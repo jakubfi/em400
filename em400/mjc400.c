@@ -142,30 +142,26 @@ int16_t mjc400_fetch_data()
 }
 
 // -----------------------------------------------------------------------
-int mjc400_execute()
-{
-	int (*op_fun)() = mjc400_iset[IR_OP].op_fun;
-	return op_fun();
-}
-
-// -----------------------------------------------------------------------
 int16_t mjc400_get_eff_arg()
 {
 	int16_t N = 0;
 
+	// argument is in next word
 	if (IR_C == 0) {
 		N += mjc400_fetch_data();
 		printf("mem: %i %i\n", N, MEM(N));
+	// argument is in field C
 	} else {
 		N += R[IR_C];
 	}
 
-	if (IR_B != 0) {
-		N += R[IR_B];
-	}
+	// add B (if >0, adding 0 won't hurt)
+	N += R[IR_B];
 
 	// !!TODO!!
 	// N += MOD;
+	
+	// if D is set, N is an address in current memory block
 	if (IR_D == 1) {
 		N = MEM(N);
 	}
@@ -176,12 +172,16 @@ int16_t mjc400_get_eff_arg()
 // -----------------------------------------------------------------------
 int mjc400_step()
 {
-	P = 0;		// branch?
+	// do not branch by default
+	P = 0;
 
+	// fetch instruction (+arg)
 	mjc400_fetch_instr();
 
-	int op_res = mjc400_execute();
+	// execute instruction
+	int op_res = mjc400_iset[IR_OP].op_fun();
 
+	// handle illegal opcodes
 	if (op_res == OP_OK) {
 		IC += P;
 		return 0;

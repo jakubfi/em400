@@ -121,7 +121,7 @@ mjc400_opdef mjc400_iset_70[] = {
 };
 
 // d a
-// 0 1
+// 0 0
 mjc400_opdef mjc400_iset_71[] = {
 	{ 0, "BLC", false, mjc400_op_71_blc },
 	{ 1, "EXL", false, mjc400_op_71_exl },

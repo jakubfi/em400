@@ -27,4 +27,13 @@ typedef struct {
 } mjc400_opdef;
 
 extern mjc400_opdef mjc400_iset[];
+extern mjc400_opdef mjc400_iset_37[];
+extern mjc400_opdef mjc400_iset_70[];
+extern mjc400_opdef mjc400_iset_71[];
+extern mjc400_opdef mjc400_iset_72[];
+extern mjc400_opdef mjc400_iset_73[];
+extern mjc400_opdef mjc400_iset_74[];
+extern mjc400_opdef mjc400_iset_75[];
+extern mjc400_opdef mjc400_iset_76[];
+extern mjc400_opdef mjc400_iset_77[];
 
