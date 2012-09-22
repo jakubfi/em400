@@ -1,6 +1,13 @@
 CC=gcc
 CFLAGS=-std=c99 -Wall -O3
-OBJS=mjc400.o mera400.o mjc400_iset.o mjc400_instr.o mjc400_mem.o mjc400_regs.o
+OBJS=\
+mera400.o\
+mjc400.o\
+mjc400_iset.o\
+mjc400_instr.o\
+mjc400_mem.o\
+mjc400_regs.o\
+mjc400_timer.o
 
 mera400: $(OBJS)
 	$(CC) $(LFLAGS) $^ -o $@
