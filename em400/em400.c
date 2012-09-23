@@ -29,12 +29,14 @@ int main(int argc, char** argv)
 	mjc400_init();
 
 	mjc400_load_os_image("add", 0);
+
 	while (!em400_quit) {
 		em400_debuger_step();
-		if (!mjc400_step()) {
-			em400_quit = 1;
+		if (mjc400_step() != 0) {
+			//em400_quit = 1;
 		}
 	}
+
 	mjc400_dump_os_mem();
 
 	return 0;

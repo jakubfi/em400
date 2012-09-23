@@ -9,7 +9,8 @@ mjc400_instr.o\
 mjc400_mem.o\
 mjc400_regs.o\
 mjc400_timer.o\
-em400_debuger.o
+em400_debuger.o\
+utils.o
 
 em400: $(OBJS)
 	$(CC) $(LFLAGS) $^ -o $@
@@ -18,6 +19,6 @@ asm: *.c
 	$(CC) $(CFLAGS) -S $^
 
 clean:
-	rm -f *.o mera400 *.s
+	rm -f *.o em400 *.s
 
 .PHONY: all clean

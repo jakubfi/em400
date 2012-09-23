@@ -2,7 +2,9 @@
 #include <stdlib.h>
 #include <readline/readline.h>
 #include <readline/history.h>
+#include "utils.h"
 #include "em400_debuger.h"
+#include "mjc400_regs.h"
 
 extern int em400_quit;
 
@@ -29,7 +31,31 @@ int em400_debuger_c_help(char* args)
 // -----------------------------------------------------------------------
 int em400_debuger_c_regs(char* args)
 {
-	printf("regs:\n");
+	char *ir = int2bin(IR, 16);
+	char *sr = int2bin(SR, 16);
+	char *rz = int2bin(RZ, 32);
+	char *r0 = int2bin(R[0], 16);
+
+	printf("           iiiiiiDAAABBBCCC             RM________QBNB__\n");
+	printf("IR: 0x%04x %s  SR: 0x%04x %s\n", IR, ir, SR, sr);
+	printf("IC: 0x%04x P: %i\n", IC, P);
+	printf("\n");
+	printf("    01234567012345670123456701234567      ZMVCLEGYX.......\n");
+	printf("RZ: %s  R0: %s\n", rz, r0);
+	printf("\n");
+	free(ir);
+	free(sr);
+	free(rz);
+	free(r0);
+	printf("     hex... dec...  bin.....|.......       hex... dec...  bin.....|.......\n");
+	for (int i=0 ; i<8 ; i++) {
+		char *r1 = int2bin(R[2*i], 16);
+		char *r2 = int2bin(R[2*i+1], 16);
+		printf("R%02i: 0x%04x  %5i  %s", 2*i, R[2*i], R[2*i], r1);
+		printf("  R%02i: 0x%04x  %5i  %s\n", 2*i+1, R[2*i+1], R[2*i+1], r2);
+		free(r1);
+		free(r2);
+	}
 	return 0;
 }
 
@@ -76,7 +102,7 @@ void em400_debuger_step()
 		buf = readline("em400> ");
 		if (!buf) {
 			printf("\n");
-			break;
+			continue;
 		} else {
 			if (*buf != 0) {
 				add_history(buf);
