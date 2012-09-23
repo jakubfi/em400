@@ -1,15 +1,17 @@
 CC=gcc
 CFLAGS=-std=c99 -Wall -O3
+LFLAGS=-lreadline
 OBJS=\
-mera400.o\
+em400.o\
 mjc400.o\
 mjc400_iset.o\
 mjc400_instr.o\
 mjc400_mem.o\
 mjc400_regs.o\
-mjc400_timer.o
+mjc400_timer.o\
+em400_debuger.o
 
-mera400: $(OBJS)
+em400: $(OBJS)
 	$(CC) $(LFLAGS) $^ -o $@
 
 asm: *.c

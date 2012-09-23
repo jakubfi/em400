@@ -7,7 +7,7 @@
 // -----------------------------------------------------------------------
 void mjc400_timer_interrupt(int i)
 {
-	// TODO: reentrancy
+	// TODO: portability
 	RZ_5sb;
 }
 
