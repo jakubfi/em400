@@ -1,4 +1,4 @@
-//  Copyright (c) 2011-2012 Jakub Filipowicz <jakubf@gmail.com>
+//  Copyright (c) 2012 Jakub Filipowicz <jakubf@gmail.com>
 //
 //  This program is free software; you can redistribute it and/or modify
 //  it under the terms of the GNU General Public License as published by
@@ -17,6 +17,7 @@
 
 #define OP_OK 0
 #define OP_ILLEGAL 1
+#define OP_MD 2
 
 int mjc400_op_illegal();
 

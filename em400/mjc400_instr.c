@@ -1,4 +1,4 @@
-//  Copyright (c) 2011-2012 Jakub Filipowicz <jakubf@gmail.com>
+//  Copyright (c) 2012 Jakub Filipowicz <jakubf@gmail.com>
 //
 //  This program is free software; you can redistribute it and/or modify
 //  it under the terms of the GNU General Public License as published by
@@ -776,15 +776,17 @@ int mjc400_op_72_lpc()
 
 int mjc400_op_73()
 {
+	// all 73-instructions are illegal in user mode
+	if (!SR_Q) return OP_ILLEGAL;
 	int arg = ((IR & 0b0000001111000000) >> 4) | (IR & 0b0000000000000011);
 	return mjc400_iset_73[arg].op_fun();
 }
 
 int mjc400_op_73_hlt()
 {
-	// TODO
+	// TODO: busy wait
 	while (!SR_RM);
-	return OP_ILLEGAL;
+	return OP_OK;
 }
 
 int mjc400_op_73_mcl()
@@ -1095,6 +1097,7 @@ int mjc400_op_77()
 
 int mjc400_op_77_mb()
 {
+	if (!SR_Q) return OP_ILLEGAL;
 	int16_t N = mjc400_get_eff_arg();
 	SR_MBw(MEM(N));
 	return OP_OK;
@@ -1102,6 +1105,7 @@ int mjc400_op_77_mb()
 
 int mjc400_op_77_im()
 {
+	if (!SR_Q) return OP_ILLEGAL;
 	int16_t N = mjc400_get_eff_arg();
 	SR_RMw(MEM(N));
 	return OP_OK;
@@ -1109,6 +1113,7 @@ int mjc400_op_77_im()
 
 int mjc400_op_77_ki()
 {
+	if (!SR_Q) return OP_ILLEGAL;
 	int16_t N = mjc400_get_eff_arg();
 	MEMw(N, ((RZ & 0b11111111111100000000000000000000) >> 16) | (RZ & 0b00000000000000000000000000001111));
 	return OP_OK;
@@ -1116,6 +1121,7 @@ int mjc400_op_77_ki()
 
 int mjc400_op_77_fi()
 {
+	if (!SR_Q) return OP_ILLEGAL;
 	int16_t N = mjc400_get_eff_arg();
 	int16_t RZM = MEM(N);
 	RZ = RZ | (RZM & 0b0000000000001111);
@@ -1125,6 +1131,7 @@ int mjc400_op_77_fi()
 
 int mjc400_op_77_sp()
 {
+	if (!SR_Q) return OP_ILLEGAL;
 	int16_t N = mjc400_get_eff_arg();
 	IC = MEMNB(N);
 	R[0] = MEMNB(N+1);
@@ -1134,9 +1141,13 @@ int mjc400_op_77_sp()
 
 int mjc400_op_77_md()
 {
+	MODcnt++;
+	if (MODcnt >= 4) {
+		return OP_ILLEGAL;
+	}
 	int16_t N = mjc400_get_eff_arg();
 	MOD = N;
-	return OP_OK;
+	return OP_MD;
 }
 
 int mjc400_op_77_rz()

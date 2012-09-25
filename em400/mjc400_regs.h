@@ -1,4 +1,4 @@
-//  Copyright (c) 2011-2012 Jakub Filipowicz <jakubf@gmail.com>
+//  Copyright (c) 2012 Jakub Filipowicz <jakubf@gmail.com>
 //
 //  This program is free software; you can redistribute it and/or modify
 //  it under the terms of the GNU General Public License as published by
@@ -26,6 +26,7 @@ extern uint32_t RZ;
 extern uint16_t IR;
 extern uint16_t P;
 extern int16_t MOD;
+extern int MODcnt;
 extern uint16_t KB;
 
 // -----------------------------------------------------------------------
@@ -163,6 +164,7 @@ extern uint16_t KB;
 // RZ
 
 #define RZ_5sb		RZ |= 0b00000100000000000000000000000000
+#define RZ_6sb		RZ |= 0b00000010000000000000000000000000
 #define RZ_30sb		RZ |= 0b00000000000000000000000000000010
 #define RZ_31sb		RZ |= 0b00000000000000000000000000000001
 #define RZ_3031sb	RZ |= 0b00000000000000000000000000000011

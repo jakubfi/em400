@@ -1,4 +1,4 @@
-//  Copyright (c) 2011-2012 Jakub Filipowicz <jakubf@gmail.com>
+//  Copyright (c) 2012 Jakub Filipowicz <jakubf@gmail.com>
 //
 //  This program is free software; you can redistribute it and/or modify
 //  it under the terms of the GNU General Public License as published by
@@ -25,5 +25,6 @@ uint32_t RZ;
 uint16_t IR = 0;
 uint16_t P = 0;
 int16_t MOD = 0;
+int MODcnt = 0;
 uint16_t KB = 0;
 

@@ -1,4 +1,4 @@
-//  Copyright (c) 2011-2012 Jakub Filipowicz <jakubf@gmail.com>
+//  Copyright (c) 2012 Jakub Filipowicz <jakubf@gmail.com>
 //
 //  This program is free software; you can redistribute it and/or modify
 //  it under the terms of the GNU General Public License as published by
@@ -26,18 +26,17 @@ int em400_quit = 0;
 // -----------------------------------------------------------------------
 int main(int argc, char** argv)
 {
-	mjc400_init();
+	if (mjc400_init()) {
+		printf("Could not initialize emulator.\n");
+		return 1;
+	}
 
 	mjc400_load_os_image("add", 0);
 
 	while (!em400_quit) {
 		em400_debuger_step();
-		if (mjc400_step() != 0) {
-			//em400_quit = 1;
-		}
+		mjc400_step();
 	}
-
-	mjc400_dump_os_mem();
 
 	return 0;
 }

@@ -1,4 +1,4 @@
-//  Copyright (c) 2011-2012 Jakub Filipowicz <jakubf@gmail.com>
+//  Copyright (c) 2012 Jakub Filipowicz <jakubf@gmail.com>
 //
 //  This program is free software; you can redistribute it and/or modify
 //  it under the terms of the GNU General Public License as published by
@@ -22,11 +22,15 @@
 #include "mjc400_regs.h"
 #include "mjc400_iset.h"
 #include "mjc400_instr.h"
+#include "mjc400_timer.h"
 
 // -----------------------------------------------------------------------
-void mjc400_init()
+int mjc400_init()
 {
+	int res;
 	mjc400_reset();
+	res = mjc400_timer_start();
+	return res;
 }
 
 // -----------------------------------------------------------------------
@@ -40,6 +44,7 @@ void mjc400_reset()
 	RZ = 0;
 	IR = 0;
 	P = 0;
+	MOD = MODcnt = 0;
 }
 
 // -----------------------------------------------------------------------
@@ -158,8 +163,8 @@ int16_t mjc400_get_eff_arg()
 	// add B (if >0, adding 0 won't hurt)
 	N += R[IR_B];
 
-	// !!TODO!!
-	// N += MOD;
+	// pre-modification
+	N += MOD;
 	
 	// if D is set, N is an address in current memory block
 	if (IR_D == 1) {
@@ -170,22 +175,35 @@ int16_t mjc400_get_eff_arg()
 }
 
 // -----------------------------------------------------------------------
-int mjc400_step()
+void mjc400_step()
 {
 	// do not branch by default
 	P = 0;
 
-	// fetch instruction (+arg)
+	// fetch instruction (and additional argument, if necessary)
 	mjc400_fetch_instr();
 
 	// execute instruction
 	int op_res = mjc400_iset[IR_OP].op_fun();
 
-	// handle illegal opcodes
-	if (op_res == OP_OK) {
-		IC += P;
-		return 0;
-	} else {
-		return 1;
+	switch (op_res) {
+		// normal instruction
+		case OP_OK:
+			MOD = MODcnt = 0;
+			break;
+		// pre-modification
+		case OP_MD:
+			break;
+		// illegal instruction
+		case OP_ILLEGAL:
+			MOD = MODcnt = 0;
+			if (P!=0) {
+				P = 0;
+			} else {
+				RZ_6sb;
+			}
+			break;
 	}
+
+	IC += P;
 }

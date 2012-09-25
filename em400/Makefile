@@ -1,5 +1,5 @@
 CC=gcc
-CFLAGS=-std=c99 -Wall -O3
+CFLAGS=-std=c99 -Wall -O3 -D_XOPEN_SOURCE
 LFLAGS=-lreadline
 OBJS=\
 em400.o\
