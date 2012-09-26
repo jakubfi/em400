@@ -32,6 +32,7 @@ int em400_debuger_c_quit(char* args);
 int em400_debuger_c_step(char* args);
 int em400_debuger_c_help(char* args);
 int em400_debuger_c_regs(char* args);
+int em400_debuger_c_reset(char* args);
 
 int em400_debuger_execute(char* line);
 void em400_debuger_step();

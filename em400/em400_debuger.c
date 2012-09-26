@@ -22,6 +22,7 @@
 #include "utils.h"
 #include "em400_debuger.h"
 #include "mjc400_regs.h"
+#include "mjc400.h"
 
 extern int em400_quit;
 
@@ -42,6 +43,13 @@ int em400_debuger_c_step(char* args)
 int em400_debuger_c_help(char* args)
 {
 	printf("This is help.\n");
+	return 0;
+}
+
+// -----------------------------------------------------------------------
+int em400_debuger_c_reset(char* args)
+{
+	mjc400_reset();
 	return 0;
 }
 
@@ -83,6 +91,7 @@ cmd_s em400_debuger_commands[] = {
 	{ "help",	em400_debuger_c_help,	"Print help" },
 	{ "?",		em400_debuger_c_help,	"Synonym for 'help'" },
 	{ "regs",	em400_debuger_c_regs,	"Print registers" },
+	{ "reset",	em400_debuger_c_reset,	"Reset the emulator" },
 	{ NULL,		NULL,	NULL }
 };
 

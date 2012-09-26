@@ -154,7 +154,6 @@ int16_t mjc400_get_eff_arg()
 	// argument is in next word
 	if (IR_C == 0) {
 		N += mjc400_fetch_data();
-		printf("mem: %i %i\n", N, MEM(N));
 	// argument is in field C
 	} else {
 		N += R[IR_C];
@@ -170,7 +169,6 @@ int16_t mjc400_get_eff_arg()
 	if (IR_D == 1) {
 		N = MEM(N);
 	}
-	printf("eff: %i\n", N);
 	return N;
 }
 

@@ -23,6 +23,7 @@ typedef struct {
 	char mnemonic[3];
 	_Bool nl;
 	int (*op_fun)();
+	int (*dasm_fun)();
 
 } mjc400_opdef;
 

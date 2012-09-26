@@ -34,8 +34,8 @@ int main(int argc, char** argv)
 	mjc400_load_os_image("add", 0);
 
 	while (!em400_quit) {
-		em400_debuger_step();
 		mjc400_step();
+		em400_debuger_step();
 	}
 
 	return 0;
