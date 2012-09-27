@@ -6,7 +6,8 @@ em400.o\
 mjc400.o\
 mjc400_iset.o\
 mjc400_instr.o\
-mjc400_instr_dasm.o\
+mjc400_dasm.o\
+mjc400_trans.o\
 mjc400_mem.o\
 mjc400_regs.o\
 mjc400_timer.o\

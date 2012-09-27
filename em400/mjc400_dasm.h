@@ -15,28 +15,27 @@
 //  Foundation, Inc.,
 //  51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 
-#include <inttypes.h>
-#include <stdbool.h>
+char* mjc400_dasm_illegal(int opcode);
 
-typedef struct {
-	uint16_t opcode;
-	char mnemo_assm[3];
-	char mnemo_assk[3];
-	_Bool nl;
-	int (*op_fun)();
-	char* (*trans_fun)();
-	char* (*dasm_fun)(int opcode);
-
-} mjc400_opdef;
-
-extern mjc400_opdef mjc400_iset[];
-extern mjc400_opdef mjc400_iset_37[];
-extern mjc400_opdef mjc400_iset_70[];
-extern mjc400_opdef mjc400_iset_71[];
-extern mjc400_opdef mjc400_iset_72[];
-extern mjc400_opdef mjc400_iset_73[];
-extern mjc400_opdef mjc400_iset_74[];
-extern mjc400_opdef mjc400_iset_75[];
-extern mjc400_opdef mjc400_iset_76[];
-extern mjc400_opdef mjc400_iset_77[];
+char* mjc400_dasm_2argn(int opcode);
+char* mjc400_dasm_37(int opcode);
+char* mjc400_dasm_ka1(int opcode);
+char* mjc400_dasm_70(int opcode);
+char* mjc400_dasm_71(int opcode);
+char* mjc400_dasm_72(int opcode);
+char* mjc400_dasm_73(int opcode);
+char* mjc400_dasm_74(int opcode);
+char* mjc400_dasm_75(int opcode);
+char* mjc400_dasm_76(int opcode);
+char* mjc400_dasm_77(int opcode);
+char* mjc400_dasm_fd(int opcode);
+char* mjc400_dasm_js(int opcode);
+char* mjc400_dasm_ka2(int opcode);
+char* mjc400_dasm_c(int opcode);
+char* mjc400_dasm_c_shc(int opcode);
+char* mjc400_dasm_s(int opcode);
+char* mjc400_dasm_j(int opcode);
+char* mjc400_dasm_l(int opcode);
+char* mjc400_dasm_g(int opcode);
+char* mjc400_dasm_bn(int opcode);
 
