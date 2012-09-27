@@ -143,7 +143,7 @@ int mjc400_op_in()
 // -----------------------------------------------------------------------
 int mjc400_op_37()
 {
-	return mjc400_iset_37[IR_A].op_fun();
+	return mjc400_iset_37[EXT_OP_37].op_fun();
 }
 
 int mjc400_op_37_ad()
@@ -491,7 +491,7 @@ int mjc400_op_rws()
 
 int mjc400_op_70()
 {
-	return mjc400_iset_70[IR_A].op_fun();
+	return mjc400_iset_70[EXT_OP_70].op_fun();
 }
 
 int mjc400_op_70_ujs()
@@ -551,9 +551,7 @@ int mjc400_op_70_jcs()
 
 int mjc400_op_71()
 {
-	// argument is: ((IR_A & 0b100) >> 2) | (IR_D << 1)
-	int arg = (IR & 0b0000001100000000) >> 8;
-	return mjc400_iset_71[arg].op_fun();
+	return mjc400_iset_71[EXT_OP_71].op_fun();
 }
 
 int mjc400_op_71_blc()
@@ -595,8 +593,7 @@ int mjc400_op_71_nrf()
 
 int mjc400_op_72()
 {
-	int arg = ((IR & 0b0000001000000000) >> 3) | (IR & 0b0000000000111111);
-	return mjc400_iset_72[arg].op_fun();
+	return mjc400_iset_72[EXT_OP_72].op_fun();
 }
 
 int mjc400_op_72_ric()
@@ -775,8 +772,7 @@ int mjc400_op_73()
 {
 	// all 73-instructions are illegal in user mode
 	if (!SR_Q) return OP_ILLEGAL;
-	int arg = ((IR & 0b0000001111000000) >> 4) | (IR & 0b0000000000000011);
-	return mjc400_iset_73[arg].op_fun();
+	return mjc400_iset_73[EXT_OP_73].op_fun();
 }
 
 int mjc400_op_73_hlt()
@@ -849,7 +845,7 @@ int mjc400_op_73_lip()
 
 int mjc400_op_74()
 {
-	return mjc400_iset_74[IR_A].op_fun();
+	return mjc400_iset_74[EXT_OP_74].op_fun();
 }
 
 int mjc400_op_74_uj()
@@ -915,7 +911,7 @@ int mjc400_op_74_lj()
 
 int mjc400_op_75()
 {
-	return mjc400_iset_75[IR_A].op_fun();
+	return mjc400_iset_75[EXT_OP_75].op_fun();
 }
 
 int mjc400_op_75_ld()
@@ -1002,7 +998,7 @@ int mjc400_op_75_tl()
 
 int mjc400_op_76()
 {
-	return mjc400_iset_76[IR_A].op_fun();
+	return mjc400_iset_76[EXT_OP_76].op_fun();
 }
 
 int mjc400_op_76_rd()
@@ -1089,7 +1085,7 @@ int mjc400_op_76_pl()
 
 int mjc400_op_77()
 {
-	return mjc400_iset_77[IR_A].op_fun();
+	return mjc400_iset_77[EXT_OP_77].op_fun();
 }
 
 int mjc400_op_77_mb()

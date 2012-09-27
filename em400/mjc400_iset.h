@@ -18,6 +18,17 @@
 #include <inttypes.h>
 #include <stdbool.h>
 
+#define EXT_OP_37 IR_A
+#define EXT_OP_70 IR_A
+#define EXT_OP_71 ((IR & 0b0000001100000000) >> 8)	// argument is: ((IR_A & 0b100) >> 2) | (IR_D << 1)
+#define EXT_OP_72 (((IR & 0b0000001000000000) >> 3) | (IR & 0b0000000000111111))
+#define EXT_OP_73 (((IR & 0b0000001111000000) >> 4) | (IR & 0b0000000000000011))
+#define EXT_OP_74 IR_A
+#define EXT_OP_75 IR_A
+#define EXT_OP_76 IR_A
+#define EXT_OP_77 IR_A
+
+
 typedef struct {
 	uint16_t opcode;
 	char mnemo_assm[3];
