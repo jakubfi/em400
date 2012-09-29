@@ -17,165 +17,159 @@
 
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 #include "mjc400_dasm.h"
-#include "mjc400_instr.h"
 #include "mjc400_iset.h"
 #include "mjc400_mem.h"
 #include "mjc400_regs.h"
 #include "mjc400.h"
+#include "utils.h"
 
-char* mjc400_dasm_illegal(int opcode)
+// -----------------------------------------------------------------------
+int mjc400_dasm(uint16_t* memptr, char **buf)
 {
-	return NULL;
+	uint8_t op = _OP(*memptr);
+	return mjc400_iset[op].dasm_fun(op, memptr, buf);
 }
 
 // -----------------------------------------------------------------------
-// ---- 20 - 36, 40 - 57 -------------------------------------------------
-// -----------------------------------------------------------------------
-
-char* mjc400_dasm_2argn(int opcode)
+int mjc400_dasm_illegal(uint8_t op, uint16_t* memptr, char **buf)
 {
-	return NULL;
+	*buf = malloc(1024);
+	char *opcode = int2bin(*memptr, 16);
+	sprintf(*buf, "ILLEGAL: 0x%04x (dec: %i, bin: %s)", *memptr, *memptr, opcode);
+	free(opcode);
+
+	return 1;
 }
 
 // -----------------------------------------------------------------------
-// ---- 37 ---------------------------------------------------------------
-// -----------------------------------------------------------------------
-
-char* mjc400_dasm_37(int opcode)
+int mjc400_dasm_2argn(uint8_t op, uint16_t* memptr, char **buf)
 {
-	return NULL;
-}
-
-char* mjc400_dasm_fd(int opcode)
-{
-	return NULL;
+	int n = 0;
+	*buf = malloc(1024);
+	n += sprintf(*buf, "%s ", mjc400_iset[op].mnemo_assm);
+	return 2;
 }
 
 // -----------------------------------------------------------------------
-// ---- 60 - 67 ----------------------------------------------------------
-// -----------------------------------------------------------------------
-
-char* mjc400_dasm_ka1(int opcode)
+int mjc400_dasm_37(uint8_t op, uint16_t* memptr, char **buf)
 {
-	return NULL;
+	return 0;
 }
 
 // -----------------------------------------------------------------------
-// ---- 70 ---------------------------------------------------------------
-// -----------------------------------------------------------------------
-
-char* mjc400_dasm_70(int opcode)
+int mjc400_dasm_fd(uint8_t op, uint16_t* memptr, char **buf)
 {
-	return NULL;
-}
-
-char* mjc400_dasm_js(int opcode)
-{
-	return NULL;
+	return 0;
 }
 
 // -----------------------------------------------------------------------
-// ---- 71 ---------------------------------------------------------------
-// -----------------------------------------------------------------------
-
-char* mjc400_dasm_71(int opcode)
+int mjc400_dasm_ka1(uint8_t op, uint16_t* memptr, char **buf)
 {
-	return NULL;
-}
-
-char* mjc400_dasm_ka2(int opcode)
-{
-	return NULL;
+	return 0;
 }
 
 // -----------------------------------------------------------------------
-// ---- 72 ---------------------------------------------------------------
-// -----------------------------------------------------------------------
-
-char* mjc400_dasm_72(int opcode)
+int mjc400_dasm_70(uint8_t op, uint16_t* memptr, char **buf)
 {
-	return NULL;
-}
-
-char* mjc400_dasm_c(int opcode)
-{
-	return NULL;
-}
-
-char* mjc400_dasm_c_shc(int opcode)
-{
-	return NULL;
+	return 0;
 }
 
 // -----------------------------------------------------------------------
-// ---- 73 ---------------------------------------------------------------
-// -----------------------------------------------------------------------
-
-char* mjc400_dasm_73(int opcode)
+int mjc400_dasm_js(uint8_t op, uint16_t* memptr, char **buf)
 {
-	return NULL;
-}
-
-char* mjc400_dasm_s(int opcode)
-{
-	return NULL;
+	return 0;
 }
 
 // -----------------------------------------------------------------------
-// ---- 74 ---------------------------------------------------------------
-// -----------------------------------------------------------------------
-
-char* mjc400_dasm_74(int opcode)
+int mjc400_dasm_71(uint8_t op, uint16_t* memptr, char **buf)
 {
-	return NULL;
-}
-
-char* mjc400_dasm_j(int opcode)
-{
-	return NULL;
+	return 0;
 }
 
 // -----------------------------------------------------------------------
-// ---- 75 ---------------------------------------------------------------
-// -----------------------------------------------------------------------
-
-char* mjc400_dasm_75(int opcode)
+int mjc400_dasm_ka2(uint8_t op, uint16_t* memptr, char **buf)
 {
-	return NULL;
-}
-
-char* mjc400_dasm_l(int opcode)
-{
-	return NULL;
+	return 0;
 }
 
 // -----------------------------------------------------------------------
-// ---- 76 ---------------------------------------------------------------
-// -----------------------------------------------------------------------
-
-char* mjc400_dasm_76(int opcode)
+int mjc400_dasm_72(uint8_t op, uint16_t* memptr, char **buf)
 {
-	return NULL;
-}
-
-char* mjc400_dasm_g(int opcode)
-{
-	return NULL;
+	return 0;
 }
 
 // -----------------------------------------------------------------------
-// ---- 77 ---------------------------------------------------------------
-// -----------------------------------------------------------------------
-
-char* mjc400_dasm_77(int opcode)
+int mjc400_dasm_c(uint8_t op, uint16_t* memptr, char **buf)
 {
-	return NULL;
+	return 0;
 }
 
-char* mjc400_dasm_bn(int opcode)
+// -----------------------------------------------------------------------
+int mjc400_dasm_c_shc(uint8_t op, uint16_t* memptr, char **buf)
 {
-	return NULL;
+	return 0;
+}
+
+// -----------------------------------------------------------------------
+int mjc400_dasm_73(uint8_t op, uint16_t* memptr, char **buf)
+{
+	return 0;
+}
+
+// -----------------------------------------------------------------------
+int mjc400_dasm_s(uint8_t op, uint16_t* memptr, char **buf)
+{
+	return 0;
+}
+
+// -----------------------------------------------------------------------
+int mjc400_dasm_74(uint8_t op, uint16_t* memptr, char **buf)
+{
+	return 0;
+}
+
+// -----------------------------------------------------------------------
+int mjc400_dasm_j(uint8_t op, uint16_t* memptr, char **buf)
+{
+	return 0;
+}
+
+// -----------------------------------------------------------------------
+int mjc400_dasm_75(uint8_t op, uint16_t* memptr, char **buf)
+{
+	return 0;
+}
+
+// -----------------------------------------------------------------------
+int mjc400_dasm_l(uint8_t op, uint16_t* memptr, char **buf)
+{
+	return 0;
+}
+
+// -----------------------------------------------------------------------
+int mjc400_dasm_76(uint8_t op, uint16_t* memptr, char **buf)
+{
+	return 0;
+}
+
+// -----------------------------------------------------------------------
+int mjc400_dasm_g(uint8_t op, uint16_t* memptr, char **buf)
+{
+	return 0;
+}
+
+// -----------------------------------------------------------------------
+int mjc400_dasm_77(uint8_t op, uint16_t* memptr, char **buf)
+{
+	return 0;
+}
+
+// -----------------------------------------------------------------------
+int mjc400_dasm_bn(uint8_t op, uint16_t* memptr, char **buf)
+{
+	return 0;
 }
 
 

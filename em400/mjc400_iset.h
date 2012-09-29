@@ -35,8 +35,8 @@ typedef struct {
 	char mnemo_assk[3];
 	_Bool nl;
 	int (*op_fun)();
-	char* (*trans_fun)();
-	char* (*dasm_fun)(int opcode);
+	int (*trans_fun)(uint8_t op, uint16_t* memptr, char **buf);
+	int (*dasm_fun)(uint8_t op, uint16_t* memptr, char **buf);
 
 } mjc400_opdef;
 

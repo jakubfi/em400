@@ -17,16 +17,48 @@
 
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 #include "mjc400_trans.h"
-#include "mjc400_instr.h"
 #include "mjc400_iset.h"
 #include "mjc400_mem.h"
 #include "mjc400_regs.h"
 #include "mjc400.h"
+#include "utils.h"
 
-char* mjc400_trans_illegal()
+// -----------------------------------------------------------------------
+int mjc400_trans(uint16_t* memptr, char **buf)
 {
-	return NULL;
+	uint8_t op = _OP(*memptr);
+	return mjc400_iset[op].trans_fun(op, memptr, buf);
+}
+
+// int mjc400_trans_illegal(uint8_t op, uint16_t* memptr, char **buf)
+// it's the same as mjc400_dasm_illegal
+
+// -----------------------------------------------------------------------
+int mjc400_trans_eff_arg(char *buf, uint16_t *memptr)
+{
+	int n = 0;
+
+	if (_D(*memptr) == 1) {
+		n += sprintf(buf+n, "[");
+	}
+
+	if (_C(*memptr) == 0) {
+		n += sprintf(buf+n, "%i", *(memptr+1));
+	} else {
+		n += sprintf(buf+n, "r%i", _C(*memptr));
+	}
+
+	if (_B(*memptr) != 0) {
+		n += sprintf(buf+n, "+r%i", _B(*memptr));
+	}
+
+	if (_D(*memptr) == 1) {
+		n += sprintf(buf+n, "]");
+	}
+
+	return n;
 }
 
 
@@ -34,697 +66,719 @@ char* mjc400_trans_illegal()
 // ---- 20 - 36 ----------------------------------------------------------
 // -----------------------------------------------------------------------
 
-char* mjc400_trans_lw()
+int mjc400_trans_lw(uint8_t op, uint16_t* memptr, char **buf)
 {
-	return NULL;
+	*buf = malloc(1024);
+
+	int n = 0;
+	n += sprintf((*buf)+n, "r%i = ", _A(*memptr));
+	n += mjc400_trans_eff_arg((*buf)+n, memptr);
+
+	if (_C(*memptr) == 0) return 2;
+	else return 1;
 }
 
-char* mjc400_trans_tw()
+int mjc400_trans_tw(uint8_t op, uint16_t* memptr, char **buf)
 {
-	return NULL;
+	return 0;
 }
 
-char* mjc400_trans_ls()
+int mjc400_trans_ls(uint8_t op, uint16_t* memptr, char **buf)
 {
-	return NULL;
+	return 0;
 }
 
-char* mjc400_trans_ri()
+int mjc400_trans_ri(uint8_t op, uint16_t* memptr, char **buf)
 {
-	return NULL;
+	return 0;
 }
 
-char* mjc400_trans_rw()
+int mjc400_trans_rw(uint8_t op, uint16_t* memptr, char **buf)
 {
-	return NULL;
+	*buf = malloc(1024);
+
+	int n = 0;
+	n += sprintf((*buf)+n, "[");
+	n += mjc400_trans_eff_arg((*buf)+n, memptr);
+	n += sprintf((*buf)+n, "] = r%i", _A(*memptr));
+
+	if (_C(*memptr) == 0) return 2;
+	else return 1;
 }
 
-char* mjc400_trans_pw()
+int mjc400_trans_pw(uint8_t op, uint16_t* memptr, char **buf)
 {
-	return NULL;
+	return 0;
 }
 
-char* mjc400_trans_rj()
+int mjc400_trans_rj(uint8_t op, uint16_t* memptr, char **buf)
 {
-	return NULL;
+	return 0;
 }
 
-char* mjc400_trans_is()
+int mjc400_trans_is(uint8_t op, uint16_t* memptr, char **buf)
 {
-	return NULL;
+	return 0;
 }
 
-char* mjc400_trans_bb()
+int mjc400_trans_bb(uint8_t op, uint16_t* memptr, char **buf)
 {
-	return NULL;
+	return 0;
 }
 
-char* mjc400_trans_bm()
+int mjc400_trans_bm(uint8_t op, uint16_t* memptr, char **buf)
 {
-	return NULL;
+	return 0;
 }
 
-char* mjc400_trans_bs()
+int mjc400_trans_bs(uint8_t op, uint16_t* memptr, char **buf)
 {
-	return NULL;
+	return 0;
 }
 
-char* mjc400_trans_bc()
+int mjc400_trans_bc(uint8_t op, uint16_t* memptr, char **buf)
 {
-	return NULL;
+	return 0;
 }
 
-char* mjc400_trans_bn()
+int mjc400_trans_bn(uint8_t op, uint16_t* memptr, char **buf)
 {
-	return NULL;
+	return 0;
 }
 
-char* mjc400_trans_ou()
+int mjc400_trans_ou(uint8_t op, uint16_t* memptr, char **buf)
 {
-	return NULL;
+	return 0;
 }
 
-char* mjc400_trans_in()
+int mjc400_trans_in(uint8_t op, uint16_t* memptr, char **buf)
 {
-	return NULL;
+	return 0;
 }
 
 // -----------------------------------------------------------------------
 // ---- 37 ---------------------------------------------------------------
 // -----------------------------------------------------------------------
-char* mjc400_trans_37()
+int mjc400_trans_37(uint8_t op, uint16_t* memptr, char **buf)
 {
-	return NULL;
+	return 0;
 }
 
-char* mjc400_trans_37_ad()
+int mjc400_trans_37_ad(uint8_t op, uint16_t* memptr, char **buf)
 {
-	return NULL;
+	return 0;
 }
 
-char* mjc400_trans_37_sd()
+int mjc400_trans_37_sd(uint8_t op, uint16_t* memptr, char **buf)
 {
-	return NULL;
+	return 0;
 }
 
-char* mjc400_trans_37_mw()
+int mjc400_trans_37_mw(uint8_t op, uint16_t* memptr, char **buf)
 {
-	return NULL;
+	return 0;
 }
 
-char* mjc400_trans_37_dw()
+int mjc400_trans_37_dw(uint8_t op, uint16_t* memptr, char **buf)
 {
-	return NULL;
+	return 0;
 }
 
-char* mjc400_trans_37_af()
+int mjc400_trans_37_af(uint8_t op, uint16_t* memptr, char **buf)
 {
-	return NULL;
+	return 0;
 }
 
-char* mjc400_trans_37_sf()
+int mjc400_trans_37_sf(uint8_t op, uint16_t* memptr, char **buf)
 {
-	return NULL;
+	return 0;
 }
 
-char* mjc400_trans_37_mf()
+int mjc400_trans_37_mf(uint8_t op, uint16_t* memptr, char **buf)
 {
-	return NULL;
+	return 0;
 }
 
-char* mjc400_trans_37_df()
+int mjc400_trans_37_df(uint8_t op, uint16_t* memptr, char **buf)
 {
-	return NULL;
+	return 0;
 }
 
 // -----------------------------------------------------------------------
 // ---- 40 - 57 ----------------------------------------------------------
 // -----------------------------------------------------------------------
 
-char* mjc400_trans_aw()
+int mjc400_trans_aw(uint8_t op, uint16_t* memptr, char **buf)
 {
-	return NULL;
+	*buf = malloc(1024);
+
+	int n = 0;
+	n += sprintf((*buf)+n, "r%i += ", _A(*memptr));
+	n += mjc400_trans_eff_arg((*buf)+n, memptr);
+
+	if (_C(*memptr) == 0) return 2;
+	else return 1;
 }
 
-char* mjc400_trans_ac()
+int mjc400_trans_ac(uint8_t op, uint16_t* memptr, char **buf)
 {
-	return NULL;
+	return 0;
 }
 
-char* mjc400_trans_sw()
+int mjc400_trans_sw(uint8_t op, uint16_t* memptr, char **buf)
 {
-	return NULL;
+	return 0;
 }
 
-char* mjc400_trans_cw()
+int mjc400_trans_cw(uint8_t op, uint16_t* memptr, char **buf)
 {
-	return NULL;
+	return 0;
 }
 
-char* mjc400_trans_or()
+int mjc400_trans_or(uint8_t op, uint16_t* memptr, char **buf)
 {
-	return NULL;
+	return 0;
 }
 
-char* mjc400_trans_om()
+int mjc400_trans_om(uint8_t op, uint16_t* memptr, char **buf)
 {
-	return NULL;
+	return 0;
 }
 
-char* mjc400_trans_nr()
+int mjc400_trans_nr(uint8_t op, uint16_t* memptr, char **buf)
 {
-	return NULL;
+	return 0;
 }
 
-char* mjc400_trans_nm()
+int mjc400_trans_nm(uint8_t op, uint16_t* memptr, char **buf)
 {
-	return NULL;
+	return 0;
 }
 
-char* mjc400_trans_er()
+int mjc400_trans_er(uint8_t op, uint16_t* memptr, char **buf)
 {
-	return NULL;
+	return 0;
 }
 
-char* mjc400_trans_em()
+int mjc400_trans_em(uint8_t op, uint16_t* memptr, char **buf)
 {
-	return NULL;
+	return 0;
 }
 
-char* mjc400_trans_xr()
+int mjc400_trans_xr(uint8_t op, uint16_t* memptr, char **buf)
 {
-	return NULL;
+	return 0;
 }
 
-char* mjc400_trans_xm()
+int mjc400_trans_xm(uint8_t op, uint16_t* memptr, char **buf)
 {
-	return NULL;
+	return 0;
 }
 
-char* mjc400_trans_cl()
+int mjc400_trans_cl(uint8_t op, uint16_t* memptr, char **buf)
 {
-	return NULL;
+	return 0;
 }
 
-char* mjc400_trans_lb()
+int mjc400_trans_lb(uint8_t op, uint16_t* memptr, char **buf)
 {
-	return NULL;
+	return 0;
 }
 
-char* mjc400_trans_rb()
+int mjc400_trans_rb(uint8_t op, uint16_t* memptr, char **buf)
 {
-	return NULL;
+	return 0;
 }
 
-char* mjc400_trans_cb()
+int mjc400_trans_cb(uint8_t op, uint16_t* memptr, char **buf)
 {
-	return NULL;
+	return 0;
 }
 
 // -----------------------------------------------------------------------
 // ---- 60 - 67 ----------------------------------------------------------
 // -----------------------------------------------------------------------
 
-char* mjc400_trans_awt()
+int mjc400_trans_awt(uint8_t op, uint16_t* memptr, char **buf)
 {
-	return NULL;
+	return 0;
 }
 
-char* mjc400_trans_trb()
+int mjc400_trans_trb(uint8_t op, uint16_t* memptr, char **buf)
 {
-	return NULL;
+	return 0;
 }
 
-char* mjc400_trans_irb()
+int mjc400_trans_irb(uint8_t op, uint16_t* memptr, char **buf)
 {
-	return NULL;
+	return 0;
 }
 
-char* mjc400_trans_drb()
+int mjc400_trans_drb(uint8_t op, uint16_t* memptr, char **buf)
 {
-	return NULL;
+	return 0;
 }
 
-char* mjc400_trans_cwt()
+int mjc400_trans_cwt(uint8_t op, uint16_t* memptr, char **buf)
 {
-	return NULL;
+	return 0;
 }
 
-char* mjc400_trans_lwt()
+int mjc400_trans_lwt(uint8_t op, uint16_t* memptr, char **buf)
 {
-	return NULL;
+	return 0;
 }
 
-char* mjc400_trans_lws()
+int mjc400_trans_lws(uint8_t op, uint16_t* memptr, char **buf)
 {
-	return NULL;
+	return 0;
 }
 
-char* mjc400_trans_rws()
+int mjc400_trans_rws(uint8_t op, uint16_t* memptr, char **buf)
 {
-	return NULL;
+	return 0;
 }
 
 // -----------------------------------------------------------------------
 // ---- 70 ---------------------------------------------------------------
 // -----------------------------------------------------------------------
 
-char* mjc400_trans_70()
+int mjc400_trans_70(uint8_t op, uint16_t* memptr, char **buf)
 {
-	return NULL;
+	return 0;
 }
 
-char* mjc400_trans_70_ujs()
+int mjc400_trans_70_ujs(uint8_t op, uint16_t* memptr, char **buf)
 {
-	return NULL;
+	return 0;
 }
 
-char* mjc400_trans_70_jls()
+int mjc400_trans_70_jls(uint8_t op, uint16_t* memptr, char **buf)
 {
-	return NULL;
+	return 0;
 }
 
-char* mjc400_trans_70_jes()
+int mjc400_trans_70_jes(uint8_t op, uint16_t* memptr, char **buf)
 {
-	return NULL;
+	return 0;
 }
 
-char* mjc400_trans_70_jgs()
+int mjc400_trans_70_jgs(uint8_t op, uint16_t* memptr, char **buf)
 {
-	return NULL;
+	return 0;
 }
 
-char* mjc400_trans_70_jvs()
+int mjc400_trans_70_jvs(uint8_t op, uint16_t* memptr, char **buf)
 {
-	return NULL;
+	return 0;
 }
 
-char* mjc400_trans_70_jxs()
+int mjc400_trans_70_jxs(uint8_t op, uint16_t* memptr, char **buf)
 {
-	return NULL;
+	return 0;
 }
 
-char* mjc400_trans_70_jys()
+int mjc400_trans_70_jys(uint8_t op, uint16_t* memptr, char **buf)
 {
-	return NULL;
+	return 0;
 }
 
-char* mjc400_trans_70_jcs()
+int mjc400_trans_70_jcs(uint8_t op, uint16_t* memptr, char **buf)
 {
-	return NULL;
+	return 0;
 }
 
 // -----------------------------------------------------------------------
 // ---- 71 ---------------------------------------------------------------
 // -----------------------------------------------------------------------
 
-char* mjc400_trans_71()
+int mjc400_trans_71(uint8_t op, uint16_t* memptr, char **buf)
 {
-	return NULL;
+	return 0;
 }
 
-char* mjc400_trans_71_blc()
+int mjc400_trans_71_blc(uint8_t op, uint16_t* memptr, char **buf)
 {
-	return NULL;
+	return 0;
 }
 
-char* mjc400_trans_71_exl()
+int mjc400_trans_71_exl(uint8_t op, uint16_t* memptr, char **buf)
 {
-	return NULL;
+	return 0;
 }
 
-char* mjc400_trans_71_brc()
+int mjc400_trans_71_brc(uint8_t op, uint16_t* memptr, char **buf)
 {
-	return NULL;
+	return 0;
 }
 
-char* mjc400_trans_71_nrf()
+int mjc400_trans_71_nrf(uint8_t op, uint16_t* memptr, char **buf)
 {
-	return NULL;
+	return 0;
 }
 
 // -----------------------------------------------------------------------
 // ---- 72 ---------------------------------------------------------------
 // -----------------------------------------------------------------------
 
-char* mjc400_trans_72()
+int mjc400_trans_72(uint8_t op, uint16_t* memptr, char **buf)
 {
-	return NULL;
+	return 0;
 }
 
-char* mjc400_trans_72_ric()
+int mjc400_trans_72_ric(uint8_t op, uint16_t* memptr, char **buf)
 {
-	return NULL;
+	return 0;
 }
 
-char* mjc400_trans_72_zlb()
+int mjc400_trans_72_zlb(uint8_t op, uint16_t* memptr, char **buf)
 {
-	return NULL;
+	return 0;
 }
 
-char* mjc400_trans_72_sxu()
+int mjc400_trans_72_sxu(uint8_t op, uint16_t* memptr, char **buf)
 {
-	return NULL;
+	return 0;
 }
 
-char* mjc400_trans_72_nga()
+int mjc400_trans_72_nga(uint8_t op, uint16_t* memptr, char **buf)
 {
-	return NULL;
+	return 0;
 }
 
-char* mjc400_trans_72_slz()
+int mjc400_trans_72_slz(uint8_t op, uint16_t* memptr, char **buf)
 {
-	return NULL;
+	return 0;
 }
 
-char* mjc400_trans_72_sly()
+int mjc400_trans_72_sly(uint8_t op, uint16_t* memptr, char **buf)
 {
-	return NULL;
+	return 0;
 }
 
-char* mjc400_trans_72_slx()
+int mjc400_trans_72_slx(uint8_t op, uint16_t* memptr, char **buf)
 {
-	return NULL;
+	return 0;
 }
 
-char* mjc400_trans_72_sry()
+int mjc400_trans_72_sry(uint8_t op, uint16_t* memptr, char **buf)
 {
-	return NULL;
+	return 0;
 }
 
-char* mjc400_trans_72_ngl()
+int mjc400_trans_72_ngl(uint8_t op, uint16_t* memptr, char **buf)
 {
-	return NULL;
+	return 0;
 }
 
-char* mjc400_trans_72_rpc()
+int mjc400_trans_72_rpc(uint8_t op, uint16_t* memptr, char **buf)
 {
-	return NULL;
+	return 0;
 }
 
-char* mjc400_trans_72_shc()
+int mjc400_trans_72_shc(uint8_t op, uint16_t* memptr, char **buf)
 {
-	return NULL;
+	return 0;
 }
 
-char* mjc400_trans_72_rky()
+int mjc400_trans_72_rky(uint8_t op, uint16_t* memptr, char **buf)
 {
-	return NULL;
+	return 0;
 }
 
-char* mjc400_trans_72_zrb()
+int mjc400_trans_72_zrb(uint8_t op, uint16_t* memptr, char **buf)
 {
-	return NULL;
+	return 0;
 }
 
-char* mjc400_trans_72_sxl()
+int mjc400_trans_72_sxl(uint8_t op, uint16_t* memptr, char **buf)
 {
-	return NULL;
+	return 0;
 }
 
-char* mjc400_trans_72_ngc()
+int mjc400_trans_72_ngc(uint8_t op, uint16_t* memptr, char **buf)
 {
-	return NULL;
+	return 0;
 }
 
-char* mjc400_trans_72_svz()
+int mjc400_trans_72_svz(uint8_t op, uint16_t* memptr, char **buf)
 {
-	return NULL;
+	return 0;
 }
 
-char* mjc400_trans_72_svy()
+int mjc400_trans_72_svy(uint8_t op, uint16_t* memptr, char **buf)
 {
-	return NULL;
+	return 0;
 }
 
-char* mjc400_trans_72_svx()
+int mjc400_trans_72_svx(uint8_t op, uint16_t* memptr, char **buf)
 {
-	return NULL;
+	return 0;
 }
 
-char* mjc400_trans_72_srx()
+int mjc400_trans_72_srx(uint8_t op, uint16_t* memptr, char **buf)
 {
-	return NULL;
+	return 0;
 }
 
-char* mjc400_trans_72_srz()
+int mjc400_trans_72_srz(uint8_t op, uint16_t* memptr, char **buf)
 {
-	return NULL;
+	return 0;
 }
 
-char* mjc400_trans_72_lpc()
+int mjc400_trans_72_lpc(uint8_t op, uint16_t* memptr, char **buf)
 {
-	return NULL;
+	return 0;
 }
 
 // -----------------------------------------------------------------------
 // ---- 73 ---------------------------------------------------------------
 // -----------------------------------------------------------------------
 
-char* mjc400_trans_73()
+int mjc400_trans_73(uint8_t op, uint16_t* memptr, char **buf)
 {
-	return NULL;
+	return 0;
 }
 
-char* mjc400_trans_73_hlt()
+int mjc400_trans_73_hlt(uint8_t op, uint16_t* memptr, char **buf)
 {
-	return NULL;
+	return 0;
 }
 
-char* mjc400_trans_73_mcl()
+int mjc400_trans_73_mcl(uint8_t op, uint16_t* memptr, char **buf)
 {
-	return NULL;
+	return 0;
 }
 
-char* mjc400_trans_73_cit()
+int mjc400_trans_73_cit(uint8_t op, uint16_t* memptr, char **buf)
 {
-	return NULL;
+	return 0;
 }
 
-char* mjc400_trans_73_sil()
+int mjc400_trans_73_sil(uint8_t op, uint16_t* memptr, char **buf)
 {
-	return NULL;
+	return 0;
 }
 
-char* mjc400_trans_73_siu()
+int mjc400_trans_73_siu(uint8_t op, uint16_t* memptr, char **buf)
 {
-	return NULL;
+	return 0;
 }
 
-char* mjc400_trans_73_sit()
+int mjc400_trans_73_sit(uint8_t op, uint16_t* memptr, char **buf)
 {
-	return NULL;
+	return 0;
 }
 
-char* mjc400_trans_73_giu()
+int mjc400_trans_73_giu(uint8_t op, uint16_t* memptr, char **buf)
 {
-	return NULL;
+	return 0;
 }
 
-char* mjc400_trans_73_gil()
+int mjc400_trans_73_gil(uint8_t op, uint16_t* memptr, char **buf)
 {
-	return NULL;
+	return 0;
 }
 
-char* mjc400_trans_73_lip()
+int mjc400_trans_73_lip(uint8_t op, uint16_t* memptr, char **buf)
 {
-	return NULL;
+	return 0;
 }
 
 // -----------------------------------------------------------------------
 // ---- 74 ---------------------------------------------------------------
 // -----------------------------------------------------------------------
 
-char* mjc400_trans_74()
+int mjc400_trans_74(uint8_t op, uint16_t* memptr, char **buf)
 {
-	return NULL;
+	return 0;
 }
 
-char* mjc400_trans_74_uj()
+int mjc400_trans_74_uj(uint8_t op, uint16_t* memptr, char **buf)
 {
-	return NULL;
+	return 0;
 }
 
-char* mjc400_trans_74_jl()
+int mjc400_trans_74_jl(uint8_t op, uint16_t* memptr, char **buf)
 {
-	return NULL;
+	return 0;
 }
 
-char* mjc400_trans_74_je()
+int mjc400_trans_74_je(uint8_t op, uint16_t* memptr, char **buf)
 {
-	return NULL;
+	return 0;
 }
 
-char* mjc400_trans_74_jg()
+int mjc400_trans_74_jg(uint8_t op, uint16_t* memptr, char **buf)
 {
-	return NULL;
+	return 0;
 }
 
-char* mjc400_trans_74_jz()
+int mjc400_trans_74_jz(uint8_t op, uint16_t* memptr, char **buf)
 {
-	return NULL;
+	return 0;
 }
 
-char* mjc400_trans_74_jm()
+int mjc400_trans_74_jm(uint8_t op, uint16_t* memptr, char **buf)
 {
-	return NULL;
+	return 0;
 }
 
-char* mjc400_trans_74_jn()
+int mjc400_trans_74_jn(uint8_t op, uint16_t* memptr, char **buf)
 {
-	return NULL;
+	return 0;
 }
 
-char* mjc400_trans_74_lj()
+int mjc400_trans_74_lj(uint8_t op, uint16_t* memptr, char **buf)
 {
-	return NULL;
+	return 0;
 }
 
 // -----------------------------------------------------------------------
 // ---- 75 ---------------------------------------------------------------
 // -----------------------------------------------------------------------
 
-char* mjc400_trans_75()
+int mjc400_trans_75(uint8_t op, uint16_t* memptr, char **buf)
 {
-	return NULL;
+	return 0;
 }
 
-char* mjc400_trans_75_ld()
+int mjc400_trans_75_ld(uint8_t op, uint16_t* memptr, char **buf)
 {
-	return NULL;
+	return 0;
 }
 
-char* mjc400_trans_75_lf()
+int mjc400_trans_75_lf(uint8_t op, uint16_t* memptr, char **buf)
 {
-	return NULL;
+	return 0;
 }
 
-char* mjc400_trans_75_la()
+int mjc400_trans_75_la(uint8_t op, uint16_t* memptr, char **buf)
 {
-	return NULL;
+	return 0;
 }
 
-char* mjc400_trans_75_ll()
+int mjc400_trans_75_ll(uint8_t op, uint16_t* memptr, char **buf)
 {
-	return NULL;
+	return 0;
 }
 
-char* mjc400_trans_75_td()
+int mjc400_trans_75_td(uint8_t op, uint16_t* memptr, char **buf)
 {
-	return NULL;
+	return 0;
 }
 
-char* mjc400_trans_75_tf()
+int mjc400_trans_75_tf(uint8_t op, uint16_t* memptr, char **buf)
 {
-	return NULL;
+	return 0;
 }
 
-char* mjc400_trans_75_ta()
+int mjc400_trans_75_ta(uint8_t op, uint16_t* memptr, char **buf)
 {
-	return NULL;
+	return 0;
 }
 
-char* mjc400_trans_75_tl()
+int mjc400_trans_75_tl(uint8_t op, uint16_t* memptr, char **buf)
 {
-	return NULL;
+	return 0;
 }
 
 // -----------------------------------------------------------------------
 // ---- 76 ---------------------------------------------------------------
 // -----------------------------------------------------------------------
 
-char* mjc400_trans_76()
+int mjc400_trans_76(uint8_t op, uint16_t* memptr, char **buf)
 {
-	return NULL;
+	return 0;
 }
 
-char* mjc400_trans_76_rd()
+int mjc400_trans_76_rd(uint8_t op, uint16_t* memptr, char **buf)
 {
-	return NULL;
+	return 0;
 }
 
-char* mjc400_trans_76_rf()
+int mjc400_trans_76_rf(uint8_t op, uint16_t* memptr, char **buf)
 {
-	return NULL;
+	return 0;
 }
 
-char* mjc400_trans_76_ra()
+int mjc400_trans_76_ra(uint8_t op, uint16_t* memptr, char **buf)
 {
-	return NULL;
+	return 0;
 }
 
-char* mjc400_trans_76_rl()
+int mjc400_trans_76_rl(uint8_t op, uint16_t* memptr, char **buf)
 {
-	return NULL;
+	return 0;
 }
 
-char* mjc400_trans_76_pd()
+int mjc400_trans_76_pd(uint8_t op, uint16_t* memptr, char **buf)
 {
-	return NULL;
+	return 0;
 }
 
-char* mjc400_trans_76_pf()
+int mjc400_trans_76_pf(uint8_t op, uint16_t* memptr, char **buf)
 {
-	return NULL;
+	return 0;
 }
 
-char* mjc400_trans_76_pa()
+int mjc400_trans_76_pa(uint8_t op, uint16_t* memptr, char **buf)
 {
-	return NULL;
+	return 0;
 }
 
-char* mjc400_trans_76_pl()
+int mjc400_trans_76_pl(uint8_t op, uint16_t* memptr, char **buf)
 {
-	return NULL;
+	return 0;
 }
 
 // -----------------------------------------------------------------------
 // ---- 77 ---------------------------------------------------------------
 // -----------------------------------------------------------------------
 
-char* mjc400_trans_77()
+int mjc400_trans_77(uint8_t op, uint16_t* memptr, char **buf)
 {
-	return NULL;
+	return 0;
 }
 
-char* mjc400_trans_77_mb()
+int mjc400_trans_77_mb(uint8_t op, uint16_t* memptr, char **buf)
 {
-	return NULL;
+	return 0;
 }
 
-char* mjc400_trans_77_im()
+int mjc400_trans_77_im(uint8_t op, uint16_t* memptr, char **buf)
 {
-	return NULL;
+	return 0;
 }
 
-char* mjc400_trans_77_ki()
+int mjc400_trans_77_ki(uint8_t op, uint16_t* memptr, char **buf)
 {
-	return NULL;
+	return 0;
 }
 
-char* mjc400_trans_77_fi()
+int mjc400_trans_77_fi(uint8_t op, uint16_t* memptr, char **buf)
 {
-	return NULL;
+	return 0;
 }
 
-char* mjc400_trans_77_sp()
+int mjc400_trans_77_sp(uint8_t op, uint16_t* memptr, char **buf)
 {
-	return NULL;
+	return 0;
 }
 
-char* mjc400_trans_77_md()
+int mjc400_trans_77_md(uint8_t op, uint16_t* memptr, char **buf)
 {
-	return NULL;
+	return 0;
 }
 
-char* mjc400_trans_77_rz()
+int mjc400_trans_77_rz(uint8_t op, uint16_t* memptr, char **buf)
 {
-	return NULL;
+	return 0;
 }
 
-char* mjc400_trans_77_ib()
+int mjc400_trans_77_ib(uint8_t op, uint16_t* memptr, char **buf)
 {
-	return NULL;
+	return 0;
 }
 
 

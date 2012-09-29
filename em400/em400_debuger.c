@@ -23,6 +23,9 @@
 #include "em400_debuger.h"
 #include "mjc400_regs.h"
 #include "mjc400.h"
+#include "mjc400_dasm.h"
+#include "mjc400_trans.h"
+#include "mjc400_mem.h"
 
 extern int em400_quit;
 
@@ -50,6 +53,60 @@ int em400_debuger_c_help(char* args)
 int em400_debuger_c_reset(char* args)
 {
 	mjc400_reset();
+	return 0;
+}
+
+// -----------------------------------------------------------------------
+int em400_debuger_c_dasm(char* args)
+{
+	char *buf;
+	int len = mjc400_dasm(MEMptr(IC), &buf);
+	printf("0x%04x: (%i) %s\n", IC, len, buf);
+	free(buf);
+	return 0;
+}
+
+// -----------------------------------------------------------------------
+int em400_debuger_c_trans(char* args)
+{
+	char *buf;
+	int len = mjc400_trans(MEMptr(IC), &buf);
+	printf("0x%04x: (%i) %s\n", IC, len, buf);
+	free(buf);
+	return 0;
+}
+
+// -----------------------------------------------------------------------
+int em400_debuger_c_mem(char* args)
+{
+	int m_block = 0;
+	int m_start = 0;
+	int m_end = 0;
+	int n = sscanf(args, "%i:%i-%i", &m_block, &m_start, &m_end);
+	if ((n<=1) || (n>3)) {
+		printf("Syntax error. Use: mem block:start_addr[-end_addr]\n");
+		return 0;
+	} else if (n == 2) {
+		int16_t data;
+		if (m_block < 0) {
+			printf("Syntax error. Use: mem block:start_addr[-end_addr]\n");
+			return 0;
+		} else if (m_block == 0) {
+			data = mjc400_os_mem[m_start];
+		} else if (m_block <= 15) {
+			data = mjc400_user_mem[SR_NB][m_start];
+		} else {
+			printf("Syntax error. Use: mem block:start_addr[-end_addr]\n");
+			return 0;
+		}
+		printf("%02i 0x%04x: %i (0x%04x)\n", m_block, m_start, data, data);
+	} else if (n == 3) {
+		if (m_start>m_end) {
+			printf("Syntax error. Use: mem block:start_addr[-end_addr]\n");
+			return 0;
+		}
+		printf("%02i 0x%04x - 0x%04x:\n", m_block, m_start, m_end);
+	}
 	return 0;
 }
 
@@ -92,6 +149,9 @@ cmd_s em400_debuger_commands[] = {
 	{ "?",		em400_debuger_c_help,	"Synonym for 'help'" },
 	{ "regs",	em400_debuger_c_regs,	"Print registers" },
 	{ "reset",	em400_debuger_c_reset,	"Reset the emulator" },
+	{ "dasm",	em400_debuger_c_dasm,	"Disassembly instruction" },
+	{ "trans",	em400_debuger_c_trans,	"Translate instruction" },
+	{ "mem",	em400_debuger_c_mem,	"Memory contents" },
 	{ NULL,		NULL,	NULL }
 };
 
@@ -102,7 +162,7 @@ int em400_debuger_execute(char* line)
 	char args[100+1] = {0};
 	int res;
 
-	res = sscanf(line, "%10s %100s", cmd, args);
+	res = sscanf(line, "%s %100s", cmd, args);
 
 	cmd_s* cmd_pos = em400_debuger_commands;
 

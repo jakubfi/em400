@@ -29,6 +29,7 @@ extern uint16_t mjc400_user_mem[USER_MEM_BANK_COUNT][USER_MEM_BANK_SIZE];
 // -----------------------------------------------------------------------
 // unified OS/user memory access macro
 #define MEM(a) SR_Q ? mjc400_user_mem[SR_NB][a] : mjc400_os_mem[a]
+#define MEMptr(a) SR_Q ? mjc400_user_mem[SR_NB]+a : mjc400_os_mem+a
 #define MEMNB(a) SR_NB ? mjc400_user_mem[SR_NB][a] : mjc400_os_mem[a]
 #define MEMw(a, x) \
 	if (SR_Q == 1) mjc400_user_mem[SR_NB][a] = x; \

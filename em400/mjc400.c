@@ -17,6 +17,7 @@
 
 #include <stdio.h>
 #include <arpa/inet.h>
+#include "em400_debuger.h"
 #include "mjc400.h"
 #include "mjc400_mem.h"
 #include "mjc400_regs.h"
