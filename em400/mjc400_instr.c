@@ -202,50 +202,6 @@ int mjc400_op_37_dw()
 
 int mjc400_op_37_af()
 {
-	int16_t N = mjc400_get_eff_arg();
-
-	// get exp and fraction
-	int8_t a1e = F_EXP(R[1], R[2], R[3]);
-	int64_t a1f = F_FRAC(R[1], R[2], R[3]);
-	int8_t a2e = F_EXP(MEM(N), MEM(N+1), MEM(N+2));
-	int64_t a2f = F_FRAC(MEM(N), MEM(N+1), MEM(N+2));
-
-	// offset
-	int8_t ediff;
-	if (a1e<a2e) {
-		ediff = a2e-a1e;
-		a1e += ediff;
-		a1f /= 2^ediff;
-	} else if (a1e>a2e) {
-		ediff = a1e-a2e;
-		a1e += ediff;
-		a1f /= 2^ediff;
-	}
-
-	int8_t e = a1e;
-
-	// add
-	int64_t f = a1f + a2f;
-	R0_Ms64(f);
-	R0_Zs64(f);
-	R0_Cs64(f);
-
-	//normalize down
-	while (abs(f) >= 2) {
-		f /= 2;
-		e -= 1;
-	}
-
-	// normalize up
-	while (abs(f) < 1) {
-		f *= 2;
-		e += 1;
-	}
-
-	R[1] = (f&0b1111111111111111000000000000000000000000) >> (16+8);
-	R[2] =                 (f&0b111111111111111100000000) >> 8;
-	R[3] =                            e | ((f&0b11111111) << 8);
-
 	return OP_OK;
 }
 

@@ -38,14 +38,18 @@ int mjc400_init()
 void mjc400_reset()
 {
 	IC = 0;
+	IR = 0;
 	SR = 0;
 	for (int i=0 ; i<16 ; i++) {
 		R[i] = 0;
 	}
 	RZ = 0;
-	IR = 0;
 	P = 0;
-	MOD = MODcnt = 0;
+	MOD = 0;
+	MODcnt = 0;
+	KB = 0;
+
+	mjc400_clear_mem();
 }
 
 // -----------------------------------------------------------------------
@@ -115,29 +119,14 @@ int __mjc400_load_image(const char* fname, uint16_t *ptr, uint16_t len)
 }
 
 // -----------------------------------------------------------------------
-void mjc400_dump_os_mem()
+uint16_t mjc400_fetch_instr()
 {
-	int bpl = 64; // bytes per line
-	uint16_t *m = mjc400_os_mem;
-	for (int i=0 ; i<(OS_MEM_BANK_SIZE/bpl) ; i++) {
-		printf("%04x: ", (unsigned int) (m-mjc400_os_mem));
-		for (int j=0 ; j<bpl ; j++) {
-			printf("%x %x ", (*m)>>8, (*m)&0x00ff);
-			m++;
-		}
-		printf("\n");
-	}
-}
-
-// -----------------------------------------------------------------------
-void mjc400_fetch_instr()
-{
-	if (SR_Q == 0) {
-		IR = mjc400_os_mem[IC];
-	} else {
-		IR = mjc400_user_mem[SR_NB][IC];
-	}
 	IC += 1;
+	if (SR_Q == 0) {
+		return mjc400_os_mem[IC-1];
+	} else {
+		return mjc400_user_mem[SR_NB][IC-1];
+	}
 }
 
 // -----------------------------------------------------------------------
@@ -179,16 +168,19 @@ void mjc400_step()
 	// do not branch by default
 	P = 0;
 
-	// fetch instruction (and additional argument, if necessary)
-	mjc400_fetch_instr();
+	// fetch instruction into IR
+	// (additional argument is fetched by the instruction, if necessary)
+	IR = mjc400_fetch_instr();
 
 	// execute instruction
-	int op_res = mjc400_iset[IR_OP].op_fun();
+	int op_res;
+	op_res = mjc400_iset[IR_OP].op_fun();
 
 	switch (op_res) {
 		// normal instruction
 		case OP_OK:
-			MOD = MODcnt = 0;
+			MOD = 0;
+			MODcnt = 0;
 			break;
 		// pre-modification
 		case OP_MD:

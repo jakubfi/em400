@@ -48,5 +48,6 @@ int mjc400_timer_start()
 	if (setitimer(ITIMER_REAL, &it_val, NULL) == -1) {
 		return 1;
 	}
+
 	return 0;
 }

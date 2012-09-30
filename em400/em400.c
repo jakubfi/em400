@@ -27,11 +27,14 @@ int em400_quit = 0;
 int main(int argc, char** argv)
 {
 	if (mjc400_init()) {
-		printf("Could not initialize emulator.\n");
+		printf("Could not initialize the emulator.\n");
 		return 1;
 	}
 
-	mjc400_load_os_image("add", 0);
+	if (mjc400_load_os_image("add", 0)) {
+		printf("Could not load image.\n");
+		return 1;
+	}
 
 	while (!em400_quit) {
 		em400_debuger_step();

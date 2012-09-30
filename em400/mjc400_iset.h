@@ -18,29 +18,33 @@
 #include <inttypes.h>
 #include <stdbool.h>
 
+
+typedef struct {
+	uint16_t opcode;	// basic opcode
+	char mnemo_assm[4];	// ASSM mnemonic (for disassembler)
+	char mnemo_assk[4];	// ASSK mnemonic (for disassembler)
+	_Bool nl;		// legal in user mode?
+	int (*op_fun)();	// instruction execution function
+	int (*trans_fun)(uint8_t op, uint16_t* memptr, char **buf);	// translator function
+	int (*dasm_fun)(uint8_t op, uint16_t* memptr, char **buf);	// disassembler function
+
+} mjc400_opdef;
+
+// basic opcodes jump table
+extern mjc400_opdef mjc400_iset[];
+
+// macros to access sub-opcodes
 #define EXT_OP_37 IR_A
 #define EXT_OP_70 IR_A
-#define EXT_OP_71 ((IR & 0b0000001100000000) >> 8)	// argument is: ((IR_A & 0b100) >> 2) | (IR_D << 1)
-#define EXT_OP_72 (((IR & 0b0000001000000000) >> 3) | (IR & 0b0000000000111111))
-#define EXT_OP_73 (((IR & 0b0000001111000000) >> 4) | (IR & 0b0000000000000011))
+#define EXT_OP_71 ((IR & 0b0000001100000000) >> 8) // [D,A0]
+#define EXT_OP_72 (((IR & 0b0000001000000000) >> 3) | (IR & 0b0000000000111111)) // [D,B,C]
+#define EXT_OP_73 (((IR & 0b0000001111000000) >> 4) | (IR & 0b0000000000000011)) // [D,A,C1,C2] (but not all used in each instruction)
 #define EXT_OP_74 IR_A
 #define EXT_OP_75 IR_A
 #define EXT_OP_76 IR_A
 #define EXT_OP_77 IR_A
 
-
-typedef struct {
-	uint16_t opcode;
-	char mnemo_assm[3];
-	char mnemo_assk[3];
-	_Bool nl;
-	int (*op_fun)();
-	int (*trans_fun)(uint8_t op, uint16_t* memptr, char **buf);
-	int (*dasm_fun)(uint8_t op, uint16_t* memptr, char **buf);
-
-} mjc400_opdef;
-
-extern mjc400_opdef mjc400_iset[];
+// sub-opcodes (2nd level) jump tables
 extern mjc400_opdef mjc400_iset_37[];
 extern mjc400_opdef mjc400_iset_70[];
 extern mjc400_opdef mjc400_iset_71[];

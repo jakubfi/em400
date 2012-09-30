@@ -15,9 +15,9 @@
 //  Foundation, Inc.,
 //  51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 
+#define OP_ILLEGAL -1
 #define OP_OK 0
-#define OP_ILLEGAL 1
-#define OP_MD 2
+#define OP_MD 1
 
 int mjc400_op_illegal();
 

@@ -96,8 +96,6 @@ mjc400_opdef mjc400_iset[] = {
 	{ 077, "-i-", "-i-", false, mjc400_op_77, mjc400_trans_77, mjc400_dasm_77 }
 };
 
-// aaa
-// 012
 mjc400_opdef mjc400_iset_37[] = {
 	{ 0, "AD", "AD", false, mjc400_op_37_ad, mjc400_trans_37_ad, mjc400_dasm_fd },
 	{ 1, "SD", "SD", false, mjc400_op_37_sd, mjc400_trans_37_sd, mjc400_dasm_fd },
@@ -109,8 +107,6 @@ mjc400_opdef mjc400_iset_37[] = {
 	{ 7, "DF", "DF", false, mjc400_op_37_df, mjc400_trans_37_df, mjc400_dasm_fd }
 };
 
-// aaa
-// 012
 mjc400_opdef mjc400_iset_70[] = {
 	{ 0, "UJS", "UJS", false, mjc400_op_70_ujs, mjc400_trans_70_ujs, mjc400_dasm_js },
 	{ 1, "JLS", "JLS", false, mjc400_op_70_jls, mjc400_trans_70_jls, mjc400_dasm_js },
@@ -122,8 +118,6 @@ mjc400_opdef mjc400_iset_70[] = {
 	{ 7, "JCS", "JCS", false, mjc400_op_70_jcs, mjc400_trans_70_jcs, mjc400_dasm_js }
 };
 
-// d a
-// 0 0
 mjc400_opdef mjc400_iset_71[] = {
 	{ 0, "BLC", "BLC", false, mjc400_op_71_blc, mjc400_trans_71_blc, mjc400_dasm_ka2 },
 	{ 1, "EXL", "EXL", false, mjc400_op_71_exl, mjc400_trans_71_exl, mjc400_dasm_ka2 },
@@ -131,8 +125,6 @@ mjc400_opdef mjc400_iset_71[] = {
 	{ 3, "NRF", "NRF", false, mjc400_op_71_nrf, mjc400_trans_71_nrf, mjc400_dasm_ka2 }
 };
 
-// d bb ccc
-// 0 12 012
 mjc400_opdef mjc400_iset_72[] = {
 	{ 0b000000, "RIC", "RIC", false, mjc400_op_72_ric, mjc400_trans_72_ric, mjc400_dasm_c },
 	{ 0b000001, "ZLB", "ZLB", false, mjc400_op_72_zlb, mjc400_trans_72_zlb, mjc400_dasm_c },
@@ -200,8 +192,6 @@ mjc400_opdef mjc400_iset_72[] = {
 	{ 0b111111, "-i-", "-i-", false, mjc400_op_illegal, mjc400_dasm_illegal, mjc400_dasm_illegal }
 };
 
-// d aaa cc
-// 0 012 12
 mjc400_opdef mjc400_iset_73[] = {
 	{ 0b000000, "HLT", "HLT", true, mjc400_op_73_hlt, mjc400_trans_73_hlt, mjc400_dasm_s },
 	{ 0b000001, "HLT", "HLT", true, mjc400_op_73_hlt, mjc400_trans_73_hlt, mjc400_dasm_s },
@@ -269,8 +259,6 @@ mjc400_opdef mjc400_iset_73[] = {
 	{ 0b111111, "-i-", "-i-", false, mjc400_op_illegal, mjc400_dasm_illegal, mjc400_dasm_illegal }
 };
 
-// aaa
-// 012
 mjc400_opdef mjc400_iset_74[] = {
 	{ 0, "UJ", "UJ", false, mjc400_op_74_uj, mjc400_trans_74_uj, mjc400_dasm_j },
 	{ 1, "JL", "JL", false, mjc400_op_74_jl, mjc400_trans_74_jl, mjc400_dasm_j },
@@ -282,8 +270,6 @@ mjc400_opdef mjc400_iset_74[] = {
 	{ 7, "LJ", "LJ", false, mjc400_op_74_lj, mjc400_trans_74_lj, mjc400_dasm_j }
 };
 
-// aaa
-// 012
 mjc400_opdef mjc400_iset_75[] = {
 	{ 0, "LD", "LD", false, mjc400_op_75_ld, mjc400_trans_75_ld, mjc400_dasm_l },
 	{ 1, "LF", "LF", false, mjc400_op_75_lf, mjc400_trans_75_lf, mjc400_dasm_l },
@@ -295,8 +281,6 @@ mjc400_opdef mjc400_iset_75[] = {
 	{ 7, "TL", "TL", false, mjc400_op_75_tl, mjc400_trans_75_tl, mjc400_dasm_l }
 };
 
-// aaa
-// 012
 mjc400_opdef mjc400_iset_76[] = {
 	{ 0, "RD", "RD", false, mjc400_op_76_rd, mjc400_trans_76_rd, mjc400_dasm_g },
 	{ 1, "RF", "RF", false, mjc400_op_76_rf, mjc400_trans_76_rf, mjc400_dasm_g },
@@ -308,8 +292,6 @@ mjc400_opdef mjc400_iset_76[] = {
 	{ 7, "PL", "PL", false, mjc400_op_76_pl, mjc400_trans_76_pl, mjc400_dasm_g }
 };
 
-// aaa
-// 012
 mjc400_opdef mjc400_iset_77[] = {
 	{ 0, "MB", "MB", true,  mjc400_op_77_mb, mjc400_trans_77_mb, mjc400_dasm_bn },
 	{ 1, "IM", "IM", true,  mjc400_op_77_im, mjc400_trans_77_im, mjc400_dasm_bn },

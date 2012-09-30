@@ -18,13 +18,13 @@
 #include <inttypes.h>
 #include "mjc400_regs.h"
 
-uint16_t IC = 0;
+uint16_t IC;
+uint16_t IR;
 uint16_t SR;
-uint16_t R[16] = { 0 };
+uint16_t R[16];
 uint32_t RZ;
-uint16_t IR = 0;
-uint16_t P = 0;
-int16_t MOD = 0;
-int MODcnt = 0;
-uint16_t KB = 0;
+unsigned short int P;
+int16_t MOD;
+unsigned short int MODcnt;
+uint16_t KB;
 
