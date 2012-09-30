@@ -30,6 +30,7 @@ int mjc400_init()
 {
 	int res;
 	mjc400_reset();
+	mjc400_clear_mem();
 	res = mjc400_timer_start();
 	return res;
 }
@@ -48,8 +49,6 @@ void mjc400_reset()
 	MOD = 0;
 	MODcnt = 0;
 	KB = 0;
-
-	mjc400_clear_mem();
 }
 
 // -----------------------------------------------------------------------

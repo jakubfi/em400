@@ -30,6 +30,23 @@
 extern int em400_quit;
 
 // -----------------------------------------------------------------------
+cmd_s em400_debuger_commands[] = {
+	{ "quit",	em400_debuger_c_quit,	"Quit the emulator" },
+	{ "step",	em400_debuger_c_step,	"Execute instruction at IC" },
+	{ "help",	em400_debuger_c_help,	"Print help" },
+	{ "?",		em400_debuger_c_help,	"Print help" },
+	{ "regs",	em400_debuger_c_regs,	"Show registers" },
+	{ "reset",	em400_debuger_c_reset,	"Reset the emulator" },
+	{ "dasm",	em400_debuger_c_dasm,	"Disassembly instruction at IC" },
+	{ "trans",	em400_debuger_c_trans,	"Translate instruction at IC" },
+	{ "mem",	em400_debuger_c_mem,	"Show memory contents (any block)" },
+	{ "mem",	em400_debuger_c_memq,	"Show memory contents (block by Q)" },
+	{ "mem",	em400_debuger_c_memnb,	"Show memory contents (block by NB)" },
+	{ "clmem",	em400_debuger_c_clmem,	"Clear memory contents" },
+	{ NULL,		NULL,			NULL }
+};
+
+// -----------------------------------------------------------------------
 int em400_debuger_c_quit(char* args)
 {
 	em400_quit = 1;
@@ -45,7 +62,11 @@ int em400_debuger_c_step(char* args)
 // -----------------------------------------------------------------------
 int em400_debuger_c_help(char* args)
 {
-	printf("This is help.\n");
+	cmd_s *c = em400_debuger_commands;
+	while (c->cmd) {
+		printf("%10s %s\n", c->cmd, c->doc);
+		c++;
+	}
 	return 0;
 }
 
@@ -53,6 +74,13 @@ int em400_debuger_c_help(char* args)
 int em400_debuger_c_reset(char* args)
 {
 	mjc400_reset();
+	return 0;
+}
+
+// -----------------------------------------------------------------------
+int em400_debuger_c_clmem(char* args)
+{
+	mjc400_clear_mem();
 	return 0;
 }
 
@@ -77,36 +105,102 @@ int em400_debuger_c_trans(char* args)
 }
 
 // -----------------------------------------------------------------------
+void __em400_debuger_dump_mem(uint16_t *blockptr, uint16_t start, uint16_t count)
+{
+	uint16_t addr = start;
+	char *text = malloc(MEMDUMP_COLS*2+1);
+	char *tptr = text;
+	char c1, c2;
+
+	// TODO: not #define-able
+	printf("        +0x0 +0x1 +0x2 +0x3 +0x4 +0x5 +0x6 +0x7 +0x8 +0x9 +0xa +0xb +0xc +0xd +0xe +0xf  |-text-dump--------------------|\n");
+
+	while (addr < (start+count)) {
+		// row header
+		if ((addr-start)%MEMDUMP_COLS == 0) {
+			printf("0x%04x: ", addr); 
+		}
+		// hex contents
+		printf("%4x ", *(blockptr+addr));
+
+		// store text representation
+		c1 = (char) (((*(blockptr+addr))&0b111111110000000)>>8);
+		if ((c1<32)||((c1>126)&&(c1<160))) c1 = '.';
+		c2 = (char) ((*(blockptr+addr))&0b0000000011111111);
+		if ((c2<32)||((c2>126)&&(c2<160))) c2 = '.';
+		tptr += sprintf(tptr, "%c%c", c1, c2);
+
+		// row footer - text representation
+		if ((addr-start)%MEMDUMP_COLS == (MEMDUMP_COLS-1)) {
+			printf(" %s\n", text);
+			tptr = text;
+		}
+
+		addr++;
+	}
+
+	if ((addr-start-1)%MEMDUMP_COLS != (MEMDUMP_COLS-1)) {
+		while ((addr-start)%MEMDUMP_COLS !=0) {
+			printf("     ");
+			addr++;
+		}
+		printf(" %s\n", text);
+	}
+
+	free(text);
+}
+
+// -----------------------------------------------------------------------
+int em400_debuger_c_memq(char* args)
+{
+	return 0;
+}
+
+// -----------------------------------------------------------------------
+int em400_debuger_c_memnb(char* args)
+{
+	return 0;
+}
+
+// -----------------------------------------------------------------------
 int em400_debuger_c_mem(char* args)
 {
-	int m_block = 0;
-	int m_start = 0;
-	int m_end = 0;
-	int n = sscanf(args, "%i:%i-%i", &m_block, &m_start, &m_end);
+	int m_block = -1;
+	int m_start = -1;
+	int m_end = -1;
+	int n = sscanf(args, "%i %i %i", &m_block, &m_start, &m_end);
+
+	// parse error
 	if ((n<=1) || (n>3)) {
-		printf("Syntax error. Use: mem block:start_addr[-end_addr]\n");
+		printf("Syntax error. Use: mem block start [end]\n");
 		return 0;
-	} else if (n == 2) {
-		int16_t data;
-		if (m_block < 0) {
-			printf("Syntax error. Use: mem block:start_addr[-end_addr]\n");
-			return 0;
-		} else if (m_block == 0) {
-			data = mjc400_os_mem[m_start];
-		} else if (m_block <= 15) {
-			data = mjc400_user_mem[SR_NB][m_start];
-		} else {
-			printf("Syntax error. Use: mem block:start_addr[-end_addr]\n");
-			return 0;
-		}
-		printf("%02i 0x%04x: %i (0x%04x)\n", m_block, m_start, data, data);
-	} else if (n == 3) {
-		if (m_start>m_end) {
-			printf("Syntax error. Use: mem block:start_addr[-end_addr]\n");
-			return 0;
-		}
-		printf("%02i 0x%04x - 0x%04x:\n", m_block, m_start, m_end);
 	}
+
+	// wrong range
+	if ((m_end >= 0) && (m_start > m_end)) {
+		printf("Error: end>=start. Use: mem block start [end]\n");
+		return 0;
+	}
+
+	// wrong block
+	if ((m_block < 0) || (m_block > 15)) {
+		printf("Error: 0 <= block <= 15. Use: mem block start [end]\n");
+		return 0;
+	}
+
+	// only start position given, adjust end position
+	if (n == 2) {
+		m_end = m_start;
+	}
+
+	// system block
+	if (m_block == 0) {
+		__em400_debuger_dump_mem(mjc400_os_mem, m_start, 1+m_end-m_start);
+	// user block
+	} else {
+		__em400_debuger_dump_mem(mjc400_user_mem[m_block], m_start, 1+m_end-m_start);
+	}
+
 	return 0;
 }
 
@@ -142,35 +236,24 @@ int em400_debuger_c_regs(char* args)
 }
 
 // -----------------------------------------------------------------------
-cmd_s em400_debuger_commands[] = {
-	{ "quit",	em400_debuger_c_quit,	"Quit the emulator" },
-	{ "step",	em400_debuger_c_step,	"Execute next instruction" },
-	{ "help",	em400_debuger_c_help,	"Print help" },
-	{ "?",		em400_debuger_c_help,	"Synonym for 'help'" },
-	{ "regs",	em400_debuger_c_regs,	"Print registers" },
-	{ "reset",	em400_debuger_c_reset,	"Reset the emulator" },
-	{ "dasm",	em400_debuger_c_dasm,	"Disassembly instruction" },
-	{ "trans",	em400_debuger_c_trans,	"Translate instruction" },
-	{ "mem",	em400_debuger_c_mem,	"Memory contents" },
-	{ NULL,		NULL,	NULL }
-};
-
-// -----------------------------------------------------------------------
 int em400_debuger_execute(char* line)
 {
 	char cmd[10+1] = {0};
 	char args[100+1] = {0};
 	int res;
 
-	res = sscanf(line, "%s %100s", cmd, args);
+	res = sscanf(line, "%s %100c", cmd, args);
+	if (res <= 0) {
+		return 0;
+	}
 
-	cmd_s* cmd_pos = em400_debuger_commands;
+	cmd_s* c = em400_debuger_commands;
 
-	while (cmd_pos->cmd) {
-		if (!strcmp(cmd, cmd_pos->cmd)) {
-			return cmd_pos->fun(args);
+	while (c->cmd) {
+		if (!strcmp(cmd, c->cmd)) {
+			return c->fun(args);
 		}
-		cmd_pos++;
+		c++;
 	}
 	printf("Unknown command: %s\n", cmd);
 	return 0;
@@ -182,7 +265,7 @@ void em400_debuger_step()
 	char *buf;
 	int done = 0;
  
-	rl_bind_key('\t', rl_abort); //disable auto-complete
+	rl_bind_key('\t', rl_abort); // disable auto-complete
 
 	while (!done)  {
 		buf = readline("em400> ");

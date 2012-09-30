@@ -20,6 +20,8 @@
 #include <readline/readline.h>
 #include <readline/history.h>
 
+#define MEMDUMP_COLS 16
+
 typedef struct {
 	char *cmd;
 	int (*fun)(char*);
@@ -33,6 +35,12 @@ int em400_debuger_c_step(char* args);
 int em400_debuger_c_help(char* args);
 int em400_debuger_c_regs(char* args);
 int em400_debuger_c_reset(char* args);
+int em400_debuger_c_mem(char* args);
+int em400_debuger_c_memq(char* args);
+int em400_debuger_c_memnb(char* args);
+int em400_debuger_c_clmem(char* args);
+int em400_debuger_c_dasm(char* args);
+int em400_debuger_c_trans(char* args);
 
 int em400_debuger_execute(char* line);
 void em400_debuger_step();
