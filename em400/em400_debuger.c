@@ -40,8 +40,8 @@ cmd_s em400_debuger_commands[] = {
 	{ "dasm",	em400_debuger_c_dasm,	"Disassembly instruction at IC" },
 	{ "trans",	em400_debuger_c_trans,	"Translate instruction at IC" },
 	{ "mem",	em400_debuger_c_mem,	"Show memory contents (any block)" },
-	{ "mem",	em400_debuger_c_memq,	"Show memory contents (block by Q)" },
-	{ "mem",	em400_debuger_c_memnb,	"Show memory contents (block by NB)" },
+	{ "memq",	em400_debuger_c_memq,	"Show memory contents (block by Q,NB)" },
+	{ "memnb",	em400_debuger_c_memnb,	"Show memory contents (block by NB)" },
 	{ "clmem",	em400_debuger_c_clmem,	"Clear memory contents" },
 	{ NULL,		NULL,			NULL }
 };
@@ -105,21 +105,43 @@ int em400_debuger_c_trans(char* args)
 }
 
 // -----------------------------------------------------------------------
-void __em400_debuger_dump_mem(uint16_t *blockptr, uint16_t start, uint16_t count)
+int __em400_debuger_dump_mem(int block, int start, int end)
 {
 	uint16_t addr = start;
 	char *text = malloc(MEMDUMP_COLS*2+1);
 	char *tptr = text;
 	char c1, c2;
+	uint16_t *blockptr;
+
+	if (block < 0) {
+		return 1;
+	} else if (block == 0) {
+		blockptr = mjc400_os_mem;
+	} else if (block < 16) {
+		blockptr = mjc400_user_mem[block];
+	} else {
+		return 1;
+	}
+
+	// wrong range
+	if ((end >= 0) && (start > end)) {
+		return 1;
+	}
+
+	// only start position given, adjust end position
+	if (end < 0) {
+		end = start;
+	}
 
 	// TODO: not #define-able
 	printf("        +0x0 +0x1 +0x2 +0x3 +0x4 +0x5 +0x6 +0x7 +0x8 +0x9 +0xa +0xb +0xc +0xd +0xe +0xf  |-text-dump--------------------|\n");
 
-	while (addr < (start+count)) {
+	while (addr <= end) {
 		// row header
 		if ((addr-start)%MEMDUMP_COLS == 0) {
 			printf("0x%04x: ", addr); 
 		}
+
 		// hex contents
 		printf("%4x ", *(blockptr+addr));
 
@@ -139,6 +161,7 @@ void __em400_debuger_dump_mem(uint16_t *blockptr, uint16_t start, uint16_t count
 		addr++;
 	}
 
+	// fill and finish current line
 	if ((addr-start-1)%MEMDUMP_COLS != (MEMDUMP_COLS-1)) {
 		while ((addr-start)%MEMDUMP_COLS !=0) {
 			printf("     ");
@@ -148,17 +171,56 @@ void __em400_debuger_dump_mem(uint16_t *blockptr, uint16_t start, uint16_t count
 	}
 
 	free(text);
+
+	return 0;
 }
 
 // -----------------------------------------------------------------------
 int em400_debuger_c_memq(char* args)
 {
+	int m_block;
+	int m_start = -1;
+	int m_end = -1;
+	int n = sscanf(args, "%i %i", &m_start, &m_end);
+
+	// parse error
+	if ((n<1) || (n>2)) {
+		printf("Syntax error. Use: memq start [end]\n");
+		return 0;
+	}
+
+	// set block
+	if (SR_Q == 0) {
+		m_block = 0;
+	} else {
+		m_block = SR_NB;
+	}
+	if (__em400_debuger_dump_mem(m_block, m_start, m_end)) {
+		printf("Syntax error. Use: memq start [end]\n");
+		return 0;
+	}
+
 	return 0;
 }
 
 // -----------------------------------------------------------------------
 int em400_debuger_c_memnb(char* args)
 {
+	int m_start = -1;
+	int m_end = -1;
+	int n = sscanf(args, "%i %i", &m_start, &m_end);
+
+	// parse error
+	if ((n<1) || (n>2)) {
+		printf("Syntax error. Use: memnb start [end]\n");
+		return 0;
+	}
+
+	if (__em400_debuger_dump_mem(SR_NB, m_start, m_end)) {
+		printf("Syntax error. Use: memnb start [end]\n");
+		return 0;
+	}
+
 	return 0;
 }
 
@@ -176,29 +238,9 @@ int em400_debuger_c_mem(char* args)
 		return 0;
 	}
 
-	// wrong range
-	if ((m_end >= 0) && (m_start > m_end)) {
-		printf("Error: end>=start. Use: mem block start [end]\n");
+	if (__em400_debuger_dump_mem(m_block, m_start, m_end)) {
+		printf("Syntax error. Use: mem block start [end]\n");
 		return 0;
-	}
-
-	// wrong block
-	if ((m_block < 0) || (m_block > 15)) {
-		printf("Error: 0 <= block <= 15. Use: mem block start [end]\n");
-		return 0;
-	}
-
-	// only start position given, adjust end position
-	if (n == 2) {
-		m_end = m_start;
-	}
-
-	// system block
-	if (m_block == 0) {
-		__em400_debuger_dump_mem(mjc400_os_mem, m_start, 1+m_end-m_start);
-	// user block
-	} else {
-		__em400_debuger_dump_mem(mjc400_user_mem[m_block], m_start, 1+m_end-m_start);
 	}
 
 	return 0;
