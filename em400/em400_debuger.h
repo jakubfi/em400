@@ -22,10 +22,16 @@
 
 #define MEMDUMP_COLS 16
 
+#define DEBUGER_EM400_QUIT	-10
+#define DEBUGER_LOOP_ERR	-7
+#define DEBUGER_EM400_SKIP	-5	// here and below, we don't execute next instruction
+#define DEBUGER_EM400_STEP	100
+
 typedef struct {
 	char *cmd;
 	int (*fun)(char*);
 	char *doc;
+	char *help;
 } cmd_s;
 
 extern cmd_s em400_debuger_commands[];
@@ -43,4 +49,5 @@ int em400_debuger_c_dasm(char* args);
 int em400_debuger_c_trans(char* args);
 
 int em400_debuger_execute(char* line);
-void em400_debuger_step();
+int em400_debuger_step();
+int em400_debuger_setup();

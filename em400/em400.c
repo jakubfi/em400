@@ -36,8 +36,17 @@ int main(int argc, char** argv)
 		return 1;
 	}
 
+	em400_debuger_setup();
+
 	while (!em400_quit) {
-		em400_debuger_step();
+		int dbg_res = em400_debuger_step();
+		if (dbg_res <= DEBUGER_EM400_SKIP) {
+			if (dbg_res <= DEBUGER_EM400_QUIT) {
+				em400_quit = 1;
+			}
+			continue;
+		}
+		printf("step\n");
 		mjc400_step();
 	}
 

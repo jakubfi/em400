@@ -27,81 +27,115 @@
 #include "mjc400_trans.h"
 #include "mjc400_mem.h"
 
-extern int em400_quit;
+char *debuger_prompt;
 
 // -----------------------------------------------------------------------
 cmd_s em400_debuger_commands[] = {
-	{ "quit",	em400_debuger_c_quit,	"Quit the emulator" },
-	{ "step",	em400_debuger_c_step,	"Execute instruction at IC" },
-	{ "help",	em400_debuger_c_help,	"Print help" },
-	{ "?",		em400_debuger_c_help,	"Print help" },
-	{ "regs",	em400_debuger_c_regs,	"Show registers" },
-	{ "reset",	em400_debuger_c_reset,	"Reset the emulator" },
-	{ "dasm",	em400_debuger_c_dasm,	"Disassembly instruction at IC" },
-	{ "trans",	em400_debuger_c_trans,	"Translate instruction at IC" },
-	{ "mem",	em400_debuger_c_mem,	"Show memory contents (any block)" },
-	{ "memq",	em400_debuger_c_memq,	"Show memory contents (block by Q,NB)" },
-	{ "memnb",	em400_debuger_c_memnb,	"Show memory contents (block by NB)" },
-	{ "clmem",	em400_debuger_c_clmem,	"Clear memory contents" },
-	{ NULL,		NULL,			NULL }
+	{ "exit",	em400_debuger_c_quit,	"Quit the emulator", "  exit" },
+	{ "quit",	em400_debuger_c_quit,	"Quit the emulator", "  quit" },
+	{ "step",	em400_debuger_c_step,	"Execute instruction at IC", "  step" },
+	{ "help",	em400_debuger_c_help,	"Print help", "  help" },
+	{ "?",		em400_debuger_c_help,	"Print help", "  ?" },
+	{ "regs",	em400_debuger_c_regs,	"Show registers", "  regs" },
+	{ "reset",	em400_debuger_c_reset,	"Reset the emulator", "  reset" },
+	{ "dasm",	em400_debuger_c_dasm,	"Disassembler", "  dasm\n  dasm count\n  dasm start count" },
+	{ "trans",	em400_debuger_c_trans,	"Translator", "  trans\n  trans count\n  trans start count" },
+	{ "mem",	em400_debuger_c_mem,	"Show memory contents (any block)", "  mem block word_addr\n  mem block start_addr end_addr",  },
+	{ "memq",	em400_debuger_c_memq,	"Show memory contents (block by Q,NB)", "  memq word_addr\n  memq start_addr end_addr" },
+	{ "memnb",	em400_debuger_c_memnb,	"Show memory contents (block by NB)", "  memnb word_addr\n  memnb start_addr end_addr" },
+	{ "clmem",	em400_debuger_c_clmem,	"Clear memory contents", "  clmem" },
+	{ NULL,		NULL,			NULL, NULL }
 };
 
 // -----------------------------------------------------------------------
 int em400_debuger_c_quit(char* args)
 {
-	em400_quit = 1;
-	return 1;
+	return DEBUGER_EM400_QUIT;
 }
 
 // -----------------------------------------------------------------------
 int em400_debuger_c_step(char* args)
 {
-	return 1;
+	return DEBUGER_EM400_STEP;
 }
 
 // -----------------------------------------------------------------------
 int em400_debuger_c_help(char* args)
 {
 	cmd_s *c = em400_debuger_commands;
-	while (c->cmd) {
-		printf("%10s %s\n", c->cmd, c->doc);
-		c++;
+	if (args && *args) {
+		while (c->cmd) {
+			if (!strcmp(args, c->cmd)) {
+				printf("%s : %s\nUsage:\n%s\n", c->cmd, c->doc, c->help);
+				return DEBUGER_EM400_SKIP;
+			}
+			c++;
+		}
+		return DEBUGER_LOOP_ERR;
+	} else {
+		while (c->cmd) {
+			printf("%-10s : %s\n", c->cmd, c->doc);
+			c++;
+		}
 	}
-	return 0;
+	return DEBUGER_EM400_SKIP;
 }
 
 // -----------------------------------------------------------------------
 int em400_debuger_c_reset(char* args)
 {
 	mjc400_reset();
-	return 0;
+	return DEBUGER_EM400_SKIP;
 }
 
 // -----------------------------------------------------------------------
 int em400_debuger_c_clmem(char* args)
 {
 	mjc400_clear_mem();
-	return 0;
+	return DEBUGER_EM400_SKIP;
+}
+
+// -----------------------------------------------------------------------
+int __em400_debuger_c_dasmtrans(char* args, int dasm_fun(uint16_t* memptr, char **buf))
+{
+	int d_start;
+	int d_count;
+
+	int n = sscanf(args, "%i %i", &d_start, &d_count);
+
+	if (n<=0) {
+		d_count = 1;
+		d_start = IC;
+	} else if (n==1) {
+		d_count = d_start;
+		d_start = IC;
+	} else if (n==2) {
+	} else {
+		printf("Syntax error.\n");
+	}
+
+	char *buf;
+	int len;
+	while (d_count >0) {
+		len = dasm_fun(MEMptr(d_start), &buf);
+		printf("0x%04x: (%i) %s\n", d_start, len, buf);
+		d_start += len;
+		d_count--;
+		free(buf);
+	}
+	return DEBUGER_EM400_SKIP;
 }
 
 // -----------------------------------------------------------------------
 int em400_debuger_c_dasm(char* args)
 {
-	char *buf;
-	int len = mjc400_dasm(MEMptr(IC), &buf);
-	printf("0x%04x: (%i) %s\n", IC, len, buf);
-	free(buf);
-	return 0;
+	return __em400_debuger_c_dasmtrans(args, mjc400_dasm);
 }
 
 // -----------------------------------------------------------------------
 int em400_debuger_c_trans(char* args)
 {
-	char *buf;
-	int len = mjc400_trans(MEMptr(IC), &buf);
-	printf("0x%04x: (%i) %s\n", IC, len, buf);
-	free(buf);
-	return 0;
+	return __em400_debuger_c_dasmtrans(args, mjc400_trans);
 }
 
 // -----------------------------------------------------------------------
@@ -114,18 +148,18 @@ int __em400_debuger_dump_mem(int block, int start, int end)
 	uint16_t *blockptr;
 
 	if (block < 0) {
-		return 1;
+		return DEBUGER_LOOP_ERR;
 	} else if (block == 0) {
 		blockptr = mjc400_os_mem;
 	} else if (block < 16) {
 		blockptr = mjc400_user_mem[block];
 	} else {
-		return 1;
+		return DEBUGER_LOOP_ERR;
 	}
 
 	// wrong range
 	if ((end >= 0) && (start > end)) {
-		return 1;
+		return DEBUGER_LOOP_ERR;
 	}
 
 	// only start position given, adjust end position
@@ -133,8 +167,12 @@ int __em400_debuger_dump_mem(int block, int start, int end)
 		end = start;
 	}
 
-	// TODO: not #define-able
-	printf("        +0x0 +0x1 +0x2 +0x3 +0x4 +0x5 +0x6 +0x7 +0x8 +0x9 +0xa +0xb +0xc +0xd +0xe +0xf  |-text-dump--------------------|\n");
+	// print headers, mind MEMDUMP_COLS
+	printf("  addr: ");
+	for (int i=0 ; i<MEMDUMP_COLS ; i++) {
+		printf("+%03x ", i);
+	}
+	printf("\n");
 
 	while (addr <= end) {
 		// row header
@@ -172,7 +210,7 @@ int __em400_debuger_dump_mem(int block, int start, int end)
 
 	free(text);
 
-	return 0;
+	return DEBUGER_EM400_SKIP;
 }
 
 // -----------------------------------------------------------------------
@@ -185,8 +223,7 @@ int em400_debuger_c_memq(char* args)
 
 	// parse error
 	if ((n<1) || (n>2)) {
-		printf("Syntax error. Use: memq start [end]\n");
-		return 0;
+		return DEBUGER_LOOP_ERR;
 	}
 
 	// set block
@@ -195,12 +232,8 @@ int em400_debuger_c_memq(char* args)
 	} else {
 		m_block = SR_NB;
 	}
-	if (__em400_debuger_dump_mem(m_block, m_start, m_end)) {
-		printf("Syntax error. Use: memq start [end]\n");
-		return 0;
-	}
 
-	return 0;
+	return __em400_debuger_dump_mem(m_block, m_start, m_end);
 }
 
 // -----------------------------------------------------------------------
@@ -212,16 +245,10 @@ int em400_debuger_c_memnb(char* args)
 
 	// parse error
 	if ((n<1) || (n>2)) {
-		printf("Syntax error. Use: memnb start [end]\n");
-		return 0;
+		return DEBUGER_LOOP_ERR;
 	}
 
-	if (__em400_debuger_dump_mem(SR_NB, m_start, m_end)) {
-		printf("Syntax error. Use: memnb start [end]\n");
-		return 0;
-	}
-
-	return 0;
+	return __em400_debuger_dump_mem(SR_NB, m_start, m_end);
 }
 
 // -----------------------------------------------------------------------
@@ -234,16 +261,10 @@ int em400_debuger_c_mem(char* args)
 
 	// parse error
 	if ((n<=1) || (n>3)) {
-		printf("Syntax error. Use: mem block start [end]\n");
-		return 0;
+		return DEBUGER_LOOP_ERR;
 	}
 
-	if (__em400_debuger_dump_mem(m_block, m_start, m_end)) {
-		printf("Syntax error. Use: mem block start [end]\n");
-		return 0;
-	}
-
-	return 0;
+	return __em400_debuger_dump_mem(m_block, m_start, m_end);
 }
 
 // -----------------------------------------------------------------------
@@ -274,7 +295,7 @@ int em400_debuger_c_regs(char* args)
 		free(r1);
 		free(r2);
 	}
-	return 0;
+	return DEBUGER_EM400_SKIP;
 }
 
 // -----------------------------------------------------------------------
@@ -282,47 +303,59 @@ int em400_debuger_execute(char* line)
 {
 	char cmd[10+1] = {0};
 	char args[100+1] = {0};
-	int res;
-
-	res = sscanf(line, "%s %100c", cmd, args);
-	if (res <= 0) {
-		return 0;
-	}
-
 	cmd_s* c = em400_debuger_commands;
+
+	int n;
+	n = sscanf(line, "%s %100c", cmd, args);
+	if (n <= 0) {
+		return DEBUGER_EM400_SKIP;
+	}
 
 	while (c->cmd) {
 		if (!strcmp(cmd, c->cmd)) {
-			return c->fun(args);
+			int ret;
+			ret = c->fun(args);
+			if (ret == DEBUGER_LOOP_ERR) {
+				printf("Syntax error. Usage:\n%s\n", c->help);
+			}
+			return ret;
 		}
 		c++;
 	}
-	printf("Unknown command: %s\n", cmd);
-	return 0;
+
+	printf("Unknown command: '%s'. Try 'help'.\n", cmd);
+	return DEBUGER_EM400_SKIP;
 }
  
 // -----------------------------------------------------------------------
-void em400_debuger_step()
+int em400_debuger_setup()
 {
+	debuger_prompt = malloc(32);
+	return 0;
+}
+
+// -----------------------------------------------------------------------
+int em400_debuger_step()
+{
+	int ret = DEBUGER_EM400_STEP;
 	char *buf;
-	int done = 0;
+	sprintf(debuger_prompt, "em400 [%1i %02i 0x%04x]> ", SR_Q, SR_NB, IC);
  
 	rl_bind_key('\t', rl_abort); // disable auto-complete
 
-	while (!done)  {
-		buf = readline("em400> ");
-		if (!buf) {
-			printf("\n");
-			continue;
+	buf = readline(debuger_prompt);
+	if (!buf) {
+		printf("\n");
+		ret = DEBUGER_EM400_SKIP;
+	} else {
+		if (*buf != 0) {
+			add_history(buf);
+			ret = em400_debuger_execute(buf);
 		} else {
-			if (*buf != 0) {
-				add_history(buf);
-				if (em400_debuger_execute(buf)) {
-					done = 1;
-				}
-			}
+			ret = DEBUGER_EM400_SKIP;
 		}
-		free(buf);
 	}
+	free(buf);
+	return ret;
 }
 
