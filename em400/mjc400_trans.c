@@ -66,6 +66,7 @@ int mjc400_trans_eff_arg(char *buf, uint16_t *memptr)
 // ---- 20 - 36 ----------------------------------------------------------
 // -----------------------------------------------------------------------
 
+// -----------------------------------------------------------------------
 int mjc400_trans_lw(uint8_t op, uint16_t* memptr, char **buf)
 {
 	*buf = malloc(1024);
@@ -78,21 +79,48 @@ int mjc400_trans_lw(uint8_t op, uint16_t* memptr, char **buf)
 	else return 1;
 }
 
+// -----------------------------------------------------------------------
 int mjc400_trans_tw(uint8_t op, uint16_t* memptr, char **buf)
 {
-	return 0;
+	*buf = malloc(1024);
+
+	int n = 0;
+	n += sprintf((*buf)+n, "r%i = NB:", _A(*memptr));
+	n += mjc400_trans_eff_arg((*buf)+n, memptr);
+
+	if (_C(*memptr) == 0) return 2;
+	else return 1;
 }
 
+// -----------------------------------------------------------------------
 int mjc400_trans_ls(uint8_t op, uint16_t* memptr, char **buf)
 {
-	return 0;
+	*buf = malloc(1024);
+
+	int n = 0;
+	n += sprintf((*buf)+n, "r%i = (r%i & r7) | (", _A(*memptr), _A(*memptr));
+	n += mjc400_trans_eff_arg((*buf)+n, memptr);
+	n += sprintf((*buf)+n, " & r7)");
+
+	if (_C(*memptr) == 0) return 2;
+	else return 1;
 }
 
+// -----------------------------------------------------------------------
 int mjc400_trans_ri(uint8_t op, uint16_t* memptr, char **buf)
 {
-	return 0;
+	*buf = malloc(1024);
+
+	int n = 0;
+	n += sprintf((*buf)+n, "[r%i] = ", _A(*memptr));
+	n += mjc400_trans_eff_arg((*buf)+n, memptr);
+	n += sprintf((*buf)+n, "\nr%i++", _A(*memptr));
+
+	if (_C(*memptr) == 0) return 2;
+	else return 1;
 }
 
+// -----------------------------------------------------------------------
 int mjc400_trans_rw(uint8_t op, uint16_t* memptr, char **buf)
 {
 	*buf = malloc(1024);
@@ -106,51 +134,100 @@ int mjc400_trans_rw(uint8_t op, uint16_t* memptr, char **buf)
 	else return 1;
 }
 
+// -----------------------------------------------------------------------
 int mjc400_trans_pw(uint8_t op, uint16_t* memptr, char **buf)
 {
-	return 0;
+	*buf = malloc(1024);
+
+	int n = 0;
+	n += sprintf((*buf)+n, "NB:");
+	n += mjc400_trans_eff_arg((*buf)+n, memptr);
+	n += sprintf((*buf)+n, " = r%i", _A(*memptr));
+
+	if (_C(*memptr) == 0) return 2;
+	else return 1;
+
 }
 
+// -----------------------------------------------------------------------
 int mjc400_trans_rj(uint8_t op, uint16_t* memptr, char **buf)
 {
-	return 0;
+	*buf = malloc(1024);
+
+	int n = 0;
+	n += sprintf((*buf)+n, "r%i = IC\nIC = ", _A(*memptr));
+	n += mjc400_trans_eff_arg((*buf)+n, memptr);
+
+	if (_C(*memptr) == 0) return 2;
+	else return 1;
 }
 
+// -----------------------------------------------------------------------
 int mjc400_trans_is(uint8_t op, uint16_t* memptr, char **buf)
 {
-	return 0;
+	*buf = malloc(1024);
+
+	int n = 0;
+	n += sprintf((*buf)+n, "if (NB:");
+	n += mjc400_trans_eff_arg((*buf)+n, memptr);
+	n += sprintf((*buf)+n, " & r%i == r%i) then skip\n", _A(*memptr), _A(*memptr));
+	n += sprintf((*buf)+n, "else NB:");
+	n += mjc400_trans_eff_arg((*buf)+n, memptr);
+	n += sprintf((*buf)+n, " = NB:");
+	n += mjc400_trans_eff_arg((*buf)+n, memptr);
+	n += sprintf((*buf)+n, " & r%i", _A(*memptr));
+
+	if (_C(*memptr) == 0) return 2;
+	else return 1;
 }
 
+// -----------------------------------------------------------------------
 int mjc400_trans_bb(uint8_t op, uint16_t* memptr, char **buf)
 {
-	return 0;
+	*buf = malloc(1024);
+
+	int n = 0;
+	n += sprintf((*buf)+n, "if (r%i & ", _A(*memptr));
+	n += mjc400_trans_eff_arg((*buf)+n, memptr);
+	n += sprintf((*buf)+n, " = ");
+	n += mjc400_trans_eff_arg((*buf)+n, memptr);
+	n += sprintf((*buf)+n, " then skip");
+
+	if (_C(*memptr) == 0) return 2;
+	else return 1;
 }
 
+// -----------------------------------------------------------------------
 int mjc400_trans_bm(uint8_t op, uint16_t* memptr, char **buf)
 {
-	return 0;
+	return 1;
 }
 
+// -----------------------------------------------------------------------
 int mjc400_trans_bs(uint8_t op, uint16_t* memptr, char **buf)
 {
 	return 0;
 }
 
+// -----------------------------------------------------------------------
 int mjc400_trans_bc(uint8_t op, uint16_t* memptr, char **buf)
 {
 	return 0;
 }
 
+// -----------------------------------------------------------------------
 int mjc400_trans_bn(uint8_t op, uint16_t* memptr, char **buf)
 {
 	return 0;
 }
 
+// -----------------------------------------------------------------------
 int mjc400_trans_ou(uint8_t op, uint16_t* memptr, char **buf)
 {
 	return 0;
 }
 
+// -----------------------------------------------------------------------
 int mjc400_trans_in(uint8_t op, uint16_t* memptr, char **buf)
 {
 	return 0;
@@ -208,6 +285,7 @@ int mjc400_trans_37_df(uint8_t op, uint16_t* memptr, char **buf)
 // ---- 40 - 57 ----------------------------------------------------------
 // -----------------------------------------------------------------------
 
+// -----------------------------------------------------------------------
 int mjc400_trans_aw(uint8_t op, uint16_t* memptr, char **buf)
 {
 	*buf = malloc(1024);

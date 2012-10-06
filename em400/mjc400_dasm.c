@@ -87,7 +87,7 @@ int mjc400_dasm_eff_arg(char *buf, uint16_t *memptr)
 int mjc400_dasm_2argn(uint8_t op, uint16_t* memptr, char **buf)
 {
 	*buf = malloc(1024);
-
+	// %op%ext %ra, %n
 	int n = 0;
 	n += sprintf((*buf)+n, "%s", mjc400_iset[op].mnemo_assm);
 	n += mjc400_dasm_opext((*buf)+n, memptr);
