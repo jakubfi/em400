@@ -58,7 +58,7 @@ mjc400_opdef mjc400_iset[] = {
 	{ 035, "OU", "OU", false, mjc400_op_ou, mjc400_trans_ou, mjc400_dasm_2argn },
 	{ 036, "IN", "IN", false, mjc400_op_in, mjc400_trans_in, mjc400_dasm_2argn },
 
-	{ 037, "-i-", "-i-", false, mjc400_op_37, mjc400_trans_37, mjc400_dasm_37 },
+	{ 037, "-i-", "-i-", false, mjc400_op_37, mjc400_trans_37, mjc400_dasm_fd },
 
 	{ 040, "AW", "AW", false, mjc400_op_aw, mjc400_trans_aw, mjc400_dasm_2argn },
 	{ 041, "AC", "AC", false, mjc400_op_ac, mjc400_trans_ac, mjc400_dasm_2argn },
@@ -86,14 +86,14 @@ mjc400_opdef mjc400_iset[] = {
 	{ 066, "LWS", "LWS", false, mjc400_op_lws, mjc400_trans_lws, mjc400_dasm_ka1 },
 	{ 067, "RWS", "RWS", false, mjc400_op_rws, mjc400_trans_rws, mjc400_dasm_ka1 },
 
-	{ 070, "-i-", "-i-", false, mjc400_op_70, mjc400_trans_70, mjc400_dasm_70 },
-	{ 071, "-i-", "-i-", false, mjc400_op_71, mjc400_trans_71, mjc400_dasm_71 },
+	{ 070, "-i-", "-i-", false, mjc400_op_70, mjc400_trans_70, mjc400_dasm_js },
+	{ 071, "-i-", "-i-", false, mjc400_op_71, mjc400_trans_71, mjc400_dasm_ka2 },
 	{ 072, "-i-", "-i-", false, mjc400_op_72, mjc400_trans_72, mjc400_dasm_72 },
 	{ 073, "-i-", "-i-", false, mjc400_op_73, mjc400_trans_73, mjc400_dasm_73 },
-	{ 074, "-i-", "-i-", false, mjc400_op_74, mjc400_trans_74, mjc400_dasm_74 },
-	{ 075, "-i-", "-i-", false, mjc400_op_75, mjc400_trans_75, mjc400_dasm_75 },
-	{ 076, "-i-", "-i-", false, mjc400_op_76, mjc400_trans_76, mjc400_dasm_76 },
-	{ 077, "-i-", "-i-", false, mjc400_op_77, mjc400_trans_77, mjc400_dasm_77 }
+	{ 074, "-i-", "-i-", false, mjc400_op_74, mjc400_trans_74, mjc400_dasm_j },
+	{ 075, "-i-", "-i-", false, mjc400_op_75, mjc400_trans_75, mjc400_dasm_l },
+	{ 076, "-i-", "-i-", false, mjc400_op_76, mjc400_trans_76, mjc400_dasm_g },
+	{ 077, "-i-", "-i-", false, mjc400_op_77, mjc400_trans_77, mjc400_dasm_bn }
 };
 
 mjc400_opdef mjc400_iset_37[] = {

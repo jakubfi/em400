@@ -88,6 +88,7 @@ extern uint16_t KB;
 #define _B(x)	((x & 0b0000000000111000) >> 3)
 #define _C(x)	((x & 0b0000000000000111) >> 0)
 #define _T(x)	((int8_t) (x & 0b0000000000111111) | ((x & 0b0000001000000000) >> 2))
+#define _t(x)	((int8_t) (x & 0b0000000000000111) | ((x & 0b0000001000000000) >> 6)) // only SHC uses it
 #define _b(x)	(x & 0b0000000011111111)
 #define IR_OP	_OP(IR)
 #define IR_D	_D(IR)
@@ -95,6 +96,7 @@ extern uint16_t KB;
 #define IR_B	_B(IR)
 #define IR_C	_C(IR)
 #define IR_T	_T(IR)
+#define IR_t	_t(IR)
 #define IR_b	_b(IR)
 
 // -----------------------------------------------------------------------

@@ -17,6 +17,7 @@
 
 #include <inttypes.h>
 #include <stdbool.h>
+#include "mjc400_regs.h"
 
 
 typedef struct {
@@ -34,15 +35,15 @@ typedef struct {
 extern mjc400_opdef mjc400_iset[];
 
 // macros to access sub-opcodes
-#define EXT_OP_37 IR_A
-#define EXT_OP_70 IR_A
-#define EXT_OP_71 ((IR & 0b0000001100000000) >> 8) // [D,A0]
-#define EXT_OP_72 (((IR & 0b0000001000000000) >> 3) | (IR & 0b0000000000111111)) // [D,B,C]
-#define EXT_OP_73 (((IR & 0b0000001111000000) >> 4) | (IR & 0b0000000000000011)) // [D,A,C1,C2] (but not all used in each instruction)
-#define EXT_OP_74 IR_A
-#define EXT_OP_75 IR_A
-#define EXT_OP_76 IR_A
-#define EXT_OP_77 IR_A
+#define EXT_OP_37(x) _A(x)
+#define EXT_OP_70(x) _A(x)
+#define EXT_OP_71(x) ((x & 0b0000001100000000) >> 8) // [D,A0]
+#define EXT_OP_72(x) (((x & 0b0000001000000000) >> 4) | (x & 0b0000000000011111)) // [D,B1,B2,C] (b0 is always 0)
+#define EXT_OP_73(x) (((x & 0b0000001111000000) >> 4) | (x & 0b0000000000000011)) // [D,A,C1,C2] (but not all used in each instruction)
+#define EXT_OP_74(x) _A(x)
+#define EXT_OP_75(x) _A(x)
+#define EXT_OP_76(x) _A(x)
+#define EXT_OP_77(x) _A(x)
 
 // sub-opcodes (2nd level) jump tables
 extern mjc400_opdef mjc400_iset_37[];

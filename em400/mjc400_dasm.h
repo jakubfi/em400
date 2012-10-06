@@ -21,16 +21,9 @@ int mjc400_dasm(uint16_t* memptr, char **buf);
 
 int mjc400_dasm_illegal(uint8_t op, uint16_t* memptr, char **buf);
 int mjc400_dasm_2argn(uint8_t op, uint16_t* memptr, char **buf);
-int mjc400_dasm_37(uint8_t op, uint16_t* memptr, char **buf);
 int mjc400_dasm_ka1(uint8_t op, uint16_t* memptr, char **buf);
-int mjc400_dasm_70(uint8_t op, uint16_t* memptr, char **buf);
-int mjc400_dasm_71(uint8_t op, uint16_t* memptr, char **buf);
 int mjc400_dasm_72(uint8_t op, uint16_t* memptr, char **buf);
 int mjc400_dasm_73(uint8_t op, uint16_t* memptr, char **buf);
-int mjc400_dasm_74(uint8_t op, uint16_t* memptr, char **buf);
-int mjc400_dasm_75(uint8_t op, uint16_t* memptr, char **buf);
-int mjc400_dasm_76(uint8_t op, uint16_t* memptr, char **buf);
-int mjc400_dasm_77(uint8_t op, uint16_t* memptr, char **buf);
 int mjc400_dasm_fd(uint8_t op, uint16_t* memptr, char **buf);
 int mjc400_dasm_js(uint8_t op, uint16_t* memptr, char **buf);
 int mjc400_dasm_ka2(uint8_t op, uint16_t* memptr, char **buf);

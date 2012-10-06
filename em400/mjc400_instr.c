@@ -143,7 +143,7 @@ int mjc400_op_in()
 // -----------------------------------------------------------------------
 int mjc400_op_37()
 {
-	return mjc400_iset_37[EXT_OP_37].op_fun();
+	return mjc400_iset_37[EXT_OP_37(IR)].op_fun();
 }
 
 int mjc400_op_37_ad()
@@ -447,7 +447,7 @@ int mjc400_op_rws()
 
 int mjc400_op_70()
 {
-	return mjc400_iset_70[EXT_OP_70].op_fun();
+	return mjc400_iset_70[EXT_OP_70(IR)].op_fun();
 }
 
 int mjc400_op_70_ujs()
@@ -507,7 +507,7 @@ int mjc400_op_70_jcs()
 
 int mjc400_op_71()
 {
-	return mjc400_iset_71[EXT_OP_71].op_fun();
+	return mjc400_iset_71[EXT_OP_71(IR)].op_fun();
 }
 
 int mjc400_op_71_blc()
@@ -549,7 +549,7 @@ int mjc400_op_71_nrf()
 
 int mjc400_op_72()
 {
-	return mjc400_iset_72[EXT_OP_72].op_fun();
+	return mjc400_iset_72[EXT_OP_72(IR)].op_fun();
 }
 
 int mjc400_op_72_ric()
@@ -625,11 +625,11 @@ int mjc400_op_72_rpc()
 
 int mjc400_op_72_shc()
 {
-	if (!IR_T) return OP_OK;
+	if (!IR_t) return OP_OK;
 
-	uint16_t falling = (R[IR_A] & (IR_T-1)) << (16-IR_T);
+	uint16_t falling = (R[IR_A] & (IR_t-1)) << (16-IR_t);
 	
-	R[IR_A] = (R[IR_A] >> IR_T) | falling;
+	R[IR_A] = (R[IR_A] >> IR_t) | falling;
 	return OP_OK;
 }
 
@@ -728,7 +728,7 @@ int mjc400_op_73()
 {
 	// all 73-instructions are illegal in user mode
 	if (!SR_Q) return OP_ILLEGAL;
-	return mjc400_iset_73[EXT_OP_73].op_fun();
+	return mjc400_iset_73[EXT_OP_73(IR)].op_fun();
 }
 
 int mjc400_op_73_hlt()
@@ -801,7 +801,7 @@ int mjc400_op_73_lip()
 
 int mjc400_op_74()
 {
-	return mjc400_iset_74[EXT_OP_74].op_fun();
+	return mjc400_iset_74[EXT_OP_74(IR)].op_fun();
 }
 
 int mjc400_op_74_uj()
@@ -867,7 +867,7 @@ int mjc400_op_74_lj()
 
 int mjc400_op_75()
 {
-	return mjc400_iset_75[EXT_OP_75].op_fun();
+	return mjc400_iset_75[EXT_OP_75(IR)].op_fun();
 }
 
 int mjc400_op_75_ld()
@@ -954,7 +954,7 @@ int mjc400_op_75_tl()
 
 int mjc400_op_76()
 {
-	return mjc400_iset_76[EXT_OP_76].op_fun();
+	return mjc400_iset_76[EXT_OP_76(IR)].op_fun();
 }
 
 int mjc400_op_76_rd()
@@ -1041,7 +1041,7 @@ int mjc400_op_76_pl()
 
 int mjc400_op_77()
 {
-	return mjc400_iset_77[EXT_OP_77].op_fun();
+	return mjc400_iset_77[EXT_OP_77(IR)].op_fun();
 }
 
 int mjc400_op_77_mb()
