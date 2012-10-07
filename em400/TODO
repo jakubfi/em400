@@ -1,0 +1,5 @@
+* em400: rework memory subsystem
+* em400: floating point instructions
+* em400: save memory image
+* debuger: setting registers
+* debuger: seting memory
