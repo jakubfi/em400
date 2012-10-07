@@ -32,11 +32,6 @@ int main(int argc, char** argv)
 		return 1;
 	}
 
-	if (em400_load_image("test_img", 0, 0)) {
-		printf("Could not load image.\n");
-		return 1;
-	}
-
 	em400_debuger_setup();
 
 	while (!em400_quit) {

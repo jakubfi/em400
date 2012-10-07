@@ -64,6 +64,23 @@ int em400_debuger_c_step(char* args)
 // -----------------------------------------------------------------------
 int em400_debuger_c_load(char* args)
 {
+	char *image = malloc(256+1);
+	int bank = -1;
+
+	int n = sscanf(args, "%256s %i", image, &bank);
+
+	// parse error
+	if ((n<2) || (n>2)) {
+		return DEBUGER_LOOP_ERR;
+	}
+
+	if (em400_load_image(image, bank, 0)) {
+		printf("Cannot load image: \"%s\"\n", image);
+		return DEBUGER_LOOP_ERR;
+	}
+
+	free(image);
+
 	return DEBUGER_EM400_SKIP;
 }
 
@@ -125,7 +142,7 @@ int __em400_debuger_c_dt(char* args, int dasm_mode)
 		d_start = IC;
 	} else if (n == 2) {
 	} else {
-		printf("Syntax error.\n");
+		return DEBUGER_LOOP_ERR;
 	}
 
 	char *buf;
@@ -188,7 +205,18 @@ int __em400_debuger_dump_mem(int block, int start, int end)
 		printf("+%03x ", i);
 	}
 	printf("\n");
+	// print separator
+	printf("-------");
+	for (int i=0 ; i<MEMDUMP_COLS ; i++) {
+		printf("-----");
+	}
+	printf("  ");
+	for (int i=0 ; i<MEMDUMP_COLS ; i++) {
+		printf("--");
+	}
+	printf("\n");
 
+	// print row
 	while (addr <= end) {
 		// row header
 		if ((addr-start)%MEMDUMP_COLS == 0) {
@@ -331,7 +359,7 @@ int em400_debuger_execute(char* line)
 			int ret;
 			ret = c->fun(args);
 			if (ret == DEBUGER_LOOP_ERR) {
-				printf("Syntax error. Usage:\n%s\n", c->help);
+				printf("Error while processing command. Usage:\n%s\n", c->help);
 			}
 			return ret;
 		}
