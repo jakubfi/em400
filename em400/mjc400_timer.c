@@ -51,3 +51,5 @@ int mjc400_timer_start()
 
 	return 0;
 }
+
+// vim: tabstop=4

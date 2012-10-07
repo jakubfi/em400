@@ -197,3 +197,5 @@ void mjc400_step()
 
 	IC += P;
 }
+
+// vim: tabstop=4

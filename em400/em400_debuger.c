@@ -359,3 +359,4 @@ int em400_debuger_step()
 	return ret;
 }
 
+// vim: tabstop=4

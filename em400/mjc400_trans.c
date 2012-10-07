@@ -28,12 +28,8 @@
 // -----------------------------------------------------------------------
 int mjc400_trans(uint16_t* memptr, char **buf)
 {
-	uint8_t op = _OP(*memptr);
-	return mjc400_iset[op].trans_fun(op, memptr, buf);
+	return 1;
 }
-
-// int mjc400_trans_illegal(uint8_t op, uint16_t* memptr, char **buf)
-// it's the same as mjc400_dasm_illegal
 
 // -----------------------------------------------------------------------
 int mjc400_trans_eff_arg(char *buf, uint16_t *memptr)
@@ -859,4 +855,4 @@ int mjc400_trans_77_ib(uint8_t op, uint16_t* memptr, char **buf)
 	return 0;
 }
 
-
+// vim: tabstop=4

@@ -15,6 +15,9 @@
 //  Foundation, Inc.,
 //  51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 
+#ifndef MJC400_MEM_H
+#define MJC400_MEM_H
+
 #include <inttypes.h>
 
 #define OS_MEM_BANK_SIZE 8 * 1024
@@ -45,3 +48,6 @@ extern uint16_t mjc400_user_mem[USER_MEM_BANK_COUNT][USER_MEM_BANK_SIZE];
 #define DWORD(x, y) (x<<16) | (y)
 #define DWORDw(x, y, z) x = (z>>16) & 0xffff; y = (z) & 0xffff;
 
+#endif
+
+// vim: tabstop=4

@@ -15,24 +15,27 @@
 //  Foundation, Inc.,
 //  51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 
+#ifndef MJC400_ISET_H
+#define MJC400_ISET_H
+
 #include <inttypes.h>
 #include <stdbool.h>
 #include "mjc400_regs.h"
 
-
-typedef struct {
-	uint16_t opcode;	// basic opcode
-	char mnemo_assm[4];	// ASSM mnemonic (for disassembler)
-	char mnemo_assk[4];	// ASSK mnemonic (for disassembler)
-	_Bool nl;		// legal in user mode?
-	int (*op_fun)();	// instruction execution function
-	int (*trans_fun)(uint8_t op, uint16_t* memptr, char **buf);	// translator function
-	int (*dasm_fun)(uint8_t op, uint16_t* memptr, char **buf);	// disassembler function
-
-} mjc400_opdef;
+struct mjc400_opdef {
+	uint16_t opcode;				// basic/extended opcode
+	char *mnemo;					// mnemonic (for disassembler)
+	_Bool nl;						// legal in user mode?
+	_Bool twoword;					// can occupy 2 words?
+	int (*op_fun)();				// instruction execution function
+	int (*extop_fun)(int);			// function to get extended op
+	struct mjc400_opdef * e_opdef;	// pointer to extop def table
+	char* d_format;					// disassembler format
+	char* t_format;					// translator format
+};
 
 // basic opcodes jump table
-extern mjc400_opdef mjc400_iset[];
+extern struct mjc400_opdef mjc400_iset[];
 
 // macros to access sub-opcodes
 #define EXT_OP_37(x) _A(x)
@@ -46,13 +49,16 @@ extern mjc400_opdef mjc400_iset[];
 #define EXT_OP_77(x) _A(x)
 
 // sub-opcodes (2nd level) jump tables
-extern mjc400_opdef mjc400_iset_37[];
-extern mjc400_opdef mjc400_iset_70[];
-extern mjc400_opdef mjc400_iset_71[];
-extern mjc400_opdef mjc400_iset_72[];
-extern mjc400_opdef mjc400_iset_73[];
-extern mjc400_opdef mjc400_iset_74[];
-extern mjc400_opdef mjc400_iset_75[];
-extern mjc400_opdef mjc400_iset_76[];
-extern mjc400_opdef mjc400_iset_77[];
+extern struct mjc400_opdef mjc400_iset_37[];
+extern struct mjc400_opdef mjc400_iset_70[];
+extern struct mjc400_opdef mjc400_iset_71[];
+extern struct mjc400_opdef mjc400_iset_72[];
+extern struct mjc400_opdef mjc400_iset_73[];
+extern struct mjc400_opdef mjc400_iset_74[];
+extern struct mjc400_opdef mjc400_iset_75[];
+extern struct mjc400_opdef mjc400_iset_76[];
+extern struct mjc400_opdef mjc400_iset_77[];
 
+#endif
+
+// vim: tabstop=4

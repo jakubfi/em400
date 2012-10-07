@@ -15,5 +15,11 @@
 //  Foundation, Inc.,
 //  51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 
+#ifndef UTILS_H
+#define UTILS_H
+
 char* int2bin(int x, int len);
 
+#endif
+
+// vim: tabstop=4

@@ -15,23 +15,42 @@
 //  Foundation, Inc.,
 //  51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 
+#ifndef MJC400_DASM_H
+#define MJC400_DASM_H
+
 #include <inttypes.h>
+#include "mjc400_iset.h"
+
+#define DT_ILL	"ILLEGAL: %0 (0x%x)"
+#define D_2ARGN	"%I%E r%A, %N"
+#define D_1ARGN	"%I%E %N"
+#define D_FD	D_1ARGN
+#define D_KA1	"%I r%A, %T"
+#define D_JS	"%I %T"
+#define D_KA2	"%I %b"
+#define D_C		"%I r%A"
+#define D_SHC	"%I r%A, %t"
+#define D_S		"%I"
+#define D_J		D_1ARGN
+#define D_L		D_1ARGN
+#define D_G		D_1ARGN
+#define D_BN	D_1ARGN
+
+int mjc400_dasm_e37(int i);
+int mjc400_dasm_e70(int i);
+int mjc400_dasm_e71(int i);
+int mjc400_dasm_e72(int i);
+int mjc400_dasm_e73(int i);
+int mjc400_dasm_e74(int i);
+int mjc400_dasm_e75(int i);
+int mjc400_dasm_e76(int i);
+int mjc400_dasm_e77(int i);
 
 int mjc400_dasm(uint16_t* memptr, char **buf);
+int mjc400_dasm_parse(struct mjc400_opdef *opdef, uint16_t *memptr, char *format, char *buf);
+int mjc400_dasm_eff_arg(char *buf, uint16_t *memptr);
+int mjc400_dasm_opext(char *buf, uint16_t *memptr);
 
-int mjc400_dasm_illegal(uint8_t op, uint16_t* memptr, char **buf);
-int mjc400_dasm_2argn(uint8_t op, uint16_t* memptr, char **buf);
-int mjc400_dasm_ka1(uint8_t op, uint16_t* memptr, char **buf);
-int mjc400_dasm_72(uint8_t op, uint16_t* memptr, char **buf);
-int mjc400_dasm_73(uint8_t op, uint16_t* memptr, char **buf);
-int mjc400_dasm_fd(uint8_t op, uint16_t* memptr, char **buf);
-int mjc400_dasm_js(uint8_t op, uint16_t* memptr, char **buf);
-int mjc400_dasm_ka2(uint8_t op, uint16_t* memptr, char **buf);
-int mjc400_dasm_c(uint8_t op, uint16_t* memptr, char **buf);
-int mjc400_dasm_c_shc(uint8_t op, uint16_t* memptr, char **buf);
-int mjc400_dasm_s(uint8_t op, uint16_t* memptr, char **buf);
-int mjc400_dasm_j(uint8_t op, uint16_t* memptr, char **buf);
-int mjc400_dasm_l(uint8_t op, uint16_t* memptr, char **buf);
-int mjc400_dasm_g(uint8_t op, uint16_t* memptr, char **buf);
-int mjc400_dasm_bn(uint8_t op, uint16_t* memptr, char **buf);
+#endif
 
+// vim: tabstop=4

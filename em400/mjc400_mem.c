@@ -20,3 +20,5 @@
 
 uint16_t mjc400_os_mem[OS_MEM_BANK_SIZE];
 uint16_t mjc400_user_mem[USER_MEM_BANK_COUNT][USER_MEM_BANK_SIZE];
+
+// vim: tabstop=4

@@ -28,3 +28,4 @@ int16_t MOD;
 unsigned short int MODcnt;
 uint16_t KB;
 
+// vim: tabstop=4

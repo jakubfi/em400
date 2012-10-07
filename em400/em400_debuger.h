@@ -15,6 +15,9 @@
 //  Foundation, Inc.,
 //  51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 
+#ifndef EM400_DEBUGER_H
+#define EM400_DEBUGER_H
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <readline/readline.h>
@@ -51,3 +54,7 @@ int em400_debuger_c_trans(char* args);
 int em400_debuger_execute(char* line);
 int em400_debuger_step();
 int em400_debuger_setup();
+
+#endif
+
+// vim: tabstop=4

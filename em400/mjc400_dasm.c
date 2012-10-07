@@ -28,19 +28,83 @@
 // -----------------------------------------------------------------------
 int mjc400_dasm(uint16_t* memptr, char **buf)
 {
-	uint8_t op = _OP(*memptr);
-	return mjc400_iset[op].dasm_fun(op, memptr, buf);
+	struct mjc400_opdef *opdef;
+	*buf = malloc(1024);
+
+	opdef = mjc400_iset + _OP(*memptr);
+	if (!(opdef->d_format)) {
+		opdef = opdef->e_opdef + opdef->extop_fun(*memptr);
+	}
+
+	return mjc400_dasm_parse(opdef, memptr, opdef->d_format, *buf);
 }
 
 // -----------------------------------------------------------------------
-int mjc400_dasm_illegal(uint8_t op, uint16_t* memptr, char **buf)
+int mjc400_dasm_parse(struct mjc400_opdef *opdef, uint16_t *memptr, char *format, char *buf)
 {
-	*buf = malloc(1024);
-	char *opcode = int2bin(*memptr, 16);
-	sprintf(*buf, "ILLEGAL: 0x%04x (dec: %i, bin: %s)", *memptr, *memptr, opcode);
-	free(opcode);
+	char *in = format;
+	char *out = buf;
+	char *b;
+	int len = 1;
 
-	return 1;
+	if ((opdef->twoword) && (!_C(*memptr))) {
+		len++;
+	}
+
+	while (*in) {
+		if (*in != '%') {
+			*(out++) = *(in++);
+		} else {
+			switch (*(++in)) {
+				case 'I':
+					out += sprintf(out, "%s", opdef->mnemo);
+					break;
+				case 'E':
+					out += mjc400_dasm_opext(out, memptr);
+					break;
+				case 'A':
+					out += sprintf(out, "%i", _A(*memptr));
+					break;
+				case 'B':
+					out += sprintf(out, "%i", _B(*memptr));
+					break;
+				case 'C':
+					out += sprintf(out, "%i", _C(*memptr));
+					break;
+				case 'T':
+					out += sprintf(out, "%i", _T(*memptr));
+					break;
+				case 't':
+					out += sprintf(out, "%i", _t(*memptr));
+					break;
+				case 'b':
+					out += sprintf(out, "%i", _b(*memptr));
+					break;
+				case 'N':
+					out += mjc400_dasm_eff_arg(out, memptr);
+					break;
+				case '0':
+					b = int2bin(*memptr, 16);
+					out += sprintf(out, "%s", b);
+					free(b);
+					break;
+				case 'x':
+					out += sprintf(out, "0x%04x", *memptr);
+					break;
+				case 'd':
+					out += sprintf(out, "%i", *memptr);
+					break;
+				case '%':
+					*(out++) = '%';
+					break;
+				default:
+					*(out++) = '%';
+					*(out++) = *in;
+			}
+			in++;
+		}
+	}
+	return len;
 }
 
 // -----------------------------------------------------------------------
@@ -50,15 +114,15 @@ int mjc400_dasm_opext(char *buf, uint16_t *memptr)
 
 	if (_D(*memptr) == 1) {
 		if (_C(*memptr) != 0) {
-			n += sprintf(buf+n, "A ");
+			n += sprintf(buf+n, "A");
 		} else {
-			n += sprintf(buf+n, "I ");
+			n += sprintf(buf+n, "I");
 		}
 	} else {
 		if (_C(*memptr) != 0) {
-			n += sprintf(buf+n, "R ");
+			n += sprintf(buf+n, "R");
 		} else {
-			n += sprintf(buf+n, "D ");
+			n += sprintf(buf+n, "D");
 		}
 	}
 
@@ -84,161 +148,57 @@ int mjc400_dasm_eff_arg(char *buf, uint16_t *memptr)
 }
 
 // -----------------------------------------------------------------------
-int mjc400_dasm_2argn(uint8_t op, uint16_t* memptr, char **buf)
+int mjc400_dasm_e37(int i)
 {
-	*buf = malloc(1024);
-	// %op%ext %ra, %n
-	int n = 0;
-	n += sprintf((*buf)+n, "%s", mjc400_iset[op].mnemo_assm);
-	n += mjc400_dasm_opext((*buf)+n, memptr);
-	n += sprintf((*buf)+n, "r%i, ", _A(*memptr));
-	n += mjc400_dasm_eff_arg((*buf)+n, memptr);
-
-	if (_C(*memptr) == 0) return 2;
-	else return 1;
+	return EXT_OP_37(i);
 }
 
 // -----------------------------------------------------------------------
-int mjc400_dasm_fd(uint8_t op, uint16_t* memptr, char **buf)
+int mjc400_dasm_e70(int i)
 {
-	*buf = malloc(1024);
-
-	int n = 0;
-	n += sprintf((*buf)+n, "%s", mjc400_iset_37[EXT_OP_37(*memptr)].mnemo_assm);
-	n += mjc400_dasm_opext((*buf)+n, memptr);
-	n += mjc400_dasm_eff_arg((*buf)+n, memptr);
-
-	if (_C(*memptr) == 0) return 2;
-	else return 1;
+	return EXT_OP_70(i);
 }
 
 // -----------------------------------------------------------------------
-int mjc400_dasm_ka1(uint8_t op, uint16_t* memptr, char **buf)
+int mjc400_dasm_e71(int i)
 {
-	*buf = malloc(1024);
-
-	int n = 0;
-	n += sprintf((*buf)+n, "%s r%i, %i", mjc400_iset[op].mnemo_assm, _A(*memptr), _T(*memptr));
-	return 1;
+	return EXT_OP_71(i);
 }
 
 // -----------------------------------------------------------------------
-int mjc400_dasm_js(uint8_t op, uint16_t* memptr, char **buf)
+int mjc400_dasm_e72(int i)
 {
-	*buf = malloc(1024);
-
-	int n = 0;
-	n += sprintf((*buf)+n, "%s %i", mjc400_iset_70[EXT_OP_70(*memptr)].mnemo_assm, _T(*memptr));
-	return 1;
+	return EXT_OP_72(i);
 }
 
 // -----------------------------------------------------------------------
-int mjc400_dasm_ka2(uint8_t op, uint16_t* memptr, char **buf)
+int mjc400_dasm_e73(int i)
 {
-	*buf = malloc(1024);
-
-	int n = 0;
-	n += sprintf((*buf)+n, "%s %i", mjc400_iset_71[EXT_OP_71(*memptr)].mnemo_assm, _b(*memptr));
-	return 1;
+	return EXT_OP_73(i);
 }
 
 // -----------------------------------------------------------------------
-int mjc400_dasm_72(uint8_t op, uint16_t* memptr, char **buf)
+int mjc400_dasm_e74(int i)
 {
-	return mjc400_iset_72[EXT_OP_72(*memptr)].dasm_fun(op, memptr, buf);
+	return EXT_OP_74(i);
 }
 
 // -----------------------------------------------------------------------
-int mjc400_dasm_c(uint8_t op, uint16_t* memptr, char **buf)
+int mjc400_dasm_e75(int i)
 {
-	*buf = malloc(1024);
-
-	int n = 0;
-	n += sprintf((*buf)+n, "%s r%i", mjc400_iset_72[EXT_OP_72(*memptr)].mnemo_assm, _A(*memptr));
-	return 1;
+	return EXT_OP_75(i);
 }
 
 // -----------------------------------------------------------------------
-int mjc400_dasm_c_shc(uint8_t op, uint16_t* memptr, char **buf)
+int mjc400_dasm_e76(int i)
 {
-	*buf = malloc(1024);
-
-	int n = 0;
-	n += sprintf((*buf)+n, "%s r%i, %i", mjc400_iset_72[EXT_OP_72(*memptr)].mnemo_assm, _A(*memptr), _t(*memptr));
-	return 1;
+	return EXT_OP_76(i);
 }
 
 // -----------------------------------------------------------------------
-int mjc400_dasm_73(uint8_t op, uint16_t* memptr, char **buf)
+int mjc400_dasm_e77(int i)
 {
-	return mjc400_iset_73[EXT_OP_73(*memptr)].dasm_fun(op, memptr, buf);
+	return EXT_OP_77(i);
 }
 
-// -----------------------------------------------------------------------
-int mjc400_dasm_s(uint8_t op, uint16_t* memptr, char **buf)
-{
-	*buf = malloc(1024);
-
-	int n = 0;
-	n += sprintf((*buf)+n, "%s", mjc400_iset_73[EXT_OP_73(*memptr)].mnemo_assm);
-	return 1;
-}
-
-// -----------------------------------------------------------------------
-int mjc400_dasm_j(uint8_t op, uint16_t* memptr, char **buf)
-{
-	*buf = malloc(1024);
-
-	int n = 0;
-	n += sprintf((*buf)+n, "%s", mjc400_iset_74[EXT_OP_74(*memptr)].mnemo_assm);
-	n += mjc400_dasm_opext((*buf)+n, memptr);
-	n += mjc400_dasm_eff_arg((*buf)+n, memptr);
-
-	if (_C(*memptr) == 0) return 2;
-	else return 1;
-}
-
-// -----------------------------------------------------------------------
-int mjc400_dasm_l(uint8_t op, uint16_t* memptr, char **buf)
-{
-	*buf = malloc(1024);
-
-	int n = 0;
-	n += sprintf((*buf)+n, "%s", mjc400_iset_75[EXT_OP_75(*memptr)].mnemo_assm);
-	n += mjc400_dasm_opext((*buf)+n, memptr);
-	n += mjc400_dasm_eff_arg((*buf)+n, memptr);
-
-	if (_C(*memptr) == 0) return 2;
-	else return 1;
-}
-
-// -----------------------------------------------------------------------
-int mjc400_dasm_g(uint8_t op, uint16_t* memptr, char **buf)
-{
-	*buf = malloc(1024);
-
-	int n = 0;
-	n += sprintf((*buf)+n, "%s", mjc400_iset_76[EXT_OP_76(*memptr)].mnemo_assm);
-	n += mjc400_dasm_opext((*buf)+n, memptr);
-	n += mjc400_dasm_eff_arg((*buf)+n, memptr);
-
-	if (_C(*memptr) == 0) return 2;
-	else return 1;
-
-}
-
-// -----------------------------------------------------------------------
-int mjc400_dasm_bn(uint8_t op, uint16_t* memptr, char **buf)
-{
-	*buf = malloc(1024);
-
-	int n = 0;
-	n += sprintf((*buf)+n, "%s", mjc400_iset_77[EXT_OP_77(*memptr)].mnemo_assm);
-	n += mjc400_dasm_opext((*buf)+n, memptr);
-	n += mjc400_dasm_eff_arg((*buf)+n, memptr);
-
-	if (_C(*memptr) == 0) return 2;
-	else return 1;
-}
-
-
+// vim: tabstop=4

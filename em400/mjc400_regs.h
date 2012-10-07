@@ -15,6 +15,9 @@
 //  Foundation, Inc.,
 //  51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 
+#ifndef MJC400_REGS_H
+#define MJC400_REGS_H
+
 #include <inttypes.h>
 
 // -----------------------------------------------------------------------
@@ -187,3 +190,6 @@ extern uint16_t KB;
 #define RZ_31cb		RZ &= 0b11111111111111111111111111111110
 #define RZ_3031cb	RZ &= 0b11111111111111111111111111111100
 
+#endif
+
+// vim: tabstop=4

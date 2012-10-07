@@ -31,3 +31,4 @@ char* int2bin(int x, int len)
 	return buf;
 }
 
+// vim: tabstop=4

@@ -15,6 +15,9 @@
 //  Foundation, Inc.,
 //  51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 
+#ifndef MJC400_TIMER_H
+#define MJC400_TIMER_H
+
 // MJC400_TIMER is a value (in miliseconds) from the
 // following sets (different sources give different sets):
 // - 2, 4, 8, 10, 20
@@ -24,3 +27,6 @@
 void mjc400_timer_interrupt(int i);
 int mjc400_timer_start();
 
+#endif
+
+// vim: tabstop=4

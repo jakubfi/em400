@@ -15,6 +15,9 @@
 //  Foundation, Inc.,
 //  51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 
+#ifndef MJC400_INSTR_H
+#define MJC400_INSTR_H
+
 #define OP_ILLEGAL -1
 #define OP_OK 0
 #define OP_MD 1
@@ -165,4 +168,6 @@ int mjc400_op_77_md();
 int mjc400_op_77_rz();
 int mjc400_op_77_ib();
 
+#endif
 
+// vim: tabstop=4

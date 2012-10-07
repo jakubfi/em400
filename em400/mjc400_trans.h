@@ -15,6 +15,9 @@
 //  Foundation, Inc.,
 //  51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 
+#ifndef MJC400_TRANS_H
+#define MJC400_TRANS_H
+
 #include <inttypes.h>
 
 int mjc400_trans_illegal(uint8_t op, uint16_t* memptr, char **buf);
@@ -164,4 +167,6 @@ int mjc400_trans_77_md(uint8_t op, uint16_t* memptr, char **buf);
 int mjc400_trans_77_rz(uint8_t op, uint16_t* memptr, char **buf);
 int mjc400_trans_77_ib(uint8_t op, uint16_t* memptr, char **buf);
 
+#endif
 
+// vim: tabstop=4
