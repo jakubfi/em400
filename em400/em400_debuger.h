@@ -50,6 +50,8 @@ int em400_debuger_c_memnb(char* args);
 int em400_debuger_c_clmem(char* args);
 int em400_debuger_c_dasm(char* args);
 int em400_debuger_c_trans(char* args);
+int em400_debuger_c_load(char* args);
+int em400_debuger_c_save(char* args);
 
 int em400_debuger_execute(char* line);
 int em400_debuger_step();

@@ -26,16 +26,6 @@
 #include "mjc400_timer.h"
 
 // -----------------------------------------------------------------------
-int mjc400_init()
-{
-	int res;
-	mjc400_reset();
-	mjc400_clear_mem();
-	res = mjc400_timer_start();
-	return res;
-}
-
-// -----------------------------------------------------------------------
 void mjc400_reset()
 {
 	IC = 0;
@@ -49,72 +39,6 @@ void mjc400_reset()
 	MOD = 0;
 	MODcnt = 0;
 	KB = 0;
-}
-
-// -----------------------------------------------------------------------
-void mjc400_clear_mem()
-{
-	unsigned short bank;
-	uint16_t addr;
-
-	for (addr=0 ; addr<OS_MEM_BANK_SIZE ; addr++) {
-		mjc400_os_mem[addr] = 0;
-	}
-
-	for (bank=0 ; bank<USER_MEM_BANK_COUNT ; bank++) {
-		for (addr=0 ; addr<USER_MEM_BANK_SIZE ; addr++) {
-			mjc400_user_mem[bank][addr] = 0;
-		}
-	}
-}
-
-// -----------------------------------------------------------------------
-int mjc400_load_os_image(const char* fname, uint16_t addr)
-{
-	if (addr > OS_MEM_BANK_SIZE) {
-		return 1;
-	}
-	return __mjc400_load_image(fname, mjc400_os_mem+addr, OS_MEM_BANK_SIZE);
-}
-// -----------------------------------------------------------------------
-int mjc400_load_user_image(const char* fname, unsigned short bank, uint16_t addr)
-{
-	if (bank > USER_MEM_BANK_COUNT) {
-		return 1;
-	}
-	if (addr > USER_MEM_BANK_SIZE) {
-		return 1;
-	}
-	return __mjc400_load_image(fname, mjc400_user_mem[bank]+addr, USER_MEM_BANK_SIZE);
-}
-
-// -----------------------------------------------------------------------
-int __mjc400_load_image(const char* fname, uint16_t *ptr, uint16_t len)
-{
-	FILE *f = fopen(fname, "rb");
-
-	if (f == NULL) {
-		return 1;
-	}
-
-	uint16_t *i = ptr;
-
-	int res = fread((void*)ptr, sizeof(*ptr), len, f);
-
-	if (ferror(f)) {
-		fclose(f);
-		return 1;
-	}
-
-	fclose(f);
-
-	// we swap bytes from big-endian to host-endianness at load time
-	while (i < ptr + res) {
-		*i = ntohs(*i);
-		i++;
-	}
-
-	return 0;
 }
 
 // -----------------------------------------------------------------------

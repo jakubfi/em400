@@ -21,6 +21,7 @@
 #include <readline/history.h>
 #include "utils.h"
 #include "em400_debuger.h"
+#include "em400_routines.h"
 #include "mjc400_regs.h"
 #include "mjc400.h"
 #include "mjc400_dasm.h"
@@ -43,6 +44,8 @@ cmd_s em400_debuger_commands[] = {
 	{ "memq",	em400_debuger_c_memq,	"Show memory contents (block by Q,NB)", "  memq word_addr\n  memq start_addr end_addr" },
 	{ "memnb",	em400_debuger_c_memnb,	"Show memory contents (block by NB)", "  memnb word_addr\n  memnb start_addr end_addr" },
 	{ "clmem",	em400_debuger_c_clmem,	"Clear memory contents", "  clmem" },
+	{ "load",	em400_debuger_c_load,	"Load memory image", "  load image mem_block" },
+	{ "save",	em400_debuger_c_save,	"Load save image", "  save image mem_block" },
 	{ NULL,		NULL,			NULL, NULL }
 };
 
@@ -56,6 +59,18 @@ int em400_debuger_c_quit(char* args)
 int em400_debuger_c_step(char* args)
 {
 	return DEBUGER_EM400_STEP;
+}
+
+// -----------------------------------------------------------------------
+int em400_debuger_c_load(char* args)
+{
+	return DEBUGER_EM400_SKIP;
+}
+
+// -----------------------------------------------------------------------
+int em400_debuger_c_save(char* args)
+{
+	return DEBUGER_EM400_SKIP;
 }
 
 // -----------------------------------------------------------------------
@@ -90,7 +105,7 @@ int em400_debuger_c_reset(char* args)
 // -----------------------------------------------------------------------
 int em400_debuger_c_clmem(char* args)
 {
-	mjc400_clear_mem();
+	em400_clear_mem();
 	return DEBUGER_EM400_SKIP;
 }
 

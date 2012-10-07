@@ -15,18 +15,15 @@
 //  Foundation, Inc.,
 //  51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 
-#ifndef MJC400_H
-#define MJC400_H
+#ifndef EM400_ROUTINES_H
+#define EM400_ROUTINES_H
 
 #include <inttypes.h>
 #include <stdio.h>
 
-void mjc400_reset();
-uint16_t mjc400_fetch_instr();
-int16_t mjc400_fetch_data();
-void mjc400_step();
-int mjc400_execute();
-int16_t mjc400_get_eff_arg();
+int em400_init();
+void em400_clear_mem();
+int em400_load_image(const char* fname, unsigned short bank, uint16_t addr);
 
 #endif
 

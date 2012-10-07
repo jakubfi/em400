@@ -18,6 +18,7 @@
 #include <stdio.h>
 #include "mjc400.h"
 #include "em400_debuger.h"
+#include "em400_routines.h"
 
 int em400_quit = 0;
 
@@ -26,12 +27,12 @@ int em400_quit = 0;
 // -----------------------------------------------------------------------
 int main(int argc, char** argv)
 {
-	if (mjc400_init()) {
+	if (em400_init()) {
 		printf("Could not initialize the emulator.\n");
 		return 1;
 	}
 
-	if (mjc400_load_os_image("INSTALL.EXE", 0)) {
+	if (em400_load_image("test_img", 0, 0)) {
 		printf("Could not load image.\n");
 		return 1;
 	}
