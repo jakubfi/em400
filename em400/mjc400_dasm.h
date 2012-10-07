@@ -21,18 +21,22 @@
 #include <inttypes.h>
 #include "mjc400_iset.h"
 
+#define DMODE_DASM	1
+#define DMODE_TRANS	2
+
 /*
-	Disassembler output formatting:
+	Disassembler/translator output formatting:
 
 	%I - mnemonic
 	%E - mnemonic suffix
-	%A - reg. A
-	%B - reg. B
-	%C - reg. C
+	%A - reg. A number
+	%B - reg. B number
+	%C - reg. C number
 	%T - short arg.
 	%t - very short arg. (SHC only)
 	%b - byte arg.
 	%N - norm. arg. (disassembler syntax)
+	%n - norm. arg. (translator syntax)
 	%0 - bin representation of a word
 	%x - hex representation of a word
 	%d - dec representation of a word
@@ -53,20 +57,21 @@
 #define D_G		D_1ARGN
 #define D_BN	D_1ARGN
 
-int mjc400_dasm_e37(int i);
-int mjc400_dasm_e70(int i);
-int mjc400_dasm_e71(int i);
-int mjc400_dasm_e72(int i);
-int mjc400_dasm_e73(int i);
-int mjc400_dasm_e74(int i);
-int mjc400_dasm_e75(int i);
-int mjc400_dasm_e76(int i);
-int mjc400_dasm_e77(int i);
+int mjc400_dt(uint16_t* memptr, char **buf, int dasm_mode);
+int mjc400_dt_parse(struct mjc400_opdef *opdef, uint16_t *memptr, char *format, char *buf);
+int mjc400_dt_eff_arg(char *buf, uint16_t *memptr);
+int mjc400_trans_eff_arg(char *buf, uint16_t *memptr);
+int mjc400_dt_opext(char *buf, uint16_t *memptr);
 
-int mjc400_dasm(uint16_t* memptr, char **buf);
-int mjc400_dasm_parse(struct mjc400_opdef *opdef, uint16_t *memptr, char *format, char *buf);
-int mjc400_dasm_eff_arg(char *buf, uint16_t *memptr);
-int mjc400_dasm_opext(char *buf, uint16_t *memptr);
+int mjc400_dt_e37(int i);
+int mjc400_dt_e70(int i);
+int mjc400_dt_e71(int i);
+int mjc400_dt_e72(int i);
+int mjc400_dt_e73(int i);
+int mjc400_dt_e74(int i);
+int mjc400_dt_e75(int i);
+int mjc400_dt_e76(int i);
+int mjc400_dt_e77(int i);
 
 #endif
 

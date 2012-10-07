@@ -31,7 +31,7 @@ int main(int argc, char** argv)
 		return 1;
 	}
 
-	if (mjc400_load_os_image("INSTALL.EXE", 0)) {
+	if (mjc400_load_os_image("add", 0)) {
 		printf("Could not load image.\n");
 		return 1;
 	}

@@ -24,7 +24,6 @@
 #include "mjc400_regs.h"
 #include "mjc400.h"
 #include "mjc400_dasm.h"
-#include "mjc400_trans.h"
 #include "mjc400_mem.h"
 
 char *debuger_prompt;
@@ -96,28 +95,28 @@ int em400_debuger_c_clmem(char* args)
 }
 
 // -----------------------------------------------------------------------
-int __em400_debuger_c_dasmtrans(char* args, int dasm_fun(uint16_t* memptr, char **buf))
+int __em400_debuger_c_dt(char* args, int dasm_mode)
 {
 	int d_start;
 	int d_count;
 
 	int n = sscanf(args, "%i %i", &d_start, &d_count);
 
-	if (n<=0) {
+	if (n <= 0) {
 		d_count = 1;
 		d_start = IC;
-	} else if (n==1) {
+	} else if (n == 1) {
 		d_count = d_start;
 		d_start = IC;
-	} else if (n==2) {
+	} else if (n == 2) {
 	} else {
 		printf("Syntax error.\n");
 	}
 
 	char *buf;
 	int len;
-	while (d_count >0) {
-		len = dasm_fun(MEMptr(d_start), &buf);
+	while (d_count > 0) {
+		len = mjc400_dt(MEMptr(d_start), &buf, dasm_mode);
 		printf("0x%04x: (%i) %s\n", d_start, len, buf);
 		d_start += len;
 		d_count--;
@@ -129,13 +128,13 @@ int __em400_debuger_c_dasmtrans(char* args, int dasm_fun(uint16_t* memptr, char 
 // -----------------------------------------------------------------------
 int em400_debuger_c_dasm(char* args)
 {
-	return __em400_debuger_c_dasmtrans(args, mjc400_dasm);
+	return __em400_debuger_c_dt(args, DMODE_DASM);
 }
 
 // -----------------------------------------------------------------------
 int em400_debuger_c_trans(char* args)
 {
-	return __em400_debuger_c_dasmtrans(args, mjc400_trans);
+	return __em400_debuger_c_dt(args, DMODE_TRANS);
 }
 
 // -----------------------------------------------------------------------

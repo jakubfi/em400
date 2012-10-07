@@ -22,7 +22,6 @@
 #include "mjc400_iset.h"
 #include "mjc400_instr.h"
 #include "mjc400_dasm.h"
-#include "mjc400_trans.h"
 
 struct mjc400_opdef mjc400_iset[] = {
 	{ 000, NULL, false, false, mjc400_op_illegal, NULL, NULL, DT_ILL, DT_ILL },
@@ -42,11 +41,11 @@ struct mjc400_opdef mjc400_iset[] = {
 	{ 016, NULL, false, false, mjc400_op_illegal, NULL, NULL, DT_ILL, DT_ILL },
 	{ 017, NULL, false, false, mjc400_op_illegal, NULL, NULL, DT_ILL, DT_ILL },
 	
-	{ 020, "LW", false, true, mjc400_op_lw, NULL, NULL, D_2ARGN, NULL },
+	{ 020, "LW", false, true, mjc400_op_lw, NULL, NULL, D_2ARGN, "r%A = %n" },
 	{ 021, "TW", false, true, mjc400_op_tw, NULL, NULL, D_2ARGN, NULL },
 	{ 022, "LS", false, true, mjc400_op_ls, NULL, NULL, D_2ARGN, NULL },
 	{ 023, "RI", false, true, mjc400_op_ri, NULL, NULL, D_2ARGN, NULL },
-	{ 024, "RW", false, true, mjc400_op_rw, NULL, NULL, D_2ARGN, NULL },
+	{ 024, "RW", false, true, mjc400_op_rw, NULL, NULL, D_2ARGN, "[%n] = r%A"},
 	{ 025, "PW", false, true, mjc400_op_pw, NULL, NULL, D_2ARGN, NULL },
 	{ 026, "RJ", false, true, mjc400_op_rj, NULL, NULL, D_2ARGN, NULL },
 	{ 027, "IS", false, true, mjc400_op_is, NULL, NULL, D_2ARGN, NULL },
@@ -58,9 +57,9 @@ struct mjc400_opdef mjc400_iset[] = {
 	{ 035, "OU", false, true, mjc400_op_ou, NULL, NULL, D_2ARGN, NULL },
 	{ 036, "IN", false, true, mjc400_op_in, NULL, NULL, D_2ARGN, NULL },
 
-	{ 037, NULL, false, false, mjc400_op_37, mjc400_dasm_e37, mjc400_iset_37, NULL },
+	{ 037, NULL, false, false, mjc400_op_37, mjc400_dt_e37, mjc400_iset_37, NULL },
 
-	{ 040, "AW", false, true, mjc400_op_aw, NULL, NULL, D_2ARGN, NULL },
+	{ 040, "AW", false, true, mjc400_op_aw, NULL, NULL, D_2ARGN, "r%A += %n" },
 	{ 041, "AC", false, true, mjc400_op_ac, NULL, NULL, D_2ARGN, NULL },
 	{ 042, "SW", false, true, mjc400_op_sw, NULL, NULL, D_2ARGN, NULL },
 	{ 043, "CW", false, true, mjc400_op_cw, NULL, NULL, D_2ARGN, NULL },
@@ -86,14 +85,14 @@ struct mjc400_opdef mjc400_iset[] = {
 	{ 066, "LWS", false, false, mjc400_op_lws, NULL, NULL, D_KA1, NULL },
 	{ 067, "RWS", false, false, mjc400_op_rws, NULL, NULL, D_KA1, NULL },
 
-	{ 070, NULL, false, false, mjc400_op_70, mjc400_dasm_e70, mjc400_iset_70, NULL },
-	{ 071, NULL, false, false, mjc400_op_71, mjc400_dasm_e71, mjc400_iset_71, NULL },
-	{ 072, NULL, false, false, mjc400_op_72, mjc400_dasm_e72, mjc400_iset_72, NULL },
-	{ 073, NULL, false, false, mjc400_op_73, mjc400_dasm_e73, mjc400_iset_73, NULL },
-	{ 074, NULL, false, false, mjc400_op_74, mjc400_dasm_e74, mjc400_iset_74, NULL },
-	{ 075, NULL, false, false, mjc400_op_75, mjc400_dasm_e75, mjc400_iset_75, NULL },
-	{ 076, NULL, false, false, mjc400_op_76, mjc400_dasm_e76, mjc400_iset_76, NULL },
-	{ 077, NULL, false, false, mjc400_op_77, mjc400_dasm_e77, mjc400_iset_77, NULL }
+	{ 070, NULL, false, false, mjc400_op_70, mjc400_dt_e70, mjc400_iset_70, NULL },
+	{ 071, NULL, false, false, mjc400_op_71, mjc400_dt_e71, mjc400_iset_71, NULL },
+	{ 072, NULL, false, false, mjc400_op_72, mjc400_dt_e72, mjc400_iset_72, NULL },
+	{ 073, NULL, false, false, mjc400_op_73, mjc400_dt_e73, mjc400_iset_73, NULL },
+	{ 074, NULL, false, false, mjc400_op_74, mjc400_dt_e74, mjc400_iset_74, NULL },
+	{ 075, NULL, false, false, mjc400_op_75, mjc400_dt_e75, mjc400_iset_75, NULL },
+	{ 076, NULL, false, false, mjc400_op_76, mjc400_dt_e76, mjc400_iset_76, NULL },
+	{ 077, NULL, false, false, mjc400_op_77, mjc400_dt_e77, mjc400_iset_77, NULL }
 };
 
 struct mjc400_opdef mjc400_iset_37[] = {
