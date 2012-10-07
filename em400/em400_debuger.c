@@ -19,7 +19,7 @@
 #include <stdlib.h>
 #include <readline/readline.h>
 #include <readline/history.h>
-#include "utils.h"
+#include "em400_utils.h"
 #include "em400_debuger.h"
 #include "em400_routines.h"
 #include "mjc400_regs.h"

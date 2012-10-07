@@ -23,7 +23,7 @@
 #include "mjc400_mem.h"
 #include "mjc400_regs.h"
 #include "mjc400.h"
-#include "utils.h"
+#include "em400_utils.h"
 
 // -----------------------------------------------------------------------
 int mjc400_dt(uint16_t* memptr, char **buf, int dasm_mode)
