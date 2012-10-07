@@ -21,6 +21,23 @@
 #include <inttypes.h>
 #include "mjc400_iset.h"
 
+/*
+	Disassembler output formatting:
+
+	%I - mnemonic
+	%E - mnemonic suffix
+	%A - reg. A
+	%B - reg. B
+	%C - reg. C
+	%T - short arg.
+	%t - very short arg. (SHC only)
+	%b - byte arg.
+	%N - norm. arg. (disassembler syntax)
+	%0 - bin representation of a word
+	%x - hex representation of a word
+	%d - dec representation of a word
+*/
+
 #define DT_ILL	"ILLEGAL: %0 (0x%x)"
 #define D_2ARGN	"%I%E r%A, %N"
 #define D_1ARGN	"%I%E %N"
