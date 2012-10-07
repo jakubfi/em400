@@ -115,9 +115,10 @@ int __em400_debuger_c_dt(char* args, int dasm_mode)
 
 	char *buf;
 	int len;
+
 	while (d_count > 0) {
 		len = mjc400_dt(MEMptr(d_start), &buf, dasm_mode);
-		printf("0x%04x: (%i) %s\n", d_start, len, buf);
+		printf("0x%04x:\t%s\n", d_start, buf);
 		d_start += len;
 		d_count--;
 		free(buf);

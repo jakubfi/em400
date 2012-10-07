@@ -120,6 +120,9 @@ int mjc400_dt_parse(struct mjc400_opdef *opdef, uint16_t *memptr, char *format, 
 			in++;
 		}
 	}
+
+	*out = '\0';
+
 	return len;
 }
 
