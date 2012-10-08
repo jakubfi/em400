@@ -371,10 +371,16 @@ int em400_debuger_execute(char* line)
 }
  
 // -----------------------------------------------------------------------
-int em400_debuger_setup()
+int em400_debuger_init()
 {
-	debuger_prompt = malloc(32);
+	debuger_prompt = malloc(64);
 	return 0;
+}
+
+// -----------------------------------------------------------------------
+void em400_debuger_shutdown()
+{
+	free(debuger_prompt);
 }
 
 // -----------------------------------------------------------------------

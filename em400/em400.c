@@ -32,7 +32,7 @@ int main(int argc, char** argv)
 		return 1;
 	}
 
-	em400_debuger_setup();
+	em400_debuger_init();
 
 	while (!em400_quit) {
 		int dbg_res = em400_debuger_step();
@@ -45,6 +45,8 @@ int main(int argc, char** argv)
 		printf("step\n");
 		mjc400_step();
 	}
+
+	em400_debuger_shutdown();
 
 	return 0;
 }

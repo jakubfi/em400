@@ -55,7 +55,8 @@ int em400_debuger_c_save(char* args);
 
 int em400_debuger_execute(char* line);
 int em400_debuger_step();
-int em400_debuger_setup();
+int em400_debuger_init();
+void em400_debuger_shutdown();
 
 #endif
 

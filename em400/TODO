@@ -2,4 +2,8 @@
 * em400: floating point instructions
 * em400: save memory image
 * debuger: setting registers
-* debuger: seting memory
+* debuger: setting memory
+* debuger: save memory image
+* debuger: breakpoints
+* other: commandline dasm/trans
+* other: move dasm/trans away from iset (?)
