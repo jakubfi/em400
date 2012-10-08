@@ -25,7 +25,7 @@
 #include "mjc400_regs.h"
 #include "mjc400.h"
 #include "mjc400_dasm.h"
-#include "mjc400_mem.h"
+#include "em400_mem.h"
 
 char *debuger_prompt;
 

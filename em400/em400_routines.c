@@ -19,7 +19,7 @@
 #include <arpa/inet.h>
 #include "em400_routines.h"
 #include "mjc400.h"
-#include "mjc400_mem.h"
+#include "em400_mem.h"
 #include "mjc400_regs.h"
 #include "mjc400_timer.h"
 
