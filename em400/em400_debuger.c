@@ -21,7 +21,6 @@
 #include <readline/history.h>
 #include "em400_utils.h"
 #include "em400_debuger.h"
-#include "em400_routines.h"
 #include "mjc400_regs.h"
 #include "mjc400.h"
 #include "mjc400_dasm.h"
@@ -74,7 +73,7 @@ int em400_debuger_c_load(char* args)
 		return DEBUGER_LOOP_ERR;
 	}
 
-	if (em400_load_image(image, bank, 0)) {
+	if (em400_mem_load_image(image, bank, 0)) {
 		printf("Cannot load image: \"%s\"\n", image);
 		return DEBUGER_LOOP_ERR;
 	}
@@ -122,7 +121,7 @@ int em400_debuger_c_reset(char* args)
 // -----------------------------------------------------------------------
 int em400_debuger_c_clmem(char* args)
 {
-	em400_clear_mem();
+	em400_mem_clear();
 	return DEBUGER_EM400_SKIP;
 }
 
@@ -149,7 +148,7 @@ int __em400_debuger_c_dt(char* args, int dasm_mode)
 	int len;
 
 	while (d_count > 0) {
-		len = mjc400_dt(MEMptr(d_start), &buf, dasm_mode);
+		len = mjc400_dt(em400_mem_ptr(SR_Q*SR_NB, d_start), &buf, dasm_mode);
 		printf("0x%04x:\t%s\n", d_start, buf);
 		d_start += len;
 		d_count--;
@@ -179,13 +178,8 @@ int __em400_debuger_dump_mem(int block, int start, int end)
 	char c1, c2;
 	uint16_t *blockptr;
 
-	if (block < 0) {
-		return DEBUGER_LOOP_ERR;
-	} else if (block == 0) {
-		blockptr = mjc400_os_mem;
-	} else if (block < 16) {
-		blockptr = mjc400_user_mem[block];
-	} else {
+	blockptr = em400_mem_ptr(block, 0);
+	if (!blockptr) {
 		return DEBUGER_LOOP_ERR;
 	}
 
@@ -259,7 +253,6 @@ int __em400_debuger_dump_mem(int block, int start, int end)
 // -----------------------------------------------------------------------
 int em400_debuger_c_memq(char* args)
 {
-	int m_block;
 	int m_start = -1;
 	int m_end = -1;
 	int n = sscanf(args, "%i %i", &m_start, &m_end);
@@ -269,14 +262,7 @@ int em400_debuger_c_memq(char* args)
 		return DEBUGER_LOOP_ERR;
 	}
 
-	// set block
-	if (SR_Q == 0) {
-		m_block = 0;
-	} else {
-		m_block = SR_NB;
-	}
-
-	return __em400_debuger_dump_mem(m_block, m_start, m_end);
+	return __em400_debuger_dump_mem(SR_Q*SR_NB, m_start, m_end);
 }
 
 // -----------------------------------------------------------------------

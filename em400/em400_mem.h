@@ -15,33 +15,30 @@
 //  Foundation, Inc.,
 //  51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 
-#ifndef MJC400_MEM_H
-#define MJC400_MEM_H
+#ifndef EM400_MEM_H
+#define EM400_MEM_H
 
 #include <inttypes.h>
 
-#define OS_MEM_BANK_SIZE 8 * 1024
-#define USER_MEM_BANK_SIZE 32 * 1024
-#define USER_MEM_BANK_COUNT 16
+#define MEM_BANKS 16
+#define MEM_CHUNK 4 * 1024
 
-// -----------------------------------------------------------------------
-// memory
-extern uint16_t mjc400_os_mem[OS_MEM_BANK_SIZE];
-extern uint16_t mjc400_user_mem[USER_MEM_BANK_COUNT][USER_MEM_BANK_SIZE];
+extern int em400_mem_block_layout[];
+extern int em400_mem_block_size[];
+extern uint16_t *em400_mem[];
 
-// -----------------------------------------------------------------------
-// unified OS/user memory access macro
-#define MEM(a) SR_Q ? mjc400_user_mem[SR_NB][a] : mjc400_os_mem[a]
-#define MEMNB(a) SR_NB ? mjc400_user_mem[SR_NB][a] : mjc400_os_mem[a]
-#define MEMw(a, x) \
-	if (SR_Q == 1) mjc400_user_mem[SR_NB][a] = x; \
-	else mjc400_os_mem[a] = x;
-#define MEMNBw(a, x) \
-	if (SR_NB == 1) mjc400_user_mem[SR_NB][a] = x; \
-	else mjc400_os_mem[a] = x;
+int em400_mem_init();
+int em400_mem_shutdown();
+uint16_t em400_mem_read(short unsigned int bank, uint16_t addr);
+void em400_mem_write(short unsigned int bank, uint16_t addr, uint16_t val);
+uint16_t * em400_mem_ptr(short unsigned int bank, uint16_t addr);
+void em400_mem_clear();
+int em400_mem_load_image(const char* fname, unsigned short bank, uint16_t addr);
 
-#define MEMptr(a) SR_Q ? mjc400_user_mem[SR_NB]+a : mjc400_os_mem+a
-#define MEMNBptr(a) SR_NB ? mjc400_user_mem[SR_NB]+a : mjc400_os_mem+a
+#define MEM(a)			em400_mem_read(SR_Q*SR_NB, a)
+#define MEMNB(a)		em400_mem_read(SR_NB, a)
+#define MEMw(a, x)		em400_mem_write(SR_Q*SR_NB, a, x)
+#define MEMNBw(a, x)	em400_mem_write(SR_NB, a, x)
 
 // -----------------------------------------------------------------------
 // dword conversions

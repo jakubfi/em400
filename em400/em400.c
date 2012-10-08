@@ -17,8 +17,9 @@
 
 #include <stdio.h>
 #include "mjc400.h"
+#include "mjc400_timer.h"
 #include "em400_debuger.h"
-#include "em400_routines.h"
+#include "em400_mem.h"
 
 int em400_quit = 0;
 
@@ -27,12 +28,12 @@ int em400_quit = 0;
 // -----------------------------------------------------------------------
 int main(int argc, char** argv)
 {
-	if (em400_init()) {
-		printf("Could not initialize the emulator.\n");
-		return 1;
-	}
-
+	mjc400_reset();
+	em400_mem_init();
+	em400_mem_clear();
 	em400_debuger_init();
+
+	mjc400_timer_start();
 
 	while (!em400_quit) {
 		int dbg_res = em400_debuger_step();
@@ -46,6 +47,7 @@ int main(int argc, char** argv)
 		mjc400_step();
 	}
 
+	em400_mem_shutdown();
 	em400_debuger_shutdown();
 
 	return 0;

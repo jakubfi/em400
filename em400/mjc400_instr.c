@@ -518,14 +518,14 @@ int mjc400_op_71_blc()
 
 int mjc400_op_71_exl()
 {
-	uint16_t SP = mjc400_os_mem[97];
-	mjc400_os_mem[SP] = IC;
-	mjc400_os_mem[SP+1] = R[0];
-	mjc400_os_mem[SP+2] = SR;
-	mjc400_os_mem[SP+3] = IR_b;
-	IC = mjc400_os_mem[96];
+	uint16_t SP = em400_mem_read(0, 97);
+	em400_mem_write(0, SP, IC);
+	em400_mem_write(0, SP+1, R[0]);
+	em400_mem_write(0, SP+2, SR);
+	em400_mem_write(0, SP+3, IR_b);
+	IC = em400_mem_read(0, 96);
 	R[0] = 0;
-	mjc400_os_mem[97] = SP + 4;
+	em400_mem_write(0, 97, SP+4);
 	SR_RM9cb;
 	SR_Qcb;
 	return OP_OK;
@@ -787,11 +787,11 @@ int mjc400_op_73_gil()
 
 int mjc400_op_73_lip()
 {
-	uint16_t SP = mjc400_os_mem[97];
-	IC = mjc400_os_mem[SP-4];
-	R[0] = mjc400_os_mem[SP-3];
-	SR = mjc400_os_mem[SP-2];
-	mjc400_os_mem[97] = SP - 4;
+	uint16_t SP = em400_mem_read(0, 97);
+	IC = em400_mem_read(0, SP-4);
+	R[0] = em400_mem_read(0, SP-3);
+	SR = em400_mem_read(0, SP-2);
+	em400_mem_write(0, 97, SP-4);
 	return OP_OK;
 }
 

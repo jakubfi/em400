@@ -22,8 +22,6 @@
 #include <stdio.h>
 
 void mjc400_reset();
-uint16_t mjc400_fetch_instr();
-int16_t mjc400_fetch_data();
 void mjc400_step();
 int mjc400_execute();
 int16_t mjc400_get_eff_arg();

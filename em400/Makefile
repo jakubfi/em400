@@ -3,7 +3,6 @@ CFLAGS=-std=c99 -Wall -O3 -D_POSIX_C_SOURCE=1
 LFLAGS=-lreadline
 OBJS=\
 em400.o\
-em400_routines.o\
 mjc400.o\
 mjc400_iset.o\
 mjc400_instr.o\

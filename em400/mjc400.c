@@ -42,31 +42,14 @@ void mjc400_reset()
 }
 
 // -----------------------------------------------------------------------
-uint16_t mjc400_fetch_instr()
-{
-	IC += 1;
-	if (SR_Q == 0) {
-		return mjc400_os_mem[IC-1];
-	} else {
-		return mjc400_user_mem[SR_NB][IC-1];
-	}
-}
-
-// -----------------------------------------------------------------------
-int16_t mjc400_fetch_data()
-{
-	IC += 1;
-	return MEM(IC-1);
-}
-
-// -----------------------------------------------------------------------
 int16_t mjc400_get_eff_arg()
 {
 	int16_t N = 0;
 
 	// argument is in next word
 	if (IR_C == 0) {
-		N += mjc400_fetch_data();
+		N += MEM(IC);
+		IC++;
 	// argument is in field C
 	} else {
 		N += R[IR_C];
@@ -93,7 +76,8 @@ void mjc400_step()
 
 	// fetch instruction into IR
 	// (additional argument is fetched by the instruction, if necessary)
-	IR = mjc400_fetch_instr();
+	IR = MEM(IC);
+	IC++;
 
 	// execute instruction
 	int op_res;
