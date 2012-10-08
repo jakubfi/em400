@@ -20,6 +20,7 @@
 #include <inttypes.h>
 #include <arpa/inet.h>
 #include "em400_mem.h"
+#include "mjc400_regs.h"
 
 // memory configuration: number of 4Kword chunks in a bank
 int em400_mem_bank_layout[MEM_BANKS] = { 2, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8 };
@@ -69,8 +70,11 @@ uint16_t em400_mem_read(short unsigned int bank, uint16_t addr)
 	if (addr < em400_mem_bank_size[bank]) {
 		return em400_mem[bank][addr];
 	} else {
-		// TODO: przerwanie
-		printf("nima\n");
+		if (SR_Q) {
+			RZ_2sb;
+		} else {
+			// TODO: ALARM
+		}
 		return 0;
 	}
 }
@@ -82,8 +86,11 @@ void em400_mem_write(short unsigned int bank, uint16_t addr, uint16_t val)
 	if (addr < em400_mem_bank_size[bank]) {
 		em400_mem[bank][addr] = val;
 	} else {
-		// TODO: przerwanie
-		printf("nima\n");
+		if (SR_Q) {
+			RZ_2sb;
+		} else {
+			// TODO: ALARM
+		}
 	}
 }
 
