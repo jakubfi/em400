@@ -1,9 +1,11 @@
-* em400: software memory configuration
 * em400: floating point instructions
 * em400: save memory image
+* em400: 17-bit myte address
+* em400: error codes
 * debuger: setting registers
 * debuger: setting memory
 * debuger: save memory image
 * debuger: breakpoints
+* debuger: seeing MOD, P, operator panel LED-s, other?
 * other: commandline dasm/trans
 * other: move dasm/trans away from iset (?)

@@ -20,20 +20,26 @@
 
 #include <inttypes.h>
 
-#define MEM_BANKS 16
-#define MEM_CHUNK 4 * 1024
+#define MEM_MAX_MODULES 16
+#define MEM_MAX_SEGMENTS 8
+#define MEM_SEGMENT_SIZE 4 * 1024
+#define MEM_MAX_NB 16
+#define MEM_MAX_AB 16
 
-extern int em400_mem_block_layout[];
-extern int em400_mem_block_size[];
-extern uint16_t *em400_mem[];
+extern short int em400_mem_conf[MEM_MAX_MODULES];
+extern uint16_t *em400_mem_segment[MEM_MAX_MODULES][MEM_MAX_SEGMENTS];
+extern uint16_t *em400_mem_map[MEM_MAX_NB][MEM_MAX_AB];
 
 int em400_mem_init();
-int em400_mem_shutdown();
-uint16_t em400_mem_read(short unsigned int bank, uint16_t addr);
-void em400_mem_write(short unsigned int bank, uint16_t addr, uint16_t val);
-uint16_t * em400_mem_ptr(short unsigned int bank, uint16_t addr);
+void em400_mem_shutdown();
+void em400_mem_add_map(unsigned short int nb, unsigned short int ab, unsigned short int mp, unsigned short int segment);
+
+uint16_t * em400_mem_ptr(short unsigned int nb, uint16_t addr);
+uint16_t em400_mem_read(short unsigned int nb, uint16_t addr);
+void em400_mem_write(short unsigned int nb, uint16_t addr, uint16_t val);
+
 void em400_mem_clear();
-int em400_mem_load_image(const char* fname, unsigned short bank, uint16_t addr);
+int em400_mem_load_image(const char* fname, unsigned short block);
 
 #define MEM(a)			em400_mem_read(SR_Q*SR_NB, a)
 #define MEMNB(a)		em400_mem_read(SR_NB, a)

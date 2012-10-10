@@ -73,7 +73,7 @@ int em400_debuger_c_load(char* args)
 		return DEBUGER_LOOP_ERR;
 	}
 
-	if (em400_mem_load_image(image, bank, 0)) {
+	if (em400_mem_load_image(image, bank)) {
 		printf("Cannot load image: \"%s\"\n", image);
 		return DEBUGER_LOOP_ERR;
 	}

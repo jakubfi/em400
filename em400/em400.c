@@ -43,7 +43,6 @@ int main(int argc, char** argv)
 			}
 			continue;
 		}
-		printf("step\n");
 		mjc400_step();
 	}
 
