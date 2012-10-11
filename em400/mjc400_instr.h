@@ -18,9 +18,11 @@
 #ifndef MJC400_INSTR_H
 #define MJC400_INSTR_H
 
-#define OP_ILLEGAL -1
-#define OP_OK 0
-#define OP_MD 1
+enum mjc400_op_result {
+	OP_ILLEGAL = -1,
+	OP_OK,
+	OP_MD
+};
 
 int mjc400_op_illegal();
 
