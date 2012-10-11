@@ -49,7 +49,21 @@ def m400_assm_2argn(op, line):
     return op_bin
 
 def m400_assm_no1argn(op, line):
-    print "no1arg2"
+    op_bin = [m400_assm[op][1]]
+    res = re.match(r'^([a-zA-Z]+)[ \t]+' + re_narg + '$', line)
+    n_d = res.group(2)
+    n_c = res.group(4)
+    n_m = res.group(5)
+    n_b = res.group(7)
+    if n_d:
+        op_bin[0] |= 0b0000001000000000
+    if n_c:
+        op_bin[0] |= (int(n_c)<<3)
+    if n_m:
+        op_bin.append(int(n_m))
+    if n_b:
+        op_bin[0] |= int(n_b)
+    return op_bin
 
 def m400_assm_ka2arg(op, line):
     print "ka2arg"
