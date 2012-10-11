@@ -31,7 +31,7 @@ void mjc400_reset()
 	IC = 0;
 	IR = 0;
 	SR = 0;
-	for (int i=0 ; i<16 ; i++) {
+	for (int i=0 ; i<8 ; i++) {
 		R[i] = 0;
 	}
 	RZ = 0;

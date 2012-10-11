@@ -317,7 +317,7 @@ int em400_debuger_c_regs(char* args)
 	free(rz);
 	free(r0);
 	printf("     hex... dec...  bin.....|.......       hex... dec...  bin.....|.......\n");
-	for (int i=0 ; i<8 ; i++) {
+	for (int i=0 ; i<4 ; i++) {
 		char *r1 = int2bin(R[2*i], 16);
 		char *r2 = int2bin(R[2*i+1], 16);
 		printf("R%02i: 0x%04x  %5i  %s", 2*i, R[2*i], R[2*i], r1);

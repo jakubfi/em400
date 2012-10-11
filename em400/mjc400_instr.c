@@ -740,9 +740,7 @@ int mjc400_op_73_hlt()
 
 int mjc400_op_73_mcl()
 {
-	RZ = 0;
-	SR = 0;
-	R[0] = 0;
+	mjc400_reset();
 	em400_mem_remove_maps();
 	// zeruj kanały
 	// zeruj urządzenia

@@ -1,7 +1,5 @@
 * em400: floating point instructions
 * em400: save memory image
-* em400: 17-bit byte address
-* em400: error codes
 * debuger: setting registers
 * debuger: setting memory
 * debuger: save memory image

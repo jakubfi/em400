@@ -21,7 +21,7 @@
 uint16_t IC;
 uint16_t IR;
 uint16_t SR;
-uint16_t R[16];
+uint16_t R[8];
 uint32_t RZ;
 unsigned short int P;
 int16_t MOD;
