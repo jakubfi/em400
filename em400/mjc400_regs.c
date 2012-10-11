@@ -27,5 +27,6 @@ unsigned short int P;
 int16_t MOD;
 unsigned short int MODcnt;
 uint16_t KB;
+uint8_t ZC17;
 
 // vim: tabstop=4

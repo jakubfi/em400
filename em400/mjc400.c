@@ -44,28 +44,32 @@ void mjc400_reset()
 // -----------------------------------------------------------------------
 int16_t mjc400_get_eff_arg()
 {
-	int16_t N = 0;
+	uint32_t N;
 
 	// argument is in next word
 	if (IR_C == 0) {
-		N += (int16_t) MEM(IC);
+		N = MEM(IC);
 		IC++;
 	// argument is in field C
 	} else {
-		N += (int16_t) R[IR_C];
+		N = R[IR_C];
 	}
 
-	// add B (if >0, adding 0 won't hurt)
-	N += (int16_t) R[IR_B];
+	// B-modification
+	N += R[IR_B];
 
-	// pre-modification
-	N += (int16_t) MOD;
+	// PRE-modification
+	N += MOD;
 	
 	// if D is set, N is an address in current memory block
 	if (IR_D == 1) {
-		N = (int16_t) MEM((uint16_t) N);
+		N = MEM((uint16_t) N);
 	}
-	return N;
+
+	// store 17th bit for byte addressing
+	ZC17 = (N & 0b10000000000000000) >> 16;
+
+	return (int16_t) N;
 }
 
 // -----------------------------------------------------------------------

@@ -32,6 +32,7 @@ extern unsigned short int P;
 extern int16_t MOD;
 extern unsigned short int MODcnt;
 extern uint16_t KB;
+extern uint8_t ZC17;
 
 // -----------------------------------------------------------------------
 // macros to access bit fields

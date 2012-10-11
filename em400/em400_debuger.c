@@ -326,7 +326,7 @@ int em400_debuger_c_regs(char* args)
 		free(r2);
 	}
 	printf("\n");
-	printf("MOD: %i  MODcnt: %i  P: %i\n", MOD, MODcnt, P);
+	printf("MOD: %i  MODcnt: %i  P: %i  ZC17: %i\n", MOD, MODcnt, P, ZC17);
 	return DEBUGER_EM400_SKIP;
 }
 
