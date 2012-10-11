@@ -35,27 +35,27 @@ int mjc400_op_illegal()
 
 int mjc400_op_lw()
 {
-	R[IR_A] = mjc400_get_eff_arg();
+	R[IR_A] = (uint16_t) mjc400_get_eff_arg();
 	return OP_OK;
 }
 
 int mjc400_op_tw()
 {
-	int16_t N = mjc400_get_eff_arg();
+	uint16_t N = mjc400_get_eff_arg();
 	R[IR_A] = MEMNB(N);
 	return OP_OK;
 }
 
 int mjc400_op_ls()
 {
-	int16_t N = mjc400_get_eff_arg();
+	uint16_t N = mjc400_get_eff_arg();
 	R[IR_A] = (R[IR_A] & ~R[7]) | (N & R[7]);
 	return OP_OK;
 }
 
 int mjc400_op_ri()
 {
-	int16_t N = mjc400_get_eff_arg();
+	uint16_t N = mjc400_get_eff_arg();
 	MEMw(R[IR_A], N);
 	R[IR_A]++;
 	return OP_OK;
@@ -63,21 +63,21 @@ int mjc400_op_ri()
 
 int mjc400_op_rw()
 {
-	int16_t N = mjc400_get_eff_arg();
+	uint16_t N = mjc400_get_eff_arg();
 	MEMw(N, R[IR_A]);
 	return OP_OK;
 }
 
 int mjc400_op_pw()
 {
-	int16_t N = mjc400_get_eff_arg();
+	uint16_t N = mjc400_get_eff_arg();
 	MEMNBw(N, R[IR_A]);
 	return OP_OK;
 }
 
 int mjc400_op_rj()
 {
-	int16_t N = mjc400_get_eff_arg();
+	uint16_t N = mjc400_get_eff_arg();
 	R[IR_A] = IC;
 	IC = N;
 	return OP_OK;
@@ -85,7 +85,7 @@ int mjc400_op_rj()
 
 int mjc400_op_is()
 {
-	int16_t N = mjc400_get_eff_arg();
+	uint16_t N = mjc400_get_eff_arg();
 	if ((MEMNB(N) & R[IR_A]) == R[IR_A]) {
 		P = 1;
 		MEMNBw(N, (MEMNB(N) | R[IR_A]));
@@ -95,35 +95,35 @@ int mjc400_op_is()
 
 int mjc400_op_bb()
 {
-	int16_t N = mjc400_get_eff_arg();
-	if ((R[IR_A] & N) == (N)) P = 1;
+	uint16_t N = mjc400_get_eff_arg();
+	if ((R[IR_A] & N) == N) P = 1;
 	return OP_OK;
 }
 
 int mjc400_op_bm()
 {
-	int16_t N = mjc400_get_eff_arg();
+	uint16_t N = mjc400_get_eff_arg();
 	if ((MEMNB(N) & R[IR_A]) == R[IR_A]) P = 1;
 	return OP_OK;
 }
 
 int mjc400_op_bs()
 {
-	int16_t N = mjc400_get_eff_arg();
+	uint16_t N = mjc400_get_eff_arg();
 	if ((R[IR_A] & R[7]) == (N & R[7])) P = 1;
 	return OP_OK;
 }
 
 int mjc400_op_bc()
 {
-	int16_t N = mjc400_get_eff_arg();
+	uint16_t N = mjc400_get_eff_arg();
 	if ((R[IR_A] & N) == N) P = 1;
 	return OP_OK;
 }
 
 int mjc400_op_bn()
 {
-	int16_t N = mjc400_get_eff_arg();
+	uint16_t N = mjc400_get_eff_arg();
 	if ((R[IR_A] & N) == 0) P = 1;
 	return OP_OK;
 }
@@ -148,7 +148,7 @@ int mjc400_op_37()
 
 int mjc400_op_37_ad()
 {
-	int16_t N = mjc400_get_eff_arg();
+	uint16_t N = mjc400_get_eff_arg();
 	int32_t a1 = DWORD(R[1], R[2]);
 	int32_t a2 = DWORD(MEM(N), MEM(N+1));
 	int64_t res = a1 + a2;
@@ -162,7 +162,7 @@ int mjc400_op_37_ad()
 
 int mjc400_op_37_sd()
 {
-	int16_t N = mjc400_get_eff_arg();
+	uint16_t N = mjc400_get_eff_arg();
 	int32_t a1 = DWORD(R[1], R[2]);
 	int32_t a2 = DWORD(MEM(N), MEM(N+1));
 	int64_t res = a1 - a2;
@@ -176,7 +176,7 @@ int mjc400_op_37_sd()
 
 int mjc400_op_37_mw()
 {
-	int16_t N = mjc400_get_eff_arg();
+	uint16_t N = mjc400_get_eff_arg();
 	int16_t m1 = R[2];
 	int16_t m2 = MEM(N);
 	int64_t res = m1 * m2;
@@ -189,7 +189,7 @@ int mjc400_op_37_mw()
 
 int mjc400_op_37_dw()
 {
-	int16_t N = mjc400_get_eff_arg();
+	uint16_t N = mjc400_get_eff_arg();
 	int32_t d1 = DWORD(R[1], R[2]);
 	int16_t d2 = MEM(N);
 	int32_t res = d1 / d2;
@@ -229,11 +229,11 @@ int mjc400_op_aw()
 	int16_t N = mjc400_get_eff_arg();
 	int16_t tmp = R[IR_A];
 	int32_t res = N + tmp;
-	R0_Ms16(res);
-	R0_Zs16(res);
-	R0_Cs16(res);
+	R0_Ms16((uint32_t) res);
+	R0_Zs16((uint32_t) res);
+	R0_Cs16((uint32_t) res);
 	R0_Vs16(N, tmp, res);
-	R[IR_A] = (int16_t) res;
+	R[IR_A] = (uint16_t) res;
 	return OP_OK;
 }
 
@@ -242,11 +242,11 @@ int mjc400_op_ac()
 	int16_t N = mjc400_get_eff_arg();
 	int16_t tmp = R[IR_A];
 	int32_t res = N + tmp + R0_C;
-	R0_Ms16(res);
-	R0_Zs16(res);
-	R0_Cs16(res);
+	R0_Ms16((uint32_t) res);
+	R0_Zs16((uint32_t) res);
+	R0_Cs16((uint32_t) res);
 	R0_Vs16(N, tmp, res);
-	R[IR_A] = (int16_t) res;
+	R[IR_A] = (uint16_t) res;
 	return OP_OK;
 }
 
@@ -255,24 +255,24 @@ int mjc400_op_sw()
 	int16_t N = mjc400_get_eff_arg();
 	int16_t tmp = R[IR_A];
 	int32_t res = N - tmp;
-	R0_Ms16(res);
-	R0_Zs16(res);
-	R0_Cs16(res);
+	R0_Ms16((uint32_t) res);
+	R0_Zs16((uint32_t) res);
+	R0_Cs16((uint32_t) res);
 	R0_Vs16(N, -tmp, res);
-	R[IR_A] = (int16_t) res;
+	R[IR_A] = (uint16_t) res;
 	return OP_OK;
 }
 
 int mjc400_op_cw()
 {
-	int16_t N = mjc400_get_eff_arg();
+	uint16_t N = mjc400_get_eff_arg();
 	R0_LEG(R[IR_A], N);
 	return OP_OK;
 }
 
 int mjc400_op_or()
 {
-	int16_t N = mjc400_get_eff_arg();
+	uint16_t N = mjc400_get_eff_arg();
 	R[IR_A] = R[IR_A] | N;
 	R0_Zs16(R[IR_A]);
 	return OP_OK;
@@ -280,7 +280,7 @@ int mjc400_op_or()
 
 int mjc400_op_om()
 {
-	int16_t N = mjc400_get_eff_arg();
+	uint16_t N = mjc400_get_eff_arg();
 	MEMNBw(N, MEMNB(N) | R[IR_A]);
 	R0_Zs16(MEMNB(N));
 	return OP_OK;
@@ -288,7 +288,7 @@ int mjc400_op_om()
 
 int mjc400_op_nr()
 {
-	int16_t N = mjc400_get_eff_arg();
+	uint16_t N = mjc400_get_eff_arg();
 	R[IR_A] = R[IR_A] & N;
 	R0_Zs16(R[IR_A]);
 	return OP_OK;
@@ -296,7 +296,7 @@ int mjc400_op_nr()
 
 int mjc400_op_nm()
 {
-	int16_t N = mjc400_get_eff_arg();
+	uint16_t N = mjc400_get_eff_arg();
 	MEMNBw(N, MEMNB(N) & R[IR_A]);
 	R0_Zs16(MEMNB(N));
 	return OP_OK;
@@ -304,7 +304,7 @@ int mjc400_op_nm()
 
 int mjc400_op_er()
 {
-	int16_t N = mjc400_get_eff_arg();
+	uint16_t N = mjc400_get_eff_arg();
 	R[IR_A] = R[IR_A] & ~N;
 	R0_Zs16(R[IR_A]);
 	return OP_OK;
@@ -312,7 +312,7 @@ int mjc400_op_er()
 
 int mjc400_op_em()
 {
-	int16_t N = mjc400_get_eff_arg();
+	uint16_t N = mjc400_get_eff_arg();
 	MEMNBw(N, MEMNB(N) & ~R[IR_A]);
 	R0_Zs16(MEMNB(N));
 	return OP_OK;
@@ -320,7 +320,7 @@ int mjc400_op_em()
 
 int mjc400_op_xr()
 {
-	int16_t N = mjc400_get_eff_arg();
+	uint16_t N = mjc400_get_eff_arg();
 	R[IR_A] = R[IR_A] ^ N;
 	R0_Zs16(R[IR_A]);
 	return OP_OK;
@@ -328,7 +328,7 @@ int mjc400_op_xr()
 
 int mjc400_op_xm()
 {
-	int16_t N = mjc400_get_eff_arg();
+	uint16_t N = mjc400_get_eff_arg();
 	MEMNBw(N, MEMNB(N) ^ R[IR_A]);
 	R0_Zs16(MEMNB(N));
 	return OP_OK;
@@ -336,14 +336,14 @@ int mjc400_op_xm()
 
 int mjc400_op_cl()
 {
-	int16_t N = mjc400_get_eff_arg();
+	uint16_t N = mjc400_get_eff_arg();
 	R0_LEG(R[IR_A], N);
 	return OP_OK;
 }
 
 int mjc400_op_lb()
 {
-	int16_t N = mjc400_get_eff_arg();
+	uint16_t N = mjc400_get_eff_arg();
 
 	// N lsb=1 - right byte
 	// N lsb=0 - left byte
@@ -360,7 +360,7 @@ int mjc400_op_lb()
 
 int mjc400_op_rb()
 {
-	int16_t N = mjc400_get_eff_arg();
+	uint16_t N = mjc400_get_eff_arg();
 	int shift = 8 * ~(N&1);
 	N >>= 1;
 
@@ -373,7 +373,7 @@ int mjc400_op_rb()
 
 int mjc400_op_cb()
 {
-	int16_t N = mjc400_get_eff_arg();
+	uint16_t N = mjc400_get_eff_arg();
 	int shift = 8 * ~(N&1);
 	N >>= 1;
 	R0_LEG((R[IR_A]&0b0000000011111111), ((MEMNB(N) >> shift) & 0b0000000011111111));
@@ -388,9 +388,9 @@ int mjc400_op_awt()
 {
 	int16_t tmp = R[IR_A];
 	int32_t res = IR_T + tmp;
-	R0_Ms16(res);
-	R0_Zs16(res);
-	R0_Cs16(res);
+	R0_Ms16((uint32_t) res);
+	R0_Zs16((uint32_t) res);
+	R0_Cs16((uint32_t) res);
 	R0_Vs16(IR_T, tmp, res);
 	return OP_OK;
 }
@@ -734,7 +734,7 @@ int mjc400_op_73()
 int mjc400_op_73_hlt()
 {
 	// TODO: busy wait
-	while (!SR_RM);
+	while (!RZ);
 	return OP_OK;
 }
 
@@ -743,9 +743,9 @@ int mjc400_op_73_mcl()
 	RZ = 0;
 	SR = 0;
 	R[0] = 0;
+	em400_mem_remove_maps();
 	// zeruj kanały
 	// zeruj urządzenia
-	// zeruj rejestry podziału PAO (jeśli będziemy dzielić)
 	return OP_OK;
 }
 
@@ -806,56 +806,56 @@ int mjc400_op_74()
 
 int mjc400_op_74_uj()
 {
-	int16_t N = mjc400_get_eff_arg();
+	uint16_t N = mjc400_get_eff_arg();
 	IC = N;
 	return OP_OK;
 }
 
 int mjc400_op_74_jl()
 {
-	int16_t N = mjc400_get_eff_arg();
+	uint16_t N = mjc400_get_eff_arg();
 	if (R0_L) IC = N;
 	return OP_OK;
 }
 
 int mjc400_op_74_je()
 {
-	int16_t N = mjc400_get_eff_arg();
+	uint16_t N = mjc400_get_eff_arg();
 	if (R0_E) IC = N;
 	return OP_OK;
 }
 
 int mjc400_op_74_jg()
 {
-	int16_t N = mjc400_get_eff_arg();
+	uint16_t N = mjc400_get_eff_arg();
 	if (R0_G) IC = N;
 	return OP_OK;
 }
 
 int mjc400_op_74_jz()
 {
-	int16_t N = mjc400_get_eff_arg();
+	uint16_t N = mjc400_get_eff_arg();
 	if (R0_Z) IC = N;
 	return OP_OK;
 }
 
 int mjc400_op_74_jm()
 {
-	int16_t N = mjc400_get_eff_arg();
+	uint16_t N = mjc400_get_eff_arg();
 	if (R0_M) IC = N;
 	return OP_OK;
 }
 
 int mjc400_op_74_jn()
 {
-	int16_t N = mjc400_get_eff_arg();
+	uint16_t N = mjc400_get_eff_arg();
 	if (!R0_E) IC = N;
 	return OP_OK;
 }
 
 int mjc400_op_74_lj()
 {
-	int16_t N = mjc400_get_eff_arg();
+	uint16_t N = mjc400_get_eff_arg();
 	MEMw(N, IC);
 	IC = N+1;
 	return OP_OK;
@@ -872,7 +872,7 @@ int mjc400_op_75()
 
 int mjc400_op_75_ld()
 {
-	int16_t N = mjc400_get_eff_arg();
+	uint16_t N = mjc400_get_eff_arg();
 	R[1] = MEM(N);
 	R[2] = MEM(N+1);
 	return OP_OK;
@@ -880,7 +880,7 @@ int mjc400_op_75_ld()
 
 int mjc400_op_75_lf()
 {
-	int16_t N = mjc400_get_eff_arg();
+	uint16_t N = mjc400_get_eff_arg();
 	R[1] = MEM(N);
 	R[2] = MEM(N+1);
 	R[3] = MEM(N+2);
@@ -889,7 +889,7 @@ int mjc400_op_75_lf()
 
 int mjc400_op_75_la()
 {
-	int16_t N = mjc400_get_eff_arg();
+	uint16_t N = mjc400_get_eff_arg();
 	R[1] = MEM(N);
 	R[2] = MEM(N+1);
 	R[3] = MEM(N+2);
@@ -902,7 +902,7 @@ int mjc400_op_75_la()
 
 int mjc400_op_75_ll()
 {
-	int16_t N = mjc400_get_eff_arg();
+	uint16_t N = mjc400_get_eff_arg();
 	R[5] = MEM(N);
 	R[6] = MEM(N+1);
 	R[7] = MEM(N+2);
@@ -911,7 +911,7 @@ int mjc400_op_75_ll()
 
 int mjc400_op_75_td()
 {
-	int16_t N = mjc400_get_eff_arg();
+	uint16_t N = mjc400_get_eff_arg();
 	R[1] = MEMNB(N);
 	R[2] = MEMNB(N+1);
 	return OP_OK;
@@ -919,7 +919,7 @@ int mjc400_op_75_td()
 
 int mjc400_op_75_tf()
 {
-	int16_t N = mjc400_get_eff_arg();
+	uint16_t N = mjc400_get_eff_arg();
 	R[1] = MEMNB(N);
 	R[2] = MEMNB(N+1);
 	R[3] = MEMNB(N+2);
@@ -928,7 +928,7 @@ int mjc400_op_75_tf()
 
 int mjc400_op_75_ta()
 {
-	int16_t N = mjc400_get_eff_arg();
+	uint16_t N = mjc400_get_eff_arg();
 	R[1] = MEMNB(N);
 	R[2] = MEMNB(N+1);
 	R[3] = MEMNB(N+2);
@@ -941,7 +941,7 @@ int mjc400_op_75_ta()
 
 int mjc400_op_75_tl()
 {
-	int16_t N = mjc400_get_eff_arg();
+	uint16_t N = mjc400_get_eff_arg();
 	R[5] = MEMNB(N);
 	R[6] = MEMNB(N+1);
 	R[7] = MEMNB(N+2);
@@ -959,7 +959,7 @@ int mjc400_op_76()
 
 int mjc400_op_76_rd()
 {
-	int16_t N = mjc400_get_eff_arg();
+	uint16_t N = mjc400_get_eff_arg();
 	MEMw(N, R[1]);
 	MEMw(N+1, R[2]);
 	return OP_OK;
@@ -967,7 +967,7 @@ int mjc400_op_76_rd()
 
 int mjc400_op_76_rf()
 {
-	int16_t N = mjc400_get_eff_arg();
+	uint16_t N = mjc400_get_eff_arg();
 	MEMw(N, R[1]);
 	MEMw(N+1, R[2]);
 	MEMw(N+2, R[3]);
@@ -976,7 +976,7 @@ int mjc400_op_76_rf()
 
 int mjc400_op_76_ra()
 {
-	int16_t N = mjc400_get_eff_arg();
+	uint16_t N = mjc400_get_eff_arg();
 	MEMw(N, R[1]);
 	MEMw(N+1, R[2]);
 	MEMw(N+2, R[3]);
@@ -989,7 +989,7 @@ int mjc400_op_76_ra()
 
 int mjc400_op_76_rl()
 {
-	int16_t N = mjc400_get_eff_arg();
+	uint16_t N = mjc400_get_eff_arg();
 	MEMw(N, R[5]);
 	MEMw(N+1, R[6]);
 	MEMw(N+2, R[7]);
@@ -998,7 +998,7 @@ int mjc400_op_76_rl()
 
 int mjc400_op_76_pd()
 {
-	int16_t N = mjc400_get_eff_arg();
+	uint16_t N = mjc400_get_eff_arg();
 	MEMNBw(N, R[1]);
 	MEMNBw(N+1, R[2]);
 	return OP_OK;
@@ -1006,7 +1006,7 @@ int mjc400_op_76_pd()
 
 int mjc400_op_76_pf()
 {
-	int16_t N = mjc400_get_eff_arg();
+	uint16_t N = mjc400_get_eff_arg();
 	MEMNBw(N, R[1]);
 	MEMNBw(N+1, R[2]);
 	MEMNBw(N+2, R[3]);
@@ -1015,7 +1015,7 @@ int mjc400_op_76_pf()
 
 int mjc400_op_76_pa()
 {
-	int16_t N = mjc400_get_eff_arg();
+	uint16_t N = mjc400_get_eff_arg();
 	MEMNBw(N, R[1]);
 	MEMNBw(N+1, R[2]);
 	MEMNBw(N+2, R[3]);
@@ -1028,7 +1028,7 @@ int mjc400_op_76_pa()
 
 int mjc400_op_76_pl()
 {
-	int16_t N = mjc400_get_eff_arg();
+	uint16_t N = mjc400_get_eff_arg();
 	MEMNBw(N, R[5]);
 	MEMNBw(N+1, R[6]);
 	MEMNBw(N+2, R[7]);
@@ -1047,7 +1047,7 @@ int mjc400_op_77()
 int mjc400_op_77_mb()
 {
 	if (!SR_Q) return OP_ILLEGAL;
-	int16_t N = mjc400_get_eff_arg();
+	uint16_t N = mjc400_get_eff_arg();
 	SR_MBw(MEM(N));
 	return OP_OK;
 }
@@ -1055,7 +1055,7 @@ int mjc400_op_77_mb()
 int mjc400_op_77_im()
 {
 	if (!SR_Q) return OP_ILLEGAL;
-	int16_t N = mjc400_get_eff_arg();
+	uint16_t N = mjc400_get_eff_arg();
 	SR_RMw(MEM(N));
 	return OP_OK;
 }
@@ -1063,7 +1063,7 @@ int mjc400_op_77_im()
 int mjc400_op_77_ki()
 {
 	if (!SR_Q) return OP_ILLEGAL;
-	int16_t N = mjc400_get_eff_arg();
+	uint16_t N = mjc400_get_eff_arg();
 	MEMw(N, ((RZ & 0b11111111111100000000000000000000) >> 16) | (RZ & 0b00000000000000000000000000001111));
 	return OP_OK;
 }
@@ -1071,8 +1071,8 @@ int mjc400_op_77_ki()
 int mjc400_op_77_fi()
 {
 	if (!SR_Q) return OP_ILLEGAL;
-	int16_t N = mjc400_get_eff_arg();
-	int16_t RZM = MEM(N);
+	uint16_t N = mjc400_get_eff_arg();
+	uint16_t RZM = MEM(N);
 	RZ = RZ | (RZM & 0b0000000000001111);
 	RZ = RZ | ((RZM & 0b1111111111110000) << 16);
 	return OP_OK;
@@ -1081,7 +1081,7 @@ int mjc400_op_77_fi()
 int mjc400_op_77_sp()
 {
 	if (!SR_Q) return OP_ILLEGAL;
-	int16_t N = mjc400_get_eff_arg();
+	uint16_t N = mjc400_get_eff_arg();
 	IC = MEMNB(N);
 	R[0] = MEMNB(N+1);
 	SR = MEMNB(N+2);
@@ -1101,14 +1101,14 @@ int mjc400_op_77_md()
 
 int mjc400_op_77_rz()
 {
-	int16_t N = mjc400_get_eff_arg();
+	uint16_t N = mjc400_get_eff_arg();
 	MEMw(N, 0);
 	return OP_OK;
 }
 
 int mjc400_op_77_ib()
 {
-	int16_t N = mjc400_get_eff_arg();
+	uint16_t N = mjc400_get_eff_arg();
 	MEMw(N, MEM(N)+1);
 	if (!MEM(N)) P = 1;
 	return OP_OK;

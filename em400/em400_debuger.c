@@ -325,6 +325,8 @@ int em400_debuger_c_regs(char* args)
 		free(r1);
 		free(r2);
 	}
+	printf("\n");
+	printf("MOD: %i  MODcnt: %i  P: %i\n", MOD, MODcnt, P);
 	return DEBUGER_EM400_SKIP;
 }
 
@@ -379,7 +381,7 @@ int em400_debuger_step()
 {
 	int ret = DEBUGER_EM400_STEP;
 	char *buf;
-	sprintf(debuger_prompt, "em400 [%1i %02i 0x%04x]> ", SR_Q, SR_NB, IC);
+	sprintf(debuger_prompt, "\e[1;34mem400 [%1i %02i 0x%04x]>\e[m ", SR_Q, SR_NB, IC);
  
 	rl_bind_key('\t', rl_abort); // disable auto-complete
 

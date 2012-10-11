@@ -48,22 +48,22 @@ int16_t mjc400_get_eff_arg()
 
 	// argument is in next word
 	if (IR_C == 0) {
-		N += MEM(IC);
+		N += (int16_t) MEM(IC);
 		IC++;
 	// argument is in field C
 	} else {
-		N += R[IR_C];
+		N += (int16_t) R[IR_C];
 	}
 
 	// add B (if >0, adding 0 won't hurt)
-	N += R[IR_B];
+	N += (int16_t) R[IR_B];
 
 	// pre-modification
-	N += MOD;
+	N += (int16_t) MOD;
 	
 	// if D is set, N is an address in current memory block
 	if (IR_D == 1) {
-		N = MEM(N);
+		N = (int16_t) MEM((uint16_t) N);
 	}
 	return N;
 }

@@ -65,12 +65,7 @@ int em400_mem_init()
 // -----------------------------------------------------------------------
 void em400_mem_shutdown()
 {
-	// remove memory mappings
-	for (int nb=0 ; nb<MEM_MAX_NB ; nb++) {
-		for (int ab=0 ; ab<MEM_MAX_AB ; ab ++) {
-			em400_mem_map[nb][ab] = NULL;
-		}
-	}
+	em400_mem_remove_maps();
 
 	// disconnect memory modules
 	for (int mp=0 ; mp<MEM_MAX_MODULES ; mp++) {
@@ -90,6 +85,17 @@ void em400_mem_add_map(unsigned short int nb, unsigned short int ab, unsigned sh
 		}
 	} else {
 		// TODO: not OK - we don't configure anything other than user blocks
+	}
+}
+
+// -----------------------------------------------------------------------
+void em400_mem_remove_maps()
+{
+	// remove all memory mappings
+	for (int nb=0 ; nb<MEM_MAX_NB ; nb++) {
+		for (int ab=0 ; ab<MEM_MAX_AB ; ab ++) {
+			em400_mem_map[nb][ab] = NULL;
+		}
 	}
 }
 
