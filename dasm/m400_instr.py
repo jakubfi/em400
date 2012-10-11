@@ -212,6 +212,7 @@ op_no_arg_i73_a = {
     1: ['MCL', 'Master CLear'],
     3: ['GIU', 'Generate Interrupt Upper'],
     4: ['LIP', 'Leave to Interrupted Program']
+    5: ['GIL', 'Generate Interrupt Lower']
 }
 
 op_no_arg_i73_c10 = {
