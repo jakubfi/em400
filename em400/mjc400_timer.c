@@ -19,6 +19,7 @@
 #include <stdio.h>
 #include <features.h>
 #include <signal.h>
+#include "em400_errors.h"
 #include "mjc400_timer.h"
 #include "mjc400_regs.h"
 
@@ -38,7 +39,7 @@ int mjc400_timer_start()
 	act.sa_flags = 0;
 	
 	if (sigaction(SIGALRM, &act, NULL) != 0) {
-		return 1;
+		return E_TIMER_SIGNAL;
 	}
 
 	it_val.it_value.tv_sec = 0;
@@ -46,10 +47,10 @@ int mjc400_timer_start()
 	it_val.it_interval = it_val.it_value;
 
 	if (setitimer(ITIMER_REAL, &it_val, NULL) == -1) {
-		return 1;
+		return E_TIMER_SET;
 	}
 
-	return 0;
+	return E_OK;
 }
 
 // vim: tabstop=4

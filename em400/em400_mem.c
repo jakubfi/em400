@@ -19,12 +19,13 @@
 #include <stdio.h>
 #include <inttypes.h>
 #include <arpa/inet.h>
+#include "em400_errors.h"
 #include "em400_mem.h"
 #include "mjc400_regs.h"
 
 // memory configuration provided by the user: number of segments in a module
 short int em400_mem_conf[MEM_MAX_MODULES] = { 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8 };
-// physical memory configuration: modules with segments inside
+// physical memory: modules with segments inside
 uint16_t *em400_mem_segment[MEM_MAX_MODULES][MEM_MAX_SEGMENTS] = { {NULL} };
 // logical mapping from (NB,AB) to physical segment pointer
 uint16_t *em400_mem_map[MEM_MAX_NB][MEM_MAX_AB] = { {NULL} };
@@ -33,21 +34,18 @@ uint16_t *em400_mem_map[MEM_MAX_NB][MEM_MAX_AB] = { {NULL} };
 int em400_mem_init()
 {
 	if (em400_mem_conf[0] <= 0) {
-		// we need some OS memory
-		return 1;
+		return E_MEM_NO_OS_MEM;
 	}
 
 	// create configured physical segments
 	for (int mp=0 ; mp<MEM_MAX_MODULES ; mp++) {
 		if (em400_mem_conf[mp] > MEM_MAX_SEGMENTS) {
-			// wrong number of segments per module
-			return 1;
+			return E_MEM_BAD_SEGMENT_COUNT;
 		} else {
 			for (int seg=0 ; seg<em400_mem_conf[mp] ; seg++) {
 				em400_mem_segment[mp][seg] = malloc(2 * MEM_SEGMENT_SIZE);
 				if (!em400_mem_segment[mp][seg]) {
-					// cannot allocate memory
-					return 1;
+					return E_MEM_CANNOT_ALLOCATE;
 				}
 			}
 		}
@@ -61,7 +59,7 @@ int em400_mem_init()
 		}
 	}
 
-	return 0;
+	return E_OK;
 }
 
 // -----------------------------------------------------------------------
@@ -158,7 +156,7 @@ int em400_mem_load_image(const char* fname, unsigned short block)
 
 	FILE *f = fopen(fname, "rb");
 	if (f == NULL) {
-		return 1;
+		return E_FILE_OPEN;
 	}
 
 	int res = 1;
@@ -167,15 +165,14 @@ int em400_mem_load_image(const char* fname, unsigned short block)
 		// get pointer to segment in a block
 		ptr = em400_mem_ptr(block, chunk*MEM_SEGMENT_SIZE);
 		if (!ptr) {
-			// no such segment (block too small)
-			return 1;
+			return E_MEM_BLOCK_TOO_SMALL;
 		}
 
 		// read chunk of data
 		res = fread((void*)ptr, sizeof(*ptr), MEM_SEGMENT_SIZE, f);
 		if (ferror(f)) {
 			fclose(f);
-			return 1;
+			return E_FILE_OPERATION;
 		}
 
 		// we swap bytes from big-endian to host-endianness at load time
@@ -189,7 +186,7 @@ int em400_mem_load_image(const char* fname, unsigned short block)
 
 	fclose(f);
 
-	return 0;
+	return E_OK;
 }
 
 

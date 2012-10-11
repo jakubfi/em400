@@ -22,6 +22,9 @@
 char* int2bin(int x, int len)
 {
 	char* buf = malloc(len+1);
+	if (!buf) {
+		return NULL;
+	}
 
 	buf[len] = 0;
 

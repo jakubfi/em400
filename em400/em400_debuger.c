@@ -19,6 +19,7 @@
 #include <stdlib.h>
 #include <readline/readline.h>
 #include <readline/history.h>
+#include "em400_errors.h"
 #include "em400_utils.h"
 #include "em400_debuger.h"
 #include "mjc400_regs.h"
@@ -360,7 +361,11 @@ int em400_debuger_execute(char* line)
 int em400_debuger_init()
 {
 	debuger_prompt = malloc(64);
-	return 0;
+	if (!debuger_prompt) {
+		return E_ALLOC;
+	} else {
+		return E_OK;
+	}
 }
 
 // -----------------------------------------------------------------------
