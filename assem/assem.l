@@ -64,7 +64,7 @@ chars	[\[\]\+\,]
 }
 {dlabel}	{
 	yylval.str = strdup(yytext);
-	yylval.str[strlen(yytext) - 1] = '\0';
+	yylval.str[strlen(yytext)-1] = '\0';
 	return DLABEL;
 }
 {data}	{
@@ -78,11 +78,9 @@ chars	[\[\]\+\,]
 {name}	{
 	struct op_t *op = get_op(yytext);
 	if (op) {
-		printf("Matched: %s -> %i %i \n", yytext, op->type, op->opcode);
 		yylval.val = op->opcode;
 		return op->type;
 	} else {
-		printf("name: %s\n", yytext);
 		yylval.str = strdup(yytext);
 		return NAME;
 	}

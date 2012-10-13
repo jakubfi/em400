@@ -54,18 +54,18 @@ data:
 	;
 
 instruction:
-	i_2arg
-	| i_fd
-	| i_ka1
-	| i_js
-	| i_ka2
-	| i_c
-	| i_shc
-	| i_s
-	| i_j
-	| i_l
-	| i_g
-	| i_bn
+	OP_2ARG REGISTER ',' norm
+	| OP_FD norm
+	| OP_KA1 REGISTER VALUE
+	| OP_JS VALUE
+	| OP_KA2 VALUE
+	| OP_C REGISTER
+	| OP_SHC VALUE
+	| OP_S
+	| OP_J norm
+	| OP_L norm
+	| OP_G norm
+	| OP_BN norm
 	;
 
 norm:
@@ -83,53 +83,6 @@ normval:
 addrval:
 	VALUE
 	| NAME
-	;
-
-i_2arg:
-	OP_2ARG REGISTER ',' norm
-	;
-
-i_fd:
-	OP_FD norm
-	;
-i_ka1:
-	OP_KA1 REGISTER VALUE
-	;
-
-i_js:
-	OP_JS VALUE
-	;
-
-i_ka2:
-	OP_KA2 VALUE
-	;
-
-i_c:
-	OP_C REGISTER
-	;
-
-i_shc:
-	OP_SHC VALUE
-	;
-
-i_s:
-	OP_S
-	;
-
-i_j:
-	OP_J norm
-	;
-
-i_l:
-	OP_L norm
-	;
-
-i_g:
-	OP_G norm
-	;
-
-i_bn:
-	OP_BN norm
 	;
 
 %%
