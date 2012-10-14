@@ -28,14 +28,15 @@ class M400dasm:
         ifile = open(f, "r")
         self.img = bytearray(ifile.read())
         ifile.close()
-        self.ic = -1 + p;
-        self.pos = 0 + 2*p;
+        self.offset = p
+        self.ic = -1
+        self.pos = 0
 
     # ------------------------------------------------------------------------
     def m400_decode_norm(self, i, group, d, a, b, c):
         if c == 0:
             m = self.m400_fetch()
-            rc = "%i" % m
+            rc = "0x%x" % m
         else:
             rc = "r%i" % c
             m = 0
@@ -117,7 +118,7 @@ class M400dasm:
             code = "---"
             args = zbin(i, 6)
             debug_b = "# %s %s" % (zbin(word>>8, 8), zbin(word&255, 8))
-            desc = "# %2x %2x" % (word>>8, word&255)
+            desc = "# %4x %2x %2x" % (word, word>>8, word&255)
             debug = "."
 
         else:
@@ -159,7 +160,7 @@ class M400dasm:
                 desc = ""
                 debug = ""
 
-        print "0x%04x: %-7s %-15s %-25s %-10s %-30s" % (addr, code, args, debug_b, debug, desc)
+        print "0x%04x: %-7s %-15s %-25s %-10s %-30s" % (addr+self.offset, code, args, debug_b, debug, desc)
             
     # --------------------------------------------------------------------
     def m400_fetch(self):

@@ -68,15 +68,24 @@ def m400_name_i72(i, d, a, b, c):
     if (b == 0b010):
         return "SHC", "SHift Cyclic"
     else:
-        return op_no_arg_i72_dbc[dbc][0], op_no_arg_i72_dbc[dbc][1]
+        try:
+            return op_no_arg_i72_dbc[dbc][0], op_no_arg_i72_dbc[dbc][1]
+        except Exception, e:
+            return "ILLEGAL", "ILLEGAL"
 
 # ------------------------------------------------------------------------
 def m400_name_i73(i, d, a, b, c):
     if a != 2:
-        return op_no_arg_i73_a[a][0], op_no_arg_i73_a[a][1]
+        try:
+            return op_no_arg_i73_a[a][0], op_no_arg_i73_a[a][1]
+        except Exception, e:
+            return "ILLEGAL", "ILLEGAL"
     else:
         c10 = c & 0b11
-        return op_no_arg_i73_c10[c10][0], op_no_arg_i73_c10[c10][1]
+        try:
+            return op_no_arg_i73_c10[c10][0], op_no_arg_i73_c10[c10][1]
+        except Exception, e:
+            return "ILLEGAL", "ILLEGAL"
 
 # ------------------------------------------------------------------------
 def m400_name_i74(i, d, a, b, c):
@@ -211,7 +220,7 @@ op_no_arg_i73_a = {
     0: ['HLT', 'HaLT'],
     1: ['MCL', 'Master CLear'],
     3: ['GIU', 'Generate Interrupt Upper'],
-    4: ['LIP', 'Leave to Interrupted Program']
+    4: ['LIP', 'Leave to Interrupted Program'],
     5: ['GIL', 'Generate Interrupt Lower']
 }
 
