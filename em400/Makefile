@@ -12,6 +12,7 @@ mjc400_regs.o\
 mjc400_timer.o\
 em400_debuger.o\
 em400_utils.o\
+em400_io.o\
 em400_errors.o
 
 em400: $(OBJS)

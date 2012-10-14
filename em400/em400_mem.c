@@ -22,6 +22,7 @@
 #include "em400_errors.h"
 #include "em400_mem.h"
 #include "mjc400_regs.h"
+#include "em400_io.h"
 
 // memory configuration provided by the user: number of segments in a module
 short int em400_mem_conf[MEM_MAX_MODULES] = { 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8 };
@@ -65,7 +66,7 @@ int em400_mem_init()
 // -----------------------------------------------------------------------
 void em400_mem_shutdown()
 {
-	em400_mem_remove_maps();
+	em400_mem_remove_user_maps();
 
 	// disconnect memory modules
 	for (int mp=0 ; mp<MEM_MAX_MODULES ; mp++) {
@@ -76,23 +77,24 @@ void em400_mem_shutdown()
 }
 
 // -----------------------------------------------------------------------
-void em400_mem_add_map(unsigned short int nb, unsigned short int ab, unsigned short int mp, unsigned short int segment)
+int em400_mem_add_user_map(unsigned short int nb, unsigned short int ab, unsigned short int mp, unsigned short int segment)
 {
 	if ((nb > 0) && (nb < MEM_MAX_NB)) {
 		em400_mem_map[nb][ab] = em400_mem_segment[mp][segment];
 		if (!em400_mem_map[nb][ab]) {
-			// TODO: not OK - segment doesn't exist
+			return IO_NO;
 		}
 	} else {
-		// TODO: not OK - we don't configure anything other than user blocks
+		return IO_NO;
 	}
+	return IO_OK;
 }
 
 // -----------------------------------------------------------------------
-void em400_mem_remove_maps()
+void em400_mem_remove_user_maps()
 {
 	// remove all memory mappings
-	for (int nb=0 ; nb<MEM_MAX_NB ; nb++) {
+	for (int nb=1 ; nb<MEM_MAX_NB ; nb++) {
 		for (int ab=0 ; ab<MEM_MAX_AB ; ab ++) {
 			em400_mem_map[nb][ab] = NULL;
 		}

@@ -32,8 +32,8 @@ extern uint16_t *em400_mem_map[MEM_MAX_NB][MEM_MAX_AB];
 
 int em400_mem_init();
 void em400_mem_shutdown();
-void em400_mem_add_map(unsigned short int nb, unsigned short int ab, unsigned short int mp, unsigned short int segment);
-void em400_mem_remove_maps();
+int em400_mem_add_user_map(unsigned short int nb, unsigned short int ab, unsigned short int mp, unsigned short int segment);
+void em400_mem_remove_user_maps();
 
 uint16_t * em400_mem_ptr(short unsigned int nb, uint16_t addr);
 uint16_t em400_mem_read(short unsigned int nb, uint16_t addr);

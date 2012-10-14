@@ -20,6 +20,8 @@
 #include "mjc400_instr.h"
 #include "mjc400_iset.h"
 #include "em400_mem.h"
+#include "em400_utils.h"
+#include "em400_io.h"
 #include "mjc400_regs.h"
 #include "mjc400.h"
 
@@ -27,7 +29,6 @@ int mjc400_op_illegal()
 {
 	return OP_ILLEGAL;
 }
-
 
 // -----------------------------------------------------------------------
 // ---- 20 - 36 ----------------------------------------------------------
@@ -130,11 +131,33 @@ int mjc400_op_bn()
 
 int mjc400_op_ou()
 {
+	uint16_t N = mjc400_get_eff_arg();
+
+	int is_mem = (N & 0b0000000000000001);
+	int chan   = (N & 0b0000000000011110) >> 1;
+	int unit   = (N & 0b0000000011100000) >> 5;
+	int cmd    = (N & 0b1111111100000000) >> 8;
+
+	int io_result = em400_io_dispatch(IO_OU, is_mem, chan, unit, cmd, R[IR_A]);
+
+	IC = MEM(IC+io_result);
+
 	return OP_OK;
 }
 
 int mjc400_op_in()
 {
+	uint16_t N = mjc400_get_eff_arg();
+
+	int is_mem = (N & 0b0000000000000001);
+	int chan   = (N & 0b0000000000011110) >> 1;
+	int unit   = (N & 0b0000000011100000) >> 5;
+	int cmd    = (N & 0b1111111100000000) >> 8;
+
+	int io_result = em400_io_dispatch(IO_IN, is_mem, chan, unit, cmd, R[IR_A]);
+
+	IC = MEM(IC+io_result);
+
 	return OP_OK;
 }
 
@@ -635,7 +658,10 @@ int mjc400_op_72_shc()
 
 int mjc400_op_72_rky()
 {
-	R[IR_A] = KB;
+	// TODO: does it work that way?
+	if (KB) {
+		R[IR_A] = KB;
+	}
 	return OP_OK;
 }
 
@@ -727,7 +753,7 @@ int mjc400_op_72_lpc()
 int mjc400_op_73()
 {
 	// all 73-instructions are illegal in user mode
-	if (!SR_Q) return OP_ILLEGAL;
+	if (SR_Q) return OP_ILLEGAL;
 	return mjc400_iset_73[EXT_OP_73(IR)].op_fun();
 }
 
@@ -740,10 +766,12 @@ int mjc400_op_73_hlt()
 
 int mjc400_op_73_mcl()
 {
-	mjc400_reset();
-	em400_mem_remove_maps();
+	RZ = 0;
+	SR = 0;
+	R[0] = 0;
 	// zeruj kanały
 	// zeruj urządzenia
+	em400_mem_remove_user_maps();
 	return OP_OK;
 }
 
@@ -1044,7 +1072,7 @@ int mjc400_op_77()
 
 int mjc400_op_77_mb()
 {
-	if (!SR_Q) return OP_ILLEGAL;
+	if (SR_Q) return OP_ILLEGAL;
 	uint16_t N = mjc400_get_eff_arg();
 	SR_MBw(MEM(N));
 	return OP_OK;
@@ -1052,7 +1080,7 @@ int mjc400_op_77_mb()
 
 int mjc400_op_77_im()
 {
-	if (!SR_Q) return OP_ILLEGAL;
+	if (SR_Q) return OP_ILLEGAL;
 	uint16_t N = mjc400_get_eff_arg();
 	SR_RMw(MEM(N));
 	return OP_OK;
@@ -1060,7 +1088,7 @@ int mjc400_op_77_im()
 
 int mjc400_op_77_ki()
 {
-	if (!SR_Q) return OP_ILLEGAL;
+	if (SR_Q) return OP_ILLEGAL;
 	uint16_t N = mjc400_get_eff_arg();
 	MEMw(N, ((RZ & 0b11111111111100000000000000000000) >> 16) | (RZ & 0b00000000000000000000000000001111));
 	return OP_OK;
@@ -1068,7 +1096,7 @@ int mjc400_op_77_ki()
 
 int mjc400_op_77_fi()
 {
-	if (!SR_Q) return OP_ILLEGAL;
+	if (SR_Q) return OP_ILLEGAL;
 	uint16_t N = mjc400_get_eff_arg();
 	uint16_t RZM = MEM(N);
 	RZ = RZ | (RZM & 0b0000000000001111);
@@ -1078,7 +1106,7 @@ int mjc400_op_77_fi()
 
 int mjc400_op_77_sp()
 {
-	if (!SR_Q) return OP_ILLEGAL;
+	if (SR_Q) return OP_ILLEGAL;
 	uint16_t N = mjc400_get_eff_arg();
 	IC = MEMNB(N);
 	R[0] = MEMNB(N+1);
