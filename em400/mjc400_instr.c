@@ -289,7 +289,7 @@ int mjc400_op_sw()
 int mjc400_op_cw()
 {
 	uint16_t N = mjc400_get_eff_arg();
-	R0_LEG(R[IR_A], N);
+	R0_LEG((int16_t)R[IR_A], (int16_t)N);
 	return OP_OK;
 }
 
@@ -360,7 +360,7 @@ int mjc400_op_xm()
 int mjc400_op_cl()
 {
 	uint16_t N = mjc400_get_eff_arg();
-	R0_LEG(R[IR_A], N);
+	R0_LEG((uint16_t)R[IR_A], (uint16_t)N);
 	return OP_OK;
 }
 
@@ -399,7 +399,7 @@ int mjc400_op_cb()
 	uint16_t N = mjc400_get_eff_arg();
 	int shift = 8 * ~(N&1);
 	N >>= 1;
-	R0_LEG((R[IR_A]&0b0000000011111111), ((MEMNB(N) >> shift) & 0b0000000011111111));
+	R0_LEG((uint8_t)(R[IR_A]&0b0000000011111111), (uint8_t)((MEMNB(N) >> shift) & 0b0000000011111111));
 	return OP_OK;
 }
 
@@ -429,20 +429,20 @@ int mjc400_op_trb()
 int mjc400_op_irb()
 {
 	R[IR_A] += 1;
-	if (!R[IR_A]) IC += IR_T;
+	if (R[IR_A]) IC += IR_T;
 	return OP_OK;
 }
 
 int mjc400_op_drb()
 {
 	R[IR_A] -= 1;
-	if (!R[IR_A]) IC += IR_T;
+	if (R[IR_A]) IC += IR_T;
 	return OP_OK;
 }
 
 int mjc400_op_cwt()
 {
-	R0_LEG(R[IR_A], IR_T);
+	R0_LEG((int16_t)R[IR_A], (int8_t)(IR_T);
 	return OP_OK;
 }
 
