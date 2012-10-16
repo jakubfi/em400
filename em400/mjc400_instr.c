@@ -442,7 +442,7 @@ int mjc400_op_drb()
 
 int mjc400_op_cwt()
 {
-	R0_LEG((int16_t)R[IR_A], (int8_t)(IR_T);
+	R0_LEG((int16_t)R[IR_A], (int8_t)IR_T);
 	return OP_OK;
 }
 

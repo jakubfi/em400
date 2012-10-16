@@ -6,5 +6,5 @@
 * debuger: save memory image
 * debuger: breakpoints
 * debuger: operator panel view
-* other: commandline dasm/trans
+* other: commandline dasm/trans (?)
 * other: move dasm/trans away from iset (?)
