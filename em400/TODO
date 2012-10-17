@@ -6,5 +6,6 @@
 * debuger: save memory image
 * debuger: breakpoints
 * debuger: operator panel view
+* debuger: step should work the same way as CYCLE (cycle on instruction and interrupt)
 * other: commandline dasm/trans (?)
 * other: move dasm/trans away from iset (?)
