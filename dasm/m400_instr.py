@@ -225,10 +225,10 @@ op_no_arg_i73_a = {
 }
 
 op_no_arg_i73_c10 = {
-    0: ['CIT', 'Clear InTerrupts'],
+    0: ['SIT', 'Set InTerrupts'],
     1: ['SIL', 'Set Interrupt Lower'],
     2: ['SIU', 'Set Interrupt Upper'],
-    3: ['SIT', 'Set InTerrupts']
+    3: ['CIT', 'Clear InTerrupts']
 }
 
 op_basic_i74_a = {
