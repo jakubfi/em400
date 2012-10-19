@@ -1,6 +1,6 @@
 CC=gcc
-CFLAGS=-std=c99 -Wall -O3 -D_POSIX_C_SOURCE=1
-LFLAGS=-lreadline
+CFLAGS=-std=c99 -Wall -O3 -D_XOPEN_SOURCE=600
+LFLAGS=-lncurses -lrt
 OBJS=\
 em400.o\
 mjc400.o\

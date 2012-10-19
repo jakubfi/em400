@@ -30,22 +30,26 @@ struct _em400_errordesc {
 	{ E_FILE_OPEN, "Cannot open file." },
 	{ E_FILE_OPERATION, "Read/write error." },
 	{ E_TIMER_SIGNAL, "Cannot set timer handler." },
+	{ E_TIMER_CREATE, "Cannot create timer." },
 	{ E_TIMER_SET, "Cannot set timer." },
 	{ E_ALLOC, "Cannot allocade memory." },
-    { 0, NULL }
+	{ E_DEBUGER_INIT, "Cannot initialize debuger." },
+
+
+    { E_UNKNOWN, "Unknown error." }
 };
 
 // -----------------------------------------------------------------------
 char * e400_gerror(int e)
 {
 	struct _em400_errordesc *edict = em400_errordesc;
-	while (edict->message) {
+	while (edict->code != E_UNKNOWN) {
 		if (e == edict->code) {
 			return edict->message;
 		}
 		edict++;
 	}
-	return NULL;
+	return edict->message;
 }
 
 // vim: tabstop=4

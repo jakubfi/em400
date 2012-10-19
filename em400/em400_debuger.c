@@ -17,8 +17,9 @@
 
 #include <stdio.h>
 #include <stdlib.h>
-#include <readline/readline.h>
-#include <readline/history.h>
+#include <ncurses.h>
+#include <signal.h>
+
 #include "em400_errors.h"
 #include "em400_utils.h"
 #include "em400_debuger.h"
@@ -75,7 +76,7 @@ int em400_debuger_c_load(char* args)
 	}
 
 	if (em400_mem_load_image(image, bank)) {
-		printf("Cannot load image: \"%s\"\n", image);
+		printw("Cannot load image: \"%s\"\n", image);
 		return DEBUGER_LOOP_ERR;
 	}
 
@@ -97,7 +98,7 @@ int em400_debuger_c_help(char* args)
 	if (args && *args) {
 		while (c->cmd) {
 			if (!strcmp(args, c->cmd)) {
-				printf("%s : %s\nUsage:\n%s\n", c->cmd, c->doc, c->help);
+				printw("%s : %s\nUsage:\n%s\n", c->cmd, c->doc, c->help);
 				return DEBUGER_EM400_SKIP;
 			}
 			c++;
@@ -105,7 +106,7 @@ int em400_debuger_c_help(char* args)
 		return DEBUGER_LOOP_ERR;
 	} else {
 		while (c->cmd) {
-			printf("%-10s : %s\n", c->cmd, c->doc);
+			printw("%-10s : %s\n", c->cmd, c->doc);
 			c++;
 		}
 	}
@@ -150,7 +151,7 @@ int __em400_debuger_c_dt(char* args, int dasm_mode)
 
 	while (d_count > 0) {
 		len = mjc400_dt(em400_mem_ptr(SR_Q*SR_NB, d_start), &buf, dasm_mode);
-		printf("0x%04x:\t%s\n", d_start, buf);
+		printw("0x%04x:\t%s\n", d_start, buf);
 		d_start += len;
 		d_count--;
 		free(buf);
@@ -195,31 +196,31 @@ int __em400_debuger_dump_mem(int block, int start, int end)
 	}
 
 	// print headers, mind MEMDUMP_COLS
-	printf("  addr: ");
+	printw("  addr: ");
 	for (int i=0 ; i<MEMDUMP_COLS ; i++) {
-		printf("+%03x ", i);
+		printw("+%03x ", i);
 	}
-	printf("\n");
+	printw("\n");
 	// print separator
-	printf("-------");
+	printw("-------");
 	for (int i=0 ; i<MEMDUMP_COLS ; i++) {
-		printf("-----");
+		printw("-----");
 	}
-	printf("  ");
+	printw("  ");
 	for (int i=0 ; i<MEMDUMP_COLS ; i++) {
-		printf("--");
+		printw("--");
 	}
-	printf("\n");
+	printw("\n");
 
 	// print row
 	while (addr <= end) {
 		// row header
 		if ((addr-start)%MEMDUMP_COLS == 0) {
-			printf("0x%04x: ", addr); 
+			printw("0x%04x: ", addr); 
 		}
 
 		// hex contents
-		printf("%4x ", *(blockptr+addr));
+		printw("%4x ", *(blockptr+addr));
 
 		// store text representation
 		c1 = (char) (((*(blockptr+addr))&0b111111110000000)>>8);
@@ -230,7 +231,7 @@ int __em400_debuger_dump_mem(int block, int start, int end)
 
 		// row footer - text representation
 		if ((addr-start)%MEMDUMP_COLS == (MEMDUMP_COLS-1)) {
-			printf(" %s\n", text);
+			printw(" %s\n", text);
 			tptr = text;
 		}
 
@@ -240,10 +241,10 @@ int __em400_debuger_dump_mem(int block, int start, int end)
 	// fill and finish current line
 	if ((addr-start-1)%MEMDUMP_COLS != (MEMDUMP_COLS-1)) {
 		while ((addr-start)%MEMDUMP_COLS !=0) {
-			printf("     ");
+			printw("     ");
 			addr++;
 		}
-		printf(" %s\n", text);
+		printw(" %s\n", text);
 	}
 
 	free(text);
@@ -305,28 +306,28 @@ int em400_debuger_c_regs(char* args)
 	char *rz = int2bin(RZ, 32);
 	char *r0 = int2bin(R[0], 16);
 
-	printf("           iiiiiiDAAABBBCCC             RM________QBNB__\n");
-	printf("IR: 0x%04x %s  SR: 0x%04x %s\n", IR, ir, SR, sr);
-	printf("IC: 0x%04x P: %i\n", IC, P);
-	printf("\n");
-	printf("    01234567012345670123456701234567      ZMVCLEGYX.......\n");
-	printf("RZ: %s  R0: %s\n", rz, r0);
-	printf("\n");
+	printw("           iiiiiiDAAABBBCCC             RM________QBNB__\n");
+	printw("IR: 0x%04x %s  SR: 0x%04x %s\n", IR, ir, SR, sr);
+	printw("IC: 0x%04x P: %i\n", IC, P);
+	printw("\n");
+	printw("    01234567012345670123456701234567      ZMVCLEGYX.......\n");
+	printw("RZ: %s  R0: %s\n", rz, r0);
+	printw("\n");
 	free(ir);
 	free(sr);
 	free(rz);
 	free(r0);
-	printf("     hex... dec...  bin.....|.......       hex... dec...  bin.....|.......\n");
+	printw("     hex... dec...  bin.....|.......       hex... dec...  bin.....|.......\n");
 	for (int i=0 ; i<4 ; i++) {
 		char *r1 = int2bin(R[2*i], 16);
 		char *r2 = int2bin(R[2*i+1], 16);
-		printf("R%02i: 0x%04x  %5i  %s", 2*i, R[2*i], R[2*i], r1);
-		printf("  R%02i: 0x%04x  %5i  %s\n", 2*i+1, R[2*i+1], R[2*i+1], r2);
+		printw("R%02i: 0x%04x  %5i  %s", 2*i, R[2*i], R[2*i], r1);
+		printw("  R%02i: 0x%04x  %5i  %s\n", 2*i+1, R[2*i+1], R[2*i+1], r2);
 		free(r1);
 		free(r2);
 	}
-	printf("\n");
-	printf("MOD: 0x%04x %i  MODcnt: %i  P: %i  ZC17: %i\n", (uint16_t) MOD, MOD, MODcnt, P, ZC17);
+	printw("\n");
+	printw("MOD: 0x%04x %i  MODcnt: %i  P: %i  ZC17: %i\n", (uint16_t) MOD, MOD, MODcnt, P, ZC17);
 	return DEBUGER_EM400_SKIP;
 }
 
@@ -348,31 +349,53 @@ int em400_debuger_execute(char* line)
 			int ret;
 			ret = c->fun(args);
 			if (ret == DEBUGER_LOOP_ERR) {
-				printf("Error while processing command. Usage:\n%s\n", c->help);
+				printw("Error while processing command. Usage:\n%s\n", c->help);
 			}
 			return ret;
 		}
 		c++;
 	}
 
-	printf("Unknown command: '%s'. Try 'help'.\n", cmd);
+	printw("Unknown command: '%s'. Try 'help'.\n", cmd);
 	return DEBUGER_EM400_SKIP;
 }
- 
+
+// -----------------------------------------------------------------------
+void _em400_debuger_resize_sig(int signum, siginfo_t *si, void *ctx)
+{
+
+}
+
 // -----------------------------------------------------------------------
 int em400_debuger_init()
 {
+	WINDOW * w_main = initscr();
+	scrollok(w_main, TRUE);
+
+	struct sigaction sa;
+	sa.sa_flags = SA_SIGINFO | SA_RESTART;
+	sa.sa_sigaction = _em400_debuger_resize_sig;
+
+	if (sigemptyset(&sa.sa_mask) != 0) {
+		return E_DEBUGER_INIT;
+	}
+
+	if (sigaction(SIGWINCH, &sa, NULL) != 0) {
+		return E_DEBUGER_INIT;
+	}
+
 	debuger_prompt = malloc(64);
 	if (!debuger_prompt) {
-		return E_ALLOC;
-	} else {
-		return E_OK;
+		return E_DEBUGER_INIT;
 	}
+
+	return E_OK;
 }
 
 // -----------------------------------------------------------------------
 void em400_debuger_shutdown()
 {
+	endwin();
 	free(debuger_prompt);
 }
 
@@ -380,24 +403,21 @@ void em400_debuger_shutdown()
 int em400_debuger_step()
 {
 	int ret = DEBUGER_EM400_STEP;
-	char *buf;
-	sprintf(debuger_prompt, "\e[1;34mem400 [%1i %02i 0x%04x]>\e[m ", SR_Q, SR_NB, IC);
- 
-	rl_bind_key('\t', rl_abort); // disable auto-complete
+	int nbufsize = 10;
+	char buf[nbufsize];
+	sprintf(debuger_prompt, "[%1i %02i 0x%04x] em400 > ", SR_Q, SR_NB, IC);
 
-	buf = readline(debuger_prompt);
-	if (!buf) {
-		printf("\n");
+	printw(debuger_prompt);
+	getnstr(buf, nbufsize);
+	if (!*buf) {
 		ret = DEBUGER_EM400_SKIP;
 	} else {
 		if (*buf != 0) {
-			add_history(buf);
 			ret = em400_debuger_execute(buf);
 		} else {
 			ret = DEBUGER_EM400_SKIP;
 		}
 	}
-	free(buf);
 	return ret;
 }
 
