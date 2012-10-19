@@ -111,6 +111,9 @@ class M400dasm:
         b = (word & 0b0000000000111000) >> 3
         c = (word & 0b0000000000000111) >> 0
 
+        if (i==073) and (a==2):
+            print "THAT: %i %i %i" % (d, b, c)
+
         addr = self.ic
         debug_b = "# %i  %s %s %s (%i %i %i)" % (d, zbin(a,3), zbin(b,3), zbin(c,3), a, b, c)
 

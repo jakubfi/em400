@@ -15,21 +15,6 @@
 //  Foundation, Inc.,
 //  51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 
-#ifndef MJC400_TIMER_H
-#define MJC400_TIMER_H
-
-#include <signal.h>
-
-// MJC400_TIMER is a value (in miliseconds) from the
-// following sets (different sources give different sets):
-// - 2, 4, 8, 10, 20
-// - 2, 10, 20, 40, 80
-#define MJC400_TIMER		10 // miliseconds
-#define MJC400_TIMER_SIG	SIGRTMAX
-
-void _mjc400_timer_interrupt_sig(int signum, siginfo_t *si, void *ctx);
-int mjc400_timer_start();
-
-#endif
+void nc_readline(const char *prompt, char *buffer, int buflen);
 
 // vim: tabstop=4

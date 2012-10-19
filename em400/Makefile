@@ -1,6 +1,6 @@
 CC=gcc
-CFLAGS=-std=c99 -Wall -O3 -D_POSIX_C_SOURCE=1
-LFLAGS=-lreadline
+CFLAGS=-std=c99 -Wall -O3 -D_XOPEN_SOURCE=600
+LFLAGS=-lncurses -lrt
 OBJS=\
 em400.o\
 mjc400.o\
@@ -13,7 +13,8 @@ mjc400_timer.o\
 em400_debuger.o\
 em400_utils.o\
 em400_io.o\
-em400_errors.o
+em400_errors.o \
+em400_debuger_nc.o
 
 em400: $(OBJS)
 	$(CC) $(LFLAGS) $^ -o $@

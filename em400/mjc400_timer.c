@@ -19,12 +19,13 @@
 #include <stdio.h>
 #include <features.h>
 #include <signal.h>
+#include <time.h>
 #include "em400_errors.h"
 #include "mjc400_timer.h"
 #include "mjc400_regs.h"
 
 // -----------------------------------------------------------------------
-void mjc400_timer_interrupt(int i)
+void _mjc400_timer_interrupt_sig(int signum, siginfo_t *si, void *ctx)
 {
 	RZ_5sb;
 }
@@ -32,21 +33,37 @@ void mjc400_timer_interrupt(int i)
 // -----------------------------------------------------------------------
 int mjc400_timer_start()
 {
-	struct itimerval it_val;
-	struct sigaction act;
+	struct sigaction sa;
+	struct sigevent se;
+	struct itimerspec its;
 
-	act.sa_handler = mjc400_timer_interrupt;
-	act.sa_flags = 0;
-	
-	if (sigaction(SIGALRM, &act, NULL) != 0) {
+	timer_t timer;
+
+    sa.sa_flags = SA_SIGINFO | SA_RESTART;
+    sa.sa_sigaction = _mjc400_timer_interrupt_sig;
+
+    if (sigemptyset(&sa.sa_mask) != 0) {
 		return E_TIMER_SIGNAL;
 	}
 
-	it_val.it_value.tv_sec = 0;
-	it_val.it_value.tv_usec = MJC400_TIMER * 1000;
-	it_val.it_interval = it_val.it_value;
+    if (sigaction(MJC400_TIMER_SIG, &sa, NULL) != 0) {
+        return E_TIMER_SIGNAL;
+    }
 
-	if (setitimer(ITIMER_REAL, &it_val, NULL) == -1) {
+    se.sigev_notify = SIGEV_SIGNAL;
+    se.sigev_signo = MJC400_TIMER_SIG;
+    se.sigev_value.sival_ptr = &timer;
+
+    if (timer_create(CLOCK_REALTIME, &se, &timer) != 0) {
+		return E_TIMER_CREATE;
+	}
+
+    its.it_interval.tv_sec = 0;
+    its.it_interval.tv_nsec = MJC400_TIMER * 1000000;
+    its.it_value.tv_sec = 0;
+    its.it_value.tv_nsec = MJC400_TIMER * 1000000;
+
+    if (timer_settime(&timer, 0, &its, NULL) != 0) {
 		return E_TIMER_SET;
 	}
 

@@ -19,6 +19,7 @@
 #define EM400_ERRORS_H
 
 enum em400_error {
+	E_UNKNOWN = -1,
 	E_OK = 0,
 	E_MEM_NO_OS_MEM,
 	E_MEM_BAD_SEGMENT_COUNT,
@@ -27,8 +28,10 @@ enum em400_error {
 	E_FILE_OPEN,
 	E_FILE_OPERATION,
 	E_TIMER_SIGNAL,
+	E_TIMER_CREATE,
 	E_TIMER_SET,
-	E_ALLOC
+	E_ALLOC,
+	E_DEBUGER_INIT
 };
 
 struct _em400_errordesc;
