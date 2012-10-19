@@ -13,7 +13,8 @@ mjc400_timer.o\
 em400_debuger.o\
 em400_utils.o\
 em400_io.o\
-em400_errors.o
+em400_errors.o \
+em400_debuger_nc.o
 
 em400: $(OBJS)
 	$(CC) $(LFLAGS) $^ -o $@

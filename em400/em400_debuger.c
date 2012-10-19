@@ -27,6 +27,7 @@
 #include "mjc400.h"
 #include "mjc400_dasm.h"
 #include "em400_mem.h"
+#include "em400_debuger_nc.h"
 
 char *debuger_prompt;
 
@@ -371,7 +372,11 @@ int em400_debuger_init()
 {
 	WINDOW * w_main = initscr();
 	scrollok(w_main, TRUE);
+	cbreak();
+	noecho();
+	keypad(stdscr, TRUE);
 	start_color();
+
 	init_pair(1, COLOR_YELLOW, COLOR_BLACK);
 
 	struct sigaction sa;
@@ -402,22 +407,12 @@ int em400_debuger_step()
 	int nbufsize = 1024;
 	char buf[nbufsize];
 
-	attron(COLOR_PAIR(1));
-	attron(A_BOLD);
-	printw("em400> ");
-	attroff(A_BOLD);
-	attroff(COLOR_PAIR(1));
+	nc_readline("em400> ", buf, nbufsize);
 
-	getnstr(buf, nbufsize);
-
-	if (!*buf) {
-		ret = DEBUGER_EM400_SKIP;
+	if (*buf) {
+		ret = em400_debuger_execute(buf);
 	} else {
-		if (*buf != 0) {
-			ret = em400_debuger_execute(buf);
-		} else {
-			ret = DEBUGER_EM400_SKIP;
-		}
+		ret = DEBUGER_EM400_SKIP;
 	}
 
 	return ret;
