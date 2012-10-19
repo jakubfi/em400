@@ -371,6 +371,8 @@ int em400_debuger_init()
 {
 	WINDOW * w_main = initscr();
 	scrollok(w_main, TRUE);
+	start_color();
+	init_pair(1, COLOR_YELLOW, COLOR_BLACK);
 
 	struct sigaction sa;
 	sa.sa_flags = SA_SIGINFO | SA_RESTART;
@@ -384,11 +386,6 @@ int em400_debuger_init()
 		return E_DEBUGER_INIT;
 	}
 
-	debuger_prompt = malloc(64);
-	if (!debuger_prompt) {
-		return E_DEBUGER_INIT;
-	}
-
 	return E_OK;
 }
 
@@ -396,19 +393,23 @@ int em400_debuger_init()
 void em400_debuger_shutdown()
 {
 	endwin();
-	free(debuger_prompt);
 }
 
 // -----------------------------------------------------------------------
 int em400_debuger_step()
 {
 	int ret = DEBUGER_EM400_STEP;
-	int nbufsize = 10;
+	int nbufsize = 1024;
 	char buf[nbufsize];
-	sprintf(debuger_prompt, "[%1i %02i 0x%04x] em400 > ", SR_Q, SR_NB, IC);
 
-	printw(debuger_prompt);
+	attron(COLOR_PAIR(1));
+	attron(A_BOLD);
+	printw("em400> ");
+	attroff(A_BOLD);
+	attroff(COLOR_PAIR(1));
+
 	getnstr(buf, nbufsize);
+
 	if (!*buf) {
 		ret = DEBUGER_EM400_SKIP;
 	} else {
@@ -418,6 +419,7 @@ int em400_debuger_step()
 			ret = DEBUGER_EM400_SKIP;
 		}
 	}
+
 	return ret;
 }
 
