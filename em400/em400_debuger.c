@@ -19,6 +19,7 @@
 #include <stdlib.h>
 #include <ncurses.h>
 #include <signal.h>
+#include <string.h>
 
 #include "em400_errors.h"
 #include "em400_utils.h"
@@ -27,15 +28,17 @@
 #include "mjc400.h"
 #include "mjc400_dasm.h"
 #include "em400_mem.h"
-#include "em400_debuger_nc.h"
+#include "em400_debuger_ui.h"
 
 char *debuger_prompt;
+int nc_repaint = 0;
 
 // -----------------------------------------------------------------------
 cmd_s em400_debuger_commands[] = {
 	{ "exit",	em400_debuger_c_quit,	"Quit the emulator", "  exit" },
 	{ "quit",	em400_debuger_c_quit,	"Quit the emulator", "  quit" },
 	{ "step",	em400_debuger_c_step,	"Execute instruction at IC", "  step" },
+	{ "s",		em400_debuger_c_step,	"Execute instruction at IC", "  s" },
 	{ "help",	em400_debuger_c_help,	"Print help", "  help" },
 	{ "?",		em400_debuger_c_help,	"Print help", "  ?" },
 	{ "regs",	em400_debuger_c_regs,	"Show registers", "  regs" },
@@ -48,23 +51,23 @@ cmd_s em400_debuger_commands[] = {
 	{ "clmem",	em400_debuger_c_clmem,	"Clear memory contents", "  clmem" },
 	{ "load",	em400_debuger_c_load,	"Load memory image", "  load image mem_block" },
 	{ "save",	em400_debuger_c_save,	"Load save image", "  save image mem_block" },
-	{ NULL,		NULL,			NULL, NULL }
+	{ NULL,		NULL,					NULL, NULL }
 };
 
 // -----------------------------------------------------------------------
-int em400_debuger_c_quit(char* args)
+int em400_debuger_c_quit(WINDOW *win, char* args)
 {
 	return DEBUGER_EM400_QUIT;
 }
 
 // -----------------------------------------------------------------------
-int em400_debuger_c_step(char* args)
+int em400_debuger_c_step(WINDOW *win, char* args)
 {
 	return DEBUGER_EM400_STEP;
 }
 
 // -----------------------------------------------------------------------
-int em400_debuger_c_load(char* args)
+int em400_debuger_c_load(WINDOW *win, char* args)
 {
 	char *image = malloc(256+1);
 	int bank = -1;
@@ -77,7 +80,7 @@ int em400_debuger_c_load(char* args)
 	}
 
 	if (em400_mem_load_image(image, bank)) {
-		printw("Cannot load image: \"%s\"\n", image);
+		wprintw(win, "Cannot load image: \"%s\"\n", image);
 		return DEBUGER_LOOP_ERR;
 	}
 
@@ -87,19 +90,19 @@ int em400_debuger_c_load(char* args)
 }
 
 // -----------------------------------------------------------------------
-int em400_debuger_c_save(char* args)
+int em400_debuger_c_save(WINDOW *win, char* args)
 {
 	return DEBUGER_EM400_SKIP;
 }
 
 // -----------------------------------------------------------------------
-int em400_debuger_c_help(char* args)
+int em400_debuger_c_help(WINDOW *win, char* args)
 {
 	cmd_s *c = em400_debuger_commands;
 	if (args && *args) {
 		while (c->cmd) {
 			if (!strcmp(args, c->cmd)) {
-				printw("%s : %s\nUsage:\n%s\n", c->cmd, c->doc, c->help);
+				wprintw(win, "%s : %s\nUsage:\n%s\n", c->cmd, c->doc, c->help);
 				return DEBUGER_EM400_SKIP;
 			}
 			c++;
@@ -107,7 +110,7 @@ int em400_debuger_c_help(char* args)
 		return DEBUGER_LOOP_ERR;
 	} else {
 		while (c->cmd) {
-			printw("%-10s : %s\n", c->cmd, c->doc);
+			wprintw(win, "%-10s : %s\n", c->cmd, c->doc);
 			c++;
 		}
 	}
@@ -115,21 +118,44 @@ int em400_debuger_c_help(char* args)
 }
 
 // -----------------------------------------------------------------------
-int em400_debuger_c_reset(char* args)
+int em400_debuger_c_reset(WINDOW *win, char* args)
 {
 	mjc400_reset();
 	return DEBUGER_EM400_SKIP;
 }
 
 // -----------------------------------------------------------------------
-int em400_debuger_c_clmem(char* args)
+int em400_debuger_c_clmem(WINDOW *win, char* args)
 {
 	em400_mem_clear();
 	return DEBUGER_EM400_SKIP;
 }
 
 // -----------------------------------------------------------------------
-int __em400_debuger_c_dt(char* args, int dasm_mode)
+void em400_debuger_dt(WINDOW *win, int dasm_mode, int start, int count)
+{
+	char *buf;
+	int len;
+
+	while (count > 0) {
+		len = mjc400_dt(em400_mem_ptr(SR_Q*SR_NB, start), &buf, dasm_mode);
+		if (start == IC) {
+			init_pair(2, COLOR_BLUE, COLOR_WHITE);
+			wattron(win, COLOR_PAIR(2));
+		}
+		wprintw(win, "0x%04x: %-19s\n", start, buf);
+		if (start == IC) {
+			wattroff(win, COLOR_PAIR(2));
+		}
+		start += len;
+		count--;
+		free(buf);
+	}
+
+}
+
+// -----------------------------------------------------------------------
+int __em400_debuger_c_dt(WINDOW *win, char* args, int dasm_mode)
 {
 	int d_start;
 	int d_count;
@@ -147,33 +173,25 @@ int __em400_debuger_c_dt(char* args, int dasm_mode)
 		return DEBUGER_LOOP_ERR;
 	}
 
-	char *buf;
-	int len;
+	em400_debuger_dt(win, dasm_mode, d_start, d_count);
 
-	while (d_count > 0) {
-		len = mjc400_dt(em400_mem_ptr(SR_Q*SR_NB, d_start), &buf, dasm_mode);
-		printw("0x%04x:\t%s\n", d_start, buf);
-		d_start += len;
-		d_count--;
-		free(buf);
-	}
 	return DEBUGER_EM400_SKIP;
 }
 
 // -----------------------------------------------------------------------
-int em400_debuger_c_dasm(char* args)
+int em400_debuger_c_dasm(WINDOW *win, char* args)
 {
-	return __em400_debuger_c_dt(args, DMODE_DASM);
+	return __em400_debuger_c_dt(win, args, DMODE_DASM);
 }
 
 // -----------------------------------------------------------------------
-int em400_debuger_c_trans(char* args)
+int em400_debuger_c_trans(WINDOW *win, char* args)
 {
-	return __em400_debuger_c_dt(args, DMODE_TRANS);
+	return __em400_debuger_c_dt(win, args, DMODE_TRANS);
 }
 
 // -----------------------------------------------------------------------
-int __em400_debuger_dump_mem(int block, int start, int end)
+int __em400_debuger_dump_mem(WINDOW *win, int block, int start, int end)
 {
 	uint16_t addr = start;
 	char *text = malloc(MEMDUMP_COLS*2+1);
@@ -197,31 +215,31 @@ int __em400_debuger_dump_mem(int block, int start, int end)
 	}
 
 	// print headers, mind MEMDUMP_COLS
-	printw("  addr: ");
+	wprintw(win, "  addr: ");
 	for (int i=0 ; i<MEMDUMP_COLS ; i++) {
-		printw("+%03x ", i);
+		wprintw(win, "+%03x ", i);
 	}
-	printw("\n");
+	wprintw(win, "\n");
 	// print separator
-	printw("-------");
+	wprintw(win, "-------");
 	for (int i=0 ; i<MEMDUMP_COLS ; i++) {
-		printw("-----");
+		wprintw(win, "-----");
 	}
-	printw("  ");
+	wprintw(win, "  ");
 	for (int i=0 ; i<MEMDUMP_COLS ; i++) {
-		printw("--");
+		wprintw(win, "--");
 	}
-	printw("\n");
+	wprintw(win, "\n");
 
 	// print row
 	while (addr <= end) {
 		// row header
 		if ((addr-start)%MEMDUMP_COLS == 0) {
-			printw("0x%04x: ", addr); 
+			wprintw(win, "0x%04x: ", addr); 
 		}
 
 		// hex contents
-		printw("%4x ", *(blockptr+addr));
+		wprintw(win, "%4x ", *(blockptr+addr));
 
 		// store text representation
 		c1 = (char) (((*(blockptr+addr))&0b111111110000000)>>8);
@@ -232,7 +250,7 @@ int __em400_debuger_dump_mem(int block, int start, int end)
 
 		// row footer - text representation
 		if ((addr-start)%MEMDUMP_COLS == (MEMDUMP_COLS-1)) {
-			printw(" %s\n", text);
+			wprintw(win, " %s\n", text);
 			tptr = text;
 		}
 
@@ -242,10 +260,10 @@ int __em400_debuger_dump_mem(int block, int start, int end)
 	// fill and finish current line
 	if ((addr-start-1)%MEMDUMP_COLS != (MEMDUMP_COLS-1)) {
 		while ((addr-start)%MEMDUMP_COLS !=0) {
-			printw("     ");
+			wprintw(win, "     ");
 			addr++;
 		}
-		printw(" %s\n", text);
+		wprintw(win, " %s\n", text);
 	}
 
 	free(text);
@@ -254,7 +272,7 @@ int __em400_debuger_dump_mem(int block, int start, int end)
 }
 
 // -----------------------------------------------------------------------
-int em400_debuger_c_memq(char* args)
+int em400_debuger_c_memq(WINDOW *win, char* args)
 {
 	int m_start = -1;
 	int m_end = -1;
@@ -265,11 +283,11 @@ int em400_debuger_c_memq(char* args)
 		return DEBUGER_LOOP_ERR;
 	}
 
-	return __em400_debuger_dump_mem(SR_Q*SR_NB, m_start, m_end);
+	return __em400_debuger_dump_mem(win, SR_Q*SR_NB, m_start, m_end);
 }
 
 // -----------------------------------------------------------------------
-int em400_debuger_c_memnb(char* args)
+int em400_debuger_c_memnb(WINDOW *win, char* args)
 {
 	int m_start = -1;
 	int m_end = -1;
@@ -280,11 +298,11 @@ int em400_debuger_c_memnb(char* args)
 		return DEBUGER_LOOP_ERR;
 	}
 
-	return __em400_debuger_dump_mem(SR_NB, m_start, m_end);
+	return __em400_debuger_dump_mem(win, SR_NB, m_start, m_end);
 }
 
 // -----------------------------------------------------------------------
-int em400_debuger_c_mem(char* args)
+int em400_debuger_c_mem(WINDOW *win, char* args)
 {
 	int m_block = -1;
 	int m_start = -1;
@@ -296,39 +314,39 @@ int em400_debuger_c_mem(char* args)
 		return DEBUGER_LOOP_ERR;
 	}
 
-	return __em400_debuger_dump_mem(m_block, m_start, m_end);
+	return __em400_debuger_dump_mem(win, m_block, m_start, m_end);
 }
 
 // -----------------------------------------------------------------------
-int em400_debuger_c_regs(char* args)
+int em400_debuger_c_regs(WINDOW *win, char* args)
 {
 	char *ir = int2bin(IR, 16);
 	char *sr = int2bin(SR, 16);
 	char *rz = int2bin(RZ, 32);
 	char *r0 = int2bin(R[0], 16);
 
-	printw("           iiiiiiDAAABBBCCC             RM________QBNB__\n");
-	printw("IR: 0x%04x %s  SR: 0x%04x %s\n", IR, ir, SR, sr);
-	printw("IC: 0x%04x P: %i\n", IC, P);
-	printw("\n");
-	printw("    01234567012345670123456701234567      ZMVCLEGYX.......\n");
-	printw("RZ: %s  R0: %s\n", rz, r0);
-	printw("\n");
+	wprintw(win, "           iiiiiiDAAABBBCCC             RM________QBNB__\n");
+	wprintw(win, "IR: 0x%04x %s  SR: 0x%04x %s\n", IR, ir, SR, sr);
+	wprintw(win, "IC: 0x%04x P: %i\n", IC, P);
+	wprintw(win, "\n");
+	wprintw(win, "    01234567012345670123456701234567      ZMVCLEGYX.......\n");
+	wprintw(win, "RZ: %s  R0: %s\n", rz, r0);
+	wprintw(win, "\n");
 	free(ir);
 	free(sr);
 	free(rz);
 	free(r0);
-	printw("     hex... dec...  bin.....|.......       hex... dec...  bin.....|.......\n");
+	wprintw(win, "     hex... dec...  bin.....|.......       hex... dec...  bin.....|.......\n");
 	for (int i=0 ; i<4 ; i++) {
 		char *r1 = int2bin(R[2*i], 16);
 		char *r2 = int2bin(R[2*i+1], 16);
-		printw("R%02i: 0x%04x  %5i  %s", 2*i, R[2*i], R[2*i], r1);
-		printw("  R%02i: 0x%04x  %5i  %s\n", 2*i+1, R[2*i+1], R[2*i+1], r2);
+		wprintw(win, "R%02i: 0x%04x  %5i  %s", 2*i, R[2*i], R[2*i], r1);
+		wprintw(win, "  R%02i: 0x%04x  %5i  %s\n", 2*i+1, R[2*i+1], R[2*i+1], r2);
 		free(r1);
 		free(r2);
 	}
-	printw("\n");
-	printw("MOD: 0x%04x %i  MODcnt: %i  P: %i  ZC17: %i\n", (uint16_t) MOD, MOD, MODcnt, P, ZC17);
+	wprintw(win, "\n");
+	wprintw(win, "MOD: 0x%04x %i  MODcnt: %i  P: %i  ZC17: %i\n", (uint16_t) MOD, MOD, MODcnt, P, ZC17);
 	return DEBUGER_EM400_SKIP;
 }
 
@@ -348,40 +366,30 @@ int em400_debuger_execute(char* line)
 	while (c->cmd) {
 		if (!strcmp(cmd, c->cmd)) {
 			int ret;
-			ret = c->fun(args);
+			ret = c->fun(e4d_w[WIN_CMD].win, args);
 			if (ret == DEBUGER_LOOP_ERR) {
-				printw("Error while processing command. Usage:\n%s\n", c->help);
+				wprintw(e4d_w[WIN_CMD].win, "Error while processing command. Usage:\n%s\n", c->help);
 			}
 			return ret;
 		}
 		c++;
 	}
 
-	printw("Unknown command: '%s'. Try 'help'.\n", cmd);
+	wprintw(e4d_w[WIN_CMD].win, "Unknown command: '%s'. Try 'help'.\n", cmd);
 	return DEBUGER_EM400_SKIP;
-}
-
-// -----------------------------------------------------------------------
-void _em400_debuger_resize_sig(int signum, siginfo_t *si, void *ctx)
-{
-
 }
 
 // -----------------------------------------------------------------------
 int em400_debuger_init()
 {
-	WINDOW * w_main = initscr();
-	scrollok(w_main, TRUE);
+	initscr();
 	cbreak();
 	noecho();
-	keypad(stdscr, TRUE);
 	start_color();
 
-	init_pair(1, COLOR_YELLOW, COLOR_BLACK);
-
 	struct sigaction sa;
-	sa.sa_flags = SA_SIGINFO | SA_RESTART;
-	sa.sa_sigaction = _em400_debuger_resize_sig;
+	sa.sa_flags = SA_SIGINFO;
+	sa.sa_sigaction = _em400_debuger_w_resize_sig;
 
 	if (sigemptyset(&sa.sa_mask) != 0) {
 		return E_DEBUGER_INIT;
@@ -390,6 +398,8 @@ int em400_debuger_init()
 	if (sigaction(SIGWINCH, &sa, NULL) != 0) {
 		return E_DEBUGER_INIT;
 	}
+
+	e400_debuger_w_reinit_all();
 
 	return E_OK;
 }
@@ -406,8 +416,16 @@ int em400_debuger_step()
 	int ret = DEBUGER_EM400_STEP;
 	int nbufsize = 1024;
 	char buf[nbufsize];
+	int res;
 
-	nc_readline("em400> ", buf, nbufsize);
+	if (nc_w_changed) {
+		e400_debuger_w_reinit_all();
+		nc_w_changed = 0;
+	} else {
+		e400_debuger_w_redraw_all();
+	}
+
+	res = nc_readline(e4d_w[WIN_CMD].win, "em400> ", buf, nbufsize);
 
 	if (*buf) {
 		ret = em400_debuger_execute(buf);

@@ -20,8 +20,7 @@
 
 #include <stdio.h>
 #include <stdlib.h>
-#include <readline/readline.h>
-#include <readline/history.h>
+#include <ncurses.h>
 
 #define MEMDUMP_COLS 16
 
@@ -32,26 +31,29 @@
 
 typedef struct {
 	char *cmd;
-	int (*fun)(char*);
+	int (*fun)(WINDOW *win, char*);
 	char *doc;
 	char *help;
 } cmd_s;
 
 extern cmd_s em400_debuger_commands[];
 
-int em400_debuger_c_quit(char* args);
-int em400_debuger_c_step(char* args);
-int em400_debuger_c_help(char* args);
-int em400_debuger_c_regs(char* args);
-int em400_debuger_c_reset(char* args);
-int em400_debuger_c_mem(char* args);
-int em400_debuger_c_memq(char* args);
-int em400_debuger_c_memnb(char* args);
-int em400_debuger_c_clmem(char* args);
-int em400_debuger_c_dasm(char* args);
-int em400_debuger_c_trans(char* args);
-int em400_debuger_c_load(char* args);
-int em400_debuger_c_save(char* args);
+int em400_debuger_c_quit(WINDOW *win, char* args);
+int em400_debuger_c_step(WINDOW *win, char* args);
+int em400_debuger_c_help(WINDOW *win, char* args);
+int em400_debuger_c_regs(WINDOW *win, char* args);
+int em400_debuger_c_reset(WINDOW *win, char* args);
+int __em400_debuger_dump_mem(WINDOW *win, int block, int start, int end);
+int em400_debuger_c_mem(WINDOW *win, char* args);
+int em400_debuger_c_memq(WINDOW *win, char* args);
+int em400_debuger_c_memnb(WINDOW *win, char* args);
+int em400_debuger_c_clmem(WINDOW *win, char* args);
+int __em400_debuger_c_dt(WINDOW *win, char* args, int dasm_mode);
+int em400_debuger_c_dasm(WINDOW *win, char* args);
+void em400_debuger_dt(WINDOW *win, int dasm_mode, int start, int count);
+int em400_debuger_c_trans(WINDOW *win, char* args);
+int em400_debuger_c_load(WINDOW *win, char* args);
+int em400_debuger_c_save(WINDOW *win, char* args);
 
 int em400_debuger_execute(char* line);
 int em400_debuger_step();
