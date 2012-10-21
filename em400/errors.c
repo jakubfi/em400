@@ -16,7 +16,8 @@
 //  51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 
 #include <stdlib.h>
-#include "em400_errors.h"
+
+#include "errors.h"
 
 struct _em400_errordesc {
     int code;

@@ -15,6 +15,9 @@
 //  Foundation, Inc.,
 //  51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 
+#ifndef IO_H
+#define IO_H
+
 enum em400_io_dir {
 	IO_IN,
 	IO_OU
@@ -28,5 +31,7 @@ enum em400_io_result {
 };
 
 int em400_io_dispatch(int dir, int is_mem, int chan, int unit, int cmd, uint16_t arg);
+
+#endif
 
 // vim: tabstop=4

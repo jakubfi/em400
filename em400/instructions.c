@@ -17,13 +17,14 @@
 
 #include <stdio.h>
 #include <stdlib.h>
-#include "mjc400_instr.h"
-#include "mjc400_iset.h"
-#include "em400_mem.h"
-#include "em400_utils.h"
-#include "em400_io.h"
-#include "mjc400_regs.h"
-#include "mjc400.h"
+
+#include "cpu.h"
+#include "registers.h"
+#include "memory.h"
+#include "io.h"
+#include "iset.h"
+#include "instructions.h"
+#include "utils.h"
 
 int mjc400_op_illegal()
 {

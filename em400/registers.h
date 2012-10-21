@@ -15,8 +15,8 @@
 //  Foundation, Inc.,
 //  51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 
-#ifndef MJC400_REGS_H
-#define MJC400_REGS_H
+#ifndef REGISTERS_H
+#define REGISTERS_H
 
 #include <inttypes.h>
 

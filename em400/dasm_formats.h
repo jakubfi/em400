@@ -15,8 +15,8 @@
 //  Foundation, Inc.,
 //  51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 
-#ifndef MJC400_DT_DEFS_H
-#define MJC400_DT_DEFS_H
+#ifndef DASM_FORMATS_H
+#define DASM_FORMATS_H
 
 /*
 	Disassembler/translator output formatting:

@@ -15,11 +15,11 @@
 //  Foundation, Inc.,
 //  51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 
-#ifndef MJC400_DASM_H
-#define MJC400_DASM_H
+#ifndef DASM_H
+#define DASM_H
 
 #include <inttypes.h>
-#include "mjc400_iset.h"
+#include "iset.h"
 
 #define DMODE_DASM	1
 #define DMODE_TRANS	2

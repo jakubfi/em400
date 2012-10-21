@@ -21,14 +21,14 @@
 #include <signal.h>
 #include <string.h>
 
-#include "em400_errors.h"
-#include "em400_utils.h"
-#include "em400_debuger.h"
-#include "mjc400_regs.h"
-#include "mjc400.h"
-#include "mjc400_dasm.h"
-#include "em400_mem.h"
-#include "em400_debuger_ui.h"
+#include "cpu.h"
+#include "registers.h"
+#include "memory.h"
+#include "dasm.h"
+#include "errors.h"
+#include "utils.h"
+#include "debuger.h"
+#include "debuger_ui.h"
 
 char *debuger_prompt;
 int nc_repaint = 0;
@@ -140,18 +140,22 @@ void em400_debuger_dt(WINDOW *win, int dasm_mode, int start, int count)
 	while (count > 0) {
 		len = mjc400_dt(em400_mem_ptr(SR_Q*SR_NB, start), &buf, dasm_mode);
 		if (start == IC) {
-			init_pair(2, COLOR_BLUE, COLOR_WHITE);
-			wattron(win, COLOR_PAIR(2));
+			wattrset(win, attr[C_ILABEL]);
+		} else {
+			wattrset(win, attr[C_LABEL]);
 		}
-		wprintw(win, "0x%04x: %-19s\n", start, buf);
+		wprintw(win, "0x%04x:", start);
 		if (start == IC) {
-			wattroff(win, COLOR_PAIR(2));
+			wattrset(win, attr[C_IDATA]);
+		} else {
+			wattrset(win, attr[C_DATA]);
 		}
+		wprintw(win, " %-19s\n", buf);
 		start += len;
 		count--;
 		free(buf);
 	}
-
+	wattroff(win, attr);
 }
 
 // -----------------------------------------------------------------------
@@ -386,6 +390,7 @@ int em400_debuger_init()
 	cbreak();
 	noecho();
 	start_color();
+	em400_debuger_ui_init();
 
 	struct sigaction sa;
 	sa.sa_flags = SA_SIGINFO;

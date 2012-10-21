@@ -17,13 +17,14 @@
 
 #include <stdio.h>
 #include <arpa/inet.h>
-#include "em400_debuger.h"
-#include "mjc400.h"
-#include "em400_mem.h"
-#include "mjc400_regs.h"
-#include "mjc400_iset.h"
-#include "mjc400_instr.h"
-#include "mjc400_timer.h"
+
+#include "cpu.h"
+#include "registers.h"
+#include "memory.h"
+#include "iset.h"
+#include "instructions.h"
+#include "timer.h"
+#include "debuger.h"
 
 // -----------------------------------------------------------------------
 void mjc400_reset()

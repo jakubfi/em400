@@ -15,8 +15,8 @@
 //  Foundation, Inc.,
 //  51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 
-#ifndef MJC400_H
-#define MJC400_H
+#ifndef CPU_H
+#define CPU_H
 
 #include <inttypes.h>
 #include <stdio.h>

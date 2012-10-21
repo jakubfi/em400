@@ -15,12 +15,13 @@
 //  Foundation, Inc.,
 //  51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 
-#ifndef MJC400_ISET_H
-#define MJC400_ISET_H
+#ifndef ISET_H
+#define ISET_H
 
 #include <inttypes.h>
 #include <stdbool.h>
-#include "mjc400_regs.h"
+
+#include "registers.h"
 
 struct mjc400_opdef {
 	uint16_t opcode;				// basic/extended opcode

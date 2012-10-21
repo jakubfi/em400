@@ -15,8 +15,8 @@
 //  Foundation, Inc.,
 //  51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 
-#ifndef EM400_ERRORS_H
-#define EM400_ERRORS_H
+#ifndef ERRORS_H
+#define ERRORS_H
 
 enum em400_error {
 	E_UNKNOWN = -1,

@@ -18,9 +18,10 @@
 #include <inttypes.h>
 #include <stdlib.h>
 #include <stdio.h>
-#include "em400_io.h"
-#include "em400_mem.h"
-#include "em400_utils.h"
+
+#include "io.h"
+#include "memory.h"
+#include "utils.h"
 
 // -----------------------------------------------------------------------
 int em400_io_dispatch(int dir, int is_mem, int chan, int unit, int cmd, uint16_t arg)

@@ -1,3 +1,4 @@
+* mjc400: registers abstraction (as for memory)
 * mjc400: move registers to an array (for debuger)
 * mjc400: disallow writes to r0 upper byte
 * em400: floating point instructions
@@ -7,7 +8,6 @@
 * debuger: save memory image
 * debuger: breakpoints
 * debuger: operator panel view
-* debuger: ncurses
 * debuger: step should work the same way as CYCLE (cycle on instruction and interrupt)
 * other: commandline dasm/trans (?)
 * other: move dasm/trans things away from iset (?)

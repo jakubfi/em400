@@ -20,9 +20,10 @@
 #include <features.h>
 #include <signal.h>
 #include <time.h>
-#include "em400_errors.h"
-#include "mjc400_timer.h"
-#include "mjc400_regs.h"
+
+#include "errors.h"
+#include "timer.h"
+#include "registers.h"
 
 // -----------------------------------------------------------------------
 void _mjc400_timer_interrupt_sig(int signum, siginfo_t *si, void *ctx)

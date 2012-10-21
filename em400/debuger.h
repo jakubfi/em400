@@ -15,8 +15,8 @@
 //  Foundation, Inc.,
 //  51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 
-#ifndef EM400_DEBUGER_H
-#define EM400_DEBUGER_H
+#ifndef DEBUGER_H
+#define DEBUGER_H
 
 #include <stdio.h>
 #include <stdlib.h>

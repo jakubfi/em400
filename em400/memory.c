@@ -19,10 +19,11 @@
 #include <stdio.h>
 #include <inttypes.h>
 #include <arpa/inet.h>
-#include "em400_errors.h"
-#include "em400_mem.h"
-#include "mjc400_regs.h"
-#include "em400_io.h"
+
+#include "errors.h"
+#include "memory.h"
+#include "registers.h"
+#include "io.h"
 
 // memory configuration provided by the user: number of segments in a module
 short int em400_mem_conf[MEM_MAX_MODULES] = { 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8 };

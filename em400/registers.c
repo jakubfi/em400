@@ -16,7 +16,8 @@
 //  51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 
 #include <inttypes.h>
-#include "mjc400_regs.h"
+
+#include "registers.h"
 
 uint16_t IC;
 uint16_t IR;

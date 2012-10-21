@@ -19,10 +19,11 @@
 #include <stdio.h>
 #include <stdbool.h>
 #include <inttypes.h>
-#include "mjc400_iset.h"
-#include "mjc400_instr.h"
-#include "mjc400_dasm.h"
-#include "mjc400_dt_defs.h"
+
+#include "iset.h"
+#include "instructions.h"
+#include "dasm.h"
+#include "dasm_formats.h"
 
 struct mjc400_opdef mjc400_iset[] = {
 	{ 000, NULL, false, false, mjc400_op_illegal, NULL, NULL, DT_ILL, DT_ILL },

@@ -15,8 +15,8 @@
 //  Foundation, Inc.,
 //  51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 
-#ifndef EM400_MEM_H
-#define EM400_MEM_H
+#ifndef MEMORY_H
+#define MEMORY_H
 
 #include <inttypes.h>
 

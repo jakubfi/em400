@@ -15,8 +15,8 @@
 //  Foundation, Inc.,
 //  51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 
-#ifndef MJC400_INSTR_H
-#define MJC400_INSTR_H
+#ifndef INSTRUCTIONS_H
+#define INSTRUCTIONS_H
 
 enum mjc400_op_result {
 	OP_ILLEGAL = -1,

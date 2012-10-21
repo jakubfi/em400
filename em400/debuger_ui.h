@@ -15,10 +15,22 @@
 //  Foundation, Inc.,
 //  51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 
+#ifndef DEBUGER_UI_H
+#define DEBUGER_UI_H
+
 #include <ncurses.h>
 
 #define KEY_BACKSPACE2	127
 #define KEY_CTRL_W		23
+
+#define C_PROMPT	1
+#define C_LABEL		2
+#define C_DATA		3
+#define C_ILABEL	5
+#define C_IDATA		6
+#define C_MAX		64
+
+extern int attr[C_MAX];
 
 enum {
 	WIN_NONE = -1,
@@ -49,6 +61,7 @@ extern int nc_w_changed;
 
 extern struct e4d_w_struct e4d_w[];
 
+void em400_debuger_ui_init();
 int nc_readline(WINDOW *win, const char *prompt, char *buffer, int buflen);
 void e400_debuger_w_recalculate();
 void e400_debuger_w_destroy(int id);
@@ -63,5 +76,7 @@ void em400_debuger_wu_sregs(WINDOW * win);
 void em400_debuger_wu_cmd(WINDOW * win);
 void em400_debuger_wu_status(WINDOW * win);
 void em400_debuger_wu_none(WINDOW * win);
+
+#endif
 
 // vim: tabstop=4

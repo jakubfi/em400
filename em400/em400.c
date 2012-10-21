@@ -16,10 +16,11 @@
 //  51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 
 #include <stdio.h>
-#include "mjc400.h"
-#include "mjc400_timer.h"
-#include "em400_debuger.h"
-#include "em400_mem.h"
+
+#include "cpu.h"
+#include "memory.h"
+#include "timer.h"
+#include "debuger.h"
 
 int em400_quit = 0;
 

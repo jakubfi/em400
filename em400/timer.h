@@ -15,8 +15,8 @@
 //  Foundation, Inc.,
 //  51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 
-#ifndef MJC400_TIMER_H
-#define MJC400_TIMER_H
+#ifndef TIMER_H
+#define TIMER_H
 
 #include <signal.h>
 

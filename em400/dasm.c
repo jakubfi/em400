@@ -18,12 +18,13 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include "mjc400_dasm.h"
-#include "mjc400_iset.h"
-#include "em400_mem.h"
-#include "mjc400_regs.h"
-#include "mjc400.h"
-#include "em400_utils.h"
+
+#include "cpu.h"
+#include "registers.h"
+#include "memory.h"
+#include "iset.h"
+#include "dasm.h"
+#include "utils.h"
 
 // -----------------------------------------------------------------------
 int mjc400_dt(uint16_t* memptr, char **buf, int dasm_mode)
