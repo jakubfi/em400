@@ -779,8 +779,7 @@ int mjc400_op_73_mcl()
 
 int mjc400_op_73_cit()
 {
-	INT_CLEAR(INT_SOFT_U);
-	INT_CLEAR(INT_SOFT_L);
+	INT_CLEAR(INT_SOFT_U | INT_SOFT_L);
 	return OP_OK;
 }
 
@@ -798,8 +797,7 @@ int mjc400_op_73_siu()
 
 int mjc400_op_73_sit()
 {
-	INT_SET(INT_SOFT_U);
-	INT_SET(INT_SOFT_L);
+	INT_SET(INT_SOFT_U | INT_SOFT_L);
 	return OP_OK;
 }
 
