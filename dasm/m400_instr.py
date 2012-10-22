@@ -81,9 +81,9 @@ def m400_name_i73(i, d, a, b, c):
         except Exception, e:
             return "ILLEGAL", "ILLEGAL"
     else:
-        c10 = c & 0b11
+        dc = (d<<3) | c;
         try:
-            return op_no_arg_i73_c10[c10][0], op_no_arg_i73_c10[c10][1]
+            return op_no_arg_i73_dc[dc][0], op_no_arg_i73_dc[dc][1]
         except Exception, e:
             return "ILLEGAL", "ILLEGAL"
 
@@ -224,11 +224,13 @@ op_no_arg_i73_a = {
     5: ['GIL', 'Generate Interrupt Lower']
 }
 
-op_no_arg_i73_c10 = {
+op_no_arg_i73_dc = {
     0: ['CIT', 'Clear InTerrupts'],
     1: ['SIL', 'Set Interrupt Lower'],
     2: ['SIU', 'Set Interrupt Upper'],
-    3: ['SIT', 'Set InTerrupts']
+    3: ['SIT', 'Set InTerrupts'],
+    4: ['SIX', 'Set Interrupt eXtra'],
+    12: ['CIX', 'Clear Interrupt eXtra']
 }
 
 op_basic_i74_a = {
