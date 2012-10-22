@@ -133,6 +133,8 @@ int mjc400_op_73_sit();
 int mjc400_op_73_giu();
 int mjc400_op_73_gil();
 int mjc400_op_73_lip();
+int mjc400_op_73_six();
+int mjc400_op_73_cix();
 
 int mjc400_op_74_uj();
 int mjc400_op_74_jl();
