@@ -23,6 +23,7 @@
 #include "errors.h"
 #include "memory.h"
 #include "registers.h"
+#include "interrupts.h"
 #include "io.h"
 
 // memory configuration provided by the user: number of segments in a module
@@ -112,7 +113,7 @@ uint16_t * em400_mem_ptr(short unsigned int nb, uint16_t addr)
 
 	if (!seg_addr) {
 		if (SR_Q) {
-			RZ_2sb;
+			INT_SET(INT_NO_MEM);
 		} else {
 			// TODO: ALARM
 		}

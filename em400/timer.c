@@ -24,11 +24,12 @@
 #include "errors.h"
 #include "timer.h"
 #include "registers.h"
+#include "interrupts.h"
 
 // -----------------------------------------------------------------------
 void _mjc400_timer_interrupt_sig(int signum, siginfo_t *si, void *ctx)
 {
-	RZ_5sb;
+	INT_SET(INT_TIMER);
 }
 
 // -----------------------------------------------------------------------

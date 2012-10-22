@@ -1,7 +1,7 @@
-* mjc400: registers abstraction (as for memory)
-* mjc400: move registers to an array (for debuger)
-* mjc400: disallow writes to r0 upper byte
-* em400: floating point instructions
+* cpu: registers abstraction (as for memory)
+* cpu: move registers to an array (for debuger)
+* cpu: disallow writes to r0 upper byte
+* cpu: floating point instructions
 * debuger: save memory image
 * debuger: setting registers
 * debuger: setting memory

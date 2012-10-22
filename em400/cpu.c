@@ -20,6 +20,7 @@
 
 #include "cpu.h"
 #include "registers.h"
+#include "interrupts.h"
 #include "memory.h"
 #include "iset.h"
 #include "instructions.h"
@@ -103,7 +104,7 @@ void mjc400_step()
 			if (P!=0) {
 				P = 0;
 			} else {
-				RZ_6sb;
+				INT_SET(INT_ILLEGAL_OPCODE);
 			}
 			break;
 	}

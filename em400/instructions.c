@@ -20,6 +20,7 @@
 
 #include "cpu.h"
 #include "registers.h"
+#include "interrupts.h"
 #include "memory.h"
 #include "io.h"
 #include "iset.h"
@@ -778,25 +779,27 @@ int mjc400_op_73_mcl()
 
 int mjc400_op_73_cit()
 {
-	RZ_3031cb;
+	INT_CLEAR(INT_SOFT_U);
+	INT_CLEAR(INT_SOFT_L);
 	return OP_OK;
 }
 
 int mjc400_op_73_sil()
 {
-	RZ_31sb;
+	INT_SET(INT_SOFT_L);
 	return OP_OK;
 }
 
 int mjc400_op_73_siu()
 {
-	RZ_30sb;
+	INT_SET(INT_SOFT_U);
 	return OP_OK;
 }
 
 int mjc400_op_73_sit()
 {
-	RZ_3031sb;
+	INT_SET(INT_SOFT_U);
+	INT_SET(INT_SOFT_L);
 	return OP_OK;
 }
 

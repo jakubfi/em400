@@ -33,7 +33,6 @@ int main(int argc, char** argv)
 	em400_mem_init();
 	em400_mem_clear();
 	em400_debuger_init();
-
 	mjc400_timer_start();
 
 	while (!em400_quit) {
@@ -47,8 +46,8 @@ int main(int argc, char** argv)
 		mjc400_step();
 	}
 
-	em400_mem_shutdown();
 	em400_debuger_shutdown();
+	em400_mem_shutdown();
 
 	return 0;
 }
