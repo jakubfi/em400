@@ -1,5 +1,5 @@
 CC=gcc
-CFLAGS=-std=c99 -Wall -O3 -D_XOPEN_SOURCE=600
+CFLAGS=-std=c99 -Wall -O3 -D_XOPEN_SOURCE=600 -I include
 LFLAGS=-lncurses -lrt
 OBJS=\
 em400.o\
