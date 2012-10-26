@@ -1,6 +1,3 @@
-* cpu: registers abstraction (as for memory)
-* cpu: move registers to an array (for debuger)
-* cpu: disallow writes to r0 upper byte
 * cpu: floating point instructions
 * debuger: save memory image
 * debuger: setting registers
