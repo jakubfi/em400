@@ -19,26 +19,27 @@
 #define DASM_H
 
 #include <inttypes.h>
-#include "iset.h"
+
+#include "dasm_iset.h"
 
 #define DMODE_DASM	1
 #define DMODE_TRANS	2
 
 int mjc400_dt(uint16_t* memptr, char **buf, int dasm_mode);
-int mjc400_dt_parse(struct mjc400_opdef *opdef, uint16_t *memptr, char *format, char *buf);
+int mjc400_dt_parse(struct dasm_opdef *opdef, uint16_t *memptr, char *format, char *buf);
 int mjc400_dt_eff_arg(char *buf, uint16_t *memptr);
 int mjc400_trans_eff_arg(char *buf, uint16_t *memptr);
 int mjc400_dt_opext(char *buf, uint16_t *memptr);
 
-int mjc400_dt_e37(int i);
-int mjc400_dt_e70(int i);
-int mjc400_dt_e71(int i);
-int mjc400_dt_e72(int i);
-int mjc400_dt_e73(int i);
-int mjc400_dt_e74(int i);
-int mjc400_dt_e75(int i);
-int mjc400_dt_e76(int i);
-int mjc400_dt_e77(int i);
+int dasm_extcode_37(int i);
+int dasm_extcode_70(int i);
+int dasm_extcode_71(int i);
+int dasm_extcode_72(int i);
+int dasm_extcode_73(int i);
+int dasm_extcode_74(int i);
+int dasm_extcode_75(int i);
+int dasm_extcode_76(int i);
+int dasm_extcode_77(int i);
 
 #endif
 

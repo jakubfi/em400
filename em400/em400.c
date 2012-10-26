@@ -15,27 +15,62 @@
 //  Foundation, Inc.,
 //  51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 
+#include <stdlib.h>
 #include <stdio.h>
 
 #include "cpu.h"
 #include "memory.h"
 #include "timer.h"
+#include "errors.h"
+
+#ifdef WITH_DEBUGER
 #include "debuger.h"
+#endif
 
 int em400_quit = 0;
+
+// -----------------------------------------------------------------------
+void eerr(char *message, int ecode)
+{
+	printf("%s: %s\n", message, e400_gerror(ecode));
+	exit(1);
+}
 
 // -----------------------------------------------------------------------
 // ---- MAIN -------------------------------------------------------------
 // -----------------------------------------------------------------------
 int main(int argc, char** argv)
 {
-	mjc400_reset();
-	em400_mem_init();
+	int res;
+
+	printf("Starting EM400...\n");
+
+	res = em400_mem_init();
+	if (res) {
+		em400_mem_shutdown();
+		eerr("Error initializing EM400", res);
+	}
+
 	em400_mem_clear();
-	em400_debuger_init();
-	mjc400_timer_start();
+	mjc400_reset();
+
+	res = mjc400_timer_start();
+	if (res) {
+		em400_mem_shutdown();
+		eerr("Error initializing CPU timer", res);
+	}
+
+#ifdef WITH_DEBUGER
+	res = em400_debuger_init();
+	if (res) {
+		em400_debuger_shutdown();
+		em400_mem_shutdown();
+		eerr("Error initializing debuger", res);
+	}
+#endif
 
 	while (!em400_quit) {
+#ifdef WITH_DEBUGER
 		int dbg_res = em400_debuger_step();
 		if (dbg_res <= DEBUGER_EM400_SKIP) {
 			if (dbg_res <= DEBUGER_EM400_QUIT) {
@@ -43,11 +78,17 @@ int main(int argc, char** argv)
 			}
 			continue;
 		}
+#endif
 		mjc400_step();
 	}
 
+#ifdef WITH_DEBUGER
 	em400_debuger_shutdown();
+#endif
+
 	em400_mem_shutdown();
+
+	printf("EM400 exits.\n");
 
 	return 0;
 }

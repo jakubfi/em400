@@ -25,14 +25,9 @@
 
 struct mjc400_opdef {
 	uint16_t opcode;				// basic/extended opcode
-	char *mnemo;					// mnemonic (for disassembler)
 	_Bool nl;						// legal in user mode?
-	_Bool twoword;					// can occupy 2 words?
 	int (*op_fun)();				// instruction execution function
-	int (*extop_fun)(int);			// function to get extended op
 	struct mjc400_opdef * e_opdef;	// pointer to extop def table
-	char* d_format;					// disassembler format
-	char* t_format;					// translator format
 };
 
 // basic opcodes jump table

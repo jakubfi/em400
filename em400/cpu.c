@@ -25,7 +25,10 @@
 #include "iset.h"
 #include "instructions.h"
 #include "timer.h"
+
+#ifdef WITH_DEBUGER
 #include "debuger.h"
+#endif
 
 // -----------------------------------------------------------------------
 void mjc400_reset()

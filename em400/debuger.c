@@ -397,11 +397,11 @@ int em400_debuger_init()
 	sa.sa_sigaction = _em400_debuger_w_resize_sig;
 
 	if (sigemptyset(&sa.sa_mask) != 0) {
-		return E_DEBUGER_INIT;
+		return E_DEBUGER_SIG_RESIZE;
 	}
 
 	if (sigaction(SIGWINCH, &sa, NULL) != 0) {
-		return E_DEBUGER_INIT;
+		return E_DEBUGER_SIG_RESIZE;
 	}
 
 	e400_debuger_w_reinit_all();

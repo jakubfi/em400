@@ -19,7 +19,6 @@
 #define CPU_H
 
 #include <inttypes.h>
-#include <stdio.h>
 
 void mjc400_reset();
 void mjc400_step();

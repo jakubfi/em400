@@ -8,4 +8,4 @@
 * debuger: step should work the same way as CYCLE (cycle on instruction and interrupt)
 * autotests
 * other: commandline dasm/trans (?)
-* other: move dasm/trans things away from iset (?)
+* separate I/O thread
