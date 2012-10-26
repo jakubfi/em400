@@ -50,7 +50,8 @@ int em400_mem_load_image(const char* fname, unsigned short block);
 // -----------------------------------------------------------------------
 // dword conversions
 #define DWORD(x, y) (x<<16) | (y)
-#define DWORDw(x, y, z) x = (z>>16) & 0xffff; y = (z) & 0xffff;
+#define DWORDl(z) (z>>16) & 0xffff
+#define DWORDr(z) z & 0xffff
 
 #endif
 

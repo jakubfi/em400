@@ -23,16 +23,39 @@
 // -----------------------------------------------------------------------
 // registers and "registers"
 // -----------------------------------------------------------------------
-extern uint16_t IC;
-extern uint16_t SR;
-extern uint16_t R[];
+
+enum _registers {
+	R_R0 = 0,
+	R_R1 = 1,
+	R_R2 = 2,
+	R_R3 = 3,
+	R_R4 = 4,
+	R_R5 = 5,
+	R_R6 = 6,
+	R_R7 = 7,
+	R_IC = 8,
+	R_SR = 9,
+	R_IR = 10,
+	R_KB = 11,
+	R_MOD = 12,
+	R_MAX = 13
+};
+
+extern uint16_t regs[];
+
 extern uint32_t RZ;
-extern uint16_t IR;
 extern unsigned short int P;
-extern int16_t MOD;
 extern unsigned short int MODcnt;
-extern uint16_t KB;
 extern uint8_t ZC17;
+
+uint16_t reg_read(unsigned short int r);
+void reg_write(unsigned short int r, uint16_t x);
+
+#define R(x)		reg_read(x)
+#define Rw(r, x)	reg_write(r, x)
+#define Rinc(r)		reg_write(r, R(r)+1)
+#define Rdec(r)		reg_write(r, R(r)-1)
+#define Radd(r, x)	reg_write(r, R(r)+x)
 
 // -----------------------------------------------------------------------
 // macros to access bit fields
@@ -41,47 +64,26 @@ extern uint8_t ZC17;
 // -----------------------------------------------------------------------
 // SR
 // -----------------------------------------------------------------------
-#define SR_RM	((SR & 0b1111111111000000) >> 6)
-#define SR_RM0	((SR & 0b1000000000000000) >> 15)
-#define SR_RM1	((SR & 0b0100000000000000) >> 14)
-#define SR_RM2	((SR & 0b0010000000000000) >> 13)
-#define SR_RM3	((SR & 0b0001000000000000) >> 12)
-#define SR_RM4	((SR & 0b0000100000000000) >> 11)
-#define SR_RM5	((SR & 0b0000010000000000) >> 10)
-#define SR_RM6	((SR & 0b0000001000000000) >> 9)
-#define SR_RM7	((SR & 0b0000000100000000) >> 8)
-#define SR_RM8	((SR & 0b0000000010000000) >> 7)
-#define SR_RM9	((SR & 0b0000000001000000) >> 6)
-#define SR_Q	((SR & 0b0000000000100000) >> 5)
-#define SR_BS	((SR & 0b0000000000010000) >> 4)
-#define SR_NB	((SR & 0b0000000000001111) >> 0)
+#define SR_RM	((R(R_SR) & 0b1111111111000000) >> 6)
+#define SR_RM0	((R(R_SR) & 0b1000000000000000) >> 15)
+#define SR_RM1	((R(R_SR) & 0b0100000000000000) >> 14)
+#define SR_RM2	((R(R_SR) & 0b0010000000000000) >> 13)
+#define SR_RM3	((R(R_SR) & 0b0001000000000000) >> 12)
+#define SR_RM4	((R(R_SR) & 0b0000100000000000) >> 11)
+#define SR_RM5	((R(R_SR) & 0b0000010000000000) >> 10)
+#define SR_RM6	((R(R_SR) & 0b0000001000000000) >> 9)
+#define SR_RM7	((R(R_SR) & 0b0000000100000000) >> 8)
+#define SR_RM8	((R(R_SR) & 0b0000000010000000) >> 7)
+#define SR_RM9	((R(R_SR) & 0b0000000001000000) >> 6)
+#define SR_Q	((R(R_SR) & 0b0000000000100000) >> 5)
+#define SR_BS	((R(R_SR) & 0b0000000000010000) >> 4)
+#define SR_NB	((R(R_SR) & 0b0000000000001111) >> 0)
 
-#define SR_RM0sb	SR |= 0b1000000000000000
-#define SR_RM1sb	SR |= 0b0100000000000000
-#define SR_RM2sb	SR |= 0b0010000000000000
-#define SR_RM3sb	SR |= 0b0001000000000000
-#define SR_RM4sb	SR |= 0b0000100000000000
-#define SR_RM5sb	SR |= 0b0000010000000000
-#define SR_RM6sb	SR |= 0b0000001000000000
-#define SR_RM7sb	SR |= 0b0000000100000000
-#define SR_RM8sb	SR |= 0b0000000010000000
-#define SR_RM9sb	SR |= 0b0000000001000000
-#define SR_Qsb		SR |= 0b0000000000100000
+#define SR_RM9cb	Rw(R_SR, R(R_SR) & 0b1111111110111111)
+#define SR_Qcb		Rw(R_SR, R(R_SR) & 0b1111111111011111)
 
-#define SR_RM0cb	SR &= 0b0111111111111111
-#define SR_RM1cb	SR &= 0b1011111111111111
-#define SR_RM2cb	SR &= 0b1101111111111111
-#define SR_RM3cb	SR &= 0b1110111111111111
-#define SR_RM4cb	SR &= 0b1111011111111111
-#define SR_RM5cb	SR &= 0b1111101111111111
-#define SR_RM6cb	SR &= 0b1111110111111111
-#define SR_RM7cb	SR &= 0b1111111011111111
-#define SR_RM8cb	SR &= 0b1111111101111111
-#define SR_RM9cb	SR &= 0b1111111110111111
-#define SR_Qcb		SR &= 0b1111111111011111
-
-#define SR_RMw(x)	SR &= (SR & 0b0000000000111111) | (x & 0b1111111111000000)
-#define SR_MBw(x)	SR &= (SR & 0b1111111111000000) | (x & 0b0000000000111111)
+#define	SR_SET_QNB(x)	Rw(R_SR, (R(R_SR) & 0b111111111000000) | (x & 0b0000000000111111))
+#define	SR_SET_MASK(x)	Rw(R_SR, (R(R_SR) & 0b000000000111111) | (x & 0b1111111111000000))
 
 // -----------------------------------------------------------------------
 // IR
@@ -94,69 +96,69 @@ extern uint8_t ZC17;
 #define _T(x)	(int8_t) ((x & 0b0000000000111111) * (((x & 0b0000001000000000) >> 9) ? -1 : 1))
 #define _t(x)	(uint8_t) ((x & 0b0000000000000111) | ((x & 0b0000001000000000) >> 6)) // only SHC uses it
 #define _b(x)	(x & 0b0000000011111111)
-#define IR_OP	_OP(IR)
-#define IR_D	_D(IR)
-#define IR_A	_A(IR)
-#define IR_B	_B(IR)
-#define IR_C	_C(IR)
-#define IR_T	_T(IR)
-#define IR_t	_t(IR)
-#define IR_b	_b(IR)
+#define IR_OP	_OP(R(R_IR))
+#define IR_D	_D(R(R_IR))
+#define IR_A	_A(R(R_IR))
+#define IR_B	_B(R(R_IR))
+#define IR_C	_C(R(R_IR))
+#define IR_T	_T(R(R_IR))
+#define IR_t	_t(R(R_IR))
+#define IR_b	_b(R(R_IR))
 
 // -----------------------------------------------------------------------
 // R0
 // -----------------------------------------------------------------------
 
 // R0 - read
-#define R0_Z	((R[0] & 0b1000000000000000) >> 15)
-#define R0_M	((R[0] & 0b0100000000000000) >> 14)
-#define R0_V	((R[0] & 0b0010000000000000) >> 13)
-#define R0_C	((R[0] & 0b0001000000000000) >> 12)
-#define R0_L	((R[0] & 0b0000100000000000) >> 11)
-#define R0_E	((R[0] & 0b0000010000000000) >> 10)
-#define R0_G	((R[0] & 0b0000001000000000) >> 9)
-#define R0_Y	((R[0] & 0b0000000100000000) >> 8)
-#define R0_X	((R[0] & 0b0000000010000000) >> 7)
-#define R0_USER	((R[0] & 0b0000000001111111) >> 0)
+#define R0_Z	((R(0) & 0b1000000000000000) >> 15)
+#define R0_M	((R(0) & 0b0100000000000000) >> 14)
+#define R0_V	((R(0) & 0b0010000000000000) >> 13)
+#define R0_C	((R(0) & 0b0001000000000000) >> 12)
+#define R0_L	((R(0) & 0b0000100000000000) >> 11)
+#define R0_E	((R(0) & 0b0000010000000000) >> 10)
+#define R0_G	((R(0) & 0b0000001000000000) >> 9)
+#define R0_Y	((R(0) & 0b0000000100000000) >> 8)
+#define R0_X	((R(0) & 0b0000000010000000) >> 7)
+#define R0_USER	((R(0) & 0b0000000001111111) >> 0)
 
 // R0 - set
-#define R0_Zsb	R[0] |= 0b1000000000000000
-#define R0_Msb	R[0] |= 0b0100000000000000
-#define R0_Vsb	R[0] |= 0b0010000000000000
-#define R0_Csb	R[0] |= 0b0001000000000000
-#define R0_Lsb	R[0] |= 0b0000100000000000
-#define R0_Esb	R[0] |= 0b0000010000000000
-#define R0_Gsb	R[0] |= 0b0000001000000000
-#define R0_Ysb	R[0] |= 0b0000000100000000
-#define R0_Xsb	R[0] |= 0b0000000010000000
+#define R0_Zsb	Rw(0, R(0) | 0b1000000000000000)
+#define R0_Msb	Rw(0, R(0) | 0b0100000000000000)
+#define R0_Vsb	Rw(0, R(0) | 0b0010000000000000)
+#define R0_Csb	Rw(0, R(0) | 0b0001000000000000)
+#define R0_Lsb	Rw(0, R(0) | 0b0000100000000000)
+#define R0_Esb	Rw(0, R(0) | 0b0000010000000000)
+#define R0_Gsb	Rw(0, R(0) | 0b0000001000000000)
+#define R0_Ysb	Rw(0, R(0) | 0b0000000100000000)
+#define R0_Xsb	Rw(0, R(0) | 0b0000000010000000)
 
 // R0 - clear
-#define R0_Zcb	R[0] &= 0b0111111111111111
-#define R0_Mcb	R[0] &= 0b1011111111111111
-#define R0_Vcb	R[0] &= 0b1101111111111111
-#define R0_Ccb	R[0] &= 0b1110111111111111
-#define R0_Lcb	R[0] &= 0b1111011111111111
-#define R0_Ecb	R[0] &= 0b1111101111111111
-#define R0_Gcb	R[0] &= 0b1111110111111111
-#define R0_Ycb	R[0] &= 0b1111111011111111
-#define R0_Xcb	R[0] &= 0b1111111101111111
+#define R0_Zcb	Rw(0, R(0) & 0b0111111111111111)
+#define R0_Mcb	Rw(0, R(0) & 0b1011111111111111)
+#define R0_Vcb	Rw(0, R(0) & 0b1101111111111111)
+#define R0_Ccb	Rw(0, R(0) & 0b1110111111111111)
+#define R0_Lcb	Rw(0, R(0) & 0b1111011111111111)
+#define R0_Ecb	Rw(0, R(0) & 0b1111101111111111)
+#define R0_Gcb	Rw(0, R(0) & 0b1111110111111111)
+#define R0_Ycb	Rw(0, R(0) & 0b1111111011111111)
+#define R0_Xcb	Rw(0, R(0) & 0b1111111101111111)
 
 // R0 - write
-#define R0_USERw(x)	R[0] |= x
+#define R0_USERw(x)	Rw(0, R(0) | x)
 
 // R0 - set flags by x, y, z
-#define R0_Cs16(z)	R[0] |= (z & (0xffff+1)) >> 4;
-#define R0_Cs32(z)	R[0] |= (z & (0xffffffff+1)) >> (16+4);
-#define R0_Cs64(z)	R[0] |= (z & (0xffffffffff+1)) >> (8+16+4);
+#define R0_Cs16(z)	Rw(0, R(0) | (z & (0xffff+1)) >> 4);
+#define R0_Cs32(z)	Rw(0, R(0) | (z & (0xffffffff+1)) >> (16+4));
+#define R0_Cs64(z)	Rw(0, R(0) | (z & (0xffffffffff+1)) >> (8+16+4));
 
 #define R0_Zs(z)	if (!z) R0_Zsb; else R0_Zcb;
 #define R0_Zs16(z)	R0_Zs(z)
 #define R0_Zs32(z)	R0_Zs(z)
 #define R0_Zs64(z)	R0_Zs(z)
 
-#define R0_Ms16(z)	R[0] |= (z & 0x8000) >> 1;
-#define R0_Ms32(z)	R[0] |= (z & 0x80000000) >> (16+1);
-#define R0_Ms64(z)	R[0] |= (z & 0x8000000000) >> (8+16+1);
+#define R0_Ms16(z)	Rw(0, R(0) | (z & 0x8000) >> 1);
+#define R0_Ms32(z)	Rw(0, R(0) | (z & 0x80000000) >> (16+1));
+#define R0_Ms64(z)	Rw(0, R(0) | (z & 0x8000000000) >> (8+16+1));
 
 #define R0_Vs(x,y,z)	if (((x<0) && (y<0) && (z>0)) || ((x>0) && (y>0) && (z<0))) R0_Vsb; else R0_Vcb;
 #define R0_Vs16(x,y,z)	R0_Vs(x,y,z)

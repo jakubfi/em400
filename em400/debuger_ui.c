@@ -313,10 +313,10 @@ void em400_debuger_wu_dasm(WINDOW *win)
 {
 	int offset = (e4d_w[WIN_DASM].h-2) / 3;
 	int start;
-	if (IC < offset) {
+	if (R(R_IC) < offset) {
 		start = 0;
 	} else {
-		start = IC - offset;
+		start = R(R_IC) - offset;
 	}
 	em400_debuger_dt(win, DMODE_DASM, start, e4d_w[WIN_DASM].h-2);
 }
@@ -326,13 +326,13 @@ void em400_debuger_wu_regs(WINDOW *win)
 {
 	wprintw(win, "    hex    oct    dec    bin              ch R40\n");
 	for (int i=1 ; i<=7 ; i++) {
-		char *b = int2bin(R[i], 16);
-		char *r = int2r40(R[i]);
-		char *c = int2chars(R[i]);
+		char *b = int2bin(R(i), 16);
+		char *r = int2r40(R(i));
+		char *c = int2chars(R(i));
 
 		wprintw(win, "R%i: ", i);
 		wattron(win, A_BOLD);
-		wprintw(win, "0x%04x %6o %6i %s %s %s\n", R[i], R[i], (int16_t)R[i], b, c, r);
+		wprintw(win, "0x%04x %6o %6i %s %s %s\n", R(i), R(i), (int16_t)R(i), b, c, r);
 		wattroff(win, A_BOLD);
 		free(c);
 		free(r);
@@ -343,16 +343,16 @@ void em400_debuger_wu_regs(WINDOW *win)
 // -----------------------------------------------------------------------
 void em400_debuger_wu_sregs(WINDOW *win)
 {
-	char *ir = int2bin(IR>>10, 6);
-	int d = (IR>>9) & 1;
-	char *a = int2bin(IR>>6, 3);
-	char *b = int2bin(IR>>3, 3);
-	char *c = int2bin(IR, 3);
+	char *ir = int2bin(R(R_IR)>>10, 6);
+	int d = (R(R_IR)>>9) & 1;
+	char *a = int2bin(R(R_IR)>>6, 3);
+	char *b = int2bin(R(R_IR)>>3, 3);
+	char *c = int2bin(R(R_IR), 3);
 
-	char *rm = int2bin(SR>>6, 10);
-	int q = (SR>>5) & 1;
-	int s = (SR>>6) & 1;
-	char *nb = int2bin(SR, 4);
+	char *rm = int2bin(R(R_SR)>>6, 10);
+	int q = SR_Q;
+	int s = (R(R_SR)>>6) & 1;
+	char *nb = int2bin(R(R_SR), 4);
 
 	char *i1 = int2bin(RZ>>27, 5);
 	char *i2 = int2bin(RZ>>20, 7);
@@ -362,18 +362,18 @@ void em400_debuger_wu_sregs(WINDOW *win)
 	char *i6 = int2bin(RZ>>4, 6);
 	char *i7 = int2bin(RZ, 4);
 
-	char *sf = int2bin(R[0]>>8, 8);
-	char *uf = int2bin(R[0], 8);
+	char *sf = int2bin(R(0)>>8, 8);
+	char *uf = int2bin(R(0), 8);
 
 	wprintw(win, "            OPCODE D A   B   C\n");
 	wprintw(win, "IR: ");
 	wattron(win, A_BOLD);
-	wprintw(win, "0x%04x  %s %i %s %s %s\n", IR, ir, d, a, b, c);
+	wprintw(win, "0x%04x  %s %i %s %s %s\n", R(R_IR), ir, d, a, b, c);
 	wattroff(win, A_BOLD);
 	wprintw(win, "            RM         Q s NB\n");
 	wprintw(win, "SR: ");
 	wattron(win, A_BOLD);
-	wprintw(win, "0x%04x  %s %i %i %s\n", SR, rm, q, s, nb);
+	wprintw(win, "0x%04x  %s %i %i %s\n", R(R_SR), rm, q, s, nb);
 	wattroff(win, A_BOLD);
 	wprintw(win, "                ZPMCZ TIFFFFx 01 23 456789 abcdef OCSS\n");
 	wprintw(win, "RZ: ");
@@ -383,7 +383,7 @@ void em400_debuger_wu_sregs(WINDOW *win)
 	wprintw(win, "            ZMVCLEGY Xuser\n");
 	wprintw(win, "R0: ");
 	wattron(win, A_BOLD);
-	wprintw(win, "0x%04x  %s %s\n", R[0], sf, uf);
+	wprintw(win, "0x%04x  %s %s\n", R(0), sf, uf);
 	wattroff(win, A_BOLD);
 
 	free(uf);
@@ -424,11 +424,11 @@ void em400_debuger_wu_status(WINDOW *win)
 	wattrset(win, attr[C_ILABEL]); wprintw(win, "  NB:");
 	wattrset(win, attr[C_IDATA]); wprintw(win, "%i", SR_NB);
 	wattrset(win, attr[C_ILABEL]); wprintw(win, "  IC:");
-	wattrset(win, attr[C_IDATA]); wprintw(win, "0x%04x", IC);
+	wattrset(win, attr[C_IDATA]); wprintw(win, "0x%04x", R(R_IC));
 	wattrset(win, attr[C_ILABEL]); wprintw(win, "  P:");
 	wattrset(win, attr[C_IDATA]); wprintw(win, "%i", P);
 	wattrset(win, attr[C_ILABEL]); wprintw(win, "  MOD:");
-	wattrset(win, attr[C_IDATA]); wprintw(win, "%06i (0x%04x)", MOD, MOD);
+	wattrset(win, attr[C_IDATA]); wprintw(win, "%06i (0x%04x)", R(R_MOD), R(R_MOD));
 	wattrset(win, attr[C_ILABEL]); wprintw(win, "  MODcnt:");
 	wattrset(win, attr[C_IDATA]); wprintw(win, "%i", MODcnt);
 	wattrset(win, attr[C_ILABEL]); wprintw(win, "  ZC17:");

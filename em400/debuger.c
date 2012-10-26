@@ -139,13 +139,13 @@ void em400_debuger_dt(WINDOW *win, int dasm_mode, int start, int count)
 
 	while (count > 0) {
 		len = mjc400_dt(em400_mem_ptr(SR_Q*SR_NB, start), &buf, dasm_mode);
-		if (start == IC) {
+		if (start == R(R_IC)) {
 			wattrset(win, attr[C_ILABEL]);
 		} else {
 			wattrset(win, attr[C_LABEL]);
 		}
 		wprintw(win, "0x%04x:", start);
-		if (start == IC) {
+		if (start == R(R_IC)) {
 			wattrset(win, attr[C_IDATA]);
 		} else {
 			wattrset(win, attr[C_DATA]);
@@ -168,10 +168,10 @@ int __em400_debuger_c_dt(WINDOW *win, char* args, int dasm_mode)
 
 	if (n <= 0) {
 		d_count = 1;
-		d_start = IC;
+		d_start = R(R_IC);
 	} else if (n == 1) {
 		d_count = d_start;
-		d_start = IC;
+		d_start = R(R_IC);
 	} else if (n == 2) {
 	} else {
 		return DEBUGER_LOOP_ERR;
@@ -324,14 +324,14 @@ int em400_debuger_c_mem(WINDOW *win, char* args)
 // -----------------------------------------------------------------------
 int em400_debuger_c_regs(WINDOW *win, char* args)
 {
-	char *ir = int2bin(IR, 16);
-	char *sr = int2bin(SR, 16);
+	char *ir = int2bin(R(R_IR), 16);
+	char *sr = int2bin(R(R_SR), 16);
 	char *rz = int2bin(RZ, 32);
-	char *r0 = int2bin(R[0], 16);
+	char *r0 = int2bin(R(0), 16);
 
 	wprintw(win, "           iiiiiiDAAABBBCCC             RM________QBNB__\n");
-	wprintw(win, "IR: 0x%04x %s  SR: 0x%04x %s\n", IR, ir, SR, sr);
-	wprintw(win, "IC: 0x%04x P: %i\n", IC, P);
+	wprintw(win, "IR: 0x%04x %s  SR: 0x%04x %s\n", R(R_IR), ir, R(R_SR), sr);
+	wprintw(win, "IC: 0x%04x P: %i\n", R(R_IC), P);
 	wprintw(win, "\n");
 	wprintw(win, "    01234567012345670123456701234567      ZMVCLEGYX.......\n");
 	wprintw(win, "RZ: %s  R0: %s\n", rz, r0);
@@ -342,15 +342,15 @@ int em400_debuger_c_regs(WINDOW *win, char* args)
 	free(r0);
 	wprintw(win, "     hex... dec...  bin.....|.......       hex... dec...  bin.....|.......\n");
 	for (int i=0 ; i<4 ; i++) {
-		char *r1 = int2bin(R[2*i], 16);
-		char *r2 = int2bin(R[2*i+1], 16);
-		wprintw(win, "R%02i: 0x%04x  %5i  %s", 2*i, R[2*i], R[2*i], r1);
-		wprintw(win, "  R%02i: 0x%04x  %5i  %s\n", 2*i+1, R[2*i+1], R[2*i+1], r2);
+		char *r1 = int2bin(R(2*i), 16);
+		char *r2 = int2bin(R(2*i+1), 16);
+		wprintw(win, "R%02i: 0x%04x  %5i  %s", 2*i, R(2*i), R(2*i), r1);
+		wprintw(win, "  R%02i: 0x%04x  %5i  %s\n", 2*i+1, R(2*i+1), R(2*i+1), r2);
 		free(r1);
 		free(r2);
 	}
 	wprintw(win, "\n");
-	wprintw(win, "MOD: 0x%04x %i  MODcnt: %i  P: %i  ZC17: %i\n", (uint16_t) MOD, MOD, MODcnt, P, ZC17);
+	wprintw(win, "MOD: 0x%04x %i  MODcnt: %i  P: %i  ZC17: %i\n", (uint16_t) R(R_MOD), R(R_MOD), MODcnt, P, ZC17);
 	return DEBUGER_EM400_SKIP;
 }
 

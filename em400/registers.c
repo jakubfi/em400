@@ -19,15 +19,27 @@
 
 #include "registers.h"
 
-uint16_t IC;
-uint16_t IR;
-uint16_t SR;
-uint16_t R[8];
+uint16_t regs[R_MAX];
+
 uint32_t RZ;
 unsigned short int P;
-int16_t MOD;
 unsigned short int MODcnt;
-uint16_t KB;
 uint8_t ZC17;
+
+// -----------------------------------------------------------------------
+uint16_t reg_read(unsigned short int r)
+{
+	return regs[r];
+}
+
+// -----------------------------------------------------------------------
+void reg_write(unsigned short int r, uint16_t x)
+{
+	if (r) {
+		regs[r] = x;
+	} else {
+		regs[r] = regs[r] | (x & 0b0000000011111111);
+	}
+}
 
 // vim: tabstop=4

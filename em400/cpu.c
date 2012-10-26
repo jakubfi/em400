@@ -30,17 +30,13 @@
 // -----------------------------------------------------------------------
 void mjc400_reset()
 {
-	IC = 0;
-	IR = 0;
-	SR = 0;
-	for (int i=0 ; i<8 ; i++) {
-		R[i] = 0;
+	for (int i=0 ; i<R_MAX ; i++) {
+		Rw(i, 0);
 	}
 	RZ = 0;
 	P = 0;
-	MOD = 0;
 	MODcnt = 0;
-	KB = 0;
+	ZC17 = 0;
 }
 
 // -----------------------------------------------------------------------
@@ -50,18 +46,18 @@ int16_t mjc400_get_eff_arg()
 
 	// argument is in next word
 	if (IR_C == 0) {
-		N = MEM(IC);
-		IC++;
+		N = MEM(R(R_IC));
+		Rinc(R_IC);
 	// argument is in field C
 	} else {
-		N = R[IR_C];
+		N = R(IR_C);
 	}
 
 	// B-modification
-	N += R[IR_B];
+	N += R(IR_B);
 
 	// PRE-modification
-	N += MOD;
+	N += R(R_MOD);
 	
 	// if D is set, N is an address in current memory block
 	if (IR_D == 1) {
@@ -82,8 +78,8 @@ void mjc400_step()
 
 	// fetch instruction into IR
 	// (additional argument is fetched by the instruction, if necessary)
-	IR = MEM(IC);
-	IC++;
+	Rw(R_IR, MEM(R(R_IC)));
+	Rinc(R_IC);
 
 	// execute instruction
 	int op_res;
@@ -92,7 +88,7 @@ void mjc400_step()
 	switch (op_res) {
 		// normal instruction
 		case OP_OK:
-			MOD = 0;
+			Rw(R_MOD, 0);
 			MODcnt = 0;
 			break;
 		// pre-modification
@@ -100,8 +96,9 @@ void mjc400_step()
 			break;
 		// illegal instruction
 		case OP_ILLEGAL:
-			MOD = MODcnt = 0;
-			if (P!=0) {
+			Rw(R_MOD, 0);
+			MODcnt = 0;
+			if (P != 0) {
 				P = 0;
 			} else {
 				INT_SET(INT_ILLEGAL_OPCODE);
@@ -109,7 +106,7 @@ void mjc400_step()
 			break;
 	}
 
-	IC += P;
+	Radd(R_IC, P);
 }
 
 // vim: tabstop=4
