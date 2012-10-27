@@ -25,15 +25,14 @@ int yylex(void);
 %}
 
 %union {
-    char *str;
-    int val;
+	int value;
+	char *text;
 };
 
-%token '[' ']' ':' '-' ',' '='
-%token F_QUIT F_CLMEM F_RUN F_BRK F_REGS F_RESET F_MCL F_MEMDUMP F_STEP F_HELP F_DASM F_TRANS F_LOAD F_SAVE
-%token IN OU INT
-%token <val> VALUE REGISTER NB
-%token <str> NAME CONDITION BIT
+%token <value> VALUE
+%token <text> TEXT
+%token '-' ':'
+%token F_QUIT F_CLMEM F_MEM F_REGS F_RESET F_STEP F_HELP F_DASM F_TRANS F_LOAD
 
 %%
 
@@ -43,103 +42,74 @@ commands:
 	;
 	
 command:
-	function
-	| assignment
-	| value
-	;
-
-assignment:
-	REGISTER '=' value
-	| memory '=' value
-	;
-
-value:
-	REGISTER
-	| memory
-	| VALUE
-	| bitchunk
-	| BIT
-	;
-
-memory:
-	'[' value ']'
-	| NB ':' '[' value ']'
-
-bitchunk:
-	value '[' bitlist ']'
-
-bitlist:
-	bits
-	| bitlist ',' bits
-	;
-
-bits:
-	VALUE
-	| VALUE '-' VALUE
+	function '\n'
 	;
 
 function:
-	F_QUIT
-	| F_CLMEM
-	| f_memdump
-	| f_step
-	| F_RUN
+	F_QUIT	{
+		printf("Got: quit\n");
+	}
+	| F_STEP {
+		printf("Got: step\n");
+	}
 	| f_help
-	| F_REGS
-	| F_RESET
+	| F_REGS {
+		printf("Got: regs\n");
+	}
+	| F_RESET {
+		printf("Got: reset\n");
+	}
 	| f_dasm
 	| f_trans
-	| F_MCL
+	| f_mem
+	| F_CLMEM {
+		printf("Got: clmem\n");
+	}
 	| f_load
-	| f_save
-	| f_brk
-	;
-
-f_memdump:
-	F_MEMDUMP value value
-	F_MEMDUMP value '-' value
-	| F_MEMDUMP value value value
-	| F_MEMDUMP value ':' value value
-	| F_MEMDUMP value value '-' value
-	| F_MEMDUMP value ':' value '-' value
-	;
-
-f_step:
-	F_STEP
-	| F_STEP value
 	;
 
 f_help:
-	F_HELP
-	| F_HELP NAME
+	F_HELP {
+		printf("Got: help\n");
+	}
+	| F_HELP TEXT {
+		printf("Got: help %s\n", $2);
+		free($2);
+	}
 	;
 
 f_dasm:
-	F_DASM
-	| F_DASM value
+	F_DASM {
+		printf("Got: dasm\n");
+	}
+	| F_DASM VALUE {
+		printf("Got: dasm %i\n", $2);
+	}
+	| F_DASM VALUE VALUE {
+		printf("Got: dasm %i %i\n", $2, $3);
+	}
 	;
 
 f_trans:
 	F_TRANS
-	| F_TRANS value
+	| F_TRANS VALUE
+	| F_TRANS VALUE VALUE
 	;
+
+f_mem:
+	F_MEM VALUE '-' VALUE
+	| F_MEM VALUE VALUE '-' VALUE
+	| F_MEM VALUE ':' VALUE '-' VALUE
 
 f_load:
-	F_LOAD NAME
-	| F_LOAD value NAME
-	;
-
-f_save:
-	F_SAVE NAME
-	| F_SAVE value NAME
-	;
-
-f_brk:
-	F_BRK value CONDITION value
-	| F_BRK value
-	| F_BRK INT value
-	| F_BRK IN
-	| F_BRK OU
+	F_LOAD TEXT
+	| F_LOAD TEXT VALUE
 	;
 
 %%
+
+void yyerror(char *s) {
+    fprintf(stdout, "%s\n", s);
+}
+
+// vim: tabstop=4
