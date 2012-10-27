@@ -2,7 +2,7 @@ WITH_DEBUGER = 1
 
 CC = gcc
 CFLAGS = -std=c99 -Wall -O3 -D_XOPEN_SOURCE=600 -I include
-LFLAGS = -lncurses -lrt
+LFLAGS = -lrt
 
 OBJS = \
 em400.o\
@@ -16,15 +16,16 @@ utils.o\
 io.o\
 errors.o
 
-DEBUGOBJS = \
+DEBUG_OBJS = \
 dasm.o\
 dasm_iset.o\
 debuger.o\
 debuger_ui.o
 
 ifdef WITH_DEBUGER
-OBJS += $(DEBUGOBJS)
+OBJS += $(DEBUG_OBJS)
 CFLAGS += -DWITH_DEBUGER
+LFLAGS += -lncurses
 endif
 
 em400: $(OBJS)
