@@ -63,6 +63,9 @@ void em400_debuger_ui_init()
 	// standard data
 	attr[C_DATA] = COLOR_PAIR(C_LABEL) | A_BOLD;
 
+	// error
+	init_pair(C_ERROR, COLOR_RED, COLOR_BLACK);
+	attr[C_ERROR] = COLOR_PAIR(C_ERROR) | A_BOLD;
 }
 
 // -----------------------------------------------------------------------
@@ -77,11 +80,11 @@ int nc_readline(WINDOW *win, const char *prompt, char *buffer, int buflen)
 	keypad(win, TRUE);
 	getyx(win, y, x);
 
-	wattron(win, attr[C_PROMPT]);
-	mvwprintw(win, y, 0, prompt);
-	wattroff(win, attr[C_PROMPT]);
+	mvwaprintw(win, y, 0, attr[C_PROMPT], prompt);
 
 	getyx(win, y, x);
+
+	flushinp();
 
 	while (1) {
 		buffer[len] = ' ';
@@ -250,7 +253,7 @@ void e400_debuger_w_create(int id)
 	if (e4d_w[id].box) {
 		e4d_w[id].bwin = newwin(e4d_w[id].h, e4d_w[id].w, e4d_w[id].y, e4d_w[id].x);
 		box(e4d_w[id].bwin, 0, 0);
-		mvwprintw(e4d_w[id].bwin, 0, 3, "[ %s ]", e4d_w[id].title);
+		mvwaprintw(e4d_w[id].bwin, 0, 3, attr[C_LABEL], "[ %s ]", e4d_w[id].title);
 		wrefresh(e4d_w[id].bwin);
 		e4d_w[id].win = newwin(e4d_w[id].h-2, e4d_w[id].w-2, e4d_w[id].y+1, e4d_w[id].x+1);
 	} else {
@@ -325,86 +328,13 @@ void em400_debuger_wu_dasm(WINDOW *win)
 // -----------------------------------------------------------------------
 void em400_debuger_wu_regs(WINDOW *win)
 {
-	wprintw(win, "    hex    oct    dec    bin              ch R40\n");
-	for (int i=1 ; i<=7 ; i++) {
-		char *b = int2bin(R(i), 16);
-		char *r = int2r40(R(i));
-		char *c = int2chars(R(i));
-
-		wprintw(win, "R%i: ", i);
-		wattron(win, A_BOLD);
-		wprintw(win, "0x%04x %6o %6i %s %s %s\n", R(i), R(i), (int16_t)R(i), b, c, r);
-		wattroff(win, A_BOLD);
-		free(c);
-		free(r);
-		free(b);
-	}
+	em400_debuger_c_regs(win);
 }
 
 // -----------------------------------------------------------------------
 void em400_debuger_wu_sregs(WINDOW *win)
 {
-	char *ir = int2bin(R(R_IR)>>10, 6);
-	int d = (R(R_IR)>>9) & 1;
-	char *a = int2bin(R(R_IR)>>6, 3);
-	char *b = int2bin(R(R_IR)>>3, 3);
-	char *c = int2bin(R(R_IR), 3);
-
-	char *rm = int2bin(R(R_SR)>>6, 10);
-	int q = SR_Q;
-	int s = (R(R_SR)>>6) & 1;
-	char *nb = int2bin(R(R_SR), 4);
-
-	char *i1 = int2bin(RZ>>27, 5);
-	char *i2 = int2bin(RZ>>20, 7);
-	char *i3 = int2bin(RZ>>18, 2);
-	char *i4 = int2bin(RZ>>16, 2);
-	char *i5 = int2bin(RZ>>10, 6);
-	char *i6 = int2bin(RZ>>4, 6);
-	char *i7 = int2bin(RZ, 4);
-
-	char *sf = int2bin(R(0)>>8, 8);
-	char *uf = int2bin(R(0), 8);
-
-	wprintw(win, "            OPCODE D A   B   C\n");
-	wprintw(win, "IR: ");
-	wattron(win, A_BOLD);
-	wprintw(win, "0x%04x  %s %i %s %s %s\n", R(R_IR), ir, d, a, b, c);
-	wattroff(win, A_BOLD);
-	wprintw(win, "            RM         Q s NB\n");
-	wprintw(win, "SR: ");
-	wattron(win, A_BOLD);
-	wprintw(win, "0x%04x  %s %i %i %s\n", R(R_SR), rm, q, s, nb);
-	wattroff(win, A_BOLD);
-	wprintw(win, "                ZPMCZ TIFFFFx 01 23 456789 abcdef OCSS\n");
-	wprintw(win, "RZ: ");
-	wattron(win, A_BOLD);
-	wprintw(win, "0x%08x  %s %s %s %s %s %s %s\n", RZ, i1, i2, i3, i4, i5, i6, i7);
-	wattroff(win, A_BOLD);
-	wprintw(win, "            ZMVCLEGY Xuser\n");
-	wprintw(win, "R0: ");
-	wattron(win, A_BOLD);
-	wprintw(win, "0x%04x  %s %s\n", R(0), sf, uf);
-	wattroff(win, A_BOLD);
-
-	free(uf);
-	free(sf);
-
-	free(i1);
-	free(i2);
-	free(i3);
-	free(i4);
-	free(i5);
-	free(i6);
-	free(i7);
-
-	free(rm);
-	free(nb);
-
-	free(ir);
-	free(a);
-	free(b);
-	free(c);
+	em400_debuger_c_sregs(win);
 }
 
 // -----------------------------------------------------------------------
@@ -420,21 +350,20 @@ void em400_debuger_wu_status(WINDOW *win)
 	whline(win, ' ', COLS);
 	getyx(win, y, x);
 	wmove(win, y, 0);
-	wattrset(win, attr[C_ILABEL]); wprintw(win, "  Q:");
-	wattrset(win, attr[C_IDATA]); wprintw(win, "%i", SR_Q);
-	wattrset(win, attr[C_ILABEL]); wprintw(win, "  NB:");
-	wattrset(win, attr[C_IDATA]); wprintw(win, "%i", SR_NB);
-	wattrset(win, attr[C_ILABEL]); wprintw(win, "  IC:");
-	wattrset(win, attr[C_IDATA]); wprintw(win, "0x%04x", R(R_IC));
-	wattrset(win, attr[C_ILABEL]); wprintw(win, "  P:");
-	wattrset(win, attr[C_IDATA]); wprintw(win, "%i", P);
-	wattrset(win, attr[C_ILABEL]); wprintw(win, "  MOD:");
-	wattrset(win, attr[C_IDATA]); wprintw(win, "%06i (0x%04x)", R(R_MOD), R(R_MOD));
-	wattrset(win, attr[C_ILABEL]); wprintw(win, "  MODcnt:");
-	wattrset(win, attr[C_IDATA]); wprintw(win, "%i", MODcnt);
-	wattrset(win, attr[C_ILABEL]); wprintw(win, "  ZC17:");
-	wattrset(win, attr[C_IDATA]); wprintw(win, "%i", ZC17);
-	wattroff(win, attr[C_IDATA]);
+	waprintw(win, attr[C_ILABEL], "  Q:");
+	waprintw(win, attr[C_IDATA], "%i", SR_Q);
+	waprintw(win, attr[C_ILABEL], "  NB:");
+	waprintw(win, attr[C_IDATA], "%i", SR_NB);
+	waprintw(win, attr[C_ILABEL], "  IC:");
+	waprintw(win, attr[C_IDATA], "0x%04x", R(R_IC));
+	waprintw(win, attr[C_ILABEL], "  P:");
+	waprintw(win, attr[C_IDATA], "%i", P);
+	waprintw(win, attr[C_ILABEL], "  MOD:");
+	waprintw(win, attr[C_IDATA], "%06i (0x%04x)", R(R_MOD), R(R_MOD));
+	waprintw(win, attr[C_ILABEL], "  MODcnt:");
+	waprintw(win, attr[C_IDATA], "%i", MODcnt);
+	waprintw(win, attr[C_ILABEL], "  ZC17:");
+	waprintw(win, attr[C_IDATA], "%i", ZC17);
 }
 
 // -----------------------------------------------------------------------

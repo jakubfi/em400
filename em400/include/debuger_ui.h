@@ -29,6 +29,7 @@
 #define C_DATA		3
 #define C_ILABEL	5
 #define C_IDATA		6
+#define C_ERROR		7
 #define C_MAX		64
 
 extern int attr[C_MAX];
@@ -63,6 +64,9 @@ extern int nc_w_changed;
 extern struct e4d_w_struct e4d_w[];
 
 #define WCMD e4d_w[WIN_CMD].win
+
+#define waprintw(win, attr, ...) wattron(win, attr); wprintw(win, __VA_ARGS__); wattroff(win, attr)
+#define mvwaprintw(win, y, x, attr, ...) wattron(win, attr); mvwprintw(win, y, x, __VA_ARGS__); wattroff(win, attr)
 
 void em400_debuger_ui_init();
 int nc_readline(WINDOW *win, const char *prompt, char *buffer, int buflen);

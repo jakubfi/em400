@@ -51,6 +51,7 @@ void em400_debuger_c_step();
 void em400_debuger_c_quit();
 void em400_debuger_c_help(WINDOW *win, int cmd_tok);
 void em400_debuger_c_regs(WINDOW *win);
+void em400_debuger_c_sregs(WINDOW *win);
 void em400_debuger_c_reset();
 void em400_debuger_c_mem(WINDOW *win, int block, int start, int end);
 void em400_debuger_c_clmem();

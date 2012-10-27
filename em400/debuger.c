@@ -46,7 +46,8 @@ cmd_s em400_debuger_commands[] = {
 	{ "quit",	F_QUIT,		"Quit the emulator", "  quit" },
 	{ "step",	F_STEP,		"Execute instruction at IC", "  step" },
 	{ "help",	F_HELP,		"Print help", "  help" },
-	{ "regs",	F_REGS,		"Show registers", "  regs" },
+	{ "regs",	F_REGS,		"Show user registers", "  regs" },
+	{ "sregs",	F_SREGS,	"Show system registers", "  sregs" },
 	{ "reset",	F_RESET,	"Reset the emulator", "  reset" },
 	{ "dasm",	F_DASM,		"Disassembler", "  dasm\n  dasm count\n  dasm start count" },
 	{ "trans",	F_TRANS,	"Translator", "  trans\n  trans count\n  trans start count" },
@@ -79,7 +80,7 @@ void em400_debuger_c_load(WINDOW *win, char* image, int bank)
 	}
 
 	if (em400_mem_load_image(image, bank)) {
-		wprintw(win, "Cannot load image: \"%s\"\n", image);
+		waprintw(win, attr[C_ERROR], "Cannot load image: \"%s\"\n", image);
 	}
 }
 
@@ -90,14 +91,14 @@ void em400_debuger_c_help(WINDOW *win, int cmd_tok)
 	if (cmd_tok) {
 		while (c->cmd) {
 			if (cmd_tok == c->tok) {
-				wprintw(win, "%s : %s\nUsage:\n%s\n", c->cmd, c->doc, c->help);
+				waprintw(win, attr[C_LABEL], "%s : %s\nUsage:\n%s\n", c->cmd, c->doc, c->help);
 				return;
 			}
 			c++;
 		}
 	} else {
 		while (c->cmd) {
-			wprintw(win, "%-10s : %s\n", c->cmd, c->doc);
+			waprintw(win, attr[C_LABEL], "%-10s : %s\n", c->cmd, c->doc);
 			c++;
 		}
 	}
@@ -140,23 +141,19 @@ void em400_debuger_c_dt(WINDOW *win, int dasm_mode, int start, int count)
 
 	while (count > 0) {
 		len = mjc400_dt(em400_mem_ptr(SR_Q * SR_NB, start), &buf, dasm_mode);
+
 		if (start == R(R_IC)) {
-			wattrset(win, attr[C_ILABEL]);
+			waprintw(win, attr[C_ILABEL], "0x%04x:", start);
+			waprintw(win, attr[C_IDATA], " %-19s\n", buf);
 		} else {
-			wattrset(win, attr[C_LABEL]);
+			waprintw(win, attr[C_LABEL], "0x%04x:", start);
+			waprintw(win, attr[C_DATA], " %-19s\n", buf);
 		}
-		wprintw(win, "0x%04x:", start);
-		if (start == R(R_IC)) {
-			wattrset(win, attr[C_IDATA]);
-		} else {
-			wattrset(win, attr[C_DATA]);
-		}
-		wprintw(win, " %-19s\n", buf);
+
 		start += len;
 		count--;
 		free(buf);
 	}
-	wattroff(win, attr);
 }
 
 // -----------------------------------------------------------------------
@@ -174,12 +171,12 @@ void em400_debuger_c_mem(WINDOW *win, int block, int start, int end)
 
 	blockptr = em400_mem_ptr(block, 0);
 	if (!blockptr) {
-		wprintw(WCMD, "Cannot access block %i\n", block);
+		waprintw(WCMD, attr[C_ERROR], "Cannot access block %i\n", block);
 	}
 
 	// wrong range
 	if ((end >= 0) && (start > end)) {
-		wprintw(WCMD, "Wrong memory range: %i - %i\n", start, end);
+		waprintw(WCMD, attr[C_ERROR], "Wrong memory range: %i - %i\n", start, end);
 	}
 
 	// only start position given, adjust end position
@@ -188,31 +185,31 @@ void em400_debuger_c_mem(WINDOW *win, int block, int start, int end)
 	}
 
 	// print headers, mind MEMDUMP_COLS
-	wprintw(win, "  addr: ");
+	waprintw(win, attr[C_LABEL], "  addr: ");
 	for (int i=0 ; i<MEMDUMP_COLS ; i++) {
-		wprintw(win, "+%03x ", i);
+		waprintw(win, attr[C_LABEL], "+%03x ", i);
 	}
-	wprintw(win, "\n");
+	waprintw(win, attr[C_LABEL], "\n");
 	// print separator
-	wprintw(win, "-------");
+	waprintw(win, attr[C_LABEL], "-------");
 	for (int i=0 ; i<MEMDUMP_COLS ; i++) {
-		wprintw(win, "-----");
+		waprintw(win, attr[C_LABEL], "-----");
 	}
-	wprintw(win, "  ");
+	waprintw(win, attr[C_LABEL], "  ");
 	for (int i=0 ; i<MEMDUMP_COLS ; i++) {
-		wprintw(win, "--");
+		waprintw(win, attr[C_LABEL], "--");
 	}
-	wprintw(win, "\n");
+	waprintw(win, attr[C_LABEL], "\n");
 
 	// print row
 	while (addr <= end) {
 		// row header
 		if ((addr-start)%MEMDUMP_COLS == 0) {
-			wprintw(win, "0x%04x: ", addr); 
+			waprintw(win, attr[C_LABEL], "0x%04x: ", addr); 
 		}
 
 		// hex contents
-		wprintw(win, "%4x ", *(blockptr+addr));
+		waprintw(win, attr[C_DATA], "%4x ", *(blockptr+addr));
 
 		// store text representation
 		c1 = (char) (((*(blockptr+addr))&0b111111110000000)>>8);
@@ -223,7 +220,7 @@ void em400_debuger_c_mem(WINDOW *win, int block, int start, int end)
 
 		// row footer - text representation
 		if ((addr-start)%MEMDUMP_COLS == (MEMDUMP_COLS-1)) {
-			wprintw(win, " %s\n", text);
+			waprintw(win, attr[C_DATA], " %s\n", text);
 			tptr = text;
 		}
 
@@ -233,45 +230,88 @@ void em400_debuger_c_mem(WINDOW *win, int block, int start, int end)
 	// fill and finish current line
 	if ((addr-start-1)%MEMDUMP_COLS != (MEMDUMP_COLS-1)) {
 		while ((addr-start)%MEMDUMP_COLS !=0) {
-			wprintw(win, "     ");
+			waprintw(win, attr[C_DATA], "     ");
 			addr++;
 		}
-		wprintw(win, " %s\n", text);
+		waprintw(win, attr[C_DATA], " %s\n", text);
 	}
 
 	free(text);
 }
 
 // -----------------------------------------------------------------------
+void em400_debuger_c_sregs(WINDOW *win)
+{
+	char *ir = int2bin(R(R_IR)>>10, 6);
+	int d = (R(R_IR)>>9) & 1;
+	char *a = int2bin(R(R_IR)>>6, 3);
+	char *b = int2bin(R(R_IR)>>3, 3);
+	char *c = int2bin(R(R_IR), 3);
+
+	char *rm = int2bin(R(R_SR)>>6, 10);
+	int q = SR_Q;
+	int s = (R(R_SR)>>6) & 1;
+	char *nb = int2bin(R(R_SR), 4);
+
+	char *i1 = int2bin(RZ>>27, 5);
+	char *i2 = int2bin(RZ>>20, 7);
+	char *i3 = int2bin(RZ>>18, 2);
+	char *i4 = int2bin(RZ>>16, 2);
+	char *i5 = int2bin(RZ>>10, 6);
+	char *i6 = int2bin(RZ>>4, 6);
+	char *i7 = int2bin(RZ, 4);
+
+	char *sf = int2bin(R(0)>>8, 8);
+	char *uf = int2bin(R(0), 8);
+
+	waprintw(win, attr[C_LABEL], "            OPCODE D A   B   C\n");
+	waprintw(win, attr[C_LABEL], "IR: ");
+	waprintw(win, attr[C_DATA], "0x%04x  %s %i %s %s %s\n", R(R_IR), ir, d, a, b, c);
+	waprintw(win, attr[C_LABEL], "            RM         Q s NB\n");
+	waprintw(win, attr[C_LABEL], "SR: ");
+	waprintw(win, attr[C_DATA], "0x%04x  %s %i %i %s\n", R(R_SR), rm, q, s, nb);
+	waprintw(win, attr[C_LABEL], "                ZPMCZ TIFFFFx 01 23 456789 abcdef OCSS\n");
+	waprintw(win, attr[C_LABEL], "RZ: ");
+	waprintw(win, attr[C_DATA], "0x%08x  %s %s %s %s %s %s %s\n", RZ, i1, i2, i3, i4, i5, i6, i7);
+	waprintw(win, attr[C_LABEL], "            ZMVCLEGY Xuser\n");
+	waprintw(win, attr[C_LABEL], "R0: ");
+	waprintw(win, attr[C_DATA], "0x%04x  %s %s\n", R(0), sf, uf);
+
+	free(uf);
+	free(sf);
+
+	free(i1);
+	free(i2);
+	free(i3);
+	free(i4);
+	free(i5);
+	free(i6);
+	free(i7);
+
+	free(rm);
+	free(nb);
+
+	free(ir);
+	free(a);
+	free(b);
+	free(c);
+}
+
+// -----------------------------------------------------------------------
 void em400_debuger_c_regs(WINDOW *win)
 {
-	char *ir = int2bin(R(R_IR), 16);
-	char *sr = int2bin(R(R_SR), 16);
-	char *rz = int2bin(RZ, 32);
-	char *r0 = int2bin(R(0), 16);
+	waprintw(win, 0, "    hex    oct    dec    bin              ch R40\n");
+	for (int i=1 ; i<=7 ; i++) {
+		char *b = int2bin(R(i), 16);
+		char *r = int2r40(R(i));
+		char *c = int2chars(R(i));
 
-	wprintw(win, "           iiiiiiDAAABBBCCC             RM________QBNB__\n");
-	wprintw(win, "IR: 0x%04x %s  SR: 0x%04x %s\n", R(R_IR), ir, R(R_SR), sr);
-	wprintw(win, "IC: 0x%04x P: %i\n", R(R_IC), P);
-	wprintw(win, "\n");
-	wprintw(win, "    01234567012345670123456701234567      ZMVCLEGYX.......\n");
-	wprintw(win, "RZ: %s  R0: %s\n", rz, r0);
-	wprintw(win, "\n");
-	free(ir);
-	free(sr);
-	free(rz);
-	free(r0);
-	wprintw(win, "     hex... dec...  bin.....|.......       hex... dec...  bin.....|.......\n");
-	for (int i=0 ; i<4 ; i++) {
-		char *r1 = int2bin(R(2*i), 16);
-		char *r2 = int2bin(R(2*i+1), 16);
-		wprintw(win, "R%02i: 0x%04x  %5i  %s", 2*i, R(2*i), R(2*i), r1);
-		wprintw(win, "  R%02i: 0x%04x  %5i  %s\n", 2*i+1, R(2*i+1), R(2*i+1), r2);
-		free(r1);
-		free(r2);
+		waprintw(win, attr[C_LABEL], "R%i: ", i);
+		waprintw(win, attr[C_DATA], "0x%04x %6o %6i %s %s %s\n", R(i), R(i), (int16_t)R(i), b, c, r);
+		free(c);
+		free(r);
+		free(b);
 	}
-	wprintw(win, "\n");
-	wprintw(win, "MOD: 0x%04x %i  MODcnt: %i  P: %i  ZC17: %i\n", (uint16_t) R(R_MOD), R(R_MOD), MODcnt, P, ZC17);
 }
 
 // -----------------------------------------------------------------------
@@ -324,7 +364,7 @@ void em400_debuger_loop()
 		}
 
 		res = nc_readline(WCMD, "em400> ", buf, nbufsize);
-		wprintw(WCMD, "\n");
+		waprintw(WCMD, 0, "\n");
 
 		if ((res == KEY_ENTER) && (*buf)) {
 			yy_scan_string(buf);

@@ -35,7 +35,7 @@ int yylex(void);
 %token <value> VALUE YERR
 %token <text> TEXT
 %token '-' ':'
-%token <value> F_QUIT F_CLMEM F_MEM F_REGS F_RESET F_STEP F_HELP F_DASM F_TRANS F_LOAD
+%token <value> F_QUIT F_CLMEM F_MEM F_REGS F_SREGS F_RESET F_STEP F_HELP F_DASM F_TRANS F_LOAD
 %type <value> hcmd
 
 %%
@@ -61,6 +61,9 @@ function:
 	| F_REGS '\n' {
 		em400_debuger_c_regs(WCMD);
 	}
+	| F_SREGS '\n' {
+		em400_debuger_c_sregs(WCMD);
+	}
 	| F_RESET '\n' {
 		em400_debuger_c_reset();
 	}
@@ -83,7 +86,7 @@ f_help:
 	;
 
 hcmd:
-	F_QUIT | F_STEP | F_HELP | F_REGS | F_RESET | F_DASM | F_TRANS | F_MEM | F_CLMEM | F_LOAD {
+	F_QUIT | F_STEP | F_HELP | F_REGS | F_SREGS | F_RESET | F_DASM | F_TRANS | F_MEM | F_CLMEM | F_LOAD {
 		$$ = $1;
 	}
 
@@ -131,7 +134,7 @@ f_load:
 %%
 
 void yyerror(char *s) {
-    wprintw(WCMD, "Error: %s\n", s);
+    waprintw(WCMD, attr[C_ERROR], "Error: %s\n", s);
 }
 
 // vim: tabstop=4
