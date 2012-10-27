@@ -22,12 +22,12 @@ io.o\
 errors.o
 
 DEBUG_OBJS = \
+debuger_parser.o\
+debuger_scanner.o\
 dasm.o\
 dasm_iset.o\
 debuger.o\
-debuger_ui.o\
-debuger_parser.o\
-debuger_scanner.o
+debuger_ui.o
 
 ifdef WITH_DEBUGER
 OBJS += $(DEBUG_OBJS)

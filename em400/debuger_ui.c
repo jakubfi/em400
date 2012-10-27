@@ -90,7 +90,8 @@ int nc_readline(WINDOW *win, const char *prompt, char *buffer, int buflen)
 		c = wgetch(win);
 
 		if ((c == KEY_ENTER) || (c == '\n') || (c == '\r')) {
-			wprintw(win, "\n");
+			c = KEY_ENTER;
+			buffer[len++] = '\n';
 			break;
 		} else if (isprint(c)) {
 			if (pos < buflen-1) {
@@ -305,7 +306,7 @@ void _em400_debuger_w_resize_sig(int signum, siginfo_t *si, void *ctx)
 // -----------------------------------------------------------------------
 void em400_debuger_wu_mem(WINDOW *win)
 {
-	__em400_debuger_dump_mem(e4d_w[WIN_MEM].win, 0, 0, 0xff);
+	em400_debuger_c_mem(e4d_w[WIN_MEM].win, 0, 0, 0xff);
 }
 
 // -----------------------------------------------------------------------
@@ -318,7 +319,7 @@ void em400_debuger_wu_dasm(WINDOW *win)
 	} else {
 		start = R(R_IC) - offset;
 	}
-	em400_debuger_dt(win, DMODE_DASM, start, e4d_w[WIN_DASM].h-2);
+	em400_debuger_c_dt(win, DMODE_DASM, start, e4d_w[WIN_DASM].h-2);
 }
 
 // -----------------------------------------------------------------------

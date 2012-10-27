@@ -17,6 +17,9 @@
 //  51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 
 #include <stdlib.h>
+
+#include "debuger.h"
+#include "debuger_ui.h"
 #include "debuger_parser.h"
 
 void yyerror(char *);
@@ -26,21 +29,9 @@ oct		0[0-7]+
 hex		0x[0-9a-fA-F]+
 bin		0b[01]+
 dec		[0-9]+
-text	[_a-zA-Z][_a-zA-Z0-9]*
+text	[./_a-zA-Z0-9]+
 
 %%
-
-"quit"		return F_QUIT;
-"step"|"s"	return F_STEP;
-"help"|"?"	return F_HELP;
-"regs"		return F_REGS;
-"reset"		return F_RESET;
-"dasm"		return F_DASM;
-"trans"		return F_TRANS;
-"mem"		return F_MEM;
-"clmem"		return F_CLMEM;
-"memcl"		return F_CLMEM;
-"load"		return F_LOAD;
 
 {oct} {
 	yylval.value = strtoul(yytext+1, NULL, 8);
@@ -58,16 +49,24 @@ text	[_a-zA-Z][_a-zA-Z0-9]*
 	yylval.value = atoi(yytext);
 	return VALUE;
 }
-{text}	{ 
-	yylval.text = strdup(yytext);
-	return TEXT;
+{text}	{
+	int tok = debuger_is_cmd(yytext);
+	if (!tok) {
+		yylval.text = strdup(yytext);
+		return TEXT;
+	} else {
+		yylval.value = tok;
+		return tok;
+	}
 }
 
 [-:\n]	return *yytext;
 
 [ \t]+	;
-.		yyerror("Unknown character");
-
+. {
+	yylval.value = *yytext;
+	return YERR;
+}
 %%
 
 int yywrap(void) {

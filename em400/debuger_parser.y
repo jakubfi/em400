@@ -16,9 +16,12 @@
 //  Foundation, Inc.,
 //  51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 
-#include <stdio.h>
 #include <stdlib.h>
 #include <stdarg.h>
+
+#include "dasm.h"
+#include "debuger.h"
+#include "debuger_ui.h"
 
 void yyerror(char *);
 int yylex(void);
@@ -29,87 +32,106 @@ int yylex(void);
 	char *text;
 };
 
-%token <value> VALUE
+%token <value> VALUE YERR
 %token <text> TEXT
 %token '-' ':'
-%token F_QUIT F_CLMEM F_MEM F_REGS F_RESET F_STEP F_HELP F_DASM F_TRANS F_LOAD
+%token <value> F_QUIT F_CLMEM F_MEM F_REGS F_RESET F_STEP F_HELP F_DASM F_TRANS F_LOAD
+%type <value> hcmd
 
 %%
 
-commands:
-	commands command
-	|
-	;
-	
 command:
-	function '\n'
+	| function
+	| YERR {
+		char *s_err = malloc(1024);
+		sprintf(s_err, "unknown character: %c", (char) $1);
+		yyerror(s_err);
+		free(s_err);
+	}
 	;
 
 function:
-	F_QUIT	{
-		printf("Got: quit\n");
+	F_QUIT'\n' {
+		em400_debuger_c_quit();
 	}
-	| F_STEP {
-		printf("Got: step\n");
+	| F_STEP '\n' {
+		em400_debuger_c_step();
 	}
 	| f_help
-	| F_REGS {
-		printf("Got: regs\n");
+	| F_REGS '\n' {
+		em400_debuger_c_regs(WCMD);
 	}
-	| F_RESET {
-		printf("Got: reset\n");
+	| F_RESET '\n' {
+		em400_debuger_c_reset();
 	}
 	| f_dasm
 	| f_trans
 	| f_mem
-	| F_CLMEM {
-		printf("Got: clmem\n");
+	| F_CLMEM '\n' {
+		em400_debuger_c_clmem();
 	}
 	| f_load
 	;
 
 f_help:
-	F_HELP {
-		printf("Got: help\n");
+	F_HELP '\n' {
+		em400_debuger_c_help(WCMD, 0);
 	}
-	| F_HELP TEXT {
-		printf("Got: help %s\n", $2);
-		free($2);
+	| F_HELP hcmd '\n'{
+		em400_debuger_c_help(WCMD, $2);
 	}
 	;
 
+hcmd:
+	F_QUIT | F_STEP | F_HELP | F_REGS | F_RESET | F_DASM | F_TRANS | F_MEM | F_CLMEM | F_LOAD {
+		$$ = $1;
+	}
+
 f_dasm:
-	F_DASM {
-		printf("Got: dasm\n");
+	F_DASM '\n' {
+		em400_debuger_c_dt(WCMD, DMODE_DASM, -1, 1);
 	}
-	| F_DASM VALUE {
-		printf("Got: dasm %i\n", $2);
+	| F_DASM VALUE '\n' {
+		em400_debuger_c_dt(WCMD, DMODE_DASM, -1, $2);
 	}
-	| F_DASM VALUE VALUE {
-		printf("Got: dasm %i %i\n", $2, $3);
+	| F_DASM VALUE VALUE '\n' {
+		em400_debuger_c_dt(WCMD, DMODE_DASM, $2, $3);
 	}
 	;
 
 f_trans:
-	F_TRANS
-	| F_TRANS VALUE
-	| F_TRANS VALUE VALUE
+	F_TRANS '\n' {
+		em400_debuger_c_dt(WCMD, DMODE_TRANS, -1, 1);
+	}
+	| F_TRANS VALUE '\n' {
+		em400_debuger_c_dt(WCMD, DMODE_TRANS, -1, $2);
+	}
+	| F_TRANS VALUE VALUE '\n' {
+		em400_debuger_c_dt(WCMD, DMODE_TRANS, $2, $3);
+	}
 	;
 
 f_mem:
-	F_MEM VALUE '-' VALUE
-	| F_MEM VALUE VALUE '-' VALUE
-	| F_MEM VALUE ':' VALUE '-' VALUE
+	F_MEM VALUE '-' VALUE '\n' {
+		em400_debuger_c_mem(WCMD, -1, $2, $4);
+	}
+	| F_MEM VALUE ':' VALUE '-' VALUE '\n' {
+		em400_debuger_c_mem(WCMD, $4, $4, $6);
+	}
 
 f_load:
-	F_LOAD TEXT
-	| F_LOAD TEXT VALUE
+	F_LOAD TEXT '\n' {
+		em400_debuger_c_load(WCMD, $2, -1);
+	}
+	| F_LOAD TEXT VALUE '\n' {
+		em400_debuger_c_load(WCMD, $2, $3);
+	}
 	;
 
 %%
 
 void yyerror(char *s) {
-    fprintf(stdout, "%s\n", s);
+    wprintw(WCMD, "Error: %s\n", s);
 }
 
 // vim: tabstop=4

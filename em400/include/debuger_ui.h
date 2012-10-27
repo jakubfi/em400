@@ -18,6 +18,7 @@
 #ifndef DEBUGER_UI_H
 #define DEBUGER_UI_H
 
+#include <signal.h>
 #include <ncurses.h>
 
 #define KEY_BACKSPACE2	127
@@ -60,6 +61,8 @@ struct e4d_w_struct {
 extern int nc_w_changed;
 
 extern struct e4d_w_struct e4d_w[];
+
+#define WCMD e4d_w[WIN_CMD].win
 
 void em400_debuger_ui_init();
 int nc_readline(WINDOW *win, const char *prompt, char *buffer, int buflen);

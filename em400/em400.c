@@ -71,12 +71,9 @@ int main(int argc, char** argv)
 
 	while (!em400_quit) {
 #ifdef WITH_DEBUGER
-		int dbg_res = em400_debuger_step();
-		if (dbg_res <= DEBUGER_EM400_SKIP) {
-			if (dbg_res <= DEBUGER_EM400_QUIT) {
-				em400_quit = 1;
-			}
-			continue;
+		em400_debuger_loop();
+		if (em400_quit) {
+			break;
 		}
 #endif
 		mjc400_step();

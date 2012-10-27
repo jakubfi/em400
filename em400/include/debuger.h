@@ -24,39 +24,40 @@
 
 #define MEMDUMP_COLS 16
 
-#define DEBUGER_EM400_QUIT	-10
-#define DEBUGER_LOOP_ERR	-7
-#define DEBUGER_EM400_SKIP	-5	// here and below, we don't execute next instruction
-#define DEBUGER_EM400_STEP	100
+enum _debuger_loop_ret {
+	DEBUGER_EM400_CONT = 0,
+	DEBUGER_EM400_QUIT = 1,
+	DEBUGER_LOOP = 2
+};
+
+enum _debuger_cmd_res {
+	DEBUGER_CMD_OK = 0,
+	DEBUGER_CMD_ERR = 1
+};
 
 typedef struct {
 	char *cmd;
-	int (*fun)(WINDOW *win, char*);
+	int tok;
 	char *doc;
 	char *help;
 } cmd_s;
 
+extern int debuger_fin;
 extern cmd_s em400_debuger_commands[];
 
-int em400_debuger_c_quit(WINDOW *win, char* args);
-int em400_debuger_c_step(WINDOW *win, char* args);
-int em400_debuger_c_help(WINDOW *win, char* args);
-int em400_debuger_c_regs(WINDOW *win, char* args);
-int em400_debuger_c_reset(WINDOW *win, char* args);
-int __em400_debuger_dump_mem(WINDOW *win, int block, int start, int end);
-int em400_debuger_c_mem(WINDOW *win, char* args);
-int em400_debuger_c_memq(WINDOW *win, char* args);
-int em400_debuger_c_memnb(WINDOW *win, char* args);
-int em400_debuger_c_clmem(WINDOW *win, char* args);
-int __em400_debuger_c_dt(WINDOW *win, char* args, int dasm_mode);
-int em400_debuger_c_dasm(WINDOW *win, char* args);
-void em400_debuger_dt(WINDOW *win, int dasm_mode, int start, int count);
-int em400_debuger_c_trans(WINDOW *win, char* args);
-int em400_debuger_c_load(WINDOW *win, char* args);
-int em400_debuger_c_save(WINDOW *win, char* args);
+int debuger_is_cmd(char *cmd);
 
-int em400_debuger_execute(char* line);
-int em400_debuger_step();
+void em400_debuger_c_step();
+void em400_debuger_c_quit();
+void em400_debuger_c_help(WINDOW *win, int cmd_tok);
+void em400_debuger_c_regs(WINDOW *win);
+void em400_debuger_c_reset();
+void em400_debuger_c_mem(WINDOW *win, int block, int start, int end);
+void em400_debuger_c_clmem();
+void em400_debuger_c_dt(WINDOW *win, int dasm_mode, int start, int count);
+void em400_debuger_c_load(WINDOW *win, char* image, int bank);
+
+void em400_debuger_loop();
 int em400_debuger_init();
 void em400_debuger_shutdown();
 

@@ -1,10 +1,11 @@
+* CHECK IF SR_Q IS PROPERLY USED!
+
 * cpu: floating point instructions
 * debuger: save memory image
 * debuger: setting registers
 * debuger: setting memory
-* debuger: save memory image
 * debuger: breakpoints
-* debuger: operator panel view
+* debuger: operator panel view (?)
 * debuger: step should work the same way as CYCLE (cycle on instruction and interrupt)
 * autotests
 * other: commandline dasm/trans (?)

@@ -29,113 +29,114 @@
 #include "utils.h"
 #include "debuger.h"
 #include "debuger_ui.h"
+#include "debuger_parser.h"
+
+extern int em400_quit;
 
 char *debuger_prompt;
 int nc_repaint = 0;
+int debuger_fin = 0;
+
+extern int yyparse();
+typedef struct yy_buffer_state *YY_BUFFER_STATE;
+YY_BUFFER_STATE yy_scan_string(char *yy_str);
 
 // -----------------------------------------------------------------------
 cmd_s em400_debuger_commands[] = {
-	{ "exit",	em400_debuger_c_quit,	"Quit the emulator", "  exit" },
-	{ "quit",	em400_debuger_c_quit,	"Quit the emulator", "  quit" },
-	{ "step",	em400_debuger_c_step,	"Execute instruction at IC", "  step" },
-	{ "s",		em400_debuger_c_step,	"Execute instruction at IC", "  s" },
-	{ "help",	em400_debuger_c_help,	"Print help", "  help" },
-	{ "?",		em400_debuger_c_help,	"Print help", "  ?" },
-	{ "regs",	em400_debuger_c_regs,	"Show registers", "  regs" },
-	{ "reset",	em400_debuger_c_reset,	"Reset the emulator", "  reset" },
-	{ "dasm",	em400_debuger_c_dasm,	"Disassembler", "  dasm\n  dasm count\n  dasm start count" },
-	{ "trans",	em400_debuger_c_trans,	"Translator", "  trans\n  trans count\n  trans start count" },
-	{ "mem",	em400_debuger_c_mem,	"Show memory contents (any block)", "  mem block word_addr\n  mem block start_addr end_addr",  },
-	{ "memq",	em400_debuger_c_memq,	"Show memory contents (block by Q,NB)", "  memq word_addr\n  memq start_addr end_addr" },
-	{ "memnb",	em400_debuger_c_memnb,	"Show memory contents (block by NB)", "  memnb word_addr\n  memnb start_addr end_addr" },
-	{ "clmem",	em400_debuger_c_clmem,	"Clear memory contents", "  clmem" },
-	{ "load",	em400_debuger_c_load,	"Load memory image", "  load image mem_block" },
-	{ "save",	em400_debuger_c_save,	"Load save image", "  save image mem_block" },
-	{ NULL,		NULL,					NULL, NULL }
+	{ "quit",	F_QUIT,		"Quit the emulator", "  quit" },
+	{ "step",	F_STEP,		"Execute instruction at IC", "  step" },
+	{ "help",	F_HELP,		"Print help", "  help" },
+	{ "regs",	F_REGS,		"Show registers", "  regs" },
+	{ "reset",	F_RESET,	"Reset the emulator", "  reset" },
+	{ "dasm",	F_DASM,		"Disassembler", "  dasm\n  dasm count\n  dasm start count" },
+	{ "trans",	F_TRANS,	"Translator", "  trans\n  trans count\n  trans start count" },
+	{ "mem",	F_MEM,		"Show memory contents (any block)", "  mem block word_addr\n  mem block start_addr end_addr",  },
+	{ "memq",	F_MEM,		"Show memory contents (block by Q,NB)", "  memq word_addr\n  memq start_addr end_addr" },
+	{ "memnb",	F_MEM,		"Show memory contents (block by NB)", "  memnb word_addr\n  memnb start_addr end_addr" },
+	{ "clmem",	F_CLMEM,	"Clear memory contents", "  clmem" },
+	{ "load",	F_LOAD,		"Load memory image", "  load image mem_block" },
+	{ NULL,		0,			NULL }
 };
 
 // -----------------------------------------------------------------------
-int em400_debuger_c_quit(WINDOW *win, char* args)
+int debuger_is_cmd(char *cmd)
 {
-	return DEBUGER_EM400_QUIT;
+	cmd_s* c = em400_debuger_commands;
+	while (c->cmd) {
+		if (!strcmp(cmd, c->cmd)) {
+			return c->tok;
+		}
+		c++;
+	}
+	return 0;
 }
 
 // -----------------------------------------------------------------------
-int em400_debuger_c_step(WINDOW *win, char* args)
+void em400_debuger_c_load(WINDOW *win, char* image, int bank)
 {
-	return DEBUGER_EM400_STEP;
-}
-
-// -----------------------------------------------------------------------
-int em400_debuger_c_load(WINDOW *win, char* args)
-{
-	char *image = malloc(256+1);
-	int bank = -1;
-
-	int n = sscanf(args, "%256s %i", image, &bank);
-
-	// parse error
-	if ((n<2) || (n>2)) {
-		return DEBUGER_LOOP_ERR;
+	if (bank < 0) {
+		bank = SR_NB;
 	}
 
 	if (em400_mem_load_image(image, bank)) {
 		wprintw(win, "Cannot load image: \"%s\"\n", image);
-		return DEBUGER_LOOP_ERR;
 	}
-
-	free(image);
-
-	return DEBUGER_EM400_SKIP;
 }
 
 // -----------------------------------------------------------------------
-int em400_debuger_c_save(WINDOW *win, char* args)
-{
-	return DEBUGER_EM400_SKIP;
-}
-
-// -----------------------------------------------------------------------
-int em400_debuger_c_help(WINDOW *win, char* args)
+void em400_debuger_c_help(WINDOW *win, int cmd_tok)
 {
 	cmd_s *c = em400_debuger_commands;
-	if (args && *args) {
+	if (cmd_tok) {
 		while (c->cmd) {
-			if (!strcmp(args, c->cmd)) {
+			if (cmd_tok == c->tok) {
 				wprintw(win, "%s : %s\nUsage:\n%s\n", c->cmd, c->doc, c->help);
-				return DEBUGER_EM400_SKIP;
+				return;
 			}
 			c++;
 		}
-		return DEBUGER_LOOP_ERR;
 	} else {
 		while (c->cmd) {
 			wprintw(win, "%-10s : %s\n", c->cmd, c->doc);
 			c++;
 		}
 	}
-	return DEBUGER_EM400_SKIP;
 }
 
 // -----------------------------------------------------------------------
-int em400_debuger_c_reset(WINDOW *win, char* args)
+void em400_debuger_c_quit()
+{
+	debuger_fin = 1;
+	em400_quit = 1;
+}
+
+// -----------------------------------------------------------------------
+void em400_debuger_c_step()
+{
+	debuger_fin = 1;
+}
+
+// -----------------------------------------------------------------------
+void em400_debuger_c_reset()
 {
 	mjc400_reset();
-	return DEBUGER_EM400_SKIP;
 }
 
 // -----------------------------------------------------------------------
-int em400_debuger_c_clmem(WINDOW *win, char* args)
+void em400_debuger_c_clmem()
 {
 	em400_mem_clear();
-	return DEBUGER_EM400_SKIP;
 }
 
 // -----------------------------------------------------------------------
-void em400_debuger_dt(WINDOW *win, int dasm_mode, int start, int count)
+void em400_debuger_c_dt(WINDOW *win, int dasm_mode, int start, int count)
 {
 	char *buf;
 	int len;
+
+	if (start < 0) {
+		start = R(R_IC);
+	}
 
 	while (count > 0) {
 		len = mjc400_dt(em400_mem_ptr(SR_Q*SR_NB, start), &buf, dasm_mode);
@@ -159,43 +160,7 @@ void em400_debuger_dt(WINDOW *win, int dasm_mode, int start, int count)
 }
 
 // -----------------------------------------------------------------------
-int __em400_debuger_c_dt(WINDOW *win, char* args, int dasm_mode)
-{
-	int d_start;
-	int d_count;
-
-	int n = sscanf(args, "%i %i", &d_start, &d_count);
-
-	if (n <= 0) {
-		d_count = 1;
-		d_start = R(R_IC);
-	} else if (n == 1) {
-		d_count = d_start;
-		d_start = R(R_IC);
-	} else if (n == 2) {
-	} else {
-		return DEBUGER_LOOP_ERR;
-	}
-
-	em400_debuger_dt(win, dasm_mode, d_start, d_count);
-
-	return DEBUGER_EM400_SKIP;
-}
-
-// -----------------------------------------------------------------------
-int em400_debuger_c_dasm(WINDOW *win, char* args)
-{
-	return __em400_debuger_c_dt(win, args, DMODE_DASM);
-}
-
-// -----------------------------------------------------------------------
-int em400_debuger_c_trans(WINDOW *win, char* args)
-{
-	return __em400_debuger_c_dt(win, args, DMODE_TRANS);
-}
-
-// -----------------------------------------------------------------------
-int __em400_debuger_dump_mem(WINDOW *win, int block, int start, int end)
+void em400_debuger_c_mem(WINDOW *win, int block, int start, int end)
 {
 	uint16_t addr = start;
 	char *text = malloc(MEMDUMP_COLS*2+1);
@@ -203,14 +168,19 @@ int __em400_debuger_dump_mem(WINDOW *win, int block, int start, int end)
 	char c1, c2;
 	uint16_t *blockptr;
 
+	if (block < 0) {
+		if (SR_Q) block = SR_NB;
+		else block = 0;
+	}
+
 	blockptr = em400_mem_ptr(block, 0);
 	if (!blockptr) {
-		return DEBUGER_LOOP_ERR;
+		wprintw(WCMD, "Cannot access block %i\n", block);
 	}
 
 	// wrong range
 	if ((end >= 0) && (start > end)) {
-		return DEBUGER_LOOP_ERR;
+		wprintw(WCMD, "Wrong memory range: %i - %i\n", start, end);
 	}
 
 	// only start position given, adjust end position
@@ -271,58 +241,10 @@ int __em400_debuger_dump_mem(WINDOW *win, int block, int start, int end)
 	}
 
 	free(text);
-
-	return DEBUGER_EM400_SKIP;
 }
 
 // -----------------------------------------------------------------------
-int em400_debuger_c_memq(WINDOW *win, char* args)
-{
-	int m_start = -1;
-	int m_end = -1;
-	int n = sscanf(args, "%i %i", &m_start, &m_end);
-
-	// parse error
-	if ((n<1) || (n>2)) {
-		return DEBUGER_LOOP_ERR;
-	}
-
-	return __em400_debuger_dump_mem(win, SR_Q*SR_NB, m_start, m_end);
-}
-
-// -----------------------------------------------------------------------
-int em400_debuger_c_memnb(WINDOW *win, char* args)
-{
-	int m_start = -1;
-	int m_end = -1;
-	int n = sscanf(args, "%i %i", &m_start, &m_end);
-
-	// parse error
-	if ((n<1) || (n>2)) {
-		return DEBUGER_LOOP_ERR;
-	}
-
-	return __em400_debuger_dump_mem(win, SR_NB, m_start, m_end);
-}
-
-// -----------------------------------------------------------------------
-int em400_debuger_c_mem(WINDOW *win, char* args)
-{
-	int m_block = -1;
-	int m_start = -1;
-	int m_end = -1;
-	int n = sscanf(args, "%i %i %i", &m_block, &m_start, &m_end);
-
-	// parse error
-	if ((n<=1) || (n>3)) {
-		return DEBUGER_LOOP_ERR;
-	}
-
-	return __em400_debuger_dump_mem(win, m_block, m_start, m_end);
-}
-
-// -----------------------------------------------------------------------
-int em400_debuger_c_regs(WINDOW *win, char* args)
+void em400_debuger_c_regs(WINDOW *win)
 {
 	char *ir = int2bin(R(R_IR), 16);
 	char *sr = int2bin(R(R_SR), 16);
@@ -351,36 +273,6 @@ int em400_debuger_c_regs(WINDOW *win, char* args)
 	}
 	wprintw(win, "\n");
 	wprintw(win, "MOD: 0x%04x %i  MODcnt: %i  P: %i  ZC17: %i\n", (uint16_t) R(R_MOD), R(R_MOD), MODcnt, P, ZC17);
-	return DEBUGER_EM400_SKIP;
-}
-
-// -----------------------------------------------------------------------
-int em400_debuger_execute(char* line)
-{
-	char cmd[10+1] = {0};
-	char args[100+1] = {0};
-	cmd_s* c = em400_debuger_commands;
-
-	int n;
-	n = sscanf(line, "%s %100c", cmd, args);
-	if (n <= 0) {
-		return DEBUGER_EM400_SKIP;
-	}
-
-	while (c->cmd) {
-		if (!strcmp(cmd, c->cmd)) {
-			int ret;
-			ret = c->fun(e4d_w[WIN_CMD].win, args);
-			if (ret == DEBUGER_LOOP_ERR) {
-				wprintw(e4d_w[WIN_CMD].win, "Error while processing command. Usage:\n%s\n", c->help);
-			}
-			return ret;
-		}
-		c++;
-	}
-
-	wprintw(e4d_w[WIN_CMD].win, "Unknown command: '%s'. Try 'help'.\n", cmd);
-	return DEBUGER_EM400_SKIP;
 }
 
 // -----------------------------------------------------------------------
@@ -416,29 +308,30 @@ void em400_debuger_shutdown()
 }
 
 // -----------------------------------------------------------------------
-int em400_debuger_step()
+void em400_debuger_loop()
 {
-	int ret = DEBUGER_EM400_STEP;
 	int nbufsize = 1024;
 	char buf[nbufsize];
 	int res;
 
-	if (nc_w_changed) {
-		e400_debuger_w_reinit_all();
-		nc_w_changed = 0;
-	} else {
-		e400_debuger_w_redraw_all();
+	debuger_fin = 0;
+
+	while (!debuger_fin) {
+		if (nc_w_changed) {
+			e400_debuger_w_reinit_all();
+			nc_w_changed = 0;
+		} else {
+			e400_debuger_w_redraw_all();
+		}
+
+		res = nc_readline(WCMD, "em400> ", buf, nbufsize);
+		wprintw(WCMD, "\n");
+
+		if ((res == KEY_ENTER) && (*buf)) {
+			yy_scan_string(buf);
+			yyparse();
+		}
 	}
-
-	res = nc_readline(e4d_w[WIN_CMD].win, "em400> ", buf, nbufsize);
-
-	if (*buf) {
-		ret = em400_debuger_execute(buf);
-	} else {
-		ret = DEBUGER_EM400_SKIP;
-	}
-
-	return ret;
 }
 
 // vim: tabstop=4
