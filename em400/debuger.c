@@ -139,7 +139,7 @@ void em400_debuger_c_dt(WINDOW *win, int dasm_mode, int start, int count)
 	}
 
 	while (count > 0) {
-		len = mjc400_dt(em400_mem_ptr(SR_Q*SR_NB, start), &buf, dasm_mode);
+		len = mjc400_dt(em400_mem_ptr(SR_Q * SR_NB, start), &buf, dasm_mode);
 		if (start == R(R_IC)) {
 			wattrset(win, attr[C_ILABEL]);
 		} else {
@@ -169,8 +169,7 @@ void em400_debuger_c_mem(WINDOW *win, int block, int start, int end)
 	uint16_t *blockptr;
 
 	if (block < 0) {
-		if (SR_Q) block = SR_NB;
-		else block = 0;
+		block = SR_Q * SR_NB;
 	}
 
 	blockptr = em400_mem_ptr(block, 0);

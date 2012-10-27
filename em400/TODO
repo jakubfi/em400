@@ -1,5 +1,3 @@
-* CHECK IF SR_Q IS PROPERLY USED!
-
 * cpu: floating point instructions
 * debuger: save memory image
 * debuger: setting registers
