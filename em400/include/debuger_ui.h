@@ -59,6 +59,15 @@ struct e4d_w_struct {
 	void (*fun)(WINDOW *win);
 };
 
+struct h_entry {
+	char *cmd;
+	int len;
+	struct h_entry *next;
+	struct h_entry *prev;
+};
+
+extern struct h_entry *history;
+
 extern int nc_w_changed;
 
 extern struct e4d_w_struct e4d_w[];

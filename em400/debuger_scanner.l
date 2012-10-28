@@ -75,6 +75,9 @@ mod|MOD	{
 	yylval.value = R_MOD;
 	return REG;
 }
+hex	return HEX;
+oct	return OCT;
+bin	return BIN;
 {text}	{
 	int tok = debuger_is_cmd(yytext);
 	if (!tok) {

@@ -373,7 +373,7 @@ void em400_debuger_shutdown()
 // -----------------------------------------------------------------------
 void em400_debuger_loop()
 {
-	int nbufsize = 1024;
+	int nbufsize = 70;
 	char buf[nbufsize];
 	int res;
 

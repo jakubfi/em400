@@ -40,9 +40,19 @@ struct e4d_w_struct e4d_w[] = {
 
 int attr[C_MAX] = {0};
 
+struct h_entry *history;
+struct h_entry *cur_h;
+
 // -----------------------------------------------------------------------
 void em400_debuger_ui_init()
 {
+	history = malloc(sizeof(struct h_entry));
+	history->cmd = NULL;
+	history->next = NULL;
+	history->prev = NULL;
+	history->len = 0;
+	cur_h = history;
+
 	// command line promt
 	init_pair(C_PROMPT, COLOR_YELLOW, COLOR_BLACK);
 	attr[C_PROMPT] = COLOR_PAIR(C_PROMPT) | A_BOLD;
@@ -69,6 +79,26 @@ void em400_debuger_ui_init()
 }
 
 // -----------------------------------------------------------------------
+void nc_rl_history_add(char *cmd, int len)
+{
+	if ((history->prev) && (history->prev->cmd) && (!strncmp(cmd, history->prev->cmd, len))) {
+		return;
+	}
+
+	struct h_entry *he = malloc(sizeof(struct h_entry));
+	he->cmd = NULL;
+	he->next = NULL;
+	he->prev = history;
+	he->len = 0;
+
+	history->cmd = strdup(cmd);
+	history->len = len;
+	history->next = he;
+
+	history = he;
+}
+
+// -----------------------------------------------------------------------
 int nc_readline(WINDOW *win, const char *prompt, char *buffer, int buflen)
 {
 	int old_curs = curs_set(1);
@@ -77,14 +107,11 @@ int nc_readline(WINDOW *win, const char *prompt, char *buffer, int buflen)
 	int x, y;
 	int c;
 
+	flushinp();
 	keypad(win, TRUE);
 	getyx(win, y, x);
-
 	mvwaprintw(win, y, 0, attr[C_PROMPT], prompt);
-
 	getyx(win, y, x);
-
-	flushinp();
 
 	while (1) {
 		buffer[len] = ' ';
@@ -94,6 +121,10 @@ int nc_readline(WINDOW *win, const char *prompt, char *buffer, int buflen)
 
 		if ((c == KEY_ENTER) || (c == '\n') || (c == '\r')) {
 			c = KEY_ENTER;
+			if (len > 0) {
+				nc_rl_history_add(buffer, len);
+			}
+			cur_h = history;
 			buffer[len++] = '\n';
 			break;
 		} else if (isprint(c)) {
@@ -124,6 +155,29 @@ int nc_readline(WINDOW *win, const char *prompt, char *buffer, int buflen)
 			if (pos < len) {
 				memmove(buffer+pos, buffer+pos+1, len-pos-1);
 				len -= 1;
+			}
+		} else if (c == KEY_UP) {
+			if (cur_h->prev) {
+				wmove(win, y, x);
+				wprintw(win, "                                                                     ");
+				cur_h = cur_h->prev;
+				strcpy(buffer, cur_h->cmd);
+				len = cur_h->len;
+				pos = cur_h->len;
+			}
+		} else if (c == KEY_DOWN) {
+			if (cur_h->next) {
+				wmove(win, y, x);
+				wprintw(win, "                                                                     ");
+				cur_h = cur_h->next;
+				if (cur_h->cmd) {
+					strcpy(buffer, cur_h->cmd);
+					len = cur_h->len;
+					pos = cur_h->len;
+				} else {
+					len = 0;
+					pos = 0;
+				}
 			}
 		} else {
 			break;

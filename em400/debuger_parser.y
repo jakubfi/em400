@@ -21,6 +21,7 @@
 
 #include "registers.h"
 #include "memory.h"
+#include "utils.h"
 #include "dasm.h"
 #include "debuger.h"
 #include "debuger_ui.h"
@@ -39,6 +40,7 @@ int yylex(void);
 %token <value> VALUE REG YERR
 %token <text> TEXT
 %token ':' '&' '|' '(' ')' '[' ']'
+%token HEX OCT BIN
 %token <value> F_QUIT F_CLMEM F_MEM F_REGS F_SREGS F_RESET F_STEP F_HELP F_DASM F_TRANS F_LOAD F_MEMCFG
 %type <value> hcmd
 %type <n> expr
@@ -59,7 +61,21 @@ int yylex(void);
 %%
 
 statement:
-	| function
+	| command
+	| HEX '(' expr ')' '\n' {
+		int16_t v = n_eval($3);
+		waprintw(WCMD, attr[C_DATA], "0x%x\n", v);
+	}
+	| OCT '(' expr ')' '\n' {
+		int16_t v = n_eval($3);
+		waprintw(WCMD, attr[C_DATA], "0%o\n", v);
+	}
+	| BIN '(' expr ')' '\n' {
+		int16_t v = n_eval($3);
+		char *b = int2bin(v, 16);
+		waprintw(WCMD, attr[C_DATA], "0b%s\n", b);
+		free(b);
+	}
 	| expr '\n' {
 		int16_t v = n_eval($1);
 		waprintw(WCMD, attr[C_DATA], "%i\n", v);
@@ -106,7 +122,7 @@ expr:
 	| '[' expr ':' expr ']' { $$ = n_oper('[', $2, $4); }
 	;
 
-function:
+command:
 	'\n' {}
 	| F_QUIT'\n' {
 		em400_debuger_c_quit();
