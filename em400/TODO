@@ -1,5 +1,7 @@
 * cpu: floating point instructions
 * debuger: variables
+* debiger: command history
+* debuger: base conversion
 * debuger: save memory image
 * debuger: breakpoints
 * debuger: operator panel view (?)
