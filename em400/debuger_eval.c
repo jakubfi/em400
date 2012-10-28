@@ -26,6 +26,8 @@ struct node_t * n_val(int16_t v)
 	struct node_t *n = malloc(sizeof(struct node_t));
 	n->type = N_VAL;
 	n->val = v;
+	n->n1 = NULL;
+	n->n2 = NULL;
 	return n;
 }
 
@@ -46,8 +48,20 @@ struct node_t * n_reg(int r)
 	struct node_t *n = malloc(sizeof(struct node_t));
 	n->type = N_REG;
 	n->val = r;
+	n->n1 = NULL;
+	n->n2 = NULL;
 	return n;
 }
+
+// -----------------------------------------------------------------------
+void n_free(struct node_t *n)
+{
+	if (!n) return;
+	n_free(n->n1);
+	n_free(n->n2);
+	free(n);
+}
+
 // -----------------------------------------------------------------------
 uint16_t n_eval(struct node_t * n)
 {

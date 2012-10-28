@@ -65,26 +65,33 @@ statement:
 	| HEX '(' expr ')' '\n' {
 		int16_t v = n_eval($3);
 		waprintw(WCMD, attr[C_DATA], "0x%x\n", v);
+		n_free($3);
 	}
 	| OCT '(' expr ')' '\n' {
 		int16_t v = n_eval($3);
 		waprintw(WCMD, attr[C_DATA], "0%o\n", v);
+		n_free($3);
 	}
 	| BIN '(' expr ')' '\n' {
 		int16_t v = n_eval($3);
 		char *b = int2bin(v, 16);
 		waprintw(WCMD, attr[C_DATA], "0b%s\n", b);
 		free(b);
+		n_free($3);
 	}
 	| expr '\n' {
 		int16_t v = n_eval($1);
 		waprintw(WCMD, attr[C_DATA], "%i\n", v);
+		n_free($1);
 	}
 	| REG '=' expr '\n' {
 		Rw($1, n_eval($3));
+		n_free($3);
 	}
 	| '[' expr ']' '=' expr '\n' {
 		MEMw(n_eval($2), n_eval($5));
+		n_free($2);
+		n_free($5);
 	}
 	| '[' expr ':' expr ']' '=' expr '\n' {
 		MEMBw(n_eval($2), n_eval($4), n_eval($7));

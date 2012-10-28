@@ -36,6 +36,7 @@ struct node_t {
 
 struct node_t * n_val(int16_t v);
 struct node_t * n_reg(int r);
+void n_free(struct node_t *n);
 struct node_t * n_oper(int oper, struct node_t *n1, struct node_t *n2);
 uint16_t n_eval(struct node_t * n);
 
