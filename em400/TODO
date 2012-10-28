@@ -1,7 +1,6 @@
 * cpu: floating point instructions
+* debuger: variables
 * debuger: save memory image
-* debuger: setting registers
-* debuger: setting memory
 * debuger: breakpoints
 * debuger: operator panel view (?)
 * debuger: step should work the same way as CYCLE (cycle on instruction and interrupt)

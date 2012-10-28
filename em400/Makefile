@@ -27,7 +27,8 @@ debuger_scanner.o\
 dasm.o\
 dasm_iset.o\
 debuger.o\
-debuger_ui.o
+debuger_ui.o\
+debuger_eval.o
 
 ifdef WITH_DEBUGER
 OBJS += $(DEBUG_OBJS)

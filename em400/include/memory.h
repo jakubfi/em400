@@ -44,8 +44,10 @@ int em400_mem_load_image(const char* fname, unsigned short block);
 
 #define MEM(a)			em400_mem_read(SR_Q*SR_NB, a)
 #define MEMNB(a)		em400_mem_read(SR_NB, a)
+#define MEMB(b, a)		em400_mem_read(b, a)
 #define MEMw(a, x)		em400_mem_write(SR_Q*SR_NB, a, x)
 #define MEMNBw(a, x)	em400_mem_write(SR_NB, a, x)
+#define MEMBw(b, a, x)	em400_mem_write(b, a, x)
 
 // -----------------------------------------------------------------------
 // dword conversions

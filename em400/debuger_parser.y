@@ -19,9 +19,12 @@
 #include <stdlib.h>
 #include <stdarg.h>
 
+#include "registers.h"
+#include "memory.h"
 #include "dasm.h"
 #include "debuger.h"
 #include "debuger_ui.h"
+#include "debuger_eval.h"
 
 void yyerror(char *);
 int yylex(void);
@@ -30,24 +33,77 @@ int yylex(void);
 %union {
 	int value;
 	char *text;
+	struct node_t *n;
 };
 
-%token <value> VALUE YERR
+%token <value> VALUE REG YERR
 %token <text> TEXT
-%token '-' ':'
+%token ':' '&' '|' '(' ')' '[' ']'
 %token <value> F_QUIT F_CLMEM F_MEM F_REGS F_SREGS F_RESET F_STEP F_HELP F_DASM F_TRANS F_LOAD F_MEMCFG
 %type <value> hcmd
+%type <n> expr
+
+%left OR
+%left AND
+%left '|'
+%left '^'
+%left '&'
+%left EQ NEQ
+%left GE LE '>' '<'
+%left SHR SHL
+%left '+' '-'
+%left '*'
+%left '~' '!'
+%nonassoc UMINUS
 
 %%
 
-command:
+statement:
 	| function
+	| expr '\n' {
+		int16_t v = n_eval($1);
+		waprintw(WCMD, attr[C_DATA], "%i\n", v);
+	}
+	| REG '=' expr '\n' {
+		Rw($1, n_eval($3));
+	}
+	| '[' expr ']' '=' expr '\n' {
+		MEMw(n_eval($2), n_eval($5));
+	}
+	| '[' expr ':' expr ']' '=' expr '\n' {
+		MEMBw(n_eval($2), n_eval($4), n_eval($7));
+	}
 	| YERR {
 		char *s_err = malloc(1024);
 		sprintf(s_err, "unknown character: %c", (char) $1);
 		yyerror(s_err);
 		free(s_err);
 	}
+	;
+
+expr:
+	VALUE { $$ = n_val($1); }
+	| REG { $$ = n_reg($1); }
+	| '-' expr %prec UMINUS { $$ = n_oper(UMINUS, $2, NULL); }
+	| expr '+' expr { $$ = n_oper('+', $1, $3); }
+	| expr '-' expr { $$ = n_oper('-', $1, $3); }
+	| expr '*' expr { $$ = n_oper('*', $1, $3); }
+	| expr '|' expr { $$ = n_oper('|', $1, $3); }
+	| expr '&' expr { $$ = n_oper('&', $1, $3); }
+	| expr '^' expr { $$ = n_oper('^', $1, $3); }
+	| expr SHR expr { $$ = n_oper(SHR, $1, $3); }
+	| expr SHL expr { $$ = n_oper(SHL, $1, $3); }
+	| expr EQ expr { $$ = n_oper(EQ, $1, $3); }
+	| expr NEQ expr { $$ = n_oper(NEQ, $1, $3); }
+	| expr GE expr { $$ = n_oper(GE, $1, $3); }
+	| expr LE expr { $$ = n_oper(LE, $1, $3); }
+	| expr '>' expr { $$ = n_oper('>', $1, $3); }
+	| expr '<' expr { $$ = n_oper('<', $1, $3); }
+	| '~' expr { $$ = n_oper('~', $2, NULL); }
+	| '!' expr { $$ = n_oper('!', $2, NULL); }
+	| '(' expr ')' { $$ = $2; }
+	| '[' expr ']' { $$ = n_oper('[', $2, NULL); }
+	| '[' expr ':' expr ']' { $$ = n_oper('[', $2, $4); }
 	;
 
 function:

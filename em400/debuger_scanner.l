@@ -18,6 +18,7 @@
 
 #include <stdlib.h>
 
+#include "registers.h"
 #include "debuger.h"
 #include "debuger_ui.h"
 #include "debuger_parser.h"
@@ -29,6 +30,7 @@ oct		0[0-7]+
 hex		0x[0-9a-fA-F]+
 bin		0b[01]+
 dec		[0-9]+
+reg		r[0-7]|R[0-7]
 text	[./_a-zA-Z0-9]+
 
 %%
@@ -37,7 +39,7 @@ text	[./_a-zA-Z0-9]+
 	yylval.value = strtoul(yytext+1, NULL, 8);
 	return VALUE;
 }
-{hex}	{
+{hex} {
 	yylval.value = strtoul(yytext+2, NULL, 16);
 	return VALUE;
 }
@@ -45,9 +47,33 @@ text	[./_a-zA-Z0-9]+
 	yylval.value = strtoul(yytext+2, NULL, 2);
 	return VALUE;
 }
-{dec}	{
+{dec} {
 	yylval.value = atoi(yytext);
 	return VALUE;
+}
+{reg} {
+	yylval.value = atoi(yytext+1);
+	return REG;
+}
+ic|IC	{
+	yylval.value = R_IC;
+	return REG;
+}
+sr|SR	{
+	yylval.value = R_SR;
+	return REG;
+}
+ir|IR	{
+	yylval.value = R_IR;
+	return REG;
+}
+kb|KB	{
+	yylval.value = R_KB;
+	return REG;
+}
+mod|MOD	{
+	yylval.value = R_MOD;
+	return REG;
 }
 {text}	{
 	int tok = debuger_is_cmd(yytext);
@@ -60,7 +86,17 @@ text	[./_a-zA-Z0-9]+
 	}
 }
 
-[-:\n]	return *yytext;
+">>"	return SHR;
+"<<"	return SHL;
+"=="	return EQ;
+"!="	return NEQ;
+"<>"	return NEQ;
+">="	return GE;
+"<="	return LE;
+"||"	return OR;
+"&&"	return AND;
+
+[-=+*&\|\^><:()\]\[~!\n]	return *yytext;
 
 [ \t]+	;
 . {
