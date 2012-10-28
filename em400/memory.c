@@ -27,7 +27,7 @@
 #include "io.h"
 
 // memory configuration provided by the user: number of segments in a module
-short int em400_mem_conf[MEM_MAX_MODULES] = { 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8 };
+short int em400_mem_conf[MEM_MAX_MODULES] = { 2, 8, 8, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 };
 // physical memory: modules with segments inside
 uint16_t *em400_mem_segment[MEM_MAX_MODULES][MEM_MAX_SEGMENTS] = { {NULL} };
 // logical mapping from (NB,AB) to physical segment pointer

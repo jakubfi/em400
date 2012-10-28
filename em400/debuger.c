@@ -51,11 +51,10 @@ cmd_s em400_debuger_commands[] = {
 	{ "reset",	F_RESET,	"Reset the emulator", "  reset" },
 	{ "dasm",	F_DASM,		"Disassembler", "  dasm\n  dasm count\n  dasm start count" },
 	{ "trans",	F_TRANS,	"Translator", "  trans\n  trans count\n  trans start count" },
-	{ "mem",	F_MEM,		"Show memory contents (any block)", "  mem block word_addr\n  mem block start_addr end_addr",  },
-	{ "memq",	F_MEM,		"Show memory contents (block by Q,NB)", "  memq word_addr\n  memq start_addr end_addr" },
-	{ "memnb",	F_MEM,		"Show memory contents (block by NB)", "  memnb word_addr\n  memnb start_addr end_addr" },
+	{ "mem",	F_MEM,		"Show memory contents", "  mem start-end\n  mem block: start-end" },
 	{ "clmem",	F_CLMEM,	"Clear memory contents", "  clmem" },
 	{ "load",	F_LOAD,		"Load memory image", "  load image mem_block" },
+	{ "memcfg",	F_MEMCFG,	"Show memory configuration", "  memcfg" },
 	{ NULL,		0,			NULL }
 };
 
@@ -249,7 +248,6 @@ void em400_debuger_c_sregs(WINDOW *win)
 	char *c = int2bin(R(R_IR), 3);
 
 	char *rm = int2bin(R(R_SR)>>6, 10);
-	int q = SR_Q;
 	int s = (R(R_SR)>>6) & 1;
 	char *nb = int2bin(R(R_SR), 4);
 
@@ -269,7 +267,7 @@ void em400_debuger_c_sregs(WINDOW *win)
 	waprintw(win, attr[C_DATA], "0x%04x  %s %i %s %s %s\n", R(R_IR), ir, d, a, b, c);
 	waprintw(win, attr[C_LABEL], "            RM         Q s NB\n");
 	waprintw(win, attr[C_LABEL], "SR: ");
-	waprintw(win, attr[C_DATA], "0x%04x  %s %i %i %s\n", R(R_SR), rm, q, s, nb);
+	waprintw(win, attr[C_DATA], "0x%04x  %s %i %i %s\n", R(R_SR), rm, SR_Q, s, nb);
 	waprintw(win, attr[C_LABEL], "                ZPMCZ TIFFFFx 01 23 456789 abcdef OCSS\n");
 	waprintw(win, attr[C_LABEL], "RZ: ");
 	waprintw(win, attr[C_DATA], "0x%08x  %s %s %s %s %s %s %s\n", RZ, i1, i2, i3, i4, i5, i6, i7);
@@ -300,7 +298,7 @@ void em400_debuger_c_sregs(WINDOW *win)
 // -----------------------------------------------------------------------
 void em400_debuger_c_regs(WINDOW *win)
 {
-	waprintw(win, 0, "    hex    oct    dec    bin              ch R40\n");
+	waprintw(win, attr[C_LABEL], "    hex    oct    dec    bin              ch R40\n");
 	for (int i=1 ; i<=7 ; i++) {
 		char *b = int2bin(R(i), 16);
 		char *r = int2r40(R(i));
@@ -312,6 +310,32 @@ void em400_debuger_c_regs(WINDOW *win)
 		free(r);
 		free(b);
 	}
+}
+
+// -----------------------------------------------------------------------
+void em400_debuger_c_memcfg(WINDOW *win)
+{
+	int i, j, cnt;
+	waprintw(win, attr[C_LABEL], "Number of 4kword segments in each segment/block\n");
+	waprintw(win, attr[C_LABEL], "seg/blk:  0 1 2 3 4 5 6 7 8 9 a b c d e f\n");
+	waprintw(win, attr[C_LABEL], "     hw:  ");
+	for (i=0 ; i<MEM_MAX_MODULES ; i++) {
+		cnt = 0;
+		for (j=0 ; j<MEM_MAX_SEGMENTS ; j++) {
+			if (em400_mem_segment[i][j]) cnt++;
+		}
+		waprintw(win, attr[C_DATA], "%i ", cnt);
+	}
+	waprintw(win, attr[C_DATA], "\n");
+	waprintw(win, attr[C_LABEL], "     sw:  ");
+	for (i=0 ; i<MEM_MAX_NB ; i++) {
+		cnt = 0;
+		for (j=0 ; j<MEM_MAX_SEGMENTS ; j++) {
+			if (em400_mem_map[i][j]) cnt++;
+		}
+		waprintw(win, attr[C_DATA], "%i ", cnt);
+	}
+	waprintw(win, attr[C_DATA], "\n");
 }
 
 // -----------------------------------------------------------------------

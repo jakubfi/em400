@@ -57,6 +57,7 @@ void em400_debuger_c_mem(WINDOW *win, int block, int start, int end);
 void em400_debuger_c_clmem();
 void em400_debuger_c_dt(WINDOW *win, int dasm_mode, int start, int count);
 void em400_debuger_c_load(WINDOW *win, char* image, int bank);
+void em400_debuger_c_memcfg(WINDOW *win);
 
 void em400_debuger_loop();
 int em400_debuger_init();

@@ -345,6 +345,7 @@ void em400_debuger_wu_cmd(WINDOW *win)
 // -----------------------------------------------------------------------
 void em400_debuger_wu_status(WINDOW *win)
 {
+	char *kb = int2bin(R(R_KB), 16);
 	int x,y;
 	wattron(win, attr[C_ILABEL]);
 	whline(win, ' ', COLS);
@@ -362,8 +363,11 @@ void em400_debuger_wu_status(WINDOW *win)
 	waprintw(win, attr[C_IDATA], "%06i (0x%04x)", R(R_MOD), R(R_MOD));
 	waprintw(win, attr[C_ILABEL], "  MODcnt:");
 	waprintw(win, attr[C_IDATA], "%i", MODcnt);
+	waprintw(win, attr[C_ILABEL], "  KB:");
+	waprintw(win, attr[C_IDATA], "%s", kb);
 	waprintw(win, attr[C_ILABEL], "  ZC17:");
 	waprintw(win, attr[C_IDATA], "%i", ZC17);
+	free(kb);
 }
 
 // -----------------------------------------------------------------------

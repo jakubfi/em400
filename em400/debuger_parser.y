@@ -35,7 +35,7 @@ int yylex(void);
 %token <value> VALUE YERR
 %token <text> TEXT
 %token '-' ':'
-%token <value> F_QUIT F_CLMEM F_MEM F_REGS F_SREGS F_RESET F_STEP F_HELP F_DASM F_TRANS F_LOAD
+%token <value> F_QUIT F_CLMEM F_MEM F_REGS F_SREGS F_RESET F_STEP F_HELP F_DASM F_TRANS F_LOAD F_MEMCFG
 %type <value> hcmd
 
 %%
@@ -51,7 +51,8 @@ command:
 	;
 
 function:
-	F_QUIT'\n' {
+	'\n' {}
+	| F_QUIT'\n' {
 		em400_debuger_c_quit();
 	}
 	| F_STEP '\n' {
@@ -74,6 +75,9 @@ function:
 		em400_debuger_c_clmem();
 	}
 	| f_load
+	| F_MEMCFG '\n' {
+		em400_debuger_c_memcfg(WCMD);
+	}
 	;
 
 f_help:
@@ -86,7 +90,7 @@ f_help:
 	;
 
 hcmd:
-	F_QUIT | F_STEP | F_HELP | F_REGS | F_SREGS | F_RESET | F_DASM | F_TRANS | F_MEM | F_CLMEM | F_LOAD {
+	F_QUIT | F_STEP | F_HELP | F_REGS | F_SREGS | F_RESET | F_DASM | F_TRANS | F_MEM | F_CLMEM | F_LOAD | F_MEMCFG {
 		$$ = $1;
 	}
 

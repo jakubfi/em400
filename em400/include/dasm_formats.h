@@ -178,7 +178,7 @@
 #define T_PL "(NB:[%n], NB:[%n+1], NB:[%n+2]) = (r5, r6, r7)"
 
 #define T_MB "MB = [%n][10-15]"
-#define T_IM "IM = [%n]0-9]"
+#define T_IM "IM = [%n][0-9]"
 #define T_KI "[%n] = RZ[0-11,28-31]"
 #define T_FI "RZ[0-11,28-31] = [%n]"
 #define T_SP "(IC, r0, SR) = (NB:[%n], NB:[%n+1], NB:[%n+2])"
