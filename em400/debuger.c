@@ -37,6 +37,9 @@ char *debuger_prompt;
 int nc_repaint = 0;
 int debuger_fin = 0;
 
+struct debuger_var *variables = NULL;
+struct debuger_var *last_v = NULL;
+
 extern int yyparse();
 typedef struct yy_buffer_state *YY_BUFFER_STATE;
 YY_BUFFER_STATE yy_scan_string(char *yy_str);
@@ -57,6 +60,42 @@ cmd_s em400_debuger_commands[] = {
 	{ "memcfg",	F_MEMCFG,	"Show memory configuration", "  memcfg" },
 	{ NULL,		0,			NULL }
 };
+
+// -----------------------------------------------------------------------
+void debuger_set_var(char *name, uint16_t value)
+{
+	struct debuger_var *v;
+
+	v = debuger_get_var(name);
+
+	if (v) {
+		v->value = value;
+	} else {
+		v = malloc(sizeof(struct debuger_var));
+		v->name = strdup(name);
+		v->value = value;
+		v->next = NULL;
+		if (variables) {
+			last_v->next = v;
+			last_v = v;
+		} else {
+			variables = last_v = v;
+		}
+	}
+}
+
+// -----------------------------------------------------------------------
+struct debuger_var * debuger_get_var(char *name)
+{
+	struct debuger_var *v = variables;
+	while (v) {
+		if (!strcmp(name, v->name)) {
+			return v;
+		}
+		v = v->next;
+	}
+	return NULL;
+}
 
 // -----------------------------------------------------------------------
 int debuger_is_cmd(char *cmd)

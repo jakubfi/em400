@@ -42,8 +42,19 @@ typedef struct {
 	char *help;
 } cmd_s;
 
+struct debuger_var {
+	char *name;
+	uint16_t value;
+	struct debuger_var *next;
+};
+
+extern struct debuger_var *variables;
+
 extern int debuger_fin;
 extern cmd_s em400_debuger_commands[];
+
+void debuger_set_var(char *name, uint16_t value);
+struct debuger_var * debuger_get_var(char *name);
 
 int debuger_is_cmd(char *cmd);
 

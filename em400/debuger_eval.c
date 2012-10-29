@@ -15,10 +15,15 @@
 //  Foundation, Inc.,
 //  51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 
+#include <string.h>
+
 #include "registers.h"
 #include "memory.h"
+#include "debuger.h"
 #include "debuger_eval.h"
 #include "debuger_parser.h"
+
+void yyerror(char *s);
 
 // -----------------------------------------------------------------------
 struct node_t * n_val(int16_t v)
@@ -26,6 +31,17 @@ struct node_t * n_val(int16_t v)
 	struct node_t *n = malloc(sizeof(struct node_t));
 	n->type = N_VAL;
 	n->val = v;
+	n->n1 = NULL;
+	n->n2 = NULL;
+	return n;
+}
+
+// -----------------------------------------------------------------------
+struct node_t * n_var(char *name)
+{
+	struct node_t *n = malloc(sizeof(struct node_t));
+	n->type = N_VAR;
+	n->var = strdup(name);
 	n->n1 = NULL;
 	n->n2 = NULL;
 	return n;
@@ -70,6 +86,12 @@ uint16_t n_eval(struct node_t * n)
 	switch (n->type) {
 		case N_VAL:
 			return n->val;
+		case N_VAR:
+			if (!debuger_get_var(n->var)) {
+				return 0;
+			} else {
+				return debuger_get_var(n->var)->value;
+			}
 		case N_REG:
 			return R(n->val);
 		case N_OPER:

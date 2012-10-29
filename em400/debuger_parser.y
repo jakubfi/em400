@@ -88,6 +88,10 @@ statement:
 		waprintw(WCMD, attr[C_DATA], "%i\n", v);
 		n_free($1);
 	}
+	| TEXT '=' expr '\n' {
+		debuger_set_var($1, n_eval($3));
+		n_free($3);
+	}
 	| REG '=' expr '\n' {
 		Rw($1, n_eval($3));
 		n_free($3);
@@ -110,6 +114,7 @@ statement:
 
 expr:
 	VALUE { $$ = n_val($1); }
+	| TEXT { $$ = n_var($1); }
 	| REG { $$ = n_reg($1); }
 	| '-' expr %prec UMINUS { $$ = n_oper(UMINUS, $2, NULL); }
 	| expr '+' expr { $$ = n_oper('+', $1, $3); }
@@ -223,7 +228,8 @@ f_load:
 
 %%
 
-void yyerror(char *s) {
+void yyerror(char *s)
+{
     waprintw(WCMD, attr[C_ERROR], "Error: %s\n", s);
 }
 
