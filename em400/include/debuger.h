@@ -49,7 +49,7 @@ int debuger_is_cmd(char *cmd);
 
 void em400_debuger_c_step();
 void em400_debuger_c_quit();
-void em400_debuger_c_help(WINDOW *win, int cmd_tok);
+void em400_debuger_c_help(WINDOW *win, char *cmd);
 void em400_debuger_c_regs(WINDOW *win);
 void em400_debuger_c_sregs(WINDOW *win);
 void em400_debuger_c_reset();

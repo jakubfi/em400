@@ -49,11 +49,11 @@ cmd_s em400_debuger_commands[] = {
 	{ "regs",	F_REGS,		"Show user registers", "  regs" },
 	{ "sregs",	F_SREGS,	"Show system registers", "  sregs" },
 	{ "reset",	F_RESET,	"Reset the emulator", "  reset" },
-	{ "dasm",	F_DASM,		"Disassembler", "  dasm\n  dasm count\n  dasm start count" },
-	{ "trans",	F_TRANS,	"Translator", "  trans\n  trans count\n  trans start count" },
-	{ "mem",	F_MEM,		"Show memory contents", "  mem start-end\n  mem block: start-end" },
+	{ "dasm",	F_DASM,		"Disassembler", "  dasm [[start] count]" },
+	{ "trans",	F_TRANS,	"Translator", "  trans [[start] count]" },
+	{ "mem",	F_MEM,		"Show memory contents", "  mem [block:] start-end" },
 	{ "clmem",	F_CLMEM,	"Clear memory contents", "  clmem" },
-	{ "load",	F_LOAD,		"Load memory image", "  load image mem_block" },
+	{ "load",	F_LOAD,		"Load memory image", "  load image [mem_block]" },
 	{ "memcfg",	F_MEMCFG,	"Show memory configuration", "  memcfg" },
 	{ NULL,		0,			NULL }
 };
@@ -74,27 +74,26 @@ int debuger_is_cmd(char *cmd)
 // -----------------------------------------------------------------------
 void em400_debuger_c_load(WINDOW *win, char* image, int bank)
 {
-	if (bank < 0) {
-		bank = SR_NB;
-	}
-
 	if (em400_mem_load_image(image, bank)) {
 		waprintw(win, attr[C_ERROR], "Cannot load image: \"%s\"\n", image);
 	}
 }
 
 // -----------------------------------------------------------------------
-void em400_debuger_c_help(WINDOW *win, int cmd_tok)
+void em400_debuger_c_help(WINDOW *win, char *cmd)
 {
 	cmd_s *c = em400_debuger_commands;
-	if (cmd_tok) {
+	if (cmd) {
 		while (c->cmd) {
-			if (cmd_tok == c->tok) {
-				waprintw(win, attr[C_LABEL], "%s : %s\nUsage:\n%s\n", c->cmd, c->doc, c->help);
+			if (!strcmp(cmd, c->cmd)) {
+				waprintw(win, attr[C_LABEL], "%s : ", c->cmd);
+				waprintw(win, attr[C_DATA], "%s\n", c->doc);
+				waprintw(win, attr[C_LABEL], "Usage:\n%s\n", c->help);
 				return;
 			}
 			c++;
 		}
+		waprintw(win, attr[C_ERROR], "Error: no such command: %s\n", cmd);
 	} else {
 		while (c->cmd) {
 			waprintw(win, attr[C_LABEL], "%-10s : %s\n", c->cmd, c->doc);
@@ -134,10 +133,6 @@ void em400_debuger_c_dt(WINDOW *win, int dasm_mode, int start, int count)
 	char *buf;
 	int len;
 
-	if (start < 0) {
-		start = R(R_IC);
-	}
-
 	while (count > 0) {
 		len = mjc400_dt(em400_mem_ptr(SR_Q * SR_NB, start), &buf, dasm_mode);
 
@@ -163,10 +158,6 @@ void em400_debuger_c_mem(WINDOW *win, int block, int start, int end)
 	char *tptr = text;
 	char c1, c2;
 	uint16_t *blockptr;
-
-	if (block < 0) {
-		block = SR_Q * SR_NB;
-	}
 
 	blockptr = em400_mem_ptr(block, 0);
 	if (!blockptr) {
@@ -341,33 +332,14 @@ void em400_debuger_c_memcfg(WINDOW *win)
 // -----------------------------------------------------------------------
 int em400_debuger_init()
 {
-	initscr();
-	cbreak();
-	noecho();
-	start_color();
-	em400_debuger_ui_init();
-
-	struct sigaction sa;
-	sa.sa_flags = SA_SIGINFO;
-	sa.sa_sigaction = _em400_debuger_w_resize_sig;
-
-	if (sigemptyset(&sa.sa_mask) != 0) {
-		return E_DEBUGER_SIG_RESIZE;
-	}
-
-	if (sigaction(SIGWINCH, &sa, NULL) != 0) {
-		return E_DEBUGER_SIG_RESIZE;
-	}
-
-	e400_debuger_w_reinit_all();
-
-	return E_OK;
+	nc_w_changed = 1;
+	return em400_debuger_ui_init();
 }
 
 // -----------------------------------------------------------------------
 void em400_debuger_shutdown()
 {
-	endwin();
+	em400_debuger_ui_shutdown();
 }
 
 // -----------------------------------------------------------------------

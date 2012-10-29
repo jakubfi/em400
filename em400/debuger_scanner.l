@@ -26,6 +26,8 @@
 void yyerror(char *);
 %}
 
+%s no_keyword
+
 oct		0[0-7]+
 hex		0x[0-9a-fA-F]+
 bin		0b[01]+
@@ -78,7 +80,10 @@ mod|MOD	{
 hex	return HEX;
 oct	return OCT;
 bin	return BIN;
-{text}	{
+uint return UINT;
+
+<INITIAL>{text}	{
+	BEGIN(no_keyword);
 	int tok = debuger_is_cmd(yytext);
 	if (!tok) {
 		yylval.text = strdup(yytext);
@@ -87,6 +92,11 @@ bin	return BIN;
 		yylval.value = tok;
 		return tok;
 	}
+}
+
+<no_keyword>{text} {
+	yylval.text = strdup(yytext);
+	return TEXT;
 }
 
 ">>"	return SHR;
@@ -99,7 +109,11 @@ bin	return BIN;
 "||"	return OR;
 "&&"	return AND;
 
-[-=+*&\|\^><:()\]\[~!\n]	return *yytext;
+[-=+*&\|\^><:()\]\[~!]	return *yytext;
+\n {
+	BEGIN(INITIAL);
+	return *yytext;
+}
 
 [ \t]+	;
 . {

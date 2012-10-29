@@ -23,6 +23,7 @@
 
 #include "dasm.h"
 #include "utils.h"
+#include "errors.h"
 #include "debuger.h"
 #include "debuger_ui.h"
 
@@ -44,14 +45,36 @@ struct h_entry *history;
 struct h_entry *cur_h;
 
 // -----------------------------------------------------------------------
-void em400_debuger_ui_init()
+int em400_debuger_ui_init()
 {
+	// enter ncurses screen
+	initscr();
+	cbreak();
+	noecho();
+	start_color();
+
+	// prepare history
 	history = malloc(sizeof(struct h_entry));
 	history->cmd = NULL;
 	history->next = NULL;
 	history->prev = NULL;
 	history->len = 0;
 	cur_h = history;
+
+	// prepare handler for terminal resize
+	struct sigaction sa;
+	sa.sa_flags = SA_SIGINFO;
+	sa.sa_sigaction = _em400_debuger_w_resize_sig;
+
+	if (sigemptyset(&sa.sa_mask) != 0) {
+		return E_DEBUGER_SIG_RESIZE;
+	}
+
+	if (sigaction(SIGWINCH, &sa, NULL) != 0) {
+		return E_DEBUGER_SIG_RESIZE;
+	}
+
+	// initialilze attributes
 
 	// command line promt
 	init_pair(C_PROMPT, COLOR_YELLOW, COLOR_BLACK);
@@ -76,6 +99,15 @@ void em400_debuger_ui_init()
 	// error
 	init_pair(C_ERROR, COLOR_RED, COLOR_BLACK);
 	attr[C_ERROR] = COLOR_PAIR(C_ERROR) | A_BOLD;
+
+	return E_OK;
+}
+
+// -----------------------------------------------------------------------
+void em400_debuger_ui_shutdown()
+{
+	endwin();
+	nc_rl_histore_free(history);
 }
 
 // -----------------------------------------------------------------------
@@ -96,6 +128,15 @@ void nc_rl_history_add(char *cmd, int len)
 	history->next = he;
 
 	history = he;
+}
+
+// -----------------------------------------------------------------------
+void nc_rl_histore_free(struct h_entry *h)
+{
+	if (!h) return;
+	nc_rl_histore_free(h->prev);
+	free(h->cmd);
+	free(h);
 }
 
 // -----------------------------------------------------------------------

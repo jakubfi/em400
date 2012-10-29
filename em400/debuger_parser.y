@@ -40,9 +40,8 @@ int yylex(void);
 %token <value> VALUE REG YERR
 %token <text> TEXT
 %token ':' '&' '|' '(' ')' '[' ']'
-%token HEX OCT BIN
+%token HEX OCT BIN INT UINT
 %token <value> F_QUIT F_CLMEM F_MEM F_REGS F_SREGS F_RESET F_STEP F_HELP F_DASM F_TRANS F_LOAD F_MEMCFG
-%type <value> hcmd
 %type <n> expr
 
 %left OR
@@ -62,18 +61,23 @@ int yylex(void);
 
 statement:
 	| command
+	| UINT '(' expr ')' '\n' {
+		uint16_t v = n_eval($3);
+		waprintw(WCMD, attr[C_DATA], "%i\n", v);
+		n_free($3);
+	}
 	| HEX '(' expr ')' '\n' {
-		int16_t v = n_eval($3);
+		uint16_t v = n_eval($3);
 		waprintw(WCMD, attr[C_DATA], "0x%x\n", v);
 		n_free($3);
 	}
 	| OCT '(' expr ')' '\n' {
-		int16_t v = n_eval($3);
+		uint16_t v = n_eval($3);
 		waprintw(WCMD, attr[C_DATA], "0%o\n", v);
 		n_free($3);
 	}
 	| BIN '(' expr ')' '\n' {
-		int16_t v = n_eval($3);
+		uint16_t v = n_eval($3);
 		char *b = int2bin(v, 16);
 		waprintw(WCMD, attr[C_DATA], "0b%s\n", b);
 		free(b);
@@ -161,53 +165,56 @@ command:
 
 f_help:
 	F_HELP '\n' {
-		em400_debuger_c_help(WCMD, 0);
+		em400_debuger_c_help(WCMD, NULL);
 	}
-	| F_HELP hcmd '\n'{
+	| F_HELP TEXT '\n'{
 		em400_debuger_c_help(WCMD, $2);
 	}
 	;
 
-hcmd:
-	F_QUIT | F_STEP | F_HELP | F_REGS | F_SREGS | F_RESET | F_DASM | F_TRANS | F_MEM | F_CLMEM | F_LOAD | F_MEMCFG {
-		$$ = $1;
-	}
-
 f_dasm:
 	F_DASM '\n' {
-		em400_debuger_c_dt(WCMD, DMODE_DASM, -1, 1);
+		em400_debuger_c_dt(WCMD, DMODE_DASM, R(R_IC), 1);
 	}
 	| F_DASM VALUE '\n' {
-		em400_debuger_c_dt(WCMD, DMODE_DASM, -1, $2);
+		em400_debuger_c_dt(WCMD, DMODE_DASM, R(R_IC), $2);
 	}
-	| F_DASM VALUE VALUE '\n' {
-		em400_debuger_c_dt(WCMD, DMODE_DASM, $2, $3);
+	| F_DASM expr VALUE '\n' {
+		em400_debuger_c_dt(WCMD, DMODE_DASM, n_eval($2), $3);
+		n_free($2);
 	}
 	;
 
 f_trans:
 	F_TRANS '\n' {
-		em400_debuger_c_dt(WCMD, DMODE_TRANS, -1, 1);
+		em400_debuger_c_dt(WCMD, DMODE_TRANS, R(R_IC), 1);
 	}
 	| F_TRANS VALUE '\n' {
-		em400_debuger_c_dt(WCMD, DMODE_TRANS, -1, $2);
+		em400_debuger_c_dt(WCMD, DMODE_TRANS, R(R_IC), $2);
 	}
-	| F_TRANS VALUE VALUE '\n' {
-		em400_debuger_c_dt(WCMD, DMODE_TRANS, $2, $3);
+	| F_TRANS expr VALUE '\n' {
+		em400_debuger_c_dt(WCMD, DMODE_TRANS, n_eval($2), $3);
+		n_free($2);
 	}
 	;
 
 f_mem:
-	F_MEM VALUE '-' VALUE '\n' {
-		em400_debuger_c_mem(WCMD, -1, $2, $4);
+	F_MEM expr '-' expr '\n' {
+		em400_debuger_c_mem(WCMD, SR_Q*SR_NB, n_eval($2), n_eval($4));
+		n_free($2);
+		n_free($4);
 	}
-	| F_MEM VALUE ':' VALUE '-' VALUE '\n' {
-		em400_debuger_c_mem(WCMD, $4, $4, $6);
+	| F_MEM expr ':' expr '-' expr '\n' {
+		em400_debuger_c_mem(WCMD, n_eval($2), n_eval($4), n_eval($6));
+		n_free($2);
+		n_free($4);
+		n_free($6);
 	}
+	;
 
 f_load:
 	F_LOAD TEXT '\n' {
-		em400_debuger_c_load(WCMD, $2, -1);
+		em400_debuger_c_load(WCMD, $2, SR_Q*SR_NB);
 	}
 	| F_LOAD TEXT VALUE '\n' {
 		em400_debuger_c_load(WCMD, $2, $3);

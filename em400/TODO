@@ -1,6 +1,4 @@
 * cpu: floating point instructions
-* debuger: cleanup memory: history
-* debuger: expressions in commands
 * debuger: variables
 * debuger: save memory image
 * debuger: breakpoints
