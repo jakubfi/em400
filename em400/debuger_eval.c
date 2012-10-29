@@ -20,6 +20,7 @@
 #include "registers.h"
 #include "memory.h"
 #include "debuger.h"
+#include "debuger_ui.h"
 #include "debuger_eval.h"
 #include "debuger_parser.h"
 
@@ -48,13 +49,14 @@ struct node_t * n_var(char *name)
 }
 
 // -----------------------------------------------------------------------
-struct node_t * n_oper(int oper, struct node_t *n1, struct node_t *n2)
+struct node_t * n_oper(int oper, int nops, struct node_t *n1, struct node_t *n2)
 {
 	struct node_t *n = malloc(sizeof(struct node_t));
 	n->type = N_OPER;
 	n->val = oper;
 	n->n1 = n1;
 	n->n2 = n2;
+	n->nops = nops;
 	return n;
 }
 
@@ -79,78 +81,131 @@ void n_free(struct node_t *n)
 }
 
 // -----------------------------------------------------------------------
-uint16_t n_eval(struct node_t * n)
+struct eval_res *n_eval(struct node_t * n)
 {
-	if (!n) return 0;
-	uint16_t v1, v2;
-	switch (n->type) {
-		case N_VAL:
-			return n->val;
-		case N_VAR:
-			if (!debuger_get_var(n->var)) {
-				return 0;
-			} else {
-				return debuger_get_var(n->var)->value;
-			}
-		case N_REG:
-			return R(n->val);
-		case N_OPER:
-			v1 = n_eval(n->n1);
-			v2 = n_eval(n->n2);
-			switch (n->val) {
-				case '-':
-					return v1 - v2;
-				case '+':
-					return v1 + v2;
-				case '*':
-					return v1 * v2;
-				case '|':
-					return v1 | v2;
-				case '&':
-					return v1 & v2;
-				case '^':
-					return v1 ^ v2;
-				case SHR:
-					return v1 >> v2;
-				case SHL:
-					return v1 << v2;
-				case '~':
-					return ~v1;
-				case '!':
-					return !v1;
-				case EQ:
-					return v1 == v2;
-				case NEQ:
-					return v1 != v2;
-				case '>':
-					return v1 > v2;
-				case '<':
-					return v1 < v2;
-				case GE:
-					return v1 >= v2;
-				case LE:
-					return v1 <= v2;
-				case '[':
-					if (n->n2) {
-						return MEMB(v1, v2);
-					} else {
-						return MEM(v1);
+	struct eval_res *e = malloc(sizeof(struct node_t));
+	e->val = 0;
+	e->res = EV_OK;
+
+	struct eval_res *e1, *e2;
+
+	if (!n) {
+		e->res = EV_NODE_NULL;
+	} else {
+		switch (n->type) {
+			case N_VAL:
+				e->val = n->val;
+				break;
+			case N_VAR:
+				if (!debuger_get_var(n->var)) {
+					e->res = EV_UNKNOWN_VAR;
+				} else {
+					e->val = debuger_get_var(n->var)->value;
+				}
+				break;
+			case N_REG:
+				e->val = R(n->val);
+				break;
+			case N_OPER:
+				e1 = n_eval(n->n1);
+				e2 = n_eval(n->n2);
+				if ((e1->res != EV_OK) || ((n->nops == 2) && (e2->res != EV_OK))) {
+					e->res = e1->res | e2->res;
+				} else {
+					switch (n->val) {
+						case '-':
+							e->val = e1->val - e2->val;
+							break;
+						case '+':
+							e->val = e1->val + e2->val;
+							break;
+						case '*':
+							e->val = e1->val * e2->val;
+							break;
+						case '|':
+							e->val = e1->val | e2->val;
+							break;
+						case '&':
+							e->val = e1->val & e2->val;
+							break;
+						case '^':
+							e->val = e1->val ^ e2->val;
+							break;
+						case SHR:
+							e->val = e1->val >> e2->val;
+							break;
+						case SHL:
+							e->val = e1->val << e2->val;
+							break;
+						case '~':
+							e->val = ~e1->val;
+							break;
+						case '!':
+							e->val = !e1->val;
+							break;
+						case EQ:
+							e->val = e1->val == e2->val;
+							break;
+						case NEQ:
+							e->val = e1->val != e2->val;
+							break;
+						case '>':
+							e->val = e1->val > e2->val;
+							break;
+						case '<':
+							e->val = e1->val < e2->val;
+							break;
+						case GE:
+							e->val = e1->val >= e2->val;
+							break;
+						case LE:
+								e->val = e1->val <= e2->val;
+							break;
+						case '[':
+							if (n->n2) {
+								e->val = MEMB((e1->val), (e2->val));
+							} else {
+								e->val = MEM((e1->val));
+							}
+							break;
+						case UMINUS:
+							e->val = -e1->val;
+							break;
+						case AND:
+							if (e1->val && e2->val) e->val = 1;
+							else e->val = 0;
+							break;
+						case OR:
+							if (e1->val || e2->val) e->val = 1;
+							else e->val = 0;
+							break;
+						default:
+							e->res = EV_UNKNOWN_OP;
 					}
-				case UMINUS:	
-					return -v1;
-				case AND:
-					if (v1 && v2) return 1;
-					else return 0;
-				case OR:
-					if (v1 || v2) return 1;
-					else return 0;
-				default:
-					return 0;
-			}
-		default:
-			return 0;
+				}
+				free(e1);
+				free(e2);
+				break;
+			default:
+				e->res = EV_UNKNOWN_NODE;
+		}
 	}
-	return 0;
+	switch (e->res) {
+		case EV_OK:
+			break;
+		case EV_NODE_NULL:
+			break;
+		case EV_UNKNOWN_VAR:
+			waprintw(WCMD, attr[C_ERROR], "Unknown variable\n");
+			break;
+		case EV_UNKNOWN_NODE:
+			waprintw(WCMD, attr[C_ERROR], "Unknown node type\n");
+			break;
+		case EV_UNKNOWN_OP:
+			waprintw(WCMD, attr[C_ERROR], "Unknown operator\n");
+			break;
+	}
+	return e;
 }
 
 

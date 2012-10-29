@@ -74,8 +74,8 @@ extern struct e4d_w_struct e4d_w[];
 
 #define WCMD e4d_w[WIN_CMD].win
 
-#define waprintw(win, attr, ...) wattron(win, attr); wprintw(win, __VA_ARGS__); wattroff(win, attr)
-#define mvwaprintw(win, y, x, attr, ...) wattron(win, attr); mvwprintw(win, y, x, __VA_ARGS__); wattroff(win, attr)
+#define waprintw(win, attr, ...) { wattron(win, attr); wprintw(win, __VA_ARGS__); wattroff(win, attr); }
+#define mvwaprintw(win, y, x, attr, ...) { wattron(win, attr); mvwprintw(win, y, x, __VA_ARGS__); wattroff(win, attr); }
 
 int em400_debuger_ui_init();
 void em400_debuger_ui_shutdown();
