@@ -62,69 +62,33 @@ int yylex(void);
 statement:
 	| command
 	| UINT '(' expr ')' '\n' {
-		struct eval_res *e = n_eval($3);
-		if (!e->res) waprintw(WCMD, attr[C_DATA], "%i\n", e->val);
-		n_free($3);
-		free(e);
+		waprintw(WCMD, attr[C_DATA], "%i\n", n_eval($3));
 	}
 	| HEX '(' expr ')' '\n' {
-		struct eval_res *e = n_eval($3);
-		if (!e->res) waprintw(WCMD, attr[C_DATA], "0x%x\n", e->val);
-		n_free($3);
-		free(e);
+		waprintw(WCMD, attr[C_DATA], "0x%x\n", n_eval($3));
 	}
 	| OCT '(' expr ')' '\n' {
-		struct eval_res *e = n_eval($3);
-		if (!e->res) waprintw(WCMD, attr[C_DATA], "0%o\n", e->val);
-		n_free($3);
-		free(e);
+		waprintw(WCMD, attr[C_DATA], "0%o\n", n_eval($3));
 	}
 	| BIN '(' expr ')' '\n' {
-		struct eval_res *e = n_eval($3);
-		char *b = int2bin(e->val, 16);
-		if (!e->res) waprintw(WCMD, attr[C_DATA], "0b%s\n", e->val);
+		char *b = int2bin(n_eval($3), 16);
+		waprintw(WCMD, attr[C_DATA], "0b%s\n", b);
 		free(b);
-		n_free($3);
-		free(e);
 	}
 	| expr '\n' {
-		struct eval_res *e = n_eval($1);
-		if (!e->res) waprintw(WCMD, attr[C_DATA], "%i\n", e->val);
-		n_free($1);
-		free(e);
+		waprintw(WCMD, attr[C_DATA], "%i\n", n_eval($1));
 	}
 	| TEXT '=' expr '\n' {
-		struct eval_res *e = n_eval($3);
-		if (!e->res) debuger_set_var($1, e->val);
-		n_free($3);
-		free(e);
+		debuger_set_var($1, n_eval($3));
 	}
 	| REG '=' expr '\n' {
-		struct eval_res *e = n_eval($3);
-		if (!e->res) Rw($1, e->val);
-		n_free($3);
-		free(e);
+		Rw($1, n_eval($3));
 	}
 	| '[' expr ']' '=' expr '\n' {
-		struct eval_res *e1 = n_eval($2);
-		struct eval_res *e2 = n_eval($5);
-		if ((!e1->res) && (!e2->res)) MEMw(e1->val, e2->val);
-		n_free($2);
-		n_free($5);
-		free(e1);
-		free(e2);
+		MEMw(n_eval($2), n_eval($5));
 	}
 	| '[' expr ':' expr ']' '=' expr '\n' {
-		struct eval_res *e1 = n_eval($2);
-		struct eval_res *e2 = n_eval($4);
-		struct eval_res *e3 = n_eval($7);
-		if ((!e1->res) && (!e2->res) && (!e3->res)) MEMBw(e1->val, e2->val, e3->val);
-		n_free($2);
-		n_free($4);
-		n_free($7);
-		free(e1);
-		free(e2);
-		free(e3);
+		MEMBw(n_eval($2), n_eval($4), n_eval($7));
 	}
 	| YERR {
 		char *s_err = malloc(1024);
@@ -136,28 +100,35 @@ statement:
 
 expr:
 	VALUE { $$ = n_val($1); }
-	| TEXT { $$ = n_var($1); }
+	| TEXT {
+		char ebuf[128];
+		$$ = n_var($1, ebuf);
+		if (!$$) {
+			yyerror(ebuf);
+			YYERROR;
+		}
+	}
 	| REG { $$ = n_reg($1); }
-	| '-' expr %prec UMINUS { $$ = n_oper(UMINUS, 1, $2, NULL); }
-	| expr '+' expr { $$ = n_oper('+', 2, $1, $3); }
-	| expr '-' expr { $$ = n_oper('-', 2, $1, $3); }
-	| expr '*' expr { $$ = n_oper('*', 2, $1, $3); }
-	| expr '|' expr { $$ = n_oper('|', 2, $1, $3); }
-	| expr '&' expr { $$ = n_oper('&', 2, $1, $3); }
-	| expr '^' expr { $$ = n_oper('^', 2, $1, $3); }
-	| expr SHR expr { $$ = n_oper(SHR, 2, $1, $3); }
-	| expr SHL expr { $$ = n_oper(SHL, 2, $1, $3); }
-	| expr EQ expr { $$ = n_oper(EQ, 2, $1, $3); }
-	| expr NEQ expr { $$ = n_oper(NEQ, 2, $1, $3); }
-	| expr GE expr { $$ = n_oper(GE, 2, $1, $3); }
-	| expr LE expr { $$ = n_oper(LE, 2, $1, $3); }
-	| expr '>' expr { $$ = n_oper('>', 2, $1, $3); }
-	| expr '<' expr { $$ = n_oper('<', 2, $1, $3); }
-	| '~' expr { $$ = n_oper('~', 1, $2, NULL); }
-	| '!' expr { $$ = n_oper('!', 1, $2, NULL); }
+	| '-' expr %prec UMINUS { $$ = n_op1(UMINUS, $2); }
+	| expr '+' expr { $$ = n_op2('+', $1, $3); }
+	| expr '-' expr { $$ = n_op2('-', $1, $3); }
+	| expr '*' expr { $$ = n_op2('*', $1, $3); }
+	| expr '|' expr { $$ = n_op2('|', $1, $3); }
+	| expr '&' expr { $$ = n_op2('&', $1, $3); }
+	| expr '^' expr { $$ = n_op2('^', $1, $3); }
+	| expr SHR expr { $$ = n_op2(SHR, $1, $3); }
+	| expr SHL expr { $$ = n_op2(SHL, $1, $3); }
+	| expr EQ expr { $$ = n_op2(EQ, $1, $3); }
+	| expr NEQ expr { $$ = n_op2(NEQ, $1, $3); }
+	| expr GE expr { $$ = n_op2(GE, $1, $3); }
+	| expr LE expr { $$ = n_op2(LE, $1, $3); }
+	| expr '>' expr { $$ = n_op2('>', $1, $3); }
+	| expr '<' expr { $$ = n_op2('<', $1, $3); }
+	| '~' expr { $$ = n_op1('~', $2); }
+	| '!' expr { $$ = n_op1('!', $2); }
 	| '(' expr ')' { $$ = $2; }
-	| '[' expr ']' { $$ = n_oper('[', 1, $2, NULL); }
-	| '[' expr ':' expr ']' { $$ = n_oper('[', 2, $2, $4); }
+	| '[' expr ']' { $$ = n_op1('[', $2); }
+	| '[' expr ':' expr ']' { $$ = n_op2('[', $2, $4); }
 	;
 
 command:
@@ -207,10 +178,7 @@ f_dasm:
 		em400_debuger_c_dt(WCMD, DMODE_DASM, R(R_IC), $2);
 	}
 	| F_DASM expr VALUE '\n' {
-		struct eval_res *e = n_eval($2);
-		if (!e->res) em400_debuger_c_dt(WCMD, DMODE_DASM, e->val, $3);
-		n_free($2);
-		free(e);
+		em400_debuger_c_dt(WCMD, DMODE_DASM, n_eval($2), $3);
 	}
 	;
 
@@ -222,34 +190,16 @@ f_trans:
 		em400_debuger_c_dt(WCMD, DMODE_TRANS, R(R_IC), $2);
 	}
 	| F_TRANS expr VALUE '\n' {
-		struct eval_res *e = n_eval($2);
-		if (!e->res) em400_debuger_c_dt(WCMD, DMODE_TRANS, e->val, $3);
-		n_free($2);
-		free(e);
+		em400_debuger_c_dt(WCMD, DMODE_TRANS, n_eval($2), $3);
 	}
 	;
 
 f_mem:
 	F_MEM expr '-' expr '\n' {
-		struct eval_res *e1 = n_eval($2);
-		struct eval_res *e2 = n_eval($4);
-		if ((!e1->res) && (!e2->res)) em400_debuger_c_mem(WCMD, SR_Q*SR_NB, e1->val, e2->val);
-		n_free($2);
-		n_free($4);
-		free(e1);
-		free(e2);
+		em400_debuger_c_mem(WCMD, SR_Q*SR_NB, n_eval($2), n_eval($4));
 	}
 	| F_MEM expr ':' expr '-' expr '\n' {
-		struct eval_res *e1 = n_eval($2);
-		struct eval_res *e2 = n_eval($4);
-		struct eval_res *e3 = n_eval($6);
-		if ((!e1->res) && (!e2->res) && (e3->res)) em400_debuger_c_mem(WCMD, e1->val, e2->val, e3->val);
-		n_free($2);
-		n_free($4);
-		n_free($6);
-		free(e1);
-		free(e2);
-		free(e3);
+		em400_debuger_c_mem(WCMD, n_eval($2), n_eval($4), n_eval($6));
 	}
 	;
 

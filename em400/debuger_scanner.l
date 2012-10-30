@@ -33,7 +33,7 @@ hex		0x[0-9a-fA-F]+
 bin		0b[01]+
 dec		[0-9]+
 reg		r[0-7]|R[0-7]
-text	[./_a-zA-Z0-9]+
+text	[./_a-zA-Z0-9]*
 
 %%
 
