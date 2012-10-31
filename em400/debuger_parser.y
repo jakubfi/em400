@@ -40,10 +40,11 @@ int yylex(void);
 %token <value> VALUE REG YERR
 %token <text> TEXT
 %token ':' '&' '|' '(' ')' '[' ']'
-%token HEX OCT BIN INT UINT
+%token HEX OCT BIN UINT
 %token <value> F_QUIT F_CLMEM F_MEM F_REGS F_SREGS F_RESET F_STEP F_HELP F_DASM F_TRANS F_LOAD F_MEMCFG
-%type <n> expr
+%type <n> expr lval
 
+%left '='
 %left OR
 %left AND
 %left '|'
@@ -78,18 +79,6 @@ statement:
 	| expr '\n' {
 		waprintw(WCMD, attr[C_DATA], "%i\n", n_eval($1));
 	}
-	| TEXT '=' expr '\n' {
-		debuger_set_var($1, n_eval($3));
-	}
-	| REG '=' expr '\n' {
-		Rw($1, n_eval($3));
-	}
-	| '[' expr ']' '=' expr '\n' {
-		MEMw(n_eval($2), n_eval($5));
-	}
-	| '[' expr ':' expr ']' '=' expr '\n' {
-		MEMBw(n_eval($2), n_eval($4), n_eval($7));
-	}
 	| YERR {
 		char *s_err = malloc(1024);
 		sprintf(s_err, "unknown character: %c", (char) $1);
@@ -101,11 +90,14 @@ statement:
 expr:
 	VALUE { $$ = n_val($1); }
 	| TEXT {
-		char ebuf[128];
-		$$ = n_var($1, ebuf);
-		if (!$$) {
-			yyerror(ebuf);
+		struct debuger_var *v = debuger_get_var($1);
+		if (!v) {
+			char verr[128];
+			sprintf(verr, "undefined variable: %s", $1);
+			yyerror(verr);
 			YYERROR;
+		} else {
+			$$ = n_var($1);
 		}
 	}
 	| REG { $$ = n_reg($1); }
@@ -118,6 +110,8 @@ expr:
 	| expr '^' expr { $$ = n_op2('^', $1, $3); }
 	| expr SHR expr { $$ = n_op2(SHR, $1, $3); }
 	| expr SHL expr { $$ = n_op2(SHL, $1, $3); }
+	| expr OR expr { $$ = n_op2(OR, $1, $3); }
+	| expr AND expr { $$ = n_op2(AND, $1, $3); }
 	| expr EQ expr { $$ = n_op2(EQ, $1, $3); }
 	| expr NEQ expr { $$ = n_op2(NEQ, $1, $3); }
 	| expr GE expr { $$ = n_op2(GE, $1, $3); }
@@ -127,7 +121,15 @@ expr:
 	| '~' expr { $$ = n_op1('~', $2); }
 	| '!' expr { $$ = n_op1('!', $2); }
 	| '(' expr ')' { $$ = $2; }
-	| '[' expr ']' { $$ = n_op1('[', $2); }
+	| '[' expr ']' { $$ = n_op2('[', n_val(SR_NB*SR_Q), $2); }
+	| '[' expr ':' expr ']' { $$ = n_op2('[', $2, $4); }
+	| lval '=' expr { $$ = n_op2('=', $1, $3); }
+	;
+
+lval:
+	TEXT { $$ = n_var($1); }
+	| REG { $$ = n_reg($1); }
+	| '[' expr ']' { $$ = n_op2('[', n_val(SR_NB*SR_Q), $2); }
 	| '[' expr ':' expr ']' { $$ = n_op2('[', $2, $4); }
 	;
 

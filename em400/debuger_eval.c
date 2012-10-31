@@ -36,14 +36,19 @@ struct node_t * n_val(int16_t v)
 }
 
 // -----------------------------------------------------------------------
-struct node_t * n_var(char *name, char *ebuf)
+struct node_t * n_reg(int r)
 {
-	struct debuger_var *v = debuger_get_var(name);
-	if (!v) {
-		sprintf(ebuf, "unknown variable: %s", name);
-		return NULL;
-	}
+	struct node_t *n = malloc(sizeof(struct node_t));
+	n->type = N_REG;
+	n->val = r;
+	n->n1 = NULL;
+	n->n2 = NULL;
+	return n;
+}
 
+// -----------------------------------------------------------------------
+struct node_t * n_var(char *name)
+{
 	struct node_t *n = malloc(sizeof(struct node_t));
 	n->type = N_VAR;
 	n->var = strdup(name);
@@ -71,17 +76,6 @@ struct node_t * n_op2(int oper, struct node_t *n1, struct node_t *n2)
 	n->val = oper;
 	n->n1 = n1;
 	n->n2 = n2;
-	return n;
-}
-
-// -----------------------------------------------------------------------
-struct node_t * n_reg(int r)
-{
-	struct node_t *n = malloc(sizeof(struct node_t));
-	n->type = N_REG;
-	n->val = r;
-	n->n1 = NULL;
-	n->n2 = NULL;
 	return n;
 }
 
@@ -127,8 +121,34 @@ uint16_t n_eval_op1(struct node_t * n)
 			return !v;
 		case UMINUS:
 			return -v;
-		case '[':
-			return MEM(v);
+		default:
+			return 0;
+	}
+}
+
+// -----------------------------------------------------------------------
+uint16_t n_eval_ass(struct node_t * n)
+{
+	uint16_t v = n_eval(n->n2);
+	unsigned short int nb;
+	uint16_t addr;
+
+	switch (n->n1->type) {
+		case N_VAR:
+			debuger_set_var(n->n1->var, v);
+			return v;
+		case N_REG:
+			Rw(n->n1->val, v);
+			return v;
+		case N_OP2:
+			if (n->n1->val == '[') {
+				nb = n_eval(n->n1->n1);
+				addr = n_eval(n->n1->n2);
+				MEMBw(nb, addr, v);
+				return v;
+			} else {
+				return 0;
+			}
 		default:
 			return 0;
 	}
@@ -197,7 +217,11 @@ uint16_t n_eval(struct node_t *n)
 		case N_OP1:
 			return n_eval_op1(n);
 		case N_OP2:
-			return n_eval_op2(n);
+			if (n->val == '=') {
+				return n_eval_ass(n);
+			} else {
+				return n_eval_op2(n);
+			}
 		default:
 			return 0;
 	}

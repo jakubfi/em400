@@ -1,6 +1,6 @@
+* commandline 'eats' endings when using history sometimes
 * debuger: mem for blocks other than 0
 * debuger: treating filenames/texts properly
-* lval, =
 * when accessing memory with pointers, check ranges
 * cpu: floating point instructions
 * debuger: save memory image

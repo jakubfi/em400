@@ -22,18 +22,21 @@
 #include <inttypes.h>
 
 enum _node_type {
-	N_OP1 = 1,
-	N_OP2 = 2,
-	N_VAL = 3,
-	N_VAR = 4,
-	N_REG = 5
+	N_OP1,
+	N_OP2,
+	N_VAL,
+	N_VAR,
+	N_REG,
+	N_MEM,
+	N_LAST
 };
 
 struct node_t {
 	int type;
 	int16_t val;
 	char *var;
-	int nops;
+	unsigned short int nb;
+	uint16_t addr;
 	struct node_t *n1;
 	struct node_t *n2;
 };
@@ -52,7 +55,7 @@ struct eval_res {
 };
 
 struct node_t * n_val(int16_t v);
-struct node_t * n_var(char *name, char *ebuf);
+struct node_t * n_var(char *name);
 struct node_t * n_reg(int r);
 void n_free(struct node_t *n);
 struct node_t * n_op1(int oper, struct node_t *n);
