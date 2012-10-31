@@ -32,7 +32,7 @@ int yylex(void);
 %}
 
 %union {
-	int value;
+	int16_t value;
 	char *text;
 	struct node_t *n;
 };
@@ -63,7 +63,7 @@ int yylex(void);
 statement:
 	| command
 	| UINT '(' expr ')' '\n' {
-		waprintw(WCMD, attr[C_DATA], "%i\n", n_eval($3));
+		waprintw(WCMD, attr[C_DATA], "%i\n", (uint16_t) n_eval($3));
 		n_free($3);
 	}
 	| HEX '(' expr ')' '\n' {

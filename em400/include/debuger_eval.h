@@ -41,31 +41,18 @@ struct node_t {
 	struct node_t *n2;
 };
 
-enum _eval_result {
-	EV_OK = 0,
-	EV_NODE_NULL = 1,
-	EV_UNKNOWN_VAR = 2,
-	EV_UNKNOWN_NODE = 4,
-	EV_UNKNOWN_OP = 8
-};
-
-struct eval_res {
-	int val;
-	int res;
-};
-
 struct node_t * n_val(int16_t v);
 struct node_t * n_var(char *name);
 struct node_t * n_reg(int r);
 void n_free(struct node_t *n);
 struct node_t * n_op1(int oper, struct node_t *n);
 struct node_t * n_op2(int oper, struct node_t *n1, struct node_t *n2);
-uint16_t n_eval_val(struct node_t *n);
-uint16_t n_eval_var(struct node_t *n);
-uint16_t n_eval_reg(struct node_t *n);
-uint16_t n_eval_op1(struct node_t *n);
-uint16_t n_eval_op2(struct node_t *n);
-uint16_t n_eval(struct node_t *n);
+int16_t n_eval_val(struct node_t *n);
+int16_t n_eval_var(struct node_t *n);
+int16_t n_eval_reg(struct node_t *n);
+int16_t n_eval_op1(struct node_t *n);
+int16_t n_eval_op2(struct node_t *n);
+int16_t n_eval(struct node_t *n);
 
 #endif
 

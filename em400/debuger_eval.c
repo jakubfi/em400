@@ -89,28 +89,28 @@ void n_free(struct node_t *n)
 }
 
 // -----------------------------------------------------------------------
-uint16_t n_eval_val(struct node_t * n)
+int16_t n_eval_val(struct node_t * n)
 {
 	return n->val;
 }
 
 // -----------------------------------------------------------------------
-uint16_t n_eval_var(struct node_t * n)
+int16_t n_eval_var(struct node_t * n)
 {
 	struct debuger_var *v = debuger_get_var(n->var);
 	return v->value;
 }
 
 // -----------------------------------------------------------------------
-uint16_t n_eval_reg(struct node_t * n)
+int16_t n_eval_reg(struct node_t * n)
 {
 	return R(n->val);
 }
 
 // -----------------------------------------------------------------------
-uint16_t n_eval_op1(struct node_t * n)
+int16_t n_eval_op1(struct node_t * n)
 {
-	uint16_t v;
+	int16_t v;
 
 	v = n_eval(n->n1);
 
@@ -127,9 +127,9 @@ uint16_t n_eval_op1(struct node_t * n)
 }
 
 // -----------------------------------------------------------------------
-uint16_t n_eval_ass(struct node_t * n)
+int16_t n_eval_ass(struct node_t * n)
 {
-	uint16_t v = n_eval(n->n2);
+	int16_t v = n_eval(n->n2);
 	unsigned short int nb;
 	uint16_t addr;
 
@@ -155,9 +155,9 @@ uint16_t n_eval_ass(struct node_t * n)
 }
 
 // -----------------------------------------------------------------------
-uint16_t n_eval_op2(struct node_t * n)
+int16_t n_eval_op2(struct node_t * n)
 {
-	uint16_t v1, v2;
+	int16_t v1, v2;
 
 	v1 = n_eval(n->n1);
 	v2 = n_eval(n->n2);
@@ -205,7 +205,7 @@ uint16_t n_eval_op2(struct node_t * n)
 }
 
 // -----------------------------------------------------------------------
-uint16_t n_eval(struct node_t *n)
+int16_t n_eval(struct node_t *n)
 {
 	switch (n->type) {
 		case N_VAL:
