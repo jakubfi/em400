@@ -113,8 +113,14 @@ void em400_debuger_ui_shutdown()
 // -----------------------------------------------------------------------
 void nc_rl_history_add(char *cmd, int len)
 {
-	if ((history->prev) && (history->prev->cmd) && (!strncmp(cmd, history->prev->cmd, len))) {
-		return;
+	if ((history->prev) && (history->prev->cmd)) {
+		int l = len;
+		if (history->prev->len > len) {
+			l = history->prev->len;
+		}
+		if (!strncmp(cmd, history->prev->cmd, l)) {
+			return;
+		}
 	}
 
 	struct h_entry *he = malloc(sizeof(struct h_entry));
@@ -167,6 +173,7 @@ int nc_readline(WINDOW *win, const char *prompt, char *buffer, int buflen)
 			}
 			cur_h = history;
 			buffer[len++] = '\n';
+			wmove(win, y, x+len);
 			break;
 		} else if (isprint(c)) {
 			if (pos < buflen-1) {

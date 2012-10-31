@@ -144,7 +144,7 @@ int16_t n_eval_ass(struct node_t * n)
 			if (n->n1->val == '[') {
 				nb = n_eval(n->n1->n1);
 				addr = n_eval(n->n1->n2);
-				MEMBw(nb, addr, v);
+				*em400_mem_ptr(nb, addr, 0) = v;
 				return v;
 			} else {
 				return 0;
@@ -198,7 +198,7 @@ int16_t n_eval_op2(struct node_t * n)
 			if (v1 || v2) return 1;
 			else return 0;
 		case '[':
-			return MEMB(v1, v2);
+			return *em400_mem_ptr(v1, v2, 0);
 		default:
 			return 0;
 	}

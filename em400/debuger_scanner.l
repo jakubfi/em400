@@ -26,14 +26,16 @@
 void yyerror(char *);
 %}
 
-%s no_keyword
+%s fname cmdname
 
 oct		0[0-7]+
 hex		0x[0-9a-fA-F]+
 bin		0b[01]+
 dec		[0-9]+
 reg		r[0-7]|R[0-7]
-text	[./_a-zA-Z0-9]*
+text	[a-zA-Z][a-zA-Z0-9]*
+cmdname	[^ \t\n\r]+
+fname	[^ \t\n\r]+
 
 %%
 
@@ -83,20 +85,34 @@ bin	return BIN;
 uint return UINT;
 
 <INITIAL>{text}	{
-	BEGIN(no_keyword);
 	int tok = debuger_is_cmd(yytext);
 	if (!tok) {
 		yylval.text = strdup(yytext);
 		return TEXT;
 	} else {
+		switch (tok) {
+			case F_HELP:
+				BEGIN(cmdname);
+				break;
+			case F_LOAD:
+				BEGIN(fname);
+				break;
+		}
 		yylval.value = tok;
 		return tok;
 	}
 }
 
-<no_keyword>{text} {
+<fname>{fname} {
 	yylval.text = strdup(yytext);
-	return TEXT;
+	BEGIN(INITIAL);
+	return FNAME;
+}
+
+<cmdname>{cmdname} {
+	yylval.text = strdup(yytext);
+	BEGIN(INITIAL);
+	return CMDNAME;
 }
 
 ">>"	return SHR;
@@ -110,12 +126,14 @@ uint return UINT;
 "&&"	return AND;
 
 [-=+*&\|\^><:()\]\[~!]	return *yytext;
+
 \n {
 	BEGIN(INITIAL);
 	return *yytext;
 }
 
 [ \t]+	;
+
 . {
 	yylval.value = *yytext;
 	return YERR;

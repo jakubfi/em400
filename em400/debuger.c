@@ -173,7 +173,7 @@ void em400_debuger_c_dt(WINDOW *win, int dasm_mode, int start, int count)
 	int len;
 
 	while (count > 0) {
-		len = mjc400_dt(em400_mem_ptr(SR_Q * SR_NB, start), &buf, dasm_mode);
+		len = mjc400_dt(em400_mem_ptr(SR_Q * SR_NB, start, 0), &buf, dasm_mode);
 
 		if (start == R(R_IC)) {
 			waprintw(win, attr[C_ILABEL], "0x%04x:", start);
@@ -198,7 +198,7 @@ void em400_debuger_c_mem(WINDOW *win, int block, int start, int end)
 	char c1, c2;
 	uint16_t *blockptr;
 
-	blockptr = em400_mem_ptr(block, 0);
+	blockptr = em400_mem_ptr(block, 0, 0);
 	if (!blockptr) {
 		waprintw(WCMD, attr[C_ERROR], "Cannot access block %i\n", block);
 	}

@@ -104,7 +104,7 @@ void em400_mem_remove_user_maps()
 }
 
 // -----------------------------------------------------------------------
-uint16_t * em400_mem_ptr(short unsigned int nb, uint16_t addr)
+uint16_t * em400_mem_ptr(short unsigned int nb, uint16_t addr, int emulation)
 {
 	unsigned short int ab = (addr & 0b1111000000000000) >> 12;
 	unsigned int addr12 = addr & 0b0000111111111111;
@@ -112,14 +112,16 @@ uint16_t * em400_mem_ptr(short unsigned int nb, uint16_t addr)
 	uint16_t *seg_addr = em400_mem_map[nb][ab];
 
 	if (!seg_addr) {
-		if (SR_Q) {
-			INT_SET(INT_NO_MEM);
-		} else {
-			// TODO: ALARM
+		if (emulation) {
+			if (SR_Q) {
+				INT_SET(INT_NO_MEM);
+			} else {
+				// TODO: ALARM
+			}
 		}
 		return NULL;
 	} else {
-		return seg_addr+addr12;
+		return seg_addr + addr12;
 	}
 }
 
@@ -127,7 +129,7 @@ uint16_t * em400_mem_ptr(short unsigned int nb, uint16_t addr)
 // read from any block
 uint16_t em400_mem_read(short unsigned int nb, uint16_t addr)
 {
-	uint16_t *mem_ptr = em400_mem_ptr(nb, addr);
+	uint16_t *mem_ptr = em400_mem_ptr(nb, addr, 1);
 	if (mem_ptr) {
 		return *mem_ptr;
 	} else {
@@ -139,7 +141,7 @@ uint16_t em400_mem_read(short unsigned int nb, uint16_t addr)
 // write to any block
 void em400_mem_write(short unsigned int nb, uint16_t addr, uint16_t val)
 {
-	uint16_t *mem_ptr = em400_mem_ptr(nb, addr);
+	uint16_t *mem_ptr = em400_mem_ptr(nb, addr, 1);
 	if (mem_ptr) {
 		*mem_ptr = val;
 	}
@@ -173,7 +175,7 @@ int em400_mem_load_image(const char* fname, unsigned short block)
 	int chunk = 0;
 	while (res > 0) {
 		// get pointer to segment in a block
-		ptr = em400_mem_ptr(block, chunk*MEM_SEGMENT_SIZE);
+		ptr = em400_mem_ptr(block, chunk*MEM_SEGMENT_SIZE, 0);
 		if (!ptr) {
 			return E_MEM_BLOCK_TOO_SMALL;
 		}

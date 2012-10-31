@@ -38,7 +38,7 @@ int yylex(void);
 };
 
 %token <value> VALUE REG YERR
-%token <text> TEXT
+%token <text> TEXT FNAME CMDNAME
 %token ':' '&' '|' '(' ')' '[' ']'
 %token HEX OCT BIN UINT
 %token <value> F_QUIT F_CLMEM F_MEM F_REGS F_SREGS F_RESET F_STEP F_HELP F_DASM F_TRANS F_LOAD F_MEMCFG
@@ -126,8 +126,31 @@ expr:
 	| '~' expr { $$ = n_op1('~', $2); }
 	| '!' expr { $$ = n_op1('!', $2); }
 	| '(' expr ')' { $$ = $2; }
-	| '[' expr ']' { $$ = n_op2('[', n_val(SR_NB*SR_Q), $2); }
-	| '[' expr ':' expr ']' { $$ = n_op2('[', $2, $4); }
+	| '[' expr ']' { 
+		uint16_t v = n_eval($2);
+		uint16_t *aptr = em400_mem_ptr((SR_NB*SR_Q), v, 0);
+		if (!aptr) {
+			char verr[128];
+			sprintf(verr, "address [%i:%i] not available, memory not configured", (SR_NB*SR_Q), v);
+			yyerror(verr);
+			YYERROR;
+		} else {
+			$$ = n_op2('[', n_val(SR_NB*SR_Q), $2);
+		}
+	}
+	| '[' expr ':' expr ']' {
+		uint16_t nb = n_eval($2);
+		uint16_t v = n_eval($4);
+		uint16_t *aptr = em400_mem_ptr(nb, v, 0);
+		if (!aptr) {
+			char verr[128];
+			sprintf(verr, "address [%i:%i] not available, memory not configured", nb, v);
+			yyerror(verr);
+			YYERROR;
+		} else {
+			$$ = n_op2('[', $2, $4);
+		}
+	}
 	| lval '=' expr { $$ = n_op2('=', $1, $3); }
 	;
 
@@ -172,7 +195,7 @@ f_help:
 	F_HELP '\n' {
 		em400_debuger_c_help(WCMD, NULL);
 	}
-	| F_HELP TEXT '\n'{
+	| F_HELP CMDNAME '\n'{
 		em400_debuger_c_help(WCMD, $2);
 	}
 	;
@@ -218,10 +241,10 @@ f_mem:
 	;
 
 f_load:
-	F_LOAD TEXT '\n' {
+	F_LOAD FNAME '\n' {
 		em400_debuger_c_load(WCMD, $2, SR_Q*SR_NB);
 	}
-	| F_LOAD TEXT VALUE '\n' {
+	| F_LOAD FNAME VALUE '\n' {
 		em400_debuger_c_load(WCMD, $2, $3);
 	}
 	;
