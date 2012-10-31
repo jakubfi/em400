@@ -64,20 +64,25 @@ statement:
 	| command
 	| UINT '(' expr ')' '\n' {
 		waprintw(WCMD, attr[C_DATA], "%i\n", n_eval($3));
+		n_free($3);
 	}
 	| HEX '(' expr ')' '\n' {
 		waprintw(WCMD, attr[C_DATA], "0x%x\n", n_eval($3));
+		n_free($3);
 	}
 	| OCT '(' expr ')' '\n' {
 		waprintw(WCMD, attr[C_DATA], "0%o\n", n_eval($3));
+		n_free($3);
 	}
 	| BIN '(' expr ')' '\n' {
 		char *b = int2bin(n_eval($3), 16);
 		waprintw(WCMD, attr[C_DATA], "0b%s\n", b);
+		n_free($3);
 		free(b);
 	}
 	| expr '\n' {
 		waprintw(WCMD, attr[C_DATA], "%i\n", n_eval($1));
+		n_free($1);
 	}
 	| YERR {
 		char *s_err = malloc(1024);
@@ -181,6 +186,7 @@ f_dasm:
 	}
 	| F_DASM expr VALUE '\n' {
 		em400_debuger_c_dt(WCMD, DMODE_DASM, n_eval($2), $3);
+		n_free($2);
 	}
 	;
 
@@ -193,15 +199,21 @@ f_trans:
 	}
 	| F_TRANS expr VALUE '\n' {
 		em400_debuger_c_dt(WCMD, DMODE_TRANS, n_eval($2), $3);
+		n_free($2);
 	}
 	;
 
 f_mem:
 	F_MEM expr '-' expr '\n' {
 		em400_debuger_c_mem(WCMD, SR_Q*SR_NB, n_eval($2), n_eval($4));
+		n_free($2);
+		n_free($4);
 	}
 	| F_MEM expr ':' expr '-' expr '\n' {
 		em400_debuger_c_mem(WCMD, n_eval($2), n_eval($4), n_eval($6));
+		n_free($2);
+		n_free($4);
+		n_free($6);
 	}
 	;
 
