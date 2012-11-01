@@ -42,7 +42,8 @@ int yylex(void);
 %token ':' '&' '|' '(' ')' '[' ']'
 %token HEX OCT BIN UINT
 %token <value> F_QUIT F_CLMEM F_MEM F_REGS F_SREGS F_RESET F_STEP F_HELP F_DASM F_TRANS F_LOAD F_MEMCFG
-%type <n> expr lval
+%type <n> expr lval bitfield
+%right '.'
 
 %left '='
 %left OR
@@ -106,6 +107,7 @@ expr:
 		}
 	}
 	| REG { $$ = n_reg($1); }
+	| expr '.' bitfield { $$ = n_op2('.', $1, $3); }
 	| '-' expr %prec UMINUS { $$ = n_op1(UMINUS, $2); }
 	| expr '+' expr { $$ = n_op2('+', $1, $3); }
 	| expr '-' expr { $$ = n_op2('-', $1, $3); }
@@ -159,6 +161,11 @@ lval:
 	| REG { $$ = n_reg($1); }
 	| '[' expr ']' { $$ = n_op2('[', n_val(SR_NB*SR_Q), $2); }
 	| '[' expr ':' expr ']' { $$ = n_op2('[', $2, $4); }
+	;
+
+bitfield:
+	VALUE { $$ = n_bf($1, $1); }
+	| VALUE '-' VALUE { $$ = n_bf($1, $3); }
 	;
 
 command:

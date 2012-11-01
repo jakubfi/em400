@@ -80,6 +80,21 @@ struct node_t * n_op2(int oper, struct node_t *n1, struct node_t *n2)
 }
 
 // -----------------------------------------------------------------------
+struct node_t * n_bf(int beg, int end)
+{
+	struct node_t *n = malloc(sizeof(struct node_t));
+	n->type = N_BF;
+	uint16_t bf = 0;
+	for (int i=beg ; i<=end ; i++) {
+		bf |= (0b1000000000000000 >> i);
+	}
+	n->val = bf;
+	n->n1 = NULL;
+	n->n2 = NULL;
+	return n;
+}
+
+// -----------------------------------------------------------------------
 void n_free(struct node_t *n)
 {
 	if (!n) return;
@@ -159,6 +174,9 @@ int16_t n_eval_op2(struct node_t * n)
 {
 	int16_t v1, v2;
 
+	uint16_t m;
+	unsigned short int s;
+
 	v1 = n_eval(n->n1);
 	v2 = n_eval(n->n2);
 
@@ -199,6 +217,14 @@ int16_t n_eval_op2(struct node_t * n)
 			else return 0;
 		case '[':
 			return *em400_mem_ptr(v1, v2, 0);
+		case '.':
+			m = v2;
+			s = 0;
+			while ((m & 1) == 0) {
+				m >>= 1;
+				s++;
+			}
+			return (uint16_t) (v1 & v2) >> s;
 		default:
 			return 0;
 	}
@@ -214,6 +240,8 @@ int16_t n_eval(struct node_t *n)
 			return n_eval_var(n);
 		case N_REG:
 			return n_eval_reg(n);
+		case N_BF:
+			return n_eval_val(n);
 		case N_OP1:
 			return n_eval_op1(n);
 		case N_OP2:

@@ -1,3 +1,4 @@
+* sr/ic write causes segfault (on Q/NB and IC memory access)
 * cpu: floating point instructions
 * debuger: save memory image
 * debuger: breakpoints
