@@ -26,7 +26,7 @@
 void yyerror(char *);
 %}
 
-%s fname cmdname
+%s fname cmdname brkcmd
 
 oct		0[0-7]+
 hex		0x[0-9a-fA-F]+
@@ -97,10 +97,26 @@ uint return UINT;
 			case F_LOAD:
 				BEGIN(fname);
 				break;
+			case F_BRK:
+				BEGIN(brkcmd);
+				break;
 		}
 		yylval.value = tok;
 		return tok;
 	}
+}
+
+<brkcmd>"add" {
+	BEGIN(INITIAL);
+	return B_ADD;
+}
+<brkcmd>"list" {
+	BEGIN(INITIAL);
+	return B_LIST;
+}
+<brkcmd>"del" {
+	BEGIN(INITIAL);
+	return B_DEL;
 }
 
 <fname>{fname} {

@@ -41,6 +41,21 @@ struct node_t {
 	struct node_t *n2;
 };
 
+struct break_t {
+	int nr;
+	char *label;
+	struct node_t *n;
+	struct break_t *next;
+};
+
+extern struct break_t *brkpoints;
+extern struct break_t *last_brk;
+extern int brkcnt;
+
+void brk_add(char *label, struct node_t *n);
+void brk_list();
+int brk_del(int nr);
+
 struct node_t * n_val(int16_t v);
 struct node_t * n_var(char *name);
 struct node_t * n_reg(int r);

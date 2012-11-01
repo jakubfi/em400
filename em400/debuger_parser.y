@@ -39,11 +39,11 @@ int yylex(void);
 
 %token <value> VALUE REG YERR
 %token <text> TEXT FNAME CMDNAME
-%token ':' '&' '|' '(' ')' '[' ']'
+%token ':' '&' '|' '(' ')'
 %token HEX OCT BIN UINT
-%token <value> F_QUIT F_CLMEM F_MEM F_REGS F_SREGS F_RESET F_STEP F_HELP F_DASM F_TRANS F_LOAD F_MEMCFG
+%token <value> F_QUIT F_CLMEM F_MEM F_REGS F_SREGS F_RESET F_STEP F_HELP F_DASM F_TRANS F_LOAD F_MEMCFG F_BRK
+%token B_ADD B_LIST B_DEL
 %type <n> expr lval bitfield
-%right '.'
 
 %left '='
 %left OR
@@ -57,6 +57,7 @@ int yylex(void);
 %left '+' '-'
 %left '*'
 %left '~' '!'
+%left '[' ']'
 %nonassoc UMINUS
 
 %%
@@ -107,7 +108,7 @@ expr:
 		}
 	}
 	| REG { $$ = n_reg($1); }
-	| expr '.' bitfield { $$ = n_op2('.', $1, $3); }
+	| expr bitfield { $$ = n_op2('.', $1, $2); }
 	| '-' expr %prec UMINUS { $$ = n_op1(UMINUS, $2); }
 	| expr '+' expr { $$ = n_op2('+', $1, $3); }
 	| expr '-' expr { $$ = n_op2('-', $1, $3); }
@@ -164,8 +165,8 @@ lval:
 	;
 
 bitfield:
-	VALUE { $$ = n_bf($1, $1); }
-	| VALUE '-' VALUE { $$ = n_bf($1, $3); }
+	'[' VALUE ']' { $$ = n_bf($2, $2); }
+	| '[' VALUE '-' VALUE ']' { $$ = n_bf($2, $4); }
 	;
 
 command:
@@ -196,6 +197,7 @@ command:
 	| F_MEMCFG '\n' {
 		em400_debuger_c_memcfg(WCMD);
 	}
+	| f_brk
 	;
 
 f_help:
@@ -253,6 +255,20 @@ f_load:
 	}
 	| F_LOAD FNAME VALUE '\n' {
 		em400_debuger_c_load(WCMD, $2, $3);
+	}
+	;
+
+f_brk:
+	F_BRK B_LIST '\n' {
+		brk_list();
+	}
+	| F_BRK B_ADD expr '\n' {
+		brk_add("test", $3);
+	}
+	| F_BRK B_DEL VALUE '\n' {
+		if (brk_del($3)) {
+			waprintw(WCMD, attr[C_ERROR], "No such breakpoint: %i\n", $3);
+		}
 	}
 	;
 

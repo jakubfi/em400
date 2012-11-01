@@ -24,6 +24,61 @@
 #include "debuger_eval.h"
 #include "debuger_parser.h"
 
+struct break_t *brkpoints = NULL;
+struct break_t *last_brk = NULL;
+int brkcnt = 0;
+
+// -----------------------------------------------------------------------
+void brk_add(char *label, struct node_t *n)
+{
+	struct break_t *b = malloc(sizeof(struct break_t));
+	b->nr= brkcnt;
+	b->label = strdup(label);
+	b->n = n;
+	b->next = NULL;
+
+	if (last_brk) {
+		last_brk->next = b;
+		last_brk = b;
+	} else {
+		last_brk = brkpoints = b;
+	}
+
+	brkcnt++;
+}
+
+// -----------------------------------------------------------------------
+void brk_list()
+{
+	struct break_t *b = brkpoints;
+	while (b) {
+		waprintw(WCMD, attr[C_DATA], "%-2i : %s\n", b->nr, b->label);
+		b = b->next;
+	}
+}
+
+// -----------------------------------------------------------------------
+int brk_del(int nr)
+{
+	struct break_t *b = brkpoints;
+	struct break_t *prev = NULL;
+	while (b) {
+		if (b->nr == nr) {
+			if (prev) {
+				prev->next = b->next;
+			} else {
+				brkpoints = last_brk = b->next;
+			}
+			free(b->label);
+			free(b);
+			return 0;
+		}
+		prev = b;
+		b = b->next;
+	}
+	return 1;
+}
+
 // -----------------------------------------------------------------------
 struct node_t * n_val(int16_t v)
 {

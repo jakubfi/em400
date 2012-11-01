@@ -54,10 +54,11 @@ cmd_s em400_debuger_commands[] = {
 	{ "reset",	F_RESET,	"Reset the emulator", "  reset" },
 	{ "dasm",	F_DASM,		"Disassembler", "  dasm [[start] count]" },
 	{ "trans",	F_TRANS,	"Translator", "  trans [[start] count]" },
-	{ "mem",	F_MEM,		"Show memory contents", "  mem [block:] start-end" },
+	{ "mem",	F_MEM,		"Show memory contents", "  mem [block:] <start>-<end>" },
 	{ "clmem",	F_CLMEM,	"Clear memory contents", "  clmem" },
-	{ "load",	F_LOAD,		"Load memory image", "  load image [mem_block]" },
+	{ "load",	F_LOAD,		"Load memory image from file", "  load <file> [mem_block]" },
 	{ "memcfg",	F_MEMCFG,	"Show memory configuration", "  memcfg" },
+	{ "brk",	F_BRK,		"Manipulate breakpoints", "  brk add <expression>\n  brk list\n  brk del <brk_number>" },
 	{ NULL,		0,			NULL }
 };
 
