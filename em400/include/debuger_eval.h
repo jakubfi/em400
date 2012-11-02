@@ -18,7 +18,6 @@
 #ifndef DEBUG_EVAL_H
 #define DEBUG_EVAL_H
 
-#include <stdlib.h>
 #include <inttypes.h>
 
 enum _node_type {
@@ -45,28 +44,11 @@ struct node_t {
 	struct node_t *next;
 };
 
-struct break_t {
-	int nr;
-	char *label;
-	struct node_t *n;
-	struct break_t *next;
-};
-
-extern struct break_t *brkpoints;
-extern struct break_t *last_brk;
-extern int brkcnt;
-
-extern struct node_t *node_stack;
-extern struct node_t *last_node;
-
-void brk_add(char *label, struct node_t *n);
-void brk_list();
-int brk_del(int nr);
-
 // node housekeeping
 struct node_t * n_create();
 void n_reset_stack();
-void n_free_stack(struct node_t *n);
+void n_discard_stack();
+void n_free_list(struct node_t *n);
 void n_free_tree(struct node_t *n);
 
 // node creation

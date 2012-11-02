@@ -19,12 +19,14 @@
 #include <string.h>
 #include <ncurses.h>
 #include <stdio.h>
+#include <stdlib.h>
 #include <signal.h>
 
 #include "dasm.h"
 #include "utils.h"
 #include "errors.h"
 #include "debuger.h"
+#include "debuger_cmd.h"
 #include "debuger_ui.h"
 
 int nc_w_changed = 0;

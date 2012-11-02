@@ -21,6 +21,7 @@
 #include "registers.h"
 #include "debuger.h"
 #include "debuger_ui.h"
+#include "debuger_cmd.h"
 #include "debuger_parser.h"
 
 void yyerror(char *);

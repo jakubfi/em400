@@ -18,11 +18,9 @@
 #ifndef DEBUGER_H
 #define DEBUGER_H
 
-#include <stdio.h>
-#include <stdlib.h>
-#include <ncurses.h>
+#include <inttypes.h>
 
-#define MEMDUMP_COLS 16
+extern int debuger_fin;
 
 enum _debuger_loop_ret {
 	DEBUGER_EM400_CONT = 0,
@@ -35,40 +33,14 @@ enum _debuger_cmd_res {
 	DEBUGER_CMD_ERR = 1
 };
 
-typedef struct {
-	char *cmd;
-	int tok;
-	char *doc;
-	char *help;
-} cmd_s;
-
-struct debuger_var {
+struct var_t {
 	char *name;
 	uint16_t value;
-	struct debuger_var *next;
+	struct var_t *next;
 };
 
-extern struct debuger_var *variables;
-
-extern int debuger_fin;
-extern cmd_s em400_debuger_commands[];
-
 void debuger_set_var(char *name, uint16_t value);
-struct debuger_var * debuger_get_var(char *name);
-
-int debuger_is_cmd(char *cmd);
-
-void em400_debuger_c_step();
-void em400_debuger_c_quit();
-void em400_debuger_c_help(WINDOW *win, char *cmd);
-void em400_debuger_c_regs(WINDOW *win);
-void em400_debuger_c_sregs(WINDOW *win);
-void em400_debuger_c_reset();
-void em400_debuger_c_mem(WINDOW *win, int block, int start, int end);
-void em400_debuger_c_clmem();
-void em400_debuger_c_dt(WINDOW *win, int dasm_mode, int start, int count);
-void em400_debuger_c_load(WINDOW *win, char* image, int bank);
-void em400_debuger_c_memcfg(WINDOW *win);
+struct var_t * debuger_get_var(char *name);
 
 void em400_debuger_loop();
 int em400_debuger_init();

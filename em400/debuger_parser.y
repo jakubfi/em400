@@ -25,6 +25,7 @@
 #include "dasm.h"
 #include "debuger.h"
 #include "debuger_ui.h"
+#include "debuger_cmd.h"
 #include "debuger_eval.h"
 
 void yyerror(char *);
@@ -68,25 +69,25 @@ statement:
 	| command
 	| UINT '(' expr ')' '\n' {
 		waprintw(WCMD, attr[C_DATA], "%i\n", (uint16_t) n_eval($3));
-		n_free_stack(node_stack);
+		n_discard_stack();
 	}
 	| HEX '(' expr ')' '\n' {
 		waprintw(WCMD, attr[C_DATA], "0x%x\n", n_eval($3));
-		n_free_stack(node_stack);
+		n_discard_stack();
 	}
 	| OCT '(' expr ')' '\n' {
 		waprintw(WCMD, attr[C_DATA], "0%o\n", n_eval($3));
-		n_free_stack(node_stack);
+		n_discard_stack();
 	}
 	| BIN '(' expr ')' '\n' {
 		char *b = int2bin(n_eval($3), 16);
 		waprintw(WCMD, attr[C_DATA], "0b%s\n", b);
 		free(b);
-		n_free_stack(node_stack);
+		n_discard_stack();
 	}
 	| expr '\n' {
 		waprintw(WCMD, attr[C_DATA], "%i\n", n_eval($1));
-		n_free_stack(node_stack);
+		n_discard_stack();
 	}
 	| YERR '\n' {
 		yyclearin;
@@ -153,7 +154,7 @@ expr:
 					break;
 			}
 			enode = NULL;
-			n_free_stack(node_stack);
+			n_discard_stack();
 		}
 		YYERROR;
 	}
@@ -231,7 +232,7 @@ f_dasm:
 	}
 	| F_DASM expr VALUE '\n' {
 		em400_debuger_c_dt(WCMD, DMODE_DASM, n_eval($2), $3);
-		n_free_stack(node_stack);
+		n_discard_stack();
 	}
 	;
 
@@ -244,18 +245,18 @@ f_trans:
 	}
 	| F_TRANS expr VALUE '\n' {
 		em400_debuger_c_dt(WCMD, DMODE_TRANS, n_eval($2), $3);
-		n_free_stack(node_stack);
+		n_discard_stack();
 	}
 	;
 
 f_mem:
 	F_MEM expr '-' expr '\n' {
 		em400_debuger_c_mem(WCMD, SR_Q*SR_NB, n_eval($2), n_eval($4));
-		n_free_stack(node_stack);
+		n_discard_stack();
 	}
 	| F_MEM expr ':' expr '-' expr '\n' {
 		em400_debuger_c_mem(WCMD, n_eval($2), n_eval($4), n_eval($6));
-		n_free_stack(node_stack);
+		n_discard_stack();
 	}
 	;
 
@@ -270,13 +271,13 @@ f_load:
 
 f_brk:
 	F_BRK B_LIST '\n' {
-		brk_list();
+		em400_debuger_c_brk_list();
 	}
 	| F_BRK B_ADD expr '\n' {
-		brk_add("test", $3);
+		em400_debuger_c_brk_add("test", $3);
 	}
 	| F_BRK B_DEL VALUE '\n' {
-		if (brk_del($3)) {
+		if (em400_debuger_c_brk_del($3)) {
 			waprintw(WCMD, attr[C_ERROR], "No such breakpoint: %i\n", $3);
 		}
 	}

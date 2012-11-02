@@ -16,74 +16,19 @@
 //  51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 
 #include <string.h>
+#include <stdlib.h>
 
 #include "registers.h"
 #include "memory.h"
 #include "debuger.h"
-#include "debuger_ui.h"
 #include "debuger_eval.h"
 #include "debuger_parser.h"
-
-struct break_t *brkpoints = NULL;
-struct break_t *last_brk = NULL;
-int brkcnt = 0;
 
 struct node_t *node_stack = NULL;
 struct node_t *last_node = NULL;
 
 // -----------------------------------------------------------------------
-void brk_add(char *label, struct node_t *n)
-{
-	struct break_t *b = malloc(sizeof(struct break_t));
-	b->nr= brkcnt;
-	b->label = strdup(label);
-	b->n = n;
-	b->next = NULL;
-
-	if (last_brk) {
-		last_brk->next = b;
-		last_brk = b;
-	} else {
-		last_brk = brkpoints = b;
-	}
-
-	brkcnt++;
-}
-
-// -----------------------------------------------------------------------
-void brk_list()
-{
-	struct break_t *b = brkpoints;
-	while (b) {
-		waprintw(WCMD, attr[C_DATA], "%-2i : %s\n", b->nr, b->label);
-		b = b->next;
-	}
-}
-
-// -----------------------------------------------------------------------
-int brk_del(int nr)
-{
-	struct break_t *b = brkpoints;
-	struct break_t *prev = NULL;
-	while (b) {
-		if (b->nr == nr) {
-			if (prev) {
-				prev->next = b->next;
-			} else {
-				brkpoints = last_brk = b->next;
-			}
-			free(b->label);
-			free(b);
-			return 0;
-		}
-		prev = b;
-		b = b->next;
-	}
-	return 1;
-}
-
-// -----------------------------------------------------------------------
-// --- NODES -------------------------------------------------------------
+// --- NODES, HOUSEKEEPING -----------------------------------------------
 // -----------------------------------------------------------------------
 
 // -----------------------------------------------------------------------
@@ -108,6 +53,43 @@ struct node_t * n_create()
 
 	return n;
 }
+
+// -----------------------------------------------------------------------
+void n_reset_stack()
+{
+	node_stack = last_node = NULL;
+}
+
+// -----------------------------------------------------------------------
+void n_discard_stack()
+{
+	n_free_list(node_stack);
+}
+
+// -----------------------------------------------------------------------
+void n_free_list(struct node_t *n)
+{
+	if (!n) return;
+	n_free_list(n->next);
+	free(n->var);
+	free(n);
+	n_reset_stack();
+}
+
+// -----------------------------------------------------------------------
+void n_free_tree(struct node_t *n)
+{
+	if (!n) return;
+	n_free_tree(n->n1);
+	n_free_tree(n->n2);
+	free(n->var);
+	free(n);
+	n_reset_stack();
+}
+
+// -----------------------------------------------------------------------
+// --- NODES, CREATION ---------------------------------------------------
+// -----------------------------------------------------------------------
 
 // -----------------------------------------------------------------------
 struct node_t * n_val(int16_t v)
@@ -196,33 +178,6 @@ struct node_t * n_mem(struct node_t *n1, struct node_t *n2)
 }
 
 // -----------------------------------------------------------------------
-void n_reset_stack()
-{
-	node_stack = last_node = NULL;
-}
-
-// -----------------------------------------------------------------------
-void n_free_stack(struct node_t *n)
-{
-	if (!n) return;
-	n_free_stack(n->next);
-	free(n->var);
-	free(n);
-	n_reset_stack();
-}
-
-// -----------------------------------------------------------------------
-void n_free_tree(struct node_t *n)
-{
-	if (!n) return;
-	n_free_tree(n->n1);
-	n_free_tree(n->n2);
-	free(n->var);
-	free(n);
-	n_reset_stack();
-}
-
-// -----------------------------------------------------------------------
 // --- EVALUATION --------------------------------------------------------
 // -----------------------------------------------------------------------
 
@@ -235,7 +190,7 @@ int16_t n_eval_val(struct node_t * n)
 // -----------------------------------------------------------------------
 int16_t n_eval_var(struct node_t * n)
 {
-	struct debuger_var *v = debuger_get_var(n->var);
+	struct var_t *v = debuger_get_var(n->var);
 	return v->value;
 }
 

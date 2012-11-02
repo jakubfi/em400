@@ -28,6 +28,7 @@ dasm.o\
 dasm_iset.o\
 debuger.o\
 debuger_ui.o\
+debuger_cmd.o\
 debuger_eval.o
 
 ifdef WITH_DEBUGER
