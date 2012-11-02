@@ -106,7 +106,6 @@ struct node_t * n_create()
 		last_node = n;
 	}
 
-	wprintw(WCMD, "Added node to stack: %x\n", n);
 	return n;
 }
 
@@ -116,7 +115,6 @@ struct node_t * n_val(int16_t v)
 	struct node_t *n = n_create();
 	n->type = N_VAL;
 	n->val = v;
-	wprintw(WCMD, "New val node: %x (%i)\n", n, v);
 	return n;
 }
 
@@ -126,7 +124,6 @@ struct node_t * n_reg(int r)
 	struct node_t *n = n_create();
 	n->type = N_REG;
 	n->val = r;
-	wprintw(WCMD, "New reg node: %x (%i)\n", n, r);
 	return n;
 }
 
@@ -137,7 +134,6 @@ struct node_t * n_var(char *name)
 	n->type = N_VAR;
 	n->mptr = debuger_get_var(name);
 	n->var = name;
-	wprintw(WCMD, "New var node: %x (%s)\n", n, name);
 	return n;
 }
 
@@ -148,7 +144,6 @@ struct node_t * n_op1(int oper, struct node_t *n1)
 	n->type = N_OP1;
 	n->val = oper;
 	n->n1 = n1;
-	wprintw(WCMD, "New op1 node: %x (%c)\n", n, oper);
 	return n;
 }
 
@@ -160,7 +155,6 @@ struct node_t * n_op2(int oper, struct node_t *n1, struct node_t *n2)
 	n->val = oper;
 	n->n1 = n1;
 	n->n2 = n2;
-	wprintw(WCMD, "New op2 node: %x (%c)\n", n, oper);
 	return n;
 }
 
@@ -171,7 +165,6 @@ struct node_t * n_ass(struct node_t *n1, struct node_t *n2)
 	n->type = N_ASS;
 	n->n1 = n1;
 	n->n2 = n2;
-	wprintw(WCMD, "New ass node: %x\n", n);
 	return n;
 }
 
@@ -185,7 +178,6 @@ struct node_t * n_bf(int beg, int end)
 		bf |= (0b1000000000000000 >> i);
 	}
 	n->val = bf;
-	wprintw(WCMD, "New bf node: %x\n", n);
 	return n;
 }
 
@@ -200,7 +192,6 @@ struct node_t * n_mem(struct node_t *n1, struct node_t *n2)
 	n->mptr = em400_mem_ptr(n->nb, n->val, 0);
 	n->n1 = n1;
 	n->n2 = n2;
-	wprintw(WCMD, "New mem node: %x (%i)\n", n, n->val);
 	return n;
 }
 
@@ -213,7 +204,6 @@ void n_reset_stack()
 // -----------------------------------------------------------------------
 void n_free_stack(struct node_t *n)
 {
-	wprintw(WCMD, "freeing node (list): %x\n", n);
 	if (!n) return;
 	n_free_stack(n->next);
 	free(n->var);
@@ -227,7 +217,6 @@ void n_free_tree(struct node_t *n)
 	if (!n) return;
 	n_free_tree(n->n1);
 	n_free_tree(n->n2);
-	wprintw(WCMD, "freeing node: %x\n", n);
 	free(n->var);
 	free(n);
 	n_reset_stack();
