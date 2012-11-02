@@ -29,6 +29,8 @@
 
 void yyerror(char *);
 int yylex(void);
+char verr[128];
+struct node_t *enode;
 %}
 
 %union {
@@ -66,45 +68,39 @@ statement:
 	| command
 	| UINT '(' expr ')' '\n' {
 		waprintw(WCMD, attr[C_DATA], "%i\n", (uint16_t) n_eval($3));
-		n_free($3);
+		n_free_stack(node_stack);
 	}
 	| HEX '(' expr ')' '\n' {
 		waprintw(WCMD, attr[C_DATA], "0x%x\n", n_eval($3));
-		n_free($3);
+		n_free_stack(node_stack);
 	}
 	| OCT '(' expr ')' '\n' {
 		waprintw(WCMD, attr[C_DATA], "0%o\n", n_eval($3));
-		n_free($3);
+		n_free_stack(node_stack);
 	}
 	| BIN '(' expr ')' '\n' {
 		char *b = int2bin(n_eval($3), 16);
 		waprintw(WCMD, attr[C_DATA], "0b%s\n", b);
-		n_free($3);
 		free(b);
+		n_free_stack(node_stack);
 	}
 	| expr '\n' {
 		waprintw(WCMD, attr[C_DATA], "%i\n", n_eval($1));
-		n_free($1);
+		n_free_stack(node_stack);
 	}
-	| YERR {
-		char *s_err = malloc(1024);
-		sprintf(s_err, "unknown character: %c", (char) $1);
-		yyerror(s_err);
-		free(s_err);
+	| YERR '\n' {
+		yyclearin;
+		waprintw(WCMD, attr[C_ERROR], "Error: unknown character: %c\n", (char) $1);
+		YYERROR;
 	}
 	;
 
 expr:
 	VALUE { $$ = n_val($1); }
 	| TEXT {
-		struct debuger_var *v = debuger_get_var($1);
-		if (!v) {
-			char verr[128];
-			sprintf(verr, "undefined variable: %s", $1);
-			yyerror(verr);
-			YYERROR;
-		} else {
-			$$ = n_var($1);
+		$$ = n_var($1);
+		if (!$$->mptr) {
+			enode = $$; YYERROR;
 		}
 	}
 	| REG { $$ = n_reg($1); }
@@ -129,39 +125,55 @@ expr:
 	| '~' expr { $$ = n_op1('~', $2); }
 	| '!' expr { $$ = n_op1('!', $2); }
 	| '(' expr ')' { $$ = $2; }
-	| '[' expr ']' { 
-		uint16_t v = n_eval($2);
-		uint16_t *aptr = em400_mem_ptr((SR_NB*SR_Q), v, 0);
-		if (!aptr) {
-			char verr[128];
-			sprintf(verr, "address [%i:%i] not available, memory not configured", (SR_NB*SR_Q), v);
-			yyerror(verr);
-			YYERROR;
-		} else {
-			$$ = n_op2('[', n_val(SR_NB*SR_Q), $2);
+	| '[' expr ']' {
+		$$ = n_mem(n_val(SR_NB*SR_Q), $2);
+		if (!$$->mptr) {
+			enode = $$; YYERROR;
 		}
 	}
 	| '[' expr ':' expr ']' {
-		uint16_t nb = n_eval($2);
-		uint16_t v = n_eval($4);
-		uint16_t *aptr = em400_mem_ptr(nb, v, 0);
-		if (!aptr) {
-			char verr[128];
-			sprintf(verr, "address [%i:%i] not available, memory not configured", nb, v);
-			yyerror(verr);
-			YYERROR;
-		} else {
-			$$ = n_op2('[', $2, $4);
+		$$ = n_mem($2, $4);
+		if (!$$->mptr) {
+			enode = $$; YYERROR;
 		}
 	}
-	| lval '=' expr { $$ = n_op2('=', $1, $3); }
+	| lval '=' expr { $$ = n_ass($1, $3); }
+	| error '\n' {
+		yyclearin;
+		if (enode) {
+			switch (enode->type) {
+				case N_MEM:
+					waprintw(WCMD, attr[C_ERROR], "Error: address [%i:0x%04x] not available, memory not configured\n", enode->nb, (uint16_t) enode->val);
+					break;
+				case N_VAR:
+					waprintw(WCMD, attr[C_ERROR], "Error: undefined variable: %s\n", enode->var);
+					break;
+				default:
+					waprintw(WCMD, attr[C_ERROR], "Unknown error on node: type: %i, value: %i, var: %s\n", enode->type, (uint16_t) enode->val, enode->var);
+					break;
+			}
+			enode = NULL;
+			n_free_stack(node_stack);
+		}
+		YYERROR;
+	}
 	;
 
 lval:
 	TEXT { $$ = n_var($1); }
 	| REG { $$ = n_reg($1); }
-	| '[' expr ']' { $$ = n_op2('[', n_val(SR_NB*SR_Q), $2); }
-	| '[' expr ':' expr ']' { $$ = n_op2('[', $2, $4); }
+	| '[' expr ']' {
+		$$ = n_mem(n_val(SR_NB*SR_Q), $2);
+		if (!$$->mptr) {
+			enode = $$; YYERROR;
+		}
+	}
+	| '[' expr ':' expr ']' {
+		$$ = n_mem($2, $4);
+		if (!$$->mptr) {
+			enode = $$; YYERROR;
+		}
+	}
 	;
 
 bitfield:
@@ -206,6 +218,7 @@ f_help:
 	}
 	| F_HELP CMDNAME '\n'{
 		em400_debuger_c_help(WCMD, $2);
+		free($2);
 	}
 	;
 
@@ -218,7 +231,7 @@ f_dasm:
 	}
 	| F_DASM expr VALUE '\n' {
 		em400_debuger_c_dt(WCMD, DMODE_DASM, n_eval($2), $3);
-		n_free($2);
+		n_free_stack(node_stack);
 	}
 	;
 
@@ -231,21 +244,18 @@ f_trans:
 	}
 	| F_TRANS expr VALUE '\n' {
 		em400_debuger_c_dt(WCMD, DMODE_TRANS, n_eval($2), $3);
-		n_free($2);
+		n_free_stack(node_stack);
 	}
 	;
 
 f_mem:
 	F_MEM expr '-' expr '\n' {
 		em400_debuger_c_mem(WCMD, SR_Q*SR_NB, n_eval($2), n_eval($4));
-		n_free($2);
-		n_free($4);
+		n_free_stack(node_stack);
 	}
 	| F_MEM expr ':' expr '-' expr '\n' {
 		em400_debuger_c_mem(WCMD, n_eval($2), n_eval($4), n_eval($6));
-		n_free($2);
-		n_free($4);
-		n_free($6);
+		n_free_stack(node_stack);
 	}
 	;
 

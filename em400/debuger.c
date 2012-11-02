@@ -43,6 +43,7 @@ struct debuger_var *last_v = NULL;
 extern int yyparse();
 typedef struct yy_buffer_state *YY_BUFFER_STATE;
 YY_BUFFER_STATE yy_scan_string(char *yy_str);
+void yy_delete_buffer(YY_BUFFER_STATE b);
 
 // -----------------------------------------------------------------------
 cmd_s em400_debuger_commands[] = {
@@ -403,8 +404,9 @@ void em400_debuger_loop()
 		waprintw(WCMD, 0, "\n");
 
 		if ((res == KEY_ENTER) && (*buf)) {
-			yy_scan_string(buf);
+			YY_BUFFER_STATE yb = yy_scan_string(buf);
 			yyparse();
+			yy_delete_buffer(yb);
 		}
 	}
 }

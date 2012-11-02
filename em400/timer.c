@@ -26,6 +26,8 @@
 #include "registers.h"
 #include "interrupts.h"
 
+timer_t timer;
+
 // -----------------------------------------------------------------------
 void _mjc400_timer_interrupt_sig(int signum, siginfo_t *si, void *ctx)
 {
@@ -38,8 +40,6 @@ int mjc400_timer_start()
 	struct sigaction sa;
 	struct sigevent se;
 	struct itimerspec its;
-
-	timer_t timer;
 
     sa.sa_flags = SA_SIGINFO | SA_RESTART;
     sa.sa_sigaction = _mjc400_timer_interrupt_sig;
@@ -68,8 +68,13 @@ int mjc400_timer_start()
     if (timer_settime(&timer, 0, &its, NULL) != 0) {
 		return E_TIMER_SET;
 	}
-
 	return E_OK;
+}
+
+// -----------------------------------------------------------------------
+void mjc400_timer_delete()
+{
+	timer_delete(timer);
 }
 
 // vim: tabstop=4

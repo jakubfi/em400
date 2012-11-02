@@ -28,6 +28,9 @@ struct break_t *brkpoints = NULL;
 struct break_t *last_brk = NULL;
 int brkcnt = 0;
 
+struct node_t *node_stack = NULL;
+struct node_t *last_node = NULL;
+
 // -----------------------------------------------------------------------
 void brk_add(char *label, struct node_t *n)
 {
@@ -80,83 +83,159 @@ int brk_del(int nr)
 }
 
 // -----------------------------------------------------------------------
-struct node_t * n_val(int16_t v)
+// --- NODES -------------------------------------------------------------
+// -----------------------------------------------------------------------
+
+// -----------------------------------------------------------------------
+struct node_t * n_create()
 {
 	struct node_t *n = malloc(sizeof(struct node_t));
-	n->type = N_VAL;
-	n->val = v;
+	n->type = N_NONE;
+	n->val = 0;
+	n->var = NULL;
+	n->nb = 0;
+	n->mptr = NULL;
 	n->n1 = NULL;
 	n->n2 = NULL;
+	n->next = NULL;
+
+	if (!node_stack) {
+		node_stack = last_node = n;
+	} else {
+		last_node->next = n;
+		last_node = n;
+	}
+
+	wprintw(WCMD, "Added node to stack: %x\n", n);
+	return n;
+}
+
+// -----------------------------------------------------------------------
+struct node_t * n_val(int16_t v)
+{
+	struct node_t *n = n_create();
+	n->type = N_VAL;
+	n->val = v;
+	wprintw(WCMD, "New val node: %x (%i)\n", n, v);
 	return n;
 }
 
 // -----------------------------------------------------------------------
 struct node_t * n_reg(int r)
 {
-	struct node_t *n = malloc(sizeof(struct node_t));
+	struct node_t *n = n_create();
 	n->type = N_REG;
 	n->val = r;
-	n->n1 = NULL;
-	n->n2 = NULL;
+	wprintw(WCMD, "New reg node: %x (%i)\n", n, r);
 	return n;
 }
 
 // -----------------------------------------------------------------------
 struct node_t * n_var(char *name)
 {
-	struct node_t *n = malloc(sizeof(struct node_t));
+	struct node_t *n = n_create();
 	n->type = N_VAR;
-	n->var = strdup(name);
-	n->n1 = NULL;
-	n->n2 = NULL;
+	n->mptr = debuger_get_var(name);
+	n->var = name;
+	wprintw(WCMD, "New var node: %x (%s)\n", n, name);
 	return n;
 }
 
 // -----------------------------------------------------------------------
 struct node_t * n_op1(int oper, struct node_t *n1)
 {
-	struct node_t *n = malloc(sizeof(struct node_t));
+	struct node_t *n = n_create();
 	n->type = N_OP1;
 	n->val = oper;
 	n->n1 = n1;
-	n->n2 = NULL;
+	wprintw(WCMD, "New op1 node: %x (%c)\n", n, oper);
 	return n;
 }
 
 // -----------------------------------------------------------------------
 struct node_t * n_op2(int oper, struct node_t *n1, struct node_t *n2)
 {
-	struct node_t *n = malloc(sizeof(struct node_t));
+	struct node_t *n = n_create();
 	n->type = N_OP2;
 	n->val = oper;
 	n->n1 = n1;
 	n->n2 = n2;
+	wprintw(WCMD, "New op2 node: %x (%c)\n", n, oper);
+	return n;
+}
+
+// -----------------------------------------------------------------------
+struct node_t * n_ass(struct node_t *n1, struct node_t *n2)
+{
+	struct node_t *n = n_create();
+	n->type = N_ASS;
+	n->n1 = n1;
+	n->n2 = n2;
+	wprintw(WCMD, "New ass node: %x\n", n);
 	return n;
 }
 
 // -----------------------------------------------------------------------
 struct node_t * n_bf(int beg, int end)
 {
-	struct node_t *n = malloc(sizeof(struct node_t));
+	struct node_t *n = n_create();
 	n->type = N_BF;
 	uint16_t bf = 0;
 	for (int i=beg ; i<=end ; i++) {
 		bf |= (0b1000000000000000 >> i);
 	}
 	n->val = bf;
-	n->n1 = NULL;
-	n->n2 = NULL;
+	wprintw(WCMD, "New bf node: %x\n", n);
 	return n;
 }
 
 // -----------------------------------------------------------------------
-void n_free(struct node_t *n)
+struct node_t * n_mem(struct node_t *n1, struct node_t *n2)
+{
+	struct node_t *n = n_create();
+	n->type = N_MEM;
+	// store memory pointer and address for error handling in parser
+	n->nb = n_eval(n1);
+	n->val = n_eval(n2);
+	n->mptr = em400_mem_ptr(n->nb, n->val, 0);
+	n->n1 = n1;
+	n->n2 = n2;
+	wprintw(WCMD, "New mem node: %x (%i)\n", n, n->val);
+	return n;
+}
+
+// -----------------------------------------------------------------------
+void n_reset_stack()
+{
+	node_stack = last_node = NULL;
+}
+
+// -----------------------------------------------------------------------
+void n_free_stack(struct node_t *n)
+{
+	wprintw(WCMD, "freeing node (list): %x\n", n);
+	if (!n) return;
+	n_free_stack(n->next);
+	free(n->var);
+	free(n);
+	n_reset_stack();
+}
+
+// -----------------------------------------------------------------------
+void n_free_tree(struct node_t *n)
 {
 	if (!n) return;
-	n_free(n->n1);
-	n_free(n->n2);
+	n_free_tree(n->n1);
+	n_free_tree(n->n2);
+	wprintw(WCMD, "freeing node: %x\n", n);
+	free(n->var);
 	free(n);
+	n_reset_stack();
 }
+
+// -----------------------------------------------------------------------
+// --- EVALUATION --------------------------------------------------------
+// -----------------------------------------------------------------------
 
 // -----------------------------------------------------------------------
 int16_t n_eval_val(struct node_t * n)
@@ -200,6 +279,7 @@ int16_t n_eval_op1(struct node_t * n)
 int16_t n_eval_ass(struct node_t * n)
 {
 	int16_t v = n_eval(n->n2);
+
 	unsigned short int nb;
 	uint16_t addr;
 
@@ -210,18 +290,22 @@ int16_t n_eval_ass(struct node_t * n)
 		case N_REG:
 			Rw(n->n1->val, v);
 			return v;
-		case N_OP2:
-			if (n->n1->val == '[') {
-				nb = n_eval(n->n1->n1);
-				addr = n_eval(n->n1->n2);
-				*em400_mem_ptr(nb, addr, 0) = v;
-				return v;
-			} else {
-				return 0;
-			}
+		case N_MEM:
+			nb = n_eval(n->n1->n1);
+			addr = n_eval(n->n1->n2);
+			*em400_mem_ptr(nb, addr, 0) = v;
+			return v;
 		default:
-			return 0;
+			return v;
 	}
+}
+
+// -----------------------------------------------------------------------
+int16_t n_eval_mem(struct node_t *n)
+{
+	unsigned short int nb = n_eval(n->n1);
+	uint16_t addr = n_eval(n->n2);
+	return *em400_mem_ptr(nb, addr, 0);
 }
 
 // -----------------------------------------------------------------------
@@ -270,8 +354,6 @@ int16_t n_eval_op2(struct node_t * n)
 		case OR:
 			if (v1 || v2) return 1;
 			else return 0;
-		case '[':
-			return *em400_mem_ptr(v1, v2, 0);
 		case '.':
 			m = v2;
 			s = 0;
@@ -300,11 +382,11 @@ int16_t n_eval(struct node_t *n)
 		case N_OP1:
 			return n_eval_op1(n);
 		case N_OP2:
-			if (n->val == '=') {
-				return n_eval_ass(n);
-			} else {
-				return n_eval_op2(n);
-			}
+			return n_eval_op2(n);
+		case N_ASS:
+			return n_eval_ass(n);
+		case N_MEM:
+			return n_eval_mem(n);
 		default:
 			return 0;
 	}

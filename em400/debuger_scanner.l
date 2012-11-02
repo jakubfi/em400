@@ -141,7 +141,7 @@ uint return UINT;
 "||"	return OR;
 "&&"	return AND;
 
-[-.=+*&\|\^><:()\]\[~!]	return *yytext;
+[-=+*&|^><:()\]\[~!]	return *yytext;
 
 \n {
 	BEGIN(INITIAL);

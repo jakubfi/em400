@@ -84,7 +84,7 @@ int main(int argc, char** argv)
 #endif
 
 	em400_mem_shutdown();
-
+	mjc400_timer_delete();
 	printf("EM400 exits.\n");
 
 	return 0;
