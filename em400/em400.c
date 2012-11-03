@@ -77,9 +77,6 @@ int main(int argc, char** argv)
 		}
 #endif
 		mjc400_step();
-#ifdef WITH_DEBUGER
-		em400_debuger_brk_check();
-#endif
 	}
 
 #ifdef WITH_DEBUGER

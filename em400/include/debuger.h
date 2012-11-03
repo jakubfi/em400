@@ -46,6 +46,8 @@ struct var_t {
 struct break_t {
 	int nr;
 	char *label;
+	unsigned int counter;
+	int disabled;
 	struct node_t *n;
 	struct break_t *next;
 };
@@ -55,7 +57,7 @@ extern struct break_t *brkpoints;
 void debuger_set_var(char *name, uint16_t value);
 struct var_t * debuger_get_var(char *name);
 
-void em400_debuger_brk_check();
+struct break_t * em400_debuger_brk_check();
 void em400_debuger_step();
 int em400_debuger_init();
 void em400_debuger_shutdown();

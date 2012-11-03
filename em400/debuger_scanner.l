@@ -123,6 +123,14 @@ uint return UINT;
 	BEGIN(INITIAL);
 	return B_TEST;
 }
+<brkcmd>"disable" {
+	BEGIN(INITIAL);
+	return B_DISABLE;
+}
+<brkcmd>"enable" {
+	BEGIN(INITIAL);
+	return B_ENABLE;
+}
 
 <fname>{fname} {
 	yylval.text = strdup(yytext);

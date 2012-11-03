@@ -341,6 +341,8 @@ void em400_debuger_c_brk_add(char *label, struct node_t *n)
 {
 	struct break_t *b = malloc(sizeof(struct break_t));
 	b->nr = brkcnt;
+	b->counter = 0;
+	b->disabled = 0;
 	b->label = strdup(label);
 	b->n = n;
 	b->next = NULL;
@@ -360,7 +362,11 @@ void em400_debuger_c_brk_list()
 {
 	struct break_t *b = brkpoints;
 	while (b) {
-		waprintw(WCMD, attr[C_DATA], "%i: %s\n", b->nr, b->label);
+		if (b->disabled) {
+			waprintw(WCMD, attr[C_LABEL], "%i: %s\n", b->nr, b->label);
+		} else {
+			waprintw(WCMD, attr[C_DATA], "%i: %s\n", b->nr, b->label);
+		}
 		b = b->next;
 	}
 }
@@ -412,6 +418,16 @@ int em400_debuger_c_brk_test(int nr)
 	}
 } 
 
-
+// -----------------------------------------------------------------------
+int em400_debuger_c_brk_disable(int nr, int disable)
+{
+	struct break_t *b = em400_debuger_c_brk_get(nr);
+	if (b) {
+		b->disabled = disable;
+		return 0;
+	} else {
+		return 1;
+	}
+}
 
 // vim: tabstop=4

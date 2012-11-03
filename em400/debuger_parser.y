@@ -46,7 +46,7 @@ struct node_t *enode;
 %token ':' '&' '|' '(' ')'
 %token HEX OCT BIN UINT
 %token <value> F_QUIT F_CLMEM F_MEM F_REGS F_SREGS F_RESET F_STEP F_HELP F_DASM F_TRANS F_LOAD F_MEMCFG F_BRK F_RUN
-%token B_ADD B_LIST B_DEL B_TEST
+%token B_ADD B_LIST B_DEL B_TEST B_DISABLE B_ENABLE
 %type <n> expr lval bitfield
 
 %left '='
@@ -290,6 +290,20 @@ f_brk:
 	| F_BRK B_TEST VALUE '\n' {
 		if (em400_debuger_c_brk_test($3)) {
 			waprintw(WCMD, attr[C_ERROR], "No such breakpoint: %i\n", $3);
+		}
+	}
+	| F_BRK B_DISABLE VALUE '\n' {
+		if (em400_debuger_c_brk_disable($3, 1)) {
+			waprintw(WCMD, attr[C_ERROR], "No such breakpoint: %i\n", $3);
+		} else {
+			waprintw(WCMD, attr[C_DATA], "Breakpoint %i disabled.\n", $3);
+		}
+	}
+	| F_BRK B_ENABLE VALUE '\n' {
+		if (em400_debuger_c_brk_disable($3, 0)) {
+			waprintw(WCMD, attr[C_ERROR], "No such breakpoint: %i\n", $3);
+		} else {
+			waprintw(WCMD, attr[C_DATA], "Breakpoint %i enabled.\n", $3);
 		}
 	}
 	;

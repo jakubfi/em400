@@ -95,27 +95,31 @@ void em400_debuger_shutdown()
 }
 
 // -----------------------------------------------------------------------
-void em400_debuger_brk_check()
+struct break_t * em400_debuger_brk_check()
 {
 	struct break_t *b = brkpoints;
 	while (b) {
-		if (n_eval(b->n)) {
-			debuger_enter = 1;
-			waprintw(WCMD, attr[C_DATA], "Breakpoint hit: (%i) %s\n", b->nr, b->label);
-			return;
+		if ((!b->disabled) && (n_eval(b->n))) {
+			b->counter++;
+			return b;
 		}
 		b = b->next;
 	}
+	return NULL;
 }
 
 // -----------------------------------------------------------------------
 void em400_debuger_step()
 {
-	if (!debuger_enter) {
+	struct break_t *bhit = NULL;
+
+	if ((!debuger_enter) && (!(bhit=em400_debuger_brk_check()))) {
 		return;
 	}
 
-	int res;
+	if (bhit) {
+		waprintw(WCMD, attr[C_DATA], "Hit breakpoint %i: %s (cnt: %i)\n", bhit->nr, bhit->label, bhit->counter);
+	}
 
 	debuger_loop_fin = 0;
 
@@ -127,7 +131,7 @@ void em400_debuger_step()
 			e400_debuger_w_redraw_all();
 		}
 
-		res = nc_readline(WCMD, "em400> ", input_buf, INPUT_BUF_SIZE);
+		int res = nc_readline(WCMD, "em400> ", input_buf, INPUT_BUF_SIZE);
 		waprintw(WCMD, 0, "\n");
 		wrefresh(WCMD);
 

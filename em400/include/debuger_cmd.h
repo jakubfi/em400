@@ -49,6 +49,7 @@ void em400_debuger_c_brk_add(char *label, struct node_t *n);
 void em400_debuger_c_brk_list();
 int em400_debuger_c_brk_del(int nr);
 int em400_debuger_c_brk_test(int nr);
+int em400_debuger_c_brk_disable(int nr, int disable);
 
 #endif
 

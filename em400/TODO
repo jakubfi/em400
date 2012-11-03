@@ -1,9 +1,27 @@
+Bugs:
+
 * sr/ic write causes segfault (on Q/NB and IC memory access)
-* cpu: floating point instructions
-* debuger: save memory image
-* debuger: breakpoints
-* debuger: operator panel view (?)
-* debuger: step should work the same way as CYCLE (cycle on instruction and interrupt)
+
+CPU:
+
+* floating point instructions
+* interrupts
+* hlt
+
+Debuger:
+
+* memory/register traces
+* macro for accessing interrupt states
+* ctrl-c handling
+* dynamic window contents
+* save memory image
+* load/save snapshot
+* step should work the same way as CYCLE (cycle on instruction and interrupt) (?)
+
+Other:
+
 * autotests
-* other: commandline dasm/trans (?)
 * separate I/O thread
+* operator panel view (?)
+* commandline dasm/trans (?)
+
