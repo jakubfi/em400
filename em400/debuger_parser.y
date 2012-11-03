@@ -281,6 +281,7 @@ f_brk:
 		char expr[128];
 		sscanf(input_buf, " brk add %[^\n]", expr);
 		em400_debuger_c_brk_add(expr, $3);
+		n_reset_stack();
 	}
 	| F_BRK B_DEL VALUE '\n' {
 		if (em400_debuger_c_brk_del($3)) {

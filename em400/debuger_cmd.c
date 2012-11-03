@@ -397,6 +397,7 @@ int em400_debuger_c_brk_del(int nr)
 				brkpoints = last_brk = b->next;
 			}
 			free(b->label);
+			n_free_tree(b->n);
 			free(b);
 			return 0;
 		}

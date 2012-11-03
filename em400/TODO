@@ -20,6 +20,8 @@ Debuger:
 
 Other:
 
+* fix source directory structure, naming
+* autotools
 * autotests
 * separate I/O thread
 * operator panel view (?)
