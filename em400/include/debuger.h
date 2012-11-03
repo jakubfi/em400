@@ -20,7 +20,11 @@
 
 #include <inttypes.h>
 
-extern int debuger_fin;
+#define INPUT_BUF_SIZE 70
+
+extern int debuger_loop_fin;
+extern int debuger_enter;
+extern char input_buf[];
 
 enum _debuger_loop_ret {
 	DEBUGER_EM400_CONT = 0,
@@ -39,10 +43,20 @@ struct var_t {
 	struct var_t *next;
 };
 
+struct break_t {
+	int nr;
+	char *label;
+	struct node_t *n;
+	struct break_t *next;
+};
+
+extern struct break_t *brkpoints;
+
 void debuger_set_var(char *name, uint16_t value);
 struct var_t * debuger_get_var(char *name);
 
-void em400_debuger_loop();
+void em400_debuger_brk_check();
+void em400_debuger_step();
 int em400_debuger_init();
 void em400_debuger_shutdown();
 

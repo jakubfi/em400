@@ -35,7 +35,6 @@
 
 extern int em400_quit;
 
-struct break_t *brkpoints = NULL;
 struct break_t *last_brk = NULL;
 unsigned int brkcnt = 0;
 
@@ -54,6 +53,7 @@ struct cmd_t em400_debuger_commands[] = {
 	{ "load",	F_LOAD,		"Load memory image from file", "  load <file> [mem_block]" },
 	{ "memcfg",	F_MEMCFG,	"Show memory configuration", "  memcfg" },
 	{ "brk",	F_BRK,		"Manipulate breakpoints", "  brk add <expression>\n  brk list\n  brk del <brk_number>" },
+	{ "run",	F_RUN,		"Run emulation", "  run" },
 	{ NULL,		0,			NULL }
 };
 
@@ -104,14 +104,22 @@ void em400_debuger_c_help(WINDOW *win, char *cmd)
 // -----------------------------------------------------------------------
 void em400_debuger_c_quit()
 {
-	debuger_fin = 1;
 	em400_quit = 1;
+	debuger_loop_fin = 1;
 }
 
 // -----------------------------------------------------------------------
 void em400_debuger_c_step()
 {
-	debuger_fin = 1;
+	debuger_enter = 1;
+	debuger_loop_fin = 1;
+}
+
+// -----------------------------------------------------------------------
+void em400_debuger_c_run()
+{
+	debuger_enter = 0;
+	debuger_loop_fin = 1;
 }
 
 // -----------------------------------------------------------------------
@@ -219,7 +227,7 @@ void em400_debuger_c_mem(WINDOW *win, int block, int start, int end)
 	// fill and finish current line
 	if ((addr-start-1)%MEMDUMP_COLS != (MEMDUMP_COLS-1)) {
 		while ((addr-start)%MEMDUMP_COLS !=0) {
-			waprintw(win, attr[C_DATA], "     ");
+			waprintw(win, attr[C_DATA], "	 ");
 			addr++;
 		}
 		waprintw(win, attr[C_DATA], " %s\n", text);
@@ -331,52 +339,79 @@ void em400_debuger_c_memcfg(WINDOW *win)
 // -----------------------------------------------------------------------
 void em400_debuger_c_brk_add(char *label, struct node_t *n)
 {
-    struct break_t *b = malloc(sizeof(struct break_t));
-    b->nr = brkcnt;
-    b->label = strdup(label);
-    b->n = n;
-    b->next = NULL;
+	struct break_t *b = malloc(sizeof(struct break_t));
+	b->nr = brkcnt;
+	b->label = strdup(label);
+	b->n = n;
+	b->next = NULL;
 
-    if (last_brk) {
-        last_brk->next = b;
-        last_brk = b;
-    } else {
-        last_brk = brkpoints = b;
-    }
+	if (last_brk) {
+		last_brk->next = b;
+		last_brk = b;
+	} else {
+		last_brk = brkpoints = b;
+	}
 
-    brkcnt++;
+	brkcnt++;
 }
 
 // -----------------------------------------------------------------------
 void em400_debuger_c_brk_list()
 {
-    struct break_t *b = brkpoints;
-    while (b) {
-        waprintw(WCMD, attr[C_DATA], "%-2i : %s\n", b->nr, b->label);
-        b = b->next;
-    }
+	struct break_t *b = brkpoints;
+	while (b) {
+		waprintw(WCMD, attr[C_DATA], "%i: %s\n", b->nr, b->label);
+		b = b->next;
+	}
+}
+
+// -----------------------------------------------------------------------
+struct break_t * em400_debuger_c_brk_get(int nr)
+{
+	struct break_t *b = brkpoints;
+	while (b) {
+		if (b->nr == nr) {
+			return b;
+		}
+		b = b->next;
+	}
+	return NULL;
 }
 
 // -----------------------------------------------------------------------
 int em400_debuger_c_brk_del(int nr)
 {
-    struct break_t *b = brkpoints;
-    struct break_t *prev = NULL;
-    while (b) {
-        if (b->nr == nr) {
-            if (prev) {
-                prev->next = b->next;
-            } else {
-                brkpoints = last_brk = b->next;
-            }
-            free(b->label);
-            free(b);
-            return 0;
-        }
-        prev = b;
-        b = b->next;
-    }
-    return 1;
+	struct break_t *b = brkpoints;
+	struct break_t *prev = NULL;
+	while (b) {
+		if (b->nr == nr) {
+			if (prev) {
+				prev->next = b->next;
+			} else {
+				brkpoints = last_brk = b->next;
+			}
+			free(b->label);
+			free(b);
+			return 0;
+		}
+		prev = b;
+		b = b->next;
+	}
+	return 1;
 }
+
+// -----------------------------------------------------------------------
+int em400_debuger_c_brk_test(int nr)
+{
+	struct break_t *b = em400_debuger_c_brk_get(nr);
+	if (b) {
+		waprintw(WCMD, attr[C_DATA], "Breakpoint %i evaluates to: %i\n", b->nr, n_eval(b->n));
+		return 0;
+	} else {
+		return 1;
+	}
+} 
+
+
 
 // vim: tabstop=4

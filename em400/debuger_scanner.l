@@ -119,6 +119,10 @@ uint return UINT;
 	BEGIN(INITIAL);
 	return B_DEL;
 }
+<brkcmd>"test" {
+	BEGIN(INITIAL);
+	return B_TEST;
+}
 
 <fname>{fname} {
 	yylval.text = strdup(yytext);

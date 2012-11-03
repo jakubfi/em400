@@ -20,6 +20,7 @@
 
 #include <ncurses.h>
 
+#include "debuger.h"
 #include "debuger_eval.h"
 
 #define MEMDUMP_COLS 16
@@ -31,16 +32,10 @@ struct cmd_t {
 	char *help;
 };
 
-struct break_t {
-	int nr;
-	char *label;
-	struct node_t *n;
-	struct break_t *next;
-};
-
 int debuger_is_cmd(char *cmd);
 void em400_debuger_c_step();
 void em400_debuger_c_quit();
+void em400_debuger_c_run();
 void em400_debuger_c_help(WINDOW *win, char *cmd);
 void em400_debuger_c_regs(WINDOW *win);
 void em400_debuger_c_sregs(WINDOW *win);
@@ -53,6 +48,7 @@ void em400_debuger_c_memcfg(WINDOW *win);
 void em400_debuger_c_brk_add(char *label, struct node_t *n);
 void em400_debuger_c_brk_list();
 int em400_debuger_c_brk_del(int nr);
+int em400_debuger_c_brk_test(int nr);
 
 #endif
 

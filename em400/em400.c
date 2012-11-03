@@ -71,12 +71,15 @@ int main(int argc, char** argv)
 
 	while (!em400_quit) {
 #ifdef WITH_DEBUGER
-		em400_debuger_loop();
+		em400_debuger_step();
 		if (em400_quit) {
 			break;
 		}
 #endif
 		mjc400_step();
+#ifdef WITH_DEBUGER
+		em400_debuger_brk_check();
+#endif
 	}
 
 #ifdef WITH_DEBUGER

@@ -765,7 +765,7 @@ int mjc400_op_73()
 int mjc400_op_73_hlt()
 {
 	// TODO: busy wait
-	while (!RZ);
+	//while (RZ == 0);
 	return OP_OK;
 }
 

@@ -28,11 +28,17 @@
 #include "debuger.h"
 #include "debuger_ui.h"
 #include "debuger_parser.h"
+#include "debuger_eval.h"
 
-int debuger_fin = 0;
+int debuger_loop_fin = 0;
+int debuger_enter = 1;
+
+char input_buf[INPUT_BUF_SIZE];
 
 struct var_t *variables = NULL;
 struct var_t *last_v = NULL;
+
+struct break_t *brkpoints = NULL;
 
 extern int yyparse();
 typedef struct yy_buffer_state *YY_BUFFER_STATE;
@@ -89,15 +95,31 @@ void em400_debuger_shutdown()
 }
 
 // -----------------------------------------------------------------------
-void em400_debuger_loop()
+void em400_debuger_brk_check()
 {
-	int nbufsize = 70;
-	char buf[nbufsize];
+	struct break_t *b = brkpoints;
+	while (b) {
+		if (n_eval(b->n)) {
+			debuger_enter = 1;
+			waprintw(WCMD, attr[C_DATA], "Breakpoint hit: (%i) %s\n", b->nr, b->label);
+			return;
+		}
+		b = b->next;
+	}
+}
+
+// -----------------------------------------------------------------------
+void em400_debuger_step()
+{
+	if (!debuger_enter) {
+		return;
+	}
+
 	int res;
 
-	debuger_fin = 0;
+	debuger_loop_fin = 0;
 
-	while (!debuger_fin) {
+	while (!debuger_loop_fin) {
 		if (nc_w_changed) {
 			e400_debuger_w_reinit_all();
 			nc_w_changed = 0;
@@ -105,11 +127,12 @@ void em400_debuger_loop()
 			e400_debuger_w_redraw_all();
 		}
 
-		res = nc_readline(WCMD, "em400> ", buf, nbufsize);
+		res = nc_readline(WCMD, "em400> ", input_buf, INPUT_BUF_SIZE);
 		waprintw(WCMD, 0, "\n");
+		wrefresh(WCMD);
 
-		if ((res == KEY_ENTER) && (*buf)) {
-			YY_BUFFER_STATE yb = yy_scan_string(buf);
+		if ((res == KEY_ENTER) && (*input_buf)) {
+			YY_BUFFER_STATE yb = yy_scan_string(input_buf);
 			yyparse();
 			yy_delete_buffer(yb);
 		}

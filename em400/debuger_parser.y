@@ -18,6 +18,7 @@
 
 #include <stdlib.h>
 #include <stdarg.h>
+#include <string.h>
 
 #include "registers.h"
 #include "memory.h"
@@ -44,8 +45,8 @@ struct node_t *enode;
 %token <text> TEXT FNAME CMDNAME
 %token ':' '&' '|' '(' ')'
 %token HEX OCT BIN UINT
-%token <value> F_QUIT F_CLMEM F_MEM F_REGS F_SREGS F_RESET F_STEP F_HELP F_DASM F_TRANS F_LOAD F_MEMCFG F_BRK
-%token B_ADD B_LIST B_DEL
+%token <value> F_QUIT F_CLMEM F_MEM F_REGS F_SREGS F_RESET F_STEP F_HELP F_DASM F_TRANS F_LOAD F_MEMCFG F_BRK F_RUN
+%token B_ADD B_LIST B_DEL B_TEST
 %type <n> expr lval bitfield
 
 %left '='
@@ -211,6 +212,9 @@ command:
 		em400_debuger_c_memcfg(WCMD);
 	}
 	| f_brk
+	| F_RUN '\n' {
+		em400_debuger_c_run();
+	}
 	;
 
 f_help:
@@ -274,10 +278,17 @@ f_brk:
 		em400_debuger_c_brk_list();
 	}
 	| F_BRK B_ADD expr '\n' {
-		em400_debuger_c_brk_add("test", $3);
+		char expr[128];
+		sscanf(input_buf, " brk add %[^\n]", expr);
+		em400_debuger_c_brk_add(expr, $3);
 	}
 	| F_BRK B_DEL VALUE '\n' {
 		if (em400_debuger_c_brk_del($3)) {
+			waprintw(WCMD, attr[C_ERROR], "No such breakpoint: %i\n", $3);
+		}
+	}
+	| F_BRK B_TEST VALUE '\n' {
+		if (em400_debuger_c_brk_test($3)) {
 			waprintw(WCMD, attr[C_ERROR], "No such breakpoint: %i\n", $3);
 		}
 	}
