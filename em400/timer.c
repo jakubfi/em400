@@ -65,7 +65,7 @@ int mjc400_timer_start()
     its.it_value.tv_sec = 0;
     its.it_value.tv_nsec = MJC400_TIMER * 1000000;
 
-    if (timer_settime(&timer, 0, &its, NULL) != 0) {
+    if (timer_settime(timer, 0, &its, NULL) != 0) {
 		return E_TIMER_SET;
 	}
 	return E_OK;
