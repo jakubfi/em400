@@ -145,7 +145,13 @@ void em400_debuger_step()
 	}
 
 	if (bhit) {
-		awprint(W_CMD, C_DATA, "Hit breakpoint %i: %s (cnt: %i)\n", bhit->nr, bhit->label, bhit->counter);
+		awprint(W_CMD, C_LABEL, "Hit breakpoint ");
+		awprint(W_CMD, C_DATA, "%i", bhit->nr);
+		awprint(W_CMD, C_LABEL, ": \"");
+		awprint(W_CMD, C_DATA, "%s", bhit->label);
+		awprint(W_CMD, C_LABEL, "\" (cnt: ");
+		awprint(W_CMD, C_DATA, "%i", bhit->counter);
+		awprint(W_CMD, C_LABEL, ")\n");
 	}
 
 	debuger_loop_fin = 0;

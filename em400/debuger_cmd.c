@@ -360,8 +360,9 @@ void em400_debuger_c_brk_add(unsigned int wid, char *label, struct node_t *n)
 
 	awprint(wid, C_LABEL, "Breakpoint ");
 	awprint(wid, C_DATA, "%i", b->nr);
-	awprint(wid, C_LABEL, " added:");
-	awprint(wid, C_DATA, " %s\n", b->label);
+	awprint(wid, C_LABEL, " added: \"");
+	awprint(wid, C_DATA, "%s", b->label);
+	awprint(wid, C_LABEL, "\"\n");
 
 	brkcnt++;
 }
