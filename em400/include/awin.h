@@ -107,6 +107,7 @@ AWIN * aw_window_add(ACONT *container, unsigned int id, char *title, int border,
 void aw_attr_new(int id, int bgcolor, int fgcolor, int attr);
 void awxyprint(int id, int x, int y, int attr, char *format, ...);
 #define awprint(id, attr, format, ...) awxyprint(id, -1, -1, attr, format, ##__VA_ARGS__)
+void awfillbg(int id, int attr, char c, int len);
 
 void aw_nc_rl_history_add(char *cmd, int len);
 void aw_nc_rl_history_delete(struct h_entry *h);

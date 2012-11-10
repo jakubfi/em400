@@ -93,7 +93,6 @@ statement:
 	| YERR '\n' {
 		yyclearin;
 		awprint(W_CMD, C_ERROR, "Error: unknown character: %c\n", (char) $1);
-		YYERROR;
 	}
 	;
 
@@ -185,7 +184,7 @@ bitfield:
 
 command:
 	'\n' {}
-	| F_QUIT'\n' {
+	| F_QUIT '\n' {
 		em400_debuger_c_quit();
 	}
 	| F_STEP '\n' {
@@ -221,7 +220,7 @@ f_help:
 	F_HELP '\n' {
 		em400_debuger_c_help(W_CMD, NULL);
 	}
-	| F_HELP CMDNAME '\n'{
+	| F_HELP CMDNAME '\n' {
 		em400_debuger_c_help(W_CMD, $2);
 		free($2);
 	}

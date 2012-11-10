@@ -167,6 +167,7 @@ uint return UINT;
 	yylval.value = *yytext;
 	return YERR;
 }
+
 %%
 
 int yywrap(void) {

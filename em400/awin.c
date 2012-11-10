@@ -559,6 +559,32 @@ void awxyprint(int id, int x, int y, int attr, char *format, ...)
 }
 
 // -----------------------------------------------------------------------
+void awfillbg(int id, int attr, char c, int len)
+{
+	AWIN *w = aw_window_find(id);
+	if ((aw_output == O_NCURSES) && (!w)) {
+		return;
+	}
+
+	int x, y;
+	getyx(w->win, y, x);
+
+	if (len <= 0) {
+		len = w->w - x - 3;
+	}
+	char *fill = malloc(len+1);
+	memset(fill, c, len);
+	fill[len] = '\0';
+
+	wattron(w->win, aw_attr[attr]);
+	wprintw(w->win, fill);
+	wmove(w->win, y, x);
+	wattroff(w->win, aw_attr[attr]);
+
+	free(fill);
+}
+
+// -----------------------------------------------------------------------
 void aw_nc_rl_history_add(char *cmd, int len)
 {
 	aw_history_cur = NULL;
@@ -690,14 +716,14 @@ int aw_nc_readline(int id, int attr, char *prompt, char *buffer, int buflen)
 			he = aw_nc_rl_history_get_prev();
 			if (he) {
 				wmove(w->win, y, x);
-				wprintw(w->win, "                                                                     ");
+				awfillbg(id, 0, ' ', -1);
 				strcpy(buffer, he->cmd);
 				len = he->len;
 				pos = he->len;
 			}
 		} else if (c == KEY_DOWN) {
 			wmove(w->win, y, x);
-			wprintw(w->win, "                                                                     ");
+			awfillbg(id, 0, ' ', -1);
 			he = aw_nc_rl_history_get_next();
 			if (he) {
 				strcpy(buffer, he->cmd);
@@ -728,9 +754,11 @@ int aw_readline(int id, int attr, char *prompt, char *buffer, int buflen)
 			rlin = readline(prompt);
 			if ((rlin) && (*rlin)) {
 				add_history(rlin);
-				strncpy(buffer, rlin, buflen);
-				buffer[buflen-1] = '\0';
+				strncpy(buffer, rlin, strlen(rlin));
+				buffer[strlen(rlin)] = '\n';
+				buffer[strlen(rlin)+1] = '\0';
 				free(rlin);
+				return KEY_ENTER;
 			} else {
 				return -1;
 			}

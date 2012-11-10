@@ -98,7 +98,8 @@ void em400_debuger_wu_cmd(unsigned int wid)
 void em400_debuger_wu_status(unsigned int wid)
 {
 	char *kb = int2bin(R(R_KB), 16);
-	awxyprint(wid, 0, 0, C_ILABEL, "  Q:");
+	awfillbg(wid, C_ILABEL, ' ', -1);
+	awprint(wid, C_ILABEL, " Q:");
 	awprint(wid, C_IDATA, "%i", SR_Q);
 	awprint(wid, C_ILABEL, "  NB:");
 	awprint(wid, C_IDATA, "%i", SR_NB);
