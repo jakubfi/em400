@@ -19,82 +19,35 @@
 #define DEBUGER_UI_H
 
 #include <signal.h>
-#include <ncurses.h>
 
-#define KEY_BACKSPACE2	127
-#define KEY_CTRL_W		23
+#include "awin.h"
 
-#define C_PROMPT	1
-#define C_LABEL		2
-#define C_DATA		3
-#define C_ILABEL	5
-#define C_IDATA		6
-#define C_ERROR		7
-#define C_MAX		64
-
-extern int attr[C_MAX];
-
-enum {
-	WIN_NONE = -1,
-	WIN_MEM = 0,
-	WIN_DASM = 1,
-	WIN_SREGS = 2,
-	WIN_REGS = 3,
-	WIN_CMD = 4,
-	WIN_STATUS = 5,
-	WIN_LAST = 6
+enum _ui_attributes {
+	C_PROMPT = 1,
+	C_LABEL,
+	C_DATA,
+	C_ILABEL,
+	C_IDATA,
+	C_ERROR
 };
 
-struct e4d_w_struct {
-	char *title;
-	WINDOW *win;
-	WINDOW *bwin;
-	int w;
-	int h;
-	int x;
-	int y;
-	int box;
-	int enabled;
-	int scrollable;
-	void (*fun)(WINDOW *win);
+enum _ui_windows {
+	W_MEM = 0,
+	W_DASM,
+	W_SREGS,
+	W_REGS,
+	W_CMD,
+	W_STATUS
 };
 
-struct h_entry {
-	char *cmd;
-	int len;
-	struct h_entry *next;
-	struct h_entry *prev;
-};
-
-extern struct h_entry *history;
-
-extern int nc_w_changed;
-
-extern struct e4d_w_struct e4d_w[];
-
-#define WCMD e4d_w[WIN_CMD].win
-
-#define waprintw(win, attr, ...) { wattron(win, attr); wprintw(win, __VA_ARGS__); wattroff(win, attr); }
-#define mvwaprintw(win, y, x, attr, ...) { wattron(win, attr); mvwprintw(win, y, x, __VA_ARGS__); wattroff(win, attr); }
-
-int em400_debuger_ui_init();
-void em400_debuger_ui_shutdown();
-void nc_rl_history_add(char *cmd, int len);
-void nc_rl_histore_free(struct h_entry *h);
-int nc_readline(WINDOW *win, const char *prompt, char *buffer, int buflen);
-void e400_debuger_w_recalculate();
-void e400_debuger_w_destroy(int id);
-void e400_debuger_w_create(int id);
-void e400_debuger_w_reinit_all();
-void e400_debuger_w_redraw_all();
-void _em400_debuger_w_resize_sig(int signum, siginfo_t *si, void *ctx);
-void em400_debuger_wu_mem(WINDOW * win);
-void em400_debuger_wu_dasm(WINDOW * win);
-void em400_debuger_wu_regs(WINDOW * win);
-void em400_debuger_wu_sregs(WINDOW * win);
-void em400_debuger_wu_cmd(WINDOW * win);
-void em400_debuger_wu_status(WINDOW * win);
-void em400_debuger_wu_none(WINDOW * win);
+void em400_debuger_ui_init();
+void em400_debuger_wu_mem(unsigned int wid);
+void em400_debuger_wu_dasm(unsigned int wid);
+void em400_debuger_wu_regs(unsigned int wid);
+void em400_debuger_wu_sregs(unsigned int wid);
+void em400_debuger_wu_cmd(unsigned int wid);
+void em400_debuger_wu_status(unsigned int wid);
+void em400_debuger_wu_none(unsigned int wid);
 
 #endif
 

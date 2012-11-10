@@ -16,7 +16,6 @@
 //  51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 
 #include <stdlib.h>
-#include <ncurses.h>
 #include <string.h>
 
 #include "cpu.h"
@@ -25,6 +24,7 @@
 #include "dasm.h"
 #include "errors.h"
 #include "utils.h"
+#include "awin.h"
 #include "debuger.h"
 #include "debuger_ui.h"
 #include "debuger_parser.h"
@@ -84,14 +84,16 @@ struct var_t * debuger_get_var(char *name)
 // -----------------------------------------------------------------------
 int em400_debuger_init()
 {
-	nc_w_changed = 1;
-	return em400_debuger_ui_init();
+	aw_init(O_NCURSES);
+	em400_debuger_ui_init();
+	aw_layout_changed = 1;
+	return 0;
 }
 
 // -----------------------------------------------------------------------
 void em400_debuger_shutdown()
 {
-	em400_debuger_ui_shutdown();
+	aw_shutdown();
 }
 
 // -----------------------------------------------------------------------
@@ -118,22 +120,19 @@ void em400_debuger_step()
 	}
 
 	if (bhit) {
-		waprintw(WCMD, attr[C_DATA], "Hit breakpoint %i: %s (cnt: %i)\n", bhit->nr, bhit->label, bhit->counter);
+		awprint(W_CMD, C_DATA, "Hit breakpoint %i: %s (cnt: %i)\n", bhit->nr, bhit->label, bhit->counter);
 	}
 
 	debuger_loop_fin = 0;
 
 	while (!debuger_loop_fin) {
-		if (nc_w_changed) {
-			e400_debuger_w_reinit_all();
-			nc_w_changed = 0;
+		if (aw_layout_changed) {
+			aw_layout_redo();
 		} else {
-			e400_debuger_w_redraw_all();
+			aw_layout_refresh();
 		}
 
-		int res = nc_readline(WCMD, "em400> ", input_buf, INPUT_BUF_SIZE);
-		waprintw(WCMD, 0, "\n");
-		wrefresh(WCMD);
+		int res = aw_readline(W_CMD, C_PROMPT, "em400> ", input_buf, INPUT_BUF_SIZE);
 
 		if ((res == KEY_ENTER) && (*input_buf)) {
 			YY_BUFFER_STATE yb = yy_scan_string(input_buf);

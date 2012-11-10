@@ -69,30 +69,30 @@ struct node_t *enode;
 statement:
 	| command
 	| UINT '(' expr ')' '\n' {
-		waprintw(WCMD, attr[C_DATA], "%i\n", (uint16_t) n_eval($3));
+		awprint(W_CMD, C_DATA, "%i\n", (uint16_t) n_eval($3));
 		n_discard_stack();
 	}
 	| HEX '(' expr ')' '\n' {
-		waprintw(WCMD, attr[C_DATA], "0x%x\n", n_eval($3));
+		awprint(W_CMD, C_DATA, "0x%x\n", n_eval($3));
 		n_discard_stack();
 	}
 	| OCT '(' expr ')' '\n' {
-		waprintw(WCMD, attr[C_DATA], "0%o\n", n_eval($3));
+		awprint(W_CMD, C_DATA, "0%o\n", n_eval($3));
 		n_discard_stack();
 	}
 	| BIN '(' expr ')' '\n' {
 		char *b = int2bin(n_eval($3), 16);
-		waprintw(WCMD, attr[C_DATA], "0b%s\n", b);
+		awprint(W_CMD, C_DATA, "0b%s\n", b);
 		free(b);
 		n_discard_stack();
 	}
 	| expr '\n' {
-		waprintw(WCMD, attr[C_DATA], "%i\n", n_eval($1));
+		awprint(W_CMD, C_DATA, "%i\n", n_eval($1));
 		n_discard_stack();
 	}
 	| YERR '\n' {
 		yyclearin;
-		waprintw(WCMD, attr[C_ERROR], "Error: unknown character: %c\n", (char) $1);
+		awprint(W_CMD, C_ERROR, "Error: unknown character: %c\n", (char) $1);
 		YYERROR;
 	}
 	;
@@ -145,13 +145,13 @@ expr:
 		if (enode) {
 			switch (enode->type) {
 				case N_MEM:
-					waprintw(WCMD, attr[C_ERROR], "Error: address [%i:0x%04x] not available, memory not configured\n", enode->nb, (uint16_t) enode->val);
+					awprint(W_CMD, C_ERROR, "Error: address [%i:0x%04x] not available, memory not configured\n", enode->nb, (uint16_t) enode->val);
 					break;
 				case N_VAR:
-					waprintw(WCMD, attr[C_ERROR], "Error: undefined variable: %s\n", enode->var);
+					awprint(W_CMD, C_ERROR, "Error: undefined variable: %s\n", enode->var);
 					break;
 				default:
-					waprintw(WCMD, attr[C_ERROR], "Unknown error on node: type: %i, value: %i, var: %s\n", enode->type, (uint16_t) enode->val, enode->var);
+					awprint(W_CMD, C_ERROR, "Unknown error on node: type: %i, value: %i, var: %s\n", enode->type, (uint16_t) enode->val, enode->var);
 					break;
 			}
 			enode = NULL;
@@ -193,10 +193,10 @@ command:
 	}
 	| f_help
 	| F_REGS '\n' {
-		em400_debuger_c_regs(WCMD);
+		em400_debuger_c_regs(W_CMD);
 	}
 	| F_SREGS '\n' {
-		em400_debuger_c_sregs(WCMD);
+		em400_debuger_c_sregs(W_CMD);
 	}
 	| F_RESET '\n' {
 		em400_debuger_c_reset();
@@ -209,7 +209,7 @@ command:
 	}
 	| f_load
 	| F_MEMCFG '\n' {
-		em400_debuger_c_memcfg(WCMD);
+		em400_debuger_c_memcfg(W_CMD);
 	}
 	| f_brk
 	| F_RUN '\n' {
@@ -219,57 +219,57 @@ command:
 
 f_help:
 	F_HELP '\n' {
-		em400_debuger_c_help(WCMD, NULL);
+		em400_debuger_c_help(W_CMD, NULL);
 	}
 	| F_HELP CMDNAME '\n'{
-		em400_debuger_c_help(WCMD, $2);
+		em400_debuger_c_help(W_CMD, $2);
 		free($2);
 	}
 	;
 
 f_dasm:
 	F_DASM '\n' {
-		em400_debuger_c_dt(WCMD, DMODE_DASM, R(R_IC), 1);
+		em400_debuger_c_dt(W_CMD, DMODE_DASM, R(R_IC), 1);
 	}
 	| F_DASM VALUE '\n' {
-		em400_debuger_c_dt(WCMD, DMODE_DASM, R(R_IC), $2);
+		em400_debuger_c_dt(W_CMD, DMODE_DASM, R(R_IC), $2);
 	}
 	| F_DASM expr VALUE '\n' {
-		em400_debuger_c_dt(WCMD, DMODE_DASM, n_eval($2), $3);
+		em400_debuger_c_dt(W_CMD, DMODE_DASM, n_eval($2), $3);
 		n_discard_stack();
 	}
 	;
 
 f_trans:
 	F_TRANS '\n' {
-		em400_debuger_c_dt(WCMD, DMODE_TRANS, R(R_IC), 1);
+		em400_debuger_c_dt(W_CMD, DMODE_TRANS, R(R_IC), 1);
 	}
 	| F_TRANS VALUE '\n' {
-		em400_debuger_c_dt(WCMD, DMODE_TRANS, R(R_IC), $2);
+		em400_debuger_c_dt(W_CMD, DMODE_TRANS, R(R_IC), $2);
 	}
 	| F_TRANS expr VALUE '\n' {
-		em400_debuger_c_dt(WCMD, DMODE_TRANS, n_eval($2), $3);
+		em400_debuger_c_dt(W_CMD, DMODE_TRANS, n_eval($2), $3);
 		n_discard_stack();
 	}
 	;
 
 f_mem:
 	F_MEM expr '-' expr '\n' {
-		em400_debuger_c_mem(WCMD, SR_Q*SR_NB, n_eval($2), n_eval($4));
+		em400_debuger_c_mem(W_CMD, SR_Q*SR_NB, n_eval($2), n_eval($4));
 		n_discard_stack();
 	}
 	| F_MEM expr ':' expr '-' expr '\n' {
-		em400_debuger_c_mem(WCMD, n_eval($2), n_eval($4), n_eval($6));
+		em400_debuger_c_mem(W_CMD, n_eval($2), n_eval($4), n_eval($6));
 		n_discard_stack();
 	}
 	;
 
 f_load:
 	F_LOAD FNAME '\n' {
-		em400_debuger_c_load(WCMD, $2, SR_Q*SR_NB);
+		em400_debuger_c_load(W_CMD, $2, SR_Q*SR_NB);
 	}
 	| F_LOAD FNAME VALUE '\n' {
-		em400_debuger_c_load(WCMD, $2, $3);
+		em400_debuger_c_load(W_CMD, $2, $3);
 	}
 	;
 
@@ -285,26 +285,26 @@ f_brk:
 	}
 	| F_BRK B_DEL VALUE '\n' {
 		if (em400_debuger_c_brk_del($3)) {
-			waprintw(WCMD, attr[C_ERROR], "No such breakpoint: %i\n", $3);
+			awprint(W_CMD, C_ERROR, "No such breakpoint: %i\n", $3);
 		}
 	}
 	| F_BRK B_TEST VALUE '\n' {
 		if (em400_debuger_c_brk_test($3)) {
-			waprintw(WCMD, attr[C_ERROR], "No such breakpoint: %i\n", $3);
+			awprint(W_CMD, C_ERROR, "No such breakpoint: %i\n", $3);
 		}
 	}
 	| F_BRK B_DISABLE VALUE '\n' {
 		if (em400_debuger_c_brk_disable($3, 1)) {
-			waprintw(WCMD, attr[C_ERROR], "No such breakpoint: %i\n", $3);
+			awprint(W_CMD, C_ERROR, "No such breakpoint: %i\n", $3);
 		} else {
-			waprintw(WCMD, attr[C_DATA], "Breakpoint %i disabled.\n", $3);
+			awprint(W_CMD, C_DATA, "Breakpoint %i disabled.\n", $3);
 		}
 	}
 	| F_BRK B_ENABLE VALUE '\n' {
 		if (em400_debuger_c_brk_disable($3, 0)) {
-			waprintw(WCMD, attr[C_ERROR], "No such breakpoint: %i\n", $3);
+			awprint(W_CMD, C_ERROR, "No such breakpoint: %i\n", $3);
 		} else {
-			waprintw(WCMD, attr[C_DATA], "Breakpoint %i enabled.\n", $3);
+			awprint(W_CMD, C_DATA, "Breakpoint %i enabled.\n", $3);
 		}
 	}
 	;
@@ -313,7 +313,7 @@ f_brk:
 
 void yyerror(char *s)
 {
-    waprintw(WCMD, attr[C_ERROR], "Error: %s\n", s);
+    awprint(W_CMD, C_ERROR, "Error: %s\n", s);
 }
 
 // vim: tabstop=4

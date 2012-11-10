@@ -71,31 +71,31 @@ int debuger_is_cmd(char *cmd)
 }
 
 // -----------------------------------------------------------------------
-void em400_debuger_c_load(WINDOW *win, char* image, int bank)
+void em400_debuger_c_load(int wid, char* image, int bank)
 {
 	if (em400_mem_load_image(image, bank)) {
-		waprintw(win, attr[C_ERROR], "Cannot load image: \"%s\"\n", image);
+		awprint(wid, C_ERROR, "Cannot load image: \"%s\"\n", image);
 	}
 }
 
 // -----------------------------------------------------------------------
-void em400_debuger_c_help(WINDOW *win, char *cmd)
+void em400_debuger_c_help(int wid, char *cmd)
 {
 	struct cmd_t *c = em400_debuger_commands;
 	if (cmd) {
 		while (c->cmd) {
 			if (!strcmp(cmd, c->cmd)) {
-				waprintw(win, attr[C_LABEL], "%s : ", c->cmd);
-				waprintw(win, attr[C_DATA], "%s\n", c->doc);
-				waprintw(win, attr[C_LABEL], "Usage:\n%s\n", c->help);
+				awprint(wid, C_LABEL, "%s : ", c->cmd);
+				awprint(wid, C_DATA, "%s\n", c->doc);
+				awprint(wid, C_LABEL, "Usage:\n%s\n", c->help);
 				return;
 			}
 			c++;
 		}
-		waprintw(win, attr[C_ERROR], "Error: no such command: %s\n", cmd);
+		awprint(wid, C_ERROR, "Error: no such command: %s\n", cmd);
 	} else {
 		while (c->cmd) {
-			waprintw(win, attr[C_LABEL], "%-10s : %s\n", c->cmd, c->doc);
+			awprint(wid, C_LABEL, "%-10s : %s\n", c->cmd, c->doc);
 			c++;
 		}
 	}
@@ -135,7 +135,7 @@ void em400_debuger_c_clmem()
 }
 
 // -----------------------------------------------------------------------
-void em400_debuger_c_dt(WINDOW *win, int dasm_mode, int start, int count)
+void em400_debuger_c_dt(int wid, int dasm_mode, int start, int count)
 {
 	char *buf;
 	int len;
@@ -144,11 +144,11 @@ void em400_debuger_c_dt(WINDOW *win, int dasm_mode, int start, int count)
 		len = mjc400_dt(em400_mem_ptr(SR_Q * SR_NB, start, 0), &buf, dasm_mode);
 
 		if (start == R(R_IC)) {
-			waprintw(win, attr[C_ILABEL], "0x%04x:", start);
-			waprintw(win, attr[C_IDATA], " %-19s\n", buf);
+			awprint(wid, C_ILABEL, "0x%04x:", start);
+			awprint(wid, C_IDATA, " %-19s\n", buf);
 		} else {
-			waprintw(win, attr[C_LABEL], "0x%04x:", start);
-			waprintw(win, attr[C_DATA], " %-19s\n", buf);
+			awprint(wid, C_LABEL, "0x%04x:", start);
+			awprint(wid, C_DATA, " %-19s\n", buf);
 		}
 
 		start += len;
@@ -158,7 +158,7 @@ void em400_debuger_c_dt(WINDOW *win, int dasm_mode, int start, int count)
 }
 
 // -----------------------------------------------------------------------
-void em400_debuger_c_mem(WINDOW *win, int block, int start, int end)
+void em400_debuger_c_mem(int wid, int block, int start, int end)
 {
 	uint16_t addr = start;
 	char *text = malloc(MEMDUMP_COLS*2+1);
@@ -168,12 +168,12 @@ void em400_debuger_c_mem(WINDOW *win, int block, int start, int end)
 
 	blockptr = em400_mem_ptr(block, 0, 0);
 	if (!blockptr) {
-		waprintw(WCMD, attr[C_ERROR], "Cannot access block %i\n", block);
+		awprint(W_CMD, C_ERROR, "Cannot access block %i\n", block);
 	}
 
 	// wrong range
 	if ((end >= 0) && (start > end)) {
-		waprintw(WCMD, attr[C_ERROR], "Wrong memory range: %i - %i\n", start, end);
+		awprint(W_CMD, C_ERROR, "Wrong memory range: %i - %i\n", start, end);
 	}
 
 	// only start position given, adjust end position
@@ -182,31 +182,31 @@ void em400_debuger_c_mem(WINDOW *win, int block, int start, int end)
 	}
 
 	// print headers, mind MEMDUMP_COLS
-	waprintw(win, attr[C_LABEL], "  addr: ");
+	awprint(wid, C_LABEL, "  addr: ");
 	for (int i=0 ; i<MEMDUMP_COLS ; i++) {
-		waprintw(win, attr[C_LABEL], "+%03x ", i);
+		awprint(wid, C_LABEL, "+%03x ", i);
 	}
-	waprintw(win, attr[C_LABEL], "\n");
+	awprint(wid, C_LABEL, "\n");
 	// print separator
-	waprintw(win, attr[C_LABEL], "-------");
+	awprint(wid, C_LABEL, "-------");
 	for (int i=0 ; i<MEMDUMP_COLS ; i++) {
-		waprintw(win, attr[C_LABEL], "-----");
+		awprint(wid, C_LABEL, "-----");
 	}
-	waprintw(win, attr[C_LABEL], "  ");
+	awprint(wid, C_LABEL, "  ");
 	for (int i=0 ; i<MEMDUMP_COLS ; i++) {
-		waprintw(win, attr[C_LABEL], "--");
+		awprint(wid, C_LABEL, "--");
 	}
-	waprintw(win, attr[C_LABEL], "\n");
+	awprint(wid, C_LABEL, "\n");
 
 	// print row
 	while (addr <= end) {
 		// row header
 		if ((addr-start)%MEMDUMP_COLS == 0) {
-			waprintw(win, attr[C_LABEL], "0x%04x: ", addr); 
+			awprint(wid, C_LABEL, "0x%04x: ", addr); 
 		}
 
 		// hex contents
-		waprintw(win, attr[C_DATA], "%4x ", *(blockptr+addr));
+		awprint(wid, C_DATA, "%4x ", *(blockptr+addr));
 
 		// store text representation
 		c1 = (char) (((*(blockptr+addr))&0b111111110000000)>>8);
@@ -217,7 +217,7 @@ void em400_debuger_c_mem(WINDOW *win, int block, int start, int end)
 
 		// row footer - text representation
 		if ((addr-start)%MEMDUMP_COLS == (MEMDUMP_COLS-1)) {
-			waprintw(win, attr[C_DATA], " %s\n", text);
+			awprint(wid, C_DATA, " %s\n", text);
 			tptr = text;
 		}
 
@@ -227,17 +227,17 @@ void em400_debuger_c_mem(WINDOW *win, int block, int start, int end)
 	// fill and finish current line
 	if ((addr-start-1)%MEMDUMP_COLS != (MEMDUMP_COLS-1)) {
 		while ((addr-start)%MEMDUMP_COLS !=0) {
-			waprintw(win, attr[C_DATA], "	 ");
+			awprint(wid, C_DATA, "	 ");
 			addr++;
 		}
-		waprintw(win, attr[C_DATA], " %s\n", text);
+		awprint(wid, C_DATA, " %s\n", text);
 	}
 
 	free(text);
 }
 
 // -----------------------------------------------------------------------
-void em400_debuger_c_sregs(WINDOW *win)
+void em400_debuger_c_sregs(int wid)
 {
 	char *ir = int2bin(R(R_IR)>>10, 6);
 	int d = (R(R_IR)>>9) & 1;
@@ -260,18 +260,18 @@ void em400_debuger_c_sregs(WINDOW *win)
 	char *sf = int2bin(R(0)>>8, 8);
 	char *uf = int2bin(R(0), 8);
 
-	waprintw(win, attr[C_LABEL], "            OPCODE D A   B   C\n");
-	waprintw(win, attr[C_LABEL], "IR: ");
-	waprintw(win, attr[C_DATA], "0x%04x  %s %i %s %s %s\n", R(R_IR), ir, d, a, b, c);
-	waprintw(win, attr[C_LABEL], "            RM         Q s NB\n");
-	waprintw(win, attr[C_LABEL], "SR: ");
-	waprintw(win, attr[C_DATA], "0x%04x  %s %i %i %s\n", R(R_SR), rm, SR_Q, s, nb);
-	waprintw(win, attr[C_LABEL], "                ZPMCZ TIFFFFx 01 23 456789 abcdef OCSS\n");
-	waprintw(win, attr[C_LABEL], "RZ: ");
-	waprintw(win, attr[C_DATA], "0x%08x  %s %s %s %s %s %s %s\n", RZ, i1, i2, i3, i4, i5, i6, i7);
-	waprintw(win, attr[C_LABEL], "            ZMVCLEGY Xuser\n");
-	waprintw(win, attr[C_LABEL], "R0: ");
-	waprintw(win, attr[C_DATA], "0x%04x  %s %s\n", R(0), sf, uf);
+	awprint(wid, C_LABEL, "            OPCODE D A   B   C\n");
+	awprint(wid, C_LABEL, "IR: ");
+	awprint(wid, C_DATA, "0x%04x  %s %i %s %s %s\n", R(R_IR), ir, d, a, b, c);
+	awprint(wid, C_LABEL, "            RM         Q s NB\n");
+	awprint(wid, C_LABEL, "SR: ");
+	awprint(wid, C_DATA, "0x%04x  %s %i %i %s\n", R(R_SR), rm, SR_Q, s, nb);
+	awprint(wid, C_LABEL, "                ZPMCZ TIFFFFx 01 23 456789 abcdef OCSS\n");
+	awprint(wid, C_LABEL, "RZ: ");
+	awprint(wid, C_DATA, "0x%08x  %s %s %s %s %s %s %s\n", RZ, i1, i2, i3, i4, i5, i6, i7);
+	awprint(wid, C_LABEL, "            ZMVCLEGY Xuser\n");
+	awprint(wid, C_LABEL, "R0: ");
+	awprint(wid, C_DATA, "0x%04x  %s %s\n", R(0), sf, uf);
 
 	free(uf);
 	free(sf);
@@ -294,16 +294,16 @@ void em400_debuger_c_sregs(WINDOW *win)
 }
 
 // -----------------------------------------------------------------------
-void em400_debuger_c_regs(WINDOW *win)
+void em400_debuger_c_regs(int wid)
 {
-	waprintw(win, attr[C_LABEL], "    hex    oct    dec    bin              ch R40\n");
+	awprint(wid, C_LABEL, "    hex    oct    dec    bin              ch R40\n");
 	for (int i=1 ; i<=7 ; i++) {
 		char *b = int2bin(R(i), 16);
 		char *r = int2r40(R(i));
 		char *c = int2chars(R(i));
 
-		waprintw(win, attr[C_LABEL], "R%i: ", i);
-		waprintw(win, attr[C_DATA], "0x%04x %6o %6i %s %s %s\n", R(i), R(i), (int16_t)R(i), b, c, r);
+		awprint(wid, C_LABEL, "R%i: ", i);
+		awprint(wid, C_DATA, "0x%04x %6o %6i %s %s %s\n", R(i), R(i), (int16_t)R(i), b, c, r);
 		free(c);
 		free(r);
 		free(b);
@@ -311,29 +311,29 @@ void em400_debuger_c_regs(WINDOW *win)
 }
 
 // -----------------------------------------------------------------------
-void em400_debuger_c_memcfg(WINDOW *win)
+void em400_debuger_c_memcfg(int wid)
 {
 	int i, j, cnt;
-	waprintw(win, attr[C_LABEL], "Number of 4kword segments in each segment/block\n");
-	waprintw(win, attr[C_LABEL], "seg/blk:  0 1 2 3 4 5 6 7 8 9 a b c d e f\n");
-	waprintw(win, attr[C_LABEL], "     hw:  ");
+	awprint(wid, C_LABEL, "Number of 4kword segments in each segment/block\n");
+	awprint(wid, C_LABEL, "seg/blk:  0 1 2 3 4 5 6 7 8 9 a b c d e f\n");
+	awprint(wid, C_LABEL, "     hw:  ");
 	for (i=0 ; i<MEM_MAX_MODULES ; i++) {
 		cnt = 0;
 		for (j=0 ; j<MEM_MAX_SEGMENTS ; j++) {
 			if (em400_mem_segment[i][j]) cnt++;
 		}
-		waprintw(win, attr[C_DATA], "%i ", cnt);
+		awprint(wid, C_DATA, "%i ", cnt);
 	}
-	waprintw(win, attr[C_DATA], "\n");
-	waprintw(win, attr[C_LABEL], "     sw:  ");
+	awprint(wid, C_DATA, "\n");
+	awprint(wid, C_LABEL, "     sw:  ");
 	for (i=0 ; i<MEM_MAX_NB ; i++) {
 		cnt = 0;
 		for (j=0 ; j<MEM_MAX_SEGMENTS ; j++) {
 			if (em400_mem_map[i][j]) cnt++;
 		}
-		waprintw(win, attr[C_DATA], "%i ", cnt);
+		awprint(wid, C_DATA, "%i ", cnt);
 	}
-	waprintw(win, attr[C_DATA], "\n");
+	awprint(wid, C_DATA, "\n");
 }
 
 // -----------------------------------------------------------------------
@@ -363,9 +363,9 @@ void em400_debuger_c_brk_list()
 	struct break_t *b = brkpoints;
 	while (b) {
 		if (b->disabled) {
-			waprintw(WCMD, attr[C_LABEL], "%i: %s\n", b->nr, b->label);
+			awprint(W_CMD, C_LABEL, "%i: %s\n", b->nr, b->label);
 		} else {
-			waprintw(WCMD, attr[C_DATA], "%i: %s\n", b->nr, b->label);
+			awprint(W_CMD, C_DATA, "%i: %s\n", b->nr, b->label);
 		}
 		b = b->next;
 	}
@@ -412,7 +412,7 @@ int em400_debuger_c_brk_test(int nr)
 {
 	struct break_t *b = em400_debuger_c_brk_get(nr);
 	if (b) {
-		waprintw(WCMD, attr[C_DATA], "Breakpoint %i evaluates to: %i\n", b->nr, n_eval(b->n));
+		awprint(W_CMD, C_DATA, "Breakpoint %i evaluates to: %i\n", b->nr, n_eval(b->n));
 		return 0;
 	} else {
 		return 1;

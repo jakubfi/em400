@@ -18,8 +18,6 @@
 #ifndef DEBUGER_CMD_H
 #define DEBUGER_CMD_H
 
-#include <ncurses.h>
-
 #include "debuger.h"
 #include "debuger_eval.h"
 
@@ -36,15 +34,15 @@ int debuger_is_cmd(char *cmd);
 void em400_debuger_c_step();
 void em400_debuger_c_quit();
 void em400_debuger_c_run();
-void em400_debuger_c_help(WINDOW *win, char *cmd);
-void em400_debuger_c_regs(WINDOW *win);
-void em400_debuger_c_sregs(WINDOW *win);
+void em400_debuger_c_help(int wid, char *cmd);
+void em400_debuger_c_regs(int wid);
+void em400_debuger_c_sregs(int wid);
 void em400_debuger_c_reset();
-void em400_debuger_c_mem(WINDOW *win, int block, int start, int end);
+void em400_debuger_c_mem(int wid, int block, int start, int end);
 void em400_debuger_c_clmem();
-void em400_debuger_c_dt(WINDOW *win, int dasm_mode, int start, int count);
-void em400_debuger_c_load(WINDOW *win, char* image, int bank);
-void em400_debuger_c_memcfg(WINDOW *win);
+void em400_debuger_c_dt(int wid, int dasm_mode, int start, int count);
+void em400_debuger_c_load(int wid, char* image, int bank);
+void em400_debuger_c_memcfg(int wid);
 void em400_debuger_c_brk_add(char *label, struct node_t *n);
 void em400_debuger_c_brk_list();
 int em400_debuger_c_brk_del(int nr);

@@ -29,12 +29,13 @@ dasm_iset.o\
 debuger.o\
 debuger_ui.o\
 debuger_cmd.o\
-debuger_eval.o
+debuger_eval.o\
+awin.o
 
 ifdef WITH_DEBUGER
 OBJS += $(DEBUG_OBJS)
 CFLAGS += -DWITH_DEBUGER
-LFLAGS += -lncurses
+LFLAGS += -lncurses -lreadline
 endif
 
 em400: $(OBJS)
