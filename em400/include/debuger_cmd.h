@@ -43,11 +43,11 @@ void em400_debuger_c_clmem();
 void em400_debuger_c_dt(int wid, int dasm_mode, int start, int count);
 void em400_debuger_c_load(int wid, char* image, int bank);
 void em400_debuger_c_memcfg(int wid);
-void em400_debuger_c_brk_add(char *label, struct node_t *n);
-void em400_debuger_c_brk_list();
-int em400_debuger_c_brk_del(int nr);
-int em400_debuger_c_brk_test(int nr);
-int em400_debuger_c_brk_disable(int nr, int disable);
+void em400_debuger_c_brk_add(unsigned int wid, char *label, struct node_t *n);
+void em400_debuger_c_brk_list(unsigned int wid);
+void em400_debuger_c_brk_del(unsigned int wid, int nr);
+void em400_debuger_c_brk_test(unsigned int wid, int nr);
+void em400_debuger_c_brk_disable(unsigned int wid, int nr, int disable);
 
 #endif
 

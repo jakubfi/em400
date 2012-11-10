@@ -40,7 +40,7 @@ int wmin, wmax;
 int chmin, chmax, cvmin, cvmax;
 
 // -----------------------------------------------------------------------
-void _aw_resize_sig(int signum, siginfo_t *si, void *ctx)
+void _aw_sigwinch_handler(int signum, siginfo_t *si, void *ctx)
 {
 	aw_layout_changed = 1;
 }
@@ -60,7 +60,7 @@ int aw_init(int output)
 	// prepare handler for terminal resize
 	struct sigaction sa;
 	sa.sa_flags = SA_SIGINFO;
-	sa.sa_sigaction = _aw_resize_sig;
+	sa.sa_sigaction = _aw_sigwinch_handler;
 
 	if (sigemptyset(&sa.sa_mask) != 0) {
 		return -1;
@@ -681,7 +681,6 @@ int aw_nc_readline(int id, int attr, char *prompt, char *buffer, int buflen)
 			}
 			buffer[len++] = '\n';
 			wmove(w->win, y, x+len);
-			wprintw(w->win, "\n");
 			break;
 		} else if (isprint(c)) {
 			if (pos < buflen-1) {

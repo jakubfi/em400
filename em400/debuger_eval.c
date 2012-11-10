@@ -281,9 +281,11 @@ int16_t n_eval_op2(struct node_t * n)
 		case SHL:
 			return v1 << v2;
 		case EQ:
-			return v1 == v2;
+			if (v1 == v2) return 1;
+			else return 0;
 		case NEQ:
-			return v1 != v2;
+			if (v1 != v2) return 1;
+			else return 0;
 		case '>':
 			return v1 > v2;
 		case '<':

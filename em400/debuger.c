@@ -30,8 +30,10 @@
 #include "debuger_parser.h"
 #include "debuger_eval.h"
 
-int debuger_loop_fin = 0;
-int debuger_enter = 1;
+int ui_mode = O_NCURSES;
+
+volatile int debuger_loop_fin = 0;
+volatile int debuger_enter = 1;
 
 char input_buf[INPUT_BUF_SIZE];
 
@@ -44,6 +46,12 @@ extern int yyparse();
 typedef struct yy_buffer_state *YY_BUFFER_STATE;
 YY_BUFFER_STATE yy_scan_string(char *yy_str);
 void yy_delete_buffer(YY_BUFFER_STATE b);
+
+// -----------------------------------------------------------------------
+void _debuger_sigint_handler(int signum, siginfo_t *si, void *ctx)
+{
+	debuger_enter = 1;
+}
 
 // -----------------------------------------------------------------------
 void debuger_set_var(char *name, uint16_t value)
@@ -84,9 +92,26 @@ struct var_t * debuger_get_var(char *name)
 // -----------------------------------------------------------------------
 int em400_debuger_init()
 {
-	aw_init(O_NCURSES);
+	if (aw_init(ui_mode)) {
+		return -1;
+	}
+
 	em400_debuger_ui_init();
 	aw_layout_changed = 1;
+
+    // prepare handler for ctrl-c
+    struct sigaction sa;
+    sa.sa_flags = SA_SIGINFO;
+    sa.sa_sigaction = _debuger_sigint_handler;
+
+    if (sigemptyset(&sa.sa_mask) != 0) {
+        return -1;
+    }
+
+    if (sigaction(SIGINT, &sa, NULL) != 0) {
+        return -1;
+    }
+
 	return 0;
 }
 
@@ -133,6 +158,11 @@ void em400_debuger_step()
 		}
 
 		int res = aw_readline(W_CMD, C_PROMPT, "em400> ", input_buf, INPUT_BUF_SIZE);
+		if (ui_mode == O_NCURSES) {
+			awprint(W_CMD, C_LABEL, "\n");
+		}
+
+		aw_layout_refresh();
 
 		if ((res == KEY_ENTER) && (*input_buf)) {
 			YY_BUFFER_STATE yb = yy_scan_string(input_buf);

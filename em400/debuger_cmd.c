@@ -85,8 +85,8 @@ void em400_debuger_c_help(int wid, char *cmd)
 	if (cmd) {
 		while (c->cmd) {
 			if (!strcmp(cmd, c->cmd)) {
-				awprint(wid, C_LABEL, "%s : ", c->cmd);
-				awprint(wid, C_DATA, "%s\n", c->doc);
+				awprint(wid, C_DATA, "%s ", c->cmd);
+				awprint(wid, C_LABEL, ": %s\n", c->doc);
 				awprint(wid, C_LABEL, "Usage:\n%s\n", c->help);
 				return;
 			}
@@ -141,19 +141,23 @@ void em400_debuger_c_dt(int wid, int dasm_mode, int start, int count)
 	int len;
 
 	while (count > 0) {
-		len = mjc400_dt(em400_mem_ptr(SR_Q * SR_NB, start, 0), &buf, dasm_mode);
+		uint16_t * addr = em400_mem_ptr(SR_Q * SR_NB, start, 0);
+		if (addr) {
+			len = mjc400_dt(addr, &buf, dasm_mode);
 
-		if (start == R(R_IC)) {
-			awprint(wid, C_ILABEL, "0x%04x:", start);
-			awprint(wid, C_IDATA, " %-19s\n", buf);
+			if (start == R(R_IC)) {
+				awprint(wid, C_ILABEL, "0x%04x:", start);
+				awprint(wid, C_IDATA, " %-19s\n", buf);
+			} else {
+				awprint(wid, C_LABEL, "0x%04x:", start);
+				awprint(wid, C_DATA, " %-19s\n", buf);
+			}
+			start += len;
+			free(buf);
 		} else {
-			awprint(wid, C_LABEL, "0x%04x:", start);
-			awprint(wid, C_DATA, " %-19s\n", buf);
+			awprint(wid, C_DATA, "\n");
 		}
-
-		start += len;
 		count--;
-		free(buf);
 	}
 }
 
@@ -168,12 +172,12 @@ void em400_debuger_c_mem(int wid, int block, int start, int end)
 
 	blockptr = em400_mem_ptr(block, 0, 0);
 	if (!blockptr) {
-		awprint(W_CMD, C_ERROR, "Cannot access block %i\n", block);
+		awprint(wid, C_ERROR, "Cannot access block %i\n", block);
 	}
 
 	// wrong range
 	if ((end >= 0) && (start > end)) {
-		awprint(W_CMD, C_ERROR, "Wrong memory range: %i - %i\n", start, end);
+		awprint(wid, C_ERROR, "Wrong memory range: %i - %i\n", start, end);
 	}
 
 	// only start position given, adjust end position
@@ -337,7 +341,7 @@ void em400_debuger_c_memcfg(int wid)
 }
 
 // -----------------------------------------------------------------------
-void em400_debuger_c_brk_add(char *label, struct node_t *n)
+void em400_debuger_c_brk_add(unsigned int wid, char *label, struct node_t *n)
 {
 	struct break_t *b = malloc(sizeof(struct break_t));
 	b->nr = brkcnt;
@@ -354,18 +358,26 @@ void em400_debuger_c_brk_add(char *label, struct node_t *n)
 		last_brk = brkpoints = b;
 	}
 
+	awprint(wid, C_LABEL, "Breakpoint ");
+	awprint(wid, C_DATA, "%i", b->nr);
+	awprint(wid, C_LABEL, " added:");
+	awprint(wid, C_DATA, " %s\n", b->label);
+
 	brkcnt++;
 }
 
 // -----------------------------------------------------------------------
-void em400_debuger_c_brk_list()
+void em400_debuger_c_brk_list(unsigned int wid)
 {
 	struct break_t *b = brkpoints;
+	if (!b) {
+		awprint(wid, C_LABEL, "No breakpoints\n");
+	}
 	while (b) {
 		if (b->disabled) {
-			awprint(W_CMD, C_LABEL, "%i: %s\n", b->nr, b->label);
+			awprint(wid, C_LABEL, "%i: %s\n", b->nr, b->label);
 		} else {
-			awprint(W_CMD, C_DATA, "%i: %s\n", b->nr, b->label);
+			awprint(wid, C_DATA, "%i: %s\n", b->nr, b->label);
 		}
 		b = b->next;
 	}
@@ -385,7 +397,7 @@ struct break_t * em400_debuger_c_brk_get(int nr)
 }
 
 // -----------------------------------------------------------------------
-int em400_debuger_c_brk_del(int nr)
+void em400_debuger_c_brk_del(unsigned int wid, int nr)
 {
 	struct break_t *b = brkpoints;
 	struct break_t *prev = NULL;
@@ -396,38 +408,52 @@ int em400_debuger_c_brk_del(int nr)
 			} else {
 				brkpoints = last_brk = b->next;
 			}
+			awprint(wid, C_LABEL, "Removing breakpoint ");
+			awprint(wid, C_DATA, "%i", b->nr);
+			awprint(wid, C_LABEL, ":");
+			awprint(wid, C_DATA, " %s\n", b->label);
 			free(b->label);
 			n_free_tree(b->n);
 			free(b);
-			return 0;
+			return;
 		}
 		prev = b;
 		b = b->next;
 	}
-	return 1;
+	awprint(wid, C_ERROR, "No such breakpoint: %i\n", nr);
 }
 
 // -----------------------------------------------------------------------
-int em400_debuger_c_brk_test(int nr)
+void em400_debuger_c_brk_test(unsigned int wid, int nr)
 {
 	struct break_t *b = em400_debuger_c_brk_get(nr);
 	if (b) {
-		awprint(W_CMD, C_DATA, "Breakpoint %i evaluates to: %i\n", b->nr, n_eval(b->n));
-		return 0;
+		awprint(wid, C_LABEL, "Breakpoint ");
+		awprint(wid, C_DATA, "%i", b->nr);
+		awprint(wid, C_LABEL, " evaluates to: ");
+		awprint(wid, C_DATA, "%i\n", n_eval(b->n));
 	} else {
-		return 1;
+		awprint(wid, C_ERROR, "No such breakpoint: %i\n", nr);
 	}
 } 
 
 // -----------------------------------------------------------------------
-int em400_debuger_c_brk_disable(int nr, int disable)
+void em400_debuger_c_brk_disable(unsigned int wid, int nr, int disable)
 {
 	struct break_t *b = em400_debuger_c_brk_get(nr);
 	if (b) {
 		b->disabled = disable;
-		return 0;
+		if (disable) {
+			awprint(wid, C_LABEL, "Breakpoint ");
+			awprint(wid, C_DATA, "%i", nr);
+			awprint(wid, C_LABEL, " disabled.\n");
+		} else {
+			awprint(wid, C_LABEL, "Breakpoint ");
+			awprint(wid, C_DATA, "%i", nr);
+			awprint(wid, C_LABEL, " enabled.\n");
+		}
 	} else {
-		return 1;
+		awprint(wid, C_ERROR, "No such breakpoint: %i\n", nr);
 	}
 }
 

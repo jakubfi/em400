@@ -50,10 +50,10 @@ void em400_debuger_ui_init()
     aw_window_add(c5, W_CMD, "Commandline", 1, 1, em400_debuger_wu_cmd, FILL, 0, 0);
 
 	aw_attr_new(C_PROMPT, COLOR_BLACK, COLOR_YELLOW, A_BOLD);
-	aw_attr_new(C_LABEL, COLOR_BLACK, COLOR_WHITE, 0);
+	aw_attr_new(C_LABEL, COLOR_BLACK, COLOR_WHITE, A_NORMAL);
 	aw_attr_new(C_DATA, COLOR_BLACK, COLOR_WHITE, A_BOLD);
-	aw_attr_new(C_ILABEL, COLOR_WHITE, COLOR_BLACK, 0);
-	aw_attr_new(C_IDATA, COLOR_WHITE, COLOR_BLUE, 0);
+	aw_attr_new(C_ILABEL, COLOR_WHITE, COLOR_BLACK, A_NORMAL);
+	aw_attr_new(C_IDATA, COLOR_WHITE, COLOR_BLUE, A_NORMAL);
 	aw_attr_new(C_ERROR, COLOR_BLACK, COLOR_RED, A_BOLD);
 }
 

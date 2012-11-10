@@ -1,6 +1,6 @@
 Bugs:
 
-* sr/ic write causes segfault (on Q/NB and IC memory access)
+* sr/ic write causes segfault (on Q/NB)
 
 CPU:
 
@@ -10,9 +10,9 @@ CPU:
 
 Debuger:
 
+* real window width vs. internal width
 * memory/register traces
 * macro for accessing interrupt states
-* ctrl-c handling
 * dynamic window contents
 * save memory image
 * load/save snapshot

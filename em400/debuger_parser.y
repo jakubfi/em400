@@ -274,37 +274,25 @@ f_load:
 
 f_brk:
 	F_BRK B_LIST '\n' {
-		em400_debuger_c_brk_list();
+		em400_debuger_c_brk_list(W_CMD);
 	}
 	| F_BRK B_ADD expr '\n' {
 		char expr[128];
 		sscanf(input_buf, " brk add %[^\n]", expr);
-		em400_debuger_c_brk_add(expr, $3);
+		em400_debuger_c_brk_add(W_CMD, expr, $3);
 		n_reset_stack();
 	}
 	| F_BRK B_DEL VALUE '\n' {
-		if (em400_debuger_c_brk_del($3)) {
-			awprint(W_CMD, C_ERROR, "No such breakpoint: %i\n", $3);
-		}
+		em400_debuger_c_brk_del(W_CMD, $3);
 	}
 	| F_BRK B_TEST VALUE '\n' {
-		if (em400_debuger_c_brk_test($3)) {
-			awprint(W_CMD, C_ERROR, "No such breakpoint: %i\n", $3);
-		}
+		em400_debuger_c_brk_test(W_CMD, $3);
 	}
 	| F_BRK B_DISABLE VALUE '\n' {
-		if (em400_debuger_c_brk_disable($3, 1)) {
-			awprint(W_CMD, C_ERROR, "No such breakpoint: %i\n", $3);
-		} else {
-			awprint(W_CMD, C_DATA, "Breakpoint %i disabled.\n", $3);
-		}
+		em400_debuger_c_brk_disable(W_CMD, $3, 1);
 	}
 	| F_BRK B_ENABLE VALUE '\n' {
-		if (em400_debuger_c_brk_disable($3, 0)) {
-			awprint(W_CMD, C_ERROR, "No such breakpoint: %i\n", $3);
-		} else {
-			awprint(W_CMD, C_DATA, "Breakpoint %i enabled.\n", $3);
-		}
+		em400_debuger_c_brk_disable(W_CMD, $3, 0);
 	}
 	;
 

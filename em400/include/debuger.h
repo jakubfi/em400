@@ -22,8 +22,8 @@
 
 #define INPUT_BUF_SIZE 70
 
-extern int debuger_loop_fin;
-extern int debuger_enter;
+extern volatile int debuger_loop_fin;
+extern volatile int debuger_enter;
 extern char input_buf[];
 
 enum _debuger_loop_ret {
