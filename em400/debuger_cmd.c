@@ -197,7 +197,12 @@ void em400_debuger_c_mem(int wid, int block, int start, int end, int maxcols, in
 				return;
 			}
 			// data (hex)
-			awprint(wid, C_DATA, "%4x ", *mptr);
+			if ((block == mem_act_block) && (addr >= mem_act_min) && (addr <= mem_act_max)) {
+				awprint(wid, C_WRITE, "%4x ", *mptr);
+				mem_act_block = mem_act_min = mem_act_max = -1;
+			} else {
+				awprint(wid, C_DATA, "%4x ", *mptr);
+			}
 			// store data (chars)
 			int2chars(*mptr, chars+w*2);
 			addr++;
@@ -277,7 +282,8 @@ void em400_debuger_c_regs(int wid)
 		int2chars(R(i), c);
 
 		awprint(wid, C_LABEL, "R%i: ", i);
-		awprint(wid, C_DATA, "0x%04x %6o %6i %s %s %s\n", R(i), R(i), (int16_t)R(i), b, c, r);
+		awprint(wid, reg_act[i], "0x%04x %6o %6i %s %s %s\n", R(i), R(i), (int16_t)R(i), b, c, r);
+		reg_act[i] = C_DATA;
 		free(r);
 		free(b);
 	}

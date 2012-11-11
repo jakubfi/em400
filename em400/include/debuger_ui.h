@@ -28,7 +28,9 @@ enum _ui_attributes {
 	C_DATA,
 	C_ILABEL,
 	C_IDATA,
-	C_ERROR
+	C_ERROR,
+	C_READ,
+	C_WRITE
 };
 
 enum _ui_windows {

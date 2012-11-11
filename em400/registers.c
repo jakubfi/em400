@@ -17,9 +17,15 @@
 
 #include <inttypes.h>
 
+#ifdef WITH_DEBUGER
+#include "debuger_ui.h"
+#endif
 #include "registers.h"
 
 uint16_t regs[R_MAX];
+#ifdef WITH_DEBUGER
+int reg_act[R_MAX];
+#endif
 
 uint32_t RZ;
 
@@ -32,6 +38,9 @@ uint16_t reg_read(unsigned short int r)
 // -----------------------------------------------------------------------
 void reg_write(unsigned short int r, uint16_t x)
 {
+#ifdef WITH_DEBUGER
+	reg_act[r] = C_WRITE;
+#endif
 	if (r) {
 		regs[r] = x;
 	} else {

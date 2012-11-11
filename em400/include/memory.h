@@ -30,6 +30,12 @@ extern short int em400_mem_conf[MEM_MAX_MODULES];
 extern uint16_t *em400_mem_segment[MEM_MAX_MODULES][MEM_MAX_SEGMENTS];
 extern uint16_t *em400_mem_map[MEM_MAX_NB][MEM_MAX_AB];
 
+#ifdef WITH_DEBUGER
+extern int mem_act_block;
+extern int mem_act_min;
+extern int mem_act_max;
+#endif
+
 int em400_mem_init();
 void em400_mem_shutdown();
 int em400_mem_add_user_map(unsigned short int nb, unsigned short int ab, unsigned short int mp, unsigned short int segment);

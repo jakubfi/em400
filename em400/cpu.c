@@ -28,6 +28,7 @@
 
 #ifdef WITH_DEBUGER
 #include "debuger.h"
+#include "debuger_ui.h"
 #endif
 
 // -----------------------------------------------------------------------
@@ -35,6 +36,9 @@ void mjc400_reset()
 {
 	for (int i=0 ; i<R_MAX ; i++) {
 		Rw(i, 0);
+#ifdef WITH_DEBUGER
+		reg_act[i] = C_DATA;
+#endif
 	}
 	RZ = 0;
 }

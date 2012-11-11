@@ -35,7 +35,7 @@ int em400_io_dispatch(int dir, int is_mem, int chan, int unit, int cmd, uint16_t
 			int nb = arg & 0b0000000000001111;
 			int ab = (arg & 0b1111000000000000) >> 12;
 			// here, channel is memory module, unit is memory segment
-			printf("I/O OU: memory nb:%i ab:%i mp:%i seg:%i\n", nb, ab, chan, unit);
+			//printf("I/O OU: memory nb:%i ab:%i mp:%i seg:%i\n", nb, ab, chan, unit);
 			return em400_mem_add_user_map(nb, ab, chan, unit);
 		}
 	} else {
@@ -43,7 +43,7 @@ int em400_io_dispatch(int dir, int is_mem, int chan, int unit, int cmd, uint16_t
 		// N - information for selected channel/unit
 		char* s_cmd = int2bin(cmd, 8);
 		char* s_inf = int2bin(arg, 16);
-		printf("I/O OU: device chan:%i unit:%i command:%s information:%s\n", chan, unit, s_cmd, s_inf);
+		//printf("I/O OU: device chan:%i unit:%i command:%s information:%s\n", chan, unit, s_cmd, s_inf);
 		free(s_cmd);
 		free(s_inf);
 		// no such channel/unit

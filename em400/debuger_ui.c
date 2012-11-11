@@ -55,6 +55,8 @@ void em400_debuger_ui_init()
 	aw_attr_new(C_ILABEL, COLOR_WHITE, COLOR_BLACK, A_NORMAL);
 	aw_attr_new(C_IDATA, COLOR_WHITE, COLOR_BLUE, A_NORMAL);
 	aw_attr_new(C_ERROR, COLOR_BLACK, COLOR_RED, A_BOLD);
+	aw_attr_new(C_READ, COLOR_BLACK, COLOR_GREEN, A_BOLD);
+	aw_attr_new(C_WRITE, COLOR_BLACK, COLOR_MAGENTA, A_BOLD);
 }
 
 // -----------------------------------------------------------------------
