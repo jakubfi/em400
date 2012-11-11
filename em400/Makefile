@@ -45,7 +45,7 @@ debuger_scanner.c: debuger_scanner.l
 	$(LEX) -o $@ $^
 
 debuger_scanner.o: debuger_scanner.c
-	$(CC) -c $(LEXCFLAGS) $^ -o $@
+	$(CC) $(LEXCFLAGS) $^ -c -o $@
 
 debuger_parser.c: debuger_parser.y
 	$(YACC) $(YFLAGS) $^ -o $@

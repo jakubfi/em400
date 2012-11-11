@@ -15,7 +15,7 @@ Debuger:
 * macro for accessing interrupt states
 * dynamic window contents
 * save memory image
-* load/save snapshot
+* load/save snapshot (?)
 * step should work the same way as CYCLE (cycle on instruction and interrupt) (?)
 
 Other:

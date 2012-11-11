@@ -90,7 +90,7 @@ int mjc400_op_is()
 {
 	uint16_t N = mjc400_get_eff_arg();
 	if ((MEMNB(N) & R(IR_A)) == R(IR_A)) {
-		P = 1;
+		Rw(R_P, 1);
 		MEMNBw(N, (MEMNB(N) | R(IR_A)));
 	}
 	return OP_OK;
@@ -99,35 +99,35 @@ int mjc400_op_is()
 int mjc400_op_bb()
 {
 	uint16_t N = mjc400_get_eff_arg();
-	if ((R(IR_A) & N) == N) P = 1;
+	if ((R(IR_A) & N) == N) Rw(R_P, 1);
 	return OP_OK;
 }
 
 int mjc400_op_bm()
 {
 	uint16_t N = mjc400_get_eff_arg();
-	if ((MEMNB(N) & R(IR_A)) == R(IR_A)) P = 1;
+	if ((MEMNB(N) & R(IR_A)) == R(IR_A)) Rw(R_P, 1);
 	return OP_OK;
 }
 
 int mjc400_op_bs()
 {
 	uint16_t N = mjc400_get_eff_arg();
-	if ((R(IR_A) & R(7)) == (N & R(7))) P = 1;
+	if ((R(IR_A) & R(7)) == (N & R(7))) Rw(R_P, 1);
 	return OP_OK;
 }
 
 int mjc400_op_bc()
 {
 	uint16_t N = mjc400_get_eff_arg();
-	if ((R(IR_A) & N) == N) P = 1;
+	if ((R(IR_A) & N) == N) Rw(R_P, 1);
 	return OP_OK;
 }
 
 int mjc400_op_bn()
 {
 	uint16_t N = mjc400_get_eff_arg();
-	if ((R(IR_A) & N) == 0) P = 1;
+	if ((R(IR_A) & N) == 0) Rw(R_P, 1);
 	return OP_OK;
 }
 
@@ -426,8 +426,8 @@ int mjc400_op_awt()
 int mjc400_op_trb()
 {
 	Radd(IR_A, IR_T);
-	if (!R(IR_A)) P = 1;
-	else P = 0;
+	if (!R(IR_A)) Rw(R_P, 1);
+	else Rw(R_P, 0);
 	return OP_OK;
 }
 
@@ -540,7 +540,7 @@ int mjc400_op_71()
 
 int mjc400_op_71_blc()
 {
-	if ((((R(0) & 0b1111111100000000) >> 8) & IR_b) != IR_b) P = 1;
+	if ((((R(0) & 0b1111111100000000) >> 8) & IR_b) != IR_b) Rw(R_P, 1);
 	return OP_OK;
 }
 
@@ -561,7 +561,7 @@ int mjc400_op_71_exl()
 
 int mjc400_op_71_brc()
 {
-	if (((R(0) & 0b0000000011111111) & IR_b) != IR_b) P = 1;
+	if (((R(0) & 0b0000000011111111) & IR_b) != IR_b) Rw(R_P, 1);
 	return OP_OK;
 }
 
@@ -1133,8 +1133,8 @@ int mjc400_op_77_sp()
 
 int mjc400_op_77_md()
 {
-	MODcnt++;
-	if (MODcnt >= 4) {
+	Rinc(R_MODc);
+	if (R(R_MODc) >= 4) {
 		return OP_ILLEGAL;
 	}
 	int16_t N = mjc400_get_eff_arg();
@@ -1153,7 +1153,7 @@ int mjc400_op_77_ib()
 {
 	uint16_t N = mjc400_get_eff_arg();
 	MEMw(N, MEM(N)+1);
-	if (!MEM(N)) P = 1;
+	if (!MEM(N)) Rw(R_P, 1);
 	return OP_OK;
 }
 

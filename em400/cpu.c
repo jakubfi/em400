@@ -37,9 +37,6 @@ void mjc400_reset()
 		Rw(i, 0);
 	}
 	RZ = 0;
-	P = 0;
-	MODcnt = 0;
-	ZC17 = 0;
 }
 
 // -----------------------------------------------------------------------
@@ -68,7 +65,7 @@ int16_t mjc400_get_eff_arg()
 	}
 
 	// store 17th bit for byte addressing
-	ZC17 = (N & 0b10000000000000000) >> 16;
+	Rw(R_ZC17, (N & 0b10000000000000000) >> 16);
 
 	return (int16_t) N;
 }
@@ -77,7 +74,7 @@ int16_t mjc400_get_eff_arg()
 void mjc400_step()
 {
 	// do not branch by default
-	P = 0;
+	Rw(R_P, 0);
 
 	// fetch instruction into IR
 	// (additional argument is fetched by the instruction, if necessary)
@@ -92,7 +89,7 @@ void mjc400_step()
 		// normal instruction
 		case OP_OK:
 			Rw(R_MOD, 0);
-			MODcnt = 0;
+			Rw(R_MODc, 0);
 			break;
 		// pre-modification
 		case OP_MD:
@@ -100,16 +97,16 @@ void mjc400_step()
 		// illegal instruction
 		case OP_ILLEGAL:
 			Rw(R_MOD, 0);
-			MODcnt = 0;
-			if (P != 0) {
-				P = 0;
+			Rw(R_MODc, 0);
+			if (R(R_P) != 0) {
+				Rw(R_P, 0);
 			} else {
 				INT_SET(INT_ILLEGAL_OPCODE);
 			}
 			break;
 	}
 
-	Radd(R_IC, P);
+	Radd(R_IC, R(R_P));
 }
 
 // vim: tabstop=4

@@ -106,15 +106,15 @@ void em400_debuger_wu_status(unsigned int wid)
 	awprint(wid, C_ILABEL, "  IC:");
 	awprint(wid, C_IDATA, "0x%04x", R(R_IC));
 	awprint(wid, C_ILABEL, "  P:");
-	awprint(wid, C_IDATA, "%i", P);
+	awprint(wid, C_IDATA, "%i", R(R_P));
 	awprint(wid, C_ILABEL, "  MOD:");
 	awprint(wid, C_IDATA, "%06i (0x%04x)", R(R_MOD), R(R_MOD));
 	awprint(wid, C_ILABEL, "  MODcnt:");
-	awprint(wid, C_IDATA, "%i", MODcnt);
+	awprint(wid, C_IDATA, "%i", R(R_MODc));
 	awprint(wid, C_ILABEL, "  KB:");
 	awprint(wid, C_IDATA, "%s", kb);
 	awprint(wid, C_ILABEL, "  ZC17:");
-	awprint(wid, C_IDATA, "%i", ZC17);
+	awprint(wid, C_IDATA, "%i", R(R_ZC17));
 	free(kb);
 }
 

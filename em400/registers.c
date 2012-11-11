@@ -22,9 +22,6 @@
 uint16_t regs[R_MAX];
 
 uint32_t RZ;
-unsigned short int P;
-unsigned short int MODcnt;
-uint8_t ZC17;
 
 // -----------------------------------------------------------------------
 uint16_t reg_read(unsigned short int r)

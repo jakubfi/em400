@@ -38,15 +38,15 @@ enum _registers {
 	R_IR = 10,
 	R_KB = 11,
 	R_MOD = 12,
-	R_MAX = 13
+	R_MODc = 13,
+	R_P = 14,
+	R_ZC17 = 15,
+	R_MAX = 16
 };
 
 extern uint16_t regs[];
 
 extern uint32_t RZ;
-extern unsigned short int P;
-extern unsigned short int MODcnt;
-extern uint8_t ZC17;
 
 uint16_t reg_read(unsigned short int r);
 void reg_write(unsigned short int r, uint16_t x);
