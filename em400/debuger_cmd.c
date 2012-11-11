@@ -17,7 +17,6 @@
 
 #include <stdio.h>
 #include <stdlib.h>
-#include <ncurses.h>
 #include <signal.h>
 #include <string.h>
 
@@ -27,6 +26,7 @@
 #include "dasm.h"
 #include "errors.h"
 #include "utils.h"
+#include "awin.h"
 #include "debuger.h"
 #include "debuger_cmd.h"
 #include "debuger_ui.h"
@@ -34,9 +34,6 @@
 #include "debuger_eval.h"
 
 extern int em400_quit;
-
-struct break_t *last_brk = NULL;
-unsigned int brkcnt = 0;
 
 // -----------------------------------------------------------------------
 struct cmd_t em400_debuger_commands[] = {
@@ -343,19 +340,21 @@ void em400_debuger_c_memcfg(int wid)
 // -----------------------------------------------------------------------
 void em400_debuger_c_brk_add(unsigned int wid, char *label, struct node_t *n)
 {
+	static unsigned int brkcnt;
+
 	struct break_t *b = malloc(sizeof(struct break_t));
-	b->nr = brkcnt;
+	b->nr = brkcnt++;
 	b->counter = 0;
 	b->disabled = 0;
 	b->label = strdup(label);
 	b->n = n;
 	b->next = NULL;
 
-	if (last_brk) {
-		last_brk->next = b;
-		last_brk = b;
+	if (brk_last) {
+		brk_last->next = b;
+		brk_last = b;
 	} else {
-		last_brk = brkpoints = b;
+		brk_last = brk_stack = b;
 	}
 
 	awprint(wid, C_LABEL, "Breakpoint ");
@@ -363,14 +362,12 @@ void em400_debuger_c_brk_add(unsigned int wid, char *label, struct node_t *n)
 	awprint(wid, C_LABEL, " added: \"");
 	awprint(wid, C_DATA, "%s", b->label);
 	awprint(wid, C_LABEL, "\"\n");
-
-	brkcnt++;
 }
 
 // -----------------------------------------------------------------------
 void em400_debuger_c_brk_list(unsigned int wid)
 {
-	struct break_t *b = brkpoints;
+	struct break_t *b = brk_stack;
 	if (!b) {
 		awprint(wid, C_LABEL, "No breakpoints\n");
 	}
@@ -387,7 +384,7 @@ void em400_debuger_c_brk_list(unsigned int wid)
 // -----------------------------------------------------------------------
 struct break_t * em400_debuger_c_brk_get(int nr)
 {
-	struct break_t *b = brkpoints;
+	struct break_t *b = brk_stack;
 	while (b) {
 		if (b->nr == nr) {
 			return b;
@@ -400,14 +397,14 @@ struct break_t * em400_debuger_c_brk_get(int nr)
 // -----------------------------------------------------------------------
 void em400_debuger_c_brk_del(unsigned int wid, int nr)
 {
-	struct break_t *b = brkpoints;
+	struct break_t *b = brk_stack;
 	struct break_t *prev = NULL;
 	while (b) {
 		if (b->nr == nr) {
 			if (prev) {
 				prev->next = b->next;
 			} else {
-				brkpoints = last_brk = b->next;
+				brk_stack = brk_last = b->next;
 			}
 			awprint(wid, C_LABEL, "Removing breakpoint ");
 			awprint(wid, C_DATA, "%i", b->nr);

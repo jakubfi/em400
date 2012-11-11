@@ -32,15 +32,13 @@
 
 int ui_mode = O_NCURSES;
 
-volatile int debuger_loop_fin = 0;
+int debuger_loop_fin = 0;
 volatile int debuger_enter = 1;
 
 char input_buf[INPUT_BUF_SIZE];
 
-struct var_t *variables = NULL;
-struct var_t *last_v = NULL;
-
-struct break_t *brkpoints = NULL;
+struct break_t *brk_stack = NULL;
+struct break_t *brk_last = NULL;
 
 extern int yyparse();
 typedef struct yy_buffer_state *YY_BUFFER_STATE;
@@ -51,42 +49,6 @@ void yy_delete_buffer(YY_BUFFER_STATE b);
 void _debuger_sigint_handler(int signum, siginfo_t *si, void *ctx)
 {
 	debuger_enter = 1;
-}
-
-// -----------------------------------------------------------------------
-void debuger_set_var(char *name, uint16_t value)
-{
-	struct var_t *v;
-
-	v = debuger_get_var(name);
-
-	if (v) {
-		v->value = value;
-	} else {
-		v = malloc(sizeof(struct var_t));
-		v->name = strdup(name);
-		v->value = value;
-		v->next = NULL;
-		if (variables) {
-			last_v->next = v;
-			last_v = v;
-		} else {
-			variables = last_v = v;
-		}
-	}
-}
-
-// -----------------------------------------------------------------------
-struct var_t * debuger_get_var(char *name)
-{
-	struct var_t *v = variables;
-	while (v) {
-		if (!strcmp(name, v->name)) {
-			return v;
-		}
-		v = v->next;
-	}
-	return NULL;
 }
 
 // -----------------------------------------------------------------------
@@ -124,9 +86,16 @@ void em400_debuger_shutdown()
 // -----------------------------------------------------------------------
 struct break_t * em400_debuger_brk_check()
 {
-	struct break_t *b = brkpoints;
+	struct break_t *b = brk_stack;
 	while (b) {
 		if ((!b->disabled) && (n_eval(b->n))) {
+			awprint(W_CMD, C_LABEL, "Hit breakpoint ");
+			awprint(W_CMD, C_DATA, "%i", b->nr);
+			awprint(W_CMD, C_LABEL, ": \"");
+			awprint(W_CMD, C_DATA, "%s", b->label);
+			awprint(W_CMD, C_LABEL, "\" (cnt: ");
+			awprint(W_CMD, C_DATA, "%i", b->counter);
+			awprint(W_CMD, C_LABEL, ")\n");
 			b->counter++;
 			return b;
 		}
@@ -142,16 +111,6 @@ void em400_debuger_step()
 
 	if ((!debuger_enter) && (!(bhit=em400_debuger_brk_check()))) {
 		return;
-	}
-
-	if (bhit) {
-		awprint(W_CMD, C_LABEL, "Hit breakpoint ");
-		awprint(W_CMD, C_DATA, "%i", bhit->nr);
-		awprint(W_CMD, C_LABEL, ": \"");
-		awprint(W_CMD, C_DATA, "%s", bhit->label);
-		awprint(W_CMD, C_LABEL, "\" (cnt: ");
-		awprint(W_CMD, C_DATA, "%i", bhit->counter);
-		awprint(W_CMD, C_LABEL, ")\n");
 	}
 
 	debuger_loop_fin = 0;

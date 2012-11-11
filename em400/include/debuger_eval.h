@@ -44,6 +44,16 @@ struct node_t {
 	struct node_t *next;
 };
 
+struct var_t {
+	char *name;
+	uint16_t value;
+	struct var_t *next;
+};
+
+// variables
+void var_set(char *name, uint16_t value);
+struct var_t * var_get(char *name);
+
 // node housekeeping
 struct node_t * n_create();
 void n_reset_stack();

@@ -22,27 +22,6 @@
 
 #define INPUT_BUF_SIZE 70
 
-extern volatile int debuger_loop_fin;
-extern volatile int debuger_enter;
-extern char input_buf[];
-
-enum _debuger_loop_ret {
-	DEBUGER_EM400_CONT = 0,
-	DEBUGER_EM400_QUIT = 1,
-	DEBUGER_LOOP = 2
-};
-
-enum _debuger_cmd_res {
-	DEBUGER_CMD_OK = 0,
-	DEBUGER_CMD_ERR = 1
-};
-
-struct var_t {
-	char *name;
-	uint16_t value;
-	struct var_t *next;
-};
-
 struct break_t {
 	int nr;
 	char *label;
@@ -52,10 +31,12 @@ struct break_t {
 	struct break_t *next;
 };
 
-extern struct break_t *brkpoints;
+extern int debuger_loop_fin;
+extern volatile int debuger_enter;
+extern char input_buf[];
 
-void debuger_set_var(char *name, uint16_t value);
-struct var_t * debuger_get_var(char *name);
+extern struct break_t *brk_stack;
+extern struct break_t *brk_last;
 
 struct break_t * em400_debuger_brk_check();
 void em400_debuger_step();

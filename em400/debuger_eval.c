@@ -25,7 +25,50 @@
 #include "debuger_parser.h"
 
 struct node_t *node_stack = NULL;
-struct node_t *last_node = NULL;
+struct node_t *node_last = NULL;
+
+struct var_t *var_stack = NULL;
+struct var_t *var_last = NULL;
+
+// -----------------------------------------------------------------------
+// --- VARIABLES ---------------------------------------------------------
+// -----------------------------------------------------------------------
+
+// -----------------------------------------------------------------------
+void var_set(char *name, uint16_t value)
+{
+	struct var_t *v;
+
+	v = var_get(name);
+
+	if (v) {
+		v->value = value;
+	} else {
+		v = malloc(sizeof(struct var_t));
+		v->name = strdup(name);
+		v->value = value;
+		v->next = NULL;
+		if (var_stack) {
+			var_last->next = v;
+			var_last = v;
+		} else {
+			var_stack = var_last = v;
+		}
+	}
+}
+
+// -----------------------------------------------------------------------
+struct var_t * var_get(char *name)
+{
+	struct var_t *v = var_stack;
+	while (v) {
+		if (!strcmp(name, v->name)) {
+			return v;
+		}
+		v = v->next;
+	}
+	return NULL;
+}
 
 // -----------------------------------------------------------------------
 // --- NODES, HOUSEKEEPING -----------------------------------------------
@@ -45,10 +88,10 @@ struct node_t * n_create()
 	n->next = NULL;
 
 	if (!node_stack) {
-		node_stack = last_node = n;
+		node_stack = node_last = n;
 	} else {
-		last_node->next = n;
-		last_node = n;
+		node_last->next = n;
+		node_last = n;
 	}
 
 	return n;
@@ -57,7 +100,7 @@ struct node_t * n_create()
 // -----------------------------------------------------------------------
 void n_reset_stack()
 {
-	node_stack = last_node = NULL;
+	node_stack = node_last = NULL;
 }
 
 // -----------------------------------------------------------------------
@@ -114,7 +157,7 @@ struct node_t * n_var(char *name)
 {
 	struct node_t *n = n_create();
 	n->type = N_VAR;
-	n->mptr = debuger_get_var(name);
+	n->mptr = var_get(name);
 	n->var = name;
 	return n;
 }
@@ -190,7 +233,7 @@ int16_t n_eval_val(struct node_t * n)
 // -----------------------------------------------------------------------
 int16_t n_eval_var(struct node_t * n)
 {
-	struct var_t *v = debuger_get_var(n->var);
+	struct var_t *v = var_get(n->var);
 	return v->value;
 }
 
@@ -229,7 +272,7 @@ int16_t n_eval_ass(struct node_t * n)
 
 	switch (n->n1->type) {
 		case N_VAR:
-			debuger_set_var(n->n1->var, v);
+			var_set(n->n1->var, v);
 			return v;
 		case N_REG:
 			Rw(n->n1->val, v);
