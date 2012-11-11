@@ -159,82 +159,54 @@ void em400_debuger_c_dt(int wid, int dasm_mode, int start, int count)
 }
 
 // -----------------------------------------------------------------------
-void em400_debuger_c_mem(int wid, int block, int start, int end)
+void em400_debuger_c_mem(int wid, int block, int start, int end, int maxcols, int maxlines)
 {
-	uint16_t addr = start;
-	char *text = malloc(MEMDUMP_COLS*2+1);
-	char *tptr = text;
-	char c1, c2;
-	uint16_t *blockptr;
+	uint16_t *mptr = em400_mem_ptr(block, 0, 0);
 
-	blockptr = em400_mem_ptr(block, 0, 0);
-	if (!blockptr) {
+	if (!mptr) {
 		awprint(wid, C_ERROR, "Cannot access block %i\n", block);
 	}
 
 	// wrong range
-	if ((end >= 0) && (start > end)) {
+	if (end - start <= 0) {
 		awprint(wid, C_ERROR, "Wrong memory range: %i - %i\n", start, end);
 	}
 
-	// only start position given, adjust end position
-	if (end < 0) {
-		end = start;
-	}
+	int words = (maxcols - 10) / 7;
+	maxlines -=2; // two used for header
 
-	// print headers, mind MEMDUMP_COLS
+	// headers
 	awprint(wid, C_LABEL, "  addr: ");
-	for (int i=0 ; i<MEMDUMP_COLS ; i++) {
-		awprint(wid, C_LABEL, "+%03x ", i);
-	}
+	for (int i=0 ; i<words ; i++) awprint(wid, C_LABEL, "+%03x ", i);
 	awprint(wid, C_LABEL, "\n");
-	// print separator
 	awprint(wid, C_LABEL, "-------");
-	for (int i=0 ; i<MEMDUMP_COLS ; i++) {
-		awprint(wid, C_LABEL, "-----");
-	}
+	for (int i=0 ; i<words ; i++) awprint(wid, C_LABEL, "-----");
 	awprint(wid, C_LABEL, "  ");
-	for (int i=0 ; i<MEMDUMP_COLS ; i++) {
-		awprint(wid, C_LABEL, "--");
-	}
+	for (int i=0 ; i<words ; i++) awprint(wid, C_LABEL, "--");
 	awprint(wid, C_LABEL, "\n");
 
-	// print row
-	while (addr <= end) {
+	uint16_t addr = start;
+
+	while ((maxlines > 0) && (addr <= end)) {
 		// row header
-		if ((addr-start)%MEMDUMP_COLS == 0) {
-			awprint(wid, C_LABEL, "0x%04x: ", addr); 
-		}
-
-		// hex contents
-		awprint(wid, C_DATA, "%4x ", *(blockptr+addr));
-
-		// store text representation
-		c1 = (char) (((*(blockptr+addr))&0b111111110000000)>>8);
-		if ((c1<32)||((c1>126)&&(c1<160))) c1 = '.';
-		c2 = (char) ((*(blockptr+addr))&0b0000000011111111);
-		if ((c2<32)||((c2>126)&&(c2<160))) c2 = '.';
-		tptr += sprintf(tptr, "%c%c", c1, c2);
-
-		// row footer - text representation
-		if ((addr-start)%MEMDUMP_COLS == (MEMDUMP_COLS-1)) {
-			awprint(wid, C_DATA, " %s\n", text);
-			tptr = text;
-		}
-
-		addr++;
-	}
-
-	// fill and finish current line
-	if ((addr-start-1)%MEMDUMP_COLS != (MEMDUMP_COLS-1)) {
-		while ((addr-start)%MEMDUMP_COLS !=0) {
-			awprint(wid, C_DATA, "	 ");
+		awprint(wid, C_LABEL, "0x%04x: ", addr);
+		char *chars = malloc(words*2+1);
+		for (int w=0 ; w<words ; w++) {
+			mptr = em400_mem_ptr(block, addr, 0);
+			if (!mptr) {
+				return;
+			}
+			// data (hex)
+			awprint(wid, C_DATA, "%4x ", *mptr);
+			// store data (chars)
+			int2chars(*mptr, chars+w*2);
 			addr++;
 		}
-		awprint(wid, C_DATA, " %s\n", text);
+		// data (chars)
+		awprint(wid, C_DATA, " %s\n", chars);
+		free(chars);
+		maxlines--;
 	}
-
-	free(text);
 }
 
 // -----------------------------------------------------------------------
@@ -301,11 +273,11 @@ void em400_debuger_c_regs(int wid)
 	for (int i=1 ; i<=7 ; i++) {
 		char *b = int2bin(R(i), 16);
 		char *r = int2r40(R(i));
-		char *c = int2chars(R(i));
+		char c[3];
+		int2chars(R(i), c);
 
 		awprint(wid, C_LABEL, "R%i: ", i);
 		awprint(wid, C_DATA, "0x%04x %6o %6i %s %s %s\n", R(i), R(i), (int16_t)R(i), b, c, r);
-		free(c);
 		free(r);
 		free(b);
 	}

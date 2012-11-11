@@ -21,7 +21,7 @@
 #include <inttypes.h>
 
 char* int2bin(int x, int len);
-char *int2chars(uint16_t w);
+char *int2chars(uint16_t w, char *buf);
 char r2a(int i);
 char *int2r40(uint16_t w);
 

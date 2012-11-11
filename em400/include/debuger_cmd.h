@@ -38,7 +38,7 @@ void em400_debuger_c_help(int wid, char *cmd);
 void em400_debuger_c_regs(int wid);
 void em400_debuger_c_sregs(int wid);
 void em400_debuger_c_reset();
-void em400_debuger_c_mem(int wid, int block, int start, int end);
+void em400_debuger_c_mem(int wid, int block, int start, int end, int maxcols, int maxlines);
 void em400_debuger_c_clmem();
 void em400_debuger_c_dt(int wid, int dasm_mode, int start, int count);
 void em400_debuger_c_load(int wid, char* image, int bank);

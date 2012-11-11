@@ -254,11 +254,11 @@ f_trans:
 
 f_mem:
 	F_MEM expr '-' expr '\n' {
-		em400_debuger_c_mem(W_CMD, SR_Q*SR_NB, n_eval($2), n_eval($4));
+		em400_debuger_c_mem(W_CMD, SR_Q*SR_NB, n_eval($2), n_eval($4), 122, 18);
 		n_discard_stack();
 	}
 	| F_MEM expr ':' expr '-' expr '\n' {
-		em400_debuger_c_mem(W_CMD, n_eval($2), n_eval($4), n_eval($6));
+		em400_debuger_c_mem(W_CMD, n_eval($2), n_eval($4), n_eval($6), 122, 18);
 		n_discard_stack();
 	}
 	;

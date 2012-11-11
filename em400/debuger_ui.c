@@ -60,7 +60,11 @@ void em400_debuger_ui_init()
 // -----------------------------------------------------------------------
 void em400_debuger_wu_mem(unsigned int wid)
 {
-	em400_debuger_c_mem(wid, 0, 0, 0xff);
+	AWIN *w = aw_window_find(wid);
+	if (!w) {
+		return;
+	}
+	em400_debuger_c_mem(wid, 0, 0, 0x300, w->iw, w->ih);
 }
 
 // -----------------------------------------------------------------------

@@ -1,6 +1,5 @@
 Bugs:
 
-* sr/ic write causes segfault (on Q/NB)
 
 CPU:
 
@@ -12,7 +11,6 @@ Debuger:
 
 * memory/register traces
 * macro for accessing interrupt states
-* dynamic window contents
 * save memory image
 * load/save snapshot (?)
 * step should work the same way as CYCLE (cycle on instruction and interrupt) (?)

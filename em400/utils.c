@@ -37,9 +37,8 @@ char* int2bin(int x, int len)
 }
 
 // -----------------------------------------------------------------------
-char *int2chars(uint16_t w)
+char * int2chars(uint16_t w, char *buf)
 {
-	char *buf = malloc(3);
 	buf[0] = (w & 0b1111111100000000) >> 8;
 	if (!isprint(buf[0])) buf[0] = '.';
 	buf[1] = (w & 0b0000000011111111);
