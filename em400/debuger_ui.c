@@ -67,14 +67,14 @@ void em400_debuger_wu_mem(unsigned int wid)
 void em400_debuger_wu_dasm(unsigned int wid)
 {
 	AWIN *w = aw_window_find(wid);
-	int offset = (w->h - 2) / 3;
+	int offset = (w->ih) / 3;
 	int start;
 	if (R(R_IC) < offset) {
 		start = 0;
 	} else {
 		start = R(R_IC) - offset;
 	}
-	em400_debuger_c_dt(wid, DMODE_DASM, start, w->h - 2);
+	em400_debuger_c_dt(wid, DMODE_DASM, start, w->ih);
 }
 
 // -----------------------------------------------------------------------
@@ -98,7 +98,7 @@ void em400_debuger_wu_cmd(unsigned int wid)
 void em400_debuger_wu_status(unsigned int wid)
 {
 	char *kb = int2bin(R(R_KB), 16);
-	awfillbg(wid, C_ILABEL, ' ', -1);
+	awfillbg(wid, C_ILABEL, ' ', 0);
 	awprint(wid, C_ILABEL, " Q:");
 	awprint(wid, C_IDATA, "%i", SR_Q);
 	awprint(wid, C_ILABEL, "  NB:");

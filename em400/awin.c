@@ -157,10 +157,16 @@ AWIN * aw_window_find(unsigned int id)
 void aw_window_disable(AWIN *w)
 {
 	w->enabled = 0;
-	w->w = 0;
-	w->h = 0;
-	w->x = 0;
-	w->y = 0;
+
+	w->bw = 0;
+	w->bh = 0;
+	w->bx = 0;
+	w->by = 0;
+
+	w->iw = 0;
+	w->ih = 0;
+	w->ix = 0;
+	w->iy = 0;
 }
 
 // -----------------------------------------------------------------------
@@ -301,24 +307,24 @@ int aw_window_fit(ACONT *c, AWIN *w)
 
 	// update window's width/height
 	if (c->calign & HORIZONTAL) {
-		w->w = size;
-		w->h = c->size;
+		w->bw = size;
+		w->bh = c->size;
 		if (c->walign == LEFT) {
-			w->x = wmin;
-			w->y = c->y;
+			w->bx = wmin;
+			w->by = c->y;
 		} else {
-			w->x = wmax - w->w;
-			w->y = c->y;
+			w->bx = wmax - w->bw;
+			w->by = c->y;
 		}
 	} else {
-		w->w = c->size;
-		w->h = size;
+		w->bw = c->size;
+		w->bh = size;
 		if (c->walign == TOP) {
-			w->x = c->x;
-			w->y = wmin;
+			w->bx = c->x;
+			w->by = wmin;
 		} else {
-			w->x = c->x;
-			w->y = wmax - w->h;
+			w->bx = c->x;
+			w->by = wmax - w->bh;
 		}
 	}
 
@@ -327,6 +333,18 @@ int aw_window_fit(ACONT *c, AWIN *w)
 		wmin += size;
 	} else {
 		wmax -= size;
+	}
+
+	w->ix = w->bx;
+	w->iy = w->by;
+	w->iw = w->bw;
+	w->ih = w->bh;
+
+	if (w->border) {
+		w->ix += 1;
+		w->iy += 1;
+		w->iw -= 2;
+		w->ih -= 2;
 	}
 
 	return size;
@@ -353,18 +371,16 @@ AWIN * aw_window_add(ACONT *container, unsigned int id, char *title, int border,
 	w->title = strdup(title);
 	w->win = NULL;
 	w->bwin = NULL;
-	w->w = 0;
-	w->h = 0;
-	w->x = 0;
-	w->y = 0;
 	w->max = max;
 	w->min = min;
 	w->left = left;
 	w->border = border;
-	w->enabled = 0;
 	w->scrollable = scrollable;
 	w->fun = fun;
 	w->next = NULL;
+
+	// reset x/y/w/h
+	aw_window_disable(w);
 
 	// add window to the list
 	if (container->win_last) {
@@ -403,13 +419,11 @@ void aw_window_nc_create(AWIN *w)
 		return;
 	}
 	if (w->border) {
-		w->bwin = newwin(w->h, w->w, w->y, w->x);
-		w->win = newwin(w->h-2, w->w-2, w->y+1, w->x+1);
+		w->bwin = newwin(w->bh, w->bw, w->by, w->bx);
 		box(w->bwin, 0, 0);
 		mvwprintw(w->bwin, 0, 3, "[ %s ]", w->title);
-	} else {
-		w->win = newwin(w->h, w->w, w->y, w->x);
 	}
+	w->win = newwin(w->ih, w->iw, w->iy, w->ix);
 
 	if (w->scrollable) {
 		scrollok(w->win, TRUE);
@@ -569,9 +583,15 @@ void awfillbg(int id, int attr, char c, int len)
 	int x, y;
 	getyx(w->win, y, x);
 
-	if (len <= 0) {
-		len = w->w - x - 3;
+	if (len == 0) {
+		len = w->iw - x;
+	} else if (len < 0) {
+		len = w->iw - x + len;
+		if (len < 0) {
+			len = 0;
+		}
 	}
+
 	char *fill = malloc(len+1);
 	memset(fill, c, len);
 	fill[len] = '\0';

@@ -10,7 +10,6 @@ CPU:
 
 Debuger:
 
-* real window width vs. internal width
 * memory/register traces
 * macro for accessing interrupt states
 * dynamic window contents

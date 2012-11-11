@@ -43,8 +43,8 @@ struct awin_t {
 	unsigned int id;
 	WINDOW *win;
 	WINDOW *bwin;
-	int w, h;
-	int x, y;
+	int bx, by, bw, bh;
+	int ix, iy, iw, ih;
 	int max, min, left;
 	int border, enabled, scrollable;
 	void (*fun)(unsigned int wid);
