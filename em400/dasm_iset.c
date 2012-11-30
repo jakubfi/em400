@@ -16,9 +16,7 @@
 //  51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 
 #include <stdlib.h>
-#include <stdio.h>
 #include <stdbool.h>
-#include <inttypes.h>
 
 #include "dasm.h"
 #include "dasm_formats.h"

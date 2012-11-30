@@ -20,10 +20,10 @@
 #include "errors.h"
 
 struct _em400_errordesc {
-    int code;
-    char *message;
+	int code;
+	char *message;
 } em400_errordesc[] = {
-    { E_OK, "No error." },
+	{ E_OK, "No error." },
 	{ E_MEM_NO_OS_MEM, "No segments defined for OS memory." },
 	{ E_MEM_BAD_SEGMENT_COUNT, "Wrong segment count in a module." },
 	{ E_MEM_CANNOT_ALLOCATE, "Cannot allocate machine memory." },
@@ -37,7 +37,7 @@ struct _em400_errordesc {
 	{ E_DEBUGER_SIG_RESIZE, "Cannot setup window resize handler." },
 
 
-    { E_UNKNOWN, "Unknown error." }
+	{ E_UNKNOWN, "Unknown error." }
 };
 
 // -----------------------------------------------------------------------

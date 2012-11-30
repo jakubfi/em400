@@ -17,8 +17,6 @@
 //  51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 
 #include <stdlib.h>
-#include <stdarg.h>
-#include <string.h>
 
 #include "registers.h"
 #include "memory.h"
@@ -300,7 +298,7 @@ f_brk:
 
 void yyerror(char *s)
 {
-    awprint(W_CMD, C_ERROR, "Error: %s\n", s);
+	awprint(W_CMD, C_ERROR, "Error: %s\n", s);
 }
 
 // vim: tabstop=4

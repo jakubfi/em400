@@ -15,11 +15,8 @@
 //  Foundation, Inc.,
 //  51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 
-#include <ctype.h>
 #include <string.h>
-#include <stdio.h>
 #include <stdlib.h>
-#include <signal.h>
 
 #include "dasm.h"
 #include "utils.h"
@@ -33,21 +30,21 @@
 // -----------------------------------------------------------------------
 void em400_debuger_ui_init()
 {
-    ACONT *c1 = aw_container_add(BOTTOM, LEFT, 1, 1, 0);
-    aw_window_add(c1, W_STATUS, "Status", 0, 0, em400_debuger_wu_status, FILL, 0, 0);
+	ACONT *c1 = aw_container_add(BOTTOM, LEFT, 1, 1, 0);
+	aw_window_add(c1, W_STATUS, "Status", 0, 0, em400_debuger_wu_status, FILL, 0, 0);
 
-    ACONT *c2 = aw_container_add(RIGHT, TOP, 30, 30, 30);
-    aw_window_add(c2, W_DASM, "ASM", 1, 0, em400_debuger_wu_dasm, FILL, 3, 0);
+	ACONT *c2 = aw_container_add(RIGHT, TOP, 30, 30, 30);
+	aw_window_add(c2, W_DASM, "ASM", 1, 0, em400_debuger_wu_dasm, FILL, 3, 0);
 
-    ACONT *c3 = aw_container_add(TOP, LEFT, 20, 6, 30);
-    aw_window_add(c3, W_MEM, "Memory", 1, 0, em400_debuger_wu_mem, FILL, 30, 0);
+	ACONT *c3 = aw_container_add(TOP, LEFT, 20, 6, 30);
+	aw_window_add(c3, W_MEM, "Memory", 1, 0, em400_debuger_wu_mem, FILL, 30, 0);
 
-    ACONT *c4 = aw_container_add(TOP, LEFT, 10, 10, 20);
-    aw_window_add(c4, W_SREGS, "System registers", 1, 0, em400_debuger_wu_sregs, DIV2, 58, 58);
-    aw_window_add(c4, W_REGS, "User registers", 1, 0, em400_debuger_wu_regs, FILL, 58, 0);
+	ACONT *c4 = aw_container_add(TOP, LEFT, 10, 10, 20);
+	aw_window_add(c4, W_SREGS, "System registers", 1, 0, em400_debuger_wu_sregs, DIV2, 58, 58);
+	aw_window_add(c4, W_REGS, "User registers", 1, 0, em400_debuger_wu_regs, FILL, 58, 0);
 
-    ACONT *c5 = aw_container_add(TOP, LEFT, FILL, 0, 0);
-    aw_window_add(c5, W_CMD, "Commandline", 1, 1, em400_debuger_wu_cmd, FILL, 0, 0);
+	ACONT *c5 = aw_container_add(TOP, LEFT, FILL, 0, 0);
+	aw_window_add(c5, W_CMD, "Commandline", 1, 1, em400_debuger_wu_cmd, FILL, 0, 0);
 
 	aw_attr_new(C_PROMPT, COLOR_BLACK, COLOR_YELLOW, A_BOLD);
 	aw_attr_new(C_LABEL, COLOR_BLACK, COLOR_WHITE, A_NORMAL);

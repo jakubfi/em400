@@ -17,7 +17,6 @@
 
 #include <inttypes.h>
 #include <stdlib.h>
-#include <stdio.h>
 
 #include "io.h"
 #include "memory.h"

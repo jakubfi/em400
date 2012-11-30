@@ -61,18 +61,18 @@ int em400_debuger_init()
 	em400_debuger_ui_init();
 	aw_layout_changed = 1;
 
-    // prepare handler for ctrl-c
-    struct sigaction sa;
-    sa.sa_flags = SA_SIGINFO;
-    sa.sa_sigaction = _debuger_sigint_handler;
+	// prepare handler for ctrl-c
+	struct sigaction sa;
+	sa.sa_flags = SA_SIGINFO;
+	sa.sa_sigaction = _debuger_sigint_handler;
 
-    if (sigemptyset(&sa.sa_mask) != 0) {
-        return -1;
-    }
+	if (sigemptyset(&sa.sa_mask) != 0) {
+		return -1;
+	}
 
-    if (sigaction(SIGINT, &sa, NULL) != 0) {
-        return -1;
-    }
+	if (sigaction(SIGINT, &sa, NULL) != 0) {
+		return -1;
+	}
 
 	return 0;
 }
