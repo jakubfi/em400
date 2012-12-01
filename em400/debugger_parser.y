@@ -22,10 +22,10 @@
 #include "memory.h"
 #include "utils.h"
 #include "dasm.h"
-#include "debuger.h"
-#include "debuger_ui.h"
-#include "debuger_cmd.h"
-#include "debuger_eval.h"
+#include "debugger.h"
+#include "debugger_ui.h"
+#include "debugger_cmd.h"
+#include "debugger_eval.h"
 
 void yyerror(char *);
 int yylex(void);
@@ -183,114 +183,114 @@ bitfield:
 command:
 	'\n' {}
 	| F_QUIT '\n' {
-		em400_debuger_c_quit();
+		em400_debugger_c_quit();
 	}
 	| F_STEP '\n' {
-		em400_debuger_c_step();
+		em400_debugger_c_step();
 	}
 	| f_help
 	| F_REGS '\n' {
-		em400_debuger_c_regs(W_CMD);
+		em400_debugger_c_regs(W_CMD);
 	}
 	| F_SREGS '\n' {
-		em400_debuger_c_sregs(W_CMD);
+		em400_debugger_c_sregs(W_CMD);
 	}
 	| F_RESET '\n' {
-		em400_debuger_c_reset();
+		em400_debugger_c_reset();
 	}
 	| f_dasm
 	| f_trans
 	| f_mem
 	| F_CLMEM '\n' {
-		em400_debuger_c_clmem();
+		em400_debugger_c_clmem();
 	}
 	| f_load
 	| F_MEMCFG '\n' {
-		em400_debuger_c_memcfg(W_CMD);
+		em400_debugger_c_memcfg(W_CMD);
 	}
 	| f_brk
 	| F_RUN '\n' {
-		em400_debuger_c_run();
+		em400_debugger_c_run();
 	}
 	;
 
 f_help:
 	F_HELP '\n' {
-		em400_debuger_c_help(W_CMD, NULL);
+		em400_debugger_c_help(W_CMD, NULL);
 	}
 	| F_HELP CMDNAME '\n' {
-		em400_debuger_c_help(W_CMD, $2);
+		em400_debugger_c_help(W_CMD, $2);
 		free($2);
 	}
 	;
 
 f_dasm:
 	F_DASM '\n' {
-		em400_debuger_c_dt(W_CMD, DMODE_DASM, R(R_IC), 1);
+		em400_debugger_c_dt(W_CMD, DMODE_DASM, R(R_IC), 1);
 	}
 	| F_DASM VALUE '\n' {
-		em400_debuger_c_dt(W_CMD, DMODE_DASM, R(R_IC), $2);
+		em400_debugger_c_dt(W_CMD, DMODE_DASM, R(R_IC), $2);
 	}
 	| F_DASM expr VALUE '\n' {
-		em400_debuger_c_dt(W_CMD, DMODE_DASM, n_eval($2), $3);
+		em400_debugger_c_dt(W_CMD, DMODE_DASM, n_eval($2), $3);
 		n_discard_stack();
 	}
 	;
 
 f_trans:
 	F_TRANS '\n' {
-		em400_debuger_c_dt(W_CMD, DMODE_TRANS, R(R_IC), 1);
+		em400_debugger_c_dt(W_CMD, DMODE_TRANS, R(R_IC), 1);
 	}
 	| F_TRANS VALUE '\n' {
-		em400_debuger_c_dt(W_CMD, DMODE_TRANS, R(R_IC), $2);
+		em400_debugger_c_dt(W_CMD, DMODE_TRANS, R(R_IC), $2);
 	}
 	| F_TRANS expr VALUE '\n' {
-		em400_debuger_c_dt(W_CMD, DMODE_TRANS, n_eval($2), $3);
+		em400_debugger_c_dt(W_CMD, DMODE_TRANS, n_eval($2), $3);
 		n_discard_stack();
 	}
 	;
 
 f_mem:
 	F_MEM expr '-' expr '\n' {
-		em400_debuger_c_mem(W_CMD, SR_Q*SR_NB, n_eval($2), n_eval($4), 122, 18);
+		em400_debugger_c_mem(W_CMD, SR_Q*SR_NB, n_eval($2), n_eval($4), 122, 18);
 		n_discard_stack();
 	}
 	| F_MEM expr ':' expr '-' expr '\n' {
-		em400_debuger_c_mem(W_CMD, n_eval($2), n_eval($4), n_eval($6), 122, 18);
+		em400_debugger_c_mem(W_CMD, n_eval($2), n_eval($4), n_eval($6), 122, 18);
 		n_discard_stack();
 	}
 	;
 
 f_load:
 	F_LOAD FNAME '\n' {
-		em400_debuger_c_load(W_CMD, $2, SR_Q*SR_NB);
+		em400_debugger_c_load(W_CMD, $2, SR_Q*SR_NB);
 	}
 	| F_LOAD FNAME VALUE '\n' {
-		em400_debuger_c_load(W_CMD, $2, $3);
+		em400_debugger_c_load(W_CMD, $2, $3);
 	}
 	;
 
 f_brk:
 	F_BRK B_LIST '\n' {
-		em400_debuger_c_brk_list(W_CMD);
+		em400_debugger_c_brk_list(W_CMD);
 	}
 	| F_BRK B_ADD expr '\n' {
 		char expr[128];
 		sscanf(input_buf, " brk add %[^\n]", expr);
-		em400_debuger_c_brk_add(W_CMD, expr, $3);
+		em400_debugger_c_brk_add(W_CMD, expr, $3);
 		n_reset_stack();
 	}
 	| F_BRK B_DEL VALUE '\n' {
-		em400_debuger_c_brk_del(W_CMD, $3);
+		em400_debugger_c_brk_del(W_CMD, $3);
 	}
 	| F_BRK B_TEST VALUE '\n' {
-		em400_debuger_c_brk_test(W_CMD, $3);
+		em400_debugger_c_brk_test(W_CMD, $3);
 	}
 	| F_BRK B_DISABLE VALUE '\n' {
-		em400_debuger_c_brk_disable(W_CMD, $3, 1);
+		em400_debugger_c_brk_disable(W_CMD, $3, 1);
 	}
 	| F_BRK B_ENABLE VALUE '\n' {
-		em400_debuger_c_brk_disable(W_CMD, $3, 0);
+		em400_debugger_c_brk_disable(W_CMD, $3, 0);
 	}
 	;
 

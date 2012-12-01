@@ -31,7 +31,7 @@ enum em400_error {
 	E_TIMER_CREATE,
 	E_TIMER_SET,
 	E_ALLOC,
-	E_DEBUGER_SIG_RESIZE
+	E_DEBUGGER_SIG_RESIZE
 };
 
 struct _em400_errordesc;

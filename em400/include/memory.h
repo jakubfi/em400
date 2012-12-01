@@ -30,7 +30,7 @@ extern short int em400_mem_conf[MEM_MAX_MODULES];
 extern uint16_t *em400_mem_segment[MEM_MAX_MODULES][MEM_MAX_SEGMENTS];
 extern uint16_t *em400_mem_map[MEM_MAX_NB][MEM_MAX_AB];
 
-#ifdef WITH_DEBUGER
+#ifdef WITH_DEBUGGER
 extern int mem_act_block;
 extern int mem_act_min;
 extern int mem_act_max;

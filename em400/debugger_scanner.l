@@ -19,10 +19,10 @@
 #include <stdlib.h>
 
 #include "registers.h"
-#include "debuger.h"
-#include "debuger_ui.h"
-#include "debuger_cmd.h"
-#include "debuger_parser.h"
+#include "debugger.h"
+#include "debugger_ui.h"
+#include "debugger_cmd.h"
+#include "debugger_parser.h"
 
 void yyerror(char *);
 %}
@@ -86,7 +86,7 @@ bin	return BIN;
 uint return UINT;
 
 <INITIAL>{text}	{
-	int tok = debuger_is_cmd(yytext);
+	int tok = debugger_is_cmd(yytext);
 	if (!tok) {
 		yylval.text = strdup(yytext);
 		return TEXT;

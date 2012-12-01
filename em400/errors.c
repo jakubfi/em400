@@ -34,7 +34,7 @@ struct _em400_errordesc {
 	{ E_TIMER_CREATE, "Cannot create timer." },
 	{ E_TIMER_SET, "Cannot set timer." },
 	{ E_ALLOC, "Cannot allocade memory." },
-	{ E_DEBUGER_SIG_RESIZE, "Cannot setup window resize handler." },
+	{ E_DEBUGGER_SIG_RESIZE, "Cannot setup window resize handler." },
 
 
 	{ E_UNKNOWN, "Unknown error." }

@@ -23,8 +23,8 @@
 #include "timer.h"
 #include "errors.h"
 
-#ifdef WITH_DEBUGER
-#include "debuger.h"
+#ifdef WITH_DEBUGGER
+#include "debugger.h"
 #endif
 
 int em400_quit = 0;
@@ -60,18 +60,18 @@ int main(int argc, char** argv)
 		eerr("Error initializing CPU timer", res);
 	}
 
-#ifdef WITH_DEBUGER
-	res = em400_debuger_init();
+#ifdef WITH_DEBUGGER
+	res = em400_debugger_init();
 	if (res) {
-		em400_debuger_shutdown();
+		em400_debugger_shutdown();
 		em400_mem_shutdown();
-		eerr("Error initializing debuger", res);
+		eerr("Error initializing debugger", res);
 	}
 #endif
 
 	while (!em400_quit) {
-#ifdef WITH_DEBUGER
-		em400_debuger_step();
+#ifdef WITH_DEBUGGER
+		em400_debugger_step();
 		if (em400_quit) {
 			break;
 		}
@@ -79,8 +79,8 @@ int main(int argc, char** argv)
 		mjc400_step();
 	}
 
-#ifdef WITH_DEBUGER
-	em400_debuger_shutdown();
+#ifdef WITH_DEBUGGER
+	em400_debugger_shutdown();
 #endif
 
 	em400_mem_shutdown();

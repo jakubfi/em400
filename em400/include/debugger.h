@@ -15,41 +15,33 @@
 //  Foundation, Inc.,
 //  51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 
-#ifndef DEBUGER_UI_H
-#define DEBUGER_UI_H
+#ifndef DEBUGGER_H
+#define DEBUGGER_H
 
-#include <signal.h>
+#include <inttypes.h>
 
-#include "awin.h"
+#define INPUT_BUF_SIZE 70
 
-enum _ui_attributes {
-	C_PROMPT = 1,
-	C_LABEL,
-	C_DATA,
-	C_ILABEL,
-	C_IDATA,
-	C_ERROR,
-	C_READ,
-	C_WRITE
+struct break_t {
+	int nr;
+	char *label;
+	unsigned int counter;
+	int disabled;
+	struct node_t *n;
+	struct break_t *next;
 };
 
-enum _ui_windows {
-	W_MEM = 0,
-	W_DASM,
-	W_SREGS,
-	W_REGS,
-	W_CMD,
-	W_STATUS
-};
+extern int debugger_loop_fin;
+extern volatile int debugger_enter;
+extern char input_buf[];
 
-void em400_debuger_ui_init();
-void em400_debuger_wu_mem(unsigned int wid);
-void em400_debuger_wu_dasm(unsigned int wid);
-void em400_debuger_wu_regs(unsigned int wid);
-void em400_debuger_wu_sregs(unsigned int wid);
-void em400_debuger_wu_cmd(unsigned int wid);
-void em400_debuger_wu_status(unsigned int wid);
-void em400_debuger_wu_none(unsigned int wid);
+extern struct break_t *brk_stack;
+extern struct break_t *brk_last;
+
+struct break_t * em400_debugger_brk_check();
+void em400_debugger_step();
+int em400_debugger_init();
+void em400_debugger_shutdown();
 
 #endif
 

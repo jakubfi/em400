@@ -33,7 +33,7 @@ uint16_t *em400_mem_segment[MEM_MAX_MODULES][MEM_MAX_SEGMENTS] = { {NULL} };
 // logical mapping from (NB,AB) to physical segment pointer
 uint16_t *em400_mem_map[MEM_MAX_NB][MEM_MAX_AB] = { {NULL} };
 
-#ifdef WITH_DEBUGER
+#ifdef WITH_DEBUGGER
 int mem_act_block = -1;
 int mem_act_min = -1;
 int mem_act_max = -1;
@@ -151,7 +151,7 @@ void em400_mem_write(short unsigned int nb, uint16_t addr, uint16_t val)
 	if (mem_ptr) {
 		*mem_ptr = val;
 	}
-#ifdef WITH_DEBUGER
+#ifdef WITH_DEBUGGER
 	if (mem_act_min == -1) {
 		mem_act_block = nb;
 		mem_act_min = addr;

@@ -23,9 +23,9 @@
 #include "instructions.h"
 #include "timer.h"
 
-#ifdef WITH_DEBUGER
-#include "debuger.h"
-#include "debuger_ui.h"
+#ifdef WITH_DEBUGGER
+#include "debugger.h"
+#include "debugger_ui.h"
 #endif
 
 // -----------------------------------------------------------------------
@@ -33,7 +33,7 @@ void mjc400_reset()
 {
 	for (int i=0 ; i<R_MAX ; i++) {
 		Rw(i, 0);
-#ifdef WITH_DEBUGER
+#ifdef WITH_DEBUGGER
 		reg_act[i] = C_DATA;
 #endif
 	}

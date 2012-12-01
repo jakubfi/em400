@@ -1,4 +1,4 @@
-WITH_DEBUGER = 1
+WITH_DEBUGGER = 1
 
 CC = gcc
 LEX = flex
@@ -22,38 +22,38 @@ io.o\
 errors.o
 
 DEBUG_OBJS = \
-debuger_parser.o\
-debuger_scanner.o\
+debugger_parser.o\
+debugger_scanner.o\
 dasm.o\
 dasm_iset.o\
-debuger.o\
-debuger_ui.o\
-debuger_cmd.o\
-debuger_eval.o\
+debugger.o\
+debugger_ui.o\
+debugger_cmd.o\
+debugger_eval.o\
 awin.o
 
-ifdef WITH_DEBUGER
+ifdef WITH_DEBUGGER
 OBJS += $(DEBUG_OBJS)
-CFLAGS += -DWITH_DEBUGER
+CFLAGS += -DWITH_DEBUGGER
 LFLAGS += -lncurses -lreadline
 endif
 
 em400: $(OBJS)
 	$(CC) $(LFLAGS) $^ -o $@
 
-debuger_scanner.c: debuger_scanner.l
+debugger_scanner.c: debugger_scanner.l
 	$(LEX) -o $@ $^
 
-debuger_scanner.o: debuger_scanner.c
+debugger_scanner.o: debugger_scanner.c
 	$(CC) $(LEXCFLAGS) $^ -c -o $@
 
-debuger_parser.c: debuger_parser.y
+debugger_parser.c: debugger_parser.y
 	$(YACC) $(YFLAGS) $^ -o $@
 
 asm: *.c
 	$(CC) $(CFLAGS) -S $^
 
 clean:
-	rm -f *.o em400 *.s debuger_parser.c debuger_scanner.c debuger_parser.h
+	rm -f *.o em400 *.s debugger_parser.c debugger_scanner.c debugger_parser.h
 
 .PHONY: all clean
