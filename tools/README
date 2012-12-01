@@ -1,0 +1,7 @@
+Various tools to help with em400 development:
+
+* label.py - show crook filesystem label
+* dicdic.py - show dicdic area contents
+* fildic.py - show file list
+* r40dec.py - r40 decoder
+* disassm.py - disassembler
