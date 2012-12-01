@@ -5,5 +5,4 @@ EM400 is an attempt to create emulation of Polish MERA-400 minicomputer system,
 built in late '70 and popular in the '80. See: http://mera400.pl
 
 em400 - MERA-400 emulator
-dasm - MERA-400 disassembler
-graphics - graphics restored from original MERA-400 docs
+tools - various tools to help with em400 development
