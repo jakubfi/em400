@@ -21,10 +21,12 @@
 #include "cpu.h"
 #include "memory.h"
 #include "timer.h"
+#include "registers.h"
 #include "errors.h"
 
 #ifdef WITH_DEBUGGER
 #include "debugger.h"
+#include "debugger_ui.h"
 #endif
 
 int em400_quit = 0;
@@ -32,7 +34,7 @@ int em400_quit = 0;
 // -----------------------------------------------------------------------
 void eerr(char *message, int ecode)
 {
-	printf("%s: %s\n", message, e400_gerror(ecode));
+	printf("%s: %s\n", message, get_error(ecode));
 	exit(1);
 }
 
@@ -45,46 +47,51 @@ int main(int argc, char** argv)
 
 	printf("Starting EM400...\n");
 
-	res = em400_mem_init();
+	res = mem_init();
 	if (res) {
-		em400_mem_shutdown();
+		mem_shutdown();
 		eerr("Error initializing EM400", res);
 	}
 
-	em400_mem_clear();
-	mjc400_reset();
+	mem_clear();
+	cpu_reset();
 
-	res = mjc400_timer_start();
+	res = timer_start();
 	if (res) {
-		em400_mem_shutdown();
+		mem_shutdown();
 		eerr("Error initializing CPU timer", res);
 	}
 
 #ifdef WITH_DEBUGGER
-	res = em400_debugger_init();
+	res = dbg_init();
 	if (res) {
-		em400_debugger_shutdown();
-		em400_mem_shutdown();
+		dbg_shutdown();
+		mem_shutdown();
 		eerr("Error initializing debugger", res);
 	}
 #endif
 
 	while (!em400_quit) {
 #ifdef WITH_DEBUGGER
-		em400_debugger_step();
+		dbg_step();
 		if (em400_quit) {
 			break;
 		}
+		mem_actr_max = -1;
+		mem_actw_max = -1;
+		for (int r=0 ; r<R_MAX ; r++) {
+			reg_act[r] = C_DATA;
+		}
 #endif
-		mjc400_step();
+		cpu_step();
 	}
 
 #ifdef WITH_DEBUGGER
-	em400_debugger_shutdown();
+	dbg_shutdown();
 #endif
 
-	em400_mem_shutdown();
-	mjc400_timer_delete();
+	mem_shutdown();
+	timer_remove();
 	printf("EM400 exits.\n");
 
 	return 0;

@@ -32,13 +32,26 @@
 
 int ui_mode = O_NCURSES;
 
-int debugger_loop_fin = 0;
-volatile int debugger_enter = 1;
+// debuger flow
+int dbg_loop_fin = 0;
+volatile int dbg_enter = 1;
 
+// store user input here
 char input_buf[INPUT_BUF_SIZE];
 
+// breakpoints
 struct break_t *brk_stack = NULL;
 struct break_t *brk_last = NULL;
+
+// trace memory activity
+int mem_act_block;
+int mem_actr_min;
+int mem_actr_max = -1;
+int mem_actw_min;
+int mem_actw_max = -1;
+
+// trace register activity
+int reg_act[R_MAX];
 
 extern int yyparse();
 typedef struct yy_buffer_state *YY_BUFFER_STATE;
@@ -46,25 +59,25 @@ YY_BUFFER_STATE yy_scan_string(char *yy_str);
 void yy_delete_buffer(YY_BUFFER_STATE b);
 
 // -----------------------------------------------------------------------
-void _debugger_sigint_handler(int signum, siginfo_t *si, void *ctx)
+void _dbg_sigint_handler(int signum, siginfo_t *si, void *ctx)
 {
-	debugger_enter = 1;
+	dbg_enter = 1;
 }
 
 // -----------------------------------------------------------------------
-int em400_debugger_init()
+int dbg_init()
 {
 	if (aw_init(ui_mode)) {
 		return -1;
 	}
 
-	em400_debugger_ui_init();
+	dbg_ui_init();
 	aw_layout_changed = 1;
 
 	// prepare handler for ctrl-c
 	struct sigaction sa;
 	sa.sa_flags = SA_SIGINFO;
-	sa.sa_sigaction = _debugger_sigint_handler;
+	sa.sa_sigaction = _dbg_sigint_handler;
 
 	if (sigemptyset(&sa.sa_mask) != 0) {
 		return -1;
@@ -78,13 +91,13 @@ int em400_debugger_init()
 }
 
 // -----------------------------------------------------------------------
-void em400_debugger_shutdown()
+void dbg_shutdown()
 {
 	aw_shutdown();
 }
 
 // -----------------------------------------------------------------------
-struct break_t * em400_debugger_brk_check()
+struct break_t * dbg_brk_check()
 {
 	struct break_t *b = brk_stack;
 	while (b) {
@@ -105,17 +118,17 @@ struct break_t * em400_debugger_brk_check()
 }
 
 // -----------------------------------------------------------------------
-void em400_debugger_step()
+void dbg_step()
 {
 	struct break_t *bhit = NULL;
 
-	if ((!debugger_enter) && (!(bhit=em400_debugger_brk_check()))) {
+	if ((!dbg_enter) && (!(bhit=dbg_brk_check()))) {
 		return;
 	}
 
-	debugger_loop_fin = 0;
+	dbg_loop_fin = 0;
 
-	while (!debugger_loop_fin) {
+	while (!dbg_loop_fin) {
 		if (aw_layout_changed) {
 			aw_layout_redo();
 		} else {

@@ -20,10 +20,9 @@
 
 #include <inttypes.h>
 
-void mjc400_reset();
-void mjc400_step();
-int mjc400_execute();
-int16_t mjc400_get_eff_arg();
+void cpu_reset();
+void cpu_step();
+int16_t cpu_get_eff_arg();
 
 #endif
 

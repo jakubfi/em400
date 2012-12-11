@@ -41,7 +41,7 @@ struct _em400_errordesc {
 };
 
 // -----------------------------------------------------------------------
-char * e400_gerror(int e)
+char * get_error(int e)
 {
 	struct _em400_errordesc *edict = em400_errordesc;
 	while (edict->code != E_UNKNOWN) {

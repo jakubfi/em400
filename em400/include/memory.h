@@ -26,34 +26,29 @@
 #define MEM_MAX_NB 16
 #define MEM_MAX_AB 16
 
-extern short int em400_mem_conf[MEM_MAX_MODULES];
-extern uint16_t *em400_mem_segment[MEM_MAX_MODULES][MEM_MAX_SEGMENTS];
-extern uint16_t *em400_mem_map[MEM_MAX_NB][MEM_MAX_AB];
+extern short int mem_conf[MEM_MAX_MODULES];
+extern uint16_t *mem_segment[MEM_MAX_MODULES][MEM_MAX_SEGMENTS];
+extern uint16_t *mem_map[MEM_MAX_NB][MEM_MAX_AB];
 
-#ifdef WITH_DEBUGGER
-extern int mem_act_block;
-extern int mem_act_min;
-extern int mem_act_max;
-#endif
+int mem_init();
+void mem_shutdown();
+int mem_add_map(unsigned short int nb, unsigned short int ab, unsigned short int mp, unsigned short int segment);
+void mem_remove_maps();
 
-int em400_mem_init();
-void em400_mem_shutdown();
-int em400_mem_add_user_map(unsigned short int nb, unsigned short int ab, unsigned short int mp, unsigned short int segment);
-void em400_mem_remove_user_maps();
+uint16_t * mem_ptr(short unsigned int nb, uint16_t addr, int emulation);
+uint16_t mem_read(short unsigned int nb, uint16_t addr, int trace);
+void mem_write(short unsigned int nb, uint16_t addr, uint16_t val, int trace);
 
-uint16_t * em400_mem_ptr(short unsigned int nb, uint16_t addr, int emulation);
-uint16_t em400_mem_read(short unsigned int nb, uint16_t addr);
-void em400_mem_write(short unsigned int nb, uint16_t addr, uint16_t val);
+void mem_clear();
+int mem_load_image(const char* fname, unsigned short block);
 
-void em400_mem_clear();
-int em400_mem_load_image(const char* fname, unsigned short block);
-
-#define MEM(a)			em400_mem_read(SR_Q*SR_NB, a)
-#define MEMNB(a)		em400_mem_read(SR_NB, a)
-#define MEMB(b, a)		em400_mem_read(b, a)
-#define MEMw(a, x)		em400_mem_write(SR_Q*SR_NB, a, x)
-#define MEMNBw(a, x)	em400_mem_write(SR_NB, a, x)
-#define MEMBw(b, a, x)	em400_mem_write(b, a, x)
+#define MEM(a)			mem_read(SR_Q*SR_NB, a, 1)
+#define MEMw(a, x)		mem_write(SR_Q*SR_NB, a, x, 1)
+#define MEM_nt(a)		mem_read(SR_Q*SR_NB, a, 0)
+#define MEMNB(a)		mem_read(SR_NB, a, 1)
+#define MEMB(b, a)		mem_read(b, a, 1)
+#define MEMNBw(a, x)	mem_write(SR_NB, a, x, 1)
+#define MEMBw(b, a, x)	mem_write(b, a, x, 1)
 
 // -----------------------------------------------------------------------
 // dword conversions

@@ -30,24 +30,24 @@ struct cmd_t {
 	char *help;
 };
 
-int debugger_is_cmd(char *cmd);
-void em400_debugger_c_step();
-void em400_debugger_c_quit();
-void em400_debugger_c_run();
-void em400_debugger_c_help(int wid, char *cmd);
-void em400_debugger_c_regs(int wid);
-void em400_debugger_c_sregs(int wid);
-void em400_debugger_c_reset();
-void em400_debugger_c_mem(int wid, int block, int start, int end, int maxcols, int maxlines);
-void em400_debugger_c_clmem();
-void em400_debugger_c_dt(int wid, int dasm_mode, int start, int count);
-void em400_debugger_c_load(int wid, char* image, int bank);
-void em400_debugger_c_memcfg(int wid);
-void em400_debugger_c_brk_add(unsigned int wid, char *label, struct node_t *n);
-void em400_debugger_c_brk_list(unsigned int wid);
-void em400_debugger_c_brk_del(unsigned int wid, int nr);
-void em400_debugger_c_brk_test(unsigned int wid, int nr);
-void em400_debugger_c_brk_disable(unsigned int wid, int nr, int disable);
+int dbg_is_cmd(char *cmd);
+void dbg_c_step();
+void dbg_c_quit();
+void dbg_c_run();
+void dbg_c_help(int wid, char *cmd);
+void dbg_c_regs(int wid);
+void dbg_c_sregs(int wid);
+void dbg_c_reset();
+void dbg_c_mem(int wid, int block, int start, int end, int maxcols, int maxlines);
+void dbg_c_clmem();
+void dbg_c_dt(int wid, int dasm_mode, int start, int count);
+void dbg_c_load(int wid, char* image, int bank);
+void dbg_c_memcfg(int wid);
+void dbg_c_brk_add(unsigned int wid, char *label, struct node_t *n);
+void dbg_c_brk_list(unsigned int wid);
+void dbg_c_brk_del(unsigned int wid, int nr);
+void dbg_c_brk_test(unsigned int wid, int nr);
+void dbg_c_brk_disable(unsigned int wid, int nr, int disable);
 
 #endif
 

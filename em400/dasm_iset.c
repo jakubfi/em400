@@ -55,7 +55,7 @@ struct dasm_opdef dasm_iset[] = {
 	{ 035, "OU", true, NULL, NULL, D_2ARGN, T_OU },
 	{ 036, "IN", true, NULL, NULL, D_2ARGN, T_IN },
 
-	{ 037, NULL, false, dasm_extcode_37, dasm_iset_37, NULL },
+	{ 037, NULL, false, dt_extcode_37, dasm_iset_37, NULL },
 
 	{ 040, "AW", true, NULL, NULL, D_2ARGN, T_AW },
 	{ 041, "AC", true, NULL, NULL, D_2ARGN, T_AC },
@@ -83,14 +83,14 @@ struct dasm_opdef dasm_iset[] = {
 	{ 066, "LWS", false, NULL, NULL, D_KA1, T_LWS },
 	{ 067, "RWS", false, NULL, NULL, D_KA1, T_RWS },
 
-	{ 070, NULL, false, dasm_extcode_70, dasm_iset_70, NULL },
-	{ 071, NULL, false, dasm_extcode_71, dasm_iset_71, NULL },
-	{ 072, NULL, false, dasm_extcode_72, dasm_iset_72, NULL },
-	{ 073, NULL, false, dasm_extcode_73, dasm_iset_73, NULL },
-	{ 074, NULL, false, dasm_extcode_74, dasm_iset_74, NULL },
-	{ 075, NULL, false, dasm_extcode_75, dasm_iset_75, NULL },
-	{ 076, NULL, false, dasm_extcode_76, dasm_iset_76, NULL },
-	{ 077, NULL, false, dasm_extcode_77, dasm_iset_77, NULL }
+	{ 070, NULL, false, dt_extcode_70, dasm_iset_70, NULL },
+	{ 071, NULL, false, dt_extcode_71, dasm_iset_71, NULL },
+	{ 072, NULL, false, dt_extcode_72, dasm_iset_72, NULL },
+	{ 073, NULL, false, dt_extcode_73, dasm_iset_73, NULL },
+	{ 074, NULL, false, dt_extcode_74, dasm_iset_74, NULL },
+	{ 075, NULL, false, dt_extcode_75, dasm_iset_75, NULL },
+	{ 076, NULL, false, dt_extcode_76, dasm_iset_76, NULL },
+	{ 077, NULL, false, dt_extcode_77, dasm_iset_77, NULL }
 };
 
 struct dasm_opdef dasm_iset_37[] = {

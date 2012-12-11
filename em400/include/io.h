@@ -30,7 +30,7 @@ enum em400_io_result {
 	IO_PE = 3   // data error (parity error?)
 };
 
-int em400_io_dispatch(int dir, int is_mem, int chan, int unit, int cmd, uint16_t arg);
+int io_dispatch(int dir, int is_mem, int chan, int unit, int cmd, uint16_t arg);
 
 #endif
 

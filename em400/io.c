@@ -23,7 +23,7 @@
 #include "utils.h"
 
 // -----------------------------------------------------------------------
-int em400_io_dispatch(int dir, int is_mem, int chan, int unit, int cmd, uint16_t arg)
+int io_dispatch(int dir, int is_mem, int chan, int unit, int cmd, uint16_t arg)
 {
 	if (is_mem) {
 		if (dir != IO_OU) {
@@ -35,7 +35,7 @@ int em400_io_dispatch(int dir, int is_mem, int chan, int unit, int cmd, uint16_t
 			int ab = (arg & 0b1111000000000000) >> 12;
 			// here, channel is memory module, unit is memory segment
 			//printf("I/O OU: memory nb:%i ab:%i mp:%i seg:%i\n", nb, ab, chan, unit);
-			return em400_mem_add_user_map(nb, ab, chan, unit);
+			return mem_add_map(nb, ab, chan, unit);
 		}
 	} else {
 		// command to channel or device control unit

@@ -26,34 +26,34 @@
 #include "interrupts.h"
 #include "io.h"
 
-// memory configuration provided by the user: number of segments in a module
-short int em400_mem_conf[MEM_MAX_MODULES] = { 2, 8, 8, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 };
-// physical memory: modules with segments inside
-uint16_t *em400_mem_segment[MEM_MAX_MODULES][MEM_MAX_SEGMENTS] = { {NULL} };
-// logical mapping from (NB,AB) to physical segment pointer
-uint16_t *em400_mem_map[MEM_MAX_NB][MEM_MAX_AB] = { {NULL} };
-
 #ifdef WITH_DEBUGGER
-int mem_act_block = -1;
-int mem_act_min = -1;
-int mem_act_max = -1;
+#include "debugger.h"
 #endif
 
+// memory configuration provided by the user: number of segments in a module
+short int mem_conf[MEM_MAX_MODULES] = { 2, 8, 8, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 };
+
+// physical memory: modules with segments inside
+uint16_t *mem_segment[MEM_MAX_MODULES][MEM_MAX_SEGMENTS] = { {NULL} };
+
+// logical mapping from (NB,AB) to physical segment pointer
+uint16_t *mem_map[MEM_MAX_NB][MEM_MAX_AB] = { {NULL} };
+
 // -----------------------------------------------------------------------
-int em400_mem_init()
+int mem_init()
 {
-	if (em400_mem_conf[0] <= 0) {
+	if (mem_conf[0] <= 0) {
 		return E_MEM_NO_OS_MEM;
 	}
 
 	// create configured physical segments
 	for (int mp=0 ; mp<MEM_MAX_MODULES ; mp++) {
-		if (em400_mem_conf[mp] > MEM_MAX_SEGMENTS) {
+		if (mem_conf[mp] > MEM_MAX_SEGMENTS) {
 			return E_MEM_BAD_SEGMENT_COUNT;
 		} else {
-			for (int seg=0 ; seg<em400_mem_conf[mp] ; seg++) {
-				em400_mem_segment[mp][seg] = malloc(2 * MEM_SEGMENT_SIZE);
-				if (!em400_mem_segment[mp][seg]) {
+			for (int seg=0 ; seg<mem_conf[mp] ; seg++) {
+				mem_segment[mp][seg] = malloc(2 * MEM_SEGMENT_SIZE);
+				if (!mem_segment[mp][seg]) {
 					return E_MEM_CANNOT_ALLOCATE;
 				}
 			}
@@ -63,8 +63,8 @@ int em400_mem_init()
 	// hardwire segments for OS
 	// TODO: MEM_MAX_SEGMENTS for OS block may be too much... (?)
 	for (int ab=0 ; ab<MEM_MAX_SEGMENTS ; ab++) {
-		if (em400_mem_segment[0][ab]) {
-			em400_mem_map[0][ab] = em400_mem_segment[0][ab];
+		if (mem_segment[0][ab]) {
+			mem_map[0][ab] = mem_segment[0][ab];
 		}
 	}
 
@@ -72,24 +72,24 @@ int em400_mem_init()
 }
 
 // -----------------------------------------------------------------------
-void em400_mem_shutdown()
+void mem_shutdown()
 {
-	em400_mem_remove_user_maps();
+	mem_remove_maps();
 
 	// disconnect memory modules
 	for (int mp=0 ; mp<MEM_MAX_MODULES ; mp++) {
 		for (int seg=0 ; seg<MEM_MAX_SEGMENTS ; seg++) {
-			free(em400_mem_segment[mp][seg]);
+			free(mem_segment[mp][seg]);
 		}
 	}
 }
 
 // -----------------------------------------------------------------------
-int em400_mem_add_user_map(unsigned short int nb, unsigned short int ab, unsigned short int mp, unsigned short int segment)
+int mem_add_map(unsigned short int nb, unsigned short int ab, unsigned short int mp, unsigned short int segment)
 {
 	if ((nb > 0) && (nb < MEM_MAX_NB)) {
-		em400_mem_map[nb][ab] = em400_mem_segment[mp][segment];
-		if (!em400_mem_map[nb][ab]) {
+		mem_map[nb][ab] = mem_segment[mp][segment];
+		if (!mem_map[nb][ab]) {
 			return IO_NO;
 		}
 	} else {
@@ -99,23 +99,23 @@ int em400_mem_add_user_map(unsigned short int nb, unsigned short int ab, unsigne
 }
 
 // -----------------------------------------------------------------------
-void em400_mem_remove_user_maps()
+void mem_remove_maps()
 {
 	// remove all memory mappings
 	for (int nb=1 ; nb<MEM_MAX_NB ; nb++) {
 		for (int ab=0 ; ab<MEM_MAX_AB ; ab ++) {
-			em400_mem_map[nb][ab] = NULL;
+			mem_map[nb][ab] = NULL;
 		}
 	}
 }
 
 // -----------------------------------------------------------------------
-uint16_t * em400_mem_ptr(short unsigned int nb, uint16_t addr, int emulation)
+uint16_t * mem_ptr(short unsigned int nb, uint16_t addr, int emulation)
 {
 	unsigned short int ab = (addr & 0b1111000000000000) >> 12;
 	unsigned int addr12 = addr & 0b0000111111111111;
 
-	uint16_t *seg_addr = em400_mem_map[nb][ab];
+	uint16_t *seg_addr = mem_map[nb][ab];
 
 	if (!seg_addr) {
 		if (emulation) {
@@ -133,11 +133,20 @@ uint16_t * em400_mem_ptr(short unsigned int nb, uint16_t addr, int emulation)
 
 // -----------------------------------------------------------------------
 // read from any block
-uint16_t em400_mem_read(short unsigned int nb, uint16_t addr)
+uint16_t mem_read(short unsigned int nb, uint16_t addr, int trace)
 {
-	uint16_t *mem_ptr = em400_mem_ptr(nb, addr, 1);
-	if (mem_ptr) {
-		return *mem_ptr;
+	uint16_t *ptr = mem_ptr(nb, addr, 1);
+	if (ptr) {
+#ifdef WITH_DEBUGGER
+		if (trace) {
+			if (mem_actr_max == -1) {
+				mem_act_block = nb;
+				mem_actr_min = addr;
+			}
+			mem_actr_max = addr;
+		}
+#endif
+		return *ptr;
 	} else {
 		return 0xdead;
 	}
@@ -145,31 +154,31 @@ uint16_t em400_mem_read(short unsigned int nb, uint16_t addr)
 
 // -----------------------------------------------------------------------
 // write to any block
-void em400_mem_write(short unsigned int nb, uint16_t addr, uint16_t val)
+void mem_write(short unsigned int nb, uint16_t addr, uint16_t val, int trace)
 {
-	uint16_t *mem_ptr = em400_mem_ptr(nb, addr, 1);
-	if (mem_ptr) {
-		*mem_ptr = val;
-	}
+	uint16_t *ptr = mem_ptr(nb, addr, 1);
+	if (ptr) {
 #ifdef WITH_DEBUGGER
-	if (mem_act_min == -1) {
-		mem_act_block = nb;
-		mem_act_min = addr;
-		mem_act_max = addr;
-	} else {
-		mem_act_max = addr;
-	}
+		if (trace) {
+			if (mem_actw_max == -1) {
+				mem_act_block = nb;
+				mem_actw_min = addr;
+			}
+			mem_actw_max = addr;
+		}
 #endif
+		*ptr = val;
+	}
 }
 
 // -----------------------------------------------------------------------
-void em400_mem_clear()
+void mem_clear()
 {
 	for (int mp=0 ; mp<MEM_MAX_MODULES ; mp++) {
 		for (int seg=0 ; seg<MEM_MAX_SEGMENTS ; seg++) {
-			if (em400_mem_segment[mp][seg]) {
+			if (mem_segment[mp][seg]) {
 				for (int addr=0 ; addr<MEM_SEGMENT_SIZE ; addr++) {
-					em400_mem_segment[mp][seg][addr] = 0;
+					mem_segment[mp][seg][addr] = 0;
 				}
 			}
 		}
@@ -177,7 +186,7 @@ void em400_mem_clear()
 }
 
 // -----------------------------------------------------------------------
-int em400_mem_load_image(const char* fname, unsigned short block)
+int mem_load_image(const char* fname, unsigned short block)
 {
 	uint16_t *ptr;
 
@@ -190,7 +199,7 @@ int em400_mem_load_image(const char* fname, unsigned short block)
 	int chunk = 0;
 	while (res > 0) {
 		// get pointer to segment in a block
-		ptr = em400_mem_ptr(block, chunk*MEM_SEGMENT_SIZE, 0);
+		ptr = mem_ptr(block, chunk*MEM_SEGMENT_SIZE, 0);
 		if (!ptr) {
 			return E_MEM_BLOCK_TOO_SMALL;
 		}

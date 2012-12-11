@@ -86,7 +86,7 @@ bin	return BIN;
 uint return UINT;
 
 <INITIAL>{text}	{
-	int tok = debugger_is_cmd(yytext);
+	int tok = dbg_is_cmd(yytext);
 	if (!tok) {
 		yylval.text = strdup(yytext);
 		return TEXT;

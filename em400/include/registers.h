@@ -45,9 +45,6 @@ enum _registers {
 };
 
 extern uint16_t regs[];
-#ifdef WITH_DEBUGGER
-extern int reg_act[];
-#endif
 
 extern uint32_t RZ;
 

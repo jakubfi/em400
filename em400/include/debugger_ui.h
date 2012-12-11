@@ -30,7 +30,8 @@ enum _ui_attributes {
 	C_IDATA,
 	C_ERROR,
 	C_READ,
-	C_WRITE
+	C_WRITE,
+	C_RW
 };
 
 enum _ui_windows {
@@ -42,14 +43,14 @@ enum _ui_windows {
 	W_STATUS
 };
 
-void em400_debugger_ui_init();
-void em400_debugger_wu_mem(unsigned int wid);
-void em400_debugger_wu_dasm(unsigned int wid);
-void em400_debugger_wu_regs(unsigned int wid);
-void em400_debugger_wu_sregs(unsigned int wid);
-void em400_debugger_wu_cmd(unsigned int wid);
-void em400_debugger_wu_status(unsigned int wid);
-void em400_debugger_wu_none(unsigned int wid);
+void dbg_ui_init();
+void dbg_wu_mem(unsigned int wid);
+void dbg_wu_dasm(unsigned int wid);
+void dbg_wu_regs(unsigned int wid);
+void dbg_wu_sregs(unsigned int wid);
+void dbg_wu_cmd(unsigned int wid);
+void dbg_wu_status(unsigned int wid);
+void dbg_wu_none(unsigned int wid);
 
 #endif
 

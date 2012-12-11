@@ -28,7 +28,7 @@
 #include "dasm_iset.h"
 
 // -----------------------------------------------------------------------
-int mjc400_dt(uint16_t* memptr, char **buf, int dasm_mode)
+int dt_trans(uint16_t* memptr, char **buf, int dasm_mode)
 {
 	struct dasm_opdef *opdef;
 	*buf = malloc(1024);
@@ -51,11 +51,11 @@ int mjc400_dt(uint16_t* memptr, char **buf, int dasm_mode)
 			break;
 	}
 
-	return mjc400_dt_parse(opdef, memptr, format, *buf);
+	return dt_parse(opdef, memptr, format, *buf);
 }
 
 // -----------------------------------------------------------------------
-int mjc400_dt_parse(struct dasm_opdef *opdef, uint16_t *memptr, char *format, char *buf)
+int dt_parse(struct dasm_opdef *opdef, uint16_t *memptr, char *format, char *buf)
 {
 	char *in = format;
 	char *out = buf;
@@ -75,7 +75,7 @@ int mjc400_dt_parse(struct dasm_opdef *opdef, uint16_t *memptr, char *format, ch
 					out += sprintf(out, "%s", opdef->mnemo);
 					break;
 				case 'E':
-					out += mjc400_dt_opext(out, memptr);
+					out += dt_opext(out, memptr);
 					break;
 				case 'A':
 					out += sprintf(out, "%i", _A(*memptr));
@@ -96,10 +96,10 @@ int mjc400_dt_parse(struct dasm_opdef *opdef, uint16_t *memptr, char *format, ch
 					out += sprintf(out, "%i", _b(*memptr));
 					break;
 				case 'N':
-					out += mjc400_dt_eff_arg(out, memptr);
+					out += dt_dasm_eff_arg(out, memptr);
 					break;
 				case 'n':
-					out += mjc400_trans_eff_arg(out, memptr);
+					out += dt_trans_eff_arg(out, memptr);
 					break;
 				case '0':
 					b = int2bin(*memptr, 16);
@@ -129,7 +129,7 @@ int mjc400_dt_parse(struct dasm_opdef *opdef, uint16_t *memptr, char *format, ch
 }
 
 // -----------------------------------------------------------------------
-int mjc400_dt_opext(char *buf, uint16_t *memptr)
+int dt_opext(char *buf, uint16_t *memptr)
 {
 	int n = 0;
 
@@ -151,7 +151,7 @@ int mjc400_dt_opext(char *buf, uint16_t *memptr)
 }
 
 // -----------------------------------------------------------------------
-int mjc400_dt_eff_arg(char *buf, uint16_t *memptr)
+int dt_dasm_eff_arg(char *buf, uint16_t *memptr)
 {
 	int n = 0;
 
@@ -169,7 +169,7 @@ int mjc400_dt_eff_arg(char *buf, uint16_t *memptr)
 }
 
 // -----------------------------------------------------------------------
-int mjc400_trans_eff_arg(char *buf, uint16_t *memptr)
+int dt_trans_eff_arg(char *buf, uint16_t *memptr)
 {
 	int n = 0;
 
@@ -195,55 +195,55 @@ int mjc400_trans_eff_arg(char *buf, uint16_t *memptr)
 }
 
 // -----------------------------------------------------------------------
-int dasm_extcode_37(int i)
+int dt_extcode_37(int i)
 {
 	return EXT_OP_37(i);
 }
 
 // -----------------------------------------------------------------------
-int dasm_extcode_70(int i)
+int dt_extcode_70(int i)
 {
 	return EXT_OP_70(i);
 }
 
 // -----------------------------------------------------------------------
-int dasm_extcode_71(int i)
+int dt_extcode_71(int i)
 {
 	return EXT_OP_71(i);
 }
 
 // -----------------------------------------------------------------------
-int dasm_extcode_72(int i)
+int dt_extcode_72(int i)
 {
 	return EXT_OP_72(i);
 }
 
 // -----------------------------------------------------------------------
-int dasm_extcode_73(int i)
+int dt_extcode_73(int i)
 {
 	return EXT_OP_73(i);
 }
 
 // -----------------------------------------------------------------------
-int dasm_extcode_74(int i)
+int dt_extcode_74(int i)
 {
 	return EXT_OP_74(i);
 }
 
 // -----------------------------------------------------------------------
-int dasm_extcode_75(int i)
+int dt_extcode_75(int i)
 {
 	return EXT_OP_75(i);
 }
 
 // -----------------------------------------------------------------------
-int dasm_extcode_76(int i)
+int dt_extcode_76(int i)
 {
 	return EXT_OP_76(i);
 }
 
 // -----------------------------------------------------------------------
-int dasm_extcode_77(int i)
+int dt_extcode_77(int i)
 {
 	return EXT_OP_77(i);
 }

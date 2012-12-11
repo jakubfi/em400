@@ -34,7 +34,7 @@
 extern int em400_quit;
 
 // -----------------------------------------------------------------------
-struct cmd_t em400_debugger_commands[] = {
+struct cmd_t dbg_commands[] = {
 	{ "quit",	F_QUIT,		"Quit the emulator", "  quit" },
 	{ "step",	F_STEP,		"Execute instruction at IC", "  step" },
 	{ "help",	F_HELP,		"Print help", "  help" },
@@ -53,9 +53,9 @@ struct cmd_t em400_debugger_commands[] = {
 };
 
 // -----------------------------------------------------------------------
-int debugger_is_cmd(char *cmd)
+int dbg_is_cmd(char *cmd)
 {
-	struct cmd_t* c = em400_debugger_commands;
+	struct cmd_t* c = dbg_commands;
 	while (c->cmd) {
 		if (!strcmp(cmd, c->cmd)) {
 			return c->tok;
@@ -66,17 +66,17 @@ int debugger_is_cmd(char *cmd)
 }
 
 // -----------------------------------------------------------------------
-void em400_debugger_c_load(int wid, char* image, int bank)
+void dbg_c_load(int wid, char* image, int bank)
 {
-	if (em400_mem_load_image(image, bank)) {
+	if (mem_load_image(image, bank)) {
 		awprint(wid, C_ERROR, "Cannot load image: \"%s\"\n", image);
 	}
 }
 
 // -----------------------------------------------------------------------
-void em400_debugger_c_help(int wid, char *cmd)
+void dbg_c_help(int wid, char *cmd)
 {
-	struct cmd_t *c = em400_debugger_commands;
+	struct cmd_t *c = dbg_commands;
 	if (cmd) {
 		while (c->cmd) {
 			if (!strcmp(cmd, c->cmd)) {
@@ -97,48 +97,48 @@ void em400_debugger_c_help(int wid, char *cmd)
 }
 
 // -----------------------------------------------------------------------
-void em400_debugger_c_quit()
+void dbg_c_quit()
 {
 	em400_quit = 1;
-	debugger_loop_fin = 1;
+	dbg_loop_fin = 1;
 }
 
 // -----------------------------------------------------------------------
-void em400_debugger_c_step()
+void dbg_c_step()
 {
-	debugger_enter = 1;
-	debugger_loop_fin = 1;
+	dbg_enter = 1;
+	dbg_loop_fin = 1;
 }
 
 // -----------------------------------------------------------------------
-void em400_debugger_c_run()
+void dbg_c_run()
 {
-	debugger_enter = 0;
-	debugger_loop_fin = 1;
+	dbg_enter = 0;
+	dbg_loop_fin = 1;
 }
 
 // -----------------------------------------------------------------------
-void em400_debugger_c_reset()
+void dbg_c_reset()
 {
-	mjc400_reset();
+	cpu_reset();
 }
 
 // -----------------------------------------------------------------------
-void em400_debugger_c_clmem()
+void dbg_c_clmem()
 {
-	em400_mem_clear();
+	mem_clear();
 }
 
 // -----------------------------------------------------------------------
-void em400_debugger_c_dt(int wid, int dasm_mode, int start, int count)
+void dbg_c_dt(int wid, int dasm_mode, int start, int count)
 {
 	char *buf;
 	int len;
 
 	while (count > 0) {
-		uint16_t * addr = em400_mem_ptr(SR_Q * SR_NB, start, 0);
+		uint16_t * addr = mem_ptr(SR_Q * SR_NB, start, 0);
 		if (addr) {
-			len = mjc400_dt(addr, &buf, dasm_mode);
+			len = dt_trans(addr, &buf, dasm_mode);
 
 			if (start == R(R_IC)) {
 				awprint(wid, C_ILABEL, "0x%04x:", start);
@@ -157,9 +157,9 @@ void em400_debugger_c_dt(int wid, int dasm_mode, int start, int count)
 }
 
 // -----------------------------------------------------------------------
-void em400_debugger_c_mem(int wid, int block, int start, int end, int maxcols, int maxlines)
+void dbg_c_mem(int wid, int block, int start, int end, int maxcols, int maxlines)
 {
-	uint16_t *mptr = em400_mem_ptr(block, 0, 0);
+	uint16_t *mptr = mem_ptr(block, 0, 0);
 
 	if (!mptr) {
 		awprint(wid, C_ERROR, "Cannot access block %i\n", block);
@@ -184,23 +184,32 @@ void em400_debugger_c_mem(int wid, int block, int start, int end, int maxcols, i
 	awprint(wid, C_LABEL, "\n");
 
 	uint16_t addr = start;
+	int attr = C_DATA;
 
 	while ((maxlines > 0) && (addr <= end)) {
 		// row header
 		awprint(wid, C_LABEL, "0x%04x: ", addr);
 		char *chars = malloc(words*2+1);
 		for (int w=0 ; w<words ; w++) {
-			mptr = em400_mem_ptr(block, addr, 0);
+			mptr = mem_ptr(block, addr, 0);
 			if (!mptr) {
 				return;
 			}
+
 			// data (hex)
-			if ((block == mem_act_block) && (addr >= mem_act_min) && (addr <= mem_act_max)) {
-				awprint(wid, C_WRITE, "%4x ", *mptr);
-				mem_act_block = mem_act_min = mem_act_max = -1;
+			if ((addr >= mem_actw_min) && (addr <= mem_actw_max)) {
+				if ((addr >= mem_actr_min) && (addr <= mem_actr_max)) {
+					attr = C_RW;
+				} else {
+					attr = C_WRITE;
+				}
+			} else if ((addr >= mem_actr_min) && (addr <= mem_actr_max)) {
+				attr = C_READ;
 			} else {
-				awprint(wid, C_DATA, "%4x ", *mptr);
+				attr = C_DATA;
 			}
+			awprint(wid, attr, "%4x ", *mptr);
+
 			// store data (chars)
 			int2chars(*mptr, chars+w*2);
 			addr++;
@@ -213,7 +222,7 @@ void em400_debugger_c_mem(int wid, int block, int start, int end, int maxcols, i
 }
 
 // -----------------------------------------------------------------------
-void em400_debugger_c_sregs(int wid)
+void dbg_c_sregs(int wid)
 {
 	char *ir = int2bin(R(R_IR)>>10, 6);
 	int d = (R(R_IR)>>9) & 1;
@@ -270,7 +279,7 @@ void em400_debugger_c_sregs(int wid)
 }
 
 // -----------------------------------------------------------------------
-void em400_debugger_c_regs(int wid)
+void dbg_c_regs(int wid)
 {
 	awprint(wid, C_LABEL, "    hex    oct    dec    bin              ch R40\n");
 	for (int i=1 ; i<=7 ; i++) {
@@ -281,14 +290,13 @@ void em400_debugger_c_regs(int wid)
 
 		awprint(wid, C_LABEL, "R%i: ", i);
 		awprint(wid, reg_act[i], "0x%04x %6o %6i %s %s %s\n", R(i), R(i), (int16_t)R(i), b, c, r);
-		reg_act[i] = C_DATA;
 		free(r);
 		free(b);
 	}
 }
 
 // -----------------------------------------------------------------------
-void em400_debugger_c_memcfg(int wid)
+void dbg_c_memcfg(int wid)
 {
 	int i, j, cnt;
 	awprint(wid, C_LABEL, "Number of 4kword segments in each segment/block\n");
@@ -297,7 +305,7 @@ void em400_debugger_c_memcfg(int wid)
 	for (i=0 ; i<MEM_MAX_MODULES ; i++) {
 		cnt = 0;
 		for (j=0 ; j<MEM_MAX_SEGMENTS ; j++) {
-			if (em400_mem_segment[i][j]) cnt++;
+			if (mem_segment[i][j]) cnt++;
 		}
 		awprint(wid, C_DATA, "%i ", cnt);
 	}
@@ -306,7 +314,7 @@ void em400_debugger_c_memcfg(int wid)
 	for (i=0 ; i<MEM_MAX_NB ; i++) {
 		cnt = 0;
 		for (j=0 ; j<MEM_MAX_SEGMENTS ; j++) {
-			if (em400_mem_map[i][j]) cnt++;
+			if (mem_map[i][j]) cnt++;
 		}
 		awprint(wid, C_DATA, "%i ", cnt);
 	}
@@ -314,7 +322,7 @@ void em400_debugger_c_memcfg(int wid)
 }
 
 // -----------------------------------------------------------------------
-void em400_debugger_c_brk_add(unsigned int wid, char *label, struct node_t *n)
+void dbg_c_brk_add(unsigned int wid, char *label, struct node_t *n)
 {
 	static unsigned int brkcnt;
 
@@ -341,7 +349,7 @@ void em400_debugger_c_brk_add(unsigned int wid, char *label, struct node_t *n)
 }
 
 // -----------------------------------------------------------------------
-void em400_debugger_c_brk_list(unsigned int wid)
+void dbg_c_brk_list(unsigned int wid)
 {
 	struct break_t *b = brk_stack;
 	if (!b) {
@@ -358,7 +366,7 @@ void em400_debugger_c_brk_list(unsigned int wid)
 }
 
 // -----------------------------------------------------------------------
-struct break_t * em400_debugger_c_brk_get(int nr)
+struct break_t * dbg_c_brk_get(int nr)
 {
 	struct break_t *b = brk_stack;
 	while (b) {
@@ -371,7 +379,7 @@ struct break_t * em400_debugger_c_brk_get(int nr)
 }
 
 // -----------------------------------------------------------------------
-void em400_debugger_c_brk_del(unsigned int wid, int nr)
+void dbg_c_brk_del(unsigned int wid, int nr)
 {
 	struct break_t *b = brk_stack;
 	struct break_t *prev = NULL;
@@ -398,9 +406,9 @@ void em400_debugger_c_brk_del(unsigned int wid, int nr)
 }
 
 // -----------------------------------------------------------------------
-void em400_debugger_c_brk_test(unsigned int wid, int nr)
+void dbg_c_brk_test(unsigned int wid, int nr)
 {
-	struct break_t *b = em400_debugger_c_brk_get(nr);
+	struct break_t *b = dbg_c_brk_get(nr);
 	if (b) {
 		awprint(wid, C_LABEL, "Breakpoint ");
 		awprint(wid, C_DATA, "%i", b->nr);
@@ -412,9 +420,9 @@ void em400_debugger_c_brk_test(unsigned int wid, int nr)
 } 
 
 // -----------------------------------------------------------------------
-void em400_debugger_c_brk_disable(unsigned int wid, int nr, int disable)
+void dbg_c_brk_disable(unsigned int wid, int nr, int disable)
 {
-	struct break_t *b = em400_debugger_c_brk_get(nr);
+	struct break_t *b = dbg_c_brk_get(nr);
 	if (b) {
 		b->disabled = disable;
 		if (disable) {

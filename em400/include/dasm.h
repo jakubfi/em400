@@ -25,21 +25,21 @@
 #define DMODE_DASM	1
 #define DMODE_TRANS	2
 
-int mjc400_dt(uint16_t* memptr, char **buf, int dasm_mode);
-int mjc400_dt_parse(struct dasm_opdef *opdef, uint16_t *memptr, char *format, char *buf);
-int mjc400_dt_eff_arg(char *buf, uint16_t *memptr);
-int mjc400_trans_eff_arg(char *buf, uint16_t *memptr);
-int mjc400_dt_opext(char *buf, uint16_t *memptr);
+int dt_trans(uint16_t* memptr, char **buf, int dasm_mode);
+int dt_parse(struct dasm_opdef *opdef, uint16_t *memptr, char *format, char *buf);
+int dt_dasm_eff_arg(char *buf, uint16_t *memptr);
+int dt_trans_eff_arg(char *buf, uint16_t *memptr);
+int dt_opext(char *buf, uint16_t *memptr);
 
-int dasm_extcode_37(int i);
-int dasm_extcode_70(int i);
-int dasm_extcode_71(int i);
-int dasm_extcode_72(int i);
-int dasm_extcode_73(int i);
-int dasm_extcode_74(int i);
-int dasm_extcode_75(int i);
-int dasm_extcode_76(int i);
-int dasm_extcode_77(int i);
+int dt_extcode_37(int i);
+int dt_extcode_70(int i);
+int dt_extcode_71(int i);
+int dt_extcode_72(int i);
+int dt_extcode_73(int i);
+int dt_extcode_74(int i);
+int dt_extcode_75(int i);
+int dt_extcode_76(int i);
+int dt_extcode_77(int i);
 
 #endif
 

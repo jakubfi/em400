@@ -31,17 +31,25 @@ struct break_t {
 	struct break_t *next;
 };
 
-extern int debugger_loop_fin;
-extern volatile int debugger_enter;
+extern int dbg_loop_fin;
+extern volatile int dbg_enter;
 extern char input_buf[];
 
 extern struct break_t *brk_stack;
 extern struct break_t *brk_last;
 
-struct break_t * em400_debugger_brk_check();
-void em400_debugger_step();
-int em400_debugger_init();
-void em400_debugger_shutdown();
+extern int mem_act_block;
+extern int mem_actr_min;
+extern int mem_actr_max;
+extern int mem_actw_min;
+extern int mem_actw_max;
+
+extern int reg_act[R_MAX];
+
+struct break_t * dbg_brk_check();
+void dbg_step();
+int dbg_init();
+void dbg_shutdown();
 
 #endif
 

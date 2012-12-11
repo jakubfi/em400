@@ -28,23 +28,23 @@
 
 
 // -----------------------------------------------------------------------
-void em400_debugger_ui_init()
+void dbg_ui_init()
 {
 	ACONT *c1 = aw_container_add(BOTTOM, LEFT, 1, 1, 0);
-	aw_window_add(c1, W_STATUS, "Status", 0, 0, em400_debugger_wu_status, FILL, 0, 0);
+	aw_window_add(c1, W_STATUS, "Status", 0, 0, dbg_wu_status, FILL, 0, 0);
 
 	ACONT *c2 = aw_container_add(RIGHT, TOP, 30, 30, 30);
-	aw_window_add(c2, W_DASM, "ASM", 1, 0, em400_debugger_wu_dasm, FILL, 3, 0);
+	aw_window_add(c2, W_DASM, "ASM", 1, 0, dbg_wu_dasm, FILL, 3, 0);
 
 	ACONT *c3 = aw_container_add(TOP, LEFT, 20, 6, 30);
-	aw_window_add(c3, W_MEM, "Memory", 1, 0, em400_debugger_wu_mem, FILL, 30, 0);
+	aw_window_add(c3, W_MEM, "Memory", 1, 0, dbg_wu_mem, FILL, 30, 0);
 
 	ACONT *c4 = aw_container_add(TOP, LEFT, 10, 10, 20);
-	aw_window_add(c4, W_SREGS, "System registers", 1, 0, em400_debugger_wu_sregs, DIV2, 58, 58);
-	aw_window_add(c4, W_REGS, "User registers", 1, 0, em400_debugger_wu_regs, FILL, 58, 0);
+	aw_window_add(c4, W_SREGS, "System registers", 1, 0, dbg_wu_sregs, DIV2, 58, 58);
+	aw_window_add(c4, W_REGS, "User registers", 1, 0, dbg_wu_regs, FILL, 58, 0);
 
 	ACONT *c5 = aw_container_add(TOP, LEFT, FILL, 0, 0);
-	aw_window_add(c5, W_CMD, "Commandline", 1, 1, em400_debugger_wu_cmd, FILL, 0, 0);
+	aw_window_add(c5, W_CMD, "Commandline", 1, 1, dbg_wu_cmd, FILL, 0, 0);
 
 	aw_attr_new(C_PROMPT, COLOR_BLACK, COLOR_YELLOW, A_BOLD);
 	aw_attr_new(C_LABEL, COLOR_BLACK, COLOR_WHITE, A_NORMAL);
@@ -53,21 +53,22 @@ void em400_debugger_ui_init()
 	aw_attr_new(C_IDATA, COLOR_WHITE, COLOR_BLUE, A_NORMAL);
 	aw_attr_new(C_ERROR, COLOR_BLACK, COLOR_RED, A_BOLD);
 	aw_attr_new(C_READ, COLOR_BLACK, COLOR_GREEN, A_BOLD);
-	aw_attr_new(C_WRITE, COLOR_BLACK, COLOR_MAGENTA, A_BOLD);
+	aw_attr_new(C_WRITE, COLOR_RED, COLOR_WHITE, A_BOLD);
+	aw_attr_new(C_RW, COLOR_RED, COLOR_GREEN, A_BOLD);
 }
 
 // -----------------------------------------------------------------------
-void em400_debugger_wu_mem(unsigned int wid)
+void dbg_wu_mem(unsigned int wid)
 {
 	AWIN *w = aw_window_find(wid);
 	if (!w) {
 		return;
 	}
-	em400_debugger_c_mem(wid, 0, 0, 0x300, w->iw, w->ih);
+	dbg_c_mem(wid, 0, 0, 0x300, w->iw, w->ih);
 }
 
 // -----------------------------------------------------------------------
-void em400_debugger_wu_dasm(unsigned int wid)
+void dbg_wu_dasm(unsigned int wid)
 {
 	AWIN *w = aw_window_find(wid);
 	int offset = (w->ih) / 3;
@@ -77,28 +78,28 @@ void em400_debugger_wu_dasm(unsigned int wid)
 	} else {
 		start = R(R_IC) - offset;
 	}
-	em400_debugger_c_dt(wid, DMODE_DASM, start, w->ih);
+	dbg_c_dt(wid, DMODE_DASM, start, w->ih);
 }
 
 // -----------------------------------------------------------------------
-void em400_debugger_wu_regs(unsigned int wid)
+void dbg_wu_regs(unsigned int wid)
 {
-	em400_debugger_c_regs(wid);
+	dbg_c_regs(wid);
 }
 
 // -----------------------------------------------------------------------
-void em400_debugger_wu_sregs(unsigned int wid)
+void dbg_wu_sregs(unsigned int wid)
 {
-	em400_debugger_c_sregs(wid);
+	dbg_c_sregs(wid);
 }
 
 // -----------------------------------------------------------------------
-void em400_debugger_wu_cmd(unsigned int wid)
+void dbg_wu_cmd(unsigned int wid)
 {
 }
 
 // -----------------------------------------------------------------------
-void em400_debugger_wu_status(unsigned int wid)
+void dbg_wu_status(unsigned int wid)
 {
 	char *kb = int2bin(R(R_KB), 16);
 	awfillbg(wid, C_ILABEL, ' ', 0);

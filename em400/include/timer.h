@@ -27,9 +27,9 @@
 #define MJC400_TIMER		10 // miliseconds
 #define MJC400_TIMER_SIG	SIGRTMIN+1
 
-void _mjc400_timer_interrupt_sig(int signum, siginfo_t *si, void *ctx);
-int mjc400_timer_start();
-void mjc400_timer_delete();
+void _timer_interrupt_sig(int signum, siginfo_t *si, void *ctx);
+int timer_start();
+void timer_remove();
 
 #endif
 

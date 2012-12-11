@@ -23,15 +23,15 @@
 
 #include "registers.h"
 
-struct mjc400_opdef {
+struct opdef {
 	uint16_t opcode;				// basic/extended opcode
 	_Bool nl;						// legal in user mode?
 	int (*op_fun)();				// instruction execution function
-	struct mjc400_opdef * e_opdef;	// pointer to extop def table
+	struct opdef * e_opdef;	// pointer to extop def table
 };
 
 // basic opcodes jump table
-extern struct mjc400_opdef mjc400_iset[];
+extern struct opdef iset[];
 
 // macros to access sub-opcodes
 #define EXT_OP_37(x) _A(x)
@@ -45,15 +45,15 @@ extern struct mjc400_opdef mjc400_iset[];
 #define EXT_OP_77(x) _A(x)
 
 // sub-opcodes (2nd level) jump tables
-extern struct mjc400_opdef mjc400_iset_37[];
-extern struct mjc400_opdef mjc400_iset_70[];
-extern struct mjc400_opdef mjc400_iset_71[];
-extern struct mjc400_opdef mjc400_iset_72[];
-extern struct mjc400_opdef mjc400_iset_73[];
-extern struct mjc400_opdef mjc400_iset_74[];
-extern struct mjc400_opdef mjc400_iset_75[];
-extern struct mjc400_opdef mjc400_iset_76[];
-extern struct mjc400_opdef mjc400_iset_77[];
+extern struct opdef iset_37[];
+extern struct opdef iset_70[];
+extern struct opdef iset_71[];
+extern struct opdef iset_72[];
+extern struct opdef iset_73[];
+extern struct opdef iset_74[];
+extern struct opdef iset_75[];
+extern struct opdef iset_76[];
+extern struct opdef iset_77[];
 
 #endif
 

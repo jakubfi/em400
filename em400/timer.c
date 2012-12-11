@@ -26,20 +26,20 @@
 timer_t timer;
 
 // -----------------------------------------------------------------------
-void _mjc400_timer_interrupt_sig(int signum, siginfo_t *si, void *ctx)
+void _timer_interrupt_sig(int signum, siginfo_t *si, void *ctx)
 {
 	INT_SET(INT_TIMER);
 }
 
 // -----------------------------------------------------------------------
-int mjc400_timer_start()
+int timer_start()
 {
 	struct sigaction sa;
 	struct sigevent se;
 	struct itimerspec its;
 
 	sa.sa_flags = SA_SIGINFO | SA_RESTART;
-	sa.sa_sigaction = _mjc400_timer_interrupt_sig;
+	sa.sa_sigaction = _timer_interrupt_sig;
 
 	if (sigemptyset(&sa.sa_mask) != 0) {
 		return E_TIMER_SIGNAL;
@@ -69,7 +69,7 @@ int mjc400_timer_start()
 }
 
 // -----------------------------------------------------------------------
-void mjc400_timer_delete()
+void timer_remove()
 {
 	timer_delete(timer);
 }

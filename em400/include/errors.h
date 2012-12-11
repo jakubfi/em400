@@ -36,7 +36,7 @@ enum em400_error {
 
 struct _em400_errordesc;
 
-char * e400_gerror(int e);
+char * get_error(int e);
 
 #endif
 

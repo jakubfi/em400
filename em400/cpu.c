@@ -29,25 +29,22 @@
 #endif
 
 // -----------------------------------------------------------------------
-void mjc400_reset()
+void cpu_reset()
 {
 	for (int i=0 ; i<R_MAX ; i++) {
 		Rw(i, 0);
-#ifdef WITH_DEBUGGER
-		reg_act[i] = C_DATA;
-#endif
 	}
 	RZ = 0;
 }
 
 // -----------------------------------------------------------------------
-int16_t mjc400_get_eff_arg()
+int16_t cpu_get_eff_arg()
 {
 	uint32_t N;
 
 	// argument is in next word
 	if (IR_C == 0) {
-		N = MEM(R(R_IC));
+		N = MEM_nt(R(R_IC));
 		Rinc(R_IC);
 	// argument is in field C
 	} else {
@@ -62,7 +59,7 @@ int16_t mjc400_get_eff_arg()
 	
 	// if D is set, N is an address in current memory block
 	if (IR_D == 1) {
-		N = MEM((uint16_t) N);
+		N = MEM_nt((uint16_t) N);
 	}
 
 	// store 17th bit for byte addressing
@@ -72,19 +69,19 @@ int16_t mjc400_get_eff_arg()
 }
 
 // -----------------------------------------------------------------------
-void mjc400_step()
+void cpu_step()
 {
 	// do not branch by default
 	Rw(R_P, 0);
 
 	// fetch instruction into IR
 	// (additional argument is fetched by the instruction, if necessary)
-	Rw(R_IR, MEM(R(R_IC)));
+	Rw(R_IR, MEM_nt(R(R_IC)));
 	Rinc(R_IC);
 
 	// execute instruction
 	int op_res;
-	op_res = mjc400_iset[IR_OP].op_fun();
+	op_res = iset[IR_OP].op_fun();
 
 	switch (op_res) {
 		// normal instruction
