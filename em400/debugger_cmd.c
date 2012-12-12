@@ -125,7 +125,7 @@ void dbg_c_reset()
 	mem_actr_max = -1;
 	mem_actw_max = -1;
 	for (int i=0 ; i<R_MAX ; i++) {
-		reg_act[i] = 0;
+		reg_act[i] = C_DATA;
 	}
 }
 
@@ -298,15 +298,7 @@ void dbg_c_regs(int wid)
 		int2chars(regs[i], c);
 
 		awprint(wid, C_LABEL, "R%i: ", i);
-		if (reg_act[i] == 3) {
-			awprint(wid, C_RW, "0x%04x %6o %6i %s %s %s\n", regs[i], regs[i], (int16_t)regs[i], b, c, r);
-		} else if (reg_act[i] == 2) {
-			awprint(wid, C_WRITE, "0x%04x %6o %6i %s %s %s\n", regs[i], regs[i], (int16_t)regs[i], b, c, r);
-		} else if (reg_act[i] == 1) {
-			awprint(wid, C_READ, "0x%04x %6o %6i %s %s %s\n", regs[i], regs[i], (int16_t)regs[i], b, c, r);
-		} else {
-			awprint(wid, C_DATA, "0x%04x %6o %6i %s %s %s\n", regs[i], regs[i], (int16_t)regs[i], b, c, r);
-		}
+		awprint(wid, reg_act[i], "0x%04x %6o %6i %s %s %s\n", regs[i], regs[i], (int16_t)regs[i], b, c, r);
 		free(r);
 		free(b);
 	}

@@ -67,6 +67,7 @@ void _dbg_sigint_handler(int signum, siginfo_t *si, void *ctx)
 // -----------------------------------------------------------------------
 int dbg_init()
 {
+	// set UI mode
 	if (aw_init(ui_mode)) {
 		return -1;
 	}
@@ -85,6 +86,11 @@ int dbg_init()
 
 	if (sigaction(SIGINT, &sa, NULL) != 0) {
 		return -1;
+	}
+
+	// register action is none when debugger starts
+	for (int i=0 ; i<R_MAX ; i++) {
+		reg_act[i] = C_DATA;
 	}
 
 	return 0;

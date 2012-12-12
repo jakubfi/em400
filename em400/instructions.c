@@ -381,7 +381,7 @@ int op_lb()
 	// get the real address
 	N >>= 1;
 
-	Rw(IR_A, (R(IR_A) & 0b1111111100000000) | ((MEMNB(N) >> shift) & 0b0000000011111111));
+	Rw(IR_A, (nR(IR_A) & 0b1111111100000000) | ((MEMNB(N) >> shift) & 0b0000000011111111));
 	return OP_OK;
 }
 
@@ -391,7 +391,7 @@ int op_rb()
 	int shift = 8 * ~(N&1);
 	N >>= 1;
 
-	int16_t oval = MEMNB(N) & (0b1111111100000000 >> shift);
+	int16_t oval = nMEMNB(N) & (0b1111111100000000 >> shift);
 	int16_t val = (R(IR_A) & 0b0000000011111111) << shift;
 	MEMNBw(N, oval | val);
 
@@ -588,7 +588,7 @@ int op_72_ric()
 
 int op_72_zlb()
 {
-	Rw(IR_A, R(IR_A) & 0b0000000011111111);
+	Rw(IR_A, nR(IR_A) & 0b0000000011111111);
 	return OP_OK;
 }
 
@@ -672,7 +672,7 @@ int op_72_rky()
 
 int op_72_zrb()
 {
-	Rw(IR_A, R(IR_A) & 0b1111111100000000);
+	Rw(IR_A, nR(IR_A) & 0b1111111100000000);
 	return OP_OK;
 }
 

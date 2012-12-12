@@ -3,6 +3,7 @@ Bugs:
 
 CPU:
 
+* AWP - sign storage
 * floating point instructions
 * interrupts
 * hlt

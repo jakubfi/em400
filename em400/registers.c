@@ -33,7 +33,11 @@ uint16_t reg_read(unsigned short int r, int trace)
 {
 #ifdef WITH_DEBUGGER
 	if (trace != 0) {
-		reg_act[r] |= 1;
+		if (reg_act[r] == C_WRITE) {
+			reg_act[r] = C_RW;
+		} else {
+			reg_act[r] = C_READ;
+		}
 	}
 #endif
 	return regs[r];
@@ -44,7 +48,11 @@ void reg_write(unsigned short int r, uint16_t x, int trace)
 {
 #ifdef WITH_DEBUGGER
 	if (trace != 0) {
-		reg_act[r] |= 2;
+		if (reg_act[r] == C_READ) {
+			reg_act[r] = C_RW;
+		} else {
+			reg_act[r] = C_WRITE;
+		}
 	}
 #endif
 	if (r) {
