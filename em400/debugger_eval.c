@@ -240,7 +240,7 @@ int16_t n_eval_var(struct node_t * n)
 // -----------------------------------------------------------------------
 int16_t n_eval_reg(struct node_t * n)
 {
-	return R(n->val);
+	return regs[n->val];
 }
 
 // -----------------------------------------------------------------------
@@ -275,7 +275,7 @@ int16_t n_eval_ass(struct node_t * n)
 			var_set(n->n1->var, v);
 			return v;
 		case N_REG:
-			Rw(n->n1->val, v);
+			regs[n->n1->val] = v;
 			return v;
 		case N_MEM:
 			nb = n_eval(n->n1->n1);

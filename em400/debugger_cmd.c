@@ -49,6 +49,7 @@ struct cmd_t dbg_commands[] = {
 	{ "memcfg",	F_MEMCFG,	"Show memory configuration", "  memcfg" },
 	{ "brk",	F_BRK,		"Manipulate breakpoints", "  brk add <expression>\n  brk list\n  brk del <brk_number>" },
 	{ "run",	F_RUN,		"Run emulation", "  run" },
+	{ "stack",	F_STACK,	"Show stack", "  stack" },
 	{ NULL,		0,			NULL }
 };
 
@@ -121,6 +122,11 @@ void dbg_c_run()
 void dbg_c_reset()
 {
 	cpu_reset();
+	mem_actr_max = -1;
+	mem_actw_max = -1;
+	for (int i=0 ; i<R_MAX ; i++) {
+		reg_act[i] = 0;
+	}
 }
 
 // -----------------------------------------------------------------------
@@ -140,7 +146,7 @@ void dbg_c_dt(int wid, int dasm_mode, int start, int count)
 		if (addr) {
 			len = dt_trans(addr, &buf, dasm_mode);
 
-			if (start == R(R_IC)) {
+			if (start == regs[R_IC]) {
 				awprint(wid, C_ILABEL, "0x%04x:", start);
 				awprint(wid, C_IDATA, " %-19s\n", buf);
 			} else {
@@ -205,10 +211,13 @@ void dbg_c_mem(int wid, int block, int start, int end, int maxcols, int maxlines
 				}
 			} else if ((addr >= mem_actr_min) && (addr <= mem_actr_max)) {
 				attr = C_READ;
+			} else if (addr == regs[R_IC]) {
+				attr = C_DATAU;
 			} else {
 				attr = C_DATA;
 			}
-			awprint(wid, attr, "%4x ", *mptr);
+			awprint(wid, attr, "%4x", *mptr);
+			awprint(wid, C_DATA, " ");
 
 			// store data (chars)
 			int2chars(*mptr, chars+w*2);
@@ -224,15 +233,15 @@ void dbg_c_mem(int wid, int block, int start, int end, int maxcols, int maxlines
 // -----------------------------------------------------------------------
 void dbg_c_sregs(int wid)
 {
-	char *ir = int2bin(R(R_IR)>>10, 6);
-	int d = (R(R_IR)>>9) & 1;
-	char *a = int2bin(R(R_IR)>>6, 3);
-	char *b = int2bin(R(R_IR)>>3, 3);
-	char *c = int2bin(R(R_IR), 3);
+	char *ir = int2bin(regs[R_IR]>>10, 6);
+	int d = (regs[R_IR]>>9) & 1;
+	char *a = int2bin(regs[R_IR]>>6, 3);
+	char *b = int2bin(regs[R_IR]>>3, 3);
+	char *c = int2bin(regs[R_IR], 3);
 
-	char *rm = int2bin(R(R_SR)>>6, 10);
-	int s = (R(R_SR)>>6) & 1;
-	char *nb = int2bin(R(R_SR), 4);
+	char *rm = int2bin(regs[R_SR]>>6, 10);
+	int s = (regs[R_SR]>>6) & 1;
+	char *nb = int2bin(regs[R_SR], 4);
 
 	char *i1 = int2bin(RZ>>27, 5);
 	char *i2 = int2bin(RZ>>20, 7);
@@ -242,21 +251,21 @@ void dbg_c_sregs(int wid)
 	char *i6 = int2bin(RZ>>4, 6);
 	char *i7 = int2bin(RZ, 4);
 
-	char *sf = int2bin(R(0)>>8, 8);
-	char *uf = int2bin(R(0), 8);
+	char *sf = int2bin(regs[0]>>8, 8);
+	char *uf = int2bin(regs[0], 8);
 
 	awprint(wid, C_LABEL, "            OPCODE D A   B   C\n");
 	awprint(wid, C_LABEL, "IR: ");
-	awprint(wid, C_DATA, "0x%04x  %s %i %s %s %s\n", R(R_IR), ir, d, a, b, c);
+	awprint(wid, C_DATA, "0x%04x  %s %i %s %s %s\n", regs[R_IR], ir, d, a, b, c);
 	awprint(wid, C_LABEL, "            RM         Q s NB\n");
 	awprint(wid, C_LABEL, "SR: ");
-	awprint(wid, C_DATA, "0x%04x  %s %i %i %s\n", R(R_SR), rm, SR_Q, s, nb);
+	awprint(wid, C_DATA, "0x%04x  %s %i %i %s\n", regs[R_SR], rm, SR_Q, s, nb);
 	awprint(wid, C_LABEL, "                ZPMCZ TIFFFFx 01 23 456789 abcdef OCSS\n");
 	awprint(wid, C_LABEL, "RZ: ");
 	awprint(wid, C_DATA, "0x%08x  %s %s %s %s %s %s %s\n", RZ, i1, i2, i3, i4, i5, i6, i7);
 	awprint(wid, C_LABEL, "            ZMVCLEGY Xuser\n");
 	awprint(wid, C_LABEL, "R0: ");
-	awprint(wid, C_DATA, "0x%04x  %s %s\n", R(0), sf, uf);
+	awprint(wid, C_DATA, "0x%04x  %s %s\n", regs[0], sf, uf);
 
 	free(uf);
 	free(sf);
@@ -283,15 +292,45 @@ void dbg_c_regs(int wid)
 {
 	awprint(wid, C_LABEL, "    hex    oct    dec    bin              ch R40\n");
 	for (int i=1 ; i<=7 ; i++) {
-		char *b = int2bin(R(i), 16);
-		char *r = int2r40(R(i));
+		char *b = int2bin(regs[i], 16);
+		char *r = int2r40(regs[i]);
 		char c[3];
-		int2chars(R(i), c);
+		int2chars(regs[i], c);
 
 		awprint(wid, C_LABEL, "R%i: ", i);
-		awprint(wid, reg_act[i], "0x%04x %6o %6i %s %s %s\n", R(i), R(i), (int16_t)R(i), b, c, r);
+		if (reg_act[i] == 3) {
+			awprint(wid, C_RW, "0x%04x %6o %6i %s %s %s\n", regs[i], regs[i], (int16_t)regs[i], b, c, r);
+		} else if (reg_act[i] == 2) {
+			awprint(wid, C_WRITE, "0x%04x %6o %6i %s %s %s\n", regs[i], regs[i], (int16_t)regs[i], b, c, r);
+		} else if (reg_act[i] == 1) {
+			awprint(wid, C_READ, "0x%04x %6o %6i %s %s %s\n", regs[i], regs[i], (int16_t)regs[i], b, c, r);
+		} else {
+			awprint(wid, C_DATA, "0x%04x %6o %6i %s %s %s\n", regs[i], regs[i], (int16_t)regs[i], b, c, r);
+		}
 		free(r);
 		free(b);
+	}
+}
+
+// -----------------------------------------------------------------------
+void dbg_c_stack(int wid, int size)
+{
+	int sp = *mem_ptr(0, 97);
+	int addr = sp;
+	while (size > 0) {
+		if (addr > 0) {
+			if (addr == sp) {
+				awprint(wid, C_ILABEL, "0x%04x: ", addr);
+				awprint(wid, C_IDATA, "%04x\n", *mem_ptr(0, addr));
+			} else {
+				awprint(wid, C_LABEL, "0x%04x: ", addr);
+				awprint(wid, C_DATA, "%04x\n", *mem_ptr(0, addr));
+			}
+		} else {
+			awprint(wid, C_DATA, "            \n");
+		}
+		size--;
+		addr--;
 	}
 }
 

@@ -26,6 +26,7 @@ enum _ui_attributes {
 	C_PROMPT = 1,
 	C_LABEL,
 	C_DATA,
+	C_DATAU,
 	C_ILABEL,
 	C_IDATA,
 	C_ERROR,
@@ -36,6 +37,7 @@ enum _ui_attributes {
 
 enum _ui_windows {
 	W_MEM = 0,
+	W_STACK,
 	W_DASM,
 	W_SREGS,
 	W_REGS,
@@ -50,6 +52,7 @@ void dbg_wu_regs(unsigned int wid);
 void dbg_wu_sregs(unsigned int wid);
 void dbg_wu_cmd(unsigned int wid);
 void dbg_wu_status(unsigned int wid);
+void dbg_wu_stack(unsigned int wid);
 void dbg_wu_none(unsigned int wid);
 
 #endif

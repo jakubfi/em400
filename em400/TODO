@@ -9,7 +9,6 @@ CPU:
 
 Debuger:
 
-* memory/register traces
 * macro for accessing interrupt states
 * save memory image
 * load/save snapshot (?)

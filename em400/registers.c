@@ -29,15 +29,24 @@ uint16_t regs[R_MAX];
 uint32_t RZ;
 
 // -----------------------------------------------------------------------
-uint16_t reg_read(unsigned short int r)
+uint16_t reg_read(unsigned short int r, int trace)
 {
+#ifdef WITH_DEBUGGER
+	if (trace != 0) {
+		reg_act[r] |= 1;
+	}
+#endif
 	return regs[r];
 }
 
 // -----------------------------------------------------------------------
-void reg_write(unsigned short int r, uint16_t x)
+void reg_write(unsigned short int r, uint16_t x, int trace)
 {
-	reg_act[r] = C_WRITE;
+#ifdef WITH_DEBUGGER
+	if (trace != 0) {
+		reg_act[r] |= 2;
+	}
+#endif
 	if (r) {
 		regs[r] = x;
 	} else {

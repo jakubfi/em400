@@ -32,7 +32,7 @@
 void cpu_reset()
 {
 	for (int i=0 ; i<R_MAX ; i++) {
-		Rw(i, 0);
+		nRw(i, 0);
 	}
 	RZ = 0;
 }
@@ -44,8 +44,8 @@ int16_t cpu_get_eff_arg()
 
 	// argument is in next word
 	if (IR_C == 0) {
-		N = nMEM(R(R_IC));
-		Rinc(R_IC);
+		N = nMEM(nR(R_IC));
+		nRinc(R_IC);
 	// argument is in field C
 	} else {
 		N = R(IR_C);
@@ -55,15 +55,15 @@ int16_t cpu_get_eff_arg()
 	N += R(IR_B);
 
 	// PRE-modification
-	N += R(R_MOD);
+	N += nR(R_MOD);
 	
 	// if D is set, N is an address in current memory block
 	if (IR_D == 1) {
-		N = nMEM((uint16_t) N);
+		N = MEM((uint16_t) N);
 	}
 
 	// store 17th bit for byte addressing
-	Rw(R_ZC17, (N & 0b10000000000000000) >> 16);
+	nRw(R_ZC17, (N & 0b10000000000000000) >> 16);
 
 	return (int16_t) N;
 }
@@ -72,12 +72,12 @@ int16_t cpu_get_eff_arg()
 void cpu_step()
 {
 	// do not branch by default
-	Rw(R_P, 0);
+	nRw(R_P, 0);
 
 	// fetch instruction into IR
 	// (additional argument is fetched by the instruction, if necessary)
-	Rw(R_IR, nMEM(R(R_IC)));
-	Rinc(R_IC);
+	nRw(R_IR, nMEM(nR(R_IC)));
+	nRinc(R_IC);
 
 	// execute instruction
 	int op_res;
@@ -86,25 +86,25 @@ void cpu_step()
 	switch (op_res) {
 		// normal instruction
 		case OP_OK:
-			Rw(R_MOD, 0);
-			Rw(R_MODc, 0);
+			nRw(R_MOD, 0);
+			nRw(R_MODc, 0);
 			break;
 		// pre-modification
 		case OP_MD:
 			break;
 		// illegal instruction
 		case OP_ILLEGAL:
-			Rw(R_MOD, 0);
-			Rw(R_MODc, 0);
-			if (R(R_P) != 0) {
-				Rw(R_P, 0);
+			nRw(R_MOD, 0);
+			nRw(R_MODc, 0);
+			if (nR(R_P) != 0) {
+				nRw(R_P, 0);
 			} else {
 				INT_SET(INT_ILLEGAL_OPCODE);
 			}
 			break;
 	}
 
-	Radd(R_IC, R(R_P));
+	nRadd(R_IC, nR(R_P));
 }
 
 // vim: tabstop=4

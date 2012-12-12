@@ -48,14 +48,20 @@ extern uint16_t regs[];
 
 extern uint32_t RZ;
 
-uint16_t reg_read(unsigned short int r);
-void reg_write(unsigned short int r, uint16_t x);
+uint16_t reg_read(unsigned short int r, int trace);
+void reg_write(unsigned short int r, uint16_t x, int trace);
 
-#define R(x)		reg_read(x)
-#define Rw(r, x)	reg_write(r, x)
-#define Rinc(r)		reg_write(r, R(r)+1)
-#define Rdec(r)		reg_write(r, R(r)-1)
-#define Radd(r, x)	reg_write(r, R(r)+x)
+#define R(x)		reg_read(x, 1)
+#define nR(x)		reg_read(x, 0)
+#define Rw(r, x)	reg_write(r, x, 1)
+#define nRw(r, x)	reg_write(r, x, 0)
+
+#define Rinc(r)		reg_write(r, R(r)+1, 1)
+#define nRinc(r)	reg_write(r, nR(r)+1, 0)
+#define Rdec(r)		reg_write(r, R(r)-1, 1)
+#define nRdec(r)	reg_write(r, nR(r)-1, 0)
+#define Radd(r, x)	reg_write(r, R(r)+x, 1)
+#define nRadd(r, x)	reg_write(r, nR(r)+x, 0)
 
 // -----------------------------------------------------------------------
 // macros to access bit fields

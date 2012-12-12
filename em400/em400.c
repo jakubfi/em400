@@ -80,7 +80,7 @@ int main(int argc, char** argv)
 		mem_actr_max = -1;
 		mem_actw_max = -1;
 		for (int r=0 ; r<R_MAX ; r++) {
-			reg_act[r] = C_DATA;
+			reg_act[r] = 0;
 		}
 #endif
 		cpu_step();

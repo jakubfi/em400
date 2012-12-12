@@ -43,7 +43,7 @@ struct node_t *enode;
 %token <text> TEXT FNAME CMDNAME
 %token ':' '&' '|' '(' ')'
 %token HEX OCT BIN UINT
-%token <value> F_QUIT F_CLMEM F_MEM F_REGS F_SREGS F_RESET F_STEP F_HELP F_DASM F_TRANS F_LOAD F_MEMCFG F_BRK F_RUN
+%token <value> F_QUIT F_CLMEM F_MEM F_REGS F_SREGS F_RESET F_STEP F_HELP F_DASM F_TRANS F_LOAD F_MEMCFG F_BRK F_RUN F_STACK
 %token B_ADD B_LIST B_DEL B_TEST B_DISABLE B_ENABLE
 %type <n> expr lval bitfield
 
@@ -212,6 +212,9 @@ command:
 	| F_RUN '\n' {
 		dbg_c_run();
 	}
+	| F_STACK '\n' {
+		dbg_c_stack(W_CMD, 12);
+	}
 	;
 
 f_help:
@@ -226,10 +229,10 @@ f_help:
 
 f_dasm:
 	F_DASM '\n' {
-		dbg_c_dt(W_CMD, DMODE_DASM, R(R_IC), 1);
+		dbg_c_dt(W_CMD, DMODE_DASM, regs[R_IC], 1);
 	}
 	| F_DASM VALUE '\n' {
-		dbg_c_dt(W_CMD, DMODE_DASM, R(R_IC), $2);
+		dbg_c_dt(W_CMD, DMODE_DASM, regs[R_IC], $2);
 	}
 	| F_DASM expr VALUE '\n' {
 		dbg_c_dt(W_CMD, DMODE_DASM, n_eval($2), $3);
@@ -239,10 +242,10 @@ f_dasm:
 
 f_trans:
 	F_TRANS '\n' {
-		dbg_c_dt(W_CMD, DMODE_TRANS, R(R_IC), 1);
+		dbg_c_dt(W_CMD, DMODE_TRANS, regs[R_IC], 1);
 	}
 	| F_TRANS VALUE '\n' {
-		dbg_c_dt(W_CMD, DMODE_TRANS, R(R_IC), $2);
+		dbg_c_dt(W_CMD, DMODE_TRANS, regs[R_IC], $2);
 	}
 	| F_TRANS expr VALUE '\n' {
 		dbg_c_dt(W_CMD, DMODE_TRANS, n_eval($2), $3);

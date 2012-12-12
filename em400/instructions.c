@@ -415,6 +415,7 @@ int op_awt()
 {
 	int16_t tmp = R(IR_A);
 	int32_t res = IR_T + tmp;
+	Rw(IR_A, res);
 	R0_Ms16((uint32_t) res);
 	R0_Zs16((uint32_t) res);
 	R0_Cs16((uint32_t) res);
