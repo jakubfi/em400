@@ -110,24 +110,18 @@ void mem_remove_maps()
 }
 
 // -----------------------------------------------------------------------
-uint16_t * mem_ptr(short unsigned int nb, uint16_t addr, int emulation)
+// low-level memory access (bypassing emulation)
+uint16_t * mem_ptr(short unsigned int nb, uint16_t addr)
 {
 	unsigned short int ab = (addr & 0b1111000000000000) >> 12;
 	unsigned int addr12 = addr & 0b0000111111111111;
 
 	uint16_t *seg_addr = mem_map[nb][ab];
 
-	if (!seg_addr) {
-		if (emulation) {
-			if (SR_Q) {
-				INT_SET(INT_NO_MEM);
-			} else {
-				// TODO: ALARM
-			}
-		}
-		return NULL;
-	} else {
+	if (seg_addr) {
 		return seg_addr + addr12;
+	} else {
+		return NULL;
 	}
 }
 
@@ -135,9 +129,10 @@ uint16_t * mem_ptr(short unsigned int nb, uint16_t addr, int emulation)
 // read from any block
 uint16_t mem_read(short unsigned int nb, uint16_t addr, int trace)
 {
-	uint16_t *ptr = mem_ptr(nb, addr, 1);
+	uint16_t *ptr = mem_ptr(nb, addr);
 	if (ptr) {
 #ifdef WITH_DEBUGGER
+		// leave trace for debugger to display
 		if (trace) {
 			if (mem_actr_max == -1) {
 				mem_act_block = nb;
@@ -148,6 +143,11 @@ uint16_t mem_read(short unsigned int nb, uint16_t addr, int trace)
 #endif
 		return *ptr;
 	} else {
+		if (SR_Q) {
+			INT_SET(INT_NO_MEM);
+		} else {
+			// TODO: ALARM
+		}
 		return 0xdead;
 	}
 }
@@ -156,9 +156,10 @@ uint16_t mem_read(short unsigned int nb, uint16_t addr, int trace)
 // write to any block
 void mem_write(short unsigned int nb, uint16_t addr, uint16_t val, int trace)
 {
-	uint16_t *ptr = mem_ptr(nb, addr, 1);
+	uint16_t *ptr = mem_ptr(nb, addr);
 	if (ptr) {
 #ifdef WITH_DEBUGGER
+		// leave trace for debugger to display
 		if (trace) {
 			if (mem_actw_max == -1) {
 				mem_act_block = nb;
@@ -168,6 +169,12 @@ void mem_write(short unsigned int nb, uint16_t addr, uint16_t val, int trace)
 		}
 #endif
 		*ptr = val;
+	} else {
+		if (SR_Q) {
+			INT_SET(INT_NO_MEM);
+		} else {
+			// TODO: ALARM
+		}
 	}
 }
 
@@ -199,7 +206,7 @@ int mem_load_image(const char* fname, unsigned short block)
 	int chunk = 0;
 	while (res > 0) {
 		// get pointer to segment in a block
-		ptr = mem_ptr(block, chunk*MEM_SEGMENT_SIZE, 0);
+		ptr = mem_ptr(block, chunk*MEM_SEGMENT_SIZE);
 		if (!ptr) {
 			return E_MEM_BLOCK_TOO_SMALL;
 		}

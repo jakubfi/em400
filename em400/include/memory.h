@@ -35,20 +35,28 @@ void mem_shutdown();
 int mem_add_map(unsigned short int nb, unsigned short int ab, unsigned short int mp, unsigned short int segment);
 void mem_remove_maps();
 
-uint16_t * mem_ptr(short unsigned int nb, uint16_t addr, int emulation);
+uint16_t * mem_ptr(short unsigned int nb, uint16_t addr);
 uint16_t mem_read(short unsigned int nb, uint16_t addr, int trace);
 void mem_write(short unsigned int nb, uint16_t addr, uint16_t val, int trace);
 
 void mem_clear();
 int mem_load_image(const char* fname, unsigned short block);
 
+// memory access macros
 #define MEM(a)			mem_read(SR_Q*SR_NB, a, 1)
+#define nMEM(a)			mem_read(SR_Q*SR_NB, a, 0)
 #define MEMw(a, x)		mem_write(SR_Q*SR_NB, a, x, 1)
-#define MEM_nt(a)		mem_read(SR_Q*SR_NB, a, 0)
+#define nMEMw(a, x)		mem_write(SR_Q*SR_NB, a, x, 0)
+
 #define MEMNB(a)		mem_read(SR_NB, a, 1)
-#define MEMB(b, a)		mem_read(b, a, 1)
+#define nMEMNB(a)		mem_read(SR_NB, a, 0)
 #define MEMNBw(a, x)	mem_write(SR_NB, a, x, 1)
+#define nMEMNBw(a, x)	mem_write(SR_NB, a, x, 0)
+
+#define MEMB(b, a)		mem_read(b, a, 1)
+#define nMEMB(b, a)		mem_read(b, a, 0)
 #define MEMBw(b, a, x)	mem_write(b, a, x, 1)
+#define nMEMBw(b, a, x)	mem_write(b, a, x, 0)
 
 // -----------------------------------------------------------------------
 // dword conversions

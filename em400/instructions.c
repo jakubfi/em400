@@ -545,14 +545,14 @@ int op_71_blc()
 
 int op_71_exl()
 {
-	uint16_t SP = mem_read(0, 97, 0);
-	mem_write(0, SP, R(R_IC), 0);
-	mem_write(0, SP+1, R(0), 0);
-	mem_write(0, SP+2, R(R_SR), 0);
-	mem_write(0, SP+3, IR_b, 0);
-	Rw(R_IC, mem_read(0, 96, 0));
+	uint16_t SP = nMEMB(0, 97);
+	nMEMBw(0, SP, R(R_IC));
+	nMEMBw(0, SP+1, R(0));
+	nMEMBw(0, SP+2, R(R_SR));
+	nMEMBw(0, SP+3, IR_b);
+	Rw(R_IC, nMEMB(0, 96));
 	Rw(0, 0);
-	mem_write(0, 97, SP+4, 0);
+	nMEMBw(0, 97, SP+4);
 	SR_RM9cb;
 	SR_Qcb;
 	return OP_OK;
@@ -817,11 +817,11 @@ int op_73_gil()
 
 int op_73_lip()
 {
-	uint16_t SP = mem_read(0, 97, 0);
-	Rw(R_IC, mem_read(0, SP-4, 0));
-	Rw(0, mem_read(0, SP-3, 0));
-	Rw(R_SR, mem_read(0, SP-2, 0));
-	mem_write(0, 97, SP-4, 0);
+	uint16_t SP = nMEMB(0, 97);
+	Rw(R_IC, nMEMB(0, SP-4));
+	Rw(0, nMEMB(0, SP-3));
+	Rw(R_SR, nMEMB(0, SP-2));
+	nMEMBw(0, 97, SP-4);
 	return OP_OK;
 }
 

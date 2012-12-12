@@ -44,7 +44,7 @@ int16_t cpu_get_eff_arg()
 
 	// argument is in next word
 	if (IR_C == 0) {
-		N = MEM_nt(R(R_IC));
+		N = nMEM(R(R_IC));
 		Rinc(R_IC);
 	// argument is in field C
 	} else {
@@ -59,7 +59,7 @@ int16_t cpu_get_eff_arg()
 	
 	// if D is set, N is an address in current memory block
 	if (IR_D == 1) {
-		N = MEM_nt((uint16_t) N);
+		N = nMEM((uint16_t) N);
 	}
 
 	// store 17th bit for byte addressing
@@ -76,7 +76,7 @@ void cpu_step()
 
 	// fetch instruction into IR
 	// (additional argument is fetched by the instruction, if necessary)
-	Rw(R_IR, MEM_nt(R(R_IC)));
+	Rw(R_IR, nMEM(R(R_IC)));
 	Rinc(R_IC);
 
 	// execute instruction

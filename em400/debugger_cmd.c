@@ -136,7 +136,7 @@ void dbg_c_dt(int wid, int dasm_mode, int start, int count)
 	int len;
 
 	while (count > 0) {
-		uint16_t * addr = mem_ptr(SR_Q * SR_NB, start, 0);
+		uint16_t * addr = mem_ptr(SR_Q * SR_NB, start);
 		if (addr) {
 			len = dt_trans(addr, &buf, dasm_mode);
 
@@ -159,7 +159,7 @@ void dbg_c_dt(int wid, int dasm_mode, int start, int count)
 // -----------------------------------------------------------------------
 void dbg_c_mem(int wid, int block, int start, int end, int maxcols, int maxlines)
 {
-	uint16_t *mptr = mem_ptr(block, 0, 0);
+	uint16_t *mptr = mem_ptr(block, 0);
 
 	if (!mptr) {
 		awprint(wid, C_ERROR, "Cannot access block %i\n", block);
@@ -191,7 +191,7 @@ void dbg_c_mem(int wid, int block, int start, int end, int maxcols, int maxlines
 		awprint(wid, C_LABEL, "0x%04x: ", addr);
 		char *chars = malloc(words*2+1);
 		for (int w=0 ; w<words ; w++) {
-			mptr = mem_ptr(block, addr, 0);
+			mptr = mem_ptr(block, addr);
 			if (!mptr) {
 				return;
 			}
