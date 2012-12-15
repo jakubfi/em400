@@ -20,7 +20,7 @@
 
 #include <inttypes.h>
 
-#include "registers.h"
+extern uint32_t RZ;
 
 #define INT_2CPU_POWER		1 << (31 - 0)
 #define INT_PARITY			1 << (31 - 1)
