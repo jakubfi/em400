@@ -24,8 +24,9 @@
 #include "memory.h"
 #include "utils.h"
 #include "iset.h"
-#include "dasm.h"
-#include "dasm_iset.h"
+
+#include "debugger/dasm.h"
+#include "debugger/dasm_iset.h"
 
 // -----------------------------------------------------------------------
 int dt_trans(uint16_t* memptr, char **buf, int dasm_mode)

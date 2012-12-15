@@ -22,15 +22,16 @@
 #include "registers.h"
 #include "interrupts.h"
 #include "memory.h"
-#include "dasm.h"
 #include "errors.h"
 #include "utils.h"
-#include "awin.h"
-#include "debugger.h"
-#include "debugger_cmd.h"
-#include "debugger_ui.h"
-#include "debugger_parser.h"
-#include "debugger_eval.h"
+
+#include "debugger/awin.h"
+#include "debugger/dasm.h"
+#include "debugger/debugger.h"
+#include "debugger/cmd.h"
+#include "debugger/ui.h"
+#include "parser.h"
+#include "debugger/eval.h"
 
 extern int em400_quit;
 

@@ -21,11 +21,12 @@
 #include "registers.h"
 #include "memory.h"
 #include "utils.h"
-#include "dasm.h"
-#include "debugger.h"
-#include "debugger_ui.h"
-#include "debugger_cmd.h"
-#include "debugger_eval.h"
+
+#include "debugger/dasm.h"
+#include "debugger/debugger.h"
+#include "debugger/ui.h"
+#include "debugger/cmd.h"
+#include "debugger/eval.h"
 
 void yyerror(char *);
 int yylex(void);

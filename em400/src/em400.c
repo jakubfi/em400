@@ -25,8 +25,8 @@
 #include "errors.h"
 
 #ifdef WITH_DEBUGGER
-#include "debugger.h"
-#include "debugger_ui.h"
+#include "debugger/debugger.h"
+#include "debugger/ui.h"
 #endif
 
 int em400_quit = 0;

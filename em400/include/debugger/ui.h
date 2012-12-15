@@ -20,7 +20,7 @@
 
 #include <signal.h>
 
-#include "awin.h"
+#include "debugger/awin.h"
 
 enum _ui_attributes {
 	C_PROMPT = 1,

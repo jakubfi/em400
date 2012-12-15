@@ -20,7 +20,7 @@
 
 #include <inttypes.h>
 
-#include "dasm_iset.h"
+#include "debugger/dasm_iset.h"
 
 #define DMODE_DASM	1
 #define DMODE_TRANS	2

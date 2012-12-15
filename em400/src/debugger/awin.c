@@ -25,7 +25,7 @@
 #include <readline/readline.h>
 #include <readline/history.h>
 
-#include "awin.h"
+#include "debugger/awin.h"
 
 volatile int aw_layout_changed;
 

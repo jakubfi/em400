@@ -21,14 +21,15 @@
 #include "cpu.h"
 #include "registers.h"
 #include "memory.h"
-#include "dasm.h"
 #include "errors.h"
 #include "utils.h"
-#include "awin.h"
-#include "debugger.h"
-#include "debugger_ui.h"
-#include "debugger_parser.h"
-#include "debugger_eval.h"
+
+#include "debugger/dasm.h"
+#include "debugger/awin.h"
+#include "debugger/debugger.h"
+#include "debugger/ui.h"
+#include "parser.h"
+#include "debugger/eval.h"
 
 int ui_mode = O_NCURSES;
 

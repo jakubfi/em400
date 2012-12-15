@@ -18,13 +18,14 @@
 #include <string.h>
 #include <stdlib.h>
 
-#include "dasm.h"
 #include "utils.h"
 #include "errors.h"
-#include "awin.h"
-#include "debugger.h"
-#include "debugger_cmd.h"
-#include "debugger_ui.h"
+
+#include "debugger/dasm.h"
+#include "debugger/awin.h"
+#include "debugger/debugger.h"
+#include "debugger/cmd.h"
+#include "debugger/ui.h"
 
 
 // -----------------------------------------------------------------------

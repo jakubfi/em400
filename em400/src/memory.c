@@ -27,7 +27,7 @@
 #include "io.h"
 
 #ifdef WITH_DEBUGGER
-#include "debugger.h"
+#include "debugger/debugger.h"
 #endif
 
 // memory configuration provided by the user: number of segments in a module

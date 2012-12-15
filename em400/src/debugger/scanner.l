@@ -19,10 +19,11 @@
 #include <stdlib.h>
 
 #include "registers.h"
-#include "debugger.h"
-#include "debugger_ui.h"
-#include "debugger_cmd.h"
-#include "debugger_parser.h"
+
+#include "debugger/debugger.h"
+#include "debugger/ui.h"
+#include "debugger/cmd.h"
+#include "parser.h"
 
 void yyerror(char *);
 %}

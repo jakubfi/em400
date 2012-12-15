@@ -20,8 +20,8 @@
 #include "registers.h"
 
 #ifdef WITH_DEBUGGER
-#include "debugger.h"
-#include "debugger_ui.h"
+#include "debugger/debugger.h"
+#include "debugger/ui.h"
 #endif
 
 uint16_t regs[R_MAX];

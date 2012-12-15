@@ -18,8 +18,8 @@
 #include <stdlib.h>
 #include <stdbool.h>
 
-#include "dasm.h"
-#include "dasm_formats.h"
+#include "debugger/dasm.h"
+#include "debugger/dasm_formats.h"
 
 struct dasm_opdef dasm_iset[] = {
 	{ 000, NULL, false, NULL, NULL, DT_ILL, DT_ILL },

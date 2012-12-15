@@ -20,9 +20,10 @@
 
 #include "registers.h"
 #include "memory.h"
-#include "debugger.h"
-#include "debugger_eval.h"
-#include "debugger_parser.h"
+
+#include "debugger/debugger.h"
+#include "debugger/eval.h"
+#include "parser.h"
 
 struct node_t *node_stack = NULL;
 struct node_t *node_last = NULL;
