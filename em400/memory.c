@@ -144,7 +144,7 @@ uint16_t mem_read(short unsigned int nb, uint16_t addr, int trace)
 		return *ptr;
 	} else {
 		if (SR_Q) {
-			INT_SET(INT_NO_MEM);
+			int_set(INT_NO_MEM);
 		} else {
 			// TODO: ALARM
 		}
@@ -171,7 +171,7 @@ void mem_write(short unsigned int nb, uint16_t addr, uint16_t val, int trace)
 		*ptr = val;
 	} else {
 		if (SR_Q) {
-			INT_SET(INT_NO_MEM);
+			int_set(INT_NO_MEM);
 		} else {
 			// TODO: ALARM
 		}

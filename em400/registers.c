@@ -26,8 +26,6 @@
 
 uint16_t regs[R_MAX];
 
-uint32_t RZ;
-
 // -----------------------------------------------------------------------
 uint16_t reg_read(unsigned short int r, int trace)
 {

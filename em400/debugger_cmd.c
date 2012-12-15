@@ -20,6 +20,7 @@
 
 #include "cpu.h"
 #include "registers.h"
+#include "interrupts.h"
 #include "memory.h"
 #include "dasm.h"
 #include "errors.h"

@@ -21,6 +21,7 @@
 #include "memory.h"
 #include "iset.h"
 #include "instructions.h"
+#include "interrupts.h"
 #include "timer.h"
 
 #ifdef WITH_DEBUGGER
@@ -34,7 +35,7 @@ void cpu_reset()
 	for (int i=0 ; i<R_MAX ; i++) {
 		nRw(i, 0);
 	}
-	RZ = 0;
+	int_clear(INT_ALL);
 }
 
 // -----------------------------------------------------------------------
@@ -99,7 +100,7 @@ void cpu_step()
 			if (nR(R_P) != 0) {
 				nRw(R_P, 0);
 			} else {
-				INT_SET(INT_ILLEGAL_OPCODE);
+				int_set(INT_ILLEGAL_OPCODE);
 			}
 			break;
 	}

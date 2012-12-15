@@ -28,7 +28,7 @@ timer_t timer;
 // -----------------------------------------------------------------------
 void _timer_interrupt_sig(int signum, siginfo_t *si, void *ctx)
 {
-	INT_SET(INT_TIMER);
+	int_set(INT_TIMER);
 }
 
 // -----------------------------------------------------------------------

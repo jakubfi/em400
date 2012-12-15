@@ -16,6 +16,7 @@ iset.o\
 instructions.o\
 memory.o\
 registers.o\
+interrupts.o\
 timer.o\
 utils.o\
 io.o\

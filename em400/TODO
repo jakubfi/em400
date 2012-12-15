@@ -10,6 +10,7 @@ CPU:
 
 Debuger:
 
+* IPS counter
 * macro for accessing interrupt states
 * save memory image
 * load/save snapshot (?)
@@ -17,7 +18,7 @@ Debuger:
 
 Other:
 
-* fix source directory structure, naming
+* fix source directory structure (src)
 * autotools
 * autotests
 * separate I/O thread

@@ -55,8 +55,10 @@ extern uint32_t RZ;
 #define INT_SOFT_U			1 << (31 - 30)
 #define INT_SOFT_L			1 << (31 - 31)
 
-#define INT_SET(x)		RZ |= x
-#define INT_CLEAR(x)	RZ &= ~(x)
+#define INT_ALL				0xffffffff
+
+void int_set(uint32_t x);
+void int_clear(uint32_t x);
 
 #endif
 

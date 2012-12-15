@@ -765,42 +765,41 @@ int op_73()
 int op_73_hlt()
 {
 	// TODO: busy wait
-	//while (RZ == 0);
 	return OP_OK;
 }
 
 int op_73_mcl()
 {
-	RZ = 0;
+	int_clear(INT_ALL);
 	Rw(R_SR, 0);
 	Rw(0, 0);
-	// zeruj kanały
-	// zeruj urządzenia
+	// TODO: zeruj kanały
+	// TODO: zeruj urządzenia
 	mem_remove_maps();
 	return OP_OK;
 }
 
 int op_73_cit()
 {
-	INT_CLEAR(INT_SOFT_U | INT_SOFT_L);
+	int_clear(INT_SOFT_U | INT_SOFT_L);
 	return OP_OK;
 }
 
 int op_73_sil()
 {
-	INT_SET(INT_SOFT_L);
+	int_set(INT_SOFT_L);
 	return OP_OK;
 }
 
 int op_73_siu()
 {
-	INT_SET(INT_SOFT_U);
+	int_set(INT_SOFT_U);
 	return OP_OK;
 }
 
 int op_73_sit()
 {
-	INT_SET(INT_SOFT_U | INT_SOFT_L);
+	int_set(INT_SOFT_U | INT_SOFT_L);
 	return OP_OK;
 }
 
@@ -828,13 +827,13 @@ int op_73_lip()
 
 int op_73_six()
 {
-	INT_SET(INT_EXTRA);
+	int_set(INT_EXTRA);
 	return OP_OK;
 }
 
 int op_73_cix()
 {
-	INT_CLEAR(INT_EXTRA);
+	int_clear(INT_EXTRA);
 	return OP_OK;
 }
 
