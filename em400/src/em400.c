@@ -45,7 +45,7 @@ int main(int argc, char** argv)
 {
 	int res;
 
-	printf("Starting EM400...\n");
+	printf("Starting EM400 %s ...\n", EM400_VERSION);
 
 	res = mem_init();
 	if (res) {
