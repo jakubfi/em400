@@ -1,5 +1,5 @@
 
- About em400
+About em400
 ==========================================================================
 
 EM400 is an attempt to create emulation of Polish MERA-400 minicomputer system,
@@ -14,7 +14,7 @@ Currently, project is in highly development state, that means emulation is:
 Basically, there is nothing interesting you can do with it at the moment. :-)
 
 
- Requirements:
+Requirements
 ==========================================================================
 
 To build and run em400 you need:
@@ -26,21 +26,25 @@ To build and run em400 you need:
 * readline (used by debugger)
 
 
- Build instructions:
+Build instructions
 ==========================================================================
 
 Do the following in the directory where this README lives:
 
-* cmake .
-* make
+```
+	cmake .
+	make
+```
 
- Running:
+Running
 ==========================================================================
 
 Emulator is by default built with debugger, which currently is its primary (and only) user interface.
 Just run:
 
-build/em400
+```
+	build/em400
+```
 
 And have fun.
 
