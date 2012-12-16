@@ -1,9 +1,0 @@
-This repository contains tools built for development of EM400: MERA-400 emulator
-and sources of the emulator itself.
-
-EM400 is an attempt to create emulation of Polish MERA-400 minicomputer system,
-built in late '70 and popular in the '80. See: http://mera400.pl
-
-assem - crossassembler for MERA-400
-em400 - MERA-400 emulator
-tools - various tools to help with em400 development
