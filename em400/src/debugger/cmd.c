@@ -259,7 +259,7 @@ void dbg_c_sregs(int wid)
 	awprint(wid, C_LABEL, "            OPCODE D A   B   C\n");
 	awprint(wid, C_LABEL, "IR: ");
 	awprint(wid, C_DATA, "0x%04x  %s %i %s %s %s\n", regs[R_IR], ir, d, a, b, c);
-	awprint(wid, C_LABEL, "            RM         Q s NB\n");
+	awprint(wid, C_LABEL, "            PMCZs139fS Q s NB\n");
 	awprint(wid, C_LABEL, "SR: ");
 	awprint(wid, C_DATA, "0x%04x  %s %i %i %s\n", regs[R_SR], rm, SR_Q, s, nb);
 	awprint(wid, C_LABEL, "                ZPMCZ TIFFFFx 01 23 456789 abcdef OCSS\n");
@@ -314,11 +314,11 @@ void dbg_c_stack(int wid, int size)
 	while (size > 0) {
 		if (addr > 0) {
 			if (addr == sp) {
-				awprint(wid, C_ILABEL, "0x%04x: ", addr);
-				awprint(wid, C_IDATA, "%04x\n", *mem_ptr(0, addr));
+				awprint(wid, C_ILABEL, " 0x%04x: ", addr);
+				awprint(wid, C_IDATA, "%04x \n", *mem_ptr(0, addr));
 			} else {
-				awprint(wid, C_LABEL, "0x%04x: ", addr);
-				awprint(wid, C_DATA, "%04x\n", *mem_ptr(0, addr));
+				awprint(wid, C_LABEL, " 0x%04x: ", addr);
+				awprint(wid, C_DATA, "%04x \n", *mem_ptr(0, addr));
 			}
 		} else {
 			awprint(wid, C_DATA, "            \n");

@@ -22,6 +22,7 @@
 #include "memory.h"
 #include "timer.h"
 #include "registers.h"
+#include "interrupts.h"
 #include "errors.h"
 
 #ifdef WITH_DEBUGGER
@@ -84,6 +85,7 @@ int main(int argc, char** argv)
 		}
 #endif
 		cpu_step();
+		int_serve();
 	}
 
 #ifdef WITH_DEBUGGER
@@ -91,7 +93,7 @@ int main(int argc, char** argv)
 #endif
 
 	mem_shutdown();
-	timer_remove();
+	timer_stop();
 	printf("EM400 exits.\n");
 
 	return 0;

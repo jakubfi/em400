@@ -765,6 +765,7 @@ int op_73()
 int op_73_hlt()
 {
 	// TODO: busy wait
+	while (!RZ);
 	return OP_OK;
 }
 
@@ -1106,7 +1107,7 @@ int op_77_ki()
 {
 	if (SR_Q) return OP_ILLEGAL;
 	uint16_t N = cpu_get_eff_arg();
-	MEMw(N, ((RZ & 0b11111111111100000000000000000000) >> 16) | (RZ & 0b00000000000000000000000000001111));
+	MEMw(N, int_get_nchan());
 	return OP_OK;
 }
 
@@ -1114,9 +1115,7 @@ int op_77_fi()
 {
 	if (SR_Q) return OP_ILLEGAL;
 	uint16_t N = cpu_get_eff_arg();
-	uint16_t RZM = MEM(N);
-	RZ = RZ | (RZM & 0b0000000000001111);
-	RZ = RZ | ((RZM & 0b1111111111110000) << 16);
+	int_put_nchan(MEM(N));
 	return OP_OK;
 }
 

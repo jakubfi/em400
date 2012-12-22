@@ -1,15 +1,17 @@
-Bugs:
+Known bugs:
 
 
 CPU:
 
-* AWP - sign storage
-* floating point instructions
-* interrupts
-* hlt
+* AWP - sign storage, floating point instructions
+* proper hlt
 
 Debuger:
 
+* inform user which interrupt is being served (if any)
+* memory/registers untraced when accessed by i/o devices
+* inteligent memory view (auto-scroll)
+* scrollable memory/dasm/stack views (?)
 * IPS counter
 * macro for accessing interrupt states
 * save memory image
@@ -18,10 +20,15 @@ Debuger:
 
 Other:
 
-* fix source directory structure (src)
-* autotools
 * autotests
-* separate I/O thread
-* operator panel view (?)
-* commandline dasm/trans (?)
+
+MERA-400 features that em400 does not emulate:
+
+* power failure interrupts (cpu and channel)
+* 2-cpu configuration
+  * interrupts
+  * gil/giu instructions
+* memory parity (itself and interrupts)
+* priority based interface reservation
+* operator panel
 

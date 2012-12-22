@@ -15,7 +15,7 @@
 //  Foundation, Inc.,
 //  51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 
-#include <signal.h>
+#include <pthread.h>
 #include <time.h>
 
 #include "errors.h"
@@ -23,55 +23,35 @@
 #include "registers.h"
 #include "interrupts.h"
 
-timer_t timer;
+int timer_fin = 0;
+
+pthread_t timer_th;
 
 // -----------------------------------------------------------------------
-void _timer_interrupt_sig(int signum, siginfo_t *si, void *ctx)
+void * timer_thread(void *ptr)
 {
-	int_set(INT_TIMER);
+	struct timespec ts;
+	struct timespec tr;
+
+	ts.tv_sec = 0;
+	ts.tv_nsec = MJC400_TIMER * 1000000;
+
+	while (!timer_fin) {
+		nanosleep(&ts, &tr);
+		int_set(INT_TIMER);
+	}
 }
 
 // -----------------------------------------------------------------------
 int timer_start()
 {
-	struct sigaction sa;
-	struct sigevent se;
-	struct itimerspec its;
-
-	sa.sa_flags = SA_SIGINFO | SA_RESTART;
-	sa.sa_sigaction = _timer_interrupt_sig;
-
-	if (sigemptyset(&sa.sa_mask) != 0) {
-		return E_TIMER_SIGNAL;
-	}
-
-	if (sigaction(MJC400_TIMER_SIG, &sa, NULL) != 0) {
-		return E_TIMER_SIGNAL;
-	}
-
-	se.sigev_notify = SIGEV_SIGNAL;
-	se.sigev_signo = MJC400_TIMER_SIG;
-	se.sigev_value.sival_ptr = &timer;
-
-	if (timer_create(CLOCK_REALTIME, &se, &timer) != 0) {
-		return E_TIMER_CREATE;
-	}
-
-	its.it_interval.tv_sec = 0;
-	its.it_interval.tv_nsec = MJC400_TIMER * 1000000;
-	its.it_value.tv_sec = 0;
-	its.it_value.tv_nsec = MJC400_TIMER * 1000000;
-
-	if (timer_settime(timer, 0, &its, NULL) != 0) {
-		return E_TIMER_SET;
-	}
-	return E_OK;
+	return pthread_create(&timer_th, NULL, timer_thread, NULL);
 }
 
 // -----------------------------------------------------------------------
-void timer_remove()
+void timer_stop()
 {
-	timer_delete(timer);
+	timer_fin = 1;
 }
 
 // vim: tabstop=4

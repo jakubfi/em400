@@ -19,6 +19,7 @@
 #include <stdio.h>
 #include <inttypes.h>
 #include <arpa/inet.h>
+#include <pthread.h>
 
 #include "errors.h"
 #include "memory.h"
@@ -29,6 +30,8 @@
 #ifdef WITH_DEBUGGER
 #include "debugger/debugger.h"
 #endif
+
+pthread_mutex_t mem_mutex = PTHREAD_MUTEX_INITIALIZER;
 
 // memory configuration provided by the user: number of segments in a module
 short int mem_conf[MEM_MAX_MODULES] = { 2, 8, 8, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 };
@@ -132,6 +135,7 @@ uint16_t mem_read(short unsigned int nb, uint16_t addr, int trace)
 	uint16_t *ptr = mem_ptr(nb, addr);
 	if (ptr) {
 #ifdef WITH_DEBUGGER
+		pthread_mutex_lock(&mem_mutex);
 		// leave trace for debugger to display
 		if (trace) {
 			if (mem_actr_max == -1) {
@@ -141,7 +145,9 @@ uint16_t mem_read(short unsigned int nb, uint16_t addr, int trace)
 			mem_actr_max = addr;
 		}
 #endif
-		return *ptr;
+		uint16_t value = *ptr;
+		pthread_mutex_unlock(&mem_mutex);
+		return value;
 	} else {
 		if (SR_Q) {
 			int_set(INT_NO_MEM);
@@ -158,6 +164,7 @@ void mem_write(short unsigned int nb, uint16_t addr, uint16_t val, int trace)
 {
 	uint16_t *ptr = mem_ptr(nb, addr);
 	if (ptr) {
+		pthread_mutex_lock(&mem_mutex);
 #ifdef WITH_DEBUGGER
 		// leave trace for debugger to display
 		if (trace) {
@@ -169,6 +176,7 @@ void mem_write(short unsigned int nb, uint16_t addr, uint16_t val, int trace)
 		}
 #endif
 		*ptr = val;
+		pthread_mutex_unlock(&mem_mutex);
 	} else {
 		if (SR_Q) {
 			int_set(INT_NO_MEM);

@@ -76,7 +76,7 @@ int dbg_init()
 	dbg_ui_init();
 	aw_layout_changed = 1;
 
-	// prepare handler for ctrl-c
+	// prepare handler for ctrl-c (break emulation, enter debugger loop)
 	struct sigaction sa;
 	sa.sa_flags = SA_SIGINFO;
 	sa.sa_sigaction = _dbg_sigint_handler;

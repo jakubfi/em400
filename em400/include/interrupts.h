@@ -21,6 +21,8 @@
 #include <inttypes.h>
 
 extern uint32_t RZ;
+extern int int_rz2rm[32];
+extern int int_rz2mask[32];
 
 #define INT_2CPU_POWER		1 << (31 - 0)
 #define INT_PARITY			1 << (31 - 1)
@@ -57,8 +59,36 @@ extern uint32_t RZ;
 
 #define INT_ALL				0xffffffff
 
+#define RM_0				1 << (15 - 0)
+#define RM_1				1 << (15 - 1)
+#define RM_2				1 << (15 - 2)
+#define RM_3				1 << (15 - 3)
+#define RM_4				1 << (15 - 4)
+#define RM_5				1 << (15 - 5)
+#define RM_6				1 << (15 - 6)
+#define RM_7				1 << (15 - 7)
+#define RM_8				1 << (15 - 8)
+#define RM_9				1 << (15 - 9)
+
+#define MASK_0				0b0000000000111111
+#define MASK_1				0b1000000000111111
+#define MASK_2				0b1100000000111111
+#define MASK_3				0b1110000000111111
+#define MASK_4				0b1111000000111111
+#define MASK_5				0b1111100000111111
+#define MASK_6				0b1111110000111111
+#define MASK_7				0b1111111000111111
+#define MASK_8				0b1111111100111111
+#define MASK_9				0b1111111110111111
+
 void int_set(uint32_t x);
 void int_clear(uint32_t x);
+void int_put_nchan(uint16_t r);
+uint16_t int_get_nchan();
+int int_is_masked(int i);
+void int_mask(int i);
+
+void int_serve();
 
 #endif
 

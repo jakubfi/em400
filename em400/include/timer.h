@@ -25,11 +25,10 @@
 // - 2, 4, 8, 10, 20
 // - 2, 10, 20, 40, 80
 #define MJC400_TIMER		10 // miliseconds
-#define MJC400_TIMER_SIG	SIGRTMIN+1
 
-void _timer_interrupt_sig(int signum, siginfo_t *si, void *ctx);
+void * timer_thread(void *ptr);
 int timer_start();
-void timer_remove();
+void timer_stop();
 
 #endif
 
