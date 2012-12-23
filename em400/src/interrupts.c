@@ -24,6 +24,7 @@
 
 uint32_t RZ;
 pthread_mutex_t int_mutex = PTHREAD_MUTEX_INITIALIZER;
+pthread_cond_t int_cond = PTHREAD_COND_INITIALIZER;
 
 // bit masks (to use on SR) for each interrupt
 int int_rz2rm[32] = {
@@ -59,6 +60,7 @@ void int_set(uint32_t x)
 {
 	pthread_mutex_lock(&int_mutex);
 	RZ |= x;
+	pthread_cond_signal(&int_cond);
 	pthread_mutex_unlock(&int_mutex);
 }
 
@@ -75,6 +77,7 @@ void int_put_nchan(uint16_t r)
 {
 	pthread_mutex_lock(&int_mutex);
 	RZ = (RZ & 0b00000000000011111111111111110000) | ((r & 0b1111111111110000) << 16) | (r & 0b0000000000001111);
+	pthread_cond_signal(&int_cond);
 	pthread_mutex_unlock(&int_mutex);
 }
 

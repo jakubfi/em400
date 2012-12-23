@@ -20,6 +20,8 @@
 
 #include <inttypes.h>
 
+#include "registers.h"
+
 #define INPUT_BUF_SIZE 70
 
 struct break_t {
@@ -50,6 +52,7 @@ struct break_t * dbg_brk_check();
 void dbg_step();
 int dbg_init();
 void dbg_shutdown();
+void dbg_fin_cycle();
 
 #endif
 

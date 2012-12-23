@@ -20,11 +20,11 @@
 
 #include <signal.h>
 
-// MJC400_TIMER is a value (in miliseconds) from the
+// TIMER_PERIOD is a value (in miliseconds) from the
 // following sets (different sources give different sets):
 // - 2, 4, 8, 10, 20
 // - 2, 10, 20, 40, 80
-#define MJC400_TIMER		10 // miliseconds
+#define TIMER_PERIOD		10 // miliseconds
 
 void * timer_thread(void *ptr);
 int timer_start();

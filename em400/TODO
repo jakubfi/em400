@@ -4,7 +4,6 @@ Known bugs:
 CPU:
 
 * AWP - sign storage, floating point instructions
-* proper hlt
 
 Debuger:
 
@@ -24,6 +23,7 @@ Other:
 
 MERA-400 features that em400 does not emulate:
 
+* timings (instructions, memory access, disk latencies, serial lines)
 * power failure interrupts (cpu and channel)
 * 2-cpu configuration
   * interrupts

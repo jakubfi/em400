@@ -34,7 +34,7 @@ void * timer_thread(void *ptr)
 	struct timespec tr;
 
 	ts.tv_sec = 0;
-	ts.tv_nsec = MJC400_TIMER * 1000000;
+	ts.tv_nsec = TIMER_PERIOD * 1000000;
 
 	while (!timer_fin) {
 		nanosleep(&ts, &tr);

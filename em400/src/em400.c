@@ -20,9 +20,8 @@
 
 #include "cpu.h"
 #include "memory.h"
-#include "timer.h"
-#include "registers.h"
 #include "interrupts.h"
+#include "timer.h"
 #include "errors.h"
 
 #ifdef WITH_DEBUGGER
@@ -46,7 +45,7 @@ int main(int argc, char** argv)
 {
 	int res;
 
-	printf("Starting EM400 %s ...\n", EM400_VERSION);
+	printf("Starting EM400 version %s ...\n", EM400_VERSION);
 
 	res = mem_init();
 	if (res) {
@@ -54,11 +53,9 @@ int main(int argc, char** argv)
 		eerr("Error initializing EM400", res);
 	}
 
-	mem_clear();
-	cpu_reset();
-
 	res = timer_start();
 	if (res) {
+		timer_stop();
 		mem_shutdown();
 		eerr("Error initializing CPU timer", res);
 	}
@@ -67,22 +64,19 @@ int main(int argc, char** argv)
 	res = dbg_init();
 	if (res) {
 		dbg_shutdown();
+		timer_stop();
 		mem_shutdown();
 		eerr("Error initializing debugger", res);
 	}
 #endif
 
+	mem_clear();
+	cpu_reset();
+
 	while (!em400_quit) {
 #ifdef WITH_DEBUGGER
 		dbg_step();
-		if (em400_quit) {
-			break;
-		}
-		mem_actr_max = -1;
-		mem_actw_max = -1;
-		for (int r=0 ; r<R_MAX ; r++) {
-			reg_act[r] = C_DATA;
-		}
+		if (em400_quit) break;
 #endif
 		cpu_step();
 		int_serve();

@@ -125,11 +125,23 @@ struct break_t * dbg_brk_check()
 }
 
 // -----------------------------------------------------------------------
+void dbg_fin_cycle()
+{
+    // we're leaving debuger, clear memory/register traces
+    mem_actr_max = -1;
+    mem_actw_max = -1;
+    for (int r=0 ; r<R_MAX ; r++) {
+        reg_act[r] = C_DATA;
+    }
+}
+
+// -----------------------------------------------------------------------
 void dbg_step()
 {
 	struct break_t *bhit = NULL;
 
 	if ((!dbg_enter) && (!(bhit=dbg_brk_check()))) {
+		dbg_fin_cycle();
 		return;
 	}
 
@@ -155,6 +167,7 @@ void dbg_step()
 			yy_delete_buffer(yb);
 		}
 	}
+	dbg_fin_cycle();
 }
 
 // vim: tabstop=4

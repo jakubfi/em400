@@ -19,6 +19,10 @@
 #define INTERRUPTS_H
 
 #include <inttypes.h>
+#include <pthread.h>
+
+extern pthread_cond_t int_cond;
+extern pthread_mutex_t int_mutex;
 
 extern uint32_t RZ;
 extern int int_rz2rm[32];
