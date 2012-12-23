@@ -20,6 +20,7 @@
 
 #include "cpu.h"
 #include "memory.h"
+#include "io.h"
 #include "interrupts.h"
 #include "timer.h"
 #include "errors.h"
@@ -50,12 +51,20 @@ int main(int argc, char** argv)
 	res = mem_init();
 	if (res) {
 		mem_shutdown();
-		eerr("Error initializing EM400", res);
+		eerr("Error initializing memory", res);
 	}
 
-	res = timer_start();
+	res = io_init();
 	if (res) {
-		timer_stop();
+		io_shutdown();
+		mem_shutdown();
+		eerr("Error initializing I/O", res);
+	}
+
+	res = timer_init();
+	if (res) {
+		timer_shutdown();
+		io_shutdown();
 		mem_shutdown();
 		eerr("Error initializing CPU timer", res);
 	}
@@ -64,7 +73,8 @@ int main(int argc, char** argv)
 	res = dbg_init();
 	if (res) {
 		dbg_shutdown();
-		timer_stop();
+		timer_shutdown();
+		io_shutdown();
 		mem_shutdown();
 		eerr("Error initializing debugger", res);
 	}
@@ -86,8 +96,9 @@ int main(int argc, char** argv)
 	dbg_shutdown();
 #endif
 
+	timer_shutdown();
+	io_shutdown();
 	mem_shutdown();
-	timer_stop();
 	printf("EM400 exits.\n");
 
 	return 0;

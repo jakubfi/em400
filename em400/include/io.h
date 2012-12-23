@@ -18,19 +18,42 @@
 #ifndef IO_H
 #define IO_H
 
-enum em400_io_dir {
+#include <pthread.h>
+
+#define IO_MAX_CHAN	16
+#define IO_MAX_UNIT	8
+
+enum io_dir {
 	IO_IN,
 	IO_OU
 };
 
-enum em400_io_result {
+enum io_result {
 	IO_NO = 0,  // no channel, no control unit, or no memory block
 	IO_EN = 1,  // not ready
 	IO_OK = 2,  // OK
 	IO_PE = 3   // data error (parity error?)
 };
 
-int io_dispatch(int dir, int is_mem, int chan, int unit, int cmd, uint16_t arg);
+enum io_chan_type {
+	CHAN_NONE = 0,
+	CHAN_CHAR,
+	CHAN_MEM,
+	CHAN_PI,
+	CHAN_MULTIX,
+	CHAN_PLIX
+};
+
+struct chan_t {
+	int type;
+	pthread_t thread;
+};
+
+extern struct chan_t io_channels[];
+
+int io_init();
+void io_shutdown();
+int io_dispatch(int dir, uint16_t n, unsigned short int r);
 
 #endif
 

@@ -148,16 +148,8 @@ int op_bn()
 int op_ou()
 {
 	uint16_t N = cpu_get_eff_arg();
-
-	int is_mem = (N & 0b0000000000000001);
-	int chan   = (N & 0b0000000000011110) >> 1;
-	int unit   = (N & 0b0000000011100000) >> 5;
-	int cmd    = (N & 0b1111111100000000) >> 8;
-
-	int io_result = io_dispatch(IO_OU, is_mem, chan, unit, cmd, R(IR_A));
-
+	int io_result = io_dispatch(IO_OU, N, IR_A);
 	Rw(R_IC, MEM(R(R_IC) + io_result));
-
 	return OP_OK;
 }
 
@@ -165,16 +157,8 @@ int op_ou()
 int op_in()
 {
 	uint16_t N = cpu_get_eff_arg();
-
-	int is_mem = (N & 0b0000000000000001);
-	int chan   = (N & 0b0000000000011110) >> 1;
-	int unit   = (N & 0b0000000011100000) >> 5;
-	int cmd    = (N & 0b1111111100000000) >> 8;
-
-	int io_result = io_dispatch(IO_IN, is_mem, chan, unit, cmd, R(IR_A));
-
+	int io_result = io_dispatch(IO_IN, N, IR_A);
 	Rw(R_IC, MEM(R(R_IC) + io_result));
-
 	return OP_OK;
 }
 

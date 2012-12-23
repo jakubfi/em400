@@ -43,13 +43,13 @@ void * timer_thread(void *ptr)
 }
 
 // -----------------------------------------------------------------------
-int timer_start()
+int timer_init()
 {
 	return pthread_create(&timer_th, NULL, timer_thread, NULL);
 }
 
 // -----------------------------------------------------------------------
-void timer_stop()
+void timer_shutdown()
 {
 	timer_fin = 1;
 }

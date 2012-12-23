@@ -18,34 +18,48 @@
 #include <inttypes.h>
 #include <stdlib.h>
 
+#include "errors.h"
 #include "io.h"
 #include "memory.h"
-#include "utils.h"
+#include "registers.h"
+
+struct chan_t io_channels[IO_MAX_CHAN];
+
+int io_chan_conf[IO_MAX_CHAN] = { CHAN_CHAR, CHAN_MEM, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 };
 
 // -----------------------------------------------------------------------
-int io_dispatch(int dir, int is_mem, int chan, int unit, int cmd, uint16_t arg)
+int io_init()
 {
+	for (int i=0 ; i<IO_MAX_CHAN ; i++) {
+		io_channels[i].type = io_chan_conf[i];
+	}
+	return E_OK;
+}
+
+// -----------------------------------------------------------------------
+void io_shutdown()
+{
+
+}
+
+// -----------------------------------------------------------------------
+int io_dispatch(int dir, uint16_t n, unsigned short r)
+{
+	int is_mem = (n & 0b0000000000000001);
+	int chan = (n & 0b0000000000011110) >> 1;
+	int unit = (n & 0b0000000011100000) >> 5;
+	int cmd = (n & 0b1111111100000000) >> 8;
+
+	// software memory configuration
 	if (is_mem) {
-		if (dir != IO_OU) {
-			// TODO: what to return, really?
-			return IO_NO;
-		} else {
-			// software memory configuration
-			int nb = arg & 0b0000000000001111;
-			int ab = (arg & 0b1111000000000000) >> 12;
-			// here, channel is memory module, unit is memory segment
-			//printf("I/O OU: memory nb:%i ab:%i mp:%i seg:%i\n", nb, ab, chan, unit);
-			return mem_add_map(nb, ab, chan, unit);
-		}
+		// TODO: this should work for OU only, but just in case, do it for IN too
+		int nb = R(r) & 0b0000000000001111;
+		int ab = (R(r) & 0b1111000000000000) >> 12;
+		// here, channel is memory module, unit is memory segment
+		return mem_add_map(nb, ab, chan, unit);
+
+	// command for a channel
 	} else {
-		// command to channel or device control unit
-		// N - information for selected channel/unit
-		char* s_cmd = int2bin(cmd, 8);
-		char* s_inf = int2bin(arg, 16);
-		//printf("I/O OU: device chan:%i unit:%i command:%s information:%s\n", chan, unit, s_cmd, s_inf);
-		free(s_cmd);
-		free(s_inf);
-		// no such channel/unit
 		return IO_NO;
 	}
 }

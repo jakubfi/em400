@@ -27,8 +27,8 @@
 #define TIMER_PERIOD		10 // miliseconds
 
 void * timer_thread(void *ptr);
-int timer_start();
-void timer_stop();
+int timer_init();
+void timer_shutdown();
 
 #endif
 
