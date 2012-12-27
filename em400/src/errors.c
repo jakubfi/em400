@@ -35,6 +35,7 @@ struct _em400_errordesc {
 	{ E_TIMER_SET, "Cannot set timer." },
 	{ E_ALLOC, "Cannot allocade memory." },
 	{ E_DEBUGGER_SIG_RESIZE, "Cannot setup window resize handler." },
+	{ E_IO_INCOMPATIBILE_UNIT, "Unit incompatibile with channel." },
 
 
 	{ E_UNKNOWN, "Unknown error." }

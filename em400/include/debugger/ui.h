@@ -46,14 +46,14 @@ enum _ui_windows {
 };
 
 void dbg_ui_init();
-void dbg_wu_mem(unsigned int wid);
-void dbg_wu_dasm(unsigned int wid);
-void dbg_wu_regs(unsigned int wid);
-void dbg_wu_sregs(unsigned int wid);
-void dbg_wu_cmd(unsigned int wid);
-void dbg_wu_status(unsigned int wid);
-void dbg_wu_stack(unsigned int wid);
-void dbg_wu_none(unsigned int wid);
+void dbg_wu_mem(int wid);
+void dbg_wu_dasm(int wid);
+void dbg_wu_regs(int wid);
+void dbg_wu_sregs(int wid);
+void dbg_wu_cmd(int wid);
+void dbg_wu_status(int wid);
+void dbg_wu_stack(int wid);
+void dbg_wu_none(int wid);
 
 #endif
 

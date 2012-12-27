@@ -18,6 +18,7 @@
 #ifndef IO_H
 #define IO_H
 
+#include <inttypes.h>
 #include <pthread.h>
 
 #define IO_MAX_CHAN	16
@@ -35,25 +36,33 @@ enum io_result {
 	IO_PE = 3   // data error (parity error?)
 };
 
-enum io_chan_type {
-	CHAN_NONE = 0,
-	CHAN_CHAR,
-	CHAN_MEM,
-	CHAN_PI,
-	CHAN_MULTIX,
-	CHAN_PLIX
-};
-
 struct chan_t {
 	int type;
+	volatile int finish;
+	void (*f_shutdown)(struct chan_t *ch);
+	void (*f_reset)(struct chan_t *ch);
+	int (*f_cmd)(struct chan_t *ch, int dir, int unit, int cmd, int r);
 	pthread_t thread;
+	uint16_t int_spec;
+	uint8_t int_mask;
+	uint8_t dev_alloc;
 };
 
-extern struct chan_t io_channels[];
+struct unit_t {
+	int type;
+	struct chan_t *chan;
+	void (*f_shutdown)(struct unit_t *u);
+	void (*f_reset)(struct unit_t *u);
+	int (*f_cmd)(struct unit_t *u, int dir, int cmd, int r);
+};
+
+extern struct chan_t io_chan[IO_MAX_CHAN];
+extern struct unit_t io_unit[IO_MAX_CHAN][IO_MAX_UNIT];
 
 int io_init();
 void io_shutdown();
-int io_dispatch(int dir, uint16_t n, unsigned short int r);
+uint16_t io_get_int_spec(int interrupt);
+int io_dispatch(int dir, uint16_t n, int r);
 
 #endif
 

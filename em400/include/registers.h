@@ -48,8 +48,8 @@ extern uint16_t regs[];
 
 extern uint32_t RZ;
 
-uint16_t reg_read(unsigned short int r, int trace);
-void reg_write(unsigned short int r, uint16_t x, int trace);
+uint16_t reg_read(int r, int trace);
+void reg_write(int r, uint16_t x, int trace);
 
 #define R(x)		reg_read(x, 1)
 #define nR(x)		reg_read(x, 0)

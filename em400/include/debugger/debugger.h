@@ -27,7 +27,7 @@
 struct break_t {
 	int nr;
 	char *label;
-	unsigned int counter;
+	int counter;
 	int disabled;
 	struct node_t *n;
 	struct break_t *next;

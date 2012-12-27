@@ -34,7 +34,7 @@
 pthread_mutex_t mem_mutex = PTHREAD_MUTEX_INITIALIZER;
 
 // memory configuration provided by the user: number of segments in a module
-short int mem_conf[MEM_MAX_MODULES] = { 2, 8, 8, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 };
+int mem_conf[MEM_MAX_MODULES] = { 2, 8, 8, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 };
 
 // physical memory: modules with segments inside
 uint16_t *mem_segment[MEM_MAX_MODULES][MEM_MAX_SEGMENTS] = { {NULL} };
@@ -88,9 +88,9 @@ void mem_shutdown()
 }
 
 // -----------------------------------------------------------------------
-int mem_add_map(unsigned short int nb, unsigned short int ab, unsigned short int mp, unsigned short int segment)
+int mem_add_map(int nb, int ab, int mp, int segment)
 {
-	if ((nb > 0) && (nb < MEM_MAX_NB)) {
+	if (nb < MEM_MAX_NB) {
 		mem_map[nb][ab] = mem_segment[mp][segment];
 		if (!mem_map[nb][ab]) {
 			return IO_NO;
@@ -114,10 +114,10 @@ void mem_remove_maps()
 
 // -----------------------------------------------------------------------
 // low-level memory access (bypassing emulation)
-uint16_t * mem_ptr(short unsigned int nb, uint16_t addr)
+uint16_t * mem_ptr(int nb, uint16_t addr)
 {
-	unsigned short int ab = (addr & 0b1111000000000000) >> 12;
-	unsigned int addr12 = addr & 0b0000111111111111;
+	int ab = (addr & 0b1111000000000000) >> 12;
+	int addr12 = addr & 0b0000111111111111;
 
 	uint16_t *seg_addr = mem_map[nb][ab];
 
@@ -130,7 +130,7 @@ uint16_t * mem_ptr(short unsigned int nb, uint16_t addr)
 
 // -----------------------------------------------------------------------
 // read from any block
-uint16_t mem_read(short unsigned int nb, uint16_t addr, int trace)
+uint16_t mem_read(int nb, uint16_t addr, int trace)
 {
 	uint16_t *ptr = mem_ptr(nb, addr);
 	if (ptr) {
@@ -160,7 +160,7 @@ uint16_t mem_read(short unsigned int nb, uint16_t addr, int trace)
 
 // -----------------------------------------------------------------------
 // write to any block
-void mem_write(short unsigned int nb, uint16_t addr, uint16_t val, int trace)
+void mem_write(int nb, uint16_t addr, uint16_t val, int trace)
 {
 	uint16_t *ptr = mem_ptr(nb, addr);
 	if (ptr) {
@@ -201,7 +201,7 @@ void mem_clear()
 }
 
 // -----------------------------------------------------------------------
-int mem_load_image(const char* fname, unsigned short block)
+int mem_load_image(const char* fname, int nb)
 {
 	uint16_t *ptr;
 
@@ -214,7 +214,7 @@ int mem_load_image(const char* fname, unsigned short block)
 	int chunk = 0;
 	while (res > 0) {
 		// get pointer to segment in a block
-		ptr = mem_ptr(block, chunk*MEM_SEGMENT_SIZE);
+		ptr = mem_ptr(nb, chunk*MEM_SEGMENT_SIZE);
 		if (!ptr) {
 			return E_MEM_BLOCK_TOO_SMALL;
 		}

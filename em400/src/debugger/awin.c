@@ -136,7 +136,7 @@ void aw_containers_all_delete(ACONT *c)
 }
 
 // -----------------------------------------------------------------------
-AWIN * aw_window_find(unsigned int id)
+AWIN * aw_window_find(int id)
 {
 	NCCHECK NULL;
 	ACONT *c = aw_containers;
@@ -351,7 +351,7 @@ int aw_window_fit(ACONT *c, AWIN *w)
 }
 
 // -----------------------------------------------------------------------
-AWIN * aw_window_add(ACONT *container, unsigned int id, char *title, int border, int scrollable, void (*fun)(unsigned int wid), int max, int min, int left)
+AWIN * aw_window_add(ACONT *container, int id, char *title, int border, int scrollable, void (*fun)(int wid), int max, int min, int left)
 {
 	NCCHECK NULL;
 	if (!container) {

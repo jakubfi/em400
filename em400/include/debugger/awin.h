@@ -40,14 +40,14 @@
 
 struct awin_t {
 	char *title;
-	unsigned int id;
+	int id;
 	WINDOW *win;
 	WINDOW *bwin;
 	int bx, by, bw, bh;
 	int ix, iy, iw, ih;
 	int max, min, left;
 	int border, enabled, scrollable;
-	void (*fun)(unsigned int wid);
+	void (*fun)(int wid);
 	struct awin_t *next;
 };
 
@@ -91,7 +91,7 @@ void aw_containers_all_delete(ACONT *c);
 void aw_window_nc_create(AWIN *w);
 void aw_window_nc_delete(AWIN *w);
 
-AWIN * aw_window_find(unsigned int id);
+AWIN * aw_window_find(int id);
 void aw_window_disable(AWIN *w);
 void aw_container_disable(ACONT *c);
 
@@ -102,7 +102,7 @@ void aw_layout_redo();
 void aw_layout_refresh();
 
 ACONT * aw_container_add(int calign, int walign, int max, int min, int left);
-AWIN * aw_window_add(ACONT *container, unsigned int id, char *title, int border, int scrollable, void (*fun)(unsigned int wid), int max, int min, int left);
+AWIN * aw_window_add(ACONT *container, int id, char *title, int border, int scrollable, void (*fun)(int wid), int max, int min, int left);
 
 void aw_attr_new(int id, int bgcolor, int fgcolor, int attr);
 void awxyprint(int id, int x, int y, int attr, char *format, ...);

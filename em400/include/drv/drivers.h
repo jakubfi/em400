@@ -15,29 +15,47 @@
 //  Foundation, Inc.,
 //  51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 
-#ifndef ERRORS_H
-#define ERRORS_H
+#ifndef DRV_DRIVERS_H
+#define DRV_DRIVERS_H
 
-enum em400_error {
-	E_UNKNOWN = -1,
-	E_OK = 0,
-	E_MEM_NO_OS_MEM,
-	E_MEM_BAD_SEGMENT_COUNT,
-	E_MEM_CANNOT_ALLOCATE,
-	E_MEM_BLOCK_TOO_SMALL,
-	E_FILE_OPEN,
-	E_FILE_OPERATION,
-	E_TIMER_SIGNAL,
-	E_TIMER_CREATE,
-	E_TIMER_SET,
-	E_ALLOC,
-	E_DEBUGGER_SIG_RESIZE,
-	E_IO_INCOMPATIBILE_UNIT
+#include "io.h"
+
+enum drv_chan_type {
+	CHAN_NONE = 0,
+	CHAN_CHAR,
+	CHAN_MEM,
+	CHAN_PI,
+	CHAN_MULTIX,
+	CHAN_PLIX
 };
 
-struct _em400_errordesc;
+enum drv_unit_type {
+	UNIT_NONE = 0,
+	UNIT_9425,
+	UNIT_WINCHESTER,
+	UNIT_TERM_NET,
+	UNIT_TERM_SERIAL
+};
 
-char * get_error(int e);
+struct drv_chan_t {
+	int type;
+	int (*f_init)(struct chan_t *ch);
+	void (*f_shutdown)(struct chan_t *ch);
+	void (*f_reset)(struct chan_t *ch);
+	int (*f_cmd)(struct chan_t *ch, int dir, int unit, int cmd, int r);
+};
+
+struct drv_unit_t {
+	int type;
+	int chan_type;
+	int (*f_init)(struct unit_t *u, int cfgc, char **cfgv);
+	void (*f_shutdown)(struct unit_t *u);
+	void (*f_reset)(struct unit_t *u);
+	int (*f_cmd)(struct unit_t *u, int dir, int cmd, int r);
+};
+
+extern struct drv_chan_t drv_chan[];
+extern struct drv_unit_t drv_unit[];
 
 #endif
 

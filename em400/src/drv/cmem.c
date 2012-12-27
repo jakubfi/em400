@@ -15,49 +15,50 @@
 //  Foundation, Inc.,
 //  51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 
-#include <inttypes.h>
+#include <pthread.h>
+#include <unistd.h>
 
-#include "registers.h"
-
-#ifdef WITH_DEBUGGER
-#include "debugger/debugger.h"
-#include "debugger/ui.h"
-#endif
-
-uint16_t regs[R_MAX];
+#include "errors.h"
+#include "io.h"
+#include "drv/cmem.h"
 
 // -----------------------------------------------------------------------
-uint16_t reg_read(int r, int trace)
+void * drv_cmem_thread(void *ptr)
 {
-#ifdef WITH_DEBUGGER
-	if (trace != 0) {
-		if (reg_act[r] == C_WRITE) {
-			reg_act[r] = C_RW;
-		} else {
-			reg_act[r] = C_READ;
-		}
+	struct chan_t *chan = ptr;
+	while (!chan->finish) {
+		sleep(1);
 	}
-#endif
-	return regs[r];
+	pthread_exit(NULL);
 }
 
 // -----------------------------------------------------------------------
-void reg_write(int r, uint16_t x, int trace)
+int drv_cmem_init(struct chan_t *ch)
 {
-#ifdef WITH_DEBUGGER
-	if (trace != 0) {
-		if (reg_act[r] == C_READ) {
-			reg_act[r] = C_RW;
-		} else {
-			reg_act[r] = C_WRITE;
-		}
-	}
-#endif
-	if (r) {
-		regs[r] = x;
-	} else {
-		regs[r] = regs[r] | (x & 0b0000000011111111);
-	}
+	drv_cmem_reset(ch);
+	pthread_create(&ch->thread, NULL, drv_cmem_thread, ch);
+	return E_OK;
+}
+
+// -----------------------------------------------------------------------
+void drv_cmem_shutdown(struct chan_t *ch)
+{
+	ch->finish = 1;
+	pthread_join(ch->thread, NULL);
+}
+
+// -----------------------------------------------------------------------
+void drv_cmem_reset(struct chan_t *ch)
+{
+	ch->int_spec = 0;
+	ch->int_mask = 0;
+	ch->dev_alloc = 0;
+}
+
+// -----------------------------------------------------------------------
+int drv_cmem_cmd(struct chan_t *ch, int dir, int unit, int cmd, int r)
+{
+	return IO_EN;
 }
 
 // vim: tabstop=4

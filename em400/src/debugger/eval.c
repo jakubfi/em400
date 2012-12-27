@@ -268,7 +268,7 @@ int16_t n_eval_ass(struct node_t * n)
 {
 	int16_t v = n_eval(n->n2);
 
-	unsigned short int nb;
+	int nb;
 	uint16_t addr;
 
 	switch (n->n1->type) {
@@ -291,7 +291,7 @@ int16_t n_eval_ass(struct node_t * n)
 // -----------------------------------------------------------------------
 int16_t n_eval_mem(struct node_t *n)
 {
-	unsigned short int nb = n_eval(n->n1);
+	int nb = n_eval(n->n1);
 	uint16_t addr = n_eval(n->n2);
 	return *mem_ptr(nb, addr);
 }
@@ -302,7 +302,7 @@ int16_t n_eval_op2(struct node_t * n)
 	int16_t v1, v2;
 
 	uint16_t m;
-	unsigned short int s;
+	int s;
 
 	v1 = n_eval(n->n1);
 	v2 = n_eval(n->n2);

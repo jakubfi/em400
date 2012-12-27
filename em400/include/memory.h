@@ -26,21 +26,21 @@
 #define MEM_MAX_NB 16
 #define MEM_MAX_AB 16
 
-extern short int mem_conf[MEM_MAX_MODULES];
+extern int mem_conf[MEM_MAX_MODULES];
 extern uint16_t *mem_segment[MEM_MAX_MODULES][MEM_MAX_SEGMENTS];
 extern uint16_t *mem_map[MEM_MAX_NB][MEM_MAX_AB];
 
 int mem_init();
 void mem_shutdown();
-int mem_add_map(unsigned short int nb, unsigned short int ab, unsigned short int mp, unsigned short int segment);
+int mem_add_map(int nb, int ab, int mp, int segment);
 void mem_remove_maps();
 
-uint16_t * mem_ptr(short unsigned int nb, uint16_t addr);
-uint16_t mem_read(short unsigned int nb, uint16_t addr, int trace);
-void mem_write(short unsigned int nb, uint16_t addr, uint16_t val, int trace);
+uint16_t * mem_ptr(int nb, uint16_t addr);
+uint16_t mem_read(int nb, uint16_t addr, int trace);
+void mem_write(int nb, uint16_t addr, uint16_t val, int trace);
 
 void mem_clear();
-int mem_load_image(const char* fname, unsigned short block);
+int mem_load_image(const char* fname, int nb);
 
 // memory access macros
 #define MEM(a)			mem_read(SR_Q*SR_NB, a, 1)

@@ -61,7 +61,7 @@ void dbg_ui_init()
 }
 
 // -----------------------------------------------------------------------
-void dbg_wu_mem(unsigned int wid)
+void dbg_wu_mem(int wid)
 {
 	AWIN *w = aw_window_find(wid);
 	if (!w) {
@@ -71,7 +71,7 @@ void dbg_wu_mem(unsigned int wid)
 }
 
 // -----------------------------------------------------------------------
-void dbg_wu_dasm(unsigned int wid)
+void dbg_wu_dasm(int wid)
 {
 	AWIN *w = aw_window_find(wid);
 	int offset = (w->ih) / 3;
@@ -85,24 +85,24 @@ void dbg_wu_dasm(unsigned int wid)
 }
 
 // -----------------------------------------------------------------------
-void dbg_wu_regs(unsigned int wid)
+void dbg_wu_regs(int wid)
 {
 	dbg_c_regs(wid);
 }
 
 // -----------------------------------------------------------------------
-void dbg_wu_sregs(unsigned int wid)
+void dbg_wu_sregs(int wid)
 {
 	dbg_c_sregs(wid);
 }
 
 // -----------------------------------------------------------------------
-void dbg_wu_cmd(unsigned int wid)
+void dbg_wu_cmd(int wid)
 {
 }
 
 // -----------------------------------------------------------------------
-void dbg_wu_status(unsigned int wid)
+void dbg_wu_status(int wid)
 {
 	char *kb = int2bin(regs[R_KB], 16);
 	awfillbg(wid, C_ILABEL, ' ', 0);
@@ -126,7 +126,7 @@ void dbg_wu_status(unsigned int wid)
 }
 
 // -----------------------------------------------------------------------
-void dbg_wu_stack(unsigned int wid)
+void dbg_wu_stack(int wid)
 {
 	AWIN *w = aw_window_find(wid);
 	dbg_c_stack(wid, w->ih);

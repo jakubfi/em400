@@ -15,30 +15,29 @@
 //  Foundation, Inc.,
 //  51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 
-#ifndef ERRORS_H
-#define ERRORS_H
+#include "errors.h"
+#include "io.h"
 
-enum em400_error {
-	E_UNKNOWN = -1,
-	E_OK = 0,
-	E_MEM_NO_OS_MEM,
-	E_MEM_BAD_SEGMENT_COUNT,
-	E_MEM_CANNOT_ALLOCATE,
-	E_MEM_BLOCK_TOO_SMALL,
-	E_FILE_OPEN,
-	E_FILE_OPERATION,
-	E_TIMER_SIGNAL,
-	E_TIMER_CREATE,
-	E_TIMER_SET,
-	E_ALLOC,
-	E_DEBUGGER_SIG_RESIZE,
-	E_IO_INCOMPATIBILE_UNIT
-};
+// -----------------------------------------------------------------------
+int drv_cnone_init(struct chan_t *ch)
+{
+	return E_OK;
+}
 
-struct _em400_errordesc;
+// -----------------------------------------------------------------------
+void drv_cnone_shutdown(struct chan_t *ch)
+{
+}
 
-char * get_error(int e);
+// -----------------------------------------------------------------------
+void drv_cnone_reset(struct chan_t *ch)
+{
+}
 
-#endif
+// -----------------------------------------------------------------------
+int drv_cnone_cmd(struct chan_t *ch, int dir, int unit, int cmd, int r)
+{
+	return IO_NO;
+}
 
 // vim: tabstop=4

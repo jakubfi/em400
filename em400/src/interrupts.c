@@ -21,6 +21,7 @@
 #include "memory.h"
 #include "registers.h"
 #include "interrupts.h"
+#include "io.h"
 
 uint32_t RZ;
 pthread_mutex_t int_mutex = PTHREAD_MUTEX_INITIALIZER;
@@ -114,7 +115,7 @@ void int_serve()
 
 	// find highest interrupt to serve
 	int probe = 31;
-	while (probe && !(rz & (1<<probe))) {
+	while ((probe > 0) && !(rz & (1 << probe))) {
 		probe--;
 	}
 
@@ -127,12 +128,18 @@ void int_serve()
 	// interrupt is masked, nothing to do
 	if (int_is_masked(interrupt)) return;
 
+	// get interrupt specification
+	int int_spec = 0;
+	if ((interrupt >= 12) && (interrupt <= 27)) {
+		int_spec = io_get_int_spec(interrupt);
+	}
+
 	// put system status on stack
 	uint16_t SP = nMEMB(0, 97);
 	nMEMBw(0, SP, R(R_IC));
 	nMEMBw(0, SP+1, R(0));
 	nMEMBw(0, SP+2, R(R_SR));
-	nMEMBw(0, SP+3, 0); // TODO: 0 lub specyfikacja przerwania (jeśli z kanału)
+	nMEMBw(0, SP+3, int_spec);
 	Rw(0, 0);
 	int_mask(interrupt);
 	int_clear(interrupt);

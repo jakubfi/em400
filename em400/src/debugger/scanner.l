@@ -28,6 +28,9 @@
 void yyerror(char *);
 %}
 
+%option nounput
+%option noinput
+
 %s fname cmdname brkcmd
 
 oct		0[0-7]+

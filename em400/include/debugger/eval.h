@@ -37,7 +37,7 @@ struct node_t {
 	int type;
 	int16_t val;
 	char *var;
-	unsigned short int nb;
+	int nb;
 	void *mptr;
 	struct node_t *n1;
 	struct node_t *n2;

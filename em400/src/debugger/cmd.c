@@ -355,9 +355,9 @@ void dbg_c_memcfg(int wid)
 }
 
 // -----------------------------------------------------------------------
-void dbg_c_brk_add(unsigned int wid, char *label, struct node_t *n)
+void dbg_c_brk_add(int wid, char *label, struct node_t *n)
 {
-	static unsigned int brkcnt;
+	static int brkcnt;
 
 	struct break_t *b = malloc(sizeof(struct break_t));
 	b->nr = brkcnt++;
@@ -382,7 +382,7 @@ void dbg_c_brk_add(unsigned int wid, char *label, struct node_t *n)
 }
 
 // -----------------------------------------------------------------------
-void dbg_c_brk_list(unsigned int wid)
+void dbg_c_brk_list(int wid)
 {
 	struct break_t *b = brk_stack;
 	if (!b) {
@@ -412,7 +412,7 @@ struct break_t * dbg_c_brk_get(int nr)
 }
 
 // -----------------------------------------------------------------------
-void dbg_c_brk_del(unsigned int wid, int nr)
+void dbg_c_brk_del(int wid, int nr)
 {
 	struct break_t *b = brk_stack;
 	struct break_t *prev = NULL;
@@ -439,7 +439,7 @@ void dbg_c_brk_del(unsigned int wid, int nr)
 }
 
 // -----------------------------------------------------------------------
-void dbg_c_brk_test(unsigned int wid, int nr)
+void dbg_c_brk_test(int wid, int nr)
 {
 	struct break_t *b = dbg_c_brk_get(nr);
 	if (b) {
@@ -453,7 +453,7 @@ void dbg_c_brk_test(unsigned int wid, int nr)
 } 
 
 // -----------------------------------------------------------------------
-void dbg_c_brk_disable(unsigned int wid, int nr, int disable)
+void dbg_c_brk_disable(int wid, int nr, int disable)
 {
 	struct break_t *b = dbg_c_brk_get(nr);
 	if (b) {

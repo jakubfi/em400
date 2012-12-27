@@ -48,12 +48,14 @@ int main(int argc, char** argv)
 
 	printf("Starting EM400 version %s ...\n", EM400_VERSION);
 
+	printf("Initializing memory\n");
 	res = mem_init();
 	if (res) {
 		mem_shutdown();
 		eerr("Error initializing memory", res);
 	}
 
+	printf("Initializing I/O\n");
 	res = io_init();
 	if (res) {
 		io_shutdown();
@@ -61,6 +63,7 @@ int main(int argc, char** argv)
 		eerr("Error initializing I/O", res);
 	}
 
+	printf("Starting timer\n");
 	res = timer_init();
 	if (res) {
 		timer_shutdown();
@@ -70,6 +73,7 @@ int main(int argc, char** argv)
 	}
 
 #ifdef WITH_DEBUGGER
+	printf("Initializing debugger\n");
 	res = dbg_init();
 	if (res) {
 		dbg_shutdown();

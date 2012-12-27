@@ -40,6 +40,7 @@ void * timer_thread(void *ptr)
 		nanosleep(&ts, &tr);
 		int_set(INT_TIMER);
 	}
+	pthread_exit(NULL);
 }
 
 // -----------------------------------------------------------------------
@@ -52,6 +53,7 @@ int timer_init()
 void timer_shutdown()
 {
 	timer_fin = 1;
+	pthread_join(timer_th, NULL);
 }
 
 // vim: tabstop=4
