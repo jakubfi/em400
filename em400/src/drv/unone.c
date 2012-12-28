@@ -15,48 +15,29 @@
 //  Foundation, Inc.,
 //  51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 
-#ifndef DRV_DRIVERS_H
-#define DRV_DRIVERS_H
-
+#include "errors.h"
 #include "io.h"
 
-enum drv_chan_type {
-	CHAN_NONE = 0,
-	CHAN_CHAR,
-	CHAN_MEM,
-	CHAN_PI,
-	CHAN_MULTIX,
-	CHAN_PLIX
-};
+// -----------------------------------------------------------------------
+int drv_unone_init(struct unit_t *u, int cfgc, char **cfgv)
+{
+	return E_OK;
+}
 
-enum drv_unit_type {
-	UNIT_NONE = 0,
-	UNIT_9425,
-	UNIT_WINCHESTER,
-	UNIT_TERM_TCP,
-	UNIT_TERM_SERIAL
-};
+// -----------------------------------------------------------------------
+void drv_unone_shutdown(struct unit_t *u)
+{
+}
 
-struct drv_chan_t {
-	int type;
-	int (*f_init)(struct chan_t *ch);
-	void (*f_shutdown)(struct chan_t *ch);
-	void (*f_reset)(struct chan_t *ch);
-	int (*f_cmd)(struct chan_t *ch, int dir, int unit, int cmd, int r);
-};
+// -----------------------------------------------------------------------
+void drv_unone_reset(struct unit_t *u)
+{
+}
 
-struct drv_unit_t {
-	int type;
-	int chan_type;
-	int (*f_init)(struct unit_t *u, int cfgc, char **cfgv);
-	void (*f_shutdown)(struct unit_t *u);
-	void (*f_reset)(struct unit_t *u);
-	int (*f_cmd)(struct unit_t *u, int dir, int cmd, int r);
-};
-
-extern struct drv_chan_t drv_chan[];
-extern struct drv_unit_t drv_unit[];
-
-#endif
+// -----------------------------------------------------------------------
+int drv_unone_cmd(struct unit_t *u, int dir, int cmd, int r)
+{
+	return IO_NO;
+}
 
 // vim: tabstop=4

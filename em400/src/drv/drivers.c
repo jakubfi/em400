@@ -20,6 +20,8 @@
 #include "drv/cnone.h"
 #include "drv/cmem.h"
 
+#include "drv/unone.h"
+
 struct drv_chan_t drv_chan[] = {
 	{ CHAN_NONE, drv_cnone_init, drv_cnone_shutdown, drv_cnone_reset, drv_cnone_cmd },
 	{ CHAN_CHAR, NULL, NULL, NULL, NULL },
@@ -30,10 +32,10 @@ struct drv_chan_t drv_chan[] = {
 };
 
 struct drv_unit_t drv_unit[] = {
-	{ UNIT_NONE, CHAN_NONE, NULL, NULL, NULL, NULL },
+	{ UNIT_NONE, CHAN_NONE, drv_unone_init, drv_unone_shutdown, drv_unone_reset, drv_unone_cmd },
 	{ UNIT_9425, CHAN_MEM, NULL, NULL, NULL, NULL },
 	{ UNIT_WINCHESTER, CHAN_PLIX, NULL, NULL, NULL, NULL },
-	{ UNIT_TERM_NET, CHAN_CHAR, NULL, NULL, NULL, NULL },
+	{ UNIT_TERM_TCP, CHAN_CHAR, NULL, NULL, NULL, NULL },
 	{ UNIT_TERM_SERIAL, CHAN_CHAR, NULL, NULL, NULL, NULL }
 };
 

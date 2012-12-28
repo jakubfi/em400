@@ -32,6 +32,7 @@
 #include "debugger/eval.h"
 
 int ui_mode = O_NCURSES;
+//int ui_mode = O_STD;
 
 // debuger flow
 int dbg_loop_fin = 0;

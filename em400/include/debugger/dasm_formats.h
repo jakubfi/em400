@@ -64,8 +64,8 @@
 #define T_BS "if (r%A & r7 == %n & r7) then skip"
 #define T_BC "if (r%A & %n != %n then skip"
 #define T_BN "if (r%A & %n == 0) then skip"
-#define T_OU "output(%n, r%A)"
-#define T_IN "input(%n, r%A)"
+#define T_OU "output(N:%n, r:%A)"
+#define T_IN "input(N:%n, r:%A)"
 
 #define T_AW "r%A += %n"
 #define T_AC "r%A += %n + C"

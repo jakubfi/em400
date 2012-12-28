@@ -36,6 +36,8 @@ struct _em400_errordesc {
 	{ E_ALLOC, "Cannot allocade memory." },
 	{ E_DEBUGGER_SIG_RESIZE, "Cannot setup window resize handler." },
 	{ E_IO_INCOMPATIBILE_UNIT, "Unit incompatibile with channel." },
+	{ E_IO_DRV_CHAN_BAD, "Bad channel driver definition." },
+	{ E_IO_DRV_UNIT_BAD, "Bad unit driver definition." },
 
 
 	{ E_UNKNOWN, "Unknown error." }

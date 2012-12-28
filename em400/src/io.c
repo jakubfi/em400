@@ -18,6 +18,7 @@
 #include <inttypes.h>
 #include <stdlib.h>
 #include <pthread.h>
+#include <stdio.h>
 
 #include "errors.h"
 #include "io.h"
@@ -29,7 +30,7 @@
 struct chan_t io_chan[IO_MAX_CHAN];
 struct unit_t io_unit[IO_MAX_CHAN][IO_MAX_UNIT];
 
-int io_chan_conf[IO_MAX_CHAN] = { 0, CHAN_MEM, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 };
+int io_chan_conf[IO_MAX_CHAN] = { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 };
 int io_unit_conf[IO_MAX_CHAN][IO_MAX_UNIT] = {
 { 0, 0, 0, 0, 0, 0, 0, 0 },
 { 0, 0, 0, 0, 0, 0, 0, 0 },
@@ -50,31 +51,66 @@ int io_unit_conf[IO_MAX_CHAN][IO_MAX_UNIT] = {
 };
 
 // -----------------------------------------------------------------------
+int io_chan_init(struct chan_t *chan, int ctype)
+{
+	// channel driver description
+	struct drv_chan_t *drv = drv_chan + ctype;
+
+	// driver sanity checks
+	if ((!drv) || (!drv->f_init) || (!drv->f_shutdown) || (!drv->f_reset) || (!drv->f_cmd) || (ctype != drv->type)) {
+		return E_IO_DRV_CHAN_BAD;
+	}
+
+	// common channel initialization
+	chan->type = drv->type;
+	chan->finish = 0;
+	chan->f_shutdown = drv->f_shutdown;
+	chan->f_reset = drv->f_reset;
+	chan->f_cmd = drv->f_cmd;
+
+	// initialize the channel
+	drv->f_init(chan);
+
+	return E_OK;
+}
+
+// -----------------------------------------------------------------------
+int io_unit_init(struct unit_t *unit, int utype)
+{
+	// unit driver description
+	struct drv_unit_t *drv = drv_unit + utype;
+
+	// driver sanity checks
+	if ((!drv) || (!drv->f_init) || (!drv->f_shutdown) || (!drv->f_reset) || (!drv->f_cmd) || (utype != drv->type)) {
+		return E_IO_DRV_UNIT_BAD;
+	}
+
+	unit->type = drv->type;
+
+	// check if unit can be connected to this type of channel
+	if ((unit->chan->type == drv->chan_type) || (unit->type == UNIT_NONE)) {
+		unit->f_shutdown = drv->f_shutdown;
+		unit->f_reset = drv->f_reset;
+		unit->f_cmd = drv->f_cmd;
+	} else {
+		// unit driver is incompatibile with this type of channel
+		return E_IO_INCOMPATIBILE_UNIT;
+	}
+
+	return E_OK;
+}
+
+// -----------------------------------------------------------------------
 int io_init()
 {
+	// initialize all channels
 	for (int i=0 ; i<IO_MAX_CHAN ; i++) {
-		int ctype = io_chan_conf[i];
+		io_chan_init(io_chan+i, io_chan_conf[i]);
 
-		// common channel initialization
-		io_chan[i].type = ctype;
-		io_chan[i].finish = 0;
-		io_chan[i].f_shutdown = drv_chan[ctype].f_shutdown;
-		io_chan[i].f_reset = drv_chan[ctype].f_reset;
-		io_chan[i].f_cmd = drv_chan[ctype].f_cmd;
-
-		// initialize the channel
-		drv_chan[ctype].f_init(io_chan+i);
-
-		// initialize all units connected
+		// initialize all units connected to each channel
 		for (int j=0 ; j<IO_MAX_UNIT ; j++) {
-			int utype = io_unit_conf[i][j];
-			io_unit[i][j].chan = io_chan + i;
-
-			// check if unit can be connected to this type of channel
-			if ((ctype == drv_unit[utype].chan_type) || (utype == UNIT_NONE)) {
-			} else {
-				return E_IO_INCOMPATIBILE_UNIT;
-			}
+			io_unit[i][j].chan = io_chan+i;
+			io_unit_init(io_unit[i]+j, io_unit_conf[i][j]);
 		}
 	}
 	return E_OK;
@@ -92,6 +128,7 @@ void io_shutdown()
 // -----------------------------------------------------------------------
 uint16_t io_get_int_spec(int interrupt)
 {
+	// TODO: check if the interrupt hasn't been masked in the meantime
 	int chan = interrupt - 12;
 	return io_chan[chan].int_spec;
 }

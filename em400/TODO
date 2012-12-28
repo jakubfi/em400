@@ -7,6 +7,9 @@ CPU:
 
 Debuger:
 
+* trans should decode in/ou more
+* logging (?)
+* use hex everywhere by default
 * inform user which interrupt is being served (if any)
 * memory/registers untraced when accessed by i/o devices
 * inteligent memory view (auto-scroll)

@@ -15,47 +15,15 @@
 //  Foundation, Inc.,
 //  51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 
-#ifndef DRV_DRIVERS_H
-#define DRV_DRIVERS_H
+#ifndef DRV_UNONE_H
+#define DRV_UNONE_H
 
 #include "io.h"
 
-enum drv_chan_type {
-	CHAN_NONE = 0,
-	CHAN_CHAR,
-	CHAN_MEM,
-	CHAN_PI,
-	CHAN_MULTIX,
-	CHAN_PLIX
-};
-
-enum drv_unit_type {
-	UNIT_NONE = 0,
-	UNIT_9425,
-	UNIT_WINCHESTER,
-	UNIT_TERM_TCP,
-	UNIT_TERM_SERIAL
-};
-
-struct drv_chan_t {
-	int type;
-	int (*f_init)(struct chan_t *ch);
-	void (*f_shutdown)(struct chan_t *ch);
-	void (*f_reset)(struct chan_t *ch);
-	int (*f_cmd)(struct chan_t *ch, int dir, int unit, int cmd, int r);
-};
-
-struct drv_unit_t {
-	int type;
-	int chan_type;
-	int (*f_init)(struct unit_t *u, int cfgc, char **cfgv);
-	void (*f_shutdown)(struct unit_t *u);
-	void (*f_reset)(struct unit_t *u);
-	int (*f_cmd)(struct unit_t *u, int dir, int cmd, int r);
-};
-
-extern struct drv_chan_t drv_chan[];
-extern struct drv_unit_t drv_unit[];
+int drv_unone_init(struct unit_t *u, int cfgc, char **cfgv);
+void drv_unone_shutdown(struct unit_t *u);
+void drv_unone_reset(struct unit_t *u);
+int drv_unone_cmd(struct unit_t *u, int dir, int cmd, int r);
 
 #endif
 
