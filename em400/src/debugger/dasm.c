@@ -159,7 +159,7 @@ int dt_dasm_eff_arg(char *buf, uint16_t *memptr)
 	if (_C(*memptr) != 0) {
 		n += sprintf(buf+n, "r%i", _C(*memptr));
 	} else {
-		n += sprintf(buf+n, "%i", *(memptr+1));
+		n += sprintf(buf+n, "0x%x", *(memptr+1));
 	}
 
 	if (_B(*memptr) != 0) {

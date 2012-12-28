@@ -3,19 +3,19 @@ Known bugs:
 
 CPU:
 
+* HLT should wait for unmasked interrupts only (?)
+* interrupts served only when P=0, MOD=0, ...
 * AWP - sign storage, floating point instructions
 
 Debuger:
 
-* trans should decode in/ou more
-* logging (?)
-* use hex everywhere by default
+* logging
 * inform user which interrupt is being served (if any)
 * memory/registers untraced when accessed by i/o devices
 * inteligent memory view (auto-scroll)
 * scrollable memory/dasm/stack views (?)
 * IPS counter
-* macro for accessing interrupt states
+* macro for accessing interrupt states (for brk)
 * save memory image
 * load/save snapshot (?)
 * step should work the same way as CYCLE (cycle on instruction and interrupt) (?)

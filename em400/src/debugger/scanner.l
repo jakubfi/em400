@@ -87,6 +87,7 @@ mod|MOD	{
 hex	return HEX;
 oct	return OCT;
 bin	return BIN;
+dec return DEC;
 uint return UINT;
 
 <INITIAL>{text}	{

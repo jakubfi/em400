@@ -38,7 +38,9 @@ enum drv_unit_type {
 };
 
 struct drv_chan_t {
-	int type;
+	const int type;
+	const char *name;
+	const char *desc;
 	int (*f_init)(struct chan_t *ch);
 	void (*f_shutdown)(struct chan_t *ch);
 	void (*f_reset)(struct chan_t *ch);
@@ -46,8 +48,10 @@ struct drv_chan_t {
 };
 
 struct drv_unit_t {
-	int type;
-	int chan_type;
+	const int type;
+	const int chan_type;
+	const char *name;
+	const char *desc;
 	int (*f_init)(struct unit_t *u, int cfgc, char **cfgv);
 	void (*f_shutdown)(struct unit_t *u);
 	void (*f_reset)(struct unit_t *u);

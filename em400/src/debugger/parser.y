@@ -43,7 +43,7 @@ struct node_t *enode;
 %token <value> VALUE REG YERR
 %token <text> TEXT FNAME CMDNAME
 %token ':' '&' '|' '(' ')'
-%token HEX OCT BIN UINT
+%token HEX OCT BIN DEC UINT
 %token <value> F_QUIT F_CLMEM F_MEM F_REGS F_SREGS F_RESET F_STEP F_HELP F_DASM F_TRANS F_LOAD F_MEMCFG F_BRK F_RUN F_STACK
 %token B_ADD B_LIST B_DEL B_TEST B_DISABLE B_ENABLE
 %type <n> expr lval bitfield
@@ -71,6 +71,10 @@ statement:
 		awprint(W_CMD, C_DATA, "%i\n", (uint16_t) n_eval($3));
 		n_discard_stack();
 	}
+	| DEC '(' expr ')' '\n' {
+		awprint(W_CMD, C_DATA, "%i\n", n_eval($3));
+		n_discard_stack();
+	}
 	| HEX '(' expr ')' '\n' {
 		awprint(W_CMD, C_DATA, "0x%x\n", n_eval($3));
 		n_discard_stack();
@@ -86,7 +90,7 @@ statement:
 		n_discard_stack();
 	}
 	| expr '\n' {
-		awprint(W_CMD, C_DATA, "%i\n", n_eval($1));
+		awprint(W_CMD, C_DATA, "0x%x\n", n_eval($1));
 		n_discard_stack();
 	}
 	| YERR '\n' {

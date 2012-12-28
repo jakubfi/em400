@@ -23,20 +23,20 @@
 #include "drv/unone.h"
 
 struct drv_chan_t drv_chan[] = {
-	{ CHAN_NONE, drv_cnone_init, drv_cnone_shutdown, drv_cnone_reset, drv_cnone_cmd },
-	{ CHAN_CHAR, NULL, NULL, NULL, NULL },
-	{ CHAN_MEM, drv_cmem_init, drv_cmem_shutdown, drv_cmem_reset, drv_cmem_cmd },
-	{ CHAN_PI, NULL, NULL, NULL, NULL },
-	{ CHAN_MULTIX, NULL, NULL, NULL, NULL },
-	{ CHAN_PLIX, NULL, NULL, NULL, NULL }
+	{ CHAN_NONE, "none", "None", drv_cnone_init, drv_cnone_shutdown, drv_cnone_reset, drv_cnone_cmd },
+	{ CHAN_CHAR, "char", "Character", NULL, NULL, NULL, NULL },
+	{ CHAN_MEM, "mem", "Memory", drv_cmem_init, drv_cmem_shutdown, drv_cmem_reset, drv_cmem_cmd },
+	{ CHAN_PI, "pi", "PI", NULL, NULL, NULL, NULL },
+	{ CHAN_MULTIX, "multix", "MULTIX", NULL, NULL, NULL, NULL },
+	{ CHAN_PLIX, "plix", "PLIX", NULL, NULL, NULL, NULL }
 };
 
 struct drv_unit_t drv_unit[] = {
-	{ UNIT_NONE, CHAN_NONE, drv_unone_init, drv_unone_shutdown, drv_unone_reset, drv_unone_cmd },
-	{ UNIT_9425, CHAN_MEM, NULL, NULL, NULL, NULL },
-	{ UNIT_WINCHESTER, CHAN_PLIX, NULL, NULL, NULL, NULL },
-	{ UNIT_TERM_TCP, CHAN_CHAR, NULL, NULL, NULL, NULL },
-	{ UNIT_TERM_SERIAL, CHAN_CHAR, NULL, NULL, NULL, NULL }
+	{ UNIT_NONE, CHAN_NONE, "none", "None", drv_unone_init, drv_unone_shutdown, drv_unone_reset, drv_unone_cmd },
+	{ UNIT_9425, CHAN_MEM, "9425", "MERA-9425", NULL, NULL, NULL, NULL },
+	{ UNIT_WINCHESTER, CHAN_PLIX, "winchester", "Winchester", NULL, NULL, NULL, NULL },
+	{ UNIT_TERM_TCP, CHAN_CHAR, "term_tcp", "TCP terminal", NULL, NULL, NULL, NULL },
+	{ UNIT_TERM_SERIAL, CHAN_CHAR, "term_serial", "Serial terminal", NULL, NULL, NULL, NULL }
 };
 
 // vim: tabstop=4
