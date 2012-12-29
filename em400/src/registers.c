@@ -18,7 +18,6 @@
 #include <inttypes.h>
 
 #include "registers.h"
-#include "interrupts.h"
 
 #ifdef WITH_DEBUGGER
 #include "debugger/debugger.h"
@@ -55,22 +54,7 @@ void reg_write(int r, uint16_t x, int trace)
 	}
 #endif
 	if (r) {
-		// if this is not SR, just do it
-		if (r != R_SR) {
-			regs[r] = x;
-		// if this is SR, user may have changed RM
-		} else {
-			// if RM is untouched, just do it
-			if ((regs[R_SR] & 0b1111111111000000) == (r & 0b1111111111000000)) {
-				regs[r] = x;
-			// if RM has changed, we need to update RP
-			} else {
-				pthread_mutex_lock(&int_mutex);
-				regs[r] = x;
-				int_update_rp();
-				pthread_mutex_unlock(&int_mutex);
-			}
-		}
+		regs[r] = x;
 	} else {
 		regs[r] = regs[r] | (x & 0b0000000011111111);
 	}

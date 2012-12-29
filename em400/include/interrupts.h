@@ -21,8 +21,9 @@
 #include <inttypes.h>
 #include <pthread.h>
 
-extern pthread_cond_t int_cond;
-extern pthread_mutex_t int_mutex;
+extern pthread_mutex_t int_mutex_rz;
+extern pthread_mutex_t int_mutex_rp;
+extern pthread_cond_t int_cond_rp;
 
 extern volatile uint32_t RZ;
 extern volatile uint32_t RP;

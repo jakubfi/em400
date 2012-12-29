@@ -609,6 +609,7 @@ int op_71_exl()
 	Rw(0, 0);
 	nMEMBw(0, 97, SP+4);
 	SR_RM9cb;
+	int_update_rp();
 	SR_Qcb;
 	return OP_OK;
 }
@@ -844,19 +845,19 @@ int op_73()
 // -----------------------------------------------------------------------
 int op_73_hlt()
 {
-	pthread_mutex_lock(&int_mutex);
+	pthread_mutex_lock(&int_mutex_rp);
 	while (!RP) {
-		pthread_cond_wait(&int_cond, &int_mutex);
+		pthread_cond_wait(&int_cond_rp, &int_mutex_rp);
 	}
-	pthread_mutex_unlock(&int_mutex);
+	pthread_mutex_unlock(&int_mutex_rp);
 	return OP_OK;
 }
 
 // -----------------------------------------------------------------------
 int op_73_mcl()
 {
-	int_clear(INT_ALL);
 	Rw(R_SR, 0);
+	int_clear(INT_ALL);
 	Rw(0, 0);
 	// TODO: zeruj kanały
 	// TODO: zeruj urządzenia
@@ -913,6 +914,7 @@ int op_73_lip()
 	Rw(R_IC, nMEMB(0, SP-4));
 	Rw(0, nMEMB(0, SP-3));
 	Rw(R_SR, nMEMB(0, SP-2));
+	int_update_rp();
 	nMEMBw(0, 97, SP-4);
 	return OP_OK;
 }
@@ -1223,6 +1225,7 @@ int op_77_im()
 	if (SR_Q) return OP_ILLEGAL;
 	uint16_t N = cpu_get_eff_arg();
 	SR_SET_MASK(MEM(N));
+	int_update_rp();
 	return OP_OK;
 }
 
@@ -1252,6 +1255,7 @@ int op_77_sp()
 	Rw(R_IC, MEMNB(N));
 	Rw(0, MEMNB(N+1));
 	Rw(R_SR, MEMNB(N+2));
+	int_update_rp();
 	return OP_OK;
 }
 

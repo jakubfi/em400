@@ -25,10 +25,11 @@
 
 volatile uint32_t RZ;
 volatile uint32_t RP;
-uint32_t xmask;
+uint32_t xmask = 0b10000000000000000000000000000000;
 
-pthread_mutex_t int_mutex = PTHREAD_MUTEX_INITIALIZER;
-pthread_cond_t int_cond = PTHREAD_COND_INITIALIZER;
+pthread_mutex_t int_mutex_rz = PTHREAD_MUTEX_INITIALIZER;
+pthread_mutex_t int_mutex_rp = PTHREAD_MUTEX_INITIALIZER;
+pthread_cond_t int_cond_rp = PTHREAD_COND_INITIALIZER;
 
 // for extending RM into 32-bit xmask
 const uint32_t int_rm2xmask[10] = {
@@ -62,43 +63,50 @@ const int int_int2mask[32] = {
 // -----------------------------------------------------------------------
 void int_update_rp()
 {
-	xmask = 0b10000000000000000000000000000000;
+	uint16_t sr = nR(R_SR);
+	uint32_t lxmask = 0b10000000000000000000000000000000;
+
 	for (int i=0 ; i<10 ; i++) {
-		if (nR(R_SR) & (1<<(15-i))) {
-			xmask |= int_rm2xmask[i];
+		if (sr & (1 << (15-i))) {
+			lxmask |= int_rm2xmask[i];
 		}
 	}
 
-	RP = RZ & xmask;
+	pthread_mutex_lock(&int_mutex_rp);
+	RP = RZ & lxmask;
+	xmask = lxmask;
+	pthread_cond_signal(&int_cond_rp);
+	pthread_mutex_unlock(&int_mutex_rp);
 }
 
 // -----------------------------------------------------------------------
 void int_set(uint32_t x)
 {
-	pthread_mutex_lock(&int_mutex);
+	pthread_mutex_lock(&int_mutex_rz);
 	RZ |= x;
+	pthread_mutex_unlock(&int_mutex_rz);
 	int_update_rp();
-	pthread_cond_signal(&int_cond);
-	pthread_mutex_unlock(&int_mutex);
 }
 
 // -----------------------------------------------------------------------
 void int_clear(uint32_t x)
 {
-	pthread_mutex_lock(&int_mutex);
+	pthread_mutex_lock(&int_mutex_rz);
 	RZ &= ~(x);
+	pthread_mutex_unlock(&int_mutex_rz);
+
+	pthread_mutex_lock(&int_mutex_rp);
 	RP &= ~(x);
-	pthread_mutex_unlock(&int_mutex);
+	pthread_mutex_unlock(&int_mutex_rp);
 }
 
 // -----------------------------------------------------------------------
 void int_put_nchan(uint16_t r)
 {
-	pthread_mutex_lock(&int_mutex);
+	pthread_mutex_lock(&int_mutex_rz);
 	RZ = (RZ & 0b00000000000011111111111111110000) | ((r & 0b1111111111110000) << 16) | (r & 0b0000000000001111);
+	pthread_mutex_unlock(&int_mutex_rz);
 	int_update_rp();
-	pthread_cond_signal(&int_cond);
-	pthread_mutex_unlock(&int_mutex);
 }
 
 // -----------------------------------------------------------------------
@@ -106,12 +114,6 @@ uint16_t int_get_nchan()
 {
 	uint16_t r = RZ;
 	return ((r & 0b11111111111100000000000000000000) >> 16) | (r & 0b00000000000000000000000000001111);
-}
-
-// -----------------------------------------------------------------------
-void int_mask_below(int i)
-{
-	nRw(R_SR, nR(R_SR) & int_int2mask[i]);
 }
 
 // -----------------------------------------------------------------------
@@ -152,7 +154,8 @@ void int_serve()
 
 	// clear stuff and get ready to serve
 	nRw(0, 0);
-	int_mask_below(interrupt);
+	// mask interrupts with prio <= interrupt
+	nRw(R_SR, nR(R_SR) & int_int2mask[interrupt]);
 	int_clear(interrupt);
 	nRw(R_IC, nMEMB(0, 64+interrupt));
 	nMEMBw(0, 97, SP+4);
