@@ -179,6 +179,7 @@ void dbg_c_mem(int wid, int block, int start, int end, int maxcols, int maxlines
 	}
 
 	int words = (maxcols - 10) / 7;
+	if (words>16) words = 16;
 	maxlines -=2; // two used for header
 
 	// headers
@@ -261,6 +262,14 @@ void dbg_c_sregs(int wid)
 	char *rp6 = int2bin(RP>>4, 6);
 	char *rp7 = int2bin(RP, 4);
 
+	char *xm1 = int2bin(xmask>>27, 5);
+	char *xm2 = int2bin(xmask>>20, 7);
+	char *xm3 = int2bin(xmask>>18, 2);
+	char *xm4 = int2bin(xmask>>16, 2);
+	char *xm5 = int2bin(xmask>>10, 6);
+	char *xm6 = int2bin(xmask>>4, 6);
+	char *xm7 = int2bin(xmask, 4);
+
 	char *sf = int2bin(regs[0]>>8, 8);
 	char *uf = int2bin(regs[0], 8);
 
@@ -279,7 +288,7 @@ void dbg_c_sregs(int wid)
 	awprint(wid, C_DATA, "\n");
 	awprint(wid, C_LABEL, "SR: ");
 	awprint(wid, C_DATA, "0x%04x  %s %i %i %s", regs[R_SR], rm, SR_Q, s, nb);
-	awprint(wid, C_DATA, "\n");
+	awprint(wid, C_DATA, "\n\n");
 
 	awprint(wid, C_LABEL, "                ZPMCZ TIFFFFx 01 23 456789 abcdef OCSS");
 	awprint(wid, C_DATA, "\n");
@@ -287,15 +296,13 @@ void dbg_c_sregs(int wid)
 	awprint(wid, C_DATA, "0x%08x  %s %s %s %s %s %s %s", RZ, rz1, rz2, rz3, rz4, rz5, rz6, rz7);
 	awprint(wid, C_DATA, "\n");
 
+	awprint(wid, C_LABEL, "Unmasked in RM: ");
+	awprint(wid, C_DATA, "%s %s %s %s %s %s %s", xm1, xm2, xm3, xm4, xm5, xm6, xm7);
+	awprint(wid, C_DATA, "\n");
+
 	awprint(wid, C_LABEL, "RP: ");
 	awprint(wid, C_DATA, "0x%08x  %s %s %s %s %s %s %s", RP, rp1, rp2, rp3, rp4, rp5, rp6, rp7);
 	awprint(wid, C_DATA, "\n");
-
-//	awprint(wid, C_LABEL, "            ZMVCLEGY Xuser");
-//	awprint(wid, C_DATA, "\n");
-//	awprint(wid, C_LABEL, "R0: ");
-//	awprint(wid, C_DATA, "0x%04x  %s %s", regs[0], sf, uf);
-//	awprint(wid, C_DATA, "\n");
 
 	free(uf);
 	free(sf);
@@ -307,6 +314,14 @@ void dbg_c_sregs(int wid)
 	free(rz5);
 	free(rz6);
 	free(rz7);
+
+	free(xm1);
+	free(xm2);
+	free(xm3);
+	free(xm4);
+	free(xm5);
+	free(xm6);
+	free(xm7);
 
 	free(rp1);
 	free(rp2);
@@ -328,17 +343,19 @@ void dbg_c_sregs(int wid)
 // -----------------------------------------------------------------------
 void dbg_c_regs(int wid)
 {
-	awprint(wid, C_LABEL, "    hex    oct    dec    ZMVCLEGYXuser    ch R40\n");
+	awprint(wid, C_LABEL, "    hex    oct    dec    ZMVCLEGY Xuser    ch R40\n");
 	for (int i=0 ; i<=7 ; i++) {
-		char *b = int2bin(regs[i], 16);
+		char *b1 = int2bin(regs[i]>>8, 8);
+		char *b2 = int2bin(regs[i], 8);
 		char *r = int2r40(regs[i]);
 		char c[3];
 		int2chars(regs[i], c);
 
 		awprint(wid, C_LABEL, "R%i: ", i);
-		awprint(wid, reg_act[i], "0x%04x %6o %6i %s %s %s\n", regs[i], regs[i], (int16_t)regs[i], b, c, r);
+		awprint(wid, reg_act[i], "0x%04x %6o %6i %s %s %s %s\n", regs[i], regs[i], (int16_t)regs[i], b1, b2, c, r);
 		free(r);
-		free(b);
+		free(b1);
+		free(b2);
 	}
 }
 

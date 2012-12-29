@@ -53,7 +53,9 @@ int16_t cpu_get_eff_arg()
 	}
 
 	// B-modification
-	N += R(IR_B);
+	if (IR_B) {
+		N += R(IR_B);
+	}
 
 	// PRE-modification
 	N += nR(R_MOD);

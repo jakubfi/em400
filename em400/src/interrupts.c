@@ -25,6 +25,7 @@
 
 volatile uint32_t RZ;
 volatile uint32_t RP;
+uint32_t xmask;
 
 pthread_mutex_t int_mutex = PTHREAD_MUTEX_INITIALIZER;
 pthread_cond_t int_cond = PTHREAD_COND_INITIALIZER;
@@ -61,8 +62,7 @@ const int int_int2mask[32] = {
 // -----------------------------------------------------------------------
 void int_update_rp()
 {
-	uint32_t xmask = 0b10000000000000000000000000000000;
-
+	xmask = 0b10000000000000000000000000000000;
 	for (int i=0 ; i<10 ; i++) {
 		if (nR(R_SR) & (1<<(15-i))) {
 			xmask |= int_rm2xmask[i];
@@ -111,7 +111,7 @@ uint16_t int_get_nchan()
 // -----------------------------------------------------------------------
 void int_mask_below(int i)
 {
-	Rw(R_SR, R(R_SR) & int_int2mask[i]);
+	nRw(R_SR, nR(R_SR) & int_int2mask[i]);
 }
 
 // -----------------------------------------------------------------------
@@ -145,16 +145,16 @@ void int_serve()
 
 	// put system status on stack
 	uint16_t SP = nMEMB(0, 97);
-	nMEMBw(0, SP, R(R_IC));
-	nMEMBw(0, SP+1, R(0));
-	nMEMBw(0, SP+2, R(R_SR));
+	nMEMBw(0, SP, nR(R_IC));
+	nMEMBw(0, SP+1, nR(0));
+	nMEMBw(0, SP+2, nR(R_SR));
 	nMEMBw(0, SP+3, int_spec);
 
 	// clear stuff and get ready to serve
-	Rw(0, 0);
+	nRw(0, 0);
 	int_mask_below(interrupt);
 	int_clear(interrupt);
-	Rw(R_IC, nMEMB(0, 64+interrupt));
+	nRw(R_IC, nMEMB(0, 64+interrupt));
 	nMEMBw(0, 97, SP+4);
 	SR_Qcb;
 }

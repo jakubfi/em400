@@ -26,6 +26,7 @@ extern pthread_mutex_t int_mutex;
 
 extern volatile uint32_t RZ;
 extern volatile uint32_t RP;
+extern uint32_t xmask;
 
 extern const int int_int2rm[32];
 extern const int int_int2mask[32];

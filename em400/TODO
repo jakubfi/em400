@@ -1,19 +1,20 @@
 Known bugs:
 
+* HLT will halt debugger too if there is no interrupt to serve
 
 CPU:
 
 * AWP - sign storage, floating point instructions
 
-Debuger:
+Debugger:
 
 * logging
 * inform user which interrupt is being served (if any)
-* memory/registers untraced when accessed by i/o devices
+* memory/registers untraced when accessed by i/o devices (?)
 * inteligent memory view (auto-scroll)
 * scrollable memory/dasm/stack views (?)
 * IPS counter
-* macro for accessing interrupt states (for brk)
+* macro for accessing interrupt states (for brk) (?)
 * save memory image
 * load/save snapshot (?)
 * step should work the same way as CYCLE (cycle on instruction and interrupt) (?)
@@ -21,6 +22,7 @@ Debuger:
 Other:
 
 * autotests
+* debugger in separate thread (?)
 
 MERA-400 features that em400 does not emulate:
 
