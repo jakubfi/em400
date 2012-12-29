@@ -113,6 +113,9 @@ void int_serve()
 	// no interrupt to serve
 	if (!rz) return;
 
+	// do not serve interrupts when P is set or previous instruction was MD
+	if (nR(R_P) || nR(R_MODc)) return;
+
 	// find highest interrupt to serve
 	int probe = 31;
 	while ((probe > 0) && !(rz & (1 << probe))) {
@@ -128,8 +131,8 @@ void int_serve()
 	// interrupt is masked, nothing to do
 	if (int_is_masked(interrupt)) return;
 
-	// get interrupt specification
 	int int_spec = 0;
+	// get interrupt specification it it's from channel
 	if ((interrupt >= 12) && (interrupt <= 27)) {
 		int_spec = io_get_int_spec(interrupt);
 	}
@@ -140,6 +143,8 @@ void int_serve()
 	nMEMBw(0, SP+1, R(0));
 	nMEMBw(0, SP+2, R(R_SR));
 	nMEMBw(0, SP+3, int_spec);
+
+	// clear stuff and get ready to serve
 	Rw(0, 0);
 	int_mask(interrupt);
 	int_clear(interrupt);

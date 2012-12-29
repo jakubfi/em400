@@ -4,7 +4,6 @@ Known bugs:
 CPU:
 
 * HLT should wait for unmasked interrupts only (?)
-* interrupts served only when P=0, MOD=0, ...
 * AWP - sign storage, floating point instructions
 
 Debuger:
