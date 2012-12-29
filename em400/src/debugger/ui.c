@@ -41,7 +41,7 @@ void dbg_ui_init()
 	ACONT *c3 = aw_container_add(RIGHT, TOP, 30, 30, 30);
 	aw_window_add(c3, W_DASM, "ASM", 1, 0, dbg_wu_dasm, FILL, 3, 0);
 
-	ACONT *c4 = aw_container_add(TOP, LEFT, 10, 10, 20);
+	ACONT *c4 = aw_container_add(TOP, LEFT, 11, 11, 20);
 	aw_window_add(c4, W_SREGS, "System registers", 1, 0, dbg_wu_sregs, DIV2, 58, 58);
 	aw_window_add(c4, W_REGS, "User registers", 1, 0, dbg_wu_regs, FILL, 58, 0);
 

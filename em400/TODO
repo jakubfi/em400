@@ -3,7 +3,6 @@ Known bugs:
 
 CPU:
 
-* HLT should wait for unmasked interrupts only (?)
 * AWP - sign storage, floating point instructions
 
 Debuger:
@@ -30,6 +29,7 @@ MERA-400 features that em400 does not emulate:
 * 2-cpu configuration
   * interrupts
   * gil/giu instructions
+  * bit 11 of SR
 * memory parity (itself and interrupts)
 * priority based interface reservation
 * operator panel

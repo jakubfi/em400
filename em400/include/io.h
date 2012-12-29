@@ -29,11 +29,12 @@ enum io_dir {
 	IO_OU
 };
 
+// TODO: those are in fact interfece signals
 enum io_result {
 	IO_NO = 0,  // no channel, no control unit, or no memory block
-	IO_EN = 1,  // not ready
+	IO_EN = 1,  // not ready (engaged)
 	IO_OK = 2,  // OK
-	IO_PE = 3   // data error (parity error?)
+	IO_PE = 3   // data error (parity error)
 };
 
 struct chan_t {

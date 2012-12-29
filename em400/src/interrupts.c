@@ -23,44 +23,61 @@
 #include "interrupts.h"
 #include "io.h"
 
-uint32_t RZ;
+volatile uint32_t RZ;
+volatile uint32_t RP;
+
 pthread_mutex_t int_mutex = PTHREAD_MUTEX_INITIALIZER;
 pthread_cond_t int_cond = PTHREAD_COND_INITIALIZER;
 
-// bit masks (to use on SR) for each interrupt
-int int_rz2rm[32] = {
--1, // NMI, no mask for that
-RM_0,
-RM_1,
-RM_2,
-RM_3,
-RM_4, RM_4, RM_4, RM_4, RM_4, RM_4,RM_4,
-RM_5, RM_5,
-RM_6, RM_6,
-RM_7, RM_7, RM_7, RM_7, RM_7, RM_7,
-RM_8, RM_8, RM_8, RM_8, RM_8, RM_8,
-RM_9, RM_9, RM_9, RM_9 };
+// for extending RM into 32-bit xmask
+const uint32_t int_rm2xmask[10] = {
+	0b01000000000000000000000000000000,
+	0b00100000000000000000000000000000,
+	0b00010000000000000000000000000000,
+	0b00001000000000000000000000000000,
+	0b00000111111100000000000000000000,
+	0b00000000000011000000000000000000,
+	0b00000000000000110000000000000000,
+	0b00000000000000001111110000000000,
+	0b00000000000000000000001111110000,
+	0b00000000000000000000000000001111
+};
 
 // bit masks (to use on SR) for each interrupt
-int int_rz2mask[32] = {
-MASK_0,
-MASK_0,
-MASK_1,
-MASK_2,
-MASK_3,
-MASK_4, MASK_4, MASK_4, MASK_4, MASK_4, MASK_4,MASK_4,
-MASK_5, MASK_5,
-MASK_6, MASK_6,
-MASK_7, MASK_7, MASK_7, MASK_7, MASK_7, MASK_7,
-MASK_8, MASK_8, MASK_8, MASK_8, MASK_8, MASK_8,
-MASK_9, MASK_9, MASK_9, MASK_9 };
+const int int_int2mask[32] = {
+	MASK_0,
+	MASK_0,
+	MASK_1,
+	MASK_2,
+	MASK_3,
+	MASK_4, MASK_4, MASK_4, MASK_4, MASK_4, MASK_4,MASK_4,
+	MASK_5, MASK_5,
+	MASK_6, MASK_6,
+	MASK_7, MASK_7, MASK_7, MASK_7, MASK_7, MASK_7,
+	MASK_8, MASK_8, MASK_8, MASK_8, MASK_8, MASK_8,
+	MASK_9, MASK_9, MASK_9, MASK_9
+};
 
+// -----------------------------------------------------------------------
+void int_update_rp()
+{
+	uint32_t xmask = 0b10000000000000000000000000000000;
+
+	for (int i=0 ; i<10 ; i++) {
+		if (nR(R_SR) & (1<<(15-i))) {
+			xmask |= int_rm2xmask[i];
+		}
+	}
+
+	RP = RZ & xmask;
+}
 
 // -----------------------------------------------------------------------
 void int_set(uint32_t x)
 {
 	pthread_mutex_lock(&int_mutex);
 	RZ |= x;
+	int_update_rp();
 	pthread_cond_signal(&int_cond);
 	pthread_mutex_unlock(&int_mutex);
 }
@@ -70,6 +87,7 @@ void int_clear(uint32_t x)
 {
 	pthread_mutex_lock(&int_mutex);
 	RZ &= ~(x);
+	RP &= ~(x);
 	pthread_mutex_unlock(&int_mutex);
 }
 
@@ -78,6 +96,7 @@ void int_put_nchan(uint16_t r)
 {
 	pthread_mutex_lock(&int_mutex);
 	RZ = (RZ & 0b00000000000011111111111111110000) | ((r & 0b1111111111110000) << 16) | (r & 0b0000000000001111);
+	int_update_rp();
 	pthread_cond_signal(&int_cond);
 	pthread_mutex_unlock(&int_mutex);
 }
@@ -90,35 +109,25 @@ uint16_t int_get_nchan()
 }
 
 // -----------------------------------------------------------------------
-int int_is_masked(int i)
+void int_mask_below(int i)
 {
-	if (i) {
-		return !(R(R_SR) & int_rz2rm[i]);
-	} else {
-		return 0;
-	}
-}
-
-// -----------------------------------------------------------------------
-void int_mask(int i)
-{
-	Rw(R_SR, R(R_SR) & int_rz2mask[i]);
+	Rw(R_SR, R(R_SR) & int_int2mask[i]);
 }
 
 // -----------------------------------------------------------------------
 void int_serve()
 {
-	uint32_t rz = RZ;
+	uint32_t rp = RP;
 
 	// no interrupt to serve
-	if (!rz) return;
+	if (!rp) return;
 
 	// do not serve interrupts when P is set or previous instruction was MD
 	if (nR(R_P) || nR(R_MODc)) return;
 
 	// find highest interrupt to serve
 	int probe = 31;
-	while ((probe > 0) && !(rz & (1 << probe))) {
+	while ((probe > 0) && !(rp & (1 << probe))) {
 		probe--;
 	}
 
@@ -127,9 +136,6 @@ void int_serve()
 
 	// this is the interrupt we're going to serve
 	int interrupt = 31 - probe;
-
-	// interrupt is masked, nothing to do
-	if (int_is_masked(interrupt)) return;
 
 	int int_spec = 0;
 	// get interrupt specification it it's from channel
@@ -146,7 +152,7 @@ void int_serve()
 
 	// clear stuff and get ready to serve
 	Rw(0, 0);
-	int_mask(interrupt);
+	int_mask_below(interrupt);
 	int_clear(interrupt);
 	Rw(R_IC, nMEMB(0, 64+interrupt));
 	nMEMBw(0, 97, SP+4);

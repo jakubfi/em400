@@ -46,8 +46,6 @@ enum _registers {
 
 extern uint16_t regs[];
 
-extern uint32_t RZ;
-
 uint16_t reg_read(int r, int trace);
 void reg_write(int r, uint16_t x, int trace);
 

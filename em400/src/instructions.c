@@ -845,9 +845,9 @@ int op_73()
 int op_73_hlt()
 {
 	pthread_mutex_lock(&int_mutex);
-	while (!RZ) {
+	while (!RP) {
 		pthread_cond_wait(&int_cond, &int_mutex);
-	};
+	}
 	pthread_mutex_unlock(&int_mutex);
 	return OP_OK;
 }
