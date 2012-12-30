@@ -362,23 +362,28 @@ void dbg_c_regs(int wid)
 // -----------------------------------------------------------------------
 void dbg_c_stack(int wid, int size)
 {
+	static int sb;
+	static int osp;
+
 	int sp = *mem_ptr(0, 97);
-	int addr = sp;
-	while (size > 0) {
-		if (addr > 0) {
-			if (addr == sp) {
-				awprint(wid, C_ILABEL, " 0x%04x: ", addr);
-				awprint(wid, C_IDATA, "%04x \n", *mem_ptr(0, addr));
-			} else {
-				awprint(wid, C_LABEL, " 0x%04x: ", addr);
-				awprint(wid, C_DATA, "%04x \n", *mem_ptr(0, addr));
-			}
-		} else {
-			awprint(wid, C_DATA, "            \n");
-		}
-		size--;
-		addr--;
+
+	if ((sb <= 0) || (sp-osp > 4) || (sp-osp < -4)) {
+		sb = sp;
 	}
+
+	osp = sp;
+
+	while (sp >= sb) {
+		if (sp == osp) {
+			awprint(wid, C_ILABEL, " 0x%04x: ", sp);
+			awprint(wid, C_IDATA, "%04x \n", *mem_ptr(0, sp));
+		} else {
+			awprint(wid, C_LABEL, " 0x%04x: ", sp);
+			awprint(wid, C_DATA, "%04x \n", *mem_ptr(0, sp));
+		}
+		sp--;
+	}
+	awprint(wid, C_LABEL, "--------------\n");
 }
 
 // -----------------------------------------------------------------------
