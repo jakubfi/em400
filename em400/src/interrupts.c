@@ -25,7 +25,6 @@
 
 volatile uint32_t RZ;
 volatile uint32_t RP;
-uint32_t xmask = 0b10000000000000000000000000000000;
 
 pthread_mutex_t int_mutex_rz = PTHREAD_MUTEX_INITIALIZER;
 pthread_mutex_t int_mutex_rp = PTHREAD_MUTEX_INITIALIZER;
@@ -64,17 +63,16 @@ const int int_int2mask[32] = {
 void int_update_rp()
 {
 	uint16_t sr = nR(R_SR);
-	uint32_t lxmask = 0b10000000000000000000000000000000;
+	uint32_t xmask = 0b10000000000000000000000000000000;
 
 	for (int i=0 ; i<10 ; i++) {
 		if (sr & (1 << (15-i))) {
-			lxmask |= int_rm2xmask[i];
+			xmask |= int_rm2xmask[i];
 		}
 	}
 
 	pthread_mutex_lock(&int_mutex_rp);
-	RP = RZ & lxmask;
-	xmask = lxmask;
+	RP = RZ & xmask;
 	pthread_cond_signal(&int_cond_rp);
 	pthread_mutex_unlock(&int_mutex_rp);
 }

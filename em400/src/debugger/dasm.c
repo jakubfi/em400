@@ -22,8 +22,8 @@
 #include "cpu.h"
 #include "registers.h"
 #include "memory.h"
-#include "utils.h"
 #include "iset.h"
+#include "utils.h"
 
 #include "debugger/dasm.h"
 #include "debugger/dasm_iset.h"

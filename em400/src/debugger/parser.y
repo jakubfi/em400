@@ -84,9 +84,7 @@ statement:
 		n_discard_stack();
 	}
 	| BIN '(' expr ')' '\n' {
-		char *b = int2bin(n_eval($3), 16);
-		awprint(W_CMD, C_DATA, "0b%s\n", b);
-		free(b);
+		awbinprint(W_CMD, C_DATA, "0b................\n", n_eval($3), 16);
 		n_discard_stack();
 	}
 	| expr '\n' {

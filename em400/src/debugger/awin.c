@@ -573,6 +573,39 @@ void awxyprint(int id, int x, int y, int attr, char *format, ...)
 }
 
 // -----------------------------------------------------------------------
+void awbinprint(int id, int attr, char *format, uint32_t value, int size)
+{
+	AWIN *w = aw_window_find(id);
+	if ((aw_output == O_NCURSES) && (!w)) {
+		return;
+	}
+
+	char *c = format;
+	int v;
+
+	size--;
+
+	while (*c) {
+		switch (*c) {
+		case '.':
+			if (size >= 0) {
+				v = (value >> size) & 1;
+				size--;
+				awprint(id, attr, "%1i", v);
+			} else {
+				awprint(id, attr, "?");
+			}
+			break;
+		default:
+			awprint(id, attr, "%c", *c);
+			break;
+		}
+		c++;
+	}
+
+}
+
+// -----------------------------------------------------------------------
 void awfillbg(int id, int attr, char c, int len)
 {
 	AWIN *w = aw_window_find(id);

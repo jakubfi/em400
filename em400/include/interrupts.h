@@ -27,7 +27,6 @@ extern pthread_cond_t int_cond_rp;
 
 extern volatile uint32_t RZ;
 extern volatile uint32_t RP;
-extern uint32_t xmask;
 
 extern const int int_int2rm[32];
 extern const int int_int2mask[32];
