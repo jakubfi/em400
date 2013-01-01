@@ -105,22 +105,6 @@ void dbg_wu_cmd(int wid)
 void dbg_wu_status(int wid)
 {
 	awfillbg(wid, C_ILABEL, ' ', 0);
-	awprint(wid, C_ILABEL, " Q:");
-	awprint(wid, C_IDATA, "%i", SR_Q);
-	awprint(wid, C_ILABEL, "  NB:");
-	awprint(wid, C_IDATA, "%i", SR_NB);
-	awprint(wid, C_ILABEL, "  IC:");
-	awprint(wid, C_IDATA, "0x%04x", regs[R_IC]);
-	awprint(wid, C_ILABEL, "  P:");
-	awprint(wid, C_IDATA, "%i", regs[R_P]);
-	awprint(wid, C_ILABEL, "  MOD:");
-	awprint(wid, C_IDATA, "%06i (0x%04x)", regs[R_MOD], regs[R_MOD]);
-	awprint(wid, C_ILABEL, "  MODcnt:");
-	awprint(wid, C_IDATA, "%i", regs[R_MODc]);
-	awprint(wid, C_ILABEL, "  KB:");
-	awbinprint(wid, C_IDATA, "0b................", regs[R_KB], 16);
-	awprint(wid, C_ILABEL, "  ZC17:");
-	awprint(wid, C_IDATA, "%i", regs[R_ZC17]);
 }
 
 // -----------------------------------------------------------------------

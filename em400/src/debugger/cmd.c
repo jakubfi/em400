@@ -237,22 +237,29 @@ void dbg_c_mem(int wid, int block, int start, int end, int maxcols, int maxlines
 void dbg_c_sregs(int wid)
 {
 	awprint(wid, C_LABEL, "            OPCODE D A   B   C");
-	awprint(wid, C_LABEL, "               P: ");
-	awprint(wid, C_DATA, "0x%x  ", regs[R_P]);
+	awprint(wid, C_LABEL, "           P: ");
+	awprint(wid, C_DATA, "%i  ", regs[R_P]);
 	awprint(wid, C_DATA, "\n");
 	awprint(wid, C_LABEL, "IR: ");
 	awprint(wid, C_DATA, "0x%04x  ", regs[R_IR]);
 	awbinprint(wid, C_DATA, "...... . ... ... ...", regs[R_IR], 16);
-	awprint(wid, C_LABEL, "            IC: ");
+	awprint(wid, C_LABEL, "        IC: ");
 	awprint(wid, C_DATA, "0x%04x ", regs[R_IC]);
 	awprint(wid, C_DATA, "\n");
 	awprint(wid, C_LABEL, "            PMCZs139fS Q s NB");
-	awprint(wid, C_LABEL, "              MOD: ");
-	awprint(wid, C_DATA, "0x%04x ", regs[R_MOD]);
+	awprint(wid, C_LABEL, "          MOD: ");
+	awprint(wid, C_DATA, "0x%04x (%i)", regs[R_MOD], regs[R_MODc]);
 	awprint(wid, C_DATA, "\n");
 	awprint(wid, C_LABEL, "SR: ");
 	awprint(wid, C_DATA, "0x%04x  ", regs[R_SR]);
-	awbinprint(wid, C_DATA, ".......... . . ..", regs[R_SR], 16);
+	awbinprint(wid, C_DATA, ".......... . . ....", regs[R_SR], 16);
+	awprint(wid, C_LABEL, "       ZC17: ");
+	awprint(wid, C_DATA, "%i", regs[R_ZC17]);
+	awprint(wid, C_DATA, "\n");
+
+	awprint(wid, C_LABEL, "KB: ");
+	awprint(wid, C_DATA, "0x%04x  ", regs[R_KB]);
+	awbinprint(wid, C_DATA, "........ ........", regs[R_KB], 16);
 	awprint(wid, C_DATA, "\n\n");
 
 	awprint(wid, C_LABEL, "                ZPMCZ TIFFFFx 01 23 456789 abcdef OCSS");
