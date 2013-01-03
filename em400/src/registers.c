@@ -1,4 +1,4 @@
-//  Copyright (c) 2012 Jakub Filipowicz <jakubf@gmail.com>
+//  Copyright (c) 2012-2013 Jakub Filipowicz <jakubf@gmail.com>
 //
 //  This program is free software; you can redistribute it and/or modify
 //  it under the terms of the GNU General Public License as published by
@@ -23,6 +23,7 @@
 #include "debugger/debugger.h"
 #include "debugger/ui.h"
 #endif
+#include "debugger/log.h"
 
 uint16_t regs[R_MAX];
 
@@ -31,6 +32,7 @@ uint16_t reg_read(int r, int trace)
 {
 #ifdef WITH_DEBUGGER
 	if (trace != 0) {
+		LOG(P_REG_R, "%s -> 0x%04x", log_reg_name[r], regs[r]);
 		if (reg_act[r] == C_WRITE) {
 			reg_act[r] = C_RW;
 		} else {
@@ -45,6 +47,7 @@ uint16_t reg_read(int r, int trace)
 void reg_write(int r, uint16_t x, int trace)
 {
 #ifdef WITH_DEBUGGER
+	LOG(P_REG_W, "%s <- 0x%04x", log_reg_name[r], x);
 	if (trace != 0) {
 		if (reg_act[r] == C_READ) {
 			reg_act[r] = C_RW;

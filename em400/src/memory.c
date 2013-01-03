@@ -1,4 +1,4 @@
-//  Copyright (c) 2012 Jakub Filipowicz <jakubf@gmail.com>
+//  Copyright (c) 2012-2013 Jakub Filipowicz <jakubf@gmail.com>
 //
 //  This program is free software; you can redistribute it and/or modify
 //  it under the terms of the GNU General Public License as published by
@@ -30,6 +30,7 @@
 #ifdef WITH_DEBUGGER
 #include "debugger/debugger.h"
 #endif
+#include "debugger/log.h"
 
 pthread_mutex_t mem_mutex = PTHREAD_MUTEX_INITIALIZER;
 
@@ -90,6 +91,7 @@ void mem_shutdown()
 // -----------------------------------------------------------------------
 int mem_add_map(int nb, int ab, int mp, int segment)
 {
+	LOG(P_MEM_CFG, "Add map: NB = %d, AB = %d, MP = %d, SEG = %d", nb, ab, mp, segment);
 	if (nb < MEM_MAX_NB) {
 		mem_map[nb][ab] = mem_segment[mp][segment];
 		if (!mem_map[nb][ab]) {
@@ -134,8 +136,11 @@ uint16_t mem_read(int nb, uint16_t addr, int trace)
 {
 	uint16_t *ptr = mem_ptr(nb, addr);
 	if (ptr) {
-#ifdef WITH_DEBUGGER
 		pthread_mutex_lock(&mem_mutex);
+		uint16_t value = *ptr;
+		pthread_mutex_unlock(&mem_mutex);
+#ifdef WITH_DEBUGGER
+		LOG(P_MEM_R, "[%d:%d] -> 0x%04x", nb, addr, value);
 		// leave trace for debugger to display
 		if (trace) {
 			if (mem_actr_max == -1) {
@@ -145,10 +150,11 @@ uint16_t mem_read(int nb, uint16_t addr, int trace)
 			mem_actr_max = addr;
 		}
 #endif
-		uint16_t value = *ptr;
-		pthread_mutex_unlock(&mem_mutex);
 		return value;
 	} else {
+#ifdef WITH_DEBUGGER
+		LOG(P_MEM_R, "[%d:%d] -> ERROR", nb, addr);
+#endif
 		if (SR_Q) {
 			int_set(INT_NO_MEM);
 		} else {
@@ -165,7 +171,10 @@ void mem_write(int nb, uint16_t addr, uint16_t val, int trace)
 	uint16_t *ptr = mem_ptr(nb, addr);
 	if (ptr) {
 		pthread_mutex_lock(&mem_mutex);
+		*ptr = val;
+		pthread_mutex_unlock(&mem_mutex);
 #ifdef WITH_DEBUGGER
+		LOG(P_MEM_W, "[%d:%d] <- 0x%04x", nb, addr, val);
 		// leave trace for debugger to display
 		if (trace) {
 			if (mem_actw_max == -1) {
@@ -175,9 +184,10 @@ void mem_write(int nb, uint16_t addr, uint16_t val, int trace)
 			mem_actw_max = addr;
 		}
 #endif
-		*ptr = val;
-		pthread_mutex_unlock(&mem_mutex);
 	} else {
+#ifdef WITH_DEBUGGER
+		LOG(P_MEM_W, "[%d:%d] <- 0x%04x ERROR", nb, addr, val);
+#endif
 		if (SR_Q) {
 			int_set(INT_NO_MEM);
 		} else {
@@ -209,6 +219,8 @@ int mem_load_image(const char* fname, int nb)
 	if (f == NULL) {
 		return E_FILE_OPEN;
 	}
+
+	LOG(P_MEM_W, "Loading memory image: %s -> %d", fname, nb);
 
 	int res = 1;
 	int chunk = 0;

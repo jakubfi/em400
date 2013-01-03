@@ -1,4 +1,4 @@
-//  Copyright (c) 2012 Jakub Filipowicz <jakubf@gmail.com>
+//  Copyright (c) 2012-2013 Jakub Filipowicz <jakubf@gmail.com>
 //
 //  This program is free software; you can redistribute it and/or modify
 //  it under the terms of the GNU General Public License as published by
@@ -68,20 +68,20 @@ void reg_write(int r, uint16_t x, int trace);
 // -----------------------------------------------------------------------
 // SR
 // -----------------------------------------------------------------------
-#define SR_RM	((R(R_SR) & 0b1111111111000000) >> 6)
-#define SR_RM0	((R(R_SR) & 0b1000000000000000) >> 15)
-#define SR_RM1	((R(R_SR) & 0b0100000000000000) >> 14)
-#define SR_RM2	((R(R_SR) & 0b0010000000000000) >> 13)
-#define SR_RM3	((R(R_SR) & 0b0001000000000000) >> 12)
-#define SR_RM4	((R(R_SR) & 0b0000100000000000) >> 11)
-#define SR_RM5	((R(R_SR) & 0b0000010000000000) >> 10)
-#define SR_RM6	((R(R_SR) & 0b0000001000000000) >> 9)
-#define SR_RM7	((R(R_SR) & 0b0000000100000000) >> 8)
-#define SR_RM8	((R(R_SR) & 0b0000000010000000) >> 7)
-#define SR_RM9	((R(R_SR) & 0b0000000001000000) >> 6)
-#define SR_Q	((R(R_SR) & 0b0000000000100000) >> 5)
-#define SR_BS	((R(R_SR) & 0b0000000000010000) >> 4)
-#define SR_NB	((R(R_SR) & 0b0000000000001111) >> 0)
+#define SR_RM	((nR(R_SR) & 0b1111111111000000) >> 6)
+#define SR_RM0	((nR(R_SR) & 0b1000000000000000) >> 15)
+#define SR_RM1	((nR(R_SR) & 0b0100000000000000) >> 14)
+#define SR_RM2	((nR(R_SR) & 0b0010000000000000) >> 13)
+#define SR_RM3	((nR(R_SR) & 0b0001000000000000) >> 12)
+#define SR_RM4	((nR(R_SR) & 0b0000100000000000) >> 11)
+#define SR_RM5	((nR(R_SR) & 0b0000010000000000) >> 10)
+#define SR_RM6	((nR(R_SR) & 0b0000001000000000) >> 9)
+#define SR_RM7	((nR(R_SR) & 0b0000000100000000) >> 8)
+#define SR_RM8	((nR(R_SR) & 0b0000000010000000) >> 7)
+#define SR_RM9	((nR(R_SR) & 0b0000000001000000) >> 6)
+#define SR_Q	((nR(R_SR) & 0b0000000000100000) >> 5)
+#define SR_BS	((nR(R_SR) & 0b0000000000010000) >> 4)
+#define SR_NB	((nR(R_SR) & 0b0000000000001111) >> 0)
 
 #define SR_RM9cb	Rw(R_SR, R(R_SR) & 0b1111111110111111)
 #define SR_Qcb		Rw(R_SR, R(R_SR) & 0b1111111111011111)
@@ -100,14 +100,14 @@ void reg_write(int r, uint16_t x, int trace);
 #define _T(x)	(int8_t) ((x & 0b0000000000111111) * (((x & 0b0000001000000000) >> 9) ? -1 : 1))
 #define _t(x)	(uint8_t) ((x & 0b0000000000000111) | ((x & 0b0000001000000000) >> 6)) // only SHC uses it
 #define _b(x)	(x & 0b0000000011111111)
-#define IR_OP	_OP(R(R_IR))
-#define IR_D	_D(R(R_IR))
-#define IR_A	_A(R(R_IR))
-#define IR_B	_B(R(R_IR))
-#define IR_C	_C(R(R_IR))
-#define IR_T	_T(R(R_IR))
-#define IR_t	_t(R(R_IR))
-#define IR_b	_b(R(R_IR))
+#define IR_OP	_OP(nR(R_IR))
+#define IR_D	_D(nR(R_IR))
+#define IR_A	_A(nR(R_IR))
+#define IR_B	_B(nR(R_IR))
+#define IR_C	_C(nR(R_IR))
+#define IR_T	_T(nR(R_IR))
+#define IR_t	_t(nR(R_IR))
+#define IR_b	_b(nR(R_IR))
 
 // -----------------------------------------------------------------------
 // R0

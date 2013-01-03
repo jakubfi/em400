@@ -1,4 +1,4 @@
-//  Copyright (c) 2012 Jakub Filipowicz <jakubf@gmail.com>
+//  Copyright (c) 2012-2013 Jakub Filipowicz <jakubf@gmail.com>
 //
 //  This program is free software; you can redistribute it and/or modify
 //  it under the terms of the GNU General Public License as published by
@@ -27,7 +27,9 @@
 #ifdef WITH_DEBUGGER
 #include "debugger/debugger.h"
 #include "debugger/ui.h"
+#include "debugger/dasm_iset.h"
 #endif
+#include "debugger/log.h"
 
 // -----------------------------------------------------------------------
 void cpu_reset()
@@ -35,7 +37,7 @@ void cpu_reset()
 	for (int i=0 ; i<R_MAX ; i++) {
 		nRw(i, 0);
 	}
-	int_clear(INT_ALL);
+	int_clear_all();
 }
 
 // -----------------------------------------------------------------------
@@ -43,6 +45,7 @@ int16_t cpu_get_eff_arg()
 {
 	uint32_t N;
 
+	LOG(P_CPU_EFF, "Get effective argument");
 	// argument is in next word
 	if (IR_C == 0) {
 		N = nMEM(nR(R_IC));
@@ -68,24 +71,29 @@ int16_t cpu_get_eff_arg()
 	// store 17th bit for byte addressing
 	nRw(R_ZC17, (N & 0b10000000000000000) >> 16);
 
+	LOG(P_CPU_EFF, "Effective argument: 0x%04x (%s%s%s%s)", N, IR_C ? "2-word " : "1-word", regs[R_MODc] ? " PRE-mod" : "", IR_B ? " B-mod" : "", IR_D ? " D-mod" : "");
 	return (int16_t) N;
 }
 
 // -----------------------------------------------------------------------
 void cpu_step()
 {
+	LOG(P_CPU_STEP, "Step start");
 	// do not branch by default
 	nRw(R_P, 0);
 
 	// fetch instruction into IR
 	// (additional argument is fetched by the instruction, if necessary)
 	nRw(R_IR, nMEM(nR(R_IC)));
+	LOG(P_CPU_STEP, "Start cycle: Q:NB:IC = %d:%d:%d", SR_Q, SR_NB, regs[R_IC]);
 	nRinc(R_IC);
 
 	// execute instruction
+	LOG(P_CPU_STEP, "Execute instruction");
 	int op_res;
 	op_res = iset[IR_OP].op_fun();
 
+	LOG(P_CPU_STEP, "Check instruction result");
 	switch (op_res) {
 		// normal instruction
 		case OP_OK:
@@ -108,6 +116,7 @@ void cpu_step()
 	}
 
 	nRadd(R_IC, nR(R_P));
+	LOG(P_CPU_STEP, "End cycle: res = %d, MOD = %d, MODc = %d, P = %d", op_res, regs[R_MOD], regs[R_MODc], regs[R_P]);
 }
 
 // vim: tabstop=4

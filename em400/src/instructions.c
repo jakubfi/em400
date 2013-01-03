@@ -1,4 +1,4 @@
-//  Copyright (c) 2012 Jakub Filipowicz <jakubf@gmail.com>
+//  Copyright (c) 2012-2013 Jakub Filipowicz <jakubf@gmail.com>
 //
 //  This program is free software; you can redistribute it and/or modify
 //  it under the terms of the GNU General Public License as published by
@@ -857,7 +857,7 @@ int op_73_hlt()
 int op_73_mcl()
 {
 	Rw(R_SR, 0);
-	int_clear(INT_ALL);
+	int_clear_all();
 	Rw(0, 0);
 	// TODO: zeruj kanały
 	// TODO: zeruj urządzenia
@@ -868,7 +868,8 @@ int op_73_mcl()
 // -----------------------------------------------------------------------
 int op_73_cit()
 {
-	int_clear(INT_SOFT_U | INT_SOFT_L);
+	int_clear(INT_SOFT_U);
+	int_clear(INT_SOFT_L);
 	return OP_OK;
 }
 

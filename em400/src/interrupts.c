@@ -1,4 +1,4 @@
-//  Copyright (c) 2012 Jakub Filipowicz <jakubf@gmail.com>
+//  Copyright (c) 2012-2013 Jakub Filipowicz <jakubf@gmail.com>
 //
 //  This program is free software; you can redistribute it and/or modify
 //  it under the terms of the GNU General Public License as published by
@@ -22,6 +22,8 @@
 #include "registers.h"
 #include "interrupts.h"
 #include "io.h"
+
+#include "debugger/log.h"
 
 volatile uint32_t RZ;
 volatile uint32_t RP;
@@ -78,29 +80,48 @@ void int_update_rp()
 }
 
 // -----------------------------------------------------------------------
-void int_set(uint32_t x)
+void int_set(int x)
 {
+#ifdef WITH_DEBUGGER
+	if (x != INT_TIMER) {
+		LOG(P_INT_SET, "Set: %lld (%s)", x, log_int_name[x]);
+	}
+#endif
 	pthread_mutex_lock(&int_mutex_rz);
-	RZ |= x;
+	RZ |= (1 << (31 - x));
 	pthread_mutex_unlock(&int_mutex_rz);
 	int_update_rp();
 }
 
 // -----------------------------------------------------------------------
-void int_clear(uint32_t x)
+void int_clear_all()
 {
 	pthread_mutex_lock(&int_mutex_rz);
-	RZ &= ~(x);
+	RZ = 0;
 	pthread_mutex_unlock(&int_mutex_rz);
 
 	pthread_mutex_lock(&int_mutex_rp);
-	RP &= ~(x);
+	RP = 0;
+	pthread_mutex_unlock(&int_mutex_rp);
+}
+
+// -----------------------------------------------------------------------
+void int_clear(int x)
+{
+	LOG(P_INT_CLEAR, "Clear: %lld (%s)", x, log_int_name[x]);
+	pthread_mutex_lock(&int_mutex_rz);
+	RZ &= ~((1 << (31 - x)));
+	pthread_mutex_unlock(&int_mutex_rz);
+
+	pthread_mutex_lock(&int_mutex_rp);
+	RP &= ~((1 << (31 - x)));
 	pthread_mutex_unlock(&int_mutex_rp);
 }
 
 // -----------------------------------------------------------------------
 void int_put_nchan(uint16_t r)
 {
+	LOG(P_INT_SET, "Set non-channel to: %d", r);
 	pthread_mutex_lock(&int_mutex_rz);
 	RZ = (RZ & 0b00000000000011111111111111110000) | ((r & 0b1111111111110000) << 16) | (r & 0b0000000000001111);
 	pthread_mutex_unlock(&int_mutex_rz);
@@ -136,6 +157,8 @@ void int_serve()
 
 	// this is the interrupt we're going to serve
 	int interrupt = 31 - probe;
+
+	LOG(P_INT_SERVE, "Serve: %d (%s)", interrupt, log_int_name[interrupt]);
 
 	int int_spec = 0;
 	// get interrupt specification it it's from channel

@@ -1,4 +1,4 @@
-//  Copyright (c) 2012 Jakub Filipowicz <jakubf@gmail.com>
+//  Copyright (c) 2012-2013 Jakub Filipowicz <jakubf@gmail.com>
 //
 //  This program is free software; you can redistribute it and/or modify
 //  it under the terms of the GNU General Public License as published by
@@ -34,7 +34,8 @@ enum em400_error {
 	E_DEBUGGER_SIG_RESIZE,
 	E_IO_INCOMPATIBILE_UNIT,
 	E_IO_DRV_CHAN_BAD,
-	E_IO_DRV_UNIT_BAD
+	E_IO_DRV_UNIT_BAD,
+	E_LOG_OPEN
 };
 
 struct _em400_errordesc;

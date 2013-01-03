@@ -1,4 +1,4 @@
-//  Copyright (c) 2012 Jakub Filipowicz <jakubf@gmail.com>
+//  Copyright (c) 2012-2013 Jakub Filipowicz <jakubf@gmail.com>
 //
 //  This program is free software; you can redistribute it and/or modify
 //  it under the terms of the GNU General Public License as published by
@@ -38,6 +38,7 @@ struct _em400_errordesc {
 	{ E_IO_INCOMPATIBILE_UNIT, "Unit incompatibile with channel." },
 	{ E_IO_DRV_CHAN_BAD, "Bad channel driver definition." },
 	{ E_IO_DRV_UNIT_BAD, "Bad unit driver definition." },
+	{ E_LOG_OPEN, "Cannot open log file." },
 
 
 	{ E_UNKNOWN, "Unknown error." }
