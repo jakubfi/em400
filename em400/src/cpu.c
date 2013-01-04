@@ -27,7 +27,7 @@
 #ifdef WITH_DEBUGGER
 #include "debugger/debugger.h"
 #include "debugger/ui.h"
-#include "debugger/dasm_iset.h"
+#include "debugger/dasm.h"
 #endif
 #include "debugger/log.h"
 
@@ -45,7 +45,7 @@ int16_t cpu_get_eff_arg()
 {
 	uint32_t N;
 
-	LOG(P_CPU_EFF, "Get effective argument");
+	LOG(P_CPU_EFF,  "------ Get effective argument");
 	// argument is in next word
 	if (IR_C == 0) {
 		N = nMEM(nR(R_IC));
@@ -78,7 +78,7 @@ int16_t cpu_get_eff_arg()
 // -----------------------------------------------------------------------
 void cpu_step()
 {
-	LOG(P_CPU_STEP, "Step start");
+	LOG(P_CPU_STEP, "------ Step start ----------------------------------------------");
 	// do not branch by default
 	nRw(R_P, 0);
 
@@ -88,12 +88,23 @@ void cpu_step()
 	LOG(P_CPU_STEP, "Start cycle: Q:NB:IC = %d:%d:%d", SR_Q, SR_NB, regs[R_IC]);
 	nRinc(R_IC);
 
+#ifdef WITH_DEBUGGER
+	char *buf_d;
+	char *buf_t;
+	uint16_t *addr = mem_ptr(SR_Q * SR_NB, regs[R_IC] - 1);
+	int len;
+	len = dt_trans(addr, &buf_t, DMODE_TRANS);
+	len = dt_trans(addr, &buf_d, DMODE_DASM);
+	LOG(P_CPU_OP, "EXEC: %s --- %s", buf_d, buf_t);
+	free(buf_t);
+	free(buf_d);
+#endif
+
 	// execute instruction
-	LOG(P_CPU_STEP, "Execute instruction");
 	int op_res;
 	op_res = iset[IR_OP].op_fun();
 
-	LOG(P_CPU_STEP, "Check instruction result");
+	LOG(P_CPU_STEP, "------ Check instruction result");
 	switch (op_res) {
 		// normal instruction
 		case OP_OK:

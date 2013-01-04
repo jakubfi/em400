@@ -20,12 +20,15 @@
 #include <pthread.h>
 #include <stdio.h>
 
+#include "utils.h"
 #include "errors.h"
 #include "io.h"
 #include "memory.h"
 #include "registers.h"
 
 #include "drv/drivers.h"
+
+#include "debugger/log.h"
 
 struct chan_t io_chan[IO_MAX_CHAN];
 struct unit_t io_unit[IO_MAX_CHAN][IO_MAX_UNIT];
@@ -143,6 +146,7 @@ int io_dispatch(int dir, uint16_t n, int r)
 
 	// software memory configuration
 	if (is_mem) {
+		LOG(P_IO_DECODE, "MEM command, dir = %s, module = %d, segment = %d, cmd = %d, r = %d", dir ? "OUT" : "IN", chan, unit, cmd, r);
 		if (dir == IO_OU) {
 			int nb = R(r) & 0b0000000000001111;
 			int ab = (R(r) & 0b1111000000000000) >> 12;
@@ -154,6 +158,11 @@ int io_dispatch(int dir, uint16_t n, int r)
 		}
 	// channel/unit command
 	} else {
+#ifdef WITH_DEBUGGER
+		char *cmdc = int2bin(cmd, 8);
+		LOG(P_IO_DECODE, "I/O command, dir = %s, chan = %d, unit = %d, cmd = %s, r = %d", dir ? "OUT" : "IN", chan, unit, cmdc, r);
+		free(cmdc);
+#endif
 		// three most sig. bits are 0 if this is channel command
 		if ((n & 0b1110000000000000) == 0) {
 			return io_chan[chan].f_cmd(io_chan+chan, dir, unit, cmd, r);

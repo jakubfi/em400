@@ -25,7 +25,7 @@
 #define IO_MAX_UNIT	8
 
 enum io_dir {
-	IO_IN,
+	IO_IN = 0,
 	IO_OU
 };
 
