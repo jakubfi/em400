@@ -84,7 +84,6 @@ int main(int argc, char** argv)
 		eerr("Error initializing debugger", res);
 	}
 	log_init("em400.log");
-	log_setmask(M_ALL);
 #endif
 
 	mem_clear();

@@ -66,6 +66,7 @@ int io_chan_init(struct chan_t *chan, int ctype)
 
 	// common channel initialization
 	chan->type = drv->type;
+	chan->name = drv->name;
 	chan->finish = 0;
 	chan->f_shutdown = drv->f_shutdown;
 	chan->f_reset = drv->f_reset;
@@ -89,6 +90,7 @@ int io_unit_init(struct unit_t *unit, int utype)
 	}
 
 	unit->type = drv->type;
+	unit->name = drv->name;
 
 	// check if unit can be connected to this type of channel
 	if ((unit->chan->type == drv->chan_type) || (unit->type == UNIT_NONE)) {
@@ -108,10 +110,12 @@ int io_init()
 {
 	// initialize all channels
 	for (int i=0 ; i<IO_MAX_CHAN ; i++) {
+		io_chan[i].number = i;
 		io_chan_init(io_chan+i, io_chan_conf[i]);
 
 		// initialize all units connected to each channel
 		for (int j=0 ; j<IO_MAX_UNIT ; j++) {
+			io_unit[i][j].number = j;
 			io_unit[i][j].chan = io_chan+i;
 			io_unit_init(io_unit[i]+j, io_unit_conf[i][j]);
 		}
@@ -146,7 +150,7 @@ int io_dispatch(int dir, uint16_t n, int r)
 
 	// software memory configuration
 	if (is_mem) {
-		LOG(P_IO_DECODE, "MEM command, dir = %s, module = %d, segment = %d, cmd = %d, r = %d", dir ? "OUT" : "IN", chan, unit, cmd, r);
+		LOG(D_IO, 1, "MEM command, dir = %s, module = %d, segment = %d, cmd = %d, r = %d", dir ? "OUT" : "IN", chan, unit, cmd, r);
 		if (dir == IO_OU) {
 			int nb = R(r) & 0b0000000000001111;
 			int ab = (R(r) & 0b1111000000000000) >> 12;
@@ -160,7 +164,7 @@ int io_dispatch(int dir, uint16_t n, int r)
 	} else {
 #ifdef WITH_DEBUGGER
 		char *cmdc = int2bin(cmd, 8);
-		LOG(P_IO_DECODE, "I/O command, dir = %s, chan = %d, unit = %d, cmd = %s, r = %d", dir ? "OUT" : "IN", chan, unit, cmdc, r);
+		LOG(D_IO, 1, "I/O command, dir = %s, chan = %d, unit = %d, cmd = %s, r = %d", dir ? "OUT" : "IN", chan, unit, cmdc, r);
 		free(cmdc);
 #endif
 		// three most sig. bits are 0 if this is channel command

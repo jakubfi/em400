@@ -91,7 +91,7 @@ void mem_shutdown()
 // -----------------------------------------------------------------------
 int mem_add_map(int nb, int ab, int mp, int segment)
 {
-	LOG(P_MEM_CFG, "Add map: NB = %d, AB = %d, MP = %d, SEG = %d", nb, ab, mp, segment);
+	LOG(D_MEM, 1, "Add map: NB = %d, AB = %d, MP = %d, SEG = %d", nb, ab, mp, segment);
 	if (nb < MEM_MAX_NB) {
 		mem_map[nb][ab] = mem_segment[mp][segment];
 		if (!mem_map[nb][ab]) {
@@ -140,20 +140,22 @@ uint16_t mem_read(int nb, uint16_t addr, int trace)
 		uint16_t value = *ptr;
 		pthread_mutex_unlock(&mem_mutex);
 #ifdef WITH_DEBUGGER
-		LOG(P_MEM_R, "[%d:%d] -> 0x%04x", nb, addr, value);
 		// leave trace for debugger to display
 		if (trace) {
+			LOG(D_MEM, 20, "[%d:%d] -> 0x%04x", nb, addr, value);
 			if (mem_actr_max == -1) {
 				mem_act_block = nb;
 				mem_actr_min = addr;
 			}
 			mem_actr_max = addr;
+		} else {
+			LOG(D_MEM, 40, "[%d:%d] -> 0x%04x", nb, addr, value);
 		}
 #endif
 		return value;
 	} else {
 #ifdef WITH_DEBUGGER
-		LOG(P_MEM_R, "[%d:%d] -> ERROR", nb, addr);
+		LOG(D_MEM, 5, "[%d:%d] -> ERROR", nb, addr);
 #endif
 		if (SR_Q) {
 			int_set(INT_NO_MEM);
@@ -174,7 +176,7 @@ void mem_write(int nb, uint16_t addr, uint16_t val, int trace)
 		*ptr = val;
 		pthread_mutex_unlock(&mem_mutex);
 #ifdef WITH_DEBUGGER
-		LOG(P_MEM_W, "[%d:%d] <- 0x%04x", nb, addr, val);
+		LOG(D_MEM, 10, "[%d:%d] <- 0x%04x", nb, addr, val);
 		// leave trace for debugger to display
 		if (trace) {
 			if (mem_actw_max == -1) {
@@ -182,11 +184,13 @@ void mem_write(int nb, uint16_t addr, uint16_t val, int trace)
 				mem_actw_min = addr;
 			}
 			mem_actw_max = addr;
+		} else {
+		LOG(D_MEM, 30, "[%d:%d] <- 0x%04x", nb, addr, val);
 		}
 #endif
 	} else {
 #ifdef WITH_DEBUGGER
-		LOG(P_MEM_W, "[%d:%d] <- 0x%04x ERROR", nb, addr, val);
+		LOG(D_MEM, 5, "[%d:%d] <- 0x%04x ERROR", nb, addr, val);
 #endif
 		if (SR_Q) {
 			int_set(INT_NO_MEM);
@@ -220,7 +224,7 @@ int mem_load_image(const char* fname, int nb)
 		return E_FILE_OPEN;
 	}
 
-	LOG(P_MEM_W, "Loading memory image: %s -> %d", fname, nb);
+	LOG(D_MEM, 1, "Loading memory image: %s -> %d", fname, nb);
 
 	int res = 1;
 	int chunk = 0;

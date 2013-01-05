@@ -24,27 +24,14 @@
 #include "errors.h"
 #include "debugger/log.h"
 
-char *log_pname[] = {
+char *log_dname[] = {
+	"REG",
+	"MEM",
+	"CPU",
+	"IO",
+	"INT",
 	"MISC",
-	"INT:CLEAR",
-	"INT:SET",
-	"INT:SERVE",
-	"IO:?",
-	"IO:UNIT",
-	"IO:CHAN",
-	"IO:SPEC",
-	"IO:DECODE",
-	"CPU:?",
-	"CPU:?",
-	"CPU:EFF",
-	"CPU:OP",
-	"CPU:STEP",
-	"MEM:CFG",
-	"MEM:W",
-	"MEM:R",
-	"REG:W",
-	"REG:R",
-	"?"
+	"MAX"
 };
 
 char *log_reg_name[] = {
@@ -103,7 +90,7 @@ char *log_int_name[] = {
 
 FILE *log_f;
 
-unsigned int log_mask = M_NONE;
+int log_level[D_MAX] = { 0 };
 
 // -----------------------------------------------------------------------
 int log_init(const char *logf)
@@ -122,15 +109,15 @@ void log_shutdown()
 }
 
 // -----------------------------------------------------------------------
-void log_setmask(unsigned int mask)
+void log_setlevel(int domain, int level)
 {
-	log_mask = mask;
+	log_level[domain] = level;
 }
 
 // -----------------------------------------------------------------------
-void log_log(unsigned int part, char *format, ...)
+void log_log(int domain, int level, char *format, ...)
 {
-	if (!(log_mask & (1 << part))) {
+	if (log_level[domain] < level) {
 		return;
 	}
 
@@ -142,7 +129,7 @@ void log_log(unsigned int part, char *format, ...)
 
 	va_list vl;
 	va_start(vl, format);
-	fprintf(log_f, "%s.%-6d %-10s ", now, (int) ct.tv_usec, log_pname[part]);
+	fprintf(log_f, "%s.%-6d %-10s:%-3d ", now, (int) ct.tv_usec, log_dname[domain], level);
 	vfprintf(log_f, format, vl);
 	fprintf(log_f, "\n");
 	va_end(vl);

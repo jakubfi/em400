@@ -32,12 +32,14 @@ uint16_t reg_read(int r, int trace)
 {
 #ifdef WITH_DEBUGGER
 	if (trace != 0) {
-		LOG(P_REG_R, "%s -> 0x%04x", log_reg_name[r], regs[r]);
+		LOG(D_REG, 10, "%s -> 0x%04x", log_reg_name[r], regs[r]);
 		if (reg_act[r] == C_WRITE) {
 			reg_act[r] = C_RW;
 		} else {
 			reg_act[r] = C_READ;
 		}
+	} else {
+		LOG(D_REG, 15, "%s -> 0x%04x", log_reg_name[r], regs[r]);
 	}
 #endif
 	return regs[r];
@@ -47,7 +49,7 @@ uint16_t reg_read(int r, int trace)
 void reg_write(int r, uint16_t x, int trace)
 {
 #ifdef WITH_DEBUGGER
-	LOG(P_REG_W, "%s <- 0x%04x", log_reg_name[r], x);
+	LOG(D_REG, 1, "%s <- 0x%04x", log_reg_name[r], x);
 	if (trace != 0) {
 		if (reg_act[r] == C_READ) {
 			reg_act[r] = C_RW;

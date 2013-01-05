@@ -84,7 +84,7 @@ void int_set(int x)
 {
 #ifdef WITH_DEBUGGER
 	if (x != INT_TIMER) {
-		LOG(P_INT_SET, "Set: %lld (%s)", x, log_int_name[x]);
+		LOG(D_INT, 10, "Set: %lld (%s)", x, log_int_name[x]);
 	}
 #endif
 	pthread_mutex_lock(&int_mutex_rz);
@@ -108,7 +108,7 @@ void int_clear_all()
 // -----------------------------------------------------------------------
 void int_clear(int x)
 {
-	LOG(P_INT_CLEAR, "Clear: %lld (%s)", x, log_int_name[x]);
+	LOG(D_INT, 10, "Clear: %lld (%s)", x, log_int_name[x]);
 	pthread_mutex_lock(&int_mutex_rz);
 	RZ &= ~((1 << (31 - x)));
 	pthread_mutex_unlock(&int_mutex_rz);
@@ -121,7 +121,7 @@ void int_clear(int x)
 // -----------------------------------------------------------------------
 void int_put_nchan(uint16_t r)
 {
-	LOG(P_INT_SET, "Set non-channel to: %d", r);
+	LOG(D_INT, 20, "Set non-channel to: %d", r);
 	pthread_mutex_lock(&int_mutex_rz);
 	RZ = (RZ & 0b00000000000011111111111111110000) | ((r & 0b1111111111110000) << 16) | (r & 0b0000000000001111);
 	pthread_mutex_unlock(&int_mutex_rz);
@@ -158,7 +158,7 @@ void int_serve()
 	// this is the interrupt we're going to serve
 	int interrupt = 31 - probe;
 
-	LOG(P_INT_SERVE, "Serve: %d (%s)", interrupt, log_int_name[interrupt]);
+	LOG(D_INT, 10, "Serve: %d (%s)", interrupt, log_int_name[interrupt]);
 
 	int int_spec = 0;
 	// get interrupt specification it it's from channel

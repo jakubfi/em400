@@ -24,85 +24,59 @@
 #include <stdio.h>
 #include <stdarg.h>
 
-enum log_parts {
-	P_REG_R		= 18,
-	P_REG_W		= 17,
-	P_MEM_R		= 16,
-	P_MEM_W		= 15,
-	P_MEM_CFG	= 14,
-
-	P_CPU_STEP	= 13,
-	P_CPU_OP	= 12,
-	P_CPU_EFF	= 11,
-	P_CPU_x		= 10,
-	P_CPU_y		= 9,
-
-	P_IO_DECODE	= 8,
-	P_IO_SPEC	= 7,
-	P_IO_CHAN	= 6,
-	P_IO_UNIT	= 5,
-	P_IO_x		= 4,
-
-	P_INT_SERVE	= 3,
-	P_INT_SET	= 2,
-	P_INT_CLEAR	= 1,
-
-	P_MISC		= 0
+enum log_domains {
+	D_REG = 0,
+	D_MEM,
+	D_CPU,
+	D_IO,
+	D_INT,
+	D_MISC,
+	D_MAX
 };
 
-extern char *log_pname[];
+/*
+Log levels:
 
-enum _log_mask {
-	M_REG_R		= 1 << P_REG_R,
-	M_REG_W		= 1 << P_REG_W,
-	M_REG_ALL	= M_REG_R | M_REG_W,
-
-	M_MEM_CFG	= 1 << P_MEM_CFG,
-	M_MEM_R		= 1 << P_MEM_R,
-	M_MEM_W		= 1 << P_MEM_W,
-	M_MEM_ALL	= M_MEM_CFG | M_MEM_R | M_MEM_W,
-
-	M_CPU_STEP	= 1 << P_CPU_STEP,
-	M_CPU_OP	= 1 << P_CPU_OP,
-	M_CPU_EFF	= 1 << P_CPU_EFF,
-	M_CPU_x		= 1 << P_CPU_x,
-	M_CPU_y		= 1 << P_CPU_y,
-	M_CPU_ALL	= M_CPU_STEP | M_CPU_OP | M_CPU_EFF | M_CPU_x | M_CPU_y,
-
-	M_IO_DECODE	= 1 << P_IO_DECODE,
-	M_IO_SPEC	= 1 << P_IO_SPEC,
-	M_IO_CHAN	= 1 << P_IO_CHAN,
-	M_IO_UNIT	= 1 << P_IO_UNIT,
-	M_IO_x		= 1 << P_IO_x,
-	M_IO_ALL	= M_IO_DECODE | M_IO_SPEC | M_IO_CHAN | M_IO_UNIT | M_IO_x,
-
-	M_INT_SERVE	= 1 << P_INT_SERVE,
-	M_INT_SET	= 1 << P_INT_SET,
-	M_INT_CLEAR	= 1 << P_INT_CLEAR,
-	M_INT_ALL	= M_INT_SERVE | M_INT_SET | M_INT_CLEAR,
-
-	M_MISC		= 1 << P_MISC,
-
-	M_ALL		= 0b11111111111111111111111111111111,
-	M_NONE		= 0
-};
+* CPU:
+	1 - step
+	5 - exec (dasm+trnas)
+	10 - eff. arg.
+* REG:
+	1 - write
+	10 - read traced
+	15 - read all
+* MEM:
+	1 - add map, load image
+	5 - error accessing
+	10 - write traced
+	20 - read traced
+	30 - write all
+	40 - read all
+* I/O:
+	1 - command
+	10 - channel
+	20 - unit
+	30 - data
+* INT:
+	10 - everything
+*/
 
 extern FILE *log_f;
-extern unsigned int log_mask;
-
+extern int log_level[];
 extern char *log_pname[];
+
 extern char *log_reg_name[];
 extern char *log_int_name[];
 
 int log_init(const char *logf);
 void log_shutdown();
-void log_setmask(unsigned int mask);
-void log_log(unsigned int part, char *format, ...);
+void log_setlevel(int domain, int level);
+void log_log(int domain, int level, char *format, ...);
 
 #ifdef WITH_DEBUGGER
-#define LOG(p, f, ...) log_log(p, f, ##__VA_ARGS__)
+#define LOG(d, l, f, ...) log_log(d, l, f, ##__VA_ARGS__)
 #else
-#define LOG(p, f, ...) ;
+#define LOG(d, l, f, ...) ;
 #endif
 
 #endif

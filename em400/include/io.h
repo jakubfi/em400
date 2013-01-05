@@ -38,7 +38,9 @@ enum io_result {
 };
 
 struct chan_t {
+	int number;
 	int type;
+	const char *name;
 	volatile int finish;
 	void (*f_shutdown)(struct chan_t *ch);
 	void (*f_reset)(struct chan_t *ch);
@@ -50,7 +52,9 @@ struct chan_t {
 };
 
 struct unit_t {
+	int number;
 	int type;
+	const char *name;
 	struct chan_t *chan;
 	void (*f_shutdown)(struct unit_t *u);
 	void (*f_reset)(struct unit_t *u);

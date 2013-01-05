@@ -18,6 +18,8 @@
 #include "errors.h"
 #include "io.h"
 
+#include "debugger/log.h"
+
 // -----------------------------------------------------------------------
 int drv_cnone_init(struct chan_t *ch)
 {
@@ -37,6 +39,7 @@ void drv_cnone_reset(struct chan_t *ch)
 // -----------------------------------------------------------------------
 int drv_cnone_cmd(struct chan_t *ch, int dir, int unit, int cmd, int r)
 {
+	LOG(D_IO, 10, "Chan %d (%s) ignored command", ch->number, ch->name);
 	return IO_NO;
 }
 

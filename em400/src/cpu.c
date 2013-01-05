@@ -45,7 +45,7 @@ int16_t cpu_get_eff_arg()
 {
 	uint32_t N;
 
-	LOG(P_CPU_EFF,  "------ Get effective argument");
+	LOG(D_CPU, 10, "------ Get effective argument");
 	// argument is in next word
 	if (IR_C == 0) {
 		N = nMEM(nR(R_IC));
@@ -71,21 +71,21 @@ int16_t cpu_get_eff_arg()
 	// store 17th bit for byte addressing
 	nRw(R_ZC17, (N & 0b10000000000000000) >> 16);
 
-	LOG(P_CPU_EFF, "Effective argument: 0x%04x (%s%s%s%s)", N, IR_C ? "2-word " : "1-word", regs[R_MODc] ? " PRE-mod" : "", IR_B ? " B-mod" : "", IR_D ? " D-mod" : "");
+	LOG(D_CPU, 10, "Effective argument: 0x%04x (%s%s%s%s)", N, IR_C ? "2-word " : "1-word", regs[R_MODc] ? " PRE-mod" : "", IR_B ? " B-mod" : "", IR_D ? " D-mod" : "");
 	return (int16_t) N;
 }
 
 // -----------------------------------------------------------------------
 void cpu_step()
 {
-	LOG(P_CPU_STEP, "------ Step start ----------------------------------------------");
+	LOG(D_CPU, 1, "------ cpu_step() -----------------------------------------------");
 	// do not branch by default
 	nRw(R_P, 0);
 
 	// fetch instruction into IR
 	// (additional argument is fetched by the instruction, if necessary)
 	nRw(R_IR, nMEM(nR(R_IC)));
-	LOG(P_CPU_STEP, "Start cycle: Q:NB:IC = %d:%d:%d", SR_Q, SR_NB, regs[R_IC]);
+	LOG(D_CPU, 1, "Cycle: Q:NB = %d:%d, IC = %d", SR_Q, SR_NB, regs[R_IC]);
 	nRinc(R_IC);
 
 #ifdef WITH_DEBUGGER
@@ -95,7 +95,7 @@ void cpu_step()
 	int len;
 	len = dt_trans(addr, &buf_t, DMODE_TRANS);
 	len = dt_trans(addr, &buf_d, DMODE_DASM);
-	LOG(P_CPU_OP, "EXEC: %s --- %s", buf_d, buf_t);
+	LOG(D_CPU, 5, "EXEC: %s --- %s", buf_d, buf_t);
 	free(buf_t);
 	free(buf_d);
 #endif
@@ -104,7 +104,8 @@ void cpu_step()
 	int op_res;
 	op_res = iset[IR_OP].op_fun();
 
-	LOG(P_CPU_STEP, "------ Check instruction result");
+	LOG(D_CPU, 1, "------ Check instruction result");
+
 	switch (op_res) {
 		// normal instruction
 		case OP_OK:
@@ -127,7 +128,8 @@ void cpu_step()
 	}
 
 	nRadd(R_IC, nR(R_P));
-	LOG(P_CPU_STEP, "End cycle: res = %d, MOD = %d, MODc = %d, P = %d", op_res, regs[R_MOD], regs[R_MODc], regs[R_P]);
+
+	LOG(D_CPU, 1, "End cycle: res = %d, MOD = %d, MODc = %d, P = %d", op_res, regs[R_MOD], regs[R_MODc], regs[R_P]);
 }
 
 // vim: tabstop=4
