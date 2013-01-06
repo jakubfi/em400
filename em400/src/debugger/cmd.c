@@ -32,6 +32,7 @@
 #include "debugger/ui.h"
 #include "parser.h"
 #include "debugger/eval.h"
+#include "debugger/log.h"
 
 extern int em400_quit;
 
@@ -52,6 +53,7 @@ struct cmd_t dbg_commands[] = {
 	{ "brk",	F_BRK,		"Manipulate breakpoints", "  brk add <expression>\n  brk list\n  brk del <brk_number>" },
 	{ "run",	F_RUN,		"Run emulation", "  run" },
 	{ "stack",	F_STACK,	"Show stack", "  stack" },
+	{ "log",	F_LOG,		"Enable logging", "  log\n  log on|off\n  log file <filename>\n  log set <domain>:<level>" },
 	{ NULL,		0,			NULL }
 };
 
@@ -460,6 +462,32 @@ void dbg_c_brk_disable(int wid, int nr, int disable)
 		}
 	} else {
 		awprint(wid, C_ERROR, "No such breakpoint: %i\n", nr);
+	}
+}
+
+// -----------------------------------------------------------------------
+void dbg_c_log_show(int wid)
+{
+	awprint(wid, C_LABEL, "Logging to file: ");
+	awprint(wid, C_DATA, "%s (%s)\n", log_fname, log_enabled ? "enabled" : "disabled");
+	awprint(wid, C_LABEL, "Levels: ");
+	char **d = log_dname;
+	int i = 0;
+	while (*(d+i)) {
+		awprint(wid, C_DATA, "%s:%i ", *(d+i), log_level[i]);
+		i++;
+	}
+	awprint(wid, C_LABEL, "\n");
+}
+
+// -----------------------------------------------------------------------
+void dbg_c_log_set(int wid, char *domain, int level)
+{
+	int d = log_find_domain(domain);
+	if (d < -1) {
+		awprint(W_CMD, C_ERROR, "Unknown domain: %s\n", domain);
+	} else {
+		log_setlevel(d, level);
 	}
 }
 

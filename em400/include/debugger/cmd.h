@@ -49,6 +49,8 @@ void dbg_c_brk_list(int wid);
 void dbg_c_brk_del(int wid, int nr);
 void dbg_c_brk_test(int wid, int nr);
 void dbg_c_brk_disable(int wid, int nr, int disable);
+void dbg_c_log_show(int wid);
+void dbg_c_log_set(int wid, char *domain, int level);
 
 #endif
 

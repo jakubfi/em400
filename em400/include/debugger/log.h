@@ -61,20 +61,25 @@ Log levels:
 	10 - everything
 */
 
+extern int log_enabled;
 extern FILE *log_f;
+extern char *log_fname;
 extern int log_level[];
-extern char *log_pname[];
+extern char *log_dname[];
 
 extern char *log_reg_name[];
 extern char *log_int_name[];
 
 int log_init(const char *logf);
 void log_shutdown();
+int log_enable();
+void log_disable();
+int log_find_domain(char *name);
 void log_setlevel(int domain, int level);
 void log_log(int domain, int level, char *format, ...);
 
 #ifdef WITH_DEBUGGER
-#define LOG(d, l, f, ...) log_log(d, l, f, ##__VA_ARGS__)
+#define LOG(d, l, f, ...) if (log_enabled) log_log(d, l, f, ##__VA_ARGS__)
 #else
 #define LOG(d, l, f, ...) ;
 #endif

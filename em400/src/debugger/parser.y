@@ -27,6 +27,7 @@
 #include "debugger/ui.h"
 #include "debugger/cmd.h"
 #include "debugger/eval.h"
+#include "debugger/log.h"
 
 void yyerror(char *);
 int yylex(void);
@@ -41,11 +42,12 @@ struct node_t *enode;
 };
 
 %token <value> VALUE REG YERR
-%token <text> TEXT FNAME CMDNAME
+%token <text> TEXT NAME
 %token ':' '&' '|' '(' ')'
 %token HEX OCT BIN DEC UINT
-%token <value> F_QUIT F_CLMEM F_MEM F_REGS F_SREGS F_RESET F_STEP F_HELP F_DASM F_TRANS F_LOAD F_MEMCFG F_BRK F_RUN F_STACK
-%token B_ADD B_LIST B_DEL B_TEST B_DISABLE B_ENABLE
+%token <value> F_QUIT F_CLMEM F_MEM F_REGS F_SREGS F_RESET F_STEP F_HELP F_DASM F_TRANS F_LOAD F_MEMCFG F_BRK F_RUN F_STACK F_LOG
+%token B_ADD B_DEL B_TEST B_DISABLE B_ENABLE
+%token L_ON L_OFF L_FILE L_LEVEL
 %type <n> expr lval bitfield
 
 %left '='
@@ -212,6 +214,7 @@ command:
 		dbg_c_memcfg(W_CMD);
 	}
 	| f_brk
+	| f_log
 	| F_RUN '\n' {
 		dbg_c_run();
 	}
@@ -224,7 +227,7 @@ f_help:
 	F_HELP '\n' {
 		dbg_c_help(W_CMD, NULL);
 	}
-	| F_HELP CMDNAME '\n' {
+	| F_HELP NAME '\n' {
 		dbg_c_help(W_CMD, $2);
 		free($2);
 	}
@@ -268,16 +271,16 @@ f_mem:
 	;
 
 f_load:
-	F_LOAD FNAME '\n' {
+	F_LOAD NAME '\n' {
 		dbg_c_load(W_CMD, $2, SR_Q*SR_NB);
 	}
-	| F_LOAD FNAME VALUE '\n' {
+	| F_LOAD NAME VALUE '\n' {
 		dbg_c_load(W_CMD, $2, $3);
 	}
 	;
 
 f_brk:
-	F_BRK B_LIST '\n' {
+	F_BRK '\n' {
 		dbg_c_brk_list(W_CMD);
 	}
 	| F_BRK B_ADD expr '\n' {
@@ -297,6 +300,25 @@ f_brk:
 	}
 	| F_BRK B_ENABLE VALUE '\n' {
 		dbg_c_brk_disable(W_CMD, $3, 0);
+	}
+	;
+
+f_log:
+	F_LOG '\n' {
+		dbg_c_log_show(W_CMD);
+	}
+	| F_LOG L_ON '\n' {
+		log_enable();
+	}
+	| F_LOG L_OFF '\n' {
+		log_disable();
+	}
+	| F_LOG L_FILE NAME '\n' {
+		log_shutdown();
+		log_init($3);
+	}
+	| F_LOG L_LEVEL NAME ':' VALUE '\n' {
+		dbg_c_log_set(W_CMD, $3, $5);
 	}
 	;
 

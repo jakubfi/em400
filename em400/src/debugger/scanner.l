@@ -31,16 +31,14 @@ void yyerror(char *);
 %option nounput
 %option noinput
 
-%s fname cmdname brkcmd
+%s name brkcmd logcmd
 
 oct		0[0-7]+
 hex		0x[0-9a-fA-F]+
 bin		0b[01]+
 dec		[0-9]+
 reg		r[0-7]|R[0-7]
-text	[a-zA-Z][a-zA-Z0-9]*
-cmdname	[^ \t\n\r]+
-fname	[^ \t\n\r]+
+text	[^: \t\n\r]+
 
 %%
 
@@ -98,13 +96,16 @@ uint return UINT;
 	} else {
 		switch (tok) {
 			case F_HELP:
-				BEGIN(cmdname);
+				BEGIN(name);
 				break;
 			case F_LOAD:
-				BEGIN(fname);
+				BEGIN(name);
 				break;
 			case F_BRK:
 				BEGIN(brkcmd);
+				break;
+			case F_LOG:
+				BEGIN(logcmd);
 				break;
 		}
 		yylval.value = tok;
@@ -116,10 +117,6 @@ uint return UINT;
 	BEGIN(INITIAL);
 	return B_ADD;
 }
-<brkcmd>"list" {
-	BEGIN(INITIAL);
-	return B_LIST;
-}
 <brkcmd>"del" {
 	BEGIN(INITIAL);
 	return B_DEL;
@@ -128,25 +125,36 @@ uint return UINT;
 	BEGIN(INITIAL);
 	return B_TEST;
 }
-<brkcmd>"disable" {
+<brkcmd>"on"|"disable" {
 	BEGIN(INITIAL);
 	return B_DISABLE;
 }
-<brkcmd>"enable" {
+<brkcmd>"off"|"enable" {
 	BEGIN(INITIAL);
 	return B_ENABLE;
 }
 
-<fname>{fname} {
-	yylval.text = strdup(yytext);
+<logcmd>"on"|"enable" {
 	BEGIN(INITIAL);
-	return FNAME;
+	return L_ON;
+}
+<logcmd>"off"|"disable" {
+	BEGIN(INITIAL);
+	return L_OFF;
+}
+<logcmd>"file" {
+	BEGIN(name);
+	return L_FILE;
+}
+<logcmd>"level" {
+	BEGIN(name);
+	return L_LEVEL;
 }
 
-<cmdname>{cmdname} {
+<name>{text} {
 	yylval.text = strdup(yytext);
 	BEGIN(INITIAL);
-	return CMDNAME;
+	return NAME;
 }
 
 ">>"	return SHR;
