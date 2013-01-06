@@ -15,17 +15,14 @@
 //  Foundation, Inc.,
 //  51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 
-#ifndef DRV_UNONE_H
-#define DRV_UNONE_H
+#ifndef LIB_H
+#define LIB_H
 
 #include <inttypes.h>
 
-#include "io.h"
+#include "drv/drivers.h"
 
-int drv_unone_init(struct unit_t *u, int cfgc, char **cfgv);
-void drv_unone_shutdown(struct unit_t *u);
-void drv_unone_reset(struct unit_t *u);
-int drv_unone_cmd(struct unit_t *u, int dir, int cmd, uint16_t *r);
+int chan_get_int_spec(struct chan_t *ch, uint16_t *r);
 
 #endif
 

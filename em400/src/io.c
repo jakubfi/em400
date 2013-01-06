@@ -31,7 +31,6 @@
 #include "debugger/log.h"
 
 struct chan_t io_chan[IO_MAX_CHAN];
-struct unit_t io_unit[IO_MAX_CHAN][IO_MAX_UNIT];
 
 int io_chan_conf[IO_MAX_CHAN] = { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 };
 int io_unit_conf[IO_MAX_CHAN][IO_MAX_UNIT] = {
@@ -110,14 +109,23 @@ int io_init()
 {
 	// initialize all channels
 	for (int i=0 ; i<IO_MAX_CHAN ; i++) {
-		io_chan[i].number = i;
-		io_chan_init(io_chan+i, io_chan_conf[i]);
+		struct chan_t *ch = io_chan + i;
+		ch->number = i;
+	
+		int res = io_chan_init(ch, io_chan_conf[i]);
+		if (res != E_OK) {
+			return res;
+		}
 
 		// initialize all units connected to each channel
 		for (int j=0 ; j<IO_MAX_UNIT ; j++) {
-			io_unit[i][j].number = j;
-			io_unit[i][j].chan = io_chan+i;
-			io_unit_init(io_unit[i]+j, io_unit_conf[i][j]);
+			ch->unit[j] = malloc(sizeof(struct unit_t));
+			ch->unit[j]->number = j;
+			ch->unit[j]->chan = io_chan+i;
+			res = io_unit_init(ch->unit[j], io_unit_conf[i][j]);
+			if (res != E_OK) {
+				return res;
+			}
 		}
 	}
 	return E_OK;
@@ -127,21 +135,17 @@ int io_init()
 void io_shutdown()
 {
 	for (int i=0 ; i<IO_MAX_CHAN ; i++) {
+		struct chan_t *ch = io_chan + i;
 		for (int j=0 ; j<IO_MAX_UNIT ; j++) {
+			ch->unit[j]->f_shutdown(ch->unit[j]);
+			free(ch->unit[j]);
 		}
+		ch->f_shutdown(ch);
 	}
 }
 
 // -----------------------------------------------------------------------
-uint16_t io_get_int_spec(int interrupt)
-{
-	// TODO: check if the interrupt hasn't been masked in the meantime
-	int chan = interrupt - 12;
-	return io_chan[chan].int_spec;
-}
-
-// -----------------------------------------------------------------------
-int io_dispatch(int dir, uint16_t n, int r)
+int io_dispatch(int dir, uint16_t n, uint16_t *r)
 {
 	int is_mem = (n & 0b0000000000000001);
 	int chan = (n & 0b0000000000011110) >> 1;
@@ -150,30 +154,28 @@ int io_dispatch(int dir, uint16_t n, int r)
 
 	// software memory configuration
 	if (is_mem) {
-		LOG(D_IO, 1, "MEM command, dir = %s, module = %d, segment = %d, cmd = %d, r = %d", dir ? "OUT" : "IN", chan, unit, cmd, r);
+		LOG(D_IO, 1, "MEM command, dir = %s, module = %d, segment = %d, cmd = %d", dir ? "OUT" : "IN", chan, unit, cmd);
 		if (dir == IO_OU) {
-			int nb = R(r) & 0b0000000000001111;
-			int ab = (R(r) & 0b1111000000000000) >> 12;
+			int nb = *r & 0b0000000000001111;
+			int ab = (*r & 0b1111000000000000) >> 12;
 			// here, channel is memory module, unit is memory segment
 			return mem_add_map(nb, ab, chan, unit);
 		} else {
 			// TODO: what to return?
 			return IO_NO;
 		}
+
 	// channel/unit command
 	} else {
+		struct chan_t *ch = io_chan + chan;
+
 #ifdef WITH_DEBUGGER
 		char *cmdc = int2bin(cmd, 8);
-		LOG(D_IO, 1, "I/O command, dir = %s, chan = %d, unit = %d, cmd = %s, r = %d", dir ? "OUT" : "IN", chan, unit, cmdc, r);
+		LOG(D_IO, 1, "I/O command, dir = %s, chan = %d, unit = %d, cmd = %s", dir ? "OUT" : "IN", chan, unit, cmdc);
 		free(cmdc);
 #endif
-		// three most sig. bits are 0 if this is channel command
-		if ((n & 0b1110000000000000) == 0) {
-			return io_chan[chan].f_cmd(io_chan+chan, dir, unit, cmd, r);
-		// unit command
-		} else {
-			return io_unit[chan][unit].f_cmd(io_unit[chan]+unit, dir, cmd, r);
-		}
+
+		return ch->f_cmd(ch, dir, ch->unit[unit], cmd, r);
 	}
 }
 

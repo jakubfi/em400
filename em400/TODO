@@ -11,7 +11,6 @@ Debugger:
 * debugger in separate thread (?)
 * use status bar for panel leds (?)
 * inform user which interrupt is being served (if any)
-* memory/registers untraced when accessed by i/o devices (?)
 * inteligent memory view (auto-scroll)
 * scrollable memory/dasm/stack views (?)
 * IPS counter

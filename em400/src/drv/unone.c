@@ -15,6 +15,8 @@
 //  Foundation, Inc.,
 //  51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 
+#include <inttypes.h>
+
 #include "errors.h"
 #include "io.h"
 
@@ -35,7 +37,7 @@ void drv_unone_reset(struct unit_t *u)
 }
 
 // -----------------------------------------------------------------------
-int drv_unone_cmd(struct unit_t *u, int dir, int cmd, int r)
+int drv_unone_cmd(struct unit_t *u, int dir, int cmd, uint16_t *r)
 {
 	return IO_NO;
 }

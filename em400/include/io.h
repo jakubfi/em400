@@ -37,37 +37,45 @@ enum io_result {
 	IO_PE = 3   // data error (parity error)
 };
 
+struct unit_t;
+
+// -----------------------------------------------------------------------
 struct chan_t {
 	int number;
 	int type;
 	const char *name;
-	volatile int finish;
+	struct unit_t *unit[IO_MAX_UNIT];
+
+	int finish;
+	pthread_t thread;
+
 	void (*f_shutdown)(struct chan_t *ch);
 	void (*f_reset)(struct chan_t *ch);
-	int (*f_cmd)(struct chan_t *ch, int dir, int unit, int cmd, int r);
-	pthread_t thread;
+	int (*f_cmd)(struct chan_t *ch, int dir, struct unit_t *unit, int cmd, uint16_t *r);
+
 	uint16_t int_spec;
 	uint8_t int_mask;
 	uint8_t dev_alloc;
 };
 
+// -----------------------------------------------------------------------
 struct unit_t {
 	int number;
 	int type;
 	const char *name;
+
 	struct chan_t *chan;
+
 	void (*f_shutdown)(struct unit_t *u);
 	void (*f_reset)(struct unit_t *u);
-	int (*f_cmd)(struct unit_t *u, int dir, int cmd, int r);
+	int (*f_cmd)(struct unit_t *u, int dir, int cmd, uint16_t *r);
 };
 
 extern struct chan_t io_chan[IO_MAX_CHAN];
-extern struct unit_t io_unit[IO_MAX_CHAN][IO_MAX_UNIT];
 
 int io_init();
 void io_shutdown();
-uint16_t io_get_int_spec(int interrupt);
-int io_dispatch(int dir, uint16_t n, int r);
+int io_dispatch(int dir, uint16_t n, uint16_t *r);
 
 #endif
 

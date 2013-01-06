@@ -18,6 +18,8 @@
 #ifndef DRV_DRIVERS_H
 #define DRV_DRIVERS_H
 
+#include <inttypes.h>
+
 #include "io.h"
 
 enum drv_chan_type {
@@ -44,7 +46,7 @@ struct drv_chan_t {
 	int (*f_init)(struct chan_t *ch);
 	void (*f_shutdown)(struct chan_t *ch);
 	void (*f_reset)(struct chan_t *ch);
-	int (*f_cmd)(struct chan_t *ch, int dir, int unit, int cmd, int r);
+	int (*f_cmd)(struct chan_t *ch, int dir, struct unit_t *unit, int cmd, uint16_t *r);
 };
 
 struct drv_unit_t {
@@ -55,7 +57,7 @@ struct drv_unit_t {
 	int (*f_init)(struct unit_t *u, int cfgc, char **cfgv);
 	void (*f_shutdown)(struct unit_t *u);
 	void (*f_reset)(struct unit_t *u);
-	int (*f_cmd)(struct unit_t *u, int dir, int cmd, int r);
+	int (*f_cmd)(struct unit_t *u, int dir, int cmd, uint16_t *r);
 };
 
 extern struct drv_chan_t drv_chan[];

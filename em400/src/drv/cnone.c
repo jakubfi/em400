@@ -15,6 +15,8 @@
 //  Foundation, Inc.,
 //  51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 
+#include <inttypes.h>
+
 #include "errors.h"
 #include "io.h"
 
@@ -37,7 +39,7 @@ void drv_cnone_reset(struct chan_t *ch)
 }
 
 // -----------------------------------------------------------------------
-int drv_cnone_cmd(struct chan_t *ch, int dir, int unit, int cmd, int r)
+int drv_cnone_cmd(struct chan_t *ch, int dir, struct unit_t *unit, int cmd, uint16_t *r)
 {
 	LOG(D_IO, 10, "Chan %d (%s) ignored command", ch->number, ch->name);
 	return IO_NO;

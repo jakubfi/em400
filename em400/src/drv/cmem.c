@@ -15,6 +15,7 @@
 //  Foundation, Inc.,
 //  51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 
+#include <inttypes.h>
 #include <pthread.h>
 #include <unistd.h>
 
@@ -56,8 +57,43 @@ void drv_cmem_reset(struct chan_t *ch)
 }
 
 // -----------------------------------------------------------------------
-int drv_cmem_cmd(struct chan_t *ch, int dir, int unit, int cmd, int r)
+int drv_cmem_cmd(struct chan_t *ch, int dir, struct unit_t *unit, int cmd, uint16_t *r)
 {
+	// command for channel
+	if ((cmd & 0b11100000) == 0) {
+		if (dir == IO_OU) {
+			switch (cmd & 0b00011000) {
+			case 0b00000000:
+				return IO_OK;
+			case 0b00001000:
+				break;
+			case 0b00010000:
+				break;
+			case 0b00011000:
+				break;
+			default:
+				// shouldn't happen, but as channel always reports OK...
+				return IO_OK;
+			}
+		} else {
+			switch (cmd & 0b00011000) {
+			case 0b00000000:
+				return IO_OK;
+			case 0b00001000:
+				break;
+			case 0b00010000:
+				break;
+			case 0b00011000:
+				break;
+			default:
+				// shouldn't happen, but as channel always reports OK...
+				return IO_OK;
+			}
+		}
+	// command for unit
+	} else {
+		unit->f_cmd(unit, dir, cmd, r);
+	}
 	return IO_EN;
 }
 

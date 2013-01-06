@@ -18,12 +18,14 @@
 #ifndef DRV_CNONE_H
 #define DRV_CNONE_H
 
+#include <inttypes.h>
+
 #include "io.h"
 
 int drv_cnone_init(struct chan_t *ch);
 void drv_cnone_shutdown(struct chan_t *ch);
 void drv_cnone_reset(struct chan_t *ch);
-int drv_cnone_cmd(struct chan_t *ch, int dir, int unit, int cmd, int r);
+int drv_cnone_cmd(struct chan_t *ch, int dir, struct unit_t *unit, int cmd, uint16_t *r);
 
 #endif
 

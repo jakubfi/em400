@@ -148,7 +148,7 @@ int op_bn()
 int op_ou()
 {
 	uint16_t N = cpu_get_eff_arg();
-	int io_result = io_dispatch(IO_OU, N, IR_A);
+	int io_result = io_dispatch(IO_OU, N, regs+IR_A);
 	Rw(R_IC, MEM(R(R_IC) + io_result));
 	return OP_OK;
 }
@@ -157,7 +157,7 @@ int op_ou()
 int op_in()
 {
 	uint16_t N = cpu_get_eff_arg();
-	int io_result = io_dispatch(IO_IN, N, IR_A);
+	int io_result = io_dispatch(IO_IN, N, regs+IR_A);
 	Rw(R_IC, MEM(R(R_IC) + io_result));
 	return OP_OK;
 }

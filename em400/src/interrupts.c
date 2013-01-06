@@ -22,6 +22,7 @@
 #include "registers.h"
 #include "interrupts.h"
 #include "io.h"
+#include "drv/lib.h"
 
 #include "debugger/log.h"
 
@@ -160,10 +161,10 @@ void int_serve()
 
 	LOG(D_INT, 10, "Serve: %d (%s)", interrupt, log_int_name[interrupt]);
 
-	int int_spec = 0;
+	uint16_t int_spec = 0;
 	// get interrupt specification it it's from channel
 	if ((interrupt >= 12) && (interrupt <= 27)) {
-		int_spec = io_get_int_spec(interrupt);
+		int_spec = chan_get_int_spec(io_chan + (interrupt-12), &int_spec);
 	}
 
 	// put system status on stack
