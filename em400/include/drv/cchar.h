@@ -15,26 +15,17 @@
 //  Foundation, Inc.,
 //  51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 
-#ifndef DRV_LIB_H
-#define DRV_LIB_H
+#ifndef DRV_CCHAR_H
+#define DRV_CCHAR_H
 
 #include <inttypes.h>
 
-#include "drv/drivers.h"
+#include "io.h"
 
-enum _chan_cmd {
-	// channel IN
-	CHAN_CMD_EXISTS		= 0b00000000,
-	CHAN_CMD_INTSPEC	= 0b00001000,
-	CHAN_CMD_STATUS		= 0b00010000,
-	CHAN_CMD_ALLOC		= 0b00011000,
-	// channel OU
-	CHAN_CMD_MASK_PN	= 0b00001000,
-	CHAN_CMD_MASK_NPN	= 0b00010000,
-	CHAN_CMD_ASSIGN		= 0b00011000
-};
-
-int chan_get_int_spec(struct chan_t *ch, uint16_t *r);
+int drv_cchar_init(struct chan_t *ch);
+void drv_cchar_shutdown(struct chan_t *ch);
+void drv_cchar_reset(struct chan_t *ch);
+int drv_cchar_cmd(struct chan_t *ch, int dir, struct unit_t *unit, int cmd, uint16_t *r);
 
 #endif
 

@@ -15,26 +15,32 @@
 //  Foundation, Inc.,
 //  51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 
-#ifndef DRV_LIB_H
-#define DRV_LIB_H
+#ifndef DRV_U9425_H
+#define DRV_U9425_H
 
 #include <inttypes.h>
 
-#include "drv/drivers.h"
+#include "io.h"
 
-enum _chan_cmd {
-	// channel IN
-	CHAN_CMD_EXISTS		= 0b00000000,
-	CHAN_CMD_INTSPEC	= 0b00001000,
-	CHAN_CMD_STATUS		= 0b00010000,
-	CHAN_CMD_ALLOC		= 0b00011000,
-	// channel OU
-	CHAN_CMD_MASK_PN	= 0b00001000,
-	CHAN_CMD_MASK_NPN	= 0b00010000,
-	CHAN_CMD_ASSIGN		= 0b00011000
+enum _u9425_cmd {
+	// OU
+	U9425_CMD_ZER		= 0b10000000,
+	U9425_CMD_OTR		= 0b11000000,
+	U9425_CMD_NTR		= 0b11010000,
+	U9425_CMD_SEEK		= 0b11100000,
+	U9425_CMD_RTZ		= 0b01000000,
+	U9425_CMD_SELOFF	= 0b10100000,
+	U9425_CMD_RES		= 0b10010000,
+	// IN
+	U9425_CMD_TEST		= 0b10000000,
+	U9425_CMD_TSR		= 0b01000000,
+	U9425_CMD_TCH		= 0b10010000
 };
 
-int chan_get_int_spec(struct chan_t *ch, uint16_t *r);
+int drv_u9425_init(struct unit_t *u, int cfgc, char **cfgv);
+void drv_u9425_shutdown(struct unit_t *u);
+void drv_u9425_reset(struct unit_t *u);
+int drv_u9425_cmd(struct unit_t *u, int dir, int cmd, uint16_t *r);
 
 #endif
 

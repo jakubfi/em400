@@ -21,44 +21,31 @@
 
 #include "errors.h"
 #include "io.h"
-#include "drv/cmem.h"
+#include "drv/cchar.h"
 #include "drv/lib.h"
 
 // -----------------------------------------------------------------------
-void * drv_cmem_thread(void *ptr)
+int drv_cchar_init(struct chan_t *ch)
 {
-	struct chan_t *chan = ptr;
-	while (!chan->finish) {
-		sleep(1);
-	}
-	pthread_exit(NULL);
-}
-
-// -----------------------------------------------------------------------
-int drv_cmem_init(struct chan_t *ch)
-{
-	drv_cmem_reset(ch);
-	pthread_create(&ch->thread, NULL, drv_cmem_thread, ch);
+	drv_cchar_reset(ch);
 	return E_OK;
 }
 
 // -----------------------------------------------------------------------
-void drv_cmem_shutdown(struct chan_t *ch)
+void drv_cchar_shutdown(struct chan_t *ch)
 {
 	ch->finish = 1;
-	pthread_join(ch->thread, NULL);
 }
 
 // -----------------------------------------------------------------------
-void drv_cmem_reset(struct chan_t *ch)
+void drv_cchar_reset(struct chan_t *ch)
 {
 	ch->int_spec = 0;
 	ch->int_mask = 0;
-	ch->untransmitted = 0;
 }
 
 // -----------------------------------------------------------------------
-int drv_cmem_cmd(struct chan_t *ch, int dir, struct unit_t *unit, int cmd, uint16_t *r)
+int drv_cchar_cmd(struct chan_t *ch, int dir, struct unit_t *unit, int cmd, uint16_t *r)
 {
 	ch->int_mask = 0;
 
@@ -70,9 +57,6 @@ int drv_cmem_cmd(struct chan_t *ch, int dir, struct unit_t *unit, int cmd, uint1
 				break;
 			case CHAN_CMD_INTSPEC:
 				*r = ch->int_spec;
-				break;
-			case CHAN_CMD_STATUS:
-				*r = ch->untransmitted;
 				break;
 			case CHAN_CMD_ALLOC:
 				// always worging with CPU 0

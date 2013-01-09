@@ -15,8 +15,8 @@
 //  Foundation, Inc.,
 //  51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 
-#ifndef LOG_H
-#define LOG_H
+#ifndef DEBUGGER_LOG_H
+#define DEBUGGER_LOG_H
 
 #include <time.h>
 #include <sys/time.h>

@@ -15,8 +15,8 @@
 //  Foundation, Inc.,
 //  51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 
-#ifndef DEBUGGER_H
-#define DEBUGGER_H
+#ifndef DEBUGGER_DEBUGGER_H
+#define DEBUGGER_DEBUGGER_H
 
 #include <inttypes.h>
 

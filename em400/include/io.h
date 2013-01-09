@@ -53,9 +53,9 @@ struct chan_t {
 	void (*f_reset)(struct chan_t *ch);
 	int (*f_cmd)(struct chan_t *ch, int dir, struct unit_t *unit, int cmd, uint16_t *r);
 
-	uint16_t int_spec;
-	uint8_t int_mask;
-	uint8_t dev_alloc;
+	uint16_t int_spec; // 0 past-EN, 3-7 int spec, 8-10 dev number
+	uint16_t untransmitted;
+	int int_mask;
 };
 
 // -----------------------------------------------------------------------

@@ -15,27 +15,31 @@
 //  Foundation, Inc.,
 //  51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 
-#ifndef DRV_LIB_H
-#define DRV_LIB_H
-
 #include <inttypes.h>
 
-#include "drv/drivers.h"
+#include "errors.h"
+#include "io.h"
 
-enum _chan_cmd {
-	// channel IN
-	CHAN_CMD_EXISTS		= 0b00000000,
-	CHAN_CMD_INTSPEC	= 0b00001000,
-	CHAN_CMD_STATUS		= 0b00010000,
-	CHAN_CMD_ALLOC		= 0b00011000,
-	// channel OU
-	CHAN_CMD_MASK_PN	= 0b00001000,
-	CHAN_CMD_MASK_NPN	= 0b00010000,
-	CHAN_CMD_ASSIGN		= 0b00011000
-};
+// -----------------------------------------------------------------------
+int drv_u9425_init(struct unit_t *u, int cfgc, char **cfgv)
+{
+	return E_OK;
+}
 
-int chan_get_int_spec(struct chan_t *ch, uint16_t *r);
+// -----------------------------------------------------------------------
+void drv_u9425_shutdown(struct unit_t *u)
+{
+}
 
-#endif
+// -----------------------------------------------------------------------
+void drv_u9425_reset(struct unit_t *u)
+{
+}
+
+// -----------------------------------------------------------------------
+int drv_u9425_cmd(struct unit_t *u, int dir, int cmd, uint16_t *r)
+{
+	return IO_NO;
+}
 
 // vim: tabstop=4

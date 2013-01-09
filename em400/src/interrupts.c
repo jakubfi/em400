@@ -153,7 +153,7 @@ void int_serve()
 		probe--;
 	}
 
-	// no interrupt to serve
+	// no interrupt to serve (shouldn't happen here)
 	if (!probe) return;
 
 	// this is the interrupt we're going to serve
@@ -162,9 +162,10 @@ void int_serve()
 	LOG(D_INT, 10, "Serve: %d (%s)", interrupt, log_int_name[interrupt]);
 
 	uint16_t int_spec = 0;
-	// get interrupt specification it it's from channel
+	// get interrupt specification if it's from channel
 	if ((interrupt >= 12) && (interrupt <= 27)) {
-		int_spec = chan_get_int_spec(io_chan + (interrupt-12), &int_spec);
+		struct chan_t *ch = io_chan + (interrupt-12);
+		ch->f_cmd(ch, IO_IN, NULL, CHAN_CMD_INTSPEC, &int_spec);
 	}
 
 	// put system status on stack

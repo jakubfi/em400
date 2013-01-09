@@ -15,8 +15,8 @@
 //  Foundation, Inc.,
 //  51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 
-#ifndef DASM_H
-#define DASM_H
+#ifndef DEBUGGER_DASM_H
+#define DEBUGGER_DASM_H
 
 #include <inttypes.h>
 
