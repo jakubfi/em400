@@ -34,16 +34,28 @@
 int em400_quit = 0;
 
 // -----------------------------------------------------------------------
-static void eerr(const char *message, int ecode)
+void em400_shutdown()
+{
+#ifdef WITH_DEBUGGER
+	log_shutdown();
+	dbg_shutdown();
+#endif
+	timer_shutdown();
+	io_shutdown();
+	mem_shutdown();
+	printf("EM400 exits.\n");
+}
+
+// -----------------------------------------------------------------------
+void eerr(const char *message, int ecode)
 {
 	printf("%s: %s\n", message, get_error(ecode));
+	em400_shutdown();
 	exit(EXIT_FAILURE);
 }
 
 // -----------------------------------------------------------------------
-// ---- MAIN -------------------------------------------------------------
-// -----------------------------------------------------------------------
-int main(int argc, char** argv)
+void em400_init()
 {
 	int res;
 
@@ -52,24 +64,18 @@ int main(int argc, char** argv)
 	printf("Initializing memory\n");
 	res = mem_init();
 	if (res != E_OK) {
-		mem_shutdown();
 		eerr("Error initializing memory", res);
 	}
 
 	printf("Initializing I/O\n");
 	res = io_init();
 	if (res != E_OK) {
-		io_shutdown();
-		mem_shutdown();
 		eerr("Error initializing I/O", res);
 	}
 
 	printf("Starting timer\n");
 	res = timer_init();
 	if (res != E_OK) {
-		timer_shutdown();
-		io_shutdown();
-		mem_shutdown();
 		eerr("Error initializing CPU timer", res);
 	}
 
@@ -77,14 +83,24 @@ int main(int argc, char** argv)
 	printf("Initializing debugger\n");
 	res = dbg_init();
 	if (res != E_OK) {
-		dbg_shutdown();
-		timer_shutdown();
-		io_shutdown();
-		mem_shutdown();
 		eerr("Error initializing debugger", res);
 	}
-	log_init("em400.log");
+	printf("Initializing logging\n");
+	res = log_init("em400.log");
+	if (res != E_OK) {
+		eerr("Error initializing logging", res);
+	}
 #endif
+
+}
+
+
+// -----------------------------------------------------------------------
+// ---- MAIN -------------------------------------------------------------
+// -----------------------------------------------------------------------
+int main(int argc, char** argv)
+{
+	em400_init();
 
 	mem_clear();
 	cpu_reset();
@@ -92,22 +108,15 @@ int main(int argc, char** argv)
 	while (em400_quit == 0) {
 #ifdef WITH_DEBUGGER
 		dbg_step();
-		if (em400_quit) break;
+		if (em400_quit) {
+			break;
+		}
 #endif
 		cpu_step();
 		int_serve();
 	}
 
-#ifdef WITH_DEBUGGER
-	log_shutdown();
-	dbg_shutdown();
-#endif
-
-	timer_shutdown();
-	io_shutdown();
-	mem_shutdown();
-	printf("EM400 exits.\n");
-
+	em400_shutdown();
 	return 0;
 }
 

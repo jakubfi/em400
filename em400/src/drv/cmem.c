@@ -69,13 +69,13 @@ int drv_cmem_cmd(struct chan_t *ch, int dir, struct unit_t *unit, int cmd, uint1
 			case CHAN_CMD_EXISTS:
 				break;
 			case CHAN_CMD_INTSPEC:
-				*r = ch->int_spec;
+				chan_get_int_spec(ch, r);
 				break;
 			case CHAN_CMD_STATUS:
 				*r = ch->untransmitted;
 				break;
 			case CHAN_CMD_ALLOC:
-				// always worging with CPU 0
+				// all units always working with CPU 0
 				*r = 0;
 				break;
 			default:

@@ -22,7 +22,7 @@
 
 #include "io.h"
 
-enum drv_chan_type {
+enum _drv_chan_type {
 	CHAN_NONE = 0,
 	CHAN_CHAR,
 	CHAN_MEM,
@@ -31,7 +31,7 @@ enum drv_chan_type {
 	CHAN_PLIX
 };
 
-enum drv_unit_type {
+enum _drv_unit_type {
 	UNIT_NONE = 0,
 	UNIT_9425,
 	UNIT_WINCHESTER,

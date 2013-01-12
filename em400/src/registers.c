@@ -39,7 +39,7 @@ uint16_t reg_read(int r, int trace)
 			reg_act[r] = C_READ;
 		}
 	} else {
-		LOG(D_REG, 15, "%s -> 0x%04x", log_reg_name[r], regs[r]);
+		LOG(D_REG, 100, "%s -> 0x%04x", log_reg_name[r], regs[r]);
 	}
 #endif
 	return regs[r];

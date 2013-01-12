@@ -48,6 +48,10 @@ extern int mem_actw_max;
 
 extern int reg_act[R_MAX];
 
+extern uint32_t int_act;
+extern int int_serve_stack[32];
+extern int int_serve_top;
+
 struct break_t * dbg_brk_check();
 void dbg_step();
 int dbg_init();

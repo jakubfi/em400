@@ -24,9 +24,9 @@
 // following sets (different sources give different sets):
 // - 2, 4, 8, 10, 20
 // - 2, 10, 20, 40, 80
-#define TIMER_PERIOD		10 // miliseconds
 
-void * timer_thread(void *ptr);
+#define TIMER_PERIOD		10
+
 int timer_init();
 void timer_shutdown();
 

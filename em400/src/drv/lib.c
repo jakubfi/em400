@@ -18,9 +18,9 @@
 #include "drv/drivers.h"
 
 // -----------------------------------------------------------------------
-int chan_get_int_spec(struct chan_t *ch, uint16_t *r)
+void chan_get_int_spec(struct chan_t *ch, uint16_t *r)
 {
-	return IO_OK;
+	*r = ch->int_spec;
 }
 
 // vim: tabstop=4

@@ -23,6 +23,7 @@
 #include "drv/unone.h"
 #include "drv/u9425.h"
 
+// channel drivers definitions
 struct drv_chan_t drv_chan[] = {
 	{ CHAN_NONE, "none", "None", drv_cnone_init, drv_cnone_shutdown, drv_cnone_reset, drv_cnone_cmd },
 	{ CHAN_CHAR, "char", "Character", drv_cchar_init, drv_cchar_shutdown, drv_cchar_reset, drv_cchar_cmd },
@@ -32,6 +33,7 @@ struct drv_chan_t drv_chan[] = {
 	{ CHAN_PLIX, "plix", "PLIX", NULL, NULL, NULL, NULL }
 };
 
+// unit driver definitions
 struct drv_unit_t drv_unit[] = {
 	{ UNIT_NONE, CHAN_NONE, "none", "None", drv_unone_init, drv_unone_shutdown, drv_unone_reset, drv_unone_cmd },
 	{ UNIT_9425, CHAN_MEM, "9425", "MERA-9425", drv_u9425_init, drv_u9425_shutdown, drv_u9425_reset, drv_u9425_cmd },

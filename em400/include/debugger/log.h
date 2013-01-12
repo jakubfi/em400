@@ -44,7 +44,7 @@ Log levels:
 * REG:
 	1 - write
 	10 - read traced
-	15 - read all
+	100 - read all
 * MEM:
 	1 - add map, load image
 	5 - error accessing
@@ -58,7 +58,8 @@ Log levels:
 	20 - unit
 	30 - data
 * INT:
-	10 - everything
+	10 - everything except TIMER
+	100 - everything
 */
 
 extern int log_enabled;

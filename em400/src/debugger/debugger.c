@@ -34,7 +34,7 @@
 int ui_mode = O_NCURSES;
 //int ui_mode = O_STD;
 
-// debuger flow
+// debugger flow
 int dbg_loop_fin = 0;
 volatile int dbg_enter = 1;
 
@@ -55,6 +55,11 @@ int mem_actw_max = -1;
 // trace register activity
 int reg_act[R_MAX];
 
+// trace interrupts activity
+uint32_t int_act;
+int int_serve_stack[32];
+int int_serve_top;
+
 extern int yyparse();
 typedef struct yy_buffer_state *YY_BUFFER_STATE;
 YY_BUFFER_STATE yy_scan_string(char *yy_str);
@@ -70,11 +75,14 @@ void _dbg_sigint_handler(int signum, siginfo_t *si, void *ctx)
 int dbg_init()
 {
 	// set UI mode
-	if (aw_init(ui_mode)) {
-		return -1;
+	if (aw_init(ui_mode) != 0) {
+		return E_AW_INIT;
 	}
 
-	dbg_ui_init();
+	if (dbg_ui_init() != 0) {
+		return E_UI_INIT;
+	}
+
 	aw_layout_changed = 1;
 
 	// prepare handler for ctrl-c (break emulation, enter debugger loop)
@@ -83,17 +91,15 @@ int dbg_init()
 	sa.sa_sigaction = _dbg_sigint_handler;
 
 	if (sigemptyset(&sa.sa_mask) != 0) {
-		return -1;
+		return E_UI_SIG_CTRLC;
 	}
 
 	if (sigaction(SIGINT, &sa, NULL) != 0) {
-		return -1;
+		return E_UI_SIG_CTRLC;
 	}
 
-	// register action is none when debugger starts
-	for (int i=0 ; i<R_MAX ; i++) {
-		reg_act[i] = C_DATA;
-	}
+	// register/memory action is none when debugger starts
+	dbg_fin_cycle();
 
 	return 0;
 }
@@ -128,7 +134,7 @@ struct break_t * dbg_brk_check()
 // -----------------------------------------------------------------------
 void dbg_fin_cycle()
 {
-    // we're leaving debuger, clear memory/register traces
+    // we're leaving debugger, clear memory/register traces
     mem_actr_max = -1;
     mem_actw_max = -1;
     for (int r=0 ; r<R_MAX ; r++) {

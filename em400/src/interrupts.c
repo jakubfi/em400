@@ -24,10 +24,13 @@
 #include "io.h"
 #include "drv/lib.h"
 
+#ifdef WITH_DEBUGGER
+#include "debugger/debugger.h"
+#endif
 #include "debugger/log.h"
 
-volatile uint32_t RZ;
-volatile uint32_t RP;
+uint32_t RZ;
+uint32_t RP;
 
 pthread_mutex_t int_mutex_rz = PTHREAD_MUTEX_INITIALIZER;
 pthread_mutex_t int_mutex_rp = PTHREAD_MUTEX_INITIALIZER;
@@ -86,6 +89,8 @@ void int_set(int x)
 #ifdef WITH_DEBUGGER
 	if (x != INT_TIMER) {
 		LOG(D_INT, 10, "Set: %lld (%s)", x, log_int_name[x]);
+	} else {
+		LOG(D_INT, 100, "Set: %lld (%s)", x, log_int_name[x]);
 	}
 #endif
 	pthread_mutex_lock(&int_mutex_rz);
@@ -183,6 +188,11 @@ void int_serve()
 	nRw(R_IC, nMEMB(0, 64+interrupt));
 	nMEMBw(0, 97, SP+4);
 	SR_Qcb;
+#ifdef WITH_DEBUGGER
+	int_act = int_act | (1 << (31-interrupt));
+	int_serve_stack[int_serve_top] = interrupt;
+	int_serve_top++;
+#endif
 }
 
 

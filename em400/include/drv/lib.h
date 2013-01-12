@@ -34,7 +34,7 @@ enum _chan_cmd {
 	CHAN_CMD_ASSIGN		= 0b00011000
 };
 
-int chan_get_int_spec(struct chan_t *ch, uint16_t *r);
+void chan_get_int_spec(struct chan_t *ch, uint16_t *r);
 
 #endif
 

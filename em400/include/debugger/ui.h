@@ -45,7 +45,7 @@ enum _ui_windows {
 	W_STATUS
 };
 
-void dbg_ui_init();
+int dbg_ui_init();
 void dbg_wu_mem(int wid);
 void dbg_wu_dasm(int wid);
 void dbg_wu_regs(int wid);

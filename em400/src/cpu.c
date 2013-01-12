@@ -56,7 +56,7 @@ int16_t cpu_get_eff_arg()
 	}
 
 	// B-modification
-	if (IR_B) {
+	if (IR_B != 0) {
 		N += R(IR_B);
 	}
 
@@ -71,7 +71,7 @@ int16_t cpu_get_eff_arg()
 	// store 17th bit for byte addressing
 	nRw(R_ZC17, (N & 0b10000000000000000) >> 16);
 
-	LOG(D_CPU, 10, "Effective argument: 0x%04x (%s%s%s%s)", N, IR_C ? "2-word " : "1-word", regs[R_MODc] ? " PRE-mod" : "", IR_B ? " B-mod" : "", IR_D ? " D-mod" : "");
+	LOG(D_CPU, 10, "------ Effective argument: 0x%04x (%s%s%s%s)", N, IR_C ? "2-word " : "1-word", regs[R_MODc] ? " PRE-mod" : "", IR_B ? " B-mod" : "", IR_D ? " D-mod" : "");
 	return (int16_t) N;
 }
 
@@ -129,7 +129,7 @@ void cpu_step()
 
 	nRadd(R_IC, nR(R_P));
 
-	LOG(D_CPU, 1, "End cycle: res = %d, MOD = %d, MODc = %d, P = %d", op_res, regs[R_MOD], regs[R_MODc], regs[R_P]);
+	LOG(D_CPU, 1, "------ End cycle: res = %d, MOD = %d, MODc = %d, P = %d", op_res, regs[R_MOD], regs[R_MODc], regs[R_P]);
 }
 
 // vim: tabstop=4

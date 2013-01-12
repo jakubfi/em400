@@ -20,6 +20,7 @@
 
 #include "registers.h"
 #include "memory.h"
+#include "interrupts.h"
 
 #include "debugger/debugger.h"
 #include "debugger/eval.h"
@@ -258,6 +259,10 @@ int16_t n_eval_op1(struct node_t * n)
 			return !v;
 		case UMINUS:
 			return -v;
+		case 'z':
+			return (RZ & (1<<(31-v))) >> (31-v);
+		case 'p':
+			return (RP & (1<<(31-v))) >> (31-v);
 		default:
 			return 0;
 	}

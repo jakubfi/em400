@@ -206,7 +206,6 @@ void dbg_c_mem(int wid, int block, int start, int end, int maxcols, int maxlines
 			if (!mptr) {
 				return;
 			}
-
 			// data (hex)
 			if ((addr >= mem_actw_min) && (addr <= mem_actw_max)) {
 				if ((addr >= mem_actr_min) && (addr <= mem_actr_max)) {
@@ -262,7 +261,7 @@ void dbg_c_sregs(int wid)
 	awprint(wid, C_LABEL, "KB: ");
 	awprint(wid, C_DATA, "0x%04x  ", regs[R_KB]);
 	awbinprint(wid, C_DATA, "........ ........", regs[R_KB], 16);
-	awprint(wid, C_DATA, "\n\n");
+	awprint(wid, C_DATA, "\n");
 
 	awprint(wid, C_LABEL, "                ZPMCZ TIFFFFx 01 23 456789 abcdef OCSS");
 	awprint(wid, C_DATA, "\n");
@@ -275,6 +274,10 @@ void dbg_c_sregs(int wid)
 	awprint(wid, C_DATA, "0x%08x  ");
 	awbinprint(wid, C_DATA, "..... ....... .. .. ...... ...... ....", RP, 32);
 	awprint(wid, C_DATA, "\n");
+
+	awprint(wid, C_LABEL, "Being served:   ");
+	awbinprint(wid, C_LABEL, "..... ....... .. .. ...... ...... ....", int_act, 32);
+	awprint(wid, C_LABEL, "\n");
 }
 
 // -----------------------------------------------------------------------

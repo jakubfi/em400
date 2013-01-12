@@ -25,44 +25,46 @@ extern pthread_mutex_t int_mutex_rz;
 extern pthread_mutex_t int_mutex_rp;
 extern pthread_cond_t int_cond_rp;
 
-extern volatile uint32_t RZ;
-extern volatile uint32_t RP;
+extern uint32_t RZ;
+extern uint32_t RP;
 
 extern const int int_int2rm[32];
 extern const int int_int2mask[32];
 
-#define INT_2CPU_POWER		0
-#define INT_PARITY			1
-#define INT_NO_MEM			2
-#define INT_2CPU_HIGH		3
-#define INT_IFACE_POWER		4
-#define INT_TIMER			5
-#define INT_ILLEGAL_OPCODE	6
-#define INT_FP_DIV_OF		7
-#define INT_FP_OF			8
-#define INT_FP_UF			9
-#define INT_DIV0			10
-#define INT_EXTRA			11
-#define INT_C0				12
-#define INT_C1				13
-#define INT_C2				14
-#define INT_C3				15
-#define INT_C4				16
-#define INT_C5				17
-#define INT_C6				18
-#define INT_C7				19
-#define INT_C8				20
-#define INT_C9				21
-#define INT_C10				22
-#define INT_C11				23
-#define INT_C12				24
-#define INT_C13				25
-#define INT_C14				26
-#define INT_C15				27
-#define INT_OPRQ			28
-#define INT_2CPU_LOW		29
-#define INT_SOFT_U			30
-#define INT_SOFT_L			31
+enum _interrupts {
+	INT_2CPU_POWER		= 0,
+	INT_PARITY			= 1,
+	INT_NO_MEM			= 2,
+	INT_2CPU_HIGH		= 3,
+	INT_IFACE_POWER		= 4,
+	INT_TIMER			= 5,
+	INT_ILLEGAL_OPCODE	= 6,
+	INT_FP_DIV_OF		= 7,
+	INT_FP_OF			= 8,
+	INT_FP_UF			= 9,
+	INT_DIV0			= 10,
+	INT_EXTRA			= 11,
+	INT_C0				= 12,
+	INT_C1				= 13,
+	INT_C2				= 14,
+	INT_C3				= 15,
+	INT_C4				= 16,
+	INT_C5				= 17,
+	INT_C6				= 18,
+	INT_C7				= 19,
+	INT_C8				= 20,
+	INT_C9				= 21,
+	INT_C10				= 22,
+	INT_C11				= 23,
+	INT_C12				= 24,
+	INT_C13				= 25,
+	INT_C14				= 26,
+	INT_C15				= 27,
+	INT_OPRQ			= 28,
+	INT_2CPU_LOW		= 29,
+	INT_SOFT_U			= 30,
+	INT_SOFT_L			= 31
+};
 
 #define MASK_0				0b0000000000111111
 #define MASK_1				0b1000000000111111

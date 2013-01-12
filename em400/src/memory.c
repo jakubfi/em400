@@ -38,10 +38,10 @@ pthread_mutex_t mem_mutex = PTHREAD_MUTEX_INITIALIZER;
 int mem_conf[MEM_MAX_MODULES] = { 2, 8, 8, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 };
 
 // physical memory: modules with segments inside
-uint16_t *mem_segment[MEM_MAX_MODULES][MEM_MAX_SEGMENTS] = { {NULL} };
+uint16_t *mem_segment[MEM_MAX_MODULES][MEM_MAX_SEGMENTS];
 
 // logical mapping from (NB,AB) to physical segment pointer
-uint16_t *mem_map[MEM_MAX_NB][MEM_MAX_AB] = { {NULL} };
+uint16_t *mem_map[MEM_MAX_NB][MEM_MAX_AB];
 
 // -----------------------------------------------------------------------
 int mem_init()
@@ -56,7 +56,7 @@ int mem_init()
 			return E_MEM_BAD_SEGMENT_COUNT;
 		} else {
 			for (int seg=0 ; seg<mem_conf[mp] ; seg++) {
-				mem_segment[mp][seg] = malloc(2 * MEM_SEGMENT_SIZE);
+				mem_segment[mp][seg] = malloc(sizeof(uint16_t) * MEM_SEGMENT_SIZE);
 				if (!mem_segment[mp][seg]) {
 					return E_MEM_CANNOT_ALLOCATE;
 				}

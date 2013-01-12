@@ -45,6 +45,7 @@ struct node_t *enode;
 %token <text> TEXT NAME
 %token ':' '&' '|' '(' ')'
 %token HEX OCT BIN DEC UINT
+%token IRZ IRP
 %token <value> F_QUIT F_CLMEM F_MEM F_REGS F_SREGS F_RESET F_STEP F_HELP F_DASM F_TRANS F_LOAD F_MEMCFG F_BRK F_RUN F_STACK F_LOG
 %token B_ADD B_DEL B_TEST B_DISABLE B_ENABLE
 %token L_ON L_OFF L_FILE L_LEVEL
@@ -142,6 +143,12 @@ expr:
 		}
 	}
 	| lval '=' expr { $$ = n_ass($1, $3); }
+	| IRZ '(' expr ')' {
+		$$ = n_op1('z', $3);
+	}
+	| IRP '(' expr ')' {
+		$$ = n_op1('p', $3);
+	}
 	| error '\n' {
 		yyclearin;
 		if (enode) {

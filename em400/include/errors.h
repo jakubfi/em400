@@ -35,10 +35,11 @@ enum em400_error {
 	E_IO_INCOMPATIBILE_UNIT,
 	E_IO_DRV_CHAN_BAD,
 	E_IO_DRV_UNIT_BAD,
-	E_LOG_OPEN
+	E_LOG_OPEN,
+	E_AW_INIT,
+	E_UI_INIT,
+	E_UI_SIG_CTRLC
 };
-
-struct _em400_errordesc;
 
 char * get_error(int e);
 

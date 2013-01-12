@@ -39,6 +39,9 @@ struct _em400_errordesc {
 	{ E_IO_DRV_CHAN_BAD, "Bad channel driver definition." },
 	{ E_IO_DRV_UNIT_BAD, "Bad unit driver definition." },
 	{ E_LOG_OPEN, "Cannot open log file." },
+	{ E_AW_INIT, "Cannot initialize awin." },
+	{ E_UI_INIT, "Cannot initialize UI." },
+	{ E_UI_SIG_CTRLC, "Cannot install Ctrl-C handler." },
 
 
 	{ E_UNKNOWN, "Unknown error." }

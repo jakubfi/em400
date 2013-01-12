@@ -37,22 +37,22 @@ char *log_dname[] = {
 };
 
 char *log_reg_name[] = {
-    "R0",
-    "R1",
-    "R2",
-    "R3",
-    "R4",
-    "R5",
-    "R6",
-    "R7",
-    "IC",
-    "SR",
-    "IR",
-    "KB",
-    "MOD",
-    "MODc",
-    "P",
-    "ZC17"
+	"R0",
+	"R1",
+	"R2",
+	"R3",
+	"R4",
+	"R5",
+	"R6",
+	"R7",
+	"IC",
+	"SR",
+	"IR",
+	"KB",
+	"MOD",
+	"MODc",
+	"P",
+	"ZC17"
 };
 
 char *log_int_name[] = {
@@ -100,6 +100,9 @@ int log_level[D_MAX] = { 0 };
 int log_init(const char *logf)
 {
 	log_fname = strdup(logf);
+	if (!log_fname) {
+		return E_LOG_OPEN;
+	}
 	log_f = fopen(log_fname, "a");
 	if (!log_f) {
 		return E_LOG_OPEN;

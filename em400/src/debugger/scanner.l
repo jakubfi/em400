@@ -38,7 +38,7 @@ hex		0x[0-9a-fA-F]+
 bin		0b[01]+
 dec		[0-9]+
 reg		r[0-7]|R[0-7]
-text	[^=: \t\n\r]+
+text	[^-()=: \t\n\r]+
 
 %%
 
@@ -85,8 +85,10 @@ mod|MOD	{
 hex	return HEX;
 oct	return OCT;
 bin	return BIN;
-dec return DEC;
+dec	return DEC;
 uint return UINT;
+rz	return IRZ;
+rp	return IRP;
 
 <INITIAL>{text}	{
 	int tok = dbg_is_cmd(yytext);
