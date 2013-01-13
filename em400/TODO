@@ -10,11 +10,9 @@ Debugger:
 * HLT will halt debugger too if there is no interrupt to serve
 * debugger in separate thread (?)
 * use status bar for panel leds (?)
-* inform user which interrupt is being served (if any)
 * inteligent memory view (auto-scroll)
 * scrollable memory/dasm/stack views (?)
 * IPS counter
-* macro for accessing interrupt states (for brk) (?)
 * save memory image
 * load/save snapshot (?)
 * step should work the same way as CYCLE (cycle on instruction and interrupt) (?)
