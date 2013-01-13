@@ -176,22 +176,20 @@ void mem_write(int nb, uint16_t addr, uint16_t val, int trace)
 		*ptr = val;
 		pthread_mutex_unlock(&mem_mutex);
 #ifdef WITH_DEBUGGER
-		LOG(D_MEM, 10, "[%d:%d] <- 0x%04x", nb, addr, val);
 		// leave trace for debugger to display
 		if (trace) {
+			LOG(D_MEM, 10, "[%d:%d] <- 0x%04x", nb, addr, val);
 			if (mem_actw_max == -1) {
 				mem_act_block = nb;
 				mem_actw_min = addr;
 			}
 			mem_actw_max = addr;
 		} else {
-		LOG(D_MEM, 30, "[%d:%d] <- 0x%04x", nb, addr, val);
+			LOG(D_MEM, 30, "[%d:%d] <- 0x%04x", nb, addr, val);
 		}
 #endif
 	} else {
-#ifdef WITH_DEBUGGER
 		LOG(D_MEM, 5, "[%d:%d] <- 0x%04x ERROR", nb, addr, val);
-#endif
 		if (SR_Q) {
 			int_set(INT_NO_MEM);
 		} else {
