@@ -7,29 +7,30 @@ Microcontroler configuration:
 * clocked by internal RC oscillator, 8MHz (no clock divider)
 * JTAG disabled
 
-Disk-uC connections (connection is for reading data only):
+Where to connect ST-506 control port signals:
 
 * all odd pins - GND
-* 2 - 5V pull-up
-* 4 - 5V pull-up
-* 6 - 5V pull-up
-* 8 - PC0
-* 10 - PC1
-* 12 - NC
-* 14 - PA7
-* 16 - NC
-* 18 - PA6
-* 20 - PC2
-* 22 - PC3
-* 24 - PA5
-* 26 - PA4
-* 28 - PA3
-* 30 - PA2
-* 32 - PA1
-* 34 - PA0
+* 2 (HD SLCT 3) - 5V pull-up
+* 4 (HD SLCT 2) - 5V pull-up
+* 6 (WRITE GATE) - 5V pull-up
+* 8 (SEEK COMPLETE) - uC PC0
+* 10 (TRACK 0) - uC PC1
+* 12 (WRITE FAULT) - NC
+* 14 (HEAD SELECT 0) - uC PA7
+* 16 (RESERVED) - NC
+* 18 (HEAD SELECT 1) - uC PA6
+* 20 (INDEX) - to a data sampler (reader)
+* 22 (READY) - uC PC2
+* 24 (STEP) - uC PA5
+* 26 (DRV SLCT 0) - uC PA4
+* 28 (DRV SLCT 1) - uC PA3
+* 30 (DRV SLCT 2) - uC PA2
+* 32 (DRV SLCT 3) - uC PA1
+* 34 (DIRECTION IN) - uC PA0
 
-uC receives commands and sends responses on UART0 (async serial, 19200baud, 8N1) preferably connected to an FTDI232 USB chip.
+uC also receives commands from the user (or software) and sends responses on UART0
+(async serial, 19200baud, 8N1) preferably connected to an FTDI232 USB chip:
 
-* PD0 (RXD0)
-* PD1 (TXD0)
+* FTDI TX - uC PD0 (RXD0)
+* FTDI RX - uC PD1 (TXD0)
 
