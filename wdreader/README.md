@@ -1,7 +1,3 @@
-
-WDREAD
-==========================================================================
-
 WDREAD is a set of tools build to read Winchester disk drives used in
 MERA-400 system. It consists of several parts:
 
