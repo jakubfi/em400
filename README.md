@@ -4,5 +4,6 @@ and http://mera400.pl/index.php/EM400 to know more about em400.
 
 * **assem** - crossassembler for MERA-400
 * **em400** - MERA-400 emulator
-* **tools** - various tools to help with em400 development:
+* **tools** - various tools to help with em400 development
+* **wdread** - tools for reading Winchester disk drives
 
