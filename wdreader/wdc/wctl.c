@@ -22,33 +22,33 @@
 
 // ports where winchester signals are connected
 
-#define STATUS_PORT	PORTA
-#define STATUS_PIN	PINA
-#define STATUS_DDR	DDRA
+#define STATUS_PORT	PORTC
+#define STATUS_PIN	PINC
+#define STATUS_DDR	DDRC
 
-#define CTRL_PORT	PORTC
-#define CTRL_PIN	PINC
-#define CTRL_DDR	DDRC
+#define CTRL_PORT	PORTA
+#define CTRL_PIN	PINA
+#define CTRL_DDR	DDRA
 
 // input: status signals pads
 
-#define READY	0
-#define SEEKOK	1
-#define TRACK0	2
+#define SEEKOK	0
+#define TRACK0	1
+#define READY	2
 
 // output: drive selection pads
 
-#define DRV1	0
-#define DRV2	1
+#define DRV1	4
+#define DRV2	3
 #define DRV3	2
-#define DRV4	3
+#define DRV4	1
 
 // output: head selection and movement pads
 
-#define STEP		4
-#define DIRIN		5
-#define HEADSEL0	6
-#define HEADSEL1	7
+#define STEP		5
+#define DIRIN		0
+#define HEADSEL0	7
+#define HEADSEL1	6
 
 // status test macros
 

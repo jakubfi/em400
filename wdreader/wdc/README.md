@@ -22,10 +22,10 @@ Where to connect ST-506 control port signals:
 * 20 (INDEX) - to a data sampler (reader)
 * 22 (READY) - uC PC2
 * 24 (STEP) - uC PA5
-* 26 (DRV SLCT 0) - uC PA4
-* 28 (DRV SLCT 1) - uC PA3
-* 30 (DRV SLCT 2) - uC PA2
-* 32 (DRV SLCT 3) - uC PA1
+* 26 (DRV SLCT 1) - uC PA4
+* 28 (DRV SLCT 2) - uC PA3
+* 30 (DRV SLCT 3) - uC PA2
+* 32 (DRV SLCT 4) - uC PA1
 * 34 (DIRECTION IN) - uC PA0
 
 uC also receives commands from the user (or software) and sends responses on UART0
