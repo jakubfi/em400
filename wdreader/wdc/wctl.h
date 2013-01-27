@@ -28,11 +28,13 @@ void _wdc_seek_reset(void);
 
 // user-level access
 
-int wdc_init(void);
+void wdc_init(void);
+int wdc_status(void);
+int wdc_track0(void);
 int wdc_drv_sel(unsigned char drv);
-void wdc_head_sel(unsigned char head);
-void wdc_seek(unsigned int cyl);
-void wdc_step_in(void);
-void wdc_step_out(void);
+int wdc_head_sel(unsigned char head);
+int wdc_seek(unsigned int cyl);
+int wdc_step_in(void);
+int wdc_step_out(void);
 
 // vim: tabstop=4

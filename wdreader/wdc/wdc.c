@@ -28,45 +28,72 @@
 // -----------------------------------------------------------------------
 int main(void)
 {
-	_delay_ms(1000);
-
+	wdc_init();
 	serial_init();
 
-	serial_tx_string("Initializing Winchester...\n\r");
-	if (wdc_init() == RET_ERR) {
-		serial_tx_string("FAILED.\n\r");
-		return 1;
-	}
-
-	serial_tx_string("READY.\n\r");
+	_delay_ms(1000);
 
 	while (1) {
 		char c = serial_rx_char();
-		serial_tx_char(c);
 		switch (c) {
+			case 's':
+				if (wdc_status() == RET_OK) {
+					serial_tx_string("OK!");
+				} else {
+					serial_tx_string("ERR");
+				}
+				break;
+			case 't':
+				if (wdc_track0() == RET_OK) {
+					serial_tx_string("OK!");
+				} else {
+					serial_tx_string("ERR");
+				}
+				break;
 			case 'i':
-				wdc_step_in();
+				if (wdc_step_in() == RET_OK) {
+					serial_tx_string("OK!");
+				} else {
+					serial_tx_string("ERR");
+				}
 				break;
 			case 'o':
-				wdc_step_out();
-				break;
-			case '0':
-				wdc_seek(0);
-				break;
-			case '1':
-				wdc_seek(614);
+				if (wdc_step_out() == RET_OK) {
+					serial_tx_string("OK!");
+				} else {
+					serial_tx_string("ERR");
+				}
 				break;
 			case 'a':
-				wdc_head_sel(0);
+				if (wdc_head_sel(0) == RET_OK) {
+					serial_tx_string("OK!");
+				} else {
+					serial_tx_string("ERR");
+				}
 				break;
 			case 'b':
-				wdc_head_sel(1);
+				if (wdc_head_sel(1) == RET_OK) {
+					serial_tx_string("OK!");
+				} else {
+					serial_tx_string("ERR");
+				}
 				break;
 			case 'c':
-				wdc_head_sel(2);
+				if (wdc_head_sel(2) == RET_OK) {
+					serial_tx_string("OK!");
+				} else {
+					serial_tx_string("ERR");
+				}
 				break;
 			case 'd':
-				wdc_head_sel(3);
+				if (wdc_head_sel(3) == RET_OK) {
+					serial_tx_string("OK!");
+				} else {
+					serial_tx_string("ERR");
+				}
+				break;
+			default:
+				serial_tx_string("ERR");
 				break;
 		}
 	}

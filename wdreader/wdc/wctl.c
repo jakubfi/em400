@@ -53,10 +53,9 @@
 
 // status test macros
 
-#define INIT_READY		~(STATUS_PIN & (_BV(READY) | _BV(SEEKOK) | _BV(TRACK0)))
-#define INIT_NOT_READY	~INIT_READY
-#define SEEK_COMPLETE	~(STATUS_PIN & _BV(SEEKOK))
-#define DRIVE_READY		~(STATUS_PIN & _BV(READY))
+#define SEEK_COMPLETE	!(STATUS_PIN & _BV(SEEKOK))
+#define DRIVE_READY		!(STATUS_PIN & (_BV(READY) | _BV(SEEKOK)))
+#define TRACK_IS_0		!(STATUS_PIN & _BV(TRACK0))
 
 // timings
 
@@ -77,39 +76,43 @@ unsigned int cylinder = 0;
 // -----------------------------------------------------------------------
 void _wdc_port_setup(void)
 {
-	// status port is an input port with pull-up
+	// drv and head ports are output ports
+	CTRL_PORT |= _BV(DRV1) | _BV(DRV2) | _BV(DRV3) | _BV(DRV4) | _BV(HEADSEL0) | _BV(HEADSEL1) | _BV(STEP) | _BV(DIRIN);
+	CTRL_DDR = _BV(DRV1) | _BV(DRV2) | _BV(DRV3) | _BV(DRV4) | _BV(HEADSEL0) | _BV(HEADSEL1) | _BV(STEP) | _BV(DIRIN);
+
+	// status port is an input port (with pull-up)
 	SFIOR &= ~(_BV(PUD));
 	STATUS_DDR = ~(_BV(READY) | _BV(SEEKOK) | _BV(TRACK0) | _BV(INDEX));
 	STATUS_PORT = (_BV(READY) | _BV(SEEKOK) | _BV(TRACK0) | _BV(INDEX));
-
-	// drv and head ports are output ports
-	CTRL_DDR = _BV(DRV1) | _BV(DRV2) | _BV(DRV3) | _BV(DRV4) | _BV(HEADSEL0) | _BV(HEADSEL1) | _BV(STEP) | _BV(DIRIN);
-	CTRL_PORT |= _BV(DRV1) | _BV(DRV2) | _BV(DRV3) | _BV(DRV4) | _BV(HEADSEL0) | _BV(HEADSEL1) | _BV(STEP) | _BV(DIRIN);
 }
 
 // -----------------------------------------------------------------------
-int wdc_init(void)
+void wdc_init(void)
 {
-	const unsigned char init_wait = 180;
-	unsigned char wait_cycles = 100; // 18 seconds should be more than enough for the drive to spinup
-
 	_wdc_port_setup();
 
 	// select drive 1
 	CTRL_PORT &= ~_BV(DRV1);
+}
 
-	// wait for spinup to complete
-	while (INIT_NOT_READY && (wait_cycles > 0)) {
-		_delay_ms(init_wait);
-		wait_cycles--;
-	}
-
-	// drive initialized properly
-	if (wait_cycles > 0) {
+// -----------------------------------------------------------------------
+int wdc_status(void)
+{
+	if (DRIVE_READY) {
 		return RET_OK;
+	} else {
+		return RET_ERR;
 	}
+}
 
-	return RET_ERR;
+// -----------------------------------------------------------------------
+int wdc_track0(void)
+{
+	if (TRACK_IS_0) {
+		return RET_OK;
+	} else {
+		return RET_ERR;
+	}
 }
 
 // -----------------------------------------------------------------------
@@ -126,7 +129,7 @@ int wdc_drv_sel(unsigned char drv)
 	CTRL_PORT &= ~_BV(drive[drv-1]);
 	_delay_us(DELAY_DRIVESEL);
 
-	while (~DRIVE_READY) {
+	while (!DRIVE_READY) {
 		_delay_ms(1);
 	}
 
@@ -134,7 +137,7 @@ int wdc_drv_sel(unsigned char drv)
 }
 
 // -----------------------------------------------------------------------
-void wdc_head_sel(unsigned char head)
+int wdc_head_sel(unsigned char head)
 {
 	switch (head) {
 		case 0:
@@ -152,9 +155,10 @@ void wdc_head_sel(unsigned char head)
 			CTRL_PORT &= ~(_BV(HEADSEL0) | _BV(HEADSEL1));
 			break;
 		default:
-			return;
+			return RET_ERR;
 	}
 	_delay_us(DELAY_HEADSEL);
+	return RET_OK;
 }
 
 // -----------------------------------------------------------------------
@@ -181,23 +185,14 @@ inline void _wdc_step_pulse(void)
 }
 
 // -----------------------------------------------------------------------
-void _wdc_seek_reset(void)
+int wdc_seek(unsigned int cyl)
 {
-	_wdc_dir_out();
-	_wdc_step_pulse();
-	while (INIT_NOT_READY) {
-		_wdc_step_pulse();
-		_delay_ms(1000);
-	}
-	cylinder = 0;
-}
+    const unsigned char seek_wait = 1;
+    unsigned char wait_cycles = 250; // 250ms timeout for seek
 
-// -----------------------------------------------------------------------
-void wdc_seek(unsigned int cyl)
-{
 	if ((cyl < CYL_MIN) || (cyl > CYL_MAX) || (cyl == cylinder)) {
 		// requested cylinder out of bounds or already at requested cylinder
-		return;
+		return RET_ERR;
 	}
 
 	int delta = cyl - cylinder;
@@ -221,19 +216,29 @@ void wdc_seek(unsigned int cyl)
 	cylinder = cyl;
 
 	// wait until heads settle
-	while (~SEEK_COMPLETE);
+	while (!SEEK_COMPLETE && (wait_cycles > 0)) {
+		_delay_ms(seek_wait);
+		wait_cycles--;
+	}
+
+    // seek completed properly
+    if (wait_cycles > 0) {
+        return RET_OK;
+    }
+
+	return RET_ERR;
 }
 
 // -----------------------------------------------------------------------
-void wdc_step_in(void)
+int wdc_step_in(void)
 {
-	wdc_seek(cylinder+1);
+	return wdc_seek(cylinder+1);
 }
 
 // -----------------------------------------------------------------------
-void wdc_step_out(void)
+int wdc_step_out(void)
 {
-	wdc_seek(cylinder-1);
+	return wdc_seek(cylinder-1);
 }
 
 // vim: tabstop=4
