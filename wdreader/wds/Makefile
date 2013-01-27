@@ -1,6 +1,6 @@
 CXX=g++
 CXXFLAGS=-O3 -w -c -fpic -pthread
-LFLAGS=-lSaleaeDevice
+LFLAGS=-lSaleaeDevice -lreadline
 
 OBJS=wds.o
 
