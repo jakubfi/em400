@@ -19,8 +19,8 @@ Where to connect ST-506 control port signals:
 * 14 (HEAD SELECT 0) - uC PA7
 * 16 (RESERVED) - NC
 * 18 (HEAD SELECT 1) - uC PA6
-* 20 (INDEX) - to a data sampler (reader)
-* 22 (READY) - uC PC2
+* 20 (INDEX) - uC PC2 (also to a data sampler)
+* 22 (READY) - uC PC3
 * 24 (STEP) - uC PA5
 * 26 (DRV SLCT 1) - uC PA4
 * 28 (DRV SLCT 2) - uC PA3
@@ -29,7 +29,7 @@ Where to connect ST-506 control port signals:
 * 34 (DIRECTION IN) - uC PA0
 
 uC also receives commands from the user (or software) and sends responses on UART0
-(async serial, 19200baud, 8N1) preferably connected to an FTDI232 USB chip:
+(async serial, 9600baud, 8N1) preferably connected to an FTDI232 USB chip:
 
 * FTDI TX - uC PD0 (RXD0)
 * FTDI RX - uC PD1 (TXD0)

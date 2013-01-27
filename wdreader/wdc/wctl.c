@@ -34,7 +34,8 @@
 
 #define SEEKOK	0
 #define TRACK0	1
-#define READY	2
+#define INDEX	2
+#define READY	3
 
 // output: drive selection pads
 
@@ -78,8 +79,8 @@ void _wdc_port_setup(void)
 {
 	// status port is an input port with pull-up
 	SFIOR &= ~(_BV(PUD));
-	STATUS_DDR = ~(_BV(READY) | _BV(SEEKOK) | _BV(TRACK0));
-	STATUS_PORT = (_BV(READY) | _BV(SEEKOK) | _BV(TRACK0));
+	STATUS_DDR = ~(_BV(READY) | _BV(SEEKOK) | _BV(TRACK0) | _BV(INDEX));
+	STATUS_PORT = (_BV(READY) | _BV(SEEKOK) | _BV(TRACK0) | _BV(INDEX));
 
 	// drv and head ports are output ports
 	CTRL_DDR = _BV(DRV1) | _BV(DRV2) | _BV(DRV3) | _BV(DRV4) | _BV(HEADSEL0) | _BV(HEADSEL1) | _BV(STEP) | _BV(DIRIN);
@@ -89,8 +90,8 @@ void _wdc_port_setup(void)
 // -----------------------------------------------------------------------
 int wdc_init(void)
 {
-	const unsigned char init_wait = 200;
-	unsigned char wait_cycles = 100; // 20 seconds should be more than enough for the drive to spinup
+	const unsigned char init_wait = 180;
+	unsigned char wait_cycles = 100; // 18 seconds should be more than enough for the drive to spinup
 
 	_wdc_port_setup();
 
@@ -135,10 +136,24 @@ int wdc_drv_sel(unsigned char drv)
 // -----------------------------------------------------------------------
 void wdc_head_sel(unsigned char head)
 {
-	// clear head selection
-	CTRL_PORT &= ~(_BV(HEADSEL0) | _BV(HEADSEL1));
-	// select head
-	CTRL_PORT |= ~head & (_BV(HEADSEL0) | _BV(HEADSEL1));
+	switch (head) {
+		case 0:
+			CTRL_PORT |= _BV(HEADSEL0) | _BV(HEADSEL1);
+			break;
+		case 1:
+			CTRL_PORT |= _BV(HEADSEL1);
+			CTRL_PORT &= ~_BV(HEADSEL0);
+			break;
+		case 2:
+			CTRL_PORT |= _BV(HEADSEL0);
+			CTRL_PORT &= ~_BV(HEADSEL1);
+			break;
+		case 3:
+			CTRL_PORT &= ~(_BV(HEADSEL0) | _BV(HEADSEL1));
+			break;
+		default:
+			return;
+	}
 	_delay_us(DELAY_HEADSEL);
 }
 
@@ -168,10 +183,11 @@ inline void _wdc_step_pulse(void)
 // -----------------------------------------------------------------------
 void _wdc_seek_reset(void)
 {
-	while (STATUS_PIN & _BV(TRACK0)) {
-		_wdc_dir_out();
+	_wdc_dir_out();
+	_wdc_step_pulse();
+	while (INIT_NOT_READY) {
 		_wdc_step_pulse();
-		while (~SEEK_COMPLETE);
+		_delay_ms(1000);
 	}
 	cylinder = 0;
 }

@@ -19,7 +19,7 @@
 
 #include "serial.h"
 
-#define BAUD    19200
+#define BAUD    9600
 #define UBRR	(F_CPU / (16UL*BAUD) - 1)
 
 // -----------------------------------------------------------------------

@@ -28,6 +28,8 @@
 // -----------------------------------------------------------------------
 int main(void)
 {
+	_delay_ms(1000);
+
 	serial_init();
 
 	serial_tx_string("Initializing Winchester...\n\r");
@@ -53,6 +55,18 @@ int main(void)
 				break;
 			case '1':
 				wdc_seek(614);
+				break;
+			case 'a':
+				wdc_head_sel(0);
+				break;
+			case 'b':
+				wdc_head_sel(1);
+				break;
+			case 'c':
+				wdc_head_sel(2);
+				break;
+			case 'd':
+				wdc_head_sel(3);
 				break;
 		}
 	}
