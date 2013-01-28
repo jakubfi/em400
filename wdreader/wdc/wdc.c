@@ -17,6 +17,7 @@
 
 // atmega162, 8MHz internal RC oscillator
 
+#include <stdlib.h>
 #include <avr/io.h>
 #include <util/delay.h>
 
@@ -31,72 +32,50 @@ int main(void)
 	wdc_init();
 	serial_init();
 
-	_delay_ms(1000);
+	const unsigned char buf_size = 5;
+	char buf[buf_size+1];
+	unsigned char rcount;
+	unsigned char ret;
+	int val;
 
 	while (1) {
-		char c = serial_rx_char();
-		switch (c) {
+		rcount = serial_rx_string(buf, buf_size, '\r');
+		buf[rcount] = '\0';
+
+		switch (*buf) {
 			case 's':
-				if (wdc_status() == RET_OK) {
-					serial_tx_string("OK!");
-				} else {
-					serial_tx_string("ERR");
-				}
+				ret = wdc_status();
 				break;
 			case 't':
-				if (wdc_track0() == RET_OK) {
-					serial_tx_string("OK!");
-				} else {
-					serial_tx_string("ERR");
-				}
+				ret = wdc_track0();
 				break;
 			case 'i':
-				if (wdc_step_in() == RET_OK) {
-					serial_tx_string("OK!");
-				} else {
-					serial_tx_string("ERR");
-				}
+				ret = wdc_step_in();
 				break;
 			case 'o':
-				if (wdc_step_out() == RET_OK) {
-					serial_tx_string("OK!");
-				} else {
-					serial_tx_string("ERR");
-				}
-				break;
-			case 'a':
-				if (wdc_head_sel(0) == RET_OK) {
-					serial_tx_string("OK!");
-				} else {
-					serial_tx_string("ERR");
-				}
-				break;
-			case 'b':
-				if (wdc_head_sel(1) == RET_OK) {
-					serial_tx_string("OK!");
-				} else {
-					serial_tx_string("ERR");
-				}
+				ret = wdc_step_out();
 				break;
 			case 'c':
-				if (wdc_head_sel(2) == RET_OK) {
-					serial_tx_string("OK!");
-				} else {
-					serial_tx_string("ERR");
-				}
+				val = atoi(buf+1);
+				ret = wdc_seek(val);
 				break;
-			case 'd':
-				if (wdc_head_sel(3) == RET_OK) {
-					serial_tx_string("OK!");
-				} else {
-					serial_tx_string("ERR");
-				}
+			case 'h':
+				val = atoi(buf+1);
+				ret = wdc_head_sel(val);
 				break;
 			default:
-				serial_tx_string("ERR");
+				ret = RET_ERR;
 				break;
 		}
+
+		if (ret == RET_OK) {
+			serial_tx_string("OK!\n\r");
+		} else {
+			serial_tx_string("ERR\n\r");
+		}
+
 	}
+
 	return 0;
 } 
 

@@ -96,7 +96,7 @@ void wdc_init(void)
 }
 
 // -----------------------------------------------------------------------
-int wdc_status(void)
+unsigned char wdc_status(void)
 {
 	if (DRIVE_READY) {
 		return RET_OK;
@@ -106,7 +106,7 @@ int wdc_status(void)
 }
 
 // -----------------------------------------------------------------------
-int wdc_track0(void)
+unsigned char wdc_track0(void)
 {
 	if (TRACK_IS_0) {
 		return RET_OK;
@@ -116,7 +116,7 @@ int wdc_track0(void)
 }
 
 // -----------------------------------------------------------------------
-int wdc_drv_sel(unsigned char drv)
+unsigned char wdc_drv_sel(unsigned char drv)
 {
 	// clear all drive selection lines
 	CTRL_PORT |= _BV(DRV1) | _BV(DRV2) | _BV(DRV3) | _BV(DRV4);
@@ -137,7 +137,7 @@ int wdc_drv_sel(unsigned char drv)
 }
 
 // -----------------------------------------------------------------------
-int wdc_head_sel(unsigned char head)
+unsigned char wdc_head_sel(unsigned char head)
 {
 	switch (head) {
 		case 0:
@@ -185,15 +185,13 @@ inline void _wdc_step_pulse(void)
 }
 
 // -----------------------------------------------------------------------
-int wdc_seek(unsigned int cyl)
+unsigned char wdc_seek(unsigned int cyl)
 {
     const unsigned char seek_wait = 1;
     unsigned char wait_cycles = 250; // 250ms timeout for seek
 
-	if ((cyl < CYL_MIN) || (cyl > CYL_MAX) || (cyl == cylinder)) {
-		// requested cylinder out of bounds or already at requested cylinder
-		return RET_ERR;
-	}
+	// requested cylinder out of bounds
+	if ((cyl < CYL_MIN) || (cyl > CYL_MAX)) return RET_ERR;
 
 	int delta = cyl - cylinder;
 
@@ -211,6 +209,7 @@ int wdc_seek(unsigned int cyl)
 			delta++;
 		}
 	} else {
+		return RET_OK;
 	}
 
 	cylinder = cyl;
@@ -230,13 +229,13 @@ int wdc_seek(unsigned int cyl)
 }
 
 // -----------------------------------------------------------------------
-int wdc_step_in(void)
+unsigned char wdc_step_in(void)
 {
 	return wdc_seek(cylinder+1);
 }
 
 // -----------------------------------------------------------------------
-int wdc_step_out(void)
+unsigned char wdc_step_out(void)
 {
 	return wdc_seek(cylinder-1);
 }

@@ -15,8 +15,8 @@
 //  Foundation, Inc.,
 //  51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 
+#include <stddef.h>
 #include <avr/io.h>
-#include <util/delay.h>
 
 #include "serial.h"
 
@@ -33,7 +33,7 @@ void serial_init(void)
 }
 
 // -----------------------------------------------------------------------
-void serial_tx_char(char c)
+inline void serial_tx_char(char c)
 {
 	while (!(UCSR0A & (1 <<UDRE0)));
 	UDR0 = c;
@@ -49,10 +49,29 @@ void serial_tx_string(char *data)
 }
 
 // -----------------------------------------------------------------------
-char serial_rx_char(void)
+inline char serial_rx_char(void)
 {
 	while (!(UCSR0A & (1<<RXC0)));
 	return UDR0;
+}
+
+// -----------------------------------------------------------------------
+unsigned char serial_rx_string(char *buf, unsigned char buf_size, char terminator)
+{
+	unsigned char count = 0;
+	char c;
+
+	if ((buf_size <= 0) || (buf == NULL)) {
+		return 0;
+	}
+
+	do {
+		c = serial_rx_char();
+		*(buf+count) = c;
+		count++;
+	} while ((c != terminator) && (count < buf_size));
+
+	return count;
 }
 
 // vim: tabstop=4
