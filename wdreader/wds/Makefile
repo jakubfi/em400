@@ -2,7 +2,7 @@ CXX=g++
 CXXFLAGS=-O3 -w -c -fpic -pthread
 LFLAGS=-lSaleaeDevice -lreadline
 
-OBJS=wds.o
+OBJS=wds.o logic.o wdc.o
 
 wds: $(OBJS)
 	$(CXX) $(LFLAGS) $^ -o $@
