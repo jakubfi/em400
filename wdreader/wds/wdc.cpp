@@ -11,11 +11,9 @@ void serial_setup(int fd)
 {
 	struct termios options;
 
-	fcntl(fd, F_SETFL, 0);
-
 	// 9600 baud
-	cfsetispeed(&options, B9600);
-	cfsetospeed(&options, B9600);
+	cfsetispeed(&options, B19200);
+	cfsetospeed(&options, B19200);
 
 	// enable receiver, local mode
 	options.c_cflag |= (CLOCAL | CREAD);
@@ -38,8 +36,11 @@ void serial_setup(int fd)
 	// raw mode
 	options.c_lflag &= ~(ICANON | ECHO | ECHOE | ISIG);
 
+	// don't map this shit
+	options.c_iflag &= ~(INLCR | ICRNL | IGNCR | IUCLC);
+
 	// no postprocess
-	options.c_oflag &= ~OPOST;
+	options.c_oflag &= ~(OPOST | ONLCR | OCRNL | OLCUC | ONLRET | OFILL );
 
 	tcsetattr(fd, TCSANOW, &options);
 }
@@ -49,12 +50,16 @@ bool transmit(int fd, char *c)
 {
 	char inbuf[1024 + 1] = { 0 };
 
+	printf(" WDC CMD: %s\n", c);
 	write(fd, c, strlen(c));
 
 	int res = 0;
-	while (res != 5) {
-		res += read(fd, inbuf+res, 1024);
+	while (res < 5) {
+		res += read(fd, inbuf+res, 1);
+		usleep(1000);
 	}
+
+	printf(" WDC RESP: %s", inbuf);
 
 	if (!strncmp(inbuf, "OK!", 3)) {
 		return true;
@@ -91,6 +96,14 @@ bool wdc_seek(unsigned int cyl)
 {
 	char buf[10];
 	snprintf(buf, 10, "c%i\r", cyl);
+	return transmit(wdc_fd, buf);
+}
+
+// -----------------------------------------------------------------------
+bool wdc_set_drive(int d)
+{
+	char buf[10];
+	snprintf(buf, 10, "d%i\r", d);
 	return transmit(wdc_fd, buf);
 }
 

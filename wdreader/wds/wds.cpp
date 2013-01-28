@@ -26,10 +26,14 @@ int main(int argc, char **argv)
 		return -1;
 	}
 
+	fcntl(wdc_fd, F_SETFL, 0);
 	serial_setup(wdc_fd);
 
 	printf("Waiting for Winchester to become ready...\n");
 
+	while (!wdc_set_drive(1)) {
+		sleep(1);
+	}
 	while (!(wdc_ready() && wdc_track0())) {
 		sleep(1);
 	}
@@ -57,7 +61,7 @@ int main(int argc, char **argv)
 
 		if (!strcmp(buf, "quit")) {
 			quit = 1;
-			res = false;
+			res = true;
 		} else if (!strcmp(buf, "in")) {
 			res = wdc_step_in();
 		} else if (!strcmp(buf, "out")) {
@@ -74,6 +78,7 @@ int main(int argc, char **argv)
 			dev->Stop();
 			res = true;
 		} else {
+			printf(" NO SUCH COMMAND\n");
 			res = false;
 		}
 
