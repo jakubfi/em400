@@ -15,7 +15,7 @@
 //  Foundation, Inc.,
 //  51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 
-// atmega162, 8MHz internal RC oscillator
+// atmega162, 16MHz external crystal oscillator
 
 #include <stdlib.h>
 #include <avr/io.h>

@@ -4,7 +4,7 @@ can be read with another piece of circuitry (in this particular case Logic16 is 
 
 Microcontroler configuration:
 
-* clocked by internal RC oscillator, 8MHz (no clock divider)
+* clocked by external crystal oscillator, 16MHz, no clock divider
 * JTAG disabled
 
 Where to connect ST-506 control port signals:
