@@ -63,6 +63,10 @@ int main(void)
 				val = atoi(buf+1);
 				ret = wdc_head_sel(val);
 				break;
+			case 'd':
+				val = atoi(buf+1);
+				ret = wdc_drv_sel(val);
+				break;
 			default:
 				ret = RET_ERR;
 				break;

@@ -70,8 +70,9 @@
 #define CYL_MIN		0
 #define CYL_MAX		614
 
-unsigned char drive[4] = { DRV1, DRV2, DRV3, DRV4 };
-unsigned int cylinder = 0;
+unsigned char drive_map[5] = { 0, _BV(DRV1), _BV(DRV2), _BV(DRV3), _BV(DRV4) };
+unsigned char drv_selected = 0;
+unsigned int cylinder[5] = { 0 };
 
 // -----------------------------------------------------------------------
 void _wdc_port_setup(void)
@@ -90,9 +91,6 @@ void _wdc_port_setup(void)
 void wdc_init(void)
 {
 	_wdc_port_setup();
-
-	// select drive 1
-	CTRL_PORT &= ~_BV(DRV1);
 }
 
 // -----------------------------------------------------------------------
@@ -120,17 +118,33 @@ unsigned char wdc_drv_sel(unsigned char drv)
 {
 	// clear all drive selection lines
 	CTRL_PORT |= _BV(DRV1) | _BV(DRV2) | _BV(DRV3) | _BV(DRV4);
+	drv_selected = 0;
 
-	if ((drv < 1) || (drv > 4)) {
-		return RET_ERR;
-	}
+	const unsigned char select_wait = 1;
+	unsigned char wait_cycles = 250; // 250ms timeout for drive select
 
-	// select drive specified by user
-	CTRL_PORT &= ~_BV(drive[drv-1]);
-	_delay_us(DELAY_DRIVESEL);
 
-	while (!DRIVE_READY) {
-		_delay_ms(1);
+	// bogus drive
+	if ((drv < 0) || (drv > 4)) return RET_ERR;
+
+	// real drive
+	if (drv != 0) {
+		drv_selected = drv;
+		CTRL_PORT &= ~drive_map[drv];
+		_delay_us(DELAY_DRIVESEL);
+
+		// wait for the drive to report 'ready'
+		while (!DRIVE_READY && (wait_cycles > 0)) {
+			_delay_ms(select_wait);
+			wait_cycles--;
+		}
+		// timeout occured
+		if (wait_cycles <= 0) {
+			return RET_ERR;
+		}
+	// 'none' drive, just do the delay
+	} else {
+		_delay_us(DELAY_DRIVESEL);
 	}
 
 	return RET_OK;
@@ -139,6 +153,8 @@ unsigned char wdc_drv_sel(unsigned char drv)
 // -----------------------------------------------------------------------
 unsigned char wdc_head_sel(unsigned char head)
 {
+	if (drv_selected == 0) return RET_ERR;
+
 	switch (head) {
 		case 0:
 			CTRL_PORT |= _BV(HEADSEL0) | _BV(HEADSEL1);
@@ -190,10 +206,12 @@ unsigned char wdc_seek(unsigned int cyl)
     const unsigned char seek_wait = 1;
     unsigned char wait_cycles = 250; // 250ms timeout for seek
 
+	if (drv_selected == 0) return RET_ERR;
+
 	// requested cylinder out of bounds
 	if ((cyl < CYL_MIN) || (cyl > CYL_MAX)) return RET_ERR;
 
-	int delta = cyl - cylinder;
+	int delta = cyl - cylinder[drv_selected];
 
 	// set stepping direction
 	if (delta > 0) {
@@ -212,7 +230,7 @@ unsigned char wdc_seek(unsigned int cyl)
 		return RET_OK;
 	}
 
-	cylinder = cyl;
+	cylinder[drv_selected] = cyl;
 
 	// wait until heads settle
 	while (!SEEK_COMPLETE && (wait_cycles > 0)) {
@@ -231,13 +249,13 @@ unsigned char wdc_seek(unsigned int cyl)
 // -----------------------------------------------------------------------
 unsigned char wdc_step_in(void)
 {
-	return wdc_seek(cylinder+1);
+	return wdc_seek(cylinder[drv_selected]+1);
 }
 
 // -----------------------------------------------------------------------
 unsigned char wdc_step_out(void)
 {
-	return wdc_seek(cylinder-1);
+	return wdc_seek(cylinder[drv_selected]-1);
 }
 
 // vim: tabstop=4
