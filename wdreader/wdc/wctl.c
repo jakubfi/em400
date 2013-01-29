@@ -67,15 +67,16 @@
 
 // disk geometry
 
+#define DRV_MAX		4
 #define CYL_MIN		0
 #define CYL_MAX		614
 
-unsigned char drive_map[5] = { 0, _BV(DRV1), _BV(DRV2), _BV(DRV3), _BV(DRV4) };
+unsigned char drive_map[DRV_MAX+1] = { 0, _BV(DRV1), _BV(DRV2), _BV(DRV3), _BV(DRV4) };
 unsigned char drv_selected = 0;
-unsigned int cylinder[5] = { 0 };
+unsigned int cylinder[DRV_MAX+1] = { 0 };
 
 // -----------------------------------------------------------------------
-void _wdc_port_setup(void)
+void wdc_init(void)
 {
 	// drv and head ports are output ports
 	CTRL_PORT |= _BV(DRV1) | _BV(DRV2) | _BV(DRV3) | _BV(DRV4) | _BV(HEADSEL0) | _BV(HEADSEL1) | _BV(STEP) | _BV(DIRIN);
@@ -85,12 +86,6 @@ void _wdc_port_setup(void)
 	SFIOR &= ~(_BV(PUD));
 	STATUS_DDR = ~(_BV(READY) | _BV(SEEKOK) | _BV(TRACK0) | _BV(INDEX));
 	STATUS_PORT = (_BV(READY) | _BV(SEEKOK) | _BV(TRACK0) | _BV(INDEX));
-}
-
-// -----------------------------------------------------------------------
-void wdc_init(void)
-{
-	_wdc_port_setup();
 }
 
 // -----------------------------------------------------------------------
@@ -116,35 +111,39 @@ unsigned char wdc_track0(void)
 // -----------------------------------------------------------------------
 unsigned char wdc_drv_sel(unsigned char drv)
 {
-	// clear all drive selection lines
+	// clear all drive selection lines anyway (even if drive is bogus)
 	CTRL_PORT |= _BV(DRV1) | _BV(DRV2) | _BV(DRV3) | _BV(DRV4);
 	drv_selected = 0;
 
+	// 250ms timeout for drive select
 	const unsigned char select_wait = 1;
-	unsigned char wait_cycles = 250; // 250ms timeout for drive select
+	unsigned char wait_cycles = 250;
 
+	// no such drive
+	if ((drv < 0) || (drv > DRV_MAX)) {
+		return RET_ERR;
+	}
 
-	// bogus drive
-	if ((drv < 0) || (drv > 4)) return RET_ERR;
-
-	// real drive
-	if (drv != 0) {
-		drv_selected = drv;
-		CTRL_PORT &= ~drive_map[drv];
+	// 'none' drive
+	if (drv == 0) {
 		_delay_us(DELAY_DRIVESEL);
+		return RET_OK;
+	}
 
-		// wait for the drive to report 'ready'
-		while (!DRIVE_READY && (wait_cycles > 0)) {
-			_delay_ms(select_wait);
-			wait_cycles--;
-		}
-		// timeout occured
-		if (wait_cycles <= 0) {
-			return RET_ERR;
-		}
-	// 'none' drive, just do the delay
-	} else {
-		_delay_us(DELAY_DRIVESEL);
+	// real drive - select the drive
+	drv_selected = drv;
+	CTRL_PORT &= ~drive_map[drv];
+	_delay_us(DELAY_DRIVESEL);
+
+	// wait for the drive to report 'ready'
+	while (!DRIVE_READY && (wait_cycles > 0)) {
+		_delay_ms(select_wait);
+		wait_cycles--;
+	}
+
+	// timeout occured
+	if (wait_cycles <= 0) {
+		return RET_ERR;
 	}
 
 	return RET_OK;

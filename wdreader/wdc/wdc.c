@@ -77,7 +77,6 @@ int main(void)
 		} else {
 			serial_tx_string("ERR\n\r");
 		}
-
 	}
 
 	return 0;
