@@ -6,6 +6,10 @@
 
 int wdc_fd;
 
+extern int debug;
+
+int drive, cylinder, head;
+
 // -----------------------------------------------------------------------
 void serial_setup(int fd)
 {
@@ -50,7 +54,8 @@ bool transmit(int fd, char *c)
 {
 	char inbuf[1024 + 1] = { 0 };
 
-	printf(" WDC CMD: %s\n", c);
+	if (debug) printf(" WDC cmd: %s\n", c);
+
 	write(fd, c, strlen(c));
 
 	int res = 0;
@@ -59,7 +64,7 @@ bool transmit(int fd, char *c)
 		usleep(1000);
 	}
 
-	printf(" WDC RESP: %s", inbuf);
+	if (debug) printf(" WDC resp: %s", inbuf);
 
 	if (!strncmp(inbuf, "OK!", 3)) {
 		return true;
@@ -96,7 +101,9 @@ bool wdc_seek(unsigned int cyl)
 {
 	char buf[10];
 	snprintf(buf, 10, "c%i\r", cyl);
-	return transmit(wdc_fd, buf);
+	bool ret = transmit(wdc_fd, buf);
+	if (ret) cylinder = cyl;
+	return ret;
 }
 
 // -----------------------------------------------------------------------
@@ -104,7 +111,19 @@ bool wdc_set_drive(int d)
 {
 	char buf[10];
 	snprintf(buf, 10, "d%i\r", d);
-	return transmit(wdc_fd, buf);
+	bool ret = transmit(wdc_fd, buf);
+	if (ret) drive = d;
+	return ret;
+}
+
+// -----------------------------------------------------------------------
+bool wdc_set_head(int h)
+{
+	char buf[10];
+	snprintf(buf, 10, "h%i\r", h);
+	bool ret = transmit(wdc_fd, buf);
+	if (ret) head = h;
+	return ret;
 }
 
 // vim: tabstop=4

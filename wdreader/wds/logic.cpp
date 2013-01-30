@@ -1,5 +1,6 @@
 #include <stdlib.h>
 #include <stdio.h>
+#include <pthread.h>
 #include <SaleaeDeviceApi.h>
 #include "logic.h"
 
@@ -8,6 +9,27 @@ U64 logic_id;
 volatile int logic_connected;
 struct data_t *data_last;
 struct data_t *data_head;
+
+int data_counter;
+
+pthread_mutex_t dcount_mutex;
+pthread_cond_t dcount_cv;
+
+
+// -----------------------------------------------------------------------
+void drop_logic_buffers()
+{
+	struct data_t *d = data_head;
+	struct data_t *x = NULL;
+
+	while (d) {
+		DevicesManagerInterface::DeleteU8ArrayPtr(d->d);
+		x = d;
+		d = d->next;
+		free(x);
+	}
+	data_head = data_last = NULL;
+}
 
 // -----------------------------------------------------------------------
 void __stdcall OnDisconnect(U64 device_id, void* user_data)
@@ -21,12 +43,13 @@ void __stdcall OnDisconnect(U64 device_id, void* user_data)
 // -----------------------------------------------------------------------
 void __stdcall OnReadData(U64 device_id, U8* data, U32 data_length, void* user_data)
 {
-	printf("Read %i words\n", data_length/2);
+	//printf(" Read %i bytes, three first bytes: %d, %d, %d\n", data_length, *data, *(data+1), *(data+2));
 
 	// create new data packet
 	struct data_t *d = (struct data_t*) malloc(sizeof(struct data_t));
 	d->d = data;
 	d->next = NULL;
+	d->len = data_length;
 
 	// append the packet to the list
 	if (!data_last) {
@@ -35,6 +58,11 @@ void __stdcall OnReadData(U64 device_id, U8* data, U32 data_length, void* user_d
 		data_last->next = d;
 		data_last = d;
 	}
+
+	pthread_mutex_lock(&dcount_mutex);
+	data_counter += data_length;
+	pthread_cond_signal(&dcount_cv);
+	pthread_mutex_unlock(&dcount_mutex);
 
 	//DevicesManagerInterface::DeleteU8ArrayPtr(data);
 }
@@ -64,13 +92,13 @@ void __stdcall OnConnect(U64 device_id, GenericInterface* device_interface, void
 		dev->RegisterOnReadData(&OnReadData);
 		dev->RegisterOnError(&OnError);
 
-		U32 channels[3];
-		for(U32 i=0; i<3; i++) {
+		U32 channels[2];
+		for(U32 i=0; i<2; i++) {
 			channels[i] = i;
 		}
 
 		dev->SetUse5Volts(true);
-		dev->SetActiveChannels(channels, 3);
+		dev->SetActiveChannels(channels, 2);
 		dev->SetSampleRateHz(100*1000*1000);
 	}
 
