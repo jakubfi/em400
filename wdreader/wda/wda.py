@@ -45,14 +45,16 @@ class wds_track:
 
         while counter < len(self.samples):
             v = self.samples[counter][0]
+            self.samples[counter] = [v, 0, 0, 0, 0, 0, 0, 0]
 
             # each rising edge restarts clock
             if (ov == 0) and (v == 1):
-                # clock cleanup - remove previously inserted early clock ticks 
-                prev_clock_tick = self.clock[len(self.clock)-1]
-                if counter - prev_clock_tick <= early_clock_margin:
-                    self.clock.pop()
-                    self.samples[prev_clock_tick][1] = 0
+                # clock cleanup - remove previously inserted early clock ticks
+                if early_clock_margin:
+                    prev_clock_tick = self.clock[len(self.clock)-1]
+                    if counter - prev_clock_tick <= early_clock_margin:
+                        self.clock.pop()
+                        self.samples[prev_clock_tick][1] = 0
 
                 next_clock = counter + clock_period
                 self.clock.append(counter)
@@ -150,6 +152,12 @@ class wds_track:
 
     # -------------------------------------------------------------------
     def analyze(self, clock, margin):
+
+        self.gaps = []
+        self.gap_hist = {}
+        self.clock = []
+        self.a1 = []
+
         print "Regenerating clock..."
         self.clock_regen(clock, margin)
 
@@ -163,14 +171,20 @@ class wds_track:
         print "Analyzing sectors..."
         count = 0
         while count < len(self.a1):
-            data = self.read_bytes(self.a1[count]+1, 6)
-            print ''.join(map(chr,data))
-            print "---------"
-            count += 1
-            data = self.read_bytes(self.a1[count]+1, 512 + 3)
-            print ''.join(map(chr,data))
-            print "---------"
-            count += 1
+            try:
+                data = self.read_bytes(self.a1[count]+1, 6)
+                print ''.join(map(chr,data))
+                print "---------"
+                count += 1
+            except:
+                pass
+            try:
+                data = self.read_bytes(self.a1[count]+1, 512 + 3)
+                print ''.join(map(chr,data))
+                print "---------"
+                count += 1
+            except:
+                pass
 
 # ------------------------------------------------------------------------
 class WDA:
@@ -180,7 +194,7 @@ class WDA:
         self.fname = fname
         self.quit = 0
         self.win_w = 1200
-        self.win_h = 400
+        self.win_h = 277
 
         self.clk = 12
         self.clk_margin = 2
@@ -198,9 +212,9 @@ class WDA:
         self.f[10] = pygame.font.Font(pygame.font.match_font("tahoma"), 10)
 
     # -------------------------------------------------------------------
-    def write(self, text, pos, color, size=12, bold=False):
+    def write(self, text, pos, color, size=12, bold=False, bg=(0,0,0)):
         self.f[size].set_bold(bold)
-        s = self.f[size].render(text, True, color)
+        s = self.f[size].render(text, True, color, bg)
         self.screen.blit(s, pos)
         
     # -------------------------------------------------------------------
@@ -298,6 +312,36 @@ class WDA:
             sx += 1
 
     # -------------------------------------------------------------------
+    def draw_controls(self, x, y, w, h):
+        pygame.draw.rect(self.screen, (0,0,0), (x, y, w, h))
+        pygame.draw.rect(self.screen, (255,255,255), (x, y, w, h), 1)
+
+        pygame.draw.rect(self.screen, (0x70, 0x9D, 0xFF), (x+2, y+2, 50, h-4))
+        pygame.draw.rect(self.screen, (0x70, 0x9D, 0xFF), (x+54, y+2, 50, h-4))
+        self.write("CLK-", (x+12, y+8), (0,0,0), 12, True, (0x70, 0x9D, 0xFF))
+        self.write("CLK+", (x+64, y+8), (0,0,0), 12, True, (0x70, 0x9D, 0xFF))
+
+        pygame.draw.rect(self.screen, (0x8d, 0x7D, 0xFF), (x+106, y+2, 50, h-4))
+        pygame.draw.rect(self.screen, (0x8d, 0x7D, 0xFF), (x+158, y+2, 50, h-4))
+        self.write("MRG-", (x+116, y+8), (0,0,0), 12, True, (0x8d, 0x7D, 0xFF))
+        self.write("MRG+", (x+168, y+8), (0,0,0), 12, True, (0x8d, 0x7D, 0xFF))
+
+        pygame.draw.rect(self.screen, (0xE2, 0x70, 0xFF), (x+210, y+2, 100, h-4))
+        self.write("UPDATE", (x+234, y+8), (0,0,0), 12, True, (0xE2, 0x70, 0xFF))
+
+    # -------------------------------------------------------------------
+    def draw_nav(self, offset, x, y, w, h):
+        pygame.draw.rect(self.screen, (0,0,0), (x, y, w, h))
+        pygame.draw.rect(self.screen, (255,255,255), (x, y, w, h), 1)
+
+        scale = len(self.track.samples) / (w-x-10)
+
+        for a1 in self.track.a1:
+            xpos = self.track.clock[a1] / scale
+            line(self.screen, x+5+xpos, y+1, x+5+xpos, y+h-2, (0xBB, 0x59, 0xD4))
+        line(self.screen, x+5+offset/scale, y+1, x+5+offset/scale, y+h-2, (0xFF, 0xf5, 0x70))
+
+    # -------------------------------------------------------------------
     def run(self):
         drag = 0
         offset = 0
@@ -305,11 +349,34 @@ class WDA:
         self.draw_info(1, 1, self.win_w-2, 20)
         self.draw_hist(1, 22, self.win_w-2, 100)
         self.draw_wave(offset, 1, 123, self.win_w-2, 100)
+        self.draw_nav(offset, 1, 224, self.win_w-2, 20)
+        self.draw_controls(1, 245, self.win_w-2, 30)
         while not self.quit:
             ev = pygame.event.wait()
             # mouse down
             if ev.type == 5:
-                drag = 1
+                # wave drag
+                if ev.pos[1] > 123 and ev.pos[1] < 223:
+                    drag = 1
+                if ev.pos[1] > 224 and ev.pos[1] < 244:
+                    offset = (ev.pos[0]-6) * (len(self.track.samples) / (self.win_w-2-1-10))
+                    self.draw_wave(offset, 1, 123, self.win_w-2, 100)
+                    self.draw_nav(offset, 1, 224, self.win_w-2, 20)
+                # controls
+                if ev.pos[1] > 245 and ev.pos[1] < 275 and ev.pos[0] < 310:
+                    if ev.pos[0] > 2 and ev.pos[0] < 50:
+                        self.clk -= 1
+                    if ev.pos[0] > 54 and ev.pos[0] < 104:
+                        self.clk += 1
+                    if ev.pos[0] > 106 and ev.pos[0] < 156:
+                        self.clk_margin -= 1
+                    if ev.pos[0] > 158 and ev.pos[0] < 208:
+                        self.clk_margin += 1
+                    if ev.pos[0] > 210 and ev.pos[0] < 310:
+                        self.track.analyze(self.clk, self.clk_margin)
+                    self.draw_info(1, 1, self.win_w-2, 20)
+                    self.draw_wave(offset, 1, 123, self.win_w-2, 100)
+                    self.draw_nav(offset, 1, 224, self.win_w-2, 20)
             # mouse up
             if ev.type == 6:
                 drag = 0
@@ -319,10 +386,30 @@ class WDA:
                 if offset < 0:
                     offset = 0
                 self.draw_wave(offset, 1, 123, self.win_w-2, 100)
+                self.draw_nav(offset, 1, 224, self.win_w-2, 20)
             # key down
             if ev.type == 2:
                 if ev.key == 292:
                     self.quit = 1
+                if ev.key == 275:
+                    for a1 in self.track.a1:
+                        if self.track.clock[a1] > offset:
+                            offset = self.track.clock[a1]
+                            break;
+                if ev.key == 276:
+                    apos = len(self.track.a1)-1
+                    while apos>0 and self.track.clock[self.track.a1[apos]] >= offset:
+                        apos -= 1
+                    if apos >= 0:
+                        offset = self.track.clock[self.track.a1[apos]]
+                if ev.key == 278:
+                    offset = 0
+                if ev.key == 279:
+                    offset = len(self.track.samples) - self.win_w
+
+                self.draw_wave(offset, 1, 123, self.win_w-2, 100)
+                self.draw_nav(offset, 1, 224, self.win_w-2, 20)
+
             #print ev
             pygame.display.flip()
 
