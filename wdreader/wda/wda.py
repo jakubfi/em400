@@ -4,9 +4,10 @@
 import pygame, sys, os
 from pygame.locals import *
 from pygame.gfxdraw import *
+from crc_algorithms import Crc
 
 # -----------------------------------------------------------------------
-class wds_track:
+class mfm_track:
 
     # -------------------------------------------------------------------
     def __init__(self, fname):
@@ -26,6 +27,9 @@ class wds_track:
         self.a1_clk = []
         self.a1_pos = 0
 
+        self.crc = Crc(width = 16, poly = 0x1021, reflect_in = False, xor_in = 0xffff, reflect_out = False, xor_out = 0x0000);
+        #self.crc = Crc(width = 16, poly = 0x140a0445, reflect_in = False, xor_in = 0xffffffff, reflect_out = False, xor_out = 0x0000);
+
         print "Unpacking..."
         self.explode()
 
@@ -34,8 +38,8 @@ class wds_track:
         for byte in self.data:
             for bit in [7, 6, 5, 4, 3, 2, 1, 0]:
                 v = (byte >> bit) & 1
-                # [value, clock, a1, cell, validdbit, bit, validbyte, byte]
-                self.samples.append([v, 0, 0, 0, 0, 0, 0, 0])
+                # [value, clock, a1, cell, validdbit, bit, validbyte, byte, crcok]
+                self.samples.append([v, 0, 0, 0, 0, 0, 0, 0, 0])
 
     # -------------------------------------------------------------------
     def clock_regen(self, clock_period, early_clock_margin):
@@ -45,7 +49,7 @@ class wds_track:
 
         while counter < len(self.samples):
             v = self.samples[counter][0]
-            self.samples[counter] = [v, 0, 0, 0, 0, 0, 0, 0]
+            self.samples[counter] = [v, 0, 0, 0, 0, 0, 0, 0, 0]
 
             # each rising edge restarts clock
             if (ov == 0) and (v == 1):
@@ -102,7 +106,7 @@ class wds_track:
     def calc_gaps(self):
         ls = 0
         pos = opos = 0
-        for (s,c,a1,cell,valbit,bit,valbyte,byte) in self.samples:
+        for (s,c,a1,cell,valbit,bit,valbyte,byte,crcok) in self.samples:
             if (s != ls) and (s == 1):
                 diff = pos-opos
                 self.gaps.append(diff)
@@ -118,9 +122,12 @@ class wds_track:
     def read_bytes(self, clkpos, b):
         bit = 7
         char = 0
-        data = []
+        data = [ 0xa1 ]
         cellmark = 1
+        crcok = False
+        crc = 0
         while b > 0:
+            # prepare 0, +1 and +2 clocks
             clk0 = self.clock[clkpos]
             clk1 = self.clock[clkpos+1]
             clk2 = self.clock[clkpos+2]
@@ -138,17 +145,37 @@ class wds_track:
             bit -= 1
 
             if bit < 0:
-                bit = 7
-                data.append(char)
+                # append only data, not CRC
+                if b > 2:
+                    data.append(char)
+                elif b == 2:
+                    crc = self.crc.table_driven(''.join(map(chr,data)))
+                    print "%x" % crc
+                    if char == (crc & 0xff00) >> 8:
+                        self.samples[clk2][8] = 1
+                        crcok = True
+                    else:
+                        self.samples[clk2][8] = 2
+                        crcok = False
+                elif b == 1:
+                    if char == crc & 0xff:
+                        self.samples[clk2][8] = 1
+                        crcok &= True
+                    else:
+                        self.samples[clk2][8] = 2
+                        crcok = False
+
                 # mark and store byte
                 self.samples[clk2][6] = 1
                 self.samples[clk2][7] = char
+
+                bit = 7
                 b -= 1
                 char = 0
 
             clkpos += 2
         self.samples[clk2][3] = 2
-        return data
+        return data, crcok
 
     # -------------------------------------------------------------------
     def analyze(self, clock, margin):
@@ -172,19 +199,21 @@ class wds_track:
         count = 0
         while count < len(self.a1):
             try:
-                data = self.read_bytes(self.a1[count]+1, 6)
+                data, crcok = self.read_bytes(self.a1[count]+1, 6)
                 print ''.join(map(chr,data))
-                print "---------"
-                count += 1
-            except:
+                print "---- CRC: %s --------------------------------------------------------" % str(crcok)
+            except Exception, e:
+                print str(e)
                 pass
+            count += 1
             try:
-                data = self.read_bytes(self.a1[count]+1, 512 + 3)
+                data, crcok = self.read_bytes(self.a1[count]+1, 512 + 3)
                 print ''.join(map(chr,data))
-                print "---------"
-                count += 1
-            except:
+                print "---- CRC: %s --------------------------------------------------------" % str(crcok)
+            except Exception, e:
+                print str(e)
                 pass
+            count += 1
 
 # ------------------------------------------------------------------------
 class WDA:
@@ -198,7 +227,7 @@ class WDA:
 
         self.clk = 12
         self.clk_margin = 2
-        self.track = wds_track(self.fname)
+        self.track = mfm_track(self.fname)
         self.track.analyze(self.clk, self.clk_margin)
 
         pygame.init()
@@ -294,7 +323,12 @@ class WDA:
 
             # draw byte values
             if self.track.samples[pos][6]:
-                line(self.screen, x+sx+5, y+54, x+sx+5, y+91, (0xFF, 0xf5, 0x70))
+                color = (0xFF, 0xf5, 0x70)
+                if self.track.samples[pos][8] == 1:
+                    color = (0x00, 0xff, 0x00)
+                if self.track.samples[pos][8] == 2:
+                    color = (0xff, 0x00, 0x00)
+                line(self.screen, x+sx+5, y+54, x+sx+5, y+91, color)
                 if self.track.samples[pos][7] != 0:
                     ch = chr(self.track.samples[pos][7])
                 else:
@@ -420,6 +454,5 @@ class WDA:
 
 wda = WDA("dump--1--000--3.wds")
 wda.run()
-
 
 # vim: tabstop=4 expandtab shiftwidth=4 softtabstop=4
