@@ -42,7 +42,7 @@ class mfm_track:
                 self.samples.append([v, 0, 0, 0, 0, 0, 0, 0, 0])
 
     # -------------------------------------------------------------------
-    def clock_regen(self, clock_period, early_clock_margin):
+    def clock_regen(self, clock_period, early_clock_margin, clock_offset=0):
         counter = 0
         ov = 1
         next_clock = 0
@@ -54,15 +54,18 @@ class mfm_track:
             # each rising edge restarts clock
             if (ov == 0) and (v == 1):
                 # clock cleanup - remove previously inserted early clock ticks
-                if early_clock_margin:
+                if early_clock_margin and not clock_offset:
                     prev_clock_tick = self.clock[len(self.clock)-1]
                     if counter - prev_clock_tick <= early_clock_margin:
                         self.clock.pop()
                         self.samples[prev_clock_tick][1] = 0
 
-                next_clock = counter + clock_period
-                self.clock.append(counter)
-                self.samples[counter][1] = 1
+                if not clock_offset:
+                    next_clock = counter + clock_period
+                    self.clock.append(counter)
+                    self.samples[counter][1] = 1
+                else:
+                    next_clock = counter + clock_offset
 
             # is it time for next clock tick?
             if counter >= next_clock:
@@ -178,7 +181,7 @@ class mfm_track:
         return data, crcok
 
     # -------------------------------------------------------------------
-    def analyze(self, clock, margin):
+    def analyze(self, clock, margin, offset):
 
         self.gaps = []
         self.gap_hist = {}
@@ -186,7 +189,7 @@ class mfm_track:
         self.a1 = []
 
         print "Regenerating clock..."
-        self.clock_regen(clock, margin)
+        self.clock_regen(clock, margin, offset)
 
         print "Analyzing signal gaps..."
         self.calc_gaps()
@@ -227,8 +230,9 @@ class WDA:
 
         self.clk = 12
         self.clk_margin = 2
+        self.clk_offset = 0
         self.track = mfm_track(self.fname)
-        self.track.analyze(self.clk, self.clk_margin)
+        self.track.analyze(self.clk, self.clk_margin, self.clk_offset)
 
         pygame.init()
         pygame.font.init()
@@ -254,11 +258,11 @@ class WDA:
         self.write("File:", (x+5, y+3), (0xff, 0xff, 0xff), 12, True)
         self.write(self.fname, (x+40, y+3), (0xFF, 0xFE, 0xE0), 12, True)
 
-        self.write("Clock period/margin:", (x+300, y+3), (0xff, 0xff, 0xff), 12, True)
-        self.write("%i/%i" % (self.clk, self.clk_margin), (x+435, y+3), (0xFF, 0xFE, 0xE0), 12, True)
+        self.write("Clock period/margin/offset:", (x+300, y+3), (0xff, 0xff, 0xff), 12, True)
+        self.write("%i/%i/%i" % (self.clk, self.clk_margin, self.clk_offset), (x+480, y+3), (0xFF, 0xFE, 0xE0), 12, True)
 
-        self.write("A1s:", (x+500, y+3), (0xff, 0xff, 0xff), 12, True)
-        self.write("%i" % (len(self.track.a1)), (x+535, y+3), (0xFF, 0xFE, 0xE0), 12, True)
+        self.write("A1s:", (x+545, y+3), (0xff, 0xff, 0xff), 12, True)
+        self.write("%i" % (len(self.track.a1)), (x+580, y+3), (0xFF, 0xFE, 0xE0), 12, True)
 
     # -------------------------------------------------------------------
     def draw_hist(self, x, y, w, h):
@@ -360,8 +364,13 @@ class WDA:
         self.write("MRG-", (x+116, y+8), (0,0,0), 12, True, (0x8d, 0x7D, 0xFF))
         self.write("MRG+", (x+168, y+8), (0,0,0), 12, True, (0x8d, 0x7D, 0xFF))
 
-        pygame.draw.rect(self.screen, (0xE2, 0x70, 0xFF), (x+210, y+2, 100, h-4))
-        self.write("UPDATE", (x+234, y+8), (0,0,0), 12, True, (0xE2, 0x70, 0xFF))
+        pygame.draw.rect(self.screen, (0xba, 0x70, 0xFF), (x+210, y+2, 50, h-4))
+        pygame.draw.rect(self.screen, (0xba, 0x70, 0xFF), (x+262, y+2, 50, h-4))
+        self.write("OFS-", (x+220, y+8), (0,0,0), 12, True, (0xba, 0x70, 0xFF))
+        self.write("OFS+", (x+272, y+8), (0,0,0), 12, True, (0xba, 0x70, 0xFF))
+
+        pygame.draw.rect(self.screen, (0xE2, 0x70, 0xFF), (x+314, y+2, 100, h-4))
+        self.write("UPDATE", (x+334, y+8), (0,0,0), 12, True, (0xE2, 0x70, 0xFF))
 
     # -------------------------------------------------------------------
     def draw_nav(self, offset, x, y, w, h):
@@ -397,7 +406,7 @@ class WDA:
                     self.draw_wave(offset, 1, 123, self.win_w-2, 100)
                     self.draw_nav(offset, 1, 224, self.win_w-2, 20)
                 # controls
-                if ev.pos[1] > 245 and ev.pos[1] < 275 and ev.pos[0] < 310:
+                if ev.pos[1] > 245 and ev.pos[1] < 275 and ev.pos[0] < 414:
                     if ev.pos[0] > 2 and ev.pos[0] < 50:
                         self.clk -= 1
                     if ev.pos[0] > 54 and ev.pos[0] < 104:
@@ -406,8 +415,12 @@ class WDA:
                         self.clk_margin -= 1
                     if ev.pos[0] > 158 and ev.pos[0] < 208:
                         self.clk_margin += 1
-                    if ev.pos[0] > 210 and ev.pos[0] < 310:
-                        self.track.analyze(self.clk, self.clk_margin)
+                    if ev.pos[0] > 210 and ev.pos[0] < 260:
+                        self.clk_offset -= 1
+                    if ev.pos[0] > 262 and ev.pos[0] < 312:
+                        self.clk_offset += 1
+                    if ev.pos[0] > 314 and ev.pos[0] < 412:
+                        self.track.analyze(self.clk, self.clk_margin, self.clk_offset)
                     self.draw_info(1, 1, self.win_w-2, 20)
                     self.draw_wave(offset, 1, 123, self.win_w-2, 100)
                     self.draw_nav(offset, 1, 224, self.win_w-2, 20)
@@ -452,7 +465,7 @@ class WDA:
 # ---- MAIN --------------------------------------------------------------
 # ------------------------------------------------------------------------
 
-wda = WDA("dump--1--000--3.wds")
+wda = WDA("dump--1--000--0.wds")
 wda.run()
 
 # vim: tabstop=4 expandtab shiftwidth=4 softtabstop=4
