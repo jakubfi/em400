@@ -17,11 +17,10 @@ class Track:
             res = sector.feed(s)
 
             if res == State.DONE:
-                print "Sector %d done" % (len(self.sectors)+1)
+                print "Sector %2d: %3d/%d/%2d CRC header: %s, CRC data: %s, BAD: %s" % (len(self.sectors)+1, sector.cylinder, sector.head, sector.sector, str(sector.head_crc_ok), str(sector.head_crc_ok), str(sector.bad))
                 self.sectors.append(sector)
                 sector = Sector()
                 if len(self.sectors) == sectors:
-                    print "Got %d sectors, that's it!" % sectors
                     break
 
             elif res == State.FAILED:
@@ -34,3 +33,5 @@ class Track:
         for s in self.sectors:
             s.get_data()
 
+
+# vim: tabstop=4 expandtab shiftwidth=4 softtabstop=4

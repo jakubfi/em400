@@ -210,7 +210,7 @@ class mfm_track:
                 pass
             count += 1
             try:
-                data, crcok = self.read_bytes(self.a1[count]+1, 512 + 3)
+                data, crcok = self.read_bytes(self.a1[count]+1, 512 + 5)
                 print ''.join(map(chr,data))
                 print "---- CRC: %s --------------------------------------------------------" % str(crcok)
             except Exception, e:
@@ -226,7 +226,7 @@ class WDA:
         self.fname = fname
         self.quit = 0
         self.win_w = 1200
-        self.win_h = 277
+        self.win_h = 297
 
         self.clk = 12
         self.clk_margin = 2
@@ -302,7 +302,7 @@ class WDA:
             elif self.track.samples[pos][2] == 2:
                 a1 = False
             if a1:
-                line(self.screen, x+sx+5, y+3, x+sx+5, y+42, (0xA6, 0x1B, 0x9A))
+                line(self.screen, x+sx+5, y+23, x+sx+5, y+62, (0xA6, 0x1B, 0x9A))
 
             # draw bit cells
             if self.track.samples[pos][3] == 1:
@@ -313,17 +313,20 @@ class WDA:
                 cell = 0
             if cell:
                 cc = 50 * (cell%2) + 0x50
-                line(self.screen, x+sx+5, y+3, x+sx+5, y+42, (cc,cc,cc))
+                line(self.screen, x+sx+5, y+23, x+sx+5, y+62, (cc,cc,cc))
 
             # draw clock ticks
             if self.track.samples[pos][1]:
-                line(self.screen, x+sx+5, y+38, x+sx+5, y+41, (0x29, 0xFF, 0xEA))
-                self.write("%i" % self.track.samples[pos][0], (x+sx+3, y+42), (255,255,255), 10, False)
+                if ((pos/10)%10) == 0:
+                    line(self.screen, x+sx+5, y+11, x+sx+5, y+21, (0x29, 0xFF, 0xEA))
+                    self.write("%i" % (pos/10), (x+sx+5, y+5), (255,255,255), 10, False)
+                line(self.screen, x+sx+5, y+58, x+sx+5, y+61, (0x29, 0xFF, 0xEA))
+                self.write("%i" % self.track.samples[pos][0], (x+sx+3, y+62), (255,255,255), 10, False)
 
             # draw bit values
             if self.track.samples[pos][4]:
-                line(self.screen, x+sx+5, y+54, x+sx+5, y+71, (0xFF, 0xf5, 0x70))
-                self.write("%i" % self.track.samples[pos][5], (x+sx-6, y+57), (255,255,255), 12, False)
+                line(self.screen, x+sx+5, y+74, x+sx+5, y+91, (0xFF, 0xf5, 0x70))
+                self.write("%i" % self.track.samples[pos][5], (x+sx-6, y+77), (255,255,255), 12, False)
 
             # draw byte values
             if self.track.samples[pos][6]:
@@ -332,17 +335,17 @@ class WDA:
                     color = (0x00, 0xff, 0x00)
                 if self.track.samples[pos][8] == 2:
                     color = (0xff, 0x00, 0x00)
-                line(self.screen, x+sx+5, y+54, x+sx+5, y+91, color)
+                line(self.screen, x+sx+5, y+74, x+sx+5, y+111, color)
                 if self.track.samples[pos][7] != 0:
                     ch = chr(self.track.samples[pos][7])
                 else:
                     ch = " "
-                self.write("0x%02x %s" % (self.track.samples[pos][7], ch), (x+sx-46, y+77), (255,255,255), 12, True)
+                self.write("0x%02x %s" % (self.track.samples[pos][7], ch), (x+sx-46, y+97), (255,255,255), 12, True)
 
             # draw waveform
             sy = 30 + self.track.samples[pos][0]*-30
             if (ox!=0) or (oy!=0):
-                line(self.screen, x+ox+5, y+oy+6, x+sx+5, y+sy+6, (255,255,255))
+                line(self.screen, x+ox+5, y+oy+26, x+sx+5, y+sy+26, (255,255,255))
 
             ox = sx+1
             oy = sy
@@ -391,22 +394,22 @@ class WDA:
 
         self.draw_info(1, 1, self.win_w-2, 20)
         self.draw_hist(1, 22, self.win_w-2, 100)
-        self.draw_wave(offset, 1, 123, self.win_w-2, 100)
-        self.draw_nav(offset, 1, 224, self.win_w-2, 20)
-        self.draw_controls(1, 245, self.win_w-2, 30)
+        self.draw_wave(offset, 1, 123, self.win_w-2, 120)
+        self.draw_nav(offset, 1, 244, self.win_w-2, 20)
+        self.draw_controls(1, 265, self.win_w-2, 30)
         while not self.quit:
             ev = pygame.event.wait()
             # mouse down
             if ev.type == 5:
                 # wave drag
-                if ev.pos[1] > 123 and ev.pos[1] < 223:
+                if ev.pos[1] > 123 and ev.pos[1] < 243:
                     drag = 1
-                if ev.pos[1] > 224 and ev.pos[1] < 244:
+                if ev.pos[1] > 244 and ev.pos[1] < 264:
                     offset = (ev.pos[0]-6) * (len(self.track.samples) / (self.win_w-2-1-10))
-                    self.draw_wave(offset, 1, 123, self.win_w-2, 100)
-                    self.draw_nav(offset, 1, 224, self.win_w-2, 20)
+                    self.draw_wave(offset, 1, 123, self.win_w-2, 120)
+                    self.draw_nav(offset, 1, 244, self.win_w-2, 20)
                 # controls
-                if ev.pos[1] > 245 and ev.pos[1] < 275 and ev.pos[0] < 414:
+                if ev.pos[1] > 265 and ev.pos[1] < 295 and ev.pos[0] < 414:
                     if ev.pos[0] > 2 and ev.pos[0] < 50:
                         self.clk -= 1
                     if ev.pos[0] > 54 and ev.pos[0] < 104:
@@ -422,8 +425,8 @@ class WDA:
                     if ev.pos[0] > 314 and ev.pos[0] < 412:
                         self.track.analyze(self.clk, self.clk_margin, self.clk_offset)
                     self.draw_info(1, 1, self.win_w-2, 20)
-                    self.draw_wave(offset, 1, 123, self.win_w-2, 100)
-                    self.draw_nav(offset, 1, 224, self.win_w-2, 20)
+                    self.draw_wave(offset, 1, 123, self.win_w-2, 120)
+                    self.draw_nav(offset, 1, 244, self.win_w-2, 20)
             # mouse up
             if ev.type == 6:
                 drag = 0
@@ -432,8 +435,8 @@ class WDA:
                 offset -= ev.rel[0]
                 if offset < 0:
                     offset = 0
-                self.draw_wave(offset, 1, 123, self.win_w-2, 100)
-                self.draw_nav(offset, 1, 224, self.win_w-2, 20)
+                self.draw_wave(offset, 1, 123, self.win_w-2, 120)
+                self.draw_nav(offset, 1, 244, self.win_w-2, 20)
             # key down
             if ev.type == 2:
                 if ev.key == 292:
@@ -454,8 +457,8 @@ class WDA:
                 if ev.key == 279:
                     offset = len(self.track.samples) - self.win_w
 
-                self.draw_wave(offset, 1, 123, self.win_w-2, 100)
-                self.draw_nav(offset, 1, 224, self.win_w-2, 20)
+                self.draw_wave(offset, 1, 123, self.win_w-2, 120)
+                self.draw_nav(offset, 1, 244, self.win_w-2, 20)
 
             #print ev
             pygame.display.flip()
@@ -465,7 +468,7 @@ class WDA:
 # ---- MAIN --------------------------------------------------------------
 # ------------------------------------------------------------------------
 
-wda = WDA("dump--1--214--3.wds")
+wda = WDA("dump--1--000--0.wds")
 wda.run()
 
 # vim: tabstop=4 expandtab shiftwidth=4 softtabstop=4

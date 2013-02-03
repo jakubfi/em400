@@ -6,7 +6,7 @@ class MFMData:
     # --------------------------------------------------------------------
     def __init__(self, wds_file):
         samples = Samples(wds_file)
-	clock_finder = MFMClockGen(12, 2, 0)
+        clock_finder = MFMClockGen(11, 2, 0)
         self.data = clock_finder.run(samples)
         self.pos = 0
         self.clock_period = float(self.data[len(self.data)-1][0]) / len(self.data)
@@ -45,7 +45,7 @@ class MFMClockGen:
 
         self.last_clock = -100
 
-        print "Creating MFMClockGen, clock len: %d, margin: %d, offset: %d" % (self.c_period, self.c_margin, self.c_offset)
+        print "MFMClockGen: clock len: %d, margin: %d, offset: %d" % (self.c_period, self.c_margin, self.c_offset)
 
     # --------------------------------------------------------------------
     def add_clock(self, ticks, t, v):
@@ -79,3 +79,5 @@ class MFMClockGen:
 
         return ticks
 
+
+# vim: tabstop=4 expandtab shiftwidth=4 softtabstop=4
