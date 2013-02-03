@@ -91,13 +91,13 @@ class ByteReader:
     # --------------------------------------------------------------------
     def feed(self, (t,v)):
 
-        # ignore odd bits (clock)
+        # skip odd bits (clock)
         if self.bit_odd:
             self.bit_odd = 0
             return State.COOKING
         self.bit_odd = 1
 
-        # shift even bits (data)
+        # shift in even bits (data)
         self.bytes[self.byte_pos] |= (v << self.bit_pos)
 
         self.bit_pos -= 1
@@ -183,7 +183,7 @@ class Sector:
     # --------------------------------------------------------------------
     def callback_head_crc(self, arg):
         crc_read = arg[0]*256 + arg[1]
-        crc_computed = self.crc16_alg.table_driven(''.join(map(chr,self.crc_head_buf)))
+        crc_computed = self.crc16_alg.table_driven(''.join([chr(x) for x in self.crc_head_buf]))
         if crc_read == crc_computed:
             self.head_crc_ok = True
 
@@ -203,7 +203,7 @@ class Sector:
     # --------------------------------------------------------------------
     def callback_data_crc(self, arg):
         crc_read = arg[0]*16777216 + arg[1]*65536 + arg[2]*256 + arg[3]
-        crc_computed = self.crc32_alg.table_driven(''.join(map(chr,self.crc_data_buf)))
+        crc_computed = self.crc32_alg.table_driven(''.join([chr(x) for x in self.crc_data_buf]))
         if crc_read == crc_computed:
             self.data_crc_ok = True
         

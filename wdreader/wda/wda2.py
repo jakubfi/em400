@@ -27,10 +27,7 @@ class DiskImage:
 # ---- MAIN --------------------------------------------------------------
 # ------------------------------------------------------------------------
 
-head = int(sys.argv[1])
-
-for i in range(615):
-    track = Track("dump--1--%03d--%d.wds" % (i, head), 17)
+track = Track("dump--1--000--0.wds", 17)
 #disk = DiskImage("dump", 615, 4, 17)
 
 # vim: tabstop=4 expandtab shiftwidth=4 softtabstop=4

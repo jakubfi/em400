@@ -152,7 +152,7 @@ class mfm_track:
                 if b > 2:
                     data.append(char)
                 elif b == 2:
-                    crc = self.crc.table_driven(''.join(map(chr,data)))
+                    crc = self.crc.table_driven(''.join([chr(x) for x in data]))
                     print "%x" % crc
                     if char == (crc & 0xff00) >> 8:
                         self.samples[clk2][8] = 1
@@ -203,7 +203,7 @@ class mfm_track:
         while count < len(self.a1):
             try:
                 data, crcok = self.read_bytes(self.a1[count]+1, 6)
-                print ''.join(map(chr,data))
+                print ''.join([chr(x) for x in data])
                 print "---- CRC: %s --------------------------------------------------------" % str(crcok)
             except Exception, e:
                 print str(e)
@@ -211,7 +211,7 @@ class mfm_track:
             count += 1
             try:
                 data, crcok = self.read_bytes(self.a1[count]+1, 512 + 5)
-                print ''.join(map(chr,data))
+                print ''.join([chr(x) for x in data])
                 print "---- CRC: %s --------------------------------------------------------" % str(crcok)
             except Exception, e:
                 print str(e)
