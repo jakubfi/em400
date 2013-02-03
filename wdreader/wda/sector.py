@@ -1,3 +1,21 @@
+#  Copyright (c) 2013 Jakub Filipowicz <jakubf@gmail.com>
+#
+#  This program is free software; you can redistribute it and/or modify
+#  it under the terms of the GNU General Public License as published by
+#  the Free Software Foundation; either version 2 of the License, or
+#  (at your option) any later version.
+#
+#  This program is distributed in the hope that it will be useful,
+#  but WITHOUT ANY WARRANTY; without even the implied warranty of
+#  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#  GNU General Public License for more details.
+#
+#  You should have received a copy of the GNU General Public License
+#  along with this program; if not, write to the Free Software
+#  Foundation, Inc.,
+#  51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
+
+
 import crc_algorithms
 
 # ------------------------------------------------------------------------
@@ -124,7 +142,9 @@ class Sector:
     SYNC = [1, 0] * (10*8)
 
     # --------------------------------------------------------------------
-    def __init__(self):
+    def __init__(self, sector_size):
+        self.sector_size = sector_size
+
         self.crc_head_buf = []
         self.crc_data_buf = []
         self.crc16_alg = crc_algorithms.Crc(width = 16, poly = 0x1021, reflect_in = False, xor_in = 0xffff, reflect_out = False, xor_out = 0x0000);
@@ -150,7 +170,7 @@ class Sector:
             BitSeqFinder("Data Sync", Sector.SYNC, 3*8*2, self.callback_none),
             BitSeqFinder("Data A1", Sector.A1, 3*8*2, self.callback_data_a1),
             ByteReader("Data marker", 1, self.callback_data_marker),
-            ByteReader("Data", 512, self.callback_data_data),
+            ByteReader("Data", sector_size, self.callback_data_data),
             ByteReader("Data CRC", 4, self.callback_data_crc),
             Skipper("Gap", 16*8*2),
             Looper()
@@ -215,18 +235,18 @@ class Sector:
     def feed(self, s):
         result = self.layout[self.phase].feed(s)
 
-	# Phase is done, but we're still cooking
+        # Phase is done, but we're still cooking
         if result == State.DONE:
             self.phase += 1
             return State.COOKING
 
-	# Phase failed, cooking failed
+        # Phase failed, cooking failed
         elif result == State.FAILED:
             print "Failed at: %s" % (self.layout[self.phase].name)
             self.phase = 0
             return State.FAILED
 
-	# Last phase done, loop over and return success!
+        # Last phase done, loop over and return success!
         elif result == State.LOOP_END:
             phase = 0
             return State.DONE
