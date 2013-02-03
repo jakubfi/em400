@@ -34,6 +34,6 @@ from track import *
 
 track = Track("dump--1--000--3.wds", 17, 512)
 for sector in track:
-    print sector
+    print "sector len: %d" % len(sector)
 
 # vim: tabstop=4 expandtab shiftwidth=4 softtabstop=4
