@@ -16,6 +16,7 @@ extern struct data_t *data_last;
 extern struct data_t *data_head;
 
 extern int data_counter;
+extern bool device_error;
 
 extern pthread_mutex_t dcount_mutex;
 extern pthread_cond_t dcount_cv;

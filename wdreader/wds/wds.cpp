@@ -4,6 +4,7 @@
 #include <string.h>
 #include <fcntl.h>
 #include <unistd.h>
+#include <time.h>
 #include <readline/readline.h>
 #include <readline/history.h>
 
@@ -74,28 +75,31 @@ int process_data(struct data_t *input, U8 *output)
 // -----------------------------------------------------------------------
 bool read_track(char *session, int drive, int cylinder, int head)
 {
+	static U8 *output_data;
+	if (!output_data) output_data = (U8*) malloc(10000000);
 	data_counter = 0;
+
+	if (device_error) {
+		return false;
+	}
 
 	// start reading data
 	dev->ReadStart();
 
 	// wait for at least two full disk revolutions
 	pthread_mutex_lock(&dcount_mutex);
-	while (data_counter < 7000000) {
+	while ((data_counter < 7000000) && !device_error) {
 		pthread_cond_wait(&dcount_cv, &dcount_mutex);
 	}
 	pthread_mutex_unlock(&dcount_mutex);
 
-	// done reading
+	// stop reading and wait for Logic to stop streaming
 	dev->Stop();
 	while (dev->IsStreaming()) usleep(100);
 
-	static U8 *output_data;
-	if (!output_data) output_data = (U8*) malloc(10000000);
-
 	// process the data into output_data
 	int obytes = process_data(data_head, output_data);
-	if (obytes <= 0) {
+	if ((obytes <= 0) || device_error) {
 		drop_logic_buffers();
 		return false;
 	}
@@ -117,6 +121,79 @@ bool read_track(char *session, int drive, int cylinder, int head)
 	close(f);
 
 	drop_logic_buffers();
+	if (device_error) {
+		return false;
+	}
+	return true;
+}
+
+// -----------------------------------------------------------------------
+bool dump(int direction)
+{
+	bool res;
+
+	time_t rawtime;
+	struct tm * timeinfo;
+	char session_name[100];
+
+	// preapre session name
+	time(&rawtime);
+	timeinfo = localtime(&rawtime);
+	if (direction > 0) {
+		strftime(session_name, 99, "fwd-%Y-%m-%d-%H-%M-%S", timeinfo);
+	} else {
+		strftime(session_name, 99, "bwd-%Y-%m-%d-%H-%M-%S", timeinfo);
+	}
+	printf(" Starting session: %s\n", session_name);
+
+	// check if session is started
+	if (!session_name || !*session_name) {
+		printf(" Session name empty\n");
+		return false;
+	}
+
+	// select the drive
+	res = wdc_set_drive(1);
+	if (!res) {
+		printf(" Cannot select drive\n");
+		return false;
+	}
+	// check Logic16 status
+	if (device_error) {
+		printf(" Logic device error\n");
+		return false;
+	}
+
+	// iterate over all cylinders
+	int cyl = -1;
+	for (int c=0 ; c<615 ; c++) {
+		// mind the direction
+		if (direction != 1) {
+			cyl = 614 - c;
+		}
+
+		printf(" Dumping cylinder: %i\n", cyl);
+
+		res = wdc_seek(cyl);
+		if (!res) {
+			printf(" Seek failed");
+			return false;
+		}
+		// iterate over all tracks
+		for (int h=0 ; h<4 ; h++) {
+			res = wdc_set_head(h);
+			if (!res) {
+				printf(" Cannot set head\n");
+				return false;
+			}
+			// read the track
+			res = read_track(session_name, drive, cylinder, head);
+			if (!res) {
+				printf(" Cannot read track\n");
+				return false;
+			}
+		}
+	}
 	return true;
 }
 
@@ -184,19 +261,11 @@ int main(int argc, char **argv)
 
 		} else if (!strcmp(buf, "test")) {
 			res = read_track("test_track", drive, cylinder, head);
-		} else if (!strcmp(buf, "dump")) {
-			wdc_set_drive(1);
-			for (int c=0 ; c<615 ; c++) {
-				wdc_seek(c);
-				printf(" Dumping cylinder: %i\n", c);
-				for (int h=0 ; h<4 ; h++) {
-					wdc_set_head(h);
-					res = read_track("dump", drive, cylinder, head);
-					if (!res) break;
-				}
-				if (!res) break;
-			}
 
+		} else if (!strcmp(buf, "dump fw")) {
+			res = dump(1);
+		} else if (!strcmp(buf, "dump bw")) {
+			res = dump(-1);
 		} else {
 			printf(" Unknown command.\n");
 			res = false;

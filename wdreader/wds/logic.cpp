@@ -11,6 +11,7 @@ struct data_t *data_last;
 struct data_t *data_head;
 
 int data_counter;
+bool device_error = false;
 
 pthread_mutex_t dcount_mutex;
 pthread_cond_t dcount_cv;
@@ -71,6 +72,7 @@ void __stdcall OnReadData(U64 device_id, U8* data, U32 data_length, void* user_d
 void __stdcall OnError(U64 device_id, void* user_data)
 {
 	printf("Device error\n");
+	device_error = true;
 	// A device reported an Error. This probably means that it
 	// could not keep up at the given data rate, or was disconnected.
 	// You can re-start the capture automatically, if your application
