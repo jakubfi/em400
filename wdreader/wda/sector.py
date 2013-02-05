@@ -203,7 +203,7 @@ class Sector:
     # --------------------------------------------------------------------
     def callback_head_crc(self, arg):
         crc_read = arg[0]*256 + arg[1]
-        crc_computed = self.crc16_alg.table_driven(''.join([chr(x) for x in self.crc_head_buf]))
+        crc_computed = self.crc16_alg.bit_by_bit_fast(''.join([chr(x) for x in self.crc_head_buf]))
         if crc_read == crc_computed:
             self.head_crc_ok = True
 
@@ -234,6 +234,10 @@ class Sector:
     # --------------------------------------------------------------------
     def feed(self, s):
         result = self.layout[self.phase].feed(s)
+
+        # Still cooking, get next sample
+        if result == State.COOKING:
+            return
 
         # Phase is done, but we're still cooking
         if result == State.DONE:
