@@ -486,7 +486,18 @@ class WDA:
 # ---- MAIN --------------------------------------------------------------
 # ------------------------------------------------------------------------
 
-wda = WDA("dump--1--000--0.wds")
-wda.run()
+filename = ""
+
+try:
+    filename = sys.argv[1]
+except Exception, e:
+    print "Usage: wda.py track_image"
+    sys.exit(1)
+
+try:
+    wda = WDA(filename)
+    wda.run()
+except Exception, e:
+    print "Cannot perform the analysis: %s" % str(e)
 
 # vim: tabstop=4 expandtab shiftwidth=4 softtabstop=4

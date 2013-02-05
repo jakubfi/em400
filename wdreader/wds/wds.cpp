@@ -12,6 +12,7 @@
 #include "wdc.h"
 
 int debug;
+int shake_pattern[] = { 1, 614, 100, 500, 200, 400, 210, 390, 220, 380, 240, 360, 260, 340, 280, 320, 0 };
 
 // -----------------------------------------------------------------------
 int process_data(struct data_t *input, U8 *output)
@@ -165,11 +166,13 @@ bool dump(int direction)
 	}
 
 	// iterate over all cylinders
-	int cyl = -1;
+	int cyl;
 	for (int c=0 ; c<615 ; c++) {
 		// mind the direction
 		if (direction != 1) {
 			cyl = 614 - c;
+		} else {
+			cyl = c;
 		}
 
 		printf(" Dumping cylinder: %i\n", cyl);
@@ -261,6 +264,16 @@ int main(int argc, char **argv)
 
 		} else if (!strcmp(buf, "test")) {
 			res = read_track("test_track", drive, cylinder, head);
+		} else if (!strcmp(buf, "shake")) {
+			int *shake = shake_pattern;
+			while (*shake != 0) {
+				wdc_seek(*shake);
+				shake++;
+			}
+		} else if (!strcmp(buf, "warmup")) {
+			int c;
+			for (c=0 ; c<=614 ; c++) wdc_seek(c);
+			for (c=614 ; c>=0 ; c--) wdc_seek(c);
 
 		} else if (!strcmp(buf, "dump fw")) {
 			res = dump(1);

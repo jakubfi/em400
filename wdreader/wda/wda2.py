@@ -27,13 +27,28 @@ from track import *
 # ---- MAIN --------------------------------------------------------------
 # ------------------------------------------------------------------------
 
-#head = int(sys.argv[1])
+try:
+    name = sys.argv[1]
+except Exception, e:
+    print "Usage: wda2.py <filename.wds>|<session_name>"
+    sys.exit(1)
 
-#for i in range(615):
-#    track = Track("dump--1--%03d--%d.wds" % (i, head), 17, 512)
-
-track = Track("dump--1--000--3.wds", 17, 512)
-for sector in track:
-    print "sector len: %d" % len(sector)
+if name.endswith(".wds"):
+    print "Running analysis on single file: %s" % name
+    try:
+        track = Track(name, 17, 512)
+    except Exception, e:
+        print "Cannot load track %s for analysis. Error: %s" % (name, str(e))
+        sys.exit(1)
+    for sector in track:
+        print "sector len: %d" % len(sector)
+else:
+    print "Running analysis on WDS session: %s" % name
+    for cylinder in range(615):
+        for head in range(4):
+            track_name = "%s--1--%03d--%d.wds" % (name, cylinder, head)
+            track = Track(track_name, 17, 512)
+            for sector in track:
+                print "sector len: %d" % len(sector)
 
 # vim: tabstop=4 expandtab shiftwidth=4 softtabstop=4
