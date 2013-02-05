@@ -267,13 +267,20 @@ int main(int argc, char **argv)
 		} else if (!strcmp(buf, "shake")) {
 			int *shake = shake_pattern;
 			while (*shake != 0) {
-				wdc_seek(*shake);
+				res = wdc_seek(*shake);
+				if (!res) break;
 				shake++;
 			}
 		} else if (!strcmp(buf, "warmup")) {
 			int c;
-			for (c=0 ; c<=614 ; c++) wdc_seek(c);
-			for (c=614 ; c>=0 ; c--) wdc_seek(c);
+			for (c=0 ; c<=614 ; c++) {
+				res = wdc_seek(c);
+				if (!res) break;
+			}
+			for (c=614 ; c>=0 ; c--) {
+				wdc_seek(c);
+				if (!res) break;
+			}
 
 		} else if (!strcmp(buf, "dump fw")) {
 			res = dump(1);
