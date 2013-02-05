@@ -271,6 +271,7 @@ int main(int argc, char **argv)
 				if (!res) break;
 				shake++;
 			}
+			res = wdc_seek(0);
 		} else if (!strcmp(buf, "warmup")) {
 			int c;
 			for (c=0 ; c<=614 ; c++) {
