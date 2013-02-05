@@ -22,12 +22,11 @@ class MFMData:
 
     # --------------------------------------------------------------------
     def __init__(self, wds_file):
-        samples = Samples(wds_file)
+        self.samples = Samples(wds_file)
         clock_finder = MFMClockGen(11, 2, 0)
-        self.data = clock_finder.run(samples)
+        self.data = clock_finder.run(self.samples)
         self.pos = 0
         self.clock_period = float(self.data[len(self.data)-1][0]) / len(self.data)
-        print "Total clock ticks: %s, average clock period: %f samples" % (len(self.data), self.clock_period)
 
     # --------------------------------------------------------------------
     def period(self):
@@ -62,8 +61,6 @@ class MFMClockGen:
 
         self.last_clock = -100
 
-        print "MFMClockGen: clock len: %d, margin: %d, offset: %d" % (self.c_period, self.c_margin, self.c_offset)
-
     # --------------------------------------------------------------------
     def add_clock(self, ticks, t, v):
         # remove early inserted clocks
@@ -75,8 +72,6 @@ class MFMClockGen:
 
     # --------------------------------------------------------------------
     def run(self, samples):
-        print "Running clock analysis on MFM data (%d samples)" % (len(samples))
-
         ticks = []
         ov = 1
         t = 0

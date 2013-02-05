@@ -37,18 +37,25 @@ if name.endswith(".wds"):
     print "Running analysis on single file: %s" % name
     try:
         track = Track(name, 17, 512)
+        print "%s: samples: %d, MFM clocks: %d, clock period: %.5f, sectors: %d" % (name, len(track.data.samples), len(track.data.data), track.data.period(), len(track))
     except Exception, e:
         print "Cannot load track %s for analysis. Error: %s" % (name, str(e))
         sys.exit(1)
     for sector in track:
-        print "sector len: %d" % len(sector)
+        pass
 else:
     print "Running analysis on WDS session: %s" % name
     for cylinder in range(615):
         for head in range(4):
             track_name = "%s--1--%03d--%d.wds" % (name, cylinder, head)
-            track = Track(track_name, 17, 512)
+            try:
+                track = Track(track_name, 17, 512)
+                print "%s: samples: %d, MFM clocks: %d, clock period: %.5f, sectors: %d" % (track_name, len(track.data.samples), len(track.data.data), track.data.period(), len(track))
+                sys.stdout.flush()
+            except Exception, e:
+                print "Cannot run analysis on file: %s. Error: %s" % (track_name, str(e))
+                sys.exit(1)
             for sector in track:
-                print "sector len: %d" % len(sector)
+                pass
 
 # vim: tabstop=4 expandtab shiftwidth=4 softtabstop=4

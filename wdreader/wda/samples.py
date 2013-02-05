@@ -21,11 +21,9 @@ class Samples:
 
     # --------------------------------------------------------------------
     def __init__(self, wds_file):
-        print "Loading wds file: %s" % wds_file
         wds_f = open(wds_file, "r")
         self.data = bytearray(wds_f.read())
         wds_f.close()
-        print "Bytes loaded: %d" % len(self.data)
 
         self.byte_pos = 0
         self.bit_pos = 7

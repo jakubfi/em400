@@ -31,14 +31,13 @@ class Track:
 
         self.data = MFMData(wds_file)
 
-        print "Cooking sectors (%d bytes each)..." % self.sector_size
-
         sector = Sector(self.sector_size)
         for s in self.data:
             res = sector.feed(s)
 
             if res == State.DONE:
-                print "Sector %2d: %3d/%d/%2d CRC header: %s, CRC data: %s, BAD: %s" % (len(self.sectors)+1, sector.cylinder, sector.head, sector.sector, str(sector.head_crc_ok), str(sector.data_crc_ok), str(sector.bad))
+                if not sector.head_crc_ok or not sector.data_crc_ok:
+                    print "Sector %2d: %3d/%d/%2d CRC header: %s, CRC data: %s, BAD: %s" % (len(self.sectors)+1, sector.cylinder, sector.head, sector.sector, str(sector.head_crc_ok), str(sector.data_crc_ok), str(sector.bad))
                 self.sectors[sector.sector] = sector
                 sector = Sector(self.sector_size)
                 if len(self.sectors) == self.sectors_per_track:
