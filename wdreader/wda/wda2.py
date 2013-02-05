@@ -20,42 +20,58 @@
 
 
 import sys
+import re
 from track import *
+
+
+# ------------------------------------------------------------------------
+def process_file(file_name):
+    try:
+        track = Track(file_name, 17, 512)
+    except Exception, e:
+        print "Cannot load track %s for analysis. Error: %s" % (file_name, str(e))
+
+    # write sector image to a file
+    out_file = file_name.replace(".wds", ".img")
+    outf = open(out_file, "w")
+    for sector in track:
+        outf.write(''.join([chr(x) for x in sector]))
+    outf.close()
+    print "%s: %d samples, %d clocks (period: %8.5f) %d sectors -> %s" % (re.sub(".*/", "", file_name), len(track.data.samples), len(track.data.data), track.data.period(), len(track), re.sub(".*/", "", out_file))
 
 
 # ------------------------------------------------------------------------
 # ---- MAIN --------------------------------------------------------------
 # ------------------------------------------------------------------------
 
-try:
-    name = sys.argv[1]
-except Exception, e:
-    print "Usage: wda2.py <filename.wds>|<session_name>"
-    sys.exit(1)
+session_name = None
+file_name = None
+heads = [0, 1, 2, 3]
 
-if name.endswith(".wds"):
-    print "Running analysis on single file: %s" % name
-    try:
-        track = Track(name, 17, 512)
-        print "%s: samples: %d, MFM clocks: %d, clock period: %.5f, sectors: %d" % (name, len(track.data.samples), len(track.data.data), track.data.period(), len(track))
-    except Exception, e:
-        print "Cannot load track %s for analysis. Error: %s" % (name, str(e))
-        sys.exit(1)
-    for sector in track:
-        pass
+# parse command line
+
+if len(sys.argv) < 2:
+    print "Usage: wda2.py <filename.wds>|<session_name [head]>"
+    sys.exit(1)
+if sys.argv[1].endswith(".wds"):
+    file_name = sys.argv[1]
 else:
-    print "Running analysis on WDS session: %s" % name
+    session_name = sys.argv[1]
+    if len(sys.argv) == 3:
+        heads = [int(x) for x in sys.argv[2].split(',')]
+
+# single-file run
+if file_name is not None:
+    print "Running analysis on single file: %s" % file_name
+    process_file(file_name)
+
+# session run
+else:
+    print "Running analysis on WDS session: %s, heads: %s" % (session_name, ','.join([str(x) for x in heads]))
     for cylinder in range(615):
-        for head in range(4):
-            track_name = "%s--1--%03d--%d.wds" % (name, cylinder, head)
-            try:
-                track = Track(track_name, 17, 512)
-                print "%s: samples: %d, MFM clocks: %d, clock period: %.5f, sectors: %d" % (track_name, len(track.data.samples), len(track.data.data), track.data.period(), len(track))
-                sys.stdout.flush()
-            except Exception, e:
-                print "Cannot run analysis on file: %s. Error: %s" % (track_name, str(e))
-                sys.exit(1)
-            for sector in track:
-                pass
+        for head in heads:
+            file_name = "%s--1--%03d--%d.wds" % (session_name, cylinder, head)
+            process_file(file_name)
+
 
 # vim: tabstop=4 expandtab shiftwidth=4 softtabstop=4
