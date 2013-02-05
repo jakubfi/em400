@@ -170,6 +170,8 @@ bool dump(int direction)
 		// mind the direction
 		if (direction != 1) {
 			cyl = 614 - c;
+		} else {
+			cyl = c;
 		}
 
 		printf(" Dumping cylinder: %i\n", cyl);

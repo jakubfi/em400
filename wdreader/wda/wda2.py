@@ -32,7 +32,7 @@ from track import *
 #for i in range(615):
 #    track = Track("dump--1--%03d--%d.wds" % (i, head), 17, 512)
 
-track = Track("dump--1--000--3.wds", 17, 512)
+track = Track("test_track--1--000--0.wds", 17, 512)
 for sector in track:
     print "sector len: %d" % len(sector)
 
