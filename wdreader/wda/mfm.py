@@ -15,22 +15,20 @@
 #  Foundation, Inc.,
 #  51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 
-from samples import *
+from wdsfile import *
 
 # ------------------------------------------------------------------------
 class MFMData:
 
     # --------------------------------------------------------------------
-    def __init__(self, wds_file):
-        self.samples = Samples(wds_file)
-        clock_finder = MFMClockGen(11, 2, 0)
-        self.data = clock_finder.run(self.samples)
+    def __init__(self, wds_file_name, clock_gen):
+        self.samples = WDSFile(wds_file_name)
+        self.data = clock_gen.run(self.samples)
         self.pos = 0
-        self.clock_period = float(self.data[len(self.data)-1][0]) / len(self.data)
 
     # --------------------------------------------------------------------
     def period(self):
-        return self.clock_period
+        return float(len(self.samples)) / len(self.data)
 
     # --------------------------------------------------------------------
     def __iter__(self):

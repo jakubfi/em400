@@ -18,16 +18,16 @@
 #  Foundation, Inc.,
 #  51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 
-
 import sys
 import re
 from track import *
-
+from mfm import *
 
 # ------------------------------------------------------------------------
 def process_file(file_name):
     try:
-        track = Track(file_name, 17, 512)
+        track = Track(file_name, MFMClockGen(11, 2, 0), 17, 512)
+        track.analyze()
     except Exception, e:
         print "Cannot load track %s for analysis. Error: %s" % (file_name, str(e))
 

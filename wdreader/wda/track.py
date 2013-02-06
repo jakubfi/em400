@@ -15,7 +15,6 @@
 #  Foundation, Inc.,
 #  51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 
-
 from mfm import *
 from sector import *
 
@@ -23,25 +22,30 @@ from sector import *
 class Track:
 
     # --------------------------------------------------------------------
-    def __init__(self, wds_file, sectors_per_track, sector_size):
+    def __init__(self, wds_file, clock_gen, sectors_per_track, sector_size):
         self.sectors_per_track = sectors_per_track
         self.sector_size = sector_size
         self.sectors = {}
         self.iter_pos = 0
 
-        self.data = MFMData(wds_file)
+        self.data = MFMData(wds_file, clock_gen)
 
+    # --------------------------------------------------------------------
+    def analyze(self):
         sector = Sector(self.sector_size)
         for s in self.data:
             res = sector.feed(s)
 
             if res == State.DONE:
                 if not sector.head_crc_ok or not sector.data_crc_ok:
-                    print "Sector %2d: %3d/%d/%2d CRC header: %s, CRC data: %s, BAD: %s" % (len(self.sectors)+1, sector.cylinder, sector.head, sector.sector, str(sector.head_crc_ok), str(sector.data_crc_ok), str(sector.bad))
+                    print "CRC error: %3d/%d/%2d CRC header: %s, CRC data: %s, BAD: %s" % (sector.cylinder, sector.head, sector.sector, str(sector.head_crc_ok), str(sector.data_crc_ok), str(sector.bad))
+
                 self.sectors[sector.sector] = sector
-                sector = Sector(self.sector_size)
+
                 if len(self.sectors) == self.sectors_per_track:
                     break
+                else:
+                    sector = Sector(self.sector_size)
 
             elif res == State.FAILED:
                 print "Cooking sector failed"
@@ -58,7 +62,7 @@ class Track:
 
     # --------------------------------------------------------------------
     def next(self):
-        if self.iter_pos >= self.sectors_per_track:
+        if self.iter_pos >= len(self.sectors):
             raise StopIteration
         else:
             self.iter_pos += 1

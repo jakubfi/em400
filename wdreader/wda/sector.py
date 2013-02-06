@@ -15,7 +15,6 @@
 #  Foundation, Inc.,
 #  51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 
-
 import crc_algorithms
 
 # ------------------------------------------------------------------------
@@ -24,6 +23,7 @@ class State:
     COOKING = 1
     DONE = 2
     LOOP_END = 3
+
 
 # ------------------------------------------------------------------------
 class Looper:
@@ -35,6 +35,7 @@ class Looper:
     # -------------------------------------------------------------------
     def feed(self, s):
         return State.LOOP_END
+
 
 # ------------------------------------------------------------------------
 class Skipper:
@@ -54,6 +55,7 @@ class Skipper:
             return State.DONE
         else:
             return State.COOKING
+
 
 # ------------------------------------------------------------------------
 class BitSeqFinder:
@@ -92,6 +94,7 @@ class BitSeqFinder:
         self.clock_tick += 1
 
         return State.COOKING
+
 
 # ------------------------------------------------------------------------
 class ByteReader:
@@ -134,6 +137,7 @@ class ByteReader:
                 self.bit_pos = 7
                 self.bytes.append(0)
                 return State.COOKING
+
 
 # ------------------------------------------------------------------------
 class Sector:

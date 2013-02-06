@@ -18,7 +18,6 @@
 #  Foundation, Inc.,
 #  51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 
-
 import pygame, sys, os
 from pygame.locals import *
 from pygame.gfxdraw import *

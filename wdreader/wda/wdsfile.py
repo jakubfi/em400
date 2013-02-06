@@ -15,13 +15,12 @@
 #  Foundation, Inc.,
 #  51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 
-
 # ------------------------------------------------------------------------
-class Samples:
+class WDSFile:
 
     # --------------------------------------------------------------------
-    def __init__(self, wds_file):
-        wds_f = open(wds_file, "r")
+    def __init__(self, wds_file_name):
+        wds_f = open(wds_file_name, "r")
         self.data = bytearray(wds_f.read())
         wds_f.close()
 
