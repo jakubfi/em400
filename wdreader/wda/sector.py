@@ -36,6 +36,10 @@ class Looper:
     def feed(self, s):
         return State.LOOP_END
 
+    # -------------------------------------------------------------------
+    def last(self, bit):
+        pass
+
 
 # ------------------------------------------------------------------------
 class Skipper:
@@ -55,6 +59,10 @@ class Skipper:
             return State.DONE
         else:
             return State.COOKING
+
+    # -------------------------------------------------------------------
+    def last(self, bit):
+        pass
 
 
 # ------------------------------------------------------------------------
@@ -95,6 +103,10 @@ class BitSeqFinder:
 
         return State.COOKING
 
+    # -------------------------------------------------------------------
+    def last(self, bit):
+        pass
+
 
 # ------------------------------------------------------------------------
 class ByteReader:
@@ -108,18 +120,32 @@ class ByteReader:
         self.byte_pos = 0
         self.bit_pos = 7
         self.bit_odd = 1
+        self.last_bit = -1
+        self.clock = 0
 
     # --------------------------------------------------------------------
     def feed(self, (t,v)):
 
         # skip odd bits (clock)
         if self.bit_odd:
+            self.clock = v
             self.bit_odd = 0
             return State.COOKING
+
         self.bit_odd = 1
+
+        # check for illegal MFM bits
+        if (v == 1) and (self.clock == 1):
+            print "MFM illegal cell: 11"
+        elif v == 0:
+            if (self.clock == 0) and (self.last_bit == 0):
+                print "MFM illegal cell: 00 after 0"
+            elif (self.clock == 1) and (self.last_bit == 1):
+                print "MFM illegal cell: 10 after 1"
 
         # shift in even bits (data)
         self.bytes[self.byte_pos] |= (v << self.bit_pos)
+        self.last_bit = v
 
         self.bit_pos -= 1
 
@@ -138,6 +164,10 @@ class ByteReader:
                 self.bytes.append(0)
                 return State.COOKING
 
+    # -------------------------------------------------------------------
+    def last(self, bit):
+        self.last_bit = bit
+
 
 # ------------------------------------------------------------------------
 class Sector:
@@ -149,6 +179,7 @@ class Sector:
     def __init__(self, sector_size):
         self.sector_size = sector_size
 
+        self.last_bit = 0
         self.crc_head_buf = []
         self.crc_data_buf = []
         self.crc16_alg = crc_algorithms.Crc(width = 16, poly = 0x1021, reflect_in = False, xor_in = 0xffff, reflect_out = False, xor_out = 0x0000);
@@ -183,10 +214,12 @@ class Sector:
     # --------------------------------------------------------------------
     def callback_head_a1(self, arg):
         self.crc_head_buf = [ 0xa1 ]
+        self.last_bit = 1
         
     # --------------------------------------------------------------------
     def callback_head_data(self, arg):
         self.crc_head_buf += arg
+        self.last_bit = arg[len(arg)-1] & 1
 
         if arg[0] == 0xfe:
             cyl_msb = 0
@@ -214,14 +247,17 @@ class Sector:
     # --------------------------------------------------------------------
     def callback_data_a1(self, arg):
         self.crc_data_buf = [ 0xa1 ]
+        self.last_bit = 1
         
     # --------------------------------------------------------------------
     def callback_data_marker(self, arg):
         self.crc_data_buf += arg
+        self.last_bit = arg[len(arg)-1] & 1
 
     # --------------------------------------------------------------------
     def callback_data_data(self, arg):
         self.crc_data_buf += arg
+        self.last_bit = arg[len(arg)-1] & 1
         self.data = arg
         
     # --------------------------------------------------------------------
@@ -246,6 +282,7 @@ class Sector:
         # Phase is done, but we're still cooking
         if result == State.DONE:
             self.phase += 1
+            self.layout[self.phase].last(self.last_bit)
             return State.COOKING
 
         # Phase failed, cooking failed
