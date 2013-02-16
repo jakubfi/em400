@@ -208,7 +208,9 @@ unsigned char wdc_seek(unsigned int cyl)
 	if (drv_selected == 0) return RET_ERR;
 
 	// requested cylinder out of bounds
-	if ((cyl < CYL_MIN) || (cyl > CYL_MAX)) return RET_ERR;
+	if (cyl < CYL_MIN) return RET_ERR;
+	// commented out to allow heads parking
+	// if (cyl > CYL_MAX) return RET_ERR;
 
 	int delta = cyl - cylinder[drv_selected];
 
