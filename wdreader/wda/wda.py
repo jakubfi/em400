@@ -227,7 +227,7 @@ class mfm_track:
                 pass
             count += 1
             try:
-                data, crcok = self.read_bytes(self.a1[count]+1, 512 + 5)
+                data, crcok = self.read_bytes(self.a1[count]+1, 512 + 3)
                 print ''.join([chr(x) for x in data])
                 print "---- CRC: %s --------------------------------------------------------" % str(crcok)
             except Exception, e:
@@ -245,7 +245,7 @@ class WDA:
         self.win_w = 1200
         self.win_h = 297
 
-        self.clk = 12
+        self.clk = 11
         self.clk_margin = 2
         self.clk_offset = 0
         self.track = mfm_track(self.fname)

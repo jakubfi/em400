@@ -22,17 +22,19 @@ from sector import *
 class Track:
 
     # --------------------------------------------------------------------
-    def __init__(self, wds_file, clock_gen, sectors_per_track, sector_size):
+    def __init__(self, wds_file, clock_gen, sector_class, sectors_per_track, sector_size):
         self.sectors_per_track = sectors_per_track
         self.sector_size = sector_size
         self.sectors = {}
-        self.iter_pos = 0
+        self.sector_min = 666
+        self.iter_pos = self.sector_min
+        self.sector_class = sector_class
 
         self.data = MFMData(wds_file, clock_gen)
 
     # --------------------------------------------------------------------
     def analyze(self):
-        sector = Sector(self.sector_size)
+        sector = self.sector_class(self.sector_size)
         for s in self.data:
             res = sector.feed(s)
 
@@ -41,11 +43,13 @@ class Track:
                     print "CRC error: %3d/%d/%2d CRC header: %s, CRC data: %s, BAD: %s" % (sector.cylinder, sector.head, sector.sector, str(sector.head_crc_ok), str(sector.data_crc_ok), str(sector.bad))
 
                 self.sectors[sector.sector] = sector
+                if sector.sector < self.sector_min:
+                    self.sector_min = sector.sector
 
                 if len(self.sectors) == self.sectors_per_track:
                     break
                 else:
-                    sector = Sector(self.sector_size)
+                    sector = self.sector_class(self.sector_size)
 
             elif res == State.FAILED:
                 print "Cooking sector failed"
@@ -57,7 +61,7 @@ class Track:
 
     # --------------------------------------------------------------------
     def __iter__(self):
-        self.iter_pos = 0
+        self.iter_pos = self.sector_min
         return self
 
     # --------------------------------------------------------------------
@@ -66,7 +70,7 @@ class Track:
             raise StopIteration
         else:
             self.iter_pos += 1
-            return self.sectors[self.iter_pos].data
+            return self.sectors[self.iter_pos-1].data
 
 
 # vim: tabstop=4 expandtab shiftwidth=4 softtabstop=4

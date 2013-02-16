@@ -136,12 +136,12 @@ class ByteReader:
 
         # check for illegal MFM bits
         if (v == 1) and (self.clock == 1):
-            print "MFM illegal cell: 11"
+            print "MFM illegal cell: 11 at: %i" % t
         elif v == 0:
             if (self.clock == 0) and (self.last_bit == 0):
-                print "MFM illegal cell: 00 after 0"
+                print "MFM illegal cell: 00 after 0 at: %i" % t
             elif (self.clock == 1) and (self.last_bit == 1):
-                print "MFM illegal cell: 10 after 1"
+                print "MFM illegal cell: 10 after 1 at: %i" %t
 
         # shift in even bits (data)
         self.bytes[self.byte_pos] |= (v << self.bit_pos)
@@ -170,7 +170,8 @@ class ByteReader:
 
 
 # ------------------------------------------------------------------------
-class Sector:
+# Sector format for WD1006V-MM1 controller
+class SectorWD:
 
     A1 = [0, 1, 0, 0, 0, 1, 0, 0, 1, 0, 0, 0, 1, 0, 0, 1]
     SYNC = [1, 0] * (10*8)
@@ -197,13 +198,13 @@ class Sector:
 
         self.phase = 0
         self.layout = [
-            BitSeqFinder("Head SYNC", Sector.SYNC, 18*8*2, self.callback_none),
-            BitSeqFinder("Head A1", Sector.A1, 3*8*2, self.callback_head_a1),
+            BitSeqFinder("Head SYNC", SectorWD.SYNC, 18*8*2, self.callback_none),
+            BitSeqFinder("Head A1", SectorWD.A1, 3*8*2, self.callback_head_a1),
             ByteReader("Head data", 4, self.callback_head_data),
             ByteReader("Head CRC", 2, self.callback_head_crc),
             Skipper("Gap", 3*8*2),
-            BitSeqFinder("Data Sync", Sector.SYNC, 3*8*2, self.callback_none),
-            BitSeqFinder("Data A1", Sector.A1, 3*8*2, self.callback_data_a1),
+            BitSeqFinder("Data Sync", SectorWD.SYNC, 3*8*2, self.callback_none),
+            BitSeqFinder("Data A1", SectorWD.A1, 3*8*2, self.callback_data_a1),
             ByteReader("Data marker", 1, self.callback_data_marker),
             ByteReader("Data", sector_size, self.callback_data_data),
             ByteReader("Data CRC", 4, self.callback_data_crc),
@@ -295,6 +296,134 @@ class Sector:
         elif result == State.LOOP_END:
             phase = 0
             return State.DONE
+
+# ------------------------------------------------------------------------
+# Sector format for MERA-400 Intel C82062 based controller
+class SectorMERA:
+
+    A1 = [0, 1, 0, 0, 0, 1, 0, 0, 1, 0, 0, 0, 1, 0, 0, 1]
+    SYNC = [1, 0] * (10*8)
+
+    # --------------------------------------------------------------------
+    def __init__(self, sector_size):
+        self.sector_size = sector_size
+
+        self.last_bit = 0
+        self.crc_head_buf = []
+        self.crc_data_buf = []
+        self.crc16_alg = crc_algorithms.Crc(width = 16, poly = 0x1021, reflect_in = False, xor_in = 0xffff, reflect_out = False, xor_out = 0x0000);
+        self.cylinder = 0
+        self.head = 0
+        self.sector = 0
+        self.sector_size = 0
+        self.bad = False
+
+        self.head_crc_ok = False
+        self.data_crc_ok = False
+
+        self.data = []
+
+        self.phase = 0
+        self.layout = [
+            BitSeqFinder("Head SYNC", SectorMERA.SYNC, 750, self.callback_none),
+            BitSeqFinder("Head A1", SectorMERA.A1, 5*8*2, self.callback_head_a1),
+            ByteReader("Head data", 4, self.callback_head_data),
+            ByteReader("Head CRC", 2, self.callback_head_crc),
+            Skipper("Gap", 60),
+            BitSeqFinder("Data Sync", SectorMERA.SYNC, 5*8*2, self.callback_none),
+            BitSeqFinder("Data A1", SectorMERA.A1, 3*8*2, self.callback_data_a1),
+            ByteReader("Data marker", 1, self.callback_data_marker),
+            ByteReader("Data", sector_size, self.callback_data_data),
+            ByteReader("Data CRC", 2, self.callback_data_crc),
+            Skipper("Gap", 16*8*2),
+            Looper()
+        ]
+
+    # --------------------------------------------------------------------
+    def callback_head_a1(self, arg):
+        self.crc_head_buf = [ 0xa1 ]
+        self.last_bit = 1
+        
+    # --------------------------------------------------------------------
+    def callback_head_data(self, arg):
+        self.crc_head_buf += arg
+        self.last_bit = arg[len(arg)-1] & 1
+
+        if arg[0] == 0xfe:
+            cyl_msb = 0
+        elif arg[0] == 0xff:
+            cyl_msb = 256
+        elif arg[0] == 0xfc:
+            cyl_msb = 512
+        elif arg[0] == 0xfd:
+            cyl_msb = 768
+        self.cylinder = cyl_msb + arg[1]
+
+        self.head = arg[2] & 0b00000111
+        self.sector_size = arg[2] & 0b01100000
+        if arg[2] & 0b10000000:
+            self.bad = True
+        self.sector = arg[3]
+
+    # --------------------------------------------------------------------
+    def callback_head_crc(self, arg):
+        crc_read = arg[0]*256 + arg[1]
+        crc_computed = self.crc16_alg.bit_by_bit_fast(''.join([chr(x) for x in self.crc_head_buf]))
+        if crc_read == crc_computed:
+            self.head_crc_ok = True
+
+    # --------------------------------------------------------------------
+    def callback_data_a1(self, arg):
+        self.crc_data_buf = [ 0xa1 ]
+        self.last_bit = 1
+        
+    # --------------------------------------------------------------------
+    def callback_data_marker(self, arg):
+        self.crc_data_buf += arg
+        self.last_bit = arg[len(arg)-1] & 1
+
+    # --------------------------------------------------------------------
+    def callback_data_data(self, arg):
+        self.crc_data_buf += arg
+        self.last_bit = arg[len(arg)-1] & 1
+        self.data = arg
+        
+    # --------------------------------------------------------------------
+    def callback_data_crc(self, arg):
+        crc_read = arg[0]*256 + arg[1]
+        crc_computed = self.crc16_alg.table_driven(''.join([chr(x) for x in self.crc_data_buf]))
+        if crc_read == crc_computed:
+            self.data_crc_ok = True
+        
+    # --------------------------------------------------------------------
+    def callback_none(self, arg):
+        pass
+
+    # --------------------------------------------------------------------
+    def feed(self, s):
+        result = self.layout[self.phase].feed(s)
+
+        # Still cooking, get next sample
+        if result == State.COOKING:
+            return
+
+        # Phase is done, but we're still cooking
+        if result == State.DONE:
+            self.phase += 1
+            self.layout[self.phase].last(self.last_bit)
+            return State.COOKING
+
+        # Phase failed, cooking failed
+        elif result == State.FAILED:
+            print "Failed at: %s" % (self.layout[self.phase].name)
+            self.phase = 0
+            return State.FAILED
+
+        # Last phase done, loop over and return success!
+        elif result == State.LOOP_END:
+            phase = 0
+            return State.DONE
+
 
 
 # vim: tabstop=4 expandtab shiftwidth=4 softtabstop=4
