@@ -21,6 +21,7 @@ import errno
 import fuse
 import stat
 import time
+import sys
 
 from c5fs import *
 
@@ -54,12 +55,12 @@ class DirEntry:
 
     # --------------------------------------------------------------------
     def add_entry(self, e):
-        print "%s adding: %s" % (self.name, e.name)
+        #print "%s adding: %s" % (self.name, e.name)
         self.entries.append(e)
 
     # --------------------------------------------------------------------
     def find_entry(self, path):
-        print "%s searching for: %s" % (self.name, str(path))
+        #print "%s searching for: %s" % (self.name, str(path))
 
         if len(path) == 0:
             return None
@@ -89,7 +90,7 @@ class C5Fuse(fuse.Fuse):
     # --------------------------------------------------------------------
     def __init__(self, *args, **kw):
         fuse.Fuse.__init__(self, *args, **kw)
-        self.c5fs = C5FS("/home/amo/projekty/mera400/varia/winchester_mt_analyzed/w_fwd5.img", 9888)
+        self.c5fs = C5FS(image, offset)
 
         st = fuse.Stat()
         st.st_atime = int(time.time())
@@ -171,6 +172,14 @@ class C5Fuse(fuse.Fuse):
 # ------------------------------------------------------------------------
 # ---- MAIN --------------------------------------------------------------
 # ------------------------------------------------------------------------
+
+if len(sys.argv) < 3:
+    print "Usage: c5fuse.py image:offset mountpoint "
+    sys.exit(1)
+
+o = sys.argv[1].split(':')
+image = o[0]
+offset = int(o[1])
 
 fs = C5Fuse()
 fs.parse(errex=1)
