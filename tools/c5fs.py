@@ -1,3 +1,20 @@
+#  Copyright (c) 2013 Jakub Filipowicz <jakubf@gmail.com>
+#
+#  This program is free software; you can redistribute it and/or modify
+#  it under the terms of the GNU General Public License as published by
+#  the Free Software Foundation; either version 2 of the License, or
+#  (at your option) any later version.
+#
+#  This program is distributed in the hope that it will be useful,
+#  but WITHOUT ANY WARRANTY; without even the implied warranty of
+#  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#  GNU General Public License for more details.
+#
+#  You should have received a copy of the GNU General Public License
+#  along with this program; if not, write to the Free Software
+#  Foundation, Inc.,
+#  51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
+
 from m400lib import r40, wload
 
 # ------------------------------------------------------------------------
@@ -26,7 +43,8 @@ class DDEntry:
 class FDEntry:
 
     # --------------------------------------------------------------------
-    def __init__(self, data):
+    def __init__(self, pos, data):
+        self.pos = pos
         self.name = "%s%s" % (r40(data[0]), r40(data[1]))
         self.ext = "%s" % r40(data[3])
         self.did = data[2]
@@ -44,7 +62,7 @@ class FDEntry:
 
     # --------------------------------------------------------------------
     def __str__(self):
-        return "%6s.%-3s %5i/%-5i (%i-%i = %i) flags: %i, reserved: %i" % (self.name, self.ext, self.uid, self.did, self.start, self.end, self.size, self.flags, self.reserved)
+        return "%-6s.%-3s %5i/%-5i (%i-%i = %i) flags: %i, reserved: %i" % (self.name, self.ext, self.uid, self.did, self.start, self.end, self.size, self.flags, self.reserved)
 
 # ------------------------------------------------------------------------
 class C5FS:
@@ -97,13 +115,13 @@ class C5FS:
         fildic_size = 256 * (self.map_start - self.fildic_start)
         data = wload(self.image, self.offset + self.fildic_start, fildic_size)
 
-        self.fildic = []
+        self.fildic = {}
         pos = 0
         while pos < fildic_size-1:
             entry_data = data[pos:pos+12]
             try:
-                f = FDEntry(entry_data)
-                self.fildic.append(f)
+                f = FDEntry(pos, entry_data)
+                self.fildic[pos] = f
             except ValueError:
                 pass
 
@@ -131,8 +149,24 @@ class C5FS:
     # --------------------------------------------------------------------
     def print_fildic(self):
         for i in self.fildic:
-            print i
+            print self.fildic[i]
 
+    # --------------------------------------------------------------------
+    def dump_file(self, did, pos):
+        name = "%s.%s" % (self.fildic[pos].name, self.fildic[pos].ext)
+        start = 512 * (self.offset + self.fildic[pos].start)
+        size = 512 * (self.fildic[pos].size)
+
+        print "  Dumping file: \"%s\" (%i bytes at %i)" % (name, size, start)
+
+        fin = open(self.image, "r")
+        fin.seek(start)
+        data = fin.read(size)
+        fin.close()
+
+        fout = open(name, "w")
+        fout.write(data)
+        fout.close()
 
 # vim: tabstop=4 expandtab shiftwidth=4 softtabstop=4
 

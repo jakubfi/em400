@@ -1,5 +1,22 @@
 #!/usr/bin/python
 
+#  Copyright (c) 2013 Jakub Filipowicz <jakubf@gmail.com>
+#
+#  This program is free software; you can redistribute it and/or modify
+#  it under the terms of the GNU General Public License as published by
+#  the Free Software Foundation; either version 2 of the License, or
+#  (at your option) any later version.
+#
+#  This program is distributed in the hope that it will be useful,
+#  but WITHOUT ANY WARRANTY; without even the implied warranty of
+#  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#  GNU General Public License for more details.
+#
+#  You should have received a copy of the GNU General Public License
+#  along with this program; if not, write to the Free Software
+#  Foundation, Inc.,
+#  51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
+
 import os
 import sys
 import inspect
@@ -97,6 +114,8 @@ class C5FSExplorer:
             nlabel = int(args[0])
             if nlabel >= 0 and nlabel < self.fscnt:
                 self.cur_label = nlabel
+                self.cur_dir = 8*4
+                self.path = [ 8*4 ]
                 print "  Switched to label %i: \"%s\"" % (self.cur_label, self.fs[self.cur_label].label)
             else:
                 print "  No such label: %i" % nlabel
@@ -111,14 +130,29 @@ class C5FSExplorer:
     # --------------------------------------------------------------------
     def cmd_ls(self, args):
         dicdic = self.fs[self.cur_label].dicdic
-        for i in dicdic:
-            if dicdic[i].topid == self.cur_dir:
-                print dicdic[i]
+        diclist = sorted([ (dicdic[x].name, dicdic[x]) for x in dicdic ])
+
+        for d in diclist:
+            if d[1].topid == self.cur_dir:
+                print "  %-6s <DIR>  %6s %5i" % (d[1].name, dicdic[d[1].topid].name, d[1].subdirs)
+
+        fildic = self.fs[self.cur_label].fildic
+        fillist = sorted([ (("%s.%s" % (fildic[x].name, fildic[x].ext)), fildic[x]) for x in fildic ])
+        for f in fillist:
+            if f[1].did == self.cur_dir:
+                print "  %-6s .%-3s   %6s %5i" % (f[1].name, f[1].ext, dicdic[f[1].uid].name, f[1].size)
+
+    # --------------------------------------------------------------------
+    def cmd_dump(self, args):
+        if len(args) == 0:
+            return
+
+        filename = args[0].upper().split(".")
 
         fildic = self.fs[self.cur_label].fildic
         for i in fildic:
-            if i.did == self.cur_dir:
-                print i
+            if fildic[i].did == self.cur_dir and fildic[i].name == filename[0] and fildic[i].ext == filename[1]:
+                self.fs[self.cur_label].dump_file(fildic[i].did, fildic[i].pos)
 
     # --------------------------------------------------------------------
     def cmd_cd(self, args):
