@@ -152,6 +152,18 @@ class C5FS:
             print self.fildic[i]
 
     # --------------------------------------------------------------------
+    def read_file(self, did, pos):
+        name = "%s.%s" % (self.fildic[pos].name, self.fildic[pos].ext)
+        start = 512 * (self.offset + self.fildic[pos].start)
+        size = 512 * (self.fildic[pos].size)
+
+        fin = open(self.image, "r")
+        fin.seek(start)
+        data = fin.read(size)
+        fin.close()
+        return data
+
+    # --------------------------------------------------------------------
     def dump_file(self, did, pos):
         name = "%s.%s" % (self.fildic[pos].name, self.fildic[pos].ext)
         start = 512 * (self.offset + self.fildic[pos].start)
