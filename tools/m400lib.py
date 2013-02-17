@@ -4,15 +4,16 @@
 def r2a(i):
 	if (i>=1) and (i<=26):
 		return chr(i+64)
-	if (i>=27) and (i<=36):
+	elif (i>=27) and (i<=36):
 		return chr(i+21)
-	if i==37:
+	elif i==37:
 		return "_"
-	if i==38:
+	elif i==38:
 		return "%"
-	if i==39:
+	elif i==39:
 		return ":"
-	return "."
+	else:
+		return ""
 
 # ------------------------------------------------------------------------
 def r40(w):
