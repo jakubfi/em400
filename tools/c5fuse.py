@@ -17,11 +17,12 @@
 #  Foundation, Inc.,
 #  51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 
+import sys
+import os.path
+import time
+import stat
 import errno
 import fuse
-import stat
-import time
-import sys
 
 from c5fs import *
 
@@ -55,26 +56,21 @@ class DirEntry:
 
     # --------------------------------------------------------------------
     def add_entry(self, e):
-        #print "%s adding: %s" % (self.name, e.name)
         self.entries.append(e)
 
     # --------------------------------------------------------------------
     def find_entry(self, path):
-        #print "%s searching for: %s" % (self.name, str(path))
-
         if len(path) == 0:
             return None
 
         if path[0] == self.name:
             if len(path) == 1:
-                print "got it (direct): %s" % self.name
                 return self
             else:
                 path.pop(0)
                 for i in self.entries:
                     ret = i.find_entry(path)
                     if ret is not None:
-                        print "got it (search): %s" % ret.name
                         return ret
                 return None
         else:
@@ -90,7 +86,7 @@ class C5Fuse(fuse.Fuse):
     # --------------------------------------------------------------------
     def __init__(self, *args, **kw):
         fuse.Fuse.__init__(self, *args, **kw)
-        self.c5fs = C5FS(image, offset)
+        self.c5fs = C5FS(os.path.abspath(image), offset)
 
         st = fuse.Stat()
         st.st_atime = int(time.time())
@@ -136,29 +132,23 @@ class C5Fuse(fuse.Fuse):
 
     # --------------------------------------------------------------------
     def getattr(self, path):
-        print "getattr : %s" % path
-
         path_split = ("LIBRAR%s" % path).strip("/").split("/")
         e = self.tree.find_entry(path_split)
-        print "getattr has: %s" % e.name
-
-        return e.st
+        if e is None:
+            return -errno.ENOENT
+        else:
+            return e.st
 
     # --------------------------------------------------------------------
     def readdir(self, path, offset):
-        print "readdir: %s" % path
-
-        path = ("LIBRAR%s" % path).strip("/")
-        e = self.tree.find_entry(path.split("/"))
-        print "readdir has: %s" % e.name
+        path_split = ("LIBRAR%s" % path).strip("/").split("/")
+        e = self.tree.find_entry(path_split)
 
         for i in e.list_entries():
-            print "readdir yielding: %s" % i
             yield fuse.Direntry(i)
 
     # --------------------------------------------------------------------
     def read(self, path, size, offset):
-        print "Reading file: %s" % path
         path_split = ("LIBRAR%s" % path).strip("/").split("/")
         e = self.tree.find_entry(path_split)
 
@@ -166,8 +156,7 @@ class C5Fuse(fuse.Fuse):
             return -errno.ENOENT
         else:
             data = self.c5fs.read_file(e.peid, e.eid)
-
-        return data[offset:size]
+            return data[offset:size]
 
 # ------------------------------------------------------------------------
 # ---- MAIN --------------------------------------------------------------
