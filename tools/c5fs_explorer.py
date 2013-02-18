@@ -52,8 +52,8 @@ class C5FSExplorer:
     def load_image(self, image):
         self.image = image
         print "  Searching image '%s' for labels..." % image
-        for offset in self.find_labels(image):
-            self.fs.append(C5FS(image, offset))
+        for (offset, label_offset) in self.find_labels(image):
+            self.fs.append(C5FS(image, offset, label_offset))
             print "  Label %i: \"%s\" at sector %i" % (self.fscnt, self.fs[self.fscnt].label, offset)
             self.fscnt += 1
 
@@ -65,7 +65,7 @@ class C5FSExplorer:
     # --------------------------------------------------------------------
     def find_labels(self, image):
         # maybe some other time ;-)
-        return [64, 9888]
+        return [(64, 0), (9888, 0)]
 
     # --------------------------------------------------------------------
     def label_ok(self):
@@ -118,7 +118,9 @@ class C5FSExplorer:
         if self.label_ok():
             fildic = self.fs[self.cur_label].fildic
             for i in fildic:
+                smap = self.fs[self.cur_label].get_map(fildic[i].start, fildic[i].end-fildic[i].start)
                 print fildic[i]
+                print smap
 
     # --------------------------------------------------------------------
     def cmd_use(self, args):
@@ -166,7 +168,7 @@ class C5FSExplorer:
         fildic = self.fs[self.cur_label].fildic
         for i in fildic:
             if fildic[i].did == self.cur_dir and fildic[i].name == name_split[0] and fildic[i].ext == name_split[1]:
-                data = self.fs[self.cur_label].read_file(fildic[i].did, fildic[i].pos)
+                data = self.fs[self.cur_label].get_file(fildic[i].did, fildic[i].pos)
 
                 print "  Dumping file: %s" % name
                 fout = open(name, "w")
