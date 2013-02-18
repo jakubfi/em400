@@ -93,19 +93,32 @@ class C5FSExplorer:
     def cmd_label(self, args):
         """Print contents of currently selected label"""
         if self.label_ok():
-            self.fs[self.cur_label].print_label()
+            c5fs = self.fs[self.cur_label]
+            print "  Label         : %s" % c5fs.label
+            print "  Disk name     : %s" % c5fs.disk_name
+            print "  DICDIC start  : %i" % c5fs.dicdic_start
+            print "  FILDIC start  : %i" % c5fs.fildic_start
+            print "  MAP start/end : %i / %i" % (c5fs.map_start, c5fs.map_end)
+            print "  Disk end      : %i" % c5fs.disk_end
+            print "  Disk size     : %i KB" % (c5fs.disk_end/2)
+            print "  Init date     : %s" % c5fs.init_date
+            print "  Init date/time: %s" % c5fs.init_date_time
 
     # --------------------------------------------------------------------
     def cmd_dicdic(self, args):
         """Print DICDIC for currently selected partition"""
         if self.label_ok():
-            self.fs[self.cur_label].print_dicdic()
+            dicdic = self.fs[self.cur_label].dicdic
+            for i in dicdic:
+                print dicdic[i]
 
     # --------------------------------------------------------------------
     def cmd_fildic(self, args):
         """Print FILDIC for currently selected partition"""
         if self.label_ok():
-            self.fs[self.cur_label].print_fildic()
+            fildic = self.fs[self.cur_label].fildic
+            for i in fildic:
+                print fildic[i]
 
     # --------------------------------------------------------------------
     def cmd_use(self, args):
@@ -134,25 +147,35 @@ class C5FSExplorer:
 
         for d in diclist:
             if d[1].topid == self.cur_dir:
-                print "  %-6s <DIR>  %6s %5i" % (d[1].name, dicdic[d[1].topid].name, d[1].subdirs)
+                print "  %-6s <DIR>  %6s %7i" % (d[1].name, dicdic[d[1].topid].name, d[1].subdirs)
 
         fildic = self.fs[self.cur_label].fildic
         fillist = sorted([ (("%s.%s" % (fildic[x].name, fildic[x].ext)), fildic[x]) for x in fildic ])
         for f in fillist:
             if f[1].did == self.cur_dir:
-                print "  %-6s .%-3s   %6s %5i" % (f[1].name, f[1].ext, dicdic[f[1].uid].name, f[1].size)
+                print "  %-10s    %6s %7i" % ("%s.%s" % (f[1].name, f[1].ext), dicdic[f[1].uid].name, f[1].size*512)
 
     # --------------------------------------------------------------------
     def cmd_dump(self, args):
         if len(args) == 0:
             return
 
-        filename = args[0].upper().split(".")
+        name = args[0].upper()
+        name_split = name.split(".")
 
         fildic = self.fs[self.cur_label].fildic
         for i in fildic:
-            if fildic[i].did == self.cur_dir and fildic[i].name == filename[0] and fildic[i].ext == filename[1]:
-                self.fs[self.cur_label].dump_file(fildic[i].did, fildic[i].pos)
+            if fildic[i].did == self.cur_dir and fildic[i].name == name_split[0] and fildic[i].ext == name_split[1]:
+                data = self.fs[self.cur_label].read_file(fildic[i].did, fildic[i].pos)
+
+                print "  Dumping file: %s" % name
+                fout = open(name, "w")
+                fout.write(data)
+                fout.close()
+
+                return
+
+        print "  Could not find file: %s" % name
 
     # --------------------------------------------------------------------
     def cmd_cd(self, args):

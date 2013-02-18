@@ -35,6 +35,13 @@ class DDEntry:
         self.osl = "%s%s" % (r40(data[8]), r40(data[9]))
         self.osl_arg = "%s%s" % (r40(data[10]), r40(data[11]))
 
+        # 0 = empty entry, skip
+        if data[0] == 0:
+            raise ValueError
+        # 1 = DICDIC end
+        if data[0] == 1:
+            raise EOFError
+
     # --------------------------------------------------------------------
     def __str__(self):
         return "%4s [%5i]: %6s [%3s] (id:%-5i top:%-5i) subdirs: %i, budget: %i, OSL: %s (%s)" % (self.type, self.pos, self.name, self.password, self.id, self.topid, self.subdirs, self.budget, self.osl, self.osl_arg)
@@ -95,18 +102,25 @@ class C5FS:
         data = wload(self.image, self.offset + self.dicdic_start, dicdic_size)
 
         self.dicdic = {}
+        # DICDIC entries start at 8th word in first DICDIC sector
         pos = 8
         while pos+512 < dicdic_size:
-            if data[pos] == 0:
-                pass
-            if data[pos] == 1:
-                break
-            else:
-                entry_data = data[pos:pos+4] + data[256+pos:256+pos+4] + data[512+pos:512+pos+4]
+
+            # each DICDIC entry spans across 3 consecutive sectors, 4 words per sector
+            entry_data = data[pos:pos+4] + data[256+pos:256+pos+4] + data[512+pos:512+pos+4]
+
+            try:
                 d = DDEntry(pos*4, entry_data)
                 self.dicdic[pos*4] = d
+            except ValueError:
+                pass
+            except EOFError:
+                return
 
+            # next DICDIC entry starts in +4 words
             pos += 4
+
+            # end of sector, skip to next one
             if pos % 256 == 0:
                 pos += 256 * 2
 
@@ -116,40 +130,23 @@ class C5FS:
         data = wload(self.image, self.offset + self.fildic_start, fildic_size)
 
         self.fildic = {}
+        # FILDIC starts at the beginning of first sector
         pos = 0
         while pos < fildic_size-1:
+
             entry_data = data[pos:pos+12]
+
             try:
                 f = FDEntry(pos, entry_data)
                 self.fildic[pos] = f
             except ValueError:
                 pass
 
+            # 12 words each FILEDIC entry
             pos += 12
+            # last 4 words in a sector are reserved for hash
             if pos % 256 == 252:
                 pos += 4
-
-    # --------------------------------------------------------------------
-    def print_label(self):
-        print "  Label         : %s" % self.label
-        print "  Disk name     : %s" % self.disk_name
-        print "  DICDIC start  : %i" % self.dicdic_start
-        print "  FILDIC start  : %i" % self.fildic_start
-        print "  MAP start/end : %i / %i" % (self.map_start, self.map_end)
-        print "  Disk end      : %i" % self.disk_end
-        print "  Disk size     : %i KB" % (self.disk_end/2)
-        print "  Init date     : %s" % self.init_date
-        print "  Init date/time: %s" % self.init_date_time
-
-    # --------------------------------------------------------------------
-    def print_dicdic(self):
-        for i in self.dicdic:
-            print self.dicdic[i]
-
-    # --------------------------------------------------------------------
-    def print_fildic(self):
-        for i in self.fildic:
-            print self.fildic[i]
 
     # --------------------------------------------------------------------
     def read_file(self, did, pos):
@@ -162,23 +159,6 @@ class C5FS:
         data = fin.read(size)
         fin.close()
         return data
-
-    # --------------------------------------------------------------------
-    def dump_file(self, did, pos):
-        name = "%s.%s" % (self.fildic[pos].name, self.fildic[pos].ext)
-        start = 512 * (self.offset + self.fildic[pos].start)
-        size = 512 * (self.fildic[pos].size)
-
-        print "  Dumping file: \"%s\" (%i bytes at %i)" % (name, size, start)
-
-        fin = open(self.image, "r")
-        fin.seek(start)
-        data = fin.read(size)
-        fin.close()
-
-        fout = open(name, "w")
-        fout.write(data)
-        fout.close()
 
 # vim: tabstop=4 expandtab shiftwidth=4 softtabstop=4
 
