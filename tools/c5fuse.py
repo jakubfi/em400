@@ -156,7 +156,7 @@ class C5Fuse(fuse.Fuse):
             return -errno.ENOENT
         else:
             data = self.c5fs.get_file(e.peid, e.eid)
-            return data[offset:size]
+            return data[offset:offset+size]
 
 # ------------------------------------------------------------------------
 # ---- MAIN --------------------------------------------------------------
