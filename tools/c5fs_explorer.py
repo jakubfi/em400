@@ -26,58 +26,18 @@ from c5fs import *
 class C5FSExplorer:
 
     # --------------------------------------------------------------------
-    def __init__(self, image = ""):
+    def __init__(self, image):
         self.quit = False
-        self.image = ""
-        self.fs = []
+        self.image = image
+        self.fs = None
         self.fscnt = 0
-        self.cur_label = -1
+        self.offset = 0
+        self.label_offset = 0
 
         self.cur_dir = 0
         self.path = []
 
-        if image:
-            self.load_image(image)
-
         self.methods = dict(inspect.getmembers(self, predicate=inspect.ismethod))
-
-    # --------------------------------------------------------------------
-    def switch_label(self, label_no):
-        self.cur_label = label_no
-        self.cur_dir = 8*4
-        self.path = [ self.cur_dir ]
-        print "  Switched to label %i: \"%s\"" % (self.cur_label, self.fs[self.cur_label].label)
-
-    # --------------------------------------------------------------------
-    def load_image(self, image):
-        self.image = image
-        print "  Searching image '%s' for labels..." % image
-        for (offset, label_offset) in self.find_labels(image):
-            self.fs.append(C5FS(image, offset, label_offset))
-            print "  Label %i: \"%s\" at sector %i" % (self.fscnt, self.fs[self.fscnt].label, offset)
-            self.fscnt += 1
-
-        if self.fscnt > 0:
-            self.switch_label(0)
-        else:
-            print "  No labels found"
-
-    # --------------------------------------------------------------------
-    def find_labels(self, image):
-        # maybe some other time ;-)
-        return [(64, 0), (9888, 0)]
-
-    # --------------------------------------------------------------------
-    def label_ok(self):
-        if self.image != "":
-            if self.cur_label >= 0:
-                return True
-            else:
-                print "  No label selected"
-                return False
-        else:
-            print "  No image loaded"
-            return False
 
     # --------------------------------------------------------------------
     def cmd_quit(self, args):
@@ -86,54 +46,77 @@ class C5FSExplorer:
     cmd_exit = cmd_quit
 
     # --------------------------------------------------------------------
-    def cmd_load(self, args):
-        self.load_image(args[0])
-
-    # --------------------------------------------------------------------
     def cmd_label(self, args):
         """Print contents of currently selected label"""
-        if self.label_ok():
-            c5fs = self.fs[self.cur_label]
-            print "  Label         : %s" % c5fs.label
-            print "  Disk name     : %s" % c5fs.disk_name
-            print "  DICDIC start  : %i" % c5fs.dicdic_start
-            print "  FILDIC start  : %i" % c5fs.fildic_start
-            print "  MAP start/end : %i / %i" % (c5fs.map_start, c5fs.map_end)
-            print "  Disk end      : %i" % c5fs.disk_end
-            print "  Disk size     : %i KB" % (c5fs.disk_end/2)
-            print "  Init date     : %s" % c5fs.init_date
-            print "  Init date/time: %s" % c5fs.init_date_time
+
+        if self.fs is None:
+            return
+
+        print "  Label         : %s" % self.fs.label
+        print "  Disk name     : %s" % self.fs.disk_name
+        print "  DICDIC start  : %i" % self.fs.dicdic_start
+        print "  FILDIC start  : %i" % self.fs.fildic_start
+        print "  MAP start/end : %i / %i" % (self.fs.map_start, self.fs.map_end)
+        print "  Disk end      : %i" % self.fs.disk_end
+        print "  Disk size     : %i KB" % (self.fs.disk_end/2)
+        print "  Init date     : %s" % self.fs.init_date
+        print "  Init date/time: %s" % self.fs.init_date_time
 
     # --------------------------------------------------------------------
     def cmd_dicdic(self, args):
         """Print DICDIC for currently selected partition"""
-        if self.label_ok():
-            dicdic = self.fs[self.cur_label].dicdic
-            for i in dicdic:
-                print dicdic[i]
+
+        if self.fs is None:
+            return
+
+        for i in self.fs.dicdic:
+            print self.fs.dicdic[i]
 
     # --------------------------------------------------------------------
     def cmd_fildic(self, args):
         """Print FILDIC for currently selected partition"""
-        if self.label_ok():
-            fildic = self.fs[self.cur_label].fildic
-            for i in fildic:
-                smap = self.fs[self.cur_label].get_map(fildic[i].start, fildic[i].end-fildic[i].start)
-                print fildic[i]
-                print smap
+
+        if self.fs is None:
+            return
+
+        for i in self.fs.fildic:
+            print self.fs.fildic[i]
+            # dump MAP contents for the file
+            smap = self.fs.get_map(self.fs.fildic[i].start, self.fs.fildic[i].end-self.fs.fildic[i].start)
+            print smap
 
     # --------------------------------------------------------------------
     def cmd_use(self, args):
         """Change current partition"""
-        if self.label_ok():
-            nlabel = int(args[0])
-            if nlabel >= 0 and nlabel < self.fscnt:
-                self.cur_label = nlabel
-                self.cur_dir = 8*4
-                self.path = [ 8*4 ]
-                print "  Switched to label %i: \"%s\"" % (self.cur_label, self.fs[self.cur_label].label)
-            else:
-                print "  No such label: %i" % nlabel
+
+        self.label_offset = 0
+
+        if len(args) == 0:
+            print "Usage: use offset [label_offset]"
+            return
+        elif len(args) == 1:
+            self.offset = int(args[0])
+        else:
+            self.offset = int(args[0])
+            self.label_offset = int(args[1])
+
+        self.fs = None
+
+        try:
+            self.fs = C5FS(self.image, self.offset, self.label_offset)
+            # we need at least two entries: LIBRAR and BOSS
+            if self.fs.dicdic[8*4].name != "LIBRAR":
+                raise ValueError("User LIBRAR not found")
+            if self.fs.dicdic[12*4].name != "BOSS":
+                raise ValueError("User BOSS not found")
+        except Exception, e:
+            print "  Seems there is no label at %i:%i. Error: %s" % (self.offset, self.label_offset, str(e))
+            return
+
+        self.cur_dir = 8*4
+        self.path = [ self.cur_dir ]
+
+        print "  Switching to label \"%s\" (%i:%i)" % (self.fs.label, self.offset, self.label_offset)
 
     # --------------------------------------------------------------------
     def cmd_help(self, args):
@@ -144,14 +127,18 @@ class C5FSExplorer:
 
     # --------------------------------------------------------------------
     def cmd_ls(self, args):
-        dicdic = self.fs[self.cur_label].dicdic
+
+        if self.fs is None:
+            return
+
+        dicdic = self.fs.dicdic
         diclist = sorted([ (dicdic[x].name, dicdic[x]) for x in dicdic ])
 
         for d in diclist:
             if d[1].topid == self.cur_dir:
                 print "  %-6s <DIR>  %6s %7i" % (d[1].name, dicdic[d[1].topid].name, d[1].subdirs)
 
-        fildic = self.fs[self.cur_label].fildic
+        fildic = self.fs.fildic
         fillist = sorted([ (("%s.%s" % (fildic[x].name, fildic[x].ext)), fildic[x]) for x in fildic ])
         for f in fillist:
             if f[1].did == self.cur_dir:
@@ -159,13 +146,17 @@ class C5FSExplorer:
 
     # --------------------------------------------------------------------
     def cmd_dump(self, args):
+
+        if self.fs is None:
+            return
+
         if len(args) == 0:
             return
 
         name = args[0].upper()
         name_split = name.split(".")
 
-        fildic = self.fs[self.cur_label].fildic
+        fildic = self.fs.fildic
         for i in fildic:
             if fildic[i].did == self.cur_dir and fildic[i].name == name_split[0] and fildic[i].ext == name_split[1]:
                 data = self.fs[self.cur_label].get_file(fildic[i].did, fildic[i].pos)
@@ -181,11 +172,15 @@ class C5FSExplorer:
 
     # --------------------------------------------------------------------
     def cmd_cd(self, args):
+
+        if self.fs is None:
+            return
+
         if len(args) == 0:
             return
 
         dirname = args[0]
-        dicdic =  self.fs[self.cur_label].dicdic
+        dicdic =  self.fs.dicdic
 
         if dirname == ".":
             pass
@@ -193,7 +188,7 @@ class C5FSExplorer:
             self.cur_dir = 8*4
             self.path = [ 8*4 ]
         elif dirname == "..":
-            topdir = dicdic[self.cur_dir].topid
+            topdir = dicdic.topid
             if topdir == 0:
                 print "  Already at top dir"
             else:
@@ -211,12 +206,12 @@ class C5FSExplorer:
     def run(self):
         while not self.quit:
 
-            if self.cur_label >= 0 and self.cur_label < self.fscnt:
-                label = self.fs[self.cur_label].label
-            else:
+            if self.fs is None:
                 label = '?'
+            else:
+                label = self.fs.label
 
-            self.directory = "/".join([ self.fs[self.cur_label].dicdic[x].name for x in self.path ])
+            self.directory = "/".join([ self.fs.dicdic[x].name for x in self.path ])
 
             prompt = '\x1b[32;1m%s:%s/> \x1b[0m' % (label, self.directory)
 
@@ -243,11 +238,11 @@ class C5FSExplorer:
 # ---- MAIN --------------------------------------------------------------
 # ------------------------------------------------------------------------
 
-if len(sys.argv) > 1:
-    c5e = C5FSExplorer(sys.argv[1])
-else:
-    c5e = C5FSExplorer()
+if len(sys.argv) != 2:
+    print "Usage: c5fs_explorer.py image_file"
+    sys.exit(1)
 
+c5e = C5FSExplorer(sys.argv[1])
 c5e.run()
 
 
