@@ -72,7 +72,7 @@ class FDEntry:
             raise ValueError
 
         # no top directory, ignore
-        if self.did == 0 or 
+        if self.did == 0:
             raise ValueError
 
         # show deleted files with "DELETED_" prefix
