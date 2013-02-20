@@ -121,7 +121,7 @@ class C5Fuse(fuse.Fuse):
                 st.st_atime = int(time.time())
                 st.st_mtime = st.st_atime
                 st.st_ctime = st.st_atime
-                st.st_mode = stat.S_IFREG | 0755
+                st.st_mode = stat.S_IFREG | 0644
                 st.st_size = self.c5fs.fildic[i].size * 512
                 st.st_nlink = 1
 
