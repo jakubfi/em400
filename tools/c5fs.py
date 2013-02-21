@@ -85,7 +85,7 @@ class FDEntry:
 
     # --------------------------------------------------------------------
     def __str__(self):
-        return "%-6s.%-3s %5i/%-5i (%i-%i = %i) flags: %i, reserved: %i, rights: %i attrs: %i mem: %i" % (self.name, self.ext, self.uid, self.did, self.start, self.end, self.size, self.flags, self.reserved, self.rights, self.attrs, self.mem)
+        return "%-6s.%-3s  user:%5i dir:%-5i size:%4i (%i-%i) flags: %i, reserved: %i, rights: %i attrs: %i mem: %i" % (self.name, self.ext, self.uid, self.did, self.size, self.start, self.end, self.flags, self.reserved, self.rights, self.attrs, self.mem)
 
 # ------------------------------------------------------------------------
 class C5FS:
@@ -189,7 +189,7 @@ class C5FS:
         return m
 
     # --------------------------------------------------------------------
-    def get_file(self, did, pos):
+    def get_file(self, pos):
         name = "%s.%s" % (self.fildic[pos].name, self.fildic[pos].ext)
         start = 512 * (self.offset + self.fildic[pos].start)
         size = 512 * (self.fildic[pos].size)

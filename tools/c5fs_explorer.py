@@ -69,7 +69,7 @@ class C5FSExplorer:
         if self.fs is None:
             return
 
-        for i in self.fs.dicdic:
+        for i in sorted(self.fs.dicdic):
             print self.fs.dicdic[i]
 
     # --------------------------------------------------------------------
@@ -79,11 +79,22 @@ class C5FSExplorer:
         if self.fs is None:
             return
 
-        for i in self.fs.fildic:
+        for i in sorted(self.fs.fildic):
             print self.fs.fildic[i]
-            # dump MAP contents for the file
+
+    # --------------------------------------------------------------------
+    def cmd_map(self, args):
+        """Print sector usage map for all or specified file"""
+
+        mfile = None
+        if len(args) > 0:
+            mfile = args[0].split(".")
+
+        for i in self.fs.fildic:
+            if mfile is not None and (mfile[0] != self.fs.fildic[i].name or mfile[1] != self.fs.fildic[i].ext):
+                continue
             smap = self.fs.get_map(self.fs.fildic[i].start, self.fs.fildic[i].end-self.fs.fildic[i].start)
-            print smap
+            print "%-6s.%-3s: %s" % (self.fs.fildic[i].name, self.fs.fildic[i].ext, smap)
 
     # --------------------------------------------------------------------
     def cmd_use(self, args):
@@ -159,7 +170,7 @@ class C5FSExplorer:
         fildic = self.fs.fildic
         for i in fildic:
             if fildic[i].did == self.cur_dir and fildic[i].name == name_split[0] and fildic[i].ext == name_split[1]:
-                data = self.fs[self.cur_label].get_file(fildic[i].did, fildic[i].pos)
+                data = self.fs[self.cur_label].get_file(fildic[i].pos)
 
                 print "  Dumping file: %s" % name
                 fout = open(name, "w")
