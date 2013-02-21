@@ -1,6 +1,6 @@
 #!/usr/bin/python
 
-#  Copyright (c) 2012 Jakub Filipowicz <jakubf@gmail.com>
+#  Copyright (c) 2012-2013 Jakub Filipowicz <jakubf@gmail.com>
 #
 #  This program is free software; you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
@@ -24,74 +24,77 @@ from m400_utils import *
 class M400dasm:
 
     # ------------------------------------------------------------------------
-    def __init__(self, f, p):
+    def __init__(self, f, mode):
         ifile = open(f, "r")
         self.img = bytearray(ifile.read())
         ifile.close()
-        self.offset = p
+        self.mode = mode
         self.ic = -1
         self.pos = 0
 
     # ------------------------------------------------------------------------
     def m400_decode_norm(self, i, group, d, a, b, c):
+
+        # argument is in next word
         if c == 0:
             m = self.m400_fetch()
             rc = "0x%x" % m
+        # use rC as the argument
         else:
             rc = "r%i" % c
             m = 0
-
+        # B-modification
         if b != 0:
             rb = "+r%s" % b
         else:
             rb = ""
 
+        # NORM1 and NORM2 are decoded here, but group 037 (NORM1) uses A for opcode extension
         if group == OP_NORM2:
             ra = "r%i, " % a
         else:
             ra = ""
 
-        debug = "m=%-4x" % (m)
-
+        # D-modification
         if d == 0:
             args = "%s%s%s" % (ra, rc, rb)
         else:
             args = "%s[%s%s]" % (ra, rc, rb)
 
+        # for group 076 we have 2-level addressing
         if i == 076:
             args = "[%s]" % (args)
 
-        return args, debug
-
+        return args
 
     # ------------------------------------------------------------------------
     def m400_decode_short2_arg(self, i, d, a, b, c):
+        # B and C stores the value
         t = (b<<3) | c
+
+        # D stores the sign
         if d == 1:
             t = -t
-        debug = "t=%-4x" % (t)
         args = "r%i, %i" % (a, t)
-        return args, debug
+        return args
 
     # ------------------------------------------------------------------------
     def m400_decode_short1_arg(self, i, d, a, b, c):
         t = (b<<3) | c
         if d == 1:
             t = -t
-        debug = "t=%-4x" % (t)
         args = "%i" % (t)
-        return args, debug
+        return args
 
     # ------------------------------------------------------------------------
     def m400_decode_byte_arg(self, i, d, a, b, c):
         b = ((a&0b011)<3) | (b<<3) | c
-        debug = "byte=%-4x" % (b)
         args = "%i" % (b)
-        return args, debug
+        return args
 
     # ------------------------------------------------------------------------
     def m400_decode_no_arg(self, i, d, a, b, c):
-        return "", ""
+        return ""
 
     # ------------------------------------------------------------------------
     def m400_decode_no2_arg(self, i, d, a, b, c):
@@ -100,7 +103,12 @@ class M400dasm:
             args = "r%i, %i" % (a, T)
         else:
             args = "r%i" % (a)
-        return args, ""
+        return args
+
+    # ------------------------------------------------------------------------
+    def m400_decode_sin(self, i, d, a, b, c):
+        args = "%i" % c
+        return args
 
     # ------------------------------------------------------------------------
     def m400_decode(self, word):
@@ -111,69 +119,64 @@ class M400dasm:
         b = (word & 0b0000000000111000) >> 3
         c = (word & 0b0000000000000111) >> 0
 
-        addr = self.ic
-        debug_b = "# %i  %s %s %s (%i %i %i)" % (d, zbin(a,3), zbin(b,3), zbin(c,3), a, b, c)
+        code, group, desc = m400_get_opcode(i, d, a, b, c, self.mode)
 
-        if not i in m400_opcodes:
-            code = "---"
-            args = zbin(i, 6)
-            debug_b = "# %s %s" % (zbin(word>>8, 8), zbin(word&255, 8))
-            desc = "# %4x %2x %2x" % (word, word>>8, word&255)
-            debug = "."
+        # 2-arg opcode with normal arg
+        if group == OP_NORM2:
+            args = self.m400_decode_norm(i, group, d, a, b, c)
 
-        else:
-            code, group, desc = m400_get_opcode(i, d, a, b, c)
-            desc = "# %s" % desc
+        # 1-arg opcode with normal arg
+        elif group == OP_NORM1:
+            args = self.m400_decode_norm(i, group, d, a, b, c)
 
-            # 2-arg opcode with normal arg
-            if group == OP_NORM2:
-                args, debug = self.m400_decode_norm(i, group, d, a, b, c)
+        # opcode with A arg and 7-bit arg
+        elif group == OP_SHORT2:
+            args = self.m400_decode_short2_arg(i, d, a, b, c)
 
-            # 1-arg opcode with normal arg
-            elif group == OP_NORM1:
-                args, debug = self.m400_decode_norm(i, group, d, a, b, c)
+        # opcode with 7-bit arg only
+        elif group == OP_SHORT1:
+            args = self.m400_decode_short1_arg(i, d, a, b, c)
+            # those are jumps, calculate destination address for convenience
+            args = "%-3s -> 0x%04x" % (args, self.ic + 1 + int(args))
 
-            # opcode with A arg and 7-bit arg
-            elif group == OP_SHORT2:
-                args, debug = self.m400_decode_short2_arg(i, d, a, b, c)
+        # opcode with 8-bit arg
+        elif group == OP_BYTE:
+            args = self.m400_decode_byte_arg(i, d, a, b, c)
 
-            # opcode with 7-bit arg only
-            elif group == OP_SHORT1:
-                args, debug = self.m400_decode_short1_arg(i, d, a, b, c)
-
-            # opcode with 8-bit arg
-            elif group == OP_BYTE:
-                args, debug = self.m400_decode_byte_arg(i, d, a, b, c)
-
-            # opcode with no arg
-            elif group == OP_NO:
-                args, debug = self.m400_decode_no_arg(i, d, a, b, c)
-
-            # opcode with no second arg
-            elif group == OP_NO2:
-                args, debug = self.m400_decode_no2_arg(i, d, a, b, c)
-
-            # unknown group
+        # opcode with no arg
+        elif group == OP_NO:
+            # HLT (A=0) uses T as the halt reason, just as SHORT1
+            if a == 0:
+                args = self.m400_decode_short1_arg(i, d, a, b, c)
             else:
-                code = "UNKNOWN"
-                args = "GROUP"
-                desc = ""
-                debug = ""
+                args = self.m400_decode_no_arg(i, d, a, b, c)
 
-        print "0x%04x: %-7s %-15s %-25s %-10s %-30s" % (addr+self.offset, code, args, debug_b, debug, desc)
+        # opcode with no second arg
+        elif group == OP_NO2:
+            args = self.m400_decode_no2_arg(i, d, a, b, c)
+
+        # sin is treated as a special case
+        elif group == OP_SIN:
+            args = self.m400_decode_sin(i, d, a, b, c)
+
+        # unknown group
+        else:
+            args = "%04x" % (word)
+
+        print "0x%04x: %-5s %-15s    # %-30s" % (self.ic, code, args, desc)
             
     # --------------------------------------------------------------------
     def m400_fetch(self):
         b1 = self.img[self.pos]
         b2 = self.img[self.pos+1]
+        word = (b1 << 8) | b2
         self.pos += 2
         self.ic += 1
-        word = (b1 << 8) | b2
         return word
 
     # --------------------------------------------------------------------
     def go(self):
-        while True:
+        while self.pos < len(self.img):
             self.m400_decode(self.m400_fetch())
  
 
@@ -181,6 +184,10 @@ class M400dasm:
 # --- MAIN ---------------------------------------------------------------
 # ------------------------------------------------------------------------
 
-M400dasm(sys.argv[1], int(sys.argv[2])).go()
+binfile = sys.argv[1]
+
+dasm = M400dasm(binfile, MODE_K202)
+#dasm = M400dasm(binfile, MODE_MERA400)
+dasm.go()
 
 # vim: tabstop=4 expandtab shiftwidth=4 softtabstop=4
