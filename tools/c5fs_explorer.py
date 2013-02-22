@@ -153,7 +153,7 @@ class C5FSExplorer:
         fillist = sorted([ (("%s.%s" % (fildic[x].name, fildic[x].ext)), fildic[x]) for x in fildic ])
         for f in fillist:
             if f[1].did == self.cur_dir:
-                print "  %-10s    %6s %7i" % ("%s.%s" % (f[1].name, f[1].ext), dicdic[f[1].uid].name, f[1].size*512)
+                print "  %-10s    %6s %7i" % ("%s.%s" % (f[1].name, f[1].ext), dicdic[f[1].did].name, f[1].size*512)
 
     # --------------------------------------------------------------------
     def cmd_dump(self, args):
