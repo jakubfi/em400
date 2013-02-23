@@ -27,4 +27,17 @@ def zbin(x, n):
     else:
         return '0' * (n-lc) + c
 
+# ------------------------------------------------------------------------
+def bitmask(length):
+    return (1<<length)-1
+
+# ------------------------------------------------------------------------
+def setbits(b, e):
+    x = 0
+    while b <= e:
+        x |= 1 << (15-b)
+        b += 1  
+    return x
+
+
 # vim: tabstop=4 expandtab shiftwidth=4 softtabstop=4

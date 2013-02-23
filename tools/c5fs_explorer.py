@@ -232,6 +232,10 @@ class C5FSExplorer:
                 self.quit = 1
                 print ""
                 continue
+            except KeyboardInterrupt:
+                self.quit = 1
+                print ""
+                continue
 
             if len(cmd) == 0:
                 continue
