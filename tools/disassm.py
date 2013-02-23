@@ -119,6 +119,8 @@ class M400dasm:
         b = (word & 0b0000000000111000) >> 3
         c = (word & 0b0000000000000111) >> 0
 
+        addr = self.ic
+
         code, group, desc = m400_get_opcode(i, d, a, b, c, self.mode)
 
         # 2-arg opcode with normal arg
@@ -137,7 +139,7 @@ class M400dasm:
         elif group == OP_SHORT1:
             args = self.m400_decode_short1_arg(i, d, a, b, c)
             # those are jumps, calculate destination address for convenience
-            args = "%-3s -> 0x%04x" % (args, self.ic + 1 + int(args))
+            args = "%-3s -> 0x%04x" % (args, addr + 1 + int(args))
 
         # opcode with 8-bit arg
         elif group == OP_BYTE:
@@ -163,7 +165,7 @@ class M400dasm:
         else:
             args = "%04x" % (word)
 
-        print "0x%04x: %-5s %-15s    # %-30s" % (self.ic, code, args, desc)
+        print "0x%04x: %-5s %-15s    # %-30s" % (addr, code, args, desc)
             
     # --------------------------------------------------------------------
     def m400_fetch(self):
