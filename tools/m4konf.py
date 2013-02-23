@@ -28,8 +28,9 @@ NIETAK = ["Nie", "Tak"]
 class WordConf:
 
     # --------------------------------------------------------------------
-    def __init__(self, word):
+    def __init__(self, word, disableable = False):
         self.word = word
+        self.disableable = disableable
         self.keys = []
         self.conf = {}
         self.pos = 0
@@ -72,7 +73,17 @@ class WordConf:
         return word
 
     # --------------------------------------------------------------------
+    def is_disabled(self):
+        if self.disableable == True and self.word == 65535:
+            return True
+        return False
+
+    # --------------------------------------------------------------------
     def get(self, key):
+
+        if self.is_disabled():
+            raise ValueError("Device disabled")
+
         entry = self.conf[key]
         name = entry[0]
         value = entry[1]
@@ -119,34 +130,34 @@ class M400Conf:
 
         self.config = {}
 
-        self.config["sys1"] = self.parse_sys1(self.data[4])
-        self.config["multix"] = self.parse_multix(self.data[5])
-        self.config["sys2"] = self.parse_sys2(self.data[6])
-        self.config["sys3"] = self.parse_sys3(self.data[7])
+        self.config["sys1"] = self.parse_sys1(self.data[04])
+        self.config["multix"] = self.parse_multix(self.data[05])
+        self.config["sys2"] = self.parse_sys2(self.data[06])
+        self.config["sys3"] = self.parse_sys3(self.data[07])
 
         for i in range(0, 8):
-           self.config["mem%i"%i] = self.parse_mem(self.data[8+i])
+           self.config["mem%i"%i] = self.parse_mem(self.data[010+i])
 
         for i in range(0, 16):
-            self.config["disk%i"%i] = self.parse_disk(self.data[16+i])
+            self.config["disk%i"%i] = self.parse_disk(self.data[020+i])
 
         for i in range(0, 4):
-            self.config["tape%i"%i] = self.parse_tapes(self.data[32+i])
+            self.config["tape%i"%i] = self.parse_tapes(self.data[040+i])
 
-        self.config["io1"] = self.parse_io1(self.data[36])
-        self.config["io2"] = self.parse_io2(self.data[37])
-        self.config["io3"] = self.parse_io3(self.data[38])
-        self.config["io4"] = self.parse_io4(self.data[39])
-        self.config["io5"] = self.parse_io5(self.data[40])
-        self.config["io6"] = self.parse_io6(self.data[41])
-        self.config["io7"] = self.parse_io7(self.data[42])
-        self.config["io8"] = self.parse_io8(self.data[43])
-        self.config["rtc"] = self.parse_rtc(self.data[46])
-        self.config["mon"] = self.parse_mon(self.data[47])
-        self.config["oprq"] = self.parse_oprq(self.data[48])
+        self.config["io1"] = self.parse_io1(self.data[044])
+        self.config["io2"] = self.parse_io2(self.data[045])
+        self.config["io3"] = self.parse_io3(self.data[046])
+        self.config["io4"] = self.parse_io4(self.data[047])
+        self.config["io5"] = self.parse_io5(self.data[050])
+        self.config["io6"] = self.parse_io6(self.data[051])
+        self.config["io7"] = self.parse_io7(self.data[052])
+        self.config["io8"] = self.parse_io8(self.data[053])
+        self.config["rtc"] = self.parse_rtc(self.data[056])
+        self.config["mon"] = self.parse_mon(self.data[057])
+        self.config["oprq"] = self.parse_oprq(self.data[060])
 
         for i in range(0, 15):
-            self.config["char%i"%i] = self.parse_char(self.data[49+i])
+            self.config["char%i"%i] = self.parse_char(self.data[061+i])
 
     # --------------------------------------------------------------------
     def sections(self):
@@ -206,7 +217,7 @@ class M400Conf:
  
     # --------------------------------------------------------------------
     def parse_disk(self, word):
-        disk = WordConf(word)
+        disk = WordConf(word, disableable = True)
         disk.add("foreign", "Talerz", 0, 0, ["Własny", "Obcy"])
         disk.add("dtype",   "Typ", 1, 2, ['MERA 9425 w kanale pamięciowym', 'Winchester', 'Floppy', '9425 lub EC 5061 w PLIX-ie'])
 
@@ -247,7 +258,7 @@ class M400Conf:
 
     # --------------------------------------------------------------------
     def parse_tapes(self, word):
-        tape = WordConf(word)
+        tape = WordConf(word, disableable = True)
         tape.add("unit", "Numer jednostki ster.", 8, 10)
         tape.add("chan", "Numer kanał", 11, 14)
 
@@ -255,25 +266,25 @@ class M400Conf:
 
     # --------------------------------------------------------------------
     def parse_io1(self, word):
-        wc = WordConf(word)
+        wc = WordConf(word, disableable = True)
         wc.add("camac1", "Adres CAMAC 1", 11, 14)
         return wc
 
     # --------------------------------------------------------------------
     def parse_io2(self, word):
-        wc = WordConf(word)
+        wc = WordConf(word, disableable = True)
         wc.add("camac2", "Adres CAMAC 2", 11, 14)
         return wc
 
     # --------------------------------------------------------------------
     def parse_io3(self, word):
-        wc = WordConf(word)
+        wc = WordConf(word, disableable = True)
         wc.add("camac3", "Adres CAMAC 3/PI", 11, 14)
         return wc
 
     # --------------------------------------------------------------------
     def parse_io4(self, word):
-        wc = WordConf(word)
+        wc = WordConf(word, disableable = True)
         wc.add("camac4", "Adres CAMAC 3/IEC", 11, 14)
         return wc
 
@@ -293,19 +304,19 @@ class M400Conf:
 
     # --------------------------------------------------------------------
     def parse_io7(self, word):
-        wc = WordConf(word)
+        wc = WordConf(word, disableable = True)
         wc.add("char1", "Kanał znakowy 1", 11, 14)
         return wc
 
     # --------------------------------------------------------------------
     def parse_io8(self, word):
-        wc = WordConf(word)
+        wc = WordConf(word, disableable = True)
         wc.add("char2", "Kanał znakowy 2", 11, 14)
         return wc
 
     # --------------------------------------------------------------------
     def parse_rtc(self, word):
-        wc = WordConf(word)
+        wc = WordConf(word, disableable = True)
         wc.add("unit", "Urządzenie", 8, 10)
         wc.add("chan", "Kanał", 8, 10)
         return wc
@@ -323,8 +334,8 @@ class M400Conf:
         return wc
 
     # --------------------------------------------------------------------
-    def parse_char(self, word):
-        wc = WordConf(word)
+    def parse_char(self, word, disableable = True):
+        wc = WordConf(word, disableable = True)
         # MULTIX only
         if word >> 8 != 0:
             wc.add("dir", "Kierunek", 0, 2, ["--", "--", "Wejście", "--", "Wyjście", "", "Half-Duplex", "Full-Duplex"])
@@ -339,7 +350,21 @@ class M400Conf:
 # ---- MAIN --------------------------------------------------------------
 # ------------------------------------------------------------------------
 
-m4c = M400Conf("../varia/system.cut", 0)
+if len(sys.argv) == 3:
+    image = sys.argv[1]
+    offset = int(sys.argv[2])
+elif len(sys.argv) == 2:
+    image = sys.argv[1]
+    offset = 0
+else:
+    print "Usage: m4konf.py <image> [offset]"
+    sys.exit(1)
+
+try:
+    m4c = M400Conf(image, offset)
+except Exception, e:
+    print "Cannot load system configuration: %s" % str(e)
+    sys.exit(1)
 
 while True:
     try:
@@ -350,6 +375,8 @@ while True:
         break
     except KeyboardInterrupt:
         break
+    except:
+        continue
 
     if cmd == "quit" or cmd == "exit":
         break
@@ -361,13 +388,24 @@ while True:
         try:
             section = args[0]
         except:
-            print "  Use: print <section>"
+            print "  Use: print <section>|all"
             continue
-        try:
-            for name, desc, val, dval in m4c.config[section]:
-                print "  %-7s = %-3i   # %s = %s" % (name, val, desc, dval)
-        except:
-            print "  No section: %s" % section
+
+        if section == 'all':
+            sections = sorted([ x for x in m4c.config ])
+        else:
+            sections = [ section ]
+
+        for s in sections:
+            print "[%s]" % s
+            try:
+                for name, desc, val, dval in m4c.config[s]:
+                    print "  %-7s = %-3i   # %s = %s" % (name, val, desc, dval)
+            except ValueError:
+                print "  Disabled"
+                continue
+            except:
+                print "  No section: %s" % s
 
     elif cmd == "set":
         try:
