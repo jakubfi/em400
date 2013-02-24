@@ -292,7 +292,7 @@ int op_ac()
 {
 	int16_t N = cpu_get_eff_arg();
 	int16_t tmp = R(IR_A);
-	int32_t res = N + tmp + R0_C;
+	int32_t res = N + tmp + Fget(FL_C);
 	R0_Ms16((uint32_t) res);
 	R0_Zs16((uint32_t) res);
 	R0_Cs16((uint32_t) res);
@@ -535,30 +535,30 @@ int op_70_ujs()
 // -----------------------------------------------------------------------
 int op_70_jls()
 {
-	if (R0_E) Radd(R_IC, IR_T);
+	if (Fget(FL_E)) Radd(R_IC, IR_T);
 	return OP_OK;
 }
 
 // -----------------------------------------------------------------------
 int op_70_jes()
 {
-	if (R0_L) Radd(R_IC, IR_T);
+	if (Fget(FL_L)) Radd(R_IC, IR_T);
 	return OP_OK;
 }
 
 // -----------------------------------------------------------------------
 int op_70_jgs()
 {
-	if (R0_G) Radd(R_IC, IR_T);
+	if (Fget(FL_G)) Radd(R_IC, IR_T);
 	return OP_OK;
 }
 
 // -----------------------------------------------------------------------
 int op_70_jvs()
 {
-	if (R0_V) {
+	if (Fget(FL_V)) {
 		Radd(R_IC, IR_T);
-		R0_Vcb;
+		Fset(FL_V);
 	}
 	return OP_OK;
 }
@@ -566,21 +566,21 @@ int op_70_jvs()
 // -----------------------------------------------------------------------
 int op_70_jxs()
 {
-	if (R0_X) Radd(R_IC, IR_T);
+	if (Fget(FL_X)) Radd(R_IC, IR_T);
 	return OP_OK;
 }
 
 // -----------------------------------------------------------------------
 int op_70_jys()
 {
-	if (R0_Y) Radd(R_IC, IR_T);
+	if (Fget(FL_Y)) Radd(R_IC, IR_T);
 	return OP_OK;
 }
 
 // -----------------------------------------------------------------------
 int op_70_jcs()
 {
-	if (R0_C) Radd(R_IC, IR_T);
+	if (Fget(FL_C)) Radd(R_IC, IR_T);
 	return OP_OK;
 }
 
@@ -659,8 +659,8 @@ int op_72_zlb()
 // -----------------------------------------------------------------------
 int op_72_sxu()
 {
-	if (R(IR_A) & 0b1000000000000000) R0_Zsb;
-	else R0_Zcb;
+	if (R(IR_A) & 0b1000000000000000) Fset(FL_Z);
+	else Fclr(FL_Z);
 	R0_Zs16(R(IR_A));
 	return OP_OK;
 }
@@ -675,8 +675,8 @@ int op_72_nga()
 // -----------------------------------------------------------------------
 int op_72_slz()
 {
-	if (R(IR_A) & 0b1000000000000000) R0_Ysb;
-	else R0_Ycb;
+	if (R(IR_A) & 0b1000000000000000) Fset(FL_Y);
+	else Fclr(FL_Y);
 	Rw(IR_A, (R(IR_A)<<1) & 0b1111111111111110);
 	return OP_OK;
 }
@@ -684,27 +684,27 @@ int op_72_slz()
 // -----------------------------------------------------------------------
 int op_72_sly()
 {
-	if (R(IR_A) & 0b1000000000000000) R0_Ysb;
-	else R0_Ycb;
-	Rw(IR_A, (R(IR_A)<<1) & (0b1111111111111110 | R0_Y));
+	if (R(IR_A) & 0b1000000000000000) Fset(FL_Y);
+	else Fclr(FL_Y);
+	Rw(IR_A, (R(IR_A)<<1) & (0b1111111111111110 | Fget(FL_Y)));
 	return OP_OK;
 }
 
 // -----------------------------------------------------------------------
 int op_72_slx()
 {
-	if (R(IR_A) & 0b1000000000000000) R0_Ysb;
-	else R0_Ycb;
-	Rw(IR_A, (R(IR_A)<<1) & (0b1111111111111110 | R0_X));
+	if (R(IR_A) & 0b1000000000000000) Fset(FL_Y);
+	else Fclr(FL_Y);
+	Rw(IR_A, (R(IR_A)<<1) & (0b1111111111111110 | Fget(FL_X)));
 	return OP_OK;
 }
 
 // -----------------------------------------------------------------------
 int op_72_sry()
 {
-	if (R(IR_A) & 1) R0_Ysb;
-	else R0_Ycb;
-	Rw(IR_A, (R(IR_A)>>1) & (0b0111111111111111 | (R0_Y<<15)));
+	if (R(IR_A) & 1) Fset(FL_Y);
+	else Fclr(FL_Y);
+	Rw(IR_A, (R(IR_A)>>1) & (0b0111111111111111 | (Fget(FL_Y) << 15)));
 	return OP_OK;
 }
 
@@ -754,8 +754,8 @@ int op_72_zrb()
 // -----------------------------------------------------------------------
 int op_72_sxl()
 {
-	if (R(IR_A) & 1) R0_Xsb;
-	else R0_Xcb;
+	if (R(IR_A) & 1) Fset(FL_X);
+	else Fclr(FL_X);
 	R0_Zs16(R(IR_A));
 	return OP_OK;
 }
@@ -763,7 +763,7 @@ int op_72_sxl()
 // -----------------------------------------------------------------------
 int op_72_ngc()
 {
-	Rw(IR_A, ~R(IR_A) + R0_C);
+	Rw(IR_A, ~R(IR_A) + Fget(FL_C));
 	return OP_OK;
 }
 
@@ -771,11 +771,11 @@ int op_72_ngc()
 int op_72_svz()
 {
 	if (R(IR_A) & 0b1000000000000000) {
-		R0_Ysb;
-		R0_Vsb;
+		Fset(FL_Y);
+		Fset(FL_V);
 	} else {
-		R0_Ycb;
-		R0_Vcb;
+		Fclr(FL_Y);
+		Fclr(FL_V);
 	}
 	Rw(IR_A, (R(IR_A)<<1) & 0b1111111111111110);
 	return OP_OK;
@@ -785,13 +785,13 @@ int op_72_svz()
 int op_72_svy()
 {
 	if (R(IR_A) & 0b1000000000000000) {
-		R0_Ysb;
-		R0_Vsb;
+		Fset(FL_Y);
+		Fset(FL_V);
 	} else {
-		R0_Ycb;
-		R0_Vcb;
+		Fclr(FL_Y);
+		Fclr(FL_V);
 	}
-	Rw(IR_A, (R(IR_A)<<1) & (0b1111111111111110 | R0_Y));
+	Rw(IR_A, (R(IR_A)<<1) & (0b1111111111111110 | Fget(FL_Y)));
 	return OP_OK;
 }
 
@@ -799,30 +799,30 @@ int op_72_svy()
 int op_72_svx()
 {
 	if (R(IR_A) & 0b1000000000000000) {
-		R0_Ysb;
-		R0_Vsb;
+		Fset(FL_Y);
+		Fset(FL_V);
 	} else {
-		R0_Ycb;
-		R0_Vcb;
+		Fclr(FL_Y);
+		Fclr(FL_V);
 	}
-	Rw(IR_A, (R(IR_A)<<1) & (0b1111111111111110 | R0_X));
+	Rw(IR_A, (R(IR_A)<<1) & (0b1111111111111110 | Fget(FL_X)));
 	return OP_OK;
 }
 
 // -----------------------------------------------------------------------
 int op_72_srx()
 {
-	if (R(IR_A) & 1) R0_Ysb;
-	else R0_Ycb;
-	Rw(IR_A, (R(IR_A)>>1) & (0b0111111111111111 | (R0_X<<15)));
+	if (R(IR_A) & 1) Fset(FL_Y);
+	else Fclr(FL_Y);
+	Rw(IR_A, (R(IR_A)>>1) & (0b0111111111111111 | (Fget(FL_X) << 15)));
 	return OP_OK;
 }
 
 // -----------------------------------------------------------------------
 int op_72_srz()
 {
-	if (R(IR_A) & 1) R0_Ysb;
-	else R0_Ycb;
+	if (R(IR_A) & 1) Fset(FL_Y);
+	else Fclr(FL_Y);
 	Rw(IR_A, (R(IR_A)>>1) & 0b0111111111111111);
 	return OP_OK;
 }
@@ -862,7 +862,7 @@ int op_73_mcl()
 {
 	Rw(R_SR, 0);
 	int_clear_all();
-	Rw(0, 0);
+	reg_write(0, 0, 1, 1);
 	// TODO: zeruj kanały
 	// TODO: zeruj urządzenia
 	mem_remove_maps();
@@ -965,7 +965,7 @@ int op_74_uj()
 int op_74_jl()
 {
 	uint16_t N = cpu_get_eff_arg();
-	if (R0_L) Rw(R_IC, N);
+	if (Fget(FL_L)) Rw(R_IC, N);
 	return OP_OK;
 }
 
@@ -973,7 +973,7 @@ int op_74_jl()
 int op_74_je()
 {
 	uint16_t N = cpu_get_eff_arg();
-	if (R0_E) Rw(R_IC, N);
+	if (Fget(FL_E)) Rw(R_IC, N);
 	return OP_OK;
 }
 
@@ -981,7 +981,7 @@ int op_74_je()
 int op_74_jg()
 {
 	uint16_t N = cpu_get_eff_arg();
-	if (R0_G) Rw(R_IC, N);
+	if (Fget(FL_G)) Rw(R_IC, N);
 	return OP_OK;
 }
 
@@ -989,7 +989,7 @@ int op_74_jg()
 int op_74_jz()
 {
 	uint16_t N = cpu_get_eff_arg();
-	if (R0_Z) Rw(R_IC, N);
+	if (Fget(FL_Z)) Rw(R_IC, N);
 	return OP_OK;
 }
 
@@ -997,7 +997,7 @@ int op_74_jz()
 int op_74_jm()
 {
 	uint16_t N = cpu_get_eff_arg();
-	if (R0_M) Rw(R_IC, N);
+	if (Fget(FL_M)) Rw(R_IC, N);
 	return OP_OK;
 }
 
@@ -1005,7 +1005,7 @@ int op_74_jm()
 int op_74_jn()
 {
 	uint16_t N = cpu_get_eff_arg();
-	if (!R0_E) Rw(R_IC, N);
+	if (!Fget(FL_E)) Rw(R_IC, N);
 	return OP_OK;
 }
 

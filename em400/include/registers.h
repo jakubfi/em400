@@ -39,7 +39,7 @@ enum _registers {
 	R_KB	= 11,
 	R_MOD	= 12,
 	R_MODc	= 13,
-	R_P	= 14,
+	R_P		= 14,
 	R_ZC17	= 15,
 	R_MAX	= 16
 };
@@ -47,19 +47,23 @@ enum _registers {
 extern uint16_t regs[];
 
 uint16_t reg_read(int r, int trace);
-void reg_write(int r, uint16_t x, int trace);
+void reg_write(int r, uint16_t x, int trace, int hw);
 
 #define R(x)		reg_read(x, 1)
 #define nR(x)		reg_read(x, 0)
-#define Rw(r, x)	reg_write(r, x, 1)
-#define nRw(r, x)	reg_write(r, x, 0)
+#define Rw(r, x)	reg_write(r, x, 1, 0)
+#define nRw(r, x)	reg_write(r, x, 0, 0)
 
-#define Rinc(r)		reg_write(r, R(r)+1, 1)
-#define nRinc(r)	reg_write(r, nR(r)+1, 0)
-#define Rdec(r)		reg_write(r, R(r)-1, 1)
-#define nRdec(r)	reg_write(r, nR(r)-1, 0)
-#define Radd(r, x)	reg_write(r, R(r)+x, 1)
-#define nRadd(r, x)	reg_write(r, nR(r)+x, 0)
+#define Rinc(r)		reg_write(r, R(r)+1, 1, 0)
+#define nRinc(r)	reg_write(r, nR(r)+1, 0, 0)
+#define Rdec(r)		reg_write(r, R(r)-1, 1, 0)
+#define nRdec(r)	reg_write(r, nR(r)-1, 0, 0)
+#define Radd(r, x)	reg_write(r, R(r)+x, 1, 0)
+#define nRadd(r, x)	reg_write(r, nR(r)+x, 0, 0)
+
+#define Fget(x)		(reg_read(0, 1) | x) ? 1 : 0
+#define Fset(x)		reg_write(0, reg_read(0, 0) | x, 1, 1)
+#define Fclr(x)		reg_write(0, reg_read(0, 0) & ~x, 1, 1)
 
 // -----------------------------------------------------------------------
 // macros to access bit fields
@@ -68,19 +72,7 @@ void reg_write(int r, uint16_t x, int trace);
 // -----------------------------------------------------------------------
 // SR
 // -----------------------------------------------------------------------
-#define SR_RM	((nR(R_SR) & 0b1111111111000000) >> 6)
-#define SR_RM0	((nR(R_SR) & 0b1000000000000000) >> 15)
-#define SR_RM1	((nR(R_SR) & 0b0100000000000000) >> 14)
-#define SR_RM2	((nR(R_SR) & 0b0010000000000000) >> 13)
-#define SR_RM3	((nR(R_SR) & 0b0001000000000000) >> 12)
-#define SR_RM4	((nR(R_SR) & 0b0000100000000000) >> 11)
-#define SR_RM5	((nR(R_SR) & 0b0000010000000000) >> 10)
-#define SR_RM6	((nR(R_SR) & 0b0000001000000000) >> 9)
-#define SR_RM7	((nR(R_SR) & 0b0000000100000000) >> 8)
-#define SR_RM8	((nR(R_SR) & 0b0000000010000000) >> 7)
-#define SR_RM9	((nR(R_SR) & 0b0000000001000000) >> 6)
 #define SR_Q	((nR(R_SR) & 0b0000000000100000) >> 5)
-#define SR_BS	((nR(R_SR) & 0b0000000000010000) >> 4)
 #define SR_NB	((nR(R_SR) & 0b0000000000001111) >> 0)
 
 #define SR_RM9cb	Rw(R_SR, R(R_SR) & 0b1111111110111111)
@@ -112,50 +104,23 @@ void reg_write(int r, uint16_t x, int trace);
 // -----------------------------------------------------------------------
 // R0
 // -----------------------------------------------------------------------
-
-// R0 - read
-#define R0_Z	((R(0) & 0b1000000000000000) >> 15)
-#define R0_M	((R(0) & 0b0100000000000000) >> 14)
-#define R0_V	((R(0) & 0b0010000000000000) >> 13)
-#define R0_C	((R(0) & 0b0001000000000000) >> 12)
-#define R0_L	((R(0) & 0b0000100000000000) >> 11)
-#define R0_E	((R(0) & 0b0000010000000000) >> 10)
-#define R0_G	((R(0) & 0b0000001000000000) >> 9)
-#define R0_Y	((R(0) & 0b0000000100000000) >> 8)
-#define R0_X	((R(0) & 0b0000000010000000) >> 7)
-#define R0_USER	((R(0) & 0b0000000001111111) >> 0)
-
-// R0 - set
-#define R0_Zsb	Rw(0, R(0) | 0b1000000000000000)
-#define R0_Msb	Rw(0, R(0) | 0b0100000000000000)
-#define R0_Vsb	Rw(0, R(0) | 0b0010000000000000)
-#define R0_Csb	Rw(0, R(0) | 0b0001000000000000)
-#define R0_Lsb	Rw(0, R(0) | 0b0000100000000000)
-#define R0_Esb	Rw(0, R(0) | 0b0000010000000000)
-#define R0_Gsb	Rw(0, R(0) | 0b0000001000000000)
-#define R0_Ysb	Rw(0, R(0) | 0b0000000100000000)
-#define R0_Xsb	Rw(0, R(0) | 0b0000000010000000)
-
-// R0 - clear
-#define R0_Zcb	Rw(0, R(0) & 0b0111111111111111)
-#define R0_Mcb	Rw(0, R(0) & 0b1011111111111111)
-#define R0_Vcb	Rw(0, R(0) & 0b1101111111111111)
-#define R0_Ccb	Rw(0, R(0) & 0b1110111111111111)
-#define R0_Lcb	Rw(0, R(0) & 0b1111011111111111)
-#define R0_Ecb	Rw(0, R(0) & 0b1111101111111111)
-#define R0_Gcb	Rw(0, R(0) & 0b1111110111111111)
-#define R0_Ycb	Rw(0, R(0) & 0b1111111011111111)
-#define R0_Xcb	Rw(0, R(0) & 0b1111111101111111)
-
-// R0 - write
-#define R0_USERw(x)	Rw(0, R(0) | x)
+#define FL_Z	0b1000000000000000
+#define FL_M	0b0100000000000000
+#define FL_V	0b0010000000000000
+#define FL_C	0b0001000000000000
+#define FL_L	0b0000100000000000
+#define FL_E	0b0000010000000000
+#define FL_G	0b0000001000000000
+#define FL_Y	0b0000000100000000
+#define FL_X	0b0000000010000000
+#define FL_USER	0b0000000001111111
 
 // R0 - set flags by x, y, z
 #define R0_Cs16(z)	Rw(0, R(0) | (z & (0xffff+1)) >> 4);
 #define R0_Cs32(z)	Rw(0, R(0) | (z & (0xffffffff+1)) >> (16+4));
 #define R0_Cs64(z)	Rw(0, R(0) | (z & (0xffffffffff+1)) >> (8+16+4));
 
-#define R0_Zs(z)	if (!z) R0_Zsb; else R0_Zcb;
+#define R0_Zs(z)	if (!z) Fset(FL_Z); else Fclr(FL_Z);
 #define R0_Zs16(z)	R0_Zs(z)
 #define R0_Zs32(z)	R0_Zs(z)
 #define R0_Zs64(z)	R0_Zs(z)
@@ -164,24 +129,24 @@ void reg_write(int r, uint16_t x, int trace);
 #define R0_Ms32(z)	Rw(0, R(0) | (z & 0x80000000) >> (16+1));
 #define R0_Ms64(z)	Rw(0, R(0) | (z & 0x8000000000) >> (8+16+1));
 
-#define R0_Vs(x,y,z)	if (((x<0) && (y<0) && (z>0)) || ((x>0) && (y>0) && (z<0))) R0_Vsb; else R0_Vcb;
+#define R0_Vs(x,y,z)	if (((x<0) && (y<0) && (z>0)) || ((x>0) && (y>0) && (z<0))) Fset(FL_V); else Fclr(FL_V);
 #define R0_Vs16(x,y,z)	R0_Vs(x,y,z)
 #define R0_Vs32(x,y,z)	R0_Vs(x,y,z)
 #define R0_Vs64(x,y,z)	R0_Vs(x,y,z)
 
 #define R0_LEG(x,y) \
-	if (x==y) { \
-		R0_Esb; \
-		R0_Gcb; \
-		R0_Lcb; \
+	if (x == y) { \
+		Fset(FL_E); \
+		Fclr(FL_G); \
+		Fclr(FL_L); \
 	} else { \
-		R0_Ecb; \
-		if (x<y) { \
-			R0_Lsb; \
-			R0_Gcb; \
+		Fclr(FL_E); \
+		if (x < y) { \
+			Fset(FL_L); \
+			Fclr(FL_G); \
 		} else { \
-			R0_Lcb; \
-			R0_Gsb; \
+			Fclr(FL_L); \
+			Fset(FL_G); \
 		} \
 	}
 

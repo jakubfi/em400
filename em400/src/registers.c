@@ -46,7 +46,7 @@ uint16_t reg_read(int r, int trace)
 }
 
 // -----------------------------------------------------------------------
-void reg_write(int r, uint16_t x, int trace)
+void reg_write(int r, uint16_t x, int trace, int hw)
 {
 #ifdef WITH_DEBUGGER
 	LOG(D_REG, 1, "%s <- 0x%04x", log_reg_name[r], x);
@@ -58,10 +58,10 @@ void reg_write(int r, uint16_t x, int trace)
 		}
 	}
 #endif
-	if (r) {
+	if (r || hw) {
 		regs[r] = x;
 	} else {
-		regs[r] = regs[r] | (x & 0b0000000011111111);
+		regs[r] = (regs[r] & 0b1111111100000000) | (x & 0b0000000011111111);
 	}
 }
 

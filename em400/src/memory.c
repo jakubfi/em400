@@ -35,7 +35,7 @@
 pthread_mutex_t mem_mutex = PTHREAD_MUTEX_INITIALIZER;
 
 // memory configuration provided by the user: number of segments in a module
-int mem_conf[MEM_MAX_MODULES] = { 2, 8, 8, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 };
+int mem_conf[MEM_MAX_MODULES] = { 7, 8, 8, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 };
 
 // physical memory: modules with segments inside
 uint16_t *mem_segment[MEM_MAX_MODULES][MEM_MAX_SEGMENTS];
