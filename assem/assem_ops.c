@@ -1,4 +1,4 @@
-//  Copyright (c) 2012 Jakub Filipowicz <jakubf@gmail.com>
+//  Copyright (c) 2012-2013 Jakub Filipowicz <jakubf@gmail.com>
 //
 //  This program is free software; you can redistribute it and/or modify
 //  it under the terms of the GNU General Public License as published by
@@ -19,9 +19,16 @@
 #include <string.h>
 #include <inttypes.h>
 #include <ctype.h>
+#include <arpa/inet.h>
 
 #include "assem_parse.h"
 #include "assem_ops.h"
+
+struct label_t *label_first;
+struct label_t *label_last;
+
+struct word_t *word_first;
+struct word_t *word_last;
 
 struct op_t ops[] = {
 
@@ -112,7 +119,7 @@ struct op_t ops[] = {
 { "SRZ", OP_C, 0b1110101000001000 },
 { "LPC", OP_C, 0b1110101000001001 },
 
-{ "HLT", OP_S, 0b1110110000000000 },
+{ "HLT", OP_JS, 0b1110110000000000 },
 { "MCL", OP_S, 0b1110110001000000 },
 { "CIT", OP_S, 0b1110110010000000 },
 { "SIL", OP_S, 0b1110110010000001 },
@@ -184,5 +191,138 @@ struct op_t * get_op(char * opname)
 	free(opname_u);
 	return NULL;
 }
+
+// -----------------------------------------------------------------------
+struct vval_t * make_vval(int value, char *label)
+{
+	struct vval_t *vval = malloc(sizeof(struct vval_t));
+	vval->value = value;
+	if (label) {
+		vval->label = strdup(label);
+	} else {
+		vval->label = NULL;
+	}
+	return vval;
+}
+
+// -----------------------------------------------------------------------
+struct norm_t * make_norm(int rc, int rb, struct vval_t *vval)
+{
+	struct norm_t *norm = malloc(sizeof(struct norm_t));
+	norm->rc = rc;
+	norm->rb = rb;
+	norm->vval = vval;
+	norm->is_addr = 0;
+	return norm;
+}
+
+// -----------------------------------------------------------------------
+struct word_t * make_op(int type, uint16_t op, int ra, int value, struct norm_t *norm)
+{
+	struct word_t *word = malloc(sizeof(struct word_t));
+	word->type = type;
+	word->opcode = op;
+	word->ra = ra;
+	word->value = value;
+	word->norm = norm;
+	return word;
+}
+
+// -----------------------------------------------------------------------
+void label_add(int addr, char *name)
+{
+	struct label_t *label = malloc(sizeof(struct label_t));
+	label->addr = addr;
+	label->name = strdup(name);
+
+	if (!label_first) {
+		label_first = label_last = label;
+	} else {
+		label_last->next = label;
+		label_last = label;
+	}
+}
+
+// -----------------------------------------------------------------------
+struct label_t * label_find(char *name)
+{
+	struct label_t *l = label_first;
+	while (l) {
+		if (!strcmp(name, l->name)) {
+			return l;
+		}
+		l = l->next;
+	}
+	return NULL;
+}
+
+// -----------------------------------------------------------------------
+void word_add(struct word_t *word)
+{
+	if (!word_first) {
+		word_first = word_last = word;
+	} else {
+		word_last->next = word;
+		word_last = word;
+	}
+}
+
+// -----------------------------------------------------------------------
+int program_write(struct word_t *word, FILE *out)
+{
+	int res = 0;
+
+	while (word) {
+		uint16_t code = 0;
+
+		if (word->type == W_DATA) {
+			code = word->value;
+
+		} else {
+			code |= word->opcode;
+			code |= word->ra << 6;
+			if (word->norm) {
+				code |= (word->norm->is_addr << 9);
+				code |= word->norm->rc;
+				code |= (word->norm->rb << 3);
+			}
+			if ((word->type == W_OP_KA1) || (word->type == W_OP_JS)) {
+				if (word->value < 0) {
+					code |= 0b0000001000000000;
+				}
+				code |= word->value & 0b0000000000111111;
+			}
+			if (word->type == W_OP_KA2) {
+				code |= (word->value & 256);
+			}
+			if (word->type == W_OP_SHC) {
+				code |= (word->value & 0b111);
+				code |= ((word->value & 0b1000) << 6);
+			}
+		}
+
+		code = ntohs(code);
+		res += fwrite(&code, 2, 1, out);
+
+		if ((word->norm) && (word->norm->rc == 0)) {
+			uint16_t data;
+			if (!word->norm->vval->label) {
+				data = ntohs(word->norm->vval->value);
+			} else {
+				struct label_t * l = label_find(word->norm->vval->label);
+				if (!l) {
+					printf("Can't find label: %s\n", word->norm->vval->label);
+				} else {
+					data = ntohs(l->addr);
+				}
+			}
+			res += fwrite(&data, 2, 1, out);
+		}
+
+		word = word->next;
+	}
+	return res;
+}
+
 
 // vim: tabstop=4

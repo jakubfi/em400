@@ -1,5 +1,5 @@
 %{
-//  Copyright (c) 2012 Jakub Filipowicz <jakubf@gmail.com>
+//  Copyright (c) 2012-2013 Jakub Filipowicz <jakubf@gmail.com>
 //
 //  This program is free software; you can redistribute it and/or modify
 //  it under the terms of the GNU General Public License as published by
@@ -27,7 +27,7 @@ void yyerror(char *);
 %}
 
 ws		[ \t]+
-comment	^#.*
+comment	^[#;].*
 
 oct		-?0[0-9]+
 dec		-?[0-9]+
