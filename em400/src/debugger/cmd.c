@@ -53,7 +53,7 @@ struct cmd_t dbg_commands[] = {
 	{ "brk",	F_BRK,		"Manipulate breakpoints", "  brk add <expression>\n  brk list\n  brk del <brk_number>" },
 	{ "run",	F_RUN,		"Run emulation", "  run" },
 	{ "stack",	F_STACK,	"Show stack", "  stack" },
-	{ "log",	F_LOG,		"Enable logging", "  log\n  log on|off\n  log file <filename>\n  log set <domain>:<level>" },
+	{ "log",	F_LOG,		"Enable logging", "  log\n  log on|off\n  log file <filename>\n  log level <domain>:<level>" },
 	{ NULL,		0,			NULL }
 };
 

@@ -32,13 +32,13 @@
 
 struct chan_t io_chan[IO_MAX_CHAN];
 
-int io_chan_conf[IO_MAX_CHAN] = { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 };
+int io_chan_conf[IO_MAX_CHAN] = { 0, 0, 0, 0, CHAN_MEM, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 };
 int io_unit_conf[IO_MAX_CHAN][IO_MAX_UNIT] = {
 { 0, 0, 0, 0, 0, 0, 0, 0 },
 { 0, 0, 0, 0, 0, 0, 0, 0 },
 { 0, 0, 0, 0, 0, 0, 0, 0 },
 { 0, 0, 0, 0, 0, 0, 0, 0 },
-{ 0, 0, 0, 0, 0, 0, 0, 0 },
+{ 0, 0, 0, UNIT_9425, 0, 0, 0, 0 },
 { 0, 0, 0, 0, 0, 0, 0, 0 },
 { 0, 0, 0, 0, 0, 0, 0, 0 },
 { 0, 0, 0, 0, 0, 0, 0, 0 },
@@ -173,14 +173,14 @@ int io_dispatch(int dir, uint16_t n, uint16_t *r)
 	// channel/unit command
 	} else {
 		struct chan_t *ch = io_chan + chan;
+		int res = ch->f_cmd(ch, dir, ch->unit[unit], cmd, r);
 
 #ifdef WITH_DEBUGGER
 		char *cmdc = int2bin(cmd, 8);
-		LOG(D_IO, 1, "I/O command, dir = %s, chan = %d, unit = %d, cmd = %s", dir ? "OUT" : "IN", chan, unit, cmdc);
+		LOG(D_IO, 1, "I/O command, dir = %s, chan = %d, unit = %d, cmd = %s, result -> %i", dir ? "OUT" : "IN", chan, unit, cmdc, res);
 		free(cmdc);
 #endif
-
-		return ch->f_cmd(ch, dir, ch->unit[unit], cmd, r);
+		return res;
 	}
 }
 
