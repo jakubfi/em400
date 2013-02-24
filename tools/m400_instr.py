@@ -87,11 +87,13 @@ def m400_name_i72(i, d, a, b, c, mode):
 
 # ------------------------------------------------------------------------
 def m400_name_i73(i, d, a, b, c, mode):
-    if a != 2:
-        return op_no_arg_i73_a[a][mode], op_no_arg_i73_a[a][2]
-    else:
+    # sil, sit, cit, ciu
+    if a == 2:
         dc = (d<<3) | c;
         return op_no_arg_i73_dc[dc][mode], op_no_arg_i73_dc[dc][2]
+    else:
+        da = (d<<3) | a;
+        return op_no_arg_i73_da[da][mode], op_no_arg_i73_da[da][2]
 
 # ------------------------------------------------------------------------
 def m400_name_i74(i, d, a, b, c, mode):
@@ -230,24 +232,33 @@ op_no_arg_i72_dbc = {
     0b1000111: ['SRX', 'shrx', 'Shift Right, add X'],
     0b1001000: ['SRZ', 'shr',  'Shift Right, add Zero'],
     0b1001001: ['LPC', 'lpc',  'Load Program Conditions']
-
 }
 
-op_no_arg_i73_a = {
-    0: ['HLT', 'stop', 'HaLT'],
-    1: ['MCL', 'mcl',  'Master CLear'],
-    3: ['GIU', 'giu',  'Generate Interrupt Upper'],
-    4: ['LIP', 'lip',  'Leave to Interrupted Program'],
-    5: ['GIL', 'gil',  'Generate Interrupt Lower']
+op_no_arg_i73_da = {
+    0b0000: ['HLT', 'stop', 'HaLT'],
+    0b1000: ['HLT', 'stop', 'HaLT'],
+
+    0b0001: ['MCL', 'mcl',  'Master CLear'],
+    0b1001: ['MCL', 'mcl',  'Master CLear'],
+
+    0b0011: ['GIU', 'giu',  'Generate Interrupt Upper'],
+    0b1011: ['GIL', 'gil',  'Generate Interrupt Lower'],
+
+    0b0100: ['LIP', 'lip',  'Leave to Interrupted Program'],
+    0b1100: ['LIP', 'lip',  'Leave to Interrupted Program']
 }
 
 op_no_arg_i73_dc = {
-    0:  ['CIT',  'cit',  'Clear InTerrupts'],
-    1:  ['SIL',  'sil',  'Set Interrupt Lower'],
-    2:  ['SIU',  'siu',  'Set Interrupt Upper'],
-    3:  ['SIT',  'sit',  'Set InTerrupts'],
-    4:  ['SINT', 'sint', 'Set Interrupt eXtra'],
-    12: ['SIND', 'sind', 'Clear Interrupt eXtra']
+    0b0000: ['CIT',  'cit',  'Clear InTerrupts'],
+    0b1000: ['CIT',  'cit',  'Clear InTerrupts'],
+    0b0001: ['SIL',  'sil',  'Set Interrupt Lower'],
+    0b1001: ['SIL',  'sil',  'Set Interrupt Lower'],
+    0b0010: ['SIU',  'siu',  'Set Interrupt Upper'],
+    0b1010: ['SIU',  'siu',  'Set Interrupt Upper'],
+    0b0011: ['SIT',  'sit',  'Set InTerrupts'],
+    0b1011: ['SIT',  'sit',  'Set InTerrupts'],
+    0b0100: ['SINT', 'sint', 'Software INterrupt seT'],
+    0b1100: ['SIND', 'sind', 'Software INterrupt Delete']
 }
 
 op_basic_i74_a = {
