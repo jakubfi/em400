@@ -147,8 +147,8 @@
 #define T_GIU "RZ\"[3] = 1\n\tif OK then skip"
 #define T_GIL "RZ\"[29] = 1\n\tif OK then skip"
 #define T_LIP "pop (IC, r0, SR)"
-#define T_SIX "int_set(EXTRA)"
-#define T_CIX "int_clear(EXTRA)"
+#define T_SINT "int_set(EXTRA)"
+#define T_SIND "int_clear(EXTRA)"
 
 #define T_UJ "IC = %n"
 #define T_JL "if < then IC = %n"

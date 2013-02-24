@@ -133,8 +133,8 @@ int op_73_sit();
 int op_73_giu();
 int op_73_gil();
 int op_73_lip();
-int op_73_six();
-int op_73_cix();
+int op_73_sint();
+int op_73_sind();
 
 int op_74_uj();
 int op_74_jl();
