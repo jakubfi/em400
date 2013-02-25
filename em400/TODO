@@ -1,5 +1,7 @@
 Known bugs:
 
+T-arg should honor pre-modification (and use zc17?)
+
 CPU:
 
 * AWP - sign storage, floating point instructions
