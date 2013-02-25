@@ -33,23 +33,25 @@ int ic = 0;
 	int val;
 	struct word_t *word;
 	struct norm_t *norm;
-	struct vval_t *vval;
+	struct enode_t *enode;
 };
 
 %token '[' ']' ',' '+'
-%token DATA
+%token DATA EQU RES
 %token <str> DLABEL NAME
 %token <val> VALUE REGISTER
 %token <val> OP_2ARG OP_FD OP_KA1 OP_JS OP_KA2 OP_C OP_SHC OP_S OP_J OP_L OP_G OP_BN
 
 %type <norm> normval norm
 %type <word> data instruction
-%type <vval> val
+%type <enode> expr
+
+%left '+' '-'
 
 %%
 
 sentences:
-	sentence sentences
+	sentences sentence
 	|
 	;
 
@@ -65,26 +67,29 @@ sentence:
 		word_add($1);
 		ic++;
 	}
-	| DLABEL { label_add(ic, $1); }
+	| EQU NAME VALUE { dict_add(D_VALUE, $2, $3); }
+	| RES expr { word_add(make_data(0, $2)); }
+	| RES expr ',' expr { word_add(make_data($4, $2)); }
+	| DLABEL { dict_add(D_ADDR, $1, ic); }
 	;
 
 data:
-	DATA VALUE { $$ = make_op(W_DATA, 0, 0, $2, NULL); }
+	DATA expr { $$ = make_data($2, NULL); }
 	;
 
 instruction:
-	OP_2ARG REGISTER ',' norm { $$ = make_op(W_OP_2ARG, $1, $2, 0, $4); }
-	| OP_FD norm { $$ = make_op(W_OP_FD, $1, 0, 0, $2); }
-	| OP_KA1 REGISTER VALUE { $$ = make_op(W_OP_KA1, $1, $2, $3, NULL); }
-	| OP_JS VALUE { $$ = make_op(W_OP_JS, $1, 0, $2, NULL); }
-	| OP_KA2 VALUE { $$ = make_op(W_OP_KA2, $1, 0, $2, NULL); }
-	| OP_C REGISTER { $$ = make_op(W_OP_C, $1, $2, 0, NULL); }
-	| OP_SHC VALUE { $$ = make_op(W_OP_SHC, $1, 0, $2, NULL); }
-	| OP_S { $$ = make_op(W_OP_S, $1, 0, 0, NULL); }
-	| OP_J norm { $$ = make_op(W_OP_J, $1, 0, 0, $2); }
-	| OP_L norm { $$ = make_op(W_OP_L, $1, 0, 0, $2); }
-	| OP_G norm { $$ = make_op(W_OP_G, $1, 0, 0, $2); }
-	| OP_BN norm { $$ = make_op(W_OP_BN, $1, 0, 0, $2); }
+	OP_2ARG REGISTER ',' norm { $$ = make_op(W_OP_2ARG, $1, $2, NULL, $4); }
+	| OP_FD norm { $$ = make_op(W_OP_FD, $1, 0, NULL, $2); }
+	| OP_KA1 REGISTER expr { $$ = make_op(W_OP_KA1, $1, $2, $3, NULL); }
+	| OP_JS expr { $$ = make_op(W_OP_JS, $1, 0, $2, NULL); }
+	| OP_KA2 expr { $$ = make_op(W_OP_KA2, $1, 0, $2, NULL); }
+	| OP_C REGISTER { $$ = make_op(W_OP_C, $1, $2, NULL, NULL); }
+	| OP_SHC expr { $$ = make_op(W_OP_SHC, $1, 0, $2, NULL); }
+	| OP_S { $$ = make_op(W_OP_S, $1, 0, NULL, NULL); }
+	| OP_J norm { $$ = make_op(W_OP_J, $1, 0, NULL, $2); }
+	| OP_L norm { $$ = make_op(W_OP_L, $1, 0, NULL, $2); }
+	| OP_G norm { $$ = make_op(W_OP_G, $1, 0, NULL, $2); }
+	| OP_BN norm { $$ = make_op(W_OP_BN, $1, 0, NULL, $2); }
 	;
 
 norm:
@@ -94,15 +99,17 @@ norm:
 
 normval:
 	REGISTER { $$ = make_norm($1, 0, NULL); }
-	| val { $$ = make_norm(0, 0, $1); }
+	| expr { $$ = make_norm(0, 0, $1); }
 	| REGISTER '+' REGISTER { $$ = make_norm($1, $3, NULL); }
-	| REGISTER '+' val { $$ = make_norm(0, $1, $3); }
-	| val '+' REGISTER { $$ = make_norm(0, $3, $1); }
+	| REGISTER '+' expr { $$ = make_norm(0, $1, $3); }
+	| expr '+' REGISTER { $$ = make_norm(0, $3, $1); }
 	;
 
-val:
-	VALUE { $$ = make_vval($1, NULL); }
-	| NAME { $$ = make_vval(0, $1); }
+expr:
+	VALUE { $$ = make_enode(VALUE, $1, NULL, NULL, NULL); }
+	| NAME { $$ = make_enode(NAME, 0, $1, NULL, NULL); }
+	| expr '+' expr { $$ = make_enode('+', 0, NULL, $1, $3); }
+	| expr '-' expr { $$ = make_enode('-', 0, NULL, $1, $3); }
 	;
 
 %%
@@ -123,10 +130,22 @@ int main(void) {
 	} while (!feof(yyin));
 	fclose(asm_source);
 
+	uint16_t outdata[64*1024];
+	struct word_t *word = program_start;
+	int ic = 0;
+	while (word) {
+		int res = make_bin(ic, word, outdata);
+		if (res <= 0) {
+			printf("dupa\n");
+		}
+		ic += res;
+		word = word->next;
+	}
+
 	FILE *bin_out = fopen("test.bin", "w");
-	int res = program_write(word_first, bin_out);
+	int res = fwrite(outdata, 2, ic, bin_out);
 	fclose(bin_out);
-	printf("Words written: %i\n", res);
+	printf("Program size: %i, words written: %i\n", ic, res);
 
 }
 

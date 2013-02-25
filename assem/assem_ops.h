@@ -18,6 +18,12 @@
 #include<stdio.h>
 #include <inttypes.h>
 
+struct op_t {
+	char *mnemo;
+	int type;
+	uint16_t opcode;
+};
+
 enum _word_type {
 	W_DATA,
 	W_OP_2ARG,
@@ -34,48 +40,54 @@ enum _word_type {
 	W_OP_BN
 };
 
-struct label_t {
-	int addr;
+enum _dict_type {
+	D_VALUE,
+	D_ADDR
+};
+
+struct dict_t {
 	char *name;
-	struct label_t *next;
-};
-
-struct vval_t {
-	int value;
-	char *label;
-};
-
-struct op_t {
-	char *mnemo;
 	int type;
-	uint16_t opcode;
+	int value;
+	struct dict_t *next;
+};
+
+struct enode_t {
+	int type;
+	int value;
+	int was_addr;
+	char *label;
+	struct enode_t *e1, *e2;
 };
 
 struct norm_t {
 	int is_addr;
 	int rc, rb;
-	struct vval_t *vval;
+	struct enode_t *e;
 };
 
 struct word_t {
 	int type;
 	uint16_t opcode;
 	int ra;
-	int value;
-	char *label;
+	struct enode_t *e;
+	struct enode_t *data_rep;
 	struct norm_t *norm;
 	struct word_t *next;
 };
 
-extern struct word_t *word_first;
+extern struct word_t *program_start;
+extern struct word_t *program_end;
 
 struct op_t * get_op(char * opname);
-struct vval_t * make_vval(int value, char *label);
-struct norm_t * make_norm(int rc, int rb, struct vval_t *vval);
-struct word_t * make_op(int type, uint16_t op, int ra, int value, struct norm_t *norm);
-void label_add(int addr, char *name);
-struct label_t * label_find(char *name);
+
+struct enode_t * make_enode(int type, int value, char *label, struct enode_t *e1, struct enode_t *e2);
+struct norm_t * make_norm(int rc, int rb, struct enode_t *e);
+struct word_t * make_data(struct enode_t *e, struct enode_t *data_rep);
+struct word_t * make_op(int type, uint16_t op, int ra, struct enode_t *e, struct norm_t *norm);
+void dict_add(int type, char *name, int value);
+struct dict_t * dict_find(char *name);
 void word_add(struct word_t *word);
-int program_write(struct word_t *word, FILE *out);
+int make_bin(int ic, struct word_t *word, uint16_t *dt);
 
 // vim: tabstop=4

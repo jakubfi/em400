@@ -38,6 +38,8 @@ reg		r[0-7]
 name	[a-zA-Z][a-zA-Z0-9_]+
 dlabel	[a-zA-Z][a-zA-Z0-9_]+:
 data	.data
+equ		.equ
+res		.res
 chars	[\[\]\+\,]
 
 %%
@@ -67,9 +69,9 @@ chars	[\[\]\+\,]
 	yylval.str[strlen(yytext)-1] = '\0';
 	return DLABEL;
 }
-{data}	{
-	return DATA;
-}
+{data} return DATA;
+{equ} return EQU;
+{res} return RES;
 
 {chars}	{
 	return *yytext;

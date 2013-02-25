@@ -24,11 +24,11 @@
 #include "assem_parse.h"
 #include "assem_ops.h"
 
-struct label_t *label_first;
-struct label_t *label_last;
+struct dict_t *dict_start;
+struct dict_t *dict_end;
 
-struct word_t *word_first;
-struct word_t *word_last;
+struct word_t *program_start;
+struct word_t *program_end;
 
 struct op_t ops[] = {
 
@@ -129,6 +129,9 @@ struct op_t ops[] = {
 { "LIP", OP_S, 0b1110110100000000 },
 { "GIL", OP_S, 0b1110111011000000 },
 
+// fake
+{ "NOP", OP_S, 0b1110000000000000 },
+
 { "UJ", OP_J, 0b1111000000000000 },
 { "JL", OP_J, 0b1111000001000000 },
 { "JE", OP_J, 0b1111000010000000 },
@@ -193,60 +196,81 @@ struct op_t * get_op(char * opname)
 }
 
 // -----------------------------------------------------------------------
-struct vval_t * make_vval(int value, char *label)
+struct enode_t * make_enode(int type, int value, char *label, struct enode_t *e1, struct enode_t *e2)
 {
-	struct vval_t *vval = malloc(sizeof(struct vval_t));
-	vval->value = value;
+	struct enode_t *e = malloc(sizeof(struct enode_t));
+	e->type = type;
+	e->value = value;
+	e->was_addr = 0;
 	if (label) {
-		vval->label = strdup(label);
+		e->label = strdup(label);
 	} else {
-		vval->label = NULL;
+		e->label = NULL;
 	}
-	return vval;
+	e->e1 = e1;
+	e->e2 = e2;
+	return e;
 }
 
 // -----------------------------------------------------------------------
-struct norm_t * make_norm(int rc, int rb, struct vval_t *vval)
+struct norm_t * make_norm(int rc, int rb, struct enode_t *e)
 {
 	struct norm_t *norm = malloc(sizeof(struct norm_t));
 	norm->rc = rc;
 	norm->rb = rb;
-	norm->vval = vval;
+	norm->e = e;
 	norm->is_addr = 0;
 	return norm;
 }
 
 // -----------------------------------------------------------------------
-struct word_t * make_op(int type, uint16_t op, int ra, int value, struct norm_t *norm)
+struct word_t * make_data(struct enode_t *e, struct enode_t *data_rep)
+{
+	struct word_t *word = malloc(sizeof(struct word_t));
+	word->type = W_DATA;
+	word->e = e;
+	word->data_rep = data_rep;
+
+	word->opcode = 0;
+	word->ra = 0;
+	word->norm = NULL;
+	return word;
+}
+
+// -----------------------------------------------------------------------
+struct word_t * make_op(int type, uint16_t op, int ra, struct enode_t *e, struct norm_t *norm)
 {
 	struct word_t *word = malloc(sizeof(struct word_t));
 	word->type = type;
 	word->opcode = op;
 	word->ra = ra;
-	word->value = value;
+	word->e = e;
 	word->norm = norm;
+	word->data_rep = NULL;
 	return word;
 }
 
 // -----------------------------------------------------------------------
-void label_add(int addr, char *name)
+void dict_add(int type, char *name, int value)
 {
-	struct label_t *label = malloc(sizeof(struct label_t));
-	label->addr = addr;
+	struct dict_t *label = malloc(sizeof(struct dict_t));
+	label->type = type;
 	label->name = strdup(name);
+	label->value = value;
 
-	if (!label_first) {
-		label_first = label_last = label;
+	if (!dict_start) {
+		dict_start = dict_end = label;
 	} else {
-		label_last->next = label;
-		label_last = label;
+		dict_end->next = label;
+		dict_end = label;
 	}
 }
 
 // -----------------------------------------------------------------------
-struct label_t * label_find(char *name)
+struct dict_t * dict_find(char *name)
 {
-	struct label_t *l = label_first;
+	if (!name) return NULL;
+	struct dict_t *l = dict_start;
 	while (l) {
 		if (!strcmp(name, l->name)) {
 			return l;
@@ -259,67 +283,174 @@ struct label_t * label_find(char *name)
 // -----------------------------------------------------------------------
 void word_add(struct word_t *word)
 {
-	if (!word_first) {
-		word_first = word_last = word;
+	if (!program_start) {
+		program_start = program_end = word;
 	} else {
-		word_last->next = word;
-		word_last = word;
+		program_end->next = word;
+		program_end = word;
 	}
 }
 
 // -----------------------------------------------------------------------
-int program_write(struct word_t *word, FILE *out)
+struct enode_t * enode_eval(struct enode_t *e)
 {
+	if (!e) return NULL;
+
+	struct dict_t *d = dict_find(e->label);
+	struct enode_t *e1 = enode_eval(e->e1);
+	struct enode_t *e2 = enode_eval(e->e2);
+
+	struct enode_t *ev = make_enode(VALUE, 0, NULL, NULL, NULL);
+
+	switch (e->type) {
+		case VALUE:
+			ev->value = e->value;
+			break;
+		case NAME:
+			if (!d) return NULL;
+			ev->value = d->value;
+			if (d->type == D_ADDR) ev->was_addr = 1;
+			break;
+		case '+':
+			if (!e1 || !e2) return NULL;
+			ev->value = e1->value + e2->value;
+			if (e1->was_addr || e2->was_addr) ev->was_addr = 1;
+			break;
+		case '-':
+			if (!e1 || !e2) return NULL;
+			ev->value = e1->value - e2->value;
+			if (e1->was_addr || e2->was_addr) ev->was_addr = 1;
+			break;
+	}
+	return ev;
+}
+
+// -----------------------------------------------------------------------
+int compose_data(struct word_t *word, uint16_t *dt)
+{
+	int count = 1;
 	int res = 0;
 
-	while (word) {
-		uint16_t code = 0;
+	// evaluate the argument -- data value
+	struct enode_t *ev = enode_eval(word->e);
+	if (!ev) {
+		return -1;
+	}
 
-		if (word->type == W_DATA) {
-			code = word->value;
-
+	// calculate repetition if given
+	if (word->data_rep) {
+		struct enode_t *dr = enode_eval(word->data_rep);
+		if (!dr) {
+			return -1;
 		} else {
-			code |= word->opcode;
-			code |= word->ra << 6;
-			if (word->norm) {
-				code |= (word->norm->is_addr << 9);
-				code |= word->norm->rc;
-				code |= (word->norm->rb << 3);
-			}
-			if ((word->type == W_OP_KA1) || (word->type == W_OP_JS)) {
-				if (word->value < 0) {
-					code |= 0b0000001000000000;
-				}
-				code |= word->value & 0b0000000000111111;
-			}
-			if (word->type == W_OP_KA2) {
-				code |= (word->value & 256);
-			}
-			if (word->type == W_OP_SHC) {
-				code |= (word->value & 0b111);
-				code |= ((word->value & 0b1000) << 6);
-			}
+			count = dr->value;
 		}
+	}
 
-		code = ntohs(code);
-		res += fwrite(&code, 2, 1, out);
+	while (count > 0) {
+		*(dt+res) = ntohs(ev->value);
+		res++;
+		count--;
+	}
+	return res;
+}
 
-		if ((word->norm) && (word->norm->rc == 0)) {
-			uint16_t data;
-			if (!word->norm->vval->label) {
-				data = ntohs(word->norm->vval->value);
+// -----------------------------------------------------------------------
+int make_bin(int ic, struct word_t *word, uint16_t *dt)
+{
+	int res = 0;
+	struct enode_t *ev;
+
+	// compose data
+	if (word->type == W_DATA) {
+		return compose_data(word, dt+ic);
+	}
+
+	// evaluate the argument, if exists (meaning opcode uses it)
+	ev = enode_eval(word->e);
+	if ((word->e) && (!ev)) {
+		return -1;
+	}
+
+	// compose opcode
+	uint16_t *dtic = dt+ic;
+	*dtic = 0;
+	*dtic |= word->opcode;
+	*dtic |= word->ra << 6;
+
+	int jsval;
+
+	switch (word->type) {
+		case OP_2ARG:
+			break;
+		case OP_FD:
+			break;
+		case W_OP_KA1:
+			if ((ev->value < -63) || (ev->value > 63)) return -1;
+			if (ev->value < 0) {
+				*dtic |= 0b0000001000000000;
+				*dtic |= (-ev->value) & 0b0000000000111111;
 			} else {
-				struct label_t * l = label_find(word->norm->vval->label);
-				if (!l) {
-					printf("Can't find label: %s\n", word->norm->vval->label);
-				} else {
-					data = ntohs(l->addr);
-				}
+				*dtic |= ev->value & 0b0000000000111111;
 			}
-			res += fwrite(&data, 2, 1, out);
-		}
+			break;
+		case W_OP_JS:
+			if (ev->was_addr) {
+				jsval = ev->value - ic - 1;
+			} else {
+				jsval = ev->value;
+			}
+			if ((jsval < -63) || (jsval > 63)) return -1;
+			if (jsval < 0) {
+				*dtic |= 0b0000001000000000;
+				*dtic |= (-jsval) & 0b0000000000111111;
+			} else {
+				*dtic |= jsval & 0b0000000000111111;
+			}
+			break;
+		case W_OP_KA2:
+			if ((ev->value < 0) || (ev->value > 255)) return -1;
+			*dtic |= (ev->value & 256);
+			break;
+		case OP_C:
+			break;
+		case W_OP_SHC:
+			if ((ev->value < 0) || (ev->value > 15)) return -1;
+			*dtic |= (ev->value & 0b111);
+			*dtic |= ((ev->value & 0b1000) << 6);
+			break;
+		case OP_S:
+			break;
+		case OP_J:
+			break;
+		case OP_L:
+			break;
+		case OP_G:
+			break;
+		case OP_BN:
+			break;
+	}
 
-		word = word->next;
+	// compose normal argument (opcode part) if exists
+	if (word->norm) {
+		*dtic |= (word->norm->is_addr << 9);
+		*dtic |= word->norm->rc;
+		*dtic |= (word->norm->rb << 3);
+	}
+
+	// write out opcode data
+	*dtic = ntohs(*dtic);
+	res++;
+
+	// compose ant write out next-word norm argument if exists
+	if ((word->norm) && (word->norm->rc == 0)) {
+		struct enode_t *ev = enode_eval(word->norm->e);
+		if (ev) {
+			*(dtic+1) = ntohs(ev->value);
+			res++;
+		} else {
+			return -1;
+		}
 	}
 	return res;
 }
