@@ -58,11 +58,81 @@ void reg_write(int r, uint16_t x, int trace, int hw)
 		}
 	}
 #endif
-	if (r || hw) {
+	if (r!=0 || hw==1) {
 		regs[r] = x;
 	} else {
 		regs[r] = (regs[r] & 0b1111111100000000) | (x & 0b0000000011111111);
 	}
 }
+
+// -----------------------------------------------------------------------
+void flags_Z(int64_t z, int bits)
+{
+	if (z == 0) {
+		Fset(FL_Z);
+	} else {
+		Fclr(FL_Z);
+}
+
+// -----------------------------------------------------------------------
+void flags_M(int64_t z, int bits)
+{
+	int64_t mask_M = 1 << (bits-1);
+	if (z & mask_M) {
+		Fset(FL_M);
+	} else {
+		Fclr(FL_M);
+	}
+}
+
+// -----------------------------------------------------------------------
+void flags_C(int64_t z, int bits)
+{
+	int64_t mask_C = 1 << bits;
+	if (z & mask_C) {
+		Fset(FL_C);
+	} else {
+		Fclr(FL_C);
+	}
+}
+
+// -----------------------------------------------------------------------
+void flags_V(int64_t x, int64_t y, int64_t z, int bits)
+{
+	if (((x & mask_M) && (y & mask_M) && !(z & mask_M)) || (!(x & mask_M) && !(y & mask_M) && (z & mask_M))) {
+		Fset(FL_V);
+	} else {
+		Fclr(FL_V);
+	}
+}
+
+// -----------------------------------------------------------------------
+void flags_ZMVC(int64_t x, int64_t y, int64_t z, int bits)
+{
+	flags_Z(z, bits);
+	flags_M(z, bits);
+	flags_C(z, bits);
+	flags_V(x, y, z, bits);	
+}
+
+// -----------------------------------------------------------------------
+void flags_LEG(int16_t x, int16_t y)
+{
+	if (x == y) {
+		Fset(FL_E);
+		Fclr(FL_G);
+		Fclr(FL_L);
+	} else {
+		Fclr(FL_E);
+		if (x < y) {
+			Fset(FL_L);
+			Fclr(FL_G);
+		} else {
+			Fclr(FL_L);
+			Fset(FL_G);
+		}
+	}
+}
+
 
 // vim: tabstop=4

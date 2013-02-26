@@ -1,6 +1,8 @@
 Known bugs:
 
-T-arg should honor pre-modification (and use zc17?)
+* T-arg should honor pre-modification (and use zc17?)
+* rework flags setting
+* clean that register-macro mess
 
 CPU:
 

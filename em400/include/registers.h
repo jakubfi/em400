@@ -48,10 +48,13 @@ extern uint16_t regs[];
 
 uint16_t reg_read(int r, int trace);
 void reg_write(int r, uint16_t x, int trace, int hw);
+void flags_LEG(int16_t x, int16_t y);
+void flags_ZMVC(int64_t x, int64_t y, int64_t z, int bits);
 
 #define R(x)		reg_read(x, 1)
 #define nR(x)		reg_read(x, 0)
 #define Rw(r, x)	reg_write(r, x, 1, 0)
+#define hRw(r, x)	reg_write(r, x, 1, 1)
 #define nRw(r, x)	reg_write(r, x, 0, 0)
 
 #define Rinc(r)		reg_write(r, R(r)+1, 1, 0)
@@ -62,8 +65,8 @@ void reg_write(int r, uint16_t x, int trace, int hw);
 #define nRadd(r, x)	reg_write(r, nR(r)+x, 0, 0)
 
 #define Fget(x)		(reg_read(0, 1) | x) ? 1 : 0
-#define Fset(x)		reg_write(0, reg_read(0, 0) | x, 1, 1)
-#define Fclr(x)		reg_write(0, reg_read(0, 0) & ~x, 1, 1)
+#define Fset(x)		reg_write(0, reg_read(0, 1) | x, 1, 1)
+#define Fclr(x)		reg_write(0, reg_read(0, 1) & ~x, 1, 1)
 
 // -----------------------------------------------------------------------
 // macros to access bit fields
@@ -116,39 +119,19 @@ void reg_write(int r, uint16_t x, int trace, int hw);
 #define FL_USER	0b0000000001111111
 
 // R0 - set flags by x, y, z
-#define R0_Cs16(z)	Rw(0, R(0) | (z & (0xffff+1)) >> 4);
-#define R0_Cs32(z)	Rw(0, R(0) | (z & (0xffffffff+1)) >> (16+4));
-#define R0_Cs64(z)	Rw(0, R(0) | (z & (0xffffffffff+1)) >> (8+16+4));
+#define R0_Cs16(z)	hRw(0, R(0) | (z & (0xffff+1)) >> 4);
+#define R0_Cs32(z)	hRw(0, R(0) | (z & (0xffffffff+1)) >> (16+4));
 
-#define R0_Zs(z)	if (!z) Fset(FL_Z); else Fclr(FL_Z);
+#define R0_Zs(z)	if (z==0) Fset(FL_Z); else Fclr(FL_Z);
 #define R0_Zs16(z)	R0_Zs(z)
 #define R0_Zs32(z)	R0_Zs(z)
-#define R0_Zs64(z)	R0_Zs(z)
 
-#define R0_Ms16(z)	Rw(0, R(0) | (z & 0x8000) >> 1);
-#define R0_Ms32(z)	Rw(0, R(0) | (z & 0x80000000) >> (16+1));
-#define R0_Ms64(z)	Rw(0, R(0) | (z & 0x8000000000) >> (8+16+1));
+#define R0_Ms16(z)	hRw(0, R(0) | (z & 0x8000) >> 1);
+#define R0_Ms32(z)	hRw(0, R(0) | (z & 0x80000000) >> (16+1));
 
 #define R0_Vs(x,y,z)	if (((x<0) && (y<0) && (z>0)) || ((x>0) && (y>0) && (z<0))) Fset(FL_V); else Fclr(FL_V);
 #define R0_Vs16(x,y,z)	R0_Vs(x,y,z)
 #define R0_Vs32(x,y,z)	R0_Vs(x,y,z)
-#define R0_Vs64(x,y,z)	R0_Vs(x,y,z)
-
-#define R0_LEG(x,y) \
-	if (x == y) { \
-		Fset(FL_E); \
-		Fclr(FL_G); \
-		Fclr(FL_L); \
-	} else { \
-		Fclr(FL_E); \
-		if (x < y) { \
-			Fset(FL_L); \
-			Fclr(FL_G); \
-		} else { \
-			Fclr(FL_L); \
-			Fset(FL_G); \
-		} \
-	}
 
 #endif
 

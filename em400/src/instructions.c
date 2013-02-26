@@ -29,6 +29,7 @@
 #ifdef WITH_DEBUGGER
 #include "debugger/debugger.h"
 #endif
+#include "debugger/log.h"
 
 // -----------------------------------------------------------------------
 int op_illegal()
@@ -279,10 +280,7 @@ int op_aw()
 	int16_t N = cpu_get_eff_arg();
 	int16_t tmp = R(IR_A);
 	int32_t res = N + tmp;
-	R0_Ms16((uint32_t) res);
-	R0_Zs16((uint32_t) res);
-	R0_Cs16((uint32_t) res);
-	R0_Vs16(N, tmp, res);
+	flags_ZMVC(N, tmp, res, 16);
 	Rw(IR_A, (uint16_t) res);
 	return OP_OK;
 }
@@ -293,10 +291,7 @@ int op_ac()
 	int16_t N = cpu_get_eff_arg();
 	int16_t tmp = R(IR_A);
 	int32_t res = N + tmp + Fget(FL_C);
-	R0_Ms16((uint32_t) res);
-	R0_Zs16((uint32_t) res);
-	R0_Cs16((uint32_t) res);
-	R0_Vs16(N, tmp, res);
+	flags_ZMVC(N, tmp + Fget(FL_C), res, 16);
 	Rw(IR_A, (uint16_t) res);
 	return OP_OK;
 }
@@ -307,10 +302,7 @@ int op_sw()
 	int16_t N = cpu_get_eff_arg();
 	int16_t tmp = R(IR_A);
 	int32_t res = N - tmp;
-	R0_Ms16((uint32_t) res);
-	R0_Zs16((uint32_t) res);
-	R0_Cs16((uint32_t) res);
-	R0_Vs16(N, -tmp, res);
+	flags_ZMVC(N, -tmp, res, 16);
 	Rw(IR_A, (uint16_t) res);
 	return OP_OK;
 }
@@ -319,7 +311,7 @@ int op_sw()
 int op_cw()
 {
 	uint16_t N = cpu_get_eff_arg();
-	R0_LEG((int16_t)R(IR_A), (int16_t)N);
+	flags_LEG((int16_t)R(IR_A), (int16_t)N);
 	return OP_OK;
 }
 
@@ -399,7 +391,7 @@ int op_xm()
 int op_cl()
 {
 	uint16_t N = cpu_get_eff_arg();
-	R0_LEG((uint16_t)R(IR_A), (uint16_t)N);
+	flags_LEG((uint16_t)R(IR_A), (uint16_t)N);
 	return OP_OK;
 }
 
@@ -441,7 +433,7 @@ int op_cb()
 	uint16_t N = cpu_get_eff_arg();
 	int shift = 8 * ~(N&1);
 	N >>= 1;
-	R0_LEG((uint8_t)(R(IR_A)&0b0000000011111111), (uint8_t)((MEMNB(N) >> shift) & 0b0000000011111111));
+	flags_LEG((uint8_t)(R(IR_A)&0b0000000011111111), (uint8_t)((MEMNB(N) >> shift) & 0b0000000011111111));
 	return OP_OK;
 }
 
@@ -490,7 +482,7 @@ int op_drb()
 // -----------------------------------------------------------------------
 int op_cwt()
 {
-	R0_LEG((int16_t)R(IR_A), (int8_t)IR_T);
+	flags_LEG((int16_t)R(IR_A), (int8_t)IR_T);
 	return OP_OK;
 }
 
