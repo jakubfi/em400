@@ -17,6 +17,7 @@
 
 #include <stdlib.h>
 #include <string.h>
+#include <strings.h>
 #include <inttypes.h>
 #include <ctype.h>
 #include <arpa/inet.h>
@@ -129,7 +130,7 @@ struct op_t ops[] = {
 { "LIP", OP_S, 0b1110110100000000 },
 { "GIL", OP_S, 0b1110111011000000 },
 
-// fake
+// fake UJS 0
 { "NOP", OP_S, 0b1110000000000000 },
 
 { "UJ", OP_J, 0b1111000000000000 },
@@ -172,6 +173,8 @@ struct op_t ops[] = {
 
 };
 
+#define ASSEMBLY_ERROR(x) {strcpy(assembly_error, x); return -1;}
+
 // -----------------------------------------------------------------------
 struct op_t * get_op(char * opname)
 {
@@ -185,7 +188,7 @@ struct op_t * get_op(char * opname)
 	}
 
 	while (op->mnemo) {
-		if (!strcmp(op->mnemo, opname_u)) {
+		if (!strcasecmp(op->mnemo, opname_u)) {
 			free(opname_u);
 			return op;
 		}
@@ -224,7 +227,7 @@ struct norm_t * make_norm(int rc, int rb, struct enode_t *e)
 }
 
 // -----------------------------------------------------------------------
-struct word_t * make_data(struct enode_t *e, struct enode_t *data_rep)
+struct word_t * make_data(struct enode_t *e, struct enode_t *data_rep, int lineno)
 {
 	struct word_t *word = malloc(sizeof(struct word_t));
 	word->type = W_DATA;
@@ -234,11 +237,12 @@ struct word_t * make_data(struct enode_t *e, struct enode_t *data_rep)
 	word->opcode = 0;
 	word->ra = 0;
 	word->norm = NULL;
+	word->lineno = lineno;
 	return word;
 }
 
 // -----------------------------------------------------------------------
-struct word_t * make_op(int type, uint16_t op, int ra, struct enode_t *e, struct norm_t *norm)
+struct word_t * make_op(int type, uint16_t op, int ra, struct enode_t *e, struct norm_t *norm, int lineno)
 {
 	struct word_t *word = malloc(sizeof(struct word_t));
 	word->type = type;
@@ -247,6 +251,7 @@ struct word_t * make_op(int type, uint16_t op, int ra, struct enode_t *e, struct
 	word->e = e;
 	word->norm = norm;
 	word->data_rep = NULL;
+	word->lineno = lineno;
 	return word;
 }
 
@@ -334,14 +339,14 @@ int compose_data(struct word_t *word, uint16_t *dt)
 	// evaluate the argument -- data value
 	struct enode_t *ev = enode_eval(word->e);
 	if (!ev) {
-		return -1;
+		ASSEMBLY_ERROR("cannot evaluate data value");
 	}
 
 	// calculate repetition if given
 	if (word->data_rep) {
 		struct enode_t *dr = enode_eval(word->data_rep);
 		if (!dr) {
-			return -1;
+			ASSEMBLY_ERROR("cannot evaluate data repetition value");
 		} else {
 			count = dr->value;
 		}
@@ -363,13 +368,15 @@ int make_bin(int ic, struct word_t *word, uint16_t *dt)
 
 	// compose data
 	if (word->type == W_DATA) {
-		return compose_data(word, dt+ic);
+		res = compose_data(word, dt+ic);
+		if (res<0) ASSEMBLY_ERROR("cannot compose data word");
+		return res;
 	}
 
 	// evaluate the argument, if exists (meaning opcode uses it)
 	ev = enode_eval(word->e);
 	if ((word->e) && (!ev)) {
-		return -1;
+		ASSEMBLY_ERROR("cannot evaluate opcode's argument");
 	}
 
 	// compose opcode
@@ -386,7 +393,7 @@ int make_bin(int ic, struct word_t *word, uint16_t *dt)
 		case OP_FD:
 			break;
 		case W_OP_KA1:
-			if ((ev->value < -63) || (ev->value > 63)) return -1;
+			if ((ev->value < -63) || (ev->value > 63)) ASSEMBLY_ERROR("value excess short argument size");
 			if (ev->value < 0) {
 				*dtic |= 0b0000001000000000;
 				*dtic |= (-ev->value) & 0b0000000000111111;
@@ -400,7 +407,7 @@ int make_bin(int ic, struct word_t *word, uint16_t *dt)
 			} else {
 				jsval = ev->value;
 			}
-			if ((jsval < -63) || (jsval > 63)) return -1;
+			if ((jsval < -63) || (jsval > 63)) ASSEMBLY_ERROR("value excess short argument size");
 			if (jsval < 0) {
 				*dtic |= 0b0000001000000000;
 				*dtic |= (-jsval) & 0b0000000000111111;
@@ -409,13 +416,13 @@ int make_bin(int ic, struct word_t *word, uint16_t *dt)
 			}
 			break;
 		case W_OP_KA2:
-			if ((ev->value < 0) || (ev->value > 255)) return -1;
+			if ((ev->value < 0) || (ev->value > 255)) ASSEMBLY_ERROR("value excess byte argument size");
 			*dtic |= (ev->value & 256);
 			break;
 		case OP_C:
 			break;
 		case W_OP_SHC:
-			if ((ev->value < 0) || (ev->value > 15)) return -1;
+			if ((ev->value < 0) || (ev->value > 15)) ASSEMBLY_ERROR("value excess SHC argument size");
 			*dtic |= (ev->value & 0b111);
 			*dtic |= ((ev->value & 0b1000) << 6);
 			break;
@@ -449,9 +456,12 @@ int make_bin(int ic, struct word_t *word, uint16_t *dt)
 			*(dtic+1) = ntohs(ev->value);
 			res++;
 		} else {
-			return -1;
+			ASSEMBLY_ERROR("cannot evaluate normal argument value");
 		}
 	}
+
+	if (res<0) ASSEMBLY_ERROR("dunno what the error was, sorry...");
+
 	return res;
 }
 

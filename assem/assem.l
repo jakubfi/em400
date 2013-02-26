@@ -22,11 +22,17 @@
 #include "assem_parse.h"
 #include "assem_ops.h"
 
-void yyerror(char *);
+void yyerror(char *, ...);
+
+#define YY_USER_ACTION yylloc.first_line = yylineno;
+#define YYABORT     goto yyabortlab
+
 
 %}
 
-ws		[ \t]+
+%option yylineno
+
+ws		[ \t\n]+
 comment	^[#;].*
 
 oct		-?0[0-9]+
@@ -40,7 +46,9 @@ dlabel	[a-zA-Z][a-zA-Z0-9_]+:
 data	.data
 equ		.equ
 res		.res
-chars	[\[\]\+\,]
+program	.program
+endprog	.endprog
+chars	[-+:,\[\]]
 
 %%
 
@@ -64,14 +72,11 @@ chars	[\[\]\+\,]
 	yylval.val = strtol(yytext+1, NULL, 10);
 	return REGISTER;
 }
-{dlabel}	{
-	yylval.str = strdup(yytext);
-	yylval.str[strlen(yytext)-1] = '\0';
-	return DLABEL;
-}
-{data} return DATA;
-{equ} return EQU;
-{res} return RES;
+{data}		return DATA;
+{equ}		return EQU;
+{res}		return RES;
+{program}	return PROGRAM;
+{endprog}	return ENDPROG;
 
 {chars}	{
 	return *yytext;
@@ -91,7 +96,7 @@ chars	[\[\]\+\,]
 {ws}		;
 {comment}	;
 
-.	yyerror("Unknown character");
+.	{ yyerror("unknown character"); }
 
 %%
 
