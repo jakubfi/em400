@@ -72,6 +72,7 @@ void flags_Z(int64_t z, int bits)
 		Fset(FL_Z);
 	} else {
 		Fclr(FL_Z);
+	}
 }
 
 // -----------------------------------------------------------------------
@@ -99,6 +100,7 @@ void flags_C(int64_t z, int bits)
 // -----------------------------------------------------------------------
 void flags_V(int64_t x, int64_t y, int64_t z, int bits)
 {
+	int64_t mask_M = 1 << (bits-1);
 	if (((x & mask_M) && (y & mask_M) && !(z & mask_M)) || (!(x & mask_M) && !(y & mask_M) && (z & mask_M))) {
 		Fset(FL_V);
 	} else {
