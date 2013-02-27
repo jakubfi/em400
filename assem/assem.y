@@ -17,16 +17,16 @@
 //  51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 
 #include <stdio.h>
-#include <stdlib.h>
 #include <stdarg.h>
-#include "assem_ops.h"
+
+#include "ops.h"
+#include "elements.h"
+#include "eval.h"
 
 void yyerror(char *s, ...);
 int yylex(void);
-extern FILE *yyin;
-int got_error = 0;
-extern char assembly_error[];
-int ic = 0;
+int got_error;
+extern int ic;
 
 %}
 
@@ -69,14 +69,10 @@ sentences:
 
 sentence:
 	instruction {
-		ic += program_append($1);
-		// instruction's argument is in next word, advance ic
-		if (($1->norm) && ($1->norm->rc == 0)) {
-			ic++;
-		}
+		program_append($1);
 	}
 	| data {
-		ic += program_append($1);
+		program_append($1);
 	}
 	| EQU NAME VALUE {
 		if (!dict_add(D_VALUE, $2, $3)) {
@@ -84,7 +80,7 @@ sentence:
 		}
 	}
 	| res {
-		ic += program_append($1);
+		program_append($1);
 	}
 	| NAME ':' {
 		if (!dict_add(D_ADDR, $1, ic)) {
@@ -135,10 +131,10 @@ norm:
 
 normval:
 	REGISTER { $$ = make_norm($1, 0, NULL); }
-	| expr { $$ = make_norm(0, 0, $1); }
+	| expr { $$ = make_norm(0, 0, make_data($1, yylloc.first_line)); }
 	| REGISTER '+' REGISTER { $$ = make_norm($1, $3, NULL); }
-	| REGISTER '+' expr { $$ = make_norm(0, $1, $3); }
-	| expr '+' REGISTER { $$ = make_norm(0, $3, $1); }
+	| REGISTER '+' expr { $$ = make_norm(0, $1, make_data($3, yylloc.first_line)); }
+	| expr '+' REGISTER { $$ = make_norm(0, $3, make_data($1, yylloc.first_line)); }
 	;
 
 expr:
@@ -159,46 +155,6 @@ void yyerror(char *s, ...)
 	vprintf(s, ap);
 	printf("\n");
 	got_error = 1;
-}
-
-// -----------------------------------------------------------------------
-int main(void) {
-	FILE *asm_source = fopen("test.asm", "r");
-	if (!asm_source) {
-		printf("Cannot open input file\n");
-		exit(1);
-	}
-
-	yyin = asm_source;
-	int res;
-	do {
-		res = yyparse();
-	} while (!feof(yyin));
-	fclose(asm_source);
-
-	if (got_error) {
-		printf("Exiting.\n");
-		exit(1);
-	}
-
-	uint16_t outdata[64*1024];
-	struct word_t *word = program_start;
-	int ic = 0;
-	while (word) {
-		res = make_bin(ic, word, outdata);
-		if (res < 0) {
-			printf("Error assembling binary image, line %i: %s\nExiting.\n", word->lineno-1, assembly_error);
-			exit(1);
-		}
-		ic += res;
-		word = word->next;
-	}
-
-	FILE *bin_out = fopen("test.bin", "w");
-	res = fwrite(outdata, 2, ic, bin_out);
-	fclose(bin_out);
-	printf("Program size: %i, words written: %i\n", ic, res);
-
 }
 
 // vim: tabstop=4

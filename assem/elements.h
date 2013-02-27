@@ -15,14 +15,10 @@
 //  Foundation, Inc.,
 //  51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 
-#include<stdio.h>
-#include <inttypes.h>
+#ifndef ELEMENTS_H
+#define ELEMENTS_H
 
-struct op_t {
-	char *mnemo;
-	int type;
-	uint16_t opcode;
-};
+#include <inttypes.h>
 
 enum _word_type {
 	W_DATA,
@@ -63,7 +59,7 @@ struct enode_t {
 struct norm_t {
 	int is_addr;
 	int rc, rb;
-	struct enode_t *e;
+	struct word_t *word;
 };
 
 struct word_t {
@@ -76,23 +72,14 @@ struct word_t {
 	int lineno;
 };
 
-extern struct word_t *program_start;
-extern struct word_t *program_end;
-
-struct op_t * get_op(char * opname);
-
-char assembly_error[100];
-
 struct enode_t * make_enode(int type, int value, char *label, struct enode_t *e1, struct enode_t *e2);
-struct norm_t * make_norm(int rc, int rb, struct enode_t *e);
+struct norm_t * make_norm(int rc, int rb, struct word_t *w);
 struct word_t * make_data(struct enode_t *e, int lineno);
 struct word_t * make_rep(int rep, struct enode_t *e, int lineno);
 struct word_t * make_op(int type, uint16_t op, int ra, struct enode_t *e, struct norm_t *norm, int lineno);
 struct dict_t * dict_add(int type, char *name, int value);
 struct dict_t * dict_find(char *name);
-int program_append(struct word_t *word);
-int make_bin(int ic, struct word_t *word, uint16_t *dt);
-struct enode_t * enode_eval(struct enode_t *e);
 
+#endif
 
 // vim: tabstop=4

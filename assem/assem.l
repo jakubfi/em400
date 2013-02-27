@@ -18,9 +18,9 @@
 
 #include <stdlib.h>
 #include <string.h>
-#include <stdio.h>
+
 #include "assem_parse.h"
-#include "assem_ops.h"
+#include "ops.h"
 
 void yyerror(char *, ...);
 
