@@ -24,12 +24,16 @@
 
 void yyerror(char *, ...);
 
+char strbuf[1024];
+char *strbufpos;
+
 #define YY_USER_ACTION yylloc.first_line = yylineno;
 #define YYABORT     goto yyabortlab
 
 
 %}
 
+%x string
 %option yylineno
 
 ws		[ \t\n]+
@@ -51,6 +55,18 @@ endprog	.endprog
 chars	[-+:,\[\]]
 
 %%
+
+\"						{ BEGIN string; strbufpos = strbuf; }
+<string>\"				{ yylval.str = strdup(strbuf); BEGIN 0; return STRING; }
+<string>[^\\\"\n\r\t]*	{ strcpy(strbufpos, yytext); strbufpos += strlen(yytext); }
+<string>\\\\			{ *strbufpos++ = '\\'; }
+<string>\\\"			{ *strbufpos++ = '\"'; }
+<string>\\n				{ *strbufpos++ = '\n'; }
+<string>\\r				{ *strbufpos++ = '\r'; }
+<string>\\t				{ *strbufpos++ = '\t'; }
+<string>\n				{ BEGIN 0; yyerror("newline in string"); }
+<string>\r				{ BEGIN 0; yyerror("carriage return in string"); }
+<string>\\.				{ BEGIN 0; yyerror("unknown escape sequence: %s", yytext); }
 
 {oct}	{
 	yylval.val = strtol(yytext, NULL, 8);

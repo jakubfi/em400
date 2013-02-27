@@ -41,7 +41,7 @@ int ic = 0;
 
 %token '[' ']' ',' ':'
 %token DATA EQU RES PROGRAM ENDPROG
-%token <str> NAME
+%token <str> NAME STRING
 %token <val> VALUE REGISTER
 %token <val> OP_2ARG OP_FD OP_KA1 OP_JS OP_KA2 OP_C OP_SHC OP_S OP_J OP_L OP_G OP_BN
 
@@ -54,7 +54,9 @@ int ic = 0;
 %%
 
 program:
-	PROGRAM NAME sentences ENDPROG
+	PROGRAM STRING sentences ENDPROG {
+		printf("Assembling: '%s'\n", $2);
+	}
 	| sentences
 	;
 
