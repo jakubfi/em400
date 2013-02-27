@@ -48,6 +48,11 @@ struct dict_t {
 	struct dict_t *next;
 };
 
+struct dict_bucket_t {
+	struct dict_t *head;
+	struct dict_t *tail;
+};
+
 struct enode_t {
 	int type;
 	int value;

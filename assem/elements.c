@@ -23,8 +23,63 @@
 #include "assem_parse.h"
 #include "ops.h"
 
-struct dict_t *dict_start;
-struct dict_t *dict_end;
+#define DICT_HASH_BITS 8
+
+struct dict_bucket_t dict[1<<DICT_HASH_BITS];
+
+// -----------------------------------------------------------------------
+static inline unsigned int dict_hash(char *i)
+{
+	return (*i & 0b1111) | ((*(i+1) & 0b1111) << 4);
+}
+
+// -----------------------------------------------------------------------
+struct dict_t * dict_add(int type, char *name, int value)
+{
+	if (!name) {
+		return NULL;
+	}
+
+	struct dict_t *d = malloc(sizeof(struct dict_t));
+	d->type = type;
+	d->name = strdup(name);
+	d->value = value;
+	d->next = NULL;
+
+	struct dict_bucket_t *b = dict + dict_hash(name);
+
+	if (b->head) {
+		b->tail->next = d;
+		b->tail = d;
+	} else {
+		b->head = b->tail = d;
+	}
+
+	return d;
+}
+
+// -----------------------------------------------------------------------
+struct dict_t * dict_find(char *name)
+{
+	if (!name) {
+		return NULL;
+	}
+
+	struct dict_bucket_t *b = dict + dict_hash(name);
+	struct dict_t *d = b->head;
+
+	int i;
+	while (d) {
+		i++;
+		if (!strcmp(name, d->name)) {
+			printf("checked in: %i\n", i);
+			return d;
+		}
+		d = d->next;
+	}
+
+	return NULL;
+}
 
 // -----------------------------------------------------------------------
 struct enode_t * make_enode(int type, int value, char *label, struct enode_t *e1, struct enode_t *e2)
@@ -51,7 +106,6 @@ struct norm_t * make_norm(int rc, int rb, struct word_t *word)
 	norm->rb = rb;
 	norm->word = word;
 	norm->is_addr = 0;
-	printf("rc:%i, rb:%i\n", rc, rb);
 	return norm;
 }
 
@@ -136,43 +190,6 @@ struct word_t * make_op(int type, uint16_t op, int ra, struct enode_t *e, struct
 		word->next = NULL;
 	}
 	return word;
-}
-
-// -----------------------------------------------------------------------
-struct dict_t * dict_add(int type, char *name, int value)
-{
-	// label already exists
-	if (dict_find(name)) {
-		return NULL;
-	}
-
-	struct dict_t *label = malloc(sizeof(struct dict_t));
-	label->type = type;
-	label->name = strdup(name);
-	label->value = value;
-
-	if (!dict_start) {
-		dict_start = dict_end = label;
-	} else {
-		dict_end->next = label;
-		dict_end = label;
-	}
-
-	return label;
-}
-
-// -----------------------------------------------------------------------
-struct dict_t * dict_find(char *name)
-{
-	if (!name) return NULL;
-	struct dict_t *l = dict_start;
-	while (l) {
-		if (!strcmp(name, l->name)) {
-			return l;
-		}
-		l = l->next;
-	}
-	return NULL;
 }
 
 // vim: tabstop=4
