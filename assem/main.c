@@ -28,16 +28,16 @@ int yyparse();
 // -----------------------------------------------------------------------
 int main(void) {
 
-	FILE *yyin = fopen("test.asm", "r");
-	if (!yyin) {
+	FILE *asm_source = fopen("test.asm", "r");
+	if (!asm_source) {
 		printf("Cannot open input file\n");
 		exit(1);
 	}
-
+	yyin = asm_source;
 	do {
 		 yyparse();
 	} while (!feof(yyin));
-	fclose(yyin);
+	fclose(asm_source);
 
 	if (got_error) {
 		printf("Exiting.\n");

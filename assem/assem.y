@@ -46,7 +46,8 @@ extern int ic;
 %token <val> OP_2ARG OP_FD OP_KA1 OP_JS OP_KA2 OP_C OP_SHC OP_S OP_J OP_L OP_G OP_BN
 
 %type <norm> normval norm
-%type <word> data res instruction
+%type <word> instruction
+%type <word> res data dataword
 %type <enode> expr
 
 %left '+' '-'
@@ -71,8 +72,8 @@ sentence:
 	instruction {
 		program_append($1);
 	}
-	| data {
-		program_append($1);
+	| DATA data {
+		program_append($2);
 	}
 	| EQU NAME VALUE {
 		if (!dict_add(D_VALUE, $2, $3)) {
@@ -90,7 +91,13 @@ sentence:
 	;
 
 data:
-	DATA expr { $$ = make_data($2, yylloc.first_line); }
+	dataword { $$ = $1; }
+	| dataword ',' data { $1->next = $3; $$ = $1; }
+	;
+
+dataword:
+	expr { $$ = make_data($1, yylloc.first_line); }
+	| STRING { $$ = make_string($1, yylloc.first_line); }
 	;
 
 res:

@@ -91,6 +91,35 @@ struct word_t * make_rep(int rep, struct enode_t *e, int lineno)
 }
 
 // -----------------------------------------------------------------------
+struct word_t * make_string(char *str, int lineno)
+{
+	char *c = str;
+	struct word_t *word = NULL;
+	struct word_t *word_head = NULL;
+
+	while (c && *c) {
+		struct enode_t *e = make_enode(VALUE, (int)(*c << 8), NULL, NULL, NULL);
+		struct word_t *w = make_data(e, lineno);
+
+		c++;
+		if (*c) {
+			e->value |= (int)(*c);
+			c++;
+		}
+
+		if (!word) {
+			word = w;
+			word_head = w;
+		} else {
+			word->next = w;
+			word = w;
+		}
+	}
+
+	return word_head;
+}
+
+// -----------------------------------------------------------------------
 struct word_t * make_op(int type, uint16_t op, int ra, struct enode_t *e, struct norm_t *norm, int lineno)
 {
 	struct word_t *word = malloc(sizeof(struct word_t));
