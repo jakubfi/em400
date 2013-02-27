@@ -57,7 +57,9 @@ program:
 	PROGRAM STRING sentences ENDPROG {
 		printf("Assembling: '%s'\n", $2);
 	}
-	| sentences
+	| sentences {
+		printf("Assembling unnamed program\n");
+	}
 	;
 
 sentences:
@@ -67,39 +69,48 @@ sentences:
 
 sentence:
 	instruction {
-		word_add($1);
-		ic++;
+		ic += program_append($1);
+		// instruction's argument is in next word, advance ic
 		if (($1->norm) && ($1->norm->rc == 0)) {
 			ic++;
 		}
 	}
 	| data {
-		word_add($1);
-		ic++;
+		ic += program_append($1);
 	}
-	| EQU NAME VALUE { dict_add(D_VALUE, $2, $3); }
-	| res {
-		struct enode_t *e = enode_eval($1->data_rep);
-		if (!e) {
-			yyerror("cannot evaluate .res length");
-		} else {
-			if (e->value <= 0) {
-				yyerror("resulting .res length is 0");
-			} else {
-				word_add($1);
-				ic += e->value;
-			}
+	| EQU NAME VALUE {
+		if (!dict_add(D_VALUE, $2, $3)) {
+			yyerror("name '%s' already defined", $2);
 		}
 	}
-	| NAME ':' { dict_add(D_ADDR, $1, ic); }
+	| res {
+		ic += program_append($1);
+	}
+	| NAME ':' {
+		if (!dict_add(D_ADDR, $1, ic)) {
+			yyerror("name '%s' already defined", $1);
+		}
+	}
 	;
 
 data:
-	DATA expr { $$ = make_data($2, NULL, yylloc.first_line); }
+	DATA expr { $$ = make_data($2, yylloc.first_line); }
 	;
 
 res:
-	RES expr ',' expr { $$ = make_data($4, $2, yylloc.first_line); }
+	RES expr ',' expr { 
+		struct enode_t *e = enode_eval($2);
+		if (!e) {
+			yyerror("cannot evaluate .res length");
+		} else {
+			struct word_t *wlist = make_rep(e->value, $4, yylloc.first_line);
+			if (!wlist) {
+				yyerror("resulting .res length is 0");
+			} else {
+				$$ = wlist;
+			}
+		}
+	}
 	;
 
 instruction:

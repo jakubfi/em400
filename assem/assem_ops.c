@@ -169,7 +169,7 @@ struct op_t ops[] = {
 { "RZ", OP_BN, 0b1111110110000000 },
 { "IB", OP_BN, 0b1111110111000000 },
 
-{ "", 0, 0}
+{ "", 0, 0 }
 
 };
 
@@ -227,18 +227,39 @@ struct norm_t * make_norm(int rc, int rb, struct enode_t *e)
 }
 
 // -----------------------------------------------------------------------
-struct word_t * make_data(struct enode_t *e, struct enode_t *data_rep, int lineno)
+struct word_t * make_data(struct enode_t *e, int lineno)
 {
 	struct word_t *word = malloc(sizeof(struct word_t));
 	word->type = W_DATA;
 	word->e = e;
-	word->data_rep = data_rep;
 
 	word->opcode = 0;
 	word->ra = 0;
 	word->norm = NULL;
 	word->lineno = lineno;
+	word->next = NULL;
 	return word;
+}
+
+// -----------------------------------------------------------------------
+struct word_t * make_rep(int rep, struct enode_t *e, int lineno)
+{
+	struct word_t *wlist = NULL;
+	struct word_t *whead = NULL;
+
+	while (rep > 0) {
+		struct word_t *w = make_data(e, lineno);
+		if (!wlist) {
+			whead = w;
+			wlist = w;
+		} else {
+			wlist->next = w;
+			wlist = w;
+		}
+		rep--;
+	}
+
+	return whead;
 }
 
 // -----------------------------------------------------------------------
@@ -250,14 +271,19 @@ struct word_t * make_op(int type, uint16_t op, int ra, struct enode_t *e, struct
 	word->ra = ra;
 	word->e = e;
 	word->norm = norm;
-	word->data_rep = NULL;
 	word->lineno = lineno;
+	word->next = NULL;
 	return word;
 }
 
 // -----------------------------------------------------------------------
-void dict_add(int type, char *name, int value)
+struct dict_t * dict_add(int type, char *name, int value)
 {
+	// label already exists
+	if (dict_find(name)) {
+		return NULL;
+	}
+
 	struct dict_t *label = malloc(sizeof(struct dict_t));
 	label->type = type;
 	label->name = strdup(name);
@@ -269,6 +295,8 @@ void dict_add(int type, char *name, int value)
 		dict_end->next = label;
 		dict_end = label;
 	}
+
+	return label;
 }
 
 // -----------------------------------------------------------------------
@@ -286,14 +314,29 @@ struct dict_t * dict_find(char *name)
 }
 
 // -----------------------------------------------------------------------
-void word_add(struct word_t *word)
+int program_append(struct word_t *word)
 {
-	if (!program_start) {
+	int count = 0;
+
+	if (!word) {
+		return 0;
+	}
+
+	// append given list
+	if (!program_end) {
 		program_start = program_end = word;
+		count++;
 	} else {
 		program_end->next = word;
-		program_end = word;
 	}
+
+	// move program end and count words
+	while (program_end->next) {
+		program_end = program_end->next;
+		count++;
+	}
+
+	return count;
 }
 
 // -----------------------------------------------------------------------
@@ -333,7 +376,6 @@ struct enode_t * enode_eval(struct enode_t *e)
 // -----------------------------------------------------------------------
 int compose_data(struct word_t *word, uint16_t *dt)
 {
-	int count = 1;
 	int res = 0;
 
 	// evaluate the argument -- data value
@@ -342,21 +384,9 @@ int compose_data(struct word_t *word, uint16_t *dt)
 		ASSEMBLY_ERROR("cannot evaluate data value");
 	}
 
-	// calculate repetition if given
-	if (word->data_rep) {
-		struct enode_t *dr = enode_eval(word->data_rep);
-		if (!dr) {
-			ASSEMBLY_ERROR("cannot evaluate data repetition value");
-		} else {
-			count = dr->value;
-		}
-	}
+	*dt = ntohs(ev->value);
+	res++;
 
-	while (count > 0) {
-		*(dt+res) = ntohs(ev->value);
-		res++;
-		count--;
-	}
 	return res;
 }
 
@@ -369,13 +399,13 @@ int make_bin(int ic, struct word_t *word, uint16_t *dt)
 	// compose data
 	if (word->type == W_DATA) {
 		res = compose_data(word, dt+ic);
-		if (res<0) ASSEMBLY_ERROR("cannot compose data word");
+		if (res < 0) ASSEMBLY_ERROR("cannot compose data word");
 		return res;
 	}
 
 	// evaluate the argument, if exists (meaning opcode uses it)
 	ev = enode_eval(word->e);
-	if ((word->e) && (!ev)) {
+	if (word->e && !ev) {
 		ASSEMBLY_ERROR("cannot evaluate opcode's argument");
 	}
 

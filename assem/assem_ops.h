@@ -71,7 +71,6 @@ struct word_t {
 	uint16_t opcode;
 	int ra;
 	struct enode_t *e;
-	struct enode_t *data_rep;
 	struct norm_t *norm;
 	struct word_t *next;
 	int lineno;
@@ -86,11 +85,12 @@ char assembly_error[100];
 
 struct enode_t * make_enode(int type, int value, char *label, struct enode_t *e1, struct enode_t *e2);
 struct norm_t * make_norm(int rc, int rb, struct enode_t *e);
-struct word_t * make_data(struct enode_t *e, struct enode_t *data_rep, int lineno);
+struct word_t * make_data(struct enode_t *e, int lineno);
+struct word_t * make_rep(int rep, struct enode_t *e, int lineno);
 struct word_t * make_op(int type, uint16_t op, int ra, struct enode_t *e, struct norm_t *norm, int lineno);
-void dict_add(int type, char *name, int value);
+struct dict_t * dict_add(int type, char *name, int value);
 struct dict_t * dict_find(char *name);
-void word_add(struct word_t *word);
+int program_append(struct word_t *word);
 int make_bin(int ic, struct word_t *word, uint16_t *dt);
 struct enode_t * enode_eval(struct enode_t *e);
 
