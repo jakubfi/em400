@@ -107,7 +107,7 @@ instruction:
 	| OP_JS expr { $$ = make_op(W_OP_JS, $1, 0, $2, NULL, yylloc.first_line); }
 	| OP_KA2 expr { $$ = make_op(W_OP_KA2, $1, 0, $2, NULL, yylloc.first_line); }
 	| OP_C REGISTER { $$ = make_op(W_OP_C, $1, $2, NULL, NULL, yylloc.first_line); }
-	| OP_SHC expr { $$ = make_op(W_OP_SHC, $1, 0, $2, NULL, yylloc.first_line); }
+	| OP_SHC REGISTER ',' expr { $$ = make_op(W_OP_SHC, $1, $2, $4, NULL, yylloc.first_line); }
 	| OP_S { $$ = make_op(W_OP_S, $1, 0, NULL, NULL, yylloc.first_line); }
 	| OP_J norm { $$ = make_op(W_OP_J, $1, 0, NULL, $2, yylloc.first_line); }
 	| OP_L norm { $$ = make_op(W_OP_L, $1, 0, NULL, $2, yylloc.first_line); }
