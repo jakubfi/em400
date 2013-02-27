@@ -46,8 +46,8 @@ extern int ic;
 %token <val> OP_2ARG OP_FD OP_KA1 OP_JS OP_KA2 OP_C OP_SHC OP_S OP_J OP_L OP_G OP_BN
 
 %type <norm> normval norm
-%type <word> instruction
-%type <word> res data dataword
+%type <word> words
+%type <word> instruction res data dataword
 %type <enode> expr
 
 %left '+' '-'
@@ -69,25 +69,30 @@ sentences:
 	;
 
 sentence:
-	instruction {
-		program_append($1);
-	}
-	| DATA data {
-		program_append($2);
+	words {
+		if (program_append($1) < 0) {
+			yyerror("program too big");
+			YYABORT;
+		}
 	}
 	| EQU NAME VALUE {
 		if (!dict_add(D_VALUE, $2, $3)) {
 			yyerror("name '%s' already defined", $2);
+			YYABORT;
 		}
-	}
-	| res {
-		program_append($1);
 	}
 	| NAME ':' {
 		if (!dict_add(D_ADDR, $1, ic)) {
 			yyerror("name '%s' already defined", $1);
+			YYABORT;
 		}
 	}
+	;
+
+words:
+	instruction { $$ = $1; }
+	| DATA data { $$ = $2; }
+	| res { $$ = $1; }
 	;
 
 data:
@@ -105,10 +110,12 @@ res:
 		struct enode_t *e = enode_eval($2);
 		if (!e) {
 			yyerror("cannot evaluate .res length");
+			YYABORT;
 		} else {
 			struct word_t *wlist = make_rep(e->value, $4, yylloc.first_line);
 			if (!wlist) {
 				yyerror("resulting .res length is 0");
+				YYABORT;
 			} else {
 				$$ = wlist;
 			}

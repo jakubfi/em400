@@ -20,13 +20,15 @@
 
 #include <inttypes.h>
 
+#define MAX_PROG_SIZE 64*1024
+
 extern struct word_t *program_start;
 extern struct word_t *program_end;
 
 extern char assembly_error[];
 extern int ic;
 
-void program_append(struct word_t *word);
+int program_append(struct word_t *word);
 int make_bin(int ic, struct word_t *word, uint16_t *dt);
 struct enode_t * enode_eval(struct enode_t *e);
 

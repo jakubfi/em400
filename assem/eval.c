@@ -34,10 +34,10 @@ int ic;
 #define ASSEMBLY_ERROR(x) {strcpy(assembly_error, x); return -1;}
 
 // -----------------------------------------------------------------------
-void program_append(struct word_t *word)
+int program_append(struct word_t *word)
 {
 	if (!word) {
-		return;
+		return -1;
 	}
 
 	// append given word list
@@ -53,6 +53,11 @@ void program_append(struct word_t *word)
 		program_end = program_end->next;
 		ic++;
 	}
+
+	if (ic > MAX_PROG_SIZE) {
+		return -1;
+	}
+	return 0;
 }
 
 // -----------------------------------------------------------------------

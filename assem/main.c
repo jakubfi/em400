@@ -44,7 +44,7 @@ int main(void) {
 		exit(1);
 	}
 
-	uint16_t outdata[64*1024];
+	uint16_t outdata[MAX_PROG_SIZE+4];
 	struct word_t *word = program_start;
 	int wcounter = 0;
 	int res;

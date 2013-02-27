@@ -51,6 +51,7 @@ struct norm_t * make_norm(int rc, int rb, struct word_t *word)
 	norm->rb = rb;
 	norm->word = word;
 	norm->is_addr = 0;
+	printf("rc:%i, rb:%i\n", rc, rb);
 	return norm;
 }
 
