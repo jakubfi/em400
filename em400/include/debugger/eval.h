@@ -20,6 +20,14 @@
 
 #include <inttypes.h>
 
+enum _base_type {
+	B_BIN,
+	B_OCT,
+	B_DEC,
+	B_HEX,
+	B_UINT
+};
+
 enum _node_type {
 	N_NONE,
 	N_OP1,
@@ -35,6 +43,7 @@ enum _node_type {
 
 struct node_t {
 	int type;
+	int base;
 	int16_t val;
 	char *var;
 	int nb;
@@ -79,6 +88,8 @@ int16_t n_eval_op1(struct node_t *n);
 int16_t n_eval_op2(struct node_t *n);
 int16_t n_eval_mem(struct node_t *n);
 int16_t n_eval(struct node_t *n);
+
+void print_node(struct node_t *n);
 
 #endif
 

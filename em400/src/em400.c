@@ -117,7 +117,7 @@ void print_usage()
 #ifdef WITH_DEBUGGER
 	printf("\nDebuger-only options:\n");
 	printf("   -s                 : use simple debugger interface\n");
-	printf("   -t test_expression : execute test_expression after HLT 077\n");
+	printf("   -t test_expression : execute test_expression after HLT 077 (implies -s)\n");
 #endif
 }
 
@@ -135,10 +135,9 @@ void parse_arguments(int argc, char **argv)
 				em400_opts.autotest = 1;
 				em400_opts.ui_simple = 1;
 				int elen = strlen(optarg);
-				em400_opts.test_expr = malloc(elen+2);
+				em400_opts.test_expr = malloc(elen+3);
 				strcpy(em400_opts.test_expr, optarg);
-				em400_opts.test_expr[elen] = '\n';
-				em400_opts.test_expr[elen+1] = '\0';
+				strcpy(em400_opts.test_expr + elen, "\n\0");
 				break;
 			case 's':
 				em400_opts.ui_simple = 1;

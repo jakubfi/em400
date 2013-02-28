@@ -70,38 +70,25 @@ struct node_t *enode;
 
 statement:
 	| command
-	| UINT '(' expr ')' '\n' {
-		awprint(W_CMD, C_DATA, "%i\n", (uint16_t) n_eval($3));
-		n_discard_stack();
-	}
-	| DEC '(' expr ')' '\n' {
-		awprint(W_CMD, C_DATA, "%i\n", n_eval($3));
-		n_discard_stack();
-	}
-	| HEX '(' expr ')' '\n' {
-		awprint(W_CMD, C_DATA, "0x%x\n", n_eval($3));
-		n_discard_stack();
-	}
-	| OCT '(' expr ')' '\n' {
-		awprint(W_CMD, C_DATA, "0%o\n", n_eval($3));
-		n_discard_stack();
-	}
-	| BIN '(' expr ')' '\n' {
-		awbinprint(W_CMD, C_DATA, "0b................\n", n_eval($3), 16);
-		n_discard_stack();
-	}
-	| expr '\n' {
-		awprint(W_CMD, C_DATA, "0x%x\n", n_eval($1));
-		n_discard_stack();
-	}
+	| exprlist '\n' { n_discard_stack(); awprint(W_CMD, C_DATA, "\n"); }
 	| YERR '\n' {
 		yyclearin;
 		awprint(W_CMD, C_ERROR, "Error: unknown character: %c\n", (char) $1);
 	}
 	;
 
+exprlist:
+	expr { print_node($1); }
+	| exprlist ',' expr { print_node($3); }
+	;
+
 expr:
 	VALUE { $$ = n_val($1); }
+	| UINT '(' expr ')' { $3->base = B_UINT; $$ = $3; }
+	| DEC '(' expr ')' { $3->base = B_DEC; $$ = $3; }
+	| HEX '(' expr ')' { $3->base = B_HEX; $$ = $3; }
+	| OCT '(' expr ')' { $3->base = B_OCT; $$ = $3; }
+	| BIN '(' expr ')' { $3->base = B_BIN; $$ = $3; }
 	| TEXT {
 		$$ = n_var($1);
 		if (!$$->mptr) {

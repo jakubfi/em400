@@ -24,6 +24,7 @@
 
 #include "debugger/debugger.h"
 #include "debugger/eval.h"
+#include "debugger/ui.h"
 #include "parser.h"
 
 struct node_t *node_stack = NULL;
@@ -81,6 +82,7 @@ struct node_t * n_create()
 {
 	struct node_t *n = malloc(sizeof(struct node_t));
 	n->type = N_NONE;
+	n->base = B_HEX;
 	n->val = 0;
 	n->var = NULL;
 	n->nb = 0;
@@ -384,6 +386,32 @@ int16_t n_eval(struct node_t *n)
 			return n_eval_mem(n);
 		default:
 			return 0;
+	}
+}
+
+// -----------------------------------------------------------------------
+void print_node(struct node_t *n)
+{
+	uint16_t value = n_eval(n);
+	switch (n->base) {
+		case B_UINT:
+			awprint(W_CMD, C_DATA, "%i ", (uint16_t) value);
+			break;
+		case B_DEC:
+			awprint(W_CMD, C_DATA, "%i ", (int16_t) value);
+			break;
+		case B_HEX:
+			awprint(W_CMD, C_DATA, "0x%x ", (uint16_t) value);
+			break;
+		case B_OCT:
+			awprint(W_CMD, C_DATA, "0%o ", (uint16_t) value);
+			break;
+		case B_BIN:
+			awbinprint(W_CMD, C_DATA, "0b................ ", (uint16_t) value, 16);
+			break;
+		default:
+			awprint(W_CMD, C_DATA, "0x%x ", (uint16_t) value);
+			break;
 	}
 }
 

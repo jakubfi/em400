@@ -38,7 +38,7 @@ hex		0x[0-9a-fA-F]+
 bin		0b[01]+
 dec		[0-9]+
 reg		r[0-7]|R[0-7]
-text	[^-+*&|<>()\[\]!~=: \t\n\r]+
+text	[^-,+*&|<>()\[\]!~=: \t\n\r]+
 
 %%
 
@@ -169,7 +169,7 @@ rp	return IRP;
 "||"	return OR;
 "&&"	return AND;
 
-[-=+*&|^><:()\]\[~!]	return *yytext;
+[-,=+*&|^><:()\]\[~!]	return *yytext;
 
 \n {
 	BEGIN(INITIAL);

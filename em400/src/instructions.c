@@ -843,7 +843,8 @@ int op_73()
 int op_73_hlt()
 {
 #ifdef WITH_DEBUGGER
-	if (IR_T == 077) {
+	// handle hlt 077 differently in autotests mode
+	if ((em400_opts.autotest == 1) && (IR_T == 077)) {
 		em400_quit = 1;
 		return OP_OK;
 	}
