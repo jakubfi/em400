@@ -36,7 +36,6 @@ int parse(FILE *source)
 	} while (!feof(yyin));
 
 	if (got_error) {
-		printf("Error parsing source.\n");
 		return -1;
 	}
 
@@ -52,8 +51,7 @@ int assembly(struct word_t *word, uint16_t *outdata)
 	while (word) {
 		res = make_bin(wcounter, word, outdata);
 		if (res < 0) {
-			printf("Error assembling binary image, line %i: %s\n", word->lineno-1, assembly_error);
-			return -1;
+			return -wcounter;
 		}
 		wcounter += res;
 		word = word->next;
@@ -67,9 +65,8 @@ void usage()
 {
 	printf("Usage: assem [-k] [-c] <file.asm>\n");
 	printf("Where:\n");
-	printf("         -k : use K-202 mnemonics (instead of MERA-400)\n");
-	printf("         -c : use classic ASSK/ASSM syntax (instead of modern)\n");
-	printf("   file.asm : source to assembly\n");
+	printf("   -k : use K-202 mnemonics (instead of MERA-400)\n");
+	printf("   -c : use classic ASSK/ASSM syntax (instead of modern)\n");
 }
 
 // -----------------------------------------------------------------------
@@ -114,6 +111,7 @@ int main(int argc, char **argv)
 	fclose(asm_source);
 
 	if (res < 0) {
+		printf("Error parsing source.\n");
 		program_drop(program_start);
 		dicts_drop();
 		exit(1);
@@ -123,19 +121,22 @@ int main(int argc, char **argv)
 	uint16_t outdata[MAX_PROG_SIZE+4];
 	int wcounter = assembly(program_start, outdata);
 
-	if (wcounter < 0) {
+	if (wcounter <= 0) {
+		printf("Error assembling binary image, line %i: %s\n", -wcounter-1, assembly_error);
 		program_drop(program_start);
 		dicts_drop();
 		exit(1);
 	}
 
+	printf("Assembled: %i words\n", wcounter);
+
 	// write output program
 	FILE *bin_out = fopen("test.bin", "w");
 	res = fwrite(outdata, 2, wcounter, bin_out);
 	fclose(bin_out);
-	printf("Program size: %i, words written: %i\n", wcounter, res);
+	printf("Written: %i words.\n", res);
 	if (wcounter != res) {
-		printf("Words assembled and written differ, binary file is broken.\n");
+		printf("Error: binary output is broken.\n");
 		program_drop(program_start);
 		dicts_drop();
 		exit(1);
