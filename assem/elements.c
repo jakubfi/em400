@@ -68,11 +68,8 @@ struct dict_t * dict_find(char *name)
 	struct dict_bucket_t *b = dict + dict_hash(name);
 	struct dict_t *d = b->head;
 
-	int i;
 	while (d) {
-		i++;
 		if (!strcmp(name, d->name)) {
-			printf("checked in: %i\n", i);
 			return d;
 		}
 		d = d->next;
