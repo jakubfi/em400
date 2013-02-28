@@ -36,7 +36,7 @@ int parse(FILE *source)
 	} while (!feof(yyin));
 
 	if (got_error) {
-		printf("Error parsing source. Exiting.\n");
+		printf("Error parsing source.\n");
 		return -1;
 	}
 
@@ -52,7 +52,7 @@ int assembly(struct word_t *word, uint16_t *outdata)
 	while (word) {
 		res = make_bin(wcounter, word, outdata);
 		if (res < 0) {
-			printf("Error assembling binary image, line %i: %s\nExiting.\n", word->lineno-1, assembly_error);
+			printf("Error assembling binary image, line %i: %s\n", word->lineno-1, assembly_error);
 			return -1;
 		}
 		wcounter += res;
@@ -66,6 +66,10 @@ int assembly(struct word_t *word, uint16_t *outdata)
 void usage()
 {
 	printf("Usage: assem [-k] [-c] <file.asm>\n");
+	printf("Where:\n");
+	printf("         -k : use K-202 mnemonics (instead of MERA-400)\n");
+	printf("         -c : use classic ASSK/ASSM syntax (instead of modern)\n");
+	printf("   file.asm : source to assembly\n");
 }
 
 // -----------------------------------------------------------------------
@@ -75,8 +79,12 @@ int main(int argc, char **argv)
 	int k202 = 0;
 	int classic = 0;
 
-	while ((option = getopt(argc, argv,"kc")) != -1) {
+	// parse arguments
+	while ((option = getopt(argc, argv,"kch")) != -1) {
 		switch (option) {
+			case 'h':
+				usage();
+				exit(0);
 			case 'k':
 				k202 = 1;
 				break;
@@ -84,11 +92,10 @@ int main(int argc, char **argv)
 				classic = 1;
 				break;
 			default:
-				usage(); 
+				usage();
 				exit(1);
 		}
 	}
-
 	if (optind != argc-1) {
 		usage();
 		exit(1);
@@ -107,6 +114,8 @@ int main(int argc, char **argv)
 	fclose(asm_source);
 
 	if (res < 0) {
+		program_drop(program_start);
+		dicts_drop();
 		exit(1);
 	}
 
@@ -115,6 +124,8 @@ int main(int argc, char **argv)
 	int wcounter = assembly(program_start, outdata);
 
 	if (wcounter < 0) {
+		program_drop(program_start);
+		dicts_drop();
 		exit(1);
 	}
 
@@ -125,9 +136,13 @@ int main(int argc, char **argv)
 	printf("Program size: %i, words written: %i\n", wcounter, res);
 	if (wcounter != res) {
 		printf("Words assembled and written differ, binary file is broken.\n");
+		program_drop(program_start);
+		dicts_drop();
 		exit(1);
 	}
 
+	program_drop(program_start);
+	dicts_drop();
 	return 0;
 }
 

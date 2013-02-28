@@ -61,6 +61,22 @@ int program_append(struct word_t *word)
 }
 
 // -----------------------------------------------------------------------
+void program_drop(struct word_t *word)
+{
+	if (!word) {
+		return;
+	}
+
+	enode_drop(word->e);
+	if (word->norm) {
+		free(word->norm);
+	}
+
+	program_drop(word->next);
+	free(word);
+}
+
+// -----------------------------------------------------------------------
 struct enode_t * enode_eval(struct enode_t *e)
 {
 	if (!e) return NULL;

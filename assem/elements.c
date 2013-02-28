@@ -79,9 +79,22 @@ struct dict_t * dict_find(char *name)
 }
 
 // -----------------------------------------------------------------------
-void dict_drop()
+void dict_drop(struct dict_t * dict)
 {
+	if (!dict) {
+		return;
+	}
+	free(dict->name);
+	dict_drop(dict->next);
+	free(dict);
+}
 
+// -----------------------------------------------------------------------
+void dicts_drop()
+{
+	for (int i=0 ; i<1<<DICT_HASH_BITS ; i++) {
+		dict_drop(dict[i].head);
+	}
 }
 
 // -----------------------------------------------------------------------
@@ -99,6 +112,21 @@ struct enode_t * make_enode(int type, int value, char *label, struct enode_t *e1
 	e->e1 = e1;
 	e->e2 = e2;
 	return e;
+}
+
+// -----------------------------------------------------------------------
+void enode_drop(struct enode_t *e)
+{
+	if (!e) {
+		return;
+	}
+
+	if (e->label) {
+		free(e->label);
+	}
+	enode_drop(e->e1);
+	enode_drop(e->e2);
+	free(e);
 }
 
 // -----------------------------------------------------------------------

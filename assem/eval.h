@@ -29,6 +29,7 @@ extern char assembly_error[];
 extern int ic;
 
 int program_append(struct word_t *word);
+void program_drop(struct word_t *word);
 int make_bin(int ic, struct word_t *word, uint16_t *dt);
 struct enode_t * enode_eval(struct enode_t *e);
 
