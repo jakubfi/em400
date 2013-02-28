@@ -17,6 +17,7 @@
 
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 #include <getopt.h>
 
 #include "elements.h"
@@ -63,7 +64,7 @@ int assembly(struct word_t *word, uint16_t *outdata)
 // -----------------------------------------------------------------------
 void usage()
 {
-	printf("Usage: assem [-k] [-c] <file.asm>\n");
+	printf("Usage: assem [-k] [-c] <input.asm> [output]\n");
 	printf("Where:\n");
 	printf("   -k : use K-202 mnemonics (instead of MERA-400)\n");
 	printf("   -c : use classic ASSK/ASSM syntax (instead of modern)\n");
@@ -75,8 +76,10 @@ int main(int argc, char **argv)
 	int option;
 	int k202 = 0;
 	int classic = 0;
+	char *input_file = NULL;
+	char *output_file = NULL;
 
-	// parse arguments
+	// parse options
 	while ((option = getopt(argc, argv,"kch")) != -1) {
 		switch (option) {
 			case 'h':
@@ -93,15 +96,34 @@ int main(int argc, char **argv)
 				exit(1);
 		}
 	}
-	if (optind != argc-1) {
+
+	// parse arguments
+	if (optind == argc-1) {
+		input_file = argv[optind];
+		output_file = strdup(input_file);
+		char *pos = strstr(output_file, ".asm\0");
+		if (!pos) {
+			printf("Error: input file is not .asm\n");
+			exit(1);
+		}
+		strcpy(pos, ".bin");
+	} else if (optind == argc-2) {
+		input_file = argv[optind];
+		output_file = argv[optind+1];
+	} else {
 		usage();
+		exit(1);
+	}
+
+	if (!strcmp(input_file, output_file)) {
+		printf("Error: input and output files are the same.\n");
 		exit(1);
 	}
 
 	// read input file
 	FILE *asm_source = fopen(argv[optind], "r");
 	if (!asm_source) {
-		printf("Cannot open input file\n");
+		printf("Error: cannot open input file\n");
 		exit(1);
 	}
 
@@ -128,15 +150,15 @@ int main(int argc, char **argv)
 		exit(1);
 	}
 
-	printf("Assembled: %i words\n", wcounter);
+	printf("Assembled %i words\n", wcounter);
 
 	// write output program
-	FILE *bin_out = fopen("test.bin", "w");
+	FILE *bin_out = fopen(output_file, "w");
 	res = fwrite(outdata, 2, wcounter, bin_out);
 	fclose(bin_out);
-	printf("Written: %i words.\n", res);
+	printf("Written %i words to file '%s'.\n", res, output_file);
 	if (wcounter != res) {
-		printf("Error: binary output is broken.\n");
+		printf("Error: not all words written, output file '%s' is broken.\n", output_file);
 		program_drop(program_start);
 		dicts_drop();
 		exit(1);
