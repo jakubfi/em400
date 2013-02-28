@@ -79,6 +79,12 @@ struct dict_t * dict_find(char *name)
 }
 
 // -----------------------------------------------------------------------
+void dict_drop()
+{
+
+}
+
+// -----------------------------------------------------------------------
 struct enode_t * make_enode(int type, int value, char *label, struct enode_t *e1, struct enode_t *e2)
 {
 	struct enode_t *e = malloc(sizeof(struct enode_t));

@@ -17,6 +17,7 @@
 
 #include <stdio.h>
 #include <stdlib.h>
+#include <getopt.h>
 
 #include "elements.h"
 #include "eval.h"
@@ -26,42 +27,106 @@ extern int got_error;
 int yyparse();
 
 // -----------------------------------------------------------------------
-int main(void) {
+int parse(FILE *source)
+{
+	yyin = source;
 
-	FILE *asm_source = fopen("test.asm", "r");
-	if (!asm_source) {
-		printf("Cannot open input file\n");
-		exit(1);
-	}
-	yyin = asm_source;
 	do {
 		 yyparse();
 	} while (!feof(yyin));
-	fclose(asm_source);
 
 	if (got_error) {
-		printf("Exiting.\n");
-		exit(1);
+		printf("Error parsing source. Exiting.\n");
+		return -1;
 	}
 
-	uint16_t outdata[MAX_PROG_SIZE+4];
-	struct word_t *word = program_start;
+	return 1;
+}
+
+// -----------------------------------------------------------------------
+int assembly(struct word_t *word, uint16_t *outdata)
+{
 	int wcounter = 0;
 	int res;
+
 	while (word) {
 		res = make_bin(wcounter, word, outdata);
 		if (res < 0) {
 			printf("Error assembling binary image, line %i: %s\nExiting.\n", word->lineno-1, assembly_error);
-			exit(1);
+			return -1;
 		}
 		wcounter += res;
 		word = word->next;
 	}
 
+	return wcounter;
+}
+
+// -----------------------------------------------------------------------
+void usage()
+{
+	printf("Usage: assem [-k] [-c] <file.asm>\n");
+}
+
+// -----------------------------------------------------------------------
+int main(int argc, char **argv)
+{
+	int option;
+	int k202 = 0;
+	int classic = 0;
+
+	while ((option = getopt(argc, argv,"kc")) != -1) {
+		switch (option) {
+			case 'k':
+				k202 = 1;
+				break;
+			case 'c':
+				classic = 1;
+				break;
+			default:
+				usage(); 
+				exit(1);
+		}
+	}
+
+	if (optind != argc-1) {
+		usage();
+		exit(1);
+	}
+
+	// read input file
+	FILE *asm_source = fopen(argv[optind], "r");
+	if (!asm_source) {
+		printf("Cannot open input file\n");
+		exit(1);
+	}
+
+	// parse program
+	int res = parse(asm_source);
+
+	fclose(asm_source);
+
+	if (res < 0) {
+		exit(1);
+	}
+
+	// assembly binary image
+	uint16_t outdata[MAX_PROG_SIZE+4];
+	int wcounter = assembly(program_start, outdata);
+
+	if (wcounter < 0) {
+		exit(1);
+	}
+
+	// write output program
 	FILE *bin_out = fopen("test.bin", "w");
 	res = fwrite(outdata, 2, wcounter, bin_out);
 	fclose(bin_out);
 	printf("Program size: %i, words written: %i\n", wcounter, res);
+	if (wcounter != res) {
+		printf("Words assembled and written differ, binary file is broken.\n");
+		exit(1);
+	}
 
 	return 0;
 }
