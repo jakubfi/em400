@@ -30,8 +30,13 @@
 void * drv_cmem_thread(void *ptr)
 {
 	struct chan_t *chan = ptr;
+
+	struct timespec ts;
+/**/	ts.tv_sec = 0;
+/**/	ts.tv_nsec = 1000000;
+
 	while (!chan->finish) {
-		sleep(1);
+/**/		nanosleep(&ts, &ts);
 	}
 	pthread_exit(NULL);
 }

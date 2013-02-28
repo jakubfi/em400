@@ -22,7 +22,7 @@
 
 #include "registers.h"
 
-#define INPUT_BUF_SIZE 70
+#define INPUT_BUF_SIZE 200
 
 struct break_t {
 	int nr;
@@ -57,6 +57,7 @@ void dbg_step();
 int dbg_init();
 void dbg_shutdown();
 void dbg_fin_cycle();
+void dbg_parse(char *c);
 
 #endif
 

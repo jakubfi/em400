@@ -18,6 +18,7 @@
 #include <stdlib.h>
 #include <string.h>
 
+#include "em400.h"
 #include "cpu.h"
 #include "registers.h"
 #include "memory.h"
@@ -31,8 +32,7 @@
 #include "parser.h"
 #include "debugger/eval.h"
 
-int ui_mode = O_NCURSES;
-//int ui_mode = O_STD;
+int ui_mode;
 
 // debugger flow
 int dbg_loop_fin = 0;
@@ -75,11 +75,17 @@ void _dbg_sigint_handler(int signum, siginfo_t *si, void *ctx)
 int dbg_init()
 {
 	// set UI mode
+	if (em400_opts.ui_simple == 1) {
+		ui_mode = O_STD;
+	} else {
+		ui_mode = O_NCURSES;
+	}
+
 	if (aw_init(ui_mode) != 0) {
 		return E_AW_INIT;
 	}
 
-	if (dbg_ui_init() != 0) {
+	if ((ui_mode == O_NCURSES) &&  (dbg_ui_init() != 0)) {
 		return E_UI_INIT;
 	}
 
@@ -107,7 +113,9 @@ int dbg_init()
 // -----------------------------------------------------------------------
 void dbg_shutdown()
 {
-	aw_shutdown();
+	if (ui_mode == O_NCURSES) {
+		aw_shutdown();
+	}
 }
 
 // -----------------------------------------------------------------------
@@ -143,6 +151,14 @@ void dbg_fin_cycle()
 }
 
 // -----------------------------------------------------------------------
+void dbg_parse(char *c)
+{
+	YY_BUFFER_STATE yb = yy_scan_string(c);
+	yyparse();
+	yy_delete_buffer(yb);
+}
+
+// -----------------------------------------------------------------------
 void dbg_step()
 {
 	struct break_t *bhit = NULL;
@@ -169,9 +185,7 @@ void dbg_step()
 		aw_layout_refresh();
 
 		if ((res == KEY_ENTER) && (*input_buf)) {
-			YY_BUFFER_STATE yb = yy_scan_string(input_buf);
-			yyparse();
-			yy_delete_buffer(yb);
+			dbg_parse(input_buf);
 		}
 	}
 	dbg_fin_cycle();

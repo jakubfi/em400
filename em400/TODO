@@ -10,6 +10,7 @@ CPU:
 
 Debugger:
 
+* r5 = 0xf0f0 : r5 shows 0xfffff0f0
 * again, rethink hex/dec numbers in output and log
 * HLT will halt debugger too if there is no interrupt to serve
 * debugger in separate thread (?)

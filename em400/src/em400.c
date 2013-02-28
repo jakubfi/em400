@@ -17,7 +17,10 @@
 
 #include <stdlib.h>
 #include <stdio.h>
+#include <string.h>
+#include <unistd.h>
 
+#include "em400.h"
 #include "cpu.h"
 #include "memory.h"
 #include "io.h"
@@ -79,6 +82,17 @@ void em400_init()
 		eerr("Error initializing CPU timer", res);
 	}
 
+	mem_clear();
+	cpu_reset();
+
+	if (em400_opts.program_name) {
+		printf("Loading image '%s' into OS memory\n", em400_opts.program_name);
+		int res = mem_load_image(em400_opts.program_name, 0);
+		if (res != E_OK) {
+			eerr("Could not load program", res);
+		}
+	}
+
 #ifdef WITH_DEBUGGER
 	printf("Initializing debugger\n");
 	res = dbg_init();
@@ -94,27 +108,78 @@ void em400_init()
 
 }
 
+// -----------------------------------------------------------------------
+void print_usage()
+{
+	printf("Usage: em400 [option] ...\n");
+	printf("\nOptions:\n");
+	printf("   -p program_image   : load program image into OS memory\n");
+#ifdef WITH_DEBUGGER
+	printf("\nDebuger-only options:\n");
+	printf("   -s                 : use simple debugger interface\n");
+	printf("   -t test_expression : execute test_expression after HLT 077\n");
+#endif
+}
+
+// -----------------------------------------------------------------------
+void parse_arguments(int argc, char **argv)
+{
+	int option;
+    while ((option = getopt(argc, argv,"p:t:s")) != -1) {
+        switch (option) {
+			case 'p':
+				em400_opts.program_name = strdup(optarg);
+				break;
+#ifdef WITH_DEBUGGER
+			case 't':
+				em400_opts.autotest = 1;
+				em400_opts.ui_simple = 1;
+				int elen = strlen(optarg);
+				em400_opts.test_expr = malloc(elen+2);
+				strcpy(em400_opts.test_expr, optarg);
+				em400_opts.test_expr[elen] = '\n';
+				em400_opts.test_expr[elen+1] = '\0';
+				break;
+			case 's':
+				em400_opts.ui_simple = 1;
+				break;
+#endif
+            default:
+				print_usage();
+                exit(1);
+        }
+    }
+}
 
 // -----------------------------------------------------------------------
 // ---- MAIN -------------------------------------------------------------
 // -----------------------------------------------------------------------
 int main(int argc, char** argv)
 {
+	parse_arguments(argc, argv);
 	em400_init();
-
-	mem_clear();
-	cpu_reset();
 
 	while (em400_quit == 0) {
 #ifdef WITH_DEBUGGER
-		dbg_step();
-		if (em400_quit) {
-			break;
+		if (em400_opts.autotest != 1) {
+			dbg_step();
+			if (em400_quit) {
+				break;
+			}
 		}
 #endif
 		cpu_step();
 		int_serve();
 	}
+
+#ifdef WITH_DEBUGGER
+	if (em400_opts.autotest == 1) {
+		printf("TEST RESULT: ");
+		dbg_parse(em400_opts.test_expr);
+		free(em400_opts.test_expr);
+		free(em400_opts.program_name);
+	}
+#endif
 
 	em400_shutdown();
 	return 0;

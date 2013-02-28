@@ -17,6 +17,7 @@
 
 #include <stdlib.h>
 
+#include "em400.h"
 #include "cpu.h"
 #include "registers.h"
 #include "interrupts.h"
@@ -841,6 +842,12 @@ int op_73()
 // -----------------------------------------------------------------------
 int op_73_hlt()
 {
+#ifdef WITH_DEBUGGER
+	if (IR_T == 077) {
+		em400_quit = 1;
+		return OP_OK;
+	}
+#endif
 	pthread_mutex_lock(&int_mutex_rp);
 	while (!RP) {
 		pthread_cond_wait(&int_cond_rp, &int_mutex_rp);
