@@ -22,6 +22,7 @@ extern int em400_quit;
 
 struct em400_opts_t {
     char *program_name;
+	char *config_file;
 #ifdef WITH_DEBUGGER
 	int autotest;
     char *test_expr;

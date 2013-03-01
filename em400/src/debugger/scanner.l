@@ -85,7 +85,7 @@ mod|MOD	{
 hex	return HEX;
 oct	return OCT;
 bin	return BIN;
-dec	return DEC;
+dec|int	return DEC;
 uint return UINT;
 rz	return IRZ;
 rp	return IRP;

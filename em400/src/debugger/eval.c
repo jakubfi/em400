@@ -401,10 +401,10 @@ void print_node(struct node_t *n)
 			awprint(W_CMD, C_DATA, "%i ", (int16_t) value);
 			break;
 		case B_HEX:
-			awprint(W_CMD, C_DATA, "0x%x ", (uint16_t) value);
+			awprint(W_CMD, C_DATA, "0x%04x ", (uint16_t) value);
 			break;
 		case B_OCT:
-			awprint(W_CMD, C_DATA, "0%o ", (uint16_t) value);
+			awprint(W_CMD, C_DATA, "0%06o ", (uint16_t) value);
 			break;
 		case B_BIN:
 			awbinprint(W_CMD, C_DATA, "0b................ ", (uint16_t) value, 16);

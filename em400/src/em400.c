@@ -125,8 +125,11 @@ void print_usage()
 void parse_arguments(int argc, char **argv)
 {
 	int option;
-    while ((option = getopt(argc, argv,"p:t:s")) != -1) {
+    while ((option = getopt(argc, argv,"c:p:t:s")) != -1) {
         switch (option) {
+			case 'c':
+				em400_opts.config_file = strdup(optarg);
+				break;
 			case 'p':
 				em400_opts.program_name = strdup(optarg);
 				break;
