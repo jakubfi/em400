@@ -106,7 +106,7 @@ struct enode_t * enode_eval(struct enode_t *e)
 			ev->value = e1->value - e2->value;
 			if (e1->was_addr || e2->was_addr) ev->was_addr = 1;
 			break;
-		case 'u':
+		case UMINUS:
 			if (!e2) return NULL;
 			ev->value = - e2->value;
 			if (e2->was_addr) ev->was_addr = 1;

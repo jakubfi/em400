@@ -51,6 +51,8 @@ extern int ic;
 %type <enode> expr
 
 %left '+' '-'
+%nonassoc UMINUS
+
 
 %%
 
@@ -148,7 +150,7 @@ normval:
 	| expr { $$ = make_norm(0, 0, make_data($1, yylloc.first_line)); }
 	| REGISTER '+' REGISTER { $$ = make_norm($1, $3, NULL); }
 	| REGISTER '+' expr { $$ = make_norm(0, $1, make_data($3, yylloc.first_line)); }
-	| REGISTER '-' expr { $$ = make_norm(0, $1, make_data(make_enode('u', 0, NULL, NULL, $3), yylloc.first_line)); }
+	| REGISTER '-' expr { $$ = make_norm(0, $1, make_data(make_enode(UMINUS, 0, NULL, NULL, $3), yylloc.first_line)); }
 	| expr '+' REGISTER { $$ = make_norm(0, $3, make_data($1, yylloc.first_line)); }
 	;
 
@@ -157,6 +159,8 @@ expr:
 	| NAME { $$ = make_enode(NAME, 0, $1, NULL, NULL); }
 	| expr '+' expr { $$ = make_enode('+', 0, NULL, $1, $3); }
 	| expr '-' expr { $$ = make_enode('-', 0, NULL, $1, $3); }
+	| '-' expr %prec UMINUS { $$ = make_enode(UMINUS, 0, NULL, NULL, $2); }
+	| '(' expr ')' { $$ = $2; }
 	;
 
 %%
