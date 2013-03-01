@@ -148,6 +148,7 @@ normval:
 	| expr { $$ = make_norm(0, 0, make_data($1, yylloc.first_line)); }
 	| REGISTER '+' REGISTER { $$ = make_norm($1, $3, NULL); }
 	| REGISTER '+' expr { $$ = make_norm(0, $1, make_data($3, yylloc.first_line)); }
+	| REGISTER '-' expr { $$ = make_norm(0, $1, make_data(make_enode('u', 0, NULL, NULL, $3), yylloc.first_line)); }
 	| expr '+' REGISTER { $$ = make_norm(0, $3, make_data($1, yylloc.first_line)); }
 	;
 
