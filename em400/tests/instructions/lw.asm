@@ -25,4 +25,3 @@
 ; XPCT hex(r6): 0x0f0f
 ; XPCT hex(r7): 0x1234
 
-# vim: tabstop=4

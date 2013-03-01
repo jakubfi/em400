@@ -1,4 +1,4 @@
-.program "cpu/norm-mem"
+.program "cpu/arg-norm-mem"
 
 	lw r1, [dt1]
 	lw r2, [dt2]
@@ -30,4 +30,3 @@ dt4:
 ; XPCT hex(r5): 0x000d
 ; XPCT hex(r6): 0x0004
 
-# vim: tabstop=4

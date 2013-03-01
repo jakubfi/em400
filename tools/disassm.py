@@ -188,8 +188,8 @@ class M400dasm:
 
 binfile = sys.argv[1]
 
-dasm = M400dasm(binfile, MODE_K202)
-#dasm = M400dasm(binfile, MODE_MERA400)
+#dasm = M400dasm(binfile, MODE_K202)
+dasm = M400dasm(binfile, MODE_MERA400)
 dasm.go()
 
 # vim: tabstop=4 expandtab shiftwidth=4 softtabstop=4

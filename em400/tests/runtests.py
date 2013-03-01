@@ -96,6 +96,7 @@ else:
 for t in tests:
     binary = run_assem(t)
     result = "?"
+    program_name = None
 
     if binary is not None:
         program_name, xpcts = get_test_data(t)
@@ -120,7 +121,7 @@ for t in tests:
     else:
         result = "FAIL: assem"
 
-    print "Test: %-30s -> %s" % (program_name, result)
+    print "Test: %-30s %s" % (program_name, result)
 
 
 # vim: tabstop=4 expandtab shiftwidth=4 softtabstop=4

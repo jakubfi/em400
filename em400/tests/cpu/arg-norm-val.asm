@@ -1,4 +1,4 @@
-.program "cpu/norm-val"
+.program "cpu/arg-norm-val"
 
 	lw r1, 0x0001
 	lw r2, 0x0002
@@ -23,4 +23,3 @@
 ; XPCT hex(r6): 0x0000
 ; XPCT hex(r7): 0xffff
 
-# vim: tabstop=4

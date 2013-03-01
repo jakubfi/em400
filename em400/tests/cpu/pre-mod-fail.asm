@@ -15,4 +15,3 @@
 ; XPCT int(rz(6)) : 1
 ; XPCT int(r1): 1
 
-# vim: tabstop=4
