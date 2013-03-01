@@ -20,6 +20,9 @@ dt4:
 
 .endprog
 
+; XPCT int(rz(6)) : 0
+; XPCT int(sr) : 0
+
 ; XPCT hex(r1): 0x0001
 ; XPCT hex(r2): 0x000d
 ; XPCT hex(r3): 0x0003

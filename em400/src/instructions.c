@@ -45,14 +45,14 @@ int op_illegal()
 // -----------------------------------------------------------------------
 int op_lw()
 {
-	Rw(IR_A, (uint16_t) cpu_get_eff_arg());
+	Rw(IR_A, (uint16_t) get_arg_norm());
 	return OP_OK;
 }
 
 // -----------------------------------------------------------------------
 int op_tw()
 {
-	uint16_t N = cpu_get_eff_arg();
+	uint16_t N = get_arg_norm();
 	Rw(IR_A, MEMNB(N));
 	return OP_OK;
 }
@@ -60,7 +60,7 @@ int op_tw()
 // -----------------------------------------------------------------------
 int op_ls()
 {
-	uint16_t N = cpu_get_eff_arg();
+	uint16_t N = get_arg_norm();
 	Rw(IR_A, (R(IR_A) & ~R(7)) | (N & R(7)));
 	return OP_OK;
 }
@@ -68,7 +68,7 @@ int op_ls()
 // -----------------------------------------------------------------------
 int op_ri()
 {
-	uint16_t N = cpu_get_eff_arg();
+	uint16_t N = get_arg_norm();
 	MEMw(R(IR_A), N);
 	Rinc(IR_A);
 	return OP_OK;
@@ -77,7 +77,7 @@ int op_ri()
 // -----------------------------------------------------------------------
 int op_rw()
 {
-	uint16_t N = cpu_get_eff_arg();
+	uint16_t N = get_arg_norm();
 	MEMw(N, R(IR_A));
 	return OP_OK;
 }
@@ -85,7 +85,7 @@ int op_rw()
 // -----------------------------------------------------------------------
 int op_pw()
 {
-	uint16_t N = cpu_get_eff_arg();
+	uint16_t N = get_arg_norm();
 	MEMNBw(N, R(IR_A));
 	return OP_OK;
 }
@@ -93,7 +93,7 @@ int op_pw()
 // -----------------------------------------------------------------------
 int op_rj()
 {
-	uint16_t N = cpu_get_eff_arg();
+	uint16_t N = get_arg_norm();
 	Rw(IR_A, R(R_IC));
 	Rw(R_IC, N);
 	return OP_OK;
@@ -102,7 +102,7 @@ int op_rj()
 // -----------------------------------------------------------------------
 int op_is()
 {
-	uint16_t N = cpu_get_eff_arg();
+	uint16_t N = get_arg_norm();
 	if ((MEMNB(N) & R(IR_A)) == R(IR_A)) {
 		Rw(R_P, 1);
 		MEMNBw(N, (MEMNB(N) | R(IR_A)));
@@ -113,7 +113,7 @@ int op_is()
 // -----------------------------------------------------------------------
 int op_bb()
 {
-	uint16_t N = cpu_get_eff_arg();
+	uint16_t N = get_arg_norm();
 	if ((R(IR_A) & N) == N) Rw(R_P, 1);
 	return OP_OK;
 }
@@ -121,7 +121,7 @@ int op_bb()
 // -----------------------------------------------------------------------
 int op_bm()
 {
-	uint16_t N = cpu_get_eff_arg();
+	uint16_t N = get_arg_norm();
 	if ((MEMNB(N) & R(IR_A)) == R(IR_A)) Rw(R_P, 1);
 	return OP_OK;
 }
@@ -129,7 +129,7 @@ int op_bm()
 // -----------------------------------------------------------------------
 int op_bs()
 {
-	uint16_t N = cpu_get_eff_arg();
+	uint16_t N = get_arg_norm();
 	if ((R(IR_A) & R(7)) == (N & R(7))) Rw(R_P, 1);
 	return OP_OK;
 }
@@ -137,7 +137,7 @@ int op_bs()
 // -----------------------------------------------------------------------
 int op_bc()
 {
-	uint16_t N = cpu_get_eff_arg();
+	uint16_t N = get_arg_norm();
 	if ((R(IR_A) & N) == N) Rw(R_P, 1);
 	return OP_OK;
 }
@@ -145,7 +145,7 @@ int op_bc()
 // -----------------------------------------------------------------------
 int op_bn()
 {
-	uint16_t N = cpu_get_eff_arg();
+	uint16_t N = get_arg_norm();
 	if ((R(IR_A) & N) == 0) Rw(R_P, 1);
 	return OP_OK;
 }
@@ -153,7 +153,7 @@ int op_bn()
 // -----------------------------------------------------------------------
 int op_ou()
 {
-	uint16_t N = cpu_get_eff_arg();
+	uint16_t N = get_arg_norm();
 	int io_result = io_dispatch(IO_OU, N, regs+IR_A);
 	Rw(R_IC, MEM(R(R_IC) + io_result));
 	return OP_OK;
@@ -162,7 +162,7 @@ int op_ou()
 // -----------------------------------------------------------------------
 int op_in()
 {
-	uint16_t N = cpu_get_eff_arg();
+	uint16_t N = get_arg_norm();
 	int io_result = io_dispatch(IO_IN, N, regs+IR_A);
 	Rw(R_IC, MEM(R(R_IC) + io_result));
 	return OP_OK;
@@ -182,16 +182,13 @@ int op_37()
 int op_37_ad()
 {
 	// TODO: AWP
-	uint16_t N = cpu_get_eff_arg();
+	uint16_t N = get_arg_norm();
 	int32_t a1 = DWORD(R(1), R(2));
 	int32_t a2 = DWORD(MEM(N), MEM(N+1));
 	int64_t res = a1 + a2;
 	Rw(1, DWORDl(res));
 	Rw(2, DWORDr(res));
-	R0_Ms32(res);
-	R0_Zs32(res);
-	R0_Cs32(res);
-	R0_Vs32(a1, a2, res);
+	flags_ZMVC(a1, a2, res, 32);
 	return OP_OK;
 }
 
@@ -199,16 +196,13 @@ int op_37_ad()
 int op_37_sd()
 {
 	// TODO: AWP
-	uint16_t N = cpu_get_eff_arg();
+	uint16_t N = get_arg_norm();
 	int32_t a1 = DWORD(R(1), R(2));
 	int32_t a2 = DWORD(MEM(N), MEM(N+1));
 	int64_t res = a1 - a2;
 	Rw(1, DWORDl(res));
 	Rw(2, DWORDr(res));
-	R0_Ms32(res);
-	R0_Zs32(res);
-	R0_Cs32(res);
-	R0_Vs32(a1, -a2, res);
+	flags_ZMVC(a1, -a2, res, 32);
 	return OP_OK;
 }
 
@@ -216,15 +210,15 @@ int op_37_sd()
 int op_37_mw()
 {
 	// TODO: AWP
-	uint16_t N = cpu_get_eff_arg();
+	uint16_t N = get_arg_norm();
 	int16_t m1 = R(2);
 	int16_t m2 = MEM(N);
 	int64_t res = m1 * m2;
 	Rw(1, DWORDl(res));
 	Rw(2, DWORDr(res));
-	R0_Ms32(res);
-	R0_Zs32(res);
-	R0_Vs32(m1, m2, res);
+	flags_M(res, 32);
+	flags_Z(res);
+	flags_V(m1, m2, res, 32);
 	return OP_OK;
 }
 
@@ -232,14 +226,14 @@ int op_37_mw()
 int op_37_dw()
 {
 	// TODO: AWP
-	uint16_t N = cpu_get_eff_arg();
+	uint16_t N = get_arg_norm();
 	int32_t d1 = DWORD(R(1), R(2));
 	int16_t d2 = MEM(N);
 	int32_t res = d1 / d2;
 	Rw(2, res);
 	Rw(1, d1 % d2);
-	R0_Ms32(res);
-	R0_Zs32(res);
+	flags_M(res, 32);
+	flags_Z(res);
 	return OP_OK;
 }
 
@@ -278,7 +272,7 @@ int op_37_df()
 // -----------------------------------------------------------------------
 int op_aw()
 {
-	int16_t N = cpu_get_eff_arg();
+	int16_t N = get_arg_norm();
 	int16_t tmp = R(IR_A);
 	int32_t res = N + tmp;
 	flags_ZMVC(N, tmp, res, 16);
@@ -289,7 +283,7 @@ int op_aw()
 // -----------------------------------------------------------------------
 int op_ac()
 {
-	int16_t N = cpu_get_eff_arg();
+	int16_t N = get_arg_norm();
 	int16_t tmp = R(IR_A);
 	int32_t res = N + tmp + Fget(FL_C);
 	flags_ZMVC(N, tmp + Fget(FL_C), res, 16);
@@ -300,7 +294,7 @@ int op_ac()
 // -----------------------------------------------------------------------
 int op_sw()
 {
-	int16_t N = cpu_get_eff_arg();
+	int16_t N = get_arg_norm();
 	int16_t tmp = R(IR_A);
 	int32_t res = N - tmp;
 	flags_ZMVC(N, -tmp, res, 16);
@@ -311,7 +305,7 @@ int op_sw()
 // -----------------------------------------------------------------------
 int op_cw()
 {
-	uint16_t N = cpu_get_eff_arg();
+	uint16_t N = get_arg_norm();
 	flags_LEG((int16_t)R(IR_A), (int16_t)N);
 	return OP_OK;
 }
@@ -319,79 +313,79 @@ int op_cw()
 // -----------------------------------------------------------------------
 int op_or()
 {
-	uint16_t N = cpu_get_eff_arg();
+	uint16_t N = get_arg_norm();
 	Rw(IR_A, R(IR_A) | N);
-	R0_Zs16(R(IR_A));
+	flags_Z(R(IR_A));
 	return OP_OK;
 }
 
 // -----------------------------------------------------------------------
 int op_om()
 {
-	uint16_t N = cpu_get_eff_arg();
+	uint16_t N = get_arg_norm();
 	MEMNBw(N, MEMNB(N) | R(IR_A));
-	R0_Zs16(MEMNB(N));
+	flags_Z(MEMNB(N));
 	return OP_OK;
 }
 
 // -----------------------------------------------------------------------
 int op_nr()
 {
-	uint16_t N = cpu_get_eff_arg();
+	uint16_t N = get_arg_norm();
 	Rw(IR_A, R(IR_A) & N);
-	R0_Zs16(R(IR_A));
+	flags_Z(R(IR_A));
 	return OP_OK;
 }
 
 // -----------------------------------------------------------------------
 int op_nm()
 {
-	uint16_t N = cpu_get_eff_arg();
+	uint16_t N = get_arg_norm();
 	MEMNBw(N, MEMNB(N) & R(IR_A));
-	R0_Zs16(MEMNB(N));
+	flags_Z(MEMNB(N));
 	return OP_OK;
 }
 
 // -----------------------------------------------------------------------
 int op_er()
 {
-	uint16_t N = cpu_get_eff_arg();
+	uint16_t N = get_arg_norm();
 	Rw(IR_A, R(IR_A) & ~N);
-	R0_Zs16(R(IR_A));
+	flags_Z(R(IR_A));
 	return OP_OK;
 }
 
 // -----------------------------------------------------------------------
 int op_em()
 {
-	uint16_t N = cpu_get_eff_arg();
+	uint16_t N = get_arg_norm();
 	MEMNBw(N, MEMNB(N) & ~R(IR_A));
-	R0_Zs16(MEMNB(N));
+	flags_Z(MEMNB(N));
 	return OP_OK;
 }
 
 // -----------------------------------------------------------------------
 int op_xr()
 {
-	uint16_t N = cpu_get_eff_arg();
+	uint16_t N = get_arg_norm();
 	Rw(IR_A, R(IR_A) ^ N);
-	R0_Zs16(R(IR_A));
+	flags_Z(R(IR_A));
 	return OP_OK;
 }
 
 // -----------------------------------------------------------------------
 int op_xm()
 {
-	uint16_t N = cpu_get_eff_arg();
+	uint16_t N = get_arg_norm();
 	MEMNBw(N, MEMNB(N) ^ R(IR_A));
-	R0_Zs16(MEMNB(N));
+	flags_Z(MEMNB(N));
 	return OP_OK;
 }
 
 // -----------------------------------------------------------------------
 int op_cl()
 {
-	uint16_t N = cpu_get_eff_arg();
+	uint16_t N = get_arg_norm();
 	flags_LEG((uint16_t)R(IR_A), (uint16_t)N);
 	return OP_OK;
 }
@@ -399,7 +393,7 @@ int op_cl()
 // -----------------------------------------------------------------------
 int op_lb()
 {
-	uint16_t N = cpu_get_eff_arg();
+	uint16_t N = get_arg_norm();
 
 	// N lsb=1 - right byte
 	// N lsb=0 - left byte
@@ -417,7 +411,7 @@ int op_lb()
 // -----------------------------------------------------------------------
 int op_rb()
 {
-	uint16_t N = cpu_get_eff_arg();
+	uint16_t N = get_arg_norm();
 	int shift = 8 * ~(N&1);
 	N >>= 1;
 
@@ -431,7 +425,7 @@ int op_rb()
 // -----------------------------------------------------------------------
 int op_cb()
 {
-	uint16_t N = cpu_get_eff_arg();
+	uint16_t N = get_arg_norm();
 	int shift = 8 * ~(N&1);
 	N >>= 1;
 	flags_LEG((uint8_t)(R(IR_A)&0b0000000011111111), (uint8_t)((MEMNB(N) >> shift) & 0b0000000011111111));
@@ -446,19 +440,18 @@ int op_cb()
 int op_awt()
 {
 	int16_t tmp = R(IR_A);
-	int32_t res = IR_T + tmp;
+	int16_t T = get_arg_short();
+	int32_t res = T + tmp;
 	Rw(IR_A, res);
-	R0_Ms16((uint32_t) res);
-	R0_Zs16((uint32_t) res);
-	R0_Cs16((uint32_t) res);
-	R0_Vs16(IR_T, tmp, res);
+	flags_ZMVC(T, tmp, res, 16);
 	return OP_OK;
 }
 
 // -----------------------------------------------------------------------
 int op_trb()
 {
-	Radd(IR_A, IR_T);
+	int16_t T = get_arg_short();
+	Radd(IR_A, T);
 	if (!R(IR_A)) Rw(R_P, 1);
 	else Rw(R_P, 0);
 	return OP_OK;
@@ -467,44 +460,50 @@ int op_trb()
 // -----------------------------------------------------------------------
 int op_irb()
 {
+	int16_t T = get_arg_short();
 	Rinc(IR_A);
-	if (R(IR_A)) Radd(R_IC, IR_T);
+	if (R(IR_A)) Radd(R_IC, T);
 	return OP_OK;
 }
 
 // -----------------------------------------------------------------------
 int op_drb()
 {
+	int16_t T = get_arg_short();
 	Rdec(IR_A);
-	if (R(IR_A)) Radd(R_IC, IR_T);
+	if (R(IR_A)) Radd(R_IC, T);
 	return OP_OK;
 }
 
 // -----------------------------------------------------------------------
 int op_cwt()
 {
-	flags_LEG((int16_t)R(IR_A), (int8_t)IR_T);
+	int16_t T = get_arg_short();
+	flags_LEG((int16_t)R(IR_A), (int8_t)T);
 	return OP_OK;
 }
 
 // -----------------------------------------------------------------------
 int op_lwt()
 {
-	Rw(IR_A, IR_T);
+	int16_t T = get_arg_short();
+	Rw(IR_A, T);
 	return OP_OK;
 }
 
 // -----------------------------------------------------------------------
 int op_lws()
 {
-	Rw(IR_A, MEM(R(R_IC) + IR_T));
+	int16_t T = get_arg_short();
+	Rw(IR_A, MEM(R(R_IC) + T));
 	return OP_OK;
 }
 
 // -----------------------------------------------------------------------
 int op_rws()
 {
-	MEMw(R(R_IC) + IR_T, R(IR_A));
+	int16_t T = get_arg_short();
+	MEMw(R(R_IC) + T, R(IR_A));
 	return OP_OK;
 }
 
@@ -521,36 +520,41 @@ int op_70()
 // -----------------------------------------------------------------------
 int op_70_ujs()
 {
-	Radd(R_IC, IR_T);
+	int16_t T = get_arg_short();
+	Radd(R_IC, T);
 	return OP_OK;
 }
 
 // -----------------------------------------------------------------------
 int op_70_jls()
 {
-	if (Fget(FL_E)) Radd(R_IC, IR_T);
+	int16_t T = get_arg_short();
+	if (Fget(FL_E)) Radd(R_IC, T);
 	return OP_OK;
 }
 
 // -----------------------------------------------------------------------
 int op_70_jes()
 {
-	if (Fget(FL_L)) Radd(R_IC, IR_T);
+	int16_t T = get_arg_short();
+	if (Fget(FL_L)) Radd(R_IC, T);
 	return OP_OK;
 }
 
 // -----------------------------------------------------------------------
 int op_70_jgs()
 {
-	if (Fget(FL_G)) Radd(R_IC, IR_T);
+	int16_t T = get_arg_short();
+	if (Fget(FL_G)) Radd(R_IC, T);
 	return OP_OK;
 }
 
 // -----------------------------------------------------------------------
 int op_70_jvs()
 {
+	int16_t T = get_arg_short();
 	if (Fget(FL_V)) {
-		Radd(R_IC, IR_T);
+		Radd(R_IC, T);
 		Fset(FL_V);
 	}
 	return OP_OK;
@@ -559,21 +563,24 @@ int op_70_jvs()
 // -----------------------------------------------------------------------
 int op_70_jxs()
 {
-	if (Fget(FL_X)) Radd(R_IC, IR_T);
+	int16_t T = get_arg_short();
+	if (Fget(FL_X)) Radd(R_IC, T);
 	return OP_OK;
 }
 
 // -----------------------------------------------------------------------
 int op_70_jys()
 {
-	if (Fget(FL_Y)) Radd(R_IC, IR_T);
+	int16_t T = get_arg_short();
+	if (Fget(FL_Y)) Radd(R_IC, T);
 	return OP_OK;
 }
 
 // -----------------------------------------------------------------------
 int op_70_jcs()
 {
-	if (Fget(FL_C)) Radd(R_IC, IR_T);
+	int16_t T = get_arg_short();
+	if (Fget(FL_C)) Radd(R_IC, T);
 	return OP_OK;
 }
 
@@ -654,7 +661,7 @@ int op_72_sxu()
 {
 	if (R(IR_A) & 0b1000000000000000) Fset(FL_Z);
 	else Fclr(FL_Z);
-	R0_Zs16(R(IR_A));
+	flags_Z(R(IR_A));
 	return OP_OK;
 }
 
@@ -705,7 +712,7 @@ int op_72_sry()
 int op_72_ngl()
 {
 	Rw(IR_A, ~R(IR_A));
-	R0_Zs16(R(IR_A));
+	flags_Z(R(IR_A));
 	return OP_OK;
 }
 
@@ -749,7 +756,7 @@ int op_72_sxl()
 {
 	if (R(IR_A) & 1) Fset(FL_X);
 	else Fclr(FL_X);
-	R0_Zs16(R(IR_A));
+	flags_Z(R(IR_A));
 	return OP_OK;
 }
 
@@ -844,7 +851,8 @@ int op_73_hlt()
 {
 #ifdef WITH_DEBUGGER
 	// handle hlt 077 differently in autotests mode
-	if ((em400_opts.autotest == 1) && (IR_T == 077)) {
+	int16_t T = get_arg_short();
+	if ((em400_opts.autotest == 1) && (T == 077)) {
 		em400_quit = 1;
 		return OP_OK;
 	}
@@ -956,7 +964,7 @@ int op_74()
 // -----------------------------------------------------------------------
 int op_74_uj()
 {
-	uint16_t N = cpu_get_eff_arg();
+	uint16_t N = get_arg_norm();
 	Rw(R_IC, N);
 	return OP_OK;
 }
@@ -964,7 +972,7 @@ int op_74_uj()
 // -----------------------------------------------------------------------
 int op_74_jl()
 {
-	uint16_t N = cpu_get_eff_arg();
+	uint16_t N = get_arg_norm();
 	if (Fget(FL_L)) Rw(R_IC, N);
 	return OP_OK;
 }
@@ -972,7 +980,7 @@ int op_74_jl()
 // -----------------------------------------------------------------------
 int op_74_je()
 {
-	uint16_t N = cpu_get_eff_arg();
+	uint16_t N = get_arg_norm();
 	if (Fget(FL_E)) Rw(R_IC, N);
 	return OP_OK;
 }
@@ -980,7 +988,7 @@ int op_74_je()
 // -----------------------------------------------------------------------
 int op_74_jg()
 {
-	uint16_t N = cpu_get_eff_arg();
+	uint16_t N = get_arg_norm();
 	if (Fget(FL_G)) Rw(R_IC, N);
 	return OP_OK;
 }
@@ -988,7 +996,7 @@ int op_74_jg()
 // -----------------------------------------------------------------------
 int op_74_jz()
 {
-	uint16_t N = cpu_get_eff_arg();
+	uint16_t N = get_arg_norm();
 	if (Fget(FL_Z)) Rw(R_IC, N);
 	return OP_OK;
 }
@@ -996,7 +1004,7 @@ int op_74_jz()
 // -----------------------------------------------------------------------
 int op_74_jm()
 {
-	uint16_t N = cpu_get_eff_arg();
+	uint16_t N = get_arg_norm();
 	if (Fget(FL_M)) Rw(R_IC, N);
 	return OP_OK;
 }
@@ -1004,7 +1012,7 @@ int op_74_jm()
 // -----------------------------------------------------------------------
 int op_74_jn()
 {
-	uint16_t N = cpu_get_eff_arg();
+	uint16_t N = get_arg_norm();
 	if (!Fget(FL_E)) Rw(R_IC, N);
 	return OP_OK;
 }
@@ -1012,7 +1020,7 @@ int op_74_jn()
 // -----------------------------------------------------------------------
 int op_74_lj()
 {
-	uint16_t N = cpu_get_eff_arg();
+	uint16_t N = get_arg_norm();
 	MEMw(N, R(R_IC));
 	Rw(R_IC, N+1);
 	return OP_OK;
@@ -1031,7 +1039,7 @@ int op_75()
 // -----------------------------------------------------------------------
 int op_75_ld()
 {
-	uint16_t N = cpu_get_eff_arg();
+	uint16_t N = get_arg_norm();
 	Rw(1, MEM(N));
 	Rw(2, MEM(N+1));
 	return OP_OK;
@@ -1040,7 +1048,7 @@ int op_75_ld()
 // -----------------------------------------------------------------------
 int op_75_lf()
 {
-	uint16_t N = cpu_get_eff_arg();
+	uint16_t N = get_arg_norm();
 	Rw(1, MEM(N));
 	Rw(2, MEM(N+1));
 	Rw(3, MEM(N+2));
@@ -1050,7 +1058,7 @@ int op_75_lf()
 // -----------------------------------------------------------------------
 int op_75_la()
 {
-	uint16_t N = cpu_get_eff_arg();
+	uint16_t N = get_arg_norm();
 	Rw(1, MEM(N));
 	Rw(2, MEM(N+1));
 	Rw(3, MEM(N+2));
@@ -1064,7 +1072,7 @@ int op_75_la()
 // -----------------------------------------------------------------------
 int op_75_ll()
 {
-	uint16_t N = cpu_get_eff_arg();
+	uint16_t N = get_arg_norm();
 	Rw(5, MEM(N));
 	Rw(6, MEM(N+1));
 	Rw(7, MEM(N+2));
@@ -1074,7 +1082,7 @@ int op_75_ll()
 // -----------------------------------------------------------------------
 int op_75_td()
 {
-	uint16_t N = cpu_get_eff_arg();
+	uint16_t N = get_arg_norm();
 	Rw(1, MEMNB(N));
 	Rw(2, MEMNB(N+1));
 	return OP_OK;
@@ -1083,7 +1091,7 @@ int op_75_td()
 // -----------------------------------------------------------------------
 int op_75_tf()
 {
-	uint16_t N = cpu_get_eff_arg();
+	uint16_t N = get_arg_norm();
 	Rw(1, MEMNB(N));
 	Rw(2, MEMNB(N+1));
 	Rw(3, MEMNB(N+2));
@@ -1093,7 +1101,7 @@ int op_75_tf()
 // -----------------------------------------------------------------------
 int op_75_ta()
 {
-	uint16_t N = cpu_get_eff_arg();
+	uint16_t N = get_arg_norm();
 	Rw(1, MEMNB(N));
 	Rw(2, MEMNB(N+1));
 	Rw(3, MEMNB(N+2));
@@ -1107,7 +1115,7 @@ int op_75_ta()
 // -----------------------------------------------------------------------
 int op_75_tl()
 {
-	uint16_t N = cpu_get_eff_arg();
+	uint16_t N = get_arg_norm();
 	Rw(5, MEMNB(N));
 	Rw(6, MEMNB(N+1));
 	Rw(7, MEMNB(N+2));
@@ -1127,7 +1135,7 @@ int op_76()
 // -----------------------------------------------------------------------
 int op_76_rd()
 {
-	uint16_t N = cpu_get_eff_arg();
+	uint16_t N = get_arg_norm();
 	MEMw(N, R(1));
 	MEMw(N+1, R(2));
 	return OP_OK;
@@ -1136,7 +1144,7 @@ int op_76_rd()
 // -----------------------------------------------------------------------
 int op_76_rf()
 {
-	uint16_t N = cpu_get_eff_arg();
+	uint16_t N = get_arg_norm();
 	MEMw(N, R(1));
 	MEMw(N+1, R(2));
 	MEMw(N+2, R(3));
@@ -1146,7 +1154,7 @@ int op_76_rf()
 // -----------------------------------------------------------------------
 int op_76_ra()
 {
-	uint16_t N = cpu_get_eff_arg();
+	uint16_t N = get_arg_norm();
 	MEMw(N, R(1));
 	MEMw(N+1, R(2));
 	MEMw(N+2, R(3));
@@ -1160,7 +1168,7 @@ int op_76_ra()
 // -----------------------------------------------------------------------
 int op_76_rl()
 {
-	uint16_t N = cpu_get_eff_arg();
+	uint16_t N = get_arg_norm();
 	MEMw(N, R(5));
 	MEMw(N+1, R(6));
 	MEMw(N+2, R(7));
@@ -1170,7 +1178,7 @@ int op_76_rl()
 // -----------------------------------------------------------------------
 int op_76_pd()
 {
-	uint16_t N = cpu_get_eff_arg();
+	uint16_t N = get_arg_norm();
 	MEMNBw(N, R(1));
 	MEMNBw(N+1, R(2));
 	return OP_OK;
@@ -1179,7 +1187,7 @@ int op_76_pd()
 // -----------------------------------------------------------------------
 int op_76_pf()
 {
-	uint16_t N = cpu_get_eff_arg();
+	uint16_t N = get_arg_norm();
 	MEMNBw(N, R(1));
 	MEMNBw(N+1, R(2));
 	MEMNBw(N+2, R(3));
@@ -1189,7 +1197,7 @@ int op_76_pf()
 // -----------------------------------------------------------------------
 int op_76_pa()
 {
-	uint16_t N = cpu_get_eff_arg();
+	uint16_t N = get_arg_norm();
 	MEMNBw(N, R(1));
 	MEMNBw(N+1, R(2));
 	MEMNBw(N+2, R(3));
@@ -1203,7 +1211,7 @@ int op_76_pa()
 // -----------------------------------------------------------------------
 int op_76_pl()
 {
-	uint16_t N = cpu_get_eff_arg();
+	uint16_t N = get_arg_norm();
 	MEMNBw(N, R(5));
 	MEMNBw(N+1, R(6));
 	MEMNBw(N+2, R(7));
@@ -1224,7 +1232,7 @@ int op_77()
 int op_77_mb()
 {
 	if (SR_Q) return OP_ILLEGAL;
-	uint16_t N = cpu_get_eff_arg();
+	uint16_t N = get_arg_norm();
 	SR_SET_QNB(MEM(N));
 	return OP_OK;
 }
@@ -1233,7 +1241,7 @@ int op_77_mb()
 int op_77_im()
 {
 	if (SR_Q) return OP_ILLEGAL;
-	uint16_t N = cpu_get_eff_arg();
+	uint16_t N = get_arg_norm();
 	SR_SET_MASK(MEM(N));
 	int_update_rp();
 	return OP_OK;
@@ -1243,7 +1251,7 @@ int op_77_im()
 int op_77_ki()
 {
 	if (SR_Q) return OP_ILLEGAL;
-	uint16_t N = cpu_get_eff_arg();
+	uint16_t N = get_arg_norm();
 	MEMw(N, int_get_nchan());
 	return OP_OK;
 }
@@ -1252,7 +1260,7 @@ int op_77_ki()
 int op_77_fi()
 {
 	if (SR_Q) return OP_ILLEGAL;
-	uint16_t N = cpu_get_eff_arg();
+	uint16_t N = get_arg_norm();
 	int_put_nchan(MEM(N));
 	return OP_OK;
 }
@@ -1261,7 +1269,7 @@ int op_77_fi()
 int op_77_sp()
 {
 	if (SR_Q) return OP_ILLEGAL;
-	uint16_t N = cpu_get_eff_arg();
+	uint16_t N = get_arg_norm();
 	Rw(R_IC, MEMNB(N));
 	Rw(0, MEMNB(N+1));
 	Rw(R_SR, MEMNB(N+2));
@@ -1276,7 +1284,7 @@ int op_77_md()
 	if (R(R_MODc) >= 4) {
 		return OP_ILLEGAL;
 	}
-	int16_t N = cpu_get_eff_arg();
+	int16_t N = get_arg_norm();
 	Rw(R_MOD, N);
 	return OP_MD;
 }
@@ -1284,7 +1292,7 @@ int op_77_md()
 // -----------------------------------------------------------------------
 int op_77_rz()
 {
-	uint16_t N = cpu_get_eff_arg();
+	uint16_t N = get_arg_norm();
 	MEMw(N, 0);
 	return OP_OK;
 }
@@ -1292,7 +1300,7 @@ int op_77_rz()
 // -----------------------------------------------------------------------
 int op_77_ib()
 {
-	uint16_t N = cpu_get_eff_arg();
+	uint16_t N = get_arg_norm();
 	MEMw(N, MEM(N)+1);
 	if (!MEM(N)) Rw(R_P, 1);
 	return OP_OK;

@@ -22,7 +22,8 @@
 
 void cpu_reset();
 void cpu_step();
-int16_t cpu_get_eff_arg();
+int16_t get_arg_short();
+int16_t get_arg_norm();
 
 #endif
 

@@ -48,13 +48,21 @@ extern uint16_t regs[];
 
 uint16_t reg_read(int r, int trace);
 void reg_write(int r, uint16_t x, int trace, int hw);
+
 void flags_LEG(int16_t x, int16_t y);
+void flags_Z(int64_t z);
+void flags_M(int64_t z, int bits);
+void flags_C(int64_t z, int bits);
+void flags_V(int64_t x, int64_t y, int64_t z, int bits);
 void flags_ZMVC(int64_t x, int64_t y, int64_t z, int bits);
+
+// -----------------------------------------------------------------------
+// Register access macros
+// -----------------------------------------------------------------------
 
 #define R(x)		reg_read(x, 1)
 #define nR(x)		reg_read(x, 0)
 #define Rw(r, x)	reg_write(r, x, 1, 0)
-#define hRw(r, x)	reg_write(r, x, 1, 1)
 #define nRw(r, x)	reg_write(r, x, 0, 0)
 
 #define Rinc(r)		reg_write(r, R(r)+1, 1, 0)
@@ -64,49 +72,10 @@ void flags_ZMVC(int64_t x, int64_t y, int64_t z, int bits);
 #define Radd(r, x)	reg_write(r, R(r)+x, 1, 0)
 #define nRadd(r, x)	reg_write(r, nR(r)+x, 0, 0)
 
-#define Fget(x)		(reg_read(0, 1) | x) ? 1 : 0
-#define Fset(x)		reg_write(0, reg_read(0, 1) | x, 1, 1)
-#define Fclr(x)		reg_write(0, reg_read(0, 1) & ~x, 1, 1)
-
 // -----------------------------------------------------------------------
-// macros to access bit fields
+// Operations on flags (in R0)
 // -----------------------------------------------------------------------
 
-// -----------------------------------------------------------------------
-// SR
-// -----------------------------------------------------------------------
-#define SR_Q	((nR(R_SR) & 0b0000000000100000) >> 5)
-#define SR_NB	((nR(R_SR) & 0b0000000000001111) >> 0)
-
-#define SR_RM9cb	Rw(R_SR, R(R_SR) & 0b1111111110111111)
-#define SR_Qcb		Rw(R_SR, R(R_SR) & 0b1111111111011111)
-
-#define	SR_SET_QNB(x)	Rw(R_SR, (R(R_SR) & 0b111111111000000) | (x & 0b0000000000111111))
-#define	SR_SET_MASK(x)	Rw(R_SR, (R(R_SR) & 0b000000000111111) | (x & 0b1111111111000000))
-
-// -----------------------------------------------------------------------
-// IR
-// -----------------------------------------------------------------------
-#define _OP(x)	((x & 0b1111110000000000) >> 10)
-#define _D(x)	((x & 0b0000001000000000) >> 9)
-#define _A(x)	((x & 0b0000000111000000) >> 6)
-#define _B(x)	((x & 0b0000000000111000) >> 3)
-#define _C(x)	((x & 0b0000000000000111) >> 0)
-#define _T(x)	(int8_t) ((x & 0b0000000000111111) * (((x & 0b0000001000000000) >> 9) ? -1 : 1))
-#define _t(x)	(uint8_t) ((x & 0b0000000000000111) | ((x & 0b0000001000000000) >> 6)) // only SHC uses it
-#define _b(x)	(x & 0b0000000011111111)
-#define IR_OP	_OP(nR(R_IR))
-#define IR_D	_D(nR(R_IR))
-#define IR_A	_A(nR(R_IR))
-#define IR_B	_B(nR(R_IR))
-#define IR_C	_C(nR(R_IR))
-#define IR_T	_T(nR(R_IR))
-#define IR_t	_t(nR(R_IR))
-#define IR_b	_b(nR(R_IR))
-
-// -----------------------------------------------------------------------
-// R0
-// -----------------------------------------------------------------------
 #define FL_Z	0b1000000000000000
 #define FL_M	0b0100000000000000
 #define FL_V	0b0010000000000000
@@ -118,20 +87,41 @@ void flags_ZMVC(int64_t x, int64_t y, int64_t z, int bits);
 #define FL_X	0b0000000010000000
 #define FL_USER	0b0000000001111111
 
-// R0 - set flags by x, y, z
-#define R0_Cs16(z)	hRw(0, R(0) | (z & (0xffff+1)) >> 4);
-#define R0_Cs32(z)	hRw(0, R(0) | (z & (0xffffffff+1)) >> (16+4));
+#define Fget(x)		(reg_read(0, 1) | x) ? 1 : 0
+#define Fset(x)		reg_write(0, reg_read(0, 1) | x, 1, 1)
+#define Fclr(x)		reg_write(0, reg_read(0, 1) & ~x, 1, 1)
 
-#define R0_Zs(z)	if (z==0) Fset(FL_Z); else Fclr(FL_Z);
-#define R0_Zs16(z)	R0_Zs(z)
-#define R0_Zs32(z)	R0_Zs(z)
+// -----------------------------------------------------------------------
+// SR access macros
+// -----------------------------------------------------------------------
+#define SR_Q	((nR(R_SR) & 0b0000000000100000) >> 5)
+#define SR_NB	((nR(R_SR) & 0b0000000000001111) >> 0)
 
-#define R0_Ms16(z)	hRw(0, R(0) | (z & 0x8000) >> 1);
-#define R0_Ms32(z)	hRw(0, R(0) | (z & 0x80000000) >> (16+1));
+#define SR_RM9cb	Rw(R_SR, R(R_SR) & 0b1111111110111111)
+#define SR_Qcb		Rw(R_SR, R(R_SR) & 0b1111111111011111)
 
-#define R0_Vs(x,y,z)	if (((x<0) && (y<0) && (z>0)) || ((x>0) && (y>0) && (z<0))) Fset(FL_V); else Fclr(FL_V);
-#define R0_Vs16(x,y,z)	R0_Vs(x,y,z)
-#define R0_Vs32(x,y,z)	R0_Vs(x,y,z)
+#define	SR_SET_QNB(x)	Rw(R_SR, (R(R_SR) & 0b111111111000000) | (x & 0b0000000000111111))
+#define	SR_SET_MASK(x)	Rw(R_SR, (R(R_SR) & 0b000000000111111) | (x & 0b1111111111000000))
+
+// -----------------------------------------------------------------------
+// IR access macros
+// -----------------------------------------------------------------------
+#define _OP(x)	((x & 0b1111110000000000) >> 10)
+#define _D(x)	((x & 0b0000001000000000) >> 9)
+#define _A(x)	((x & 0b0000000111000000) >> 6)
+#define _B(x)	((x & 0b0000000000111000) >> 3)
+#define _C(x)	((x & 0b0000000000000111) >> 0)
+#define _T(x)	(int8_t) ((x & 0b0000000000111111) * ((x & 0b0000001000000000) ? -1 : 1))
+#define _t(x)	(uint8_t) ((x & 0b0000000000000111) | ((x & 0b0000001000000000) >> 6)) // only SHC uses it
+#define _b(x)	(x & 0b0000000011111111)
+#define IR_OP	_OP(nR(R_IR))
+#define IR_D	_D(nR(R_IR))
+#define IR_A	_A(nR(R_IR))
+#define IR_B	_B(nR(R_IR))
+#define IR_C	_C(nR(R_IR))
+#define IR_T	_T(nR(R_IR))
+#define IR_t	_t(nR(R_IR))
+#define IR_b	_b(nR(R_IR))
 
 #endif
 

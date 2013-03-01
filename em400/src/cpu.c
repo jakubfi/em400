@@ -41,11 +41,19 @@ void cpu_reset()
 }
 
 // -----------------------------------------------------------------------
-int16_t cpu_get_eff_arg()
+int16_t get_arg_short()
+{
+	uint32_t T = IR_T + nR(R_MOD);
+	nRw(R_ZC17, (T >> 16) & 1);
+	return (int16_t) T;
+}
+
+// -----------------------------------------------------------------------
+int16_t get_arg_norm()
 {
 	uint32_t N;
 
-	LOG(D_CPU, 10, "------ Get effective argument");
+	LOG(D_CPU, 10, "------ Get argument (norm)");
 	// argument is in next word
 	if (IR_C == 0) {
 		N = nMEM(nR(R_IC));
@@ -69,9 +77,9 @@ int16_t cpu_get_eff_arg()
 	}
 
 	// store 17th bit for byte addressing
-	nRw(R_ZC17, (N & 0b10000000000000000) >> 16);
+	nRw(R_ZC17, (N >> 16) & 1);
 
-	LOG(D_CPU, 10, "------ Effective argument: 0x%04x (%s%s%s%s)", N, IR_C ? "2-word " : "1-word", regs[R_MODc] ? " PRE-mod" : "", IR_B ? " B-mod" : "", IR_D ? " D-mod" : "");
+	LOG(D_CPU, 10, "------ Effective argument (norm): 0x%04x (%s%s%s%s)", N, IR_C ? "2-word " : "1-word", regs[R_MODc] ? " PRE-mod" : "", IR_B ? " B-mod" : "", IR_D ? " D-mod" : "");
 	return (int16_t) N;
 }
 

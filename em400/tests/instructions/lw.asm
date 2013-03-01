@@ -13,6 +13,9 @@
 
 .endprog
 
+; XPCT int(rz(6)) : 0
+; XPCT int(sr) : 0
+
 ; XPCT hex(r0): 0x00fe
 ; XPCT hex(r1): 0x0001
 ; XPCT hex(r2): 0x0010

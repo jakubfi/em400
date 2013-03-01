@@ -1,7 +1,5 @@
 Known bugs:
 
-* T-arg should honor pre-modification (and use zc17?)
-* rework flags setting
 * clean that register-macro mess
 
 CPU:
@@ -23,7 +21,7 @@ Debugger:
 
 Other:
 
-* autotests
+* prepare all autotests
 
 MERA-400 features that em400 does not emulate:
 

@@ -66,7 +66,7 @@ void reg_write(int r, uint16_t x, int trace, int hw)
 }
 
 // -----------------------------------------------------------------------
-void flags_Z(int64_t z, int bits)
+void flags_Z(int64_t z)
 {
 	if (z == 0) {
 		Fset(FL_Z);
@@ -111,7 +111,7 @@ void flags_V(int64_t x, int64_t y, int64_t z, int bits)
 // -----------------------------------------------------------------------
 void flags_ZMVC(int64_t x, int64_t y, int64_t z, int bits)
 {
-	flags_Z(z, bits);
+	flags_Z(z);
 	flags_M(z, bits);
 	flags_C(z, bits);
 	flags_V(x, y, z, bits);	
