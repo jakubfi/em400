@@ -127,6 +127,14 @@ int main(int argc, char **argv)
 		exit(1);
 	}
 
+	// open output file
+	FILE *bin_out = fopen(output_file, "w");
+	if (!bin_out) {
+		printf("Cannot open output file '%s'\n", output_file);
+		fclose(asm_source);
+		exit(1);
+	}
+
 	// parse program
 	int res = parse(asm_source);
 
@@ -153,7 +161,6 @@ int main(int argc, char **argv)
 	printf("Assembled %i words\n", wcounter);
 
 	// write output program
-	FILE *bin_out = fopen(output_file, "w");
 	res = fwrite(outdata, 2, wcounter, bin_out);
 	fclose(bin_out);
 	printf("Written %i words to file '%s'.\n", res, output_file);

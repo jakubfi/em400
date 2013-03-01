@@ -56,7 +56,7 @@ extern int ic;
 
 program:
 	PROGRAM STRING sentences ENDPROG {
-		printf("Assembling: '%s'\n", $2);
+		printf("Assembling program '%s'\n", $2);
 	}
 	| sentences {
 		printf("Assembling unnamed program\n");
