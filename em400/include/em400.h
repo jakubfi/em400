@@ -25,6 +25,7 @@ struct em400_opts_t {
 	char *config_file;
 #ifdef WITH_DEBUGGER
 	int autotest;
+	char *pre_expr;
     char *test_expr;
     int ui_simple;
 #endif

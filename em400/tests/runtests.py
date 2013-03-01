@@ -39,7 +39,8 @@ def run_assem(source):
 # ------------------------------------------------------------------------
 def get_test_data(source):
     xpcts = []
-    program_name = ""
+    program_name = None
+    pre = None
 
     for l in open(source):
 
@@ -48,6 +49,11 @@ def get_test_data(source):
         if pname:
             program_name = pname[0]
 
+        # get PRE expression
+        ppre = re.findall(";[ \t]*PRE[\ \t]+(.*)", l)
+        if ppre:
+            pre = ppre[0]
+
         # get test result conditions
         xpct = re.findall(";[ \t]*XPCT[ \t]+([^ \t:]+)[ \t]*:[ \t]*(.*)", l)
         if len(xpct) == 0 or len(xpct[0]) != 2:
@@ -55,7 +61,7 @@ def get_test_data(source):
         else:
             xpcts.append(xpct[0])
 
-    return program_name, xpcts
+    return program_name, pre, xpcts
 
 # ------------------------------------------------------------------------
 def compose_test(xpcts):
@@ -64,8 +70,10 @@ def compose_test(xpcts):
     return q, a
 
 # ------------------------------------------------------------------------
-def run_em400(program, q, a):
+def run_em400(program, pre, q, a):
     args = [em400, "-p", program, "-t", q]
+    if pre:
+        args += ["-x", pre]
     try:
         o = subprocess.check_output(args)
     except Exception, e:
@@ -94,19 +102,20 @@ else:
 # run tests
 
 for t in tests:
-    binary = run_assem(t)
     result = "?"
     program_name = None
 
+    binary = run_assem(t)
+
     if binary is not None:
-        program_name, xpcts = get_test_data(t)
+        program_name, pre, xpcts = get_test_data(t)
         if xpcts is not None:
             if not program_name:
                 program_name = t
 
             q, a = compose_test(xpcts)
 
-            result = run_em400(binary, q, a)
+            result = run_em400(binary, pre, q, a)
 
             if result is None:
                 result = "FAIL: em400"

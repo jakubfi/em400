@@ -6,8 +6,8 @@
 	lwt r2, 1
 	md -16
 	lwt r3, 0
-	md -1024
-	lwt r4, -63
+	md -12
+	lwt r4, 63
 	md 0xffff
 	lwt r5, 1
 	md -63
@@ -23,7 +23,7 @@
 ; XPCT int(r1): 101
 ; XPCT int(r2): 0
 ; XPCT int(r3): -16
-; XPCT int(r4): -1087
+; XPCT int(r4): 51
 ; XPCT int(r5): 0
 ; XPCT int(r6): -126
 

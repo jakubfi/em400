@@ -118,6 +118,7 @@ void print_usage()
 	printf("\nDebuger-only options:\n");
 	printf("   -s                 : use simple debugger interface\n");
 	printf("   -t test_expression : execute test_expression after HLT 077 (implies -s)\n");
+	printf("   -x pre_expression  : execute pre_expression before program start\n");
 #endif
 }
 
@@ -125,7 +126,11 @@ void print_usage()
 void parse_arguments(int argc, char **argv)
 {
 	int option;
-    while ((option = getopt(argc, argv,"c:p:t:s")) != -1) {
+	int len;
+
+	em400_opts.pre_expr = NULL;
+
+    while ((option = getopt(argc, argv,"c:p:t:x:s")) != -1) {
         switch (option) {
 			case 'c':
 				em400_opts.config_file = strdup(optarg);
@@ -137,10 +142,16 @@ void parse_arguments(int argc, char **argv)
 			case 't':
 				em400_opts.autotest = 1;
 				em400_opts.ui_simple = 1;
-				int elen = strlen(optarg);
-				em400_opts.test_expr = malloc(elen+3);
+				len = strlen(optarg);
+				em400_opts.test_expr = malloc(len+3);
 				strcpy(em400_opts.test_expr, optarg);
-				strcpy(em400_opts.test_expr + elen, "\n\0");
+				strcpy(em400_opts.test_expr + len, "\n\0");
+				break;
+			case 'x':
+				len = strlen(optarg);
+				em400_opts.pre_expr = malloc(len+3);
+				strcpy(em400_opts.pre_expr, optarg);
+				strcpy(em400_opts.pre_expr + len, "\n\0");
 				break;
 			case 's':
 				em400_opts.ui_simple = 1;
@@ -160,6 +171,12 @@ int main(int argc, char** argv)
 {
 	parse_arguments(argc, argv);
 	em400_init();
+
+#ifdef WITH_DEBUGGER
+	if (em400_opts.pre_expr) {
+		dbg_parse(em400_opts.pre_expr);
+	}
+#endif
 
 	while (em400_quit == 0) {
 #ifdef WITH_DEBUGGER

@@ -8,8 +8,8 @@
 	lw r3, 0
 	md -1024
 	lw r4, -1024
-	md 0xffff
-	lw r5, 1
+	md -512
+	lw r5, 1024
 
 	hlt 077
 
@@ -22,5 +22,5 @@
 ; XPCT int(r2): 0
 ; XPCT int(r3): -16
 ; XPCT int(r4): -2048
-; XPCT int(r5): 0
+; XPCT int(r5): 512
 
