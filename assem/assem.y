@@ -108,19 +108,22 @@ dataword:
 	;
 
 res:
-	RES expr ',' expr { 
-		struct enode_t *e = enode_eval($2);
-		if (!e) {
-			yyerror("cannot evaluate .res length");
+	RES VALUE {
+		struct word_t *wlist = make_rep($2, 0, yylloc.first_line);
+		if (!wlist) {
+			yyerror("resulting .res length is 0");
 			YYABORT;
 		} else {
-			struct word_t *wlist = make_rep(e->value, $4, yylloc.first_line);
-			if (!wlist) {
-				yyerror("resulting .res length is 0");
-				YYABORT;
-			} else {
-				$$ = wlist;
-			}
+			$$ = wlist;
+		}
+	}
+	| RES VALUE ',' VALUE{
+		struct word_t *wlist = make_rep($2, $4, yylloc.first_line);
+		if (!wlist) {
+			yyerror("resulting .res length is 0");
+			YYABORT;
+		} else {
+			$$ = wlist;
 		}
 	}
 	;

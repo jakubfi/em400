@@ -156,19 +156,19 @@ struct word_t * make_data(struct enode_t *e, int lineno)
 }
 
 // -----------------------------------------------------------------------
-struct word_t * make_rep(int rep, struct enode_t *e, int lineno)
+struct word_t * make_rep(int rep, int value, int lineno)
 {
-	struct word_t *wlist = NULL;
 	struct word_t *whead = NULL;
+	struct word_t *wtail = NULL;
 
 	while (rep > 0) {
+		struct enode_t *e = make_enode(VALUE, value, NULL, NULL, NULL);
 		struct word_t *w = make_data(e, lineno);
-		if (!wlist) {
-			whead = w;
-			wlist = w;
+		if (!whead) {
+			whead = wtail = w;
 		} else {
-			wlist->next = w;
-			wlist = w;
+			wtail->next = w;
+			wtail= w;
 		}
 		rep--;
 	}
