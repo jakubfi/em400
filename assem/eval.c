@@ -157,6 +157,7 @@ int make_bin(int ic, struct word_t *word, uint16_t *dt)
 	*dtic |= word->opcode;
 	*dtic |= word->ra << 6;
 
+	int opl;
 	int jsval;
 
 	switch (word->type) {
@@ -165,15 +166,23 @@ int make_bin(int ic, struct word_t *word, uint16_t *dt)
 		case OP_FD:
 			break;
 		case W_OP_KA1:
-			if ((ev->value < -63) || (ev->value > 63)) ASSEMBLY_ERROR("value excess short argument size");
-			if (ev->value < 0) {
-				*dtic |= 0b0000001000000000;
-				*dtic |= (-ev->value) & 0b0000000000111111;
+			opl = (word->opcode >> 10) & 0b111;
+			// IRB, DRB, LWS, RWS use adresses relative to IC
+			if ((ev->was_addr) && ((opl == 0b010) || (opl == 0b011) || (opl == 0b110) || (opl == 111))) {
+				jsval = ev->value - ic - 1;
 			} else {
-				*dtic |= ev->value & 0b0000000000111111;
+				jsval = ev->value;
+			}
+			if ((jsval < -63) || (jsval > 63)) ASSEMBLY_ERROR("value excess short argument size");
+			if (jsval < 0) {
+				*dtic |= 0b0000001000000000;
+				*dtic |= (-jsval) & 0b0000000000111111;
+			} else {
+				*dtic |= jsval & 0b0000000000111111;
 			}
 			break;
 		case W_OP_JS:
+			// JS group jumps use adresses relative to IC
 			if (ev->was_addr) {
 				jsval = ev->value - ic - 1;
 			} else {

@@ -46,12 +46,11 @@ hex		-?0x[0-9a-fA-F]+
 
 reg		r[0-7]
 name	[a-zA-Z][a-zA-Z0-9_]+
-dlabel	[a-zA-Z][a-zA-Z0-9_]+:
-data	.data
-equ		.equ
-res		.res
-program	.program
-endprog	.endprog
+data	\.data
+equ		\.equ
+res		\.res
+program	\.program
+endprog	\.endprog
 chars	[-+:,\[\]]
 
 %%
