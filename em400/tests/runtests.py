@@ -40,6 +40,7 @@ def run_assem(source):
 def get_test_data(source):
     xpcts = []
     program_name = None
+    pre_tab = []
     pre = None
 
     for l in open(source):
@@ -49,10 +50,10 @@ def get_test_data(source):
         if pname:
             program_name = pname[0]
 
-        # get PRE expression
+        # get PRE expressions
         ppre = re.findall(";[ \t]*PRE[\ \t]+(.*)", l)
         if ppre:
-            pre = ppre[0]
+            pre_tab.append(ppre[0])
 
         # get test result conditions
         xpct = re.findall(";[ \t]*XPCT[ \t]+([^ \t:]+)[ \t]*:[ \t]*(.*)", l)
@@ -60,6 +61,9 @@ def get_test_data(source):
             continue
         else:
             xpcts.append(xpct[0])
+
+    if pre_tab:
+        pre = ','.join(pre_tab)
 
     return program_name, pre, xpcts
 
