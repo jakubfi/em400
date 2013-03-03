@@ -90,6 +90,7 @@ struct enode_t * enode_eval(struct enode_t *e)
 	switch (e->type) {
 		case VALUE:
 			ev->value = e->value;
+			ev->was_addr = e->was_addr;
 			break;
 		case NAME:
 			if (!d) return NULL;
@@ -99,17 +100,17 @@ struct enode_t * enode_eval(struct enode_t *e)
 		case '+':
 			if (!e1 || !e2) return NULL;
 			ev->value = e1->value + e2->value;
-			if (e1->was_addr || e2->was_addr) ev->was_addr = 1;
+			ev->was_addr = e1->was_addr | e2->was_addr;
 			break;
 		case '-':
 			if (!e1 || !e2) return NULL;
 			ev->value = e1->value - e2->value;
-			if (e1->was_addr || e2->was_addr) ev->was_addr = 1;
+			ev->was_addr = e1->was_addr | e2->was_addr;
 			break;
 		case UMINUS:
 			if (!e2) return NULL;
 			ev->value = - e2->value;
-			if (e2->was_addr) ev->was_addr = 1;
+			ev->was_addr = e2->was_addr;
 			break;
 	}
 	return ev;
@@ -168,7 +169,7 @@ int make_bin(int ic, struct word_t *word, uint16_t *dt)
 		case W_OP_KA1:
 			opl = (word->opcode >> 10) & 0b111;
 			// IRB, DRB, LWS, RWS use adresses relative to IC
-			if ((ev->was_addr) && ((opl == 0b010) || (opl == 0b011) || (opl == 0b110) || (opl == 111))) {
+			if ((ev->was_addr) && ((opl == 0b010) || (opl == 0b011) || (opl == 0b110) || (opl == 0b111))) {
 				jsval = ev->value - ic - 1;
 			} else {
 				jsval = ev->value;
