@@ -1,4 +1,4 @@
-.program "cpu/pre-mod-reset"
+.program "cycle/pre-mod-reset"
 
 ; legal instruction resets MOD
 

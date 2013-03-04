@@ -1,4 +1,6 @@
-.program "cpu/r0"
+.program "registers/r0"
+
+; r0 allows user only to bodify its right byte
 
 ; PRE r0 = 0xaa00
 

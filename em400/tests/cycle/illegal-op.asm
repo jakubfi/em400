@@ -1,4 +1,4 @@
-.program "cpu/cycle-illegal-op"
+.program "cycle/illegal-op"
 
 ; illegal instruction resets MOD
 

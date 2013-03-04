@@ -11,14 +11,10 @@
 
 	hlt 077
 
-dt1:
-.data	0x0001
-dt2:
-.data	dt3
-dt3:
-.data	0x0003
-dt4:
-.data	0x0004
+dt1:	.data	0x0001
+dt2:	.data	dt3
+dt3:	.data	0x0003
+dt4:	.data	0x0004
 
 .endprog
 

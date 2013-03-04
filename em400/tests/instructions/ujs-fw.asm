@@ -3,8 +3,7 @@
 	ujs fin
 .res	5
 	hlt 077
-fin:
-	hlt 077
+fin:	hlt 077
 .res	5
 	hlt 077
 

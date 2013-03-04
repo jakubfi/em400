@@ -1,4 +1,4 @@
-.program "cpu/ic-add-1"
+.program "cycle/ic-add-1"
 
 ; 1-word instruction
 

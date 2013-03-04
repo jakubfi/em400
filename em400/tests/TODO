@@ -1,17 +1,38 @@
+('*' means already done)
+
 REQ (tests required to complete current one)
 
-
-* norm arg
-* illegal opcode - interrupt
-* illegal opcode - resetting mod
-* instruction resets mod
-* IC += 1
-* IC += 2
-* pre-mod (norm)
-* pre-mod (short)
-* r0
+--- Memory ---------------------------------------------------------------
 
 memory configuration
+
+--- Interrupts -----------------------------------------------------------
+
+* illegal opcode
+* timer
+
+--- Arguments ------------------------------------------------------------
+
+* norm arg - value
+* norm arg - memory
+* pre-mod (norm)
+* pre-mod (short)
+* pre-mod fail on 4th MOD
+* pre-mod no fail on 3rd MOD
+
+--- Instruction cycle ----------------------------------------------------
+
+* IC += 1
+* IC += 2
+* illegal opcode - resetting mod
+* instruction resets mod
+* P jumps instruction over
+
+--- Registers ------------------------------------------------------------
+
+* r0
+
+--- Instructions ---------------------------------------------------------
 
 * LWn, rA, rC, rB
 * LWT, rA, T
@@ -100,7 +121,7 @@ JVS, T
 JCS, T
 JYS, T
 JXS, T
-TRB, rA, T
+* TRB, rA, T
 IRB, rA, T
 DRB, rA, T
 BBn, rA, rC, rB
