@@ -1,4 +1,6 @@
-.program "cpu/pre-mod"
+.program "args/pre-mod"
+
+; pre-modification
 
 	md 100
 	lw r1, 1

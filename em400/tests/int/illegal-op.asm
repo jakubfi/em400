@@ -1,7 +1,6 @@
-.program "cpu/illegal-opcode"
+.program "int/illegal-op"
 
 .data	1
-
 	hlt 077
 
 .endprog

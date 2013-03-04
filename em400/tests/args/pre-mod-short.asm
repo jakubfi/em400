@@ -1,4 +1,6 @@
-.program "cpu/pre-mod-short"
+.program "args/pre-mod-short"
+
+; pre-modification for instructions with short argument
 
 	md 100
 	lwt r1, 1

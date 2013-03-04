@@ -1,4 +1,6 @@
-.program "cpu/pre-mod-nofail"
+.program "args/pre-mod-nofail"
+
+; pre-modification works 3 times in a row
 
 	md 1
 	md 1

@@ -1,4 +1,6 @@
-.program "cpu/pre-mod-fail"
+.program "args/pre-mod-fail"
+
+; pre-modification fails on 4th time
 
 	md 1
 	md 1

@@ -2,7 +2,11 @@ REQ (tests required to complete current one)
 
 
 * norm arg
-* illegal opcode
+* illegal opcode - interrupt
+* illegal opcode - resetting mod
+* instruction resets mod
+* IC += 1
+* IC += 2
 * pre-mod (norm)
 * pre-mod (short)
 * r0

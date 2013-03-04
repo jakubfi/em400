@@ -25,69 +25,112 @@ import subprocess
 assem = "../../assem/assem"
 em400 = "../build/em400"
 
+# ------------------------------------------------------------------------
+class TestBed:
+
+    # --------------------------------------------------------------------
+    def __init__(self, tests):
+        self.tests = tests
+
+    def run(self):
+        for test_file in self.tests:
+            test = Test(test_file)
+            result, details = test.run()
+            print "%-30s : %s%s" % (test.prog_name, result, details)
 
 # ------------------------------------------------------------------------
-def run_assem(source):
-    output = "out.bin"
-    args = [assem, source, output]
-    try:
+class Test:
+
+    # --------------------------------------------------------------------
+    def __init__(self, source):
+        self.source = source
+        self.prog_name = source
+
+    # ------------------------------------------------------------------------
+    def run(self):
+        details = ""
+        result = "?"
+
+        try:
+            phase = "Assembly"
+            self.assembly()
+            phase = "Parse"
+            self.parse()
+            phase = "Run"
+            self.execute()
+            result = "PASSED"
+            phase = ""
+        except Exception, e:
+            result = "FAILED"
+            details = " (at %s: %s)" % (phase, str(e))
+
+        return result, details
+
+    # ------------------------------------------------------------------------
+    def assembly(self):
+        self.output = "/tmp/out.bin"
+        args = [assem, self.source, self.output]
+        subprocess.check_output(args)
+
+    # ------------------------------------------------------------------------
+    def parse(self):
+        self.pre = ""
+        self.test_expr = ""
+        self.expected = ""
+
+        xpcts = []
+        pre_tab = []
+
+        for l in open(self.source):
+
+            # get program name
+            pname = re.findall(".program[ \t]+\"(.*)\"", l)
+            if pname:
+                self.prog_name = pname[0]
+
+            # get PRE expressions
+            if re.match(".*PRE.*", l):
+                ppre = re.findall(";[ \t]*PRE[ \t]+(.*)", l)
+                if ppre:
+                    pre_tab.append(ppre[0])
+                else:
+                    raise Exception("Incomplete PRE found")
+
+            # get test result conditions
+            if re.match(".*XPCT.*", l):
+                xpct = re.findall(";[ \t]*XPCT[ \t]+([^ \t:]+)[ \t]*:[ \t]*([^ \t]+.*)\n", l)
+                if xpct and len(xpct[0]) == 2:
+                    xpcts.append(xpct[0])
+                else:
+                    raise Exception("Incomplete XPCT found")
+
+        if pre_tab:
+            self.pre = ','.join(pre_tab)
+
+        if not xpcts:
+            raise Exception("No XPCTs foud")
+
+        self.test_expr = ', '.join([x[0] for x in xpcts])
+        self.expected = ' '.join([x[1] for x in xpcts])
+
+    # ------------------------------------------------------------------------
+    def execute(self):
+        args = [em400, "-p", self.output, "-t", self.test_expr]
+        if self.pre:
+            args += ["-x", self.pre]
+
         o = subprocess.check_output(args)
-    except:
-        return None
-    return output
 
-# ------------------------------------------------------------------------
-def get_test_data(source):
-    xpcts = []
-    program_name = None
-    pre_tab = []
-    pre = None
+        tres = re.findall("TEST RESULT: (.*) \n", o)
 
-    for l in open(source):
+        if not tres:
+            raise Exception("No test result found")
 
-        # get program name
-        pname = re.findall(".program[ \t]+\"(.*)\"", l)
-        if pname:
-            program_name = pname[0]
+        self.result = tres[0]
 
-        # get PRE expressions
-        ppre = re.findall(";[ \t]*PRE[\ \t]+(.*)", l)
-        if ppre:
-            pre_tab.append(ppre[0])
+        if self.result != self.expected:
+            raise Exception("Test failed, expected: %s got: %s" % (self.expected, self.result))
 
-        # get test result conditions
-        xpct = re.findall(";[ \t]*XPCT[ \t]+([^ \t:]+)[ \t]*:[ \t]*(.*)", l)
-        if len(xpct) == 0 or len(xpct[0]) != 2:
-            continue
-        else:
-            xpcts.append(xpct[0])
-
-    if pre_tab:
-        pre = ','.join(pre_tab)
-
-    return program_name, pre, xpcts
-
-# ------------------------------------------------------------------------
-def compose_test(xpcts):
-    q = ', '.join([x[0] for x in xpcts])
-    a = ' '.join([x[1] for x in xpcts])
-    return q, a
-
-# ------------------------------------------------------------------------
-def run_em400(program, pre, q, a):
-    args = [em400, "-p", program, "-t", q]
-    if pre:
-        args += ["-x", pre]
-    try:
-        o = subprocess.check_output(args)
-    except Exception, e:
-        return None
-
-    tres = re.findall("TEST RESULT: (.*) \n", o)
-    if not tres:
-        return None
-
-    return tres[0]
 
 # ------------------------------------------------------------------------
 # --- MAIN ---------------------------------------------------------------
@@ -105,36 +148,7 @@ else:
 
 # run tests
 
-for t in tests:
-    result = "?"
-    program_name = None
-
-    binary = run_assem(t)
-
-    if binary is not None:
-        program_name, pre, xpcts = get_test_data(t)
-        if xpcts is not None:
-            if not program_name:
-                program_name = t
-
-            q, a = compose_test(xpcts)
-
-            result = run_em400(binary, pre, q, a)
-
-            if result is None:
-                result = "FAIL: em400"
-            else:
-                if result != a:
-                    result = "FAIL: %s" % result
-                else:
-                    result = "PASS"
-
-        else:
-            result = "FAIL: xpcts"
-    else:
-        result = "FAIL: assem"
-
-    print "Test: %-30s %s" % (program_name, result)
-
+t = TestBed(tests)
+t.run()
 
 # vim: tabstop=4 expandtab shiftwidth=4 softtabstop=4

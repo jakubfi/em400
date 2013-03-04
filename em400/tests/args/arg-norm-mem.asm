@@ -1,4 +1,6 @@
-.program "cpu/arg-norm-mem"
+.program "args/arg-norm-mem"
+
+; normal argument points to memory
 
 	lw r1, [dt1]
 	lw r2, [dt2]

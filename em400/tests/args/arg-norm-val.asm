@@ -1,4 +1,6 @@
-.program "cpu/arg-norm-val"
+.program "args/arg-norm-val"
+
+; normal argument is a value
 
 	lw r1, 0x0001
 	lw r2, 0x0002
