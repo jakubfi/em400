@@ -217,7 +217,7 @@ int op_37_mw()
 	Rw(1, DWORDl(res));
 	Rw(2, DWORDr(res));
 	flags_M(res, 32);
-	flags_Z(res);
+	flags_Z(res, 32);
 	flags_V(m1, m2, res, 32);
 	return OP_OK;
 }
@@ -233,7 +233,7 @@ int op_37_dw()
 	Rw(2, res);
 	Rw(1, d1 % d2);
 	flags_M(res, 32);
-	flags_Z(res);
+	flags_Z(res, 32);
 	return OP_OK;
 }
 
@@ -272,9 +272,9 @@ int op_37_df()
 // -----------------------------------------------------------------------
 int op_aw()
 {
-	int16_t N = get_arg_norm();
-	int16_t tmp = R(IR_A);
-	int32_t res = N + tmp;
+	uint16_t N = get_arg_norm();
+	uint16_t tmp = R(IR_A);
+	uint32_t res = N + tmp;
 	flags_ZMVC(N, tmp, res, 16);
 	Rw(IR_A, (uint16_t) res);
 	return OP_OK;
@@ -283,9 +283,9 @@ int op_aw()
 // -----------------------------------------------------------------------
 int op_ac()
 {
-	int16_t N = get_arg_norm();
-	int16_t tmp = R(IR_A);
-	int32_t res = N + tmp + Fget(FL_C);
+	uint16_t N = get_arg_norm();
+	uint16_t tmp = R(IR_A);
+	uint32_t res = N + tmp + Fget(FL_C);
 	flags_ZMVC(N, tmp + Fget(FL_C), res, 16);
 	Rw(IR_A, (uint16_t) res);
 	return OP_OK;
@@ -294,10 +294,10 @@ int op_ac()
 // -----------------------------------------------------------------------
 int op_sw()
 {
-	int16_t N = get_arg_norm();
-	int16_t tmp = R(IR_A);
-	int32_t res = N - tmp;
-	flags_ZMVC(N, -tmp, res, 16);
+	uint16_t N = get_arg_norm();
+	uint16_t tmp = -R(IR_A);
+	uint32_t res = N + tmp;
+	flags_ZMVC(N, tmp, res, 16);
 	Rw(IR_A, (uint16_t) res);
 	return OP_OK;
 }
@@ -315,7 +315,7 @@ int op_or()
 {
 	uint16_t N = get_arg_norm();
 	Rw(IR_A, R(IR_A) | N);
-	flags_Z(R(IR_A));
+	flags_Z(R(IR_A), 16);
 	return OP_OK;
 }
 
@@ -324,7 +324,7 @@ int op_om()
 {
 	uint16_t N = get_arg_norm();
 	MEMNBw(N, MEMNB(N) | R(IR_A));
-	flags_Z(MEMNB(N));
+	flags_Z(MEMNB(N), 16);
 	return OP_OK;
 }
 
@@ -333,7 +333,7 @@ int op_nr()
 {
 	uint16_t N = get_arg_norm();
 	Rw(IR_A, R(IR_A) & N);
-	flags_Z(R(IR_A));
+	flags_Z(R(IR_A), 16);
 	return OP_OK;
 }
 
@@ -342,7 +342,7 @@ int op_nm()
 {
 	uint16_t N = get_arg_norm();
 	MEMNBw(N, MEMNB(N) & R(IR_A));
-	flags_Z(MEMNB(N));
+	flags_Z(MEMNB(N), 16);
 	return OP_OK;
 }
 
@@ -351,7 +351,7 @@ int op_er()
 {
 	uint16_t N = get_arg_norm();
 	Rw(IR_A, R(IR_A) & ~N);
-	flags_Z(R(IR_A));
+	flags_Z(R(IR_A), 16);
 	return OP_OK;
 }
 
@@ -360,7 +360,7 @@ int op_em()
 {
 	uint16_t N = get_arg_norm();
 	MEMNBw(N, MEMNB(N) & ~R(IR_A));
-	flags_Z(MEMNB(N));
+	flags_Z(MEMNB(N), 16);
 	return OP_OK;
 }
 
@@ -369,7 +369,7 @@ int op_xr()
 {
 	uint16_t N = get_arg_norm();
 	Rw(IR_A, R(IR_A) ^ N);
-	flags_Z(R(IR_A));
+	flags_Z(R(IR_A), 16);
 	return OP_OK;
 }
 
@@ -378,7 +378,7 @@ int op_xm()
 {
 	uint16_t N = get_arg_norm();
 	MEMNBw(N, MEMNB(N) ^ R(IR_A));
-	flags_Z(MEMNB(N));
+	flags_Z(MEMNB(N), 16);
 	return OP_OK;
 }
 
@@ -439,10 +439,10 @@ int op_cb()
 // -----------------------------------------------------------------------
 int op_awt()
 {
-	int16_t tmp = R(IR_A);
-	int16_t T = get_arg_short();
-	int32_t res = T + tmp;
-	Rw(IR_A, res);
+	uint16_t tmp = R(IR_A);
+	uint16_t T = get_arg_short();
+	uint32_t res = T + tmp;
+	Rw(IR_A, (uint16_t) res);
 	flags_ZMVC(T, tmp, res, 16);
 	return OP_OK;
 }
@@ -661,7 +661,7 @@ int op_72_sxu()
 {
 	if (R(IR_A) & 0b1000000000000000) Fset(FL_Z);
 	else Fclr(FL_Z);
-	flags_Z(R(IR_A));
+	flags_Z(R(IR_A), 16);
 	return OP_OK;
 }
 
@@ -712,7 +712,7 @@ int op_72_sry()
 int op_72_ngl()
 {
 	Rw(IR_A, ~R(IR_A));
-	flags_Z(R(IR_A));
+	flags_Z(R(IR_A), 16);
 	return OP_OK;
 }
 
@@ -756,7 +756,7 @@ int op_72_sxl()
 {
 	if (R(IR_A) & 1) Fset(FL_X);
 	else Fclr(FL_X);
-	flags_Z(R(IR_A));
+	flags_Z(R(IR_A), 16);
 	return OP_OK;
 }
 

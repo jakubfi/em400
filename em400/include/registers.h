@@ -50,11 +50,11 @@ uint16_t reg_read(int r, int trace);
 void reg_write(int r, uint16_t x, int trace, int hw);
 
 void flags_LEG(int16_t x, int16_t y);
-void flags_Z(int64_t z);
-void flags_M(int64_t z, int bits);
-void flags_C(int64_t z, int bits);
-void flags_V(int64_t x, int64_t y, int64_t z, int bits);
-void flags_ZMVC(int64_t x, int64_t y, int64_t z, int bits);
+void flags_Z(uint64_t z, int bits);
+void flags_M(uint64_t z, int bits);
+void flags_C(uint64_t z, int bits);
+void flags_V(uint64_t x, uint64_t y, uint64_t z, int bits);
+void flags_ZMVC(uint64_t x, uint64_t y, uint64_t z, int bits);
 
 // -----------------------------------------------------------------------
 // Register access macros

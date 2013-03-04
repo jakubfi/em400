@@ -4,6 +4,7 @@ Known bugs:
 
 CPU:
 
+* separate ALU?
 * AWP - sign storage, floating point instructions
 
 Debugger:
