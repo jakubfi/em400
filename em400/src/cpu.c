@@ -87,8 +87,6 @@ int16_t get_arg_norm()
 void cpu_step()
 {
 	LOG(D_CPU, 1, "------ cpu_step() -----------------------------------------------");
-	// do not branch by default
-	nRw(R_P, 0);
 
 	// fetch instruction into IR
 	// (additional argument is fetched by the instruction, if necessary)
@@ -127,15 +125,14 @@ void cpu_step()
 		case OP_ILLEGAL:
 			nRw(R_MOD, 0);
 			nRw(R_MODc, 0);
-			if (nR(R_P) != 0) {
-				nRw(R_P, 0);
-			} else {
-				int_set(INT_ILLEGAL_OPCODE);
-			}
+			int_set(INT_ILLEGAL_OPCODE);
 			break;
 	}
 
-	nRadd(R_IC, nR(R_P));
+	if (nR(R_P)) {
+		nRinc(R_IC);
+		Rw(R_P, 0);
+	}
 
 	LOG(D_CPU, 1, "------ End cycle: res = %d, MOD = %d, MODc = %d, P = %d", op_res, regs[R_MOD], regs[R_MODc], regs[R_P]);
 }
