@@ -1,4 +1,4 @@
-.program "instruction/LA-1level"
+.program "op/LA-1level"
 
 	la data
 

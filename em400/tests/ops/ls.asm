@@ -1,4 +1,4 @@
-.program "instruction/LS"
+.program "op/LS"
 
 ; PRE r1 = 0b1111000011110000
 ; PRE r7 = 0b1111111100000000

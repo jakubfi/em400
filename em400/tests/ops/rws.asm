@@ -1,4 +1,4 @@
-.program "instruction/RWS"
+.program "op/RWS"
 
 ; PRE r0 = -30
 ; PRE r1 = -31

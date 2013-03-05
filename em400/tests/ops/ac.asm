@@ -1,4 +1,4 @@
-.program "instructions/AC"
+.program "op/AC"
 
 ; PRE r0 = 0b0001000000000000
 

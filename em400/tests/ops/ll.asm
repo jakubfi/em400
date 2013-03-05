@@ -1,4 +1,4 @@
-.program "instruction/LL"
+.program "op/LL"
 
 	ll data1
 	lw r1, r5

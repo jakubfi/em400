@@ -1,4 +1,4 @@
-.program "instruction/UJS-fw"
+.program "op/UJS-fw"
 
 	ujs fin
 .res	5

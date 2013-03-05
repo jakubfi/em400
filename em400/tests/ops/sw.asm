@@ -1,4 +1,4 @@
-.program "instructions/SW"
+.program "op/SW"
 
 	lw r1, 10
 	sw r1, 100

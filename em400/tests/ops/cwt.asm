@@ -1,4 +1,4 @@
-.program "instructions/CWT"
+.program "op/CWT"
 
 	lw r1, -1
 	cwt r1, 1

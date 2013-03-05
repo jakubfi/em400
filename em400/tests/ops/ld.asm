@@ -1,4 +1,4 @@
-.program "instruction/LD"
+.program "op/LD"
 
 	ld data1
 	lw r3, r1

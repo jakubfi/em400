@@ -1,4 +1,4 @@
-.program "instructions/AW"
+.program "op/AW"
 
 	lw r1, 10
 	aw r1, 100

@@ -1,4 +1,4 @@
-.program "instruction/LWS"
+.program "op/LWS"
 
 	ujs main
 data1:	.data	0xffff

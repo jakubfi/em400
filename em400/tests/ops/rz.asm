@@ -1,4 +1,4 @@
-.program "instruction/RZ"
+.program "op/RZ"
 
 ; PRE [6] = -1
 ; PRE [7] = -1

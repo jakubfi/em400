@@ -1,4 +1,4 @@
-.program "instructions/NGL"
+.program "op/NGL"
 
 	lw r1, 0b1111111111111111
 	ngl r1

@@ -1,4 +1,4 @@
-.program "instruction/UJS-bw"
+.program "op/UJS-bw"
 
 	ujs fin
 .res	4

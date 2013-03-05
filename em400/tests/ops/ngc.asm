@@ -1,4 +1,4 @@
-.program "instructions/NGC"
+.program "op/NGC"
 
 ; PRE r0 = 0b0001000000000000
 

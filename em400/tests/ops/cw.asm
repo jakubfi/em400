@@ -1,4 +1,4 @@
-.program "instructions/CW"
+.program "op/CW"
 
 	lw r1, -1
 	cw r1, 1

@@ -1,4 +1,4 @@
-.program "instruction/RA"
+.program "op/RA"
 
 ; PRE r1 = 10
 ; PRE r2 = 20

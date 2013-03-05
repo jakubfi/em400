@@ -1,4 +1,4 @@
-.program "instruction/LWT"
+.program "op/LWT"
 
 	lwt r1, 0
 	lwt r2, 63

@@ -1,4 +1,4 @@
-.program "instruction/LF"
+.program "op/LF"
 
 	lf data1
 	lw r4, r1

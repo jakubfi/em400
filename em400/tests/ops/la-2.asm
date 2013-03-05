@@ -1,4 +1,4 @@
-.program "instruction/LA-2levels"
+.program "op/LA-2levels"
 
 	la [data1]
 

@@ -1,4 +1,4 @@
-.program "instructions/NGA"
+.program "op/NGA"
 
 	lw r1, -1
 	nga r1

@@ -1,4 +1,4 @@
-.program "instruction/LW"
+.program "op/LW"
 
 	lw r0, 0xfffe
 	lw r1, 0x0001

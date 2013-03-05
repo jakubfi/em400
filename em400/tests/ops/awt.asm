@@ -1,4 +1,4 @@
-.program "instructions/AWT"
+.program "op/AWT"
 
 	lw r1, 10
 	awt r1, 20
