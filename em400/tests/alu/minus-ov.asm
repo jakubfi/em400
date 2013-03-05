@@ -1,4 +1,4 @@
-.program "instruction/AW-minus-ov"
+.program "alu/minus-ov"
 
 ; 32767 + 32767
 

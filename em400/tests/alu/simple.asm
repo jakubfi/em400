@@ -1,4 +1,4 @@
-.program "instruction/AW-simple"
+.program "alu/simple"
 
 ; 1 + 1
 

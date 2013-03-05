@@ -1,4 +1,4 @@
-.program "instruction/AW-minus"
+.program "alu/minus"
 
 ; -1 + 0
 

@@ -1,4 +1,4 @@
-.program "instruction/AW-carry"
+.program "alu/carry"
 
 ; -1 + 32767
 

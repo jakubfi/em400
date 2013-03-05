@@ -1,4 +1,4 @@
-.program "instruction/AW-zero"
+.program "alu/zero"
 
 ; 0 + 0
 
