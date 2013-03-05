@@ -112,6 +112,16 @@ struct enode_t * enode_eval(struct enode_t *e)
 			ev->value = - e2->value;
 			ev->was_addr = e2->was_addr;
 			break;
+		case SHL:
+			if (!e1 || !e2) return NULL;
+			ev->value = e1->value << e2->value;
+			ev->was_addr = e1->was_addr | e2->was_addr;
+			break;
+		case SHR:
+			if (!e1 || !e2) return NULL;
+			ev->value = e1->value >> e2->value;
+			ev->was_addr = e1->was_addr | e2->was_addr;
+			break;
 	}
 	return ev;
 }

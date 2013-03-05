@@ -51,7 +51,7 @@ equ		\.equ
 res		\.res
 program	\.program
 endprog	\.endprog
-chars	[-+:,\[\]]
+chars	[-+:,\[\]<>]
 
 %%
 
@@ -96,6 +96,8 @@ chars	[-+:,\[\]]
 {chars}	{
 	return *yytext;
 }
+"<<"	return SHL;
+">>"	return SHR;
 
 {name}	{
 	struct op_t *op = get_op(yytext);

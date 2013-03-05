@@ -51,6 +51,7 @@ extern int ic;
 %type <enode> expr
 
 %left '+' '-'
+%left SHR SHL
 %nonassoc UMINUS
 
 
@@ -77,9 +78,9 @@ sentence:
 			YYABORT;
 		}
 	}
-	| EQU NAME VALUE {
-		if (!dict_add(D_VALUE, $2, $3)) {
-			yyerror("name '%s' already defined", $2);
+	| NAME ':' EQU VALUE {
+		if (!dict_add(D_VALUE, $1, $4)) {
+			yyerror("name '%s' already defined", $1);
 			YYABORT;
 		}
 	}
@@ -164,6 +165,8 @@ expr:
 	| expr '-' expr { $$ = make_enode('-', 0, NULL, $1, $3); }
 	| '-' expr %prec UMINUS { $$ = make_enode(UMINUS, 0, NULL, NULL, $2); }
 	| '(' expr ')' { $$ = $2; }
+	| expr SHL expr { $$ = make_enode(SHL, 0, NULL, $1, $3); }
+	| expr SHR expr { $$ = make_enode(SHR, 0, NULL, $1, $3); }
 	;
 
 %%
