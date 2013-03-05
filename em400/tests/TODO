@@ -61,13 +61,13 @@ PLn, rC, rB
 * RZn, rC, rB
 * RIn, rA, rC, rB
 * AWn, rA, rC, rB
-AWT, rA, T
-ACn, rA, rC, rB
-SWn, rA, rC, rB
-CWn, rA, rC, rB
-CWT, rA, T
-NGA, rA
-NGC, rA
+* AWT, rA, T
+* ACn, rA, rC, rB
+* SWn, rA, rC, rB
+* CWn, rA, rC, rB
+* CWT, rA, T
+* NGA, rA
+* NGC, rA
 ADn, rC, rB
 SDn, rC, rB
 MWn, rC, rB
@@ -86,7 +86,7 @@ XMn, rA, rC, rB
 ERn, rA, rC, rB
 EMn, rA, rC, rB
 CLn, rA, rC, rB
-NGL, rA
+* NGL, rA
 SXU, rA
 SXL, rA
 SLZ, rA
