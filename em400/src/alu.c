@@ -51,6 +51,18 @@ void alu_compare(int32_t a, int32_t b)
 }
 
 // -----------------------------------------------------------------------
+uint16_t alu_negate(uint16_t a, uint16_t c)
+{
+	uint32_t res = (uint16_t) (~a) + c;
+	alu_set_flag_Z(res, 16);
+	alu_set_flag_M(res, 16);
+	alu_set_flag_C(res, 16);
+	alu_set_flag_V(a, a, res, 16);
+	
+	return res;
+}
+
+// -----------------------------------------------------------------------
 void alu_set_flag_Z(uint64_t z, int bits)
 {
     int64_t mask_Z = (1 << (bits))-1;

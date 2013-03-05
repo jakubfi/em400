@@ -24,6 +24,7 @@
 
 uint32_t alu_add(uint32_t a, uint32_t b, uint32_t c, int bits);
 void alu_compare(int32_t a, int32_t b);
+uint16_t alu_negate(uint16_t a, uint16_t c);
 
 void alu_set_flags_LEG(int16_t x, int16_t y);
 void alu_set_flag_Z(uint64_t z, int bits);
@@ -32,7 +33,7 @@ void alu_set_flag_C(uint64_t z, int bits);
 void alu_set_flag_V(uint64_t x, uint64_t y, uint64_t z, int bits);
 void alu_set_flags_ZMVC(uint64_t x, uint64_t y, uint64_t z, int bits);
 
-#define Fget(x)     (reg_read(0, 1) | x) ? 1 : 0
+#define Fget(x)     (reg_read(0, 1) & x) ? 1 : 0
 #define Fset(x)     reg_write(0, reg_read(0, 1) | x, 1, 1)
 #define Fclr(x)     reg_write(0, reg_read(0, 1) & ~x, 1, 1)
 

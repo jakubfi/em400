@@ -657,7 +657,8 @@ int op_72_sxu()
 // -----------------------------------------------------------------------
 int op_72_nga()
 {
-	Rw(IR_A, ~R(IR_A) + 1);
+	uint16_t res = alu_negate(R(IR_A), 1);
+	Rw(IR_A, res);
 	return OP_OK;
 }
 
@@ -700,8 +701,8 @@ int op_72_sry()
 // -----------------------------------------------------------------------
 int op_72_ngl()
 {
-	Rw(IR_A, ~R(IR_A));
-	alu_set_flag_Z(R(IR_A), 16);
+	uint16_t res = alu_negate(R(IR_A), 0);
+	Rw(IR_A, res);
 	return OP_OK;
 }
 
@@ -752,7 +753,8 @@ int op_72_sxl()
 // -----------------------------------------------------------------------
 int op_72_ngc()
 {
-	Rw(IR_A, ~R(IR_A) + Fget(FL_C));
+	uint16_t res = alu_negate(R(IR_A), Fget(FL_C));
+	Rw(IR_A, res);
 	return OP_OK;
 }
 
