@@ -37,6 +37,7 @@ void mem_remove_maps();
 
 uint16_t * mem_ptr(int nb, uint16_t addr);
 uint16_t mem_read(int nb, uint16_t addr, int trace);
+uint8_t mem_read_byte(int nb, uint16_t addr, int trace);
 void mem_write(int nb, uint16_t addr, uint16_t val, int trace);
 
 void mem_clear();
@@ -52,6 +53,7 @@ int mem_load_image(const char* fname, int nb);
 #define nMEMNB(a)		mem_read(SR_NB, a, 0)
 #define MEMNBw(a, x)	mem_write(SR_NB, a, x, 1)
 #define nMEMNBw(a, x)	mem_write(SR_NB, a, x, 0)
+#define MEMNBb(a)		mem_read_byte(SR_NB, a, 1)
 
 #define MEMB(b, a)		mem_read(b, a, 1)
 #define nMEMB(b, a)		mem_read(b, a, 0)

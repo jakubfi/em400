@@ -49,13 +49,6 @@ extern uint16_t regs[];
 uint16_t reg_read(int r, int trace);
 void reg_write(int r, uint16_t x, int trace, int hw);
 
-void flags_LEG(int16_t x, int16_t y);
-void flags_Z(uint64_t z, int bits);
-void flags_M(uint64_t z, int bits);
-void flags_C(uint64_t z, int bits);
-void flags_V(uint64_t x, uint64_t y, uint64_t z, int bits);
-void flags_ZMVC(uint64_t x, uint64_t y, uint64_t z, int bits);
-
 // -----------------------------------------------------------------------
 // Register access macros
 // -----------------------------------------------------------------------
@@ -73,7 +66,7 @@ void flags_ZMVC(uint64_t x, uint64_t y, uint64_t z, int bits);
 #define nRadd(r, x)	reg_write(r, nR(r)+x, 0, 0)
 
 // -----------------------------------------------------------------------
-// Operations on flags (in R0)
+// Flags in R0
 // -----------------------------------------------------------------------
 
 #define FL_Z	0b1000000000000000
@@ -86,10 +79,6 @@ void flags_ZMVC(uint64_t x, uint64_t y, uint64_t z, int bits);
 #define FL_Y	0b0000000100000000
 #define FL_X	0b0000000010000000
 #define FL_USER	0b0000000001111111
-
-#define Fget(x)		(reg_read(0, 1) | x) ? 1 : 0
-#define Fset(x)		reg_write(0, reg_read(0, 1) | x, 1, 1)
-#define Fclr(x)		reg_write(0, reg_read(0, 1) & ~x, 1, 1)
 
 // -----------------------------------------------------------------------
 // SR access macros

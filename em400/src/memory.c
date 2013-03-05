@@ -167,6 +167,14 @@ uint16_t mem_read(int nb, uint16_t addr, int trace)
 }
 
 // -----------------------------------------------------------------------
+uint8_t mem_read_byte(int nb, uint16_t addr, int trace)
+{
+	int shift = 8 * ~(addr&1);
+	uint16_t data = mem_read(nb, addr>>1, trace);
+	return (data >> shift) & 0b0000000011111111;
+}
+
+// -----------------------------------------------------------------------
 // write to any block
 void mem_write(int nb, uint16_t addr, uint16_t val, int trace)
 {
