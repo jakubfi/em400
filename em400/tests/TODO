@@ -60,7 +60,7 @@ PAn, rC, rB
 PLn, rC, rB
 * RZn, rC, rB
 * RIn, rA, rC, rB
-AWn, rA, rC, rB
+* AWn, rA, rC, rB
 AWT, rA, T
 ACn, rA, rC, rB
 SWn, rA, rC, rB

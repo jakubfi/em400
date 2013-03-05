@@ -35,8 +35,9 @@
 void cpu_reset()
 {
 	for (int i=0 ; i<R_MAX ; i++) {
-		nRw(i, 0);
+		reg_write(i, 0, 0, 1);
 	}
+	mem_remove_maps();
 	int_clear_all();
 }
 
