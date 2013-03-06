@@ -26,8 +26,6 @@
 #include "debugger/log.h"
 
 uint16_t regs[R_MAX];
-// this works on low-endian CPU
-uint8_t *r0low = (uint8_t*) (regs+R_R0);
 
 // -----------------------------------------------------------------------
 uint16_t reg_read(int r, int trace)
@@ -63,7 +61,7 @@ void reg_write(int r, uint16_t x, int trace, int hw)
 	if (r | hw) {
 		regs[r] = x;
 	} else {
-		*r0low = x;
+		regs[r] = (regs[r] & 0b1111111100000000) | (x & 0b0000000011111111);
 	}
 }
 
