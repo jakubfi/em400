@@ -77,82 +77,82 @@ SFn, rC, rB
 MFn, rC, rB
 DFn, rC, rB
 NRF
-ORn, rA, rC, rB
+* ORn, rA, rC, rB
 OMn, rA, rC, rB
-NRn, rA, rC, rB
+* NRn, rA, rC, rB
 NMn, rA, rC, rB
-XRn, rA, rC, rB
+* XRn, rA, rC, rB
 XMn, rA, rC, rB
-ERn, rA, rC, rB
+* ERn, rA, rC, rB
 EMn, rA, rC, rB
-CLn, rA, rC, rB
+* CLn, rA, rC, rB
 * NGL, rA
-SXU, rA
-SXL, rA
-SLZ, rA
-SLY, rA
-SLX, rA
-SVZ, rA
-SVY, rA
-SVX, rA
-SRZ, rA
-SRY, rA
-SRX, rA
-SHC, rA, T
+* SXU, rA
+* SXL, rA
+* SLZ, rA
+* SLY, rA
+* SLX, rA
+* SVZ, rA
+* SVY, rA
+* SVX, rA
+* SRZ, rA
+* SRY, rA
+* SRX, rA
+* SHC, rA, T
 LBn, rA, rC, rB
 RBn, rA, rC, rB
-ZLB, rA
-ZRB, rA
+* ZLB, rA
+* ZRB, rA
 CBn, rA, rB, rC
-UJn, rC, rB
+* UJn, rC, rB
 * UJS, T
-LJn, rC, rB
-RJn, rA, rC, rB
-JNn, rC, rB
-JLn, rC, rB
-JLS, T
-JEn, rC, rB
-JES, T
-JGn, rC, rB
-JGS, T
-JZn, rC, rB
-JMn, rC, rB
-JVS, T
-JCS, T
-JYS, T
-JXS, T
+* LJn, rC, rB
+* RJn, rA, rC, rB
+* JNn, rC, rB
+* JLn, rC, rB
+* JLS, T
+* JEn, rC, rB
+* JES, T
+* JGn, rC, rB
+* JGS, T
+* JZn, rC, rB
+* JMn, rC, rB
+* JVS, T
+* JCS, T
+* JYS, T
+* JXS, T
 * TRB, rA, T
-IRB, rA, T
-DRB, rA, T
-BBn, rA, rC, rB
+* IRB, rA, T
+* DRB, rA, T
+* BBn, rA, rC, rB
 BMn, rA, rC, rB
-BSn, rA, rC, rB
-BCn, rA, rC, rB
-BNn, rA, rC, rB
-BRC, b
-BLC, b
-IBn, rC, rB
-MDn, rC, rB
-NOP
-RKY, rA
-RIC, rA
+* BSn, rA, rC, rB
+* BCn, rA, rC, rB
+* BNn, rA, rC, rB
+* BRC, b
+* BLC, b
+* IBn, rC, rB
+* MDn, rC, rB
+* NOP
+* RKY, rA
+* RIC, rA
 ISn, rA, rC, rB
 EXL, b
-RPC, rA
-LPC, rA
+* RPC, rA
+* LPC, rA
 MBn, rA, rC, rB
 IMn, rA, rC, rB
 KIn, rA, rC, rB
 FIn, rA, rC, rB
 SPn, rA, rC, rB
 HLT
-MCL
-SIU
-SIL
-CIT
-SIT
-GIU
-GIL
+* MCL
+* SIU
+* SIL
+* CIT
+* SIT
+* GIU
+* GIL
 LIP
 OUn, rA, rC, rB
 INn, rA, rC, rB 
