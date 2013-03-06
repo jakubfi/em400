@@ -1,6 +1,6 @@
 .program "registers/r0"
 
-; r0 allows user only to bodify its right byte
+; r0 allows user to modify only its right byte
 
 ; PRE r0 = 0xaa00
 

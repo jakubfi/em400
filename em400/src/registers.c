@@ -58,7 +58,7 @@ void reg_write(int r, uint16_t x, int trace, int hw)
 		}
 	}
 #endif
-	if (r!=0 || hw==1) {
+	if (r | hw) {
 		regs[r] = x;
 	} else {
 		regs[r] = (regs[r] & 0b1111111100000000) | (x & 0b0000000011111111);

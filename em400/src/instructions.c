@@ -840,14 +840,14 @@ int op_73()
 // -----------------------------------------------------------------------
 int op_73_hlt()
 {
-#ifdef WITH_DEBUGGER
-	// handle hlt 077 differently in autotests mode
-	int16_t T = get_arg_short();
-	if ((em400_opts.autotest == 1) && (T == 077)) {
-		em400_quit = 1;
-		return OP_OK;
+	// handle hlt 077 as "exit emulation" if user wants to
+	if (em400_opts.exit_on_hlt) {
+		if (get_arg_short() == 077) {
+			em400_quit = 1;
+			return OP_OK;
+		}
 	}
-#endif
+
 	pthread_mutex_lock(&int_mutex_rp);
 	while (!RP) {
 		pthread_cond_wait(&int_cond_rp, &int_mutex_rp);

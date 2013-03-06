@@ -19,10 +19,14 @@
 #define EM400_H
 
 extern int em400_quit;
+extern unsigned int ips_counter;
+extern struct timeval ips_start;
+extern struct timeval ips_end;
 
 struct em400_opts_t {
     char *program_name;
 	char *config_file;
+	int exit_on_hlt;
 #ifdef WITH_DEBUGGER
 	int autotest;
 	char *pre_expr;
