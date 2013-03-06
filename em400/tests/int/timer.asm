@@ -15,6 +15,7 @@ loop1:	trb r1, 1
 .endprog
 
 ; XPCT int(sr) : 0
+; XPCT int(rz(6)) : 0
 
 ; XPCT int(rz(5)) : 1
 

@@ -19,6 +19,7 @@
 #include <stdio.h>
 #include <string.h>
 #include <unistd.h>
+#include <sys/time.h>
 
 #include "em400.h"
 #include "cpu.h"
@@ -35,6 +36,9 @@
 #endif
 
 int em400_quit = 0;
+unsigned int ips_counter = 0;
+struct timeval ips_start;
+struct timeval ips_end;
 
 // -----------------------------------------------------------------------
 void em400_shutdown()
@@ -62,7 +66,11 @@ void em400_init()
 {
 	int res;
 
+#ifdef WITH_DEBUGGER
+	printf("Starting EM400 version %s (with debugger) ...\n", EM400_VERSION);
+#else
 	printf("Starting EM400 version %s ...\n", EM400_VERSION);
+#endif
 
 	printf("Initializing memory\n");
 	res = mem_init();
@@ -114,10 +122,11 @@ void print_usage()
 	printf("Usage: em400 [option] ...\n");
 	printf("\nOptions:\n");
 	printf("   -p program_image   : load program image into OS memory\n");
+	printf("   -e                 : exit after HLT 077\n");
 #ifdef WITH_DEBUGGER
 	printf("\nDebuger-only options:\n");
 	printf("   -s                 : use simple debugger interface\n");
-	printf("   -t test_expression : execute test_expression after HLT 077 (implies -s)\n");
+	printf("   -t test_expression : execute test_expression when program halts (implies -e -s)\n");
 	printf("   -x pre_expression  : execute pre_expression before program start\n");
 #endif
 }
@@ -126,22 +135,27 @@ void print_usage()
 void parse_arguments(int argc, char **argv)
 {
 	int option;
+
+#ifdef WITH_DEBUGGER
 	int len;
-
 	em400_opts.pre_expr = NULL;
+#endif
 
-    while ((option = getopt(argc, argv,"c:p:t:x:s")) != -1) {
+    while ((option = getopt(argc, argv,"ec:p:t:x:s")) != -1) {
         switch (option) {
 			case 'c':
 				em400_opts.config_file = strdup(optarg);
 				break;
 			case 'p':
 				em400_opts.program_name = strdup(optarg);
+			case 'e':
+				em400_opts.exit_on_hlt = 1;
 				break;
 #ifdef WITH_DEBUGGER
 			case 't':
 				em400_opts.autotest = 1;
 				em400_opts.ui_simple = 1;
+				em400_opts.exit_on_hlt = 1;
 				len = strlen(optarg);
 				em400_opts.test_expr = malloc(len+3);
 				strcpy(em400_opts.test_expr, optarg);
@@ -178,6 +192,8 @@ int main(int argc, char** argv)
 	}
 #endif
 
+	gettimeofday(&ips_start, NULL);
+
 	while (em400_quit == 0) {
 #ifdef WITH_DEBUGGER
 		if (em400_opts.autotest != 1) {
@@ -188,8 +204,11 @@ int main(int argc, char** argv)
 		}
 #endif
 		cpu_step();
+		ips_counter++;
 		int_serve();
 	}
+
+	gettimeofday(&ips_end, NULL);
 
 #ifdef WITH_DEBUGGER
 	if (em400_opts.autotest == 1) {
@@ -201,6 +220,14 @@ int main(int argc, char** argv)
 #endif
 
 	em400_shutdown();
+
+	double ips_time_spent = (double)(ips_end.tv_usec - ips_start.tv_usec)/1000000 + (ips_end.tv_sec - ips_start.tv_sec);
+	if (ips_time_spent > 0) {
+		printf("IPS: %i\n", (int) (ips_counter/ips_time_spent));
+	} else {
+		printf("IPS: 0\n");
+	}
+
 	return 0;
 }
 

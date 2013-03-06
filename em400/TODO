@@ -15,7 +15,6 @@ Debugger:
 * use status bar for panel leds (?)
 * inteligent memory view (auto-scroll)
 * scrollable memory/dasm/stack views (?)
-* IPS counter
 * save memory image
 * load/save snapshot (?)
 * step should work the same way as CYCLE (cycle on instruction and interrupt) (?)
