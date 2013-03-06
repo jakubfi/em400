@@ -33,7 +33,7 @@ void alu_set_flag_C(uint64_t z, int bits);
 void alu_set_flag_V(uint64_t x, uint64_t y, uint64_t z, int bits);
 void alu_set_flags_ZMVC(uint64_t x, uint64_t y, uint64_t z, int bits);
 
-#define Fget(x)     (reg_read(0, 1) & x) ? 1 : 0
+#define Fget(x)     ((reg_read(0, 1) & x) ? 1 : 0)
 #define Fset(x)     reg_write(0, reg_read(0, 1) | x, 1, 1)
 #define Fclr(x)     reg_write(0, reg_read(0, 1) & ~x, 1, 1)
 

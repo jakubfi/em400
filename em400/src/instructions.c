@@ -139,7 +139,7 @@ int op_bs()
 int op_bc()
 {
 	uint16_t N = get_arg_norm();
-	if ((R(IR_A) & N) == N) Rw(R_P, 1);
+	if ((R(IR_A) & N) != N) Rw(R_P, 1);
 	return OP_OK;
 }
 
@@ -518,7 +518,7 @@ int op_70_ujs()
 int op_70_jls()
 {
 	int16_t T = get_arg_short();
-	if (Fget(FL_E)) Radd(R_IC, T);
+	if (Fget(FL_L)) Radd(R_IC, T);
 	return OP_OK;
 }
 
@@ -526,7 +526,7 @@ int op_70_jls()
 int op_70_jes()
 {
 	int16_t T = get_arg_short();
-	if (Fget(FL_L)) Radd(R_IC, T);
+	if (Fget(FL_E)) Radd(R_IC, T);
 	return OP_OK;
 }
 
@@ -544,7 +544,7 @@ int op_70_jvs()
 	int16_t T = get_arg_short();
 	if (Fget(FL_V)) {
 		Radd(R_IC, T);
-		Fset(FL_V);
+		Fclr(FL_V);
 	}
 	return OP_OK;
 }
@@ -648,8 +648,8 @@ int op_72_zlb()
 // -----------------------------------------------------------------------
 int op_72_sxu()
 {
-	if (R(IR_A) & 0b1000000000000000) Fset(FL_Z);
-	else Fclr(FL_Z);
+	if (R(IR_A) & 0b1000000000000000) Fset(FL_X);
+	else Fclr(FL_X);
 	alu_set_flag_Z(R(IR_A), 16);
 	return OP_OK;
 }
@@ -667,16 +667,17 @@ int op_72_slz()
 {
 	if (R(IR_A) & 0b1000000000000000) Fset(FL_Y);
 	else Fclr(FL_Y);
-	Rw(IR_A, (R(IR_A)<<1) & 0b1111111111111110);
+	Rw(IR_A, R(IR_A)<<1);
 	return OP_OK;
 }
 
 // -----------------------------------------------------------------------
 int op_72_sly()
 {
-	if (R(IR_A) & 0b1000000000000000) Fset(FL_Y);
+	uint16_t ir_a = nR(IR_A);
+	Rw(IR_A, (R(IR_A)<<1) | Fget(FL_Y));
+	if (ir_a & 0b1000000000000000) Fset(FL_Y);
 	else Fclr(FL_Y);
-	Rw(IR_A, (R(IR_A)<<1) & (0b1111111111111110 | Fget(FL_Y)));
 	return OP_OK;
 }
 
@@ -685,16 +686,17 @@ int op_72_slx()
 {
 	if (R(IR_A) & 0b1000000000000000) Fset(FL_Y);
 	else Fclr(FL_Y);
-	Rw(IR_A, (R(IR_A)<<1) & (0b1111111111111110 | Fget(FL_X)));
+	Rw(IR_A, (R(IR_A)<<1) | Fget(FL_X));
 	return OP_OK;
 }
 
 // -----------------------------------------------------------------------
 int op_72_sry()
 {
-	if (R(IR_A) & 1) Fset(FL_Y);
+	uint16_t ir_a = nR(IR_A);
+	Rw(IR_A, (R(IR_A)>>1) | Fget(FL_Y)<<15);
+	if (ir_a & 1) Fset(FL_Y);
 	else Fclr(FL_Y);
-	Rw(IR_A, (R(IR_A)>>1) & (0b0111111111111111 | (Fget(FL_Y) << 15)));
 	return OP_OK;
 }
 
@@ -718,7 +720,7 @@ int op_72_shc()
 {
 	if (!IR_t) return OP_OK;
 
-	uint16_t falling = (R(IR_A) & (IR_t-1)) << (16-IR_t);
+	uint16_t falling = (R(IR_A) & ((1<<IR_t)-1)) << (16-IR_t);
 	
 	Rw(IR_A, (R(IR_A) >> IR_t) | falling);
 	return OP_OK;
@@ -728,9 +730,7 @@ int op_72_shc()
 int op_72_rky()
 {
 	// TODO: does it work that way?
-	if (R(R_KB)) {
-		Rw(IR_A, R(R_KB));
-	}
+	Rw(IR_A, R(R_KB));
 	return OP_OK;
 }
 
@@ -761,42 +761,34 @@ int op_72_ngc()
 // -----------------------------------------------------------------------
 int op_72_svz()
 {
-	if (R(IR_A) & 0b1000000000000000) {
-		Fset(FL_Y);
-		Fset(FL_V);
-	} else {
-		Fclr(FL_Y);
-		Fclr(FL_V);
-	}
-	Rw(IR_A, (R(IR_A)<<1) & 0b1111111111111110);
+	uint16_t ir_a = nR(IR_A);
+	Rw(IR_A, R(IR_A)<<1);
+	if (ir_a & 0b1000000000000000) Fset(FL_Y);
+	else Fclr(FL_Y);
+	alu_set_flag_V(ir_a, ir_a, R(IR_A), 16);
+
 	return OP_OK;
 }
 
 // -----------------------------------------------------------------------
 int op_72_svy()
 {
-	if (R(IR_A) & 0b1000000000000000) {
-		Fset(FL_Y);
-		Fset(FL_V);
-	} else {
-		Fclr(FL_Y);
-		Fclr(FL_V);
-	}
-	Rw(IR_A, (R(IR_A)<<1) & (0b1111111111111110 | Fget(FL_Y)));
+	uint16_t ir_a = nR(IR_A);
+	Rw(IR_A, R(IR_A)<<1 | Fget(FL_Y));
+	if (ir_a & 0b1000000000000000) Fset(FL_Y);
+	else Fclr(FL_Y);
+	alu_set_flag_V(ir_a, ir_a, R(IR_A), 16);
 	return OP_OK;
 }
 
 // -----------------------------------------------------------------------
 int op_72_svx()
 {
-	if (R(IR_A) & 0b1000000000000000) {
-		Fset(FL_Y);
-		Fset(FL_V);
-	} else {
-		Fclr(FL_Y);
-		Fclr(FL_V);
-	}
-	Rw(IR_A, (R(IR_A)<<1) & (0b1111111111111110 | Fget(FL_X)));
+	uint16_t ir_a = nR(IR_A);
+	Rw(IR_A, R(IR_A)<<1 | Fget(FL_X));
+	if (ir_a & 0b1000000000000000) Fset(FL_Y);
+	else Fclr(FL_Y);
+	alu_set_flag_V(ir_a, ir_a, R(IR_A), 16);
 	return OP_OK;
 }
 
@@ -805,7 +797,7 @@ int op_72_srx()
 {
 	if (R(IR_A) & 1) Fset(FL_Y);
 	else Fclr(FL_Y);
-	Rw(IR_A, (R(IR_A)>>1) & (0b0111111111111111 | (Fget(FL_X) << 15)));
+	Rw(IR_A, (R(IR_A)>>1) | Fget(FL_X)<<15);
 	return OP_OK;
 }
 
@@ -821,7 +813,7 @@ int op_72_srz()
 // -----------------------------------------------------------------------
 int op_72_lpc()
 {
-	Rw(0, R(IR_A));
+	reg_write(0, R(IR_A), 1, 1);
 	return OP_OK;
 }
 
@@ -893,7 +885,8 @@ int op_73_siu()
 // -----------------------------------------------------------------------
 int op_73_sit()
 {
-	int_set(INT_SOFT_U | INT_SOFT_L);
+	int_set(INT_SOFT_U);
+	int_set(INT_SOFT_L);
 	return OP_OK;
 }
 
