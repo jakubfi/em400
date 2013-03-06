@@ -209,7 +209,7 @@ int make_bin(int ic, struct word_t *word, uint16_t *dt)
 			break;
 		case W_OP_KA2:
 			if ((ev->value < 0) || (ev->value > 255)) ASSEMBLY_ERROR("value excess byte argument size");
-			*dtic |= (ev->value & 256);
+			*dtic |= (ev->value & 255);
 			break;
 		case OP_C:
 			break;
