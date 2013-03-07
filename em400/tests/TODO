@@ -1,73 +1,22 @@
-('*' means already done)
-
-REQ (tests required to complete current one)
-
---- Memory ---------------------------------------------------------------
-
+CONFIG - em400 configuration to use
 memory configuration
+instructions illegal in user mode
 
---- Interrupts -----------------------------------------------------------
-
-* illegal opcode
-* timer
-
---- Arguments ------------------------------------------------------------
-
-* norm arg - value
-* norm arg - memory
-* pre-mod (norm)
-* pre-mod (short)
-* pre-mod fail on 4th MOD
-* pre-mod no fail on 3rd MOD
-
---- Instruction cycle ----------------------------------------------------
-
-* IC += 1
-* IC += 2
-* illegal opcode - resetting mod
-* instruction resets mod
-* P jumps instruction over
-
---- Registers ------------------------------------------------------------
-
-* r0
 
 --- Instructions ---------------------------------------------------------
 
-* LWn, rA, rC, rB
-* LWT, rA, T
-* LWS, rA, T
-* LDn, rC, rB
-* LFn, rC, rB
-* LAn, rC, rB
-* LLn, rC, rB
-* LSn, rA, rC, rB
 TWn, rA, rC, rB
 TDn rC, rB
 TFn, rC, rB
 TAn, rC, rB
 TLn, rC, rB
-* RWn, rA, rC, rB
-* RWS rA, T
-* RDn, rC, rB
-* RFn, rC, rB
-* RAn, rC, rB
-* RLn, rC, rB
+
 PWn, rA, rC, rB
 PDn, rC, rB
 PFn, rC, rB
 PAn, rC, rB
 PLn, rC, rB
-* RZn, rC, rB
-* RIn, rA, rC, rB
-* AWn, rA, rC, rB
-* AWT, rA, T
-* ACn, rA, rC, rB
-* SWn, rA, rC, rB
-* CWn, rA, rC, rB
-* CWT, rA, T
-* NGA, rA
-* NGC, rA
+
 ADn, rC, rB
 SDn, rC, rB
 MWn, rC, rB
@@ -77,82 +26,22 @@ SFn, rC, rB
 MFn, rC, rB
 DFn, rC, rB
 NRF
-* ORn, rA, rC, rB
+
 OMn, rA, rC, rB
-* NRn, rA, rC, rB
 NMn, rA, rC, rB
-* XRn, rA, rC, rB
 XMn, rA, rC, rB
-* ERn, rA, rC, rB
 EMn, rA, rC, rB
-* CLn, rA, rC, rB
-* NGL, rA
-* SXU, rA
-* SXL, rA
-* SLZ, rA
-* SLY, rA
-* SLX, rA
-* SVZ, rA
-* SVY, rA
-* SVX, rA
-* SRZ, rA
-* SRY, rA
-* SRX, rA
-* SHC, rA, T
+
 LBn, rA, rC, rB
 RBn, rA, rC, rB
-* ZLB, rA
-* ZRB, rA
 CBn, rA, rB, rC
-* UJn, rC, rB
-* UJS, T
-* LJn, rC, rB
-* RJn, rA, rC, rB
-* JNn, rC, rB
-* JLn, rC, rB
-* JLS, T
-* JEn, rC, rB
-* JES, T
-* JGn, rC, rB
-* JGS, T
-* JZn, rC, rB
-* JMn, rC, rB
-* JVS, T
-* JCS, T
-* JYS, T
-* JXS, T
-* TRB, rA, T
-* IRB, rA, T
-* DRB, rA, T
-* BBn, rA, rC, rB
+
 BMn, rA, rC, rB
-* BSn, rA, rC, rB
-* BCn, rA, rC, rB
-* BNn, rA, rC, rB
-* BRC, b
-* BLC, b
-* IBn, rC, rB
-* MDn, rC, rB
-* NOP
-* RKY, rA
-* RIC, rA
+
 ISn, rA, rC, rB
 EXL, b
-* RPC, rA
-* LPC, rA
 MBn, rA, rC, rB
-IMn, rA, rC, rB
-KIn, rA, rC, rB
-FIn, rA, rC, rB
 SPn, rA, rC, rB
-HLT
-* MCL
-* SIU
-* SIL
-* CIT
-* SIT
-* GIU
-* GIL
 LIP
 OUn, rA, rC, rB
 INn, rA, rC, rB 
