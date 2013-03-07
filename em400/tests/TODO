@@ -5,18 +5,6 @@ instructions illegal in user mode
 
 --- Instructions ---------------------------------------------------------
 
-TWn, rA, rC, rB
-TDn rC, rB
-TFn, rC, rB
-TAn, rC, rB
-TLn, rC, rB
-
-PWn, rA, rC, rB
-PDn, rC, rB
-PFn, rC, rB
-PAn, rC, rB
-PLn, rC, rB
-
 ADn, rC, rB
 SDn, rC, rB
 MWn, rC, rB
@@ -26,11 +14,6 @@ SFn, rC, rB
 MFn, rC, rB
 DFn, rC, rB
 NRF
-
-OMn, rA, rC, rB
-NMn, rA, rC, rB
-XMn, rA, rC, rB
-EMn, rA, rC, rB
 
 LBn, rA, rC, rB
 RBn, rA, rC, rB

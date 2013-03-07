@@ -98,7 +98,7 @@ class Test:
 
             # get test result conditions
             if re.match(".*XPCT.*", l):
-                xpct = re.findall(";[ \t]*XPCT[ \t]+([^ \t:]+)[ \t]*:[ \t]*([^ \t]+.*)\n", l)
+                xpct = re.findall(";[ \t]*XPCT[ \t]+([^ \t]+)[ \t]*:[ \t]*([^ \t]+.*)\n", l)
                 if xpct and len(xpct[0]) == 2:
                     xpcts.append(xpct[0])
                 else:
