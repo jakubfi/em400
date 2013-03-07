@@ -21,14 +21,14 @@
 #include <inttypes.h>
 
 struct op_t {
-	char *mnemo;
+	char *mnemo[2];
 	int type;
 	uint16_t opcode;
 };
 
 extern struct op_t ops[];
 
-struct op_t * get_op(char * opname);
+struct op_t * get_op(char *opname);
 
 #endif
 
