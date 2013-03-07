@@ -15,10 +15,6 @@ MFn, rC, rB
 DFn, rC, rB
 NRF
 
-LBn, rA, rC, rB
-RBn, rA, rC, rB
-CBn, rA, rB, rC
-
 BMn, rA, rC, rB
 
 ISn, rA, rC, rB
