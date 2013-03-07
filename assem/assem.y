@@ -43,7 +43,7 @@ extern int ic;
 %token DATA EQU RES PROGRAM ENDPROG
 %token <str> NAME STRING
 %token <val> VALUE ADDR REGISTER
-%token <val> OP_2ARG OP_FD OP_KA1 OP_JS OP_KA2 OP_C OP_SHC OP_S OP_J OP_L OP_G OP_BN
+%token <val> OP_2ARG OP_FD OP_KA1 OP_JS OP_KA2 OP_C OP_SHC OP_S OP_HLT OP_J OP_L OP_G OP_BN
 
 %type <norm> normval norm
 %type <word> words
@@ -143,6 +143,7 @@ instruction:
 	| OP_C REGISTER { $$ = make_op(OP_C, $1, $2, NULL, NULL, yylloc.first_line); }
 	| OP_SHC REGISTER ',' expr { $$ = make_op(OP_SHC, $1, $2, $4, NULL, yylloc.first_line); }
 	| OP_S { $$ = make_op(OP_S, $1, 0, NULL, NULL, yylloc.first_line); }
+	| OP_HLT expr { $$ = make_op(OP_HLT, $1, 0, $2, NULL, yylloc.first_line); }
 	| OP_J norm { $$ = make_op(OP_J, $1, 0, NULL, $2, yylloc.first_line); }
 	| OP_L norm { $$ = make_op(OP_L, $1, 0, NULL, $2, yylloc.first_line); }
 	| OP_G norm { $$ = make_op(OP_G, $1, 0, NULL, $2, yylloc.first_line); }

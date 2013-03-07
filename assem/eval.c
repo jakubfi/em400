@@ -143,6 +143,31 @@ int compose_data(int ic, struct word_t *word, uint16_t *dt)
 }
 
 // -----------------------------------------------------------------------
+int compose_t_arg(uint16_t *dt, uint16_t ic, struct enode_t *ev, int relative)
+{
+	int jsval;
+
+	// some instructions use relative addres, calculate it, if so
+	if (ev->was_addr && relative) {
+		jsval = ev->value - ic - 1;
+	} else {
+		jsval = ev->value;
+	}
+
+	if ((jsval < -63) || (jsval > 63)) return -1;
+
+	// compose T argument
+	if (jsval < 0) {
+		*(dt+ic) |= 0b0000001000000000;
+		*(dt+ic) |= (-jsval) & 0b0000000000111111;
+	} else {
+		*(dt+ic) |= jsval & 0b0000000000111111;
+	}
+
+	return 0;
+}
+
+// -----------------------------------------------------------------------
 int compose_opcode(int ic, struct word_t *word, uint16_t *dt)
 {
 	// evaluate the argument, if exists (meaning opcode uses short argument)
@@ -158,7 +183,7 @@ int compose_opcode(int ic, struct word_t *word, uint16_t *dt)
 	*dtic |= word->ra << 6;
 
 	int opl;
-	int jsval;
+	int relative = 0;
 
 	switch (word->type) {
 		case OP_2ARG:
@@ -168,46 +193,38 @@ int compose_opcode(int ic, struct word_t *word, uint16_t *dt)
 		case OP_KA1:
 			opl = (word->opcode >> 10) & 0b111;
 			// IRB, DRB, LWS, RWS use adresses relative to IC
-			if ((ev->was_addr) && ((opl == 0b010) || (opl == 0b011) || (opl == 0b110) || (opl == 0b111))) {
-				jsval = ev->value - ic - 1;
-			} else {
-				jsval = ev->value;
-			}
-			if ((jsval < -63) || (jsval > 63)) ASSEMBLY_ERROR("value excess short argument size");
-			if (jsval < 0) {
-				*dtic |= 0b0000001000000000;
-				*dtic |= (-jsval) & 0b0000000000111111;
-			} else {
-				*dtic |= jsval & 0b0000000000111111;
+			relative = ((opl == 0b010) || (opl == 0b011) || (opl == 0b110) || (opl == 0b111)) ? 1 : 0;
+			if (compose_t_arg(dt, ic, ev, relative) < 0) {
+				ASSEMBLY_ERROR("value excess short argument size");
 			}
 			break;
 		case OP_JS:
 			// JS group jumps use adresses relative to IC
-			if (ev->was_addr) {
-				jsval = ev->value - ic - 1;
-			} else {
-				jsval = ev->value;
-			}
-			if ((jsval < -63) || (jsval > 63)) ASSEMBLY_ERROR("value excess short argument size");
-			if (jsval < 0) {
-				*dtic |= 0b0000001000000000;
-				*dtic |= (-jsval) & 0b0000000000111111;
-			} else {
-				*dtic |= jsval & 0b0000000000111111;
+			if (compose_t_arg(dt, ic, ev, 1) < 0) {
+				ASSEMBLY_ERROR("value excess short argument size");
 			}
 			break;
 		case OP_KA2:
-			if ((ev->value < 0) || (ev->value > 255)) ASSEMBLY_ERROR("value excess byte argument size");
+			if ((ev->value < 0) || (ev->value > 255)) {
+				ASSEMBLY_ERROR("value excess byte argument size");
+			}
 			*dtic |= (ev->value & 255);
 			break;
 		case OP_C:
 			break;
 		case OP_SHC:
-			if ((ev->value < 0) || (ev->value > 15)) ASSEMBLY_ERROR("value excess SHC argument size");
+			if ((ev->value < 0) || (ev->value > 15)) {
+				ASSEMBLY_ERROR("value excess SHC argument size");
+			}
 			*dtic |= (ev->value & 0b111);
 			*dtic |= ((ev->value & 0b1000) << 6);
 			break;
 		case OP_S:
+			break;
+		case OP_HLT:
+			if (compose_t_arg(dt, ic, ev, 0) < 0) {
+				ASSEMBLY_ERROR("value excess short argument size");
+			}
 			break;
 		case OP_J:
 			break;
@@ -216,6 +233,8 @@ int compose_opcode(int ic, struct word_t *word, uint16_t *dt)
 		case OP_G:
 			break;
 		case OP_BN:
+			break;
+		default:
 			break;
 	}
 
@@ -226,7 +245,7 @@ int compose_opcode(int ic, struct word_t *word, uint16_t *dt)
 		*dtic |= (word->norm->rb << 3);
 	}
 
-	// write out opcode data
+	// convert opcode data
 	*dtic = ntohs(*dtic);
 
 	return 1;
