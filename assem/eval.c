@@ -98,7 +98,7 @@ struct enode_t * enode_eval(struct enode_t *e, char *refcheck)
 			struct enode_t *de = enode_eval(d->e, d->name);
 			if (!de) return NULL;
 			ev->value = de->value;
-			if (d->type == D_ADDR) ev->was_addr = 1;
+			if (d->type == ADDR) ev->was_addr = 1;
 			break;
 		case '+':
 			if (!e1 || !e2) return NULL;

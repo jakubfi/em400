@@ -42,7 +42,7 @@ extern int ic;
 %token '[' ']' ',' ':'
 %token DATA EQU RES PROGRAM ENDPROG
 %token <str> NAME STRING
-%token <val> VALUE REGISTER
+%token <val> VALUE ADDR REGISTER
 %token <val> OP_2ARG OP_FD OP_KA1 OP_JS OP_KA2 OP_C OP_SHC OP_S OP_J OP_L OP_G OP_BN
 
 %type <norm> normval norm
@@ -79,7 +79,7 @@ sentence:
 		}
 	}
 	| EQU NAME expr {
-		if (!dict_add(D_VALUE, $2, $3)) {
+		if (!dict_add(VALUE, $2, $3)) {
 			yyerror("name '%s' already defined", $2);
 			YYABORT;
 		}
@@ -90,7 +90,7 @@ sentence:
 			yyerror("cannot make enode for '%s'", $1);
 			YYABORT;
 		}
-		if (!dict_add(D_ADDR, $1, e)) {
+		if (!dict_add(ADDR, $1, e)) {
 			yyerror("name '%s' already defined", $1);
 			YYABORT;
 		}

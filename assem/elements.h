@@ -20,11 +20,6 @@
 
 #include <inttypes.h>
 
-enum _dict_type {
-	D_VALUE,
-	D_ADDR
-};
-
 struct dict_t {
 	char *name;
 	int type;
