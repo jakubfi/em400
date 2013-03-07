@@ -45,7 +45,7 @@ bin		0b[01]+
 hex		-?0x[0-9a-fA-F]+
 
 reg		r[0-7]
-name	[a-zA-Z][a-zA-Z0-9_]+
+name	[a-zA-Z][a-zA-Z0-9_]*
 data	\.data
 equ		\.equ
 res		\.res

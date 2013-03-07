@@ -78,14 +78,19 @@ sentence:
 			YYABORT;
 		}
 	}
-	| NAME ':' EQU VALUE {
-		if (!dict_add(D_VALUE, $1, $4)) {
-			yyerror("name '%s' already defined", $1);
+	| EQU NAME expr {
+		if (!dict_add(D_VALUE, $2, $3)) {
+			yyerror("name '%s' already defined", $2);
 			YYABORT;
 		}
 	}
 	| NAME ':' {
-		if (!dict_add(D_ADDR, $1, ic)) {
+		struct enode_t *e = make_enode(VALUE, ic, NULL, NULL, NULL);
+		if (!e) {
+			yyerror("cannot make enode for '%s'", $1);
+			YYABORT;
+		}
+		if (!dict_add(D_ADDR, $1, e)) {
 			yyerror("name '%s' already defined", $1);
 			YYABORT;
 		}
@@ -130,18 +135,18 @@ res:
 	;
 
 instruction:
-	OP_2ARG REGISTER ',' norm { $$ = make_op(W_OP_2ARG, $1, $2, NULL, $4, yylloc.first_line); }
-	| OP_FD norm { $$ = make_op(W_OP_FD, $1, 0, NULL, $2, yylloc.first_line); }
-	| OP_KA1 REGISTER ',' expr { $$ = make_op(W_OP_KA1, $1, $2, $4, NULL, yylloc.first_line); }
-	| OP_JS expr { $$ = make_op(W_OP_JS, $1, 0, $2, NULL, yylloc.first_line); }
-	| OP_KA2 expr { $$ = make_op(W_OP_KA2, $1, 0, $2, NULL, yylloc.first_line); }
-	| OP_C REGISTER { $$ = make_op(W_OP_C, $1, $2, NULL, NULL, yylloc.first_line); }
-	| OP_SHC REGISTER ',' expr { $$ = make_op(W_OP_SHC, $1, $2, $4, NULL, yylloc.first_line); }
-	| OP_S { $$ = make_op(W_OP_S, $1, 0, NULL, NULL, yylloc.first_line); }
-	| OP_J norm { $$ = make_op(W_OP_J, $1, 0, NULL, $2, yylloc.first_line); }
-	| OP_L norm { $$ = make_op(W_OP_L, $1, 0, NULL, $2, yylloc.first_line); }
-	| OP_G norm { $$ = make_op(W_OP_G, $1, 0, NULL, $2, yylloc.first_line); }
-	| OP_BN norm { $$ = make_op(W_OP_BN, $1, 0, NULL, $2, yylloc.first_line); }
+	OP_2ARG REGISTER ',' norm { $$ = make_op(OP_2ARG, $1, $2, NULL, $4, yylloc.first_line); }
+	| OP_FD norm { $$ = make_op(OP_FD, $1, 0, NULL, $2, yylloc.first_line); }
+	| OP_KA1 REGISTER ',' expr { $$ = make_op(OP_KA1, $1, $2, $4, NULL, yylloc.first_line); }
+	| OP_JS expr { $$ = make_op(OP_JS, $1, 0, $2, NULL, yylloc.first_line); }
+	| OP_KA2 expr { $$ = make_op(OP_KA2, $1, 0, $2, NULL, yylloc.first_line); }
+	| OP_C REGISTER { $$ = make_op(OP_C, $1, $2, NULL, NULL, yylloc.first_line); }
+	| OP_SHC REGISTER ',' expr { $$ = make_op(OP_SHC, $1, $2, $4, NULL, yylloc.first_line); }
+	| OP_S { $$ = make_op(OP_S, $1, 0, NULL, NULL, yylloc.first_line); }
+	| OP_J norm { $$ = make_op(OP_J, $1, 0, NULL, $2, yylloc.first_line); }
+	| OP_L norm { $$ = make_op(OP_L, $1, 0, NULL, $2, yylloc.first_line); }
+	| OP_G norm { $$ = make_op(OP_G, $1, 0, NULL, $2, yylloc.first_line); }
+	| OP_BN norm { $$ = make_op(OP_BN, $1, 0, NULL, $2, yylloc.first_line); }
 	;
 
 norm:

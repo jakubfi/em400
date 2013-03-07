@@ -20,6 +20,7 @@
 #include <string.h>
 #include <getopt.h>
 
+#include "assem_parse.h"
 #include "elements.h"
 #include "eval.h"
 
@@ -50,7 +51,11 @@ int assembly(struct word_t *word, uint16_t *outdata)
 	int res;
 
 	while (word) {
-		res = make_bin(wcounter, word, outdata);
+		if (word->type == DATA) {
+			res = compose_data(wcounter, word, outdata);
+		} else {
+			res = compose_opcode(wcounter, word, outdata);
+		}
 		if (res < 0) {
 			return -wcounter;
 		}
@@ -152,7 +157,7 @@ int main(int argc, char **argv)
 	int wcounter = assembly(program_start, outdata);
 
 	if (wcounter <= 0) {
-		printf("Error assembling binary image, line %i: %s\n", -wcounter-1, assembly_error);
+		printf("Error assembling binary image at IC=%i: %s\n", -wcounter-1, assembly_error);
 		program_drop(program_start);
 		dicts_drop();
 		exit(1);

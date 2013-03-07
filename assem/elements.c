@@ -34,16 +34,20 @@ static inline unsigned int dict_hash(char *i)
 }
 
 // -----------------------------------------------------------------------
-struct dict_t * dict_add(int type, char *name, int value)
+struct dict_t * dict_add(int type, char *name, struct enode_t *e)
 {
-	if (!name) {
+	if (!name || !e) {
+		return NULL;
+	}
+
+	if (dict_find(name)) {
 		return NULL;
 	}
 
 	struct dict_t *d = malloc(sizeof(struct dict_t));
 	d->type = type;
 	d->name = strdup(name);
-	d->value = value;
+	d->e = e;
 	d->next = NULL;
 
 	struct dict_bucket_t *b = dict + dict_hash(name);
@@ -144,7 +148,7 @@ struct norm_t * make_norm(int rc, int rb, struct word_t *word)
 struct word_t * make_data(struct enode_t *e, int lineno)
 {
 	struct word_t *word = malloc(sizeof(struct word_t));
-	word->type = W_DATA;
+	word->type = DATA;
 	word->e = e;
 
 	word->opcode = 0;

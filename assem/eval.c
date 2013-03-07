@@ -77,13 +77,13 @@ void program_drop(struct word_t *word)
 }
 
 // -----------------------------------------------------------------------
-struct enode_t * enode_eval(struct enode_t *e)
+struct enode_t * enode_eval(struct enode_t *e, char *refcheck)
 {
 	if (!e) return NULL;
 
 	struct dict_t *d = dict_find(e->label);
-	struct enode_t *e1 = enode_eval(e->e1);
-	struct enode_t *e2 = enode_eval(e->e2);
+	struct enode_t *e1 = enode_eval(e->e1, refcheck);
+	struct enode_t *e2 = enode_eval(e->e2, refcheck);
 
 	struct enode_t *ev = make_enode(VALUE, 0, NULL, NULL, NULL);
 
@@ -94,7 +94,10 @@ struct enode_t * enode_eval(struct enode_t *e)
 			break;
 		case NAME:
 			if (!d) return NULL;
-			ev->value = d->value;
+			if (d->name == refcheck) return NULL;
+			struct enode_t *de = enode_eval(d->e, d->name);
+			if (!de) return NULL;
+			ev->value = de->value;
 			if (d->type == D_ADDR) ev->was_addr = 1;
 			break;
 		case '+':
@@ -127,39 +130,25 @@ struct enode_t * enode_eval(struct enode_t *e)
 }
 
 // -----------------------------------------------------------------------
-int compose_data(struct word_t *word, uint16_t *dt)
+int compose_data(int ic, struct word_t *word, uint16_t *dt)
 {
-	int res = 0;
-
 	// evaluate the argument -- data value
-	struct enode_t *ev = enode_eval(word->e);
+	struct enode_t *ev = enode_eval(word->e, NULL);
 	if (!ev) {
-		ASSEMBLY_ERROR("cannot evaluate data value");
+		ASSEMBLY_ERROR("cannot evaluate opcode's normal argument or data value");
 	}
+	*(dt+ic) = ntohs(ev->value);
 
-	*dt = ntohs(ev->value);
-	res++;
-
-	return res;
+	return 1;
 }
 
 // -----------------------------------------------------------------------
-int make_bin(int ic, struct word_t *word, uint16_t *dt)
+int compose_opcode(int ic, struct word_t *word, uint16_t *dt)
 {
-	int res = 0;
-	struct enode_t *ev;
-
-	// compose data
-	if (word->type == W_DATA) {
-		res = compose_data(word, dt+ic);
-		if (res < 0) ASSEMBLY_ERROR("cannot compose data word");
-		return res;
-	}
-
-	// evaluate the argument, if exists (meaning opcode uses it)
-	ev = enode_eval(word->e);
+	// evaluate the argument, if exists (meaning opcode uses short argument)
+	struct enode_t *ev = enode_eval(word->e, NULL);
 	if (word->e && !ev) {
-		ASSEMBLY_ERROR("cannot evaluate opcode's argument");
+		ASSEMBLY_ERROR("cannot evaluate opcode's short argument");
 	}
 
 	// compose opcode
@@ -176,7 +165,7 @@ int make_bin(int ic, struct word_t *word, uint16_t *dt)
 			break;
 		case OP_FD:
 			break;
-		case W_OP_KA1:
+		case OP_KA1:
 			opl = (word->opcode >> 10) & 0b111;
 			// IRB, DRB, LWS, RWS use adresses relative to IC
 			if ((ev->was_addr) && ((opl == 0b010) || (opl == 0b011) || (opl == 0b110) || (opl == 0b111))) {
@@ -192,7 +181,7 @@ int make_bin(int ic, struct word_t *word, uint16_t *dt)
 				*dtic |= jsval & 0b0000000000111111;
 			}
 			break;
-		case W_OP_JS:
+		case OP_JS:
 			// JS group jumps use adresses relative to IC
 			if (ev->was_addr) {
 				jsval = ev->value - ic - 1;
@@ -207,13 +196,13 @@ int make_bin(int ic, struct word_t *word, uint16_t *dt)
 				*dtic |= jsval & 0b0000000000111111;
 			}
 			break;
-		case W_OP_KA2:
+		case OP_KA2:
 			if ((ev->value < 0) || (ev->value > 255)) ASSEMBLY_ERROR("value excess byte argument size");
 			*dtic |= (ev->value & 255);
 			break;
 		case OP_C:
 			break;
-		case W_OP_SHC:
+		case OP_SHC:
 			if ((ev->value < 0) || (ev->value > 15)) ASSEMBLY_ERROR("value excess SHC argument size");
 			*dtic |= (ev->value & 0b111);
 			*dtic |= ((ev->value & 0b1000) << 6);
@@ -239,9 +228,8 @@ int make_bin(int ic, struct word_t *word, uint16_t *dt)
 
 	// write out opcode data
 	*dtic = ntohs(*dtic);
-	res++;
 
-	return res;
+	return 1;
 }
 
 

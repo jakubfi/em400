@@ -20,22 +20,6 @@
 
 #include <inttypes.h>
 
-enum _word_type {
-	W_DATA,
-	W_OP_2ARG,
-	W_OP_FD,
-	W_OP_KA1,
-	W_OP_JS,
-	W_OP_KA2,
-	W_OP_C,
-	W_OP_SHC,
-	W_OP_S,
-	W_OP_J,
-	W_OP_L,
-	W_OP_G,
-	W_OP_BN
-};
-
 enum _dict_type {
 	D_VALUE,
 	D_ADDR
@@ -44,7 +28,7 @@ enum _dict_type {
 struct dict_t {
 	char *name;
 	int type;
-	int value;
+	struct enode_t *e;
 	struct dict_t *next;
 };
 
@@ -84,7 +68,7 @@ struct word_t * make_data(struct enode_t *e, int lineno);
 struct word_t * make_rep(int rep, int value, int lineno);
 struct word_t * make_string(char *str, int lineno);
 struct word_t * make_op(int type, uint16_t op, int ra, struct enode_t *e, struct norm_t *norm, int lineno);
-struct dict_t * dict_add(int type, char *name, int value);
+struct dict_t * dict_add(int type, char *name, struct enode_t *e);
 struct dict_t * dict_find(char *name);
 void dict_drop(struct dict_t * dict);
 void dicts_drop();
