@@ -387,17 +387,7 @@ int op_cl()
 int op_lb()
 {
 	uint16_t N = get_arg_norm();
-
-	// N lsb=1 - right byte
-	// N lsb=0 - left byte
-
-	// we shift data 8 bits right if N0 = 0
-	int shift = 8 * ~(N&1); // left=8, right=0
-
-	// get the real address
-	N >>= 1;
-
-	Rw(IR_A, (nR(IR_A) & 0b1111111100000000) | ((MEMNB(N) >> shift) & 0b0000000011111111));
+	Rw(IR_A, (nR(IR_A) & 0b1111111100000000) | (uint16_t)MEMNBb(N));
 	return OP_OK;
 }
 
@@ -405,13 +395,7 @@ int op_lb()
 int op_rb()
 {
 	uint16_t N = get_arg_norm();
-	int shift = 8 * ~(N&1);
-	N >>= 1;
-
-	int16_t oval = nMEMNB(N) & (0b1111111100000000 >> shift);
-	int16_t val = (R(IR_A) & 0b0000000011111111) << shift;
-	MEMNBw(N, oval | val);
-
+	MEMNBwb(N, R(IR_A));
 	return OP_OK;
 }
 
@@ -419,7 +403,7 @@ int op_rb()
 int op_cb()
 {
 	uint16_t N = get_arg_norm();
-	alu_compare((uint8_t)(R(IR_A)&0b0000000011111111), MEMNBb(N));
+	alu_compare((uint8_t)R(IR_A), MEMNBb(N));
 	return OP_OK;
 }
 
