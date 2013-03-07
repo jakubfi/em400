@@ -106,6 +106,7 @@ int op_is()
 	uint16_t N = get_arg_norm();
 	if ((MEMNB(N) & R(IR_A)) == R(IR_A)) {
 		Rw(R_P, 1);
+	} else {
 		MEMNBw(N, (MEMNB(N) | R(IR_A)));
 	}
 	return OP_OK;
@@ -583,7 +584,7 @@ int op_71_exl()
 	nMEMBw(0, SP+2, R(R_SR));
 	nMEMBw(0, SP+3, IR_b);
 	Rw(R_IC, nMEMB(0, 96));
-	Rw(0, 0);
+	reg_write(0, 0, 1, 1);
 	nMEMBw(0, 97, SP+4);
 	SR_RM9cb;
 	int_update_rp();
