@@ -181,7 +181,7 @@ void int_serve()
 	nMEMBw(0, SP+3, int_spec);
 
 	// clear stuff and get ready to serve
-	nRw(0, 0);
+	reg_write(0, 0, 1, 1);
 	// mask interrupts with prio <= interrupt
 	nRw(R_SR, nR(R_SR) & int_int2mask[interrupt]);
 	int_clear(interrupt);

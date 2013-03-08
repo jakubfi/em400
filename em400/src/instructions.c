@@ -894,7 +894,7 @@ int op_73_lip()
 {
 	uint16_t SP = nMEMB(0, 97);
 	Rw(R_IC, nMEMB(0, SP-4));
-	Rw(0, nMEMB(0, SP-3));
+	reg_write(0, nMEMB(0, SP-3), 1, 1);
 	Rw(R_SR, nMEMB(0, SP-2));
 	int_update_rp();
 	nMEMBw(0, 97, SP-4);
@@ -1238,7 +1238,7 @@ int op_77_sp()
 	if (SR_Q) return OP_ILLEGAL;
 	uint16_t N = get_arg_norm();
 	Rw(R_IC, MEMNB(N));
-	Rw(0, MEMNB(N+1));
+	reg_write(0, MEMNB(N+1), 1, 1);
 	Rw(R_SR, MEMNB(N+2));
 	int_update_rp();
 	return OP_OK;
