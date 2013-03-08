@@ -11,6 +11,8 @@ CPU:
 
 Debugger:
 
+* command history
+* more shortcuts (c-w, c-d)
 * should log start new file immediately?
 * stack display after shrinking
 * again, rethink hex/dec numbers in output and log

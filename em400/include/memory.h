@@ -63,12 +63,6 @@ int mem_load_image(const char* fname, int nb);
 #define MEMBw(b, a, x)	mem_write(b, a, x, 1)
 #define nMEMBw(b, a, x)	mem_write(b, a, x, 0)
 
-// -----------------------------------------------------------------------
-// dword conversions
-#define DWORD(x, y) (x<<16) | (y)
-#define DWORDl(z) (z>>16) & 0xffff
-#define DWORDr(z) z & 0xffff
-
 #endif
 
 // vim: tabstop=4

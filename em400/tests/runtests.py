@@ -62,7 +62,7 @@ class Test:
             phase = ""
         except Exception, e:
             result = "FAILED"
-            details = " (at %s: %s)" % (phase, str(e))
+            details = " at %s: %s" % (phase, str(e))
 
         return result, details
 
@@ -129,7 +129,7 @@ class Test:
         self.result = tres[0]
 
         if self.result != self.expected:
-            raise Exception("Test failed, expected: %s got: %s" % (self.expected, self.result))
+            raise Exception("\n%32s xpct: %s\n%32s  got: %s" % ("", self.expected, "", self.result))
 
 
 # ------------------------------------------------------------------------

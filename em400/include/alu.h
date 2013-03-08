@@ -22,9 +22,12 @@
 
 #include "registers.h"
 
-uint32_t alu_add(uint32_t a, uint32_t b, uint32_t c, int bits);
+void alu_add16(int reg, uint32_t arg, uint32_t carry);
+void alu_add32(int reg1, int reg2, uint16_t arg1, uint16_t arg2, int sign);
+void alu_mul32(int reg1, int reg2, int16_t arg);
+void alu_div32(int reg1, int reg2, int16_t arg);
 void alu_compare(int32_t a, int32_t b);
-uint16_t alu_negate(uint16_t a, uint16_t c);
+void alu_negate(int reg, uint16_t carry);
 
 void alu_set_flags_LEG(int16_t x, int16_t y);
 void alu_set_flag_Z(uint64_t z, int bits);
@@ -36,6 +39,10 @@ void alu_set_flags_ZMVC(uint64_t x, uint64_t y, uint64_t z, int bits);
 #define Fget(x)     ((reg_read(0, 1) & x) ? 1 : 0)
 #define Fset(x)     reg_write(0, reg_read(0, 1) | x, 1, 1)
 #define Fclr(x)     reg_write(0, reg_read(0, 1) & ~x, 1, 1)
+
+#define DWORD(x, y)	(uint32_t) (x << 16) | (uint16_t) y
+#define DWORDl(z)	(uint16_t) (z >> 16)
+#define DWORDr(z)	(uint16_t) z
 
 #endif
 

@@ -183,57 +183,32 @@ int op_37()
 // -----------------------------------------------------------------------
 int op_37_ad()
 {
-	// TODO: AWP
 	uint16_t N = get_arg_norm();
-	int32_t a1 = DWORD(R(1), R(2));
-	int32_t a2 = DWORD(MEM(N), MEM(N+1));
-	int32_t res = alu_add(a1, a2, 0, 32);
-	Rw(1, DWORDl(res));
-	Rw(2, DWORDr(res));
+	alu_add32(1, 2, MEM(N), MEM(N+1), 1);
 	return OP_OK;
 }
 
 // -----------------------------------------------------------------------
 int op_37_sd()
 {
-	// TODO: AWP
 	uint16_t N = get_arg_norm();
-	int32_t a1 = DWORD(R(1), R(2));
-	int32_t a2 = - DWORD(MEM(N), MEM(N+1));
-	int32_t res = alu_add(a1, a2, 0, 32);
-	Rw(1, DWORDl(res));
-	Rw(2, DWORDr(res));
+	alu_add32(1, 2, MEM(N), MEM(N+1), -1);
 	return OP_OK;
 }
 
 // -----------------------------------------------------------------------
 int op_37_mw()
 {
-	// TODO: AWP
 	uint16_t N = get_arg_norm();
-	int16_t m1 = R(2);
-	int16_t m2 = MEM(N);
-	int64_t res = m1 * m2;
-	Rw(1, DWORDl(res));
-	Rw(2, DWORDr(res));
-	alu_set_flag_M(res, 32);
-	alu_set_flag_Z(res, 32);
-	alu_set_flag_V(m1, m2, res, 32);
+	alu_mul32(1, 2, MEM(N));
 	return OP_OK;
 }
 
 // -----------------------------------------------------------------------
 int op_37_dw()
 {
-	// TODO: AWP
 	uint16_t N = get_arg_norm();
-	int32_t d1 = DWORD(R(1), R(2));
-	int16_t d2 = MEM(N);
-	int32_t res = d1 / d2;
-	Rw(2, res);
-	Rw(1, d1 % d2);
-	alu_set_flag_M(res, 32);
-	alu_set_flag_Z(res, 32);
+	alu_div32(1, 2, MEM(N));
 	return OP_OK;
 }
 
@@ -273,8 +248,7 @@ int op_37_df()
 int op_aw()
 {
 	uint16_t N = get_arg_norm();
-	uint16_t res = alu_add(R(IR_A), N, 0, 16);
-	Rw(IR_A, res);
+	alu_add16(IR_A, N, 0);
 	return OP_OK;
 }
 
@@ -282,8 +256,7 @@ int op_aw()
 int op_ac()
 {
 	uint16_t N = get_arg_norm();
-	uint16_t res = alu_add(R(IR_A), N, Fget(FL_C), 16);
-	Rw(IR_A, res);
+	alu_add16(IR_A, N, Fget(FL_C));
 	return OP_OK;
 }
 
@@ -291,8 +264,7 @@ int op_ac()
 int op_sw()
 {
 	uint16_t N = - get_arg_norm();
-	uint16_t res = alu_add(R(IR_A), N, 0, 16);
-	Rw(IR_A, res);
+	alu_add16(IR_A, N, 0);
 	return OP_OK;
 }
 
@@ -416,8 +388,7 @@ int op_cb()
 int op_awt()
 {
 	uint16_t T = get_arg_short();
-	uint16_t res = alu_add(T, R(IR_A), 0, 16);
-	Rw(IR_A, res);
+	alu_add16(IR_A, T, 0);
 	return OP_OK;
 }
 
@@ -642,8 +613,7 @@ int op_72_sxu()
 // -----------------------------------------------------------------------
 int op_72_nga()
 {
-	uint16_t res = alu_negate(R(IR_A), 1);
-	Rw(IR_A, res);
+	alu_negate(IR_A, 1);
 	return OP_OK;
 }
 
@@ -688,8 +658,7 @@ int op_72_sry()
 // -----------------------------------------------------------------------
 int op_72_ngl()
 {
-	uint16_t res = alu_negate(R(IR_A), 0);
-	Rw(IR_A, res);
+	alu_negate(IR_A, 0);
 	return OP_OK;
 }
 
@@ -738,8 +707,7 @@ int op_72_sxl()
 // -----------------------------------------------------------------------
 int op_72_ngc()
 {
-	uint16_t res = alu_negate(R(IR_A), Fget(FL_C));
-	Rw(IR_A, res);
+	alu_negate(IR_A, Fget(FL_C));
 	return OP_OK;
 }
 

@@ -21,14 +21,50 @@
 #include "registers.h"
 
 // -----------------------------------------------------------------------
-uint32_t alu_add(uint32_t a, uint32_t b, uint32_t c, int bits)
+void alu_add16(int reg, uint32_t arg, uint32_t carry)
 {
-	uint64_t res = a + b + c;
-    alu_set_flag_Z(res, bits);
-    alu_set_flag_M(res, bits);
-    alu_set_flag_C(res, bits);
-    alu_set_flag_V(a, b, res, bits);
-	return res;
+	uint64_t res = R(reg) + arg + carry;
+    alu_set_flag_Z(res, 16);
+    alu_set_flag_M(res, 16);
+    alu_set_flag_C(res, 16);
+    alu_set_flag_V(nR(reg), arg, res, 16);
+	Rw(reg, (uint16_t) res);
+}
+
+// -----------------------------------------------------------------------
+void alu_add32(int reg1, int reg2, uint16_t arg1, uint16_t arg2, int sign)
+{
+    int32_t a1 = DWORD(R(reg1), R(reg2));
+    int32_t a2 = DWORD(arg1, arg2);
+    int64_t res = a1 + (sign * a2);
+	alu_set_flag_Z(res, 32);
+	alu_set_flag_M(res, 32);
+	alu_set_flag_C(res, 32);
+	alu_set_flag_V(a1, a2, res, 32);
+    Rw(reg1, DWORDl(res));
+    Rw(reg2, DWORDr(res));
+}
+
+// -----------------------------------------------------------------------
+void alu_mul32(int reg1, int reg2, int16_t arg)
+{
+    int64_t res = R(reg2) * arg;
+    alu_set_flag_M(res, 32);
+    alu_set_flag_Z(res, 32);
+    alu_set_flag_V(nR(reg2), arg, res, 32);
+    Rw(reg1, DWORDl(res));
+    Rw(reg2, DWORDr(res));
+}
+
+// -----------------------------------------------------------------------
+void alu_div32(int reg1, int reg2, int16_t arg)
+{
+    int32_t d1 = DWORD(R(reg1), R(reg2));
+    int32_t res = d1 / arg;
+    alu_set_flag_M(res, 32);
+    alu_set_flag_Z(res, 32);
+    Rw(reg2, res);
+    Rw(reg1, d1 % arg);
 }
 
 // -----------------------------------------------------------------------
@@ -51,15 +87,15 @@ void alu_compare(int32_t a, int32_t b)
 }
 
 // -----------------------------------------------------------------------
-uint16_t alu_negate(uint16_t a, uint16_t c)
+void alu_negate(int reg, uint16_t carry)
 {
-	uint32_t res = (uint16_t) (~a) + c;
+	uint16_t a = R(reg);
+	uint32_t res = (uint16_t) (~a) + carry;
 	alu_set_flag_Z(res, 16);
 	alu_set_flag_M(res, 16);
 	alu_set_flag_C(res, 16);
 	alu_set_flag_V(a, a, res, 16);
-	
-	return res;
+	Rw(reg, res);
 }
 
 // -----------------------------------------------------------------------
