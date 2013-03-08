@@ -46,7 +46,7 @@ int op_illegal()
 // -----------------------------------------------------------------------
 int op_lw()
 {
-	Rw(IR_A, (uint16_t) get_arg_norm());
+	Rw(IR_A, get_arg_norm());
 	return OP_OK;
 }
 
@@ -388,7 +388,7 @@ int op_cl()
 int op_lb()
 {
 	uint16_t N = get_arg_norm();
-	Rw(IR_A, (nR(IR_A) & 0b1111111100000000) | (uint16_t)MEMNBb(N));
+	Rw(IR_A, (nR(IR_A) & 0b1111111100000000) | (uint16_t) MEMNBb(N));
 	return OP_OK;
 }
 
@@ -404,7 +404,7 @@ int op_rb()
 int op_cb()
 {
 	uint16_t N = get_arg_norm();
-	alu_compare((uint8_t)R(IR_A), MEMNBb(N));
+	alu_compare((uint8_t) R(IR_A), MEMNBb(N));
 	return OP_OK;
 }
 

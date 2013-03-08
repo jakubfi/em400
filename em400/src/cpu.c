@@ -46,7 +46,7 @@ int16_t get_arg_short()
 {
 	uint32_t T = IR_T + nR(R_MOD);
 	nRw(R_ZC17, (T >> 16) & 1);
-	return (int16_t) T;
+	return T;
 }
 
 // -----------------------------------------------------------------------
@@ -81,7 +81,7 @@ int16_t get_arg_norm()
 	nRw(R_ZC17, (N >> 16) & 1);
 
 	LOG(D_CPU, 10, "------ Effective argument (norm): 0x%04x (%s%s%s%s)", N, IR_C ? "2-word " : "1-word", regs[R_MODc] ? " PRE-mod" : "", IR_B ? " B-mod" : "", IR_D ? " D-mod" : "");
-	return (int16_t) N;
+	return N;
 }
 
 // -----------------------------------------------------------------------
