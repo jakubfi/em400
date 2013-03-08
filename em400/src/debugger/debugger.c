@@ -49,9 +49,6 @@ struct touch_t *touch_reg = NULL;
 struct break_t *brk_stack = NULL;
 struct break_t *brk_last = NULL;
 
-// trace register activity
-int reg_act[R_MAX];
-
 // trace interrupts activity
 uint32_t int_act;
 int int_serve_stack[32];
@@ -182,9 +179,7 @@ void dbg_fin_cycle()
 {
     // we're leaving debugger, clear memory/register traces
 	dbg_drop_touches(&touch_mem);
-    for (int r=0 ; r<R_MAX ; r++) {
-        reg_act[r] = C_DATA;
-    }
+	dbg_drop_touches(&touch_reg);
 }
 
 // -----------------------------------------------------------------------

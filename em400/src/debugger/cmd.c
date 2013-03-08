@@ -127,9 +127,7 @@ void dbg_c_reset()
 {
 	cpu_reset();
 	dbg_drop_touches(&touch_mem);
-	for (int i=0 ; i<R_MAX ; i++) {
-		reg_act[i] = C_DATA;
-	}
+	dbg_drop_touches(&touch_reg);
 }
 
 // -----------------------------------------------------------------------
@@ -291,10 +289,17 @@ void dbg_c_regs(int wid)
 		char c[3];
 		int2chars(regs[i], c);
 
+		int touch = dbg_touch_check(&touch_reg, 0, i);
+		int attr;
+		if (touch == 3) attr = C_RW;
+		else if (touch == 2) attr = C_WRITE;
+		else if (touch == 1) attr = C_READ;
+		else attr = C_DATA;
+
 		awprint(wid, C_LABEL, "R%i: ", i);
-		awprint(wid, reg_act[i], "0x%04x %6o %6i ", regs[i], regs[i], (int16_t) regs[i]);
-		awbinprint(wid, reg_act[i], "........ ........", regs[i], 16);
-		awprint(wid, reg_act[i], " %s %s\n", c, r);
+		awprint(wid, attr, "0x%04x %6o %6i ", regs[i], regs[i], (int16_t) regs[i]);
+		awbinprint(wid, attr, "........ ........", regs[i], 16);
+		awprint(wid, attr, " %s %s\n", c, r);
 		free(r);
 	}
 }

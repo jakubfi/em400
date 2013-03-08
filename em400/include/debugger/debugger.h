@@ -33,6 +33,12 @@ struct break_t {
 	struct break_t *next;
 };
 
+enum touch_types {
+	TOUCH_NONE = 0,
+	TOUCH_R = 1,
+	TOUCH_W = 2
+};
+
 struct touch_t {
 	int type;
 	int block;
@@ -49,8 +55,6 @@ extern char input_buf[];
 
 extern struct break_t *brk_stack;
 extern struct break_t *brk_last;
-
-extern int reg_act[R_MAX];
 
 extern uint32_t int_act;
 extern int int_serve_stack[32];
