@@ -28,10 +28,8 @@
 #include "parser.h"
 
 struct node_t *node_stack = NULL;
-struct node_t *node_last = NULL;
 
 struct var_t *var_stack = NULL;
-struct var_t *var_last = NULL;
 
 // -----------------------------------------------------------------------
 // --- VARIABLES ---------------------------------------------------------
@@ -50,13 +48,8 @@ void var_set(char *name, uint16_t value)
 		v = malloc(sizeof(struct var_t));
 		v->name = strdup(name);
 		v->value = value;
-		v->next = NULL;
-		if (var_stack) {
-			var_last->next = v;
-			var_last = v;
-		} else {
-			var_stack = var_last = v;
-		}
+		v->next = var_stack;
+		var_stack = v;
 	}
 }
 
@@ -89,14 +82,8 @@ struct node_t * n_create()
 	n->mptr = NULL;
 	n->n1 = NULL;
 	n->n2 = NULL;
-	n->next = NULL;
-
-	if (!node_stack) {
-		node_stack = node_last = n;
-	} else {
-		node_last->next = n;
-		node_last = n;
-	}
+	n->next = node_stack;
+	node_stack = n;
 
 	return n;
 }
@@ -104,7 +91,7 @@ struct node_t * n_create()
 // -----------------------------------------------------------------------
 void n_reset_stack()
 {
-	node_stack = node_last = NULL;
+	node_stack = NULL;
 }
 
 // -----------------------------------------------------------------------

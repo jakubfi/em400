@@ -11,6 +11,8 @@ CPU:
 
 Debugger:
 
+* should log start new file immediately?
+* stack display after shrinking
 * again, rethink hex/dec numbers in output and log
 * HLT will halt debugger too if there is no interrupt to serve
 * debugger in separate thread (?)
