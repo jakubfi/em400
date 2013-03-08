@@ -206,20 +206,34 @@ void dbg_c_mem(int wid, int block, int start, int end, int maxcols, int maxlines
 			if (!mptr) {
 				return;
 			}
+
 			// data (hex)
-			if ((addr >= mem_actw_min) && (addr <= mem_actw_max)) {
-				if ((addr >= mem_actr_min) && (addr <= mem_actr_max)) {
-					attr = C_RW;
-				} else {
-					attr = C_WRITE;
-				}
-			} else if ((addr >= mem_actr_min) && (addr <= mem_actr_max)) {
-				attr = C_READ;
-			} else if (addr == regs[R_IC]) {
+
+			// 'untouched' cell
+			attr = C_DATA;
+
+			// cell with current instruction
+			if (addr == regs[R_IC]) {
 				attr = C_DATAU;
 			} else {
-				attr = C_DATA;
+				// displaying block with touched data
+				if (block == mem_act_block) {
+					// ... written ...
+					if ((addr >= mem_actw_min) && (addr <= mem_actw_max)) {
+						// ... and read ...
+						if ((addr >= mem_actr_min) && (addr <= mem_actr_max)) {
+							attr = C_RW;
+						// ... or only read ...
+						} else {
+							attr = C_WRITE;
+						}
+					// ... only read
+					} else if ((addr >= mem_actr_min) && (addr <= mem_actr_max)) {
+						attr = C_READ;
+					}
+				}
 			}
+
 			awprint(wid, attr, "%4x", *mptr);
 			awprint(wid, C_DATA, " ");
 
