@@ -70,6 +70,7 @@ void dbg_touch(struct touch_t **t, int type, int block, int pos);
 struct touch_t * dbg_touch_get(struct touch_t **t, int block, int pos);
 int dbg_touch_check(struct touch_t **t, int block, int pos);
 void dbg_drop_touches(struct touch_t **t);
+int dbg_touch2attr(int t);
 
 #endif
 

@@ -101,6 +101,15 @@ void dbg_drop_touches(struct touch_t **t)
 }
 
 // -----------------------------------------------------------------------
+int dbg_touch2attr(int t)
+{
+	if (t == 3) return C_RW;
+	else if (t == 2) return C_WRITE;
+	else if (t == 1) return C_READ;
+	else return C_DATA;
+}
+
+// -----------------------------------------------------------------------
 void _dbg_sigint_handler(int signum, siginfo_t *si, void *ctx)
 {
 	dbg_enter = 1;

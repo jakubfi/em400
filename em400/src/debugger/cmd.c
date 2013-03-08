@@ -206,18 +206,11 @@ void dbg_c_mem(int wid, int block, int start, int end, int maxcols, int maxlines
 
 			// data (hex)
 
-			int touch = dbg_touch_check(&touch_mem, block, addr);
-
 			// cell with current instruction
 			if (addr == regs[R_IC]) {
 				attr = C_DATAU;
 			} else {
-				// displaying cell with touched data
-				// ... written ...
-				if (touch == 3) attr = C_RW;
-				else if (touch == 2) attr = C_WRITE;
-				else if (touch == 1) attr = C_READ;
-				else attr = C_DATA;
+				attr = dbg_touch2attr(dbg_touch_check(&touch_mem, block, addr));
 			}
 
 			awprint(wid, attr, "%4x", *mptr);
@@ -289,12 +282,7 @@ void dbg_c_regs(int wid)
 		char c[3];
 		int2chars(regs[i], c);
 
-		int touch = dbg_touch_check(&touch_reg, 0, i);
-		int attr;
-		if (touch == 3) attr = C_RW;
-		else if (touch == 2) attr = C_WRITE;
-		else if (touch == 1) attr = C_READ;
-		else attr = C_DATA;
+		int attr = dbg_touch2attr(dbg_touch_check(&touch_reg, 0, i));
 
 		awprint(wid, C_LABEL, "R%i: ", i);
 		awprint(wid, attr, "0x%04x %6o %6i ", regs[i], regs[i], (int16_t) regs[i]);
