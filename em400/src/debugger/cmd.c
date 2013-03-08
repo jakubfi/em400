@@ -126,8 +126,7 @@ void dbg_c_run()
 void dbg_c_reset()
 {
 	cpu_reset();
-	mem_actr_max = -1;
-	mem_actw_max = -1;
+	dbg_drop_touches(&touch_mem);
 	for (int i=0 ; i<R_MAX ; i++) {
 		reg_act[i] = C_DATA;
 	}
@@ -209,29 +208,18 @@ void dbg_c_mem(int wid, int block, int start, int end, int maxcols, int maxlines
 
 			// data (hex)
 
-			// 'untouched' cell
-			attr = C_DATA;
+			int touch = dbg_touch_check(&touch_mem, block, addr);
 
 			// cell with current instruction
 			if (addr == regs[R_IC]) {
 				attr = C_DATAU;
 			} else {
-				// displaying block with touched data
-				if (block == mem_act_block) {
-					// ... written ...
-					if ((addr >= mem_actw_min) && (addr <= mem_actw_max)) {
-						// ... and read ...
-						if ((addr >= mem_actr_min) && (addr <= mem_actr_max)) {
-							attr = C_RW;
-						// ... or only read ...
-						} else {
-							attr = C_WRITE;
-						}
-					// ... only read
-					} else if ((addr >= mem_actr_min) && (addr <= mem_actr_max)) {
-						attr = C_READ;
-					}
-				}
+				// displaying cell with touched data
+				// ... written ...
+				if (touch == 3) attr = C_RW;
+				else if (touch == 2) attr = C_WRITE;
+				else if (touch == 1) attr = C_READ;
+				else attr = C_DATA;
 			}
 
 			awprint(wid, attr, "%4x", *mptr);

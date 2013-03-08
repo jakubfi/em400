@@ -41,16 +41,13 @@ volatile int dbg_enter = 1;
 // store user input here
 char input_buf[INPUT_BUF_SIZE];
 
+// mem/reg touches
+struct touch_t *touch_mem = NULL;
+struct touch_t *touch_reg = NULL;
+
 // breakpoints
 struct break_t *brk_stack = NULL;
 struct break_t *brk_last = NULL;
-
-// trace memory activity
-int mem_act_block;
-int mem_actr_min;
-int mem_actr_max = -1;
-int mem_actw_min;
-int mem_actw_max = -1;
 
 // trace register activity
 int reg_act[R_MAX];
@@ -64,6 +61,47 @@ extern int yyparse();
 typedef struct yy_buffer_state *YY_BUFFER_STATE;
 YY_BUFFER_STATE yy_scan_string(char *yy_str);
 void yy_delete_buffer(YY_BUFFER_STATE b);
+
+// -----------------------------------------------------------------------
+void dbg_touch(struct touch_t **t, int type, int block, int pos)
+{
+	struct touch_t *nt = dbg_touch_get(t, block, pos);
+	if (nt) {
+		nt->type |= type;
+	} else {
+		nt = malloc(sizeof(struct touch_t));
+		nt->type = type;
+		nt->block = block;
+		nt->pos = pos;
+		nt->next = *t;
+		*t = nt;
+	}
+}
+
+// -----------------------------------------------------------------------
+struct touch_t * dbg_touch_get(struct touch_t **t, int block, int pos)
+{
+	if (!*t) return NULL;
+	if (((*t)->block == block) && ((*t)->pos == pos)) return *t;
+	return dbg_touch_get(&(*t)->next, block, pos);
+}
+
+// -----------------------------------------------------------------------
+int dbg_touch_check(struct touch_t **t, int block, int pos)
+{
+	if (!*t) return 0;
+	if (((*t)->block == block) && ((*t)->pos == pos)) return (*t)->type;
+	return dbg_touch_check(&(*t)->next, block, pos);
+}
+
+// -----------------------------------------------------------------------
+void dbg_drop_touches(struct touch_t **t)
+{
+	if (!*t) return;
+	dbg_drop_touches(&(*t)->next);
+	free(*t);
+	*t = NULL;
+}
 
 // -----------------------------------------------------------------------
 void _dbg_sigint_handler(int signum, siginfo_t *si, void *ctx)
@@ -143,8 +181,7 @@ struct break_t * dbg_brk_check()
 void dbg_fin_cycle()
 {
     // we're leaving debugger, clear memory/register traces
-    mem_actr_max = -1;
-    mem_actw_max = -1;
+	dbg_drop_touches(&touch_mem);
     for (int r=0 ; r<R_MAX ; r++) {
         reg_act[r] = C_DATA;
     }

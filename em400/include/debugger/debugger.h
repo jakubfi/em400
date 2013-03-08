@@ -33,18 +33,22 @@ struct break_t {
 	struct break_t *next;
 };
 
+struct touch_t {
+	int type;
+	int block;
+	int pos;
+	struct touch_t *next;
+};
+
+extern struct touch_t *touch_mem;
+extern struct touch_t *touch_reg;
+
 extern int dbg_loop_fin;
 extern volatile int dbg_enter;
 extern char input_buf[];
 
 extern struct break_t *brk_stack;
 extern struct break_t *brk_last;
-
-extern int mem_act_block;
-extern int mem_actr_min;
-extern int mem_actr_max;
-extern int mem_actw_min;
-extern int mem_actw_max;
 
 extern int reg_act[R_MAX];
 
@@ -58,6 +62,10 @@ int dbg_init();
 void dbg_shutdown();
 void dbg_fin_cycle();
 void dbg_parse(char *c);
+void dbg_touch(struct touch_t **t, int type, int block, int pos);
+struct touch_t * dbg_touch_get(struct touch_t **t, int block, int pos);
+int dbg_touch_check(struct touch_t **t, int block, int pos);
+void dbg_drop_touches(struct touch_t **t);
 
 #endif
 
