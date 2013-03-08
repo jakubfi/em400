@@ -21,9 +21,9 @@
 #include "registers.h"
 
 // -----------------------------------------------------------------------
-void alu_add16(int reg, uint32_t arg, uint32_t carry)
+void alu_add16(int reg, uint16_t arg, uint16_t carry)
 {
-	uint64_t res = R(reg) + arg + carry;
+	uint32_t res = R(reg) + arg + carry;
     alu_set_flag_Z(res, 16);
     alu_set_flag_M(res, 16);
     alu_set_flag_C(res, 16);
@@ -34,13 +34,13 @@ void alu_add16(int reg, uint32_t arg, uint32_t carry)
 // -----------------------------------------------------------------------
 void alu_add32(int reg1, int reg2, uint16_t arg1, uint16_t arg2, int sign)
 {
-    int32_t a1 = DWORD(R(reg1), R(reg2));
-    int32_t a2 = DWORD(arg1, arg2);
-    int64_t res = a1 + (sign * a2);
+    uint32_t a1 = DWORD(R(reg1), R(reg2));
+    uint32_t a2 = DWORD(arg1, arg2);
+    uint64_t res = (uint64_t) a1 + (sign * a2);
 	alu_set_flag_Z(res, 32);
 	alu_set_flag_M(res, 32);
 	alu_set_flag_C(res, 32);
-	alu_set_flag_V(a1, a2, res, 32);
+	alu_set_flag_V(a1, sign*a2, res, 32);
     Rw(reg1, DWORDl(res));
     Rw(reg2, DWORDr(res));
 }
@@ -101,7 +101,7 @@ void alu_negate(int reg, uint16_t carry)
 // -----------------------------------------------------------------------
 void alu_set_flag_Z(uint64_t z, int bits)
 {
-    int64_t mask_Z = (1 << (bits))-1;
+    uint64_t mask_Z = ((uint64_t)1 << (bits))-1;
     if (z & mask_Z) {
         Fclr(FL_Z);
     } else {
@@ -112,7 +112,7 @@ void alu_set_flag_Z(uint64_t z, int bits)
 // -----------------------------------------------------------------------
 void alu_set_flag_M(uint64_t z, int bits)
 {
-    int64_t mask_M = 1 << (bits-1);
+    uint64_t mask_M = (uint64_t) 1 << (bits-1);
     if (z & mask_M) {
         Fset(FL_M);
     } else {
@@ -123,7 +123,7 @@ void alu_set_flag_M(uint64_t z, int bits)
 // -----------------------------------------------------------------------
 void alu_set_flag_C(uint64_t z, int bits)
 {
-    int64_t mask_C = 1 << bits;
+    uint64_t mask_C = (uint64_t) 1 << bits;
     if (z & mask_C) {
         Fset(FL_C);
     } else {
@@ -134,7 +134,7 @@ void alu_set_flag_C(uint64_t z, int bits)
 // -----------------------------------------------------------------------
 void alu_set_flag_V(uint64_t x, uint64_t y, uint64_t z, int bits)
 {
-    int64_t mask_M = 1 << (bits-1);
+    uint64_t mask_M = (uint64_t) 1 << (bits-1);
     if (((x & mask_M) && (y & mask_M) && !(z & mask_M)) || (!(x & mask_M) && !(y & mask_M) && (z & mask_M))) {
         Fset(FL_V);
     } else {
