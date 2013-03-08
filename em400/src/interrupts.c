@@ -189,9 +189,7 @@ void int_serve()
 	nMEMBw(0, 97, SP+4);
 	SR_Qcb;
 #ifdef WITH_DEBUGGER
-	int_act = int_act | (1 << (31-interrupt));
-	int_serve_stack[int_serve_top] = interrupt;
-	int_serve_top++;
+	dbg_touch_add(&touch_int, 1, 0, interrupt);
 #endif
 }
 

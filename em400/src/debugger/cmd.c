@@ -126,8 +126,8 @@ void dbg_c_run()
 void dbg_c_reset()
 {
 	cpu_reset();
-	dbg_drop_touches(&touch_mem);
-	dbg_drop_touches(&touch_reg);
+	dbg_touch_drop_all(&touch_mem);
+	dbg_touch_drop_all(&touch_reg);
 }
 
 // -----------------------------------------------------------------------
@@ -267,6 +267,13 @@ void dbg_c_sregs(int wid)
 	awprint(wid, C_DATA, "0x%08x  ");
 	awbinprint(wid, C_DATA, "..... ....... .. .. ...... ...... ....", RP, 32);
 	awprint(wid, C_DATA, "\n");
+
+	uint32_t int_act = 0;
+	struct touch_t *t = touch_int;
+	while (t) {
+		int_act |= 1 << (31-t->pos);
+		t = t->next;
+	}
 
 	awprint(wid, C_LABEL, "Being served:   ");
 	awbinprint(wid, C_LABEL, "..... ....... .. .. ...... ...... ....", int_act, 32);

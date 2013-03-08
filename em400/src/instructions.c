@@ -899,9 +899,7 @@ int op_73_lip()
 	int_update_rp();
 	nMEMBw(0, 97, SP-4);
 #ifdef WITH_DEBUGGER
-	int_serve_top--;
-	//int_act = int_act & ~(1 << (31-int_serve_stack[int_serve_top]));
-	int_act = 0;
+	dbg_touch_pop(&touch_int);
 #endif
 	return OP_OK;
 }

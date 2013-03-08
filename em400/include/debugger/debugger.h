@@ -48,6 +48,7 @@ struct touch_t {
 
 extern struct touch_t *touch_mem;
 extern struct touch_t *touch_reg;
+extern struct touch_t *touch_int;
 
 extern int dbg_loop_fin;
 extern volatile int dbg_enter;
@@ -66,10 +67,12 @@ int dbg_init();
 void dbg_shutdown();
 void dbg_fin_cycle();
 void dbg_parse(char *c);
-void dbg_touch(struct touch_t **t, int type, int block, int pos);
+
+void dbg_touch_add(struct touch_t **t, int type, int block, int pos);
 struct touch_t * dbg_touch_get(struct touch_t **t, int block, int pos);
 int dbg_touch_check(struct touch_t **t, int block, int pos);
-void dbg_drop_touches(struct touch_t **t);
+void dbg_touch_pop(struct touch_t **t);
+void dbg_touch_drop_all(struct touch_t **t);
 int dbg_touch2attr(int t);
 
 #endif

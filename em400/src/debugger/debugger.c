@@ -41,18 +41,14 @@ volatile int dbg_enter = 1;
 // store user input here
 char input_buf[INPUT_BUF_SIZE];
 
-// mem/reg touches
+// mem/reg/int touches
 struct touch_t *touch_mem = NULL;
 struct touch_t *touch_reg = NULL;
+struct touch_t *touch_int = NULL;
 
 // breakpoints
 struct break_t *brk_stack = NULL;
 struct break_t *brk_last = NULL;
-
-// trace interrupts activity
-uint32_t int_act;
-int int_serve_stack[32];
-int int_serve_top;
 
 extern int yyparse();
 typedef struct yy_buffer_state *YY_BUFFER_STATE;
@@ -60,7 +56,7 @@ YY_BUFFER_STATE yy_scan_string(char *yy_str);
 void yy_delete_buffer(YY_BUFFER_STATE b);
 
 // -----------------------------------------------------------------------
-void dbg_touch(struct touch_t **t, int type, int block, int pos)
+void dbg_touch_add(struct touch_t **t, int type, int block, int pos)
 {
 	struct touch_t *nt = dbg_touch_get(t, block, pos);
 	if (nt) {
@@ -92,10 +88,19 @@ int dbg_touch_check(struct touch_t **t, int block, int pos)
 }
 
 // -----------------------------------------------------------------------
-void dbg_drop_touches(struct touch_t **t)
+void dbg_touch_pop(struct touch_t **t)
 {
 	if (!*t) return;
-	dbg_drop_touches(&(*t)->next);
+	struct touch_t *tn = (*t)->next;
+	free(*t);
+	*t = tn;
+}
+
+// -----------------------------------------------------------------------
+void dbg_touch_drop_all(struct touch_t **t)
+{
+	if (!*t) return;
+	dbg_touch_drop_all(&(*t)->next);
 	free(*t);
 	*t = NULL;
 }
@@ -187,8 +192,8 @@ struct break_t * dbg_brk_check()
 void dbg_fin_cycle()
 {
     // we're leaving debugger, clear memory/register traces
-	dbg_drop_touches(&touch_mem);
-	dbg_drop_touches(&touch_reg);
+	dbg_touch_drop_all(&touch_mem);
+	dbg_touch_drop_all(&touch_reg);
 }
 
 // -----------------------------------------------------------------------

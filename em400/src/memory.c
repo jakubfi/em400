@@ -143,7 +143,7 @@ uint16_t mem_read(int nb, uint16_t addr, int trace)
 		// leave trace for debugger to display
 		if (trace) {
 			LOG(D_MEM, 20, "[%d:%d] -> 0x%04x", nb, addr, value);
-			dbg_touch(&touch_mem, TOUCH_R, nb, addr);
+			dbg_touch_add(&touch_mem, TOUCH_R, nb, addr);
 		} else {
 			LOG(D_MEM, 40, "[%d:%d] -> 0x%04x", nb, addr, value);
 		}
@@ -191,7 +191,7 @@ void mem_write(int nb, uint16_t addr, uint16_t val, int trace)
 		// leave trace for debugger to display
 		if (trace) {
 			LOG(D_MEM, 10, "[%d:%d] <- 0x%04x", nb, addr, val);
-			dbg_touch(&touch_mem, TOUCH_W, nb, addr);
+			dbg_touch_add(&touch_mem, TOUCH_W, nb, addr);
 		} else {
 			LOG(D_MEM, 30, "[%d:%d] <- 0x%04x", nb, addr, val);
 		}
