@@ -1,4 +1,4 @@
-.program "alu/simple"
+.program "alu/AD-simple"
 
 ; 1 + 1
 

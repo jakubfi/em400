@@ -1,4 +1,4 @@
-.program "alu/ov-carry"
+.program "alu/AD-ov-carry"
 
 ; -1 + -32768
 

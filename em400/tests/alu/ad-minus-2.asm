@@ -1,4 +1,4 @@
-.program "alu/minus-2"
+.program "alu/AD-minus-2"
 
 ; 0 + -1
 

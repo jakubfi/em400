@@ -1,4 +1,4 @@
-.program "alu/carry"
+.program "alu/AD-carry"
 
 ; -1 + 32767
 

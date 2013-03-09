@@ -1,4 +1,4 @@
-.program "alu/minus-carry"
+.program "alu/AD-minus-carry"
 
 ; -1 + -1
 

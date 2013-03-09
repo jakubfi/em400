@@ -1,4 +1,4 @@
-.program "alu/zero"
+.program "alu/AD-zero"
 
 ; 0 + 0
 

@@ -1,4 +1,4 @@
-.program "alu/32-MW"
+.program "alu/MW"
 
 ; PRE [910] = 0b1010010010010000
 ; PRE [911] = 0b0000000000000000
