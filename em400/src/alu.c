@@ -19,6 +19,7 @@
 
 #include "alu.h"
 #include "registers.h"
+#include "interrupts.h"
 
 // -----------------------------------------------------------------------
 void alu_add16(int reg, uint16_t arg, uint16_t carry)
@@ -48,10 +49,11 @@ void alu_add32(int reg1, int reg2, uint16_t arg1, uint16_t arg2, int sign)
 // -----------------------------------------------------------------------
 void alu_mul32(int reg1, int reg2, int16_t arg)
 {
-    int64_t res = R(reg2) * arg;
-    alu_set_flag_M(res, 32);
+    int64_t res = (int16_t) R(reg2) * arg;
     alu_set_flag_Z(res, 32);
-    alu_set_flag_V(nR(reg2), arg, res, 32);
+    alu_set_flag_M(res, 32);
+	// TODO: overflow? how? why? we always have enough bits to store output
+	Fclr(FL_V);
     Rw(reg1, DWORDl(res));
     Rw(reg2, DWORDr(res));
 }
@@ -59,10 +61,17 @@ void alu_mul32(int reg1, int reg2, int16_t arg)
 // -----------------------------------------------------------------------
 void alu_div32(int reg1, int reg2, int16_t arg)
 {
+	if (!arg) {
+		int_set(INT_DIV0);
+		return;
+	}
     int32_t d1 = DWORD(R(reg1), R(reg2));
     int32_t res = d1 / arg;
-    alu_set_flag_M(res, 32);
+	if ((res > 32767) || (res < -32768)) {
+		int_set(INT_FP_DIV_OF);
+	}
     alu_set_flag_Z(res, 32);
+    alu_set_flag_M(res, 32);
     Rw(reg2, res);
     Rw(reg1, d1 % arg);
 }
