@@ -2,11 +2,6 @@ CONFIG - em400 configuration to use
 memory configuration
 instructions illegal in user mode
 
-
---- Instructions ---------------------------------------------------------
-
-MWn, rC, rB
-DWn, rC, rB
 AFn, rC, rB
 SFn, rC, rB
 MFn, rC, rB
