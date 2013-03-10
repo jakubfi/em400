@@ -18,6 +18,7 @@
 #include <pthread.h>
 #include <time.h>
 
+#include "cfg.h"
 #include "errors.h"
 #include "timer.h"
 #include "registers.h"
@@ -34,7 +35,7 @@ void * timer_thread(void *ptr)
 	struct timespec tr;
 
 	ts.tv_sec = 0;
-	ts.tv_nsec = TIMER_PERIOD * 1000000;
+	ts.tv_nsec = em400_cfg.cpu.timer_step * 1000000;
 
 	while (!timer_fin) {
 		nanosleep(&ts, &tr);
