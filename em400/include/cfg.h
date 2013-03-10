@@ -1,4 +1,4 @@
-//  Copyright (c) 2013 Jakub Filipowicz <jakubf@gmail.com>
+//  Copyright (c) 2012-2013 Jakub Filipowicz <jakubf@gmail.com>
 //
 //  This program is free software; you can redistribute it and/or modify
 //  it under the terms of the GNU General Public License as published by
@@ -15,13 +15,42 @@
 //  Foundation, Inc.,
 //  51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 
-#ifndef EM400_H
-#define EM400_H
+#ifndef CFG_H
+#define CFG_H
 
-extern int em400_quit;
-extern unsigned int ips_counter;
-extern struct timeval ips_start;
-extern struct timeval ips_end;
+extern int cfg_error;
+
+struct mem_module_cfg_t {
+	int segments;
+	int is_mega;
+};
+
+struct em400_cfg_t {
+
+    char *program_name;
+    char *config_file;
+    int exit_on_hlt;
+
+	struct cpu_c {
+		int speed_real;
+		int timer_step;
+		int mod_17bit;
+		int mod_sint;
+	} cpu;
+
+	struct mem_module_cfg_t mem[16];
+
+#ifdef WITH_DEBUGGER
+    int autotest;
+    char *pre_expr;
+    char *test_expr;
+    int ui_simple;
+#endif
+
+} em400_cfg;
+
+int cfg_load(char *cfg_file);
+int cfg_set_mem(int module, int is_mega, int segments);
 
 #endif
 

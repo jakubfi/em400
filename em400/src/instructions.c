@@ -18,6 +18,7 @@
 #include <stdlib.h>
 
 #include "em400.h"
+#include "cfg.h"
 #include "cpu.h"
 #include "registers.h"
 #include "interrupts.h"
@@ -786,7 +787,7 @@ int op_73()
 int op_73_hlt()
 {
 	// handle hlt 077 as "exit emulation" if user wants to
-	if (em400_opts.exit_on_hlt) {
+	if (em400_cfg.exit_on_hlt) {
 		if (get_arg_short() == 077) {
 			em400_quit = 1;
 			return OP_OK;

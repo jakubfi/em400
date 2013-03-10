@@ -19,6 +19,7 @@
 #include <string.h>
 
 #include "em400.h"
+#include "cfg.h"
 #include "cpu.h"
 #include "registers.h"
 #include "memory.h"
@@ -124,7 +125,7 @@ void _dbg_sigint_handler(int signum, siginfo_t *si, void *ctx)
 int dbg_init()
 {
 	// set UI mode
-	if (em400_opts.ui_simple == 1) {
+	if (em400_cfg.ui_simple == 1) {
 		ui_mode = O_STD;
 	} else {
 		ui_mode = O_NCURSES;

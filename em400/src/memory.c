@@ -21,6 +21,7 @@
 #include <arpa/inet.h>
 #include <pthread.h>
 
+#include "cfg.h"
 #include "errors.h"
 #include "memory.h"
 #include "registers.h"
@@ -34,9 +35,6 @@
 
 pthread_mutex_t mem_mutex = PTHREAD_MUTEX_INITIALIZER;
 
-// memory configuration provided by the user: number of segments in a module
-int mem_conf[MEM_MAX_MODULES] = { 7, 8, 8, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 };
-
 // physical memory: modules with segments inside
 uint16_t *mem_segment[MEM_MAX_MODULES][MEM_MAX_SEGMENTS];
 
@@ -46,16 +44,16 @@ uint16_t *mem_map[MEM_MAX_NB][MEM_MAX_AB];
 // -----------------------------------------------------------------------
 int mem_init()
 {
-	if (mem_conf[0] <= 0) {
+	if (em400_cfg.mem[0].segments <= 0) {
 		return E_MEM_NO_OS_MEM;
 	}
 
 	// create configured physical segments
 	for (int mp=0 ; mp<MEM_MAX_MODULES ; mp++) {
-		if (mem_conf[mp] > MEM_MAX_SEGMENTS) {
+		if (em400_cfg.mem[mp].segments > MEM_MAX_SEGMENTS) {
 			return E_MEM_BAD_SEGMENT_COUNT;
 		} else {
-			for (int seg=0 ; seg<mem_conf[mp] ; seg++) {
+			for (int seg=0 ; seg<em400_cfg.mem[mp].segments ; seg++) {
 				mem_segment[mp][seg] = malloc(sizeof(uint16_t) * MEM_SEGMENT_SIZE);
 				if (!mem_segment[mp][seg]) {
 					return E_MEM_CANNOT_ALLOCATE;

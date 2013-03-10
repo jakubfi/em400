@@ -21,7 +21,7 @@
 #include <inttypes.h>
 
 #define MEM_MAX_MODULES 16
-#define MEM_MAX_SEGMENTS 8
+#define MEM_MAX_SEGMENTS 16
 #define MEM_SEGMENT_SIZE 4 * 1024
 #define MEM_MAX_NB 16
 #define MEM_MAX_AB 16
