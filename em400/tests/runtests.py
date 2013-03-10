@@ -18,6 +18,7 @@
 #  51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 
 import os
+import os.path
 import sys
 import re
 import subprocess
@@ -77,6 +78,7 @@ class Test:
         self.pre = ""
         self.test_expr = ""
         self.expected = ""
+        self.config = ""
 
         xpcts = []
         pre_tab = []
@@ -87,6 +89,16 @@ class Test:
             pname = re.findall(".program[ \t]+\"(.*)\"", l)
             if pname:
                 self.prog_name = pname[0]
+
+            # get CONFIG directive
+            if re.match(".*CONFIG.*", l):
+                pcfg = re.findall(";[ \t]*CONFIG[ \t]+(.*)", l)
+                if pcfg:
+                    if not os.path.isfile(pcfg[0]):
+                        raise Exception("Config '%s' does not exist" % pcfg[0])
+                    self.config = pcfg[0]
+                else:
+                    raise Exception("Incomplete CONFIG directive")
 
             # get PRE expressions
             if re.match(".*PRE.*", l):
@@ -118,6 +130,8 @@ class Test:
         args = [em400, "-p", self.output, "-t", self.test_expr]
         if self.pre:
             args += ["-x", self.pre]
+        if self.config:
+            args += ["-c", self.config]
 
         o = subprocess.check_output(args)
 
