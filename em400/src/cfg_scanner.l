@@ -21,13 +21,17 @@
 #include "cfg_parser.h"
 
 void cyyerror(char *);
+
+#define YY_USER_ACTION cyylloc.first_line = cyylineno;
+
 %}
 
 %option nounput
 %option noinput
+%option yylineno
 
 number	[0-9]+
-text	\"[^\"]*\"
+text	[^: \n\t]+
 chars	[\}\{=:]
 comment	#.*$
 
@@ -46,16 +50,21 @@ elwro		return ELWRO;
 mega		return MEGA;
 true|yes	{ cyylval.value = 1; return VALUE; }
 false|no	{ cyylval.value = 0; return VALUE; }
+channel		return CHANNEL;
+unit		return UNIT;
+mem			return MEM;
+char		return CHAR;
+multix		return MULTIX;
+plix		return PLIX;
+mera9425	return MERA9425;
+term_cons	return TERM_CONS;
+term_tcp	return TERM_TCP;
+term_serial	return TERM_SERIAL;
+winchester	return WINCHESTER;
 
 {number} {
 	cyylval.value = strtol(cyytext, NULL, 10);
 	return VALUE;
-}
-
-{text} {
-	cyytext[strlen(cyytext-1)] = '\0';
-	cyylval.text = strdup(cyytext+1);
-	return TEXT;
 }
 
 {chars} {
@@ -65,8 +74,9 @@ false|no	{ cyylval.value = 0; return VALUE; }
 [ \t\n]+	;
 {comment}	;
 
-. {
-	printf("unknown: %c\n", *yytext);
+{text} {
+	cyylval.text = strdup(cyytext);
+	return TEXT;
 }
 
 %%

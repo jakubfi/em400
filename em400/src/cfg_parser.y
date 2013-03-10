@@ -32,8 +32,11 @@ int cyylex(void);
 	char *text;
 };
 
-%token CPU MEMORY
+%token CPU MEMORY CHANNEL UNIT
 %token SPEED MAX REAL TIMER MOD_17 MOD_SINT
+%token CHAR MEM MULTIX PLIX
+%token MERA9425 WINCHESTER
+%token TERM_TCP TERM_SERIAL TERM_CONS
 %token MODULE ELWRO MEGA
 %token <text> TEXT
 %token <value> VALUE
@@ -50,6 +53,23 @@ objects:
 object:
 	CPU '{' cpu_opts '}'
 	| MEMORY '{' modules '}'
+	| CHANNEL VALUE '=' CHAR '{' units '}' { }
+	| CHANNEL VALUE '=' MEM '{' units '}' { }
+	| CHANNEL VALUE '=' PLIX '{' units '}' { }
+	| CHANNEL VALUE '=' MULTIX '{' units '}' { }
+	;
+
+units:
+	unit units
+	|
+	;
+
+unit:
+	UNIT VALUE '=' MERA9425 ':' TEXT
+	| UNIT VALUE '=' TERM_CONS
+	| UNIT VALUE '=' TERM_TCP ':' VALUE
+	| UNIT VALUE '=' TERM_SERIAL ':' TEXT ':' VALUE ':' VALUE ':' TEXT ':' VALUE
+	| UNIT VALUE '=' WINCHESTER ':' TEXT
 	;
 
 cpu_opts:
