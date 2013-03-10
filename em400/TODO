@@ -4,7 +4,6 @@ Known bugs:
 
 CPU:
 
-* configuration
 * alarm
 * int/uint rework
 * AWP - sign storage, floating point instructions
@@ -27,7 +26,7 @@ Debugger:
 
 Other:
 
-* prepare all autotests
+
 
 MERA-400 features that em400 does not emulate:
 
