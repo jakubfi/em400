@@ -15,6 +15,7 @@
 //  Foundation, Inc.,
 //  51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 
+#include "cfg.h"
 #include "cpu.h"
 #include "registers.h"
 #include "interrupts.h"
@@ -45,7 +46,9 @@ void cpu_reset()
 int16_t get_arg_short()
 {
 	uint32_t T = IR_T + nR(R_MOD);
-	nRw(R_ZC17, (T >> 16) & 1);
+	if (em400_cfg.cpu.mod_17bit) {
+		nRw(R_ZC17, (T >> 16) & 1);
+	}
 	return T;
 }
 
@@ -78,7 +81,9 @@ int16_t get_arg_norm()
 	}
 
 	// store 17th bit for byte addressing
-	nRw(R_ZC17, (N >> 16) & 1);
+	if (em400_cfg.cpu.mod_17bit) {
+		nRw(R_ZC17, (N >> 16) & 1);
+	}
 
 	LOG(D_CPU, 10, "------ Effective argument (norm): 0x%04x (%s%s%s%s)", N, IR_C ? "2-word " : "1-word", regs[R_MODc] ? " PRE-mod" : "", IR_B ? " B-mod" : "", IR_D ? " D-mod" : "");
 	return N;

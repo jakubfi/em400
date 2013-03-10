@@ -116,14 +116,15 @@ void print_usage()
 {
 	printf("Usage: em400 [option] ...\n");
 	printf("\nOptions:\n");
-	printf("   -c config_file     : use config_file instead of default ones\n");
-	printf("   -p program_image   : load program image into OS memory\n");
-	printf("   -e                 : exit after HLT 077\n");
+	printf("   -h           : display help\n");
+	printf("   -c config    : use given config file instead of defaults\n");
+	printf("   -p program   : load program image into OS memory\n");
+	printf("   -e           : exit emulator after HLT 077\n");
 #ifdef WITH_DEBUGGER
 	printf("\nDebuger-only options:\n");
-	printf("   -s                 : use simple debugger interface\n");
-	printf("   -t test_expression : execute test_expression when program halts (implies -e -s)\n");
-	printf("   -x pre_expression  : execute pre_expression before program start\n");
+	printf("   -s           : use simple debugger interface\n");
+	printf("   -t test_expr : execute expression when program halts (implies -e -s)\n");
+	printf("   -x pre_expr  : execute expression on emulator startup\n");
 #endif
 }
 
@@ -137,8 +138,11 @@ void parse_arguments(int argc, char **argv)
 	em400_cfg.pre_expr = NULL;
 #endif
 
-	while ((option = getopt(argc, argv,"ec:p:t:x:s")) != -1) {
+	while ((option = getopt(argc, argv,"hec:p:t:x:s")) != -1) {
 		switch (option) {
+			case 'h':
+				print_usage();
+				exit(0);
 			case 'c':
 				em400_cfg.config_file = strdup(optarg);
 				break;
@@ -212,13 +216,13 @@ void em400_configure()
 				exit(EXIT_FAILURE);
 			}
 		} else {
-			printf("Config loaded.\n");
+			printf("Config loaded\n");
 			return;
 		}
 		cfgf++;
 	}
 
-	printf("Error loading default config files.\n");
+	printf("Error loading default config files\n");
 	exit(EXIT_FAILURE);
 }
 
@@ -227,13 +231,14 @@ void em400_configure()
 // -----------------------------------------------------------------------
 int main(int argc, char** argv)
 {
+	parse_arguments(argc, argv);
+
 #ifdef WITH_DEBUGGER
 	printf("Starting EM400 version %s (with debugger) ...\n", EM400_VERSION);
 #else
 	printf("Starting EM400 version %s ...\n", EM400_VERSION);
 #endif
 
-	parse_arguments(argc, argv);
 	em400_configure();
 	em400_init();
 
