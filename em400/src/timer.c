@@ -53,7 +53,9 @@ int timer_init()
 void timer_shutdown()
 {
 	timer_fin = 1;
-	pthread_join(timer_th, NULL);
+	if (timer_th) {
+		pthread_join(timer_th, NULL);
+	}
 }
 
 // vim: tabstop=4

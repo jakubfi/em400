@@ -18,13 +18,15 @@
 
 #include <stdlib.h>
 #include <stdio.h>
+#include <stdarg.h>
 
 #include "cfg.h"
 
-void cyyerror(char *);
+void cyyerror(char *s, ...);
 int cyylex(void);
 %}
 
+%locations
 %union {
 	int value;
 	char *text;
@@ -78,9 +80,13 @@ module:
 	;
 %%
 
-void cyyerror(char *s)
+void cyyerror(char *s, ...)
 {
-	printf("Error: %s\n", s);
+	va_list ap;
+	va_start(ap, s);
+	printf("Error parsing config, line %d: ", yylloc.first_line);
+	vprintf(s, ap);
+	printf("\n");
 	cfg_error = 1;
 }
 

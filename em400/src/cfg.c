@@ -16,11 +16,13 @@
 //  51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 
 #include <stdio.h>
+#include <stdarg.h>
 
 #include "cfg.h"
 #include "cfg_parser.h"
 
 extern FILE *cyyin;
+void cyyerror(char *s, ...);
 int cyyparse();
 int cfg_error = 0;
 
@@ -46,12 +48,15 @@ int cfg_load(char *cfg_file)
 int cfg_set_mem(int module, int is_mega, int segments)
 {
 	if ((module < 0) || (module > 15)) {
+		cyyerror("Incorrect module number: %i", module);
 		return -1;
 	}
 	if ((segments < 1) || (segments > 16)) {
+		cyyerror("Incorrect segment count: %i", segments);
 		return -2;
 	}
 	if ((module == 0) && (segments < 2)) {
+		cyyerror("Incorrect segment count for OS memory block: %i", segments);
 		return -3;
 	}
 	em400_cfg.mem[module].segments = segments;

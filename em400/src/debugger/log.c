@@ -113,8 +113,12 @@ int log_init(const char *logf)
 // -----------------------------------------------------------------------
 void log_shutdown()
 {
-	fclose(log_f);
-	free(log_fname);
+	if (log_f) {
+		fclose(log_f);
+	}
+	if (log_fname) {
+		free(log_fname);
+	}
 }
 
 // -----------------------------------------------------------------------

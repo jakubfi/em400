@@ -136,14 +136,16 @@ void io_shutdown()
 {
 	for (int i=0 ; i<IO_MAX_CHAN ; i++) {
 		struct chan_t *ch = io_chan + i;
-		if (ch) {
-			for (int j=0 ; j<IO_MAX_UNIT ; j++) {
-				struct unit_t *u = ch->unit[j];
-				if (u) {
+		for (int j=0 ; j<IO_MAX_UNIT ; j++) {
+			struct unit_t *u = ch->unit[j];
+			if (u) {
+				if (u->f_shutdown) {
 					u->f_shutdown(u);
-					free(u);
 				}
+				free(u);
 			}
+		}
+		if (ch->f_shutdown) {
 			ch->f_shutdown(ch);
 		}
 	}

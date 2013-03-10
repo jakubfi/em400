@@ -67,12 +67,6 @@ void em400_init()
 {
 	int res;
 
-#ifdef WITH_DEBUGGER
-	printf("Starting EM400 version %s (with debugger) ...\n", EM400_VERSION);
-#else
-	printf("Starting EM400 version %s ...\n", EM400_VERSION);
-#endif
-
 	printf("Initializing memory\n");
 	res = mem_init();
 	if (res != E_OK) {
@@ -233,6 +227,12 @@ void em400_configure()
 // -----------------------------------------------------------------------
 int main(int argc, char** argv)
 {
+#ifdef WITH_DEBUGGER
+	printf("Starting EM400 version %s (with debugger) ...\n", EM400_VERSION);
+#else
+	printf("Starting EM400 version %s ...\n", EM400_VERSION);
+#endif
+
 	parse_arguments(argc, argv);
 	em400_configure();
 	em400_init();
