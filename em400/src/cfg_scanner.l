@@ -48,8 +48,8 @@ mod_sint	return MOD_SINT;
 module		return MODULE;
 elwro		return ELWRO;
 mega		return MEGA;
-true|yes	{ cyylval.value = 1; return VALUE; }
-false|no	{ cyylval.value = 0; return VALUE; }
+true|yes	{ cyylval.value.v = 1; cyylval.value.s = strdup(cyytext); return VALUE; }
+false|no	{ cyylval.value.v = 0; cyylval.value.s = strdup(cyytext); return VALUE; }
 channel		return CHANNEL;
 unit		return UNIT;
 mem			return MEM;
@@ -63,7 +63,8 @@ term_serial	return TERM_SERIAL;
 winchester	return WINCHESTER;
 
 {number} {
-	cyylval.value = strtol(cyytext, NULL, 10);
+	cyylval.value.v = strtol(cyytext, NULL, 10);
+	cyylval.value.s = strdup(cyytext);
 	return VALUE;
 }
 

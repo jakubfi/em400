@@ -16,9 +16,12 @@
 //  51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 
 #include <stdio.h>
+#include <stdlib.h>
 #include <stdarg.h>
+#include <string.h>
 
 #include "cfg.h"
+#include "memory.h"
 #include "cfg_parser.h"
 
 extern FILE *cyyin;
@@ -45,13 +48,46 @@ int cfg_load(char *cfg_file)
 }
 
 // -----------------------------------------------------------------------
+void cfg_print()
+{
+	printf("---- Config: ---------------------------\n");
+	printf("  Program to load: %s\n", em400_cfg.program_name);
+	printf("  User-provided config: %s\n", em400_cfg.config_file);
+	printf("  Exit on HLT 077: %s\n", em400_cfg.exit_on_hlt ? "true" : "false");
+	printf("  Emulation speed: %s\n", em400_cfg.cpu.speed_real ? "real" : "max");
+	printf("  Timer step: %i\n", em400_cfg.cpu.timer_step);
+	printf("  17-bit byte addressing: %s\n", em400_cfg.cpu.mod_17bit ? "true" : "false");
+	printf("  High prio software int: %s\n", em400_cfg.cpu.mod_sint ? "true" : "false");
+	printf("---- Memory: ---------------------------\n");
+	for (int i=0 ; i<MEM_MAX_MODULES ; i++) {
+		printf("  Module %2i: %5s: %2i segments\n", i, em400_cfg.mem[i].is_mega ? "MEGA" : "ELWRO", em400_cfg.mem[i].segments);
+	}
+	printf("---- I/O: ------------------------------\n");
+	for (int i=0 ; i<IO_MAX_CHAN ; i++) {
+		printf("  Channel %2i type: %i\n", i, em400_cfg.chan[i].type);
+		struct cfg_unit_t *units = em400_cfg.chan[i].units;
+		while (units) {
+			printf("     Unit %2i type: %i args: ", units->number, units->type);
+			struct cfg_arglist_t *args = units->args;
+			while (args) {
+				printf("%s, ", args->arg);
+				args = args->next;
+			}
+			printf("\n");
+			units = units->next;
+		}
+	}
+	printf("----------------------------------------\n");
+}
+
+// -----------------------------------------------------------------------
 int cfg_set_mem(int module, int is_mega, int segments)
 {
-	if ((module < 0) || (module > 15)) {
+	if ((module < 0) || (module > MEM_MAX_MODULES-1)) {
 		cyyerror("Incorrect module number: %i", module);
 		return -1;
 	}
-	if ((segments < 1) || (segments > 16)) {
+	if ((segments < 1) || (segments > MEM_MAX_SEGMENTS)) {
 		cyyerror("Incorrect segment count: %i", segments);
 		return -2;
 	}
@@ -64,5 +100,51 @@ int cfg_set_mem(int module, int is_mega, int segments)
 	return 0;
 }
 
+// -----------------------------------------------------------------------
+struct cfg_unit_t * cfg_make_unit(int number, int type, ...)
+{
+	struct cfg_unit_t *u = malloc(sizeof(struct cfg_unit_t));
+
+	u->number = number;
+	u->type = type;
+	u->args = NULL;
+
+	struct cfg_arglist_t *lastarg = NULL;
+
+	char *s;
+	va_list ap;
+
+	va_start(ap, type);
+
+	s = va_arg(ap, char *);
+	while (s) {
+		struct cfg_arglist_t *arg = malloc(sizeof(struct cfg_arglist_t));
+		arg->arg = strdup(s);
+		arg->next = NULL;
+
+		if (!u->args) {
+			u->args = arg;
+		} else {
+			lastarg->next = arg;
+		}
+		lastarg = arg;
+		s = va_arg(ap, char *);
+	}
+
+	va_end(ap);
+
+	return u;
+}
+
+// -----------------------------------------------------------------------
+int cfg_make_chan(int number, int type, struct cfg_unit_t *units)
+{
+	if ((number < 0) || (number > IO_MAX_CHAN)) {
+		return -1;
+	}
+	em400_cfg.chan[number].type = type;
+	em400_cfg.chan[number].units = units;
+	return 0;
+}
 
 // vim: tabstop=4

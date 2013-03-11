@@ -18,27 +18,55 @@
 #ifndef CFG_H
 #define CFG_H
 
+#include "memory.h"
+#include "io.h"
+
 extern int cfg_error;
 
-struct mem_module_cfg_t {
+// -----------------------------------------------------------------------
+struct cfg_cpu_t {
+	int speed_real;
+	int timer_step;
+	int mod_17bit;
+	int mod_sint;
+};
+
+// -----------------------------------------------------------------------
+struct cfg_mem_module_t {
 	int segments;
 	int is_mega;
 };
 
-struct em400_cfg_t {
+// -----------------------------------------------------------------------
+struct cfg_arglist_t {
+	char *arg;
+	struct cfg_arglist_t *next;
+};
+
+// -----------------------------------------------------------------------
+struct cfg_unit_t {
+	int number;
+	int type;
+	struct cfg_arglist_t *args;
+	struct cfg_unit_t *next;
+};
+
+// -----------------------------------------------------------------------
+struct cfg_chan_t {
+	int type;
+	struct cfg_unit_t *units;
+};
+
+// -----------------------------------------------------------------------
+struct cfg_em400_t {
 
     char *program_name;
     char *config_file;
     int exit_on_hlt;
 
-	struct cpu_c {
-		int speed_real;
-		int timer_step;
-		int mod_17bit;
-		int mod_sint;
-	} cpu;
-
-	struct mem_module_cfg_t mem[16];
+	struct cfg_cpu_t cpu;
+	struct cfg_mem_module_t mem[MEM_MAX_MODULES];
+	struct cfg_chan_t chan[IO_MAX_CHAN];
 
 #ifdef WITH_DEBUGGER
     int autotest;
@@ -49,8 +77,12 @@ struct em400_cfg_t {
 
 } em400_cfg;
 
+
 int cfg_load(char *cfg_file);
+void cfg_print();
 int cfg_set_mem(int module, int is_mega, int segments);
+struct cfg_unit_t * cfg_make_unit(int number, int type, ...);
+int cfg_make_chan(int number, int type, struct cfg_unit_t *units);
 
 #endif
 

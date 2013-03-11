@@ -21,6 +21,7 @@
 #include <stdarg.h>
 
 #include "cfg.h"
+#include "drv/drivers.h"
 
 void cyyerror(char *s, ...);
 int cyylex(void);
@@ -28,8 +29,12 @@ int cyylex(void);
 
 %locations
 %union {
-	int value;
+	struct value_t {
+		int v;
+		char *s;
+	} value;
 	char *text;
+	struct cfg_unit_t *unit;
 };
 
 %token CPU MEMORY CHANNEL UNIT
@@ -40,6 +45,8 @@ int cyylex(void);
 %token MODULE ELWRO MEGA
 %token <text> TEXT
 %token <value> VALUE
+%type <unit> unit
+%type <unit> units
 
 %token '{' '}' '=' ':'
 
@@ -53,23 +60,23 @@ objects:
 object:
 	CPU '{' cpu_opts '}'
 	| MEMORY '{' modules '}'
-	| CHANNEL VALUE '=' CHAR '{' units '}' { }
-	| CHANNEL VALUE '=' MEM '{' units '}' { }
-	| CHANNEL VALUE '=' PLIX '{' units '}' { }
-	| CHANNEL VALUE '=' MULTIX '{' units '}' { }
+	| CHANNEL VALUE '=' CHAR '{' units '}' { cfg_make_chan($2.v, CHAN_CHAR, $6); }
+	| CHANNEL VALUE '=' MEM '{' units '}' { cfg_make_chan($2.v, CHAN_MEM, $6); }
+	| CHANNEL VALUE '=' PLIX '{' units '}' { cfg_make_chan($2.v, CHAN_PLIX, $6); }
+	| CHANNEL VALUE '=' MULTIX '{' units '}' { cfg_make_chan($2.v, CHAN_MULTIX, $6); }
 	;
 
 units:
-	unit units
-	|
+	unit units { $1->next = $2; } 
+	| { $$ = NULL; }
 	;
 
 unit:
-	UNIT VALUE '=' MERA9425 ':' TEXT
-	| UNIT VALUE '=' TERM_CONS
-	| UNIT VALUE '=' TERM_TCP ':' VALUE
-	| UNIT VALUE '=' TERM_SERIAL ':' TEXT ':' VALUE ':' VALUE ':' TEXT ':' VALUE
-	| UNIT VALUE '=' WINCHESTER ':' TEXT
+	UNIT VALUE '=' MERA9425 ':' TEXT { $$ = cfg_make_unit($2.v, UNIT_MERA9425, $6, NULL); }
+	| UNIT VALUE '=' TERM_CONS { $$ = cfg_make_unit($2.v, UNIT_TERM_CONS, NULL); }
+	| UNIT VALUE '=' TERM_TCP ':' VALUE { $$ = cfg_make_unit($2.v, UNIT_TERM_TCP, $6.s, NULL); }
+	| UNIT VALUE '=' TERM_SERIAL ':' TEXT ':' VALUE ':' VALUE ':' TEXT ':' VALUE { $$ = cfg_make_unit($2.v, UNIT_TERM_SERIAL, $6, $8.s, $10.s, $12, $14.s, NULL); }
+	| UNIT VALUE '=' WINCHESTER ':' TEXT { $$ = cfg_make_unit($2.v, UNIT_WINCHESTER, $6, NULL); }
 	;
 
 cpu_opts:
@@ -80,9 +87,9 @@ cpu_opts:
 cpu_opt:
 	SPEED '=' MAX { em400_cfg.cpu.speed_real = 0; }
 	| SPEED '=' REAL { em400_cfg.cpu.speed_real = 1; }
-	| TIMER '=' VALUE { em400_cfg.cpu.timer_step = $3; }
-	| MOD_17 '=' VALUE { em400_cfg.cpu.mod_17bit = $3; }
-	| MOD_SINT '=' VALUE { em400_cfg.cpu.mod_sint = $3; }
+	| TIMER '=' VALUE { em400_cfg.cpu.timer_step = $3.v; }
+	| MOD_17 '=' VALUE { em400_cfg.cpu.mod_17bit = $3.v; }
+	| MOD_SINT '=' VALUE { em400_cfg.cpu.mod_sint = $3.v; }
 	;
 
 modules:
@@ -91,12 +98,8 @@ modules:
 	;
 
 module:
-	MODULE VALUE '=' ELWRO ':' VALUE {
-		cfg_set_mem($2, 0, $6);
-	}
-	| MODULE VALUE '=' MEGA ':' VALUE {
-		cfg_set_mem($2, 1, $6);
-	}
+	MODULE VALUE '=' ELWRO ':' VALUE { cfg_set_mem($2.v, 0, $6.v); }
+	| MODULE VALUE '=' MEGA ':' VALUE { cfg_set_mem($2.v, 1, $6.v); }
 	;
 %%
 

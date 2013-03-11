@@ -240,6 +240,7 @@ int main(int argc, char** argv)
 #endif
 
 	em400_configure();
+	cfg_print();
 	em400_init();
 
 #ifdef WITH_DEBUGGER

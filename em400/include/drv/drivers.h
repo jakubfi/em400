@@ -33,10 +33,11 @@ enum _drv_chan_type {
 
 enum _drv_unit_type {
 	UNIT_NONE = 0,
-	UNIT_9425,
+	UNIT_MERA9425,
 	UNIT_WINCHESTER,
 	UNIT_TERM_TCP,
-	UNIT_TERM_SERIAL
+	UNIT_TERM_SERIAL,
+	UNIT_TERM_CONS
 };
 
 struct drv_chan_t {

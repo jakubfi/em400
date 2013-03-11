@@ -331,7 +331,7 @@ void dbg_c_memcfg(int wid)
 {
 	int i, j, cnt;
 	awprint(wid, C_LABEL, "Number of 4kword segments in each segment/block\n");
-	awprint(wid, C_LABEL, "seg/blk:   0  1  2  3  4  5  6  7  8  9  a  b  c  d  e  f\n");
+	awprint(wid, C_LABEL, "seg/blk:   0  1  2  3  4  5  6  7  8  9 10 11 12 13 14 15\n");
 	awprint(wid, C_LABEL, "     hw:  ");
 	for (i=0 ; i<MEM_MAX_MODULES ; i++) {
 		cnt = 0;
