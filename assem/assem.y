@@ -185,6 +185,7 @@ void yyerror(char *s, ...)
 	printf("Error parsing source, line %d: ", yylloc.first_line);
 	vprintf(s, ap);
 	printf("\n");
+	va_end(ap);
 	got_error = 1;
 }
 
