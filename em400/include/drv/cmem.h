@@ -20,12 +20,13 @@
 
 #include <inttypes.h>
 
+#include "cfg.h"
 #include "io.h"
 
-int drv_cmem_init(struct chan_t *ch);
-void drv_cmem_shutdown(struct chan_t *ch);
-void drv_cmem_reset(struct chan_t *ch);
-int drv_cmem_cmd(struct chan_t *ch, int dir, struct unit_t *unit, int cmd, uint16_t *r);
+int drv_cmem_init(void *self, struct cfg_arg_t *arg);
+void drv_cmem_shutdown(void *self);
+void drv_cmem_reset(void *self);
+int drv_cmem_cmd(void *self, int u_num, int dir, int cmd, uint16_t *r);
 
 #endif
 

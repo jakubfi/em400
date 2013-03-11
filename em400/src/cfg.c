@@ -20,9 +20,11 @@
 #include <stdarg.h>
 #include <string.h>
 
+#include "errors.h"
 #include "cfg.h"
 #include "memory.h"
 #include "cfg_parser.h"
+#include "drv/drivers.h"
 
 extern FILE *cyyin;
 void cyyerror(char *s, ...);
@@ -30,11 +32,21 @@ int cyyparse();
 int cfg_error = 0;
 
 // -----------------------------------------------------------------------
+void eprint(char *format, ...)
+{
+	if (!em400_cfg.verbose) return;
+	va_list ap;
+	va_start(ap, format);
+	vprintf(format, ap);
+	va_end(ap);
+}
+
+// -----------------------------------------------------------------------
 int cfg_load(char *cfg_file)
 {
 	FILE * cfg = fopen(cfg_file, "r");
 	if (!cfg) {
-		return -1;
+		return E_CFG_OPEN;
 	}
 
 	cyyin = cfg;
@@ -43,93 +55,101 @@ int cfg_load(char *cfg_file)
 	} while (!feof(cyyin));
 
 	fclose(cfg);
-	if (cfg_error) return -1;
-	return 0;
+	if (cfg_error) return E_CFG_PARSE;
+	return E_OK;
 }
 
 // -----------------------------------------------------------------------
 void cfg_print()
 {
-	printf("---- Config: ---------------------------\n");
-	printf("  Program to load: %s\n", em400_cfg.program_name);
-	printf("  User-provided config: %s\n", em400_cfg.config_file);
-	printf("  Exit on HLT 077: %s\n", em400_cfg.exit_on_hlt ? "true" : "false");
-	printf("  Emulation speed: %s\n", em400_cfg.cpu.speed_real ? "real" : "max");
-	printf("  Timer step: %i\n", em400_cfg.cpu.timer_step);
-	printf("  17-bit byte addressing: %s\n", em400_cfg.cpu.mod_17bit ? "true" : "false");
-	printf("  High prio software int: %s\n", em400_cfg.cpu.mod_sint ? "true" : "false");
-	printf("---- Memory: ---------------------------\n");
+	eprint("---- Config: ---------------------------\n");
+	eprint("  Program to load: %s\n", em400_cfg.program_name);
+	eprint("  User-provided config: %s\n", em400_cfg.config_file);
+	eprint("  Exit on HLT 077: %s\n", em400_cfg.exit_on_hlt ? "true" : "false");
+	eprint("  Emulation speed: %s\n", em400_cfg.cpu.speed_real ? "real" : "max");
+	eprint("  Timer step: %i\n", em400_cfg.cpu.timer_step);
+	eprint("  17-bit byte addressing: %s\n", em400_cfg.cpu.mod_17bit ? "true" : "false");
+	eprint("  High prio software int: %s\n", em400_cfg.cpu.mod_sint ? "true" : "false");
+	eprint("  -- Memory: ---------------------------\n");
 	for (int i=0 ; i<MEM_MAX_MODULES ; i++) {
-		printf("  Module %2i: %5s: %2i segments\n", i, em400_cfg.mem[i].is_mega ? "MEGA" : "ELWRO", em400_cfg.mem[i].segments);
+		eprint("  Module %2i: %5s: %2i segments\n", i, em400_cfg.mem[i].is_mega ? "MEGA" : "ELWRO", em400_cfg.mem[i].segments);
 	}
-	printf("---- I/O: ------------------------------\n");
+	eprint("  -- I/O: ------------------------------\n");
 	for (int i=0 ; i<IO_MAX_CHAN ; i++) {
-		printf("  Channel %2i: %s\n", i, em400_cfg.chan[i].type);
-		struct cfg_unit_t *units = em400_cfg.chan[i].units;
-		while (units) {
-			struct cfg_arg_t *args = units->args;
-			printf("     Unit %2i: %s (args: ", units->number, args->arg);
-			args = args->next;
+		eprint("  Channel %2i: %s\n", i, em400_cfg.chan[i].name);
+		struct cfg_unit_t *unit = em400_cfg.chan[i].units;
+		while (unit) {
+			eprint("     Unit %2i: %s (args: ", unit->num, unit->name);
+			struct cfg_arg_t *args = unit->args;
 			while (args) {
-				printf("%s, ", args->arg);
+				eprint("%s, ", args->text);
 				args = args->next;
 			}
-			printf(")\n");
-			units = units->next;
+			eprint(")\n");
+			unit = unit->next;
 		}
 	}
-	printf("----------------------------------------\n");
+	eprint("----------------------------------------\n");
 }
 
 // -----------------------------------------------------------------------
-int cfg_set_mem(int module, int is_mega, int segments)
+void cfg_set_mem(int module, int is_mega, int segments)
 {
 	if ((module < 0) || (module > MEM_MAX_MODULES-1)) {
 		cyyerror("Incorrect module number: %i", module);
-		return -1;
 	}
 	if ((segments < 1) || (segments > MEM_MAX_SEGMENTS)) {
 		cyyerror("Incorrect segment count: %i", segments);
-		return -2;
 	}
 	if ((module == 0) && (segments < 2)) {
 		cyyerror("Incorrect segment count for OS memory block: %i", segments);
-		return -3;
 	}
 	em400_cfg.mem[module].segments = segments;
 	em400_cfg.mem[module].is_mega = is_mega;
-	return 0;
 }
 
 // -----------------------------------------------------------------------
 struct cfg_arg_t * cfg_make_arg(char *s)
 {
 	struct cfg_arg_t *a = malloc(sizeof(struct cfg_arg_t));
-	a->arg = strdup(s);
+	a->text = strdup(s);
 	a->next = NULL;
 	return a;
 }
 
 // -----------------------------------------------------------------------
-struct cfg_unit_t * cfg_make_unit(int number, struct cfg_arg_t *arglist)
+struct cfg_unit_t * cfg_make_unit(int u_num, char *name, struct cfg_arg_t *arglist)
 {
+	if ((u_num < 0) || (u_num > IO_MAX_UNIT)) {
+		cyyerror("Incorrect unit number: %i", u_num);
+	}
+
+	if (!drv_get(DRV_UNIT, CHAN_IGNORE, name)) {
+		cyyerror("Unknown unit type: %s", name);
+	}
+
 	struct cfg_unit_t *u = malloc(sizeof(struct cfg_unit_t));
 
-	u->number = number;
+	u->num = u_num;
+	u->name = name;
 	u->args = arglist;
 
 	return u;
 }
 
 // -----------------------------------------------------------------------
-int cfg_make_chan(int number, char *type, struct cfg_unit_t *units)
+void cfg_make_chan(int c_num, char *name, struct cfg_unit_t *units)
 {
-	if ((number < 0) || (number > IO_MAX_CHAN)) {
-		return -1;
+	if ((c_num < 0) || (c_num > IO_MAX_CHAN)) {
+		cyyerror("Incorrect channel number: %i", c_num);
 	}
-	em400_cfg.chan[number].type = type;
-	em400_cfg.chan[number].units = units;
-	return 0;
+
+	if (!drv_get(DRV_CHAN, CHAN_IGNORE, name)) {
+		cyyerror("Unknown channel type: %s", name);
+	}
+
+	em400_cfg.chan[c_num].name = name;
+	em400_cfg.chan[c_num].units = units;
 }
 
 // vim: tabstop=4

@@ -17,27 +17,28 @@
 
 #include <inttypes.h>
 
+#include "cfg.h"
 #include "errors.h"
 #include "io.h"
 
 // -----------------------------------------------------------------------
-int drv_unone_init(struct unit_t *u, int cfgc, char **cfgv)
+int drv_unone_init(void *self, struct cfg_arg_t *arg)
 {
 	return E_OK;
 }
 
 // -----------------------------------------------------------------------
-void drv_unone_shutdown(struct unit_t *u)
+void drv_unone_shutdown(void *self)
 {
 }
 
 // -----------------------------------------------------------------------
-void drv_unone_reset(struct unit_t *u)
+void drv_unone_reset(void *self)
 {
 }
 
 // -----------------------------------------------------------------------
-int drv_unone_cmd(struct unit_t *u, int dir, int cmd, uint16_t *r)
+int drv_unone_cmd(void *self, int u_num, int dir, int cmd, uint16_t *r)
 {
 	return IO_NO;
 }

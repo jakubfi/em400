@@ -20,6 +20,7 @@
 #include <pthread.h>
 #include <stdio.h>
 
+#include "cfg.h"
 #include "utils.h"
 #include "errors.h"
 #include "io.h"
@@ -32,100 +33,80 @@
 
 struct chan_t io_chan[IO_MAX_CHAN];
 
-int io_chan_conf[IO_MAX_CHAN] = { 0, 0, 0, 0, CHAN_MEM, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 };
-int io_unit_conf[IO_MAX_CHAN][IO_MAX_UNIT] = {
-{ 0, 0, 0, 0, 0, 0, 0, 0 },
-{ 0, 0, 0, 0, 0, 0, 0, 0 },
-{ 0, 0, 0, 0, 0, 0, 0, 0 },
-{ 0, 0, 0, 0, 0, 0, 0, 0 },
-{ 0, 0, 0, UNIT_MERA9425, 0, 0, 0, 0 },
-{ 0, 0, 0, 0, 0, 0, 0, 0 },
-{ 0, 0, 0, 0, 0, 0, 0, 0 },
-{ 0, 0, 0, 0, 0, 0, 0, 0 },
-{ 0, 0, 0, 0, 0, 0, 0, 0 },
-{ 0, 0, 0, 0, 0, 0, 0, 0 },
-{ 0, 0, 0, 0, 0, 0, 0, 0 },
-{ 0, 0, 0, 0, 0, 0, 0, 0 },
-{ 0, 0, 0, 0, 0, 0, 0, 0 },
-{ 0, 0, 0, 0, 0, 0, 0, 0 },
-{ 0, 0, 0, 0, 0, 0, 0, 0 },
-{ 0, 0, 0, 0, 0, 0, 0, 0 }
-};
-
 // -----------------------------------------------------------------------
-int io_chan_init(struct chan_t *chan, int ctype)
+int io_chan_init(int c_num, char *chan_name)
 {
-	// channel driver description
-	struct drv_chan_t *drv = drv_chan + ctype;
+	struct drv_t *c_driver = drv_get(DRV_CHAN, CHAN_IGNORE, chan_name);
+
+	if (!c_driver) {
+		return E_IO_CHAN_UNKNOWN;
+	} 
 
 	// driver sanity checks
-	if ((!drv) || (!drv->f_init) || (!drv->f_shutdown) || (!drv->f_reset) || (!drv->f_cmd) || (ctype != drv->type)) {
+	if ((!c_driver->f_init) || (!c_driver->f_shutdown) || (!c_driver->f_reset) || (!c_driver->f_cmd)) {
 		return E_IO_DRV_CHAN_BAD;
 	}
 
 	// common channel initialization
-	chan->type = drv->type;
-	chan->name = drv->name;
-	chan->finish = 0;
-	chan->f_shutdown = drv->f_shutdown;
-	chan->f_reset = drv->f_reset;
-	chan->f_cmd = drv->f_cmd;
+	io_chan[c_num].type = c_driver->chan_type;
+	io_chan[c_num].name = c_driver->name;
+	io_chan[c_num].finish = 0;
+	io_chan[c_num].f_shutdown = c_driver->f_shutdown;
+	io_chan[c_num].f_reset = c_driver->f_reset;
+	io_chan[c_num].f_cmd = c_driver->f_cmd;
+
+	eprint("  Channel %i (%s):\n", c_num, io_chan[c_num].name);
 
 	// initialize the channel
-	drv->f_init(chan);
-
-	return E_OK;
+	return c_driver->f_init(io_chan+c_num, NULL);
 }
 
 // -----------------------------------------------------------------------
-int io_unit_init(struct unit_t *unit, int utype)
+int io_unit_init(struct chan_t *chan, struct cfg_unit_t *unit_cfg)
 {
-	// unit driver description
-	struct drv_unit_t *drv = drv_unit + utype;
+	struct drv_t *u_driver = drv_get(DRV_UNIT, chan->type, unit_cfg->name);
+
+	if (!u_driver) {
+		return E_IO_UNIT_UNKNOWN;
+	}
 
 	// driver sanity checks
-	if ((!drv) || (!drv->f_init) || (!drv->f_shutdown) || (!drv->f_reset) || (!drv->f_cmd) || (utype != drv->type)) {
+	if ((!u_driver->f_init) || (!u_driver->f_shutdown) || (!u_driver->f_reset) || (!u_driver->f_cmd)) {
 		return E_IO_DRV_UNIT_BAD;
 	}
 
-	unit->type = drv->type;
-	unit->name = drv->name;
+	struct unit_t *unit = malloc(sizeof(struct unit_t));
+	chan->unit[unit_cfg->num] = unit;
 
-	// check if unit can be connected to this type of channel
-	if ((unit->chan->type == drv->chan_type) || (unit->type == UNIT_NONE)) {
-		unit->f_shutdown = drv->f_shutdown;
-		unit->f_reset = drv->f_reset;
-		unit->f_cmd = drv->f_cmd;
-	} else {
-		// unit driver is incompatibile with this type of channel
-		return E_IO_INCOMPATIBILE_UNIT;
-	}
+	unit->name = u_driver->name;
 
-	return E_OK;
+	eprint("   Unit %i (%s)\n", unit_cfg->num, unit->name);
+
+	// initialize the unit
+	return u_driver->f_init(&chan->unit[unit_cfg->num], NULL);
 }
 
 // -----------------------------------------------------------------------
 int io_init()
 {
-	// initialize all channels
-	for (int i=0 ; i<IO_MAX_CHAN ; i++) {
-		struct chan_t *ch = io_chan + i;
-		ch->number = i;
-	
-		int res = io_chan_init(ch, io_chan_conf[i]);
+	int res;
+
+	for (int chan=0 ; chan<IO_MAX_CHAN ; chan++) {
+		char *chan_name = em400_cfg.chan[chan].name;
+		if (!chan_name) continue;
+
+		res = io_chan_init(chan, chan_name);
 		if (res != E_OK) {
 			return res;
 		}
 
-		// initialize all units connected to each channel
-		for (int j=0 ; j<IO_MAX_UNIT ; j++) {
-			ch->unit[j] = malloc(sizeof(struct unit_t));
-			ch->unit[j]->number = j;
-			ch->unit[j]->chan = io_chan+i;
-			res = io_unit_init(ch->unit[j], io_unit_conf[i][j]);
+		struct cfg_unit_t *unit_cfg = em400_cfg.chan[chan].units;
+		while (unit_cfg) {
+			io_unit_init(&io_chan[chan], unit_cfg);
 			if (res != E_OK) {
 				return res;
 			}
+			unit_cfg = unit_cfg->next;
 		}
 	}
 	return E_OK;
@@ -174,8 +155,7 @@ int io_dispatch(int dir, uint16_t n, uint16_t *r)
 
 	// channel/unit command
 	} else {
-		struct chan_t *ch = io_chan + chan;
-		int res = ch->f_cmd(ch, dir, ch->unit[unit], cmd, r);
+		int res = io_chan[chan].f_cmd(&io_chan[chan], unit, dir, cmd, r);
 
 #ifdef WITH_DEBUGGER
 		char *cmdc = int2bin(cmd, 8);

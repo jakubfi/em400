@@ -15,6 +15,7 @@
 //  Foundation, Inc.,
 //  51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 
+#include <strings.h>
 
 #include "drv/drivers.h"
 #include "drv/cnone.h"
@@ -23,23 +24,38 @@
 #include "drv/unone.h"
 #include "drv/u9425.h"
 
-// channel drivers definitions
-struct drv_chan_t drv_chan[] = {
-	{ CHAN_NONE, "none", "None", drv_cnone_init, drv_cnone_shutdown, drv_cnone_reset, drv_cnone_cmd },
-	{ CHAN_CHAR, "char", "Character", drv_cchar_init, drv_cchar_shutdown, drv_cchar_reset, drv_cchar_cmd },
-	{ CHAN_MEM, "mem", "Memory", drv_cmem_init, drv_cmem_shutdown, drv_cmem_reset, drv_cmem_cmd },
-	{ CHAN_PI, "pi", "PI", NULL, NULL, NULL, NULL },
-	{ CHAN_MULTIX, "multix", "MULTIX", NULL, NULL, NULL, NULL },
-	{ CHAN_PLIX, "plix", "PLIX", NULL, NULL, NULL, NULL }
+struct drv_t drv_drivers[] = {
+// channel driver definitions
+	{ DRV_CHAN, CHAN_NONE,		"none",			drv_cnone_init,	drv_cnone_shutdown,	drv_cnone_reset,	drv_cnone_cmd },
+	{ DRV_CHAN, CHAN_CHAR,		"char",			drv_cchar_init,	drv_cchar_shutdown,	drv_cchar_reset,	drv_cchar_cmd },
+	{ DRV_CHAN, CHAN_MEM,		"mem",			drv_cmem_init,	drv_cmem_shutdown,	drv_cmem_reset,		drv_cmem_cmd },
+	{ DRV_CHAN, CHAN_MULTIX,	"multix",		drv_cnone_init,	drv_cnone_shutdown,	drv_cnone_reset,	drv_cnone_cmd },
+	{ DRV_CHAN, CHAN_PLIX,		"plix",			drv_cnone_init,	drv_cnone_shutdown,	drv_cnone_reset,	drv_cnone_cmd },
+// unit driver definitions
+	{ DRV_UNIT, CHAN_NONE,		"none",			drv_unone_init,	drv_unone_shutdown,	drv_unone_reset,	drv_unone_cmd },
+	{ DRV_UNIT, CHAN_MEM,		"mera9425",		drv_u9425_init,	drv_u9425_shutdown,	drv_u9425_reset,	drv_u9425_cmd },
+	{ DRV_UNIT, CHAN_PLIX,		"winchester",	drv_unone_init,	drv_unone_shutdown,	drv_unone_reset,	drv_unone_cmd },
+	{ DRV_UNIT, CHAN_CHAR,		"term_tcp",		drv_unone_init,	drv_unone_shutdown,	drv_unone_reset,	drv_unone_cmd },
+	{ DRV_UNIT, CHAN_MULTIX,	"term_tcp",		drv_unone_init,	drv_unone_shutdown,	drv_unone_reset,	drv_unone_cmd },
+	{ DRV_UNIT, CHAN_CHAR,		"term_serial",	drv_unone_init,	drv_unone_shutdown,	drv_unone_reset,	drv_unone_cmd },
+	{ DRV_UNIT, CHAN_CHAR,		"term_cons",	drv_unone_init,	drv_unone_shutdown,	drv_unone_reset,	drv_unone_cmd },
+	{ DRV_UNIT, CHAN_MULTIX,	"term_cons",	drv_unone_init,	drv_unone_shutdown,	drv_unone_reset,	drv_unone_cmd },
+	{ DRV_NONE, CHAN_IGNORE,	"",				NULL,			NULL,				NULL,				NULL }
 };
 
-// unit driver definitions
-struct drv_unit_t drv_unit[] = {
-	{ UNIT_NONE, CHAN_NONE, "none", "None", drv_unone_init, drv_unone_shutdown, drv_unone_reset, drv_unone_cmd },
-	{ UNIT_MERA9425, CHAN_MEM, "9425", "MERA-9425", drv_u9425_init, drv_u9425_shutdown, drv_u9425_reset, drv_u9425_cmd },
-	{ UNIT_WINCHESTER, CHAN_PLIX, "winchester", "Winchester", NULL, NULL, NULL, NULL },
-	{ UNIT_TERM_TCP, CHAN_CHAR, "term_tcp", "TCP terminal", NULL, NULL, NULL, NULL },
-	{ UNIT_TERM_SERIAL, CHAN_CHAR, "term_serial", "Serial terminal", NULL, NULL, NULL, NULL }
-};
+// -----------------------------------------------------------------------
+struct drv_t * drv_get(int role, int chan_type, char *name)
+{
+	struct drv_t *driver = drv_drivers;
+
+	while (driver->name) {
+		if ((driver->role == role) && !strcasecmp(name, driver->name) && ((chan_type == CHAN_IGNORE) || (driver->chan_type == chan_type))) {
+			return driver;
+		}
+		driver++;
+	}
+
+	return NULL;
+}
 
 // vim: tabstop=4

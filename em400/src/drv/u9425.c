@@ -17,27 +17,28 @@
 
 #include <inttypes.h>
 
+#include "cfg.h"
 #include "errors.h"
 #include "io.h"
 
 // -----------------------------------------------------------------------
-int drv_u9425_init(struct unit_t *u, int cfgc, char **cfgv)
+int drv_u9425_init(void *self, struct cfg_arg_t *arg)
 {
 	return E_OK;
 }
 
 // -----------------------------------------------------------------------
-void drv_u9425_shutdown(struct unit_t *u)
+void drv_u9425_shutdown(void *self)
 {
 }
 
 // -----------------------------------------------------------------------
-void drv_u9425_reset(struct unit_t *u)
+void drv_u9425_reset(void *self)
 {
 }
 
 // -----------------------------------------------------------------------
-int drv_u9425_cmd(struct unit_t *u, int dir, int cmd, uint16_t *r)
+int drv_u9425_cmd(void *self, int u_num, int dir, int cmd, uint16_t *r)
 {
 	return IO_NO;
 }

@@ -1,7 +1,5 @@
 Known bugs:
 
-* clean that register-macro mess
-
 CPU:
 
 * alarm
@@ -26,7 +24,7 @@ Debugger:
 
 Other:
 
-
+* gnu getopt_long
 
 MERA-400 features that em400 does not emulate:
 

@@ -17,31 +17,33 @@
 
 #include <inttypes.h>
 
+#include "cfg.h"
 #include "errors.h"
 #include "io.h"
 
 #include "debugger/log.h"
 
 // -----------------------------------------------------------------------
-int drv_cnone_init(struct chan_t *ch)
+int drv_cnone_init(void *self, struct cfg_arg_t *arg)
 {
 	return E_OK;
 }
 
 // -----------------------------------------------------------------------
-void drv_cnone_shutdown(struct chan_t *ch)
+void drv_cnone_shutdown(void *self)
 {
 }
 
 // -----------------------------------------------------------------------
-void drv_cnone_reset(struct chan_t *ch)
+void drv_cnone_reset(void *self)
 {
 }
 
 // -----------------------------------------------------------------------
-int drv_cnone_cmd(struct chan_t *ch, int dir, struct unit_t *unit, int cmd, uint16_t *r)
+int drv_cnone_cmd(void *self, int u_num, int dir, int cmd, uint16_t *r)
 {
-	LOG(D_IO, 10, "Chan %d (%s) ignored command", ch->number, ch->name);
+	struct chan_t *ch = self;
+	LOG(D_IO, 10, "Chan %d (%s) ignored command", ch->num, ch->name);
 	return IO_NO;
 }
 

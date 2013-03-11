@@ -19,34 +19,40 @@
 #include <pthread.h>
 #include <unistd.h>
 
+#include "cfg.h"
 #include "errors.h"
 #include "io.h"
 #include "drv/cchar.h"
 #include "drv/lib.h"
 
 // -----------------------------------------------------------------------
-int drv_cchar_init(struct chan_t *ch)
+int drv_cchar_init(void *self, struct cfg_arg_t *arg)
 {
+	struct chan_t *ch = self;
 	drv_cchar_reset(ch);
 	return E_OK;
 }
 
 // -----------------------------------------------------------------------
-void drv_cchar_shutdown(struct chan_t *ch)
+void drv_cchar_shutdown(void *self)
 {
+	struct chan_t *ch = self;
 	ch->finish = 1;
 }
 
 // -----------------------------------------------------------------------
-void drv_cchar_reset(struct chan_t *ch)
+void drv_cchar_reset(void *self)
 {
+	struct chan_t *ch = self;
 	ch->int_spec = 0;
 	ch->int_mask = 0;
 }
 
 // -----------------------------------------------------------------------
-int drv_cchar_cmd(struct chan_t *ch, int dir, struct unit_t *unit, int cmd, uint16_t *r)
+int drv_cchar_cmd(void *self, int u_num, int dir, int cmd, uint16_t *r)
 {
+	struct chan_t *ch = self;
+	struct unit_t *unit = ch->unit[u_num];
 	ch->int_mask = 0;
 
 	// command for channel
@@ -87,7 +93,7 @@ int drv_cchar_cmd(struct chan_t *ch, int dir, struct unit_t *unit, int cmd, uint
 		return IO_OK;
 	// command for unit
 	} else {
-		return unit->f_cmd(unit, dir, cmd, r);
+		return unit->f_cmd(unit, -1, dir, cmd, r);
 	}
 }
 

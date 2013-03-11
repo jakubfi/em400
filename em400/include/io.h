@@ -41,7 +41,7 @@ struct unit_t;
 
 // -----------------------------------------------------------------------
 struct chan_t {
-	int number;
+	int num;
 	int type;
 	const char *name;
 	struct unit_t *unit[IO_MAX_UNIT];
@@ -49,9 +49,9 @@ struct chan_t {
 	int finish;
 	pthread_t thread;
 
-	void (*f_shutdown)(struct chan_t *ch);
-	void (*f_reset)(struct chan_t *ch);
-	int (*f_cmd)(struct chan_t *ch, int dir, struct unit_t *unit, int cmd, uint16_t *r);
+	void (*f_shutdown)(void *self);
+	void (*f_reset)(void *self);
+	int (*f_cmd)(void *self, int cunit, int dir, int cmd, uint16_t *r);
 
 	uint16_t int_spec; // 0 past-EN, 3-7 int spec, 8-10 dev number
 	uint16_t untransmitted;
@@ -60,15 +60,14 @@ struct chan_t {
 
 // -----------------------------------------------------------------------
 struct unit_t {
-	int number;
-	int type;
+	int num;
 	const char *name;
 
 	struct chan_t *chan;
 
-	void (*f_shutdown)(struct unit_t *u);
-	void (*f_reset)(struct unit_t *u);
-	int (*f_cmd)(struct unit_t *u, int dir, int cmd, uint16_t *r);
+	void (*f_shutdown)(void *self);
+	void (*f_reset)(void *self);
+	int (*f_cmd)(void *self, int cunit, int dir, int cmd, uint16_t *r);
 };
 
 extern struct chan_t io_chan[IO_MAX_CHAN];

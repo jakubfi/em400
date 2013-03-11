@@ -20,12 +20,13 @@
 
 #include <inttypes.h>
 
+#include "cfg.h"
 #include "io.h"
 
-int drv_cchar_init(struct chan_t *ch);
-void drv_cchar_shutdown(struct chan_t *ch);
-void drv_cchar_reset(struct chan_t *ch);
-int drv_cchar_cmd(struct chan_t *ch, int dir, struct unit_t *unit, int cmd, uint16_t *r);
+int drv_cchar_init(void *self, struct cfg_arg_t *arg);
+void drv_cchar_shutdown(void *self);
+void drv_cchar_reset(void *self);
+int drv_cchar_cmd(void *self, int u_num, int dir, int cmd, uint16_t *r);
 
 #endif
 

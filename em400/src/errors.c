@@ -35,13 +35,18 @@ struct _em400_errordesc {
 	{ E_TIMER_SET, "Cannot set timer." },
 	{ E_ALLOC, "Cannot allocade memory." },
 	{ E_DEBUGGER_SIG_RESIZE, "Cannot setup window resize handler." },
-	{ E_IO_INCOMPATIBILE_UNIT, "Unit incompatibile with channel." },
+	{ E_IO_CHAN_UNKNOWN, "Unknown channel type." },
+	{ E_IO_UNIT_UNKNOWN, "Unit incompatibile with channel, or unknown unit type." },
 	{ E_IO_DRV_CHAN_BAD, "Bad channel driver definition." },
 	{ E_IO_DRV_UNIT_BAD, "Bad unit driver definition." },
 	{ E_LOG_OPEN, "Cannot open log file." },
 	{ E_AW_INIT, "Cannot initialize awin." },
 	{ E_UI_INIT, "Cannot initialize UI." },
 	{ E_UI_SIG_CTRLC, "Cannot install Ctrl-C handler." },
+	{ E_CFG_OPEN, "Cannot open file." },
+	{ E_CFG_PARSE, "Cannot parse file." },
+	{ E_CFG_DEFAULT_LOAD, "sorry" },
+
 
 
 	{ E_UNKNOWN, "Unknown error." }

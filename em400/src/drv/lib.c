@@ -18,8 +18,9 @@
 #include "drv/drivers.h"
 
 // -----------------------------------------------------------------------
-void chan_get_int_spec(struct chan_t *ch, uint16_t *r)
+void chan_get_int_spec(void *self, uint16_t *r)
 {
+	struct chan_t *ch = self;
 	*r = ch->int_spec;
 }
 

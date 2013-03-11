@@ -20,6 +20,7 @@
 
 #include <inttypes.h>
 
+#include "cfg.h"
 #include "io.h"
 
 enum _u9425_cmd {
@@ -37,10 +38,10 @@ enum _u9425_cmd {
 	U9425_CMD_TCH		= 0b10010000
 };
 
-int drv_u9425_init(struct unit_t *u, int cfgc, char **cfgv);
-void drv_u9425_shutdown(struct unit_t *u);
-void drv_u9425_reset(struct unit_t *u);
-int drv_u9425_cmd(struct unit_t *u, int dir, int cmd, uint16_t *r);
+int drv_u9425_init(void *self, struct cfg_arg_t *arg);
+void drv_u9425_shutdown(void *self);
+void drv_u9425_reset(void *self);
+int drv_u9425_cmd(void *self, int u_num, int dir, int cmd, uint16_t *r);
 
 #endif
 

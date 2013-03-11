@@ -39,21 +39,21 @@ struct cfg_mem_module_t {
 
 // -----------------------------------------------------------------------
 struct cfg_arg_t {
-	char *arg;
+	char *text;
 	struct cfg_arg_t *next;
 };
 
 // -----------------------------------------------------------------------
 struct cfg_unit_t {
-	int number;
-	char *type;
+	int num;
+	char *name;
 	struct cfg_arg_t *args;
 	struct cfg_unit_t *next;
 };
 
 // -----------------------------------------------------------------------
 struct cfg_chan_t {
-	char *type;
+	char *name;
 	struct cfg_unit_t *units;
 };
 
@@ -63,6 +63,8 @@ struct cfg_em400_t {
     char *program_name;
     char *config_file;
     int exit_on_hlt;
+	int verbose;
+	int benchmark;
 
 	struct cfg_cpu_t cpu;
 	struct cfg_mem_module_t mem[MEM_MAX_MODULES];
@@ -77,13 +79,13 @@ struct cfg_em400_t {
 
 } em400_cfg;
 
-
+void eprint(char *format, ...);
 int cfg_load(char *cfg_file);
 void cfg_print();
-int cfg_set_mem(int module, int is_mega, int segments);
+void cfg_set_mem(int module, int is_mega, int segments);
 struct cfg_arg_t * cfg_make_arg(char *arg);
-struct cfg_unit_t * cfg_make_unit(int number, struct cfg_arg_t *args);
-int cfg_make_chan(int number, char *type, struct cfg_unit_t *units);
+struct cfg_unit_t * cfg_make_unit(int u_num, char *name, struct cfg_arg_t *args);
+void cfg_make_chan(int c_num, char *name, struct cfg_unit_t *units);
 
 #endif
 

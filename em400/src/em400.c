@@ -19,6 +19,7 @@
 #include <stdio.h>
 #include <string.h>
 #include <unistd.h>
+#include <stdarg.h>
 #include <sys/time.h>
 
 #include "em400.h"
@@ -51,7 +52,7 @@ void em400_shutdown()
 	timer_shutdown();
 	io_shutdown();
 	mem_shutdown();
-	printf("EM400 exits.\n");
+	eprint("EM400 exits.\n");
 }
 
 // -----------------------------------------------------------------------
@@ -67,19 +68,19 @@ void em400_init()
 {
 	int res;
 
-	printf("Initializing memory\n");
+	eprint("Initializing memory\n");
 	res = mem_init();
 	if (res != E_OK) {
 		eerr("Error initializing memory", res);
 	}
 
-	printf("Initializing I/O\n");
+	eprint("Initializing I/O\n");
 	res = io_init();
 	if (res != E_OK) {
 		eerr("Error initializing I/O", res);
 	}
 
-	printf("Starting timer\n");
+	eprint("Starting timer\n");
 	res = timer_init();
 	if (res != E_OK) {
 		eerr("Error initializing CPU timer", res);
@@ -89,7 +90,7 @@ void em400_init()
 	cpu_reset();
 
 	if (em400_cfg.program_name) {
-		printf("Loading image '%s' into OS memory\n", em400_cfg.program_name);
+		eprint("Loading image '%s' into OS memory\n", em400_cfg.program_name);
 		int res = mem_load_image(em400_cfg.program_name, 0);
 		if (res != E_OK) {
 			eerr("Could not load program", res);
@@ -97,12 +98,12 @@ void em400_init()
 	}
 
 #ifdef WITH_DEBUGGER
-	printf("Initializing debugger\n");
+	eprint("Initializing debugger\n");
 	res = dbg_init();
 	if (res != E_OK) {
 		eerr("Error initializing debugger", res);
 	}
-	printf("Initializing logging\n");
+	eprint("Initializing logging\n");
 	res = log_init("em400.log");
 	if (res != E_OK) {
 		eerr("Error initializing logging", res);
@@ -120,6 +121,8 @@ void print_usage()
 	printf("   -c config    : use given config file instead of defaults\n");
 	printf("   -p program   : load program image into OS memory\n");
 	printf("   -e           : exit emulator after HLT 077\n");
+	printf("   -b           : benchmark emulator\n");
+	printf("   -v           : enable verbose messages\n");
 #ifdef WITH_DEBUGGER
 	printf("\nDebuger-only options:\n");
 	printf("   -s           : use simple debugger interface\n");
@@ -138,8 +141,14 @@ void parse_arguments(int argc, char **argv)
 	em400_cfg.pre_expr = NULL;
 #endif
 
-	while ((option = getopt(argc, argv,"hec:p:t:x:s")) != -1) {
+	while ((option = getopt(argc, argv,"vhec:p:t:x:s")) != -1) {
 		switch (option) {
+			case 'b':
+				em400_cfg.benchmark = 1;
+				break;
+			case 'v':
+				em400_cfg.verbose = 1;
+				break;
 			case 'h':
 				print_usage();
 				exit(0);
@@ -209,21 +218,20 @@ void em400_configure()
 	// try to load one of configuration files
 	cfgf = cfgfile;
 	while (cfgf->name) {
-		printf("Trying config file: %s\n", cfgf->name);
-		if (cfg_load(cfgf->name) < 0) {
+		eprint("Trying config file: %s\n", cfgf->name);
+		int res = cfg_load(cfgf->name);
+		if (res != E_OK) {
 			if (cfgf->name == em400_cfg.config_file) {
-				printf("Error loading required config file: %s\n", cfgf->name);
-				exit(EXIT_FAILURE);
+				eerr("Error loading required config file", res);
 			}
 		} else {
-			printf("Config loaded\n");
+			eprint("Config loaded\n");
 			return;
 		}
 		cfgf++;
 	}
 
-	printf("Error loading default config files\n");
-	exit(EXIT_FAILURE);
+	eerr("Error loading default config files", E_CFG_DEFAULT_LOAD);
 }
 
 // -----------------------------------------------------------------------
@@ -234,9 +242,9 @@ int main(int argc, char** argv)
 	parse_arguments(argc, argv);
 
 #ifdef WITH_DEBUGGER
-	printf("Starting EM400 version %s (with debugger) ...\n", EM400_VERSION);
+	printf("EM400 v%s (+debugger)\n", EM400_VERSION);
 #else
-	printf("Starting EM400 version %s ...\n", EM400_VERSION);
+	printf("EM400 v%s\n", EM400_VERSION);
 #endif
 
 	em400_configure();
@@ -278,11 +286,13 @@ int main(int argc, char** argv)
 
 	em400_shutdown();
 
-	double ips_time_spent = (double)(ips_end.tv_usec - ips_start.tv_usec)/1000000 + (ips_end.tv_sec - ips_start.tv_sec);
-	if (ips_time_spent > 0) {
-		printf("IPS: %i\n", (int) (ips_counter/ips_time_spent));
-	} else {
-		printf("IPS: 0\n");
+	if (em400_cfg.benchmark) {
+		double ips_time_spent = (double)(ips_end.tv_usec - ips_start.tv_usec)/1000000 + (ips_end.tv_sec - ips_start.tv_sec);
+		if (ips_time_spent > 0) {
+			printf("IPS: %i\n", (int) (ips_counter/ips_time_spent));
+		} else {
+			printf("IPS: 0\n");
+		}
 	}
 
 	return 0;

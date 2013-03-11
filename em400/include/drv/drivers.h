@@ -20,49 +20,37 @@
 
 #include <inttypes.h>
 
+#include "cfg.h"
 #include "io.h"
 
-enum _drv_chan_type {
+enum drv_role_e {
+	DRV_NONE = -1,
+	DRV_CHAN = 0,
+	DRV_UNIT
+};
+
+enum drv_chan_e {
+	CHAN_IGNORE = -1,
 	CHAN_NONE = 0,
 	CHAN_CHAR,
 	CHAN_MEM,
-	CHAN_PI,
 	CHAN_MULTIX,
 	CHAN_PLIX
 };
 
-enum _drv_unit_type {
-	UNIT_NONE = 0,
-	UNIT_MERA9425,
-	UNIT_WINCHESTER,
-	UNIT_TERM_TCP,
-	UNIT_TERM_SERIAL,
-	UNIT_TERM_CONS
-};
-
-struct drv_chan_t {
-	const int type;
-	const char *name;
-	const char *desc;
-	int (*f_init)(struct chan_t *ch);
-	void (*f_shutdown)(struct chan_t *ch);
-	void (*f_reset)(struct chan_t *ch);
-	int (*f_cmd)(struct chan_t *ch, int dir, struct unit_t *unit, int cmd, uint16_t *r);
-};
-
-struct drv_unit_t {
-	const int type;
+struct drv_t {
+	const int role;
 	const int chan_type;
 	const char *name;
-	const char *desc;
-	int (*f_init)(struct unit_t *u, int cfgc, char **cfgv);
-	void (*f_shutdown)(struct unit_t *u);
-	void (*f_reset)(struct unit_t *u);
-	int (*f_cmd)(struct unit_t *u, int dir, int cmd, uint16_t *r);
+	int (*f_init)(void *self, struct cfg_arg_t *arg);
+	void (*f_shutdown)(void *self);
+	void (*f_reset)(void *self);
+	int (*f_cmd)(void *self, int u_num, int dir, int cmd, uint16_t *r);
 };
 
-extern struct drv_chan_t drv_chan[];
-extern struct drv_unit_t drv_unit[];
+extern struct drv_t drv_drivers[];
+
+struct drv_t * drv_get(int role, int chan_type, char *name);
 
 #endif
 

@@ -66,7 +66,8 @@ units:
 	;
 
 unit:
-	UNIT VALUE '=' arglist { $$ = cfg_make_unit($2.v, $4); }
+	UNIT VALUE '=' TEXT ':' arglist { $$ = cfg_make_unit($2.v, $4.s, $6); }
+	| UNIT VALUE '=' TEXT { $$ = cfg_make_unit($2.v, $4.s, NULL); }
 	;
 
 arglist:
