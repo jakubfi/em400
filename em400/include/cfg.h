@@ -38,22 +38,22 @@ struct cfg_mem_module_t {
 };
 
 // -----------------------------------------------------------------------
-struct cfg_arglist_t {
+struct cfg_arg_t {
 	char *arg;
-	struct cfg_arglist_t *next;
+	struct cfg_arg_t *next;
 };
 
 // -----------------------------------------------------------------------
 struct cfg_unit_t {
 	int number;
-	int type;
-	struct cfg_arglist_t *args;
+	char *type;
+	struct cfg_arg_t *args;
 	struct cfg_unit_t *next;
 };
 
 // -----------------------------------------------------------------------
 struct cfg_chan_t {
-	int type;
+	char *type;
 	struct cfg_unit_t *units;
 };
 
@@ -81,8 +81,9 @@ struct cfg_em400_t {
 int cfg_load(char *cfg_file);
 void cfg_print();
 int cfg_set_mem(int module, int is_mega, int segments);
-struct cfg_unit_t * cfg_make_unit(int number, int type, ...);
-int cfg_make_chan(int number, int type, struct cfg_unit_t *units);
+struct cfg_arg_t * cfg_make_arg(char *arg);
+struct cfg_unit_t * cfg_make_unit(int number, struct cfg_arg_t *args);
+int cfg_make_chan(int number, char *type, struct cfg_unit_t *units);
 
 #endif
 

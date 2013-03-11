@@ -33,20 +33,17 @@ int cyylex(void);
 		int v;
 		char *s;
 	} value;
-	char *text;
 	struct cfg_unit_t *unit;
+	struct cfg_arg_t *arg;
 };
 
 %token CPU MEMORY CHANNEL UNIT
 %token SPEED MAX REAL TIMER MOD_17 MOD_SINT
-%token CHAR MEM MULTIX PLIX
-%token MERA9425 WINCHESTER
-%token TERM_TCP TERM_SERIAL TERM_CONS
 %token MODULE ELWRO MEGA
-%token <text> TEXT
+%token <value> TEXT
 %token <value> VALUE
-%type <unit> unit
-%type <unit> units
+%type <unit> unit units
+%type <arg> arg arglist
 
 %token '{' '}' '=' ':'
 
@@ -60,23 +57,26 @@ objects:
 object:
 	CPU '{' cpu_opts '}'
 	| MEMORY '{' modules '}'
-	| CHANNEL VALUE '=' CHAR '{' units '}' { cfg_make_chan($2.v, CHAN_CHAR, $6); }
-	| CHANNEL VALUE '=' MEM '{' units '}' { cfg_make_chan($2.v, CHAN_MEM, $6); }
-	| CHANNEL VALUE '=' PLIX '{' units '}' { cfg_make_chan($2.v, CHAN_PLIX, $6); }
-	| CHANNEL VALUE '=' MULTIX '{' units '}' { cfg_make_chan($2.v, CHAN_MULTIX, $6); }
+	| CHANNEL VALUE '=' TEXT '{' units '}' { cfg_make_chan($2.v, $4.s, $6); }
 	;
 
 units:
-	unit units { $1->next = $2; } 
+	unit units { $1->next = $2; $$ = $1; } 
 	| { $$ = NULL; }
 	;
 
 unit:
-	UNIT VALUE '=' MERA9425 ':' TEXT { $$ = cfg_make_unit($2.v, UNIT_MERA9425, $6, NULL); }
-	| UNIT VALUE '=' TERM_CONS { $$ = cfg_make_unit($2.v, UNIT_TERM_CONS, NULL); }
-	| UNIT VALUE '=' TERM_TCP ':' VALUE { $$ = cfg_make_unit($2.v, UNIT_TERM_TCP, $6.s, NULL); }
-	| UNIT VALUE '=' TERM_SERIAL ':' TEXT ':' VALUE ':' VALUE ':' TEXT ':' VALUE { $$ = cfg_make_unit($2.v, UNIT_TERM_SERIAL, $6, $8.s, $10.s, $12, $14.s, NULL); }
-	| UNIT VALUE '=' WINCHESTER ':' TEXT { $$ = cfg_make_unit($2.v, UNIT_WINCHESTER, $6, NULL); }
+	UNIT VALUE '=' arglist { $$ = cfg_make_unit($2.v, $4); }
+	;
+
+arglist:
+	arg ':' arglist { $1->next = $3; $$ = $1; }
+	| arg { $$ = $1; }
+	;
+
+arg:
+	VALUE { $$ = cfg_make_arg($1.s); }
+	| TEXT { $$ = cfg_make_arg($1.s); }
 	;
 
 cpu_opts:

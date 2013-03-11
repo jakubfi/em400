@@ -64,16 +64,17 @@ void cfg_print()
 	}
 	printf("---- I/O: ------------------------------\n");
 	for (int i=0 ; i<IO_MAX_CHAN ; i++) {
-		printf("  Channel %2i type: %i\n", i, em400_cfg.chan[i].type);
+		printf("  Channel %2i: %s\n", i, em400_cfg.chan[i].type);
 		struct cfg_unit_t *units = em400_cfg.chan[i].units;
 		while (units) {
-			printf("     Unit %2i type: %i args: ", units->number, units->type);
-			struct cfg_arglist_t *args = units->args;
+			struct cfg_arg_t *args = units->args;
+			printf("     Unit %2i: %s (args: ", units->number, args->arg);
+			args = args->next;
 			while (args) {
 				printf("%s, ", args->arg);
 				args = args->next;
 			}
-			printf("\n");
+			printf(")\n");
 			units = units->next;
 		}
 	}
@@ -101,43 +102,27 @@ int cfg_set_mem(int module, int is_mega, int segments)
 }
 
 // -----------------------------------------------------------------------
-struct cfg_unit_t * cfg_make_unit(int number, int type, ...)
+struct cfg_arg_t * cfg_make_arg(char *s)
+{
+	struct cfg_arg_t *a = malloc(sizeof(struct cfg_arg_t));
+	a->arg = strdup(s);
+	a->next = NULL;
+	return a;
+}
+
+// -----------------------------------------------------------------------
+struct cfg_unit_t * cfg_make_unit(int number, struct cfg_arg_t *arglist)
 {
 	struct cfg_unit_t *u = malloc(sizeof(struct cfg_unit_t));
 
 	u->number = number;
-	u->type = type;
-	u->args = NULL;
-
-	struct cfg_arglist_t *lastarg = NULL;
-
-	char *s;
-	va_list ap;
-
-	va_start(ap, type);
-
-	s = va_arg(ap, char *);
-	while (s) {
-		struct cfg_arglist_t *arg = malloc(sizeof(struct cfg_arglist_t));
-		arg->arg = strdup(s);
-		arg->next = NULL;
-
-		if (!u->args) {
-			u->args = arg;
-		} else {
-			lastarg->next = arg;
-		}
-		lastarg = arg;
-		s = va_arg(ap, char *);
-	}
-
-	va_end(ap);
+	u->args = arglist;
 
 	return u;
 }
 
 // -----------------------------------------------------------------------
-int cfg_make_chan(int number, int type, struct cfg_unit_t *units)
+int cfg_make_chan(int number, char *type, struct cfg_unit_t *units)
 {
 	if ((number < 0) || (number > IO_MAX_CHAN)) {
 		return -1;

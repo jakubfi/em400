@@ -52,15 +52,6 @@ true|yes	{ cyylval.value.v = 1; cyylval.value.s = strdup(cyytext); return VALUE;
 false|no	{ cyylval.value.v = 0; cyylval.value.s = strdup(cyytext); return VALUE; }
 channel		return CHANNEL;
 unit		return UNIT;
-mem			return MEM;
-char		return CHAR;
-multix		return MULTIX;
-plix		return PLIX;
-mera9425	return MERA9425;
-term_cons	return TERM_CONS;
-term_tcp	return TERM_TCP;
-term_serial	return TERM_SERIAL;
-winchester	return WINCHESTER;
 
 {number} {
 	cyylval.value.v = strtol(cyytext, NULL, 10);
@@ -76,7 +67,7 @@ winchester	return WINCHESTER;
 {comment}	;
 
 {text} {
-	cyylval.text = strdup(cyytext);
+	cyylval.value.s = strdup(cyytext);
 	return TEXT;
 }
 
