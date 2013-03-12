@@ -45,7 +45,7 @@ int cyylex(void);
 %type <unit> unit units
 %type <arg> arg arglist
 
-%token '{' '}' '=' ':'
+%token '{' '}' '=' ':' ','
 
 %%
 
@@ -71,7 +71,7 @@ unit:
 	;
 
 arglist:
-	arg ':' arglist { $1->next = $3; $$ = $1; }
+	arg ',' arglist { $1->next = $3; $$ = $1; }
 	| arg { $$ = $1; }
 	;
 
@@ -95,7 +95,7 @@ cpu_opt:
 
 modules:
 	modules module
-	|
+	| module
 	;
 
 module:

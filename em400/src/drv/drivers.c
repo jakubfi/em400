@@ -26,21 +26,21 @@
 
 struct drv_t drv_drivers[] = {
 // channel driver definitions
-	{ DRV_CHAN, CHAN_NONE,		"none",			drv_cnone_init,	drv_cnone_shutdown,	drv_cnone_reset,	drv_cnone_cmd },
-	{ DRV_CHAN, CHAN_CHAR,		"char",			drv_cchar_init,	drv_cchar_shutdown,	drv_cchar_reset,	drv_cchar_cmd },
-	{ DRV_CHAN, CHAN_MEM,		"mem",			drv_cmem_init,	drv_cmem_shutdown,	drv_cmem_reset,		drv_cmem_cmd },
-	{ DRV_CHAN, CHAN_MULTIX,	"multix",		drv_cnone_init,	drv_cnone_shutdown,	drv_cnone_reset,	drv_cnone_cmd },
-	{ DRV_CHAN, CHAN_PLIX,		"plix",			drv_cnone_init,	drv_cnone_shutdown,	drv_cnone_reset,	drv_cnone_cmd },
+	{ DRV_CHAN, CHAN_NONE,		"none",			0,	drv_cnone_init,	drv_cnone_shutdown,	drv_cnone_reset,	drv_cnone_cmd },
+	{ DRV_CHAN, CHAN_CHAR,		"char",			0,	drv_cchar_init,	drv_cchar_shutdown,	drv_cchar_reset,	drv_cchar_cmd },
+	{ DRV_CHAN, CHAN_MEM,		"mem",			0,	drv_cmem_init,	drv_cmem_shutdown,	drv_cmem_reset,		drv_cmem_cmd },
+	{ DRV_CHAN, CHAN_MULTIX,	"multix",		0,	drv_cnone_init,	drv_cnone_shutdown,	drv_cnone_reset,	drv_cnone_cmd },
+	{ DRV_CHAN, CHAN_PLIX,		"plix",			0,	drv_cnone_init,	drv_cnone_shutdown,	drv_cnone_reset,	drv_cnone_cmd },
 // unit driver definitions
-	{ DRV_UNIT, CHAN_NONE,		"none",			drv_unone_init,	drv_unone_shutdown,	drv_unone_reset,	drv_unone_cmd },
-	{ DRV_UNIT, CHAN_MEM,		"mera9425",		drv_u9425_init,	drv_u9425_shutdown,	drv_u9425_reset,	drv_u9425_cmd },
-	{ DRV_UNIT, CHAN_PLIX,		"winchester",	drv_unone_init,	drv_unone_shutdown,	drv_unone_reset,	drv_unone_cmd },
-	{ DRV_UNIT, CHAN_CHAR,		"term_tcp",		drv_unone_init,	drv_unone_shutdown,	drv_unone_reset,	drv_unone_cmd },
-	{ DRV_UNIT, CHAN_MULTIX,	"term_tcp",		drv_unone_init,	drv_unone_shutdown,	drv_unone_reset,	drv_unone_cmd },
-	{ DRV_UNIT, CHAN_CHAR,		"term_serial",	drv_unone_init,	drv_unone_shutdown,	drv_unone_reset,	drv_unone_cmd },
-	{ DRV_UNIT, CHAN_CHAR,		"term_cons",	drv_unone_init,	drv_unone_shutdown,	drv_unone_reset,	drv_unone_cmd },
-	{ DRV_UNIT, CHAN_MULTIX,	"term_cons",	drv_unone_init,	drv_unone_shutdown,	drv_unone_reset,	drv_unone_cmd },
-	{ DRV_NONE, CHAN_IGNORE,	"",				NULL,			NULL,				NULL,				NULL }
+	{ DRV_UNIT, CHAN_NONE,		"none",			0,	drv_unone_init,	drv_unone_shutdown,	drv_unone_reset,	drv_unone_cmd },
+	{ DRV_UNIT, CHAN_MEM,		"mera9425",		1,	drv_u9425_init,	drv_u9425_shutdown,	drv_u9425_reset,	drv_u9425_cmd },
+	{ DRV_UNIT, CHAN_PLIX,		"winchester",	1,	drv_unone_init,	drv_unone_shutdown,	drv_unone_reset,	drv_unone_cmd },
+	{ DRV_UNIT, CHAN_CHAR,		"term_tcp",		1,	drv_unone_init,	drv_unone_shutdown,	drv_unone_reset,	drv_unone_cmd },
+	{ DRV_UNIT, CHAN_MULTIX,	"term_tcp",		1,	drv_unone_init,	drv_unone_shutdown,	drv_unone_reset,	drv_unone_cmd },
+	{ DRV_UNIT, CHAN_CHAR,		"term_serial",	5,	drv_unone_init,	drv_unone_shutdown,	drv_unone_reset,	drv_unone_cmd },
+	{ DRV_UNIT, CHAN_CHAR,		"term_cons",	0,	drv_unone_init,	drv_unone_shutdown,	drv_unone_reset,	drv_unone_cmd },
+	{ DRV_UNIT, CHAN_MULTIX,	"term_cons",	0,	drv_unone_init,	drv_unone_shutdown,	drv_unone_reset,	drv_unone_cmd },
+	{ DRV_NONE, CHAN_IGNORE,	"",				0,	NULL,			NULL,				NULL,				NULL }
 };
 
 // -----------------------------------------------------------------------

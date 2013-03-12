@@ -44,6 +44,7 @@ void eprint(char *format, ...)
 // -----------------------------------------------------------------------
 int cfg_load(char *cfg_file)
 {
+	eprint("Loading config file: %s\n", cfg_file);
 	FILE * cfg = fopen(cfg_file, "r");
 	if (!cfg) {
 		return E_CFG_OPEN;
@@ -124,8 +125,22 @@ struct cfg_unit_t * cfg_make_unit(int u_num, char *name, struct cfg_arg_t *argli
 		cyyerror("Incorrect unit number: %i", u_num);
 	}
 
-	if (!drv_get(DRV_UNIT, CHAN_IGNORE, name)) {
+	// check configuration with driver
+	struct drv_t *driver = drv_get(DRV_UNIT, CHAN_IGNORE, name);
+	if (!driver) {
 		cyyerror("Unknown unit type: %s", name);
+	}
+
+	// count arguments
+	int cnt = 0;
+	struct cfg_arg_t *arg = arglist;
+	while (arg) {
+		cnt++;
+		arg = arg->next;
+	}
+
+	if (cnt != driver->argc) {
+		cyyerror("Wrong number of arguments for driver '%s'. Got: %i, required %i", name, cnt, driver->argc);
 	}
 
 	struct cfg_unit_t *u = malloc(sizeof(struct cfg_unit_t));

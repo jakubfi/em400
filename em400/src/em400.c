@@ -56,9 +56,12 @@ void em400_shutdown()
 }
 
 // -----------------------------------------------------------------------
-void eerr(const char *message, int ecode)
+void eerr(char *format, ...)
 {
-	printf("%s: %s\n", message, get_error(ecode));
+	va_list ap;
+	va_start(ap, format);
+	vprintf(format, ap);
+	va_end(ap);
 	em400_shutdown();
 	exit(EXIT_FAILURE);
 }
@@ -71,19 +74,19 @@ void em400_init()
 	eprint("Initializing memory\n");
 	res = mem_init();
 	if (res != E_OK) {
-		eerr("Error initializing memory", res);
+		eerr("Error initializing memory: %s\n", get_error(res));
 	}
 
 	eprint("Initializing I/O\n");
 	res = io_init();
 	if (res != E_OK) {
-		eerr("Error initializing I/O", res);
+		eerr("Error initializing I/O: %s\n", get_error(res));
 	}
 
 	eprint("Starting timer\n");
 	res = timer_init();
 	if (res != E_OK) {
-		eerr("Error initializing CPU timer", res);
+		eerr("Error initializing CPU timer: %s\n", get_error(res));
 	}
 
 	mem_clear();
@@ -93,7 +96,7 @@ void em400_init()
 		eprint("Loading image '%s' into OS memory\n", em400_cfg.program_name);
 		int res = mem_load_image(em400_cfg.program_name, 0);
 		if (res != E_OK) {
-			eerr("Could not load program", res);
+			eerr("Could not load program '%s': %s\n", em400_cfg.program_name, get_error(res));
 		}
 	}
 
@@ -101,12 +104,12 @@ void em400_init()
 	eprint("Initializing debugger\n");
 	res = dbg_init();
 	if (res != E_OK) {
-		eerr("Error initializing debugger", res);
+		eerr("Error initializing debugger: %s\n", get_error(res));
 	}
 	eprint("Initializing logging\n");
 	res = log_init("em400.log");
 	if (res != E_OK) {
-		eerr("Error initializing logging", res);
+		eerr("Error initializing logging: %s\n", get_error(res));
 	}
 #endif
 
@@ -218,11 +221,11 @@ void em400_configure()
 	// try to load one of configuration files
 	cfgf = cfgfile;
 	while (cfgf->name) {
-		eprint("Trying config file: %s\n", cfgf->name);
 		int res = cfg_load(cfgf->name);
 		if (res != E_OK) {
+			printf("Failed to load config '%s'\n", cfgf->name);
 			if (cfgf->name == em400_cfg.config_file) {
-				eerr("Error loading required config file", res);
+				eerr("Error loading user config file\n");
 			}
 		} else {
 			eprint("Config loaded\n");
@@ -231,7 +234,7 @@ void em400_configure()
 		cfgf++;
 	}
 
-	eerr("Error loading default config files", E_CFG_DEFAULT_LOAD);
+	eerr("Error loading default config files\n");
 }
 
 // -----------------------------------------------------------------------

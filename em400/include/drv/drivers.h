@@ -42,6 +42,7 @@ struct drv_t {
 	const int role;
 	const int chan_type;
 	const char *name;
+	int argc;
 	int (*f_init)(void *self, struct cfg_arg_t *arg);
 	void (*f_shutdown)(void *self);
 	void (*f_reset)(void *self);
