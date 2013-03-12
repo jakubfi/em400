@@ -1,4 +1,4 @@
-.program "op/LIP"
+.program "op/SP"
 
 	lw r1, 0b0000000000000001
 	ou r1, 0b0000000000000011

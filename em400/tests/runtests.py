@@ -37,7 +37,7 @@ class TestBed:
         for test_file in self.tests:
             test = Test(test_file)
             result, details = test.run()
-            print "%-30s : %s%s" % (test.prog_name, result, details)
+            print "%-30s : %s%s" % (test_file.replace("./", ""), result, details)
 
 # ------------------------------------------------------------------------
 class Test:
@@ -46,6 +46,7 @@ class Test:
     def __init__(self, source):
         self.source = source
         self.prog_name = source
+        self.config = "configs/minimal.cfg"
 
     # ------------------------------------------------------------------------
     def run(self):
@@ -78,20 +79,18 @@ class Test:
         self.pre = ""
         self.test_expr = ""
         self.expected = ""
-        self.config = ""
 
         xpcts = []
         pre_tab = []
 
-        for l in open(self.source):
-
+        for l in open(self.source, "r"):
             # get program name
             pname = re.findall(".program[ \t]+\"(.*)\"", l)
             if pname:
                 self.prog_name = pname[0]
 
             # get CONFIG directive
-            if re.match(".*CONFIG.*", l):
+            if "CONFIG" in l:
                 pcfg = re.findall(";[ \t]*CONFIG[ \t]+(.*)", l)
                 if pcfg:
                     if not os.path.isfile(pcfg[0]):
@@ -101,7 +100,7 @@ class Test:
                     raise Exception("Incomplete CONFIG directive")
 
             # get PRE expressions
-            if re.match(".*PRE.*", l):
+            if "PRE" in l:
                 ppre = re.findall(";[ \t]*PRE[ \t]+(.*)", l)
                 if ppre:
                     pre_tab.append(ppre[0])
@@ -109,7 +108,7 @@ class Test:
                     raise Exception("Incomplete PRE found")
 
             # get test result conditions
-            if re.match(".*XPCT.*", l):
+            if "XPCT" in l:
                 xpct = re.findall(";[ \t]*XPCT[ \t]+([^ \t]+)[ \t]*:[ \t]*([^ \t]+.*)\n", l)
                 if xpct and len(xpct[0]) == 2:
                     xpcts.append(xpct[0])
@@ -127,23 +126,21 @@ class Test:
 
     # ------------------------------------------------------------------------
     def execute(self):
-        args = [em400, "-p", self.output, "-t", self.test_expr]
+        args = [em400, "-c", self.config, "-p", self.output, "-t", self.test_expr]
         if self.pre:
             args += ["-x", self.pre]
-        if self.config:
-            args += ["-c", self.config]
 
         o = subprocess.check_output(args)
 
-        tres = re.findall("TEST RESULT: (.*) \n", o)
+        tres = re.findall("TEST RESULT: (.*)\n", o)
 
         if not tres:
             raise Exception("No test result found")
 
-        self.result = tres[0]
+        self.result = tres[0].strip(" ")
 
         if self.result != self.expected:
-            raise Exception("\n%32s xpct: %s\n%32s  got: %s" % ("", self.expected, "", self.result))
+            raise Exception("\n%32s xpct: '%s'\n%32s  got: '%s'" % ("", self.expected, "", self.result))
 
 
 # ------------------------------------------------------------------------
