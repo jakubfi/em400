@@ -19,6 +19,7 @@
 #include <string.h>
 #include <inttypes.h>
 
+#include "drv/lib.h"
 #include "drv/u9425.h"
 #include "cfg.h"
 #include "errors.h"
@@ -31,13 +32,10 @@ int drv_u9425_init(void *self, struct cfg_arg_t *arg)
 	struct u9425_cfg_t *cfg = unit->cfg = malloc(sizeof(struct u9425_cfg_t));
 	if (!unit->cfg) return E_IO_UNIT_INIT;
 
-	// arg1 : fixed disk platter
-	if (!arg || !arg->text) return E_IO_UNIT_INIT;
-	cfg->img_fixed = strdup(arg->text);
-
-	// arg2 : removable disk platter
-	if (!arg->next || !arg->next->text) return E_IO_UNIT_INIT;
-	cfg->img_removable = strdup(arg->next->text);
+	int argc = args_to_cfg(arg, "ss", &cfg->img_fixed, &cfg->img_removable);
+	if (argc != 2) {
+		return E_IO_UNIT_INIT_ARGS;
+	}
 
 	return E_OK;
 }

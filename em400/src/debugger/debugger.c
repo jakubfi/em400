@@ -124,10 +124,13 @@ void _dbg_sigint_handler(int signum, siginfo_t *si, void *ctx)
 // -----------------------------------------------------------------------
 int dbg_init()
 {
+	eprint("Initializing debugger: ");
 	// set UI mode
 	if (em400_cfg.ui_simple == 1) {
+		eprint("simple\n");
 		ui_mode = O_STD;
 	} else {
+		eprint("ncurses\n");
 		ui_mode = O_NCURSES;
 	}
 
@@ -163,6 +166,7 @@ int dbg_init()
 // -----------------------------------------------------------------------
 void dbg_shutdown()
 {
+	eprint("Shutdown debugger\n");
 	if (ui_mode == O_NCURSES) {
 		aw_shutdown();
 	}

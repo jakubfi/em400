@@ -47,12 +47,14 @@ void * timer_thread(void *ptr)
 // -----------------------------------------------------------------------
 int timer_init()
 {
+	eprint("Starting timer: %i ms\n", em400_cfg.cpu.timer_step);
 	return pthread_create(&timer_th, NULL, timer_thread, NULL);
 }
 
 // -----------------------------------------------------------------------
 void timer_shutdown()
 {
+	eprint("Stopping timer\n");
 	timer_fin = 1;
 	if (timer_th) {
 		pthread_join(timer_th, NULL);

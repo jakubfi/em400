@@ -35,6 +35,7 @@ enum _chan_cmd {
 };
 
 void chan_get_int_spec(void *self, uint16_t *r);
+int args_to_cfg(struct cfg_arg_t *arg, const char *format, ...);
 
 #endif
 

@@ -23,6 +23,7 @@
 #include <strings.h>
 #include <stdarg.h>
 
+#include "cfg.h"
 #include "errors.h"
 #include "debugger/log.h"
 
@@ -99,6 +100,7 @@ int log_level[D_MAX] = { 0 };
 // -----------------------------------------------------------------------
 int log_init(const char *logf)
 {
+	eprint("Initializing logging\n");
 	log_fname = strdup(logf);
 	if (!log_fname) {
 		return E_LOG_OPEN;
@@ -113,6 +115,7 @@ int log_init(const char *logf)
 // -----------------------------------------------------------------------
 void log_shutdown()
 {
+	eprint("Shutdown logging\n");
 	if (log_f) {
 		fclose(log_f);
 	}

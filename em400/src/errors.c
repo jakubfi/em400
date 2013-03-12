@@ -41,6 +41,7 @@ struct _em400_errordesc {
 	{ E_IO_DRV_UNIT_BAD, "Bad unit driver definition." },
 	{ E_IO_CHAN_INIT, "Cannot initialize channel." },
 	{ E_IO_UNIT_INIT, "Cannot initialize driver." },
+	{ E_IO_UNIT_INIT_ARGS, "Error parsing unit driver arguments." },
 	{ E_LOG_OPEN, "Cannot open log file." },
 	{ E_AW_INIT, "Cannot initialize awin." },
 	{ E_UI_INIT, "Cannot initialize UI." },

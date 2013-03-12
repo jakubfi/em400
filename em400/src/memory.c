@@ -44,6 +44,8 @@ uint16_t *mem_map[MEM_MAX_NB][MEM_MAX_AB];
 // -----------------------------------------------------------------------
 int mem_init()
 {
+	eprint("Initializing memory\n");
+
 	if (em400_cfg.mem[0].segments <= 0) {
 		return E_MEM_NO_OS_MEM;
 	}
@@ -53,12 +55,14 @@ int mem_init()
 		if (em400_cfg.mem[mp].segments > MEM_MAX_SEGMENTS) {
 			return E_MEM_BAD_SEGMENT_COUNT;
 		} else {
-			for (int seg=0 ; seg<em400_cfg.mem[mp].segments ; seg++) {
+			int seg;
+			for (seg=0 ; seg<em400_cfg.mem[mp].segments ; seg++) {
 				mem_segment[mp][seg] = malloc(sizeof(uint16_t) * MEM_SEGMENT_SIZE);
 				if (!mem_segment[mp][seg]) {
 					return E_MEM_CANNOT_ALLOCATE;
 				}
 			}
+			eprint("  Module %i: added %i segments\n", mp, seg);
 		}
 	}
 
@@ -76,6 +80,7 @@ int mem_init()
 // -----------------------------------------------------------------------
 void mem_shutdown()
 {
+	eprint("Shutdown memory\n");
 	mem_remove_maps();
 
 	// disconnect memory modules

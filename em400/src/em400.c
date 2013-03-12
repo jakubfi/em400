@@ -71,19 +71,16 @@ void em400_init()
 {
 	int res;
 
-	eprint("Initializing memory\n");
 	res = mem_init();
 	if (res != E_OK) {
 		eerr("Error initializing memory: %s\n", get_error(res));
 	}
 
-	eprint("Initializing I/O\n");
 	res = io_init();
 	if (res != E_OK) {
 		eerr("Error initializing I/O: %s\n", get_error(res));
 	}
 
-	eprint("Starting timer\n");
 	res = timer_init();
 	if (res != E_OK) {
 		eerr("Error initializing CPU timer: %s\n", get_error(res));
@@ -101,12 +98,10 @@ void em400_init()
 	}
 
 #ifdef WITH_DEBUGGER
-	eprint("Initializing debugger\n");
 	res = dbg_init();
 	if (res != E_OK) {
 		eerr("Error initializing debugger: %s\n", get_error(res));
 	}
-	eprint("Initializing logging\n");
 	res = log_init("em400.log");
 	if (res != E_OK) {
 		eerr("Error initializing logging: %s\n", get_error(res));

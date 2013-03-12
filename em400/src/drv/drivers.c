@@ -33,7 +33,7 @@ struct drv_t drv_drivers[] = {
 	{ DRV_CHAN, CHAN_PLIX,		"plix",			0,	drv_cnone_init,	drv_cnone_shutdown,	drv_cnone_reset,	drv_cnone_cmd },
 // unit driver definitions
 	{ DRV_UNIT, CHAN_NONE,		"none",			0,	drv_unone_init,	drv_unone_shutdown,	drv_unone_reset,	drv_unone_cmd },
-	{ DRV_UNIT, CHAN_MEM,		"mera9425",		1,	drv_u9425_init,	drv_u9425_shutdown,	drv_u9425_reset,	drv_u9425_cmd },
+	{ DRV_UNIT, CHAN_MEM,		"mera9425",		2,	drv_u9425_init,	drv_u9425_shutdown,	drv_u9425_reset,	drv_u9425_cmd },
 	{ DRV_UNIT, CHAN_PLIX,		"winchester",	1,	drv_unone_init,	drv_unone_shutdown,	drv_unone_reset,	drv_unone_cmd },
 	{ DRV_UNIT, CHAN_CHAR,		"term_tcp",		1,	drv_unone_init,	drv_unone_shutdown,	drv_unone_reset,	drv_unone_cmd },
 	{ DRV_UNIT, CHAN_MULTIX,	"term_tcp",		1,	drv_unone_init,	drv_unone_shutdown,	drv_unone_reset,	drv_unone_cmd },
