@@ -83,7 +83,7 @@ int io_unit_init(struct chan_t *chan, struct cfg_unit_t *unit_cfg)
 	eprint("   Unit %i (%s)\n", unit_cfg->num, unit->name);
 
 	// initialize the unit
-	return u_driver->f_init(&chan->unit[unit_cfg->num], NULL);
+	return u_driver->f_init(&chan->unit[unit_cfg->num], unit_cfg->args);
 }
 
 // -----------------------------------------------------------------------

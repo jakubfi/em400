@@ -38,6 +38,11 @@ enum _u9425_cmd {
 	U9425_CMD_TCH		= 0b10010000
 };
 
+struct u9425_cfg_t {
+	char *img_fixed;
+	char *img_removable;
+};
+
 int drv_u9425_init(void *self, struct cfg_arg_t *arg);
 void drv_u9425_shutdown(void *self);
 void drv_u9425_reset(void *self);
