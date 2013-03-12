@@ -76,19 +76,21 @@ void cfg_print()
 		eprint("  Module %2i: %5s: %2i segments\n", i, em400_cfg.mem[i].is_mega ? "MEGA" : "ELWRO", em400_cfg.mem[i].segments);
 	}
 	eprint("  -- I/O: ------------------------------\n");
-	for (int i=0 ; i<IO_MAX_CHAN ; i++) {
-		eprint("  Channel %2i: %s\n", i, em400_cfg.chan[i].name);
-		struct cfg_unit_t *unit = em400_cfg.chan[i].units;
-		while (unit) {
-			eprint("     Unit %2i: %s (args: ", unit->num, unit->name);
-			struct cfg_arg_t *args = unit->args;
+	struct cfg_chan_t *chan_cfg = em400_cfg.chans;
+	while (chan_cfg) {
+		eprint("  Channel %2i: %s\n", chan_cfg->num, chan_cfg->name);
+		struct cfg_unit_t *unit_cfg = chan_cfg->units;
+		while (unit_cfg) {
+			eprint("     Unit %2i: %s (args: ", unit_cfg->num, unit_cfg->name);
+			struct cfg_arg_t *args = unit_cfg->args;
 			while (args) {
 				eprint("%s, ", args->text);
 				args = args->next;
 			}
 			eprint(")\n");
-			unit = unit->next;
+			unit_cfg = unit_cfg->next;
 		}
+		chan_cfg = chan_cfg->next;
 	}
 	eprint("----------------------------------------\n");
 }
@@ -128,7 +130,7 @@ struct cfg_unit_t * cfg_make_unit(int u_num, char *name, struct cfg_arg_t *argli
 	// check configuration with driver
 	struct drv_t *driver = drv_get(DRV_UNIT, CHAN_IGNORE, name);
 	if (!driver) {
-		cyyerror("Unknown unit type: %s", name);
+		cyyerror("Unknown unit: %s", name);
 	}
 
 	// count arguments
@@ -143,28 +145,34 @@ struct cfg_unit_t * cfg_make_unit(int u_num, char *name, struct cfg_arg_t *argli
 		cyyerror("Wrong number of arguments for driver '%s'. Got: %i, required %i", name, cnt, driver->argc);
 	}
 
-	struct cfg_unit_t *u = malloc(sizeof(struct cfg_unit_t));
+	struct cfg_unit_t *unit_cfg = malloc(sizeof(struct cfg_unit_t));
 
-	u->num = u_num;
-	u->name = name;
-	u->args = arglist;
+	unit_cfg->num = u_num;
+	unit_cfg->name = name;
+	unit_cfg->args = arglist;
 
-	return u;
+	return unit_cfg;
 }
 
 // -----------------------------------------------------------------------
-void cfg_make_chan(int c_num, char *name, struct cfg_unit_t *units)
+struct cfg_chan_t * cfg_make_chan(int c_num, char *name, struct cfg_unit_t *units)
 {
 	if ((c_num < 0) || (c_num > IO_MAX_CHAN)) {
 		cyyerror("Incorrect channel number: %i", c_num);
 	}
 
 	if (!drv_get(DRV_CHAN, CHAN_IGNORE, name)) {
-		cyyerror("Unknown channel type: %s", name);
+		cyyerror("Unknown channel: %s", name);
 	}
 
-	em400_cfg.chan[c_num].name = name;
-	em400_cfg.chan[c_num].units = units;
+	struct cfg_chan_t *chan_cfg = malloc(sizeof(struct cfg_chan_t));
+
+	chan_cfg->num = c_num;
+	chan_cfg->name = name;
+	chan_cfg->units = units;
+	chan_cfg->next = NULL;
+
+	return chan_cfg;
 }
 
 // vim: tabstop=4

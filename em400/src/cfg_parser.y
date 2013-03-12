@@ -57,7 +57,11 @@ objects:
 object:
 	CPU '{' cpu_opts '}'
 	| MEMORY '{' modules '}'
-	| CHANNEL VALUE '=' TEXT '{' units '}' { cfg_make_chan($2.v, $4.s, $6); }
+	| CHANNEL VALUE '=' TEXT '{' units '}' { 
+		struct cfg_chan_t *chan = cfg_make_chan($2.v, $4.s, $6);
+		chan->next = em400_cfg.chans;
+		em400_cfg.chans = chan;
+	}
 	;
 
 units:

@@ -31,12 +31,12 @@
 
 #include "debugger/log.h"
 
-struct chan_t io_chan[IO_MAX_CHAN];
+struct chan_t *io_chan[IO_MAX_CHAN];
 
 // -----------------------------------------------------------------------
-int io_chan_init(int c_num, char *chan_name)
+int io_chan_init(struct cfg_chan_t *chan_cfg)
 {
-	struct drv_t *c_driver = drv_get(DRV_CHAN, CHAN_IGNORE, chan_name);
+	struct drv_t *c_driver = drv_get(DRV_CHAN, CHAN_IGNORE, chan_cfg->name);
 
 	if (!c_driver) {
 		return E_IO_CHAN_UNKNOWN;
@@ -47,19 +47,22 @@ int io_chan_init(int c_num, char *chan_name)
 		return E_IO_DRV_CHAN_BAD;
 	}
 
-	// common channel initialization
-	io_chan[c_num].num = c_num;
-	io_chan[c_num].type = c_driver->chan_type;
-	io_chan[c_num].name = c_driver->name;
-	io_chan[c_num].finish = 0;
-	io_chan[c_num].f_shutdown = c_driver->f_shutdown;
-	io_chan[c_num].f_reset = c_driver->f_reset;
-	io_chan[c_num].f_cmd = c_driver->f_cmd;
+	struct chan_t *chan = malloc(sizeof(struct chan_t));
+	io_chan[chan_cfg->num] = chan;
 
-	eprint("  Channel %i (%s):\n", c_num, io_chan[c_num].name);
+	// common channel initialization
+	chan->num = chan_cfg->num;
+	chan->type = c_driver->chan_type;
+	chan->name = c_driver->name;
+	chan->finish = 0;
+	chan->f_shutdown = c_driver->f_shutdown;
+	chan->f_reset = c_driver->f_reset;
+	chan->f_cmd = c_driver->f_cmd;
+
+	eprint("  Channel %i (%s):\n", chan->num, chan->name);
 
 	// initialize the channel
-	return c_driver->f_init(io_chan+c_num, NULL);
+	return c_driver->f_init(chan, NULL);
 }
 
 // -----------------------------------------------------------------------
@@ -87,10 +90,10 @@ int io_unit_init(struct chan_t *chan, struct cfg_unit_t *unit_cfg)
 	unit->f_reset = u_driver->f_reset;
 	unit->f_cmd = u_driver->f_cmd;
 
-	eprint("   Unit %i (%s)\n", unit_cfg->num, unit->name);
+	eprint("   Unit %i (%s)\n", unit->num, unit->name);
 
 	// initialize the unit
-	return u_driver->f_init(chan->unit[unit_cfg->num], unit_cfg->args);
+	return u_driver->f_init(chan->unit[unit->num], unit_cfg->args);
 }
 
 // -----------------------------------------------------------------------
@@ -100,30 +103,24 @@ int io_init()
 
 	eprint("Initializing I/O\n");
 
-	for (int c_num=0 ; c_num<IO_MAX_CHAN ; c_num++) {
-		char *chan_name = em400_cfg.chan[c_num].name;
-		if (!chan_name) continue;
-
+	struct cfg_chan_t *chan_cfg = em400_cfg.chans;
+	while (chan_cfg) {
 		// initialize channel
-		res = io_chan_init(c_num, chan_name);
+		res = io_chan_init(chan_cfg);
 		if (res != E_OK) {
 			return res;
 		}
 
-		// NULL-ify units
-		for (int i=0 ; i<IO_MAX_UNIT ; i++) {
-			io_chan[c_num].unit[i] = NULL;
-		}
-
-		// initialize provided units
-		struct cfg_unit_t *unit_cfg = em400_cfg.chan[c_num].units;
+		// initialize units connected
+		struct cfg_unit_t *unit_cfg = chan_cfg->units;
 		while (unit_cfg) {
-			res = io_unit_init(&io_chan[c_num], unit_cfg);
+			res = io_unit_init(io_chan[chan_cfg->num], unit_cfg);
 			if (res != E_OK) {
 				return res;
 			}
 			unit_cfg = unit_cfg->next;
 		}
+		chan_cfg = chan_cfg->next;
 	}
 	return E_OK;
 }
@@ -133,23 +130,25 @@ void io_shutdown()
 {
 	eprint("Shutdown I/O\n");
 	for (int c_num=0 ; c_num<IO_MAX_CHAN ; c_num++) {
-		struct chan_t *chan = io_chan + c_num;
+		struct chan_t *chan = io_chan[c_num];
+		if (!chan) {
+			continue;
+		}
+
 		for (int u_num=0 ; u_num<IO_MAX_UNIT ; u_num++) {
 			struct unit_t *unit = chan->unit[u_num];
-			if (unit) {
-				eprint("  Shutdown unit %i (%s)\n", u_num, unit->name);
-				if (unit->f_shutdown) {
-					unit->f_shutdown(unit);
-				}
-				free(unit);
+			if (!unit) {
+				continue;
 			}
+
+			eprint("  Shutdown unit %i (%s)\n", u_num, unit->name);
+			unit->f_shutdown(unit);
+			free(unit);
 		}
-		if (chan->name) {
-			eprint("    Shutdown channel %i (%s)\n", c_num, chan->name);
-			if (chan->f_shutdown) {
-				chan->f_shutdown(chan);
-			}
-		}
+
+		eprint("    Shutdown channel %i (%s)\n", c_num, chan->name);
+		chan->f_shutdown(chan);
+		free(chan);
 	}
 }
 
@@ -176,7 +175,7 @@ int io_dispatch(int dir, uint16_t n, uint16_t *r)
 
 	// channel/unit command
 	} else {
-		int res = io_chan[chan].f_cmd(&io_chan[chan], unit, dir, cmd, r);
+		int res = io_chan[chan]->f_cmd(io_chan[chan], unit, dir, cmd, r);
 
 #ifdef WITH_DEBUGGER
 		char *cmdc = int2bin(cmd, 8);

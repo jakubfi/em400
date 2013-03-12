@@ -69,7 +69,7 @@ struct unit_t {
 	int (*f_cmd)(void *self, int u_num, int dir, int cmd, uint16_t *r);
 };
 
-extern struct chan_t io_chan[IO_MAX_CHAN];
+extern struct chan_t *io_chan[IO_MAX_CHAN];
 
 int io_init();
 void io_shutdown();
