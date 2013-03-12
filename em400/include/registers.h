@@ -41,7 +41,8 @@ enum _registers {
 	R_MODc	= 13,
 	R_P		= 14,
 	R_ZC17	= 15,
-	R_MAX	= 16
+	R_ALARM	= 16,
+	R_MAX	= 17
 };
 
 extern uint16_t regs[];

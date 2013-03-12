@@ -21,6 +21,7 @@
 #include <arpa/inet.h>
 #include <pthread.h>
 
+#include "em400.h"
 #include "cfg.h"
 #include "errors.h"
 #include "memory.h"
@@ -129,6 +130,15 @@ uint16_t * mem_ptr(int nb, uint16_t addr)
 	if (seg_addr) {
 		return seg_addr + addr12;
 	} else {
+		int_set(INT_NO_MEM);
+		if (!SR_Q) {
+			nRw(R_ALARM, 1);
+#ifdef WITH_DEBUGGER
+			dbg_enter = 1;
+#else
+			em400_quit = E_QUIT_NO_MEM;
+#endif
+		}
 		return NULL;
 	}
 }
@@ -156,11 +166,6 @@ uint16_t mem_read(int nb, uint16_t addr, int trace)
 #ifdef WITH_DEBUGGER
 		LOG(D_MEM, 5, "[%d:%d] -> ERROR", nb, addr);
 #endif
-		if (SR_Q) {
-			int_set(INT_NO_MEM);
-		} else {
-			// TODO: ALARM
-		}
 		return 0xdead;
 	}
 }
@@ -213,11 +218,6 @@ void mem_write(int nb, uint16_t addr, uint16_t val, int trace)
 #endif
 	} else {
 		LOG(D_MEM, 5, "[%d:%d] <- 0x%04x ERROR", nb, addr, val);
-		if (SR_Q) {
-			int_set(INT_NO_MEM);
-		} else {
-			// TODO: ALARM
-		}
 	}
 }
 

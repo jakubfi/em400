@@ -257,7 +257,7 @@ int main(int argc, char** argv)
 
 	gettimeofday(&ips_start, NULL);
 
-	while (em400_quit == 0) {
+	while (em400_quit == E_OK) {
 #ifdef WITH_DEBUGGER
 		if (em400_cfg.autotest != 1) {
 			dbg_step();
@@ -269,6 +269,10 @@ int main(int argc, char** argv)
 		cpu_step();
 		ips_counter++;
 		int_serve();
+	}
+
+	if (em400_quit != E_QUIT_OK) {
+		eerr("Emulation terminated unexpectedly: %s\n", get_error(em400_quit));
 	}
 
 	gettimeofday(&ips_end, NULL);

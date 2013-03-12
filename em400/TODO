@@ -2,7 +2,6 @@ Known bugs:
 
 CPU:
 
-* alarm
 * int/uint rework
 * AWP - sign storage, floating point instructions
 

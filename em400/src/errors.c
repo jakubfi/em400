@@ -48,6 +48,8 @@ struct _em400_errordesc {
 	{ E_UI_SIG_CTRLC, "Cannot install Ctrl-C handler." },
 	{ E_CFG_OPEN, "Cannot open file." },
 	{ E_CFG_PARSE, "Cannot parse file." },
+	{ E_QUIT_OK, "Emulation terminated properly." },
+	{ E_QUIT_NO_MEM, "OS segmentation fault." },
 	{ E_CFG_DEFAULT_LOAD, "sorry" },
 
 
