@@ -94,6 +94,10 @@ zc17|ZC17 {
 	yylval.value = R_ZC17;
 	return REG;
 }
+alarm|ALARM {
+	yylval.value = R_ALARM;
+	return REG;
+}
 hex	return HEX;
 oct	return OCT;
 bin	return BIN;
