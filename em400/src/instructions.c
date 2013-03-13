@@ -47,7 +47,8 @@ int op_illegal()
 // -----------------------------------------------------------------------
 int op_lw()
 {
-	Rw(IR_A, get_arg_norm());
+	uint16_t N = get_arg_norm();
+	Rw(IR_A, N);
 	return OP_OK;
 }
 
