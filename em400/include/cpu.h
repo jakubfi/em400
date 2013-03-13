@@ -31,9 +31,9 @@ extern uint32_t __N;
 ( __N = \
 	IR_D ? \
 		MEM( \
-		(IR_C ? R(IR_C) : (nMEM(nR(R_IC))) \
+		(IR_C ? R(IR_C) : (nMEM(nR(R_IC)))) \
 		+ (IR_B ? R(IR_B) : 0) \
-		+ nR(R_MOD)) \
+		+ nR(R_MOD) \
 		) \
 	: \
 		(IR_C ? R(IR_C) : nMEM(nR(R_IC))) \
