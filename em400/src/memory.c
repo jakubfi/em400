@@ -115,7 +115,8 @@ void mem_remove_maps()
 		}
 	}
 }
-/*
+
+#ifndef WITH_SPEEDOPT
 // -----------------------------------------------------------------------
 // low-level memory access (bypassing emulation)
 uint16_t * mem_ptr(int nb, uint16_t addr)
@@ -131,7 +132,8 @@ uint16_t * mem_ptr(int nb, uint16_t addr)
 		return NULL;
 	}
 }
-*/
+#endif
+
 // -----------------------------------------------------------------------
 // read from any block
 uint16_t mem_read(int nb, uint16_t addr, int trace)
@@ -251,7 +253,7 @@ int mem_load_image(const char* fname, int nb)
 	LOG(D_MEM, 1, "Loading memory image: %s -> %d", fname, nb);
 
 	int res = 1;
-	int chunk = 0;
+	uint16_t chunk = 0;
 	while (res > 0) {
 		// get pointer to segment in a block
 		ptr = mem_ptr(nb, chunk*MEM_SEGMENT_SIZE);

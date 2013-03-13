@@ -137,7 +137,7 @@ void dbg_c_clmem()
 }
 
 // -----------------------------------------------------------------------
-void dbg_c_dt(int wid, int dasm_mode, int start, int count)
+void dbg_c_dt(int wid, int dasm_mode, uint16_t start, int count)
 {
 	char *buf;
 	int len;
@@ -305,7 +305,7 @@ void dbg_c_stack(int wid, int size)
 	static int sb;
 	static int osp;
 
-	int sp = *mem_ptr(0, 97);
+	uint16_t sp = *mem_ptr(0, 97);
 
 	if ((sb <= 0) || (sp-osp > 4) || (sp-osp < -4)) {
 		sb = sp;

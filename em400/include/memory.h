@@ -35,7 +35,12 @@ void mem_shutdown();
 int mem_add_map(int nb, int ab, int mp, int segment);
 void mem_remove_maps();
 
-#define mem_ptr(nb, addr) (mem_map[nb][((addr) & 0b1111000000000000) >> 12] ? mem_map[nb][((addr) & 0b1111000000000000) >> 12] + ((addr) & 0b0000111111111111) : NULL)
+#ifdef WITH_SPEEDOPT
+#define mem_ptr(nb, addr) (mem_map[nb][(addr) >> 12] ? mem_map[nb][(addr) >> 12] + ((addr) & 0b0000111111111111) : NULL)
+#else
+uint16_t * mem_ptr(int nb, uint16_t addr);
+#endif
+
 uint16_t mem_read(int nb, uint16_t addr, int trace);
 uint8_t mem_read_byte(int nb, uint16_t addr, int trace);
 void mem_write(int nb, uint16_t addr, uint16_t val, int trace);

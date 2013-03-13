@@ -155,6 +155,7 @@ void parse_arguments(int argc, char **argv)
 				break;
 			case 'p':
 				em400_cfg.program_name = strdup(optarg);
+				break;
 			case 'e':
 				em400_cfg.exit_on_hlt = 1;
 #ifdef WITH_DEBUGGER

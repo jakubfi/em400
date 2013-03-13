@@ -23,9 +23,8 @@
 void cpu_reset();
 void cpu_step();
 int16_t get_arg_short();
-#ifdef WITH_DEBUGGER
-int16_t get_arg_norm();
-#else
+
+#ifdef WITH_SPEEDOPT
 extern uint32_t __N;
 #define get_arg_norm() (int16_t) \
 ( __N = \
@@ -42,6 +41,8 @@ extern uint32_t __N;
 ); \
 if (!IR_C) nRinc(R_IC); \
 if (em400_cfg.cpu.mod_17bit) nRw(R_ZC17, (__N >> 16) & 1);
+#else
+int16_t get_arg_norm();
 #endif
 
 #endif

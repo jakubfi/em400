@@ -9,7 +9,7 @@ Debugger:
 
 * command history
 * more shortcuts (c-w, c-d)
-* should log start new file immediately?
+* log shouldn't start new file immediately
 * stack display after shrinking
 * again, rethink hex/dec numbers in output and log
 * HLT will halt debugger too if there is no interrupt to serve

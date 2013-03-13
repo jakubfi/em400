@@ -54,7 +54,7 @@ int16_t get_arg_short()
 	return T;
 }
 
-# ifdef WITH_DEBUGGER
+#ifndef WITH_SPEEDOPT
 // -----------------------------------------------------------------------
 int16_t get_arg_norm()
 {

@@ -205,7 +205,7 @@ struct node_t * n_mem(struct node_t *n1, struct node_t *n2)
 	// store memory pointer and address for error handling in parser
 	n->nb = n_eval(n1);
 	n->val = n_eval(n2);
-	n->mptr = mem_ptr(n->nb, n->val);
+	n->mptr = mem_ptr(n->nb, (uint16_t)n->val);
 	n->n1 = n1;
 	n->n2 = n2;
 	return n;
