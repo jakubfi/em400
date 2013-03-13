@@ -305,7 +305,7 @@ void dbg_c_stack(int wid, int size)
 	static int sb;
 	static int osp;
 
-	uint16_t sp = *mem_ptr(0, 97);
+	int sp = *mem_ptr(0, 97);
 
 	if ((sb <= 0) || (sp-osp > 4) || (sp-osp < -4)) {
 		sb = sp;
