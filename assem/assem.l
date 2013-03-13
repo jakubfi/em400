@@ -37,7 +37,7 @@ char *strbufpos;
 %option yylineno
 
 ws		[ \t\n]+
-comment	^[#;].*
+comment	[#;].*\n
 
 oct		-?0[0-9]+
 dec		-?[0-9]+
@@ -54,6 +54,9 @@ endprog	\.endprog
 chars	[-+:,\[\]<>]
 
 %%
+
+{ws}		;
+{comment}	;
 
 \"						{ BEGIN string; strbufpos = strbuf; }
 <string>\"				{ yylval.str = strdup(strbuf); BEGIN 0; return STRING; }
@@ -109,9 +112,6 @@ chars	[-+:,\[\]<>]
 		return NAME;
 	}
 }
-
-{ws}		;
-{comment}	;
 
 .	{ yyerror("unknown character"); }
 
