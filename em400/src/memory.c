@@ -34,8 +34,6 @@
 #endif
 #include "debugger/log.h"
 
-pthread_mutex_t mem_mutex = PTHREAD_MUTEX_INITIALIZER;
-
 // physical memory: modules with segments inside
 uint16_t *mem_segment[MEM_MAX_MODULES][MEM_MAX_SEGMENTS];
 
@@ -140,9 +138,7 @@ uint16_t mem_read(int nb, uint16_t addr, int trace)
 {
 	uint16_t *ptr = mem_ptr(nb, addr);
 	if (ptr) {
-		pthread_mutex_lock(&mem_mutex);
 		uint16_t value = *ptr;
-		pthread_mutex_unlock(&mem_mutex);
 #ifdef WITH_DEBUGGER
 		// leave trace for debugger to display
 		if (trace) {
@@ -204,9 +200,7 @@ void mem_write(int nb, uint16_t addr, uint16_t val, int trace)
 {
 	uint16_t *ptr = mem_ptr(nb, addr);
 	if (ptr) {
-		pthread_mutex_lock(&mem_mutex);
 		*ptr = val;
-		pthread_mutex_unlock(&mem_mutex);
 #ifdef WITH_DEBUGGER
 		// leave trace for debugger to display
 		if (trace) {
