@@ -55,5 +55,4 @@ void reg_write(int r, uint16_t x, int trace, int hw)
 }
 #endif
 
-
 // vim: tabstop=4
