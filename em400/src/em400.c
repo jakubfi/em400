@@ -157,6 +157,9 @@ void parse_arguments(int argc, char **argv)
 				em400_cfg.program_name = strdup(optarg);
 			case 'e':
 				em400_cfg.exit_on_hlt = 1;
+#ifdef WITH_DEBUGGER
+				em400_cfg.autotest = 1;
+#endif
 				break;
 #ifdef WITH_DEBUGGER
 			case 't':
@@ -278,7 +281,7 @@ int main(int argc, char** argv)
 	gettimeofday(&ips_end, NULL);
 
 #ifdef WITH_DEBUGGER
-	if (em400_cfg.autotest == 1) {
+	if (em400_cfg.autotest && em400_cfg.test_expr) {
 		printf("TEST RESULT: ");
 		dbg_parse(em400_cfg.test_expr);
 		free(em400_cfg.test_expr);
