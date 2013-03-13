@@ -115,7 +115,7 @@ void mem_remove_maps()
 		}
 	}
 }
-
+/*
 // -----------------------------------------------------------------------
 // low-level memory access (bypassing emulation)
 uint16_t * mem_ptr(int nb, uint16_t addr)
@@ -131,7 +131,7 @@ uint16_t * mem_ptr(int nb, uint16_t addr)
 		return NULL;
 	}
 }
-
+*/
 // -----------------------------------------------------------------------
 // read from any block
 uint16_t mem_read(int nb, uint16_t addr, int trace)

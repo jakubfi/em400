@@ -7,9 +7,11 @@
 ; Results:
 ;
 ; original K-202                                0.424 MIPS
-; em400 +debugger        (Core2Duo @2.80GHz)    0.858 MIPS
+; em400 w/debugger       (Core2Duo @2.80GHz)    0.858 MIPS
 ; em400                  (Core2Duo @2.80GHz)    7.8   MIPS
-; em400 optimized regs   (Core2Duo @2.80GHz)   10.422 MIPS
+; em400 +regs opt.       (Core2Duo @2.80GHz)   10.422 MIPS
+; em400 +mutex opt.      (Core2Duo @2.80GHz)   25     MIPS
+; em400 +mem_ptr() opt.  (Core2Duo @2.80GHz)   27.7   MIPS
 
 	lw r4, 0
 	lw r3, -10		; -10 instead of 0
