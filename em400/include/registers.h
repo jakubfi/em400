@@ -47,8 +47,13 @@ enum _registers {
 
 extern uint16_t regs[];
 
+#ifdef WITH_DEBUGGER
 uint16_t reg_read(int r, int trace);
 void reg_write(int r, uint16_t x, int trace, int hw);
+#else
+#define reg_read(r, trace) regs[r]
+#define reg_write(r, x, trace, hw) regs[r] = (r|hw) ? (x) : (regs[r] & 0b1111111100000000) | ((x) & 0b0000000011111111)
+#endif
 
 // -----------------------------------------------------------------------
 // Register access macros

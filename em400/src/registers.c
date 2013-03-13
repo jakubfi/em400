@@ -27,35 +27,33 @@
 
 uint16_t regs[R_MAX];
 
+#ifdef WITH_DEBUGGER
 // -----------------------------------------------------------------------
 uint16_t reg_read(int r, int trace)
 {
-#ifdef WITH_DEBUGGER
 	if (trace != 0) {
 		LOG(D_REG, 10, "%s -> 0x%04x", log_reg_name[r], regs[r]);
 		dbg_touch_add(&touch_reg, TOUCH_R, 0, r);
 	} else {
 		LOG(D_REG, 100, "%s -> 0x%04x", log_reg_name[r], regs[r]);
 	}
-#endif
 	return regs[r];
 }
 
 // -----------------------------------------------------------------------
 void reg_write(int r, uint16_t x, int trace, int hw)
 {
-#ifdef WITH_DEBUGGER
 	LOG(D_REG, 1, "%s <- 0x%04x", log_reg_name[r], x);
 	if (trace != 0) {
 		dbg_touch_add(&touch_reg, TOUCH_W, 0, r);
 	}
-#endif
 	if (r | hw) {
 		regs[r] = x;
 	} else {
 		regs[r] = (regs[r] & 0b1111111100000000) | (x & 0b0000000011111111);
 	}
 }
+#endif
 
 
 // vim: tabstop=4
