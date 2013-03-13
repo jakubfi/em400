@@ -32,6 +32,8 @@
 #endif
 #include "debugger/log.h"
 
+uint32_t __N;
+
 // -----------------------------------------------------------------------
 void cpu_reset()
 {
@@ -52,6 +54,7 @@ int16_t get_arg_short()
 	return T;
 }
 
+# ifdef WITH_DEBUGGER
 // -----------------------------------------------------------------------
 int16_t get_arg_norm()
 {
@@ -88,6 +91,7 @@ int16_t get_arg_norm()
 	LOG(D_CPU, 10, "------ Effective argument (norm): 0x%04x (%s%s%s%s)", N, IR_C ? "2-word " : "1-word", regs[R_MODc] ? " PRE-mod" : "", IR_B ? " B-mod" : "", IR_D ? " D-mod" : "");
 	return N;
 }
+#endif
 
 // -----------------------------------------------------------------------
 void cpu_step()

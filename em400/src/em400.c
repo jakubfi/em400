@@ -294,7 +294,7 @@ int main(int argc, char** argv)
 	if (em400_cfg.benchmark) {
 		double ips_time_spent = (double)(ips_end.tv_usec - ips_start.tv_usec)/1000000 + (ips_end.tv_sec - ips_start.tv_sec);
 		if (ips_time_spent > 0) {
-			printf("IPS: %i\n", (int) (ips_counter/ips_time_spent));
+			printf("IPS: %i (instructions: %i time: %f)\n", (int) (ips_counter/ips_time_spent), ips_counter, ips_time_spent);
 		} else {
 			printf("IPS: 0\n");
 		}
