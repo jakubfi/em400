@@ -32,7 +32,9 @@
 #endif
 #include "debugger/log.h"
 
+#ifdef WITH_SPEEDOPT
 uint32_t __N;
+#endif
 
 // -----------------------------------------------------------------------
 void cpu_reset()

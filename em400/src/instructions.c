@@ -789,7 +789,8 @@ int op_73_hlt()
 {
 	// handle hlt 077 as "exit emulation" if user wants to
 	if (em400_cfg.exit_on_hlt) {
-		if (get_arg_short() == 077) {
+		uint16_t T = get_arg_short();
+		if (T == 077) {
 			em400_quit = 1;
 			return OP_OK;
 		}
