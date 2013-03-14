@@ -20,7 +20,7 @@
 #include <inttypes.h>
 
 #include "elements.h"
-#include "assem_parse.h"
+#include "parser_modern.h"
 #include "ops.h"
 
 #define DICT_HASH_BITS 8

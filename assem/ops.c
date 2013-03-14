@@ -19,7 +19,7 @@
 #include <strings.h>
 
 #include "ops.h"
-#include "assem_parse.h"
+#include "parser_modern.h"
 
 int mnemo_sel = 0;
 

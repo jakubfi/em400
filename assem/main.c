@@ -21,7 +21,7 @@
 #include <getopt.h>
 
 #include "ops.h"
-#include "assem_parse.h"
+#include "parser_modern.h"
 #include "elements.h"
 #include "eval.h"
 

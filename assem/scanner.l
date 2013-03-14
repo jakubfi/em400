@@ -19,7 +19,7 @@
 #include <stdlib.h>
 #include <string.h>
 
-#include "assem_parse.h"
+#include "parser_modern.h"
 #include "ops.h"
 
 void yyerror(char *, ...);
@@ -33,8 +33,11 @@ char *strbufpos;
 
 %}
 
-%x string
+%option nounput
+%option noinput
 %option yylineno
+
+%x string
 
 ws		[ \t\n]+
 comment	[#;].*\n
