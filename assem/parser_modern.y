@@ -23,7 +23,7 @@
 #include "elements.h"
 #include "eval.h"
 
-void yyerror(char *s, ...);
+void m_yyerror(char *s, ...);
 int yylex(void);
 int got_error;
 extern int ic;
@@ -74,24 +74,24 @@ sentences:
 sentence:
 	words {
 		if (program_append($1) < 0) {
-			yyerror("program too big");
+			m_yyerror("program too big");
 			YYABORT;
 		}
 	}
 	| EQU NAME expr {
 		if (!dict_add(VALUE, $2, $3)) {
-			yyerror("name '%s' already defined", $2);
+			m_yyerror("name '%s' already defined", $2);
 			YYABORT;
 		}
 	}
 	| NAME ':' {
 		struct enode_t *e = make_enode(VALUE, ic, NULL, NULL, NULL);
 		if (!e) {
-			yyerror("cannot make enode for '%s'", $1);
+			m_yyerror("cannot make enode for '%s'", $1);
 			YYABORT;
 		}
 		if (!dict_add(ADDR, $1, e)) {
-			yyerror("name '%s' already defined", $1);
+			m_yyerror("name '%s' already defined", $1);
 			YYABORT;
 		}
 	}
@@ -109,24 +109,24 @@ data:
 	;
 
 dataword:
-	expr { $$ = make_data($1, yylloc.first_line); }
-	| STRING { $$ = make_string($1, yylloc.first_line); }
+	expr { $$ = make_data($1, m_yylloc.first_line); }
+	| STRING { $$ = make_string($1, m_yylloc.first_line); }
 	;
 
 res:
 	RES VALUE {
-		struct word_t *wlist = make_rep($2, 0, yylloc.first_line);
+		struct word_t *wlist = make_rep($2, 0, m_yylloc.first_line);
 		if (!wlist) {
-			yyerror("resulting .res length is 0");
+			m_yyerror("resulting .res length is 0");
 			YYABORT;
 		} else {
 			$$ = wlist;
 		}
 	}
 	| RES VALUE ',' VALUE{
-		struct word_t *wlist = make_rep($2, $4, yylloc.first_line);
+		struct word_t *wlist = make_rep($2, $4, m_yylloc.first_line);
 		if (!wlist) {
-			yyerror("resulting .res length is 0");
+			m_yyerror("resulting .res length is 0");
 			YYABORT;
 		} else {
 			$$ = wlist;
@@ -135,19 +135,19 @@ res:
 	;
 
 instruction:
-	OP_2ARG REGISTER ',' norm { $$ = make_op(OP_2ARG, $1, $2, NULL, $4, yylloc.first_line); }
-	| OP_FD norm { $$ = make_op(OP_FD, $1, 0, NULL, $2, yylloc.first_line); }
-	| OP_KA1 REGISTER ',' expr { $$ = make_op(OP_KA1, $1, $2, $4, NULL, yylloc.first_line); }
-	| OP_JS expr { $$ = make_op(OP_JS, $1, 0, $2, NULL, yylloc.first_line); }
-	| OP_KA2 expr { $$ = make_op(OP_KA2, $1, 0, $2, NULL, yylloc.first_line); }
-	| OP_C REGISTER { $$ = make_op(OP_C, $1, $2, NULL, NULL, yylloc.first_line); }
-	| OP_SHC REGISTER ',' expr { $$ = make_op(OP_SHC, $1, $2, $4, NULL, yylloc.first_line); }
-	| OP_S { $$ = make_op(OP_S, $1, 0, NULL, NULL, yylloc.first_line); }
-	| OP_HLT expr { $$ = make_op(OP_HLT, $1, 0, $2, NULL, yylloc.first_line); }
-	| OP_J norm { $$ = make_op(OP_J, $1, 0, NULL, $2, yylloc.first_line); }
-	| OP_L norm { $$ = make_op(OP_L, $1, 0, NULL, $2, yylloc.first_line); }
-	| OP_G norm { $$ = make_op(OP_G, $1, 0, NULL, $2, yylloc.first_line); }
-	| OP_BN norm { $$ = make_op(OP_BN, $1, 0, NULL, $2, yylloc.first_line); }
+	OP_2ARG REGISTER ',' norm { $$ = make_op(OP_2ARG, $1, $2, NULL, $4, m_yylloc.first_line); }
+	| OP_FD norm { $$ = make_op(OP_FD, $1, 0, NULL, $2, m_yylloc.first_line); }
+	| OP_KA1 REGISTER ',' expr { $$ = make_op(OP_KA1, $1, $2, $4, NULL, m_yylloc.first_line); }
+	| OP_JS expr { $$ = make_op(OP_JS, $1, 0, $2, NULL, m_yylloc.first_line); }
+	| OP_KA2 expr { $$ = make_op(OP_KA2, $1, 0, $2, NULL, m_yylloc.first_line); }
+	| OP_C REGISTER { $$ = make_op(OP_C, $1, $2, NULL, NULL, m_yylloc.first_line); }
+	| OP_SHC REGISTER ',' expr { $$ = make_op(OP_SHC, $1, $2, $4, NULL, m_yylloc.first_line); }
+	| OP_S { $$ = make_op(OP_S, $1, 0, NULL, NULL, m_yylloc.first_line); }
+	| OP_HLT expr { $$ = make_op(OP_HLT, $1, 0, $2, NULL, m_yylloc.first_line); }
+	| OP_J norm { $$ = make_op(OP_J, $1, 0, NULL, $2, m_yylloc.first_line); }
+	| OP_L norm { $$ = make_op(OP_L, $1, 0, NULL, $2, m_yylloc.first_line); }
+	| OP_G norm { $$ = make_op(OP_G, $1, 0, NULL, $2, m_yylloc.first_line); }
+	| OP_BN norm { $$ = make_op(OP_BN, $1, 0, NULL, $2, m_yylloc.first_line); }
 	;
 
 norm:
@@ -157,11 +157,11 @@ norm:
 
 normval:
 	REGISTER { $$ = make_norm($1, 0, NULL); }
-	| expr { $$ = make_norm(0, 0, make_data($1, yylloc.first_line)); }
+	| expr { $$ = make_norm(0, 0, make_data($1, m_yylloc.first_line)); }
 	| REGISTER '+' REGISTER { $$ = make_norm($1, $3, NULL); }
-	| REGISTER '+' expr { $$ = make_norm(0, $1, make_data($3, yylloc.first_line)); }
-	| REGISTER '-' expr { $$ = make_norm(0, $1, make_data(make_enode(UMINUS, 0, NULL, NULL, $3), yylloc.first_line)); }
-	| expr '+' REGISTER { $$ = make_norm(0, $3, make_data($1, yylloc.first_line)); }
+	| REGISTER '+' expr { $$ = make_norm(0, $1, make_data($3, m_yylloc.first_line)); }
+	| REGISTER '-' expr { $$ = make_norm(0, $1, make_data(make_enode(UMINUS, 0, NULL, NULL, $3), m_yylloc.first_line)); }
+	| expr '+' REGISTER { $$ = make_norm(0, $3, make_data($1, m_yylloc.first_line)); }
 	;
 
 expr:
@@ -178,11 +178,11 @@ expr:
 %%
 
 // -----------------------------------------------------------------------
-void yyerror(char *s, ...)
+void m_yyerror(char *s, ...)
 {
 	va_list ap;
 	va_start(ap, s);
-	printf("Error parsing source, line %d: ", yylloc.first_line);
+	printf("Error parsing source, line %d: ", m_yylloc.first_line);
 	vprintf(s, ap);
 	printf("\n");
 	va_end(ap);

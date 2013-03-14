@@ -25,18 +25,26 @@
 #include "elements.h"
 #include "eval.h"
 
-extern FILE *yyin;
+int classic = 0;
+
+extern FILE *m_yyin;
+extern FILE *c_yyin;
 extern int got_error;
-int yyparse();
+int m_yyparse();
+int c_yyparse();
 
 // -----------------------------------------------------------------------
 int parse(FILE *source)
 {
-	yyin = source;
+	m_yyin = c_yyin = source;
+
+	int (*active_parser)();
+	if (classic) active_parser = c_yyparse;
+	else active_parser = m_yyparse;
 
 	do {
-		 yyparse();
-	} while (!feof(yyin));
+		active_parser();
+	} while (!feof(source));
 
 	if (got_error) {
 		return -1;
@@ -81,7 +89,7 @@ int main(int argc, char **argv)
 {
 	int option;
 	mnemo_sel = MNEMO_MERA400;
-	int classic = 0;
+	classic = 0;
 	char *input_file = NULL;
 	char *output_file = NULL;
 

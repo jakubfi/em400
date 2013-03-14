@@ -22,13 +22,13 @@
 #include "parser_modern.h"
 #include "ops.h"
 
-void yyerror(char *, ...);
+void m_yyerror(char *, ...);
 
 char strbuf[1024];
 char *strbufpos;
 
-#define YY_USER_ACTION yylloc.first_line = yylineno;
-#define YYABORT     goto yyabortlab
+#define YY_USER_ACTION m_yylloc.first_line = m_yylineno;
+#define YYABORT     goto m_yyabortlab
 
 
 %}
@@ -62,35 +62,35 @@ chars	[-+:,\[\]<>]
 {comment}	;
 
 \"						{ BEGIN string; strbufpos = strbuf; }
-<string>\"				{ yylval.str = strdup(strbuf); BEGIN 0; return STRING; }
-<string>[^\\\"\n\r\t]*	{ strcpy(strbufpos, yytext); strbufpos += strlen(yytext); }
+<string>\"				{ m_yylval.str = strdup(strbuf); BEGIN 0; return STRING; }
+<string>[^\\\"\n\r\t]*	{ strcpy(strbufpos, m_yytext); strbufpos += strlen(m_yytext); }
 <string>\\\\			{ *strbufpos++ = '\\'; }
 <string>\\\"			{ *strbufpos++ = '\"'; }
 <string>\\n				{ *strbufpos++ = '\n'; }
 <string>\\r				{ *strbufpos++ = '\r'; }
 <string>\\t				{ *strbufpos++ = '\t'; }
-<string>\n				{ BEGIN 0; yyerror("newline in string"); }
-<string>\r				{ BEGIN 0; yyerror("carriage return in string"); }
-<string>\\.				{ BEGIN 0; yyerror("unknown escape sequence: %s", yytext); }
+<string>\n				{ BEGIN 0; m_yyerror("newline in string"); }
+<string>\r				{ BEGIN 0; m_yyerror("carriage return in string"); }
+<string>\\.				{ BEGIN 0; m_yyerror("unknown escape sequence: %s", m_yytext); }
 
 {oct}	{
-	yylval.val = strtol(yytext, NULL, 8);
+	m_yylval.val = strtol(m_yytext, NULL, 8);
 	return VALUE;
 }
 {dec} 	{
-	yylval.val = strtol(yytext, NULL, 10);
+	m_yylval.val = strtol(m_yytext, NULL, 10);
 	return VALUE;
 }
 {bin}	{
-	yylval.val = strtol(yytext+2, NULL, 2);
+	m_yylval.val = strtol(m_yytext+2, NULL, 2);
 	return VALUE;
 }
 {hex}	{
-	yylval.val = strtol(yytext+2, NULL, 16);
+	m_yylval.val = strtol(m_yytext+2, NULL, 16);
 	return VALUE;
 }
 {reg}	{
-	yylval.val = strtol(yytext+1, NULL, 10);
+	m_yylval.val = strtol(m_yytext+1, NULL, 10);
 	return REGISTER;
 }
 {data}		return DATA;
@@ -100,27 +100,27 @@ chars	[-+:,\[\]<>]
 {endprog}	return ENDPROG;
 
 {chars}	{
-	return *yytext;
+	return *m_yytext;
 }
 "<<"	return SHL;
 ">>"	return SHR;
 
 {name}	{
-	struct op_t *op = get_op(yytext);
+	struct op_t *op = get_op(m_yytext);
 	if (op) {
-		yylval.val = op->opcode;
+		m_yylval.val = op->opcode;
 		return op->type;
 	} else {
-		yylval.str = strdup(yytext);
+		m_yylval.str = strdup(m_yytext);
 		return NAME;
 	}
 }
 
-.	{ yyerror("unknown character"); }
+.	{ m_yyerror("unknown character"); }
 
 %%
 
-int yywrap(void) {
+int m_yywrap(void) {
 	return 1;
 }
 
