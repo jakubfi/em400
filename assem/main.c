@@ -20,6 +20,7 @@
 #include <string.h>
 #include <getopt.h>
 
+#include "ops.h"
 #include "assem_parse.h"
 #include "elements.h"
 #include "eval.h"
@@ -79,7 +80,7 @@ void usage()
 int main(int argc, char **argv)
 {
 	int option;
-	int k202 = 0;
+	mnemo_sel = MNEMO_MERA400;
 	int classic = 0;
 	char *input_file = NULL;
 	char *output_file = NULL;
@@ -91,7 +92,7 @@ int main(int argc, char **argv)
 				usage();
 				exit(0);
 			case 'k':
-				k202 = 1;
+				mnemo_sel = MNEMO_K202;
 				break;
 			case 'c':
 				classic = 1;

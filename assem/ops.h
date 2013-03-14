@@ -20,6 +20,11 @@
 
 #include <inttypes.h>
 
+enum _mnemo_e {
+	MNEMO_MERA400 = 0,
+	MNEMO_K202 = 1
+};
+
 struct op_t {
 	char *mnemo[2];
 	int type;
@@ -27,6 +32,7 @@ struct op_t {
 };
 
 extern struct op_t ops[];
+extern int mnemo_sel;
 
 struct op_t * get_op(char *opname);
 

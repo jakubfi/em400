@@ -166,12 +166,12 @@ struct op_t ops[] = {
 };
 
 // -----------------------------------------------------------------------
-struct op_t * get_op(char * opname)
+struct op_t * get_op(char *opname)
 {
 	struct op_t *op = ops;
 
-	while (op->mnemo[0]) {
-		if (!strcasecmp(op->mnemo[0], opname)) {
+	while (op->mnemo[mnemo_sel]) {
+		if (!strcasecmp(op->mnemo[mnemo_sel], opname)) {
 			return op;
 		}
 		op++;
