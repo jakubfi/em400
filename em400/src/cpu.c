@@ -113,7 +113,7 @@ void cpu_step()
 	int len;
 	len = dt_trans(addr, &buf_t, DMODE_TRANS);
 	len = dt_trans(addr, &buf_d, DMODE_DASM);
-	LOG(D_CPU, 5, "EXEC: %s --- %s", buf_d, buf_t);
+	LOG(D_CPU, 5, "EXEC (words: %i): %s --- %s", len, buf_d, buf_t);
 	free(buf_t);
 	free(buf_d);
 #endif
