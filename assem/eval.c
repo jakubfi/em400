@@ -27,7 +27,7 @@
 
 struct word_t *program_start;
 struct word_t *program_end;
-
+struct dict_t **dict;
 char assembly_error[1024];
 int ic;
 
@@ -81,7 +81,7 @@ struct enode_t * enode_eval(struct enode_t *e, char *refcheck)
 {
 	if (!e) return NULL;
 
-	struct dict_t *d = dict_find(e->label);
+	struct dict_t *d = dict_find(dict, e->label);
 	struct enode_t *e1 = enode_eval(e->e1, refcheck);
 	struct enode_t *e2 = enode_eval(e->e2, refcheck);
 

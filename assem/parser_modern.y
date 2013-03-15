@@ -79,7 +79,7 @@ sentence:
 		}
 	}
 	| EQU NAME expr {
-		if (!dict_add(VALUE, $2, $3)) {
+		if (!dict_add(dict, VALUE, $2, $3)) {
 			m_yyerror("name '%s' already defined", $2);
 			YYABORT;
 		}
@@ -90,7 +90,7 @@ sentence:
 			m_yyerror("cannot make enode for '%s'", $1);
 			YYABORT;
 		}
-		if (!dict_add(ADDR, $1, e)) {
+		if (!dict_add(dict, ADDR, $1, e)) {
 			m_yyerror("name '%s' already defined", $1);
 			YYABORT;
 		}

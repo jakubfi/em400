@@ -24,7 +24,7 @@
 
 extern struct word_t *program_start;
 extern struct word_t *program_end;
-
+extern struct dict_t **dict;
 extern char assembly_error[];
 extern int ic;
 

@@ -150,6 +150,7 @@ int main(int argc, char **argv)
 	}
 
 	// parse program
+	dict = dict_create();
 	int res = parse(asm_source);
 
 	fclose(asm_source);
@@ -157,7 +158,7 @@ int main(int argc, char **argv)
 	if (res < 0) {
 		printf("Error parsing source.\n");
 		program_drop(program_start);
-		dicts_drop();
+		dicts_drop(dict);
 		exit(1);
 	}
 
@@ -168,7 +169,7 @@ int main(int argc, char **argv)
 	if (wcounter <= 0) {
 		printf("Error assembling binary image at IC=%i: %s\n", -wcounter-1, assembly_error);
 		program_drop(program_start);
-		dicts_drop();
+		dicts_drop(dict);
 		exit(1);
 	}
 
@@ -181,12 +182,12 @@ int main(int argc, char **argv)
 	if (wcounter != res) {
 		printf("Error: not all words written, output file '%s' is broken.\n", output_file);
 		program_drop(program_start);
-		dicts_drop();
+		dicts_drop(dict);
 		exit(1);
 	}
 
 	program_drop(program_start);
-	dicts_drop();
+	dicts_drop(dict);
 	return 0;
 }
 

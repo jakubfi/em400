@@ -58,10 +58,11 @@ struct word_t * make_data(struct enode_t *e, int lineno);
 struct word_t * make_rep(int rep, int value, int lineno);
 struct word_t * make_string(char *str, int lineno);
 struct word_t * make_op(int type, uint16_t op, int ra, struct enode_t *e, struct norm_t *norm, int lineno);
-struct dict_t * dict_add(int type, char *name, struct enode_t *e);
-struct dict_t * dict_find(char *name);
+struct dict_t ** dict_create();
+struct dict_t * dict_add(struct dict_t **dict, int type, char *name, struct enode_t *e);
+struct dict_t * dict_find(struct dict_t **dict, char *name);
 void dict_drop(struct dict_t * dict);
-void dicts_drop();
+void dicts_drop(struct dict_t **dict);
 
 #endif
 

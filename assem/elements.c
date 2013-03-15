@@ -25,8 +25,6 @@
 
 #define DICT_HASH_BITS 8
 
-struct dict_t *dict[1<<DICT_HASH_BITS];
-
 // -----------------------------------------------------------------------
 static inline unsigned int dict_hash(char *i)
 {
@@ -34,20 +32,23 @@ static inline unsigned int dict_hash(char *i)
 }
 
 // -----------------------------------------------------------------------
-struct dict_t * dict_create()
+struct dict_t ** dict_create()
 {
-	struct dict_t *d = malloc(sizeof(struct dict_t) * 1<<DICT_HASH_BITS);
+	struct dict_t **d = malloc(sizeof(struct dict_t*) * (1<<DICT_HASH_BITS));
+	for (int i=0 ; i<(1<<DICT_HASH_BITS) ; i++) {
+		d[i] = NULL;
+	}
 	return d;
 }
 
 // -----------------------------------------------------------------------
-struct dict_t * dict_add(int type, char *name, struct enode_t *e)
+struct dict_t * dict_add(struct dict_t **dict, int type, char *name, struct enode_t *e)
 {
 	if (!name || !e) {
 		return NULL;
 	}
 
-	if (dict_find(name)) {
+	if (dict_find(dict, name)) {
 		return NULL;
 	}
 
@@ -63,7 +64,7 @@ struct dict_t * dict_add(int type, char *name, struct enode_t *e)
 }
 
 // -----------------------------------------------------------------------
-struct dict_t * dict_find(char *name)
+struct dict_t * dict_find(struct dict_t **dict, char *name)
 {
 	if (!name) {
 		return NULL;
@@ -93,9 +94,12 @@ void dict_drop(struct dict_t * dict)
 }
 
 // -----------------------------------------------------------------------
-void dicts_drop()
+void dicts_drop(struct dict_t **dict)
 {
-	for (int i=0 ; i<1<<DICT_HASH_BITS ; i++) {
+	if (!dict) {
+		return;
+	}
+	for (int i=0 ; i<(1<<DICT_HASH_BITS) ; i++) {
 		dict_drop(dict[i]);
 	}
 }
