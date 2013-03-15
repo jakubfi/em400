@@ -25,12 +25,19 @@
 
 #define DICT_HASH_BITS 8
 
-struct dict_bucket_t dict[1<<DICT_HASH_BITS];
+struct dict_t *dict[1<<DICT_HASH_BITS];
 
 // -----------------------------------------------------------------------
 static inline unsigned int dict_hash(char *i)
 {
 	return (*i & 0b1111) | ((*(i+1) & 0b1111) << 4);
+}
+
+// -----------------------------------------------------------------------
+struct dict_t * dict_create()
+{
+	struct dict_t *d = malloc(sizeof(struct dict_t) * 1<<DICT_HASH_BITS);
+	return d;
 }
 
 // -----------------------------------------------------------------------
@@ -48,16 +55,9 @@ struct dict_t * dict_add(int type, char *name, struct enode_t *e)
 	d->type = type;
 	d->name = strdup(name);
 	d->e = e;
-	d->next = NULL;
 
-	struct dict_bucket_t *b = dict + dict_hash(name);
-
-	if (b->head) {
-		b->tail->next = d;
-		b->tail = d;
-	} else {
-		b->head = b->tail = d;
-	}
+	d->next = dict[dict_hash(name)];
+	dict[dict_hash(name)] = d;
 
 	return d;
 }
@@ -69,8 +69,7 @@ struct dict_t * dict_find(char *name)
 		return NULL;
 	}
 
-	struct dict_bucket_t *b = dict + dict_hash(name);
-	struct dict_t *d = b->head;
+	struct dict_t *d = dict[dict_hash(name)];
 
 	while (d) {
 		if (!strcmp(name, d->name)) {
@@ -97,7 +96,7 @@ void dict_drop(struct dict_t * dict)
 void dicts_drop()
 {
 	for (int i=0 ; i<1<<DICT_HASH_BITS ; i++) {
-		dict_drop(dict[i].head);
+		dict_drop(dict[i]);
 	}
 }
 
