@@ -1,4 +1,4 @@
-.program "op/RIC"
+.prog "op/RIC"
 
 	ric r1
 	ric r2
@@ -7,7 +7,7 @@
 
 	hlt 077
 
-.endprog
+.finprog
 
 ; XPCT int(rz(6)) : 0
 ; XPCT int(sr) : 0

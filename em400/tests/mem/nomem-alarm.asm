@@ -1,4 +1,4 @@
-.program "mem/nomem-alarm"
+.prog "mem/nomem-alarm"
 
 ; CONFIG configs/no_user_mem.cfg
 
@@ -8,7 +8,7 @@
 
 	hlt 077
 
-.endprog
+.finprog
 
 ; XPCT int(rz(2)) : 1
 ; XPCT int(rz(6)) : 0

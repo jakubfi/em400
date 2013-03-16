@@ -1,4 +1,4 @@
-.program "alu/MW"
+.prog "alu/MW"
 
 ; PRE [910] = 0b1010010010010000
 ; PRE [911] = 0b0000000000000000
@@ -66,7 +66,7 @@
 
 	hlt 077
 
-.endprog
+.finprog
 
 ; XPCT int(rz(6)) : 0
 ; XPCT int(sr) : 0

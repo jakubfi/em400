@@ -1,4 +1,4 @@
-.program "op/LA-2levels"
+.prog "op/LA-2levels"
 
 	la [data1]
 
@@ -7,7 +7,7 @@
 data1:	.data	data2
 data2:	.data	40, 41, 42, 43, 44, 45, 46
 
-.endprog
+.finprog
 
 ; XPCT int(rz(6)) : 0
 ; XPCT int(sr) : 0

@@ -1,4 +1,4 @@
-.program "op/CL"
+.prog "op/CL"
 
 	lw r1, -1
 	cl r1, 1
@@ -18,7 +18,7 @@
 
 	hlt 077
 
-.endprog
+.finprog
 
 ; XPCT int(rz(6)) : 0
 ; XPCT int(sr) : 0

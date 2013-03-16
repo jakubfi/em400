@@ -1,4 +1,4 @@
-.program "op/UJS-bw"
+.prog "op/UJS-bw"
 
 	ujs fin
 .res	4
@@ -10,7 +10,7 @@ fin:	ujs fin2
 .res	5
 	hlt 077
 
-.endprog
+.finprog
 
 ; XPCT int(rz(6)) : 0
 ; XPCT int(sr) : 0

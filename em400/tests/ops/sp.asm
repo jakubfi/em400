@@ -1,4 +1,4 @@
-.program "op/SP"
+.prog "op/SP"
 
 	lw r1, 0b0000000000000001
 	ou r1, 0b0000000000000011
@@ -20,7 +20,7 @@ err:
 
 blk:	.data 1
 
-.endprog
+.finprog
 
 ; XPCT int(rz(6)) : 0
 

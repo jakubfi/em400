@@ -1,4 +1,4 @@
-.program "int/timer"
+.prog "int/timer"
 
 ; busy loop for a while, waiting for timer to tick
 
@@ -12,7 +12,7 @@ loop1:	trb r1, 1
 	ujs loop1
 	ujs loop2
 
-.endprog
+.finprog
 
 ; XPCT int(sr) : 0
 ; XPCT int(rz(6)) : 0

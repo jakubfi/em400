@@ -1,4 +1,4 @@
-.program "op/EXL"
+.prog "op/EXL"
 
 ; PRE r0 = 0xfafa
 ; PRE sr = 0b0000001111000000
@@ -20,7 +20,7 @@ start:
 exlp:
 	hlt 077
 
-.endprog
+.finprog
 
 ; XPCT int(rz(6)) : 0
 

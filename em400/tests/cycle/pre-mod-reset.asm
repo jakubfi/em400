@@ -1,4 +1,4 @@
-.program "cycle/pre-mod-reset"
+.prog "cycle/pre-mod-reset"
 
 ; legal instruction resets MOD
 
@@ -8,7 +8,7 @@
 
 	hlt 074
 
-.endprog
+.finprog
 
 ; XPCT int(sr) : 0
 ; XPCT int(rz(6)) : 0

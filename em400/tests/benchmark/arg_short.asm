@@ -1,4 +1,4 @@
-.program "arg short"
+.prog "arg short"
 
 	lwt r2, 0
 next:	lwt r1, 0
@@ -12,4 +12,4 @@ loop:	awt r1, 1
 
 fin:	hlt 077
 
-.endprog
+.finprog

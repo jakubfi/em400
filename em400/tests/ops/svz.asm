@@ -1,4 +1,4 @@
-.program "op/SVZ"
+.prog "op/SVZ"
 
 	lw r1, 0b0010000000000001
 	svz r1
@@ -13,7 +13,7 @@
 
 	hlt 077
 
-.endprog
+.finprog
 
 ; XPCT int(rz(6)) : 0
 ; XPCT int(sr) : 0

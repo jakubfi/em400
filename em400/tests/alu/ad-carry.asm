@@ -1,4 +1,4 @@
-.program "alu/AD-carry"
+.prog "alu/AD-carry"
 
 ; -1 + 32767
 
@@ -6,7 +6,7 @@
 	aw r1, 0b0111111111111111
 	hlt 077
 
-.endprog
+.finprog
 
 ; XPCT int(rz(6)) : 0
 ; XPCT int(sr) : 0

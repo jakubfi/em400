@@ -1,4 +1,4 @@
-.program "cycle/illegal-op"
+.prog "cycle/illegal-op"
 
 ; illegal instruction resets MOD
 
@@ -7,7 +7,7 @@
 	lw r1, 0
 	hlt 077
 
-.endprog
+.finprog
 
 ; XPCT int(sr) : 0
 ; XPCT int(rz(6)) : 1

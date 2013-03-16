@@ -1,4 +1,4 @@
-.program "args/pre-mod"
+.prog "args/pre-mod"
 
 ; pre-modification
 
@@ -15,7 +15,7 @@
 
 	hlt 077
 
-.endprog
+.finprog
 
 ; XPCT int(rz(6)) : 0
 ; XPCT int(sr) : 0

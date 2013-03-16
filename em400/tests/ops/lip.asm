@@ -1,4 +1,4 @@
-.program "op/LIP"
+.prog "op/LIP"
 
 ; PRE [10] = 135
 ; PRE [11] = 0xfafa
@@ -16,7 +16,7 @@ start:
 exlp:
 	hlt 077
 
-.endprog
+.finprog
 
 ; XPCT int(rz(6)) : 0
 

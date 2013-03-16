@@ -1,4 +1,4 @@
-.program "op/RI"
+.prog "op/RI"
 
 ; PRE r1 = 10
 
@@ -6,7 +6,7 @@
 
 	hlt 077
 
-.endprog
+.finprog
 
 ; XPCT int(rz(6)) : 0
 ; XPCT int(sr) : 0

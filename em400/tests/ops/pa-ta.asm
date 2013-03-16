@@ -1,4 +1,4 @@
-.program "op/PA+TA"
+.prog "op/PA+TA"
 
 ; PRE r2 = 20
 ; PRE r3 = 30
@@ -32,7 +32,7 @@ blk:	.data 1
 
 err:	hlt 077
 
-.endprog
+.finprog
 
 ; XPCT int(rz(6)) : 0
 ; XPCT int(sr) : 1

@@ -1,4 +1,4 @@
-.program "args/arg-norm-mem"
+.prog "args/arg-norm-mem"
 
 ; normal argument points to memory
 
@@ -16,7 +16,7 @@ dt2:	.data	dt3
 dt3:	.data	0x0003
 dt4:	.data	0x0004
 
-.endprog
+.finprog
 
 ; XPCT int(rz(6)) : 0
 ; XPCT int(sr) : 0

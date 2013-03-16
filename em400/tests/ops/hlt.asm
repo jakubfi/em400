@@ -1,4 +1,4 @@
-.program "op/HLT"
+.prog "op/HLT"
 
 ; PRE [20] = 0b0000100000000000
 
@@ -10,7 +10,7 @@ loop:	ujs loop
 
 fin:	hlt 077
 
-.endprog
+.finprog
 
 ; XPCT int(rz(6)) : 0
 

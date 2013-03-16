@@ -1,4 +1,4 @@
-.program "op/RW"
+.prog "op/RW"
 
 ; PRE r0 = -10
 ; PRE r1 = -11
@@ -22,7 +22,7 @@
 
 .res	100
 
-.endprog
+.finprog
 
 ; XPCT int(rz(6)) : 0
 ; XPCT int(sr) : 0

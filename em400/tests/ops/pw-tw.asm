@@ -1,4 +1,4 @@
-.program "op/PW+TW"
+.prog "op/PW+TW"
 
 ; PRE r0 = 0xaafe
 ; PRE r1 = 0x0001
@@ -48,7 +48,7 @@ blk:	.data 0b0000000000000001
 
 err:	hlt 077
 
-.endprog
+.finprog
 
 ; XPCT int(rz(6)) : 0
 ; XPCT int(sr) : 1

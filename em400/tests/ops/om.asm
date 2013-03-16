@@ -1,4 +1,4 @@
-.program "op/OM"
+.prog "op/OM"
 
 	lw r1, 0b0000000000000001
 	ou r1, 0b0000000000000011
@@ -19,7 +19,7 @@ ok:
 err:	hlt 077
 blk:	.data 1
 
-.endprog
+.finprog
 
 ; XPCT int(rz(6)) : 0
 ; XPCT int(sr) : 1

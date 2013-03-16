@@ -85,7 +85,7 @@ class Test:
 
         for l in open(self.source, "r"):
             # get program name
-            pname = re.findall(".program[ \t]+\"(.*)\"", l)
+            pname = re.findall(".prog[ \t]+\"(.*)\"", l)
             if pname:
                 self.prog_name = pname[0]
 

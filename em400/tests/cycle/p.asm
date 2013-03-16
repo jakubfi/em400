@@ -1,4 +1,4 @@
-.program "cycle/p"
+.prog "cycle/p"
 
 ; if P is set, next instruction is uneffective and IC jumps over
 
@@ -7,7 +7,7 @@
 	hlt 077
 	hlt 077
 
-.endprog
+.finprog
 
 ; XPCT int(sr) : 0
 ; XPCT int(rz(6)) : 0

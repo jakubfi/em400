@@ -1,4 +1,4 @@
-.program "args/pre-mod-fail"
+.prog "args/pre-mod-fail"
 
 ; pre-modification fails on 4th time
 
@@ -10,7 +10,7 @@
 
 	hlt 077
 
-.endprog
+.finprog
 
 ; XPCT int(sr) : 0
 

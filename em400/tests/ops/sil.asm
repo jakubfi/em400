@@ -1,9 +1,9 @@
-.program "op/SIL"
+.prog "op/SIL"
 
 	sil
 	hlt 077
 
-.endprog
+.finprog
 
 ; XPCT int(rz(6)) : 0
 ; XPCT int(sr) : 0

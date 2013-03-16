@@ -1,4 +1,4 @@
-.program "op/RA"
+.prog "op/RA"
 
 ; PRE r1 = 10
 ; PRE r2 = 20
@@ -14,7 +14,7 @@
 
 data:	.res 7
 
-.endprog
+.finprog
 
 ; XPCT int(rz(6)) : 0
 ; XPCT int(sr) : 0

@@ -1,4 +1,4 @@
-.program "cycle/ic-add-2"
+.prog "cycle/ic-add-2"
 
 ; 2-words instruction
 
@@ -6,7 +6,7 @@
 
 	hlt 077
 
-.endprog
+.finprog
 
 ; XPCT int(sr) : 0
 ; XPCT int(rz(6)) : 0

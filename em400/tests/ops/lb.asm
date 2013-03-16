@@ -1,4 +1,4 @@
-.program "op/LB"
+.prog "op/LB"
 
 	lw r1, 0b0000000000000001
 	ou r1, 0b0000000000000011
@@ -18,7 +18,7 @@ err:	hlt 077
 blk:    .data 0b0000000000000001
 
 
-.endprog
+.finprog
 
 ; XPCT int(rz(6)) : 0
 ; XPCT bin(sr) : 0b0000000000000001

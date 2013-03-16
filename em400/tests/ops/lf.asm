@@ -1,4 +1,4 @@
-.program "op/LF"
+.prog "op/LF"
 
 	lf data1
 	lw r4, r1
@@ -12,7 +12,7 @@ data1:	.data	1024, 1025, 1026
 data2:	.data	data3
 data3:	.data	2048, 2049, 2050
 
-.endprog
+.finprog
 
 ; XPCT int(rz(6)) : 0
 ; XPCT int(sr) : 0

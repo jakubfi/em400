@@ -1,4 +1,4 @@
-.program "ocena K-202"
+.prog "ocena K-202"
 
 ; Slightly modified (see notes below) version of a test used
 ; for K-202 evaluation done on December 4th 1972 by
@@ -30,4 +30,4 @@ adr_pocz:
 adr_1:	.data 1
 adr_2:	.data 0
 
-.endprog
+.finprog

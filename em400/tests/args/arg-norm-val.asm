@@ -1,4 +1,4 @@
-.program "args/arg-norm-val"
+.prog "args/arg-norm-val"
 
 ; normal argument is a value
 
@@ -12,7 +12,7 @@
 
 	hlt 077
 
-.endprog
+.finprog
 
 ; XPCT int(rz(6)) : 0
 ; XPCT int(sr) : 0

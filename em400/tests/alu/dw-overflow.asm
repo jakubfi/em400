@@ -1,4 +1,4 @@
-.program "alu/DW-overflow"
+.prog "alu/DW-overflow"
 ; 5/0
 ; PRE [0xa0] = 0b0111111111111111
 ; PRE [0xa1] =                   0b1111111111111111
@@ -11,7 +11,7 @@
 
 	hlt 077
 
-.endprog
+.finprog
 
 ; XPCT int(rz(6)) : 0
 ; XPCT int(rz(7)) : 1

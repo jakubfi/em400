@@ -1,4 +1,4 @@
-.program "op/JCS"
+.prog "op/JCS"
 
 	lw r1, 0b1000000000000000
 	aw r1, 0b1000000000000000
@@ -7,7 +7,7 @@
 fin:	hlt 077
 
 
-.endprog
+.finprog
 
 ; XPCT int(rz(6)) : 0
 ; XPCT int(sr) : 0

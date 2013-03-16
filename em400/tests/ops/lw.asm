@@ -1,4 +1,4 @@
-.program "op/LW"
+.prog "op/LW"
 
 	lw r0, 0xfffe
 	lw r1, 0x0001
@@ -11,7 +11,7 @@
 
 	hlt 077
 
-.endprog
+.finprog
 
 ; XPCT int(rz(6)) : 0
 ; XPCT int(sr) : 0

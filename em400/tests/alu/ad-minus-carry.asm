@@ -1,4 +1,4 @@
-.program "alu/AD-minus-carry"
+.prog "alu/AD-minus-carry"
 
 ; -1 + -1
 
@@ -6,7 +6,7 @@
 	aw r1, 0b1111111111111111
 	hlt 077
 
-.endprog
+.finprog
 
 ; XPCT int(rz(6)) : 0
 ; XPCT int(sr) : 0

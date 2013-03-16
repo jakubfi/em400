@@ -1,4 +1,4 @@
-.program "alu/AD-minus"
+.prog "alu/AD-minus"
 
 ; -1 + 0
 
@@ -6,7 +6,7 @@
 	aw r1, 0
 	hlt 077
 
-.endprog
+.finprog
 
 ; XPCT int(rz(6)) : 0
 ; XPCT int(sr) : 0

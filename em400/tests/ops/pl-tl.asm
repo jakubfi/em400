@@ -1,4 +1,4 @@
-.program "op/PL+TL"
+.prog "op/PL+TL"
 
 ; PRE r5 = 50
 ; PRE r6 = 60
@@ -25,7 +25,7 @@ blk:	.data 1
 
 err:	hlt 077
 
-.endprog
+.finprog
 
 ; XPCT int(rz(6)) : 0
 ; XPCT int(sr) : 1

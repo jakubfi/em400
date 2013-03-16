@@ -1,4 +1,4 @@
-.program "op/KI+FI"
+.prog "op/KI+FI"
 
 ; PRE [10] = 0b0110101010101010
 ; PRE [11] = 0b0000000000000000
@@ -11,7 +11,7 @@
 	ki 13
 	hlt 077
 
-.endprog
+.finprog
 
 ; XPCT int(rz(6)) : 0
 ; XPCT int(sr) : 0

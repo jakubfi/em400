@@ -1,4 +1,4 @@
-.program "registers/r0"
+.prog "registers/r0"
 
 ; r0 allows user to modify only its right byte
 
@@ -8,7 +8,7 @@
 
 	hlt 077
 
-.endprog
+.finprog
 
 ; XPCT int(rz(6)) : 0
 ; XPCT int(sr) : 0

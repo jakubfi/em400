@@ -1,4 +1,4 @@
-.program "op/SXU"
+.prog "op/SXU"
 
 	lw r1, -1
 	sxu r1
@@ -10,7 +10,7 @@
 
 	hlt 077
 
-.endprog
+.finprog
 
 ; XPCT int(rz(6)) : 0
 ; XPCT int(sr) : 0

@@ -1,4 +1,4 @@
-.program "op/LWS"
+.prog "op/LWS"
 
 	ujs main
 data1:	.data	0xffff
@@ -21,7 +21,7 @@ data2:	.data	0x1040
 
 fin:	hlt 077
 
-.endprog
+.finprog
 
 ; XPCT int(rz(6)) : 0
 ; XPCT int(sr) : 0

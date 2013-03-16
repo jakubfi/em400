@@ -1,4 +1,4 @@
-.program "args/pre-mod-nofail"
+.prog "args/pre-mod-nofail"
 
 ; pre-modification works 3 times in a row
 
@@ -9,7 +9,7 @@
 
 	hlt 077
 
-.endprog
+.finprog
 
 ; XPCT int(sr) : 0
 

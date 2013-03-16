@@ -1,11 +1,11 @@
-.program "op/IRB"
+.prog "op/IRB"
 
 	lwt r1, -2
 	irb r1, fin
 	hlt 077
 fin:	hlt 077
 
-.endprog
+.finprog
 
 ; XPCT int(rz(6)) : 0
 ; XPCT int(sr) : 0

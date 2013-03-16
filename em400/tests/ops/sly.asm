@@ -1,4 +1,4 @@
-.program "op/SLY"
+.prog "op/SLY"
 
 ; PRE r0 = 0b0000000100000000
 
@@ -15,7 +15,7 @@
 
 	hlt 077
 
-.endprog
+.finprog
 
 ; XPCT int(rz(6)) : 0
 ; XPCT int(sr) : 0

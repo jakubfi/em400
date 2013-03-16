@@ -1,4 +1,4 @@
-.program "op/BRC"
+.prog "op/BRC"
 
 ; PRE r0 = 0b1101011010101101
 
@@ -8,7 +8,7 @@
 	hlt 077
 	hlt 077
 
-.endprog
+.finprog
 
 ; XPCT int(rz(6)) : 0
 ; XPCT int(sr) : 0

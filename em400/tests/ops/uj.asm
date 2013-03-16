@@ -1,4 +1,4 @@
-.program "op/UJ"
+.prog "op/UJ"
 
 	lw r1, label
 	uj r1
@@ -10,7 +10,7 @@ label:	hlt 077
 	hlt 077
 	hlt 077
 
-.endprog
+.finprog
 
 ; XPCT int(rz(6)) : 0
 ; XPCT int(sr) : 0
