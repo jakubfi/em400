@@ -41,16 +41,16 @@ extern int ic;
 
 %left  '+' '-' '/'
 %token '=' ':' ',' '.' '(' ')' '&'
-%token S RES F PROG FINPROG SEG FINSEG MACRO FINMACRO ALL NAME BA INT OUT LAB NLAB MEM OS IFUNK IFUND IFDEF FI SS HS MAX LEN E
+%token CP_S CP_RES CP_F CP_PROG CP_FINPROG CP_SEG CP_FINSEG CP_MACRO CP_FINMACRO CP_ALL CP_NAME CP_BA CP_INT CP_OUT CP_LAB CP_NLAB CP_MEM CP_OS CP_IFUNK CP_IFUND CP_IFDEF CP_FI CP_SS CP_HS CP_MAX CP_LEN CP_E
 %token <str> IDENTIFIER FLOAT STRING
 %token <val> VALUE
-%token <val> OP_2ARG OP_FD OP_KA1 OP_JS OP_KA2 OP_C OP_SHC OP_S OP_HLT OP_J OP_L OP_G OP_BN
+%token <val> COP_2ARG COP_FD COP_KA1 COP_JS COP_KA2 COP_C COP_SHC COP_S COP_HLT COP_J COP_L COP_G COP_BN
 
 
 %%
 
 program:
-	PROG progblock FINPROG
+	CP_PROG progblock CP_FINPROG
 	;
 
 progblock:
@@ -61,7 +61,7 @@ progblock:
 	;
 
 segment:
-	SEG segmentblock FINSEG
+	CP_SEG segmentblock CP_FINSEG
 	;
 
 segmentblock:
@@ -71,7 +71,7 @@ segmentblock:
 	;
 
 macro:
-	MACRO macroblock FINMACRO
+	CP_MACRO macroblock CP_FINMACRO
 	;
 
 macroblock:
@@ -82,25 +82,25 @@ macroblock:
 code:
 	vardef
 	| label
-	| internal
+	| pragma
 	| STRING
 	| instruction
 	;
 
 instruction:
-	OP_2ARG ',' reg normarg
-	| OP_FD normarg
-	| OP_KA1 ',' reg ',' expr '.'
-	| OP_JS ',' expr '.'
-	| OP_KA2 ',' expr '.'
-	| OP_C ',' reg '.'
-	| OP_SHC '.' reg ',' expr '.'
-	| OP_S ',' zero '.'
-	| OP_HLT ',' expr '.'
-	| OP_J normarg
-	| OP_L normarg
-	| OP_G normarg
-	| OP_BN normarg
+	COP_2ARG ',' reg normarg
+	| COP_FD normarg
+	| COP_KA1 ',' reg ',' expr '.'
+	| COP_JS ',' expr '.'
+	| COP_KA2 ',' expr '.'
+	| COP_C ',' reg '.'
+	| COP_SHC '.' reg ',' expr '.'
+	| COP_S ',' zero '.'
+	| COP_HLT ',' expr '.'
+	| COP_J normarg
+	| COP_L normarg
+	| COP_G normarg
+	| COP_BN normarg
 	;
 
 normarg:
@@ -149,28 +149,28 @@ label:
 	IDENTIFIER ':'
 	;
 
-internal:
-	S expr '.'
-	| RES expr '.'
-	| RES expr ',' expr '.'
-	| F expr '.' floats
-	| NAME IDENTIFIER '.'
-	| BA expr '.'
-	| INT expr '.'
-	| OUT expr '.'
-	| LAB expr '.'
-	| NLAB
-	| MEM expr '.'
-	| OS
-	| IFUNK IDENTIFIER '.'
-	| IFUND IDENTIFIER '.'
-	| IFDEF IDENTIFIER '.'
-	| FI
-	| SS expr '.'
-	| HS
-	| MAX IDENTIFIER ',' maxlist '.'
-	| LEN expr '.'
-	| E expr '.'
+pragma:
+	CP_S expr '.'
+	| CP_RES expr '.'
+	| CP_RES expr ',' expr '.'
+	| CP_F expr '.' floats
+	| CP_NAME IDENTIFIER '.'
+	| CP_BA expr '.'
+	| CP_INT expr '.'
+	| CP_OUT expr '.'
+	| CP_LAB expr '.'
+	| CP_NLAB
+	| CP_MEM expr '.'
+	| CP_OS
+	| CP_IFUNK IDENTIFIER '.'
+	| CP_IFUND IDENTIFIER '.'
+	| CP_IFDEF IDENTIFIER '.'
+	| CP_FI
+	| CP_SS expr '.'
+	| CP_HS
+	| CP_MAX IDENTIFIER ',' maxlist '.'
+	| CP_LEN expr '.'
+	| CP_E expr '.'
 	;
 
 maxlist:

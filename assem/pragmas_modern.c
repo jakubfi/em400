@@ -15,16 +15,24 @@
 //  Foundation, Inc.,
 //  51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 
-#ifndef PRAGMAS_H
-#define PRAGMAS_H
+#include <stdlib.h>
+#include <strings.h>
 
-struct pragma_t {
-	char *name;
-	int type;
+#include "pragmas.h"
+#include "parser_modern.h"
+
+struct pragma_t pragmas_modern[] = {
+{ ".prog",		MP_PROG },
+{ ".finprog",	MP_FINPROG },
+{ ".seg",		MP_SEG },
+{ ".finseg",	MP_FINSEG },
+{ ".macro",		MP_MACRO },
+{ ".finmacro",	MP_FINMACRO },
+{ ".data",		MP_DATA },
+{ ".res",		MP_RES },
+{ ".equ",		MP_EQU },
+
+{ NULL, 0 }
 };
-
-struct pragma_t * get_pragma(struct pragma_t *pr, char *prname);
-
-#endif
 
 // vim: tabstop=4

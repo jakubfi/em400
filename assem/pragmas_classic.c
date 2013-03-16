@@ -15,16 +15,41 @@
 //  Foundation, Inc.,
 //  51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 
-#ifndef PRAGMAS_H
-#define PRAGMAS_H
+#include <stdlib.h>
+#include <strings.h>
 
-struct pragma_t {
-	char *name;
-	int type;
+#include "pragmas.h"
+#include "parser_classic.h"
+
+struct pragma_t pragmas_classic[] = {
+{ "S*",			CP_S },
+{ "RES*",		CP_RES },
+{ "F*",			CP_F },
+{ "PROG*",		CP_PROG },
+{ "FINPROG*",	CP_FINPROG },
+{ "SEG*",		CP_SEG },
+{ "FINSEG*",	CP_FINSEG },
+{ "MACRO*",		CP_MACRO },
+{ "FINMACRO*",	CP_FINMACRO },
+{ "ALL*",		CP_ALL },
+{ "NAME*",		CP_NAME },
+{ "BA*",		CP_BA },
+{ "MEM*",		CP_MEM },
+{ "OS*",		CP_OS },
+{ "IFUNK*",		CP_IFUNK },
+{ "IF UNK*",	CP_IFUNK },
+{ "IFUND*",		CP_IFUND },
+{ "IF UND*",	CP_IFUND },
+{ "IFDEF*",		CP_IFDEF },
+{ "IF DEF*",	CP_IFDEF },
+{ "FI*",		CP_FI },
+{ "SS*",		CP_SS },
+{ "MAX*",		CP_MAX },
+{ "LEN*",		CP_LEN },
+{ "E*",			CP_E },
+{ "#S", 		CP_HS },
+
+{ NULL, 0 }
 };
-
-struct pragma_t * get_pragma(struct pragma_t *pr, char *prname);
-
-#endif
 
 // vim: tabstop=4

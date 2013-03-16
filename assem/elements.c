@@ -83,24 +83,24 @@ struct dict_t * dict_find(struct dict_t **dict, char *name)
 }
 
 // -----------------------------------------------------------------------
-void dict_drop(struct dict_t * dict)
+void dict_list_drop(struct dict_t * dict)
 {
 	if (!dict) {
 		return;
 	}
 	free(dict->name);
-	dict_drop(dict->next);
+	dict_list_drop(dict->next);
 	free(dict);
 }
 
 // -----------------------------------------------------------------------
-void dicts_drop(struct dict_t **dict)
+void dict_drop(struct dict_t **dict)
 {
 	if (!dict) {
 		return;
 	}
 	for (int i=0 ; i<(1<<DICT_HASH_BITS) ; i++) {
-		dict_drop(dict[i]);
+		dict_list_drop(dict[i]);
 	}
 }
 
@@ -151,7 +151,7 @@ struct norm_t * make_norm(int rc, int rb, struct word_t *word)
 struct word_t * make_data(struct enode_t *e, int lineno)
 {
 	struct word_t *word = malloc(sizeof(struct word_t));
-	word->type = DATA;
+	word->type = O_DATA;
 	word->e = e;
 
 	word->opcode = 0;
@@ -169,7 +169,7 @@ struct word_t * make_rep(int rep, int value, int lineno)
 	struct word_t *wtail = NULL;
 
 	while (rep > 0) {
-		struct enode_t *e = make_enode(VALUE, value, NULL, NULL, NULL);
+		struct enode_t *e = make_enode(E_VALUE, value, NULL, NULL, NULL);
 		struct word_t *w = make_data(e, lineno);
 		if (!whead) {
 			whead = wtail = w;
@@ -191,7 +191,7 @@ struct word_t * make_string(char *str, int lineno)
 	struct word_t *word_head = NULL;
 
 	while (c && *c) {
-		struct enode_t *e = make_enode(VALUE, (int)(*c << 8), NULL, NULL, NULL);
+		struct enode_t *e = make_enode(E_VALUE, (int)(*c << 8), NULL, NULL, NULL);
 		struct word_t *w = make_data(e, lineno);
 
 		c++;

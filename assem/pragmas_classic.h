@@ -15,15 +15,12 @@
 //  Foundation, Inc.,
 //  51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 
-#ifndef PRAGMAS_H
-#define PRAGMAS_H
+#ifndef PRAGMAS_CLASSIC_H
+#define PRAGMAS_CLASSIC_H
 
-struct pragma_t {
-	char *name;
-	int type;
-};
+#include "pragmas.h"
 
-struct pragma_t * get_pragma(struct pragma_t *pr, char *prname);
+extern struct pragma_t pragmas_classic[];
 
 #endif
 

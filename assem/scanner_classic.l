@@ -19,15 +19,16 @@
 #include <stdlib.h>
 #include <string.h>
 
-#include "parser_classic.h"
 #include "ops.h"
-#include "pragmas.h"
+#include "parser_classic.h"
+#include "pragmas_classic.h"
 
 void c_yyerror(char *, ...);
 
-#define YY_USER_ACTION c_yylloc.first_line = c_yylineno;
-#define YYABORT     goto c_yyabortlab
+int uop_to_classic[] = { COP_2ARG, COP_FD, COP_KA1, COP_JS, COP_KA2, COP_C, COP_SHC, COP_HLT, COP_S, COP_J, COP_L, COP_G, COP_BN };
 
+#define YY_USER_ACTION	c_yylloc.first_line = c_yylineno;
+#define YYABORT			goto c_yyabortlab
 
 %}
 
@@ -110,7 +111,7 @@ hs				#S
 {chars} { return *yytext; }
 
 {pragma}|{hs} {
-	struct pragma_t *pragma = get_pragma(yytext);
+	struct pragma_t *pragma = get_pragma(pragmas_classic, yytext);
 	if (!pragma) c_yyerror("unknown pragma: %s", yytext);
 	else return pragma->type;
 }

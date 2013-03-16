@@ -19,17 +19,19 @@
 #include <stdlib.h>
 #include <string.h>
 
-#include "parser_modern.h"
 #include "ops.h"
+#include "parser_modern.h"
+#include "pragmas_modern.h"
 
 void m_yyerror(char *, ...);
 
 char strbuf[1024];
 char *strbufpos;
 
-#define YY_USER_ACTION m_yylloc.first_line = m_yylineno;
-#define YYABORT     goto m_yyabortlab
+int uop_to_modern[] = { MOP_2ARG, MOP_FD, MOP_KA1, MOP_JS, MOP_KA2, MOP_C, MOP_SHC, MOP_HLT, MOP_S, MOP_J, MOP_L, MOP_G, MOP_BN };
 
+#define YY_USER_ACTION	m_yylloc.first_line = m_yylineno;
+#define YYABORT 	    goto m_yyabortlab
 
 %}
 
@@ -49,11 +51,7 @@ hex		-?0x[0-9a-fA-F]+
 
 reg		r[0-7]
 name	[a-zA-Z][a-zA-Z0-9_]*
-data	\.data
-equ		\.equ
-res		\.res
-program	\.program
-endprog	\.endprog
+pragma	\.[a-z]+
 chars	[-+:,\[\]<>]
 
 %%
@@ -93,11 +91,13 @@ chars	[-+:,\[\]<>]
 	m_yylval.val = strtol(m_yytext+1, NULL, 10);
 	return REGISTER;
 }
-{data}		return DATA;
-{equ}		return EQU;
-{res}		return RES;
-{program}	return PROGRAM;
-{endprog}	return ENDPROG;
+{pragma} {
+	struct pragma_t *p = get_pragma(pragmas_modern, yytext);
+	if (!p) {
+		m_yyerror("unknown pragma: %s", yytext);
+	}
+	return p->type;
+}
 
 {chars}	{
 	return *m_yytext;
@@ -109,7 +109,7 @@ chars	[-+:,\[\]<>]
 	struct op_t *op = get_op(m_yytext);
 	if (op) {
 		m_yylval.val = op->opcode;
-		return op->type;
+		return uop_to_modern[op->type];
 	} else {
 		m_yylval.str = strdup(m_yytext);
 		return NAME;

@@ -85,42 +85,42 @@ struct enode_t * enode_eval(struct enode_t *e, char *refcheck)
 	struct enode_t *e1 = enode_eval(e->e1, refcheck);
 	struct enode_t *e2 = enode_eval(e->e2, refcheck);
 
-	struct enode_t *ev = make_enode(VALUE, 0, NULL, NULL, NULL);
+	struct enode_t *ev = make_enode(E_VALUE, 0, NULL, NULL, NULL);
 
 	switch (e->type) {
-		case VALUE:
+		case E_VALUE:
 			ev->value = e->value;
 			ev->was_addr = e->was_addr;
 			break;
-		case NAME:
+		case E_NAME:
 			if (!d) return NULL;
 			if (d->name == refcheck) return NULL;
 			struct enode_t *de = enode_eval(d->e, d->name);
 			if (!de) return NULL;
 			ev->value = de->value;
-			if (d->type == ADDR) ev->was_addr = 1;
+			if (d->type == D_ADDR) ev->was_addr = 1;
 			break;
-		case '+':
+		case E_PLUS:
 			if (!e1 || !e2) return NULL;
 			ev->value = e1->value + e2->value;
 			ev->was_addr = e1->was_addr | e2->was_addr;
 			break;
-		case '-':
+		case E_MINUS:
 			if (!e1 || !e2) return NULL;
 			ev->value = e1->value - e2->value;
 			ev->was_addr = e1->was_addr | e2->was_addr;
 			break;
-		case UMINUS:
+		case E_UMINUS:
 			if (!e2) return NULL;
 			ev->value = - e2->value;
 			ev->was_addr = e2->was_addr;
 			break;
-		case SHL:
+		case E_SHL:
 			if (!e1 || !e2) return NULL;
 			ev->value = e1->value << e2->value;
 			ev->was_addr = e1->was_addr | e2->was_addr;
 			break;
-		case SHR:
+		case E_SHR:
 			if (!e1 || !e2) return NULL;
 			ev->value = e1->value >> e2->value;
 			ev->was_addr = e1->was_addr | e2->was_addr;
@@ -186,11 +186,11 @@ int compose_opcode(int ic, struct word_t *word, uint16_t *dt)
 	int relative = 0;
 
 	switch (word->type) {
-		case OP_2ARG:
+		case O_2ARG:
 			break;
-		case OP_FD:
+		case O_FD:
 			break;
-		case OP_KA1:
+		case O_KA1:
 			opl = (word->opcode >> 10) & 0b111;
 			// IRB, DRB, LWS, RWS use adresses relative to IC
 			relative = ((opl == 0b010) || (opl == 0b011) || (opl == 0b110) || (opl == 0b111)) ? 1 : 0;
@@ -198,41 +198,41 @@ int compose_opcode(int ic, struct word_t *word, uint16_t *dt)
 				ASSEMBLY_ERROR("value excess short argument size");
 			}
 			break;
-		case OP_JS:
+		case O_JS:
 			// JS group jumps use adresses relative to IC
 			if (compose_t_arg(dt, ic, ev, 1) < 0) {
 				ASSEMBLY_ERROR("value excess short argument size");
 			}
 			break;
-		case OP_KA2:
+		case O_KA2:
 			if ((ev->value < 0) || (ev->value > 255)) {
 				ASSEMBLY_ERROR("value excess byte argument size");
 			}
 			*dtic |= (ev->value & 255);
 			break;
-		case OP_C:
+		case O_C:
 			break;
-		case OP_SHC:
+		case O_SHC:
 			if ((ev->value < 0) || (ev->value > 15)) {
 				ASSEMBLY_ERROR("value excess SHC argument size");
 			}
 			*dtic |= (ev->value & 0b111);
 			*dtic |= ((ev->value & 0b1000) << 6);
 			break;
-		case OP_S:
+		case O_S:
 			break;
-		case OP_HLT:
+		case O_HLT:
 			if (compose_t_arg(dt, ic, ev, 0) < 0) {
 				ASSEMBLY_ERROR("value excess short argument size");
 			}
 			break;
-		case OP_J:
+		case O_J:
 			break;
-		case OP_L:
+		case O_L:
 			break;
-		case OP_G:
+		case O_G:
 			break;
-		case OP_BN:
+		case O_BN:
 			break;
 		default:
 			break;

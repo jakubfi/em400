@@ -40,10 +40,10 @@ extern int ic;
 };
 
 %token '[' ']' ',' ':'
-%token DATA EQU RES PROGRAM ENDPROG
+%token MP_DATA MP_EQU MP_RES MP_PROG MP_FINPROG MP_SEG MP_FINSEG MP_MACRO MP_FINMACRO
 %token <str> NAME STRING
 %token <val> VALUE ADDR REGISTER
-%token <val> OP_2ARG OP_FD OP_KA1 OP_JS OP_KA2 OP_C OP_SHC OP_S OP_HLT OP_J OP_L OP_G OP_BN
+%token <val> MOP_2ARG MOP_FD MOP_KA1 MOP_JS MOP_KA2 MOP_C MOP_SHC MOP_S MOP_HLT MOP_J MOP_L MOP_G MOP_BN
 
 %type <norm> normval norm
 %type <word> words
@@ -58,10 +58,10 @@ extern int ic;
 %%
 
 program:
-	PROGRAM STRING sentences ENDPROG {
+	MP_PROG STRING sentences MP_FINPROG {
 		printf("Assembling program '%s'\n", $2);
 	}
-	| sentences {
+	| MP_PROG sentences MP_FINPROG {
 		printf("Assembling unnamed program\n");
 	}
 	;
@@ -78,19 +78,19 @@ sentence:
 			YYABORT;
 		}
 	}
-	| EQU NAME expr {
-		if (!dict_add(dict, VALUE, $2, $3)) {
+	| MP_EQU NAME expr {
+		if (!dict_add(dict, D_VALUE, $2, $3)) {
 			m_yyerror("name '%s' already defined", $2);
 			YYABORT;
 		}
 	}
 	| NAME ':' {
-		struct enode_t *e = make_enode(VALUE, ic, NULL, NULL, NULL);
+		struct enode_t *e = make_enode(E_VALUE, ic, NULL, NULL, NULL);
 		if (!e) {
 			m_yyerror("cannot make enode for '%s'", $1);
 			YYABORT;
 		}
-		if (!dict_add(dict, ADDR, $1, e)) {
+		if (!dict_add(dict, D_ADDR, $1, e)) {
 			m_yyerror("name '%s' already defined", $1);
 			YYABORT;
 		}
@@ -99,7 +99,7 @@ sentence:
 
 words:
 	instruction { $$ = $1; }
-	| DATA data { $$ = $2; }
+	| MP_DATA data { $$ = $2; }
 	| res { $$ = $1; }
 	;
 
@@ -114,7 +114,7 @@ dataword:
 	;
 
 res:
-	RES VALUE {
+	MP_RES VALUE {
 		struct word_t *wlist = make_rep($2, 0, m_yylloc.first_line);
 		if (!wlist) {
 			m_yyerror("resulting .res length is 0");
@@ -123,7 +123,7 @@ res:
 			$$ = wlist;
 		}
 	}
-	| RES VALUE ',' VALUE{
+	| MP_RES VALUE ',' VALUE{
 		struct word_t *wlist = make_rep($2, $4, m_yylloc.first_line);
 		if (!wlist) {
 			m_yyerror("resulting .res length is 0");
@@ -135,19 +135,19 @@ res:
 	;
 
 instruction:
-	OP_2ARG REGISTER ',' norm { $$ = make_op(OP_2ARG, $1, $2, NULL, $4, m_yylloc.first_line); }
-	| OP_FD norm { $$ = make_op(OP_FD, $1, 0, NULL, $2, m_yylloc.first_line); }
-	| OP_KA1 REGISTER ',' expr { $$ = make_op(OP_KA1, $1, $2, $4, NULL, m_yylloc.first_line); }
-	| OP_JS expr { $$ = make_op(OP_JS, $1, 0, $2, NULL, m_yylloc.first_line); }
-	| OP_KA2 expr { $$ = make_op(OP_KA2, $1, 0, $2, NULL, m_yylloc.first_line); }
-	| OP_C REGISTER { $$ = make_op(OP_C, $1, $2, NULL, NULL, m_yylloc.first_line); }
-	| OP_SHC REGISTER ',' expr { $$ = make_op(OP_SHC, $1, $2, $4, NULL, m_yylloc.first_line); }
-	| OP_S { $$ = make_op(OP_S, $1, 0, NULL, NULL, m_yylloc.first_line); }
-	| OP_HLT expr { $$ = make_op(OP_HLT, $1, 0, $2, NULL, m_yylloc.first_line); }
-	| OP_J norm { $$ = make_op(OP_J, $1, 0, NULL, $2, m_yylloc.first_line); }
-	| OP_L norm { $$ = make_op(OP_L, $1, 0, NULL, $2, m_yylloc.first_line); }
-	| OP_G norm { $$ = make_op(OP_G, $1, 0, NULL, $2, m_yylloc.first_line); }
-	| OP_BN norm { $$ = make_op(OP_BN, $1, 0, NULL, $2, m_yylloc.first_line); }
+	MOP_2ARG REGISTER ',' norm { $$ = make_op(O_2ARG, $1, $2, NULL, $4, m_yylloc.first_line); }
+	| MOP_FD norm { $$ = make_op(O_FD, $1, 0, NULL, $2, m_yylloc.first_line); }
+	| MOP_KA1 REGISTER ',' expr { $$ = make_op(O_KA1, $1, $2, $4, NULL, m_yylloc.first_line); }
+	| MOP_JS expr { $$ = make_op(O_JS, $1, 0, $2, NULL, m_yylloc.first_line); }
+	| MOP_KA2 expr { $$ = make_op(O_KA2, $1, 0, $2, NULL, m_yylloc.first_line); }
+	| MOP_C REGISTER { $$ = make_op(O_C, $1, $2, NULL, NULL, m_yylloc.first_line); }
+	| MOP_SHC REGISTER ',' expr { $$ = make_op(O_SHC, $1, $2, $4, NULL, m_yylloc.first_line); }
+	| MOP_S { $$ = make_op(O_S, $1, 0, NULL, NULL, m_yylloc.first_line); }
+	| MOP_HLT expr { $$ = make_op(O_HLT, $1, 0, $2, NULL, m_yylloc.first_line); }
+	| MOP_J norm { $$ = make_op(O_J, $1, 0, NULL, $2, m_yylloc.first_line); }
+	| MOP_L norm { $$ = make_op(O_L, $1, 0, NULL, $2, m_yylloc.first_line); }
+	| MOP_G norm { $$ = make_op(O_G, $1, 0, NULL, $2, m_yylloc.first_line); }
+	| MOP_BN norm { $$ = make_op(O_BN, $1, 0, NULL, $2, m_yylloc.first_line); }
 	;
 
 norm:
@@ -160,19 +160,19 @@ normval:
 	| expr { $$ = make_norm(0, 0, make_data($1, m_yylloc.first_line)); }
 	| REGISTER '+' REGISTER { $$ = make_norm($1, $3, NULL); }
 	| REGISTER '+' expr { $$ = make_norm(0, $1, make_data($3, m_yylloc.first_line)); }
-	| REGISTER '-' expr { $$ = make_norm(0, $1, make_data(make_enode(UMINUS, 0, NULL, NULL, $3), m_yylloc.first_line)); }
+	| REGISTER '-' expr { $$ = make_norm(0, $1, make_data(make_enode(E_UMINUS, 0, NULL, NULL, $3), m_yylloc.first_line)); }
 	| expr '+' REGISTER { $$ = make_norm(0, $3, make_data($1, m_yylloc.first_line)); }
 	;
 
 expr:
-	VALUE { $$ = make_enode(VALUE, $1, NULL, NULL, NULL); }
-	| NAME { $$ = make_enode(NAME, 0, $1, NULL, NULL); }
-	| expr '+' expr { $$ = make_enode('+', 0, NULL, $1, $3); }
-	| expr '-' expr { $$ = make_enode('-', 0, NULL, $1, $3); }
-	| '-' expr %prec UMINUS { $$ = make_enode(UMINUS, 0, NULL, NULL, $2); }
+	VALUE { $$ = make_enode(E_VALUE, $1, NULL, NULL, NULL); }
+	| NAME { $$ = make_enode(E_NAME, 0, $1, NULL, NULL); }
+	| expr '+' expr { $$ = make_enode(E_PLUS, 0, NULL, $1, $3); }
+	| expr '-' expr { $$ = make_enode(E_MINUS, 0, NULL, $1, $3); }
+	| '-' expr %prec UMINUS { $$ = make_enode(E_UMINUS, 0, NULL, NULL, $2); }
 	| '(' expr ')' { $$ = $2; }
-	| expr SHL expr { $$ = make_enode(SHL, 0, NULL, $1, $3); }
-	| expr SHR expr { $$ = make_enode(SHR, 0, NULL, $1, $3); }
+	| expr SHL expr { $$ = make_enode(E_SHL, 0, NULL, $1, $3); }
+	| expr SHR expr { $$ = make_enode(E_SHR, 0, NULL, $1, $3); }
 	;
 
 %%

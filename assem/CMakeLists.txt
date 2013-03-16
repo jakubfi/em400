@@ -19,6 +19,7 @@ ADD_FLEX_BISON_DEPENDENCY(scanner_modern parser_modern)
 ADD_FLEX_BISON_DEPENDENCY(scanner_classic parser_classic)
 
 ADD_EXECUTABLE(assem main.c elements.c eval.c ops.c pragmas.c
+pragmas_classic.c pragmas_modern.c
 ${BISON_parser_modern_OUTPUTS}
 ${BISON_parser_classic_OUTPUTS}
 ${FLEX_scanner_modern_OUTPUTS}

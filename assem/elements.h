@@ -20,11 +20,26 @@
 
 #include <inttypes.h>
 
+enum _dict_type_e {
+	D_VALUE,
+	D_ADDR
+};
+
 struct dict_t {
 	char *name;
 	int type;
 	struct enode_t *e;
 	struct dict_t *next;
+};
+
+enum _enode_types_e {
+	E_VALUE,
+	E_NAME,
+	E_PLUS,
+	E_MINUS,
+	E_UMINUS,
+	E_SHL,
+	E_SHR
 };
 
 struct enode_t {
@@ -51,6 +66,11 @@ struct word_t {
 	int lineno;
 };
 
+struct codeblock_t {
+	struct word_t *word;
+	struct dict_t **dict;
+};
+
 struct enode_t * make_enode(int type, int value, char *label, struct enode_t *e1, struct enode_t *e2);
 void enode_drop(struct enode_t *e);
 struct norm_t * make_norm(int rc, int rb, struct word_t *w);
@@ -61,8 +81,8 @@ struct word_t * make_op(int type, uint16_t op, int ra, struct enode_t *e, struct
 struct dict_t ** dict_create();
 struct dict_t * dict_add(struct dict_t **dict, int type, char *name, struct enode_t *e);
 struct dict_t * dict_find(struct dict_t **dict, char *name);
-void dict_drop(struct dict_t * dict);
-void dicts_drop(struct dict_t **dict);
+void dict_list_drop(struct dict_t * dict);
+void dict_drop(struct dict_t **dict);
 
 #endif
 
