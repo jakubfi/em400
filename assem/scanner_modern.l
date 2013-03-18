@@ -31,7 +31,6 @@ char *strbufpos;
 int uop_to_modern[] = { MOP_2ARG, MOP_FD, MOP_KA1, MOP_JS, MOP_KA2, MOP_C, MOP_SHC, MOP_HLT, MOP_S, MOP_J, MOP_L, MOP_G, MOP_BN };
 
 #define YY_USER_ACTION	m_yylloc.first_line = m_yylineno;
-#define YYABORT 	    goto m_yyabortlab
 
 %}
 
@@ -95,6 +94,7 @@ chars	[-+:,\[\]<>]
 	struct pragma_t *p = get_pragma(pragmas_modern, yytext);
 	if (!p) {
 		m_yyerror("unknown pragma: %s", yytext);
+		return 0;
 	}
 	return p->type;
 }
@@ -116,7 +116,7 @@ chars	[-+:,\[\]<>]
 	}
 }
 
-.	{ m_yyerror("unknown character"); }
+.	{ m_yyerror("unknown character"); return 0; }
 
 %%
 

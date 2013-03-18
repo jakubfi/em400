@@ -117,7 +117,7 @@ int main(int argc, char **argv)
 		output_file = strdup(input_file);
 		char *pos = strstr(output_file, ".asm\0");
 		if (!pos) {
-			printf("Error: input file is not .asm\n");
+			printf("Error: input file is not .asm, exiting.\n");
 			exit(1);
 		}
 		strcpy(pos, ".bin");
@@ -130,21 +130,21 @@ int main(int argc, char **argv)
 	}
 
 	if (!strcmp(input_file, output_file)) {
-		printf("Error: input and output files are the same.\n");
+		printf("Error: input and output files are the same, exiting.\n");
 		exit(1);
 	}
 
 	// read input file
 	FILE *asm_source = fopen(argv[optind], "r");
 	if (!asm_source) {
-		printf("Error: cannot open input file\n");
+		printf("Error: cannot open input file, exiting.\n");
 		exit(1);
 	}
 
 	// open output file
 	FILE *bin_out = fopen(output_file, "w");
 	if (!bin_out) {
-		printf("Cannot open output file '%s'\n", output_file);
+		printf("Cannot open output file '%s', exiting.\n", output_file);
 		fclose(asm_source);
 		exit(1);
 	}
@@ -156,7 +156,7 @@ int main(int argc, char **argv)
 	fclose(asm_source);
 
 	if (res < 0) {
-		printf("Error parsing source.\n");
+		printf("Cannot parse source, exiting.\n");
 		program_drop(program_start);
 		dict_drop(dict);
 		exit(1);
@@ -166,8 +166,13 @@ int main(int argc, char **argv)
 	uint16_t outdata[MAX_PROG_SIZE+4];
 	int wcounter = assembly(program_start, outdata);
 
+	if (wcounter == 0) {
+		printf("Nothing to assemble, empty program, exiting.\n");
+	} else if (wcounter < 0) {
+		printf("Error assembling binary image at IC=%i: %s, exiting.\n", -wcounter-1, assembly_error);
+	}
+
 	if (wcounter <= 0) {
-		printf("Error assembling binary image at IC=%i: %s\n", -wcounter-1, assembly_error);
 		program_drop(program_start);
 		dict_drop(dict);
 		exit(1);

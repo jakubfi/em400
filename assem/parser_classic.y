@@ -29,7 +29,7 @@ extern int got_error;
 extern int ic;
 
 %}
-
+%error-verbose
 %locations
 %union {
 	char *str;
@@ -39,62 +39,67 @@ extern int ic;
 	struct enode_t *enode;
 };
 
-%left  '+' '-' '/'
-%token '=' ':' ',' '.' '(' ')' '&'
-%token CP_S CP_RES CP_F CP_PROG CP_FINPROG CP_SEG CP_FINSEG CP_MACRO CP_FINMACRO CP_ALL CP_NAME CP_BA CP_INT CP_OUT CP_LAB CP_NLAB CP_MEM CP_OS CP_IFUNK CP_IFUND CP_IFDEF CP_FI CP_SS CP_HS CP_MAX CP_LEN CP_E
+%token COMMENT
+%left '+' '-'
+%left '/'
+%nonassoc UMINUS
+%token '.' '=' ':' ',' '(' ')' '&'
+%token CP_S CP_RES CP_F CP_PROG CP_FINPROG CP_SEG CP_FINSEG CP_MACRO CP_FINMACRO CP_ALL CP_NAME CP_BA CP_INT CP_OUT CP_LAB CP_NLAB CP_MEM CP_OS CP_IFUNK CP_IFUND CP_IFDEF CP_FI CP_SS CP_HS CP_MAX CP_LEN CP_E CP_FILE CP_TEXT
 %token <str> IDENTIFIER FLOAT STRING
+%token <str> LABEL VAR
 %token <val> VALUE
 %token <val> COP_2ARG COP_FD COP_KA1 COP_JS COP_KA2 COP_C COP_SHC COP_S COP_HLT COP_J COP_L COP_G COP_BN
-
 
 %%
 
 program:
-	CP_PROG progblock CP_FINPROG
-	;
-
-progblock:
-	segment progblock
-	| macro progblock
-	| code progblock
-	|
+	preblock CP_PROG '*' codeblock CP_FINPROG '*'
 	;
 
 segment:
-	CP_SEG segmentblock CP_FINSEG
-	;
-
-segmentblock:
-	macro segmentblock
-	| code segmentblock
-	|
+	CP_SEG '*' codeblock CP_FINSEG '*'
 	;
 
 macro:
-	CP_MACRO macroblock CP_FINMACRO
+	CP_MACRO '*' codeblock CP_FINMACRO '*'
 	;
 
-macroblock:
-	code macroblock
+preblock:
+	preblock pre
+	|
+	;
+
+pre:
+	COMMENT
+	| pragma
+	;
+
+codeblock:
+	codeblock code
 	|
 	;
 
 code:
 	vardef
-	| label
+	| label { printf("(label)\n");}
 	| pragma
 	| STRING
-	| instruction
+	| instruction { printf("(instr)\n"); }
+	| COMMENT
+	| expr '.' { printf("(expr)\n"); }
+	| '.' { printf("(empty)\n"); }
+	| macro
+	| segment
 	;
 
 instruction:
-	COP_2ARG ',' reg normarg
+	COP_2ARG ',' reg normarg {}
 	| COP_FD normarg
 	| COP_KA1 ',' reg ',' expr '.'
 	| COP_JS ',' expr '.'
 	| COP_KA2 ',' expr '.'
 	| COP_C ',' reg '.'
-	| COP_SHC '.' reg ',' expr '.'
+	| COP_SHC ',' reg ',' expr '.'
 	| COP_S ',' zero '.'
 	| COP_HLT ',' expr '.'
 	| COP_J normarg
@@ -104,27 +109,28 @@ instruction:
 	;
 
 normarg:
-	',' norm_oneword '.'
-	',' norm_oneword '\'' '.'
-	| '(' norm_twowords ')'
-	| '(' norm_twowords '\'' ')'
+	',' norm_oneword '.' { }
+	| ',' norm_oneword '\'' '.' {}
+	| '(' norm_twowords ')' {}
+	| '(' norm_twowords '\'' ')' {}
 	;
 
 norm_oneword:
-	reg
-	| reg '&' reg
+	reg {}
+	| reg '&' reg {}
 	;
 
 norm_twowords:
-	expr
-	expr '&' reg
+	expr {}
+	| expr '&' reg {}
 	;
 
 expr:
 	value
 	| expr '+' expr
 	| expr '-' expr
-	| expr '/' value
+	| value '/' value
+	| '-' expr %prec UMINUS
 	;
 
 zero:
@@ -142,52 +148,44 @@ reg:
 	;
 
 vardef:
-	IDENTIFIER '=' expr '.'
+	VAR '=' expr '.'
 	;
 
 label:
-	IDENTIFIER ':'
+	LABEL ':'
 	;
 
 pragma:
-	CP_S expr '.'
-	| CP_RES expr '.'
-	| CP_RES expr ',' expr '.'
-	| CP_F expr '.' floats
-	| CP_NAME IDENTIFIER '.'
-	| CP_BA expr '.'
-	| CP_INT expr '.'
-	| CP_OUT expr '.'
-	| CP_LAB expr '.'
-	| CP_NLAB
-	| CP_MEM expr '.'
-	| CP_OS
-	| CP_IFUNK IDENTIFIER '.'
-	| CP_IFUND IDENTIFIER '.'
-	| CP_IFDEF IDENTIFIER '.'
-	| CP_FI
-	| CP_SS expr '.'
-	| CP_HS
-	| CP_MAX IDENTIFIER ',' maxlist '.'
-	| CP_LEN expr '.'
-	| CP_E expr '.'
+	CP_S '*' expr '.'
+	| CP_RES '*' expr '.'
+	| CP_RES '*' expr ',' expr '.'
+	| CP_F '*' '.'
+	| CP_NAME '*' IDENTIFIER '.'
+	| CP_BA '*' expr '.'
+	| CP_INT '*' expr '.'
+	| CP_OUT '*' expr '.'
+	| CP_LAB '*' expr '.'
+	| CP_NLAB '*'
+	| CP_MEM '*' expr '.'
+	| CP_OS '*'
+	| CP_IFUNK '*' IDENTIFIER '.'
+	| CP_IFUND '*' IDENTIFIER '.'
+	| CP_IFDEF '*' IDENTIFIER '.'
+	| CP_FI '*'
+	| CP_SS '*' expr '.'
+	| CP_HS '*'
+	| CP_MAX '*' IDENTIFIER ',' maxlist '.'
+	| CP_LEN '*' expr '.'
+	| CP_E '*' expr '.'
+	| CP_ALL '*' vardef
+	| CP_ALL '*' label
+	| CP_FILE '*' IDENTIFIER ',' IDENTIFIER ',' expr ',' expr '.'
+	| CP_TEXT '*' expr '.'
 	;
 
 maxlist:
 	expr
 	| maxlist ',' expr
-	;
-
-floats:
-	float
-	| float ',' floats
-	| float ';' floats
-	| float floats
-	;
-
-float:
-	VALUE
-	| FLOAT
 	;
 
 %%
