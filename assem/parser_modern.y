@@ -34,9 +34,8 @@ extern int ic;
 %union {
 	char *str;
 	int val;
-	struct word_t *word;
 	struct norm_t *norm;
-	struct enode_t *enode;
+	struct node_t *node;
 };
 
 %token '[' ']' ',' ':'
@@ -46,9 +45,7 @@ extern int ic;
 %token <val> MOP_2ARG MOP_FD MOP_KA1 MOP_JS MOP_KA2 MOP_C MOP_SHC MOP_S MOP_HLT MOP_J MOP_L MOP_G MOP_BN
 
 %type <norm> normval norm
-%type <word> words
-%type <word> instruction res data dataword
-%type <enode> expr
+%type <node> instruction res data dataword words expr
 
 %left '+' '-'
 %left SHR SHL
@@ -58,12 +55,8 @@ extern int ic;
 %%
 
 program:
-	MP_PROG STRING sentences MP_FINPROG {
-		printf("Assembling program '%s'\n", $2);
-	}
-	| MP_PROG sentences MP_FINPROG {
-		printf("Assembling unnamed program\n");
-	}
+	MP_PROG STRING sentences MP_FINPROG	{ printf("Assembling program '%s'\n", $2); }
+	| MP_PROG sentences MP_FINPROG		{ printf("Assembling unnamed program\n"); }
 	;
 
 sentences:
@@ -74,7 +67,7 @@ sentences:
 sentence:
 	words {
 		if (program_append($1) < 0) {
-			m_yyerror("program too big");
+			m_yyerror("cannot append word (program too big?)");
 			YYABORT;
 		}
 	}
@@ -85,12 +78,7 @@ sentence:
 		}
 	}
 	| NAME ':' {
-		struct enode_t *e = make_enode(E_VALUE, ic, NULL, NULL, NULL);
-		if (!e) {
-			m_yyerror("cannot make enode for '%s'", $1);
-			YYABORT;
-		}
-		if (!dict_add(dict, D_ADDR, $1, e)) {
+		if (!dict_add(dict, D_ADDR, $1, make_value(ic))) {
 			m_yyerror("name '%s' already defined", $1);
 			YYABORT;
 		}
@@ -98,81 +86,65 @@ sentence:
 	;
 
 words:
-	instruction { $$ = $1; }
-	| MP_DATA data { $$ = $2; }
-	| res { $$ = $1; }
+	instruction		{ $$ = $1; }
+	| MP_DATA data	{ $$ = $2; }
+	| res			{ $$ = $1; }
 	;
 
 data:
-	dataword { $$ = $1; }
-	| dataword ',' data { $1->next = $3; $$ = $1; }
+	dataword			{ $$ = $1; }
+	| dataword ',' data	{ $1->next = $3; $$ = $1; }
 	;
 
 dataword:
-	expr { $$ = make_data($1, m_yylloc.first_line); }
-	| STRING { $$ = make_string($1, m_yylloc.first_line); }
+	expr		{ $$ = $1; }
+	| STRING	{ $$ = make_string($1); }
 	;
 
 res:
-	MP_RES VALUE {
-		struct word_t *wlist = make_rep($2, 0, m_yylloc.first_line);
-		if (!wlist) {
-			m_yyerror("resulting .res length is 0");
-			YYABORT;
-		} else {
-			$$ = wlist;
-		}
-	}
-	| MP_RES VALUE ',' VALUE{
-		struct word_t *wlist = make_rep($2, $4, m_yylloc.first_line);
-		if (!wlist) {
-			m_yyerror("resulting .res length is 0");
-			YYABORT;
-		} else {
-			$$ = wlist;
-		}
-	}
+	MP_RES VALUE				{ $$ = make_rep($2, 0); }
+	| MP_RES VALUE ',' VALUE	{ $$ = make_rep($2, $4); }
 	;
 
 instruction:
-	MOP_2ARG REGISTER ',' norm { $$ = make_op(O_2ARG, $1, $2, NULL, $4, m_yylloc.first_line); }
-	| MOP_FD norm { $$ = make_op(O_FD, $1, 0, NULL, $2, m_yylloc.first_line); }
-	| MOP_KA1 REGISTER ',' expr { $$ = make_op(O_KA1, $1, $2, $4, NULL, m_yylloc.first_line); }
-	| MOP_JS expr { $$ = make_op(O_JS, $1, 0, $2, NULL, m_yylloc.first_line); }
-	| MOP_KA2 expr { $$ = make_op(O_KA2, $1, 0, $2, NULL, m_yylloc.first_line); }
-	| MOP_C REGISTER { $$ = make_op(O_C, $1, $2, NULL, NULL, m_yylloc.first_line); }
-	| MOP_SHC REGISTER ',' expr { $$ = make_op(O_SHC, $1, $2, $4, NULL, m_yylloc.first_line); }
-	| MOP_S { $$ = make_op(O_S, $1, 0, NULL, NULL, m_yylloc.first_line); }
-	| MOP_HLT expr { $$ = make_op(O_HLT, $1, 0, $2, NULL, m_yylloc.first_line); }
-	| MOP_J norm { $$ = make_op(O_J, $1, 0, NULL, $2, m_yylloc.first_line); }
-	| MOP_L norm { $$ = make_op(O_L, $1, 0, NULL, $2, m_yylloc.first_line); }
-	| MOP_G norm { $$ = make_op(O_G, $1, 0, NULL, $2, m_yylloc.first_line); }
-	| MOP_BN norm { $$ = make_op(O_BN, $1, 0, NULL, $2, m_yylloc.first_line); }
+	MOP_2ARG REGISTER ',' norm	{ $$ = make_op(O_2ARG,	$1, $2, NULL, $4); }
+	| MOP_FD norm				{ $$ = make_op(O_FD,	$1, 0,  NULL, $2); }
+	| MOP_KA1 REGISTER ',' expr	{ $$ = make_op(O_KA1,	$1, $2, $4,   NULL); }
+	| MOP_JS expr				{ $$ = make_op(O_JS,	$1, 0,  $2,   NULL); }
+	| MOP_KA2 expr				{ $$ = make_op(O_KA2,	$1, 0,  $2,   NULL); }
+	| MOP_C REGISTER			{ $$ = make_op(O_C,		$1, $2, NULL, NULL); }
+	| MOP_SHC REGISTER ',' expr	{ $$ = make_op(O_SHC,	$1, $2, $4,   NULL); }
+	| MOP_S						{ $$ = make_op(O_S,		$1, 0,  NULL, NULL); }
+	| MOP_HLT expr				{ $$ = make_op(O_HLT,	$1, 0,  $2,   NULL); }
+	| MOP_J norm				{ $$ = make_op(O_J,		$1, 0,  NULL, $2); }
+	| MOP_L norm				{ $$ = make_op(O_L,		$1, 0,  NULL, $2); }
+	| MOP_G norm				{ $$ = make_op(O_G,		$1, 0,  NULL, $2); }
+	| MOP_BN norm				{ $$ = make_op(O_BN,	$1, 0,  NULL, $2); }
 	;
 
 norm:
-	normval { $$ = $1; }
-	| '[' normval ']' { $2->is_addr = 1; $$ = $2; }
+	normval					{ $$ = $1; }
+	| '[' normval ']'		{ $$ = $2; $$->d = 1; }
 	;
 
 normval:
-	REGISTER { $$ = make_norm($1, 0, NULL); }
-	| expr { $$ = make_norm(0, 0, make_data($1, m_yylloc.first_line)); }
-	| REGISTER '+' REGISTER { $$ = make_norm($1, $3, NULL); }
-	| REGISTER '+' expr { $$ = make_norm(0, $1, make_data($3, m_yylloc.first_line)); }
-	| REGISTER '-' expr { $$ = make_norm(0, $1, make_data(make_enode(E_UMINUS, 0, NULL, NULL, $3), m_yylloc.first_line)); }
-	| expr '+' REGISTER { $$ = make_norm(0, $3, make_data($1, m_yylloc.first_line)); }
+	REGISTER				{ $$ = make_norm($1, 0, NULL); }
+	| expr					{ $$ = make_norm(0, 0, $1); }
+	| REGISTER '+' REGISTER	{ $$ = make_norm($1, $3, NULL); }
+	| REGISTER '+' expr		{ $$ = make_norm(0, $1, $3); }
+	| REGISTER '-' expr		{ $$ = make_norm(0, $1, make_oper(N_UMINUS, $3, NULL)); }
+	| expr '+' REGISTER		{ $$ = make_norm(0, $3, $1); }
 	;
 
 expr:
-	VALUE { $$ = make_enode(E_VALUE, $1, NULL, NULL, NULL); }
-	| NAME { $$ = make_enode(E_NAME, 0, $1, NULL, NULL); }
-	| expr '+' expr { $$ = make_enode(E_PLUS, 0, NULL, $1, $3); }
-	| expr '-' expr { $$ = make_enode(E_MINUS, 0, NULL, $1, $3); }
-	| '-' expr %prec UMINUS { $$ = make_enode(E_UMINUS, 0, NULL, NULL, $2); }
-	| '(' expr ')' { $$ = $2; }
-	| expr SHL expr { $$ = make_enode(E_SHL, 0, NULL, $1, $3); }
-	| expr SHR expr { $$ = make_enode(E_SHR, 0, NULL, $1, $3); }
+	VALUE					{ $$ = make_value($1); }
+	| NAME					{ $$ = make_name($1); }
+	| expr '+' expr			{ $$ = make_oper(N_PLUS, $1, $3); }
+	| expr '-' expr			{ $$ = make_oper(N_MINUS, $1, $3); }
+	| '-' expr %prec UMINUS	{ $$ = make_oper(N_UMINUS, $2, NULL); }
+	| '(' expr ')'			{ $$ = $2; }
+	| expr SHL expr			{ $$ = make_oper(N_SHL, $1, $3); }
+	| expr SHR expr			{ $$ = make_oper(N_SHR, $1, $3); }
 	;
 
 %%

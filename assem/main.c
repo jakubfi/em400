@@ -54,22 +54,22 @@ int parse(FILE *source)
 }
 
 // -----------------------------------------------------------------------
-int assembly(struct word_t *word, uint16_t *outdata)
+int assembly(struct node_t *n, uint16_t *outdata)
 {
 	int wcounter = 0;
 	int res;
 
-	while (word) {
-		if (word->type == O_DATA) {
-			res = compose_data(wcounter, word, outdata);
+	while (n) {
+		if (n->type == N_OP) {
+			res = compose_opcode(wcounter, n, outdata);
 		} else {
-			res = compose_opcode(wcounter, word, outdata);
+			res = compose_data(wcounter, n, outdata);
 		}
 		if (res < 0) {
 			return -wcounter;
 		}
 		wcounter += res;
-		word = word->next;
+		n = n->next;
 	}
 
 	return wcounter;
@@ -157,7 +157,7 @@ int main(int argc, char **argv)
 
 	if (res < 0) {
 		printf("Cannot parse source, exiting.\n");
-		program_drop(program_start);
+		node_drop(program_start);
 		dict_drop(dict);
 		exit(1);
 	}
@@ -173,7 +173,7 @@ int main(int argc, char **argv)
 	}
 
 	if (wcounter <= 0) {
-		program_drop(program_start);
+		node_drop(program_start);
 		dict_drop(dict);
 		exit(1);
 	}
@@ -186,12 +186,12 @@ int main(int argc, char **argv)
 	printf("Written %i words to file '%s'.\n", res, output_file);
 	if (wcounter != res) {
 		printf("Error: not all words written, output file '%s' is broken.\n", output_file);
-		program_drop(program_start);
+		node_drop(program_start);
 		dict_drop(dict);
 		exit(1);
 	}
 
-	program_drop(program_start);
+	node_drop(program_start);
 	dict_drop(dict);
 	return 0;
 }

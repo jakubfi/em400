@@ -28,58 +28,49 @@ enum _dict_type_e {
 struct dict_t {
 	char *name;
 	int type;
-	struct enode_t *e;
+	struct node_t *n;
 	struct dict_t *next;
 };
 
-enum _enode_types_e {
-	E_VALUE,
-	E_NAME,
-	E_PLUS,
-	E_MINUS,
-	E_UMINUS,
-	E_SHL,
-	E_SHR
-};
-
-struct enode_t {
-	int type;
-	int value;
-	int was_addr;
-	char *label;
-	struct enode_t *e1, *e2;
+enum node_type_e {
+	N_OP,
+	N_VAL,
+	N_NAME,
+	N_PLUS,
+	N_MINUS,
+	N_UMINUS,
+	N_SHL,
+	N_SHR,
 };
 
 struct norm_t {
-	int is_addr;
-	int rc, rb;
-	struct word_t *word;
+	int rb, rc, d;
+	struct node_t *e;
 };
 
-struct word_t {
+struct node_t {
 	int type;
+	int optype;
 	uint16_t opcode;
-	int ra;
-	struct enode_t *e;
-	struct norm_t *norm;
-	struct word_t *next;
+	int data;
+	int was_addr;
+	char *name;
+	struct node_t *n1, *n2;
+	struct node_t *next;
 	int lineno;
 };
 
-struct codeblock_t {
-	struct word_t *word;
-	struct dict_t **dict;
-};
+struct node_t * make_value(int value);
+struct node_t * make_name(char *name);
+struct node_t * make_oper(int type, struct node_t *n1, struct node_t *n2);
+void node_drop(struct node_t *n);
 
-struct enode_t * make_enode(int type, int value, char *label, struct enode_t *e1, struct enode_t *e2);
-void enode_drop(struct enode_t *e);
-struct norm_t * make_norm(int rc, int rb, struct word_t *w);
-struct word_t * make_data(struct enode_t *e, int lineno);
-struct word_t * make_rep(int rep, int value, int lineno);
-struct word_t * make_string(char *str, int lineno);
-struct word_t * make_op(int type, uint16_t op, int ra, struct enode_t *e, struct norm_t *norm, int lineno);
+struct norm_t * make_norm(int rc, int rb, struct node_t *n);
+struct node_t * make_rep(int rep, int value);
+struct node_t * make_string(char *str);
+struct node_t * make_op(int optype, uint16_t op, int ra, struct node_t *n, struct norm_t *norm);
 struct dict_t ** dict_create();
-struct dict_t * dict_add(struct dict_t **dict, int type, char *name, struct enode_t *e);
+struct dict_t * dict_add(struct dict_t **dict, int type, char *name, struct node_t *n);
 struct dict_t * dict_find(struct dict_t **dict, char *name);
 void dict_list_drop(struct dict_t * dict);
 void dict_drop(struct dict_t **dict);

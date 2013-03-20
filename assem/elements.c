@@ -42,9 +42,9 @@ struct dict_t ** dict_create()
 }
 
 // -----------------------------------------------------------------------
-struct dict_t * dict_add(struct dict_t **dict, int type, char *name, struct enode_t *e)
+struct dict_t * dict_add(struct dict_t **dict, int type, char *name, struct node_t *n)
 {
-	if (!name || !e) {
+	if (!name || !n) {
 		return NULL;
 	}
 
@@ -55,7 +55,7 @@ struct dict_t * dict_add(struct dict_t **dict, int type, char *name, struct enod
 	struct dict_t *d = malloc(sizeof(struct dict_t));
 	d->type = type;
 	d->name = strdup(name);
-	d->e = e;
+	d->n = n;
 
 	d->next = dict[dict_hash(name)];
 	dict[dict_hash(name)] = d;
@@ -105,129 +105,148 @@ void dict_drop(struct dict_t **dict)
 }
 
 // -----------------------------------------------------------------------
-struct enode_t * make_enode(int type, int value, char *label, struct enode_t *e1, struct enode_t *e2)
-{
-	struct enode_t *e = malloc(sizeof(struct enode_t));
-	e->type = type;
-	e->value = value;
-	e->was_addr = 0;
-	if (label) {
-		e->label = strdup(label);
-	} else {
-		e->label = NULL;
-	}
-	e->e1 = e1;
-	e->e2 = e2;
-	return e;
-}
-
-// -----------------------------------------------------------------------
-void enode_drop(struct enode_t *e)
-{
-	if (!e) {
-		return;
-	}
-
-	if (e->label) {
-		free(e->label);
-	}
-	enode_drop(e->e1);
-	enode_drop(e->e2);
-	free(e);
-}
-
-// -----------------------------------------------------------------------
-struct norm_t * make_norm(int rc, int rb, struct word_t *word)
+struct norm_t * make_norm(int rc, int rb, struct node_t *n)
 {
 	struct norm_t *norm = malloc(sizeof(struct norm_t));
 	norm->rc = rc;
 	norm->rb = rb;
-	norm->word = word;
-	norm->is_addr = 0;
+	norm->e = n;
+	norm->d = 0;
 	return norm;
 }
 
 // -----------------------------------------------------------------------
-struct word_t * make_data(struct enode_t *e, int lineno)
+struct node_t * make_rep(int rep, int value)
 {
-	struct word_t *word = malloc(sizeof(struct word_t));
-	word->type = O_DATA;
-	word->e = e;
-
-	word->opcode = 0;
-	word->ra = 0;
-	word->norm = NULL;
-	word->lineno = lineno;
-	word->next = NULL;
-	return word;
-}
-
-// -----------------------------------------------------------------------
-struct word_t * make_rep(int rep, int value, int lineno)
-{
-	struct word_t *whead = NULL;
-	struct word_t *wtail = NULL;
+	struct node_t *nhead = NULL;
+	struct node_t *ntail = NULL;
 
 	while (rep > 0) {
-		struct enode_t *e = make_enode(E_VALUE, value, NULL, NULL, NULL);
-		struct word_t *w = make_data(e, lineno);
-		if (!whead) {
-			whead = wtail = w;
+		struct node_t *n = make_value(value);
+		if (!nhead) {
+			nhead = ntail = n;
 		} else {
-			wtail->next = w;
-			wtail= w;
+			ntail->next = n;
+			ntail= n;
 		}
 		rep--;
 	}
 
-	return whead;
+	return nhead;
 }
 
 // -----------------------------------------------------------------------
-struct word_t * make_string(char *str, int lineno)
+struct node_t * make_string(char *str)
 {
 	char *c = str;
-	struct word_t *word = NULL;
-	struct word_t *word_head = NULL;
+	struct node_t *node = NULL;
+	struct node_t *node_head = NULL;
 
 	while (c && *c) {
-		struct enode_t *e = make_enode(E_VALUE, (int)(*c << 8), NULL, NULL, NULL);
-		struct word_t *w = make_data(e, lineno);
+		struct node_t *n = make_value((int)(*c << 8));
 
 		c++;
 		if (*c) {
-			e->value |= (int)(*c);
+			n->data |= (int)(*c);
 			c++;
 		}
 
-		if (!word) {
-			word = w;
-			word_head = w;
+		if (!node) {
+			node = n;
+			node_head = n;
 		} else {
-			word->next = w;
-			word = w;
+			node->next = n;
+			node = n;
 		}
 	}
 
-	return word_head;
+	return node_head;
 }
 
 // -----------------------------------------------------------------------
-struct word_t * make_op(int type, uint16_t op, int ra, struct enode_t *e, struct norm_t *norm, int lineno)
+struct node_t * make_op(int optype, uint16_t op, int ra, struct node_t *n, struct norm_t *norm)
 {
-	struct word_t *word = malloc(sizeof(struct word_t));
-	word->type = type;
-	word->opcode = op;
-	word->ra = ra;
-	word->e = e;
-	word->norm = norm;
-	word->lineno = lineno;
-	if (norm && norm->word) {
-		word->next = norm->word;
+	struct node_t *node = malloc(sizeof(struct node_t));
+	node->type = N_OP;
+	node->optype = optype;
+	node->opcode = op;
+	node->opcode |= ra << 6;
+	node->n1 = n;
+	if (norm) {
+		node->opcode |= (norm->d << 9);
+		node->opcode |= norm->rc;
+		node->opcode |= (norm->rb << 3);
+		node->next = norm->e;
+		free(norm);
 	} else {
-		word->next = NULL;
+		node->next = NULL;
 	}
-	return word;
+
+	node->lineno = m_yylloc.first_line;
+	node->name = NULL;
+	node->n2 = NULL;
+	return node;
 }
+
+// -----------------------------------------------------------------------
+struct node_t * make_value(int value)
+{
+	struct node_t *n = malloc(sizeof(struct node_t));
+	n->type = N_VAL;
+	n->data = value;
+
+	n->lineno = m_yylloc.first_line;
+	n->next = NULL;
+	n->name = NULL;
+	n->n1 = NULL;
+	n->n2 = NULL;
+
+	return n;
+}
+
+// -----------------------------------------------------------------------
+struct node_t * make_name(char *name)
+{
+	struct node_t *n = malloc(sizeof(struct node_t));
+	n->type = N_NAME;
+	n->name = strdup(name);
+
+	n->lineno = m_yylloc.first_line;
+	n->next = NULL;
+	n->n1 = NULL;
+	n->n2 = NULL;
+
+	return n;
+}
+
+// -----------------------------------------------------------------------
+struct node_t * make_oper(int type, struct node_t *n1, struct node_t *n2)
+{
+	struct node_t *n = malloc(sizeof(struct node_t));
+	n->type = type;
+	n->n1 = n1;
+	n->n2 = n2;
+
+	n->lineno = m_yylloc.first_line;
+	n->name = NULL;
+	n->next = NULL;
+
+	return n;
+}
+
+// -----------------------------------------------------------------------
+void node_drop(struct node_t *n)
+{
+	if (!n) {
+		return;
+	}
+	node_drop(n->n1);
+	node_drop(n->n2);
+	node_drop(n->next);
+	free(n->name);
+	free(n);
+}
+
+
 
 // vim: tabstop=4

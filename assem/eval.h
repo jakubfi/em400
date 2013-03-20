@@ -22,17 +22,16 @@
 
 #define MAX_PROG_SIZE 64*1024
 
-extern struct word_t *program_start;
-extern struct word_t *program_end;
+extern struct node_t *program_start;
+extern struct node_t *program_end;
 extern struct dict_t **dict;
 extern char assembly_error[];
 extern int ic;
 
-int program_append(struct word_t *word);
-void program_drop(struct word_t *word);
-int compose_data(int ic, struct word_t *word, uint16_t *dt);
-int compose_opcode(int ic, struct word_t *word, uint16_t *dt);
-struct enode_t * enode_eval(struct enode_t *e, char *refcheck);
+int program_append(struct node_t *word);
+int compose_data(int ic, struct node_t *word, uint16_t *dt);
+int compose_opcode(int ic, struct node_t *word, uint16_t *dt);
+struct node_t * enode_eval(struct node_t *n, char *refcheck);
 
 #endif
 

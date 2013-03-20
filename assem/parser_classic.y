@@ -35,33 +35,35 @@ extern int ic;
 	char *str;
 	int val;
 	struct word_t *word;
-	struct norm_t *norm;
-	struct enode_t *enode;
+	struct node_t *norm;
+	struct node_t *node;
 };
 
-%token COMMENT
 %left '+' '-'
 %left '/'
 %nonassoc UMINUS
+%token COMMENT
 %token '.' '=' ':' ',' '(' ')' '&'
 %token CP_S CP_RES CP_F CP_PROG CP_FINPROG CP_SEG CP_FINSEG CP_MACRO CP_FINMACRO CP_ALL CP_NAME CP_BA CP_INT CP_OUT CP_LAB CP_NLAB CP_MEM CP_OS CP_IFUNK CP_IFUND CP_IFDEF CP_FI CP_SS CP_HS CP_MAX CP_LEN CP_E CP_FILE CP_TEXT
 %token <str> IDENTIFIER FLOAT STRING
 %token <str> LABEL VAR
 %token <val> VALUE
 %token <val> COP_2ARG COP_FD COP_KA1 COP_JS COP_KA2 COP_C COP_SHC COP_S COP_HLT COP_J COP_L COP_G COP_BN
+%type <norm> normarg norm1 norm2
+%type <node> expr
 
 %%
 
 program:
-	preblock CP_PROG '*' codeblock CP_FINPROG '*'
+	preblock CP_PROG '*' { printf("NEW VARSET: PROG\n"); } codeblock CP_FINPROG '*'
 	;
 
 segment:
-	CP_SEG '*' codeblock CP_FINSEG '*'
+	CP_SEG '*' { printf("NEW VARSET: SEG\n"); } codeblock CP_FINSEG '*'
 	;
 
 macro:
-	CP_MACRO '*' codeblock CP_FINMACRO '*'
+	CP_MACRO '*' { printf("NEW VARSET: MACRO\n"); } codeblock CP_FINMACRO '*'
 	;
 
 preblock:
@@ -109,28 +111,28 @@ instruction:
 	;
 
 normarg:
-	',' norm_oneword '.' { }
-	| ',' norm_oneword '\'' '.' {}
-	| '(' norm_twowords ')' {}
-	| '(' norm_twowords '\'' ')' {}
+	',' norm1 '.' { $$=NULL; }
+	| ',' norm1 '\'' '.' { $$=NULL; }
+	| '(' norm2 ')' { $$=NULL; }
+	| '(' norm2 '\'' ')' { $$=NULL; }
 	;
 
-norm_oneword:
-	reg {}
-	| reg '&' reg {}
+norm1:
+	reg { $$=NULL;}
+	| reg '&' reg { $$=NULL; }
 	;
 
-norm_twowords:
-	expr {}
-	| expr '&' reg {}
+norm2:
+	expr { $$=NULL; }
+	| expr '&' reg { $$=NULL; }
 	;
 
 expr:
-	value
-	| expr '+' expr
-	| expr '-' expr
-	| value '/' value
-	| '-' expr %prec UMINUS
+	value { $$=NULL; }
+	| expr '+' expr { $$=NULL; }
+	| expr '-' expr { $$=NULL; }
+	| value '/' value { $$=NULL; }
+	| '-' expr %prec UMINUS { $$=NULL; }
 	;
 
 zero:
@@ -144,15 +146,30 @@ value:
 
 reg:
 	VALUE
-	| IDENTIFIER
+/*	| IDENTIFIER { printf("mamto\n"); }*/
 	;
 
 vardef:
-	VAR '=' expr '.'
+	VAR '=' expr '.' {
+		if (!dict_add(dict, D_VALUE, $1, $3)) {
+			//c_yyerror("name '%s' already defined", $1);
+			//YYABORT;
+		}
+	}
 	;
 
 label:
-	LABEL ':'
+	LABEL ':' {
+		struct node_t *n = make_value(ic);
+		if (!n) {
+			c_yyerror("cannot make node for '%s'", $1);
+			YYABORT;
+		}
+		if (!dict_add(dict, D_ADDR, $1, n)) {
+			//c_yyerror("name '%s' already defined", $1);
+			//YYABORT;
+		}
+	}
 	;
 
 pragma:
