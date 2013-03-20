@@ -60,16 +60,17 @@ int assembly(struct node_t *n, uint16_t *outdata)
 	int res;
 
 	while (n) {
-		if (n->type == N_OP) {
+		if (n->type <= N_BN) {
 			res = compose_opcode(wcounter, n, outdata);
 		} else {
-			res = compose_data(wcounter, n, outdata);
+			res = compose_data(n, outdata);
 		}
-		if (res < 0) {
-			return -wcounter;
+		if (res != 1) {
+			return -(wcounter+1);
 		}
-		wcounter += res;
 		n = n->next;
+		wcounter++;
+		outdata++;
 	}
 
 	return wcounter;
@@ -166,13 +167,12 @@ int main(int argc, char **argv)
 	uint16_t outdata[MAX_PROG_SIZE+4];
 	int wcounter = assembly(program_start, outdata);
 
-	if (wcounter == 0) {
-		printf("Nothing to assemble, empty program, exiting.\n");
-	} else if (wcounter < 0) {
-		printf("Error assembling binary image at IC=%i: %s, exiting.\n", -wcounter-1, assembly_error);
-	}
-
 	if (wcounter <= 0) {
+		if (wcounter == 0) {
+			printf("Nothing to assemble, empty program, exiting.\n");
+		} else {
+			printf("Error assembling binary image at IC=%i: %s, exiting.\n", -wcounter-1, assembly_error);
+		}
 		node_drop(program_start);
 		dict_drop(dict);
 		exit(1);

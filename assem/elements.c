@@ -167,8 +167,7 @@ struct node_t * make_string(char *str)
 struct node_t * make_op(int optype, uint16_t op, int ra, struct node_t *n, struct norm_t *norm)
 {
 	struct node_t *node = malloc(sizeof(struct node_t));
-	node->type = N_OP;
-	node->optype = optype;
+	node->type = optype;
 	node->opcode = op;
 	node->opcode |= ra << 6;
 	node->n1 = n;

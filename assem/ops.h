@@ -25,23 +25,6 @@ enum _mnemo_e {
 	MNEMO_K202 = 1
 };
 
-enum _optype_e {
-	O_2ARG = 0,
-	O_FD,
-	O_KA1,
-	O_JS,
-	O_KA2,
-	O_C,
-	O_SHC,
-	O_HLT,
-	O_S,
-	O_J,
-	O_L,
-	O_G,
-	O_BN,
-	O_DATA
-};
-
 struct op_t {
 	char *mnemo[2];
 	int type;

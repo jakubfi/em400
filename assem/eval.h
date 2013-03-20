@@ -29,9 +29,9 @@ extern char assembly_error[];
 extern int ic;
 
 int program_append(struct node_t *word);
-int compose_data(int ic, struct node_t *word, uint16_t *dt);
+int compose_data(struct node_t *word, uint16_t *dt);
 int compose_opcode(int ic, struct node_t *word, uint16_t *dt);
-struct node_t * enode_eval(struct node_t *n, char *refcheck);
+struct node_t * expr_eval(struct node_t *n, char *refcheck);
 
 #endif
 

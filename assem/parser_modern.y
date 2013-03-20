@@ -107,19 +107,19 @@ res:
 	;
 
 instruction:
-	MOP_2ARG REGISTER ',' norm	{ $$ = make_op(O_2ARG,	$1, $2, NULL, $4); }
-	| MOP_FD norm				{ $$ = make_op(O_FD,	$1, 0,  NULL, $2); }
-	| MOP_KA1 REGISTER ',' expr	{ $$ = make_op(O_KA1,	$1, $2, $4,   NULL); }
-	| MOP_JS expr				{ $$ = make_op(O_JS,	$1, 0,  $2,   NULL); }
-	| MOP_KA2 expr				{ $$ = make_op(O_KA2,	$1, 0,  $2,   NULL); }
-	| MOP_C REGISTER			{ $$ = make_op(O_C,		$1, $2, NULL, NULL); }
-	| MOP_SHC REGISTER ',' expr	{ $$ = make_op(O_SHC,	$1, $2, $4,   NULL); }
-	| MOP_S						{ $$ = make_op(O_S,		$1, 0,  NULL, NULL); }
-	| MOP_HLT expr				{ $$ = make_op(O_HLT,	$1, 0,  $2,   NULL); }
-	| MOP_J norm				{ $$ = make_op(O_J,		$1, 0,  NULL, $2); }
-	| MOP_L norm				{ $$ = make_op(O_L,		$1, 0,  NULL, $2); }
-	| MOP_G norm				{ $$ = make_op(O_G,		$1, 0,  NULL, $2); }
-	| MOP_BN norm				{ $$ = make_op(O_BN,	$1, 0,  NULL, $2); }
+	MOP_2ARG REGISTER ',' norm	{ $$ = make_op(N_2ARG,	$1, $2, NULL, $4); }
+	| MOP_FD norm				{ $$ = make_op(N_FD,	$1, 0,  NULL, $2); }
+	| MOP_KA1 REGISTER ',' expr	{ $$ = make_op(N_KA1,	$1, $2, $4,   NULL); }
+	| MOP_JS expr				{ $$ = make_op(N_JS,	$1, 0,  $2,   NULL); }
+	| MOP_KA2 expr				{ $$ = make_op(N_KA2,	$1, 0,  $2,   NULL); }
+	| MOP_C REGISTER			{ $$ = make_op(N_C,		$1, $2, NULL, NULL); }
+	| MOP_SHC REGISTER ',' expr	{ $$ = make_op(N_SHC,	$1, $2, $4,   NULL); }
+	| MOP_S						{ $$ = make_op(N_S,		$1, 0,  NULL, NULL); }
+	| MOP_HLT expr				{ $$ = make_op(N_HLT,	$1, 0,  $2,   NULL); }
+	| MOP_J norm				{ $$ = make_op(N_J,		$1, 0,  NULL, $2); }
+	| MOP_L norm				{ $$ = make_op(N_L,		$1, 0,  NULL, $2); }
+	| MOP_G norm				{ $$ = make_op(N_G,		$1, 0,  NULL, $2); }
+	| MOP_BN norm				{ $$ = make_op(N_BN,	$1, 0,  NULL, $2); }
 	;
 
 norm:

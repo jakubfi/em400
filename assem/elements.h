@@ -33,7 +33,19 @@ struct dict_t {
 };
 
 enum node_type_e {
-	N_OP,
+	N_2ARG = 0,
+	N_FD,
+	N_KA1,
+	N_JS,
+	N_KA2,
+	N_C,
+	N_SHC,
+	N_HLT,
+	N_S,
+	N_J,
+	N_L,
+	N_G,
+	N_BN,
 	N_VAL,
 	N_NAME,
 	N_PLUS,
@@ -50,7 +62,6 @@ struct norm_t {
 
 struct node_t {
 	int type;
-	int optype;
 	uint16_t opcode;
 	int data;
 	int was_addr;
@@ -69,6 +80,7 @@ struct norm_t * make_norm(int rc, int rb, struct node_t *n);
 struct node_t * make_rep(int rep, int value);
 struct node_t * make_string(char *str);
 struct node_t * make_op(int optype, uint16_t op, int ra, struct node_t *n, struct norm_t *norm);
+
 struct dict_t ** dict_create();
 struct dict_t * dict_add(struct dict_t **dict, int type, char *name, struct node_t *n);
 struct dict_t * dict_find(struct dict_t **dict, char *name);
