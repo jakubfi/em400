@@ -35,6 +35,7 @@ MERA-400 features that em400 does not emulate:
   * bit 11 of SR
   * channel interrupt masks for 2 cpus
   * device allocations per cpu
+  * OS memory configuration (hardwired)
 * memory parity (itself and interrupts)
 * interface
 * priority based interface reservation
