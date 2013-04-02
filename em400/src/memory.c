@@ -49,6 +49,10 @@ int mem_init()
 		return E_MEM_NO_OS_MEM;
 	}
 
+	if ((em400_cfg.mem_os < 1) || (em400_cfg.mem_os > 2)) {
+		return E_MEM_WRONG_OS_MEM;
+	}
+
 	// create configured physical segments
 	for (int mp=0 ; mp<MEM_MAX_MODULES ; mp++) {
 		if (em400_cfg.mem[mp].segments > MEM_MAX_SEGMENTS) {
@@ -66,8 +70,7 @@ int mem_init()
 	}
 
 	// hardwire segments for OS
-	// TODO: MEM_MAX_SEGMENTS for OS block may be too much... (?)
-	for (int ab=0 ; ab<MEM_MAX_SEGMENTS ; ab++) {
+	for (int ab=0 ; ab<em400_cfg.mem_os ; ab++) {
 		if (mem_segment[0][ab]) {
 			mem_map[0][ab] = mem_segment[0][ab];
 		}
@@ -93,6 +96,10 @@ void mem_shutdown()
 // -----------------------------------------------------------------------
 int mem_add_map(int nb, int ab, int mp, int segment)
 {
+	if ((nb == 0) && (ab<em400_cfg.mem_os)) {
+		return IO_NO;
+	}
+
 	LOG(D_MEM, 1, "Add map: NB = %d, AB = %d, MP = %d, SEG = %d", nb, ab, mp, segment);
 	if (nb < MEM_MAX_NB) {
 		mem_map[nb][ab] = mem_segment[mp][segment];
@@ -108,9 +115,16 @@ int mem_add_map(int nb, int ab, int mp, int segment)
 // -----------------------------------------------------------------------
 void mem_remove_maps()
 {
+	int min_ab;
+
 	// remove all memory mappings
-	for (int nb=1 ; nb<MEM_MAX_NB ; nb++) {
-		for (int ab=0 ; ab<MEM_MAX_AB ; ab ++) {
+	for (int nb=0 ; nb<MEM_MAX_NB ; nb++) {
+		if (nb == 0) {
+			min_ab = em400_cfg.mem_os;
+		} else {
+			min_ab = 0;
+		}
+		for (int ab=min_ab ; ab<MEM_MAX_AB ; ab ++) {
 			mem_map[nb][ab] = NULL;
 		}
 	}

@@ -25,6 +25,7 @@ struct _em400_errordesc {
 } em400_errordesc[] = {
 	{ E_OK, "No error." },
 	{ E_MEM_NO_OS_MEM, "No segments defined for OS memory." },
+	{ E_MEM_WRONG_OS_MEM, "Wrong number of segments defined for OS memory." },
 	{ E_MEM_BAD_SEGMENT_COUNT, "Wrong segment count in a module." },
 	{ E_MEM_CANNOT_ALLOCATE, "Cannot allocate machine memory." },
 	{ E_MEM_BLOCK_TOO_SMALL, "Address outside the block. Block too small." },
