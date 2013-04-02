@@ -44,7 +44,7 @@ int drv_cnone_cmd(void *self, int u_num, int dir, int cmd, uint16_t *r)
 {
 #ifdef WITH_DEBUGGER
 	struct chan_t *ch = self;
-	LOG(D_IO, 10, "Chan %d (%s) ignored command", ch->num, ch->name);
+	LOG(D_IO, 10, "Chan %d (%s) is not connected, ignored command", ch->num, ch->name);
 #endif
 	return IO_NO;
 }

@@ -21,6 +21,8 @@
 #include "errors.h"
 #include "io.h"
 
+#include "debugger/log.h"
+
 // -----------------------------------------------------------------------
 int drv_unone_init(void *self, struct cfg_arg_t *arg)
 {
@@ -40,6 +42,10 @@ void drv_unone_reset(void *self)
 // -----------------------------------------------------------------------
 int drv_unone_cmd(void *self, int u_num, int dir, int cmd, uint16_t *r)
 {
+#ifdef WITH_DEBUGGER
+	struct unit_t *u = self;
+	LOG(D_IO, 10, "Unit %d (%s) is not connected, ignored command", u->num, u->name);
+#endif
 	return IO_NO;
 }
 

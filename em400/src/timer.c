@@ -47,8 +47,13 @@ void * timer_thread(void *ptr)
 // -----------------------------------------------------------------------
 int timer_init()
 {
-	eprint("Starting timer: %i ms\n", em400_cfg.cpu.timer_step);
-	return pthread_create(&timer_th, NULL, timer_thread, NULL);
+	if (em400_cfg.cpu.timer_step == 0) {
+		eprint("Timer disabled in configuration\n");
+		return 0;
+	} else {
+		eprint("Starting timer: %i ms\n", em400_cfg.cpu.timer_step);
+		return pthread_create(&timer_th, NULL, timer_thread, NULL);
+	}
 }
 
 // -----------------------------------------------------------------------

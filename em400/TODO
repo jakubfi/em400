@@ -3,7 +3,7 @@ Known bugs:
 CPU:
 
 * int/uint rework
-* AWP - sign storage, floating point instructions
+* AWP - floating point instructions
 
 Debugger:
 
@@ -27,7 +27,7 @@ Other:
 
 MERA-400 features that em400 does not emulate:
 
-* timings (instructions, memory access, disk latencies, serial lines)
+* timings (instructions, memory access, disk latencies, serial lines, ...)
 * power failure interrupts (cpu and channel)
 * 2-cpu configuration
   * interrupts
@@ -36,6 +36,7 @@ MERA-400 features that em400 does not emulate:
   * channel interrupt masks for 2 cpus
   * device allocations per cpu
 * memory parity (itself and interrupts)
+* interface
 * priority based interface reservation
 * operator panel
 

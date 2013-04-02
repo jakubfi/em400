@@ -38,7 +38,8 @@ enum log_domains {
 Log levels:
 
 * CPU:
-	1 - step
+	1 - illegal
+	3 - step
 	5 - exec (dasm+trnas)
 	10 - eff. arg.
 * REG:

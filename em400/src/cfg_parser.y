@@ -23,6 +23,8 @@
 #include "cfg.h"
 #include "drv/drivers.h"
 
+int this_chan;
+
 void cyyerror(char *s, ...);
 int cyylex(void);
 %}
@@ -33,7 +35,6 @@ int cyylex(void);
 		int v;
 		char *s;
 	} value;
-	struct cfg_unit_t *unit;
 	struct cfg_arg_t *arg;
 };
 
@@ -42,7 +43,6 @@ int cyylex(void);
 %token MODULE ELWRO MEGA
 %token <value> TEXT
 %token <value> VALUE
-%type <unit> unit units
 %type <arg> arg arglist
 
 %token '{' '}' '=' ':' ','
@@ -57,31 +57,27 @@ objects:
 object:
 	CPU '{' cpu_opts '}'
 	| MEMORY '{' modules '}'
-	| CHANNEL VALUE '=' TEXT '{' units '}' { 
-		struct cfg_chan_t *chan = cfg_make_chan($2.v, $4.s, $6);
-		chan->next = em400_cfg.chans;
-		em400_cfg.chans = chan;
-	}
+	| CHANNEL VALUE { this_chan=$2.v; } '=' TEXT '{' units '}' { cfg_make_chan($2.v, $5.s); }
 	;
 
 units:
-	unit units { $1->next = $2; $$ = $1; } 
-	| { $$ = NULL; }
+	unit units
+	|
 	;
 
 unit:
-	UNIT VALUE '=' TEXT ':' arglist { $$ = cfg_make_unit($2.v, $4.s, $6); }
-	| UNIT VALUE '=' TEXT { $$ = cfg_make_unit($2.v, $4.s, NULL); }
+	UNIT VALUE '=' TEXT ':' arglist	{ cfg_make_unit(this_chan, $2.v, $4.s, $6); }
+	| UNIT VALUE '=' TEXT			{ cfg_make_unit(this_chan, $2.v, $4.s, NULL); }
 	;
 
 arglist:
-	arg ',' arglist { $1->next = $3; $$ = $1; }
-	| arg { $$ = $1; }
+	arg ',' arglist	{ $1->next = $3; $$ = $1; }
+	| arg			{ $$ = $1; }
 	;
 
 arg:
-	VALUE { $$ = cfg_make_arg($1.s); }
-	| TEXT { $$ = cfg_make_arg($1.s); }
+	VALUE	{ $$ = cfg_make_arg($1.s); }
+	| TEXT	{ $$ = cfg_make_arg($1.s); }
 	;
 
 cpu_opts:
@@ -90,11 +86,11 @@ cpu_opts:
 	;
 
 cpu_opt:
-	SPEED '=' MAX { em400_cfg.cpu.speed_real = 0; }
-	| SPEED '=' REAL { em400_cfg.cpu.speed_real = 1; }
-	| TIMER '=' VALUE { em400_cfg.cpu.timer_step = $3.v; }
-	| MOD_17 '=' VALUE { em400_cfg.cpu.mod_17bit = $3.v; }
-	| MOD_SINT '=' VALUE { em400_cfg.cpu.mod_sint = $3.v; }
+	SPEED '=' MAX			{ em400_cfg.cpu.speed_real = 0; }
+	| SPEED '=' REAL		{ em400_cfg.cpu.speed_real = 1; }
+	| TIMER '=' VALUE		{ em400_cfg.cpu.timer_step = $3.v; }
+	| MOD_17 '=' VALUE		{ em400_cfg.cpu.mod_17bit = $3.v; }
+	| MOD_SINT '=' VALUE	{ em400_cfg.cpu.mod_sint = $3.v; }
 	;
 
 modules:
@@ -103,11 +99,12 @@ modules:
 	;
 
 module:
-	MODULE VALUE '=' ELWRO ':' VALUE { cfg_set_mem($2.v, 0, $6.v); }
-	| MODULE VALUE '=' MEGA ':' VALUE { cfg_set_mem($2.v, 1, $6.v); }
+	MODULE VALUE '=' ELWRO ':' VALUE	{ cfg_set_mem($2.v, 0, $6.v); }
+	| MODULE VALUE '=' MEGA ':' VALUE	{ cfg_set_mem($2.v, 1, $6.v); }
 	;
 %%
 
+// -----------------------------------------------------------------------
 void cyyerror(char *s, ...)
 {
 	va_list ap;

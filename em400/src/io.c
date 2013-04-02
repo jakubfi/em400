@@ -34,9 +34,14 @@
 struct chan_t *io_chan[IO_MAX_CHAN];
 
 // -----------------------------------------------------------------------
-int io_chan_init(struct cfg_chan_t *chan_cfg)
+int io_chan_init(int c_num)
 {
-	struct drv_t *c_driver = drv_get(DRV_CHAN, CHAN_IGNORE, chan_cfg->name);
+	struct drv_t *c_driver;
+	if (em400_cfg.chans[c_num].name) {
+		c_driver = drv_get(DRV_CHAN, CHAN_IGNORE, em400_cfg.chans[c_num].name);
+	} else {
+		c_driver = drv_get(DRV_CHAN, CHAN_IGNORE, "none");
+	}
 
 	if (!c_driver) {
 		return E_IO_CHAN_UNKNOWN;
@@ -48,10 +53,10 @@ int io_chan_init(struct cfg_chan_t *chan_cfg)
 	}
 
 	struct chan_t *chan = malloc(sizeof(struct chan_t));
-	io_chan[chan_cfg->num] = chan;
+	io_chan[c_num] = chan;
 
 	// common channel initialization
-	chan->num = chan_cfg->num;
+	chan->num = c_num;
 	chan->type = c_driver->chan_type;
 	chan->name = c_driver->name;
 	chan->finish = 0;
@@ -59,16 +64,23 @@ int io_chan_init(struct cfg_chan_t *chan_cfg)
 	chan->f_reset = c_driver->f_reset;
 	chan->f_cmd = c_driver->f_cmd;
 
-	eprint("  Channel %i (%s):\n", chan->num, chan->name);
+	if (em400_cfg.chans[c_num].name) {
+		eprint("  Channel %i (%s):\n", chan->num, chan->name);
+	}
 
 	// initialize the channel
 	return c_driver->f_init(chan, NULL);
 }
 
 // -----------------------------------------------------------------------
-int io_unit_init(struct chan_t *chan, struct cfg_unit_t *unit_cfg)
+int io_unit_init(int c_num, int u_num)
 {
-	struct drv_t *u_driver = drv_get(DRV_UNIT, chan->type, unit_cfg->name);
+	struct drv_t *u_driver;
+	if (em400_cfg.chans[c_num].units[u_num].name) {
+		u_driver = drv_get(DRV_UNIT, io_chan[c_num]->type, em400_cfg.chans[c_num].units[u_num].name);
+	} else {
+		u_driver = drv_get(DRV_UNIT, CHAN_IGNORE, "none");
+	}
 
 	if (!u_driver) {
 		return E_IO_UNIT_UNKNOWN;
@@ -80,20 +92,22 @@ int io_unit_init(struct chan_t *chan, struct cfg_unit_t *unit_cfg)
 	}
 
 	struct unit_t *unit = malloc(sizeof(struct unit_t));
-	chan->unit[unit_cfg->num] = unit;
+	io_chan[c_num]->unit[u_num] = unit;
 
-	unit->num = unit_cfg->num;
-	unit->name = unit_cfg->name;
-	unit->chan = chan;
+	unit->num = u_num;
+	unit->name = u_driver->name;
+	unit->chan = io_chan[c_num];
 	unit->cfg = NULL;
 	unit->f_shutdown = u_driver->f_shutdown;
 	unit->f_reset = u_driver->f_reset;
 	unit->f_cmd = u_driver->f_cmd;
 
-	eprint("    Unit %i (%s)\n", unit->num, unit->name);
+	if (em400_cfg.chans[c_num].units[u_num].name) {
+		eprint("          %i:%i (%s)\n", c_num, unit->num, unit->name);
+	}
 
 	// initialize the unit
-	return u_driver->f_init(chan->unit[unit->num], unit_cfg->args);
+	return u_driver->f_init(unit, em400_cfg.chans[c_num].units[u_num].args);
 }
 
 // -----------------------------------------------------------------------
@@ -103,24 +117,20 @@ int io_init()
 
 	eprint("Initializing I/O\n");
 
-	struct cfg_chan_t *chan_cfg = em400_cfg.chans;
-	while (chan_cfg) {
+	for (int c_num=0 ; c_num<IO_MAX_CHAN ; c_num++) {
 		// initialize channel
-		res = io_chan_init(chan_cfg);
+		res = io_chan_init(c_num);
 		if (res != E_OK) {
 			return res;
 		}
 
 		// initialize units connected
-		struct cfg_unit_t *unit_cfg = chan_cfg->units;
-		while (unit_cfg) {
-			res = io_unit_init(io_chan[chan_cfg->num], unit_cfg);
+		for (int u_num=0 ; u_num<IO_MAX_UNIT ; u_num++) {
+			res = io_unit_init(c_num, u_num);
 			if (res != E_OK) {
 				return res;
 			}
-			unit_cfg = unit_cfg->next;
 		}
-		chan_cfg = chan_cfg->next;
 	}
 	return E_OK;
 }
@@ -175,12 +185,14 @@ int io_dispatch(int dir, uint16_t n, uint16_t *r)
 
 	// channel/unit command
 	} else {
-		int res = io_chan[chan]->f_cmd(io_chan[chan], unit, dir, cmd, r);
-
 #ifdef WITH_DEBUGGER
 		char *cmdc = int2bin(cmd, 8);
-		LOG(D_IO, 1, "I/O command, dir = %s, chan = %d, unit = %d, cmd = %s, result -> %i", dir ? "OUT" : "IN", chan, unit, cmdc, res);
+		LOG(D_IO, 1, "I/O command, dir = %s, chan = %d, unit = %d, cmd = %s", dir ? "OUT" : "IN", chan, unit, cmdc);
 		free(cmdc);
+#endif
+		int res = io_chan[chan]->f_cmd(io_chan[chan], unit, dir, cmd, r);
+#ifdef WITH_DEBUGGER
+		LOG(D_IO, 1, "I/O command, result = %i", res);
 #endif
 		return res;
 	}
