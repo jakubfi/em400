@@ -127,28 +127,38 @@ void cpu_step()
 
 	LOG(D_CPU, 3, "------ Check instruction result");
 
+	// check instruction result and proceed accordingly
 	switch (op_res) {
 		// normal instruction
 		case OP_OK:
 			nRw(R_MOD, 0);
 			nRw(R_MODc, 0);
 			was_P = 0;
-			break;
+			LOG(D_CPU, 3, "------ End cycle (OP_OK)");
+			int_serve();
+			return;
+
+		// instruction that resulted in P set
 		case OP_P:
 			nRw(R_MOD, 0);
 			nRw(R_MODc, 0);
 			nRinc(R_IC);
 			was_P = 1;
-			break;
+			LOG(D_CPU, 3, "------ End cycle (OP_P)");
+			int_serve();
+			return;
+
 		// pre-modification
 		case OP_MD:
 			was_P = 0;
-			break;
+			LOG(D_CPU, 3, "------ End cycle (OP_MD): MOD = %d, MODc = %d", regs[R_MOD], regs[R_MODc]);
+			return;
+
 		// illegal instruction
 		case OP_ILLEGAL:
 #ifdef WITH_DEBUGGER
 			b = int2bin(nR(IR_OP), 16);
-			LOG(D_CPU, 1, "!!! Illegal opcode: %s (0x%04x) at 0x%04x", b, nR(IR_OP), nR(R_IC)-1);
+			LOG(D_CPU, 1, "------ End cycle (OP_ILLEGAL): %s (0x%04x) at 0x%04x (P:%i)", b, nR(IR_OP), nR(R_IC)-1, was_P);
 			free(b);
 #endif
 			nRw(R_MOD, 0);
@@ -157,13 +167,9 @@ void cpu_step()
 				was_P = 0;
 			} else {
 				int_set(INT_ILLEGAL_OPCODE);
+				int_serve();
 			}
-			break;
-	}
-
-	LOG(D_CPU, 3, "------ End cycle: res = %d, MOD = %d, MODc = %d, P = %d", op_res, regs[R_MOD], regs[R_MODc], was_P);
-	if (!was_P && (op_res != OP_MD)) {
-		int_serve();
+			return;
 	}
 }
 
