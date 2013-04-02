@@ -1,5 +1,7 @@
 Known bugs:
 
+* OS mem block is configurable too
+
 CPU:
 
 * int/uint rework

@@ -106,7 +106,7 @@ void cpu_step()
 	// fetch instruction into IR
 	// (additional argument is fetched by the instruction, if necessary)
 	nRw(R_IR, nMEM(nR(R_IC)));
-	LOG(D_CPU, 3, "Cycle: Q:NB = %d:%d, IC = %d", SR_Q, SR_NB, regs[R_IC]);
+	LOG(D_CPU, 3, "Cycle: Q:NB = %d:%d, IC = 0x%04x", SR_Q, SR_NB, regs[R_IC]);
 	nRinc(R_IC);
 
 #ifdef WITH_DEBUGGER
@@ -157,8 +157,8 @@ void cpu_step()
 		// illegal instruction
 		case OP_ILLEGAL:
 #ifdef WITH_DEBUGGER
-			b = int2bin(nR(IR_OP), 16);
-			LOG(D_CPU, 1, "------ End cycle (OP_ILLEGAL): %s (0x%04x) at 0x%04x (P:%i)", b, nR(IR_OP), nR(R_IC)-1, was_P);
+			b = int2bin(nR(R_IR), 16);
+			LOG(D_CPU, 1, "------ End cycle (OP_ILLEGAL): %s (0x%04x) at 0x%04x (P:%i)", b, nR(R_IR), nR(R_IC)-1, was_P);
 			free(b);
 #endif
 			nRw(R_MOD, 0);

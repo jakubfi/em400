@@ -72,6 +72,7 @@ void cfg_print()
 	eprint("  17-bit byte addressing: %s\n", em400_cfg.cpu.mod_17bit ? "true" : "false");
 	eprint("  High prio software int: %s\n", em400_cfg.cpu.mod_sint ? "true" : "false");
 	eprint("  -- Memory: ---------------------------\n");
+	eprint("  Segments for OS: %i\n", em400_cfg.mem_os);
 	for (int i=0 ; i<MEM_MAX_MODULES ; i++) {
 		eprint("  Module %2i: %5s: %2i segments\n", i, em400_cfg.mem[i].is_mega ? "MEGA" : "ELWRO", em400_cfg.mem[i].segments);
 	}
@@ -109,6 +110,16 @@ void cfg_set_mem(int module, int is_mega, int segments)
 	}
 	em400_cfg.mem[module].segments = segments;
 	em400_cfg.mem[module].is_mega = is_mega;
+}
+
+// -----------------------------------------------------------------------
+void cfg_set_os_mem(int segments)
+{
+	if ((segments < 1) || (segments > 2)) {
+		cyyerror("Incorrect segment count reserved for OS usage: %i", segments);
+	}
+
+	em400_cfg.mem_os = segments;
 }
 
 // -----------------------------------------------------------------------

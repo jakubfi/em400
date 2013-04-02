@@ -66,6 +66,7 @@ struct cfg_em400_t {
 
 	struct cfg_cpu_t cpu;
 	struct cfg_mem_module_t mem[MEM_MAX_MODULES];
+	int mem_os;
 	struct cfg_chan_t chans[IO_MAX_CHAN];
 
 #ifdef WITH_DEBUGGER
@@ -81,6 +82,7 @@ void eprint(char *format, ...);
 int cfg_load(char *cfg_file);
 void cfg_print();
 void cfg_set_mem(int module, int is_mega, int segments);
+void cfg_set_os_mem(int segments);
 struct cfg_arg_t * cfg_make_arg(char *arg);
 void cfg_make_unit(int c_num, int u_num, char *name, struct cfg_arg_t *args);
 void cfg_make_chan(int c_num, char *name);

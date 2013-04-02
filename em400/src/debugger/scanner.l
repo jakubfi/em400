@@ -94,13 +94,6 @@ alarm|ALARM {
 	yylval.value = R_ALARM;
 	return REG;
 }
-hex	return HEX;
-oct	return OCT;
-bin	return BIN;
-int|dec	return DEC;
-uint return UINT;
-rz	return IRZ;
-rp	return IRP;
 
 <INITIAL>{text}	{
 	int tok = dbg_is_cmd(yytext);
@@ -170,6 +163,14 @@ rp	return IRP;
 	BEGIN(INITIAL);
 	return NAME;
 }
+
+hex	return HEX;
+oct	return OCT;
+bin	return BIN;
+int|dec	return DEC;
+uint return UINT;
+rz	return IRZ;
+rp	return IRP;
 
 ">>"	return SHR;
 "<<"	return SHL;

@@ -40,7 +40,7 @@ int cyylex(void);
 
 %token CPU MEMORY CHANNEL UNIT
 %token SPEED MAX REAL TIMER MOD_17 MOD_SINT
-%token MODULE ELWRO MEGA
+%token MODULE ELWRO MEGA OS_SEG
 %token <value> TEXT
 %token <value> VALUE
 %type <arg> arg arglist
@@ -56,7 +56,7 @@ objects:
 
 object:
 	CPU '{' cpu_opts '}'
-	| MEMORY '{' modules '}'
+	| MEMORY '{' os_mem modules '}'
 	| CHANNEL VALUE { this_chan=$2.v; } '=' TEXT '{' units '}' { cfg_make_chan($2.v, $5.s); }
 	;
 
@@ -101,6 +101,10 @@ modules:
 module:
 	MODULE VALUE '=' ELWRO ':' VALUE	{ cfg_set_mem($2.v, 0, $6.v); }
 	| MODULE VALUE '=' MEGA ':' VALUE	{ cfg_set_mem($2.v, 1, $6.v); }
+	;
+
+os_mem:
+	OS_SEG '=' VALUE { cfg_set_os_mem($3.v); }
 	;
 %%
 

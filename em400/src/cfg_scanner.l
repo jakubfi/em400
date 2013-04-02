@@ -48,6 +48,7 @@ mod_sint	return MOD_SINT;
 module		return MODULE;
 elwro		return ELWRO;
 mega		return MEGA;
+os_segments	return OS_SEG;
 true|yes	{ cyylval.value.v = 1; cyylval.value.s = strdup(cyytext); return VALUE; }
 false|no	{ cyylval.value.v = 0; cyylval.value.s = strdup(cyytext); return VALUE; }
 channel		return CHANNEL;
