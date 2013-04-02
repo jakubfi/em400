@@ -86,10 +86,6 @@ modc|MODC {
 	yylval.value = R_MODc;
 	return REG;
 }
-p|P {
-	yylval.value = R_P;
-	return REG;
-}
 zc17|ZC17 {
 	yylval.value = R_ZC17;
 	return REG;

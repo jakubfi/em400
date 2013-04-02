@@ -107,51 +107,66 @@ int op_is()
 {
 	uint16_t N = get_arg_norm();
 	if ((MEMNB(N) & R(IR_A)) == R(IR_A)) {
-		Rw(R_P, 1);
+		return OP_P;
 	} else {
 		MEMNBw(N, (MEMNB(N) | R(IR_A)));
+		return OP_OK;
 	}
-	return OP_OK;
 }
 
 // -----------------------------------------------------------------------
 int op_bb()
 {
 	uint16_t N = get_arg_norm();
-	if ((R(IR_A) & N) == N) Rw(R_P, 1);
-	return OP_OK;
+	if ((R(IR_A) & N) == N) {
+		return OP_P;
+	} else {
+		return OP_OK;
+	}
 }
 
 // -----------------------------------------------------------------------
 int op_bm()
 {
 	uint16_t N = get_arg_norm();
-	if ((MEMNB(N) & R(IR_A)) == R(IR_A)) Rw(R_P, 1);
-	return OP_OK;
+	if ((MEMNB(N) & R(IR_A)) == R(IR_A)) {
+		return OP_P;
+	} else {
+		return OP_OK;
+	}
 }
 
 // -----------------------------------------------------------------------
 int op_bs()
 {
 	uint16_t N = get_arg_norm();
-	if ((R(IR_A) & R(7)) == (N & R(7))) Rw(R_P, 1);
-	return OP_OK;
+	if ((R(IR_A) & R(7)) == (N & R(7))) {
+		return OP_P;
+	} else {
+		return OP_OK;
+	}
 }
 
 // -----------------------------------------------------------------------
 int op_bc()
 {
 	uint16_t N = get_arg_norm();
-	if ((R(IR_A) & N) != N) Rw(R_P, 1);
-	return OP_OK;
+	if ((R(IR_A) & N) != N) {
+		return OP_P;
+	} else {
+		return OP_OK;
+	}
 }
 
 // -----------------------------------------------------------------------
 int op_bn()
 {
 	uint16_t N = get_arg_norm();
-	if ((R(IR_A) & N) == 0) Rw(R_P, 1);
-	return OP_OK;
+	if ((R(IR_A) & N) == 0) {
+		return OP_P;
+	} else {
+		return OP_OK;
+	}
 }
 
 // -----------------------------------------------------------------------
@@ -399,9 +414,11 @@ int op_trb()
 {
 	int16_t T = get_arg_short();
 	Radd(IR_A, T);
-	if (!R(IR_A)) Rw(R_P, 1);
-	else Rw(R_P, 0);
-	return OP_OK;
+	if (!R(IR_A)) {
+		return OP_P;
+	} else {
+		return OP_OK;
+	}
 }
 
 // -----------------------------------------------------------------------
@@ -544,8 +561,11 @@ int op_71()
 // -----------------------------------------------------------------------
 int op_71_blc()
 {
-	if ((((R(0) & 0b1111111100000000) >> 8) & IR_b) != IR_b) Rw(R_P, 1);
-	return OP_OK;
+	if ((((R(0) & 0b1111111100000000) >> 8) & IR_b) != IR_b) {
+		return OP_P;
+	} else {
+		return OP_OK;
+	}
 }
 
 // -----------------------------------------------------------------------
@@ -568,8 +588,11 @@ int op_71_exl()
 // -----------------------------------------------------------------------
 int op_71_brc()
 {
-	if (((R(0) & 0b0000000011111111) & IR_b) != IR_b) Rw(R_P, 1);
-	return OP_OK;
+	if (((R(0) & 0b0000000011111111) & IR_b) != IR_b) {
+		return OP_P;
+	} else {
+		return OP_OK;
+	}
 }
 
 // -----------------------------------------------------------------------
@@ -1240,8 +1263,11 @@ int op_77_ib()
 {
 	uint16_t N = get_arg_norm();
 	MEMw(N, MEM(N)+1);
-	if (!MEM(N)) Rw(R_P, 1);
-	return OP_OK;
+	if (!MEM(N)) {
+		return OP_P;
+	} else {
+		return OP_OK;
+	}
 }
 
 // vim: tabstop=4

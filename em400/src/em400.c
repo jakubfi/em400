@@ -272,7 +272,6 @@ int main(int argc, char** argv)
 #endif
 		cpu_step();
 		ips_counter++;
-		int_serve();
 	}
 
 	if (em400_quit != E_QUIT_OK) {

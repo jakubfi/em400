@@ -21,7 +21,8 @@
 enum op_result {
 	OP_ILLEGAL = -1,
 	OP_OK,
-	OP_MD
+	OP_MD,
+	OP_P
 };
 
 int op_illegal();

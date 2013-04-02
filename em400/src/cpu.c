@@ -99,6 +99,8 @@ int16_t get_arg_norm()
 // -----------------------------------------------------------------------
 void cpu_step()
 {
+	static int was_P;
+
 	LOG(D_CPU, 3, "------ cpu_step() -----------------------------------------------");
 
 	// fetch instruction into IR
@@ -120,11 +122,8 @@ void cpu_step()
 	free(buf_d);
 #endif
 
-	static int was_P;
-
 	// execute instruction
-	int op_res;
-	op_res = iset[IR_OP].op_fun();
+	int op_res = iset[IR_OP].op_fun();
 
 	LOG(D_CPU, 3, "------ Check instruction result");
 
@@ -133,13 +132,13 @@ void cpu_step()
 		case OP_OK:
 			nRw(R_MOD, 0);
 			nRw(R_MODc, 0);
-			if (nR(R_P)) {
-				nRinc(R_IC);
-				Rw(R_P, 0);
-				was_P = 1;
-			} else {
-				was_P = 0;
-			}
+			was_P = 0;
+			break;
+		case OP_P:
+			nRw(R_MOD, 0);
+			nRw(R_MODc, 0);
+			nRinc(R_IC);
+			was_P = 1;
 			break;
 		// pre-modification
 		case OP_MD:
@@ -149,12 +148,12 @@ void cpu_step()
 		case OP_ILLEGAL:
 #ifdef WITH_DEBUGGER
 			b = int2bin(nR(IR_OP), 16);
-			LOG(D_CPU, 1, "Illegal opcode: %s (0x%04x) at 0x%04x", b, nR(IR_OP), nR(R_IC)-1);
+			LOG(D_CPU, 1, "!!! Illegal opcode: %s (0x%04x) at 0x%04x", b, nR(IR_OP), nR(R_IC)-1);
 			free(b);
 #endif
 			nRw(R_MOD, 0);
 			nRw(R_MODc, 0);
-			if (was_P != 0) {
+			if (was_P) {
 				was_P = 0;
 			} else {
 				int_set(INT_ILLEGAL_OPCODE);
@@ -162,7 +161,10 @@ void cpu_step()
 			break;
 	}
 
-	LOG(D_CPU, 3, "------ End cycle: res = %d, MOD = %d, MODc = %d, P = %d", op_res, regs[R_MOD], regs[R_MODc], regs[R_P]);
+	LOG(D_CPU, 3, "------ End cycle: res = %d, MOD = %d, MODc = %d, P = %d", op_res, regs[R_MOD], regs[R_MODc], was_P);
+	if (!was_P && (op_res != OP_MD)) {
+		int_serve();
+	}
 }
 
 // vim: tabstop=4

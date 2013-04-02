@@ -232,7 +232,6 @@ void dbg_c_sregs(int wid)
 {
 	awprint(wid, C_LABEL, "            OPCODE D A   B   C");
 	awprint(wid, C_LABEL, "           P: ");
-	awprint(wid, C_DATA, "%i  ", regs[R_P]);
 	awprint(wid, C_DATA, "\n");
 	awprint(wid, C_LABEL, "IR: ");
 	awprint(wid, C_DATA, "0x%04x  ", regs[R_IR]);

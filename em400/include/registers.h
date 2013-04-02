@@ -33,16 +33,15 @@ enum _registers {
 	R_R5	= 5,
 	R_R6	= 6,
 	R_R7	= 7,
-	R_IC	= 8,
-	R_SR	= 9,
-	R_IR	= 10,
-	R_KB	= 11,
-	R_MOD	= 12,
-	R_MODc	= 13,
-	R_P		= 14,
-	R_ZC17	= 15,
-	R_ALARM	= 16,
-	R_MAX	= 17
+	R_IC,
+	R_SR,
+	R_IR,
+	R_KB,
+	R_MOD,
+	R_MODc,
+	R_ZC17,
+	R_ALARM,
+	R_MAX
 };
 
 extern uint16_t regs[];

@@ -149,17 +149,11 @@ void int_serve()
 	// no interrupt to serve
 	if (!rp) return;
 
-	// do not serve interrupts when P is set or previous instruction was MD
-	if (nR(R_P) || nR(R_MODc)) return;
-
 	// find highest interrupt to serve
 	int probe = 31;
 	while ((probe > 0) && !(rp & (1 << probe))) {
 		probe--;
 	}
-
-	// no interrupt to serve (shouldn't happen here)
-	if (!probe) return;
 
 	// this is the interrupt we're going to serve
 	int interrupt = 31 - probe;
