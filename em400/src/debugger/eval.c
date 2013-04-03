@@ -144,6 +144,15 @@ struct node_t * n_reg(int r)
 }
 
 // -----------------------------------------------------------------------
+struct node_t * n_ireg(int rtype, int bit)
+{
+	struct node_t *n = n_create();
+	n->type = rtype;
+	n->val = bit;
+	return n;
+}
+
+// -----------------------------------------------------------------------
 struct node_t * n_var(char *name)
 {
 	struct node_t *n = n_create();
@@ -235,6 +244,12 @@ int16_t n_eval_reg(struct node_t * n)
 }
 
 // -----------------------------------------------------------------------
+int16_t n_eval_ireg(struct node_t * n)
+{
+	return (RZ >> (31 - n->val)) & 1;
+}
+
+// -----------------------------------------------------------------------
 int16_t n_eval_op1(struct node_t * n)
 {
 	int16_t v;
@@ -248,10 +263,6 @@ int16_t n_eval_op1(struct node_t * n)
 			return !v;
 		case UMINUS:
 			return -v;
-		case 'z':
-			return (RZ & (1<<(31-v))) >> (31-v);
-		case 'p':
-			return (RP & (1<<(31-v))) >> (31-v);
 		default:
 			return 0;
 	}
@@ -276,6 +287,13 @@ int16_t n_eval_ass(struct node_t * n)
 			nb = n_eval(n->n1->n1);
 			addr = n_eval(n->n1->n2);
 			*mem_ptr(nb, addr) = v;
+			return v;
+		case N_RZ:
+			if (v) {
+				int_set(n->n1->val);
+			} else {
+				int_clear(n->n1->val);
+			}
 			return v;
 		default:
 			return v;
@@ -361,6 +379,8 @@ int16_t n_eval(struct node_t *n)
 			return n_eval_var(n);
 		case N_REG:
 			return n_eval_reg(n);
+		case N_RZ:
+			return n_eval_ireg(n);
 		case N_BF:
 			return n_eval_val(n);
 		case N_OP1:
@@ -384,7 +404,7 @@ void print_node(struct node_t *n)
 		case B_UINT:
 			awprint(W_CMD, C_DATA, "%i ", (uint16_t) value);
 			break;
-		case B_DEC:
+		case B_INT:
 			awprint(W_CMD, C_DATA, "%i ", (int16_t) value);
 			break;
 		case B_HEX:

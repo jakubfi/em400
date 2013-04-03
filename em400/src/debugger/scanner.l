@@ -97,10 +97,9 @@ alarm|ALARM {
 hex	return HEX;
 oct	return OCT;
 bin	return BIN;
-int|dec	return DEC;
+int	return INT;
 uint return UINT;
 rz	return IRZ;
-rp	return IRP;
 
 
 <INITIAL>{text}	{
