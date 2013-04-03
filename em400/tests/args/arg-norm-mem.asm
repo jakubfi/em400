@@ -18,7 +18,7 @@ dt4:	.data	0x0004
 
 .finprog
 
-; XPCT int(rz(6)) : 0
+; XPCT int(rz[6]) : 0
 ; XPCT int(sr) : 0
 
 ; XPCT hex(r1): 0x0001

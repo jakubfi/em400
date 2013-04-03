@@ -12,7 +12,7 @@
 .finprog
 
 ; XPCT int(sr) : 0
-; XPCT int(rz(6)) : 0
+; XPCT int(rz[6]) : 0
 
 ; XPCT int(r1) : 15
 

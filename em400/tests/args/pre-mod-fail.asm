@@ -14,6 +14,6 @@
 
 ; XPCT int(sr) : 0
 
-; XPCT int(rz(6)) : 1
+; XPCT int(rz[6]) : 1
 ; XPCT int(r1): 1
 

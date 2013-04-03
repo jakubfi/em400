@@ -9,7 +9,7 @@ data2:	.data	40, 41, 42, 43, 44, 45, 46
 
 .finprog
 
-; XPCT int(rz(6)) : 0
+; XPCT int(rz[6]) : 0
 ; XPCT int(sr) : 0
 
 ; XPCT int(r1): 40

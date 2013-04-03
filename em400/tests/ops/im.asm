@@ -7,7 +7,7 @@
 
 .finprog
 
-; XPCT int(rz(6)) : 0
+; XPCT int(rz[6]) : 0
 
 ; XPCT bin([10]) : 0b1111011111111111
 ; XPCT bin(sr) : 0b1111011111000000

@@ -21,7 +21,7 @@ blk:	.data 1
 
 .finprog
 
-; XPCT int(rz(6)) : 0
+; XPCT int(rz[6]) : 0
 ; XPCT int(sr) : 1
 
 ; XPCT bin([1:10]) : 0b0101010110101010
