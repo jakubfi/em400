@@ -31,7 +31,7 @@ blk:	.data 0b0000000000000001
 
 .finprog
 
-; XPCT int(rz(6)) : 0
+; XPCT int(rz[6]) : 0
 ; XPCT bin(sr) : 0b0000000000000001
 
 ; XPCT bin(r5) : 0b0000100000000000

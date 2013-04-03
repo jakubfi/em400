@@ -29,7 +29,7 @@ data2:	.res	100
 
 .finprog
 
-; XPCT int(rz(6)) : 0
+; XPCT int(rz[6]) : 0
 ; XPCT int(sr) : 0
 
 ; XPCT int([1]) : -30

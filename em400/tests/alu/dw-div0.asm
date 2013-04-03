@@ -13,10 +13,10 @@
 
 .finprog
 
-; XPCT int(rz(6)) : 0
-; XPCT int(rz(7)) : 0
-; XPCT int(rz(8)) : 0
-; XPCT int(rz(9)) : 0
-; XPCT int(rz(10)) : 1
+; XPCT int(rz[6]) : 0
+; XPCT int(rz[7]) : 0
+; XPCT int(rz[8]) : 0
+; XPCT int(rz[9]) : 0
+; XPCT int(rz[10]) : 1
 ; XPCT int(sr) : 0
 

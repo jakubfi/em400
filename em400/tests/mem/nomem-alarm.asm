@@ -10,6 +10,6 @@
 
 .finprog
 
-; XPCT int(rz(2)) : 1
-; XPCT int(rz(6)) : 0
+; XPCT int(rz[2]) : 1
+; XPCT int(rz[6]) : 0
 ; XPCT int(alarm) : 1

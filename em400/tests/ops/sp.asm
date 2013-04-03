@@ -22,7 +22,7 @@ blk:	.data 1
 
 .finprog
 
-; XPCT int(rz(6)) : 0
+; XPCT int(rz[6]) : 0
 
 ; new process vector
 

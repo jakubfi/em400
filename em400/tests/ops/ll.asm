@@ -14,7 +14,7 @@ data3:	.data	101, 102, 103
 
 .finprog
 
-; XPCT int(rz(6)) : 0
+; XPCT int(rz[6]) : 0
 ; XPCT int(sr) : 0
 
 ; XPCT int(r5): 101
