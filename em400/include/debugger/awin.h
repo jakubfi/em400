@@ -109,6 +109,7 @@ void aw_attr_new(int id, int bgcolor, int fgcolor, int attr);
 void awbinprint(int id, int attr, char *format, uint32_t value, int size);
 void awxyprint(int id, int x, int y, int attr, char *format, ...);
 #define awprint(id, attr, format, ...) awxyprint(id, -1, -1, attr, format, ##__VA_ARGS__)
+void vawprint(int id, int attr, const char *format, va_list ap);
 void awfillbg(int id, int attr, char c, int len);
 
 void aw_nc_rl_history_add(char *cmd, int len);

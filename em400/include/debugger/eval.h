@@ -20,14 +20,6 @@
 
 #include <inttypes.h>
 
-enum _base_type {
-	B_BIN,
-	B_OCT,
-	B_DEC,
-	B_HEX,
-	B_UINT
-};
-
 enum _node_type {
 	N_NONE,
 	N_OP1,
@@ -38,6 +30,7 @@ enum _node_type {
 	N_MEM,
 	N_BF,
 	N_ASS,
+	N_RZ,
 	N_LAST
 };
 
@@ -74,6 +67,7 @@ void n_free_tree(struct node_t *n);
 struct node_t * n_val(int16_t v);
 struct node_t * n_var(char *name);
 struct node_t * n_reg(int r);
+struct node_t * n_ireg(int rtype, int bit);
 struct node_t * n_bf(int beg, int end);
 struct node_t * n_op1(int oper, struct node_t *n);
 struct node_t * n_op2(int oper, struct node_t *n1, struct node_t *n2);
@@ -84,6 +78,7 @@ struct node_t * n_mem(struct node_t *n1, struct node_t *n2);
 int16_t n_eval_val(struct node_t *n);
 int16_t n_eval_var(struct node_t *n);
 int16_t n_eval_reg(struct node_t *n);
+int16_t n_eval_ireg(struct node_t * n);
 int16_t n_eval_op1(struct node_t *n);
 int16_t n_eval_op2(struct node_t *n);
 int16_t n_eval_mem(struct node_t *n);

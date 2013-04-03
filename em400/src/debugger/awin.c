@@ -545,6 +545,26 @@ void aw_attr_new(int id, int bgcolor, int fgcolor, int attr)
 }
 
 // -----------------------------------------------------------------------
+void vawprint(int id, int attr, const char *format, va_list vl)
+{
+	AWIN *w = aw_window_find(id);
+	if ((aw_output == O_NCURSES) && (!w)) {
+		return;
+	}
+
+	switch (aw_output) {
+		case O_NCURSES:
+			wattron(w->win, aw_attr[attr]);
+			vwprintw(w->win, format, vl);
+			wattroff(w->win, aw_attr[attr]);
+			break;
+		case O_STD:
+			vprintf(format, vl);
+			break;
+	}
+}
+
+// -----------------------------------------------------------------------
 void awxyprint(int id, int x, int y, int attr, char *format, ...)
 {
 	AWIN *w = aw_window_find(id);

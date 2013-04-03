@@ -17,6 +17,7 @@
 
 #include <stdlib.h>
 #include <string.h>
+#include <strings.h>
 
 #include "cpu.h"
 #include "registers.h"
@@ -47,7 +48,7 @@ struct cmd_t dbg_commands[] = {
 	{ "dasm",	F_DASM,		"Disassembler", "  dasm [[start] count]" },
 	{ "trans",	F_TRANS,	"Translator", "  trans [[start] count]" },
 	{ "mem",	F_MEM,		"Show memory contents", "  mem [block:] <start>-<end>" },
-	{ "clmem",	F_CLMEM,	"Clear memory contents", "  clmem" },
+	{ "memcl",	F_MEMCL,	"Clear memory contents", "  memcl" },
 	{ "load",	F_LOAD,		"Load memory image from file", "  load <file> [mem_block]" },
 	{ "memcfg",	F_MEMCFG,	"Show memory configuration", "  memcfg" },
 	{ "brk",	F_BRK,		"Manipulate breakpoints", "  brk add <expression>\n  brk list\n  brk del <brk_number>" },
@@ -56,19 +57,6 @@ struct cmd_t dbg_commands[] = {
 	{ "log",	F_LOG,		"Enable logging", "  log\n  log on|off\n  log file <filename>\n  log level <domain>:<level>" },
 	{ NULL,		0,			NULL }
 };
-
-// -----------------------------------------------------------------------
-int dbg_is_cmd(char *cmd)
-{
-	struct cmd_t* c = dbg_commands;
-	while (c->cmd) {
-		if (!strcmp(cmd, c->cmd)) {
-			return c->tok;
-		}
-		c++;
-	}
-	return 0;
-}
 
 // -----------------------------------------------------------------------
 void dbg_c_load(int wid, char* image, int bank)
@@ -387,7 +375,7 @@ void dbg_c_brk_list(int wid)
 	}
 	while (b) {
 		if (b->disabled) {
-			awprint(wid, C_LABEL, "%i: %s\n", b->nr, b->label);
+			awprint(wid, C_LABEL, "%i: %s (disabled)\n", b->nr, b->label);
 		} else {
 			awprint(wid, C_DATA, "%i: %s\n", b->nr, b->label);
 		}

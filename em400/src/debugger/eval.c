@@ -28,7 +28,6 @@
 #include "parser.h"
 
 struct node_t *node_stack = NULL;
-
 struct var_t *var_stack = NULL;
 
 // -----------------------------------------------------------------------
@@ -75,7 +74,7 @@ struct node_t * n_create()
 {
 	struct node_t *n = malloc(sizeof(struct node_t));
 	n->type = N_NONE;
-	n->base = B_HEX;
+	n->base = HEX;
 	n->val = 0;
 	n->var = NULL;
 	n->nb = 0;
@@ -140,6 +139,15 @@ struct node_t * n_reg(int r)
 	struct node_t *n = n_create();
 	n->type = N_REG;
 	n->val = r;
+	return n;
+}
+
+// -----------------------------------------------------------------------
+struct node_t * n_ireg(int rtype, int bit)
+{
+	struct node_t *n = n_create();
+	n->type = rtype;
+	n->val = bit;
 	return n;
 }
 
@@ -235,6 +243,12 @@ int16_t n_eval_reg(struct node_t * n)
 }
 
 // -----------------------------------------------------------------------
+int16_t n_eval_ireg(struct node_t * n)
+{
+	return (RZ >> (31 - n->val)) & 1;
+}
+
+// -----------------------------------------------------------------------
 int16_t n_eval_op1(struct node_t * n)
 {
 	int16_t v;
@@ -248,10 +262,6 @@ int16_t n_eval_op1(struct node_t * n)
 			return !v;
 		case UMINUS:
 			return -v;
-		case 'z':
-			return (RZ & (1<<(31-v))) >> (31-v);
-		case 'p':
-			return (RP & (1<<(31-v))) >> (31-v);
 		default:
 			return 0;
 	}
@@ -276,6 +286,13 @@ int16_t n_eval_ass(struct node_t * n)
 			nb = n_eval(n->n1->n1);
 			addr = n_eval(n->n1->n2);
 			*mem_ptr(nb, addr) = v;
+			return v;
+		case N_RZ:
+			if (v) {
+				int_set(n->n1->val);
+			} else {
+				int_clear(n->n1->val);
+			}
 			return v;
 		default:
 			return v;
@@ -338,7 +355,7 @@ int16_t n_eval_op2(struct node_t * n)
 		case OR:
 			if (v1 || v2) return 1;
 			else return 0;
-		case '.':
+		case BF:
 			m = v2;
 			s = 0;
 			while ((m & 1) == 0) {
@@ -361,6 +378,8 @@ int16_t n_eval(struct node_t *n)
 			return n_eval_var(n);
 		case N_REG:
 			return n_eval_reg(n);
+		case N_RZ:
+			return n_eval_ireg(n);
 		case N_BF:
 			return n_eval_val(n);
 		case N_OP1:
@@ -381,19 +400,19 @@ void print_node(struct node_t *n)
 {
 	uint16_t value = n_eval(n);
 	switch (n->base) {
-		case B_UINT:
+		case UINT:
 			awprint(W_CMD, C_DATA, "%i ", (uint16_t) value);
 			break;
-		case B_DEC:
+		case INT:
 			awprint(W_CMD, C_DATA, "%i ", (int16_t) value);
 			break;
-		case B_HEX:
+		case HEX:
 			awprint(W_CMD, C_DATA, "0x%04x ", (uint16_t) value);
 			break;
-		case B_OCT:
+		case OCT:
 			awprint(W_CMD, C_DATA, "0%06o ", (uint16_t) value);
 			break;
-		case B_BIN:
+		case BIN:
 			awbinprint(W_CMD, C_DATA, "0b................ ", (uint16_t) value, 16);
 			break;
 		default:

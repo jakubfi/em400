@@ -29,10 +29,10 @@
 #include "debugger/eval.h"
 #include "debugger/log.h"
 
-void yyerror(char *);
+void reset_scanner();
+void yyerror(char *s, ...);
 int yylex(void);
 char verr[128];
-struct node_t *enode;
 %}
 
 %union {
@@ -42,14 +42,16 @@ struct node_t *enode;
 };
 
 %token <value> VALUE REG YERR
-%token <text> TEXT NAME
+%token <text> NAME TEXT
 %token ':' '&' '|' '(' ')'
-%token HEX OCT BIN DEC UINT
-%token IRZ IRP
-%token <value> F_QUIT F_CLMEM F_MEM F_REGS F_SREGS F_RESET F_STEP F_HELP F_DASM F_TRANS F_LOAD F_MEMCFG F_BRK F_RUN F_STACK F_LOG
-%token B_ADD B_DEL B_TEST B_DISABLE B_ENABLE
-%token L_ON L_OFF L_FILE L_LEVEL
-%type <n> expr lval bitfield
+%token HEX OCT BIN INT UINT
+%token IRZ
+%token <value> F_QUIT F_MEMCL F_MEM F_REGS F_SREGS F_RESET F_STEP F_HELP F_DASM F_TRANS F_LOAD F_MEMCFG F_BRK F_RUN F_STACK F_LOG
+%token ADD DEL TEST
+%token ON OFF FFILE LEVEL
+%type <n> expr lval bitfield basemod
+
+%token BF
 
 %left '='
 %left OR
@@ -68,13 +70,15 @@ struct node_t *enode;
 
 %%
 
+line:
+	statement '\n' { n_discard_stack(); }
+	;
+
 statement:
-	| command
-	| exprlist '\n' { n_discard_stack(); awprint(W_CMD, C_DATA, "\n"); }
-	| YERR '\n' {
-		yyclearin;
-		awprint(W_CMD, C_ERROR, "Error: unknown character: %c\n", (char) $1);
-	}
+	command 
+	| exprlist 	{ awprint(W_CMD, C_DATA, "\n"); }
+	| YERR 		{ yyclearin; yyerror("unknown character: %c", (char) $1); YYABORT; }
+	| 
 	;
 
 exprlist:
@@ -84,243 +88,121 @@ exprlist:
 
 expr:
 	VALUE { $$ = n_val($1); }
-	| UINT '(' expr ')' { $3->base = B_UINT; $$ = $3; }
-	| DEC '(' expr ')' { $3->base = B_DEC; $$ = $3; }
-	| HEX '(' expr ')' { $3->base = B_HEX; $$ = $3; }
-	| OCT '(' expr ')' { $3->base = B_OCT; $$ = $3; }
-	| BIN '(' expr ')' { $3->base = B_BIN; $$ = $3; }
-	| TEXT {
-		$$ = n_var($1);
+	| basemod
+	| expr bitfield			{ $$ = n_op2(BF, $1, $2); }
+	| '-' expr %prec UMINUS	{ $$ = n_op1(UMINUS, $2); }
+	| expr '+' expr			{ $$ = n_op2('+', $1, $3); }
+	| expr '-' expr			{ $$ = n_op2('-', $1, $3); }
+	| expr '*' expr			{ $$ = n_op2('*', $1, $3); }
+	| expr '|' expr			{ $$ = n_op2('|', $1, $3); }
+	| expr '&' expr			{ $$ = n_op2('&', $1, $3); }
+	| expr '^' expr			{ $$ = n_op2('^', $1, $3); }
+	| expr SHR expr			{ $$ = n_op2(SHR, $1, $3); }
+	| expr SHL expr			{ $$ = n_op2(SHL, $1, $3); }
+	| expr OR expr			{ $$ = n_op2(OR, $1, $3); }
+	| expr AND expr			{ $$ = n_op2(AND, $1, $3); }
+	| expr EQ expr			{ $$ = n_op2(EQ, $1, $3); }
+	| expr NEQ expr			{ $$ = n_op2(NEQ, $1, $3); }
+	| expr GE expr			{ $$ = n_op2(GE, $1, $3); }
+	| expr LE expr			{ $$ = n_op2(LE, $1, $3); }
+	| expr '>' expr			{ $$ = n_op2('>', $1, $3); }
+	| expr '<' expr			{ $$ = n_op2('<', $1, $3); }
+	| '~' expr				{ $$ = n_op1('~', $2); }
+	| '!' expr				{ $$ = n_op1('!', $2); }
+	| '(' expr ')'			{ $$ = $2; }
+	| lval {
 		if (!$$->mptr) {
-			enode = $$; YYERROR;
-		}
-	}
-	| REG { $$ = n_reg($1); }
-	| expr bitfield { $$ = n_op2('.', $1, $2); }
-	| '-' expr %prec UMINUS { $$ = n_op1(UMINUS, $2); }
-	| expr '+' expr { $$ = n_op2('+', $1, $3); }
-	| expr '-' expr { $$ = n_op2('-', $1, $3); }
-	| expr '*' expr { $$ = n_op2('*', $1, $3); }
-	| expr '|' expr { $$ = n_op2('|', $1, $3); }
-	| expr '&' expr { $$ = n_op2('&', $1, $3); }
-	| expr '^' expr { $$ = n_op2('^', $1, $3); }
-	| expr SHR expr { $$ = n_op2(SHR, $1, $3); }
-	| expr SHL expr { $$ = n_op2(SHL, $1, $3); }
-	| expr OR expr { $$ = n_op2(OR, $1, $3); }
-	| expr AND expr { $$ = n_op2(AND, $1, $3); }
-	| expr EQ expr { $$ = n_op2(EQ, $1, $3); }
-	| expr NEQ expr { $$ = n_op2(NEQ, $1, $3); }
-	| expr GE expr { $$ = n_op2(GE, $1, $3); }
-	| expr LE expr { $$ = n_op2(LE, $1, $3); }
-	| expr '>' expr { $$ = n_op2('>', $1, $3); }
-	| expr '<' expr { $$ = n_op2('<', $1, $3); }
-	| '~' expr { $$ = n_op1('~', $2); }
-	| '!' expr { $$ = n_op1('!', $2); }
-	| '(' expr ')' { $$ = $2; }
-	| '[' expr ']' {
-		$$ = n_mem(n_val(SR_NB*SR_Q), $2);
-		if (!$$->mptr) {
-			enode = $$; YYERROR;
-		}
-	}
-	| '[' expr ':' expr ']' {
-		$$ = n_mem($2, $4);
-		if (!$$->mptr) {
-			enode = $$; YYERROR;
+			switch ($$->type) {
+				case N_MEM:
+					yyerror("address [%i:0x%04x] not available, memory not configured", $$->nb, (uint16_t) $$->val);
+					YYABORT;
+					break;
+				case N_VAR:
+					yyerror("undefined variable: %s", $$->var);
+					YYABORT;
+					break;
+			}
 		}
 	}
 	| lval '=' expr { $$ = n_ass($1, $3); }
-	| IRZ '(' expr ')' {
-		$$ = n_op1('z', $3);
-	}
-	| IRP '(' expr ')' {
-		$$ = n_op1('p', $3);
-	}
-	| error '\n' {
-		yyclearin;
-		if (enode) {
-			switch (enode->type) {
-				case N_MEM:
-					awprint(W_CMD, C_ERROR, "Error: address [%i:0x%04x] not available, memory not configured\n", enode->nb, (uint16_t) enode->val);
-					break;
-				case N_VAR:
-					awprint(W_CMD, C_ERROR, "Error: undefined variable: %s\n", enode->var);
-					break;
-				default:
-					awprint(W_CMD, C_ERROR, "Unknown error on node: type: %i, value: %i, var: %s\n", enode->type, (uint16_t) enode->val, enode->var);
-					break;
-			}
-			enode = NULL;
-			n_discard_stack();
-		}
-		YYERROR;
-	}
 	;
 
+basemod:
+	UINT '(' expr ')'	{ $3->base = UINT; $$ = $3; }
+	| INT '(' expr ')'	{ $3->base = INT; $$ = $3; }
+	| HEX '(' expr ')'	{ $3->base = HEX; $$ = $3; }
+	| OCT '(' expr ')'	{ $3->base = OCT; $$ = $3; }
+	| BIN '(' expr ')'	{ $3->base = BIN; $$ = $3; }
+
 lval:
-	TEXT { $$ = n_var($1); }
+	NAME { $$ = n_var($1); }
 	| REG { $$ = n_reg($1); }
-	| '[' expr ']' {
-		$$ = n_mem(n_val(SR_NB*SR_Q), $2);
-		if (!$$->mptr) {
-			enode = $$; YYERROR;
-		}
-	}
-	| '[' expr ':' expr ']' {
-		$$ = n_mem($2, $4);
-		if (!$$->mptr) {
-			enode = $$; YYERROR;
-		}
-	}
+	| '[' expr ']' { $$ = n_mem(n_val(SR_NB*SR_Q), $2); }
+	| '[' expr ':' expr ']' { $$ = n_mem($2, $4); }
+	| IRZ '[' expr ']' { $$ = n_ireg(N_RZ, n_eval($3)); }
 	;
 
 bitfield:
-	'[' VALUE ']' { $$ = n_bf($2, $2); }
-	| '[' VALUE '-' VALUE ']' { $$ = n_bf($2, $4); }
+	'[' VALUE ']'				{ $$ = n_bf($2, $2); }
+	| '[' VALUE '-' VALUE ']'	{ $$ = n_bf($2, $4); }
 	;
 
 command:
-	'\n' {}
-	| F_QUIT '\n' {
-		dbg_c_quit();
-	}
-	| F_STEP '\n' {
-		dbg_c_step();
-	}
-	| f_help
-	| F_REGS '\n' {
-		dbg_c_regs(W_CMD);
-	}
-	| F_SREGS '\n' {
-		dbg_c_sregs(W_CMD);
-	}
-	| F_RESET '\n' {
-		dbg_c_reset();
-	}
-	| f_dasm
-	| f_trans
-	| f_mem
-	| F_CLMEM '\n' {
-		dbg_c_clmem();
-	}
-	| f_load
-	| F_MEMCFG '\n' {
-		dbg_c_memcfg(W_CMD);
-	}
-	| f_brk
-	| f_log
-	| F_RUN '\n' {
-		dbg_c_run();
-	}
-	| F_STACK '\n' {
-		dbg_c_stack(W_CMD, 12);
-	}
-	;
-
-f_help:
-	F_HELP '\n' {
-		dbg_c_help(W_CMD, NULL);
-	}
-	| F_HELP NAME '\n' {
-		dbg_c_help(W_CMD, $2);
-		free($2);
-	}
-	;
-
-f_dasm:
-	F_DASM '\n' {
-		dbg_c_dt(W_CMD, DMODE_DASM, regs[R_IC], 1);
-	}
-	| F_DASM VALUE '\n' {
-		dbg_c_dt(W_CMD, DMODE_DASM, regs[R_IC], $2);
-	}
-	| F_DASM expr VALUE '\n' {
-		dbg_c_dt(W_CMD, DMODE_DASM, n_eval($2), $3);
-		n_discard_stack();
-	}
-	;
-
-f_trans:
-	F_TRANS '\n' {
-		dbg_c_dt(W_CMD, DMODE_TRANS, regs[R_IC], 1);
-	}
-	| F_TRANS VALUE '\n' {
-		dbg_c_dt(W_CMD, DMODE_TRANS, regs[R_IC], $2);
-	}
-	| F_TRANS expr VALUE '\n' {
-		dbg_c_dt(W_CMD, DMODE_TRANS, n_eval($2), $3);
-		n_discard_stack();
-	}
-	;
-
-f_mem:
-	F_MEM expr '-' expr '\n' {
-		dbg_c_mem(W_CMD, SR_Q*SR_NB, n_eval($2), n_eval($4), 122, 18);
-		n_discard_stack();
-	}
-	| F_MEM expr ':' expr '-' expr '\n' {
-		dbg_c_mem(W_CMD, n_eval($2), n_eval($4), n_eval($6), 122, 18);
-		n_discard_stack();
-	}
-	;
-
-f_load:
-	F_LOAD NAME '\n' {
-		dbg_c_load(W_CMD, $2, SR_Q*SR_NB);
-	}
-	| F_LOAD NAME VALUE '\n' {
-		dbg_c_load(W_CMD, $2, $3);
-	}
-	;
-
-f_brk:
-	F_BRK '\n' {
-		dbg_c_brk_list(W_CMD);
-	}
-	| F_BRK B_ADD expr '\n' {
+	  F_QUIT 				{ dbg_c_quit(); }
+	| F_STEP 				{ dbg_c_step(); }
+	| F_REGS 				{ dbg_c_regs(W_CMD); }
+	| F_SREGS 				{ dbg_c_sregs(W_CMD); }
+	| F_RESET 				{ dbg_c_reset(); }
+	| F_MEMCL 				{ dbg_c_clmem(); }
+	| F_MEMCFG			 	{ dbg_c_memcfg(W_CMD); }
+	| F_RUN 				{ dbg_c_run(); }
+	| F_STACK 				{ dbg_c_stack(W_CMD, 12); }
+	| F_HELP 				{ dbg_c_help(W_CMD, NULL); }
+	| F_HELP TEXT			{ dbg_c_help(W_CMD, $2); free($2); }
+	| F_DASM				{ dbg_c_dt(W_CMD, DMODE_DASM, regs[R_IC], 1); }
+	| F_DASM VALUE			{ dbg_c_dt(W_CMD, DMODE_DASM, regs[R_IC], $2); }
+	| F_DASM expr VALUE		{ dbg_c_dt(W_CMD, DMODE_DASM, n_eval($2), $3); }
+	| F_TRANS				{ dbg_c_dt(W_CMD, DMODE_TRANS, regs[R_IC], 1); }
+	| F_TRANS VALUE			{ dbg_c_dt(W_CMD, DMODE_TRANS, regs[R_IC], $2); }
+	| F_TRANS expr VALUE	{ dbg_c_dt(W_CMD, DMODE_TRANS, n_eval($2), $3); }
+	| F_MEM expr '-' expr	{ dbg_c_mem(W_CMD, SR_Q*SR_NB, n_eval($2), n_eval($4), 122, 18); }
+	| F_MEM expr ':' expr '-' expr	{ dbg_c_mem(W_CMD, n_eval($2), n_eval($4), n_eval($6), 122, 18); }
+	| F_LOAD TEXT			{ dbg_c_load(W_CMD, $2, SR_Q*SR_NB); }
+	| F_LOAD TEXT VALUE		{ dbg_c_load(W_CMD, $2, $3); }
+	| F_BRK					{ dbg_c_brk_list(W_CMD); }
+	| F_BRK ADD expr	{
 		char expr[128];
 		sscanf(input_buf, " brk add %[^\n]", expr);
 		dbg_c_brk_add(W_CMD, expr, $3);
+		// we need those expressions when evaluating breakpoints later
 		n_reset_stack();
 	}
-	| F_BRK B_DEL VALUE '\n' {
-		dbg_c_brk_del(W_CMD, $3);
-	}
-	| F_BRK B_TEST VALUE '\n' {
-		dbg_c_brk_test(W_CMD, $3);
-	}
-	| F_BRK B_DISABLE VALUE '\n' {
-		dbg_c_brk_disable(W_CMD, $3, 1);
-	}
-	| F_BRK B_ENABLE VALUE '\n' {
-		dbg_c_brk_disable(W_CMD, $3, 0);
-	}
-	;
-
-f_log:
-	F_LOG '\n' {
-		dbg_c_log_show(W_CMD);
-	}
-	| F_LOG L_ON '\n' {
-		log_enable();
-	}
-	| F_LOG L_OFF '\n' {
-		log_disable();
-	}
-	| F_LOG L_FILE NAME '\n' {
-		log_shutdown();
-		log_init($3);
-	}
-	| F_LOG L_LEVEL NAME ':' VALUE '\n' {
-		dbg_c_log_set(W_CMD, $3, $5);
-	}
+	| F_BRK DEL VALUE	{ dbg_c_brk_del(W_CMD, $3); }
+	| F_BRK TEST VALUE	{ dbg_c_brk_test(W_CMD, $3); }
+	| F_BRK OFF VALUE	{ dbg_c_brk_disable(W_CMD, $3, 1); }
+	| F_BRK ON VALUE	{ dbg_c_brk_disable(W_CMD, $3, 0); }
+	| F_BRK error
+	| F_LOG				{ dbg_c_log_show(W_CMD); }
+	| F_LOG ON 			{ log_enable(); }
+	| F_LOG OFF			{ log_disable(); }
+	| F_LOG FFILE TEXT	{ log_shutdown(); log_init($3); }
+	| F_LOG NAME ':' VALUE	{ dbg_c_log_set(W_CMD, $2, $4); }
+	| F_LOG error
 	;
 
 %%
 
-void yyerror(char *s)
+// -----------------------------------------------------------------------
+void yyerror(char *format, ...)
 {
-	awprint(W_CMD, C_ERROR, "Error: %s\n", s);
+	va_list ap;
+	va_start(ap, format);
+	awprint(W_CMD, C_ERROR, "Error: ");
+	vawprint(W_CMD, C_ERROR, format, ap);
+	awprint(W_CMD, C_ERROR, "\n");
+	va_end(ap);
+	n_discard_stack();
+	reset_scanner();
 }
 
 // vim: tabstop=4
