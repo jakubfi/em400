@@ -75,7 +75,7 @@ struct node_t * n_create()
 {
 	struct node_t *n = malloc(sizeof(struct node_t));
 	n->type = N_NONE;
-	n->base = B_HEX;
+	n->base = HEX;
 	n->val = 0;
 	n->var = NULL;
 	n->nb = 0;
@@ -356,7 +356,7 @@ int16_t n_eval_op2(struct node_t * n)
 		case OR:
 			if (v1 || v2) return 1;
 			else return 0;
-		case '.':
+		case BF:
 			m = v2;
 			s = 0;
 			while ((m & 1) == 0) {
@@ -401,19 +401,19 @@ void print_node(struct node_t *n)
 {
 	uint16_t value = n_eval(n);
 	switch (n->base) {
-		case B_UINT:
+		case UINT:
 			awprint(W_CMD, C_DATA, "%i ", (uint16_t) value);
 			break;
-		case B_INT:
+		case INT:
 			awprint(W_CMD, C_DATA, "%i ", (int16_t) value);
 			break;
-		case B_HEX:
+		case HEX:
 			awprint(W_CMD, C_DATA, "0x%04x ", (uint16_t) value);
 			break;
-		case B_OCT:
+		case OCT:
 			awprint(W_CMD, C_DATA, "0%06o ", (uint16_t) value);
 			break;
-		case B_BIN:
+		case BIN:
 			awbinprint(W_CMD, C_DATA, "0b................ ", (uint16_t) value, 16);
 			break;
 		default:

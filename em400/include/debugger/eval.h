@@ -20,14 +20,6 @@
 
 #include <inttypes.h>
 
-enum _base_type {
-	B_BIN,
-	B_OCT,
-	B_INT,
-	B_HEX,
-	B_UINT
-};
-
 enum _node_type {
 	N_NONE,
 	N_OP1,

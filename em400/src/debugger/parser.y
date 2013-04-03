@@ -50,6 +50,8 @@ char verr[128];
 %token L_ON L_OFF L_FILE L_LEVEL
 %type <n> expr lval bitfield basemod
 
+%token BF
+
 %left '='
 %left OR
 %left AND
@@ -82,7 +84,7 @@ exprlist:
 expr:
 	VALUE { $$ = n_val($1); }
 	| basemod
-	| expr bitfield			{ $$ = n_op2('.', $1, $2); }
+	| expr bitfield			{ $$ = n_op2(BF, $1, $2); }
 	| '-' expr %prec UMINUS	{ $$ = n_op1(UMINUS, $2); }
 	| expr '+' expr			{ $$ = n_op2('+', $1, $3); }
 	| expr '-' expr			{ $$ = n_op2('-', $1, $3); }
@@ -123,11 +125,11 @@ expr:
 	;
 
 basemod:
-	UINT '(' expr ')'	{ $3->base = B_UINT; $$ = $3; }
-	| INT '(' expr ')'	{ $3->base = B_INT; $$ = $3; }
-	| HEX '(' expr ')'	{ $3->base = B_HEX; $$ = $3; }
-	| OCT '(' expr ')'	{ $3->base = B_OCT; $$ = $3; }
-	| BIN '(' expr ')'	{ $3->base = B_BIN; $$ = $3; }
+	UINT '(' expr ')'	{ $3->base = UINT; $$ = $3; }
+	| INT '(' expr ')'	{ $3->base = INT; $$ = $3; }
+	| HEX '(' expr ')'	{ $3->base = HEX; $$ = $3; }
+	| OCT '(' expr ')'	{ $3->base = OCT; $$ = $3; }
+	| BIN '(' expr ')'	{ $3->base = BIN; $$ = $3; }
 
 lval:
 	TEXT { $$ = n_var($1); }
