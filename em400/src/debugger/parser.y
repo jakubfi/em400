@@ -69,11 +69,15 @@ char verr[128];
 
 %%
 
+line:
+	statement '\n' { n_discard_stack(); }
+	;
+
 statement:
-	'\n'
-	| command '\n'	{ n_discard_stack(); }
-	| exprlist '\n'	{ n_discard_stack(); awprint(W_CMD, C_DATA, "\n"); }
-	| YERR '\n'		{ yyclearin; awprint(W_CMD, C_ERROR, "Error: unknown character: %c\n", (char) $1); }
+	command 
+	| exprlist 	{ awprint(W_CMD, C_DATA, "\n"); }
+	| YERR 		{ yyclearin; awprint(W_CMD, C_ERROR, "Error: unknown character: %c\n", (char) $1); YYERROR; }
+	|
 	;
 
 exprlist:
@@ -110,12 +114,10 @@ expr:
 			switch ($$->type) {
 				case N_MEM:
 					awprint(W_CMD, C_ERROR, "Error: address [%i:0x%04x] not available, memory not configured\n", $$->nb, (uint16_t) $$->val);
-					n_discard_stack();
 					YYERROR;
 					break;
 				case N_VAR:
 					awprint(W_CMD, C_ERROR, "Error: undefined variable: %s\n", $$->var);
-					n_discard_stack();
 					YYERROR;
 					break;
 			}
@@ -171,6 +173,7 @@ command:
 		char expr[128];
 		sscanf(input_buf, " brk add %[^\n]", expr);
 		dbg_c_brk_add(W_CMD, expr, $3);
+		// we need those expressions when evaluating breakpoints later
 		n_reset_stack();
 	}
 	| F_BRK B_DEL VALUE		{ dbg_c_brk_del(W_CMD, $3); }
@@ -189,6 +192,7 @@ command:
 // -----------------------------------------------------------------------
 void yyerror(char *s)
 {
+	n_discard_stack();
 	awprint(W_CMD, C_ERROR, "Error: %s\n", s);
 }
 

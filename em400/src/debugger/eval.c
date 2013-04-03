@@ -28,7 +28,6 @@
 #include "parser.h"
 
 struct node_t *node_stack = NULL;
-
 struct var_t *var_stack = NULL;
 
 // -----------------------------------------------------------------------
