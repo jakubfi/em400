@@ -89,7 +89,6 @@ exprlist:
 expr:
 	VALUE { $$ = n_val($1); }
 	| basemod
-<<<<<<< HEAD
 	| expr bitfield			{ $$ = n_op2(BF, $1, $2); }
 	| '-' expr %prec UMINUS	{ $$ = n_op1(UMINUS, $2); }
 	| expr '+' expr			{ $$ = n_op2('+', $1, $3); }
