@@ -29,6 +29,7 @@
 #include "debugger/eval.h"
 #include "debugger/log.h"
 
+void reset_scanner();
 void yyerror(char *s, ...);
 int yylex(void);
 char verr[128];
