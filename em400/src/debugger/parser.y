@@ -29,7 +29,7 @@
 #include "debugger/eval.h"
 #include "debugger/log.h"
 
-void yyerror(char *);
+void yyerror(char *s, ...);
 int yylex(void);
 char verr[128];
 %}
@@ -41,13 +41,13 @@ char verr[128];
 };
 
 %token <value> VALUE REG YERR
-%token <text> TEXT NAME
+%token <text> NAME TEXT
 %token ':' '&' '|' '(' ')'
 %token HEX OCT BIN INT UINT
 %token IRZ
-%token <value> F_QUIT F_CLMEM F_MEM F_REGS F_SREGS F_RESET F_STEP F_HELP F_DASM F_TRANS F_LOAD F_MEMCFG F_BRK F_RUN F_STACK F_LOG
-%token B_ADD B_DEL B_TEST B_DISABLE B_ENABLE
-%token L_ON L_OFF L_FILE L_LEVEL
+%token <value> F_QUIT F_MEMCL F_MEM F_REGS F_SREGS F_RESET F_STEP F_HELP F_DASM F_TRANS F_LOAD F_MEMCFG F_BRK F_RUN F_STACK F_LOG
+%token ADD DEL TEST
+%token ON OFF FFILE LEVEL
 %type <n> expr lval bitfield basemod
 
 %token BF
@@ -76,8 +76,8 @@ line:
 statement:
 	command 
 	| exprlist 	{ awprint(W_CMD, C_DATA, "\n"); }
-	| YERR 		{ yyclearin; awprint(W_CMD, C_ERROR, "Error: unknown character: %c\n", (char) $1); YYERROR; }
-	|
+	| YERR 		{ yyclearin; yyerror("unknown character: %c", (char) $1); YYABORT; }
+	| 
 	;
 
 exprlist:
@@ -113,12 +113,12 @@ expr:
 		if (!$$->mptr) {
 			switch ($$->type) {
 				case N_MEM:
-					awprint(W_CMD, C_ERROR, "Error: address [%i:0x%04x] not available, memory not configured\n", $$->nb, (uint16_t) $$->val);
-					YYERROR;
+					yyerror("address [%i:0x%04x] not available, memory not configured", $$->nb, (uint16_t) $$->val);
+					YYABORT;
 					break;
 				case N_VAR:
-					awprint(W_CMD, C_ERROR, "Error: undefined variable: %s\n", $$->var);
-					YYERROR;
+					yyerror("undefined variable: %s", $$->var);
+					YYABORT;
 					break;
 			}
 		}
@@ -134,7 +134,7 @@ basemod:
 	| BIN '(' expr ')'	{ $3->base = BIN; $$ = $3; }
 
 lval:
-	TEXT { $$ = n_var($1); }
+	NAME { $$ = n_var($1); }
 	| REG { $$ = n_reg($1); }
 	| '[' expr ']' { $$ = n_mem(n_val(SR_NB*SR_Q), $2); }
 	| '[' expr ':' expr ']' { $$ = n_mem($2, $4); }
@@ -152,12 +152,12 @@ command:
 	| F_REGS 				{ dbg_c_regs(W_CMD); }
 	| F_SREGS 				{ dbg_c_sregs(W_CMD); }
 	| F_RESET 				{ dbg_c_reset(); }
-	| F_CLMEM 				{ dbg_c_clmem(); }
+	| F_MEMCL 				{ dbg_c_clmem(); }
 	| F_MEMCFG			 	{ dbg_c_memcfg(W_CMD); }
 	| F_RUN 				{ dbg_c_run(); }
 	| F_STACK 				{ dbg_c_stack(W_CMD, 12); }
 	| F_HELP 				{ dbg_c_help(W_CMD, NULL); }
-	| F_HELP NAME			{ dbg_c_help(W_CMD, $2); free($2); }
+	| F_HELP TEXT			{ dbg_c_help(W_CMD, $2); free($2); }
 	| F_DASM				{ dbg_c_dt(W_CMD, DMODE_DASM, regs[R_IC], 1); }
 	| F_DASM VALUE			{ dbg_c_dt(W_CMD, DMODE_DASM, regs[R_IC], $2); }
 	| F_DASM expr VALUE		{ dbg_c_dt(W_CMD, DMODE_DASM, n_eval($2), $3); }
@@ -166,34 +166,42 @@ command:
 	| F_TRANS expr VALUE	{ dbg_c_dt(W_CMD, DMODE_TRANS, n_eval($2), $3); }
 	| F_MEM expr '-' expr	{ dbg_c_mem(W_CMD, SR_Q*SR_NB, n_eval($2), n_eval($4), 122, 18); }
 	| F_MEM expr ':' expr '-' expr	{ dbg_c_mem(W_CMD, n_eval($2), n_eval($4), n_eval($6), 122, 18); }
-	| F_LOAD NAME			{ dbg_c_load(W_CMD, $2, SR_Q*SR_NB); }
-	| F_LOAD NAME VALUE		{ dbg_c_load(W_CMD, $2, $3); }
+	| F_LOAD TEXT			{ dbg_c_load(W_CMD, $2, SR_Q*SR_NB); }
+	| F_LOAD TEXT VALUE		{ dbg_c_load(W_CMD, $2, $3); }
 	| F_BRK					{ dbg_c_brk_list(W_CMD); }
-	| F_BRK B_ADD expr	{
+	| F_BRK ADD expr	{
 		char expr[128];
 		sscanf(input_buf, " brk add %[^\n]", expr);
 		dbg_c_brk_add(W_CMD, expr, $3);
 		// we need those expressions when evaluating breakpoints later
 		n_reset_stack();
 	}
-	| F_BRK B_DEL VALUE		{ dbg_c_brk_del(W_CMD, $3); }
-	| F_BRK B_TEST VALUE	{ dbg_c_brk_test(W_CMD, $3); }
-	| F_BRK B_DISABLE VALUE	{ dbg_c_brk_disable(W_CMD, $3, 1); }
-	| F_BRK B_ENABLE VALUE	{ dbg_c_brk_disable(W_CMD, $3, 0); }
-	| F_LOG					{ dbg_c_log_show(W_CMD); }
-	| F_LOG L_ON 			{ log_enable(); }
-	| F_LOG L_OFF			{ log_disable(); }
-	| F_LOG L_FILE NAME		{ log_shutdown(); log_init($3); }
-	| F_LOG L_LEVEL NAME ':' VALUE	{ dbg_c_log_set(W_CMD, $3, $5); }
+	| F_BRK DEL VALUE	{ dbg_c_brk_del(W_CMD, $3); }
+	| F_BRK TEST VALUE	{ dbg_c_brk_test(W_CMD, $3); }
+	| F_BRK OFF VALUE	{ dbg_c_brk_disable(W_CMD, $3, 1); }
+	| F_BRK ON VALUE	{ dbg_c_brk_disable(W_CMD, $3, 0); }
+	| F_BRK error
+	| F_LOG				{ dbg_c_log_show(W_CMD); }
+	| F_LOG ON 			{ log_enable(); }
+	| F_LOG OFF			{ log_disable(); }
+	| F_LOG FFILE TEXT	{ log_shutdown(); log_init($3); }
+	| F_LOG NAME ':' VALUE	{ dbg_c_log_set(W_CMD, $2, $4); }
+	| F_LOG error
 	;
 
 %%
 
 // -----------------------------------------------------------------------
-void yyerror(char *s)
+void yyerror(char *format, ...)
 {
+	va_list ap;
+	va_start(ap, format);
+	awprint(W_CMD, C_ERROR, "Error: ");
+	vawprint(W_CMD, C_ERROR, format, ap);
+	awprint(W_CMD, C_ERROR, "\n");
+	va_end(ap);
 	n_discard_stack();
-	awprint(W_CMD, C_ERROR, "Error: %s\n", s);
+	reset_scanner();
 }
 
 // vim: tabstop=4

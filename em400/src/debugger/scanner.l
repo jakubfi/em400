@@ -23,153 +23,70 @@
 #include "debugger/debugger.h"
 #include "debugger/ui.h"
 #include "debugger/cmd.h"
+#include "debugger/keywords.h"
 #include "parser.h"
 
-void yyerror(char *);
+void yyerror(char *s, ...);
 %}
 
 %option nounput
 %option noinput
+%option case-insensitive
 
-%s name brkcmd logcmd
+%s args texts opts
 
 oct		0[0-7]+
-hex		0x[0-9a-fA-F]+
+hex		0x[0-9a-f]+
 bin		0b[01]+
 dec		[0-9]+
-reg		r[0-7]|R[0-7]
-text	[^-,+*&|<>()\[\]!~=: \t\n\r]+
+reg		r[0-7]
+regs	ic|sr|ir|kb|mod|modc|zc17|alarm
+bases	int|uint|bin|oct|hex
+name	[a-z][a-z0-9]+
+text	[^\n\t\r ]+
+chars	[-,=+*&|^><:()\]\[~!]
 
 %%
 
-{oct} {
-	yylval.value = strtoul(yytext+1, NULL, 8);
-	return VALUE;
-}
-{hex} {
-	yylval.value = strtoul(yytext+2, NULL, 16);
-	return VALUE;
-}
-{bin} {
-	yylval.value = strtoul(yytext+2, NULL, 2);
-	return VALUE;
-}
-{dec} {
-	yylval.value = atoi(yytext);
-	return VALUE;
-}
-{reg} {
-	yylval.value = atoi(yytext+1);
-	return REG;
-}
-ic|IC	{
-	yylval.value = R_IC;
-	return REG;
-}
-sr|SR	{
-	yylval.value = R_SR;
-	return REG;
-}
-ir|IR	{
-	yylval.value = R_IR;
-	return REG;
-}
-kb|KB	{
-	yylval.value = R_KB;
-	return REG;
-}
-mod|MOD	{
-	yylval.value = R_MOD;
-	return REG;
-}
-modc|MODC {
-	yylval.value = R_MODc;
-	return REG;
-}
-zc17|ZC17 {
-	yylval.value = R_ZC17;
-	return REG;
-}
-alarm|ALARM {
-	yylval.value = R_ALARM;
-	return REG;
-}
-hex	return HEX;
-oct	return OCT;
-bin	return BIN;
-int	return INT;
-uint return UINT;
-rz	return IRZ;
+<texts>{text}	{ yylval.text = strdup(yytext); return TEXT; }
 
+{oct}	{ yylval.value = strtoul(yytext+1, NULL, 8); return VALUE; }
+{hex}	{ yylval.value = strtoul(yytext+2, NULL, 16); return VALUE; }
+{bin}	{ yylval.value = strtoul(yytext+2, NULL, 2); return VALUE; }
+{dec}	{ yylval.value = atoi(yytext); return VALUE; }
 
-<INITIAL>{text}	{
-	int tok = dbg_is_cmd(yytext);
-	if (!tok) {
-		yylval.text = strdup(yytext);
-		return TEXT;
-	} else {
-		switch (tok) {
-			case F_HELP:
-				BEGIN(name);
-				break;
-			case F_LOAD:
-				BEGIN(name);
-				break;
-			case F_BRK:
-				BEGIN(brkcmd);
-				break;
-			case F_LOG:
-				BEGIN(logcmd);
-				break;
-		}
-		yylval.value = tok;
-		return tok;
-	}
-}
+<INITIAL,args>{bases}	{ return find_token(kw_bases, yytext); }
+<INITIAL,args>{reg}		{ yylval.value = atoi(yytext+1); return REG; }
+<INITIAL,args>{regs}	{ yylval.value = find_token(kw_regs, yytext); return REG; }
+<INITIAL,args>rz		{ return IRZ; }
 
-<brkcmd>"add" {
-	BEGIN(INITIAL);
-	return B_ADD;
-}
-<brkcmd>"del" {
-	BEGIN(INITIAL);
-	return B_DEL;
-}
-<brkcmd>"test" {
-	BEGIN(INITIAL);
-	return B_TEST;
-}
-<brkcmd>"on"|"disable" {
-	BEGIN(INITIAL);
-	return B_DISABLE;
-}
-<brkcmd>"off"|"enable" {
-	BEGIN(INITIAL);
-	return B_ENABLE;
-}
+<args>{name}	{ yylval.text = strdup(yytext); return NAME; }
 
-<logcmd>"on"|"enable" {
-	BEGIN(INITIAL);
-	return L_ON;
-}
-<logcmd>"off"|"disable" {
-	BEGIN(INITIAL);
-	return L_OFF;
-}
-<logcmd>"file" {
-	BEGIN(name);
-	return L_FILE;
-}
-<logcmd>"level" {
-	BEGIN(name);
-	return L_LEVEL;
-}
+<opts>add	{ BEGIN(INITIAL); return ADD; }
+<opts>del	{ BEGIN(INITIAL); return DEL; }
+<opts>test	{ BEGIN(INITIAL); return TEST; }
+<opts>on	{ BEGIN(INITIAL); return ON; }
+<opts>off	{ BEGIN(INITIAL); return OFF; }
+<opts>file	{ BEGIN(texts); return LEVEL; }
 
-<name>{text} {
-	yylval.text = strdup(yytext);
-	BEGIN(INITIAL);
-	return NAME;
-}
+quit	{ return F_QUIT; }
+step	{ return F_STEP; }
+regs	{ return F_REGS; }
+sregs	{ return F_SREGS; }
+reset	{ return F_RESET; }
+memcl	{ return F_MEMCL; }
+memcfg	{ return F_MEMCFG; }
+run		{ return F_RUN; }
+stack	{ return F_STACK; }
+help	{ BEGIN(texts); return F_HELP; }
+dasm	{ BEGIN(args); return F_DASM; }
+trans	{ BEGIN(args); return F_TRANS; }
+mem		{ BEGIN(args); return F_MEM; }
+load	{ BEGIN(texts); return F_LOAD; }
+brk		{ BEGIN(opts); return F_BRK; }
+log		{ BEGIN(opts); return F_LOG; }
+
+{name}	{ yylval.text = strdup(yytext); return NAME; }
 
 ">>"	return SHR;
 "<<"	return SHL;
@@ -181,7 +98,7 @@ rz	return IRZ;
 "||"	return OR;
 "&&"	return AND;
 
-[-,=+*&|^><:()\]\[~!]	return *yytext;
+{chars} return *yytext;
 
 \n {
 	BEGIN(INITIAL);
@@ -197,6 +114,14 @@ rz	return IRZ;
 
 %%
 
+// -----------------------------------------------------------------------
+void reset_scanner()
+{
+	BEGIN(INITIAL);
+
+}
+
+// -----------------------------------------------------------------------
 int yywrap(void) {
 	return 1;
 }
