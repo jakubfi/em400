@@ -239,5 +239,32 @@ int compose_opcode(int ic, struct node_t *n, uint16_t *dt)
 	return ret;
 }
 
+// -----------------------------------------------------------------------
+int assembly(struct node_t *n, uint16_t *outdata)
+{
+	int ic = 0;
+	int res;
+
+	while (n) {
+		// opcode
+		if (n->type <= N_BN) {
+			res = compose_opcode(ic, n, outdata);
+		// data
+		} else {
+			res = compose_data(n, outdata);
+		}
+
+		if (res != 1) {
+			return -(ic+1);
+		}
+
+		n = n->next;
+		ic++;
+		outdata++;
+	}
+
+	return ic;
+}
+
 
 // vim: tabstop=4

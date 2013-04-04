@@ -32,6 +32,7 @@ int program_append(struct node_t *word);
 int compose_data(struct node_t *word, uint16_t *dt);
 int compose_opcode(int ic, struct node_t *word, uint16_t *dt);
 struct node_t * expr_eval(struct node_t *n, char *refcheck);
+int assembly(struct node_t *n, uint16_t *outdata);
 
 #endif
 

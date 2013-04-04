@@ -21,7 +21,6 @@
 #include <getopt.h>
 
 #include "ops.h"
-#include "parser_modern.h"
 #include "elements.h"
 #include "eval.h"
 #include "pprocess.h"
@@ -64,75 +63,6 @@ int parse(FILE *source)
 	}
 
 	return 1;
-}
-
-// -----------------------------------------------------------------------
-int assembly(struct node_t *n, uint16_t *outdata)
-{
-	int wcounter = 0;
-	int res;
-
-	while (n) {
-		// opcode
-		if (n->type <= N_BN) {
-			res = compose_opcode(wcounter, n, outdata);
-		// data
-		} else {
-			res = compose_data(n, outdata);
-		}
-
-		if (res != 1) {
-			return -(wcounter+1);
-		}
-
-		n = n->next;
-		wcounter++;
-		outdata++;
-	}
-
-	return wcounter;
-}
-
-// -----------------------------------------------------------------------
-int preprocess(struct node_t *n, FILE *ppf)
-{
-	int wcounter = 0;
-	int res;
-
-	while (n) {
-		// address
-		fprintf(ppf, "0x%04x:", wcounter);
-
-		// labels, if exist
-		char *labels = pp_get_labels(dict, wcounter);
-		if (labels && *labels) {
-			fprintf(ppf, " %16s ", labels);
-		} else {
-			fprintf(ppf, " %16s ", "");
-		}
-		free(labels);
-
-		// opcode
-		if (n->type <= N_BN) {
-			res = pp_compose_opcode(wcounter, n, ppf);
-		// data
-		} else {
-			char *s = pp_expr_eval(n);
-			fprintf(ppf, ".data %s", s);
-			free(s);
-			res = 1;
-		}
-
-		// if there was normal argument	
-		if (res == 2) n = n->next;
-
-		n = n->next;
-		wcounter += res;
-
-		fprintf(ppf, "\n");
-	}
-
-	return wcounter;
 }
 
 // -----------------------------------------------------------------------
@@ -255,6 +185,7 @@ int main(int argc, char **argv)
 		exit(1);
 	}
 
+	// write preprocessor output
 	if (preprocessor) {
 		char *pp_file = malloc(strlen(output_file)+10);
 		sprintf(pp_file, "%s.pp.asm", output_file);
@@ -270,6 +201,7 @@ int main(int argc, char **argv)
 
 	node_drop(program_start);
 	dict_drop(dict);
+
 	return 0;
 }
 

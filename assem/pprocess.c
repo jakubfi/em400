@@ -217,5 +217,47 @@ int pp_compose_opcode(int ic, struct node_t *n, FILE *ppf)
 	return ret;
 }
 
+// -----------------------------------------------------------------------
+int preprocess(struct node_t *n, FILE *ppf)
+{
+	int ic = 0;
+	int res;
+
+	while (n) {
+		// address
+		fprintf(ppf, "0x%04x:", ic);
+
+		// labels, if exist
+		char *labels = pp_get_labels(dict, ic);
+		if (labels && *labels) {
+			fprintf(ppf, " %16s ", labels);
+		} else {
+			fprintf(ppf, " %16s ", "");
+		}
+		free(labels);
+
+		// opcode
+		if (n->type <= N_BN) {
+			res = pp_compose_opcode(ic, n, ppf);
+		// data
+		} else {
+			char *s = pp_expr_eval(n);
+			fprintf(ppf, ".data %s", s);
+			free(s);
+			res = 1;
+		}
+
+		// if there was normal argument 
+		if (res == 2) n = n->next;
+
+		n = n->next;
+		ic += res;
+
+		fprintf(ppf, "\n");
+	}
+
+	return ic;
+}
+
 
 // vim: tabstop=4

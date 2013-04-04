@@ -24,6 +24,7 @@ char * pp_get_labels(struct dict_t **dict, int addr);
 char * pp_get_mnemo(struct node_t *n);
 int pp_compose_opcode(int ic, struct node_t *word, FILE *ppf);
 char * pp_expr_eval(struct node_t *n);
+int preprocess(struct node_t *n, FILE *ppf);
 
 #endif
 
