@@ -180,6 +180,7 @@ int io_dispatch(int dir, uint16_t n, uint16_t *r)
 			return mem_add_map(nb, ab, chan, unit);
 		} else {
 			// TODO: what to return?
+			LOG(D_IO, 1, "MEM command shouldn't be IN");
 			return IO_NO;
 		}
 

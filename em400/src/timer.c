@@ -34,8 +34,8 @@ void * timer_thread(void *ptr)
 	struct timespec ts;
 	struct timespec tr;
 
-	ts.tv_sec = 0;
-	ts.tv_nsec = em400_cfg.cpu.timer_step * 1000000;
+	ts.tv_sec = em400_cfg.cpu.timer_step/1000;
+	ts.tv_nsec = (em400_cfg.cpu.timer_step%1000) * 1000000;
 
 	while (!timer_fin) {
 		nanosleep(&ts, &tr);

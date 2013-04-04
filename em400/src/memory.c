@@ -96,17 +96,21 @@ void mem_shutdown()
 // -----------------------------------------------------------------------
 int mem_add_map(int nb, int ab, int mp, int segment)
 {
+	LOG(D_MEM, 1, "Add map: NB = %d, AB = %d, MP = %d, SEG = %d", nb, ab, mp, segment);
+
 	if ((nb == 0) && (ab<em400_cfg.mem_os)) {
+		LOG(D_MEM, 1, "Add map: Can't configure hardwired segment");
 		return IO_NO;
 	}
 
-	LOG(D_MEM, 1, "Add map: NB = %d, AB = %d, MP = %d, SEG = %d", nb, ab, mp, segment);
 	if (nb < MEM_MAX_NB) {
 		mem_map[nb][ab] = mem_segment[mp][segment];
 		if (!mem_map[nb][ab]) {
+			LOG(D_MEM, 1, "Add map: No such segment");
 			return IO_NO;
 		}
 	} else {
+		LOG(D_MEM, 1, "Add map: NB > MEM_MAX_NB");
 		return IO_NO;
 	}
 	return IO_OK;
