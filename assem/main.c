@@ -24,8 +24,10 @@
 #include "parser_modern.h"
 #include "elements.h"
 #include "eval.h"
+#include "pprocess.h"
 
 int classic = 0;
+int preprocessor = 0;
 
 extern FILE *m_yyin;
 extern FILE *c_yyin;
@@ -60,17 +62,63 @@ int assembly(struct node_t *n, uint16_t *outdata)
 	int res;
 
 	while (n) {
+		// opcode
 		if (n->type <= N_BN) {
 			res = compose_opcode(wcounter, n, outdata);
+		// data
 		} else {
 			res = compose_data(n, outdata);
 		}
+
 		if (res != 1) {
 			return -(wcounter+1);
 		}
+
 		n = n->next;
 		wcounter++;
 		outdata++;
+	}
+
+	return wcounter;
+}
+
+// -----------------------------------------------------------------------
+int preprocess(struct node_t *n, FILE *ppf)
+{
+	int wcounter = 0;
+	int res;
+
+	while (n) {
+		// address
+		fprintf(ppf, "0x%04x:", wcounter);
+
+		// labels, if exist
+		char *labels = pp_get_labels(dict, wcounter);
+		if (*labels) {
+			fprintf(ppf, " %16s ", labels);
+		} else {
+			fprintf(ppf, " %16s ", "");
+		}
+		free(labels);
+
+		// opcode
+		if (n->type <= N_BN) {
+			res = pp_compose_opcode(wcounter, n, ppf);
+		// data
+		} else {
+			char *s = pp_expr_eval(n, "0x%04x");
+			fprintf(ppf, ".data %s", s);
+			free(s);
+			res = 1;
+		}
+
+		// if there was normal argument	
+		if (res == 2) n = n->next;
+
+		n = n->next;
+		wcounter += res;
+
+		fprintf(ppf, "\n");
 	}
 
 	return wcounter;
@@ -83,6 +131,7 @@ void usage()
 	printf("Where:\n");
 	printf("   -k : use K-202 mnemonics (instead of MERA-400)\n");
 	printf("   -c : use classic ASSK/ASSM syntax (instead of modern)\n");
+	printf("   -p : produce preprocessor output (.pp.asm file)\n");
 }
 
 // -----------------------------------------------------------------------
@@ -91,11 +140,12 @@ int main(int argc, char **argv)
 	int option;
 	mnemo_sel = MNEMO_MERA400;
 	classic = 0;
+	preprocessor = 0;
 	char *input_file = NULL;
 	char *output_file = NULL;
 
 	// parse options
-	while ((option = getopt(argc, argv,"kch")) != -1) {
+	while ((option = getopt(argc, argv,"kchp")) != -1) {
 		switch (option) {
 			case 'h':
 				usage();
@@ -105,6 +155,9 @@ int main(int argc, char **argv)
 				break;
 			case 'c':
 				classic = 1;
+				break;
+			case 'p':
+				preprocessor = 1;
 				break;
 			default:
 				usage();
@@ -189,6 +242,18 @@ int main(int argc, char **argv)
 		node_drop(program_start);
 		dict_drop(dict);
 		exit(1);
+	}
+
+	if (preprocessor) {
+		char *pp_file = malloc(strlen(output_file)+0);
+		sprintf(pp_file, "%s.pp.asm", output_file);
+		printf("Writing preprocessor output to: %s\n", pp_file);
+		FILE *ppf = fopen(pp_file, "w");
+		if (!ppf) {
+			printf("Cannot open preprocessor output file '%s', sorry.\n", pp_file);
+		}
+		preprocess(program_start, ppf);
+		fclose(ppf);
 	}
 
 	node_drop(program_start);

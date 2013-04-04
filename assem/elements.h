@@ -20,6 +20,8 @@
 
 #include <inttypes.h>
 
+#define DICT_HASH_BITS 8
+
 enum _dict_type_e {
 	D_VALUE,
 	D_ADDR

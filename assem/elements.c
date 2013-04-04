@@ -19,11 +19,10 @@
 #include <string.h>
 #include <inttypes.h>
 
+#include "eval.h"
 #include "elements.h"
 #include "parser_modern.h"
 #include "ops.h"
-
-#define DICT_HASH_BITS 8
 
 // -----------------------------------------------------------------------
 static inline unsigned int dict_hash(char *i)
