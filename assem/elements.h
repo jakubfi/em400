@@ -73,13 +73,13 @@ struct node_t {
 	int lineno;
 };
 
-struct node_t * make_value(int value);
+struct node_t * make_value(int value, char *tvalue);
 struct node_t * make_name(char *name);
 struct node_t * make_oper(int type, struct node_t *n1, struct node_t *n2);
 void node_drop(struct node_t *n);
 
 struct norm_t * make_norm(int rc, int rb, struct node_t *n);
-struct node_t * make_rep(int rep, int value);
+struct node_t * make_rep(int rep, int value, char *tvalue);
 struct node_t * make_string(char *str);
 struct node_t * make_op(int optype, uint16_t op, int ra, struct node_t *n, struct norm_t *norm);
 

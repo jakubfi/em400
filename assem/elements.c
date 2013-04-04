@@ -48,16 +48,18 @@ struct dict_t * dict_add(struct dict_t **dict, int type, char *name, struct node
 	}
 
 	if (dict_find(dict, name)) {
+		free(name);
 		return NULL;
 	}
 
 	struct dict_t *d = malloc(sizeof(struct dict_t));
 	d->type = type;
 	d->name = strdup(name);
+	free(name);
 	d->n = n;
 
-	d->next = dict[dict_hash(name)];
-	dict[dict_hash(name)] = d;
+	d->next = dict[dict_hash(d->name)];
+	dict[dict_hash(d->name)] = d;
 
 	return d;
 }
@@ -88,6 +90,7 @@ void dict_list_drop(struct dict_t * dict)
 		return;
 	}
 	free(dict->name);
+	node_drop(dict->n);
 	dict_list_drop(dict->next);
 	free(dict);
 }
@@ -101,6 +104,7 @@ void dict_drop(struct dict_t **dict)
 	for (int i=0 ; i<(1<<DICT_HASH_BITS) ; i++) {
 		dict_list_drop(dict[i]);
 	}
+	free(dict);
 }
 
 // -----------------------------------------------------------------------
@@ -115,13 +119,14 @@ struct norm_t * make_norm(int rc, int rb, struct node_t *n)
 }
 
 // -----------------------------------------------------------------------
-struct node_t * make_rep(int rep, int value)
+struct node_t * make_rep(int rep, int value, char *tvalue)
 {
 	struct node_t *nhead = NULL;
 	struct node_t *ntail = NULL;
 
 	while (rep > 0) {
-		struct node_t *n = make_value(value);
+		struct node_t *n = make_value(value, tvalue);
+		free(tvalue);
 		if (!nhead) {
 			nhead = ntail = n;
 		} else {
@@ -142,7 +147,7 @@ struct node_t * make_string(char *str)
 	struct node_t *node_head = NULL;
 
 	while (c && *c) {
-		struct node_t *n = make_value((int)(*c << 8));
+		struct node_t *n = make_value((int)(*c << 8), NULL);
 
 		c++;
 		if (*c) {
@@ -158,6 +163,8 @@ struct node_t * make_string(char *str)
 			node = n;
 		}
 	}
+
+	free(str);
 
 	return node_head;
 }
@@ -187,7 +194,7 @@ struct node_t * make_op(int optype, uint16_t op, int ra, struct node_t *n, struc
 }
 
 // -----------------------------------------------------------------------
-struct node_t * make_value(int value)
+struct node_t * make_value(int value, char *tvalue)
 {
 	struct node_t *n = malloc(sizeof(struct node_t));
 	n->type = N_VAL;
@@ -195,7 +202,12 @@ struct node_t * make_value(int value)
 
 	n->lineno = m_yylloc.first_line;
 	n->next = NULL;
-	n->name = NULL;
+	if (tvalue) {
+		n->name = strdup(tvalue);
+		free(tvalue);
+	} else {
+		n->name = NULL;
+	}
 	n->n1 = NULL;
 	n->n2 = NULL;
 
@@ -208,6 +220,7 @@ struct node_t * make_name(char *name)
 	struct node_t *n = malloc(sizeof(struct node_t));
 	n->type = N_NAME;
 	n->name = strdup(name);
+	free(name);
 
 	n->lineno = m_yylloc.first_line;
 	n->next = NULL;

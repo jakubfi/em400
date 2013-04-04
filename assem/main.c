@@ -34,19 +34,30 @@ extern FILE *c_yyin;
 extern int got_error;
 int m_yyparse();
 int c_yyparse();
+int m_yylex_destroy();
+int c_yylex_destroy();
 
 // -----------------------------------------------------------------------
 int parse(FILE *source)
 {
 	m_yyin = c_yyin = source;
 
-	int (*active_parser)();
-	if (classic) active_parser = c_yyparse;
-	else active_parser = m_yyparse;
+	int (*yyparser)();
+	int (*yylex_destroy)();
+
+	if (classic) {
+		yyparser = c_yyparse;
+		yylex_destroy = c_yylex_destroy;
+	} else {
+		yyparser = m_yyparse;
+		yylex_destroy = m_yylex_destroy;
+	}
 
 	do {
-		active_parser();
+		yyparser();
 	} while (!feof(source));
+
+	yylex_destroy();
 
 	if (got_error) {
 		return -1;
@@ -94,7 +105,7 @@ int preprocess(struct node_t *n, FILE *ppf)
 
 		// labels, if exist
 		char *labels = pp_get_labels(dict, wcounter);
-		if (*labels) {
+		if (labels && *labels) {
 			fprintf(ppf, " %16s ", labels);
 		} else {
 			fprintf(ppf, " %16s ", "");
@@ -106,7 +117,7 @@ int preprocess(struct node_t *n, FILE *ppf)
 			res = pp_compose_opcode(wcounter, n, ppf);
 		// data
 		} else {
-			char *s = pp_expr_eval(n, "0x%04x");
+			char *s = pp_expr_eval(n);
 			fprintf(ppf, ".data %s", s);
 			free(s);
 			res = 1;
@@ -245,7 +256,7 @@ int main(int argc, char **argv)
 	}
 
 	if (preprocessor) {
-		char *pp_file = malloc(strlen(output_file)+0);
+		char *pp_file = malloc(strlen(output_file)+10);
 		sprintf(pp_file, "%s.pp.asm", output_file);
 		printf("Writing preprocessor output to: %s\n", pp_file);
 		FILE *ppf = fopen(pp_file, "w");
@@ -254,6 +265,7 @@ int main(int argc, char **argv)
 		}
 		preprocess(program_start, ppf);
 		fclose(ppf);
+		free(pp_file);
 	}
 
 	node_drop(program_start);

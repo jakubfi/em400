@@ -23,26 +23,30 @@
 #include "elements.h"
 #include "eval.h"
 
+
 void m_yyerror(char *s, ...);
 int yylex(void);
 int got_error;
 extern int ic;
-
 %}
 
 %locations
+
 %union {
-	char *str;
-	int val;
+	struct val_t {
+		int v;
+		char *s;
+	} val;
 	struct norm_t *norm;
 	struct node_t *node;
 };
 
 %token '[' ']' ',' ':'
 %token MP_DATA MP_EQU MP_RES MP_PROG MP_FINPROG MP_SEG MP_FINSEG MP_MACRO MP_FINMACRO
-%token <str> NAME STRING
-%token <val> VALUE ADDR REGISTER
-%token <val> MOP_2ARG MOP_FD MOP_KA1 MOP_JS MOP_KA2 MOP_C MOP_SHC MOP_S MOP_HLT MOP_J MOP_L MOP_G MOP_BN
+%token <val.s> NAME STRING
+%token <val> VALUE ADDR
+%token <val.v> REGISTER
+%token <val.v> MOP_2ARG MOP_FD MOP_KA1 MOP_JS MOP_KA2 MOP_C MOP_SHC MOP_S MOP_HLT MOP_J MOP_L MOP_G MOP_BN
 
 %type <norm> normval norm
 %type <node> instruction res data dataword words expr
@@ -55,7 +59,7 @@ extern int ic;
 %%
 
 program:
-	MP_PROG STRING sentences MP_FINPROG	{ printf("Assembling program '%s'\n", $2); }
+	MP_PROG STRING sentences MP_FINPROG	{ printf("Assembling program '%s'\n", $2); free($2); }
 	| MP_PROG sentences MP_FINPROG		{ printf("Assembling unnamed program\n"); }
 	;
 
@@ -78,7 +82,8 @@ sentence:
 		}
 	}
 	| NAME ':' {
-		if (!dict_add(dict, D_ADDR, $1, make_value(ic))) {
+		struct node_t *n = make_value(ic, NULL);
+		if (!dict_add(dict, D_ADDR, $1, n)) {
 			m_yyerror("name '%s' already defined", $1);
 			YYABORT;
 		}
@@ -102,8 +107,8 @@ dataword:
 	;
 
 res:
-	MP_RES VALUE				{ $$ = make_rep($2, 0); }
-	| MP_RES VALUE ',' VALUE	{ $$ = make_rep($2, $4); }
+	MP_RES VALUE				{ $$ = make_rep($2.v, 0, NULL); }
+	| MP_RES VALUE ',' VALUE	{ $$ = make_rep($2.v, $4.v, $4.s); }
 	;
 
 instruction:
@@ -137,7 +142,7 @@ normval:
 	;
 
 expr:
-	VALUE					{ $$ = make_value($1); }
+	VALUE					{ $$ = make_value($1.v, $1.s); }
 	| NAME					{ $$ = make_name($1); }
 	| expr '+' expr			{ $$ = make_oper(N_PLUS, $1, $3); }
 	| expr '-' expr			{ $$ = make_oper(N_MINUS, $1, $3); }

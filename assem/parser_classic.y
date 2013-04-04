@@ -160,7 +160,7 @@ vardef:
 
 label:
 	LABEL ':' {
-		struct node_t *n = make_value(ic);
+		struct node_t *n = make_value(ic, NULL);
 		if (!n) {
 			c_yyerror("cannot make node for '%s'", $1);
 			YYABORT;

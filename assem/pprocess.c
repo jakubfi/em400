@@ -44,6 +44,7 @@ char * pp_get_labels(struct dict_t **dict, int addr)
 					sprintf(labels+len, "%s: ", d->name);
 					len += strlen(d->name) + 2;
 				}
+				free(n);
 			}
 			d = d->next;
 		}
@@ -101,18 +102,22 @@ char * pp_get_mnemo(struct node_t *n)
 
 
 // -----------------------------------------------------------------------
-char * pp_expr_eval(struct node_t *n, char *numformat)
+char * pp_expr_eval(struct node_t *n)
 {
 	if (!n) return NULL;
 
 	struct dict_t *d;
 	char *buf = malloc(1024);
-	char *s1 = pp_expr_eval(n->n1, numformat);
-	char *s2 = pp_expr_eval(n->n2, numformat);
+	char *s1 = pp_expr_eval(n->n1);
+	char *s2 = pp_expr_eval(n->n2);
 
 	switch (n->type) {
 		case N_VAL:
-			sprintf(buf, numformat, n->data);
+			if (n->name) {
+				sprintf(buf, "%s", n->name);
+			} else {
+				sprintf(buf, "%i", n->data);
+			}
 			break;
 		case N_NAME:
 			d = dict_find(dict, n->name);
@@ -148,10 +153,10 @@ int pp_compose_opcode(int ic, struct node_t *n, FILE *ppf)
 	int do_norm = 0;
 	char *s = NULL;
 
+	int d  = (n->opcode & 0b0000001000000000) >> 6;
 	int ra = (n->opcode & 0b0000000111000000) >> 6;
 	int rb = (n->opcode & 0b0000000000111000) >> 3;
 	int rc = (n->opcode & 0b0000000000000111) >> 0;
-	int d  = (n->opcode & 0b0000001000000000) >> 6;
 
 	fprintf(ppf, "%-4s", pp_get_mnemo(n));
 
@@ -161,12 +166,12 @@ int pp_compose_opcode(int ic, struct node_t *n, FILE *ppf)
 			fprintf(ppf, " r%i,", ra);
 		case N_JS:
 		case N_KA2:
-			s = pp_expr_eval(n->next, "%i");
+			s = pp_expr_eval(n->next);
 			fprintf(ppf, " %s", s);
 			free(s);
 			break;
 		case N_HLT:
-			s = pp_expr_eval(n->n1, "0%o");
+			s = pp_expr_eval(n->n1);
 			fprintf(ppf, " %s", s);
 			break;
 		case N_2ARG:
@@ -185,6 +190,9 @@ int pp_compose_opcode(int ic, struct node_t *n, FILE *ppf)
 			break;
 	}
 
+	free(s);
+	s = NULL;
+
 	if (do_norm) {
 		fprintf(ppf, " ");
 		if (d) {
@@ -193,7 +201,7 @@ int pp_compose_opcode(int ic, struct node_t *n, FILE *ppf)
 		if (rc) {
 			fprintf(ppf, "r%i", rc);
 		} else {
-			s = pp_expr_eval(n->next, "%i");
+			s = pp_expr_eval(n->next);
 			fprintf(ppf, "%s", s);
 			free(s);
 			ret++;
@@ -201,7 +209,9 @@ int pp_compose_opcode(int ic, struct node_t *n, FILE *ppf)
 		if (rb) {
 			fprintf(ppf, " + r%i", rb);
 		}
-		if (d) fprintf(ppf, "]");
+		if (d) {
+			fprintf(ppf, "]");
+		}
 	}
 
 	return ret;

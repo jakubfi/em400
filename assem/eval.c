@@ -73,7 +73,7 @@ struct node_t * expr_eval(struct node_t *n, char *refcheck)
 	struct node_t *n1 = expr_eval(n->n1, refcheck);
 	struct node_t *n2 = expr_eval(n->n2, refcheck);
 
-	struct node_t *nv = make_value(0);
+	struct node_t *nv = make_value(0, NULL);
 
 	switch (n->type) {
 		case N_VAL:
@@ -87,6 +87,7 @@ struct node_t * expr_eval(struct node_t *n, char *refcheck)
 			if (!dn) return NULL;
 			nv->data = dn->data;
 			if (d->type == D_ADDR) nv->was_addr = 1;
+			free(dn);
 			break;
 		case N_PLUS:
 			if (!n1 || !n2) return NULL;
@@ -114,6 +115,10 @@ struct node_t * expr_eval(struct node_t *n, char *refcheck)
 			nv->was_addr = n1->was_addr | n2->was_addr;
 			break;
 	}
+
+	free(n1);
+	free(n2);
+
 	return nv;
 }
 
@@ -126,7 +131,7 @@ int compose_data(struct node_t *n, uint16_t *dt)
 		return 0;
 	}
 	*dt = ntohs(nv->data);
-
+	free(nv);
 	return 1;
 }
 
@@ -159,7 +164,7 @@ int prepare_t_arg(uint16_t *dt, uint16_t ic, struct node_t *n, int relative)
 	} else {
 		*dt |= jsval & 0b0000000000111111;
 	}
-
+	free(nv);
 	return 1;
 }
 
@@ -230,7 +235,7 @@ int compose_opcode(int ic, struct node_t *n, uint16_t *dt)
 
 	// convert opcode data
 	*dt = ntohs(*dt);
-
+	free(nv);
 	return ret;
 }
 
