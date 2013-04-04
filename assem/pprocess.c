@@ -107,7 +107,7 @@ char * pp_expr_eval(struct node_t *n)
 	if (!n) return NULL;
 
 	struct dict_t *d;
-	char *buf = malloc(1024);
+	char *buf = malloc(1024 * sizeof(char));
 	char *s1 = pp_expr_eval(n->n1);
 	char *s2 = pp_expr_eval(n->n2);
 
@@ -137,6 +137,9 @@ char * pp_expr_eval(struct node_t *n)
 			break;
 		case N_SHR:
 			sprintf(buf, "%s >> %s", s1, s2);
+			break;
+		default:
+			*buf = '\0';
 			break;
 	}
 
@@ -224,36 +227,42 @@ int preprocess(struct node_t *n, FILE *ppf)
 	int res;
 
 	while (n) {
-		// address
-		fprintf(ppf, "0x%04x:", ic);
-
-		// labels, if exist
-		char *labels = pp_get_labels(dict, ic);
-		if (labels && *labels) {
-			fprintf(ppf, " %16s ", labels);
+		// comments
+		if (n->type == N_DUMMY) {
+			fprintf(ppf, "%s", n->name);
+			res = 0;
 		} else {
-			fprintf(ppf, " %16s ", "");
-		}
-		free(labels);
 
-		// opcode
-		if (n->type <= N_BN) {
-			res = pp_compose_opcode(ic, n, ppf);
-		// data
-		} else {
-			char *s = pp_expr_eval(n);
-			fprintf(ppf, ".data %s", s);
-			free(s);
-			res = 1;
-		}
+			// address
+			fprintf(ppf, "0x%04x:", ic);
 
-		// if there was normal argument 
-		if (res == 2) n = n->next;
+			// labels, if exist
+			char *labels = pp_get_labels(dict, ic);
+			if (labels && *labels) {
+				fprintf(ppf, " %16s ", labels);
+			} else {
+				fprintf(ppf, " %16s ", "");
+			}
+			free(labels);
+
+			// opcode
+			if (n->type <= N_BN) {
+				res = pp_compose_opcode(ic, n, ppf);
+			// data
+			} else {
+				char *s = pp_expr_eval(n);
+				fprintf(ppf, ".data %s", s);
+				free(s);
+				res = 1;
+			}
+
+			// if there was normal argument 
+			if (res == 2) n = n->next;
+			fprintf(ppf, "\n");
+		}
 
 		n = n->next;
 		ic += res;
-
-		fprintf(ppf, "\n");
 	}
 
 	return ic;

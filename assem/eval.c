@@ -246,21 +246,23 @@ int assembly(struct node_t *n, uint16_t *outdata)
 	int res;
 
 	while (n) {
-		// opcode
-		if (n->type <= N_BN) {
-			res = compose_opcode(ic, n, outdata);
-		// data
-		} else {
-			res = compose_data(n, outdata);
-		}
+		if (n->type != N_DUMMY ) {
+			// opcode
+			if (n->type <= N_BN) {
+				res = compose_opcode(ic, n, outdata);
+			// data
+			} else {
+				res = compose_data(n, outdata);
+			}
 
-		if (res != 1) {
-			return -(ic+1);
+			if (res != 1) {
+				return -(ic+1);
+			}
+			ic++;
+			outdata++;
 		}
 
 		n = n->next;
-		ic++;
-		outdata++;
 	}
 
 	return ic;

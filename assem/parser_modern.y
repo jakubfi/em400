@@ -43,13 +43,13 @@ extern int ic;
 
 %token '[' ']' ',' ':'
 %token MP_DATA MP_EQU MP_RES MP_PROG MP_FINPROG MP_SEG MP_FINSEG MP_MACRO MP_FINMACRO
-%token <val.s> NAME STRING
+%token <val.s> NAME STRING COMMENT
 %token <val> VALUE ADDR
 %token <val.v> REGISTER
 %token <val.v> MOP_2ARG MOP_FD MOP_KA1 MOP_JS MOP_KA2 MOP_C MOP_SHC MOP_S MOP_HLT MOP_J MOP_L MOP_G MOP_BN
 
 %type <norm> normval norm
-%type <node> instruction res data dataword words expr
+%type <node> instruction res data dataword words expr comment
 
 %left '+' '-'
 %left SHR SHL
@@ -59,8 +59,8 @@ extern int ic;
 %%
 
 program:
-	MP_PROG STRING sentences MP_FINPROG	{ printf("Assembling program '%s'\n", $2); free($2); }
-	| MP_PROG sentences MP_FINPROG		{ printf("Assembling unnamed program\n"); }
+	comments MP_PROG STRING sentences MP_FINPROG comments	{ printf("Assembling program '%s'\n", $3); free($3); }
+	| comments MP_PROG sentences MP_FINPROG	comments		{ printf("Assembling unnamed program\n"); }
 	;
 
 sentences:
@@ -88,6 +88,16 @@ sentence:
 			YYABORT;
 		}
 	}
+	| comment { program_append($1); }
+	;
+
+comments:
+	comment comments { program_append($1); }
+	|
+	;
+
+comment:
+	COMMENT { $$ = make_comment($1); }
 	;
 
 words:

@@ -56,7 +56,7 @@ chars	[-+:,\[\]<>]
 %%
 
 {ws}		;
-{comment}	;
+{comment}	{ m_yylval.val.s = strdup(m_yytext); return COMMENT; }
 
 \"						{ BEGIN string; strbufpos = strbuf; }
 <string>\"				{ m_yylval.val.s = strdup(strbuf); BEGIN 0; return STRING; }

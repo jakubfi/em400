@@ -55,6 +55,7 @@ enum node_type_e {
 	N_UMINUS,
 	N_SHL,
 	N_SHR,
+	N_DUMMY
 };
 
 struct norm_t {
@@ -82,6 +83,7 @@ struct norm_t * make_norm(int rc, int rb, struct node_t *n);
 struct node_t * make_rep(int rep, int value, char *tvalue);
 struct node_t * make_string(char *str);
 struct node_t * make_op(int optype, uint16_t op, int ra, struct node_t *n, struct norm_t *norm);
+struct node_t * make_comment(char *str);
 
 struct dict_t ** dict_create();
 struct dict_t * dict_add(struct dict_t **dict, int type, char *name, struct node_t *n);
