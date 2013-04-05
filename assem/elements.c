@@ -131,36 +131,39 @@ struct node_t * make_node()
 	node->n2 = NULL;
 	node->next = NULL;
 	node->lineno = m_yylloc.first_line;
+	node->comment = NULL;
 	return node;
 }
 
 // -----------------------------------------------------------------------
-struct node_t * make_rep(int rep, int value, char *tvalue)
+struct nodelist_t * make_nl(struct node_t *n)
 {
-	struct node_t *nhead = NULL;
-	struct node_t *ntail = NULL;
+	struct nodelist_t *nl = malloc(sizeof(struct nodelist_t));
+	nl->head = nl->tail = NULL;
+	nl_append_n(nl, n);
+	return nl;
+}
+
+// -----------------------------------------------------------------------
+struct nodelist_t * make_rep(int rep, int value, char *tvalue)
+{
+	struct nodelist_t *nl = make_nl(NULL);
 
 	while (rep > 0) {
 		struct node_t *n = make_value(value, tvalue);
 		free(tvalue);
-		if (!nhead) {
-			nhead = ntail = n;
-		} else {
-			ntail->next = n;
-			ntail= n;
-		}
+		nl_append_n(nl, n);
 		rep--;
 	}
 
-	return nhead;
+	return nl;
 }
 
 // -----------------------------------------------------------------------
-struct node_t * make_string(char *str)
+struct nodelist_t * make_string(char *str)
 {
 	char *c = str;
-	struct node_t *node = NULL;
-	struct node_t *node_head = NULL;
+	struct nodelist_t *nl = make_nl(NULL);
 
 	while (c && *c) {
 		struct node_t *n = make_value((int)(*c << 8), NULL);
@@ -171,18 +174,12 @@ struct node_t * make_string(char *str)
 			c++;
 		}
 
-		if (!node) {
-			node = n;
-			node_head = n;
-		} else {
-			node->next = n;
-			node = n;
-		}
+		nl_append_n(nl, n);
 	}
 
 	free(str);
 
-	return node_head;
+	return nl;
 }
 
 // -----------------------------------------------------------------------
@@ -254,6 +251,74 @@ struct node_t * make_comment(char *str)
 }
 
 // -----------------------------------------------------------------------
+struct nodelist_t * nl_append(struct nodelist_t *nl1, struct nodelist_t *nl2)
+{
+	if (!nl1 && !nl2) return NULL;
+	if (!nl1) return nl2;
+	if (!nl2) return nl1;
+
+	if (!nl1->tail && !nl2->tail) {
+		free(nl2);
+		return nl1;
+	}
+
+	if (!nl1->tail) {
+		free(nl1);
+		return nl2;
+	}
+
+	if (!nl2->tail) {
+		free(nl2);
+		return nl1;
+	}
+
+	nl1->tail->next = nl2->head;
+	nl1->tail = nl2->tail;
+	free(nl2);
+
+	return nl1;
+}
+
+// -----------------------------------------------------------------------
+struct nodelist_t * nl_append_n(struct nodelist_t *nl, struct node_t *n)
+{
+	if (!nl && !n) {
+		return NULL;
+	}
+
+	if (!n) {
+		return nl;
+	}
+
+	if (!nl) {
+		nl = make_nl(NULL);
+	}
+
+	// n may be a degenerated list, find the tail
+	struct node_t *n_tail = n;
+	while (n_tail->next) {
+		n_tail = n->next;
+	}
+
+	if (nl->tail) {
+		nl->tail->next = n;
+		nl->tail = n_tail;
+	} else {
+		nl->head = n;
+		nl->tail = n_tail;
+	}
+
+	return nl;
+}
+
+// -----------------------------------------------------------------------
+void nodelist_drop(struct nodelist_t *nl)
+{
+	node_drop(nl->head);
+	free(nl);
+}
+
+// -----------------------------------------------------------------------
 void node_drop(struct node_t *n)
 {
 	if (!n) {
@@ -263,6 +328,7 @@ void node_drop(struct node_t *n)
 	node_drop(n->n2);
 	node_drop(n->next);
 	free(n->name);
+	free(n->comment);
 	free(n);
 }
 

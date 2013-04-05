@@ -41,7 +41,7 @@ char * pp_get_labels(struct dict_t **dict, int addr)
 			if (d->type == D_ADDR) {
 				struct node_t *n = expr_eval(d->n, NULL);
 				if (n && (n->data == addr)) {
-					sprintf(labels+len, "%s: ", d->name);
+					sprintf(labels+len, "%s:\n", d->name);
 					len += strlen(d->name) + 2;
 				}
 				free(n);
@@ -150,35 +150,36 @@ char * pp_expr_eval(struct node_t *n)
 }
 
 // -----------------------------------------------------------------------
-int pp_compose_opcode(int ic, struct node_t *n, FILE *ppf)
+char * pp_compose_opcode(int ic, struct node_t *n, int *norm_arg)
 {
-	int ret = 1;
-	int do_norm = 0;
 	char *s = NULL;
+	char *buf = malloc(1024 * sizeof(char));
+	int pos = 0;
+	int do_norm = 0;
 
 	int d  = (n->opcode & 0b0000001000000000) >> 6;
 	int ra = (n->opcode & 0b0000000111000000) >> 6;
 	int rb = (n->opcode & 0b0000000000111000) >> 3;
 	int rc = (n->opcode & 0b0000000000000111) >> 0;
 
-	fprintf(ppf, "%-4s", pp_get_mnemo(n));
+	pos += sprintf(buf+pos, "%-4s", pp_get_mnemo(n));
 
 	switch (n->type) {
 		case N_KA1:
 		case N_SHC:
-			fprintf(ppf, " r%i,", ra);
+			pos += sprintf(buf+pos, " r%i,", ra);
 		case N_JS:
 		case N_KA2:
 			s = pp_expr_eval(n->next);
-			fprintf(ppf, " %s", s);
+			pos += sprintf(buf+pos, " %s", s);
 			free(s);
 			break;
 		case N_HLT:
 			s = pp_expr_eval(n->n1);
-			fprintf(ppf, " %s", s);
+			pos += sprintf(buf+pos, " %s", s);
 			break;
 		case N_2ARG:
-			fprintf(ppf, " r%i,", ra);
+			pos += sprintf(buf+pos, " r%i,", ra);
 		case N_FD:
 		case N_J:
 		case N_L:
@@ -189,7 +190,7 @@ int pp_compose_opcode(int ic, struct node_t *n, FILE *ppf)
 		case N_S:
 			break;
 		case N_C:
-			fprintf(ppf, " r%i,", ra);
+			pos += sprintf(buf+pos, " r%i,", ra);
 			break;
 	}
 
@@ -197,67 +198,81 @@ int pp_compose_opcode(int ic, struct node_t *n, FILE *ppf)
 	s = NULL;
 
 	if (do_norm) {
-		fprintf(ppf, " ");
+		pos += sprintf(buf+pos, " ");
 		if (d) {
-			fprintf(ppf, "[");
+			pos += sprintf(buf+pos, "[");
 		}
 		if (rc) {
-			fprintf(ppf, "r%i", rc);
+			pos += sprintf(buf+pos, "r%i", rc);
 		} else {
+			*norm_arg = 1;
 			s = pp_expr_eval(n->next);
-			fprintf(ppf, "%s", s);
+			pos += sprintf(buf+pos, "%s", s);
 			free(s);
-			ret++;
 		}
 		if (rb) {
-			fprintf(ppf, " + r%i", rb);
+			pos += sprintf(buf+pos, " + r%i", rb);
 		}
 		if (d) {
-			fprintf(ppf, "]");
+			pos += sprintf(buf+pos, "]");
 		}
 	}
 
-	return ret;
+	return buf;
 }
 
 // -----------------------------------------------------------------------
-int preprocess(struct node_t *n, FILE *ppf)
+int preprocess(struct nodelist_t *nl, FILE *ppf)
 {
 	int ic = 0;
 	int res;
+	int norm_arg;
+
+	struct node_t *n = nl->head;
 
 	while (n) {
+		norm_arg = 0;
 		// comments
 		if (n->type == N_DUMMY) {
-			fprintf(ppf, "%s", n->name);
+			fprintf(ppf, "%s\n", n->name);
 			res = 0;
 		} else {
-
-			// address
-			fprintf(ppf, "0x%04x:", ic);
 
 			// labels, if exist
 			char *labels = pp_get_labels(dict, ic);
 			if (labels && *labels) {
-				fprintf(ppf, " %16s ", labels);
-			} else {
-				fprintf(ppf, " %16s ", "");
+				fprintf(ppf, "%s", labels);
 			}
 			free(labels);
 
-			// opcode
+			// address
+			fprintf(ppf, "0x%04x: ", ic);
+
+			// opcode...
 			if (n->type <= N_BN) {
-				res = pp_compose_opcode(ic, n, ppf);
-			// data
+				char *s = pp_compose_opcode(ic, n, &norm_arg);
+				fprintf(ppf, "\t%-20s", s);
+				free(s);
+				res = 1;
+			// ... or data
 			} else {
 				char *s = pp_expr_eval(n);
-				fprintf(ppf, ".data %s", s);
+				fprintf(ppf, "\t.data %-20s", s);
 				free(s);
 				res = 1;
 			}
 
-			// if there was normal argument 
-			if (res == 2) n = n->next;
+			// if we have a comment attached
+			if (n->comment) {
+				fprintf(ppf, " %s", n->comment);
+			}
+
+			// if there was normal argument (data), we've processed it already in pp_compose_opcode()
+			if (norm_arg) {
+				n = n->next;
+				res++;
+			}
+
 			fprintf(ppf, "\n");
 		}
 

@@ -118,7 +118,7 @@ int main(int argc, char **argv)
 		strcpy(pos, ".bin");
 	} else if (optind == argc-2) {
 		input_file = argv[optind];
-		output_file = argv[optind+1];
+		output_file = strdup(argv[optind+1]);
 	} else {
 		usage();
 		exit(1);
@@ -152,14 +152,14 @@ int main(int argc, char **argv)
 
 	if (res < 0) {
 		printf("Cannot parse source, exiting.\n");
-		node_drop(program_start);
+		nodelist_drop(program);
 		dict_drop(dict);
 		exit(1);
 	}
 
 	// assembly binary image
 	uint16_t outdata[MAX_PROG_SIZE+4];
-	int wcounter = assembly(program_start, outdata);
+	int wcounter = assembly(program, outdata);
 
 	if (wcounter <= 0) {
 		if (wcounter == 0) {
@@ -167,7 +167,7 @@ int main(int argc, char **argv)
 		} else {
 			printf("Error assembling binary image at IC=%i: %s, exiting.\n", -wcounter-1, assembly_error);
 		}
-		node_drop(program_start);
+		nodelist_drop(program);
 		dict_drop(dict);
 		exit(1);
 	}
@@ -180,7 +180,7 @@ int main(int argc, char **argv)
 	printf("Written %i words to file '%s'.\n", res, output_file);
 	if (wcounter != res) {
 		printf("Error: not all words written, output file '%s' is broken.\n", output_file);
-		node_drop(program_start);
+		nodelist_drop(program);
 		dict_drop(dict);
 		exit(1);
 	}
@@ -194,12 +194,13 @@ int main(int argc, char **argv)
 		if (!ppf) {
 			printf("Cannot open preprocessor output file '%s', sorry.\n", pp_file);
 		}
-		preprocess(program_start, ppf);
+		preprocess(program, ppf);
 		fclose(ppf);
 		free(pp_file);
 	}
 
-	node_drop(program_start);
+	free(output_file);
+	nodelist_drop(program);
 	dict_drop(dict);
 
 	return 0;

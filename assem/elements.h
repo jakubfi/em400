@@ -71,17 +71,27 @@ struct node_t {
 	char *name;
 	struct node_t *n1, *n2;
 	struct node_t *next;
+	char *comment;
 	int lineno;
+};
+
+struct nodelist_t {
+	struct node_t *head;
+	struct node_t *tail;
 };
 
 struct node_t * make_value(int value, char *tvalue);
 struct node_t * make_name(char *name);
 struct node_t * make_oper(int type, struct node_t *n1, struct node_t *n2);
 void node_drop(struct node_t *n);
+void nodelist_drop(struct nodelist_t *nl);
+struct nodelist_t * make_nl(struct node_t *n);
+struct nodelist_t * nl_append_n(struct nodelist_t *nl, struct node_t *n);
+struct nodelist_t * nl_append(struct nodelist_t *nl1, struct nodelist_t *nl2);
 
 struct norm_t * make_norm(int rc, int rb, struct node_t *n);
-struct node_t * make_rep(int rep, int value, char *tvalue);
-struct node_t * make_string(char *str);
+struct nodelist_t * make_rep(int rep, int value, char *tvalue);
+struct nodelist_t * make_string(char *str);
 struct node_t * make_op(int optype, uint16_t op, int ra, struct node_t *n, struct norm_t *norm);
 struct node_t * make_comment(char *str);
 

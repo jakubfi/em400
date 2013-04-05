@@ -17,6 +17,7 @@
 //  51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 
 #include <stdio.h>
+#include <string.h>
 #include <stdarg.h>
 
 #include "ops.h"
@@ -27,7 +28,6 @@
 void m_yyerror(char *s, ...);
 int yylex(void);
 int got_error;
-extern int ic;
 %}
 
 %locations
@@ -39,17 +39,19 @@ extern int ic;
 	} val;
 	struct norm_t *norm;
 	struct node_t *node;
+	struct nodelist_t *nl;
 };
 
 %token '[' ']' ',' ':'
 %token MP_DATA MP_EQU MP_RES MP_PROG MP_FINPROG MP_SEG MP_FINSEG MP_MACRO MP_FINMACRO
-%token <val.s> NAME STRING COMMENT
+%token <val.s> NAME STRING CMT_CODE CMT_LINE
 %token <val> VALUE ADDR
 %token <val.v> REGISTER
 %token <val.v> MOP_2ARG MOP_FD MOP_KA1 MOP_JS MOP_KA2 MOP_C MOP_SHC MOP_S MOP_HLT MOP_J MOP_L MOP_G MOP_BN
 
 %type <norm> normval norm
-%type <node> instruction res data dataword words expr comment
+%type <node> instruction expr comment
+%type <nl> res words data dataword comments code sentence sentences
 
 %left '+' '-'
 %left SHR SHL
@@ -59,66 +61,82 @@ extern int ic;
 %%
 
 program:
-	comments MP_PROG STRING sentences MP_FINPROG comments	{ printf("Assembling program '%s'\n", $3); free($3); }
+	comments MP_PROG STRING sentences MP_FINPROG comments { 
+		printf("Assembling program '%s'\n", $3);
+		free($3);
+		program = nl_append(program, $1);
+		program = nl_append(program, $4);
+		program = nl_append(program, $6);
+	}
 	| comments MP_PROG sentences MP_FINPROG	comments		{ printf("Assembling unnamed program\n"); }
 	;
 
 sentences:
-	sentences sentence
-	| 
+	sentences sentence { $$ = nl_append($1, $2); }
+	| { $$ = NULL; }
 	;
 
 sentence:
-	words {
-		if (program_append($1) < 0) {
-			m_yyerror("cannot append word (program too big?)");
-			YYABORT;
+	code { $$ = $1; }
+	| code CMT_CODE { 
+		if ($1) {
+			$1->head->comment = strdup($2);
+			free($2);
+			$$ = $1;
+		} else {
+			$$ = nl_append_n($1, make_comment($2));
 		}
 	}
+	| comment { $$ = make_nl($1); }
+	;
+
+code:
+	words { $$ = $1; }
 	| MP_EQU NAME expr {
 		if (!dict_add(dict, D_VALUE, $2, $3)) {
 			m_yyerror("name '%s' already defined", $2);
 			YYABORT;
 		}
+		$$ = NULL;
 	}
 	| NAME ':' {
-		struct node_t *n = make_value(ic, NULL);
+		struct node_t *n = make_value(program_ic, NULL);
 		if (!dict_add(dict, D_ADDR, $1, n)) {
 			m_yyerror("name '%s' already defined", $1);
 			YYABORT;
 		}
+		$$ = NULL;
 	}
-	| comment { program_append($1); }
 	;
 
 comments:
-	comment comments { program_append($1); }
-	|
+	comments comment	{ $$ = nl_append_n($1, $2); }
+	|					{ $$ = NULL; }
 	;
 
 comment:
-	COMMENT { $$ = make_comment($1); }
+	CMT_LINE		{ $$ = make_comment($1); }
 	;
 
 words:
-	instruction		{ $$ = $1; }
+	instruction		{ $$ = make_nl($1); program_ic++; }
 	| MP_DATA data	{ $$ = $2; }
 	| res			{ $$ = $1; }
 	;
 
 data:
 	dataword			{ $$ = $1; }
-	| dataword ',' data	{ $1->next = $3; $$ = $1; }
+	| dataword ',' data	{ $$ = nl_append($1, $3); }
 	;
 
 dataword:
-	expr		{ $$ = $1; }
-	| STRING	{ $$ = make_string($1); }
+	expr		{ $$ = make_nl($1); program_ic++; }
+	| STRING	{ $$ = make_string($1); program_ic += strlen($1); }
 	;
 
 res:
-	MP_RES VALUE				{ $$ = make_rep($2.v, 0, NULL); }
-	| MP_RES VALUE ',' VALUE	{ $$ = make_rep($2.v, $4.v, $4.s); }
+	MP_RES VALUE				{ $$ = make_rep($2.v, 0, NULL); program_ic += $2.v; }
+	| MP_RES VALUE ',' VALUE	{ $$ = make_rep($2.v, $4.v, $4.s); program_ic += $2.v; }
 	;
 
 instruction:
@@ -144,11 +162,11 @@ norm:
 
 normval:
 	REGISTER				{ $$ = make_norm($1, 0, NULL); }
-	| expr					{ $$ = make_norm(0, 0, $1); }
+	| expr					{ $$ = make_norm(0, 0, $1); program_ic++; }
 	| REGISTER '+' REGISTER	{ $$ = make_norm($1, $3, NULL); }
-	| REGISTER '+' expr		{ $$ = make_norm(0, $1, $3); }
-	| REGISTER '-' expr		{ $$ = make_norm(0, $1, make_oper(N_UMINUS, $3, NULL)); }
-	| expr '+' REGISTER		{ $$ = make_norm(0, $3, $1); }
+	| REGISTER '+' expr		{ $$ = make_norm(0, $1, $3); program_ic++; }
+	| REGISTER '-' expr		{ $$ = make_norm(0, $1, make_oper(N_UMINUS, $3, NULL)); program_ic++; }
+	| expr '+' REGISTER		{ $$ = make_norm(0, $3, $1); program_ic++; }
 	;
 
 expr:

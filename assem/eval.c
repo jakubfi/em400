@@ -25,43 +25,16 @@
 #include "elements.h"
 #include "ops.h"
 
-struct node_t *program_start;
-struct node_t *program_end;
+struct nodelist_t *program;
+int program_ic;
+
 struct dict_t **dict;
 char assembly_error[1024];
-int ic;
 
 // -----------------------------------------------------------------------
 void ass_error(const char *str)
 {
 	strcpy(assembly_error, str);
-}
-
-// -----------------------------------------------------------------------
-int program_append(struct node_t *n)
-{
-	if (!n) {
-		return -1;
-	}
-
-	// append given word list
-	if (!program_end) {
-		program_start = program_end = n;
-		ic++;
-	} else {
-		program_end->next = n;
-	}
-
-	// move program end and count words
-	while (program_end->next) {
-		program_end = program_end->next;
-		ic++;
-	}
-
-	if (ic > MAX_PROG_SIZE) {
-		return -1;
-	}
-	return 0;
 }
 
 // -----------------------------------------------------------------------
@@ -240,10 +213,12 @@ int compose_opcode(int ic, struct node_t *n, uint16_t *dt)
 }
 
 // -----------------------------------------------------------------------
-int assembly(struct node_t *n, uint16_t *outdata)
+int assembly(struct nodelist_t *nl, uint16_t *outdata)
 {
 	int ic = 0;
 	int res;
+
+	struct node_t *n = nl->head;
 
 	while (n) {
 		if (n->type != N_DUMMY ) {

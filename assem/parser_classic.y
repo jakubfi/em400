@@ -26,7 +26,6 @@
 void c_yyerror(char *s, ...);
 int yylex(void);
 extern int got_error;
-extern int ic;
 
 %}
 %error-verbose
@@ -160,7 +159,7 @@ vardef:
 
 label:
 	LABEL ':' {
-		struct node_t *n = make_value(ic, NULL);
+		struct node_t *n = make_value(program_ic, NULL);
 		if (!n) {
 			c_yyerror("cannot make node for '%s'", $1);
 			YYABORT;

@@ -41,7 +41,8 @@ int uop_to_modern[] = { MOP_2ARG, MOP_FD, MOP_KA1, MOP_JS, MOP_KA2, MOP_C, MOP_S
 %x string
 
 ws		[ \t\n]+
-comment	[#;].*\n
+cmtcode	[#;].*$
+cmtline	^[#;].*$
 
 oct		-?0[0-9]+
 dec		-?[0-9]+
@@ -56,7 +57,8 @@ chars	[-+:,\[\]<>]
 %%
 
 {ws}		;
-{comment}	{ m_yylval.val.s = strdup(m_yytext); return COMMENT; }
+{cmtline}	{ m_yylval.val.s = strdup(m_yytext); return CMT_LINE; }
+{cmtcode}	{ m_yylval.val.s = strdup(m_yytext); return CMT_CODE; }
 
 \"						{ BEGIN string; strbufpos = strbuf; }
 <string>\"				{ m_yylval.val.s = strdup(strbuf); BEGIN 0; return STRING; }
