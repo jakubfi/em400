@@ -221,9 +221,9 @@ int assembly(struct nodelist_t *nl, uint16_t *outdata)
 	struct node_t *n = nl->head;
 
 	while (n) {
-		if (n->type != N_DUMMY ) {
+		if (n->type > N_EMPTY ) {
 			// opcode
-			if (n->type <= N_BN) {
+			if (n->type < N_OPS) {
 				res = compose_opcode(ic, n, outdata);
 			// data
 			} else {

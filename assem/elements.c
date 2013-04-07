@@ -15,6 +15,7 @@
 //  Foundation, Inc.,
 //  51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 
+#include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <inttypes.h>
@@ -23,6 +24,9 @@
 #include "elements.h"
 #include "parser_modern.h"
 #include "ops.h"
+
+void m_yyerror(char *s, ...);
+
 
 // -----------------------------------------------------------------------
 unsigned int dict_hash(char *i)
@@ -48,14 +52,12 @@ struct dict_t * dict_add(struct dict_t **dict, int type, char *name, struct node
 	}
 
 	if (dict_find(dict, name)) {
-		free(name);
 		return NULL;
 	}
 
 	struct dict_t *d = malloc(sizeof(struct dict_t));
 	d->type = type;
 	d->name = strdup(name);
-	free(name);
 	d->n = n;
 
 	d->next = dict[dict_hash(d->name)];
@@ -240,11 +242,77 @@ struct node_t * make_oper(int type, struct node_t *n1, struct node_t *n2)
 }
 
 // -----------------------------------------------------------------------
+struct nodelist_t * make_code_comment(struct nodelist_t *nl, char *str)
+{
+	nl->tail->comment = strdup(str);
+	free(str);
+	return nl;
+}
+
+// -----------------------------------------------------------------------
 struct node_t * make_comment(char *str)
 {
 	struct node_t *n = make_node();
-	n->type = N_DUMMY;
+	n->type = N_COMMENT;
 	n->name = strdup(str);
+	free(str);
+
+	return n;
+}
+
+// -----------------------------------------------------------------------
+struct node_t * make_prog(char *prog, char *name)
+{
+	struct node_t *n = make_node();
+	n->type = N_PROG;
+	n->name = malloc(sizeof(char) * (strlen(prog) + strlen(name) + 4));
+	sprintf(n->name, "%s \"%s\"", prog, name);
+	return n;
+}
+
+// -----------------------------------------------------------------------
+struct node_t * make_finprog(char *finprog)
+{
+	struct node_t *n = make_node();
+	n->type = N_FINPROG;
+	n->name = malloc(sizeof(char) * (strlen(finprog) + 2));
+	sprintf(n->name, "%s", finprog);
+	return n;
+}
+
+// -----------------------------------------------------------------------
+struct node_t * make_equ(char *str, struct node_t *nv)
+{
+	struct dict_t *d = dict_add(dict, D_VALUE, str, nv);
+
+	if (!d) {
+		return NULL;
+	}
+
+	struct node_t *n = make_node();
+	n->type = N_EQU;
+	n->n1 = nv;
+	n->name = malloc(sizeof(char) * (strlen(str) + 4));
+	sprintf(n->name, "%s = ", str);
+	free(str);
+
+	return n;
+}
+
+// -----------------------------------------------------------------------
+struct node_t * make_label(char *str)
+{
+	struct node_t *nv = make_value(program_ic, NULL);
+	struct dict_t *d = dict_add(dict, D_ADDR, str, nv);
+
+	if (!d) {
+		return NULL;
+	}
+
+	struct node_t *n = make_node();
+	n->type = N_LABEL;
+	n->name = malloc(sizeof(char) * (strlen(str+2)));
+	sprintf(n->name, "%s:", str);
 	free(str);
 
 	return n;

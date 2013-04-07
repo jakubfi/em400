@@ -18,6 +18,7 @@
 
 #include <stdio.h>
 #include <stdarg.h>
+#include <string.h>
 
 #include "ops.h"
 #include "elements.h"
@@ -31,144 +32,133 @@ extern int got_error;
 %error-verbose
 %locations
 %union {
-	char *str;
-	int val;
-	struct word_t *word;
-	struct node_t *norm;
+	struct val_t {
+		int v;
+		char *s;
+	} val;
+	struct norm_t *norm;
 	struct node_t *node;
+	struct nodelist_t *nl;
 };
 
 %left '+' '-'
 %left '/'
 %nonassoc UMINUS
-%token COMMENT
 %token '.' '=' ':' ',' '(' ')' '&'
 %token CP_S CP_RES CP_F CP_PROG CP_FINPROG CP_SEG CP_FINSEG CP_MACRO CP_FINMACRO CP_ALL CP_NAME CP_BA CP_INT CP_OUT CP_LAB CP_NLAB CP_MEM CP_OS CP_IFUNK CP_IFUND CP_IFDEF CP_FI CP_SS CP_HS CP_MAX CP_LEN CP_E CP_FILE CP_TEXT
-%token <str> IDENTIFIER FLOAT STRING
-%token <str> LABEL VAR
+%token <val.s> IDENTIFIER FLOAT STRING
+%token <val.s> LABEL VAR COMMENT
 %token <val> VALUE
-%token <val> COP_2ARG COP_FD COP_KA1 COP_JS COP_KA2 COP_C COP_SHC COP_S COP_HLT COP_J COP_L COP_G COP_BN
+%token <val.v> COP_2ARG COP_FD COP_KA1 COP_JS COP_KA2 COP_C COP_SHC COP_S COP_HLT COP_J COP_L COP_G COP_BN
 %type <norm> normarg norm1 norm2
-%type <node> expr
+%type <node> instruction expr
+%type <val.v> reg
+%type <node> zero value
+%type <nl> vardef label code segment macro codeblock pre preblock
 
 %%
 
 program:
-	preblock CP_PROG '*' { printf("NEW VARSET: PROG\n"); } codeblock CP_FINPROG '*'
+	preblock CP_PROG '*' { printf("NEW VARSET: PROG\n"); } codeblock CP_FINPROG '*'	{ program = $1; }
 	;
 
 segment:
-	CP_SEG '*' { printf("NEW VARSET: SEG\n"); } codeblock CP_FINSEG '*'
+	CP_SEG '*' { printf("NEW VARSET: SEG\n"); } codeblock CP_FINSEG '*'				{ $$ = $4; }
 	;
 
 macro:
-	CP_MACRO '*' { printf("NEW VARSET: MACRO\n"); } codeblock CP_FINMACRO '*'
+	CP_MACRO '*' { printf("NEW VARSET: MACRO\n"); } codeblock CP_FINMACRO '*'		{ $$ = $4; }
 	;
 
 preblock:
-	preblock pre
-	|
+	preblock pre	{ $$ = nl_append($1, $2); }
+	|				{ $$ = NULL; }
 	;
 
 pre:
-	COMMENT
-	| pragma
+	COMMENT			{ $$ = make_nl(make_comment($1)); }
+	| pragma		{ $$ = NULL; }
 	;
 
 codeblock:
-	codeblock code
-	|
+	codeblock code	{ $$ = nl_append($1, $2); }
+	|				{ $$ = NULL; }
 	;
 
 code:
-	vardef
-	| label { printf("(label)\n");}
-	| pragma
-	| STRING
-	| instruction { printf("(instr)\n"); }
-	| COMMENT
-	| expr '.' { printf("(expr)\n"); }
-	| '.' { printf("(empty)\n"); }
+	vardef			{ $$ = $1; }
+	| label			{ printf("(label)\n"); $$ = $1; }
+	| pragma		{ $$ = NULL; }
+	| STRING		{ $$ = make_string($1); program_ic += strlen($1); }
+	| instruction	{ printf("(instr)\n"); $$ = make_nl($1); }
+	| COMMENT		{ $$ = make_nl(make_comment($1)); }
+	| expr '.'		{ printf("(expr)\n"); $$ = make_nl($1); }
+	| '.'			{ printf("(empty)\n"); }
 	| macro
-	| segment
+	| segment		{ $$ = $1; }
 	;
 
 instruction:
-	COP_2ARG ',' reg normarg {}
-	| COP_FD normarg
-	| COP_KA1 ',' reg ',' expr '.'
-	| COP_JS ',' expr '.'
-	| COP_KA2 ',' expr '.'
-	| COP_C ',' reg '.'
-	| COP_SHC ',' reg ',' expr '.'
-	| COP_S ',' zero '.'
-	| COP_HLT ',' expr '.'
-	| COP_J normarg
-	| COP_L normarg
-	| COP_G normarg
-	| COP_BN normarg
+	COP_2ARG ',' reg normarg		{ $$ = make_op(N_2ARG,  $1, $3, NULL, $4); }
+	| COP_FD normarg				{ $$ = make_op(N_FD,    $1, 0,  NULL, $2); }
+	| COP_KA1 ',' reg ',' expr '.'	{ $$ = make_op(N_KA1,   $1, $3, $5,   NULL); }
+	| COP_JS ',' expr '.'			{ $$ = make_op(N_JS,    $1, 0,  $3,   NULL); }
+	| COP_KA2 ',' expr '.'			{ $$ = make_op(N_KA2,   $1, 0,  $3,   NULL); }
+	| COP_C ',' reg '.'				{ $$ = make_op(N_C,     $1, $3, NULL, NULL); }
+	| COP_SHC ',' reg ',' expr '.'	{ $$ = make_op(N_SHC,   $1, $3, $5,   NULL); }
+	| COP_S ',' zero '.'			{ $$ = make_op(N_S,     $1, 0,  NULL, NULL); }
+	| COP_HLT ',' expr '.'			{ $$ = make_op(N_HLT,   $1, 0,  $3,   NULL); }
+	| COP_J normarg					{ $$ = make_op(N_J,     $1, 0,  NULL, $2); }
+	| COP_L normarg					{ $$ = make_op(N_L,     $1, 0,  NULL, $2); }
+	| COP_G normarg					{ $$ = make_op(N_G,     $1, 0,  NULL, $2); }
+	| COP_BN normarg				{ $$ = make_op(N_BN,    $1, 0,  NULL, $2); }
 	;
 
 normarg:
-	',' norm1 '.' { $$=NULL; }
-	| ',' norm1 '\'' '.' { $$=NULL; }
-	| '(' norm2 ')' { $$=NULL; }
-	| '(' norm2 '\'' ')' { $$=NULL; }
+	',' norm1 '.'			{ $$ = $2; }
+	| ',' norm1 '\'' '.'	{ $$ = $2; $$->d = 1; }
+	| '(' norm2 ')'			{ $$ = $2; }
+	| '(' norm2 '\'' ')'	{ $$ = $2; $$->d = 1; }
 	;
 
 norm1:
-	reg { $$=NULL;}
-	| reg '&' reg { $$=NULL; }
+	reg				{ $$ = make_norm($1, 0, NULL); }
+	| reg '&' reg	{ $$ = make_norm($1, $3, NULL); }
 	;
 
 norm2:
-	expr { $$=NULL; }
-	| expr '&' reg { $$=NULL; }
+	expr			{ $$ = make_norm(0, 0, $1); program_ic++; }
+	| expr '&' reg	{ $$ = make_norm(0, $3, $1); program_ic++; }
 	;
 
 expr:
-	value { $$=NULL; }
-	| expr '+' expr { $$=NULL; }
-	| expr '-' expr { $$=NULL; }
-	| value '/' value { $$=NULL; }
-	| '-' expr %prec UMINUS { $$=NULL; }
+	value					{ $$ = $1; }
+	| expr '+' expr			{ $$ = make_oper(N_PLUS, $1, $3); }
+	| expr '-' expr			{ $$ = make_oper(N_MINUS, $1, $3); }
+	| value '/' value		{ $$=NULL; }
+	| '-' expr %prec UMINUS { $$ = make_oper(N_UMINUS, $2, NULL); }
 	;
 
 zero:
-	VALUE
+	VALUE			{ $$ = make_value($1.v, $1.s); }
 	;
 
 value:
-	VALUE
-	| IDENTIFIER
+	VALUE			{ $$ = make_value($1.v, $1.s); }
+	| IDENTIFIER	{ $$ = make_name($1); }
 	;
 
 reg:
-	VALUE
+	VALUE			{ $$ = $1.v; }
 /*	| IDENTIFIER { printf("mamto\n"); }*/
 	;
 
 vardef:
-	VAR '=' expr '.' {
-		if (!dict_add(dict, D_VALUE, $1, $3)) {
-			//c_yyerror("name '%s' already defined", $1);
-			//YYABORT;
-		}
-	}
+	VAR '=' expr '.' { $$ = make_nl(make_equ($1, $3)); }
 	;
 
 label:
-	LABEL ':' {
-		struct node_t *n = make_value(program_ic, NULL);
-		if (!n) {
-			c_yyerror("cannot make node for '%s'", $1);
-			YYABORT;
-		}
-		if (!dict_add(dict, D_ADDR, $1, n)) {
-			//c_yyerror("name '%s' already defined", $1);
-			//YYABORT;
-		}
-	}
+	LABEL ':' { $$ = make_nl(make_label($1)); }
 	;
 
 pragma:

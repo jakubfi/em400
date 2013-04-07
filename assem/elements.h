@@ -35,6 +35,16 @@ struct dict_t {
 };
 
 enum node_type_e {
+	// dummy, no-data nodes
+	N_DUMMY = -1000,
+	N_COMMENT,
+	N_PROG,
+	N_FINPROG,
+	N_LABEL,
+	N_EQU,
+	N_EMPTY = -1,
+
+	// opcodes
 	N_2ARG = 0,
 	N_FD,
 	N_KA1,
@@ -48,6 +58,9 @@ enum node_type_e {
 	N_L,
 	N_G,
 	N_BN,
+	N_OPS = 1000,
+
+	// expression elements
 	N_VAL,
 	N_NAME,
 	N_PLUS,
@@ -55,7 +68,6 @@ enum node_type_e {
 	N_UMINUS,
 	N_SHL,
 	N_SHR,
-	N_DUMMY
 };
 
 struct norm_t {
@@ -94,6 +106,11 @@ struct nodelist_t * make_rep(int rep, int value, char *tvalue);
 struct nodelist_t * make_string(char *str);
 struct node_t * make_op(int optype, uint16_t op, int ra, struct node_t *n, struct norm_t *norm);
 struct node_t * make_comment(char *str);
+struct nodelist_t * make_code_comment(struct nodelist_t *nl, char *str);
+struct node_t * make_label(char *str);
+struct node_t * make_equ(char *str, struct node_t *nv);
+struct node_t * make_prog(char *prog, char *name);
+struct node_t * make_finprog(char *finprog);
 
 struct dict_t ** dict_create();
 struct dict_t * dict_add(struct dict_t **dict, int type, char *name, struct node_t *n);

@@ -43,7 +43,8 @@ int got_error;
 };
 
 %token '[' ']' ',' ':'
-%token MP_DATA MP_EQU MP_RES MP_PROG MP_FINPROG MP_SEG MP_FINSEG MP_MACRO MP_FINMACRO
+%token MP_DATA MP_EQU MP_RES MP_SEG MP_FINSEG MP_MACRO MP_FINMACRO
+%token <val.s> MP_PROG MP_FINPROG
 %token <val.s> NAME STRING CMT_CODE CMT_LINE
 %token <val> VALUE ADDR
 %token <val.v> REGISTER
@@ -63,12 +64,23 @@ int got_error;
 program:
 	comments MP_PROG STRING sentences MP_FINPROG comments { 
 		printf("Assembling program '%s'\n", $3);
-		free($3);
+		program = nl_append_n(program, make_prog($2, $3));
 		program = nl_append(program, $1);
 		program = nl_append(program, $4);
 		program = nl_append(program, $6);
+		program = nl_append_n(program, make_finprog($5));
+		free($2);
+		free($3);
 	}
-	| comments MP_PROG sentences MP_FINPROG	comments		{ printf("Assembling unnamed program\n"); }
+	| comments MP_PROG sentences MP_FINPROG	comments {
+		printf("Assembling unnamed program\n");
+		program = nl_append_n(program, make_prog($2, ""));
+		program = nl_append(program, $1);
+		program = nl_append(program, $3);
+		program = nl_append(program, $5);
+		program = nl_append_n(program, make_finprog($4));
+		free($2);
+	}
 	;
 
 sentences:
@@ -77,36 +89,15 @@ sentences:
 	;
 
 sentence:
-	code { $$ = $1; }
-	| code CMT_CODE { 
-		if ($1) {
-			$1->head->comment = strdup($2);
-			free($2);
-			$$ = $1;
-		} else {
-			$$ = nl_append_n($1, make_comment($2));
-		}
-	}
-	| comment { $$ = make_nl($1); }
+	code			{ $$ = $1; }
+	| code CMT_CODE	{ make_code_comment($1, $2); }
+	| comment		{ $$ = make_nl($1); }
 	;
 
 code:
-	words { $$ = $1; }
-	| MP_EQU NAME expr {
-		if (!dict_add(dict, D_VALUE, $2, $3)) {
-			m_yyerror("name '%s' already defined", $2);
-			YYABORT;
-		}
-		$$ = NULL;
-	}
-	| NAME ':' {
-		struct node_t *n = make_value(program_ic, NULL);
-		if (!dict_add(dict, D_ADDR, $1, n)) {
-			m_yyerror("name '%s' already defined", $1);
-			YYABORT;
-		}
-		$$ = NULL;
-	}
+	words				{ $$ = $1; }
+	| MP_EQU NAME expr	{ $$ = make_nl(make_equ($2, $3)); }
+	| NAME ':'			{ $$ = make_nl(make_label($1)); }
 	;
 
 comments:
