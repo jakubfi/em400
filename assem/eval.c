@@ -27,9 +27,10 @@
 
 struct node_t *program_start;
 struct node_t *program_end;
+int program_ic;
+
 struct dict_t **dict;
 char assembly_error[1024];
-int ic;
 
 // -----------------------------------------------------------------------
 void ass_error(const char *str)
@@ -40,28 +41,28 @@ void ass_error(const char *str)
 // -----------------------------------------------------------------------
 int program_append(struct node_t *n)
 {
-	if (!n) {
+	int size = 0;
+
+	while (n) {
+		printf("apend: %p->%p (%i) %s %s \n", n, n->next, n->type, n->name, n->comment);
+		if (!program_end) {
+			program_start = program_end = n;
+		} else {
+			program_end->next = n;
+			program_end = program_end->next;
+		}
+		if (n->type != N_DUMMY) {
+			size++;
+		}
+		n = n->next;
+	}
+
+	program_ic += size;
+	if (program_ic > MAX_PROG_SIZE) {
 		return -1;
 	}
 
-	// append given word list
-	if (!program_end) {
-		program_start = program_end = n;
-		ic++;
-	} else {
-		program_end->next = n;
-	}
-
-	// move program end and count words
-	while (program_end->next) {
-		program_end = program_end->next;
-		ic++;
-	}
-
-	if (ic > MAX_PROG_SIZE) {
-		return -1;
-	}
-	return 0;
+	return size;
 }
 
 // -----------------------------------------------------------------------
@@ -73,7 +74,7 @@ struct node_t * expr_eval(struct node_t *n, char *refcheck)
 	struct node_t *n1 = expr_eval(n->n1, refcheck);
 	struct node_t *n2 = expr_eval(n->n2, refcheck);
 
-	struct node_t *nv = make_value(0);
+	struct node_t *nv = make_value(0, NULL);
 
 	switch (n->type) {
 		case N_VAL:
@@ -87,6 +88,7 @@ struct node_t * expr_eval(struct node_t *n, char *refcheck)
 			if (!dn) return NULL;
 			nv->data = dn->data;
 			if (d->type == D_ADDR) nv->was_addr = 1;
+			free(dn);
 			break;
 		case N_PLUS:
 			if (!n1 || !n2) return NULL;
@@ -114,6 +116,10 @@ struct node_t * expr_eval(struct node_t *n, char *refcheck)
 			nv->was_addr = n1->was_addr | n2->was_addr;
 			break;
 	}
+
+	free(n1);
+	free(n2);
+
 	return nv;
 }
 
@@ -126,7 +132,7 @@ int compose_data(struct node_t *n, uint16_t *dt)
 		return 0;
 	}
 	*dt = ntohs(nv->data);
-
+	free(nv);
 	return 1;
 }
 
@@ -159,7 +165,7 @@ int prepare_t_arg(uint16_t *dt, uint16_t ic, struct node_t *n, int relative)
 	} else {
 		*dt |= jsval & 0b0000000000111111;
 	}
-
+	free(nv);
 	return 1;
 }
 
@@ -230,8 +236,37 @@ int compose_opcode(int ic, struct node_t *n, uint16_t *dt)
 
 	// convert opcode data
 	*dt = ntohs(*dt);
-
+	free(nv);
 	return ret;
+}
+
+// -----------------------------------------------------------------------
+int assembly(struct node_t *n, uint16_t *outdata)
+{
+	int ic = 0;
+	int res;
+
+	while (n) {
+		if (n->type != N_DUMMY ) {
+			// opcode
+			if (n->type <= N_BN) {
+				res = compose_opcode(ic, n, outdata);
+			// data
+			} else {
+				res = compose_data(n, outdata);
+			}
+
+			if (res != 1) {
+				return -(ic+1);
+			}
+			ic++;
+			outdata++;
+		}
+
+		n = n->next;
+	}
+
+	return ic;
 }
 
 

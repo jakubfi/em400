@@ -41,7 +41,8 @@ int uop_to_modern[] = { MOP_2ARG, MOP_FD, MOP_KA1, MOP_JS, MOP_KA2, MOP_C, MOP_S
 %x string
 
 ws		[ \t\n]+
-comment	[#;].*\n
+cmtcode	[#;].*$
+cmtline	^[#;].*$
 
 oct		-?0[0-9]+
 dec		-?[0-9]+
@@ -56,10 +57,11 @@ chars	[-+:,\[\]<>]
 %%
 
 {ws}		;
-{comment}	;
+{cmtline}	{ m_yylval.val.s = strdup(m_yytext); return CMT_LINE; }
+{cmtcode}	{ m_yylval.val.s = strdup(m_yytext); return CMT_CODE; }
 
 \"						{ BEGIN string; strbufpos = strbuf; }
-<string>\"				{ m_yylval.str = strdup(strbuf); BEGIN 0; return STRING; }
+<string>\"				{ m_yylval.val.s = strdup(strbuf); BEGIN 0; return STRING; }
 <string>[^\\\"\n\r\t]*	{ strcpy(strbufpos, m_yytext); strbufpos += strlen(m_yytext); }
 <string>\\\\			{ *strbufpos++ = '\\'; }
 <string>\\\"			{ *strbufpos++ = '\"'; }
@@ -71,23 +73,27 @@ chars	[-+:,\[\]<>]
 <string>\\.				{ BEGIN 0; m_yyerror("unknown escape sequence: %s", m_yytext); }
 
 {oct}	{
-	m_yylval.val = strtol(m_yytext, NULL, 8);
+	m_yylval.val.v = strtol(m_yytext, NULL, 8);
+	m_yylval.val.s = strdup(m_yytext);
 	return VALUE;
 }
 {dec} 	{
-	m_yylval.val = strtol(m_yytext, NULL, 10);
+	m_yylval.val.v = strtol(m_yytext, NULL, 10);
+	m_yylval.val.s = strdup(m_yytext);
 	return VALUE;
 }
 {bin}	{
-	m_yylval.val = strtol(m_yytext+2, NULL, 2);
+	m_yylval.val.v = strtol(m_yytext+2, NULL, 2);
+	m_yylval.val.s = strdup(m_yytext);
 	return VALUE;
 }
 {hex}	{
-	m_yylval.val = strtol(m_yytext+2, NULL, 16);
+	m_yylval.val.v = strtol(m_yytext+2, NULL, 16);
+	m_yylval.val.s = strdup(m_yytext);
 	return VALUE;
 }
 {reg}	{
-	m_yylval.val = strtol(m_yytext+1, NULL, 10);
+	m_yylval.val.v = strtol(m_yytext+1, NULL, 10);
 	return REGISTER;
 }
 {pragma} {
@@ -108,10 +114,10 @@ chars	[-+:,\[\]<>]
 {name}	{
 	struct op_t *op = get_op(m_yytext);
 	if (op) {
-		m_yylval.val = op->opcode;
+		m_yylval.val.v = op->opcode;
 		return uop_to_modern[op->type];
 	} else {
-		m_yylval.str = strdup(m_yytext);
+		m_yylval.val.s = strdup(m_yytext);
 		return NAME;
 	}
 }

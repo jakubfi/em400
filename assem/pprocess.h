@@ -15,25 +15,16 @@
 //  Foundation, Inc.,
 //  51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 
-#ifndef EVAL_H
-#define EVAL_H
+#ifndef PPROCESS_H
+#define PPROCESS_H
 
 #include <inttypes.h>
 
-#define MAX_PROG_SIZE 64*1024
-
-extern struct node_t *program_start;
-extern struct node_t *program_end;
-extern int program_ic;
-
-extern struct dict_t **dict;
-extern char assembly_error[];
-
-int program_append(struct node_t *word);
-int compose_data(struct node_t *word, uint16_t *dt);
-int compose_opcode(int ic, struct node_t *word, uint16_t *dt);
-struct node_t * expr_eval(struct node_t *n, char *refcheck);
-int assembly(struct node_t *n, uint16_t *outdata);
+char * pp_get_labels(struct dict_t **dict, int addr);
+char * pp_get_mnemo(struct node_t *n);
+char * pp_compose_opcode(int ic, struct node_t *n, int *do_norm);
+char * pp_expr_eval(struct node_t *n);
+int preprocess(struct node_t *n, FILE *ppf);
 
 #endif
 

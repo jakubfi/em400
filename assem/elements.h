@@ -20,6 +20,8 @@
 
 #include <inttypes.h>
 
+#define DICT_HASH_BITS 8
+
 enum _dict_type_e {
 	D_VALUE,
 	D_ADDR
@@ -53,6 +55,7 @@ enum node_type_e {
 	N_UMINUS,
 	N_SHL,
 	N_SHR,
+	N_DUMMY
 };
 
 struct norm_t {
@@ -68,18 +71,20 @@ struct node_t {
 	char *name;
 	struct node_t *n1, *n2;
 	struct node_t *next;
+	char *comment;
 	int lineno;
 };
 
-struct node_t * make_value(int value);
+struct node_t * make_value(int value, char *tvalue);
 struct node_t * make_name(char *name);
 struct node_t * make_oper(int type, struct node_t *n1, struct node_t *n2);
 void node_drop(struct node_t *n);
 
 struct norm_t * make_norm(int rc, int rb, struct node_t *n);
-struct node_t * make_rep(int rep, int value);
+struct node_t * make_rep(int rep, int value, char *tvalue);
 struct node_t * make_string(char *str);
 struct node_t * make_op(int optype, uint16_t op, int ra, struct node_t *n, struct norm_t *norm);
+struct node_t * make_comment(char *str);
 
 struct dict_t ** dict_create();
 struct dict_t * dict_add(struct dict_t **dict, int type, char *name, struct node_t *n);

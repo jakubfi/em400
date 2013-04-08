@@ -19,14 +19,13 @@
 #include <string.h>
 #include <inttypes.h>
 
+#include "eval.h"
 #include "elements.h"
 #include "parser_modern.h"
 #include "ops.h"
 
-#define DICT_HASH_BITS 8
-
 // -----------------------------------------------------------------------
-static inline unsigned int dict_hash(char *i)
+unsigned int dict_hash(char *i)
 {
 	return (*i & 0b1111) | ((*(i+1) & 0b1111) << 4);
 }
@@ -49,16 +48,18 @@ struct dict_t * dict_add(struct dict_t **dict, int type, char *name, struct node
 	}
 
 	if (dict_find(dict, name)) {
+		free(name);
 		return NULL;
 	}
 
 	struct dict_t *d = malloc(sizeof(struct dict_t));
 	d->type = type;
 	d->name = strdup(name);
+	free(name);
 	d->n = n;
 
-	d->next = dict[dict_hash(name)];
-	dict[dict_hash(name)] = d;
+	d->next = dict[dict_hash(d->name)];
+	dict[dict_hash(d->name)] = d;
 
 	return d;
 }
@@ -89,6 +90,7 @@ void dict_list_drop(struct dict_t * dict)
 		return;
 	}
 	free(dict->name);
+	node_drop(dict->n);
 	dict_list_drop(dict->next);
 	free(dict);
 }
@@ -102,6 +104,7 @@ void dict_drop(struct dict_t **dict)
 	for (int i=0 ; i<(1<<DICT_HASH_BITS) ; i++) {
 		dict_list_drop(dict[i]);
 	}
+	free(dict);
 }
 
 // -----------------------------------------------------------------------
@@ -116,13 +119,31 @@ struct norm_t * make_norm(int rc, int rb, struct node_t *n)
 }
 
 // -----------------------------------------------------------------------
-struct node_t * make_rep(int rep, int value)
+struct node_t * make_node()
+{
+	struct node_t *node = malloc(sizeof(struct node_t));
+	node->type = N_DUMMY;
+	node->opcode = 0;
+	node->data = 0;
+	node->was_addr = 0;
+	node->name = NULL;
+	node->n1 = NULL;
+	node->n2 = NULL;
+	node->next = NULL;
+	node->lineno = m_yylloc.first_line;
+	node->comment = NULL;
+	return node;
+}
+
+// -----------------------------------------------------------------------
+struct node_t * make_rep(int rep, int value, char *tvalue)
 {
 	struct node_t *nhead = NULL;
 	struct node_t *ntail = NULL;
 
 	while (rep > 0) {
-		struct node_t *n = make_value(value);
+		struct node_t *n = make_value(value, tvalue);
+		free(tvalue);
 		if (!nhead) {
 			nhead = ntail = n;
 		} else {
@@ -143,7 +164,7 @@ struct node_t * make_string(char *str)
 	struct node_t *node_head = NULL;
 
 	while (c && *c) {
-		struct node_t *n = make_value((int)(*c << 8));
+		struct node_t *n = make_value((int)(*c << 8), NULL);
 
 		c++;
 		if (*c) {
@@ -160,13 +181,15 @@ struct node_t * make_string(char *str)
 		}
 	}
 
+	free(str);
+
 	return node_head;
 }
 
 // -----------------------------------------------------------------------
 struct node_t * make_op(int optype, uint16_t op, int ra, struct node_t *n, struct norm_t *norm)
 {
-	struct node_t *node = malloc(sizeof(struct node_t));
+	struct node_t *node = make_node();
 	node->type = optype;
 	node->opcode = op;
 	node->opcode |= ra << 6;
@@ -177,28 +200,23 @@ struct node_t * make_op(int optype, uint16_t op, int ra, struct node_t *n, struc
 		node->opcode |= (norm->rb << 3);
 		node->next = norm->e;
 		free(norm);
-	} else {
-		node->next = NULL;
 	}
 
-	node->lineno = m_yylloc.first_line;
-	node->name = NULL;
-	node->n2 = NULL;
 	return node;
 }
 
 // -----------------------------------------------------------------------
-struct node_t * make_value(int value)
+struct node_t * make_value(int value, char *tvalue)
 {
-	struct node_t *n = malloc(sizeof(struct node_t));
+	struct node_t *n = make_node();
 	n->type = N_VAL;
 	n->data = value;
 
 	n->lineno = m_yylloc.first_line;
-	n->next = NULL;
-	n->name = NULL;
-	n->n1 = NULL;
-	n->n2 = NULL;
+	if (tvalue) {
+		n->name = strdup(tvalue);
+		free(tvalue);
+	}
 
 	return n;
 }
@@ -206,14 +224,10 @@ struct node_t * make_value(int value)
 // -----------------------------------------------------------------------
 struct node_t * make_name(char *name)
 {
-	struct node_t *n = malloc(sizeof(struct node_t));
+	struct node_t *n = make_node();
 	n->type = N_NAME;
 	n->name = strdup(name);
-
-	n->lineno = m_yylloc.first_line;
-	n->next = NULL;
-	n->n1 = NULL;
-	n->n2 = NULL;
+	free(name);
 
 	return n;
 }
@@ -221,14 +235,21 @@ struct node_t * make_name(char *name)
 // -----------------------------------------------------------------------
 struct node_t * make_oper(int type, struct node_t *n1, struct node_t *n2)
 {
-	struct node_t *n = malloc(sizeof(struct node_t));
+	struct node_t *n = make_node();
 	n->type = type;
 	n->n1 = n1;
 	n->n2 = n2;
 
-	n->lineno = m_yylloc.first_line;
-	n->name = NULL;
-	n->next = NULL;
+	return n;
+}
+
+// -----------------------------------------------------------------------
+struct node_t * make_comment(char *str)
+{
+	struct node_t *n = make_node();
+	n->type = N_DUMMY;
+	n->name = strdup(str);
+	free(str);
 
 	return n;
 }
@@ -243,9 +264,9 @@ void node_drop(struct node_t *n)
 	node_drop(n->n2);
 	node_drop(n->next);
 	free(n->name);
+	free(n->comment);
 	free(n);
 }
-
 
 
 // vim: tabstop=4

@@ -21,30 +21,42 @@
 #include <getopt.h>
 
 #include "ops.h"
-#include "parser_modern.h"
 #include "elements.h"
 #include "eval.h"
+#include "pprocess.h"
 
 int classic = 0;
+int preprocessor = 0;
 
 extern FILE *m_yyin;
 extern FILE *c_yyin;
 extern int got_error;
 int m_yyparse();
 int c_yyparse();
+int m_yylex_destroy();
+int c_yylex_destroy();
 
 // -----------------------------------------------------------------------
 int parse(FILE *source)
 {
 	m_yyin = c_yyin = source;
 
-	int (*active_parser)();
-	if (classic) active_parser = c_yyparse;
-	else active_parser = m_yyparse;
+	int (*yyparser)();
+	int (*yylex_destroy)();
+
+	if (classic) {
+		yyparser = c_yyparse;
+		yylex_destroy = c_yylex_destroy;
+	} else {
+		yyparser = m_yyparse;
+		yylex_destroy = m_yylex_destroy;
+	}
 
 	do {
-		active_parser();
+		yyparser();
 	} while (!feof(source));
+
+	yylex_destroy();
 
 	if (got_error) {
 		return -1;
@@ -54,35 +66,13 @@ int parse(FILE *source)
 }
 
 // -----------------------------------------------------------------------
-int assembly(struct node_t *n, uint16_t *outdata)
-{
-	int wcounter = 0;
-	int res;
-
-	while (n) {
-		if (n->type <= N_BN) {
-			res = compose_opcode(wcounter, n, outdata);
-		} else {
-			res = compose_data(n, outdata);
-		}
-		if (res != 1) {
-			return -(wcounter+1);
-		}
-		n = n->next;
-		wcounter++;
-		outdata++;
-	}
-
-	return wcounter;
-}
-
-// -----------------------------------------------------------------------
 void usage()
 {
 	printf("Usage: assem [-k] [-c] <input.asm> [output]\n");
 	printf("Where:\n");
 	printf("   -k : use K-202 mnemonics (instead of MERA-400)\n");
 	printf("   -c : use classic ASSK/ASSM syntax (instead of modern)\n");
+	printf("   -p : produce preprocessor output (.pp.asm file)\n");
 }
 
 // -----------------------------------------------------------------------
@@ -91,11 +81,12 @@ int main(int argc, char **argv)
 	int option;
 	mnemo_sel = MNEMO_MERA400;
 	classic = 0;
+	preprocessor = 0;
 	char *input_file = NULL;
 	char *output_file = NULL;
 
 	// parse options
-	while ((option = getopt(argc, argv,"kch")) != -1) {
+	while ((option = getopt(argc, argv,"kchp")) != -1) {
 		switch (option) {
 			case 'h':
 				usage();
@@ -105,6 +96,9 @@ int main(int argc, char **argv)
 				break;
 			case 'c':
 				classic = 1;
+				break;
+			case 'p':
+				preprocessor = 1;
 				break;
 			default:
 				usage();
@@ -191,8 +185,23 @@ int main(int argc, char **argv)
 		exit(1);
 	}
 
+	// write preprocessor output
+	if (preprocessor) {
+		char *pp_file = malloc(strlen(output_file)+10);
+		sprintf(pp_file, "%s.pp.asm", output_file);
+		printf("Writing preprocessor output to: %s\n", pp_file);
+		FILE *ppf = fopen(pp_file, "w");
+		if (!ppf) {
+			printf("Cannot open preprocessor output file '%s', sorry.\n", pp_file);
+		}
+		preprocess(program_start, ppf);
+		fclose(ppf);
+		free(pp_file);
+	}
+
 	node_drop(program_start);
 	dict_drop(dict);
+
 	return 0;
 }
 
