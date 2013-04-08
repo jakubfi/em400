@@ -67,17 +67,20 @@ echars			[\)\.]
 
 {oct} {
 	printf("oct: %s", c_yytext);
-	c_yylval.val = strtol(c_yytext, NULL, 8);
+	c_yylval.val.v = strtol(c_yytext, NULL, 8);
+	c_yylval.val.s = strdup(c_yytext);
 	return VALUE;
 }
 {dec} {
 	printf("dec: %s", c_yytext);
-	c_yylval.val = strtol(c_yytext, NULL, 10);
+	c_yylval.val.v = strtol(c_yytext, NULL, 10);
+	c_yylval.val.s = strdup(c_yytext);
 	return VALUE;
 }
 {char2} {
 	printf("2char: %s", c_yytext);
-	c_yylval.val = ((*c_yytext) << 16) + *(c_yytext+1);
+	c_yylval.val.v = ((*c_yytext) << 16) + *(c_yytext+1);
+	c_yylval.val.s = strdup(c_yytext);
 	return VALUE;
 }
 {bitfield} {
@@ -104,11 +107,13 @@ echars			[\)\.]
 		}
 		c_yytext++;
 	}
+	c_yylval.val.v = value;
+	c_yylval.val.s = strdup(c_yytext);
 	return VALUE;
 }
 {string} {
 	printf("string: %s", c_yytext);
-	c_yylval.str = strndup(c_yytext+1, strlen(c_yytext)-2);
+	c_yylval.val.s = strndup(c_yytext+1, strlen(c_yytext)-2);
 	return STRING;
 }
 
@@ -119,7 +124,7 @@ echars			[\)\.]
 	printf("id: %s ", c_yytext);
 	int copy = 7;
 	if (isalpha(*c_yytext)) copy = 6;
-	c_yylval.str = strndup(c_yytext, copy);
+	c_yylval.val.s = strndup(c_yytext, copy);
 	return IDENTIFIER;
 }
 
@@ -128,11 +133,11 @@ echars			[\)\.]
 	if (op) {
 		BEGIN(is_id);
 		printf("opcode: %s ", c_yytext);
-		c_yylval.val = op->opcode;
+		c_yylval.val.v = op->opcode;
 		return uop_to_classic[op->type];
 	} else {
 		printf("id: %s ", c_yytext);
-		c_yylval.str = strndup(c_yytext, 6);
+		c_yylval.val.s = strndup(c_yytext, 6);
 		return IDENTIFIER;
 	}
 }
@@ -152,7 +157,7 @@ echars			[\)\.]
 	printf("labeldef: %s ", c_yytext);
 	int copy = 7;
 	if (isalpha(*c_yytext)) copy = 6;
-	c_yylval.str = strndup(c_yytext, copy);
+	c_yylval.val.s = strndup(c_yytext, copy);
 	return LABEL;
 }
 
@@ -160,7 +165,7 @@ echars			[\)\.]
 	printf("vardef: %s ", c_yytext);
 	int copy = 7;
 	if (isalpha(*c_yytext)) copy = 6;
-	c_yylval.str = strndup(c_yytext, copy);
+	c_yylval.val.s = strndup(c_yytext, copy);
 	return VAR;
 }
 
@@ -168,7 +173,7 @@ echars			[\)\.]
 	printf("id: %s ", c_yytext);
 	int copy = 7;
 	if (isalpha(*c_yytext)) copy = 6;
-	c_yylval.str = strndup(c_yytext, copy);
+	c_yylval.val.s = strndup(c_yytext, copy);
 	return IDENTIFIER;
 }
 

@@ -28,32 +28,6 @@
 #include "ops.h"
 
 // -----------------------------------------------------------------------
-char * pp_get_labels(struct dict_t **dict, int addr)
-{
-	struct dict_t *d;
-	char *labels = malloc(1024);
-	*labels = '\0';
-	int len = 0;
-
-	for (int i=0 ; i<(1<<DICT_HASH_BITS) ; i++ ) {
-		d = dict[i];
-		while (d) {
-			if (d->type == D_ADDR) {
-				struct node_t *n = expr_eval(d->n, NULL);
-				if (n && (n->data == addr)) {
-					sprintf(labels+len, "%s:\n", d->name);
-					len += strlen(d->name) + 2;
-				}
-				free(n);
-			}
-			d = d->next;
-		}
-	}
-
-	return labels;
-}
-
-// -----------------------------------------------------------------------
 char * pp_get_mnemo(struct node_t *n)
 {
 	int mask = 0;
@@ -150,11 +124,12 @@ char * pp_expr_eval(struct node_t *n)
 }
 
 // -----------------------------------------------------------------------
-char * pp_compose_opcode(int ic, struct node_t *n, int *norm)
+char * pp_compose_opcode(int ic, struct node_t *n, int *norm_arg)
 {
 	char *s = NULL;
 	char *buf = malloc(1024 * sizeof(char));
 	int pos = 0;
+	int do_norm = 0;
 
 	int d  = (n->opcode & 0b0000001000000000) >> 6;
 	int ra = (n->opcode & 0b0000000111000000) >> 6;
@@ -184,7 +159,7 @@ char * pp_compose_opcode(int ic, struct node_t *n, int *norm)
 		case N_L:
 		case N_G:
 		case N_BN:
-			*norm = 1;
+			do_norm = 1;
 			break;
 		case N_S:
 			break;
@@ -196,7 +171,7 @@ char * pp_compose_opcode(int ic, struct node_t *n, int *norm)
 	free(s);
 	s = NULL;
 
-	if (*norm) {
+	if (do_norm) {
 		pos += sprintf(buf+pos, " ");
 		if (d) {
 			pos += sprintf(buf+pos, "[");
@@ -204,6 +179,7 @@ char * pp_compose_opcode(int ic, struct node_t *n, int *norm)
 		if (rc) {
 			pos += sprintf(buf+pos, "r%i", rc);
 		} else {
+			*norm_arg = 1;
 			s = pp_expr_eval(n->next);
 			pos += sprintf(buf+pos, "%s", s);
 			free(s);
@@ -220,58 +196,71 @@ char * pp_compose_opcode(int ic, struct node_t *n, int *norm)
 }
 
 // -----------------------------------------------------------------------
-int preprocess(struct node_t *n, FILE *ppf)
+int preprocess(struct nodelist_t *nl, FILE *ppf)
 {
 	int ic = 0;
 	int res;
-	int norm;
+	int linelen;
+
+	struct node_t *n = nl->head;
 
 	while (n) {
-		norm = 0;
+		linelen = 0;
+
 		// comments
-		if (n->type == N_DUMMY) {
-			fprintf(ppf, "%s\n", n->name);
+		if (n->type < N_EMPTY) {
+			fprintf(ppf, "        %s", n->name);
+			linelen += strlen(n->name);
+			if (n->n1) {
+				char *s = pp_expr_eval(n->n1);
+				fprintf(ppf, "%s", s);
+				linelen += strlen(s);
+				free(s);
+			}
 			res = 0;
 		} else {
 
-			// labels, if exist
-			char *labels = pp_get_labels(dict, ic);
-			if (labels && *labels) {
-				fprintf(ppf, "%s", labels);
-			}
-			free(labels);
-
 			// address
 			fprintf(ppf, "0x%04x: ", ic);
+			linelen += 8;
 
 			// opcode...
-			if (n->type <= N_BN) {
-				char *s = pp_compose_opcode(ic, n, &norm);
-				fprintf(ppf, "\t%-20s", s);
+			if (n->type < N_OPS) {
+				int norm_arg = 0;
+				char *s = pp_compose_opcode(ic, n, &norm_arg);
+				fprintf(ppf, "        %s", s);
+				linelen += strlen(s);
 				free(s);
 				res = 1;
+
+				// if there was additional word in normal argument, we've processed it already in pp_compose_opcode()
+				if (norm_arg) {
+					n = n->next;
+					res++;
+				}
+
 			// ... or data
 			} else {
 				char *s = pp_expr_eval(n);
-				fprintf(ppf, "\t.data %-20s", s);
+				fprintf(ppf, "        .data %s", s);
+				linelen += strlen(s);
 				free(s);
 				res = 1;
 			}
 
-			// if we have a comment attached
-			if (n->comment) {
-				fprintf(ppf, " %s", n->comment);
-			}
-
-			// if there was normal argument (data), we've processed it already in pp_compose_opcode()
-			if (norm) {
-				n = n->next;
-				res++;
-			}
-
-			fprintf(ppf, "\n");
 		}
 
+		// if we have a comment attached
+		if (n->comment) {
+			int spaces = 40 - linelen;
+			while (spaces > 0) {
+				fprintf(ppf, " ");
+				spaces--;
+			}
+			fprintf(ppf, "%s", n->comment);
+		}
+
+		fprintf(ppf, "\n");
 		n = n->next;
 		ic += res;
 	}

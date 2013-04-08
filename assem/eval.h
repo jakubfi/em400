@@ -20,20 +20,20 @@
 
 #include <inttypes.h>
 
+#include "elements.h"
+
 #define MAX_PROG_SIZE 64*1024
 
-extern struct node_t *program_start;
-extern struct node_t *program_end;
+extern struct nodelist_t *program;
 extern int program_ic;
 
 extern struct dict_t **dict;
 extern char assembly_error[];
 
-int program_append(struct node_t *word);
 int compose_data(struct node_t *word, uint16_t *dt);
 int compose_opcode(int ic, struct node_t *word, uint16_t *dt);
 struct node_t * expr_eval(struct node_t *n, char *refcheck);
-int assembly(struct node_t *n, uint16_t *outdata);
+int assembly(struct nodelist_t *nl, uint16_t *outdata);
 
 #endif
 

@@ -97,11 +97,12 @@ chars	[-+:,\[\]<>]
 	return REGISTER;
 }
 {pragma} {
-	struct pragma_t *p = get_pragma(pragmas_modern, yytext);
+	struct pragma_t *p = get_pragma(pragmas_modern, m_yytext);
 	if (!p) {
 		m_yyerror("unknown pragma: %s", yytext);
 		return 0;
 	}
+	m_yylval.val.s = strdup(m_yytext);
 	return p->type;
 }
 

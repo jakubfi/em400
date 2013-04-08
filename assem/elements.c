@@ -15,6 +15,7 @@
 //  Foundation, Inc.,
 //  51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 
+#include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <inttypes.h>
@@ -23,6 +24,9 @@
 #include "elements.h"
 #include "parser_modern.h"
 #include "ops.h"
+
+void m_yyerror(char *s, ...);
+
 
 // -----------------------------------------------------------------------
 unsigned int dict_hash(char *i)
@@ -48,14 +52,12 @@ struct dict_t * dict_add(struct dict_t **dict, int type, char *name, struct node
 	}
 
 	if (dict_find(dict, name)) {
-		free(name);
 		return NULL;
 	}
 
 	struct dict_t *d = malloc(sizeof(struct dict_t));
 	d->type = type;
 	d->name = strdup(name);
-	free(name);
 	d->n = n;
 
 	d->next = dict[dict_hash(d->name)];
@@ -136,32 +138,34 @@ struct node_t * make_node()
 }
 
 // -----------------------------------------------------------------------
-struct node_t * make_rep(int rep, int value, char *tvalue)
+struct nodelist_t * make_nl(struct node_t *n)
 {
-	struct node_t *nhead = NULL;
-	struct node_t *ntail = NULL;
+	struct nodelist_t *nl = malloc(sizeof(struct nodelist_t));
+	nl->head = nl->tail = NULL;
+	nl_append_n(nl, n);
+	return nl;
+}
+
+// -----------------------------------------------------------------------
+struct nodelist_t * make_rep(int rep, int value, char *tvalue)
+{
+	struct nodelist_t *nl = make_nl(NULL);
 
 	while (rep > 0) {
 		struct node_t *n = make_value(value, tvalue);
 		free(tvalue);
-		if (!nhead) {
-			nhead = ntail = n;
-		} else {
-			ntail->next = n;
-			ntail= n;
-		}
+		nl_append_n(nl, n);
 		rep--;
 	}
 
-	return nhead;
+	return nl;
 }
 
 // -----------------------------------------------------------------------
-struct node_t * make_string(char *str)
+struct nodelist_t * make_string(char *str)
 {
 	char *c = str;
-	struct node_t *node = NULL;
-	struct node_t *node_head = NULL;
+	struct nodelist_t *nl = make_nl(NULL);
 
 	while (c && *c) {
 		struct node_t *n = make_value((int)(*c << 8), NULL);
@@ -172,18 +176,12 @@ struct node_t * make_string(char *str)
 			c++;
 		}
 
-		if (!node) {
-			node = n;
-			node_head = n;
-		} else {
-			node->next = n;
-			node = n;
-		}
+		nl_append_n(nl, n);
 	}
 
 	free(str);
 
-	return node_head;
+	return nl;
 }
 
 // -----------------------------------------------------------------------
@@ -244,14 +242,148 @@ struct node_t * make_oper(int type, struct node_t *n1, struct node_t *n2)
 }
 
 // -----------------------------------------------------------------------
+struct nodelist_t * make_code_comment(struct nodelist_t *nl, char *str)
+{
+	nl->tail->comment = strdup(str);
+	free(str);
+	return nl;
+}
+
+// -----------------------------------------------------------------------
 struct node_t * make_comment(char *str)
 {
 	struct node_t *n = make_node();
-	n->type = N_DUMMY;
+	n->type = N_COMMENT;
 	n->name = strdup(str);
 	free(str);
 
 	return n;
+}
+
+// -----------------------------------------------------------------------
+struct node_t * make_prog(char *prog, char *name)
+{
+	struct node_t *n = make_node();
+	n->type = N_PROG;
+	n->name = malloc(sizeof(char) * (strlen(prog) + strlen(name) + 4));
+	sprintf(n->name, "%s \"%s\"", prog, name);
+	return n;
+}
+
+// -----------------------------------------------------------------------
+struct node_t * make_finprog(char *finprog)
+{
+	struct node_t *n = make_node();
+	n->type = N_FINPROG;
+	n->name = malloc(sizeof(char) * (strlen(finprog) + 2));
+	sprintf(n->name, "%s", finprog);
+	return n;
+}
+
+// -----------------------------------------------------------------------
+struct node_t * make_equ(char *str, struct node_t *nv)
+{
+	struct dict_t *d = dict_add(dict, D_VALUE, str, nv);
+
+	if (!d) {
+		return NULL;
+	}
+
+	struct node_t *n = make_node();
+	n->type = N_EQU;
+	n->n1 = nv;
+	n->name = malloc(sizeof(char) * (strlen(str) + 4));
+	sprintf(n->name, "%s = ", str);
+	free(str);
+
+	return n;
+}
+
+// -----------------------------------------------------------------------
+struct node_t * make_label(char *str)
+{
+	struct node_t *nv = make_value(program_ic, NULL);
+	struct dict_t *d = dict_add(dict, D_ADDR, str, nv);
+
+	if (!d) {
+		return NULL;
+	}
+
+	struct node_t *n = make_node();
+	n->type = N_LABEL;
+	n->name = malloc(sizeof(char) * (strlen(str+2)));
+	sprintf(n->name, "%s:", str);
+	free(str);
+
+	return n;
+}
+
+// -----------------------------------------------------------------------
+struct nodelist_t * nl_append(struct nodelist_t *nl1, struct nodelist_t *nl2)
+{
+	if (!nl1 && !nl2) return NULL;
+	if (!nl1) return nl2;
+	if (!nl2) return nl1;
+
+	if (!nl1->tail && !nl2->tail) {
+		free(nl2);
+		return nl1;
+	}
+
+	if (!nl1->tail) {
+		free(nl1);
+		return nl2;
+	}
+
+	if (!nl2->tail) {
+		free(nl2);
+		return nl1;
+	}
+
+	nl1->tail->next = nl2->head;
+	nl1->tail = nl2->tail;
+	free(nl2);
+
+	return nl1;
+}
+
+// -----------------------------------------------------------------------
+struct nodelist_t * nl_append_n(struct nodelist_t *nl, struct node_t *n)
+{
+	if (!nl && !n) {
+		return NULL;
+	}
+
+	if (!n) {
+		return nl;
+	}
+
+	if (!nl) {
+		nl = make_nl(NULL);
+	}
+
+	// n may be a degenerated list, find the tail
+	struct node_t *n_tail = n;
+	while (n_tail->next) {
+		n_tail = n->next;
+	}
+
+	if (nl->tail) {
+		nl->tail->next = n;
+		nl->tail = n_tail;
+	} else {
+		nl->head = n;
+		nl->tail = n_tail;
+	}
+
+	return nl;
+}
+
+// -----------------------------------------------------------------------
+void nodelist_drop(struct nodelist_t *nl)
+{
+	node_drop(nl->head);
+	free(nl);
 }
 
 // -----------------------------------------------------------------------

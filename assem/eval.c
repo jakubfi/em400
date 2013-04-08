@@ -25,8 +25,7 @@
 #include "elements.h"
 #include "ops.h"
 
-struct node_t *program_start;
-struct node_t *program_end;
+struct nodelist_t *program;
 int program_ic;
 
 struct dict_t **dict;
@@ -36,33 +35,6 @@ char assembly_error[1024];
 void ass_error(const char *str)
 {
 	strcpy(assembly_error, str);
-}
-
-// -----------------------------------------------------------------------
-int program_append(struct node_t *n)
-{
-	int size = 0;
-
-	while (n) {
-		printf("apend: %p->%p (%i) %s %s \n", n, n->next, n->type, n->name, n->comment);
-		if (!program_end) {
-			program_start = program_end = n;
-		} else {
-			program_end->next = n;
-			program_end = program_end->next;
-		}
-		if (n->type != N_DUMMY) {
-			size++;
-		}
-		n = n->next;
-	}
-
-	program_ic += size;
-	if (program_ic > MAX_PROG_SIZE) {
-		return -1;
-	}
-
-	return size;
 }
 
 // -----------------------------------------------------------------------
@@ -241,15 +213,17 @@ int compose_opcode(int ic, struct node_t *n, uint16_t *dt)
 }
 
 // -----------------------------------------------------------------------
-int assembly(struct node_t *n, uint16_t *outdata)
+int assembly(struct nodelist_t *nl, uint16_t *outdata)
 {
 	int ic = 0;
 	int res;
 
+	struct node_t *n = nl->head;
+
 	while (n) {
-		if (n->type != N_DUMMY ) {
+		if (n->type > N_EMPTY ) {
 			// opcode
-			if (n->type <= N_BN) {
+			if (n->type < N_OPS) {
 				res = compose_opcode(ic, n, outdata);
 			// data
 			} else {
