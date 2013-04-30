@@ -46,9 +46,9 @@ void usage()
 // -----------------------------------------------------------------------
 void parse_args(int argc, char **argv)
 {
-	mnemo_sel = MNEMO_MERA400;
-	pp_mnemo_sel = MNEMO_MERA400;
-	classic = 0;
+	mnemo_sel = MERA400;
+	pp_mnemo_sel = MERA400;
+	syntax = MODERN;
 	preprocessor = 0;
 	enable_debug = 0;
 
@@ -64,16 +64,16 @@ void parse_args(int argc, char **argv)
 				usage();
 				exit(0);
 			case 'k':
-				mnemo_sel = MNEMO_K202;
+				mnemo_sel = K202;
 				break;
 			case 'c':
-				classic = 1;
+				syntax = CLASSIC;
 				break;
 			case 'p':
 				preprocessor = 1;
 				break;
 			case '2':
-				pp_mnemo_sel = MNEMO_K202;
+				pp_mnemo_sel = K202;
 				break;
 			default:
 				usage();

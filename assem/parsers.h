@@ -20,7 +20,12 @@
 
 #include <stdio.h>
 
-extern int classic;
+enum _syntax_type_e {
+	MODERN = 0,
+	CLASSIC = 1
+};
+
+extern int syntax;
 extern int got_error;
 extern int parser_lineno;
 

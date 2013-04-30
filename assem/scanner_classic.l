@@ -170,7 +170,7 @@ echars			[\)\.]
 
 {pragma} {
 	BEGIN(is_id);
-	struct kw_t *pragma = get_pragma(mnemo_sel, c_yytext);
+	struct kw_t *pragma = get_pragma(syntax, c_yytext);
 	if (!pragma) {
 		c_yyerror("unknown pragma: %s", c_yytext);
 	} else {

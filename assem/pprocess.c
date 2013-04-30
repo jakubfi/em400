@@ -25,7 +25,7 @@
 #include "pprocess.h"
 #include "keywords.h"
 
-int pp_mnemo_sel = MNEMO_MERA400;
+int pp_mnemo_sel = MERA400;
 
 // -----------------------------------------------------------------------
 char * pp_get_mnemo(struct node_t *n)

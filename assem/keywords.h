@@ -18,9 +18,9 @@
 #ifndef OPS_H
 #define OPS_H
 
-enum _kwtype_e {
-	MNEMO_MERA400 = 0,
-	MNEMO_K202 = 1
+enum _machine_type_e {
+	MERA400 = 0,
+	K202 = 1
 };
 
 struct kw_t {

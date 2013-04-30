@@ -26,6 +26,7 @@ struct node_t * mknod_valstr(int type, int value, char *str);
 struct node_t * mknod_nargs(int type, struct node_t *n1, struct node_t *n2);
 struct node_t * mknod_op(int optype, int op, int ra, struct node_t *arg, struct norm_t *norm);
 struct node_t * mknod_dentry(int type, char *name, struct node_t *value);
+struct node_t * mknod_file(char *name, char *type, struct node_t *addr, struct node_t *attr);
 
 #endif
 

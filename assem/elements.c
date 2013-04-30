@@ -80,4 +80,17 @@ struct node_t * mknod_dentry(int type, char *name, struct node_t *value)
 	return n;
 }
 
+// -----------------------------------------------------------------------
+struct node_t * mknod_file(char *name, char *type, struct node_t *addr, struct node_t *attr)
+{
+	struct node_t *n = make_node(N_FILE);
+	n->str = malloc(strlen(name) + strlen(type) + 2);
+	sprintf(n->str, "%s.%s", name, type);
+	free(name);
+	free(type);
+	n->n1 = addr;
+	n->n2 = attr;
+	return n;
+}
+
 // vim: tabstop=4

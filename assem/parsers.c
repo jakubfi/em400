@@ -28,7 +28,7 @@ int c_yyparse();
 int m_yylex_destroy();
 int c_yylex_destroy();
 
-int classic = 0;
+int syntax = MODERN;
 int got_error;
 int parser_lineno;
 
@@ -40,7 +40,7 @@ int parse(FILE *source)
 	int (*yyparser)();
 	int (*yylex_destroy)();
 
-	if (classic) {
+	if (syntax == CLASSIC) {
 		yyparser = c_yyparse;
 		yylex_destroy = c_yylex_destroy;
 	} else {

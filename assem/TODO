@@ -1,9 +1,5 @@
-* flow_control() cleanup
-* assembly() cleanup
+* zero
+* better syntax error handling
 * main() cleanup
 * NRF as separate opcode group?
 * redo preprocessor
-* disk address handling
-* overlays
-* other pragmas
-* finish valgrind

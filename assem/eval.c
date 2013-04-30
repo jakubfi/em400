@@ -894,6 +894,7 @@ int set_text(struct node_t *n)
 	} else {
 		text_b = (nn->value >> 8) & 255;
 		text_e = nn->value & 255;
+		res = E_OK;
 	}
 
 	DEBUG("TEXT: %i / %i\n", text_b, text_e);

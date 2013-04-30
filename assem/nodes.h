@@ -23,6 +23,8 @@ enum node_type_e {
 	N_DUMMY = -1000,
 	N_COMMENT,
 	N_NL,
+	N_LEN,		// unhandled pragma
+	N_FILE,		// unhandled pragma
 	N_EMPTY = -500,
 
 	// flow

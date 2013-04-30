@@ -63,7 +63,7 @@ int yylex(void);
 %type <norm> normarg norm1 norm2
 %type <node> instruction expr
 %type <node> zero value pragma condition prog finprog
-%type <nl> vardef label code segment macro codeblock pre preblock cond
+%type <nl> vardef label code segment macro codeblock pre preblock cond maxlist
 
 %%
 
@@ -118,8 +118,7 @@ code:
 
 segment:
 	P_SEG codeblock P_FINSEG {
-		$$ = NULL;
-		$$ = nl_append_n($$, mknod_valstr(N_SEG, 0, NULL));
+		$$ = nl_append_n(NULL, mknod_valstr(N_SEG, 0, NULL));
 		$$ = nl_append($$, $2);
 		$$ = nl_append_n($$, mknod_valstr(N_FINSEG, 0, NULL));
 	}
@@ -127,8 +126,7 @@ segment:
 
 macro:
 	P_MACRO codeblock P_FINMACRO {
-		$$ = NULL;
-		$$ = nl_append_n($$, mknod_valstr(N_MACRO, 0, NULL));
+		$$ = nl_append_n(NULL, mknod_valstr(N_MACRO, 0, NULL));
 		$$ = nl_append($$, $2);
 		$$ = nl_append_n($$, mknod_valstr(N_FINMACRO, 0, NULL));
 	}
@@ -145,7 +143,7 @@ instruction:
 	| OP_EXL ',' expr '.'			{ $$ = mknod_op(N_EXL,   $1, 0,  $3,   NULL); }
 	| OP_C ',' reg '.'				{ $$ = mknod_op(N_C,     $1, $3, NULL, NULL); }
 	| OP_SHC ',' reg ',' expr '.'	{ $$ = mknod_op(N_SHC,   $1, $3, $5,   NULL); }
-	| OP_S ',' zero '.'				{ $$ = mknod_op(N_S,     $1, 0,  NULL, NULL); }
+	| OP_S ',' zero '.'				{ $$ = mknod_op(N_S,     $1, 0,  NULL, NULL); nodes_drop($3); }
 	| OP_HLT ',' expr '.'			{ $$ = mknod_op(N_HLT,   $1, 0,  $3,   NULL); }
 	| OP_J normarg					{ $$ = mknod_op(N_J,     $1, 0,  NULL, $2); }
 	| OP_L normarg					{ $$ = mknod_op(N_L,     $1, 0,  NULL, $2); }
@@ -205,28 +203,27 @@ pragma:
 	P_S expr '.'				{ $$ = mknod_nargs(N_SETIC, $2, NULL); }
 	| P_RES expr '.'			{ $$ = mknod_nargs(N_RES, $2, NULL); }
 	| P_RES expr ',' expr '.'	{ $$ = mknod_nargs(N_RES, $2, $4); }
-	| P_F '.'					{ $$ = NULL; }
-	| P_NAME IDENTIFIER '.'		{ $$ = NULL; }
-	| P_BA expr '.'				{ $$ = NULL; }
-	| P_INT expr '.'			{ $$ = NULL; }
-	| P_OUT expr '.'			{ $$ = NULL; }
-	| P_LAB expr '.'			{ $$ = NULL; }
-	| P_NLAB					{ $$ = NULL; }
-	| P_MEM expr '.'			{ $$ = NULL; }
-	| P_OS						{ $$ = NULL; }
+	| P_F '.'					{ $$ = mknod_valstr(N_COMMENT, 0, NULL); } // unhandled
+	| P_NAME IDENTIFIER '.'		{ $$ = mknod_valstr(N_COMMENT, 0, $2); } // unhandled
+	| P_BA expr '.'				{ $$ = mknod_nargs(N_COMMENT, $2, NULL); } // unhandled
+	| P_INT expr '.'			{ $$ = mknod_nargs(N_COMMENT, $2, NULL); } // unhandled
+	| P_OUT expr '.'			{ $$ = mknod_nargs(N_COMMENT, $2, NULL); } // unhandled
+	| P_LAB expr '.'			{ $$ = mknod_nargs(N_COMMENT, $2, NULL); } // unhandled
+	| P_NLAB					{ $$ = mknod_valstr(N_COMMENT, 0, NULL); } // unhandled
+	| P_MEM expr '.'			{ $$ = mknod_nargs(N_COMMENT, $2, NULL); } // unhandled
+	| P_OS						{ $$ = mknod_valstr(N_COMMENT, 0, NULL); } // unhandled
 	| P_SS expr '.'				{ $$ = mknod_nargs(N_OVL, $2, NULL); }
-	| P_HS						{ $$ = NULL; }
-	| P_MAX IDENTIFIER ',' maxlist '.' { $$ = NULL; }
-	| P_LEN expr '.'			{ $$ = NULL; }
-	| P_E expr '.'				{ $$ = NULL; }
-	| P_FILE IDENTIFIER ',' VALUE ',' expr ',' expr '.' { $$ = mknod_valstr(N_COMMENT, $4.v, $2); $$->n1 = $6, $$->n2 = $8; free($4.s); }
+	| P_HS						{ $$ = mknod_valstr(N_COMMENT, 0, NULL); } // unhandled
+	| P_MAX IDENTIFIER ',' maxlist '.' { $$ = mknod_valstr(N_COMMENT, 0, $2); } // unhandled
+	| P_LEN expr '.'			{ $$ = mknod_nargs(N_LEN, $2, NULL); } // unhandled
+	| P_E expr '.'				{ $$ = mknod_nargs(N_COMMENT, $2, NULL); } // unhandled
+	| P_FILE IDENTIFIER ',' VALUE ',' expr ',' expr '.' { $$ = mknod_file($2, $4.s, $6, $8); } // unhandled
 	| P_TEXT expr '.'			{ $$ = mknod_nargs(N_TEXT, $2, NULL); }
 	;
 
 cond:
 	condition '.' codeblock P_FI {
-		$$ = NULL;
-		$$ = nl_append_n($$, $1);
+		$$ = nl_append_n(NULL, $1);
 		$$ = nl_append($$, $3);
 		$$ = nl_append_n($$, mknod_valstr(N_FI, 0, NULL));
 	}
@@ -239,8 +236,8 @@ condition:
 	;
 
 maxlist:
-	expr
-	| maxlist ',' expr
+	expr { $$ = NULL; }
+	| maxlist ',' expr { $$ = NULL; }
 	;
 
 %%

@@ -22,7 +22,7 @@
 #include "keywords.h"
 #include "parser_classic.h"
 
-int mnemo_sel = MNEMO_MERA400;
+int mnemo_sel = MERA400;
 
 struct var_t extracodes[] = {
 { 0200, "ASG"},
