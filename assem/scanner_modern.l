@@ -122,7 +122,7 @@ chars	[-+:,\[\]<>\*]
 	}
 }
 
-.	{ m_yyerror("unknown character"); return 0; }
+.	{ m_yyerror("unknown character"); }
 
 %%
 

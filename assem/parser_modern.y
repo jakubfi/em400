@@ -95,8 +95,8 @@ comments:
 	;
 
 sentences:
-	sentences sentence { $$ = nl_append($1, $2); }
-	| { $$ = NULL; }
+	sentences sentence	{ $$ = nl_append($1, $2); if (!$2) { m_yyerror("Fatal. Sorry."); YYABORT; } }
+	|					{ $$ = NULL; }
 	;
 
 sentence:
@@ -132,14 +132,12 @@ pragma:
 	| P_EQU NAME expr		{ $$ = make_nl(mknod_dentry(N_VAR, $2, $3)); }
 	| P_EQU '*' NAME expr	{ $$ = make_nl(mknod_dentry(N_AVAR, $3, $4)); }
 	| P_MACRO sentences P_FINMACRO {
-		$$ = NULL;
-		$$ = nl_append_n($$, mknod_valstr(N_MACRO, 0, NULL));
+		$$ = nl_append_n(NULL, mknod_valstr(N_MACRO, 0, NULL));
 		$$ = nl_append($$, $2);
 		$$ = nl_append_n($$, mknod_valstr(N_FINMACRO, 0, NULL));
 	}
 	| P_SEG sentences P_FINSEG {
-		$$ = NULL;
-		$$ = nl_append_n($$, mknod_valstr(N_SEG, 0, NULL));
+		$$ = nl_append_n(NULL, mknod_valstr(N_SEG, 0, NULL));
 		$$ = nl_append($$, $2);
 		$$ = nl_append_n($$, mknod_valstr(N_FINSEG, 0, NULL));
 	}
@@ -200,7 +198,6 @@ void m_yyerror(char *s, ...)
 	vprintf(s, ap);
 	printf("\n");
 	va_end(ap);
-	got_error = 1;
 }
 
 // vim: tabstop=4

@@ -26,7 +26,6 @@ enum _syntax_type_e {
 };
 
 extern int syntax;
-extern int got_error;
 extern int parser_lineno;
 
 int parse(FILE *source);

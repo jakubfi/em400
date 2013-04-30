@@ -1,5 +1,2 @@
-* zero
-* better syntax error handling
-* main() cleanup
-* NRF as separate opcode group?
 * redo preprocessor
+* better syntax error handling

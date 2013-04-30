@@ -29,7 +29,6 @@ int m_yylex_destroy();
 int c_yylex_destroy();
 
 int syntax = MODERN;
-int got_error;
 int parser_lineno;
 
 // -----------------------------------------------------------------------
@@ -48,13 +47,11 @@ int parse(FILE *source)
 		yylex_destroy = m_yylex_destroy;
 	}
 
-	do {
-		yyparser();
-	} while (!feof(source));
+	int res = yyparser();
 
 	yylex_destroy();
 
-	if (got_error) {
+	if (res != 0) {
 		return -1;
 	}
 

@@ -97,7 +97,7 @@ pre:
 	;
 
 codeblock:
-	codeblock code 			{ $$ = nl_append($1, $2); }
+	codeblock code 			{ $$ = nl_append($1, $2); if (!$2) { yyerror("Fatal. Sorry."); YYABORT;} }
 	|						{ $$ = NULL; }
 	;
 
@@ -177,7 +177,13 @@ expr:
 	;
 
 zero:
-	VALUE			{ $$ = mknod_valstr(N_VAL, $1.v, $1.s); }
+	VALUE {
+		if ($1.v != 0) {
+			c_yyerror("Invalid argument, should be '0'");
+			YYABORT;
+		}
+		$$ = mknod_valstr(N_VAL, $1.v, $1.s);
+	}
 	;
 
 value:
@@ -251,7 +257,6 @@ void c_yyerror(char *s, ...)
 	vprintf(s, ap);
 	printf("\n");
 	va_end(ap);
-	got_error = 1;
 }
 
 // vim: tabstop=4
