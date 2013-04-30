@@ -165,7 +165,7 @@ class M400dasm:
         else:
             args = "%04x" % (word)
 
-        print "0x%04x: %-5s %-15s    # %-30s" % (addr, code, args, desc)
+        print "0x%04x: %-5s %-15s    # 0x%04x  %-30s" % (addr, code, args, word, desc)
             
     # --------------------------------------------------------------------
     def m400_fetch(self):
