@@ -19,46 +19,46 @@
 #include <stdlib.h>
 #include <string.h>
 
-#include "ops.h"
+
+#include "keywords.h"
 #include "parser_modern.h"
-#include "pragmas_modern.h"
+#include "parsers.h"
+#include "elements.h"
 
 void m_yyerror(char *, ...);
-
 char strbuf[1024];
 char *strbufpos;
+int comment_type = CMT_LINE;
 
-int uop_to_modern[] = { MOP_2ARG, MOP_FD, MOP_KA1, MOP_JS, MOP_KA2, MOP_C, MOP_SHC, MOP_HLT, MOP_S, MOP_J, MOP_L, MOP_G, MOP_BN };
-
-#define YY_USER_ACTION	m_yylloc.first_line = m_yylineno;
+#define YY_USER_ACTION	parser_lineno = m_yylineno;
 
 %}
 
 %option nounput
 %option noinput
 %option yylineno
+%x string cmt
 
-%x string
+ws			[ \t\n]+
+anything	.*$
+cmtstart	[;#][ \t]*
 
-ws		[ \t\n]+
-cmtcode	[#;].*$
-cmtline	^[#;].*$
-
-oct		-?0[0-9]+
-dec		-?[0-9]+
+oct		0[0-9]+
+dec		[0-9]+
 bin		0b[01]+
-hex		-?0x[0-9a-fA-F]+
+hex		0x[0-9a-fA-F]+
 
 reg		r[0-7]
 name	[a-zA-Z][a-zA-Z0-9_]*
 pragma	\.[a-z]+
-chars	[-+:,\[\]<>]
+chars	[-+:,\[\]<>\*]
 
 %%
 
+^{cmtstart}	{ BEGIN(cmt); comment_type = CMT_LINE; }
+{cmtstart}	{ BEGIN(cmt); comment_type = CMT_CODE; }
+<cmt>{anything}	{ m_yylval.val.s = strdup(m_yytext); BEGIN(INITIAL); return comment_type; }
 {ws}		;
-{cmtline}	{ m_yylval.val.s = strdup(m_yytext); return CMT_LINE; }
-{cmtcode}	{ m_yylval.val.s = strdup(m_yytext); return CMT_CODE; }
 
 \"						{ BEGIN string; strbufpos = strbuf; }
 <string>\"				{ m_yylval.val.s = strdup(strbuf); BEGIN 0; return STRING; }
@@ -97,12 +97,11 @@ chars	[-+:,\[\]<>]
 	return REGISTER;
 }
 {pragma} {
-	struct pragma_t *p = get_pragma(pragmas_modern, m_yytext);
+	struct kw_t *p = get_pragma(mnemo_sel, m_yytext);
 	if (!p) {
-		m_yyerror("unknown pragma: %s", yytext);
+		m_yyerror("unknown pragma: %s", m_yytext);
 		return 0;
 	}
-	m_yylval.val.s = strdup(m_yytext);
 	return p->type;
 }
 
@@ -113,10 +112,10 @@ chars	[-+:,\[\]<>]
 ">>"	return SHR;
 
 {name}	{
-	struct op_t *op = get_op(m_yytext);
+	struct kw_t *op = get_op(mnemo_sel, m_yytext);
 	if (op) {
 		m_yylval.val.v = op->opcode;
-		return uop_to_modern[op->type];
+		return op->type;
 	} else {
 		m_yylval.val.s = strdup(m_yytext);
 		return NAME;

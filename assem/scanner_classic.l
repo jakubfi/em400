@@ -20,16 +20,17 @@
 #include <string.h>
 #include <ctype.h>
 
-#include "ops.h"
+#include "keywords.h"
 #include "parser_classic.h"
-#include "pragmas_classic.h"
+#include "parsers.h"
+#include "elements.h"
 
 void c_yyerror(char *, ...);
+char comment_buf[1024];
+int comment_pos;
 
-int uop_to_classic[] = { COP_2ARG, COP_FD, COP_KA1, COP_JS, COP_KA2, COP_C, COP_SHC, COP_HLT, COP_S, COP_J, COP_L, COP_G, COP_BN };
 
-#define YY_USER_ACTION	c_yylloc.first_line = c_yylineno;
-#define YYABORT			goto c_yyabortlab
+#define YY_USER_ACTION	parser_lineno = c_yylineno;
 
 %}
 
@@ -38,15 +39,18 @@ int uop_to_classic[] = { COP_2ARG, COP_FD, COP_KA1, COP_JS, COP_KA2, COP_C, COP_
 %option yylineno
 %s is_id in_comment
 
-ws				[ \t\n\r\f]
+ws				[ \t]
+nl				[\n\r\f]+
 comment_output	\<.*\>
 name			[a-zA-Z]+
-identifier		[$@#%a-zA-Z][a-zA-Z0-9]*
+pragma			[a-zA-Z]+\*
+identifier		[@#%a-zA-Z][a-zA-Z0-9]*
 suffix_op		[,\(]
 dec				[0-9]+
 oct				0[0-7]+
-char2			!..
-bitfield		\?[ZMVCLEGYX1234567]{1,16}
+dchar			!..
+r40				\$[A-Z0-9\ ]{1,3}
+bitmask			\?[ZMVCLEGYX1234567]{1,16}
 sfloat			[0-9]*\.[0-9]+
 string			\".+\"
 chars			[-+/=:,\(&'\*]
@@ -54,40 +58,66 @@ echars			[\)\.]
 
 %%
 
-<INITIAL,is_id>\[ BEGIN(in_comment);
+<INITIAL,is_id>{nl}	{ c_yylval.val.s = strdup("\n"); return NL; }
+
+<INITIAL,is_id>\[ { BEGIN(in_comment); comment_pos = 0; }
 <in_comment>{
-[^\]\n]+ ;
-\n ;
-\] BEGIN(INITIAL);
+[^\]\n]+	{ comment_pos += sprintf(comment_buf+comment_pos, "%s", c_yytext); }
+\n			{ comment_pos += sprintf(comment_buf+comment_pos, "%s", c_yytext); }
+\]			{ BEGIN(INITIAL); c_yylval.val.s = strdup(comment_buf); return CMT; }
 }
 {comment_output} {
-	printf("%s\n", c_yytext);
-	return COMMENT;
+	c_yylval.val.s = strdup(c_yytext);
+	return CMT;
 }
 
 {oct} {
-	printf("oct: %s", c_yytext);
 	c_yylval.val.v = strtol(c_yytext, NULL, 8);
 	c_yylval.val.s = strdup(c_yytext);
 	return VALUE;
 }
 {dec} {
-	printf("dec: %s", c_yytext);
 	c_yylval.val.v = strtol(c_yytext, NULL, 10);
 	c_yylval.val.s = strdup(c_yytext);
 	return VALUE;
 }
-{char2} {
-	printf("2char: %s", c_yytext);
-	c_yylval.val.v = ((*c_yytext) << 16) + *(c_yytext+1);
+{dchar} {
+	c_yylval.val.v = 0;
+	if (c_yytext[1] != '!')	c_yylval.val.v += c_yytext[1]*256;
+	if (c_yytext[2] != '!')	c_yylval.val.v += c_yytext[2];
 	c_yylval.val.s = strdup(c_yytext);
 	return VALUE;
 }
-{bitfield} {
-	printf("bitfield: %s", c_yytext);
+{r40} {
+	int val = 0;
+	int mul = 1600;
+	char *s = c_yytext+1;
+	c_yylval.val.v = 0;
+	while (*s) {
+		if ((*s >= 'A') && (*s <= 'Z')) {
+			val = *s - 64;
+		} else if ((*s >= 'a') && (*s <= 'z')) {
+			val = *s - 96;
+		} else if ((*s >= '0') && (*s <= '9')) {
+			val = *s - 21;
+		} else if (*s == ' ') {
+			val = 37; // TODO: ????
+		} else {
+			c_yyerror("wrong R-40 code: %s", c_yytext);
+			return YERR;
+		}
+		c_yylval.val.v += val*mul;
+		mul /= 40;
+		s++;
+	}
+	c_yylval.val.s = strdup(c_yytext);
+	return VALUE;
+}
+{bitmask} {
 	int value = 0;
-	while (*c_yytext) {
-		switch (*c_yytext) {
+	char *c = c_yytext;
+	while (*c) {
+		switch (*c) {
 			case 'Z': value |= 1 << 15; break;
 			case 'M': value |= 1 << 14; break;
 			case 'V': value |= 1 << 13; break;
@@ -105,23 +135,21 @@ echars			[\)\.]
 			case '6': value |= 1 << 1; break;
 			case '7': value |= 1 << 0; break;
 		}
-		c_yytext++;
+		c++;
 	}
 	c_yylval.val.v = value;
-	c_yylval.val.s = strdup(c_yytext);
+	c_yylval.val.s = strdup(c_yytext+1);
 	return VALUE;
 }
 {string} {
-	printf("string: %s", c_yytext);
 	c_yylval.val.s = strndup(c_yytext+1, strlen(c_yytext)-2);
 	return STRING;
 }
 
-{chars} { printf(" '%c' ", *c_yytext); return *c_yytext; }
-{echars} { BEGIN(INITIAL); printf(" '%c'\n", *c_yytext); return *c_yytext; }
+{chars} { return *c_yytext; }
+{echars} { BEGIN(INITIAL); return *c_yytext; }
 
 <is_id>{name} {
-	printf("id: %s ", c_yytext);
 	int copy = 7;
 	if (isalpha(*c_yytext)) copy = 6;
 	c_yylval.val.s = strndup(c_yytext, copy);
@@ -129,32 +157,28 @@ echars			[\)\.]
 }
 
 {name}/{suffix_op} {
-	struct op_t *op = get_op(c_yytext);
+	struct kw_t *op = get_op(mnemo_sel, c_yytext);
 	if (op) {
 		BEGIN(is_id);
-		printf("opcode: %s ", c_yytext);
 		c_yylval.val.v = op->opcode;
-		return uop_to_classic[op->type];
+		return op->type;
 	} else {
-		printf("id: %s ", c_yytext);
 		c_yylval.val.s = strndup(c_yytext, 6);
 		return IDENTIFIER;
 	}
 }
 
-{name}/\* {
+{pragma} {
 	BEGIN(is_id);
-	struct pragma_t *pragma = get_pragma(pragmas_classic, c_yytext);
+	struct kw_t *pragma = get_pragma(mnemo_sel, c_yytext);
 	if (!pragma) {
 		c_yyerror("unknown pragma: %s", c_yytext);
 	} else {
-		printf("pragma: %s ", c_yytext);
 		return pragma->type;
 	}
 }
 
 {identifier}/: {
-	printf("labeldef: %s ", c_yytext);
 	int copy = 7;
 	if (isalpha(*c_yytext)) copy = 6;
 	c_yylval.val.s = strndup(c_yytext, copy);
@@ -162,7 +186,6 @@ echars			[\)\.]
 }
 
 {identifier}/= {
-	printf("vardef: %s ", c_yytext);
 	int copy = 7;
 	if (isalpha(*c_yytext)) copy = 6;
 	c_yylval.val.s = strndup(c_yytext, copy);
@@ -170,7 +193,6 @@ echars			[\)\.]
 }
 
 {identifier} {
-	printf("id: %s ", c_yytext);
 	int copy = 7;
 	if (isalpha(*c_yytext)) copy = 6;
 	c_yylval.val.s = strndup(c_yytext, copy);
@@ -178,7 +200,7 @@ echars			[\)\.]
 }
 
 {ws} ;
-. { printf("Unknown character: '%c'", *c_yytext); }
+. {  }
 
 %%
 

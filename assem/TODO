@@ -1,3 +1,9 @@
-* namespaces
-* macro/sub
-* EXL/NRF as separate opcode groups
+* flow_control() cleanup
+* assembly() cleanup
+* main() cleanup
+* NRF as separate opcode group?
+* redo preprocessor
+* disk address handling
+* overlays
+* other pragmas
+* finish valgrind

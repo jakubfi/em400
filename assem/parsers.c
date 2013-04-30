@@ -1,4 +1,4 @@
-//  Copyright (c) 2012-2013 Jakub Filipowicz <jakubf@gmail.com>
+//  Copyright (c) 2013 Jakub Filipowicz <jakubf@gmail.com>
 //
 //  This program is free software; you can redistribute it and/or modify
 //  it under the terms of the GNU General Public License as published by
@@ -15,42 +15,50 @@
 //  Foundation, Inc.,
 //  51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 
-#include <stdlib.h>
-#include <strings.h>
+#include <stdio.h>
 
-#include "pragmas.h"
+#include "parsers.h"
+#include "parser_modern.h"
 #include "parser_classic.h"
 
-struct pragma_t pragmas_classic[] = {
-{ "S",			CP_S },
-{ "RES",		CP_RES },
-{ "F",			CP_F },
-{ "PROG",		CP_PROG },
-{ "FINPROG",	CP_FINPROG },
-{ "SEG",		CP_SEG },
-{ "FINSEG",		CP_FINSEG },
-{ "MACRO",		CP_MACRO },
-{ "FINMACRO",	CP_FINMACRO },
-{ "ALL",		CP_ALL },
-{ "NAME",		CP_NAME },
-{ "BA",			CP_BA },
-{ "MEM",		CP_MEM },
-{ "OS",			CP_OS },
-{ "IFUNK",		CP_IFUNK },
-{ "IF UNK",		CP_IFUNK },
-{ "IFUND",		CP_IFUND },
-{ "IF UND",		CP_IFUND },
-{ "IFDEF",		CP_IFDEF },
-{ "IF DEF",		CP_IFDEF },
-{ "FI",			CP_FI },
-{ "SS",			CP_SS },
-{ "MAX",		CP_MAX },
-{ "LEN",		CP_LEN },
-{ "E",			CP_E },
-{ "FILE",		CP_FILE },
-{ "TEXT", 		CP_TEXT },
+extern FILE *m_yyin;
+extern FILE *c_yyin;
+int m_yyparse();
+int c_yyparse();
+int m_yylex_destroy();
+int c_yylex_destroy();
 
-{ NULL, 0 }
-};
+int classic = 0;
+int got_error;
+int parser_lineno;
+
+// -----------------------------------------------------------------------
+int parse(FILE *source)
+{
+	m_yyin = c_yyin = source;
+
+	int (*yyparser)();
+	int (*yylex_destroy)();
+
+	if (classic) {
+		yyparser = c_yyparse;
+		yylex_destroy = c_yylex_destroy;
+	} else {
+		yyparser = m_yyparse;
+		yylex_destroy = m_yylex_destroy;
+	}
+
+	do {
+		yyparser();
+	} while (!feof(source));
+
+	yylex_destroy();
+
+	if (got_error) {
+		return -1;
+	}
+
+	return 1;
+}
 
 // vim: tabstop=4

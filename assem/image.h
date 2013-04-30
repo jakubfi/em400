@@ -1,4 +1,4 @@
-//  Copyright (c) 2012-2013 Jakub Filipowicz <jakubf@gmail.com>
+//  Copyright (c) 2013 Jakub Filipowicz <jakubf@gmail.com>
 //
 //  This program is free software; you can redistribute it and/or modify
 //  it under the terms of the GNU General Public License as published by
@@ -15,24 +15,23 @@
 //  Foundation, Inc.,
 //  51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 
-#include <stdlib.h>
-#include <strings.h>
+#ifndef IMAGE_H
+#define IMAGE_H
 
-#include "pragmas.h"
-#include "parser_modern.h"
+#include <inttypes.h>
 
-struct pragma_t pragmas_modern[] = {
-{ ".prog",		MP_PROG },
-{ ".finprog",	MP_FINPROG },
-{ ".seg",		MP_SEG },
-{ ".finseg",	MP_FINSEG },
-{ ".macro",		MP_MACRO },
-{ ".finmacro",	MP_FINMACRO },
-{ ".data",		MP_DATA },
-{ ".res",		MP_RES },
-{ ".equ",		MP_EQU },
+int img_write();
+int img_next_sector(int new_ic);
+int img_get_sector();
+int img_get_ic();
+int img_get_filepos();
+int img_set_ic(int new_ic);
+int img_inc_ic();
+int img_put_at(int addr, uint16_t word);
+int img_put(uint16_t word);
 
-{ NULL, 0 }
-};
+
+#endif
 
 // vim: tabstop=4
+

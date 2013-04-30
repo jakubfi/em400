@@ -15,15 +15,33 @@
 //  Foundation, Inc.,
 //  51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 
-#ifndef PRAGMAS_H
-#define PRAGMAS_H
+#ifndef DICT_H
+#define DICT_H
 
-struct pragma_t {
-	char *name;
-	int type;
+#include "nodes.h"
+
+enum _dict_type_e {
+	D_NONE,
+	D_VARIABLE,
+	D_LABEL
 };
 
-struct pragma_t * get_pragma(struct pragma_t *pr, char *prname);
+struct dict_t {
+	struct dict_t *parent;
+	int level;
+	int type;
+	char *name;
+	struct node_t *n;
+};
+
+extern struct dict_t *dict_bottom;
+extern struct dict_t *dict_top;
+extern struct dict_t *dict_branch;
+
+struct dict_t * dict_add(int level, int type, char *name, struct node_t *n);
+struct dict_t * dict_find(char *name);
+void dict_drop_level(int level);
+void dict_drop(struct dict_t *dict);
 
 #endif
 

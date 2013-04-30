@@ -17,19 +17,21 @@
 //  51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 
 #include <stdio.h>
-#include <string.h>
 #include <stdarg.h>
+#include <string.h>
+#include <strings.h>
 
-#include "ops.h"
+#include "parsers.h"
+#include "keywords.h"
+#include "dict.h"
 #include "elements.h"
-#include "eval.h"
-
 
 void m_yyerror(char *s, ...);
 int yylex(void);
-int got_error;
+
 %}
 
+%error-verbose
 %locations
 
 %union {
@@ -42,17 +44,19 @@ int got_error;
 	struct nodelist_t *nl;
 };
 
-%token '[' ']' ',' ':'
-%token MP_DATA MP_EQU MP_RES MP_SEG MP_FINSEG MP_MACRO MP_FINMACRO
-%token <val.s> MP_PROG MP_FINPROG
-%token <val.s> NAME STRING CMT_CODE CMT_LINE
-%token <val> VALUE ADDR
+%token <val.v> OP_2ARG OP_FD OP_KA1 OP_JS OP_KA2 OP_BRC OP_BLC OP_EXL OP_C OP_SHC OP_S OP_HLT OP_J OP_L OP_G OP_BN
+%token P_PROG P_FINPROG P_SEG P_FINSEG P_MACRO P_FINMACRO
+%token P_DATA P_EQU P_RES
+%token P_S P_F P_ALL P_NAME P_BA P_INT P_OUT P_LAB P_NLAB P_MEM P_OS P_IFUNK P_IFUND P_IFDEF P_FI P_SS P_HS P_MAX P_LEN P_E P_FILE P_TEXT
+
+%token '[' ']' ',' ':' '*'
+%token <val.s> STRING NAME CMT_CODE CMT_LINE
+%token <val> VALUE
 %token <val.v> REGISTER
-%token <val.v> MOP_2ARG MOP_FD MOP_KA1 MOP_JS MOP_KA2 MOP_C MOP_SHC MOP_S MOP_HLT MOP_J MOP_L MOP_G MOP_BN
 
 %type <norm> normval norm
-%type <node> instruction expr comment
-%type <nl> res words data dataword comments code sentence sentences
+%type <node> instruction expr comment label prog finprog
+%type <nl> data dataword comments sentence sentences pragma
 
 %left '+' '-'
 %left SHR SHL
@@ -62,25 +66,32 @@ int got_error;
 %%
 
 program:
-	comments MP_PROG STRING sentences MP_FINPROG comments { 
-		printf("Assembling program '%s'\n", $3);
-		program = nl_append_n(program, make_prog($2, $3));
+	comments prog sentences finprog comments {
+		if ($2->str) {
+			printf("Assembling program: '%s'\n", $2->str);
+		} else {
+			printf("Assembling unnamed program\n");
+		}
 		program = nl_append(program, $1);
-		program = nl_append(program, $4);
-		program = nl_append(program, $6);
-		program = nl_append_n(program, make_finprog($5));
-		free($2);
-		free($3);
-	}
-	| comments MP_PROG sentences MP_FINPROG	comments {
-		printf("Assembling unnamed program\n");
-		program = nl_append_n(program, make_prog($2, ""));
-		program = nl_append(program, $1);
+		program = nl_append_n(program, $2);
 		program = nl_append(program, $3);
+		program = nl_append_n(program, $4);
 		program = nl_append(program, $5);
-		program = nl_append_n(program, make_finprog($4));
-		free($2);
 	}
+	;
+
+prog:
+	P_PROG STRING		{ $$ = mknod_valstr(N_PROG, 0, $2); }
+	| P_PROG			{ $$ = mknod_valstr(N_PROG, 0, NULL); }
+	;
+
+finprog:
+	P_FINPROG			{ $$ = mknod_valstr(N_FINPROG, 0, NULL); }
+	;
+
+comments:
+	comments comment	{ $$ = nl_append_n($1, $2); }
+	|					{ $$ = NULL; }
 	;
 
 sentences:
@@ -89,30 +100,19 @@ sentences:
 	;
 
 sentence:
-	code			{ $$ = $1; }
-	| code CMT_CODE	{ make_code_comment($1, $2); }
+	instruction		{ $$ = make_nl($1); }
+	| pragma		{ $$ = $1; }
+	| label			{ $$ = make_nl($1); }
 	| comment		{ $$ = make_nl($1); }
 	;
 
-code:
-	words				{ $$ = $1; }
-	| MP_EQU NAME expr	{ $$ = make_nl(make_equ($2, $3)); }
-	| NAME ':'			{ $$ = make_nl(make_label($1)); }
-	;
-
-comments:
-	comments comment	{ $$ = nl_append_n($1, $2); }
-	|					{ $$ = NULL; }
+label:
+	NAME ':'		{ $$ = mknod_dentry(N_LABEL, $1, NULL); }
+	| '*' NAME ':'	{ $$ = mknod_dentry(N_ALABEL, $2, NULL); }
 	;
 
 comment:
-	CMT_LINE		{ $$ = make_comment($1); }
-	;
-
-words:
-	instruction		{ $$ = make_nl($1); program_ic++; }
-	| MP_DATA data	{ $$ = $2; }
-	| res			{ $$ = $1; }
+	CMT_LINE		{ $$ = mknod_valstr(N_COMMENT, 0, $1); }
 	;
 
 data:
@@ -121,29 +121,47 @@ data:
 	;
 
 dataword:
-	expr		{ $$ = make_nl($1); program_ic++; }
-	| STRING	{ $$ = make_string($1); program_ic += strlen($1); }
+	expr		{ $$ = make_nl($1); }
+	| STRING	{ $$ = make_nl(mknod_valstr(N_STRING, 0, $1)); }
 	;
 
-res:
-	MP_RES VALUE				{ $$ = make_rep($2.v, 0, NULL); program_ic += $2.v; }
-	| MP_RES VALUE ',' VALUE	{ $$ = make_rep($2.v, $4.v, $4.s); program_ic += $2.v; }
+pragma:
+	P_RES expr				{ $$ = make_nl(mknod_nargs(N_RES, $2, NULL)); }
+	| P_RES expr ',' expr	{ $$ = make_nl(mknod_nargs(N_RES, $2, $4)); }
+	| P_DATA data			{ $$ = $2; }
+	| P_EQU NAME expr		{ $$ = make_nl(mknod_dentry(N_VAR, $2, $3)); }
+	| P_EQU '*' NAME expr	{ $$ = make_nl(mknod_dentry(N_AVAR, $3, $4)); }
+	| P_MACRO sentences P_FINMACRO {
+		$$ = NULL;
+		$$ = nl_append_n($$, mknod_valstr(N_MACRO, 0, NULL));
+		$$ = nl_append($$, $2);
+		$$ = nl_append_n($$, mknod_valstr(N_FINMACRO, 0, NULL));
+	}
+	| P_SEG sentences P_FINSEG {
+		$$ = NULL;
+		$$ = nl_append_n($$, mknod_valstr(N_SEG, 0, NULL));
+		$$ = nl_append($$, $2);
+		$$ = nl_append_n($$, mknod_valstr(N_FINSEG, 0, NULL));
+	}
 	;
 
 instruction:
-	MOP_2ARG REGISTER ',' norm	{ $$ = make_op(N_2ARG,	$1, $2, NULL, $4); }
-	| MOP_FD norm				{ $$ = make_op(N_FD,	$1, 0,  NULL, $2); }
-	| MOP_KA1 REGISTER ',' expr	{ $$ = make_op(N_KA1,	$1, $2, $4,   NULL); }
-	| MOP_JS expr				{ $$ = make_op(N_JS,	$1, 0,  $2,   NULL); }
-	| MOP_KA2 expr				{ $$ = make_op(N_KA2,	$1, 0,  $2,   NULL); }
-	| MOP_C REGISTER			{ $$ = make_op(N_C,		$1, $2, NULL, NULL); }
-	| MOP_SHC REGISTER ',' expr	{ $$ = make_op(N_SHC,	$1, $2, $4,   NULL); }
-	| MOP_S						{ $$ = make_op(N_S,		$1, 0,  NULL, NULL); }
-	| MOP_HLT expr				{ $$ = make_op(N_HLT,	$1, 0,  $2,   NULL); }
-	| MOP_J norm				{ $$ = make_op(N_J,		$1, 0,  NULL, $2); }
-	| MOP_L norm				{ $$ = make_op(N_L,		$1, 0,  NULL, $2); }
-	| MOP_G norm				{ $$ = make_op(N_G,		$1, 0,  NULL, $2); }
-	| MOP_BN norm				{ $$ = make_op(N_BN,	$1, 0,  NULL, $2); }
+	OP_2ARG REGISTER ',' norm	{ $$ = mknod_op(N_2ARG,	$1, $2, NULL, $4); }
+	| OP_FD norm				{ $$ = mknod_op(N_FD,	$1, 0,  NULL, $2); }
+	| OP_KA1 REGISTER ',' expr	{ $$ = mknod_op(N_KA1,	$1, $2, $4,   NULL); }
+	| OP_JS expr				{ $$ = mknod_op(N_JS,	$1, 0,  $2,   NULL); }
+	| OP_KA2 expr				{ $$ = mknod_op(N_KA2,	$1, 0,  $2,   NULL); }
+	| OP_BRC expr				{ $$ = mknod_op(N_BRC,	$1, 0,  $2,   NULL); }
+	| OP_BLC expr				{ $$ = mknod_op(N_BLC,	$1, 0,  $2,   NULL); }
+	| OP_EXL expr				{ $$ = mknod_op(N_EXL,	$1, 0,  $2,   NULL); }
+	| OP_C REGISTER				{ $$ = mknod_op(N_C,		$1, $2, NULL, NULL); }
+	| OP_SHC REGISTER ',' expr	{ $$ = mknod_op(N_SHC,	$1, $2, $4,   NULL); }
+	| OP_S						{ $$ = mknod_op(N_S,		$1, 0,  NULL, NULL); }
+	| OP_HLT expr				{ $$ = mknod_op(N_HLT,	$1, 0,  $2,   NULL); }
+	| OP_J norm					{ $$ = mknod_op(N_J,		$1, 0,  NULL, $2); }
+	| OP_L norm					{ $$ = mknod_op(N_L,		$1, 0,  NULL, $2); }
+	| OP_G norm					{ $$ = mknod_op(N_G,		$1, 0,  NULL, $2); }
+	| OP_BN norm				{ $$ = mknod_op(N_BN,	$1, 0,  NULL, $2); }
 	;
 
 norm:
@@ -153,22 +171,22 @@ norm:
 
 normval:
 	REGISTER				{ $$ = make_norm($1, 0, NULL); }
-	| expr					{ $$ = make_norm(0, 0, $1); program_ic++; }
+	| expr					{ $$ = make_norm(0, 0, $1); }
 	| REGISTER '+' REGISTER	{ $$ = make_norm($1, $3, NULL); }
-	| REGISTER '+' expr		{ $$ = make_norm(0, $1, $3); program_ic++; }
-	| REGISTER '-' expr		{ $$ = make_norm(0, $1, make_oper(N_UMINUS, $3, NULL)); program_ic++; }
-	| expr '+' REGISTER		{ $$ = make_norm(0, $3, $1); program_ic++; }
+	| REGISTER '+' expr		{ $$ = make_norm(0, $1, $3); }
+	| REGISTER '-' expr		{ $$ = make_norm(0, $1, mknod_nargs(N_UMINUS, $3, NULL)); }
+	| expr '+' REGISTER		{ $$ = make_norm(0, $3, $1); }
 	;
 
 expr:
-	VALUE					{ $$ = make_value($1.v, $1.s); }
-	| NAME					{ $$ = make_name($1); }
-	| expr '+' expr			{ $$ = make_oper(N_PLUS, $1, $3); }
-	| expr '-' expr			{ $$ = make_oper(N_MINUS, $1, $3); }
-	| '-' expr %prec UMINUS	{ $$ = make_oper(N_UMINUS, $2, NULL); }
+	VALUE					{ $$ = mknod_valstr(N_VAL, $1.v, $1.s); }
+	| NAME					{ $$ = mknod_valstr(N_NAME, 0, $1); }
+	| expr '+' expr			{ $$ = mknod_nargs(N_PLUS, $1, $3); }
+	| expr '-' expr			{ $$ = mknod_nargs(N_MINUS, $1, $3); }
+	| '-' expr %prec UMINUS	{ $$ = mknod_nargs(N_UMINUS, $2, NULL); }
 	| '(' expr ')'			{ $$ = $2; }
-	| expr SHL expr			{ $$ = make_oper(N_SHL, $1, $3); }
-	| expr SHR expr			{ $$ = make_oper(N_SHR, $1, $3); }
+	| expr SHL expr			{ $$ = mknod_nargs(N_SHL, $1, $3); }
+	| expr SHR expr			{ $$ = mknod_nargs(N_SHR, $1, $3); }
 	;
 
 %%

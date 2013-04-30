@@ -18,23 +18,31 @@
 #ifndef OPS_H
 #define OPS_H
 
-#include <inttypes.h>
-
-enum _mnemo_e {
+enum _kwtype_e {
 	MNEMO_MERA400 = 0,
 	MNEMO_K202 = 1
 };
 
-struct op_t {
+struct kw_t {
 	char *mnemo[2];
 	int type;
-	uint16_t opcode;
+	int opcode;
 };
 
-extern struct op_t ops[];
+struct var_t {
+	int value;
+	char *name;
+};
+
+extern struct var_t extracodes[];
+extern struct kw_t ops[];
+extern struct kw_t pragmas[];
 extern int mnemo_sel;
 
-struct op_t * get_op(char *opname);
+struct kw_t * get_op(int set, char *name);
+struct kw_t * get_pragma(int set, char *name);
+struct kw_t * get_kw(struct kw_t *dict, int set, char *name);
+struct var_t * get_pvar(struct var_t *d, char *name);
 
 #endif
 

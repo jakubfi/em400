@@ -15,69 +15,85 @@
 //  Foundation, Inc.,
 //  51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 
-#include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 
 #include "dict.h"
 #include "nodes.h"
-#include "eval.h"
-#include "elements.h"
-#include "parser_modern.h"
-#include "keywords.h"
 
-struct nodelist_t *program;
+struct dict_t *dict = NULL;
 
 // -----------------------------------------------------------------------
-struct node_t * mknod_valstr(int type, int value, char *str)
+struct dict_t * dict_add(int level, int type, char *name, struct node_t *n)
 {
-	struct node_t *n = make_node(type);
-	n->value = value;
-	if (str) {
-		n->str = strdup(str);
-		free(str);
+	if (!name || !n) {
+		return NULL;
 	}
-	return n;
+
+	struct dict_t *d = malloc(sizeof(struct dict_t));
+	d->name = strdup(name);
+	d->level = level;
+	d->type = type;
+	d->n = n;
+	d->parent = dict;
+	dict = d;
+
+	return d;
 }
 
 // -----------------------------------------------------------------------
-struct node_t * mknod_nargs(int type, struct node_t *n1, struct node_t *n2)
+struct dict_t * dict_find(char *name)
 {
-	struct node_t *n = make_node(type);
-	n->n1 = n1;
-	n->n2 = n2;
-	return n;
-}
-
-// -----------------------------------------------------------------------
-struct node_t * mknod_op(int optype, int op, int ra, struct node_t *arg, struct norm_t *norm)
-{
-	struct node_t *n = make_node(optype);
-	n->value = op;
-	n->value |= ra << 6;
-	n->n1 = arg;
-
-	// handle normal argument
-	if (norm) {
-		n->value |= (norm->d << 9);
-		n->value |= norm->rc;
-		n->value |= (norm->rb << 3);
-		n->n1 = norm->e;
-		free(norm);
-		norm = NULL;
+	if (!name) {
+		return NULL;
 	}
-	return n;
+
+	struct dict_t *d = dict;
+
+	while (d) {
+		if (!strcmp(name, d->name)) {
+			return d;
+		}
+		d = d->parent;
+	}
+
+	return NULL;
 }
 
 // -----------------------------------------------------------------------
-struct node_t * mknod_dentry(int type, char *name, struct node_t *value)
+void dict_drop_level(int level)
 {
-	struct node_t *n = make_node(type);
-	n->type = type;
-	n->n1 = value;
-	n->str = strdup(name);
-	free(name);
-	return n;
+	struct dict_t *d = dict;
+	struct dict_t *parent = NULL;
+	struct dict_t *child = NULL;
+
+	while (d) {
+		parent = d->parent;
+
+		if (d->level >= level) {
+			dict_drop(d);
+			if (child) {
+				child->parent = parent;
+			} else {
+				dict = parent;
+			}
+		} else {
+			child = d;
+		}
+
+		d = parent;
+	}
+}
+
+// -----------------------------------------------------------------------
+void dict_drop(struct dict_t * dict)
+{
+	if (!dict) {
+		return;
+	}
+	free(dict->name);
+	nodes_drop(dict->n);
+	free(dict);
 }
 
 // vim: tabstop=4

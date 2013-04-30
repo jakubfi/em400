@@ -19,18 +19,21 @@
 #include <stdio.h>
 #include <stdarg.h>
 #include <string.h>
+#include <strings.h>
 
-#include "ops.h"
+#include "parsers.h"
+#include "keywords.h"
+#include "dict.h"
 #include "elements.h"
-#include "eval.h"
 
 void c_yyerror(char *s, ...);
 int yylex(void);
-extern int got_error;
 
 %}
+
 %error-verbose
 %locations
+
 %union {
 	struct val_t {
 		int v;
@@ -41,33 +44,45 @@ extern int got_error;
 	struct nodelist_t *nl;
 };
 
+%token <val.v> OP_2ARG OP_FD OP_KA1 OP_JS OP_KA2 OP_BRC OP_BLC OP_EXL OP_C OP_SHC OP_S OP_HLT OP_J OP_L OP_G OP_BN
+%token P_PROG P_FINPROG P_SEG P_FINSEG P_MACRO P_FINMACRO
+%token P_DATA P_EQU P_RES
+%token P_S P_F P_ALL P_NAME P_BA P_INT P_OUT P_LAB P_NLAB P_MEM P_OS P_IFUNK P_IFUND P_IFDEF P_FI P_SS P_HS P_MAX P_LEN P_E P_FILE P_TEXT
+
+%token YERR;
+
 %left '+' '-'
 %left '/'
 %nonassoc UMINUS
 %token '.' '=' ':' ',' '(' ')' '&'
-%token CP_S CP_RES CP_F CP_PROG CP_FINPROG CP_SEG CP_FINSEG CP_MACRO CP_FINMACRO CP_ALL CP_NAME CP_BA CP_INT CP_OUT CP_LAB CP_NLAB CP_MEM CP_OS CP_IFUNK CP_IFUND CP_IFDEF CP_FI CP_SS CP_HS CP_MAX CP_LEN CP_E CP_FILE CP_TEXT
-%token <val.s> IDENTIFIER FLOAT STRING
-%token <val.s> LABEL VAR COMMENT
+
 %token <val> VALUE
-%token <val.v> COP_2ARG COP_FD COP_KA1 COP_JS COP_KA2 COP_C COP_SHC COP_S COP_HLT COP_J COP_L COP_G COP_BN
+%token <val.s> FLOAT STRING
+%token <val.s> LABEL IDENTIFIER VAR CMT NL
+%type <val.v> reg
 %type <norm> normarg norm1 norm2
 %type <node> instruction expr
-%type <val.v> reg
-%type <node> zero value
-%type <nl> vardef label code segment macro codeblock pre preblock
+%type <node> zero value pragma condition prog finprog
+%type <nl> vardef label code segment macro codeblock pre preblock cond
 
 %%
 
 program:
-	preblock CP_PROG '*' { printf("NEW VARSET: PROG\n"); } codeblock CP_FINPROG '*'	{ program = $1; }
+	preblock prog codeblock finprog NL {
+		program = nl_append(program, $1);
+		program = nl_append_n(program, $2);
+		program = nl_append(program, $3);
+		program = nl_append_n(program, $4);
+		free($5);
+	}
 	;
 
-segment:
-	CP_SEG '*' { printf("NEW VARSET: SEG\n"); } codeblock CP_FINSEG '*'				{ $$ = $4; }
+prog:
+	P_PROG			{ $$ = mknod_valstr(N_PROG, 0, NULL); }
 	;
 
-macro:
-	CP_MACRO '*' { printf("NEW VARSET: MACRO\n"); } codeblock CP_FINMACRO '*'		{ $$ = $4; }
+finprog:
+	P_FINPROG		{ $$ = mknod_valstr(N_FINPROG, 0, NULL); }
 	;
 
 preblock:
@@ -76,42 +91,66 @@ preblock:
 	;
 
 pre:
-	COMMENT			{ $$ = make_nl(make_comment($1)); }
-	| pragma		{ $$ = NULL; }
+	CMT				{ $$ = make_nl(mknod_valstr(N_COMMENT, 0, $1)); }
+	| NL			{ $$ = make_nl(mknod_valstr(N_NL, 0, $1)); }
+	| pragma		{ $$ = make_nl($1); }
 	;
 
 codeblock:
-	codeblock code	{ $$ = nl_append($1, $2); }
-	|				{ $$ = NULL; }
+	codeblock code 			{ $$ = nl_append($1, $2); }
+	|						{ $$ = NULL; }
 	;
 
 code:
 	vardef			{ $$ = $1; }
-	| label			{ printf("(label)\n"); $$ = $1; }
-	| pragma		{ $$ = NULL; }
-	| STRING		{ $$ = make_string($1); program_ic += strlen($1); }
-	| instruction	{ printf("(instr)\n"); $$ = make_nl($1); }
-	| COMMENT		{ $$ = make_nl(make_comment($1)); }
-	| expr '.'		{ printf("(expr)\n"); $$ = make_nl($1); }
-	| '.'			{ printf("(empty)\n"); }
-	| macro
+	| label			{ $$ = $1; }
+	| pragma		{ $$ = make_nl($1); }
+	| cond			{ $$ = $1; }
+	| STRING		{ $$ = make_nl(mknod_valstr(N_STRING, 0, $1)); }
+	| instruction	{ $$ = make_nl($1); }
+	| CMT			{ $$ = make_nl(mknod_valstr(N_COMMENT, 0, $1)); }
+	| expr '.'		{ $$ = make_nl($1); }
+	| '.'			{ $$ = make_nl(mknod_valstr(N_VAL, 0, NULL)); }
+	| macro			{ $$ = $1; }
 	| segment		{ $$ = $1; }
+	| NL			{ $$ = make_nl(mknod_valstr(N_NL, 0, $1)); }
+	;
+
+segment:
+	P_SEG codeblock P_FINSEG {
+		$$ = NULL;
+		$$ = nl_append_n($$, mknod_valstr(N_SEG, 0, NULL));
+		$$ = nl_append($$, $2);
+		$$ = nl_append_n($$, mknod_valstr(N_FINSEG, 0, NULL));
+	}
+	;
+
+macro:
+	P_MACRO codeblock P_FINMACRO {
+		$$ = NULL;
+		$$ = nl_append_n($$, mknod_valstr(N_MACRO, 0, NULL));
+		$$ = nl_append($$, $2);
+		$$ = nl_append_n($$, mknod_valstr(N_FINMACRO, 0, NULL));
+	}
 	;
 
 instruction:
-	COP_2ARG ',' reg normarg		{ $$ = make_op(N_2ARG,  $1, $3, NULL, $4); }
-	| COP_FD normarg				{ $$ = make_op(N_FD,    $1, 0,  NULL, $2); }
-	| COP_KA1 ',' reg ',' expr '.'	{ $$ = make_op(N_KA1,   $1, $3, $5,   NULL); }
-	| COP_JS ',' expr '.'			{ $$ = make_op(N_JS,    $1, 0,  $3,   NULL); }
-	| COP_KA2 ',' expr '.'			{ $$ = make_op(N_KA2,   $1, 0,  $3,   NULL); }
-	| COP_C ',' reg '.'				{ $$ = make_op(N_C,     $1, $3, NULL, NULL); }
-	| COP_SHC ',' reg ',' expr '.'	{ $$ = make_op(N_SHC,   $1, $3, $5,   NULL); }
-	| COP_S ',' zero '.'			{ $$ = make_op(N_S,     $1, 0,  NULL, NULL); }
-	| COP_HLT ',' expr '.'			{ $$ = make_op(N_HLT,   $1, 0,  $3,   NULL); }
-	| COP_J normarg					{ $$ = make_op(N_J,     $1, 0,  NULL, $2); }
-	| COP_L normarg					{ $$ = make_op(N_L,     $1, 0,  NULL, $2); }
-	| COP_G normarg					{ $$ = make_op(N_G,     $1, 0,  NULL, $2); }
-	| COP_BN normarg				{ $$ = make_op(N_BN,    $1, 0,  NULL, $2); }
+	OP_2ARG ',' reg normarg			{ $$ = mknod_op(N_2ARG,  $1, $3, NULL, $4); }
+	| OP_FD normarg					{ $$ = mknod_op(N_FD,    $1, 0,  NULL, $2); }
+	| OP_KA1 ',' reg ',' expr '.'	{ $$ = mknod_op(N_KA1,   $1, $3, $5,   NULL); }
+	| OP_JS ',' expr '.'			{ $$ = mknod_op(N_JS,    $1, 0,  $3,   NULL); }
+	| OP_KA2 ',' expr '.'			{ $$ = mknod_op(N_KA2,   $1, 0,  $3,   NULL); }
+	| OP_BRC ',' expr '.'			{ $$ = mknod_op(N_BRC,   $1, 0,  $3,   NULL); }
+	| OP_BLC ',' expr '.'			{ $$ = mknod_op(N_BLC,   $1, 0,  $3,   NULL); }
+	| OP_EXL ',' expr '.'			{ $$ = mknod_op(N_EXL,   $1, 0,  $3,   NULL); }
+	| OP_C ',' reg '.'				{ $$ = mknod_op(N_C,     $1, $3, NULL, NULL); }
+	| OP_SHC ',' reg ',' expr '.'	{ $$ = mknod_op(N_SHC,   $1, $3, $5,   NULL); }
+	| OP_S ',' zero '.'				{ $$ = mknod_op(N_S,     $1, 0,  NULL, NULL); }
+	| OP_HLT ',' expr '.'			{ $$ = mknod_op(N_HLT,   $1, 0,  $3,   NULL); }
+	| OP_J normarg					{ $$ = mknod_op(N_J,     $1, 0,  NULL, $2); }
+	| OP_L normarg					{ $$ = mknod_op(N_L,     $1, 0,  NULL, $2); }
+	| OP_G normarg					{ $$ = mknod_op(N_G,     $1, 0,  NULL, $2); }
+	| OP_BN normarg					{ $$ = mknod_op(N_BN,    $1, 0,  NULL, $2); }
 	;
 
 normarg:
@@ -127,66 +166,76 @@ norm1:
 	;
 
 norm2:
-	expr			{ $$ = make_norm(0, 0, $1); program_ic++; }
-	| expr '&' reg	{ $$ = make_norm(0, $3, $1); program_ic++; }
+	expr			{ $$ = make_norm(0, 0, $1); }
+	| expr '&' reg	{ $$ = make_norm(0, $3, $1); }
 	;
 
 expr:
 	value					{ $$ = $1; }
-	| expr '+' expr			{ $$ = make_oper(N_PLUS, $1, $3); }
-	| expr '-' expr			{ $$ = make_oper(N_MINUS, $1, $3); }
-	| value '/' value		{ $$=NULL; }
-	| '-' expr %prec UMINUS { $$ = make_oper(N_UMINUS, $2, NULL); }
+	| expr '+' expr			{ $$ = mknod_nargs(N_PLUS, $1, $3); }
+	| expr '-' expr			{ $$ = mknod_nargs(N_MINUS, $1, $3); }
+	| value '/' value		{ $$ = mknod_nargs(N_SCALE, $1, $3); }
+	| '-' expr %prec UMINUS { $$ = mknod_nargs(N_UMINUS, $2, NULL); }
 	;
 
 zero:
-	VALUE			{ $$ = make_value($1.v, $1.s); }
+	VALUE			{ $$ = mknod_valstr(N_VAL, $1.v, $1.s); }
 	;
 
 value:
-	VALUE			{ $$ = make_value($1.v, $1.s); }
-	| IDENTIFIER	{ $$ = make_name($1); }
+	VALUE			{ $$ = mknod_valstr(N_VAL, $1.v, $1.s); }
+	| IDENTIFIER	{ $$ = mknod_valstr(N_NAME, 0, $1); }
 	;
 
 reg:
-	VALUE			{ $$ = $1.v; }
-/*	| IDENTIFIER { printf("mamto\n"); }*/
+	VALUE			{ $$ = $1.v; free($1.s); }
 	;
 
 vardef:
-	VAR '=' expr '.' { $$ = make_nl(make_equ($1, $3)); }
+	VAR '=' expr '.'			{ $$ = make_nl(mknod_dentry(N_VAR, $1, $3)); }
+	| P_ALL VAR '=' expr '.'	{ $$ = make_nl(mknod_dentry(N_AVAR, $2, $4)); }
 	;
 
 label:
-	LABEL ':' { $$ = make_nl(make_label($1)); }
+	LABEL ':'					{ $$ = make_nl(mknod_dentry(N_LABEL, $1, NULL)); }
+	| P_ALL LABEL ':'			{ $$ = make_nl(mknod_dentry(N_ALABEL, $2, NULL)); }
 	;
 
 pragma:
-	CP_S '*' expr '.'
-	| CP_RES '*' expr '.'
-	| CP_RES '*' expr ',' expr '.'
-	| CP_F '*' '.'
-	| CP_NAME '*' IDENTIFIER '.'
-	| CP_BA '*' expr '.'
-	| CP_INT '*' expr '.'
-	| CP_OUT '*' expr '.'
-	| CP_LAB '*' expr '.'
-	| CP_NLAB '*'
-	| CP_MEM '*' expr '.'
-	| CP_OS '*'
-	| CP_IFUNK '*' IDENTIFIER '.'
-	| CP_IFUND '*' IDENTIFIER '.'
-	| CP_IFDEF '*' IDENTIFIER '.'
-	| CP_FI '*'
-	| CP_SS '*' expr '.'
-	| CP_HS '*'
-	| CP_MAX '*' IDENTIFIER ',' maxlist '.'
-	| CP_LEN '*' expr '.'
-	| CP_E '*' expr '.'
-	| CP_ALL '*' vardef
-	| CP_ALL '*' label
-	| CP_FILE '*' IDENTIFIER ',' IDENTIFIER ',' expr ',' expr '.'
-	| CP_TEXT '*' expr '.'
+	P_S expr '.'				{ $$ = mknod_nargs(N_SETIC, $2, NULL); }
+	| P_RES expr '.'			{ $$ = mknod_nargs(N_RES, $2, NULL); }
+	| P_RES expr ',' expr '.'	{ $$ = mknod_nargs(N_RES, $2, $4); }
+	| P_F '.'					{ $$ = NULL; }
+	| P_NAME IDENTIFIER '.'		{ $$ = NULL; }
+	| P_BA expr '.'				{ $$ = NULL; }
+	| P_INT expr '.'			{ $$ = NULL; }
+	| P_OUT expr '.'			{ $$ = NULL; }
+	| P_LAB expr '.'			{ $$ = NULL; }
+	| P_NLAB					{ $$ = NULL; }
+	| P_MEM expr '.'			{ $$ = NULL; }
+	| P_OS						{ $$ = NULL; }
+	| P_SS expr '.'				{ $$ = mknod_nargs(N_OVL, $2, NULL); }
+	| P_HS						{ $$ = NULL; }
+	| P_MAX IDENTIFIER ',' maxlist '.' { $$ = NULL; }
+	| P_LEN expr '.'			{ $$ = NULL; }
+	| P_E expr '.'				{ $$ = NULL; }
+	| P_FILE IDENTIFIER ',' VALUE ',' expr ',' expr '.' { $$ = mknod_valstr(N_COMMENT, $4.v, $2); $$->n1 = $6, $$->n2 = $8; free($4.s); }
+	| P_TEXT expr '.'			{ $$ = mknod_nargs(N_TEXT, $2, NULL); }
+	;
+
+cond:
+	condition '.' codeblock P_FI {
+		$$ = NULL;
+		$$ = nl_append_n($$, $1);
+		$$ = nl_append($$, $3);
+		$$ = nl_append_n($$, mknod_valstr(N_FI, 0, NULL));
+	}
+	;
+
+condition:
+	P_IFUNK IDENTIFIER		{ $$ = mknod_valstr(N_IFUNK, 0, $2); }
+/*	| P_IFUND IDENTIFIER	{ $$ = mknod_valstr(N_IFUND, 0, $2); } */
+	| P_IFDEF IDENTIFIER	{ $$ = mknod_valstr(N_IFDEF, 0, $2); }
 	;
 
 maxlist:

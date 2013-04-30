@@ -20,11 +20,13 @@
 
 #include <inttypes.h>
 
-char * pp_get_labels(struct dict_t **dict, int addr);
+extern int pp_mnemo_sel;
+
 char * pp_get_mnemo(struct node_t *n);
 char * pp_compose_opcode(int ic, struct node_t *n, int *do_norm);
 char * pp_expr_eval(struct node_t *n);
 int preprocess(struct nodelist_t *nl, FILE *ppf);
+void preprocess_new(struct nodelist_t *nl, FILE *ppf);
 
 #endif
 

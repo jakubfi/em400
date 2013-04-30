@@ -1,4 +1,4 @@
-//  Copyright (c) 2012-2013 Jakub Filipowicz <jakubf@gmail.com>
+//  Copyright (c) 2013 Jakub Filipowicz <jakubf@gmail.com>
 //
 //  This program is free software; you can redistribute it and/or modify
 //  it under the terms of the GNU General Public License as published by
@@ -15,22 +15,17 @@
 //  Foundation, Inc.,
 //  51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 
-#include <stdlib.h>
-#include <strings.h>
+#ifndef PARSERS_H
+#define PARSERS_H
 
-#include "pragmas.h"
+#include <stdio.h>
 
-// -----------------------------------------------------------------------
-struct pragma_t * get_pragma(struct pragma_t *pr, char *prname)
-{
-	while (pr->name) {
-		if (!strcasecmp(pr->name, prname)) {
-			return pr;
-		}
-		pr++;
-	}
+extern int classic;
+extern int got_error;
+extern int parser_lineno;
 
-	return NULL;
-}
+int parse(FILE *source);
+
+#endif
 
 // vim: tabstop=4

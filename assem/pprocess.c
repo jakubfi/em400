@@ -21,11 +21,11 @@
 #include <inttypes.h>
 #include <arpa/inet.h>
 
-#include "eval.h"
+#include "dict.h"
 #include "pprocess.h"
-#include "parser_modern.h"
-#include "elements.h"
-#include "ops.h"
+#include "keywords.h"
+
+int pp_mnemo_sel = MNEMO_MERA400;
 
 // -----------------------------------------------------------------------
 char * pp_get_mnemo(struct node_t *n)
@@ -60,57 +60,57 @@ char * pp_get_mnemo(struct node_t *n)
 			break;
 	}
 
-	int opcode = n->opcode & mask;
+	int opcode = n->value & mask;
 
-	struct op_t *op = ops;
+	struct kw_t *kw = ops;
 
-	while (op->mnemo[0]) {
-			if (opcode == op->opcode) {
-					return op->mnemo[0];
+	while (kw->mnemo[0]) {
+			if (opcode == kw->opcode) {
+					return kw->mnemo[pp_mnemo_sel];
 			}
-			op++;
+			kw++;
 	}
 
 	return NULL;
 }
 
-
 // -----------------------------------------------------------------------
-char * pp_expr_eval(struct node_t *n)
+char * pp_eval(struct node_t *n)
 {
 	if (!n) return NULL;
 
-	struct dict_t *d;
 	char *buf = malloc(1024 * sizeof(char));
-	char *s1 = pp_expr_eval(n->n1);
-	char *s2 = pp_expr_eval(n->n2);
+	char *s1 = pp_eval(n->n1);
+	char *s2 = pp_eval(n->n2);
 
 	switch (n->type) {
 		case N_VAL:
-			if (n->name) {
-				sprintf(buf, "%s", n->name);
+			if (n->str) {
+				sprintf(buf, "%s", n->str);
 			} else {
-				sprintf(buf, "%i", n->data);
+				sprintf(buf, "%i", n->value);
 			}
 			break;
 		case N_NAME:
-			d = dict_find(dict, n->name);
-			sprintf(buf, "%s", d->name);
+			sprintf(buf, "%s", n->str);
 			break;
 		case N_PLUS:
-			sprintf(buf, "%s + %s", s1, s2);
+			sprintf(buf, "%s+%s", s1, s2);
 			break;
 		case N_MINUS:
-			sprintf(buf, "%s - %s", s1, s2);
+			sprintf(buf, "%s-%s", s1, s2);
 			break;
 		case N_UMINUS:
 			sprintf(buf, "-%s", s1);
 			break;
 		case N_SHL:
-			sprintf(buf, "%s << %s", s1, s2);
+			sprintf(buf, "%s<<%s", s1, s2);
 			break;
 		case N_SHR:
-			sprintf(buf, "%s >> %s", s1, s2);
+			sprintf(buf, "%s>>%s", s1, s2);
+			break;
+		case N_SCALE:
+			sprintf(buf, "%s/%s", s1, s2);
 			break;
 		default:
 			*buf = '\0';
@@ -131,10 +131,10 @@ char * pp_compose_opcode(int ic, struct node_t *n, int *norm_arg)
 	int pos = 0;
 	int do_norm = 0;
 
-	int d  = (n->opcode & 0b0000001000000000) >> 6;
-	int ra = (n->opcode & 0b0000000111000000) >> 6;
-	int rb = (n->opcode & 0b0000000000111000) >> 3;
-	int rc = (n->opcode & 0b0000000000000111) >> 0;
+	int d  = (n->value & 0b0000001000000000) >> 6;
+	int ra = (n->value & 0b0000000111000000) >> 6;
+	int rb = (n->value & 0b0000000000111000) >> 3;
+	int rc = (n->value & 0b0000000000000111) >> 0;
 
 	pos += sprintf(buf+pos, "%-4s", pp_get_mnemo(n));
 
@@ -144,12 +144,12 @@ char * pp_compose_opcode(int ic, struct node_t *n, int *norm_arg)
 			pos += sprintf(buf+pos, " r%i,", ra);
 		case N_JS:
 		case N_KA2:
-			s = pp_expr_eval(n->next);
+			s = pp_eval(n->n1);
 			pos += sprintf(buf+pos, " %s", s);
 			free(s);
 			break;
 		case N_HLT:
-			s = pp_expr_eval(n->n1);
+			s = pp_eval(n->n1);
 			pos += sprintf(buf+pos, " %s", s);
 			break;
 		case N_2ARG:
@@ -180,12 +180,12 @@ char * pp_compose_opcode(int ic, struct node_t *n, int *norm_arg)
 			pos += sprintf(buf+pos, "r%i", rc);
 		} else {
 			*norm_arg = 1;
-			s = pp_expr_eval(n->next);
+			s = pp_eval(n->next);
 			pos += sprintf(buf+pos, "%s", s);
 			free(s);
 		}
 		if (rb) {
-			pos += sprintf(buf+pos, " + r%i", rb);
+			pos += sprintf(buf+pos, "+r%i", rb);
 		}
 		if (d) {
 			pos += sprintf(buf+pos, "]");
@@ -193,6 +193,72 @@ char * pp_compose_opcode(int ic, struct node_t *n, int *norm_arg)
 	}
 
 	return buf;
+}
+
+// -----------------------------------------------------------------------
+char * pp_compose_pragma(struct node_t *n)
+{
+	if (!n) return NULL;
+
+	char *buf = malloc(1024 * sizeof(char));
+	int pos = 0;
+
+	struct kw_t *kw = pragmas;
+
+	while (kw->mnemo[0]) {
+		if (n->type == kw->opcode) {
+			pos += sprintf(buf+pos, "%s", kw->mnemo[pp_mnemo_sel]);
+		}
+		kw++;
+	}
+
+	if (n->str) {
+		pos += sprintf(buf+pos, " %s", n->str);
+	}
+
+	if (n->n1) {
+		pos += sprintf(buf+pos, " %s", pp_eval(n->n1));
+	}
+
+	return buf;
+}
+
+// -----------------------------------------------------------------------
+void preprocess_new(struct nodelist_t *nl, FILE *ppf)
+{
+	struct node_t *n = nl->head;
+
+	while (n) {
+		if (n->type <= N_EMPTY) {
+			fprintf(ppf, "%s", n->str);
+		} else if (n->type <= N_FLOWCTL) {
+			char *s = pp_compose_pragma(n);
+			fprintf(ppf, "%s\n", s);
+			free(s);
+		} else if (n->type <= N_OPS) {
+			fprintf(ppf, "0x%04x: ", n->ic);
+			int norm_arg = 0;
+			char *s = pp_compose_opcode(-1, n, &norm_arg);
+			fprintf(ppf, "%s\n", s);
+			free(s);
+
+			// if there was additional word in normal argument, we've processed it already in pp_compose_opcode()
+			if (norm_arg) {
+				n = n->next;
+			}
+
+		} else if (n->type <= N_WORD) {
+			fprintf(ppf, "0x%04x: ", n->ic);
+			char *s = pp_eval(n);
+			fprintf(ppf, ".data %s\n", s);
+			free(s);
+		} else if (n->type <= N_MWORD) {
+			fprintf(ppf, "?\n");
+		} else {
+			fprintf(ppf, "?\n");
+		}
+		n = n->next;
+	}
 }
 
 // -----------------------------------------------------------------------
@@ -207,15 +273,23 @@ int preprocess(struct nodelist_t *nl, FILE *ppf)
 	while (n) {
 		linelen = 0;
 
-		// comments
-		if (n->type < N_EMPTY) {
-			fprintf(ppf, "        %s", n->name);
-			linelen += strlen(n->name);
+		// empties and pragmas
+		if (n->type <= N_EMPTY) {
+			if (n->type == N_COMMENT) {
+				fprintf(ppf, "        ; %s", n->str);
+				linelen += strlen(n->str);
+			} else {
+				fprintf(ppf, "        %s", n->str);
+				linelen += strlen(n->str);
+			}
+		} else if (n->type <= N_FLOWCTL) {
+			char *p = pp_compose_pragma(n);
+			fprintf(ppf, "        %s", p);
+			linelen += strlen(n->str);
 			if (n->n1) {
-				char *s = pp_expr_eval(n->n1);
+				char *s = pp_eval(n->n1);
 				fprintf(ppf, "%s", s);
 				linelen += strlen(s);
-				free(s);
 			}
 			res = 0;
 		} else {
@@ -241,23 +315,13 @@ int preprocess(struct nodelist_t *nl, FILE *ppf)
 
 			// ... or data
 			} else {
-				char *s = pp_expr_eval(n);
+				char *s = pp_eval(n);
 				fprintf(ppf, "        .data %s", s);
 				linelen += strlen(s);
 				free(s);
 				res = 1;
 			}
 
-		}
-
-		// if we have a comment attached
-		if (n->comment) {
-			int spaces = 40 - linelen;
-			while (spaces > 0) {
-				fprintf(ppf, " ");
-				spaces--;
-			}
-			fprintf(ppf, "%s", n->comment);
 		}
 
 		fprintf(ppf, "\n");
