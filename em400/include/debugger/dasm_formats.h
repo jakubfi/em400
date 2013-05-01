@@ -36,7 +36,7 @@
 	%d - dec representation of a word
 */
 
-#define DT_ILL	"? %x %d"
+#define DT_ILL	"--- %x %d"
 #define D_2ARGN	"%I%E r%A, %N"
 #define D_1ARGN	"%I%E %N"
 #define D_FD	D_1ARGN

@@ -64,7 +64,7 @@ int dt_parse(struct dasm_opdef *opdef, uint16_t *memptr, char *format, char *buf
 	int len = 1;
 
 	if ((opdef->twoword) && (!_C(*memptr))) {
-		len++;
+		//len++;
 	}
 
 	while ((in) && (*in)) {
@@ -73,10 +73,10 @@ int dt_parse(struct dasm_opdef *opdef, uint16_t *memptr, char *format, char *buf
 		} else {
 			switch (*(++in)) {
 				case 'I':
-					out += sprintf(out, "%s", opdef->mnemo);
+					out += sprintf(out, "%-3s", opdef->mnemo);
 					break;
 				case 'E':
-					out += dt_opext(out, memptr);
+					//out += dt_opext(out, memptr);
 					break;
 				case 'A':
 					out += sprintf(out, "%i", _A(*memptr));
@@ -156,6 +156,10 @@ int dt_dasm_eff_arg(char *buf, uint16_t *memptr)
 {
 	int n = 0;
 
+	if (_D(*memptr) == 1) {
+		n += sprintf(buf+n, "[");
+	}
+
 	if (_C(*memptr) != 0) {
 		n += sprintf(buf+n, "r%i", _C(*memptr));
 	} else {
@@ -163,7 +167,11 @@ int dt_dasm_eff_arg(char *buf, uint16_t *memptr)
 	}
 
 	if (_B(*memptr) != 0) {
-		n += sprintf(buf+n, ", r%i", _B(*memptr));
+		n += sprintf(buf+n, "+r%i", _B(*memptr));
+	}
+
+	if (_D(*memptr) == 1) {
+		n += sprintf(buf+n, "]");
 	}
 
 	return n;
