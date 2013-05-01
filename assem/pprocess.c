@@ -37,6 +37,9 @@ char * pp_get_mnemo(struct node_t *n)
 
 	switch (n->type) {
 		case N_KA2:
+		case N_BRC:
+		case N_BLC:
+		case N_EXL:
 			mask = 0b1111111100000000;
 			break;
 		case N_SHC:
@@ -103,6 +106,7 @@ int pp_eval(char *buf, struct node_t *n)
 			}
 			break;
 		case N_NAME:
+		case N_EXLNAME:
 			pos += sprintf(buf+pos, "%s", n->str);
 			break;
 		case N_PLUS:
@@ -160,10 +164,10 @@ int pp_compose_opcode(char *buf, struct node_t *n)
 			pos += sprintf(buf+pos, " r%i,", ra);
 		case N_JS:
 		case N_KA2:
-			pos += sprintf(buf+pos, " ");
-			pos += pp_eval(buf+pos, n->n1);
-			break;
+		case N_BRC:
+		case N_BLC:
 		case N_HLT:
+		case N_EXL:
 			pos += sprintf(buf+pos, " ");
 			pos += pp_eval(buf+pos, n->n1);
 			break;
@@ -275,6 +279,31 @@ int pp_compose_flow(char *buf, struct node_t *n)
 }
 
 // -----------------------------------------------------------------------
+int pp_compose_multi(char *buf, struct node_t *n)
+{
+	if (!n) return 0;
+
+	int pos = 0;
+
+	switch (n->type) {
+		case N_STRING:
+			pos += sprintf(buf+pos, ".data \"%s\"", n->str);
+			break;
+		case N_RES:
+			pos += sprintf(buf+pos, ".res ");
+			pos += pp_eval(buf+pos, n->n1);
+			pos += sprintf(buf+pos, ", ");
+			pos += pp_eval(buf+pos, n->n2);
+			break;
+		default:
+			pos += sprintf(buf+pos, "?");
+			break;
+	}
+
+	return pos;
+}
+
+// -----------------------------------------------------------------------
 int pp_compose_empty(char *buf, struct node_t *n)
 {
 	if (!n) return 0;
@@ -292,11 +321,11 @@ int pp_compose_empty(char *buf, struct node_t *n)
 			*(buf+pos) = '\0';
 			break;
 		case N_LEN:
-			pos += sprintf(buf+pos, "\n.len ");
+			pos += sprintf(buf+pos, "\n%s.len ", indent);
 			pos += pp_eval(buf+pos, n->n1);
 			break;
 		case N_FILE:
-			pos += sprintf(buf+pos, "\n.file %s, ", n->str);
+			pos += sprintf(buf+pos, "\n%s.file %s, ", indent, n->str);
 			pos += pp_eval(buf+pos, n->n1);
 			pos += sprintf(buf+pos, ", ");
 			pos += pp_eval(buf+pos, n->n2);
@@ -338,7 +367,9 @@ void preprocess(struct nodelist_t *nl, FILE *ppf)
 			fprintf(ppf, "\t%s.data %s", indent, buf);
 
 		} else if (n->type <= N_MWORD) {
-			fprintf(ppf, "\n?");
+			fprintf(ppf, "\n0x%04x: ", n->ic);
+			pp_compose_multi(buf, n);
+			fprintf(ppf, "\t%s%s", indent, buf);
 
 		} else {
 			fprintf(ppf, "\n?");

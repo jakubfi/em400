@@ -115,7 +115,7 @@ echars			[\)\.]
 }
 {bitmask} {
 	int value = 0;
-	char *c = c_yytext;
+	char *c = c_yytext+1;
 	while (*c) {
 		switch (*c) {
 			case 'Z': value |= 1 << 15; break;
@@ -134,11 +134,14 @@ echars			[\)\.]
 			case '5': value |= 1 << 2; break;
 			case '6': value |= 1 << 1; break;
 			case '7': value |= 1 << 0; break;
+			default:
+				c_yyerror("Unknown bit in bitmask: %c", *c);
+				break;
 		}
 		c++;
 	}
 	c_yylval.val.v = value;
-	c_yylval.val.s = strdup(c_yytext+1);
+	c_yylval.val.s = strdup(c_yytext);
 	return VALUE;
 }
 {string} {
