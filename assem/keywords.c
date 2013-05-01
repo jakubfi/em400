@@ -113,8 +113,10 @@ struct kw_t pragmas[] = {
 { {".macro",	"MACRO*"},		P_MACRO,		N_MACRO },
 { {".finmacro",	"FINMACRO*"},	P_FINMACRO,		N_FINMACRO },
 
-{ {".data",		""},			P_DATA,			N_LABEL },
+{ {".data",		""},			P_DATA,			N_ERR },
 { {".equ",		""},			P_EQU,			N_VAR },
+{ {".equ",		""},			P_EQU,			N_AVAR }, // for preprocessor
+{ {"",		""},				0,		N_LABEL}, // for preprocessor
 { {".res",		"RES*"},		P_RES,			N_RES },
 
 { {".s",		"S*"},			P_S,			N_SETIC },

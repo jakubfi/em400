@@ -23,9 +23,9 @@
 extern int pp_mnemo_sel;
 
 char * pp_get_mnemo(struct node_t *n);
-char * pp_compose_opcode(int ic, struct node_t *n, int *do_norm);
-char * pp_expr_eval(struct node_t *n);
-int preprocess(struct nodelist_t *nl, FILE *ppf);
+int pp_eval_2op(char *buf, char *op, struct node_t *n1, struct node_t *n2);
+int pp_compose_opcode(char *buf, struct node_t *n);
+int pp_eval(char *buf, struct node_t *n);
 void preprocess_new(struct nodelist_t *nl, FILE *ppf);
 
 #endif

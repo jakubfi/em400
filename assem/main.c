@@ -151,8 +151,6 @@ int main(int argc, char **argv)
 		printf("Written %i words to file '%s'.\n", res, output_file);
 	}
 
-	free(output_file);
-
 	// write preprocessor output
 	if (preprocessor) {
 		char *pp_file = malloc(strlen(output_file)+10);
@@ -167,6 +165,7 @@ int main(int argc, char **argv)
 		free(pp_file);
 	}
 
+	free(output_file);
 	nodelist_drop(program);
 
 	return 0;

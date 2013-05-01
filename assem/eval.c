@@ -166,7 +166,10 @@ struct node_t * eval_1op(int operator, struct node_t *n)
 				case N_UMINUS:
 					nn->value = - n1->value;
 					nodes_drop(n1);
-					DEBUG("eval_1op() result: %i\n", nn->value);
+					break;
+				case N_PAR:
+					nn->value = n1->value;
+					nodes_drop(n1);
 					break;
 				default:
 					ass_error(n->lineno, "Fatal, unknown operator of type %i", n1->type);
@@ -174,6 +177,7 @@ struct node_t * eval_1op(int operator, struct node_t *n)
 					nn = NULL;
 					break;
 			}
+			DEBUG("eval_1op() result: %i\n", nn->value);
 		} else {
 			ass_error(n->lineno, "Memory allocation error");
 		}
@@ -209,6 +213,12 @@ struct node_t * eval_2op(int operator, struct node_t *n)
 					break;
 				case N_MINUS:
 					nn->value = n1->value - n2->value;
+					break;
+				case N_MUL:
+					nn->value = n1->value * n2->value;
+					break;
+				case N_DIV:
+					nn->value = n1->value / n2->value;
 					break;
 				case N_SHR:
 					nn->value = n1->value << n2->value;
@@ -380,12 +390,15 @@ struct node_t * eval_expr(struct node_t *n)
 			break;
 		case N_PLUS:
 		case N_MINUS:
+		case N_MUL:
+		case N_DIV:
 		case N_SHR:
 		case N_SHL:
 		case N_SCALE:
 			nn = eval_2op(n->type, n);
 			break;
 		case N_UMINUS:
+		case N_PAR:
 			nn = eval_1op(n->type, n);
 			break;
 		default:

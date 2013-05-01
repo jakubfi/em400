@@ -47,11 +47,12 @@ oct		0[0-9]+
 dec		[0-9]+
 bin		0b[01]+
 hex		0x[0-9a-fA-F]+
+bitmask	\?[ZMVCLEGYX1234567]{1,16}
 
 reg		r[0-7]
 name	[a-zA-Z][a-zA-Z0-9_]*
 pragma	\.[a-z]+
-chars	[-+:,\[\]<>\*]
+chars	[-+:,\[\]<>\*/()]
 
 %%
 
@@ -92,6 +93,35 @@ chars	[-+:,\[\]<>\*]
 	m_yylval.val.s = strdup(m_yytext);
 	return VALUE;
 }
+{bitmask} {
+	int value = 0;
+	char *c = m_yytext;
+	while (*c) {
+		switch (*c) {
+			case 'Z': value |= 1 << 15; break;
+			case 'M': value |= 1 << 14; break;
+			case 'V': value |= 1 << 13; break;
+			case 'C': value |= 1 << 12; break;
+			case 'L': value |= 1 << 11; break;
+			case 'E': value |= 1 << 10; break;
+			case 'G': value |= 1 << 9; break;
+			case 'Y': value |= 1 << 8; break;
+			case 'X': value |= 1 << 7; break;
+			case '1': value |= 1 << 6; break;
+			case '2': value |= 1 << 5; break;
+			case '3': value |= 1 << 4; break;
+			case '4': value |= 1 << 3; break;
+			case '5': value |= 1 << 2; break;
+			case '6': value |= 1 << 1; break;
+			case '7': value |= 1 << 0; break;
+		}
+		c++;
+	}
+	m_yylval.val.v = value;
+	m_yylval.val.s = strdup(m_yytext);
+	return VALUE;
+}
+
 {reg}	{
 	m_yylval.val.v = strtol(m_yytext+1, NULL, 10);
 	return REGISTER;
@@ -105,12 +135,13 @@ chars	[-+:,\[\]<>\*]
 	return p->type;
 }
 
+"<<"	return SHL;
+">>"	return SHR;
+"//"	return SCALE;
+
 {chars}	{
 	return *m_yytext;
 }
-"<<"	return SHL;
-">>"	return SHR;
-
 {name}	{
 	struct kw_t *op = get_op(mnemo_sel, m_yytext);
 	if (op) {

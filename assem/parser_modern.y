@@ -49,7 +49,7 @@ int yylex(void);
 %token P_DATA P_EQU P_RES
 %token P_S P_F P_ALL P_NAME P_BA P_INT P_OUT P_LAB P_NLAB P_MEM P_OS P_IFUNK P_IFUND P_IFDEF P_FI P_SS P_HS P_MAX P_LEN P_E P_FILE P_TEXT
 
-%token '[' ']' ',' ':' '*'
+%token '[' ']' ',' ':' '@' '(' ')'
 %token <val.s> STRING NAME CMT_CODE CMT_LINE
 %token <val> VALUE
 %token <val.v> REGISTER
@@ -59,7 +59,8 @@ int yylex(void);
 %type <nl> data dataword comments sentence sentences pragma
 
 %left '+' '-'
-%left SHR SHL
+%left '*' '/'
+%left SHR SHL SCALE
 %nonassoc UMINUS
 
 
@@ -108,7 +109,7 @@ sentence:
 
 label:
 	NAME ':'		{ $$ = mknod_dentry(N_LABEL, $1, NULL); }
-	| '*' NAME ':'	{ $$ = mknod_dentry(N_ALABEL, $2, NULL); }
+	| '@' NAME ':'	{ $$ = mknod_dentry(N_ALABEL, $2, NULL); }
 	;
 
 comment:
@@ -130,7 +131,7 @@ pragma:
 	| P_RES expr ',' expr	{ $$ = make_nl(mknod_nargs(N_RES, $2, $4)); }
 	| P_DATA data			{ $$ = $2; }
 	| P_EQU NAME expr		{ $$ = make_nl(mknod_dentry(N_VAR, $2, $3)); }
-	| P_EQU '*' NAME expr	{ $$ = make_nl(mknod_dentry(N_AVAR, $3, $4)); }
+	| P_EQU '@' NAME expr	{ $$ = make_nl(mknod_dentry(N_AVAR, $3, $4)); }
 	| P_MACRO sentences P_FINMACRO {
 		$$ = nl_append_n(NULL, mknod_valstr(N_MACRO, 0, NULL));
 		$$ = nl_append($$, $2);
@@ -181,8 +182,11 @@ expr:
 	| NAME					{ $$ = mknod_valstr(N_NAME, 0, $1); }
 	| expr '+' expr			{ $$ = mknod_nargs(N_PLUS, $1, $3); }
 	| expr '-' expr			{ $$ = mknod_nargs(N_MINUS, $1, $3); }
+	| expr '*' expr			{ $$ = mknod_nargs(N_MUL, $1, $3); }
+	| expr '/' expr			{ $$ = mknod_nargs(N_DIV, $1, $3); }
+	| expr SCALE expr		{ $$ = mknod_nargs(N_SCALE, $1, $3); }
 	| '-' expr %prec UMINUS	{ $$ = mknod_nargs(N_UMINUS, $2, NULL); }
-	| '(' expr ')'			{ $$ = $2; }
+	| '(' expr ')'			{ $$ = mknod_nargs(N_PAR, $2, NULL); }
 	| expr SHL expr			{ $$ = mknod_nargs(N_SHL, $1, $3); }
 	| expr SHR expr			{ $$ = mknod_nargs(N_SHR, $1, $3); }
 	;
