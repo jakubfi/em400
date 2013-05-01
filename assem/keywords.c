@@ -119,7 +119,7 @@ struct kw_t pragmas[] = {
 { {"",		""},				0,		N_LABEL}, // for preprocessor
 { {".res",		"RES*"},		P_RES,			N_RES },
 
-{ {".s",		"S*"},			P_S,			N_SETIC },
+{ {".ic",		"S*"},			P_S,			N_SETIC },
 { {"",			"F*"},			P_F,			N_ERR },
 { {"@",			"ALL*"},		P_ALL,			N_ERR },
 { {"",			"NAME*"},		P_NAME,			N_ERR },

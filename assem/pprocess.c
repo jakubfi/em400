@@ -26,6 +26,9 @@
 #include "keywords.h"
 
 int pp_mnemo_sel = MERA400;
+int indent_step = 1;
+char indent_string[] = "\t\t\t\t\t\t\t\t\t\0";
+char *indent = indent_string + 10;
 
 // -----------------------------------------------------------------------
 char * pp_get_mnemo(struct node_t *n)
@@ -215,36 +218,101 @@ char * pp_get_pragma(struct node_t *n)
 }
 
 // -----------------------------------------------------------------------
-int pp_compose_pragma(char *buf, struct node_t *n)
+int pp_compose_flow(char *buf, struct node_t *n)
 {
 	if (!n) return 0;
 
 	int pos = 0;
 
-	pos += sprintf(buf+pos, "%s", pp_get_pragma(n));
-
-	if (n->type == N_AVAR) {
-		pos += sprintf(buf+pos, " *");
-	} else {
-		pos += sprintf(buf+pos, " ");
+	if ((n->type != N_ALABEL) && (n->type != N_LABEL)) {
+		pos += sprintf(buf+pos, "\t%s%s ", indent, pp_get_pragma(n));
 	}
 
-	if (n->str) {
-		pos += sprintf(buf+pos, "%s", n->str);
-	}
-
-	if (n->n1) {
-		pos += sprintf(buf+pos, " ");
-		pos += pp_eval(buf+pos, n->n1);
+	switch (n->type) {
+		case N_PROG:
+		case N_SEG:
+		case N_MACRO:
+			indent -= indent_step;
+			break;
+		case N_FINPROG:
+		case N_FINSEG:
+		case N_FINMACRO:
+			indent += indent_step;
+			break;
+		case N_FI:
+			break;
+		case N_LABEL:
+		case N_ALABEL:
+			pos += sprintf(buf+pos, "%s:", n->str);
+			break;
+		case N_VAR:
+			pos += sprintf(buf+pos, "%s ", n->str);
+			pos += pp_eval(buf+pos, n->n1);
+			break;
+		case N_AVAR:
+			pos += sprintf(buf+pos, "*%s ", n->str);
+			pos += pp_eval(buf+pos, n->n1);
+			break;
+		case N_SETIC:
+		case N_OVL:
+			pos += pp_eval(buf+pos, n->n1);
+			break;
+		case N_IFUNK:
+		case N_IFUND:
+		case N_IFDEF:
+			pos += sprintf(buf+pos, "%s\n", n->str);
+			break;
+		case N_TEXT:
+			pos += sprintf(buf+pos, ".text ");
+			pos += pp_eval(buf+pos, n->n1);
+			break;
+		default:
+			pos += sprintf(buf+pos, "?");
+			break;
 	}
 
 	return pos;
 }
 
-#define fprintf(file, format, ...) printf(format, ##__VA_ARGS__)
-
 // -----------------------------------------------------------------------
-void preprocess_new(struct nodelist_t *nl, FILE *ppf)
+int pp_compose_empty(char *buf, struct node_t *n)
+{
+	if (!n) return 0;
+
+	int pos = 0;
+	char *s;
+
+	switch (n->type) {
+		case N_COMMENT:
+			s = n->str;
+			while (*s == ' ') s++;
+			pos += sprintf(buf+pos, "\t\t\t/* %s */", s);
+			break;
+		case N_NL:
+			*(buf+pos) = '\0';
+			break;
+		case N_LEN:
+			pos += sprintf(buf+pos, "\n.len ");
+			pos += pp_eval(buf+pos, n->n1);
+			break;
+		case N_FILE:
+			pos += sprintf(buf+pos, "\n.file %s, ", n->str);
+			pos += pp_eval(buf+pos, n->n1);
+			pos += sprintf(buf+pos, ", ");
+			pos += pp_eval(buf+pos, n->n2);
+			break;
+		default:
+			pos += sprintf(buf+pos, "?");
+			break;
+	}
+
+
+	return pos;
+}
+
+#define fprintf(file, format, ...) printf(format, ##__VA_ARGS__)
+// -----------------------------------------------------------------------
+void preprocess(struct nodelist_t *nl, FILE *ppf)
 {
 	char buf[1024];
 	struct node_t *n = nl->head;
@@ -252,23 +320,28 @@ void preprocess_new(struct nodelist_t *nl, FILE *ppf)
 	while (n) {
 		//printf("TYPE: %i\n", n->type);
 		if (n->type <= N_EMPTY) {
-			fprintf(ppf, "%s", n->str);
+			pp_compose_empty(buf, n);
+			fprintf(ppf, "%s", buf);
+
 		} else if (n->type <= N_FLOWCTL) {
-			pp_compose_pragma(buf, n);
-			fprintf(ppf, "%s\n", buf);
+			pp_compose_flow(buf, n);
+			fprintf(ppf, "\n\t%s", buf);
+
 		} else if (n->type <= N_OPS) {
-			fprintf(ppf, "0x%04x: ", n->ic);
+			fprintf(ppf, "\n0x%04x: ", n->ic);
 			pp_compose_opcode(buf, n);
-			fprintf(ppf, "%s\n", buf);
+			fprintf(ppf, "\t%s%s", indent, buf);
 
 		} else if (n->type <= N_WORD) {
-			fprintf(ppf, "0x%04x: ", n->ic);
+			fprintf(ppf, "\n0x%04x: ", n->ic);
 			pp_eval(buf, n);
-			fprintf(ppf, ".data %s\n", buf);
+			fprintf(ppf, "\t%s.data %s", indent, buf);
+
 		} else if (n->type <= N_MWORD) {
-			fprintf(ppf, "?\n");
+			fprintf(ppf, "\n?");
+
 		} else {
-			fprintf(ppf, "?\n");
+			fprintf(ppf, "\n?");
 		}
 		n = n->next;
 	}

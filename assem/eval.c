@@ -954,6 +954,7 @@ int flow_control(struct node_t **n)
 			startline = (*n)->lineno;
 			// skip nodes until FI*
 			while ((d) && n && ((*n)->type != N_FI)) {
+				(*n)->next->ic = 0xffff;
 				*n = (*n)->next;
 			}
 			if (n) {
@@ -965,6 +966,7 @@ int flow_control(struct node_t **n)
 			startline = (*n)->lineno;
 			// skip nodes until FI*
 			while ((!d) && n && ((*n)->type != N_FI)) {
+				(*n)->next->ic = 0xffff;
 				*n = (*n)->next;
 			}
 			if (n) {

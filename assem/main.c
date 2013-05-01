@@ -148,19 +148,19 @@ int main(int argc, char **argv)
 			printf("Unknown error during image write\n");
 		}
 	} else {
-		printf("Written %i words to file '%s'.\n", res, output_file);
+		printf("Written %i words to '%s'.\n", res, output_file);
 	}
 
 	// write preprocessor output
 	if (preprocessor) {
 		char *pp_file = malloc(strlen(output_file)+10);
 		sprintf(pp_file, "%s.pp.asm", output_file);
-		printf("Writing preprocessor output to: %s\n", pp_file);
+		printf("Writing preprocessor output to %s\n", pp_file);
 		FILE *ppf = fopen(pp_file, "w");
 		if (!ppf) {
 			printf("Cannot open preprocessor output file '%s', sorry.\n", pp_file);
 		}
-		preprocess_new(program, ppf);
+		preprocess(program, ppf);
 		fclose(ppf);
 		free(pp_file);
 	}
