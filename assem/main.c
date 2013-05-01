@@ -34,9 +34,11 @@ char *output_file = NULL;
 // -----------------------------------------------------------------------
 void usage()
 {
-	printf("Usage: assem [-d] [-k] [-c] [-p [-2]] <input.asm> [output]\n");
+	printf("Usage: assem [-v] [-d] [-k] [-c] [-p [-2]] <input.asm> [output]\n");
 	printf("Where:\n");
-	printf("   -d : Enable debug messages (lots of)\n");
+	printf("   -v : print version information and exit\n");
+	printf("   -h : print help\n");
+	printf("   -d : enable debug messages (lots of)\n");
 	printf("   -k : use K-202 mnemonics (instead of MERA-400)\n");
 	printf("   -c : use classic ASSK/ASSM syntax (instead of modern)\n");
 	printf("   -p : produce preprocessor output (.pp.asm file)\n");
@@ -55,8 +57,11 @@ void parse_args(int argc, char **argv)
 	int option;
 
 	// parse options
-	while ((option = getopt(argc, argv,"dkchp2:")) != -1) {
+	while ((option = getopt(argc, argv,"vdkchp2:")) != -1) {
 		switch (option) {
+			case 'v':
+				printf("ASSEM version %s (c) 2012-2013 by Jakub Filipowicz\n", ASSEM_VERSION);
+				exit(0);
 			case 'd':
 				enable_debug = 1;
 				break;

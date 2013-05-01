@@ -183,7 +183,7 @@ int pp_compose_opcode(char *buf, struct node_t *n)
 		case N_S:
 			break;
 		case N_C:
-			pos += sprintf(buf+pos, " r%i,", ra);
+			pos += sprintf(buf+pos, " r%i", ra);
 			break;
 	}
 
@@ -339,7 +339,7 @@ int pp_compose_empty(char *buf, struct node_t *n)
 	return pos;
 }
 
-#define fprintf(file, format, ...) printf(format, ##__VA_ARGS__)
+// #define fprintf(file, format, ...) printf(format, ##__VA_ARGS__)
 // -----------------------------------------------------------------------
 void preprocess(struct nodelist_t *nl, FILE *ppf)
 {

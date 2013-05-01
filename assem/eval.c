@@ -50,8 +50,6 @@ void DEBUG(char *format, ...)
 		for (int i=syntax_level ; i>0 ; i--) printf(".  ");
 		if (retrying) {
 			printf("+ ");
-		} else {
-			//printf("");
 		}
 		vprintf(format, ap);
 		va_end(ap);

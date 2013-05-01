@@ -153,13 +153,13 @@ instruction:
 	| OP_BRC expr				{ $$ = mknod_op(N_BRC,	$1, 0,  $2,   NULL); }
 	| OP_BLC expr				{ $$ = mknod_op(N_BLC,	$1, 0,  $2,   NULL); }
 	| OP_EXL expr				{ $$ = mknod_op(N_EXL,	$1, 0,  $2,   NULL); }
-	| OP_C REGISTER				{ $$ = mknod_op(N_C,		$1, $2, NULL, NULL); }
+	| OP_C REGISTER				{ $$ = mknod_op(N_C,	$1, $2, NULL, NULL); }
 	| OP_SHC REGISTER ',' expr	{ $$ = mknod_op(N_SHC,	$1, $2, $4,   NULL); }
-	| OP_S						{ $$ = mknod_op(N_S,		$1, 0,  NULL, NULL); }
+	| OP_S						{ $$ = mknod_op(N_S,	$1, 0,  NULL, NULL); }
 	| OP_HLT expr				{ $$ = mknod_op(N_HLT,	$1, 0,  $2,   NULL); }
-	| OP_J norm					{ $$ = mknod_op(N_J,		$1, 0,  NULL, $2); }
-	| OP_L norm					{ $$ = mknod_op(N_L,		$1, 0,  NULL, $2); }
-	| OP_G norm					{ $$ = mknod_op(N_G,		$1, 0,  NULL, $2); }
+	| OP_J norm					{ $$ = mknod_op(N_J,	$1, 0,  NULL, $2); }
+	| OP_L norm					{ $$ = mknod_op(N_L,	$1, 0,  NULL, $2); }
+	| OP_G norm					{ $$ = mknod_op(N_G,	$1, 0,  NULL, $2); }
 	| OP_BN norm				{ $$ = mknod_op(N_BN,	$1, 0,  NULL, $2); }
 	;
 
