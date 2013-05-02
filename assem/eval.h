@@ -61,7 +61,7 @@ struct node_t * compose(struct node_t *n);
 
 struct node_t * expr_eval(struct node_t *n);
 
-int assembly(struct nodelist_t *program);
+int assembly(struct node_t *n);
 int flow_control(struct node_t **n);
 int ass_retry();
 int retry_push(struct node_t *n);

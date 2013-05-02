@@ -339,7 +339,6 @@ int pp_compose_empty(char *buf, struct node_t *n)
 	return pos;
 }
 
-// #define fprintf(file, format, ...) printf(format, ##__VA_ARGS__)
 // -----------------------------------------------------------------------
 void preprocess(struct nodelist_t *nl, FILE *ppf)
 {

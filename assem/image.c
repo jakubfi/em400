@@ -24,8 +24,9 @@
 #include "errors.h"
 
 #define SECTOR_SIZE 256
+#define IMAGE_SIZE 2 * 1024 * SECTOR_SIZE
 
-uint16_t image[2 * 1024 * 256]; // this should be done dynamically
+uint16_t image[IMAGE_SIZE]; // this should be done dynamically
 int ic = 0;
 int max_filepos = -1;
 int filepos = 0;
@@ -58,7 +59,14 @@ int img_next_sector(int new_ic)
 	filepos = (img_get_sector()+1) * SECTOR_SIZE;
 	ic = new_ic;
 	DEBUG("img_next_sector(): filepos = %i, ic = %i\n", filepos, ic);
-	return img_get_sector();
+
+	if ((ic < 0) || (ic > 0xffff)) {
+		return E_IC;
+	} else if ((filepos < 0) || (filepos >= IMAGE_SIZE)) {
+		return E_FILEPOS;
+	} else {
+		return E_OK;
+	}
 }
 
 // -----------------------------------------------------------------------
@@ -66,7 +74,14 @@ int img_set_ic(int new_ic)
 {
 	filepos += new_ic - ic;
 	ic = new_ic;
-	return ic;
+
+	if ((ic < 0) || (ic > 0xffff)) {
+		return E_IC;
+	} else if ((filepos < 0) || (filepos >= IMAGE_SIZE)) {
+		return E_FILEPOS;
+	} else {
+		return E_OK;
+	}
 }
 
 // -----------------------------------------------------------------------
@@ -78,9 +93,7 @@ int img_get_ic()
 // -----------------------------------------------------------------------
 int img_inc_ic()
 {
-	ic++;
-	filepos++;
-	return ic;
+	return img_set_ic(ic+1);
 }
 
 // -----------------------------------------------------------------------
@@ -96,25 +109,30 @@ int img_get_sector()
 }
 
 // -----------------------------------------------------------------------
-int img_put_at(int addr, uint16_t word)
+int img_put_at(int addr, int orig_ic, uint16_t word)
 {
-	DEBUG("img_put_at(): [0x%04x] (ic:%i, sector:%i) = %i\n", addr, addr, img_get_sector(), word);
+	DEBUG("img_put_at(): [0x%04x] (ic:%i, sector:%i) = %i\n", addr, orig_ic, img_get_sector(), word);
+	if ((addr < 0) || (addr >= IMAGE_SIZE)) {
+		return E_FILEPOS;
+	}
 	image[addr] = ntohs(word);
-	return addr;
+	return E_OK;
 }
 
 
 // -----------------------------------------------------------------------
 int img_put(uint16_t word)
 {
-	DEBUG("img_put(): [0x%04x] (ic:%i, sector:%i) = %i\n", filepos, ic, img_get_sector(), word);
-	image[filepos] = ntohs(word);
+	int res = img_put_at(filepos, ic, word);
+	if (res != E_OK) {
+		return res;
+	}
 	if (filepos > max_filepos) {
 		max_filepos = filepos;
 	}
 	ic++;
 	filepos++;
-	return ic;
+	return E_OK;
 }
 
 // vim: tabstop=4

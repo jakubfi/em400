@@ -134,7 +134,7 @@ int main(int argc, char **argv)
 	}
 
 	// assembly binary image
-	res = assembly(program);
+	res = assembly(program->head);
 
 	if (res < 0) {
 		printf("Error at %s\n", assembly_error);

@@ -27,7 +27,7 @@ int img_get_ic();
 int img_get_filepos();
 int img_set_ic(int new_ic);
 int img_inc_ic();
-int img_put_at(int addr, uint16_t word);
+int img_put_at(int addr, int orig_ic, uint16_t word);
 int img_put(uint16_t word);
 
 

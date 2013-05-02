@@ -95,15 +95,15 @@ struct norm_t {
 };
 
 struct node_t {
-	int ic;
-	int at;
-	int type;
-	int value;
-	int was_addr;
-	char *str;
-	struct node_t *n1, *n2;
-	struct node_t *next;
-	int lineno;
+	int ic;						// instruction counter for a node
+	int at;						// position in output file (needed by retry())
+	int type;					// node type
+	int value;					// value (meaning differs between node types)
+	int is_addr;				// node is an address (for ops with relative arguments)
+	char *str;					// string (meaning differs)
+	struct node_t *n1, *n2;		// child nodes in syntax structure (meaning differs)
+	struct node_t *next;		// next node in syntax structure
+	int lineno;					// line number, at which node was born
 };
 
 struct nodelist_t {

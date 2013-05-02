@@ -61,8 +61,8 @@ int ass_error(int line, char *format, ...)
 {
 	va_list ap;
 	va_start(ap, format);
-	int res = sprintf(assembly_error, "line %i: ", line);
-	vsprintf(assembly_error+res, format, ap);
+	int pos = sprintf(assembly_error, "line %i: ", line);
+	vsprintf(assembly_error+pos, format, ap);
 	va_end(ap);
 	return E_ASS;
 }
@@ -109,7 +109,7 @@ struct node_t * eval_name(struct node_t *n)
 	if (!strcasecmp(n->str, "S")) {
 		nn = mknod_valstr(N_VAL, img_get_ic(), NULL);
 		if (nn) {
-			nn->was_addr = 1;
+			nn->is_addr = 1;
 			DEBUG("eval_name() predef: %s = %i\n", n->str, nn->value);
 		} else {
 			ass_error(n->lineno, "Memory allocation error");
@@ -129,7 +129,7 @@ struct node_t * eval_name(struct node_t *n)
 			if (nn) {
 				DEBUG("eval_name() dict: %s = %i\n", n->str, nn->value);
 				if (d->type == D_LABEL) {
-					nn->was_addr = 1;
+					nn->is_addr = 1;
 				}
 			}
 		} else { // does not exist (yet!)
@@ -159,7 +159,7 @@ struct node_t * eval_1op(int operator, struct node_t *n)
 	if (n1->type == N_VAL) {
 		nn = mknod_valstr(N_VAL, 0, NULL);
 		if (nn) {
-			nn->was_addr = n1->was_addr;
+			nn->is_addr = n1->is_addr;
 			switch (operator) {
 				case N_UMINUS:
 					nn->value = - n1->value;
@@ -204,7 +204,7 @@ struct node_t * eval_2op(int operator, struct node_t *n)
 	if ((n1->type == N_VAL) && (n2->type == N_VAL)) {
 		nn = mknod_valstr(N_VAL, 0, NULL);
 		if (nn) {
-			nn->was_addr = n1->was_addr | n2->was_addr;
+			nn->is_addr = n1->is_addr | n2->is_addr;
 			switch (operator) {
 				case N_PLUS:
 					nn->value = n1->value + n2->value;
@@ -440,7 +440,7 @@ struct node_t * eval_t_arg(struct node_t *n, int ic, int rel_op)
 		int jsval = arg->value;
 
 		// arg is relative
-		if (arg->was_addr && rel_op) {
+		if (arg->is_addr && rel_op) {
 			DEBUG("Got relative T-arg\n");
 			jsval -= ic + 1;
 		}
@@ -749,11 +749,6 @@ struct node_t * eval_op(struct node_t *n)
 	return nn;
 }
 
-
-// -----------------------------------------------------------------------
-// ---- OLD EVAL ---------------------------------------------------------
-// -----------------------------------------------------------------------
-
 // -----------------------------------------------------------------------
 void exlize_names(struct node_t *n)
 {
@@ -777,9 +772,9 @@ int ass_retry()
 	DEBUG("Retrying on level %i\n", syntax_level);
 
 	// retry only nodes from current code segment
-    while (r && (r->level == syntax_level)) {
+	while (r && (r->level == syntax_level)) {
 		DEBUG("--- Retrying '%s' on level %i ------\n", r->n->str, syntax_level);
-        parent = r->next;
+		parent = r->next;
 
 		nn = compose(r->n);
 
@@ -788,19 +783,21 @@ int ass_retry()
 			break;
 		}
 
-        if (nn->type == N_VAL) { // if retry is OK, remove node from stack
+		if (nn->type == N_VAL) { // if retry is OK, remove node from stack
 			DEBUG("retry ok\n");
-			img_put_at(r->n->at, nn->value);
+			res = img_put_at(r->n->at, r->n->ic, nn->value);
+			if (res != E_OK) {
+				ass_error(r->n->lineno, "Cannot update image at IC=%i, filepos=%i", r->n->ic, r->n->at);
+			}
 			nodes_drop(r->n);
-            free(r);
+			free(r);
 			nodes_drop(nn);
-            if (child) {
-                child->next = parent;
-            } else {
-                retry = parent;
-            }
-			res = E_OK;
-        } else { // if retry failed...
+			if (child) {
+				child->next = parent;
+			} else {
+				retry = parent;
+			}
+		} else { // if retry failed...
 			if (r->level <= 0) { // ...fail completly, if node's segment is the top one
 				DEBUG("retry failed completly\n");
 				res = E_ASS;
@@ -814,10 +811,10 @@ int ass_retry()
 				r->n = nn;
 				res = E_OK;
 			}
-            child = r;
-        }
-        r = parent;
-    }
+			child = r;
+		}
+		r = parent;
+	}
 	DEBUG("Done retrying on level %i\n", syntax_level);
 	retrying = 0;
 
@@ -831,7 +828,7 @@ int add_def(int type, int level, struct node_t *n)
 
 	if (type == D_LABEL) {
 		nn = mknod_valstr(N_VAL, n->ic, NULL);
-		nn->was_addr = 1;
+		nn->is_addr = 1;
 	} else {
 		nn = eval_expr(n->n1);
 	}
@@ -869,8 +866,10 @@ int set_ic(struct node_t *n)
 	if (!nn || (nn->type != N_VAL)) {
 		res = E_ASS;
 	} else {
-		img_set_ic(nn->value);
-		res = E_OK;
+		res = img_set_ic(nn->value);
+		if (res != E_OK) {
+			ass_error(n->lineno, "Cannot set IC=%i", nn->value);
+		}
 	}
 	nodes_drop(nn);
 	return res;
@@ -885,8 +884,10 @@ int set_ovl(struct node_t *n)
 	if (!nn || (nn->type != N_VAL)) {
 		res = E_ASS;
 	} else {
-		img_next_sector(nn->value);
-		res = E_OK;
+		res = img_next_sector(nn->value);
+		if (res != E_OK) {
+			ass_error(n->lineno, "Cannot set next overlay at IC=%i", nn->value);
+		}
 	}
 	nodes_drop(nn);
 
@@ -915,11 +916,26 @@ int set_text(struct node_t *n)
 }
 
 // -----------------------------------------------------------------------
+int conditional(int condition, struct node_t **n)
+{
+	int startline = (*n)->lineno;
+	// skip nodes until FI*
+	while (condition && n && ((*n)->type != N_FI)) {
+		(*n)->next->ic = 0xffff;
+		*n = (*n)->next;
+	}
+	if (n) {
+		return E_OK;
+	} else {
+		return ass_error(startline, "Missing closing FI");
+	}
+}
+
+// -----------------------------------------------------------------------
 int flow_control(struct node_t **n)
 {
 	int res = E_ASS;
 	struct dict_t *d = dict_find((*n)->str);
-	int startline;
 
 	switch ((*n)->type) {
 		case N_LABEL:
@@ -949,29 +965,9 @@ int flow_control(struct node_t **n)
 			syntax_level--;
 			return res;
 		case N_IFUNK:
-			startline = (*n)->lineno;
-			// skip nodes until FI*
-			while ((d) && n && ((*n)->type != N_FI)) {
-				(*n)->next->ic = 0xffff;
-				*n = (*n)->next;
-			}
-			if (n) {
-				return E_OK;
-			} else {
-				return ass_error(startline, "Missing closing FI");
-			}
+			return conditional(d?1:0, n);
 		case N_IFDEF:
-			startline = (*n)->lineno;
-			// skip nodes until FI*
-			while ((!d) && n && ((*n)->type != N_FI)) {
-				(*n)->next->ic = 0xffff;
-				*n = (*n)->next;
-			}
-			if (n) {
-				return E_OK;
-			} else {
-				return ass_error(startline, "Missing closing FI");
-			}
+			return conditional(!d?1:0, n);
 		case N_FI:
 			return E_OK; // alone FI* is OK, may happen when IF* was true
 		case N_TEXT:
@@ -986,11 +982,14 @@ int retry_push(struct node_t *n)
 {
 	DEBUG("will retry later: %s (at IC=%i, pos=%i)\n", n->str, n->ic, n->at);
 	struct retry_t *r = malloc(sizeof(struct retry_t));
+	if (!r) {
+		return ass_error(n->lineno, "Memory allocation error");
+	}
 	r->n = n;
 	r->next = retry;
 	r->level = syntax_level;
 	retry = r;
-	return 1;
+	return E_OK;
 }
 
 // -----------------------------------------------------------------------
@@ -1013,10 +1012,49 @@ struct node_t * compose(struct node_t *n)
 }
 
 // -----------------------------------------------------------------------
-int assembly(struct nodelist_t *program)
+int write_out(struct node_t *n)
 {
-	struct node_t *n = program->head;
+	int res;
+	struct node_t *nn = compose(n);
 
+	if (!n || !nn) {
+		return E_ASS;
+	}
+
+	// write out all composed words
+	struct node_t *next = NULL;
+	while (nn) {
+		if (nn->type == N_VAL) {
+			// write word to image
+			res = img_put(nn->value);
+			next = nn->next;
+			node_drop(nn);
+			if (res != E_OK) {
+				return ass_error(n->lineno, "Cannot update image at IC=%i", n->ic);
+			}
+		} else {
+			nn->lineno = n->lineno;
+			nn->at = img_get_filepos();
+			res = retry_push(nn);
+			if (res != E_OK) {
+				return ass_error(n->lineno, "Cannot push node to retry");
+			}
+			res = img_inc_ic();
+			if (res != E_OK) {
+				return ass_error(n->lineno, "Cannot advance IC=%i", img_get_ic());
+			}
+			next = nn->next;
+		}
+		nn = next;
+	}
+	return E_OK;
+}
+
+
+// -----------------------------------------------------------------------
+int assembly(struct node_t *n)
+{
+	int res;
 	while (n) {
 		// set ic for a node
 		n->ic = img_get_ic();
@@ -1025,46 +1063,27 @@ int assembly(struct nodelist_t *program)
 
 		// node is empty, nothing to compose
 		if (n->type <= N_EMPTY) {
-
+			res = E_OK;
 		// node is assembler flow control command
 		} else if (n->type <= N_FLOWCTL) {
-			if (flow_control(&n) < 0) {
-				return E_ASS;
-			}
-
-		// node is meant to be assembled
+			res =  flow_control(&n);
+		// node is something that produces output
 		} else if (n->type <= N_MWORD) {
-			struct node_t *nn = compose(n);
-			if (!nn) {
-				return E_ASS;
-			}
-			// write out all composed words
-			struct node_t *next = NULL;
-			while (nn) {
-				if (nn->type == N_VAL) {
-					// write word to image
-					img_put(nn->value);
-					next = nn->next;
-					node_drop(nn);
-				} else {
-					nn->lineno = n->lineno;
-					nn->at = img_get_filepos();
-					retry_push(nn);
-					img_inc_ic();
-					next = nn->next;
-				}
-				nn = next;
-			}
-
+			res =  write_out(n);
 		// shouldn't happen
 		} else {
-			return ass_error(n->lineno, "Trying to assembly unknow node");
+			res = ass_error(n->lineno, "Trying to assembly unknow node (type %i)", n->type);
 		}
 
-		n = n->next;
+		// check result
+		if (res != E_OK) {
+			break;
+		} else {
+			n = n->next;
+		}
 	}
 
-	return E_OK;
+	return res;
 }
 
 

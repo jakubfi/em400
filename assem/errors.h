@@ -19,11 +19,13 @@
 #define ERRORS_H
 
 enum errors_e {
+	E_PROG_EMPTY = -100,
+	E_IO_OPEN,
+	E_IO_WRITE,
+	E_IC,
+	E_FILEPOS,
+	E_ASS,
 	E_OK = 0,
-	E_ASS = -1,
-	E_PROG_EMPTY = -2,
-	E_IO_OPEN = -3,
-	E_IO_WRITE = -4,
 
 };
 

@@ -41,7 +41,7 @@ struct node_t * make_node(int type)
 	n->at = -1;
 	n->type = type;
 	n->value = 0;
-	n->was_addr = 0;
+	n->is_addr = 0;
 	n->str = NULL;
 	n->n1 = NULL;
 	n->n2 = NULL;
@@ -53,15 +53,10 @@ struct node_t * make_node(int type)
 // -----------------------------------------------------------------------
 struct node_t * dup_node(struct node_t *sn)
 {
-	struct node_t *n = malloc(sizeof(struct node_t));
+	struct node_t *n = make_node(sn->type);
 	n->ic = sn->ic;
-	n->type = sn->type;
 	n->value = sn->value;
-	n->was_addr = sn->was_addr;
-	n->str = NULL;
-	n->n1 = NULL;
-	n->n2 = NULL;
-	n->next = NULL;
+	n->is_addr = sn->is_addr;
 	n->lineno = sn->lineno;
 	return n;
 }
