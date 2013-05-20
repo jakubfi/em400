@@ -318,9 +318,9 @@ void dbg_c_stack(int wid, int size)
 void dbg_c_memcfg(int wid)
 {
 	int i, j, cnt;
-	awprint(wid, C_LABEL, "Number of 4kword segments in each segment/block\n");
-	awprint(wid, C_LABEL, "seg/blk:   0  1  2  3  4  5  6  7  8  9 10 11 12 13 14 15\n");
-	awprint(wid, C_LABEL, "     hw:  ");
+	awprint(wid, C_LABEL, "Number of 4kword pages in each hardware module and logical block\n");
+	awprint(wid, C_LABEL, "mod/blk:   0  1  2  3  4  5  6  7  8  9 10 11 12 13 14 15\n");
+	awprint(wid, C_LABEL, " hw pgs:  ");
 	for (i=0 ; i<MEM_MAX_MODULES ; i++) {
 		cnt = 0;
 		for (j=0 ; j<MEM_MAX_SEGMENTS ; j++) {
@@ -329,7 +329,7 @@ void dbg_c_memcfg(int wid)
 		awprint(wid, C_DATA, "%2i ", cnt);
 	}
 	awprint(wid, C_DATA, "\n");
-	awprint(wid, C_LABEL, "     sw:  ");
+	awprint(wid, C_LABEL, " sw pgs:  ");
 	for (i=0 ; i<MEM_MAX_NB ; i++) {
 		cnt = 0;
 		for (j=0 ; j<MEM_MAX_SEGMENTS ; j++) {

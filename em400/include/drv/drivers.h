@@ -43,10 +43,11 @@ struct drv_t {
 	const int chan_type;
 	const char *name;
 	int argc;
+	int max_devs;
 	int (*f_init)(void *self, struct cfg_arg_t *arg);
 	void (*f_shutdown)(void *self);
 	void (*f_reset)(void *self);
-	int (*f_cmd)(void *self, int u_num, int dir, int cmd, uint16_t *r);
+	int (*f_cmd)(void *self, int dir, uint16_t n, uint16_t *r);
 };
 
 extern struct drv_t drv_drivers[];

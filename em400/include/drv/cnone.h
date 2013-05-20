@@ -26,7 +26,7 @@
 int drv_cnone_init(void *self, struct cfg_arg_t *arg);
 void drv_cnone_shutdown(void *self);
 void drv_cnone_reset(void *self);
-int drv_cnone_cmd(void *self, int u_num, int dir, int cmd, uint16_t *r);
+int drv_cnone_cmd(void *self, int dir, uint16_t n, uint16_t *r);
 
 #endif
 

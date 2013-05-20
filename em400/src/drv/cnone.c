@@ -40,7 +40,7 @@ void drv_cnone_reset(void *self)
 }
 
 // -----------------------------------------------------------------------
-int drv_cnone_cmd(void *self, int u_num, int dir, int cmd, uint16_t *r)
+int drv_cnone_cmd(void *self, int dir, uint16_t n_arg, uint16_t *r_arg)
 {
 #ifdef WITH_DEBUGGER
 	struct chan_t *ch = self;

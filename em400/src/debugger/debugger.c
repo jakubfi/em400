@@ -167,9 +167,7 @@ int dbg_init()
 void dbg_shutdown()
 {
 	eprint("Shutdown debugger\n");
-	if (ui_mode == O_NCURSES) {
-		aw_shutdown();
-	}
+	aw_shutdown();
 }
 
 // -----------------------------------------------------------------------

@@ -26,7 +26,7 @@
 int drv_cmem_init(void *self, struct cfg_arg_t *arg);
 void drv_cmem_shutdown(void *self);
 void drv_cmem_reset(void *self);
-int drv_cmem_cmd(void *self, int u_num, int dir, int cmd, uint16_t *r);
+int drv_cmem_cmd(void *self, int dir, uint16_t n_arg, uint16_t *r_arg);
 
 #endif
 

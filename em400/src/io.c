@@ -39,6 +39,7 @@ int io_chan_init(int c_num)
 	struct drv_t *c_driver;
 	if (em400_cfg.chans[c_num].name) {
 		c_driver = drv_get(DRV_CHAN, CHAN_IGNORE, em400_cfg.chans[c_num].name);
+		free(em400_cfg.chans[c_num].name);
 	} else {
 		c_driver = drv_get(DRV_CHAN, CHAN_IGNORE, "none");
 	}
@@ -56,9 +57,11 @@ int io_chan_init(int c_num)
 	io_chan[c_num] = chan;
 
 	// common channel initialization
+	chan->unit = calloc(c_driver->max_devs, sizeof(struct unit_t*));
 	chan->num = c_num;
 	chan->type = c_driver->chan_type;
 	chan->name = c_driver->name;
+	chan->max_devs = c_driver->max_devs;
 	chan->finish = 0;
 	chan->f_shutdown = c_driver->f_shutdown;
 	chan->f_reset = c_driver->f_reset;
@@ -78,12 +81,13 @@ int io_unit_init(int c_num, int u_num)
 	struct drv_t *u_driver;
 	if (em400_cfg.chans[c_num].units[u_num].name) {
 		u_driver = drv_get(DRV_UNIT, io_chan[c_num]->type, em400_cfg.chans[c_num].units[u_num].name);
+		free(em400_cfg.chans[c_num].units[u_num].name);
+		if (!u_driver) {
+			return E_IO_UNIT_UNKNOWN;
+		}
 	} else {
-		u_driver = drv_get(DRV_UNIT, CHAN_IGNORE, "none");
-	}
-
-	if (!u_driver) {
-		return E_IO_UNIT_UNKNOWN;
+		u_driver = NULL;
+		return E_OK;
 	}
 
 	// driver sanity checks
@@ -125,7 +129,7 @@ int io_init()
 		}
 
 		// initialize units connected
-		for (int u_num=0 ; u_num<IO_MAX_UNIT ; u_num++) {
+		for (int u_num=0 ; u_num<io_chan[c_num]->max_devs ; u_num++) {
 			res = io_unit_init(c_num, u_num);
 			if (res != E_OK) {
 				return res;
@@ -145,7 +149,7 @@ void io_shutdown()
 			continue;
 		}
 
-		for (int u_num=0 ; u_num<IO_MAX_UNIT ; u_num++) {
+		for (int u_num=0 ; u_num<chan->max_devs ; u_num++) {
 			struct unit_t *unit = chan->unit[u_num];
 			if (!unit) {
 				continue;
@@ -158,6 +162,7 @@ void io_shutdown()
 
 		eprint("    Shutdown channel %i (%s)\n", c_num, chan->name);
 		chan->f_shutdown(chan);
+		free(chan->unit);
 		free(chan);
 	}
 }
@@ -165,36 +170,34 @@ void io_shutdown()
 // -----------------------------------------------------------------------
 int io_dispatch(int dir, uint16_t n, uint16_t *r)
 {
-	int is_mem = (n & 0b0000000000000001);
-	int chan = (n & 0b0000000000011110) >> 1;
-	int unit = (n & 0b0000000011100000) >> 5;
-	int cmd = (n & 0b1111111100000000) >> 8;
+	int is_mem = (n & 0b0000000000000001);		// 1 = mem config
 
 	// software memory configuration
 	if (is_mem) {
-		LOG(D_IO, 1, "MEM command, dir = %s, module = %d, segment = %d, cmd = %d", dir ? "OUT" : "IN", chan, unit, cmd);
 		if (dir == IO_OU) {
+			LOG(D_IO, 1, "MEM command");
 			int nb = *r & 0b0000000000001111;
 			int ab = (*r & 0b1111000000000000) >> 12;
-			// here, channel is memory module, unit is memory segment
-			return mem_add_map(nb, ab, chan, unit);
+			int module = (n & 0b0000000000011110) >> 1;
+			int seg = (n & 0b0000000111100000) >> 5;
+			return mem_add_map(nb, ab, module, seg);
 		} else {
 			// TODO: what to return?
 			LOG(D_IO, 1, "MEM command shouldn't be IN");
 			return IO_NO;
 		}
-
 	// channel/unit command
 	} else {
+		int chan = (n & 0b0000000000011110) >> 1;
 #ifdef WITH_DEBUGGER
-		char *cmdc = int2bin(cmd, 8);
-		LOG(D_IO, 1, "I/O command, dir = %s, chan = %d, unit = %d, cmd = %s", dir ? "OUT" : "IN", chan, unit, cmdc);
-		free(cmdc);
+		char *narg = int2bin(n, 16);
+		char *rarg = int2bin(*r, 16);
+		LOG(D_IO, 1, "I/O command, dir = %s, chan = %d, n_arg = %s, r_arg = %s", dir ? "OUT" : "IN", chan, narg, rarg);
+		free(narg);
+		free(rarg);
 #endif
-		int res = io_chan[chan]->f_cmd(io_chan[chan], unit, dir, cmd, r);
-#ifdef WITH_DEBUGGER
+		int res = io_chan[chan]->f_cmd(io_chan[chan], dir, n, r);
 		LOG(D_IO, 1, "I/O command, result = %i", res);
-#endif
 		return res;
 	}
 }

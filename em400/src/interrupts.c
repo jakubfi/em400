@@ -163,7 +163,7 @@ void int_serve()
 	uint16_t int_spec = 0;
 	// get interrupt specification if it's from channel
 	if ((interrupt >= 12) && (interrupt <= 27)) {
-		io_chan[interrupt-12]->f_cmd(io_chan[interrupt-12], -1, IO_IN, CHAN_CMD_INTSPEC, &int_spec);
+		io_chan[interrupt-12]->f_cmd(io_chan[interrupt-12], -IO_IN, CHAN_CMD_INTSPEC<<8, &int_spec);
 	}
 
 	// put system status on stack
