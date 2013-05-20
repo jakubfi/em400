@@ -28,22 +28,22 @@ struct retry_t {
 	int level;
 };
 
-struct symbol_t {
+struct label_t {
 	char *name;
 	int value;
-	struct symbol_t *next;
+	struct label_t *next;
 };
 
-extern struct symbol_t *symbols;
+extern struct label_t *labels;
 
 extern int enable_debug;
 extern char assembly_error[];
 
 void DEBUG(char *format, ...);
 
-struct symbol_t * symbol_add(char *name, int value);
-int write_symbols(FILE *symf);
-void symbols_drop();
+struct label_t * label_add(char *name, int value);
+int write_labels(FILE *labf);
+void labels_drop();
 
 struct node_t * eval_val(struct node_t *n);
 struct node_t * eval_exlname(struct node_t *n);

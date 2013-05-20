@@ -28,7 +28,7 @@
 #include "errors.h"
 
 int preprocessor = 0;
-int dump_symbols = 0;
+int dump_labels = 0;
 char *input_file = NULL;
 char *output_file = NULL;
 
@@ -40,7 +40,7 @@ void usage()
 	printf("   -v : print version information and exit\n");
 	printf("   -h : print help\n");
 	printf("   -d : enable debug messages (lots of)\n");
-	printf("   -s : dump symbols to .sym file (for later use with em400 debugger)\n");
+	printf("   -l : write labels to .lab file\n");
 	printf("   -k : use K-202 mnemonics (instead of MERA-400)\n");
 	printf("   -c : use classic ASSK/ASSM syntax (instead of modern)\n");
 	printf("   -p : produce preprocessor output (.pp.asm file)\n");
@@ -54,13 +54,13 @@ void parse_args(int argc, char **argv)
 	pp_mnemo_sel = MERA400;
 	syntax = MODERN;
 	preprocessor = 0;
-	dump_symbols = 0;
+	dump_labels = 0;
 	enable_debug = 0;
 
 	int option;
 
 	// parse options
-	while ((option = getopt(argc, argv,"vdskchp2:")) != -1) {
+	while ((option = getopt(argc, argv,"vdlkchp2:")) != -1) {
 		switch (option) {
 			case 'v':
 				printf("ASSEM version %s (c) 2012-2013 by Jakub Filipowicz\n", ASSEM_VERSION);
@@ -68,8 +68,8 @@ void parse_args(int argc, char **argv)
 			case 'd':
 				enable_debug = 1;
 				break;
-			case 's':
-				dump_symbols = 1;
+			case 'l':
+				dump_labels = 1;
 				break;
 			case 'h':
 				usage();
@@ -176,22 +176,22 @@ int main(int argc, char **argv)
 		free(pp_file);
 	}
 
-	if (dump_symbols) {
-		char *sym_file = malloc(strlen(output_file)+10);
-		sprintf(sym_file, "%s.sym", output_file);
-		printf("Writing symbols to %s\n", sym_file);
-		FILE *symf = fopen(sym_file, "w");
-		if (!symf) {
-			printf("Cannot open symbols file '%s' for writing, sorry.\n", sym_file);
+	if (dump_labels) {
+		char *lab_file = malloc(strlen(output_file)+10);
+		sprintf(lab_file, "%s.lab", output_file);
+		printf("Writing labels to %s\n", lab_file);
+		FILE *labf = fopen(lab_file, "w");
+		if (!labf) {
+			printf("Cannot open labels file '%s' for writing, sorry.\n", lab_file);
 		}
-		write_symbols(symf);
-		fclose(symf);
-		free(sym_file);
+		write_labels(labf);
+		fclose(labf);
+		free(lab_file);
 	}
 
 	free(output_file);
 	nodelist_drop(program);
-	symbols_drop();
+	labels_drop();
 
 	return 0;
 }

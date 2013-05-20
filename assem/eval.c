@@ -38,8 +38,8 @@ int retrying = 0;
 char text_b = 0;
 char text_e = 128;
 
-struct symbol_t *symbols;
-struct symbol_t *symbols_top;
+struct label_t *labels;
+struct label_t *labels_top;
 
 char assembly_error[1024];
 
@@ -71,42 +71,42 @@ int ass_error(int line, char *format, ...)
 }
 
 // -----------------------------------------------------------------------
-struct symbol_t * symbol_add(char *name, int value)
+struct label_t * label_add(char *name, int value)
 {
-	struct symbol_t *s = malloc(sizeof(struct symbol_t));
-	if (s) {
-		s->name = strdup(name);
-		s->value = value;
-		if (symbols) {
-			symbols_top->next = s;
-			symbols_top = s;
+	struct label_t *l = malloc(sizeof(struct label_t));
+	if (l) {
+		l->name = strdup(name);
+		l->value = value;
+		if (labels) {
+			labels_top->next = l;
+			labels_top = l;
 		} else {
-			symbols = symbols_top = s;
+			labels = labels_top = l;
 		}
 	}
-	return s;
+	return l;
 }
 
 // -----------------------------------------------------------------------
-int write_symbols(FILE *symf)
+int write_labels(FILE *labf)
 {
-	struct symbol_t *s = symbols;
-	while (s) {
-		fprintf(symf, "%s %i\n", s->name, s->value);
-		s = s->next;
+	struct label_t *l = labels;
+	while (l) {
+		fprintf(labf, "%s %i\n", l->name, l->value);
+		l = l->next;
 	}
 	return 1;
 }
 
 // -----------------------------------------------------------------------
-void symbols_drop()
+void labels_drop()
 {
-	struct symbol_t *s = symbols;
-	while (s) {
-		struct symbol_t *next = s->next;
-		free(s->name);
-		free(s);
-		s = next;
+	struct label_t *l = labels;
+	while (l) {
+		struct label_t *next = l->next;
+		free(l->name);
+		free(l);
+		l = next;
 	}
 }
 
@@ -896,7 +896,7 @@ int add_def(int type, int level, struct node_t *n)
 		DEBUG("%i add %s: %s\n", level, (type==D_LABEL)?"label":"variable", n->str);
 		dict_add(level, type, n->str, nn);
 		if (type == D_LABEL) {
-			symbol_add(n->str, n->ic);
+			label_add(n->str, n->ic);
 		}
 		return E_OK;
 	}
