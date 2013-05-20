@@ -22,6 +22,7 @@
 #include "nodes.h"
 
 struct dict_t *dict = NULL;
+struct symbol_t *symbols = NULL;
 
 // -----------------------------------------------------------------------
 struct dict_t * dict_add(int level, int type, char *name, struct node_t *n)

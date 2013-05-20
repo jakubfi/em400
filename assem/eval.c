@@ -38,6 +38,9 @@ int retrying = 0;
 char text_b = 0;
 char text_e = 128;
 
+struct symbol_t *symbols;
+struct symbol_t *symbols_top;
+
 char assembly_error[1024];
 
 // -----------------------------------------------------------------------
@@ -65,6 +68,46 @@ int ass_error(int line, char *format, ...)
 	vsprintf(assembly_error+pos, format, ap);
 	va_end(ap);
 	return E_ASS;
+}
+
+// -----------------------------------------------------------------------
+struct symbol_t * symbol_add(char *name, int value)
+{
+	struct symbol_t *s = malloc(sizeof(struct symbol_t));
+	if (s) {
+		s->name = strdup(name);
+		s->value = value;
+		if (symbols) {
+			symbols_top->next = s;
+			symbols_top = s;
+		} else {
+			symbols = symbols_top = s;
+		}
+	}
+	return s;
+}
+
+// -----------------------------------------------------------------------
+int write_symbols(FILE *symf)
+{
+	struct symbol_t *s = symbols;
+	while (s) {
+		fprintf(symf, "%s %i\n", s->name, s->value);
+		s = s->next;
+	}
+	return 1;
+}
+
+// -----------------------------------------------------------------------
+void symbols_drop()
+{
+	struct symbol_t *s = symbols;
+	while (s) {
+		struct symbol_t *next = s->next;
+		free(s->name);
+		free(s);
+		s = next;
+	}
 }
 
 // -----------------------------------------------------------------------
@@ -852,6 +895,9 @@ int add_def(int type, int level, struct node_t *n)
 	} else { // add new variable/label
 		DEBUG("%i add %s: %s\n", level, (type==D_LABEL)?"label":"variable", n->str);
 		dict_add(level, type, n->str, nn);
+		if (type == D_LABEL) {
+			symbol_add(n->str, n->ic);
+		}
 		return E_OK;
 	}
 }
