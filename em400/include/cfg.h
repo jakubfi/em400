@@ -52,7 +52,7 @@ struct cfg_unit_t {
 // -----------------------------------------------------------------------
 struct cfg_chan_t {
 	char *name;
-	struct cfg_unit_t units[IO_MAX_UNIT];
+	struct cfg_unit_t units[256];
 };
 
 // -----------------------------------------------------------------------

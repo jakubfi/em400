@@ -69,9 +69,13 @@ void drv_cmem_reset(void *self)
 }
 
 // -----------------------------------------------------------------------
-int drv_cmem_cmd(void *self, int u_num, int dir, int cmd, uint16_t *r)
+int drv_cmem_cmd(void *self, int dir, uint16_t n_arg, uint16_t *r_arg)
 {
 	struct chan_t *ch = self;
+
+	int u_num = (n_arg & 0b0000000011100000) >> 5;
+	int cmd = (n_arg & 0b1111111100000000) >> 8;
+
 	struct unit_t *unit = ch->unit[u_num];
 	ch->int_mask = 0;
 
@@ -83,17 +87,17 @@ int drv_cmem_cmd(void *self, int u_num, int dir, int cmd, uint16_t *r)
 				LOG(D_IO, 1, "%i:%i (%s:%s) command (chan): CHAN_CMD_EXISTS", ch->num, unit->num, ch->name, unit->name);
 				break;
 			case CHAN_CMD_INTSPEC:
-				chan_get_int_spec(ch, r);
-				LOG(D_IO, 1, "%i:%i (%s:%s) command (chan): CHAN_CMD_INTSPEC -> %i", ch->num, unit->num, ch->name, unit->name, *r);
+				chan_get_int_spec(ch, r_arg);
+				LOG(D_IO, 1, "%i:%i (%s:%s) command (chan): CHAN_CMD_INTSPEC -> %i", ch->num, unit->num, ch->name, unit->name, *r_arg);
 				break;
 			case CHAN_CMD_STATUS:
-				*r = ch->untransmitted;
+				*r_arg = ch->untransmitted;
 				LOG(D_IO, 1, "%i:%i (%s:%s) command (chan): CHAN_CMD_STATUS -> %i", ch->num, unit->num, ch->name, unit->name, ch->untransmitted);
 				break;
 			case CHAN_CMD_ALLOC:
 				// all units always working with CPU 0
-				*r = 0;
-				LOG(D_IO, 1, "%i:%i (%s:%s) command (chan): CHAN_CMD_ALLOC -> %i", ch->num, unit->num, ch->name, unit->name, *r);
+				*r_arg = 0;
+				LOG(D_IO, 1, "%i:%i (%s:%s) command (chan): CHAN_CMD_ALLOC -> %i", ch->num, unit->num, ch->name, unit->name, *r_arg);
 				break;
 			default:
 				// shouldn't happen, but as channel always reports OK...
@@ -125,7 +129,7 @@ int drv_cmem_cmd(void *self, int u_num, int dir, int cmd, uint16_t *r)
 		return IO_OK;
 	// command for unit
 	} else {
-		return unit->f_cmd(unit, -1, dir, cmd, r);
+		return unit->f_cmd(unit, cmd, n_arg, r_arg);
 	}
 }
 

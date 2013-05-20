@@ -25,11 +25,29 @@
 #include "drv/cchar.h"
 #include "drv/lib.h"
 
+#include "debugger/log.h"
+
+// -----------------------------------------------------------------------
+void * drv_cchar_thread(void *self)
+{
+	struct chan_t *ch = self;
+
+	struct timespec ts;
+/**/	ts.tv_sec = 0;
+/**/	ts.tv_nsec = 1000000;
+
+	while (!ch->finish) {
+/**/		nanosleep(&ts, &ts);
+	}
+	pthread_exit(NULL);
+}
+
 // -----------------------------------------------------------------------
 int drv_cchar_init(void *self, struct cfg_arg_t *arg)
 {
 	struct chan_t *ch = self;
 	drv_cchar_reset(ch);
+	pthread_create(&ch->thread, NULL, drv_cchar_thread, ch);
 	return E_OK;
 }
 
@@ -38,6 +56,7 @@ void drv_cchar_shutdown(void *self)
 {
 	struct chan_t *ch = self;
 	ch->finish = 1;
+	pthread_join(ch->thread, NULL);
 }
 
 // -----------------------------------------------------------------------
@@ -49,9 +68,13 @@ void drv_cchar_reset(void *self)
 }
 
 // -----------------------------------------------------------------------
-int drv_cchar_cmd(void *self, int u_num, int dir, int cmd, uint16_t *r)
+int drv_cchar_cmd(void *self, int dir, uint16_t n_arg, uint16_t *r_arg)
 {
 	struct chan_t *ch = self;
+
+	int u_num = (n_arg & 0b0000000011100000) >> 5;
+	int cmd = (n_arg & 0b1111111100000000) >> 8;
+
 	struct unit_t *unit = ch->unit[u_num];
 	ch->int_mask = 0;
 
@@ -62,11 +85,11 @@ int drv_cchar_cmd(void *self, int u_num, int dir, int cmd, uint16_t *r)
 			case CHAN_CMD_EXISTS:
 				break;
 			case CHAN_CMD_INTSPEC:
-				chan_get_int_spec(ch, r);
+				chan_get_int_spec(ch, r_arg);
 				break;
 			case CHAN_CMD_ALLOC:
 				// all units always working with CPU 0
-				*r = 0;
+				*r_arg = 0;
 				break;
 			default:
 				// shouldn't happen, but as channel always reports OK...
@@ -93,7 +116,7 @@ int drv_cchar_cmd(void *self, int u_num, int dir, int cmd, uint16_t *r)
 		return IO_OK;
 	// command for unit
 	} else {
-		return unit->f_cmd(unit, -1, dir, cmd, r);
+		return unit->f_cmd(unit, dir, n_arg, r_arg);
 	}
 }
 

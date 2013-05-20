@@ -43,6 +43,10 @@ int drv_u9425_init(void *self, struct cfg_arg_t *arg)
 // -----------------------------------------------------------------------
 void drv_u9425_shutdown(void *self)
 {
+	struct u9425_cfg_t *cfg = ((struct unit_t *)self)->cfg;
+	free(cfg->img_fixed);
+	free(cfg->img_removable);
+	free(cfg);
 }
 
 // -----------------------------------------------------------------------
@@ -51,7 +55,7 @@ void drv_u9425_reset(void *self)
 }
 
 // -----------------------------------------------------------------------
-int drv_u9425_cmd(void *self, int u_num, int dir, int cmd, uint16_t *r)
+int drv_u9425_cmd(void *self, int dir, uint16_t n_arg, uint16_t *r_arg)
 {
 	return IO_NO;
 }

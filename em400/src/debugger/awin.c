@@ -77,6 +77,7 @@ int aw_init(int output)
 void aw_shutdown()
 {
 	if (aw_output != O_NCURSES) {
+		clear_history();
 		return;
 	}
 	aw_nc_rl_history_delete(aw_history);
@@ -832,6 +833,7 @@ int aw_readline(int id, int attr, char *prompt, char *buffer, int buflen)
 				free(rlin);
 				return KEY_ENTER;
 			} else {
+				free(rlin);
 				return -1;
 			}
 			break;

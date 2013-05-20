@@ -29,6 +29,7 @@
 extern FILE *cyyin;
 void cyyerror(char *s, ...);
 int cyyparse();
+int cyylex_destroy();
 int cfg_error = 0;
 
 // -----------------------------------------------------------------------
@@ -56,6 +57,8 @@ int cfg_load(char *cfg_file)
 	} while (!feof(cyyin));
 
 	fclose(cfg);
+	cyylex_destroy();
+
 	if (cfg_error) return E_CFG_PARSE;
 	return E_OK;
 }
@@ -80,7 +83,7 @@ void cfg_print()
 	for (int c_num=0 ; c_num<IO_MAX_CHAN ; c_num++) {
 		if (em400_cfg.chans[c_num].name) {
 			eprint("  Channel %2i: %s\n", c_num, em400_cfg.chans[c_num].name);
-			for (int u_num=0 ; u_num<IO_MAX_UNIT ; u_num++) {
+			for (int u_num=0 ; u_num<256 ; u_num++) {
 				if (em400_cfg.chans[c_num].units[u_num].name) {
 					eprint("     Unit %2i: %s (args: ", u_num, em400_cfg.chans[c_num].units[u_num].name);
 					struct cfg_arg_t *args = em400_cfg.chans[c_num].units[u_num].args;
@@ -126,7 +129,7 @@ void cfg_set_os_mem(int segments)
 struct cfg_arg_t * cfg_make_arg(char *s)
 {
 	struct cfg_arg_t *a = malloc(sizeof(struct cfg_arg_t));
-	a->text = strdup(s);
+	a->text = s;
 	a->next = NULL;
 	return a;
 }
@@ -134,15 +137,12 @@ struct cfg_arg_t * cfg_make_arg(char *s)
 // -----------------------------------------------------------------------
 void cfg_make_unit(int c_num, int u_num, char *name, struct cfg_arg_t *arglist)
 {
+	// check channel number
 	if ((c_num < 0) || (c_num > IO_MAX_CHAN)) {
 		cyyerror("Incorrect channel number for unit %i: %i", u_num, c_num);
 	}
 
-	if ((u_num < 0) || (u_num > IO_MAX_UNIT)) {
-		cyyerror("Incorrect unit number: %i", u_num);
-	}
-
-	// check configuration with driver
+	// check if unit driver of that name exists
 	struct drv_t *driver = drv_get(DRV_UNIT, CHAN_IGNORE, name);
 	if (!driver) {
 		cyyerror("Unknown unit: %s", name);

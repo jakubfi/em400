@@ -63,7 +63,10 @@ int args_to_cfg(struct cfg_arg_t *arg, const char *format, ...)
 		}
 		count++;
 		format++;
+		free(arg->text);
+		struct cfg_arg_t *parg = arg;
 		arg = arg->next;
+		free(parg);
 	}
 
 	va_end(ap);

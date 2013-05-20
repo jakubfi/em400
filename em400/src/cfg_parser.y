@@ -57,7 +57,7 @@ objects:
 object:
 	CPU '{' cpu_opts '}'
 	| MEMORY '{' os_mem modules '}'
-	| CHANNEL VALUE { this_chan=$2.v; } '=' TEXT '{' units '}' { cfg_make_chan($2.v, $5.s); }
+	| CHANNEL VALUE { this_chan=$2.v; } '=' TEXT '{' units '}' { cfg_make_chan($2.v, $5.s); free($2.s); }
 	;
 
 units:
@@ -66,8 +66,8 @@ units:
 	;
 
 unit:
-	UNIT VALUE '=' TEXT ':' arglist	{ cfg_make_unit(this_chan, $2.v, $4.s, $6); }
-	| UNIT VALUE '=' TEXT			{ cfg_make_unit(this_chan, $2.v, $4.s, NULL); }
+	UNIT VALUE '=' TEXT ':' arglist	{ cfg_make_unit(this_chan, $2.v, $4.s, $6); free($2.s); }
+	| UNIT VALUE '=' TEXT			{ cfg_make_unit(this_chan, $2.v, $4.s, NULL); free($2.s); }
 	;
 
 arglist:
@@ -88,9 +88,9 @@ cpu_opts:
 cpu_opt:
 	SPEED '=' MAX			{ em400_cfg.cpu.speed_real = 0; }
 	| SPEED '=' REAL		{ em400_cfg.cpu.speed_real = 1; }
-	| TIMER '=' VALUE		{ em400_cfg.cpu.timer_step = $3.v; }
-	| MOD_17 '=' VALUE		{ em400_cfg.cpu.mod_17bit = $3.v; }
-	| MOD_SINT '=' VALUE	{ em400_cfg.cpu.mod_sint = $3.v; }
+	| TIMER '=' VALUE		{ em400_cfg.cpu.timer_step = $3.v; free($3.s); }
+	| MOD_17 '=' VALUE		{ em400_cfg.cpu.mod_17bit = $3.v; free($3.s); }
+	| MOD_SINT '=' VALUE	{ em400_cfg.cpu.mod_sint = $3.v; free($3.s); }
 	;
 
 modules:
@@ -99,12 +99,12 @@ modules:
 	;
 
 module:
-	MODULE VALUE '=' ELWRO ':' VALUE	{ cfg_set_mem($2.v, 0, $6.v); }
-	| MODULE VALUE '=' MEGA ':' VALUE	{ cfg_set_mem($2.v, 1, $6.v); }
+	MODULE VALUE '=' ELWRO ':' VALUE	{ cfg_set_mem($2.v, 0, $6.v); free($2.s); free($6.s); }
+	| MODULE VALUE '=' MEGA ':' VALUE	{ cfg_set_mem($2.v, 1, $6.v); free($2.s); free($6.s); }
 	;
 
 os_mem:
-	OS_SEG '=' VALUE { cfg_set_os_mem($3.v); }
+	OS_SEG '=' VALUE { cfg_set_os_mem($3.v); free($3.s); }
 	;
 %%
 

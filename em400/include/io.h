@@ -22,7 +22,6 @@
 #include <pthread.h>
 
 #define IO_MAX_CHAN	16
-#define IO_MAX_UNIT	8
 
 enum io_dir {
 	IO_IN = 0,
@@ -44,13 +43,14 @@ struct chan_t {
 	int num;
 	int type;
 	const char *name;
-	struct unit_t *unit[IO_MAX_UNIT];
+	int max_devs;
+	struct unit_t **unit;
 	int finish;
 	pthread_t thread;
 
 	void (*f_shutdown)(void *self);
 	void (*f_reset)(void *self);
-	int (*f_cmd)(void *self, int u_num, int dir, int cmd, uint16_t *r);
+	int (*f_cmd)(void *self, int dir, uint16_t, uint16_t *r);
 
 	uint16_t int_spec; // 0 past-EN, 3-7 int spec, 8-10 dev number
 	uint16_t untransmitted;
@@ -66,7 +66,7 @@ struct unit_t {
 
 	void (*f_shutdown)(void *self);
 	void (*f_reset)(void *self);
-	int (*f_cmd)(void *self, int u_num, int dir, int cmd, uint16_t *r);
+	int (*f_cmd)(void *self, int dir, uint16_t, uint16_t *r);
 };
 
 extern struct chan_t *io_chan[IO_MAX_CHAN];
