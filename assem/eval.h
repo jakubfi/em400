@@ -22,18 +22,50 @@
 
 #include "elements.h"
 
-#define MAX_PROG_SIZE 64*1024
+struct retry_t {
+	struct node_t *n;
+	struct retry_t *next;
+	int level;
+};
 
-extern struct nodelist_t *program;
-extern int program_ic;
-
-extern struct dict_t **dict;
+extern int enable_debug;
 extern char assembly_error[];
 
-int compose_data(struct node_t *word, uint16_t *dt);
-int compose_opcode(int ic, struct node_t *word, uint16_t *dt);
-struct node_t * expr_eval(struct node_t *n, char *refcheck);
-int assembly(struct nodelist_t *nl, uint16_t *outdata);
+void DEBUG(char *format, ...);
+
+struct node_t * eval_val(struct node_t *n);
+struct node_t * eval_exlname(struct node_t *n);
+struct node_t * eval_name(struct node_t *n);
+struct node_t * eval_2op(int operator, struct node_t *n);
+struct node_t * eval_1op(int operator, struct node_t *n);
+struct node_t * eval_expr(struct node_t *n);
+
+struct node_t * eval_t_arg(struct node_t *n, int ic, int rel_op);
+
+struct node_t * eval_op(struct node_t *n);
+struct node_t * eval_op_norm(struct node_t *n);
+struct node_t * eval_op_ka1(struct node_t *n);
+struct node_t * eval_op_js(struct node_t *n);
+struct node_t * eval_op_ka2(struct node_t *n);
+struct node_t * eval_op_brc(struct node_t *n);
+struct node_t * eval_op_blc(struct node_t *n);
+struct node_t * eval_op_shc(struct node_t *n);
+struct node_t * eval_op_hlt(struct node_t *n);
+
+struct node_t * eval_multi(struct node_t *n);
+struct node_t * eval_string(struct node_t *n);
+struct node_t * eval_res(struct node_t *n);
+
+void exlize_names(struct node_t *n);
+struct node_t * compose(struct node_t *n);
+
+struct node_t * expr_eval(struct node_t *n);
+
+int assembly(struct node_t *n);
+int flow_control(struct node_t **n);
+int ass_retry();
+int retry_push(struct node_t *n);
+
 
 #endif
 

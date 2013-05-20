@@ -21,11 +21,14 @@
 #include <inttypes.h>
 #include <arpa/inet.h>
 
-#include "eval.h"
+#include "dict.h"
 #include "pprocess.h"
-#include "parser_modern.h"
-#include "elements.h"
-#include "ops.h"
+#include "keywords.h"
+
+int pp_mnemo_sel = MERA400;
+int indent_step = 1;
+char indent_string[] = "\t\t\t\t\t\t\t\t\t\0";
+char *indent = indent_string + 10;
 
 // -----------------------------------------------------------------------
 char * pp_get_mnemo(struct node_t *n)
@@ -34,6 +37,9 @@ char * pp_get_mnemo(struct node_t *n)
 
 	switch (n->type) {
 		case N_KA2:
+		case N_BRC:
+		case N_BLC:
+		case N_EXL:
 			mask = 0b1111111100000000;
 			break;
 		case N_SHC:
@@ -60,81 +66,95 @@ char * pp_get_mnemo(struct node_t *n)
 			break;
 	}
 
-	int opcode = n->opcode & mask;
+	int opcode = n->value & mask;
 
-	struct op_t *op = ops;
+	struct kw_t *kw = ops;
 
-	while (op->mnemo[0]) {
-			if (opcode == op->opcode) {
-					return op->mnemo[0];
+	while (kw->mnemo[0]) {
+			if (opcode == kw->opcode) {
+					return kw->mnemo[pp_mnemo_sel];
 			}
-			op++;
+			kw++;
 	}
 
 	return NULL;
 }
 
-
 // -----------------------------------------------------------------------
-char * pp_expr_eval(struct node_t *n)
+int pp_eval_2op(char *buf, char *op, struct node_t *n1, struct node_t *n2)
 {
-	if (!n) return NULL;
-
-	struct dict_t *d;
-	char *buf = malloc(1024 * sizeof(char));
-	char *s1 = pp_expr_eval(n->n1);
-	char *s2 = pp_expr_eval(n->n2);
-
-	switch (n->type) {
-		case N_VAL:
-			if (n->name) {
-				sprintf(buf, "%s", n->name);
-			} else {
-				sprintf(buf, "%i", n->data);
-			}
-			break;
-		case N_NAME:
-			d = dict_find(dict, n->name);
-			sprintf(buf, "%s", d->name);
-			break;
-		case N_PLUS:
-			sprintf(buf, "%s + %s", s1, s2);
-			break;
-		case N_MINUS:
-			sprintf(buf, "%s - %s", s1, s2);
-			break;
-		case N_UMINUS:
-			sprintf(buf, "-%s", s1);
-			break;
-		case N_SHL:
-			sprintf(buf, "%s << %s", s1, s2);
-			break;
-		case N_SHR:
-			sprintf(buf, "%s >> %s", s1, s2);
-			break;
-		default:
-			*buf = '\0';
-			break;
-	}
-
-	free(s1);
-	free(s2);
-
-	return buf;
+	int pos = 0;
+	pos += pp_eval(buf+pos, n1);
+	pos += sprintf(buf+pos, "%s", op);
+	pos += pp_eval(buf+pos, n2);
+	return pos;
 }
 
 // -----------------------------------------------------------------------
-char * pp_compose_opcode(int ic, struct node_t *n, int *norm_arg)
+int pp_eval(char *buf, struct node_t *n)
 {
-	char *s = NULL;
-	char *buf = malloc(1024 * sizeof(char));
+	if (!n) return 0;
+
+	int pos = 0;
+
+	switch (n->type) {
+		case N_VAL:
+			if (n->str) {
+				pos += sprintf(buf+pos, "%s", n->str);
+			} else {
+				pos += sprintf(buf+pos, "%i", n->value);
+			}
+			break;
+		case N_NAME:
+		case N_EXLNAME:
+			pos += sprintf(buf+pos, "%s", n->str);
+			break;
+		case N_PLUS:
+			pos += pp_eval_2op(buf+pos, "+", n->n1, n->n2);
+			break;
+		case N_MINUS:
+			pos += pp_eval_2op(buf+pos, "-", n->n1, n->n2);
+			break;
+		case N_MUL:
+			pos += pp_eval_2op(buf+pos, "*", n->n1, n->n2);
+			break;
+		case N_DIV:
+			pos += pp_eval_2op(buf+pos, "/", n->n1, n->n2);
+			break;
+		case N_PAR:
+			pos += pp_eval_2op(buf+pos, "(", NULL, n->n1);
+			pos += sprintf(buf+pos, ")");
+			break;
+		case N_UMINUS:
+			pos += pp_eval_2op(buf+pos, "-", NULL, n->n1);
+			break;
+		case N_SHL:
+			pos += pp_eval_2op(buf+pos, "<<", n->n1, n->n2);
+			break;
+		case N_SHR:
+			pos += pp_eval_2op(buf+pos, ">>", n->n1, n->n2);
+			break;
+		case N_SCALE:
+			pos += pp_eval_2op(buf+pos, "//", n->n1, n->n2);
+			break;
+		default:
+			*(buf+pos) = '\0';
+			break;
+	}
+
+	return pos;
+}
+
+// -----------------------------------------------------------------------
+int pp_compose_opcode(char *buf, struct node_t *n)
+{
 	int pos = 0;
 	int do_norm = 0;
 
-	int d  = (n->opcode & 0b0000001000000000) >> 6;
-	int ra = (n->opcode & 0b0000000111000000) >> 6;
-	int rb = (n->opcode & 0b0000000000111000) >> 3;
-	int rc = (n->opcode & 0b0000000000000111) >> 0;
+	int d  = (n->value & 0b0000001000000000) >> 6;
+	int ra = (n->value & 0b0000000111000000) >> 6;
+	int rb = (n->value & 0b0000000000111000) >> 3;
+	int rc = (n->value & 0b0000000000000111) >> 0;
 
 	pos += sprintf(buf+pos, "%-4s", pp_get_mnemo(n));
 
@@ -144,13 +164,12 @@ char * pp_compose_opcode(int ic, struct node_t *n, int *norm_arg)
 			pos += sprintf(buf+pos, " r%i,", ra);
 		case N_JS:
 		case N_KA2:
-			s = pp_expr_eval(n->next);
-			pos += sprintf(buf+pos, " %s", s);
-			free(s);
-			break;
+		case N_BRC:
+		case N_BLC:
 		case N_HLT:
-			s = pp_expr_eval(n->n1);
-			pos += sprintf(buf+pos, " %s", s);
+		case N_EXL:
+			pos += sprintf(buf+pos, " ");
+			pos += pp_eval(buf+pos, n->n1);
 			break;
 		case N_2ARG:
 			pos += sprintf(buf+pos, " r%i,", ra);
@@ -164,12 +183,9 @@ char * pp_compose_opcode(int ic, struct node_t *n, int *norm_arg)
 		case N_S:
 			break;
 		case N_C:
-			pos += sprintf(buf+pos, " r%i,", ra);
+			pos += sprintf(buf+pos, " r%i", ra);
 			break;
 	}
-
-	free(s);
-	s = NULL;
 
 	if (do_norm) {
 		pos += sprintf(buf+pos, " ");
@@ -179,94 +195,186 @@ char * pp_compose_opcode(int ic, struct node_t *n, int *norm_arg)
 		if (rc) {
 			pos += sprintf(buf+pos, "r%i", rc);
 		} else {
-			*norm_arg = 1;
-			s = pp_expr_eval(n->next);
-			pos += sprintf(buf+pos, "%s", s);
-			free(s);
+			pos += pp_eval(buf+pos, n->n1);
 		}
 		if (rb) {
-			pos += sprintf(buf+pos, " + r%i", rb);
+			pos += sprintf(buf+pos, "+r%i", rb);
 		}
 		if (d) {
 			pos += sprintf(buf+pos, "]");
 		}
 	}
 
-	return buf;
+	return pos;
 }
 
 // -----------------------------------------------------------------------
-int preprocess(struct nodelist_t *nl, FILE *ppf)
+char * pp_get_pragma(struct node_t *n)
 {
-	int ic = 0;
-	int res;
-	int linelen;
+	struct kw_t *kw = pragmas;
+	while (kw->mnemo[0]) {
+		if (n->type == kw->opcode) {
+			return kw->mnemo[pp_mnemo_sel];
+		}
+		kw++;
+	}
+	return NULL;
+}
 
+// -----------------------------------------------------------------------
+int pp_compose_flow(char *buf, struct node_t *n)
+{
+	if (!n) return 0;
+
+	int pos = 0;
+
+	if ((n->type != N_ALABEL) && (n->type != N_LABEL)) {
+		pos += sprintf(buf+pos, "\t%s%s ", indent, pp_get_pragma(n));
+	}
+
+	switch (n->type) {
+		case N_PROG:
+		case N_SEG:
+		case N_MACRO:
+			indent -= indent_step;
+			break;
+		case N_FINPROG:
+		case N_FINSEG:
+		case N_FINMACRO:
+			indent += indent_step;
+			break;
+		case N_FI:
+			break;
+		case N_LABEL:
+		case N_ALABEL:
+			pos += sprintf(buf+pos, "%s:", n->str);
+			break;
+		case N_VAR:
+			pos += sprintf(buf+pos, "%s ", n->str);
+			pos += pp_eval(buf+pos, n->n1);
+			break;
+		case N_AVAR:
+			pos += sprintf(buf+pos, "*%s ", n->str);
+			pos += pp_eval(buf+pos, n->n1);
+			break;
+		case N_SETIC:
+		case N_OVL:
+			pos += pp_eval(buf+pos, n->n1);
+			break;
+		case N_IFUNK:
+		case N_IFUND:
+		case N_IFDEF:
+			pos += sprintf(buf+pos, "%s\n", n->str);
+			break;
+		case N_TEXT:
+			pos += sprintf(buf+pos, ".text ");
+			pos += pp_eval(buf+pos, n->n1);
+			break;
+		default:
+			pos += sprintf(buf+pos, "?");
+			break;
+	}
+
+	return pos;
+}
+
+// -----------------------------------------------------------------------
+int pp_compose_multi(char *buf, struct node_t *n)
+{
+	if (!n) return 0;
+
+	int pos = 0;
+
+	switch (n->type) {
+		case N_STRING:
+			pos += sprintf(buf+pos, ".data \"%s\"", n->str);
+			break;
+		case N_RES:
+			pos += sprintf(buf+pos, ".res ");
+			pos += pp_eval(buf+pos, n->n1);
+			pos += sprintf(buf+pos, ", ");
+			pos += pp_eval(buf+pos, n->n2);
+			break;
+		default:
+			pos += sprintf(buf+pos, "?");
+			break;
+	}
+
+	return pos;
+}
+
+// -----------------------------------------------------------------------
+int pp_compose_empty(char *buf, struct node_t *n)
+{
+	if (!n) return 0;
+
+	int pos = 0;
+	char *s;
+
+	switch (n->type) {
+		case N_COMMENT:
+			s = n->str;
+			while (*s == ' ') s++;
+			pos += sprintf(buf+pos, "\t\t\t/* %s */", s);
+			break;
+		case N_NL:
+			*(buf+pos) = '\0';
+			break;
+		case N_LEN:
+			pos += sprintf(buf+pos, "\n%s.len ", indent);
+			pos += pp_eval(buf+pos, n->n1);
+			break;
+		case N_FILE:
+			pos += sprintf(buf+pos, "\n%s.file %s, ", indent, n->str);
+			pos += pp_eval(buf+pos, n->n1);
+			pos += sprintf(buf+pos, ", ");
+			pos += pp_eval(buf+pos, n->n2);
+			break;
+		default:
+			pos += sprintf(buf+pos, "?");
+			break;
+	}
+
+
+	return pos;
+}
+
+// -----------------------------------------------------------------------
+void preprocess(struct nodelist_t *nl, FILE *ppf)
+{
+	char buf[1024];
 	struct node_t *n = nl->head;
 
 	while (n) {
-		linelen = 0;
+		//printf("TYPE: %i\n", n->type);
+		if (n->type <= N_EMPTY) {
+			pp_compose_empty(buf, n);
+			fprintf(ppf, "%s", buf);
 
-		// comments
-		if (n->type < N_EMPTY) {
-			fprintf(ppf, "        %s", n->name);
-			linelen += strlen(n->name);
-			if (n->n1) {
-				char *s = pp_expr_eval(n->n1);
-				fprintf(ppf, "%s", s);
-				linelen += strlen(s);
-				free(s);
-			}
-			res = 0;
+		} else if (n->type <= N_FLOWCTL) {
+			pp_compose_flow(buf, n);
+			fprintf(ppf, "\n\t%s", buf);
+
+		} else if (n->type <= N_OPS) {
+			fprintf(ppf, "\n0x%04x: ", n->ic);
+			pp_compose_opcode(buf, n);
+			fprintf(ppf, "\t%s%s", indent, buf);
+
+		} else if (n->type <= N_WORD) {
+			fprintf(ppf, "\n0x%04x: ", n->ic);
+			pp_eval(buf, n);
+			fprintf(ppf, "\t%s.data %s", indent, buf);
+
+		} else if (n->type <= N_MWORD) {
+			fprintf(ppf, "\n0x%04x: ", n->ic);
+			pp_compose_multi(buf, n);
+			fprintf(ppf, "\t%s%s", indent, buf);
+
 		} else {
-
-			// address
-			fprintf(ppf, "0x%04x: ", ic);
-			linelen += 8;
-
-			// opcode...
-			if (n->type < N_OPS) {
-				int norm_arg = 0;
-				char *s = pp_compose_opcode(ic, n, &norm_arg);
-				fprintf(ppf, "        %s", s);
-				linelen += strlen(s);
-				free(s);
-				res = 1;
-
-				// if there was additional word in normal argument, we've processed it already in pp_compose_opcode()
-				if (norm_arg) {
-					n = n->next;
-					res++;
-				}
-
-			// ... or data
-			} else {
-				char *s = pp_expr_eval(n);
-				fprintf(ppf, "        .data %s", s);
-				linelen += strlen(s);
-				free(s);
-				res = 1;
-			}
-
+			fprintf(ppf, "\n?");
 		}
-
-		// if we have a comment attached
-		if (n->comment) {
-			int spaces = 40 - linelen;
-			while (spaces > 0) {
-				fprintf(ppf, " ");
-				spaces--;
-			}
-			fprintf(ppf, "%s", n->comment);
-		}
-
-		fprintf(ppf, "\n");
 		n = n->next;
-		ic += res;
 	}
-
-	return ic;
 }
-
 
 // vim: tabstop=4

@@ -15,24 +15,35 @@
 //  Foundation, Inc.,
 //  51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 
-#include <stdlib.h>
-#include <strings.h>
+#ifndef OPS_H
+#define OPS_H
 
-#include "pragmas.h"
-#include "parser_modern.h"
-
-struct pragma_t pragmas_modern[] = {
-{ ".prog",		MP_PROG },
-{ ".finprog",	MP_FINPROG },
-{ ".seg",		MP_SEG },
-{ ".finseg",	MP_FINSEG },
-{ ".macro",		MP_MACRO },
-{ ".finmacro",	MP_FINMACRO },
-{ ".data",		MP_DATA },
-{ ".res",		MP_RES },
-{ ".equ",		MP_EQU },
-
-{ NULL, 0 }
+enum _machine_type_e {
+	MERA400 = 0,
+	K202 = 1
 };
+
+struct kw_t {
+	char *mnemo[2];
+	int type;
+	int opcode;
+};
+
+struct var_t {
+	int value;
+	char *name;
+};
+
+extern struct var_t extracodes[];
+extern struct kw_t ops[];
+extern struct kw_t pragmas[];
+extern int mnemo_sel;
+
+struct kw_t * get_op(int set, char *name);
+struct kw_t * get_pragma(int set, char *name);
+struct kw_t * get_kw(struct kw_t *dict, int set, char *name);
+struct var_t * get_pvar(struct var_t *d, char *name);
+
+#endif
 
 // vim: tabstop=4

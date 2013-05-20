@@ -140,7 +140,8 @@ void dbg_c_dt(int wid, int dasm_mode, uint16_t start, int count)
 				awprint(wid, C_IDATA, " %-19s\n", buf);
 			} else {
 				awprint(wid, C_LABEL, "0x%04x:", start);
-				awprint(wid, C_DATA, " %-19s\n", buf);
+				if (*buf != '-') awprint(wid, C_PROMPT, " %-19s\n", buf);
+				else awprint(wid, C_DATA, " %-19s\n", buf);
 			}
 			start += len;
 			free(buf);

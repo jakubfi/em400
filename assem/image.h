@@ -1,4 +1,4 @@
-//  Copyright (c) 2012-2013 Jakub Filipowicz <jakubf@gmail.com>
+//  Copyright (c) 2013 Jakub Filipowicz <jakubf@gmail.com>
 //
 //  This program is free software; you can redistribute it and/or modify
 //  it under the terms of the GNU General Public License as published by
@@ -15,27 +15,23 @@
 //  Foundation, Inc.,
 //  51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 
-#ifndef OPS_H
-#define OPS_H
+#ifndef IMAGE_H
+#define IMAGE_H
 
 #include <inttypes.h>
 
-enum _mnemo_e {
-	MNEMO_MERA400 = 0,
-	MNEMO_K202 = 1
-};
+int img_write();
+int img_next_sector(int new_ic);
+int img_get_sector();
+int img_get_ic();
+int img_get_filepos();
+int img_set_ic(int new_ic);
+int img_inc_ic();
+int img_put_at(int addr, int orig_ic, uint16_t word);
+int img_put(uint16_t word);
 
-struct op_t {
-	char *mnemo[2];
-	int type;
-	uint16_t opcode;
-};
-
-extern struct op_t ops[];
-extern int mnemo_sel;
-
-struct op_t * get_op(char *opname);
 
 #endif
 
 // vim: tabstop=4
+

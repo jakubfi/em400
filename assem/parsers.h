@@ -1,4 +1,4 @@
-//  Copyright (c) 2012-2013 Jakub Filipowicz <jakubf@gmail.com>
+//  Copyright (c) 2013 Jakub Filipowicz <jakubf@gmail.com>
 //
 //  This program is free software; you can redistribute it and/or modify
 //  it under the terms of the GNU General Public License as published by
@@ -15,18 +15,20 @@
 //  Foundation, Inc.,
 //  51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 
-#ifndef DRV_UNONE_H
-#define DRV_UNONE_H
+#ifndef PARSERS_H
+#define PARSERS_H
 
-#include <inttypes.h>
+#include <stdio.h>
 
-#include "cfg.h"
-#include "io.h"
+enum _syntax_type_e {
+	MODERN = 0,
+	CLASSIC = 1
+};
 
-int drv_unone_init(void *self, struct cfg_arg_t *arg);
-void drv_unone_shutdown(void *self);
-void drv_unone_reset(void *self);
-int drv_unone_cmd(void *self, int u_num, int dir, int cmd, uint16_t *r);
+extern int syntax;
+extern int parser_lineno;
+
+int parse(FILE *source);
 
 #endif
 

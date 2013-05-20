@@ -88,7 +88,7 @@ class M400dasm:
 
     # ------------------------------------------------------------------------
     def m400_decode_byte_arg(self, i, d, a, b, c):
-        b = ((a&0b011)<3) | (b<<3) | c
+        b = ((a&0b011)<<6) | (b<<3) | c
         args = "%i" % (b)
         return args
 
@@ -165,7 +165,7 @@ class M400dasm:
         else:
             args = "%04x" % (word)
 
-        print "0x%04x: %-5s %-15s    # %-30s" % (addr, code, args, desc)
+        print "0x%04x: %-5s %-15s    # 0x%04x  %-30s" % (addr, code, args, word, desc)
             
     # --------------------------------------------------------------------
     def m400_fetch(self):

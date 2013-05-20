@@ -1,4 +1,4 @@
-//  Copyright (c) 2012-2013 Jakub Filipowicz <jakubf@gmail.com>
+//  Copyright (c) 2013 Jakub Filipowicz <jakubf@gmail.com>
 //
 //  This program is free software; you can redistribute it and/or modify
 //  it under the terms of the GNU General Public License as published by
@@ -15,13 +15,18 @@
 //  Foundation, Inc.,
 //  51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 
-#ifndef PRAGMAS_MODERN_H
-#define PRAGMAS_MODERN_H
+#ifndef ERRORS_H
+#define ERRORS_H
 
-#include "pragmas.h"
+enum errors_e {
+	E_PROG_EMPTY = -100,
+	E_IO_OPEN,
+	E_IO_WRITE,
+	E_IC,
+	E_FILEPOS,
+	E_ASS,
+	E_OK = 0,
 
-extern struct pragma_t pragmas_modern[];
+};
 
 #endif
-
-// vim: tabstop=4

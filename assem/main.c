@@ -20,85 +20,65 @@
 #include <string.h>
 #include <getopt.h>
 
-#include "ops.h"
-#include "elements.h"
+#include "parsers.h"
+#include "keywords.h"
 #include "eval.h"
 #include "pprocess.h"
+#include "image.h"
+#include "errors.h"
 
-int classic = 0;
 int preprocessor = 0;
-
-extern FILE *m_yyin;
-extern FILE *c_yyin;
-extern int got_error;
-int m_yyparse();
-int c_yyparse();
-int m_yylex_destroy();
-int c_yylex_destroy();
-
-// -----------------------------------------------------------------------
-int parse(FILE *source)
-{
-	m_yyin = c_yyin = source;
-
-	int (*yyparser)();
-	int (*yylex_destroy)();
-
-	if (classic) {
-		yyparser = c_yyparse;
-		yylex_destroy = c_yylex_destroy;
-	} else {
-		yyparser = m_yyparse;
-		yylex_destroy = m_yylex_destroy;
-	}
-
-	do {
-		yyparser();
-	} while (!feof(source));
-
-	yylex_destroy();
-
-	if (got_error) {
-		return -1;
-	}
-
-	return 1;
-}
+char *input_file = NULL;
+char *output_file = NULL;
 
 // -----------------------------------------------------------------------
 void usage()
 {
-	printf("Usage: assem [-k] [-c] <input.asm> [output]\n");
+	printf("Usage: assem [-v] [-d] [-k] [-c] [-p [-2]] <input.asm> [output]\n");
 	printf("Where:\n");
+	printf("   -v : print version information and exit\n");
+	printf("   -h : print help\n");
+	printf("   -d : enable debug messages (lots of)\n");
 	printf("   -k : use K-202 mnemonics (instead of MERA-400)\n");
 	printf("   -c : use classic ASSK/ASSM syntax (instead of modern)\n");
 	printf("   -p : produce preprocessor output (.pp.asm file)\n");
+	printf("   -2 : use K-202 mnemonics in preprocessor output (instead of MERA-400)\n");
 }
 
 // -----------------------------------------------------------------------
-int main(int argc, char **argv)
+void parse_args(int argc, char **argv)
 {
-	int option;
-	mnemo_sel = MNEMO_MERA400;
-	classic = 0;
+	mnemo_sel = MERA400;
+	pp_mnemo_sel = MERA400;
+	syntax = MODERN;
 	preprocessor = 0;
-	char *input_file = NULL;
-	char *output_file = NULL;
+	enable_debug = 0;
+
+	int option;
 
 	// parse options
-	while ((option = getopt(argc, argv,"kchp")) != -1) {
+	while ((option = getopt(argc, argv,"vdkchp2:")) != -1) {
 		switch (option) {
+			case 'v':
+				printf("ASSEM version %s (c) 2012-2013 by Jakub Filipowicz\n", ASSEM_VERSION);
+				exit(0);
+			case 'd':
+				enable_debug = 1;
+				break;
 			case 'h':
 				usage();
 				exit(0);
 			case 'k':
-				mnemo_sel = MNEMO_K202;
+				mnemo_sel = K202;
 				break;
 			case 'c':
-				classic = 1;
+				syntax = CLASSIC;
 				break;
 			case 'p':
 				preprocessor = 1;
+				break;
+			case '2':
+				pp_mnemo_sel = K202;
 				break;
 			default:
 				usage();
@@ -128,24 +108,21 @@ int main(int argc, char **argv)
 		printf("Error: input and output files are the same, exiting.\n");
 		exit(1);
 	}
+}
 
-	// read input file
+// -----------------------------------------------------------------------
+int main(int argc, char **argv)
+{
+	parse_args(argc, argv);
+
+	// open input file
 	FILE *asm_source = fopen(argv[optind], "r");
 	if (!asm_source) {
 		printf("Error: cannot open input file, exiting.\n");
 		exit(1);
 	}
 
-	// open output file
-	FILE *bin_out = fopen(output_file, "w");
-	if (!bin_out) {
-		printf("Cannot open output file '%s', exiting.\n", output_file);
-		fclose(asm_source);
-		exit(1);
-	}
-
 	// parse program
-	dict = dict_create();
 	int res = parse(asm_source);
 
 	fclose(asm_source);
@@ -153,43 +130,37 @@ int main(int argc, char **argv)
 	if (res < 0) {
 		printf("Cannot parse source, exiting.\n");
 		nodelist_drop(program);
-		dict_drop(dict);
 		exit(1);
 	}
 
 	// assembly binary image
-	uint16_t outdata[MAX_PROG_SIZE+4];
-	int wcounter = assembly(program, outdata);
+	res = assembly(program->head);
 
-	if (wcounter <= 0) {
-		if (wcounter == 0) {
-			printf("Nothing to assemble, empty program, exiting.\n");
-		} else {
-			printf("Error assembling binary image at IC=%i: %s, exiting.\n", -wcounter-1, assembly_error);
-		}
+	if (res < 0) {
+		printf("Error at %s\n", assembly_error);
 		nodelist_drop(program);
-		dict_drop(dict);
 		exit(1);
 	}
 
-	printf("Assembled %i words\n", wcounter);
+	res = img_write(output_file);
 
-	// write output program
-	res = fwrite(outdata, 2, wcounter, bin_out);
-	fclose(bin_out);
-	printf("Written %i words to file '%s'.\n", res, output_file);
-	if (wcounter != res) {
-		printf("Error: not all words written, output file '%s' is broken.\n", output_file);
-		nodelist_drop(program);
-		dict_drop(dict);
-		exit(1);
+	if (res < 0) {
+		if (res == E_IO_OPEN) {
+			printf("Cannot open output file '%s', exiting.\n", output_file);
+		} else if (res == E_IO_WRITE) {
+			printf("Error: not all words written, output file '%s' is broken.\n", output_file);
+		} else {
+			printf("Unknown error during image write\n");
+		}
+	} else {
+		printf("Written %i words to '%s'.\n", res, output_file);
 	}
 
 	// write preprocessor output
 	if (preprocessor) {
 		char *pp_file = malloc(strlen(output_file)+10);
 		sprintf(pp_file, "%s.pp.asm", output_file);
-		printf("Writing preprocessor output to: %s\n", pp_file);
+		printf("Writing preprocessor output to %s\n", pp_file);
 		FILE *ppf = fopen(pp_file, "w");
 		if (!ppf) {
 			printf("Cannot open preprocessor output file '%s', sorry.\n", pp_file);
@@ -201,7 +172,6 @@ int main(int argc, char **argv)
 
 	free(output_file);
 	nodelist_drop(program);
-	dict_drop(dict);
 
 	return 0;
 }

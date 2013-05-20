@@ -1,4 +1,4 @@
-//  Copyright (c) 2012-2013 Jakub Filipowicz <jakubf@gmail.com>
+//  Copyright (c) 2013 Jakub Filipowicz <jakubf@gmail.com>
 //
 //  This program is free software; you can redistribute it and/or modify
 //  it under the terms of the GNU General Public License as published by
@@ -15,38 +15,47 @@
 //  Foundation, Inc.,
 //  51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 
-#include <inttypes.h>
+#include <stdio.h>
 
-#include "cfg.h"
-#include "errors.h"
-#include "io.h"
+#include "parsers.h"
+#include "parser_modern.h"
+#include "parser_classic.h"
 
-#include "debugger/log.h"
+extern FILE *m_yyin;
+extern FILE *c_yyin;
+int m_yyparse();
+int c_yyparse();
+int m_yylex_destroy();
+int c_yylex_destroy();
 
-// -----------------------------------------------------------------------
-int drv_unone_init(void *self, struct cfg_arg_t *arg)
-{
-	return E_OK;
-}
-
-// -----------------------------------------------------------------------
-void drv_unone_shutdown(void *self)
-{
-}
+int syntax = MODERN;
+int parser_lineno;
 
 // -----------------------------------------------------------------------
-void drv_unone_reset(void *self)
+int parse(FILE *source)
 {
-}
+	m_yyin = c_yyin = source;
 
-// -----------------------------------------------------------------------
-int drv_unone_cmd(void *self, int u_num, int dir, int cmd, uint16_t *r)
-{
-#ifdef WITH_DEBUGGER
-	struct unit_t *u = self;
-	LOG(D_IO, 10, "Unit %d (%s) is not connected, ignored command", u->num, u->name);
-#endif
-	return IO_NO;
+	int (*yyparser)();
+	int (*yylex_destroy)();
+
+	if (syntax == CLASSIC) {
+		yyparser = c_yyparse;
+		yylex_destroy = c_yylex_destroy;
+	} else {
+		yyparser = m_yyparse;
+		yylex_destroy = m_yylex_destroy;
+	}
+
+	int res = yyparser();
+
+	yylex_destroy();
+
+	if (res != 0) {
+		return -1;
+	}
+
+	return 1;
 }
 
 // vim: tabstop=4
