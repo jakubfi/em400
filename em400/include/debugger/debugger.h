@@ -66,7 +66,7 @@ void dbg_step();
 int dbg_init();
 void dbg_shutdown();
 void dbg_fin_cycle();
-void dbg_parse(char *c);
+int dbg_parse(char *c);
 
 void dbg_touch_add(struct touch_t **t, int type, int block, int pos);
 struct touch_t * dbg_touch_get(struct touch_t **t, int block, int pos);

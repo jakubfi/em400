@@ -36,6 +36,7 @@
 #include "debugger/log.h"
 
 extern int em400_quit;
+extern char *script_name;
 
 // -----------------------------------------------------------------------
 struct cmd_t dbg_commands[] = {
@@ -55,6 +56,7 @@ struct cmd_t dbg_commands[] = {
 	{ "run",	F_RUN,		"Run emulation", "  run" },
 	{ "stack",	F_STACK,	"Show stack", "  stack" },
 	{ "log",	F_LOG,		"Enable logging", "  log\n  log on|off\n  log file <filename>\n  log level <domain>:<level>" },
+	{ "script",	F_SCRIPT,	"Load and execute script", "  script <filename>" },
 	{ NULL,		0,			NULL }
 };
 
@@ -482,6 +484,12 @@ void dbg_c_log_set(int wid, char *domain, int level)
 	} else {
 		log_setlevel(d, level);
 	}
+}
+
+// -----------------------------------------------------------------------
+void dbg_script_load(int wid, char *filename)
+{
+	script_name = filename;
 }
 
 // vim: tabstop=4

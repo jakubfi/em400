@@ -46,7 +46,7 @@ char verr[128];
 %token ':' '&' '|' '(' ')'
 %token HEX OCT BIN INT UINT
 %token IRZ
-%token <value> F_QUIT F_MEMCL F_MEM F_REGS F_SREGS F_RESET F_STEP F_HELP F_DASM F_TRANS F_LOAD F_MEMCFG F_BRK F_RUN F_STACK F_LOG
+%token <value> F_QUIT F_MEMCL F_MEM F_REGS F_SREGS F_RESET F_STEP F_HELP F_DASM F_TRANS F_LOAD F_MEMCFG F_BRK F_RUN F_STACK F_LOG F_SCRIPT
 %token ADD DEL TEST
 %token ON OFF FFILE LEVEL
 %type <n> expr lval bitfield basemod
@@ -188,6 +188,7 @@ command:
 	| F_LOG FFILE TEXT	{ log_shutdown(); log_init($3); }
 	| F_LOG NAME ':' VALUE	{ dbg_c_log_set(W_CMD, $2, $4); }
 	| F_LOG error
+	| F_SCRIPT TEXT		{ dbg_script_load(W_CMD, $2); }
 	;
 
 %%

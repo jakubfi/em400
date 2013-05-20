@@ -33,6 +33,8 @@
 #include "parser.h"
 #include "debugger/eval.h"
 
+char *script_name = NULL;
+
 int ui_mode;
 
 // debugger flow
@@ -200,11 +202,61 @@ void dbg_fin_cycle()
 }
 
 // -----------------------------------------------------------------------
-void dbg_parse(char *c)
+int dbg_parse(char *c)
 {
 	YY_BUFFER_STATE yb = yy_scan_string(c);
-	yyparse();
+	int res = yyparse();
 	yy_delete_buffer(yb);
+	return res;
+}
+
+// -----------------------------------------------------------------------
+void read_script(char *filename)
+{
+	FILE *sf = fopen(filename, "r");
+	if (!sf) {
+		awprint(W_CMD, C_ERROR, "Cannot open script: %s\n", filename);
+	}
+
+	char buf[1024];
+	char *b = buf;
+	int lines = 0;
+	int linebeg = 1;
+
+	while (1) {
+		int c = fread(b, 1, 1, sf);
+
+		if (c <= 0) {
+			break;
+		}
+
+		if (((*b == ' ') || (*b == '\t')) && (linebeg)) {
+		} else if (*b == '\n') {
+			linebeg = 1;
+			*(b+1) = '\0';
+			*b = '\0';
+			if (b != buf) {
+				awprint(W_CMD, C_LABEL, "%s ", buf);
+				awprint(W_CMD, C_PROMPT, "-> ", buf);
+				*b = '\n';
+				int res = dbg_parse(buf);
+				b = buf;
+				lines++;
+				if (res != 0) {
+					awprint(W_CMD, C_ERROR, "Error at line: %i\n", lines);
+					lines--;
+					break;
+				}
+			}
+		} else {
+			linebeg = 0;
+			b++;
+		}
+	}
+
+	fclose(sf);
+
+	awprint(W_CMD, C_LABEL, "Loaded %i line(s)\n", lines);
 }
 
 // -----------------------------------------------------------------------
@@ -235,6 +287,12 @@ void dbg_step()
 
 		if ((res == KEY_ENTER) && (*input_buf)) {
 			dbg_parse(input_buf);
+		}
+
+		if (script_name) {
+			read_script(script_name);
+			free(script_name);
+			script_name = NULL;
 		}
 	}
 	dbg_fin_cycle();

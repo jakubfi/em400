@@ -42,7 +42,7 @@ dec		[0-9]+
 reg		r[0-7]
 regs	ic|sr|ir|kb|mod|modc|zc17|alarm
 bases	int|uint|bin|oct|hex
-name	[a-z][a-z0-9]+
+name	[a-z][a-z0-9]*
 text	[^\n\t\r ]+
 chars	[-,=+*&|^><:()\]\[~!]
 
@@ -85,6 +85,7 @@ mem		{ BEGIN(args); return F_MEM; }
 load	{ BEGIN(texts); return F_LOAD; }
 brk		{ BEGIN(opts); return F_BRK; }
 log		{ BEGIN(opts); return F_LOG; }
+script	{ BEGIN(texts); return F_SCRIPT; }
 
 {name}	{ yylval.text = strdup(yytext); return NAME; }
 
