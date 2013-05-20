@@ -35,16 +35,16 @@ char *output_file = NULL;
 // -----------------------------------------------------------------------
 void usage()
 {
-	printf("Usage: assem [-v] [-d] [-k] [-c] [-p [-2]] <input.asm> [output]\n");
-	printf("Where:\n");
+	printf("Usage: assem [options] <input.asm> [output]\n");
+	printf("Where options are:\n");
+	printf("   -k : use K-202 mnemonics (instead of MERA-400)\n");
+	printf("   -c : use classic ASSK/ASSM syntax (instead of modern)\n");
+	printf("   -l : write labels to output.lab file\n");
+	printf("   -p : write preprocessor output to output.pp.asm file\n");
+	printf("   -2 : use K-202 mnemonics in preprocessor output (instead of MERA-400)\n");
 	printf("   -v : print version information and exit\n");
 	printf("   -h : print help\n");
 	printf("   -d : enable debug messages (lots of)\n");
-	printf("   -l : write labels to .lab file\n");
-	printf("   -k : use K-202 mnemonics (instead of MERA-400)\n");
-	printf("   -c : use classic ASSK/ASSM syntax (instead of modern)\n");
-	printf("   -p : produce preprocessor output (.pp.asm file)\n");
-	printf("   -2 : use K-202 mnemonics in preprocessor output (instead of MERA-400)\n");
 }
 
 // -----------------------------------------------------------------------

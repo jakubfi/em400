@@ -77,6 +77,7 @@ struct label_t * label_add(char *name, int value)
 	if (l) {
 		l->name = strdup(name);
 		l->value = value;
+		l->next = NULL;
 		if (labels) {
 			labels_top->next = l;
 			labels_top = l;
@@ -92,7 +93,7 @@ int write_labels(FILE *labf)
 {
 	struct label_t *l = labels;
 	while (l) {
-		fprintf(labf, "%s %i\n", l->name, l->value);
+		fprintf(labf, "%s = %i\n", l->name, l->value);
 		l = l->next;
 	}
 	return 1;
