@@ -5,13 +5,32 @@ About em400
 EM400 is an attempt to create emulation of Polish MERA-400 minicomputer system,
 built in late '70 and popular in the '80. Learn more at: http://mera400.pl
 
-Currently, project is in highly development state, that means emulation is:
+Project is in highly development state, but some emulation parts work fine...ish:
 
-* incomplete
-* inaccurate
-* unoptimized
+* CPU
+* memory
+* interrupts
+* basic I/O layer
+* character channel (character-oriented I/O interface)
+* memory channel (block-oriented I/O interface)
+* built-in debugger
 
-Basically, there is nothing interesting you can do with it at the moment. :-)
+Things that are still waiting for implementation:
+
+* MULTIX peripherial processor
+* PLIX peripherial processor
+* Winchester
+* Terminals (TCP, serial, console)
+* floating point arithmetics
+* real time clock
+
+Things that may or may not be implemented:
+
+* MERA 9425 disk drive
+* EC 6051 disk drive
+* PT-305 tape drive
+* 5.25" floppy disk drive
+* MEGA memory
 
 
 Requirements
@@ -46,5 +65,5 @@ Just run:
 	build/em400
 ```
 
-And have fun.
+and emulate away.
 
