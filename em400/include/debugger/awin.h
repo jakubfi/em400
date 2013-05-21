@@ -106,6 +106,7 @@ ACONT * aw_container_add(int calign, int walign, int max, int min, int left);
 AWIN * aw_window_add(ACONT *container, int id, char *title, int border, int scrollable, void (*fun)(int wid), int max, int min, int left);
 
 void aw_attr_new(int id, int bgcolor, int fgcolor, int attr);
+void aw_clear_win(int id);
 void awbinprint(int id, int attr, char *format, uint32_t value, int size);
 void awxyprint(int id, int x, int y, int attr, char *format, ...);
 #define awprint(id, attr, format, ...) awxyprint(id, -1, -1, attr, format, ##__VA_ARGS__)

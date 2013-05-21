@@ -42,7 +42,8 @@ enum _ui_windows {
 	W_SREGS,
 	W_REGS,
 	W_CMD,
-	W_STATUS
+	W_WATCH,
+	W_STATUS,
 };
 
 int dbg_ui_init();
@@ -53,6 +54,7 @@ void dbg_wu_sregs(int wid);
 void dbg_wu_cmd(int wid);
 void dbg_wu_status(int wid);
 void dbg_wu_stack(int wid);
+void dbg_wu_watch(int wid);
 void dbg_wu_none(int wid);
 
 #endif

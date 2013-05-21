@@ -546,6 +546,14 @@ void aw_attr_new(int id, int bgcolor, int fgcolor, int attr)
 }
 
 // -----------------------------------------------------------------------
+void aw_clear_win(int id)
+{
+	NCCHECK;
+	AWIN *w = aw_window_find(id);
+	werase(w->win);
+}
+
+// -----------------------------------------------------------------------
 void vawprint(int id, int attr, const char *format, va_list vl)
 {
 	AWIN *w = aw_window_find(id);

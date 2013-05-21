@@ -52,11 +52,12 @@ struct cmd_t dbg_commands[] = {
 	{ "memcl",	F_MEMCL,	"Clear memory contents", "  memcl" },
 	{ "load",	F_LOAD,		"Load memory image from file", "  load <file> [mem_block]" },
 	{ "memcfg",	F_MEMCFG,	"Show memory configuration", "  memcfg" },
-	{ "brk",	F_BRK,		"Manipulate breakpoints", "  brk add <expression>\n  brk list\n  brk del <brk_number>" },
+	{ "brk",	F_BRK,		"Manipulate breakpoints", "  brk add <expression>\n  brk del <brk_number>\n  brk" },
 	{ "run",	F_RUN,		"Run emulation", "  run" },
 	{ "stack",	F_STACK,	"Show stack", "  stack" },
 	{ "log",	F_LOG,		"Enable logging", "  log\n  log on|off\n  log file <filename>\n  log level <domain>:<level>" },
 	{ "script",	F_SCRIPT,	"Load and execute script", "  script <filename>" },
+	{ "watch",	F_WATCH,	"Manipulate expression watches", "  watch add <expression>\n  watch del <watch_number>\n  watch" },
 	{ NULL,		0,			NULL }
 };
 
@@ -347,19 +348,19 @@ void dbg_c_brk_add(int wid, char *label, struct node_t *n)
 {
 	static int brkcnt;
 
-	struct break_t *b = malloc(sizeof(struct break_t));
+	struct evlb_t *b = malloc(sizeof(struct evlb_t));
 	b->nr = brkcnt++;
-	b->counter = 0;
+	b->value = 0;
 	b->disabled = 0;
 	b->label = strdup(label);
 	b->n = n;
 	b->next = NULL;
 
-	if (brk_last) {
-		brk_last->next = b;
-		brk_last = b;
+	if (brk_top) {
+		brk_top->next = b;
+		brk_top = b;
 	} else {
-		brk_last = brk_stack = b;
+		brk_top = brk_stack = b;
 	}
 
 	awprint(wid, C_LABEL, "Breakpoint ");
@@ -372,7 +373,7 @@ void dbg_c_brk_add(int wid, char *label, struct node_t *n)
 // -----------------------------------------------------------------------
 void dbg_c_brk_list(int wid)
 {
-	struct break_t *b = brk_stack;
+	struct evlb_t *b = brk_stack;
 	if (!b) {
 		awprint(wid, C_LABEL, "No breakpoints\n");
 	}
@@ -387,9 +388,9 @@ void dbg_c_brk_list(int wid)
 }
 
 // -----------------------------------------------------------------------
-struct break_t * dbg_c_brk_get(int nr)
+struct evlb_t * dbg_c_brk_get(int nr)
 {
-	struct break_t *b = brk_stack;
+	struct evlb_t *b = brk_stack;
 	while (b) {
 		if (b->nr == nr) {
 			return b;
@@ -402,14 +403,14 @@ struct break_t * dbg_c_brk_get(int nr)
 // -----------------------------------------------------------------------
 void dbg_c_brk_del(int wid, int nr)
 {
-	struct break_t *b = brk_stack;
-	struct break_t *prev = NULL;
+	struct evlb_t *b = brk_stack;
+	struct evlb_t *prev = NULL;
 	while (b) {
 		if (b->nr == nr) {
 			if (prev) {
 				prev->next = b->next;
 			} else {
-				brk_stack = brk_last = b->next;
+				brk_stack = brk_top = b->next;
 			}
 			awprint(wid, C_LABEL, "Removing breakpoint ");
 			awprint(wid, C_DATA, "%i", b->nr);
@@ -429,7 +430,7 @@ void dbg_c_brk_del(int wid, int nr)
 // -----------------------------------------------------------------------
 void dbg_c_brk_test(int wid, int nr)
 {
-	struct break_t *b = dbg_c_brk_get(nr);
+	struct evlb_t *b = dbg_c_brk_get(nr);
 	if (b) {
 		awprint(wid, C_LABEL, "Breakpoint ");
 		awprint(wid, C_DATA, "%i", b->nr);
@@ -443,7 +444,7 @@ void dbg_c_brk_test(int wid, int nr)
 // -----------------------------------------------------------------------
 void dbg_c_brk_disable(int wid, int nr, int disable)
 {
-	struct break_t *b = dbg_c_brk_get(nr);
+	struct evlb_t *b = dbg_c_brk_get(nr);
 	if (b) {
 		b->disabled = disable;
 		if (disable) {
@@ -487,9 +488,86 @@ void dbg_c_log_set(int wid, char *domain, int level)
 }
 
 // -----------------------------------------------------------------------
-void dbg_script_load(int wid, char *filename)
+void dbg_c_script_load(int wid, char *filename)
 {
 	script_name = filename;
 }
+
+// -----------------------------------------------------------------------
+void dbg_c_watch_list(int wid, int count)
+{
+	struct evlb_t *w = watch_stack;
+	if (!w) {
+		awprint(wid, C_LABEL, "No watches\n");
+	}
+
+	while (w && (count > 0)) {
+		int value = n_eval(w->n);
+		awprint(wid, C_LABEL, "%i: ", w->nr);
+		awprint(wid, C_DATA, "%-6s ", w->label);
+		awprint(wid, C_LABEL, "= ");
+		awprint(wid, C_DATA, "0x%04x (%i)\n", value, value);
+		w = w->next;
+		count--;
+	}
+}
+
+// -----------------------------------------------------------------------
+void dbg_c_watch_add(int wid, char *label, struct node_t *n)
+{
+	static int watchcnt;
+	struct evlb_t *w = malloc(sizeof(struct evlb_t));
+	w->nr = watchcnt++;
+	w->value = 0;
+	w->disabled = 0;
+	w->label = strdup(label);
+	w->n = n;
+	w->next = NULL;
+
+	if (watch_top) {
+		watch_top->next = w;
+		watch_top = w;
+	} else {
+		watch_top = watch_stack = w;
+	}
+
+	awprint(wid, C_LABEL, "Watch ");
+	awprint(wid, C_DATA, "%i", w->nr);
+	awprint(wid, C_LABEL, " added: \"");
+	awprint(wid, C_DATA, "%s", w->label);
+	awprint(wid, C_LABEL, "\"\n");
+
+}
+
+// -----------------------------------------------------------------------
+void dbg_c_watch_del(int wid, int nr)
+{
+	struct evlb_t *w = watch_stack;
+	struct evlb_t *prev = NULL;
+
+	while (w) {
+		if (w->nr == nr) {
+			if (prev) {
+				prev->next = w->next;
+			} else {
+				watch_stack = watch_top = w->next;
+			}
+			awprint(wid, C_LABEL, "Removing watch ");
+			awprint(wid, C_DATA, "%i", w->nr);
+			awprint(wid, C_LABEL, ":");
+			awprint(wid, C_DATA, " %s\n", w->label);
+			free(w->label);
+			n_free_tree(w->n);
+			free(w);
+			return;
+		}
+		prev = w;
+		w = w->next;
+	}
+	awprint(wid, C_ERROR, "No such watch: %i\n", nr);
+}
+
+
+
 
 // vim: tabstop=4

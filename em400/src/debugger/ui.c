@@ -60,8 +60,10 @@ int dbg_ui_init()
 	win = aw_window_add(c4, W_REGS, "User registers", 1, 0, dbg_wu_regs, FILL, 58, 0);
 	if (win == NULL) return -1;
 
-	ACONT *c5 = aw_container_add(TOP, LEFT, FILL, 0, 0);
+	ACONT *c5 = aw_container_add(TOP, RIGHT, FILL, 0, 0);
 	if (c5 == NULL) return -1;
+	win = aw_window_add(c5, W_WATCH, "Watch", 1, 0, dbg_wu_watch, 30, 30, 30);
+	if (win == NULL) return -1;
 	win = aw_window_add(c5, W_CMD, "Commandline", 1, 1, dbg_wu_cmd, FILL, 0, 0);
 	if (win == NULL) return -1;
 
@@ -130,7 +132,16 @@ void dbg_wu_status(int wid)
 void dbg_wu_stack(int wid)
 {
 	AWIN *w = aw_window_find(wid);
+	aw_clear_win(wid);
 	dbg_c_stack(wid, w->ih);
+}
+
+// -----------------------------------------------------------------------
+void dbg_wu_watch(int wid)
+{
+	AWIN *w = aw_window_find(wid);
+	aw_clear_win(wid);
+	dbg_c_watch_list(wid, w->ih);
 }
 
 // vim: tabstop=4

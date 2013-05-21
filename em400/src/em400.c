@@ -124,6 +124,7 @@ void print_usage()
 #ifdef WITH_DEBUGGER
 	printf("\nDebuger-only options:\n");
 	printf("   -s           : use simple debugger interface\n");
+	printf("   -l script    : load and execute script on startup\n");
 	printf("   -t test_expr : execute expression when program halts (implies -e -s)\n");
 	printf("   -x pre_expr  : execute expression on emulator startup\n");
 #endif
@@ -137,9 +138,10 @@ void parse_arguments(int argc, char **argv)
 #ifdef WITH_DEBUGGER
 	int len;
 	em400_cfg.pre_expr = NULL;
+	em400_cfg.test_expr = NULL;
 #endif
 
-	while ((option = getopt(argc, argv,"bvhec:p:t:x:s")) != -1) {
+	while ((option = getopt(argc, argv,"bvhec:p:l:t:x:s")) != -1) {
 		switch (option) {
 			case 'b':
 				em400_cfg.benchmark = 1;
@@ -171,6 +173,9 @@ void parse_arguments(int argc, char **argv)
 				em400_cfg.test_expr = malloc(len+3);
 				strcpy(em400_cfg.test_expr, optarg);
 				strcpy(em400_cfg.test_expr + len, "\n\0");
+				break;
+			case 'l':
+				script_name = strdup(optarg);
 				break;
 			case 'x':
 				len = strlen(optarg);

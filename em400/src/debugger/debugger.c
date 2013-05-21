@@ -17,6 +17,7 @@
 
 #include <stdlib.h>
 #include <string.h>
+#include <limits.h>
 
 #include "em400.h"
 #include "cfg.h"
@@ -50,8 +51,12 @@ struct touch_t *touch_reg = NULL;
 struct touch_t *touch_int = NULL;
 
 // breakpoints
-struct break_t *brk_stack = NULL;
-struct break_t *brk_last = NULL;
+struct evlb_t *brk_stack = NULL;
+struct evlb_t *brk_top = NULL;
+
+// watches
+struct evlb_t *watch_stack = NULL;
+struct evlb_t *watch_top = NULL;
 
 extern int yyparse();
 typedef struct yy_buffer_state *YY_BUFFER_STATE;
@@ -173,9 +178,9 @@ void dbg_shutdown()
 }
 
 // -----------------------------------------------------------------------
-struct break_t * dbg_brk_check()
+struct evlb_t * dbg_brk_check()
 {
-	struct break_t *b = brk_stack;
+	struct evlb_t *b = brk_stack;
 	while (b) {
 		if ((!b->disabled) && (n_eval(b->n))) {
 			awprint(W_CMD, C_LABEL, "Hit breakpoint ");
@@ -183,9 +188,9 @@ struct break_t * dbg_brk_check()
 			awprint(W_CMD, C_LABEL, ": \"");
 			awprint(W_CMD, C_DATA, "%s", b->label);
 			awprint(W_CMD, C_LABEL, "\" (cnt: ");
-			awprint(W_CMD, C_DATA, "%i", b->counter);
+			awprint(W_CMD, C_DATA, "%i", b->value);
 			awprint(W_CMD, C_LABEL, ")\n");
-			b->counter++;
+			b->value++;
 			return b;
 		}
 		b = b->next;
@@ -211,17 +216,18 @@ int dbg_parse(char *c)
 }
 
 // -----------------------------------------------------------------------
-void read_script(char *filename)
+int read_script(char *filename)
 {
 	FILE *sf = fopen(filename, "r");
 	if (!sf) {
-		awprint(W_CMD, C_ERROR, "Cannot open script: %s\n", filename);
+		return INT_MIN;;
 	}
 
 	char buf[1024];
 	char *b = buf;
 	int lines = 0;
 	int linebeg = 1;
+	int comment = 0;
 
 	while (1) {
 		int c = fread(b, 1, 1, sf);
@@ -230,9 +236,17 @@ void read_script(char *filename)
 			break;
 		}
 
+		// skip leading blanks
 		if (((*b == ' ') || (*b == '\t')) && (linebeg)) {
+		// comment start
+		} else if (*b == '#') {
+			comment = 1;
+		// skip comments
+		} else if (comment && (*b != '\n')) {
+		// EOL, do parse
 		} else if (*b == '\n') {
 			linebeg = 1;
+			comment = 0;
 			*(b+1) = '\0';
 			*b = '\0';
 			if (b != buf) {
@@ -240,14 +254,13 @@ void read_script(char *filename)
 				awprint(W_CMD, C_PROMPT, "-> ", buf);
 				*b = '\n';
 				int res = dbg_parse(buf);
+				if (res != 0) {
+					return -(lines+1);
+				}
 				b = buf;
 				lines++;
-				if (res != 0) {
-					awprint(W_CMD, C_ERROR, "Error at line: %i\n", lines);
-					lines--;
-					break;
-				}
 			}
+		// next char
 		} else {
 			linebeg = 0;
 			b++;
@@ -255,14 +268,13 @@ void read_script(char *filename)
 	}
 
 	fclose(sf);
-
-	awprint(W_CMD, C_LABEL, "Loaded %i line(s)\n", lines);
+	return lines;
 }
 
 // -----------------------------------------------------------------------
 void dbg_step()
 {
-	struct break_t *bhit = NULL;
+	struct evlb_t *bhit = NULL;
 
 	if ((!dbg_enter) && (!(bhit=dbg_brk_check()))) {
 		dbg_fin_cycle();
@@ -278,21 +290,28 @@ void dbg_step()
 			aw_layout_refresh();
 		}
 
+		if (script_name) {
+			int sr = read_script(script_name);
+			if (sr == INT_MIN) {
+				awprint(W_CMD, C_ERROR, "Cannot open script file:: %s\n", script_name);
+			} else if (sr<0) {
+				awprint(W_CMD, C_ERROR, "Error at line: %i\n", -sr);
+			} else {
+				awprint(W_CMD, C_LABEL, "Loaded %i line(s)\n", sr);
+			}
+			free(script_name);
+			script_name = NULL;
+		}
+
+		aw_layout_refresh();
+
 		int res = aw_readline(W_CMD, C_PROMPT, "em400> ", input_buf, INPUT_BUF_SIZE);
 		if (ui_mode == O_NCURSES) {
 			awprint(W_CMD, C_LABEL, "\n");
 		}
 
-		aw_layout_refresh();
-
 		if ((res == KEY_ENTER) && (*input_buf)) {
 			dbg_parse(input_buf);
-		}
-
-		if (script_name) {
-			read_script(script_name);
-			free(script_name);
-			script_name = NULL;
 		}
 	}
 	dbg_fin_cycle();
