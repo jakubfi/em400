@@ -19,7 +19,7 @@ Things that are still waiting for implementation:
 
 * MULTIX peripherial processor
 * PLIX peripherial processor
-* Winchester
+* Winchester disk drive
 * Terminals (TCP, serial, console)
 * floating point arithmetics
 * real time clock
