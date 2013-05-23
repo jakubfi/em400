@@ -196,7 +196,9 @@ struct evlb_t * dbg_brk_check()
 			awprint(W_CMD, C_DATA, "%i", b->nr);
 			awprint(W_CMD, C_LABEL, ": \"");
 			awprint(W_CMD, C_DATA, "%s", b->label);
-			awprint(W_CMD, C_LABEL, "\" (cnt: ");
+			awprint(W_CMD, C_LABEL, "\" (at: ");
+			awprint(W_CMD, C_DATA, "0x%04x", nR(R_IC));
+			awprint(W_CMD, C_LABEL, ", cnt: ");
 			awprint(W_CMD, C_DATA, "%i", b->value);
 			awprint(W_CMD, C_LABEL, ")\n");
 			b->value++;
