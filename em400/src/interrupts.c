@@ -182,7 +182,7 @@ void int_serve()
 	nMEMBw(0, 97, SP+4);
 	SR_Qcb;
 #ifdef WITH_DEBUGGER
-	dbg_touch_add(&touch_int, 1, 0, interrupt);
+	dbg_touch_add(&touch_int, 1, 0, interrupt, 0);
 #endif
 }
 

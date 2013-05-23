@@ -42,7 +42,7 @@ dec		[0-9]+
 reg		r[0-7]
 regs	ic|sr|ir|kb|mod|modc|zc17|alarm
 bases	int|uint|bin|oct|hex
-name	[a-z][a-z0-9]*
+name	[a-z%#][a-z0-9]*
 text	[^\n\t\r ]+
 chars	[-,=+*&|^><:()\]\[~!]
 
@@ -90,6 +90,11 @@ watch	{ BEGIN(opts); return F_WATCH; }
 
 {name}	{ yylval.text = strdup(yytext); return NAME; }
 
+"?>"	return WACT;
+"?<"	return RACT;
+"?<>"	return ACT;
+"?><"	return ACT;
+"\."	return PVAL;
 ">>"	return SHR;
 "<<"	return SHL;
 "=="	return EQ;

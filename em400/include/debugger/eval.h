@@ -31,6 +31,7 @@ enum _node_type {
 	N_BF,
 	N_ASS,
 	N_RZ,
+	N_ACT,
 	N_LAST
 };
 
@@ -73,6 +74,7 @@ struct node_t * n_op1(int oper, struct node_t *n);
 struct node_t * n_op2(int oper, struct node_t *n1, struct node_t *n2);
 struct node_t * n_ass(struct node_t *n1, struct node_t *n2);
 struct node_t * n_mem(struct node_t *n1, struct node_t *n2);
+struct node_t * n_act(int type, struct node_t *n);
 
 // node evaluation
 int16_t n_eval_val(struct node_t *n);
@@ -81,6 +83,8 @@ int16_t n_eval_reg(struct node_t *n);
 int16_t n_eval_ireg(struct node_t * n);
 int16_t n_eval_op1(struct node_t *n);
 int16_t n_eval_op2(struct node_t *n);
+int16_t n_eval_act_mem(struct node_t *n);
+int16_t n_eval_act_reg(struct node_t *n);
 int16_t n_eval_mem(struct node_t *n);
 int16_t n_eval(struct node_t *n);
 

@@ -64,7 +64,7 @@ YY_BUFFER_STATE yy_scan_string(char *yy_str);
 void yy_delete_buffer(YY_BUFFER_STATE b);
 
 // -----------------------------------------------------------------------
-void dbg_touch_add(struct touch_t **t, int type, int block, int pos)
+void dbg_touch_add(struct touch_t **t, int type, int block, int pos, int oval)
 {
 	struct touch_t *nt = dbg_touch_get(t, block, pos);
 	if (nt) {
@@ -74,6 +74,7 @@ void dbg_touch_add(struct touch_t **t, int type, int block, int pos)
 		nt->type = type;
 		nt->block = block;
 		nt->pos = pos;
+		nt->oval = oval;
 		nt->next = *t;
 		*t = nt;
 	}
@@ -223,8 +224,7 @@ int read_script(char *filename)
 		return INT_MIN;;
 	}
 
-	char buf[1024];
-	char *b = buf;
+	char *b = input_buf;
 	int lines = 0;
 	int linebeg = 1;
 	int comment = 0;
@@ -239,7 +239,7 @@ int read_script(char *filename)
 		// skip leading blanks
 		if (((*b == ' ') || (*b == '\t')) && (linebeg)) {
 		// comment start
-		} else if (*b == '#') {
+		} else if (*b == ';') {
 			comment = 1;
 		// skip comments
 		} else if (comment && (*b != '\n')) {
@@ -249,15 +249,15 @@ int read_script(char *filename)
 			comment = 0;
 			*(b+1) = '\0';
 			*b = '\0';
-			if (b != buf) {
-				awprint(W_CMD, C_LABEL, "%s ", buf);
-				awprint(W_CMD, C_PROMPT, "-> ", buf);
+			if (b != input_buf) {
+				awprint(W_CMD, C_LABEL, "%s ", input_buf);
+				awprint(W_CMD, C_PROMPT, "-> ", input_buf);
 				*b = '\n';
-				int res = dbg_parse(buf);
+				int res = dbg_parse(input_buf);
 				if (res != 0) {
 					return -(lines+1);
 				}
-				b = buf;
+				b = input_buf;
 				lines++;
 			}
 		// next char
@@ -297,7 +297,7 @@ void dbg_step()
 			} else if (sr<0) {
 				awprint(W_CMD, C_ERROR, "Error at line: %i\n", -sr);
 			} else {
-				awprint(W_CMD, C_LABEL, "Loaded %i line(s)\n", sr);
+				awprint(W_CMD, C_LABEL, "Read %i line(s)\n", sr);
 			}
 			free(script_name);
 			script_name = NULL;

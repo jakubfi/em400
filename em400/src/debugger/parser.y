@@ -49,9 +49,11 @@ char verr[128];
 %token <value> F_QUIT F_MEMCL F_MEM F_REGS F_SREGS F_RESET F_STEP F_HELP F_DASM F_TRANS F_LOAD F_MEMCFG F_BRK F_RUN F_STACK F_LOG F_SCRIPT F_WATCH
 %token ADD DEL TEST
 %token ON OFF FFILE LEVEL
-%type <n> expr lval bitfield basemod
+%type <n> expr lval bitfield basemod act actval
 
 %token BF
+%token PVAL
+%token ACT WACT RACT
 
 %left '='
 %left OR
@@ -110,6 +112,7 @@ expr:
 	| '~' expr				{ $$ = n_op1('~', $2); }
 	| '!' expr				{ $$ = n_op1('!', $2); }
 	| '(' expr ')'			{ $$ = $2; }
+	| act					{ $$ = $1; }
 	| lval {
 		if (!$$->mptr) {
 			switch ($$->type) {
@@ -127,6 +130,18 @@ expr:
 	| lval '=' expr { $$ = n_ass($1, $3); }
 	;
 
+act:
+	ACT actval		{ $$ = n_act(TOUCH_R+TOUCH_W, $2); }
+	| RACT actval	{ $$ = n_act(TOUCH_R, $2); }
+	| WACT actval	{ $$ = n_act(TOUCH_W, $2); }
+	;
+
+actval:
+	REG { $$ = n_reg($1); }
+	| '[' expr ']' { $$ = n_mem(n_val(SR_NB*SR_Q), $2); }
+	| '[' expr ':' expr ']' { $$ = n_mem($2, $4); }
+	;
+
 basemod:
 	UINT '(' expr ')'	{ $3->base = UINT; $$ = $3; }
 	| INT '(' expr ')'	{ $3->base = INT; $$ = $3; }
@@ -136,10 +151,8 @@ basemod:
 
 lval:
 	NAME { $$ = n_var($1); }
-	| REG { $$ = n_reg($1); }
-	| '[' expr ']' { $$ = n_mem(n_val(SR_NB*SR_Q), $2); }
-	| '[' expr ':' expr ']' { $$ = n_mem($2, $4); }
 	| IRZ '[' expr ']' { $$ = n_ireg(N_RZ, n_eval($3)); }
+	| actval
 	;
 
 bitfield:
