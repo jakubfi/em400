@@ -83,17 +83,25 @@ void dbg_touch_add(struct touch_t **t, int type, int block, int pos, int oval)
 // -----------------------------------------------------------------------
 struct touch_t * dbg_touch_get(struct touch_t **t, int block, int pos)
 {
-	if (!*t) return NULL;
-	if (((*t)->block == block) && ((*t)->pos == pos)) return *t;
-	return dbg_touch_get(&(*t)->next, block, pos);
+	struct touch_t *tf = *t;
+	while (tf) {
+		if ((tf->block == block) && (tf->pos == pos)) {
+			return tf;
+		}
+		tf = tf->next;
+	}
+	return NULL;
 }
 
 // -----------------------------------------------------------------------
 int dbg_touch_check(struct touch_t **t, int block, int pos)
 {
-	if (!*t) return 0;
-	if (((*t)->block == block) && ((*t)->pos == pos)) return (*t)->type;
-	return dbg_touch_check(&(*t)->next, block, pos);
+	struct touch_t *tf = dbg_touch_get(t, block, pos);
+	if (tf) {
+		return tf->type;
+	} else {
+		return 0;
+	}
 }
 
 // -----------------------------------------------------------------------

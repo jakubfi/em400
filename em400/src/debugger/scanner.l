@@ -92,8 +92,7 @@ watch	{ BEGIN(opts); return F_WATCH; }
 
 "?>"	return WACT;
 "?<"	return RACT;
-"?<>"	return ACT;
-"?><"	return ACT;
+"?"		return ACT;
 "\."	return PVAL;
 ">>"	return SHR;
 "<<"	return SHL;

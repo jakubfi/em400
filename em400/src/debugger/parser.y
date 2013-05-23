@@ -113,6 +113,7 @@ expr:
 	| '!' expr				{ $$ = n_op1('!', $2); }
 	| '(' expr ')'			{ $$ = $2; }
 	| act					{ $$ = $1; }
+	| actval PVAL			{ $$ = n_pval($1); }
 	| lval {
 		if (!$$->mptr) {
 			switch ($$->type) {
