@@ -29,10 +29,11 @@
 #include "debugger/dasm_iset.h"
 
 // -----------------------------------------------------------------------
-int dt_trans(uint16_t* memptr, char **buf, int dasm_mode)
+int dt_trans(int addr, char *buf, int dasm_mode)
 {
 	struct dasm_opdef *opdef;
-	*buf = malloc(1024);
+
+	uint16_t *memptr = mem_ptr(SR_Q * SR_NB, addr);
 
 	opdef = dasm_iset + _OP(*memptr);
 	if (opdef->e_opdef) {
@@ -52,11 +53,11 @@ int dt_trans(uint16_t* memptr, char **buf, int dasm_mode)
 			break;
 	}
 
-	return dt_parse(opdef, memptr, format, *buf);
+	return dt_parse(opdef, memptr, addr, format, buf);
 }
 
 // -----------------------------------------------------------------------
-int dt_parse(struct dasm_opdef *opdef, uint16_t *memptr, char *format, char *buf)
+int dt_parse(struct dasm_opdef *opdef, uint16_t *memptr, int addr, char *format, char *buf)
 {
 	char *in = format;
 	char *out = buf;
@@ -89,6 +90,9 @@ int dt_parse(struct dasm_opdef *opdef, uint16_t *memptr, char *format, char *buf
 					break;
 				case 'T':
 					out += sprintf(out, "%i", _T(*memptr));
+					break;
+				case 'R':
+					out += sprintf(out, "0x%04x", addr + _T(*memptr) + 1);
 					break;
 				case 't':
 					out += sprintf(out, "%i", _t(*memptr));

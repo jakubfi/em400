@@ -27,6 +27,7 @@
 	%B - reg. B number
 	%C - reg. C number
 	%T - short arg.
+	%R - short arg. as relative address
 	%t - very short arg. (SHC only)
 	%b - byte arg.
 	%N - norm. arg. (disassembler syntax)
@@ -41,11 +42,13 @@
 #define D_1ARGN	"%I%E %N"
 #define D_FD	D_1ARGN
 #define D_KA1	"%I r%A, %T"
-#define D_JS	"%I %T"
+#define D_KA1R	"%I r%A, %T->%R"
+#define D_JS	"%I %T->%R"
 #define D_KA2	"%I %b"
 #define D_C		"%I r%A"
 #define D_SHC	"%I r%A, %t"
 #define D_S		"%I"
+#define D_HLT	"%I %T"
 #define D_J		D_1ARGN
 #define D_L		D_1ARGN
 #define D_G		D_1ARGN

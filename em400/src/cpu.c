@@ -110,16 +110,13 @@ void cpu_step()
 	nRinc(R_IC);
 
 #ifdef WITH_DEBUGGER
-	char *buf_d;
-	char *buf_t;
 	char *b;
-	uint16_t *addr = mem_ptr(SR_Q * SR_NB, regs[R_IC] - 1);
 	int len;
-	len = dt_trans(addr, &buf_t, DMODE_TRANS);
-	len = dt_trans(addr, &buf_d, DMODE_DASM);
+	char buf_d[512];
+	char buf_t[512];
+	len = dt_trans(regs[R_IC] - 1, buf_t, DMODE_TRANS);
+	len = dt_trans(regs[R_IC] - 1, buf_d, DMODE_DASM);
 	LOG(D_CPU, 5, "EXEC (words: %i): %s --- %s", len, buf_d, buf_t);
-	free(buf_t);
-	free(buf_d);
 #endif
 
 	// execute instruction
@@ -138,7 +135,7 @@ void cpu_step()
 			int_serve();
 			return;
 
-		// instruction that resulted in P set
+		// instruction that set P
 		case OP_P:
 			nRw(R_MOD, 0);
 			nRw(R_MODc, 0);

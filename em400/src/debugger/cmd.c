@@ -64,8 +64,9 @@ struct cmd_t dbg_commands[] = {
 // -----------------------------------------------------------------------
 void dbg_c_load(int wid, char* image, int bank)
 {
-	if (mem_load_image(image, bank)) {
-		awprint(wid, C_ERROR, "Cannot load image: \"%s\"\n", image);
+	int res = mem_load_image(image, bank);
+	if (res != E_OK) {
+		awprint(wid, C_ERROR, "Error loading image \"%s\": %s\n", image, get_error(res));
 	}
 }
 
@@ -130,24 +131,21 @@ void dbg_c_clmem()
 // -----------------------------------------------------------------------
 void dbg_c_dt(int wid, int dasm_mode, uint16_t start, int count)
 {
-	char *buf;
+	char buf[1024];
 	int len;
 
 	while (count > 0) {
-		uint16_t * addr = mem_ptr(SR_Q * SR_NB, start);
-		if (addr) {
-			len = dt_trans(addr, &buf, dasm_mode);
-
+		len = dt_trans(start, buf, dasm_mode);
+		if (len) {
 			if (start == regs[R_IC]) {
-				awprint(wid, C_ILABEL, "0x%04x:", start);
-				awprint(wid, C_IDATA, " %-19s\n", buf);
+				awprint(wid, C_ILABEL, "0x%04x", start);
+				awprint(wid, C_IDATA, " %-21s", buf);
 			} else {
-				awprint(wid, C_LABEL, "0x%04x:", start);
-				if (*buf != '-') awprint(wid, C_PROMPT, " %-19s\n", buf);
-				else awprint(wid, C_DATA, " %-19s\n", buf);
+				awprint(wid, C_LABEL, "0x%04x", start);
+				if (*buf != '-') awprint(wid, C_PROMPT, " %-21s", buf);
+				else awprint(wid, C_DATA, " %-21s", buf);
 			}
 			start += len;
-			free(buf);
 		} else {
 			awprint(wid, C_DATA, "\n");
 		}
@@ -303,18 +301,19 @@ void dbg_c_stack(int wid, int size)
 	}
 
 	osp = sp;
+	uint16_t *memptr = mem_ptr(0, sp);
 
-	while (sp >= sb) {
+	while ((sp >= sb) && memptr) {
 		if (sp == osp) {
 			awprint(wid, C_ILABEL, " 0x%04x: ", sp);
-			awprint(wid, C_IDATA, "%04x \n", *mem_ptr(0, sp));
+			awprint(wid, C_IDATA, "%04x \n", *memptr);
 		} else {
 			awprint(wid, C_LABEL, " 0x%04x: ", sp);
-			awprint(wid, C_DATA, "%04x \n", *mem_ptr(0, sp));
+			awprint(wid, C_DATA, "%04x \n", mem_ptr);
 		}
 		sp--;
+		memptr = mem_ptr(0, sp);
 	}
-	awprint(wid, C_LABEL, "--------------\n");
 }
 
 // -----------------------------------------------------------------------

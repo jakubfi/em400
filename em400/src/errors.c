@@ -28,20 +28,20 @@ struct _em400_errordesc {
 	{ E_MEM_WRONG_OS_MEM, "Wrong number of segments defined for OS memory." },
 	{ E_MEM_BAD_SEGMENT_COUNT, "Wrong segment count in a module." },
 	{ E_MEM_CANNOT_ALLOCATE, "Cannot allocate machine memory." },
-	{ E_MEM_BLOCK_TOO_SMALL, "Address outside the block. Block too small." },
+	{ E_MEM_BLOCK_TOO_SMALL, "Address outside configured memory block." },
 	{ E_FILE_OPEN, "Cannot open file." },
 	{ E_FILE_OPERATION, "Read/write error." },
 	{ E_TIMER_SIGNAL, "Cannot set timer handler." },
 	{ E_TIMER_CREATE, "Cannot create timer." },
 	{ E_TIMER_SET, "Cannot set timer." },
-	{ E_ALLOC, "Cannot allocade memory." },
+	{ E_ALLOC, "Cannot allocate memory." },
 	{ E_DEBUGGER_SIG_RESIZE, "Cannot setup window resize handler." },
 	{ E_IO_CHAN_UNKNOWN, "Unknown channel type." },
 	{ E_IO_UNIT_UNKNOWN, "Unit incompatibile with channel, or unknown unit type." },
 	{ E_IO_DRV_CHAN_BAD, "Bad channel driver definition." },
 	{ E_IO_DRV_UNIT_BAD, "Bad unit driver definition." },
 	{ E_IO_CHAN_INIT, "Cannot initialize channel." },
-	{ E_IO_UNIT_INIT, "Cannot initialize driver." },
+	{ E_IO_UNIT_INIT, "Cannot initialize unit." },
 	{ E_IO_UNIT_INIT_ARGS, "Error parsing unit driver arguments." },
 	{ E_LOG_OPEN, "Cannot open log file." },
 	{ E_AW_INIT, "Cannot initialize awin." },
@@ -52,8 +52,6 @@ struct _em400_errordesc {
 	{ E_QUIT_OK, "Emulation terminated properly." },
 	{ E_QUIT_NO_MEM, "OS segmentation fault." },
 	{ E_CFG_DEFAULT_LOAD, "sorry" },
-
-
 
 	{ E_UNKNOWN, "Unknown error." }
 };

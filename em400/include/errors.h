@@ -19,9 +19,7 @@
 #define ERRORS_H
 
 enum em400_error {
-	E_UNKNOWN = -1,
-	E_OK = 0,
-	E_QUIT_OK,
+	E_UNKNOWN = -32000,
 	E_MEM_NO_OS_MEM,
 	E_MEM_WRONG_OS_MEM,
 	E_MEM_BAD_SEGMENT_COUNT,
@@ -48,8 +46,10 @@ enum em400_error {
 	E_CFG_OPEN,
 	E_CFG_PARSE,
 	E_CFG_DEFAULT_LOAD,
-	E_QUIT_NO_MEM
-	
+	E_QUIT_NO_MEM,
+
+	E_OK = 0,
+	E_QUIT_OK
 };
 
 char * get_error(int e);
