@@ -114,7 +114,7 @@ void cpu_step()
 	int len;
 	char buf_d[512];
 	char buf_t[512];
-	len = dt_trans(regs[R_IC] - 1, buf_t, DMODE_TRANS);
+	dt_trans(regs[R_IC] - 1, buf_t, DMODE_TRANS);
 	len = dt_trans(regs[R_IC] - 1, buf_d, DMODE_DASM);
 	LOG(D_CPU, 5, "EXEC (words: %i): %s --- %s", len, buf_d, buf_t);
 #endif

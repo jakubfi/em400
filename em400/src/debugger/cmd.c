@@ -58,7 +58,7 @@ struct cmd_t dbg_commands[] = {
 	{ "log",	F_LOG,		"Enable logging", "  log\n  log on|off\n  log file <filename>\n  log level <domain>:<level>" },
 	{ "script",	F_SCRIPT,	"Load and execute script", "  script <filename>" },
 	{ "watch",	F_WATCH,	"Manipulate expression watches", "  watch add <expression>\n  watch del <watch_number>\n  watch" },
-	{ NULL,		0,			NULL }
+	{ NULL,		0,			NULL, NULL }
 };
 
 // -----------------------------------------------------------------------
@@ -158,13 +158,15 @@ void dbg_c_mem(int wid, int block, int start, int end, int maxcols, int maxlines
 {
 	uint16_t *mptr = mem_ptr(block, 0);
 
-	if (!mptr) {
+	if (mptr == NULL) {
 		awprint(wid, C_ERROR, "Cannot access block %i\n", block);
+		return;
 	}
 
 	// wrong range
-	if (end - start <= 0) {
+	if ((end - start) <= 0) {
 		awprint(wid, C_ERROR, "Wrong memory range: %i - %i\n", start, end);
+		return;
 	}
 
 	int words = (maxcols - 10) / 7;
@@ -191,6 +193,7 @@ void dbg_c_mem(int wid, int block, int start, int end, int maxcols, int maxlines
 		for (int w=0 ; w<words ; w++) {
 			mptr = mem_ptr(block, addr);
 			if (!mptr) {
+				free(chars);
 				return;
 			}
 
@@ -309,7 +312,7 @@ void dbg_c_stack(int wid, int size)
 			awprint(wid, C_IDATA, "%04x \n", *memptr);
 		} else {
 			awprint(wid, C_LABEL, " 0x%04x: ", sp);
-			awprint(wid, C_DATA, "%04x \n", mem_ptr);
+			awprint(wid, C_DATA, "%04x \n", *memptr);
 		}
 		sp--;
 		memptr = mem_ptr(0, sp);
@@ -480,7 +483,7 @@ void dbg_c_log_set(int wid, char *domain, int level)
 {
 	int d = log_find_domain(domain);
 	if (d < -1) {
-		awprint(W_CMD, C_ERROR, "Unknown domain: %s\n", domain);
+		awprint(wid, C_ERROR, "Unknown domain: %s\n", domain);
 	} else {
 		log_setlevel(d, level);
 	}
@@ -489,6 +492,8 @@ void dbg_c_log_set(int wid, char *domain, int level)
 // -----------------------------------------------------------------------
 void dbg_c_script_load(int wid, char *filename)
 {
+	awprint(wid, C_LABEL, "Loading script: ");
+	awprint(wid, C_DATA, "%s\n", filename);
 	script_name = filename;
 }
 

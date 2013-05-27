@@ -140,12 +140,14 @@ void cfg_make_unit(int c_num, int u_num, char *name, struct cfg_arg_t *arglist)
 	// check channel number
 	if ((c_num < 0) || (c_num > IO_MAX_CHAN)) {
 		cyyerror("Incorrect channel number for unit %i: %i", u_num, c_num);
+		return;
 	}
 
 	// check if unit driver of that name exists
 	struct drv_t *driver = drv_get(DRV_UNIT, CHAN_IGNORE, name);
 	if (!driver) {
 		cyyerror("Unknown unit: %s", name);
+		return;
 	}
 
 	// count arguments
@@ -158,6 +160,7 @@ void cfg_make_unit(int c_num, int u_num, char *name, struct cfg_arg_t *arglist)
 
 	if (cnt != driver->argc) {
 		cyyerror("Wrong number of arguments for driver '%s'. Got: %i, required %i", name, cnt, driver->argc);
+		return;
 	}
 
 	em400_cfg.chans[c_num].units[u_num].name = name;
