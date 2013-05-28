@@ -23,6 +23,41 @@
 #include "cfg.h"
 #include "io.h"
 
+enum mx_ret_e {
+	MX_CF_ERR = -1024,
+	MX_CF_COMM,
+	MX_OK = 0
+};
+
+enum mx_int_e {
+	MX_INT_INSKA = 1,
+	MX_INT_IWYZE = 2,
+	MX_INT_IWYTE = 3,
+	MX_INT_INKON = 4,
+	MX_INT_IUKON = 5,
+	MX_INT_INKOT = 6,
+	MX_INT_ISTRE = 7,
+	MX_INT_INSTR = 8,
+	MX_INT_INKST = 9,
+	MX_INT_IDOLI = 10,
+	MX_INT_INDOL = 11,
+	MX_INT_INKDO = 12,
+	MX_INT_IETRA = 13,
+	MX_INT_INTRA = 14,
+	MX_INT_INKTR = 15,
+	MX_INT_ITRER = 16,
+	MX_INT_ITRAB = 19,
+	MX_INT_IABTR = 20,
+	MX_INT_INABT = 21,
+	MX_INT_INKAB = 22,
+	MX_INT_IODLI = 23,
+	MX_INT_INODL = 24,
+	MX_INT_INKOD = 25,
+	MX_INT_INPAO = 32,
+	MX_INT_IPARE = 33,
+	MX_INT_IOPRU = 34
+};
+
 int drv_multix_init(void *self, struct cfg_arg_t *arg);
 void drv_multix_shutdown(void *self);
 void drv_multix_reset(void *self);
