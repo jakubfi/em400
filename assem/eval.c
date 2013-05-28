@@ -135,8 +135,9 @@ struct node_t * eval_exlname(struct node_t *n)
 		nn = mknod_valstr(N_VAL, ev->value, NULL);
 		if (!nn) {
 			ass_error(n->lineno, "Memory allocation error");
+		} else {
+			DEBUG("eval_exlname() got exl: %s = %i\n", n->str, nn->value);
 		}
-		DEBUG("eval_exlname() got exl: %s = %i\n", n->str, nn->value);
 	} else { // variable or label
 		nn = eval_name(n);
 	}
@@ -279,10 +280,10 @@ struct node_t * eval_2op(int operator, struct node_t *n)
 			}
 			nodes_drop(n1);
 			nodes_drop(n2);
+			DEBUG("eval_2op() evaluated to: %i\n", nn->value);
 		} else {
 			ass_error(n->lineno, "Memory allocation error");
 		}
-		DEBUG("eval_2op() evaluated to: %i\n", nn->value);
 	} else {
 		DEBUG("eval_2op() not yet evaluated\n");
 		nn = mknod_nargs(operator, n1, n2);
@@ -806,7 +807,7 @@ void exlize_names(struct node_t *n)
 int ass_retry()
 {
 	struct node_t *nn = NULL;
-	int res;
+	int res = E_OK;
 
 	struct retry_t *r = retry;
 	struct retry_t *parent = NULL;
@@ -1101,7 +1102,8 @@ int write_out(struct node_t *n)
 // -----------------------------------------------------------------------
 int assembly(struct node_t *n)
 {
-	int res;
+	int res = E_OK;
+
 	while (n) {
 		// set ic for a node
 		n->ic = img_get_ic();
