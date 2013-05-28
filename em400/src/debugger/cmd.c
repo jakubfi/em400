@@ -34,6 +34,7 @@
 #include "parser.h"
 #include "debugger/eval.h"
 #include "debugger/log.h"
+#include "debugger/decode.h"
 
 extern int em400_quit;
 extern char *script_name;
@@ -58,6 +59,7 @@ struct cmd_t dbg_commands[] = {
 	{ "log",	F_LOG,		"Enable logging", "  log\n  log on|off\n  log file <filename>\n  log level <domain>:<level>" },
 	{ "script",	F_SCRIPT,	"Load and execute script", "  script <filename>" },
 	{ "watch",	F_WATCH,	"Manipulate expression watches", "  watch add <expression>\n  watch del <watch_number>\n  watch" },
+	{ "decode",	F_DECODE,	"Decode memory structures", "  decode\n  decode <decoder> address" },
 	{ NULL,		0,			NULL, NULL }
 };
 
@@ -571,6 +573,32 @@ void dbg_c_watch_del(int wid, int nr)
 	awprint(wid, C_ERROR, "No such watch: %i\n", nr);
 }
 
+// -----------------------------------------------------------------------
+void dbg_c_list_decoders(int wid)
+{
+	awprint(wid, C_DATA, "Available decoders:\n");
+	struct decoder_t *d = decoders;
+	while (d && d->name) {
+		awprint(wid, C_DATA, "  %-8s", d->name);
+		awprint(wid, C_LABEL, " %s\n", d->desc);
+		d++;
+	}
+}
+
+// -----------------------------------------------------------------------
+void dbg_c_decode(int wid, char *name, uint16_t addr, int arg)
+{
+	struct decoder_t *d = find_decoder(name);
+
+	if (d) {
+		awprint(wid, C_DATA, "Decoding structure at 0x%04x as: %s (%s)\n", addr, name, d->desc);
+		awprint(wid, C_LABEL, "-----------------------------------------------------------\n");
+		d->f_decode(wid, addr, arg);
+		awprint(wid, C_LABEL, "-----------------------------------------------------------\n");
+	} else {
+		awprint(wid, C_ERROR, "No such decoder: %s\n", name);
+	}
+}
 
 
 

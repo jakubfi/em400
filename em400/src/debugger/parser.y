@@ -46,7 +46,7 @@ char verr[128];
 %token ':' '&' '|' '(' ')'
 %token HEX OCT BIN INT UINT
 %token IRZ
-%token <value> F_QUIT F_MEMCL F_MEM F_REGS F_SREGS F_RESET F_STEP F_HELP F_DASM F_TRANS F_LOAD F_MEMCFG F_BRK F_RUN F_STACK F_LOG F_SCRIPT F_WATCH
+%token <value> F_QUIT F_MEMCL F_MEM F_REGS F_SREGS F_RESET F_STEP F_HELP F_DASM F_TRANS F_LOAD F_MEMCFG F_BRK F_RUN F_STACK F_LOG F_SCRIPT F_WATCH F_DECODE
 %token ADD DEL TEST
 %token ON OFF FFILE LEVEL
 %type <n> expr lval bitfield basemod act actval
@@ -212,6 +212,8 @@ command:
 		n_reset_stack();
 	}
 	| F_WATCH DEL VALUE	{ dbg_c_watch_del(W_CMD, $3); }
+	| F_DECODE			{ dbg_c_list_decoders(W_CMD); }
+	| F_DECODE NAME expr	{ dbg_c_decode(W_CMD, $2, n_eval($3), 0); }
 	;
 
 %%

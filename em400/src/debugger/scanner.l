@@ -87,6 +87,7 @@ brk		{ BEGIN(opts); return F_BRK; }
 log		{ BEGIN(opts); return F_LOG; }
 script	{ BEGIN(texts); return F_SCRIPT; }
 watch	{ BEGIN(opts); return F_WATCH; }
+decode	{ BEGIN(opts); return F_DECODE; }
 
 {name}	{ yylval.text = strdup(yytext); return NAME; }
 

@@ -55,6 +55,8 @@ void dbg_c_script_load(int wid, char *filename);
 void dbg_c_watch_add(int wid, char *label, struct node_t *n);
 void dbg_c_watch_list(int wid, int count);
 void dbg_c_watch_del(int wid, int nr);
+void dbg_c_list_decoders(int wid);
+void dbg_c_decode(int wid, char *name, uint16_t addr, int arg);
 
 
 #endif
