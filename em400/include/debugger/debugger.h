@@ -82,6 +82,7 @@ void dbg_touch_drop_all(struct touch_t **t);
 int dbg_touch2attr(int t);
 int read_script(char *filename);
 
+
 #endif
 
 // vim: tabstop=4

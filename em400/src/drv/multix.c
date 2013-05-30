@@ -73,4 +73,5 @@ int drv_multix_cmd(void *self, int dir, uint16_t n_arg, uint16_t *r_arg)
 	return IO_OK;
 }
 
+
 // vim: tabstop=4

@@ -1,1 +1,5 @@
-ADD_library(drv drivers.c cnone.c cmem.c cchar.c u9425.c lib.c multix.c multix_cf.c)
+ADD_library(drv
+	drivers.c cnone.c cmem.c cchar.c u9425.c lib.c multix.c multix_cf.c
+)
+
+# vim: tabstop=4

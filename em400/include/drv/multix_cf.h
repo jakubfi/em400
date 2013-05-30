@@ -31,21 +31,28 @@ struct cf_sc_pl {
 
 struct ll_winch {
 	int type;
-	int format_allowed;
+	int format_protect;
+};
+
+struct ll_floppy {
+	int type;
+	int format_protect;
 };
 
 struct cf_sc_ll {
 	int proto;
 	int pl_id;
+	int formatter;
 	struct ll_winch *winch;
+	struct ll_floppy *floppy;
 };
 
 struct cf_sc {
 	int pl_desc_count;
 	int ll_desc_count;
 	uint16_t *retf;
-	struct cf_sc_pl **pl;
-	struct cf_sc_ll **ll;
+	struct cf_sc_pl *pl;
+	struct cf_sc_ll *ll;
 };
 
 // --- connect line ---
@@ -91,6 +98,7 @@ struct ps_cl_monitor {
 // --- transmit ---
 
 int mx_decode_cf_sc(int addr, struct cf_sc *cf);
+void mx_free_cf_sc(struct cf_sc *cf);
 
 
 #endif

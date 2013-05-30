@@ -31,7 +31,7 @@
 #include "debugger/debugger.h"
 #include "debugger/cmd.h"
 #include "debugger/ui.h"
-#include "parser.h"
+#include "debugger/parser.h"
 #include "debugger/eval.h"
 #include "debugger/log.h"
 #include "debugger/decode.h"
@@ -589,15 +589,25 @@ void dbg_c_list_decoders(int wid)
 void dbg_c_decode(int wid, char *name, uint16_t addr, int arg)
 {
 	struct decoder_t *d = find_decoder(name);
+	char *buf = NULL;
 
-	if (d) {
-		awprint(wid, C_DATA, "Decoding structure at 0x%04x as: %s (%s)\n", addr, name, d->desc);
-		awprint(wid, C_LABEL, "-----------------------------------------------------------\n");
-		d->f_decode(wid, addr, arg);
-		awprint(wid, C_LABEL, "-----------------------------------------------------------\n");
-	} else {
+	if (!d) {
 		awprint(wid, C_ERROR, "No such decoder: %s\n", name);
+		return;
 	}
+
+	buf = d->f_decode(addr, arg);
+
+	if (!buf) {
+		awprint(wid, C_ERROR, "Cannot decode structure\n");
+		return;
+	}
+
+	awprint(wid, C_DATA, "Decoding structure at 0x%04x as: %s (%s)\n", addr, name, d->desc);
+	awprint(wid, C_LABEL, "-----------------------------------------------------------\n");
+	awprint(wid, C_LABEL, buf);
+	free(buf);
+	awprint(wid, C_LABEL, "-----------------------------------------------------------\n");
 }
 
 

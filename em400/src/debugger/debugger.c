@@ -31,7 +31,7 @@
 #include "debugger/awin.h"
 #include "debugger/debugger.h"
 #include "debugger/ui.h"
-#include "parser.h"
+#include "debugger/parser.h"
 #include "debugger/eval.h"
 
 char *script_name = NULL;
@@ -326,5 +326,6 @@ void dbg_step()
 	}
 	dbg_fin_cycle();
 }
+
 
 // vim: tabstop=4

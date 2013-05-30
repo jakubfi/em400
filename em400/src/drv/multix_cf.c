@@ -56,26 +56,40 @@ int mx_decode_cf_sc(int addr, struct cf_sc *cf)
 	// --- physical lines, 1 word each ---
 	for (int pln=0 ; pln<cf->pl_desc_count ; pln++) {
 		data = MEMB(0, addr+2+pln);
-		cf->pl[pln]->dir =		(data & 0b1110000000000000) >> 13;
-		cf->pl[pln]->used =		(data & 0b0001000000000000) >> 12;
-		cf->pl[pln]->dev_type =	(data & 0b0000111100000000) >> 8;
-		cf->pl[pln]->count =	(data & 0b0000000000011111) + 1;
+		cf->pl[pln].dir =		(data & 0b1110000000000000) >> 13;
+		cf->pl[pln].used =		(data & 0b0001000000000000) >> 12;
+		cf->pl[pln].dev_type =	(data & 0b0000111100000000) >> 8;
+		cf->pl[pln].count =		(data & 0b0000000000011111) + 1;
 	}
 
 	// --- logical lines, 4 words each ---
-	for (int lln=0 ; lln<cf->ll_desc_count ; lln+=4) {
-		data = MEMB(0, addr+2+cf->pl_desc_count+lln);
-		cf->ll[lln]->proto	= (data & 0b1111111100000000) >> 8;
-		cf->ll[lln]->pl_id	= (data & 0b0000000011111111);
-		switch (cf->ll[lln]->proto) {
+	for (int lln=0 ; lln<cf->ll_desc_count ; lln++) {
+		data = MEMB(0, addr+2+cf->pl_desc_count+(lln*4));
+		cf->ll[lln].proto = (data & 0b1111111100000000) >> 8;
+		cf->ll[lln].pl_id = (data & 0b0000000011111111);
+		switch (cf->ll[lln].proto) {
 			case 6: // Winchester
-				cf->ll[lln]->winch = calloc(1, sizeof(struct ll_winch));
-				if (!cf->ll[lln]->winch) {
+				cf->ll[lln].winch = calloc(1, sizeof(struct ll_winch));
+				if (!cf->ll[lln].winch) {
 					return MX_CF_COMM;
 				}
-				data = MEMB(0, addr+2+cf->pl_desc_count+lln+1);
-				cf->ll[lln]->winch->type =				(data && 0b1111111100000000) >> 8;
-				cf->ll[lln]->winch->format_allowed =	(data && 0b0000000011111111);
+				data = MEMB(0, addr+2+cf->pl_desc_count+(lln*4)+1);
+				cf->ll[lln].winch->type =			(data & 0b1111111100000000) >> 8;
+				cf->ll[lln].winch->format_protect =	(data & 0b0000000011111111);
+				break;
+			case 7: // magnetic tape
+				// MT protocol changes meaning of pl_id and adds formatter field
+				cf->ll[lln].pl_id &= 0b00011111;
+				cf->ll[lln].formatter = (cf->ll[lln].pl_id & 0b10000000) >> 7;
+				break;
+			case 8: // floppy disk
+				cf->ll[lln].floppy = calloc(1, sizeof(struct ll_floppy));
+				if (!cf->ll[lln].floppy) {
+					return MX_CF_COMM;
+				}
+				data = MEMB(0, addr+2+cf->pl_desc_count+(lln*4)+1);
+				cf->ll[lln].floppy->type =				(data & 0b1111111100000000) >> 8;
+				cf->ll[lln].floppy->format_protect =	(data & 0b0000000011111111);
 				break;
 			default: // unknown protocol
 				return MX_CF_ERR;
@@ -83,6 +97,28 @@ int mx_decode_cf_sc(int addr, struct cf_sc *cf)
 	}
 
 	return MX_OK;
+}
+
+// -----------------------------------------------------------------------
+void mx_free_cf_sc(struct cf_sc *cf)
+{
+	if (cf->pl) {
+		free(cf->pl);
+	}
+
+	if (cf->ll) {
+		for (int i=0 ; i<cf->ll_desc_count ; i++) {
+			if (cf->ll[i].winch) {
+				free(cf->ll[i].winch);
+			}
+			if (cf->ll[i].floppy) {
+				free(cf->ll[i].floppy);
+			}
+		}
+		free(cf->ll);
+	}
+
+	free(cf);
 }
 
 // vim: tabstop=4

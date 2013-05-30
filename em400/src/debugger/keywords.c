@@ -20,7 +20,7 @@
 
 #include "registers.h"
 
-#include "parser.h"
+#include "debugger/parser.h"
 #include "debugger/keywords.h"
 
 struct kw_t kw_regs[] = {
