@@ -52,6 +52,7 @@ struct _em400_errordesc {
 	{ E_QUIT_OK, "Emulation terminated properly." },
 	{ E_QUIT_NO_MEM, "OS segmentation fault." },
 	{ E_CFG_DEFAULT_LOAD, "sorry" },
+	{ E_CF, "Error in control field" },
 
 	{ E_UNKNOWN, "Unknown error." }
 };

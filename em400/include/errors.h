@@ -47,6 +47,7 @@ enum em400_error {
 	E_CFG_PARSE,
 	E_CFG_DEFAULT_LOAD,
 	E_QUIT_NO_MEM,
+	E_CF,
 
 	E_OK = 0,
 	E_QUIT_OK

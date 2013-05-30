@@ -22,6 +22,7 @@
 #include "errors.h"
 #include "drv/multix.h"
 #include "drv/multix_cf.h"
+#include "drv/cmem_cf.h"
 
 #include "debugger/awin.h"
 #include "debugger/ui.h"
@@ -32,6 +33,7 @@ struct decoder_t decoders[] = {
 	{ "mxpsuk", "MULTIX: set configuration", decode_mxpsuk },
 	{ "mxpsdl", "MULTIX: assign line", decode_mxpsdl },
 	{ "mxpst", "MULTIX: transmit", decode_mxpst },
+	{ "cmempst", "MEM chan: transmit", decode_cmempst },
 	{ NULL, NULL, NULL}
 };
 
@@ -81,7 +83,7 @@ char * decode_iv(uint16_t addr, int arg)
 }
 
 // -----------------------------------------------------------------------
-int decode_mxpsuk_pl(struct cf_sc_pl *pl, char *b)
+int decode_mxpsuk_pl(struct mx_cf_sc_pl *pl, char *b)
 {
 	int pos = 0;
 	if (pl->used) {
@@ -138,7 +140,7 @@ int decode_mxpsuk_pl(struct cf_sc_pl *pl, char *b)
 }
 
 // -----------------------------------------------------------------------
-int decode_mxpsuk_ll_winch(struct ll_winch *winch, char *b)
+int decode_mxpsuk_ll_winch(struct mx_ll_winch *winch, char *b)
 {
 	int pos = 0;
 	pos += sprintf(b+pos, "    Winchester type: (%i) ", winch->type);
@@ -159,7 +161,7 @@ int decode_mxpsuk_ll_winch(struct ll_winch *winch, char *b)
 }
 
 // -----------------------------------------------------------------------
-int decode_mxpsuk_ll_floppy(struct ll_floppy *floppy, char *b)
+int decode_mxpsuk_ll_floppy(struct mx_ll_floppy *floppy, char *b)
 {
 	int pos = 0;
 	pos += sprintf(b+pos, "    Floppy type: (%i) ", floppy->type);
@@ -184,7 +186,7 @@ int decode_mxpsuk_ll_floppy(struct ll_floppy *floppy, char *b)
 }
 
 // -----------------------------------------------------------------------
-int decode_mxpsuk_ll(struct cf_sc_ll *ll, char *b)
+int decode_mxpsuk_ll(struct mx_cf_sc_ll *ll, char *b)
 {
 	int pos = 0;
 	pos += sprintf(b+pos, "  Physical line id: %i\n", ll->pl_id);
@@ -242,14 +244,18 @@ char * decode_mxpsuk(uint16_t addr, int arg)
 		return NULL;
 	}
 
-	struct cf_sc *uk = calloc(1, sizeof(struct cf_sc));
+	struct mx_cf_sc *uk = calloc(1, sizeof(struct mx_cf_sc));
 
 	if (!uk) {
 		free(buf);
 		return NULL;
 	}
 
-	mx_decode_cf_sc(addr, uk);
+	int ret = mx_decode_cf_sc(addr, uk);
+	if (ret != E_OK) {
+		pos += sprintf(b+pos, "Error decoding: %s", get_error(ret));
+		return buf;
+	}
 
 	pos += sprintf(b+pos, "Line descriptions: physical = %i, logical = %i\n", uk->pl_desc_count, uk->ll_desc_count);
 	pos += sprintf(b+pos, "-------------------------------------\n");
@@ -283,5 +289,52 @@ char * decode_mxpst(uint16_t addr, int arg)
 	return E_OK;
 }
 
+// -----------------------------------------------------------------------
+char * decode_cmempst(uint16_t addr, int arg)
+{
+	char *buf = malloc(16*1024);
+	char *b = buf;
+	int pos = 0;
+
+	if (!buf) {
+		return NULL;
+	}
+
+	struct cmem_cf_t *t = calloc(1, sizeof(struct cmem_cf_t));
+
+	if (!t) {
+		free(buf);
+		return NULL;
+	}
+
+	int ret = cmem_decode_cf_t(addr, t);
+	if (ret != E_OK) {
+		pos += sprintf(b+pos, "Error decoding: %s", get_error(ret));
+		return buf;
+	}
+
+	pos += sprintf(b+pos, "CF length: %i\n", t->cf_len);
+
+	pos += sprintf(b+pos, "Operation: ");
+	if (t->oper & 2) {
+		pos += sprintf(b+pos, "write");
+	} else {
+		pos += sprintf(b+pos, "read");
+	}
+	if (t->oper & 1) {
+		pos += sprintf(b+pos, " address");
+	} else {
+		pos += sprintf(b+pos, " data");
+	}
+	pos += sprintf(b+pos, "\n");
+	pos += sprintf(b+pos, "PLATTER: %i, HEAD: %i, CYL: %i, SECTOR: %i\n", t->platter, t->head, t->cyl, t->sector);
+	pos += sprintf(b+pos, "Ignore: wprotect=%s, defects=%s, key=%s, eof=%s\n", t->ign_wrprotect?"y":"n", t->ign_defects?"y":"n", t->ign_key?"y":"n", t->ign_eof?"y":"n");
+	pos += sprintf(b+pos, "Destination: CPU=%i, NB=%i, ADDR=%i, length=%i\n", t->cpu, t->nb, t->addr, t->len);
+	pos += sprintf(b+pos, "Key: %i\n", t->key);
+
+	free(t);
+
+	return buf;
+}
 
 // vim: tabstop=4

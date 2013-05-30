@@ -22,42 +22,42 @@
 
 // --- set configuration ---
 
-struct cf_sc_pl {
+struct mx_cf_sc_pl {
 	int dir;
 	int used;
 	int dev_type;
 	int count;
 };
 
-struct ll_winch {
+struct mx_ll_winch {
 	int type;
 	int format_protect;
 };
 
-struct ll_floppy {
+struct mx_ll_floppy {
 	int type;
 	int format_protect;
 };
 
-struct cf_sc_ll {
+struct mx_cf_sc_ll {
 	int proto;
 	int pl_id;
 	int formatter;
-	struct ll_winch *winch;
-	struct ll_floppy *floppy;
+	struct mx_ll_winch *winch;
+	struct mx_ll_floppy *floppy;
 };
 
-struct cf_sc {
+struct mx_cf_sc {
 	int pl_desc_count;
 	int ll_desc_count;
 	uint16_t *retf;
-	struct cf_sc_pl *pl;
-	struct cf_sc_ll *ll;
+	struct mx_cf_sc_pl *pl;
+	struct mx_cf_sc_ll *ll;
 };
 
 // --- connect line ---
 
-struct ps_cl_punch_reader {
+struct mx_ps_cl_punch_reader {
 	int watch_eot;
 	int no_parity;
 	int odd_parity;
@@ -69,14 +69,14 @@ struct ps_cl_punch_reader {
 	int txt_proc;
 };
 
-struct ps_cl_puncher {
+struct mx_ps_cl_puncher {
 	int odd_parity;
 	int eight_bits;
 	int low_to_up;
 	int txt_proc;
 };
 
-struct ps_cl_monitor {
+struct mx_ps_cl_monitor {
 	int watch_eot;
 	int no_parity;
 	int odd_parity;
@@ -97,8 +97,8 @@ struct ps_cl_monitor {
 
 // --- transmit ---
 
-int mx_decode_cf_sc(int addr, struct cf_sc *cf);
-void mx_free_cf_sc(struct cf_sc *cf);
+int mx_decode_cf_sc(int addr, struct mx_cf_sc *cf);
+void mx_free_cf_sc(struct mx_cf_sc *cf);
 
 
 #endif
