@@ -18,6 +18,9 @@
 #ifndef DRV_CMEM_CF_H
 #define DRV_CMEM_CF_H
 
+#include <inttypes.h>
+
+// cmem control field - modes of operation
 enum cmem_trans_modes_e {
 	READ_DATA	= 0b00,
 	READ_ADDR	= 0b01,
@@ -25,7 +28,7 @@ enum cmem_trans_modes_e {
 	WRITE_ADDR	= 0b11
 };
 
-// --- transmit ---
+// --- transmit ----------------------------------------------------------
 
 struct cmem_cf_t {
 	int cf_len;
@@ -42,8 +45,10 @@ struct cmem_cf_t {
 	int head;
 	int sector;
 	int key;
-	int addr;
+	uint16_t addr;
 };
+
+// -----------------------------------------------------------------------
 
 int cmem_decode_cf_t(int addr, struct cmem_cf_t *cf);
 
