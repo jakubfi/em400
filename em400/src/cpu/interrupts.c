@@ -21,8 +21,8 @@
 #include "cpu/memory.h"
 #include "cpu/registers.h"
 #include "cpu/interrupts.h"
-#include "io.h"
-#include "drv/lib.h"
+#include "io/io.h"
+#include "io/lib.h"
 
 #ifdef WITH_DEBUGGER
 #include "debugger/debugger.h"

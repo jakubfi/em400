@@ -18,12 +18,14 @@
 #include <strings.h>
 #include <stdlib.h>
 
-#include "utils.h"
 #include "cpu/memory.h"
+
+#include "io/multix.h"
+#include "io/multix_cf.h"
+#include "io/cmem_cf.h"
+
+#include "utils.h"
 #include "errors.h"
-#include "drv/multix.h"
-#include "drv/multix_cf.h"
-#include "drv/cmem_cf.h"
 
 #include "debugger/awin.h"
 #include "debugger/ui.h"

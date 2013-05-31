@@ -1,4 +1,4 @@
-//  Copyright (c) 2012-2013 Jakub Filipowicz <jakubf@gmail.com>
+//  Copyright (c) 2013 Jakub Filipowicz <jakubf@gmail.com>
 //
 //  This program is free software; you can redistribute it and/or modify
 //  it under the terms of the GNU General Public License as published by
@@ -15,56 +15,64 @@
 //  Foundation, Inc.,
 //  51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 
+#include <inttypes.h>
 #include <pthread.h>
-#include <time.h>
+#include <unistd.h>
 
-#include "cpu/timer.h"
-#include "cpu/registers.h"
-#include "cpu/interrupts.h"
+#include "io/io.h"
+#include "io/multix.h"
 
 #include "cfg.h"
 #include "errors.h"
 
-int timer_fin = 0;
-
-pthread_t timer_th;
+#include "debugger/log.h"
 
 // -----------------------------------------------------------------------
-void * timer_thread(void *ptr)
+void * drv_multix_thread(void *self)
 {
+	struct chan_t *ch = self;
+
 	struct timespec ts;
-	struct timespec tr;
+/**/	ts.tv_sec = 0;
+/**/	ts.tv_nsec = 1000000;
 
-	ts.tv_sec = em400_cfg.cpu.timer_step/1000;
-	ts.tv_nsec = (em400_cfg.cpu.timer_step%1000) * 1000000;
-
-	while (!timer_fin) {
-		nanosleep(&ts, &tr);
-		int_set(INT_TIMER);
+	while (!ch->finish) {
+/**/		nanosleep(&ts, &ts);
 	}
 	pthread_exit(NULL);
 }
 
 // -----------------------------------------------------------------------
-int timer_init()
+int drv_multix_init(void *self, struct cfg_arg_t *arg)
 {
-	if (em400_cfg.cpu.timer_step == 0) {
-		eprint("Timer disabled in configuration\n");
-		return 0;
-	} else {
-		eprint("Starting timer: %i ms\n", em400_cfg.cpu.timer_step);
-		return pthread_create(&timer_th, NULL, timer_thread, NULL);
-	}
+	struct chan_t *ch = self;
+	drv_multix_reset(ch);
+	pthread_create(&ch->thread, NULL, drv_multix_thread, ch);
+	return E_OK;
 }
 
 // -----------------------------------------------------------------------
-void timer_shutdown()
+void drv_multix_shutdown(void *self)
 {
-	eprint("Stopping timer\n");
-	timer_fin = 1;
-	if (timer_th) {
-		pthread_join(timer_th, NULL);
-	}
+	struct chan_t *ch = self;
+	ch->finish = 1;
+	pthread_join(ch->thread, NULL);
 }
+
+// -----------------------------------------------------------------------
+void drv_multix_reset(void *self)
+{
+	struct chan_t *ch = self;
+	ch->int_spec = 0;
+	ch->int_mask = 0;
+	ch->untransmitted = 0;
+}
+
+// -----------------------------------------------------------------------
+int drv_multix_cmd(void *self, int dir, uint16_t n_arg, uint16_t *r_arg)
+{
+	return IO_OK;
+}
+
 
 // vim: tabstop=4

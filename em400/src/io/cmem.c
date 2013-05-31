@@ -19,16 +19,17 @@
 #include <pthread.h>
 #include <unistd.h>
 
+#include "io/io.h"
+#include "io/cmem.h"
+#include "io/lib.h"
+
 #include "cfg.h"
 #include "errors.h"
-#include "io.h"
-#include "drv/cchar.h"
-#include "drv/lib.h"
 
 #include "debugger/log.h"
 
 // -----------------------------------------------------------------------
-void * drv_cchar_thread(void *self)
+void * drv_cmem_thread(void *self)
 {
 	struct chan_t *ch = self;
 
@@ -43,16 +44,16 @@ void * drv_cchar_thread(void *self)
 }
 
 // -----------------------------------------------------------------------
-int drv_cchar_init(void *self, struct cfg_arg_t *arg)
+int drv_cmem_init(void *self, struct cfg_arg_t *arg)
 {
 	struct chan_t *ch = self;
-	drv_cchar_reset(ch);
-	pthread_create(&ch->thread, NULL, drv_cchar_thread, ch);
+	drv_cmem_reset(ch);
+	pthread_create(&ch->thread, NULL, drv_cmem_thread, ch);
 	return E_OK;
 }
 
 // -----------------------------------------------------------------------
-void drv_cchar_shutdown(void *self)
+void drv_cmem_shutdown(void *self)
 {
 	struct chan_t *ch = self;
 	ch->finish = 1;
@@ -60,15 +61,16 @@ void drv_cchar_shutdown(void *self)
 }
 
 // -----------------------------------------------------------------------
-void drv_cchar_reset(void *self)
+void drv_cmem_reset(void *self)
 {
 	struct chan_t *ch = self;
 	ch->int_spec = 0;
 	ch->int_mask = 0;
+	ch->untransmitted = 0;
 }
 
 // -----------------------------------------------------------------------
-int drv_cchar_cmd(void *self, int dir, uint16_t n_arg, uint16_t *r_arg)
+int drv_cmem_cmd(void *self, int dir, uint16_t n_arg, uint16_t *r_arg)
 {
 	struct chan_t *ch = self;
 
@@ -83,13 +85,20 @@ int drv_cchar_cmd(void *self, int dir, uint16_t n_arg, uint16_t *r_arg)
 		if (dir == IO_OU) {
 			switch (cmd & 0b00011000) {
 			case CHAN_CMD_EXISTS:
+				LOG(D_IO, 1, "%i:%i (%s:%s) command (chan): CHAN_CMD_EXISTS", ch->num, unit->num, ch->name, unit->name);
 				break;
 			case CHAN_CMD_INTSPEC:
 				chan_get_int_spec(ch, r_arg);
+				LOG(D_IO, 1, "%i:%i (%s:%s) command (chan): CHAN_CMD_INTSPEC -> %i", ch->num, unit->num, ch->name, unit->name, *r_arg);
+				break;
+			case CHAN_CMD_STATUS:
+				*r_arg = ch->untransmitted;
+				LOG(D_IO, 1, "%i:%i (%s:%s) command (chan): CHAN_CMD_STATUS -> %i", ch->num, unit->num, ch->name, unit->name, ch->untransmitted);
 				break;
 			case CHAN_CMD_ALLOC:
 				// all units always working with CPU 0
 				*r_arg = 0;
+				LOG(D_IO, 1, "%i:%i (%s:%s) command (chan): CHAN_CMD_ALLOC -> %i", ch->num, unit->num, ch->name, unit->name, *r_arg);
 				break;
 			default:
 				// shouldn't happen, but as channel always reports OK...
@@ -98,17 +107,22 @@ int drv_cchar_cmd(void *self, int dir, uint16_t n_arg, uint16_t *r_arg)
 		} else {
 			switch (cmd & 0b00011000) {
 			case CHAN_CMD_EXISTS:
+				LOG(D_IO, 1, "%i:%i (%s:%s) command (chan): CHAN_CMD_EXISTS", ch->num, unit->num, ch->name, unit->name);
 				break;
 			case CHAN_CMD_MASK_PN:
 				ch->int_mask = 1;
+				LOG(D_IO, 1, "%i:%i (%s:%s) command (chan): CHAN_CMD_MASK_PN -> %i", ch->num, unit->num, ch->name, unit->name, ch->int_mask);
 				break;
 			case CHAN_CMD_MASK_NPN:
+				LOG(D_IO, 1, "%i:%i (%s:%s) command (chan): CHAN_CMD_MASK_NPN -> ignored", ch->num, unit->num, ch->name, unit->name);
 				// ignore 2nd CPU
 				break;
 			case CHAN_CMD_ASSIGN:
+				LOG(D_IO, 1, "%i:%i (%s:%s) command (chan): CHAN_CMD_ASSIGN -> ignored", ch->num, unit->num, ch->name, unit->name);
 				// always for CPU 0
 				break;
 			default:
+				LOG(D_IO, 1, "%i:%i (%s:%s) command (chan): unknow command", ch->num, unit->num, ch->name, unit->name);
 				// shouldn't happen, but as channel always reports OK...
 				break;
 			}
@@ -116,7 +130,7 @@ int drv_cchar_cmd(void *self, int dir, uint16_t n_arg, uint16_t *r_arg)
 		return IO_OK;
 	// command for unit
 	} else {
-		return unit->f_cmd(unit, dir, n_arg, r_arg);
+		return unit->f_cmd(unit, cmd, n_arg, r_arg);
 	}
 }
 

@@ -17,16 +17,17 @@
 
 #include <stdlib.h>
 
-#include "em400.h"
-#include "cfg.h"
 #include "cpu/cpu.h"
 #include "cpu/registers.h"
 #include "cpu/interrupts.h"
 #include "cpu/alu.h"
 #include "cpu/memory.h"
-#include "io.h"
 #include "cpu/iset.h"
 #include "cpu/instructions.h"
+#include "io/io.h"
+
+#include "em400.h"
+#include "cfg.h"
 #include "utils.h"
 
 #ifdef WITH_DEBUGGER

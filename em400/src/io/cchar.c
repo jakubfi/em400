@@ -1,4 +1,4 @@
-//  Copyright (c) 2013 Jakub Filipowicz <jakubf@gmail.com>
+//  Copyright (c) 2012-2013 Jakub Filipowicz <jakubf@gmail.com>
 //
 //  This program is free software; you can redistribute it and/or modify
 //  it under the terms of the GNU General Public License as published by
@@ -19,15 +19,17 @@
 #include <pthread.h>
 #include <unistd.h>
 
+#include "io/io.h"
+#include "io/cchar.h"
+#include "io/lib.h"
+
 #include "cfg.h"
 #include "errors.h"
-#include "io.h"
-#include "drv/multix.h"
 
 #include "debugger/log.h"
 
 // -----------------------------------------------------------------------
-void * drv_multix_thread(void *self)
+void * drv_cchar_thread(void *self)
 {
 	struct chan_t *ch = self;
 
@@ -42,16 +44,16 @@ void * drv_multix_thread(void *self)
 }
 
 // -----------------------------------------------------------------------
-int drv_multix_init(void *self, struct cfg_arg_t *arg)
+int drv_cchar_init(void *self, struct cfg_arg_t *arg)
 {
 	struct chan_t *ch = self;
-	drv_multix_reset(ch);
-	pthread_create(&ch->thread, NULL, drv_multix_thread, ch);
+	drv_cchar_reset(ch);
+	pthread_create(&ch->thread, NULL, drv_cchar_thread, ch);
 	return E_OK;
 }
 
 // -----------------------------------------------------------------------
-void drv_multix_shutdown(void *self)
+void drv_cchar_shutdown(void *self)
 {
 	struct chan_t *ch = self;
 	ch->finish = 1;
@@ -59,19 +61,64 @@ void drv_multix_shutdown(void *self)
 }
 
 // -----------------------------------------------------------------------
-void drv_multix_reset(void *self)
+void drv_cchar_reset(void *self)
 {
 	struct chan_t *ch = self;
 	ch->int_spec = 0;
 	ch->int_mask = 0;
-	ch->untransmitted = 0;
 }
 
 // -----------------------------------------------------------------------
-int drv_multix_cmd(void *self, int dir, uint16_t n_arg, uint16_t *r_arg)
+int drv_cchar_cmd(void *self, int dir, uint16_t n_arg, uint16_t *r_arg)
 {
-	return IO_OK;
-}
+	struct chan_t *ch = self;
 
+	int u_num = (n_arg & 0b0000000011100000) >> 5;
+	int cmd = (n_arg & 0b1111111100000000) >> 8;
+
+	struct unit_t *unit = ch->unit[u_num];
+	ch->int_mask = 0;
+
+	// command for channel
+	if ((cmd & 0b11100000) == 0) {
+		if (dir == IO_OU) {
+			switch (cmd & 0b00011000) {
+			case CHAN_CMD_EXISTS:
+				break;
+			case CHAN_CMD_INTSPEC:
+				chan_get_int_spec(ch, r_arg);
+				break;
+			case CHAN_CMD_ALLOC:
+				// all units always working with CPU 0
+				*r_arg = 0;
+				break;
+			default:
+				// shouldn't happen, but as channel always reports OK...
+				break;
+			}
+		} else {
+			switch (cmd & 0b00011000) {
+			case CHAN_CMD_EXISTS:
+				break;
+			case CHAN_CMD_MASK_PN:
+				ch->int_mask = 1;
+				break;
+			case CHAN_CMD_MASK_NPN:
+				// ignore 2nd CPU
+				break;
+			case CHAN_CMD_ASSIGN:
+				// always for CPU 0
+				break;
+			default:
+				// shouldn't happen, but as channel always reports OK...
+				break;
+			}
+		}
+		return IO_OK;
+	// command for unit
+	} else {
+		return unit->f_cmd(unit, dir, n_arg, r_arg);
+	}
+}
 
 // vim: tabstop=4

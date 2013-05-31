@@ -18,10 +18,11 @@
 #include <inttypes.h>
 #include <stdlib.h>
 
-#include "errors.h"
 #include "cpu/memory.h"
-#include "drv/multix.h"
-#include "drv/multix_cf.h"
+#include "io/multix.h"
+#include "io/multix_cf.h"
+
+#include "errors.h"
 
 // -----------------------------------------------------------------------
 int mx_decode_cf_sc(int addr, struct mx_cf_sc *cf)

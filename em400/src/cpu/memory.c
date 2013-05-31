@@ -21,13 +21,14 @@
 #include <arpa/inet.h>
 #include <pthread.h>
 
-#include "em400.h"
-#include "cfg.h"
-#include "errors.h"
 #include "cpu/memory.h"
 #include "cpu/registers.h"
 #include "cpu/interrupts.h"
-#include "io.h"
+#include "io/io.h"
+
+#include "em400.h"
+#include "cfg.h"
+#include "errors.h"
 
 #ifdef WITH_DEBUGGER
 #include "debugger/debugger.h"

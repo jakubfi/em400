@@ -20,7 +20,7 @@
 
 #include <inttypes.h>
 
-#include "drv/drivers.h"
+#include "io/drivers.h"
 
 enum _chan_cmd {
 	// channel IN

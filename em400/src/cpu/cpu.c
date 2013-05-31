@@ -15,7 +15,6 @@
 //  Foundation, Inc.,
 //  51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 
-#include "cfg.h"
 #include "cpu/cpu.h"
 #include "cpu/registers.h"
 #include "cpu/interrupts.h"
@@ -24,6 +23,8 @@
 #include "cpu/instructions.h"
 #include "cpu/interrupts.h"
 #include "cpu/timer.h"
+
+#include "cfg.h"
 #include "utils.h"
 
 #ifdef WITH_DEBUGGER

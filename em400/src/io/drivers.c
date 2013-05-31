@@ -17,11 +17,11 @@
 
 #include <strings.h>
 
-#include "drv/drivers.h"
-#include "drv/cnone.h"
-#include "drv/cmem.h"
-#include "drv/cchar.h"
-#include "drv/u9425.h"
+#include "io/drivers.h"
+#include "io/cnone.h"
+#include "io/cmem.h"
+#include "io/cchar.h"
+#include "io/u9425.h"
 
 struct drv_t drv_drivers[] = {
 // channel driver definitions

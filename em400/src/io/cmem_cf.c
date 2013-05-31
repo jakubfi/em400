@@ -17,9 +17,10 @@
 
 #include <inttypes.h>
 
-#include "errors.h"
 #include "cpu/memory.h"
-#include "drv/cmem_cf.h"
+#include "io/cmem_cf.h"
+
+#include "errors.h"
 
 // -----------------------------------------------------------------------
 int cmem_decode_cf_t(int addr, struct cmem_cf_t *cf)

@@ -20,11 +20,12 @@
 #include <stdarg.h>
 #include <string.h>
 
+#include "cpu/memory.h"
+#include "io/drivers.h"
+
 #include "errors.h"
 #include "cfg.h"
-#include "cpu/memory.h"
 #include "cfg_parser.h"
-#include "drv/drivers.h"
 
 extern FILE *cyyin;
 void cyyerror(char *s, ...);

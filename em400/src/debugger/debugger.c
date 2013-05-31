@@ -19,11 +19,12 @@
 #include <string.h>
 #include <limits.h>
 
-#include "em400.h"
-#include "cfg.h"
 #include "cpu/cpu.h"
 #include "cpu/registers.h"
 #include "cpu/memory.h"
+
+#include "em400.h"
+#include "cfg.h"
 #include "errors.h"
 #include "utils.h"
 

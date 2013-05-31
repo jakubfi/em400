@@ -22,13 +22,14 @@
 #include <stdarg.h>
 #include <sys/time.h>
 
-#include "em400.h"
-#include "cfg.h"
 #include "cpu/cpu.h"
 #include "cpu/memory.h"
 #include "cpu/interrupts.h"
 #include "cpu/timer.h"
-#include "io.h"
+#include "io/io.h"
+
+#include "em400.h"
+#include "cfg.h"
 #include "errors.h"
 
 #ifdef WITH_DEBUGGER

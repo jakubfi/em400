@@ -21,7 +21,7 @@
 #include <stdarg.h>
 
 #include "cfg.h"
-#include "drv/drivers.h"
+#include "io/drivers.h"
 
 int this_chan;
 

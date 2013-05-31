@@ -20,14 +20,14 @@
 #include <pthread.h>
 #include <stdio.h>
 
+#include "cpu/memory.h"
+#include "cpu/registers.h"
+#include "io/io.h"
+#include "io/drivers.h"
+
 #include "cfg.h"
 #include "utils.h"
 #include "errors.h"
-#include "io.h"
-#include "cpu/memory.h"
-#include "cpu/registers.h"
-
-#include "drv/drivers.h"
 
 #include "debugger/log.h"
 

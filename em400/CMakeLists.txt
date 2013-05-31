@@ -27,7 +27,7 @@ ELSE(WITH_DEBUGGER)
 	set(DEBUGGER_LIB)
 ENDIF(WITH_DEBUGGER)
 
-ADD_SUBDIRECTORY(src/drv build/drv)
+ADD_SUBDIRECTORY(src/io build/io)
 ADD_SUBDIRECTORY(src/cpu build/cpu)
 ADD_SUBDIRECTORY(src build)
 

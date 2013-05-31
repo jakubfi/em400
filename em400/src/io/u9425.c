@@ -15,37 +15,49 @@
 //  Foundation, Inc.,
 //  51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 
+#include <stdlib.h>
+#include <string.h>
 #include <inttypes.h>
+
+#include "io/io.h"
+#include "io/lib.h"
+#include "io/u9425.h"
 
 #include "cfg.h"
 #include "errors.h"
-#include "io.h"
-
-#include "debugger/log.h"
 
 // -----------------------------------------------------------------------
-int drv_cnone_init(void *self, struct cfg_arg_t *arg)
+int drv_u9425_init(void *self, struct cfg_arg_t *arg)
 {
+	struct unit_t *unit = self;
+	struct u9425_cfg_t *cfg = unit->cfg = malloc(sizeof(struct u9425_cfg_t));
+	if (!unit->cfg) return E_IO_UNIT_INIT;
+
+	int argc = args_to_cfg(arg, "ss", &cfg->img_fixed, &cfg->img_removable);
+	if (argc != 2) {
+		return E_IO_UNIT_INIT_ARGS;
+	}
+
 	return E_OK;
 }
 
 // -----------------------------------------------------------------------
-void drv_cnone_shutdown(void *self)
+void drv_u9425_shutdown(void *self)
+{
+	struct u9425_cfg_t *cfg = ((struct unit_t *)self)->cfg;
+	free(cfg->img_fixed);
+	free(cfg->img_removable);
+	free(cfg);
+}
+
+// -----------------------------------------------------------------------
+void drv_u9425_reset(void *self)
 {
 }
 
 // -----------------------------------------------------------------------
-void drv_cnone_reset(void *self)
+int drv_u9425_cmd(void *self, int dir, uint16_t n_arg, uint16_t *r_arg)
 {
-}
-
-// -----------------------------------------------------------------------
-int drv_cnone_cmd(void *self, int dir, uint16_t n_arg, uint16_t *r_arg)
-{
-#ifdef WITH_DEBUGGER
-	struct chan_t *ch = self;
-	LOG(D_IO, 10, "Chan %d (%s) is not connected, ignored command", ch->num, ch->name);
-#endif
 	return IO_NO;
 }
 

@@ -19,7 +19,7 @@
 #define CFG_H
 
 #include "cpu/memory.h"
-#include "io.h"
+#include "io/io.h"
 
 extern int cfg_error;
 

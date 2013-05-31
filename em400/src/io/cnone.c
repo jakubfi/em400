@@ -15,62 +15,39 @@
 //  Foundation, Inc.,
 //  51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 
-#include <stdlib.h>
-#include <stdarg.h>
-#include <string.h>
+#include <inttypes.h>
 
-#include "drv/drivers.h"
+#include "io/io.h"
+
+#include "cfg.h"
+#include "errors.h"
+
+#include "debugger/log.h"
 
 // -----------------------------------------------------------------------
-void chan_get_int_spec(void *self, uint16_t *r)
+int drv_cnone_init(void *self, struct cfg_arg_t *arg)
 {
-	struct chan_t *ch = self;
-	*r = ch->int_spec;
+	return E_OK;
 }
 
 // -----------------------------------------------------------------------
-int args_to_cfg(struct cfg_arg_t *arg, const char *format, ...)
+void drv_cnone_shutdown(void *self)
 {
-	int *i;
-	char *c;
-	char **s;
-	char **eptr = NULL;
-	int count = 0;
+}
 
-	if (!format) return -1;
+// -----------------------------------------------------------------------
+void drv_cnone_reset(void *self)
+{
+}
 
-	va_list ap;
-	va_start(ap, format);
-	while (arg && *format) {
-		if (!arg->text) return -1;
-		switch (*format) {
-			case 'i':
-				i = va_arg(ap, int*);
-				*i = strtol(arg->text, eptr, 10);
-				if (eptr) return -1;
-				break;
-			case 'c':
-				c = va_arg(ap, char*);
-				*c = *(arg->text);
-				break;
-			case 's':
-				s = va_arg(ap, char**);
-				*s = strdup(arg->text);
-				if (!*s) return -1;
-				break;
-			default:
-				return -1;
-		}
-		count++;
-		format++;
-		free(arg->text);
-		struct cfg_arg_t *parg = arg;
-		arg = arg->next;
-		free(parg);
-	}
-
-	va_end(ap);
-	return count;
+// -----------------------------------------------------------------------
+int drv_cnone_cmd(void *self, int dir, uint16_t n_arg, uint16_t *r_arg)
+{
+#ifdef WITH_DEBUGGER
+	struct chan_t *ch = self;
+	LOG(D_IO, 10, "Chan %d (%s) is not connected, ignored command", ch->num, ch->name);
+#endif
+	return IO_NO;
 }
 
 // vim: tabstop=4

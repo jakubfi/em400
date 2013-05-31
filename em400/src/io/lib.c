@@ -16,48 +16,61 @@
 //  51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 
 #include <stdlib.h>
+#include <stdarg.h>
 #include <string.h>
-#include <inttypes.h>
 
-#include "drv/lib.h"
-#include "drv/u9425.h"
-#include "cfg.h"
-#include "errors.h"
-#include "io.h"
+#include "io/drivers.h"
 
 // -----------------------------------------------------------------------
-int drv_u9425_init(void *self, struct cfg_arg_t *arg)
+void chan_get_int_spec(void *self, uint16_t *r)
 {
-	struct unit_t *unit = self;
-	struct u9425_cfg_t *cfg = unit->cfg = malloc(sizeof(struct u9425_cfg_t));
-	if (!unit->cfg) return E_IO_UNIT_INIT;
+	struct chan_t *ch = self;
+	*r = ch->int_spec;
+}
 
-	int argc = args_to_cfg(arg, "ss", &cfg->img_fixed, &cfg->img_removable);
-	if (argc != 2) {
-		return E_IO_UNIT_INIT_ARGS;
+// -----------------------------------------------------------------------
+int args_to_cfg(struct cfg_arg_t *arg, const char *format, ...)
+{
+	int *i;
+	char *c;
+	char **s;
+	char **eptr = NULL;
+	int count = 0;
+
+	if (!format) return -1;
+
+	va_list ap;
+	va_start(ap, format);
+	while (arg && *format) {
+		if (!arg->text) return -1;
+		switch (*format) {
+			case 'i':
+				i = va_arg(ap, int*);
+				*i = strtol(arg->text, eptr, 10);
+				if (eptr) return -1;
+				break;
+			case 'c':
+				c = va_arg(ap, char*);
+				*c = *(arg->text);
+				break;
+			case 's':
+				s = va_arg(ap, char**);
+				*s = strdup(arg->text);
+				if (!*s) return -1;
+				break;
+			default:
+				return -1;
+		}
+		count++;
+		format++;
+		free(arg->text);
+		struct cfg_arg_t *parg = arg;
+		arg = arg->next;
+		free(parg);
 	}
 
-	return E_OK;
-}
-
-// -----------------------------------------------------------------------
-void drv_u9425_shutdown(void *self)
-{
-	struct u9425_cfg_t *cfg = ((struct unit_t *)self)->cfg;
-	free(cfg->img_fixed);
-	free(cfg->img_removable);
-	free(cfg);
-}
-
-// -----------------------------------------------------------------------
-void drv_u9425_reset(void *self)
-{
-}
-
-// -----------------------------------------------------------------------
-int drv_u9425_cmd(void *self, int dir, uint16_t n_arg, uint16_t *r_arg)
-{
-	return IO_NO;
+	va_end(ap);
+	return count;
 }
 
 // vim: tabstop=4
