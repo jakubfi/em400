@@ -19,10 +19,10 @@
 #include <string.h>
 #include <strings.h>
 
-#include "cpu.h"
-#include "registers.h"
-#include "interrupts.h"
-#include "memory.h"
+#include "cpu/cpu.h"
+#include "cpu/registers.h"
+#include "cpu/interrupts.h"
+#include "cpu/memory.h"
 #include "errors.h"
 #include "utils.h"
 

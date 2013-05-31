@@ -18,7 +18,7 @@
 #include <inttypes.h>
 
 #include "errors.h"
-#include "memory.h"
+#include "cpu/memory.h"
 #include "drv/cmem_cf.h"
 
 // -----------------------------------------------------------------------

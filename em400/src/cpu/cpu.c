@@ -16,14 +16,14 @@
 //  51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 
 #include "cfg.h"
-#include "cpu.h"
-#include "registers.h"
-#include "interrupts.h"
-#include "memory.h"
-#include "iset.h"
-#include "instructions.h"
-#include "interrupts.h"
-#include "timer.h"
+#include "cpu/cpu.h"
+#include "cpu/registers.h"
+#include "cpu/interrupts.h"
+#include "cpu/memory.h"
+#include "cpu/iset.h"
+#include "cpu/instructions.h"
+#include "cpu/interrupts.h"
+#include "cpu/timer.h"
 #include "utils.h"
 
 #ifdef WITH_DEBUGGER

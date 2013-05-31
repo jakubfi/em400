@@ -21,7 +21,7 @@
 #include <inttypes.h>
 #include <stdbool.h>
 
-#include "registers.h"
+#include "cpu/registers.h"
 
 struct opdef {
 	uint16_t opcode;				// basic/extended opcode

@@ -15,55 +15,48 @@
 //  Foundation, Inc.,
 //  51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 
-#include <pthread.h>
-#include <time.h>
+#include <inttypes.h>
 
-#include "cfg.h"
-#include "errors.h"
-#include "timer.h"
-#include "registers.h"
-#include "interrupts.h"
+#include "cpu/registers.h"
 
-int timer_fin = 0;
+#ifdef WITH_DEBUGGER
+#include "debugger/debugger.h"
+#include "debugger/ui.h"
+#endif
+#include "debugger/log.h"
 
-pthread_t timer_th;
+uint16_t regs[R_MAX];
 
+#ifndef WITH_SPEEDOPT
 // -----------------------------------------------------------------------
-void * timer_thread(void *ptr)
+uint16_t reg_read(int r, int trace)
 {
-	struct timespec ts;
-	struct timespec tr;
-
-	ts.tv_sec = em400_cfg.cpu.timer_step/1000;
-	ts.tv_nsec = (em400_cfg.cpu.timer_step%1000) * 1000000;
-
-	while (!timer_fin) {
-		nanosleep(&ts, &tr);
-		int_set(INT_TIMER);
-	}
-	pthread_exit(NULL);
-}
-
-// -----------------------------------------------------------------------
-int timer_init()
-{
-	if (em400_cfg.cpu.timer_step == 0) {
-		eprint("Timer disabled in configuration\n");
-		return 0;
+#ifdef WITH_DEBUGGER
+	if (trace != 0) {
+		LOG(D_REG, 10, "%s -> 0x%04x", log_reg_name[r], regs[r]);
+		dbg_touch_add(&touch_reg, TOUCH_R, 0, r, regs[r]);
 	} else {
-		eprint("Starting timer: %i ms\n", em400_cfg.cpu.timer_step);
-		return pthread_create(&timer_th, NULL, timer_thread, NULL);
+		LOG(D_REG, 100, "%s -> 0x%04x", log_reg_name[r], regs[r]);
 	}
+#endif
+	return regs[r];
 }
 
 // -----------------------------------------------------------------------
-void timer_shutdown()
+void reg_write(int r, uint16_t x, int trace, int hw)
 {
-	eprint("Stopping timer\n");
-	timer_fin = 1;
-	if (timer_th) {
-		pthread_join(timer_th, NULL);
+#ifdef WITH_DEBUGGER
+	LOG(D_REG, 1, "%s <- 0x%04x", log_reg_name[r], x);
+	if (trace != 0) {
+		dbg_touch_add(&touch_reg, TOUCH_W, 0, r, regs[r]);
+	}
+#endif
+	if (r | hw) {
+		regs[r] = x;
+	} else {
+		regs[r] = (regs[r] & 0b1111111100000000) | (x & 0b0000000011111111);
 	}
 }
+#endif
 
 // vim: tabstop=4

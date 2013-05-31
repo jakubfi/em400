@@ -20,7 +20,7 @@
 
 #include <inttypes.h>
 
-#include "registers.h"
+#include "cpu/registers.h"
 
 void alu_add16(int reg, uint16_t arg, uint16_t carry);
 void alu_add32(int reg1, int reg2, uint16_t arg1, uint16_t arg2, int sign);

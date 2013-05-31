@@ -19,8 +19,8 @@
 #include <stdbool.h>
 #include <inttypes.h>
 
-#include "iset.h"
-#include "instructions.h"
+#include "cpu/iset.h"
+#include "cpu/instructions.h"
 
 struct opdef iset[] = {
 	{ 000, false, op_illegal, NULL },

@@ -24,9 +24,9 @@
 #include "em400.h"
 #include "cfg.h"
 #include "errors.h"
-#include "memory.h"
-#include "registers.h"
-#include "interrupts.h"
+#include "cpu/memory.h"
+#include "cpu/registers.h"
+#include "cpu/interrupts.h"
 #include "io.h"
 
 #ifdef WITH_DEBUGGER

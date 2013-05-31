@@ -18,9 +18,9 @@
 #include <string.h>
 #include <stdlib.h>
 
-#include "registers.h"
-#include "memory.h"
-#include "interrupts.h"
+#include "cpu/registers.h"
+#include "cpu/memory.h"
+#include "cpu/interrupts.h"
 
 #include "debugger/debugger.h"
 #include "debugger/eval.h"

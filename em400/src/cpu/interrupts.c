@@ -18,9 +18,9 @@
 #include <inttypes.h>
 #include <pthread.h>
 
-#include "memory.h"
-#include "registers.h"
-#include "interrupts.h"
+#include "cpu/memory.h"
+#include "cpu/registers.h"
+#include "cpu/interrupts.h"
 #include "io.h"
 #include "drv/lib.h"
 

@@ -19,7 +19,7 @@
 #include <stdlib.h>
 
 #include "utils.h"
-#include "memory.h"
+#include "cpu/memory.h"
 #include "errors.h"
 #include "drv/multix.h"
 #include "drv/multix_cf.h"

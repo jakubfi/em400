@@ -21,6 +21,8 @@
 #include "utils.h"
 #include "errors.h"
 
+#include "cpu/registers.h"
+
 #include "debugger/dasm.h"
 #include "debugger/awin.h"
 #include "debugger/debugger.h"

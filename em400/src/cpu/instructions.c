@@ -19,14 +19,14 @@
 
 #include "em400.h"
 #include "cfg.h"
-#include "cpu.h"
-#include "registers.h"
-#include "interrupts.h"
-#include "alu.h"
-#include "memory.h"
+#include "cpu/cpu.h"
+#include "cpu/registers.h"
+#include "cpu/interrupts.h"
+#include "cpu/alu.h"
+#include "cpu/memory.h"
 #include "io.h"
-#include "iset.h"
-#include "instructions.h"
+#include "cpu/iset.h"
+#include "cpu/instructions.h"
 #include "utils.h"
 
 #ifdef WITH_DEBUGGER

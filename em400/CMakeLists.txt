@@ -28,6 +28,7 @@ ELSE(WITH_DEBUGGER)
 ENDIF(WITH_DEBUGGER)
 
 ADD_SUBDIRECTORY(src/drv build/drv)
+ADD_SUBDIRECTORY(src/cpu build/cpu)
 ADD_SUBDIRECTORY(src build)
 
 # vim: tabstop=4

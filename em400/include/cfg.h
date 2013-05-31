@@ -18,7 +18,7 @@
 #ifndef CFG_H
 #define CFG_H
 
-#include "memory.h"
+#include "cpu/memory.h"
 #include "io.h"
 
 extern int cfg_error;

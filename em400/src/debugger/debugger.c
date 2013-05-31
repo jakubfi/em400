@@ -21,9 +21,9 @@
 
 #include "em400.h"
 #include "cfg.h"
-#include "cpu.h"
-#include "registers.h"
-#include "memory.h"
+#include "cpu/cpu.h"
+#include "cpu/registers.h"
+#include "cpu/memory.h"
 #include "errors.h"
 #include "utils.h"
 

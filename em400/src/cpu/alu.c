@@ -17,9 +17,9 @@
 
 #include <inttypes.h>
 
-#include "alu.h"
-#include "registers.h"
-#include "interrupts.h"
+#include "cpu/alu.h"
+#include "cpu/registers.h"
+#include "cpu/interrupts.h"
 
 // -----------------------------------------------------------------------
 void alu_add16(int reg, uint16_t arg, uint16_t carry)

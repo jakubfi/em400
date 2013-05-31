@@ -21,8 +21,6 @@
 #include <inttypes.h>
 #include <stdbool.h>
 
-#include "registers.h"
-
 struct dasm_opdef {
 	uint16_t opcode;				// basic/extended opcode
 	char *mnemo;					// mnemonic (for disassembler)

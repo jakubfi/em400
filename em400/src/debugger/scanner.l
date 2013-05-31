@@ -18,7 +18,7 @@
 
 #include <stdlib.h>
 
-#include "registers.h"
+#include "cpu/registers.h"
 
 #include "debugger/debugger.h"
 #include "debugger/ui.h"

@@ -22,7 +22,7 @@
 
 #include "errors.h"
 #include "cfg.h"
-#include "memory.h"
+#include "cpu/memory.h"
 #include "cfg_parser.h"
 #include "drv/drivers.h"
 

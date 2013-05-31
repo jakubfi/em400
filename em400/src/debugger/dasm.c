@@ -19,10 +19,10 @@
 #include <stdlib.h>
 #include <string.h>
 
-#include "cpu.h"
-#include "registers.h"
-#include "memory.h"
-#include "iset.h"
+#include "cpu/cpu.h"
+#include "cpu/registers.h"
+#include "cpu/memory.h"
+#include "cpu/iset.h"
 #include "utils.h"
 
 #include "debugger/dasm.h"

@@ -24,8 +24,8 @@
 #include "utils.h"
 #include "errors.h"
 #include "io.h"
-#include "memory.h"
-#include "registers.h"
+#include "cpu/memory.h"
+#include "cpu/registers.h"
 
 #include "drv/drivers.h"
 

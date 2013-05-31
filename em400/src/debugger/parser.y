@@ -18,8 +18,8 @@
 
 #include <stdlib.h>
 
-#include "registers.h"
-#include "memory.h"
+#include "cpu/registers.h"
+#include "cpu/memory.h"
 #include "utils.h"
 
 #include "debugger/dasm.h"

@@ -18,7 +18,7 @@
 #include <stdio.h>
 #include <strings.h>
 
-#include "registers.h"
+#include "cpu/registers.h"
 
 #include "debugger/parser.h"
 #include "debugger/keywords.h"
