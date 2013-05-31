@@ -122,4 +122,62 @@ void mx_free_cf_sc(struct mx_cf_sc *cf)
 	free(cf);
 }
 
+// -----------------------------------------------------------------------
+int mx_decode_cf_winch_t(int addr, struct mx_cf_winch_t *cf)
+{
+	uint16_t data;
+
+	data = MEMB(0, addr);
+	cf->oper = (data & 0b0000001100000000) >> 8;
+	switch (cf->oper) {
+		case MX_WINCH_FORMAT_SPARE:
+			cf->format = calloc(1, sizeof(struct mx_cf_winch_format));
+			data = MEMB(0, addr+1);
+			cf->format->sector_map = data;
+			data = MEMB(0, addr+2);
+			cf->format->start_sector = data << 16;
+			data = MEMB(0, addr+3);
+			cf->format->start_sector += data;
+			break;
+		case MX_WINCH_FORMAT:
+			// nothing else
+			break;
+		case MX_WINCH_READ:
+		case MX_WINCH_WRITE:
+			cf->transmit = calloc(1, sizeof(struct mx_cf_winch_transmit));
+			cf->transmit->ign_crc		= (data & 0b0001000000000000) >> 12;
+			cf->transmit->sector_fill	= (data & 0b0000100000000000) >> 11;
+			cf->transmit->watch_eof		= (data & 0b0000010000000000) >> 10;
+			cf->transmit->cpu			= (data & 0b0000000000010000) >> 4;
+			cf->transmit->nb			= (data & 0b0000000000001111);
+			data = MEMB(0, addr+1);
+			cf->transmit->addr = data;
+			data = MEMB(0, addr+2);
+			cf->transmit->len = data+1;
+			data = MEMB(0, addr+3);
+			cf->transmit->sector = data << 16;
+			data = MEMB(0, addr+4);
+			cf->transmit->sector += data;
+			break;
+		case MX_WINCH_PARK:
+			cf->park = calloc(1, sizeof(struct mx_cf_winch_park));
+			data = MEMB(0, addr+4);
+			cf->park->cylinder = data;
+			break;
+		default:
+			break;
+	}
+
+	return E_OK;
+}
+
+// -----------------------------------------------------------------------
+void mx_free_cf_winch_t(struct mx_cf_winch_t *cf)
+{
+	if (cf->format) free(cf->format);
+	if (cf->park) free(cf->park);
+	if (cf->transmit) free(cf->transmit);
+	free(cf);
+}
+
 // vim: tabstop=4

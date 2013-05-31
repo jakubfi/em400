@@ -18,6 +18,7 @@
 #include <strings.h>
 #include <stdlib.h>
 
+#include "utils.h"
 #include "memory.h"
 #include "errors.h"
 #include "drv/multix.h"
@@ -32,7 +33,7 @@ struct decoder_t decoders[] = {
 	{ "iv", "SYS: interrupt vectors", decode_iv},
 	{ "mxpsuk", "MULTIX: set configuration", decode_mxpsuk },
 	{ "mxpsdl", "MULTIX: assign line", decode_mxpsdl },
-	{ "mxpst", "MULTIX: transmit", decode_mxpst },
+	{ "mxpstwinch", "MULTIX: transmit (Winchester)", decode_mxpst_winch },
 	{ "cmempst", "MEM chan: transmit", decode_cmempst },
 	{ NULL, NULL, NULL}
 };
@@ -280,13 +281,76 @@ char * decode_mxpsuk(uint16_t addr, int arg)
 // -----------------------------------------------------------------------
 char * decode_mxpsdl(uint16_t addr, int arg)
 {
-	return E_OK;
+	return NULL;
 }
 
 // -----------------------------------------------------------------------
-char * decode_mxpst(uint16_t addr, int arg)
+int decode_mxpst_transmit_winch(struct mx_cf_winch_transmit *t, char *b)
 {
-	return E_OK;
+	int pos = 0;
+
+	pos += sprintf(b+pos, "Starting logical sector: %i\n", t->sector);
+	pos += sprintf(b+pos, "Destination: CPU=%i, NB=%i, ADDR=%i, length=%i\n", t->cpu, t->nb, t->addr, t->len);
+	pos += sprintf(b+pos, "Ignore CRC=%s, Fill last sector=%s, Watch EOF=%s\n", t->ign_crc?"y":"n", t->sector_fill?"y":"n", t->watch_eof?"y":"n");
+
+	return pos;
+}
+
+// -----------------------------------------------------------------------
+char * decode_mxpst_winch(uint16_t addr, int arg)
+{
+	char *buf = malloc(16*1024);
+	char *b = buf;
+	int pos = 0;
+
+	if (!buf) {
+		return NULL;
+	}
+
+	struct mx_cf_winch_t *t = calloc(1, sizeof(struct mx_cf_winch_t));
+
+	if (!t) {
+		free(buf);
+		return NULL;
+	}
+
+	int ret = mx_decode_cf_winch_t(addr, t);
+	if (ret != E_OK) {
+		pos += sprintf(b+pos, "Error decoding: %s", get_error(ret));
+		return buf;
+	}
+
+	pos += sprintf(b+pos, "Operation: (%i) ", t->oper);
+	switch (t->oper) {
+		case MX_WINCH_FORMAT_SPARE:
+			pos += sprintf(b+pos, "Format spare area\n(no additional arguments)\n)");
+			break;
+		case MX_WINCH_FORMAT:
+			pos += sprintf(b+pos, "Format track (optionally move sectors to spare area)\n");
+			char *map = int2bin(t->format->sector_map, 16);
+			pos += sprintf(b+pos, "Sector relocation map: %s\n", map);
+			pos += sprintf(b+pos, "Starting sector: %i\n", t->format->start_sector);
+			free(map);
+			break;
+		case MX_WINCH_READ:
+			pos += sprintf(b+pos, "Read\n");
+			pos += decode_mxpst_transmit_winch(t->transmit, buf+pos);
+			break;
+		case MX_WINCH_WRITE:
+			pos += sprintf(b+pos, "Write\n");
+			pos += decode_mxpst_transmit_winch(t->transmit, buf+pos);
+			break;
+		case MX_WINCH_PARK:
+			pos += sprintf(b+pos, "Park\n");
+			pos += sprintf(b+pos, "Cylinder: %i\n", t->park->cylinder);
+			break;
+		default:
+			pos += sprintf(b+pos, "unknown\n");
+			break;
+	}
+
+	mx_free_cf_winch_t(t);
+	return buf;
 }
 
 // -----------------------------------------------------------------------
@@ -328,8 +392,8 @@ char * decode_cmempst(uint16_t addr, int arg)
 	}
 	pos += sprintf(b+pos, "\n");
 	pos += sprintf(b+pos, "PLATTER: %i, HEAD: %i, CYL: %i, SECTOR: %i\n", t->platter, t->head, t->cyl, t->sector);
-	pos += sprintf(b+pos, "Ignore: wprotect=%s, defects=%s, key=%s, eof=%s\n", t->ign_wrprotect?"y":"n", t->ign_defects?"y":"n", t->ign_key?"y":"n", t->ign_eof?"y":"n");
 	pos += sprintf(b+pos, "Destination: CPU=%i, NB=%i, ADDR=%i, length=%i\n", t->cpu, t->nb, t->addr, t->len);
+	pos += sprintf(b+pos, "Ignore: wprotect=%s, defects=%s, key=%s, eof=%s\n", t->ign_wrprotect?"y":"n", t->ign_defects?"y":"n", t->ign_key?"y":"n", t->ign_eof?"y":"n");
 	pos += sprintf(b+pos, "Key: %i\n", t->key);
 
 	free(t);

@@ -9,6 +9,7 @@ CPU:
 
 Debugger:
 
+* store command line history between runs
 * scrollable command window view
 * more shortcuts (c-w, c-d, c-k)
 * log shouldn't start new file immediately

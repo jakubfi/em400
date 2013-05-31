@@ -20,6 +20,14 @@
 
 #include <inttypes.h>
 
+enum mx_t_winch_oper_e {
+	MX_WINCH_FORMAT_SPARE = 0,
+	MX_WINCH_FORMAT = 1,
+	MX_WINCH_READ = 2,
+	MX_WINCH_WRITE = 3,
+	MX_WINCH_PARK = 666 // needs to be investigated, doesn't fit in 2 bits
+};
+
 // --- set configuration ---
 
 struct mx_cf_sc_pl {
@@ -57,7 +65,7 @@ struct mx_cf_sc {
 
 // --- connect line ---
 
-struct mx_ps_cl_punch_reader {
+struct mx_cf_cl_punch_reader {
 	int watch_eot;
 	int no_parity;
 	int odd_parity;
@@ -69,14 +77,14 @@ struct mx_ps_cl_punch_reader {
 	int txt_proc;
 };
 
-struct mx_ps_cl_puncher {
+struct mx_cf_cl_puncher {
 	int odd_parity;
 	int eight_bits;
 	int low_to_up;
 	int txt_proc;
 };
 
-struct mx_ps_cl_monitor {
+struct mx_cf_cl_monitor {
 	int watch_eot;
 	int no_parity;
 	int odd_parity;
@@ -97,8 +105,42 @@ struct mx_ps_cl_monitor {
 
 // --- transmit ---
 
+struct mx_cf_winch_format {
+	uint16_t sector_map;
+	int start_sector;
+};
+
+struct mx_cf_winch_transmit {
+	int ign_crc;
+	int sector_fill;
+	int watch_eof;
+	int cpu;
+	int nb;
+	int addr;
+	uint16_t len;
+	int sector;
+};
+
+struct mx_cf_winch_park {
+	int cylinder;
+};
+
+struct mx_cf_winch_t {
+	int oper;
+	struct mx_cf_winch_format *format;
+	struct mx_cf_winch_transmit *transmit;
+	struct mx_cf_winch_park *park;	
+	uint16_t *ret_len;
+	uint16_t *ret_status;
+};
+
+// -----------------------------------------------------------------
+
 int mx_decode_cf_sc(int addr, struct mx_cf_sc *cf);
+int mx_decode_cf_winch_t(int addr, struct mx_cf_winch_t *cf);
+
 void mx_free_cf_sc(struct mx_cf_sc *cf);
+void mx_free_cf_winch_t(struct mx_cf_winch_t *cf);
 
 
 #endif

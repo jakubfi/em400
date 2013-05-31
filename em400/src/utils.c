@@ -21,7 +21,7 @@
 
 // -----------------------------------------------------------------------
 // convert an integer to string with its binary representation
-char* int2bin(int x, int len)
+char * int2bin(int x, int len)
 {
 	char* buf = malloc(len+1);
 	if (!buf) {
