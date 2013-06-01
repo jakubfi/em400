@@ -20,8 +20,8 @@
 #include <unistd.h>
 
 #include "io/io.h"
+#include "io/chan.h"
 #include "io/cchar.h"
-#include "io/lib.h"
 
 #include "cfg.h"
 #include "errors.h"
@@ -86,7 +86,7 @@ int drv_cchar_cmd(void *self, int dir, uint16_t n_arg, uint16_t *r_arg)
 			case CHAN_CMD_EXISTS:
 				break;
 			case CHAN_CMD_INTSPEC:
-				chan_get_int_spec(ch, r_arg);
+				*r_arg = ch->int_spec;
 				break;
 			case CHAN_CMD_ALLOC:
 				// all units always working with CPU 0

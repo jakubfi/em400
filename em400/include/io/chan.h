@@ -15,14 +15,12 @@
 //  Foundation, Inc.,
 //  51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 
-#ifndef DRV_LIB_H
-#define DRV_LIB_H
+#ifndef DRV_CHAN_H
+#define DRV_CHAN_H
 
 #include <inttypes.h>
 
-#include "io/drivers.h"
-
-enum _chan_cmd {
+enum chan_cmds_e {
 	// channel IN
 	CHAN_CMD_EXISTS		= 0b00000000,
 	CHAN_CMD_INTSPEC	= 0b00001000,
@@ -33,9 +31,6 @@ enum _chan_cmd {
 	CHAN_CMD_MASK_NPN	= 0b00010000,
 	CHAN_CMD_ASSIGN		= 0b00011000
 };
-
-void chan_get_int_spec(void *self, uint16_t *r);
-int args_to_cfg(struct cfg_arg_t *arg, const char *format, ...);
 
 #endif
 

@@ -84,6 +84,7 @@ void cfg_print();
 void cfg_set_mem(int module, int is_mega, int segments);
 void cfg_set_os_mem(int segments);
 struct cfg_arg_t * cfg_make_arg(char *arg);
+int args_to_cfg(struct cfg_arg_t *arg, const char *format, ...);
 void cfg_make_unit(int c_num, int u_num, char *name, struct cfg_arg_t *args);
 void cfg_make_chan(int c_num, char *name);
 

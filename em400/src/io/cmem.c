@@ -20,8 +20,8 @@
 #include <unistd.h>
 
 #include "io/io.h"
+#include "io/chan.h"
 #include "io/cmem.h"
-#include "io/lib.h"
 
 #include "cfg.h"
 #include "errors.h"
@@ -88,7 +88,7 @@ int drv_cmem_cmd(void *self, int dir, uint16_t n_arg, uint16_t *r_arg)
 				LOG(D_IO, 1, "%i:%i (%s:%s) command (chan): CHAN_CMD_EXISTS", ch->num, unit->num, ch->name, unit->name);
 				break;
 			case CHAN_CMD_INTSPEC:
-				chan_get_int_spec(ch, r_arg);
+				*r_arg = ch->int_spec;
 				LOG(D_IO, 1, "%i:%i (%s:%s) command (chan): CHAN_CMD_INTSPEC -> %i", ch->num, unit->num, ch->name, unit->name, *r_arg);
 				break;
 			case CHAN_CMD_STATUS:

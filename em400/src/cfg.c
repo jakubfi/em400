@@ -136,6 +136,51 @@ struct cfg_arg_t * cfg_make_arg(char *s)
 }
 
 // -----------------------------------------------------------------------
+int args_to_cfg(struct cfg_arg_t *arg, const char *format, ...)
+{
+	int *i;
+	char *c;
+	char **s;
+	char **eptr = NULL;
+	int count = 0;
+
+	if (!format) return -1;
+
+	va_list ap;
+	va_start(ap, format);
+	while (arg && *format) {
+		if (!arg->text) return -1;
+		switch (*format) {
+			case 'i':
+				i = va_arg(ap, int*);
+				*i = strtol(arg->text, eptr, 10);
+				if (eptr) return -1;
+				break;
+			case 'c':
+				c = va_arg(ap, char*);
+				*c = *(arg->text);
+				break;
+			case 's':
+				s = va_arg(ap, char**);
+				*s = strdup(arg->text);
+				if (!*s) return -1;
+				break;
+			default:
+				return -1;
+		}
+		count++;
+		format++;
+		free(arg->text);
+		struct cfg_arg_t *parg = arg;
+		arg = arg->next;
+		free(parg);
+	}
+
+	va_end(ap);
+	return count;
+}
+
+// -----------------------------------------------------------------------
 void cfg_make_unit(int c_num, int u_num, char *name, struct cfg_arg_t *arglist)
 {
 	// check channel number

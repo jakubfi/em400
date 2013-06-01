@@ -22,7 +22,7 @@
 #include "cpu/registers.h"
 #include "cpu/interrupts.h"
 #include "io/io.h"
-#include "io/lib.h"
+#include "io/chan.h"
 
 #ifdef WITH_DEBUGGER
 #include "debugger/debugger.h"

@@ -20,7 +20,6 @@
 #include <inttypes.h>
 
 #include "io/io.h"
-#include "io/lib.h"
 #include "io/u9425.h"
 
 #include "cfg.h"
