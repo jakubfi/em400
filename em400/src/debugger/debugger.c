@@ -296,6 +296,7 @@ void dbg_step()
 
 	while (!dbg_loop_fin) {
 		if (aw_layout_changed) {
+			awin_tb_scroll_end(1);
 			aw_layout_redo();
 		} else {
 			aw_layout_refresh();
@@ -304,7 +305,7 @@ void dbg_step()
 		if (script_name) {
 			int sr = read_script(script_name);
 			if (sr == INT_MIN) {
-				awprint(W_CMD, C_ERROR, "Cannot open script file:: %s\n", script_name);
+				awprint(W_CMD, C_ERROR, "Cannot open script file: %s\n", script_name);
 			} else if (sr<0) {
 				awprint(W_CMD, C_ERROR, "Error at line: %i\n", -sr);
 			} else {
@@ -322,8 +323,17 @@ void dbg_step()
 		}
 
 		if ((res == KEY_ENTER) && (*input_buf)) {
+			awin_tb_scroll_end(1);
+			int len = strlen(input_buf);
+			input_buf[len] = '\n';
+			input_buf[len+1] = '\0';
 			dbg_parse(input_buf);
+		} else if (res == KEY_NPAGE) {
+			awin_tb_scroll(1, 10);
+		} else if (res == KEY_PPAGE) {
+			awin_tb_scroll(1, -10);
 		}
+
 	}
 	dbg_fin_cycle();
 }

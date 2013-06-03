@@ -39,6 +39,36 @@
 
 #define NCCHECK if (aw_output != O_NCURSES) return
 
+enum window_attrs_e {
+	AW_BORDER		= 1 << 0,
+	AW_SCROLLABLE	= 1 << 1,
+	AW_BUFFERED		= 1 << 2,
+}; // TODO, some other time
+
+struct awin_tb_fragment {
+	int attr;
+	char *text;
+	struct awin_tb_fragment *next;
+	int len;
+};
+
+struct awin_tb_line {
+	struct awin_tb_fragment *beg;
+	struct awin_tb_fragment *end;
+	struct awin_tb_line *prev;
+	struct awin_tb_line *next;
+	int len;
+	int num;
+};
+
+struct awin_tb {
+	int maxlines;
+	int lines;
+	struct awin_tb_line *disp_beg;
+	struct awin_tb_line *beg;
+	struct awin_tb_line *end;
+};
+
 struct awin_t {
 	char *title;
 	int id;
@@ -49,6 +79,7 @@ struct awin_t {
 	int max, min, left;
 	int border, enabled, scrollable;
 	void (*fun)(int wid);
+	struct awin_tb *tb;
 	struct awin_t *next;
 };
 
@@ -117,6 +148,14 @@ void aw_nc_rl_history_add(char *cmd, int len);
 void aw_nc_rl_history_delete(struct h_entry *h);
 int aw_nc_readline(int id, int attr, char *prompt, char *buffer, int buflen);
 int aw_readline(int id, int attr, char *prompt, char *buffer, int buflen);
+
+void awin_tb_append(struct awin_tb *tb, struct awin_tb_line *line);
+void awin_tb_line_append(struct awin_tb_line *line, struct awin_tb_fragment *fragment);
+struct awin_tb_line * aw_tb_get_last(struct awin_tb *tb, int lines);
+void awin_tb_scroll(int wid, int lines);
+void awin_tb_scroll_end(int wid);
+void awtbprint(int wid, int attr, char *format, ...);
+
 
 #endif
 

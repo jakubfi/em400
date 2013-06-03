@@ -378,6 +378,8 @@ AWIN * aw_window_add(ACONT *container, int id, char *title, int border, int scro
 	w->border = border;
 	w->scrollable = scrollable;
 	w->fun = fun;
+	w->tb = calloc(1, sizeof(struct awin_tb));
+	w->tb->maxlines = 1024;
 	w->next = NULL;
 
 	// reset x/y/w/h
@@ -761,7 +763,6 @@ int aw_nc_readline(int id, int attr, char *prompt, char *buffer, int buflen)
 			if (len > 0) {
 				aw_nc_rl_history_add(buffer, len);
 			}
-			buffer[len++] = '\n';
 			wmove(w->win, y, x+len);
 			break;
 		} else if (isprint(c)) {
@@ -835,9 +836,7 @@ int aw_readline(int id, int attr, char *prompt, char *buffer, int buflen)
 			rlin = readline(prompt);
 			if ((rlin) && (*rlin)) {
 				add_history(rlin);
-				strncpy(buffer, rlin, strlen(rlin));
-				buffer[strlen(rlin)] = '\n';
-				buffer[strlen(rlin)+1] = '\0';
+				strcpy(buffer, rlin);
 				free(rlin);
 				return KEY_ENTER;
 			} else {
@@ -848,5 +847,127 @@ int aw_readline(int id, int attr, char *prompt, char *buffer, int buflen)
 	}
 	return -1;
 }
+
+// -----------------------------------------------------------------------
+void awin_tb_append(struct awin_tb *tb, struct awin_tb_line *line)
+{
+	if (!tb) {
+		return;
+	}
+	if (tb->end) {
+		tb->end->next = line;
+		line->prev = tb->end;
+		tb->end = line;
+	} else {
+		tb->end = tb->beg = line;
+		tb->disp_beg = NULL;
+	}
+	line->num = tb->lines;
+	tb->lines++;
+}
+
+// -----------------------------------------------------------------------
+void awin_tb_line_append(struct awin_tb_line *line, struct awin_tb_fragment *fragment)
+{
+	if (!line) {
+		return;
+	}
+	if (line->end) {
+		line->end->next = fragment;
+		line->end = fragment;
+	} else {
+		line->end = line->beg = fragment;
+	}
+	line->len += fragment->len;
+}
+
+
+// -----------------------------------------------------------------------
+struct awin_tb_line * aw_tb_get_last(struct awin_tb *tb, int lines)
+{
+	struct awin_tb_line *line = tb->end;
+	while (line && line->prev && (lines > 0)) {
+		line = line->prev;
+		lines--;
+	}
+	return line;
+}
+
+// -----------------------------------------------------------------------
+void awin_tb_scroll(int wid, int lines)
+{
+	NCCHECK;
+	AWIN *win = aw_window_find(wid);
+
+	struct awin_tb_line *line;
+	// scroll up
+	if (lines < 0) {
+		if (win->tb->disp_beg) {
+			line = win->tb->disp_beg;
+		} else {
+			line = aw_tb_get_last(win->tb, win->ih-1);
+		}
+		while (line && line->prev && (lines < 0)) {
+			line = line->prev;
+			lines++;
+		}
+	// scroll down
+	} else {
+		if (win->tb->disp_beg) {
+			line = win->tb->disp_beg;
+		} else {
+			line = win->tb->beg;
+		}
+		while (line && line->next && (lines > 0) && (win->tb->end->num - line->num > (win->ih-1))) {
+			line = line->next;
+			lines--;
+		}
+	}
+	win->tb->disp_beg = line;
+}
+
+// -----------------------------------------------------------------------
+void awin_tb_scroll_end(int wid)
+{
+	NCCHECK;
+	AWIN *win = aw_window_find(wid);
+	win->tb->disp_beg = NULL;
+}
+
+// -----------------------------------------------------------------------
+void awtbprint(int wid, int attr, char *format, ...)
+{
+	AWIN *win = aw_window_find(wid);
+	struct awin_tb_fragment *fragment = calloc(1, sizeof(struct awin_tb_fragment));
+	char buf[1024];
+
+	va_list vl;
+	va_start(vl, format);
+
+	switch (aw_output) {
+		case O_NCURSES:
+			fragment->len = vsprintf(buf, format, vl);
+			fragment->text = strdup(buf);
+			fragment->attr = attr;
+			// if tb is empty, create an empty line
+			if (!win->tb->end) {
+				awin_tb_append(win->tb, calloc(1, sizeof(struct awin_tb_line)));
+			}
+			// append fragment
+			awin_tb_line_append(win->tb->end, fragment);
+			// if nl, create new empty line
+			if (buf[fragment->len-1] == '\n') {
+				awin_tb_append(win->tb, calloc(1, sizeof(struct awin_tb_line)));
+			}
+			break;
+		case O_STD:
+			vprintf(format, vl);
+			break;
+	}
+
+	va_end(vl);
+}
+
+
 
 // vim: tabstop=4
