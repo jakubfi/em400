@@ -213,7 +213,7 @@ struct evlb_t * dbg_brk_check()
 // -----------------------------------------------------------------------
 void dbg_fin_cycle()
 {
-    // we're leaving debugger, clear memory/register traces
+	// we're leaving debugger, clear memory/register traces
 	dbg_touch_drop_all(&touch_mem);
 	dbg_touch_drop_all(&touch_reg);
 }
@@ -319,10 +319,11 @@ void dbg_step()
 		int res = aw_readline(W_CMD, C_PROMPT, "em400> ", input_buf, INPUT_BUF_SIZE);
 
 		if ((res == KEY_ENTER) && (*input_buf)) {
-			awtbprint(W_CMD, C_PROMPT, "em400> ");
-			awtbprint(W_CMD, C_LABEL, "%s\n", input_buf);
-			awin_tb_scroll_end(W_CMD);
-			awin_tb_scroll_end(W_WATCH);
+			if (ui_mode == O_NCURSES) {
+				awtbprint(W_CMD, C_PROMPT, "em400> ");
+				awtbprint(W_CMD, C_LABEL, "%s\n", input_buf);
+				awin_tb_scroll_end(W_CMD);
+			}
 			int len = strlen(input_buf);
 			input_buf[len] = '\n';
 			input_buf[len+1] = '\0';

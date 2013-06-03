@@ -911,18 +911,35 @@ void awin_tb_scroll_end(int wid)
 // -----------------------------------------------------------------------
 void awtbprint(int wid, int attr, char *format, ...)
 {
-	AWIN *win = aw_window_find(wid);
-	struct awin_tb_fragment *fragment = calloc(1, sizeof(struct awin_tb_fragment));
-	char buf[1024];
+	char buf[32000];
 
 	va_list vl;
 	va_start(vl, format);
+	int len = vsprintf(buf, format, vl);
+	va_end(vl);
 
-	switch (aw_output) {
-		case O_NCURSES:
-			fragment->len = vsprintf(buf, format, vl);
-			fragment->text = strdup(buf);
+	if (aw_output == O_NCURSES) {
+		AWIN *win = aw_window_find(wid);
+		char *beg = buf;
+		char *n;
+		int flen;
+
+
+
+		while (beg && *beg) {
+			n = strchr(beg, '\n');
+			if (n) {
+				flen = n - beg + 1;
+			} else {
+				flen = len;
+			}
+
+			struct awin_tb_fragment *fragment = calloc(1, sizeof(struct awin_tb_fragment));
+			fragment->len = flen;
+			fragment->text = calloc(1, flen+1);
+			memcpy(fragment->text, beg, flen);
 			fragment->attr = attr;
+
 			// if tb is empty, create an empty line
 			if (!win->tb->end) {
 				awin_tb_append(win->tb, calloc(1, sizeof(struct awin_tb_line)));
@@ -930,16 +947,18 @@ void awtbprint(int wid, int attr, char *format, ...)
 			// append fragment
 			awin_tb_line_append(win->tb->end, fragment);
 			// if nl, create new empty line
-			if (buf[fragment->len-1] == '\n') {
+			if (n) {
 				awin_tb_append(win->tb, calloc(1, sizeof(struct awin_tb_line)));
+				beg = n+1;
+			} else {
+				beg = NULL;
 			}
-			break;
-		case O_STD:
-			vprintf(format, vl);
-			break;
-	}
+		}
 
-	va_end(vl);
+
+	} else if (aw_output == O_STD) {
+		printf("%s", buf);
+	}
 }
 
 // -----------------------------------------------------------------------
@@ -1002,4 +1021,4 @@ void awin_tb_clear(int wid)
 }
 
 
-// vim: tabstop=4
+// vim: tabstop=4 smarttab smartindent autoindent shiftwidth=4 softtabstop=4
