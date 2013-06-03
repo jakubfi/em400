@@ -21,6 +21,8 @@
 #include <unistd.h>
 #include <stdarg.h>
 #include <sys/time.h>
+#include <sys/stat.h>
+#include <sys/types.h>
 
 #include "cpu/cpu.h"
 #include "cpu/memory.h"
@@ -215,11 +217,18 @@ void em400_configure()
 		cfgf++->name = em400_cfg.config_file;
 	}
 
+	em400_cfg.cfg_dir = calloc(1, 1024);
+	em400_cfg.cfg_file = calloc(1, 1024);
+	em400_cfg.hist_file = calloc(1, 1024);
+	sprintf(em400_cfg.cfg_dir, "%s/.em400", getenv("HOME"));
+	sprintf(em400_cfg.cfg_file, "%s/.em400/em400.cfg", getenv("HOME"));
+	sprintf(em400_cfg.hist_file, "%s/.em400/history", getenv("HOME"));
+
+	mkdir(em400_cfg.cfg_dir, 0700);
+
 	// prepare default config file locations
-	char homefile[1024];
-	sprintf(homefile, "%s/.em400/em400.cfg", getenv("HOME"));
 	cfgf++->name = "em400.cfg";
-	cfgf++->name = homefile;
+	cfgf++->name = em400_cfg.cfg_file;
 	cfgf++->name = "/etc/em400/em400.cfg";
 	cfgf++->name = NULL;
 

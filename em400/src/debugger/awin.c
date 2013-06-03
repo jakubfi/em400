@@ -18,6 +18,7 @@
 #include <sys/ioctl.h>
 #include <stdlib.h>
 #include <string.h>
+#include <strings.h>
 #include <ncurses.h>
 #include <signal.h>
 #include <unistd.h>
@@ -31,6 +32,7 @@ volatile int aw_layout_changed;
 
 int aw_attr[64];
 int aw_output;
+char *aw_hist_file;
 
 struct h_entry *aw_history, *aw_history_cur;
 
@@ -46,9 +48,83 @@ void _aw_sigwinch_handler(int signum, siginfo_t *si, void *ctx)
 }
 
 // -----------------------------------------------------------------------
-int aw_init(int output)
+void aw_rl_history_read(char *hist_file)
+{
+	char buf[1024];
+	char *b = buf;
+	FILE *hf = fopen(hist_file, "r");
+	if (!hf) {
+		return;
+	}
+	while (1) {
+		int c = fread(b, 1, 1, hf);
+		if (c <= 0) {
+			break;
+		}
+		if (*b == '\n') {
+			aw_nc_rl_history_add(buf, b-buf);
+			b = buf;
+		} else {
+			b++;
+		}
+	}
+	fclose(hf);
+}
+
+// -----------------------------------------------------------------------
+void aw_rl_history_write(char *hist_file)
+{
+	FILE *hf = fopen(hist_file, "w");
+	if (!hf) {
+		return;
+	}
+
+	struct h_entry *h = aw_history;
+	while (h->prev) {
+		h = h->prev;
+	}
+
+	while (h) {
+		int res = 0;
+		res += fwrite(h->cmd, h->len, 1, hf);
+		res += fwrite("\n", 1, 1, hf);
+		h = h->next;
+	}
+
+	fclose(hf);
+}
+
+// -----------------------------------------------------------------------
+void aw_read_history()
+{
+	if (aw_hist_file) {
+		if (aw_output == O_STD) {
+			read_history(aw_hist_file);
+		} else if (aw_output == O_NCURSES) {
+			aw_rl_history_read(aw_hist_file);
+		}
+	}
+}
+
+// -----------------------------------------------------------------------
+void aw_write_history()
+{
+	if (aw_hist_file) {
+		if (aw_output == O_STD) {
+			write_history(aw_hist_file);
+		} else if (aw_output == O_NCURSES) {
+			aw_rl_history_write(aw_hist_file);
+		}
+	}
+}
+
+// -----------------------------------------------------------------------
+int aw_init(int output, char *history)
 {
 	aw_output = output;
+	aw_hist_file = history;
+
+	aw_read_history();
 
 	NCCHECK 0;
 
@@ -76,6 +152,7 @@ int aw_init(int output)
 // -----------------------------------------------------------------------
 void aw_shutdown()
 {
+	aw_write_history();
 	if (aw_output != O_NCURSES) {
 		clear_history();
 		return;
@@ -734,7 +811,7 @@ int aw_nc_readline(int id, int attr, char *prompt, char *buffer, int buflen)
 
 		if ((c == KEY_ENTER) || (c == '\n') || (c == '\r')) {
 			c = KEY_ENTER;
-			if (len > 0) {
+			if ((len > 0) && (strncasecmp(buffer, "quit", 4))) {
 				aw_nc_rl_history_add(buffer, len);
 			}
 			wmove(w->win, y, x+len);
@@ -809,7 +886,9 @@ int aw_readline(int id, int attr, char *prompt, char *buffer, int buflen)
 			rl_bind_key('\t', rl_abort);
 			rlin = readline(prompt);
 			if ((rlin) && (*rlin)) {
-				add_history(rlin);
+				if (strncasecmp(rlin, "quit", 4)) {
+					add_history(rlin);
+				}
 				strcpy(buffer, rlin);
 				free(rlin);
 				return KEY_ENTER;
@@ -906,6 +985,14 @@ void awin_tb_scroll_end(int wid)
 	NCCHECK;
 	AWIN *win = aw_window_find(wid);
 	win->tb->disp_beg = NULL;
+}
+
+// -----------------------------------------------------------------------
+void awin_tb_scroll_home(int wid)
+{
+	NCCHECK;
+	AWIN *win = aw_window_find(wid);
+	win->tb->disp_beg = win->tb->beg;
 }
 
 // -----------------------------------------------------------------------

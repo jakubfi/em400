@@ -63,6 +63,9 @@ struct cfg_em400_t {
     int exit_on_hlt;
 	int verbose;
 	int benchmark;
+	char *cfg_dir;
+	char *cfg_file;
+	char *hist_file;
 
 	struct cfg_cpu_t cpu;
 	struct cfg_mem_module_t mem[MEM_MAX_MODULES];

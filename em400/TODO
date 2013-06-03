@@ -9,9 +9,7 @@ CPU:
 
 Debugger:
 
-* store command line history between runs
-* scrollable command window view
-* more shortcuts (c-w, c-d, c-k)
+* more shortcuts (c-w, c-d, c-k, home, end, ...)
 * log shouldn't start new file immediately
 * again, rethink hex/dec numbers in output and log
 * HLT will halt debugger too if there is no interrupt to serve

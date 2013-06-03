@@ -110,7 +110,7 @@ enum _output {
 extern volatile int aw_layout_changed;
 extern int aw_attr[64];
 
-int aw_init(int output);
+int aw_init(int output, char *history);
 void aw_shutdown();
 
 int aw_fit(int l_av, int l_max, int l_min, int l_left);
@@ -151,6 +151,7 @@ void awin_tb_line_append(struct awin_tb_line *line, struct awin_tb_fragment *fra
 struct awin_tb_line * aw_tb_get_last(struct awin_tb *tb, int lines);
 void awin_tb_scroll(int wid, int lines);
 void awin_tb_scroll_end(int wid);
+void awin_tb_scroll_home(int wid);
 void awtbprint(int wid, int attr, char *format, ...);
 void awtbbinprint(int id, int attr, char *format, uint32_t value, int size);
 void awin_tb_update(int wid, int height);

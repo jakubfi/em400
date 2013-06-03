@@ -151,7 +151,7 @@ int dbg_init()
 		ui_mode = O_NCURSES;
 	}
 
-	if (aw_init(ui_mode) != 0) {
+	if (aw_init(ui_mode, em400_cfg.hist_file) != 0) {
 		return E_AW_INIT;
 	}
 
