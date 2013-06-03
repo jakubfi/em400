@@ -78,7 +78,7 @@ line:
 
 statement:
 	command 
-	| exprlist 	{ awprint(W_CMD, C_DATA, "\n"); }
+	| exprlist 	{ awtbprint(W_CMD, C_DATA, "\n"); }
 	| YERR 		{ yyclearin; yyerror("unknown character: %c", (char) $1); YYABORT; }
 	| 
 	;
@@ -221,12 +221,12 @@ command:
 // -----------------------------------------------------------------------
 void yyerror(char *format, ...)
 {
+	char error[1024];
 	va_list ap;
 	va_start(ap, format);
-	awprint(W_CMD, C_ERROR, "Error: ");
-	vawprint(W_CMD, C_ERROR, format, ap);
-	awprint(W_CMD, C_ERROR, "\n");
+	vsprintf(error, format, ap);
 	va_end(ap);
+	awtbprint(W_CMD, C_ERROR, "Error: %s\n", error);
 	n_discard_stack();
 	reset_scanner();
 }

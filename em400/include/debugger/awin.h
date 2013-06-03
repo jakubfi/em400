@@ -138,10 +138,7 @@ AWIN * aw_window_add(ACONT *container, int id, char *title, int border, int scro
 
 void aw_attr_new(int id, int bgcolor, int fgcolor, int attr);
 void aw_clear_win(int id);
-void awbinprint(int id, int attr, char *format, uint32_t value, int size);
-void awxyprint(int id, int x, int y, int attr, char *format, ...);
-#define awprint(id, attr, format, ...) awxyprint(id, -1, -1, attr, format, ##__VA_ARGS__)
-void vawprint(int id, int attr, const char *format, va_list ap);
+void awprint(int id, int attr, char *format, ...);
 void awfillbg(int id, int attr, char c, int len);
 
 void aw_nc_rl_history_add(char *cmd, int len);
@@ -155,6 +152,9 @@ struct awin_tb_line * aw_tb_get_last(struct awin_tb *tb, int lines);
 void awin_tb_scroll(int wid, int lines);
 void awin_tb_scroll_end(int wid);
 void awtbprint(int wid, int attr, char *format, ...);
+void awtbbinprint(int id, int attr, char *format, uint32_t value, int size);
+void awin_tb_update(int wid, int height);
+void awin_tb_clear(int wid);
 
 
 #endif

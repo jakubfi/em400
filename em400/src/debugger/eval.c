@@ -469,22 +469,22 @@ void print_node(struct node_t *n)
 	uint16_t value = n_eval(n);
 	switch (n->base) {
 		case UINT:
-			awprint(W_CMD, C_DATA, "%i ", (uint16_t) value);
+			awtbprint(W_CMD, C_DATA, "%i ", (uint16_t) value);
 			break;
 		case INT:
-			awprint(W_CMD, C_DATA, "%i ", (int16_t) value);
+			awtbprint(W_CMD, C_DATA, "%i ", (int16_t) value);
 			break;
 		case HEX:
-			awprint(W_CMD, C_DATA, "0x%04x ", (uint16_t) value);
+			awtbprint(W_CMD, C_DATA, "0x%04x ", (uint16_t) value);
 			break;
 		case OCT:
-			awprint(W_CMD, C_DATA, "0%06o ", (uint16_t) value);
+			awtbprint(W_CMD, C_DATA, "0%06o ", (uint16_t) value);
 			break;
 		case BIN:
-			awbinprint(W_CMD, C_DATA, "0b................ ", (uint16_t) value, 16);
+			awtbbinprint(W_CMD, C_DATA, "0b................ ", (uint16_t) value, 16);
 			break;
 		default:
-			awprint(W_CMD, C_DATA, "0x%x ", (uint16_t) value);
+			awtbprint(W_CMD, C_DATA, "0x%x ", (uint16_t) value);
 			break;
 	}
 }

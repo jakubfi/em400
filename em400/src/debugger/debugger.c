@@ -193,15 +193,15 @@ struct evlb_t * dbg_brk_check()
 	struct evlb_t *b = brk_stack;
 	while (b) {
 		if ((!b->disabled) && (n_eval(b->n))) {
-			awprint(W_CMD, C_LABEL, "Hit breakpoint ");
-			awprint(W_CMD, C_DATA, "%i", b->nr);
-			awprint(W_CMD, C_LABEL, ": \"");
-			awprint(W_CMD, C_DATA, "%s", b->label);
-			awprint(W_CMD, C_LABEL, "\" (at: ");
-			awprint(W_CMD, C_DATA, "0x%04x", nR(R_IC));
-			awprint(W_CMD, C_LABEL, ", cnt: ");
-			awprint(W_CMD, C_DATA, "%i", b->value);
-			awprint(W_CMD, C_LABEL, ")\n");
+			awtbprint(W_CMD, C_LABEL, "Hit breakpoint ");
+			awtbprint(W_CMD, C_DATA, "%i", b->nr);
+			awtbprint(W_CMD, C_LABEL, ": \"");
+			awtbprint(W_CMD, C_DATA, "%s", b->label);
+			awtbprint(W_CMD, C_LABEL, "\" (at: ");
+			awtbprint(W_CMD, C_DATA, "0x%04x", nR(R_IC));
+			awtbprint(W_CMD, C_LABEL, ", cnt: ");
+			awtbprint(W_CMD, C_DATA, "%i", b->value);
+			awtbprint(W_CMD, C_LABEL, ")\n");
 			b->value++;
 			return b;
 		}
@@ -261,8 +261,8 @@ int read_script(char *filename)
 			*(b+1) = '\0';
 			*b = '\0';
 			if (b != input_buf) {
-				awprint(W_CMD, C_LABEL, "%s ", input_buf);
-				awprint(W_CMD, C_PROMPT, "-> ", input_buf);
+				awtbprint(W_CMD, C_LABEL, "%s ", input_buf);
+				awtbprint(W_CMD, C_PROMPT, "-> ", input_buf);
 				*b = '\n';
 				int res = dbg_parse(input_buf);
 				if (res != 0) {
@@ -296,7 +296,7 @@ void dbg_step()
 
 	while (!dbg_loop_fin) {
 		if (aw_layout_changed) {
-			awin_tb_scroll_end(1);
+			awin_tb_scroll_end(W_CMD);
 			aw_layout_redo();
 		} else {
 			aw_layout_refresh();
@@ -305,33 +305,32 @@ void dbg_step()
 		if (script_name) {
 			int sr = read_script(script_name);
 			if (sr == INT_MIN) {
-				awprint(W_CMD, C_ERROR, "Cannot open script file: %s\n", script_name);
+				awtbprint(W_CMD, C_ERROR, "Cannot open script file: %s\n", script_name);
 			} else if (sr<0) {
-				awprint(W_CMD, C_ERROR, "Error at line: %i\n", -sr);
+				awtbprint(W_CMD, C_ERROR, "Error at line: %i\n", -sr);
 			} else {
-				awprint(W_CMD, C_LABEL, "Read %i line(s)\n", sr);
+				awtbprint(W_CMD, C_LABEL, "Read %i line(s)\n", sr);
 			}
 			free(script_name);
 			script_name = NULL;
+			aw_layout_refresh();
 		}
-
-		aw_layout_refresh();
 
 		int res = aw_readline(W_CMD, C_PROMPT, "em400> ", input_buf, INPUT_BUF_SIZE);
-		if (ui_mode == O_NCURSES) {
-			awprint(W_CMD, C_LABEL, "\n");
-		}
 
 		if ((res == KEY_ENTER) && (*input_buf)) {
-			awin_tb_scroll_end(1);
+			awtbprint(W_CMD, C_PROMPT, "em400> ");
+			awtbprint(W_CMD, C_LABEL, "%s\n", input_buf);
+			awin_tb_scroll_end(W_CMD);
+			awin_tb_scroll_end(W_WATCH);
 			int len = strlen(input_buf);
 			input_buf[len] = '\n';
 			input_buf[len+1] = '\0';
 			dbg_parse(input_buf);
 		} else if (res == KEY_NPAGE) {
-			awin_tb_scroll(1, 10);
+			awin_tb_scroll(W_CMD, 10);
 		} else if (res == KEY_PPAGE) {
-			awin_tb_scroll(1, -10);
+			awin_tb_scroll(W_CMD, -10);
 		}
 
 	}

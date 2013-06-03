@@ -69,7 +69,7 @@ void dbg_c_load(int wid, char* image, int bank)
 {
 	int res = mem_load_image(image, bank);
 	if (res != E_OK) {
-		awprint(wid, C_ERROR, "Error loading image \"%s\": %s\n", image, get_error(res));
+		awtbprint(wid, C_ERROR, "Error loading image \"%s\": %s\n", image, get_error(res));
 	}
 }
 
@@ -80,17 +80,17 @@ void dbg_c_help(int wid, char *cmd)
 	if (cmd) {
 		while (c->cmd) {
 			if (!strcmp(cmd, c->cmd)) {
-				awprint(wid, C_DATA, "%s ", c->cmd);
-				awprint(wid, C_LABEL, ": %s\n", c->doc);
-				awprint(wid, C_LABEL, "Usage:\n%s\n", c->help);
+				awtbprint(wid, C_DATA, "%s ", c->cmd);
+				awtbprint(wid, C_LABEL, ": %s\n", c->doc);
+				awtbprint(wid, C_LABEL, "Usage:\n%s\n", c->help);
 				return;
 			}
 			c++;
 		}
-		awprint(wid, C_ERROR, "Error: no such command: %s\n", cmd);
+		awtbprint(wid, C_ERROR, "Error: no such command: %s\n", cmd);
 	} else {
 		while (c->cmd) {
-			awprint(wid, C_LABEL, "%-10s : %s\n", c->cmd, c->doc);
+			awtbprint(wid, C_LABEL, "%-10s : %s\n", c->cmd, c->doc);
 			c++;
 		}
 	}
@@ -141,17 +141,16 @@ void dbg_c_dt(int wid, int dasm_mode, uint16_t start, int count)
 		len = dt_trans(start, buf, dasm_mode);
 		if (len) {
 			if (start == regs[R_IC]) {
-				awprint(wid, C_ILABEL, "0x%04x", start);
-				awprint(wid, C_IDATA, " %-21s", buf);
+				awtbprint(wid, C_ILABEL, "0x%04x", start);
+				awtbprint(wid, C_IDATA, " %-20s", buf);
 			} else {
-				awprint(wid, C_LABEL, "0x%04x", start);
-				if (*buf != '-') awprint(wid, C_PROMPT, " %-21s", buf);
-				else awprint(wid, C_DATA, " %-21s", buf);
+				awtbprint(wid, C_LABEL, "0x%04x", start);
+				if (*buf != '-') awtbprint(wid, C_PROMPT, " %-20s", buf);
+				else awtbprint(wid, C_DATA, " %-20s", buf);
 			}
 			start += len;
-		} else {
-			awprint(wid, C_DATA, "\n");
 		}
+		awtbprint(wid, C_DATA, "\n");
 		count--;
 	}
 }
@@ -162,13 +161,13 @@ void dbg_c_mem(int wid, int block, int start, int end, int maxcols, int maxlines
 	uint16_t *mptr = mem_ptr(block, 0);
 
 	if (mptr == NULL) {
-		awprint(wid, C_ERROR, "Cannot access block %i\n", block);
+		awtbprint(wid, C_ERROR, "Cannot access block %i\n", block);
 		return;
 	}
 
 	// wrong range
 	if ((end - start) <= 0) {
-		awprint(wid, C_ERROR, "Wrong memory range: %i - %i\n", start, end);
+		awtbprint(wid, C_ERROR, "Wrong memory range: %i - %i\n", start, end);
 		return;
 	}
 
@@ -177,21 +176,21 @@ void dbg_c_mem(int wid, int block, int start, int end, int maxcols, int maxlines
 	maxlines -=2; // two used for header
 
 	// headers
-	awprint(wid, C_LABEL, "  addr: ");
-	for (int i=0 ; i<words ; i++) awprint(wid, C_LABEL, "+%03x ", i);
-	awprint(wid, C_LABEL, "\n");
-	awprint(wid, C_LABEL, "-------");
-	for (int i=0 ; i<words ; i++) awprint(wid, C_LABEL, "-----");
-	awprint(wid, C_LABEL, "  ");
-	for (int i=0 ; i<words ; i++) awprint(wid, C_LABEL, "--");
-	awprint(wid, C_LABEL, "\n");
+	awtbprint(wid, C_LABEL, "  addr: ");
+	for (int i=0 ; i<words ; i++) awtbprint(wid, C_LABEL, "+%03x ", i);
+	awtbprint(wid, C_LABEL, "\n");
+	awtbprint(wid, C_LABEL, "-------");
+	for (int i=0 ; i<words ; i++) awtbprint(wid, C_LABEL, "-----");
+	awtbprint(wid, C_LABEL, "  ");
+	for (int i=0 ; i<words ; i++) awtbprint(wid, C_LABEL, "--");
+	awtbprint(wid, C_LABEL, "\n");
 
 	uint16_t addr = start;
 	int attr = C_DATA;
 
 	while ((maxlines > 0) && (addr <= end)) {
 		// row header
-		awprint(wid, C_LABEL, "0x%04x: ", addr);
+		awtbprint(wid, C_LABEL, "0x%04x: ", addr);
 		char *chars = malloc(words*2+1);
 		for (int w=0 ; w<words ; w++) {
 			mptr = mem_ptr(block, addr);
@@ -209,15 +208,15 @@ void dbg_c_mem(int wid, int block, int start, int end, int maxcols, int maxlines
 				attr = dbg_touch2attr(dbg_touch_check(&touch_mem, block, addr));
 			}
 
-			awprint(wid, attr, "%4x", *mptr);
-			awprint(wid, C_DATA, " ");
+			awtbprint(wid, attr, "%4x", *mptr);
+			awtbprint(wid, C_DATA, " ");
 
 			// store data (chars)
 			int2chars(*mptr, chars+w*2);
 			addr++;
 		}
 		// data (chars)
-		awprint(wid, C_DATA, " %s\n", chars);
+		awtbprint(wid, C_DATA, " %s\n", chars);
 		free(chars);
 		maxlines--;
 	}
@@ -226,42 +225,42 @@ void dbg_c_mem(int wid, int block, int start, int end, int maxcols, int maxlines
 // -----------------------------------------------------------------------
 void dbg_c_sregs(int wid)
 {
-	awprint(wid, C_LABEL, "            OPCODE D A   B   C");
-	awprint(wid, C_LABEL, "           P: ");
-	awprint(wid, C_DATA, "\n");
-	awprint(wid, C_LABEL, "IR: ");
-	awprint(wid, C_DATA, "0x%04x  ", regs[R_IR]);
-	awbinprint(wid, C_DATA, "...... . ... ... ...", regs[R_IR], 16);
-	awprint(wid, C_LABEL, "        IC: ");
-	awprint(wid, C_DATA, "0x%04x ", regs[R_IC]);
-	awprint(wid, C_DATA, "\n");
-	awprint(wid, C_LABEL, "            PMCZs139fS Q s NB");
-	awprint(wid, C_LABEL, "          MOD: ");
-	awprint(wid, C_DATA, "0x%04x (%i)", regs[R_MOD], regs[R_MODc]);
-	awprint(wid, C_DATA, "\n");
-	awprint(wid, C_LABEL, "SR: ");
-	awprint(wid, C_DATA, "0x%04x  ", regs[R_SR]);
-	awbinprint(wid, C_DATA, ".......... . . ....", regs[R_SR], 16);
-	awprint(wid, C_LABEL, "       ZC17: ");
-	awprint(wid, C_DATA, "%i", regs[R_ZC17]);
-	awprint(wid, C_DATA, "\n");
+	awtbprint(wid, C_LABEL, "            OPCODE D A   B   C");
+	awtbprint(wid, C_LABEL, "           P: ");
+	awtbprint(wid, C_DATA, "\n");
+	awtbprint(wid, C_LABEL, "IR: ");
+	awtbprint(wid, C_DATA, "0x%04x  ", regs[R_IR]);
+	awtbbinprint(wid, C_DATA, "...... . ... ... ...", regs[R_IR], 16);
+	awtbprint(wid, C_LABEL, "        IC: ");
+	awtbprint(wid, C_DATA, "0x%04x ", regs[R_IC]);
+	awtbprint(wid, C_DATA, "\n");
+	awtbprint(wid, C_LABEL, "            PMCZs139fS Q s NB");
+	awtbprint(wid, C_LABEL, "          MOD: ");
+	awtbprint(wid, C_DATA, "0x%04x (%i)", regs[R_MOD], regs[R_MODc]);
+	awtbprint(wid, C_DATA, "\n");
+	awtbprint(wid, C_LABEL, "SR: ");
+	awtbprint(wid, C_DATA, "0x%04x  ", regs[R_SR]);
+	awtbbinprint(wid, C_DATA, ".......... . . ....", regs[R_SR], 16);
+	awtbprint(wid, C_LABEL, "       ZC17: ");
+	awtbprint(wid, C_DATA, "%i", regs[R_ZC17]);
+	awtbprint(wid, C_DATA, "\n");
 
-	awprint(wid, C_LABEL, "KB: ");
-	awprint(wid, C_DATA, "0x%04x  ", regs[R_KB]);
-	awbinprint(wid, C_DATA, "........ ........", regs[R_KB], 16);
-	awprint(wid, C_DATA, "\n");
+	awtbprint(wid, C_LABEL, "KB: ");
+	awtbprint(wid, C_DATA, "0x%04x  ", regs[R_KB]);
+	awtbbinprint(wid, C_DATA, "........ ........", regs[R_KB], 16);
+	awtbprint(wid, C_DATA, "\n");
 
-	awprint(wid, C_LABEL, "                ZPMCZ TIFFFFx 01 23 456789 abcdef OCSS");
-	awprint(wid, C_DATA, "\n");
-	awprint(wid, C_LABEL, "RZ: ");
-	awprint(wid, C_DATA, "0x%08x  ");
-	awbinprint(wid, C_DATA, "..... ....... .. .. ...... ...... ....", RZ, 32);
-	awprint(wid, C_DATA, "\n");
+	awtbprint(wid, C_LABEL, "                ZPMCZ TIFFFFx 01 23 456789 abcdef OCSS");
+	awtbprint(wid, C_DATA, "\n");
+	awtbprint(wid, C_LABEL, "RZ: ");
+	awtbprint(wid, C_DATA, "0x%08x  ", RZ);
+	awtbbinprint(wid, C_DATA, "..... ....... .. .. ...... ...... ....", RZ, 32);
+	awtbprint(wid, C_DATA, "\n");
 
-	awprint(wid, C_LABEL, "RP: ");
-	awprint(wid, C_DATA, "0x%08x  ");
-	awbinprint(wid, C_DATA, "..... ....... .. .. ...... ...... ....", RP, 32);
-	awprint(wid, C_DATA, "\n");
+	awtbprint(wid, C_LABEL, "RP: ");
+	awtbprint(wid, C_DATA, "0x%08x  ", RP);
+	awtbbinprint(wid, C_DATA, "..... ....... .. .. ...... ...... ....", RP, 32);
+	awtbprint(wid, C_DATA, "\n");
 
 	uint32_t int_act = 0;
 	struct touch_t *t = touch_int;
@@ -270,15 +269,15 @@ void dbg_c_sregs(int wid)
 		t = t->next;
 	}
 
-	awprint(wid, C_LABEL, "Being served:   ");
-	awbinprint(wid, C_LABEL, "..... ....... .. .. ...... ...... ....", int_act, 32);
-	awprint(wid, C_LABEL, "\n");
+	awtbprint(wid, C_LABEL, "Being served:   ");
+	awtbbinprint(wid, C_LABEL, "..... ....... .. .. ...... ...... ....", int_act, 32);
+	awtbprint(wid, C_LABEL, "\n");
 }
 
 // -----------------------------------------------------------------------
 void dbg_c_regs(int wid)
 {
-	awprint(wid, C_LABEL, "    hex    oct    dec    ZMVCLEGY Xuser    ch R40\n");
+	awtbprint(wid, C_LABEL, "    hex    oct    dec    ZMVCLEGY Xuser    ch R40\n");
 	for (int i=0 ; i<=7 ; i++) {
 		char *r = int2r40(regs[i]);
 		char c[3];
@@ -286,10 +285,10 @@ void dbg_c_regs(int wid)
 
 		int attr = dbg_touch2attr(dbg_touch_check(&touch_reg, 0, i));
 
-		awprint(wid, C_LABEL, "R%i: ", i);
-		awprint(wid, attr, "0x%04x %6o %6i ", regs[i], regs[i], (int16_t) regs[i]);
-		awbinprint(wid, attr, "........ ........", regs[i], 16);
-		awprint(wid, attr, " %s %s\n", c, r);
+		awtbprint(wid, C_LABEL, "R%i: ", i);
+		awtbprint(wid, attr, "0x%04x %6o %6i ", regs[i], regs[i], (int16_t) regs[i]);
+		awtbbinprint(wid, attr, "........ ........", regs[i], 16);
+		awtbprint(wid, attr, " %s %s\n", c, r);
 		free(r);
 	}
 }
@@ -311,11 +310,11 @@ void dbg_c_stack(int wid, int size)
 
 	while ((sp >= sb) && memptr) {
 		if (sp == osp) {
-			awprint(wid, C_ILABEL, " 0x%04x: ", sp);
-			awprint(wid, C_IDATA, "%04x \n", *memptr);
+			awtbprint(wid, C_ILABEL, " 0x%04x: ", sp);
+			awtbprint(wid, C_IDATA, "%04x \n", *memptr);
 		} else {
-			awprint(wid, C_LABEL, " 0x%04x: ", sp);
-			awprint(wid, C_DATA, "%04x \n", *memptr);
+			awtbprint(wid, C_LABEL, " 0x%04x: ", sp);
+			awtbprint(wid, C_DATA, "%04x \n", *memptr);
 		}
 		sp--;
 		memptr = mem_ptr(0, sp);
@@ -326,26 +325,26 @@ void dbg_c_stack(int wid, int size)
 void dbg_c_memcfg(int wid)
 {
 	int i, j, cnt;
-	awprint(wid, C_LABEL, "Number of 4kword pages in each hardware module and logical block\n");
-	awprint(wid, C_LABEL, "mod/blk:   0  1  2  3  4  5  6  7  8  9 10 11 12 13 14 15\n");
-	awprint(wid, C_LABEL, " hw pgs:  ");
+	awtbprint(wid, C_LABEL, "Number of 4kword pages in each hardware module and logical block\n");
+	awtbprint(wid, C_LABEL, "mod/blk:   0  1  2  3  4  5  6  7  8  9 10 11 12 13 14 15\n");
+	awtbprint(wid, C_LABEL, " hw pgs:  ");
 	for (i=0 ; i<MEM_MAX_MODULES ; i++) {
 		cnt = 0;
 		for (j=0 ; j<MEM_MAX_SEGMENTS ; j++) {
 			if (mem_segment[i][j]) cnt++;
 		}
-		awprint(wid, C_DATA, "%2i ", cnt);
+		awtbprint(wid, C_DATA, "%2i ", cnt);
 	}
-	awprint(wid, C_DATA, "\n");
-	awprint(wid, C_LABEL, " sw pgs:  ");
+	awtbprint(wid, C_DATA, "\n");
+	awtbprint(wid, C_LABEL, " sw pgs:  ");
 	for (i=0 ; i<MEM_MAX_NB ; i++) {
 		cnt = 0;
 		for (j=0 ; j<MEM_MAX_SEGMENTS ; j++) {
 			if (mem_map[i][j]) cnt++;
 		}
-		awprint(wid, C_DATA, "%2i ", cnt);
+		awtbprint(wid, C_DATA, "%2i ", cnt);
 	}
-	awprint(wid, C_DATA, "\n");
+	awtbprint(wid, C_DATA, "\n");
 }
 
 // -----------------------------------------------------------------------
@@ -368,11 +367,11 @@ void dbg_c_brk_add(int wid, char *label, struct node_t *n)
 		brk_top = brk_stack = b;
 	}
 
-	awprint(wid, C_LABEL, "Breakpoint ");
-	awprint(wid, C_DATA, "%i", b->nr);
-	awprint(wid, C_LABEL, " added: \"");
-	awprint(wid, C_DATA, "%s", b->label);
-	awprint(wid, C_LABEL, "\"\n");
+	awtbprint(wid, C_LABEL, "Breakpoint ");
+	awtbprint(wid, C_DATA, "%i", b->nr);
+	awtbprint(wid, C_LABEL, " added: \"");
+	awtbprint(wid, C_DATA, "%s", b->label);
+	awtbprint(wid, C_LABEL, "\"\n");
 }
 
 // -----------------------------------------------------------------------
@@ -380,13 +379,13 @@ void dbg_c_brk_list(int wid)
 {
 	struct evlb_t *b = brk_stack;
 	if (!b) {
-		awprint(wid, C_LABEL, "No breakpoints\n");
+		awtbprint(wid, C_LABEL, "No breakpoints\n");
 	}
 	while (b) {
 		if (b->disabled) {
-			awprint(wid, C_LABEL, "%i: %s (disabled)\n", b->nr, b->label);
+			awtbprint(wid, C_LABEL, "%i: %s (disabled)\n", b->nr, b->label);
 		} else {
-			awprint(wid, C_DATA, "%i: %s\n", b->nr, b->label);
+			awtbprint(wid, C_DATA, "%i: %s\n", b->nr, b->label);
 		}
 		b = b->next;
 	}
@@ -417,10 +416,10 @@ void dbg_c_brk_del(int wid, int nr)
 			} else {
 				brk_stack = brk_top = b->next;
 			}
-			awprint(wid, C_LABEL, "Removing breakpoint ");
-			awprint(wid, C_DATA, "%i", b->nr);
-			awprint(wid, C_LABEL, ":");
-			awprint(wid, C_DATA, " %s\n", b->label);
+			awtbprint(wid, C_LABEL, "Removing breakpoint ");
+			awtbprint(wid, C_DATA, "%i", b->nr);
+			awtbprint(wid, C_LABEL, ":");
+			awtbprint(wid, C_DATA, " %s\n", b->label);
 			free(b->label);
 			n_free_tree(b->n);
 			free(b);
@@ -429,7 +428,7 @@ void dbg_c_brk_del(int wid, int nr)
 		prev = b;
 		b = b->next;
 	}
-	awprint(wid, C_ERROR, "No such breakpoint: %i\n", nr);
+	awtbprint(wid, C_ERROR, "No such breakpoint: %i\n", nr);
 }
 
 // -----------------------------------------------------------------------
@@ -437,12 +436,12 @@ void dbg_c_brk_test(int wid, int nr)
 {
 	struct evlb_t *b = dbg_c_brk_get(nr);
 	if (b) {
-		awprint(wid, C_LABEL, "Breakpoint ");
-		awprint(wid, C_DATA, "%i", b->nr);
-		awprint(wid, C_LABEL, " evaluates to: ");
-		awprint(wid, C_DATA, "%i\n", n_eval(b->n));
+		awtbprint(wid, C_LABEL, "Breakpoint ");
+		awtbprint(wid, C_DATA, "%i", b->nr);
+		awtbprint(wid, C_LABEL, " evaluates to: ");
+		awtbprint(wid, C_DATA, "%i\n", n_eval(b->n));
 	} else {
-		awprint(wid, C_ERROR, "No such breakpoint: %i\n", nr);
+		awtbprint(wid, C_ERROR, "No such breakpoint: %i\n", nr);
 	}
 } 
 
@@ -453,32 +452,32 @@ void dbg_c_brk_disable(int wid, int nr, int disable)
 	if (b) {
 		b->disabled = disable;
 		if (disable) {
-			awprint(wid, C_LABEL, "Breakpoint ");
-			awprint(wid, C_DATA, "%i", nr);
-			awprint(wid, C_LABEL, " disabled.\n");
+			awtbprint(wid, C_LABEL, "Breakpoint ");
+			awtbprint(wid, C_DATA, "%i", nr);
+			awtbprint(wid, C_LABEL, " disabled.\n");
 		} else {
-			awprint(wid, C_LABEL, "Breakpoint ");
-			awprint(wid, C_DATA, "%i", nr);
-			awprint(wid, C_LABEL, " enabled.\n");
+			awtbprint(wid, C_LABEL, "Breakpoint ");
+			awtbprint(wid, C_DATA, "%i", nr);
+			awtbprint(wid, C_LABEL, " enabled.\n");
 		}
 	} else {
-		awprint(wid, C_ERROR, "No such breakpoint: %i\n", nr);
+		awtbprint(wid, C_ERROR, "No such breakpoint: %i\n", nr);
 	}
 }
 
 // -----------------------------------------------------------------------
 void dbg_c_log_show(int wid)
 {
-	awprint(wid, C_LABEL, "Logging to file: ");
-	awprint(wid, C_DATA, "%s (%s)\n", log_fname, log_enabled ? "enabled" : "disabled");
-	awprint(wid, C_LABEL, "Levels: ");
+	awtbprint(wid, C_LABEL, "Logging to file: ");
+	awtbprint(wid, C_DATA, "%s (%s)\n", log_fname, log_enabled ? "enabled" : "disabled");
+	awtbprint(wid, C_LABEL, "Levels: ");
 	char **d = log_dname;
 	int i = 0;
 	while (*(d+i)) {
-		awprint(wid, C_DATA, "%s:%i ", *(d+i), log_level[i]);
+		awtbprint(wid, C_DATA, "%s:%i ", *(d+i), log_level[i]);
 		i++;
 	}
-	awprint(wid, C_LABEL, "\n");
+	awtbprint(wid, C_LABEL, "\n");
 }
 
 // -----------------------------------------------------------------------
@@ -486,7 +485,7 @@ void dbg_c_log_set(int wid, char *domain, int level)
 {
 	int d = log_find_domain(domain);
 	if (d < -1) {
-		awprint(wid, C_ERROR, "Unknown domain: %s\n", domain);
+		awtbprint(wid, C_ERROR, "Unknown domain: %s\n", domain);
 	} else {
 		log_setlevel(d, level);
 	}
@@ -495,8 +494,8 @@ void dbg_c_log_set(int wid, char *domain, int level)
 // -----------------------------------------------------------------------
 void dbg_c_script_load(int wid, char *filename)
 {
-	awprint(wid, C_LABEL, "Loading script: ");
-	awprint(wid, C_DATA, "%s\n", filename);
+	awtbprint(wid, C_LABEL, "Loading script: ");
+	awtbprint(wid, C_DATA, "%s\n", filename);
 	script_name = filename;
 }
 
@@ -505,15 +504,15 @@ void dbg_c_watch_list(int wid, int count)
 {
 	struct evlb_t *w = watch_stack;
 	if (!w) {
-		awprint(wid, C_LABEL, "No watches\n");
+		awtbprint(wid, C_LABEL, "No watches\n");
 	}
 
 	while (w && (count > 0)) {
 		int value = n_eval(w->n);
-		awprint(wid, C_LABEL, "%i: ", w->nr);
-		awprint(wid, C_DATA, "%-6s ", w->label);
-		awprint(wid, C_LABEL, "= ");
-		awprint(wid, C_DATA, "0x%04x (%i)\n", value, value);
+		awtbprint(wid, C_LABEL, "%i: ", w->nr);
+		awtbprint(wid, C_DATA, "%-6s ", w->label);
+		awtbprint(wid, C_LABEL, "= ");
+		awtbprint(wid, C_DATA, "0x%04x (%i)\n", value, value);
 		w = w->next;
 		count--;
 	}
@@ -538,11 +537,11 @@ void dbg_c_watch_add(int wid, char *label, struct node_t *n)
 		watch_top = watch_stack = w;
 	}
 
-	awprint(wid, C_LABEL, "Watch ");
-	awprint(wid, C_DATA, "%i", w->nr);
-	awprint(wid, C_LABEL, " added: \"");
-	awprint(wid, C_DATA, "%s", w->label);
-	awprint(wid, C_LABEL, "\"\n");
+	awtbprint(wid, C_LABEL, "Watch ");
+	awtbprint(wid, C_DATA, "%i", w->nr);
+	awtbprint(wid, C_LABEL, " added: \"");
+	awtbprint(wid, C_DATA, "%s", w->label);
+	awtbprint(wid, C_LABEL, "\"\n");
 
 }
 
@@ -559,10 +558,10 @@ void dbg_c_watch_del(int wid, int nr)
 			} else {
 				watch_stack = watch_top = w->next;
 			}
-			awprint(wid, C_LABEL, "Removing watch ");
-			awprint(wid, C_DATA, "%i", w->nr);
-			awprint(wid, C_LABEL, ":");
-			awprint(wid, C_DATA, " %s\n", w->label);
+			awtbprint(wid, C_LABEL, "Removing watch ");
+			awtbprint(wid, C_DATA, "%i", w->nr);
+			awtbprint(wid, C_LABEL, ":");
+			awtbprint(wid, C_DATA, " %s\n", w->label);
 			free(w->label);
 			n_free_tree(w->n);
 			free(w);
@@ -571,17 +570,17 @@ void dbg_c_watch_del(int wid, int nr)
 		prev = w;
 		w = w->next;
 	}
-	awprint(wid, C_ERROR, "No such watch: %i\n", nr);
+	awtbprint(wid, C_ERROR, "No such watch: %i\n", nr);
 }
 
 // -----------------------------------------------------------------------
 void dbg_c_list_decoders(int wid)
 {
-	awprint(wid, C_DATA, "Available decoders:\n");
+	awtbprint(wid, C_DATA, "Available decoders:\n");
 	struct decoder_t *d = decoders;
 	while (d && d->name) {
-		awprint(wid, C_DATA, "  %-8s", d->name);
-		awprint(wid, C_LABEL, " %s\n", d->desc);
+		awtbprint(wid, C_DATA, "  %-8s", d->name);
+		awtbprint(wid, C_LABEL, " %s\n", d->desc);
 		d++;
 	}
 }
@@ -593,22 +592,22 @@ void dbg_c_decode(int wid, char *name, uint16_t addr, int arg)
 	char *buf = NULL;
 
 	if (!d) {
-		awprint(wid, C_ERROR, "No such decoder: %s\n", name);
+		awtbprint(wid, C_ERROR, "No such decoder: %s\n", name);
 		return;
 	}
 
 	buf = d->f_decode(addr, arg);
 
 	if (!buf) {
-		awprint(wid, C_ERROR, "Cannot decode structure\n");
+		awtbprint(wid, C_ERROR, "Cannot decode structure\n");
 		return;
 	}
 
-	awprint(wid, C_DATA, "Decoding structure at 0x%04x as: %s (%s)\n", addr, name, d->desc);
-	awprint(wid, C_LABEL, "-----------------------------------------------------------\n");
-	awprint(wid, C_LABEL, buf);
+	awtbprint(wid, C_DATA, "Decoding structure at 0x%04x as: %s (%s)\n", addr, name, d->desc);
+	awtbprint(wid, C_LABEL, "-----------------------------------------------------------\n");
+	awtbprint(wid, C_LABEL, buf);
 	free(buf);
-	awprint(wid, C_LABEL, "-----------------------------------------------------------\n");
+	awtbprint(wid, C_LABEL, "-----------------------------------------------------------\n");
 }
 
 

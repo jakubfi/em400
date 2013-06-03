@@ -556,27 +556,7 @@ void aw_clear_win(int id)
 }
 
 // -----------------------------------------------------------------------
-void vawprint(int id, int attr, const char *format, va_list vl)
-{
-	AWIN *w = aw_window_find(id);
-	if ((aw_output == O_NCURSES) && (!w)) {
-		return;
-	}
-
-	switch (aw_output) {
-		case O_NCURSES:
-			wattron(w->win, aw_attr[attr]);
-			vwprintw(w->win, format, vl);
-			wattroff(w->win, aw_attr[attr]);
-			break;
-		case O_STD:
-			vprintf(format, vl);
-			break;
-	}
-}
-
-// -----------------------------------------------------------------------
-void awxyprint(int id, int x, int y, int attr, char *format, ...)
+void awprint(int id, int attr, char *format, ...)
 {
 	AWIN *w = aw_window_find(id);
 	if ((aw_output == O_NCURSES) && (!w)) {
@@ -589,9 +569,6 @@ void awxyprint(int id, int x, int y, int attr, char *format, ...)
 	switch (aw_output) {
 		case O_NCURSES:
 			wattron(w->win, aw_attr[attr]);
-			if (x>=0 && y>=0) {
-				wmove(w->win, y, x);
-			}
 			vwprintw(w->win, format, vl);
 			wattroff(w->win, aw_attr[attr]);
 			break;
@@ -604,15 +581,12 @@ void awxyprint(int id, int x, int y, int attr, char *format, ...)
 }
 
 // -----------------------------------------------------------------------
-void awbinprint(int id, int attr, char *format, uint32_t value, int size)
+void awtbbinprint(int id, int attr, char *format, uint32_t value, int size)
 {
-	AWIN *w = aw_window_find(id);
-	if ((aw_output == O_NCURSES) && (!w)) {
-		return;
-	}
-
 	char *c = format;
 	int v;
+	char buf[1024];
+	int pos = 0;
 
 	size--;
 
@@ -622,18 +596,18 @@ void awbinprint(int id, int attr, char *format, uint32_t value, int size)
 			if (size >= 0) {
 				v = (value >> size) & 1;
 				size--;
-				awprint(id, attr, "%1i", v);
+				pos += sprintf(buf+pos, "%1i", v);
 			} else {
-				awprint(id, attr, "?");
+				pos += sprintf(buf+pos, "?");
 			}
 			break;
 		default:
-			awprint(id, attr, "%c", *c);
+			pos += sprintf(buf+pos, "%c", *c);
 			break;
 		}
 		c++;
 	}
-
+	awtbprint(id, attr, buf);
 }
 
 // -----------------------------------------------------------------------
@@ -968,6 +942,64 @@ void awtbprint(int wid, int attr, char *format, ...)
 	va_end(vl);
 }
 
+// -----------------------------------------------------------------------
+void awin_tb_update(int wid, int height)
+{
+	AWIN *win = aw_window_find(wid);
+
+	struct awin_tb_line *line;
+	if (!win->tb->disp_beg) {
+		line = aw_tb_get_last(win->tb, height);
+	} else {
+		line = win->tb->disp_beg;
+	}
+
+	aw_clear_win(wid);
+	int cur_line = 0;
+	while (line && (cur_line < height)) {
+		struct awin_tb_fragment *fragment = line->beg;
+		while (fragment) {
+			awprint(wid, fragment->attr, fragment->text);
+			fragment = fragment->next;
+		}
+		line = line->next;
+		cur_line++;
+	}
+}
+
+// -----------------------------------------------------------------------
+void awin_tb_drop_fragments(struct awin_tb_fragment *fragment)
+{
+	struct awin_tb_fragment *f = fragment;
+	while (f) {
+		struct awin_tb_fragment *next = f->next;
+		free(f->text);
+		free(f);
+		f = next;
+	}
+}
+
+// -----------------------------------------------------------------------
+void awin_tb_drop_lines(struct awin_tb_line *line)
+{
+	struct awin_tb_line *l = line;
+	while (l) {
+		struct awin_tb_line *next = l->next;
+		awin_tb_drop_fragments(l->beg);
+		free(l);
+		l = next;
+	}
+}
+
+// -----------------------------------------------------------------------
+void awin_tb_clear(int wid)
+{
+	AWIN *win = aw_window_find(wid);
+	awin_tb_drop_lines(win->tb->beg);
+	win->tb->beg = win->tb->end = win->tb->disp_beg = NULL;
+	win->tb->lines = 0;
+	win->tb->maxlines = 1024;
+}
 
 
 // vim: tabstop=4

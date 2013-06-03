@@ -90,7 +90,9 @@ void dbg_wu_mem(int wid)
 	if (!w) {
 		return;
 	}
+	awin_tb_clear(wid);
 	dbg_c_mem(wid, 0, 0, 0x300, w->iw, w->ih);
+	awin_tb_update(wid, w->ih);
 }
 
 // -----------------------------------------------------------------------
@@ -104,24 +106,34 @@ void dbg_wu_dasm(int wid)
 	} else {
 		start = regs[R_IC] - offset;
 	}
+	awin_tb_clear(wid);
 	dbg_c_dt(wid, DMODE_DASM, start, w->ih);
+	awin_tb_update(wid, w->ih);
 }
 
 // -----------------------------------------------------------------------
 void dbg_wu_regs(int wid)
 {
+	AWIN *w = aw_window_find(wid);
+	awin_tb_clear(wid);
 	dbg_c_regs(wid);
+	awin_tb_update(wid, w->ih);
 }
 
 // -----------------------------------------------------------------------
 void dbg_wu_sregs(int wid)
 {
+	AWIN *w = aw_window_find(wid);
+	awin_tb_clear(wid);
 	dbg_c_sregs(wid);
+	awin_tb_update(wid, w->ih);
 }
 
 // -----------------------------------------------------------------------
 void dbg_wu_cmd(int wid)
 {
+	AWIN *w = aw_window_find(wid);
+	awin_tb_update(wid, w->ih-1);
 }
 
 // -----------------------------------------------------------------------
@@ -134,16 +146,18 @@ void dbg_wu_status(int wid)
 void dbg_wu_stack(int wid)
 {
 	AWIN *w = aw_window_find(wid);
-	aw_clear_win(wid);
+	awin_tb_clear(wid);
 	dbg_c_stack(wid, w->ih);
+	awin_tb_update(wid, w->ih);
 }
 
 // -----------------------------------------------------------------------
 void dbg_wu_watch(int wid)
 {
 	AWIN *w = aw_window_find(wid);
-	aw_clear_win(wid);
+	awin_tb_clear(wid);
 	dbg_c_watch_list(wid, w->ih);
+	awin_tb_update(wid, w->ih);
 }
 
 // vim: tabstop=4
