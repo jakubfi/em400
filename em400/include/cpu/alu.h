@@ -46,4 +46,4 @@ void alu_set_flags_ZMVC(uint64_t x, uint64_t y, uint64_t z, int bits);
 
 #endif
 
-// vim: tabstop=4
+// vim: tabstop=4 shiftwidth=4 autoindent

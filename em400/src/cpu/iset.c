@@ -381,4 +381,4 @@ struct opdef iset_77[] = {
 	{ 7, false, op_77_ib, NULL }
 };
 
-// vim: tabstop=4
+// vim: tabstop=4 shiftwidth=4 autoindent

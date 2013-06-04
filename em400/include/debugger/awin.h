@@ -160,4 +160,4 @@ void awin_tb_clear(int wid);
 
 #endif
 
-// vim: tabstop=4
+// vim: tabstop=4 shiftwidth=4 autoindent

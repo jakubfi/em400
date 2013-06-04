@@ -202,4 +202,4 @@ int io_dispatch(int dir, uint16_t n, uint16_t *r)
 	}
 }
 
-// vim: tabstop=4
+// vim: tabstop=4 shiftwidth=4 autoindent

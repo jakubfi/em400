@@ -612,4 +612,4 @@ void dbg_c_decode(int wid, char *name, uint16_t addr, int arg)
 
 
 
-// vim: tabstop=4
+// vim: tabstop=4 shiftwidth=4 autoindent

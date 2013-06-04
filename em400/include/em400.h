@@ -25,4 +25,4 @@ extern struct timeval ips_end;
 
 #endif
 
-// vim: tabstop=4
+// vim: tabstop=4 shiftwidth=4 autoindent

@@ -119,4 +119,4 @@ void cyyerror(char *s, ...)
 	cfg_error = 1;
 }
 
-// vim: tabstop=4
+// vim: tabstop=4 shiftwidth=4 autoindent

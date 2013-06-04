@@ -15,29 +15,10 @@
 //  Foundation, Inc.,
 //  51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 
-#ifndef DEBUGGER_DECODE_H
-#define DEBUGGER_DECODE_H
-
 #include <inttypes.h>
 
-typedef char * (*decoder_fun_t)(uint16_t addr, int arg);
 
-struct decoder_t {
-	char *name;
-	char *desc;
-	decoder_fun_t f_decode;
-};
+// -----------------------------------------------------------------------
 
-extern struct decoder_t decoders[];
-
-struct decoder_t * find_decoder(char *name);
-
-char * decode_iv(uint16_t addr, int arg);
-char * decode_mxpsuk(uint16_t addr, int arg);
-char * decode_mxpsdl(uint16_t addr, int arg);
-char * decode_mxpst_winch(uint16_t addr, int arg);
-char * decode_cmempst(uint16_t addr, int arg);
-
-#endif
 
 // vim: tabstop=4 shiftwidth=4 autoindent

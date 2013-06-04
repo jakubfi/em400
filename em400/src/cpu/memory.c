@@ -302,4 +302,4 @@ int mem_load_image(const char* fname, int nb)
 }
 
 
-// vim: tabstop=4
+// vim: tabstop=4 shiftwidth=4 autoindent

@@ -175,4 +175,4 @@ int op_77_ib();
 
 #endif
 
-// vim: tabstop=4
+// vim: tabstop=4 shiftwidth=4 autoindent

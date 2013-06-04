@@ -56,4 +56,4 @@ struct drv_t * drv_get(int role, int chan_type, char *name);
 
 #endif
 
-// vim: tabstop=4
+// vim: tabstop=4 shiftwidth=4 autoindent

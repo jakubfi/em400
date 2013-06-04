@@ -199,4 +199,4 @@ void log_log(int domain, int level, char *format, ...)
 	fflush(log_f);
 }
 
-// vim: tabstop=4
+// vim: tabstop=4 shiftwidth=4 autoindent

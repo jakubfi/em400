@@ -47,4 +47,4 @@ extern struct dasm_opdef dasm_iset_77[];
 
 #endif
 
-// vim: tabstop=4
+// vim: tabstop=4 shiftwidth=4 autoindent

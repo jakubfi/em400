@@ -59,4 +59,4 @@ int drv_multix_cmd(void *self, int dir, uint16_t n_arg, uint16_t *r_arg);
 
 #endif
 
-// vim: tabstop=4
+// vim: tabstop=4 shiftwidth=4 autoindent

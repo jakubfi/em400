@@ -134,4 +134,4 @@ int drv_cmem_cmd(void *self, int dir, uint16_t n_arg, uint16_t *r_arg)
 	}
 }
 
-// vim: tabstop=4
+// vim: tabstop=4 shiftwidth=4 autoindent

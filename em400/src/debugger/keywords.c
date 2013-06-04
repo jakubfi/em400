@@ -58,4 +58,4 @@ int find_token(struct kw_t *tok_table, char *text)
 	return 0;
 }
 
-// vim: tabstop=4
+// vim: tabstop=4 shiftwidth=4 autoindent

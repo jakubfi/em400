@@ -403,4 +403,4 @@ char * decode_cmempst(uint16_t addr, int arg)
 	return buf;
 }
 
-// vim: tabstop=4
+// vim: tabstop=4 shiftwidth=4 autoindent

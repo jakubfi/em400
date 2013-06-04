@@ -54,4 +54,4 @@ int cmem_decode_cf_t(int addr, struct cmem_cf_t *cf)
 }
 
 
-// vim: tabstop=4
+// vim: tabstop=4 shiftwidth=4 autoindent

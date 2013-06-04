@@ -47,4 +47,4 @@ int16_t get_arg_norm();
 
 #endif
 
-// vim: tabstop=4
+// vim: tabstop=4 shiftwidth=4 autoindent

@@ -58,9 +58,9 @@ struct cfg_chan_t {
 // -----------------------------------------------------------------------
 struct cfg_em400_t {
 
-    char *program_name;
-    char *config_file;
-    int exit_on_hlt;
+	char *program_name;
+	char *config_file;
+	int exit_on_hlt;
 	int verbose;
 	int benchmark;
 	char *cfg_dir;
@@ -73,10 +73,10 @@ struct cfg_em400_t {
 	struct cfg_chan_t chans[IO_MAX_CHAN];
 
 #ifdef WITH_DEBUGGER
-    int autotest;
-    char *pre_expr;
-    char *test_expr;
-    int ui_simple;
+	int autotest;
+	char *pre_expr;
+	char *test_expr;
+	int ui_simple;
 #endif
 
 } em400_cfg;
@@ -93,4 +93,4 @@ void cfg_make_chan(int c_num, char *name);
 
 #endif
 
-// vim: tabstop=4
+// vim: tabstop=4 shiftwidth=4 autoindent

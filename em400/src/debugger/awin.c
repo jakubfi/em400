@@ -1108,4 +1108,4 @@ void awin_tb_clear(int wid)
 }
 
 
-// vim: tabstop=4 smarttab smartindent autoindent shiftwidth=4 softtabstop=4
+// vim: tabstop=4 shiftwidth=4 autoindent

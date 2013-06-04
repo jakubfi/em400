@@ -160,4 +160,4 @@ void dbg_wu_watch(int wid)
 	awin_tb_update(wid, w->ih);
 }
 
-// vim: tabstop=4
+// vim: tabstop=4 shiftwidth=4 autoindent

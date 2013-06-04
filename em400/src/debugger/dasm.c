@@ -262,4 +262,4 @@ int dt_extcode_77(int i)
 	return EXT_OP_77(i);
 }
 
-// vim: tabstop=4
+// vim: tabstop=4 shiftwidth=4 autoindent

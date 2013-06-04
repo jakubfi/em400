@@ -70,4 +70,4 @@ char * get_error(int e)
 	return edict->message;
 }
 
-// vim: tabstop=4
+// vim: tabstop=4 shiftwidth=4 autoindent

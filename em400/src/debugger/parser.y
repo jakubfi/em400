@@ -231,4 +231,4 @@ void yyerror(char *format, ...)
 	reset_scanner();
 }
 
-// vim: tabstop=4
+// vim: tabstop=4 shiftwidth=4 autoindent

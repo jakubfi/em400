@@ -490,4 +490,4 @@ void print_node(struct node_t *n)
 }
 
 
-// vim: tabstop=4
+// vim: tabstop=4 shiftwidth=4 autoindent

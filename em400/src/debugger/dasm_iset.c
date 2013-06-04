@@ -380,4 +380,4 @@ struct dasm_opdef dasm_iset_77[] = {
 	{ 7, "IB", true, NULL, NULL, D_BN, T_IB }
 };
 
-// vim: tabstop=4
+// vim: tabstop=4 shiftwidth=4 autoindent

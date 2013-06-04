@@ -227,4 +227,4 @@ void cfg_make_chan(int c_num, char *name)
 	em400_cfg.chans[c_num].name = name;
 }
 
-// vim: tabstop=4
+// vim: tabstop=4 shiftwidth=4 autoindent

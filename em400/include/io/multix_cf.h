@@ -177,4 +177,4 @@ void mx_free_cf_winch_t(struct mx_cf_winch_t *cf);
 
 #endif
 
-// vim: tabstop=4
+// vim: tabstop=4 shiftwidth=4 autoindent

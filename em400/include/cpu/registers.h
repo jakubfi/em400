@@ -119,4 +119,4 @@ void reg_write(int r, uint16_t x, int trace, int hw);
 
 #endif
 
-// vim: tabstop=4
+// vim: tabstop=4 shiftwidth=4 autoindent
