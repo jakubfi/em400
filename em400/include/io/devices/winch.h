@@ -19,10 +19,30 @@
 #define WINCH_H
 
 #include <inttypes.h>
-#include <pthread.h>
+#include <stdio.h>
 
-// -----------------------------------------------------------------------
+struct winchester_t {
+	int cylinders;
+	int heads;
+	int sectors;
+	int sector_size; // bytes
+	int total_sectors;
+	char *image_name;
+	FILE *image;
+};
 
+struct winchester_t * winch_create(int cylinders, int heads, int sectors, int sector_size);
+int winch_open(struct winchester_t *w, char *image_name);
+void winch_close(struct winchester_t *w);
+void winch_shutdown(struct winchester_t *winch);
+
+
+int winch_p2l(struct winchester_t *w, int cyl, int head, int sect);
+int winch_read_sector_p(struct winchester_t *winch, uint8_t *buf, int cyl, int head, int sect);
+int winch_read_sector_l(struct winchester_t *w, uint8_t *buf, int sect);
+int winch_write_sector_p(struct winchester_t *winch, uint8_t *buf, int count, int cyl, int head, int sect);
+int winch_write_sector_l(struct winchester_t *w, uint8_t *buf, int count, int sect);
+int winch_park(int cyl);
 
 #endif
 
