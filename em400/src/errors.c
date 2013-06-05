@@ -53,6 +53,14 @@ struct _em400_errordesc {
 	{ E_QUIT_NO_MEM, "OS segmentation fault." },
 	{ E_CFG_DEFAULT_LOAD, "sorry" },
 	{ E_CF, "Error in control field" },
+	{ E_WINCH_NO, "Opening wincester that hasn't been created" },
+	{ E_WINCH_OPEN, "Winchester already open" },
+	{ E_WINCH_STAT, "Cannot stat() image file" },
+	{ E_WINCH_SIZE, "Wrong image size" },
+	{ E_WINCH_NO_SECTOR, "Cannot find sector" },
+	{ E_WINCH_RW_SIZE, "Wrong number of bytes read/written" },
+	{ E_WINCH_DATA_TOO_BIG, "Data won't fit in sector" },
+	
 
 	{ E_UNKNOWN, "Unknown error." }
 };

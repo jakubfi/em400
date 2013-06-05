@@ -21,6 +21,7 @@
 #include <stdio.h>
 #include <sys/stat.h>
 
+#include "errors.h"
 #include "io/devices/winch.h"
 
 
@@ -44,42 +45,35 @@ struct winchester_t * winch_create(int cylinders, int heads, int sectors, int se
 // -----------------------------------------------------------------------
 int winch_open(struct winchester_t *w, char *image_name)
 {
-	struct stat st;
-
 	if (!w) {
-		// not created
-		return -1;
+		return E_WINCH_NO;
 	}
 
 	if (w->image || w->image_name) {
-		// already connected
-		return -1;
+		return E_WINCH_OPEN;
 	}
 
+	struct stat st;
 	if (stat(image_name, &st) != 0) {
-		// cannot stat image file
-		return -1;
+		return E_WINCH_STAT;
 	} else {
 		int want_size = w->sector_size * (w->cylinders * w->heads * w->sectors);
 		if (st.st_size != want_size) {
-			// wrong image file size
-			return -1;
+			return E_WINCH_SIZE;
 		}
 	}
 
 	w->image = fopen(image_name, "r+");
 	if (!w->image) {
-		// cannot open file
-		return -1;
+		return E_FILE_OPEN;
 	}
 
 	w->image_name = strdup(image_name);
 	if (!w->image_name) {
-		// out of memory
-		return -1;
+		return E_ALLOC;
 	}
 
-	return 0;
+	return E_OK;
 }
 
 // -----------------------------------------------------------------------
@@ -120,21 +114,18 @@ int winch_read_sector_l(struct winchester_t *w, uint8_t *buf, int sect)
 	int res;
 
 	if (sect >= w->total_sectors) {
-		// sector outside disk
-		return -1;
+		return E_WINCH_NO_SECTOR;
 	}
 
 	res = fseek(w->image, sect*w->sector_size, SEEK_SET);
 	if (res < 0) {
-		// cannot find sector
-		return -1;
+		return E_WINCH_NO_SECTOR;
 	}
 	res = fread(buf, 1, w->sector_size, w->image);
 	if (res != w->sector_size) {
-		// cannot read sector
-		return -1;
+		return E_WINCH_RW_SIZE;
 	}
-	return 0;
+	return E_OK;
 }
 
 // -----------------------------------------------------------------------
@@ -149,33 +140,29 @@ int winch_write_sector_l(struct winchester_t *w, uint8_t *buf, int count, int se
 	int res;
 
 	if (sect >= w->total_sectors) {
-		// sector outside disk
-		return -1;
+		return E_WINCH_NO_SECTOR;
 	}
 
 	if (count > w->sector_size) {
-		// data won't fit in one sector
-		return -4;
+		return E_WINCH_DATA_TOO_BIG;
 	}
 
 	res = fseek(w->image, sect*w->sector_size, SEEK_SET);
 	if (res < 0) {
-		// cannot find sector
-		return -2;
+		return E_WINCH_NO_SECTOR;
 	}
 	res = fwrite(buf, 1, count, w->image);
 	if (res != count) {
-		// cannot write sector
-		return -3;
+		return E_WINCH_RW_SIZE;
 	}
-	return 0;
+	return E_OK;
 }
 
 // -----------------------------------------------------------------------
 int winch_park(int cyl)
 {
 	// mhm, sure.
-	return 0;
+	return E_OK;
 }
 
 // vim: tabstop=4 shiftwidth=4 autoindent
