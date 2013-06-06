@@ -34,10 +34,9 @@
 struct chan_t *io_chan[IO_MAX_CHAN];
 
 // -----------------------------------------------------------------------
-int io_chan_init(int c_num)
+int io_chan_init(int c_num, char *c_name)
 {
-	struct drv_t *c_driver = drv_get(DRV_CHAN, CHAN_IGNORE, em400_cfg.chans[c_num].name);
-	free(em400_cfg.chans[c_num].name);
+	struct drv_t *c_driver = drv_get(DRV_CHAN, CHAN_IGNORE, c_name);
 
 	if (!c_driver) {
 		return E_IO_CHAN_UNKNOWN;
@@ -71,18 +70,11 @@ int io_chan_init(int c_num)
 }
 
 // -----------------------------------------------------------------------
-int io_unit_init(int c_num, int u_num)
+int io_unit_init(int c_num, int u_num, char *u_name, struct cfg_arg_t *u_args)
 {
-	struct drv_t *u_driver;
-	if (em400_cfg.chans[c_num].units[u_num].name) {
-		u_driver = drv_get(DRV_UNIT, io_chan[c_num]->type, em400_cfg.chans[c_num].units[u_num].name);
-		free(em400_cfg.chans[c_num].units[u_num].name);
-		if (!u_driver) {
-			return E_IO_UNIT_UNKNOWN;
-		}
-	} else {
-		u_driver = NULL;
-		return E_OK;
+	struct drv_t *u_driver = drv_get(DRV_UNIT, io_chan[c_num]->type, u_name);
+	if (!u_driver) {
+		return E_IO_UNIT_UNKNOWN;
 	}
 
 	// driver sanity checks
@@ -106,35 +98,39 @@ int io_unit_init(int c_num, int u_num)
 	}
 
 	// initialize the unit
-	return u_driver->f_init(unit, em400_cfg.chans[c_num].units[u_num].args);
+	return u_driver->f_init(unit, u_args);
 }
 
 // -----------------------------------------------------------------------
 int io_init()
 {
 	int res;
+	struct cfg_chan_t *chanc;
+	struct cfg_unit_t *unitc;
 
 	eprint("Initializing I/O\n");
 
-	for (int c_num=0 ; c_num<IO_MAX_CHAN ; c_num++) {
-		if (!em400_cfg.chans[c_num].name) {
-			continue;
-		}
+	chanc = em400_cfg.chans;
 
-		// initialize channel
-		res = io_chan_init(c_num);
+	while (chanc) {
+		res = io_chan_init(chanc->num, chanc->name);
 		if (res != E_OK) {
 			return res;
 		}
 
-		// initialize units connected
-		for (int u_num=0 ; u_num<io_chan[c_num]->max_devs ; u_num++) {
-			res = io_unit_init(c_num, u_num);
+		unitc = chanc->units;
+		while (unitc) {
+			res = io_unit_init(chanc->num, unitc->num, unitc->name, unitc->args);
 			if (res != E_OK) {
 				return res;
 			}
+			unitc = unitc->next;
 		}
+		chanc = chanc->next;
 	}
+
+	cfg_drop_chans(em400_cfg.chans);
+
 	return E_OK;
 }
 

@@ -205,6 +205,7 @@ void em400_configure()
 	em400_cfg.cpu.timer_step = 10;
 	em400_cfg.cpu.mod_17bit = 1;
 	em400_cfg.cpu.mod_sint = 1;
+	em400_cfg.chans = NULL;
 
 	// config files to consider
 	struct cfgfile_t {

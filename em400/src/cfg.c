@@ -21,7 +21,6 @@
 #include <string.h>
 
 #include "cpu/memory.h"
-#include "io/drivers.h"
 
 #include "errors.h"
 #include "cfg.h"
@@ -81,21 +80,21 @@ void cfg_print()
 		eprint("  Module %2i: %5s: %2i segments\n", i, em400_cfg.mem[i].is_mega ? "MEGA" : "ELWRO", em400_cfg.mem[i].segments);
 	}
 	eprint("  -- I/O: ------------------------------\n");
-	for (int c_num=0 ; c_num<IO_MAX_CHAN ; c_num++) {
-		if (em400_cfg.chans[c_num].name) {
-			eprint("  Channel %2i: %s\n", c_num, em400_cfg.chans[c_num].name);
-			for (int u_num=0 ; u_num<256 ; u_num++) {
-				if (em400_cfg.chans[c_num].units[u_num].name) {
-					eprint("     Unit %2i: %s (args: ", u_num, em400_cfg.chans[c_num].units[u_num].name);
-					struct cfg_arg_t *args = em400_cfg.chans[c_num].units[u_num].args;
-					while (args) {
-						eprint("%s, ", args->text);
-						args = args->next;
-					}
-					eprint(")\n");
-				}
+	struct cfg_chan_t *chanc = em400_cfg.chans;
+	while (chanc) {
+		eprint("  Channel %2i: %s\n", chanc->num, chanc->name);
+		struct cfg_unit_t *unitc = chanc->units;
+		while (unitc) {
+			eprint("     Unit %2i: %s (args: ", unitc->num, unitc->name);
+			struct cfg_arg_t *args = unitc->args;
+			while (args) {
+				eprint("%s, ", args->text);
+				args = args->next;
 			}
+			eprint(")\n");
+			unitc = unitc->next;
 		}
+		chanc = chanc->next;
 	}
 	eprint("----------------------------------------\n");
 }
@@ -170,10 +169,7 @@ int args_to_cfg(struct cfg_arg_t *arg, const char *format, ...)
 		}
 		count++;
 		format++;
-		free(arg->text);
-		struct cfg_arg_t *parg = arg;
 		arg = arg->next;
-		free(parg);
 	}
 
 	va_end(ap);
@@ -181,36 +177,18 @@ int args_to_cfg(struct cfg_arg_t *arg, const char *format, ...)
 }
 
 // -----------------------------------------------------------------------
-void cfg_make_unit(int c_num, int u_num, char *name, struct cfg_arg_t *arglist)
+void cfg_make_unit(int u_num, char *name, struct cfg_arg_t *arglist)
 {
-	// check channel number
-	if ((c_num < 0) || (c_num > IO_MAX_CHAN)) {
-		cyyerror("Incorrect channel number for unit %i: %i", u_num, c_num);
-		return;
+	if (u_num < 0) {
+		cyyerror("Incorrect unit number: %i", u_num);
 	}
 
-	// check if unit driver of that name exists
-	struct drv_t *driver = drv_get(DRV_UNIT, CHAN_IGNORE, name);
-	if (!driver) {
-		cyyerror("Unknown unit: %s", name);
-		return;
-	}
-
-	// count arguments
-	int cnt = 0;
-	struct cfg_arg_t *arg = arglist;
-	while (arg) {
-		cnt++;
-		arg = arg->next;
-	}
-
-	if (cnt != driver->argc) {
-		cyyerror("Wrong number of arguments for driver '%s'. Got: %i, required %i", name, cnt, driver->argc);
-		return;
-	}
-
-	em400_cfg.chans[c_num].units[u_num].name = name;
-	em400_cfg.chans[c_num].units[u_num].args = arglist;
+	struct cfg_unit_t *u = malloc(sizeof(struct cfg_unit_t));
+	u->name = name;
+	u->num = u_num;
+	u->args = arglist;
+	u->next = em400_cfg.chans->units;
+	em400_cfg.chans->units = u;
 }
 
 // -----------------------------------------------------------------------
@@ -220,11 +198,47 @@ void cfg_make_chan(int c_num, char *name)
 		cyyerror("Incorrect channel number: %i", c_num);
 	}
 
-	if (!drv_get(DRV_CHAN, CHAN_IGNORE, name)) {
-		cyyerror("Unknown channel: %s", name);
-	}
+	struct cfg_chan_t *c = malloc(sizeof(struct cfg_chan_t));
+	c->num = c_num;
+	c->name = name;
+	c->next = em400_cfg.chans;
+	c->units = NULL;
+	em400_cfg.chans = c;
+}
 
-	em400_cfg.chans[c_num].name = name;
+// -----------------------------------------------------------------------
+void cfg_drop_args(struct cfg_arg_t *a)
+{
+	if (!a) {
+		return;
+	}
+	cfg_drop_args(a->next);
+	free(a->text);
+	free(a);
+}
+
+// -----------------------------------------------------------------------
+void cfg_drop_units(struct cfg_unit_t *u)
+{
+	if (!u) {
+		return;
+	}
+	cfg_drop_units(u->next);
+	cfg_drop_args(u->args);
+	free(u->name);
+	free(u);
+}
+
+// -----------------------------------------------------------------------
+void cfg_drop_chans(struct cfg_chan_t *c)
+{
+	if (!c) {
+		return;
+	}
+	cfg_drop_chans(c->next);
+	cfg_drop_units(c->units);
+	free(c->name);
+	free(c);
 }
 
 // vim: tabstop=4 shiftwidth=4 autoindent

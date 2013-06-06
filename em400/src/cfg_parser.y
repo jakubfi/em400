@@ -23,7 +23,7 @@
 #include "cfg.h"
 #include "io/drivers.h"
 
-int this_chan;
+struct cfg_chan_t *this_chan;
 
 void cyyerror(char *s, ...);
 int cyylex(void);
@@ -57,7 +57,7 @@ objects:
 object:
 	CPU '{' cpu_opts '}'
 	| MEMORY '{' os_mem modules '}'
-	| CHANNEL VALUE { this_chan=$2.v; } '=' TEXT '{' units '}' { cfg_make_chan($2.v, $5.s); free($2.s); }
+	| CHANNEL VALUE '=' TEXT { cfg_make_chan($2.v, $4.s); free($2.s); } '{' units '}'
 	;
 
 units:
@@ -66,8 +66,8 @@ units:
 	;
 
 unit:
-	UNIT VALUE '=' TEXT ':' arglist	{ cfg_make_unit(this_chan, $2.v, $4.s, $6); free($2.s); }
-	| UNIT VALUE '=' TEXT			{ cfg_make_unit(this_chan, $2.v, $4.s, NULL); free($2.s); }
+	UNIT VALUE '=' TEXT ':' arglist	{ cfg_make_unit($2.v, $4.s, $6); free($2.s); }
+	| UNIT VALUE '=' TEXT			{ cfg_make_unit($2.v, $4.s, NULL); free($2.s); }
 	;
 
 arglist:

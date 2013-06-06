@@ -46,13 +46,17 @@ struct cfg_arg_t {
 // -----------------------------------------------------------------------
 struct cfg_unit_t {
 	char *name;
+	int num;
 	struct cfg_arg_t *args;
+	struct cfg_unit_t *next;
 };
 
 // -----------------------------------------------------------------------
 struct cfg_chan_t {
 	char *name;
-	struct cfg_unit_t units[256];
+	int num;
+	struct cfg_unit_t *units;
+	struct cfg_chan_t *next;
 };
 
 // -----------------------------------------------------------------------
@@ -70,7 +74,7 @@ struct cfg_em400_t {
 	struct cfg_cpu_t cpu;
 	struct cfg_mem_module_t mem[MEM_MAX_MODULES];
 	int mem_os;
-	struct cfg_chan_t chans[IO_MAX_CHAN];
+	struct cfg_chan_t *chans;
 
 #ifdef WITH_DEBUGGER
 	int autotest;
@@ -88,8 +92,10 @@ void cfg_set_mem(int module, int is_mega, int segments);
 void cfg_set_os_mem(int segments);
 struct cfg_arg_t * cfg_make_arg(char *arg);
 int args_to_cfg(struct cfg_arg_t *arg, const char *format, ...);
-void cfg_make_unit(int c_num, int u_num, char *name, struct cfg_arg_t *args);
+void cfg_make_unit(int u_num, char *name, struct cfg_arg_t *args);
 void cfg_make_chan(int c_num, char *name);
+void cfg_drop_chans(struct cfg_chan_t *c);
+
 
 #endif
 
