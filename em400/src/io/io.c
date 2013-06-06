@@ -36,13 +36,8 @@ struct chan_t *io_chan[IO_MAX_CHAN];
 // -----------------------------------------------------------------------
 int io_chan_init(int c_num)
 {
-	struct drv_t *c_driver;
-	if (em400_cfg.chans[c_num].name) {
-		c_driver = drv_get(DRV_CHAN, CHAN_IGNORE, em400_cfg.chans[c_num].name);
-		free(em400_cfg.chans[c_num].name);
-	} else {
-		c_driver = drv_get(DRV_CHAN, CHAN_IGNORE, "none");
-	}
+	struct drv_t *c_driver = drv_get(DRV_CHAN, CHAN_IGNORE, em400_cfg.chans[c_num].name);
+	free(em400_cfg.chans[c_num].name);
 
 	if (!c_driver) {
 		return E_IO_CHAN_UNKNOWN;
@@ -122,6 +117,10 @@ int io_init()
 	eprint("Initializing I/O\n");
 
 	for (int c_num=0 ; c_num<IO_MAX_CHAN ; c_num++) {
+		if (!em400_cfg.chans[c_num].name) {
+			continue;
+		}
+
 		// initialize channel
 		res = io_chan_init(c_num);
 		if (res != E_OK) {
@@ -196,8 +195,14 @@ int io_dispatch(int dir, uint16_t n, uint16_t *r)
 		free(narg);
 		free(rarg);
 #endif
-		int res = io_chan[chan]->f_cmd(io_chan[chan], dir, n, r);
-		LOG(D_IO, 1, "I/O command, result = %i", res);
+		int res;
+		if (io_chan[chan]) {
+			res = io_chan[chan]->f_cmd(io_chan[chan], dir, n, r);
+			LOG(D_IO, 1, "I/O command, result = %i", res);
+		} else {
+			res = IO_NO;
+			LOG(D_IO, 1, "I/O command to a channel that doesn't exist: %i", chan);
+		}
 		return res;
 	}
 }

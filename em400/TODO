@@ -41,4 +41,5 @@ MERA-400 features that em400 does not emulate:
 * interface
 * priority based interface reservation
 * operator panel
-
+* MULTIX:
+  * SOM protocols
