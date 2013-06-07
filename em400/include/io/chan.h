@@ -20,6 +20,8 @@
 
 #include <inttypes.h>
 
+// things common for 'classic' mem and char channels
+
 enum chan_cmds_e {
 	// channel IN
 	CHAN_CMD_EXISTS		= 0b00000000,

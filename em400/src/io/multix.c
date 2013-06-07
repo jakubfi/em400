@@ -27,49 +27,32 @@
 
 #include "debugger/log.h"
 
-// -----------------------------------------------------------------------
-void * drv_multix_thread(void *self)
-{
-	struct chan_t *ch = self;
-
-	struct timespec ts;
-/**/	ts.tv_sec = 0;
-/**/	ts.tv_nsec = 1000000;
-
-	while (!ch->finish) {
-/**/		nanosleep(&ts, &ts);
-	}
-	pthread_exit(NULL);
-}
+#define CI ((struct multix_internal_t*) chan->i)
 
 // -----------------------------------------------------------------------
-int drv_multix_init(void *self, struct cfg_arg_t *arg)
+int multix_init(struct chan_t *chan, struct cfg_unit_t *units)
 {
-	struct chan_t *ch = self;
-	drv_multix_reset(ch);
-	pthread_create(&ch->thread, NULL, drv_multix_thread, ch);
+	chan->f_shutdown = multix_shutdown;
+	chan->f_reset = multix_reset;
+	chan->f_cmd = multix_cmd;
+	chan->i = calloc(1, sizeof(struct multix_internal_t));
+
+	multix_reset(chan);
 	return E_OK;
 }
 
 // -----------------------------------------------------------------------
-void drv_multix_shutdown(void *self)
+void multix_shutdown(struct chan_t *chan)
 {
-	struct chan_t *ch = self;
-	ch->finish = 1;
-	pthread_join(ch->thread, NULL);
 }
 
 // -----------------------------------------------------------------------
-void drv_multix_reset(void *self)
+void multix_reset(struct chan_t *chan)
 {
-	struct chan_t *ch = self;
-	ch->int_spec = 0;
-	ch->int_mask = 0;
-	ch->untransmitted = 0;
 }
 
 // -----------------------------------------------------------------------
-int drv_multix_cmd(void *self, int dir, uint16_t n_arg, uint16_t *r_arg)
+int multix_cmd(struct chan_t *chan, int dir, uint16_t n_arg, uint16_t *r_arg)
 {
 	return IO_OK;
 }

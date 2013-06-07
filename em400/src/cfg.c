@@ -135,7 +135,7 @@ struct cfg_arg_t * cfg_make_arg(char *s)
 }
 
 // -----------------------------------------------------------------------
-int args_to_cfg(struct cfg_arg_t *arg, const char *format, ...)
+int cfg_args_decode(struct cfg_arg_t *arg, const char *format, ...)
 {
 	int *i;
 	char *c;
@@ -143,17 +143,23 @@ int args_to_cfg(struct cfg_arg_t *arg, const char *format, ...)
 	char **eptr = NULL;
 	int count = 0;
 
-	if (!format) return -1;
+	if (!format) {
+		return E_ARG_FORMAT;
+	}
 
 	va_list ap;
 	va_start(ap, format);
-	while (arg && *format) {
-		if (!arg->text) return -1;
+	while (*format) {
+		if (!arg || !arg->text) {
+			return E_ARG_NOT_ENOUGH;
+		}
 		switch (*format) {
 			case 'i':
 				i = va_arg(ap, int*);
 				*i = strtol(arg->text, eptr, 10);
-				if (eptr) return -1;
+				if (eptr) {
+					return E_ARG_CONVERSION;
+				}
 				break;
 			case 'c':
 				c = va_arg(ap, char*);
@@ -162,10 +168,12 @@ int args_to_cfg(struct cfg_arg_t *arg, const char *format, ...)
 			case 's':
 				s = va_arg(ap, char**);
 				*s = strdup(arg->text);
-				if (!*s) return -1;
+				if (!*s) {
+					return E_ALLOC;
+				}
 				break;
 			default:
-				return -1;
+				return E_ARG_FORMAT;
 		}
 		count++;
 		format++;
@@ -173,6 +181,11 @@ int args_to_cfg(struct cfg_arg_t *arg, const char *format, ...)
 	}
 
 	va_end(ap);
+
+	if (!*format && arg) {
+		return E_ARG_TOO_MANY;
+	}
+
 	return count;
 }
 

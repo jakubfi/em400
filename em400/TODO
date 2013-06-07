@@ -1,5 +1,6 @@
 Known bugs:
 
+* .h functions visibility
 * can't use memptr+n
 
 CPU:

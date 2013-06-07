@@ -21,7 +21,6 @@
 #include <stdarg.h>
 
 #include "cfg.h"
-#include "io/drivers.h"
 
 struct cfg_chan_t *this_chan;
 

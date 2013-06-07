@@ -38,11 +38,9 @@ struct _em400_errordesc {
 	{ E_DEBUGGER_SIG_RESIZE, "Cannot setup window resize handler." },
 	{ E_IO_CHAN_UNKNOWN, "Unknown channel type." },
 	{ E_IO_UNIT_UNKNOWN, "Unit incompatibile with channel, or unknown unit type." },
-	{ E_IO_DRV_CHAN_BAD, "Bad channel driver definition." },
-	{ E_IO_DRV_UNIT_BAD, "Bad unit driver definition." },
 	{ E_IO_CHAN_INIT, "Cannot initialize channel." },
 	{ E_IO_UNIT_INIT, "Cannot initialize unit." },
-	{ E_IO_UNIT_INIT_ARGS, "Error parsing unit driver arguments." },
+	{ E_IO_UNIT_INIT_ARGS, "Error parsing unit arguments." },
 	{ E_LOG_OPEN, "Cannot open log file." },
 	{ E_AW_INIT, "Cannot initialize awin." },
 	{ E_UI_INIT, "Cannot initialize UI." },
@@ -60,6 +58,10 @@ struct _em400_errordesc {
 	{ E_WINCH_NO_SECTOR, "Cannot find sector" },
 	{ E_WINCH_RW_SIZE, "Wrong number of bytes read/written" },
 	{ E_WINCH_DATA_TOO_BIG, "Data won't fit in sector" },
+	{ E_ARG_TOO_MANY, "Too many arguments" },
+	{ E_ARG_NOT_ENOUGH, "Not enough arguments" },
+	{ E_ARG_CONVERSION, "Argument conversion error" },
+	{ E_ARG_FORMAT, "Missing or unknown format" },
 	
 
 	{ E_UNKNOWN, "Unknown error." }

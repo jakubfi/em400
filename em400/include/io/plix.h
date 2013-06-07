@@ -1,4 +1,4 @@
-//  Copyright (c) 2012-2013 Jakub Filipowicz <jakubf@gmail.com>
+//  Copyright (c) 2013 Jakub Filipowicz <jakubf@gmail.com>
 //
 //  This program is free software; you can redistribute it and/or modify
 //  it under the terms of the GNU General Public License as published by
@@ -15,38 +15,18 @@
 //  Foundation, Inc.,
 //  51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 
-#ifndef DRV_U9425_H
-#define DRV_U9425_H
+#ifndef DRV_PLIX_H
+#define DRV_PLIX_H
 
 #include <inttypes.h>
 
 #include "cfg.h"
 #include "io.h"
 
-enum _u9425_cmd {
-	// OU
-	U9425_CMD_ZER		= 0b10000000,
-	U9425_CMD_OTR		= 0b11000000,
-	U9425_CMD_NTR		= 0b11010000,
-	U9425_CMD_SEEK		= 0b11100000,
-	U9425_CMD_RTZ		= 0b01000000,
-	U9425_CMD_SELOFF	= 0b10100000,
-	U9425_CMD_RES		= 0b10010000,
-	// IN
-	U9425_CMD_TEST		= 0b10000000,
-	U9425_CMD_TSR		= 0b01000000,
-	U9425_CMD_TCH		= 0b10010000
-};
-
-struct u9425_cfg_t {
-	char *img_fixed;
-	char *img_removable;
-};
-
-int drv_u9425_init(void *self, struct cfg_arg_t *arg);
-void drv_u9425_shutdown(void *self);
-void drv_u9425_reset(void *self);
-int drv_u9425_cmd(void *self, int dir, uint16_t n, uint16_t *r);
+int plix_init(struct chan_t *chan, struct cfg_unit_t *units);
+void plix_shutdown(struct chan_t *chan);
+void plix_reset(struct chan_t *chan);
+int plix_cmd(struct chan_t *chan, int dir, uint16_t n_arg, uint16_t *r_arg);
 
 #endif
 

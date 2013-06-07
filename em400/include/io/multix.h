@@ -23,6 +23,8 @@
 #include "cfg.h"
 #include "io.h"
 
+#define MULTIX_MAX_DEVICES 256
+
 enum mx_int_e {
 	MX_INT_INSKA = 1,
 	MX_INT_IWYZE = 2,
@@ -52,10 +54,19 @@ enum mx_int_e {
 	MX_INT_IOPRU = 34
 };
 
-int drv_multix_init(void *self, struct cfg_arg_t *arg);
-void drv_multix_shutdown(void *self);
-void drv_multix_reset(void *self);
-int drv_multix_cmd(void *self, int dir, uint16_t n_arg, uint16_t *r_arg);
+struct multix_unit {
+
+};
+
+struct multix_internal_t {
+	struct multix_unit_t *devl[MULTIX_MAX_DEVICES];
+	struct multix_unit_t *devp[MULTIX_MAX_DEVICES];
+};
+
+int multix_init(struct chan_t *chan, struct cfg_unit_t *units);
+void multix_shutdown(struct chan_t *chan);
+void multix_reset(struct chan_t *chan);
+int multix_cmd(struct chan_t *chan, int dir, uint16_t n_arg, uint16_t *r_arg);
 
 #endif
 

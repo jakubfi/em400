@@ -29,76 +29,52 @@
 #include "debugger/log.h"
 
 // -----------------------------------------------------------------------
-void * drv_cmem_thread(void *self)
+int cmem_init(struct chan_t *chan, struct cfg_unit_t *units)
 {
-	struct chan_t *ch = self;
-
-	struct timespec ts;
-/**/	ts.tv_sec = 0;
-/**/	ts.tv_nsec = 1000000;
-
-	while (!ch->finish) {
-/**/		nanosleep(&ts, &ts);
-	}
-	pthread_exit(NULL);
-}
-
-// -----------------------------------------------------------------------
-int drv_cmem_init(void *self, struct cfg_arg_t *arg)
-{
-	struct chan_t *ch = self;
-	drv_cmem_reset(ch);
-	pthread_create(&ch->thread, NULL, drv_cmem_thread, ch);
+	chan->f_shutdown = cmem_shutdown;
+	chan->f_reset = cmem_reset;
+	chan->f_cmd = cmem_cmd;
+	cmem_reset(chan);
 	return E_OK;
 }
 
 // -----------------------------------------------------------------------
-void drv_cmem_shutdown(void *self)
+void cmem_shutdown(struct chan_t *chan)
 {
-	struct chan_t *ch = self;
-	ch->finish = 1;
-	pthread_join(ch->thread, NULL);
 }
 
 // -----------------------------------------------------------------------
-void drv_cmem_reset(void *self)
+void cmem_reset(struct chan_t *chan)
 {
-	struct chan_t *ch = self;
-	ch->int_spec = 0;
-	ch->int_mask = 0;
-	ch->untransmitted = 0;
 }
 
 // -----------------------------------------------------------------------
-int drv_cmem_cmd(void *self, int dir, uint16_t n_arg, uint16_t *r_arg)
+int cmem_cmd(struct chan_t *chan, int dir, uint16_t n_arg, uint16_t *r_arg)
 {
-	struct chan_t *ch = self;
-
 	int u_num = (n_arg & 0b0000000011100000) >> 5;
 	int cmd = (n_arg & 0b1111111100000000) >> 8;
 
-	struct unit_t *unit = ch->unit[u_num];
-	ch->int_mask = 0;
+	//chan->int_mask = 0;
 
 	// command for channel
 	if ((cmd & 0b11100000) == 0) {
 		if (dir == IO_OU) {
 			switch (cmd & 0b00011000) {
 			case CHAN_CMD_EXISTS:
-				LOG(D_IO, 1, "%i:%i (%s:%s) command (chan): CHAN_CMD_EXISTS", ch->num, unit->num, ch->name, unit->name);
+				LOG(D_IO, 1, "CMEM %i (%s): CHAN_CMD_EXISTS", chan->num, chan->name);
 				break;
 			case CHAN_CMD_INTSPEC:
-				*r_arg = ch->int_spec;
-				LOG(D_IO, 1, "%i:%i (%s:%s) command (chan): CHAN_CMD_INTSPEC -> %i", ch->num, unit->num, ch->name, unit->name, *r_arg);
+				//*r_arg = chan->int_spec;
+				LOG(D_IO, 1, "CMEM %i (%s): CHAN_CMD_INTSPEC -> %i", chan->num, chan->name, *r_arg);
 				break;
 			case CHAN_CMD_STATUS:
-				*r_arg = ch->untransmitted;
-				LOG(D_IO, 1, "%i:%i (%s:%s) command (chan): CHAN_CMD_STATUS -> %i", ch->num, unit->num, ch->name, unit->name, ch->untransmitted);
+				//*r_arg = chan->untransmitted;
+				LOG(D_IO, 1, "CMEM %i (%s) CHAN_CMD_STATUS", chan->num, chan->name);
 				break;
 			case CHAN_CMD_ALLOC:
 				// all units always working with CPU 0
 				*r_arg = 0;
-				LOG(D_IO, 1, "%i:%i (%s:%s) command (chan): CHAN_CMD_ALLOC -> %i", ch->num, unit->num, ch->name, unit->name, *r_arg);
+				LOG(D_IO, 1, "CMEM %i:%i (%s): CHAN_CMD_ALLOC -> %i", chan->num, u_num, chan->name, *r_arg);
 				break;
 			default:
 				// shouldn't happen, but as channel always reports OK...
@@ -107,22 +83,22 @@ int drv_cmem_cmd(void *self, int dir, uint16_t n_arg, uint16_t *r_arg)
 		} else {
 			switch (cmd & 0b00011000) {
 			case CHAN_CMD_EXISTS:
-				LOG(D_IO, 1, "%i:%i (%s:%s) command (chan): CHAN_CMD_EXISTS", ch->num, unit->num, ch->name, unit->name);
+				LOG(D_IO, 1, "CMEM %i (%s): CHAN_CMD_EXISTS", chan->num, chan->name);
 				break;
 			case CHAN_CMD_MASK_PN:
-				ch->int_mask = 1;
-				LOG(D_IO, 1, "%i:%i (%s:%s) command (chan): CHAN_CMD_MASK_PN -> %i", ch->num, unit->num, ch->name, unit->name, ch->int_mask);
+				//chan->int_mask = 1;
+				LOG(D_IO, 1, "CMEM %i (%s): CHAN_CMD_MASK_PN", chan->num, chan->name);
 				break;
 			case CHAN_CMD_MASK_NPN:
-				LOG(D_IO, 1, "%i:%i (%s:%s) command (chan): CHAN_CMD_MASK_NPN -> ignored", ch->num, unit->num, ch->name, unit->name);
+				LOG(D_IO, 1, "CMEM %i (%s): CHAN_CMD_MASK_NPN -> ignored", chan->num, chan->name);
 				// ignore 2nd CPU
 				break;
 			case CHAN_CMD_ASSIGN:
-				LOG(D_IO, 1, "%i:%i (%s:%s) command (chan): CHAN_CMD_ASSIGN -> ignored", ch->num, unit->num, ch->name, unit->name);
+				LOG(D_IO, 1, "CMEM %i (%s:%s): CHAN_CMD_ASSIGN -> ignored", chan->num, u_num, chan->name);
 				// always for CPU 0
 				break;
 			default:
-				LOG(D_IO, 1, "%i:%i (%s:%s) command (chan): unknow command", ch->num, unit->num, ch->name, unit->name);
+				LOG(D_IO, 1, "CMEM %i:%i (%s): unknow command", chan->num, u_num, chan->name);
 				// shouldn't happen, but as channel always reports OK...
 				break;
 			}
@@ -130,7 +106,7 @@ int drv_cmem_cmd(void *self, int dir, uint16_t n_arg, uint16_t *r_arg)
 		return IO_OK;
 	// command for unit
 	} else {
-		return unit->f_cmd(unit, cmd, n_arg, r_arg);
+		return IO_NO;
 	}
 }
 

@@ -21,6 +21,8 @@
 #include <inttypes.h>
 #include <pthread.h>
 
+#include "cfg.h"
+
 #define IO_MAX_CHAN	16
 
 enum io_dir {
@@ -28,7 +30,6 @@ enum io_dir {
 	IO_OU
 };
 
-// TODO: those are in fact interfece signals
 enum io_result {
 	IO_NO = 0,  // no channel, no control unit, or no memory block
 	IO_EN = 1,  // not ready (engaged)
@@ -36,37 +37,23 @@ enum io_result {
 	IO_PE = 3   // data error (parity error)
 };
 
-struct unit_t;
-
-// -----------------------------------------------------------------------
 struct chan_t {
 	int num;
-	int type;
 	const char *name;
-	int max_devs;
-	struct unit_t **unit;
-	int finish;
-	pthread_t thread;
 
-	void (*f_shutdown)(void *self);
-	void (*f_reset)(void *self);
-	int (*f_cmd)(void *self, int dir, uint16_t, uint16_t *r);
+	void *i; // internal channel-specific state data
 
-	uint16_t int_spec; // 0 past-EN, 3-7 int spec, 8-10 dev number
-	uint16_t untransmitted;
-	int int_mask;
+	void (*f_shutdown)(struct chan_t *chan);
+	void (*f_reset)(struct chan_t *chan);
+	int (*f_cmd)(struct chan_t *chan, int dir, uint16_t n, uint16_t *r);
 };
 
-// -----------------------------------------------------------------------
-struct unit_t {
-	int num;
-	const char *name;
-	struct chan_t *chan;
-	void *cfg;
+struct cfg_unit_t; // why?
+typedef int (*chan_initfun)(struct chan_t *chan, struct cfg_unit_t *units);
 
-	void (*f_shutdown)(void *self);
-	void (*f_reset)(void *self);
-	int (*f_cmd)(void *self, int dir, uint16_t, uint16_t *r);
+struct fundict_t {
+	const char *name;
+	chan_initfun f_init;
 };
 
 extern struct chan_t *io_chan[IO_MAX_CHAN];

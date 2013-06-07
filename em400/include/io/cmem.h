@@ -23,10 +23,10 @@
 #include "cfg.h"
 #include "io.h"
 
-int drv_cmem_init(void *self, struct cfg_arg_t *arg);
-void drv_cmem_shutdown(void *self);
-void drv_cmem_reset(void *self);
-int drv_cmem_cmd(void *self, int dir, uint16_t n_arg, uint16_t *r_arg);
+int cmem_init(struct chan_t *chan, struct cfg_unit_t *units);
+void cmem_shutdown(struct chan_t *chan);
+void cmem_reset(struct chan_t *chan);
+int cmem_cmd(struct chan_t *chan, int dir, uint16_t n_arg, uint16_t *r_arg);
 
 #endif
 

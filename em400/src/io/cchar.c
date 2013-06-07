@@ -29,55 +29,32 @@
 #include "debugger/log.h"
 
 // -----------------------------------------------------------------------
-void * drv_cchar_thread(void *self)
+int cchar_init(struct chan_t *chan, struct cfg_unit_t *units)
 {
-	struct chan_t *ch = self;
-
-	struct timespec ts;
-/**/	ts.tv_sec = 0;
-/**/	ts.tv_nsec = 1000000;
-
-	while (!ch->finish) {
-/**/		nanosleep(&ts, &ts);
-	}
-	pthread_exit(NULL);
-}
-
-// -----------------------------------------------------------------------
-int drv_cchar_init(void *self, struct cfg_arg_t *arg)
-{
-	struct chan_t *ch = self;
-	drv_cchar_reset(ch);
-	pthread_create(&ch->thread, NULL, drv_cchar_thread, ch);
+    chan->f_shutdown = cchar_shutdown;
+	chan->f_reset = cchar_reset;
+	chan->f_cmd = cchar_cmd;
+	cchar_reset(chan);
 	return E_OK;
 }
 
 // -----------------------------------------------------------------------
-void drv_cchar_shutdown(void *self)
+void cchar_shutdown(struct chan_t *chan)
 {
-	struct chan_t *ch = self;
-	ch->finish = 1;
-	pthread_join(ch->thread, NULL);
 }
 
 // -----------------------------------------------------------------------
-void drv_cchar_reset(void *self)
+void cchar_reset(struct chan_t *chan)
 {
-	struct chan_t *ch = self;
-	ch->int_spec = 0;
-	ch->int_mask = 0;
 }
 
 // -----------------------------------------------------------------------
-int drv_cchar_cmd(void *self, int dir, uint16_t n_arg, uint16_t *r_arg)
+int cchar_cmd(struct chan_t *chan, int dir, uint16_t n_arg, uint16_t *r_arg)
 {
-	struct chan_t *ch = self;
-
-	int u_num = (n_arg & 0b0000000011100000) >> 5;
+	//int u_num = (n_arg & 0b0000000011100000) >> 5;
 	int cmd = (n_arg & 0b1111111100000000) >> 8;
 
-	struct unit_t *unit = ch->unit[u_num];
-	ch->int_mask = 0;
+	//chan->int_mask = 0;
 
 	// command for channel
 	if ((cmd & 0b11100000) == 0) {
@@ -86,7 +63,7 @@ int drv_cchar_cmd(void *self, int dir, uint16_t n_arg, uint16_t *r_arg)
 			case CHAN_CMD_EXISTS:
 				break;
 			case CHAN_CMD_INTSPEC:
-				*r_arg = ch->int_spec;
+				//*r_arg = chan->int_spec;
 				break;
 			case CHAN_CMD_ALLOC:
 				// all units always working with CPU 0
@@ -101,7 +78,7 @@ int drv_cchar_cmd(void *self, int dir, uint16_t n_arg, uint16_t *r_arg)
 			case CHAN_CMD_EXISTS:
 				break;
 			case CHAN_CMD_MASK_PN:
-				ch->int_mask = 1;
+				//chan->int_mask = 1;
 				break;
 			case CHAN_CMD_MASK_NPN:
 				// ignore 2nd CPU
@@ -117,7 +94,7 @@ int drv_cchar_cmd(void *self, int dir, uint16_t n_arg, uint16_t *r_arg)
 		return IO_OK;
 	// command for unit
 	} else {
-		return unit->f_cmd(unit, dir, n_arg, r_arg);
+		return IO_NO;
 	}
 }
 

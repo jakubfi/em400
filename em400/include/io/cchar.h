@@ -23,10 +23,10 @@
 #include "cfg.h"
 #include "io.h"
 
-int drv_cchar_init(void *self, struct cfg_arg_t *arg);
-void drv_cchar_shutdown(void *self);
-void drv_cchar_reset(void *self);
-int drv_cchar_cmd(void *self, int dir, uint16_t n_arg, uint16_t *r_arg);
+int cchar_init(struct chan_t *chan, struct cfg_unit_t *units);
+void cchar_shutdown(struct chan_t *chan);
+void cchar_reset(struct chan_t *chan);
+int cchar_cmd(struct chan_t *chan, int dir, uint16_t n_arg, uint16_t *r_arg);
 
 #endif
 

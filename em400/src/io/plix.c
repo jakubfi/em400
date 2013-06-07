@@ -1,4 +1,4 @@
-//  Copyright (c) 2012-2013 Jakub Filipowicz <jakubf@gmail.com>
+//  Copyright (c) 2013 Jakub Filipowicz <jakubf@gmail.com>
 //
 //  This program is free software; you can redistribute it and/or modify
 //  it under the terms of the GNU General Public License as published by
@@ -15,49 +15,43 @@
 //  Foundation, Inc.,
 //  51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 
-#include <stdlib.h>
-#include <string.h>
 #include <inttypes.h>
+#include <pthread.h>
+#include <unistd.h>
 
 #include "io/io.h"
-#include "io/u9425.h"
+#include "io/plix.h"
 
 #include "cfg.h"
 #include "errors.h"
 
+#include "debugger/log.h"
+
 // -----------------------------------------------------------------------
-int drv_u9425_init(void *self, struct cfg_arg_t *arg)
+int plix_init(struct chan_t *chan, struct cfg_unit_t *units)
 {
-	struct unit_t *unit = self;
-	struct u9425_cfg_t *cfg = unit->cfg = malloc(sizeof(struct u9425_cfg_t));
-	if (!unit->cfg) return E_IO_UNIT_INIT;
-
-	int argc = args_to_cfg(arg, "ss", &cfg->img_fixed, &cfg->img_removable);
-	if (argc != 2) {
-		return E_IO_UNIT_INIT_ARGS;
-	}
-
+	chan->f_shutdown = plix_shutdown;
+	chan->f_reset = plix_reset;
+	chan->f_cmd = plix_cmd;
+	plix_reset(chan);
 	return E_OK;
 }
 
 // -----------------------------------------------------------------------
-void drv_u9425_shutdown(void *self)
-{
-	struct u9425_cfg_t *cfg = ((struct unit_t *)self)->cfg;
-	free(cfg->img_fixed);
-	free(cfg->img_removable);
-	free(cfg);
-}
-
-// -----------------------------------------------------------------------
-void drv_u9425_reset(void *self)
+void plix_shutdown(struct chan_t *chan)
 {
 }
 
 // -----------------------------------------------------------------------
-int drv_u9425_cmd(void *self, int dir, uint16_t n_arg, uint16_t *r_arg)
+void plix_reset(struct chan_t *chan)
 {
-	return IO_NO;
 }
+
+// -----------------------------------------------------------------------
+int plix_cmd(struct chan_t *chan, int dir, uint16_t n_arg, uint16_t *r_arg)
+{
+	return IO_OK;
+}
+
 
 // vim: tabstop=4 shiftwidth=4 autoindent
