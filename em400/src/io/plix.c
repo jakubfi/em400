@@ -28,27 +28,27 @@
 #include "debugger/log.h"
 
 // -----------------------------------------------------------------------
-int plix_init(struct chan_t *chan, struct cfg_unit_t *units)
+int px_init(struct chan_t *chan, struct cfg_unit_t *units)
 {
-	chan->f_shutdown = plix_shutdown;
-	chan->f_reset = plix_reset;
-	chan->f_cmd = plix_cmd;
-	plix_reset(chan);
+	chan->f_shutdown = px_shutdown;
+	chan->f_reset = px_reset;
+	chan->f_cmd = px_cmd;
+	px_reset(chan);
 	return E_OK;
 }
 
 // -----------------------------------------------------------------------
-void plix_shutdown(struct chan_t *chan)
+void px_shutdown(struct chan_t *chan)
 {
 }
 
 // -----------------------------------------------------------------------
-void plix_reset(struct chan_t *chan)
+void px_reset(struct chan_t *chan)
 {
 }
 
 // -----------------------------------------------------------------------
-int plix_cmd(struct chan_t *chan, int dir, uint16_t n_arg, uint16_t *r_arg)
+int px_cmd(struct chan_t *chan, int dir, uint16_t n_arg, uint16_t *r_arg)
 {
 	return IO_OK;
 }

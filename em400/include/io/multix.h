@@ -23,15 +23,35 @@
 #include "cfg.h"
 #include "io.h"
 
-#define MULTIX_MAX_DEVICES 256
+#define MX_MAX_DEVICES 256
+
+enum mx_cmd_e {
+	// channel (bits 0..2 = 0, bits 3..4 = command)
+	MX_CMD_RESET	= 0b00, // IN
+	MX_CMD_EXISTS	= 0b10, // IN
+	MX_CMD_INTSPEC	= 0b01, // IN
+	// control, general (bits 0..2 = command)
+	MX_CMD_INTRQ	= 0b001, // IN
+	MX_CMD_TEST		= 0b001, // OU
+	MX_CMD_SETCFG	= 0b101, // OU
+	// control, line (bits 0..2 = command)
+	MX_CMD_ATTACH	= 0b010, // OU
+	MX_CMD_DETACH	= 0b010, // IN
+	MX_CMD_STATUS	= 0b011, // OU
+	MX_CMD_TRANSMIT	= 0b100, // OU
+	MX_CMD_BREAK	= 0b011, // IN
+};
 
 enum mx_int_e {
+	// special
 	MX_INT_INSKA = 1,
 	MX_INT_IWYZE = 2,
 	MX_INT_IWYTE = 3,
+	// general
 	MX_INT_INKON = 4,
 	MX_INT_IUKON = 5,
 	MX_INT_INKOT = 6,
+	// line
 	MX_INT_ISTRE = 7,
 	MX_INT_INSTR = 8,
 	MX_INT_INKST = 9,
@@ -54,19 +74,15 @@ enum mx_int_e {
 	MX_INT_IOPRU = 34
 };
 
-struct multix_unit {
-
+struct mx_internal_t {
+	struct mx_unit_t *lline[MX_MAX_DEVICES];
+	struct mx_unit_t *pline[MX_MAX_DEVICES];
 };
 
-struct multix_internal_t {
-	struct multix_unit_t *devl[MULTIX_MAX_DEVICES];
-	struct multix_unit_t *devp[MULTIX_MAX_DEVICES];
-};
-
-int multix_init(struct chan_t *chan, struct cfg_unit_t *units);
-void multix_shutdown(struct chan_t *chan);
-void multix_reset(struct chan_t *chan);
-int multix_cmd(struct chan_t *chan, int dir, uint16_t n_arg, uint16_t *r_arg);
+int mx_init(struct chan_t *chan, struct cfg_unit_t *units);
+void mx_shutdown(struct chan_t *chan);
+void mx_reset(struct chan_t *chan);
+int mx_cmd(struct chan_t *chan, int dir, uint16_t n_arg, uint16_t *r_arg);
 
 #endif
 

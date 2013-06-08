@@ -39,8 +39,8 @@
 struct fundict_t chan_init[] = {
 	{ "char",		cchar_init },
 	{ "mem",		cmem_init },
-	{ "multix",		multix_init },
-	{ "plix",		plix_init },
+	{ "multix",		mx_init },
+	{ "plix",		px_init },
 	{ NULL,			NULL }
 };
 

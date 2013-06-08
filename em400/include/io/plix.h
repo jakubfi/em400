@@ -23,10 +23,10 @@
 #include "cfg.h"
 #include "io.h"
 
-int plix_init(struct chan_t *chan, struct cfg_unit_t *units);
-void plix_shutdown(struct chan_t *chan);
-void plix_reset(struct chan_t *chan);
-int plix_cmd(struct chan_t *chan, int dir, uint16_t n_arg, uint16_t *r_arg);
+int px_init(struct chan_t *chan, struct cfg_unit_t *units);
+void px_shutdown(struct chan_t *chan);
+void px_reset(struct chan_t *chan);
+int px_cmd(struct chan_t *chan, int dir, uint16_t n_arg, uint16_t *r_arg);
 
 #endif
 
