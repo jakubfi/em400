@@ -29,11 +29,6 @@
 
 #define CI ((struct mx_internal_t*) chan->i)
 
-struct fundict_t mx_unit_init[] {
-	{ "winchester", 	mx_winch_init },
-	{ NULL,				NULL }
-};
-
 // -----------------------------------------------------------------------
 int mx_init(struct chan_t *chan, struct cfg_unit_t *units)
 {
