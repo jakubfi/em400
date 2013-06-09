@@ -15,8 +15,8 @@
 //  Foundation, Inc.,
 //  51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 
-#ifndef DRV_MULTIX_H
-#define DRV_MULTIX_H
+#ifndef MULTIX_H
+#define MULTIX_H
 
 #include <inttypes.h>
 
@@ -25,6 +25,13 @@
 
 #define MX_MAX_DEVICES 256
 
+// internal channel data
+struct mx_internal_t {
+	struct mx_unit_t *lline[MX_MAX_DEVICES];
+	struct mx_unit_t *pline[MX_MAX_DEVICES];
+};
+
+// multix commands
 enum mx_cmd_e {
 	// channel (bits 0..2 = 0, bits 3..4 = command)
 	MX_CMD_RESET	= 0b00, // IN
@@ -42,6 +49,7 @@ enum mx_cmd_e {
 	MX_CMD_BREAK	= 0b011, // IN
 };
 
+// multix interrupts
 enum mx_int_e {
 	// special
 	MX_INT_INSKA = 1,
@@ -74,15 +82,100 @@ enum mx_int_e {
 	MX_INT_IOPRU = 34
 };
 
-struct mx_internal_t {
-	struct mx_unit_t *lline[MX_MAX_DEVICES];
-	struct mx_unit_t *pline[MX_MAX_DEVICES];
+// --- cf: set configuration -------------------------------------------------
+
+// physical line
+struct mx_cf_sc_pl {
+	int dir;
+	int used;
+	int dev_type;
+	int count;
 };
+
+// logical line - winchester
+struct mx_ll_winch {
+	int type;
+	int format_protect;
+};
+
+// logical line - floppy
+struct mx_ll_floppy {
+	int type;
+	int format_protect;
+};
+
+// logical line
+struct mx_cf_sc_ll {
+	int proto;
+	int pl_id;
+	int formatter;
+	struct mx_ll_winch *winch;
+	struct mx_ll_floppy *floppy;
+};
+
+// set configuration
+struct mx_cf_sc {
+	int pl_desc_count;
+	int ll_desc_count;
+	uint16_t *retf;
+	struct mx_cf_sc_pl *pl;
+	struct mx_cf_sc_ll *ll;
+};
+
+// --- cf: connect line ------------------------------------------------------
+
+// punch tape reader
+struct mx_cf_cl_punch_reader {
+	int watch_eot;
+	int no_parity;
+	int odd_parity;
+	int eight_bits;
+	int bs_can;
+	int watch_oprq;
+	int eot_code;
+	int oprq_code;
+	int txt_proc;
+};
+
+// tape puncher
+struct mx_cf_cl_puncher {
+	int odd_parity;
+	int eight_bits;
+	int low_to_up;
+	int txt_proc;
+};
+
+// terminal (monitor)
+struct mx_cf_cl_monitor {
+	int watch_eot;
+	int no_parity;
+	int odd_parity;
+	int eight_bits;
+	int xon_xoff;
+	int bs_can;
+	int low_to_up;
+	int watch_oprq;
+	int eot_code;
+	int oprq_code;
+	int txt_proc;
+	int txt_proc_params;
+};
+
+// --- get line status ---------------------------------------------------
+// only return field
+
+
+
+// -----------------------------------------------------------------------
 
 int mx_init(struct chan_t *chan, struct cfg_unit_t *units);
 void mx_shutdown(struct chan_t *chan);
 void mx_reset(struct chan_t *chan);
 int mx_cmd(struct chan_t *chan, int dir, uint16_t n_arg, uint16_t *r_arg);
+
+struct mx_cf_sc * mx_decode_cf_sc(int addr);
+void mx_free_cf_sc(struct mx_cf_sc *cf);
+
 
 #endif
 

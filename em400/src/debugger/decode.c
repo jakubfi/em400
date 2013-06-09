@@ -21,7 +21,7 @@
 #include "cpu/memory.h"
 
 #include "io/multix.h"
-#include "io/multix_cf.h"
+#include "io/multix_winch.h"
 #include "io/cmem_cf.h"
 
 #include "utils.h"
@@ -247,16 +247,9 @@ char * decode_mxpsuk(uint16_t addr, int arg)
 		return NULL;
 	}
 
-	struct mx_cf_sc *uk = calloc(1, sizeof(struct mx_cf_sc));
-
+	struct mx_cf_sc *uk = mx_decode_cf_sc(addr);
 	if (!uk) {
-		free(buf);
-		return NULL;
-	}
-
-	int ret = mx_decode_cf_sc(addr, uk);
-	if (ret != E_OK) {
-		pos += sprintf(b+pos, "Error decoding: %s", get_error(ret));
+		pos += sprintf(b+pos, "Cannot decode");
 		return buf;
 	}
 
@@ -287,7 +280,7 @@ char * decode_mxpsdl(uint16_t addr, int arg)
 }
 
 // -----------------------------------------------------------------------
-int decode_mxpst_transmit_winch(struct mx_cf_winch_transmit *t, char *b)
+int decode_mxpst_transmit_winch(struct mx_winch_cf_transmit *t, char *b)
 {
 	int pos = 0;
 
@@ -309,16 +302,9 @@ char * decode_mxpst_winch(uint16_t addr, int arg)
 		return NULL;
 	}
 
-	struct mx_cf_winch_t *t = calloc(1, sizeof(struct mx_cf_winch_t));
-
+	struct mx_winch_cf_t *t = mx_winch_cf_t_decode(addr);
 	if (!t) {
-		free(buf);
-		return NULL;
-	}
-
-	int ret = mx_decode_cf_winch_t(addr, t);
-	if (ret != E_OK) {
-		pos += sprintf(b+pos, "Error decoding: %s", get_error(ret));
+		pos += sprintf(b+pos, "Error decoding field");
 		return buf;
 	}
 
@@ -351,7 +337,7 @@ char * decode_mxpst_winch(uint16_t addr, int arg)
 			break;
 	}
 
-	mx_free_cf_winch_t(t);
+	mx_winch_cf_t_free(t);
 	return buf;
 }
 
