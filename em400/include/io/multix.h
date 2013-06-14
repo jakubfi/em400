@@ -25,10 +25,10 @@
 
 #define MX_MAX_DEVICES 256
 
-// internal channel data
-struct mx_internal_t {
-	struct mx_unit_t *lline[MX_MAX_DEVICES];
-	struct mx_unit_t *pline[MX_MAX_DEVICES];
+struct mx_chan_t {
+	struct chan_proto_t proto;
+	struct unit_proto_t *lline[MX_MAX_DEVICES];
+	struct unit_proto_t *pline[MX_MAX_DEVICES];
 };
 
 // multix commands
@@ -42,11 +42,11 @@ enum mx_cmd_e {
 	MX_CMD_TEST		= 0b001, // OU
 	MX_CMD_SETCFG	= 0b101, // OU
 	// control, line (bits 0..2 = command)
-	MX_CMD_ATTACH	= 0b010, // OU
-	MX_CMD_DETACH	= 0b010, // IN
-	MX_CMD_STATUS	= 0b011, // OU
-	MX_CMD_TRANSMIT	= 0b100, // OU
-	MX_CMD_BREAK	= 0b011, // IN
+	MX_LCMD_ATTACH	= 0b010, // OU
+	MX_LCMD_DETACH	= 0b010, // IN
+	MX_LCMD_STATUS	= 0b011, // OU
+	MX_LCMD_TRANSMIT= 0b100, // OU
+	MX_LCMD_BREAK	= 0b011, // IN
 };
 
 // multix interrupts
@@ -168,10 +168,10 @@ struct mx_cf_cl_monitor {
 
 // -----------------------------------------------------------------------
 
-int mx_init(struct chan_t *chan, struct cfg_unit_t *units);
-void mx_shutdown(struct chan_t *chan);
-void mx_reset(struct chan_t *chan);
-int mx_cmd(struct chan_t *chan, int dir, uint16_t n_arg, uint16_t *r_arg);
+struct chan_proto_t * mx_create(struct cfg_unit_t *units);
+void mx_shutdown(struct chan_proto_t *chan);
+void mx_reset(struct chan_proto_t *chan);
+int mx_cmd(struct chan_proto_t *chan, int dir, uint16_t n_arg, uint16_t *r_arg);
 
 struct mx_cf_sc * mx_decode_cf_sc(int addr);
 void mx_free_cf_sc(struct mx_cf_sc *cf);

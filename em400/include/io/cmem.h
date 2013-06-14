@@ -23,10 +23,10 @@
 #include "cfg.h"
 #include "io.h"
 
-int cmem_init(struct chan_t *chan, struct cfg_unit_t *units);
-void cmem_shutdown(struct chan_t *chan);
-void cmem_reset(struct chan_t *chan);
-int cmem_cmd(struct chan_t *chan, int dir, uint16_t n_arg, uint16_t *r_arg);
+struct chan_proto_t * cmem_create(struct cfg_unit_t *units);
+void cmem_shutdown(struct chan_proto_t *chan);
+void cmem_reset(struct chan_proto_t *chan);
+int cmem_cmd(struct chan_proto_t *chan, int dir, uint16_t n_arg, uint16_t *r_arg);
 
 #endif
 

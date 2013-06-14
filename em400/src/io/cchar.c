@@ -29,27 +29,23 @@
 #include "debugger/log.h"
 
 // -----------------------------------------------------------------------
-int cchar_init(struct chan_t *chan, struct cfg_unit_t *units)
+struct chan_proto_t * cchar_create(struct cfg_unit_t *units)
 {
-    chan->f_shutdown = cchar_shutdown;
-	chan->f_reset = cchar_reset;
-	chan->f_cmd = cchar_cmd;
-	cchar_reset(chan);
 	return E_OK;
 }
 
 // -----------------------------------------------------------------------
-void cchar_shutdown(struct chan_t *chan)
+void cchar_shutdown(struct chan_proto_t *chan)
 {
 }
 
 // -----------------------------------------------------------------------
-void cchar_reset(struct chan_t *chan)
+void cchar_reset(struct chan_proto_t  *chan)
 {
 }
 
 // -----------------------------------------------------------------------
-int cchar_cmd(struct chan_t *chan, int dir, uint16_t n_arg, uint16_t *r_arg)
+int cchar_cmd(struct chan_proto_t *chan, int dir, uint16_t n_arg, uint16_t *r_arg)
 {
 	//int u_num = (n_arg & 0b0000000011100000) >> 5;
 	int cmd = (n_arg & 0b1111111100000000) >> 8;

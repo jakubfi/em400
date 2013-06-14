@@ -23,10 +23,10 @@
 #include "cfg.h"
 #include "io.h"
 
-int px_init(struct chan_t *chan, struct cfg_unit_t *units);
-void px_shutdown(struct chan_t *chan);
-void px_reset(struct chan_t *chan);
-int px_cmd(struct chan_t *chan, int dir, uint16_t n_arg, uint16_t *r_arg);
+struct chan_proto_t *px_create(struct cfg_unit_t *units);
+void px_shutdown(struct chan_proto_t *chan);
+void px_reset(struct chan_proto_t *chan);
+int px_cmd(struct chan_proto_t *chan, int dir, uint16_t n_arg, uint16_t *r_arg);
 
 #endif
 

@@ -25,6 +25,9 @@
 
 #define IO_MAX_CHAN	16
 
+struct cfg_unit_t;
+struct cfg_arg_t;
+
 enum io_dir {
 	IO_IN = 0,
 	IO_OU
@@ -38,26 +41,38 @@ enum io_result {
 	IO_PE = 3   // data error (parity error)
 };
 
-struct chan_t {
+typedef struct chan_proto_t * (*chan_f_create)(struct cfg_unit_t *units);
+typedef void (*chan_f_shutdown)(struct chan_proto_t *chan);
+typedef void (*chan_f_reset)(struct chan_proto_t *chan);
+typedef int (*chan_f_cmd)(struct chan_proto_t *chan, int dir, uint16_t n, uint16_t *r);
+
+typedef struct unit_proto_t * (*unit_f_create)(struct cfg_arg_t *args);
+typedef void (*unit_f_shutdown)(struct unit_proto_t *unit);
+typedef void (*unit_f_reset)(struct unit_proto_t *unit);
+typedef int (*unit_f_cmd)(struct unit_proto_t *unit, int dir, uint16_t n, uint16_t *r);
+
+struct chan_proto_t {
 	int num;
 	const char *name;
-
-	void *i; // internal channel-specific state data
-
-	void (*f_shutdown)(struct chan_t *chan);
-	void (*f_reset)(struct chan_t *chan);
-	int (*f_cmd)(struct chan_t *chan, int dir, uint16_t n, uint16_t *r);
+	chan_f_create create;
+	chan_f_shutdown shutdown;
+	chan_f_reset reset;
+	chan_f_cmd cmd;
 };
 
-struct cfg_unit_t; // why?
-typedef int (*chan_initfun)(struct chan_t *chan, struct cfg_unit_t *units);
-
-struct fundict_t {
+struct unit_proto_t {
+	int num;
 	const char *name;
-	chan_initfun f_init;
+	unit_f_create create;
+	unit_f_shutdown shutdown;
+	unit_f_reset reset;
+	unit_f_cmd cmd;
 };
 
-extern struct chan_t *io_chan[IO_MAX_CHAN];
+extern struct chan_proto_t *io_chan[IO_MAX_CHAN];
+
+struct chan_proto_t * io_chan_proto_get(struct chan_proto_t *proto, char *name);
+struct unit_proto_t * io_unit_proto_get(struct unit_proto_t *proto, char *name);
 
 int io_init();
 void io_shutdown();

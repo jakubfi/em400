@@ -18,105 +18,139 @@
 #include <inttypes.h>
 #include <pthread.h>
 #include <unistd.h>
+#include <string.h>
 
 #include "io/io.h"
 #include "io/multix.h"
+#include "io/multix_winch.h"
 
 #include "cfg.h"
 #include "errors.h"
 
 #include "debugger/log.h"
 
-#define CI ((struct mx_internal_t*) chan->i)
+#define CHAN ((struct mx_chan_t *)(chan))
+
+struct unit_proto_t mx_unit_proto[] = {
+	{ -1, "winchester",	mx_winch_create,	mx_winch_shutdown,	mx_winch_reset,	mx_winch_cmd },
+	{ -1, NULL,			NULL,				NULL,				NULL,			NULL }
+};
 
 // -----------------------------------------------------------------------
-int mx_init(struct chan_t *chan, struct cfg_unit_t *units)
+struct chan_proto_t * mx_create(struct cfg_unit_t *units)
 {
-	chan->f_shutdown = mx_shutdown;
-	chan->f_reset = mx_reset;
-	chan->f_cmd = mx_cmd;
-	chan->i = calloc(1, sizeof(struct mx_internal_t));
-	if (!chan->i) {
-		return E_ALLOC;
+	struct mx_chan_t *chan = calloc(1, sizeof(struct mx_chan_t));
+	if (!chan) {
+		return NULL;
 	}
 
-	mx_reset(chan);
-	return E_OK;
+	struct cfg_unit_t *cunit = units;
+	while (cunit) {
+		struct unit_proto_t *proto = io_unit_proto_get(mx_unit_proto, cunit->name);
+		if (!proto) {
+			return NULL;
+		}
+
+		eprint("    Unit %i: %s\n", cunit->num, proto->name);
+
+		struct unit_proto_t *unit = proto->create(cunit->args);
+		unit->num = cunit->num;
+		unit->name = strdup(proto->name);
+		unit->create = proto->create;
+		unit->reset = proto->reset;
+		unit->shutdown = proto->shutdown;
+		unit->cmd = proto->cmd;
+		CHAN->pline[unit->num] = unit;
+		cunit = cunit->next;
+	}
+
+	return (struct chan_proto_t*) chan;
 }
 
 // -----------------------------------------------------------------------
-void mx_shutdown(struct chan_t *chan)
+void mx_shutdown(struct chan_proto_t *chan)
+{
+	eprint("  Channel %i: %s\n", chan->num, chan->name);
+	for (int i=0 ; i<MX_MAX_DEVICES ; i++) {
+		struct unit_proto_t *unit = CHAN->pline[i];
+		if (unit) {
+			eprint("    Unit %i: %s\n", unit->num, unit->name);
+			unit->shutdown(unit);
+		}
+	}
+}
+
+// -----------------------------------------------------------------------
+void mx_reset(struct chan_proto_t *chan)
 {
 }
 
 // -----------------------------------------------------------------------
-void mx_reset(struct chan_t *chan)
-{
-}
-
-// -----------------------------------------------------------------------
-int mx_cmd_int_requeue(struct chan_t *chan)
-{
-	return IO_OK;
-}
-
-// -----------------------------------------------------------------------
-int mx_cmd_test(struct chan_t *chan, unsigned param, uint16_t *r_arg)
-{
-	return IO_OK;
-}
-
-// -----------------------------------------------------------------------
-int mx_cmd_setcfg(struct chan_t *chan, uint16_t *r_arg)
-{
-	return IO_OK;
-}
-
-// -----------------------------------------------------------------------
-int mx_cmd_attach(struct chan_t *chan, unsigned lline, uint16_t *r_arg)
-{
-	return IO_OK;
-}
-
-// -----------------------------------------------------------------------
-int mx_cmd_detach(struct chan_t *chan, unsigned lline)
-{
-	return IO_OK;
-}
-
-// -----------------------------------------------------------------------
-int mx_cmd_status(struct chan_t *chan, unsigned lline, uint16_t *r_arg)
+int mx_cmd_int_requeue(struct chan_proto_t *chan)
 {
 	return IO_OK;
 }
 
 // -----------------------------------------------------------------------
-int mx_cmd_transmit(struct chan_t *chan, unsigned lline, uint16_t *r_arg)
+int mx_cmd_test(struct chan_proto_t *chan, unsigned param, uint16_t *r_arg)
 {
 	return IO_OK;
 }
 
 // -----------------------------------------------------------------------
-int mx_cmd_break(struct chan_t *chan, unsigned lline)
+int mx_cmd_setcfg(struct chan_proto_t *chan, uint16_t *r_arg)
+{
+	//struct mx_cf_sc *cf = mx_decode_cf_sc(*r_arg);
+	return IO_OK;
+}
+
+// -----------------------------------------------------------------------
+int mx_cmd_attach(struct chan_proto_t *chan, unsigned lline, uint16_t *r_arg)
 {
 	return IO_OK;
 }
 
 // -----------------------------------------------------------------------
-int mx_cmd(struct chan_t *chan, int dir, uint16_t n_arg, uint16_t *r_arg)
+int mx_cmd_detach(struct chan_proto_t *chan, unsigned lline)
+{
+	return IO_OK;
+}
+
+// -----------------------------------------------------------------------
+int mx_cmd_status(struct chan_proto_t *chan, unsigned lline, uint16_t *r_arg)
+{
+	return IO_OK;
+}
+
+// -----------------------------------------------------------------------
+int mx_cmd_transmit(struct chan_proto_t *chan, unsigned lline, uint16_t *r_arg)
+{
+	return IO_OK;
+}
+
+// -----------------------------------------------------------------------
+int mx_cmd_break(struct chan_proto_t *chan, unsigned lline)
+{
+	return IO_OK;
+}
+
+// -----------------------------------------------------------------------
+int mx_cmd(struct chan_proto_t *chan, int dir, uint16_t n_arg, uint16_t *r_arg)
 {
 	unsigned cmd = (n_arg & 0b1110000000000000) >> 13;
 	unsigned lline = (n_arg & 0b0001111111100000) >> 5;
 
-	if (cmd == 0) {
+	if (cmd == 0) { // channel commands
 		cmd = (n_arg & 0b0001100000000000) >> 11;
 		switch (cmd) {
 			case MX_CMD_RESET:
-				break;
+				mx_reset(chan);
+				// generates interrupt
+				return IO_OK;
 			case MX_CMD_EXISTS:
-				break;
+				return IO_OK;
 			case MX_CMD_INTSPEC:
-				break;
+				return IO_OK;
 			default:
 				break;
 		}
@@ -125,9 +159,9 @@ int mx_cmd(struct chan_t *chan, int dir, uint16_t n_arg, uint16_t *r_arg)
 			switch (cmd) {
 				case MX_CMD_INTRQ:
 					return mx_cmd_int_requeue(chan);
-				case MX_CMD_DETACH:
+				case MX_LCMD_DETACH:
 					return mx_cmd_detach(chan, lline);
-				case MX_CMD_BREAK:
+				case MX_LCMD_BREAK:
 					return mx_cmd_break(chan, lline);
 				default:
 					break;
@@ -138,11 +172,11 @@ int mx_cmd(struct chan_t *chan, int dir, uint16_t n_arg, uint16_t *r_arg)
 					return mx_cmd_test(chan, lline, r_arg);
 				case MX_CMD_SETCFG:
 					return mx_cmd_setcfg(chan, r_arg);
-				case MX_CMD_ATTACH:
+				case MX_LCMD_ATTACH:
 					return mx_cmd_attach(chan, lline, r_arg);
-				case MX_CMD_STATUS:
+				case MX_LCMD_STATUS:
 					return mx_cmd_status(chan, lline, r_arg);
-				case MX_CMD_TRANSMIT:
+				case MX_LCMD_TRANSMIT:
 					return mx_cmd_transmit(chan, lline, r_arg);
 				default:
 					break;

@@ -36,49 +36,62 @@
 
 #include "debugger/log.h"
 
-struct fundict_t chan_init[] = {
-	{ "char",		cchar_init },
-	{ "mem",		cmem_init },
-	{ "multix",		mx_init },
-	{ "plix",		px_init },
-	{ NULL,			NULL }
+struct chan_proto_t chan_proto[] = {
+	{ -1, "char",		cchar_create,	cchar_shutdown,	cchar_reset,	cchar_cmd },
+	{ -1, "mem",		cmem_create,	cmem_shutdown,	cmem_reset,		cmem_cmd },
+	{ -1, "multix",		mx_create,		mx_shutdown,	mx_reset,		mx_cmd },
+	{ -1, "plix",		px_create,		NULL,			NULL,			NULL },
+	{ -1, NULL,			NULL,			NULL,			NULL,			NULL }
 };
 
-struct chan_t *io_chan[IO_MAX_CHAN];
+struct chan_proto_t *io_chan[IO_MAX_CHAN];
 
 // -----------------------------------------------------------------------
-chan_initfun io_chan_getinit(char *name)
+struct chan_proto_t * io_chan_proto_get(struct chan_proto_t *proto, char *name)
 {
-	struct fundict_t *ci = chan_init;
-	while (ci->name) {
-		if (strcasecmp(name, ci->name) == 0) {
-			return ci->f_init;
+	while (proto && proto->name) {
+		if (strcasecmp(name, proto->name) == 0) {
+			return proto;
 		}
-		ci++;
+		proto++;
 	}
 	return NULL;
 }
 
 // -----------------------------------------------------------------------
-int io_chan_init(int num, char *name, struct cfg_unit_t *units)
+struct unit_proto_t * io_unit_proto_get(struct unit_proto_t *proto, char *name)
 {
-	chan_initfun chan_init = io_chan_getinit(name);
-	if (!chan_init) {
+	while (proto && proto->name) {
+		if (strcasecmp(name, proto->name) == 0) {
+			return proto;
+		}
+		proto++;
+	}
+	return NULL;
+}
+
+// -----------------------------------------------------------------------
+int io_chan_create(int num, char *name, struct cfg_unit_t *units)
+{
+	struct chan_proto_t *proto = io_chan_proto_get(chan_proto, name);
+	if (!proto) {
 		return E_IO_CHAN_UNKNOWN;
 	}
 
 	eprint("  Channel %i: %s\n", num, name);
-
-	struct chan_t *chan = calloc(1, sizeof(struct chan_t));
+	struct chan_proto_t *chan = proto->create(units);
 	if (!chan) {
 		return E_ALLOC;
 	}
 
-	chan->name = strdup(name);
 	chan->num = num;
-	io_chan[num] = chan;
+	chan->name = strdup(name);
+	chan->create = proto->create;
+	chan->shutdown = proto->shutdown;
+	chan->reset = proto->reset;
+	chan->cmd = proto->cmd;
 
-	chan_init(chan, units);
+	io_chan[num] = chan;
 
 	return E_OK;
 }
@@ -92,7 +105,7 @@ int io_init()
 	eprint("Initializing I/O\n");
 
 	while (chanc) {
-		res = io_chan_init(chanc->num, chanc->name, chanc->units);
+		res = io_chan_create(chanc->num, chanc->name, chanc->units);
 		if (res != E_OK) {
 			return res;
 		}
@@ -109,10 +122,9 @@ void io_shutdown()
 {
 	eprint("Shutdown I/O\n");
 	for (int c_num=0 ; c_num<IO_MAX_CHAN ; c_num++) {
-		struct chan_t *chan = io_chan[c_num];
+		struct chan_proto_t *chan = io_chan[c_num];
 		if (chan) {
-			eprint("    Shutdown channel %i (%s)\n", chan->num, chan->name);
-			chan->f_shutdown(chan);
+			chan->shutdown(chan);
 			free(chan);
 		}
 	}
@@ -140,7 +152,7 @@ int io_dispatch(int dir, uint16_t n, uint16_t *r)
 	// channel/unit command
 	} else {
 		int chan_n = (n & 0b0000000000011110) >> 1;
-		struct chan_t *chan = io_chan[chan_n];
+		struct chan_proto_t *chan = io_chan[chan_n];
 		int res;
 		if (chan) {
 #ifdef WITH_DEBUGGER
@@ -150,7 +162,7 @@ int io_dispatch(int dir, uint16_t n, uint16_t *r)
 			free(narg);
 			free(rarg);
 #endif
-			res = chan->f_cmd(chan, dir, n, r);
+			res = chan->cmd(chan, dir, n, r);
 			LOG(D_IO, 1, "I/O command, result = %i", res);
 		} else {
 			res = IO_NO;
