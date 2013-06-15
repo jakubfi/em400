@@ -141,7 +141,6 @@ int cfg_args_decode(struct cfg_arg_t *arg, const char *format, ...)
 	char *c;
 	char **s;
 	char **eptr = NULL;
-	int count = 0;
 
 	if (!format) {
 		return E_ARG_FORMAT;
@@ -175,7 +174,6 @@ int cfg_args_decode(struct cfg_arg_t *arg, const char *format, ...)
 			default:
 				return E_ARG_FORMAT;
 		}
-		count++;
 		format++;
 		arg = arg->next;
 	}
@@ -186,7 +184,7 @@ int cfg_args_decode(struct cfg_arg_t *arg, const char *format, ...)
 		return E_ARG_TOO_MANY;
 	}
 
-	return count;
+	return E_OK;
 }
 
 // -----------------------------------------------------------------------

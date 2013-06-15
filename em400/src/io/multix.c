@@ -48,14 +48,19 @@ struct chan_proto_t * mx_create(struct cfg_unit_t *units)
 	while (cunit) {
 		struct unit_proto_t *proto = io_unit_proto_get(mx_unit_proto, cunit->name);
 		if (!proto) {
+			gerr = E_IO_UNIT_UNKNOWN;
 			return NULL;
 		}
 
 		eprint("    Unit %i: %s\n", cunit->num, proto->name);
 
 		struct unit_proto_t *unit = proto->create(cunit->args);
+		if (!unit) {
+			return NULL;
+		}
+
 		unit->num = cunit->num;
-		unit->name = strdup(proto->name);
+		unit->name = proto->name;
 		unit->create = proto->create;
 		unit->reset = proto->reset;
 		unit->shutdown = proto->shutdown;
@@ -70,7 +75,6 @@ struct chan_proto_t * mx_create(struct cfg_unit_t *units)
 // -----------------------------------------------------------------------
 void mx_shutdown(struct chan_proto_t *chan)
 {
-	eprint("  Channel %i: %s\n", chan->num, chan->name);
 	for (int i=0 ; i<MX_MAX_DEVICES ; i++) {
 		struct unit_proto_t *unit = CHAN->pline[i];
 		if (unit) {
@@ -78,6 +82,7 @@ void mx_shutdown(struct chan_proto_t *chan)
 			unit->shutdown(unit);
 		}
 	}
+	free(chan);
 }
 
 // -----------------------------------------------------------------------

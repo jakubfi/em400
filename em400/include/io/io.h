@@ -25,6 +25,8 @@
 
 #define IO_MAX_CHAN	16
 
+extern int gerr;
+
 struct cfg_unit_t;
 struct cfg_arg_t;
 

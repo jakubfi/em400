@@ -10,7 +10,7 @@ ADD_EXECUTABLE(em400
 
 target_link_libraries(em400
 	${FLEX_LIBRARIES} ${BISON_LIBRARIES}
-	${DEBUGGER_LIB} cpu io
+	${DEBUGGER_LIB} cpu io devices
 	readline ncurses rt
 )
 

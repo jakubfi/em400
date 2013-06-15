@@ -21,17 +21,46 @@
 #include "cpu/memory.h"
 
 #include "io/multix_winch.h"
+#include "io/devices/winch.h"
+
+#define UNIT ((struct mx_unit_winch_t *)(unit))
 
 // -----------------------------------------------------------------------
 struct unit_proto_t * mx_winch_create(struct cfg_arg_t *args)
 {
 	struct mx_unit_winch_t *unit = calloc(1, sizeof(struct mx_unit_winch_t));
+
+	int cyl, head, sect, ssize;
+	char *image = NULL;
+	int res = cfg_args_decode(args, "iiiis", &cyl, &head, &sect, &ssize, &image);
+	if (res != E_OK) {
+		gerr = res;
+		return NULL;
+	}
+
+	eprint("      Winchester: cyl=%i, head=%i, sectors=%i, spt=%i\n", cyl, head, sect, ssize);
+	unit->winchester = winch_create(cyl, head, sect, ssize);
+	if (!unit->winchester) {
+		gerr = E_ALLOC;
+		return NULL;
+	}
+
+	eprint("      Image: %s\n", image);
+	res = winch_open(unit->winchester, image);
+	free(image);
+	if (res != E_OK) {
+		gerr = res;
+		return NULL;
+	}
+
 	return (struct unit_proto_t *) unit;
 }
 
 // -----------------------------------------------------------------------
 void mx_winch_shutdown(struct unit_proto_t *unit)
 {
+	winch_shutdown(UNIT->winchester);
+	free(unit);
 }
 
 // -----------------------------------------------------------------------

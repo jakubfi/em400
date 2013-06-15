@@ -36,6 +36,8 @@
 
 #include "debugger/log.h"
 
+int gerr = E_OK;
+
 struct chan_proto_t chan_proto[] = {
 	{ -1, "char",		cchar_create,	cchar_shutdown,	cchar_reset,	cchar_cmd },
 	{ -1, "mem",		cmem_create,	cmem_shutdown,	cmem_reset,		cmem_cmd },
@@ -81,11 +83,11 @@ int io_chan_create(int num, char *name, struct cfg_unit_t *units)
 	eprint("  Channel %i: %s\n", num, name);
 	struct chan_proto_t *chan = proto->create(units);
 	if (!chan) {
-		return E_ALLOC;
+		return gerr;
 	}
 
 	chan->num = num;
-	chan->name = strdup(name);
+	chan->name = proto->name;
 	chan->create = proto->create;
 	chan->shutdown = proto->shutdown;
 	chan->reset = proto->reset;
@@ -124,8 +126,8 @@ void io_shutdown()
 	for (int c_num=0 ; c_num<IO_MAX_CHAN ; c_num++) {
 		struct chan_proto_t *chan = io_chan[c_num];
 		if (chan) {
+			eprint("  Channel %i: %s\n", chan->num, chan->name);
 			chan->shutdown(chan);
-			free(chan);
 		}
 	}
 }
