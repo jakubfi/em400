@@ -135,7 +135,7 @@ int pp_eval(char *buf, struct node_t *n)
 			pos += pp_eval_2op(buf+pos, ">>", n->n1, n->n2);
 			break;
 		case N_SCALE:
-			pos += pp_eval_2op(buf+pos, "//", n->n1, n->n2);
+			pos += pp_eval_2op(buf+pos, "\\", n->n1, n->n2);
 			break;
 		default:
 			*(buf+pos) = '\0';
