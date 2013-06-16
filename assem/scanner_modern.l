@@ -28,7 +28,6 @@
 void m_yyerror(char *, ...);
 char strbuf[1024];
 char *strbufpos;
-int comment_type = CMT_LINE;
 
 #define YY_USER_ACTION	parser_lineno = m_yylineno;
 
@@ -56,9 +55,8 @@ chars	[-+:,\[\]<>\*/()]
 
 %%
 
-^{cmtstart}	{ BEGIN(cmt); comment_type = CMT_LINE; }
-{cmtstart}	{ BEGIN(cmt); comment_type = CMT_CODE; }
-<cmt>{anything}	{ m_yylval.val.s = strdup(m_yytext); BEGIN(INITIAL); return comment_type; }
+{cmtstart}	{ BEGIN(cmt); }
+<cmt>{anything}	{ m_yylval.val.s = strdup(m_yytext); BEGIN(INITIAL); return CMT; }
 {ws}		;
 
 \"						{ BEGIN string; strbufpos = strbuf; }

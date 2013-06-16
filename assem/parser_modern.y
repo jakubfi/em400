@@ -50,7 +50,7 @@ int yylex(void);
 %token P_S P_F P_ALL P_NAME P_BA P_INT P_OUT P_LAB P_NLAB P_MEM P_OS P_IFUNK P_IFUND P_IFDEF P_FI P_SS P_HS P_MAX P_LEN P_E P_FILE P_TEXT
 
 %token '[' ']' ',' ':' '@' '(' ')'
-%token <val.s> STRING NAME CMT_CODE CMT_LINE
+%token <val.s> STRING NAME CMT
 %token <val> VALUE
 %token <val.v> REGISTER
 
@@ -113,7 +113,7 @@ label:
 	;
 
 comment:
-	CMT_LINE		{ $$ = mknod_valstr(N_COMMENT, 0, $1); }
+	CMT				{ $$ = mknod_valstr(N_COMMENT, 0, $1); }
 	;
 
 data:
