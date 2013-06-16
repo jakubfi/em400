@@ -1,4 +1,4 @@
-.prog "multix/IWYZE-mcl"
+.prog "multix/IWYZE"
 
 ; CONFIG configs/multix.cfg
 
@@ -30,9 +30,15 @@ mx_int:
 
 start:
 	LWT r3, 0
-	IM mask
+	IM mask				; first IWYZE, by MULTIX initialization
 	MCL
-	IM mask
+	IM mask				; second IWYZE, by MCL
+	IN r5, 0b0000000000000110	; third IWYZE, by software reset
+	.data fail, fail, fin, fail
+
+fin:
+	LW r5, 13
+fail:
 	hlt 077
 
 .finprog
@@ -40,5 +46,6 @@ start:
 ; XPCT int(rz[15]) : 0
 ; XPCT int(rz[6]) : 0
 ; XPCT int(alarm) : 0
-; XPCT int(r3) : 2
+; XPCT int(r3) : 3
 ; XPCT bin(r4) : 0b0000001000000000
+; XPCT int(r5) : 13
