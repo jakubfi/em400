@@ -78,6 +78,7 @@ struct unit_proto_t * io_unit_proto_get(struct unit_proto_t *proto, char *name);
 
 int io_init();
 void io_shutdown();
+void io_reset();
 int io_dispatch(int dir, uint16_t n, uint16_t *r);
 
 #endif

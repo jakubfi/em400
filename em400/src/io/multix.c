@@ -19,6 +19,7 @@
 #include <pthread.h>
 #include <unistd.h>
 #include <string.h>
+#include <pthread.h>
 
 #include "io/io.h"
 #include "io/multix.h"
@@ -26,7 +27,7 @@
 
 #include "cfg.h"
 #include "errors.h"
-
+#include "cpu/interrupts.h"
 #include "debugger/log.h"
 
 #define CHAN ((struct mx_chan_t *)(chan))
@@ -44,11 +45,16 @@ struct chan_proto_t * mx_create(struct cfg_unit_t *units)
 		return NULL;
 	}
 
+	pthread_mutexattr_t attr;
+	pthread_mutexattr_init(&attr);
+	pthread_mutex_init(&chan->int_mutex, &attr);
+
 	struct cfg_unit_t *cunit = units;
 	while (cunit) {
 		struct unit_proto_t *proto = io_unit_proto_get(mx_unit_proto, cunit->name);
 		if (!proto) {
 			gerr = E_IO_UNIT_UNKNOWN;
+			free(chan);
 			return NULL;
 		}
 
@@ -56,6 +62,7 @@ struct chan_proto_t * mx_create(struct cfg_unit_t *units)
 
 		struct unit_proto_t *unit = proto->create(cunit->args);
 		if (!unit) {
+			free(chan);
 			return NULL;
 		}
 
@@ -82,17 +89,141 @@ void mx_shutdown(struct chan_proto_t *chan)
 			unit->shutdown(unit);
 		}
 	}
+	pthread_mutex_destroy(&CHAN->int_mutex);
 	free(chan);
 }
 
 // -----------------------------------------------------------------------
 void mx_reset(struct chan_proto_t *chan)
 {
+	for (int i=0 ; i<MX_MAX_DEVICES ; i++) {
+		struct unit_proto_t *punit = CHAN->pline[i];
+		if (punit) {
+			punit->reset(punit);
+		}
+		CHAN->lline[i] = NULL;
+	}
+	mx_int(CHAN, 0, MX_INT_IWYZE);
+}
+
+// -----------------------------------------------------------------------
+void mx_int_report(struct mx_chan_t *chan)
+{
+	if (CHAN->int_head) {
+		int_set(chan->proto.num + 12);
+	}
+}
+
+// -----------------------------------------------------------------------
+void mx_int(struct mx_chan_t *chan, int unit_n, int interrupt)
+{
+	struct mx_int_t *mx_int = malloc(sizeof(struct mx_int_t));
+	mx_int->unit_n = unit_n;
+	mx_int->interrupt = interrupt;
+	mx_int->next = NULL;
+
+	pthread_mutex_lock(&CHAN->int_mutex);
+
+	if (interrupt == MX_INT_IWYZE) {
+		mx_int_setq(chan, mx_int);
+		mx_int_report(chan);
+	} else if (interrupt <= MX_INT_IWYTE) {
+		mx_int_preq(chan, mx_int);
+		mx_int_report(chan);
+	} else {
+		mx_int_enq(chan, mx_int);
+	}
+
+	pthread_mutex_unlock(&CHAN->int_mutex);
+}
+
+// -----------------------------------------------------------------------
+void mx_int_enq(struct mx_chan_t *chan, struct mx_int_t *mx_int)
+{
+	if (chan->int_tail) {
+		chan->int_tail->next = mx_int;
+		chan->int_tail = mx_int;
+	} else {
+		chan->int_tail = chan->int_head = mx_int;
+	}
+}
+
+// -----------------------------------------------------------------------
+void mx_int_preq(struct mx_chan_t *chan, struct mx_int_t *mx_int)
+{
+	if (chan->int_head) {
+		mx_int->next = chan->int_tail;
+		chan->int_head = mx_int;
+	} else {
+		chan->int_tail = chan->int_head = mx_int;
+	}
+}
+
+// -----------------------------------------------------------------------
+void mx_int_setq(struct mx_chan_t *chan, struct mx_int_t *mx_int)
+{
+	struct mx_int_t *inth;
+	struct mx_int_t *next;
+	inth = chan->int_head;
+	while (inth) {
+		next = inth->next;
+		free(inth);
+		inth = next;
+	}
+	chan->int_tail = chan->int_head = mx_int;
+}
+
+// -----------------------------------------------------------------------
+struct mx_int_t * mx_int_deq(struct mx_chan_t *chan)
+{
+	struct mx_int_t *inth = chan->int_head;
+
+	if (inth) {
+		if (chan->int_head == chan->int_tail) {
+			chan->int_tail = NULL;
+		}
+		chan->int_head = chan->int_head->next;
+	}
+
+	return inth;
 }
 
 // -----------------------------------------------------------------------
 int mx_cmd_int_requeue(struct chan_proto_t *chan)
 {
+	pthread_mutex_lock(&CHAN->int_mutex);
+
+	if (CHAN->int_head) {
+		struct mx_int_t *inth = mx_int_deq(CHAN);
+		mx_int_enq(CHAN, inth);
+	}
+
+	pthread_mutex_unlock(&CHAN->int_mutex);
+
+	mx_int_report(CHAN);
+
+	return IO_OK;
+}
+
+// -----------------------------------------------------------------------
+int mx_cmd_intspec(struct chan_proto_t *chan, uint16_t *r_arg)
+{
+	pthread_mutex_lock(&CHAN->int_mutex);
+
+	struct mx_int_t *inth = mx_int_deq(CHAN);
+
+	pthread_mutex_unlock(&CHAN->int_mutex);
+
+	if (inth) {
+		*r_arg = (inth->interrupt << 8) | (inth->unit_n);
+		printf("%i, %i, %x\n", inth->unit_n, inth->interrupt, *r_arg);
+		free(inth);
+	} else {
+		*r_arg = 0;
+	}
+
+	mx_int_report(CHAN);
+
 	return IO_OK;
 }
 
@@ -150,12 +281,11 @@ int mx_cmd(struct chan_proto_t *chan, int dir, uint16_t n_arg, uint16_t *r_arg)
 		switch (cmd) {
 			case MX_CMD_RESET:
 				mx_reset(chan);
-				// generates interrupt
 				return IO_OK;
 			case MX_CMD_EXISTS:
 				return IO_OK;
 			case MX_CMD_INTSPEC:
-				return IO_OK;
+				return mx_cmd_intspec(chan, r_arg);
 			default:
 				break;
 		}
@@ -196,6 +326,11 @@ int mx_cmd(struct chan_proto_t *chan, int dir, uint16_t n_arg, uint16_t *r_arg)
 struct mx_cf_sc * mx_decode_cf_sc(int addr)
 {
 	struct mx_cf_sc *cf = calloc(1, sizeof(struct mx_cf_sc));
+
+	if (!cf) {
+		return NULL;
+	}
+
 	uint16_t data;
 
 	// --- word 0 - header ---
@@ -208,11 +343,13 @@ struct mx_cf_sc * mx_decode_cf_sc(int addr)
 
 	if (cf->pl_desc_count <= 0) {
 		// missing physical line description
+		free(cf);
 		return NULL;
 	}
 
 	if (cf->ll_desc_count <= 0) {
 		// missing logical line descroption
+		free(cf);
 		return NULL;
 	}
 
@@ -221,6 +358,7 @@ struct mx_cf_sc * mx_decode_cf_sc(int addr)
 
 	if (!cf->pl || !cf->ll) {
 		// cannot allocate memory
+		free(cf);
 		return NULL;
 	}
 
@@ -268,7 +406,6 @@ struct mx_cf_sc * mx_decode_cf_sc(int addr)
 
 	return cf;
 }
-
 
 // -----------------------------------------------------------------------
 void mx_free_cf_sc(struct mx_cf_sc *cf)

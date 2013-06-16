@@ -87,7 +87,7 @@ void aw_rl_history_write(char *hist_file)
 	while (h) {
 		int res = 0;
 		res += fwrite(h->cmd, h->len, 1, hf);
-		res += fwrite("\n", 1, 1, hf);
+		res = fwrite("\n", 1, 1, hf);
 		h = h->next;
 	}
 

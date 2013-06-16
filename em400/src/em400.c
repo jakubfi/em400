@@ -74,23 +74,24 @@ void em400_init()
 {
 	int res;
 
+	cpu_reset();
+
 	res = mem_init();
 	if (res != E_OK) {
 		eerr("Error initializing memory: %s\n", get_error(res));
 	}
 
-	res = io_init();
-	if (res != E_OK) {
-		eerr("Error initializing I/O: %s\n", get_error(res));
-	}
+	mem_clear();
 
 	res = timer_init();
 	if (res != E_OK) {
 		eerr("Error initializing CPU timer: %s\n", get_error(res));
 	}
 
-	mem_clear();
-	cpu_reset();
+	res = io_init();
+	if (res != E_OK) {
+		eerr("Error initializing I/O: %s\n", get_error(res));
+	}
 
 	if (em400_cfg.program_name) {
 		eprint("Loading image '%s' into OS memory\n", em400_cfg.program_name);

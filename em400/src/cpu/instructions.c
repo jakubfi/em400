@@ -834,9 +834,8 @@ int op_73_mcl()
 	Rw(R_SR, 0);
 	int_clear_all();
 	reg_write(0, 0, 1, 1);
-	// TODO: zeruj kanały
-	// TODO: zeruj urządzenia
 	mem_remove_maps();
+	io_reset();
 	return OP_OK;
 }
 

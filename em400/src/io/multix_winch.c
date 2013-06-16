@@ -35,6 +35,7 @@ struct unit_proto_t * mx_winch_create(struct cfg_arg_t *args)
 	int res = cfg_args_decode(args, "iiiis", &cyl, &head, &sect, &ssize, &image);
 	if (res != E_OK) {
 		gerr = res;
+		free(unit);
 		return NULL;
 	}
 
@@ -42,6 +43,7 @@ struct unit_proto_t * mx_winch_create(struct cfg_arg_t *args)
 	unit->winchester = winch_create(cyl, head, sect, ssize);
 	if (!unit->winchester) {
 		gerr = E_ALLOC;
+		free(unit);
 		return NULL;
 	}
 
@@ -50,6 +52,8 @@ struct unit_proto_t * mx_winch_create(struct cfg_arg_t *args)
 	free(image);
 	if (res != E_OK) {
 		gerr = res;
+		winch_shutdown(UNIT->winchester);
+		free(unit);
 		return NULL;
 	}
 

@@ -19,16 +19,29 @@
 #define MULTIX_H
 
 #include <inttypes.h>
+#include <pthread.h>
 
 #include "cfg.h"
 #include "io.h"
 
 #define MX_MAX_DEVICES 256
 
+struct mx_int_t {
+	unsigned unit_n;
+	unsigned interrupt;
+	struct mx_int_t *next;
+};
+
 struct mx_chan_t {
 	struct chan_proto_t proto;
+
 	struct unit_proto_t *lline[MX_MAX_DEVICES];
 	struct unit_proto_t *pline[MX_MAX_DEVICES];
+
+	struct mx_int_t *int_head;
+	struct mx_int_t *int_tail;
+	int int_reported;
+	pthread_mutex_t int_mutex;
 };
 
 // multix commands
@@ -172,6 +185,12 @@ struct chan_proto_t * mx_create(struct cfg_unit_t *units);
 void mx_shutdown(struct chan_proto_t *chan);
 void mx_reset(struct chan_proto_t *chan);
 int mx_cmd(struct chan_proto_t *chan, int dir, uint16_t n_arg, uint16_t *r_arg);
+
+void mx_int(struct mx_chan_t *chan, int unit_n, int interrupt);
+void mx_int_enq(struct mx_chan_t *chan, struct mx_int_t *mx_int);
+void mx_int_preq(struct mx_chan_t *chan, struct mx_int_t *mx_int);
+void mx_int_setq(struct mx_chan_t *chan, struct mx_int_t *mx_int);
+struct mx_int_t * mx_int_deq(struct mx_chan_t *chan);
 
 struct mx_cf_sc * mx_decode_cf_sc(int addr);
 void mx_free_cf_sc(struct mx_cf_sc *cf);

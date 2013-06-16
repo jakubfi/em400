@@ -95,6 +95,8 @@ int io_chan_create(int num, char *name, struct cfg_unit_t *units)
 
 	io_chan[num] = chan;
 
+	chan->reset(chan);
+
 	return E_OK;
 }
 
@@ -128,6 +130,17 @@ void io_shutdown()
 		if (chan) {
 			eprint("  Channel %i: %s\n", chan->num, chan->name);
 			chan->shutdown(chan);
+		}
+	}
+}
+
+// -----------------------------------------------------------------------
+void io_reset()
+{
+	for (int c_num=0 ; c_num<IO_MAX_CHAN ; c_num++) {
+		struct chan_proto_t *chan = io_chan[c_num];
+		if (chan) {
+			chan->reset(chan);
 		}
 	}
 }
