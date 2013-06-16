@@ -25,8 +25,7 @@ mask:
 mx_int:
 	AW r3, 1
 	LW r4, [stackp]
-	AWT r4, -1
-	LW r4, [r4]
+	LW r4, [r4-1]
 	LIP
 
 start:
