@@ -33,7 +33,7 @@ start:
 	IM mask				; first IWYZE, by MULTIX initialization
 	MCL
 	IM mask				; second IWYZE, by MCL
-	IN r5, 0b0000000000000110	; third IWYZE, by software reset
+	IN r5, 3\14			; third IWYZE, by software reset
 	.data fail, fail, fin, fail
 
 fin:
