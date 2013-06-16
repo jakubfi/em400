@@ -216,7 +216,6 @@ int mx_cmd_intspec(struct chan_proto_t *chan, uint16_t *r_arg)
 
 	if (inth) {
 		*r_arg = (inth->interrupt << 8) | (inth->unit_n);
-		printf("%i, %i, %x\n", inth->unit_n, inth->interrupt, *r_arg);
 		free(inth);
 	} else {
 		*r_arg = 0;
