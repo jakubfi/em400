@@ -142,6 +142,7 @@ pragma:
 		$$ = nl_append($$, $2);
 		$$ = nl_append_n($$, mknod_valstr(N_FINSEG, 0, NULL));
 	}
+	| P_S expr				{ $$ = make_nl(mknod_nargs(N_SETIC, $2, NULL)); }
 	;
 
 instruction:
