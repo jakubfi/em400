@@ -135,7 +135,7 @@ chars	[-+:,\[\]<>\*/()]
 
 "<<"	return SHL;
 ">>"	return SHR;
-"//"	return SCALE;
+"\\"	return SCALE;
 
 {chars}	{
 	return *m_yytext;

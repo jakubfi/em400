@@ -264,10 +264,10 @@ struct node_t * eval_2op(int operator, struct node_t *n)
 					nn->value = n1->value / n2->value;
 					break;
 				case N_SHR:
-					nn->value = n1->value << n2->value;
+					nn->value = n1->value >> n2->value;
 					break;
 				case N_SHL:
-					nn->value = n1->value >> n2->value;
+					nn->value = n1->value << n2->value;
 					break;
 				case N_SCALE:
 					nn->value = n1->value << (15 - n2->value);
