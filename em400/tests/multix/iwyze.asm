@@ -11,6 +11,7 @@
 	.equ int_c3 intsc + 3
 
 	.equ unmask_chan 0b0000011110000000
+	.equ iwyze 0b0000001000000000
 
 	UJ start
 
@@ -23,9 +24,12 @@
 mask:
 	.data unmask_chan
 mx_int:
-	AW r3, 1
 	LW r4, [stackp]
 	LW r4, [r4-1]
+	CW r4, iwyze
+	JN int_exit
+	AW r3, 1
+int_exit:
 	LIP
 
 start:
@@ -47,5 +51,4 @@ fail:
 ; XPCT int(rz[6]) : 0
 ; XPCT int(alarm) : 0
 ; XPCT int(r3) : 3
-; XPCT bin(r4) : 0b0000001000000000
 ; XPCT int(r5) : 13
