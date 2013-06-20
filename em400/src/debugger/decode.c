@@ -92,16 +92,16 @@ int decode_mxpsuk_pl(struct mx_cf_sc_pl *pl, char *b)
 	if (pl->used) {
 		pos += sprintf(b+pos, "  Direction: (%i) ", pl->dir);
 		switch (pl->dir) {
-			case 0b100:
+			case MX_DIR_OUTPUT:
 				pos += sprintf(b+pos, "output");
 				break;
-			case 0b010:
+			case MX_DIR_INPUT:
 				pos += sprintf(b+pos, "input");
 				break;
-			case 0b110:
+			case MX_DIR_HALF_DUPLEX:
 				pos += sprintf(b+pos, "half-duplex");
 				break;
-			case 0b111:
+			case MX_DIR_FULL_DUPLEX:
 				pos += sprintf(b+pos, "full-duplex");
 				break;
 			default:
@@ -112,22 +112,22 @@ int decode_mxpsuk_pl(struct mx_cf_sc_pl *pl, char *b)
 
 		pos += sprintf(b+pos, "  Line type: (%i) ", pl->dev_type);
 		switch (pl->dev_type) {
-			case 0:
+			case MX_PHY_USART_ASYNC:
 				pos += sprintf(b+pos, "USART asynch");
 				break;
-			case 1:
+			case MX_PHY_8255:
 				pos += sprintf(b+pos, "8255 (parallel)");
 				break;
-			case 2:
+			case MX_PHY_USART_SYNC:
 				pos += sprintf(b+pos, "USART synch");
 				break;
-			case 3:
+			case MX_PHY_WINCHESTER:
 				pos += sprintf(b+pos, "winchester");
 				break;
-			case 4:
+			case MX_PHY_MTAPE:
 				pos += sprintf(b+pos, "magnetic tape");
 				break;
-			case 5:
+			case MX_PHY_FLOPPY:
 				pos += sprintf(b+pos, "floppy disk");
 				break;
 			default:
@@ -148,10 +148,10 @@ int decode_mxpsuk_ll_winch(struct mx_ll_winch *winch, char *b)
 	int pos = 0;
 	pos += sprintf(b+pos, "    Winchester type: (%i) ", winch->type);
 	switch (winch->type) {
-		case 0:
+		case MX_WINCH_BASF:
 			pos += sprintf(b+pos, "BASF");
 			break;
-		case 1:
+		case MX_WINCH_NEC:
 			pos += sprintf(b+pos, "NEC");
 			break;
 		default:
@@ -195,37 +195,37 @@ int decode_mxpsuk_ll(struct mx_cf_sc_ll *ll, char *b)
 	pos += sprintf(b+pos, "  Physical line id: %i\n", ll->pl_id);
 	pos += sprintf(b+pos, "  Protocol: (%i) ", ll->proto);
 	switch (ll->proto) {
-		case 0:
+		case MX_PROTO_PUNCH_READER:
 			pos += sprintf(b+pos, "punched tape reader\n");
 			break;
-		case 1:
+		case MX_PROTO_PUNCHER:
 			pos += sprintf(b+pos, "tape puncher\n");
 			break;
-		case 2:
+		case MX_PROTO_TERMINAL:
 			pos += sprintf(b+pos, "terminal\n");
 			break;
-		case 3:
+		case MX_PROTO_SOM_PUNCH_READER:
 			pos += sprintf(b+pos, "SOM punched tape reader\n");
 			break;
-		case 4:
+		case MX_PROTO_SOM_PUNCHER:
 			pos += sprintf(b+pos, "SOM tape puncher\n");
 			break;
-		case 5:
+		case MX_PROTO_SOM_TERMINAL:
 			pos += sprintf(b+pos, "SOM terminal\n");
 			break;
-		case 6:
+		case MX_PROTO_WINCHESTER:
 			pos += sprintf(b+pos, "winchester\n");
 			pos += decode_mxpsuk_ll_winch(ll->winch, b+pos);
 			break;
-		case 7:
+		case MX_PROTO_MTAPE:
 			pos += sprintf(b+pos, "magnetic tape\n");
 			pos += sprintf(b+pos, "  Formatter: %i\n", ll->formatter);
 			break;
-		case 8:
+		case MX_PROTO_FLOPPY:
 			pos += sprintf(b+pos, "floppy disk\n");
 			pos += decode_mxpsuk_ll_floppy(ll->floppy, b+pos);
 			break;
-		case 9:
+		case MX_PROTO_TTY_ITWL:
 			pos += sprintf(b+pos, "TTY ITWL\n");
 			break;
 		default:

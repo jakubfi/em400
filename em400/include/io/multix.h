@@ -65,6 +65,7 @@ enum mx_cmd_e {
 
 // multix interrupts
 enum mx_int_e {
+	MX_INT_INIEA = 0,
 	// special
 	MX_INT_INSKA = 1,
 	MX_INT_IWYZE = 2,
@@ -93,7 +94,47 @@ enum mx_int_e {
 	MX_INT_INKOD = 25,
 	MX_INT_INPAO = 32,
 	MX_INT_IPARE = 33,
-	MX_INT_IOPRU = 34
+	MX_INT_IOPRU = 34,
+	MX_INT_IEPS0 = 35,
+	MX_INT_IEPS6 = 36,
+	MX_INT_IEPS7 = 37,
+	MX_INT_IEPS8 = 38,
+	MX_INT_IEPSC = 39,
+	MX_INT_IEPSD = 40,
+	MX_INT_IEPSE = 41,
+	MX_INT_IEPSF = 42
+};
+
+// multix logical line protocols
+enum mx_log_proto_e {
+	MX_PROTO_PUNCH_READER = 0,
+	MX_PROTO_PUNCHER = 1,
+	MX_PROTO_TERMINAL = 2,
+	MX_PROTO_SOM_PUNCH_READER = 3,
+	MX_PROTO_SOM_PUNCHER = 4,
+	MX_PROTO_SOM_TERMINAL = 5,
+	MX_PROTO_WINCHESTER = 6,
+	MX_PROTO_MTAPE = 7,
+	MX_PROTO_FLOPPY = 8,
+	MX_PROTO_TTY_ITWL = 9
+};
+
+// multix physical line direction
+enum mx_phy_direction_e {
+	MX_DIR_OUTPUT		= 0b100,
+	MX_DIR_INPUT		= 0b010,
+	MX_DIR_HALF_DUPLEX	= 0b110,
+	MX_DIR_FULL_DUPLEX	= 0b111
+};
+
+// multix physical line type
+enum mx_phy_type_e {
+	MX_PHY_USART_ASYNC = 0,
+	MX_PHY_8255 = 1,
+	MX_PHY_USART_SYNC = 2,
+	MX_PHY_WINCHESTER = 3,
+	MX_PHY_MTAPE = 4,
+	MX_PHY_FLOPPY = 5
 };
 
 // --- cf: set configuration -------------------------------------------------

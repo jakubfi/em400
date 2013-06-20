@@ -28,6 +28,12 @@ struct mx_unit_winch_t {
 	struct winchester_t *winchester;
 };
 
+// Winchester types
+enum mx_winch_type_e {
+	MX_WINCH_BASF = 0,
+	MX_WINCH_NEC = 1
+};
+
 // Winchester operations
 
 enum mx_winch_t_oper_e {
