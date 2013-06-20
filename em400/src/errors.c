@@ -19,6 +19,8 @@
 
 #include "errors.h"
 
+int gerr = E_OK;
+
 struct _em400_errordesc {
 	int code;
 	char *message;

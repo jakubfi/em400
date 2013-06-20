@@ -103,6 +103,7 @@ void mx_reset(struct chan_proto_t *chan)
 		}
 		CHAN->lline[i] = NULL;
 	}
+	CHAN->confset = 0;
 	mx_int(CHAN, 0, MX_INT_IWYZE);
 }
 
@@ -235,7 +236,18 @@ int mx_cmd_test(struct chan_proto_t *chan, unsigned param, uint16_t *r_arg)
 // -----------------------------------------------------------------------
 int mx_cmd_setcfg(struct chan_proto_t *chan, uint16_t *r_arg)
 {
-	//struct mx_cf_sc *cf = mx_decode_cf_sc(*r_arg);
+	if (CHAN->confset != 0) {
+		mx_int(CHAN, 0, MX_INT_INKON);
+		return IO_OK;
+	}
+
+	struct mx_cf_sc *cf = mx_decode_cf_sc(*r_arg);
+
+	if (!cf) {
+		mx_int(CHAN, 0, MX_INT_INKON);
+		return IO_OK;
+	}
+
 	return IO_OK;
 }
 

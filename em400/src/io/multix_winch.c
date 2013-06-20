@@ -28,43 +28,61 @@
 // -----------------------------------------------------------------------
 struct unit_proto_t * mx_winch_create(struct cfg_arg_t *args)
 {
-	struct mx_unit_winch_t *unit = calloc(1, sizeof(struct mx_unit_winch_t));
-
 	int cyl, head, sect, ssize;
-	char *image = NULL;
-	int res = cfg_args_decode(args, "iiiis", &cyl, &head, &sect, &ssize, &image);
+	char *image_name = NULL;
+	int res = cfg_args_decode(args, "iiiis", &cyl, &head, &sect, &ssize, &image_name);
 	if (res != E_OK) {
 		gerr = res;
-		free(unit);
 		return NULL;
 	}
 
-	eprint("      Winchester: cyl=%i, head=%i, sectors=%i, spt=%i\n", cyl, head, sect, ssize);
-	unit->winchester = winch_create(cyl, head, sect, ssize);
-	if (!unit->winchester) {
+	eprint("      Winchester: cyl=%i, head=%i, sectors=%i, spt=%i, image=%s\n", cyl, head, sect, ssize, image_name);
+
+	struct winchester_t *winchester = winch_create(cyl, head, sect, ssize, image_name);
+	if (!winchester) {
+		free(image_name);
+		return NULL;
+	}
+
+	struct mx_unit_winch_t *unit = mx_winch_create_internal(winchester);
+	if (!unit) {
+		free(image_name);
 		gerr = E_ALLOC;
-		free(unit);
 		return NULL;
 	}
 
-	eprint("      Image: %s\n", image);
-	res = winch_open(unit->winchester, image);
-	free(image);
-	if (res != E_OK) {
-		gerr = res;
-		winch_shutdown(UNIT->winchester);
-		free(unit);
-		return NULL;
-	}
-
+	free(image_name);
 	return (struct unit_proto_t *) unit;
+}
+
+// -----------------------------------------------------------------------
+struct mx_unit_winch_t * mx_winch_create_internal(struct winchester_t *winchester)
+{
+	struct mx_unit_winch_t *unit = calloc(1, sizeof(struct mx_unit_winch_t));
+	if (unit) {
+		mx_winch_connect(unit, winchester);
+	}
+	return unit;
+}
+
+// -----------------------------------------------------------------------
+void mx_winch_connect(struct mx_unit_winch_t *unit, struct winchester_t *winchester)
+{
+	UNIT->winchester = winchester;
+}
+
+// -----------------------------------------------------------------------
+void mx_winch_disconnect(struct mx_unit_winch_t *unit)
+{
+	winch_shutdown(UNIT->winchester);
+	UNIT->winchester = NULL;
 }
 
 // -----------------------------------------------------------------------
 void mx_winch_shutdown(struct unit_proto_t *unit)
 {
-	winch_shutdown(UNIT->winchester);
-	free(unit);
+	mx_winch_disconnect(UNIT);
+	free(UNIT);
 }
 
 // -----------------------------------------------------------------------
@@ -106,10 +124,10 @@ struct mx_winch_cf_t * mx_winch_cf_t_decode(int addr)
 		case MX_WINCH_READ:
 		case MX_WINCH_WRITE:
 			cf->transmit = calloc(1, sizeof(struct mx_winch_cf_transmit));
-			cf->transmit->ign_crc	   = (data & 0b0001000000000000) >> 12;
-			cf->transmit->sector_fill   = (data & 0b0000100000000000) >> 11;
-			cf->transmit->watch_eof	 = (data & 0b0000010000000000) >> 10;
-			cf->transmit->cpu		   = (data & 0b0000000000010000) >> 4;
+			cf->transmit->ign_crc		= (data & 0b0001000000000000) >> 12;
+			cf->transmit->sector_fill	= (data & 0b0000100000000000) >> 11;
+			cf->transmit->watch_eof		= (data & 0b0000010000000000) >> 10;
+			cf->transmit->cpu			= (data & 0b0000000000010000) >> 4;
 			cf->transmit->nb			= (data & 0b0000000000001111);
 			data = MEMB(0, addr+1);
 			cf->transmit->addr = data;

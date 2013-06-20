@@ -36,8 +36,6 @@
 
 #include "debugger/log.h"
 
-int gerr = E_OK;
-
 struct chan_proto_t chan_proto[] = {
 	{ -1, "char",		cchar_create,	cchar_shutdown,	cchar_reset,	cchar_cmd },
 	{ -1, "mem",		cmem_create,	cmem_shutdown,	cmem_reset,		cmem_cmd },

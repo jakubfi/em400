@@ -18,6 +18,8 @@
 #ifndef ERRORS_H
 #define ERRORS_H
 
+extern int gerr;
+
 enum em400_error {
 	E_UNKNOWN = -32000,
 	E_MEM_NO_OS_MEM,

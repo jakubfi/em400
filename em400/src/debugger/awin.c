@@ -80,7 +80,7 @@ void aw_rl_history_write(char *hist_file)
 	}
 
 	struct h_entry *h = aw_history;
-	while (h->prev) {
+	while (h && h->prev) {
 		h = h->prev;
 	}
 

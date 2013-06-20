@@ -35,6 +35,7 @@ struct mx_int_t {
 struct mx_chan_t {
 	struct chan_proto_t proto;
 
+	int confset;
 	struct unit_proto_t *lline[MX_MAX_DEVICES];
 	struct unit_proto_t *pline[MX_MAX_DEVICES];
 

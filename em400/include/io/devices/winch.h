@@ -31,9 +31,7 @@ struct winchester_t {
 	FILE *image;
 };
 
-struct winchester_t * winch_create(int cylinders, int heads, int sectors, int sector_size);
-int winch_open(struct winchester_t *w, char *image_name);
-void winch_close(struct winchester_t *w);
+struct winchester_t * winch_create(int cylinders, int heads, int sectors, int sector_size, char *image_name);
 void winch_shutdown(struct winchester_t *winch);
 
 

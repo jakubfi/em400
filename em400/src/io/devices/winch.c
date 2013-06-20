@@ -26,58 +26,51 @@
 
 
 // -----------------------------------------------------------------------
-struct winchester_t * winch_create(int cylinders, int heads, int sectors, int sector_size)
+struct winchester_t * winch_create(int cylinders, int heads, int sectors, int sector_size, char *image_name)
 {
-	struct winchester_t *w = malloc(sizeof(struct winchester_t));
-	if (w) {
-		w->cylinders = cylinders;
-		w->heads = heads;
-		w->sectors = sectors;
-		w->sector_size = sector_size;
-		w->total_sectors = cylinders*heads*sectors;
-		w->image_name = NULL;
-		w->image = NULL;
-	}
-
-	return w;
-}
-
-// -----------------------------------------------------------------------
-int winch_open(struct winchester_t *w, char *image_name)
-{
-	if (!w) {
-		return E_WINCH_NO;
-	}
-
-	if (w->image || w->image_name) {
-		return E_WINCH_OPEN;
-	}
-
 	struct stat st;
 	if (stat(image_name, &st) != 0) {
-		return E_WINCH_STAT;
+		gerr = E_WINCH_STAT;
+		return NULL;
 	} else {
-		int want_size = w->sector_size * (w->cylinders * w->heads * w->sectors);
+		int want_size = sector_size * (cylinders * heads * sectors);
 		if (st.st_size != want_size) {
-			return E_WINCH_SIZE;
+			gerr = E_WINCH_SIZE;
+			return NULL;
 		}
 	}
 
-	w->image = fopen(image_name, "r+");
-	if (!w->image) {
-		return E_FILE_OPEN;
+	FILE *image = fopen(image_name, "r+");
+	if (!image) {
+		gerr = E_FILE_OPEN;
+		return NULL;
 	}
 
+	struct winchester_t *w = malloc(sizeof(struct winchester_t));
+	if (!w) {
+		gerr = E_ALLOC;
+		return NULL;
+	}
+
+	w->cylinders = cylinders;
+	w->heads = heads;
+	w->sectors = sectors;
+	w->sector_size = sector_size;
+	w->total_sectors = cylinders * heads * sectors;
+	w->image = image;
 	w->image_name = strdup(image_name);
+
 	if (!w->image_name) {
-		return E_ALLOC;
+		gerr = E_ALLOC;
+		winch_shutdown(w);
+		return NULL;
 	}
 
 	return E_OK;
 }
 
 // -----------------------------------------------------------------------
-void winch_close(struct winchester_t *w)
+void winch_shutdown(struct winchester_t *w)
 {
 	if (w) {
 		if (w->image) {
@@ -87,12 +80,6 @@ void winch_close(struct winchester_t *w)
 		free(w->image_name);
 		w->image_name = NULL;
 	}
-}
-
-// -----------------------------------------------------------------------
-void winch_shutdown(struct winchester_t *w)
-{
-	winch_close(w);
 	free(w);
 }
 
