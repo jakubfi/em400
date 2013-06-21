@@ -364,6 +364,7 @@ int mx_cmd(struct chan_proto_t *chan, int dir, uint16_t n_arg, uint16_t *r_arg)
 }
 
 // -----------------------------------------------------------------------
+// this needs to be divided into smaller functions
 int mx_decode_cf_sc(int addr, struct mx_cf_sc *cf)
 {
 	if (!cf) {
@@ -382,13 +383,13 @@ int mx_decode_cf_sc(int addr, struct mx_cf_sc *cf)
 
 	if ((cf->pl_desc_count <= 0) || (cf->pl_desc_count > MX_MAX_DEVICES)) {
 		// missing physical line description
-		cf->retf = MX_SC_E_NUMLINES;
+		cf->err_code = MX_SC_E_NUMLINES;
 		return E_MX_DECODE;
 	}
 
 	if ((cf->ll_desc_count <= 0) || (cf->ll_desc_count > MX_MAX_DEVICES)) {
 		// missing logical line descroption
-		cf->retf = MX_SC_E_NUMLINES;
+		cf->err_code = MX_SC_E_NUMLINES;
 		return E_MX_DECODE;
 	}
 
@@ -396,9 +397,13 @@ int mx_decode_cf_sc(int addr, struct mx_cf_sc *cf)
 	cf->ll = calloc(cf->ll_desc_count, sizeof(struct mx_cf_sc_ll));
 
 	if (!cf->pl || !cf->ll) {
-		cf->retf = MX_SC_E_NOMEM;
+		cf->err_code = MX_SC_E_NOMEM;
 		return E_MX_DECODE;
 	}
+
+	// for logical line sanity checks
+	struct mx_cf_sc_pl phy[MX_MAX_DEVICES];
+	int phy_i = 0;
 
 	// --- physical lines, 1 word each ---
 	for (int pln=0 ; pln<cf->pl_desc_count ; pln++) {
@@ -407,6 +412,35 @@ int mx_decode_cf_sc(int addr, struct mx_cf_sc *cf)
 		cf->pl[pln].used =	(data & 0b0001000000000000) >> 12;
 		cf->pl[pln].type =	(data & 0b0000111100000000) >> 8;
 		cf->pl[pln].count =	(data & 0b0000000000011111) + 1;
+
+		// temporary store physical line configuration for checking logical lines sanity
+		for (int i=phy_i ; i<phy_i+cf->pl[pln].count ; i++) {
+			phy[i].dir = cf->pl[pln].dir;
+			phy[i].used = cf->pl[pln].used;
+			phy[i].type = cf->pl[pln].type;
+			phy[i].count = 0;
+		}
+		phy_i += cf->pl[pln].count;
+
+		if (cf->pl[pln].used) {
+			// check type for correctness
+			if ((cf->pl[pln].type < 0) || (cf->pl[pln].type >= MX_PHY_MAX)) {
+				cf->err_code = MX_SC_E_DEVTYPE;
+				cf->err_line = pln;
+				return E_MX_DECODE;
+			}
+
+			// check direction for correctness
+			if ((cf->pl[pln].type <= MX_PHY_USART_SYNC)
+			&& (cf->pl[pln].dir != MX_DIR_OUTPUT)
+			&& (cf->pl[pln].dir != MX_DIR_INPUT)
+			&& (cf->pl[pln].dir != MX_DIR_HALF_DUPLEX)
+			&& (cf->pl[pln].dir != MX_DIR_FULL_DUPLEX)) {
+				cf->err_code = MX_SC_E_DIR;
+				cf->err_line = pln;
+				return E_MX_DECODE;
+			}
+		}
 	}
 
 	// --- logical lines, 4 words each ---
@@ -414,11 +448,32 @@ int mx_decode_cf_sc(int addr, struct mx_cf_sc *cf)
 		data = MEMB(0, addr+2+cf->pl_desc_count+(lln*4));
 		cf->ll[lln].proto = (data & 0b1111111100000000) >> 8;
 		cf->ll[lln].pl_id = (data & 0b0000000011111111);
+
+		// make sure that we are trying to configure physical line, that is active (configured)
+		if (!phy[cf->ll[lln].pl_id].used) {
+			cf->err_code = MX_SC_E_PHY_UNUSED;
+			cf->err_line = lln;
+			return E_MX_DECODE;
+		}
+
+		// make sure that there is no other logical line which uses this physical line
+		if (phy[cf->ll[lln].pl_id].count != 0) {
+			cf->err_code = MX_SC_E_PHY_BUSY;
+			cf->err_line = lln;
+			return E_MX_DECODE;
+		}
+
 		switch (cf->ll[lln].proto) {
 			case 6: // Winchester
+				if (phy[cf->ll[lln].pl_id].type != MX_PHY_WINCHESTER) {
+					cf->err_code = MX_SC_E_PROTO_MISMATCH;
+					cf->err_line = lln;
+					return E_MX_DECODE;
+				}
 				cf->ll[lln].winch = calloc(1, sizeof(struct mx_ll_winch));
 				if (!cf->ll[lln].winch) {
-					cf->retf = MX_SC_E_NOMEM;
+					cf->err_code = MX_SC_E_NOMEM;
+					cf->err_line = lln;
 					return E_MX_DECODE;
 				}
 				data = MEMB(0, addr+2+cf->pl_desc_count+(lln*4)+1);
@@ -426,14 +481,25 @@ int mx_decode_cf_sc(int addr, struct mx_cf_sc *cf)
 				cf->ll[lln].winch->format_protect =	(data & 0b0000000011111111);
 				break;
 			case 7: // magnetic tape
+				if (phy[cf->ll[lln].pl_id].type != MX_PHY_MTAPE) {
+					cf->err_code = MX_SC_E_PROTO_MISMATCH;
+					cf->err_line = lln;
+					return E_MX_DECODE;
+				}
 				// MT protocol changes meaning of pl_id and adds formatter field
 				cf->ll[lln].pl_id &= 0b00011111;
 				cf->ll[lln].formatter = (cf->ll[lln].pl_id & 0b10000000) >> 7;
 				break;
 			case 8: // floppy disk
+				if (phy[cf->ll[lln].pl_id].type != MX_PHY_FLOPPY) {
+					cf->err_code = MX_SC_E_PROTO_MISMATCH;
+					cf->err_line = lln;
+					return E_MX_DECODE;
+				}
 				cf->ll[lln].floppy = calloc(1, sizeof(struct mx_ll_floppy));
 				if (!cf->ll[lln].floppy) {
-					cf->retf = MX_SC_E_NOMEM;
+					cf->err_code = MX_SC_E_NOMEM;
+					cf->err_line = lln;
 					return E_MX_DECODE;
 				}
 				data = MEMB(0, addr+2+cf->pl_desc_count+(lln*4)+1);
@@ -441,9 +507,11 @@ int mx_decode_cf_sc(int addr, struct mx_cf_sc *cf)
 				cf->ll[lln].floppy->format_protect =	(data & 0b0000000011111111);
 				break;
 			default: // unknown protocol
-				cf->retf = MX_SC_E_PROTO_MISSING;
+				cf->err_code = MX_SC_E_PROTO_MISSING;
+				cf->err_line = lln;
 				return E_MX_DECODE;
 		}
+		phy[cf->ll[lln].pl_id].count++;
 	}
 
 	return E_OK;

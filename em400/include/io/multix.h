@@ -220,7 +220,8 @@ struct mx_cf_sc_ll {
 struct mx_cf_sc {
 	int pl_desc_count;
 	int ll_desc_count;
-	uint16_t retf;
+	int err_code;
+	int err_line;
 	struct mx_cf_sc_pl *pl;
 	struct mx_cf_sc_ll *ll;
 };

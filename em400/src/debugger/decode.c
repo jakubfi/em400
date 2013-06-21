@@ -215,7 +215,11 @@ int decode_mxpsuk_ll(struct mx_cf_sc_ll *ll, char *b)
 			break;
 		case MX_PROTO_WINCHESTER:
 			pos += sprintf(b+pos, "winchester\n");
-			pos += decode_mxpsuk_ll_winch(ll->winch, b+pos);
+			if (ll->winch) {
+				pos += decode_mxpsuk_ll_winch(ll->winch, b+pos);
+			} else {
+				pos += sprintf(b+pos, "Missing Winchester logical line description\n");
+			}
 			break;
 		case MX_PROTO_MTAPE:
 			pos += sprintf(b+pos, "magnetic tape\n");
@@ -223,7 +227,11 @@ int decode_mxpsuk_ll(struct mx_cf_sc_ll *ll, char *b)
 			break;
 		case MX_PROTO_FLOPPY:
 			pos += sprintf(b+pos, "floppy disk\n");
-			pos += decode_mxpsuk_ll_floppy(ll->floppy, b+pos);
+			if (ll->floppy) {
+				pos += decode_mxpsuk_ll_floppy(ll->floppy, b+pos);
+			} else {
+				pos += sprintf(b+pos, "Missing floppy logical line description\n");
+			}
 			break;
 		case MX_PROTO_TTY_ITWL:
 			pos += sprintf(b+pos, "TTY ITWL\n");
@@ -256,8 +264,8 @@ char * decode_mxpsuk(uint16_t addr, int arg)
 
 	if (res != E_OK) {
 		pos += sprintf(b+pos, "ERROR DECODING CONFIGURATION FIELD, RESULTS ARE PROBABLY WRONG!\n");
-		pos += sprintf(b+pos, "Error: (%i): ", uk->retf);
-		switch (uk->retf) {
+		pos += sprintf(b+pos, "Error %i for line %i: ", uk->err_code, uk->err_line);
+		switch (uk->err_code) {
 			case MX_SC_E_CONFSET:			pos += sprintf(b+pos, "configuration already set\n"); break;
 			case MX_SC_E_NUMLINES:			pos += sprintf(b+pos, "wrong number of physical or logical lines\n"); break;
 			case MX_SC_E_DEVTYPE:			pos += sprintf(b+pos, "unknown device type in physical line description\n"); break;
@@ -278,6 +286,16 @@ char * decode_mxpsuk(uint16_t addr, int arg)
 
 	pos += sprintf(b+pos, "Line descriptions: physical = %i, logical = %i\n", uk->pl_desc_count, uk->ll_desc_count);
 	pos += sprintf(b+pos, "-------------------------------------\n");
+
+	if (!uk->pl) {
+		pos += sprintf(b+pos, "Missing physical lines configuration.");
+		return buf;
+	}
+
+	if (!uk->pl) {
+		pos += sprintf(b+pos, "Missing logical lines configuration.");
+		return buf;
+	}
 
 	int start_ll = 0;
 	for (i=0 ; i<uk->pl_desc_count ; i++) {
