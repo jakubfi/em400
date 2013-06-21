@@ -246,11 +246,34 @@ char * decode_mxpsuk(uint16_t addr, int arg)
 	if (!buf) {
 		return NULL;
 	}
-
-	struct mx_cf_sc *uk = mx_decode_cf_sc(addr);
+	struct mx_cf_sc *uk = calloc(1, sizeof(struct mx_cf_sc));
 	if (!uk) {
-		pos += sprintf(b+pos, "Cannot decode");
+		pos += sprintf(b+pos, "Cannot allocate memory");
 		return buf;
+	}
+
+	int res = mx_decode_cf_sc(addr, uk);
+
+	if (res != E_OK) {
+		pos += sprintf(b+pos, "ERROR DECODING CONFIGURATION FIELD, RESULTS ARE PROBABLY WRONG!\n");
+		pos += sprintf(b+pos, "Error: (%i): ", uk->retf);
+		switch (uk->retf) {
+			case MX_SC_E_CONFSET:			pos += sprintf(b+pos, "configuration already set\n"); break;
+			case MX_SC_E_NUMLINES:			pos += sprintf(b+pos, "wrong number of physical or logical lines\n"); break;
+			case MX_SC_E_DEVTYPE:			pos += sprintf(b+pos, "unknown device type in physical line description\n"); break;
+			case MX_SC_E_DIR:				pos += sprintf(b+pos, "unknown transmission direction\n"); break;
+			case MX_SC_E_PHY_INCOMPLETE:	pos += sprintf(b+pos, "incomplete physical line description\n"); break;
+			case MX_SC_E_PROTO_MISSING:		pos += sprintf(b+pos, "missing protocol\n"); break;
+			case MX_SC_E_PHY_UNUSED:		pos += sprintf(b+pos, "physical line is not used\n"); break;
+			case MX_SC_E_DIR_MISMATCH:		pos += sprintf(b+pos, "device vs. protocol transmission dricetion mismatch\n"); break;
+			case MX_SC_E_PHY_BUSY:			pos += sprintf(b+pos, "physical line is busy\n"); break;
+			case MX_SC_E_NOMEM:				pos += sprintf(b+pos, "memory exhausted\n"); break;
+			case MX_SC_E_PROTO_MISMATCH:	pos += sprintf(b+pos, "protocol vs. physical line type mismatch\n"); break;
+			case MX_SC_E_PROTO_PARAMS:		pos += sprintf(b+pos, "wrong protocol parameters\n"); break;
+			default:						pos += sprintf(b+pos, "unknown\b"); break;
+		}
+	} else {
+		pos += sprintf(b+pos, "Field decoded correctly\n");
 	}
 
 	pos += sprintf(b+pos, "Line descriptions: physical = %i, logical = %i\n", uk->pl_desc_count, uk->ll_desc_count);

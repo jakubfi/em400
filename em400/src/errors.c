@@ -64,6 +64,7 @@ struct _em400_errordesc {
 	{ E_ARG_NOT_ENOUGH, "Not enough arguments" },
 	{ E_ARG_CONVERSION, "Argument conversion error" },
 	{ E_ARG_FORMAT, "Missing or unknown format" },
+	{ E_MX_DECODE, "Error decoding Multix field" },
 	
 
 	{ E_UNKNOWN, "Unknown error." }

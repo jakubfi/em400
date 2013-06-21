@@ -250,18 +250,33 @@ int mx_cmd_test(struct chan_proto_t *chan, unsigned param, uint16_t *r_arg)
 // -----------------------------------------------------------------------
 int mx_cmd_setcfg(struct chan_proto_t *chan, uint16_t *r_arg)
 {
-	struct mx_cf_sc *cf = mx_decode_cf_sc(*r_arg);
+	// return field address
+    uint16_t retf_addr = *r_arg + 1;
 
-	if (!cf) {
-		mx_int(CHAN, 0, MX_INT_INKON);
-		return IO_OK;
-	}
-
+	// fail, if configuration is already set
 	if (CHAN->confset) {
-		*(cf->retf) = MX_SC_E_CONFSET;
+		MEMBw(0, retf_addr, MX_SC_E_CONFSET);
 		mx_int(CHAN, 0, MX_INT_INKON);
 		return IO_OK;
 	}
+
+	// allocate memory for cf
+	struct mx_cf_sc *cf = calloc(1, sizeof(struct mx_cf_sc));
+
+	// fail, if cannot
+	if (!cf) {
+		MEMBw(0, retf_addr, MX_SC_E_NOMEM);
+		mx_int(CHAN, 0, MX_INT_INKON);
+		return IO_OK;
+	}
+
+	// decode cf field
+	int res = mx_decode_cf_sc(*r_arg, cf);
+
+	if (res != E_OK) {
+	}
+
+	mx_free_cf_sc(cf);
 
 	return IO_OK;
 }
@@ -349,12 +364,10 @@ int mx_cmd(struct chan_proto_t *chan, int dir, uint16_t n_arg, uint16_t *r_arg)
 }
 
 // -----------------------------------------------------------------------
-struct mx_cf_sc * mx_decode_cf_sc(int addr)
+int mx_decode_cf_sc(int addr, struct mx_cf_sc *cf)
 {
-	struct mx_cf_sc *cf = calloc(1, sizeof(struct mx_cf_sc));
-
 	if (!cf) {
-		return NULL;
+		return E_MX_DECODE;
 	}
 
 	uint16_t data;
@@ -365,27 +378,26 @@ struct mx_cf_sc * mx_decode_cf_sc(int addr)
 	cf->ll_desc_count = (data & 0b0000000011111111);
 
 	// --- word 1 - return field ---
-	cf->retf = mem_ptr(0, addr+1);
+	// used by command function
 
-	if (cf->pl_desc_count <= 0) {
+	if ((cf->pl_desc_count <= 0) || (cf->pl_desc_count > MX_MAX_DEVICES)) {
 		// missing physical line description
-		free(cf);
-		return NULL;
+		cf->retf = MX_SC_E_NUMLINES;
+		return E_MX_DECODE;
 	}
 
-	if (cf->ll_desc_count <= 0) {
+	if ((cf->ll_desc_count <= 0) || (cf->ll_desc_count > MX_MAX_DEVICES)) {
 		// missing logical line descroption
-		free(cf);
-		return NULL;
+		cf->retf = MX_SC_E_NUMLINES;
+		return E_MX_DECODE;
 	}
 
 	cf->pl = calloc(cf->pl_desc_count, sizeof(struct mx_cf_sc_pl));
 	cf->ll = calloc(cf->ll_desc_count, sizeof(struct mx_cf_sc_ll));
 
 	if (!cf->pl || !cf->ll) {
-		// cannot allocate memory
-		free(cf);
-		return NULL;
+		cf->retf = MX_SC_E_NOMEM;
+		return E_MX_DECODE;
 	}
 
 	// --- physical lines, 1 word each ---
@@ -396,6 +408,7 @@ struct mx_cf_sc * mx_decode_cf_sc(int addr)
 		cf->pl[pln].type =	(data & 0b0000111100000000) >> 8;
 		cf->pl[pln].count =	(data & 0b0000000000011111) + 1;
 	}
+
 	// --- logical lines, 4 words each ---
 	for (int lln=0 ; lln<cf->ll_desc_count ; lln++) {
 		data = MEMB(0, addr+2+cf->pl_desc_count+(lln*4));
@@ -405,7 +418,8 @@ struct mx_cf_sc * mx_decode_cf_sc(int addr)
 			case 6: // Winchester
 				cf->ll[lln].winch = calloc(1, sizeof(struct mx_ll_winch));
 				if (!cf->ll[lln].winch) {
-					return NULL;
+					cf->retf = MX_SC_E_NOMEM;
+					return E_MX_DECODE;
 				}
 				data = MEMB(0, addr+2+cf->pl_desc_count+(lln*4)+1);
 				cf->ll[lln].winch->type =			(data & 0b1111111100000000) >> 8;
@@ -419,18 +433,20 @@ struct mx_cf_sc * mx_decode_cf_sc(int addr)
 			case 8: // floppy disk
 				cf->ll[lln].floppy = calloc(1, sizeof(struct mx_ll_floppy));
 				if (!cf->ll[lln].floppy) {
-					return NULL;
+					cf->retf = MX_SC_E_NOMEM;
+					return E_MX_DECODE;
 				}
 				data = MEMB(0, addr+2+cf->pl_desc_count+(lln*4)+1);
 				cf->ll[lln].floppy->type =				(data & 0b1111111100000000) >> 8;
 				cf->ll[lln].floppy->format_protect =	(data & 0b0000000011111111);
 				break;
 			default: // unknown protocol
-				return NULL;
+				cf->retf = MX_SC_E_PROTO_MISSING;
+				return E_MX_DECODE;
 		}
 	}
 
-	return cf;
+	return E_OK;
 }
 
 // -----------------------------------------------------------------------

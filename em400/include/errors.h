@@ -59,6 +59,7 @@ enum em400_error {
 	E_ARG_NOT_ENOUGH,
 	E_ARG_CONVERSION,
 	E_ARG_FORMAT,
+	E_MX_DECODE,
 
 
 	E_OK = 0,

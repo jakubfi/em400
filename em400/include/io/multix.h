@@ -180,7 +180,7 @@ enum mx_setconf_errors_e {
     MX_SC_E_PHY_UNUSED		= 6, // physical line is not used
     MX_SC_E_DIR_MISMATCH	= 7, // device vs. protocol transmission dricetion mismatch
     MX_SC_E_PHY_BUSY		= 8, // physical line is busy
-    MX_SC_E_NOMEM			= 9, // no memory
+    MX_SC_E_NOMEM			= 9, // memory exhausted
     MX_SC_E_PROTO_MISMATCH	= 10,// protocol vs. physical line type mismatch
     MX_SC_E_PROTO_PARAMS	= 11 // wrong protocol parameters
 };
@@ -220,7 +220,7 @@ struct mx_cf_sc_ll {
 struct mx_cf_sc {
 	int pl_desc_count;
 	int ll_desc_count;
-	uint16_t *retf;
+	uint16_t retf;
 	struct mx_cf_sc_pl *pl;
 	struct mx_cf_sc_ll *ll;
 };
@@ -283,7 +283,7 @@ void mx_int_preq(struct mx_chan_t *chan, struct mx_int_t *mx_int);
 void mx_int_setq(struct mx_chan_t *chan, struct mx_int_t *mx_int);
 struct mx_int_t * mx_int_deq(struct mx_chan_t *chan);
 
-struct mx_cf_sc * mx_decode_cf_sc(int addr);
+int mx_decode_cf_sc(int addr, struct mx_cf_sc *cf);
 void mx_free_cf_sc(struct mx_cf_sc *cf);
 
 
