@@ -100,6 +100,7 @@ void mx_shutdown(struct chan_proto_t *chan)
 		if (unit) {
 			eprint("    Unit %i: %s\n", unit->num, unit->name);
 			unit->shutdown(unit);
+			CHAN->pline[i] = NULL;
 		}
 	}
 	pthread_mutex_destroy(&CHAN->int_mutex);
@@ -249,14 +250,15 @@ int mx_cmd_test(struct chan_proto_t *chan, unsigned param, uint16_t *r_arg)
 // -----------------------------------------------------------------------
 int mx_cmd_setcfg(struct chan_proto_t *chan, uint16_t *r_arg)
 {
-	if (CHAN->confset != 0) {
+	struct mx_cf_sc *cf = mx_decode_cf_sc(*r_arg);
+
+	if (!cf) {
 		mx_int(CHAN, 0, MX_INT_INKON);
 		return IO_OK;
 	}
 
-	struct mx_cf_sc *cf = mx_decode_cf_sc(*r_arg);
-
-	if (!cf) {
+	if (CHAN->confset) {
+		*(cf->retf) = MX_SC_E_CONFSET;
 		mx_int(CHAN, 0, MX_INT_INKON);
 		return IO_OK;
 	}
@@ -389,10 +391,10 @@ struct mx_cf_sc * mx_decode_cf_sc(int addr)
 	// --- physical lines, 1 word each ---
 	for (int pln=0 ; pln<cf->pl_desc_count ; pln++) {
 		data = MEMB(0, addr+2+pln);
-		cf->pl[pln].dir =		(data & 0b1110000000000000) >> 13;
-		cf->pl[pln].used =		(data & 0b0001000000000000) >> 12;
-		cf->pl[pln].dev_type =	(data & 0b0000111100000000) >> 8;
-		cf->pl[pln].count =		(data & 0b0000000000011111) + 1;
+		cf->pl[pln].dir =	(data & 0b1110000000000000) >> 13;
+		cf->pl[pln].used =	(data & 0b0001000000000000) >> 12;
+		cf->pl[pln].type =	(data & 0b0000111100000000) >> 8;
+		cf->pl[pln].count =	(data & 0b0000000000011111) + 1;
 	}
 	// --- logical lines, 4 words each ---
 	for (int lln=0 ; lln<cf->ll_desc_count ; lln++) {

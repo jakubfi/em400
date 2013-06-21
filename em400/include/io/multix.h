@@ -40,12 +40,21 @@ typedef int (*mx_unit_f_cmd)(struct mx_unit_proto_t *unit, int dir, uint16_t n, 
 struct mx_unit_proto_t {
 	int num;
 	const char *name;
+
 	mx_unit_f_create create;
 	mx_unit_f_shutdown shutdown;
 	mx_unit_f_reset reset;
 	mx_unit_f_cfg_phy cfg_phy;
 	mx_unit_f_cfg_log cfg_log;
 	mx_unit_f_cmd cmd;
+
+	// physical
+	int dir;
+	int used;
+	int type;
+
+	// logical
+	int protocol;
 };
 
 struct mx_int_t {
@@ -127,18 +136,19 @@ enum mx_int_e {
 	MX_INT_IEPSF = 42
 };
 
-// multix logical line protocols
+// multix logical line protocol
 enum mx_log_proto_e {
-	MX_PROTO_PUNCH_READER = 0,
-	MX_PROTO_PUNCHER = 1,
-	MX_PROTO_TERMINAL = 2,
-	MX_PROTO_SOM_PUNCH_READER = 3,
-	MX_PROTO_SOM_PUNCHER = 4,
-	MX_PROTO_SOM_TERMINAL = 5,
-	MX_PROTO_WINCHESTER = 6,
-	MX_PROTO_MTAPE = 7,
-	MX_PROTO_FLOPPY = 8,
-	MX_PROTO_TTY_ITWL = 9
+	MX_PROTO_PUNCH_READER		= 0,
+	MX_PROTO_PUNCHER			= 1,
+	MX_PROTO_TERMINAL			= 2,
+	MX_PROTO_SOM_PUNCH_READER	= 3,
+	MX_PROTO_SOM_PUNCHER		= 4,
+	MX_PROTO_SOM_TERMINAL		= 5,
+	MX_PROTO_WINCHESTER			= 6,
+	MX_PROTO_MTAPE				= 7,
+	MX_PROTO_FLOPPY				= 8,
+	MX_PROTO_TTY_ITWL			= 9,
+	MX_PROTO_MAX				= 10
 };
 
 // multix physical line direction
@@ -151,12 +161,28 @@ enum mx_phy_direction_e {
 
 // multix physical line type
 enum mx_phy_type_e {
-	MX_PHY_USART_ASYNC = 0,
-	MX_PHY_8255 = 1,
-	MX_PHY_USART_SYNC = 2,
-	MX_PHY_WINCHESTER = 3,
-	MX_PHY_MTAPE = 4,
-	MX_PHY_FLOPPY = 5
+	MX_PHY_USART_ASYNC	= 0,
+	MX_PHY_8255			= 1,
+	MX_PHY_USART_SYNC	= 2,
+	MX_PHY_WINCHESTER	= 3,
+	MX_PHY_MTAPE		= 4,
+	MX_PHY_FLOPPY		= 5,
+	MX_PHY_MAX			= 6
+};
+
+enum mx_setconf_errors_e {
+	MX_SC_E_CONFSET			= 0, // configuration already set
+    MX_SC_E_NUMLINES		= 1, // wrong number of physical or logical lines
+    MX_SC_E_DEVTYPE			= 2, // unknown device type in physical line description
+    MX_SC_E_DIR				= 3, // unknown transmission direction
+    MX_SC_E_PHY_INCOMPLETE	= 4, // incomplete physical line description
+    MX_SC_E_PROTO_MISSING	= 5, // missing protocol
+    MX_SC_E_PHY_UNUSED		= 6, // physical line is not used
+    MX_SC_E_DIR_MISMATCH	= 7, // device vs. protocol transmission dricetion mismatch
+    MX_SC_E_PHY_BUSY		= 8, // physical line is busy
+    MX_SC_E_NOMEM			= 9, // no memory
+    MX_SC_E_PROTO_MISMATCH	= 10,// protocol vs. physical line type mismatch
+    MX_SC_E_PROTO_PARAMS	= 11 // wrong protocol parameters
 };
 
 // --- cf: set configuration -------------------------------------------------
@@ -165,7 +191,7 @@ enum mx_phy_type_e {
 struct mx_cf_sc_pl {
 	int dir;
 	int used;
-	int dev_type;
+	int type;
 	int count;
 };
 

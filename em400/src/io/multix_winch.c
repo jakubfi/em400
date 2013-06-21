@@ -46,6 +46,7 @@ struct mx_unit_proto_t * mx_winch_create(struct cfg_arg_t *args)
 
 	struct mx_unit_winch_t *unit = mx_winch_create_internal(winchester);
 	if (!unit) {
+		winch_shutdown(winchester);
 		free(image_name);
 		gerr = E_ALLOC;
 		return NULL;
@@ -94,12 +95,26 @@ void mx_winch_reset(struct mx_unit_proto_t *unit)
 // -----------------------------------------------------------------------
 int mx_winch_cfg_phy(struct mx_unit_proto_t *unit, struct mx_cf_sc_pl *cfg_phy)
 {
+	if (unit && cfg_phy) {
+		unit->dir = cfg_phy->dir;
+		unit->used = 1;
+		unit->type = cfg_phy->type;
+	} else {
+		// error in configuration field
+	}
+
 	return E_OK;
 }
 
 // -----------------------------------------------------------------------
 int mx_winch_cfg_log(struct mx_unit_proto_t *unit, struct mx_cf_sc_ll *cfg_log)
 {
+	if (unit && cfg_log && cfg_log->winch) {
+		UNIT->winch_type = cfg_log->winch->type;
+		UNIT->format_protect = cfg_log->winch->format_protect;
+	} else {
+		// error in configuration field
+	}
 	return E_OK;
 }
 

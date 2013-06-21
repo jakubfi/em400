@@ -116,6 +116,7 @@ void io_shutdown()
 		if (chan) {
 			eprint("  Channel %i: %s\n", chan->num, chan->name);
 			chan->shutdown(chan);
+			io_chan[c_num] = NULL;
 		}
 	}
 }

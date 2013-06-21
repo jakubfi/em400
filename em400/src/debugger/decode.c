@@ -110,8 +110,8 @@ int decode_mxpsuk_pl(struct mx_cf_sc_pl *pl, char *b)
 		}
 		pos += sprintf(b+pos, "\n");
 
-		pos += sprintf(b+pos, "  Line type: (%i) ", pl->dev_type);
-		switch (pl->dev_type) {
+		pos += sprintf(b+pos, "  Line type: (%i) ", pl->type);
+		switch (pl->type) {
 			case MX_PHY_USART_ASYNC:
 				pos += sprintf(b+pos, "USART asynch");
 				break;

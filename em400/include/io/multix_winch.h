@@ -27,6 +27,8 @@
 struct mx_unit_winch_t {
 	struct mx_unit_proto_t proto;
 	struct winchester_t *winchester;
+	int winch_type;
+	int format_protect;
 };
 
 // Winchester types
