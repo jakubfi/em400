@@ -26,6 +26,22 @@
 
 #define MX_MAX_DEVICES 256
 
+struct mx_unit_proto_t;
+
+typedef struct mx_unit_proto_t * (*mx_unit_f_create)(struct cfg_arg_t *args);
+typedef void (*mx_unit_f_shutdown)(struct mx_unit_proto_t *unit);
+typedef void (*mx_unit_f_reset)(struct mx_unit_proto_t *unit);
+typedef int (*mx_unit_f_cmd)(struct mx_unit_proto_t *unit, int dir, uint16_t n, uint16_t *r);
+
+struct mx_unit_proto_t {
+	int num;
+	const char *name;
+	mx_unit_f_create create;
+	mx_unit_f_shutdown shutdown;
+	mx_unit_f_reset reset;
+	mx_unit_f_cmd cmd;
+};
+
 struct mx_int_t {
 	unsigned unit_n;
 	unsigned interrupt;
@@ -36,8 +52,8 @@ struct mx_chan_t {
 	struct chan_proto_t proto;
 
 	int confset;
-	struct unit_proto_t *lline[MX_MAX_DEVICES];
-	struct unit_proto_t *pline[MX_MAX_DEVICES];
+	struct mx_unit_proto_t *lline[MX_MAX_DEVICES];
+	struct mx_unit_proto_t *pline[MX_MAX_DEVICES];
 
 	struct mx_int_t *int_head;
 	struct mx_int_t *int_tail;
@@ -223,6 +239,7 @@ struct mx_cf_cl_monitor {
 
 // -----------------------------------------------------------------------
 
+struct mx_unit_proto_t * mx_unit_proto_get(struct mx_unit_proto_t *proto, char *name);
 struct chan_proto_t * mx_create(struct cfg_unit_t *units);
 void mx_shutdown(struct chan_proto_t *chan);
 void mx_reset(struct chan_proto_t *chan);

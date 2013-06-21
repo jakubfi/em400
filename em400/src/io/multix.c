@@ -19,6 +19,7 @@
 #include <pthread.h>
 #include <unistd.h>
 #include <string.h>
+#include <strings.h>
 #include <pthread.h>
 
 #include "io/io.h"
@@ -32,10 +33,22 @@
 
 #define CHAN ((struct mx_chan_t *)(chan))
 
-struct unit_proto_t mx_unit_proto[] = {
+struct mx_unit_proto_t mx_unit_proto[] = {
 	{ -1, "winchester",	mx_winch_create,	mx_winch_shutdown,	mx_winch_reset,	mx_winch_cmd },
 	{ -1, NULL,			NULL,				NULL,				NULL,			NULL }
 };
+
+// -----------------------------------------------------------------------
+struct mx_unit_proto_t * mx_unit_proto_get(struct mx_unit_proto_t *proto, char *name)
+{
+	while (proto && proto->name) {
+		if (strcasecmp(name, proto->name) == 0) {
+			return proto;
+		}
+		proto++;
+	}
+	return NULL;
+}
 
 // -----------------------------------------------------------------------
 struct chan_proto_t * mx_create(struct cfg_unit_t *units)
@@ -51,7 +64,7 @@ struct chan_proto_t * mx_create(struct cfg_unit_t *units)
 
 	struct cfg_unit_t *cunit = units;
 	while (cunit) {
-		struct unit_proto_t *proto = io_unit_proto_get(mx_unit_proto, cunit->name);
+		struct mx_unit_proto_t *proto = mx_unit_proto_get(mx_unit_proto, cunit->name);
 		if (!proto) {
 			gerr = E_IO_UNIT_UNKNOWN;
 			free(chan);
@@ -60,7 +73,7 @@ struct chan_proto_t * mx_create(struct cfg_unit_t *units)
 
 		eprint("    Unit %i: %s\n", cunit->num, proto->name);
 
-		struct unit_proto_t *unit = proto->create(cunit->args);
+		struct mx_unit_proto_t *unit = proto->create(cunit->args);
 		if (!unit) {
 			free(chan);
 			return NULL;
@@ -83,7 +96,7 @@ struct chan_proto_t * mx_create(struct cfg_unit_t *units)
 void mx_shutdown(struct chan_proto_t *chan)
 {
 	for (int i=0 ; i<MX_MAX_DEVICES ; i++) {
-		struct unit_proto_t *unit = CHAN->pline[i];
+		struct mx_unit_proto_t *unit = CHAN->pline[i];
 		if (unit) {
 			eprint("    Unit %i: %s\n", unit->num, unit->name);
 			unit->shutdown(unit);
@@ -97,7 +110,7 @@ void mx_shutdown(struct chan_proto_t *chan)
 void mx_reset(struct chan_proto_t *chan)
 {
 	for (int i=0 ; i<MX_MAX_DEVICES ; i++) {
-		struct unit_proto_t *punit = CHAN->pline[i];
+		struct mx_unit_proto_t *punit = CHAN->pline[i];
 		if (punit) {
 			punit->reset(punit);
 		}

@@ -26,7 +26,7 @@
 #define UNIT ((struct mx_unit_winch_t *)(unit))
 
 // -----------------------------------------------------------------------
-struct unit_proto_t * mx_winch_create(struct cfg_arg_t *args)
+struct mx_unit_proto_t * mx_winch_create(struct cfg_arg_t *args)
 {
 	int cyl, head, sect, ssize;
 	char *image_name = NULL;
@@ -52,7 +52,7 @@ struct unit_proto_t * mx_winch_create(struct cfg_arg_t *args)
 	}
 
 	free(image_name);
-	return (struct unit_proto_t *) unit;
+	return (struct mx_unit_proto_t *) unit;
 }
 
 // -----------------------------------------------------------------------
@@ -79,20 +79,20 @@ void mx_winch_disconnect(struct mx_unit_winch_t *unit)
 }
 
 // -----------------------------------------------------------------------
-void mx_winch_shutdown(struct unit_proto_t *unit)
+void mx_winch_shutdown(struct mx_unit_proto_t *unit)
 {
 	mx_winch_disconnect(UNIT);
 	free(UNIT);
 }
 
 // -----------------------------------------------------------------------
-void mx_winch_reset(struct unit_proto_t *unit)
+void mx_winch_reset(struct mx_unit_proto_t *unit)
 {
 
 }
 
 // -----------------------------------------------------------------------
-int mx_winch_cmd(struct unit_proto_t *unit, int dir, uint16_t n, uint16_t *r)
+int mx_winch_cmd(struct mx_unit_proto_t *unit, int dir, uint16_t n, uint16_t *r)
 {
 	return IO_OK;
 }

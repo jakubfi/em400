@@ -59,18 +59,6 @@ struct chan_proto_t * io_chan_proto_get(struct chan_proto_t *proto, char *name)
 }
 
 // -----------------------------------------------------------------------
-struct unit_proto_t * io_unit_proto_get(struct unit_proto_t *proto, char *name)
-{
-	while (proto && proto->name) {
-		if (strcasecmp(name, proto->name) == 0) {
-			return proto;
-		}
-		proto++;
-	}
-	return NULL;
-}
-
-// -----------------------------------------------------------------------
 int io_chan_create(int num, char *name, struct cfg_unit_t *units)
 {
 	struct chan_proto_t *proto = io_chan_proto_get(chan_proto, name);

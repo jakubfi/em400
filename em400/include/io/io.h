@@ -46,11 +46,6 @@ typedef void (*chan_f_shutdown)(struct chan_proto_t *chan);
 typedef void (*chan_f_reset)(struct chan_proto_t *chan);
 typedef int (*chan_f_cmd)(struct chan_proto_t *chan, int dir, uint16_t n, uint16_t *r);
 
-typedef struct unit_proto_t * (*unit_f_create)(struct cfg_arg_t *args);
-typedef void (*unit_f_shutdown)(struct unit_proto_t *unit);
-typedef void (*unit_f_reset)(struct unit_proto_t *unit);
-typedef int (*unit_f_cmd)(struct unit_proto_t *unit, int dir, uint16_t n, uint16_t *r);
-
 struct chan_proto_t {
 	int num;
 	const char *name;
@@ -60,19 +55,9 @@ struct chan_proto_t {
 	chan_f_cmd cmd;
 };
 
-struct unit_proto_t {
-	int num;
-	const char *name;
-	unit_f_create create;
-	unit_f_shutdown shutdown;
-	unit_f_reset reset;
-	unit_f_cmd cmd;
-};
-
 extern struct chan_proto_t *io_chan[IO_MAX_CHAN];
 
 struct chan_proto_t * io_chan_proto_get(struct chan_proto_t *proto, char *name);
-struct unit_proto_t * io_unit_proto_get(struct unit_proto_t *proto, char *name);
 
 int io_init();
 void io_shutdown();
