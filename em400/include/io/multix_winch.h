@@ -102,6 +102,8 @@ void mx_winch_connect(struct mx_unit_winch_t *unit, struct winchester_t *winches
 void mx_winch_disconnect(struct mx_unit_winch_t *unit);
 void mx_winch_shutdown(struct mx_unit_proto_t *unit);
 void mx_winch_reset(struct mx_unit_proto_t *unit);
+int mx_winch_cfg_phy(struct mx_unit_proto_t *unit, struct mx_cf_sc_pl *cfg_phy);
+int mx_winch_cfg_log(struct mx_unit_proto_t *unit, struct mx_cf_sc_ll *cfg_log);
 int mx_winch_cmd(struct mx_unit_proto_t *unit, int dir, uint16_t n, uint16_t *r);
 struct mx_winch_cf_t * mx_winch_cf_t_decode(int addr);
 void mx_winch_cf_t_free(struct mx_winch_cf_t *cf);

@@ -34,8 +34,8 @@
 #define CHAN ((struct mx_chan_t *)(chan))
 
 struct mx_unit_proto_t mx_unit_proto[] = {
-	{ -1, "winchester",	mx_winch_create,	mx_winch_shutdown,	mx_winch_reset,	mx_winch_cmd },
-	{ -1, NULL,			NULL,				NULL,				NULL,			NULL }
+	{ -1, "winchester",	mx_winch_create,	mx_winch_shutdown,	mx_winch_reset,	mx_winch_cfg_phy,	mx_winch_cfg_log,	mx_winch_cmd },
+	{ -1, NULL,			NULL,				NULL,				NULL,			NULL,				NULL,				NULL }
 };
 
 // -----------------------------------------------------------------------

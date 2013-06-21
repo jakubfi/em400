@@ -92,6 +92,18 @@ void mx_winch_reset(struct mx_unit_proto_t *unit)
 }
 
 // -----------------------------------------------------------------------
+int mx_winch_cfg_phy(struct mx_unit_proto_t *unit, struct mx_cf_sc_pl *cfg_phy)
+{
+	return E_OK;
+}
+
+// -----------------------------------------------------------------------
+int mx_winch_cfg_log(struct mx_unit_proto_t *unit, struct mx_cf_sc_ll *cfg_log)
+{
+	return E_OK;
+}
+
+// -----------------------------------------------------------------------
 int mx_winch_cmd(struct mx_unit_proto_t *unit, int dir, uint16_t n, uint16_t *r)
 {
 	return IO_OK;

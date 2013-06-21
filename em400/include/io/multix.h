@@ -27,10 +27,14 @@
 #define MX_MAX_DEVICES 256
 
 struct mx_unit_proto_t;
+struct mx_cf_sc_pl;
+struct mx_cf_sc_ll;
 
 typedef struct mx_unit_proto_t * (*mx_unit_f_create)(struct cfg_arg_t *args);
 typedef void (*mx_unit_f_shutdown)(struct mx_unit_proto_t *unit);
 typedef void (*mx_unit_f_reset)(struct mx_unit_proto_t *unit);
+typedef int (*mx_unit_f_cfg_phy)(struct mx_unit_proto_t *unit, struct mx_cf_sc_pl *cfg_phy);
+typedef int (*mx_unit_f_cfg_log)(struct mx_unit_proto_t *unit, struct mx_cf_sc_ll *cfg_log);
 typedef int (*mx_unit_f_cmd)(struct mx_unit_proto_t *unit, int dir, uint16_t n, uint16_t *r);
 
 struct mx_unit_proto_t {
@@ -39,6 +43,8 @@ struct mx_unit_proto_t {
 	mx_unit_f_create create;
 	mx_unit_f_shutdown shutdown;
 	mx_unit_f_reset reset;
+	mx_unit_f_cfg_phy cfg_phy;
+	mx_unit_f_cfg_log cfg_log;
 	mx_unit_f_cmd cmd;
 };
 
