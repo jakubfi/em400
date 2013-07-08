@@ -33,6 +33,7 @@ extern struct decoder_t decoders[];
 struct decoder_t * find_decoder(char *name);
 
 char * decode_iv(uint16_t addr, int arg);
+char * decode_ctx(uint16_t addr, int arg);
 char * decode_mxpsuk(uint16_t addr, int arg);
 char * decode_mxpsdl(uint16_t addr, int arg);
 char * decode_mxpst_winch(uint16_t addr, int arg);

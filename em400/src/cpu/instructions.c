@@ -562,7 +562,7 @@ int op_71()
 // -----------------------------------------------------------------------
 int op_71_blc()
 {
-	if ((((R(0) & 0b1111111100000000) >> 8) & IR_b) != IR_b) {
+	if (((R(0) >> 8) & IR_b) != IR_b) {
 		return OP_P;
 	} else {
 		return OP_OK;
@@ -589,7 +589,7 @@ int op_71_exl()
 // -----------------------------------------------------------------------
 int op_71_brc()
 {
-	if (((R(0) & 0b0000000011111111) & IR_b) != IR_b) {
+	if ((R(0) & IR_b) != IR_b) {
 		return OP_P;
 	} else {
 		return OP_OK;
@@ -820,6 +820,7 @@ int op_73_hlt()
 		}
 	}
 
+	// otherwise, wait for interrupt
 	pthread_mutex_lock(&int_mutex_rp);
 	while (!RP) {
 		pthread_cond_wait(&int_cond_rp, &int_mutex_rp);

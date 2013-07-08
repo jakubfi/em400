@@ -26,6 +26,7 @@
 #include <readline/readline.h>
 #include <readline/history.h>
 
+#include "utils.h"
 #include "debugger/awin.h"
 
 volatile int aw_layout_changed;
@@ -660,31 +661,9 @@ void awprint(int id, int attr, char *format, ...)
 // -----------------------------------------------------------------------
 void awtbbinprint(int id, int attr, char *format, uint32_t value, int size)
 {
-	char *c = format;
-	int v;
-	char buf[1024];
-	int pos = 0;
-
-	size--;
-
-	while (*c) {
-		switch (*c) {
-		case '.':
-			if (size >= 0) {
-				v = (value >> size) & 1;
-				size--;
-				pos += sprintf(buf+pos, "%1i", v);
-			} else {
-				pos += sprintf(buf+pos, "?");
-			}
-			break;
-		default:
-			pos += sprintf(buf+pos, "%c", *c);
-			break;
-		}
-		c++;
-	}
-	awtbprint(id, attr, buf);
+	char *buf = int2binf(format, value, size);
+	awtbprint(id, attr, "%s", buf);
+	free(buf);
 }
 
 // -----------------------------------------------------------------------
@@ -712,7 +691,7 @@ void awfillbg(int id, int attr, char c, int len)
 	fill[len] = '\0';
 
 	wattron(w->win, aw_attr[attr]);
-	wprintw(w->win, fill);
+	wprintw(w->win, "%s", fill);
 	wmove(w->win, y, x);
 	wattroff(w->win, aw_attr[attr]);
 
@@ -799,7 +778,7 @@ int aw_nc_readline(int id, int attr, char *prompt, char *buffer, int buflen)
 	keypad(w->win, TRUE);
 	getyx(w->win, y, x);
 	wattron(w->win, aw_attr[attr]);
-	mvwprintw(w->win, y, 0, prompt);
+	mvwprintw(w->win, y, 0, "%s", prompt);
 	wattroff(w->win, aw_attr[attr]);
 	getyx(w->win, y, x);
 
@@ -1065,7 +1044,7 @@ void awin_tb_update(int wid, int height)
 	while (line && (cur_line < height)) {
 		struct awin_tb_fragment *fragment = line->beg;
 		while (fragment) {
-			awprint(wid, fragment->attr, fragment->text);
+			awprint(wid, fragment->attr, "%s", fragment->text);
 			fragment = fragment->next;
 		}
 		line = line->next;

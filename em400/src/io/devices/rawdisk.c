@@ -22,20 +22,20 @@
 #include <sys/stat.h>
 
 #include "errors.h"
-#include "io/devices/winch.h"
+#include "io/devices/rawdisk.h"
 
 
 // -----------------------------------------------------------------------
-struct winchester_t * winch_create(int cylinders, int heads, int sectors, int sector_size, char *image_name)
+struct rawdisk_t * rawdisk_create(int cylinders, int heads, int sectors, int sector_size, char *image_name)
 {
 	struct stat st;
 	if (stat(image_name, &st) != 0) {
-		gerr = E_WINCH_STAT;
+		gerr = E_DISK_STAT;
 		return NULL;
 	} else {
 		int want_size = sector_size * (cylinders * heads * sectors);
 		if (st.st_size != want_size) {
-			gerr = E_WINCH_SIZE;
+			gerr = E_DISK_SIZE;
 			return NULL;
 		}
 	}
@@ -46,107 +46,107 @@ struct winchester_t * winch_create(int cylinders, int heads, int sectors, int se
 		return NULL;
 	}
 
-	struct winchester_t *w = malloc(sizeof(struct winchester_t));
-	if (!w) {
+	struct rawdisk_t *disk = malloc(sizeof(struct rawdisk_t));
+	if (!disk) {
 		gerr = E_ALLOC;
 		return NULL;
 	}
 
-	w->cylinders = cylinders;
-	w->heads = heads;
-	w->sectors = sectors;
-	w->sector_size = sector_size;
-	w->total_sectors = cylinders * heads * sectors;
-	w->image = image;
-	w->image_name = strdup(image_name);
+	disk->cylinders = cylinders;
+	disk->heads = heads;
+	disk->sectors = sectors;
+	disk->sector_size = sector_size;
+	disk->total_sectors = cylinders * heads * sectors;
+	disk->image = image;
+	disk->image_name = strdup(image_name);
 
-	if (!w->image_name) {
+	if (!disk->image_name) {
 		gerr = E_ALLOC;
-		winch_shutdown(w);
+		rawdisk_shutdown(disk);
 		return NULL;
 	}
 
-	return E_OK;
+	return disk;
 }
 
 // -----------------------------------------------------------------------
-void winch_shutdown(struct winchester_t *w)
+void rawdisk_shutdown(struct rawdisk_t *d)
 {
-	if (w) {
-		if (w->image) {
-			fclose(w->image);
-			w->image = NULL;
+	if (d) {
+		if (d->image) {
+			fclose(d->image);
+			d->image = NULL;
 		}
-		free(w->image_name);
-		w->image_name = NULL;
+		free(d->image_name);
+		d->image_name = NULL;
 	}
-	free(w);
+	free(d);
 }
 
 // -----------------------------------------------------------------------
-int winch_p2l(struct winchester_t *w, int cyl, int head, int sect)
+int rawdisk_p2l(struct rawdisk_t *d, int cyl, int head, int sect)
 {
-	return sect + (head * w->sectors) + (cyl * w->heads * w->sectors);
+	return sect + (head * d->sectors) + (cyl * d->heads * d->sectors);
 }
 
 // -----------------------------------------------------------------------
-int winch_read_sector_p(struct winchester_t *w, uint8_t *buf, int cyl, int head, int sect)
+int rawdisk_read_sector_p(struct rawdisk_t *d, uint8_t *buf, int cyl, int head, int sect)
 {
-	return winch_read_sector_l(w, buf, winch_p2l(w, cyl, head, sect));
+	return rawdisk_read_sector_l(d, buf, rawdisk_p2l(d, cyl, head, sect));
 }
 
 // -----------------------------------------------------------------------
-int winch_read_sector_l(struct winchester_t *w, uint8_t *buf, int sect)
+int rawdisk_read_sector_l(struct rawdisk_t *d, uint8_t *buf, int sect)
 {
 	int res;
 
-	if (sect >= w->total_sectors) {
-		return E_WINCH_NO_SECTOR;
+	if (sect >= d->total_sectors) {
+		return E_DISK_NO_SECTOR;
 	}
 
-	res = fseek(w->image, sect*w->sector_size, SEEK_SET);
+	res = fseek(d->image, sect*d->sector_size, SEEK_SET);
 	if (res < 0) {
-		return E_WINCH_NO_SECTOR;
+		return E_DISK_NO_SECTOR;
 	}
-	res = fread(buf, 1, w->sector_size, w->image);
-	if (res != w->sector_size) {
-		return E_WINCH_RW_SIZE;
+	res = fread(buf, 1, d->sector_size, d->image);
+	if (res != d->sector_size) {
+		return E_DISK_RW_SIZE;
 	}
 	return E_OK;
 }
 
 // -----------------------------------------------------------------------
-int winch_write_sector_p(struct winchester_t *w, uint8_t *buf, int count, int cyl, int head, int sect)
+int rawdisk_write_sector_p(struct rawdisk_t *w, uint8_t *buf, int count, int cyl, int head, int sect)
 {
-	return winch_write_sector_l(w, buf, count, winch_p2l(w, cyl, head, sect));
+	return rawdisk_write_sector_l(w, buf, count, rawdisk_p2l(w, cyl, head, sect));
 }
 
 // -----------------------------------------------------------------------
-int winch_write_sector_l(struct winchester_t *w, uint8_t *buf, int count, int sect)
+int rawdisk_write_sector_l(struct rawdisk_t *d, uint8_t *buf, int count, int sect)
 {
 	int res;
 
-	if (sect >= w->total_sectors) {
-		return E_WINCH_NO_SECTOR;
+	if (sect >= d->total_sectors) {
+		return E_DISK_NO_SECTOR;
 	}
 
-	if (count > w->sector_size) {
-		return E_WINCH_DATA_TOO_BIG;
+	if (count > d->sector_size) {
+		return E_DISK_DATA_TOO_BIG;
 	}
 
-	res = fseek(w->image, sect*w->sector_size, SEEK_SET);
+	res = fseek(d->image, sect*d->sector_size, SEEK_SET);
 	if (res < 0) {
-		return E_WINCH_NO_SECTOR;
+		return E_DISK_NO_SECTOR;
 	}
-	res = fwrite(buf, 1, count, w->image);
+	res = fwrite(buf, 1, count, d->image);
 	if (res != count) {
-		return E_WINCH_RW_SIZE;
+		return E_DISK_RW_SIZE;
 	}
 	return E_OK;
 }
 
 // -----------------------------------------------------------------------
-int winch_park(int cyl)
+int rawdisk_park(int cyl)
 {
 	// mhm, sure.
 	return E_OK;

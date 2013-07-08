@@ -1,5 +1,5 @@
 ADD_library(devices
-	winch.c
+	rawdisk.c
 )
 
 # vim: tabstop=4

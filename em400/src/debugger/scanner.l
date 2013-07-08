@@ -77,7 +77,7 @@ reset	{ return F_RESET; }
 memcl	{ return F_MEMCL; }
 memcfg	{ return F_MEMCFG; }
 run		{ return F_RUN; }
-stack	{ return F_STACK; }
+stk		{ return F_STACK; }
 help	{ BEGIN(texts); return F_HELP; }
 dasm	{ BEGIN(args); return F_DASM; }
 trans	{ BEGIN(args); return F_TRANS; }

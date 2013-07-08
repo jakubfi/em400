@@ -32,7 +32,8 @@
 #include "debugger/decode.h"
 
 struct decoder_t decoders[] = {
-	{ "iv", "SYS: interrupt vectors", decode_iv},
+	{ "iv", "SYS: interrupt vectors (0x40)", decode_iv },
+	{ "ctx", "SYS: process context", decode_ctx },
 	{ "mxpsuk", "MULTIX: set configuration", decode_mxpsuk },
 	{ "mxpsdl", "MULTIX: assign line", decode_mxpsdl },
 	{ "mxpstwinch", "MULTIX: transmit (Winchester)", decode_mxpst_winch },
@@ -81,6 +82,33 @@ char * decode_iv(uint16_t addr, int arg)
 	pos += sprintf(b+pos, "14 channel 2  = 0x%04x    30 software H = 0x%04x\n", nMEMB(0, addr+14), nMEMB(0, addr+30));
 	pos += sprintf(b+pos, "15 channel 3  = 0x%04x    31 software L = 0x%04x\n", nMEMB(0, addr+15), nMEMB(0, addr+31));
 	pos += sprintf(b+pos, "EXL = 0x%04x\n",nMEMB(0, addr+32));
+
+	return buf;
+}
+
+// -----------------------------------------------------------------------
+char * decode_ctx(uint16_t addr, int arg)
+{
+	char *buf = malloc(16*1024);
+	char *b = buf;
+	int pos = 0;
+
+	if (!buf) {
+		return NULL;
+	}
+
+	char *r0s = int2binf("........ ........", nMEMB(0, addr+1), 16);
+	char *srs = int2binf(".......... . . ....", nMEMB(0, addr+2), 16);
+	
+	pos += sprintf(b+pos, "IC: 0x%04x  R0: %s  SR: %s\n", nMEMB(0, addr+0), r0s, srs);
+	pos += sprintf(b+pos, "----------------------------------------------\n");
+	pos += sprintf(b+pos, "R1: 0x%04x  R2: 0x%04x  R3: 0x%04x  R4: 0x%04x\n", nMEMB(0, addr+3), nMEMB(0, addr+4), nMEMB(0, addr+5), nMEMB(0, addr+6));
+	pos += sprintf(b+pos, "R5: 0x%04x  R6: 0x%04x  R7: 0x%04x\n", nMEMB(0, addr+7), nMEMB(0, addr+8), nMEMB(0, addr+9));
+	pos += sprintf(b+pos, "NEXT: 0x%04x, NXCH: 0x%04x\n", nMEMB(0, addr+10), nMEMB(0, addr+11));
+	pos += sprintf(b+pos, "PID: %i  PARENT: %i  STATE: %i  PRIO: %i\n", nMEMB(0, addr+14), nMEMB(0, addr+15), nMEMB(0, addr+12), nMEMB(0, addr+13));
+
+	free(r0s);
+	free(srs);
 
 	return buf;
 }
@@ -356,7 +384,7 @@ char * decode_mxpst_winch(uint16_t addr, int arg)
 			break;
 		case MX_WINCH_FORMAT:
 			pos += sprintf(b+pos, "Format track (optionally move sectors to spare area)\n");
-			char *map = int2bin(t->format->sector_map, 16);
+			char *map = int2binf("................", t->format->sector_map, 16);
 			pos += sprintf(b+pos, "Sector relocation map: %s\n", map);
 			pos += sprintf(b+pos, "Starting sector: %i\n", t->format->start_sector);
 			free(map);

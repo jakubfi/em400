@@ -31,6 +31,7 @@ struct mx_cf_sc_pl;
 struct mx_cf_sc_ll;
 
 typedef struct mx_unit_proto_t * (*mx_unit_f_create)(struct cfg_arg_t *args);
+typedef struct mx_unit_proto_t * (*mx_unit_f_create_nodev)();
 typedef void (*mx_unit_f_shutdown)(struct mx_unit_proto_t *unit);
 typedef void (*mx_unit_f_reset)(struct mx_unit_proto_t *unit);
 typedef int (*mx_unit_f_cfg_phy)(struct mx_unit_proto_t *unit, struct mx_cf_sc_pl *cfg_phy);
@@ -38,10 +39,10 @@ typedef int (*mx_unit_f_cfg_log)(struct mx_unit_proto_t *unit, struct mx_cf_sc_l
 typedef int (*mx_unit_f_cmd)(struct mx_unit_proto_t *unit, int dir, uint16_t n, uint16_t *r);
 
 struct mx_unit_proto_t {
-	int num;
 	const char *name;
 
 	mx_unit_f_create create;
+	mx_unit_f_create_nodev create_nodev;
 	mx_unit_f_shutdown shutdown;
 	mx_unit_f_reset reset;
 	mx_unit_f_cfg_phy cfg_phy;
@@ -49,6 +50,7 @@ struct mx_unit_proto_t {
 	mx_unit_f_cmd cmd;
 
 	// physical
+	int num;
 	int dir;
 	int used;
 	int type;
@@ -96,44 +98,44 @@ enum mx_cmd_e {
 
 // multix interrupts
 enum mx_int_e {
-	MX_INT_INIEA = 0,
+	MX_INT_INIEA = 0,	// interrupt no longer valid
 	// special
-	MX_INT_INSKA = 1,
-	MX_INT_IWYZE = 2,
-	MX_INT_IWYTE = 3,
+	MX_INT_INSKA = 1,	// channel faulty
+	MX_INT_IWYZE = 2,	// channel reset successfully
+	MX_INT_IWYTE = 3,	// channel test finished
 	// general
-	MX_INT_INKON = 4,
-	MX_INT_IUKON = 5,
-	MX_INT_INKOT = 6,
+	MX_INT_INKON = 4,	// 'set configuration' rejected (configuration error, out of memory, configuration already set)
+	MX_INT_IUKON = 5,	// 'set configuration' finished successfully
+	MX_INT_INKOT = 6,	// 'set configuration' unsuccessfull (transmission errors)
 	// line
-	MX_INT_ISTRE = 7,
-	MX_INT_INSTR = 8,
-	MX_INT_INKST = 9,
-	MX_INT_IDOLI = 10,
-	MX_INT_INDOL = 11,
-	MX_INT_INKDO = 12,
-	MX_INT_IETRA = 13,
-	MX_INT_INTRA = 14,
-	MX_INT_INKTR = 15,
-	MX_INT_ITRER = 16,
-	MX_INT_ITRAB = 19,
-	MX_INT_IABTR = 20,
-	MX_INT_INABT = 21,
-	MX_INT_INKAB = 22,
-	MX_INT_IODLI = 23,
-	MX_INT_INODL = 24,
-	MX_INT_INKOD = 25,
-	MX_INT_INPAO = 32,
-	MX_INT_IPARE = 33,
-	MX_INT_IOPRU = 34,
-	MX_INT_IEPS0 = 35,
-	MX_INT_IEPS6 = 36,
-	MX_INT_IEPS7 = 37,
-	MX_INT_IEPS8 = 38,
-	MX_INT_IEPSC = 39,
-	MX_INT_IEPSD = 40,
-	MX_INT_IEPSE = 41,
-	MX_INT_IEPSF = 42
+	MX_INT_ISTRE = 7,	// 'report status' OK
+	MX_INT_INSTR = 8,	// 'report status' rejected (previous 'report status' being executed)
+	MX_INT_INKST = 9,	// 'report status' for non existent line
+	MX_INT_IDOLI = 10,	// 'attach line' OK
+	MX_INT_INDOL = 11,	// 'attach line' rejected (errors in field, line already attached, previous 'attach line' beind excecuted)
+	MX_INT_INKDO = 12,	// 'attach line' for non existent line
+	MX_INT_IETRA = 13,	// 'transmit' OK
+	MX_INT_INTRA = 14,	// 'transmit' rejected (errors in field, line not attached, previous transmission ongoing)
+	MX_INT_INKTR = 15,	// 'transmit' for non existent line
+	MX_INT_ITRER = 16,	// 'transmit' finished with error (parity or other)
+	MX_INT_ITRAB = 19,	// 'transmit' cancelled (as ordered by 'cancel transmission')
+	MX_INT_IABTR = 20,	// 'cancel transmission' OK
+	MX_INT_INABT = 21,	// 'cancel transmission' while no transmission
+	MX_INT_INKAB = 22,	// 'cancel transmission' for nonexistent line
+	MX_INT_IODLI = 23,	// 'detach line' OK
+	MX_INT_INODL = 24,	// 'detach line' for a line with ongoing transmission
+	MX_INT_INKOD = 25,	// 'detach line' for non existent line
+	MX_INT_INPAO = 32,	// mera-multix transmission failure
+	MX_INT_IPARE = 33,	// mera-multix parity error
+	MX_INT_IOPRU = 34,	// operator request
+	MX_INT_IEPS0 = 35,	// unknown control command, code=0
+	MX_INT_IEPS6 = 36,	// unknown control command, code=6
+	MX_INT_IEPS7 = 37,	// unknown control command, code=7
+	MX_INT_IEPS8 = 38,	// unknown control command, code=8
+	MX_INT_IEPSC = 39,	// unknown control command, code=C
+	MX_INT_IEPSD = 40,	// unknown control command, code=D
+	MX_INT_IEPSE = 41,	// unknown control command, code=E
+	MX_INT_IEPSF = 42	// unknown control command, code=F
 };
 
 // multix logical line protocol
@@ -171,6 +173,7 @@ enum mx_phy_type_e {
 };
 
 enum mx_setconf_errors_e {
+	MX_SC_E_OK				= -1,// everything went fine. (it's not multix constant, it's em400 indicator)
 	MX_SC_E_CONFSET			= 0, // configuration already set
     MX_SC_E_NUMLINES		= 1, // wrong number of physical or logical lines
     MX_SC_E_DEVTYPE			= 2, // unknown device type in physical line description
@@ -193,6 +196,9 @@ struct mx_cf_sc_pl {
 	int used;
 	int type;
 	int count;
+
+	int offset;					// physical line offset at which this phy block starts
+	int *logical_configured;	// array with indicators saying that physical line has been configured as logical
 };
 
 // logical line - winchester
@@ -265,14 +271,10 @@ struct mx_cf_cl_monitor {
 	int txt_proc_params;
 };
 
-// --- get line status ---------------------------------------------------
-// only return field
-
-
-
 // -----------------------------------------------------------------------
 
-struct mx_unit_proto_t * mx_unit_proto_get(struct mx_unit_proto_t *proto, char *name);
+struct mx_unit_proto_t * mx_unit_proto_get_by_name(struct mx_unit_proto_t *proto, char *name);
+struct mx_unit_proto_t * mx_unit_proto_get_by_type(struct mx_unit_proto_t *proto, int type);
 struct chan_proto_t * mx_create(struct cfg_unit_t *units);
 void mx_shutdown(struct chan_proto_t *chan);
 void mx_reset(struct chan_proto_t *chan);
@@ -284,6 +286,9 @@ void mx_int_preq(struct mx_chan_t *chan, struct mx_int_t *mx_int);
 void mx_int_setq(struct mx_chan_t *chan, struct mx_int_t *mx_int);
 struct mx_int_t * mx_int_deq(struct mx_chan_t *chan);
 
+struct mx_cf_sc_pl * mx_decode_cf_find_phy(struct mx_cf_sc_pl *phys, int count, int id);
+int mx_decode_cf_phy(int addr, struct mx_cf_sc_pl *phy, int offset);
+int mx_decode_cf_log(int addr, struct mx_cf_sc_ll *log, struct mx_cf_sc_pl *phys, int phy_count);
 int mx_decode_cf_sc(int addr, struct mx_cf_sc *cf);
 void mx_free_cf_sc(struct mx_cf_sc *cf);
 

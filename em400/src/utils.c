@@ -16,23 +16,38 @@
 //  51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 
 #include <stdlib.h>
+#include <string.h>
 #include <inttypes.h>
 #include <ctype.h>
 
 // -----------------------------------------------------------------------
-// convert an integer to string with its binary representation
-char * int2bin(int x, int len)
+// convert an integer to formatted string with its binary representation
+char * int2binf(char *format, unsigned value, int size)
 {
-	char* buf = malloc(len+1);
-	if (!buf) {
-		return NULL;
-	}
+    char *i = format;
+    char *buf = malloc(strlen(format)+1);
+	char *o = buf;
 
-	buf[len] = 0;
+    size--;
 
-	for (int i=len-1 ; i>=0 ; i--) {
-		buf[i] = 48 + ((x >> (len-(i+1))) & 1);
-	}
+    while (*i) {
+        switch (*i) {
+    	    case '.':
+	            if (size >= 0) {
+                	*o = (value >> size) & 1 ? '1' : '0';
+            	    size--;
+        	    } else {
+    	            *o = '?';
+	            }
+            	break;
+        	default:
+    	        *o = *i;
+	            break;
+        }
+		o++;
+        i++;
+    }
+	*o = '\0';
 	return buf;
 }
 

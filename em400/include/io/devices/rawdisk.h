@@ -15,13 +15,13 @@
 //  Foundation, Inc.,
 //  51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 
-#ifndef WINCH_H
-#define WINCH_H
+#ifndef RAWDISK_H
+#define RAWDISK_H
 
 #include <inttypes.h>
 #include <stdio.h>
 
-struct winchester_t {
+struct rawdisk_t {
 	int cylinders;
 	int heads;
 	int sectors;
@@ -31,16 +31,16 @@ struct winchester_t {
 	FILE *image;
 };
 
-struct winchester_t * winch_create(int cylinders, int heads, int sectors, int sector_size, char *image_name);
-void winch_shutdown(struct winchester_t *winch);
+struct rawdisk_t * rawdisk_create(int cylinders, int heads, int sectors, int sector_size, char *image_name);
+void rawdisk_shutdown(struct rawdisk_t *d);
 
 
-int winch_p2l(struct winchester_t *w, int cyl, int head, int sect);
-int winch_read_sector_p(struct winchester_t *winch, uint8_t *buf, int cyl, int head, int sect);
-int winch_read_sector_l(struct winchester_t *w, uint8_t *buf, int sect);
-int winch_write_sector_p(struct winchester_t *winch, uint8_t *buf, int count, int cyl, int head, int sect);
-int winch_write_sector_l(struct winchester_t *w, uint8_t *buf, int count, int sect);
-int winch_park(int cyl);
+int rawdisk_p2l(struct rawdisk_t *d, int cyl, int head, int sect);
+int rawdisk_read_sector_p(struct rawdisk_t *d, uint8_t *buf, int cyl, int head, int sect);
+int rawdisk_read_sector_l(struct rawdisk_t *d, uint8_t *buf, int sect);
+int rawdisk_write_sector_p(struct rawdisk_t *d, uint8_t *buf, int count, int cyl, int head, int sect);
+int rawdisk_write_sector_l(struct rawdisk_t *d, uint8_t *buf, int count, int sect);
+int rawdisk_park(int cyl);
 
 #endif
 

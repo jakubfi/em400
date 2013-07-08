@@ -21,13 +21,13 @@
 #include "errors.h"
 #include "cpu/memory.h"
 
-#include "io/multix_winch.h"
+#include "io/multix_floppy.h"
 #include "io/devices/rawdisk.h"
 
-#define UNIT ((struct mx_unit_winch_t *)(unit))
+#define UNIT ((struct mx_unit_floppy_t *)(unit))
 
 // -----------------------------------------------------------------------
-struct mx_unit_proto_t * mx_winch_create(struct cfg_arg_t *args)
+struct mx_unit_proto_t * mx_floppy_create(struct cfg_arg_t *args)
 {
 	int cyl, head, sect, ssize;
 	char *image_name = NULL;
@@ -37,64 +37,64 @@ struct mx_unit_proto_t * mx_winch_create(struct cfg_arg_t *args)
 		return NULL;
 	}
 
-	eprint("      Winchester: cyl=%i, head=%i, sectors=%i, spt=%i, image=%s\n", cyl, head, sect, ssize, image_name);
+	eprint("      Floppy: cyl=%i, head=%i, sectors=%i, spt=%i, image=%s\n", cyl, head, sect, ssize, image_name);
 
-	struct rawdisk_t *winchester = rawdisk_create(cyl, head, sect, ssize, image_name);
-	if (!winchester) {
+	struct rawdisk_t *floppy = rawdisk_create(cyl, head, sect, ssize, image_name);
+	if (!floppy) {
 		free(image_name);
 		return NULL;
 	}
 
-	struct mx_unit_proto_t *unit = mx_winch_create_nodev();
+	struct mx_unit_proto_t *unit = mx_floppy_create_nodev();
 	if (!unit) {
-		rawdisk_shutdown(winchester);
+		rawdisk_shutdown(floppy);
 		free(image_name);
 		gerr = E_ALLOC;
 		return NULL;
 	}
 
-	mx_winch_connect(UNIT, winchester);
+	mx_floppy_connect(UNIT, floppy);
 	free(image_name);
 	return unit;
 }
 
 // -----------------------------------------------------------------------
-struct mx_unit_proto_t * mx_winch_create_nodev()
+struct mx_unit_proto_t * mx_floppy_create_nodev()
 {
-	struct mx_unit_winch_t *unit = calloc(1, sizeof(struct mx_unit_winch_t));
+	struct mx_unit_floppy_t *unit = calloc(1, sizeof(struct mx_unit_floppy_t));
 	return (struct mx_unit_proto_t *) unit;
 }
 
 // -----------------------------------------------------------------------
-void mx_winch_connect(struct mx_unit_winch_t *unit, struct rawdisk_t *winchester)
+void mx_floppy_connect(struct mx_unit_floppy_t *unit, struct rawdisk_t *floppy)
 {
-	UNIT->winchester = winchester;
+	UNIT->floppy = floppy;
 }
 
 // -----------------------------------------------------------------------
-void mx_winch_disconnect(struct mx_unit_winch_t *unit)
+void mx_floppy_disconnect(struct mx_unit_floppy_t *unit)
 {
-	rawdisk_shutdown(UNIT->winchester);
-	UNIT->winchester = NULL;
+	rawdisk_shutdown(UNIT->floppy);
+	UNIT->floppy = NULL;
 }
 
 // -----------------------------------------------------------------------
-void mx_winch_shutdown(struct mx_unit_proto_t *unit)
+void mx_floppy_shutdown(struct mx_unit_proto_t *unit)
 {
-	mx_winch_disconnect(UNIT);
+	mx_floppy_disconnect(UNIT);
 	free(UNIT);
 }
 
 // -----------------------------------------------------------------------
-void mx_winch_reset(struct mx_unit_proto_t *unit)
+void mx_floppy_reset(struct mx_unit_proto_t *unit)
 {
 
 }
 
 // -----------------------------------------------------------------------
-int mx_winch_cfg_phy(struct mx_unit_proto_t *unit, struct mx_cf_sc_pl *cfg_phy)
+int mx_floppy_cfg_phy(struct mx_unit_proto_t *unit, struct mx_cf_sc_pl *cfg_phy)
 {
-	LOG(D_IO, 20, "MULTIX/winchester (line:%i): configure physical line", unit->num);
+	LOG(D_IO, 20, "MULTIX/floppy (line:%i): configure physical line", unit->num);
 	if (unit && cfg_phy) {
 		unit->dir = cfg_phy->dir;
 		unit->used = 1;
@@ -106,12 +106,12 @@ int mx_winch_cfg_phy(struct mx_unit_proto_t *unit, struct mx_cf_sc_pl *cfg_phy)
 }
 
 // -----------------------------------------------------------------------
-int mx_winch_cfg_log(struct mx_unit_proto_t *unit, struct mx_cf_sc_ll *cfg_log)
+int mx_floppy_cfg_log(struct mx_unit_proto_t *unit, struct mx_cf_sc_ll *cfg_log)
 {
-	LOG(D_IO, 20, "MULTIX/winchester (line:%i): configure logical line", unit->num);
-	if (unit && cfg_log && cfg_log->winch) {
-		UNIT->winch_type = cfg_log->winch->type;
-		UNIT->format_protect = cfg_log->winch->format_protect;
+	LOG(D_IO, 20, "MULTIX/floppy (line:%i): configure logical line", unit->num);
+	if (unit && cfg_log && cfg_log->floppy) {
+		UNIT->floppy_type = cfg_log->floppy->type;
+		UNIT->format_protect = cfg_log->floppy->format_protect;
 	} else {
 		return E_MX_DECODE;
 	}
@@ -119,41 +119,32 @@ int mx_winch_cfg_log(struct mx_unit_proto_t *unit, struct mx_cf_sc_ll *cfg_log)
 }
 
 // -----------------------------------------------------------------------
-int mx_winch_cmd(struct mx_unit_proto_t *unit, int dir, uint16_t n, uint16_t *r)
+int mx_floppy_cmd(struct mx_unit_proto_t *unit, int dir, uint16_t n, uint16_t *r)
 {
 	return IO_OK;
 }
 
 // -----------------------------------------------------------------------
-struct mx_winch_cf_t * mx_winch_cf_t_decode(int addr)
+struct mx_floppy_cf_t * mx_floppy_cf_t_decode(int addr)
 {
 	uint16_t data;
-	struct mx_winch_cf_t *cf = calloc(1, sizeof(struct mx_winch_cf_t));
+	struct mx_floppy_cf_t *cf = calloc(1, sizeof(struct mx_floppy_cf_t));
 	if (!cf) {
 		return NULL;
 	}
 
 	data = MEMB(0, addr);
-	cf->oper = (data & 0b0000001100000000) >> 8;
+	cf->oper = (data & 0b0000011100000000) >> 8;
 	switch (cf->oper) {
-		case MX_WINCH_FORMAT_SPARE:
-			cf->format = calloc(1, sizeof(struct mx_winch_cf_format));
-			data = MEMB(0, addr+1);
-			cf->format->sector_map = data;
-			data = MEMB(0, addr+2);
-			cf->format->start_sector = data << 16;
+		case MX_FLOPPY_FORMAT:
 			data = MEMB(0, addr+3);
-			cf->format->start_sector += data;
+			cf->format = calloc(1, sizeof(struct mx_floppy_cf_format));
+			cf->format->start_sector = data;
 			break;
-		case MX_WINCH_FORMAT:
-			// nothing else
-			break;
-		case MX_WINCH_READ:
-		case MX_WINCH_WRITE:
-			cf->transmit = calloc(1, sizeof(struct mx_winch_cf_transmit));
+		case MX_FLOPPY_READ:
+		case MX_FLOPPY_WRITE:
+			cf->transmit = calloc(1, sizeof(struct mx_floppy_cf_transmit));
 			cf->transmit->ign_crc		= (data & 0b0001000000000000) >> 12;
-			cf->transmit->sector_fill	= (data & 0b0000100000000000) >> 11;
-			cf->transmit->watch_eof		= (data & 0b0000010000000000) >> 10;
 			cf->transmit->cpu			= (data & 0b0000000000010000) >> 4;
 			cf->transmit->nb			= (data & 0b0000000000001111);
 			data = MEMB(0, addr+1);
@@ -162,13 +153,11 @@ struct mx_winch_cf_t * mx_winch_cf_t_decode(int addr)
 			cf->transmit->len = data+1;
 			data = MEMB(0, addr+3);
 			cf->transmit->sector = data << 16;
-			data = MEMB(0, addr+4);
-			cf->transmit->sector += data;
 			break;
-		case MX_WINCH_PARK:
-			cf->park = calloc(1, sizeof(struct mx_winch_cf_park));
-			data = MEMB(0, addr+4);
-			cf->park->cylinder = data;
+		case MX_FLOPPY_BAD_SECTOR:
+			data = MEMB(0, addr+3);
+			cf->bad_sector = calloc(1, sizeof(struct mx_floppy_cf_bad_sector));
+			cf->bad_sector->sector = data;
 			break;
 		default:
 			break;
@@ -178,11 +167,11 @@ struct mx_winch_cf_t * mx_winch_cf_t_decode(int addr)
 }
 
 // -----------------------------------------------------------------------
-void mx_winch_cf_t_free(struct mx_winch_cf_t *cf)
+void mx_floppy_cf_t_free(struct mx_floppy_cf_t *cf)
 {
 	if (cf->format) free(cf->format);
-	if (cf->park) free(cf->park);
 	if (cf->transmit) free(cf->transmit);
+	if (cf->bad_sector) free(cf->bad_sector);
 	free(cf);
 }
 

@@ -262,7 +262,7 @@ int read_script(char *filename)
 			*b = '\0';
 			if (b != input_buf) {
 				awtbprint(W_CMD, C_LABEL, "%s ", input_buf);
-				awtbprint(W_CMD, C_PROMPT, "-> ", input_buf);
+				awtbprint(W_CMD, C_PROMPT, "-> ");
 				*b = '\n';
 				int res = dbg_parse(input_buf);
 				if (res != 0) {
@@ -320,7 +320,7 @@ void dbg_step()
 
 		if ((res == KEY_ENTER) && (*input_buf)) {
 			if (ui_mode == O_NCURSES) {
-				awtbprint(W_CMD, C_PROMPT, "em400> ");
+				awtbprint(W_CMD, C_PROMPT, "%s", "em400> ");
 				awtbprint(W_CMD, C_LABEL, "%s\n", input_buf);
 				awin_tb_scroll_end(W_CMD);
 			}

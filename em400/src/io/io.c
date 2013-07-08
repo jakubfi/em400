@@ -158,9 +158,9 @@ int io_dispatch(int dir, uint16_t n, uint16_t *r)
 		int res;
 		if (chan) {
 #ifdef WITH_DEBUGGER
-			char *narg = int2bin(n, 16);
-			char *rarg = int2bin(*r, 16);
-			LOG(D_IO, 1, "I/O command, dir = %s, chan = %d, n_arg = %s, r_arg = %s", dir ? "OUT" : "IN", chan_n, narg, rarg);
+			char *narg = int2binf("... .. ...... .... .", n, 16);
+			char *rarg = int2binf("", *r, 16);
+			LOG(D_IO, 1, "I/O command, dir = %s, chan = %d, n_arg = %s, r_arg = %s (0x%04x)", dir ? "OUT" : "IN", chan_n, narg, rarg, *r);
 			free(narg);
 			free(rarg);
 #endif

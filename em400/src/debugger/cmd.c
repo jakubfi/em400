@@ -56,7 +56,7 @@ struct cmd_t dbg_commands[] = {
 	{ "memcfg",	F_MEMCFG,	"Show memory configuration", "  memcfg" },
 	{ "brk",	F_BRK,		"Manipulate breakpoints", "  brk add <expression>\n  brk del <brk_number>\n  brk" },
 	{ "run",	F_RUN,		"Run emulation", "  run" },
-	{ "stack",	F_STACK,	"Show stack", "  stack" },
+	{ "stk",	F_STACK,	"Show stack", "  stk" },
 	{ "log",	F_LOG,		"Enable logging", "  log\n  log on|off\n  log file <filename>\n  log level <domain>:<level>" },
 	{ "script",	F_SCRIPT,	"Load and execute script", "  script <filename>" },
 	{ "watch",	F_WATCH,	"Manipulate expression watches", "  watch add <expression>\n  watch del <watch_number>\n  watch" },
@@ -603,7 +603,7 @@ void dbg_c_decode(int wid, char *name, uint16_t addr, int arg)
 		return;
 	}
 
-	awtbprint(wid, C_DATA, "Decoding structure at 0x%04x as: %s (%s)\n", addr, name, d->desc);
+	awtbprint(wid, C_DATA, "Decoding structure at 0x%04x as: %s\n", addr, d->desc);
 	awtbprint(wid, C_LABEL, "-----------------------------------------------------------\n");
 	awtbprint(wid, C_LABEL, buf);
 	free(buf);

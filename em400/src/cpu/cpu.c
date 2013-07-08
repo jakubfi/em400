@@ -155,7 +155,7 @@ void cpu_step()
 		// illegal instruction
 		case OP_ILLEGAL:
 #ifdef WITH_DEBUGGER
-			b = int2bin(nR(R_IR), 16);
+			b = int2binf("... ... . ... ... ...", nR(R_IR), 16);
 			LOG(D_CPU, 1, "------ End cycle (OP_ILLEGAL): %s (0x%04x) at 0x%04x (P:%i)", b, nR(R_IR), nR(R_IC)-1, was_P);
 			free(b);
 #endif

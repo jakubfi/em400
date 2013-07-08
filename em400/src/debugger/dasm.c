@@ -108,7 +108,7 @@ int dt_parse(struct dasm_opdef *opdef, uint16_t *memptr, int addr, char *format,
 					out += dt_trans_eff_arg(out, memptr);
 					break;
 				case '0':
-					b = int2bin(*memptr, 16);
+					b = int2binf("................", *memptr, 16);
 					out += sprintf(out, "%s", b);
 					free(b);
 					break;
