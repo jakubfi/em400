@@ -892,6 +892,7 @@ int add_def(int type, int level, struct node_t *n)
 			DEBUG("%i redefine variable: %s\n", level, n->str);
 			nodes_drop(d->n);
 			d->n = nn;
+			label_add(n->str, nn->value);
 			return E_OK;
 		}
 	} else { // add new variable/label
@@ -899,6 +900,8 @@ int add_def(int type, int level, struct node_t *n)
 		dict_add(level, type, n->str, nn);
 		if (type == D_LABEL) {
 			label_add(n->str, n->ic);
+		} else {
+			label_add(n->str, nn->value);
 		}
 		return E_OK;
 	}
