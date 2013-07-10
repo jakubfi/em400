@@ -1,6 +1,6 @@
 .prog "op/LW"
 
-	lw r0, 0xfffe
+	lw r0, 0xfefe
 	lw r1, 0x0001
 	lw r2, 0x0010
 	lw r3, 0x0100
@@ -16,7 +16,7 @@
 ; XPCT int(rz[6]) : 0
 ; XPCT int(sr) : 0
 
-; XPCT hex(r0): 0x00fe
+; XPCT hex(r0): 0xfefe
 ; XPCT hex(r1): 0x0001
 ; XPCT hex(r2): 0x0010
 ; XPCT hex(r3): 0x0100

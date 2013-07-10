@@ -51,7 +51,7 @@ void reg_write(int r, uint16_t x, int trace, int hw)
 		dbg_touch_add(&touch_reg, TOUCH_W, 0, r, regs[r]);
 	}
 #endif
-	if (r | hw) {
+	if (r | hw | !SR_Q) {
 		regs[r] = x;
 	} else {
 		regs[r] = (regs[r] & 0b1111111100000000) | (x & 0b0000000011111111);

@@ -149,7 +149,7 @@ enum mx_log_proto_e {
 	MX_PROTO_WINCHESTER			= 6,
 	MX_PROTO_MTAPE				= 7,
 	MX_PROTO_FLOPPY				= 8,
-	MX_PROTO_TTY_ITWL			= 9,
+	MX_PROTO_TTY_ITWL			= 9, // teleks
 	MX_PROTO_MAX				= 10
 };
 

@@ -26,7 +26,7 @@ fin:	hlt 077
 ; XPCT int(rz[6]) : 0
 ; XPCT int(sr) : 0
 
-; XPCT hex(r0): 0x00ff
+; XPCT hex(r0): 0xffff
 ; XPCT hex(r1): 0x1051
 ; XPCT hex(r2): 0x1052
 ; XPCT hex(r3): 0x1053
