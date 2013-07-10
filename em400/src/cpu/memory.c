@@ -262,7 +262,7 @@ void mem_clear()
 // -----------------------------------------------------------------------
 int mem_load_image(const char* fname, int nb)
 {
-	uint16_t *ptr;
+	int ret = E_OK;
 
 	FILE *f = fopen(fname, "rb");
 	if (f == NULL) {
@@ -271,34 +271,38 @@ int mem_load_image(const char* fname, int nb)
 
 	LOG(D_MEM, 1, "Loading memory image: %s -> %d", fname, nb);
 
-	int res = 1;
+	uint16_t buf[MEM_SEGMENT_SIZE];
+	int res;
 	uint16_t chunk = 0;
-	while (res > 0) {
-		// get pointer to segment in a block
-		ptr = mem_ptr(nb, chunk*MEM_SEGMENT_SIZE);
-		if (!ptr) {
-			return E_MEM_BLOCK_TOO_SMALL;
+	do {
+		// read chunk of data
+		res = fread((void*)buf, sizeof(uint16_t), MEM_SEGMENT_SIZE, f);
+		if (ferror(f)) {
+			ret = E_FILE_OPERATION;
+			break;
 		}
 
-		// read chunk of data
-		res = fread((void*)ptr, sizeof(*ptr), MEM_SEGMENT_SIZE, f);
-		if (ferror(f)) {
-			fclose(f);
-			return E_FILE_OPERATION;
+		if (res == 0) {
+			break;
+		}
+
+		// get pointer to segment in a block
+		uint16_t *ptr = mem_ptr(nb, chunk*MEM_SEGMENT_SIZE);
+		if (!ptr) {
+			ret = E_MEM_BLOCK_TOO_SMALL;
+			break;
 		}
 
 		// we swap bytes from big-endian to host-endianness at load time
-		uint16_t *i = ptr;
-		while (i < ptr + res) {
-			*i = ntohs(*i);
-			i++;
+		for (int i=0 ; i<res ; i++) {
+			*(ptr+i) = ntohs(*(buf+i));
 		}
 		chunk++;
-	}
+	} while (res == MEM_SEGMENT_SIZE);
 
 	fclose(f);
 
-	return E_OK;
+	return ret;
 }
 
 

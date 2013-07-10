@@ -22,13 +22,12 @@ illegal_handler:
 	lip
 
 sys_mb:
+zerod:
 	.data 0
 user_mb:
 	.data user_block
 user_im:
 	.data 0b1111100000000000
-zerod:
-	.data 0
 stack:
 	.res astart-stack
 
@@ -66,13 +65,13 @@ run_user_prog:
 user_vec:
 	.data user_prog_dest, user_r0_init, 0b1111100000100001
 user_prog:
+	hlt 077
 	cit
 	sit
 	siu
 	sil
 	gil
 	giu
-	hlt 077
 	mcl
 	lw r1, user_mb
 	mb r1
