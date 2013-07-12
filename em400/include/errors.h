@@ -60,6 +60,7 @@ enum em400_error {
 	E_ARG_CONVERSION,
 	E_ARG_FORMAT,
 	E_MX_DECODE,
+	E_THREAD,
 
 
 	E_OK = 0,

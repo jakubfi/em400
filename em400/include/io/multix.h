@@ -36,7 +36,9 @@ typedef void (*mx_unit_f_shutdown)(struct mx_unit_proto_t *unit);
 typedef void (*mx_unit_f_reset)(struct mx_unit_proto_t *unit);
 typedef int (*mx_unit_f_cfg_phy)(struct mx_unit_proto_t *unit, struct mx_cf_sc_pl *cfg_phy);
 typedef int (*mx_unit_f_cfg_log)(struct mx_unit_proto_t *unit, struct mx_cf_sc_ll *cfg_log);
-typedef int (*mx_unit_f_cmd)(struct mx_unit_proto_t *unit, int dir, uint16_t n, uint16_t *r);
+typedef int (*mx_unit_f_cmd)(struct mx_unit_proto_t *unit, int dircmd, uint16_t addr);
+
+struct mx_chan_t;
 
 struct mx_unit_proto_t {
 	const char *name;
@@ -50,13 +52,17 @@ struct mx_unit_proto_t {
 	mx_unit_f_cmd cmd;
 
 	// physical
-	int num;
+	int type;
+	int phy_num;
 	int dir;
 	int used;
-	int type;
 
 	// logical
+	int log_num;
 	int protocol;
+	int attached;
+
+	struct mx_chan_t *chan;
 };
 
 struct mx_int_t {
@@ -98,35 +104,35 @@ enum mx_cmd_e {
 
 // multix interrupts
 enum mx_int_e {
-	MX_INT_INIEA = 0,	// interrupt no longer valid
+	MX_INT_INIEA = 0,	// + interrupt no longer valid
 	// special
-	MX_INT_INSKA = 1,	// channel faulty
-	MX_INT_IWYZE = 2,	// channel reset successfully
-	MX_INT_IWYTE = 3,	// channel test finished
+	MX_INT_INSKA = 1,	// - channel faulty
+	MX_INT_IWYZE = 2,	// + channel reset successfully
+	MX_INT_IWYTE = 3,	// - channel test finished
 	// general
-	MX_INT_INKON = 4,	// 'set configuration' rejected (configuration error, out of memory, configuration already set)
-	MX_INT_IUKON = 5,	// 'set configuration' finished successfully
-	MX_INT_INKOT = 6,	// 'set configuration' unsuccessfull (transmission errors)
+	MX_INT_INKON = 4,	// + 'set configuration' rejected (configuration error, out of memory, configuration already set)
+	MX_INT_IUKON = 5,	// + 'set configuration' finished successfully
+	MX_INT_INKOT = 6,	// - 'set configuration' unsuccessfull (transmission errors)
 	// line
 	MX_INT_ISTRE = 7,	// 'report status' OK
-	MX_INT_INSTR = 8,	// 'report status' rejected (previous 'report status' being executed)
-	MX_INT_INKST = 9,	// 'report status' for non existent line
-	MX_INT_IDOLI = 10,	// 'attach line' OK
-	MX_INT_INDOL = 11,	// 'attach line' rejected (errors in field, line already attached, previous 'attach line' beind excecuted)
-	MX_INT_INKDO = 12,	// 'attach line' for non existent line
-	MX_INT_IETRA = 13,	// 'transmit' OK
-	MX_INT_INTRA = 14,	// 'transmit' rejected (errors in field, line not attached, previous transmission ongoing)
-	MX_INT_INKTR = 15,	// 'transmit' for non existent line
-	MX_INT_ITRER = 16,	// 'transmit' finished with error (parity or other)
+	MX_INT_INSTR = 8,	// - 'report status' rejected (previous 'report status' being executed)
+	MX_INT_INKST = 9,	// + 'report status' for non existent line
+	MX_INT_IDOLI = 10,	// + 'attach line' OK
+	MX_INT_INDOL = 11,	// + 'attach line' rejected (errors in field, line already attached, previous 'attach line' beind excecuted)
+	MX_INT_INKDO = 12,	// + 'attach line' for non existent line
+	MX_INT_IETRA = 13,	// + 'transmit' OK
+	MX_INT_INTRA = 14,	// + 'transmit' rejected (errors in field, line not attached, previous transmission ongoing)
+	MX_INT_INKTR = 15,	// + 'transmit' for non existent line
+	MX_INT_ITRER = 16,	// + 'transmit' finished with error (parity or other)
 	MX_INT_ITRAB = 19,	// 'transmit' cancelled (as ordered by 'cancel transmission')
-	MX_INT_IABTR = 20,	// 'cancel transmission' OK
-	MX_INT_INABT = 21,	// 'cancel transmission' while no transmission
-	MX_INT_INKAB = 22,	// 'cancel transmission' for nonexistent line
-	MX_INT_IODLI = 23,	// 'detach line' OK
-	MX_INT_INODL = 24,	// 'detach line' for a line with ongoing transmission
-	MX_INT_INKOD = 25,	// 'detach line' for non existent line
-	MX_INT_INPAO = 32,	// mera-multix transmission failure
-	MX_INT_IPARE = 33,	// mera-multix parity error
+	MX_INT_IABTR = 20,	// + 'break transmission' OK
+	MX_INT_INABT = 21,	// + 'break transmission' while no transmission
+	MX_INT_INKAB = 22,	// + 'break transmission' for nonexistent line
+	MX_INT_IODLI = 23,	// + 'detach line' OK
+	MX_INT_INODL = 24,	// + 'detach line' for a line with ongoing transmission
+	MX_INT_INKOD = 25,	// + 'detach line' for non existent line
+	MX_INT_INPAO = 32,	// - mera-multix transmission failure
+	MX_INT_IPARE = 33,	// - mera-multix parity error
 	MX_INT_IOPRU = 34,	// operator request
 	MX_INT_IEPS0 = 35,	// unknown control command, code=0
 	MX_INT_IEPS6 = 36,	// unknown control command, code=6

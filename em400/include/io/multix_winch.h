@@ -19,6 +19,7 @@
 #define _MULTIX_WINCH_H_
 
 #include <inttypes.h>
+#include <pthread.h>
 
 #include "io/io.h"
 #include "io/multix.h"
@@ -29,6 +30,11 @@ struct mx_unit_winch_t {
 	struct rawdisk_t *winchester;
 	int winch_type;
 	int format_protect;
+	pthread_t worker;
+	pthread_mutex_t worker_mutex;
+	pthread_cond_t worker_cond;
+	int worker_dircmd;
+	int worker_addr;
 };
 
 // Winchester types
@@ -94,8 +100,8 @@ struct mx_winch_cf_t {
 	struct mx_winch_cf_format *format;
 	struct mx_winch_cf_transmit *transmit;
 	struct mx_winch_cf_park *park;
-	uint16_t *ret_len;
-	uint16_t *ret_status;
+	uint16_t ret_len;
+	uint16_t ret_status;
 };
 
 struct mx_unit_proto_t * mx_winch_create(struct cfg_arg_t *args);
@@ -106,7 +112,8 @@ void mx_winch_shutdown(struct mx_unit_proto_t *unit);
 void mx_winch_reset(struct mx_unit_proto_t *unit);
 int mx_winch_cfg_phy(struct mx_unit_proto_t *unit, struct mx_cf_sc_pl *cfg_phy);
 int mx_winch_cfg_log(struct mx_unit_proto_t *unit, struct mx_cf_sc_ll *cfg_log);
-int mx_winch_cmd(struct mx_unit_proto_t *unit, int dir, uint16_t n, uint16_t *r);
+void * mx_winch_worker(void *th_id);
+int mx_winch_cmd(struct mx_unit_proto_t *unit, int dircmd, uint16_t addr);
 struct mx_winch_cf_t * mx_winch_cf_t_decode(int addr);
 void mx_winch_cf_t_free(struct mx_winch_cf_t *cf);
 

@@ -100,7 +100,7 @@ void mx_floppy_shutdown(struct mx_unit_proto_t *unit);
 void mx_floppy_reset(struct mx_unit_proto_t *unit);
 int mx_floppy_cfg_phy(struct mx_unit_proto_t *unit, struct mx_cf_sc_pl *cfg_phy);
 int mx_floppy_cfg_log(struct mx_unit_proto_t *unit, struct mx_cf_sc_ll *cfg_log);
-int mx_floppy_cmd(struct mx_unit_proto_t *unit, int dir, uint16_t n, uint16_t *r);
+int mx_floppy_cmd(struct mx_unit_proto_t *unit, int dircmd, uint16_t addr);
 struct mx_floppy_cf_t * mx_floppy_cf_t_decode(int addr);
 void mx_floppy_cf_t_free(struct mx_floppy_cf_t *cf);
 

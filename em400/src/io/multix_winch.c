@@ -16,6 +16,8 @@
 //  51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 
 #include <stdlib.h>
+#include <pthread.h>
+#include <arpa/inet.h>
 
 #include "debugger/log.h"
 #include "errors.h"
@@ -31,7 +33,8 @@ struct mx_unit_proto_t * mx_winch_create(struct cfg_arg_t *args)
 {
 	int cyl, head, sect, ssize;
 	char *image_name = NULL;
-	int res = cfg_args_decode(args, "iiiis", &cyl, &head, &sect, &ssize, &image_name);
+	int res;
+	res = cfg_args_decode(args, "iiiis", &cyl, &head, &sect, &ssize, &image_name);
 	if (res != E_OK) {
 		gerr = res;
 		return NULL;
@@ -40,21 +43,31 @@ struct mx_unit_proto_t * mx_winch_create(struct cfg_arg_t *args)
 	eprint("      Winchester: cyl=%i, head=%i, sectors=%i, spt=%i, image=%s\n", cyl, head, sect, ssize, image_name);
 
 	struct rawdisk_t *winchester = rawdisk_create(cyl, head, sect, ssize, image_name);
+	free(image_name);
 	if (!winchester) {
-		free(image_name);
 		return NULL;
 	}
 
 	struct mx_unit_proto_t *unit = mx_winch_create_nodev();
 	if (!unit) {
 		rawdisk_shutdown(winchester);
-		free(image_name);
 		gerr = E_ALLOC;
 		return NULL;
 	}
 
 	mx_winch_connect(UNIT, winchester);
-	free(image_name);
+
+	UNIT->worker_dircmd = -1;
+	UNIT->worker_addr = 0;
+	pthread_mutex_init(&UNIT->worker_mutex, NULL);
+	pthread_cond_init(&UNIT->worker_cond, NULL);
+	res = pthread_create(&UNIT->worker, NULL, mx_winch_worker, (void *)UNIT);
+	if (res != 0) {
+		rawdisk_shutdown(winchester);
+		gerr = E_THREAD;
+		return NULL;
+	}
+
 	return unit;
 }
 
@@ -94,7 +107,7 @@ void mx_winch_reset(struct mx_unit_proto_t *unit)
 // -----------------------------------------------------------------------
 int mx_winch_cfg_phy(struct mx_unit_proto_t *unit, struct mx_cf_sc_pl *cfg_phy)
 {
-	LOG(D_IO, 20, "MULTIX/winchester (line:%i): configure physical line", unit->num);
+	LOG(D_IO, 20, "MULTIX/winchester (line:%i): configure physical line", unit->phy_num);
 	if (unit && cfg_phy) {
 		unit->dir = cfg_phy->dir;
 		unit->used = 1;
@@ -108,7 +121,7 @@ int mx_winch_cfg_phy(struct mx_unit_proto_t *unit, struct mx_cf_sc_pl *cfg_phy)
 // -----------------------------------------------------------------------
 int mx_winch_cfg_log(struct mx_unit_proto_t *unit, struct mx_cf_sc_ll *cfg_log)
 {
-	LOG(D_IO, 20, "MULTIX/winchester (line:%i): configure logical line", unit->num);
+	LOG(D_IO, 20, "MULTIX/winchester (line:%i): configure logical line", unit->phy_num);
 	if (unit && cfg_log && cfg_log->winch) {
 		UNIT->winch_type = cfg_log->winch->type;
 		UNIT->format_protect = cfg_log->winch->format_protect;
@@ -119,8 +132,208 @@ int mx_winch_cfg_log(struct mx_unit_proto_t *unit, struct mx_cf_sc_ll *cfg_log)
 }
 
 // -----------------------------------------------------------------------
-int mx_winch_cmd(struct mx_unit_proto_t *unit, int dir, uint16_t n, uint16_t *r)
+void mx_winch_cmd_attach(struct mx_unit_proto_t *unit, uint16_t addr)
 {
+	LOG(D_IO, 20, "MULTIX/winchester (line:%i): attach", unit->log_num);
+	unit->attached = 1;
+	mx_int(unit->chan, unit->log_num, MX_INT_IDOLI);
+}
+
+// -----------------------------------------------------------------------
+void mx_winch_cmd_detach(struct mx_unit_proto_t *unit, uint16_t addr)
+{
+
+}
+
+// -----------------------------------------------------------------------
+void mx_winch_cmd_status(struct mx_unit_proto_t *unit, uint16_t addr)
+{
+
+}
+
+// -----------------------------------------------------------------------
+int mx_winch_read(struct mx_unit_proto_t *unit, struct mx_winch_cf_t *cf)
+{
+	// first cylinder is used for relocated sectors
+	int offset = UNIT->winchester->heads * UNIT->winchester->sectors;
+
+	int buffer_size = ((cf->transmit->len / UNIT->winchester->sector_size)+1) * UNIT->winchester->sector_size;
+	uint8_t *buf = malloc(buffer_size);
+	int res;
+	int pos;
+
+	// transmit data into buffer, sector by sector
+	pos = 0;
+	int sector = cf->transmit->sector;
+	while (pos < cf->transmit->len) {
+		LOG(D_IO, 50, "MULTIX/winchester (line:%i): reading sector %i (+offset %i) into buf at pos: %i", unit->log_num, sector, offset, pos);
+		res = rawdisk_read_sector_l(UNIT->winchester, buf+pos, offset+sector);
+		pos += UNIT->winchester->sector_size;
+		sector++;
+	}
+
+	LOG(D_IO, 50, "MULTIX/winchester (line:%i): copying buffer at %i:%i (%i words)", unit->log_num, cf->transmit->nb, cf->transmit->addr, cf->transmit->len);
+	// copy buffer to memory, swapping byte order
+	pos = 0;
+	while (pos < cf->transmit->len) {
+		uint16_t data = ntohs(*((uint16_t*)(buf+pos)));
+		MEMBw(cf->transmit->nb, cf->transmit->addr + pos/2, data);
+		pos += 2;
+	}
+
+	free(buf);
+
+	return E_OK;
+}
+
+// -----------------------------------------------------------------------
+void mx_winch_cmd_transmit(struct mx_unit_proto_t *unit, uint16_t addr)
+{
+	LOG(D_IO, 20, "MULTIX/winchester (line:%i): transmit", unit->log_num);
+
+	// disk is not connected
+	if (!UNIT->winchester) {
+		MEMBw(0, addr+6, 0);
+		MEMBw(0, addr+6, MX_WS_ERR | MX_WS_REJECTED);
+		mx_int(unit->chan, unit->log_num, MX_INT_ITRER);
+		return;
+	}
+
+	int res = E_OK;
+
+	// decode control field
+	struct mx_winch_cf_t *cf = mx_winch_cf_t_decode(addr);
+	switch (cf->oper) {
+		case MX_WINCH_FORMAT_SPARE:
+			break;
+		case MX_WINCH_FORMAT:
+			break;
+		case MX_WINCH_READ:
+			res = mx_winch_read(unit, cf);
+			break;
+		case MX_WINCH_WRITE:
+			break;
+		case MX_WINCH_PARK:
+			break;
+		default:
+			mx_int(unit->chan, unit->log_num, MX_INT_INTRA);
+			mx_winch_cf_t_free(cf);
+			return;
+	}
+
+	MEMBw(0, addr+6, cf->ret_len);
+
+	if (res != E_OK) {
+		MEMBw(0, addr+6, cf->ret_status);
+		mx_int(unit->chan, unit->log_num, MX_INT_ITRER);
+	} else {
+		mx_int(unit->chan, unit->log_num, MX_INT_IETRA);
+	}
+
+	mx_winch_cf_t_free(cf);
+}
+
+// -----------------------------------------------------------------------
+void mx_winch_cmd_break(struct mx_unit_proto_t *unit, uint16_t addr)
+{
+	// break while not transmitting
+	mx_int(unit->chan, unit->log_num, MX_INT_INABT);
+}
+
+// -----------------------------------------------------------------------
+void * mx_winch_worker(void *th_id)
+{
+	struct mx_unit_proto_t *unit = th_id;
+	while (1) {
+		// wait for command
+		pthread_mutex_lock(&UNIT->worker_mutex);
+		LOG(D_IO, 20, "MULTIX/winchester (line:%i): worker waiting for job...", unit->log_num);
+		while (UNIT->worker_dircmd <= 0) {
+			pthread_cond_wait(&UNIT->worker_cond, &UNIT->worker_mutex);
+		}
+
+		// do the work
+		switch (UNIT->worker_dircmd) {
+			case IO_OU | MX_LCMD_ATTACH:
+				mx_winch_cmd_attach(unit, UNIT->worker_addr);
+				break;
+			case IO_IN | MX_LCMD_DETACH:
+				mx_winch_cmd_detach(unit, UNIT->worker_addr);
+				break;
+			case IO_OU | MX_LCMD_STATUS:
+				mx_winch_cmd_status(unit, UNIT->worker_addr);
+				break;
+			case IO_OU | MX_LCMD_TRANSMIT:
+				mx_winch_cmd_transmit(unit, UNIT->worker_addr);
+				break;
+			case IO_IN | MX_LCMD_BREAK:
+				mx_winch_cmd_break(unit, UNIT->worker_addr);
+				break;
+			default:
+				break;
+		}
+
+		UNIT->worker_dircmd = 0;
+		LOG(D_IO, 20, "MULTIX/winchester (line:%i): worker done", unit->log_num);
+		pthread_mutex_unlock(&UNIT->worker_mutex);
+	}
+
+	pthread_exit(NULL);
+}
+
+// -----------------------------------------------------------------------
+int mx_winch_cmd(struct mx_unit_proto_t *unit, int dircmd, uint16_t addr)
+{
+	// check if worker is busy
+	LOG(D_IO, 20, "MULTIX/winchester (line:%i): checking worker status...", unit->log_num);
+	int busy = pthread_mutex_trylock(&UNIT->worker_mutex);
+	LOG(D_IO, 20, "MULTIX/winchester (line:%i): worker status: %i", unit->log_num, busy);
+	if (busy) {
+		// worker is busy, set interrupt
+		switch (dircmd) {
+			case IO_OU | MX_LCMD_ATTACH:
+				mx_int(unit->chan, unit->log_num, MX_INT_INDOL);
+				break;
+			case IO_IN | MX_LCMD_DETACH:
+				mx_int(unit->chan, unit->log_num, MX_INT_INODL);
+				break;
+			case IO_OU | MX_LCMD_STATUS:
+				mx_int(unit->chan, unit->log_num, MX_INT_INSTR);
+				break;
+			case IO_OU | MX_LCMD_TRANSMIT:
+				mx_int(unit->chan, unit->log_num, MX_INT_INTRA);
+				break;
+			case IO_IN | MX_LCMD_BREAK:
+				// TODO: naprawdę zerwij transmisję
+				mx_int(unit->chan, unit->log_num, MX_INT_IABTR);
+				break;
+			default:
+				break;
+		}
+		return IO_OK;
+	}
+
+	// worker is free, prepare command
+	UNIT->worker_addr = addr;
+	UNIT->worker_dircmd = dircmd;
+	// signal worker
+	pthread_cond_signal(&UNIT->worker_cond);
+	pthread_mutex_unlock(&UNIT->worker_mutex);
+
+	return IO_OK;
+}
+
+// -----------------------------------------------------------------------
+int mx_winch_detach(struct mx_unit_proto_t *unit)
+{
+	int busy = pthread_mutex_trylock(&UNIT->worker_mutex);
+	if (busy) {
+		mx_int(unit->chan, unit->log_num, MX_INT_INODL);
+	} else {
+		unit->attached = 0;
+		mx_int(unit->chan, unit->log_num, MX_INT_IODLI);
+		pthread_mutex_unlock(&UNIT->worker_mutex);
+	}
 	return IO_OK;
 }
 

@@ -60,7 +60,7 @@ struct cmd_t dbg_commands[] = {
 	{ "log",	F_LOG,		"Enable logging", "  log\n  log on|off\n  log file <filename>\n  log level <domain>:<level>" },
 	{ "script",	F_SCRIPT,	"Load and execute script", "  script <filename>" },
 	{ "watch",	F_WATCH,	"Manipulate expression watches", "  watch add <expression>\n  watch del <watch_number>\n  watch" },
-	{ "decode",	F_DECODE,	"Decode memory structures", "  decode\n  decode <decoder> address" },
+	{ "decode",	F_DECODE,	"Decode memory structures", "  decode\n  decode <decoder> <address>" },
 	{ NULL,		0,			NULL, NULL }
 };
 

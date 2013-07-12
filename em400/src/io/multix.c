@@ -45,11 +45,7 @@ struct mx_unit_proto_t mx_unit_proto[] = {
 		mx_winch_cfg_phy,
 		mx_winch_cfg_log,
 		mx_winch_cmd,
-		-1,
-		-1,
-		-1,
-		MX_PHY_WINCHESTER,
-		-1
+		MX_PHY_WINCHESTER
 	},
 	{
 		"floppy",
@@ -60,11 +56,7 @@ struct mx_unit_proto_t mx_unit_proto[] = {
 		mx_floppy_cfg_phy,
 		mx_floppy_cfg_log,
 		mx_floppy_cmd,
-		-1,
-		-1,
-		-1,
-		MX_PHY_FLOPPY,
-		-1
+		MX_PHY_FLOPPY
 	},
 	{
 		NULL,
@@ -75,10 +67,6 @@ struct mx_unit_proto_t mx_unit_proto[] = {
 		NULL,
 		NULL,
 		NULL,
-		-1,
-		-1,
-		-1,
-		-1,
 		-1
 	}
 };
@@ -136,13 +124,26 @@ struct chan_proto_t * mx_create(struct cfg_unit_t *units)
 			return NULL;
 		}
 
-		unit->num = cunit->num;
 		unit->name = proto->name;
 		unit->create = proto->create;
-		unit->reset = proto->reset;
+		unit->create_nodev = proto->create_nodev;
 		unit->shutdown = proto->shutdown;
+		unit->reset = proto->reset;
+		unit->cfg_phy = proto->cfg_phy;
+		unit->cfg_log = proto->cfg_log;
 		unit->cmd = proto->cmd;
-		CHAN->pline[unit->num] = unit;
+
+		unit->chan = chan;
+
+		unit->type = -1;
+		unit->phy_num = cunit->num;
+		unit->dir = -1;
+		unit->used = -1;
+		unit->log_num = -1;
+		unit->protocol = -1;
+		unit->attached = 0;
+
+		CHAN->pline[unit->phy_num] = unit;
 		cunit = cunit->next;
 	}
 	return (struct chan_proto_t*) chan;
@@ -154,7 +155,7 @@ void mx_shutdown(struct chan_proto_t *chan)
 	for (int i=0 ; i<MX_MAX_DEVICES ; i++) {
 		struct mx_unit_proto_t *unit = CHAN->pline[i];
 		if (unit) {
-			eprint("    Unit %i: %s\n", unit->num, unit->name);
+			eprint("    Unit %i: %s\n", unit->phy_num, unit->name);
 			unit->shutdown(unit);
 			CHAN->pline[i] = NULL;
 		}
@@ -182,6 +183,7 @@ void mx_reset(struct chan_proto_t *chan)
 void mx_int_report(struct mx_chan_t *chan)
 {
 	if (CHAN->int_head) {
+		LOG(D_IO, 1, "MULTIX (ch:%i) reporting interrupt %i", chan->proto.num, chan->proto.num + 12);
 		int_set(chan->proto.num + 12);
 	}
 }
@@ -194,14 +196,14 @@ void mx_int(struct mx_chan_t *chan, int unit_n, int interrupt)
 	mx_int->interrupt = interrupt;
 	mx_int->next = NULL;
 
+	LOG(D_IO, 1, "MULTIX (ch:%i) interrupt %i, unit: %i", chan->proto.num, interrupt, unit_n);
+
 	pthread_mutex_lock(&CHAN->int_mutex);
 
 	if (interrupt == MX_INT_IWYZE) {
 		mx_int_setq(chan, mx_int);
-		mx_int_report(chan);
 	} else if (interrupt <= MX_INT_IWYTE) {
 		mx_int_preq(chan, mx_int);
-		mx_int_report(chan);
 	} else {
 		mx_int_enq(chan, mx_int);
 	}
@@ -217,6 +219,7 @@ void mx_int_enq(struct mx_chan_t *chan, struct mx_int_t *mx_int)
 		chan->int_tail = mx_int;
 	} else {
 		chan->int_tail = chan->int_head = mx_int;
+		mx_int_report(chan);
 	}
 }
 
@@ -229,6 +232,7 @@ void mx_int_preq(struct mx_chan_t *chan, struct mx_int_t *mx_int)
 	} else {
 		chan->int_tail = chan->int_head = mx_int;
 	}
+	mx_int_report(chan);
 }
 
 // -----------------------------------------------------------------------
@@ -243,6 +247,7 @@ void mx_int_setq(struct mx_chan_t *chan, struct mx_int_t *mx_int)
 		inth = next;
 	}
 	chan->int_tail = chan->int_head = mx_int;
+	mx_int_report(chan);
 }
 
 // -----------------------------------------------------------------------
@@ -291,7 +296,7 @@ int mx_cmd_intspec(struct chan_proto_t *chan, uint16_t *r_arg)
 		*r_arg = (inth->interrupt << 8) | (inth->unit_n);
 		free(inth);
 	} else {
-		*r_arg = 0;
+		*r_arg = MX_INT_INIEA << 8;
 	}
 
 	mx_int_report(CHAN);
@@ -366,7 +371,8 @@ int mx_cmd_setcfg(struct chan_proto_t *chan, uint16_t *r_arg)
 				// if device, that OS tries to configure, is not configured in emulator,
 				// physical/logical configuration is lost.
 				// TODO: this needs to change when dynamic device configuration is added
-				LOG(D_IO, 1, "Physical line %i (type: %i) NOT configured (missing in em400 configuration)", unit_n, unit->type);
+				// we would need to use create_nodev() and later in unit code check if device is connected
+				LOG(D_IO, 1, "Physical line %i NOT configured (missing in em400 configuration)", unit_n);
 			}
 		}
 	}
@@ -377,55 +383,98 @@ int mx_cmd_setcfg(struct chan_proto_t *chan, uint16_t *r_arg)
 		unit = CHAN->pline[log->pl_id];
 		res = unit->cfg_log(unit, log);
 		CHAN->lline[i] = unit;
-		LOG(D_IO, 1, "Logical line assigned: %i -> %i (protocol: %i)", i, log->pl_id, log->proto);
+		unit->log_num = i;
+		LOG(D_IO, 1, "Logical line %i configured (physical: %i, protocol: %i)", i, log->pl_id, log->proto);
 	}
+
+	mx_int(CHAN, 0, MX_INT_IUKON);
+	mx_free_cf_sc(cf);
 
 	LOG(D_IO, 1, "MULTIX configuration set");
 
-	mx_free_cf_sc(cf);
 	return IO_OK;
 }
 
 // -----------------------------------------------------------------------
-int mx_cmd_attach(struct chan_proto_t *chan, unsigned lline, uint16_t *r_arg)
+int mx_cmd_attach(struct chan_proto_t *chan, int dir, int cmd, int lline_n, uint16_t addr)
 {
-	LOG(D_IO, 1, "MULTIX (ch:%i, line:%i) command: attach", chan->num, lline);
-	return IO_OK;
+	struct mx_unit_proto_t *unit = CHAN->lline[lline_n];
+	if (!unit) {
+		mx_int(CHAN, lline_n, MX_INT_INKDO);
+		return IO_OK;
+	}
+
+	if (unit->attached) {
+		mx_int(CHAN, lline_n, MX_INT_INDOL);
+		return IO_OK;
+	}
+
+	return unit->cmd(unit, dir|cmd, addr);
 }
 
 // -----------------------------------------------------------------------
-int mx_cmd_detach(struct chan_proto_t *chan, unsigned lline)
+int mx_cmd_detach(struct chan_proto_t *chan, int dir, int cmd, int lline_n, uint16_t addr)
 {
-	LOG(D_IO, 1, "MULTIX (ch:%i, line:%i) command: detach", chan->num, lline);
-	return IO_OK;
+	struct mx_unit_proto_t *unit = CHAN->lline[lline_n];
+	if (!unit) {
+		mx_int(CHAN, lline_n, MX_INT_INKOD);
+		return IO_OK;
+	}
+
+	if (!unit->attached) {
+		mx_int(CHAN, lline_n, MX_INT_IODLI);
+		return IO_OK;
+	}
+
+	return unit->cmd(unit, dir|cmd, addr);
 }
 
 // -----------------------------------------------------------------------
-int mx_cmd_status(struct chan_proto_t *chan, unsigned lline, uint16_t *r_arg)
+int mx_cmd_transmit(struct chan_proto_t *chan, int dir, int cmd, int lline_n, uint16_t addr)
 {
-	LOG(D_IO, 1, "MULTIX (ch:%i, line:%i) command: status", chan->num, lline);
-	return IO_OK;
+	struct mx_unit_proto_t *unit = CHAN->lline[lline_n];
+	if (!unit) {
+		mx_int(CHAN, lline_n, MX_INT_INKTR);
+		return IO_OK;
+	}
+
+	if (!unit->attached) {
+		mx_int(CHAN, lline_n, MX_INT_INTRA);
+		return IO_OK;
+	}
+
+	return unit->cmd(unit, dir|cmd, addr);
 }
 
 // -----------------------------------------------------------------------
-int mx_cmd_transmit(struct chan_proto_t *chan, unsigned lline, uint16_t *r_arg)
+int mx_cmd_status(struct chan_proto_t *chan, int dir, int cmd, int lline_n, uint16_t addr)
 {
-	LOG(D_IO, 1, "MULTIX (ch:%i, line:%i) command: transmit", chan->num, lline);
-	return IO_OK;
+	struct mx_unit_proto_t *unit = CHAN->lline[lline_n];
+	if (!unit) {
+		mx_int(CHAN, lline_n, MX_INT_INKST);
+		return IO_OK;
+	}
+
+	return unit->cmd(unit, dir|cmd, addr);
 }
 
 // -----------------------------------------------------------------------
-int mx_cmd_break(struct chan_proto_t *chan, unsigned lline)
+int mx_cmd_break(struct chan_proto_t *chan, int dir, int cmd, int lline_n, uint16_t addr)
 {
-	LOG(D_IO, 1, "MULTIX (ch:%i, line:%i) command: break transmission", chan->num, lline);
-	return IO_OK;
+	struct mx_unit_proto_t *unit = CHAN->lline[lline_n];
+	if (!unit) {
+		mx_int(CHAN, lline_n, MX_INT_INKAB);
+		return IO_OK;
+	}
+
+	return unit->cmd(unit, dir|cmd, addr);
 }
 
 // -----------------------------------------------------------------------
 int mx_cmd(struct chan_proto_t *chan, int dir, uint16_t n_arg, uint16_t *r_arg)
 {
 	unsigned cmd = (n_arg & 0b1110000000000000) >> 13;
-	unsigned lline = (n_arg & 0b0001111111100000) >> 5;
+	unsigned lline_n = (n_arg & 0b0001111111100000) >> 5;
 
 	if (cmd == 0) { // channel commands
 		cmd = (n_arg & 0b0001100000000000) >> 11;
@@ -447,27 +496,32 @@ int mx_cmd(struct chan_proto_t *chan, int dir, uint16_t n_arg, uint16_t *r_arg)
 				case MX_CMD_INTRQ:
 					return mx_cmd_int_requeue(chan);
 				case MX_LCMD_DETACH:
-					return mx_cmd_detach(chan, lline);
+					LOG(D_IO, 1, "MULTIX (ch:%i, line:%i) command: detach", chan->num, lline_n);
+					return mx_cmd_detach(chan, dir, cmd, lline_n, *r_arg);
 				case MX_LCMD_BREAK:
-					return mx_cmd_break(chan, lline);
+					LOG(D_IO, 1, "MULTIX (ch:%i, line:%i) command: break transmission", chan->num, lline_n);
+					return mx_cmd_break(chan, dir, cmd, lline_n, *r_arg);
 				default:
-					LOG(D_IO, 1, "MULTIX (ch:%i, line:%i) command: unknown line IN command", chan->num, lline);
+					LOG(D_IO, 1, "MULTIX (ch:%i, line:%i) command: unknown line IN command", chan->num, lline_n);
 					break;
 			}
 		} else {
 			switch (cmd) {
 				case MX_CMD_TEST:
-					return mx_cmd_test(chan, lline, r_arg);
+					return mx_cmd_test(chan, lline_n, r_arg);
 				case MX_CMD_SETCFG:
 					return mx_cmd_setcfg(chan, r_arg);
 				case MX_LCMD_ATTACH:
-					return mx_cmd_attach(chan, lline, r_arg);
+					LOG(D_IO, 1, "MULTIX (ch:%i, line:%i) command: attach", chan->num, lline_n);
+					return mx_cmd_attach(chan, dir, cmd, lline_n, *r_arg);
 				case MX_LCMD_STATUS:
-					return mx_cmd_status(chan, lline, r_arg);
+					LOG(D_IO, 1, "MULTIX (ch:%i, line:%i) command: status", chan->num, lline_n);
+					return mx_cmd_status(chan, dir, cmd, lline_n, *r_arg);
 				case MX_LCMD_TRANSMIT:
-					return mx_cmd_transmit(chan, lline, r_arg);
+					LOG(D_IO, 1, "MULTIX (ch:%i, line:%i) command: transmit", chan->num, lline_n);
+					return mx_cmd_transmit(chan, dir, cmd, lline_n, *r_arg);
 				default:
-					LOG(D_IO, 1, "MULTIX (ch:%i, line:%i) command: unknown line OUT command", chan->num, lline);
+					LOG(D_IO, 1, "MULTIX (ch:%i, line:%i) command: unknown line OUT command", chan->num, lline_n);
 					break;
 			}
 		}

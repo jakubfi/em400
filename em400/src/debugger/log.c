@@ -22,10 +22,13 @@
 #include <string.h>
 #include <strings.h>
 #include <stdarg.h>
+#include <pthread.h>
 
 #include "cfg.h"
 #include "errors.h"
 #include "debugger/log.h"
+
+pthread_mutex_t log_mutex = PTHREAD_MUTEX_INITIALIZER;
 
 char *log_dname[] = {
 	"REG",
@@ -192,9 +195,11 @@ void log_log(int domain, int level, char *format, ...)
 
 	va_list vl;
 	va_start(vl, format);
+	pthread_mutex_lock(&log_mutex);
 	fprintf(log_f, "%s.%-6d %4s:%-3d ", now, (int) ct.tv_usec, log_dname[domain], level);
 	vfprintf(log_f, format, vl);
 	fprintf(log_f, "\n");
+	pthread_mutex_unlock(&log_mutex);
 	va_end(vl);
 	fflush(log_f);
 }
