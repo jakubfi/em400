@@ -67,11 +67,11 @@ void cpu_step()
 	// fetch M-arg if present
 	if (op->norm_arg) {
 		if (!IR_C) {
-			_N = nMEM(nR(R_IC));
+			_N = (int16_t) nMEM(nR(R_IC));
 			LOG(D_CPU, 3, "Fetched M argument: 0x%04x", _N);
 			nRinc(R_IC);
 		} else {
-			_N = R(IR_C);
+			_N = (int16_t) R(IR_C);
 		}
 	}
 
@@ -100,12 +100,12 @@ void cpu_step()
 
 	// calculate argument
 	if (op->norm_arg) {
-		if (IR_B) _N += R(IR_B);
-		_N += nR(R_MOD);
-		if (IR_D) _N = MEM(_N);
+		if (IR_B) _N += (int16_t) R(IR_B);
+		_N += (int16_t) nR(R_MOD);
+		if (IR_D) _N = (int16_t) MEM(_N);
 		if (em400_cfg.cpu.mod_17bit) nRw(R_ZC17, (_N >> 16) & 1);
 	} else if (op->short_arg) {
-		_N = IR_T + nR(R_MOD);
+		_N = IR_T + (int16_t) nR(R_MOD);
 		if (em400_cfg.cpu.mod_17bit) nRw(R_ZC17, (_N >> 16) & 1);
 	}
 	N = _N;
