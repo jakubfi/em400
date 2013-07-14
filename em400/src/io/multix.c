@@ -381,10 +381,15 @@ int mx_cmd_setcfg(struct chan_proto_t *chan, uint16_t *r_arg)
 	for (i=0 ; i<cf->ll_desc_count ; i++) {
 		struct mx_cf_sc_ll *log = cf->ll+i;
 		unit = CHAN->pline[log->pl_id];
-		res = unit->cfg_log(unit, log);
-		CHAN->lline[i] = unit;
-		unit->log_num = i;
-		LOG(D_IO, 1, "Logical line %i configured (physical: %i, protocol: %i)", i, log->pl_id, log->proto);
+		if (unit) {
+			res = unit->cfg_log(unit, log);
+			CHAN->lline[i] = unit;
+			unit->log_num = i;
+			LOG(D_IO, 1, "Logical line %i configured (physical: %i, protocol: %i)", i, log->pl_id, log->proto);
+		} else {
+			// no logical line, no physical line, as above
+			LOG(D_IO, 1, "Logical line %i NOT configured (physical line missing in em400 configuration)", i);
+		}
 	}
 
 	mx_int(CHAN, 0, MX_INT_IUKON);
@@ -599,7 +604,19 @@ int mx_decode_cf_log(int addr, struct mx_cf_sc_ll *log, struct mx_cf_sc_pl *phys
 	}
 
 	switch (log->proto) {
-		case 6: // Winchester
+		case MX_PROTO_PUNCH_READER:
+			break;
+		case MX_PROTO_PUNCHER:
+			break;
+		case MX_PROTO_TERMINAL:
+			break;
+		case MX_PROTO_SOM_PUNCH_READER:
+			break;
+		case MX_PROTO_SOM_PUNCHER:
+			break;
+		case MX_PROTO_SOM_TERMINAL:
+			break;
+		case MX_PROTO_WINCHESTER:
 			if (phy->type != MX_PHY_WINCHESTER) {
 				return MX_SC_E_PROTO_MISMATCH;
 			}
@@ -611,7 +628,7 @@ int mx_decode_cf_log(int addr, struct mx_cf_sc_ll *log, struct mx_cf_sc_pl *phys
 			log->winch->type =				(data & 0b1111111100000000) >> 8;
 			log->winch->format_protect =	(data & 0b0000000011111111);
 			break;
-		case 7: // magnetic tape
+		case MX_PROTO_MTAPE:
 			if (phy->type != MX_PHY_MTAPE) {
 				return MX_SC_E_PROTO_MISMATCH;
 			}
@@ -619,7 +636,7 @@ int mx_decode_cf_log(int addr, struct mx_cf_sc_ll *log, struct mx_cf_sc_pl *phys
 			log->formatter = (log->pl_id & 0b10000000) >> 7;
 			log->pl_id &= 0b00011111;
 			break;
-		case 8: // floppy disk
+		case MX_PROTO_FLOPPY:
 			if (phy->type != MX_PHY_FLOPPY) {
 				return MX_SC_E_PROTO_MISMATCH;
 			}
@@ -630,6 +647,8 @@ int mx_decode_cf_log(int addr, struct mx_cf_sc_ll *log, struct mx_cf_sc_pl *phys
 			data = MEMB(0, addr+1);
 			log->floppy->type =				(data & 0b1111111100000000) >> 8;
 			log->floppy->format_protect =	(data & 0b0000000011111111);
+			break;
+		case MX_PROTO_TTY_ITWL:
 			break;
 		default: // unknown protocol
 			return MX_SC_E_PROTO_MISSING;

@@ -172,15 +172,15 @@ int mx_winch_read(struct mx_unit_proto_t *unit, struct mx_winch_cf_t *cf)
 		sector++;
 	}
 
-	LOG(D_IO, 50, "MULTIX/winchester (line:%i): copying buffer at %i:%i (%i words)", unit->log_num, cf->transmit->nb, cf->transmit->addr, cf->transmit->len);
+	LOG(D_IO, 50, "MULTIX/winchester (line:%i): copying %i words to %i:%i", unit->log_num, cf->transmit->len, cf->transmit->nb, cf->transmit->addr);
 	// copy buffer to memory, swapping byte order
 	pos = 0;
 	while (pos < cf->transmit->len) {
-		uint16_t data = ntohs(*((uint16_t*)(buf+pos)));
-		MEMBw(cf->transmit->nb, cf->transmit->addr + pos/2, data);
-		pos += 2;
+		uint16_t data = ntohs(*((uint16_t*)(buf+(pos*2))));
+		MEMBw(cf->transmit->nb, cf->transmit->addr + pos, data);
+		pos++;
 	}
-
+	LOG(D_IO, 50, "Last address: %i", cf->transmit->addr+pos-1);
 	free(buf);
 
 	return E_OK;
