@@ -55,7 +55,7 @@ void cpu_step()
 
 	// fetch instruction
 	nRw(R_IR, nMEM(nR(R_IC)));
-	LOG(D_CPU, 3, "---- Cycle: Q:NB = %d:%d, IC = 0x%04x ------------", SR_Q, SR_NB, regs[R_IC]);
+	LOG(D_CPU, 10, "---- Cycle: Q:NB = %d:%d, IC = 0x%04x ------------", SR_Q, SR_NB, regs[R_IC]);
 	nRinc(R_IC);
 
 	op = iset+IR_OP;
@@ -68,7 +68,7 @@ void cpu_step()
 	if (op->norm_arg) {
 		if (!IR_C) {
 			_N = (int16_t) nMEM(nR(R_IC));
-			LOG(D_CPU, 3, "Fetched M argument: 0x%04x", _N);
+			LOG(D_CPU, 20, "Fetched M argument: 0x%04x", _N);
 			nRinc(R_IC);
 		} else {
 			_N = (int16_t) R(IR_C);
@@ -77,7 +77,7 @@ void cpu_step()
 
 	// previous instruction set P?
 	if (nR(R_P)) {
-		LOG(D_CPU, 3, "P set, skipping");
+		LOG(D_CPU, 20, "P set, skipping");
 		Rw(R_P, 0);
 		return;
 	}
@@ -88,7 +88,7 @@ void cpu_step()
 	if ((op_fun == NULL)
 	|| (op_is_md && (R(R_MODc) >= 3))
 	|| (SR_Q && op->user_illegal)) {
-		LOG(D_CPU, 3, "Instruction ineffective");
+		LOG(D_CPU, 10, "Instruction ineffective");
 		Rw(R_MODc, 0);
 		Rw(R_MOD, 0);
 		Rw(R_P, 0);
@@ -110,8 +110,10 @@ void cpu_step()
 	}
 	N = _N;
 
+	LOG(D_CPU, 20, "N/T arg: 0x%04x (%i)", N, N);
+
 	// execute instruction
-	LOG(D_CPU, 3, "Execute instruction");
+	LOG(D_CPU, 30, "Execute instruction");
 	op_fun();
 
 	if (!op_is_md) {

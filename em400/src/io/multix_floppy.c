@@ -94,7 +94,7 @@ void mx_floppy_reset(struct mx_unit_proto_t *unit)
 // -----------------------------------------------------------------------
 int mx_floppy_cfg_phy(struct mx_unit_proto_t *unit, struct mx_cf_sc_pl *cfg_phy)
 {
-	LOG(D_IO, 20, "MULTIX/floppy (line:%i): configure physical line", unit->phy_num);
+	LOG(D_IO, 10, "MULTIX/floppy (line:%i): configure physical line", unit->phy_num);
 	if (unit && cfg_phy) {
 		unit->dir = cfg_phy->dir;
 		unit->used = 1;
@@ -108,7 +108,7 @@ int mx_floppy_cfg_phy(struct mx_unit_proto_t *unit, struct mx_cf_sc_pl *cfg_phy)
 // -----------------------------------------------------------------------
 int mx_floppy_cfg_log(struct mx_unit_proto_t *unit, struct mx_cf_sc_ll *cfg_log)
 {
-	LOG(D_IO, 20, "MULTIX/floppy (line:%i): configure logical line", unit->phy_num);
+	LOG(D_IO, 10, "MULTIX/floppy (line:%i): configure logical line", unit->phy_num);
 	if (unit && cfg_log && cfg_log->floppy) {
 		UNIT->floppy_type = cfg_log->floppy->type;
 		UNIT->format_protect = cfg_log->floppy->format_protect;

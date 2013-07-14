@@ -183,7 +183,7 @@ void mx_reset(struct chan_proto_t *chan)
 void mx_int_report(struct mx_chan_t *chan)
 {
 	if (CHAN->int_head) {
-		LOG(D_IO, 1, "MULTIX (ch:%i) reporting interrupt %i", chan->proto.num, chan->proto.num + 12);
+		LOG(D_IO, 10, "MULTIX (ch:%i) reporting interrupt %i", chan->proto.num, chan->proto.num + 12);
 		int_set(chan->proto.num + 12);
 	}
 }
@@ -322,7 +322,7 @@ int mx_cmd_setcfg(struct chan_proto_t *chan, uint16_t *r_arg)
 
 	// fail, if configuration is already set
 	if (CHAN->confset) {
-		LOG(D_IO, 10, "MULTIX setconf error: configuration already set");
+		LOG(D_IO, 1, "MULTIX setconf error: configuration already set");
 		MEMBw(0, retf_addr, MX_SC_E_CONFSET << 8);
 		mx_int(CHAN, 0, MX_INT_INKON);
 		return IO_OK;
@@ -344,7 +344,7 @@ int mx_cmd_setcfg(struct chan_proto_t *chan, uint16_t *r_arg)
 
 	// decoding failed
 	if (res != E_OK) {
-		LOG(D_IO, 10, "MULTIX setconf error: decode failed (error: %i, line: %i)", cf->err_code, cf->err_line);
+		LOG(D_IO, 1, "MULTIX setconf error: decode failed (error: %i, line: %i)", cf->err_code, cf->err_line);
 		retf = (cf->err_code << 8) | cf->err_line;
 		MEMBw(0, retf_addr, retf);
 		mx_int(CHAN, 0, MX_INT_INKON);

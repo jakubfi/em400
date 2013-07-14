@@ -107,7 +107,7 @@ void mx_winch_reset(struct mx_unit_proto_t *unit)
 // -----------------------------------------------------------------------
 int mx_winch_cfg_phy(struct mx_unit_proto_t *unit, struct mx_cf_sc_pl *cfg_phy)
 {
-	LOG(D_IO, 20, "MULTIX/winchester (line:%i): configure physical line", unit->phy_num);
+	LOG(D_IO, 10, "MULTIX/winchester (line:%i): configure physical line", unit->phy_num);
 	if (unit && cfg_phy) {
 		unit->dir = cfg_phy->dir;
 		unit->used = 1;
@@ -121,7 +121,7 @@ int mx_winch_cfg_phy(struct mx_unit_proto_t *unit, struct mx_cf_sc_pl *cfg_phy)
 // -----------------------------------------------------------------------
 int mx_winch_cfg_log(struct mx_unit_proto_t *unit, struct mx_cf_sc_ll *cfg_log)
 {
-	LOG(D_IO, 20, "MULTIX/winchester (line:%i): configure logical line", unit->phy_num);
+	LOG(D_IO, 10, "MULTIX/winchester (line:%i): configure logical line", unit->phy_num);
 	if (unit && cfg_log && cfg_log->winch) {
 		UNIT->winch_type = cfg_log->winch->type;
 		UNIT->format_protect = cfg_log->winch->format_protect;
@@ -134,7 +134,7 @@ int mx_winch_cfg_log(struct mx_unit_proto_t *unit, struct mx_cf_sc_ll *cfg_log)
 // -----------------------------------------------------------------------
 void mx_winch_cmd_attach(struct mx_unit_proto_t *unit, uint16_t addr)
 {
-	LOG(D_IO, 20, "MULTIX/winchester (line:%i): attach", unit->log_num);
+	LOG(D_IO, 10, "MULTIX/winchester (line:%i): attach", unit->log_num);
 	unit->attached = 1;
 	mx_int(unit->chan, unit->log_num, MX_INT_IDOLI);
 }
@@ -166,13 +166,13 @@ int mx_winch_read(struct mx_unit_proto_t *unit, struct mx_winch_cf_t *cf)
 	pos = 0;
 	int sector = cf->transmit->sector;
 	while (pos < cf->transmit->len) {
-		LOG(D_IO, 50, "MULTIX/winchester (line:%i): reading sector %i (+offset %i) into buf at pos: %i", unit->log_num, sector, offset, pos);
+		LOG(D_IO, 10, "MULTIX/winchester (line:%i): reading sector %i (+offset %i) into buf at pos: %i", unit->log_num, sector, offset, pos);
 		res = rawdisk_read_sector_l(UNIT->winchester, buf+pos, offset+sector);
 		pos += UNIT->winchester->sector_size;
 		sector++;
 	}
 
-	LOG(D_IO, 50, "MULTIX/winchester (line:%i): copying %i words to %i:%i", unit->log_num, cf->transmit->len, cf->transmit->nb, cf->transmit->addr);
+	LOG(D_IO, 10, "MULTIX/winchester (line:%i): copying %i words to %i:%i", unit->log_num, cf->transmit->len, cf->transmit->nb, cf->transmit->addr);
 	// copy buffer to memory, swapping byte order
 	pos = 0;
 	while (pos < cf->transmit->len) {
@@ -180,7 +180,6 @@ int mx_winch_read(struct mx_unit_proto_t *unit, struct mx_winch_cf_t *cf)
 		MEMBw(cf->transmit->nb, cf->transmit->addr + pos, data);
 		pos++;
 	}
-	LOG(D_IO, 50, "Last address: %i", cf->transmit->addr+pos-1);
 	free(buf);
 
 	return E_OK;
@@ -189,7 +188,7 @@ int mx_winch_read(struct mx_unit_proto_t *unit, struct mx_winch_cf_t *cf)
 // -----------------------------------------------------------------------
 void mx_winch_cmd_transmit(struct mx_unit_proto_t *unit, uint16_t addr)
 {
-	LOG(D_IO, 20, "MULTIX/winchester (line:%i): transmit", unit->log_num);
+	LOG(D_IO, 1, "MULTIX/winchester (line:%i): transmit", unit->log_num);
 
 	// disk is not connected
 	if (!UNIT->winchester) {
@@ -248,7 +247,7 @@ void * mx_winch_worker(void *th_id)
 		// wait for command
 		pthread_mutex_lock(&UNIT->worker_mutex);
 		while (UNIT->worker_dircmd <= 0) {
-			LOG(D_IO, 20, "MULTIX/winchester (line:%i): worker waiting for job...", unit->log_num);
+			LOG(D_IO, 10, "MULTIX/winchester (line:%i): worker waiting for job...", unit->log_num);
 			pthread_cond_wait(&UNIT->worker_cond, &UNIT->worker_mutex);
 		}
 
@@ -274,7 +273,7 @@ void * mx_winch_worker(void *th_id)
 		}
 
 		UNIT->worker_dircmd = 0;
-		LOG(D_IO, 20, "MULTIX/winchester (line:%i): worker done", unit->log_num);
+		LOG(D_IO, 10, "MULTIX/winchester (line:%i): worker done", unit->log_num);
 		pthread_mutex_unlock(&UNIT->worker_mutex);
 	}
 
@@ -286,7 +285,7 @@ int mx_winch_cmd(struct mx_unit_proto_t *unit, int dircmd, uint16_t addr)
 {
 	// check if worker is busy
 	int busy = pthread_mutex_trylock(&UNIT->worker_mutex);
-	LOG(D_IO, 20, "MULTIX/winchester (line:%i): worker status: %i", unit->log_num, busy);
+	LOG(D_IO, 10, "MULTIX/winchester (line:%i): worker status: %i", unit->log_num, busy);
 	if (busy) {
 		// worker is busy, set interrupt
 		switch (dircmd) {

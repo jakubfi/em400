@@ -140,7 +140,6 @@ int io_dispatch(int dir, uint16_t n, uint16_t *r)
 	// software memory configuration
 	if (is_mem) {
 		if (dir == IO_OU) {
-			LOG(D_IO, 1, "MEM command");
 			int nb = *r & 0b0000000000001111;
 			int ab = (*r & 0b1111000000000000) >> 12;
 			int module = (n & 0b0000000000011110) >> 1;
