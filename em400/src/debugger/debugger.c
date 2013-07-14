@@ -18,6 +18,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <limits.h>
+#include <pthread.h>
 
 #include "cpu/cpu.h"
 #include "cpu/registers.h"
@@ -34,6 +35,8 @@
 #include "debugger/ui.h"
 #include "debugger/parser.h"
 #include "debugger/eval.h"
+
+pthread_mutex_t touch_mutex = PTHREAD_MUTEX_INITIALIZER;
 
 char *script_name = NULL;
 
@@ -67,7 +70,8 @@ void yy_delete_buffer(YY_BUFFER_STATE b);
 // -----------------------------------------------------------------------
 void dbg_touch_add(struct touch_t **t, int type, int block, int pos, int oval)
 {
-	struct touch_t *nt = dbg_touch_get(t, block, pos);
+	pthread_mutex_lock(&touch_mutex);
+	struct touch_t *nt = dbg_touch_get_nolock(t, block, pos);
 	if (nt) {
 		nt->type |= type;
 	} else {
@@ -79,10 +83,11 @@ void dbg_touch_add(struct touch_t **t, int type, int block, int pos, int oval)
 		nt->next = *t;
 		*t = nt;
 	}
+	pthread_mutex_unlock(&touch_mutex);
 }
 
 // -----------------------------------------------------------------------
-struct touch_t * dbg_touch_get(struct touch_t **t, int block, int pos)
+struct touch_t * dbg_touch_get_nolock(struct touch_t **t, int block, int pos)
 {
 	struct touch_t *tf = *t;
 	while (tf) {
@@ -95,32 +100,63 @@ struct touch_t * dbg_touch_get(struct touch_t **t, int block, int pos)
 }
 
 // -----------------------------------------------------------------------
+struct touch_t * dbg_touch_get(struct touch_t **t, int block, int pos)
+{
+	struct touch_t *ret_touch = NULL;
+
+	pthread_mutex_lock(&touch_mutex);
+	struct touch_t *tf = *t;
+	while (tf) {
+		if ((tf->block == block) && (tf->pos == pos)) {
+			ret_touch = malloc(sizeof(struct touch_t));
+			memcpy(ret_touch, tf, sizeof(struct touch_t));
+			break;
+		}
+		tf = tf->next;
+	}
+	pthread_mutex_unlock(&touch_mutex);
+	return ret_touch;
+}
+
+// -----------------------------------------------------------------------
 int dbg_touch_check(struct touch_t **t, int block, int pos)
 {
-	struct touch_t *tf = dbg_touch_get(t, block, pos);
+	int type;
+	pthread_mutex_lock(&touch_mutex);
+	struct touch_t *tf = dbg_touch_get_nolock(t, block, pos);
 	if (tf) {
-		return tf->type;
+		type = tf->type;
 	} else {
-		return 0;
+		type = 0;
 	}
+	pthread_mutex_unlock(&touch_mutex);
+	return type;
 }
 
 // -----------------------------------------------------------------------
 void dbg_touch_pop(struct touch_t **t)
 {
-	if (!*t) return;
-	struct touch_t *tn = (*t)->next;
-	free(*t);
-	*t = tn;
+	pthread_mutex_lock(&touch_mutex);
+	if (*t) {
+		struct touch_t *next = (*t)->next;
+		free(*t);
+		*t = next;
+	}
+	pthread_mutex_unlock(&touch_mutex);
 }
 
 // -----------------------------------------------------------------------
 void dbg_touch_drop_all(struct touch_t **t)
 {
-	if (!*t) return;
-	dbg_touch_drop_all(&(*t)->next);
-	free(*t);
+	pthread_mutex_lock(&touch_mutex);
+	struct touch_t *touch = *t;
+	while (touch) {
+		struct touch_t *next = touch->next;
+		free(touch);
+		touch = next;
+	}
 	*t = NULL;
+	pthread_mutex_unlock(&touch_mutex);
 }
 
 // -----------------------------------------------------------------------

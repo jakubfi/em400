@@ -73,6 +73,7 @@ void dbg_fin_cycle();
 int dbg_parse(char *c);
 
 void dbg_touch_add(struct touch_t **t, int type, int block, int pos, int oval);
+struct touch_t * dbg_touch_get_nolock(struct touch_t **t, int block, int pos);
 struct touch_t * dbg_touch_get(struct touch_t **t, int block, int pos);
 int dbg_touch_check(struct touch_t **t, int block, int pos);
 void dbg_touch_pop(struct touch_t **t);

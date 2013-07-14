@@ -343,24 +343,30 @@ struct touch_t * act_find(struct node_t *n)
 // -----------------------------------------------------------------------
 int16_t n_eval_act(struct node_t *n)
 {
+	int res;
 	struct touch_t *t = act_find(n);
 	if (t) {
-		return (t->type & n->val) ? 1 : 0;
+		res = (t->type & n->val) ? 1 : 0;
+		free(t);
 	} else {
-		return 0;
+		res = 0;
 	}
+	return res;
 }
 
 // -----------------------------------------------------------------------
 int16_t n_eval_pval(struct node_t *n)
 {
+	int res;
 	struct touch_t *t = act_find(n);
 	if (t) {
-		return t->oval;
+		res = t->oval;
+		free(t);
 	} else {
 		// not found in history, return current value
-		return n_eval(n->n1);
+		res = n_eval(n->n1);
 	}
+	return res;
 }
 
 // -----------------------------------------------------------------------
