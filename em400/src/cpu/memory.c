@@ -135,7 +135,7 @@ void mem_remove_maps()
 	}
 }
 
-#ifndef WITH_SPEEDOPT
+#ifdef WITH_DEBUGGER
 // -----------------------------------------------------------------------
 // low-level memory access (bypassing emulation)
 uint16_t * mem_ptr(int nb, uint16_t addr)

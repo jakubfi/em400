@@ -35,7 +35,7 @@ void mem_shutdown();
 int mem_add_map(int nb, int ab, int mp, int segment);
 void mem_remove_maps();
 
-#ifdef WITH_SPEEDOPT
+#ifndef WITH_DEBUGGER
 #define mem_ptr(nb, addr) (mem_map[nb][(addr) >> 12] ? mem_map[nb][(addr) >> 12] + ((addr) & 0b0000111111111111) : NULL)
 #else
 uint16_t * mem_ptr(int nb, uint16_t addr);

@@ -47,7 +47,7 @@ enum _registers {
 
 extern uint16_t regs[];
 
-#ifdef WITH_SPEEDOPT
+#ifndef WITH_DEBUGGER
 #define reg_read(r, trace) regs[r]
 #define reg_write(r, x, trace, hw) regs[r] = (r|hw) ? (x) : (regs[r] & 0b1111111100000000) | ((x) & 0b0000000011111111)
 #else
