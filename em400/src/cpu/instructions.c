@@ -36,156 +36,130 @@
 #include "debugger/log.h"
 
 // -----------------------------------------------------------------------
-int op_illegal()
-{
-	return OP_ILLEGAL;
-}
-
-// -----------------------------------------------------------------------
 // ---- 20 - 36 ----------------------------------------------------------
 // -----------------------------------------------------------------------
 
 // -----------------------------------------------------------------------
-int op_lw()
+void op_lw()
 {
 	uint16_t N = get_arg_norm();
 	Rw(IR_A, N);
-	return OP_OK;
 }
 
 // -----------------------------------------------------------------------
-int op_tw()
+void op_tw()
 {
 	uint16_t N = get_arg_norm();
 	Rw(IR_A, MEMNB(N));
-	return OP_OK;
 }
 
 // -----------------------------------------------------------------------
-int op_ls()
+void op_ls()
 {
 	uint16_t N = get_arg_norm();
 	Rw(IR_A, (R(IR_A) & ~R(7)) | (N & R(7)));
-	return OP_OK;
 }
 
 // -----------------------------------------------------------------------
-int op_ri()
+void op_ri()
 {
 	uint16_t N = get_arg_norm();
 	MEMw(R(IR_A), N);
 	Rinc(IR_A);
-	return OP_OK;
 }
 
 // -----------------------------------------------------------------------
-int op_rw()
+void op_rw()
 {
 	uint16_t N = get_arg_norm();
 	MEMw(N, R(IR_A));
-	return OP_OK;
 }
 
 // -----------------------------------------------------------------------
-int op_pw()
+void op_pw()
 {
 	uint16_t N = get_arg_norm();
 	MEMNBw(N, R(IR_A));
-	return OP_OK;
 }
 
 // -----------------------------------------------------------------------
-int op_rj()
+void op_rj()
 {
 	uint16_t N = get_arg_norm();
 	Rw(IR_A, R(R_IC));
 	Rw(R_IC, N);
-	return OP_OK;
 }
 
 // -----------------------------------------------------------------------
-int op_is()
+void op_is()
 {
 	uint16_t N = get_arg_norm();
 	if ((MEMNB(N) & R(IR_A)) == R(IR_A)) {
-		return OP_P;
+		Rw(R_P, 1);
 	} else {
 		MEMNBw(N, (MEMNB(N) | R(IR_A)));
-		return OP_OK;
 	}
 }
 
 // -----------------------------------------------------------------------
-int op_bb()
+void op_bb()
 {
 	uint16_t N = get_arg_norm();
 	if ((R(IR_A) & N) == N) {
-		return OP_P;
-	} else {
-		return OP_OK;
+		Rw(R_P, 1);
 	}
 }
 
 // -----------------------------------------------------------------------
-int op_bm()
+void op_bm()
 {
 	uint16_t N = get_arg_norm();
 	if ((MEMNB(N) & R(IR_A)) == R(IR_A)) {
-		return OP_P;
-	} else {
-		return OP_OK;
+		Rw(R_P, 1);
 	}
 }
 
 // -----------------------------------------------------------------------
-int op_bs()
+void op_bs()
 {
 	uint16_t N = get_arg_norm();
 	if ((R(IR_A) & R(7)) == (N & R(7))) {
-		return OP_P;
-	} else {
-		return OP_OK;
+		Rw(R_P, 1);
 	}
 }
 
 // -----------------------------------------------------------------------
-int op_bc()
+void op_bc()
 {
 	uint16_t N = get_arg_norm();
 	if ((R(IR_A) & N) != N) {
-		return OP_P;
-	} else {
-		return OP_OK;
+		Rw(R_P, 1);
 	}
 }
 
 // -----------------------------------------------------------------------
-int op_bn()
+void op_bn()
 {
 	uint16_t N = get_arg_norm();
 	if ((R(IR_A) & N) == 0) {
-		return OP_P;
-	} else {
-		return OP_OK;
+		Rw(R_P, 1);
 	}
 }
 
 // -----------------------------------------------------------------------
-int op_ou()
+void op_ou()
 {
 	uint16_t N = get_arg_norm();
 	int io_result = io_dispatch(IO_OU, N, regs+IR_A);
 	Rw(R_IC, MEM(R(R_IC) + io_result));
-	return OP_OK;
 }
 
 // -----------------------------------------------------------------------
-int op_in()
+void op_in()
 {
 	uint16_t N = get_arg_norm();
 	int io_result = io_dispatch(IO_IN, N, regs+IR_A);
 	Rw(R_IC, MEM(R(R_IC) + io_result));
-	return OP_OK;
 }
 
 // -----------------------------------------------------------------------
@@ -193,69 +167,61 @@ int op_in()
 // -----------------------------------------------------------------------
 
 // -----------------------------------------------------------------------
-int op_37()
+void op_37()
 {
-	return iset_37[EXT_OP_37(nR(R_IR))].op_fun();
+	iset_37[EXT_OP_37(nR(R_IR))].op_fun();
 }
 
 // -----------------------------------------------------------------------
-int op_37_ad()
+void op_37_ad()
 {
 	uint16_t N = get_arg_norm();
 	alu_add32(1, 2, MEM(N), MEM(N+1), 1);
-	return OP_OK;
 }
 
 // -----------------------------------------------------------------------
-int op_37_sd()
+void op_37_sd()
 {
 	uint16_t N = get_arg_norm();
 	alu_add32(1, 2, MEM(N), MEM(N+1), -1);
-	return OP_OK;
 }
 
 // -----------------------------------------------------------------------
-int op_37_mw()
+void op_37_mw()
 {
 	uint16_t N = get_arg_norm();
 	alu_mul32(1, 2, MEM(N));
-	return OP_OK;
 }
 
 // -----------------------------------------------------------------------
-int op_37_dw()
+void op_37_dw()
 {
 	uint16_t N = get_arg_norm();
 	alu_div32(1, 2, MEM(N));
-	return OP_OK;
 }
 
 // -----------------------------------------------------------------------
-int op_37_af()
+void op_37_af()
 {
 	// TODO: floats
-	return OP_OK;
 }
 
 // -----------------------------------------------------------------------
-int op_37_sf()
+void op_37_sf()
 {
 	// TODO: floats
-	return OP_OK;
 }
 
 // -----------------------------------------------------------------------
-int op_37_mf()
+void op_37_mf()
 {
 	// TODO: floats
-	return OP_OK;
 }
 
 // -----------------------------------------------------------------------
-int op_37_df()
+void op_37_df()
 {
 	// TODO: floats
-	return OP_OK;
 }
 
 // -----------------------------------------------------------------------
@@ -263,139 +229,123 @@ int op_37_df()
 // -----------------------------------------------------------------------
 
 // -----------------------------------------------------------------------
-int op_aw()
+void op_aw()
 {
 	uint16_t N = get_arg_norm();
 	alu_add16(IR_A, N, 0);
-	return OP_OK;
 }
 
 // -----------------------------------------------------------------------
-int op_ac()
+void op_ac()
 {
 	uint16_t N = get_arg_norm();
 	alu_add16(IR_A, N, Fget(FL_C));
-	return OP_OK;
 }
 
 // -----------------------------------------------------------------------
-int op_sw()
+void op_sw()
 {
 	uint16_t N = - get_arg_norm();
 	alu_add16(IR_A, N, 0);
-	return OP_OK;
 }
 
 // -----------------------------------------------------------------------
-int op_cw()
+void op_cw()
 {
 	uint16_t N = get_arg_norm();
 	alu_compare((int16_t) R(IR_A), (int16_t) N);
-	return OP_OK;
 }
 
 // -----------------------------------------------------------------------
-int op_or()
+void op_or()
 {
 	uint16_t N = get_arg_norm();
 	Rw(IR_A, R(IR_A) | N);
 	alu_set_flag_Z(R(IR_A), 16);
-	return OP_OK;
 }
 
 // -----------------------------------------------------------------------
-int op_om()
+void op_om()
 {
 	uint16_t N = get_arg_norm();
 	MEMNBw(N, MEMNB(N) | R(IR_A));
 	alu_set_flag_Z(MEMNB(N), 16);
-	return OP_OK;
 }
 
 // -----------------------------------------------------------------------
-int op_nr()
+void op_nr()
 {
 	uint16_t N = get_arg_norm();
 	Rw(IR_A, R(IR_A) & N);
 	alu_set_flag_Z(R(IR_A), 16);
-	return OP_OK;
 }
 
 // -----------------------------------------------------------------------
-int op_nm()
+void op_nm()
 {
 	uint16_t N = get_arg_norm();
 	MEMNBw(N, MEMNB(N) & R(IR_A));
 	alu_set_flag_Z(MEMNB(N), 16);
-	return OP_OK;
 }
 
 // -----------------------------------------------------------------------
-int op_er()
+void op_er()
 {
 	uint16_t N = get_arg_norm();
 	Rw(IR_A, R(IR_A) & ~N);
 	alu_set_flag_Z(R(IR_A), 16);
-	return OP_OK;
 }
 
 // -----------------------------------------------------------------------
-int op_em()
+void op_em()
 {
 	uint16_t N = get_arg_norm();
 	MEMNBw(N, MEMNB(N) & ~R(IR_A));
 	alu_set_flag_Z(MEMNB(N), 16);
-	return OP_OK;
 }
 
 // -----------------------------------------------------------------------
-int op_xr()
+void op_xr()
 {
 	uint16_t N = get_arg_norm();
 	Rw(IR_A, R(IR_A) ^ N);
 	alu_set_flag_Z(R(IR_A), 16);
-	return OP_OK;
 }
 
 // -----------------------------------------------------------------------
-int op_xm()
+void op_xm()
 {
 	uint16_t N = get_arg_norm();
 	MEMNBw(N, MEMNB(N) ^ R(IR_A));
 	alu_set_flag_Z(MEMNB(N), 16);
-	return OP_OK;
 }
 
 // -----------------------------------------------------------------------
-int op_cl()
+void op_cl()
 {
 	uint16_t N = get_arg_norm();
 	alu_compare((uint16_t) R(IR_A), (uint16_t) N);
-	return OP_OK;
 }
 
 // -----------------------------------------------------------------------
-int op_lb()
+void op_lb()
 {
 	uint16_t N = get_arg_norm();
 	Rw(IR_A, (nR(IR_A) & 0b1111111100000000) | (uint16_t) MEMNBb(N));
-	return OP_OK;
 }
 
 // -----------------------------------------------------------------------
-int op_rb()
+void op_rb()
 {
 	uint16_t N = get_arg_norm();
 	MEMNBwb(N, R(IR_A));
-	return OP_OK;
 }
 
 // -----------------------------------------------------------------------
-int op_cb()
+void op_cb()
 {
 	uint16_t N = get_arg_norm();
 	alu_compare((uint8_t) R(IR_A), MEMNBb(N));
-	return OP_OK;
 }
 
 // -----------------------------------------------------------------------
@@ -403,73 +353,64 @@ int op_cb()
 // -----------------------------------------------------------------------
 
 // -----------------------------------------------------------------------
-int op_awt()
+void op_awt()
 {
 	uint16_t T = get_arg_short();
 	alu_add16(IR_A, T, 0);
-	return OP_OK;
 }
 
 // -----------------------------------------------------------------------
-int op_trb()
+void op_trb()
 {
 	int16_t T = get_arg_short();
 	Radd(IR_A, T);
 	if (!R(IR_A)) {
-		return OP_P;
-	} else {
-		return OP_OK;
+		Rw(R_P, 1);
 	}
 }
 
 // -----------------------------------------------------------------------
-int op_irb()
+void op_irb()
 {
 	int16_t T = get_arg_short();
 	Rinc(IR_A);
 	if (R(IR_A)) Radd(R_IC, T);
-	return OP_OK;
 }
 
 // -----------------------------------------------------------------------
-int op_drb()
+void op_drb()
 {
 	int16_t T = get_arg_short();
 	Rdec(IR_A);
 	if (R(IR_A)) Radd(R_IC, T);
-	return OP_OK;
 }
 
 // -----------------------------------------------------------------------
-int op_cwt()
+void op_cwt()
 {
 	int16_t T = get_arg_short();
 	alu_compare((int16_t) R(IR_A), (int16_t) T);
-	return OP_OK;
 }
 
 // -----------------------------------------------------------------------
-int op_lwt()
+void op_lwt()
 {
 	int16_t T = get_arg_short();
 	Rw(IR_A, T);
-	return OP_OK;
 }
 
 // -----------------------------------------------------------------------
-int op_lws()
+void op_lws()
 {
 	int16_t T = get_arg_short();
 	Rw(IR_A, MEM(R(R_IC) + T));
-	return OP_OK;
 }
 
 // -----------------------------------------------------------------------
-int op_rws()
+void op_rws()
 {
 	int16_t T = get_arg_short();
 	MEMw(R(R_IC) + T, R(IR_A));
-	return OP_OK;
 }
 
 // -----------------------------------------------------------------------
@@ -477,76 +418,68 @@ int op_rws()
 // -----------------------------------------------------------------------
 
 // -----------------------------------------------------------------------
-int op_70()
+void op_70()
 {
-	return iset_70[EXT_OP_70(nR(R_IR))].op_fun();
+	iset_70[EXT_OP_70(nR(R_IR))].op_fun();
 }
 
 // -----------------------------------------------------------------------
-int op_70_ujs()
+void op_70_ujs()
 {
 	int16_t T = get_arg_short();
 	Radd(R_IC, T);
-	return OP_OK;
 }
 
 // -----------------------------------------------------------------------
-int op_70_jls()
+void op_70_jls()
 {
 	int16_t T = get_arg_short();
 	if (Fget(FL_L)) Radd(R_IC, T);
-	return OP_OK;
 }
 
 // -----------------------------------------------------------------------
-int op_70_jes()
+void op_70_jes()
 {
 	int16_t T = get_arg_short();
 	if (Fget(FL_E)) Radd(R_IC, T);
-	return OP_OK;
 }
 
 // -----------------------------------------------------------------------
-int op_70_jgs()
+void op_70_jgs()
 {
 	int16_t T = get_arg_short();
 	if (Fget(FL_G)) Radd(R_IC, T);
-	return OP_OK;
 }
 
 // -----------------------------------------------------------------------
-int op_70_jvs()
+void op_70_jvs()
 {
 	int16_t T = get_arg_short();
 	if (Fget(FL_V)) {
 		Radd(R_IC, T);
 		Fclr(FL_V);
 	}
-	return OP_OK;
 }
 
 // -----------------------------------------------------------------------
-int op_70_jxs()
+void op_70_jxs()
 {
 	int16_t T = get_arg_short();
 	if (Fget(FL_X)) Radd(R_IC, T);
-	return OP_OK;
 }
 
 // -----------------------------------------------------------------------
-int op_70_jys()
+void op_70_jys()
 {
 	int16_t T = get_arg_short();
 	if (Fget(FL_Y)) Radd(R_IC, T);
-	return OP_OK;
 }
 
 // -----------------------------------------------------------------------
-int op_70_jcs()
+void op_70_jcs()
 {
 	int16_t T = get_arg_short();
 	if (Fget(FL_C)) Radd(R_IC, T);
-	return OP_OK;
 }
 
 // -----------------------------------------------------------------------
@@ -554,23 +487,21 @@ int op_70_jcs()
 // -----------------------------------------------------------------------
 
 // -----------------------------------------------------------------------
-int op_71()
+void op_71()
 {
-	return iset_71[EXT_OP_71(nR(R_IR))].op_fun();
+	iset_71[EXT_OP_71(nR(R_IR))].op_fun();
 }
 
 // -----------------------------------------------------------------------
-int op_71_blc()
+void op_71_blc()
 {
 	if (((R(0) >> 8) & IR_b) != IR_b) {
-		return OP_P;
-	} else {
-		return OP_OK;
+		Rw(R_P, 1);
 	}
 }
 
 // -----------------------------------------------------------------------
-int op_71_exl()
+void op_71_exl()
 {
 	uint16_t SP = nMEMB(0, 97);
 	nMEMBw(0, SP, R(R_IC));
@@ -583,24 +514,20 @@ int op_71_exl()
 	SR_RM9cb;
 	int_update_rp();
 	SR_Qcb;
-	return OP_OK;
 }
 
 // -----------------------------------------------------------------------
-int op_71_brc()
+void op_71_brc()
 {
 	if ((R(0) & IR_b) != IR_b) {
-		return OP_P;
-	} else {
-		return OP_OK;
+		Rw(R_P, 1);
 	}
 }
 
 // -----------------------------------------------------------------------
-int op_71_nrf()
+void op_71_nrf()
 {
 	// TODO: floats
-	return OP_OK;
 }
 
 // -----------------------------------------------------------------------
@@ -608,192 +535,170 @@ int op_71_nrf()
 // -----------------------------------------------------------------------
 
 // -----------------------------------------------------------------------
-int op_72()
+void op_72()
 {
-	return iset_72[EXT_OP_72(nR(R_IR))].op_fun();
+	iset_72[EXT_OP_72(nR(R_IR))].op_fun();
 }
 
 // -----------------------------------------------------------------------
-int op_72_ric()
+void op_72_ric()
 {
 	Rw(IR_A, R(R_IC));
-	return OP_OK;
 }
 
 // -----------------------------------------------------------------------
-int op_72_zlb()
+void op_72_zlb()
 {
 	Rw(IR_A, nR(IR_A) & 0b0000000011111111);
-	return OP_OK;
 }
 
 // -----------------------------------------------------------------------
-int op_72_sxu()
+void op_72_sxu()
 {
 	if (R(IR_A) & 0b1000000000000000) Fset(FL_X);
 	else Fclr(FL_X);
 	alu_set_flag_Z(R(IR_A), 16);
-	return OP_OK;
 }
 
 // -----------------------------------------------------------------------
-int op_72_nga()
+void op_72_nga()
 {
 	alu_negate(IR_A, 1);
-	return OP_OK;
 }
 
 // -----------------------------------------------------------------------
-int op_72_slz()
+void op_72_slz()
 {
 	if (R(IR_A) & 0b1000000000000000) Fset(FL_Y);
 	else Fclr(FL_Y);
 	Rw(IR_A, R(IR_A)<<1);
-	return OP_OK;
 }
 
 // -----------------------------------------------------------------------
-int op_72_sly()
+void op_72_sly()
 {
 	uint16_t ir_a = nR(IR_A);
 	Rw(IR_A, (R(IR_A)<<1) | Fget(FL_Y));
 	if (ir_a & 0b1000000000000000) Fset(FL_Y);
 	else Fclr(FL_Y);
-	return OP_OK;
 }
 
 // -----------------------------------------------------------------------
-int op_72_slx()
+void op_72_slx()
 {
 	if (R(IR_A) & 0b1000000000000000) Fset(FL_Y);
 	else Fclr(FL_Y);
 	Rw(IR_A, (R(IR_A)<<1) | Fget(FL_X));
-	return OP_OK;
 }
 
 // -----------------------------------------------------------------------
-int op_72_sry()
+void op_72_sry()
 {
 	uint16_t ir_a = nR(IR_A);
 	Rw(IR_A, (R(IR_A)>>1) | Fget(FL_Y)<<15);
 	if (ir_a & 1) Fset(FL_Y);
 	else Fclr(FL_Y);
-	return OP_OK;
 }
 
 // -----------------------------------------------------------------------
-int op_72_ngl()
+void op_72_ngl()
 {
 	alu_negate(IR_A, 0);
-	return OP_OK;
 }
 
 // -----------------------------------------------------------------------
-int op_72_rpc()
+void op_72_rpc()
 {
 	Rw(IR_A, R(0));
-	return OP_OK;
 }
 
 // -----------------------------------------------------------------------
-int op_72_shc()
+void op_72_shc()
 {
-	if (!IR_t) return OP_OK;
+	if (!IR_t) return;
 
 	uint16_t falling = (R(IR_A) & ((1<<IR_t)-1)) << (16-IR_t);
 	
 	Rw(IR_A, (R(IR_A) >> IR_t) | falling);
-	return OP_OK;
 }
 
 // -----------------------------------------------------------------------
-int op_72_rky()
+void op_72_rky()
 {
 	// TODO: does it work that way?
 	Rw(IR_A, R(R_KB));
-	return OP_OK;
 }
 
 // -----------------------------------------------------------------------
-int op_72_zrb()
+void op_72_zrb()
 {
 	Rw(IR_A, nR(IR_A) & 0b1111111100000000);
-	return OP_OK;
 }
 
 // -----------------------------------------------------------------------
-int op_72_sxl()
+void op_72_sxl()
 {
 	if (R(IR_A) & 1) Fset(FL_X);
 	else Fclr(FL_X);
 	alu_set_flag_Z(R(IR_A), 16);
-	return OP_OK;
 }
 
 // -----------------------------------------------------------------------
-int op_72_ngc()
+void op_72_ngc()
 {
 	alu_negate(IR_A, Fget(FL_C));
-	return OP_OK;
 }
 
 // -----------------------------------------------------------------------
-int op_72_svz()
+void op_72_svz()
 {
 	uint16_t ir_a = nR(IR_A);
 	Rw(IR_A, R(IR_A)<<1);
 	if (ir_a & 0b1000000000000000) Fset(FL_Y);
 	else Fclr(FL_Y);
 	alu_set_flag_V(ir_a, ir_a, R(IR_A), 16);
-
-	return OP_OK;
 }
 
 // -----------------------------------------------------------------------
-int op_72_svy()
+void op_72_svy()
 {
 	uint16_t ir_a = nR(IR_A);
 	Rw(IR_A, R(IR_A)<<1 | Fget(FL_Y));
 	if (ir_a & 0b1000000000000000) Fset(FL_Y);
 	else Fclr(FL_Y);
 	alu_set_flag_V(ir_a, ir_a, R(IR_A), 16);
-	return OP_OK;
 }
 
 // -----------------------------------------------------------------------
-int op_72_svx()
+void op_72_svx()
 {
 	uint16_t ir_a = nR(IR_A);
 	Rw(IR_A, R(IR_A)<<1 | Fget(FL_X));
 	if (ir_a & 0b1000000000000000) Fset(FL_Y);
 	else Fclr(FL_Y);
 	alu_set_flag_V(ir_a, ir_a, R(IR_A), 16);
-	return OP_OK;
 }
 
 // -----------------------------------------------------------------------
-int op_72_srx()
+void op_72_srx()
 {
 	if (R(IR_A) & 1) Fset(FL_Y);
 	else Fclr(FL_Y);
 	Rw(IR_A, (R(IR_A)>>1) | Fget(FL_X)<<15);
-	return OP_OK;
 }
 
 // -----------------------------------------------------------------------
-int op_72_srz()
+void op_72_srz()
 {
 	if (R(IR_A) & 1) Fset(FL_Y);
 	else Fclr(FL_Y);
 	Rw(IR_A, (R(IR_A)>>1) & 0b0111111111111111);
-	return OP_OK;
 }
 
 // -----------------------------------------------------------------------
-int op_72_lpc()
+void op_72_lpc()
 {
 	reg_write(0, R(IR_A), 1, 1);
-	return OP_OK;
 }
 
 // -----------------------------------------------------------------------
@@ -801,22 +706,20 @@ int op_72_lpc()
 // -----------------------------------------------------------------------
 
 // -----------------------------------------------------------------------
-int op_73()
+void op_73()
 {
-	// all 73-instructions are illegal in user mode
-	if (SR_Q) return OP_ILLEGAL;
-	return iset_73[EXT_OP_73(nR(R_IR))].op_fun();
+	iset_73[EXT_OP_73(nR(R_IR))].op_fun();
 }
 
 // -----------------------------------------------------------------------
-int op_73_hlt()
+void op_73_hlt()
 {
 	// handle hlt 077 as "exit emulation" if user wants to
 	if (em400_cfg.exit_on_hlt) {
 		uint16_t T = get_arg_short();
 		if (T == 077) {
 			em400_quit = 1;
-			return OP_OK;
+			return;
 		}
 	}
 
@@ -826,66 +729,58 @@ int op_73_hlt()
 		pthread_cond_wait(&int_cond_rp, &int_mutex_rp);
 	}
 	pthread_mutex_unlock(&int_mutex_rp);
-	return OP_OK;
 }
 
 // -----------------------------------------------------------------------
-int op_73_mcl()
+void op_73_mcl()
 {
 	Rw(R_SR, 0);
 	int_clear_all();
 	reg_write(0, 0, 1, 1);
 	mem_remove_maps();
 	io_reset();
-	return OP_OK;
 }
 
 // -----------------------------------------------------------------------
-int op_73_cit()
+void op_73_cit()
 {
 	int_clear(INT_SOFT_U);
 	int_clear(INT_SOFT_L);
-	return OP_OK;
 }
 
 // -----------------------------------------------------------------------
-int op_73_sil()
+void op_73_sil()
 {
 	int_set(INT_SOFT_L);
-	return OP_OK;
 }
 
 // -----------------------------------------------------------------------
-int op_73_siu()
+void op_73_siu()
 {
 	int_set(INT_SOFT_U);
-	return OP_OK;
 }
 
 // -----------------------------------------------------------------------
-int op_73_sit()
+void op_73_sit()
 {
 	int_set(INT_SOFT_U);
 	int_set(INT_SOFT_L);
-	return OP_OK;
 }
 
 // -----------------------------------------------------------------------
-int op_73_giu()
+void op_73_giu()
 {
 	// TODO: 2-cpu configuration
-	return OP_OK;
 }
 
 // -----------------------------------------------------------------------
-int op_73_gil()
+void op_73_gil()
 {
 	// TODO: 2-cpu configuration
-	return OP_OK;
 }
 
 // -----------------------------------------------------------------------
-int op_73_lip()
+void op_73_lip()
 {
 	uint16_t SP = nMEMB(0, 97);
 	Rw(R_IC, nMEMB(0, SP-4));
@@ -896,21 +791,18 @@ int op_73_lip()
 #ifdef WITH_DEBUGGER
 	dbg_touch_pop(&touch_int);
 #endif
-	return OP_OK;
 }
 
 // -----------------------------------------------------------------------
-int op_73_sint()
+void op_73_sint()
 {
 	int_set(INT_EXTRA);
-	return OP_OK;
 }
 
 // -----------------------------------------------------------------------
-int op_73_sind()
+void op_73_sind()
 {
 	int_clear(INT_EXTRA);
-	return OP_OK;
 }
 
 // -----------------------------------------------------------------------
@@ -918,74 +810,66 @@ int op_73_sind()
 // -----------------------------------------------------------------------
 
 // -----------------------------------------------------------------------
-int op_74()
+void op_74()
 {
-	return iset_74[EXT_OP_74(nR(R_IR))].op_fun();
+	iset_74[EXT_OP_74(nR(R_IR))].op_fun();
 }
 
 // -----------------------------------------------------------------------
-int op_74_uj()
+void op_74_uj()
 {
 	uint16_t N = get_arg_norm();
 	Rw(R_IC, N);
-	return OP_OK;
 }
 
 // -----------------------------------------------------------------------
-int op_74_jl()
+void op_74_jl()
 {
 	uint16_t N = get_arg_norm();
 	if (Fget(FL_L)) Rw(R_IC, N);
-	return OP_OK;
 }
 
 // -----------------------------------------------------------------------
-int op_74_je()
+void op_74_je()
 {
 	uint16_t N = get_arg_norm();
 	if (Fget(FL_E)) Rw(R_IC, N);
-	return OP_OK;
 }
 
 // -----------------------------------------------------------------------
-int op_74_jg()
+void op_74_jg()
 {
 	uint16_t N = get_arg_norm();
 	if (Fget(FL_G)) Rw(R_IC, N);
-	return OP_OK;
 }
 
 // -----------------------------------------------------------------------
-int op_74_jz()
+void op_74_jz()
 {
 	uint16_t N = get_arg_norm();
 	if (Fget(FL_Z)) Rw(R_IC, N);
-	return OP_OK;
 }
 
 // -----------------------------------------------------------------------
-int op_74_jm()
+void op_74_jm()
 {
 	uint16_t N = get_arg_norm();
 	if (Fget(FL_M)) Rw(R_IC, N);
-	return OP_OK;
 }
 
 // -----------------------------------------------------------------------
-int op_74_jn()
+void op_74_jn()
 {
 	uint16_t N = get_arg_norm();
 	if (!Fget(FL_E)) Rw(R_IC, N);
-	return OP_OK;
 }
 
 // -----------------------------------------------------------------------
-int op_74_lj()
+void op_74_lj()
 {
 	uint16_t N = get_arg_norm();
 	MEMw(N, R(R_IC));
 	Rw(R_IC, N+1);
-	return OP_OK;
 }
 
 // -----------------------------------------------------------------------
@@ -993,32 +877,30 @@ int op_74_lj()
 // -----------------------------------------------------------------------
 
 // -----------------------------------------------------------------------
-int op_75()
+void op_75()
 {
-	return iset_75[EXT_OP_75(nR(R_IR))].op_fun();
+	iset_75[EXT_OP_75(nR(R_IR))].op_fun();
 }
 
 // -----------------------------------------------------------------------
-int op_75_ld()
+void op_75_ld()
 {
 	uint16_t N = get_arg_norm();
 	Rw(1, MEM(N));
 	Rw(2, MEM(N+1));
-	return OP_OK;
 }
 
 // -----------------------------------------------------------------------
-int op_75_lf()
+void op_75_lf()
 {
 	uint16_t N = get_arg_norm();
 	Rw(1, MEM(N));
 	Rw(2, MEM(N+1));
 	Rw(3, MEM(N+2));
-	return OP_OK;
 }
 
 // -----------------------------------------------------------------------
-int op_75_la()
+void op_75_la()
 {
 	uint16_t N = get_arg_norm();
 	Rw(1, MEM(N));
@@ -1028,40 +910,36 @@ int op_75_la()
 	Rw(5, MEM(N+4));
 	Rw(6, MEM(N+5));
 	Rw(7, MEM(N+6));
-	return OP_OK;
 }
 
 // -----------------------------------------------------------------------
-int op_75_ll()
+void op_75_ll()
 {
 	uint16_t N = get_arg_norm();
 	Rw(5, MEM(N));
 	Rw(6, MEM(N+1));
 	Rw(7, MEM(N+2));
-	return OP_OK;
 }
 
 // -----------------------------------------------------------------------
-int op_75_td()
+void op_75_td()
 {
 	uint16_t N = get_arg_norm();
 	Rw(1, MEMNB(N));
 	Rw(2, MEMNB(N+1));
-	return OP_OK;
 }
 
 // -----------------------------------------------------------------------
-int op_75_tf()
+void op_75_tf()
 {
 	uint16_t N = get_arg_norm();
 	Rw(1, MEMNB(N));
 	Rw(2, MEMNB(N+1));
 	Rw(3, MEMNB(N+2));
-	return OP_OK;
 }
 
 // -----------------------------------------------------------------------
-int op_75_ta()
+void op_75_ta()
 {
 	uint16_t N = get_arg_norm();
 	Rw(1, MEMNB(N));
@@ -1071,17 +949,15 @@ int op_75_ta()
 	Rw(5, MEMNB(N+4));
 	Rw(6, MEMNB(N+5));
 	Rw(7, MEMNB(N+6));
-	return OP_OK;
 }
 
 // -----------------------------------------------------------------------
-int op_75_tl()
+void op_75_tl()
 {
 	uint16_t N = get_arg_norm();
 	Rw(5, MEMNB(N));
 	Rw(6, MEMNB(N+1));
 	Rw(7, MEMNB(N+2));
-	return OP_OK;
 }
 
 // -----------------------------------------------------------------------
@@ -1089,32 +965,30 @@ int op_75_tl()
 // -----------------------------------------------------------------------
 
 // -----------------------------------------------------------------------
-int op_76()
+void op_76()
 {
-	return iset_76[EXT_OP_76(nR(R_IR))].op_fun();
+	iset_76[EXT_OP_76(nR(R_IR))].op_fun();
 }
 
 // -----------------------------------------------------------------------
-int op_76_rd()
+void op_76_rd()
 {
 	uint16_t N = get_arg_norm();
 	MEMw(N, R(1));
 	MEMw(N+1, R(2));
-	return OP_OK;
 }
 
 // -----------------------------------------------------------------------
-int op_76_rf()
+void op_76_rf()
 {
 	uint16_t N = get_arg_norm();
 	MEMw(N, R(1));
 	MEMw(N+1, R(2));
 	MEMw(N+2, R(3));
-	return OP_OK;
 }
 
 // -----------------------------------------------------------------------
-int op_76_ra()
+void op_76_ra()
 {
 	uint16_t N = get_arg_norm();
 	MEMw(N, R(1));
@@ -1124,40 +998,36 @@ int op_76_ra()
 	MEMw(N+4, R(5));
 	MEMw(N+5, R(6));
 	MEMw(N+6, R(7));
-	return OP_OK;
 }
 
 // -----------------------------------------------------------------------
-int op_76_rl()
+void op_76_rl()
 {
 	uint16_t N = get_arg_norm();
 	MEMw(N, R(5));
 	MEMw(N+1, R(6));
 	MEMw(N+2, R(7));
-	return OP_OK;
 }
 
 // -----------------------------------------------------------------------
-int op_76_pd()
+void op_76_pd()
 {
 	uint16_t N = get_arg_norm();
 	MEMNBw(N, R(1));
 	MEMNBw(N+1, R(2));
-	return OP_OK;
 }
 
 // -----------------------------------------------------------------------
-int op_76_pf()
+void op_76_pf()
 {
 	uint16_t N = get_arg_norm();
 	MEMNBw(N, R(1));
 	MEMNBw(N+1, R(2));
 	MEMNBw(N+2, R(3));
-	return OP_OK;
 }
 
 // -----------------------------------------------------------------------
-int op_76_pa()
+void op_76_pa()
 {
 	uint16_t N = get_arg_norm();
 	MEMNBw(N, R(1));
@@ -1167,17 +1037,15 @@ int op_76_pa()
 	MEMNBw(N+4, R(5));
 	MEMNBw(N+5, R(6));
 	MEMNBw(N+6, R(7));
-	return OP_OK;
 }
 
 // -----------------------------------------------------------------------
-int op_76_pl()
+void op_76_pl()
 {
 	uint16_t N = get_arg_norm();
 	MEMNBw(N, R(5));
 	MEMNBw(N+1, R(6));
 	MEMNBw(N+2, R(7));
-	return OP_OK;
 }
 
 // -----------------------------------------------------------------------
@@ -1185,89 +1053,72 @@ int op_76_pl()
 // -----------------------------------------------------------------------
 
 // -----------------------------------------------------------------------
-int op_77()
+void op_77()
 {
-	return iset_77[EXT_OP_77(nR(R_IR))].op_fun();
+	iset_77[EXT_OP_77(nR(R_IR))].op_fun();
 }
 
 // -----------------------------------------------------------------------
-int op_77_mb()
+void op_77_mb()
 {
-	if (SR_Q) return OP_ILLEGAL;
 	uint16_t N = get_arg_norm();
 	SR_SET_QNB(MEM(N));
-	return OP_OK;
 }
 
 // -----------------------------------------------------------------------
-int op_77_im()
+void op_77_im()
 {
-	if (SR_Q) return OP_ILLEGAL;
 	uint16_t N = get_arg_norm();
 	SR_SET_MASK(MEM(N));
 	int_update_rp();
-	return OP_OK;
 }
 
 // -----------------------------------------------------------------------
-int op_77_ki()
+void op_77_ki()
 {
-	if (SR_Q) return OP_ILLEGAL;
 	uint16_t N = get_arg_norm();
 	MEMw(N, int_get_nchan());
-	return OP_OK;
 }
 
 // -----------------------------------------------------------------------
-int op_77_fi()
+void op_77_fi()
 {
-	if (SR_Q) return OP_ILLEGAL;
 	uint16_t N = get_arg_norm();
 	int_put_nchan(MEM(N));
-	return OP_OK;
 }
 
 // -----------------------------------------------------------------------
-int op_77_sp()
+void op_77_sp()
 {
-	if (SR_Q) return OP_ILLEGAL;
 	uint16_t N = get_arg_norm();
 	Rw(R_IC, MEMNB(N));
 	reg_write(0, MEMNB(N+1), 1, 1);
 	Rw(R_SR, MEMNB(N+2));
 	int_update_rp();
-	return OP_OK;
 }
 
 // -----------------------------------------------------------------------
-int op_77_md()
+void op_77_md()
 {
-	Rinc(R_MODc);
-	if (R(R_MODc) >= 4) {
-		return OP_ILLEGAL;
-	}
 	int16_t N = get_arg_norm();
 	Rw(R_MOD, N);
-	return OP_MD;
+	Rinc(R_MODc);
 }
 
 // -----------------------------------------------------------------------
-int op_77_rz()
+void op_77_rz()
 {
 	uint16_t N = get_arg_norm();
 	MEMw(N, 0);
-	return OP_OK;
 }
 
 // -----------------------------------------------------------------------
-int op_77_ib()
+void op_77_ib()
 {
 	uint16_t N = get_arg_norm();
 	MEMw(N, MEM(N)+1);
 	if (!MEM(N)) {
-		return OP_P;
-	} else {
-		return OP_OK;
+		Rw(R_P, 1);
 	}
 }
 

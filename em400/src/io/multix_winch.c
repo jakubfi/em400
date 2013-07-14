@@ -247,8 +247,8 @@ void * mx_winch_worker(void *th_id)
 	while (1) {
 		// wait for command
 		pthread_mutex_lock(&UNIT->worker_mutex);
-		LOG(D_IO, 20, "MULTIX/winchester (line:%i): worker waiting for job...", unit->log_num);
 		while (UNIT->worker_dircmd <= 0) {
+			LOG(D_IO, 20, "MULTIX/winchester (line:%i): worker waiting for job...", unit->log_num);
 			pthread_cond_wait(&UNIT->worker_cond, &UNIT->worker_mutex);
 		}
 
@@ -285,7 +285,6 @@ void * mx_winch_worker(void *th_id)
 int mx_winch_cmd(struct mx_unit_proto_t *unit, int dircmd, uint16_t addr)
 {
 	// check if worker is busy
-	LOG(D_IO, 20, "MULTIX/winchester (line:%i): checking worker status...", unit->log_num);
 	int busy = pthread_mutex_trylock(&UNIT->worker_mutex);
 	LOG(D_IO, 20, "MULTIX/winchester (line:%i): worker status: %i", unit->log_num, busy);
 	if (busy) {

@@ -24,10 +24,11 @@
 #include "cpu/registers.h"
 
 struct opdef {
-	uint16_t opcode;				// basic/extended opcode
-	_Bool nl;						// legal in user mode?
-	int (*op_fun)();				// instruction execution function
-	struct opdef * e_opdef;	// pointer to extop def table
+	uint16_t opcode;		// basic/extended opcode
+	_Bool m_arg;			// M argument possible?
+	_Bool user_illegal;		// illegal in user mode?
+	void (*op_fun)();		// instruction execution function
+	struct opdef *e_opdef;	// pointer to extop def table
 };
 
 // basic opcodes jump table

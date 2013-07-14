@@ -148,6 +148,8 @@ void int_serve()
 
 	// no interrupt to serve
 	if (!rp) return;
+	// not serving after MOD or P
+	if (nR(R_MODc) || nR(R_P)) return;
 
 	// find highest interrupt to serve
 	int probe = 31;

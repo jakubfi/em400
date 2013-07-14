@@ -32,6 +32,7 @@ enum _ui_attributes {
 	C_ERROR,
 	C_READ,
 	C_WRITE,
+	C_IRED,
 	C_RW
 };
 

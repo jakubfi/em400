@@ -141,8 +141,13 @@ void dbg_c_dt(int wid, int dasm_mode, uint16_t start, int count)
 		len = dt_trans(start, buf, dasm_mode);
 		if (len) {
 			if (start == regs[R_IC]) {
-				awtbprint(wid, C_ILABEL, "0x%04x", start);
-				awtbprint(wid, C_IDATA, " %-20s", buf);
+				if (regs[R_P]) {
+					awtbprint(wid, C_IRED, "0x%04x", start);
+					awtbprint(wid, C_IRED, " %-20s", buf);
+				} else {
+					awtbprint(wid, C_ILABEL, "0x%04x", start);
+					awtbprint(wid, C_IDATA, " %-20s", buf);
+				}
 			} else {
 				awtbprint(wid, C_LABEL, "0x%04x", start);
 				if (*buf != '-') awtbprint(wid, C_PROMPT, " %-20s", buf);

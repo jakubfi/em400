@@ -66,7 +66,7 @@ int dt_parse(struct dasm_opdef *opdef, uint16_t *memptr, int addr, char *format,
 	int len = 1;
 
 	if ((opdef->twoword) && (!_C(*memptr))) {
-		//len++;
+		len++;
 	}
 
 	while ((in) && (*in)) {

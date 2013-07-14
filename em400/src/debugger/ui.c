@@ -79,6 +79,7 @@ int dbg_ui_init()
 	aw_attr_new(C_READ, COLOR_BLACK, COLOR_GREEN, A_BOLD);
 	aw_attr_new(C_WRITE, COLOR_RED, COLOR_WHITE, A_BOLD);
 	aw_attr_new(C_RW, COLOR_RED, COLOR_GREEN, A_BOLD);
+	aw_attr_new(C_IRED, COLOR_RED, COLOR_WHITE, A_BOLD);
 
 	return E_OK;
 }

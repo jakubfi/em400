@@ -34,6 +34,8 @@
 #endif
 #include "debugger/log.h"
 
+uint16_t M_arg;
+
 #ifdef WITH_SPEEDOPT
 uint32_t __N;
 #endif
@@ -65,17 +67,12 @@ int16_t get_arg_norm()
 	uint32_t N;
 
 	LOG(D_CPU, 10, "------ Get argument (norm)");
-	// argument is in next word
-	if (IR_C == 0) {
-		N = nMEM(nR(R_IC));
-		nRinc(R_IC);
-	// argument is in field C
-	} else {
-		N = R(IR_C);
-	}
+
+	// argument is rC or M_arg
+	N = IR_C ? R(IR_C) : M_arg;
 
 	// B-modification
-	if (IR_B != 0) {
+	if (IR_B) {
 		N += R(IR_B);
 	}
 
@@ -83,7 +80,7 @@ int16_t get_arg_norm()
 	N += nR(R_MOD);
 	
 	// if D is set, N is an address in current memory block
-	if (IR_D == 1) {
+	if (IR_D) {
 		N = MEM((uint16_t) N);
 	}
 
@@ -92,7 +89,7 @@ int16_t get_arg_norm()
 		nRw(R_ZC17, (N >> 16) & 1);
 	}
 
-	LOG(D_CPU, 10, "------ Effective argument (norm): 0x%04x (%s%s%s%s)", N, IR_C ? "2-word " : "1-word", regs[R_MODc] ? " PRE-mod" : "", IR_B ? " B-mod" : "", IR_D ? " D-mod" : "");
+	LOG(D_CPU, 10, "------ Effective argument (norm): 0x%04x (%s%s%s%s)", N, IR_C ? "M" : "rC ", regs[R_MODc] ? "PRE-mod" : "", IR_B ? " B-mod" : "", IR_D ? " D-mod" : "");
 	return N;
 }
 #endif
@@ -100,74 +97,57 @@ int16_t get_arg_norm()
 // -----------------------------------------------------------------------
 void cpu_step()
 {
-	static int was_P;
+	struct opdef *op;
+	void (*op_fun)();
 
-	LOG(D_CPU, 3, "------ cpu_step() -----------------------------------------------");
-
-	// fetch instruction into IR
-	// (additional argument is fetched by the instruction, if necessary)
+	// fetch instruction
 	nRw(R_IR, nMEM(nR(R_IC)));
-	LOG(D_CPU, 3, "Cycle: Q:NB = %d:%d, IC = 0x%04x", SR_Q, SR_NB, regs[R_IC]);
+	LOG(D_CPU, 3, "---- Cycle: Q:NB = %d:%d, IC = 0x%04x ------------", SR_Q, SR_NB, regs[R_IC]);
 	nRinc(R_IC);
 
-#ifdef WITH_DEBUGGER
-	char *b;
-	int len;
-	char buf_d[512];
-	char buf_t[512];
-	dt_trans(regs[R_IC] - 1, buf_t, DMODE_TRANS);
-	len = dt_trans(regs[R_IC] - 1, buf_d, DMODE_DASM);
-	LOG(D_CPU, 5, "EXEC (words: %i): %s --- %s", len, buf_d, buf_t);
-#endif
+	op = iset+IR_OP;
+	op_fun = op->op_fun;
+	if (op->e_opdef) {
+		op = op->e_opdef;
+	}
+
+	// fetch M-arg if present
+	if (op->m_arg && !IR_C) {
+		M_arg = nMEM(nR(R_IC));
+		LOG(D_CPU, 3, "Fetched M argument: 0x%04x", M_arg);
+		nRinc(R_IC);
+	}
+
+	// previous instruction set P?
+	if (nR(R_P)) {
+		LOG(D_CPU, 3, "P set, skipping");
+		Rw(R_P, 0);
+		return;
+	}
+
+	int op_is_mod = (nR(R_IR) & 0b1111110101000000) == 0b1111110101000000 ? 1 : 0;
+
+	// op ineffective?
+	if ((op_fun == NULL)
+	|| (op_is_mod && (R(R_MODc) >= 3))
+	|| (SR_Q && op->user_illegal)) {
+		LOG(D_CPU, 3, "Instruction ineffective");
+		Rw(R_MODc, 0);
+		Rw(R_MOD, 0);
+		Rw(R_P, 0);
+		int_set(INT_ILLEGAL_OPCODE);
+		return;
+	}
+
+	Rw(R_P, 0);
 
 	// execute instruction
-	int op_res = iset[IR_OP].op_fun();
+	LOG(D_CPU, 3, "Execute instruction");
+	op_fun();
 
-	LOG(D_CPU, 3, "------ Check instruction result");
-
-	// check instruction result and proceed accordingly
-	switch (op_res) {
-		// normal instruction
-		case OP_OK:
-			nRw(R_MOD, 0);
-			nRw(R_MODc, 0);
-			was_P = 0;
-			LOG(D_CPU, 3, "------ End cycle (OP_OK)");
-			int_serve();
-			return;
-
-		// instruction that set P
-		case OP_P:
-			nRw(R_MOD, 0);
-			nRw(R_MODc, 0);
-			nRinc(R_IC);
-			was_P = 1;
-			LOG(D_CPU, 3, "------ End cycle (OP_P)");
-			int_serve();
-			return;
-
-		// pre-modification
-		case OP_MD:
-			was_P = 0;
-			LOG(D_CPU, 3, "------ End cycle (OP_MD): MOD = %d, MODc = %d", regs[R_MOD], regs[R_MODc]);
-			return;
-
-		// illegal instruction
-		case OP_ILLEGAL:
-#ifdef WITH_DEBUGGER
-			b = int2binf("... ... . ... ... ...", nR(R_IR), 16);
-			LOG(D_CPU, 1, "------ End cycle (OP_ILLEGAL): %s (0x%04x) at 0x%04x (P:%i)", b, nR(R_IR), nR(R_IC)-1, was_P);
-			free(b);
-#endif
-			nRw(R_MOD, 0);
-			nRw(R_MODc, 0);
-			if (was_P) {
-				was_P = 0;
-			} else {
-				int_set(INT_ILLEGAL_OPCODE);
-				int_serve();
-			}
-			return;
+	if (!op_mod) {
+		nRw(R_MODc, 0);
+		nRw(R_MOD, 0);
 	}
 }
 

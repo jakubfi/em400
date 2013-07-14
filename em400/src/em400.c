@@ -288,6 +288,7 @@ int main(int argc, char** argv)
 		}
 #endif
 		cpu_step();
+		int_serve();
 		ips_counter++;
 	}
 

@@ -1,6 +1,4 @@
-.prog "cycle/p"
-
-; if P is set, next instruction is uneffective and IC jumps over
+.prog "cycle/P-over-1"
 
 	lwt r1, -1
 	trb r1, 1

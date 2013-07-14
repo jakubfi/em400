@@ -41,6 +41,7 @@ enum _registers {
 	R_MODc,
 	R_ZC17,
 	R_ALARM,
+	R_P,
 	R_MAX
 };
 
