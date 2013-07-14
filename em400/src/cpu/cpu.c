@@ -34,11 +34,7 @@
 #endif
 #include "debugger/log.h"
 
-uint16_t M_arg;
-
-#ifdef WITH_SPEEDOPT
-uint32_t __N;
-#endif
+int16_t N;
 
 // -----------------------------------------------------------------------
 void cpu_reset()
@@ -51,52 +47,9 @@ void cpu_reset()
 }
 
 // -----------------------------------------------------------------------
-int16_t get_arg_short()
-{
-	uint32_t T = IR_T + nR(R_MOD);
-	if (em400_cfg.cpu.mod_17bit) {
-		nRw(R_ZC17, (T >> 16) & 1);
-	}
-	return T;
-}
-
-#ifndef WITH_SPEEDOPT
-// -----------------------------------------------------------------------
-int16_t get_arg_norm()
-{
-	uint32_t N;
-
-	LOG(D_CPU, 10, "------ Get argument (norm)");
-
-	// argument is rC or M_arg
-	N = IR_C ? R(IR_C) : M_arg;
-
-	// B-modification
-	if (IR_B) {
-		N += R(IR_B);
-	}
-
-	// PRE-modification
-	N += nR(R_MOD);
-	
-	// if D is set, N is an address in current memory block
-	if (IR_D) {
-		N = MEM((uint16_t) N);
-	}
-
-	// store 17th bit for byte addressing
-	if (em400_cfg.cpu.mod_17bit) {
-		nRw(R_ZC17, (N >> 16) & 1);
-	}
-
-	LOG(D_CPU, 10, "------ Effective argument (norm): 0x%04x (%s%s%s%s)", N, IR_C ? "M" : "rC ", regs[R_MODc] ? "PRE-mod" : "", IR_B ? " B-mod" : "", IR_D ? " D-mod" : "");
-	return N;
-}
-#endif
-
-// -----------------------------------------------------------------------
 void cpu_step()
 {
+	int32_t _N;
 	struct opdef *op;
 	void (*op_fun)();
 
@@ -112,10 +65,14 @@ void cpu_step()
 	}
 
 	// fetch M-arg if present
-	if (op->m_arg && !IR_C) {
-		M_arg = nMEM(nR(R_IC));
-		LOG(D_CPU, 3, "Fetched M argument: 0x%04x", M_arg);
-		nRinc(R_IC);
+	if (op->norm_arg) {
+		if (!IR_C) {
+			_N = nMEM(nR(R_IC));
+			LOG(D_CPU, 3, "Fetched M argument: 0x%04x", _N);
+			nRinc(R_IC);
+		} else {
+			_N = R(IR_C);
+		}
 	}
 
 	// previous instruction set P?
@@ -125,11 +82,11 @@ void cpu_step()
 		return;
 	}
 
-	int op_is_mod = (nR(R_IR) & 0b1111110101000000) == 0b1111110101000000 ? 1 : 0;
+	int op_is_md = (nR(R_IR) & 0b1111110101000000) == 0b1111110101000000 ? 1 : 0;
 
 	// op ineffective?
 	if ((op_fun == NULL)
-	|| (op_is_mod && (R(R_MODc) >= 3))
+	|| (op_is_md && (R(R_MODc) >= 3))
 	|| (SR_Q && op->user_illegal)) {
 		LOG(D_CPU, 3, "Instruction ineffective");
 		Rw(R_MODc, 0);
@@ -141,11 +98,23 @@ void cpu_step()
 
 	Rw(R_P, 0);
 
+	// calculate argument
+	if (op->norm_arg) {
+		if (IR_B) _N += R(IR_B);
+		_N += nR(R_MOD);
+		if (IR_D) _N = MEM(_N);
+		if (em400_cfg.cpu.mod_17bit) nRw(R_ZC17, (_N >> 16) & 1);
+	} else if (op->short_arg) {
+		_N = IR_T + nR(R_MOD);
+		if (em400_cfg.cpu.mod_17bit) nRw(R_ZC17, (_N >> 16) & 1);
+	}
+	N = _N;
+
 	// execute instruction
 	LOG(D_CPU, 3, "Execute instruction");
 	op_fun();
 
-	if (!op_mod) {
+	if (!op_is_md) {
 		nRw(R_MODc, 0);
 		nRw(R_MOD, 0);
 	}

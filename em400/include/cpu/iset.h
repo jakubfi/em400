@@ -25,7 +25,8 @@
 
 struct opdef {
 	uint16_t opcode;		// basic/extended opcode
-	_Bool m_arg;			// M argument possible?
+	_Bool norm_arg;			// normal argument?
+	_Bool short_arg;		// short argument?
 	_Bool user_illegal;		// illegal in user mode?
 	void (*op_fun)();		// instruction execution function
 	struct opdef *e_opdef;	// pointer to extop def table

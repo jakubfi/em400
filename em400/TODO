@@ -5,7 +5,6 @@ Known bugs:
 
 CPU:
 
-* int/uint rework
 * AWP - floating point instructions
 
 Debugger:
