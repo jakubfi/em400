@@ -16,7 +16,9 @@
 ; 2013-07-15:
 ; em400 +reworks         (Core2Duo @2.80GHz)   25     MIPS
 ; em400 +cycle opt.      (Core2Duo @2.80GHz)   30     MIPS
+; em400 --||--           (i3 530   @2.93GHz)   22     MIPS
 ; em400 +clang           (Core2Duo @2.80GHz)   31     MIPS
+; em400 --||--           (i3 530   @2.93GHz)   25     MIPS
 
 	lw r4, 0
 	lw r3, -10		; -10 instead of 0
