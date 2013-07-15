@@ -26,6 +26,7 @@
 #include "debugger/log.h"
 
 uint16_t regs[R_MAX];
+int P;
 
 #ifdef WITH_DEBUGGER
 // -----------------------------------------------------------------------

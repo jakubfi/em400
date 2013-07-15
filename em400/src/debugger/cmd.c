@@ -141,7 +141,7 @@ void dbg_c_dt(int wid, int dasm_mode, uint16_t start, int count)
 		len = dt_trans(start, buf, dasm_mode);
 		if (len) {
 			if (start == regs[R_IC]) {
-				if (regs[R_P]) {
+				if (P) {
 					awtbprint(wid, C_IRED, "0x%04x", start);
 					awtbprint(wid, C_IRED, " %-20s", buf);
 				} else {
@@ -232,7 +232,7 @@ void dbg_c_sregs(int wid)
 {
 	awtbprint(wid, C_LABEL, "            OPCODE D A   B   C");
 	awtbprint(wid, C_LABEL, "           P: ");
-	awtbprint(wid, C_DATA, "\n");
+	awtbprint(wid, C_DATA, "%i\n", P);
 	awtbprint(wid, C_LABEL, "IR: ");
 	awtbprint(wid, C_DATA, "0x%04x  ", regs[R_IR]);
 	awtbbinprint(wid, C_DATA, "...... . ... ... ...", regs[R_IR], 16);

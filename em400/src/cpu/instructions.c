@@ -87,7 +87,7 @@ void op_rj()
 void op_is()
 {
 	if ((MEMNB(N) & R(IR_A)) == R(IR_A)) {
-		Rw(R_P, 1);
+		P = 1;
 	} else {
 		MEMNBw(N, (MEMNB(N) | R(IR_A)));
 	}
@@ -97,7 +97,7 @@ void op_is()
 void op_bb()
 {
 	if ((R(IR_A) & (uint16_t) N) == (uint16_t) N) {
-		Rw(R_P, 1);
+		P = 1;
 	}
 }
 
@@ -105,7 +105,7 @@ void op_bb()
 void op_bm()
 {
 	if ((MEMNB(N) & R(IR_A)) == R(IR_A)) {
-		Rw(R_P, 1);
+		P = 1;
 	}
 }
 
@@ -113,7 +113,7 @@ void op_bm()
 void op_bs()
 {
 	if ((R(IR_A) & R(7)) == ((uint16_t) N & R(7))) {
-		Rw(R_P, 1);
+		P = 1;
 	}
 }
 
@@ -121,7 +121,7 @@ void op_bs()
 void op_bc()
 {
 	if ((R(IR_A) & (uint16_t) N) != (uint16_t) N) {
-		Rw(R_P, 1);
+		P = 1;
 	}
 }
 
@@ -129,7 +129,7 @@ void op_bc()
 void op_bn()
 {
 	if ((R(IR_A) & (uint16_t) N) == 0) {
-		Rw(R_P, 1);
+		P = 1;
 	}
 }
 
@@ -328,7 +328,7 @@ void op_trb()
 {
 	Radd(IR_A, N);
 	if (!R(IR_A)) {
-		Rw(R_P, 1);
+		P = 1;
 	}
 }
 
@@ -445,7 +445,7 @@ void op_71()
 void op_71_blc()
 {
 	if (((R(0) >> 8) & IR_b) != IR_b) {
-		Rw(R_P, 1);
+		P = 1;
 	}
 }
 
@@ -469,7 +469,7 @@ void op_71_exl()
 void op_71_brc()
 {
 	if ((R(0) & IR_b) != IR_b) {
-		Rw(R_P, 1);
+		P = 1;
 	}
 }
 
@@ -1020,8 +1020,8 @@ void op_77_sp()
 // -----------------------------------------------------------------------
 void op_77_md()
 {
-	Rw(R_MOD, N);
-	Rinc(R_MODc);
+	regs[R_MOD] = N;
+	regs[R_MODc]++;
 }
 
 // -----------------------------------------------------------------------
@@ -1035,7 +1035,7 @@ void op_77_ib()
 {
 	MEMw(N, MEM(N)+1);
 	if (!MEM(N)) {
-		Rw(R_P, 1);
+		P = 1;
 	}
 }
 

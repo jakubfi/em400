@@ -49,14 +49,14 @@ void cpu_reset()
 // -----------------------------------------------------------------------
 void cpu_step()
 {
-	int32_t _N;
+	int _N = 0xbeef;
 	struct opdef *op;
 	void (*op_fun)();
 
 	// fetch instruction
-	nRw(R_IR, nMEM(nR(R_IC)));
+	regs[R_IR] = nMEM(nR(R_IC));
 	LOG(D_CPU, 10, "---- Cycle: Q:NB = %d:%d, IC = 0x%04x ------------", SR_Q, SR_NB, regs[R_IC]);
-	nRinc(R_IC);
+	regs[R_IC]++;
 
 	op = iset+IR_OP;
 	op_fun = op->op_fun;
@@ -69,16 +69,16 @@ void cpu_step()
 		if (!IR_C) {
 			_N = (int16_t) nMEM(nR(R_IC));
 			LOG(D_CPU, 20, "Fetched M argument: 0x%04x", _N);
-			nRinc(R_IC);
+			regs[R_IC]++;
 		} else {
 			_N = (int16_t) R(IR_C);
 		}
 	}
 
 	// previous instruction set P?
-	if (nR(R_P)) {
+	if (P) {
 		LOG(D_CPU, 20, "P set, skipping");
-		Rw(R_P, 0);
+		P = 0;
 		return;
 	}
 
@@ -86,26 +86,26 @@ void cpu_step()
 
 	// op ineffective?
 	if ((op_fun == NULL)
-	|| (op_is_md && (R(R_MODc) >= 3))
+	|| (op_is_md && (regs[R_MODc] >= 3))
 	|| (SR_Q && op->user_illegal)) {
 		LOG(D_CPU, 10, "Instruction ineffective");
-		Rw(R_MODc, 0);
-		Rw(R_MOD, 0);
-		Rw(R_P, 0);
+		regs[R_MODc] = 0;
+		regs[R_MOD] = 0;
+		P = 0;
 		int_set(INT_ILLEGAL_OPCODE);
 		return;
 	}
 
-	Rw(R_P, 0);
+	P = 0;
 
 	// calculate argument
 	if (op->norm_arg) {
 		if (IR_B) _N += (int16_t) R(IR_B);
-		_N += (int16_t) nR(R_MOD);
+		_N += (int16_t) regs[R_MOD];
 		if (IR_D) _N = (int16_t) MEM(_N);
 		if (em400_cfg.cpu.mod_17bit) nRw(R_ZC17, (_N >> 16) & 1);
 	} else if (op->short_arg) {
-		_N = IR_T + (int16_t) nR(R_MOD);
+		_N = IR_T + (int16_t) regs[R_MOD];
 		if (em400_cfg.cpu.mod_17bit) nRw(R_ZC17, (_N >> 16) & 1);
 	}
 	N = _N;
@@ -117,8 +117,8 @@ void cpu_step()
 	op_fun();
 
 	if (!op_is_md) {
-		nRw(R_MODc, 0);
-		nRw(R_MOD, 0);
+		regs[R_MODc] = 0;
+		regs[R_MOD] = 0;
 	}
 }
 

@@ -41,11 +41,11 @@ enum _registers {
 	R_MODc,
 	R_ZC17,
 	R_ALARM,
-	R_P,
 	R_MAX
 };
 
 extern uint16_t regs[];
+extern int P;
 
 #ifndef WITH_DEBUGGER
 #define reg_read(r, trace) regs[r]

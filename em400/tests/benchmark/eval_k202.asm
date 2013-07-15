@@ -13,6 +13,10 @@
 ; em400 +mutex opt.      (Core2Duo @2.80GHz)   25     MIPS
 ; em400 +mem_ptr() opt.  (Core2Duo @2.80GHz)   27.7   MIPS
 ; em400 +arg_norm() opt. (Core2Duo @2.80GHz)   30     MIPS
+; 2013-07-15:
+; em400 +reworks         (Core2Duo @2.80GHz)   25     MIPS
+; em400 +cycle opt.      (Core2Duo @2.80GHz)   30     MIPS
+; em400 +clang           (Core2Duo @2.80GHz)   31     MIPS
 
 	lw r4, 0
 	lw r3, -10		; -10 instead of 0
