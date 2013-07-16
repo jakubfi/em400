@@ -17,6 +17,9 @@
 ; em400 +reworks         (Core2Duo @2.80GHz)   25     MIPS
 ; em400 +cycle opt.      (Core2Duo @2.80GHz)   30     MIPS
 ; em400 --||--           (i3 530   @2.93GHz)   22     MIPS
+; em400 --||--           (RPi, 700MHz)          1.79  MIPS
+; em400 --||--           (RPi, 800MHz)          2.05  MIPS
+; em400 --||--           (RPi, 900MHz)          2.31  MIPS
 ; em400 +clang           (Core2Duo @2.80GHz)   31     MIPS
 ; em400 --||--           (i3 530   @2.93GHz)   25     MIPS
 
