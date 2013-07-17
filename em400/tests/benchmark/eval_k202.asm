@@ -4,24 +4,7 @@
 ; for K-202 evaluation done on December 4th 1972 by
 ; K-202 Evaluation Committee
 ;
-; Results:
-;
-; original K-202                                0.424 MIPS
-; em400 w/debugger       (Core2Duo @2.80GHz)    0.858 MIPS
-; em400                  (Core2Duo @2.80GHz)    7.8   MIPS
-; em400 +regs opt.       (Core2Duo @2.80GHz)   10.422 MIPS
-; em400 +mutex opt.      (Core2Duo @2.80GHz)   25     MIPS
-; em400 +mem_ptr() opt.  (Core2Duo @2.80GHz)   27.7   MIPS
-; em400 +arg_norm() opt. (Core2Duo @2.80GHz)   30     MIPS
-; 2013-07-15:
-; em400 +reworks         (Core2Duo @2.80GHz)   25     MIPS
-; em400 +cycle opt.      (Core2Duo @2.80GHz)   30     MIPS
-; em400 --||--           (i3 530   @2.93GHz)   22     MIPS
-; em400 --||--           (RPi, 700MHz)          1.79  MIPS
-; em400 --||--           (RPi, 800MHz)          2.05  MIPS
-; em400 --||--           (RPi, 900MHz)          2.31  MIPS
-; em400 +clang           (Core2Duo @2.80GHz)   31     MIPS
-; em400 --||--           (i3 530   @2.93GHz)   25     MIPS
+; Results: http://mera400.pl/index.php/Wydajno%C5%9B%C4%87_EM400
 
 	lw r4, 0
 	lw r3, -10		; -10 instead of 0
