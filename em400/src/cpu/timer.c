@@ -38,7 +38,7 @@ void * timer_thread(void *ptr)
 	ts.tv_sec = em400_cfg.cpu.timer_step/1000;
 	ts.tv_nsec = (em400_cfg.cpu.timer_step%1000) * 1000000;
 
-	while (!timer_fin) {
+	while (!timer_fin) { // TODO: fix this
 		nanosleep(&ts, &tr);
 		int_set(INT_TIMER);
 	}

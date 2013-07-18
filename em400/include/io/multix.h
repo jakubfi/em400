@@ -49,7 +49,6 @@ struct mx_unit_proto_t {
 	mx_unit_f_reset reset;
 	mx_unit_f_cfg_phy cfg_phy;
 	mx_unit_f_cfg_log cfg_log;
-	mx_unit_f_cmd cmd;
 
 	// physical
 	int type;
@@ -63,6 +62,21 @@ struct mx_unit_proto_t {
 	int attached;
 
 	struct mx_chan_t *chan;
+
+	pthread_t worker;
+	pthread_mutex_t break_mutex;
+	pthread_mutex_t worker_mutex;
+	pthread_cond_t worker_cond;
+	int worker_dir;
+	int worker_cmd;
+	int worker_addr;
+};
+
+struct mx_cmd_int_t {
+	int int_no_line;
+	int int_line_not_attached;
+	int int_line_attached;
+	int int_line_busy;
 };
 
 struct mx_int_t {

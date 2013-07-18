@@ -30,11 +30,6 @@ struct mx_unit_winch_t {
 	struct rawdisk_t *winchester;
 	int winch_type;
 	int format_protect;
-	pthread_t worker;
-	pthread_mutex_t worker_mutex;
-	pthread_cond_t worker_cond;
-	int worker_dircmd;
-	int worker_addr;
 };
 
 // Winchester types

@@ -57,17 +57,6 @@ struct mx_unit_proto_t * mx_winch_create(struct cfg_arg_t *args)
 
 	mx_winch_connect(UNIT, winchester);
 
-	UNIT->worker_dircmd = -1;
-	UNIT->worker_addr = 0;
-	pthread_mutex_init(&UNIT->worker_mutex, NULL);
-	pthread_cond_init(&UNIT->worker_cond, NULL);
-	res = pthread_create(&UNIT->worker, NULL, mx_winch_worker, (void *)UNIT);
-	if (res != 0) {
-		rawdisk_shutdown(winchester);
-		gerr = E_THREAD;
-		return NULL;
-	}
-
 	return unit;
 }
 
@@ -142,13 +131,16 @@ void mx_winch_cmd_attach(struct mx_unit_proto_t *unit, uint16_t addr)
 // -----------------------------------------------------------------------
 void mx_winch_cmd_detach(struct mx_unit_proto_t *unit, uint16_t addr)
 {
-
+	LOG(D_IO, 10, "MULTIX/winchester (line:%i): detach", unit->log_num);
+	unit->attached = 0;
+	mx_int(unit->chan, unit->log_num, MX_INT_IODLI);
 }
 
 // -----------------------------------------------------------------------
 void mx_winch_cmd_status(struct mx_unit_proto_t *unit, uint16_t addr)
 {
-
+	LOG(D_IO, 10, "MULTIX/winchester (line:%i): status", unit->log_num);
+	mx_int(unit->chan, unit->log_num, MX_INT_ISTRE);
 }
 
 // -----------------------------------------------------------------------
@@ -245,94 +237,39 @@ void * mx_winch_worker(void *th_id)
 	struct mx_unit_proto_t *unit = th_id;
 	while (1) {
 		// wait for command
-		pthread_mutex_lock(&UNIT->worker_mutex);
-		while (UNIT->worker_dircmd <= 0) {
+		pthread_mutex_lock(&unit->worker_mutex);
+		while (unit->worker_cmd <= 0) {
 			LOG(D_IO, 10, "MULTIX/winchester (line:%i): worker waiting for job...", unit->log_num);
-			pthread_cond_wait(&UNIT->worker_cond, &UNIT->worker_mutex);
+			pthread_cond_wait(&unit->worker_cond, &unit->worker_mutex);
 		}
 
 		// do the work
-		switch (UNIT->worker_dircmd) {
-			case IO_OU | MX_LCMD_ATTACH:
-				mx_winch_cmd_attach(unit, UNIT->worker_addr);
+		switch (unit->worker_dir<<7 | unit->worker_cmd) {
+			case IO_OU<<7 | MX_LCMD_ATTACH:
+				mx_winch_cmd_attach(unit, unit->worker_addr);
 				break;
-			case IO_IN | MX_LCMD_DETACH:
-				mx_winch_cmd_detach(unit, UNIT->worker_addr);
+			case IO_IN<<7 | MX_LCMD_DETACH:
+				mx_winch_cmd_detach(unit, unit->worker_addr);
 				break;
-			case IO_OU | MX_LCMD_STATUS:
-				mx_winch_cmd_status(unit, UNIT->worker_addr);
+			case IO_OU<<7 | MX_LCMD_STATUS:
+				mx_winch_cmd_status(unit, unit->worker_addr);
 				break;
-			case IO_OU | MX_LCMD_TRANSMIT:
-				mx_winch_cmd_transmit(unit, UNIT->worker_addr);
+			case IO_OU<<7 | MX_LCMD_TRANSMIT:
+				mx_winch_cmd_transmit(unit, unit->worker_addr);
 				break;
-			case IO_IN | MX_LCMD_BREAK:
-				mx_winch_cmd_break(unit, UNIT->worker_addr);
+			case IO_IN<<7 | MX_LCMD_BREAK:
+				mx_winch_cmd_break(unit, unit->worker_addr);
 				break;
 			default:
 				break;
 		}
 
-		UNIT->worker_dircmd = 0;
+		unit->worker_cmd = 0;
 		LOG(D_IO, 10, "MULTIX/winchester (line:%i): worker done", unit->log_num);
-		pthread_mutex_unlock(&UNIT->worker_mutex);
+		pthread_mutex_unlock(&unit->worker_mutex);
 	}
 
 	pthread_exit(NULL);
-}
-
-// -----------------------------------------------------------------------
-int mx_winch_cmd(struct mx_unit_proto_t *unit, int dircmd, uint16_t addr)
-{
-	// check if worker is busy
-	int busy = pthread_mutex_trylock(&UNIT->worker_mutex);
-	LOG(D_IO, 10, "MULTIX/winchester (line:%i): worker status: %i", unit->log_num, busy);
-	if (busy) {
-		// worker is busy, set interrupt
-		switch (dircmd) {
-			case IO_OU | MX_LCMD_ATTACH:
-				mx_int(unit->chan, unit->log_num, MX_INT_INDOL);
-				break;
-			case IO_IN | MX_LCMD_DETACH:
-				mx_int(unit->chan, unit->log_num, MX_INT_INODL);
-				break;
-			case IO_OU | MX_LCMD_STATUS:
-				mx_int(unit->chan, unit->log_num, MX_INT_INSTR);
-				break;
-			case IO_OU | MX_LCMD_TRANSMIT:
-				mx_int(unit->chan, unit->log_num, MX_INT_INTRA);
-				break;
-			case IO_IN | MX_LCMD_BREAK:
-				// TODO: naprawdę zerwij transmisję
-				mx_int(unit->chan, unit->log_num, MX_INT_IABTR);
-				break;
-			default:
-				break;
-		}
-		return IO_OK;
-	}
-
-	// worker is free, prepare command
-	UNIT->worker_addr = addr;
-	UNIT->worker_dircmd = dircmd;
-	// signal worker
-	pthread_cond_signal(&UNIT->worker_cond);
-	pthread_mutex_unlock(&UNIT->worker_mutex);
-
-	return IO_OK;
-}
-
-// -----------------------------------------------------------------------
-int mx_winch_detach(struct mx_unit_proto_t *unit)
-{
-	int busy = pthread_mutex_trylock(&UNIT->worker_mutex);
-	if (busy) {
-		mx_int(unit->chan, unit->log_num, MX_INT_INODL);
-	} else {
-		unit->attached = 0;
-		mx_int(unit->chan, unit->log_num, MX_INT_IODLI);
-		pthread_mutex_unlock(&UNIT->worker_mutex);
-	}
-	return IO_OK;
 }
 
 // -----------------------------------------------------------------------

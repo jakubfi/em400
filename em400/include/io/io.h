@@ -29,8 +29,8 @@ struct cfg_unit_t;
 struct cfg_arg_t;
 
 enum io_dir {
-	IO_IN = 0 << 7,
-	IO_OU = 1 << 7
+	IO_IN = 0,
+	IO_OU = 1
 };
 
 enum io_result {
