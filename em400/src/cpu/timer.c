@@ -25,21 +25,25 @@
 #include "cfg.h"
 #include "errors.h"
 
-int timer_fin = 0;
-
+pthread_mutex_t timer_active = PTHREAD_MUTEX_INITIALIZER;
 pthread_t timer_th;
 
 // -----------------------------------------------------------------------
 void * timer_thread(void *ptr)
 {
 	struct timespec ts;
-	struct timespec tr;
+	int clock_tick_nsec = em400_cfg.cpu.timer_step * 1000000;
+	long new_nsec;
+	clock_gettime(CLOCK_REALTIME , &ts);
 
-	ts.tv_sec = em400_cfg.cpu.timer_step/1000;
-	ts.tv_nsec = (em400_cfg.cpu.timer_step%1000) * 1000000;
-
-	while (!timer_fin) { // TODO: fix this
-		nanosleep(&ts, &tr);
+	while (1) {
+		new_nsec = ts.tv_nsec + clock_tick_nsec;
+		ts.tv_sec += new_nsec / 1000000000;
+		ts.tv_nsec = new_nsec % 1000000000;
+		if(!pthread_mutex_timedlock(&timer_active, &ts)) {
+			pthread_mutex_unlock(&timer_active);
+			break;
+		}
 		int_set(INT_TIMER);
 	}
 	pthread_exit(NULL);
@@ -50,10 +54,15 @@ int timer_init()
 {
 	if (em400_cfg.cpu.timer_step == 0) {
 		eprint("Timer disabled in configuration\n");
-		return 0;
+		return E_OK;
 	} else {
 		eprint("Starting timer: %i ms\n", em400_cfg.cpu.timer_step);
-		return pthread_create(&timer_th, NULL, timer_thread, NULL);
+		pthread_mutex_lock(&timer_active);
+		if (pthread_create(&timer_th, NULL, timer_thread, NULL)) {
+			return E_THREAD;
+		} else {
+			return E_OK;
+		}
 	}
 }
 
@@ -61,7 +70,7 @@ int timer_init()
 void timer_shutdown()
 {
 	eprint("Stopping timer\n");
-	timer_fin = 1;
+	pthread_mutex_unlock(&timer_active);
 	if (timer_th) {
 		pthread_join(timer_th, NULL);
 	}
