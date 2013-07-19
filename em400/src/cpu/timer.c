@@ -69,9 +69,9 @@ int timer_init()
 // -----------------------------------------------------------------------
 void timer_shutdown()
 {
-	eprint("Stopping timer\n");
-	pthread_mutex_unlock(&timer_active);
-	if (timer_th) {
+	if (em400_cfg.cpu.timer_step) {
+		eprint("Stopping timer\n");
+		pthread_mutex_unlock(&timer_active);
 		pthread_join(timer_th, NULL);
 	}
 }
