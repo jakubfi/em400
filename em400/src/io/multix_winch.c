@@ -146,35 +146,51 @@ void mx_winch_cmd_status(struct mx_unit_proto_t *unit, uint16_t addr)
 // -----------------------------------------------------------------------
 int mx_winch_read(struct mx_unit_proto_t *unit, struct mx_winch_cf_t *cf)
 {
-	// first cylinder is used for relocated sectors
-	int offset = UNIT->winchester->heads * UNIT->winchester->sectors;
+	int ret = E_OK;
 
-	int buffer_size = ((cf->transmit->len / UNIT->winchester->sector_size)+1) * UNIT->winchester->sector_size;
-	uint8_t *buf = malloc(buffer_size);
-	int res;
-	int pos;
+	// first physical cylinder is used by multix for relocated sectors
+	int offset = UNIT->winchester->heads * UNIT->winchester->sectors;
+	uint8_t *buf = malloc(UNIT->winchester->sector_size);
+
+	int buf_pos = 0;
+	int sector = 0;
+	cf->ret_len = 0;
 
 	// transmit data into buffer, sector by sector
-	pos = 0;
-	int sector = cf->transmit->sector;
-	while (pos < cf->transmit->len) {
-		LOG(D_IO, 10, "MULTIX/winchester (line:%i): reading sector %i (+offset %i) into buf at pos: %i", unit->log_num, sector, offset, pos);
-		res = rawdisk_read_sector_l(UNIT->winchester, buf+pos, offset+sector);
-		pos += UNIT->winchester->sector_size;
-		sector++;
+	while (cf->ret_len < cf->transmit->len) {
+		LOG(D_IO, 10, "MULTIX/winchester (line:%i): reading sector %i (+offset %i) into buf at pos: %i", unit->log_num, cf->transmit->sector + sector, offset, cf->transmit->addr + sector * UNIT->winchester->sector_size);
+		// read whole sector into buffer
+		int res = rawdisk_read_sector_l(UNIT->winchester, buf, offset + cf->transmit->sector + sector);
+
+		// sector read OK
+		if (res == E_OK) {
+			// copy read data into system memory, swapping byte order
+			while ((buf_pos < UNIT->winchester->sector_size) && (cf->ret_len < cf->transmit->len)) {
+				uint16_t *buf16 = (uint16_t*)(buf+buf_pos);
+				MEMBw(cf->transmit->nb, cf->transmit->addr + sector * UNIT->winchester->sector_size/2 + buf_pos/2, ntohs(*buf16));
+				buf_pos += 2;
+				cf->ret_len++;
+			}
+			sector++;
+			buf_pos = 0;
+
+		// sector not found or incomplete
+		} else if ((res == E_DISK_NO_SECTOR) || (res == E_DISK_RW_SIZE)) {
+			cf->ret_status = MX_WS_ERR | MX_WS_NO_SECTOR;
+			ret = E_MX_TRANSMISSION;
+			break;
+
+		// shouldn't happen, but let's consider it
+		} else {
+			cf->ret_status = MX_WS_ERR | MX_WS_REJECTED;
+			ret = E_MX_TRANSMISSION;
+			break;
+		}
 	}
 
-	LOG(D_IO, 10, "MULTIX/winchester (line:%i): copying %i words to %i:%i", unit->log_num, cf->transmit->len, cf->transmit->nb, cf->transmit->addr);
-	// copy buffer to memory, swapping byte order
-	pos = 0;
-	while (pos < cf->transmit->len) {
-		uint16_t data = ntohs(*((uint16_t*)(buf+(pos*2))));
-		MEMBw(cf->transmit->nb, cf->transmit->addr + pos, data);
-		pos++;
-	}
 	free(buf);
 
-	return E_OK;
+	return ret;
 }
 
 // -----------------------------------------------------------------------

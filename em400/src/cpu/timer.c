@@ -32,8 +32,8 @@ pthread_t timer_th;
 void * timer_thread(void *ptr)
 {
 	struct timespec ts;
-	int clock_tick_nsec = em400_cfg.cpu.timer_step * 1000000;
-	long new_nsec;
+	unsigned clock_tick_nsec = em400_cfg.cpu.timer_step * 1000000;
+	unsigned new_nsec;
 	clock_gettime(CLOCK_REALTIME , &ts);
 
 	while (1) {
