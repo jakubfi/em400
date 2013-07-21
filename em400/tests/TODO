@@ -6,4 +6,19 @@ MFn, rC, rB
 DFn, rC, rB
 NRF
 
-benchmarks
+benchmarks:
+
++ simplest cycle (UJS 0?)
+register read
+register write
+memory read memory write
++ short arg
+norm arg - register
+norm arg - register + register
+norm arg - immediate
+norm arg - modification
+add
+sub
+mul
+shift
+interrupt serve
