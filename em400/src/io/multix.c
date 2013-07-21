@@ -75,7 +75,7 @@ struct mx_cmd_int_t mx_cmd_int[2][5] = {
 		{ 0,			0,				0,				0 },
 		{ 0,			0,				0,				0 },
 		{ MX_INT_INKOD,	0,				0,				MX_INT_INODL }, // detach
-		{ MX_INT_INKAB,	0,				0,				MX_INT_IABTR }, // break
+		{ 0,			0,				0,				0 }, 			// cancel handled separately
 		{ 0,			0,				0,				0 },
 	},
 	{
@@ -145,6 +145,7 @@ struct chan_proto_t * mx_create(struct cfg_unit_t *units)
 		unit->worker_dir = -1;
 		unit->worker_cmd = -1;
 		unit->worker_addr = 0;
+		pthread_mutex_init(&unit->transmit_mutex, NULL);
 		pthread_mutex_init(&unit->worker_mutex, NULL);
 		pthread_cond_init(&unit->worker_cond, NULL);
 		int res = pthread_create(&unit->worker, NULL, mx_winch_worker, (void *)unit);
@@ -459,11 +460,8 @@ int mx_cmd_forward(struct chan_proto_t *chan, int dir, int cmd, int lline_n, uin
 	int busy = pthread_mutex_trylock(&unit->worker_mutex);
 	LOG(D_IO, 10, "MULTIX/winchester (line:%i): worker status: %i", unit->log_num, busy);
 
-	// line busy
+	// line busy ('cancel' is handled separately)
 	if (busy && mx_cmd_int[dir][cmd].int_line_busy) {
-		if ((dir == IO_IN) && (cmd == MX_LCMD_BREAK)) {
-			// if this is break command, really break transmission
-		}
 		mx_int(unit->chan, unit->log_num, mx_cmd_int[dir][cmd].int_line_busy);
 		return IO_OK;
 	}
@@ -476,6 +474,22 @@ int mx_cmd_forward(struct chan_proto_t *chan, int dir, int cmd, int lline_n, uin
 	pthread_cond_signal(&unit->worker_cond);
 	pthread_mutex_unlock(&unit->worker_mutex);
 
+	return IO_OK;
+}
+
+// -----------------------------------------------------------------------
+int mx_cmd_cancel(struct chan_proto_t *chan, int lline_n)
+{
+	struct mx_unit_proto_t *unit = CHAN->lline[lline_n];
+	int transmission = pthread_mutex_trylock(&unit->transmit_mutex);
+	if (transmission) {
+		// cancel transmission
+		mx_int(unit->chan, unit->log_num, MX_INT_IABTR);
+	} else {
+		// no transmission
+		mx_int(unit->chan, unit->log_num, MX_INT_INABT);
+	}
+	pthread_mutex_unlock(&unit->transmit_mutex);
 	return IO_OK;
 }
 
@@ -507,9 +521,9 @@ int mx_cmd(struct chan_proto_t *chan, int dir, uint16_t n_arg, uint16_t *r_arg)
 				case MX_LCMD_DETACH:
 					LOG(D_IO, 1, "MULTIX (ch:%i, line:%i) command: detach", chan->num, lline_n);
 					return mx_cmd_forward(chan, dir, cmd, lline_n, *r_arg);
-				case MX_LCMD_BREAK:
-					LOG(D_IO, 1, "MULTIX (ch:%i, line:%i) command: break transmission", chan->num, lline_n);
-					return mx_cmd_forward(chan, dir, cmd, lline_n, *r_arg);
+				case MX_LCMD_CANCEL:
+					LOG(D_IO, 1, "MULTIX (ch:%i, line:%i) command: cancel transmission", chan->num, lline_n);
+					return mx_cmd_cancel(chan, lline_n);
 				default:
 					LOG(D_IO, 1, "MULTIX (ch:%i, line:%i) command: unknown line IN command", chan->num, lline_n);
 					break;

@@ -61,6 +61,7 @@ enum em400_error {
 	E_ARG_FORMAT,
 	E_MX_DECODE,
 	E_MX_TRANSMISSION,
+	E_MX_CANCEL,
 	E_THREAD,
 
 

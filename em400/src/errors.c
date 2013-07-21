@@ -66,6 +66,7 @@ struct _em400_errordesc {
 	{ E_ARG_FORMAT, "missing or unknown format" },
 	{ E_MX_DECODE, "error decoding Multix field" },
 	{ E_MX_TRANSMISSION, "Multix transmission error" },
+	{ E_MX_CANCEL, "Multix transmission cancelled" },
 	{ E_THREAD, "cannot create thread" },
 
 	{ E_UNKNOWN, "unknown error" }

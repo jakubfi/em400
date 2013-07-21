@@ -158,7 +158,16 @@ int mx_winch_read(struct mx_unit_proto_t *unit, struct mx_winch_cf_t *cf)
 
 	// transmit data into buffer, sector by sector
 	while (cf->ret_len < cf->transmit->len) {
+
+		// still allowed to transmit?
+		if (pthread_mutex_trylock(&unit->transmit_mutex) == 0) {
+			pthread_mutex_unlock(&unit->transmit_mutex);
+			ret = E_MX_CANCEL;
+			break;
+		}
+
 		LOG(D_IO, 10, "MULTIX/winchester (line:%i): reading sector %i (+offset %i) into buf at pos: %i", unit->log_num, cf->transmit->sector + sector, offset, cf->transmit->addr + sector * UNIT->winchester->sector_size);
+
 		// read whole sector into buffer
 		int res = rawdisk_read_sector_l(UNIT->winchester, buf, offset + cf->transmit->sector + sector);
 
@@ -196,6 +205,9 @@ int mx_winch_read(struct mx_unit_proto_t *unit, struct mx_winch_cf_t *cf)
 // -----------------------------------------------------------------------
 void mx_winch_cmd_transmit(struct mx_unit_proto_t *unit, uint16_t addr)
 {
+	// we're transmitting
+	pthread_mutex_trylock(&unit->transmit_mutex);
+
 	LOG(D_IO, 1, "MULTIX/winchester (line:%i): transmit", unit->log_num);
 
 	// disk is not connected
@@ -230,21 +242,19 @@ void mx_winch_cmd_transmit(struct mx_unit_proto_t *unit, uint16_t addr)
 
 	MEMBw(0, addr+6, cf->ret_len);
 
-	if (res != E_OK) {
+	if (res == E_OK) {
+		mx_int(unit->chan, unit->log_num, MX_INT_IETRA);
+	} else if (res == E_MX_CANCEL) {
+		mx_int(unit->chan, unit->log_num, MX_INT_ITRAB);
+	} else {
 		MEMBw(0, addr+6, cf->ret_status);
 		mx_int(unit->chan, unit->log_num, MX_INT_ITRER);
-	} else {
-		mx_int(unit->chan, unit->log_num, MX_INT_IETRA);
 	}
 
 	mx_winch_cf_t_free(cf);
-}
 
-// -----------------------------------------------------------------------
-void mx_winch_cmd_break(struct mx_unit_proto_t *unit, uint16_t addr)
-{
-	// break while not transmitting
-	mx_int(unit->chan, unit->log_num, MX_INT_INABT);
+	// done transmitting
+	pthread_mutex_unlock(&unit->transmit_mutex);
 }
 
 // -----------------------------------------------------------------------
@@ -272,9 +282,6 @@ void * mx_winch_worker(void *th_id)
 				break;
 			case IO_OU<<7 | MX_LCMD_TRANSMIT:
 				mx_winch_cmd_transmit(unit, unit->worker_addr);
-				break;
-			case IO_IN<<7 | MX_LCMD_BREAK:
-				mx_winch_cmd_break(unit, unit->worker_addr);
 				break;
 			default:
 				break;

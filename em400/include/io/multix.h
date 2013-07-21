@@ -64,7 +64,7 @@ struct mx_unit_proto_t {
 	struct mx_chan_t *chan;
 
 	pthread_t worker;
-	pthread_mutex_t break_mutex;
+	pthread_mutex_t transmit_mutex;
 	pthread_mutex_t worker_mutex;
 	pthread_cond_t worker_cond;
 	int worker_dir;
@@ -113,7 +113,7 @@ enum mx_cmd_e {
 	MX_LCMD_DETACH	= 0b010, // IN
 	MX_LCMD_STATUS	= 0b011, // OU
 	MX_LCMD_TRANSMIT= 0b100, // OU
-	MX_LCMD_BREAK	= 0b011, // IN
+	MX_LCMD_CANCEL	= 0b011, // IN
 };
 
 // multix interrupts
@@ -138,10 +138,10 @@ enum mx_int_e {
 	MX_INT_INTRA = 14,	// + 'transmit' rejected (errors in field, line not attached, previous transmission ongoing)
 	MX_INT_INKTR = 15,	// + 'transmit' for non existent line
 	MX_INT_ITRER = 16,	// + 'transmit' finished with error (parity or other)
-	MX_INT_ITRAB = 19,	// 'transmit' cancelled (as ordered by 'cancel transmission')
-	MX_INT_IABTR = 20,	// + 'break transmission' OK
-	MX_INT_INABT = 21,	// + 'break transmission' while no transmission
-	MX_INT_INKAB = 22,	// + 'break transmission' for nonexistent line
+	MX_INT_ITRAB = 19,	// + 'transmit' cancelled (as ordered by 'cancel transmission')
+	MX_INT_IABTR = 20,	// + 'cancel transmission' OK
+	MX_INT_INABT = 21,	// + 'cancel transmission' while no transmission
+	MX_INT_INKAB = 22,	// + 'cancel transmission' for nonexistent line
 	MX_INT_IODLI = 23,	// + 'detach line' OK
 	MX_INT_INODL = 24,	// + 'detach line' for a line with ongoing transmission
 	MX_INT_INKOD = 25,	// + 'detach line' for non existent line
@@ -311,7 +311,6 @@ int mx_decode_cf_phy(int addr, struct mx_cf_sc_pl *phy, int offset);
 int mx_decode_cf_log(int addr, struct mx_cf_sc_ll *log, struct mx_cf_sc_pl *phys, int phy_count);
 int mx_decode_cf_sc(int addr, struct mx_cf_sc *cf);
 void mx_free_cf_sc(struct mx_cf_sc *cf);
-
 
 #endif
 
