@@ -1,4 +1,4 @@
-.prog "arg short"
+.prog "benchmark/arg_short"
 
 	lwt r2, 0
 next:	lwt r1, 0

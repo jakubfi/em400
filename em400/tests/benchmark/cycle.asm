@@ -1,6 +1,6 @@
 .prog "benchmark/cycle"
 
-	lw r1, -32000
+	lw r1, 1
 loop:
 	ujs 0
 	ujs 0
