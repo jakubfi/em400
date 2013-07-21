@@ -218,7 +218,7 @@ void mx_winch_cmd_transmit(struct mx_unit_proto_t *unit, uint16_t addr)
 		return;
 	}
 
-	int res = E_OK;
+	int ret = E_OK;
 
 	// decode control field
 	struct mx_winch_cf_t *cf = mx_winch_cf_t_decode(addr);
@@ -228,13 +228,15 @@ void mx_winch_cmd_transmit(struct mx_unit_proto_t *unit, uint16_t addr)
 		case MX_WINCH_FORMAT:
 			break;
 		case MX_WINCH_READ:
-			res = mx_winch_read(unit, cf);
+			ret = mx_winch_read(unit, cf);
 			break;
 		case MX_WINCH_WRITE:
 			break;
 		case MX_WINCH_PARK:
+			ret = rawdisk_park(UNIT->winchester, cf->park->cylinder);
 			break;
 		default:
+			// shouldn't happen
 			mx_int(unit->chan, unit->log_num, MX_INT_INTRA);
 			mx_winch_cf_t_free(cf);
 			return;
@@ -242,9 +244,9 @@ void mx_winch_cmd_transmit(struct mx_unit_proto_t *unit, uint16_t addr)
 
 	MEMBw(0, addr+6, cf->ret_len);
 
-	if (res == E_OK) {
+	if (ret == E_OK) {
 		mx_int(unit->chan, unit->log_num, MX_INT_IETRA);
-	} else if (res == E_MX_CANCEL) {
+	} else if (ret == E_MX_CANCEL) {
 		mx_int(unit->chan, unit->log_num, MX_INT_ITRAB);
 	} else {
 		MEMBw(0, addr+6, cf->ret_status);

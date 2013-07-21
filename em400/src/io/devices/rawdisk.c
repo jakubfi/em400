@@ -116,9 +116,9 @@ int rawdisk_read_sector_l(struct rawdisk_t *d, uint8_t *buf, int sect)
 }
 
 // -----------------------------------------------------------------------
-int rawdisk_write_sector_p(struct rawdisk_t *w, uint8_t *buf, int count, int cyl, int head, int sect)
+int rawdisk_write_sector_p(struct rawdisk_t *d, uint8_t *buf, int count, int cyl, int head, int sect)
 {
-	return rawdisk_write_sector_l(w, buf, count, rawdisk_p2l(w, cyl, head, sect));
+	return rawdisk_write_sector_l(d, buf, count, rawdisk_p2l(d, cyl, head, sect));
 }
 
 // -----------------------------------------------------------------------
@@ -146,7 +146,7 @@ int rawdisk_write_sector_l(struct rawdisk_t *d, uint8_t *buf, int count, int sec
 }
 
 // -----------------------------------------------------------------------
-int rawdisk_park(int cyl)
+int rawdisk_park(struct rawdisk_t *d, int cyl)
 {
 	// mhm, sure.
 	return E_OK;

@@ -40,7 +40,7 @@ int rawdisk_read_sector_p(struct rawdisk_t *d, uint8_t *buf, int cyl, int head, 
 int rawdisk_read_sector_l(struct rawdisk_t *d, uint8_t *buf, int sect);
 int rawdisk_write_sector_p(struct rawdisk_t *d, uint8_t *buf, int count, int cyl, int head, int sect);
 int rawdisk_write_sector_l(struct rawdisk_t *d, uint8_t *buf, int count, int sect);
-int rawdisk_park(int cyl);
+int rawdisk_park(struct rawdisk_t *d, int cyl);
 
 #endif
 
