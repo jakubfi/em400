@@ -121,25 +121,47 @@ int mx_floppy_cfg_log(struct mx_unit_proto_t *unit, struct mx_cf_sc_ll *cfg_log)
 // -----------------------------------------------------------------------
 void mx_floppy_cmd_attach(struct mx_unit_proto_t *unit, uint16_t addr)
 {
-
+	LOG(D_IO, 10, "MULTIX/floppy (line:%i): attach", unit->log_num);
+	unit->attached = 1;
+	mx_int(unit->chan, unit->log_num, MX_INT_IDOLI);
 }
 
 // -----------------------------------------------------------------------
 void mx_floppy_cmd_detach(struct mx_unit_proto_t *unit, uint16_t addr)
 {
-
+	LOG(D_IO, 10, "MULTIX/floppy (line:%i): detach", unit->log_num);
+	unit->attached = 0;
+	mx_int(unit->chan, unit->log_num, MX_INT_IODLI);
 }
 
 // -----------------------------------------------------------------------
 void mx_floppy_cmd_status(struct mx_unit_proto_t *unit, uint16_t addr)
 {
-
+	LOG(D_IO, 10, "MULTIX/floppy (line:%i): status", unit->log_num);
+	mx_int(unit->chan, unit->log_num, MX_INT_ISTRE);
 }
 
 // -----------------------------------------------------------------------
 void mx_floppy_cmd_transmit(struct mx_unit_proto_t *unit, uint16_t addr)
 {
+    // we're transmitting
+    pthread_mutex_trylock(&unit->transmit_mutex);
 
+    LOG(D_IO, 1, "MULTIX/floppy (line:%i): transmit", unit->log_num);
+    int ret = E_OK;
+    //MEMBw(0, addr+6, cf->ret_len);
+
+    if (ret == E_OK) {
+        mx_int(unit->chan, unit->log_num, MX_INT_IETRA);
+    } else if (ret == E_MX_CANCEL) {
+        mx_int(unit->chan, unit->log_num, MX_INT_ITRAB);
+    } else {
+        //MEMBw(0, addr+6, cf->ret_status);
+        mx_int(unit->chan, unit->log_num, MX_INT_ITRER);
+    }
+
+    // done transmitting
+    pthread_mutex_unlock(&unit->transmit_mutex);
 }
 
 // -----------------------------------------------------------------------

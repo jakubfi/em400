@@ -26,6 +26,9 @@
 #include "io/multix.h"
 #include "io/multix_winch.h"
 #include "io/multix_floppy.h"
+#include "io/multix_puncher.h"
+#include "io/multix_punchreader.h"
+#include "io/multix_terminal.h"
 
 #include "cfg.h"
 #include "errors.h"
@@ -63,6 +66,48 @@ struct mx_unit_proto_t mx_unit_proto[] = {
 		mx_floppy_cmd_status,
 		mx_floppy_cmd_transmit,
 		MX_PHY_FLOPPY
+	},
+	{
+		"puncher",
+		mx_puncher_create,
+		mx_puncher_create_nodev,
+		mx_puncher_shutdown,
+		mx_puncher_reset,
+		mx_puncher_cfg_phy,
+		mx_puncher_cfg_log,
+		mx_puncher_cmd_attach,
+		mx_puncher_cmd_detach,
+		mx_puncher_cmd_status,
+		mx_puncher_cmd_transmit,
+		MX_PROTO_PUNCHER
+	},
+	{
+		"punchreader",
+		mx_punchreader_create,
+		mx_punchreader_create_nodev,
+		mx_punchreader_shutdown,
+		mx_punchreader_reset,
+		mx_punchreader_cfg_phy,
+		mx_punchreader_cfg_log,
+		mx_punchreader_cmd_attach,
+		mx_punchreader_cmd_detach,
+		mx_punchreader_cmd_status,
+		mx_punchreader_cmd_transmit,
+		MX_PROTO_PUNCH_READER
+	},
+	{
+		"terminal",
+		mx_terminal_create,
+		mx_terminal_create_nodev,
+		mx_terminal_shutdown,
+		mx_terminal_reset,
+		mx_terminal_cfg_phy,
+		mx_terminal_cfg_log,
+		mx_terminal_cmd_attach,
+		mx_terminal_cmd_detach,
+		mx_terminal_cmd_status,
+		mx_terminal_cmd_transmit,
+		MX_PROTO_TERMINAL
 	},
 	{
 		NULL,
@@ -222,6 +267,7 @@ void mx_reset(struct chan_proto_t *chan)
 		struct mx_unit_proto_t *punit = CHAN->pline[i];
 		if (punit) {
 			punit->reset(punit);
+			punit->attached = 0;
 		}
 		CHAN->lline[i] = NULL;
 	}
