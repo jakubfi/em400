@@ -119,9 +119,27 @@ int mx_floppy_cfg_log(struct mx_unit_proto_t *unit, struct mx_cf_sc_ll *cfg_log)
 }
 
 // -----------------------------------------------------------------------
-int mx_floppy_cmd(struct mx_unit_proto_t *unit, int dircmd, uint16_t addr)
+void mx_floppy_cmd_attach(struct mx_unit_proto_t *unit, uint16_t addr)
 {
-	return IO_OK;
+
+}
+
+// -----------------------------------------------------------------------
+void mx_floppy_cmd_detach(struct mx_unit_proto_t *unit, uint16_t addr)
+{
+
+}
+
+// -----------------------------------------------------------------------
+void mx_floppy_cmd_status(struct mx_unit_proto_t *unit, uint16_t addr)
+{
+
+}
+
+// -----------------------------------------------------------------------
+void mx_floppy_cmd_transmit(struct mx_unit_proto_t *unit, uint16_t addr)
+{
+
 }
 
 // -----------------------------------------------------------------------

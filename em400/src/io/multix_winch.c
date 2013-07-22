@@ -260,44 +260,6 @@ void mx_winch_cmd_transmit(struct mx_unit_proto_t *unit, uint16_t addr)
 }
 
 // -----------------------------------------------------------------------
-void * mx_winch_worker(void *th_id)
-{
-	struct mx_unit_proto_t *unit = th_id;
-	while (1) {
-		// wait for command
-		pthread_mutex_lock(&unit->worker_mutex);
-		while (unit->worker_cmd <= 0) {
-			LOG(D_IO, 10, "MULTIX/winchester (line:%i): worker waiting for job...", unit->log_num);
-			pthread_cond_wait(&unit->worker_cond, &unit->worker_mutex);
-		}
-
-		// do the work
-		switch (unit->worker_dir<<7 | unit->worker_cmd) {
-			case IO_OU<<7 | MX_LCMD_ATTACH:
-				mx_winch_cmd_attach(unit, unit->worker_addr);
-				break;
-			case IO_IN<<7 | MX_LCMD_DETACH:
-				mx_winch_cmd_detach(unit, unit->worker_addr);
-				break;
-			case IO_OU<<7 | MX_LCMD_STATUS:
-				mx_winch_cmd_status(unit, unit->worker_addr);
-				break;
-			case IO_OU<<7 | MX_LCMD_TRANSMIT:
-				mx_winch_cmd_transmit(unit, unit->worker_addr);
-				break;
-			default:
-				break;
-		}
-
-		unit->worker_cmd = 0;
-		LOG(D_IO, 10, "MULTIX/winchester (line:%i): worker done", unit->log_num);
-		pthread_mutex_unlock(&unit->worker_mutex);
-	}
-
-	pthread_exit(NULL);
-}
-
-// -----------------------------------------------------------------------
 struct mx_winch_cf_t * mx_winch_cf_t_decode(int addr)
 {
 	uint16_t data;

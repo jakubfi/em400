@@ -36,7 +36,10 @@ typedef void (*mx_unit_f_shutdown)(struct mx_unit_proto_t *unit);
 typedef void (*mx_unit_f_reset)(struct mx_unit_proto_t *unit);
 typedef int (*mx_unit_f_cfg_phy)(struct mx_unit_proto_t *unit, struct mx_cf_sc_pl *cfg_phy);
 typedef int (*mx_unit_f_cfg_log)(struct mx_unit_proto_t *unit, struct mx_cf_sc_ll *cfg_log);
-typedef int (*mx_unit_f_cmd)(struct mx_unit_proto_t *unit, int dircmd, uint16_t addr);
+typedef void (*mx_unit_f_cmd_attach)(struct mx_unit_proto_t *unit, uint16_t addr);
+typedef void (*mx_unit_f_cmd_detach)(struct mx_unit_proto_t *unit, uint16_t addr);
+typedef void (*mx_unit_f_cmd_status)(struct mx_unit_proto_t *unit, uint16_t addr);
+typedef void (*mx_unit_f_cmd_transmit)(struct mx_unit_proto_t *unit, uint16_t addr);
 
 struct mx_chan_t;
 
@@ -49,6 +52,10 @@ struct mx_unit_proto_t {
 	mx_unit_f_reset reset;
 	mx_unit_f_cfg_phy cfg_phy;
 	mx_unit_f_cfg_log cfg_log;
+	mx_unit_f_cmd_attach cmd_attach;
+	mx_unit_f_cmd_detach cmd_detach;
+	mx_unit_f_cmd_status cmd_status;
+	mx_unit_f_cmd_transmit cmd_transmit;
 
 	// physical
 	int type;
@@ -299,6 +306,7 @@ struct chan_proto_t * mx_create(struct cfg_unit_t *units);
 void mx_shutdown(struct chan_proto_t *chan);
 void mx_reset(struct chan_proto_t *chan);
 int mx_cmd(struct chan_proto_t *chan, int dir, uint16_t n_arg, uint16_t *r_arg);
+void * mx_unit_worker(void *th_id);
 
 void mx_int(struct mx_chan_t *chan, int unit_n, int interrupt);
 void mx_int_enq(struct mx_chan_t *chan, struct mx_int_t *mx_int);

@@ -44,6 +44,10 @@ struct mx_unit_proto_t mx_unit_proto[] = {
 		mx_winch_reset,
 		mx_winch_cfg_phy,
 		mx_winch_cfg_log,
+		mx_winch_cmd_attach,
+		mx_winch_cmd_detach,
+		mx_winch_cmd_status,
+		mx_winch_cmd_transmit,
 		MX_PHY_WINCHESTER
 	},
 	{
@@ -54,9 +58,17 @@ struct mx_unit_proto_t mx_unit_proto[] = {
 		mx_floppy_reset,
 		mx_floppy_cfg_phy,
 		mx_floppy_cfg_log,
+		mx_floppy_cmd_attach,
+		mx_floppy_cmd_detach,
+		mx_floppy_cmd_status,
+		mx_floppy_cmd_transmit,
 		MX_PHY_FLOPPY
 	},
 	{
+		NULL,
+		NULL,
+		NULL,
+		NULL,
 		NULL,
 		NULL,
 		NULL,
@@ -148,7 +160,7 @@ struct chan_proto_t * mx_create(struct cfg_unit_t *units)
 		pthread_mutex_init(&unit->transmit_mutex, NULL);
 		pthread_mutex_init(&unit->worker_mutex, NULL);
 		pthread_cond_init(&unit->worker_cond, NULL);
-		int res = pthread_create(&unit->worker, NULL, mx_winch_worker, (void *)unit);
+		int res = pthread_create(&unit->worker, NULL, mx_unit_worker, (void *)unit);
 		if (res != 0) {
 			unit->shutdown(unit);
 			gerr = E_THREAD;
@@ -163,8 +175,12 @@ struct chan_proto_t * mx_create(struct cfg_unit_t *units)
 		unit->reset = proto->reset;
 		unit->cfg_phy = proto->cfg_phy;
 		unit->cfg_log = proto->cfg_log;
+		unit->cmd_attach = proto->cmd_attach;
+		unit->cmd_detach = proto->cmd_detach;
+		unit->cmd_status = proto->cmd_status;
+		unit->cmd_transmit = proto->cmd_transmit;
 
-		// remember channel unit is connected to
+		// remember the channel unit is connected to
 		unit->chan = chan;
 
 		// reset properties
@@ -458,7 +474,7 @@ int mx_cmd_forward(struct chan_proto_t *chan, int dir, int cmd, int lline_n, uin
 	}
 
 	int busy = pthread_mutex_trylock(&unit->worker_mutex);
-	LOG(D_IO, 10, "MULTIX/winchester (line:%i): worker status: %i", unit->log_num, busy);
+	LOG(D_IO, 10, "MULTIX line %i: worker status: %i", unit->log_num, busy);
 
 	// line busy ('cancel' is handled separately)
 	if (busy && mx_cmd_int[dir][cmd].int_line_busy) {
@@ -491,6 +507,44 @@ int mx_cmd_cancel(struct chan_proto_t *chan, int lline_n)
 	}
 	pthread_mutex_unlock(&unit->transmit_mutex);
 	return IO_OK;
+}
+
+// -----------------------------------------------------------------------
+void * mx_unit_worker(void *th_id)
+{
+	struct mx_unit_proto_t *unit = th_id;
+	while (1) {
+		// wait for command
+		pthread_mutex_lock(&unit->worker_mutex);
+		while (unit->worker_cmd <= 0) {
+			LOG(D_IO, 10, "MULTIX line %i: worker waiting for job...", unit->log_num);
+			pthread_cond_wait(&unit->worker_cond, &unit->worker_mutex);
+		}
+
+		// do the work
+		switch (unit->worker_dir<<7 | unit->worker_cmd) {
+			case IO_OU<<7 | MX_LCMD_ATTACH:
+				unit->cmd_attach(unit, unit->worker_addr);
+				break;
+			case IO_IN<<7 | MX_LCMD_DETACH:
+				unit->cmd_detach(unit, unit->worker_addr);
+				break;
+			case IO_OU<<7 | MX_LCMD_STATUS:
+				unit->cmd_status(unit, unit->worker_addr);
+				break;
+			case IO_OU<<7 | MX_LCMD_TRANSMIT:
+				unit->cmd_transmit(unit, unit->worker_addr);
+				break;
+			default:
+				break;
+		}
+
+		unit->worker_cmd = 0;
+		LOG(D_IO, 10, "MULTIX line %i: worker done", unit->log_num);
+		pthread_mutex_unlock(&unit->worker_mutex);
+	}
+
+	pthread_exit(NULL);
 }
 
 // -----------------------------------------------------------------------
