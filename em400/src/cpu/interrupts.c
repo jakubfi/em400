@@ -114,7 +114,7 @@ void int_clear_all()
 // -----------------------------------------------------------------------
 void int_clear(int x)
 {
-	LOG(D_INT, 1, "Clear: %lld (%s)", x, log_int_name[x]);
+	LOG(D_INT, 20, "Clear: %lld (%s)", x, log_int_name[x]);
 	pthread_mutex_lock(&int_mutex_rz);
 	RZ &= ~((1 << (31 - x)));
 	pthread_mutex_unlock(&int_mutex_rz);
@@ -127,7 +127,7 @@ void int_clear(int x)
 // -----------------------------------------------------------------------
 void int_put_nchan(uint16_t r)
 {
-	LOG(D_INT, 1, "Set non-channel to: %d", r);
+	LOG(D_INT, 20, "Set non-channel to: %d", r);
 	pthread_mutex_lock(&int_mutex_rz);
 	RZ = (RZ & 0b00000000000011111111111111110000) | ((r & 0b1111111111110000) << 16) | (r & 0b0000000000001111);
 	pthread_mutex_unlock(&int_mutex_rz);

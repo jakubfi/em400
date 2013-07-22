@@ -279,7 +279,7 @@ void mx_reset(struct chan_proto_t *chan)
 void mx_int_report(struct mx_chan_t *chan)
 {
 	if (CHAN->int_head) {
-		LOG(D_IO, 10, "MULTIX (ch:%i) reporting interrupt %i", chan->proto.num, chan->proto.num + 12);
+		LOG(D_IO, 20, "MULTIX (ch:%i) reporting interrupt %i", chan->proto.num, chan->proto.num + 12);
 		int_set(chan->proto.num + 12);
 	}
 }
@@ -520,7 +520,7 @@ int mx_cmd_forward(struct chan_proto_t *chan, int dir, int cmd, int lline_n, uin
 	}
 
 	int busy = pthread_mutex_trylock(&unit->worker_mutex);
-	LOG(D_IO, 10, "MULTIX line %i: worker status: %i", unit->log_num, busy);
+	LOG(D_IO, 20, "MULTIX line %i: worker status: %i", unit->log_num, busy);
 
 	// line busy ('cancel' is handled separately)
 	if (busy && mx_cmd_int[dir][cmd].int_line_busy) {
@@ -563,7 +563,7 @@ void * mx_unit_worker(void *th_id)
 		// wait for command
 		pthread_mutex_lock(&unit->worker_mutex);
 		while (unit->worker_cmd <= 0) {
-			LOG(D_IO, 10, "MULTIX line %i: worker waiting for job...", unit->log_num);
+			LOG(D_IO, 20, "MULTIX line %i: worker waiting for job...", unit->log_num);
 			pthread_cond_wait(&unit->worker_cond, &unit->worker_mutex);
 		}
 
@@ -586,7 +586,7 @@ void * mx_unit_worker(void *th_id)
 		}
 
 		unit->worker_cmd = 0;
-		LOG(D_IO, 10, "MULTIX line %i: worker done", unit->log_num);
+		LOG(D_IO, 20, "MULTIX line %i: worker done", unit->log_num);
 		pthread_mutex_unlock(&unit->worker_mutex);
 	}
 
