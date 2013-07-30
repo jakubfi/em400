@@ -212,7 +212,6 @@ void mx_winch_cmd_transmit(struct mx_unit_proto_t *unit, uint16_t addr)
 
 	// disk is not connected
 	if (!UNIT->winchester) {
-		MEMBw(0, addr+6, 0);
 		MEMBw(0, addr+6, MX_WS_ERR | MX_WS_REJECTED);
 		mx_int(unit->chan, unit->log_num, MX_INT_ITRER);
 		return;
@@ -242,14 +241,14 @@ void mx_winch_cmd_transmit(struct mx_unit_proto_t *unit, uint16_t addr)
 			return;
 	}
 
-	MEMBw(0, addr+6, cf->ret_len);
+	MEMBw(0, addr+5, cf->ret_len);
+	MEMBw(0, addr+6, cf->ret_status);
 
 	if (ret == E_OK) {
 		mx_int(unit->chan, unit->log_num, MX_INT_IETRA);
 	} else if (ret == E_MX_CANCEL) {
 		mx_int(unit->chan, unit->log_num, MX_INT_ITRAB);
 	} else {
-		MEMBw(0, addr+6, cf->ret_status);
 		mx_int(unit->chan, unit->log_num, MX_INT_ITRER);
 	}
 

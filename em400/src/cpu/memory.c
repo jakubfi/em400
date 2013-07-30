@@ -35,6 +35,8 @@
 #endif
 #include "debugger/log.h"
 
+pthread_spinlock_t mem_spin;
+
 // physical memory: modules with segments inside
 uint16_t *mem_segment[MEM_MAX_MODULES][MEM_MAX_SEGMENTS];
 
@@ -76,6 +78,8 @@ int mem_init()
 			mem_map[0][ab] = mem_segment[0][ab];
 		}
 	}
+
+	pthread_spin_init(&mem_spin, 0);
 
 	return E_OK;
 }
@@ -159,7 +163,9 @@ uint16_t mem_read(int nb, uint16_t addr, int trace)
 {
 	uint16_t *ptr = mem_ptr(nb, addr);
 	if (ptr) {
+		pthread_spin_lock(&mem_spin);
 		uint16_t value = *ptr;
+		pthread_spin_unlock(&mem_spin);
 #ifdef WITH_DEBUGGER
 		// leave trace for debugger to display
 		if (trace) {
@@ -230,7 +236,9 @@ void mem_write(int nb, uint16_t addr, uint16_t val, int trace)
 			LOG(D_MEM, 100, "[%d:%d] <- 0x%04x", nb, addr, val);
 		}
 #endif
+		pthread_spin_lock(&mem_spin);
 		*ptr = val;
+		pthread_spin_unlock(&mem_spin);
 	} else {
 		LOG(D_MEM, 1, "[%d:%d] <- 0x%04x ERROR", nb, addr, val);
 		int_set(INT_NO_MEM);
