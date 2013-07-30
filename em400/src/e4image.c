@@ -123,7 +123,7 @@ int __e4i_header_read(struct e4i_t *e)
 
 	// unpack data
 	uint8_t *pos = buf;
-	*(uint32_t*)e->magic = *(uint32_t*)pos; pos += 4;
+	memcpy(e->magic, pos, 4); pos += 4;
     e->v_major = *pos; pos += 1;
     e->v_minor = *pos; pos += 1;
     e->img_type = ntohs(*(uint16_t*)pos); pos += 2;
@@ -149,7 +149,7 @@ int __e4i_header_write(struct e4i_t *e)
 
 	// pack data
 	uint8_t *pos = buf;
-	*(uint32_t*)pos = *(uint32_t*)e->magic; pos += 4;
+	memcpy(pos, e->magic, 4); pos += 4;
 	*pos = e->v_major; pos += 1;
 	*pos = e->v_minor; pos += 1;
 	*(uint16_t*)pos = htons(e->img_type); pos += 2;

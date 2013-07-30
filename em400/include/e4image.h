@@ -72,7 +72,7 @@ enum e4i_media_flags_e {
 	E4I_F_APPEND		= 1 << 6,	// appendable / not appendable
 };
 
-#define e4i_flags_resetable E4I_F_WRPROTECT | E4I_F_REMOVABLE
+#define e4i_flags_resetable (E4I_F_WRPROTECT | E4I_F_REMOVABLE)
 
 enum e4i_img_type_e {
 	E4I_T_NONE,
