@@ -8,6 +8,10 @@ ADD_EXECUTABLE(em400
 	${FLEX_cfg_scanner_OUTPUTS}
 )
 
+ADD_EXECUTABLE(e4itool
+	e4itool.c e4image.c
+)
+
 target_link_libraries(em400
 	${FLEX_LIBRARIES} ${BISON_LIBRARIES}
 	${DEBUGGER_LIB} cpu io devices
