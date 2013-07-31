@@ -410,7 +410,7 @@ int __e4i_init_disk(struct e4i_t *e, e4i_id_gen_f *genf, uint16_t img_type, uint
 
 	for (long s=0 ; s<e->blocks ; s++) {
 		if (genf) {
-			if (genf(id_buf, e->id_size, s) != e->id_size) {
+			if (genf(e, id_buf, e->id_size, s) != e->id_size) {
 				ret = E4I_E_IDGEN;
 				break;
 			}

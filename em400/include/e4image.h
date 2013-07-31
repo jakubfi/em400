@@ -26,7 +26,6 @@
 #define E4I_IMAGE_V_MINOR 0
 
 extern int e4i_err;
-typedef int (e4i_id_gen_f)(uint8_t *buf, int id_len, uint32_t block);
 
 enum e4i_errors_e {
 	E4I_E_UNKNOWN = -1,
@@ -107,6 +106,8 @@ struct e4i_t {
 	FILE *image;
 	uint32_t cur_pos;
 };
+
+typedef int (e4i_id_gen_f)(struct e4i_t *e, uint8_t *buf, int id_len, uint32_t block);
 
 // INTERNAL: header access
 int __e4i_header_read(struct e4i_t *e);

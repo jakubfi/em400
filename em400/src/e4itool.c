@@ -30,26 +30,6 @@ enum flags_e {
 	FSET = 1,
 };
 
-#define BAD_FLAG 0b11111111111111111111111111111111
-
-static struct option opts[] = {
-	{ "image",		required_argument,	0, 'i' },
-	{ "preset",		required_argument,	0, 'p' },
-	{ "src",		required_argument,	0, 'r' },
-	{ "dup",		required_argument,	0, 'd' },
-	{ "nomaster",	no_argument,		0, 'n' },
-	{ "blocks",		required_argument,	0, 'b' },
-	{ "cyls",		required_argument,	0, 'c' },
-	{ "heads",		required_argument,	0, 'h' },
-	{ "spt",		required_argument,	0, 's' },
-	{ "sector",		required_argument,	0, 'l' },
-	{ "id",			required_argument,	0, 'x' },
-	{ "flag",		required_argument,	0, 'f' },
-	{ "append",		no_argument,		0, 'a' },
-	{ "help",		no_argument,		0, 0 },
-	{ 0,			0,					0, 0 }
-};
-
 struct preset_t {
 	int type;
 	char *name;
@@ -60,29 +40,69 @@ struct preset_t {
 	int sector;
 	int id;
 	uint32_t flags;
+	e4i_id_gen_f *genf;
 };
 
-struct flags_t {
+struct kv_t {
 	char *name;
-	uint32_t flag;
+	int value;
+	char *description;
 };
+
+int m9425_idgenf(struct e4i_t *e, uint8_t *buf, int id_len, uint32_t block);
 
 struct preset_t known_presets[] = {
-	{ E4I_T_HDD,"win20", "Winchester 20MB", 615, 4, 17, 512, 0, 0 },
-	{ E4I_T_HDD,"m9425", "MERA 9425 (IBM 5440) fixed plate", 204, 2, 32, 192, 0, 0 },
-	{ E4I_T_HDC,"m9425", "MERA 9425 (IBM 5440) removable cardridge", 204, 2, 32, 192, 0, E4I_F_REMOVABLE },
-	{ E4I_T_FLOPPY, "flop5dsdd", "Floppy 5.25\" DSDD 360KB", 40, 2, 9, 512, 0, E4I_F_REMOVABLE },
-	{ E4I_T_FLOPPY, "flop5dshd", "Floppy 5.25\" DSHD 1.2MB", 80, 2, 15, 512, 0, E4I_F_REMOVABLE },
-	{ E4I_T_FLOPPY, "flop3dsdd", "Floppy 3.5\" DSDD 720KB", 80, 2, 9, 512, 0, E4I_F_REMOVABLE },
-	{ E4I_T_FLOPPY, "flop3dshd", "Floppy 3.5\" DSHD 1.44MB", 80, 2, 18, 512, 0, E4I_F_REMOVABLE },
-	{ E4I_T_NONE, NULL, NULL, 0, 0, 0, 0, 0, 0 }
+	{ E4I_T_HDD,"win20", "Winchester 20MB", 615, 4, 17, 512, 0, 0, NULL },
+	{ E4I_T_HDD,"m9425f", "MERA 9425 (IBM 5440 14\") fixed plate", 203, 2, 12, 512, 10, 0, m9425_idgenf },
+	{ E4I_T_HDC,"m9425r", "MERA 9425 (IBM 5440 14\") removable cardridge", 203, 2, 12, 512, 10, E4I_F_REMOVABLE, m9425_idgenf },
+	{ E4I_T_FLOPPY, "flop5dsdd", "Floppy 5.25\" DSDD 360KB", 40, 2, 9, 512, 0, E4I_F_REMOVABLE, NULL },
+	{ E4I_T_FLOPPY, "flop5dshd", "Floppy 5.25\" DSHD 1.2MB", 80, 2, 15, 512, 0, E4I_F_REMOVABLE, NULL },
+	{ E4I_T_FLOPPY, "flop3dsdd", "Floppy 3.5\" DSDD 720KB", 80, 2, 9, 512, 0, E4I_F_REMOVABLE, NULL },
+	{ E4I_T_FLOPPY, "flop3dshd", "Floppy 3.5\" DSHD 1.44MB", 80, 2, 18, 512, 0, E4I_F_REMOVABLE, NULL },
+	{ E4I_T_NONE, NULL, NULL, 0, 0, 0, 0, 0, 0, NULL }
 };
 
-struct flags_t known_flags[] = {
+struct kv_t known_flags[] = {
 	{ "removable", E4I_F_REMOVABLE },
 	{ "ro", E4I_F_WRPROTECT },
 	{ NULL, 0 }
 };
+
+struct kv_t known_types[] = {
+	{ "none", E4I_T_NONE, "none" },
+	{ "unknown", E4I_T_UNKNOWN, "unknown media" },
+	{ "hdd", E4I_T_HDD, "hard disk drive" },
+	{ "hdc", E4I_T_HDC, "hard disk cartridge" },
+	{ "floppy", E4I_T_FLOPPY, "floppy disk" },
+	{ "pcard", E4I_T_PUNCH_CARD, "punch cards stack" },
+	{ "ptape", E4I_T_PUNCH_TAPE, "punch tape" },
+	{ "mtape", E4I_T_MAGNETIC_TAPE, "magnetic tape" },
+	{ NULL, 0 }
+};
+
+// -----------------------------------------------------------------------
+int m9425_idgenf(struct e4i_t *e, uint8_t *buf, int id_len, uint32_t block)
+{
+	uint16_t cylinder = block / (e->heads * e->spt);
+	int rem = block % (e->heads * e->spt);
+	uint8_t head = rem / e->spt;
+	uint8_t sector = rem / e->spt;
+
+	*(buf+0) = (cylinder>>8) & 1;
+	*(buf+1) = cylinder & 255;
+
+	*(buf+2) = head | (e->flags & E4I_F_REMOVABLE) ? 0b100 : 0;
+	*(buf+3) = sector;
+
+	*(buf+4) = 0; // key
+	*(buf+5) = 0;
+	*(buf+6) = 0; // user status
+	*(buf+7) = 0;
+	*(buf+8) = 0; // crc
+	*(buf+9) = 0;
+	
+	return 0;
+}
 
 // -----------------------------------------------------------------------
 void error(char *format, ...)
@@ -113,6 +133,8 @@ void print_help()
 	printf("  --id, -x <bytes>          : sector ID field length\n");
 	printf("  --flag, -f <flag>|<^flag> : set/clear flag\n");
 	printf("  --append, -a              : appendable media\n");
+	printf("  --type, -t <type>         : image type\n");
+	printf("  --utype, -u <type>        : user image type\n");
 	printf("\n");
 	printf("Usage scenarios:\n");
 	printf(" * Create empty media:\n");
@@ -122,10 +144,10 @@ void print_help()
 	printf(" * Create empty media using a preset:\n");
 	printf("     e4itool --image <filename> --preset <name> [--cyls <c>] [--heads <h>] [--spt <sectors>] [--sector <bytes>] [--id <bytes>]\n");
 	printf(" * Create media from raw data:\n");
-	printf("     e4itool --image <filename> --src <filename> --sector <bytes> --id <bytes>\n");
-	printf("     e4itool --image <filename> --src <filename> --cyls <c> --heads <h> --spt <sectors> --sector <bytes> --id <bytes>\n");
+	printf("     e4itool --image <filename> --src <source> --sector <bytes> --id <bytes>\n");
+	printf("     e4itool --image <filename> --src <source> --cyls <c> --heads <h> --spt <sectors> --sector <bytes> --id <bytes>\n");
 	printf(" * Duplicate existing image:\n");
-	printf("     e4itool --image <filename> --dup <filename>\n");
+	printf("     e4itool --image <destination> --dup <source>\n");
 	printf(" * Change flags:\n");
 	printf("     e4itool --image <filename> --flag <name>|<^name> --flag <name>|<^name> ...\n");
 	printf("\n");
@@ -139,19 +161,19 @@ void print_help()
 }
 
 char *image, *preset, *src, *dup;
-int append, master, blocks, cyls, heads, spt, sector, id, flags_set, flags_clear, got_flags;
+int append, nomaster, blocks, cyls, heads, spt, sector, id, flags_set, flags_clear, got_flags, type, utype;
+e4i_id_gen_f *genf = NULL;
 
 // -----------------------------------------------------------------------
-uint32_t decode_flag(char *name)
+struct kv_t * get_kv(char *name, struct kv_t *f)
 {
-	struct flags_t *f = known_flags;
 	while (f && f->name) {
 		if (!strcasecmp(name, f->name)) {
-			return f->flag;
+			return f;
 		}
 		f++;
 	}
-	return BAD_FLAG;
+	return NULL;
 }
 
 // -----------------------------------------------------------------------
@@ -173,8 +195,30 @@ void parse_opts(int argc, char **argv)
 	int opt;
 	int idx;
 	struct preset_t *p = NULL;
+	struct kv_t *k = NULL;
+
+	static struct option opts[] = {
+		{ "image",		required_argument,	0, 'i' },
+		{ "preset",		required_argument,	0, 'p' },
+		{ "src",		required_argument,	0, 'r' },
+		{ "dup",		required_argument,	0, 'd' },
+		{ "nomaster",	no_argument,		0, 'n' },
+		{ "blocks",		required_argument,	0, 'b' },
+		{ "cyls",		required_argument,	0, 'c' },
+		{ "heads",		required_argument,	0, 'h' },
+		{ "spt",		required_argument,	0, 's' },
+		{ "sector",		required_argument,	0, 'l' },
+		{ "id",			required_argument,	0, 'x' },
+		{ "flag",		required_argument,	0, 'f' },
+		{ "append",		no_argument,		0, 'a' },
+		{ "type",		required_argument,	0, 't' },
+		{ "utype",		required_argument,	0, 'u' },
+		{ "help",		no_argument,		0, 0 },
+		{ 0,			0,					0, 0 }
+	};
+
 	while (1) {
-		opt = getopt_long(argc, argv,"i:p:r:d:nb:c:h:s:l:x:f:a", opts, &idx);
+		opt = getopt_long(argc, argv,"i:p:r:d:nb:c:h:s:l:x:f:at:u:", opts, &idx);
 		if (opt == -1) {
 			break;
 		}
@@ -199,6 +243,8 @@ void parse_opts(int argc, char **argv)
 					id = p->id;
 					flags_set = p->flags;
 					flags_clear = 0;
+					genf = p->genf;
+					type = p->type;
 				}
 				break;
 			case 'r':
@@ -207,8 +253,8 @@ void parse_opts(int argc, char **argv)
 			case 'd':
 				dup = optarg;
 				break;
-			case 'm':
-				master = 1;
+			case 'n':
+				nomaster = 1;
 				break;
 			case 'b':
 				blocks = atoi(optarg);
@@ -230,23 +276,32 @@ void parse_opts(int argc, char **argv)
 				break;
 			case 'f':
 				got_flags = 1;
-				uint32_t tmp_flag = 0;
 				if (*optarg == '^') {
-					tmp_flag = decode_flag(optarg+1);
-					if (tmp_flag == BAD_FLAG) {
+					k = get_kv(optarg+1, known_flags);
+					if (!k) {
 						error("Unknown flag: %s", optarg+1);
 					}
-					flags_clear |= tmp_flag;
+					flags_clear |= k->value;
 				} else  {
-					tmp_flag = decode_flag(optarg);
-					if (tmp_flag == BAD_FLAG) {
+					k = get_kv(optarg, known_flags);
+					if (!k) {
 						error("Unknown flag: %s", optarg);
 					}
-					flags_set |= tmp_flag;
+					flags_set |= k->value;
 				}
 				break;
 			case 'a':
 				append = 1;
+				break;
+			case 't':
+				k = get_kv(optarg, known_types);
+				if (!k) {
+					error("Unknown media type: %s", optarg);
+				}
+				type = k->value;
+				break;
+			case 'u':
+				utype = atoi(optarg);
 				break;
 			default:
 				error("Unknown option");
@@ -260,6 +315,8 @@ void parse_opts(int argc, char **argv)
 // -----------------------------------------------------------------------
 int main(int argc, char **argv)
 {
+	struct e4i_t *e = NULL;
+
 	printf("e4itool v0.1: e4image management tool\n");
 	parse_opts(argc, argv);
 
@@ -269,23 +326,47 @@ int main(int argc, char **argv)
 	}
 
 	// dup or create
-	if (dup && (blocks || cyls || heads || spt || sector || id || src)) {
+	if (dup && (preset || blocks || cyls || heads || spt || sector || id || src)) {
 		error("Mixing --dup with create options is not allowed");
 	}
 
-	// create new media from preset
-	if (preset) {
+	// nomaster only with dup
+	if (nomaster && (preset || dup || blocks || cyls || heads || spt || sector || id || got_flags || append)) {
+		error("Mixing --nomaster with options other than --dup makes no sense");
+	}
+
+    // ---- ACTIONS ------------------------------------------------------
 
 	// create LBA media
-	} else if (blocks && sector) {
+	if (blocks && sector) {
 		if (cyls || heads || spt) {
 			error("mixing --blocks with --cyls/--heads/--spt is not allowed");
+		}
+		e = e4i_create_lba(image, id, sector, blocks, 0);
+		if (!e) {
+			error("Creating media failed: %s", e4i_get_err(e4i_err));
 		}
 
 	// create CHS media
 	} else if (cyls && heads && spt && sector) {
 		if (blocks) {
-			error("mixing --blocks with --cyls/--heads/--spt is not allowed");
+			error("mixing --blocks with --cyls/--heads/--spt (directly or with --preset) is not allowed");
+		}
+		e = e4i_create_chs(image, id, sector, cyls, heads, spt);
+		if (!e) {
+			error("Creating media failed: %s", e4i_get_err(e4i_err));
+		}
+		int res = e4i_init(e, genf, type, utype);
+		if (res != E4I_E_OK) {
+			error("Creating media failed: %s", e4i_get_err(res));
+		}
+		e4i_header_print(e);
+
+
+	// create appendable media
+	} else if (append && sector) {
+		if (blocks || cyls || heads || spt) {
+			error("Can't specify geometry for appendable media");
 		}
 
 	// set flags
@@ -293,6 +374,11 @@ int main(int argc, char **argv)
 
 	// duplicate
 	} else if (dup) {
+		// not src
+		if (src) {
+			error("Use either --dup or --src");
+		}
+
 
 	// unknown mode of operation, missing options, wrong mix of options
 	} else {
