@@ -48,6 +48,7 @@ enum e4i_errors_e {
 	E4I_E_IMAGE_V_MINOR,
 	E4I_E_FLAGS,
 	E4I_E_BLOCK_SIZE,
+	E4I_E_IMG_TYPE,
 	E4I_E_UNFORMATTED,
 	E4I_E_FORMATTED,
 	E4I_E_WRPROTECT,
@@ -75,15 +76,16 @@ enum e4i_media_flags_e {
 #define e4i_flags_resetable E4I_F_WRPROTECT | E4I_F_REMOVABLE
 
 enum e4i_img_type_e {
-	E4I_T_NONE,
-	E4I_T_HDD,
-	E4I_T_FLOPPY3,
-	E4I_T_FLOPPY5,
-	E4I_T_FLOPPY8,
-	E4I_T_IBM5440,
-	E4I_T_EC5061,
-	E4I_T_PTAPE8,
-	E4I_T_MTAPE,
+	E4I_T_NONE = 0,			// no image type set
+	E4I_T_UNKNOWN,			// unknown media
+	E4I_T_HDD,				// hard disk drive
+	E4I_T_HDC,				// hard disk cartridge
+	E4I_T_FLOPPY,			// floppy disk
+	E4I_T_PUNCH_CARD,		// punch cards stack
+	E4I_T_PUNCH_TAPE,		// punch tape
+	E4I_T_MAGNETIC_TAPE,	// magnetic tape
+
+	E4I_T_MAX,
 };
 
 #define E4I_HEADER_SIZE 26

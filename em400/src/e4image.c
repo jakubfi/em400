@@ -45,6 +45,7 @@ struct e4i_errdesc_t errdesc[] = {
 	{ E4I_E_IMAGE_V_MINOR, "image minor version mismatch" },
 	{ E4I_E_FLAGS, "flag cannot be changed" },
 	{ E4I_E_BLOCK_SIZE, "wrong block size" },
+	{ E4I_E_IMG_TYPE, "unknown image type" },
 	{ E4I_E_UNFORMATTED, "media not formatted" },
 	{ E4I_E_FORMATTED, "media already formatted" },
 	{ E4I_E_WRPROTECT, "media write protected" },
@@ -211,8 +212,8 @@ int __e4i_header_check(struct e4i_t *e)
 	if (e->block_size <= 0) {
 		return E4I_E_BLOCK_SIZE;
 	}
-	if (!(e->flags & E4I_F_FORMATTED)) {
-		return E4I_E_UNFORMATTED;
+	if ((e->img_type < 0) || (e->img_type >= E4I_T_MAX)) {
+		return E4I_E_IMG_TYPE;
 	}
 	return E4I_E_OK;
 }
