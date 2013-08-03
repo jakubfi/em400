@@ -72,7 +72,7 @@ enum e4i_media_flags_e {
 	E4I_F_APPEND		= 1 << 6,	// appendable / not appendable
 };
 
-#define e4i_flags_resetable (E4I_F_WRPROTECT | E4I_F_REMOVABLE)
+#define e4i_flags_resetable (E4I_F_WRPROTECT | E4I_F_MASTERCOPY | E4I_F_REMOVABLE)
 
 enum e4i_img_type_e {
 	E4I_T_NONE = 0,			// no image type set
@@ -136,7 +136,6 @@ int __e4i_init_seq(struct e4i_t *e, uint16_t img_type, uint16_t img_utype);
 
 int e4i_init(struct e4i_t *e, e4i_id_gen_f *genf, uint16_t img_type, uint16_t img_utype);
 int e4i_import(struct e4i_t *e, char *src_name, uint16_t img_type, uint16_t img_utype);
-int e4i_dup(struct e4i_t *e, char *dup_name);
 
 // INTERNAL: block access
 int __e4i_s2b(struct e4i_t *e, int cyl, int head, int sect);

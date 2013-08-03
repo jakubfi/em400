@@ -25,6 +25,14 @@
 
 #include "e4image.h"
 
+enum actions_e{
+	A_UNKNOWN = -1,
+	A_FLAGS = 1,
+	A_CREATE_CHS = 100,
+	A_CREATE_LBA,
+	A_CREATE_SEQ,
+};
+
 enum flags_e {
 	FCLR = 0,
 	FSET = 1,
@@ -65,6 +73,7 @@ struct preset_t known_presets[] = {
 struct kv_t known_flags[] = {
 	{ "removable", E4I_F_REMOVABLE },
 	{ "ro", E4I_F_WRPROTECT },
+	{ "master", E4I_F_MASTERCOPY },
 	{ NULL, 0 }
 };
 
@@ -79,6 +88,10 @@ struct kv_t known_types[] = {
 	{ "mtape", E4I_T_MAGNETIC_TAPE, "magnetic tape" },
 	{ NULL, 0 }
 };
+
+char *image, *preset, *src;
+int append, blocks, cyls, heads, spt, sector, id, flags_set, flags_clear, got_flags, type, utype;
+e4i_id_gen_f *genf = NULL;
 
 // -----------------------------------------------------------------------
 int m9425_idgenf(struct e4i_t *e, uint8_t *buf, int id_len, uint32_t block)
@@ -123,8 +136,6 @@ void print_help()
 	printf("  --image, -i <filename>    : e4i working media file name\n");
 	printf("  --preset, -p <name>       : select media preset\n");
 	printf("  --src, -r <filename>      : read raw input data from file <filename>\n");
-	printf("  --dup, -d <filename>      : duplicate existing e4i media <filename> new image\n");
-	printf("  --nomaster, -n            : set image as not master (--src sets master by default)\n");
 	printf("  --blocks, -b <blocks>     : total blocks on media (LBA adressing)\n");
 	printf("  --cyls, -c <cylinders>    : number of cylinders (CHS addressing)\n");
 	printf("  --heads, -h <heads>       : number of heads (CHS addressing)\n");
@@ -137,32 +148,33 @@ void print_help()
 	printf("  --utype, -u <type>        : user image type\n");
 	printf("\n");
 	printf("Usage scenarios:\n");
-	printf(" * Create empty media:\n");
-	printf("     e4itool --image <filename> --blocks <blocks> --sector <bytes> [--id <bytes>]\n");
-	printf("     e4itool --image <filename> --cyls <c> --heads <h> --spt <sectors> --sector <bytes> [--id <bytes>]\n");
-	printf("     e4itool --image <filename> --append --sector <bytes> [--id <bytes>]\n");
-	printf(" * Create empty media using a preset:\n");
-	printf("     e4itool --image <filename> --preset <name> [--cyls <c>] [--heads <h>] [--spt <sectors>] [--sector <bytes>] [--id <bytes>]\n");
-	printf(" * Create media from raw data:\n");
-	printf("     e4itool --image <filename> --src <source> --sector <bytes> --id <bytes>\n");
-	printf("     e4itool --image <filename> --src <source> --cyls <c> --heads <h> --spt <sectors> --sector <bytes> --id <bytes>\n");
-	printf(" * Duplicate existing image:\n");
-	printf("     e4itool --image <destination> --dup <source>\n");
-	printf(" * Change flags:\n");
-	printf("     e4itool --image <filename> --flag <name>|<^name> --flag <name>|<^name> ...\n");
+	printf("  * Create empty media:\n");
+	printf("      e4itool --image <filename> --blocks <blocks> --sector <bytes> [--id <bytes>]\n");
+	printf("      e4itool --image <filename> --cyls <c> --heads <h> --spt <sectors> --sector <bytes> [--id <bytes>]\n");
+	printf("      e4itool --image <filename> --append --sector <bytes> [--id <bytes>]\n");
+	printf("  * Create empty media using a preset:\n");
+	printf("      e4itool --image <filename> --preset <name> [--cyls <c>] [--heads <h>] [--spt <sectors>] [--sector <bytes>] [--id <bytes>]\n");
+	printf("  * Create media from raw data:\n");
+	printf("      e4itool --image <filename> --src <source> --sector <bytes> --id <bytes>\n");
+	printf("      e4itool --image <filename> --src <source> --cyls <c> --heads <h> --spt <sectors> --sector <bytes> --id <bytes>\n");
+	printf("  * Change flags:\n");
+	printf("      e4itool --image <filename> --flag <name>|<^name> --flag <name>|<^name> ...\n");
 	printf("\n");
-	printf("Known image presets (C/H/S/block):\n");
+	printf("Known image presets (--preset) (C/H/S, id size, sector size):\n");
 	struct preset_t *p = known_presets;
 	while (p && p->name) {
-		printf("  * %s (%i/%i/%i/%i): %s\n", p->name, p->cyls, p->heads, p->spt, p->sector, p->description);
+		printf("  * %s (%i/%i/%i, %i, %i) : %s\n", p->name, p->cyls, p->heads, p->spt, p->id, p->sector, p->description);
 		p++;
 	}
 	printf("\n");
+	printf("Known image types (--type):\n");
+	struct kv_t *k = known_types;
+	while (k && k->name) {
+		printf("  * %s : %s\n", k->name, k->description);
+		k++;
+	}
+	printf("\n");
 }
-
-char *image, *preset, *src, *dup;
-int append, nomaster, blocks, cyls, heads, spt, sector, id, flags_set, flags_clear, got_flags, type, utype;
-e4i_id_gen_f *genf = NULL;
 
 // -----------------------------------------------------------------------
 struct kv_t * get_kv(char *name, struct kv_t *f)
@@ -201,8 +213,6 @@ void parse_opts(int argc, char **argv)
 		{ "image",		required_argument,	0, 'i' },
 		{ "preset",		required_argument,	0, 'p' },
 		{ "src",		required_argument,	0, 'r' },
-		{ "dup",		required_argument,	0, 'd' },
-		{ "nomaster",	no_argument,		0, 'n' },
 		{ "blocks",		required_argument,	0, 'b' },
 		{ "cyls",		required_argument,	0, 'c' },
 		{ "heads",		required_argument,	0, 'h' },
@@ -218,7 +228,7 @@ void parse_opts(int argc, char **argv)
 	};
 
 	while (1) {
-		opt = getopt_long(argc, argv,"i:p:r:d:nb:c:h:s:l:x:f:at:u:", opts, &idx);
+		opt = getopt_long(argc, argv,"i:p:r:b:c:h:s:l:x:f:at:u:", opts, &idx);
 		if (opt == -1) {
 			break;
 		}
@@ -249,12 +259,6 @@ void parse_opts(int argc, char **argv)
 				break;
 			case 'r':
 				src = optarg;
-				break;
-			case 'd':
-				dup = optarg;
-				break;
-			case 'n':
-				nomaster = 1;
 				break;
 			case 'b':
 				blocks = atoi(optarg);
@@ -311,28 +315,16 @@ void parse_opts(int argc, char **argv)
 }
 
 // -----------------------------------------------------------------------
-// ---- MAIN -------------------------------------------------------------
-// -----------------------------------------------------------------------
-int main(int argc, char **argv)
+int get_action()
 {
-	struct e4i_t *e = NULL;
-
-	printf("e4itool v0.1: e4image management tool\n");
-	parse_opts(argc, argv);
-
 	// image name is always required
 	if (!image) {
 		error("Image name required");
 	}
 
-	// dup or create
-	if (dup && (preset || blocks || cyls || heads || spt || sector || id || src)) {
-		error("Mixing --dup with create options is not allowed");
-	}
-
-	// nomaster only with dup
-	if (nomaster && (preset || dup || blocks || cyls || heads || spt || sector || id || got_flags || append)) {
-		error("Mixing --nomaster with options other than --dup makes no sense");
+	// need type to create
+	if ((blocks || cyls || heads || spt || sector || append) && !type) {
+		error("--type is required to create new media");
 	}
 
     // ---- ACTIONS ------------------------------------------------------
@@ -340,50 +332,106 @@ int main(int argc, char **argv)
 	// create LBA media
 	if (blocks && sector) {
 		if (cyls || heads || spt) {
-			error("mixing --blocks with --cyls/--heads/--spt is not allowed");
+			error("Mixing --blocks with --cyls/--heads/--spt");
 		}
-		e = e4i_create_lba(image, id, sector, blocks, 0);
-		if (!e) {
-			error("Creating media failed: %s", e4i_get_err(e4i_err));
-		}
+		return A_CREATE_LBA;
 
 	// create CHS media
 	} else if (cyls && heads && spt && sector) {
 		if (blocks) {
-			error("mixing --blocks with --cyls/--heads/--spt (directly or with --preset) is not allowed");
+			error("Mixing --blocks with --cyls/--heads/--spt (directly or with --preset)");
 		}
-		e = e4i_create_chs(image, id, sector, cyls, heads, spt);
-		if (!e) {
-			error("Creating media failed: %s", e4i_get_err(e4i_err));
-		}
-		int res = e4i_init(e, genf, type, utype);
-		if (res != E4I_E_OK) {
-			error("Creating media failed: %s", e4i_get_err(res));
-		}
-		e4i_header_print(e);
-
+		return A_CREATE_CHS;
 
 	// create appendable media
 	} else if (append && sector) {
 		if (blocks || cyls || heads || spt) {
-			error("Can't specify geometry for appendable media");
+			error("--blocks/--cyls/--heads/--spt used with --append");
 		}
+		return A_CREATE_SEQ;
 
 	// set flags
 	} else if (got_flags) {
+		return A_FLAGS;
 
-	// duplicate
-	} else if (dup) {
-		// not src
-		if (src) {
-			error("Use either --dup or --src");
+	// missing options or wrong mix of options
+	} else {
+		return A_UNKNOWN;
+	}
+}
+
+// -----------------------------------------------------------------------
+// ---- MAIN -------------------------------------------------------------
+// -----------------------------------------------------------------------
+int main(int argc, char **argv)
+{
+	struct e4i_t *e = NULL;
+	int res;
+	printf("e4itool v0.1: e4image management tool\n");
+	parse_opts(argc, argv);
+	int action = get_action();
+
+	// create
+	if (action >= A_CREATE_CHS) {
+
+		// create as requested
+		if (action == A_CREATE_LBA) {
+			e = e4i_create_lba(image, id, sector, blocks, append);
+		} else if (action == A_CREATE_CHS) {
+			e = e4i_create_chs(image, id, sector, cyls, heads, spt);
+		} else if (action == A_CREATE_SEQ) {
+			e = e4i_create_seq(image, id, sector);
 		}
 
+		// ok?
+		if (e) {
+			printf("Image created:\n");
+			e4i_header_print(e);
+		} else {
+			error("Could not create imege: %s", e4i_get_err(e4i_err));
+		}
 
-	// unknown mode of operation, missing options, wrong mix of options
+		// source given?
+		if (src) {
+			res = e4i_import(e, src, type, utype);
+			if (res == E4I_E_OK) {
+				printf("Image contents imported\n");
+			} else {
+				error("Could not import image contents: %s", e4i_get_err(res));
+			}
+		// init without source
+		} else {
+			res = e4i_init(e, genf, type, utype);
+			if (res != E4I_E_OK) {
+				error("Could not create imege: %s", e4i_get_err(res));
+			}
+		}
+
+	// set flags only
+	} else if (action == A_FLAGS) {
+		e = e4i_open(image);
+		if (!e) {
+			error("Could not open imege: %s", e4i_get_err(e4i_err));
+		}
 	} else {
-		error("Wrong usage");
+		error("Don't know how to proceed with given option set");
 	}
+
+	// any flags to set?
+	if (flags_set) {
+		res = e4i_flag_set(e, flags_set);
+		if (res != E4I_E_OK) {
+			error("Could not set flags: %s", e4i_get_err(res));
+		}
+	}
+	// any flags to clear?
+	if (flags_clear) {
+		res = e4i_flag_clear(e, flags_clear);
+		if (res != E4I_E_OK) {
+			error("Could not clear flags: %s", e4i_get_err(res));
+		}
+	}
+	e4i_close(e);
 
 	return 0;
 }
