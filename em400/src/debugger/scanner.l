@@ -42,7 +42,7 @@ dec		[0-9]+
 reg		r[0-7]
 regs	ic|sr|ir|kb|mod|modc|zc17|alarm
 bases	int|uint|bin|oct|hex
-name	[a-z%#][a-z0-9]*
+name	[a-z%#_][a-z0-9#%]*
 text	[^\n\t\r ]+
 chars	[-,=+*&|^><:()\]\[~!]
 

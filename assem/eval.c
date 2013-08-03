@@ -892,7 +892,10 @@ int add_def(int type, int level, struct node_t *n)
 			DEBUG("%i redefine variable: %s\n", level, n->str);
 			nodes_drop(d->n);
 			d->n = nn;
-			label_add(n->str, nn->value);
+			char *varname = malloc(strlen(n->str)+2);
+			sprintf(varname, "_%s", n->str);
+			label_add(varname, nn->value);
+			free(varname);
 			return E_OK;
 		}
 	} else { // add new variable/label
@@ -901,7 +904,10 @@ int add_def(int type, int level, struct node_t *n)
 		if (type == D_LABEL) {
 			label_add(n->str, n->ic);
 		} else {
-			label_add(n->str, nn->value);
+			char *varname = malloc(strlen(n->str)+2);
+			sprintf(varname, "_%s", n->str);
+			label_add(varname, nn->value);
+			free(varname);
 		}
 		return E_OK;
 	}

@@ -166,7 +166,7 @@ int mx_winch_read(struct mx_unit_proto_t *unit, struct mx_winch_cf_t *cf)
 			break;
 		}
 
-		LOG(D_IO, 10, "MULTIX/winchester (line:%i): reading sector %i (+offset %i) into buf at pos: %i", unit->log_num, cf->transmit->sector + sector, offset, cf->transmit->addr + sector * UNIT->winchester->sector_size);
+		LOG(D_IO, 10, "MULTIX/winchester (line:%i): reading sector %i (+offset %i) into buf at pos: 0x%04x", unit->log_num, cf->transmit->sector + sector, offset, cf->transmit->addr + sector * UNIT->winchester->sector_size);
 
 		// read whole sector into buffer
 		int res = rawdisk_read_sector_l(UNIT->winchester, buf, offset + cf->transmit->sector + sector);
