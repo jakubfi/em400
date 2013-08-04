@@ -15,49 +15,26 @@
 //  Foundation, Inc.,
 //  51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 
-#ifndef DRV_CMEM_H
-#define DRV_CMEM_H
+#ifndef CMEM_H
+#define CMEM_H
 
 #include <inttypes.h>
 
 #include "cfg.h"
 #include "io.h"
 
-// cmem control field - modes of operation
-enum cmem_trans_modes_e {
-	READ_DATA   = 0b00,
-	READ_ADDR   = 0b01,
-	WRITE_DATA  = 0b10,
-	WRITE_ADDR  = 0b11
+// interrupts
+enum cmem_int_e {
+	CMEM_INT_TOO_SLOW	= 0b001,
+	CMEM_INT_COMPARE	= 0b011,
+	CMEM_INT_NOMEM		= 0b010,
+	CMEM_INT_PARITY		= 0b100,
 };
-
-// --- transmit ----------------------------------------------------------
-
-struct cmem_cf_t {
-	int cf_len;
-	int cpu;
-	int nb;
-	int oper;
-	int len;
-	int ign_wrprotect;
-	int ign_defects;
-	int ign_key;
-	int ign_eof;
-	int cyl;
-	int platter;
-	int head;
-	int sector;
-	int key;
-	uint16_t addr;
-};
-
 
 struct chan_proto_t * cmem_create(struct cfg_unit_t *units);
 void cmem_shutdown(struct chan_proto_t *chan);
 void cmem_reset(struct chan_proto_t *chan);
 int cmem_cmd(struct chan_proto_t *chan, int dir, uint16_t n_arg, uint16_t *r_arg);
-
-int cmem_decode_cf_t(int addr, struct cmem_cf_t *cf);
 
 #endif
 

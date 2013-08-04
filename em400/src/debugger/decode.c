@@ -22,7 +22,7 @@
 
 #include "io/multix.h"
 #include "io/multix_winch.h"
-#include "io/cmem.h"
+#include "io/cmem_m9425.h"
 
 #include "utils.h"
 #include "errors.h"
@@ -421,14 +421,14 @@ char * decode_cmempst(uint16_t addr, int arg)
 		return NULL;
 	}
 
-	struct cmem_cf_t *t = calloc(1, sizeof(struct cmem_cf_t));
+	struct cmem_m9425_cf_t *t = calloc(1, sizeof(struct cmem_m9425_cf_t));
 
 	if (!t) {
 		free(buf);
 		return NULL;
 	}
 
-	int ret = cmem_decode_cf_t(addr, t);
+	int ret = cmem_m9425_decode_cf_t(addr, t);
 	if (ret != E_OK) {
 		pos += sprintf(b+pos, "Error decoding: %s", get_error(ret));
 		return buf;
