@@ -13,23 +13,23 @@ Project is in highly development state, but some emulation parts work fine...ish
 * basic I/O layer
 * character channel (character-oriented I/O interface)
 * memory channel (block-oriented I/O interface)
+* MULTIX peripherial processor
+* Winchester disk drive
 * built-in debugger
 
 Things that are still waiting for implementation:
 
-* MULTIX peripherial processor
-* PLIX peripherial processor
-* Winchester disk drive
+* MERA 9425 disk drive
 * Terminals (TCP, serial, console)
+* 5.25" floppy disk drive
 * floating point arithmetics
 * real time clock
 
 Things that may or may not be implemented:
 
-* MERA 9425 disk drive
+* PLIX peripherial processor
 * EC 6051 disk drive
 * PT-305 tape drive
-* 5.25" floppy disk drive
 * MEGA memory
 
 
