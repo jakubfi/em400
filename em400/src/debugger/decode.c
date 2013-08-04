@@ -22,7 +22,7 @@
 
 #include "io/multix.h"
 #include "io/multix_winch.h"
-#include "io/cmem_cf.h"
+#include "io/cmem.h"
 
 #include "utils.h"
 #include "errors.h"

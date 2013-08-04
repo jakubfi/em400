@@ -106,4 +106,42 @@ int cmem_cmd(struct chan_proto_t *chan, int dir, uint16_t n_arg, uint16_t *r_arg
 	}
 }
 
+// -----------------------------------------------------------------------
+int cmem_decode_cf_t(int addr, struct cmem_cf_t *cf)
+{
+	uint16_t data;
+
+	data = MEMB(0, addr);
+	cf->cf_len			= (data & 0b0000111100000000) >> 8;
+	cf->cpu				= (data & 0b0000000000010000) >> 4;
+	cf->nb				= (data & 0b0000000000001111);
+
+	data = MEMB(0, addr+1);
+	cf->oper			= (data & 0b0000011000000000) >> 9;
+
+	data = MEMB(0, addr+2);
+	cf->len				= data;
+
+	data = MEMB(0, addr+3);
+	cf->ign_wrprotect	= (data & 0b1000000000000000) >> 15;
+	cf->ign_defects		= (data & 0b0100000000000000) >> 14;
+	cf->ign_key			= (data & 0b0010000000000000) >> 13;
+	cf->ign_eof			= (data & 0b0001000000000000) >> 12;
+	cf->cyl				= (data & 0b0000000111111111);
+
+	data = MEMB(0, addr+4);
+	cf->platter			= (data & 0b0000010000000000) >> 10;
+	cf->head			= (data & 0b0000000100000000) >> 8;
+	cf->sector			= (data & 0b0000000000001111);
+
+	data = MEMB(0, addr+5);
+	cf->key				= data;
+
+	data = MEMB(0, addr+6);
+	cf->addr			= data;
+
+	return E_OK;
+}
+
+
 // vim: tabstop=4 shiftwidth=4 autoindent
