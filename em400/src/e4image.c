@@ -29,7 +29,7 @@ int e4i_err;
 struct e4i_errdesc_t errdesc[] = {
 	{ E4I_E_OK, "OK" },
 	{ E4I_E_EXISTS, "image already exists" },
-	{ E4I_E_OPEN, "cannot open image" },
+	{ E4I_E_OPEN, "cannot open image file" },
 	{ E4I_E_ALLOC, "cannot allocate memory" },
 	{ E4I_E_HEADER_WRITE, "error writing header" },
 	{ E4I_E_HEADER_READ, "error readig header" },

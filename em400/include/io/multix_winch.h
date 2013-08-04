@@ -23,11 +23,11 @@
 
 #include "io/io.h"
 #include "io/multix.h"
-#include "io/devices/rawdisk.h"
+#include "e4image.h"
 
 struct mx_unit_winch_t {
 	struct mx_unit_proto_t proto;
-	struct rawdisk_t *winchester;
+	struct e4i_t *winchester;
 	int winch_type;
 	int format_protect;
 };
@@ -101,7 +101,7 @@ struct mx_winch_cf_t {
 
 struct mx_unit_proto_t * mx_winch_create(struct cfg_arg_t *args);
 struct mx_unit_proto_t * mx_winch_create_nodev();
-void mx_winch_connect(struct mx_unit_winch_t *unit, struct rawdisk_t *winchester);
+void mx_winch_connect(struct mx_unit_winch_t *unit, struct e4i_t *winchester);
 void mx_winch_disconnect(struct mx_unit_winch_t *unit);
 void mx_winch_shutdown(struct mx_unit_proto_t *unit);
 void mx_winch_reset(struct mx_unit_proto_t *unit);
@@ -115,8 +115,6 @@ void mx_winch_cmd_transmit(struct mx_unit_proto_t *unit, uint16_t addr);
 
 struct mx_winch_cf_t * mx_winch_cf_t_decode(int addr);
 void mx_winch_cf_t_free(struct mx_winch_cf_t *cf);
-
-
 
 #endif
 

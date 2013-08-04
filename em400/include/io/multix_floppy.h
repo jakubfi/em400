@@ -22,11 +22,11 @@
 
 #include "io/io.h"
 #include "io/multix.h"
-#include "io/devices/rawdisk.h"
+#include "e4image.h"
 
 struct mx_unit_floppy_t {
 	struct mx_unit_proto_t proto;
-	struct rawdisk_t *floppy;
+	struct e4i_t *floppy;
 	int floppy_type;
 	int format_protect;
 };
@@ -94,7 +94,7 @@ struct mx_floppy_cf_t {
 
 struct mx_unit_proto_t * mx_floppy_create(struct cfg_arg_t *args);
 struct mx_unit_proto_t * mx_floppy_create_nodev();
-void mx_floppy_connect(struct mx_unit_floppy_t *unit, struct rawdisk_t *winchester);
+void mx_floppy_connect(struct mx_unit_floppy_t *unit, struct e4i_t *floppy);
 void mx_floppy_disconnect(struct mx_unit_floppy_t *unit);
 void mx_floppy_shutdown(struct mx_unit_proto_t *unit);
 void mx_floppy_reset(struct mx_unit_proto_t *unit);

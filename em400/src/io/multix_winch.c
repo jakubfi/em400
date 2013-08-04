@@ -24,37 +24,59 @@
 #include "cpu/memory.h"
 
 #include "io/multix_winch.h"
-#include "io/devices/rawdisk.h"
+#include "e4image.h"
 
 #define UNIT ((struct mx_unit_winch_t *)(unit))
 
 // -----------------------------------------------------------------------
 struct mx_unit_proto_t * mx_winch_create(struct cfg_arg_t *args)
 {
-	int cyl, head, sect, ssize;
 	char *image_name = NULL;
 	int res;
-	res = cfg_args_decode(args, "iiiis", &cyl, &head, &sect, &ssize, &image_name);
+	res = cfg_args_decode(args, "s", &image_name);
 	if (res != E_OK) {
 		gerr = res;
 		return NULL;
 	}
 
-	eprint("      Winchester: cyl=%i, head=%i, sectors=%i, spt=%i, image=%s\n", cyl, head, sect, ssize, image_name);
+	struct e4i_t *winchester = e4i_open(image_name);
+	res = E_OK;
 
-	struct rawdisk_t *winchester = rawdisk_create(cyl, head, sect, ssize, image_name);
-	free(image_name);
 	if (!winchester) {
+		printf("Error opening image %s: %s\n", image_name, e4i_get_err(e4i_err));
+		res = E_IMAGE;
+	}
+
+	if (winchester->img_type != E4I_T_HDD) {
+		printf("Error opening image %s: wrong image type, expecting hdd\n", image_name);
+		res = E_IMAGE;
+	}
+
+	if ((winchester->cylinders != 615) || (winchester->heads != 4) || (winchester->spt != 16) || (winchester->block_size != 512)) {
+		printf("Error opening image %s: wrong geometry\n", image_name);
+		res = E_IMAGE;
+	}
+
+	if (res != E_OK) {
+		free(image_name);
+		if (winchester) {
+			e4i_close(winchester);
+		}
+		gerr = res;
 		return NULL;
 	}
 
+	eprint("      Winchester: cyl=%i, head=%i, sectors=%i, spt=%i, image=%s\n", winchester->cylinders, winchester->heads, winchester->spt, winchester->block_size, image_name);
+
 	struct mx_unit_proto_t *unit = mx_winch_create_nodev();
 	if (!unit) {
-		rawdisk_shutdown(winchester);
+		e4i_close(winchester);
+		free(image_name);
 		gerr = E_ALLOC;
 		return NULL;
 	}
 
+	free(image_name);
 	mx_winch_connect(UNIT, winchester);
 
 	return unit;
@@ -68,7 +90,7 @@ struct mx_unit_proto_t * mx_winch_create_nodev()
 }
 
 // -----------------------------------------------------------------------
-void mx_winch_connect(struct mx_unit_winch_t *unit, struct rawdisk_t *winchester)
+void mx_winch_connect(struct mx_unit_winch_t *unit, struct e4i_t *winchester)
 {
 	UNIT->winchester = winchester;
 }
@@ -76,7 +98,7 @@ void mx_winch_connect(struct mx_unit_winch_t *unit, struct rawdisk_t *winchester
 // -----------------------------------------------------------------------
 void mx_winch_disconnect(struct mx_unit_winch_t *unit)
 {
-	rawdisk_shutdown(UNIT->winchester);
+	e4i_close(UNIT->winchester);
 	UNIT->winchester = NULL;
 }
 
@@ -149,8 +171,8 @@ int mx_winch_read(struct mx_unit_proto_t *unit, struct mx_winch_cf_t *cf)
 	int ret = E_OK;
 
 	// first physical cylinder is used by multix for relocated sectors
-	int offset = UNIT->winchester->heads * UNIT->winchester->sectors;
-	uint8_t *buf = malloc(UNIT->winchester->sector_size);
+	int offset = UNIT->winchester->heads * UNIT->winchester->spt;
+	uint8_t *buf = malloc(UNIT->winchester->block_size);
 
 	int buf_pos = 0;
 	int sector = 0;
@@ -166,17 +188,17 @@ int mx_winch_read(struct mx_unit_proto_t *unit, struct mx_winch_cf_t *cf)
 			break;
 		}
 
-		LOG(D_IO, 10, "MULTIX/winchester (line:%i): reading sector %i (+offset %i) into buf at pos: 0x%04x", unit->log_num, cf->transmit->sector + sector, offset, cf->transmit->addr + sector * UNIT->winchester->sector_size);
+		LOG(D_IO, 10, "MULTIX/winchester (line:%i): reading sector %i (+offset %i) into buf at pos: 0x%04x", unit->log_num, cf->transmit->sector + sector, offset, cf->transmit->addr + sector * UNIT->winchester->block_size);
 
 		// read whole sector into buffer
-		int res = rawdisk_read_sector_l(UNIT->winchester, buf, offset + cf->transmit->sector + sector);
+		int res = e4i_bread(UNIT->winchester, buf, offset + cf->transmit->sector + sector);
 
 		// sector read OK
 		if (res == E_OK) {
 			// copy read data into system memory, swapping byte order
-			while ((buf_pos < UNIT->winchester->sector_size) && (cf->ret_len < cf->transmit->len)) {
+			while ((buf_pos < UNIT->winchester->block_size) && (cf->ret_len < cf->transmit->len)) {
 				uint16_t *buf16 = (uint16_t*)(buf+buf_pos);
-				MEMBw(cf->transmit->nb, cf->transmit->addr + sector * UNIT->winchester->sector_size/2 + buf_pos/2, ntohs(*buf16));
+				MEMBw(cf->transmit->nb, cf->transmit->addr + sector * UNIT->winchester->block_size/2 + buf_pos/2, ntohs(*buf16));
 				buf_pos += 2;
 				cf->ret_len++;
 			}
@@ -184,7 +206,7 @@ int mx_winch_read(struct mx_unit_proto_t *unit, struct mx_winch_cf_t *cf)
 			buf_pos = 0;
 
 		// sector not found or incomplete
-		} else if ((res == E_DISK_NO_SECTOR) || (res == E_DISK_RW_SIZE)) {
+		} else if ((res == E4I_E_NO_SECTOR) || (res == E4I_E_READ)) {
 			cf->ret_status = MX_WS_ERR | MX_WS_NO_SECTOR;
 			ret = E_MX_TRANSMISSION;
 			break;
@@ -232,7 +254,8 @@ void mx_winch_cmd_transmit(struct mx_unit_proto_t *unit, uint16_t addr)
 		case MX_WINCH_WRITE:
 			break;
 		case MX_WINCH_PARK:
-			ret = rawdisk_park(UNIT->winchester, cf->park->cylinder);
+			// trrrrrrrrrrrr... done.
+			ret = E_OK;
 			break;
 		default:
 			// shouldn't happen

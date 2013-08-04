@@ -22,32 +22,59 @@
 #include "cpu/memory.h"
 
 #include "io/multix_floppy.h"
-#include "io/devices/rawdisk.h"
+#include "e4image.h"
 
 #define UNIT ((struct mx_unit_floppy_t *)(unit))
 
 // -----------------------------------------------------------------------
 struct mx_unit_proto_t * mx_floppy_create(struct cfg_arg_t *args)
 {
-	int cyl, head, sect, ssize;
 	char *image_name = NULL;
-	int res = cfg_args_decode(args, "iiiis", &cyl, &head, &sect, &ssize, &image_name);
+	int res;
+	res = cfg_args_decode(args, "s", &image_name);
 	if (res != E_OK) {
 		gerr = res;
 		return NULL;
 	}
 
-	eprint("      Floppy: cyl=%i, head=%i, sectors=%i, spt=%i, image=%s\n", cyl, head, sect, ssize, image_name);
+	struct e4i_t *floppy = e4i_open(image_name);
+	res = E_OK;
 
-	struct rawdisk_t *floppy = rawdisk_create(cyl, head, sect, ssize, image_name);
 	if (!floppy) {
+		printf("Error opening image %s: %s\n", image_name, e4i_get_err(e4i_err));
+		res = E_IMAGE;
+	}
+
+	if (floppy->img_type != E4I_T_FLOPPY) {
+		printf("Error opening image %s: wrong image type, expecting floppy\n", image_name);
+		res = E_IMAGE;
+	}
+
+	if ((floppy->cylinders != 80) || (floppy->heads != 2) || (floppy->spt != 15) || (floppy->block_size != 512)) {
+		printf("Error opening image %s: wrong geometry\n", image_name);
+		res = E_IMAGE;
+	}
+
+	if (res != E_OK) {
+		free(image_name);
+		if (floppy) {
+			e4i_close(floppy);
+		}
+		gerr = res;
+		return NULL;
+	}
+
+
+	if (res != E_OK) {
 		free(image_name);
 		return NULL;
 	}
 
+	eprint("      Floppy: cyl=%i, head=%i, sectors=%i, spt=%i, image=%s\n", floppy->cylinders, floppy->heads, floppy->spt, floppy->block_size, image_name);
+
 	struct mx_unit_proto_t *unit = mx_floppy_create_nodev();
 	if (!unit) {
-		rawdisk_shutdown(floppy);
+		e4i_close(floppy);
 		free(image_name);
 		gerr = E_ALLOC;
 		return NULL;
@@ -66,7 +93,7 @@ struct mx_unit_proto_t * mx_floppy_create_nodev()
 }
 
 // -----------------------------------------------------------------------
-void mx_floppy_connect(struct mx_unit_floppy_t *unit, struct rawdisk_t *floppy)
+void mx_floppy_connect(struct mx_unit_floppy_t *unit, struct e4i_t *floppy)
 {
 	UNIT->floppy = floppy;
 }
@@ -74,7 +101,7 @@ void mx_floppy_connect(struct mx_unit_floppy_t *unit, struct rawdisk_t *floppy)
 // -----------------------------------------------------------------------
 void mx_floppy_disconnect(struct mx_unit_floppy_t *unit)
 {
-	rawdisk_shutdown(UNIT->floppy);
+	e4i_close(UNIT->floppy);
 	UNIT->floppy = NULL;
 }
 
