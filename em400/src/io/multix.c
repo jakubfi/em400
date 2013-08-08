@@ -278,7 +278,11 @@ void mx_reset(struct chan_proto_t *chan)
 // -----------------------------------------------------------------------
 void mx_int_report(struct mx_chan_t *chan)
 {
-	if (CHAN->int_head) {
+	pthread_mutex_lock(&CHAN->int_mutex);
+	struct mx_int_t *int_head = CHAN->int_head;
+	pthread_mutex_unlock(&CHAN->int_mutex);
+
+	if (int_head) {
 		LOG(D_IO, 20, "MULTIX (ch:%i) reporting interrupt %i", chan->proto.num, chan->proto.num + 12);
 		int_set(chan->proto.num + 12);
 	}

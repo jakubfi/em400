@@ -18,32 +18,35 @@
 #ifndef CMEM_M9425_H
 #define CMEM_M9425_H
 
+#include "cfg.h"
+
 // cmem control field - modes of operation
-enum cmem_m9425_trans_mode_e {
-	CMEM_M9425_RD	= 0b00,
-	CMEM_M9425_RA	= 0b01,
-	CMEM_M9425_WD	= 0b10,
-	CMEM_M9425_WA	= 0b11,
+enum cmem_m9425_transmission_type_e {
+	CMEM_M9425_RD	= 0b00, // read data
+	CMEM_M9425_RA	= 0b01, // read address
+	CMEM_M9425_WD	= 0b10, // write data
+	CMEM_M9425_WA	= 0b11, // write address
 };
 
 // commands
 enum cmem_m9425_cmd_e {
 	// OU
-	CMEM_M9425_CMD_ZER		= 0b10000000,   // reset
-	CMEM_M9425_CMD_OTR		= 0b11000000,   // transmission with old addresses
-	CMEM_M9425_CMD_NTR		= 0b11010000,   // tramsmission with new addresses
-	CMEM_M9425_CMD_SEEK		= 0b11100000,   // seek to cylinder
-	CMEM_M9425_CMD_RTZ		= 0b01000000,   // return to cylinder 0
-	CMEM_M9425_CMD_SELOFF	= 0b10100000,   // disconnect device
-	CMEM_M9425_CMD_RES		= 0b10010000,   // device test
+	CMEM_M9425_CMD_ZER		= 0b100000, // reset
+	CMEM_M9425_CMD_OTR		= 0b110000, // transmission with old addresses
+	CMEM_M9425_CMD_NTR		= 0b110100, // tramsmission with new addresses
+	CMEM_M9425_CMD_SEEK		= 0b111000, // seek to cylinder
+	CMEM_M9425_CMD_RTZ		= 0b010000, // return to cylinder 0
+	CMEM_M9425_CMD_SELOFF	= 0b101000, // disconnect device
+	CMEM_M9425_CMD_RES		= 0b100100, // device test
 	// IN
-	CMEM_M9425_CMD_TEST		= 0b10000000,   // check device presence
-	CMEM_M9425_CMD_TSR		= 0b01000000,   // get track status
-	CMEM_M9425_CMD_TCH		= 0b10010000,   // device test
+	CMEM_M9425_CMD_TEST		= 0b100000, // check device presence
+	CMEM_M9425_CMD_TSR		= 0b010000, // get track status
+	CMEM_M9425_CMD_TCH		= 0b100100, // device test
 };
 
 // interrupts
 enum cmem_m9425_int_e {
+								// 001 - 004 are used by channel, see cmem_int_e
 	CMEM_M9425_INT_ZER			= 005, // reset done
 	CMEM_M9425_INT_RES			= 006, // device test done
 	CMEM_M9425_INT_RTZ			= 010, // return to track 0 done
@@ -86,6 +89,10 @@ struct cmem_m9425_cf_t {
 	int key;
 	uint16_t addr;
 };
+
+struct cmem_unit_proto_t * cmem_m9425_create(struct cfg_arg_t *args);
+void cmem_m9425_shutdown(struct cmem_unit_proto_t *unit);
+void cmem_m9425_reset(struct cmem_unit_proto_t *unit);
 
 int cmem_m9425_decode_cf_t(int addr, struct cmem_m9425_cf_t *cf);
 

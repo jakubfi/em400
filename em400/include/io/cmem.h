@@ -19,16 +19,54 @@
 #define CMEM_H
 
 #include <inttypes.h>
+#include <pthread.h>
 
 #include "cfg.h"
 #include "io.h"
 
+#define CMEM_MAX_DEVICES 8
+
+struct cmem_unit_proto_t;
+
+typedef struct cmem_unit_proto_t * (*cmem_unit_f_create)(struct cfg_arg_t *args);
+typedef void (*cmem_unit_f_shutdown)(struct cmem_unit_proto_t *unit);
+typedef void (*cmem_unit_f_reset)(struct cmem_unit_proto_t *unit);
+typedef int (*cmem_unit_f_cmd)(struct cmem_unit_proto_t *unit, int dir, int cmd, uint16_t *r_arg);
+
+struct cmem_chan_t;
+
+struct cmem_unit_proto_t {
+	const char *name;
+
+	cmem_unit_f_create create;
+	cmem_unit_f_shutdown shutdown;
+	cmem_unit_f_reset reset;
+	cmem_unit_f_cmd cmd;
+
+	struct cmem_chan_t *chan;
+
+};
+
+struct cmem_chan_t {
+    struct chan_proto_t proto;
+
+	pthread_mutex_t int_mutex;
+	int int_mask;
+	int int_unit[CMEM_MAX_DEVICES];
+	int int_reported;
+	int was_en;
+
+	pthread_mutex_t transmit_mutex;
+	struct cmem_unit_proto_t *unit[CMEM_MAX_DEVICES];
+};
+
 // interrupts
 enum cmem_int_e {
-	CMEM_INT_TOO_SLOW	= 0b001,
-	CMEM_INT_COMPARE	= 0b011,
-	CMEM_INT_NOMEM		= 0b010,
-	CMEM_INT_PARITY		= 0b100,
+	CMEM_INT_TOO_SLOW	= 001, // transmission too slow (?)
+	CMEM_INT_NOMEM		= 002, // no memory
+	CMEM_INT_COMPARE	= 003, // transmission with comparison failed
+	CMEM_INT_PARITY		= 004, // memory parity error
+	CMEM_INT_NONE		= 9999,// no interrupt (em400 marker)
 };
 
 struct chan_proto_t * cmem_create(struct cfg_unit_t *units);

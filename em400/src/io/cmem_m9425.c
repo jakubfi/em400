@@ -22,6 +22,25 @@
 #include "io/cmem_m9425.h"
 
 // -----------------------------------------------------------------------
+struct cmem_unit_proto_t * cmem_m9425_create(struct cfg_arg_t *args)
+{
+
+	return NULL;
+}
+
+// -----------------------------------------------------------------------
+void cmem_m9425_shutdown(struct cmem_unit_proto_t *unit)
+{
+
+}
+
+// -----------------------------------------------------------------------
+void cmem_m9425_reset(struct cmem_unit_proto_t *unit)
+{
+
+}
+
+// -----------------------------------------------------------------------
 int cmem_m9425_decode_cf_t(int addr, struct cmem_m9425_cf_t *cf)
 {
 	uint16_t data;
