@@ -15,17 +15,98 @@
 //  Foundation, Inc.,
 //  51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 
+#include <stdlib.h>
 #include <inttypes.h>
 
 #include "errors.h"
 #include "cpu/memory.h"
 #include "io/cmem_m9425.h"
 
+#define UNIT ((struct cmem_unit_m9425_t *)(unit))
+
 // -----------------------------------------------------------------------
 struct cmem_unit_proto_t * cmem_m9425_create(struct cfg_arg_t *args)
 {
+	char *image_bottom = NULL;
+	char *image_top = NULL;
+	int res;
+	res = cfg_args_decode(args, "ss", &image_bottom, &image_top);
+	if (res != E_OK) {
+		gerr = res;
+		return NULL;
+	}
 
-	return NULL;
+	res = E_OK;
+
+	struct e4i_t *disk_bottom = e4i_open(image_bottom);
+	if (!disk_bottom) {
+		printf("Error opening image %s: %s\n", image_bottom, e4i_get_err(e4i_err));
+		res = E_IMAGE;
+	}
+
+	if (disk_bottom->img_type != E4I_T_HDD) {
+		printf("Error opening image %s: wrong image type, expecting hdd\n", image_bottom);
+		res = E_IMAGE;
+	}
+
+	if ((disk_bottom->cylinders != 203) || (disk_bottom->heads != 2) || (disk_bottom->spt != 12) || (disk_bottom->block_size != 512)) {
+		printf("Error opening image %s: wrong geometry\n", image_bottom);
+		res = E_IMAGE;
+	}
+
+	if (res != E_OK) {
+		free(image_bottom);
+		if (disk_bottom) {
+			e4i_close(disk_bottom);
+		}
+		gerr = res;
+		return NULL;
+	}
+	struct e4i_t *disk_top = e4i_open(image_top);
+	if (!disk_top) {
+		printf("Error opening image %s: %s\n", image_top, e4i_get_err(e4i_err));
+		res = E_IMAGE;
+	}
+	if (disk_top->img_type != E4I_T_HDC) {
+		printf("Error opening image %s: wrong image type, expecting hdc\n", image_top);
+		res = E_IMAGE;
+	}
+
+	if ((disk_top->cylinders != 203) || (disk_top->heads != 2) || (disk_top->spt != 12) || (disk_top->block_size != 512)) {
+		printf("Error opening image %s: wrong geometry\n", image_top);
+		res = E_IMAGE;
+	}
+
+	if (res != E_OK) {
+		free(image_top);
+		free(image_bottom);
+		e4i_close(disk_bottom);
+		if (disk_top) {
+			e4i_close(disk_top);
+		}
+		gerr = res;
+		return NULL;
+	}
+
+	eprint("      MERA 9425 fixed    : cyl=%i, head=%i, sectors=%i, spt=%i, image=%s\n", disk_bottom->cylinders, disk_bottom->heads, disk_bottom->spt, disk_bottom->block_size, image_bottom);
+	eprint("      MERA 9425 removable: cyl=%i, head=%i, sectors=%i, spt=%i, image=%s\n", disk_top->cylinders, disk_top->heads, disk_top->spt, disk_top->block_size, image_top);
+
+	struct cmem_unit_m9425_t *unit = calloc(1, sizeof(struct cmem_unit_m9425_t));
+	if (!unit) {
+		free(image_top);
+		free(image_bottom);
+		e4i_close(disk_top);
+		e4i_close(disk_bottom);
+		return NULL;
+	}
+
+	UNIT->disk[0] = disk_bottom;
+	UNIT->disk[1] = disk_top;
+
+	free(image_top);
+	free(image_bottom);
+
+	return (struct cmem_unit_proto_t *) unit;
 }
 
 // -----------------------------------------------------------------------

@@ -18,6 +18,9 @@
 #ifndef CMEM_M9425_H
 #define CMEM_M9425_H
 
+#include "e4image.h"
+#include "cmem.h"
+
 #include "cfg.h"
 
 // cmem control field - modes of operation
@@ -70,6 +73,12 @@ enum cmem_m9425_int_e {
 	CMEM_M9425_INT_END_MARK		= 034, // read end-mark character in data
 	CMEM_M9425_INT_DONE			= 035, // transmission finished OK
 };
+
+struct cmem_unit_m9425_t {
+    struct cmem_unit_proto_t proto;
+	struct e4i_t *disk[2];
+};
+
 
 // --- transmit ----------------------------------------------------------
 struct cmem_m9425_cf_t {

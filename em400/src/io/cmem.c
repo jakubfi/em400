@@ -18,6 +18,7 @@
 #include <inttypes.h>
 #include <pthread.h>
 #include <unistd.h>
+#include <strings.h>
 
 #include "cpu/interrupts.h"
 #include "io/io.h"
@@ -49,11 +50,69 @@ struct cmem_unit_proto_t cmem_unit_proto[] = {
 };
 
 // -----------------------------------------------------------------------
+struct cmem_unit_proto_t * cmem_unit_proto_get(struct cmem_unit_proto_t *proto, char *name)
+{
+	while (proto && proto->name) {
+		if (strcasecmp(name, proto->name) == 0) {
+			return proto;
+		}
+		proto++;
+	}
+	return NULL;
+}
+
+// -----------------------------------------------------------------------
 struct chan_proto_t * cmem_create(struct cfg_unit_t *units)
 {
 	struct cmem_chan_t *chan = calloc(1, sizeof(struct cmem_chan_t));
-	pthread_mutex_init(&chan->transmit_mutex, NULL);
-	pthread_mutex_init(&chan->int_mutex, NULL);
+
+	pthread_mutexattr_t attr;
+	pthread_mutexattr_init(&attr);
+	pthread_mutex_init(&chan->transmit_mutex, &attr);
+	pthread_mutex_init(&chan->int_mutex, &attr);
+
+	// initialize units
+	struct cfg_unit_t *cunit = units;
+	while (cunit) {
+		// find unit prototype
+		struct cmem_unit_proto_t *proto = cmem_unit_proto_get(cmem_unit_proto, cunit->name);
+		if (!proto) {
+			gerr = E_IO_UNIT_UNKNOWN;
+			free(chan);
+			return NULL;
+		}
+
+		eprint("    Unit %i: %s\n", cunit->num, proto->name);
+
+		// create unit based on prototype
+		struct cmem_unit_proto_t *unit = proto->create(cunit->args);
+		if (!unit) {
+			free(chan);
+			return NULL;
+		}
+
+		// fill in functions
+		unit->name = proto->name;
+		unit->create = proto->create;
+		unit->shutdown = proto->shutdown;
+		unit->reset = proto->reset;
+		unit->cmd = proto->cmd;
+
+		// remember the channel unit is connected to
+		unit->chan = chan;
+		unit->num = cunit->num;
+
+		CHAN->unit[unit->num] = unit;
+		cunit = cunit->next;
+	}
+
+	// clear unit interrupts
+	pthread_mutex_lock(&chan->int_mutex);
+	for (int unit_n=0 ; unit_n<CMEM_MAX_DEVICES ; unit_n++) {
+		CHAN->int_unit[unit_n] = CMEM_INT_NONE;
+	}
+	pthread_mutex_unlock(&chan->int_mutex);
+
 
 	return (struct chan_proto_t *) chan;
 }
@@ -61,12 +120,28 @@ struct chan_proto_t * cmem_create(struct cfg_unit_t *units)
 // -----------------------------------------------------------------------
 void cmem_shutdown(struct chan_proto_t *chan)
 {
+	for (int i=0 ; i<CMEM_MAX_DEVICES ; i++) {
+		struct cmem_unit_proto_t *unit = CHAN->unit[i];
+		if (unit) {
+			unit->shutdown(unit);
+			CHAN->unit[i] = NULL;
+		}
+	}
+	pthread_mutex_destroy(&CHAN->int_mutex);
+	pthread_mutex_destroy(&CHAN->transmit_mutex);
 	free(chan);
 }
 
 // -----------------------------------------------------------------------
 void cmem_reset(struct chan_proto_t *chan)
 {
+	LOG(D_IO, 1, "CMEM (ch:%i) reset", chan->num);
+	for (int i=0 ; i<CMEM_MAX_DEVICES ; i++) {
+		struct cmem_unit_proto_t *unit = CHAN->unit[i];
+		if (unit) {
+			unit->reset(unit);
+		}
+	}
 }
 
 // -----------------------------------------------------------------------
@@ -83,8 +158,7 @@ void cmem_int_report(struct cmem_chan_t *chan)
 	// check if any unit reported interrupt
 	for (int unit_n=0 ; unit_n<CMEM_MAX_DEVICES ; unit_n++) {
 		pthread_mutex_lock(&CHAN->int_mutex);
-		int is_masked = CHAN->int_mask & (1 << unit_n);
-		if ((CHAN->int_unit[unit_n] != CMEM_INT_NONE) && !is_masked) {
+		if ((CHAN->int_unit[unit_n] != CMEM_INT_NONE) && !CHAN->int_mask) {
 			chan->int_reported = unit_n;
 			pthread_mutex_unlock(&CHAN->int_mutex);
 			LOG(D_IO, 20, "CMEM (ch:%i) reporting interrupt %i", chan->proto.num, chan->proto.num + 12);
@@ -126,6 +200,9 @@ int cmem_cmd_intspec(struct chan_proto_t *chan, uint16_t *r_arg)
 	}
 	pthread_mutex_unlock(&CHAN->int_mutex);
 
+	// this is where we unlock after transmission command
+	pthread_mutex_unlock(&CHAN->transmit_mutex);
+
 	// report another interrupt if it's there
 	cmem_int_report(CHAN);
 
@@ -135,6 +212,11 @@ int cmem_cmd_intspec(struct chan_proto_t *chan, uint16_t *r_arg)
 // -----------------------------------------------------------------------
 int cmem_chan_cmd(struct chan_proto_t *chan, int dir, int cmd, int u_num, uint16_t *r_arg)
 {
+	// any command makes channel take of the interrupt mask
+	pthread_mutex_lock(&CHAN->int_mutex);
+	CHAN->int_mask = 0;
+	pthread_mutex_unlock(&CHAN->int_mutex);
+
 	if (dir == IO_OU) {
 		switch (cmd) {
 		case CHAN_CMD_EXISTS:
@@ -161,7 +243,7 @@ int cmem_chan_cmd(struct chan_proto_t *chan, int dir, int cmd, int u_num, uint16
 			LOG(D_IO, 1, "CMEM %i (%s): CHAN_CMD_EXISTS", chan->num, chan->name);
 			break;
 		case CHAN_CMD_MASK_PN:
-			//chan->int_mask = 1;
+			CHAN->int_mask = 1;
 			LOG(D_IO, 1, "CMEM %i (%s): CHAN_CMD_MASK_PN", chan->num, chan->name);
 			break;
 		case CHAN_CMD_MASK_NPN:

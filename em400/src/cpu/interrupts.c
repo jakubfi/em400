@@ -161,11 +161,10 @@ void int_serve()
 	int interrupt = 31 - probe;
 
 	LOG(D_INT, 1, "Serve: %d (%s)", interrupt, log_int_name[interrupt]);
-
 	uint16_t int_spec = 0;
 	// get interrupt specification if it's from channel
 	if ((interrupt >= 12) && (interrupt <= 27)) {
-		io_chan[interrupt-12]->cmd(io_chan[interrupt-12], IO_IN, CHAN_CMD_INTSPEC<<8, &int_spec);
+		io_chan[interrupt-12]->cmd(io_chan[interrupt-12], IO_IN, 1<<11, &int_spec);
 	}
 
 	// put system status on stack

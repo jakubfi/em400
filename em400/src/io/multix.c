@@ -202,8 +202,8 @@ struct chan_proto_t * mx_create(struct cfg_unit_t *units)
 		unit->worker_dir = -1;
 		unit->worker_cmd = -1;
 		unit->worker_addr = 0;
-		pthread_mutex_init(&unit->transmit_mutex, NULL);
-		pthread_mutex_init(&unit->worker_mutex, NULL);
+		pthread_mutex_init(&unit->transmit_mutex, &attr);
+		pthread_mutex_init(&unit->worker_mutex, &attr);
 		pthread_cond_init(&unit->worker_cond, NULL);
 		int res = pthread_create(&unit->worker, NULL, mx_unit_worker, (void *)unit);
 		if (res != 0) {
@@ -278,11 +278,8 @@ void mx_reset(struct chan_proto_t *chan)
 // -----------------------------------------------------------------------
 void mx_int_report(struct mx_chan_t *chan)
 {
-	pthread_mutex_lock(&CHAN->int_mutex);
-	struct mx_int_t *int_head = CHAN->int_head;
-	pthread_mutex_unlock(&CHAN->int_mutex);
-
-	if (int_head) {
+	// note: called in locked state
+	if (CHAN->int_head) {
 		LOG(D_IO, 20, "MULTIX (ch:%i) reporting interrupt %i", chan->proto.num, chan->proto.num + 12);
 		int_set(chan->proto.num + 12);
 	}
@@ -296,7 +293,7 @@ void mx_int(struct mx_chan_t *chan, int unit_n, int interrupt)
 	mx_int->interrupt = interrupt;
 	mx_int->next = NULL;
 
-	LOG(D_IO, 1, "MULTIX (ch:%i) interrupt %i, unit: %i", chan->proto.num, interrupt, unit_n);
+	LOG(D_IO, 1, "MULTIX (ch:%i) interrupt spec:%i, unit: %i", chan->proto.num, interrupt, unit_n);
 
 	pthread_mutex_lock(&CHAN->int_mutex);
 
@@ -375,9 +372,8 @@ int mx_cmd_int_requeue(struct chan_proto_t *chan)
 		mx_int_enq(CHAN, inth);
 	}
 
-	pthread_mutex_unlock(&CHAN->int_mutex);
-
 	mx_int_report(CHAN);
+	pthread_mutex_unlock(&CHAN->int_mutex);
 
 	return IO_OK;
 }
@@ -386,12 +382,12 @@ int mx_cmd_int_requeue(struct chan_proto_t *chan)
 int mx_cmd_intspec(struct chan_proto_t *chan, uint16_t *r_arg)
 {
 	LOG(D_IO, 1, "MULTIX (ch:%i) command: intspec", chan->num);
+
 	pthread_mutex_lock(&CHAN->int_mutex);
-
 	struct mx_int_t *inth = mx_int_deq(CHAN);
-
 	pthread_mutex_unlock(&CHAN->int_mutex);
 
+	LOG(D_IO, 10, "MULTIX (ch:%i) command: intspec: int:%i unit:%i", chan->num, inth->interrupt, inth->unit_n);
 	if (inth) {
 		*r_arg = (inth->interrupt << 8) | (inth->unit_n);
 		free(inth);
@@ -399,7 +395,9 @@ int mx_cmd_intspec(struct chan_proto_t *chan, uint16_t *r_arg)
 		*r_arg = MX_INT_INIEA << 8;
 	}
 
+	pthread_mutex_lock(&CHAN->int_mutex);
 	mx_int_report(CHAN);
+	pthread_mutex_unlock(&CHAN->int_mutex);
 
 	return IO_OK;
 }
@@ -600,12 +598,12 @@ void * mx_unit_worker(void *th_id)
 // -----------------------------------------------------------------------
 int mx_cmd(struct chan_proto_t *chan, int dir, uint16_t n_arg, uint16_t *r_arg)
 {
-	unsigned cmd = (n_arg & 0b1110000000000000) >> 13;
+	unsigned cmd	 = (n_arg & 0b1110000000000000) >> 11;
+	unsigned chan_cmd= (n_arg & 0b0001100000000000) >> 11;
 	unsigned lline_n = (n_arg & 0b0001111111100000) >> 5;
 
 	if (cmd == 0) { // channel commands
-		cmd = (n_arg & 0b0001100000000000) >> 11;
-		switch (cmd) {
+		switch (chan_cmd) {
 			case MX_CMD_RESET:
 				mx_reset(chan);
 				return IO_OK;
@@ -617,7 +615,7 @@ int mx_cmd(struct chan_proto_t *chan, int dir, uint16_t n_arg, uint16_t *r_arg)
 				LOG(D_IO, 1, "MULTIX (ch:%i) command: unknown channel command", chan->num);
 				break;
 		}
-	} else {
+	} else { // genral or line commands
 		if (dir == IO_IN) {
 			switch (cmd) {
 				case MX_CMD_INTRQ:
