@@ -78,7 +78,7 @@ void alu_div32(int16_t arg)
 }
 
 // -----------------------------------------------------------------------
-int alu_fp_get(uint16_t d1, uint16_t d2, uint16_t d3, double *f)
+int alu_fp_get(uint16_t d1, uint16_t d2, uint16_t d3, double *f, int check_norm)
 {
 	int64_t m;
 	double m_f;
@@ -97,7 +97,7 @@ int alu_fp_get(uint16_t d1, uint16_t d2, uint16_t d3, double *f)
 		m_f = (double) m / FP_M_SCALE;
 
 		// expecting normalized input
-		if ((m_f >= 1) || (m_f < 0.5)) {
+		if (check_norm && ((m_f >= 1) || (m_f < 0.5))) {
 			int_set(INT_DIV0);
 			return -1;
 		}
@@ -140,7 +140,7 @@ int alu_fp_store(double f)
 void alu_fp_norm()
 {
 	double f;
-	if (!alu_fp_get(R(1), R(2), R(3), &f)) {
+	if (!alu_fp_get(R(1), R(2), R(3), &f, 0)) {
 		alu_fp_store(f);
 	}
 }
@@ -149,8 +149,8 @@ void alu_fp_norm()
 void alu_fp_add(uint16_t d1, uint16_t d2, uint16_t d3, int sign)
 {
 	double f1, f2;
-	if (!alu_fp_get(R(1), R(2), R(3), &f1)) {
-		if (!alu_fp_get(d1, d2, d3, &f2)) {
+	if (!alu_fp_get(R(1), R(2), R(3), &f1, 1)) {
+		if (!alu_fp_get(d1, d2, d3, &f2, 1)) {
 			f1 += sign * f2;
 			alu_fp_store(f1);
 		}
@@ -161,8 +161,8 @@ void alu_fp_add(uint16_t d1, uint16_t d2, uint16_t d3, int sign)
 void alu_fp_mul(uint16_t d1, uint16_t d2, uint16_t d3)
 {
 	double f1, f2;
-	if (!alu_fp_get(R(1), R(2), R(3), &f1)) {
-		if (!alu_fp_get(d1, d2, d3, &f2)) {
+	if (!alu_fp_get(R(1), R(2), R(3), &f1, 1)) {
+		if (!alu_fp_get(d1, d2, d3, &f2, 1)) {
 			f1 *= f2;
 			alu_fp_store(f1);
 		}
@@ -173,8 +173,8 @@ void alu_fp_mul(uint16_t d1, uint16_t d2, uint16_t d3)
 void alu_fp_div(uint16_t d1, uint16_t d2, uint16_t d3)
 {
 	double f1, f2;
-	if (!alu_fp_get(R(1), R(2), R(3), &f1)) {
-		if (!alu_fp_get(d1, d2, d3, &f2)) {
+	if (!alu_fp_get(R(1), R(2), R(3), &f1, 1)) {
+		if (!alu_fp_get(d1, d2, d3, &f2, 1)) {
 			if (f2 == 0.0f) {
 			int_set(INT_DIV0);
 			} else {

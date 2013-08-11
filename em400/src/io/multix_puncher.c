@@ -133,13 +133,10 @@ void mx_puncher_cmd_transmit(struct mx_unit_proto_t *unit, uint16_t addr)
 // -----------------------------------------------------------------------
 struct mx_puncher_cf_t * mx_puncher_cf_t_decode(int addr)
 {
-	uint16_t data;
 	struct mx_puncher_cf_t *cf = calloc(1, sizeof(void));
 	if (!cf) {
 		return NULL;
 	}
-
-	data = MEMB(0, addr);
 
 	return cf;
 }

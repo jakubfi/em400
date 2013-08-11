@@ -15,7 +15,7 @@ ADD_EXECUTABLE(e4itool
 target_link_libraries(em400
 	${FLEX_LIBRARIES} ${BISON_LIBRARIES}
 	${DEBUGGER_LIB} cpu io
-	readline ncurses rt
+	readline ncurses rt m
 )
 
 # vim: tabstop=4
