@@ -39,9 +39,11 @@ struct cmem_unit_proto_t cmem_unit_proto[] = {
 		"mera9425",
 		cmem_m9425_create,
 		cmem_m9425_shutdown,
-		cmem_m9425_reset
+		cmem_m9425_reset,
+		cmem_m9425_cmd
 	},
 	{
+		NULL,
 		NULL,
 		NULL,
 		NULL,
@@ -200,7 +202,8 @@ int cmem_cmd_intspec(struct chan_proto_t *chan, uint16_t *r_arg)
 	}
 	pthread_mutex_unlock(&CHAN->int_mutex);
 
-	// this is where we unlock after transmission command
+	// this is where we always unlock after transmission command
+	// (TODO: but may it be unlocked earlier by the unit?)
 	pthread_mutex_unlock(&CHAN->transmit_mutex);
 
 	// report another interrupt if it's there
@@ -225,7 +228,7 @@ int cmem_chan_cmd(struct chan_proto_t *chan, int dir, int cmd, int u_num, uint16
 		case CHAN_CMD_INTSPEC:
 			return cmem_cmd_intspec(chan, r_arg);
 		case CHAN_CMD_STATUS:
-			//*r_arg = chan->untransmitted;
+			*r_arg = CHAN->untransmitted;
 			LOG(D_IO, 1, "CMEM %i (%s) CHAN_CMD_STATUS", chan->num, chan->name);
 			break;
 		case CHAN_CMD_ALLOC:
@@ -266,8 +269,8 @@ int cmem_chan_cmd(struct chan_proto_t *chan, int dir, int cmd, int u_num, uint16
 // -----------------------------------------------------------------------
 int cmem_cmd(struct chan_proto_t *chan, int dir, uint16_t n_arg, uint16_t *r_arg)
 {
-	int u_num = (n_arg & 0b0000000011100000) >> 5;
-	int cmd = (n_arg & 0b1111110000000000) >> 10;
+	int cmd		= (n_arg & 0b1111110000000000) >> 10;
+	int u_num	= (n_arg & 0b0000000011100000) >> 5;
 
 	// command for channel
 	if ((cmd & 0b111000) == 0) {
@@ -276,6 +279,7 @@ int cmem_cmd(struct chan_proto_t *chan, int dir, uint16_t n_arg, uint16_t *r_arg
 	} else {
 	 	// transmission command
 	 	if ((cmd & 0b11100) == 0b11000) {
+			// only one transmission command at a time
 			int res = pthread_mutex_trylock(&CHAN->transmit_mutex);
 			if (res) {
 				return IO_EN;

@@ -16,10 +16,12 @@
 //  51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 
 #include <stdlib.h>
+#include <string.h>
 #include <inttypes.h>
 
 #include "errors.h"
 #include "cpu/memory.h"
+#include "io/cmem.h"
 #include "io/cmem_m9425.h"
 
 #define UNIT ((struct cmem_unit_m9425_t *)(unit))
@@ -54,6 +56,11 @@ struct cmem_unit_proto_t * cmem_m9425_create(struct cfg_arg_t *args)
 		res = E_IMAGE;
 	}
 
+	if (!strcmp(image_top, image_bottom)) {
+		printf("Error opening image: Trying to use the same image for fixed and removable disk");
+		res = E_IMAGE;
+	}
+
 	if (res != E_OK) {
 		free(image_bottom);
 		if (disk_bottom) {
@@ -62,6 +69,7 @@ struct cmem_unit_proto_t * cmem_m9425_create(struct cfg_arg_t *args)
 		gerr = res;
 		return NULL;
 	}
+
 	struct e4i_t *disk_top = e4i_open(image_top);
 	if (!disk_top) {
 		printf("Error opening image %s: %s\n", image_top, e4i_get_err(e4i_err));
@@ -95,13 +103,21 @@ struct cmem_unit_proto_t * cmem_m9425_create(struct cfg_arg_t *args)
 	if (!unit) {
 		free(image_top);
 		free(image_bottom);
-		e4i_close(disk_top);
-		e4i_close(disk_bottom);
+		cmem_m9425_shutdown((struct cmem_unit_proto_t *)unit);
 		return NULL;
 	}
 
 	UNIT->disk[0] = disk_bottom;
 	UNIT->disk[1] = disk_top;
+
+	res = pthread_create(&unit->worker, NULL, cmem_m9425_worker, (void *)unit);
+	if (res != 0) {
+		free(image_top);
+		free(image_bottom);
+		cmem_m9425_shutdown((struct cmem_unit_proto_t *)unit);
+		gerr = E_THREAD;
+		return NULL;
+	}
 
 	free(image_top);
 	free(image_bottom);
@@ -112,13 +128,94 @@ struct cmem_unit_proto_t * cmem_m9425_create(struct cfg_arg_t *args)
 // -----------------------------------------------------------------------
 void cmem_m9425_shutdown(struct cmem_unit_proto_t *unit)
 {
-
+	e4i_close(UNIT->disk[0]);
+	e4i_close(UNIT->disk[1]);
+	free(UNIT);
 }
 
 // -----------------------------------------------------------------------
 void cmem_m9425_reset(struct cmem_unit_proto_t *unit)
 {
+	// TODO: przerwij transmisję
+}
 
+// -----------------------------------------------------------------------
+void * cmem_m9425_worker(void *th_id)
+{
+	struct cmem_unit_proto_t *unit = th_id;
+	while (1) {
+		switch (UNIT->worker_trans_type) {
+			case CMEM_M9425_RD:
+				break;
+			case CMEM_M9425_RA:
+				break;
+			case CMEM_M9425_WD:
+				break;
+			case CMEM_M9425_WA:
+				break;
+			default:
+				break;
+		}
+	}
+
+	pthread_exit(NULL);
+}
+
+// -----------------------------------------------------------------------
+int cmem_m9425_cmd(struct cmem_unit_proto_t *unit, int dir, int cmd, uint16_t *r_arg)
+{
+	if (dir == IO_IN) {
+		switch (cmd) {
+			case CMEM_M9425_CMD_TEST:
+				if (pthread_mutex_trylock(&unit->chan->transmit_mutex) == 0) {
+					pthread_mutex_unlock(&unit->chan->transmit_mutex);
+					return IO_OK;
+				} else {
+					return IO_EN;
+				}
+				break;
+			case CMEM_M9425_CMD_TSR:
+				// TODO: zwróć status sektora z ostatio czytanego pola adresowego
+				*r_arg = 0;
+				break;
+			case CMEM_M9425_CMD_TCH:
+				break;
+			default:
+				break;
+		}
+	} else {
+		switch (cmd) {
+			case CMEM_M9425_CMD_ZER:
+				cmem_m9425_reset(unit);
+				cmem_int(unit->chan, unit->num, CMEM_M9425_INT_ZER);
+				break;
+   			case CMEM_M9425_CMD_OTR:
+				break;
+			case CMEM_M9425_CMD_NTR:
+				break;
+			case CMEM_M9425_CMD_SEEK:
+				// trrrr.. done.
+				cmem_int(unit->chan, unit->num, CMEM_M9425_INT_SEEK);
+				break;
+			case CMEM_M9425_CMD_RTZ:
+				// trrrr.. also done.
+				cmem_int(unit->chan, unit->num, CMEM_M9425_INT_RTZ);
+				break;
+			case CMEM_M9425_CMD_SELOFF:
+				if (pthread_mutex_trylock(&unit->chan->transmit_mutex) == 0) {
+					pthread_mutex_unlock(&unit->chan->transmit_mutex);
+					return IO_OK;
+				} else {
+					return IO_EN;
+				}
+			case CMEM_M9425_CMD_RES:
+				cmem_int(unit->chan, unit->num, CMEM_M9425_INT_RES);
+				break;
+			default:
+				break;
+		}
+	}
+	return IO_OK;
 }
 
 // -----------------------------------------------------------------------

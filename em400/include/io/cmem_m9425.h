@@ -18,6 +18,8 @@
 #ifndef CMEM_M9425_H
 #define CMEM_M9425_H
 
+#include <pthread.h>
+
 #include "e4image.h"
 #include "cmem.h"
 
@@ -42,31 +44,31 @@ enum cmem_m9425_cmd_e {
 	CMEM_M9425_CMD_SELOFF	= 0b101000, // disconnect device
 	CMEM_M9425_CMD_RES		= 0b100100, // device test
 	// IN
-	CMEM_M9425_CMD_TEST		= 0b100000, // check device presence
-	CMEM_M9425_CMD_TSR		= 0b010000, // get track status
+	CMEM_M9425_CMD_TEST		= 0b100000, // check device presence and availability
+	CMEM_M9425_CMD_TSR		= 0b010000, // get last read/written sector status field
 	CMEM_M9425_CMD_TCH		= 0b100100, // device test
 };
 
 // interrupts
 enum cmem_m9425_int_e {
 								// 001 - 004 are used by channel, see cmem_int_e
-	CMEM_M9425_INT_ZER			= 005, // reset done
-	CMEM_M9425_INT_RES			= 006, // device test done
-	CMEM_M9425_INT_RTZ			= 010, // return to track 0 done
-	CMEM_M9425_INT_SEEK			= 011, // seek done
-	CMEM_M9425_INT_ALARM		= 012, // control unit malfunction
-	CMEM_M9425_INT_BLOCKED		= 013, // drive malfunction
+	CMEM_M9425_INT_ZER			= 005, // +reset done
+	CMEM_M9425_INT_RES			= 006, // +device test done
+	CMEM_M9425_INT_RTZ			= 010, // +return to track 0 done
+	CMEM_M9425_INT_SEEK			= 011, // +seek done
+	CMEM_M9425_INT_ALARM		= 012, // -control unit malfunction
+	CMEM_M9425_INT_BLOCKED		= 013, // -drive malfunction
 	CMEM_M9425_INT_NODEV		= 014, // no communication with drive
-	CMEM_M9425_INT_NOSEEK		= 015, // can't seek after 1s
+	CMEM_M9425_INT_NOSEEK		= 015, // -can't seek after 1s
 	CMEM_M9425_INT_CF			= 016, // error in control field (frong field len, no such head, no such sector)
-	CMEM_M9425_INT_SYNC_ADR		= 021, // read/write while checking address field (?)
-	CMEM_M9425_INT_SYNC_DATA	= 022, // reading address while reading data (?)
-	CMEM_M9425_INT_CRC_ADR		= 023, // address field CRC error
-	CMEM_M9425_INT_CRC_DATA		= 024, // data CRC error
-	CMEM_M9425_INT_CYL			= 025, // cylinder mismatch
-	CMEM_M9425_INT_HEAD			= 026, // head mismatch
-	CMEM_M9425_INT_SECTOR		= 027, // sector mismatch
-	CMEM_M9425_INT_KEY			= 030, // key mismatch
+	CMEM_M9425_INT_SYNC_ADR		= 021, // -read/write while checking address field (?)
+	CMEM_M9425_INT_SYNC_DATA	= 022, // -reading address while reading data (?)
+	CMEM_M9425_INT_CRC_ADR		= 023, // -address field CRC error
+	CMEM_M9425_INT_CRC_DATA		= 024, // -data CRC error
+	CMEM_M9425_INT_CYL			= 025, // -cylinder mismatch
+	CMEM_M9425_INT_HEAD			= 026, // -head mismatch
+	CMEM_M9425_INT_SECTOR		= 027, // -sector mismatch
+	CMEM_M9425_INT_KEY			= 030, // -key mismatch
 	CMEM_M9425_INT_WRPROTECT	= 031, // sector write protected, but control field didn't ignore it
 	CMEM_M9425_INT_SECT_PROTECT	= 032, // bad sector, but control field didn't ignore it
 	CMEM_M9425_INT_CYL_END		= 033, // end of cylinder while reading/writing data (no more heads)
@@ -77,8 +79,11 @@ enum cmem_m9425_int_e {
 struct cmem_unit_m9425_t {
     struct cmem_unit_proto_t proto;
 	struct e4i_t *disk[2];
-};
 
+	pthread_t worker;
+	int worker_trans_type;
+	int worker_addr;
+};
 
 // --- transmit ----------------------------------------------------------
 struct cmem_m9425_cf_t {
@@ -102,6 +107,8 @@ struct cmem_m9425_cf_t {
 struct cmem_unit_proto_t * cmem_m9425_create(struct cfg_arg_t *args);
 void cmem_m9425_shutdown(struct cmem_unit_proto_t *unit);
 void cmem_m9425_reset(struct cmem_unit_proto_t *unit);
+void * cmem_m9425_worker(void *th_id);
+int cmem_m9425_cmd(struct cmem_unit_proto_t *unit, int dir, int cmd, uint16_t *r_arg);
 
 int cmem_m9425_decode_cf_t(int addr, struct cmem_m9425_cf_t *cf);
 

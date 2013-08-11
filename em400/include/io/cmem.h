@@ -56,6 +56,7 @@ struct cmem_chan_t {
 	int int_unit[CMEM_MAX_DEVICES];
 	int int_reported;
 	int was_en;
+	int untransmitted;
 
 	pthread_mutex_t transmit_mutex;
 	struct cmem_unit_proto_t *unit[CMEM_MAX_DEVICES];
@@ -63,16 +64,17 @@ struct cmem_chan_t {
 
 // interrupts
 enum cmem_int_e {
-	CMEM_INT_TOO_SLOW	= 001, // transmission too slow (?)
+	CMEM_INT_TOO_SLOW	= 001, // -transmission too slow (?)
 	CMEM_INT_NOMEM		= 002, // no memory
 	CMEM_INT_COMPARE	= 003, // transmission with comparison failed
-	CMEM_INT_PARITY		= 004, // memory parity error
+	CMEM_INT_PARITY		= 004, // -memory parity error
 	CMEM_INT_NONE		= 9999,// no interrupt (em400 marker)
 };
 
 struct chan_proto_t * cmem_create(struct cfg_unit_t *units);
 void cmem_shutdown(struct chan_proto_t *chan);
 void cmem_reset(struct chan_proto_t *chan);
+void cmem_int(struct cmem_chan_t *chan, int unit_n, int interrupt);
 int cmem_cmd(struct chan_proto_t *chan, int dir, uint16_t n_arg, uint16_t *r_arg);
 
 #endif

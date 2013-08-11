@@ -250,7 +250,13 @@ void mx_shutdown(struct chan_proto_t *chan)
 		struct mx_unit_proto_t *unit = CHAN->pline[i];
 		if (unit) {
 			eprint("    Unit %i: %s\n", unit->phy_num, unit->name);
-			// TODO: stop unit worker
+			pthread_mutex_unlock(&unit->transmit_mutex); // cancel any ongoing transmission
+
+			pthread_mutex_lock(&unit->worker_mutex); // wait for worker to become available
+			unit->worker_cmd = -1; // stop unit worker
+			pthread_cond_signal(&unit->worker_cond); // notify unit worker
+			pthread_mutex_unlock(&unit->worker_mutex);
+
 			unit->shutdown(unit);
 			CHAN->pline[i] = NULL;
 		}
@@ -266,12 +272,13 @@ void mx_reset(struct chan_proto_t *chan)
 	for (int i=0 ; i<MX_MAX_DEVICES ; i++) {
 		struct mx_unit_proto_t *punit = CHAN->pline[i];
 		if (punit) {
-			punit->reset(punit);
-			punit->attached = 0;
+			punit->reset(punit); // perform unit-specific reset routines
+			pthread_mutex_unlock(&punit->transmit_mutex); // cancel any ongoing transmission
+			punit->attached = 0; // detach unit
 		}
-		CHAN->lline[i] = NULL;
+		CHAN->lline[i] = NULL; // clear logical line connection
 	}
-	CHAN->confset = 0;
+	CHAN->confset = 0; // channel configuration no longer exists
 	mx_int(CHAN, 0, MX_INT_IWYZE);
 }
 
@@ -568,6 +575,9 @@ void * mx_unit_worker(void *th_id)
 			LOG(D_IO, 20, "MULTIX line %i: worker waiting for job...", unit->log_num);
 			pthread_cond_wait(&unit->worker_cond, &unit->worker_mutex);
 		}
+
+		// worker thread is done
+		if (unit->worker_cmd == -1) break;
 
 		// do the work
 		switch (unit->worker_dir<<7 | unit->worker_cmd) {

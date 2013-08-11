@@ -112,7 +112,6 @@ void mx_winch_shutdown(struct mx_unit_proto_t *unit)
 // -----------------------------------------------------------------------
 void mx_winch_reset(struct mx_unit_proto_t *unit)
 {
-
 }
 
 // -----------------------------------------------------------------------
