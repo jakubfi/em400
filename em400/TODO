@@ -5,15 +5,13 @@ Known bugs:
 
 CPU:
 
-* AWP - floating point instructions
 
 Debugger:
 
 * more shortcuts (c-w, c-d, c-k, home, end, ...)
 * log shouldn't start new file immediately
 * again, rethink hex/dec numbers in output and log
-* HLT will halt debugger too if there is no interrupt to serve
-* debugger in separate thread (?)
+* debugger in separate thread (?) (HLT will halt debugger too if there is no interrupt to serve)
 * use status bar for panel leds (?)
 * inteligent memory view (auto-scroll)
 * get rid of memory view?
