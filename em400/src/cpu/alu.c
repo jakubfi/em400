@@ -83,17 +83,16 @@ int alu_fp_get(uint16_t d1, uint16_t d2, uint16_t d3, double *f, int check_norm)
 	int64_t m;
 	double m_f;
 	int8_t exp;
+	
+	exp = d3 & 0b0000000011111111;
+	m  = (int64_t) d1 << 48;
+	m |= (int64_t) d2 << 32;
+	m |= (int64_t) (d3 & 0b1111111100000000) << 16;
 
-	if (d1+d2+d3 == 0) {
-		*f = 0.0f;
-		m = 0;
+	if (m == 0) {
 		m_f = 0.0f;
-		exp = 0;
+		*f = 0.0f;
 	} else {
-		exp = d3 & 0b0000000011111111;
-		m  = (int64_t) d1 << 48;
-		m |= (int64_t) d2 << 32;
-		m |= (int64_t) (d3 & 0b1111111100000000) << 16;
 		m_f = (double) m / FP_M_SCALE;
 
 		// expecting normalized input
