@@ -69,7 +69,7 @@ void alu_div32(int16_t arg)
 	int32_t d1 = DWORD(R(1), R(2));
 	int32_t res = d1 / arg;
 	if ((res > 32767) || (res < -32768)) {
-		int_set(INT_FP_DIV_OF);
+		int_set(INT_DIV_OF);
 	}
 	alu_set_flag_Z(res, 32);
 	alu_set_flag_M(res, 32);
@@ -115,7 +115,7 @@ int alu_fp_store(double f)
 	double m = frexp(f, &exp);
 	int64_t m_int = m * FP_M_SCALE;
 
-	// does exponent fit in 8 bits?
+	// check if exponent fits in 8 bits
 	if (exp > 127) {
 		int_set(INT_FP_OF);
 		return -1;
@@ -128,6 +128,13 @@ int alu_fp_store(double f)
 	uint16_t d2 = m_int >> 32;
 	uint16_t d3 = (m_int >> 16) & 0b1111111100000000;
 	d3 |= exp & 255;
+
+	if (f == 0 ) {
+		Fset(FL_Z);
+	} else if (f < 0) {
+		Fset(FL_M);
+	}
+	// C is not emulated
 
 	Rw(1, d1);
 	Rw(2, d2);

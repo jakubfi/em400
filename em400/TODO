@@ -41,3 +41,4 @@ MERA-400 features that em400 does not emulate:
 * operator panel
 * MULTIX:
   * SOM protocols
+* C flag for fp operations
