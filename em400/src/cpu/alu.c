@@ -110,7 +110,7 @@ int alu_fp_get(uint16_t d1, uint16_t d2, uint16_t d3, double *f, int check_norm)
 }
 
 // -----------------------------------------------------------------------
-int alu_fp_store(double f)
+void alu_fp_store(double f)
 {
 	int exp;
 	double m = frexp(f, &exp);
@@ -119,10 +119,8 @@ int alu_fp_store(double f)
 	// check if exponent fits in 8 bits
 	if (exp > 127) {
 		int_set(INT_FP_OF);
-		return -1;
 	} else if (exp < -128) {
 		int_set(INT_FP_UF);
-		return -1;
 	}
 
 	uint16_t d1 = m_int >> 48;
@@ -140,13 +138,11 @@ int alu_fp_store(double f)
 		Fclr(FL_Z);
 		Fclr(FL_M);
 	}
-	// C is not emulated
 
 	Rw(1, d1);
 	Rw(2, d2);
 	Rw(3, d3);
 	//printf("out: (0x%04x 0x%04x 0x%04x) = %.30f = %.30f * 2^%i (m=%li)\n", d1, d2, d3, f, m, exp, m_int);
-	return 0;
 }
 
 // -----------------------------------------------------------------------
@@ -154,6 +150,7 @@ void alu_fp_norm()
 {
 	double f;
 	if (!alu_fp_get(R(1), R(2), R(3), &f, 0)) {
+		Fclr(FL_C);
 		alu_fp_store(f);
 	}
 }
@@ -161,10 +158,21 @@ void alu_fp_norm()
 // -----------------------------------------------------------------------
 void alu_fp_add(uint16_t d1, uint16_t d2, uint16_t d3, int sign)
 {
-	double f1, f2;
+	double f1, f2, mf;
+	int e;
 	if (!alu_fp_get(R(1), R(2), R(3), &f1, 1)) {
 		if (!alu_fp_get(d1, d2, d3, &f2, 1)) {
-			f1 += sign * f2;
+			f2 *= sign;
+
+			// check/set/clear C
+			mf = frexp(f1, &e) + frexp(f2, &e);
+			if ((mf <= -1) || (mf >= 1)) {
+				Fset(FL_C);
+			} else {
+				Fclr(FL_C);
+			}
+
+			f1 += f2;
 			alu_fp_store(f1);
 		}
 	}
@@ -177,6 +185,7 @@ void alu_fp_mul(uint16_t d1, uint16_t d2, uint16_t d3)
 	if (!alu_fp_get(R(1), R(2), R(3), &f1, 1)) {
 		if (!alu_fp_get(d1, d2, d3, &f2, 1)) {
 			f1 *= f2;
+			Fclr(FL_C); // TODO: what to do here?
 			alu_fp_store(f1);
 		}
 	}
@@ -189,9 +198,10 @@ void alu_fp_div(uint16_t d1, uint16_t d2, uint16_t d3)
 	if (!alu_fp_get(R(1), R(2), R(3), &f1, 1)) {
 		if (!alu_fp_get(d1, d2, d3, &f2, 1)) {
 			if (f2 == 0.0f) {
-			int_set(INT_DIV0);
+				int_set(INT_DIV0);
 			} else {
 				f1 /= f2;
+				Fclr(FL_C); // TODO: what to do here?
 				alu_fp_store(f1);
 			}
 		}
