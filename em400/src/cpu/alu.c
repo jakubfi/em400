@@ -130,10 +130,15 @@ int alu_fp_store(double f)
 	uint16_t d3 = (m_int >> 16) & 0b1111111100000000;
 	d3 |= exp & 255;
 
-	if (f == 0 ) {
+	if (f == 0) {
 		Fset(FL_Z);
+		Fclr(FL_M);
 	} else if (f < 0) {
+		Fclr(FL_Z);
 		Fset(FL_M);
+	} else {
+		Fclr(FL_Z);
+		Fclr(FL_M);
 	}
 	// C is not emulated
 
