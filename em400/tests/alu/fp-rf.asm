@@ -1,4 +1,4 @@
-.prog "alu/fp-norm"
+.prog "alu/fp-NRF"
 
 ; 4 (denormalized)
 ; PRE [0xa0] = 0x2000
@@ -17,8 +17,10 @@
 ; XPCT int(rz[8]) : 0
 ; XPCT int(rz[9]) : 0
 ; XPCT int(rz[10]) : 0
+; XPCT int(sr) : 0
+
+; 4 (normalized)
 ; XPCT hex(r1) : 0x4000
 ; XPCT hex(r2) : 0x0000
 ; XPCT hex(r3) : 0x0003
-; XPCT int(sr) : 0
 
