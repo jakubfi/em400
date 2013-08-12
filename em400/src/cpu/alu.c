@@ -96,9 +96,11 @@ int alu_fp_get(uint16_t d1, uint16_t d2, uint16_t d3, double *f, int check_norm)
 		m_f = (double) m / FP_M_SCALE;
 
 		// expecting normalized input
-		if (check_norm && ((m_f >= 1) || (m_f < 0.5))) {
-			int_set(INT_DIV0);
-			return -1;
+		if (check_norm) {
+			if ((m_f <= -1) || (m_f >= 1) || ((m_f > -0.5) && (m_f < 0.5))) {
+				int_set(INT_DIV0);
+				return -1;
+			}
 		}
 
 		*f = m_f * pow(2, exp);
