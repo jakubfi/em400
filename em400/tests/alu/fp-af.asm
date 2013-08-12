@@ -1,0 +1,66 @@
+.prog "alu/fp-AF"
+
+; 1
+; PRE [0xa0] = 0x4000
+; PRE [0xa1] = 0x0000
+; PRE [0xa2] = 0x0001
+
+; 1000000000
+; PRE [0xa3] = 0x7735
+; PRE [0xa4] = 0x9400
+; PRE [0xa5] = 0x001e
+
+; -100
+; PRE [0xa6] = 0x9c00
+; PRE [0xa7] = 0x0000
+; PRE [0xa8] = 0x0007
+
+; 0.125
+; PRE [0xa9] = 0x4000
+; PRE [0xaa] = 0x0000
+; PRE [0xab] = 0x00fe
+
+	lf 0xa0
+	af 0xa3
+	rf 0x200
+
+	lf 0xa0
+	af 0xa6
+	rf 0x203
+
+	lf 0xa3
+	af 0xa9
+	rf 0x206
+
+	hlt 077
+
+.finprog
+
+; XPCT int(rz[6]) : 0
+; XPCT int(rz[7]) : 0
+; XPCT int(rz[8]) : 0
+; XPCT int(rz[9]) : 0
+; XPCT int(rz[10]) : 0
+; XPCT int(sr) : 0
+
+; Z, M, V, C
+; XPCT int(r0[0]) : 0
+; XPCT int(r0[1]) : 0
+; XPCT int(r0[2]) : 0
+; XPCT int(r0[3]) : 0
+
+; 1000000001
+; XPCT hex([0x200]) : 0x7735
+; XPCT hex([0x201]) : 0x9402
+; XPCT hex([0x202]) : 0x001e
+
+; -99
+; XPCT hex([0x203]) : 0x9d00
+; XPCT hex([0x204]) : 0x0000
+; XPCT hex([0x205]) : 0x0007
+
+; 1000000000.125
+; XPCT hex([0x206]) : 0x7735
+; XPCT hex([0x207]) : 0x9400
+; XPCT hex([0x208]) : 0x401e
+

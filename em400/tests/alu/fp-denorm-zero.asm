@@ -1,4 +1,4 @@
-.prog "alu/fp-not-norm-zero"
+.prog "alu/fp-denorm-zero"
 
 ; denormalized 0 doesn't set DIV0 int
 

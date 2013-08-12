@@ -1,4 +1,4 @@
-.prog "alu/fp-not-norm-2"
+.prog "alu/fp-denorm-arg2"
 
 ; 4
 ; PRE [0xa0] = 0x4000
