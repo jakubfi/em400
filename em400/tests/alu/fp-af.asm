@@ -47,7 +47,7 @@
 ; XPCT int(r0[0]) : 0
 ; XPCT int(r0[1]) : 0
 ; XPCT int(r0[2]) : 0
-; XPCT int(r0[3]) : 1
+; XPCT int(r0[3]) : 0
 
 ; 1000000001
 ; XPCT hex([0x200]) : 0x7735

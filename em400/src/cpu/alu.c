@@ -93,7 +93,7 @@ int alu_fp_get(uint16_t d1, uint16_t d2, uint16_t d3, double *f, int check_norm)
 		m_f = 0.0f;
 		*f = 0.0f;
 	} else {
-		m_f = (double) m / FP_M_SCALE;
+		m_f = ldexp(m, -(FP_M_BITS-1));
 
 		// expecting normalized input
 		if (check_norm) {
@@ -103,7 +103,7 @@ int alu_fp_get(uint16_t d1, uint16_t d2, uint16_t d3, double *f, int check_norm)
 			}
 		}
 
-		*f = m_f * pow(2, exp);
+		*f = ldexp(m_f, exp);
 	}
 	//printf(" in: (0x%04x 0x%04x 0x%04x) = %.30f = %.30f * 2^%i (m=%li)\n", d1, d2, d3, *f, m_f, exp, m);
 	return 0;
@@ -112,9 +112,17 @@ int alu_fp_get(uint16_t d1, uint16_t d2, uint16_t d3, double *f, int check_norm)
 // -----------------------------------------------------------------------
 void alu_fp_store(double f)
 {
+	// get m, exp
 	int exp;
 	double m = frexp(f, &exp);
-	int64_t m_int = m * FP_M_SCALE;
+
+	// scale m to 64-bit
+	double m_scaled = ldexp(m, FP_M_BITS-1);
+
+	// get fractional and integral part of scaled m
+	double m_fint;
+	double m_frac = modf(m_scaled, &m_fint);
+	int64_t m_int = m_fint;
 
 	// check if exponent fits in 8 bits
 	if (exp > 127) {
@@ -128,6 +136,14 @@ void alu_fp_store(double f)
 	uint16_t d3 = (m_int >> 16) & 0b1111111100000000;
 	d3 |= exp & 255;
 
+	// set C flag
+	if ((m_frac > -0.5) && (m_frac < 0.5)) {
+		Fclr(FL_C);
+	} else {
+		Fset(FL_C);
+	}
+
+	// set Z and M (fp doesn't touch V)
 	if (f == 0) {
 		Fset(FL_Z);
 		Fclr(FL_M);
@@ -158,12 +174,10 @@ void alu_fp_norm()
 // -----------------------------------------------------------------------
 void alu_fp_add(uint16_t d1, uint16_t d2, uint16_t d3, int sign)
 {
-	double f1, f2, mf;
-	int e;
+	double f1, f2;
 	if (!alu_fp_get(R(1), R(2), R(3), &f1, 1)) {
 		if (!alu_fp_get(d1, d2, d3, &f2, 1)) {
 			f2 *= sign;
-			Fclr(FL_C); // TODO: what to do here?
 			f1 += f2;
 			alu_fp_store(f1);
 		}
@@ -177,7 +191,6 @@ void alu_fp_mul(uint16_t d1, uint16_t d2, uint16_t d3)
 	if (!alu_fp_get(R(1), R(2), R(3), &f1, 1)) {
 		if (!alu_fp_get(d1, d2, d3, &f2, 1)) {
 			f1 *= f2;
-			Fclr(FL_C); // TODO: what to do here?
 			alu_fp_store(f1);
 		}
 	}
@@ -193,7 +206,6 @@ void alu_fp_div(uint16_t d1, uint16_t d2, uint16_t d3)
 				int_set(INT_DIV0);
 			} else {
 				f1 /= f2;
-				Fclr(FL_C); // TODO: what to do here?
 				alu_fp_store(f1);
 			}
 		}

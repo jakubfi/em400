@@ -22,7 +22,7 @@
 
 #include "cpu/registers.h"
 
-#define FP_M_SCALE (1UL << 63)
+#define FP_M_BITS 64
 
 void alu_add16(int reg, uint16_t arg, uint16_t carry);
 void alu_add32(uint16_t arg1, uint16_t arg2, int sign);
