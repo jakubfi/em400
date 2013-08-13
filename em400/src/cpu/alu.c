@@ -163,15 +163,7 @@ void alu_fp_add(uint16_t d1, uint16_t d2, uint16_t d3, int sign)
 	if (!alu_fp_get(R(1), R(2), R(3), &f1, 1)) {
 		if (!alu_fp_get(d1, d2, d3, &f2, 1)) {
 			f2 *= sign;
-
-			// check/set/clear C
-			mf = frexp(f1, &e) + frexp(f2, &e);
-			if ((mf <= -1) || (mf >= 1)) {
-				Fset(FL_C);
-			} else {
-				Fclr(FL_C);
-			}
-
+			Fclr(FL_C); // TODO: what to do here?
 			f1 += f2;
 			alu_fp_store(f1);
 		}
