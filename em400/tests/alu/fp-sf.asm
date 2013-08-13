@@ -43,11 +43,10 @@
 ; XPCT int(rz[10]) : 0
 ; XPCT int(sr) : 0
 
-; Z, M, V, C
+; Z, M, V
 ; XPCT int(r0[0]) : 0
 ; XPCT int(r0[1]) : 0
 ; XPCT int(r0[2]) : 0
-; XPCT int(r0[3]) : 0
 
 ; -100.125
 ; XPCT hex([0x203]) : 0x9be0
