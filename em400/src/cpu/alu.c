@@ -117,12 +117,7 @@ void alu_fp_store(double f)
 	double m = frexp(f, &exp);
 
 	// scale m to 64-bit
-	double m_scaled = ldexp(m, FP_M_BITS-1);
-
-	// get fractional and integral part of scaled m
-	double m_fint;
-	double m_frac = modf(m_scaled, &m_fint);
-	int64_t m_int = m_fint;
+	int64_t m_int = ldexp(m, FP_M_BITS-1);
 
 	// check if exponent fits in 8 bits
 	if (exp > 127) {
@@ -137,10 +132,10 @@ void alu_fp_store(double f)
 	d3 |= exp & 255;
 
 	// set C flag
-	if ((m_frac > -0.5) && (m_frac < 0.5)) {
-		Fclr(FL_C);
-	} else {
+	if (m_int & (1L << (FP_M_BITS-1-40))) {
 		Fset(FL_C);
+	} else {
+		Fclr(FL_C);
 	}
 
 	// set Z and M (fp doesn't touch V)
