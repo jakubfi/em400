@@ -1,4 +1,4 @@
-.prog "alu/fp-AF-carry"
+.prog "alu/fp-AF-no-carry"
 
 ; 0.5000000.....00000001
 ; PRE [0xa0] = 0x4000
