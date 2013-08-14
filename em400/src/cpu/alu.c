@@ -105,7 +105,6 @@ int alu_fp_get(uint16_t d1, uint16_t d2, uint16_t d3, double *f, int check_norm)
 
 		*f = ldexp(m_f, exp);
 	}
-	//printf(" in: (0x%04x 0x%04x 0x%04x) = %.30f = %.30f * 2^%i (m=%li)\n", d1, d2, d3, *f, m_f, exp, m);
 	return 0;
 }
 
@@ -156,7 +155,6 @@ void alu_fp_store(double f)
 	Rw(1, d1);
 	Rw(2, d2);
 	Rw(3, d3);
-	//printf("out: (0x%04x 0x%04x 0x%04x) = %.30f = %.30f * 2^%i (m=%li)\n", d1, d2, d3, f, m, exp, m_int);
 }
 
 // -----------------------------------------------------------------------
