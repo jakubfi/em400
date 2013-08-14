@@ -53,8 +53,7 @@ void alu_mul32(int16_t arg)
 	int64_t res = (int16_t) R(2) * arg;
 	alu_set_flag_Z(res, 32);
 	alu_set_flag_M(res, 32);
-	// TODO: overflow? how? why? we always have enough bits to store output
-	Fclr(FL_V);
+	Fclr(FL_V); // it seems that V is always 0 when doing mul32()
 	Rw(1, DWORDl(res));
 	Rw(2, DWORDr(res));
 }

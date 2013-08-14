@@ -5,6 +5,41 @@ Known bugs:
 
 CPU:
 
+* MEGA
+
+I/O:
+
+* mx: review interrupts
+* mx: reset
+* mx: pthread cleanups after shutdown
+* mx: pthread result checks
+* mx: mx_decode_cf_log(): MX_SC_E_DIR_MISMATCH device vs. protocol transmission dricetion check
+
+* mx/winch: reset
+* mx/winch: format
+* mx/winch: format spare
+* mx/winch: mind spare area
+* mx/winch: write
+* mx/winch: handle BASF drive
+
+* console terminal
+* TCP terminal
+* serial terminal
+
+* mx/floppy
+* mx/floppy: handle various floppy trypes
+* mx/terminal
+* mx/printer instead of puncher
+* mx/puncher
+
+* cmem: status (untransmitted)
+
+* cmem/9425: reset
+* cmem/9425: tsr (status read)
+* cmem/9425: tch
+* cmem/9425: ntr
+* cmem/9425: otr
+
 
 Debugger:
 

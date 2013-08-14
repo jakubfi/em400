@@ -109,20 +109,7 @@ struct mx_unit_proto_t mx_unit_proto[] = {
 		mx_terminal_cmd_transmit,
 		MX_PROTO_TERMINAL
 	},
-	{
-		NULL,
-		NULL,
-		NULL,
-		NULL,
-		NULL,
-		NULL,
-		NULL,
-		NULL,
-		NULL,
-		NULL,
-		NULL,
-		-1
-	}
+	{ NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, -1 }
 };
 
 // interrupts for command conditions
