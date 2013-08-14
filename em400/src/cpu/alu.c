@@ -17,6 +17,7 @@
 
 #include <inttypes.h>
 #include <math.h>
+#include <fenv.h>
 
 #include "cpu/alu.h"
 #include "cpu/registers.h"
@@ -111,6 +112,9 @@ int alu_fp_get(uint16_t d1, uint16_t d2, uint16_t d3, double *f, int check_norm)
 // -----------------------------------------------------------------------
 void alu_fp_store(double f)
 {
+	// fetch flags as left by fp operation
+	int fe_flags = fetestexcept(FE_OVERFLOW | FE_UNDERFLOW);
+
 	// get m, exp
 	int exp;
 	double m = frexp(f, &exp);
@@ -118,10 +122,10 @@ void alu_fp_store(double f)
 	// scale m to 64-bit
 	int64_t m_int = ldexp(m, FP_M_BITS-1);
 
-	// check if exponent fits in 8 bits
-	if (exp > 127) {
+	// check host overflow/underflow, check if exponent fits in 8 bits
+	if ((fe_flags & FE_OVERFLOW) || (exp > 127)) {
 		int_set(INT_FP_OF);
-	} else if (exp < -128) {
+	} else if ((fe_flags & FE_UNDERFLOW) || (exp < -128)) {
 		int_set(INT_FP_UF);
 	}
 
@@ -161,6 +165,7 @@ void alu_fp_norm()
 	double f;
 	if (!alu_fp_get(R(1), R(2), R(3), &f, 0)) {
 		Fclr(FL_C);
+		feclearexcept(FE_ALL_EXCEPT);
 		alu_fp_store(f);
 	}
 }
@@ -171,6 +176,7 @@ void alu_fp_add(uint16_t d1, uint16_t d2, uint16_t d3, int sign)
 	double f1, f2;
 	if (!alu_fp_get(R(1), R(2), R(3), &f1, 1)) {
 		if (!alu_fp_get(d1, d2, d3, &f2, 1)) {
+			feclearexcept(FE_ALL_EXCEPT);
 			f2 *= sign;
 			f1 += f2;
 			alu_fp_store(f1);
@@ -184,6 +190,7 @@ void alu_fp_mul(uint16_t d1, uint16_t d2, uint16_t d3)
 	double f1, f2;
 	if (!alu_fp_get(R(1), R(2), R(3), &f1, 1)) {
 		if (!alu_fp_get(d1, d2, d3, &f2, 1)) {
+			feclearexcept(FE_ALL_EXCEPT);
 			f1 *= f2;
 			alu_fp_store(f1);
 		}
@@ -198,7 +205,9 @@ void alu_fp_div(uint16_t d1, uint16_t d2, uint16_t d3)
 		if (!alu_fp_get(d1, d2, d3, &f2, 1)) {
 			if (f2 == 0.0f) {
 				int_set(INT_DIV0);
+				return;
 			} else {
+				feclearexcept(FE_ALL_EXCEPT);
 				f1 /= f2;
 				alu_fp_store(f1);
 			}
