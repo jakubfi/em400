@@ -354,7 +354,7 @@ int decode_mxpst_transmit_winch(struct mx_winch_cf_transmit *t, char *b)
 	int pos = 0;
 
 	pos += sprintf(b+pos, "Starting logical sector: %i\n", t->sector);
-	pos += sprintf(b+pos, "Destination: CPU=%i, NB=%i, ADDR=%i, length=%i\n", t->cpu, t->nb, t->addr, t->len);
+	pos += sprintf(b+pos, "Destination: CPU=%i, NB=%i, ADDR=0x%04x, length=%i\n", t->cpu, t->nb, t->addr, t->len);
 	pos += sprintf(b+pos, "Ignore CRC=%s, Fill last sector=%s, Watch EOF=%s\n", t->ign_crc?"y":"n", t->sector_fill?"y":"n", t->watch_eof?"y":"n");
 
 	return pos;

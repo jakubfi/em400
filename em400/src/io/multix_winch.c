@@ -20,6 +20,7 @@
 #include <arpa/inet.h>
 
 #include "debugger/log.h"
+#include "debugger/decode.h"
 #include "errors.h"
 #include "cpu/memory.h"
 
@@ -242,6 +243,13 @@ void mx_winch_cmd_transmit(struct mx_unit_proto_t *unit, uint16_t addr)
 
 	// decode control field
 	struct mx_winch_cf_t *cf = mx_winch_cf_t_decode(addr);
+
+#ifdef WITH_DEBUGGER
+	char *details = decode_mxpst_winch(addr, 0);
+	LOG(D_IO, 50, "%s", details);
+	free(details);
+#endif
+
 	switch (cf->oper) {
 		case MX_WINCH_FORMAT_SPARE:
 			break;

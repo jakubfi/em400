@@ -41,6 +41,7 @@ enum log_domains {
 	10 = basic cpu cycle, ineffective instructions, more detailed io (channel level, unit level)
 	20 = more cpu cycle, + memory writes and reads
 	30 = more cpu cycle, register writes and reads
+	50 = decoded I/O control fields
 	100 = untraced register reads, untraced memory reads and writes, timer interrupt
 */
 

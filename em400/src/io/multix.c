@@ -34,6 +34,7 @@
 #include "errors.h"
 #include "cpu/interrupts.h"
 #include "debugger/log.h"
+#include "debugger/decode.h"
 
 #define CHAN ((struct mx_chan_t *)(chan))
 
@@ -433,6 +434,12 @@ int mx_cmd_setcfg(struct chan_proto_t *chan, uint16_t *r_arg)
 
 	// decode cf field
 	int res = mx_decode_cf_sc(*r_arg, cf);
+
+#ifdef WITH_DEBUGGER
+	char *details = decode_mxpsuk(*r_arg, 0);
+	LOG(D_IO, 50, "%s", details);
+	free(details);
+#endif
 
 	// decoding failed
 	if (res != E_OK) {
