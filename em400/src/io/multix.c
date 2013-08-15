@@ -595,7 +595,7 @@ void * mx_unit_worker(void *th_id)
 // -----------------------------------------------------------------------
 int mx_cmd(struct chan_proto_t *chan, int dir, uint16_t n_arg, uint16_t *r_arg)
 {
-	unsigned cmd	 = (n_arg & 0b1110000000000000) >> 11;
+	unsigned cmd	 = (n_arg & 0b1110000000000000) >> 13;
 	unsigned chan_cmd= (n_arg & 0b0001100000000000) >> 11;
 	unsigned lline_n = (n_arg & 0b0001111111100000) >> 5;
 

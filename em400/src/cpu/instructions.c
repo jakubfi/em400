@@ -672,7 +672,7 @@ void op_73_hlt()
 	}
 
 	// otherwise, wait for interrupt
-	LOG(D_CPU, 1, "HALT 0%02o", N);
+	LOG(D_CPU, 1, "HALT 0%02o (r6: 0x%04x)", N, regs[6]);
 	pthread_mutex_lock(&int_mutex_rp);
 	while (!RP) {
 		pthread_cond_wait(&int_cond_rp, &int_mutex_rp);

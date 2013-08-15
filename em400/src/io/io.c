@@ -155,14 +155,14 @@ int io_dispatch(int dir, uint16_t n, uint16_t *r)
 		int chan_n = (n & 0b0000000000011110) >> 1;
 		struct chan_proto_t *chan = io_chan[chan_n];
 		int res;
-		if (chan) {
 #ifdef WITH_DEBUGGER
-			char *narg = int2binf("... .. ...... .... .", n, 16);
-			char *rarg = int2binf("", *r, 16);
-			LOG(D_IO, 1, "I/O command, dir = %s, chan = %d, n_arg = %s, r_arg = %s (0x%04x)", dir ? "OUT" : "IN", chan_n, narg, rarg, *r);
-			free(narg);
-			free(rarg);
+		char *narg = int2binf("... .. ...... .... .", n, 16);
+		char *rarg = int2binf("", *r, 16);
+		LOG(D_IO, 1, "I/O command, dir = %s, chan = %d, n_arg = %s, r_arg = %s (0x%04x)", dir ? "OUT" : "IN", chan_n, narg, rarg, *r);
+		free(narg);
+		free(rarg);
 #endif
+		if (chan) {
 			res = chan->cmd(chan, dir, n, r);
 			LOG(D_IO, 1, "I/O command, result = %i", res);
 		} else {

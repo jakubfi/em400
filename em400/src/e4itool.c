@@ -114,7 +114,7 @@ int m9425_idgenf(struct e4i_t *e, uint8_t *buf, int id_len, uint32_t block)
 	*(buf+8) = 0; // crc
 	*(buf+9) = 0;
 	
-	return 0;
+	return 10;
 }
 
 // -----------------------------------------------------------------------
