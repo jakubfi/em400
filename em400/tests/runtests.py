@@ -37,7 +37,7 @@ class TestBed:
         for test_file in self.tests:
             test = Test(test_file)
             result, details = test.run()
-            print "%-30s : %s%s" % (test_file.replace("./", ""), result, details)
+            print("%-30s : %s%s" % (test_file.replace("./", ""), result, details))
 
 # ------------------------------------------------------------------------
 class Test:
@@ -62,7 +62,7 @@ class Test:
             self.execute()
             result = "PASSED"
             phase = ""
-        except Exception, e:
+        except Exception as e:
             result = "FAILED"
             details = " at %s: %s" % (phase, str(e))
 
@@ -130,7 +130,7 @@ class Test:
         if self.pre:
             args += ["-x", self.pre]
 
-        o = subprocess.check_output(args)
+        o = subprocess.check_output(args).decode("utf-8")
 
         tres = re.findall("TEST RESULT: (.*)\n", o)
 
