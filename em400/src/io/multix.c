@@ -1,4 +1,4 @@
-//  Copyright (c) 2013 Jakub Filipowicz <jakubf@gmail.com>
+//  Copyright (c) 2013 Jakub Filipowicz <jakubf@gmail.com>goto fail;
 //
 //  This program is free software; you can redistribute it and/or modify
 //  it under the terms of the GNU General Public License as published by
@@ -162,7 +162,8 @@ struct chan_proto_t * mx_create(struct cfg_unit_t *units)
 {
 	struct mx_chan_t *chan = calloc(1, sizeof(struct mx_chan_t));
 	if (!chan) {
-		return NULL;
+		gerr = E_ALLOC;
+		goto fail;
 	}
 
 	pthread_mutexattr_t attr;
@@ -174,16 +175,15 @@ struct chan_proto_t * mx_create(struct cfg_unit_t *units)
 		struct mx_unit_proto_t *proto = mx_unit_proto_get_by_name(mx_unit_proto, cunit->name);
 		if (!proto) {
 			gerr = E_IO_UNIT_UNKNOWN;
-			free(chan);
-			return NULL;
+			goto fail;
 		}
 
 		eprint("    Unit %i: %s\n", cunit->num, proto->name);
 
 		struct mx_unit_proto_t *unit = proto->create(cunit->args);
 		if (!unit) {
-			free(chan);
-			return NULL;
+			gerr = E_ALLOC;
+			goto fail;
 		}
 
 		// set up worker thread
@@ -195,9 +195,8 @@ struct chan_proto_t * mx_create(struct cfg_unit_t *units)
 		pthread_cond_init(&unit->worker_cond, NULL);
 		int res = pthread_create(&unit->worker, NULL, mx_unit_worker, (void *)unit);
 		if (res != 0) {
-			unit->shutdown(unit);
 			gerr = E_THREAD;
-			return NULL;
+			goto fail;
 		}
 
 		// fill in functions
@@ -228,7 +227,12 @@ struct chan_proto_t * mx_create(struct cfg_unit_t *units)
 		CHAN->pline[unit->phy_num] = unit;
 		cunit = cunit->next;
 	}
+
 	return (struct chan_proto_t*) chan;
+
+fail:
+	mx_shutdown((struct chan_proto_t*) chan);
+	return NULL;
 }
 
 // -----------------------------------------------------------------------
@@ -284,6 +288,11 @@ void mx_int_report(struct mx_chan_t *chan)
 void mx_int(struct mx_chan_t *chan, int unit_n, int interrupt)
 {
 	struct mx_int_t *mx_int = malloc(sizeof(struct mx_int_t));
+	if (!mx_int) {
+		LOG(D_IO, 1, "MULTIX (ch:%i) cannot allocate memory for interrupt, interrupt LOST: spec:%i, unit: %i", chan->proto.num, interrupt, unit_n);
+		return;
+	}
+
 	mx_int->unit_n = unit_n;
 	mx_int->interrupt = interrupt;
 	mx_int->next = NULL;
@@ -571,7 +580,10 @@ void * mx_unit_worker(void *th_id)
 		}
 
 		// worker thread is done
-		if (unit->worker_cmd == -1) break;
+		if (unit->worker_cmd == -1) {
+			pthread_mutex_unlock(&unit->worker_mutex);
+			break;
+		}
 
 		// do the work
 		switch (unit->worker_dir<<7 | unit->worker_cmd) {
@@ -585,7 +597,9 @@ void * mx_unit_worker(void *th_id)
 				unit->cmd_status(unit, unit->worker_addr);
 				break;
 			case IO_OU<<7 | MX_LCMD_TRANSMIT:
+				pthread_mutex_trylock(&unit->transmit_mutex);
 				unit->cmd_transmit(unit, unit->worker_addr);
+				pthread_mutex_unlock(&unit->transmit_mutex);
 				break;
 			default:
 				break;
@@ -596,6 +610,7 @@ void * mx_unit_worker(void *th_id)
 		pthread_mutex_unlock(&unit->worker_mutex);
 	}
 
+	LOG(D_IO, 20, "MULTIX line %i: exiting worker loop", unit->log_num);
 	pthread_exit(NULL);
 }
 
@@ -660,6 +675,10 @@ int mx_cmd(struct chan_proto_t *chan, int dir, uint16_t n_arg, uint16_t *r_arg)
 }
 
 // -----------------------------------------------------------------------
+// ---- decode control fields --------------------------------------------
+// -----------------------------------------------------------------------
+
+// -----------------------------------------------------------------------
 struct mx_cf_sc_pl * mx_decode_cf_find_phy(struct mx_cf_sc_pl *phys, int count, int id)
 {
 	struct mx_cf_sc_pl *phy = phys;
@@ -682,6 +701,9 @@ int mx_decode_cf_phy(int addr, struct mx_cf_sc_pl *phy, int offset)
 	phy->count = (data & 0b0000000000011111) + 1;
 	phy->offset = offset;
 	phy->logical_configured = calloc(phy->count, sizeof(int));
+	if (!phy->logical_configured) {
+		return MX_SC_E_NOMEM;
+	}
 
 	if (phy->used) {
 		// check type for correctness
@@ -849,20 +871,14 @@ int mx_decode_cf_sc(int addr, struct mx_cf_sc *cf)
 void mx_free_cf_sc(struct mx_cf_sc *cf)
 {
 	if (cf->pl) {
-		if (cf->pl->logical_configured) {
-			free(cf->pl->logical_configured);
-		}
+		free(cf->pl->logical_configured);
 		free(cf->pl);
 	}
 
 	if (cf->ll) {
 		for (int i=0 ; i<cf->ll_desc_count ; i++) {
-			if (cf->ll[i].winch) {
-				free(cf->ll[i].winch);
-			}
-			if (cf->ll[i].floppy) {
-				free(cf->ll[i].floppy);
-			}
+			free(cf->ll[i].winch);
+			free(cf->ll[i].floppy);
 		}
 		free(cf->ll);
 	}

@@ -30,59 +30,56 @@
 struct mx_unit_proto_t * mx_floppy_create(struct cfg_arg_t *args)
 {
 	char *image_name = NULL;
+	struct e4i_t *floppy = NULL;
+	struct mx_unit_proto_t *unit = NULL;
 	int res;
+
+	unit = mx_floppy_create_nodev();
+	if (!unit) {
+		gerr = E_ALLOC;
+		goto fail;
+	}
+
 	res = cfg_args_decode(args, "s", &image_name);
 	if (res != E_OK) {
 		gerr = res;
-		return NULL;
+		goto fail;
 	}
 
-	struct e4i_t *floppy = e4i_open(image_name);
-	res = E_OK;
+	floppy = e4i_open(image_name);
+	mx_floppy_connect(UNIT, floppy);
 
 	if (!floppy) {
 		printf("Error opening image %s: %s\n", image_name, e4i_get_err(e4i_err));
 		res = E_IMAGE;
+		goto fail;
 	}
 
 	if (floppy->img_type != E4I_T_FLOPPY) {
 		printf("Error opening image %s: wrong image type, expecting floppy\n", image_name);
 		res = E_IMAGE;
+		goto fail;
 	}
 
-	if ((floppy->cylinders != 80) || (floppy->heads != 2) || (floppy->spt != 15) || (floppy->block_size != 512)) {
+	if ((floppy->cylinders != 80)
+	|| (floppy->heads != 2)
+	|| (floppy->spt != 15)
+	|| (floppy->block_size != 512)) {
 		printf("Error opening image %s: wrong geometry\n", image_name);
 		res = E_IMAGE;
-	}
-
-	if (res != E_OK) {
-		free(image_name);
-		if (floppy) {
-			e4i_close(floppy);
-		}
-		gerr = res;
-		return NULL;
-	}
-
-
-	if (res != E_OK) {
-		free(image_name);
-		return NULL;
+		goto fail;
 	}
 
 	eprint("      Floppy: cyl=%i, head=%i, sectors=%i, spt=%i, image=%s\n", floppy->cylinders, floppy->heads, floppy->spt, floppy->block_size, image_name);
 
-	struct mx_unit_proto_t *unit = mx_floppy_create_nodev();
-	if (!unit) {
-		e4i_close(floppy);
-		free(image_name);
-		gerr = E_ALLOC;
-		return NULL;
-	}
-
-	mx_floppy_connect(UNIT, floppy);
 	free(image_name);
+	image_name = NULL;
 	return unit;
+
+fail:
+	free(image_name);
+	mx_floppy_shutdown(unit);
+	return NULL;
 }
 
 // -----------------------------------------------------------------------
@@ -108,8 +105,10 @@ void mx_floppy_disconnect(struct mx_unit_floppy_t *unit)
 // -----------------------------------------------------------------------
 void mx_floppy_shutdown(struct mx_unit_proto_t *unit)
 {
-	mx_floppy_disconnect(UNIT);
-	free(UNIT);
+	if (unit) {
+		mx_floppy_disconnect(UNIT);
+		free(UNIT);
+	}
 }
 
 // -----------------------------------------------------------------------
@@ -171,9 +170,6 @@ void mx_floppy_cmd_status(struct mx_unit_proto_t *unit, uint16_t addr)
 // -----------------------------------------------------------------------
 void mx_floppy_cmd_transmit(struct mx_unit_proto_t *unit, uint16_t addr)
 {
-    // we're transmitting
-    pthread_mutex_trylock(&unit->transmit_mutex);
-
     LOG(D_IO, 1, "MULTIX/floppy (line:%i): transmit", unit->log_num);
     int ret = E_OK;
     //MEMBw(0, addr+6, cf->ret_len);
@@ -186,9 +182,6 @@ void mx_floppy_cmd_transmit(struct mx_unit_proto_t *unit, uint16_t addr)
         //MEMBw(0, addr+6, cf->ret_status);
         mx_int(unit->chan, unit->log_num, MX_INT_ITRER);
     }
-
-    // done transmitting
-    pthread_mutex_unlock(&unit->transmit_mutex);
 }
 
 // -----------------------------------------------------------------------
@@ -197,7 +190,7 @@ struct mx_floppy_cf_t * mx_floppy_cf_t_decode(int addr)
 	uint16_t data;
 	struct mx_floppy_cf_t *cf = calloc(1, sizeof(struct mx_floppy_cf_t));
 	if (!cf) {
-		return NULL;
+		goto fail;
 	}
 
 	data = MEMB(0, addr);
@@ -206,11 +199,17 @@ struct mx_floppy_cf_t * mx_floppy_cf_t_decode(int addr)
 		case MX_FLOPPY_FORMAT:
 			data = MEMB(0, addr+3);
 			cf->format = calloc(1, sizeof(struct mx_floppy_cf_format));
+			if (!cf->format) {
+				goto fail;
+			}
 			cf->format->start_sector = data;
 			break;
 		case MX_FLOPPY_READ:
 		case MX_FLOPPY_WRITE:
 			cf->transmit = calloc(1, sizeof(struct mx_floppy_cf_transmit));
+			if (!cf->transmit) {
+				goto fail;
+			}
 			cf->transmit->ign_crc		= (data & 0b0001000000000000) >> 12;
 			cf->transmit->cpu			= (data & 0b0000000000010000) >> 4;
 			cf->transmit->nb			= (data & 0b0000000000001111);
@@ -222,23 +221,30 @@ struct mx_floppy_cf_t * mx_floppy_cf_t_decode(int addr)
 			cf->transmit->sector = data << 16;
 			break;
 		case MX_FLOPPY_BAD_SECTOR:
-			data = MEMB(0, addr+3);
 			cf->bad_sector = calloc(1, sizeof(struct mx_floppy_cf_bad_sector));
+			if (!cf->bad_sector) {
+				goto fail;
+			}
+			data = MEMB(0, addr+3);
 			cf->bad_sector->sector = data;
 			break;
 		default:
-			break;
+			goto fail;
 	}
 
 	return cf;
+
+fail:
+	mx_floppy_cf_t_free(cf);
+	return NULL;
 }
 
 // -----------------------------------------------------------------------
 void mx_floppy_cf_t_free(struct mx_floppy_cf_t *cf)
 {
-	if (cf->format) free(cf->format);
-	if (cf->transmit) free(cf->transmit);
-	if (cf->bad_sector) free(cf->bad_sector);
+	free(cf->format);
+	free(cf->transmit);
+	free(cf->bad_sector);
 	free(cf);
 }
 

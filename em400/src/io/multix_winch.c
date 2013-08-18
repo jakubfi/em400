@@ -33,61 +33,63 @@
 struct mx_unit_proto_t * mx_winch_create(struct cfg_arg_t *args)
 {
 	char *image_name = NULL;
+	struct e4i_t *winchester = NULL;
+	struct mx_unit_proto_t *unit = NULL;
 	int res;
+
+	unit = mx_winch_create_nodev();
+	if (!unit) {
+		gerr = E_ALLOC;
+		goto fail;
+	}
+
 	res = cfg_args_decode(args, "s", &image_name);
 	if (res != E_OK) {
 		gerr = res;
-		return NULL;
+		goto fail;
 	}
 
-	struct e4i_t *winchester = e4i_open(image_name);
-	res = E_OK;
+	winchester = e4i_open(image_name);
+	mx_winch_connect(UNIT, winchester);
 
 	if (!winchester) {
 		printf("Error opening image %s: %s\n", image_name, e4i_get_err(e4i_err));
-		res = E_IMAGE;
+		gerr = E_IMAGE;
+		goto fail;
 	}
 
 	if (winchester->img_type != E4I_T_HDD) {
 		printf("Error opening image %s: wrong image type, expecting hdd\n", image_name);
-		res = E_IMAGE;
+		gerr = E_IMAGE;
+		goto fail;
 	}
 
-	if ((winchester->cylinders != 615) || (winchester->heads != 4) || (winchester->spt != 16) || (winchester->block_size != 512)) {
+	if ((winchester->cylinders != 615)
+	|| (winchester->heads != 4)
+	|| (winchester->spt != 16)
+	|| (winchester->block_size != 512)) {
 		printf("Error opening image %s: wrong geometry\n", image_name);
-		res = E_IMAGE;
-	}
-
-	if (res != E_OK) {
-		free(image_name);
-		if (winchester) {
-			e4i_close(winchester);
-		}
-		gerr = res;
-		return NULL;
+		gerr = E_IMAGE;
+		goto fail;
 	}
 
 	eprint("      Winchester: cyl=%i, head=%i, sectors=%i, spt=%i, image=%s\n", winchester->cylinders, winchester->heads, winchester->spt, winchester->block_size, image_name);
 
-	struct mx_unit_proto_t *unit = mx_winch_create_nodev();
-	if (!unit) {
-		e4i_close(winchester);
-		free(image_name);
-		gerr = E_ALLOC;
-		return NULL;
-	}
-
 	free(image_name);
-	mx_winch_connect(UNIT, winchester);
-
+	image_name = NULL;
 	return unit;
+
+fail:
+	free(image_name);
+	mx_winch_shutdown(unit);
+	return NULL;
 }
 
 // -----------------------------------------------------------------------
 struct mx_unit_proto_t * mx_winch_create_nodev()
 {
 	struct mx_unit_winch_t *unit = calloc(1, sizeof(struct mx_unit_winch_t));
-	return (struct mx_unit_proto_t *) unit;
+	return (struct mx_unit_proto_t*) unit;
 }
 
 // -----------------------------------------------------------------------
@@ -106,8 +108,10 @@ void mx_winch_disconnect(struct mx_unit_winch_t *unit)
 // -----------------------------------------------------------------------
 void mx_winch_shutdown(struct mx_unit_proto_t *unit)
 {
-	mx_winch_disconnect(UNIT);
-	free(UNIT);
+	if (unit) {
+		mx_winch_disconnect(UNIT);
+		free(UNIT);
+	}
 }
 
 // -----------------------------------------------------------------------
@@ -169,19 +173,24 @@ void mx_winch_cmd_status(struct mx_unit_proto_t *unit, uint16_t addr)
 int mx_winch_read(struct mx_unit_proto_t *unit, struct mx_winch_cf_t *cf)
 {
 	int ret = E_OK;
+	cf->ret_len = 0;
 
 	// first physical cylinder is used by multix for relocated sectors
 	int offset = UNIT->winchester->heads * UNIT->winchester->spt;
 	uint8_t *buf = malloc(UNIT->winchester->block_size);
 
+	if (!buf) {
+		cf->ret_status = MX_WS_ERR | MX_WS_REJECTED;
+		return E_MX_TRANSMISSION;
+	}
+
 	int buf_pos = 0;
 	int sector = 0;
-	cf->ret_len = 0;
 
 	// transmit data into buffer, sector by sector
 	while (cf->ret_len < cf->transmit->len) {
 
-		// still allowed to transmit?
+		// check if we are still allowed to transmit
 		if (pthread_mutex_trylock(&unit->transmit_mutex) == 0) {
 			pthread_mutex_unlock(&unit->transmit_mutex);
 			ret = E_MX_CANCEL;
@@ -227,22 +236,25 @@ int mx_winch_read(struct mx_unit_proto_t *unit, struct mx_winch_cf_t *cf)
 // -----------------------------------------------------------------------
 void mx_winch_cmd_transmit(struct mx_unit_proto_t *unit, uint16_t addr)
 {
-	// we're transmitting
-	pthread_mutex_trylock(&unit->transmit_mutex);
+	uint16_t addr_len = addr + 5;
+	uint16_t addr_status = addr + 6;
+	int ret = E_OK;
 
 	LOG(D_IO, 1, "MULTIX/winchester (line:%i): transmit", unit->log_num);
 
 	// disk is not connected
 	if (!UNIT->winchester) {
-		MEMBw(0, addr+6, MX_WS_ERR | MX_WS_REJECTED);
+		MEMBw(0, addr_status, MX_WS_ERR | MX_WS_REJECTED);
 		mx_int(unit->chan, unit->log_num, MX_INT_ITRER);
 		return;
 	}
 
-	int ret = E_OK;
-
 	// decode control field
 	struct mx_winch_cf_t *cf = mx_winch_cf_t_decode(addr);
+	if (!cf) {
+		mx_int(unit->chan, unit->log_num, MX_INT_INTRA);
+		return;
+	}
 
 #ifdef WITH_DEBUGGER
 	char *details = decode_mxpst_winch(addr, 0);
@@ -262,30 +274,25 @@ void mx_winch_cmd_transmit(struct mx_unit_proto_t *unit, uint16_t addr)
 			break;
 		case MX_WINCH_PARK:
 			// trrrrrrrrrrrr... done.
-			ret = E_OK;
 			break;
-		default:
-			// shouldn't happen
+		default: // shouldn't happen, set 'transmit rejected' interrupt
 			mx_int(unit->chan, unit->log_num, MX_INT_INTRA);
 			mx_winch_cf_t_free(cf);
 			return;
 	}
 
-	MEMBw(0, addr+5, cf->ret_len);
-	MEMBw(0, addr+6, cf->ret_status);
+	MEMBw(0, addr_len, cf->ret_len);
+	MEMBw(0, addr_status, cf->ret_status);
 
-	if (ret == E_OK) {
+	if (ret == E_OK) { // transmission finished OK
 		mx_int(unit->chan, unit->log_num, MX_INT_IETRA);
-	} else if (ret == E_MX_CANCEL) {
+	} else if (ret == E_MX_CANCEL) { // transmission cancelled
 		mx_int(unit->chan, unit->log_num, MX_INT_ITRAB);
-	} else {
+	} else { // transmission finished with error
 		mx_int(unit->chan, unit->log_num, MX_INT_ITRER);
 	}
 
 	mx_winch_cf_t_free(cf);
-
-	// done transmitting
-	pthread_mutex_unlock(&unit->transmit_mutex);
 }
 
 // -----------------------------------------------------------------------
@@ -293,15 +300,20 @@ struct mx_winch_cf_t * mx_winch_cf_t_decode(int addr)
 {
 	uint16_t data;
 	struct mx_winch_cf_t *cf = calloc(1, sizeof(struct mx_winch_cf_t));
+
 	if (!cf) {
-		return NULL;
+		goto fail;
 	}
 
 	data = MEMB(0, addr);
 	cf->oper = (data & 0b0000001100000000) >> 8;
+
 	switch (cf->oper) {
 		case MX_WINCH_FORMAT_SPARE:
 			cf->format = calloc(1, sizeof(struct mx_winch_cf_format));
+			if (!cf->format) {
+				goto fail;
+			}
 			data = MEMB(0, addr+1);
 			cf->format->sector_map = data;
 			data = MEMB(0, addr+2);
@@ -310,11 +322,13 @@ struct mx_winch_cf_t * mx_winch_cf_t_decode(int addr)
 			cf->format->start_sector += data;
 			break;
 		case MX_WINCH_FORMAT:
-			// nothing else
 			break;
 		case MX_WINCH_READ:
 		case MX_WINCH_WRITE:
 			cf->transmit = calloc(1, sizeof(struct mx_winch_cf_transmit));
+			if (!cf->transmit) {
+				goto fail;
+			}
 			cf->transmit->ign_crc		= (data & 0b0001000000000000) >> 12;
 			cf->transmit->sector_fill	= (data & 0b0000100000000000) >> 11;
 			cf->transmit->watch_eof		= (data & 0b0000010000000000) >> 10;
@@ -331,22 +345,29 @@ struct mx_winch_cf_t * mx_winch_cf_t_decode(int addr)
 			break;
 		case MX_WINCH_PARK:
 			cf->park = calloc(1, sizeof(struct mx_winch_cf_park));
+			if (!cf->park) {
+				goto fail;
+			}
 			data = MEMB(0, addr+4);
 			cf->park->cylinder = data;
 			break;
 		default:
-			break;
+			goto fail;
 	}
 
 	return cf;
+
+fail:
+	mx_winch_cf_t_free(cf);
+	return NULL;
 }
 
 // -----------------------------------------------------------------------
 void mx_winch_cf_t_free(struct mx_winch_cf_t *cf)
 {
-	if (cf->format) free(cf->format);
-	if (cf->park) free(cf->park);
-	if (cf->transmit) free(cf->transmit);
+	free(cf->format);
+	free(cf->park);
+	free(cf->transmit);
 	free(cf);
 }
 

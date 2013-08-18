@@ -9,6 +9,8 @@ CPU:
 
 I/O:
 
+* pthread_join()
+
 * mx: review interrupts
 * mx: reset
 * mx: pthread cleanups after shutdown

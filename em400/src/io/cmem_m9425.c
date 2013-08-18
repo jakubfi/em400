@@ -29,108 +29,77 @@
 // -----------------------------------------------------------------------
 struct cmem_unit_proto_t * cmem_m9425_create(struct cfg_arg_t *args)
 {
-	char *image_bottom = NULL;
-	char *image_top = NULL;
+	char *image_name[2] = { NULL, NULL };
+	struct cmem_unit_m9425_t *unit = calloc(1, sizeof(struct cmem_unit_m9425_t));
 	int res;
-	res = cfg_args_decode(args, "ss", &image_bottom, &image_top);
-	if (res != E_OK) {
-		gerr = res;
-		return NULL;
+
+	if (!unit) {
+		goto fail;
 	}
 
-	res = E_OK;
-
-	struct e4i_t *disk_bottom = e4i_open(image_bottom);
-	if (!disk_bottom) {
-		printf("Error opening image %s: %s\n", image_bottom, e4i_get_err(e4i_err));
-		res = E_IMAGE;
-	}
-
-	if (disk_bottom->img_type != E4I_T_HDD) {
-		printf("Error opening image %s: wrong image type, expecting hdd\n", image_bottom);
-		res = E_IMAGE;
-	}
-
-	if ((disk_bottom->cylinders != 203) || (disk_bottom->heads != 2) || (disk_bottom->spt != 12) || (disk_bottom->block_size != 512)) {
-		printf("Error opening image %s: wrong geometry\n", image_bottom);
-		res = E_IMAGE;
-	}
-
-	if (!strcmp(image_top, image_bottom)) {
+	if ((image_name[0] || image_name[1]) && !strcmp(image_name[0], image_name[1])) {
 		printf("Error opening image: Trying to use the same image for fixed and removable disk");
 		res = E_IMAGE;
+		goto fail;
 	}
 
+	res = cfg_args_decode(args, "ss", &image_name[0], &image_name[1]);
 	if (res != E_OK) {
-		free(image_bottom);
-		if (disk_bottom) {
-			e4i_close(disk_bottom);
-		}
 		gerr = res;
-		return NULL;
+		goto fail;
 	}
 
-	struct e4i_t *disk_top = e4i_open(image_top);
-	if (!disk_top) {
-		printf("Error opening image %s: %s\n", image_top, e4i_get_err(e4i_err));
-		res = E_IMAGE;
-	}
-	if (disk_top->img_type != E4I_T_HDC) {
-		printf("Error opening image %s: wrong image type, expecting hdc\n", image_top);
-		res = E_IMAGE;
-	}
+	for (int i=0 ; i<=1 ; i++) {
+		UNIT->disk[i] = e4i_open(image_name[i]);
 
-	if ((disk_top->cylinders != 203) || (disk_top->heads != 2) || (disk_top->spt != 12) || (disk_top->block_size != 512)) {
-		printf("Error opening image %s: wrong geometry\n", image_top);
-		res = E_IMAGE;
-	}
-
-	if (res != E_OK) {
-		free(image_top);
-		free(image_bottom);
-		e4i_close(disk_bottom);
-		if (disk_top) {
-			e4i_close(disk_top);
+		if (!UNIT->disk[i]) {
+			printf("Error opening image %s: %s\n", image_name[i], e4i_get_err(e4i_err));
+			res = E_IMAGE;
+			goto fail;
 		}
-		gerr = res;
-		return NULL;
+
+		if (UNIT->disk[i]->img_type != E4I_T_HDD) {
+			printf("Error opening image %s: wrong image type, expecting hdd\n", image_name[i]);
+			res = E_IMAGE;
+			goto fail;
+		}
+
+		if ((UNIT->disk[i]->cylinders != 203) || (UNIT->disk[i]->heads != 2) || (UNIT->disk[i]->spt != 12) || (UNIT->disk[i]->block_size != 512)) {
+			printf("Error opening image %s: wrong geometry\n", image_name[i]);
+			res = E_IMAGE;
+			goto fail;
+		}
+		eprint("      MERA 9425 (plate %i): cyl=%i, head=%i, sectors=%i, spt=%i, image=%s\n", i, UNIT->disk[i]->cylinders, UNIT->disk[i]->heads, UNIT->disk[i]->spt, UNIT->disk[i]->block_size, image_name[i]);
+		free(image_name[i]);
+		image_name[i] = NULL;
 	}
 
-	eprint("      MERA 9425 fixed    : cyl=%i, head=%i, sectors=%i, spt=%i, image=%s\n", disk_bottom->cylinders, disk_bottom->heads, disk_bottom->spt, disk_bottom->block_size, image_bottom);
-	eprint("      MERA 9425 removable: cyl=%i, head=%i, sectors=%i, spt=%i, image=%s\n", disk_top->cylinders, disk_top->heads, disk_top->spt, disk_top->block_size, image_top);
-
-	struct cmem_unit_m9425_t *unit = calloc(1, sizeof(struct cmem_unit_m9425_t));
-	if (!unit) {
-		free(image_top);
-		free(image_bottom);
-		cmem_m9425_shutdown((struct cmem_unit_proto_t *)unit);
-		return NULL;
-	}
-
-	UNIT->disk[0] = disk_bottom;
-	UNIT->disk[1] = disk_top;
-
-	res = pthread_create(&unit->worker, NULL, cmem_m9425_worker, (void *)unit);
+	res = pthread_create(&unit->worker, NULL, cmem_m9425_worker, (void*) unit);
 	if (res != 0) {
-		free(image_top);
-		free(image_bottom);
-		cmem_m9425_shutdown((struct cmem_unit_proto_t *)unit);
 		gerr = E_THREAD;
-		return NULL;
+		goto fail;
 	}
-
-	free(image_top);
-	free(image_bottom);
 
 	return (struct cmem_unit_proto_t *) unit;
+
+fail:
+	for (int i=0 ; i<=1 ; i++) {
+		free(image_name[i]);
+	}
+	cmem_m9425_shutdown((struct cmem_unit_proto_t*) unit);
+	return NULL;
 }
 
 // -----------------------------------------------------------------------
 void cmem_m9425_shutdown(struct cmem_unit_proto_t *unit)
 {
-	e4i_close(UNIT->disk[0]);
-	e4i_close(UNIT->disk[1]);
-	free(UNIT);
+	if (unit) {
+		for (int i=0 ; i<=1 ; i++) {
+			e4i_close(UNIT->disk[i]);
+			UNIT->disk[i] = NULL;
+		}
+		free(UNIT);
+	}
 }
 
 // -----------------------------------------------------------------------
