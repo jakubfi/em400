@@ -37,6 +37,20 @@
 int16_t N;
 
 // -----------------------------------------------------------------------
+void cpu_no_sint()
+{
+	struct opdef *op = iset_73;
+	int deactivated = 0;
+	while (deactivated != 2) {
+		if ((op->opcode == 0b1010100) || (op->opcode == 0b0010100)) {
+			op->op_fun = NULL;
+			deactivated++;
+		}
+		op++;
+	}
+}
+
+// -----------------------------------------------------------------------
 void cpu_reset()
 {
 	for (int i=0 ; i<R_MAX ; i++) {

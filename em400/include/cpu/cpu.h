@@ -20,6 +20,7 @@
 
 #include <inttypes.h>
 
+void cpu_no_sint();
 void cpu_reset();
 void cpu_step();
 

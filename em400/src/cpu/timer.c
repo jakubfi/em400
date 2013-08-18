@@ -28,6 +28,8 @@
 pthread_mutex_t timer_active = PTHREAD_MUTEX_INITIALIZER;
 pthread_t timer_th;
 
+int timer_interrupt = INT_TIMER;
+
 // -----------------------------------------------------------------------
 void * timer_thread(void *ptr)
 {
@@ -44,7 +46,7 @@ void * timer_thread(void *ptr)
 			pthread_mutex_unlock(&timer_active);
 			break;
 		}
-		int_set(INT_TIMER);
+		int_set(timer_interrupt);
 	}
 	pthread_exit(NULL);
 }
@@ -57,6 +59,10 @@ int timer_init()
 		return E_OK;
 	} else {
 		eprint("Starting timer: %i ms\n", em400_cfg.cpu.timer_step);
+		// if mod_sint is enabled, move timer interrupt to INT_EXTRA (11)
+		if (em400_cfg.cpu.mod_sint) {
+			timer_interrupt = INT_EXTRA;
+		}
 		pthread_mutex_lock(&timer_active);
 		if (pthread_create(&timer_th, NULL, timer_thread, NULL)) {
 			return E_THREAD;

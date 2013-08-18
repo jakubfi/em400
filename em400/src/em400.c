@@ -76,6 +76,11 @@ void em400_init()
 
 	cpu_reset();
 
+	// deactivate sint/sind instructions if running without cpu.mod_sint
+	if (!em400_cfg.cpu.mod_sint) {
+		cpu_no_sint();
+	}   
+
 	res = mem_init();
 	if (res != E_OK) {
 		eerr("Error initializing memory: %s\n", get_error(res));
