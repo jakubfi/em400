@@ -49,7 +49,7 @@ suffix_op		[,\(]
 dec				[0-9]+
 oct				0[0-7]+
 dchar			!..
-r40				\$[A-Z0-9\ ]{1,3}
+r40				\$[A-Z0-9\ _%#]{1,3}
 bitmask			\?[ZMVCLEGYX1234567]{1,16}
 sfloat			[0-9]*\.[0-9]+
 string			\".+\"
@@ -101,7 +101,13 @@ echars			[\)\.]
 		} else if ((*s >= '0') && (*s <= '9')) {
 			val = *s - 21;
 		} else if (*s == ' ') {
-			val = 37; // TODO: ????
+			val = 0;
+		} else if (*s == '_') {
+			val = 37;
+		} else if (*s == '%') {
+			val = 38;
+		} else if (*s == '#') {
+			val = 39;
 		} else {
 			c_yyerror("wrong R-40 code: %s", c_yytext);
 			return YERR;
