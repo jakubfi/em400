@@ -34,7 +34,7 @@ void op_bn();
 void op_ou();
 void op_in();
 
-void op_37();
+struct opdef * op_37();
 
 void op_aw();
 void op_ac();
@@ -62,14 +62,14 @@ void op_lwt();
 void op_lws();
 void op_rws();
 
-void op_70();
-void op_71();
-void op_72();
-void op_73();
-void op_74();
-void op_75();
-void op_76();
-void op_77();
+struct opdef * op_70();
+struct opdef * op_71();
+struct opdef * op_72();
+struct opdef * op_73();
+struct opdef * op_74();
+struct opdef * op_75();
+struct opdef * op_76();
+struct opdef * op_77();
 
 void op_37_ad();
 void op_37_sd();

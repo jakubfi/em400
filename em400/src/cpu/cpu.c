@@ -37,13 +37,13 @@
 int16_t N;
 
 // -----------------------------------------------------------------------
-void cpu_no_sint()
+void cpu_disable_sint()
 {
 	struct opdef *op = iset_73;
 	int deactivated = 0;
 	while (deactivated != 2) {
 		if ((op->opcode == 0b1010100) || (op->opcode == 0b0010100)) {
-			op->op_fun = NULL;
+			op->fun = NULL;
 			deactivated++;
 		}
 		op++;
@@ -69,14 +69,15 @@ void cpu_step()
 
 	// fetch instruction
 	regs[R_IR] = nMEM(nR(R_IC));
-	LOG(D_CPU, 10, "---- Cycle: Q:NB = %d:%d, IC = 0x%04x ------------", SR_Q, SR_NB, regs[R_IC]);
+	LOG(D_CPU, 10, "---- Cycle: Q:NB = %d:%d, IC = 0x%04x IR = 0x%04x ------------", SR_Q, SR_NB, regs[R_IC], regs[R_IR]);
 	regs[R_IC]++;
 
-	op = iset+IR_OP;
-	op_fun = op->op_fun;
-	if (op->e_opdef) {
-		op = op->e_opdef;
+	op = iset + IR_OP;
+	if (op->get_eop) {
+		op = op->get_eop();
 	}
+
+	op_fun = op->fun;
 
 	// fetch M-arg if present
 	if (op->norm_arg) {

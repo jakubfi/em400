@@ -56,7 +56,7 @@ struct opdef iset[] = {
 	{ 035, true, false, false, op_ou, NULL },
 	{ 036, true, false, false, op_in, NULL },
 
-	{ 037, true, false, false, op_37, iset_37 },
+	{ 037, true, false, false, NULL, op_37 },
 
 	{ 040, true, false, false, op_aw, NULL },
 	{ 041, true, false, false, op_ac, NULL },
@@ -84,14 +84,14 @@ struct opdef iset[] = {
 	{ 066, false, true, false, op_lws, NULL },
 	{ 067, false, true, false, op_rws, NULL },
 
-	{ 070, false, true,  false, op_70, iset_70 },
-	{ 071, false, false, false, op_71, iset_71 },
-	{ 072, false, false, false, op_72, iset_72 },
-	{ 073, false, false, true,  op_73, iset_73 },
-	{ 074, true,  false, false, op_74, iset_74 },
-	{ 075, true,  false, false, op_75, iset_75 },
-	{ 076, true,  false, false, op_76, iset_76 },
-	{ 077, true,  false, false, op_77, iset_77 }
+	{ 070, false, true,  false, NULL, op_70 },
+	{ 071, false, false, false, NULL, op_71 },
+	{ 072, false, false, false, NULL, op_72 },
+	{ 073, false, false, true,  NULL, op_73 },
+	{ 074, true,  false, false, NULL, op_74 },
+	{ 075, true,  false, false, NULL, op_75 },
+	{ 076, true,  false, false, NULL, op_76 },
+	{ 077, true,  false, false, NULL, op_77 }
 };
 
 struct opdef iset_37[] = {
