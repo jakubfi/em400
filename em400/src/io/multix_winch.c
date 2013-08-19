@@ -208,6 +208,7 @@ int mx_winch_read(struct mx_unit_proto_t *unit, struct mx_winch_cf_t *cf)
 			while ((buf_pos < UNIT->winchester->block_size) && (cf->ret_len < cf->transmit->len)) {
 				uint16_t *buf16 = (uint16_t*)(buf+buf_pos);
 				MEMBw(cf->transmit->nb, cf->transmit->addr + sector * UNIT->winchester->block_size/2 + buf_pos/2, ntohs(*buf16));
+				LOG(D_IO, 100, "[0x%04x] = 0x%02x 0x%02x", cf->transmit->addr + sector * UNIT->winchester->block_size/2 + buf_pos/2, ntohs(*buf16)>>8, ntohs(*buf16)&255);
 				buf_pos += 2;
 				cf->ret_len++;
 			}
@@ -339,7 +340,7 @@ struct mx_winch_cf_t * mx_winch_cf_t_decode(int addr)
 			data = MEMB(0, addr+2);
 			cf->transmit->len = data+1;
 			data = MEMB(0, addr+3);
-			cf->transmit->sector = data << 16;
+			cf->transmit->sector = (data & 255) << 16;
 			data = MEMB(0, addr+4);
 			cf->transmit->sector += data;
 			break;

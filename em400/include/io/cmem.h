@@ -45,7 +45,6 @@ struct cmem_unit_proto_t {
 
 	struct cmem_chan_t *chan;
 	int num;
-
 };
 
 struct cmem_chan_t {

@@ -42,13 +42,7 @@ struct cmem_unit_proto_t cmem_unit_proto[] = {
 		cmem_m9425_reset,
 		cmem_m9425_cmd
 	},
-	{
-		NULL,
-		NULL,
-		NULL,
-		NULL,
-		NULL
-	}
+	{ NULL, NULL, NULL, NULL, NULL }
 };
 
 // -----------------------------------------------------------------------
@@ -223,38 +217,39 @@ int cmem_chan_cmd(struct chan_proto_t *chan, int dir, int cmd, int u_num, uint16
 	if (dir == IO_OU) {
 		switch (cmd) {
 		case CHAN_CMD_EXISTS:
-			LOG(D_IO, 1, "CMEM %i (%s): CHAN_CMD_EXISTS", chan->num, chan->name);
+			LOG(D_IO, 1, "CMEM %i (%s): command: check chan exists", chan->num, chan->name);
 			break;
 		case CHAN_CMD_INTSPEC:
 			return cmem_cmd_intspec(chan, r_arg);
 		case CHAN_CMD_STATUS:
 			*r_arg = CHAN->untransmitted;
-			LOG(D_IO, 1, "CMEM %i (%s) CHAN_CMD_STATUS", chan->num, chan->name);
+			LOG(D_IO, 1, "CMEM %i (%s) command: get status", chan->num, chan->name);
 			break;
 		case CHAN_CMD_ALLOC:
 			// all units always working with CPU 0
 			*r_arg = 0;
-			LOG(D_IO, 1, "CMEM %i:%i (%s): CHAN_CMD_ALLOC -> %i", chan->num, u_num, chan->name, *r_arg);
+			LOG(D_IO, 1, "CMEM %i:%i (%s): command: get allocation -> %i", chan->num, u_num, chan->name, *r_arg);
 			break;
 		default:
+			LOG(D_IO, 1, "CMEM %i:%i (%s): unknow command", chan->num, u_num, chan->name);
 			// shouldn't happen, but as channel always reports OK...
 			break;
 		}
 	} else {
 		switch (cmd) {
 		case CHAN_CMD_EXISTS:
-			LOG(D_IO, 1, "CMEM %i (%s): CHAN_CMD_EXISTS", chan->num, chan->name);
+			LOG(D_IO, 1, "CMEM %i (%s): command: check chan exists", chan->num, chan->name);
 			break;
 		case CHAN_CMD_MASK_PN:
 			CHAN->int_mask = 1;
-			LOG(D_IO, 1, "CMEM %i (%s): CHAN_CMD_MASK_PN", chan->num, chan->name);
+			LOG(D_IO, 1, "CMEM %i (%s): command: mask CPU", chan->num, chan->name);
 			break;
 		case CHAN_CMD_MASK_NPN:
-			LOG(D_IO, 1, "CMEM %i (%s): CHAN_CMD_MASK_NPN -> ignored", chan->num, chan->name);
+			LOG(D_IO, 1, "CMEM %i (%s): command: mask ~CPU -> ignored", chan->num, chan->name);
 			// ignore 2nd CPU
 			break;
 		case CHAN_CMD_ASSIGN:
-			LOG(D_IO, 1, "CMEM %i (%s:%s): CHAN_CMD_ASSIGN -> ignored", chan->num, u_num, chan->name);
+			LOG(D_IO, 1, "CMEM %i (%s:%s): command: assign CPU -> ignored", chan->num, u_num, chan->name);
 			// always for CPU 0
 			break;
 		default:
@@ -272,11 +267,9 @@ int cmem_cmd(struct chan_proto_t *chan, int dir, uint16_t n_arg, uint16_t *r_arg
 	int cmd		= (n_arg & 0b1111110000000000) >> 10;
 	int u_num	= (n_arg & 0b0000000011100000) >> 5;
 
-	// command for channel
-	if ((cmd & 0b111000) == 0) {
+	if ((cmd & 0b111000) == 0) { // command for channel
 		return cmem_chan_cmd(chan, dir, cmd, u_num, r_arg);
-	// command for unit
-	} else {
+	} else { // command for unit
 	 	// transmission command
 	 	if ((cmd & 0b11100) == 0b11000) {
 			// only one transmission command at a time
@@ -285,7 +278,11 @@ int cmem_cmd(struct chan_proto_t *chan, int dir, uint16_t n_arg, uint16_t *r_arg
 				return IO_EN;
 			}
 		}
-		return CHAN->unit[u_num]->cmd(CHAN->unit[u_num], dir, cmd, r_arg);
+		if (CHAN->unit[u_num]) {
+			return CHAN->unit[u_num]->cmd(CHAN->unit[u_num], dir, cmd, r_arg);
+		} else {
+			return IO_NO;
+		}
 	}
 }
 
