@@ -56,6 +56,8 @@ int mem_init()
 		return E_MEM_WRONG_OS_MEM;
 	}
 
+	pthread_spin_init(&mem_spin, 0);
+
 	// create configured physical segments
 	for (int mp=0 ; mp<MEM_MAX_MODULES ; mp++) {
 		if (em400_cfg.mem[mp].segments > MEM_MAX_SEGMENTS) {
@@ -63,7 +65,9 @@ int mem_init()
 		} else {
 			int seg;
 			for (seg=0 ; seg<em400_cfg.mem[mp].segments ; seg++) {
+				pthread_spin_lock(&mem_spin);
 				mem_segment[mp][seg] = malloc(sizeof(uint16_t) * MEM_SEGMENT_SIZE);
+				pthread_spin_unlock(&mem_spin);
 				if (!mem_segment[mp][seg]) {
 					return E_MEM_CANNOT_ALLOCATE;
 				}
@@ -74,12 +78,12 @@ int mem_init()
 
 	// hardwire segments for OS
 	for (int ab=0 ; ab<em400_cfg.mem_os ; ab++) {
+		pthread_spin_lock(&mem_spin);
 		if (mem_segment[0][ab]) {
 			mem_map[0][ab] = mem_segment[0][ab];
 		}
+		pthread_spin_unlock(&mem_spin);
 	}
-
-	pthread_spin_init(&mem_spin, 0);
 
 	return E_OK;
 }
@@ -109,11 +113,14 @@ int mem_add_map(int nb, int ab, int mp, int segment)
 	}
 
 	if (nb < MEM_MAX_NB) {
+		pthread_spin_lock(&mem_spin);
 		mem_map[nb][ab] = mem_segment[mp][segment];
 		if (!mem_map[nb][ab]) {
+			pthread_spin_unlock(&mem_spin);
 			LOG(D_MEM, 1, "Add map: No such segment");
 			return IO_NO;
 		}
+		pthread_spin_unlock(&mem_spin);
 	} else {
 		LOG(D_MEM, 1, "Add map: NB > MEM_MAX_NB");
 		return IO_NO;
@@ -134,14 +141,16 @@ void mem_remove_maps()
 			min_ab = 0;
 		}
 		for (int ab=min_ab ; ab<MEM_MAX_AB ; ab ++) {
+			pthread_spin_lock(&mem_spin);
 			mem_map[nb][ab] = NULL;
+			pthread_spin_unlock(&mem_spin);
 		}
 	}
 }
 
 #ifdef WITH_DEBUGGER
 // -----------------------------------------------------------------------
-// low-level memory access (bypassing emulation)
+// low-level memory access (bypassing emulation, no thread-safety)
 uint16_t * mem_ptr(int nb, uint16_t addr)
 {
 	int ab = (addr & 0b1111000000000000) >> 12;
@@ -258,11 +267,13 @@ void mem_clear()
 {
 	for (int mp=0 ; mp<MEM_MAX_MODULES ; mp++) {
 		for (int seg=0 ; seg<MEM_MAX_SEGMENTS ; seg++) {
+			pthread_spin_lock(&mem_spin);
 			if (mem_segment[mp][seg]) {
 				for (int addr=0 ; addr<MEM_SEGMENT_SIZE ; addr++) {
 					mem_segment[mp][seg][addr] = 0;
 				}
 			}
+			pthread_spin_unlock(&mem_spin);
 		}
 	}
 }
@@ -294,9 +305,12 @@ int mem_load_image(const char* fname, int nb)
 			break;
 		}
 
+		pthread_spin_lock(&mem_spin);
+
 		// get pointer to segment in a block
 		uint16_t *ptr = mem_ptr(nb, chunk*MEM_SEGMENT_SIZE);
 		if (!ptr) {
+			pthread_spin_unlock(&mem_spin);
 			ret = E_MEM_BLOCK_TOO_SMALL;
 			break;
 		}
@@ -305,6 +319,7 @@ int mem_load_image(const char* fname, int nb)
 		for (int i=0 ; i<res ; i++) {
 			*(ptr+i) = ntohs(*(buf+i));
 		}
+		pthread_spin_unlock(&mem_spin);
 		chunk++;
 	} while (res == MEM_SEGMENT_SIZE);
 
