@@ -64,6 +64,7 @@ int cchar_term_cons_cmd(struct cchar_unit_proto_t *unit, int dir, int cmd, uint1
 		case CCHAR_TERM_CMD_SPU:
 			break;
 		case CCHAR_TERM_CMD_READ:
+			return IO_EN;
 			break;
 		default:
 			break;
