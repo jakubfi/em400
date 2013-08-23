@@ -88,7 +88,7 @@ void int_set(int x)
 {
 #ifdef WITH_DEBUGGER
 	if (x != INT_TIMER) {
-		LOG(D_INT, 1, "Set: %lld (%s)", x, log_int_name[x]);
+		LOG(D_INT, 20, "Set: %lld (%s)", x, log_int_name[x]);
 	} else {
 		LOG(D_INT, 100, "Set: %lld (%s)", x, log_int_name[x]);
 	}
@@ -160,7 +160,7 @@ void int_serve()
 	// this is the interrupt we're going to serve
 	int interrupt = 31 - probe;
 
-	LOG(D_INT, 1, "Serve: %d (%s)", interrupt, log_int_name[interrupt]);
+	LOG(D_INT, 1, "Serve: %d (%s) -> 0x%04x / return: 0x%04x", interrupt, log_int_name[interrupt], nMEMB(0, 64+interrupt), nR(R_IC));
 	uint16_t int_spec = 0;
 	// get interrupt specification if it's from channel
 	if ((interrupt >= 12) && (interrupt <= 27)) {

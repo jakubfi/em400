@@ -21,6 +21,7 @@
 #include <arpa/inet.h>
 #include <pthread.h>
 
+#include "cpu/cpu.h"
 #include "cpu/memory.h"
 #include "cpu/registers.h"
 #include "cpu/interrupts.h"
@@ -192,13 +193,9 @@ uint16_t mem_read(int nb, uint16_t addr, int trace)
 		int_set(INT_NO_MEM);
 		if (!SR_Q) {
 			nRw(R_ALARM, 1);
-#ifdef WITH_DEBUGGER
-			dbg_enter = 1;
-#else
-			em400_quit = E_QUIT_NO_MEM;
-#endif
+			cpu_stop = 1;
 		}
-		return 0xdead;
+		return 0x0000;
 	}
 }
 
@@ -253,11 +250,7 @@ void mem_write(int nb, uint16_t addr, uint16_t val, int trace)
 		int_set(INT_NO_MEM);
 		if (!SR_Q) {
 			nRw(R_ALARM, 1);
-#ifdef WITH_DEBUGGER
-			dbg_enter = 1;
-#else
-			em400_quit = E_QUIT_NO_MEM;
-#endif
+			cpu_stop = 1;
 		}
 	}
 }

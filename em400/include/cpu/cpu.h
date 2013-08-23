@@ -22,9 +22,15 @@
 
 void cpu_disable_sint();
 void cpu_reset();
+void cpu_halt();
 void cpu_step();
 
 extern int16_t N;
+extern int cpu_stop;
+
+#ifdef WITH_DEBUGGER
+extern uint16_t cycle_ic;
+#endif
 
 #endif
 

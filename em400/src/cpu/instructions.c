@@ -26,12 +26,12 @@
 #include "cpu/instructions.h"
 #include "io/io.h"
 
-#include "em400.h"
 #include "cfg.h"
 #include "utils.h"
 
 #ifdef WITH_DEBUGGER
 #include "debugger/debugger.h"
+#include "debugger/decode.h"
 #endif
 #include "debugger/log.h"
 
@@ -452,6 +452,7 @@ void op_71_blc()
 // -----------------------------------------------------------------------
 void op_71_exl()
 {
+	LOG(D_CPU, 1, "EXL: %i (r4: 0x%04x)", IR_b, regs[4]);
 	uint16_t SP = nMEMB(0, 97);
 	nMEMBw(0, SP, R(R_IC));
 	nMEMBw(0, SP+1, R(0));
@@ -663,21 +664,7 @@ struct opdef * op_73()
 // -----------------------------------------------------------------------
 void op_73_hlt()
 {
-	// handle hlt 077 as "exit emulation" if user wants to
-	if (em400_cfg.exit_on_hlt) {
-		if (N == 077) {
-			em400_quit = 1;
-			return;
-		}
-	}
-
-	// otherwise, wait for interrupt
-	LOG(D_CPU, 1, "HALT 0%02o (r6: 0x%04x)", N, regs[6]);
-	pthread_mutex_lock(&int_mutex_rp);
-	while (!RP) {
-		pthread_cond_wait(&int_cond_rp, &int_mutex_rp);
-	}
-	pthread_mutex_unlock(&int_mutex_rp);
+	cpu_stop = 1;
 }
 
 // -----------------------------------------------------------------------
@@ -732,6 +719,7 @@ void op_73_gil()
 void op_73_lip()
 {
 	uint16_t SP = nMEMB(0, 97);
+	LOG(D_CPU, 1, "LIP: 0x%04x", nMEMB(0, SP-3));
 	Rw(R_IC, nMEMB(0, SP-4));
 	reg_write(0, nMEMB(0, SP-3), 1, 1);
 	Rw(R_SR, nMEMB(0, SP-2));
@@ -1011,6 +999,9 @@ void op_77_fi()
 // -----------------------------------------------------------------------
 void op_77_sp()
 {
+#ifdef WITH_DEBUGGER
+	LOG(D_CPU, 1, "SP: context @ 0x%04x -> IC: 0x%04x\n%s", N, nMEMNB(N), decode_ctx(N, 0));
+#endif
 	Rw(R_IC, MEMNB(N));
 	reg_write(0, MEMNB(N+1), 1, 1);
 	Rw(R_SR, MEMNB(N+2));

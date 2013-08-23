@@ -19,6 +19,7 @@
 #define MEMORY_H
 
 #include <inttypes.h>
+#include "registers.h"
 
 #define MEM_MAX_MODULES 16
 #define MEM_MAX_SEGMENTS 16

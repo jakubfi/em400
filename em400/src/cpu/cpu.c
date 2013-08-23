@@ -24,6 +24,7 @@
 #include "cpu/interrupts.h"
 #include "cpu/timer.h"
 
+#include "em400.h"
 #include "cfg.h"
 #include "utils.h"
 
@@ -35,6 +36,11 @@
 #include "debugger/log.h"
 
 int16_t N;
+int cpu_stop;
+
+#ifdef WITH_DEBUGGER
+uint16_t cycle_ic;
+#endif
 
 // -----------------------------------------------------------------------
 void cpu_disable_sint()
@@ -56,8 +62,30 @@ void cpu_reset()
 	for (int i=0 ; i<R_MAX ; i++) {
 		reg_write(i, 0, 0, 1);
 	}
+	cpu_stop = 0;
 	mem_remove_maps();
 	int_clear_all();
+}
+
+// -----------------------------------------------------------------------
+void cpu_halt()
+{
+	// handle hlt 077 as "exit emulation" if user wants to
+	if (em400_cfg.exit_on_hlt) {
+		if (N == 077) {
+			em400_quit = 1;
+			return;
+		}
+	}
+
+	// otherwise, wait for interrupt
+	LOG(D_CPU, 1, "HALT 0%02o (alarm: %i)", N, regs[6]&255);
+	pthread_mutex_lock(&int_mutex_rp);
+	while (!RP) {
+		pthread_cond_wait(&int_cond_rp, &int_mutex_rp);
+	}
+	pthread_mutex_unlock(&int_mutex_rp);
+	cpu_stop = 0;
 }
 
 // -----------------------------------------------------------------------
@@ -66,6 +94,10 @@ void cpu_step()
 	int _N = 0xbeef;
 	struct opdef *op;
 	void (*op_fun)();
+
+#ifdef WITH_DEBUGGER
+	cycle_ic = regs[R_IC];
+#endif
 
 	// fetch instruction
 	regs[R_IR] = nMEM(nR(R_IC));
@@ -135,6 +167,8 @@ void cpu_step()
 		regs[R_MODc] = 0;
 		regs[R_MOD] = 0;
 	}
+
+	if (cpu_stop) cpu_halt();
 }
 
 // vim: tabstop=4 shiftwidth=4 autoindent
