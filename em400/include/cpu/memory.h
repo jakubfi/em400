@@ -48,7 +48,7 @@ void mem_write(int nb, uint16_t addr, uint16_t val, int trace);
 void mem_write_byte(int nb, uint16_t addr, uint8_t val, int trace);
 
 void mem_clear();
-int mem_load_image(const char* fname, int nb);
+int mem_load_image(const char* fname, int nb, int len);
 
 // memory access macros
 #define MEM(a)			mem_read(SR_Q*SR_NB, a, 1)

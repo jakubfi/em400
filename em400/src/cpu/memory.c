@@ -272,7 +272,7 @@ void mem_clear()
 }
 
 // -----------------------------------------------------------------------
-int mem_load_image(const char* fname, int nb)
+int mem_load_image(const char* fname, int nb, int len)
 {
 	int ret = E_OK;
 	int loaded = 0;
@@ -316,7 +316,7 @@ int mem_load_image(const char* fname, int nb)
 		}
 		pthread_spin_unlock(&mem_spin);
 		chunk++;
-	} while (res == MEM_SEGMENT_SIZE);
+	} while ((res == MEM_SEGMENT_SIZE) && ((loaded < len) || (len <= 0)));
 
 	fclose(f);
 

@@ -100,7 +100,7 @@ void em400_init()
 
 	if (em400_cfg.program_name) {
 		eprint("Loading image '%s' into OS memory\n", em400_cfg.program_name);
-		int res = mem_load_image(em400_cfg.program_name, 0);
+		int res = mem_load_image(em400_cfg.program_name, 0, 2*4*1024);
 		if (res < E_OK) {
 			eerr("Could not load program '%s': %s\n", em400_cfg.program_name, get_error(res));
 		} else {
