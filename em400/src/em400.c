@@ -81,7 +81,7 @@ void em400_init()
 
 	cpu_reset();
 
-	// disable sint/sind instructions if running without cpu.mod_sint
+	// disable sint/sind modifications?
 	if (!em400_cfg.cpu.mod_sint) {
 		cpu_disable_sint();
 	}   

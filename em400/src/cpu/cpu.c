@@ -45,6 +45,7 @@ uint16_t cycle_ic;
 // -----------------------------------------------------------------------
 void cpu_disable_sint()
 {
+	// "remove" sint/sind ops
 	struct opdef *op = iset_73;
 	int deactivated = 0;
 	while (deactivated != 2) {
@@ -54,6 +55,9 @@ void cpu_disable_sint()
 		}
 		op++;
 	}
+
+	// set timer interrupt to regular on
+	int_timer = INT_TIMER;
 }
 
 // -----------------------------------------------------------------------

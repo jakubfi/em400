@@ -32,6 +32,9 @@
 uint32_t RZ;
 uint32_t RP;
 
+// mod_sint is enabled by default, causing timer interrupt to be moved
+int int_timer = INT_EXTRA;
+
 pthread_mutex_t int_mutex_rz = PTHREAD_MUTEX_INITIALIZER;
 pthread_mutex_t int_mutex_rp = PTHREAD_MUTEX_INITIALIZER;
 pthread_cond_t int_cond_rp = PTHREAD_COND_INITIALIZER;
@@ -87,7 +90,7 @@ void int_update_rp()
 void int_set(int x)
 {
 #ifdef WITH_DEBUGGER
-	if (x != INT_TIMER) {
+	if (x != int_timer) {
 		LOG(D_INT, 20, "Set: %lld (%s)", x, log_int_name[x]);
 	} else {
 		LOG(D_INT, 100, "Set: %lld (%s)", x, log_int_name[x]);

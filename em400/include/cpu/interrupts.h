@@ -28,6 +28,8 @@ extern pthread_cond_t int_cond_rp;
 extern uint32_t RZ;
 extern uint32_t RP;
 
+extern int int_timer;
+
 extern const int int_int2rm[32];
 extern const int int_int2mask[32];
 
