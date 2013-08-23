@@ -5,6 +5,7 @@ Known bugs:
 
 CPU:
 
+* handling no memory for io devices
 * MEGA
 
 I/O:
@@ -60,6 +61,12 @@ Debugger:
 Other:
 
 * gnu getopt_long
+
+To clarify:
+
+* 2-cpu configuration
+* C for floating point instructions
+* how nomem is handled
 
 MERA-400 features that em400 does not emulate:
 
