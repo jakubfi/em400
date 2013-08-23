@@ -66,13 +66,13 @@ char *log_int_name[] = {
 	"no memory",
 	"2nd CPU (high)",
 	"ext power loss",
-	"timer",
+	"timer/special",
 	"illegal opcode",
 	"AWP div overflow",
 	"AWP underflow",
 	"AWP overflow",
 	"AWP div/0",
-	"special",
+	"special/timer",
 	"channel 0",
 	"channel 1",
 	"channel 2",
@@ -194,13 +194,18 @@ void log_log(int domain, int level, char *format, ...)
 	gettimeofday(&ct, NULL);
 	strftime(now, 30, "%Y-%m-%d %H:%M:%S", localtime(&ct.tv_sec));
 
+	int q = (regs[R_SR] >> 5) & 1;
+	int nb = regs[R_SR] & 0b1111;
+
 	va_list vl;
 	va_start(vl, format);
+
 	pthread_mutex_lock(&log_mutex);
-	fprintf(log_f, "%s %-4s @ %i:%i 0x%04x / ", now, log_dname[domain], SR_Q, SR_NB, cycle_ic);
+	fprintf(log_f, "%s %-4s @ %i:%i 0x%04x / ", now, log_dname[domain], q, nb, cycle_ic);
 	vfprintf(log_f, format, vl);
 	fprintf(log_f, "\n");
 	pthread_mutex_unlock(&log_mutex);
+
 	va_end(vl);
 	fflush(log_f);
 }
