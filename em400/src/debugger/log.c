@@ -197,7 +197,7 @@ void log_log(int domain, int level, char *format, ...)
 	va_list vl;
 	va_start(vl, format);
 	pthread_mutex_lock(&log_mutex);
-	fprintf(log_f, "%s %4s @ %i:%i 0x%04x / ", now, log_dname[domain], SR_Q, SR_NB, cycle_ic);
+	fprintf(log_f, "%s %-4s @ %i:%i 0x%04x / ", now, log_dname[domain], SR_Q, SR_NB, cycle_ic);
 	vfprintf(log_f, format, vl);
 	fprintf(log_f, "\n");
 	pthread_mutex_unlock(&log_mutex);
