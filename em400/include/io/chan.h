@@ -23,15 +23,15 @@
 // things common for 'classic' mem and char channels
 
 enum chan_cmds_e {
-	// channel IN
-	CHAN_CMD_EXISTS		= 0b000000,
-	CHAN_CMD_INTSPEC	= 0b000010,
-	CHAN_CMD_STATUS		= 0b000100,
-	CHAN_CMD_ALLOC		= 0b000110,
 	// channel OU
+	CHAN_CMD_EXISTS		= 0b000000,
 	CHAN_CMD_MASK_PN	= 0b000010,
 	CHAN_CMD_MASK_NPN	= 0b000100,
 	CHAN_CMD_ASSIGN		= 0b000110,
+	// channel IN
+	CHAN_CMD_INTSPEC	= 0b000010,
+	CHAN_CMD_ALLOC		= 0b000110,
+	CHAN_CMD_STATUS		= 0b000100,
 };
 
 #endif
