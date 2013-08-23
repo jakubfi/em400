@@ -275,6 +275,7 @@ void mem_clear()
 int mem_load_image(const char* fname, int nb)
 {
 	int ret = E_OK;
+	int loaded = 0;
 
 	FILE *f = fopen(fname, "rb");
 	if (f == NULL) {
@@ -294,9 +295,10 @@ int mem_load_image(const char* fname, int nb)
 			break;
 		}
 
-		if (res == 0) {
+		if (res <= 0) {
 			break;
 		}
+		loaded += res;
 
 		pthread_spin_lock(&mem_spin);
 
@@ -318,7 +320,11 @@ int mem_load_image(const char* fname, int nb)
 
 	fclose(f);
 
-	return ret;
+	if (loaded > 0) {
+		return loaded;
+	} else {
+		return ret;
+	}
 }
 
 

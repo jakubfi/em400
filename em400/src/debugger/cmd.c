@@ -68,7 +68,7 @@ struct cmd_t dbg_commands[] = {
 void dbg_c_load(int wid, char* image, int bank)
 {
 	int res = mem_load_image(image, bank);
-	if (res != E_OK) {
+	if (res < E_OK) {
 		awtbprint(wid, C_ERROR, "Error loading image \"%s\": %s\n", image, get_error(res));
 	}
 }

@@ -101,8 +101,10 @@ void em400_init()
 	if (em400_cfg.program_name) {
 		eprint("Loading image '%s' into OS memory\n", em400_cfg.program_name);
 		int res = mem_load_image(em400_cfg.program_name, 0);
-		if (res != E_OK) {
+		if (res < E_OK) {
 			eerr("Could not load program '%s': %s\n", em400_cfg.program_name, get_error(res));
+		} else {
+			printf("OS memory block image loaded: \"%s\", %i words\n", em400_cfg.program_name, res);
 		}
 	}
 
@@ -244,12 +246,11 @@ void em400_configure()
 	while (cfgf->name) {
 		int res = cfg_load(cfgf->name);
 		if (res != E_OK) {
-			printf("Failed to load config '%s'\n", cfgf->name);
 			if (cfgf->name == em400_cfg.config_file) {
-				eerr("Error loading user config file\n");
+				eerr("Error loading user config file: %s\n", cfgf->name);
 			}
 		} else {
-			eprint("Config loaded\n");
+			printf("Using config: %s\n", cfgf->name);
 			return;
 		}
 		cfgf++;
