@@ -2,7 +2,7 @@ cpu {
 	speed = max		# max | real
 	timer_step = 0	 	# one of: 0 (disabled), 2, 4, 8, 10, 20, 40, 80 [ms]
 	mod_17bit = true
-	mod_sint = true
+	mod_sint = false
 }
 
 memory {
@@ -59,7 +59,7 @@ channel 1 = multix {
 	unit 15 = terminal
 	unit 20 = floppy: floppy.e4i
 	unit 21 = floppy: floppy.e4i
-	unit 28 = winchester: winchester.e4i
+	unit 28 = winchester: winchester_amo.e4i
 }
 
 channel 15 = char {
