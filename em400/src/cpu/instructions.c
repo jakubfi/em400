@@ -999,9 +999,7 @@ void op_77_fi()
 // -----------------------------------------------------------------------
 void op_77_sp()
 {
-#ifdef WITH_DEBUGGER
 	LOG(D_CPU, 1, "SP: context @ 0x%04x -> IC: 0x%04x\n%s", N, nMEMNB(N), decode_ctx(N, 0));
-#endif
 	Rw(R_IC, MEMNB(N));
 	reg_write(0, MEMNB(N+1), 1, 1);
 	Rw(R_SR, MEMNB(N+2));

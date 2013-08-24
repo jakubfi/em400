@@ -36,6 +36,10 @@ int dt_trans(int addr, char *buf, int dasm_mode)
 
 	uint16_t *memptr = mem_ptr(SR_Q * SR_NB, addr);
 
+	if (!memptr) {
+		return 0;
+	}
+
 	opdef = dasm_iset + _OP(*memptr);
 	if (opdef->e_opdef) {
 		opdef = opdef->e_opdef + opdef->extop_fun(*memptr);
