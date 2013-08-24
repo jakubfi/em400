@@ -1,4 +1,22 @@
-; bootstrap system from winchester
+
+; Bootstrap MERA-400 CROOK-5 os from winchester disk
+
+; Copyright (c) 2013 Jakub Filipowicz <jakubf@gmail.com>
+;
+; This program is free software; you can redistribute it and/or modify
+; it under the terms of the GNU General Public License as published by
+; the Free Software Foundation; either version 2 of the License, or
+; (at your option) any later version.
+;
+; This program is distributed in the hope that it will be useful,
+; but WITHOUT ANY WARRANTY; without even the implied warranty of
+; MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+; GNU General Public License for more details.
+;
+; You should have received a copy of the GNU General Public License
+; along with this program; if not, write to the Free Software
+; Foundation, Inc.,
+; 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 
 .prog
 
@@ -7,7 +25,7 @@
 	.equ chan_mask 0b0000010000000000
 	.equ mx 1
 	.equ winch 0
-	.equ mx_int 0x40+12+mx
+	.equ mx_int 0x40 + 12 + mx
 	.equ stackp 0x61
 	.equ prog_beg 0x70
 
@@ -96,7 +114,7 @@ start:
 	im mask
 lhlt:
 	hlt 1
-	ujs lhlt	; forever waiting on interrupts
+	ujs lhlt	; forever waiting for interrupts
 
 ; ------------------------------------------------------------------------
 image:
