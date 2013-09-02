@@ -122,7 +122,7 @@ void mx_winch_reset(struct mx_unit_proto_t *unit)
 // -----------------------------------------------------------------------
 int mx_winch_cfg_phy(struct mx_unit_proto_t *unit, struct mx_cf_sc_pl *cfg_phy)
 {
-	LOG(D_IO, 10, "MULTIX/winchester (line:%i): configure physical line", unit->phy_num);
+	LOG(L_WNCH, 10, "MULTIX/winchester (log:%i, phy:%i): configure physical line", unit->log_num, unit->phy_num);
 	if (unit && cfg_phy) {
 		unit->dir = cfg_phy->dir;
 		unit->used = 1;
@@ -136,7 +136,7 @@ int mx_winch_cfg_phy(struct mx_unit_proto_t *unit, struct mx_cf_sc_pl *cfg_phy)
 // -----------------------------------------------------------------------
 int mx_winch_cfg_log(struct mx_unit_proto_t *unit, struct mx_cf_sc_ll *cfg_log)
 {
-	LOG(D_IO, 10, "MULTIX/winchester (line:%i): configure logical line", unit->phy_num);
+	LOG(L_WNCH, 10, "MULTIX/winchester (log:%i, phy:%i): configure logical line", unit->log_num, unit->phy_num);
 	if (unit && cfg_log && cfg_log->winch) {
 		UNIT->winch_type = cfg_log->winch->type;
 		UNIT->format_protect = cfg_log->winch->format_protect;
@@ -149,7 +149,7 @@ int mx_winch_cfg_log(struct mx_unit_proto_t *unit, struct mx_cf_sc_ll *cfg_log)
 // -----------------------------------------------------------------------
 void mx_winch_cmd_attach(struct mx_unit_proto_t *unit, uint16_t addr)
 {
-	LOG(D_IO, 10, "MULTIX/winchester (line:%i): attach", unit->log_num);
+	LOG(L_WNCH, 10, "MULTIX/winchester (log:%i, phy: %i): attach", unit->log_num, unit->phy_num);
 	unit->attached = 1;
 	mx_int(unit->chan, unit->log_num, MX_INT_IDOLI);
 }
@@ -157,16 +157,16 @@ void mx_winch_cmd_attach(struct mx_unit_proto_t *unit, uint16_t addr)
 // -----------------------------------------------------------------------
 void mx_winch_cmd_detach(struct mx_unit_proto_t *unit, uint16_t addr)
 {
-	LOG(D_IO, 10, "MULTIX/winchester (line:%i): detach", unit->log_num);
+	LOG(L_WNCH, 10, "MULTIX/winchester (log:%i, phy:%i): detach", unit->log_num, unit->phy_num);
 	unit->attached = 0;
 	mx_int(unit->chan, unit->log_num, MX_INT_IODLI);
 }
 
 // -----------------------------------------------------------------------
-void mx_winch_cmd_status(struct mx_unit_proto_t *unit, uint16_t addr)
+uint16_t mx_winch_get_status(struct mx_unit_proto_t *unit)
 {
-	LOG(D_IO, 10, "MULTIX/winchester (line:%i): status", unit->log_num);
-	mx_int(unit->chan, unit->log_num, MX_INT_ISTRE);
+	LOG(L_WNCH, 10, "MULTIX/winchester (log:%i, phy:%i): status", unit->log_num, unit->phy_num);
+	return 0;
 }
 
 // -----------------------------------------------------------------------
@@ -197,7 +197,7 @@ int mx_winch_read(struct mx_unit_proto_t *unit, struct mx_winch_cf_t *cf)
 			break;
 		}
 
-		LOG(D_IO, 10, "MULTIX/winchester (line:%i): reading sector %i (+offset %i) into buf at pos: %i : 0x%04x", unit->log_num, cf->transmit->sector + sector, offset, cf->transmit->nb, cf->transmit->addr + sector * UNIT->winchester->block_size);
+		LOG(L_WNCH, 10, "MULTIX/winchester (log:%i, phy:%i): reading sector %i (+offset %i) into buf at pos: %i : 0x%04x", unit->log_num, unit->phy_num, cf->transmit->sector + sector, offset, cf->transmit->nb, cf->transmit->addr + sector * UNIT->winchester->block_size/2);
 
 		// read whole sector into buffer
 		int res = e4i_bread(UNIT->winchester, buf, offset + cf->transmit->sector + sector);
@@ -208,7 +208,7 @@ int mx_winch_read(struct mx_unit_proto_t *unit, struct mx_winch_cf_t *cf)
 			while ((buf_pos < UNIT->winchester->block_size) && (cf->ret_len < cf->transmit->len)) {
 				uint16_t *buf16 = (uint16_t*)(buf+buf_pos);
 				MEMBw(cf->transmit->nb, cf->transmit->addr + sector * UNIT->winchester->block_size/2 + buf_pos/2, ntohs(*buf16));
-				LOG(D_IO, 100, "[%i:0x%04x] = 0x%02x 0x%02x", cf->transmit->nb, cf->transmit->addr + sector * UNIT->winchester->block_size/2 + buf_pos/2, ntohs(*buf16)>>8, ntohs(*buf16));
+				LOG(L_WNCH, 100, "[%i:0x%04x] = 0x%02x 0x%02x", cf->transmit->nb, cf->transmit->addr + sector * UNIT->winchester->block_size/2 + buf_pos/2, ntohs(*buf16)>>8, ntohs(*buf16));
 				buf_pos += 2;
 				cf->ret_len++;
 			}
@@ -261,7 +261,7 @@ int mx_winch_write(struct mx_unit_proto_t *unit, struct mx_winch_cf_t *cf)
 			break;
 		}
 
-		LOG(D_IO, 10, "MULTIX/winchester (line:%i): FAKE!!!!! writing sector %i (+offset %i) into buf at pos: 0x%04x", unit->log_num, cf->transmit->sector + sector, offset, cf->transmit->addr + sector * UNIT->winchester->block_size);
+		LOG(L_WNCH, 10, "MULTIX/winchester (log:%i, phy:%i): FAKE!!!!! writing sector %i (+offset %i) into buf at pos: 0x%04x", unit->log_num, unit->phy_num, cf->transmit->sector + sector, offset, cf->transmit->addr + sector * UNIT->winchester->block_size);
 		cf->ret_len += 256;
 
 	}
@@ -278,7 +278,7 @@ void mx_winch_cmd_transmit(struct mx_unit_proto_t *unit, uint16_t addr)
 	uint16_t addr_status = addr + 6;
 	int ret = E_OK;
 
-	LOG(D_IO, 1, "MULTIX/winchester (line:%i): transmit", unit->log_num);
+	LOG(L_WNCH, 1, "MULTIX/winchester (log:%i, phy:%i): transmit", unit->log_num, unit->phy_num);
 
 	// disk is not connected
 	if (!UNIT->winchester) {
@@ -296,7 +296,7 @@ void mx_winch_cmd_transmit(struct mx_unit_proto_t *unit, uint16_t addr)
 
 #ifdef WITH_DEBUGGER
 	char *details = decode_mxpst_winch(addr, 0);
-	LOG(D_IO, 50, "%s", details);
+	LOG(L_WNCH, 50, "Transmission details:\n%s", details);
 	free(details);
 #endif
 

@@ -37,6 +37,7 @@ char * decode_ctx(uint16_t addr, int arg);
 char * decode_mxpsuk(uint16_t addr, int arg);
 char * decode_mxpsdl(uint16_t addr, int arg);
 char * decode_mxpst_winch(uint16_t addr, int arg);
+char * decode_mxpst_term(uint16_t addr, int arg);
 char * decode_cmempst(uint16_t addr, int arg);
 
 #endif

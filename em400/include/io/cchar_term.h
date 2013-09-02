@@ -18,12 +18,27 @@
 #ifndef CCHAR_TERM_CONS_H
 #define CCHAR_TERM_CONS_H
 
-#include "cchar.h"
+#include <pthread.h>
+
+#include "io/cchar.h"
+#include "io/term.h"
 
 #include "cfg.h"
 
-struct cchar_unit_term_cons_t {
+#define TERM_BUF_LEN 1024
+
+struct cchar_unit_term_t {
     struct cchar_unit_proto_t proto;
+	struct term_t *term;
+
+	pthread_t worker;
+
+	char *buf;
+	int buf_wpos;
+	int buf_rpos;
+	int buf_len;
+	int empty_read;
+	pthread_mutex_t buf_mutex;
 };
 
 // commands
@@ -45,11 +60,12 @@ enum char_term_int_e {
 	CCHAR_TERM_INT_TOO_SLOW	= 5, // transmission too slow
 };
 
-struct cchar_unit_proto_t * cchar_term_cons_create(struct cfg_arg_t *args);
-void cchar_term_cons_shutdown(struct cchar_unit_proto_t *unit);
-void cchar_term_cons_reset(struct cchar_unit_proto_t *unit);
-void * cchar_term_cons_worker(void *th_id);
-int cchar_term_cons_cmd(struct cchar_unit_proto_t *unit, int dir, int cmd, uint16_t *r_arg);
+struct cchar_unit_proto_t * cchar_term_create(struct cfg_arg_t *args);
+void cchar_term_shutdown(struct cchar_unit_proto_t *unit);
+void cchar_term_reset(struct cchar_unit_proto_t *unit);
+void * cchar_term_worker(void *ptr);
+int cchar_term_cmd(struct cchar_unit_proto_t *unit, int dir, int cmd, uint16_t *r_arg);
+
 
 #endif
 

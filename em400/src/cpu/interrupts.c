@@ -91,9 +91,9 @@ void int_set(int x)
 {
 #ifdef WITH_DEBUGGER
 	if (x != int_timer) {
-		LOG(D_INT, 20, "Set: %lld (%s)", x, log_int_name[x]);
+		LOG(L_INT, 20, "Set: %lld (%s)", x, log_int_name[x]);
 	} else {
-		LOG(D_INT, 100, "Set: %lld (%s)", x, log_int_name[x]);
+		LOG(L_INT, 100, "Set: %lld (%s)", x, log_int_name[x]);
 	}
 #endif
 	pthread_mutex_lock(&int_mutex_rz);
@@ -117,7 +117,7 @@ void int_clear_all()
 // -----------------------------------------------------------------------
 void int_clear(int x)
 {
-	LOG(D_INT, 20, "Clear: %lld (%s)", x, log_int_name[x]);
+	LOG(L_INT, 20, "Clear: %lld (%s)", x, log_int_name[x]);
 	pthread_mutex_lock(&int_mutex_rz);
 	RZ &= ~((1 << (31 - x)));
 	pthread_mutex_unlock(&int_mutex_rz);
@@ -130,7 +130,7 @@ void int_clear(int x)
 // -----------------------------------------------------------------------
 void int_put_nchan(uint16_t r)
 {
-	LOG(D_INT, 20, "Set non-channel to: %d", r);
+	LOG(L_INT, 20, "Set non-channel to: %d", r);
 	pthread_mutex_lock(&int_mutex_rz);
 	RZ = (RZ & 0b00000000000011111111111111110000) | ((r & 0b1111111111110000) << 16) | (r & 0b0000000000001111);
 	pthread_mutex_unlock(&int_mutex_rz);
@@ -163,7 +163,7 @@ void int_serve()
 	// this is the interrupt we're going to serve
 	int interrupt = 31 - probe;
 
-	LOG(D_INT, 1, "Serve: %d (%s) -> 0x%04x / return: 0x%04x", interrupt, log_int_name[interrupt], nMEMB(0, 64+interrupt), nR(R_IC));
+	LOG(L_INT, 1, "Serve: %d (%s) -> 0x%04x / return: 0x%04x", interrupt, log_int_name[interrupt], nMEMB(0, 64+interrupt), nR(R_IC));
 	uint16_t int_spec = 0;
 	// get interrupt specification if it's from channel
 	if ((interrupt >= 12) && (interrupt <= 27)) {
@@ -180,7 +180,7 @@ void int_serve()
 	// clear stuff and get ready to serve
 	reg_write(0, 0, 1, 1);
 	// mask interrupts with prio <= interrupt
-	nRw(R_SR, nR(R_SR) & int_int2mask[interrupt]);
+	nRw(R_SR, nR(R_SR) & int_int2mask[interrupt] & 0b1111011111111111);
 	int_clear(interrupt);
 	nRw(R_IC, nMEMB(0, 64+interrupt));
 	nMEMBw(0, 97, SP+4);

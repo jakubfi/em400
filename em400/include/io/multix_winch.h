@@ -107,10 +107,10 @@ void mx_winch_shutdown(struct mx_unit_proto_t *unit);
 void mx_winch_reset(struct mx_unit_proto_t *unit);
 int mx_winch_cfg_phy(struct mx_unit_proto_t *unit, struct mx_cf_sc_pl *cfg_phy);
 int mx_winch_cfg_log(struct mx_unit_proto_t *unit, struct mx_cf_sc_ll *cfg_log);
+uint16_t mx_winch_get_status(struct mx_unit_proto_t *unit);
 
 void mx_winch_cmd_attach(struct mx_unit_proto_t *unit, uint16_t addr);
 void mx_winch_cmd_detach(struct mx_unit_proto_t *unit, uint16_t addr);
-void mx_winch_cmd_status(struct mx_unit_proto_t *unit, uint16_t addr);
 void mx_winch_cmd_transmit(struct mx_unit_proto_t *unit, uint16_t addr);
 
 struct mx_winch_cf_t * mx_winch_cf_t_decode(int addr);

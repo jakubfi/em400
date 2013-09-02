@@ -36,10 +36,10 @@ void mx_punchreader_shutdown(struct mx_unit_proto_t *unit);
 void mx_punchreader_reset(struct mx_unit_proto_t *unit);
 int mx_punchreader_cfg_phy(struct mx_unit_proto_t *unit, struct mx_cf_sc_pl *cfg_phy);
 int mx_punchreader_cfg_log(struct mx_unit_proto_t *unit, struct mx_cf_sc_ll *cfg_log);
+uint16_t mx_punchreader_get_status(struct mx_unit_proto_t *unit);
 
 void mx_punchreader_cmd_attach(struct mx_unit_proto_t *unit, uint16_t addr);
 void mx_punchreader_cmd_detach(struct mx_unit_proto_t *unit, uint16_t addr);
-void mx_punchreader_cmd_status(struct mx_unit_proto_t *unit, uint16_t addr);
 void mx_punchreader_cmd_transmit(struct mx_unit_proto_t *unit, uint16_t addr);
 
 struct mx_punchreader_cf_t * mx_punchreader_cf_t_decode(int addr);

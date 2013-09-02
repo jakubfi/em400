@@ -25,13 +25,27 @@
 #include <stdarg.h>
 
 enum log_domains {
-	D_REG = 0,
-	D_MEM,
-	D_CPU,
-	D_IO,
-	D_INT,
-	D_MISC,
-	D_MAX
+	L_REG = 0,
+	L_MEM,
+	L_CPU,
+	L_OP,
+	L_INT,
+
+	L_IO,
+
+	L_MX,
+	L_PX,
+	L_CHAR,
+	L_CMEM,
+
+	L_TERM,
+	L_WNCH,
+	L_FLOP,
+	L_PNCH,
+	L_PNRD,
+
+	L_OS,
+	L_MAX,
 };
 
 /*

@@ -452,7 +452,7 @@ void op_71_blc()
 // -----------------------------------------------------------------------
 void op_71_exl()
 {
-	LOG(D_CPU, 1, "EXL: %i (r4: 0x%04x)", IR_b, regs[4]);
+	LOG(L_OP, 10, "EXL: %i (r4: 0x%04x)", IR_b, regs[4]);
 	uint16_t SP = nMEMB(0, 97);
 	nMEMBw(0, SP, R(R_IC));
 	nMEMBw(0, SP+1, R(0));
@@ -719,7 +719,7 @@ void op_73_gil()
 void op_73_lip()
 {
 	uint16_t SP = nMEMB(0, 97);
-	LOG(D_CPU, 1, "LIP: 0x%04x", nMEMB(0, SP-3));
+	LOG(L_OP, 10, "LIP: 0x%04x", nMEMB(0, SP-3));
 	Rw(R_IC, nMEMB(0, SP-4));
 	reg_write(0, nMEMB(0, SP-3), 1, 1);
 	Rw(R_SR, nMEMB(0, SP-2));
@@ -999,7 +999,7 @@ void op_77_fi()
 // -----------------------------------------------------------------------
 void op_77_sp()
 {
-	LOG(D_CPU, 1, "SP: context @ 0x%04x -> IC: 0x%04x\n%s", N, nMEMNB(N), decode_ctx(N, 0));
+	LOG(L_OS, 50, "SP: context @ 0x%04x -> IC: 0x%04x\n%s", N, nMEMNB(N), decode_ctx(N, 0));
 	Rw(R_IC, MEMNB(N));
 	reg_write(0, MEMNB(N+1), 1, 1);
 	Rw(R_SR, MEMNB(N+2));

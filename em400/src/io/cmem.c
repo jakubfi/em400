@@ -131,7 +131,7 @@ void cmem_shutdown(struct chan_proto_t *chan)
 // -----------------------------------------------------------------------
 void cmem_reset(struct chan_proto_t *chan)
 {
-	LOG(D_IO, 1, "CMEM (ch:%i) reset", chan->num);
+	LOG(L_CMEM, 1, "CMEM (ch:%i) reset", chan->num);
 	for (int i=0 ; i<CMEM_MAX_DEVICES ; i++) {
 		struct cmem_unit_proto_t *unit = CHAN->unit[i];
 		if (unit) {
@@ -157,7 +157,7 @@ void cmem_int_report(struct cmem_chan_t *chan)
 		if ((CHAN->int_unit[unit_n] != CMEM_INT_NONE) && !CHAN->int_mask) {
 			chan->int_reported = unit_n;
 			pthread_mutex_unlock(&CHAN->int_mutex);
-			LOG(D_IO, 20, "CMEM (ch:%i) reporting interrupt %i", chan->proto.num, chan->proto.num + 12);
+			LOG(L_CMEM, 20, "CMEM (ch:%i) reporting interrupt %i", chan->proto.num, chan->proto.num + 12);
 			int_set(chan->proto.num + 12);
 			break;
 		} else {
@@ -169,7 +169,7 @@ void cmem_int_report(struct cmem_chan_t *chan)
 // -----------------------------------------------------------------------
 void cmem_int(struct cmem_chan_t *chan, int unit_n, int interrupt)
 {
-	LOG(D_IO, 1, "CMEM (ch:%i) interrupt %i, unit: %i", chan->proto.num, interrupt, unit_n);
+	LOG(L_CMEM, 1, "CMEM (ch:%i) interrupt %i, unit: %i", chan->proto.num, interrupt, unit_n);
 	pthread_mutex_lock(&CHAN->int_mutex);
 	if (interrupt < CHAN->int_unit[unit_n]) {
 		CHAN->int_unit[unit_n] = interrupt;
@@ -182,7 +182,7 @@ void cmem_int(struct cmem_chan_t *chan, int unit_n, int interrupt)
 // -----------------------------------------------------------------------
 int cmem_cmd_intspec(struct chan_proto_t *chan, uint16_t *r_arg)
 {
-	LOG(D_IO, 1, "CMEM (ch:%i) command: intspec", chan->num);
+	LOG(L_CMEM, 1, "CMEM (ch:%i) command: intspec", chan->num);
 
 	pthread_mutex_lock(&CHAN->int_mutex);
 	if (CHAN->int_reported != -1) {
@@ -217,43 +217,43 @@ int cmem_chan_cmd(struct chan_proto_t *chan, int dir, int cmd, int u_num, uint16
 	if (dir == IO_OU) {
 		switch (cmd) {
 		case CHAN_CMD_EXISTS:
-			LOG(D_IO, 1, "CMEM %i (%s): command: check chan exists", chan->num, chan->name);
+			LOG(L_CMEM, 1, "CMEM %i (%s): command: check chan exists", chan->num, chan->name);
 			break;
 		case CHAN_CMD_INTSPEC:
 			return cmem_cmd_intspec(chan, r_arg);
 		case CHAN_CMD_STATUS:
 			*r_arg = CHAN->untransmitted;
-			LOG(D_IO, 1, "CMEM %i (%s) command: get status", chan->num, chan->name);
+			LOG(L_CMEM, 1, "CMEM %i (%s) command: get status", chan->num, chan->name);
 			break;
 		case CHAN_CMD_ALLOC:
 			// all units always working with CPU 0
 			*r_arg = 0;
-			LOG(D_IO, 1, "CMEM %i:%i (%s): command: get allocation -> %i", chan->num, u_num, chan->name, *r_arg);
+			LOG(L_CMEM, 1, "CMEM %i:%i (%s): command: get allocation -> %i", chan->num, u_num, chan->name, *r_arg);
 			break;
 		default:
-			LOG(D_IO, 1, "CMEM %i:%i (%s): unknow command", chan->num, u_num, chan->name);
+			LOG(L_CMEM, 1, "CMEM %i:%i (%s): unknow command", chan->num, u_num, chan->name);
 			// shouldn't happen, but as channel always reports OK...
 			break;
 		}
 	} else {
 		switch (cmd) {
 		case CHAN_CMD_EXISTS:
-			LOG(D_IO, 1, "CMEM %i (%s): command: check chan exists", chan->num, chan->name);
+			LOG(L_CMEM, 1, "CMEM %i (%s): command: check chan exists", chan->num, chan->name);
 			break;
 		case CHAN_CMD_MASK_PN:
 			CHAN->int_mask = 1;
-			LOG(D_IO, 1, "CMEM %i (%s): command: mask CPU", chan->num, chan->name);
+			LOG(L_CMEM, 1, "CMEM %i (%s): command: mask CPU", chan->num, chan->name);
 			break;
 		case CHAN_CMD_MASK_NPN:
-			LOG(D_IO, 1, "CMEM %i (%s): command: mask ~CPU -> ignored", chan->num, chan->name);
+			LOG(L_CMEM, 1, "CMEM %i (%s): command: mask ~CPU -> ignored", chan->num, chan->name);
 			// ignore 2nd CPU
 			break;
 		case CHAN_CMD_ASSIGN:
-			LOG(D_IO, 1, "CMEM %i (%s:%s): command: assign CPU -> ignored", chan->num, u_num, chan->name);
+			LOG(L_CMEM, 1, "CMEM %i (%s:%s): command: assign CPU -> ignored", chan->num, u_num, chan->name);
 			// always for CPU 0
 			break;
 		default:
-			LOG(D_IO, 1, "CMEM %i:%i (%s): unknow command", chan->num, u_num, chan->name);
+			LOG(L_CMEM, 1, "CMEM %i:%i (%s): unknow command", chan->num, u_num, chan->name);
 			// shouldn't happen, but as channel always reports OK...
 			break;
 		}

@@ -33,10 +33,10 @@ int P;
 uint16_t reg_read(int r, int trace)
 {
 	if (trace != 0) {
-		LOG(D_REG, 30, "%s -> 0x%04x", log_reg_name[r], regs[r]);
+		LOG(L_REG, 30, "%s -> 0x%04x", log_reg_name[r], regs[r]);
 		dbg_touch_add(&touch_reg, TOUCH_R, 0, r, regs[r]);
 	} else {
-		LOG(D_REG, 100, "%s -> 0x%04x", log_reg_name[r], regs[r]);
+		LOG(L_REG, 100, "%s -> 0x%04x", log_reg_name[r], regs[r]);
 	}
 	return regs[r];
 }
@@ -44,7 +44,7 @@ uint16_t reg_read(int r, int trace)
 // -----------------------------------------------------------------------
 void reg_write(int r, uint16_t x, int trace, int hw)
 {
-	LOG(D_REG, 30, "%s <- 0x%04x", log_reg_name[r], x);
+	LOG(L_REG, 30, "%s <- 0x%04x", log_reg_name[r], x);
 	if (trace != 0) {
 		dbg_touch_add(&touch_reg, TOUCH_W, 0, r, regs[r]);
 	}

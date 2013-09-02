@@ -22,6 +22,7 @@
 
 #include "io/multix.h"
 #include "io/multix_winch.h"
+#include "io/multix_term.h"
 #include "io/cmem_m9425.h"
 
 #include "utils.h"
@@ -37,6 +38,7 @@ struct decoder_t decoders[] = {
 	{ "mxpsuk", "MULTIX: set configuration", decode_mxpsuk },
 	{ "mxpsdl", "MULTIX: assign line", decode_mxpsdl },
 	{ "mxpstwinch", "MULTIX: transmit (Winchester)", decode_mxpst_winch },
+	{ "mxpstterm", "MULTIX: transmit (Terminal)", decode_mxpst_term },
 	{ "cmempst", "MEM chan: transmit", decode_cmempst },
 	{ NULL, NULL, NULL}
 };
@@ -447,6 +449,54 @@ char * decode_mxpst_winch(uint16_t addr, int arg)
 	}
 
 	mx_winch_cf_t_free(t);
+	return buf;
+}
+
+// -----------------------------------------------------------------------
+char * decode_mxpst_term(uint16_t addr, int arg)
+{
+	char *buf = malloc(16*1024);
+	char *b = buf;
+	int pos = 0;
+
+	if (!buf) {
+		return NULL;
+	}
+
+	struct mx_term_cf_transmit_t *t = mx_term_cf_transmit_decode(addr);
+	if (!t) {
+		pos += sprintf(b+pos, "Error decoding field");
+		return buf;
+	}
+
+	pos += sprintf(b+pos, "Send (%s%s%s): Len: %i, buf addr: %i : 0x%04x, eot char: #%i, start byte pos: %i\n",
+		(t->opts & MX_TERM_TX_SEND_BY_SIZE) ? "by_size " : "x ",
+		(t->opts & MX_TERM_TX_SEND_BY_EOT_EXCL) ? "by_eot- " : "x ",
+		(t->opts & MX_TERM_TX_SEND_BY_EOT_INCL) ? "by_eot+" : "x",
+		t->send_len,
+		t->send_nb,
+		t->send_buf_addr,
+		t->send_eot_char,
+		t->send_start_byte);
+
+	pos += sprintf(b+pos, "Recv (%s%s%s): Len: %i, buf addr: %i : 0x%04x, eot char: #%i, eot char2: #%i, start byte pos: %i\n",
+		(t->opts & MX_TERM_TX_RECV_BY_SIZE) ? "by_size " : "x ",
+		(t->opts & MX_TERM_TX_RECV_BY_EOT_EXCL) ? "by_eot- " : "x ",
+		(t->opts & MX_TERM_TX_RECV_BY_EOT_INCL) ? "by_eot+" : "x",
+		t->recv_len,
+		t->recv_nb,
+		t->recv_buf_addr,
+		t->recv_eot_char,
+		t->recv_eot_char2,
+		t->send_start_byte);
+
+	pos += sprintf(b+pos, "Timeout: %i, Prompt: \"%s\", Flags: %s%s\n",
+		t->timeout,
+		t->prompt_text,
+		(t->opts & MX_TERM_TX_ECHO) ? "echo " : "",
+		(t->opts & MX_TERM_TX_PROMPT) ? "prompt " : "");
+
+	mx_term_cf_transmit_free(t);
 	return buf;
 }
 

@@ -120,7 +120,7 @@ void mx_floppy_reset(struct mx_unit_proto_t *unit)
 // -----------------------------------------------------------------------
 int mx_floppy_cfg_phy(struct mx_unit_proto_t *unit, struct mx_cf_sc_pl *cfg_phy)
 {
-	LOG(D_IO, 10, "MULTIX/floppy (line:%i): configure physical line", unit->phy_num);
+	LOG(L_FLOP, 10, "MULTIX/floppy (line:%i): configure physical line", unit->phy_num);
 	if (unit && cfg_phy) {
 		unit->dir = cfg_phy->dir;
 		unit->used = 1;
@@ -134,7 +134,7 @@ int mx_floppy_cfg_phy(struct mx_unit_proto_t *unit, struct mx_cf_sc_pl *cfg_phy)
 // -----------------------------------------------------------------------
 int mx_floppy_cfg_log(struct mx_unit_proto_t *unit, struct mx_cf_sc_ll *cfg_log)
 {
-	LOG(D_IO, 10, "MULTIX/floppy (line:%i): configure logical line", unit->phy_num);
+	LOG(L_FLOP, 10, "MULTIX/floppy (line:%i): configure logical line", unit->phy_num);
 	if (unit && cfg_log && cfg_log->floppy) {
 		UNIT->floppy_type = cfg_log->floppy->type;
 		UNIT->format_protect = cfg_log->floppy->format_protect;
@@ -147,7 +147,7 @@ int mx_floppy_cfg_log(struct mx_unit_proto_t *unit, struct mx_cf_sc_ll *cfg_log)
 // -----------------------------------------------------------------------
 void mx_floppy_cmd_attach(struct mx_unit_proto_t *unit, uint16_t addr)
 {
-	LOG(D_IO, 10, "MULTIX/floppy (line:%i): attach", unit->log_num);
+	LOG(L_FLOP, 10, "MULTIX/floppy (line:%i): attach", unit->log_num);
 	unit->attached = 1;
 	mx_int(unit->chan, unit->log_num, MX_INT_IDOLI);
 }
@@ -155,22 +155,22 @@ void mx_floppy_cmd_attach(struct mx_unit_proto_t *unit, uint16_t addr)
 // -----------------------------------------------------------------------
 void mx_floppy_cmd_detach(struct mx_unit_proto_t *unit, uint16_t addr)
 {
-	LOG(D_IO, 10, "MULTIX/floppy (line:%i): detach", unit->log_num);
+	LOG(L_FLOP, 10, "MULTIX/floppy (line:%i): detach", unit->log_num);
 	unit->attached = 0;
 	mx_int(unit->chan, unit->log_num, MX_INT_IODLI);
 }
 
 // -----------------------------------------------------------------------
-void mx_floppy_cmd_status(struct mx_unit_proto_t *unit, uint16_t addr)
+uint16_t mx_floppy_get_status(struct mx_unit_proto_t *unit)
 {
-	LOG(D_IO, 10, "MULTIX/floppy (line:%i): status", unit->log_num);
-	mx_int(unit->chan, unit->log_num, MX_INT_ISTRE);
+	LOG(L_FLOP, 10, "MULTIX/floppy (line:%i): status", unit->log_num);
+	return 0;
 }
 
 // -----------------------------------------------------------------------
 void mx_floppy_cmd_transmit(struct mx_unit_proto_t *unit, uint16_t addr)
 {
-    LOG(D_IO, 1, "MULTIX/floppy (line:%i): transmit", unit->log_num);
+    LOG(L_FLOP, 1, "MULTIX/floppy (line:%i): transmit", unit->log_num);
     int ret = E_OK;
     //MEMBw(0, addr+6, cf->ret_len);
 

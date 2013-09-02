@@ -36,9 +36,9 @@ typedef void (*mx_unit_f_shutdown)(struct mx_unit_proto_t *unit);
 typedef void (*mx_unit_f_reset)(struct mx_unit_proto_t *unit);
 typedef int (*mx_unit_f_cfg_phy)(struct mx_unit_proto_t *unit, struct mx_cf_sc_pl *cfg_phy);
 typedef int (*mx_unit_f_cfg_log)(struct mx_unit_proto_t *unit, struct mx_cf_sc_ll *cfg_log);
+typedef uint16_t (*mx_unit_f_get_status)(struct mx_unit_proto_t *unit);
 typedef void (*mx_unit_f_cmd_attach)(struct mx_unit_proto_t *unit, uint16_t addr);
 typedef void (*mx_unit_f_cmd_detach)(struct mx_unit_proto_t *unit, uint16_t addr);
-typedef void (*mx_unit_f_cmd_status)(struct mx_unit_proto_t *unit, uint16_t addr);
 typedef void (*mx_unit_f_cmd_transmit)(struct mx_unit_proto_t *unit, uint16_t addr);
 
 struct mx_chan_t;
@@ -52,9 +52,9 @@ struct mx_unit_proto_t {
 	mx_unit_f_reset reset;
 	mx_unit_f_cfg_phy cfg_phy;
 	mx_unit_f_cfg_log cfg_log;
+	mx_unit_f_get_status get_status;
 	mx_unit_f_cmd_attach cmd_attach;
 	mx_unit_f_cmd_detach cmd_detach;
-	mx_unit_f_cmd_status cmd_status;
 	mx_unit_f_cmd_transmit cmd_transmit;
 
 	// physical
@@ -67,6 +67,9 @@ struct mx_unit_proto_t {
 	int log_num;
 	int protocol;
 	int attached;
+
+	pthread_mutex_t status_mutex;
+	uint16_t status;
 
 	struct mx_chan_t *chan;
 
@@ -165,7 +168,7 @@ enum mx_int_e {
 	MX_INT_IEPSF = 42	// unknown control command, code=F
 };
 
-// multix logical line protocol
+// logical line protocols
 enum mx_log_proto_e {
 	MX_PROTO_PUNCH_READER		= 0,
 	MX_PROTO_PUNCHER			= 1,
@@ -180,7 +183,7 @@ enum mx_log_proto_e {
 	MX_PROTO_MAX				= 10
 };
 
-// multix physical line direction
+// physical line direction
 enum mx_phy_direction_e {
 	MX_DIR_OUTPUT		= 0b100,
 	MX_DIR_INPUT		= 0b010,
@@ -188,7 +191,7 @@ enum mx_phy_direction_e {
 	MX_DIR_FULL_DUPLEX	= 0b111
 };
 
-// multix physical line type
+// physical line types
 enum mx_phy_type_e {
 	MX_PHY_USART_ASYNC	= 0,
 	MX_PHY_8255			= 1,
@@ -199,6 +202,7 @@ enum mx_phy_type_e {
 	MX_PHY_MAX			= 6
 };
 
+// "set configuration" return field values
 enum mx_setconf_errors_e {
 	MX_SC_E_OK				= -1,// everything went fine. (it's not multix constant, it's em400 indicator)
 	MX_SC_E_CONFSET			= 0, // configuration already set
@@ -213,6 +217,20 @@ enum mx_setconf_errors_e {
     MX_SC_E_NOMEM			= 9, // memory exhausted
     MX_SC_E_PROTO_MISMATCH	= 10,// protocol vs. physical line type mismatch
     MX_SC_E_PROTO_PARAMS	= 11 // wrong protocol parameters
+};
+
+// "get status" bits
+enum mx_get_status_e {
+	MX_STATUS_ATTACHED		= 0b0000000100000000, // line is attached
+	MX_STATUS_OPR			= 0b0000000010000000, // operator called
+	MX_STATUS_PARITY		= 0b0000000001000000, // parity error
+	MX_STATUS_RECV_EOT		= 0b0000000000100000, // EOT received
+	MX_STATUS_RECV			= 0b0000000000001000, // receive ongoing
+	MX_STATUS_RECV_STARTED	= 0b0000000000000100, // receive started
+	MX_STATUS_SEND			= 0b0000000000000010, // send ongoing
+	MX_STATUS_SEND_STARTED	= 0b0000000000000001, // send started
+
+	MX_STATUS_NOTRANS		= 0b0000000011111111, // em400 internal: clear transmission
 };
 
 // --- cf: set configuration -------------------------------------------------
@@ -259,45 +277,6 @@ struct mx_cf_sc {
 	struct mx_cf_sc_ll *ll;
 };
 
-// --- cf: connect line ------------------------------------------------------
-
-// punch tape reader
-struct mx_cf_cl_punch_reader {
-	int watch_eot;
-	int no_parity;
-	int odd_parity;
-	int eight_bits;
-	int bs_can;
-	int watch_oprq;
-	int eot_code;
-	int oprq_code;
-	int txt_proc;
-};
-
-// tape puncher
-struct mx_cf_cl_puncher {
-	int odd_parity;
-	int eight_bits;
-	int low_to_up;
-	int txt_proc;
-};
-
-// terminal (monitor)
-struct mx_cf_cl_monitor {
-	int watch_eot;
-	int no_parity;
-	int odd_parity;
-	int eight_bits;
-	int xon_xoff;
-	int bs_can;
-	int low_to_up;
-	int watch_oprq;
-	int eot_code;
-	int oprq_code;
-	int txt_proc;
-	int txt_proc_params;
-};
-
 // -----------------------------------------------------------------------
 
 struct mx_unit_proto_t * mx_unit_proto_get_by_name(struct mx_unit_proto_t *proto, char *name);
@@ -313,6 +292,9 @@ void mx_int_enq(struct mx_chan_t *chan, struct mx_int_t *mx_int);
 void mx_int_preq(struct mx_chan_t *chan, struct mx_int_t *mx_int);
 void mx_int_setq(struct mx_chan_t *chan, struct mx_int_t *mx_int);
 struct mx_int_t * mx_int_deq(struct mx_chan_t *chan);
+
+void mx_status_set(struct mx_unit_proto_t *unit, uint16_t status);
+void mx_status_clear(struct mx_unit_proto_t *unit, uint16_t status);
 
 struct mx_cf_sc_pl * mx_decode_cf_find_phy(struct mx_cf_sc_pl *phys, int count, int id);
 int mx_decode_cf_phy(int addr, struct mx_cf_sc_pl *phy, int offset);

@@ -35,9 +35,19 @@ char *log_dname[] = {
 	"REG",
 	"MEM",
 	"CPU",
-	"IO",
+	"OP",
 	"INT",
-	"MISC",
+	"IO",
+	"MX",
+	"PX",
+	"CCHR",
+	"CMEM",
+	"TERM",
+	"WNCH",
+	"FLOP",
+	"PNCH",
+	"PNRD",
+	"OS",
 	NULL
 };
 
@@ -56,8 +66,8 @@ char *log_reg_name[] = {
 	"KB",
 	"MOD",
 	"MODc",
-	"P",
-	"ZC17"
+	"ZC17",
+	"ALARM"
 };
 
 char *log_int_name[] = {
@@ -66,13 +76,13 @@ char *log_int_name[] = {
 	"no memory",
 	"2nd CPU (high)",
 	"ext power loss",
-	"timer/special",
+	"timer (special)",
 	"illegal opcode",
 	"AWP div overflow",
 	"AWP underflow",
 	"AWP overflow",
 	"AWP div/0",
-	"special/timer",
+	"special (timer)",
 	"channel 0",
 	"channel 1",
 	"channel 2",
@@ -99,7 +109,7 @@ FILE *log_f;
 char *log_fname;
 
 int log_enabled = 0;
-int log_level[D_MAX] = { 0 };
+int log_level[L_MAX] = { 0 };
 
 // -----------------------------------------------------------------------
 int log_init(const char *logf)
@@ -173,7 +183,7 @@ int log_find_domain(char *name)
 void log_setlevel(int domain, int level)
 {
 	if (domain == -1) {
-		for (int i=0 ; i<D_MAX ; i++) {
+		for (int i=0 ; i<L_MAX ; i++) {
 			log_level[i] = level;
 		}
 	} else {

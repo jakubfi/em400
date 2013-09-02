@@ -20,10 +20,11 @@
 #include <unistd.h>
 #include <strings.h>
 
+#include "cpu/interrupts.h"
 #include "io/io.h"
 #include "io/chan.h"
 #include "io/cchar.h"
-#include "io/cchar_term_cons.h"
+#include "io/cchar_term.h"
 
 #include "cfg.h"
 #include "errors.h"
@@ -35,11 +36,11 @@
 // unit prototypes
 struct cchar_unit_proto_t cchar_unit_proto[] = {
 	{
-		"term_cons",
-		cchar_term_cons_create,
-		cchar_term_cons_shutdown,
-		cchar_term_cons_reset,
-		cchar_term_cons_cmd
+		"terminal",
+		cchar_term_create,
+		cchar_term_shutdown,
+		cchar_term_reset,
+		cchar_term_cmd
 	},
 	{ NULL, NULL, NULL, NULL, NULL }
 };
@@ -94,6 +95,14 @@ struct chan_proto_t * cchar_create(struct cfg_unit_t *units)
 		cunit = cunit->next;
 	}
 
+	// clear unit interrupts
+	pthread_mutex_lock(&chan->int_mutex);
+	for (int unit_n=0 ; unit_n<CCHAR_MAX_DEVICES ; unit_n++) {
+		CHAN->int_unit[unit_n] = CCHAR_INT_NONE;
+	}
+	CHAN->int_reported = -1;
+	pthread_mutex_unlock(&chan->int_mutex);
+
 	return (struct chan_proto_t *) chan;
 }
 
@@ -108,11 +117,64 @@ void cchar_reset(struct chan_proto_t  *chan)
 }
 
 // -----------------------------------------------------------------------
+void cchar_int_report(struct cchar_chan_t *chan)
+{
+	// if interrupt is reported and not yet served, there's nothing to do, for now
+	pthread_mutex_lock(&CHAN->int_mutex);
+	if (CHAN->int_reported != -1) {
+		pthread_mutex_unlock(&CHAN->int_mutex);
+		return;
+	}
+	pthread_mutex_unlock(&CHAN->int_mutex);
+
+	// check if any unit reported interrupt
+	for (int unit_n=0 ; unit_n<CCHAR_MAX_DEVICES ; unit_n++) {
+		pthread_mutex_lock(&CHAN->int_mutex);
+		if ((CHAN->int_unit[unit_n] != CCHAR_INT_NONE) && !CHAN->int_mask) {
+			chan->int_reported = unit_n;
+			pthread_mutex_unlock(&CHAN->int_mutex);
+			LOG(L_CHAR, 20, "CCHAR (ch:%i) reporting interrupt %i", chan->proto.num, chan->proto.num + 12);
+			int_set(chan->proto.num + 12);
+			break;
+		} else {
+			pthread_mutex_unlock(&CHAN->int_mutex);
+		}
+	}
+}
+
+// -----------------------------------------------------------------------
+void cchar_int(struct cchar_chan_t *chan, int unit_n, int interrupt)
+{
+	LOG(L_CHAR, 1, "CCHAR (ch:%i) interrupt %i, unit: %i", chan->proto.num, interrupt, unit_n);
+	pthread_mutex_lock(&CHAN->int_mutex);
+	CHAN->int_unit[unit_n] = interrupt;
+	pthread_mutex_unlock(&CHAN->int_mutex);
+
+	cchar_int_report(CHAN);
+}
+
+// -----------------------------------------------------------------------
 int cchar_cmd_intspec(struct chan_proto_t *chan, uint16_t *r_arg)
 {
-	LOG(D_IO, 1, "CCHAR (ch:%i) command: intspec", chan->num);
+	LOG(L_CHAR, 1, "CCHAR (ch:%i) command: intspec", chan->num);
+	pthread_mutex_lock(&CHAN->int_mutex);
+	if (CHAN->int_reported != -1) {
+		*r_arg = (CHAN->int_unit[CHAN->int_reported] << 8) | (CHAN->int_reported << 5);
+		// mark interrupt as served
+		CHAN->int_unit[CHAN->int_reported] = CCHAR_INT_NONE;
+		// nothing new reported
+		CHAN->int_reported = -1;
+	} else {
+		*r_arg = 0;
+	}
+	pthread_mutex_unlock(&CHAN->int_mutex);
+
+	// report another interrupt if it's there
+	cchar_int_report(CHAN);
+
 	return IO_OK;
 }
+
 
 // -----------------------------------------------------------------------
 int cchar_chan_cmd(struct chan_proto_t *chan, int dir, int cmd, int u_num, uint16_t *r_arg)
@@ -120,39 +182,40 @@ int cchar_chan_cmd(struct chan_proto_t *chan, int dir, int cmd, int u_num, uint1
 	if (dir == IO_OU) {
 		switch (cmd) {
 		case CHAN_CMD_EXISTS:
-			LOG(D_IO, 1, "CCHAR %i (%s): command: check chan exists", chan->num, chan->name);
+			LOG(L_CHAR, 1, "CCHAR %i (%s): command: check chan exists", chan->num, chan->name);
 			break;
-		case CHAN_CMD_INTSPEC:
-			return cchar_cmd_intspec(chan, r_arg);
-		case CHAN_CMD_ALLOC:
-			// all units always working with CPU 0
-			*r_arg = 0;
-			LOG(D_IO, 1, "CCHAR %i:%i (%s): command: get allocation -> %i", chan->num, u_num, chan->name, *r_arg);
+		case CHAN_CMD_MASK_PN:
+			CHAN->int_mask = 1;
+			LOG(L_CHAR, 1, "CCHAR %i (%s): command: mask CPU", chan->num, chan->name);
+			break;
+		case CHAN_CMD_MASK_NPN:
+			LOG(L_CHAR, 1, "CCHAR %i (%s): command: mask ~CPU -> ignored", chan->num, chan->name);
+			// ignore 2nd CPU
+			break;
+		case CHAN_CMD_ASSIGN:
+			LOG(L_CHAR, 1, "CCHAR %i (%s:%s): command: assign CPU -> ignored", chan->num, u_num, chan->name);
+			// always for CPU 0
 			break;
 		default:
-			LOG(D_IO, 1, "CCHAR %i:%i (%s): unknow command", chan->num, u_num, chan->name);
+			LOG(L_CHAR, 1, "CCHAR %i:%i (%s): unknow command", chan->num, u_num, chan->name);
 			// shouldn't happen, but as channel always reports OK...
 			break;
 		}
 	} else {
 		switch (cmd) {
 		case CHAN_CMD_EXISTS:
-			LOG(D_IO, 1, "CCHAR %i (%s): command: check chan exists", chan->num, chan->name);
+		case CHAN_CMD_STATUS:
+			LOG(L_CHAR, 1, "CCHAR %i (%s): command: check chan exists", chan->num, chan->name);
 			break;
-		case CHAN_CMD_MASK_PN:
-			CHAN->int_mask = 1;
-			LOG(D_IO, 1, "CCHAR %i (%s): command: mask CPU", chan->num, chan->name);
-			break;
-		case CHAN_CMD_MASK_NPN:
-			LOG(D_IO, 1, "CCHAR %i (%s): command: mask ~CPU -> ignored", chan->num, chan->name);
-			// ignore 2nd CPU
-			break;
-		case CHAN_CMD_ASSIGN:
-			LOG(D_IO, 1, "CCHAR %i (%s:%s): command: assign CPU -> ignored", chan->num, u_num, chan->name);
-			// always for CPU 0
+		case CHAN_CMD_INTSPEC:
+			return cchar_cmd_intspec(chan, r_arg);
+		case CHAN_CMD_ALLOC:
+			// all units always working with CPU 0
+			*r_arg = 0;
+			LOG(L_CHAR, 1, "CCHAR %i:%i (%s): command: get allocation -> %i", chan->num, u_num, chan->name, *r_arg);
 			break;
 		default:
-			LOG(D_IO, 1, "CCHAR %i:%i (%s): unknow command", chan->num, u_num, chan->name);
+			LOG(L_CHAR, 1, "CCHAR %i:%i (%s): unknow command", chan->num, u_num, chan->name);
 			// shouldn't happen, but as channel always reports OK...
 			break;
 		}

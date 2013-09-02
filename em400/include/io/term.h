@@ -15,56 +15,36 @@
 //  Foundation, Inc.,
 //  51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 
-#ifndef ERRORS_H
-#define ERRORS_H
+#ifndef TERM_H
+#define TERM_H
 
-extern int gerr;
+#include <inttypes.h>
+#include <sys/select.h>
+#include <sys/socket.h>
+#include <netinet/in.h>
+#include <pthread.h>
 
-enum em400_error {
-	E_UNKNOWN = -32000,
-	E_MEM_NO_OS_MEM,
-	E_MEM_WRONG_OS_MEM,
-	E_MEM_BAD_SEGMENT_COUNT,
-	E_MEM_CANNOT_ALLOCATE,
-	E_MEM_BLOCK_TOO_SMALL,
-	E_FILE_OPEN,
-	E_FILE_OPERATION,
-	E_TIMER_SIGNAL,
-	E_TIMER_CREATE,
-	E_TIMER_SET,
-	E_ALLOC,
-	E_DEBUGGER_SIG_RESIZE,
-	E_IO_CHAN_UNKNOWN,
-	E_IO_UNIT_UNKNOWN,
-	E_IO_CHAN_INIT,
-	E_IO_UNIT_INIT,
-	E_IO_UNIT_INIT_ARGS,
-	E_LOG_OPEN,
-	E_AW_INIT,
-	E_UI_INIT,
-	E_UI_SIG_CTRLC,
-	E_CFG_OPEN,
-	E_CFG_PARSE,
-	E_CFG_DEFAULT_LOAD,
-	E_QUIT_NO_MEM,
-	E_CF,
-	E_ARG_TOO_MANY,
-	E_ARG_NOT_ENOUGH,
-	E_ARG_CONVERSION,
-	E_ARG_FORMAT,
-	E_MX_DECODE,
-	E_MX_TRANSMISSION,
-	E_MX_CANCEL,
-	E_THREAD,
-	E_IMAGE,
-	E_TERM,
-
-
-	E_OK = 0,
-	E_QUIT_OK
+enum term_type_e {
+	TERM_NONE = 0,
+	TERM_TCP = 1,
+	TERM_CONSOLE = 2,
+	TERM_SERIAL = 3,
 };
 
-char * get_error(int e);
+struct term_t {
+	int type;
+	int connfd;
+	struct timespec timeout;
+
+	int listenfd;
+	struct sockaddr cliaddr;
+};
+
+struct term_t * term_open_tcp(int port, int timeout_ms);
+void term_close(struct term_t *term);
+void term_try_accept(struct term_t *term);
+int term_read(struct term_t *term, char *buf, int len);
+int term_write(struct term_t *term, char *buf, int len);
 
 #endif
 

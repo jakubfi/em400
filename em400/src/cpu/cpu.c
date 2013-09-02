@@ -83,7 +83,7 @@ void cpu_halt()
 	}
 
 	// otherwise, wait for interrupt
-	LOG(D_CPU, 1, "HALT 0%02o (alarm: %i)", N, regs[6]&255);
+	LOG(L_CPU, 10, "HALT 0%02o (alarm: %i)", N, regs[6]&255);
 	pthread_mutex_lock(&int_mutex_rp);
 	while (!RP) {
 		pthread_cond_wait(&int_cond_rp, &int_mutex_rp);
@@ -105,7 +105,7 @@ void cpu_step()
 
 	// fetch instruction
 	regs[R_IR] = nMEM(nR(R_IC));
-	LOG(D_CPU, 10, "---- Cycle: Q:NB = %d:%d, IC = 0x%04x IR = 0x%04x ------------", SR_Q, SR_NB, regs[R_IC], regs[R_IR]);
+	LOG(L_CPU, 10, "---- Cycle: Q:NB = %d:%d, IC = 0x%04x IR = 0x%04x ------------", SR_Q, SR_NB, regs[R_IC], regs[R_IR]);
 	regs[R_IC]++;
 
 	op = iset + IR_OP;
@@ -119,7 +119,7 @@ void cpu_step()
 	if (op->norm_arg) {
 		if (!IR_C) {
 			_N = (int16_t) nMEM(nR(R_IC));
-			LOG(D_CPU, 20, "Fetched M argument: 0x%04x", _N);
+			LOG(L_CPU, 20, "Fetched M argument: 0x%04x", _N);
 			regs[R_IC]++;
 		} else {
 			_N = (int16_t) R(IR_C);
@@ -128,7 +128,7 @@ void cpu_step()
 
 	// previous instruction set P?
 	if (P) {
-		LOG(D_CPU, 20, "P set, skipping");
+		LOG(L_CPU, 20, "P set, skipping");
 		P = 0;
 		return;
 	}
@@ -139,7 +139,7 @@ void cpu_step()
 	if ((op_fun == NULL)
 	|| (op_is_md && (regs[R_MODc] >= 3))
 	|| (SR_Q && op->user_illegal)) {
-		LOG(D_CPU, 10, "Instruction ineffective");
+		LOG(L_CPU, 10, "Instruction ineffective");
 		regs[R_MODc] = 0;
 		regs[R_MOD] = 0;
 		P = 0;
@@ -161,10 +161,10 @@ void cpu_step()
 	}
 	N = _N;
 
-	LOG(D_CPU, 20, "N/T arg: 0x%04x (%i)", N, N);
+	LOG(L_CPU, 20, "N/T arg: 0x%04x (%i)", N, N);
 
 	// execute instruction
-	LOG(D_CPU, 30, "Execute instruction");
+	LOG(L_CPU, 30, "Execute instruction");
 	op_fun();
 
 	if (!op_is_md) {

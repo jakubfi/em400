@@ -106,10 +106,10 @@ void mem_shutdown()
 // -----------------------------------------------------------------------
 int mem_add_map(int nb, int ab, int mp, int segment)
 {
-	LOG(D_MEM, 1, "Add map: NB = %d, AB = %d, MP = %d, SEG = %d", nb, ab, mp, segment);
+	LOG(L_MEM, 1, "Add map: NB = %d, AB = %d, MP = %d, SEG = %d", nb, ab, mp, segment);
 
 	if ((nb == 0) && (ab<em400_cfg.mem_os)) {
-		LOG(D_MEM, 1, "Add map: Can't configure hardwired segment");
+		LOG(L_MEM, 1, "Add map: Can't configure hardwired segment");
 		return IO_NO;
 	}
 
@@ -118,12 +118,12 @@ int mem_add_map(int nb, int ab, int mp, int segment)
 		mem_map[nb][ab] = mem_segment[mp][segment];
 		if (!mem_map[nb][ab]) {
 			pthread_spin_unlock(&mem_spin);
-			LOG(D_MEM, 1, "Add map: No such segment");
+			LOG(L_MEM, 1, "Add map: No such segment");
 			return IO_NO;
 		}
 		pthread_spin_unlock(&mem_spin);
 	} else {
-		LOG(D_MEM, 1, "Add map: NB > MEM_MAX_NB");
+		LOG(L_MEM, 1, "Add map: NB > MEM_MAX_NB");
 		return IO_NO;
 	}
 	return IO_OK;
@@ -179,16 +179,16 @@ uint16_t mem_read(int nb, uint16_t addr, int trace)
 #ifdef WITH_DEBUGGER
 		// leave trace for debugger to display
 		if (trace) {
-			LOG(D_MEM, 20, "[%d:%d] -> 0x%04x", nb, addr, value);
+			LOG(L_MEM, 20, "[%d:%d] -> 0x%04x", nb, addr, value);
 			dbg_touch_add(&touch_mem, TOUCH_R, nb, addr, value);
 		} else {
-			LOG(D_MEM, 100, "[%d:%d] -> 0x%04x", nb, addr, value);
+			LOG(L_MEM, 100, "[%d:%d] -> 0x%04x", nb, addr, value);
 		}
 #endif
 		return value;
 	} else {
 #ifdef WITH_DEBUGGER
-		LOG(D_MEM, 1, "[%d:%d] -> ERROR", nb, addr);
+		LOG(L_MEM, 1, "[%d:%d] -> ERROR", nb, addr);
 #endif
 		int_set(INT_NO_MEM);
 		if (!SR_Q) {
@@ -236,17 +236,17 @@ void mem_write(int nb, uint16_t addr, uint16_t val, int trace)
 #ifdef WITH_DEBUGGER
 		// leave trace for debugger to display
 		if (trace) {
-			LOG(D_MEM, 20, "[%d:%d] <- 0x%04x", nb, addr, val);
+			LOG(L_MEM, 20, "[%d:%d] <- 0x%04x", nb, addr, val);
 			dbg_touch_add(&touch_mem, TOUCH_W, nb, addr, *ptr);
 		} else {
-			LOG(D_MEM, 100, "[%d:%d] <- 0x%04x", nb, addr, val);
+			LOG(L_MEM, 100, "[%d:%d] <- 0x%04x", nb, addr, val);
 		}
 #endif
 		pthread_spin_lock(&mem_spin);
 		*ptr = val;
 		pthread_spin_unlock(&mem_spin);
 	} else {
-		LOG(D_MEM, 1, "[%d:%d] <- 0x%04x ERROR", nb, addr, val);
+		LOG(L_MEM, 1, "[%d:%d] <- 0x%04x ERROR", nb, addr, val);
 		int_set(INT_NO_MEM);
 		if (!SR_Q) {
 			nRw(R_ALARM, 1);
@@ -282,7 +282,7 @@ int mem_load_image(const char* fname, int nb, int len)
 		return E_FILE_OPEN;
 	}
 
-	LOG(D_MEM, 1, "Loading memory image: %s -> %d", fname, nb);
+	LOG(L_MEM, 1, "Loading memory image: %s -> %d", fname, nb);
 
 	uint16_t buf[MEM_SEGMENT_SIZE];
 	int res;

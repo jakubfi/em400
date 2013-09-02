@@ -62,6 +62,7 @@ struct _em400_errordesc {
 	{ E_MX_CANCEL, "Multix transmission cancelled" },
 	{ E_THREAD, "cannot create thread" },
 	{ E_IMAGE, "error opening media image" },
+	{ E_TERM, "error creating terminal" },
 
 	{ E_UNKNOWN, "unknown error" }
 };

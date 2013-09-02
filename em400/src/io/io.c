@@ -147,7 +147,7 @@ int io_dispatch(int dir, uint16_t n, uint16_t *r)
 			return mem_add_map(nb, ab, module, seg);
 		} else {
 			// TODO: what to return?
-			LOG(D_IO, 1, "MEM command shouldn't be IN");
+			LOG(L_IO, 1, "MEM command shouldn't be IN");
 			return IO_NO;
 		}
 	// channel/unit command
@@ -158,16 +158,16 @@ int io_dispatch(int dir, uint16_t n, uint16_t *r)
 #ifdef WITH_DEBUGGER
 		char *narg = int2binf("... .. ...... .... .", n, 16);
 		char *rarg = int2binf("", *r, 16);
-		LOG(D_IO, 1, "I/O command, dir = %s, chan = %d, n_arg = %s, r_arg = %s (0x%04x)", dir ? "OUT" : "IN", chan_n, narg, rarg, *r);
+		LOG(L_IO, 1, "I/O command, dir = %s, chan = %d, n_arg = %s, r_arg = %s (0x%04x)", dir ? "OUT" : "IN", chan_n, narg, rarg, *r);
 		free(narg);
 		free(rarg);
 #endif
 		if (chan) {
 			res = chan->cmd(chan, dir, n, r);
-			LOG(D_IO, 1, "I/O command, result = %i", res);
+			LOG(L_IO, 1, "I/O command, result = %i", res);
 		} else {
 			res = IO_NO;
-			LOG(D_IO, 1, "I/O command to a channel that doesn't exist: %i", chan_n);
+			LOG(L_IO, 1, "I/O command to a channel that doesn't exist: %i", chan_n);
 		}
 		return res;
 	}
