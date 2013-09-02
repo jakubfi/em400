@@ -5,6 +5,9 @@ import sys
 import re
 
 trans_table = {
+# dos newlines
+"\r\n" : "\n",
+# polish characters
 "_a" : "ą",
 "_c" : "ć",
 "_e" : "ę",
@@ -22,7 +25,7 @@ trans_table = {
 "_O" : "Ó",
 "_S" : "Ś",
 "_Z" : "Ż",
-
+# clear formatting
 "_\*" : "",
 "_'" : "",
 "_!![ZPWAOGXSTLQ][0-9]+;" : "",
@@ -45,7 +48,23 @@ trans_table = {
 "_\?" : "?",
 "_\[" : "[",
 "_\]" : "]",
+"_\|" : "|",
+"^ *" : "",
+"\|([\S])" : "\\1",
+# fix punctuation errors
+"(\w)\s:\s" : "\\1: ",
+"(\w)\s+,(\w)" : "\\1, \\2",
+"(\w),(\w)" : "\\1, \\2",
+"(\w) \." : "\\1. ",
+"([\w\.\,])\ +" : "\\1 ",
+"^ " : "",
 
+
+# fix myself
+"żró": "źró",
+"Żró": "Źró",
+"wskażni" : "wskaźni",
+"Wskażni" : "Wskaźni",
 "__" : "_",
 }
 
@@ -67,7 +86,9 @@ limit = -1
 for line in f:
     if limit == 0:
         break
+    #print line,
     print trans_line(line, trans_table),
+    #print "------------------------------------------------------"
     limit -= 1
 
 # vim: tabstop=4 expandtab shiftwidth=4 softtabstop=4
