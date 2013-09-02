@@ -5,7 +5,10 @@ SFn, rC, rB
 MFn, rC, rB
 DFn, rC, rB
 
+on/off przeróbki
 zc17
+sint/d
+maskowanie przerwań
 
 multix
 benchmark: byte addressing
