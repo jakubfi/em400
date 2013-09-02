@@ -154,11 +154,11 @@ bool dump(int direction)
 	}
 
 	// select the drive
-	res = wdc_set_drive(1);
+	/*res = wdc_set_drive(1);
 	if (!res) {
 		printf(" Cannot select drive\n");
 		return false;
-	}
+	}*/
 	// check Logic16 status
 	if (device_error) {
 		printf(" Logic device error\n");
