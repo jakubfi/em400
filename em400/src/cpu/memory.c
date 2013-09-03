@@ -17,6 +17,7 @@
 
 #include <stdlib.h>
 #include <stdio.h>
+#include <string.h>
 #include <inttypes.h>
 #include <arpa/inet.h>
 #include <pthread.h>
@@ -47,6 +48,10 @@ uint16_t *mem_map[MEM_MAX_NB][MEM_MAX_AB];
 // -----------------------------------------------------------------------
 int mem_init()
 {
+	int mp;
+	int seg;
+	int ab;
+
 	eprint("Initializing memory\n");
 
 	if (em400_cfg.mem[0].segments <= 0) {
@@ -60,11 +65,10 @@ int mem_init()
 	pthread_spin_init(&mem_spin, 0);
 
 	// create configured physical segments
-	for (int mp=0 ; mp<MEM_MAX_MODULES ; mp++) {
+	for (mp=0 ; mp<MEM_MAX_MODULES ; mp++) {
 		if (em400_cfg.mem[mp].segments > MEM_MAX_SEGMENTS) {
 			return E_MEM_BAD_SEGMENT_COUNT;
 		} else {
-			int seg;
 			for (seg=0 ; seg<em400_cfg.mem[mp].segments ; seg++) {
 				pthread_spin_lock(&mem_spin);
 				mem_segment[mp][seg] = malloc(sizeof(uint16_t) * MEM_SEGMENT_SIZE);
@@ -78,7 +82,7 @@ int mem_init()
 	}
 
 	// hardwire segments for OS
-	for (int ab=0 ; ab<em400_cfg.mem_os ; ab++) {
+	for (ab=0 ; ab<em400_cfg.mem_os ; ab++) {
 		pthread_spin_lock(&mem_spin);
 		if (mem_segment[0][ab]) {
 			mem_map[0][ab] = mem_segment[0][ab];
@@ -92,13 +96,17 @@ int mem_init()
 // -----------------------------------------------------------------------
 void mem_shutdown()
 {
+	int mp;
+	int seg;
+
 	eprint("Shutdown memory\n");
 	mem_remove_maps();
 
 	// disconnect memory modules
-	for (int mp=0 ; mp<MEM_MAX_MODULES ; mp++) {
-		for (int seg=0 ; seg<MEM_MAX_SEGMENTS ; seg++) {
+	for (mp=0 ; mp<MEM_MAX_MODULES ; mp++) {
+		for (seg=0 ; seg<MEM_MAX_SEGMENTS ; seg++) {
 			free(mem_segment[mp][seg]);
+			mem_segment[mp][seg] = NULL;
 		}
 	}
 }
@@ -108,40 +116,43 @@ int mem_add_map(int nb, int ab, int mp, int segment)
 {
 	LOG(L_MEM, 1, "Add map: NB = %d, AB = %d, MP = %d, SEG = %d", nb, ab, mp, segment);
 
-	if ((nb == 0) && (ab<em400_cfg.mem_os)) {
+	if ((nb == 0) && (ab < em400_cfg.mem_os)) {
 		LOG(L_MEM, 1, "Add map: Can't configure hardwired segment");
 		return IO_NO;
 	}
 
-	if (nb < MEM_MAX_NB) {
-		pthread_spin_lock(&mem_spin);
-		mem_map[nb][ab] = mem_segment[mp][segment];
-		if (!mem_map[nb][ab]) {
-			pthread_spin_unlock(&mem_spin);
-			LOG(L_MEM, 1, "Add map: No such segment");
-			return IO_NO;
-		}
-		pthread_spin_unlock(&mem_spin);
-	} else {
+	if (nb >= MEM_MAX_NB) {
 		LOG(L_MEM, 1, "Add map: NB > MEM_MAX_NB");
 		return IO_NO;
 	}
+
+	if (!mem_segment[mp][segment]) {
+		LOG(L_MEM, 1, "Add map: No such segment");
+		return IO_NO;
+	}
+
+	pthread_spin_lock(&mem_spin);
+	mem_map[nb][ab] = mem_segment[mp][segment];
+	pthread_spin_unlock(&mem_spin);
+
 	return IO_OK;
 }
 
 // -----------------------------------------------------------------------
 void mem_remove_maps()
 {
-	int min_ab;
+	int nb;
+	int ab;
+	int ab_min;
 
 	// remove all memory mappings
-	for (int nb=0 ; nb<MEM_MAX_NB ; nb++) {
+	for (nb=0 ; nb<MEM_MAX_NB ; nb++) {
 		if (nb == 0) {
-			min_ab = em400_cfg.mem_os;
+			ab_min = em400_cfg.mem_os;
 		} else {
-			min_ab = 0;
+			ab_min = 0;
 		}
-		for (int ab=min_ab ; ab<MEM_MAX_AB ; ab ++) {
+		for (ab=ab_min ; ab<MEM_MAX_AB ; ab++) {
 			pthread_spin_lock(&mem_spin);
 			mem_map[nb][ab] = NULL;
 			pthread_spin_unlock(&mem_spin);
@@ -149,32 +160,18 @@ void mem_remove_maps()
 	}
 }
 
-#ifdef WITH_DEBUGGER
-// -----------------------------------------------------------------------
-// low-level memory access (bypassing emulation, no thread-safety)
-uint16_t * mem_ptr(int nb, uint16_t addr)
-{
-	int ab = (addr & 0b1111000000000000) >> 12;
-	int addr12 = addr & 0b0000111111111111;
-
-	uint16_t *seg_addr = mem_map[nb][ab];
-
-	if (seg_addr) {
-		return seg_addr + addr12;
-	} else {
-		return NULL;
-	}
-}
-#endif
-
 // -----------------------------------------------------------------------
 // read from any block
 uint16_t mem_read(int nb, uint16_t addr, int trace)
 {
-	uint16_t *ptr = mem_ptr(nb, addr);
+	uint16_t *ptr;
+	uint16_t value;
+
+	ptr = mem_ptr(nb, addr);
+
 	if (ptr) {
 		pthread_spin_lock(&mem_spin);
-		uint16_t value = *ptr;
+		value = *ptr;
 		pthread_spin_unlock(&mem_spin);
 #ifdef WITH_DEBUGGER
 		// leave trace for debugger to display
@@ -187,51 +184,69 @@ uint16_t mem_read(int nb, uint16_t addr, int trace)
 #endif
 		return value;
 	} else {
-#ifdef WITH_DEBUGGER
 		LOG(L_MEM, 1, "[%d:%d] -> ERROR", nb, addr);
-#endif
 		int_set(INT_NO_MEM);
 		if (!SR_Q) {
 			nRw(R_ALARM, 1);
 			cpu_stop = 1;
 		}
-		return 0x0000;
+		return 0xdead;
 	}
 }
 
 // -----------------------------------------------------------------------
 uint8_t mem_read_byte(int nb, uint16_t addr, int trace)
 {
-	int shift = 8 * (~addr & 1);
+	int shift;
 	uint16_t addr17;
+
+	shift = 8 * (~addr & 1);
+
 	if (em400_cfg.cpu.mod_17bit) {
 		addr17 = (addr >> 1) | (nR(R_ZC17) << 15);
 	} else {
 		addr17 = addr >> 1;
 	}
-	uint16_t data = mem_read(nb, addr17, trace) >> shift;
-	return data;
+
+	return mem_read(nb, addr17, trace) >> shift;
 }
 
 // -----------------------------------------------------------------------
 void mem_write_byte(int nb, uint16_t addr, uint8_t val, int trace)
 {
-	int shift = 8 * (~addr & 1);
+	int shift;
 	uint16_t addr17;
+	uint16_t *ptr;
+	uint16_t data;
+
+	shift = 8 * (~addr & 1);
+
+	// TODO: optimize?
 	if (em400_cfg.cpu.mod_17bit) {
 		addr17 = (addr >> 1) | (nR(R_ZC17) << 15);
 	} else {
 		addr17 = addr >> 1;
 	}
-	uint16_t data = mem_read(nb, addr17, 0) & ((uint16_t)0b1111111100000000>>shift);
-	mem_write(nb, addr17, data | (((uint16_t)val) << shift), trace);
+
+	ptr = mem_ptr(nb, addr17);
+
+	if (ptr) {
+		data = (*ptr & (0b1111111100000000 >> shift)) | ((uint16_t)val << shift);
+	} else {
+		data = 0xdead;
+	}
+
+	mem_write(nb, addr17, data, trace);
 }
 
 // -----------------------------------------------------------------------
 // write to any block
 void mem_write(int nb, uint16_t addr, uint16_t val, int trace)
 {
-	uint16_t *ptr = mem_ptr(nb, addr);
+	uint16_t *ptr;
+	
+	ptr = mem_ptr(nb, addr);
+
 	if (ptr) {
 #ifdef WITH_DEBUGGER
 		// leave trace for debugger to display
@@ -258,13 +273,14 @@ void mem_write(int nb, uint16_t addr, uint16_t val, int trace)
 // -----------------------------------------------------------------------
 void mem_clear()
 {
-	for (int mp=0 ; mp<MEM_MAX_MODULES ; mp++) {
-		for (int seg=0 ; seg<MEM_MAX_SEGMENTS ; seg++) {
+	int mp;
+	int seg;
+
+	for (mp=0 ; mp<MEM_MAX_MODULES ; mp++) {
+		for (seg=0 ; seg<MEM_MAX_SEGMENTS ; seg++) {
 			pthread_spin_lock(&mem_spin);
 			if (mem_segment[mp][seg]) {
-				for (int addr=0 ; addr<MEM_SEGMENT_SIZE ; addr++) {
-					mem_segment[mp][seg][addr] = 0;
-				}
+				memset(mem_segment[mp][seg], 0, MEM_SEGMENT_SIZE);
 			}
 			pthread_spin_unlock(&mem_spin);
 		}

@@ -75,11 +75,9 @@ void cpu_reset()
 void cpu_halt()
 {
 	// handle hlt 077 as "exit emulation" if user wants to
-	if (em400_cfg.exit_on_hlt) {
-		if (N == 077) {
-			em400_quit = 1;
-			return;
-		}
+	if ((em400_cfg.exit_on_hlt) && (N == 077)) {
+		em400_quit = 1;
+		return;
 	}
 
 	// otherwise, wait for interrupt
@@ -117,7 +115,7 @@ void cpu_step()
 
 	// fetch M-arg if present
 	if (op->norm_arg) {
-		if (!IR_C) {
+		if (IR_C == 0) {
 			_N = (int16_t) nMEM(nR(R_IC));
 			LOG(L_CPU, 20, "Fetched M argument: 0x%04x", _N);
 			regs[R_IC]++;
@@ -154,11 +152,12 @@ void cpu_step()
 		if (IR_B) _N += (int16_t) R(IR_B);
 		_N += (int16_t) regs[R_MOD];
 		if (IR_D) _N = (int16_t) MEM(_N);
-		if (em400_cfg.cpu.mod_17bit) nRw(R_ZC17, (_N >> 16) & 1);
 	} else if (op->short_arg) {
 		_N = IR_T + (int16_t) regs[R_MOD];
-		if (em400_cfg.cpu.mod_17bit) nRw(R_ZC17, (_N >> 16) & 1);
 	}
+
+	if (em400_cfg.cpu.mod_17bit) nRw(R_ZC17, (_N >> 16) & 1);
+
 	N = _N;
 
 	LOG(L_CPU, 20, "N/T arg: 0x%04x (%i)", N, N);

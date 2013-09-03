@@ -21,13 +21,12 @@
 #include <inttypes.h>
 #include "registers.h"
 
-#define MEM_MAX_MODULES 16
-#define MEM_MAX_SEGMENTS 16
-#define MEM_SEGMENT_SIZE 4 * 1024
-#define MEM_MAX_NB 16
-#define MEM_MAX_AB 16
+#define MEM_SEGMENT_SIZE 4 * 1024	// segment size (16-bit words)
+#define MEM_MAX_MODULES 16			// physical memory modules
+#define MEM_MAX_SEGMENTS 16			// physical segments in a module
+#define MEM_MAX_NB 16				// logical blocks
+#define MEM_MAX_AB 16				// logical segments in a logical block
 
-extern int mem_conf[MEM_MAX_MODULES];
 extern uint16_t *mem_segment[MEM_MAX_MODULES][MEM_MAX_SEGMENTS];
 extern uint16_t *mem_map[MEM_MAX_NB][MEM_MAX_AB];
 
@@ -36,12 +35,7 @@ void mem_shutdown();
 int mem_add_map(int nb, int ab, int mp, int segment);
 void mem_remove_maps();
 
-#ifndef WITH_DEBUGGER
-#define mem_ptr(nb, addr) (mem_map[nb][(addr) >> 12] ? mem_map[nb][(addr) >> 12] + ((addr) & 0b0000111111111111) : NULL)
-#else
-uint16_t * mem_ptr(int nb, uint16_t addr);
-#endif
-
+#define mem_ptr(nb, addr) (mem_map[nb][addr >> 12] ? mem_map[nb][addr >> 12] + (addr & 0b0000111111111111) : NULL)
 uint16_t mem_read(int nb, uint16_t addr, int trace);
 uint8_t mem_read_byte(int nb, uint16_t addr, int trace);
 void mem_write(int nb, uint16_t addr, uint16_t val, int trace);
