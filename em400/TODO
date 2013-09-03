@@ -5,25 +5,32 @@ Known bugs:
 
 CPU:
 
-* handling no memory for io devices
-* MEGA
+* processor modification
+* OS memory configuration (hardwired)
+* handling no memory for io devices (change how nomem is handled? - global flag?)
+* MEGA memory
+* timings (instructions, memory access, disk latencies, serial lines, ...)
 
 I/O:
 
 * pthread_join()
 
+* make attach/detach mx funcs
+* move cfg_phy to mx
+* move cfg_log to mx, make cfg_proto for devices
+* move get_status to mx
 * mx: review interrupts
 * mx: reset
 * mx: pthread cleanups after shutdown
 * mx: pthread result checks
 * mx: mx_decode_cf_log(): MX_SC_E_DIR_MISMATCH device vs. protocol transmission dricetion check
 
+* mx/winch: write
 * mx/winch: reset
 * mx/winch: format
 * mx/winch: format spare
 * mx/winch: mind spare area
-* mx/winch: write
-* mx/winch: handle BASF drive
+* mx/winch: handle BASF (and other?) drive
 
 * console terminal
 * TCP terminal
@@ -46,6 +53,7 @@ I/O:
 
 Debugger:
 
+* simplify logging (how?)
 * more shortcuts (c-w, c-d, c-k, home, end, ...)
 * log shouldn't start new file immediately
 * again, rethink hex/dec numbers in output and log
@@ -65,12 +73,9 @@ Other:
 To clarify:
 
 * 2-cpu configuration
-* C for floating point instructions
-* how nomem is handled
 
 MERA-400 features that em400 does not emulate:
 
-* timings (instructions, memory access, disk latencies, serial lines, ...)
 * power failure interrupts (cpu and channel)
 * 2-cpu configuration
   * interrupts
@@ -78,7 +83,6 @@ MERA-400 features that em400 does not emulate:
   * bit 11 of SR
   * channel interrupt masks for 2 cpus
   * device allocations per cpu
-  * OS memory configuration (hardwired)
 * memory parity (itself and interrupts)
 * interface
 * priority based interface reservation
