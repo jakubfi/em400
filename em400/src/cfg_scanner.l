@@ -37,22 +37,17 @@ comment	#.*$
 
 %%
 
-cpu			return CPU;
-memory		return MEMORY;
-speed		return SPEED;
-max			return MAX;
-real		return REAL;
-timer_step	return TIMER;
-mod_17bit	return MOD_17;
-mod_sint	return MOD_SINT;
-module		return MODULE;
-elwro		return ELWRO;
-mega		return MEGA;
-os_segments	return OS_SEG;
-true|yes	{ cyylval.value.v = 1; cyylval.value.s = strdup(cyytext); return VALUE; }
-false|no	{ cyylval.value.v = 0; cyylval.value.s = strdup(cyytext); return VALUE; }
-channel		return CHANNEL;
-unit		return UNIT;
+computer		return COMPUTER;
+speed_real		return SPEED_REAL;
+timer_step		return TIMER;
+mod				return MOD;
+mem_elwro		return ELWRO;
+mem_mega		return MEGA;
+mem_os_segments	return OS_SEG;
+true|yes		{ cyylval.value.v = 1; cyylval.value.s = strdup(cyytext); return BOOL; }
+false|no		{ cyylval.value.v = 0; cyylval.value.s = strdup(cyytext); return BOOL; }
+channel			return CHANNEL;
+unit			return UNIT;
 
 {number} {
 	cyylval.value.v = strtol(cyytext, NULL, 10);

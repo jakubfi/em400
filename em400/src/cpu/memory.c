@@ -41,7 +41,8 @@ pthread_spinlock_t mem_spin;
 
 // physical memory: modules with segments inside
 uint16_t *mem_segment[MEM_MAX_MODULES][MEM_MAX_SEGMENTS];
-
+// physical memory: segment types
+int mem_type[MEM_MAX_MODULES][MEM_MAX_SEGMENTS];
 // logical mapping from (NB,AB) to physical segment pointer
 uint16_t *mem_map[MEM_MAX_NB][MEM_MAX_AB];
 
@@ -51,35 +52,52 @@ int mem_init()
 	int mp;
 	int seg;
 	int ab;
+	uint16_t *mptr;
 
 	eprint("Initializing memory\n");
 
-	if (em400_cfg.mem[0].segments <= 0) {
-		return E_MEM_NO_OS_MEM;
-	}
-
-	if ((em400_cfg.mem_os < 1) || (em400_cfg.mem_os > 2)) {
-		return E_MEM_WRONG_OS_MEM;
+	if ((em400_cfg.mem_elwro < 1) || (em400_cfg.mem_elwro > MEM_MAX_MODULES)
+		|| (em400_cfg.mem_mega < 0) || (em400_cfg.mem_elwro > MEM_MAX_MODULES)
+		|| (em400_cfg.mem_os < 1) || (em400_cfg.mem_os > 2)
+		|| ((em400_cfg.mem_elwro > 1) && (em400_cfg.mem_elwro+em400_cfg.mem_mega > MEM_MAX_MODULES))
+	) {
+		return E_MEM;
 	}
 
 	pthread_spin_init(&mem_spin, 0);
 
-	// create configured physical segments
-	for (mp=0 ; mp<MEM_MAX_MODULES ; mp++) {
-		if (em400_cfg.mem[mp].segments > MEM_MAX_SEGMENTS) {
-			return E_MEM_BAD_SEGMENT_COUNT;
-		} else {
-			for (seg=0 ; seg<em400_cfg.mem[mp].segments ; seg++) {
-				pthread_spin_lock(&mem_spin);
-				mem_segment[mp][seg] = malloc(sizeof(uint16_t) * MEM_SEGMENT_SIZE);
-				pthread_spin_unlock(&mem_spin);
-				if (!mem_segment[mp][seg]) {
-					return E_MEM_CANNOT_ALLOCATE;
-				}
+	// create physical segments for elwro
+	for (mp=0 ; mp<em400_cfg.mem_elwro ; mp++) {
+		for (seg=0 ; seg<MEM_MAX_ELWRO_SEGMENTS ; seg++) {
+			mptr = malloc(sizeof(uint16_t) * MEM_SEGMENT_SIZE);
+			if (!mptr) {
+				return E_ALLOC;
 			}
-			eprint("  Module %i: added %i segments\n", mp, seg);
+			pthread_spin_lock(&mem_spin);
+			mem_segment[mp][seg] = mptr;
+			pthread_spin_unlock(&mem_spin);
+			mem_type[mp][seg] = MEM_ELWRO;
 		}
+		eprint("  Elwro module %i: added %i segments\n", mp, seg);
 	}
+
+	// create physical segments for mega
+	for (mp=MEM_MAX_MODULES-1 ; mp>=MEM_MAX_MODULES-em400_cfg.mem_mega ; mp--) {
+		for (seg=0 ; seg<MEM_MAX_MEGA_SEGMENTS ; seg++) {
+			if (mem_type[mp][seg] != MEM_NONE) {
+				mptr = malloc(sizeof(uint16_t) * MEM_SEGMENT_SIZE);
+				if (!mptr) {
+					return E_ALLOC;
+				}
+				pthread_spin_lock(&mem_spin);
+				mem_segment[mp][seg] = mptr;
+				pthread_spin_unlock(&mem_spin);
+			}
+			mem_type[mp][seg] = MEM_MEGA;
+		}
+		eprint("  MEGA module %i: added %i segments\n", mp, seg);
+	}
+
 
 	// hardwire segments for OS
 	for (ab=0 ; ab<em400_cfg.mem_os ; ab++) {
@@ -100,7 +118,11 @@ void mem_shutdown()
 	int seg;
 
 	eprint("Shutdown memory\n");
-	mem_remove_maps();
+
+	// only if mem_init() was done
+	if (mem_map[0][0]) {
+		mem_remove_maps();
+	}
 
 	// disconnect memory modules
 	for (mp=0 ; mp<MEM_MAX_MODULES ; mp++) {
@@ -202,7 +224,7 @@ uint8_t mem_read_byte(int nb, uint16_t addr, int trace)
 
 	shift = 8 * (~addr & 1);
 
-	if (em400_cfg.cpu.mod_17bit) {
+	if (em400_cfg.mod) {
 		addr17 = (addr >> 1) | (nR(R_ZC17) << 15);
 	} else {
 		addr17 = addr >> 1;
@@ -221,8 +243,8 @@ void mem_write_byte(int nb, uint16_t addr, uint8_t val, int trace)
 
 	shift = 8 * (~addr & 1);
 
-	// TODO: optimize?
-	if (em400_cfg.cpu.mod_17bit) {
+	// TODO: optimize maybe?
+	if (em400_cfg.mod) {
 		addr17 = (addr >> 1) | (nR(R_ZC17) << 15);
 	} else {
 		addr17 = addr >> 1;

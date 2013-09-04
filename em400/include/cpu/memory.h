@@ -23,9 +23,17 @@
 
 #define MEM_SEGMENT_SIZE 4 * 1024	// segment size (16-bit words)
 #define MEM_MAX_MODULES 16			// physical memory modules
-#define MEM_MAX_SEGMENTS 16			// physical segments in a module
+#define MEM_MAX_SEGMENTS 16			// max physical segments in a module
+#define MEM_MAX_ELWRO_SEGMENTS 8	// physical segments in elwro module
+#define MEM_MAX_MEGA_SEGMENTS 16	// physical segments in mega module
 #define MEM_MAX_NB 16				// logical blocks
 #define MEM_MAX_AB 16				// logical segments in a logical block
+
+enum mem_type {
+	MEM_NONE = 0,
+	MEM_ELWRO = 1,
+	MEM_MEGA = 2,
+};
 
 extern uint16_t *mem_segment[MEM_MAX_MODULES][MEM_MAX_SEGMENTS];
 extern uint16_t *mem_map[MEM_MAX_NB][MEM_MAX_AB];

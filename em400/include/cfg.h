@@ -24,20 +24,6 @@
 extern int cfg_error;
 
 // -----------------------------------------------------------------------
-struct cfg_cpu_t {
-	int speed_real;
-	int timer_step;
-	int mod_17bit;
-	int mod_sint;
-};
-
-// -----------------------------------------------------------------------
-struct cfg_mem_module_t {
-	int segments;
-	int is_mega;
-};
-
-// -----------------------------------------------------------------------
 struct cfg_arg_t {
 	char *text;
 	struct cfg_arg_t *next;
@@ -63,7 +49,7 @@ struct cfg_chan_t {
 struct cfg_em400_t {
 
 	char *program_name;
-	char *config_file;
+	char *cfg_provided;
 	int exit_on_hlt;
 	int verbose;
 	int benchmark;
@@ -71,9 +57,13 @@ struct cfg_em400_t {
 	char *cfg_file;
 	char *hist_file;
 
-	struct cfg_cpu_t cpu;
-	struct cfg_mem_module_t mem[MEM_MAX_MODULES];
+	int speed_real;
+	int timer_step;
+	int mod;
+	int mem_elwro;
+	int mem_mega;
 	int mem_os;
+
 	struct cfg_chan_t *chans;
 
 #ifdef WITH_DEBUGGER
@@ -88,8 +78,6 @@ struct cfg_em400_t {
 void eprint(char *format, ...);
 int cfg_load(char *cfg_file);
 void cfg_print();
-void cfg_set_mem(int module, int is_mega, int segments);
-void cfg_set_os_mem(int segments);
 struct cfg_arg_t * cfg_make_arg(char *arg);
 int cfg_args_decode(struct cfg_arg_t *arg, const char *format, ...);
 void cfg_make_unit(int u_num, char *name, struct cfg_arg_t *args);

@@ -156,7 +156,7 @@ void cpu_step()
 		_N = IR_T + (int16_t) regs[R_MOD];
 	}
 
-	if (em400_cfg.cpu.mod_17bit) nRw(R_ZC17, (_N >> 16) & 1);
+	if (em400_cfg.mod) nRw(R_ZC17, (_N >> 16) & 1);
 
 	N = _N;
 

@@ -26,13 +26,11 @@ struct _em400_errordesc {
 	char *message;
 } em400_errordesc[] = {
 	{ E_OK, "no error" },
-	{ E_MEM_NO_OS_MEM, "no segments defined for OS memory" },
-	{ E_MEM_WRONG_OS_MEM, "wrong number of segments defined for OS memory" },
-	{ E_MEM_BAD_SEGMENT_COUNT, "wrong segment count in a module" },
-	{ E_MEM_CANNOT_ALLOCATE, "cannot allocate machine memory" },
+	{ E_MEM, "wrong memory configuration" },
 	{ E_MEM_BLOCK_TOO_SMALL, "address outside configured memory block" },
 	{ E_FILE_OPEN, "cannot open file" },
 	{ E_FILE_OPERATION, "read/write error" },
+	{ E_TIMER_VALUE, "wrong timer value" },
 	{ E_TIMER_SIGNAL, "cannot set timer handler" },
 	{ E_TIMER_CREATE, "cannot create timer" },
 	{ E_TIMER_SET, "cannot set timer" },

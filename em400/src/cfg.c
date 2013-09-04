@@ -68,17 +68,15 @@ void cfg_print()
 {
 	eprint("---- Config: ---------------------------\n");
 	eprint("  Program to load: %s\n", em400_cfg.program_name);
-	eprint("  User-provided config: %s\n", em400_cfg.config_file);
+	eprint("  User-provided config: %s\n", em400_cfg.cfg_provided);
 	eprint("  Exit on HLT 077: %s\n", em400_cfg.exit_on_hlt ? "true" : "false");
-	eprint("  Emulation speed: %s\n", em400_cfg.cpu.speed_real ? "real" : "max");
-	eprint("  Timer step: %i\n", em400_cfg.cpu.timer_step);
-	eprint("  17-bit byte addressing: %s\n", em400_cfg.cpu.mod_17bit ? "true" : "false");
-	eprint("  High prio software int: %s\n", em400_cfg.cpu.mod_sint ? "true" : "false");
+	eprint("  Emulation speed: %s\n", em400_cfg.speed_real ? "real" : "max");
+	eprint("  Timer step: %i\n", em400_cfg.timer_step);
+	eprint("  CPU modification: %s\n", em400_cfg.mod ? "true" : "false");
 	eprint("  -- Memory: ---------------------------\n");
+	eprint("  Elwro modules: %i\n", em400_cfg.mem_elwro);
+	eprint("  MEGA modules: %i\n", em400_cfg.mem_mega);
 	eprint("  Segments for OS: %i\n", em400_cfg.mem_os);
-	for (int i=0 ; i<MEM_MAX_MODULES ; i++) {
-		eprint("  Module %2i: %5s: %2i segments\n", i, em400_cfg.mem[i].is_mega ? "MEGA" : "ELWRO", em400_cfg.mem[i].segments);
-	}
 	eprint("  -- I/O: ------------------------------\n");
 	struct cfg_chan_t *chanc = em400_cfg.chans;
 	while (chanc) {
@@ -97,32 +95,6 @@ void cfg_print()
 		chanc = chanc->next;
 	}
 	eprint("----------------------------------------\n");
-}
-
-// -----------------------------------------------------------------------
-void cfg_set_mem(int module, int is_mega, int segments)
-{
-	if ((module < 0) || (module > MEM_MAX_MODULES-1)) {
-		cyyerror("Incorrect module number: %i", module);
-	}
-	if ((segments < 1) || (segments > MEM_MAX_SEGMENTS)) {
-		cyyerror("Incorrect segment count: %i", segments);
-	}
-	if ((module == 0) && (segments < 2)) {
-		cyyerror("Incorrect segment count for OS memory block: %i", segments);
-	}
-	em400_cfg.mem[module].segments = segments;
-	em400_cfg.mem[module].is_mega = is_mega;
-}
-
-// -----------------------------------------------------------------------
-void cfg_set_os_mem(int segments)
-{
-	if ((segments < 1) || (segments > 2)) {
-		cyyerror("Incorrect segment count reserved for OS usage: %i", segments);
-	}
-
-	em400_cfg.mem_os = segments;
 }
 
 // -----------------------------------------------------------------------

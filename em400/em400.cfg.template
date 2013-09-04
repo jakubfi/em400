@@ -1,28 +1,36 @@
-cpu {
-	speed = max		# max | real
-	timer_step = 0	 	# one of: 0 (disabled), 2, 4, 8, 10, 20, 40, 80 [ms]
-	mod_17bit = true
-	mod_sint = false
-}
+computer {
+	# real CPU and I/O emulation speed:
+	# "false" - run as fast as possible
+	# "true" - try to emulate actual instructions, memory and I/O timings
+	speed_real = false
 
-memory {
-	os_segments = 2		# 1 or 2
-	module 0 = mega:16
-	module 1 = mega:16
-	module 2 = mega:16
-	module 3 = mega:16
-	module 4 = mega:16
-	module 5 = mega:16
-	module 6 = mega:16
-	module 7 = mega:16
-	module 8 = mega:16
-	module 9 = mega:16
-	module 10 = mega:16
-	module 11 = mega:16
-	module 12 = mega:16
-	module 13 = mega:16
-	module 14 = mega:16
-	module 15 = mega:16
+	# Internal timer interrupt cycle (in miliseconds)
+	# allowed values: 0-100, 0 means timer is disabled
+	# Note: in real hardware, cycle lengths: 2, 4, 8, 10, 20, 40, 80 were used
+	timer_step = 0
+
+	# Enable CPU modification (17-bit byte addressing, additional instructions,
+	# additional software interrupt, int 5/11 swap, broader interrupt mask
+	# for I/O interrupts)
+	# allowed values: "true", "false"
+	mod = true
+
+	# Memory is organized into 16 physical modules. Each module can be
+	# either elwro or mega. Elwro modules are 32kword big (8 pages),
+	# mega modules are 64kword in size (16 pages).
+	# Module 0 always has to be populated with elwro memory.
+	# Elwro modules are populated starting from 0 up, mega modules
+	# from 15 down. Module 0 may be overlapped by mega module
+
+	# allowed values: 1-16
+	mem_elwro = 1
+
+	# allowed values: 0-16
+	mem_modules = 16
+
+	# 4kword segments hardwired for OS memory block (taken from module 0)
+	# allowed values: 1 or 2
+	mem_os_segments = 2
 }
 
 #channel 0 = mem {

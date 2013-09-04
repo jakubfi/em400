@@ -37,11 +37,12 @@ int cyylex(void);
 	struct cfg_arg_t *arg;
 };
 
-%token CPU MEMORY CHANNEL UNIT
-%token SPEED MAX REAL TIMER MOD_17 MOD_SINT
-%token MODULE ELWRO MEGA OS_SEG
+%token COMPUTER CHANNEL UNIT
+%token SPEED_REAL TIMER MOD
+%token ELWRO MEGA OS_SEG
 %token <value> TEXT
 %token <value> VALUE
+%token <value> BOOL
 %type <arg> arg arglist
 
 %token '{' '}' '=' ':' ','
@@ -54,8 +55,7 @@ objects:
 	;
 
 object:
-	CPU '{' cpu_opts '}'
-	| MEMORY '{' os_mem modules '}'
+	COMPUTER '{' computer_opts '}'
 	| CHANNEL VALUE '=' TEXT { cfg_make_chan($2.v, $4.s); free($2.s); } '{' units '}'
 	;
 
@@ -79,31 +79,18 @@ arg:
 	| TEXT	{ $$ = cfg_make_arg($1.s); }
 	;
 
-cpu_opts:
-	cpu_opts cpu_opt
+computer_opts:
+	computer_opts computer_opt
 	|
 	;
 
-cpu_opt:
-	SPEED '=' MAX			{ em400_cfg.cpu.speed_real = 0; }
-	| SPEED '=' REAL		{ em400_cfg.cpu.speed_real = 1; }
-	| TIMER '=' VALUE		{ em400_cfg.cpu.timer_step = $3.v; free($3.s); }
-	| MOD_17 '=' VALUE		{ em400_cfg.cpu.mod_17bit = $3.v; free($3.s); }
-	| MOD_SINT '=' VALUE	{ em400_cfg.cpu.mod_sint = $3.v; free($3.s); }
-	;
-
-modules:
-	modules module
-	| module
-	;
-
-module:
-	MODULE VALUE '=' ELWRO ':' VALUE	{ cfg_set_mem($2.v, 0, $6.v); free($2.s); free($6.s); }
-	| MODULE VALUE '=' MEGA ':' VALUE	{ cfg_set_mem($2.v, 1, $6.v); free($2.s); free($6.s); }
-	;
-
-os_mem:
-	OS_SEG '=' VALUE { cfg_set_os_mem($3.v); free($3.s); }
+computer_opt:
+	SPEED_REAL '=' BOOL		{ em400_cfg.speed_real = $3.v; free($3.s); }
+	| TIMER '=' VALUE		{ em400_cfg.timer_step = $3.v; free($3.s); }
+	| MOD '=' BOOL			{ em400_cfg.mod = $3.v; free($3.s); }
+	| ELWRO '=' VALUE		{ em400_cfg.mem_elwro = $3.v; free($3.s); }
+	| MEGA '=' VALUE		{ em400_cfg.mem_mega = $3.v; free($3.s); }
+	| OS_SEG '=' VALUE		{ em400_cfg.mem_os = $3.v; free($3.s); }
 	;
 %%
 

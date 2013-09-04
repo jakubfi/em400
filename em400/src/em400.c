@@ -41,9 +41,6 @@
 #endif
 
 int em400_quit = 0;
-unsigned int ips_counter = 0;
-struct timeval ips_start;
-struct timeval ips_end;
 
 // -----------------------------------------------------------------------
 void em400_shutdown()
@@ -82,7 +79,7 @@ void em400_init()
 	cpu_reset();
 
 	// disable sint/sind modifications?
-	if (!em400_cfg.cpu.mod_sint) {
+	if (!em400_cfg.mod) {
 		cpu_disable_sint();
 	}   
 
@@ -164,7 +161,7 @@ void parse_arguments(int argc, char **argv)
 				print_usage();
 				exit(0);
 			case 'c':
-				em400_cfg.config_file = strdup(optarg);
+				em400_cfg.cfg_provided = strdup(optarg);
 				break;
 			case 'p':
 				em400_cfg.program_name = strdup(optarg);
@@ -209,78 +206,57 @@ void parse_arguments(int argc, char **argv)
 void em400_configure()
 {
 	// default configuration
-	em400_cfg.cpu.speed_real = 0;
-	em400_cfg.cpu.timer_step = 10;
-	em400_cfg.cpu.mod_17bit = 1;
-	em400_cfg.cpu.mod_sint = 1;
+	em400_cfg.speed_real = 0;
+	em400_cfg.timer_step = 10;
+	em400_cfg.mod = 0;
 	em400_cfg.chans = NULL;
 
-	// config files to consider
-	struct cfgfile_t {
-		char *name;
-	} cfgfile[10];
-	struct cfgfile_t *cfgf = cfgfile;
-
-	// user-provided config file
-	if (em400_cfg.config_file) {
-		cfgf++->name = em400_cfg.config_file;
-	}
-
-	em400_cfg.cfg_dir = calloc(1, 1024);
-	em400_cfg.cfg_file = calloc(1, 1024);
-	em400_cfg.hist_file = calloc(1, 1024);
-	sprintf(em400_cfg.cfg_dir, "%s/.em400", getenv("HOME"));
-	sprintf(em400_cfg.cfg_file, "%s/.em400/em400.cfg", getenv("HOME"));
-	sprintf(em400_cfg.hist_file, "%s/.em400/history", getenv("HOME"));
-
+	// ~/.em400 files
+	char *home = getenv("HOME");
+	int home_len = strlen(home);
+	em400_cfg.cfg_dir = calloc(1, home_len+100);
+	em400_cfg.cfg_file = calloc(1, home_len+100);
+	em400_cfg.hist_file = calloc(1, home_len+100);
+	sprintf(em400_cfg.cfg_dir, "%s/.em400", home);
+	sprintf(em400_cfg.cfg_file, "%s/.em400/em400.cfg", home);
+	sprintf(em400_cfg.hist_file, "%s/.em400/history", home);
 	mkdir(em400_cfg.cfg_dir, 0700);
 
-	// prepare default config file locations
-	cfgf++->name = "em400.cfg";
-	cfgf++->name = em400_cfg.cfg_file;
-	cfgf++->name = "/etc/em400/em400.cfg";
-	cfgf++->name = NULL;
+	// config files to consider
+	char *cfgf[4];
 
-	// try to load one of configuration files
-	cfgf = cfgfile;
-	while (cfgf->name) {
-		int res = cfg_load(cfgf->name);
-		if (res != E_OK) {
-			if (cfgf->name == em400_cfg.config_file) {
-				eerr("Error loading user config file: %s\n", cfgf->name);
-			}
-		} else {
-			printf("Using config: %s\n", cfgf->name);
-			return;
-		}
-		cfgf++;
+	// if user wants specific config file - use it
+	if (em400_cfg.cfg_provided) {
+		cfgf[0] = em400_cfg.cfg_provided;
+		cfgf[1] = NULL;
+	// otherwise, search for known configs
+	} else {
+		cfgf[0] = em400_cfg.cfg_file;
+		cfgf[1] = "em400.cfg";
+		cfgf[2] = "/etc/em400/em400.cfg";
+		cfgf[3] = NULL;
 	}
 
-	eerr("Error loading default config files\n");
+	// try to load one of configuration files
+	char **cfgfile = cfgf;
+	while (*cfgfile) {
+		int res = cfg_load(*cfgfile);
+		if (res == E_OK) {
+			printf("Using config: %s\n", *cfgfile);
+			return;
+		}
+		cfgfile++;
+	}
+
+	eerr("Cannot find any usable config file\n");
 }
 
 // -----------------------------------------------------------------------
-// ---- MAIN -------------------------------------------------------------
-// -----------------------------------------------------------------------
-int main(int argc, char** argv)
+void em400_loop()
 {
-	parse_arguments(argc, argv);
-
-#ifdef WITH_DEBUGGER
-	printf("EM400 v%s (+debugger)\n", EM400_VERSION);
-#else
-	printf("EM400 v%s\n", EM400_VERSION);
-#endif
-
-	em400_configure();
-	cfg_print();
-	em400_init();
-
-#ifdef WITH_DEBUGGER
-	if (em400_cfg.pre_expr) {
-		dbg_parse(em400_cfg.pre_expr);
-	}
-#endif
+	unsigned int ips_counter = 0;
+	struct timeval ips_start;
+	struct timeval ips_end;
 
 	gettimeofday(&ips_start, NULL);
 
@@ -298,11 +274,45 @@ int main(int argc, char** argv)
 		ips_counter++;
 	}
 
+	gettimeofday(&ips_end, NULL);
+
 	if (em400_quit != E_QUIT_OK) {
 		eerr("Emulation terminated unexpectedly: %s\n", get_error(em400_quit));
 	}
 
-	gettimeofday(&ips_end, NULL);
+	if (em400_cfg.benchmark) {
+		double ips_time_spent = (double)(ips_end.tv_usec - ips_start.tv_usec)/1000000 + (ips_end.tv_sec - ips_start.tv_sec);
+		if (ips_time_spent > 0) {
+			printf("IPS: %i (instructions: %i time: %f)\n", (int) (ips_counter/ips_time_spent), ips_counter, ips_time_spent);
+		} else {
+			printf("IPS: 0\n");
+		}
+	}
+}
+
+// -----------------------------------------------------------------------
+// ---- MAIN -------------------------------------------------------------
+// -----------------------------------------------------------------------
+int main(int argc, char** argv)
+{
+#ifdef WITH_DEBUGGER
+	printf("EM400 v%s (+debugger)\n", EM400_VERSION);
+#else
+	printf("EM400 v%s\n", EM400_VERSION);
+#endif
+
+	parse_arguments(argc, argv);
+	em400_configure();
+	cfg_print();
+	em400_init();
+
+#ifdef WITH_DEBUGGER
+	if (em400_cfg.pre_expr) {
+		dbg_parse(em400_cfg.pre_expr);
+	}
+#endif
+
+	em400_loop();
 
 #ifdef WITH_DEBUGGER
 	if (em400_cfg.autotest && em400_cfg.test_expr) {
@@ -314,15 +324,6 @@ int main(int argc, char** argv)
 #endif
 
 	em400_shutdown();
-
-	if (em400_cfg.benchmark) {
-		double ips_time_spent = (double)(ips_end.tv_usec - ips_start.tv_usec)/1000000 + (ips_end.tv_sec - ips_start.tv_sec);
-		if (ips_time_spent > 0) {
-			printf("IPS: %i (instructions: %i time: %f)\n", (int) (ips_counter/ips_time_spent), ips_counter, ips_time_spent);
-		} else {
-			printf("IPS: 0\n");
-		}
-	}
 
 	return 0;
 }

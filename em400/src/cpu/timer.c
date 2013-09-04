@@ -32,7 +32,7 @@ pthread_t timer_th;
 void * timer_thread(void *ptr)
 {
 	struct timespec ts;
-	unsigned clock_tick_nsec = em400_cfg.cpu.timer_step * 1000000;
+	unsigned clock_tick_nsec = em400_cfg.timer_step * 1000000;
 	unsigned new_nsec;
 	clock_gettime(CLOCK_REALTIME , &ts);
 
@@ -52,11 +52,15 @@ void * timer_thread(void *ptr)
 // -----------------------------------------------------------------------
 int timer_init()
 {
-	if (em400_cfg.cpu.timer_step == 0) {
+	if ((em400_cfg.timer_step < 0) || (em400_cfg.timer_step > 100)) {
+		return E_TIMER_VALUE;
+	}
+
+	if (em400_cfg.timer_step == 0) {
 		eprint("Timer disabled in configuration\n");
 		return E_OK;
 	} else {
-		eprint("Starting timer: %i ms\n", em400_cfg.cpu.timer_step);
+		eprint("Starting timer: %i ms\n", em400_cfg.timer_step);
 		pthread_mutex_lock(&timer_active);
 		if (pthread_create(&timer_th, NULL, timer_thread, NULL)) {
 			return E_THREAD;
@@ -69,8 +73,8 @@ int timer_init()
 // -----------------------------------------------------------------------
 void timer_shutdown()
 {
-	if (em400_cfg.cpu.timer_step) {
-		eprint("Stopping timer\n");
+	eprint("Stopping timer\n");
+	if (timer_th) {
 		pthread_mutex_unlock(&timer_active);
 		pthread_join(timer_th, NULL);
 	}
