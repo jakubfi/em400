@@ -42,7 +42,7 @@ pthread_spinlock_t mem_spin;
 // physical memory: modules with segments inside
 uint16_t *mem_segment[MEM_MAX_MODULES][MEM_MAX_SEGMENTS];
 // physical memory: segment types
-int mem_type[MEM_MAX_MODULES][MEM_MAX_SEGMENTS];
+int mem_seg_type[MEM_MAX_MODULES][MEM_MAX_SEGMENTS];
 // logical mapping from (NB,AB) to physical segment pointer
 uint16_t *mem_map[MEM_MAX_NB][MEM_MAX_AB];
 
@@ -76,7 +76,7 @@ int mem_init()
 			pthread_spin_lock(&mem_spin);
 			mem_segment[mp][seg] = mptr;
 			pthread_spin_unlock(&mem_spin);
-			mem_type[mp][seg] = MEM_ELWRO;
+			mem_seg_type[mp][seg] = MEM_ELWRO;
 		}
 		eprint("  Elwro module %i: added %i segments\n", mp, seg);
 	}
@@ -84,7 +84,7 @@ int mem_init()
 	// create physical segments for mega
 	for (mp=MEM_MAX_MODULES-1 ; mp>=MEM_MAX_MODULES-em400_cfg.mem_mega ; mp--) {
 		for (seg=0 ; seg<MEM_MAX_MEGA_SEGMENTS ; seg++) {
-			if (mem_type[mp][seg] != MEM_NONE) {
+			if (mem_seg_type[mp][seg] != MEM_NONE) {
 				mptr = malloc(sizeof(uint16_t) * MEM_SEGMENT_SIZE);
 				if (!mptr) {
 					return E_ALLOC;
@@ -93,18 +93,15 @@ int mem_init()
 				mem_segment[mp][seg] = mptr;
 				pthread_spin_unlock(&mem_spin);
 			}
-			mem_type[mp][seg] = MEM_MEGA;
+			mem_seg_type[mp][seg] = MEM_MEGA;
 		}
 		eprint("  MEGA module %i: added %i segments\n", mp, seg);
 	}
 
-
 	// hardwire segments for OS
 	for (ab=0 ; ab<em400_cfg.mem_os ; ab++) {
 		pthread_spin_lock(&mem_spin);
-		if (mem_segment[0][ab]) {
-			mem_map[0][ab] = mem_segment[0][ab];
-		}
+		mem_map[0][ab] = mem_segment[0][ab];
 		pthread_spin_unlock(&mem_spin);
 	}
 
@@ -134,27 +131,54 @@ void mem_shutdown()
 }
 
 // -----------------------------------------------------------------------
-int mem_add_map(int nb, int ab, int mp, int segment)
+int mem_cmd(uint16_t n, uint16_t r)
 {
-	LOG(L_MEM, 1, "Add map: NB = %d, AB = %d, MP = %d, SEG = %d", nb, ab, mp, segment);
+	int nb		= (r & 0b0000000000001111);
+	int ab		= (r & 0b1111000000000000) >> 12;
+	int mp		= (n & 0b0000000000011110) >> 1;
+	int seg		= (n & 0b0000000111100000) >> 5;
+	int flags	= (n & 0b1111111000000000) >> 9;
 
-	if ((nb == 0) && (ab < em400_cfg.mem_os)) {
-		LOG(L_MEM, 1, "Add map: Can't configure hardwired segment");
-		return IO_NO;
-	}
+	LOG(L_MEM, 1, "Add map: NB = %d, AB = %d, MP = %d, SEG = %d", nb, ab, mp, seg);
 
 	if (nb >= MEM_MAX_NB) {
 		LOG(L_MEM, 1, "Add map: NB > MEM_MAX_NB");
 		return IO_NO;
 	}
 
-	if (!mem_segment[mp][segment]) {
-		LOG(L_MEM, 1, "Add map: No such segment");
+	if (mem_seg_type[mp][seg] == MEM_MEGA) {
+		return mem_map_mega(nb, ab, mp, seg, flags);
+	} else {
+		return mem_map_elwro(nb, ab, mp, seg);
+	}
+}
+
+// -----------------------------------------------------------------------
+int mem_map_elwro(int nb, int ab, int mp, int seg)
+{
+	if (!mem_segment[mp][seg]) {
+		LOG(L_MEM, 1, "Add map: trying to configure nonexistent segment %i in block %i", seg, mp);
+		return IO_NO;
+	}
+
+	if ((nb == 0) && (ab < em400_cfg.mem_os)) {
+		LOG(L_MEM, 1, "Add map: Can't configure hardwired segment");
 		return IO_NO;
 	}
 
 	pthread_spin_lock(&mem_spin);
-	mem_map[nb][ab] = mem_segment[mp][segment];
+	mem_map[nb][ab] = mem_segment[mp][seg];
+	pthread_spin_unlock(&mem_spin);
+
+	return IO_OK;
+}
+
+// -----------------------------------------------------------------------
+int mem_map_mega(int nb, int ab, int mp, int seg, int flags)
+{
+
+	pthread_spin_lock(&mem_spin);
+	mem_map[nb][ab] = mem_segment[mp][seg];
 	pthread_spin_unlock(&mem_spin);
 
 	return IO_OK;

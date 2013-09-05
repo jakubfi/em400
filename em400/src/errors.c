@@ -26,6 +26,7 @@ struct _em400_errordesc {
 	char *message;
 } em400_errordesc[] = {
 	{ E_OK, "no error" },
+	{ E_DEFAULT, "sorry" },
 	{ E_MEM, "wrong memory configuration" },
 	{ E_MEM_BLOCK_TOO_SMALL, "address outside configured memory block" },
 	{ E_FILE_OPEN, "cannot open file" },
@@ -49,7 +50,6 @@ struct _em400_errordesc {
 	{ E_CFG_PARSE, "cannot parse file" },
 	{ E_QUIT_OK, "emulation terminated properly" },
 	{ E_QUIT_NO_MEM, "OS segmentation fault" },
-	{ E_CFG_DEFAULT_LOAD, "sorry" },
 	{ E_CF, "error in control field" },
 	{ E_ARG_TOO_MANY, "too many arguments" },
 	{ E_ARG_NOT_ENOUGH, "not enough arguments" },

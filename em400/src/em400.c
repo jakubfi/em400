@@ -56,12 +56,13 @@ void em400_shutdown()
 }
 
 // -----------------------------------------------------------------------
-void eerr(char *format, ...)
+void em400_eerr(int err_code, char *format, ...)
 {
 	va_list ap;
 	va_start(ap, format);
 	vprintf(format, ap);
 	va_end(ap);
+	printf(": %s\n", get_error(err_code));
 	em400_shutdown();
 	exit(EXIT_FAILURE);
 }
@@ -73,7 +74,7 @@ void em400_init()
 
 	res = mem_init();
 	if (res != E_OK) {
-		eerr("Error initializing memory: %s\n", get_error(res));
+		em400_eerr(res, "Error initializing memory");
 	}
 
 	cpu_reset();
@@ -87,19 +88,19 @@ void em400_init()
 
 	res = timer_init();
 	if (res != E_OK) {
-		eerr("Error initializing CPU timer: %s\n", get_error(res));
+		em400_eerr(res, "Error initializing CPU timer");
 	}
 
 	res = io_init();
 	if (res != E_OK) {
-		eerr("Error initializing I/O: %s\n", get_error(res));
+		em400_eerr(res, "Error initializing I/O");
 	}
 
 	if (em400_cfg.program_name) {
 		eprint("Loading image '%s' into OS memory\n", em400_cfg.program_name);
 		int res = mem_load_image(em400_cfg.program_name, 0, 2*4*1024);
 		if (res < E_OK) {
-			eerr("Could not load program '%s': %s\n", em400_cfg.program_name, get_error(res));
+			em400_eerr(res, "Could not load program '%s'", em400_cfg.program_name);
 		} else {
 			printf("OS memory block image loaded: \"%s\", %i words\n", em400_cfg.program_name, res);
 		}
@@ -108,18 +109,18 @@ void em400_init()
 #ifdef WITH_DEBUGGER
 	res = dbg_init();
 	if (res != E_OK) {
-		eerr("Error initializing debugger: %s\n", get_error(res));
+		em400_eerr(res, "Error initializing debugger");
 	}
 	res = log_init("em400.log");
 	if (res != E_OK) {
-		eerr("Error initializing logging: %s\n", get_error(res));
+		em400_eerr(res, "Error initializing logging");
 	}
 #endif
 
 }
 
 // -----------------------------------------------------------------------
-void print_usage()
+void em400_usage()
 {
 	printf("Usage: em400 [option] ...\n");
 	printf("\nOptions:\n");
@@ -139,7 +140,7 @@ void print_usage()
 }
 
 // -----------------------------------------------------------------------
-void parse_arguments(int argc, char **argv)
+void em400_parse_args(int argc, char **argv)
 {
 	int option;
 
@@ -158,7 +159,7 @@ void parse_arguments(int argc, char **argv)
 				em400_cfg.verbose = 1;
 				break;
 			case 'h':
-				print_usage();
+				em400_usage();
 				exit(0);
 			case 'c':
 				em400_cfg.cfg_provided = strdup(optarg);
@@ -196,7 +197,7 @@ void parse_arguments(int argc, char **argv)
 				break;
 #endif
 			default:
-				print_usage();
+				em400_usage();
 				exit(1);
 		}
 	}
@@ -211,7 +212,7 @@ void em400_configure()
 	em400_cfg.mod = 0;
 	em400_cfg.chans = NULL;
 
-	// ~/.em400 files
+	// ~/.em400/ files
 	char *home = getenv("HOME");
 	int home_len = strlen(home);
 	em400_cfg.cfg_dir = calloc(1, home_len+100);
@@ -248,7 +249,7 @@ void em400_configure()
 		cfgfile++;
 	}
 
-	eerr("Cannot find any usable config file\n");
+	em400_eerr(E_DEFAULT, "Cannot find any usable config file");
 }
 
 // -----------------------------------------------------------------------
@@ -257,10 +258,12 @@ void em400_loop()
 	unsigned int ips_counter = 0;
 	struct timeval ips_start;
 	struct timeval ips_end;
+	double ips_time_spent;
+	int ips = 0;
 
 	gettimeofday(&ips_start, NULL);
 
-	while (em400_quit == E_OK) {
+	while (!em400_quit) {
 #ifdef WITH_DEBUGGER
 		if (em400_cfg.autotest != 1) {
 			dbg_step();
@@ -276,17 +279,12 @@ void em400_loop()
 
 	gettimeofday(&ips_end, NULL);
 
-	if (em400_quit != E_QUIT_OK) {
-		eerr("Emulation terminated unexpectedly: %s\n", get_error(em400_quit));
-	}
-
 	if (em400_cfg.benchmark) {
-		double ips_time_spent = (double)(ips_end.tv_usec - ips_start.tv_usec)/1000000 + (ips_end.tv_sec - ips_start.tv_sec);
+		ips_time_spent = (double)(ips_end.tv_usec - ips_start.tv_usec)/1000000 + (ips_end.tv_sec - ips_start.tv_sec);
 		if (ips_time_spent > 0) {
-			printf("IPS: %i (instructions: %i time: %f)\n", (int) (ips_counter/ips_time_spent), ips_counter, ips_time_spent);
-		} else {
-			printf("IPS: 0\n");
+			ips = ips_counter/ips_time_spent;
 		}
+		printf("IPS: %i (instructions: %i time: %f)\n", ips, ips_counter, ips_time_spent);
 	}
 }
 
@@ -301,7 +299,7 @@ int main(int argc, char** argv)
 	printf("EM400 v%s\n", EM400_VERSION);
 #endif
 
-	parse_arguments(argc, argv);
+	em400_parse_args(argc, argv);
 	em400_configure();
 	cfg_print();
 	em400_init();

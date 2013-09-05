@@ -22,7 +22,7 @@
 #include <string.h>
 #include <arpa/inet.h>
 
-#include "e4image.h"
+#include "io/e4image.h"
 
 int e4i_err;
 

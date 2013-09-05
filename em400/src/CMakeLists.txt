@@ -3,13 +3,13 @@ FLEX_TARGET(cfg_scanner cfg_scanner.l ${CMAKE_CURRENT_BINARY_DIR}/cfg_scanner.c 
 ADD_FLEX_BISON_DEPENDENCY(cfg_scanner cfg_parser)
 
 ADD_EXECUTABLE(em400
-	em400.c errors.c utils.c cfg.c e4image.c
+	em400.c errors.c utils.c cfg.c
 	${BISON_cfg_parser_OUTPUTS}
 	${FLEX_cfg_scanner_OUTPUTS}
 )
 
 ADD_EXECUTABLE(e4itool
-	e4itool.c e4image.c
+	e4itool.c io/e4image.c
 )
 
 target_link_libraries(em400

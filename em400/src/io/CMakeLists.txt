@@ -4,6 +4,7 @@ ADD_library(io
 	cchar.c cchar_term.c
 	multix.c multix_winch.c multix_floppy.c multix_puncher.c multix_punchreader.c multix_term.c
 	plix.c
+	e4image.c
 	term.c
 )
 

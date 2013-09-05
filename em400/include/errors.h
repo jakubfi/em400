@@ -22,6 +22,7 @@ extern int gerr;
 
 enum em400_error {
 	E_UNKNOWN = -32000,
+	E_DEFAULT,
 	E_MEM,
 	E_MEM_BLOCK_TOO_SMALL,
 	E_FILE_OPEN,
@@ -43,7 +44,6 @@ enum em400_error {
 	E_UI_SIG_CTRLC,
 	E_CFG_OPEN,
 	E_CFG_PARSE,
-	E_CFG_DEFAULT_LOAD,
 	E_QUIT_NO_MEM,
 	E_CF,
 	E_ARG_TOO_MANY,

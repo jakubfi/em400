@@ -25,7 +25,7 @@
 #include "cpu/memory.h"
 
 #include "io/multix_winch.h"
-#include "e4image.h"
+#include "io/e4image.h"
 
 #define UNIT ((struct mx_unit_winch_t *)(unit))
 

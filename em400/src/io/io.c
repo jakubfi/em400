@@ -135,16 +135,12 @@ void io_reset()
 // -----------------------------------------------------------------------
 int io_dispatch(int dir, uint16_t n, uint16_t *r)
 {
-	int is_mem = (n & 0b0000000000000001);		// 1 = mem config
+	int is_mem_cmd = n & 1; // 1 = memory configuration, 0 = I/O command
 
 	// software memory configuration
-	if (is_mem) {
+	if (is_mem_cmd) {
 		if (dir == IO_OU) {
-			int nb = *r & 0b0000000000001111;
-			int ab = (*r & 0b1111000000000000) >> 12;
-			int module = (n & 0b0000000000011110) >> 1;
-			int seg = (n & 0b0000000111100000) >> 5;
-			return mem_add_map(nb, ab, module, seg);
+			return mem_cmd(n, *r);
 		} else {
 			// TODO: what to return?
 			LOG(L_IO, 1, "MEM command shouldn't be IN");
