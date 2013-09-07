@@ -69,13 +69,14 @@ void cfg_print()
 	eprint("---- Config: ---------------------------\n");
 	eprint("  Program to load: %s\n", em400_cfg.program_name);
 	eprint("  User-provided config: %s\n", em400_cfg.cfg_provided);
-	eprint("  Exit on HLT 077: %s\n", em400_cfg.exit_on_hlt ? "true" : "false");
+	eprint("  Exit on HLT>=040: %s\n", em400_cfg.exit_on_hlt ? "true" : "false");
 	eprint("  Emulation speed: %s\n", em400_cfg.speed_real ? "real" : "max");
 	eprint("  Timer step: %i\n", em400_cfg.timer_step);
-	eprint("  CPU modification: %s\n", em400_cfg.mod ? "true" : "false");
+	eprint("  CPU modifications: %s\n", em400_cfg.mod ? "true" : "false");
 	eprint("  -- Memory: ---------------------------\n");
 	eprint("  Elwro modules: %i\n", em400_cfg.mem_elwro);
 	eprint("  MEGA modules: %i\n", em400_cfg.mem_mega);
+	eprint("  MEGA PROM image: %s\n", em400_cfg.mem_mega_prom);
 	eprint("  Segments for OS: %i\n", em400_cfg.mem_os);
 	eprint("  -- I/O: ------------------------------\n");
 	struct cfg_chan_t *chanc = em400_cfg.chans;

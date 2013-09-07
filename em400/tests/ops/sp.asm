@@ -1,24 +1,11 @@
 .prog "op/SP"
 
-	lw r1, 0b0000000000000001
-	ou r1, 0b0000000000000011
-	.data   err, err, ok, err
-ok:
-	mb blk
+	sp ctx
+	hlt 040
 
-	lw r1, 21
-	lw r2, 0xfafa
-	lw r3, 0b0110000000000001
-	pf 20
-
-	sp 20
-
+ctx:	.data fin_ok, 0xfafa, 0b0110000000000001
+fin_ok:
 	hlt 077
-
-err:
-	hlt 077
-
-blk:	.data 1
 
 .finprog
 
@@ -28,5 +15,5 @@ blk:	.data 1
 
 ; XPCT bin(sr) : 0b0110000000000001
 ; XPCT hex(r0) : 0xfafa
-; XPCT int(ic) : 22
+; XPCT oct(ir[10-15]) : 077
 

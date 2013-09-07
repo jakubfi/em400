@@ -43,6 +43,7 @@ timer_step		return TIMER;
 mod				return MOD;
 mem_elwro		return ELWRO;
 mem_mega		return MEGA;
+mem_mega_prom	return MEGA_PROM;
 mem_os_segments	return OS_SEG;
 true|yes		{ cyylval.value.v = 1; cyylval.value.s = strdup(cyytext); return BOOL; }
 false|no		{ cyylval.value.v = 0; cyylval.value.s = strdup(cyytext); return BOOL; }

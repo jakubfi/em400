@@ -26,7 +26,10 @@ computer {
 	mem_elwro = 1
 
 	# allowed values: 0-16
-	mem_modules = 16
+	mem_mega = 16
+
+	# Name of image file containing MEGA PROM memory (1 segment, 4kword max)
+	mem_mega_prom = mega_prom.img
 
 	# 4kword segments hardwired for OS memory block (taken from module 0)
 	# allowed values: 1 or 2

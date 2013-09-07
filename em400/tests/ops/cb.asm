@@ -1,9 +1,18 @@
 .prog "op/CB"
 
+	.equ int_nomem 0x40 + 2
+	.equ stackp 0x61
+
+	lw r3, stack
+	rw r3, stackp
+	lw r3, nomem_proc
+	rw r3, int_nomem
+
 	lw r1, 0b0000000000000001
 	ou r1, 0b0000000000000011
 	.data   err, err, ok, err
 ok:	mb blk
+	im blk
 
 	lw r1, 0b1111100000000001
 	pw r1, 40
@@ -22,20 +31,23 @@ ok:	mb blk
 
 	lw r4, 0b0000000000000001
 	cb r4, 81
-
+exitok:
 	hlt 077
 
-err:	hlt 077
-blk:	.data 0b0000000000000001
+err:	hlt 040
+blk:	.data 0b0100000000000001
 
+nomem_proc:
+	hlt 040
+stack:
 
 .finprog
 
 ; XPCT int(rz[6]) : 0
-; XPCT bin(sr) : 0b0000000000000001
+; XPCT bin(sr) : 0b0100000000000001
 
 ; XPCT bin(r5) : 0b0000100000000000
 ; XPCT bin(r6) : 0b0000001000000000
 ; XPCT bin(r7) : 0b0000010000000000
 ; XPCT bin(r0) : 0b0000010000000000
-; XPCT int(ic) : 34
+; XPCT oct(ir[10-15]) : 077

@@ -127,7 +127,7 @@ void em400_usage()
 	printf("   -h           : display help\n");
 	printf("   -c config    : use given config file instead of defaults\n");
 	printf("   -p program   : load program image into OS memory\n");
-	printf("   -e           : exit emulator after HLT 077\n");
+	printf("   -e           : terminate emulation on HLT >= 040\n");
 	printf("   -b           : benchmark emulator\n");
 	printf("   -v           : enable verbose messages\n");
 #ifdef WITH_DEBUGGER

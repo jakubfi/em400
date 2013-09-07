@@ -39,7 +39,7 @@ int cyylex(void);
 
 %token COMPUTER CHANNEL UNIT
 %token SPEED_REAL TIMER MOD
-%token ELWRO MEGA OS_SEG
+%token ELWRO MEGA MEGA_PROM OS_SEG
 %token <value> TEXT
 %token <value> VALUE
 %token <value> BOOL
@@ -90,6 +90,7 @@ computer_opt:
 	| MOD '=' BOOL			{ em400_cfg.mod = $3.v; free($3.s); }
 	| ELWRO '=' VALUE		{ em400_cfg.mem_elwro = $3.v; free($3.s); }
 	| MEGA '=' VALUE		{ em400_cfg.mem_mega = $3.v; free($3.s); }
+	| MEGA_PROM '=' TEXT	{ em400_cfg.mem_mega_prom = $3.s; }
 	| OS_SEG '=' VALUE		{ em400_cfg.mem_os = $3.v; free($3.s); }
 	;
 %%

@@ -15,7 +15,7 @@ start:
 	rw r1, 97
 
 	exl 23
-	hlt 077
+	hlt 040
 
 exlp:
 	hlt 077
@@ -23,15 +23,12 @@ exlp:
 .finprog
 
 ; XPCT int(rz[6]) : 0
+; XPCT oct(ir[10-15]) : 077
 
 ; new process vector
 
 ; XPCT bin(sr) : 0b0000001110000000
 ; XPCT int(r0) : 0
-
-; new ic, exl procedure address
-
-; XPCT int(ic) : 157
 
 ; new stack pointer
 

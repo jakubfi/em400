@@ -10,6 +10,7 @@
 	uj start
 
 nomem_proc:
+exitok:
 	hlt 077
 
 start:
@@ -19,8 +20,8 @@ start:
 	rw r3, int_nomem
 
 	pw r1, 10
-
-	hlt 077
+err:
+	hlt 040
 
 stack:
 	.res 4
@@ -29,4 +30,4 @@ stack:
 
 ; XPCT int(rz[6]) : 0
 ; XPCT int(alarm) : 1
-; XPCT int(IC) : 3
+; XPCT oct(ir[10-15]) : 077

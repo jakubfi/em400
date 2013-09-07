@@ -4,7 +4,8 @@
 
 	.equ aexl 0x60
 	.equ astack 0x61
-	.equ aillegal 0x46
+	.equ int_nomem 0x40 + 2
+	.equ aillegal 0x40 + 6
 	.equ astart 0x70
 
 	.equ user_block 1
@@ -21,13 +22,14 @@ illegal_handler:
 	awt r7, 1
 	lip
 
+nomem_handler:
+	hlt 040
+
 sys_mb:
 zerod:
 	.data 0
-user_mb:
-	.data user_block
-user_im:
-	.data 0b1111100000000000
+user_sr:
+	.data 0b1111100000000000 + user_block
 stack:
 	.res astart-stack
 
@@ -37,7 +39,7 @@ start:
 	ou r1, 0b0000000000000011
 	.data   err, err, setup, err
 err:
-	hlt 077
+	hlt 040
 setup:
 	lwt r1, exl_handler
 	rw r1, aexl
@@ -45,13 +47,17 @@ setup:
 	rw r1, astack
 	lwt r1, illegal_handler
 	rw r1, aillegal
+	lwt r1, nomem_handler
+	rw r1, int_nomem
+
+	mb user_sr
+	im user_sr
 
 copy_user_prog:
 	md -user_prog_end
 	lw r1, user_prog
 	lw r2, user_prog_end
 	sw r2, user_prog
-	mb user_mb
 copy_loop:
 	lw r3, [r1+user_prog_end]
 	pw r3, r1+r2
@@ -60,12 +66,12 @@ copy_loop:
 run_user_prog:
 	mb sys_mb
 	sp user_vec
-	hlt 077
+	hlt 040
 
 user_vec:
 	.data user_prog_dest, user_r0_init, 0b1111100000100001
 user_prog:
-	hlt 077
+	hlt 040
 	cit
 	sit
 	siu
@@ -73,9 +79,9 @@ user_prog:
 	gil
 	giu
 	mcl
-	lw r1, user_mb
+	lw r1, user_sr
 	mb r1
-	lw r1, user_im
+	lw r1, user_sr
 	im r1
 	lw r1, zerod
 	ki r1
@@ -85,7 +91,7 @@ user_prog:
 	lw r1, zerod
 	sp r1
 	exl 0
-	hlt 077
+	hlt 040
 	.equ user_prog_end S
 
 .finprog
@@ -94,4 +100,4 @@ user_prog:
 ; XPCT bin(SR) : 0b1111100000000001
 
 ; XPCT int(r7) : 14
-; XPCT hex(IC) : 0x0003
+; XPCT oct(ir[10-15]) : 077

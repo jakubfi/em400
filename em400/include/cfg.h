@@ -62,6 +62,7 @@ struct cfg_em400_t {
 	int mod;
 	int mem_elwro;
 	int mem_mega;
+	char *mem_mega_prom;
 	int mem_os;
 
 	struct cfg_chan_t *chans;

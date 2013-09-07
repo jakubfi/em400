@@ -673,7 +673,7 @@ void op_73_mcl()
 	Rw(R_SR, 0);
 	int_clear_all();
 	reg_write(0, 0, 1, 1);
-	mem_remove_maps();
+	mem_reset();
 	io_reset();
 }
 

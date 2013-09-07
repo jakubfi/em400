@@ -4,7 +4,7 @@
 	cw r1, 15
 	jn fin
 	hlt 077
-fin:	hlt 077
+fin:	hlt 040
 
 
 .finprog
@@ -12,5 +12,5 @@ fin:	hlt 077
 ; XPCT int(rz[6]) : 0
 ; XPCT int(sr) : 0
 
-; XPCT int(ic) : 7
+; XPCT oct(ir[10-15]) : 077
 

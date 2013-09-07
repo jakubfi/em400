@@ -484,7 +484,7 @@ void print_node(struct node_t *n)
 			awtbprint(W_CMD, C_DATA, "0x%04x ", (uint16_t) value);
 			break;
 		case OCT:
-			awtbprint(W_CMD, C_DATA, "0%06o ", (uint16_t) value);
+			awtbprint(W_CMD, C_DATA, "0%0o ", (uint16_t) value);
 			break;
 		case BIN:
 			awtbbinprint(W_CMD, C_DATA, "0b................ ", (uint16_t) value, 16);

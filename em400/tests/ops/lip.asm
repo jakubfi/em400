@@ -14,7 +14,7 @@ start:
 	hlt 077
 
 exlp:
-	hlt 077
+	hlt 040
 
 .finprog
 
@@ -24,7 +24,7 @@ exlp:
 
 ; XPCT bin(sr) : 0b1100000000000001
 ; XPCT hex(r0) : 0xfafa
-; XPCT int(ic) : 136
+; XPCT oct(ir[10-15]) : 077
 
 ; XPCT int([97]) : 10
 

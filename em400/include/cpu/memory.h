@@ -36,22 +36,22 @@ enum mem_type {
 };
 
 enum mem_mega_flags {
-	MEM_MEGA_ALLOC			= 0b0000001,
-	MEM_MEGA_FREE			= 0b0000010,
-	MEM_MEGA_PROM_UNVEIL	= 0b0010000,
-	MEM_MEGA_PROM_COVER		= 0b0100000,
-	MEM_MEGA_ALLOC_DONE		= 0b1000000,
+	MEM_MEGA_ALLOC		= 0b0000001,
+	MEM_MEGA_FREE		= 0b0000010,
+	MEM_MEGA_PROM_SHOW	= 0b0010000,
+	MEM_MEGA_PROM_HIDE	= 0b0100000,
+	MEM_MEGA_ALLOC_DONE	= 0b1000000,
 };
 
-extern uint16_t *mem_segment[MEM_MAX_MODULES][MEM_MAX_SEGMENTS];
+extern uint16_t *mem_seg[MEM_MAX_MODULES][MEM_MAX_SEGMENTS];
 extern uint16_t *mem_map[MEM_MAX_NB][MEM_MAX_AB];
 
 int mem_init();
 void mem_shutdown();
 int mem_cmd(uint16_t n, uint16_t r);
-int mem_map_elwro(int nb, int ab, int mp, int seg);
-int mem_map_mega(int nb, int ab, int mp, int seg, int flags);
-void mem_remove_maps();
+int mem_cmd_elwro(int nb, int ab, int mp, int seg);
+int mem_cmd_mega(int nb, int ab, int mp, int seg, int flags);
+void mem_reset();
 
 #define mem_ptr(nb, addr) (mem_map[nb][addr >> 12] ? mem_map[nb][addr >> 12] + (addr & 0b0000111111111111) : NULL)
 uint16_t mem_read(int nb, uint16_t addr, int trace);

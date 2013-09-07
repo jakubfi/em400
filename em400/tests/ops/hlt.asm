@@ -5,8 +5,8 @@
 	lw r1, fin
 	rw r1, 69
 	im 20
-	hlt 0
-loop:	ujs loop
+loop:	hlt 0
+	ujs loop
 
 fin:	hlt 077
 
@@ -16,5 +16,5 @@ fin:	hlt 077
 
 ; XPCT int(sr) : 0
 ; XPCT int(rz[5]) : 0
-; XPCT int(ic) : 9
+; XPCT oct(ir[10-15]) : 077
 

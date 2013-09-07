@@ -6,11 +6,12 @@
 	lwt r2, 10
 	bn r1, 0
 	lw r1, 0b1111\3 + 2 ; N argument in 2nd word is: 0b1111\3 = 'UJ' opcode, 2 = r2 as rC
-
+exitok:
 	hlt 077
 
 	.ic 10
-	hlt 077
+err:
+	hlt 040
 
 .finprog
 
@@ -18,4 +19,4 @@
 ; XPCT int(rz[6]) : 0
 
 ; XPCT int(r1) : 15
-; XPCT int(ic) : 7
+; XPCT oct(ir[10-15]) : 077

@@ -67,15 +67,15 @@ void cpu_reset()
 		reg_write(i, 0, 0, 1);
 	}
 	cpu_stop = 0;
-	mem_remove_maps();
+	mem_reset();
 	int_clear_all();
 }
 
 // -----------------------------------------------------------------------
 void cpu_halt()
 {
-	// handle hlt 077 as "exit emulation" if user wants to
-	if ((em400_cfg.exit_on_hlt) && (N == 077)) {
+	// handle hlt>=040 as "exit emulation" if user wants to
+	if ((em400_cfg.exit_on_hlt) && (N >= 040)) {
 		em400_quit = 1;
 		return;
 	}
