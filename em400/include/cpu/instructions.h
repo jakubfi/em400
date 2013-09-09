@@ -127,6 +127,7 @@ void op_73_gil();
 void op_73_lip();
 void op_73_sint();
 void op_73_sind();
+void op_73_cron();
 
 void op_74_uj();
 void op_74_jl();

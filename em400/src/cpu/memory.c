@@ -294,8 +294,9 @@ uint8_t mem_read_byte(int nb, uint16_t addr, int trace)
 
 	shift = 8 * (~addr & 1);
 
-	if (em400_cfg.mod) {
+	if (cpu_mod) {
 		addr17 = (addr >> 1) | (nR(R_ZC17) << 15);
+		nRw(R_ZC17, 0);
 	} else {
 		addr17 = addr >> 1;
 	}
@@ -314,8 +315,9 @@ void mem_write_byte(int nb, uint16_t addr, uint8_t val, int trace)
 	shift = 8 * (~addr & 1);
 
 	// TODO: optimize maybe?
-	if (em400_cfg.mod) {
+	if (cpu_mod) {
 		addr17 = (addr >> 1) | (nR(R_ZC17) << 15);
+		nRw(R_ZC17, 0);
 	} else {
 		addr17 = addr >> 1;
 	}

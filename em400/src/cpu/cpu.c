@@ -37,27 +37,48 @@
 
 int16_t N;
 int cpu_stop;
+int cpu_mod;
 
 #ifdef WITH_DEBUGGER
 uint16_t cycle_ic;
 #endif
 
 // -----------------------------------------------------------------------
-void cpu_disable_sint()
+void cpu_set_op(struct opdef *op_tab, int opcode, opfun fun)
 {
-	// "remove" sint/sind ops
-	struct opdef *op = iset_73;
-	int deactivated = 0;
-	while (deactivated != 2) {
-		if ((op->opcode == 0b1010100) || (op->opcode == 0b0010100)) {
-			op->fun = NULL;
-			deactivated++;
+	struct opdef *op = op_tab;
+	while (op && (op->opcode != 0b1111111)) {
+		if (op->opcode == opcode) {
+			op->fun = fun;
 		}
 		op++;
 	}
+}
 
-	// set timer interrupt to regular on
+// -----------------------------------------------------------------------
+void cpu_mod_enable()
+{
+	cpu_set_op(iset_73, 0b0101000, op_73_cron);
+}
+
+// -----------------------------------------------------------------------
+void cpu_mod_on()
+{
+	cpu_mod = 1;
+	int_timer = INT_EXTRA;
+	int_extra = INT_TIMER;
+	cpu_set_op(iset_73, 0b0010100, op_73_sint);
+	cpu_set_op(iset_73, 0b1010100, op_73_sind);
+}
+
+// -----------------------------------------------------------------------
+void cpu_mod_off()
+{
+	cpu_mod = 0;
 	int_timer = INT_TIMER;
+	int_extra = INT_EXTRA;
+	cpu_set_op(iset_73, 0b0010100, NULL);
+	cpu_set_op(iset_73, 0b1010100, NULL);
 }
 
 // -----------------------------------------------------------------------
@@ -69,6 +90,7 @@ void cpu_reset()
 	cpu_stop = 0;
 	mem_reset();
 	int_clear_all();
+	cpu_mod_off();
 }
 
 // -----------------------------------------------------------------------
@@ -95,7 +117,7 @@ void cpu_step()
 {
 	int _N = 0xbeef;
 	struct opdef *op;
-	void (*op_fun)();
+	opfun op_fun;
 
 #ifdef WITH_DEBUGGER
 	cycle_ic = regs[R_IC];
@@ -156,7 +178,7 @@ void cpu_step()
 		_N = IR_T + (int16_t) regs[R_MOD];
 	}
 
-	if (em400_cfg.mod) nRw(R_ZC17, (_N >> 16) & 1);
+	if (cpu_mod) nRw(R_ZC17, (_N >> 16) & 1);
 
 	N = _N;
 

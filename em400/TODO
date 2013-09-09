@@ -6,7 +6,6 @@ Known bugs:
 CPU:
 
 * mega "DONE" handling (?)
-* processor modification
 * handling no memory for io devices (change how nomem is handled? - global flag?)
 * timings (instructions, memory access, disk latencies, serial lines, ...)
 

@@ -18,6 +18,7 @@
 #include <inttypes.h>
 #include <pthread.h>
 
+#include "cpu/cpu.h"
 #include "cpu/memory.h"
 #include "cpu/registers.h"
 #include "cpu/interrupts.h"
@@ -32,8 +33,8 @@
 uint32_t RZ;
 uint32_t RP;
 
-// mod_sint is enabled by default, causing timer interrupt to be moved
-int int_timer = INT_EXTRA;
+int int_timer = INT_TIMER;
+int int_extra = INT_EXTRA;
 
 pthread_mutex_t int_mutex_rz = PTHREAD_MUTEX_INITIALIZER;
 pthread_mutex_t int_mutex_rp = PTHREAD_MUTEX_INITIALIZER;
@@ -180,7 +181,9 @@ void int_serve()
 	// clear stuff and get ready to serve
 	reg_write(0, 0, 1, 1);
 	// mask interrupts with prio <= interrupt
-	nRw(R_SR, nR(R_SR) & int_int2mask[interrupt] & 0b1111011111111111);
+	uint16_t new_sr = nR(R_SR) & int_int2mask[interrupt];
+	if (cpu_mod) new_sr &= 0b1111000000111111;
+	nRw(R_SR, new_sr);
 	int_clear(interrupt);
 	nRw(R_IC, nMEMB(0, 64+interrupt));
 	nMEMBw(0, 97, SP+4);

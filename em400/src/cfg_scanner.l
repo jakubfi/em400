@@ -40,7 +40,7 @@ comment	#.*$
 computer		return COMPUTER;
 speed_real		return SPEED_REAL;
 timer_step		return TIMER;
-mod				return MOD;
+cpu_mod			return CPU_MOD;
 mem_elwro		return ELWRO;
 mem_mega		return MEGA;
 mem_mega_prom	return MEGA_PROM;

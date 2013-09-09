@@ -72,7 +72,7 @@ void cfg_print()
 	eprint("  Exit on HLT>=040: %s\n", em400_cfg.exit_on_hlt ? "true" : "false");
 	eprint("  Emulation speed: %s\n", em400_cfg.speed_real ? "real" : "max");
 	eprint("  Timer step: %i\n", em400_cfg.timer_step);
-	eprint("  CPU modifications: %s\n", em400_cfg.mod ? "true" : "false");
+	eprint("  CPU modifications: %s\n", em400_cfg.cpu_mod ? "true" : "false");
 	eprint("  -- Memory: ---------------------------\n");
 	eprint("  Elwro modules: %i\n", em400_cfg.mem_elwro);
 	eprint("  MEGA modules: %i\n", em400_cfg.mem_mega);

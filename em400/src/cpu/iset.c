@@ -236,7 +236,7 @@ struct opdef iset_73[] = {
 	{ 0b0100110, false, false, true, op_73_lip, NULL },
 	{ 0b0100111, false, false, true, op_73_lip, NULL },
 
-	{ 0b0101000, false, false, false, NULL, NULL },
+	{ 0b0101000, false, false, true,  NULL, NULL },
 	{ 0b0101001, false, false, false, NULL, NULL },
 	{ 0b0101010, false, false, false, NULL, NULL },
 	{ 0b0101011, false, false, false, NULL, NULL },

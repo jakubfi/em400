@@ -59,7 +59,7 @@ struct cfg_em400_t {
 
 	int speed_real;
 	int timer_step;
-	int mod;
+	int cpu_mod;
 	int keys;
 	int mem_elwro;
 	int mem_mega;

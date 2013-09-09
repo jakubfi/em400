@@ -13,7 +13,7 @@ computer {
 	# additional software interrupt, int 5/11 swap, broader interrupt mask
 	# for I/O interrupts)
 	# allowed values: "true", "false"
-	mod = true
+	cpu_mod = true
 
 	# Memory is organized into 16 physical modules. Each module can be
 	# either elwro or mega. Elwro modules are 32kword big (8 pages),

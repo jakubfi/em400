@@ -19,18 +19,23 @@
 #define CPU_H
 
 #include <inttypes.h>
-
-void cpu_disable_sint();
-void cpu_reset();
-void cpu_halt();
-void cpu_step();
+#include "cpu/iset.h"
 
 extern int16_t N;
 extern int cpu_stop;
+extern int cpu_mod;
 
 #ifdef WITH_DEBUGGER
 extern uint16_t cycle_ic;
 #endif
+
+void cpu_set_op(struct opdef *op_tab, int opcode, opfun fun);
+void cpu_mod_enable();
+void cpu_mod_on();
+void cpu_mod_off();
+void cpu_reset();
+void cpu_halt();
+void cpu_step();
 
 #endif
 

@@ -80,9 +80,9 @@ void em400_init()
 	cpu_reset();
 	regs[R_KB] = em400_cfg.keys;
 
-	// disable sint/sind modifications?
-	if (!em400_cfg.mod) {
-		cpu_disable_sint();
+	// enable enabling cpu modification, if cpu mod is enabled in configuration
+	if (em400_cfg.cpu_mod) {
+		void cpu_mod_enable();
 	}   
 
 	mem_clear();
@@ -215,7 +215,7 @@ void em400_configure()
 	// default configuration
 	em400_cfg.speed_real = 0;
 	em400_cfg.timer_step = 10;
-	em400_cfg.mod = 0;
+	em400_cfg.cpu_mod = 0;
 	em400_cfg.chans = NULL;
 	em400_cfg.mem_mega_prom = NULL;
 
