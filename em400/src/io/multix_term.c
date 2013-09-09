@@ -168,7 +168,6 @@ int mx_term_send(struct mx_unit_proto_t *unit, struct mx_term_cf_transmit_t *cf)
 		term_write(UNIT->term, &ch1, 1);
 		//if (ch2 == 13) term_write(UNIT->term, &lf, 1);
 		tmp[bytes_sent] = ch1;
-		printf("Terminal sent: \"(%i) %c\"\n", ch1, ch1);
 		bytes_sent++;
 		if ((cf->opts & MX_TERM_TX_SEND_BY_EOT_INCL) && (ch1 == cf->send_eot_char)) {
 			break;
@@ -180,7 +179,6 @@ int mx_term_send(struct mx_unit_proto_t *unit, struct mx_term_cf_transmit_t *cf)
 		term_write(UNIT->term, &ch2, 1);
 		//if (ch2 == 13) term_write(UNIT->term, &lf, 1);
 		tmp[bytes_sent] = ch2;
-		printf("Terminal sent: \"(%i) %c\"\n", ch2, ch2);
 		bytes_sent++;
 		if ((cf->opts & MX_TERM_TX_SEND_BY_EOT_INCL) && (ch2 == cf->send_eot_char)) {
 			break;
@@ -225,13 +223,11 @@ int mx_term_recv(struct mx_unit_proto_t *unit, struct mx_term_cf_transmit_t *cf)
 	}
 
 	char buf[1024];
-	printf("recv start byte: %i\n", cf->recv_start_byte);
 	while (bytes_recv < cf->recv_len) {
 		char data;
 		res = term_read(UNIT->term, &data, 1);
 		if (res <= 0) continue;
 		//if (data == 10) continue;
-		printf("got: %c (%i) eot: #%i\n", data, data, cf->recv_eot_char);
 		if ((cf->opts & MX_TERM_TX_RECV_BY_EOT_EXCL) && (data == cf->recv_eot_char)) {
 			mx_status_set(unit, MX_STATUS_RECV_EOT);
 			break;
@@ -288,7 +284,6 @@ void mx_term_cmd_transmit(struct mx_unit_proto_t *unit, uint16_t addr)
 #ifdef WITH_DEBUGGER
 	char *details = decode_mxpst_term(addr, 0);
 	LOG(L_TERM, 50, "Transmission details:\n%s", details);
-	printf("%s\n", details);
 	free(details);
 #endif
 

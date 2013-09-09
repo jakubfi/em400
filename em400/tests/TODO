@@ -10,5 +10,15 @@ zc17
 sint/d
 maskowanie przerwań
 
+mega:
+* map/unmap
+* wspolpraca z elwro w 0
+* segmenty systemowe
+* prom show/hide
+* zapis do prom
+* zakres promu - 1 seg.
+* mapowanie segmentu na >1 blokow
+* "done" alokacji
+
 multix
 benchmark: byte addressing

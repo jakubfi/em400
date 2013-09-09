@@ -181,8 +181,7 @@ command:
 	| F_TRANS expr VALUE	{ dbg_c_dt(W_CMD, DMODE_TRANS, n_eval($2), $3); }
 	| F_MEM expr '-' expr	{ dbg_c_mem(W_CMD, SR_Q*SR_NB, n_eval($2), n_eval($4), 122, 18); }
 	| F_MEM expr ':' expr '-' expr	{ dbg_c_mem(W_CMD, n_eval($2), n_eval($4), n_eval($6), 122, 18); }
-	| F_LOAD TEXT			{ dbg_c_load(W_CMD, $2, SR_Q*SR_NB); }
-	| F_LOAD TEXT VALUE		{ dbg_c_load(W_CMD, $2, $3); }
+	| F_LOAD TEXT			{ dbg_c_load(W_CMD, $2); }
 	| F_BRK					{ dbg_c_brk_list(W_CMD); }
 	| F_BRK ADD expr	{
 		char expr[128];

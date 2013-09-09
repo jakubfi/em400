@@ -29,12 +29,6 @@
 #define MEM_MAX_NB 16				// logical blocks
 #define MEM_MAX_AB 16				// logical segments in a logical block
 
-enum mem_type {
-	MEM_NONE = 0,
-	MEM_ELWRO = 1,
-	MEM_MEGA = 2,
-};
-
 enum mem_mega_flags {
 	MEM_MEGA_ALLOC		= 0b0000001,
 	MEM_MEGA_FREE		= 0b0000010,
@@ -43,7 +37,8 @@ enum mem_mega_flags {
 	MEM_MEGA_ALLOC_DONE	= 0b1000000,
 };
 
-extern uint16_t *mem_seg[MEM_MAX_MODULES][MEM_MAX_SEGMENTS];
+extern uint16_t *mem_elwro[MEM_MAX_MODULES][MEM_MAX_SEGMENTS];
+extern uint16_t *mem_mega[MEM_MAX_MODULES][MEM_MAX_SEGMENTS];
 extern uint16_t *mem_map[MEM_MAX_NB][MEM_MAX_AB];
 
 int mem_init();
@@ -60,7 +55,7 @@ void mem_write(int nb, uint16_t addr, uint16_t val, int trace);
 void mem_write_byte(int nb, uint16_t addr, uint8_t val, int trace);
 
 void mem_clear();
-int mem_load_image(const char* fname, int nb, int len);
+int mem_load_image(const char* fname, int nb, int start_seg, int len);
 
 // memory access macros
 #define MEM(a)			mem_read(SR_Q*SR_NB, a, 1)

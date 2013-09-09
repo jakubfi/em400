@@ -78,6 +78,7 @@ void em400_init()
 	}
 
 	cpu_reset();
+	regs[R_KB] = em400_cfg.keys;
 
 	// disable sint/sind modifications?
 	if (!em400_cfg.mod) {
@@ -98,7 +99,7 @@ void em400_init()
 
 	if (em400_cfg.program_name) {
 		eprint("Loading image '%s' into OS memory\n", em400_cfg.program_name);
-		int res = mem_load_image(em400_cfg.program_name, 0, 2*4*1024);
+		int res = mem_load_image(em400_cfg.program_name, 0, 0, 2*4*1024);
 		if (res < E_OK) {
 			em400_eerr(res, "Could not load program '%s'", em400_cfg.program_name);
 		} else {
@@ -127,6 +128,7 @@ void em400_usage()
 	printf("   -h           : display help\n");
 	printf("   -c config    : use given config file instead of defaults\n");
 	printf("   -p program   : load program image into OS memory\n");
+	printf("   -k value     : set keys to given value\n");
 	printf("   -e           : terminate emulation on HLT >= 040\n");
 	printf("   -b           : benchmark emulator\n");
 	printf("   -v           : enable verbose messages\n");
@@ -144,13 +146,14 @@ void em400_parse_args(int argc, char **argv)
 {
 	int option;
 
+	em400_cfg.keys = 0;
 #ifdef WITH_DEBUGGER
 	int len;
 	em400_cfg.pre_expr = NULL;
 	em400_cfg.test_expr = NULL;
 #endif
 
-	while ((option = getopt(argc, argv,"bvhec:p:l:t:x:s")) != -1) {
+	while ((option = getopt(argc, argv,"bvhec:p:k:l:t:x:s")) != -1) {
 		switch (option) {
 			case 'b':
 				em400_cfg.benchmark = 1;
@@ -166,6 +169,9 @@ void em400_parse_args(int argc, char **argv)
 				break;
 			case 'p':
 				em400_cfg.program_name = strdup(optarg);
+				break;
+			case 'k':
+				em400_cfg.keys = atoi(optarg);
 				break;
 			case 'e':
 				em400_cfg.exit_on_hlt = 1;
@@ -211,6 +217,7 @@ void em400_configure()
 	em400_cfg.timer_step = 10;
 	em400_cfg.mod = 0;
 	em400_cfg.chans = NULL;
+	em400_cfg.mem_mega_prom = NULL;
 
 	// ~/.em400/ files
 	char *home = getenv("HOME");

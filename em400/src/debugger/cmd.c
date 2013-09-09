@@ -52,7 +52,7 @@ struct cmd_t dbg_commands[] = {
 	{ "trans",	F_TRANS,	"Translator", "  trans [[start] count]" },
 	{ "mem",	F_MEM,		"Show memory contents", "  mem [block:] <start>-<end>" },
 	{ "memcl",	F_MEMCL,	"Clear memory contents", "  memcl" },
-	{ "load",	F_LOAD,		"Load memory image from file", "  load <file> [mem_block]" },
+	{ "load",	F_LOAD,		"Load memory image from file", "  load <file>" },
 	{ "memcfg",	F_MEMCFG,	"Show memory configuration", "  memcfg" },
 	{ "brk",	F_BRK,		"Manipulate breakpoints", "  brk add <expression>\n  brk del <brk_number>\n  brk" },
 	{ "run",	F_RUN,		"Run emulation", "  run" },
@@ -65,9 +65,9 @@ struct cmd_t dbg_commands[] = {
 };
 
 // -----------------------------------------------------------------------
-void dbg_c_load(int wid, char* image, int bank)
+void dbg_c_load(int wid, char* image)
 {
-	int res = mem_load_image(image, bank, 0);
+	int res = mem_load_image(image, 0, 0, 0);
 	if (res < E_OK) {
 		awtbprint(wid, C_ERROR, "Error loading image \"%s\": %s\n", image, get_error(res));
 	}
@@ -333,11 +333,21 @@ void dbg_c_memcfg(int wid)
 	awtbprint(wid, C_LABEL, "Number of 4kword segments/pages in each hardware module/logical block\n");
 	awtbprint(wid, C_LABEL, "module/block  :  0  1  2  3  4  5  6  7  8  9 10 11 12 13 14 15\n");
 
-	awtbprint(wid, C_LABEL, "Phys. segments: ");
+	awtbprint(wid, C_LABEL, "Elwro segments: ");
 	for (i=0 ; i<MEM_MAX_MODULES ; i++) {
 		cnt = 0;
 		for (j=0 ; j<MEM_MAX_SEGMENTS ; j++) {
-			if (mem_seg[i][j]) cnt++;
+			if (mem_elwro[i][j]) cnt++;
+		}
+		awtbprint(wid, C_DATA, "%2i ", cnt);
+	}
+	awtbprint(wid, C_DATA, "\n");
+
+	awtbprint(wid, C_LABEL, "MEGA  segments: ");
+	for (i=0 ; i<MEM_MAX_MODULES ; i++) {
+		cnt = 0;
+		for (j=0 ; j<MEM_MAX_SEGMENTS ; j++) {
+			if (mem_mega[i][j]) cnt++;
 		}
 		awtbprint(wid, C_DATA, "%2i ", cnt);
 	}

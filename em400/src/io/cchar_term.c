@@ -126,7 +126,6 @@ int cchar_term_read(struct cchar_unit_proto_t *unit, uint16_t *r_arg)
 		pthread_mutex_lock(&UNIT->buf_mutex);
 		char data = UNIT->buf[UNIT->buf_rpos];
 		LOG(L_TERM, 50, "Term read: %i (%c)", *r_arg, *r_arg);
-		printf("Term read: %i (%c)\n", *r_arg, *r_arg);
 		UNIT->buf_len--;
 		if (UNIT->buf_rpos >= TERM_BUF_LEN-2) {
 			UNIT->buf_rpos = 0;
