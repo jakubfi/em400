@@ -235,7 +235,7 @@ struct dasm_opdef dasm_iset_73[] = {
 	{ 0b0100110, "LIP", false, NULL, NULL, D_S, T_LIP },
 	{ 0b0100111, "LIP", false, NULL, NULL, D_S, T_LIP },
 
-	{ 0b0101000, NULL,  false, NULL, NULL, DT_ILL, DT_ILL },
+	{ 0b0101000, "CRON",false, NULL, NULL, D_S, T_CRON },
 	{ 0b0101001, NULL,  false, NULL, NULL, DT_ILL, DT_ILL },
 	{ 0b0101010, NULL,  false, NULL, NULL, DT_ILL, DT_ILL },
 	{ 0b0101011, NULL,  false, NULL, NULL, DT_ILL, DT_ILL },

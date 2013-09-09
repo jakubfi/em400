@@ -152,6 +152,7 @@
 #define T_LIP "pop (IC, r0, SR)"
 #define T_SINT "int_set(EXTRA)"
 #define T_SIND "int_clear(EXTRA)"
+#define T_CRON "cpu_mod_on()"
 
 #define T_UJ "IC = %n"
 #define T_JL "if < then IC = %n"
