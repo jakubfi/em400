@@ -245,7 +245,8 @@ op_no_arg_i73_da = {
     0b1011: ['GIL', 'gil',  'Generate Interrupt Lower'],
 
     0b0100: ['LIP', 'lip',  'Leave to Interrupted Program'],
-    0b1100: ['LIP', 'lip',  'Leave to Interrupted Program']
+    0b1100: ['LIP', 'lip',  'Leave to Interrupted Program'],
+    0b0101: ['CRON','cron', 'CPU modification ON']
 }
 
 op_no_arg_i73_dc = {
@@ -257,8 +258,8 @@ op_no_arg_i73_dc = {
     0b1010: ['SIU',  'siu',  'Set Interrupt Upper'],
     0b0011: ['SIT',  'sit',  'Set InTerrupts'],
     0b1011: ['SIT',  'sit',  'Set InTerrupts'],
-    0b0100: ['SINT', 'sint', 'Software INterrupt seT'],
-    0b1100: ['SIND', 'sind', 'Software INterrupt Delete']
+    0b0100: ['SINT', 'sint', 'Software INterrupt T'],
+    0b1100: ['SIND', 'sind', 'Software INterrupt D']
 }
 
 op_basic_i74_a = {
