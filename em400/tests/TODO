@@ -1,10 +1,5 @@
 memory configuration
 
-AFn, rC, rB
-SFn, rC, rB
-MFn, rC, rB
-DFn, rC, rB
-
 mega:
 * map/unmap
 * wspolpraca z elwro w 0

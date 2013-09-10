@@ -1,19 +1,25 @@
 computer {
 	# real CPU and I/O emulation speed:
-	# "false" - run as fast as possible
+	# "false" - run as fast as possible (default)
 	# "true" - try to emulate actual instructions, memory and I/O timings
 	speed_real = false
 
 	# Internal timer interrupt cycle (in miliseconds)
-	# allowed values: 0-100, 0 means timer is disabled
-	# Note: in real hardware, cycle lengths: 2, 4, 8, 10, 20, 40, 80 were used
+	# allowed values: 0-100, 0 means timer is disabled (default is 10)
+	# Note: cycle lengths available for real hardware were:
+	# 2, 4, 8, 10, 20, 40, 80 (10 was default)
 	timer_step = 0
 
 	# Enable CPU modification (17-bit byte addressing, additional instructions,
 	# additional software interrupt, int 5/11 swap, broader interrupt mask
 	# for I/O interrupts)
-	# allowed values: "true", "false"
+	# allowed values: "true", "false" (default)
 	cpu_mod = true
+
+	# When accessing unallocated memory in OS mode, CPU may stop or continue.
+	# "true" - report interrupt and stop (default)
+	# "false" - report interrupt and continue
+	cpu_os_nomem_stop = false
 
 	# Memory is organized into 16 physical modules. Each module can be
 	# either elwro or mega. Elwro modules are 32kword big (8 pages),
@@ -22,17 +28,18 @@ computer {
 	# Elwro modules are populated starting from 0 up, mega modules
 	# from 15 down. Module 0 may be overlapped by mega module
 
-	# allowed values: 1-16
+	# allowed values: 1-16 (default: 1)
 	mem_elwro = 1
 
-	# allowed values: 0-16
+	# allowed values: 0-16 (default: 0)
 	mem_mega = 16
 
 	# Name of image file containing MEGA PROM memory (1 segment, 4kword max)
+	# (default: none)
 	mem_mega_prom = mega_prom.img
 
 	# 4kword segments hardwired for OS memory block (taken from module 0)
-	# allowed values: 1 or 2
+	# allowed values: 1 or 2 (default: 2)
 	mem_os_segments = 2
 }
 

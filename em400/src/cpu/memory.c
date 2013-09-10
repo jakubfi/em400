@@ -280,7 +280,9 @@ uint16_t mem_read(int nb, uint16_t addr, int trace)
 		int_set(INT_NO_MEM);
 		if (!SR_Q) {
 			nRw(R_ALARM, 1);
-			//cpu_stop = 1;
+			if (em400_cfg.cpu_nomem_stop) {
+				cpu_stop = 1;
+			}
 		}
 		return 0xdead;
 	}

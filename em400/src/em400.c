@@ -216,6 +216,10 @@ void em400_configure()
 	em400_cfg.speed_real = 0;
 	em400_cfg.timer_step = 10;
 	em400_cfg.cpu_mod = 0;
+	em400_cfg.cpu_nomem_stop = 1;
+	em400_cfg.mem_elwro = 1;
+	em400_cfg.mem_mega = 0;
+	em400_cfg.mem_os = 2;
 	em400_cfg.chans = NULL;
 	em400_cfg.mem_mega_prom = NULL;
 
