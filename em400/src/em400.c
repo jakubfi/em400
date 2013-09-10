@@ -82,7 +82,7 @@ void em400_init()
 
 	// enable enabling cpu modification, if cpu mod is enabled in configuration
 	if (em400_cfg.cpu_mod) {
-		void cpu_mod_enable();
+		cpu_mod_enable();
 	}   
 
 	mem_clear();

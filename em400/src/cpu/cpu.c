@@ -153,7 +153,7 @@ void cpu_step()
 		return;
 	}
 
-	int op_is_md = (nR(R_IR) & 0b1111110101000000) == 0b1111110101000000 ? 1 : 0;
+	int op_is_md = (nR(R_IR) & 0b1111110111000000) == 0b1111110101000000 ? 1 : 0;
 
 	// op ineffective?
 	if ((op_fun == NULL)
