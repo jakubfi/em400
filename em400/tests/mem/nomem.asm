@@ -1,4 +1,4 @@
-.prog "mem/nomem-os"
+.prog "mem/nomem"
 
 ; CONFIG configs/no_user_mem.cfg
 
@@ -10,7 +10,6 @@
 	uj start
 
 nomem_proc:
-exitok:
 	hlt 077
 
 start:
@@ -20,7 +19,7 @@ start:
 	rw r3, int_nomem
 
 	pw r1, 10
-err:
+
 	hlt 040
 
 stack:

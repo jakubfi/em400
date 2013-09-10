@@ -8,6 +8,7 @@ CPU:
 * mega "DONE" handling (?)
 * handling no memory for io devices (change how nomem is handled? - global flag?)
 * timings (instructions, memory access, disk latencies, serial lines, ...)
+* IN/OU legal/illegal in user mode
 
 I/O:
 
