@@ -47,7 +47,6 @@ uint16_t **mem_elwro_ral[MEM_MAX_MODULES][MEM_MAX_SEGMENTS];	// Elwro: internal 
 uint16_t *mem_mega[MEM_MAX_MODULES][MEM_MAX_SEGMENTS];			// MEGA: physical segments
 uint16_t *mem_mega_map[MEM_MAX_NB][MEM_MAX_AB];					// MEGA: internal logical->physical segment mapping
 uint16_t *mem_mega_prom;										// MEGA: PROM contents
-uint16_t *mem_mega_prom_hidden;									// MEGA: pointer to segment covered by PROM
 
 // -----------------------------------------------------------------------
 int mem_create_mp(int mp, int segments, uint16_t **sptr)
@@ -194,28 +193,32 @@ int mem_cmd_mega(int nb, int ab, int mp, int seg, int flags)
 {
 	pthread_spin_lock(&mem_spin);
 
-	if ((flags & MEM_MEGA_FREE)) {
-		LOG(L_MEM, 1, "MEGA: del map (%2d, %2d)     %s%s", nb, ab, flags & MEM_MEGA_PROM_SHOW ? "[prom show]" : "", flags & MEM_MEGA_PROM_HIDE ? "[prom hide]" : "");
-		if (mem_map[nb][ab] == mem_mega_map[nb][ab]) {
-			mem_map[nb][ab] = mem_mega_map[nb][ab] = NULL;
+	// touch only non-OS ab
+	if ((nb > 0) || ((nb == 0) && (ab > 1))) {
+		// 'free'
+		if ((flags & MEM_MEGA_FREE)) {
+			LOG(L_MEM, 1, "MEGA: del map (%2d, %2d)     %s%s", nb, ab, flags & MEM_MEGA_PROM_SHOW ? "[prom show]" : "", flags & MEM_MEGA_PROM_HIDE ? "[prom hide]" : "");
+			if (mem_map[nb][ab] == mem_mega_map[nb][ab]) {
+				mem_map[nb][ab] = mem_mega_map[nb][ab] = NULL;
+			}
+		// 'alloc'
+		} else {
+			LOG(L_MEM, 1, "MEGA: add map (%2d, %2d) -> (%2d, %2d)     %s%s", nb, ab, mp, seg, flags & MEM_MEGA_PROM_SHOW ? "[prom show]" : "", flags & MEM_MEGA_PROM_HIDE ? "[prom hide]" : "");
+			mem_map[nb][ab] = mem_mega_map[nb][ab] = mem_mega[mp][seg];
 		}
-	} else {
-		LOG(L_MEM, 1, "MEGA: add map (%2d, %2d) -> (%2d, %2d)     %s%s", nb, ab, mp, seg, flags & MEM_MEGA_PROM_SHOW ? "[prom show]" : "", flags & MEM_MEGA_PROM_HIDE ? "[prom hide]" : "");
-		mem_map[nb][ab] = mem_mega_map[nb][ab] = mem_mega[mp][seg];
 	}
 
-	// handle PROM show
+	// 'PROM hide'
+	if ((flags & MEM_MEGA_PROM_HIDE)) {
+		mem_map[0][15] = mem_mega_map[0][15];
+	}
+
+	// 'PROM show'
 	if ((flags & MEM_MEGA_PROM_SHOW)) {
-		mem_mega_prom_hidden = mem_map[0][15];
 		mem_map[0][15] = mem_mega_prom;
 	}
 
-	// hndle PROM hide
-	if ((flags & MEM_MEGA_PROM_HIDE)) {
-		mem_map[0][15] = mem_mega_prom_hidden;
-	}
-
-	// TODO: handle 'allocation done'
+	// TODO: 'allocation done'
 	if ((flags & MEM_MEGA_ALLOC_DONE)) {
 		LOG(L_MEM, 1, "MEGA: initializarion done");
 	}
@@ -230,18 +233,16 @@ void mem_reset()
 {
 	int nb;
 	int ab;
-	int ab_min;
 
 	// remove all memory mappings
 	for (nb=0 ; nb<MEM_MAX_NB ; nb++) {
-		if (nb == 0) {
-			ab_min = em400_cfg.mem_os;
-		} else {
-			ab_min = 0;
-		}
-		for (ab=ab_min ; ab<MEM_MAX_AB ; ab++) {
+		for (ab=0 ; ab<MEM_MAX_AB ; ab++) {
 			pthread_spin_lock(&mem_spin);
-			mem_map[nb][ab] = NULL;
+			if ((nb>0) || ((nb==0) && (ab>1))) {
+				mem_map[nb][ab] = NULL;
+			}
+			mem_mega_map[nb][ab] = NULL;
+			mem_elwro_ral[nb][ab] = NULL;
 			pthread_spin_unlock(&mem_spin);
 		}
 	}

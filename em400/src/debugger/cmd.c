@@ -353,7 +353,7 @@ void dbg_c_memcfg(int wid)
 	}
 	awtbprint(wid, C_DATA, "\n");
 
-	awtbprint(wid, C_LABEL, "Pages         : ");
+	awtbprint(wid, C_LABEL, "Allocated     : ");
 	for (i=0 ; i<MEM_MAX_NB ; i++) {
 		cnt = 0;
 		for (j=0 ; j<MEM_MAX_SEGMENTS ; j++) {

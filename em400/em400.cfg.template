@@ -16,7 +16,7 @@ computer {
 	# allowed values: "true", "false" (default)
 	cpu_mod = true
 
-	# When accessing unallocated memory in OS mode, CPU may stop or continue.
+	# When accessing unallocated memory in block 0, CPU could stop or continue.
 	# "true" - report interrupt and stop (default)
 	# "false" - report interrupt and continue
 	cpu_os_nomem_stop = false
