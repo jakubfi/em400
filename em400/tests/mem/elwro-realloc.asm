@@ -1,13 +1,16 @@
 .prog "mem/elwro-realloc"
 
-; Elwro does not allow to map the same segment to two different
-; addresses. First mapping is removed, when second one is done
+; does Elwro prohibit allocating the same physical segment for two logical segments?
+; is data in physical segment preserved between allocations?
 
 	.equ int_nomem 0x40 + 2
 	.equ stackp 0x61
 	.equ magic 0x2323
-	.equ seg1 2\3
-	.equ seg2 3\3
+	.equ nb 0\15
+	.equ ab1 2\3
+	.equ ab2 3\3
+	.equ mp 0\14
+	.equ seg 2\10
 	.equ addr 100
 
 	uj start
@@ -27,20 +30,20 @@ start:	lw r1, stack
 	lw r1, nomem_proc
 	rw r1, int_nomem
 
-	lw r1, seg1 + 0
-	ou r1, 2\10 + 0\14 + 1
+	lw r1, ab1 + nb
+	ou r1, mp + seg + 1\15
 	.data err, err, ok, err
 
 ok:	im mask
 	lw r1, magic
-	rw r1, seg1 + addr
+	rw r1, ab1 + addr
 
-	lw r1, seg2 + 0
-	ou r1, 2\10 + 0\14 + 1
+	lw r1, ab2 + nb
+	ou r1, mp + seg + 1\15
 	.data err, err, ok2, err
 
-ok2:	lw r1, [seg1+addr]
-	lw r2, [seg2+addr]
+ok2:	lw r1, [ab1+addr]
+	lw r2, [ab2+addr]
 
 	hlt 077
 

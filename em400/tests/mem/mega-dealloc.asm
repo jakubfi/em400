@@ -1,19 +1,17 @@
-.prog "mem/mega-double-alloc"
+.prog "mem/mega-dealloc"
 
 ; CONFIG configs/mega_max.conf
 
-; does MEGA allow to allocate the same physical segment for two logical segments?
+; does MEGA deallocation work?
 
 	.equ int_nomem 0x40 + 2
 	.equ stackp 0x61
 	.equ magic 0x2323
 
 	.equ nb 0
-	.equ ab1 2\3
-	.equ ab2 3\3
+	.equ ab 2\3
 	.equ mp 0\14
 	.equ seg 2\10
-	.equ addr 100
 
 	.equ mega 1\15 + 1\6
 	.equ dealloc 1\5
@@ -29,6 +27,7 @@ stack:	.res 16
 nomem_proc:
 	aw r7, 1
 	lip
+
 err:	hlt 040
 
 	.ic 0x70
@@ -38,25 +37,30 @@ start:	lw r1, stack
 	lw r1, nomem_proc
 	rw r1, int_nomem
 
-	lw r1, ab1 + nb
-	ou r1, seg + mp + mega+phide+done
+	lw r1, ab + nb
+	ou r1, mp + seg + mega+phide+done
 	.data err, err, ok, err
 
-ok:	lw r1, ab2 + nb
-	ou r1, seg + mp + mega
+ok:	im mask
+	lw r1, magic
+	rw r1, ab
+
+	lw r1, ab
+	ou r1, mega+dealloc
 	.data err, err, ok2, err
 
-ok2:	im mask
-	lw r1, magic
-	rw r1, ab1 + addr
-	lw r2, [ab1+addr]
-	lw r3, [ab2+addr]
+ok2:	lw r1, [ab]
+
+	lw r1, ab + nb
+	ou r1, mp + seg + mega
+	.data err, err, ok3, err
+
+ok3:	lw r2, [ab]
 
 	hlt 077
 
 .finprog
 
 ; XPCT hex(r2) : 0x2323
-; XPCT hex(r3) : 0x2323
-; XPCT int(r7) : 0
+; XPCT int(r7) : 1
 ; XPCT oct(ir[10-15]) : 077
