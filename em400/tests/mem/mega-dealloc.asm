@@ -8,7 +8,7 @@
 	.equ stackp 0x61
 	.equ magic 0x2323
 
-	.equ nb 0
+	.equ nb 1\15
 	.equ ab 2\3
 	.equ mp 0\14
 	.equ seg 2\10
@@ -21,7 +21,7 @@
 
 	uj start
 
-mask:	.data 0b0100000000000000
+mask:	.data 0b0100000000000001
 stack:	.res 16
 
 nomem_proc:
@@ -41,21 +41,22 @@ start:	lw r1, stack
 	ou r1, mp + seg + mega+phide+done
 	.data err, err, ok, err
 
-ok:	im mask
+ok:	mb mask
+	im mask
 	lw r1, magic
-	rw r1, ab
+	pw r1, ab
 
-	lw r1, ab
+	lw r1, ab + nb
 	ou r1, mega+dealloc
 	.data err, err, ok2, err
 
-ok2:	lw r1, [ab]
+ok2:	tw r1, ab
 
 	lw r1, ab + nb
 	ou r1, mp + seg + mega
 	.data err, err, ok3, err
 
-ok3:	lw r2, [ab]
+ok3:	tw r2, ab
 
 	hlt 077
 

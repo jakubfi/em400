@@ -40,7 +40,7 @@
 #include "debugger/log.h"
 #endif
 
-int em400_quit = 0;
+int em400_state = STATE_WORK;
 
 // -----------------------------------------------------------------------
 void em400_shutdown()
@@ -216,7 +216,6 @@ void em400_configure()
 	em400_cfg.speed_real = 0;
 	em400_cfg.timer_step = 10;
 	em400_cfg.cpu_mod = 0;
-	em400_cfg.cpu_nomem_stop = 1;
 	em400_cfg.mem_elwro = 1;
 	em400_cfg.mem_mega = 0;
 	em400_cfg.mem_os = 2;
@@ -274,11 +273,11 @@ void em400_loop()
 
 	gettimeofday(&ips_start, NULL);
 
-	while (!em400_quit) {
+	while (em400_state == STATE_WORK) {
 #ifdef WITH_DEBUGGER
 		if (em400_cfg.autotest != 1) {
 			dbg_step();
-			if (em400_quit) {
+			if (em400_state != STATE_WORK) {
 				break;
 			}
 		}
@@ -322,6 +321,10 @@ int main(int argc, char** argv)
 #endif
 
 	em400_loop();
+
+	if (em400_state == STATE_MEM_FAIL) {
+		printf("Emulation died, guest CPU segmentation fault.\n");
+	}
 
 #ifdef WITH_DEBUGGER
 	if (em400_cfg.autotest && em400_cfg.test_expr) {

@@ -28,5 +28,4 @@ stack:
 .finprog
 
 ; XPCT int(rz[6]) : 0
-; XPCT int(alarm) : 1
 ; XPCT oct(ir[10-15]) : 077

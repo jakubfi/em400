@@ -80,6 +80,7 @@ enum _interrupts {
 #define MASK_8				0b1111111100111111
 #define MASK_9				0b1111111110111111
 
+void int_wait();
 void int_update_rp();
 void int_set(int x);
 void int_clear(int x);

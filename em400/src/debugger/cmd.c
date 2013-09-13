@@ -19,6 +19,7 @@
 #include <string.h>
 #include <strings.h>
 
+#include "em400.h"
 #include "cpu/cpu.h"
 #include "cpu/registers.h"
 #include "cpu/interrupts.h"
@@ -37,7 +38,6 @@
 #include "debugger/log.h"
 #include "debugger/decode.h"
 
-extern int em400_quit;
 extern char *script_name;
 
 // -----------------------------------------------------------------------
@@ -99,7 +99,7 @@ void dbg_c_help(int wid, char *cmd)
 // -----------------------------------------------------------------------
 void dbg_c_quit()
 {
-	em400_quit = 1;
+	em400_state = STATE_QUIT;
 	dbg_loop_fin = 1;
 }
 

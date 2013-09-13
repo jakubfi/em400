@@ -18,7 +18,13 @@
 #ifndef EM400_H
 #define EM400_H
 
-extern int em400_quit;
+enum em400_states_e {
+	STATE_WORK = 0,
+	STATE_QUIT = 1,
+	STATE_MEM_FAIL = 2,
+};
+
+extern int em400_state;
 extern unsigned int ips_counter;
 extern struct timeval ips_start;
 extern struct timeval ips_end;

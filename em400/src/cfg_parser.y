@@ -92,7 +92,6 @@ computer_opt:
 	| MEGA '=' VALUE		{ em400_cfg.mem_mega = $3.v; free($3.s); }
 	| MEGA_PROM '=' TEXT	{ em400_cfg.mem_mega_prom = $3.s; }
 	| OS_SEG '=' VALUE		{ em400_cfg.mem_os = $3.v; free($3.s); }
-	| CPU_NOMEM_STOP '=' BOOL	{ em400_cfg.cpu_nomem_stop = $3.v; free($3.s); }
 	;
 %%
 

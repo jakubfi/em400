@@ -16,11 +16,6 @@ computer {
 	# allowed values: "true", "false" (default)
 	cpu_mod = true
 
-	# When accessing unallocated memory in block 0, CPU could stop or continue.
-	# "true" - report interrupt and stop (default)
-	# "false" - report interrupt and continue
-	cpu_os_nomem_stop = false
-
 	# Memory is organized into 16 physical modules. Each module can be
 	# either elwro or mega. Elwro modules are 32kword big (8 pages),
 	# mega modules are 64kword in size (16 pages).

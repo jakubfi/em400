@@ -70,6 +70,16 @@ const int int_int2mask[32] = {
 };
 
 // -----------------------------------------------------------------------
+void int_wait()
+{
+	pthread_mutex_lock(&int_mutex_rp);
+	while (!RP) {
+		pthread_cond_wait(&int_cond_rp, &int_mutex_rp);
+	}
+	pthread_mutex_unlock(&int_mutex_rp);
+}
+
+// -----------------------------------------------------------------------
 void int_update_rp()
 {
 	uint16_t sr = nR(R_SR);

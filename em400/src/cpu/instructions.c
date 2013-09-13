@@ -17,6 +17,7 @@
 
 #include <stdlib.h>
 
+#include "em400.h"
 #include "cpu/cpu.h"
 #include "cpu/registers.h"
 #include "cpu/interrupts.h"
@@ -664,7 +665,16 @@ struct opdef * op_73()
 // -----------------------------------------------------------------------
 void op_73_hlt()
 {
-	cpu_stop = 1;
+	LOG(L_CPU, 1, "HALT 0%02o (alarm: %i)", N, regs[6]&255);
+
+	// handle hlt>=040 as "exit emulation" if user wants to
+	if ((em400_cfg.exit_on_hlt) && (N >= 040)) {
+		em400_state = STATE_QUIT;
+		return;
+	// otherwise, wait for interrupt
+	} else {
+		int_wait();
+	}
 }
 
 // -----------------------------------------------------------------------

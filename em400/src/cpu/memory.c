@@ -279,11 +279,13 @@ uint16_t mem_read(int nb, uint16_t addr, int trace)
 	} else {
 		LOG(L_MEM, 1, "[%d:%d] -> ERROR", nb, addr);
 		int_set(INT_NO_MEM);
-		if (!SR_Q) {
+		if (nb == 0) {
 			nRw(R_ALARM, 1);
-			if (em400_cfg.cpu_nomem_stop) {
-				cpu_stop = 1;
-			}
+#ifdef WITH_DEBUGGER
+			em400_state = STATE_MEM_FAIL;
+#else
+			dbg_enter = 1;
+#endif
 		}
 		return 0xdead;
 	}
@@ -365,9 +367,13 @@ void mem_write(int nb, uint16_t addr, uint16_t val, int trace)
 	} else {
 		LOG(L_MEM, 1, "[%d:%d] <- 0x%04x ERROR", nb, addr, val);
 		int_set(INT_NO_MEM);
-		if (!SR_Q) {
+		if (nb == 0) {
 			nRw(R_ALARM, 1);
-			cpu_stop = 1;
+#ifdef WITH_DEBUGGER
+			em400_state = STATE_MEM_FAIL;
+#else
+			dbg_enter = 1;
+#endif
 		}
 	}
 }

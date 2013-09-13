@@ -36,7 +36,6 @@
 #include "debugger/log.h"
 
 int16_t N;
-int cpu_stop;
 int cpu_mod;
 
 #ifdef WITH_DEBUGGER
@@ -87,29 +86,9 @@ void cpu_reset()
 	for (int i=0 ; i<R_MAX ; i++) {
 		reg_write(i, 0, 0, 1);
 	}
-	cpu_stop = 0;
 	mem_reset();
 	int_clear_all();
 	cpu_mod_off();
-}
-
-// -----------------------------------------------------------------------
-void cpu_halt()
-{
-	// handle hlt>=040 as "exit emulation" if user wants to
-	if ((em400_cfg.exit_on_hlt) && (N >= 040)) {
-		em400_quit = 1;
-		return;
-	}
-
-	// otherwise, wait for interrupt
-	LOG(L_CPU, 1, "HALT 0%02o (alarm: %i)", N, regs[6]&255);
-	pthread_mutex_lock(&int_mutex_rp);
-	while (!RP) {
-		pthread_cond_wait(&int_cond_rp, &int_mutex_rp);
-	}
-	pthread_mutex_unlock(&int_mutex_rp);
-	cpu_stop = 0;
 }
 
 // -----------------------------------------------------------------------
@@ -192,8 +171,6 @@ void cpu_step()
 		regs[R_MODc] = 0;
 		regs[R_MOD] = 0;
 	}
-
-	if (cpu_stop) cpu_halt();
 }
 
 // vim: tabstop=4 shiftwidth=4 autoindent
