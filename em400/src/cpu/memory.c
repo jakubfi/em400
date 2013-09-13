@@ -282,9 +282,9 @@ uint16_t mem_read(int nb, uint16_t addr, int trace)
 		if (nb == 0) {
 			nRw(R_ALARM, 1);
 #ifdef WITH_DEBUGGER
-			em400_state = STATE_MEM_FAIL;
-#else
 			dbg_enter = 1;
+#else
+			em400_state = STATE_MEM_FAIL;
 #endif
 		}
 		return 0xdead;
@@ -370,9 +370,9 @@ void mem_write(int nb, uint16_t addr, uint16_t val, int trace)
 		if (nb == 0) {
 			nRw(R_ALARM, 1);
 #ifdef WITH_DEBUGGER
-			em400_state = STATE_MEM_FAIL;
-#else
 			dbg_enter = 1;
+#else
+			em400_state = STATE_MEM_FAIL;
 #endif
 		}
 	}
