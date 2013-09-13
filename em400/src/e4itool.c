@@ -28,6 +28,7 @@
 enum actions_e{
 	A_UNKNOWN = -1,
 	A_FLAGS = 1,
+	A_GET,
 	A_CREATE_CHS = 100,
 	A_CREATE_LBA,
 	A_CREATE_SEQ,
@@ -90,7 +91,7 @@ struct kv_t known_types[] = {
 };
 
 char *image, *preset, *src;
-int append, blocks, cyls, heads, spt, sector, id, flags_set, flags_clear, got_flags, type, utype;
+int get, append, blocks, cyls, heads, spt, sector, id, flags_set, flags_clear, got_flags, type, utype;
 e4i_id_gen_f *genf = NULL;
 
 // -----------------------------------------------------------------------
@@ -134,6 +135,7 @@ void print_help()
 	printf("\nOptions:\n");
 	printf("  --help                    : print help\n");
 	printf("  --image, -i <filename>    : e4i working media file name\n");
+	printf("  --get, -g                 : show media header\n");
 	printf("  --preset, -p <name>       : select media preset\n");
 	printf("  --src, -r <filename>      : read raw input data from file <filename>\n");
 	printf("  --blocks, -b <blocks>     : total blocks on media (LBA adressing)\n");
@@ -148,6 +150,8 @@ void print_help()
 	printf("  --utype, -u <type>        : user image type\n");
 	printf("\n");
 	printf("Usage scenarios:\n");
+	printf("  * Show media header:\n");
+	printf("      e4itool --image <filename> --get\n");
 	printf("  * Create empty media:\n");
 	printf("      e4itool --image <filename> --blocks <blocks> --sector <bytes> [--id <bytes>]\n");
 	printf("      e4itool --image <filename> --cyls <c> --heads <h> --spt <sectors> --sector <bytes> [--id <bytes>]\n");
@@ -211,6 +215,7 @@ void parse_opts(int argc, char **argv)
 
 	static struct option opts[] = {
 		{ "image",		required_argument,	0, 'i' },
+		{ "get",		no_argument,		0, 'g' },
 		{ "preset",		required_argument,	0, 'p' },
 		{ "src",		required_argument,	0, 'r' },
 		{ "blocks",		required_argument,	0, 'b' },
@@ -228,7 +233,7 @@ void parse_opts(int argc, char **argv)
 	};
 
 	while (1) {
-		opt = getopt_long(argc, argv,"i:p:r:b:c:h:s:l:x:f:at:u:", opts, &idx);
+		opt = getopt_long(argc, argv,"i:gp:r:b:c:h:s:l:x:f:at:u:", opts, &idx);
 		if (opt == -1) {
 			break;
 		}
@@ -240,6 +245,9 @@ void parse_opts(int argc, char **argv)
 				break;
 			case 'i':
 				image = optarg;
+				break;
+			case 'g':
+				get = 1;
 				break;
 			case 'p':
 				p = get_preset(optarg);
@@ -327,7 +335,12 @@ int get_action()
 		error("--type is required to create new media");
 	}
 
-    // ---- ACTIONS ------------------------------------------------------
+	// ---- ACTIONS ------------------------------------------------------
+
+	// Get header
+	if (get) {
+		return A_GET;
+	}
 
 	// create LBA media
 	if (blocks && sector) {
@@ -386,7 +399,6 @@ int main(int argc, char **argv)
 		// ok?
 		if (e) {
 			printf("Image created:\n");
-			e4i_header_print(e);
 		} else {
 			error("Could not create imege: %s", e4i_get_err(e4i_err));
 		}
@@ -405,6 +417,13 @@ int main(int argc, char **argv)
 			if (res != E4I_E_OK) {
 				error("Could not create imege: %s", e4i_get_err(res));
 			}
+		}
+
+	// show image header
+	} else if (action == A_GET) {
+		e = e4i_open(image);
+		if (!e) {
+			error("Could not open imege: %s", e4i_get_err(e4i_err));
 		}
 
 	// set flags only
@@ -431,6 +450,7 @@ int main(int argc, char **argv)
 			error("Could not clear flags: %s", e4i_get_err(res));
 		}
 	}
+	e4i_header_print(e);
 	e4i_close(e);
 
 	return 0;

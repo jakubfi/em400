@@ -125,17 +125,17 @@ int __e4i_header_read(struct e4i_t *e)
 	// unpack data
 	uint8_t *pos = buf;
 	memcpy(e->magic, pos, 4); pos += 4;
-    e->v_major = *pos; pos += 1;
-    e->v_minor = *pos; pos += 1;
-    e->img_type = ntohs(*(uint16_t*)pos); pos += 2;
-    e->img_utype = ntohs(*(uint16_t*)pos); pos += 2;
-    e->flags = ntohl(*(uint32_t*)pos); pos += 4;
-    e->blocks = ntohl(*(uint32_t*)pos); pos += 4;
-    e->cylinders = ntohs(*(uint16_t*)pos); pos += 2;
-    e->heads = *pos; pos += 1;
-    e->spt = *pos; pos += 1;
-    e->id_size = ntohs(*(uint16_t*)pos); pos += 2;
-    e->block_size = ntohs(*(uint16_t*)pos); pos += 2;
+	e->v_major = *pos; pos += 1;
+	e->v_minor = *pos; pos += 1;
+	e->img_type = ntohs(*(uint16_t*)pos); pos += 2;
+	e->img_utype = ntohs(*(uint16_t*)pos); pos += 2;
+	e->flags = ntohl(*(uint32_t*)pos); pos += 4;
+	e->blocks = ntohl(*(uint32_t*)pos); pos += 4;
+	e->cylinders = ntohs(*(uint16_t*)pos); pos += 2;
+	e->heads = *pos; pos += 1;
+	e->spt = *pos; pos += 1;
+	e->id_size = ntohs(*(uint16_t*)pos); pos += 2;
+	e->block_size = ntohs(*(uint16_t*)pos); pos += 2;
 
 	return E4I_E_OK;
 }
@@ -193,7 +193,7 @@ int e4i_flag_clear(struct e4i_t *e, uint32_t flag)
 	if (flag & !e4i_flags_resetable) {
 		return E4I_E_FLAGS;
 	}
-	e->flags &= !flag;
+	e->flags &= ~flag;
 	return __e4i_header_write(e);
 }
 
@@ -382,7 +382,7 @@ int e4i_import(struct e4i_t *e, char *src_name, uint16_t img_type, uint16_t img_
 		e->flags |= E4I_F_FORMATTED | E4I_F_MASTERCOPY;
 		e->img_type = img_type;
 		e->img_utype = img_utype;
-	    ret = __e4i_header_write(e);
+		ret = __e4i_header_write(e);
 	}
 
 	fclose(source);
@@ -427,7 +427,7 @@ int __e4i_init_disk(struct e4i_t *e, e4i_id_gen_f *genf, uint16_t img_type, uint
 		e->flags |= E4I_F_FORMATTED;
 		e->img_type = img_type;
 		e->img_utype = img_utype;
-	    ret = __e4i_header_write(e);
+		ret = __e4i_header_write(e);
 	}
 
 	free(buf);

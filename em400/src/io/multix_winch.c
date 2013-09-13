@@ -203,11 +203,11 @@ int mx_winch_read(struct mx_unit_proto_t *unit, struct mx_winch_cf_t *cf)
 		int res = e4i_bread(UNIT->winchester, buf, offset + cf->transmit->sector + sector);
 
 		// sector read OK
-		if (res == E_OK) {
+		if (res == E4I_E_OK) {
 			// copy read data into system memory, swapping byte order
 			while ((buf_pos < UNIT->winchester->block_size) && (cf->ret_len < cf->transmit->len)) {
 				uint16_t *buf16 = (uint16_t*)(buf+buf_pos);
-				MEMBw(cf->transmit->nb, cf->transmit->addr + sector * UNIT->winchester->block_size/2 + buf_pos/2, ntohs(*buf16));
+				nMEMBw(cf->transmit->nb, cf->transmit->addr + sector * UNIT->winchester->block_size/2 + buf_pos/2, ntohs(*buf16));
 				LOG(L_WNCH, 100, "[%i:0x%04x] = 0x%02x 0x%02x", cf->transmit->nb, cf->transmit->addr + sector * UNIT->winchester->block_size/2 + buf_pos/2, ntohs(*buf16)>>8, ntohs(*buf16));
 				buf_pos += 2;
 				cf->ret_len++;
@@ -238,22 +238,32 @@ int mx_winch_read(struct mx_unit_proto_t *unit, struct mx_winch_cf_t *cf)
 int mx_winch_write(struct mx_unit_proto_t *unit, struct mx_winch_cf_t *cf)
 {
 	int ret = E_OK;
+	uint16_t data;
+	int i;
+	int res;
+	int sector = 0;
+
 	cf->ret_len = 0;
 
 	// first physical cylinder is used by multix for relocated sectors
 	int offset = UNIT->winchester->heads * UNIT->winchester->spt;
-	uint8_t *buf = malloc(UNIT->winchester->block_size);
+	uint8_t *buf = malloc(cf->transmit->len*2);
 
 	if (!buf) {
 		cf->ret_status = MX_WS_ERR | MX_WS_REJECTED;
 		return E_MX_TRANSMISSION;
 	}
 
-	//int buf_pos = 0;
-	int sector = 0;
-	// transmit data into buffer, sector by sector
-	while (cf->ret_len < cf->transmit->len) {
+	// fill buffer with data to write
+	for (i=0 ; i<cf->transmit->len ; i++) {
+		data = nMEMB(cf->transmit->nb, cf->transmit->addr + i);
+		buf[i*2] = data>>8;
+		buf[i*2+1] = data&255;
+	}
+	LOG(L_WNCH, 10, "MULTIX/winchester (log:%i, phy:%i): filled write buffer from data at %i:0x%04x (%i words)", unit->log_num, unit->phy_num, cf->transmit->nb, cf->transmit->addr, i);
 
+	// write sectors
+	while (cf->ret_len < cf->transmit->len) {
 		// check if we are still allowed to transmit
 		if (pthread_mutex_trylock(&unit->transmit_mutex) == 0) {
 			pthread_mutex_unlock(&unit->transmit_mutex);
@@ -261,9 +271,32 @@ int mx_winch_write(struct mx_unit_proto_t *unit, struct mx_winch_cf_t *cf)
 			break;
 		}
 
-		LOG(L_WNCH, 10, "MULTIX/winchester (log:%i, phy:%i): FAKE!!!!! writing sector %i (+offset %i) into buf at pos: 0x%04x", unit->log_num, unit->phy_num, cf->transmit->sector + sector, offset, cf->transmit->addr + sector * UNIT->winchester->block_size);
-		cf->ret_len += 256;
+		int transmit = cf->transmit->len - cf->ret_len;
+		if (transmit > UNIT->winchester->block_size/2) {
+			transmit = UNIT->winchester->block_size/2;
+		}
 
+		LOG(L_WNCH, 10, "MULTIX/winchester (log:%i, phy:%i): writing sector %i (+offset %i) from buf at pos: 0x%04x, %i bytes", unit->log_num, unit->phy_num, cf->transmit->sector + sector, offset, cf->transmit->addr + cf->ret_len, transmit*2);
+
+		res = e4i_bwrite(UNIT->winchester, buf+cf->ret_len*2, offset + cf->transmit->sector + sector, transmit*2);
+		//res = E_OK;
+
+		// write OK
+		if (res == E4I_E_OK) {
+			sector++;
+			cf->ret_len += transmit;
+		// sector not found or incomplete
+		} else if ((res == E4I_E_NO_SECTOR) || (res == E4I_E_WRITE)) {
+			cf->ret_status = MX_WS_ERR | MX_WS_NO_SECTOR;
+			ret = E_MX_TRANSMISSION;
+			break;
+
+		// shouldn't happen, but let's consider it
+		} else {
+			cf->ret_status = MX_WS_ERR | MX_WS_REJECTED;
+			ret = E_MX_TRANSMISSION;
+			break;
+		}
 	}
 
 	free(buf);
