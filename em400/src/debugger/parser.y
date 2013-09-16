@@ -89,7 +89,7 @@ exprlist:
 
 expr:
 	VALUE { $$ = n_val($1); }
-	| basemod
+	| basemod				{ $$ = $1; }
 	| expr bitfield			{ $$ = n_op2(BF, $1, $2); }
 	| '-' expr %prec UMINUS	{ $$ = n_op1(UMINUS, $2); }
 	| expr '+' expr			{ $$ = n_op2('+', $1, $3); }
@@ -134,10 +134,14 @@ basemod:
 	| HEX '(' expr ')'	{ $3->base = HEX; $$ = $3; }
 	| OCT '(' expr ')'	{ $3->base = OCT; $$ = $3; }
 	| BIN '(' expr ')'	{ $3->base = BIN; $$ = $3; }
+	;
 
 lval:
 	NAME { $$ = n_var($1); }
 	| IRZ '[' expr ']' { $$ = n_ireg(N_RZ, n_eval($3)); }
+	| REG { $$ = n_reg($1); }
+	| '[' expr ']' { $$ = n_mem(n_val(QNB), $2); }
+	| '[' expr ':' expr ']' { $$ = n_mem($2, $4); }
 	;
 
 bitfield:
