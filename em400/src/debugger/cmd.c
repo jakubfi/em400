@@ -251,18 +251,13 @@ void dbg_c_sregs(int wid)
 	awtbprint(wid, C_LABEL, "KB: ");
 	awtbprint(wid, C_DATA, "0x%04x  ", regs[R_KB]);
 	awtbbinprint(wid, C_DATA, "........ ........", regs[R_KB], 16);
-	awtbprint(wid, C_DATA, "\n");
+	awtbprint(wid, C_DATA, "\n\n");
 
 	awtbprint(wid, C_LABEL, "                ZPMCZ TIFFFFx 01 23 456789 abcdef OCSS");
 	awtbprint(wid, C_DATA, "\n");
 	awtbprint(wid, C_LABEL, "RZ: ");
 	awtbprint(wid, C_DATA, "0x%08x  ", RZ);
 	awtbbinprint(wid, C_DATA, "..... ....... .. .. ...... ...... ....", RZ, 32);
-	awtbprint(wid, C_DATA, "\n");
-
-	awtbprint(wid, C_LABEL, "RP: ");
-	awtbprint(wid, C_DATA, "0x%08x  ", RP);
-	awtbbinprint(wid, C_DATA, "..... ....... .. .. ...... ...... ....", RP, 32);
 	awtbprint(wid, C_DATA, "\n");
 }
 
