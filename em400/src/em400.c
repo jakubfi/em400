@@ -25,6 +25,7 @@
 #include <sys/types.h>
 
 #include "cpu/cpu.h"
+#include "cpu/registers.h"
 #include "cpu/memory.h"
 #include "cpu/interrupts.h"
 #include "cpu/timer.h"
@@ -51,6 +52,7 @@ void em400_shutdown()
 #endif
 	timer_shutdown();
 	io_shutdown();
+	cpu_shutdown();
 	mem_shutdown();
 	eprint("EM400 exits.\n");
 }
@@ -77,15 +79,10 @@ void em400_init()
 		em400_eerr(res, "Error initializing memory");
 	}
 
-	cpu_reset();
-	regs[R_KB] = em400_cfg.keys;
-
-	// enable enabling cpu modification, if cpu mod is enabled in configuration
-	if (em400_cfg.cpu_mod) {
-		cpu_mod_enable();
-	}   
-
-	mem_clear();
+	res = cpu_init();
+	if (res != E_OK) {
+		em400_eerr(res, "Error initializing CPU");
+	}
 
 	res = timer_init();
 	if (res != E_OK) {
@@ -283,7 +280,11 @@ void em400_loop()
 		}
 #endif
 		cpu_step();
-		int_serve();
+
+		if (!pthread_spin_trylock(&int_ready) && !P && !regs[R_MODc]) {
+			int_serve();
+		}
+
 		ips_counter++;
 	}
 

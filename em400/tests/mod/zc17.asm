@@ -5,8 +5,8 @@
 	.equ int_nomem 0x40 + 2
 	.equ stackp 0x61
 
-	.equ magic1 0x5555
-	.equ magic2 0xbaba
+	.equ magic1 0x4455
+	.equ magic2 0xfeba
 	.equ addr 0x200
 
 	uj start
@@ -36,17 +36,17 @@ ok:	im mask
 	lw r1, magic2
 	rw r1, 1\0 + addr
 	md 1\0 + addr
-	lb r2, 1\0 + addr
+	lb r2, 1\0 + addr + 1
 
 	cron			; enable cpu modification
 
 	md 1\0 + addr
-	lb r3, 1\0 + addr
+	lb r3, 1\0 + addr + 1
 
 	mcl			; mcl disables cpu modification
 
 	md 1\0 + addr
-	lb r4, 1\0 + addr
+	lb r4, 1\0 + addr + 1
 
 	hlt 077
 

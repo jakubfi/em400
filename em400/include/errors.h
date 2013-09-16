@@ -56,7 +56,9 @@ enum em400_error {
 	E_THREAD,
 	E_IMAGE,
 	E_TERM,
-
+	E_NO_OPCODE,
+	E_SPIN_INIT,
+	E_MUTEX_INIT,
 
 	E_OK = 0,
 	E_QUIT_OK

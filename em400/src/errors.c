@@ -61,6 +61,9 @@ struct _em400_errordesc {
 	{ E_THREAD, "cannot create thread" },
 	{ E_IMAGE, "error opening media image" },
 	{ E_TERM, "error creating terminal" },
+	{ E_NO_OPCODE, "could not find opcode to set op_fun()" },
+	{ E_SPIN_INIT, "could not initialize spinlock" },
+	{ E_MUTEX_INIT, "could not initialize mutex" },
 
 	{ E_UNKNOWN, "unknown error" }
 };

@@ -23,8 +23,8 @@
 #include <pthread.h>
 
 #include "cpu/cpu.h"
-#include "cpu/memory.h"
 #include "cpu/registers.h"
+#include "cpu/memory.h"
 #include "cpu/interrupts.h"
 #include "io/io.h"
 
@@ -117,6 +117,8 @@ int mem_init()
 		mem_map[0][ab] = mem_elwro[0][ab];
 		pthread_spin_unlock(&mem_spin);
 	}
+
+	mem_clear();
 
 	return E_OK;
 }
@@ -254,128 +256,200 @@ void mem_reset()
 }
 
 // -----------------------------------------------------------------------
-// read from any block
-uint16_t mem_read(int nb, uint16_t addr, int trace)
+int mem_get(int nb, uint16_t addr, uint16_t *data)
 {
 	uint16_t *ptr;
-	uint16_t value;
 
+	pthread_spin_lock(&mem_spin);
 	ptr = mem_ptr(nb, addr);
-
 	if (ptr) {
-		pthread_spin_lock(&mem_spin);
-		value = *ptr;
+		*data = *ptr;
 		pthread_spin_unlock(&mem_spin);
-#ifdef WITH_DEBUGGER
-		// leave trace for debugger to display
-		if (trace) {
-			LOG(L_MEM, 20, "[%d:%d] -> 0x%04x", nb, addr, value);
-			dbg_touch_add(&touch_mem, TOUCH_R, nb, addr, value);
-		} else {
-			LOG(L_MEM, 100, "[%d:%d] -> 0x%04x", nb, addr, value);
-		}
-#endif
-		return value;
 	} else {
-		LOG(L_MEM, 1, "[%d:%d] -> ERROR", nb, addr);
+		pthread_spin_unlock(&mem_spin);
+		return 0;
+	}
+	return 1;
+}
+
+// -----------------------------------------------------------------------
+int mem_put(int nb, uint16_t addr, uint16_t data)
+{
+	uint16_t *ptr;
+
+	pthread_spin_lock(&mem_spin);
+	ptr = mem_ptr(nb, addr);
+	if (ptr) {
+		if (!mem_mega_prom || (mem_map[nb][addr>>12] != mem_mega_prom)) {
+			*ptr = data;
+		}
+		pthread_spin_unlock(&mem_spin);
+	} else {
+		pthread_spin_unlock(&mem_spin);
+		return 0;
+	}
+	return 1;
+}
+
+// -----------------------------------------------------------------------
+int mem_mget(int nb, uint16_t saddr, uint16_t *dest, int count)
+{
+	int i;
+	uint16_t *ptr;
+
+	pthread_spin_lock(&mem_spin);
+	for (i=0 ; i<count ; i++) {
+		ptr = mem_ptr(nb, (uint16_t) (saddr+i));
+		if (ptr) {
+			*(dest+i) = *ptr;
+		} else {
+			pthread_spin_unlock(&mem_spin);
+			return 0;
+		}
+	}
+	pthread_spin_unlock(&mem_spin);
+	return 1;
+}
+
+// -----------------------------------------------------------------------
+int mem_mput(int nb, uint16_t saddr, uint16_t *src, int count)
+{
+	int i;
+	uint16_t *ptr;
+
+	pthread_spin_lock(&mem_spin);
+	for (i=0 ; i<count ; i++) {
+		ptr = mem_ptr(nb, (uint16_t) (saddr+i));
+		if (ptr) {
+			if (!mem_mega_prom || (mem_map[nb][(saddr+i)>>12] != mem_mega_prom)) {
+				*ptr = *(src+i);
+			}
+		} else {
+			return 0;
+		}
+	}
+	pthread_spin_unlock(&mem_spin);
+	return 1;
+}
+
+// -----------------------------------------------------------------------
+int mem_cpu_get(int nb, uint16_t addr, uint16_t *data)
+{
+	if (!mem_get(nb, addr, data)) {
 		int_set(INT_NO_MEM);
 		if (nb == 0) {
-			nRw(R_ALARM, 1);
+			regs[R_ALARM] = 1;
 #ifdef WITH_DEBUGGER
 			dbg_enter = 1;
 #else
 			em400_state = STATE_MEM_FAIL;
 #endif
+			return 0;
 		}
-		return 0xdead;
 	}
+	return 1;
 }
 
 // -----------------------------------------------------------------------
-uint8_t mem_read_byte(int nb, uint16_t addr, int trace)
+int mem_cpu_put(int nb, uint16_t addr, uint16_t data)
 {
-	int shift;
-	uint16_t addr17;
-
-	shift = 8 * (~addr & 1);
-
-	if (cpu_mod) {
-		addr17 = (addr >> 1) | (nR(R_ZC17) << 15);
-		nRw(R_ZC17, 0);
-	} else {
-		addr17 = addr >> 1;
-	}
-
-	return mem_read(nb, addr17, trace) >> shift;
-}
-
-// -----------------------------------------------------------------------
-void mem_write_byte(int nb, uint16_t addr, uint8_t val, int trace)
-{
-	int shift;
-	uint16_t addr17;
-	uint16_t *ptr;
-	uint16_t data;
-
-	shift = 8 * (~addr & 1);
-
-	// TODO: optimize maybe?
-	if (cpu_mod) {
-		addr17 = (addr >> 1) | (nR(R_ZC17) << 15);
-		nRw(R_ZC17, 0);
-	} else {
-		addr17 = addr >> 1;
-	}
-
-	ptr = mem_ptr(nb, addr17);
-
-	if (ptr) {
-		data = (*ptr & (0b1111111100000000 >> shift)) | ((uint16_t)val << shift);
-	} else {
-		data = 0xdead;
-	}
-
-	mem_write(nb, addr17, data, trace);
-}
-
-// -----------------------------------------------------------------------
-// write to any block
-void mem_write(int nb, uint16_t addr, uint16_t val, int trace)
-{
-	uint16_t *ptr;
-
-	// don't write to prom
-	if (mem_mega_prom && (mem_map[nb][addr>>12] == mem_mega_prom)) {
-		return;
-	}
-
-	ptr = mem_ptr(nb, addr);
-
-	if (ptr) {
-#ifdef WITH_DEBUGGER
-		// leave trace for debugger to display
-		if (trace) {
-			LOG(L_MEM, 20, "[%d:%d] <- 0x%04x", nb, addr, val);
-			dbg_touch_add(&touch_mem, TOUCH_W, nb, addr, *ptr);
-		} else {
-			LOG(L_MEM, 100, "[%d:%d] <- 0x%04x", nb, addr, val);
-		}
-#endif
-		pthread_spin_lock(&mem_spin);
-		*ptr = val;
-		pthread_spin_unlock(&mem_spin);
-	} else {
-		LOG(L_MEM, 1, "[%d:%d] <- 0x%04x ERROR", nb, addr, val);
+	if (!mem_put(nb, addr, data)) {
 		int_set(INT_NO_MEM);
 		if (nb == 0) {
-			nRw(R_ALARM, 1);
+			regs[R_ALARM] = 1;
 #ifdef WITH_DEBUGGER
 			dbg_enter = 1;
 #else
 			em400_state = STATE_MEM_FAIL;
 #endif
+			return 0;
 		}
 	}
+	return 1;
+}
+
+// -----------------------------------------------------------------------
+int mem_cpu_mget(int nb, uint16_t saddr, uint16_t *dest, int count)
+{
+	if (!mem_mget(nb, saddr, dest, count)) {
+		int_set(INT_NO_MEM);
+		if ((nb) == 0) {
+			pthread_spin_unlock(&mem_spin);
+			regs[R_ALARM] = 1;
+#ifdef WITH_DEBUGGER
+			dbg_enter = 1;
+#else
+			em400_state = STATE_MEM_FAIL;
+#endif
+			return 0;
+		}
+	}
+	return 1;
+}
+
+
+// -----------------------------------------------------------------------
+int mem_cpu_mput(int nb, uint16_t saddr, uint16_t *src, int count)
+{
+	if (!mem_mput(nb, saddr, src, count)) {
+		int_set(INT_NO_MEM);
+		if (nb == 0) {
+			pthread_spin_unlock(&mem_spin);
+			regs[R_ALARM] = 1;
+#ifdef WITH_DEBUGGER
+			dbg_enter = 1;
+#else
+			em400_state = STATE_MEM_FAIL;
+#endif
+			return 0;
+		}
+	}
+	return 1;
+}
+
+// -----------------------------------------------------------------------
+int mem_get_byte(int nb, uint16_t addr, uint8_t *data)
+{
+	int shift;
+	uint16_t addr17;
+	uint16_t orig;
+
+	shift = 8 * (~addr & 1);
+
+	if (cpu_mod) {
+		addr17 = (addr >> 1) | (regs[R_ZC17] << 15);
+		regs[R_ZC17] = 0;
+	} else {
+		addr17 = addr >> 1;
+	}
+
+	if (!mem_cpu_get(nb, addr17, &orig)) return 0;
+	*data = orig >> shift;
+
+	return 1;
+}
+
+// -----------------------------------------------------------------------
+int mem_put_byte(int nb, uint16_t addr, uint8_t data)
+{
+	int shift;
+	uint16_t addr17;
+	uint16_t orig;
+
+	shift = 8 * (~addr & 1);
+
+	if (cpu_mod) {
+		addr17 = (addr >> 1) | (regs[R_ZC17] << 15);
+		regs[R_ZC17] = 0;
+	} else {
+		addr17 = addr >> 1;
+	}
+
+	if (!mem_cpu_get(nb, addr17, &orig)) return 0;
+	orig = (orig & (0b1111111100000000 >> shift)) | (((uint16_t) data) << shift);
+	if (!mem_cpu_put(nb, addr17, orig)) return 0;
+
+	return 1;
 }
 
 // -----------------------------------------------------------------------

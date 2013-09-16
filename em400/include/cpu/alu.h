@@ -20,7 +20,7 @@
 
 #include <inttypes.h>
 
-#include "cpu/registers.h"
+#include "cpu/cpu.h"
 
 #define FP_M_BITS 64
 
@@ -43,13 +43,13 @@ void alu_set_flag_C(uint64_t z, int bits);
 void alu_set_flag_V(uint64_t x, uint64_t y, uint64_t z, int bits);
 void alu_set_flags_ZMVC(uint64_t x, uint64_t y, uint64_t z, int bits);
 
-#define Fget(x)     ((reg_read(0, 1) & x) ? 1 : 0)
-#define Fset(x)     reg_write(0, reg_read(0, 1) | x, 1, 1)
-#define Fclr(x)     reg_write(0, reg_read(0, 1) & ~x, 1, 1)
+#define Fget(x)     (regs[0] & (x) ? 1 : 0)
+#define Fset(x)     regs[0] = regs[0] | (x)
+#define Fclr(x)     regs[0] = regs[0] & ~(x)
 
-#define DWORD(x, y)	(uint32_t) (x << 16) | (uint16_t) y
-#define DWORDl(z)	(uint16_t) (z >> 16)
-#define DWORDr(z)	(uint16_t) z
+#define DWORD(x, y)	(uint32_t) ((x) << 16) | (uint16_t) (y)
+#define DWORDl(z)	(uint16_t) ((z) >> 16)
+#define DWORDr(z)	(uint16_t) (z)
 
 #endif
 

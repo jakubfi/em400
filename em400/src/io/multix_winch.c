@@ -207,7 +207,7 @@ int mx_winch_read(struct mx_unit_proto_t *unit, struct mx_winch_cf_t *cf)
 			// copy read data into system memory, swapping byte order
 			while ((buf_pos < UNIT->winchester->block_size) && (cf->ret_len < cf->transmit->len)) {
 				uint16_t *buf16 = (uint16_t*)(buf+buf_pos);
-				nMEMBw(cf->transmit->nb, cf->transmit->addr + sector * UNIT->winchester->block_size/2 + buf_pos/2, ntohs(*buf16));
+				mem_put(cf->transmit->nb, cf->transmit->addr + sector * UNIT->winchester->block_size/2 + buf_pos/2, ntohs(*buf16));
 				LOG(L_WNCH, 100, "[%i:0x%04x] = 0x%02x 0x%02x", cf->transmit->nb, cf->transmit->addr + sector * UNIT->winchester->block_size/2 + buf_pos/2, ntohs(*buf16)>>8, ntohs(*buf16));
 				buf_pos += 2;
 				cf->ret_len++;
@@ -256,7 +256,7 @@ int mx_winch_write(struct mx_unit_proto_t *unit, struct mx_winch_cf_t *cf)
 
 	// fill buffer with data to write
 	for (i=0 ; i<cf->transmit->len ; i++) {
-		data = nMEMB(cf->transmit->nb, cf->transmit->addr + i);
+		mem_get(cf->transmit->nb, cf->transmit->addr + i, &data);
 		buf[i*2] = data>>8;
 		buf[i*2+1] = data&255;
 	}
@@ -315,7 +315,7 @@ void mx_winch_cmd_transmit(struct mx_unit_proto_t *unit, uint16_t addr)
 
 	// disk is not connected
 	if (!UNIT->winchester) {
-		MEMBw(0, addr_status, MX_WS_ERR | MX_WS_REJECTED);
+		mem_put(0, addr_status, MX_WS_ERR | MX_WS_REJECTED);
 		mx_int(unit->chan, unit->log_num, MX_INT_ITRER);
 		return;
 	}
@@ -353,8 +353,8 @@ void mx_winch_cmd_transmit(struct mx_unit_proto_t *unit, uint16_t addr)
 			return;
 	}
 
-	MEMBw(0, addr_len, cf->ret_len);
-	MEMBw(0, addr_status, cf->ret_status);
+	mem_put(0, addr_len, cf->ret_len);
+	mem_put(0, addr_status, cf->ret_status);
 
 	if (ret == E_OK) { // transmission finished OK
 		mx_int(unit->chan, unit->log_num, MX_INT_IETRA);
@@ -370,15 +370,16 @@ void mx_winch_cmd_transmit(struct mx_unit_proto_t *unit, uint16_t addr)
 // -----------------------------------------------------------------------
 struct mx_winch_cf_t * mx_winch_cf_t_decode(int addr)
 {
-	uint16_t data;
+	uint16_t data[5];
 	struct mx_winch_cf_t *cf = calloc(1, sizeof(struct mx_winch_cf_t));
 
 	if (!cf) {
 		goto fail;
 	}
 
-	data = MEMB(0, addr);
-	cf->oper = (data & 0b0000001100000000) >> 8;
+	mem_mget(0, addr, data, 5);
+
+	cf->oper = (data[0] & 0b0000001100000000) >> 8;
 
 	switch (cf->oper) {
 		case MX_WINCH_FORMAT_SPARE:
@@ -386,12 +387,9 @@ struct mx_winch_cf_t * mx_winch_cf_t_decode(int addr)
 			if (!cf->format) {
 				goto fail;
 			}
-			data = MEMB(0, addr+1);
-			cf->format->sector_map = data;
-			data = MEMB(0, addr+2);
-			cf->format->start_sector = data << 16;
-			data = MEMB(0, addr+3);
-			cf->format->start_sector += data;
+			cf->format->sector_map = data[1];
+			cf->format->start_sector = data[2] << 16;
+			cf->format->start_sector += data[3];
 			break;
 		case MX_WINCH_FORMAT:
 			break;
@@ -401,27 +399,22 @@ struct mx_winch_cf_t * mx_winch_cf_t_decode(int addr)
 			if (!cf->transmit) {
 				goto fail;
 			}
-			cf->transmit->ign_crc		= (data & 0b0001000000000000) >> 12;
-			cf->transmit->sector_fill	= (data & 0b0000100000000000) >> 11;
-			cf->transmit->watch_eof		= (data & 0b0000010000000000) >> 10;
-			cf->transmit->cpu			= (data & 0b0000000000010000) >> 4;
-			cf->transmit->nb			= (data & 0b0000000000001111);
-			data = MEMB(0, addr+1);
-			cf->transmit->addr = data;
-			data = MEMB(0, addr+2);
-			cf->transmit->len = data+1;
-			data = MEMB(0, addr+3);
-			cf->transmit->sector = (data & 255) << 16;
-			data = MEMB(0, addr+4);
-			cf->transmit->sector += data;
+			cf->transmit->ign_crc		= (data[0] & 0b0001000000000000) >> 12;
+			cf->transmit->sector_fill	= (data[0] & 0b0000100000000000) >> 11;
+			cf->transmit->watch_eof		= (data[0] & 0b0000010000000000) >> 10;
+			cf->transmit->cpu			= (data[0] & 0b0000000000010000) >> 4;
+			cf->transmit->nb			= (data[0] & 0b0000000000001111);
+			cf->transmit->addr = data[1];
+			cf->transmit->len = data[2]+1;
+			cf->transmit->sector = (data[3] & 255) << 16;
+			cf->transmit->sector += data[4];
 			break;
 		case MX_WINCH_PARK:
 			cf->park = calloc(1, sizeof(struct mx_winch_cf_park));
 			if (!cf->park) {
 				goto fail;
 			}
-			data = MEMB(0, addr+4);
-			cf->park->cylinder = data;
+			cf->park->cylinder = data[4];
 			break;
 		default:
 			goto fail;

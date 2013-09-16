@@ -18,6 +18,7 @@
 
 #include <stdlib.h>
 
+#include "cpu/cpu.h"
 #include "cpu/registers.h"
 #include "cpu/memory.h"
 #include "utils.h"
@@ -139,7 +140,7 @@ act:
 
 actval:
 	REG { $$ = n_reg($1); }
-	| '[' expr ']' { $$ = n_mem(n_val(SR_NB*SR_Q), $2); }
+	| '[' expr ']' { $$ = n_mem(n_val(QNB), $2); }
 	| '[' expr ':' expr ']' { $$ = n_mem($2, $4); }
 	;
 
@@ -179,7 +180,7 @@ command:
 	| F_TRANS				{ dbg_c_dt(W_CMD, DMODE_TRANS, regs[R_IC], 1); }
 	| F_TRANS VALUE			{ dbg_c_dt(W_CMD, DMODE_TRANS, regs[R_IC], $2); }
 	| F_TRANS expr VALUE	{ dbg_c_dt(W_CMD, DMODE_TRANS, n_eval($2), $3); }
-	| F_MEM expr '-' expr	{ dbg_c_mem(W_CMD, SR_Q*SR_NB, n_eval($2), n_eval($4), 122, 18); }
+	| F_MEM expr '-' expr	{ dbg_c_mem(W_CMD, QNB, n_eval($2), n_eval($4), 122, 18); }
 	| F_MEM expr ':' expr '-' expr	{ dbg_c_mem(W_CMD, n_eval($2), n_eval($4), n_eval($6), 122, 18); }
 	| F_LOAD TEXT			{ dbg_c_load(W_CMD, $2); }
 	| F_BRK					{ dbg_c_brk_list(W_CMD); }

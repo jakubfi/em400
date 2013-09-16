@@ -426,7 +426,7 @@ int mx_cmd_setcfg(struct chan_proto_t *chan, uint16_t *r_arg)
 	// fail, if configuration is already set
 	if (CHAN->confset) {
 		LOG(L_MX, 1, "MULTIX setconf error: configuration already set");
-		MEMBw(0, retf_addr, MX_SC_E_CONFSET << 8);
+		mem_put(0, retf_addr, MX_SC_E_CONFSET << 8);
 		mx_int(CHAN, 0, MX_INT_INKON);
 		return IO_OK;
 	}
@@ -436,7 +436,7 @@ int mx_cmd_setcfg(struct chan_proto_t *chan, uint16_t *r_arg)
 
 	// fail, if cannot
 	if (!cf) {
-		MEMBw(0, retf_addr, MX_SC_E_NOMEM << 8);
+		mem_put(0, retf_addr, MX_SC_E_NOMEM << 8);
 		mx_int(CHAN, 0, MX_INT_INKON);
 		mx_free_cf_sc(cf);
 		return IO_OK;
@@ -455,7 +455,7 @@ int mx_cmd_setcfg(struct chan_proto_t *chan, uint16_t *r_arg)
 	if (res != E_OK) {
 		LOG(L_MX, 1, "MULTIX setconf error: decode failed (error: %i, line: %i)", cf->err_code, cf->err_line);
 		retf = (cf->err_code << 8) | cf->err_line;
-		MEMBw(0, retf_addr, retf);
+		mem_put(0, retf_addr, retf);
 		mx_int(CHAN, 0, MX_INT_INKON);
 		mx_free_cf_sc(cf);
 		return IO_OK;
@@ -599,7 +599,7 @@ int mx_cmd_status(struct chan_proto_t *chan, int lline_n, uint16_t addr)
 	uint16_t status = unit->status;
 	pthread_mutex_unlock(&unit->status_mutex);
 
-	nMEMBw(0, addr, status);
+	mem_put(0, addr, status);
 	mx_int(unit->chan, unit->log_num, MX_INT_ISTRE);
 
 	return IO_OK;
@@ -729,7 +729,8 @@ struct mx_cf_sc_pl * mx_decode_cf_find_phy(struct mx_cf_sc_pl *phys, int count, 
 // -----------------------------------------------------------------------
 int mx_decode_cf_phy(int addr, struct mx_cf_sc_pl *phy, int offset)
 {
-	uint16_t data = MEMB(0, addr);
+	uint16_t data;
+	mem_get(0, addr, &data);
 	phy->dir =   (data & 0b1110000000000000) >> 13;
 	phy->used =  (data & 0b0001000000000000) >> 12;
 	phy->type =  (data & 0b0000111100000000) >> 8;
@@ -764,9 +765,11 @@ int mx_decode_cf_log(int addr, struct mx_cf_sc_ll *log, struct mx_cf_sc_pl *phys
 {
 	// TODO: MX_SC_E_DIR_MISMATCH check
 
-	uint16_t data = MEMB(0, addr);
-	log->proto = (data & 0b1111111100000000) >> 8;
-	log->pl_id = (data & 0b0000000011111111);
+	uint16_t data[2];
+	mem_mget(0, addr, data, 2);
+
+	log->proto = (data[0] & 0b1111111100000000) >> 8;
+	log->pl_id = (data[0] & 0b0000000011111111);
 
 	// find related physical line description
 	struct mx_cf_sc_pl *phy = mx_decode_cf_find_phy(phys, phy_count, log->pl_id);
@@ -805,9 +808,8 @@ int mx_decode_cf_log(int addr, struct mx_cf_sc_ll *log, struct mx_cf_sc_pl *phys
 			if (!log->winch) {
 				return MX_SC_E_NOMEM;
 			}
-			data = MEMB(0, addr+1);
-			log->winch->type =				(data & 0b1111111100000000) >> 8;
-			log->winch->format_protect =	(data & 0b0000000011111111);
+			log->winch->type =				(data[1] & 0b1111111100000000) >> 8;
+			log->winch->format_protect =	(data[1] & 0b0000000011111111);
 			break;
 		case MX_PROTO_MTAPE:
 			if (phy->type != MX_PHY_MTAPE) {
@@ -825,9 +827,8 @@ int mx_decode_cf_log(int addr, struct mx_cf_sc_ll *log, struct mx_cf_sc_pl *phys
 			if (!log->floppy) {
 				return MX_SC_E_NOMEM;
 			}
-			data = MEMB(0, addr+1);
-			log->floppy->type =				(data & 0b1111111100000000) >> 8;
-			log->floppy->format_protect =	(data & 0b0000000011111111);
+			log->floppy->type =				(data[1] & 0b1111111100000000) >> 8;
+			log->floppy->format_protect =	(data[1] & 0b0000000011111111);
 			break;
 		case MX_PROTO_TTY_ITWL:
 			break;
@@ -850,7 +851,7 @@ int mx_decode_cf_sc(int addr, struct mx_cf_sc *cf)
 	uint16_t data;
 
 	// --- word 0 - header ---
-	data = MEMB(0, addr);
+	mem_get(0, addr, &data);
 	cf->pl_desc_count = (data & 0b1111111100000000) >> 8;
 	cf->ll_desc_count = (data & 0b0000000011111111);
 

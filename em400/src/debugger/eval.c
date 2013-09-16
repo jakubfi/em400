@@ -18,6 +18,7 @@
 #include <string.h>
 #include <stdlib.h>
 
+#include "cpu/cpu.h"
 #include "cpu/registers.h"
 #include "cpu/memory.h"
 #include "cpu/interrupts.h"

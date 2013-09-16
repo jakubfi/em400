@@ -67,23 +67,26 @@ char * decode_iv(uint16_t addr, int arg)
 		return NULL;
 	}
 
-	pos += sprintf(b+pos, "0  NMI        = 0x%04x    16 channel 4  = 0x%04x\n", nMEMB(0, addr+0), nMEMB(0, addr+16));
-	pos += sprintf(b+pos, "1  mem parity = 0x%04x    17 channel 5  = 0x%04x\n", nMEMB(0, addr+1), nMEMB(0, addr+17));
-	pos += sprintf(b+pos, "2  no mem     = 0x%04x    18 channel 6  = 0x%04x\n", nMEMB(0, addr+2), nMEMB(0, addr+18));
-	pos += sprintf(b+pos, "3  2nd CPU    = 0x%04x    19 channel 7  = 0x%04x\n", nMEMB(0, addr+3), nMEMB(0, addr+19));
-	pos += sprintf(b+pos, "4  I/F power  = 0x%04x    20 channel 8  = 0x%04x\n", nMEMB(0, addr+4), nMEMB(0, addr+20));
-	pos += sprintf(b+pos, "5  timer      = 0x%04x    21 channel 9  = 0x%04x\n", nMEMB(0, addr+5), nMEMB(0, addr+21));
-	pos += sprintf(b+pos, "6  illegal op = 0x%04x    22 channel 10 = 0x%04x\n", nMEMB(0, addr+6), nMEMB(0, addr+22));
-	pos += sprintf(b+pos, "7  div overfl = 0x%04x    23 channel 11 = 0x%04x\n", nMEMB(0, addr+7), nMEMB(0, addr+23));
-	pos += sprintf(b+pos, "8  FP underfl = 0x%04x    24 channel 12 = 0x%04x\n", nMEMB(0, addr+8), nMEMB(0, addr+24));
-	pos += sprintf(b+pos, "9  FP overfl  = 0x%04x    25 channel 13 = 0x%04x\n", nMEMB(0, addr+9), nMEMB(0, addr+25));
-	pos += sprintf(b+pos, "10 FP error   = 0x%04x    26 channel 14 = 0x%04x\n", nMEMB(0, addr+10), nMEMB(0, addr+26));
-	pos += sprintf(b+pos, "11 extra int  = 0x%04x    27 channel 15 = 0x%04x\n", nMEMB(0, addr+11), nMEMB(0, addr+27));
-	pos += sprintf(b+pos, "12 channel 0  = 0x%04x    28 OPRQ       = 0x%04x\n", nMEMB(0, addr+12), nMEMB(0, addr+28));
-	pos += sprintf(b+pos, "13 channel 1  = 0x%04x    29 2nd CPU    = 0x%04x\n", nMEMB(0, addr+13), nMEMB(0, addr+29));
-	pos += sprintf(b+pos, "14 channel 2  = 0x%04x    30 software H = 0x%04x\n", nMEMB(0, addr+14), nMEMB(0, addr+30));
-	pos += sprintf(b+pos, "15 channel 3  = 0x%04x    31 software L = 0x%04x\n", nMEMB(0, addr+15), nMEMB(0, addr+31));
-	pos += sprintf(b+pos, "EXL = 0x%04x\n",nMEMB(0, addr+32));
+	uint16_t data[33];
+	mem_mget(0, addr, data, 33);
+
+	pos += sprintf(b+pos, "0  NMI        = 0x%04x    16 channel 4  = 0x%04x\n", data[0],  data[addr+16]);
+	pos += sprintf(b+pos, "1  mem parity = 0x%04x    17 channel 5  = 0x%04x\n", data[1],  data[addr+17]);
+	pos += sprintf(b+pos, "2  no mem     = 0x%04x    18 channel 6  = 0x%04x\n", data[2],  data[addr+18]);
+	pos += sprintf(b+pos, "3  2nd CPU    = 0x%04x    19 channel 7  = 0x%04x\n", data[3],  data[addr+19]);
+	pos += sprintf(b+pos, "4  I/F power  = 0x%04x    20 channel 8  = 0x%04x\n", data[4],  data[addr+20]);
+	pos += sprintf(b+pos, "5  timer      = 0x%04x    21 channel 9  = 0x%04x\n", data[5],  data[addr+21]);
+	pos += sprintf(b+pos, "6  illegal op = 0x%04x    22 channel 10 = 0x%04x\n", data[6],  data[addr+22]);
+	pos += sprintf(b+pos, "7  div overfl = 0x%04x    23 channel 11 = 0x%04x\n", data[7],  data[addr+23]);
+	pos += sprintf(b+pos, "8  FP underfl = 0x%04x    24 channel 12 = 0x%04x\n", data[8],  data[addr+24]);
+	pos += sprintf(b+pos, "9  FP overfl  = 0x%04x    25 channel 13 = 0x%04x\n", data[9],  data[addr+25]);
+	pos += sprintf(b+pos, "10 FP error   = 0x%04x    26 channel 14 = 0x%04x\n", data[10], data[addr+26]);
+	pos += sprintf(b+pos, "11 extra int  = 0x%04x    27 channel 15 = 0x%04x\n", data[11], data[addr+27]);
+	pos += sprintf(b+pos, "12 channel 0  = 0x%04x    28 OPRQ       = 0x%04x\n", data[12], data[addr+28]);
+	pos += sprintf(b+pos, "13 channel 1  = 0x%04x    29 2nd CPU    = 0x%04x\n", data[13], data[addr+29]);
+	pos += sprintf(b+pos, "14 channel 2  = 0x%04x    30 software H = 0x%04x\n", data[14], data[addr+30]);
+	pos += sprintf(b+pos, "15 channel 3  = 0x%04x    31 software L = 0x%04x\n", data[15], data[addr+31]);
+	pos += sprintf(b+pos, "EXL = 0x%04x\n",data[32]);
 
 	return buf;
 }
@@ -99,53 +102,57 @@ char * decode_ctx(uint16_t addr, int arg)
 		return NULL;
 	}
 
-	char *r0s = int2binf("........ ........", nMEMB(0, addr+1), 16);
-	uint16_t sr = nMEMB(0, addr+2);
+	uint16_t data[56];
+
+	mem_mget(0, addr, data, 56);
+
+	char *r0s = int2binf("........ ........", data[1], 16);
+	uint16_t sr = data[2];
 	char *srs = int2binf(".......... . . ....", sr, 16);
 	int q = (sr >> 5) & 1;
 	int nb = sr & 0b1111;
 
 	pos += sprintf(b+pos, "----------------------------------------------\n");
 	// process vector
-	pos += sprintf(b+pos, "Q:NB: %i:%i IC: 0x%04x  R0: %s  SR: %s\n", q, nb, nMEMB(0, addr+0), r0s, srs);
+	pos += sprintf(b+pos, "Q:NB: %i:%i IC: 0x%04x  R0: %s  SR: %s\n", q, nb, data[0], r0s, srs);
 	// user registers
-	pos += sprintf(b+pos, "R1: 0x%04x  R2: 0x%04x  R3: 0x%04x  R4: 0x%04x R5: 0x%04x  R6: 0x%04x  R7: 0x%04x\n", nMEMB(0, addr+3), nMEMB(0, addr+4), nMEMB(0, addr+5), nMEMB(0, addr+6), nMEMB(0, addr+7), nMEMB(0, addr+8), nMEMB(0, addr+9));
+	pos += sprintf(b+pos, "R1: 0x%04x  R2: 0x%04x  R3: 0x%04x  R4: 0x%04x R5: 0x%04x  R6: 0x%04x  R7: 0x%04x\n", data[3], data[4], data[5], data[6], data[7], data[8], data[9]);
 	pos += sprintf(b+pos, "----------------------------------------------\n");
 
-	char *n1 = int2r40(nMEMB(0, addr+52));
-	char *n2 = int2r40(nMEMB(0, addr+53));
+	char *n1 = int2r40(data[52]);
+	char *n2 = int2r40(data[53]);
 	pos += sprintf(b+pos, "Process 0x%04x: \"%s%s\"  ", addr, n1, n2);
-	pos += sprintf(b+pos, "Len: %i  ", (int16_t) (nMEMB(0, addr+54)));
-	uint16_t corsiz = nMEMB(0, addr+34);
+	pos += sprintf(b+pos, "Len: %i  ", (int16_t) (data[54]));
+	uint16_t corsiz = data[34];
 	pos += sprintf(b+pos, "Segments: %i\n", corsiz&255);
 
-	pos += sprintf(b+pos, "State: %i  ", (int16_t) nMEMB(0, addr+12));
-	pos += sprintf(b+pos, "Priority: %i \n", (int16_t) nMEMB(0, addr+13));
-	pos += sprintf(b+pos, "prev: 0x%04x  ",  nMEMB(0, addr+14));
-	pos += sprintf(b+pos, "next: 0x%04x \n", nMEMB(0, addr+10));
-	pos += sprintf(b+pos, "NXCH: 0x%04x \n", nMEMB(0, addr+11));
-	pos += sprintf(b+pos, "PAPR: 0x%04x \n", nMEMB(0, addr+15));
-	pos += sprintf(b+pos, "CHLS: 0x%04x \n", nMEMB(0, addr+16));
-	pos += sprintf(b+pos, "ALLS: 0x%04x \n", nMEMB(0, addr+17));
-	pos += sprintf(b+pos, "CHTIM: 0x%04x \n", nMEMB(0, addr+18));
-	pos += sprintf(b+pos, "DEVI: 0x%04x  ", nMEMB(0, addr+19));
-	pos += sprintf(b+pos, "DEVO: 0x%04x \n", nMEMB(0, addr+20));
-	pos += sprintf(b+pos, "USAL: 0x%04x \n", nMEMB(0, addr+21));
+	pos += sprintf(b+pos, "State: %i  ", (int16_t) data[12]);
+	pos += sprintf(b+pos, "Priority: %i \n", (int16_t) data[13]);
+	pos += sprintf(b+pos, "prev: 0x%04x  ",  data[14]);
+	pos += sprintf(b+pos, "next: 0x%04x \n", data[10]);
+	pos += sprintf(b+pos, "NXCH: 0x%04x \n", data[11]);
+	pos += sprintf(b+pos, "PAPR: 0x%04x \n", data[15]);
+	pos += sprintf(b+pos, "CHLS: 0x%04x \n", data[16]);
+	pos += sprintf(b+pos, "ALLS: 0x%04x \n", data[17]);
+	pos += sprintf(b+pos, "CHTIM: 0x%04x \n", data[18]);
+	pos += sprintf(b+pos, "DEVI: 0x%04x  ",  data[19]);
+	pos += sprintf(b+pos, "DEVO: 0x%04x \n", data[20]);
+	pos += sprintf(b+pos, "USAL: 0x%04x \n", data[21]);
 	// ROB =8
-	pos += sprintf(b+pos, "STRLI: 0x%04x \n", nMEMB(0, addr+30));
-	pos += sprintf(b+pos, "BUFLI: 0x%04x \n", nMEMB(0, addr+31));
-	pos += sprintf(b+pos, "LARUS: 0x%04x \n", nMEMB(0, addr+32));
-	pos += sprintf(b+pos, "LISMEM: 0x%04x \n", nMEMB(0, addr+33));
-	pos += sprintf(b+pos, "NXTMEM: 0x%04x \n", nMEMB(0, addr+35));
-	pos += sprintf(b+pos, "BAR: 0x%04x \n", nMEMB(0, addr+36));
-	pos += sprintf(b+pos, "SZABME: 0x%04x \n", nMEMB(0, addr+37));
-	pos += sprintf(b+pos, "BLPASC: 0x%04x \n", nMEMB(0, addr+38));
-	pos += sprintf(b+pos, "IC: 0x%04x R0: 0x%04x SR: 0x%04x \n", nMEMB(0, addr+39), nMEMB(0, addr+40), nMEMB(0, addr+41));
-	pos += sprintf(b+pos, "R1: 0x%04x  R2: 0x%04x  R3: 0x%04x  R4: 0x%04x R5: 0x%04x  R6: 0x%04x  R7: 0x%04x\n", nMEMB(0, addr+42), nMEMB(0, addr+43), nMEMB(0, addr+44), nMEMB(0, addr+45), nMEMB(0, addr+46), nMEMB(0, addr+47), nMEMB(0, addr+48));
-	pos += sprintf(b+pos, "JDAD: 0x%04x \n", nMEMB(0, addr+49));
-	pos += sprintf(b+pos, "Program start (JPAD): 0x%04x \n", nMEMB(0, addr+50));
-	pos += sprintf(b+pos, "FILDIC position (JACN): 0x%04x \n", nMEMB(0, addr+51));
-	pos += sprintf(b+pos, "TABUJB: 0x%04x \n", nMEMB(0, addr+55));
+	pos += sprintf(b+pos, "STRLI: 0x%04x \n",  data[30]);
+	pos += sprintf(b+pos, "BUFLI: 0x%04x \n",  data[31]);
+	pos += sprintf(b+pos, "LARUS: 0x%04x \n",  data[32]);
+	pos += sprintf(b+pos, "LISMEM: 0x%04x \n", data[33]);
+	pos += sprintf(b+pos, "NXTMEM: 0x%04x \n", data[35]);
+	pos += sprintf(b+pos, "BAR: 0x%04x \n", data[36]);
+	pos += sprintf(b+pos, "SZABME: 0x%04x \n", data[37]);
+	pos += sprintf(b+pos, "BLPASC: 0x%04x \n", data[38]);
+	pos += sprintf(b+pos, "IC: 0x%04x R0: 0x%04x SR: 0x%04x \n", data[39], data[40], data[41]);
+	pos += sprintf(b+pos, "R1: 0x%04x  R2: 0x%04x  R3: 0x%04x  R4: 0x%04x R5: 0x%04x  R6: 0x%04x  R7: 0x%04x\n", data[42], data[43], data[44], data[45], data[46], data[47], data[48]);
+	pos += sprintf(b+pos, "JDAD: 0x%04x \n", data[49]);
+	pos += sprintf(b+pos, "Program start (JPAD): 0x%04x \n", data[50]);
+	pos += sprintf(b+pos, "FILDIC position (JACN): 0x%04x \n", data[51]);
+	pos += sprintf(b+pos, "TABUJB: 0x%04x \n", data[55]);
 
 	free(r0s);
 	free(srs);

@@ -18,6 +18,7 @@
 #include <stdio.h>
 #include <strings.h>
 
+#include "cpu/cpu.h"
 #include "cpu/registers.h"
 
 #include "debugger/parser.h"

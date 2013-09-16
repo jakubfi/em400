@@ -27,6 +27,7 @@
 #include "em400.h"
 #include "cfg.h"
 #include "utils.h"
+#include "errors.h"
 
 #ifdef WITH_DEBUGGER
 #include "debugger/debugger.h"
@@ -35,6 +36,8 @@
 #endif
 #include "debugger/log.h"
 
+//uint16_t regs[R_MAX];
+int P;
 int16_t N;
 int cpu_mod;
 
@@ -43,68 +46,124 @@ uint16_t cycle_ic;
 #endif
 
 // -----------------------------------------------------------------------
-void cpu_set_op(struct opdef *op_tab, int opcode, opfun fun)
+int cpu_init()
+{
+	int res;
+
+	regs[R_KB] = em400_cfg.keys;
+
+	// enable enabling cpu modification, if cpu mod is enabled in configuration
+	if (em400_cfg.cpu_mod) {
+		res = cpu_mod_enable();
+		if (res != E_OK) {
+			return res;
+		}
+	}
+
+	if (pthread_spin_init(&int_ready, 0)) {
+		return E_SPIN_INIT;
+	}
+
+	cpu_reset();
+	return E_OK;
+}
+
+// -----------------------------------------------------------------------
+void cpu_shutdown()
+{
+	pthread_spin_unlock(&int_ready);
+	pthread_spin_destroy(&int_ready);
+}
+
+// -----------------------------------------------------------------------
+int cpu_set_op(struct opdef *op_tab, int opcode, opfun fun)
 {
 	struct opdef *op = op_tab;
 	while (op && (op->opcode != 0b1111111)) {
 		if (op->opcode == opcode) {
 			op->fun = fun;
+			return E_OK;
 		}
 		op++;
 	}
+	return E_NO_OPCODE;
 }
 
 // -----------------------------------------------------------------------
-void cpu_mod_enable()
+int cpu_mod_enable()
 {
-	cpu_set_op(iset_73, 0b0101000, op_73_cron);
+	return cpu_set_op(iset_73, 0b0101000, op_73_cron);
 }
 
 // -----------------------------------------------------------------------
-void cpu_mod_on()
+int cpu_mod_on()
 {
+	int res;
+
 	cpu_mod = 1;
 	int_timer = INT_EXTRA;
 	int_extra = INT_TIMER;
-	cpu_set_op(iset_73, 0b0010100, op_73_sint);
-	cpu_set_op(iset_73, 0b1010100, op_73_sind);
+
+	res = cpu_set_op(iset_73, 0b0010100, op_73_sint);
+	if (res != E_OK) {
+		return res;
+	}
+	res = cpu_set_op(iset_73, 0b1010100, op_73_sind);
+	if (res != E_OK) {
+		return res;
+	}
+	return E_OK;
 }
 
 // -----------------------------------------------------------------------
-void cpu_mod_off()
+int cpu_mod_off()
 {
+	int res;
+
 	cpu_mod = 0;
 	int_timer = INT_TIMER;
 	int_extra = INT_EXTRA;
-	cpu_set_op(iset_73, 0b0010100, NULL);
-	cpu_set_op(iset_73, 0b1010100, NULL);
+
+	res = cpu_set_op(iset_73, 0b0010100, NULL);
+	if (res != E_OK) {
+		return res;
+	}
+	res = cpu_set_op(iset_73, 0b1010100, NULL);
+	if (res != E_OK) {
+		return res;
+	}
+	return E_OK;
 }
 
 // -----------------------------------------------------------------------
 void cpu_reset()
 {
-	for (int i=0 ; i<R_MAX ; i++) {
-		reg_write(i, 0, 0, 1);
+	int i;
+	for (i=0 ; i<R_MAX ; i++) {
+		regs[i] = 0;
 	}
 	mem_reset();
 	int_clear_all();
 	cpu_mod_off();
+	pthread_spin_trylock(&int_ready);
 }
 
 // -----------------------------------------------------------------------
 void cpu_step()
 {
-	int _N = 0xbeef;
+	uint16_t M;
+	int32_t N17;
 	struct opdef *op;
-	opfun op_fun;
+	opfun op_fun = NULL;
+	uint16_t data;
 
 #ifdef WITH_DEBUGGER
 	cycle_ic = regs[R_IC];
 #endif
 
 	// fetch instruction
-	regs[R_IR] = nMEM(nR(R_IC));
-	LOG(L_CPU, 10, "---- Cycle: Q:NB = %d:%d, IC = 0x%04x IR = 0x%04x ------------", SR_Q, SR_NB, regs[R_IC], regs[R_IR]);
+	if (!mem_cpu_get(QNB, regs[R_IC], regs+R_IR)) goto catch_nomem;
+	LOG(L_CPU, 10, "---- Cycle: Q:NB = %d:%d, IC = 0x%04x IR = 0x%04x ------------", Q, NB, regs[R_IC], regs[R_IR]);
 	regs[R_IC]++;
 
 	op = iset + IR_OP;
@@ -117,12 +176,16 @@ void cpu_step()
 	// fetch M-arg if present
 	if (op->norm_arg) {
 		if (IR_C == 0) {
-			_N = (int16_t) nMEM(nR(R_IC));
-			LOG(L_CPU, 20, "Fetched M argument: 0x%04x", _N);
+			if (!mem_cpu_get(QNB, regs[R_IC], &M)) goto catch_nomem;
+			N17 = (int16_t) M;
+			LOG(L_CPU, 20, "Fetched M argument: 0x%04x", M);
 			regs[R_IC]++;
 		} else {
-			_N = (int16_t) R(IR_C);
+			N17 = (int16_t) regs[IR_C];
 		}
+	// or get T-arg if present
+	} else if (op->short_arg) {
+		N17 = (int16_t) IR_T;
 	}
 
 	// previous instruction set P?
@@ -132,12 +195,10 @@ void cpu_step()
 		return;
 	}
 
-	int op_is_md = (nR(R_IR) & 0b1111110111000000) == 0b1111110101000000 ? 1 : 0;
-
 	// op ineffective?
-	if ((op_fun == NULL)
-	|| (op_is_md && (regs[R_MODc] >= 3))
-	|| (SR_Q && op->user_illegal)) {
+	if ((!op_fun)
+	|| ((op_fun == op_77_md) && (regs[R_MODc] >= 3))
+	|| (Q && op->user_illegal)) {
 		LOG(L_CPU, 10, "Instruction ineffective");
 		regs[R_MODc] = 0;
 		regs[R_MOD] = 0;
@@ -149,17 +210,17 @@ void cpu_step()
 	P = 0;
 
 	// calculate argument
+	N17 += (int16_t) regs[R_MOD];
 	if (op->norm_arg) {
-		if (IR_B) _N += (int16_t) R(IR_B);
-		_N += (int16_t) regs[R_MOD];
-		if (IR_D) _N = (int16_t) MEM(_N);
-	} else if (op->short_arg) {
-		_N = IR_T + (int16_t) regs[R_MOD];
+		if (IR_B) N17 += (int16_t) regs[IR_B];
+		if (IR_D) {
+			if (!mem_cpu_get(QNB, N17, &data)) goto catch_nomem;
+			N17 = data;
+		}
 	}
+	N = N17;
 
-	if (cpu_mod) nRw(R_ZC17, (_N >> 16) & 1);
-
-	N = _N;
+	if (cpu_mod) regs[R_ZC17] = (N17 >> 16) & 1;
 
 	LOG(L_CPU, 20, "N/T arg: 0x%04x (%i)", N, N);
 
@@ -167,7 +228,9 @@ void cpu_step()
 	LOG(L_CPU, 30, "Execute instruction");
 	op_fun();
 
-	if (!op_is_md) {
+catch_nomem:
+
+	if (op_fun != op_77_md) {
 		regs[R_MODc] = 0;
 		regs[R_MOD] = 0;
 	}

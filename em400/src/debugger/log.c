@@ -28,6 +28,7 @@
 #include "errors.h"
 #include "debugger/log.h"
 #include "cpu/cpu.h"
+#include "cpu/registers.h"
 
 pthread_mutex_t log_mutex = PTHREAD_MUTEX_INITIALIZER;
 

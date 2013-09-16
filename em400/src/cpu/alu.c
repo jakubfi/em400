@@ -20,43 +20,44 @@
 #include <fenv.h>
 
 #include "cpu/alu.h"
+#include "cpu/cpu.h"
 #include "cpu/registers.h"
 #include "cpu/interrupts.h"
 
 // -----------------------------------------------------------------------
 void alu_add16(int reg, uint16_t arg, uint16_t carry)
 {
-	uint32_t res = R(reg) + arg + carry;
+	uint32_t res = regs[reg] + arg + carry;
 	alu_set_flag_Z(res, 16);
 	alu_set_flag_M(res, 16);
 	alu_set_flag_C(res, 16);
-	alu_set_flag_V(nR(reg), arg, res, 16);
-	Rw(reg, (uint16_t) res);
+	alu_set_flag_V(regs[reg], arg, res, 16);
+	reg_safe_write(reg, (uint16_t) res);
 }
 
 // -----------------------------------------------------------------------
 void alu_add32(uint16_t arg1, uint16_t arg2, int sign)
 {
-	uint32_t a1 = DWORD(R(1), R(2));
+	uint32_t a1 = DWORD(regs[1], regs[2]);
 	uint32_t a2 = DWORD(arg1, arg2);
 	uint64_t res = (uint64_t) a1 + (sign * a2);
 	alu_set_flag_Z(res, 32);
 	alu_set_flag_M(res, 32);
 	alu_set_flag_C(res, 32);
 	alu_set_flag_V(a1, sign*a2, res, 32);
-	Rw(1, DWORDl(res));
-	Rw(2, DWORDr(res));
+	regs[1] = DWORDl(res);
+	regs[2] = DWORDr(res);
 }
 
 // -----------------------------------------------------------------------
 void alu_mul32(int16_t arg)
 {
-	int64_t res = (int16_t) R(2) * arg;
+	int64_t res = (int16_t) regs[2] * arg;
 	alu_set_flag_Z(res, 32);
 	alu_set_flag_M(res, 32);
 	Fclr(FL_V); // it seems that V is always 0 when doing mul32()
-	Rw(1, DWORDl(res));
-	Rw(2, DWORDr(res));
+	regs[1] = DWORDl(res);
+	regs[2] = DWORDr(res);
 }
 
 // -----------------------------------------------------------------------
@@ -66,15 +67,15 @@ void alu_div32(int16_t arg)
 		int_set(INT_DIV0);
 		return;
 	}
-	int32_t d1 = DWORD(R(1), R(2));
+	int32_t d1 = DWORD(regs[1], regs[2]);
 	int32_t res = d1 / arg;
 	if ((res > 32767) || (res < -32768)) {
 		int_set(INT_DIV_OF);
 	}
 	alu_set_flag_Z(res, 32);
 	alu_set_flag_M(res, 32);
-	Rw(2, res);
-	Rw(1, d1 % arg);
+	regs[2] = res;
+	regs[1] = d1 % arg;
 }
 
 // -----------------------------------------------------------------------
@@ -152,16 +153,16 @@ void alu_fp_store(double f)
 		Fclr(FL_M);
 	}
 
-	Rw(1, d1);
-	Rw(2, d2);
-	Rw(3, d3);
+	regs[1] = d1;
+	regs[2] = d2;
+	regs[3] = d3;
 }
 
 // -----------------------------------------------------------------------
 void alu_fp_norm()
 {
 	double f;
-	if (!alu_fp_get(R(1), R(2), R(3), &f, 0)) {
+	if (!alu_fp_get(regs[1], regs[2], regs[3], &f, 0)) {
 		Fclr(FL_C);
 		feclearexcept(FE_ALL_EXCEPT);
 		alu_fp_store(f);
@@ -172,7 +173,7 @@ void alu_fp_norm()
 void alu_fp_add(uint16_t d1, uint16_t d2, uint16_t d3, int sign)
 {
 	double f1, f2;
-	if (!alu_fp_get(R(1), R(2), R(3), &f1, 1)) {
+	if (!alu_fp_get(regs[1], regs[2], regs[3], &f1, 1)) {
 		if (!alu_fp_get(d1, d2, d3, &f2, 1)) {
 			feclearexcept(FE_ALL_EXCEPT);
 			f2 *= sign;
@@ -186,7 +187,7 @@ void alu_fp_add(uint16_t d1, uint16_t d2, uint16_t d3, int sign)
 void alu_fp_mul(uint16_t d1, uint16_t d2, uint16_t d3)
 {
 	double f1, f2;
-	if (!alu_fp_get(R(1), R(2), R(3), &f1, 1)) {
+	if (!alu_fp_get(regs[1], regs[2], regs[3], &f1, 1)) {
 		if (!alu_fp_get(d1, d2, d3, &f2, 1)) {
 			feclearexcept(FE_ALL_EXCEPT);
 			f1 *= f2;
@@ -199,7 +200,7 @@ void alu_fp_mul(uint16_t d1, uint16_t d2, uint16_t d3)
 void alu_fp_div(uint16_t d1, uint16_t d2, uint16_t d3)
 {
 	double f1, f2;
-	if (!alu_fp_get(R(1), R(2), R(3), &f1, 1)) {
+	if (!alu_fp_get(regs[1], regs[2], regs[3], &f1, 1)) {
 		if (!alu_fp_get(d1, d2, d3, &f2, 1)) {
 			if (f2 == 0.0f) {
 				int_set(INT_DIV0);
@@ -235,13 +236,13 @@ void alu_compare(int32_t a, int32_t b)
 // -----------------------------------------------------------------------
 void alu_negate(int reg, uint16_t carry)
 {
-	uint16_t a = R(reg);
+	uint16_t a = regs[reg];
 	uint32_t res = (uint16_t) (~a) + carry;
 	alu_set_flag_Z(res, 16);
 	alu_set_flag_M(res, 16);
 	alu_set_flag_C(res, 16);
 	alu_set_flag_V(a, a, res, 16);
-	Rw(reg, res);
+	reg_safe_write(reg, res);
 }
 
 // -----------------------------------------------------------------------

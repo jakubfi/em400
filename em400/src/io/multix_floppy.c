@@ -187,22 +187,22 @@ void mx_floppy_cmd_transmit(struct mx_unit_proto_t *unit, uint16_t addr)
 // -----------------------------------------------------------------------
 struct mx_floppy_cf_t * mx_floppy_cf_t_decode(int addr)
 {
-	uint16_t data;
+	uint16_t data[4];
 	struct mx_floppy_cf_t *cf = calloc(1, sizeof(struct mx_floppy_cf_t));
 	if (!cf) {
 		goto fail;
 	}
 
-	data = MEMB(0, addr);
-	cf->oper = (data & 0b0000011100000000) >> 8;
+	mem_mget(0, addr, data, 4);
+
+	cf->oper = (data[0] & 0b0000011100000000) >> 8;
 	switch (cf->oper) {
 		case MX_FLOPPY_FORMAT:
-			data = MEMB(0, addr+3);
 			cf->format = calloc(1, sizeof(struct mx_floppy_cf_format));
 			if (!cf->format) {
 				goto fail;
 			}
-			cf->format->start_sector = data;
+			cf->format->start_sector = data[3];
 			break;
 		case MX_FLOPPY_READ:
 		case MX_FLOPPY_WRITE:
@@ -210,23 +210,19 @@ struct mx_floppy_cf_t * mx_floppy_cf_t_decode(int addr)
 			if (!cf->transmit) {
 				goto fail;
 			}
-			cf->transmit->ign_crc		= (data & 0b0001000000000000) >> 12;
-			cf->transmit->cpu			= (data & 0b0000000000010000) >> 4;
-			cf->transmit->nb			= (data & 0b0000000000001111);
-			data = MEMB(0, addr+1);
-			cf->transmit->addr = data;
-			data = MEMB(0, addr+2);
-			cf->transmit->len = data+1;
-			data = MEMB(0, addr+3);
-			cf->transmit->sector = data << 16;
+			cf->transmit->ign_crc		= (data[0] & 0b0001000000000000) >> 12;
+			cf->transmit->cpu			= (data[0] & 0b0000000000010000) >> 4;
+			cf->transmit->nb			= (data[0] & 0b0000000000001111);
+			cf->transmit->addr = data[1];
+			cf->transmit->len = data[2]+1;
+			cf->transmit->sector = data[3] << 16;
 			break;
 		case MX_FLOPPY_BAD_SECTOR:
 			cf->bad_sector = calloc(1, sizeof(struct mx_floppy_cf_bad_sector));
 			if (!cf->bad_sector) {
 				goto fail;
 			}
-			data = MEMB(0, addr+3);
-			cf->bad_sector->sector = data;
+			cf->bad_sector->sector = data[3];
 			break;
 		default:
 			goto fail;

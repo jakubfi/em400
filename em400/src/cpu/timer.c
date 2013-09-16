@@ -19,7 +19,7 @@
 #include <time.h>
 
 #include "cpu/timer.h"
-#include "cpu/registers.h"
+#include "cpu/cpu.h"
 #include "cpu/interrupts.h"
 
 #include "cfg.h"

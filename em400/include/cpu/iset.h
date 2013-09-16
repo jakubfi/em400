@@ -21,8 +21,6 @@
 #include <inttypes.h>
 #include <stdbool.h>
 
-#include "cpu/registers.h"
-
 typedef void (*opfun)();
 
 struct opdef {
@@ -33,6 +31,8 @@ struct opdef {
 	opfun fun;					// instruction execution function
 	struct opdef *(*get_eop)();	// pointer to extop getter
 };
+
+#include "cpu/cpu.h"
 
 // basic opcodes jump table
 extern struct opdef iset[];

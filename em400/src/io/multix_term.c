@@ -157,10 +157,11 @@ int mx_term_send(struct mx_unit_proto_t *unit, struct mx_term_cf_transmit_t *cf)
 	int words = 0;
 
 	while (bytes_sent < cf->send_len) {
-		uint16_t data = nMEMB(cf->send_nb, cf->send_buf_addr+words);
+		uint16_t data;
+		mem_get(cf->send_nb, cf->send_buf_addr+words, &data);
 		char ch1 = data >> 8;
 		char ch2 = data & 255;
-		char lf = 10;
+		//char lf = 10;
 
 		if ((cf->opts & MX_TERM_TX_SEND_BY_EOT_EXCL) && (ch1 == cf->send_eot_char)) {
 			break;
@@ -254,7 +255,7 @@ int mx_term_recv(struct mx_unit_proto_t *unit, struct mx_term_cf_transmit_t *cf)
 		buf[i*2] = buf[i*2+1];
 		buf[i*2+1] = d;
 		uint16_t data = *((uint16_t*) (buf+(i*2)));
-		nMEMBw(cf->recv_nb, cf->recv_buf_addr+i, data);
+		mem_put(cf->recv_nb, cf->recv_buf_addr+i, data);
 	}
 
 	mx_status_clear(unit, MX_STATUS_RECV);
@@ -293,9 +294,9 @@ void mx_term_cmd_transmit(struct mx_unit_proto_t *unit, uint16_t addr)
 	bytes_sent = mx_term_send(unit, cf);
 	bytes_recv = mx_term_recv(unit, cf);
 
-	MEMBw(0, addr+10, bytes_sent);
-	MEMBw(0, addr+11, 0);
-	MEMBw(0, addr+12, bytes_recv);
+	mem_put(0, addr+10, bytes_sent);
+	mem_put(0, addr+11, 0);
+	mem_put(0, addr+12, bytes_recv);
 
 	if (ret == E_OK) {
 		mx_int(unit->chan, unit->log_num, MX_INT_IETRA);
@@ -313,22 +314,21 @@ void mx_term_cmd_transmit(struct mx_unit_proto_t *unit, uint16_t addr)
 // -----------------------------------------------------------------------
 struct mx_term_cf_attach_t * mx_term_cf_attach_decode(int addr)
 {
-	uint16_t data;
+	uint16_t data[3];
 	struct mx_term_cf_attach_t *cf = calloc(1, sizeof(struct mx_term_cf_attach_t));
 	if (!cf) {
 		return NULL;
 	}
 
-	data = MEMB(0, addr+0);
-	cf->opts = data >> 8;
-	cf->eot_mark = data & 255;
+	mem_mget(0, addr, data, 3);
 
-	data = MEMB(0, addr+1);
-	cf->call_mark = data >> 8;
-	cf->text_proc = data & 255;
+	cf->opts = data[0] >> 8;
+	cf->eot_mark = data[0] & 255;
 
-	data = MEMB(0, addr+2);
-	cf->text_proc_params = data;
+	cf->call_mark = data[1] >> 8;
+	cf->text_proc = data[1] & 255;
+
+	cf->text_proc_params = data[2];
 
 	return cf;
 }
@@ -342,42 +342,38 @@ void mx_term_cf_attach_free(struct mx_term_cf_attach_t *cf)
 // -----------------------------------------------------------------------
 struct mx_term_cf_transmit_t * mx_term_cf_transmit_decode(int addr)
 {
-	uint16_t data;
+	uint16_t data[10];
 	struct mx_term_cf_transmit_t *cf = calloc(1, sizeof(struct mx_term_cf_transmit_t));
 	if (!cf) {
 		return NULL;
 	}
 
-	data = MEMB(0, addr+0);
-	cf->opts = data >> 8;
-	cf->timeout = data & 255;
+	mem_mget(0, addr, data, 10);
 
-	cf->send_len = MEMB(0, addr+1);
-	cf->send_buf_addr = MEMB(0, addr+2);
+	cf->opts = data[0] >> 8;
+	cf->timeout = data[0] & 255;
 
-	data = MEMB(0, addr+3);
-	cf->send_eot_char = data >> 8;
-	cf->send_start_byte = (data >> 9) & 1;
-	cf->send_nb = data & 0b1111;
+	cf->send_len = data[1];
+	cf->send_buf_addr = data[2];
 
-	cf->recv_len = MEMB(0, addr+4);
-	cf->recv_buf_addr = MEMB(0, addr+5);
+	cf->send_eot_char = data[3] >> 8;
+	cf->send_start_byte = (data[3] >> 9) & 1;
+	cf->send_nb = data[3] & 0b1111;
 
-	data = MEMB(0, addr+6);
-	cf->recv_start_byte = (data >> 9) &1;
-	cf->recv_nb = data & 0b1111;
+	cf->recv_len = data[4];
+	cf->recv_buf_addr = data[5];
 
-	data = MEMB(0, addr+7);
-	cf->recv_eot_char = data >> 8;
-	cf->recv_eot_char2 = data & 255;
+	cf->recv_start_byte = (data[6] >> 9) &1;
+	cf->recv_nb = data[6] & 0b1111;
 
-	data = MEMB(0, addr+8);
-	cf->prompt_text[0] = data >> 8;
-	cf->prompt_text[1] = data & 255;
+	cf->recv_eot_char = data[7] >> 8;
+	cf->recv_eot_char2 = data[7] & 255;
 
-	data = MEMB(0, addr+9);
-	cf->prompt_text[2] = data >> 8;
-	cf->prompt_text[3] = data & 255;
+	cf->prompt_text[0] = data[8] >> 8;
+	cf->prompt_text[1] = data[8] & 255;
+
+	cf->prompt_text[2] = data[9] >> 8;
+	cf->prompt_text[3] = data[9] & 255;
 	cf->prompt_text[4] = '\0';
 
 	cf->bytes_sent = 0;

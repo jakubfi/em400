@@ -21,6 +21,7 @@
 #include "utils.h"
 #include "errors.h"
 
+#include "cpu/cpu.h"
 #include "cpu/registers.h"
 
 #include "debugger/dasm.h"

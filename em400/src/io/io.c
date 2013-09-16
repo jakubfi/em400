@@ -23,7 +23,7 @@
 #include <strings.h>
 
 #include "cpu/memory.h"
-#include "cpu/registers.h"
+#include "cpu/cpu.h"
 #include "io/io.h"
 #include "io/cmem.h"
 #include "io/cchar.h"

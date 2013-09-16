@@ -34,7 +34,7 @@ int dt_trans(int addr, char *buf, int dasm_mode)
 {
 	struct dasm_opdef *opdef;
 
-	uint16_t *memptr = mem_ptr(SR_Q * SR_NB, addr);
+	uint16_t *memptr = mem_ptr(QNB, addr);
 
 	if (!memptr) {
 		return 0;
