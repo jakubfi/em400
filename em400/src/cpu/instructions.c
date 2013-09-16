@@ -797,10 +797,6 @@ void op_73_lip()
 
 	int_update_rp();
 	mem_ret_put(0, 97, sp-4);
-
-#ifdef WITH_DEBUGGER
-	dbg_touch_pop(&touch_int);
-#endif
 }
 
 // -----------------------------------------------------------------------

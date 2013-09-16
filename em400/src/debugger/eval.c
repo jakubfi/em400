@@ -221,25 +221,6 @@ struct node_t * n_mem(struct node_t *n1, struct node_t *n2)
 }
 
 // -----------------------------------------------------------------------
-struct node_t * n_act(int act_type, struct node_t *n1)
-{
-	struct node_t *n = n_create();
-	n->type = N_ACT;
-	n->val = act_type;
-	n->n1 = n1;
-	return n;
-}
-
-// -----------------------------------------------------------------------
-struct node_t * n_pval(struct node_t *n1)
-{
-	struct node_t *n = n_create();
-	n->type = N_PVAL;
-	n->n1 = n1;
-	return n;
-}
-
-// -----------------------------------------------------------------------
 // --- EVALUATION --------------------------------------------------------
 // -----------------------------------------------------------------------
 
@@ -317,57 +298,6 @@ int16_t n_eval_ass(struct node_t * n)
 		default:
 			return v;
 	}
-}
-
-// -----------------------------------------------------------------------
-struct touch_t * act_find(struct node_t *n)
-{
-	struct touch_t **t;
-	int block = 0;
-	int pos = 0;
-
-	if (n->n1->type == N_REG) {
-		t = &touch_reg;
-		block = 0;
-		pos = n->n1->val;
-	} else if (n->n1->type == N_MEM) {
-		t = &touch_mem;
-		block = n->n1->nb;
-		pos = n->n1->val;
-	} else {
-		t = NULL;
-	}
-
-	return dbg_touch_get(t, block, pos);
-}
-
-// -----------------------------------------------------------------------
-int16_t n_eval_act(struct node_t *n)
-{
-	int res;
-	struct touch_t *t = act_find(n);
-	if (t) {
-		res = (t->type & n->val) ? 1 : 0;
-		free(t);
-	} else {
-		res = 0;
-	}
-	return res;
-}
-
-// -----------------------------------------------------------------------
-int16_t n_eval_pval(struct node_t *n)
-{
-	int res;
-	struct touch_t *t = act_find(n);
-	if (t) {
-		res = t->oval;
-		free(t);
-	} else {
-		// not found in history, return current value
-		res = n_eval(n->n1);
-	}
-	return res;
 }
 
 // -----------------------------------------------------------------------
@@ -461,10 +391,6 @@ int16_t n_eval(struct node_t *n)
 			return n_eval_ass(n);
 		case N_MEM:
 			return n_eval_mem(n);
-		case N_ACT:
-			return n_eval_act(n);
-		case N_PVAL:
-			return n_eval_pval(n);
 		default:
 			return 0;
 	}

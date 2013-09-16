@@ -121,8 +121,6 @@ void dbg_c_run()
 void dbg_c_reset()
 {
 	cpu_reset();
-	dbg_touch_drop_all(&touch_mem);
-	dbg_touch_drop_all(&touch_reg);
 }
 
 // -----------------------------------------------------------------------
@@ -210,7 +208,7 @@ void dbg_c_mem(int wid, int block, int start, int end, int maxcols, int maxlines
 			if (addr == regs[R_IC]) {
 				attr = C_DATAU;
 			} else {
-				attr = dbg_touch2attr(dbg_touch_check(&touch_mem, block, addr));
+				attr = C_DATA;
 			}
 
 			awtbprint(wid, attr, "%4x", *mptr);
@@ -266,17 +264,6 @@ void dbg_c_sregs(int wid)
 	awtbprint(wid, C_DATA, "0x%08x  ", RP);
 	awtbbinprint(wid, C_DATA, "..... ....... .. .. ...... ...... ....", RP, 32);
 	awtbprint(wid, C_DATA, "\n");
-
-	uint32_t int_act = 0;
-	struct touch_t *t = touch_int;
-	while (t) {
-		int_act |= 1 << (31-t->pos);
-		t = t->next;
-	}
-
-	awtbprint(wid, C_LABEL, "Being served:   ");
-	awtbbinprint(wid, C_LABEL, "..... ....... .. .. ...... ...... ....", int_act, 32);
-	awtbprint(wid, C_LABEL, "\n");
 }
 
 // -----------------------------------------------------------------------
@@ -288,12 +275,10 @@ void dbg_c_regs(int wid)
 		char c[3];
 		int2chars(regs[i], c);
 
-		int attr = dbg_touch2attr(dbg_touch_check(&touch_reg, 0, i));
-
 		awtbprint(wid, C_LABEL, "R%i: ", i);
-		awtbprint(wid, attr, "0x%04x %6o %6i ", regs[i], regs[i], (int16_t) regs[i]);
-		awtbbinprint(wid, attr, "........ ........", regs[i], 16);
-		awtbprint(wid, attr, " %s %s\n", c, r);
+		awtbprint(wid, C_DATA, "0x%04x %6o %6i ", regs[i], regs[i], (int16_t) regs[i]);
+		awtbbinprint(wid, C_DATA, "........ ........", regs[i], 16);
+		awtbprint(wid, C_DATA, " %s %s\n", c, r);
 		free(r);
 	}
 }

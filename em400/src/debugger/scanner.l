@@ -93,10 +93,6 @@ decode	{ BEGIN(opts); return F_DECODE; }
 
 {name}	{ yylval.text = strdup(yytext); return NAME; }
 
-"?>"	return WACT;
-"?<"	return RACT;
-"?"		return ACT;
-"\."	return PVAL;
 ">>"	return SHR;
 "<<"	return SHL;
 "=="	return EQ;

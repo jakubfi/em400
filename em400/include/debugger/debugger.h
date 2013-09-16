@@ -31,24 +31,6 @@ struct evlb_t {
 	struct evlb_t *next;
 };
 
-enum touch_types {
-	TOUCH_NONE = 0,
-	TOUCH_R = 1,
-	TOUCH_W = 2
-};
-
-struct touch_t {
-	int type;
-	int block;
-	int pos;
-	int oval;
-	struct touch_t *next;
-};
-
-extern struct touch_t *touch_mem;
-extern struct touch_t *touch_reg;
-extern struct touch_t *touch_int;
-
 extern char *script_name;
 
 extern int dbg_loop_fin;
@@ -72,13 +54,6 @@ void dbg_shutdown();
 void dbg_fin_cycle();
 int dbg_parse(char *c);
 
-void dbg_touch_add(struct touch_t **t, int type, int block, int pos, int oval);
-struct touch_t * dbg_touch_get_nolock(struct touch_t **t, int block, int pos);
-struct touch_t * dbg_touch_get(struct touch_t **t, int block, int pos);
-int dbg_touch_check(struct touch_t **t, int block, int pos);
-void dbg_touch_pop(struct touch_t **t);
-void dbg_touch_drop_all(struct touch_t **t);
-int dbg_touch2attr(int t);
 int read_script(char *filename);
 
 
