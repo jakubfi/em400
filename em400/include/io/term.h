@@ -33,7 +33,8 @@ enum term_type_e {
 
 struct term_t {
 	int type;
-	int connfd;
+	int fd_in;
+	int fd_out;
 	struct timespec timeout;
 
 	int listenfd;
@@ -41,6 +42,7 @@ struct term_t {
 };
 
 struct term_t * term_open_tcp(int port, int timeout_ms);
+struct term_t * term_open_console();
 void term_close(struct term_t *term);
 void term_try_accept(struct term_t *term);
 int term_read(struct term_t *term, char *buf, int len);

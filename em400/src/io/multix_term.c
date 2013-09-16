@@ -30,6 +30,7 @@
 // -----------------------------------------------------------------------
 struct mx_unit_proto_t * mx_term_create(struct cfg_arg_t *args)
 {
+	char *type = NULL;
 	int port;
 	int res;
 
@@ -39,7 +40,7 @@ struct mx_unit_proto_t * mx_term_create(struct cfg_arg_t *args)
 		goto fail;
 	}
 
-	res = cfg_args_decode(args, "i", &port);
+	res = cfg_args_decode(args, "si", &type, &port);
 	if (res != E_OK) {
 		gerr = res;
 		goto fail;
@@ -51,7 +52,7 @@ struct mx_unit_proto_t * mx_term_create(struct cfg_arg_t *args)
 		goto fail;
 	}
 
-	eprint("      TCP terminal, port: %i\n", port);
+	eprint("      Terminal (%s), port: %i\n", type, port);
 
 	mx_term_connect(UNIT);
 	return unit;

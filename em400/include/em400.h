@@ -24,10 +24,14 @@ enum em400_states_e {
 	STATE_MEM_FAIL = 2,
 };
 
+enum em400_console_e {
+	CONSOLE_NONE = 0,
+	CONSOLE_DEBUGGER,
+	CONSOLE_TERMINAL,
+};
+
+extern int em400_console;
 extern int em400_state;
-extern unsigned int ips_counter;
-extern struct timeval ips_start;
-extern struct timeval ips_end;
 
 #endif
 

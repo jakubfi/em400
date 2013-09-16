@@ -41,6 +41,7 @@
 #include "debugger/log.h"
 #endif
 
+int em400_console = CONSOLE_NONE;
 int em400_state = STATE_WORK;
 
 // -----------------------------------------------------------------------
@@ -73,6 +74,10 @@ void em400_eerr(int err_code, char *format, ...)
 void em400_init()
 {
 	int res;
+
+#ifdef WITH_DEBUGGER
+	em400_console = CONSOLE_DEBUGGER;
+#endif
 
 	res = mem_init();
 	if (res != E_OK) {

@@ -153,10 +153,6 @@ int cfg_args_decode(struct cfg_arg_t *arg, const char *format, ...)
 
 	va_end(ap);
 
-	if (!*format && arg) {
-		return E_ARG_TOO_MANY;
-	}
-
 	return E_OK;
 }
 

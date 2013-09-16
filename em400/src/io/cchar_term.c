@@ -17,9 +17,12 @@
 
 #include <stdlib.h>
 #include <string.h>
+#include <strings.h>
 #include <inttypes.h>
 #include <stdio.h>
+#include <unistd.h>
 
+#include "em400.h"
 #include "debugger/log.h"
 #include "errors.h"
 #include "cpu/memory.h"
@@ -32,13 +35,50 @@
 // -----------------------------------------------------------------------
 struct cchar_unit_proto_t * cchar_term_create(struct cfg_arg_t *args)
 {
+	char *type = NULL;
+	int port;
+	int res;
+
 	struct cchar_unit_term_t *unit = calloc(1, sizeof(struct cchar_unit_term_t));
 	if (!unit) {
 		goto fail;
 	}
 
-	unit->term = term_open_tcp(32000, 100);
-	if (!unit->term) {
+	res = cfg_args_decode(args, "s", &type);
+	if (res != E_OK) {
+		gerr = res;
+		goto fail;
+	}
+
+	if (!strcasecmp(type, "tcp")) {
+		res = cfg_args_decode(args, "si", &type, &port);
+		if (res != E_OK) {
+			gerr = res;
+			goto fail;
+		}
+		unit->term = term_open_tcp(port, 100);
+		if (!unit->term) {
+			gerr = E_TERM;
+			goto fail;
+		}
+	} else if (!strcasecmp(type, "console")) {
+		if (em400_console == CONSOLE_DEBUGGER) {
+			gerr = E_TERM_CONSOLE_DEBUG;
+			goto fail;
+		} else if (em400_console == CONSOLE_TERMINAL) {
+			gerr = E_TERM_CONSOLE_TERM;
+			goto fail;
+		} else {
+			em400_console = CONSOLE_TERMINAL;
+			unit->term = term_open_console();
+			if (!unit->term) {
+				gerr = E_TERM;
+				goto fail;
+			}
+		}
+		printf("Console connected as system terminal.\n");
+	} else {
+		gerr = E_TERM_UNKNOWN;
 		goto fail;
 	}
 
@@ -47,11 +87,13 @@ struct cchar_unit_proto_t * cchar_term_create(struct cfg_arg_t *args)
 		goto fail;
 	}
 
+	eprint("      Terminal (%s), port: %i\n", type, port);
+
 	pthread_mutexattr_t attr;
 	pthread_mutexattr_init(&attr);
 	pthread_mutex_init(&unit->buf_mutex, &attr);
 
-	int res = pthread_create(&unit->worker, NULL, cchar_term_worker, (void *)unit);
+	res = pthread_create(&unit->worker, NULL, cchar_term_worker, (void *)unit);
 	if (res != 0) {
 		goto fail;
 	}
@@ -68,7 +110,7 @@ void cchar_term_shutdown(struct cchar_unit_proto_t *unit)
 {
 	if (unit) {
 		free(UNIT->buf);
-		term_close(UNIT->term);
+		if (UNIT->term) term_close(UNIT->term);
 		free(UNIT);
 	}
 }
@@ -79,35 +121,49 @@ void cchar_term_reset(struct cchar_unit_proto_t *unit)
 }
 
 // -----------------------------------------------------------------------
+void cchar_term_queue_char(struct cchar_unit_proto_t *unit, char data)
+{
+	pthread_mutex_lock(&UNIT->buf_mutex);
+
+	UNIT->buf[UNIT->buf_wpos] = data;
+	UNIT->buf_len++;
+	if (UNIT->buf_wpos >= TERM_BUF_LEN-2) {
+		UNIT->buf_wpos = 0;
+	} else {
+		UNIT->buf_wpos++;
+	}
+
+	if (UNIT->empty_read) {
+		cchar_int(unit->chan, unit->num, CCHAR_TERM_INT_READY);
+		UNIT->empty_read = 0;
+	}
+
+	pthread_mutex_unlock(&UNIT->buf_mutex);
+}
+
+// -----------------------------------------------------------------------
 void * cchar_term_worker(void *ptr)
 {
 	struct cchar_unit_proto_t *unit = ptr;
-
 	char data;
+	int res;
+	static int counter;
 
 	while (1) {
-		int res = term_read(UNIT->term, &data, 1);
-
+		res = term_read(UNIT->term, &data, 1);
 		if (res <= 0) {
 			continue;
 		}
 
-		pthread_mutex_lock(&UNIT->buf_mutex);
-
-		UNIT->buf[UNIT->buf_wpos] = data;
-		UNIT->buf_len++;
-		if (UNIT->buf_wpos >= TERM_BUF_LEN-2) {
-			UNIT->buf_wpos = 0;
+		if (data == 10) {
+			cchar_term_queue_char(unit, 10);
+			cchar_term_queue_char(unit, 13);
+			counter++;
+		} else if (data == 13) {
+			continue;
 		} else {
-			UNIT->buf_wpos++;
+			cchar_term_queue_char(unit, data);
 		}
-
-		if (UNIT->empty_read) {
-			cchar_int(unit->chan, unit->num, CCHAR_TERM_INT_READY);
-			UNIT->empty_read = 0;
-		}
-
-		pthread_mutex_unlock(&UNIT->buf_mutex);
 	}
 
 	pthread_exit(NULL);

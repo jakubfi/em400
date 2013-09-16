@@ -106,8 +106,8 @@ int mem_init()
 		mem_mega_prom = calloc(sizeof(uint16_t), MEM_SEGMENT_SIZE);
 		mem_map[0][15] = mem_mega_prom;
 		if (em400_cfg.mem_mega_prom) {
-			eprint("  Loading MEGA PROM image: %i\n", em400_cfg.mem_mega_prom);
-			mem_load_image(em400_cfg.mem_mega_prom, 0, 15, 4096);
+			res = mem_load_image(em400_cfg.mem_mega_prom, 0, 15, 4096);
+			eprint("  Loaded MEGA PROM image: %s (%i words)\n", em400_cfg.mem_mega_prom, res);
 		}
 	}
 
