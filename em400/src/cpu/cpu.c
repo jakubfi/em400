@@ -188,9 +188,10 @@ void cpu_step()
 
 	// end cycle if op is ineffective
 	if (
-	(Q && op->user_illegal)) {
+	(Q && op->user_illegal)
 	|| ((regs[R_MODc] >= 3) && (op_fun == op_77_md))
 	|| (!op_fun)
+	) {
 		LOG(L_CPU, 10, "Instruction ineffective");
 		regs[R_MODc] = regs[R_MOD] = 0;
 		int_set(INT_ILLEGAL_OPCODE);
