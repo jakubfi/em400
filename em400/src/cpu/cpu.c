@@ -151,10 +151,9 @@ void cpu_reset()
 // -----------------------------------------------------------------------
 void cpu_step()
 {
-	uint16_t M;
 	int32_t N17;
 	struct opdef *op;
-	opfun op_fun = NULL;
+	opfun op_fun;
 	uint16_t data;
 
 #ifdef WITH_DEBUGGER
@@ -162,67 +161,76 @@ void cpu_step()
 #endif
 
 	// fetch instruction
-	if (!mem_cpu_get(QNB, regs[R_IC], regs+R_IR)) goto catch_nomem;
+	if (!mem_cpu_get(QNB, regs[R_IC], regs+R_IR)) {
+		regs[R_MODc] = regs[R_MOD] = 0;
+		return;
+	}
 	LOG(L_CPU, 10, "---- Cycle: Q:NB = %d:%d, IC = 0x%04x IR = 0x%04x ------------", Q, NB, regs[R_IC], regs[R_IR]);
 	regs[R_IC]++;
 
+	// find instruction
 	op = iset + IR_OP;
 	if (op->get_eop) {
 		op = op->get_eop();
 	}
-
 	op_fun = op->fun;
 
-	// fetch M-arg if present
-	if (op->norm_arg) {
-		if (IR_C == 0) {
-			if (!mem_cpu_get(QNB, regs[R_IC], &M)) goto catch_nomem;
-			N17 = (int16_t) M;
-			LOG(L_CPU, 20, "Fetched M argument: 0x%04x", M);
-			regs[R_IC]++;
-		} else {
-			N17 = (int16_t) regs[IR_C];
-		}
-	// or get T-arg if present
-	} else if (op->short_arg) {
-		N17 = (int16_t) IR_T;
-	}
-
-	// previous instruction set P?
+	// end cycle if P is set
 	if (P) {
 		LOG(L_CPU, 20, "P set, skipping");
 		P = 0;
+		// skip also M-arg if present
+		if (op->norm_arg && !IR_C) {
+			regs[R_IC]++;
+		}
 		return;
 	}
 
-	// op ineffective?
-	if ((!op_fun)
-	|| ((op_fun == op_77_md) && (regs[R_MODc] >= 3))
-	|| (Q && op->user_illegal)) {
+	// end cycle if op is ineffective
+	if (
+	(Q && op->user_illegal)) {
+	|| ((regs[R_MODc] >= 3) && (op_fun == op_77_md))
+	|| (!op_fun)
 		LOG(L_CPU, 10, "Instruction ineffective");
-		regs[R_MODc] = 0;
-		regs[R_MOD] = 0;
-		P = 0;
+		regs[R_MODc] = regs[R_MOD] = 0;
 		int_set(INT_ILLEGAL_OPCODE);
+		// skip also M-arg if present
+		if (op->norm_arg && !IR_C) {
+			regs[R_IC]++;
+		}
 		return;
 	}
 
-	P = 0;
-
-	// calculate argument
-	N17 += (int16_t) regs[R_MOD];
+	// process argument
 	if (op->norm_arg) {
-		if (IR_B) N17 += (int16_t) regs[IR_B];
+		if (IR_C) {
+			N17 = (int16_t) regs[IR_C] + (int16_t) regs[R_MOD];
+		} else {
+			if (!mem_cpu_get(QNB, regs[R_IC], &data)) goto catch_nomem;
+			N17 = (int16_t) data + (int16_t) regs[R_MOD];
+			regs[R_IC]++;
+			LOG(L_CPU, 20, "Fetched M argument: 0x%04x", data);
+		}
+		if (IR_B) {
+			N17 += (int16_t) regs[IR_B];
+		}
 		if (IR_D) {
 			if (!mem_cpu_get(QNB, N17, &data)) goto catch_nomem;
 			N17 = data;
 		}
+		if (cpu_mod) {
+			regs[R_ZC17] = (N17 >> 16) & 1;
+		}
+		N = N17;
+		LOG(L_CPU, 20, "N arg: 0x%04x (%i)", N, N);
+	} else if (op->short_arg) {
+		N17 = (int16_t) IR_T + (int16_t) regs[R_MOD];
+		if (cpu_mod) {
+			regs[R_ZC17] = (N17 >> 16) & 1;
+		}
+		N = N17;
+		LOG(L_CPU, 20, "T arg: 0x%04x (%i)", N, N);
 	}
-	N = N17;
-
-	if (cpu_mod) regs[R_ZC17] = (N17 >> 16) & 1;
-
-	LOG(L_CPU, 20, "N/T arg: 0x%04x (%i)", N, N);
 
 	// execute instruction
 	LOG(L_CPU, 30, "Execute instruction");
@@ -230,9 +238,9 @@ void cpu_step()
 
 catch_nomem:
 
+	// clear mod if instruction wasn't md
 	if (op_fun != op_77_md) {
-		regs[R_MODc] = 0;
-		regs[R_MOD] = 0;
+		regs[R_MODc] = regs[R_MOD] = 0;
 	}
 }
 
