@@ -112,17 +112,20 @@ expr:
 	| '!' expr				{ $$ = n_op1('!', $2); }
 	| '(' expr ')'			{ $$ = $2; }
 	| lval {
-		if (!$$->mptr) {
-			switch ($$->type) {
-				case N_MEM:
+		uint16_t data;
+		switch ($$->type) {
+			case N_MEM:
+				if (!mem_get($$->nb, (uint16_t) $$->val, &data)) {
 					yyerror("address [%i:0x%04x] not available, memory not configured", $$->nb, (uint16_t) $$->val);
 					YYABORT;
-					break;
-				case N_VAR:
+				}
+				break;
+			case N_VAR:
+				if (!var_get($$->var)) {
 					yyerror("undefined variable: %s", $$->var);
 					YYABORT;
-					break;
-			}
+				}
+				break;
 		}
 	}
 	| lval '=' expr { $$ = n_ass($1, $3); }

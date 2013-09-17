@@ -40,7 +40,6 @@ struct node_t {
 	int16_t val;
 	char *var;
 	int nb;
-	void *mptr;
 	struct node_t *n1;
 	struct node_t *n2;
 	struct node_t *next;

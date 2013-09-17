@@ -33,16 +33,19 @@
 int dt_trans(int addr, char *buf, int dasm_mode)
 {
 	struct dasm_opdef *opdef;
+	int res;
+	uint16_t opcode;
 
-	uint16_t *memptr = mem_ptr(QNB, addr);
+	res = mem_get(QNB, addr, &opcode);
 
-	if (!memptr) {
-		return 0;
+	if (!res) {
+		sprintf(buf, "~~~~");
+		return 1;
 	}
 
-	opdef = dasm_iset + _OP(*memptr);
+	opdef = dasm_iset + _OP(opcode);
 	if (opdef->e_opdef) {
-		opdef = opdef->e_opdef + opdef->extop_fun(*memptr);
+		opdef = opdef->e_opdef + opdef->extop_fun(opcode);
 	}
 
 	char *format;
@@ -58,18 +61,18 @@ int dt_trans(int addr, char *buf, int dasm_mode)
 			break;
 	}
 
-	return dt_parse(opdef, memptr, addr, format, buf);
+	return dt_parse(opdef, opcode, addr, format, buf);
 }
 
 // -----------------------------------------------------------------------
-int dt_parse(struct dasm_opdef *opdef, uint16_t *memptr, int addr, char *format, char *buf)
+int dt_parse(struct dasm_opdef *opdef, uint16_t opcode, uint16_t addr, char *format, char *buf)
 {
 	char *in = format;
 	char *out = buf;
 	char *b;
 	int len = 1;
 
-	if ((opdef->twoword) && (!_C(*memptr))) {
+	if ((opdef->twoword) && (!_C(opcode))) {
 		len++;
 	}
 
@@ -82,45 +85,45 @@ int dt_parse(struct dasm_opdef *opdef, uint16_t *memptr, int addr, char *format,
 					out += sprintf(out, "%-3s", opdef->mnemo);
 					break;
 				case 'E':
-					//out += dt_opext(out, memptr);
+					//out += dt_opext(out, opcode);
 					break;
 				case 'A':
-					out += sprintf(out, "%i", _A(*memptr));
+					out += sprintf(out, "%i", _A(opcode));
 					break;
 				case 'B':
-					out += sprintf(out, "%i", _B(*memptr));
+					out += sprintf(out, "%i", _B(opcode));
 					break;
 				case 'C':
-					out += sprintf(out, "%i", _C(*memptr));
+					out += sprintf(out, "%i", _C(opcode));
 					break;
 				case 'T':
-					out += sprintf(out, "%i", _T(*memptr));
+					out += sprintf(out, "%i", _T(opcode));
 					break;
 				case 'R':
-					out += sprintf(out, "0x%04x", addr + _T(*memptr) + 1);
+					out += sprintf(out, "0x%04x", addr + _T(opcode) + 1);
 					break;
 				case 't':
-					out += sprintf(out, "%i", _t(*memptr));
+					out += sprintf(out, "%i", _t(opcode));
 					break;
 				case 'b':
-					out += sprintf(out, "%i", _b(*memptr));
+					out += sprintf(out, "%i", _b(opcode));
 					break;
 				case 'N':
-					out += dt_dasm_eff_arg(out, memptr);
+					out += dt_dasm_eff_arg(out, opcode, addr+1);
 					break;
 				case 'n':
-					out += dt_trans_eff_arg(out, memptr);
+					out += dt_trans_eff_arg(out, opcode, addr+1);
 					break;
 				case '0':
-					b = int2binf("................", *memptr, 16);
+					b = int2binf("................", opcode, 16);
 					out += sprintf(out, "%s", b);
 					free(b);
 					break;
 				case 'x':
-					out += sprintf(out, "0x%04x", *memptr);
+					out += sprintf(out, "0x%04x", opcode);
 					break;
 				case 'd':
-					out += sprintf(out, "%i", *memptr);
+					out += sprintf(out, "%i", opcode);
 					break;
 				case '%':
 					*(out++) = '%';
@@ -139,18 +142,18 @@ int dt_parse(struct dasm_opdef *opdef, uint16_t *memptr, int addr, char *format,
 }
 
 // -----------------------------------------------------------------------
-int dt_opext(char *buf, uint16_t *memptr)
+int dt_opext(char *buf, uint16_t opcode)
 {
 	int n = 0;
 
-	if (_D(*memptr) == 1) {
-		if (_C(*memptr) != 0) {
+	if (_D(opcode) == 1) {
+		if (_C(opcode) != 0) {
 			n += sprintf(buf+n, "A");
 		} else {
 			n += sprintf(buf+n, "I");
 		}
 	} else {
-		if (_C(*memptr) != 0) {
+		if (_C(opcode) != 0) {
 			n += sprintf(buf+n, "R");
 		} else {
 			n += sprintf(buf+n, "D");
@@ -161,25 +164,32 @@ int dt_opext(char *buf, uint16_t *memptr)
 }
 
 // -----------------------------------------------------------------------
-int dt_dasm_eff_arg(char *buf, uint16_t *memptr)
+int dt_dasm_eff_arg(char *buf, uint16_t opcode, uint16_t addr)
 {
 	int n = 0;
+	int res;
+	uint16_t arg;
 
-	if (_D(*memptr) == 1) {
+	if (_D(opcode) == 1) {
 		n += sprintf(buf+n, "[");
 	}
 
-	if (_C(*memptr) != 0) {
-		n += sprintf(buf+n, "r%i", _C(*memptr));
+	if (_C(opcode) != 0) {
+		n += sprintf(buf+n, "r%i", _C(opcode));
 	} else {
-		n += sprintf(buf+n, "0x%x", *(memptr+1));
+		res = mem_get(QNB, addr, &arg);
+		if (res) {
+			n += sprintf(buf+n, "0x%x", arg);
+		} else {
+			n += sprintf(buf+n, "~~~~");
+		}
 	}
 
-	if (_B(*memptr) != 0) {
-		n += sprintf(buf+n, "+r%i", _B(*memptr));
+	if (_B(opcode) != 0) {
+		n += sprintf(buf+n, "+r%i", _B(opcode));
 	}
 
-	if (_D(*memptr) == 1) {
+	if (_D(opcode) == 1) {
 		n += sprintf(buf+n, "]");
 	}
 
@@ -187,25 +197,32 @@ int dt_dasm_eff_arg(char *buf, uint16_t *memptr)
 }
 
 // -----------------------------------------------------------------------
-int dt_trans_eff_arg(char *buf, uint16_t *memptr)
+int dt_trans_eff_arg(char *buf, uint16_t opcode, uint16_t addr)
 {
 	int n = 0;
+	int res;
+	uint16_t arg;
 
-	if (_D(*memptr) == 1) {
+	if (_D(opcode) == 1) {
 		n += sprintf(buf+n, "[");
 	}
 
-	if (_C(*memptr) == 0) {
-		n += sprintf(buf+n, "%i", *(memptr+1));
+	if (_C(opcode) == 0) {
+		res = mem_get(QNB, addr, &arg);
+		if (res) {
+			n += sprintf(buf+n, "%i", arg);
+		} else {
+			n += sprintf(buf+n, "~~~~");
+		}
 	} else {
-		n += sprintf(buf+n, "r%i", _C(*memptr));
+		n += sprintf(buf+n, "r%i", _C(opcode));
 	}
 
-	if (_B(*memptr) != 0) {
-		n += sprintf(buf+n, "+r%i", _B(*memptr));
+	if (_B(opcode) != 0) {
+		n += sprintf(buf+n, "+r%i", _B(opcode));
 	}
 
-	if (_D(*memptr) == 1) {
+	if (_D(opcode) == 1) {
 		n += sprintf(buf+n, "]");
 	}
 

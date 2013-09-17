@@ -26,10 +26,10 @@
 #define DMODE_TRANS	2
 
 int dt_trans(int addr, char *buf, int dasm_mode);
-int dt_parse(struct dasm_opdef *opdef, uint16_t *memptr, int addr, char *format, char *buf);
-int dt_dasm_eff_arg(char *buf, uint16_t *memptr);
-int dt_trans_eff_arg(char *buf, uint16_t *memptr);
-int dt_opext(char *buf, uint16_t *memptr);
+int dt_parse(struct dasm_opdef *opdef, uint16_t opcode, uint16_t addr, char *format, char *buf);
+int dt_dasm_eff_arg(char *buf, uint16_t opcode, uint16_t addr);
+int dt_trans_eff_arg(char *buf, uint16_t opcode, uint16_t addr);
+int dt_opext(char *buf, uint16_t opcode);
 
 int dt_extcode_37(int i);
 int dt_extcode_70(int i);

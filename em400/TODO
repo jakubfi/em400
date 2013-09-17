@@ -1,14 +1,14 @@
 Known bugs:
 
 * .h functions visibility
-* can't use memptr+n
 
 CPU:
 
 * mega "DONE" handling (?)
-* handling no memory for io devices (change how nomem is handled? - global flag?)
+* handling no memory for io devices
 * timings (instructions, memory access, disk latencies, serial lines, ...)
 * IN/OU legal/illegal in user mode
+* optional AWP + "software fp"
 
 I/O:
 

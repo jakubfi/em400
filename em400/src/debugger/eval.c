@@ -79,7 +79,6 @@ struct node_t * n_create()
 	n->val = 0;
 	n->var = NULL;
 	n->nb = 0;
-	n->mptr = NULL;
 	n->n1 = NULL;
 	n->n2 = NULL;
 	n->next = node_stack;
@@ -157,7 +156,6 @@ struct node_t * n_var(char *name)
 {
 	struct node_t *n = n_create();
 	n->type = N_VAR;
-	n->mptr = var_get(name);
 	n->var = name;
 	return n;
 }
@@ -214,7 +212,6 @@ struct node_t * n_mem(struct node_t *n1, struct node_t *n2)
 	// store memory pointer and address for error handling in parser
 	n->nb = n_eval(n1);
 	n->val = n_eval(n2);
-	n->mptr = mem_ptr(n->nb, (uint16_t)n->val);
 	n->n1 = n1;
 	n->n2 = n2;
 	return n;
@@ -275,6 +272,7 @@ int16_t n_eval_ass(struct node_t * n)
 
 	int nb;
 	uint16_t addr;
+	int res;
 
 	switch (n->n1->type) {
 		case N_VAR:
@@ -286,8 +284,12 @@ int16_t n_eval_ass(struct node_t * n)
 		case N_MEM:
 			nb = n_eval(n->n1->n1);
 			addr = n_eval(n->n1->n2);
-			*mem_ptr(nb, addr) = v;
-			return v;
+			res = mem_put(nb, addr, v);
+			if (res) {
+				return v;
+			} else {
+				return 0;
+			}
 		case N_RZ:
 			if (v) {
 				int_set(n->n1->val);
@@ -305,7 +307,14 @@ int16_t n_eval_mem(struct node_t *n)
 {
 	int nb = n_eval(n->n1);
 	uint16_t addr = n_eval(n->n2);
-	return *mem_ptr(nb, addr);
+	int res;
+	uint16_t data;
+	res = mem_get(nb, addr, &data);
+	if (res) {
+		return data;
+	} else {
+		return 0;
+	}
 }
 
 // -----------------------------------------------------------------------

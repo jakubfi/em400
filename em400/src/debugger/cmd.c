@@ -148,8 +148,13 @@ void dbg_c_dt(int wid, int dasm_mode, uint16_t start, int count)
 				}
 			} else {
 				awtbprint(wid, C_LABEL, "0x%04x", start);
-				if (*buf != '-') awtbprint(wid, C_PROMPT, " %-20s", buf);
-				else awtbprint(wid, C_DATA, " %-20s", buf);
+				if (*buf == '-') {
+					awtbprint(wid, C_DATA, " %-20s", buf);
+				} else if (*buf == '~') {
+					awtbprint(wid, C_ERROR, " %-20s", buf);
+				} else {
+					awtbprint(wid, C_PROMPT, " %-20s", buf);
+				}
 			}
 			start += len;
 		}
@@ -161,12 +166,8 @@ void dbg_c_dt(int wid, int dasm_mode, uint16_t start, int count)
 // -----------------------------------------------------------------------
 void dbg_c_mem(int wid, int block, int start, int end, int maxcols, int maxlines)
 {
-	uint16_t *mptr = mem_ptr(block, 0);
-
-	if (mptr == NULL) {
-		awtbprint(wid, C_ERROR, "Cannot access block %i\n", block);
-		return;
-	}
+	uint16_t data;
+	int res;
 
 	// wrong range
 	if ((end - start) <= 0) {
@@ -196,26 +197,25 @@ void dbg_c_mem(int wid, int block, int start, int end, int maxcols, int maxlines
 		awtbprint(wid, C_LABEL, "0x%04x: ", addr);
 		char *chars = malloc(words*2+1);
 		for (int w=0 ; w<words ; w++) {
-			mptr = mem_ptr(block, addr);
-			if (!mptr) {
-				free(chars);
-				return;
-			}
-
-			// data (hex)
-
-			// cell with current instruction
-			if (addr == regs[R_IC]) {
-				attr = C_DATAU;
+			res = mem_get(block, addr, &data);
+			if (!res) {
+				awtbprint(wid, C_ERROR, "~~~~ ");
+				chars[w*2] = '-';
+				chars[w*2+1] = '-';
 			} else {
-				attr = C_DATA;
+				// cell with current instruction
+				if (addr == regs[R_IC]) {
+					attr = C_DATAU;
+				} else {
+					attr = C_DATA;
+				}
+
+				awtbprint(wid, attr, "%4x", data);
+				awtbprint(wid, C_DATA, " ");
+
+				// store data (chars)
+				int2chars(data, chars+w*2);
 			}
-
-			awtbprint(wid, attr, "%4x", *mptr);
-			awtbprint(wid, C_DATA, " ");
-
-			// store data (chars)
-			int2chars(*mptr, chars+w*2);
 			addr++;
 		}
 		// data (chars)
@@ -283,26 +283,34 @@ void dbg_c_stack(int wid, int size)
 {
 	static int sb;
 	static int osp;
+	uint16_t data;
+	int res;
 
-	int sp = *mem_ptr(0, 97);
+	res = mem_get(0, 97, &data);
+	if (!res) {
+		awtbprint(wid, C_ERROR, "~~~~");
+		return;
+	}
+
+	int sp = data; 
 
 	if ((sb <= 0) || (sp-osp > 4) || (sp-osp < -4)) {
 		sb = sp;
 	}
 
 	osp = sp;
-	uint16_t *memptr = mem_ptr(0, sp);
+	res = mem_get(0, sp, &data);
 
-	while ((sp >= sb) && memptr) {
+	while ((sp >= sb) && res) {
 		if (sp == osp) {
 			awtbprint(wid, C_ILABEL, " 0x%04x: ", sp);
-			awtbprint(wid, C_IDATA, "%04x \n", *memptr);
+			awtbprint(wid, C_IDATA, "%04x \n", data);
 		} else {
 			awtbprint(wid, C_LABEL, " 0x%04x: ", sp);
-			awtbprint(wid, C_DATA, "%04x \n", *memptr);
+			awtbprint(wid, C_DATA, "%04x \n", data);
 		}
 		sp--;
-		memptr = mem_ptr(0, sp);
+		res = mem_get(0, sp, &data);
 	}
 }
 
