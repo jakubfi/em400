@@ -1,7 +1,5 @@
 Known bugs:
 
-* .h functions visibility
-
 CPU:
 
 * mega "DONE" handling (?)
@@ -54,15 +52,13 @@ Debugger:
 * simplify logging (how?)
 * more shortcuts (c-w, c-d, c-k, home, end, ...)
 * log shouldn't start new file immediately
-* again, rethink hex/dec numbers in output and log
-* debugger in separate thread (?) (HLT will halt debugger too if there is no interrupt to serve)
 * use status bar for panel leds (?)
 * inteligent memory view (auto-scroll)
 * get rid of memory view?
 * scrollable memory views?
 * save memory image
 * load/save snapshot (?)
-* step should work the same way as CYCLE (cycle on instruction and interrupt) (?)
+* external debugger
 
 Other:
 
