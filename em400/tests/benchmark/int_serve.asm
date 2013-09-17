@@ -23,67 +23,6 @@ start:
 
 loop:
 	siu
-	siu
-	siu
-	siu
-	siu
-	siu
-	siu
-	siu
-	siu
-	siu
-	siu
-	siu
-	siu
-	siu
-	siu
-	siu
-	siu
-	siu
-	siu
-	siu
-	siu
-	siu
-	siu
-	siu
-	siu
-	siu
-	siu
-	siu
-	siu
-	siu
-	siu
-	siu
-	siu
-	siu
-	siu
-	siu
-	siu
-	siu
-	siu
-	siu
-	siu
-	siu
-	siu
-	siu
-	siu
-	siu
-	siu
-	siu
-	siu
-	siu
-	siu
-	siu
-	siu
-	siu
-	siu
-	siu
-	siu
-	siu
-	siu
-	siu
-	siu
-	siu
 	irb r1, loop
 	hlt 077
 
