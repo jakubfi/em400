@@ -258,6 +258,10 @@ void op_ac()
 void op_sw()
 {
 	alu_add16(IR_A, -N, 0);
+	// 0-0 should set carry, but our ALU can't do that. We do it here.
+	if ((regs[IR_A] == 0) && (N == 0)) {
+		Fset(FL_C);
+	}
 }
 
 // -----------------------------------------------------------------------

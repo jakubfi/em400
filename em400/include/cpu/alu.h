@@ -24,7 +24,7 @@
 
 #define FP_M_BITS 64
 
-void alu_add16(int reg, uint16_t arg, uint16_t carry);
+void alu_add16(unsigned reg, uint16_t arg, unsigned carry);
 void alu_add32(uint16_t arg1, uint16_t arg2, int sign);
 void alu_mul32(int16_t arg);
 void alu_div32(int16_t arg);
