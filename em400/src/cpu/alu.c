@@ -237,10 +237,11 @@ void alu_compare(int32_t a, int32_t b)
 void alu_negate(int reg, uint16_t carry)
 {
 	uint16_t a = regs[reg];
-	uint32_t res = (uint16_t) (~a) + carry;
-	alu_set_flag_V(a, a, res, 16);
+	uint32_t res = (~a) + carry;
+	alu_set_flag_V(~a, carry, res, 16);
 	alu_set_flag_M(res, 16);
-	alu_set_flag_C(res, 16);
+	//alu_set_flag_C(res, 16);
+	Fclr(FL_C);
 	alu_set_flag_Z(res, 16);
 	reg_safe_write(reg, res);
 }
