@@ -40,9 +40,9 @@ extern struct opdef iset[];
 // macros to access sub-opcodes
 #define EXT_OP_37(x) _A(x)
 #define EXT_OP_70(x) _A(x)
-#define EXT_OP_71(x) ((x & 0b0000001100000000) >> 8) // [D,A0]
-#define EXT_OP_72(x) (((x & 0b0000001000000000) >> 4) | (x & 0b0000000000011111)) // [D,B1,B2,C] (b0 is always 0)
-#define EXT_OP_73(x) (((x & 0b0000001111000000) >> 3) | (x & 0b0000000000000111)) // [D,A,C0,C1,C2] (but not all used in each instruction)
+#define EXT_OP_71(x) ((x & 0b0000001100000000) >> 8)
+#define EXT_OP_72(x) (((x & 0b0000001000000000) >> 3) | (x & 0b0000000000111111))
+#define EXT_OP_73(x) (((x & 0b0000001111000000) >> 3) | (x & 0b0000000000000111))
 #define EXT_OP_74(x) _A(x)
 #define EXT_OP_75(x) _A(x)
 #define EXT_OP_76(x) _A(x)
