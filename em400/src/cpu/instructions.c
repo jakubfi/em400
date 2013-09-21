@@ -564,7 +564,6 @@ void op_72_sxu()
 {
 	if (regs[IR_A] & 0b1000000000000000) Fset(FL_X);
 	else Fclr(FL_X);
-	alu_set_flag_Z(regs[IR_A], 16);
 }
 
 // -----------------------------------------------------------------------
@@ -645,9 +644,11 @@ void op_72_zrb()
 // -----------------------------------------------------------------------
 void op_72_sxl()
 {
-	if (regs[IR_A] & 1) Fset(FL_X);
-	else Fclr(FL_X);
-	alu_set_flag_Z(regs[IR_A], 16);
+	if (regs[IR_A] & 1) {
+		Fset(FL_X);
+	} else {
+		Fclr(FL_X);
+	}
 }
 
 // -----------------------------------------------------------------------
@@ -659,11 +660,13 @@ void op_72_ngc()
 // -----------------------------------------------------------------------
 void op_72_svz()
 {
-	uint16_t ir_a = regs[IR_A];
+	if (regs[IR_A] & 0b1000000000000000) {
+		Fset(FL_Y);
+	} else {
+		Fclr(FL_Y);
+	}
 	reg_safe_write(IR_A, regs[IR_A]<<1);
-	if (ir_a & 0b1000000000000000) Fset(FL_Y);
-	else Fclr(FL_Y);
-	alu_set_flag_V(ir_a, ir_a, regs[IR_A], 16);
+	Fset(FL_V);
 }
 
 // -----------------------------------------------------------------------
@@ -671,9 +674,12 @@ void op_72_svy()
 {
 	uint16_t ir_a = regs[IR_A];
 	reg_safe_write(IR_A, regs[IR_A]<<1 | Fget(FL_Y));
-	if (ir_a & 0b1000000000000000) Fset(FL_Y);
-	else Fclr(FL_Y);
-	alu_set_flag_V(ir_a, ir_a, regs[IR_A], 16);
+	if (ir_a & 0b1000000000000000) {
+		Fset(FL_Y);
+	} else {
+		Fclr(FL_Y);
+	}
+	Fset(FL_V);
 }
 
 // -----------------------------------------------------------------------
@@ -681,16 +687,22 @@ void op_72_svx()
 {
 	uint16_t ir_a = regs[IR_A];
 	reg_safe_write(IR_A, regs[IR_A]<<1 | Fget(FL_X));
-	if (ir_a & 0b1000000000000000) Fset(FL_Y);
-	else Fclr(FL_Y);
-	alu_set_flag_V(ir_a, ir_a, regs[IR_A], 16);
+	if (ir_a & 0b1000000000000000) {
+		Fset(FL_Y);
+	} else {
+		Fclr(FL_Y);
+	}
+	Fset(FL_V);
 }
 
 // -----------------------------------------------------------------------
 void op_72_srx()
 {
-	if (regs[IR_A] & 1) Fset(FL_Y);
-	else Fclr(FL_Y);
+	if (regs[IR_A] & 1) {
+		Fset(FL_Y);
+	} else {
+		Fclr(FL_Y);
+	}
 	reg_safe_write(IR_A, (regs[IR_A]>>1) | Fget(FL_X)<<15);
 }
 
