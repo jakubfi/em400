@@ -25,43 +25,163 @@
 #include "cpu/interrupts.h"
 
 // -----------------------------------------------------------------------
-void alu_add16(unsigned reg, uint16_t arg, unsigned carry)
+// ---- 16-bit -----------------------------------------------------------
+// -----------------------------------------------------------------------
+
+// -----------------------------------------------------------------------
+void alu_16_add(unsigned reg, uint16_t arg, unsigned carry)
 {
 	uint64_t res = regs[reg] + arg + carry;
-	alu_set_flag_V(regs[reg], arg, res, 16);
-	alu_set_flag_M(res, 16);
-	alu_set_flag_C(res, 16);
-	alu_set_flag_Z(res, 16);
+	alu_16_set_V(regs[reg], arg, res);
+	alu_16_set_M(res);
+	alu_16_set_C(res);
+	alu_16_set_Z(res);
 	reg_safe_write(reg, (uint16_t) res);
 }
 
 // -----------------------------------------------------------------------
-void alu_add32(uint16_t arg1, uint16_t arg2, int sign)
+void alu_16_sub(unsigned reg, uint16_t arg, unsigned carry)
+{
+	alu_16_add(reg, -arg, carry);
+	// 0-0 sets carry
+	if ((regs[IR_A] == 0) && (N == 0)) {
+		Fset(FL_C);
+	}
+}
+
+// -----------------------------------------------------------------------
+void alu_16_compare(int32_t a, int32_t b)
+{
+	if (a == b) {
+		Fset(FL_E);
+		Fclr(FL_G);
+		Fclr(FL_L);
+	} else {
+		Fclr(FL_E);
+		if (a < b) {
+			Fset(FL_L);
+			Fclr(FL_G);
+		} else {
+			Fclr(FL_L);
+			Fset(FL_G);
+		}
+	}
+}
+
+// -----------------------------------------------------------------------
+void alu_16_aneg(int reg, uint16_t carry)
+{
+	uint16_t a = regs[reg];
+	uint32_t res = (~a) + carry;
+	alu_16_set_V(~a, carry, res);
+	alu_16_set_M(res);
+    // -0 sets carry
+	if ((regs[IR_A] == 0) && (carry)) {
+		Fset(FL_C);
+	} else {
+		Fclr(FL_C);
+	}
+	alu_16_set_Z(res);
+	reg_safe_write(reg, res);
+}
+
+// -----------------------------------------------------------------------
+void alu_16_lneg(int reg)
+{
+	regs[reg] = ~regs[reg];
+	alu_16_set_Z(regs[reg]);
+}
+
+// -----------------------------------------------------------------------
+void alu_16_set_Z(uint64_t z)
+{
+	// V and C needs to be set prior Z
+	uint64_t mask_Z = ((uint64_t) 1 << 16) - 1;
+
+	// set Z if:
+	//  * all 16 bits of result is 0 and there is no carry
+	//  * OR all 16 bits of result is 0 and carry is set, but overflow is not (case of -1+1)
+
+	if (((z & mask_Z) == 0) && (!Fget(FL_C) || (Fget(FL_C) && !Fget(FL_V)))) {
+		Fset(FL_Z);
+	} else {
+		Fclr(FL_Z);
+	}
+}
+
+// -----------------------------------------------------------------------
+void alu_16_set_M(uint64_t z)
+{
+	// V needs to be set prior M
+	uint64_t mask_M = (uint64_t) 1 << 15;
+	int minus = z & mask_M;
+
+	// set M if:
+	//  * minus and no overflow (just a plain negative number)
+	//  * OR not minus and overflow (number looks non-negative, but there is overflow, which means a negative number overflown)
+
+	if ((minus && !Fget(FL_V)) || (!minus && Fget(FL_V))) {
+		Fset(FL_M);
+	} else {
+		Fclr(FL_M);
+	}
+}
+
+// -----------------------------------------------------------------------
+void alu_16_set_C(uint64_t z)
+{
+	uint64_t mask_C = (uint64_t) 1 << 16;
+
+	// set C if bit on position -1 is set
+
+	if (z & mask_C) {
+		Fset(FL_C);
+	} else {
+		Fclr(FL_C);
+	}
+}
+
+// -----------------------------------------------------------------------
+void alu_16_set_V(uint64_t x, uint64_t y, uint64_t z)
+{
+	uint64_t mask_M = (uint64_t) 1 << 15;
+	
+	// set V if:
+	//  * both arguments were positive, and result is negative
+	//  * OR both arguments were negative, and result is positive
+
+	if (((x & mask_M) && (y & mask_M) && !(z & mask_M)) || (!(x & mask_M) && !(y & mask_M) && (z & mask_M))) {
+		Fset(FL_V);
+	} else {
+		Fclr(FL_V);
+	}
+}
+
+// -----------------------------------------------------------------------
+// ---- 32-bit -----------------------------------------------------------
+// -----------------------------------------------------------------------
+
+// -----------------------------------------------------------------------
+void alu_32_add(uint16_t arg1, uint16_t arg2, int sign)
 {
 	uint32_t a1 = DWORD(regs[1], regs[2]);
 	uint32_t a2 = DWORD(arg1, arg2);
 	uint64_t res = (uint64_t) a1 + (sign * a2);
-	alu_set_flag_V(a1, sign*a2, res, 32);
-	alu_set_flag_M(res, 32);
-	alu_set_flag_C(res, 32);
-	alu_set_flag_Z(res, 32);
 	regs[1] = DWORDl(res);
 	regs[2] = DWORDr(res);
 }
 
 // -----------------------------------------------------------------------
-void alu_mul32(int16_t arg)
+void alu_32_mul(int16_t arg)
 {
 	int64_t res = (int16_t) regs[2] * arg;
-	alu_set_flag_M(res, 32);
-	alu_set_flag_Z(res, 32);
 	// mul32() has no effect on V
 	regs[1] = DWORDl(res);
 	regs[2] = DWORDr(res);
 }
 
 // -----------------------------------------------------------------------
-void alu_div32(int16_t arg)
+void alu_32_div(int16_t arg)
 {
 	if (!arg) {
 		int_set(INT_DIV0);
@@ -72,11 +192,13 @@ void alu_div32(int16_t arg)
 	if ((res > 32767) || (res < -32768)) {
 		int_set(INT_DIV_OF);
 	}
-	alu_set_flag_M(res, 32);
-	alu_set_flag_Z(res, 32);
 	regs[2] = res;
 	regs[1] = d1 % arg;
 }
+
+// -----------------------------------------------------------------------
+// ---- Floating Point ---------------------------------------------------
+// -----------------------------------------------------------------------
 
 // -----------------------------------------------------------------------
 int alu_fp_get(uint16_t d1, uint16_t d2, uint16_t d3, double *f, int check_norm)
@@ -211,103 +333,6 @@ void alu_fp_div(uint16_t d1, uint16_t d2, uint16_t d3)
 				alu_fp_store(f1);
 			}
 		}
-	}
-}
-
-// -----------------------------------------------------------------------
-void alu_compare(int32_t a, int32_t b)
-{
-	if (a == b) {
-		Fset(FL_E);
-		Fclr(FL_G);
-		Fclr(FL_L);
-	} else {
-		Fclr(FL_E);
-		if (a < b) {
-			Fset(FL_L);
-			Fclr(FL_G);
-		} else {
-			Fclr(FL_L);
-			Fset(FL_G);
-		}
-	}
-}
-
-// -----------------------------------------------------------------------
-void alu_negate(int reg, uint16_t carry)
-{
-	uint16_t a = regs[reg];
-	uint32_t res = (~a) + carry;
-	alu_set_flag_V(~a, carry, res, 16);
-	alu_set_flag_M(res, 16);
-	//alu_set_flag_C(res, 16);
-	Fclr(FL_C);
-	alu_set_flag_Z(res, 16);
-	reg_safe_write(reg, res);
-}
-
-// -----------------------------------------------------------------------
-void alu_set_flag_Z(uint64_t z, int bits)
-{
-	// V and C needs to be set prior Z
-	uint64_t mask_Z = ((uint64_t) 1 << (bits)) - 1;
-
-	// set Z if:
-	//  * all 16 bits of result is 0 and there is no carry
-	//  * OR all 16 bits of result is 0 and carry is set, but overflow is not (case of -1+1)
-
-	if (((z & mask_Z) == 0) && (!Fget(FL_C) || (Fget(FL_C) && !Fget(FL_V)))) {
-		Fset(FL_Z);
-	} else {
-		Fclr(FL_Z);
-	}
-}
-
-// -----------------------------------------------------------------------
-void alu_set_flag_M(uint64_t z, int bits)
-{
-	// V needs to be set prior M
-	uint64_t mask_M = (uint64_t) 1 << (bits-1);
-	int minus = z & mask_M;
-
-	// set M if:
-	//  * minus and no overflow (just a plain negative number)
-	//  * OR not minus and overflow (number looks non-negative, but there is overflow, which means a negative number overflown)
-
-	if ((minus && !Fget(FL_V)) || (!minus && Fget(FL_V))) {
-		Fset(FL_M);
-	} else {
-		Fclr(FL_M);
-	}
-}
-
-// -----------------------------------------------------------------------
-void alu_set_flag_C(uint64_t z, int bits)
-{
-	uint64_t mask_C = (uint64_t) 1 << bits;
-
-	// set C if bit on position -1 is set
-
-	if (z & mask_C) {
-		Fset(FL_C);
-	} else {
-		Fclr(FL_C);
-	}
-}
-
-// -----------------------------------------------------------------------
-void alu_set_flag_V(uint64_t x, uint64_t y, uint64_t z, int bits)
-{
-	uint64_t mask_M = (uint64_t) 1 << (bits-1);
-	
-	// set V if:
-	//  * both arguments were positive, and result is negative
-	//  * OR both arguments were negative, and result is positive
-
-	if (((x & mask_M) && (y & mask_M) && !(z & mask_M)) || (!(x & mask_M) && !(y & mask_M) && (z & mask_M))) {
-		Fset(FL_V);
-	} else {
-		Fclr(FL_V);
 	}
 }
 

@@ -24,24 +24,24 @@
 
 #define FP_M_BITS 64
 
-void alu_add16(unsigned reg, uint16_t arg, unsigned carry);
-void alu_add32(uint16_t arg1, uint16_t arg2, int sign);
-void alu_mul32(int16_t arg);
-void alu_div32(int16_t arg);
-void alu_compare(int32_t a, int32_t b);
-void alu_negate(int reg, uint16_t carry);
+void alu_16_add(unsigned reg, uint16_t arg, unsigned carry);
+void alu_16_sub(unsigned reg, uint16_t arg, unsigned carry);
+void alu_16_compare(int32_t a, int32_t b);
+void alu_16_aneg(int reg, uint16_t carry);
+void alu_16_lneg(int reg);
+void alu_16_set_Z(uint64_t z);
+void alu_16_set_M(uint64_t z);
+void alu_16_set_C(uint64_t z);
+void alu_16_set_V(uint64_t x, uint64_t y, uint64_t z);
+
+void alu_32_add(uint16_t arg1, uint16_t arg2, int sign);
+void alu_32_mul(int16_t arg);
+void alu_32_div(int16_t arg);
 
 void alu_fp_norm();
 void alu_fp_add(uint16_t d1, uint16_t d2, uint16_t d3, int sign);
 void alu_fp_mul(uint16_t d1, uint16_t d2, uint16_t d3);
 void alu_fp_div(uint16_t d1, uint16_t d2, uint16_t d3);
-
-void alu_set_flags_LEG(int16_t x, int16_t y);
-void alu_set_flag_Z(uint64_t z, int bits);
-void alu_set_flag_M(uint64_t z, int bits);
-void alu_set_flag_C(uint64_t z, int bits);
-void alu_set_flag_V(uint64_t x, uint64_t y, uint64_t z, int bits);
-void alu_set_flags_ZMVC(uint64_t x, uint64_t y, uint64_t z, int bits);
 
 #define Fget(x)     (regs[0] & (x) ? 1 : 0)
 #define Fset(x)     regs[0] = regs[0] | (x)
