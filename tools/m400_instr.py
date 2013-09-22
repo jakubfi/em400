@@ -36,21 +36,21 @@ def m400_get_opcode(i, d, a, b, c, mode):
         except:
             return "---", OP_INVALID, ""
 
-    # basic opcodes have suffixes in MERA-400 mode
-    if mode == MODE_MERA400 and m400_opcodes[i][2] in (OP_NORM2, OP_NORM1):
-        # basic opcode, no direct arg
-        if c != 0:
-            if d == 0:
-                suffix = "R"
-            if d == 1:
-                suffix = "A"
-        # basic opcode with direct 16-bit arg
-        if c == 0:
-            if d == 0:
-                suffix = "D"
-            if d == 1:
-                suffix = "I"    
-        code += suffix
+#    # basic opcodes have suffixes in MERA-400 mode
+#    if mode == MODE_MERA400 and m400_opcodes[i][2] in (OP_NORM2, OP_NORM1):
+#        # basic opcode, no direct arg
+#        if c != 0:
+#            if d == 0:
+#                suffix = "R"
+#            if d == 1:
+#                suffix = "A"
+#        # basic opcode with direct 16-bit arg
+#        if c == 0:
+#            if d == 0:
+#                suffix = "D"
+#            if d == 1:
+#                suffix = "I"    
+#        code += suffix
 
     return code, group, desc
 
@@ -69,10 +69,7 @@ def m400_name_i70(i, d, a, b, c, mode):
 # ------------------------------------------------------------------------
 def m400_name_i71(i, d, a, b, c, mode):
     da2 = (d<<1) | (a>>2)
-    if (da2 == 0b11) and (a != 7):
-        raise ValueError
-    else:
-        return op_byte_arg_i71_da2[da2][mode], op_byte_arg_i71_da2[da2][2]
+    return op_byte_arg_i71_da2[da2][mode], op_byte_arg_i71_da2[da2][2]
 
 # ------------------------------------------------------------------------
 def m400_name_i72(i, d, a, b, c, mode):
