@@ -191,9 +191,10 @@ void alu_32_div(int16_t arg)
 	int32_t res = d1 / arg;
 	if ((res > 32767) || (res < -32768)) {
 		int_set(INT_DIV_OF);
+	} else {
+		regs[2] = res;
+		regs[1] = d1 % arg;
 	}
-	regs[2] = res;
-	regs[1] = d1 % arg;
 }
 
 // -----------------------------------------------------------------------
