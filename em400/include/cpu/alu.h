@@ -24,11 +24,9 @@
 
 #define FP_M_BITS 64
 
-void alu_16_add(unsigned reg, uint16_t arg, unsigned carry);
-void alu_16_sub(unsigned reg, uint16_t arg, unsigned carry);
-void alu_16_compare(int32_t a, int32_t b);
-void alu_16_aneg(int reg, uint16_t carry);
-void alu_16_lneg(int reg);
+void alu_16_add(unsigned reg, uint16_t arg, unsigned carry, int sign);
+void alu_16_neg(int reg, uint16_t carry);
+void alu_16_set_LEG(int32_t a, int32_t b);
 void alu_16_set_Z(uint64_t z);
 void alu_16_set_M(uint64_t z);
 void alu_16_set_C(uint64_t z);
