@@ -108,14 +108,6 @@ def m400_name_i76(i, d, a, b, c, mode):
 def m400_name_i77(i, d, a, b, c, mode):
     return op_basic_i77_a[a][mode], op_basic_i77_a[a][2]
 
-# ------------------------------------------------------------------------
-def m400_sin(i, d, a, b, c, mode):
-    # to minimize false positives, we check argument's value
-    if d == 1 or b != 0 or a != 0:
-        raise ValueError
-    else:
-        return m400_opcodes[i][mode], m400_opcodes[i][4]
-
 OP_INVALID = -1
 OP_NORM2 = 0
 OP_NORM1 = 1
@@ -124,10 +116,8 @@ OP_SHORT1 = 3
 OP_BYTE = 4
 OP_NO = 5
 OP_NO2 = 6
-OP_SIN = 7
 
 m400_opcodes = {
-    017: ['SIN','sin',  OP_SIN,   m400_sin, 'Software INterrupt'],
     020: ['LW', 'lo',   OP_NORM2, None, 'Load Word'],
     021: ['TW', 'lob',  OP_NORM2, None, 'Take Word'],
     022: ['LS', 'lom',  OP_NORM2, None, 'Load Selective'],
