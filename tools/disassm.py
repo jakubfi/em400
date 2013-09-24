@@ -61,10 +61,6 @@ class M400dasm:
         else:
             args = "%s[%s%s]" % (ra, rc, rb)
 
-        # for group 076 we have 2-level addressing
-        if i == 076:
-            args = "[%s]" % (args)
-
         return args
 
     # ------------------------------------------------------------------------
@@ -156,10 +152,6 @@ class M400dasm:
         # opcode with no second arg
         elif group == OP_NO2:
             args = self.m400_decode_no2_arg(i, d, a, b, c)
-
-        # sin is treated as a special case
-        elif group == OP_SIN:
-            args = self.m400_decode_sin(i, d, a, b, c)
 
         # unknown group
         else:
