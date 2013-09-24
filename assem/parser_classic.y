@@ -253,7 +253,7 @@ void c_yyerror(char *s, ...)
 {
 	va_list ap;
 	va_start(ap, s);
-	printf("Error parsing source, line %d: ", c_yylloc.first_line);
+	printf("Error parsing source, line %d: ", parser_lineno);
 	vprintf(s, ap);
 	printf("\n");
 	va_end(ap);
