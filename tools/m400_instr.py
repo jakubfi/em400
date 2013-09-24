@@ -224,7 +224,7 @@ op_no_arg_i72_dbc = {
     0b1000010: ['SXL', 'stxz', 'Set X as Lower bit'],
     0b1000011: ['NGC', 'nec',  'NeGation with Carry'],
     0b1000100: ['SVZ', 'shv',  'Shift left, check oVerflow, add Zero'],
-    0b1000100: ['SVY', 'shvy', 'Shift left, check oVerflow, add Y'],
+    0b1000101: ['SVY', 'shvy', 'Shift left, check oVerflow, add Y'],
     0b1000110: ['SVX', 'shvx', 'Shift left, check oVerflow, add X'],
     0b1000111: ['SRX', 'shrx', 'Shift Right, add X'],
     0b1001000: ['SRZ', 'shr',  'Shift Right, add Zero'],
