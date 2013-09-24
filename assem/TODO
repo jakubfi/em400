@@ -1,2 +1,3 @@
+* BLC argument "255" is treated as right byte, on the other hand ?Z, ?M, ... are in the left byte
 * better syntax error handling
 * pragmas (check if need to implement, handle in .pp.asm)

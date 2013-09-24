@@ -662,7 +662,7 @@ struct node_t * eval_op_blc(struct node_t *n)
 
 	if (arg->type == N_VAL) {
 		if (arg->value & 255) {
-			ass_error(n->lineno, "Bits set in right byte of BLC argument");
+			ass_error(n->lineno, "Bits set in right byte of BLC argument (0x%04x)", arg->value);
 			return NULL;
 		}
 		int blcval = (arg->value >> 8) & 255;
