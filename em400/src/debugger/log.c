@@ -227,7 +227,7 @@ void log_pretty_log(int domain, int level, char *pre, char *text)
 // -----------------------------------------------------------------------
 void log_log(int domain, int level, char *format, ...)
 {
-	if (log_level[domain] < level) {
+	if (!log_enabled || (log_level[domain] < level)) {
 		return;
 	}
 
@@ -249,7 +249,7 @@ void log_splitlog(int domain, int level, char *text)
 	char *p;
 	char *start = text;
 
-	if (log_level[domain] < level) {
+	if (!log_enabled || (log_level[domain] < level)) {
 		return;
 	}
 

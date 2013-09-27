@@ -27,6 +27,8 @@
 #include "io/multix_winch.h"
 #include "io/e4image.h"
 
+#include "utils.h"
+
 #define UNIT ((struct mx_unit_winch_t *)(unit))
 
 // -----------------------------------------------------------------------
@@ -353,6 +355,12 @@ void mx_winch_cmd_transmit(struct mx_unit_proto_t *unit, uint16_t addr)
 
 	mem_put(0, addr_len, cf->ret_len);
 	mem_put(0, addr_status, cf->ret_status);
+
+#ifdef WITH_DEBUGGER
+	char *status = int2binf("........ ........", cf->ret_status, 16);
+	LOG(L_WNCH, 10, "MULTIX/winchester (log:%i, phy:%i): transmit done, status: %s, transmitted %i words", unit->log_num, unit->phy_num, status, cf->ret_len);
+	free(status);
+#endif
 
 	if (ret == E_OK) { // transmission finished OK
 		mx_int(unit->chan, unit->log_num, MX_INT_IETRA);

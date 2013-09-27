@@ -82,7 +82,7 @@ void log_log(int domain, int level, char *format, ...);
 void log_splitlog(int domain, int level, char *text);
 
 #ifdef WITH_DEBUGGER
-#define LOG(d, l, f, ...) if (log_enabled) log_log(d, l, f, ##__VA_ARGS__)
+#define LOG(d, l, f, ...) log_log(d, l, f, ##__VA_ARGS__)
 #else
 #define LOG(d, l, f, ...) ;
 #endif
