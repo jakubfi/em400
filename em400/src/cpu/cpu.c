@@ -163,9 +163,9 @@ void cpu_step()
 	// fetch instruction
 	if (!mem_cpu_get(QNB, regs[R_IC], regs+R_IR)) {
 		regs[R_MODc] = regs[R_MOD] = 0;
+		LOG(L_CPU, 10, "    (no mem)");
 		return;
 	}
-	LOG(L_CPU, 10, "---- Cycle: Q:NB = %d:%d, IC = 0x%04x IR = 0x%04x ------------", Q, NB, regs[R_IC], regs[R_IR]);
 	regs[R_IC]++;
 
 	// find instruction
@@ -177,7 +177,7 @@ void cpu_step()
 
 	// end cycle if P is set
 	if (P) {
-		LOG(L_CPU, 20, "P set, skipping");
+		LOG(L_CPU, 10, "    (skip)");
 		P = 0;
 		// skip also M-arg if present
 		if (op->norm_arg && !IR_C) {
@@ -192,7 +192,11 @@ void cpu_step()
 	|| ((regs[R_MODc] >= 3) && (op_fun == op_77_md))
 	|| (!op_fun)
 	) {
-		LOG(L_CPU, 10, "Instruction ineffective");
+#ifdef WITH_DEBUGGER
+	char buf[256];
+	dt_trans(cycle_ic, buf, DMODE_DASM);
+	LOG(L_CPU, 10, "    (ineffective) %s Q: %d, MODc=%d (%s%s)", buf, Q, regs[R_MODc], op_fun?"legal":"illegal", op->user_illegal?"":", user illegal");
+#endif
 		regs[R_MODc] = regs[R_MOD] = 0;
 		int_set(INT_ILLEGAL_OPCODE);
 		// skip also M-arg if present
@@ -210,7 +214,6 @@ void cpu_step()
 			if (!mem_cpu_get(QNB, regs[R_IC], &data)) goto catch_nomem;
 			N17 = (int16_t) data + (int16_t) regs[R_MOD];
 			regs[R_IC]++;
-			LOG(L_CPU, 20, "Fetched M argument: 0x%04x", data);
 		}
 		if (IR_B) {
 			N17 += (int16_t) regs[IR_B];
@@ -223,18 +226,32 @@ void cpu_step()
 			regs[R_ZC17] = (N17 >> 16) & 1;
 		}
 		N = N17;
-		LOG(L_CPU, 20, "N arg: 0x%04x (%i)", N, N);
 	} else if (op->short_arg) {
 		N17 = (int16_t) IR_T + (int16_t) regs[R_MOD];
 		if (cpu_mod) {
 			regs[R_ZC17] = (N17 >> 16) & 1;
 		}
 		N = N17;
-		LOG(L_CPU, 20, "T arg: 0x%04x (%i)", N, N);
 	}
 
 	// execute instruction
-	LOG(L_CPU, 30, "Execute instruction");
+#ifdef WITH_DEBUGGER
+	char buf[256];
+	dt_trans(cycle_ic, buf, DMODE_DASM);
+	char mbuf[64];
+	if (regs[R_MODc]) {
+		sprintf(mbuf, "MOD = 0x%04x = %6i", regs[R_MOD], regs[R_MOD]);
+	} else {
+		*mbuf = '\0';
+	}
+	if (op->norm_arg) {
+		LOG(L_CPU, 10, "    %-20s N = 0x%04x = %i %s", buf, (uint16_t)N, (int16_t)N, mbuf);
+	} else if (op->short_arg) {
+		LOG(L_CPU, 10, "    %-20s T = %i  %s", buf, (int16_t)N, mbuf);
+	} else {
+		LOG(L_CPU, 10, "    %-20s", buf);
+	}
+#endif
 	op_fun();
 
 catch_nomem:

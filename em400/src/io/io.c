@@ -152,19 +152,16 @@ int io_dispatch(int dir, uint16_t n, uint16_t *r)
 		struct chan_proto_t *chan = io_chan[chan_n];
 		int res;
 #ifdef WITH_DEBUGGER
-		char *narg = int2binf("... .. ...... .... .", n, 16);
-		char *rarg = int2binf("", *r, 16);
-		LOG(L_IO, 1, "I/O command, dir = %s, chan = %d, n_arg = %s, r_arg = %s (0x%04x)", dir ? "OUT" : "IN", chan_n, narg, rarg, *r);
+		char *narg = int2binf("cmd:... .. ...... ch:.... .", n, 16);
+		LOG(L_IO, 1, "I/O %s chan = %d, n_arg = %s (0x%04x), r_arg = 0x%04x", dir ? "OUT" : "IN", chan_n, narg, n, *r);
 		free(narg);
-		free(rarg);
 #endif
 		if (chan) {
 			res = chan->cmd(chan, dir, n, r);
-			LOG(L_IO, 1, "I/O command, result = %i", res);
 		} else {
 			res = IO_NO;
-			LOG(L_IO, 1, "I/O command to a channel that doesn't exist: %i", chan_n);
 		}
+		LOG(L_IO, 1, "I/O result: %s", log_io_result[res]);
 		return res;
 	}
 }

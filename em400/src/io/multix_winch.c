@@ -197,7 +197,7 @@ int mx_winch_read(struct mx_unit_proto_t *unit, struct mx_winch_cf_t *cf)
 			break;
 		}
 
-		LOG(L_WNCH, 10, "MULTIX/winchester (log:%i, phy:%i): reading sector %i (+offset %i) into buf at pos: %i : 0x%04x", unit->log_num, unit->phy_num, cf->transmit->sector + sector, offset, cf->transmit->nb, cf->transmit->addr + sector * UNIT->winchester->block_size/2);
+		LOG(L_WNCH, 10, "MULTIX/winchester (log:%i, phy:%i): read sector %i (+%i) -> %i : 0x%04x", unit->log_num, unit->phy_num, cf->transmit->sector + sector, offset, cf->transmit->nb, cf->transmit->addr + sector * UNIT->winchester->block_size/2);
 
 		// read whole sector into buffer
 		int res = e4i_bread(UNIT->winchester, buf, offset + cf->transmit->sector + sector);
@@ -208,7 +208,6 @@ int mx_winch_read(struct mx_unit_proto_t *unit, struct mx_winch_cf_t *cf)
 			while ((buf_pos < UNIT->winchester->block_size) && (cf->ret_len < cf->transmit->len)) {
 				uint16_t *buf16 = (uint16_t*)(buf+buf_pos);
 				mem_put(cf->transmit->nb, cf->transmit->addr + sector * UNIT->winchester->block_size/2 + buf_pos/2, ntohs(*buf16));
-				LOG(L_WNCH, 100, "[%i:0x%04x] = 0x%02x 0x%02x", cf->transmit->nb, cf->transmit->addr + sector * UNIT->winchester->block_size/2 + buf_pos/2, ntohs(*buf16)>>8, ntohs(*buf16));
 				buf_pos += 2;
 				cf->ret_len++;
 			}
@@ -260,7 +259,6 @@ int mx_winch_write(struct mx_unit_proto_t *unit, struct mx_winch_cf_t *cf)
 		buf[i*2] = data>>8;
 		buf[i*2+1] = data&255;
 	}
-	LOG(L_WNCH, 10, "MULTIX/winchester (log:%i, phy:%i): filled write buffer from data at %i:0x%04x (%i words)", unit->log_num, unit->phy_num, cf->transmit->nb, cf->transmit->addr, i);
 
 	// write sectors
 	while (cf->ret_len < cf->transmit->len) {
@@ -276,7 +274,7 @@ int mx_winch_write(struct mx_unit_proto_t *unit, struct mx_winch_cf_t *cf)
 			transmit = UNIT->winchester->block_size/2;
 		}
 
-		LOG(L_WNCH, 10, "MULTIX/winchester (log:%i, phy:%i): writing sector %i (+offset %i) from buf at pos: 0x%04x, %i bytes", unit->log_num, unit->phy_num, cf->transmit->sector + sector, offset, cf->transmit->addr + cf->ret_len, transmit*2);
+		LOG(L_WNCH, 10, "MULTIX/winchester (log:%i, phy:%i): write sector %i (+%i) <- %d : 0x%04x, %i words", unit->log_num, unit->phy_num, cf->transmit->sector + sector, offset, cf->transmit->nb, cf->transmit->addr + cf->ret_len, transmit);
 
 		res = e4i_bwrite(UNIT->winchester, buf+cf->ret_len*2, offset + cf->transmit->sector + sector, transmit*2);
 		//res = E_OK;
@@ -329,7 +327,7 @@ void mx_winch_cmd_transmit(struct mx_unit_proto_t *unit, uint16_t addr)
 
 #ifdef WITH_DEBUGGER
 	char *details = decode_mxpst_winch(addr, 0);
-	LOG(L_WNCH, 50, "Transmission details:\n%s", details);
+	log_splitlog(L_WNCH, 50, details);
 	free(details);
 #endif
 

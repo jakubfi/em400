@@ -181,7 +181,13 @@ int cchar_term_read(struct cchar_unit_proto_t *unit, uint16_t *r_arg)
 	} else {
 		pthread_mutex_lock(&UNIT->buf_mutex);
 		char data = UNIT->buf[UNIT->buf_rpos];
-		LOG(L_TERM, 50, "Term read: %i (%c)", *r_arg, *r_arg);
+#ifdef WITH_DEBUGGER
+		if ((char)*r_arg >= 32) {
+			LOG(L_TERM, 50, "Term read: %i (%c)", *r_arg, *r_arg);
+		} else {
+			LOG(L_TERM, 50, "Term read: %i (#%02x)", *r_arg, (char)*r_arg);
+		}
+#endif
 		UNIT->buf_len--;
 		if (UNIT->buf_rpos >= TERM_BUF_LEN-2) {
 			UNIT->buf_rpos = 0;
@@ -203,7 +209,13 @@ int cchar_term_read(struct cchar_unit_proto_t *unit, uint16_t *r_arg)
 int cchar_term_write(struct cchar_unit_proto_t *unit, uint16_t *r_arg)
 {
 	char data = *r_arg & 255;
-	LOG(L_TERM, 50, "Term write: %i (%c)", data, data);
+#ifdef WITH_DEBUGGER
+	if (data >= 32) {
+		LOG(L_TERM, 50, "Term write: %i (%c)", data, data);
+	} else {
+		LOG(L_TERM, 50, "Term write: %i (#%02x)", data, data);
+	}
+#endif
 	term_write(UNIT->term, &data, 1);
 	return IO_OK;
 }

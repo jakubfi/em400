@@ -386,8 +386,6 @@ int mx_cmd_int_requeue(struct chan_proto_t *chan)
 // -----------------------------------------------------------------------
 int mx_cmd_intspec(struct chan_proto_t *chan, uint16_t *r_arg)
 {
-	LOG(L_MX, 1, "MULTIX (ch:%i) command: intspec", chan->num);
-
 	pthread_mutex_lock(&CHAN->int_mutex);
 	struct mx_int_t *inth = mx_int_deq(CHAN);
 	pthread_mutex_unlock(&CHAN->int_mutex);
@@ -447,7 +445,7 @@ int mx_cmd_setcfg(struct chan_proto_t *chan, uint16_t *r_arg)
 
 #ifdef WITH_DEBUGGER
 	char *details = decode_mxpsuk(*r_arg, 0);
-	LOG(L_MX, 50, "%s", details);
+	log_splitlog(L_MX, 50, details);
 	free(details);
 #endif
 

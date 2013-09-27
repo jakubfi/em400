@@ -67,6 +67,10 @@ extern char *log_dname[];
 
 extern char *log_reg_name[];
 extern char *log_int_name[];
+extern char *log_io_result[];
+
+#define LOG_INT_INDENT_MAX 32
+extern int log_int_level;
 
 int log_init(const char *logf);
 void log_shutdown();
@@ -75,6 +79,7 @@ void log_disable();
 int log_find_domain(char *name);
 void log_setlevel(int domain, int level);
 void log_log(int domain, int level, char *format, ...);
+void log_splitlog(int domain, int level, char *text);
 
 #ifdef WITH_DEBUGGER
 #define LOG(d, l, f, ...) if (log_enabled) log_log(d, l, f, ##__VA_ARGS__)

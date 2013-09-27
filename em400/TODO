@@ -49,6 +49,7 @@ I/O:
 
 Debugger:
 
+* operator precedence!
 * simplify logging (how?)
 * more shortcuts (c-w, c-d, c-k, home, end, ...)
 * log shouldn't start new file immediately

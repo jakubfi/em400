@@ -112,11 +112,10 @@ char * decode_ctx(uint16_t addr, int arg)
 	int q = (sr >> 5) & 1;
 	int nb = sr & 0b1111;
 
-	pos += sprintf(b+pos, "----------------------------------------------\n");
 	// process vector
-	pos += sprintf(b+pos, "Q:NB: %i:%i IC: 0x%04x  R0: %s  SR: %s\n", q, nb, data[0], r0s, srs);
+	pos += sprintf(b+pos, "Q:NB: %i:%i IC: 0x%04x R0: %s SR: %s\n", q, nb, data[0], r0s, srs);
 	// user registers
-	pos += sprintf(b+pos, "R1: 0x%04x  R2: 0x%04x  R3: 0x%04x  R4: 0x%04x R5: 0x%04x  R6: 0x%04x  R7: 0x%04x\n", data[3], data[4], data[5], data[6], data[7], data[8], data[9]);
+	pos += sprintf(b+pos, "R1: 0x%04x R2: 0x%04x R3: 0x%04x R4: 0x%04x R5: 0x%04x R6: 0x%04x R7: 0x%04x\n", data[3], data[4], data[5], data[6], data[7], data[8], data[9]);
 	pos += sprintf(b+pos, "----------------------------------------------\n");
 
 	char *n1 = int2r40(data[52]);
@@ -128,27 +127,26 @@ char * decode_ctx(uint16_t addr, int arg)
 
 	pos += sprintf(b+pos, "State: %i  ", (int16_t) data[12]);
 	pos += sprintf(b+pos, "Priority: %i \n", (int16_t) data[13]);
-	pos += sprintf(b+pos, "prev: 0x%04x  ",  data[14]);
-	pos += sprintf(b+pos, "next: 0x%04x \n", data[10]);
-	pos += sprintf(b+pos, "NXCH: 0x%04x \n", data[11]);
-	pos += sprintf(b+pos, "PAPR: 0x%04x \n", data[15]);
-	pos += sprintf(b+pos, "CHLS: 0x%04x \n", data[16]);
-	pos += sprintf(b+pos, "ALLS: 0x%04x \n", data[17]);
-	pos += sprintf(b+pos, "CHTIM: 0x%04x \n", data[18]);
-	pos += sprintf(b+pos, "DEVI: 0x%04x  ",  data[19]);
-	pos += sprintf(b+pos, "DEVO: 0x%04x \n", data[20]);
-	pos += sprintf(b+pos, "USAL: 0x%04x \n", data[21]);
+	pos += sprintf(b+pos, "Prev: 0x%04x Next: 0x%04x\n",  data[14], data[10]);
+	pos += sprintf(b+pos, "NXCH:   0x%04x \n", data[11]);
+	pos += sprintf(b+pos, "PAPR:   0x%04x \n", data[15]);
+	pos += sprintf(b+pos, "CHLS:   0x%04x \n", data[16]);
+	pos += sprintf(b+pos, "ALLS:   0x%04x \n", data[17]);
+	pos += sprintf(b+pos, "CHTIM:  0x%04x \n", data[18]);
+	pos += sprintf(b+pos, "DEVI:   0x%04x \n", data[19]);
+	pos += sprintf(b+pos, "DEVO:   0x%04x \n", data[20]);
+	pos += sprintf(b+pos, "USAL:   0x%04x \n", data[21]);
 	// ROB =8
-	pos += sprintf(b+pos, "STRLI: 0x%04x \n",  data[30]);
-	pos += sprintf(b+pos, "BUFLI: 0x%04x \n",  data[31]);
-	pos += sprintf(b+pos, "LARUS: 0x%04x \n",  data[32]);
+	pos += sprintf(b+pos, "STRLI:  0x%04x \n", data[30]);
+	pos += sprintf(b+pos, "BUFLI:  0x%04x \n", data[31]);
+	pos += sprintf(b+pos, "LARUS:  0x%04x \n", data[32]);
 	pos += sprintf(b+pos, "LISMEM: 0x%04x \n", data[33]);
 	pos += sprintf(b+pos, "NXTMEM: 0x%04x \n", data[35]);
-	pos += sprintf(b+pos, "BAR: 0x%04x \n", data[36]);
+	pos += sprintf(b+pos, "BAR:    0x%04x \n", data[36]);
 	pos += sprintf(b+pos, "SZABME: 0x%04x \n", data[37]);
 	pos += sprintf(b+pos, "BLPASC: 0x%04x \n", data[38]);
 	pos += sprintf(b+pos, "IC: 0x%04x R0: 0x%04x SR: 0x%04x \n", data[39], data[40], data[41]);
-	pos += sprintf(b+pos, "R1: 0x%04x  R2: 0x%04x  R3: 0x%04x  R4: 0x%04x R5: 0x%04x  R6: 0x%04x  R7: 0x%04x\n", data[42], data[43], data[44], data[45], data[46], data[47], data[48]);
+	pos += sprintf(b+pos, "R1: 0x%04x R2: 0x%04x R3: 0x%04x R4: 0x%04x R5: 0x%04x R6: 0x%04x R7: 0x%04x\n", data[42], data[43], data[44], data[45], data[46], data[47], data[48]);
 	pos += sprintf(b+pos, "JDAD: 0x%04x \n", data[49]);
 	pos += sprintf(b+pos, "Program start (JPAD): 0x%04x \n", data[50]);
 	pos += sprintf(b+pos, "FILDIC position (JACN): 0x%04x \n", data[51]);

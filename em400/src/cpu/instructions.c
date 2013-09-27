@@ -734,7 +734,7 @@ struct opdef * op_73()
 // -----------------------------------------------------------------------
 void op_73_hlt()
 {
-	LOG(L_CPU, 1, "HALT 0%02o (alarm: %i)", N, regs[6]&255);
+	LOG(L_OP, 1, "HALT 0%02o (alarm: %i)", N, regs[6]&255);
 
 	// handle hlt>=040 as "exit emulation" if user wants to
 	if ((em400_cfg.exit_on_hlt) && (N >= 040)) {
@@ -814,6 +814,7 @@ void op_73_lip()
 
 	int_update_rp();
 	mem_ret_put(0, 97, sp-4);
+	log_int_level += 4;
 }
 
 // -----------------------------------------------------------------------
@@ -1056,8 +1057,14 @@ void op_77_sp()
 {
 	uint16_t data;
 	mem_ret_get(NB, N, &data);
-	LOG(L_OS, 50, "SP: context @ 0x%04x -> IC: 0x%04x\n%s", N, data, decode_ctx(N, 0));
 	regs[R_IC] = data;
+
+#ifdef WITH_DEBUGGER
+	LOG(L_OS, 50, "SP: context @ 0x%04x -> IC: 0x%04x", N, data);
+	char *ctx = decode_ctx(N, 0);
+	log_splitlog(L_OS, 50, ctx);
+	free(ctx);
+#endif
 
 	mem_ret_get(NB, N+1, &data);
 	regs[0] = data;
@@ -1066,6 +1073,7 @@ void op_77_sp()
 	regs[R_SR] = data;
 
 	int_update_rp();
+	log_int_level = LOG_INT_INDENT_MAX;
 }
 
 // -----------------------------------------------------------------------
