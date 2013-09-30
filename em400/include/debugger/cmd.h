@@ -57,7 +57,7 @@ void dbg_c_watch_list(int wid, int count);
 void dbg_c_watch_del(int wid, int nr);
 void dbg_c_list_decoders(int wid);
 void dbg_c_decode(int wid, char *name, uint16_t addr, int arg);
-
+void dbg_c_find(int wid, uint16_t block, uint16_t value);
 
 #endif
 

@@ -61,6 +61,7 @@ struct cmd_t dbg_commands[] = {
 	{ "script",	F_SCRIPT,	"Load and execute script", "  script <filename>" },
 	{ "watch",	F_WATCH,	"Manipulate expression watches", "  watch add <expression>\n  watch del <watch_number>\n  watch" },
 	{ "decode",	F_DECODE,	"Decode memory structures", "  decode\n  decode <decoder> <address>" },
+	{ "find",	F_FIND,		"Search memory for a value", "  find <block> <value>" },
 	{ NULL,		0,			NULL, NULL }
 };
 
@@ -615,6 +616,28 @@ void dbg_c_decode(int wid, char *name, uint16_t addr, int arg)
 	awtbprint(wid, C_LABEL, "-----------------------------------------------------------\n");
 }
 
-
+// -----------------------------------------------------------------------
+void dbg_c_find(int wid, uint16_t block, uint16_t value)
+{
+	int found = 0;
+	for (int seg=0 ; seg<MEM_MAX_SEGMENTS ; seg++) {
+		if (mem_map[block][seg]) {
+			awtbprint(wid, C_DATA, "Segment %x: ", seg);
+			for (int word=0 ; word<MEM_SEGMENT_SIZE ; word++) {
+				if (mem_map[block][seg][word] == value) {
+					awtbprint(wid, C_DATA, "0x%04x ", (seg<<12)+word);
+					found++;
+					if (found >= 8) {
+						awtbprint(wid, C_DATA, "\n           ");
+						found = 0;
+					}
+				}
+			}
+			if (found < 8) {
+				awtbprint(wid, C_DATA, "\n");
+			}
+		}
+	}
+}
 
 // vim: tabstop=4 shiftwidth=4 autoindent
