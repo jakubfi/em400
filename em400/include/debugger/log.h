@@ -44,7 +44,7 @@ enum log_domains {
 	L_PNCH,
 	L_PNRD,
 
-	L_OS,
+	L_CRK5,
 	L_MAX,
 };
 

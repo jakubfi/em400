@@ -444,7 +444,7 @@ int mx_cmd_setcfg(struct chan_proto_t *chan, uint16_t *r_arg)
 	int res = mx_decode_cf_sc(*r_arg, cf);
 
 #ifdef WITH_DEBUGGER
-	char *details = decode_mxpsuk(*r_arg, 0);
+	char *details = decode_mxpsuk(0, *r_arg, 0);
 	log_splitlog(L_MX, 50, details);
 	free(details);
 #endif

@@ -33,6 +33,10 @@
 #ifdef WITH_DEBUGGER
 #include "debugger/debugger.h"
 #include "debugger/decode.h"
+int exl_was_exl;
+int exl_was_nb;
+int exl_was_addr;
+int exl_was_r4;
 #endif
 #include "debugger/log.h"
 
@@ -506,6 +510,15 @@ void op_71_exl()
 	uint16_t data;
 	uint16_t sp;
 	LOG(L_OP, 10, "EXL: %i (r4: 0x%04x)", IR_b, regs[4]);
+#ifdef WITH_DEBUGGER
+	char *details = decode_exl(NB, regs[4], IR_b);
+	log_splitlog(L_CRK5, 10, details);
+	free(details);
+	exl_was_exl = IR_b;
+	exl_was_nb = NB;
+	exl_was_addr = regs[R_IC];
+	exl_was_r4 = regs[4];
+#endif
 	mem_ret_get(0, 97, &sp);
 	mem_ret_put(0, sp, regs[R_IC]);
 	mem_ret_put(0, sp+1, regs[0]);
@@ -1060,9 +1073,9 @@ void op_77_sp()
 	regs[R_IC] = data;
 
 #ifdef WITH_DEBUGGER
-	LOG(L_OS, 50, "SP: context @ 0x%04x -> IC: 0x%04x", N, data);
-	char *ctx = decode_ctx(N, 0);
-	log_splitlog(L_OS, 50, ctx);
+	LOG(L_CRK5, 50, "SP: context @ 0x%04x -> IC: 0x%04x", N, data);
+	char *ctx = decode_ctx(0, N, 0);
+	log_splitlog(L_CRK5, 50, ctx);
 	free(ctx);
 #endif
 
@@ -1074,6 +1087,14 @@ void op_77_sp()
 
 	int_update_rp();
 	log_int_level = LOG_INT_INDENT_MAX;
+#ifdef WITH_DEBUGGER
+	if (exl_was_exl && (regs[R_IC] == exl_was_addr) && (NB == exl_was_nb)) {
+		char *details = decode_exl(exl_was_nb, exl_was_r4, -exl_was_exl);
+		log_splitlog(L_CRK5, 10, details);
+		free(details);
+		exl_was_exl = 0;
+	}
+#endif
 }
 
 // -----------------------------------------------------------------------

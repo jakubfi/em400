@@ -20,7 +20,7 @@
 
 #include <inttypes.h>
 
-typedef char * (*decoder_fun_t)(uint16_t addr, int arg);
+typedef char * (*decoder_fun_t)(int nb, uint16_t addr, int arg);
 
 struct decoder_t {
 	char *name;
@@ -32,13 +32,14 @@ extern struct decoder_t decoders[];
 
 struct decoder_t * find_decoder(char *name);
 
-char * decode_iv(uint16_t addr, int arg);
-char * decode_ctx(uint16_t addr, int arg);
-char * decode_mxpsuk(uint16_t addr, int arg);
-char * decode_mxpsdl(uint16_t addr, int arg);
-char * decode_mxpst_winch(uint16_t addr, int arg);
-char * decode_mxpst_term(uint16_t addr, int arg);
-char * decode_cmempst(uint16_t addr, int arg);
+char * decode_iv(int nb, uint16_t addr, int arg);
+char * decode_ctx(int nb, uint16_t addr, int arg);
+char * decode_exl(int nb, uint16_t addr, int arg);
+char * decode_mxpsuk(int nb, uint16_t addr, int arg);
+char * decode_mxpsdl(int nb, uint16_t addr, int arg);
+char * decode_mxpst_winch(int nb, uint16_t addr, int arg);
+char * decode_mxpst_term(int nb, uint16_t addr, int arg);
+char * decode_cmempst(int nb, uint16_t addr, int arg);
 
 #endif
 

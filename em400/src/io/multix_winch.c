@@ -328,7 +328,7 @@ void mx_winch_cmd_transmit(struct mx_unit_proto_t *unit, uint16_t addr)
 	}
 
 #ifdef WITH_DEBUGGER
-	char *details = decode_mxpst_winch(addr, 0);
+	char *details = decode_mxpst_winch(0, addr, 0);
 	log_splitlog(L_WNCH, 50, details);
 	free(details);
 #endif

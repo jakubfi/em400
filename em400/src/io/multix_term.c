@@ -284,7 +284,7 @@ void mx_term_cmd_transmit(struct mx_unit_proto_t *unit, uint16_t addr)
 	}
 
 #ifdef WITH_DEBUGGER
-	char *details = decode_mxpst_term(addr, 0);
+	char *details = decode_mxpst_term(0, addr, 0);
 	log_splitlog(L_TERM, 50, details);
 	free(details);
 #endif

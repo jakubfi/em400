@@ -602,7 +602,7 @@ void dbg_c_decode(int wid, char *name, uint16_t addr, int arg)
 		return;
 	}
 
-	buf = d->f_decode(addr, arg);
+	buf = d->f_decode(NB, addr, arg);
 
 	if (!buf) {
 		awtbprint(wid, C_ERROR, "Cannot decode structure\n");

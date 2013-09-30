@@ -26,6 +26,7 @@
 
 #include "cfg.h"
 #include "errors.h"
+#include "utils.h"
 #include "debugger/log.h"
 #include "cpu/cpu.h"
 #include "cpu/registers.h"
@@ -48,7 +49,7 @@ char *log_dname[] = {
 	"FLOP",
 	"PNCH",
 	"PNRD",
-	"OS",
+	"CRK5",
 	NULL
 };
 
@@ -215,11 +216,17 @@ void log_pretty_log(int domain, int level, char *pre, char *text)
 	gettimeofday(&ct, NULL);
 	strftime(now, 30, "%Y-%m-%d %H:%M:%S", localtime(&ct.tv_sec));
 
-	if ((domain == L_CPU) || (domain == L_INT) || (domain == L_OP) || (domain == L_IO)) {
-		fprintf(log_f, "%s | %3i %-4s | %i:%-2i 0x%04x | ", now, level, log_dname[domain], Q, NB, cycle_ic);
+	if ((domain == L_CPU) || (domain == L_MEM) || (domain == L_INT) || (domain == L_OP) || (domain == L_IO) || (domain == L_CRK5)) {
+		uint16_t bprog;
+		uint16_t pname[2];
+		mem_get(0, 0x62, &bprog);
+		mem_mget(0, bprog+52, pname, 2);
+		char *n1 = int2r40(pname[0]);
+		char *n2 = int2r40(pname[1]);
+		fprintf(log_f, "%s | %3i %-4s | %i:%-2i 0x%04x | %s%s | ", now, level, log_dname[domain], Q, NB, cycle_ic, n1, n2);
 		fprintf(log_f, "%s%s%s\n", log_int_indent+log_int_level, pre, text);
 	} else {
-		fprintf(log_f, "%s | %3i %-4s |             | ", now, level, log_dname[domain]);
+		fprintf(log_f, "%s | %3i %-4s |             |        | ", now, level, log_dname[domain]);
 		fprintf(log_f, "%s%s\n", pre, text);
 	}
 }
