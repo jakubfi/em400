@@ -70,16 +70,16 @@ enum _interrupts {
 };
 
 #define MASK_Q				0b1111111111011111
-#define MASK_0				0b0000000000111111 & MASK_Q
-#define MASK_1				0b1000000000111111 & MASK_Q
-#define MASK_2				0b1100000000111111 & MASK_Q
-#define MASK_3				0b1110000000111111 & MASK_Q
-#define MASK_4				0b1111000000111111 & MASK_Q
-#define MASK_5				0b1111100000111111 & MASK_Q
-#define MASK_6				0b1111110000111111 & MASK_Q
-#define MASK_7				0b1111111000111111 & MASK_Q
-#define MASK_8				0b1111111100111111 & MASK_Q
-#define MASK_9				0b1111111110111111 & MASK_Q
+#define MASK_0				0b0000000000111111
+#define MASK_1				0b1000000000111111
+#define MASK_2				0b1100000000111111
+#define MASK_3				0b1110000000111111
+#define MASK_4				0b1111000000111111
+#define MASK_5				0b1111100000111111
+#define MASK_6				0b1111110000111111
+#define MASK_7				0b1111111000111111
+#define MASK_8				0b1111111100111111
+#define MASK_9				0b1111111110111111
 #define MASK_EX				MASK_4
 
 void int_wait();
@@ -89,7 +89,6 @@ void int_clear(int x);
 void int_clear_all();
 void int_put_nchan(uint16_t r);
 uint16_t int_get_nchan();
-void int_mask_below(int i);
 
 void int_serve();
 

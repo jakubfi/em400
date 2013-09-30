@@ -197,7 +197,7 @@ void int_serve()
 	regs[0] = 0;
 	int_clear(interrupt);
 	regs[R_IC] = int_addr;
-	regs[R_SR] &= int_int2mask[interrupt]; // put mask and clear Q
+	regs[R_SR] &= int_int2mask[interrupt] & MASK_Q; // put mask and clear Q
 	if (cpu_mod) regs[R_SR] &= MASK_EX; // put extended mask if cpu_mod
 	log_int_level -= 4;
 }
