@@ -204,7 +204,7 @@ command:
 	| F_WATCH DEL VALUE	{ dbg_c_watch_del(W_CMD, $3); }
 	| F_DECODE			{ dbg_c_list_decoders(W_CMD); }
 	| F_DECODE NAME expr{ dbg_c_decode(W_CMD, $2, n_eval($3), 0); }
-	| F_FIND expr expr	{ dbg_c_find(W_CMD, n_eval($2), n_eval($3)); }
+	| F_FIND VALUE expr	{ dbg_c_find(W_CMD, $2, n_eval($3)); }
 	;
 
 %%

@@ -622,7 +622,7 @@ void dbg_c_find(int wid, uint16_t block, uint16_t value)
 	int found = 0;
 	for (int seg=0 ; seg<MEM_MAX_SEGMENTS ; seg++) {
 		if (mem_map[block][seg]) {
-			awtbprint(wid, C_DATA, "Segment %x: ", seg);
+			awtbprint(wid, C_LABEL, "Segment %x: ", seg);
 			for (int word=0 ; word<MEM_SEGMENT_SIZE ; word++) {
 				if (mem_map[block][seg][word] == value) {
 					awtbprint(wid, C_DATA, "0x%04x ", (seg<<12)+word);
