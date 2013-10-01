@@ -827,7 +827,9 @@ void op_73_lip()
 
 	int_update_rp();
 	mem_ret_put(0, 97, sp-4);
+#ifdef WITH_DEBUGGER
 	log_int_level += 4;
+#endif
 }
 
 // -----------------------------------------------------------------------
@@ -1086,8 +1088,8 @@ void op_77_sp()
 	regs[R_SR] = data;
 
 	int_update_rp();
-	log_int_level = LOG_INT_INDENT_MAX;
 #ifdef WITH_DEBUGGER
+	log_int_level = LOG_INT_INDENT_MAX;
 	if (exl_was_exl && (regs[R_IC] == exl_was_addr) && (NB == exl_was_nb)) {
 		char *details = decode_exl(exl_was_nb, exl_was_r4, -exl_was_exl);
 		log_splitlog(L_CRK5, 10, details);
