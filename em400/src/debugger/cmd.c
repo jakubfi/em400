@@ -50,7 +50,7 @@ struct cmd_t dbg_commands[] = {
 	{ "reset",	F_RESET,	"Reset the emulator", "  reset" },
 	{ "dasm",	F_DASM,		"Disassembler", "  dasm [[start] count]" },
 	{ "trans",	F_TRANS,	"Translator", "  trans [[start] count]" },
-	{ "mem",	F_MEM,		"Show memory contents", "  mem [block:] <start>-<end>" },
+	{ "mem",	F_MEM,		"Show memory contents", "  mem [block:] <start> [len]" },
 	{ "memcl",	F_MEMCL,	"Clear memory contents", "  memcl" },
 	{ "load",	F_LOAD,		"Load memory image from file", "  load <file>" },
 	{ "memcfg",	F_MEMCFG,	"Show memory configuration", "  memcfg" },
@@ -201,8 +201,8 @@ void dbg_c_mem(int wid, int block, int start, int end, int maxcols, int maxlines
 			res = mem_get(block, addr, &data);
 			if (!res) {
 				awtbprint(wid, C_ERROR, "~~~~ ");
-				chars[w*2] = '-';
-				chars[w*2+1] = '-';
+				chars[w*2] = '~';
+				chars[w*2+1] = '~';
 			} else {
 				// cell with current instruction
 				if (addr == regs[R_IC]) {
@@ -472,6 +472,16 @@ void dbg_c_brk_disable(int wid, int nr, int disable)
 }
 
 // -----------------------------------------------------------------------
+void dbg_c_brk_disable_all(int wid, int disable)
+{
+	struct evlb_t *b = brk_stack;
+	while (b) {
+		dbg_c_brk_disable(wid, b->nr, disable);
+		b = b->next;
+	}
+}
+
+// -----------------------------------------------------------------------
 void dbg_c_log_show(int wid)
 {
 	awtbprint(wid, C_LABEL, "Logging to file: ");
@@ -518,7 +528,7 @@ void dbg_c_watch_list(int wid, int count)
 		awtbprint(wid, C_LABEL, "%i: ", w->nr);
 		awtbprint(wid, C_DATA, "%-6s ", w->label);
 		awtbprint(wid, C_LABEL, "= ");
-		awtbprint(wid, C_DATA, "0x%04x (%i)\n", value, value);
+		awtbprint(wid, C_DATA, "0x%04x (%i)\n", (uint16_t) value, (int16_t) value);
 		w = w->next;
 		count--;
 	}

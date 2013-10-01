@@ -170,8 +170,10 @@ command:
 	| F_TRANS				{ dbg_c_dt(W_CMD, DMODE_TRANS, regs[R_IC], 1); }
 	| F_TRANS VALUE			{ dbg_c_dt(W_CMD, DMODE_TRANS, regs[R_IC], $2); }
 	| F_TRANS expr VALUE	{ dbg_c_dt(W_CMD, DMODE_TRANS, n_eval($2), $3); }
-	| F_MEM expr '-' expr	{ dbg_c_mem(W_CMD, QNB, n_eval($2), n_eval($4), 122, 18); }
-	| F_MEM expr ':' expr '-' expr	{ dbg_c_mem(W_CMD, n_eval($2), n_eval($4), n_eval($6), 122, 18); }
+	| F_MEM expr			{ dbg_c_mem(W_CMD, QNB, n_eval($2), n_eval($2)+15, 122, 18); }
+	| F_MEM expr VALUE		{ dbg_c_mem(W_CMD, QNB, n_eval($2), n_eval($2)+$3-1, 122, 18); }
+	| F_MEM VALUE ':' expr	{ dbg_c_mem(W_CMD, $2, n_eval($4), n_eval($4)+15, 122, 18); }
+	| F_MEM VALUE ':' expr VALUE { dbg_c_mem(W_CMD, $2, n_eval($4), n_eval($4)+$5-1, 122, 18); }
 	| F_LOAD TEXT			{ dbg_c_load(W_CMD, $2); }
 	| F_BRK					{ dbg_c_brk_list(W_CMD); }
 	| F_BRK ADD expr	{
@@ -185,6 +187,8 @@ command:
 	| F_BRK TEST VALUE	{ dbg_c_brk_test(W_CMD, $3); }
 	| F_BRK OFF VALUE	{ dbg_c_brk_disable(W_CMD, $3, 1); }
 	| F_BRK ON VALUE	{ dbg_c_brk_disable(W_CMD, $3, 0); }
+	| F_BRK OFF			{ dbg_c_brk_disable_all(W_CMD, 1); }
+	| F_BRK ON			{ dbg_c_brk_disable_all(W_CMD, 0); }
 	| F_BRK error
 	| F_LOG				{ dbg_c_log_show(W_CMD); }
 	| F_LOG ON 			{ log_enable(); }
