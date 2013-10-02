@@ -1,16 +1,17 @@
 .prog "op/SVY"
 
-; PRE r0 = 0b0000000100000000
-
+	lw r0, ?VY
 	lw r1, 0b0010000000000001
 	svy r1
 	lw r3, r1
 	rpc r2
 
+	lwt r0, 0
 	svy r1
 	lw r4, r1
 	rpc r5
 
+	lwt r0, 0
 	svy r1
 
 	hlt 077

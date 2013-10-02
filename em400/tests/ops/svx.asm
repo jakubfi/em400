@@ -1,16 +1,17 @@
 .prog "op/SVX"
 
-; PRE r0 = 0b0000000010000000
-
+	lw r0, ?VX
 	lw r1, 0b0010000000000001
 	svx r1
 	lw r3, r1
 	rpc r2
 
+	lw r0, ?X
 	svx r1
 	lw r4, r1
 	rpc r5
 
+	lw r0, ?X
 	svx r1
 
 	hlt 077
