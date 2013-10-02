@@ -132,15 +132,16 @@ class Test:
 
         o = subprocess.check_output(args).decode("utf-8")
 
-        tres = re.findall("TEST RESULT: (.*)\n", o)
+        tres = re.findall("TEST RESULT @ (0x[0-9a-fA-F]+): (.*)\n", o)
 
         if not tres:
             raise Exception("No test result found")
 
-        self.result = tres[0].strip(" ")
+        self.result = tres[0][1].strip(" ")
+        address = tres[0][0].strip(" ")
 
         if self.result != self.expected:
-            raise Exception("\n%32s xpct: '%s'\n%32s  got: '%s'" % ("", self.expected, "", self.result))
+            raise Exception("@ %s\n%32s xpct: '%s'\n%32s  got: '%s'" % (address, "", self.expected, "", self.result))
 
 
 # ------------------------------------------------------------------------

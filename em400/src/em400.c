@@ -334,7 +334,7 @@ int main(int argc, char** argv)
 
 #ifdef WITH_DEBUGGER
 	if (em400_cfg.autotest && em400_cfg.test_expr) {
-		printf("TEST RESULT: ");
+		printf("TEST RESULT @ 0x%04x: ", cycle_ic);
 		dbg_parse(em400_cfg.test_expr);
 		free(em400_cfg.test_expr);
 		free(em400_cfg.program_name);
