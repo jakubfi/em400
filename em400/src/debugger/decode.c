@@ -219,6 +219,23 @@ int decode_exl_rec(int nb, uint16_t r4, char *b, int exl_code)
 	pos += sprintf(b+pos, "Buf addr: 0x%04x\n", data[2]);
 	pos += sprintf(b+pos, "Ending char: #%02x\n", data[3]>>8);
 	pos += sprintf(b+pos, "Max bytes: %i\n", data[3]&255);
+
+	// if we return from record write
+	if ((exl_code == -139) || (exl_code == -141)) {
+		int slen = data[0]/2+2;
+		uint16_t *str = calloc(2, slen);
+		mem_mget(nb, data[2], str, slen);
+		pos += sprintf(b+pos, "Data: ");
+		for (int i=0 ; i<slen ; i++) {
+			if ((str[i]>>8) == (data[3]>>8)) break;
+			pos += sprintf(b+pos, "%c", str[i]>>8);
+			if ((str[i]&255) == (data[3]>>8)) break;
+			pos += sprintf(b+pos, "%c", str[i]&255);
+		}
+		pos += sprintf(b+pos, "\n");
+		free(str);
+	}
+
 	return pos;
 }
 
