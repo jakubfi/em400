@@ -198,7 +198,7 @@ void int_serve()
 	int_clear(interrupt);
 	regs[R_IC] = int_addr;
 	regs[R_SR] &= int_int2mask[interrupt] & MASK_Q; // put mask and clear Q
-	if (cpu_mod && (interrupt >= 5) && (interrupt <= 8)) regs[R_SR] &= MASK_EX; // put extended mask if cpu_mod
+	if (cpu_mod && (interrupt >= 12) && (interrupt <= 27)) regs[R_SR] &= MASK_EX; // put extended mask if cpu_mod
 	int_update_rp();
 #ifdef WITH_DEBUGGER
 	log_int_level -= 4;
