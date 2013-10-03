@@ -5,6 +5,7 @@ mega:
 
 redo alu/flags tests
 MW nie dotyka V - testowac
+przenieść case-y z tp
 
 multix
 benchmark: byte addressing

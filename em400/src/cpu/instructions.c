@@ -763,6 +763,7 @@ void op_73_hlt()
 void op_73_mcl()
 {
 	regs[R_SR] = 0;
+	int_update_rp();
 	int_clear_all();
 	regs[0] = 0;
 	mem_reset();
