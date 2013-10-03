@@ -104,7 +104,9 @@ int mem_init()
 	// allocate and show MEGA PROM if MEGA is there
 	if (em400_cfg.mem_mega > 0) {
 		mem_mega_prom = calloc(sizeof(uint16_t), MEM_SEGMENT_SIZE);
+		pthread_spin_lock(&mem_spin);
 		mem_map[0][15] = mem_mega_prom;
+		pthread_spin_unlock(&mem_spin);
 		if (em400_cfg.mem_mega_prom) {
 			res = mem_load_image(em400_cfg.mem_mega_prom, 0, 15, 4096);
 			eprint("  Loaded MEGA PROM image: %s (%i words)\n", em400_cfg.mem_mega_prom, res);
@@ -182,10 +184,9 @@ int mem_cmd_elwro(int nb, int ab, int mp, int seg)
 	// make new l->p mapping
 	pthread_spin_lock(&mem_spin);
 	mem_map[nb][ab] = mem_elwro[mp][seg];
-	pthread_spin_unlock(&mem_spin);
-
 	// remember new p->l mapping
 	mem_elwro_ral[mp][seg] = &mem_map[nb][ab];
+	pthread_spin_unlock(&mem_spin);
 
 	return IO_OK;
 }
@@ -193,39 +194,45 @@ int mem_cmd_elwro(int nb, int ab, int mp, int seg)
 // -----------------------------------------------------------------------
 int mem_cmd_mega(int nb, int ab, int mp, int seg, int flags)
 {
-	pthread_spin_lock(&mem_spin);
-
 	// touch only non-OS ab
 	if ((nb > 0) || ((nb == 0) && (ab > 1))) {
 		// 'free'
 		if ((flags & MEM_MEGA_FREE)) {
 			LOG(L_MEM, 1, "MEGA: del map (%2d, %2d)     %s%s", nb, ab, flags & MEM_MEGA_PROM_SHOW ? "[prom show]" : "", flags & MEM_MEGA_PROM_HIDE ? "[prom hide]" : "");
+			pthread_spin_lock(&mem_spin);
 			if (mem_map[nb][ab] == mem_mega_map[nb][ab]) {
 				mem_map[nb][ab] = mem_mega_map[nb][ab] = NULL;
 			}
+			pthread_spin_unlock(&mem_spin);
 		// 'alloc'
 		} else {
 			LOG(L_MEM, 1, "MEGA: add map (%2d, %2d) -> (%2d, %2d)     %s%s", nb, ab, mp, seg, flags & MEM_MEGA_PROM_SHOW ? "[prom show]" : "", flags & MEM_MEGA_PROM_HIDE ? "[prom hide]" : "");
+			pthread_spin_lock(&mem_spin);
 			mem_map[nb][ab] = mem_mega_map[nb][ab] = mem_mega[mp][seg];
+			pthread_spin_unlock(&mem_spin);
 		}
+	} else {
+		LOG(L_MEM, 1, "MEGA: ignored map (%2d, %2d) -> (%2d, %2d)     %s%s", nb, ab, mp, seg, flags & MEM_MEGA_PROM_SHOW ? "[prom show]" : "", flags & MEM_MEGA_PROM_HIDE ? "[prom hide]" : "");
 	}
 
 	// 'PROM hide'
 	if ((flags & MEM_MEGA_PROM_HIDE)) {
+		pthread_spin_lock(&mem_spin);
 		mem_map[0][15] = mem_mega_map[0][15];
+		pthread_spin_unlock(&mem_spin);
 	}
 
 	// 'PROM show'
 	if ((flags & MEM_MEGA_PROM_SHOW)) {
+		pthread_spin_lock(&mem_spin);
 		mem_map[0][15] = mem_mega_prom;
+		pthread_spin_unlock(&mem_spin);
 	}
 
 	// TODO: 'allocation done'
 	if ((flags & MEM_MEGA_ALLOC_DONE)) {
 		LOG(L_MEM, 1, "MEGA: initializarion done");
 	}
-
-	pthread_spin_unlock(&mem_spin);
 
 	return IO_OK;
 }
@@ -239,19 +246,21 @@ void mem_reset()
 	// remove all memory mappings
 	for (nb=0 ; nb<MEM_MAX_NB ; nb++) {
 		for (ab=0 ; ab<MEM_MAX_AB ; ab++) {
-			pthread_spin_lock(&mem_spin);
 			if ((nb>0) || ((nb==0) && (ab>1))) {
+				pthread_spin_lock(&mem_spin);
 				mem_map[nb][ab] = NULL;
+				pthread_spin_unlock(&mem_spin);
 			}
 			mem_mega_map[nb][ab] = NULL;
 			mem_elwro_ral[nb][ab] = NULL;
-			pthread_spin_unlock(&mem_spin);
 		}
 	}
 
 	// show MEGA PROM if MEGA is there
 	if (em400_cfg.mem_mega > 0) {
+		pthread_spin_lock(&mem_spin);
 		mem_map[0][15] = mem_mega_prom;
+		pthread_spin_unlock(&mem_spin);
 	}
 }
 
@@ -325,6 +334,7 @@ int mem_mput(int nb, uint16_t saddr, uint16_t *src, int count)
 				*ptr = *(src+i);
 			}
 		} else {
+			pthread_spin_unlock(&mem_spin);
 			return 0;
 		}
 	}
@@ -373,8 +383,7 @@ int mem_cpu_mget(int nb, uint16_t saddr, uint16_t *dest, int count)
 {
 	if (!mem_mget(nb, saddr, dest, count)) {
 		int_set(INT_NO_MEM);
-		if ((nb) == 0) {
-			pthread_spin_unlock(&mem_spin);
+		if (nb == 0) {
 			regs[R_ALARM] = 1;
 #ifdef WITH_DEBUGGER
 			dbg_enter = 1;
@@ -394,7 +403,6 @@ int mem_cpu_mput(int nb, uint16_t saddr, uint16_t *src, int count)
 	if (!mem_mput(nb, saddr, src, count)) {
 		int_set(INT_NO_MEM);
 		if (nb == 0) {
-			pthread_spin_unlock(&mem_spin);
 			regs[R_ALARM] = 1;
 #ifdef WITH_DEBUGGER
 			dbg_enter = 1;
@@ -489,11 +497,14 @@ int mem_load_image(const char* fname, int nb, int start_seg, int len)
 
 	do {
 		// get pointer to segment in a block
+		pthread_spin_lock(&mem_spin);
 		uint16_t *ptr = mem_map[nb][seg];
 		if (!ptr) {
 			ret = E_MEM_BLOCK_TOO_SMALL;
+			pthread_spin_unlock(&mem_spin);
 			break;
 		}
+		pthread_spin_unlock(&mem_spin);
 
 		// read chunk of data
 		res = fread(ptr, sizeof(uint16_t), MEM_SEGMENT_SIZE, f);
