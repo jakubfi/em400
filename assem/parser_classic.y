@@ -44,7 +44,7 @@ int yylex(void);
 	struct nodelist_t *nl;
 };
 
-%token <val.v> OP_2ARG OP_FD OP_KA1 OP_JS OP_KA2 OP_BRC OP_BLC OP_EXL OP_C OP_SHC OP_S OP_HLT OP_J OP_L OP_G OP_BN
+%token <val.v> OP_2ARG OP_FD OP_KA1 OP_JS OP_KA2 OP_BRC OP_BLC OP_EXL OP_C OP_SHC OP_S OP_HLT OP_J OP_L OP_G OP_BN OP_NRF
 %token P_PROG P_FINPROG P_SEG P_FINSEG P_MACRO P_FINMACRO
 %token P_DATA P_EQU P_RES
 %token P_S P_F P_ALL P_NAME P_BA P_INT P_OUT P_LAB P_NLAB P_MEM P_OS P_IFUNK P_IFUND P_IFDEF P_FI P_SS P_HS P_MAX P_LEN P_E P_FILE P_TEXT
@@ -145,6 +145,7 @@ instruction:
 	| OP_SHC ',' reg ',' expr '.'	{ $$ = mknod_op(N_SHC,   $1, $3, $5,   NULL); }
 	| OP_S ',' zero '.'				{ $$ = mknod_op(N_S,     $1, 0,  NULL, NULL); nodes_drop($3); }
 	| OP_HLT ',' expr '.'			{ $$ = mknod_op(N_HLT,   $1, 0,  $3,   NULL); }
+	| OP_NRF ',' expr '.'			{ $$ = mknod_op(N_KA2,   $1, 0,  $3,   NULL); }
 	| OP_J normarg					{ $$ = mknod_op(N_J,     $1, 0,  NULL, $2); }
 	| OP_L normarg					{ $$ = mknod_op(N_L,     $1, 0,  NULL, $2); }
 	| OP_G normarg					{ $$ = mknod_op(N_G,     $1, 0,  NULL, $2); }
