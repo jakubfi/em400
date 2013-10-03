@@ -38,7 +38,7 @@ class M400dasm:
         # argument is in next word
         if c == 0:
             m = self.m400_fetch()
-            rc = "0x%x" % m
+            rc = "0x%04x" % m
         # use rC as the argument
         else:
             rc = "r%i" % c
@@ -85,7 +85,10 @@ class M400dasm:
     # ------------------------------------------------------------------------
     def m400_decode_byte_arg(self, i, d, a, b, c):
         b = ((a&0b011)<<6) | (b<<3) | c
-        args = "%i" % (b)
+        if d == 0 and a & 0b100 == 0:
+            args = "%i" % (b<<8)
+        else:
+            args = "%i" % (b)
         return args
 
     # ------------------------------------------------------------------------
@@ -135,7 +138,7 @@ class M400dasm:
         elif group == OP_SHORT1:
             args = self.m400_decode_short1_arg(i, d, a, b, c)
             # those are jumps, calculate destination address for convenience
-            args = "%-3s -> 0x%04x" % (args, addr + 1 + int(args))
+            args = "%-3s ; -> 0x%04x" % (args, addr + 1 + int(args))
 
         # opcode with 8-bit arg
         elif group == OP_BYTE:
@@ -155,9 +158,10 @@ class M400dasm:
 
         # unknown group
         else:
-            args = "%04x" % (word)
+            code = ".data"
+            args = "0x%04x" % (word)
 
-        print "0x%04x: %-5s %-15s    # 0x%04x" % (addr, code, args, word)
+        print "x%04x: %-5s %-15s    ; 0x%04x" % (addr, code, args, word)
             
     # --------------------------------------------------------------------
     def m400_fetch(self):
@@ -170,8 +174,10 @@ class M400dasm:
 
     # --------------------------------------------------------------------
     def go(self):
+        print ".prog \"%s\"" % binfile
         while self.pos < len(self.img):
             self.m400_decode(self.m400_fetch())
+        print ".finprog"
  
 
 # ------------------------------------------------------------------------

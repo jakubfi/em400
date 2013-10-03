@@ -60,11 +60,7 @@ def m400_name_i37(i, d, a, b, c, mode):
 
 # ------------------------------------------------------------------------
 def m400_name_i70(i, d, a, b, c, mode):
-    # treated by assembler as UJS, 0
-    if (d==0) and (a==0) and (b==0) and (c==0):
-        return 'NOP', 'NO Operation'
-    else:
-        return op_short_arg_i70_a[a][mode], op_short_arg_i70_a[a][2]
+    return op_short_arg_i70_a[a][mode], op_short_arg_i70_a[a][2]
 
 # ------------------------------------------------------------------------
 def m400_name_i71(i, d, a, b, c, mode):
