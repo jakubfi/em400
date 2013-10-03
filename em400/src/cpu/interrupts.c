@@ -95,6 +95,7 @@ void int_update_rp()
 	pthread_mutex_lock(&int_mutex);
 	RP = RZ & xmask;
 	if (RP) pthread_spin_unlock(&int_ready);
+	else pthread_spin_trylock(&int_ready);
 	pthread_cond_signal(&int_cond);
 	pthread_mutex_unlock(&int_mutex);
 }
@@ -121,6 +122,7 @@ void int_clear_all()
 	pthread_mutex_lock(&int_mutex);
 	RZ = 0;
 	RP = 0;
+	pthread_spin_trylock(&int_ready);
 	pthread_mutex_unlock(&int_mutex);
 }
 
@@ -133,6 +135,8 @@ void int_clear(int x)
 	pthread_mutex_lock(&int_mutex);
 	RZ &= mask;
 	RP &= mask;
+	if (RP) pthread_spin_unlock(&int_ready);
+	else pthread_spin_trylock(&int_ready);
 	pthread_mutex_unlock(&int_mutex);
 }
 
@@ -195,11 +199,10 @@ void int_serve()
 	if (!mem_cpu_put(0, 97, sp+4)) return;
 
 	regs[0] = 0;
-	int_clear(interrupt);
 	regs[R_IC] = int_addr;
 	regs[R_SR] &= int_int2mask[interrupt] & MASK_Q; // put mask and clear Q
 	if (cpu_mod && (interrupt >= 12) && (interrupt <= 27)) regs[R_SR] &= MASK_EX; // put extended mask if cpu_mod
-	int_update_rp();
+	int_clear(interrupt);
 #ifdef WITH_DEBUGGER
 	log_int_level -= 4;
 #endif

@@ -245,9 +245,9 @@ void cpu_step()
 		*mbuf = '\0';
 	}
 	if (op->norm_arg) {
-		LOG(L_CPU, 10, "    %-20s N = 0x%04x = %i %s", buf, (uint16_t)N, (int16_t)N, mbuf);
+		LOG(L_CPU, 10, "    %-20s N = 0x%04x = %i %s", buf, (uint16_t) N, (int16_t) N, mbuf);
 	} else if (op->short_arg) {
-		LOG(L_CPU, 10, "    %-20s T = %i  %s", buf, (int16_t)N, mbuf);
+		LOG(L_CPU, 10, "    %-20s T = %i  %s", buf, (int16_t) N, mbuf);
 	} else {
 		LOG(L_CPU, 10, "    %-20s", buf);
 	}
