@@ -679,7 +679,7 @@ void op_72_svz()
 	} else {
 		Fclr(FL_Y);
 	}
-	alu_16_set_V(regs[IR_A], regs[IR_A], regs[IR_A]<<1);
+	alu_16_update_V(regs[IR_A], regs[IR_A], regs[IR_A]<<1);
 	reg_safe_write(IR_A, regs[IR_A]<<1);
 }
 
@@ -688,7 +688,7 @@ void op_72_svy()
 {
 	uint16_t ir_a = regs[IR_A];
 	reg_safe_write(IR_A, regs[IR_A]<<1 | Fget(FL_Y));
-	alu_16_set_V(ir_a, ir_a, regs[IR_A]);
+	alu_16_update_V(ir_a, ir_a, regs[IR_A]);
 	if (ir_a & 0b1000000000000000) {
 		Fset(FL_Y);
 	} else {
@@ -701,7 +701,7 @@ void op_72_svx()
 {
 	uint16_t ir_a = regs[IR_A];
 	reg_safe_write(IR_A, regs[IR_A]<<1 | Fget(FL_X));
-	alu_16_set_V(ir_a, ir_a, regs[IR_A]);
+	alu_16_update_V(ir_a, ir_a, regs[IR_A]);
 	if (ir_a & 0b1000000000000000) {
 		Fset(FL_Y);
 	} else {

@@ -141,6 +141,20 @@ void alu_16_set_V(uint64_t x, uint64_t y, uint64_t z)
 	//  * both arguments were positive, and result is negative
 	//  * OR both arguments were negative, and result is positive
 
+	if ((BIT(15, x) && BIT(15, y) && !BIT(15, z)) || (!BIT(15, x) && !(BIT(15, y)) && BIT(15, z))) {
+		Fset(FL_V);
+	} else {
+		Fclr(FL_V);
+	}
+}
+
+// -----------------------------------------------------------------------
+void alu_16_update_V(uint64_t x, uint64_t y, uint64_t z)
+{
+	// update V if it's not set AND:
+	//  * both arguments were positive, and result is negative
+	//  * OR both arguments were negative, and result is positive
+
 	if (!Fget(FL_V)) {
 		if ((BIT(15, x) && BIT(15, y) && !BIT(15, z)) || (!BIT(15, x) && !(BIT(15, y)) && BIT(15, z))) {
 			Fset(FL_V);
