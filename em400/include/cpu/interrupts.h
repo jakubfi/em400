@@ -22,17 +22,12 @@
 #include <pthread.h>
 
 extern pthread_spinlock_t int_ready;
-extern pthread_mutex_t int_mutex;
-extern pthread_cond_t int_cond;
 
 extern uint32_t RZ;
 extern uint32_t RP;
 
 extern int int_timer;
 extern int int_extra;
-
-extern const int int_int2rm[32];
-extern const int int_int2mask[32];
 
 enum _interrupts {
 	INT_2CPU_POWER		= 0,
@@ -89,7 +84,6 @@ void int_clear(int x);
 void int_clear_all();
 void int_put_nchan(uint16_t r);
 uint16_t int_get_nchan();
-
 void int_serve();
 
 #endif

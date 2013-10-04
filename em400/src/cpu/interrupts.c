@@ -41,7 +41,7 @@ pthread_mutex_t int_mutex = PTHREAD_MUTEX_INITIALIZER;
 pthread_cond_t int_cond = PTHREAD_COND_INITIALIZER;
 
 // for extending RM into 32-bit xmask
-const uint32_t int_rm2xmask[10] = {
+static const uint32_t int_rm2xmask[10] = {
 	0b01000000000000000000000000000000,
 	0b00100000000000000000000000000000,
 	0b00010000000000000000000000000000,
@@ -55,7 +55,7 @@ const uint32_t int_rm2xmask[10] = {
 };
 
 // bit masks (to use on SR) for each interrupt (always masks Q)
-const int int_int2mask[32] = {
+static const int int_int2mask[32] = {
 	MASK_0,
 	MASK_0,
 	MASK_1,

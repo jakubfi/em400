@@ -63,6 +63,7 @@ int cpu_init()
 	if (pthread_spin_init(&int_ready, 0)) {
 		return E_SPIN_INIT;
 	}
+	pthread_spin_trylock(&int_ready);
 
 	cpu_reset();
 	return E_OK;
