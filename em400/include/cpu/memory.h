@@ -38,11 +38,9 @@ enum mem_mega_flags {
 	MEM_MEGA_ALLOC_DONE	= 0b1000000,
 };
 
-extern pthread_spinlock_t mem_spin;
-extern uint16_t *mem_elwro[MEM_MAX_MODULES][MEM_MAX_SEGMENTS];
 extern uint16_t *mem_map[MEM_MAX_NB][MEM_MAX_AB];
+extern uint16_t *mem_elwro[MEM_MAX_MODULES][MEM_MAX_SEGMENTS];
 extern uint16_t *mem_mega[MEM_MAX_MODULES][MEM_MAX_SEGMENTS];
-extern uint16_t *mem_mega_prom;
 
 #define mem_ptr(nb, addr) (mem_map[nb][(addr) >> 12] ? mem_map[nb][(addr) >> 12] + ((addr) & 0b0000111111111111) : NULL)
 
