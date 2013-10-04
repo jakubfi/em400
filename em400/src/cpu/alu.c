@@ -29,6 +29,8 @@
 // get bits n...0
 #define BITS(n, z)	((z) & (((uint64_t) 1 << ((n)+1)) - 1))
 
+int alu_32_V;
+
 // -----------------------------------------------------------------------
 // ---- 16-bit -----------------------------------------------------------
 // -----------------------------------------------------------------------
@@ -97,7 +99,7 @@ void alu_16_set_Z(uint64_t z)
 {
 	// for arithmetic zero, V and C needs to be set prior Z
 	// set Z if:
-	//  * all 16 bits of result is 0 and there is no carry
+	//  * all 16 bits of result are 0 and there is no carry
 	//  * OR all 16 bits of result is 0 and carry is set, but overflow is not (case of -1+1)
 
 	if (!BITS(15, z) && (!Fget(FL_C) || (Fget(FL_C) && !Fget(FL_V)))) {
@@ -155,10 +157,8 @@ void alu_16_update_V(uint64_t x, uint64_t y, uint64_t z)
 	//  * both arguments were positive, and result is negative
 	//  * OR both arguments were negative, and result is positive
 
-	if (!Fget(FL_V)) {
-		if ((BIT(15, x) && BIT(15, y) && !BIT(15, z)) || (!BIT(15, x) && !(BIT(15, y)) && BIT(15, z))) {
-			Fset(FL_V);
-		}
+	if ((BIT(15, x) && BIT(15, y) && !BIT(15, z)) || (!BIT(15, x) && !(BIT(15, y)) && BIT(15, z))) {
+		Fset(FL_V);
 	}
 }
 
@@ -174,15 +174,23 @@ void alu_32_add(uint16_t arg1, uint16_t arg2, int sign)
 	uint64_t res = (uint64_t) a1 + (sign * a2);
 	regs[1] = DWORDl(res);
 	regs[2] = DWORDr(res);
+
+	alu_32_update_V(a1, sign*a2, res);
+	alu_32_set_M(res);
+	alu_32_set_C(res);
+	alu_32_set_Z(res);
 }
 
 // -----------------------------------------------------------------------
 void alu_32_mul(int16_t arg)
 {
 	int64_t res = (int16_t) regs[2] * arg;
-	// mul32() has no effect on V
 	regs[1] = DWORDl(res);
 	regs[2] = DWORDr(res);
+	// alu_32_mul() has no effect on V
+	alu_32_V = 0;
+	alu_32_set_M(res);
+	alu_32_set_Z(res);
 }
 
 // -----------------------------------------------------------------------
@@ -199,6 +207,66 @@ void alu_32_div(int16_t arg)
 	} else {
 		regs[2] = res;
 		regs[1] = d1 % arg;
+		// alu_32_div() has no effect on V
+		alu_32_V = 0;
+		// alu_32_div() has no effect on C
+		alu_32_set_M(res);
+		alu_32_set_Z(res);
+	}
+}
+
+// -----------------------------------------------------------------------
+void alu_32_set_Z(uint64_t z)
+{
+	// set Z if:
+	//  * all 16 bits of result are 0
+
+	if (!BITS(31, z)) {
+		Fset(FL_Z);
+	} else {
+		Fclr(FL_Z);
+	}
+}
+
+// -----------------------------------------------------------------------
+void alu_32_update_V(uint64_t x, uint64_t y, uint64_t z)
+{
+	// update V if:
+	//  * both arguments were positive, and result is negative
+	//  * OR both arguments were negative, and result is positive
+
+	if ((BIT(31, x) && BIT(31, y) && !BIT(31, z)) || (!BIT(31, x) && !(BIT(31, y)) && BIT(31, z))) {
+		Fset(FL_V);
+		alu_32_V = 1;
+	} else {
+		alu_32_V = 0;
+	}
+}
+
+// -----------------------------------------------------------------------
+void alu_32_set_C(uint64_t z)
+{
+	// set C if bit on position -1 is set
+
+	if (BIT(32, z)) {
+		Fset(FL_C);
+	} else {
+		Fclr(FL_C);
+	}
+}
+
+// -----------------------------------------------------------------------
+void alu_32_set_M(uint64_t z)
+{
+	// internal 32-bit V needs to be set prior M
+	// set M if:
+	//  * minus and no overflow (just a plain negative number)
+	//  * OR not minus and overflow (number looks non-negative, but there is overflow, which means a negative number overflown)
+
+	if ((BIT(31, z) && !alu_32_V) || (!BIT(31, z) && alu_32_V)) {
+		Fset(FL_M);
+	} else {
+		Fclr(FL_M);
 	}
 }
 

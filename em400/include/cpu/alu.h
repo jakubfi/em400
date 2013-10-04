@@ -36,6 +36,10 @@ void alu_16_update_V(uint64_t x, uint64_t y, uint64_t z);
 void alu_32_add(uint16_t arg1, uint16_t arg2, int sign);
 void alu_32_mul(int16_t arg);
 void alu_32_div(int16_t arg);
+void alu_32_set_Z(uint64_t z);
+void alu_32_update_V(uint64_t x, uint64_t y, uint64_t z);
+void alu_32_set_C(uint64_t z);
+void alu_32_set_M(uint64_t z);
 
 void alu_fp_norm();
 void alu_fp_add(uint16_t d1, uint16_t d2, uint16_t d3, int sign);
