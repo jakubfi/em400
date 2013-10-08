@@ -158,9 +158,9 @@ instruction:
 	| OP_SHC REGISTER ',' expr	{ $$ = mknod_op(N_SHC,	$1, $2, $4,   NULL); }
 	| OP_S						{ $$ = mknod_op(N_S,	$1, 0,  NULL, NULL); }
 	| OP_NRF					{ $$ = mknod_op(N_KA2,	$1, 0,  mknod_valstr(N_VAL, 0, NULL), NULL); }
-	| OP_NRF expr				{ $$ = mknod_op(N_KA2,	$1, 0,  $2,   NULL); }
+	| OP_NRF VALUE				{ $$ = mknod_op(N_KA2,	$1, 0,  mknod_valstr(N_VAL, $2.v, $2.s), NULL); }
 	| OP_HLT					{ $$ = mknod_op(N_HLT,	$1, 0,  mknod_valstr(N_VAL, 0, NULL), NULL); }
-	| OP_HLT expr				{ $$ = mknod_op(N_HLT,	$1, 0,  $2,   NULL); }
+	| OP_HLT VALUE				{ $$ = mknod_op(N_HLT,	$1, 0,  mknod_valstr(N_VAL, $2.v, $2.s), NULL); }
 	| OP_J norm					{ $$ = mknod_op(N_J,	$1, 0,  NULL, $2); }
 	| OP_L norm					{ $$ = mknod_op(N_L,	$1, 0,  NULL, $2); }
 	| OP_G norm					{ $$ = mknod_op(N_G,	$1, 0,  NULL, $2); }
