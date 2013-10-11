@@ -352,11 +352,6 @@ void alu_fp_store(double f, int round)
 	uint16_t d3 = (m_int >> 16) & 0b1111111100000000;
 	d3 |= exp & 255;
 
-	// FP resets C in most cases... except one:
-	// 0x6666 0x3333 0x33f7 - 0x6666 0x3333 0x33f0 = 0x6599 0x66cc 0xcdf7
-	// don't know how to handle it, yet, so:
-	Fclr(FL_C);
-
 	// set Z and M (fp doesn't touch V)
 	if (f == 0) {
 		Fset(FL_Z);
@@ -382,6 +377,7 @@ void alu_fp_norm()
 		Fclr(FL_C);
 		feclearexcept(FE_ALL_EXCEPT);
 		alu_fp_store(f, 0);
+		Fclr(FL_C); // always 0?
 	}
 }
 
@@ -395,6 +391,10 @@ void alu_fp_add(uint16_t d1, uint16_t d2, uint16_t d3, int sign)
 			f2 *= sign;
 			f1 += f2;
 			alu_fp_store(f1, 1);
+			// FP resets C in most cases... except one:
+			// 0x6666 0x3333 0x33f7 - 0x6666 0x3333 0x33f0 = 0x6599 0x66cc 0xcdf7
+			// don't know how to handle it, yet, so:
+			Fclr(FL_C);
 		}
 	}
 }
@@ -408,6 +408,7 @@ void alu_fp_mul(uint16_t d1, uint16_t d2, uint16_t d3)
 			feclearexcept(FE_ALL_EXCEPT);
 			f1 *= f2;
 			alu_fp_store(f1, 0);
+			Fclr(FL_C); // effectively always 0
 		}
 	}
 }
@@ -425,6 +426,7 @@ void alu_fp_div(uint16_t d1, uint16_t d2, uint16_t d3)
 				feclearexcept(FE_ALL_EXCEPT);
 				f1 /= f2;
 				alu_fp_store(f1, 0);
+				Fclr(FL_C); // always 0
 			}
 		}
 	}
