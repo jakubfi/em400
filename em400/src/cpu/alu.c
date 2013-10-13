@@ -24,11 +24,6 @@
 #include "cpu/registers.h"
 #include "cpu/interrupts.h"
 
-// get bit n
-#define BIT(n, z)	((z) & ((uint64_t) 1 << (n)))
-// get bits n...0
-#define BITS(n, z)	((z) & (((uint64_t) 1 << ((n)+1)) - 1))
-
 int alu_32_V;
 
 // -----------------------------------------------------------------------
@@ -65,7 +60,7 @@ void alu_16_neg(int reg, uint16_t carry)
 
 	alu_16_set_V(~a, carry, res);
 	alu_16_set_M(res);
-    // -0 sets carry
+	// -0 sets carry
 	if ((regs[IR_A] == 0) && (carry)) {
 		Fset(FL_C);
 	} else {
@@ -280,33 +275,33 @@ int alu_fp_get(uint16_t d1, uint16_t d2, uint16_t d3, double *f, int check_norm)
 	int64_t m;
 	double m_f;
 	int8_t exp;
-	
+
 	exp = d3 & 0b0000000011111111;
 	m  = (int64_t) d1 << 48;
 	m |= (int64_t) d2 << 32;
 	m |= (int64_t) (d3 & 0b1111111100000000) << 16;
 
 	if (m == 0) {
-		m_f = 0.0f;
 		*f = 0.0f;
 	} else {
-		m_f = ldexp(m, -(FP_M_BITS-1));
-
 		// expecting normalized input
 		if (check_norm) {
-			if ((m_f >= -0.5f) && (m_f < 0.5f)) {
+			if ((FP_BIT(0, m) >> 1) == FP_BIT(1, m)) {
 				int_set(INT_DIV0);
 				return -1;
 			}
 		}
 
+		// scale m down to floating point
+		m_f = ldexp(m, -(FP_BITS-1));
+		// make final fp number
 		*f = ldexp(m_f, exp);
 	}
 	return 0;
 }
 
 // -----------------------------------------------------------------------
-void alu_fp_store(double f, int round)
+void alu_fp_store(double f, int round, int set_c)
 {
 	// fetch flags as left by fp operation
 	int fe_flags = fetestexcept(FE_OVERFLOW | FE_UNDERFLOW);
@@ -316,28 +311,28 @@ void alu_fp_store(double f, int round)
 	double m = frexp(f, &exp);
 
 	// scale m to 64-bit
-	int64_t m_int = ldexp(m, FP_M_BITS-1);
+	int64_t m_int = ldexp(m, FP_BITS-1);
 
 	// 'normalized' for frexp() is (-1,-0.5], [0.5,1)
 	// 'normalized' for AWP is [-1,-0.5), [0.5,1)
 	// example: -1 + -1 = -2
 	// 0x8000 0x0000 0x0000 + 0x8000 0x0000 0x0000 = 0x8000 0x0000 0x0001 (without fix it's: 0xc000 0x0000 0x0002)
-	// so if result is -0.5 * 2^n make it -1 * 2^(n-1)
-	if ((m_int != 0) && ((BIT(63, m_int) >> 1) == BIT(62, m_int))) {
+	// so if result is -0.5 * 2^n, make it -1 * 2^(n-1)
+	if ((m_int != 0) && ((FP_BIT(0, m_int) >> 1) == FP_BIT(1, m_int))) {
 		m_int <<= 1;
 		exp--;
 	}
 
-	// AWP rounds up for add/sub if bit -1 of the result is set
-	if (round && BIT(FP_M_BITS-1-40, m_int)) {
-		// if we would overflow, need to shift first
-		#define FULL_M_INT 0b0111111111111111111111111111111111111111000000000000000000000000
-		if ((m_int & FULL_M_INT) == FULL_M_INT) {
+	// AWP rounds up for AF/SF if bit 40 (stored in M[-1]) of the result is set
+	if (round && FP_BIT(40, m_int)) {
+		// if we would overflow, need to shift right first
+		if ((m_int & FP_M_MAX) == FP_M_MAX) {
 			m_int >>= 1;
 			exp++;
+			m_int += FP_CORRECTION >> 1;
+		} else {
+			m_int += FP_CORRECTION;
 		}
-		// add 1 on the least significant m_int position
-		m_int += 1ULL << (FP_M_BITS-1-40);
 	}
 
 	// check host overflow/underflow, check if exponent fits in 8 bits
@@ -347,22 +342,30 @@ void alu_fp_store(double f, int round)
 		int_set(INT_FP_UF);
 	}
 
-	uint16_t d1 = m_int >> 48;
-	uint16_t d2 = m_int >> 32;
-	uint16_t d3 = (m_int >> 16) & 0b1111111100000000;
-	d3 |= exp & 255;
-
-	// set Z and M (fp doesn't touch V)
-	if (f == 0) {
+	// fp doesn't touch V
+	// set Z and M
+	if ((m_int & FP_M_MASK) == 0) {
 		Fset(FL_Z);
 		Fclr(FL_M);
-	} else if (f < 0) {
+	} else if (FP_BIT(0, m_int)) {
 		Fclr(FL_Z);
 		Fset(FL_M);
 	} else {
 		Fclr(FL_Z);
 		Fclr(FL_M);
 	}
+
+	// set C to M[-1] (only for AF/SF)
+	if (set_c && FP_BIT(40, m_int)) {
+		Fset(FL_C);
+	} else {
+		Fclr(FL_C);
+	}
+
+	uint16_t d1 = m_int >> 48;
+	uint16_t d2 = m_int >> 32;
+	uint16_t d3 = (m_int >> 16) & 0b1111111100000000;
+	d3 |= exp & 255;
 
 	regs[1] = d1;
 	regs[2] = d2;
@@ -376,8 +379,8 @@ void alu_fp_norm()
 	if (!alu_fp_get(regs[1], regs[2], regs[3], &f, 0)) {
 		Fclr(FL_C);
 		feclearexcept(FE_ALL_EXCEPT);
-		alu_fp_store(f, 0);
-		Fclr(FL_C); // always 0?
+		alu_fp_store(f, 0, 0);
+		Fclr(FL_C); // always 0
 	}
 }
 
@@ -390,11 +393,7 @@ void alu_fp_add(uint16_t d1, uint16_t d2, uint16_t d3, int sign)
 			feclearexcept(FE_ALL_EXCEPT);
 			f2 *= sign;
 			f1 += f2;
-			alu_fp_store(f1, 1);
-			// FP resets C in most cases... except one:
-			// 0x6666 0x3333 0x33f7 - 0x6666 0x3333 0x33f0 = 0x6599 0x66cc 0xcdf7
-			// don't know how to handle it, yet, so:
-			Fclr(FL_C);
+			alu_fp_store(f1, 1, 1);
 		}
 	}
 }
@@ -407,7 +406,7 @@ void alu_fp_mul(uint16_t d1, uint16_t d2, uint16_t d3)
 		if (!alu_fp_get(d1, d2, d3, &f2, 1)) {
 			feclearexcept(FE_ALL_EXCEPT);
 			f1 *= f2;
-			alu_fp_store(f1, 0);
+			alu_fp_store(f1, 0, 0);
 			Fclr(FL_C); // effectively always 0
 		}
 	}
@@ -425,7 +424,7 @@ void alu_fp_div(uint16_t d1, uint16_t d2, uint16_t d3)
 			} else {
 				feclearexcept(FE_ALL_EXCEPT);
 				f1 /= f2;
-				alu_fp_store(f1, 0);
+				alu_fp_store(f1, 0, 0);
 				Fclr(FL_C); // always 0
 			}
 		}

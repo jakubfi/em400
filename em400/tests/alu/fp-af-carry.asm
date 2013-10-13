@@ -32,5 +32,5 @@
 
 ; XPCT hex(r1) : 0x4000
 ; XPCT hex(r2) : 0x0000
-; XPCT hex(r3) : 0x0001
+; XPCT hex(r3) : 0x0101
 

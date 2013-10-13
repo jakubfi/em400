@@ -22,7 +22,7 @@
 
 // -----------------------------------------------------------------------
 // convert an integer to formatted string with its binary representation
-char * int2binf(char *format, unsigned value, int size)
+char * int2binf(char *format, uint64_t value, int size)
 {
     char *i = format;
     char *buf = malloc(strlen(format)+1);

@@ -22,7 +22,14 @@
 
 #include "cpu/cpu.h"
 
-#define FP_M_BITS 64
+#define BIT(n, z)   ((z) & (1ULL << (n)))           // get bit n (n...0 bit numbering)
+#define BITS(n, z)  ((z) & ((1ULL << ((n)+1)) - 1)) // get bits n...0 (n...0 bit numbering)
+
+#define FP_BITS 64
+#define FP_M_MASK 0b1111111111111111111111111111111111111111000000000000000000000000
+#define FP_M_MAX 0b0111111111111111111111111111111111111111000000000000000000000000
+#define FP_CORRECTION (1ULL << (FP_BITS-1-39))
+#define FP_BIT(n, z) ((z) & (1ULL << (FP_BITS-1-n))) // get nth bit of 40-bit mantissa (stored in 64-bit uint, 0...n bit numbering)
 
 void alu_16_add(unsigned reg, uint16_t arg, unsigned carry, int sign);
 void alu_16_neg(int reg, uint16_t carry);
