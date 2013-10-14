@@ -318,7 +318,7 @@ class M400Conf:
     def parse_rtc(self, word):
         wc = WordConf(word, disableable = True)
         wc.add("unit", "Urządzenie", 8, 10)
-        wc.add("chan", "Kanał", 8, 10)
+        wc.add("chan", "Kanał", 11, 14)
         return wc
 
     # --------------------------------------------------------------------
