@@ -63,7 +63,7 @@ class TestBed:
                 result_avg += result[i]
             result_avg /= count
                 
-            print "%-40s : %.3f%s" % (test_file.replace("./", ""), result_avg/1000000, details)
+            print("%-40s : %.3f%s" % (test_file.replace("./", ""), result_avg/1000000, details))
 
 # ------------------------------------------------------------------------
 class Benchmark:
@@ -85,7 +85,7 @@ class Benchmark:
             phase = "Run"
             result = self.execute()
             phase = ""
-        except Exception, e:
+        except Exception as e:
             result = "FAILED"
             details = " at %s: %s" % (phase, str(e))
 
@@ -101,7 +101,7 @@ class Benchmark:
     def execute(self):
         args = [em400, "-c", self.config, "-p", self.output, "-be"]
 
-        o = subprocess.check_output(args)
+        o = subprocess.check_output(args).decode("utf-8")
 
         tres = re.findall("IPS: ([0-9]+) .*\n", o)
 
