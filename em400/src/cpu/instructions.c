@@ -529,7 +529,7 @@ void op_71_exl()
 	regs[0] = 0;
 	mem_ret_put(0, 97, sp+4);
 	regs[R_SR] &= 0b1111111110011111; // clear Q and RM9
-	int_update_rp();
+	int_update_mask();
 }
 
 // -----------------------------------------------------------------------
@@ -763,7 +763,7 @@ void op_73_hlt()
 void op_73_mcl()
 {
 	regs[R_SR] = 0;
-	int_update_rp();
+	int_update_mask();
 	int_clear_all();
 	regs[0] = 0;
 	mem_reset();
@@ -825,8 +825,8 @@ void op_73_lip()
 
 	mem_ret_get(0, sp-2, &data);
 	regs[R_SR] = data;
+	int_update_mask();
 
-	int_update_rp();
 	mem_ret_put(0, 97, sp-4);
 #ifdef WITH_DEBUGGER
 	log_int_level += 4;
@@ -1050,7 +1050,7 @@ void op_77_im()
 	uint16_t data;
 	mem_ret_get(QNB, N, &data);
 	regs[R_SR] = (regs[R_SR] & 0b000000000111111) | (data & 0b1111111111000000);
-	int_update_rp();
+	int_update_mask();
 }
 
 // -----------------------------------------------------------------------
@@ -1087,8 +1087,8 @@ void op_77_sp()
 
 	mem_ret_get(NB, N+2, &data);
 	regs[R_SR] = data;
+	int_update_mask();
 
-	int_update_rp();
 #ifdef WITH_DEBUGGER
 	log_int_level = LOG_INT_INDENT_MAX;
 	if (exl_was_exl && (regs[R_IC] == exl_was_addr) && (NB == exl_was_nb)) {

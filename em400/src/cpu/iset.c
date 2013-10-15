@@ -53,8 +53,8 @@ struct opdef iset[] = {
 	{ 032, true, false, false, op_bs, NULL },
 	{ 033, true, false, false, op_bc, NULL },
 	{ 034, true, false, false, op_bn, NULL },
-	{ 035, true, false, false, op_ou, NULL },
-	{ 036, true, false, false, op_in, NULL },
+	{ 035, true, false, true, op_ou, NULL },
+	{ 036, true, false, true, op_in, NULL },
 
 	{ 037, true, false, false, NULL, op_37 },
 

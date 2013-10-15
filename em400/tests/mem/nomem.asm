@@ -2,13 +2,12 @@
 
 ; CONFIG configs/no_user_mem.cfg
 
-; PRE sr = 0b0100000000000001
-
 	.equ int_nomem 0x40 + 2
 	.equ stackp 0x61
 
 	uj start
 
+mask:	.data 0b0100000000000001
 nomem_proc:
 	hlt 077
 
@@ -17,6 +16,8 @@ start:
 	rw r3, stackp
 	lw r3, nomem_proc
 	rw r3, int_nomem
+	im mask
+	mb mask
 
 	pw r1, 10
 

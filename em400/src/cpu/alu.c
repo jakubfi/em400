@@ -192,7 +192,7 @@ void alu_32_mul(int16_t arg)
 void alu_32_div(int16_t arg)
 {
 	if (!arg) {
-		int_set(INT_DIV0);
+		int_set(INT_FP_ERR);
 		return;
 	}
 	int32_t d1 = DWORD(regs[1], regs[2]);
@@ -287,7 +287,7 @@ int alu_fp_get(uint16_t d1, uint16_t d2, uint16_t d3, double *f, int check_norm)
 		// expecting normalized input
 		if (check_norm) {
 			if ((FP_BIT(0, m) >> 1) == FP_BIT(1, m)) {
-				int_set(INT_DIV0);
+				int_set(INT_FP_ERR);
 				return -1;
 			}
 		}
@@ -419,7 +419,7 @@ void alu_fp_div(uint16_t d1, uint16_t d2, uint16_t d3)
 	if (!alu_fp_get(regs[1], regs[2], regs[3], &f1, 1)) {
 		if (!alu_fp_get(d1, d2, d3, &f2, 1)) {
 			if (f2 == 0.0f) {
-				int_set(INT_DIV0);
+				int_set(INT_FP_ERR);
 				return;
 			} else {
 				feclearexcept(FE_ALL_EXCEPT);

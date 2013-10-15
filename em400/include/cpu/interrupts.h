@@ -22,9 +22,7 @@
 #include <pthread.h>
 
 extern pthread_spinlock_t int_ready;
-
 extern uint32_t RZ;
-extern uint32_t RP;
 
 extern int int_timer;
 extern int int_extra;
@@ -40,7 +38,7 @@ enum _interrupts {
 	INT_DIV_OF			= 7,
 	INT_FP_UF			= 8,
 	INT_FP_OF			= 9,
-	INT_DIV0			= 10,
+	INT_FP_ERR			= 10,
 	INT_EXTRA			= 11,
 	INT_C0				= 12,
 	INT_C1				= 13,
@@ -64,21 +62,25 @@ enum _interrupts {
 	INT_SOFT_L			= 31
 };
 
-#define MASK_Q				0b1111111111011111
-#define MASK_0				0b0000000000111111
-#define MASK_1				0b1000000000111111
-#define MASK_2				0b1100000000111111
-#define MASK_3				0b1110000000111111
-#define MASK_4				0b1111000000111111
-#define MASK_5				0b1111100000111111
-#define MASK_6				0b1111110000111111
-#define MASK_7				0b1111111000111111
-#define MASK_8				0b1111111100111111
-#define MASK_9				0b1111111110111111
-#define MASK_EX				MASK_4
+#define INT_BIT(x) (1UL << (31 - x))
+
+enum int_masks_e {
+	MASK_0	= 0b0000000000111111,
+	MASK_1	= 0b1000000000111111,
+	MASK_2	= 0b1100000000111111,
+	MASK_3	= 0b1110000000111111,
+	MASK_4	= 0b1111000000111111,
+	MASK_5	= 0b1111100000111111,
+	MASK_6	= 0b1111110000111111,
+	MASK_7	= 0b1111111000111111,
+	MASK_8	= 0b1111111100111111,
+	MASK_9	= 0b1111111110111111,
+	MASK_Q	= 0b1111111111011111,
+	MASK_EX	= MASK_4,
+};
 
 void int_wait();
-void int_update_rp();
+void int_update_mask();
 void int_set(int x);
 void int_clear(int x);
 void int_clear_all();

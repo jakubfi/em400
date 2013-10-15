@@ -63,7 +63,7 @@ int cpu_init()
 	if (pthread_spin_init(&int_ready, 0)) {
 		return E_SPIN_INIT;
 	}
-	pthread_spin_trylock(&int_ready);
+	int_update_mask(regs[R_SR]);
 
 	cpu_reset();
 	return E_OK;
@@ -146,7 +146,6 @@ void cpu_reset()
 	mem_reset();
 	int_clear_all();
 	cpu_mod_off();
-	pthread_spin_trylock(&int_ready);
 }
 
 // -----------------------------------------------------------------------

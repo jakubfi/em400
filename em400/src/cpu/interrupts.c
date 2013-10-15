@@ -32,6 +32,7 @@
 
 uint32_t RZ;
 uint32_t RP;
+uint32_t int_mask;
 
 int int_timer = INT_TIMER;
 int int_extra = INT_EXTRA;
@@ -54,7 +55,7 @@ static const uint32_t int_rm2xmask[10] = {
 	0b00000000000000000000000000001111
 };
 
-// bit masks (to use on SR) for each interrupt (always masks Q)
+// bit masks (to use on SR) for each interrupt
 static const int int_int2mask[32] = {
 	MASK_0,
 	MASK_0,
@@ -82,21 +83,29 @@ void int_wait()
 // -----------------------------------------------------------------------
 void int_update_rp()
 {
+	RP = RZ & int_mask;
+	if (RP) {
+		pthread_spin_unlock(&int_ready);
+		pthread_cond_signal(&int_cond);
+	} else {
+		pthread_spin_trylock(&int_ready);
+	}
+}
+
+// -----------------------------------------------------------------------
+void int_update_mask()
+{
 	int i;
-	uint16_t sr = regs[R_SR];
 	uint32_t xmask = 0b10000000000000000000000000000000;
 
+	pthread_mutex_lock(&int_mutex);
 	for (i=0 ; i<10 ; i++) {
-		if (sr & (1 << (15-i))) {
+		if (regs[R_SR] & (1 << (15-i))) {
 			xmask |= int_rm2xmask[i];
 		}
 	}
-
-	pthread_mutex_lock(&int_mutex);
-	RP = RZ & xmask;
-	if (RP) pthread_spin_unlock(&int_ready);
-	else pthread_spin_trylock(&int_ready);
-	pthread_cond_signal(&int_cond);
+	int_mask = xmask;
+	int_update_rp();
 	pthread_mutex_unlock(&int_mutex);
 }
 
@@ -111,9 +120,9 @@ void int_set(int x)
 	}
 #endif
 	pthread_mutex_lock(&int_mutex);
-	RZ |= (1 << (31 - x));
-	pthread_mutex_unlock(&int_mutex);
+	RZ |= INT_BIT(x);
 	int_update_rp();
+	pthread_mutex_unlock(&int_mutex);
 }
 
 // -----------------------------------------------------------------------
@@ -121,22 +130,17 @@ void int_clear_all()
 {
 	pthread_mutex_lock(&int_mutex);
 	RZ = 0;
-	RP = 0;
-	pthread_spin_trylock(&int_ready);
+	int_update_rp();
 	pthread_mutex_unlock(&int_mutex);
 }
 
 // -----------------------------------------------------------------------
 void int_clear(int x)
 {
-	uint32_t mask;
 	LOG(L_INT, 20, "Clear: %lld (%s)", x, log_int_name[x]);
-	mask = ~((1 << (31 - x)));
 	pthread_mutex_lock(&int_mutex);
-	RZ &= mask;
-	RP &= mask;
-	if (RP) pthread_spin_unlock(&int_ready);
-	else pthread_spin_trylock(&int_ready);
+	RZ &= ~INT_BIT(x);
+	int_update_rp();
 	pthread_mutex_unlock(&int_mutex);
 }
 
@@ -146,8 +150,8 @@ void int_put_nchan(uint16_t r)
 	LOG(L_INT, 20, "Set non-channel to: %d", r);
 	pthread_mutex_lock(&int_mutex);
 	RZ = (RZ & 0b00000000000011111111111111110000) | ((r & 0b1111111111110000) << 16) | (r & 0b0000000000001111);
-	pthread_mutex_unlock(&int_mutex);
 	int_update_rp();
+	pthread_mutex_unlock(&int_mutex);
 }
 
 // -----------------------------------------------------------------------
@@ -163,7 +167,6 @@ uint16_t int_get_nchan()
 // -----------------------------------------------------------------------
 void int_serve()
 {
-	uint32_t rp;
 	int probe = 31;
 	int interrupt;
 	uint16_t int_addr;
@@ -171,16 +174,15 @@ void int_serve()
 	uint16_t sp;
 
 	pthread_mutex_lock(&int_mutex);
-	rp = RP;
-	pthread_mutex_unlock(&int_mutex);
-
 	// find highest interrupt to serve
-	while ((probe > 0) && !(rp & (1 << probe))) {
+	while ((probe > 0) && !(RP & (1 << probe))) {
 		probe--;
 	}
-
-	// this is the interrupt we're going to serve
 	interrupt = 31 - probe;
+	// clear interrupt, we update rp together with mask later
+	RZ &= ~INT_BIT(interrupt);
+	pthread_mutex_unlock(&int_mutex);
+
 	if (!mem_cpu_get(0, 64+interrupt, &int_addr)) return;
 
 	// get interrupt specification if it's from channel
@@ -198,12 +200,11 @@ void int_serve()
 	if (!mem_cpu_put(0, sp+3, int_spec)) return;
 	if (!mem_cpu_put(0, 97, sp+4)) return;
 
-	int_clear(interrupt);
 	regs[0] = 0;
 	regs[R_IC] = int_addr;
 	regs[R_SR] &= int_int2mask[interrupt] & MASK_Q; // put mask and clear Q
 	if (cpu_mod && (interrupt >= 12) && (interrupt <= 27)) regs[R_SR] &= MASK_EX; // put extended mask if cpu_mod
-	int_update_rp();
+	int_update_mask();
 #ifdef WITH_DEBUGGER
 	log_int_level -= 4;
 #endif
