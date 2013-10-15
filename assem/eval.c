@@ -317,10 +317,15 @@ struct node_t * eval_res(struct node_t *n)
 	DEBUG("eval_res(): rep:%i\n", repetitions);
 
 	struct node_t *nn = NULL;
+	struct node_t *nnn;
 
 	// prepend nodes, order doesn't matter here
 	while (repetitions > 0) {
-		struct node_t *nnn = eval_expr(n->n2);
+		if (n->n2) {
+			nnn = eval_expr(n->n2);
+		} else {
+			nnn = mknod_valstr(N_VAL, 0, NULL);
+		}
 		if (!nnn) {
 			ass_error(n->lineno, "Memory allocation error");
 			return NULL;
