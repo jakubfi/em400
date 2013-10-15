@@ -90,14 +90,19 @@ user_prog:
 	lip
 	lw r1, zerod
 	sp r1
+	in r6, 0
+	.data ok, ok, ok, ok
+	ou r6, 0
+	.data ok, ok, ok, ok
 	exl 0
-	hlt 040
-	.equ user_prog_end S
+ok:	hlt 040
+
+user_prog_end:
 
 .finprog
 
 ; XPCT int(rz[6]) : 0
 ; XPCT bin(SR) : 0b1111100000000001
 
-; XPCT int(r7) : 14
+; XPCT int(r7) : 24
 ; XPCT oct(ir[10-15]) : 077
