@@ -1,5 +1,6 @@
 .prog "int/timer"
 
+; CONFIG configs/minimal-clock.cfg
 ; busy loop for a while, waiting for timer to tick
 
 	lwt r1, 0

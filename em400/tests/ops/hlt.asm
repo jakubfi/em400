@@ -1,5 +1,6 @@
 .prog "op/HLT"
 
+; CONFIG configs/minimal-clock.cfg
 ; PRE [20] = 0b0000100000000000
 
 	lw r1, fin
