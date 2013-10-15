@@ -22,6 +22,21 @@
 
 #include "cpu/cpu.h"
 
+enum alu_awp_ops_e {
+	AWP_NRF0 = 0,
+	AWP_NRF1 = 1,
+	AWP_NRF2 = 2,
+	AWP_NRF3 = 3,
+	AWP_AD = 4,
+	AWP_SD = 5,
+	AWP_MW = 6,
+	AWP_DW = 7,
+	AWP_AF = 8,
+	AWP_SF = 9,
+	AWP_MF = 10,
+	AWP_DF = 11,
+};
+
 #define BIT(n, z)   ((z) & (1ULL << (n)))           // get bit n (n...0 bit numbering)
 #define BITS(n, z)  ((z) & ((1ULL << ((n)+1)) - 1)) // get bits n...0 (n...0 bit numbering)
 
@@ -39,6 +54,8 @@ void alu_16_set_M(uint64_t z);
 void alu_16_set_C(uint64_t z);
 void alu_16_set_V(uint64_t x, uint64_t y, uint64_t z);
 void alu_16_update_V(uint64_t x, uint64_t y, uint64_t z);
+
+void alu_awp_dispatch(int op, uint16_t arg);
 
 void alu_32_add(uint16_t arg1, uint16_t arg2, int sign);
 void alu_32_mul(int16_t arg);

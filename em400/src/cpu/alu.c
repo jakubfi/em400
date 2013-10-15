@@ -19,6 +19,8 @@
 #include <math.h>
 #include <fenv.h>
 
+#include "cfg.h"
+#include "debugger/log.h"
 #include "cpu/alu.h"
 #include "cpu/cpu.h"
 #include "cpu/registers.h"
@@ -160,6 +162,49 @@ void alu_16_update_V(uint64_t x, uint64_t y, uint64_t z)
 // -----------------------------------------------------------------------
 // ---- 32-bit -----------------------------------------------------------
 // -----------------------------------------------------------------------
+
+// -----------------------------------------------------------------------
+void alu_awp_dispatch(int op, uint16_t arg)
+{
+	uint16_t d[3];
+	if (em400_cfg.cpu_awp) {
+		if (!mem_cpu_mget(QNB, arg, d, 3)) return;
+		switch (op) {
+			case AWP_NRF0:
+			case AWP_NRF1:
+			case AWP_NRF2:
+			case AWP_NRF3:
+				alu_fp_norm();
+				break;
+			case AWP_AD:
+				alu_32_add(d[0], d[1], 1);
+				break;
+			case AWP_SD:
+				alu_32_add(d[0], d[1], -1);
+				break;
+			case AWP_MW:
+				alu_32_mul(d[0]);
+				break;
+			case AWP_DW:
+				alu_32_div(d[0]);
+				break;
+			case AWP_AF:
+				alu_fp_add(d[0], d[1], d[2], 1);
+				break;
+			case AWP_SF:
+				alu_fp_add(d[0], d[1], d[2], -1);
+				break;
+			case AWP_MF:
+				alu_fp_mul(d[0], d[1], d[2]);
+				break;
+			case AWP_DF:
+				alu_fp_div(d[0], d[1], d[2]);
+				break;
+		}
+	} else {
+		if (!cpu_ctx_switch(arg, 100+op, 0b1111111110011111)) return;
+	}
+}
 
 // -----------------------------------------------------------------------
 void alu_32_add(uint16_t arg1, uint16_t arg2, int sign)

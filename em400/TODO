@@ -5,7 +5,6 @@ CPU:
 * mega "DONE" handling (?)
 * handling no memory for io devices
 * timings (instructions, memory access, disk latencies, serial lines, ...)
-* optional AWP + "software fp"
 
 I/O:
 
