@@ -16,6 +16,14 @@ computer {
 	# allowed values: "true", "false" (default)
 	cpu_mod = true
 
+	# IN/OU operations can be either illegal or legal in user programs
+	# allowed values: "true" (default), "false"
+	cpu_user_io_illegal = true
+
+	# AWP (hardware 48-bit floating point and 32-bit fixed point arithmetic) is optional
+	# allowed values: "true" (default), "false"
+	cpu_awp = true
+
 	# Memory is organized into 16 physical modules. Each module can be
 	# either elwro or mega. Elwro modules are 32kword big (8 pages),
 	# mega modules are 64kword in size (16 pages).

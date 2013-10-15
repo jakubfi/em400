@@ -41,6 +41,8 @@ computer		return COMPUTER;
 speed_real		return SPEED_REAL;
 timer_step		return TIMER;
 cpu_mod			return CPU_MOD;
+cpu_user_io_illegal		return CPU_USER_IO_ILLEGAL;
+cpu_awp			return CPU_AWP;
 mem_elwro		return ELWRO;
 mem_mega		return MEGA;
 mem_mega_prom	return MEGA_PROM;

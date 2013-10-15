@@ -60,6 +60,11 @@ int cpu_init()
 		}
 	}
 
+	// set IN/OU operations user-legalness
+	iset[035].user_illegal = em400_cfg.cpu_user_io_illegal;
+	iset[036].user_illegal = em400_cfg.cpu_user_io_illegal;
+
+	// init interrupts
 	if (pthread_spin_init(&int_ready, 0)) {
 		return E_SPIN_INIT;
 	}
@@ -77,9 +82,9 @@ void cpu_shutdown()
 }
 
 // -----------------------------------------------------------------------
-int cpu_set_op(struct opdef *op_tab, int opcode, opfun fun)
+int cpu_op_73_set(int opcode, opfun fun)
 {
-	struct opdef *op = op_tab;
+	struct opdef *op = iset_73;
 	while (op && (op->opcode != 0b1111111)) {
 		if (op->opcode == opcode) {
 			op->fun = fun;
@@ -93,7 +98,7 @@ int cpu_set_op(struct opdef *op_tab, int opcode, opfun fun)
 // -----------------------------------------------------------------------
 int cpu_mod_enable()
 {
-	return cpu_set_op(iset_73, 0b0101000, op_73_cron);
+	return cpu_op_73_set(0b0101000, op_73_cron);
 }
 
 // -----------------------------------------------------------------------
@@ -105,11 +110,11 @@ int cpu_mod_on()
 	int_timer = INT_EXTRA;
 	int_extra = INT_TIMER;
 
-	res = cpu_set_op(iset_73, 0b0010100, op_73_sint);
+	res = cpu_op_73_set(0b0010100, op_73_sint);
 	if (res != E_OK) {
 		return res;
 	}
-	res = cpu_set_op(iset_73, 0b1010100, op_73_sind);
+	res = cpu_op_73_set(0b1010100, op_73_sind);
 	if (res != E_OK) {
 		return res;
 	}
@@ -125,11 +130,11 @@ int cpu_mod_off()
 	int_timer = INT_TIMER;
 	int_extra = INT_EXTRA;
 
-	res = cpu_set_op(iset_73, 0b0010100, NULL);
+	res = cpu_op_73_set(0b0010100, NULL);
 	if (res != E_OK) {
 		return res;
 	}
-	res = cpu_set_op(iset_73, 0b1010100, NULL);
+	res = cpu_op_73_set(0b1010100, NULL);
 	if (res != E_OK) {
 		return res;
 	}
