@@ -154,6 +154,43 @@ void cpu_reset()
 }
 
 // -----------------------------------------------------------------------
+int cpu_ctx_switch(uint16_t arg, uint16_t ic, uint16_t sr_mask)
+{
+	uint16_t sp;
+	if (!mem_cpu_get(0, 97, &sp)) return 0;
+	if (!mem_cpu_put(0, sp, regs[R_IC])) return 0;
+	if (!mem_cpu_put(0, sp+1, regs[0])) return 0;
+	if (!mem_cpu_put(0, sp+2, regs[R_SR])) return 0;
+	if (!mem_cpu_put(0, sp+3, arg)) return 0;
+	if (!mem_cpu_put(0, 97, sp+4)) return 0;
+	regs[0] = 0;
+	regs[R_IC] = ic;
+	regs[R_SR] &= sr_mask;
+	int_update_mask();
+	LOG(L_CPU, 20, "ctx switch: 0x%04x", ic);
+	return 1;
+}
+
+// -----------------------------------------------------------------------
+int cpu_ctx_restore()
+{
+	uint16_t data;
+	uint16_t sp;
+
+	if (!mem_cpu_get(0, 97, &sp)) return 0;
+	if (!mem_cpu_get(0, sp-4, &data)) return 0;
+	regs[R_IC] = data;
+	LOG(L_CPU, 20, "ctx restore: 0x%04x", data);
+	if (!mem_cpu_get(0, sp-3, &data)) return 0;
+	regs[0] = data;
+	if (!mem_cpu_get(0, sp-2, &data)) return 0;
+	regs[R_SR] = data;
+	int_update_mask();
+	if (!mem_cpu_put(0, 97, sp-4)) return 0;
+	return 1;
+}
+
+// -----------------------------------------------------------------------
 void cpu_step()
 {
 	int32_t N17;

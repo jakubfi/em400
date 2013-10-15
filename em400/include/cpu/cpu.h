@@ -36,6 +36,8 @@ int cpu_mod_enable();
 int cpu_mod_on();
 int cpu_mod_off();
 void cpu_reset();
+int cpu_ctx_switch(uint16_t arg, uint16_t ic, uint16_t sr_mask);
+int cpu_ctx_restore();
 void cpu_step();
 
 #endif

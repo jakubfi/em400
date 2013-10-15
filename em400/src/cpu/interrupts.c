@@ -171,7 +171,7 @@ void int_serve()
 	int interrupt;
 	uint16_t int_addr;
 	uint16_t int_spec = 0;
-	uint16_t sp;
+	uint16_t sr_mask;
 
 	pthread_mutex_lock(&int_mutex);
 	// find highest interrupt to serve
@@ -193,18 +193,9 @@ void int_serve()
 	LOG(L_INT, 1, "Serve: %d (%s, spec: %i) -> 0x%04x / return: 0x%04x", interrupt, log_int_name[interrupt], int_spec, int_addr, regs[R_IC]);
 
 	// put system status on stack
-	if (!mem_cpu_get(0, 97, &sp)) return;
-	if (!mem_cpu_put(0, sp, regs[R_IC])) return;
-	if (!mem_cpu_put(0, sp+1, regs[0])) return;
-	if (!mem_cpu_put(0, sp+2, regs[R_SR])) return;
-	if (!mem_cpu_put(0, sp+3, int_spec)) return;
-	if (!mem_cpu_put(0, 97, sp+4)) return;
-
-	regs[0] = 0;
-	regs[R_IC] = int_addr;
-	regs[R_SR] &= int_int2mask[interrupt] & MASK_Q; // put mask and clear Q
-	if (cpu_mod && (interrupt >= 12) && (interrupt <= 27)) regs[R_SR] &= MASK_EX; // put extended mask if cpu_mod
-	int_update_mask();
+	sr_mask = int_int2mask[interrupt] & MASK_Q; // put mask and clear Q
+	if (cpu_mod && (interrupt >= 12) && (interrupt <= 27)) sr_mask &= MASK_EX; // put extended mask if cpu_mod
+	if (!cpu_ctx_switch(int_spec, int_addr, sr_mask)) return;
 #ifdef WITH_DEBUGGER
 	log_int_level -= 4;
 #endif

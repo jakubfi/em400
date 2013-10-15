@@ -508,7 +508,6 @@ void op_71_blc()
 void op_71_exl()
 {
 	uint16_t data;
-	uint16_t sp;
 	LOG(L_OP, 10, "EXL: %i (r4: 0x%04x)", IR_b, regs[4]);
 #ifdef WITH_DEBUGGER
 	char *details = decode_exl(NB, regs[4], IR_b);
@@ -519,17 +518,8 @@ void op_71_exl()
 	exl_was_addr = regs[R_IC];
 	exl_was_r4 = regs[4];
 #endif
-	mem_ret_get(0, 97, &sp);
-	mem_ret_put(0, sp, regs[R_IC]);
-	mem_ret_put(0, sp+1, regs[0]);
-	mem_ret_put(0, sp+2, regs[R_SR]);
-	mem_ret_put(0, sp+3, IR_b);
 	mem_ret_get(0, 96, &data);
-	regs[R_IC] = data;
-	regs[0] = 0;
-	mem_ret_put(0, 97, sp+4);
-	regs[R_SR] &= 0b1111111110011111; // clear Q and RM9
-	int_update_mask();
+	if (!cpu_ctx_switch(IR_b, data, 0b1111111110011111)) return;
 }
 
 // -----------------------------------------------------------------------
@@ -812,22 +802,7 @@ void op_73_gil()
 // -----------------------------------------------------------------------
 void op_73_lip()
 {
-	uint16_t data;
-	uint16_t sp;
-	mem_ret_get(0, 97, &sp);
-
-	mem_ret_get(0, sp-4, &data);
-	regs[R_IC] = data;
-	LOG(L_OP, 10, "LIP -> 0x%04x", data);
-
-	mem_ret_get(0, sp-3, &data);
-	regs[0] = data;
-
-	mem_ret_get(0, sp-2, &data);
-	regs[R_SR] = data;
-	int_update_mask();
-
-	mem_ret_put(0, 97, sp-4);
+	cpu_ctx_restore();
 #ifdef WITH_DEBUGGER
 	log_int_level += 4;
 #endif
