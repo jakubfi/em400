@@ -167,6 +167,8 @@ void alu_16_update_V(uint64_t x, uint64_t y, uint64_t z)
 void alu_awp_dispatch(int op, uint16_t arg)
 {
 	uint16_t d[3];
+	uint16_t addr;
+
 	if (em400_cfg.cpu_awp) {
 		if (!mem_cpu_mget(QNB, arg, d, 3)) return;
 		switch (op) {
@@ -202,7 +204,8 @@ void alu_awp_dispatch(int op, uint16_t arg)
 				break;
 		}
 	} else {
-		if (!cpu_ctx_switch(arg, 100+op, 0b1111111110011111)) return;
+		if (!mem_cpu_get(0, 100+op, &addr)) return;
+		if (!cpu_ctx_switch(arg, addr, 0b1111111110011111)) return;
 	}
 }
 

@@ -3,10 +3,11 @@ Known bugs:
 CPU:
 
 * mega "DONE" handling (?)
-* handling no memory for io devices
 * timings (instructions, memory access, disk latencies, serial lines, ...)
 
 I/O:
+
+* handling no memory for io devices
 
 * pthread_join()
 
