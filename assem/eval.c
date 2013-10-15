@@ -314,23 +314,13 @@ struct node_t * eval_res(struct node_t *n)
 		return NULL;
 	}
 	nodes_drop(n1);
-
-	int value;
-	struct node_t *n2 = eval_expr(n->n2);
-	if (n2 && (n2->type == N_VAL)) {
-		value = n2->value;
-	} else {
-		value = 0;
-	}
-	nodes_drop(n2);
-
-	DEBUG("eval_res(): rep:%i, val:%i\n", repetitions, value);
+	DEBUG("eval_res(): rep:%i\n", repetitions);
 
 	struct node_t *nn = NULL;
 
 	// prepend nodes, order doesn't matter here
 	while (repetitions > 0) {
-		struct node_t *nnn = mknod_valstr(N_VAL, value, NULL);
+		struct node_t *nnn = eval_expr(n->n2);
 		if (!nnn) {
 			ass_error(n->lineno, "Memory allocation error");
 			return NULL;
@@ -834,7 +824,7 @@ int ass_retry()
 			if (res != E_OK) {
 				ass_error(r->n->lineno, "Cannot update image at IC=%i, filepos=%i", r->n->ic, r->n->at);
 			}
-			nodes_drop(r->n);
+			node_drop(r->n);
 			free(r);
 			nodes_drop(nn);
 			if (child) {

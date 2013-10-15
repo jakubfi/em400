@@ -18,6 +18,7 @@
 #include <stdlib.h>
 #include <stdarg.h>
 #include <inttypes.h>
+#include <string.h>
 
 #include "nodes.h"
 #include "parsers.h"
