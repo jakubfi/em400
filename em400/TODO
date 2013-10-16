@@ -67,6 +67,7 @@ Other:
 To clarify:
 
 * 2-cpu configuration
+* 4 slots for NRF in software AWP - why?
 
 MERA-400 features that em400 does not emulate:
 

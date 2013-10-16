@@ -61,7 +61,10 @@ start:	lw r1, stack
 	sf 1500
 	mf 1600
 	df 1700
-	nrf
+	nrf 0b00000000
+	nrf 0b01000000
+	nrf 0b10000000
+	nrf 0b11000000
 
 	hlt 077
 
@@ -76,6 +79,9 @@ start:	lw r1, stack
 ; XPCT int([1611]) : 1611
 ; XPCT int([1712]) : 1712
 ; XPCT int([901]) : 901
+; XPCT int([902]) : 902
+; XPCT int([903]) : 903
+; XPCT int([904]) : 904
 
 ; XPCT oct(ir[10-15]) : 077
 
