@@ -687,7 +687,9 @@ void awfillbg(int id, int attr, char c, int len)
 	}
 
 	char *fill = malloc(len+1);
-	memset(fill, c, len);
+	if (len > 0) {
+		memset(fill, c, len);
+	}
 	fill[len] = '\0';
 
 	wattron(w->win, aw_attr[attr]);

@@ -420,7 +420,7 @@ int mem_get_byte(int nb, uint16_t addr, uint8_t *data)
 {
 	int shift;
 	uint16_t addr17;
-	uint16_t orig;
+	uint16_t orig = 0;
 
 	shift = 8 * (~addr & 1);
 
@@ -442,7 +442,7 @@ int mem_put_byte(int nb, uint16_t addr, uint8_t data)
 {
 	int shift;
 	uint16_t addr17;
-	uint16_t orig;
+	uint16_t orig = 0;
 
 	shift = 8 * (~addr & 1);
 
