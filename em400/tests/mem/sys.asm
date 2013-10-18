@@ -4,7 +4,7 @@
 
 	.equ int_nomem 0x40 + 2
 	.equ stackp 0x61
-
+hlt 077
 	uj start
 
 mask:	.data 0b0100000000000000
@@ -24,12 +24,12 @@ start:	lwt r1, stack
 
 	lwt r1, 0
 	ou r1, 5\10 + 1\14 + 1
-	.data next, err0, err0, err0
+	.data err0, err0, next, err0
 err0:	hlt 042
 
 next:	lw r1, 1\3
 	ou r1, 5\10 + 1\14 + 1
-	.data ok, err1, err1, err1
+	.data err1, err1, ok, err1
 
 err1:	hlt 043
 ok:	hlt 077

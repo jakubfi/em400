@@ -42,13 +42,9 @@ extern uint16_t *mem_map[MEM_MAX_NB][MEM_MAX_AB];
 extern uint16_t *mem_elwro[MEM_MAX_MODULES][MEM_MAX_SEGMENTS];
 extern uint16_t *mem_mega[MEM_MAX_MODULES][MEM_MAX_SEGMENTS];
 
-#define mem_ptr(nb, addr) (mem_map[nb][(addr) >> 12] ? mem_map[nb][(addr) >> 12] + ((addr) & 0b0000111111111111) : NULL)
-
 int mem_init();
 void mem_shutdown();
 int mem_cmd(uint16_t n, uint16_t r);
-int mem_cmd_elwro(int nb, int ab, int mp, int seg);
-int mem_cmd_mega(int nb, int ab, int mp, int seg, int flags);
 void mem_reset();
 
 int mem_get(int nb, uint16_t addr, uint16_t *data);

@@ -48,6 +48,8 @@ uint16_t *mem_mega[MEM_MAX_MODULES][MEM_MAX_SEGMENTS];			// MEGA: physical segme
 uint16_t *mem_mega_map[MEM_MAX_NB][MEM_MAX_AB];					// MEGA: internal logical->physical segment mapping
 uint16_t *mem_mega_prom;										// MEGA: PROM contents
 
+#define mem_ptr(nb, addr) (mem_map[nb][(addr) >> 12] ? mem_map[nb][(addr) >> 12] + ((addr) & 0b0000111111111111) : NULL)
+
 // -----------------------------------------------------------------------
 int mem_create_mp(int mp, int segments, uint16_t **sptr)
 {
@@ -56,7 +58,7 @@ int mem_create_mp(int mp, int segments, uint16_t **sptr)
 	eprint("  Module %2i: %2i adding segments\n", mp, segments);
 
 	for (seg=0 ; seg<segments; seg++) {
-		*(sptr+seg) = malloc(sizeof(uint16_t) * MEM_SEGMENT_SIZE);
+		*(sptr+seg) = calloc(sizeof(uint16_t), MEM_SEGMENT_SIZE);
 		if (!*(sptr+seg)) {
 			return E_ALLOC;
 		}
@@ -86,13 +88,14 @@ int mem_init()
 
 	// create physical segments
 	for (mp=0 ; mp<MEM_MAX_MODULES ; mp++) {
+		// create Elwro modules
 		if (mp < em400_cfg.mem_elwro) {
 			res = mem_create_mp(mp, MEM_MAX_ELWRO_SEGMENTS, mem_elwro[mp]);
 			if (res != E_OK) {
 				return res;
 			}
 		}
-		// mega modules may overlap with elwro, that's why it's not else'd
+		// MEGA modules may overlap with Elwro, that's why it's not else'd
 		if (mp >= MEM_MAX_MODULES - em400_cfg.mem_mega) {
 			res = mem_create_mp(mp, MEM_MAX_MEGA_SEGMENTS, mem_mega[mp]);
 			if (res != E_OK) {
@@ -113,14 +116,12 @@ int mem_init()
 		}
 	}
 
-	// hardwire elwro segments for OS
+	// hardwire Elwro segments for OS
 	for (ab=0 ; ab<em400_cfg.mem_os ; ab++) {
 		pthread_spin_lock(&mem_spin);
 		mem_map[0][ab] = mem_elwro[0][ab];
 		pthread_spin_unlock(&mem_spin);
 	}
-
-	mem_clear();
 
 	return E_OK;
 }
@@ -140,24 +141,6 @@ void mem_shutdown()
 			free(mem_elwro[mp][seg]);
 			free(mem_mega[mp][seg]);
 		}
-	}
-}
-
-// -----------------------------------------------------------------------
-int mem_cmd(uint16_t n, uint16_t r)
-{
-	int nb		= (r & 0b0000000000001111);
-	int ab		= (r & 0b1111000000000000) >> 12;
-	int mp		= (n & 0b0000000000011110) >> 1;
-	int seg		= (n & 0b0000000111100000) >> 5;
-	int flags	= (n & 0b1111111000000000) >> 9;
-
-	// if MEGA is present and MEM_MEGA_ALLOC is set => command for MEGA
-	if ((em400_cfg.mem_mega > 0) && ((flags & MEM_MEGA_ALLOC))) {
-		return mem_cmd_mega(nb, ab, mp, seg, flags);
-	// Elwro otherwise
-	} else {
-		return mem_cmd_elwro(nb, ab, mp, seg & 0b0111);
 	}
 }
 
@@ -235,6 +218,24 @@ int mem_cmd_mega(int nb, int ab, int mp, int seg, int flags)
 	}
 
 	return IO_OK;
+}
+
+// -----------------------------------------------------------------------
+int mem_cmd(uint16_t n, uint16_t r)
+{
+	int nb		= (r & 0b0000000000001111);
+	int ab		= (r & 0b1111000000000000) >> 12;
+	int mp		= (n & 0b0000000000011110) >> 1;
+	int seg		= (n & 0b0000000111100000) >> 5;
+	int flags	= (n & 0b1111111000000000) >> 9;
+
+	// if MEGA is present and MEM_MEGA_ALLOC is set => command for MEGA
+	if ((em400_cfg.mem_mega > 0) && ((flags & MEM_MEGA_ALLOC))) {
+		return mem_cmd_mega(nb, ab, mp, seg, flags);
+	// Elwro otherwise
+	} else {
+		return mem_cmd_elwro(nb, ab, mp, seg & 0b0111);
+	}
 }
 
 // -----------------------------------------------------------------------
