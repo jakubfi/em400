@@ -165,12 +165,12 @@ int mem_cmd(uint16_t n, uint16_t r)
 int mem_cmd_elwro(int nb, int ab, int mp, int seg)
 {
 	if (!mem_elwro[mp][seg]) {
-		LOG(L_MEM, 1, "Elwro: ignore nonexistent segment (%2d, %2d)", mp, seg);
+		LOG(L_MEM, 1, "Elwro: ignore mapping nonexistent physical segment (%2d, %2d) -> (%2d, %2d)", nb, ab, mp, seg);
 		return IO_NO;
 	}
 
 	if ((mp == 0) && (seg < em400_cfg.mem_os)) {
-		LOG(L_MEM, 1, "Elwro: ignore hardwired segment (%2d, %2d)", mp, seg);
+		LOG(L_MEM, 1, "Elwro: ignore mapping hardwired segment (%2d, %2d) -> (%2d, %2d)", nb, ab, mp, seg);
 		return IO_NO;
 	}
 
