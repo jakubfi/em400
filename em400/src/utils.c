@@ -74,7 +74,7 @@ char r2a(int i)
 	} else if (i == 38) {
 		return '%';
 	} else if (i == 39) {
-		return ':';
+		return '#';
 	} else {
 		return '.';
 	}
