@@ -21,7 +21,7 @@
 
 #include "cpu/cpu.h"
 #include "cpu/registers.h"
-#include "cpu/memory.h"
+#include "mem/mem.h"
 #include "cpu/iset.h"
 
 #include "utils.h"

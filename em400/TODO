@@ -2,7 +2,6 @@ Known bugs:
 
 CPU:
 
-* mega "DONE" handling (?)
 * timings (instructions, memory access, disk latencies, serial lines, ...)
 
 I/O:

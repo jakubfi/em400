@@ -15,59 +15,23 @@
 //  Foundation, Inc.,
 //  51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 
-#ifndef ERRORS_H
-#define ERRORS_H
+#ifndef MEM_ELWRO_H
+#define MEM_ELWRO_H
 
-extern int gerr;
+#include <inttypes.h>
 
-enum em400_error {
-	E_UNKNOWN = -32000,
-	E_DEFAULT,
-	E_MEM,
-	E_MEM_BLOCK_TOO_SMALL,
-	E_FILE_OPEN,
-	E_FILE_OPERATION,
-	E_TIMER_VALUE,
-	E_TIMER_SIGNAL,
-	E_TIMER_CREATE,
-	E_TIMER_SET,
-	E_ALLOC,
-	E_DEBUGGER_SIG_RESIZE,
-	E_IO_CHAN_UNKNOWN,
-	E_IO_UNIT_UNKNOWN,
-	E_IO_CHAN_INIT,
-	E_IO_UNIT_INIT,
-	E_IO_UNIT_INIT_ARGS,
-	E_LOG_OPEN,
-	E_AW_INIT,
-	E_UI_INIT,
-	E_UI_SIG_CTRLC,
-	E_CFG_OPEN,
-	E_CFG_PARSE,
-	E_QUIT_NO_MEM,
-	E_CF,
-	E_ARG_NOT_ENOUGH,
-	E_ARG_CONVERSION,
-	E_ARG_FORMAT,
-	E_MX_DECODE,
-	E_MX_TRANSMISSION,
-	E_MX_CANCEL,
-	E_THREAD,
-	E_IMAGE,
-	E_TERM,
-	E_TERM_UNKNOWN,
-	E_TERM_CONSOLE_DEBUG,
-	E_TERM_CONSOLE_TERM,
-	E_NO_OPCODE,
-	E_SPIN_INIT,
-	E_MUTEX_INIT,
+#include "mem/mem.h"
 
-	E_OK = 0,
-	E_QUIT_OK
-};
+#define MEM_MAX_ELWRO_SEGMENTS 8
 
-char * get_error(int e);
-void eprint(char *format, ...);
+extern uint16_t *mem_elwro[MEM_MAX_MODULES][MEM_MAX_ELWRO_SEGMENTS];
+
+int mem_elwro_init(int modc, int osc);
+void mem_elwro_shutdown();
+void mem_elwro_reset();
+void mem_elwro_clear();
+void mem_elwro_seg_set(int nb, int ab, struct mem_slot_t *slot);
+int mem_elwro_cmd(int nb, int ab, int mp, int seg);
 
 #endif
 

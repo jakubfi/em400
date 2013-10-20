@@ -20,7 +20,7 @@
 #include <stdarg.h>
 #include <string.h>
 
-#include "cpu/memory.h"
+#include "mem/mem.h"
 
 #include "errors.h"
 #include "cfg.h"
@@ -31,16 +31,6 @@ void cyyerror(char *s, ...);
 int cyyparse();
 int cyylex_destroy();
 int cfg_error = 0;
-
-// -----------------------------------------------------------------------
-void eprint(char *format, ...)
-{
-	if (!em400_cfg.verbose) return;
-	va_list ap;
-	va_start(ap, format);
-	vprintf(format, ap);
-	va_end(ap);
-}
 
 // -----------------------------------------------------------------------
 int cfg_load(char *cfg_file)

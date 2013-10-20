@@ -26,7 +26,7 @@
 
 #include "cpu/cpu.h"
 #include "cpu/registers.h"
-#include "cpu/memory.h"
+#include "mem/mem.h"
 #include "cpu/interrupts.h"
 #include "cpu/timer.h"
 #include "io/io.h"
@@ -101,7 +101,7 @@ void em400_init()
 
 	if (em400_cfg.program_name) {
 		eprint("Loading image '%s' into OS memory\n", em400_cfg.program_name);
-		int res = mem_load_image(em400_cfg.program_name, 0, 0, 2*4*1024);
+		int res = mem_load(em400_cfg.program_name, 0, 0, 2*4096);
 		if (res < E_OK) {
 			em400_eerr(res, "Could not load program '%s'", em400_cfg.program_name);
 		} else {

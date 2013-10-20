@@ -20,7 +20,7 @@
 #include "debugger/log.h"
 #include "debugger/decode.h"
 #include "errors.h"
-#include "cpu/memory.h"
+#include "mem/mem.h"
 
 #include "io/multix_term.h"
 #include "io/term.h"

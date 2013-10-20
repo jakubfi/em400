@@ -22,7 +22,7 @@
 
 #include "cpu/cpu.h"
 #include "cpu/registers.h"
-#include "cpu/memory.h"
+#include "mem/mem.h"
 
 #include "em400.h"
 #include "cfg.h"

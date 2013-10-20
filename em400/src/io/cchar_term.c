@@ -25,7 +25,7 @@
 #include "em400.h"
 #include "debugger/log.h"
 #include "errors.h"
-#include "cpu/memory.h"
+#include "mem/mem.h"
 #include "io/cchar.h"
 #include "io/cchar_term.h"
 #include "io/term.h"

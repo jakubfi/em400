@@ -19,7 +19,7 @@
 
 #include "debugger/log.h"
 #include "errors.h"
-#include "cpu/memory.h"
+#include "mem/mem.h"
 
 #include "io/multix_punchreader.h"
 

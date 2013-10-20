@@ -23,7 +23,9 @@
 #include "cpu/cpu.h"
 #include "cpu/registers.h"
 #include "cpu/interrupts.h"
-#include "cpu/memory.h"
+#include "mem/mem.h"
+#include "mem/mem_mega.h"
+#include "mem/mem_elwro.h"
 
 #include "errors.h"
 #include "utils.h"
@@ -68,7 +70,7 @@ struct cmd_t dbg_commands[] = {
 // -----------------------------------------------------------------------
 void dbg_c_load(int wid, char* image)
 {
-	int res = mem_load_image(image, 0, 0, 0);
+	int res = mem_load(image, 0, 0, 0);
 	if (res < E_OK) {
 		awtbprint(wid, C_ERROR, "Error loading image \"%s\": %s\n", image, get_error(res));
 	}
@@ -325,7 +327,7 @@ void dbg_c_memcfg(int wid)
 	awtbprint(wid, C_LABEL, "Elwro segments: ");
 	for (i=0 ; i<MEM_MAX_MODULES ; i++) {
 		cnt = 0;
-		for (j=0 ; j<MEM_MAX_SEGMENTS ; j++) {
+		for (j=0 ; j<MEM_MAX_ELWRO_SEGMENTS ; j++) {
 			if (mem_elwro[i][j]) cnt++;
 		}
 		awtbprint(wid, C_DATA, "%2i ", cnt);
@@ -335,7 +337,7 @@ void dbg_c_memcfg(int wid)
 	awtbprint(wid, C_LABEL, "MEGA  segments: ");
 	for (i=0 ; i<MEM_MAX_MODULES ; i++) {
 		cnt = 0;
-		for (j=0 ; j<MEM_MAX_SEGMENTS ; j++) {
+		for (j=0 ; j<MEM_MAX_MEGA_SEGMENTS ; j++) {
 			if (mem_mega[i][j]) cnt++;
 		}
 		awtbprint(wid, C_DATA, "%2i ", cnt);
@@ -346,10 +348,11 @@ void dbg_c_memcfg(int wid)
 	for (i=0 ; i<MEM_MAX_NB ; i++) {
 		cnt = 0;
 		for (j=0 ; j<MEM_MAX_SEGMENTS ; j++) {
-			if (mem_map[i][j]) cnt++;
+			if (mem_map[i][j].seg) cnt++;
 		}
 		awtbprint(wid, C_DATA, "%2i ", cnt);
 	}
+
 	awtbprint(wid, C_DATA, "\n");
 }
 
@@ -631,10 +634,10 @@ void dbg_c_find(int wid, uint16_t block, uint16_t value)
 {
 	int found = 0;
 	for (int seg=0 ; seg<MEM_MAX_SEGMENTS ; seg++) {
-		if (mem_map[block][seg]) {
+		if (mem_map[block][seg].seg) {
 			awtbprint(wid, C_LABEL, "Segment %x: ", seg);
 			for (int word=0 ; word<MEM_SEGMENT_SIZE ; word++) {
-				if (mem_map[block][seg][word] == value) {
+				if (mem_map[block][seg].seg[word] == value) {
 					awtbprint(wid, C_DATA, "0x%04x ", (seg<<12)+word);
 					found++;
 					if (found >= 8) {

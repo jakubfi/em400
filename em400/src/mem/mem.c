@@ -22,9 +22,11 @@
 #include <arpa/inet.h>
 #include <pthread.h>
 
+#include "mem/mem_elwro.h"
+#include "mem/mem_mega.h"
 #include "cpu/cpu.h"
 #include "cpu/registers.h"
-#include "cpu/memory.h"
+#include "mem/mem.h"
 #include "cpu/interrupts.h"
 #include "io/io.h"
 
@@ -39,89 +41,51 @@
 
 pthread_spinlock_t mem_spin;
 
-uint16_t *mem_map[MEM_MAX_NB][MEM_MAX_AB];						// logical->physical segment mapping
+struct mem_slot_t mem_map[MEM_MAX_NB][MEM_MAX_AB];	// final (as seen by emulation) logical->physical segment mapping
 
-uint16_t *mem_elwro[MEM_MAX_MODULES][MEM_MAX_SEGMENTS];			// Elwro: physical segments
-uint16_t **mem_elwro_ral[MEM_MAX_MODULES][MEM_MAX_SEGMENTS];	// Elwro: internal physical->logical segment mapping
-
-uint16_t *mem_mega[MEM_MAX_MODULES][MEM_MAX_SEGMENTS];			// MEGA: physical segments
-uint16_t *mem_mega_map[MEM_MAX_NB][MEM_MAX_AB];					// MEGA: internal logical->physical segment mapping
-uint16_t *mem_mega_prom;										// MEGA: PROM contents
-
-#define mem_ptr(nb, addr) (mem_map[nb][(addr) >> 12] ? mem_map[nb][(addr) >> 12] + ((addr) & 0b0000111111111111) : NULL)
+#define mem_ptr(nb, addr) (mem_map[nb][(addr) >> 12].seg ? mem_map[nb][(addr) >> 12].seg + ((addr) & 0b0000111111111111) : NULL)
 
 // -----------------------------------------------------------------------
-int mem_create_mp(int mp, int segments, uint16_t **sptr)
+void mem_update_map()
 {
-	int seg;
+	int nb, ab;
 
-	eprint("  Module %2i: %2i adding segments\n", mp, segments);
-
-	for (seg=0 ; seg<segments; seg++) {
-		*(sptr+seg) = calloc(sizeof(uint16_t), MEM_SEGMENT_SIZE);
-		if (!*(sptr+seg)) {
-			return E_ALLOC;
+	for (nb=0 ; nb<MEM_MAX_NB ; nb++) {
+		for (ab=0 ; ab<MEM_MAX_AB ; ab++) {
+			pthread_spin_lock(&mem_spin);
+			mem_elwro_seg_set(nb, ab, &mem_map[nb][ab]);
+			if (!mem_map[nb][ab].seg) {
+				mem_mega_seg_set(nb, ab, &mem_map[nb][ab]);
+			}
+			pthread_spin_unlock(&mem_spin);
 		}
 	}
-
-	return E_OK;
 }
 
 // -----------------------------------------------------------------------
 int mem_init()
 {
-	int mp;
-	int ab;
 	int res;
 
-	eprint("Initializing memory\n");
-
-	if ((em400_cfg.mem_elwro < 1) || (em400_cfg.mem_elwro > MEM_MAX_MODULES)
-		|| (em400_cfg.mem_mega < 0) || (em400_cfg.mem_elwro > MEM_MAX_MODULES)
-		|| (em400_cfg.mem_os < 1) || (em400_cfg.mem_os > 2)
-		|| ((em400_cfg.mem_elwro > 1) && (em400_cfg.mem_elwro+em400_cfg.mem_mega > MEM_MAX_MODULES))
-	) {
-		return E_MEM;
-	}
+	eprint("Initializing memory (Elwro: %d modules, MEGA: %d modules)\n", em400_cfg.mem_elwro, em400_cfg.mem_mega);
 
 	pthread_spin_init(&mem_spin, 0);
 
-	// create physical segments
-	for (mp=0 ; mp<MEM_MAX_MODULES ; mp++) {
-		// create Elwro modules
-		if (mp < em400_cfg.mem_elwro) {
-			res = mem_create_mp(mp, MEM_MAX_ELWRO_SEGMENTS, mem_elwro[mp]);
-			if (res != E_OK) {
-				return res;
-			}
-		}
-		// MEGA modules may overlap with Elwro, that's why it's not else'd
-		if (mp >= MEM_MAX_MODULES - em400_cfg.mem_mega) {
-			res = mem_create_mp(mp, MEM_MAX_MEGA_SEGMENTS, mem_mega[mp]);
-			if (res != E_OK) {
-				return res;
-			}
-		}
+	if (em400_cfg.mem_elwro+em400_cfg.mem_mega > MEM_MAX_MODULES+1) {
+		return E_MEM;
 	}
 
-	// allocate and show MEGA PROM if MEGA is there
-	if (em400_cfg.mem_mega > 0) {
-		mem_mega_prom = calloc(sizeof(uint16_t), MEM_SEGMENT_SIZE);
-		pthread_spin_lock(&mem_spin);
-		mem_map[0][15] = mem_mega_prom;
-		pthread_spin_unlock(&mem_spin);
-		if (em400_cfg.mem_mega_prom) {
-			res = mem_load_image(em400_cfg.mem_mega_prom, 0, 15, 4096);
-			eprint("  Loaded MEGA PROM image: %s (%i words)\n", em400_cfg.mem_mega_prom, res);
-		}
+	res = mem_elwro_init(em400_cfg.mem_elwro, em400_cfg.mem_os);
+	if (res != E_OK) {
+		return res;
 	}
 
-	// hardwire Elwro segments for OS
-	for (ab=0 ; ab<em400_cfg.mem_os ; ab++) {
-		pthread_spin_lock(&mem_spin);
-		mem_map[0][ab] = mem_elwro[0][ab];
-		pthread_spin_unlock(&mem_spin);
+	res = mem_mega_init(em400_cfg.mem_mega, em400_cfg.mem_mega_prom);
+	if (res != E_OK) {
+		return res;
 	}
+
+	mem_update_map();
 
 	return E_OK;
 }
@@ -129,100 +93,16 @@ int mem_init()
 // -----------------------------------------------------------------------
 void mem_shutdown()
 {
-	int mp;
-	int seg;
-
 	eprint("Shutdown memory\n");
 
-	free(mem_mega_prom);
-
-	for (mp=0 ; mp<MEM_MAX_MODULES ; mp++) {
-		for (seg=0 ; seg<MEM_MAX_SEGMENTS ; seg++) {
-			free(mem_elwro[mp][seg]);
-			free(mem_mega[mp][seg]);
-		}
-	}
-}
-
-// -----------------------------------------------------------------------
-int mem_cmd_elwro(int nb, int ab, int mp, int seg)
-{
-	if (!mem_elwro[mp][seg]) {
-		LOG(L_MEM, 1, "Elwro: ignore mapping nonexistent physical segment (%2d, %2d) -> (%2d, %2d)", nb, ab, mp, seg);
-		return IO_NO;
-	}
-
-	if ((mp == 0) && (seg < em400_cfg.mem_os)) {
-		LOG(L_MEM, 1, "Elwro: ignore mapping hardwired segment (%2d, %2d) -> (%2d, %2d)", nb, ab, mp, seg);
-		return IO_NO;
-	}
-
-	LOG(L_MEM, 1, "Elwro: add map (%2d, %2d) -> (%2d, %2d)", nb, ab, mp, seg);
-
-	// clear p->l mapping if set
-	if (mem_elwro_ral[mp][seg]) {
-		*mem_elwro_ral[mp][seg] = NULL;
-	}
-
-	// make new l->p mapping
-	pthread_spin_lock(&mem_spin);
-	mem_map[nb][ab] = mem_elwro[mp][seg];
-	// remember new p->l mapping
-	mem_elwro_ral[mp][seg] = &mem_map[nb][ab];
-	pthread_spin_unlock(&mem_spin);
-
-	return IO_OK;
-}
-
-// -----------------------------------------------------------------------
-int mem_cmd_mega(int nb, int ab, int mp, int seg, int flags)
-{
-	// touch only non-OS ab
-	if ((nb > 0) || ((nb == 0) && (ab > 1))) {
-		// 'free'
-		if ((flags & MEM_MEGA_FREE)) {
-			LOG(L_MEM, 1, "MEGA: del map (%2d, %2d)     %s%s", nb, ab, flags & MEM_MEGA_PROM_SHOW ? "[prom show]" : "", flags & MEM_MEGA_PROM_HIDE ? "[prom hide]" : "");
-			pthread_spin_lock(&mem_spin);
-			if (mem_map[nb][ab] == mem_mega_map[nb][ab]) {
-				mem_map[nb][ab] = mem_mega_map[nb][ab] = NULL;
-			}
-			pthread_spin_unlock(&mem_spin);
-		// 'alloc'
-		} else {
-			LOG(L_MEM, 1, "MEGA: add map (%2d, %2d) -> (%2d, %2d)     %s%s", nb, ab, mp, seg, flags & MEM_MEGA_PROM_SHOW ? "[prom show]" : "", flags & MEM_MEGA_PROM_HIDE ? "[prom hide]" : "");
-			pthread_spin_lock(&mem_spin);
-			mem_map[nb][ab] = mem_mega_map[nb][ab] = mem_mega[mp][seg];
-			pthread_spin_unlock(&mem_spin);
-		}
-	} else {
-		LOG(L_MEM, 1, "MEGA: ignored map (%2d, %2d) -> (%2d, %2d)     %s%s", nb, ab, mp, seg, flags & MEM_MEGA_PROM_SHOW ? "[prom show]" : "", flags & MEM_MEGA_PROM_HIDE ? "[prom hide]" : "");
-	}
-
-	// 'PROM hide'
-	if ((flags & MEM_MEGA_PROM_HIDE)) {
-		pthread_spin_lock(&mem_spin);
-		mem_map[0][15] = mem_mega_map[0][15];
-		pthread_spin_unlock(&mem_spin);
-	}
-
-	// 'PROM show'
-	if ((flags & MEM_MEGA_PROM_SHOW)) {
-		pthread_spin_lock(&mem_spin);
-		mem_map[0][15] = mem_mega_prom;
-		pthread_spin_unlock(&mem_spin);
-	}
-
-	// TODO: 'allocation done'
-	if ((flags & MEM_MEGA_ALLOC_DONE)) {
-		LOG(L_MEM, 1, "MEGA: initializarion done");
-	}
-
-	return IO_OK;
+	mem_mega_shutdown();
+	mem_elwro_shutdown();
 }
 
 // -----------------------------------------------------------------------
 int mem_cmd(uint16_t n, uint16_t r)
 {
+	int res;
 	int nb		= (r & 0b0000000000001111);
 	int ab		= (r & 0b1111000000000000) >> 12;
 	int mp		= (n & 0b0000000000011110) >> 1;
@@ -231,38 +111,25 @@ int mem_cmd(uint16_t n, uint16_t r)
 
 	// if MEGA is present and MEM_MEGA_ALLOC is set => command for MEGA
 	if ((em400_cfg.mem_mega > 0) && ((flags & MEM_MEGA_ALLOC))) {
-		return mem_cmd_mega(nb, ab, mp, seg, flags);
-	// Elwro otherwise
+		res = mem_mega_cmd(nb, ab, mp, seg, flags);
+	// Elwro otherwise (but mask segment number to 3 bits)
 	} else {
-		return mem_cmd_elwro(nb, ab, mp, seg & 0b0111);
+		res = mem_elwro_cmd(nb, ab, mp, seg & 0b0111);
 	}
+	if (res == IO_OK) {
+		mem_update_map();
+	}
+	return res;
 }
 
 // -----------------------------------------------------------------------
 void mem_reset()
 {
-	int nb;
-	int ab;
-
-	// remove all memory mappings
-	for (nb=0 ; nb<MEM_MAX_NB ; nb++) {
-		for (ab=0 ; ab<MEM_MAX_AB ; ab++) {
-			if ((nb>0) || ((nb==0) && (ab>1))) {
-				pthread_spin_lock(&mem_spin);
-				mem_map[nb][ab] = NULL;
-				pthread_spin_unlock(&mem_spin);
-			}
-			mem_mega_map[nb][ab] = NULL;
-			mem_elwro_ral[nb][ab] = NULL;
-		}
-	}
-
-	// show MEGA PROM if MEGA is there
-	if (em400_cfg.mem_mega > 0) {
-		pthread_spin_lock(&mem_spin);
-		mem_map[0][15] = mem_mega_prom;
-		pthread_spin_unlock(&mem_spin);
-	}
+	pthread_spin_lock(&mem_spin);
+	mem_elwro_reset();
+	mem_mega_reset();
+	pthread_spin_unlock(&mem_spin);
+	mem_update_map();
 }
 
 // -----------------------------------------------------------------------
@@ -290,7 +157,7 @@ int mem_put(int nb, uint16_t addr, uint16_t data)
 	pthread_spin_lock(&mem_spin);
 	ptr = mem_ptr(nb, addr);
 	if (ptr) {
-		if (!mem_mega_prom || (mem_map[nb][addr>>12] != mem_mega_prom)) {
+		if (!mem_mega_prom || (mem_map[nb][addr>>12].seg != mem_mega_prom)) {
 			*ptr = data;
 		}
 		pthread_spin_unlock(&mem_spin);
@@ -331,7 +198,7 @@ int mem_mput(int nb, uint16_t saddr, uint16_t *src, int count)
 	for (i=0 ; i<count ; i++) {
 		ptr = mem_ptr(nb, (uint16_t) (saddr+i));
 		if (ptr) {
-			if (!mem_mega_prom || (mem_map[nb][(saddr+i)>>12] != mem_mega_prom)) {
+			if (!mem_mega_prom || (mem_map[nb][(saddr+i)>>12].seg != mem_mega_prom)) {
 				*ptr = *(src+i);
 			}
 		} else {
@@ -464,42 +331,55 @@ int mem_put_byte(int nb, uint16_t addr, uint8_t data)
 // -----------------------------------------------------------------------
 void mem_clear()
 {
-	int mp;
-	int seg;
-
-	for (mp=0 ; mp<MEM_MAX_MODULES ; mp++) {
-		for (seg=0 ; seg<MEM_MAX_SEGMENTS ; seg++) {
-			pthread_spin_lock(&mem_spin);
-			if (mem_elwro[mp][seg]) {
-				memset(mem_elwro[mp][seg], 0, MEM_SEGMENT_SIZE);
-			}
-			if (mem_mega[mp][seg]) {
-				memset(mem_mega[mp][seg], 0, MEM_SEGMENT_SIZE);
-			}
-			pthread_spin_unlock(&mem_spin);
-		}
-	}
+	pthread_spin_lock(&mem_spin);
+	mem_elwro_clear();
+	mem_mega_clear();
+	pthread_spin_unlock(&mem_spin);
 }
 
 // -----------------------------------------------------------------------
-int mem_load_image(const char* fname, int nb, int start_seg, int len)
+int mem_seg_load(FILE *f, uint16_t *ptr)
+{
+	int res;
+
+	if (!ptr) {
+		return E_MEM_BLOCK_TOO_SMALL;
+	}
+
+	res = fread(ptr, sizeof(uint16_t), MEM_SEGMENT_SIZE, f);
+	if (ferror(f)) {
+		return E_FILE_OPERATION;
+	}
+
+	// we swap bytes from big-endian to host-endianness at load time
+	pthread_spin_lock(&mem_spin);
+	for (int i=0 ; i<res ; i++) {
+		*(ptr+i) = ntohs(*(ptr+i));
+	}
+	pthread_spin_unlock(&mem_spin);
+	
+	return res;
+}
+// -----------------------------------------------------------------------
+int mem_load(const char* fname, int nb, int start_ab, int len)
 {
 	int ret = E_OK;
 	int loaded = 0;
 	int res;
-	uint16_t seg = start_seg;
+	uint16_t *ptr;
+	uint16_t seg = start_ab;
 
 	FILE *f = fopen(fname, "rb");
 	if (f == NULL) {
 		return E_FILE_OPEN;
 	}
 
-	LOG(L_MEM, 1, "Loading memory image: %s -> %d:%d", fname, nb, start_seg);
+	LOG(L_MEM, 1, "Loading memory image: %s -> %d:%d", fname, nb, start_ab);
 
 	do {
 		// get pointer to segment in a block
 		pthread_spin_lock(&mem_spin);
-		uint16_t *ptr = mem_map[nb][seg];
+		ptr = mem_map[nb][seg].seg;
 		if (!ptr) {
 			ret = E_MEM_BLOCK_TOO_SMALL;
 			pthread_spin_unlock(&mem_spin);
@@ -508,22 +388,10 @@ int mem_load_image(const char* fname, int nb, int start_seg, int len)
 		pthread_spin_unlock(&mem_spin);
 
 		// read chunk of data
-		res = fread(ptr, sizeof(uint16_t), MEM_SEGMENT_SIZE, f);
-		if (ferror(f)) {
-			ret = E_FILE_OPERATION;
-			break;
-		}
-
+		res = mem_seg_load(f, ptr);
 		if (res <= 0) {
 			break;
 		}
-
-		// we swap bytes from big-endian to host-endianness at load time
-		pthread_spin_lock(&mem_spin);
-		for (int i=0 ; i<res ; i++) {
-			*(ptr+i) = ntohs(*(ptr+i));
-		}
-		pthread_spin_unlock(&mem_spin);
 
 		loaded += res;
 		seg++;
@@ -537,6 +405,5 @@ int mem_load_image(const char* fname, int nb, int start_seg, int len)
 		return ret;
 	}
 }
-
 
 // vim: tabstop=4 shiftwidth=4 autoindent

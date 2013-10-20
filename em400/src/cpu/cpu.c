@@ -18,7 +18,7 @@
 #include "cpu/cpu.h"
 #include "cpu/registers.h"
 #include "cpu/interrupts.h"
-#include "cpu/memory.h"
+#include "mem/mem.h"
 #include "cpu/iset.h"
 #include "cpu/instructions.h"
 #include "cpu/interrupts.h"

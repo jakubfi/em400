@@ -16,8 +16,11 @@
 //  51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 
 #include <stdlib.h>
+#include <stdarg.h>
+#include <stdio.h>
 
 #include "errors.h"
+#include "cfg.h"
 
 int gerr = E_OK;
 
@@ -82,5 +85,16 @@ char * get_error(int e)
 	}
 	return edict->message;
 }
+
+// -----------------------------------------------------------------------
+void eprint(char *format, ...)
+{
+	if (!em400_cfg.verbose) return;
+	va_list ap;
+	va_start(ap, format);
+	vprintf(format, ap);
+	va_end(ap);
+}
+
 
 // vim: tabstop=4 shiftwidth=4 autoindent

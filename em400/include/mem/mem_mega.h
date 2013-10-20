@@ -15,59 +15,33 @@
 //  Foundation, Inc.,
 //  51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 
-#ifndef ERRORS_H
-#define ERRORS_H
+#ifndef MEM_MEGA_H
+#define MEM_MEGA_H
 
-extern int gerr;
+#include <inttypes.h>
+#include <pthread.h>
 
-enum em400_error {
-	E_UNKNOWN = -32000,
-	E_DEFAULT,
-	E_MEM,
-	E_MEM_BLOCK_TOO_SMALL,
-	E_FILE_OPEN,
-	E_FILE_OPERATION,
-	E_TIMER_VALUE,
-	E_TIMER_SIGNAL,
-	E_TIMER_CREATE,
-	E_TIMER_SET,
-	E_ALLOC,
-	E_DEBUGGER_SIG_RESIZE,
-	E_IO_CHAN_UNKNOWN,
-	E_IO_UNIT_UNKNOWN,
-	E_IO_CHAN_INIT,
-	E_IO_UNIT_INIT,
-	E_IO_UNIT_INIT_ARGS,
-	E_LOG_OPEN,
-	E_AW_INIT,
-	E_UI_INIT,
-	E_UI_SIG_CTRLC,
-	E_CFG_OPEN,
-	E_CFG_PARSE,
-	E_QUIT_NO_MEM,
-	E_CF,
-	E_ARG_NOT_ENOUGH,
-	E_ARG_CONVERSION,
-	E_ARG_FORMAT,
-	E_MX_DECODE,
-	E_MX_TRANSMISSION,
-	E_MX_CANCEL,
-	E_THREAD,
-	E_IMAGE,
-	E_TERM,
-	E_TERM_UNKNOWN,
-	E_TERM_CONSOLE_DEBUG,
-	E_TERM_CONSOLE_TERM,
-	E_NO_OPCODE,
-	E_SPIN_INIT,
-	E_MUTEX_INIT,
+#include "mem/mem.h"
 
-	E_OK = 0,
-	E_QUIT_OK
+#define MEM_MAX_MEGA_SEGMENTS 16	// physical segments in mega module
+
+enum mem_mega_flags {
+	MEM_MEGA_ALLOC		= 0b0000001,
+	MEM_MEGA_FREE		= 0b0000010,
+	MEM_MEGA_PROM_SHOW	= 0b0010000,
+	MEM_MEGA_PROM_HIDE	= 0b0100000,
+	MEM_MEGA_ALLOC_DONE	= 0b1000000,
 };
 
-char * get_error(int e);
-void eprint(char *format, ...);
+extern uint16_t *mem_mega[MEM_MAX_MODULES][MEM_MAX_SEGMENTS];
+extern uint16_t *mem_mega_prom;	// this needs to be visible, we check in mem_put() if we can write to segment
+
+int mem_mega_init(int modc, char *prom_image);
+void mem_mega_shutdown();
+void mem_mega_reset();
+void mem_mega_clear();
+void mem_mega_seg_set(int nb, int ab, struct mem_slot_t *slot);
+int mem_mega_cmd(int nb, int ab, int mp, int seg, int flags);
 
 #endif
 

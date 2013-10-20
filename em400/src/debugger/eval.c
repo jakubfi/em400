@@ -20,7 +20,7 @@
 
 #include "cpu/cpu.h"
 #include "cpu/registers.h"
-#include "cpu/memory.h"
+#include "mem/mem.h"
 #include "cpu/interrupts.h"
 
 #include "debugger/debugger.h"

@@ -20,27 +20,22 @@
 
 #include <inttypes.h>
 #include <pthread.h>
-#include "cpu.h"
+#include <stdio.h>
+#include "cpu/cpu.h"
 
 #define MEM_SEGMENT_SIZE 4 * 1024	// segment size (16-bit words)
 #define MEM_MAX_MODULES 16			// physical memory modules
 #define MEM_MAX_SEGMENTS 16			// max physical segments in a module
-#define MEM_MAX_ELWRO_SEGMENTS 8	// physical segments in elwro module
-#define MEM_MAX_MEGA_SEGMENTS 16	// physical segments in mega module
 #define MEM_MAX_NB 16				// logical blocks
 #define MEM_MAX_AB 16				// logical segments in a logical block
 
-enum mem_mega_flags {
-	MEM_MEGA_ALLOC		= 0b0000001,
-	MEM_MEGA_FREE		= 0b0000010,
-	MEM_MEGA_PROM_SHOW	= 0b0010000,
-	MEM_MEGA_PROM_HIDE	= 0b0100000,
-	MEM_MEGA_ALLOC_DONE	= 0b1000000,
+struct mem_slot_t {
+	uint16_t *seg;
+	int type;
+	int speed;
 };
 
-extern uint16_t *mem_map[MEM_MAX_NB][MEM_MAX_AB];
-extern uint16_t *mem_elwro[MEM_MAX_MODULES][MEM_MAX_SEGMENTS];
-extern uint16_t *mem_mega[MEM_MAX_MODULES][MEM_MAX_SEGMENTS];
+extern struct mem_slot_t mem_map[MEM_MAX_NB][MEM_MAX_AB];
 
 int mem_init();
 void mem_shutdown();
@@ -59,7 +54,8 @@ int mem_get_byte(int nb, uint16_t addr, uint8_t *data);
 int mem_put_byte(int nb, uint16_t addr, uint8_t data);
 
 void mem_clear();
-int mem_load_image(const char* fname, int nb, int start_seg, int len);
+int mem_seg_load(FILE *f, uint16_t *ptr);
+int mem_load(const char* fname, int nb, int start_ab, int len);
 
 #endif
 

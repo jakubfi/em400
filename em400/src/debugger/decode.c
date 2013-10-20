@@ -18,7 +18,7 @@
 #include <strings.h>
 #include <stdlib.h>
 
-#include "cpu/memory.h"
+#include "mem/mem.h"
 
 #include "io/multix.h"
 #include "io/multix_winch.h"

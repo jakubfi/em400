@@ -18,7 +18,7 @@
 #ifndef CFG_H
 #define CFG_H
 
-#include "cpu/memory.h"
+#include "mem/mem.h"
 #include "io/io.h"
 
 extern int cfg_error;
@@ -79,7 +79,6 @@ struct cfg_em400_t {
 
 } em400_cfg;
 
-void eprint(char *format, ...);
 int cfg_load(char *cfg_file);
 void cfg_print();
 struct cfg_arg_t * cfg_make_arg(char *arg);

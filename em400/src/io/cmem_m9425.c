@@ -20,7 +20,7 @@
 #include <inttypes.h>
 
 #include "errors.h"
-#include "cpu/memory.h"
+#include "mem/mem.h"
 #include "io/cmem.h"
 #include "io/cmem_m9425.h"
 

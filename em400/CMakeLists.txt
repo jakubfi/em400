@@ -23,6 +23,7 @@ ELSE(WITH_DEBUGGER)
 ENDIF(WITH_DEBUGGER)
 
 ADD_SUBDIRECTORY(src/io build/io)
+ADD_SUBDIRECTORY(src/mem build/mem)
 ADD_SUBDIRECTORY(src/cpu build/cpu)
 ADD_SUBDIRECTORY(src build)
 
