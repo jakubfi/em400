@@ -110,7 +110,6 @@ void mem_mega_reset()
 		}
 	}
 	mem_mega_prom_hidden = 0;
-	mem_mega_init_done = 0;
 }
 
 // -----------------------------------------------------------------------
