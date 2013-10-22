@@ -77,7 +77,6 @@ struct mx_unit_proto_t {
 	pthread_mutex_t transmit_mutex;
 	pthread_mutex_t worker_mutex;
 	pthread_cond_t worker_cond;
-	int worker_dir;
 	int worker_cmd;
 	int worker_addr;
 };
@@ -108,22 +107,32 @@ struct mx_chan_t {
 	pthread_mutex_t int_mutex;
 };
 
-// multix commands
+// channel commands: always IN, bits 0..2 = 0, bits 3..4 = command
+enum mx_cmd_chan_e {
+	MX_CMD_RESET	= 0b00,
+	MX_CMD_EXISTS	= 0b10,
+	MX_CMD_INTSPEC	= 0b01,
+	MX_CMD_INVALID	= 0b11,
+};
+
+// general and line commands: bit 3: 0=OUT/1=IN, bits 1-3: command bits 0-2
 enum mx_cmd_e {
-	// channel (bits 0..2 = 0, bits 3..4 = command)
-	MX_CMD_RESET	= 0b00, // IN
-	MX_CMD_EXISTS	= 0b10, // IN
-	MX_CMD_INTSPEC	= 0b01, // IN
-	// control, general (bits 0..2 = command)
-	MX_CMD_INTRQ	= 0b001, // IN
-	MX_CMD_TEST		= 0b001, // OU
-	MX_CMD_SETCFG	= 0b101, // OU
-	// control, line (bits 0..2 = command)
-	MX_LCMD_ATTACH	= 0b010, // OU
-	MX_LCMD_DETACH	= 0b010, // IN
-	MX_LCMD_STATUS	= 0b011, // OU
-	MX_LCMD_TRANSMIT= 0b100, // OU
-	MX_LCMD_CANCEL	= 0b011, // IN
+	MX_CMD_ERR_0		= 0b0000,
+	MX_CMD_TEST			= 0b0001,
+	MX_CMD_ATTACH		= 0b0010,
+	MX_CMD_STATUS		= 0b0011,
+	MX_CMD_TRANSMIT		= 0b0100,
+	MX_CMD_SETCFG		= 0b0101,
+	MX_CMD_ERR_6		= 0b0110,
+	MX_CMD_ERR_7		= 0b0111,
+	MX_CMD_CHAN			= 0b1000,
+	MX_CMD_INTRQ		= 0b1001,
+	MX_CMD_DETACH		= 0b1010,
+	MX_CMD_CANCEL		= 0b1011,
+	MX_CMD_ERR_C		= 0b1100,
+	MX_CMD_ERR_D		= 0b1101,
+	MX_CMD_ERR_E		= 0b1110,
+	MX_CMD_ERR_F		= 0b1111,
 };
 
 // multix interrupts

@@ -2,12 +2,13 @@ Known bugs:
 
 CPU:
 
+* no-elwro configuration
+* overlaid elwro/mega
 * timings (instructions, memory access, disk latencies, serial lines, ...)
 
 I/O:
 
 * handling no memory for io devices
-
 * pthread_join()
 
 * make attach/detach mx funcs

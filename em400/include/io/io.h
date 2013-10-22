@@ -29,8 +29,8 @@ struct cfg_unit_t;
 struct cfg_arg_t;
 
 enum io_dir {
-	IO_IN = 0,
-	IO_OU = 1
+	IO_OU = 0,
+	IO_IN = 1,
 };
 
 enum io_result {
@@ -38,7 +38,7 @@ enum io_result {
 	IO_NO = 0,  // no channel, no control unit, or no memory block
 	IO_EN = 1,  // not ready (engaged)
 	IO_OK = 2,  // OK
-	IO_PE = 3   // data error (parity error)
+	IO_PE = 3,  // data error (parity error)
 };
 
 typedef struct chan_proto_t * (*chan_f_create)(struct cfg_unit_t *units);

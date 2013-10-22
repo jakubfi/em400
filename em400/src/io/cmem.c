@@ -186,7 +186,7 @@ int cmem_cmd_intspec(struct chan_proto_t *chan, uint16_t *r_arg)
 
 	pthread_mutex_lock(&CHAN->int_mutex);
 	if (CHAN->int_reported != -1) {
-		*r_arg = (CHAN->was_en << 15) || (CHAN->int_unit[CHAN->int_reported] << 8) || (CHAN->int_reported << 5);
+		*r_arg = (CHAN->was_en << 15) | (CHAN->int_unit[CHAN->int_reported] << 8) | (CHAN->int_reported << 5);
 		// mark interrupt as served
 		CHAN->int_unit[CHAN->int_reported] = CMEM_INT_NONE;
 		// nothing new reported

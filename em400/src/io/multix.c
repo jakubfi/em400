@@ -114,23 +114,23 @@ struct mx_unit_proto_t mx_unit_proto[] = {
 };
 
 // interrupts for command conditions
-struct mx_cmd_int_t mx_cmd_int[2][5] = {
-	{
-// IN:	  no line		not attached	attached		busy
-		{ 0,			0,				0,				0 },
-		{ 0,			0,				0,				0 },
-		{ MX_INT_INKOD,	0,				0,				MX_INT_INODL }, // detach
-		{ 0,			0,				0,				0 }, 			// cancel handled separately
-		{ 0,			0,				0,				0 },
-	},
-	{
-// OUT:	  no line		not attached	attached		busy
-		{ 0,			0,				0,				0 },
-		{ 0,			0,				0,				0 },
-		{ MX_INT_INKDO,	0,				MX_INT_INDOL,	MX_INT_INDOL }, // attach
-		{ 0,			0,				0,				0 }, // status
-		{ MX_INT_INKTR,	MX_INT_INTRA,	0,				MX_INT_INTRA }, // transmit
-	}
+struct mx_cmd_int_t mx_cmd_int[16] = {
+/* 0000 */ { 0, 0, 0, 0 },
+/* 0001 */ { 0, 0, 0, 0 },
+/* 0010 */ { MX_INT_INKDO, 0, MX_INT_INDOL, MX_INT_INDOL },
+/* 0011 */ { 0, 0, 0, 0 },
+/* 0100 */ { MX_INT_INKTR, MX_INT_INTRA, 0, MX_INT_INTRA },
+/* 0101 */ { 0, 0, 0, 0 },
+/* 0110 */ { 0, 0, 0, 0 },
+/* 0111 */ { 0, 0, 0, 0 },
+/* 1000 */ { 0, 0, 0, 0 },
+/* 1001 */ { 0, 0, 0, 0 },
+/* 1010 */ { MX_INT_INKOD, 0, 0, MX_INT_INODL },
+/* 1011 */ { 0, 0, 0, 0 },
+/* 1100 */ { 0, 0, 0, 0 },
+/* 1101 */ { 0, 0, 0, 0 },
+/* 1110 */ { 0, 0, 0, 0 },
+/* 1111 */ { 0, 0, 0, 0 },
 };
 
 // -----------------------------------------------------------------------
@@ -187,7 +187,6 @@ struct chan_proto_t * mx_create(struct cfg_unit_t *units)
 		}
 
 		// set up worker thread
-		unit->worker_dir = -1;
 		unit->worker_cmd = -1;
 		unit->worker_addr = 0;
 		pthread_mutex_init(&unit->transmit_mutex, &attr);
@@ -508,25 +507,25 @@ int mx_cmd_setcfg(struct chan_proto_t *chan, uint16_t *r_arg)
 }
 
 // -----------------------------------------------------------------------
-int mx_cmd_forward(struct chan_proto_t *chan, int dir, int cmd, int lline_n, uint16_t addr)
+int mx_cmd_forward(struct chan_proto_t *chan, int cmd, int lline_n, uint16_t addr)
 {
 	struct mx_unit_proto_t *unit = CHAN->lline[lline_n];
 
 	// line doesn't exist
 	if (!unit) {
-		mx_int(CHAN, lline_n, mx_cmd_int[dir][cmd].int_no_line);
+		mx_int(CHAN, lline_n, mx_cmd_int[cmd].int_no_line);
 		return IO_OK;
 	}
 
 	// line not attached
-	if (!unit->attached && mx_cmd_int[dir][cmd].int_line_not_attached) {
-		mx_int(CHAN, lline_n, mx_cmd_int[dir][cmd].int_line_not_attached);
+	if (!unit->attached && mx_cmd_int[cmd].int_line_not_attached) {
+		mx_int(CHAN, lline_n, mx_cmd_int[cmd].int_line_not_attached);
 		return IO_OK;
 	}
 
 	// line attached
-	if (unit->attached && mx_cmd_int[dir][cmd].int_line_attached) {
-		mx_int(CHAN, lline_n, mx_cmd_int[dir][cmd].int_line_attached);
+	if (unit->attached && mx_cmd_int[cmd].int_line_attached) {
+		mx_int(CHAN, lline_n, mx_cmd_int[cmd].int_line_attached);
 		return IO_OK;
 	}
 
@@ -534,14 +533,13 @@ int mx_cmd_forward(struct chan_proto_t *chan, int dir, int cmd, int lline_n, uin
 	LOG(L_MX, 20, "MULTIX line %i: worker status: %s", unit->log_num, busy?"busy":"free");
 
 	// line busy ('cancel' is handled separately)
-	if (busy && mx_cmd_int[dir][cmd].int_line_busy) {
-		mx_int(unit->chan, unit->log_num, mx_cmd_int[dir][cmd].int_line_busy);
+	if (busy && mx_cmd_int[cmd].int_line_busy) {
+		mx_int(unit->chan, unit->log_num, mx_cmd_int[cmd].int_line_busy);
 		return IO_OK;
 	}
 
 	// worker is free, prepare command
 	unit->worker_addr = addr;
-	unit->worker_dir = dir;
 	unit->worker_cmd = cmd;
 	// signal worker
 	pthread_cond_signal(&unit->worker_cond);
@@ -622,14 +620,14 @@ void * mx_unit_worker(void *th_id)
 		}
 
 		// do the work
-		switch (unit->worker_dir<<7 | unit->worker_cmd) {
-			case IO_OU<<7 | MX_LCMD_ATTACH:
+		switch (unit->worker_cmd) {
+			case MX_CMD_ATTACH:
 				unit->cmd_attach(unit, unit->worker_addr);
 				break;
-			case IO_IN<<7 | MX_LCMD_DETACH:
+			case MX_CMD_DETACH:
 				unit->cmd_detach(unit, unit->worker_addr);
 				break;
-			case IO_OU<<7 | MX_LCMD_TRANSMIT:
+			case MX_CMD_TRANSMIT:
 				pthread_mutex_trylock(&unit->transmit_mutex);
 				unit->cmd_transmit(unit, unit->worker_addr);
 				pthread_mutex_unlock(&unit->transmit_mutex);
@@ -648,63 +646,73 @@ void * mx_unit_worker(void *th_id)
 }
 
 // -----------------------------------------------------------------------
+int mx_cmd_illegal(struct chan_proto_t *chan, int lline_n, int interrupt)
+{
+	LOG(L_MX, 1, "MULTIX (ch:%i, line:%i) command: illegal command, reporting int: %d", chan->num, lline_n, interrupt);
+	mx_int(CHAN, 0, interrupt);
+	return IO_OK;
+}
+
+// -----------------------------------------------------------------------
 int mx_cmd(struct chan_proto_t *chan, int dir, uint16_t n_arg, uint16_t *r_arg)
 {
-	unsigned cmd	 = (n_arg & 0b1110000000000000) >> 13;
+	unsigned cmd	 = ((n_arg & 0b1110000000000000) >> 13) | ((dir&1) << 3);
 	unsigned chan_cmd= (n_arg & 0b0001100000000000) >> 11;
 	unsigned lline_n = (n_arg & 0b0001111111100000) >> 5;
 
-	if (cmd == 0) { // channel commands
-		switch (chan_cmd) {
-			case MX_CMD_RESET:
-				mx_reset(chan);
-				return IO_OK;
-			case MX_CMD_EXISTS:
-				return IO_OK;
-			case MX_CMD_INTSPEC:
-				return mx_cmd_intspec(chan, r_arg);
-			default:
-				LOG(L_MX, 1, "MULTIX (ch:%i) command: unknown channel command", chan->num);
-				break;
-		}
-	} else { // genral or line commands
-		if (dir == IO_IN) {
-			switch (cmd) {
-				case MX_CMD_INTRQ:
-					return mx_cmd_int_requeue(chan);
-				case MX_LCMD_DETACH:
-					LOG(L_MX, 1, "MULTIX (ch:%i, line:%i) command: detach", chan->num, lline_n);
-					return mx_cmd_forward(chan, dir, cmd, lline_n, *r_arg);
-				case MX_LCMD_CANCEL:
-					LOG(L_MX, 1, "MULTIX (ch:%i, line:%i) command: cancel transmission", chan->num, lline_n);
-					return mx_cmd_cancel(chan, lline_n);
+	switch (cmd) {
+		case MX_CMD_ERR_0:
+			return mx_cmd_illegal(chan, lline_n, MX_INT_IEPS0);
+		case MX_CMD_TEST:
+			return mx_cmd_test(chan, lline_n, r_arg);
+		case MX_CMD_ATTACH:
+			LOG(L_MX, 1, "MULTIX (ch:%i, line:%i) command: attach", chan->num, lline_n);
+			return mx_cmd_forward(chan, cmd, lline_n, *r_arg);
+		case MX_CMD_STATUS:
+			LOG(L_MX, 1, "MULTIX (ch:%i, line:%i) command: status", chan->num, lline_n);
+			return mx_cmd_status(chan, lline_n, *r_arg);
+		case MX_CMD_TRANSMIT:
+			LOG(L_MX, 1, "MULTIX (ch:%i, line:%i) command: transmit", chan->num, lline_n);
+			return mx_cmd_forward(chan, cmd, lline_n, *r_arg);
+		case MX_CMD_SETCFG:
+			return mx_cmd_setcfg(chan, r_arg);
+		case MX_CMD_ERR_6:
+			return mx_cmd_illegal(chan, lline_n, MX_INT_IEPS6);
+		case MX_CMD_ERR_7:
+			return mx_cmd_illegal(chan, lline_n, MX_INT_IEPS7);
+		case MX_CMD_CHAN:
+			switch (chan_cmd) {
+				case MX_CMD_RESET:
+					mx_reset(chan);
+					return IO_OK;
+				case MX_CMD_EXISTS:
+					return IO_OK;
+				case MX_CMD_INTSPEC:
+					return mx_cmd_intspec(chan, r_arg);
+				case MX_CMD_INVALID:
+					return mx_cmd_illegal(chan, lline_n, MX_INT_IEPS8);
 				default:
-					LOG(L_MX, 1, "MULTIX (ch:%i, line:%i) command: unknown line IN command", chan->num, lline_n);
-					break;
+					return IO_OK;
 			}
-		} else {
-			switch (cmd) {
-				case MX_CMD_TEST:
-					return mx_cmd_test(chan, lline_n, r_arg);
-				case MX_CMD_SETCFG:
-					return mx_cmd_setcfg(chan, r_arg);
-				case MX_LCMD_ATTACH:
-					LOG(L_MX, 1, "MULTIX (ch:%i, line:%i) command: attach", chan->num, lline_n);
-					return mx_cmd_forward(chan, dir, cmd, lline_n, *r_arg);
-				case MX_LCMD_STATUS:
-					LOG(L_MX, 1, "MULTIX (ch:%i, line:%i) command: status", chan->num, lline_n);
-					return mx_cmd_status(chan, lline_n, *r_arg);
-				case MX_LCMD_TRANSMIT:
-					LOG(L_MX, 1, "MULTIX (ch:%i, line:%i) command: transmit", chan->num, lline_n);
-					return mx_cmd_forward(chan, dir, cmd, lline_n, *r_arg);
-				default:
-					LOG(L_MX, 1, "MULTIX (ch:%i, line:%i) command: unknown line OUT command", chan->num, lline_n);
-					break;
-			}
-		}
+		case MX_CMD_INTRQ:
+			return mx_cmd_int_requeue(chan);
+		case MX_CMD_DETACH:
+			LOG(L_MX, 1, "MULTIX (ch:%i, line:%i) command: detach", chan->num, lline_n);
+			return mx_cmd_forward(chan, cmd, lline_n, *r_arg);
+		case MX_CMD_CANCEL:
+			LOG(L_MX, 1, "MULTIX (ch:%i, line:%i) command: cancel transmission", chan->num, lline_n);
+			return mx_cmd_cancel(chan, lline_n);
+		case MX_CMD_ERR_C:
+			return mx_cmd_illegal(chan, lline_n, MX_INT_IEPSC);
+		case MX_CMD_ERR_D:
+			return mx_cmd_illegal(chan, lline_n, MX_INT_IEPSD);
+		case MX_CMD_ERR_E:
+			return mx_cmd_illegal(chan, lline_n, MX_INT_IEPSE);
+		case MX_CMD_ERR_F:
+			return mx_cmd_illegal(chan, lline_n, MX_INT_IEPSF);
+		default:
+			return IO_OK;
 	}
-
-	return IO_OK;
 }
 
 // -----------------------------------------------------------------------

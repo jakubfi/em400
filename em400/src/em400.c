@@ -99,6 +99,8 @@ void em400_init()
 		em400_eerr(res, "Error initializing I/O");
 	}
 
+	regs[R_KB] = em400_cfg.keys;
+
 	if (em400_cfg.program_name) {
 		eprint("Loading image '%s' into OS memory\n", em400_cfg.program_name);
 		int res = mem_load(em400_cfg.program_name, 0, 0, 2*4096);
