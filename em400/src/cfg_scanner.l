@@ -62,7 +62,7 @@ unit			return UNIT;
 	return *cyytext;
 }
 
-[ \t\n]+	;
+[ \t\n\r\f]+ ;
 {comment}	;
 
 {text} {
