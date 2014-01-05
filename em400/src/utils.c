@@ -55,9 +55,9 @@ char * int2binf(char *format, uint64_t value, int size)
 char * int2chars(uint16_t w, char *buf)
 {
 	buf[0] = (w & 0b1111111100000000) >> 8;
-	if (!isprint(buf[0])) buf[0] = '.';
+	if (!isprint((unsigned)buf[0])) buf[0] = '.';
 	buf[1] = (w & 0b0000000011111111);
-	if (!isprint(buf[1])) buf[1] = '.';
+	if (!isprint((unsigned)buf[1])) buf[1] = '.';
 	buf[2] = '\0';
 	return buf;
 }

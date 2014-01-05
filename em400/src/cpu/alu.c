@@ -386,7 +386,7 @@ void alu_fp_store(double f, int round, int set_c)
 	// check host overflow/underflow, check if exponent fits in 8 bits
 	if ((fe_flags & FE_OVERFLOW) || (exp > 127)) {
 		int_set(INT_FP_OF);
-	} else if ((fe_flags & FE_UNDERFLOW) || (exp < -128)) {
+	} else if ((fe_flags & FE_UNDERFLOW) || (((m != 0.0f) && exp < -128))) {
 		int_set(INT_FP_UF);
 	}
 

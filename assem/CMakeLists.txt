@@ -8,6 +8,9 @@ find_package(FLEX)
 
 ADD_DEFINITIONS(-Wall -std=c99 -D_XOPEN_SOURCE=700 -O2 -DASSEM_VERSION="${ASSEM_VERSION}")
 
+include_directories(${CMAKE_SOURCE_DIR})
+include_directories(${CMAKE_BINARY_DIR})
+
 BISON_TARGET(parser_modern parser_modern.y ${CMAKE_CURRENT_BINARY_DIR}/parser_modern.c COMPILE_FLAGS "-p m_yy")
 BISON_TARGET(parser_classic parser_classic.y ${CMAKE_CURRENT_BINARY_DIR}/parser_classic.c COMPILE_FLAGS "-p c_yy")
 FLEX_TARGET(scanner_modern scanner_modern.l ${CMAKE_CURRENT_BINARY_DIR}/scanner_modern.c COMPILE_FLAGS "-P m_yy")
