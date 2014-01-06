@@ -16,6 +16,7 @@
 //  51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 
 #include <pthread.h>
+#include <semaphore.h>
 #include <time.h>
 
 #include "cpu/timer.h"
@@ -25,40 +26,8 @@
 #include "cfg.h"
 #include "errors.h"
 
-pthread_mutex_t timer_active = PTHREAD_MUTEX_INITIALIZER;
 pthread_t timer_th;
-
-#ifdef __CYGWIN__
-#include <errno.h>
-	
-#define _x_min(a, b) ((a) < (b) ? (a) : (b))
-
-int pthread_mutex_timedlock(pthread_mutex_t *mutex, const struct timespec *abs_timeout)
-{
- int pthread_rc;
- struct timespec remaining, slept, ts;
-
- remaining = *abs_timeout;
- while ((pthread_rc = pthread_mutex_trylock(mutex)) == EBUSY) {
-	 ts.tv_sec = 0;
-	 ts.tv_nsec = (remaining.tv_sec > 0 ? 10000000 : _x_min(remaining.tv_nsec,10000000));
-	 nanosleep(&ts, &slept);
-	 ts.tv_nsec -= slept.tv_nsec;
-	 if (ts.tv_nsec <= remaining.tv_nsec) {
-		remaining.tv_nsec -= ts.tv_nsec;
-	 }
-	 else {
-		 remaining.tv_sec--;
-		 remaining.tv_nsec = (1000000 - (ts.tv_nsec - remaining.tv_nsec));
-	 }
-	 if (remaining.tv_sec < 0 || (!remaining.tv_sec && remaining.tv_nsec <=0)) {
-		return ETIMEDOUT;
-	 }
- }
-
- return pthread_rc;
-}
-#endif
+sem_t timer_quit;
 
 // -----------------------------------------------------------------------
 void * timer_thread(void *ptr)
@@ -72,8 +41,7 @@ void * timer_thread(void *ptr)
 		new_nsec = ts.tv_nsec + clock_tick_nsec;
 		ts.tv_sec += new_nsec / 1000000000;
 		ts.tv_nsec = new_nsec % 1000000000;
-		if(!pthread_mutex_timedlock(&timer_active, &ts)) {
-			pthread_mutex_unlock(&timer_active);
+		if (!sem_timedwait(&timer_quit, &ts)) {
 			break;
 		}
 		int_set(int_timer);
@@ -93,7 +61,7 @@ int timer_init()
 		return E_OK;
 	} else {
 		eprint("Starting timer: %i ms\n", em400_cfg.timer_step);
-		pthread_mutex_lock(&timer_active);
+		sem_init(&timer_quit, 0, 0);
 		if (pthread_create(&timer_th, NULL, timer_thread, NULL)) {
 			return E_THREAD;
 		} else {
@@ -107,7 +75,7 @@ void timer_shutdown()
 {
 	eprint("Stopping timer\n");
 	if (timer_th) {
-		pthread_mutex_unlock(&timer_active);
+		sem_post(&timer_quit);
 		pthread_join(timer_th, NULL);
 	}
 }
