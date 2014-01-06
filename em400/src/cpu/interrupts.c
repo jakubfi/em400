@@ -17,6 +17,7 @@
 
 #include <inttypes.h>
 #include <pthread.h>
+#include <semaphore.h>
 
 #include "cpu/cpu.h"
 #include "cpu/registers.h"
@@ -37,7 +38,7 @@ uint32_t int_mask;
 int int_timer = INT_TIMER;
 int int_extra = INT_EXTRA;
 
-pthread_spinlock_t int_ready;
+sem_t int_ready;
 pthread_mutex_t int_mutex = PTHREAD_MUTEX_INITIALIZER;
 pthread_cond_t int_cond = PTHREAD_COND_INITIALIZER;
 
@@ -83,12 +84,17 @@ void int_wait()
 // -----------------------------------------------------------------------
 void int_update_rp()
 {
+	int semval;
 	RP = RZ & int_mask;
 	if (RP) {
-		pthread_spin_unlock(&int_ready);
+		sem_getvalue(&int_ready, &semval);
+		while (semval < 1) {
+			sem_post(&int_ready);
+			sem_getvalue(&int_ready, &semval);
+		}
 		pthread_cond_signal(&int_cond);
 	} else {
-		pthread_spin_trylock(&int_ready);
+		while (!sem_trywait(&int_ready));
 	}
 }
 

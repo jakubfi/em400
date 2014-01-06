@@ -65,7 +65,7 @@ int cpu_init()
 	iset[036].user_illegal = em400_cfg.cpu_user_io_illegal;
 
 	// init interrupts
-	if (pthread_spin_init(&int_ready, 0)) {
+	if (sem_init(&int_ready, 0, 0)) {
 		return E_SPIN_INIT;
 	}
 	int_update_mask(regs[R_SR]);
@@ -77,8 +77,7 @@ int cpu_init()
 // -----------------------------------------------------------------------
 void cpu_shutdown()
 {
-	pthread_spin_unlock(&int_ready);
-	pthread_spin_destroy(&int_ready);
+	sem_destroy(&int_ready);
 }
 
 // -----------------------------------------------------------------------

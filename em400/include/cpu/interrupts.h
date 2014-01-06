@@ -20,8 +20,9 @@
 
 #include <inttypes.h>
 #include <pthread.h>
+#include <semaphore.h>
 
-extern pthread_spinlock_t int_ready;
+extern sem_t int_ready;
 extern uint32_t RZ;
 
 extern int int_timer;

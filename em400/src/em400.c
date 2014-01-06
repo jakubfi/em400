@@ -290,7 +290,7 @@ void em400_loop()
 #endif
 		cpu_step();
 
-		if (!pthread_spin_trylock(&int_ready) && !P && !regs[R_MODc]) {
+		if (!P && !regs[R_MODc] && !sem_trywait(&int_ready)) {
 			int_serve();
 		}
 
