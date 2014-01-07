@@ -38,7 +38,7 @@ char *strbufpos;
 %option yylineno
 %x string cmt
 
-ws			[ \t\n]+
+ws			[ \t\n\r\f]+
 anything	.*$
 cmtstart	[;#][ \t]*
 

@@ -8,8 +8,9 @@ CPU:
 
 I/O:
 
+* mx: async command processor
 * handling no memory for io devices
-* pthread_join()
+* pthread_join() (worker, cmd_worker)
 
 * make attach/detach mx funcs
 * move cfg_phy to mx

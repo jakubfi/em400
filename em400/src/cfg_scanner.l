@@ -31,7 +31,7 @@ void cyyerror(char *);
 %option yylineno
 
 number	[0-9]+
-text	[^,: \n\t]+
+text	[^,: \n\t\r\f]+
 chars	[\}\{=:,]
 comment	#.*$
 
