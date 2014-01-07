@@ -8,13 +8,13 @@ computer {
 	# allowed values: 0-100, 0 means timer is disabled (default is 10)
 	# Note: cycle lengths available for real hardware were:
 	# 2, 4, 8, 10, 20, 40, 80 (10 was default)
-	timer_step = 0
+	timer_step = 10
 
 	# Enable CPU modification (17-bit byte addressing, additional instructions,
 	# additional software interrupt, int 5/11 swap, broader interrupt mask
 	# for I/O interrupts)
 	# allowed values: "true", "false" (default)
-	cpu_mod = true
+	cpu_mod = false
 
 	# IN/OU operations can be either illegal or legal in user programs
 	# allowed values: "true" (default), "false"
@@ -35,11 +35,11 @@ computer {
 	mem_elwro = 1
 
 	# allowed values: 0-16 (default: 0)
-	mem_mega = 16
+	mem_mega = 0
 
 	# Name of image file containing MEGA PROM memory (1 segment, 4kword max)
 	# (default: none)
-	mem_mega_prom = mega_prom.img
+	#mem_mega_prom = mega_prom.img
 
 	# 4kword segments hardwired for OS memory block (taken from module 0)
 	# allowed values: 1 or 2 (default: 2)
@@ -61,28 +61,28 @@ computer {
 #	unit 1 = winchester: /home/amo/winchester2.img
 #}
 
-channel 1 = multix {
-	unit 0 = puncher
-	unit 1 = puncher
-	unit 2 = puncher
-	unit 3 = punchreader
-	unit 4 = terminal
-	unit 5 = terminal
-	unit 6 = terminal
-	unit 7 = terminal
-	unit 8 = terminal
-	unit 9 = terminal
-	unit 10 = terminal
-	unit 11 = terminal
-	unit 12 = terminal
-	unit 13 = terminal
-	unit 14 = terminal
-	unit 15 = terminal
-	unit 20 = floppy: floppy.e4i
-	unit 21 = floppy: floppy.e4i
-	unit 28 = winchester: winchester_amo.e4i
-}
+#channel 1 = multix {
+#	unit 0 = puncher
+#	unit 1 = puncher
+#	unit 2 = puncher
+#	unit 3 = punchreader
+#	unit 4 = terminal
+#	unit 5 = terminal
+#	unit 6 = terminal
+#	unit 7 = terminal
+#	unit 8 = terminal
+#	unit 9 = terminal
+#	unit 10 = terminal
+#	unit 11 = terminal
+#	unit 12 = terminal
+#	unit 13 = terminal
+#	unit 14 = terminal
+#	unit 15 = terminal
+#	unit 20 = floppy: floppy.e4i
+#	unit 21 = floppy: floppy.e4i
+#	unit 28 = winchester: winchester_amo.e4i
+#}
 
-channel 15 = char {
-	unit 4 = term_cons
-}
+#channel 15 = char {
+#	unit 4 = term_cons
+#}
