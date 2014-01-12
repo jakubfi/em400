@@ -20,4 +20,6 @@ target_link_libraries(em400
 	cpu mem io
 )
 
+install(TARGETS em400 emitool RUNTIME DESTINATION bin)
+
 # vim: tabstop=4

@@ -61,7 +61,7 @@ computer {
 #	unit 1 = winchester: /home/amo/winchester2.img
 #}
 
-#channel 1 = multix {
+channel 1 = multix {
 #	unit 0 = puncher
 #	unit 1 = puncher
 #	unit 2 = puncher
@@ -81,7 +81,7 @@ computer {
 #	unit 20 = floppy: floppy.e4i
 #	unit 21 = floppy: floppy.e4i
 #	unit 28 = winchester: winchester_amo.e4i
-#}
+}
 
 #channel 15 = char {
 #	unit 4 = term_cons

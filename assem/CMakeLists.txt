@@ -25,4 +25,6 @@ ${FLEX_scanner_modern_OUTPUTS}
 ${FLEX_scanner_classic_OUTPUTS}
 )
 
+install(TARGETS assem RUNTIME DESTINATION bin)
+
 # vim: tabstop=4
