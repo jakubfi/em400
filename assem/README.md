@@ -1,1 +1,1 @@
-ASSEM is an assembler for MERA-400.
+ASSEM is an assembler for MERA 400.

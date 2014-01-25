@@ -157,7 +157,7 @@ instruction:
 	| OP_C REGISTER				{ $$ = mknod_op(N_C,	$1, $2, NULL, NULL); }
 	| OP_SHC REGISTER ',' expr	{ $$ = mknod_op(N_SHC,	$1, $2, $4,   NULL); }
 	| OP_S						{ $$ = mknod_op(N_S,	$1, 0,  NULL, NULL); }
-	| OP_NRF					{ $$ = mknod_op(N_KA2,	$1, 0,  mknod_valstr(N_VAL, 0, NULL), NULL); }
+	| OP_NRF					{ $$ = mknod_op(N_KA2,	$1, 0,  mknod_valstr(N_VAL, 255, NULL), NULL); }
 	| OP_NRF VALUE				{ $$ = mknod_op(N_KA2,	$1, 0,  mknod_valstr(N_VAL, $2.v, $2.s), NULL); }
 	| OP_HLT					{ $$ = mknod_op(N_HLT,	$1, 0,  mknod_valstr(N_VAL, 0, NULL), NULL); }
 	| OP_HLT VALUE				{ $$ = mknod_op(N_HLT,	$1, 0,  mknod_valstr(N_VAL, $2.v, $2.s), NULL); }
