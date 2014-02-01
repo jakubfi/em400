@@ -1,4 +1,3 @@
-.prog "op/MCL"
 
 ; PRE sr = 0b0000001000000000
 ; PRE r0 = 0xfafa
@@ -10,11 +9,9 @@
 ; PRE r6 = 236
 ; PRE r7 = -24886
 
-	.data 1
+	.word 1
 	mcl
 	hlt 077
-
-.finprog
 
 ; XPCT int(rz[6]) : 0
 ; XPCT int(sr) : 0

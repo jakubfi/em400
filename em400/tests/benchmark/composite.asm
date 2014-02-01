@@ -1,5 +1,3 @@
-.prog "benchmark/composite"
-
 	.equ stackp 0x61
 	.equ soft 94
 	.equ start 0x70
@@ -10,11 +8,11 @@ softx:
 	lip
 
 stack:	.res 4
-mask:	.data 0b0000000001000000
-one:	.data 1
-minus1:	.data -1
+mask:	.word 0b0000000001000000
+one:	.word 1
+minus1:	.word -1
 
-.ic start
+.org start
 	lwt r1, stack
 	rw r1, stackp
 	lwt r1, softx
@@ -41,5 +39,3 @@ loop:	lwt r2, -1		; short arg
 	hlt 077
 
 jump:	uj r7
-
-.finprog

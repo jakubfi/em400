@@ -1,5 +1,3 @@
-.prog "mem/mega-prom"
-
 ; CONFIG configs/mega_max.conf
 
 ; does PROM show/hide work?
@@ -24,7 +22,7 @@
 
 	uj start
 
-mask:	.data 0b0100000000000000
+mask:	.word 0b0100000000000000
 stack:	.res 16
 
 nomem_proc:
@@ -33,7 +31,7 @@ nomem_proc:
 
 err:	hlt 040
 
-	.ic 0x70
+	.org 0x70
 
 start:	lw r1, stack
 	rw r1, stackp
@@ -42,11 +40,11 @@ start:	lw r1, stack
 
 	lw r1, 14\3 + nb
 	ou r1, mp + 3\10 + mega
-	.data err, err, ok0, err
+	.word err, err, ok0, err
 
 ok0:	lw r1, ab + nb
 	ou r1, mp + seg + mega+phide+done
-	.data err, err, ok, err
+	.word err, err, ok, err
 
 ok:	im mask
 	lw r1, magic
@@ -54,7 +52,7 @@ ok:	im mask
 
 	lw r1, 0
 	ou r1, mega+pshow
-	.data err, err, ok2, err
+	.word err, err, ok2, err
 
 ok2:	lw r2, magic
 	rw r2, ab+1
@@ -65,13 +63,11 @@ ok2:	lw r2, magic
 
 	lw r1, 0
 	ou r1, mega+phide
-	.data err, err, ok3, err
+	.word err, err, ok3, err
 
 ok3:	lw r5, [ab]
 
 	hlt 077
-
-.finprog
 
 ; XPCT hex(r2) : 0x0000
 ; XPCT hex(r3) : 0x2323

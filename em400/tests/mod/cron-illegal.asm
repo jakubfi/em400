@@ -1,8 +1,7 @@
-.prog "mod/cron-legal"
+
+	.cpu mx16
 
 	cron
 	hlt 077
-
-.finprog
 
 ; XPCT int(rz[6]) : 1

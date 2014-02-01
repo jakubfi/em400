@@ -1,5 +1,3 @@
-.prog "op/PW+TW"
-
 ; PRE r0 = 0xaafe
 ; PRE r1 = 0x0001
 ; PRE r2 = 0x0010
@@ -14,14 +12,14 @@
 
 	uj start
 
-blk:	.data 0b0100000000000001
+blk:	.word 0b0100000000000001
 data:	.res 8
 stack:	.res 16
 
 nomem_proc:
 	hlt 040
 
-	.ic 0x70
+	.org 0x70
 start:
 	lw r1, stack
 	rw r1, stackp
@@ -30,7 +28,7 @@ start:
 
 	lw r1, 0b0000000000000001
 	ou r1, 0b0000000000000011
-	.data   err, err, ok, err
+	.word   err, err, ok, err
 err:	hlt 040
 ok:
 	mb blk
@@ -64,8 +62,6 @@ ok:
 	tw r7, data+7
 
 	hlt 077
-
-.finprog
 
 ; XPCT int(rz[6]) : 0
 ; XPCT bin(sr) : 0b0100000000000001

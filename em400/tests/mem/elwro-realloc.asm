@@ -1,5 +1,3 @@
-.prog "mem/elwro-realloc"
-
 ; does Elwro prohibit allocating the same physical segment for two logical segments?
 ; is data in physical segment preserved between allocations?
 
@@ -15,7 +13,7 @@
 
 	uj start
 
-mask:	.data 0b0100000000000001
+mask:	.word 0b0100000000000001
 stack:	.res 16
 
 nomem_proc:
@@ -23,7 +21,7 @@ nomem_proc:
 	lip
 err:	hlt 040
 
-	.ic 0x70
+	.org 0x70
 
 start:	lw r1, stack
 	rw r1, stackp
@@ -32,7 +30,7 @@ start:	lw r1, stack
 
 	lw r1, ab1 + nb
 	ou r1, mp + seg + 1\15
-	.data err, err, ok, err
+	.word err, err, ok, err
 
 ok:	mb mask
 	im mask
@@ -41,14 +39,12 @@ ok:	mb mask
 
 	lw r1, ab2 + nb
 	ou r1, mp + seg + 1\15
-	.data err, err, ok2, err
+	.word err, err, ok2, err
 
 ok2:	tw r1, ab1+addr
 	tw r2, ab2+addr
 
 	hlt 077
-
-.finprog
 
 ; XPCT hex(r2) : 0x2323
 ; XPCT int(r7) : 1

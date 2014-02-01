@@ -1,5 +1,3 @@
-.prog "alu/fp-exp-overflow"
-
 ; 0.9999... * 2^127
 ; PRE [0xa0] = 0x7fff
 ; PRE [0xa1] = 0xffff
@@ -13,8 +11,6 @@
 	mf 0xa3
 
 	hlt 077
-
-.finprog
 
 ; XPCT int(rz[6]) : 0
 ; XPCT int(rz[7]) : 0

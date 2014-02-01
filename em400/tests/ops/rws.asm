@@ -1,5 +1,3 @@
-.prog "op/RWS"
-
 ; PRE r0 = -30
 ; PRE r1 = -31
 ; PRE r2 = -32
@@ -26,8 +24,6 @@ main:	rws r0, data1
 	nop
 
 data2:	.res	100
-
-.finprog
 
 ; XPCT int(rz[6]) : 0
 ; XPCT int(sr) : 0

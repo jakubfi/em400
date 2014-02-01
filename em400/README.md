@@ -39,9 +39,9 @@ Requirements
 
 To build and run em400 you need:
 
-* a Linux box
 * cmake
 * GNU make
+* bison and flex
 * ncurses (used by debugger)
 * readline (used by debugger)
 
@@ -54,6 +54,7 @@ Do the following in the directory where this README lives:
 ```
 	cmake .
 	make
+	make install
 ```
 
 Running

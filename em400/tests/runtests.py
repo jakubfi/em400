@@ -23,7 +23,7 @@ import sys
 import re
 import subprocess
 
-assem = "../../assem/assem"
+assem = "emas"
 em400 = "../build/em400"
 
 # ------------------------------------------------------------------------

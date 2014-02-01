@@ -1,6 +1,6 @@
-.prog "mod/zc17"
-
 ; CONFIG configs/mod.conf
+
+	.cpu mx16
 
 	.equ int_nomem 0x40 + 2
 	.equ stackp 0x61
@@ -11,13 +11,13 @@
 
 	uj start
 
-mask:	.data 0b0100000000000000
+mask:	.word 0b0100000000000000
 stack:	.res 16
 
 nomem_proc:
 	hlt 040
 
-	.ic 0x70
+	.org 0x70
 
 start:	lw r1, stack
 	rw r1, stackp
@@ -26,7 +26,7 @@ start:	lw r1, stack
 
 	lw r1, 8\3 + 0\15
 	ou r1, 3\10 + 0\14 + 1
-	.data err, err, ok, err
+	.word err, err, ok, err
 
 err:	hlt 040
 
@@ -49,8 +49,6 @@ ok:	im mask
 	lb r4, 1\0 + addr + 1
 
 	hlt 077
-
-.finprog
 
 ; XPCT hex(r2) : 0x0055
 ; XPCT hex(r3) : 0x00ba

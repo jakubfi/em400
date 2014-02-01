@@ -1,5 +1,3 @@
-.prog "op/NGC"
-
 ; PRE r0 = 0b0001000000000000
 
 	lw r1, 0b1111111111111111
@@ -9,8 +7,6 @@
 	ngc r2
 
 	hlt 077
-
-.finprog
 
 ; XPCT int(rz[6]) : 0
 ; XPCT int(sr) : 0

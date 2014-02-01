@@ -1,6 +1,6 @@
-.prog "mod/sint-sind-timer"
-
 ; CONFIG configs/mod.conf
+
+	.cpu mx16
 
 	.equ int 0x40
 	.equ int_timer int+5
@@ -12,10 +12,10 @@
 	uj start
 
 stack:	.res 4
-mask:	.data 1\4
-zmask:	.data 0
-set1:	.data 0x100, 0x101, 0x102
-set2:	.data 0x200, 0x201, 0x202
+mask:	.word 1\4
+zmask:	.word 0
+set1:	.word 0x100, 0x101, 0x102
+set2:	.word 0x200, 0x201, 0x202
 
 timerx:	ib r1
 	lip
@@ -26,7 +26,7 @@ illx:	ib r2
 extrax:	ib r3
 	lip
 
-.ic start
+.org start
 	lw r1, timerx
 	rw r1, int_timer
 	lw r1, extrax
@@ -53,8 +53,6 @@ extrax:	ib r3
 	im zmask
 
 	hlt 077
-
-.finprog
 
 ; XPCT int([0x100]) : 1
 ; XPCT int([0x101]) : 2

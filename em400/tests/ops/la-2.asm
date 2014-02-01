@@ -1,13 +1,10 @@
-.prog "op/LA-2levels"
 
 	la [data1]
 
 	hlt 077
 
-data1:	.data	data2
-data2:	.data	40, 41, 42, 43, 44, 45, 46
-
-.finprog
+data1:	.word	data2
+data2:	.word	40, 41, 42, 43, 44, 45, 46
 
 ; XPCT int(rz[6]) : 0
 ; XPCT int(sr) : 0

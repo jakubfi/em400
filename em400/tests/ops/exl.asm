@@ -1,11 +1,9 @@
-.prog "op/EXL"
-
 ; PRE r0 = 0xfafa
 
 	uj start
 	.res 128
 stack:	.res 16
-mask:	.data 0b0000001111000000
+mask:	.word 0b0000001111000000
 
 start:
 	lw r1, exlp
@@ -21,8 +19,6 @@ start:
 
 exlp:
 	hlt 077
-
-.finprog
 
 ; XPCT int(rz[6]) : 0
 ; XPCT oct(ir[10-15]) : 077

@@ -1,5 +1,3 @@
-.prog "args/pre-mod"
-
 ; pre-modification
 
 	md 100
@@ -14,8 +12,6 @@
 	lw r5, 1024
 
 	hlt 077
-
-.finprog
 
 ; XPCT int(rz[6]) : 0
 ; XPCT int(sr) : 0

@@ -1,5 +1,3 @@
-.prog "benchmark/cycle"
-
 	lw r1, 1
 loop:
 	ujs 0
@@ -66,5 +64,3 @@ loop:
 	ujs 0
 	irb r1, loop
 	hlt 077
-
-.finprog

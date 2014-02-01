@@ -1,4 +1,3 @@
-.prog "op/LD"
 
 	ld data1
 	lw r3, r1
@@ -7,11 +6,9 @@
 
 	hlt 077
 
-data1:	.data	12, 13
-data2:	.data	data3
-data3:	.data	14, 15
-
-.finprog
+data1:	.word	12, 13
+data2:	.word	data3
+data3:	.word	14, 15
 
 ; XPCT int(rz[6]) : 0
 ; XPCT int(sr) : 0

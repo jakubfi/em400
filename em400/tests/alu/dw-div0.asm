@@ -1,4 +1,3 @@
-.prog "alu/DW-div0"
 ; 5/0
 ; PRE [0xa0] = 0b0000000000000000
 ; PRE [0xa1] =                   0b0000000000000101
@@ -10,8 +9,6 @@
 	rw r0, 0xe2
 
 	hlt 077
-
-.finprog
 
 ; XPCT int(rz[6]) : 0
 ; XPCT int(rz[7]) : 0

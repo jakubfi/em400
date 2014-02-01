@@ -1,5 +1,3 @@
-.prog "op/SRX"
-
 ; PRE r0 = 0b0000000010000000
 
 	lw r1, 0b1000000000000001
@@ -14,8 +12,6 @@
 	srx r1
 
 	hlt 077
-
-.finprog
 
 ; XPCT int(rz[6]) : 0
 ; XPCT int(sr) : 0

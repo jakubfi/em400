@@ -1,5 +1,3 @@
-.prog "benchmark/shc"
-
 	lwt r1, 1
 loop:
 	shc r2, 1
@@ -66,5 +64,3 @@ loop:
 	shc r2, 1
 	irb r1, loop
 	hlt 077
-
-.finprog

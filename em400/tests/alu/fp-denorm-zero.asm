@@ -1,5 +1,3 @@
-.prog "alu/fp-denorm-zero"
-
 ; denormalized 0 doesn't set DIV0 int
 
 ; 4
@@ -15,8 +13,6 @@
 	af 0xa3
 
 	hlt 077
-
-.finprog
 
 ; XPCT int(rz[6]) : 0
 ; XPCT int(rz[7]) : 0

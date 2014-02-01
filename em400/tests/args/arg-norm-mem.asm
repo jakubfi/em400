@@ -1,5 +1,3 @@
-.prog "args/arg-norm-mem"
-
 ; normal argument points to memory
 
 	lw r1, [dt1]
@@ -11,12 +9,10 @@
 
 	hlt 077
 
-dt1:	.data	0x0001
-dt2:	.data	dt3
-dt3:	.data	0x0003
-dt4:	.data	0x0004
-
-.finprog
+dt1:	.word	0x0001
+dt2:	.word	dt3
+dt3:	.word	0x0003
+dt4:	.word	0x0004
 
 ; XPCT int(rz[6]) : 0
 ; XPCT int(sr) : 0

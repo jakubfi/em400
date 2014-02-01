@@ -1,5 +1,3 @@
-.prog "args/arg-norm-val"
-
 ; normal argument is a value
 
 	lw r1, 1
@@ -11,8 +9,6 @@
 	lw r7, r1 - 2
 
 	hlt 077
-
-.finprog
 
 ; XPCT int(rz[6]) : 0
 ; XPCT int(sr) : 0

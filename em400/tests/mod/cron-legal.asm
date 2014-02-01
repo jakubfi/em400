@@ -1,10 +1,8 @@
-.prog "mod/cron-legal"
-
 ; CONFIG configs/mod.conf
+
+	.cpu mx16
 
 	cron
 	hlt 077
-
-.finprog
 
 ; XPCT int(rz[6]) : 0

@@ -1,5 +1,3 @@
-.prog "alu/fp-NRF-no-carry"
-
 ; 0.5000000.....00000001
 ; PRE [0xa0] = 0x4000
 ; PRE [0xa1] = 0x0000
@@ -9,8 +7,6 @@
 	nrf
 
 	hlt 077
-
-.finprog
 
 ; XPCT int(rz[6]) : 0
 ; XPCT int(rz[7]) : 0

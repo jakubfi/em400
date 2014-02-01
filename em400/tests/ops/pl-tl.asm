@@ -1,5 +1,3 @@
-.prog "op/PL+TL"
-
 ; PRE r5 = 50
 ; PRE r6 = 60
 ; PRE r7 = 70
@@ -14,7 +12,7 @@
 
 	lw r1, 0b0000000000000001
 	ou r1, 0b0000000000000011
-	.data   err, err, ok, err
+	.word   err, err, ok, err
 ok:
 	mb blk
 	im blk
@@ -31,13 +29,11 @@ ok:
 
 err:	hlt 040
 data:	.res 7
-blk:	.data 0b0100000000000001
+blk:	.word 0b0100000000000001
 
 nomem_proc:
 	hlt 040
 stack:
-
-.finprog
 
 ; XPCT int(rz[6]) : 0
 ; XPCT bin(sr) : 0b0100000000000001

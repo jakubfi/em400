@@ -1,5 +1,3 @@
-.prog "args/pre-mod-short"
-
 ; pre-modification for instructions with short argument
 
 	md 100
@@ -16,8 +14,6 @@
 	lwt r6, -63
 
 	hlt 077
-
-.finprog
 
 ; XPCT int(rz[6]) : 0
 ; XPCT int(sr) : 0

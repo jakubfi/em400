@@ -1,9 +1,6 @@
-.prog "int/illegal-op"
+.word	1
 
-.data	1
 	hlt 077
-
-.finprog
 
 ; XPCT int(sr) : 0
 

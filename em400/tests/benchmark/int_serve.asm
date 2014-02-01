@@ -1,5 +1,3 @@
-.prog "benchmark/int_serve"
-
 	.equ astack 0x61
 	.equ asoft 94
 	.equ astart 0x70
@@ -10,9 +8,9 @@
 softint_handler:
 	lip
 stack:	.res 4
-mask:	.data 0b0000000001000000
+mask:	.word 0b0000000001000000
 
-	.ic astart
+	.org astart
 start:
 	lwt r1, stack
 	rw r1, astack
@@ -25,5 +23,3 @@ loop:
 	siu
 	irb r1, loop
 	hlt 077
-
-.finprog

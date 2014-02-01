@@ -1,6 +1,6 @@
-.prog "mod/mask"
-
 ; CONFIG configs/mod.conf
+
+	.cpu mx16
 
 	.equ inttable 0x40
 	.equ int_cpu2 inttable + 3
@@ -10,13 +10,13 @@
 
 	uj start
 
-mask:	.data 0b1111110000000000
-zmask:	.data 0
-raise:	.data 1\3
-	.ic inttable
+mask:	.word 0b1111110000000000
+zmask:	.word 0
+raise:	.word 1\3
+	.org inttable
 	.res 32, empty
 
-.ic start
+.org start
 	lw r1, stack
 	rw r1, stackp
 	lw r1, cpu2x
@@ -51,8 +51,6 @@ mx:	fi raise
 	lip
 
 stack:	.res 4*16
-
-.finprog
 
 ; XPCT bin([0x200]) : 0b1111100000000000
 ; XPCT bin([0x201]) : 0b1111000000000000

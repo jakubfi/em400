@@ -1,5 +1,3 @@
-.prog "op/LIP"
-
 ; PRE [10] = 135
 ; PRE [11] = 0xfafa
 ; PRE [12] = 0b1100000000000001
@@ -15,8 +13,6 @@ start:
 
 exlp:
 	hlt 040
-
-.finprog
 
 ; XPCT int(rz[6]) : 0
 

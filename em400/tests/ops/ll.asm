@@ -1,4 +1,3 @@
-.prog "op/LL"
 
 	ll data1
 	lw r1, r5
@@ -8,11 +7,9 @@
 
 	hlt 077
 
-data1:	.data	98, 99, 100
-data2:	.data 	data3
-data3:	.data	101, 102, 103
-
-.finprog
+data1:	.word	98, 99, 100
+data2:	.word	data3
+data3:	.word	101, 102, 103
 
 ; XPCT int(rz[6]) : 0
 ; XPCT int(sr) : 0

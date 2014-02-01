@@ -1,5 +1,3 @@
-.prog "mem/mega-double-alloc"
-
 ; CONFIG configs/mega_max.conf
 
 ; does MEGA allow to allocate the same physical segment for two logical segments?
@@ -23,7 +21,7 @@
 
 	uj start
 
-mask:	.data 0b0100000000000000
+mask:	.word 0b0100000000000000
 stack:	.res 16
 
 nomem_proc:
@@ -31,7 +29,7 @@ nomem_proc:
 	lip
 err:	hlt 040
 
-	.ic 0x70
+	.org 0x70
 
 start:	lw r1, stack
 	rw r1, stackp
@@ -40,11 +38,11 @@ start:	lw r1, stack
 
 	lw r1, ab1 + nb
 	ou r1, seg + mp + mega+phide+done
-	.data err, err, ok, err
+	.word err, err, ok, err
 
 ok:	lw r1, ab2 + nb
 	ou r1, seg + mp + mega
-	.data err, err, ok2, err
+	.word err, err, ok2, err
 
 ok2:	im mask
 	lw r1, magic
@@ -53,8 +51,6 @@ ok2:	im mask
 	lw r3, [ab2+addr]
 
 	hlt 077
-
-.finprog
 
 ; XPCT hex(r2) : 0x2323
 ; XPCT hex(r3) : 0x2323

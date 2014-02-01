@@ -1,5 +1,3 @@
-.prog "registers/r0"
-
 ; in user mode, only LPC may change upper r0 byte
 
 	.equ aexl 0x60
@@ -22,17 +20,17 @@ exl_handler:
 	hlt 077
 
 sys_sr:
-	.data int_mask+0
+	.word int_mask+0
 user_sr:
-	.data int_mask+user_block
+	.word int_mask+user_block
 stack:
 	.res astart-stack
 
-	.ic astart
+	.org astart
 start:
 	lwt r1, user_block
 	ou r1, 0b0000000000000011
-	.data   err, err, setup, err
+	.word   err, err, setup, err
 err:
 	hlt 040
 setup:
@@ -62,7 +60,7 @@ run_user_prog:
 	hlt 040
 
 user_vec:
-	.data user_prog_dest, user_r0_init, 0b0100000000100001
+	.word user_prog_dest, user_r0_init, 0b0100000000100001
 
 user_prog:
 	lw r0, user_r0_test
@@ -72,9 +70,7 @@ user_prog:
 	rpc r2
 	exl 0
 	hlt 040
-	.equ user_prog_end S
-
-.finprog
+	.equ user_prog_end .
 
 ; XPCT int(rz[6]) : 0
 ; XPCT bin(SR) : 0b0100000000000001

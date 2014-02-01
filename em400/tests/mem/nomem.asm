@@ -1,5 +1,3 @@
-.prog "mem/nomem"
-
 ; CONFIG configs/no_user_mem.cfg
 
 	.equ int_nomem 0x40 + 2
@@ -7,7 +5,7 @@
 
 	uj start
 
-mask:	.data 0b0100000000000001
+mask:	.word 0b0100000000000001
 nomem_proc:
 	hlt 077
 
@@ -25,8 +23,6 @@ start:
 
 stack:
 	.res 4
-
-.finprog
 
 ; XPCT int(rz[6]) : 0
 ; XPCT oct(ir[10-15]) : 077

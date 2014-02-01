@@ -1,5 +1,3 @@
-.prog "op/RZ"
-
 ; PRE [6] = -1
 ; PRE [7] = -1
 ; PRE [8] = -1
@@ -15,8 +13,6 @@
 	rz 10
 
 	hlt 077
-
-.finprog
 
 ; XPCT int(rz[6]) : 0
 ; XPCT int(sr) : 0

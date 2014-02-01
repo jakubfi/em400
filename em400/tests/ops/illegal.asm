@@ -1,5 +1,3 @@
-.prog "ops/illegal"
-
 ; in user mode, some instructions are illegal
 
 	.equ aexl 0x60
@@ -27,17 +25,17 @@ nomem_handler:
 
 sys_mb:
 zerod:
-	.data 0
+	.word 0
 user_sr:
-	.data 0b1111100000000000 + user_block
+	.word 0b1111100000000000 + user_block
 stack:
 	.res astart-stack
 
-	.ic astart
+	.org astart
 start:
 	lwt r1, user_block
 	ou r1, 0b0000000000000011
-	.data   err, err, setup, err
+	.word   err, err, setup, err
 err:
 	hlt 040
 setup:
@@ -69,7 +67,7 @@ run_user_prog:
 	hlt 040
 
 user_vec:
-	.data user_prog_dest, user_r0_init, 0b1111100000100001
+	.word user_prog_dest, user_r0_init, 0b1111100000100001
 user_prog:
 	hlt 040
 	cit
@@ -91,15 +89,13 @@ user_prog:
 	lw r1, zerod
 	sp r1
 	in r6, 0
-	.data ok, ok, ok, ok
+	.word ok, ok, ok, ok
 	ou r6, 0
-	.data ok, ok, ok, ok
+	.word ok, ok, ok, ok
 	exl 0
 ok:	hlt 040
 
 user_prog_end:
-
-.finprog
 
 ; XPCT int(rz[6]) : 0
 ; XPCT bin(SR) : 0b1111100000000001

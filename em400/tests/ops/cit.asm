@@ -1,11 +1,8 @@
-.prog "op/CIT"
 
 	sil
 	siu
 	cit
 	hlt 077
-
-.finprog
 
 ; XPCT int(rz[6]) : 0
 ; XPCT int(sr) : 0

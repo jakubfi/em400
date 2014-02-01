@@ -1,4 +1,3 @@
-
 ; Bootstrap MERA-400 CROOK-5 os from winchester disk
 
 ; Copyright (c) 2013 Jakub Filipowicz <jakubf@gmail.com>
@@ -18,8 +17,6 @@
 ; Foundation, Inc.,
 ; 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 
-.prog
-
 ; ------------------------------------------------------------------------
 	.equ chan 1
 	.equ chan_mask 0b0000010000000000
@@ -33,28 +30,28 @@
 
 ; ------------------------------------------------------------------------
 stack:	.res 2*4
-mask:	.data chan_mask
+mask:	.word chan_mask
 
-mx_cmd:	.data 0b101\2+chan\14, 0b010\2+chan\14, 0b100\2+chan\14
-mx_ps:	.data psuk, 0, pstrx
-intseq:	.data 2, 5, 10, 13
+mx_cmd:	.word 0b101\2+chan\14, 0b010\2+chan\14, 0b100\2+chan\14
+mx_ps:	.word psuk, 0, pstrx
+intseq:	.word 2, 5, 10, 13
 
-psuk:	.data 2\7 + 1
-	.data 0
-	.data 27
-	.data 1\3 + 3\7
-	.data 6\7 + 28
-	.data 1\7 + 1
-pstrx:	.data 2\7
-	.data image
-	.data imagesize-1
-	.data 0
-	.data 1
+psuk:	.word 2\7 + 1
+	.word 0
+	.word 27
+	.word 1\3 + 3\7
+	.word 6\7 + 28
+	.word 1\7 + 1
+pstrx:	.word 2\7
+	.word image
+	.word imagesize-1
+	.word 0
+	.word 1
 
-	.res 0x40-S	; padding up to 0x40
+	.res 0x40-.	; padding up to 0x40
 
 ; ------------------------------------------------------------------------
-	.ic prog_beg
+	.org prog_beg
 pmx:
 	irb r7, 0	; int_sequence++
 
@@ -80,7 +77,7 @@ cont:
 	je boot
 	lw r1, [mx_ps+r7]
 	ou r1, [mx_cmd+r7]
-	.data 0, 0, next, 0
+	.word 0, 0, next, 0
 next:
 	lip
 
@@ -122,4 +119,3 @@ image:
 	.equ imagesize (memsize-image)-(elcp-lcp)
 	.equ copier image+imagesize
 
-.finprog

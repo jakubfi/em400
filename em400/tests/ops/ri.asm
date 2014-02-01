@@ -1,12 +1,8 @@
-.prog "op/RI"
-
 ; PRE r1 = 10
 
 	ri r1, 15
 
 	hlt 077
-
-.finprog
 
 ; XPCT int(rz[6]) : 0
 ; XPCT int(sr) : 0

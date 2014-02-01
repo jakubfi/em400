@@ -1,4 +1,3 @@
-.prog "op/OR"
 
 	lw r1, 0b1010101010101010
 	or r1, 0b1111111100000000
@@ -7,8 +6,6 @@
 	or r2, 0
 
 	hlt 077
-
-.finprog
 
 ; XPCT int(rz[6]) : 0
 ; XPCT int(sr) : 0

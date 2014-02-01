@@ -1,4 +1,3 @@
-.prog "op/RIC"
 
 	ric r1
 	ric r2
@@ -6,8 +5,6 @@
 	ric r4
 
 	hlt 077
-
-.finprog
 
 ; XPCT int(rz[6]) : 0
 ; XPCT int(sr) : 0

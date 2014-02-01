@@ -1,5 +1,3 @@
-.prog "cycle/P-over-2"
-
 ; P should skip over next instruction, whether it's 1-word, or 2-words
 
 	lwt r1, 15
@@ -9,11 +7,9 @@
 exitok:
 	hlt 077
 
-	.ic 10
+	.org 10
 err:
 	hlt 040
-
-.finprog
 
 ; XPCT int(sr) : 0
 ; XPCT int(rz[6]) : 0

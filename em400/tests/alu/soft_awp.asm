@@ -1,7 +1,4 @@
-
 ; CONFIG configs/soft_awp.cfg
-
-.prog "alu/soft_awp"
 
 	.equ stackp 0x61
 	.equ interrupts 0x40
@@ -11,24 +8,24 @@
 
 int:	hlt 040
 stack:	.res 16
-mask:	.data 0b1111111111000000
+mask:	.word 0b1111111111000000
 
-.ic interrupts
+.org interrupts
 	.res 32, int
 
-.ic soft_awp
-	.data pNRF0
-	.data pNRF1
-	.data pNRF2
-	.data pNRF3
-	.data pAD
-	.data pSD
-	.data pMW
-	.data pDW
-	.data pAF
-	.data pSF
-	.data pMF
-	.data pDF
+.org soft_awp
+	.word pNRF0
+	.word pNRF1
+	.word pNRF2
+	.word pNRF3
+	.word pAD
+	.word pSD
+	.word pMW
+	.word pDW
+	.word pAF
+	.word pSF
+	.word pMF
+	.word pDF
 
 mark:	lw r1, [stackp]
 	lw r1, [r1-1]
@@ -67,8 +64,6 @@ start:	lw r1, stack
 	nrf 0b11000000
 
 	hlt 077
-
-.finprog
 
 ; XPCT int([1005]) : 1005
 ; XPCT int([1106]) : 1106

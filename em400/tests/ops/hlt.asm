@@ -1,5 +1,3 @@
-.prog "op/HLT"
-
 ; CONFIG configs/minimal-clock.cfg
 ; PRE [20] = 0b0000100000000000
 
@@ -10,8 +8,6 @@ loop:	hlt 0
 	ujs loop
 
 fin:	hlt 077
-
-.finprog
 
 ; XPCT int(rz[6]) : 0
 

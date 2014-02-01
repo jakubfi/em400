@@ -1,4 +1,3 @@
-.prog "op/SVY"
 
 	lw r0, ?VY
 	lw r1, 0b0010000000000001
@@ -15,8 +14,6 @@
 	svy r1
 
 	hlt 077
-
-.finprog
 
 ; XPCT int(rz[6]) : 0
 ; XPCT int(sr) : 0

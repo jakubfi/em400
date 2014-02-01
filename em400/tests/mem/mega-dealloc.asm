@@ -1,5 +1,3 @@
-.prog "mem/mega-dealloc"
-
 ; CONFIG configs/mega_max.conf
 
 ; does MEGA deallocation work?
@@ -21,7 +19,7 @@
 
 	uj start
 
-mask:	.data 0b0100000000000001
+mask:	.word 0b0100000000000001
 stack:	.res 16
 
 nomem_proc:
@@ -30,7 +28,7 @@ nomem_proc:
 
 err:	hlt 040
 
-	.ic 0x70
+	.org 0x70
 
 start:	lw r1, stack
 	rw r1, stackp
@@ -39,7 +37,7 @@ start:	lw r1, stack
 
 	lw r1, ab + nb
 	ou r1, mp + seg + mega+phide+done
-	.data err, err, ok, err
+	.word err, err, ok, err
 
 ok:	mb mask
 	im mask
@@ -48,19 +46,17 @@ ok:	mb mask
 
 	lw r1, ab + nb
 	ou r1, mega+dealloc
-	.data err, err, ok2, err
+	.word err, err, ok2, err
 
 ok2:	tw r1, ab
 
 	lw r1, ab + nb
 	ou r1, mp + seg + mega
-	.data err, err, ok3, err
+	.word err, err, ok3, err
 
 ok3:	tw r2, ab
 
 	hlt 077
-
-.finprog
 
 ; XPCT hex(r2) : 0x2323
 ; XPCT int(r7) : 1

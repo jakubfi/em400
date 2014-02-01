@@ -1,12 +1,8 @@
-.prog "alu/AD-simple"
-
 ; 1 + 1
 
 	lw r1, 1
 	aw r1, 1
 	hlt 077
-
-.finprog
 
 ; XPCT int(rz[6]) : 0
 ; XPCT int(sr) : 0

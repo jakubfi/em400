@@ -1,5 +1,3 @@
-.prog "mem/MEGA"
-
 ; CONFIG configs/mega_max.conf
 
 ; does MEGA allocation work?
@@ -24,14 +22,14 @@
 
 	uj start
 
-mask:	.data 0b0100000000000000
+mask:	.word 0b0100000000000000
 stack:	.res 16
 
 nomem_proc:
 	awt r7, 1
 err:	hlt 040
 
-	.ic 0x70
+	.org 0x70
 
 start:	lwt r1, stack
 	rw r1, stackp
@@ -46,7 +44,7 @@ next:	cw r1, ab_last
 	aw r1, ab_s
 	aw r2, seg_s
 	ou r1, r2 + mega+phide+done
-	.data err, err, next, err
+	.word err, err, next, err
 
 fin:	im mask
 	lwt r1, 0
@@ -58,8 +56,6 @@ loop:	aw r1, 0x1000
 	jn loop
 
 	hlt 077
-
-.finprog
 
 ; XPCT int(r7) : 0
 ; XPCT hex([0x1100]) : 0x1000

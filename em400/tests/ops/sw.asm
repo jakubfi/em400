@@ -1,4 +1,3 @@
-.prog "op/SW"
 
 	lw r1, 10
 	sw r1, 100
@@ -19,8 +18,6 @@
 	sw r6, -10
 
 	hlt 077
-
-.finprog
 
 ; XPCT int(rz[6]) : 0
 ; XPCT int(sr) : 0

@@ -1,13 +1,9 @@
-.prog "alu/AD-ov-carry"
-
 ; -1 + -32768
 
 	lw r1, 0b1111111111111111
 	aw r1, 0b1000000000000000
 	; =    1 0111111111111111
 	hlt 077
-
-.finprog
 
 ; XPCT int(rz[6]) : 0
 ; XPCT int(sr) : 0

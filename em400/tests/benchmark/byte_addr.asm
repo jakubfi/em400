@@ -1,5 +1,3 @@
-.prog "benchmark/byte_addr"
-
 	lwt r5, -60
 
 loop:	lb r1, r7
@@ -41,5 +39,3 @@ loop:	lb r1, r7
 
 	irb r5, loop
 	hlt 077
-
-.finprog

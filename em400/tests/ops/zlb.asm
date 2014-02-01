@@ -1,11 +1,8 @@
-.prog "op/ZLB"
 
 	lw r1, 0xfafa
 	zlb r1
 
 	hlt 077
-
-.finprog
 
 ; XPCT int(rz[6]) : 0
 ; XPCT int(sr) : 0

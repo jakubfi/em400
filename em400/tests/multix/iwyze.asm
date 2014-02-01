@@ -1,5 +1,3 @@
-.prog "multix/IWYZE"
-
 ; CONFIG configs/multix.cfg
 
 	.equ stackp 0x61
@@ -11,9 +9,9 @@
 
 	UJ start
 
-	.ic prog_beg
+	.org prog_beg
 mask:
-	.data unmask_chan
+	.word unmask_chan
 mx_proc:
 	LW r4, [stackp]
 	LW r4, [r4-1]
@@ -34,7 +32,7 @@ start:
 	MCL
 	IM mask				; second IWYZE, by MCL
 	IN r5, mx_chan\14		; third IWYZE, by software reset
-	.data fail, fail, fin, fail
+	.word fail, fail, fin, fail
 
 fin:
 	LW r5, 13
@@ -43,8 +41,6 @@ fail:
 
 stack:
 	.res 4
-
-.finprog
 
 ; XPCT int(rz[15]) : 0
 ; XPCT int(rz[6]) : 0

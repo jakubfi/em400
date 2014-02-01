@@ -1,4 +1,3 @@
-.prog "op/NGL"
 
 	lw r1, 0b1111111111111111
 	ngl r1
@@ -7,8 +6,6 @@
 	ngl r2
 
 	hlt 077
-
-.finprog
 
 ; XPCT int(rz[6]) : 0
 ; XPCT int(sr) : 0

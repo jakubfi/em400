@@ -1,5 +1,3 @@
-.prog "op/RW"
-
 ; PRE r0 = -10
 ; PRE r1 = -11
 ; PRE r2 = -12
@@ -21,8 +19,6 @@
 	hlt 077
 
 .res	100
-
-.finprog
 
 ; XPCT int(rz[6]) : 0
 ; XPCT int(sr) : 0

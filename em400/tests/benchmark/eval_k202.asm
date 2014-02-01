@@ -1,5 +1,3 @@
-.prog "ocena K-202"
-
 ; Slightly modified (see notes below) version of a test used
 ; for K-202 evaluation done on December 4th 1972 by
 ; K-202 Evaluation Committee
@@ -19,7 +17,5 @@ adr_pocz:
 
 	hlt 077
 
-adr_1:	.data 1
-adr_2:	.data 0
-
-.finprog
+adr_1:	.word 1
+adr_2:	.word 0

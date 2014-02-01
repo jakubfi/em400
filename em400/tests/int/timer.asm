@@ -1,5 +1,3 @@
-.prog "int/timer"
-
 ; CONFIG configs/minimal-clock.cfg
 ; busy loop for a while, waiting for timer to tick
 
@@ -12,8 +10,6 @@ loop2:	trb r2, 1
 loop1:	trb r1, 1
 	ujs loop1
 	ujs loop2
-
-.finprog
 
 ; XPCT int(sr) : 0
 ; XPCT int(rz[6]) : 0

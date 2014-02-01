@@ -1,4 +1,3 @@
-.prog "op/SHC"
 
 	lw r1, 0b1000000000000001
 	shc r1, 0
@@ -13,8 +12,6 @@
 	shc r1, 15
 
 	hlt 077
-
-.finprog
 
 ; XPCT int(rz[6]) : 0
 ; XPCT int(sr) : 0

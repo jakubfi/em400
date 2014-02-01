@@ -1,12 +1,8 @@
-.prog "alu/AD-zero"
-
 ; 0 + 0
 
 	lw r1, 0
 	aw r1, 0
 	hlt 077
-
-.finprog
 
 ; XPCT int(rz[6]) : 0
 ; XPCT int(sr) : 0

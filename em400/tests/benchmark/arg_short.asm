@@ -1,5 +1,3 @@
-.prog "benchmark/arg_short"
-
 	lwt r2, 0
 next:	lwt r1, 0
 	awt r2, 1
@@ -11,5 +9,3 @@ loop:	awt r1, 1
 	ujs loop
 
 fin:	hlt 077
-
-.finprog

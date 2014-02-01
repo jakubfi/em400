@@ -1,5 +1,3 @@
-.prog "op/IB"
-
 ; PRE [10] = -1
 
 	ib 10
@@ -7,8 +5,6 @@
 	ib 10
 	hlt 077
 	hlt 040
-
-.finprog
 
 ; XPCT int(rz[6]) : 0
 ; XPCT int(sr) : 0

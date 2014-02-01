@@ -1,5 +1,3 @@
-.prog "alu/fp-AF-zero"
-
 ; 1
 ; PRE [0xa0] = 0x4000
 ; PRE [0xa1] = 0x0000
@@ -14,8 +12,6 @@
 	af 0xa3
 
 	hlt 077
-
-.finprog
 
 ; XPCT int(rz[6]) : 0
 ; XPCT int(rz[7]) : 0

@@ -1,5 +1,3 @@
-.prog "alu/fp-denorm-arg2"
-
 ; 4
 ; PRE [0xa0] = 0x4000
 ; PRE [0xa1] = 0x0000
@@ -13,8 +11,6 @@
 	df 0xa0
 
 	hlt 077
-
-.finprog
 
 ; XPCT int(rz[6]) : 0
 ; XPCT int(rz[7]) : 0
