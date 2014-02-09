@@ -132,7 +132,7 @@ class Test:
 
         o = subprocess.check_output(args).decode("utf-8")
 
-        tres = re.findall("TEST RESULT @ (0x[0-9a-fA-F]+): (.*)\n", o)
+        tres = re.findall("TEST RESULT @ (.*, regs: .*): (.*)\n", o)
 
         if not tres:
             raise Exception("No test result found")
