@@ -1,19 +1,18 @@
-; 5/0
-; PRE [0xa0] = 0b0111111111111111
-; PRE [0xa1] =                   0b1111111111111111
-; PRE [0xa2] = 0b0000000000000010
 
-	ld 0xa0
-	dw 0xa2
-	rd 0xe0
-	rw r0, 0xe2
+	.include awp-dword.asm
 
-	hlt 077
+operation:
+	ld r7+ARG1
+	dw r7+ARG2
+	uj r5
 
-; XPCT int(rz[6]) : 0
-; XPCT int(rz[7]) : 1
-; XPCT int(rz[8]) : 0
-; XPCT int(rz[9]) : 0
-; XPCT int(rz[10]) : 0
+tests:
+	.word 0, 0, INT_DIV_OF
+	.word 0b0111111111111111, 0b1111111111111111
+	.word 2, 0
+	.word 0b0111111111111111, 0b1111111111111111
+fin:
+
 ; XPCT int(sr) : 0
+; XPCT oct(ir[10-15]) : 077
 

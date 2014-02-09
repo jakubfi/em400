@@ -47,6 +47,7 @@ class Test:
         self.source = source
         self.prog_name = source
         self.config = "configs/minimal.cfg"
+        self.options = "-Iinclude"
 
     # ------------------------------------------------------------------------
     def run(self):
@@ -71,7 +72,7 @@ class Test:
     # ------------------------------------------------------------------------
     def assembly(self):
         self.output = "/tmp/out.bin"
-        args = [assem, self.source, self.output]
+        args = [assem, self.options, self.source, self.output]
         subprocess.check_output(args)
 
     # ------------------------------------------------------------------------
@@ -154,7 +155,7 @@ else:
     tests = []
     for path, dirs, files in os.walk("."):
         for f in files:
-            if f.endswith(".asm") and "benchmark" not in path:
+            if f.endswith(".asm") and "benchmark" not in path and "include" not in path:
                 tests.append(os.path.join(path, f))
     tests.sort()
 
