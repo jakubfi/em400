@@ -1,61 +1,28 @@
-; 2
-; PRE [0xa0] = 0x4000
-; PRE [0xa1] = 0x0000
-; PRE [0xa2] = 0x0002
 
-; 1000000000
-; PRE [0xa3] = 0x7735
-; PRE [0xa4] = 0x9400
-; PRE [0xa5] = 0x001e
+	.include awp-fp.asm
 
-; -100
-; PRE [0xa6] = 0x9c00
-; PRE [0xa7] = 0x0000
-; PRE [0xa8] = 0x0007
+operation:
+	lf r7+ARG1
+	mf r7+ARG2
+	uj r5
 
-; 0.125
-; PRE [0xa9] = 0x4000
-; PRE [0xaa] = 0x0000
-; PRE [0xab] = 0x00fe
+tests:
+	.word 0, 0, 0
+	.float 2
+	.float 2
+	.float 4
 
-	lf 0xa0
-	mf 0xa0
-	rf 0x200
+	.word 0, ?M, 0
+	.float 1000000000
+	.float -100
+	.float -100000000000.0
 
-	lf 0xa3
-	mf 0xa6
-	rf 0x203
+	.word 0, 0, 0
+	.float 2
+	.float 0.125
+	.float 0.25
+fin:
 
-	lf 0xa0
-	mf 0xa9
-	rf 0x206
-
-	hlt 077
-
-; XPCT int(rz[6]) : 0
-; XPCT int(rz[7]) : 0
-; XPCT int(rz[8]) : 0
-; XPCT int(rz[9]) : 0
-; XPCT int(rz[10]) : 0
 ; XPCT int(sr) : 0
-
-; Z, M, V
-; XPCT int(r0[0]) : 0
-; XPCT int(r0[1]) : 0
-; XPCT int(r0[2]) : 0
-
-; 4
-; XPCT hex([0x200]) : 0x4000
-; XPCT hex([0x201]) : 0x0000
-; XPCT hex([0x202]) : 0x0003
-
-; -100000000000
-; XPCT hex([0x203]) : 0xa2de
-; XPCT hex([0x204]) : 0x2460
-; XPCT hex([0x205]) : 0x0025
-
-; 0.25
-; XPCT hex([0x206]) : 0x4000
-; XPCT hex([0x207]) : 0x0000
-; XPCT hex([0x208]) : 0x00ff
+; XPCT oct(ir[10-15]) : 077
 

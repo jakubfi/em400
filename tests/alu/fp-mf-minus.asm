@@ -1,31 +1,18 @@
-; 4
-; PRE [0xa0] = 0x4000
-; PRE [0xa1] = 0x0000
-; PRE [0xa2] = 0x0003
-; -1/10
-; PRE [0xa3] = 0x9999
-; PRE [0xa4] = 0x9999
-; PRE [0xa5] = 0x9afd
 
-	lf 0xa0
-	mf 0xa3
+	.include awp-fp.asm
 
-	hlt 077
+operation:
+	lf r7+ARG1
+	mf r7+ARG2
+	uj r5
 
-; XPCT int(rz[6]) : 0
-; XPCT int(rz[7]) : 0
-; XPCT int(rz[8]) : 0
-; XPCT int(rz[9]) : 0
-; XPCT int(rz[10]) : 0
-
-; Z, M, V
-; XPCT int(r0[0]) : 0
-; XPCT int(r0[1]) : 1
-; XPCT int(r0[2]) : 0
-
-; -0.4
-; XPCT hex(r1) : 0x9999
-; XPCT hex(r2) : 0x9999
-; XPCT hex(r3) : 0x9aff
+tests:
+	.word 0, ?M, 0
+	.float 4
+	.float -0.1
+	.float -0.4
+fin:
 
 ; XPCT int(sr) : 0
+; XPCT oct(ir[10-15]) : 077
+
