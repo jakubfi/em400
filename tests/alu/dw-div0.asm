@@ -1,5 +1,5 @@
 
-	.include include/awp-dword.asm
+	.include awp-dword.asm
 
 operation:
 	ld r7+ARG1
