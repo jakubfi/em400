@@ -47,7 +47,6 @@ class Test:
         self.source = source
         self.prog_name = source
         self.config = "configs/minimal.cfg"
-        self.options = "-Iinclude"
 
     # ------------------------------------------------------------------------
     def run(self):
@@ -72,7 +71,7 @@ class Test:
     # ------------------------------------------------------------------------
     def assembly(self):
         self.output = "/tmp/out.bin"
-        args = [assem, self.options, self.source, self.output]
+        args = [assem, "-Iinclude", "-Oraw", self.source, self.output]
         subprocess.check_output(args)
 
     # ------------------------------------------------------------------------
