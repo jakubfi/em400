@@ -71,7 +71,7 @@ class Test:
     # ------------------------------------------------------------------------
     def assembly(self):
         self.output = "/tmp/out.bin"
-        args = [assem, "-Iinclude", "-Oraw", self.source, self.output]
+        args = [assem, "-Iinclude", "-Oraw", "-o" + self.output, self.source]
         subprocess.check_output(args)
 
     # ------------------------------------------------------------------------

@@ -94,7 +94,7 @@ class Benchmark:
     # ------------------------------------------------------------------------
     def assembly(self):
         self.output = "/tmp/out.bin"
-        args = [assem, "-Oraw", self.source, self.output]
+        args = [assem, "-Oraw", "-o" + self.output, self.source]
         subprocess.check_output(args)
 
     # ------------------------------------------------------------------------
