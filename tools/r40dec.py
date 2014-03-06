@@ -9,15 +9,14 @@ f = open(infile, "r")
 a = 0
 buf = ""
 while f:
+	if a%24 == 0:
+		print "0x%04x:" % a,
 	c1 = ord(f.read(1))
 	c2 = ord(f.read(1))
 	c = (c1 << 8) | c2
-	if a%24 == 0:
-		buf += "%4x: " % a
-	buf += r40(c)
-	if a%24 == 22:
-		print buf
-		buf = ""
+	print r40(c) + " |",
 	a += 2
+	if a%24 == 0:
+		print ""
 
 f.close()

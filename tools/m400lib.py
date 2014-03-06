@@ -11,7 +11,9 @@ def r2a(i):
 	elif i==38:
 		return "%"
 	elif i==39:
-		return ":"
+		return "#"
+	elif i==0:
+		return " "
 	else:
 		return ""
 
