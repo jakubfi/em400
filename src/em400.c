@@ -154,7 +154,7 @@ void em400_parse_args(int argc, char **argv)
 	em400_cfg.test_expr = NULL;
 #endif
 
-	while ((option = getopt(argc, argv,"bvhec:p:k:l:t:x:s:d")) != -1) {
+	while ((option = getopt(argc, argv,"bvhec:p:k:l:t:x:sd")) != -1) {
 		switch (option) {
 			case 'b':
 				em400_cfg.benchmark = 1;
