@@ -193,7 +193,7 @@ command:
 	| F_LOG				{ dbg_c_log_show(W_CMD); }
 	| F_LOG ON 			{ log_enable(); }
 	| F_LOG OFF			{ log_disable(); }
-	| F_LOG FFILE TEXT	{ log_shutdown(); log_init($3); }
+	| F_LOG FFILE TEXT	{ log_close(); log_open($3); }
 	| F_LOG NAME ':' VALUE	{ dbg_c_log_set(W_CMD, $2, $4); }
 	| F_LOG error
 	| F_SCRIPT TEXT		{ dbg_c_script_load(W_CMD, $2); }

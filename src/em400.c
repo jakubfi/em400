@@ -48,7 +48,7 @@ int em400_state = STATE_WORK;
 void em400_shutdown()
 {
 #ifdef WITH_DEBUGGER
-	log_shutdown();
+	log_close();
 	dbg_shutdown();
 #endif
 	timer_shutdown();
@@ -116,10 +116,6 @@ void em400_init()
 	if (res != E_OK) {
 		em400_eerr(res, "Error initializing debugger");
 	}
-	res = log_init("em400.log");
-	if (res != E_OK) {
-		em400_eerr(res, "Error initializing logging");
-	}
 #endif
 
 }
@@ -142,6 +138,7 @@ void em400_usage()
 	printf("   -l script    : load and execute script on startup\n");
 	printf("   -t test_expr : execute expression when program halts (implies -e -s)\n");
 	printf("   -x pre_expr  : execute expression on emulator startup\n");
+	printf("   -d           : enable full debug logging\n");
 #endif
 }
 
@@ -157,7 +154,7 @@ void em400_parse_args(int argc, char **argv)
 	em400_cfg.test_expr = NULL;
 #endif
 
-	while ((option = getopt(argc, argv,"bvhec:p:k:l:t:x:s")) != -1) {
+	while ((option = getopt(argc, argv,"bvhec:p:k:l:t:x:s:d")) != -1) {
 		switch (option) {
 			case 'b':
 				em400_cfg.benchmark = 1;
@@ -204,6 +201,11 @@ void em400_parse_args(int argc, char **argv)
 				break;
 			case 's':
 				em400_cfg.ui_simple = 1;
+				break;
+			case 'd':
+				log_setlevel(-1, 100);
+				log_open("em400.log");
+				log_enable();
 				break;
 #endif
 			default:

@@ -72,8 +72,8 @@ extern char *log_io_result[];
 #define LOG_INT_INDENT_MAX 32
 extern int log_int_level;
 
-int log_init(const char *logf);
-void log_shutdown();
+int log_open(const char *logf);
+void log_close();
 int log_enable();
 void log_disable();
 int log_find_domain(char *name);

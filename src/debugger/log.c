@@ -114,8 +114,9 @@ char *log_io_result[] = {
 	"PARITY ERROR"
 };
 
-FILE *log_f;
 char *log_fname;
+
+FILE *log_f;
 
 int log_enabled = 0;
 int log_level[L_MAX] = { 0 };
@@ -124,53 +125,43 @@ const char *log_int_indent = "--> --> --> --> --> --> --> --> ";
 int log_int_level = LOG_INT_INDENT_MAX;
 
 // -----------------------------------------------------------------------
-int log_init(const char *logf)
+int log_open(const char *logf)
 {
-	eprint("Initializing logging\n");
-	log_fname = strdup(logf);
-	if (!log_fname) {
-		return E_LOG_OPEN;
-	}
-	log_f = fopen(log_fname, "a");
+	log_close();
+	log_f = fopen(logf, "a");
 	if (!log_f) {
 		return E_LOG_OPEN;
 	}
+	log_fname = strdup(logf);
 	return E_OK;
 }
 
 // -----------------------------------------------------------------------
-void log_shutdown()
+void log_close()
 {
-	eprint("Shutdown logging\n");
 	if (log_f) {
 		fclose(log_f);
-	}
-	if (log_fname) {
+		log_f = NULL;
 		free(log_fname);
+		log_fname = NULL;
 	}
 }
 
 // -----------------------------------------------------------------------
 int log_enable()
 {
-	if (!log_enabled) {
-		log_f = fopen(log_fname, "a");
-		if (!log_f) {
-			return E_LOG_OPEN;
-		} else {
-			log_enabled = 1;
-		}
+	if (!log_f) {
+		return E_LOG_OPEN;
 	}
+
+	log_enabled = 1;
 	return E_OK;
 }
 
 // -----------------------------------------------------------------------
 void log_disable()
 {
-	if (log_enabled) {
-		log_enabled = 0;
-		fclose(log_f);
-	}
+	log_enabled = 0;
 }
 
 // -----------------------------------------------------------------------
@@ -234,7 +225,7 @@ void log_pretty_log(int domain, int level, char *pre, char *text)
 // -----------------------------------------------------------------------
 void log_log(int domain, int level, char *format, ...)
 {
-	if (!log_enabled || (log_level[domain] < level)) {
+	if (!log_enabled || !log_f || (log_level[domain] < level)) {
 		return;
 	}
 
@@ -256,7 +247,7 @@ void log_splitlog(int domain, int level, char *text)
 	char *p;
 	char *start = text;
 
-	if (!log_enabled || (log_level[domain] < level)) {
+	if (!log_enabled || !log_f || (log_level[domain] < level)) {
 		return;
 	}
 
