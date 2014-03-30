@@ -57,8 +57,6 @@ struct chan_proto_t {
 
 extern struct chan_proto_t *io_chan[IO_MAX_CHAN];
 
-struct chan_proto_t * io_chan_proto_get(struct chan_proto_t *proto, char *name);
-
 int io_init();
 void io_shutdown();
 void io_reset();

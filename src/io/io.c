@@ -36,7 +36,7 @@
 
 #include "debugger/log.h"
 
-struct chan_proto_t chan_proto[] = {
+static struct chan_proto_t chan_proto[] = {
 	{ -1, "char",		cchar_create,	cchar_shutdown,	cchar_reset,	cchar_cmd },
 	{ -1, "mem",		cmem_create,	cmem_shutdown,	cmem_reset,		cmem_cmd },
 	{ -1, "multix",		mx_create,		mx_shutdown,	mx_reset,		mx_cmd },
@@ -47,57 +47,49 @@ struct chan_proto_t chan_proto[] = {
 struct chan_proto_t *io_chan[IO_MAX_CHAN];
 
 // -----------------------------------------------------------------------
-struct chan_proto_t * io_chan_proto_get(struct chan_proto_t *proto, char *name)
+static struct chan_proto_t * io_chan_maker(int num, char *name, struct cfg_unit_t *units)
 {
+	struct chan_proto_t *proto = chan_proto;
+	struct chan_proto_t *chan = NULL;
+
 	while (proto && proto->name) {
-		if (strcasecmp(name, proto->name) == 0) {
-			return proto;
+		if (!strcasecmp(name, proto->name)) {
+			chan = proto->create(units);
+			break;
 		}
 		proto++;
 	}
-	return NULL;
-}
 
-// -----------------------------------------------------------------------
-int io_chan_create(int num, char *name, struct cfg_unit_t *units)
-{
-	struct chan_proto_t *proto = io_chan_proto_get(chan_proto, name);
-	if (!proto) {
-		return E_IO_CHAN_UNKNOWN;
+	if (chan) {
+		chan->num = num;
+		chan->name = proto->name;
+		chan->create = proto->create;
+		chan->shutdown = proto->shutdown;
+		chan->reset = proto->reset;
+		chan->cmd = proto->cmd;
+	} else if (!proto->name) {
+		gerr = E_IO_CHAN_UNKNOWN;
 	}
 
-	eprint("  Channel %i: %s\n", num, name);
-	struct chan_proto_t *chan = proto->create(units);
-	if (!chan) {
-		return gerr;
-	}
-
-	chan->num = num;
-	chan->name = proto->name;
-	chan->create = proto->create;
-	chan->shutdown = proto->shutdown;
-	chan->reset = proto->reset;
-	chan->cmd = proto->cmd;
-
-	io_chan[num] = chan;
-
-	chan->reset(chan);
-
-	return E_OK;
+	return chan;
 }
 
 // -----------------------------------------------------------------------
 int io_init()
 {
-	int res;
 	struct cfg_chan_t *chanc = em400_cfg.chans;
+	struct chan_proto_t *chan;
 
 	eprint("Initializing I/O\n");
 
 	while (chanc) {
-		res = io_chan_create(chanc->num, chanc->name, chanc->units);
-		if (res != E_OK) {
-			return res;
+		eprint("  Channel %i: %s\n", chanc->num, chanc->name);
+		chan = io_chan_maker(chanc->num, chanc->name, chanc->units);
+		if (!chan) {
+			return gerr;
+		} else {
+			chan->reset(chan);
+			io_chan[chanc->num] = chan;
 		}
 		chanc = chanc->next;
 	}
