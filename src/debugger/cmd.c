@@ -318,13 +318,37 @@ void dbg_c_stack(int wid, int size)
 }
 
 // -----------------------------------------------------------------------
+char dbg_mem_getalloc(int mod, int seg)
+{
+	int i, j;
+
+	if (!mem_map[mod][seg].seg) {
+		return '.';
+	} else if (mem_map[mod][seg].seg == mem_mega_prom) {
+		return 'p';
+	} else {
+		for (i=0 ; i<MEM_MAX_MODULES ; i++) {
+			for (j=0 ; j<MEM_MAX_MEGA_SEGMENTS ; j++) {
+				if (mem_map[mod][seg].seg == mem_elwro[i][j]) {
+					return 'e';
+				} else if (mem_map[mod][seg].seg == mem_mega[i][j]) {
+					return 'm';
+				}
+			}
+		}
+	}
+
+	return '?';
+}
+
+// -----------------------------------------------------------------------
 void dbg_c_memcfg(int wid)
 {
 	int i, j, cnt;
-	awtbprint(wid, C_LABEL, "Number of 4kword segments/pages in each hardware module/logical block\n");
-	awtbprint(wid, C_LABEL, "module/block  :  0  1  2  3  4  5  6  7  8  9 10 11 12 13 14 15\n");
+	char c;
+	awtbprint(wid, C_LABEL, "module  :  0  1  2  3  4  5  6  7  8  9 10 11 12 13 14 15\n");
 
-	awtbprint(wid, C_LABEL, "Elwro segments: ");
+	awtbprint(wid, C_LABEL, "Elwro   : ");
 	for (i=0 ; i<MEM_MAX_MODULES ; i++) {
 		cnt = 0;
 		for (j=0 ; j<MEM_MAX_ELWRO_SEGMENTS ; j++) {
@@ -334,7 +358,7 @@ void dbg_c_memcfg(int wid)
 	}
 	awtbprint(wid, C_DATA, "\n");
 
-	awtbprint(wid, C_LABEL, "MEGA  segments: ");
+	awtbprint(wid, C_LABEL, "MEGA    : ");
 	for (i=0 ; i<MEM_MAX_MODULES ; i++) {
 		cnt = 0;
 		for (j=0 ; j<MEM_MAX_MEGA_SEGMENTS ; j++) {
@@ -344,15 +368,20 @@ void dbg_c_memcfg(int wid)
 	}
 	awtbprint(wid, C_DATA, "\n");
 
-	awtbprint(wid, C_LABEL, "Allocated     : ");
-	for (i=0 ; i<MEM_MAX_NB ; i++) {
+	awtbprint(wid, C_LABEL, "\nAllocation map:\n");
+	awtbprint(wid, C_LABEL, "    0 1 2 3 4 5 6 7 8 9 a b c d e f\n");
+	for (i=0 ; i<MEM_MAX_MODULES ; i++) {
 		cnt = 0;
-		for (j=0 ; j<MEM_MAX_SEGMENTS ; j++) {
-			if (mem_map[i][j].seg) cnt++;
+		awtbprint(wid, C_LABEL, "%2i: ", i);
+		for (j=0 ; j<MEM_MAX_MEGA_SEGMENTS ; j++) {
+			c = dbg_mem_getalloc(i, j);
+			if (c != '.') {
+				cnt++;
+			}
+			awtbprint(wid, C_DATA, "%c ", c);
 		}
-		awtbprint(wid, C_DATA, "%2i ", cnt);
+		awtbprint(wid, C_LABEL, " = %3i K\n", cnt*4);
 	}
-
 	awtbprint(wid, C_DATA, "\n");
 }
 
