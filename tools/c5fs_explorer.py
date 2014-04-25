@@ -118,7 +118,7 @@ class C5FSExplorer:
             # we need at least two entries: LIBRAR and BOSS
             if self.fs.dicdic[8*4].name != "LIBRAR":
                 raise ValueError("User LIBRAR not found")
-            if self.fs.dicdic[12*4].name != "BOSS":
+            if self.fs.dicdic[12*4].name != "BOSS  ":
                 raise ValueError("User BOSS not found")
         except Exception, e:
             print "  Seems there is no label at %i:%i. Error: %s" % (self.offset, self.label_offset, str(e))

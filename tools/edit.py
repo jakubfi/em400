@@ -70,12 +70,36 @@ class Edit:
             self.get_line()
 
     # --------------------------------------------------------------------
+    def cmd_FN(self):
+        self.flush()
+        val = int(self.cmdargs.rstrip("\n\f\r"))
+        print "FN: %i" % val
+        if val > 0:
+            raise NotImplementedError("dd")
+        elif val < 0:
+            self.get_line()
+            val += 1
+            while val < 0:
+                self.flush()
+                self.get_line()
+                val += 1
+
+    # --------------------------------------------------------------------
     def cmd_IB(self):
         self.flush()
         stop = self.cmdargs[0]
         self.next_cmd()
         while not self.cmdline.startswith(stop):
             print "IB: " + self.cmdline
+            self.fout.write(self.cmdline)
+            self.next_cmd()
+
+    # --------------------------------------------------------------------
+    def cmd_BB(self):
+        stop = self.cmdargs[0]
+        self.next_cmd()
+        while not self.cmdline.startswith(stop):
+            print "BB: " + self.cmdline
             self.fout.write(self.cmdline)
             self.next_cmd()
 
@@ -133,6 +157,11 @@ class Edit:
         print "IL: %s" % self.cmdargs.rstrip("\n\r\f")
         self.flush()
         self.buf = self.cmdargs
+
+    # --------------------------------------------------------------------
+    def cmd_BL(self):
+        print "BL: %s" % self.cmdargs.rstrip("\n\r\f")
+        self.fout.write(self.cmdargs)
 
     # --------------------------------------------------------------------
     def cmd_LP(self):
@@ -197,6 +226,6 @@ class Edit:
 # ---- MAIN --------------------------------------------------------------
 # ------------------------------------------------------------------------
 
-e = Edit("PC5P08.COR", "crook_n8.asm", "crook_p8.asm")
+e = Edit("PC5P07.COR", "crook_n7.asm", "crook_p7.asm")
 
 # vim: tabstop=4 expandtab shiftwidth=4 softtabstop=4
