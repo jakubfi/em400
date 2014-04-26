@@ -269,9 +269,6 @@ void cpu_step()
 		N = N17;
 	} else if (op->short_arg) {
 		N17 = (int16_t) IR_T + (int16_t) regs[R_MOD];
-		if (cpu_mod) {
-			regs[R_ZC17] = (N17 >> 16) & 1;
-		}
 		N = N17;
 	}
 
