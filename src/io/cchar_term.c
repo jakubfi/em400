@@ -173,8 +173,8 @@ void * cchar_term_worker(void *ptr)
 int cchar_term_read(struct cchar_unit_proto_t *unit, uint16_t *r_arg)
 {
 	if (UNIT->buf_len <= 0) {
-		LOG(L_TERM, 50, "Term empty read");
 		pthread_mutex_lock(&UNIT->buf_mutex);
+		LOG(L_TERM, 50, "buffer empty");
 		UNIT->empty_read = 1;
 		pthread_mutex_unlock(&UNIT->buf_mutex);
 		return IO_EN;
@@ -182,10 +182,10 @@ int cchar_term_read(struct cchar_unit_proto_t *unit, uint16_t *r_arg)
 		pthread_mutex_lock(&UNIT->buf_mutex);
 		char data = UNIT->buf[UNIT->buf_rpos];
 #ifdef WITH_DEBUGGER
-		if ((char)*r_arg >= 32) {
-			LOG(L_TERM, 50, "Term read: %i (%c)", *r_arg, *r_arg);
+		if (data >= 32) {
+			LOG(L_TERM, 50, "buf read: %i (%c)", data, data);
 		} else {
-			LOG(L_TERM, 50, "Term read: %i (#%02x)", *r_arg, (char)*r_arg);
+			LOG(L_TERM, 50, "buf read: %i (#%02x)", data, data);
 		}
 #endif
 		UNIT->buf_len--;
