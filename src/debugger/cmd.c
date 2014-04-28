@@ -329,7 +329,7 @@ char dbg_mem_getalloc(int mod, int seg)
 	} else {
 		for (i=0 ; i<MEM_MAX_MODULES ; i++) {
 			for (j=0 ; j<MEM_MAX_MEGA_SEGMENTS ; j++) {
-				if (mem_map[mod][seg].seg == mem_elwro[i][j]) {
+				if ((j<MEM_MAX_ELWRO_SEGMENTS) && (mem_map[mod][seg].seg == mem_elwro[i][j])) {
 					return 'e';
 				} else if (mem_map[mod][seg].seg == mem_mega[i][j]) {
 					return 'm';
