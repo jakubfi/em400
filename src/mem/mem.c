@@ -222,8 +222,8 @@ int mem_cpu_get(int nb, uint16_t addr, uint16_t *data)
 #else
 			em400_state = STATE_MEM_FAIL;
 #endif
-			return 0;
 		}
+		return 0;
 	}
 	return 1;
 }
@@ -240,8 +240,8 @@ int mem_cpu_put(int nb, uint16_t addr, uint16_t data)
 #else
 			em400_state = STATE_MEM_FAIL;
 #endif
-			return 0;
 		}
+		return 0;
 	}
 	return 1;
 }
@@ -258,8 +258,8 @@ int mem_cpu_mget(int nb, uint16_t saddr, uint16_t *dest, int count)
 #else
 			em400_state = STATE_MEM_FAIL;
 #endif
-			return 0;
 		}
+		return 0;
 	}
 	return 1;
 }
@@ -277,8 +277,8 @@ int mem_cpu_mput(int nb, uint16_t saddr, uint16_t *src, int count)
 #else
 			em400_state = STATE_MEM_FAIL;
 #endif
-			return 0;
 		}
+		return 0;
 	}
 	return 1;
 }
