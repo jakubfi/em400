@@ -38,7 +38,7 @@
 
 //uint16_t regs[R_MAX];
 int P;
-int16_t N;
+uint32_t N;
 int cpu_mod;
 
 #ifdef WITH_DEBUGGER
@@ -192,7 +192,6 @@ int cpu_ctx_restore()
 // -----------------------------------------------------------------------
 void cpu_step()
 {
-	int32_t N17;
 	struct opdef *op;
 	opfun op_fun;
 	uint16_t data;
@@ -228,15 +227,13 @@ void cpu_step()
 	}
 
 	// end cycle if op is ineffective
-	if (
-	(Q && op->user_illegal)
+	if ((Q && op->user_illegal)
 	|| ((regs[R_MODc] >= 3) && (op_fun == op_77_md))
-	|| (!op_fun)
-	) {
+	|| (!op_fun)) {
 #ifdef WITH_DEBUGGER
-	char buf[256];
-	dt_trans(cycle_ic, buf, DMODE_DASM);
-	LOG(L_CPU, 10, "    (ineffective) %s Q: %d, MODc=%d (%s%s)", buf, Q, regs[R_MODc], op_fun?"legal":"illegal", op->user_illegal?"":", user illegal");
+		char buf[256];
+		dt_trans(cycle_ic, buf, DMODE_DASM);
+		LOG(L_CPU, 10, "    (ineffective) %s Q: %d, MODc=%d (%s%s)", buf, Q, regs[R_MODc], op_fun?"legal":"illegal", op->user_illegal?"":", user illegal");
 #endif
 		regs[R_MODc] = regs[R_MOD] = 0;
 		int_set(INT_ILLEGAL_OPCODE);
@@ -250,30 +247,21 @@ void cpu_step()
 	// process argument
 	if (op->norm_arg) {
 		if (IR_C) {
-			N17 = (int16_t) regs[IR_C] + (int16_t) regs[R_MOD];
+			N = regs[IR_C] + regs[R_MOD];
 		} else {
 			if (!mem_cpu_get(QNB, regs[R_IC], &data)) goto catch_nomem;
-			N17 = (int16_t) data + (int16_t) regs[R_MOD];
+			N = data + regs[R_MOD];
 			regs[R_IC]++;
 		}
 		if (IR_B) {
-			N17 += (int16_t) regs[IR_B];
+			N += regs[IR_B];
 		}
 		if (IR_D) {
-			if (!mem_cpu_get(QNB, N17, &data)) goto catch_nomem;
-			N17 = data;
+			if (!mem_cpu_get(QNB, N, &data)) goto catch_nomem;
+			N = data;
 		}
-		if (cpu_mod) {
-			if (IR_B && (IR_B == IR_C)) {
-				regs[R_ZC17] = (N17 >> 16) & 1;
-			} else {
-				regs[R_ZC17] = 0;
-			}
-		}
-		N = N17;
 	} else if (op->short_arg) {
-		N17 = (int16_t) IR_T + (int16_t) regs[R_MOD];
-		N = N17;
+		N = IR_T + regs[R_MOD];
 	}
 
 	// execute instruction

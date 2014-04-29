@@ -248,7 +248,7 @@ void dbg_c_sregs(int wid)
 	awtbprint(wid, C_DATA, "0x%04x  ", regs[R_SR]);
 	awtbbinprint(wid, C_DATA, ".......... . . ....", regs[R_SR], 16);
 	awtbprint(wid, C_LABEL, "       ZC17: ");
-	awtbprint(wid, C_DATA, "%i", regs[R_ZC17]);
+	awtbprint(wid, C_DATA, "%i", (N>>16)&1);
 	awtbprint(wid, C_DATA, "\n");
 
 	awtbprint(wid, C_LABEL, "KB: ");

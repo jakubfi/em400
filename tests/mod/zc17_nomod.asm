@@ -1,10 +1,6 @@
-; CONFIG configs/mod.cfg
+; CONFIG configs/minimal.cfg
 
-; 17-bit byte addressing works only when:
-;  * cpu_mod is on
-;  * modifications are enabled with CRON
-;  * B-modification is used
-;  * rB == rC
+; 17-bit byte addressing does not work on unmodified cpu
 
 	.cpu	mx16
 
@@ -43,37 +39,25 @@ ok:	im	mask
 	lw	r1, magic2
 	rw	r1, seg\3+addr
 	lw	r7, seg\3+addr
-				; 17-bit addressing is disabled by default
-	md	1
-	lb	r2, r7+r7
-
-	cron			; enable cpu modification
 
 	md	1
 	lb	r3, r7+r7
 
 	lw	r4, r7
 	md	1
-	lb	r5, r7+r4	; this shouldn't work
+	lb	r5, r7+r4
 
 	lwt	r4, 0
 	md	1+r7
-	lb	r4, r7		; this shouldn't work either
+	lb	r4, r7
 
 	lwt	r1, 0
 	lb	r1, (seg\3+addr)*2 + 1 ; neither this
 
-	mcl			; mcl disables cpu modification
-
-	md	1
-	lb	r6, r7+r7
-
 	hlt	077
 
 ; XPCT hex(r1) : 0x0055
-; XPCT hex(r2) : 0x0055
-; XPCT hex(r3) : 0x00ba
+; XPCT hex(r3) : 0x0055
 ; XPCT hex(r4) : 0x0055
 ; XPCT hex(r5) : 0x0055
-; XPCT hex(r6) : 0x0055
 ; XPCT oct(ir[10-15]) : 077
