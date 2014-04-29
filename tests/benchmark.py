@@ -44,26 +44,12 @@ class TestBed:
                 result[i] = float(res)
                 if details:
                     break;
-            result_min = 99999999999999
-            index_min = 0
-            result_max = -0
-            index_max = 0
+            result_max = -1
             for i in range(0, 10):
-                if result[i] < result_min:
-                    result_min = result[i]
-                    index_min = i
                 if result[i] > result_max:
                     result_max = result[i]
-                    index_max = i
-            count = 0
-            for i in range(0, 10):
-                if i==index_min or i==index_max:
-                    continue
-                count += 1;
-                result_avg += result[i]
-            result_avg /= count
-                
-            print("%-40s : %.3f%s" % (test_file.replace("./", ""), result_avg/1000000, details))
+
+            print("%-40s : %.3f%s" % (test_file.replace("./", ""), result_max/1000000, details))
 
 # ------------------------------------------------------------------------
 class Benchmark:
