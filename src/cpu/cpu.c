@@ -264,7 +264,11 @@ void cpu_step()
 			N17 = data;
 		}
 		if (cpu_mod) {
-			regs[R_ZC17] = (N17 >> 16) & 1;
+			if (IR_B && (IR_B == IR_C)) {
+				regs[R_ZC17] = (N17 >> 16) & 1;
+			} else {
+				regs[R_ZC17] = 0;
+			}
 		}
 		N = N17;
 	} else if (op->short_arg) {

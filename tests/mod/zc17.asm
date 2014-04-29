@@ -35,18 +35,21 @@ ok:	im mask
 	rw r1, addr
 	lw r1, magic2
 	rw r1, 1\0 + addr
-	md 1\0 + addr
-	lb r2, 1\0 + addr + 1
+
+	lw r7, 1\0 + addr
+
+	md 1
+	lb r2, r7+r7
 
 	cron			; enable cpu modification
 
-	md 1\0 + addr
-	lb r3, 1\0 + addr + 1
+	md 1
+	lb r3, r7+r7
 
 	mcl			; mcl disables cpu modification
 
-	md 1\0 + addr
-	lb r4, 1\0 + addr + 1
+	md 1
+	lb r4, r7+r7
 
 	hlt 077
 
