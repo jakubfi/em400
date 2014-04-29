@@ -1,4 +1,4 @@
-; CONFIG configs/mod.conf
+; CONFIG configs/mod.cfg
 
 	.cpu mx16
 

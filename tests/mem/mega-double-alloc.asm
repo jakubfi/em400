@@ -1,4 +1,4 @@
-; CONFIG configs/mega_max.conf
+; CONFIG configs/mega_max.cfg
 
 ; does MEGA allow to allocate the same physical segment for two logical segments?
 
