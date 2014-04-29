@@ -33,7 +33,9 @@ enum _ui_attributes {
 	C_READ,
 	C_WRITE,
 	C_IRED,
-	C_RW
+	C_RW,
+	C_FRAME,
+	C_INPUT
 };
 
 enum _ui_windows {

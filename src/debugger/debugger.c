@@ -242,7 +242,7 @@ void dbg_step()
 			aw_layout_refresh();
 		}
 
-		int res = aw_readline(W_CMD, C_PROMPT, "em400> ", input_buf, INPUT_BUF_SIZE);
+		int res = aw_readline(W_CMD, C_PROMPT, "em400> ", C_INPUT, input_buf, INPUT_BUF_SIZE);
 
 		if ((res == KEY_ENTER) && (*input_buf)) {
 			if (ui_mode == O_NCURSES) {

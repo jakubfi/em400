@@ -430,7 +430,7 @@ int aw_window_fit(ACONT *c, AWIN *w)
 }
 
 // -----------------------------------------------------------------------
-AWIN * aw_window_add(ACONT *container, int id, char *title, int border, int scrollable, void (*fun)(int wid), int max, int min, int left)
+AWIN * aw_window_add(ACONT *container, int id, char *title, int border, int scrollable, void (*fun)(int wid), int max, int min, int left, int attr)
 {
 	NCCHECK NULL;
 	if (!container) {
@@ -454,6 +454,7 @@ AWIN * aw_window_add(ACONT *container, int id, char *title, int border, int scro
 	w->min = min;
 	w->left = left;
 	w->border = border;
+	w->battr = attr;
 	w->scrollable = scrollable;
 	w->fun = fun;
 	w->tb = calloc(1, sizeof(struct awin_tb));
@@ -501,8 +502,10 @@ void aw_window_nc_create(AWIN *w)
 	}
 	if (w->border) {
 		w->bwin = newwin(w->bh, w->bw, w->by, w->bx);
+		wattron(w->bwin, aw_attr[w->battr]);
 		box(w->bwin, 0, 0);
 		mvwprintw(w->bwin, 0, 3, "[ %s ]", w->title);
+		wattroff(w->bwin, aw_attr[w->battr]);
 	}
 	w->win = newwin(w->ih, w->iw, w->iy, w->ix);
 
@@ -763,7 +766,7 @@ struct h_entry * aw_nc_rl_history_get_next()
 }
 
 // -----------------------------------------------------------------------
-int aw_nc_readline(int id, int attr, char *prompt, char *buffer, int buflen)
+int aw_nc_readline(int id, int pattr, char *prompt, int iattr, char *buffer, int buflen)
 {
 	int pos = 0;
 	int len = 0;
@@ -779,11 +782,12 @@ int aw_nc_readline(int id, int attr, char *prompt, char *buffer, int buflen)
 	flushinp();
 	keypad(w->win, TRUE);
 	getyx(w->win, y, x);
-	wattron(w->win, aw_attr[attr]);
+	wattron(w->win, aw_attr[pattr]);
 	mvwprintw(w->win, y, 0, "%s", prompt);
-	wattroff(w->win, aw_attr[attr]);
+	wattroff(w->win, aw_attr[pattr]);
 	getyx(w->win, y, x);
 
+	wattron(w->win, aw_attr[iattr]);
 	while (1) {
 		buffer[len] = ' ';
 		mvwaddnstr(w->win, y, x, buffer, len+1);
@@ -851,18 +855,19 @@ int aw_nc_readline(int id, int attr, char *prompt, char *buffer, int buflen)
 			break;
 		}
 	}
+	wattroff(w->win, aw_attr[iattr]);
 	buffer[len] = '\0';
 
 	return c;
 }
 
 // -----------------------------------------------------------------------
-int aw_readline(int id, int attr, char *prompt, char *buffer, int buflen)
+int aw_readline(int id, int pattr, char *prompt, int iattr, char *buffer, int buflen)
 {
 	char *rlin;
 	switch (aw_output) {
 		case O_NCURSES:
-			return aw_nc_readline(id, attr, prompt, buffer, buflen);
+			return aw_nc_readline(id, pattr, prompt, iattr, buffer, buflen);
 		case O_STD:
 			rl_bind_key('\t', rl_abort);
 			rlin = readline(prompt);
