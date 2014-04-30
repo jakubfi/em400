@@ -18,8 +18,6 @@
 #ifndef DEBUGGER_UI_H
 #define DEBUGGER_UI_H
 
-#include <signal.h>
-
 #include "debugger/awin.h"
 
 enum _ui_attributes {
