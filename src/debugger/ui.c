@@ -41,33 +41,33 @@ int dbg_ui_init()
 
 	ACONT *c1 = aw_container_add(BOTTOM, LEFT, 1, 1, 0);
 	if (c1 == NULL) return -1;
-	win = aw_window_add(c1, W_STATUS, "Status", 0, 0, dbg_wu_status, FILL, 0, 0);
+	win = aw_window_add(c1, W_STATUS, "Status", 0, 0, dbg_wu_status, FILL, 0, 0, C_FRAME);
 	if (win == NULL) return -1;
 
 	ACONT *c2 = aw_container_add(TOP, LEFT, 20, 6, 30);
 	if (c2 == NULL) return -1;
-	win = aw_window_add(c2, W_STACK, "Stack", 1, 0, dbg_wu_stack, 17, 17, 50);
+	win = aw_window_add(c2, W_STACK, "Stack", 1, 0, dbg_wu_stack, 17, 17, 50, C_FRAME);
 	if (win == NULL) return -1;
-	win = aw_window_add(c2, W_MEM, "Memory", 1, 0, dbg_wu_mem, FILL, 30, 0);
+	win = aw_window_add(c2, W_MEM, "Memory", 1, 0, dbg_wu_mem, FILL, 30, 0, C_FRAME);
 	if (win == NULL) return -1;
 
 	ACONT *c3 = aw_container_add(RIGHT, TOP, 30, 30, 30);
 	if (c3 == NULL) return -1;
-	win = aw_window_add(c3, W_DASM, "ASM", 1, 0, dbg_wu_dasm, FILL, 3, 0);
+	win = aw_window_add(c3, W_DASM, "ASM", 1, 0, dbg_wu_dasm, FILL, 3, 0, C_FRAME);
 	if (win == NULL) return -1;
 
 	ACONT *c4 = aw_container_add(TOP, LEFT, 11, 11, 15);
 	if (c4 == NULL) return -1;
-	win = aw_window_add(c4, W_SREGS, "System registers", 1, 0, dbg_wu_sregs, DIV2, 58, 58);
+	win = aw_window_add(c4, W_SREGS, "System registers", 1, 0, dbg_wu_sregs, DIV2, 58, 58, C_FRAME);
 	if (win == NULL) return -1;
-	win = aw_window_add(c4, W_REGS, "User registers", 1, 0, dbg_wu_regs, FILL, 58, 0);
+	win = aw_window_add(c4, W_REGS, "User registers", 1, 0, dbg_wu_regs, FILL, 58, 0, C_FRAME);
 	if (win == NULL) return -1;
 
 	ACONT *c5 = aw_container_add(TOP, RIGHT, FILL, 0, 0);
 	if (c5 == NULL) return -1;
-	win = aw_window_add(c5, W_WATCH, "Watch", 1, 0, dbg_wu_watch, 30, 30, 30);
+	win = aw_window_add(c5, W_WATCH, "Watch", 1, 0, dbg_wu_watch, 30, 30, 30, C_FRAME);
 	if (win == NULL) return -1;
-	win = aw_window_add(c5, W_CMD, "Commandline", 1, 1, dbg_wu_cmd, FILL, 0, 0);
+	win = aw_window_add(c5, W_CMD, "Commandline", 1, 1, dbg_wu_cmd, FILL, 0, 0, C_FRAME);
 	if (win == NULL) return -1;
 
 	aw_attr_new(C_PROMPT, COLOR_BLACK, COLOR_YELLOW, A_BOLD);
@@ -81,6 +81,8 @@ int dbg_ui_init()
 	aw_attr_new(C_WRITE, COLOR_RED, COLOR_WHITE, A_BOLD);
 	aw_attr_new(C_RW, COLOR_RED, COLOR_GREEN, A_BOLD);
 	aw_attr_new(C_IRED, COLOR_RED, COLOR_WHITE, A_BOLD);
+	aw_attr_new(C_FRAME, COLOR_BLACK, COLOR_WHITE, A_NORMAL);
+	aw_attr_new(C_INPUT, COLOR_BLACK, COLOR_WHITE, A_NORMAL);
 
 	return E_OK;
 }
