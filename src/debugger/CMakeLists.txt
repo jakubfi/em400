@@ -9,4 +9,10 @@ ADD_library(debugger
 	${FLEX_scanner_OUTPUTS}
 )
 
+fileno(scanner.c)
+strdup(awin.c)
+strdup(cmd.c)
+strdup(eval.c)
+strdup(log.c)
+
 # vim: tabstop=4
