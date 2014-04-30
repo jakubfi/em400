@@ -1,6 +1,21 @@
+# --- build files
 CMakeCache.txt
 CMakeFiles
 Makefile
 build
 cmake_install.cmake
+install_manifest.txt
+
+# --- 3rd party tests
+tests/vendor
+
+# --- emulator temporary
+*.e4i*
+*.img
+*.bin
+
+# --- runtime temporary
 *.core
+*.swp
+*.pyc
+*.log
