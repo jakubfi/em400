@@ -9,4 +9,13 @@ ADD_library(debugger
 	${FLEX_scanner_OUTPUTS}
 )
 
+# POSIX: scanner.c needs X/Open 5 fileno(2)
+set_property(
+	SOURCE scanner.c
+	APPEND
+	PROPERTY COMPILE_DEFINITIONS
+	_XOPEN_SOURCE=500
+)
+
+
 # vim: tabstop=4
