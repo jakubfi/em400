@@ -3,11 +3,6 @@ ADD_library(mem
 )
 
 # POSIX: mem.c needs X/Open 6 (pthread_spinlock_t)
-set_property(
-	SOURCE mem.c
-	APPEND
-	PROPERTY COMPILE_DEFINITIONS
-	_XOPEN_SOURCE=600
-)
+xopen(mem.c 600 pthread_spinlock_t)
 
 # vim: tabstop=4

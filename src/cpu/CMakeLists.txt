@@ -4,11 +4,6 @@ ADD_library(cpu
 
 # POSIX: timer.c Needs IEEE Std 1003.1b-1993 for clock_gettime(2)
 # POSIX: timer.c Needs IEEE Std 1003.1-2004 for sem_timedwait(2)
-set_property(
-	SOURCE timer.c
-	APPEND
-	PROPERTY COMPILE_DEFINITIONS
-	_XOPEN_SOURCE=600
-)
+xopen(timer.c 600 "clock_gettime(2)" "sem_timedwait(2)")
 
 # vim: tabstop=4
