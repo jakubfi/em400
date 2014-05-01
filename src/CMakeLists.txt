@@ -1,9 +1,9 @@
 BISON_TARGET(cfg_parser cfg_parser.y ${CMAKE_CURRENT_BINARY_DIR}/cfg_parser.c COMPILE_FLAGS "-p cyy")
-FLEX_TARGET(cfg_scanner cfg_scanner.l ${CMAKE_CURRENT_BINARY_DIR}/cfg_scanner.c COMPILE_FLAGS "-P cyy")
+FLEX_TARGET(cfg_scanner cfg_scanner.l ${CMAKE_CURRENT_BINARY_DIR}/cfg_scanner.c COMPILE_FLAGS "-P cyy --never-interactive")
 ADD_FLEX_BISON_DEPENDENCY(cfg_scanner cfg_parser)
 
-fileno(cfg_scanner.c)
 xopen(em400.c 500 "getopt(3)")
+strdup(cfg_scanner.c)
 strdup(cfg.c)
 strdup(io/e4image.c)
 

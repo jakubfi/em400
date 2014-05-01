@@ -26,10 +26,6 @@ function(strdup FILE)
 xopen(${FILE} 500 "strdup()")
 endfunction(strdup)
 
-function(fileno FILE)
-xopen(${FILE} 500 "fileno()")
-endfunction(fileno)
-
 INCLUDE_DIRECTORIES(${CMAKE_SOURCE_DIR}/include)
 INCLUDE_DIRECTORIES(${CMAKE_BINARY_DIR}/build)
 
