@@ -3,7 +3,6 @@ FLEX_TARGET(cfg_scanner cfg_scanner.l ${CMAKE_CURRENT_BINARY_DIR}/cfg_scanner.c 
 ADD_FLEX_BISON_DEPENDENCY(cfg_scanner cfg_parser)
 
 fileno(cfg_scanner.c)
-fileno(cfg_parser.c)
 xopen(em400.c 500 "getopt(3)")
 strdup(cfg.c)
 strdup(io/e4image.c)
