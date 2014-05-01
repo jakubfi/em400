@@ -39,6 +39,7 @@ enum _registers {
 	R_KB,
 	R_MOD,
 	R_MODc,
+	R_ZC17,
 	R_ALARM,
 	R_MAX
 };

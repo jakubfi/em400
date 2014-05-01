@@ -22,7 +22,7 @@
 #include "cpu/iset.h"
 
 extern int P;
-extern uint32_t N;
+extern int16_t N;
 extern int cpu_mod;
 
 #ifdef WITH_DEBUGGER
