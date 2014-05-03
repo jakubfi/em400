@@ -67,7 +67,7 @@ void op_tw()
 // -----------------------------------------------------------------------
 void op_ls()
 {
-	reg_safe_write(IR_A, (regs[IR_A] & ~regs[7]) | (N & regs[7]));
+	reg_safe_write(IR_A, (regs[IR_A] & ~regs[7]) | ((uint16_t) N & regs[7]));
 }
 
 // -----------------------------------------------------------------------
@@ -251,13 +251,13 @@ void op_sw()
 // -----------------------------------------------------------------------
 void op_cw()
 {
-	alu_16_set_LEG((int16_t) regs[IR_A], (int16_t) N);
+	alu_16_set_LEG((int16_t) regs[IR_A], N);
 }
 
 // -----------------------------------------------------------------------
 void op_or()
 {
-	reg_safe_write(IR_A, regs[IR_A] | N);
+	reg_safe_write(IR_A, regs[IR_A] | (uint16_t) N);
 	alu_16_set_Z(regs[IR_A]);
 }
 
@@ -274,7 +274,7 @@ void op_om()
 // -----------------------------------------------------------------------
 void op_nr()
 {
-	reg_safe_write(IR_A, regs[IR_A] & N);
+	reg_safe_write(IR_A, regs[IR_A] & (uint16_t) N);
 	alu_16_set_Z(regs[IR_A]);
 }
 
@@ -291,7 +291,7 @@ void op_nm()
 // -----------------------------------------------------------------------
 void op_er()
 {
-	reg_safe_write(IR_A, regs[IR_A] & ~N);
+	reg_safe_write(IR_A, regs[IR_A] & ~(uint16_t) N);
 	alu_16_set_Z(regs[IR_A]);
 }
 
@@ -308,7 +308,7 @@ void op_em()
 // -----------------------------------------------------------------------
 void op_xr()
 {
-	reg_safe_write(IR_A, regs[IR_A] ^ N);
+	reg_safe_write(IR_A, regs[IR_A] ^ (uint16_t) N);
 	alu_16_set_Z(regs[IR_A]);
 }
 
@@ -386,7 +386,7 @@ void op_drb()
 // -----------------------------------------------------------------------
 void op_cwt()
 {
-	alu_16_set_LEG((int16_t) regs[IR_A], (int16_t) N);
+	alu_16_set_LEG((int16_t) regs[IR_A], N);
 }
 
 // -----------------------------------------------------------------------
