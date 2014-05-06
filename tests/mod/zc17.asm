@@ -4,7 +4,6 @@
 ;  * cpu_mod is on
 ;  * modifications are enabled with CRON
 ;  * B-modification is used
-;  * rB == rC
 
 	.cpu	mx16
 

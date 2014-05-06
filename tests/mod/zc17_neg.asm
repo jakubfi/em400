@@ -1,7 +1,7 @@
 ; CONFIG configs/mod.cfg
 
 ; 17th bit for byte addressing is not set when
-; negative pre-mod causes C=1 when added to rB+rB
+; negative pre-mod causes carry=1 when added to rC+rB
 
 	.cpu	mx16
 
