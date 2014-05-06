@@ -284,44 +284,32 @@ int mem_cpu_mput(int nb, uint16_t saddr, uint16_t *src, int count)
 }
 
 // -----------------------------------------------------------------------
-int mem_get_byte(int nb, uint16_t addr, uint8_t *data)
+int mem_get_byte(int nb, uint32_t addr, uint8_t *data)
 {
 	int shift;
-	uint16_t addr17;
 	uint16_t orig = 0;
 
 	shift = 8 * (~addr & 1);
+	addr >>= 1;
 
-	if (cpu_mod) {
-		addr17 = (addr >> 1) | (regs[R_ZC17] << 15);
-	} else {
-		addr17 = addr >> 1;
-	}
-
-	if (!mem_cpu_get(nb, addr17, &orig)) return 0;
+	if (!mem_cpu_get(nb, addr, &orig)) return 0;
 	*data = orig >> shift;
 
 	return 1;
 }
 
 // -----------------------------------------------------------------------
-int mem_put_byte(int nb, uint16_t addr, uint8_t data)
+int mem_put_byte(int nb, uint32_t addr, uint8_t data)
 {
 	int shift;
-	uint16_t addr17;
 	uint16_t orig = 0;
 
 	shift = 8 * (~addr & 1);
+	addr >>= 1;
 
-	if (cpu_mod) {
-		addr17 = (addr >> 1) | (regs[R_ZC17] << 15);
-	} else {
-		addr17 = addr >> 1;
-	}
-
-	if (!mem_cpu_get(nb, addr17, &orig)) return 0;
+	if (!mem_cpu_get(nb, addr, &orig)) return 0;
 	orig = (orig & (0b1111111100000000 >> shift)) | (((uint16_t) data) << shift);
-	if (!mem_cpu_put(nb, addr17, orig)) return 0;
+	if (!mem_cpu_put(nb, addr, orig)) return 0;
 
 	return 1;
 }

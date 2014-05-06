@@ -38,7 +38,7 @@
 
 //uint16_t regs[R_MAX];
 int P;
-uint16_t N;
+uint32_t N;
 int cpu_mod;
 
 #ifdef WITH_DEBUGGER
@@ -192,7 +192,6 @@ int cpu_ctx_restore()
 // -----------------------------------------------------------------------
 void cpu_step()
 {
-	uint32_t N17;
 	struct opdef *op;
 	opfun op_fun;
 	uint16_t data;
@@ -250,29 +249,21 @@ void cpu_step()
 	// process argument
 	if (op->norm_arg) {
 		if (IR_C) {
-			N = regs[IR_C] + regs[R_MOD];
+			N = (uint16_t) (regs[IR_C] + regs[R_MOD]);
 		} else {
 			if (!mem_cpu_get(QNB, regs[R_IC], &data)) goto catch_nomem;
-			N = data + regs[R_MOD];
+			N = (uint16_t) (data + regs[R_MOD]);
 			regs[R_IC]++;
 		}
 		if (IR_B) {
-			N17 = N + regs[IR_B];
-			N = N17;
-			if (cpu_mod && !IR_D) {
-				regs[R_ZC17] = (N17 >> 16) & 1;
-			} else {
-				regs[R_ZC17] = 0;
-			}
-		} else {
-			regs[R_ZC17] = 0;
+			N += regs[IR_B];
 		}
 		if (IR_D) {
 			if (!mem_cpu_get(QNB, N, &data)) goto catch_nomem;
 			N = data;
 		}
 	} else if (op->short_arg) {
-		N = IR_T + regs[R_MOD];
+		N = (uint16_t) IR_T + (uint16_t) regs[R_MOD];
 	}
 
 #ifdef WITH_DEBUGGER
