@@ -74,6 +74,6 @@ ok:	im	mask
 ; XPCT hex(r2) : 0x0055
 ; XPCT hex(r3) : 0x00ba
 ; XPCT hex(r4) : 0x0055
-; XPCT hex(r5) : 0x0055
+; XPCT hex(r5) : 0x00ba
 ; XPCT hex(r6) : 0x0055
 ; XPCT oct(ir[10-15]) : 077

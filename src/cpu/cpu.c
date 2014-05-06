@@ -38,7 +38,7 @@
 
 //uint16_t regs[R_MAX];
 int P;
-int16_t N;
+uint16_t N;
 int cpu_mod;
 
 #ifdef WITH_DEBUGGER
@@ -192,7 +192,7 @@ int cpu_ctx_restore()
 // -----------------------------------------------------------------------
 void cpu_step()
 {
-	int32_t N17;
+	uint32_t N17;
 	struct opdef *op;
 	opfun op_fun;
 	uint16_t data;
@@ -250,33 +250,31 @@ void cpu_step()
 	// process argument
 	if (op->norm_arg) {
 		if (IR_C) {
-			N17 = (int16_t) regs[IR_C] + (int16_t) regs[R_MOD];
+			N = regs[IR_C] + regs[R_MOD];
 		} else {
 			if (!mem_cpu_get(QNB, regs[R_IC], &data)) goto catch_nomem;
-			N17 = (int16_t) data + (int16_t) regs[R_MOD];
+			N = data + regs[R_MOD];
 			regs[R_IC]++;
 		}
 		if (IR_B) {
-			N17 += (int16_t) regs[IR_B];
-		}
-		if (IR_D) {
-			if (!mem_cpu_get(QNB, N17, &data)) goto catch_nomem;
-			N17 = data;
-		}
-		if (cpu_mod) {
-			if (IR_B && (IR_B == IR_C)) {
+			N17 = N + regs[IR_B];
+			N = N17;
+			if (cpu_mod && !IR_D) {
 				regs[R_ZC17] = (N17 >> 16) & 1;
 			} else {
 				regs[R_ZC17] = 0;
 			}
+		} else {
+			regs[R_ZC17] = 0;
 		}
-		N = N17;
+		if (IR_D) {
+			if (!mem_cpu_get(QNB, N, &data)) goto catch_nomem;
+			N = data;
+		}
 	} else if (op->short_arg) {
-		N17 = (int16_t) IR_T + (int16_t) regs[R_MOD];
-		N = N17;
+		N = IR_T + regs[R_MOD];
 	}
 
-	// execute instruction
 #ifdef WITH_DEBUGGER
 	char buf[256];
 	dt_trans(cycle_ic, buf, DMODE_DASM);
@@ -294,10 +292,11 @@ void cpu_step()
 		LOG(L_CPU, 10, "    %-20s", buf);
 	}
 #endif
+
+	// execute instruction
 	op_fun();
 
 catch_nomem:
-
 	// clear mod if instruction wasn't md
 	if (op_fun != op_77_md) {
 		regs[R_MODc] = regs[R_MOD] = 0;
