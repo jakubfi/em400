@@ -112,6 +112,7 @@ extern volatile int aw_layout_changed;
 extern int aw_attr[64];
 
 int aw_init(int output, char *history);
+int aw_sigwinch_init(void);
 void aw_shutdown();
 
 int aw_fit(int l_av, int l_max, int l_min, int l_left);

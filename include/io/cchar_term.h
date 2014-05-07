@@ -21,7 +21,6 @@
 #include <pthread.h>
 
 #include "io/cchar.h"
-#include "io/term.h"
 
 #include "cfg.h"
 
