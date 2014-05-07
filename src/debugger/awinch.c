@@ -25,7 +25,6 @@ volatile int aw_layout_changed;
 // -----------------------------------------------------------------------
 static void _aw_sigwinch_handler(int signum)
 {
-	fprintf(stderr, "Window resized\n");
 	aw_layout_changed = 1;
 }
 

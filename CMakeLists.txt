@@ -5,8 +5,6 @@ set(WITH_DEBUGGER 1)
 
 set(EM400_VERSION 0.1.0)
 
-set(CMAKE_VERBOSE_MAKEFILE ON)
-
 find_package(BISON)
 find_package(FLEX)
 find_package(Threads)
