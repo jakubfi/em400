@@ -15,31 +15,25 @@
 //  Foundation, Inc.,
 //  51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 
-#ifndef CPU_H
-#define CPU_H
+#include <signal.h>
+#include <stdio.h>
 
-#include <inttypes.h>
-#include "cpu/iset.h"
+#include "debugger/awin.h"
 
-extern int P;
-extern uint32_t N;
-extern int cpu_mod;
+volatile int aw_layout_changed;
 
-#ifdef WITH_DEBUGGER
-extern uint16_t cycle_ic;
-#endif
+// -----------------------------------------------------------------------
+static void _aw_sigwinch_handler(int signum)
+{
+	aw_layout_changed = 1;
+}
 
-int cpu_init();
-void cpu_shutdown();
-int cpu_op_73_set(int opcode, opfun fun);
-int cpu_mod_enable();
-int cpu_mod_on();
-int cpu_mod_off();
-void cpu_reset();
-int cpu_ctx_switch(uint16_t arg, uint16_t ic, uint16_t sr_mask);
-int cpu_ctx_restore();
-void cpu_step();
+// -----------------------------------------------------------------------
+int aw_sigwinch_init()
+{
+	if (signal(SIGWINCH, _aw_sigwinch_handler) == SIG_ERR) {
+		return -1;
+	}
 
-#endif
-
-// vim: tabstop=4 shiftwidth=4 autoindent
+	return 0;
+}

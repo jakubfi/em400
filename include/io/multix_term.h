@@ -23,7 +23,6 @@
 
 #include "io/io.h"
 #include "io/multix.h"
-#include "io/term.h"
 
 enum mx_term_attach_opts_e {
 	MX_TERM_ATTACH_WATCH_EOT	= 0b10000000,

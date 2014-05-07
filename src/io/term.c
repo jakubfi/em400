@@ -27,6 +27,16 @@
 
 #include "io/term.h"
 
+struct term_t {
+	int type;
+	int fd_in;
+	int fd_out;
+	struct timespec timeout;
+
+	int listenfd;
+	struct sockaddr cliaddr;
+};
+
 // -----------------------------------------------------------------------
 struct term_t * term_open_console()
 {

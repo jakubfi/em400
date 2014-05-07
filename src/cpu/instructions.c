@@ -67,7 +67,7 @@ void op_tw()
 // -----------------------------------------------------------------------
 void op_ls()
 {
-	reg_safe_write(IR_A, (regs[IR_A] & ~regs[7]) | ((uint16_t) N & regs[7]));
+	reg_safe_write(IR_A, (regs[IR_A] & ~regs[7]) | (N & regs[7]));
 }
 
 // -----------------------------------------------------------------------
@@ -251,13 +251,13 @@ void op_sw()
 // -----------------------------------------------------------------------
 void op_cw()
 {
-	alu_16_set_LEG((int16_t) regs[IR_A], N);
+	alu_16_set_LEG((int16_t) regs[IR_A], (int16_t) N);
 }
 
 // -----------------------------------------------------------------------
 void op_or()
 {
-	reg_safe_write(IR_A, regs[IR_A] | (uint16_t) N);
+	reg_safe_write(IR_A, regs[IR_A] | N);
 	alu_16_set_Z(regs[IR_A]);
 }
 
@@ -274,7 +274,7 @@ void op_om()
 // -----------------------------------------------------------------------
 void op_nr()
 {
-	reg_safe_write(IR_A, regs[IR_A] & (uint16_t) N);
+	reg_safe_write(IR_A, regs[IR_A] & N);
 	alu_16_set_Z(regs[IR_A]);
 }
 
@@ -291,7 +291,7 @@ void op_nm()
 // -----------------------------------------------------------------------
 void op_er()
 {
-	reg_safe_write(IR_A, regs[IR_A] & ~(uint16_t) N);
+	reg_safe_write(IR_A, regs[IR_A] & ~N);
 	alu_16_set_Z(regs[IR_A]);
 }
 
@@ -308,7 +308,7 @@ void op_em()
 // -----------------------------------------------------------------------
 void op_xr()
 {
-	reg_safe_write(IR_A, regs[IR_A] ^ (uint16_t) N);
+	reg_safe_write(IR_A, regs[IR_A] ^ N);
 	alu_16_set_Z(regs[IR_A]);
 }
 
@@ -332,14 +332,22 @@ void op_cl()
 void op_lb()
 {
 	uint8_t data;
-	if (!mem_get_byte(NB, N, &data)) return;
+	if (cpu_mod) {
+		if (!mem_get_byte(NB, N, &data)) return;
+	} else {
+		if (!mem_get_byte(NB, (uint16_t) N, &data)) return;
+	}
 	reg_safe_write(IR_A, (regs[IR_A] & 0b1111111100000000) | data);
 }
 
 // -----------------------------------------------------------------------
 void op_rb()
 {
-	if (!mem_put_byte(NB, N, regs[IR_A])) return;
+	if (cpu_mod) {
+		if (!mem_put_byte(NB, N, regs[IR_A])) return;
+	} else {
+		if (!mem_put_byte(NB, (uint16_t) N, regs[IR_A])) return;
+	}
 }
 
 // -----------------------------------------------------------------------
@@ -386,7 +394,7 @@ void op_drb()
 // -----------------------------------------------------------------------
 void op_cwt()
 {
-	alu_16_set_LEG((int16_t) regs[IR_A], N);
+	alu_16_set_LEG((int16_t) regs[IR_A], (int16_t) N);
 }
 
 // -----------------------------------------------------------------------
@@ -620,7 +628,6 @@ void op_72_shc()
 // -----------------------------------------------------------------------
 void op_72_rky()
 {
-	// TODO: does it work that way?
 	reg_safe_write(IR_A, regs[R_KB]);
 }
 

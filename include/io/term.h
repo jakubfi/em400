@@ -31,15 +31,7 @@ enum term_type_e {
 	TERM_SERIAL = 3,
 };
 
-struct term_t {
-	int type;
-	int fd_in;
-	int fd_out;
-	struct timespec timeout;
-
-	int listenfd;
-	struct sockaddr cliaddr;
-};
+struct term_t;
 
 struct term_t * term_open_tcp(int port, int timeout_ms);
 struct term_t * term_open_console();

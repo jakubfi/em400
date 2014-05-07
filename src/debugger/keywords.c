@@ -31,7 +31,6 @@ struct kw_t kw_regs[] = {
 	{ "KB",	R_KB },
 	{ "MOD", R_MOD },
 	{ "MODC", R_MODc },
-	{ "ZC17", R_ZC17 },
 	{ "ALARM", R_ALARM },
 	{ NULL, 0 }
 };
