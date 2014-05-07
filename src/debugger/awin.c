@@ -29,8 +29,6 @@
 #include "utils.h"
 #include "debugger/awin.h"
 
-volatile int aw_layout_changed;
-
 int aw_attr[64];
 int aw_output;
 char *aw_hist_file;
@@ -41,12 +39,6 @@ ACONT *aw_containers, *aw_container_last;
 
 int wmin, wmax;
 int chmin, chmax, cvmin, cvmax;
-
-// -----------------------------------------------------------------------
-void _aw_sigwinch_handler(int signum, siginfo_t *si, void *ctx)
-{
-	aw_layout_changed = 1;
-}
 
 // -----------------------------------------------------------------------
 void aw_rl_history_read(char *hist_file)
@@ -133,21 +125,7 @@ int aw_init(int output, char *history)
 	cbreak();
 	noecho();
 	start_color();
-
-	// prepare handler for terminal resize
-	struct sigaction sa;
-	sa.sa_flags = SA_SIGINFO;
-	sa.sa_sigaction = _aw_sigwinch_handler;
-
-	if (sigemptyset(&sa.sa_mask) != 0) {
-		return -1;
-	}
-
-	if (sigaction(SIGWINCH, &sa, NULL) != 0) {
-		return -1;
-	}
-
-	return 0;
+	return aw_sigwinch_init();
 }
 
 // -----------------------------------------------------------------------

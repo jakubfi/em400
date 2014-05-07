@@ -19,6 +19,7 @@
 #include <string.h>
 #include <limits.h>
 #include <pthread.h>
+#include <signal.h>
 
 #include "cpu/cpu.h"
 #include "cpu/registers.h"
@@ -61,8 +62,9 @@ YY_BUFFER_STATE yy_scan_string(char *yy_str);
 void yy_delete_buffer(YY_BUFFER_STATE b);
 
 // -----------------------------------------------------------------------
-void _dbg_sigint_handler(int signum, siginfo_t *si, void *ctx)
+static void _dbg_sigint_handler(int signum)
 {
+	fprintf(stderr, "Ctrl-C pressed\n");
 	dbg_enter = 1;
 }
 
@@ -90,15 +92,7 @@ int dbg_init()
 	aw_layout_changed = 1;
 
 	// prepare handler for ctrl-c (break emulation, enter debugger loop)
-	struct sigaction sa;
-	sa.sa_flags = SA_SIGINFO;
-	sa.sa_sigaction = _dbg_sigint_handler;
-
-	if (sigemptyset(&sa.sa_mask) != 0) {
-		return E_UI_SIG_CTRLC;
-	}
-
-	if (sigaction(SIGINT, &sa, NULL) != 0) {
+	if (signal(SIGINT, _dbg_sigint_handler) == SIG_ERR) {
 		return E_UI_SIG_CTRLC;
 	}
 

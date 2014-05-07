@@ -18,8 +18,6 @@
 #ifndef TIMER_H
 #define TIMER_H
 
-#include <signal.h>
-
 int timer_init();
 void timer_shutdown();
 

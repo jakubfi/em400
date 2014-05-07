@@ -15,49 +15,26 @@
 //  Foundation, Inc.,
 //  51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 
-#ifndef DEBUGGER_UI_H
-#define DEBUGGER_UI_H
+#include <signal.h>
+#include <stdio.h>
 
 #include "debugger/awin.h"
 
-enum _ui_attributes {
-	C_PROMPT = 1,
-	C_LABEL,
-	C_DATA,
-	C_DATAU,
-	C_ILABEL,
-	C_IDATA,
-	C_ERROR,
-	C_READ,
-	C_WRITE,
-	C_IRED,
-	C_RW,
-	C_FRAME,
-	C_INPUT
-};
+volatile int aw_layout_changed;
 
-enum _ui_windows {
-	W_MEM = 0,
-	W_STACK,
-	W_DASM,
-	W_SREGS,
-	W_REGS,
-	W_CMD,
-	W_WATCH,
-	W_STATUS,
-};
+// -----------------------------------------------------------------------
+static void _aw_sigwinch_handler(int signum)
+{
+	fprintf(stderr, "Window resized\n");
+	aw_layout_changed = 1;
+}
 
-int dbg_ui_init();
-void dbg_wu_mem(int wid);
-void dbg_wu_dasm(int wid);
-void dbg_wu_regs(int wid);
-void dbg_wu_sregs(int wid);
-void dbg_wu_cmd(int wid);
-void dbg_wu_status(int wid);
-void dbg_wu_stack(int wid);
-void dbg_wu_watch(int wid);
-void dbg_wu_none(int wid);
+// -----------------------------------------------------------------------
+int aw_sigwinch_init()
+{
+	if (signal(SIGWINCH, _aw_sigwinch_handler) == SIG_ERR) {
+		return -1;
+	}
 
-#endif
-
-// vim: tabstop=4 shiftwidth=4 autoindent
+	return 0;
+}
