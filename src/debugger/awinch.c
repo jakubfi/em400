@@ -25,6 +25,7 @@ volatile int aw_layout_changed;
 // -----------------------------------------------------------------------
 static void _aw_sigwinch_handler(int signum)
 {
+	signal(SIGWINCH, _aw_sigwinch_handler);
 	aw_layout_changed = 1;
 }
 
