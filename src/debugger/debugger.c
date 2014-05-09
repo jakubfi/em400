@@ -64,7 +64,6 @@ void yy_delete_buffer(YY_BUFFER_STATE b);
 // -----------------------------------------------------------------------
 static void _dbg_sigint_handler(int signum)
 {
-	fprintf(stderr, "Ctrl-C pressed\n");
 	dbg_enter = 1;
 }
 
