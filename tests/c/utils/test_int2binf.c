@@ -15,7 +15,7 @@ test_call(struct int2binf_params *p, char **out)
 {
 	int r;
 	*out = int2binf(p->format, p->value, p->size);
-	r = strncmp(p->WANT, *out, strlen(p->WANT));
+	r = strncmp(p->WANT, *out, strlen(p->WANT)) != 0;
 	return r;
 }
 
