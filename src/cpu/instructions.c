@@ -20,6 +20,10 @@
 #include "em400.h"
 #include "cpu/cpu.h"
 #include "cpu/registers.h"
+#include "cpu/reg/ir.h"
+#include "cpu/reg/sr.h"
+#include "cpu/reg/flags.h"
+#include "cpu/regwr.h"
 #include "cpu/interrupts.h"
 #include "cpu/alu.h"
 #include "mem/mem.h"
@@ -502,11 +506,11 @@ void op_71_exl()
 	uint16_t data;
 	LOG(L_OP, 10, "EXL: %i (r4: 0x%04x)", IR_b, regs[4]);
 #ifdef WITH_DEBUGGER
-	char *details = decode_exl(NB, regs[4], IR_b);
+	char *details = decode_exl(NB, regs[4], IR_b); /* CURRENT_BLOCK_ADDR */
 	log_splitlog(L_CRK5, 10, details);
 	free(details);
 	exl_was_exl = IR_b;
-	exl_was_nb = NB;
+	exl_was_nb = NB; /* CURRENT_BLOCK_ADDR */
 	exl_was_addr = regs[R_IC];
 	exl_was_r4 = regs[4];
 #endif

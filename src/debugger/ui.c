@@ -24,7 +24,8 @@
 #include "cpu/cpu.h"
 #include "cpu/registers.h"
 
-#include "debugger/dasm.h"
+#include "dasm/dasm.h" /* XXX need dmode */
+
 #include "debugger/awin.h"
 #include "debugger/debugger.h"
 #include "debugger/cmd.h"

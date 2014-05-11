@@ -30,6 +30,7 @@
 #include "debugger/log.h"
 #include "cpu/cpu.h"
 #include "cpu/registers.h"
+#include "cpu/reg/sr.h"
 
 pthread_mutex_t log_mutex = PTHREAD_MUTEX_INITIALIZER;
 
@@ -214,7 +215,7 @@ void log_pretty_log(int domain, int level, char *pre, char *text)
 		mem_mget(0, bprog+52, pname, 2);
 		char *n1 = int2r40(pname[0]);
 		char *n2 = int2r40(pname[1]);
-		fprintf(log_f, "%s | %3i %-4s | %i:%-2i 0x%04x | %s%s | ", now, level, log_dname[domain], Q, NB, cycle_ic, n1, n2);
+		fprintf(log_f, "%s | %3i %-4s | %i:%-2i 0x%04x | %s%s | ", now, level, log_dname[domain], Q, NB, cycle_ic, n1, n2); /* CURRENT_BLOCK_ADDR */
 		fprintf(log_f, "%s%s%s\n", log_int_indent+log_int_level, pre, text);
 	} else {
 		fprintf(log_f, "%s | %3i %-4s |             |        | ", now, level, log_dname[domain]);

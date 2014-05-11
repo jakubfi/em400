@@ -15,28 +15,15 @@
 //  Foundation, Inc.,
 //  51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 
-#ifndef CPU_H
-#define CPU_H
+#ifndef REG_SR_H
+#define REG_SR_H
 
-#include <inttypes.h>
-#include "cpu/iset.h"
-
-extern int P;
-extern uint32_t N;
-extern int cpu_mod;
-
-extern uint16_t cycle_ic;
-
-int cpu_init();
-void cpu_shutdown();
-int cpu_op_73_set(int opcode, opfun fun);
-int cpu_mod_enable();
-int cpu_mod_on();
-int cpu_mod_off();
-void cpu_reset();
-int cpu_ctx_switch(uint16_t arg, uint16_t ic, uint16_t sr_mask);
-int cpu_ctx_restore();
-void cpu_step();
+// -----------------------------------------------------------------------
+// SR access macros
+// -----------------------------------------------------------------------
+#define Q	((regs[R_SR] & 0b0000000000100000) >> 5)
+#define NB	((regs[R_SR] & 0b0000000000001111) >> 0)
+#define QNB	(Q*NB)
 
 #endif
 

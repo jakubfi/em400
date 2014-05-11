@@ -17,6 +17,8 @@
 
 #include "cpu/cpu.h"
 #include "cpu/registers.h"
+#include "cpu/reg/ir.h"
+#include "cpu/reg/sr.h"
 #include "cpu/interrupts.h"
 #include "mem/mem.h"
 #include "cpu/iset.h"
@@ -29,10 +31,11 @@
 #include "utils.h"
 #include "errors.h"
 
+#include "dasm/dasm.h"
+
 #ifdef WITH_DEBUGGER
 #include "debugger/debugger.h"
 #include "debugger/ui.h"
-#include "debugger/dasm.h"
 #endif
 #include "debugger/log.h"
 
@@ -40,10 +43,7 @@
 int P;
 uint32_t N;
 int cpu_mod;
-
-#ifdef WITH_DEBUGGER
 uint16_t cycle_ic;
-#endif
 
 // -----------------------------------------------------------------------
 int cpu_init()
@@ -196,12 +196,10 @@ void cpu_step()
 	opfun op_fun;
 	uint16_t data;
 
-#ifdef WITH_DEBUGGER
 	cycle_ic = regs[R_IC];
-#endif
 
 	// fetch instruction
-	if (!mem_cpu_get(QNB, regs[R_IC], regs+R_IR)) {
+	if (!mem_cpu_get(QNB, regs[R_IC], regs+R_IR)) { /* CURRENT_BLOCK_ADDR */
 		regs[R_MODc] = regs[R_MOD] = 0;
 		LOG(L_CPU, 10, "    (no mem)");
 		return;
@@ -232,10 +230,14 @@ void cpu_step()
 	|| ((regs[R_MODc] >= 3) && (op_fun == op_77_md))
 	|| (!op_fun)
 	) {
-#ifdef WITH_DEBUGGER
-	char buf[256];
-	dt_trans(cycle_ic, buf, DMODE_DASM);
-	LOG(L_CPU, 10, "    (ineffective) %s Q: %d, MODc=%d (%s%s)", buf, Q, regs[R_MODc], op_fun?"legal":"illegal", op->user_illegal?"":", user illegal");
+#if defined(WITH_DEBUGGER)
+#if defined(HAVE_DASM)
+		char buf[256];
+		dt_trans(QNB, cycle_ic, buf, DMODE_DASM); /* CURRENT_BLOCK_ADDR */
+#else
+		char buf[256] = "*** undecoded ***";
+#endif
+		LOG(L_CPU, 10, "    (ineffective) %s Q: %d, MODc=%d (%s%s)", buf, Q, regs[R_MODc], op_fun?"legal":"illegal", op->user_illegal?"":", user illegal"); /* CURRENT_BLOCK_ADDR */
 #endif
 		regs[R_MODc] = regs[R_MOD] = 0;
 		int_set(INT_ILLEGAL_OPCODE);
@@ -251,7 +253,8 @@ void cpu_step()
 		if (IR_C) {
 			N = (uint16_t) (regs[IR_C] + regs[R_MOD]);
 		} else {
-			if (!mem_cpu_get(QNB, regs[R_IC], &data)) goto catch_nomem;
+			if (!mem_cpu_get(QNB, regs[R_IC], &data)) /* CURRENT_BLOCK_ADDR */
+				goto catch_nomem;
 			N = (uint16_t) (data + regs[R_MOD]);
 			regs[R_IC]++;
 		}
@@ -259,16 +262,21 @@ void cpu_step()
 			N += regs[IR_B];
 		}
 		if (IR_D) {
-			if (!mem_cpu_get(QNB, N, &data)) goto catch_nomem;
+			if (!mem_cpu_get(QNB, N, &data)) /* CURRENT_BLOCK_ADDR */
+				goto catch_nomem;
 			N = data;
 		}
 	} else if (op->short_arg) {
 		N = (uint16_t) IR_T + (uint16_t) regs[R_MOD];
 	}
 
-#ifdef WITH_DEBUGGER
+#if defined(WITH_DEBUGGER)
+#if defined(HAVE_DASM)
 	char buf[256];
-	dt_trans(cycle_ic, buf, DMODE_DASM);
+	dt_trans(QNB, cycle_ic, buf, DMODE_DASM); /* CURRENT_BLOCK_ADDR */
+#else
+	char buf[256] = "*** undecoded ***";
+#endif
 	char mbuf[64];
 	if (regs[R_MODc]) {
 		sprintf(mbuf, "MOD = 0x%04x = %6i", regs[R_MOD], regs[R_MOD]);

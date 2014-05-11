@@ -24,29 +24,29 @@
 // convert an integer to formatted string with its binary representation
 char * int2binf(char *format, uint64_t value, int size)
 {
-    char *i = format;
-    char *buf = malloc(strlen(format)+1);
+	char *i = format;
+	char *buf = malloc(strlen(format)+1);
 	char *o = buf;
 
-    size--;
+	size--;
 
-    while (*i) {
-        switch (*i) {
-    	    case '.':
-	            if (size >= 0) {
-                	*o = (value >> size) & 1 ? '1' : '0';
-            	    size--;
-        	    } else {
-    	            *o = '?';
-	            }
-            	break;
-        	default:
-    	        *o = *i;
-	            break;
-        }
+	while (*i) {
+		switch (*i) {
+			case '.':
+				if (size >= 0) {
+					*o = (value >> size) & 1 ? '1' : '0';
+					size--;
+				} else {
+					*o = '?';
+				}
+				break;
+			default:
+				*o = *i;
+				break;
+		}
 		o++;
-        i++;
-    }
+		i++;
+	}
 	*o = '\0';
 	return buf;
 }

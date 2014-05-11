@@ -20,23 +20,28 @@
 #include <string.h>
 
 #include "cpu/cpu.h"
-#include "cpu/registers.h"
+#include "cpu/reg/ir.h"
 #include "mem/mem.h"
 #include "cpu/iset.h"
 
 #include "utils.h"
 
-#include "debugger/dasm.h"
-#include "debugger/dasm_iset.h"
+#include "dasm/dasm.h"
+#include "dasm/dasm_iset.h"
+
+static int dt_parse(struct dasm_opdef *opdef, uint16_t opcode, int nb, uint16_t addr, char *format, char *buf);
+static int dt_opext(char *buf, uint16_t opcode);
+static int dt_dasm_eff_arg(int nb, char *buf, uint16_t opcode, uint16_t addr);
+static int dt_trans_eff_arg(int nb, char *buf, uint16_t opcode, uint16_t addr);
 
 // -----------------------------------------------------------------------
-int dt_trans(int addr, char *buf, int dasm_mode)
+int dt_trans(int nb, int addr, char *buf, int dasm_mode)
 {
 	struct dasm_opdef *opdef;
 	int res;
 	uint16_t opcode;
 
-	res = mem_get(QNB, addr, &opcode);
+	res = mem_get(nb, addr, &opcode);
 
 	if (!res) {
 		sprintf(buf, "~~~~");
@@ -61,11 +66,11 @@ int dt_trans(int addr, char *buf, int dasm_mode)
 			break;
 	}
 
-	return dt_parse(opdef, opcode, addr, format, buf);
+	return dt_parse(opdef, opcode, nb, addr, format, buf);
 }
 
 // -----------------------------------------------------------------------
-int dt_parse(struct dasm_opdef *opdef, uint16_t opcode, uint16_t addr, char *format, char *buf)
+static int dt_parse(struct dasm_opdef *opdef, uint16_t opcode, int nb, uint16_t addr, char *format, char *buf)
 {
 	char *in = format;
 	char *out = buf;
@@ -85,7 +90,7 @@ int dt_parse(struct dasm_opdef *opdef, uint16_t opcode, uint16_t addr, char *for
 					out += sprintf(out, "%-3s", opdef->mnemo);
 					break;
 				case 'E':
-					//out += dt_opext(out, opcode);
+					/* out += dt_opext(out, opcode); */
 					break;
 				case 'A':
 					out += sprintf(out, "%i", _A(opcode));
@@ -109,10 +114,10 @@ int dt_parse(struct dasm_opdef *opdef, uint16_t opcode, uint16_t addr, char *for
 					out += sprintf(out, "%i", _b(opcode));
 					break;
 				case 'N':
-					out += dt_dasm_eff_arg(out, opcode, addr+1);
+					out += dt_dasm_eff_arg(nb, out, opcode, addr+1);
 					break;
 				case 'n':
-					out += dt_trans_eff_arg(out, opcode, addr+1);
+					out += dt_trans_eff_arg(nb, out, opcode, addr+1);
 					break;
 				case '0':
 					b = int2binf("................", opcode, 16);
@@ -142,7 +147,7 @@ int dt_parse(struct dasm_opdef *opdef, uint16_t opcode, uint16_t addr, char *for
 }
 
 // -----------------------------------------------------------------------
-int dt_opext(char *buf, uint16_t opcode)
+static int dt_opext(char *buf, uint16_t opcode)
 {
 	int n = 0;
 
@@ -164,7 +169,7 @@ int dt_opext(char *buf, uint16_t opcode)
 }
 
 // -----------------------------------------------------------------------
-int dt_dasm_eff_arg(char *buf, uint16_t opcode, uint16_t addr)
+static int dt_dasm_eff_arg(int nb, char *buf, uint16_t opcode, uint16_t addr)
 {
 	int n = 0;
 	int res;
@@ -177,7 +182,7 @@ int dt_dasm_eff_arg(char *buf, uint16_t opcode, uint16_t addr)
 	if (_C(opcode) != 0) {
 		n += sprintf(buf+n, "r%i", _C(opcode));
 	} else {
-		res = mem_get(QNB, addr, &arg);
+		res = mem_get(nb, addr, &arg);
 		if (res) {
 			n += sprintf(buf+n, "0x%x", arg);
 		} else {
@@ -197,7 +202,7 @@ int dt_dasm_eff_arg(char *buf, uint16_t opcode, uint16_t addr)
 }
 
 // -----------------------------------------------------------------------
-int dt_trans_eff_arg(char *buf, uint16_t opcode, uint16_t addr)
+static int dt_trans_eff_arg(int nb, char *buf, uint16_t opcode, uint16_t addr)
 {
 	int n = 0;
 	int res;
@@ -208,7 +213,7 @@ int dt_trans_eff_arg(char *buf, uint16_t opcode, uint16_t addr)
 	}
 
 	if (_C(opcode) == 0) {
-		res = mem_get(QNB, addr, &arg);
+		res = mem_get(nb, addr, &arg);
 		if (res) {
 			n += sprintf(buf+n, "%i", arg);
 		} else {
@@ -227,60 +232,6 @@ int dt_trans_eff_arg(char *buf, uint16_t opcode, uint16_t addr)
 	}
 
 	return n;
-}
-
-// -----------------------------------------------------------------------
-int dt_extcode_37(int i)
-{
-	return EXT_OP_37(i);
-}
-
-// -----------------------------------------------------------------------
-int dt_extcode_70(int i)
-{
-	return EXT_OP_70(i);
-}
-
-// -----------------------------------------------------------------------
-int dt_extcode_71(int i)
-{
-	return EXT_OP_71(i);
-}
-
-// -----------------------------------------------------------------------
-int dt_extcode_72(int i)
-{
-	return EXT_OP_72(i);
-}
-
-// -----------------------------------------------------------------------
-int dt_extcode_73(int i)
-{
-	return EXT_OP_73(i);
-}
-
-// -----------------------------------------------------------------------
-int dt_extcode_74(int i)
-{
-	return EXT_OP_74(i);
-}
-
-// -----------------------------------------------------------------------
-int dt_extcode_75(int i)
-{
-	return EXT_OP_75(i);
-}
-
-// -----------------------------------------------------------------------
-int dt_extcode_76(int i)
-{
-	return EXT_OP_76(i);
-}
-
-// -----------------------------------------------------------------------
-int dt_extcode_77(int i)
-{
-	return EXT_OP_77(i);
 }
 
 // vim: tabstop=4 shiftwidth=4 autoindent

@@ -15,31 +15,22 @@
 //  Foundation, Inc.,
 //  51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 
-#ifndef DEBUGGER_DASM_H
-#define DEBUGGER_DASM_H
+#ifndef REG_FLAGS_H
+#define REG_FLAGS_H
 
-#include <inttypes.h>
+// -----------------------------------------------------------------------
+// Flags in R0
+// -----------------------------------------------------------------------
 
-#include "debugger/dasm_iset.h"
-
-#define DMODE_DASM	1
-#define DMODE_TRANS	2
-
-int dt_trans(int addr, char *buf, int dasm_mode);
-int dt_parse(struct dasm_opdef *opdef, uint16_t opcode, uint16_t addr, char *format, char *buf);
-int dt_dasm_eff_arg(char *buf, uint16_t opcode, uint16_t addr);
-int dt_trans_eff_arg(char *buf, uint16_t opcode, uint16_t addr);
-int dt_opext(char *buf, uint16_t opcode);
-
-int dt_extcode_37(int i);
-int dt_extcode_70(int i);
-int dt_extcode_71(int i);
-int dt_extcode_72(int i);
-int dt_extcode_73(int i);
-int dt_extcode_74(int i);
-int dt_extcode_75(int i);
-int dt_extcode_76(int i);
-int dt_extcode_77(int i);
+#define FL_Z	0b1000000000000000
+#define FL_M	0b0100000000000000
+#define FL_V	0b0010000000000000
+#define FL_C	0b0001000000000000
+#define FL_L	0b0000100000000000
+#define FL_E	0b0000010000000000
+#define FL_G	0b0000001000000000
+#define FL_Y	0b0000000100000000
+#define FL_X	0b0000000010000000
 
 #endif
 

@@ -30,7 +30,8 @@
 #include "errors.h"
 #include "utils.h"
 
-#include "debugger/dasm.h"
+#include "dasm/dasm.h"
+
 #include "debugger/awin.h"
 #include "debugger/debugger.h"
 #include "debugger/ui.h"

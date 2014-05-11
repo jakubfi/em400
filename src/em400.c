@@ -315,11 +315,31 @@ void em400_loop()
 // -----------------------------------------------------------------------
 int main(int argc, char** argv)
 {
-#ifdef WITH_DEBUGGER
-	printf("EM400 v%s (+debugger)\n", EM400_VERSION);
-#else
-	printf("EM400 v%s\n", EM400_VERSION);
+	static const char *features[] = {
+#if defined(WITH_DEBUGGER)
+		"debugger",
 #endif
+#if defined(HAVE_DASM)
+		"dissassembler",
+#endif
+		NULL
+	};
+	const char **ft;
+
+	printf("EM400 v%s", EM400_VERSION);
+	if (*features) {
+		printf(" ");
+		for (ft = features; *ft; ft++) {
+			if (ft == features) {
+				printf("(");
+			} else {
+				printf(" ");
+			}
+			printf("+%s", *ft);
+		}
+		printf(")");
+	}
+	printf("\n");
 
 	em400_parse_args(argc, argv);
 	em400_configure();
