@@ -45,6 +45,8 @@ ADD_SUBDIRECTORY(src/io build/io)
 ADD_SUBDIRECTORY(src/mem build/mem)
 ADD_SUBDIRECTORY(src/cpu build/cpu)
 ADD_SUBDIRECTORY(src build)
+enable_testing()
+ADD_SUBDIRECTORY(tests build/tests)
 
 install(FILES em400.cfg.template DESTINATION /etc/em400 RENAME em400.cfg OPTIONAL)
 
