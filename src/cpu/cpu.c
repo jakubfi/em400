@@ -228,6 +228,7 @@ void cpu_step()
 	|| ((regs[R_MODc] >= 3) && (op_fun == op_77_md))
 	|| (!op_fun)
 	) {
+#if defined(WITH_DEBUGGER)
 #if defined(HAVE_DASM)
 		char buf[256];
 		dt_trans(cycle_ic, buf, DMODE_DASM);
@@ -235,6 +236,7 @@ void cpu_step()
 		char buf[256] = "*** undecoded ***";
 #endif
 		LOG(L_CPU, 10, "    (ineffective) %s Q: %d, MODc=%d (%s%s)", buf, Q, regs[R_MODc], op_fun?"legal":"illegal", op->user_illegal?"":", user illegal");
+#endif
 		regs[R_MODc] = regs[R_MOD] = 0;
 		int_set(INT_ILLEGAL_OPCODE);
 		// skip also M-arg if present
