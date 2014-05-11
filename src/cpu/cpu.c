@@ -17,6 +17,8 @@
 
 #include "cpu/cpu.h"
 #include "cpu/registers.h"
+#include "cpu/reg/ir.h"
+#include "cpu/reg/sr.h"
 #include "cpu/interrupts.h"
 #include "mem/mem.h"
 #include "cpu/iset.h"
@@ -197,7 +199,7 @@ void cpu_step()
 	cycle_ic = regs[R_IC];
 
 	// fetch instruction
-	if (!mem_cpu_get(QNB, regs[R_IC], regs+R_IR)) {
+	if (!mem_cpu_get(QNB, regs[R_IC], regs+R_IR)) { /* CURRENT_BLOCK_ADDR */
 		regs[R_MODc] = regs[R_MOD] = 0;
 		LOG(L_CPU, 10, "    (no mem)");
 		return;
@@ -231,11 +233,11 @@ void cpu_step()
 #if defined(WITH_DEBUGGER)
 #if defined(HAVE_DASM)
 		char buf[256];
-		dt_trans(cycle_ic, buf, DMODE_DASM);
+		dt_trans(QNB, cycle_ic, buf, DMODE_DASM); /* CURRENT_BLOCK_ADDR */
 #else
 		char buf[256] = "*** undecoded ***";
 #endif
-		LOG(L_CPU, 10, "    (ineffective) %s Q: %d, MODc=%d (%s%s)", buf, Q, regs[R_MODc], op_fun?"legal":"illegal", op->user_illegal?"":", user illegal");
+		LOG(L_CPU, 10, "    (ineffective) %s Q: %d, MODc=%d (%s%s)", buf, Q, regs[R_MODc], op_fun?"legal":"illegal", op->user_illegal?"":", user illegal"); /* CURRENT_BLOCK_ADDR */
 #endif
 		regs[R_MODc] = regs[R_MOD] = 0;
 		int_set(INT_ILLEGAL_OPCODE);
@@ -251,7 +253,8 @@ void cpu_step()
 		if (IR_C) {
 			N = (uint16_t) (regs[IR_C] + regs[R_MOD]);
 		} else {
-			if (!mem_cpu_get(QNB, regs[R_IC], &data)) goto catch_nomem;
+			if (!mem_cpu_get(QNB, regs[R_IC], &data)) /* CURRENT_BLOCK_ADDR */
+				goto catch_nomem;
 			N = (uint16_t) (data + regs[R_MOD]);
 			regs[R_IC]++;
 		}
@@ -259,7 +262,8 @@ void cpu_step()
 			N += regs[IR_B];
 		}
 		if (IR_D) {
-			if (!mem_cpu_get(QNB, N, &data)) goto catch_nomem;
+			if (!mem_cpu_get(QNB, N, &data)) /* CURRENT_BLOCK_ADDR */
+				goto catch_nomem;
 			N = data;
 		}
 	} else if (op->short_arg) {
@@ -269,7 +273,7 @@ void cpu_step()
 #if defined(WITH_DEBUGGER)
 #if defined(HAVE_DASM)
 	char buf[256];
-	dt_trans(cycle_ic, buf, DMODE_DASM);
+	dt_trans(QNB, cycle_ic, buf, DMODE_DASM); /* CURRENT_BLOCK_ADDR */
 #else
 	char buf[256] = "*** undecoded ***";
 #endif

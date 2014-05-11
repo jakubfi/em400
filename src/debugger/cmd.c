@@ -22,6 +22,7 @@
 #include "em400.h"
 #include "cpu/cpu.h"
 #include "cpu/registers.h"
+#include "cpu/reg/sr.h"
 #include "cpu/interrupts.h"
 #include "mem/mem.h"
 #include "mem/mem_mega.h"
@@ -141,7 +142,7 @@ void dbg_c_dt(int wid, int dasm_mode, uint16_t start, int count)
 	int len;
 
 	while (count > 0) {
-		len = dt_trans(start, buf, dasm_mode);
+		len = dt_trans(QNB, start, buf, dasm_mode); /* CURRENT_BLOCK_ADDR */
 		if (len) {
 			if (start == regs[R_IC]) {
 				if (P) {
@@ -647,7 +648,7 @@ void dbg_c_decode(int wid, char *name, uint16_t addr, int arg)
 		return;
 	}
 
-	buf = d->f_decode(NB, addr, arg);
+	buf = d->f_decode(NB, addr, arg); /* CURRENT_BLOCK_ADDR */
 
 	if (!buf) {
 		awtbprint(wid, C_ERROR, "Cannot decode structure\n");

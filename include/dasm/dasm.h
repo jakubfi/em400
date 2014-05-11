@@ -22,7 +22,7 @@
 #define DMODE_TRANS	2
 
 #if defined(HAVE_DASM)
-int dt_trans(int addr, char *buf, int dasm_mode);
+int dt_trans(int nb, int addr, char *buf, int dasm_mode);
 #endif
 
 #endif

@@ -24,6 +24,10 @@
 #include "cpu/alu.h"
 #include "cpu/cpu.h"
 #include "cpu/registers.h"
+#include "cpu/reg/ir.h"
+#include "cpu/reg/sr.h"
+#include "cpu/reg/flags.h"
+#include "cpu/regwr.h"
 #include "cpu/interrupts.h"
 
 int alu_32_V;

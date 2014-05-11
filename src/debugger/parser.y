@@ -20,6 +20,7 @@
 
 #include "cpu/cpu.h"
 #include "cpu/registers.h"
+#include "cpu/reg/sr.h"
 #include "mem/mem.h"
 #include "utils.h"
 
@@ -144,7 +145,7 @@ lval:
 	NAME { $$ = n_var($1); }
 	| IRZ '[' expr ']' { $$ = n_ireg(N_RZ, n_eval($3)); }
 	| REG { $$ = n_reg($1); }
-	| '[' expr ']' { $$ = n_mem(n_val(QNB), $2); }
+	| '[' expr ']' { $$ = n_mem(n_val(QNB), $2); } /* CURRENT_BLOC_ADDR */
 	| '[' expr ':' expr ']' { $$ = n_mem($2, $4); }
 	;
 
@@ -171,8 +172,8 @@ command:
 	| F_TRANS				{ dbg_c_dt(W_CMD, DMODE_TRANS, regs[R_IC], 1); }
 	| F_TRANS VALUE			{ dbg_c_dt(W_CMD, DMODE_TRANS, regs[R_IC], $2); }
 	| F_TRANS expr VALUE	{ dbg_c_dt(W_CMD, DMODE_TRANS, n_eval($2), $3); }
-	| F_MEM expr			{ dbg_c_mem(W_CMD, QNB, n_eval($2), n_eval($2)+15, 122, 18); }
-	| F_MEM expr VALUE		{ dbg_c_mem(W_CMD, QNB, n_eval($2), n_eval($2)+$3-1, 122, 18); }
+	| F_MEM expr			{ dbg_c_mem(W_CMD, QNB, n_eval($2), n_eval($2)+15, 122, 18); /* CURRENT_BLOCK_ADDR */ }
+	| F_MEM expr VALUE		{ dbg_c_mem(W_CMD, QNB, n_eval($2), n_eval($2)+$3-1, 122, 18); /* CURRENT_BLOCK_ADDR */ }
 	| F_MEM VALUE ':' expr	{ dbg_c_mem(W_CMD, $2, n_eval($4), n_eval($4)+15, 122, 18); }
 	| F_MEM VALUE ':' expr VALUE { dbg_c_mem(W_CMD, $2, n_eval($4), n_eval($4)+$5-1, 122, 18); }
 	| F_LOAD TEXT			{ dbg_c_load(W_CMD, $2); }

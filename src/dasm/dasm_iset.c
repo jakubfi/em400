@@ -22,7 +22,7 @@
 #include "dasm/dasm_iset.h"
 
 #include "cpu/cpu.h"       /* EXT_OP_xx macros         */
-#include "cpu/registers.h" /* .. need _A() and friends */
+#include "cpu/reg/ir.h"    /* .. need _A() and friends */
 
 static struct dasm_opdef dasm_iset_37[];
 static struct dasm_opdef dasm_iset_70[];

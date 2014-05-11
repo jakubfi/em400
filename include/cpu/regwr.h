@@ -15,35 +15,10 @@
 //  Foundation, Inc.,
 //  51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 
-#ifndef REGISTERS_H
-#define REGISTERS_H
+#ifndef REGWR_H
+#define REGWR_H
 
-#include <inttypes.h>
-
-// -----------------------------------------------------------------------
-// registers and "registers"
-// -----------------------------------------------------------------------
-
-enum _registers {
-	R_R0	= 0,
-	R_R1	= 1,
-	R_R2	= 2,
-	R_R3	= 3,
-	R_R4	= 4,
-	R_R5	= 5,
-	R_R6	= 6,
-	R_R7	= 7,
-	R_IC,
-	R_SR,
-	R_IR,
-	R_KB,
-	R_MOD,
-	R_MODc,
-	R_ALARM,
-	R_MAX
-};
-
-extern uint16_t regs[];
+#define reg_safe_write(r, x) regs[r] = (r|!Q) ? (x) : (regs[r] & 0b1111111100000000) | ((x) & 0b0000000011111111)
 
 #endif
 

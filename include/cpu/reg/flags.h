@@ -15,35 +15,24 @@
 //  Foundation, Inc.,
 //  51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 
-#ifndef REGISTERS_H
-#define REGISTERS_H
+#ifndef REG_FLAGS_H
+#define REG_FLAGS_H
 
 #include <inttypes.h>
 
 // -----------------------------------------------------------------------
-// registers and "registers"
+// Flags in R0
 // -----------------------------------------------------------------------
 
-enum _registers {
-	R_R0	= 0,
-	R_R1	= 1,
-	R_R2	= 2,
-	R_R3	= 3,
-	R_R4	= 4,
-	R_R5	= 5,
-	R_R6	= 6,
-	R_R7	= 7,
-	R_IC,
-	R_SR,
-	R_IR,
-	R_KB,
-	R_MOD,
-	R_MODc,
-	R_ALARM,
-	R_MAX
-};
-
-extern uint16_t regs[];
+#define FL_Z	0b1000000000000000
+#define FL_M	0b0100000000000000
+#define FL_V	0b0010000000000000
+#define FL_C	0b0001000000000000
+#define FL_L	0b0000100000000000
+#define FL_E	0b0000010000000000
+#define FL_G	0b0000001000000000
+#define FL_Y	0b0000000100000000
+#define FL_X	0b0000000010000000
 
 #endif
 
