@@ -15,21 +15,8 @@
 //  Foundation, Inc.,
 //  51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 
-#ifndef DEBUGGER_DASM_H
-#define DEBUGGER_DASM_H
-
-#include <inttypes.h>
-
-#include "debugger/dasm_iset.h"
-
-#define DMODE_DASM	1
-#define DMODE_TRANS	2
-
-int dt_trans(int addr, char *buf, int dasm_mode);
-int dt_parse(struct dasm_opdef *opdef, uint16_t opcode, uint16_t addr, char *format, char *buf);
-int dt_dasm_eff_arg(char *buf, uint16_t opcode, uint16_t addr);
-int dt_trans_eff_arg(char *buf, uint16_t opcode, uint16_t addr);
-int dt_opext(char *buf, uint16_t opcode);
+#ifndef DEBUGGER_DASM_EXTCODE_H
+#define DEBUGGER_DASM_EXTCODE_H
 
 int dt_extcode_37(int i);
 int dt_extcode_70(int i);

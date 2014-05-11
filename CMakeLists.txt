@@ -2,6 +2,7 @@ CMAKE_MINIMUM_REQUIRED(VERSION 2.8.4)
 PROJECT(em400 C)
 
 set(WITH_DEBUGGER 1)
+set(WITH_DASM 1)
 
 set(EM400_VERSION 0.1.0)
 
@@ -24,6 +25,17 @@ function(strdup FILE)
 xopen(${FILE} 500 "strdup()")
 endfunction(strdup)
 
+function(uses FILE WHAT)
+IF(WITH_DASM)
+set_property(
+	SOURCE ${FILE}
+	APPEND
+	PROPERTY COMPILE_DEFINITIONS
+	HAVE_${WHAT}=1
+)
+ENDIF(WITH_DASM)
+endfunction(uses)
+
 INCLUDE_DIRECTORIES(${CMAKE_SOURCE_DIR}/include)
 INCLUDE_DIRECTORIES(${CMAKE_BINARY_DIR}/build)
 
@@ -40,6 +52,13 @@ IF(WITH_DEBUGGER)
 ELSE(WITH_DEBUGGER)
 	set(DEBUGGER_LIBS)
 ENDIF(WITH_DEBUGGER)
+
+IF(WITH_DASM)
+	ADD_SUBDIRECTORY(src/dasm build/dasm)
+	set(DASM_LIBS dasm)
+ELSE(WITH_DASM)
+	set(DASM_LIBS)
+ENDIF(WITH_DASM)
 
 ADD_SUBDIRECTORY(src/io build/io)
 ADD_SUBDIRECTORY(src/mem build/mem)

@@ -18,80 +18,10 @@
 #include <stdlib.h>
 #include <stdbool.h>
 
-#include "debugger/dasm.h"
-#include "debugger/dasm_formats.h"
+#include "dasm/dasm_formats.h"
+#include "dasm/dasm_iset.h"
+#include "dasm/dasm_extcode.h"
 
-struct dasm_opdef dasm_iset[] = {
-	{ 000, NULL, false, NULL, NULL, DT_ILL, DT_ILL },
-	{ 001, NULL, false, NULL, NULL, DT_ILL, DT_ILL },
-	{ 002, NULL, false, NULL, NULL, DT_ILL, DT_ILL },
-	{ 003, NULL, false, NULL, NULL, DT_ILL, DT_ILL },
-	{ 004, NULL, false, NULL, NULL, DT_ILL, DT_ILL },
-	{ 005, NULL, false, NULL, NULL, DT_ILL, DT_ILL },
-	{ 006, NULL, false, NULL, NULL, DT_ILL, DT_ILL },
-	{ 007, NULL, false, NULL, NULL, DT_ILL, DT_ILL },
-	{ 010, NULL, false, NULL, NULL, DT_ILL, DT_ILL },
-	{ 011, NULL, false, NULL, NULL, DT_ILL, DT_ILL },
-	{ 012, NULL, false, NULL, NULL, DT_ILL, DT_ILL },
-	{ 013, NULL, false, NULL, NULL, DT_ILL, DT_ILL },
-	{ 014, NULL, false, NULL, NULL, DT_ILL, DT_ILL },
-	{ 015, NULL, false, NULL, NULL, DT_ILL, DT_ILL },
-	{ 016, NULL, false, NULL, NULL, DT_ILL, DT_ILL },
-	{ 017, NULL, false, NULL, NULL, DT_ILL, DT_ILL },
-	
-	{ 020, "LW", true, NULL, NULL, D_2ARGN, T_LW },
-	{ 021, "TW", true, NULL, NULL, D_2ARGN, T_TW },
-	{ 022, "LS", true, NULL, NULL, D_2ARGN, T_LS },
-	{ 023, "RI", true, NULL, NULL, D_2ARGN, T_RI },
-	{ 024, "RW", true, NULL, NULL, D_2ARGN, T_RW },
-	{ 025, "PW", true, NULL, NULL, D_2ARGN, T_PW },
-	{ 026, "RJ", true, NULL, NULL, D_2ARGN, T_RJ },
-	{ 027, "IS", true, NULL, NULL, D_2ARGN, T_IS },
-	{ 030, "BB", true, NULL, NULL, D_2ARGN, T_BB },
-	{ 031, "BM", true, NULL, NULL, D_2ARGN, T_BM },
-	{ 032, "BS", true, NULL, NULL, D_2ARGN, T_BS },
-	{ 033, "BC", true, NULL, NULL, D_2ARGN, T_BC },
-	{ 034, "BN", true, NULL, NULL, D_2ARGN, T_BN },
-	{ 035, "OU", true, NULL, NULL, D_2ARGN, T_OU },
-	{ 036, "IN", true, NULL, NULL, D_2ARGN, T_IN },
-
-	{ 037, NULL, false, dt_extcode_37, dasm_iset_37, NULL, NULL },
-
-	{ 040, "AW", true, NULL, NULL, D_2ARGN, T_AW },
-	{ 041, "AC", true, NULL, NULL, D_2ARGN, T_AC },
-	{ 042, "SW", true, NULL, NULL, D_2ARGN, T_SW },
-	{ 043, "CW", true, NULL, NULL, D_2ARGN, T_CW },
-	{ 044, "OR", true, NULL, NULL, D_2ARGN, T_OR },
-	{ 045, "OM", true, NULL, NULL, D_2ARGN, T_OM },
-	{ 046, "NR", true, NULL, NULL, D_2ARGN, T_NR },
-	{ 047, "NM", true, NULL, NULL, D_2ARGN, T_NM },
-	{ 050, "ER", true, NULL, NULL, D_2ARGN, T_ER },
-	{ 051, "EM", true, NULL, NULL, D_2ARGN, T_EM },
-	{ 052, "XR", true, NULL, NULL, D_2ARGN, T_XR },
-	{ 053, "XM", true, NULL, NULL, D_2ARGN, T_XM },
-	{ 054, "CL", true, NULL, NULL, D_2ARGN, T_CL },
-	{ 055, "LB", true, NULL, NULL, D_2ARGN, T_LB },
-	{ 056, "RB", true, NULL, NULL, D_2ARGN, T_RB },
-	{ 057, "CB", true, NULL, NULL, D_2ARGN, T_CB },
-
-	{ 060, "AWT", false, NULL, NULL, D_KA1, T_AWT },
-	{ 061, "TRB", false, NULL, NULL, D_KA1, T_TRB },
-	{ 062, "IRB", false, NULL, NULL, D_KA1R, T_IRB },
-	{ 063, "DRB", false, NULL, NULL, D_KA1R, T_DRB },
-	{ 064, "CWT", false, NULL, NULL, D_KA1, T_CWT },
-	{ 065, "LWT", false, NULL, NULL, D_KA1, T_LWT },
-	{ 066, "LWS", false, NULL, NULL, D_KA1R, T_LWS },
-	{ 067, "RWS", false, NULL, NULL, D_KA1R, T_RWS },
-
-	{ 070, NULL, false, dt_extcode_70, dasm_iset_70, NULL, NULL },
-	{ 071, NULL, false, dt_extcode_71, dasm_iset_71, NULL, NULL },
-	{ 072, NULL, false, dt_extcode_72, dasm_iset_72, NULL, NULL },
-	{ 073, NULL, false, dt_extcode_73, dasm_iset_73, NULL, NULL },
-	{ 074, NULL, false, dt_extcode_74, dasm_iset_74, NULL, NULL },
-	{ 075, NULL, false, dt_extcode_75, dasm_iset_75, NULL, NULL },
-	{ 076, NULL, false, dt_extcode_76, dasm_iset_76, NULL, NULL },
-	{ 077, NULL, false, dt_extcode_77, dasm_iset_77, NULL, NULL }
-};
 
 struct dasm_opdef dasm_iset_37[] = {
 	{ 0, "AD", true, NULL, NULL, D_FD, T_AD },
@@ -442,6 +372,78 @@ struct dasm_opdef dasm_iset_77[] = {
 	{ 5, "MD", true, NULL, NULL, D_BN, T_MD },
 	{ 6, "RZ", true, NULL, NULL, D_BN, T_RZ },
 	{ 7, "IB", true, NULL, NULL, D_BN, T_IB }
+};
+
+struct dasm_opdef dasm_iset[] = {
+	{ 000, NULL, false, NULL, NULL, DT_ILL, DT_ILL },
+	{ 001, NULL, false, NULL, NULL, DT_ILL, DT_ILL },
+	{ 002, NULL, false, NULL, NULL, DT_ILL, DT_ILL },
+	{ 003, NULL, false, NULL, NULL, DT_ILL, DT_ILL },
+	{ 004, NULL, false, NULL, NULL, DT_ILL, DT_ILL },
+	{ 005, NULL, false, NULL, NULL, DT_ILL, DT_ILL },
+	{ 006, NULL, false, NULL, NULL, DT_ILL, DT_ILL },
+	{ 007, NULL, false, NULL, NULL, DT_ILL, DT_ILL },
+	{ 010, NULL, false, NULL, NULL, DT_ILL, DT_ILL },
+	{ 011, NULL, false, NULL, NULL, DT_ILL, DT_ILL },
+	{ 012, NULL, false, NULL, NULL, DT_ILL, DT_ILL },
+	{ 013, NULL, false, NULL, NULL, DT_ILL, DT_ILL },
+	{ 014, NULL, false, NULL, NULL, DT_ILL, DT_ILL },
+	{ 015, NULL, false, NULL, NULL, DT_ILL, DT_ILL },
+	{ 016, NULL, false, NULL, NULL, DT_ILL, DT_ILL },
+	{ 017, NULL, false, NULL, NULL, DT_ILL, DT_ILL },
+	
+	{ 020, "LW", true, NULL, NULL, D_2ARGN, T_LW },
+	{ 021, "TW", true, NULL, NULL, D_2ARGN, T_TW },
+	{ 022, "LS", true, NULL, NULL, D_2ARGN, T_LS },
+	{ 023, "RI", true, NULL, NULL, D_2ARGN, T_RI },
+	{ 024, "RW", true, NULL, NULL, D_2ARGN, T_RW },
+	{ 025, "PW", true, NULL, NULL, D_2ARGN, T_PW },
+	{ 026, "RJ", true, NULL, NULL, D_2ARGN, T_RJ },
+	{ 027, "IS", true, NULL, NULL, D_2ARGN, T_IS },
+	{ 030, "BB", true, NULL, NULL, D_2ARGN, T_BB },
+	{ 031, "BM", true, NULL, NULL, D_2ARGN, T_BM },
+	{ 032, "BS", true, NULL, NULL, D_2ARGN, T_BS },
+	{ 033, "BC", true, NULL, NULL, D_2ARGN, T_BC },
+	{ 034, "BN", true, NULL, NULL, D_2ARGN, T_BN },
+	{ 035, "OU", true, NULL, NULL, D_2ARGN, T_OU },
+	{ 036, "IN", true, NULL, NULL, D_2ARGN, T_IN },
+
+	{ 037, NULL, false, dt_extcode_37, dasm_iset_37, NULL, NULL },
+
+	{ 040, "AW", true, NULL, NULL, D_2ARGN, T_AW },
+	{ 041, "AC", true, NULL, NULL, D_2ARGN, T_AC },
+	{ 042, "SW", true, NULL, NULL, D_2ARGN, T_SW },
+	{ 043, "CW", true, NULL, NULL, D_2ARGN, T_CW },
+	{ 044, "OR", true, NULL, NULL, D_2ARGN, T_OR },
+	{ 045, "OM", true, NULL, NULL, D_2ARGN, T_OM },
+	{ 046, "NR", true, NULL, NULL, D_2ARGN, T_NR },
+	{ 047, "NM", true, NULL, NULL, D_2ARGN, T_NM },
+	{ 050, "ER", true, NULL, NULL, D_2ARGN, T_ER },
+	{ 051, "EM", true, NULL, NULL, D_2ARGN, T_EM },
+	{ 052, "XR", true, NULL, NULL, D_2ARGN, T_XR },
+	{ 053, "XM", true, NULL, NULL, D_2ARGN, T_XM },
+	{ 054, "CL", true, NULL, NULL, D_2ARGN, T_CL },
+	{ 055, "LB", true, NULL, NULL, D_2ARGN, T_LB },
+	{ 056, "RB", true, NULL, NULL, D_2ARGN, T_RB },
+	{ 057, "CB", true, NULL, NULL, D_2ARGN, T_CB },
+
+	{ 060, "AWT", false, NULL, NULL, D_KA1, T_AWT },
+	{ 061, "TRB", false, NULL, NULL, D_KA1, T_TRB },
+	{ 062, "IRB", false, NULL, NULL, D_KA1R, T_IRB },
+	{ 063, "DRB", false, NULL, NULL, D_KA1R, T_DRB },
+	{ 064, "CWT", false, NULL, NULL, D_KA1, T_CWT },
+	{ 065, "LWT", false, NULL, NULL, D_KA1, T_LWT },
+	{ 066, "LWS", false, NULL, NULL, D_KA1R, T_LWS },
+	{ 067, "RWS", false, NULL, NULL, D_KA1R, T_RWS },
+
+	{ 070, NULL, false, dt_extcode_70, dasm_iset_70, NULL, NULL },
+	{ 071, NULL, false, dt_extcode_71, dasm_iset_71, NULL, NULL },
+	{ 072, NULL, false, dt_extcode_72, dasm_iset_72, NULL, NULL },
+	{ 073, NULL, false, dt_extcode_73, dasm_iset_73, NULL, NULL },
+	{ 074, NULL, false, dt_extcode_74, dasm_iset_74, NULL, NULL },
+	{ 075, NULL, false, dt_extcode_75, dasm_iset_75, NULL, NULL },
+	{ 076, NULL, false, dt_extcode_76, dasm_iset_76, NULL, NULL },
+	{ 077, NULL, false, dt_extcode_77, dasm_iset_77, NULL, NULL }
 };
 
 // vim: tabstop=4 shiftwidth=4 autoindent

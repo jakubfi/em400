@@ -30,8 +30,9 @@
 #include "errors.h"
 #include "utils.h"
 
+#include "dasm/dasm.h"
+
 #include "debugger/awin.h"
-#include "debugger/dasm.h"
 #include "debugger/debugger.h"
 #include "debugger/cmd.h"
 #include "debugger/ui.h"
@@ -135,6 +136,7 @@ void dbg_c_clmem()
 // -----------------------------------------------------------------------
 void dbg_c_dt(int wid, int dasm_mode, uint16_t start, int count)
 {
+#if defined(HAVE_DASM)
 	char buf[1024];
 	int len;
 
@@ -164,6 +166,9 @@ void dbg_c_dt(int wid, int dasm_mode, uint16_t start, int count)
 		awtbprint(wid, C_DATA, "\n");
 		count--;
 	}
+#else
+	awtbprint(wid, C_DATA, "Disassembler not available\n");
+#endif
 }
 
 // -----------------------------------------------------------------------

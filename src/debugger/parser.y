@@ -23,7 +23,8 @@
 #include "mem/mem.h"
 #include "utils.h"
 
-#include "debugger/dasm.h"
+#include "dasm/dasm.h" /* XXX Need dmode */
+
 #include "debugger/debugger.h"
 #include "debugger/ui.h"
 #include "debugger/cmd.h"

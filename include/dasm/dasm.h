@@ -15,28 +15,15 @@
 //  Foundation, Inc.,
 //  51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 
-#ifndef CPU_H
-#define CPU_H
+#ifndef DEBUGGER_DASM_H
+#define DEBUGGER_DASM_H
 
-#include <inttypes.h>
-#include "cpu/iset.h"
+#define DMODE_DASM	1
+#define DMODE_TRANS	2
 
-extern int P;
-extern uint32_t N;
-extern int cpu_mod;
-
-extern uint16_t cycle_ic;
-
-int cpu_init();
-void cpu_shutdown();
-int cpu_op_73_set(int opcode, opfun fun);
-int cpu_mod_enable();
-int cpu_mod_on();
-int cpu_mod_off();
-void cpu_reset();
-int cpu_ctx_switch(uint16_t arg, uint16_t ic, uint16_t sr_mask);
-int cpu_ctx_restore();
-void cpu_step();
+#if defined(HAVE_DASM)
+int dt_trans(int addr, char *buf, int dasm_mode);
+#endif
 
 #endif
 

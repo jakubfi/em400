@@ -7,6 +7,8 @@ strdup(cfg_scanner.c)
 strdup(cfg.c)
 strdup(io/e4image.c)
 
+uses(em400.c DASM)
+
 ADD_EXECUTABLE(em400
 	em400.c errors.c utils.c cfg.c
 	${BISON_cfg_parser_OUTPUTS}
@@ -22,7 +24,7 @@ target_link_libraries(em400
 	${CMAKE_THREAD_LIBS_INIT}
 	${FLEX_LIBRARIES} ${BISON_LIBRARIES}
 	${DEBUGGER_LIBS}
-	cpu mem io
+	cpu mem io ${DASM_LIBS}
 )
 
 install(TARGETS em400 emitool RUNTIME DESTINATION bin)
