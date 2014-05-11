@@ -34,17 +34,6 @@ struct dasm_opdef {
 // basic opcodes
 extern struct dasm_opdef dasm_iset[];
 
-// sub-opcodes (2nd level)
-extern struct dasm_opdef dasm_iset_37[];
-extern struct dasm_opdef dasm_iset_70[];
-extern struct dasm_opdef dasm_iset_71[];
-extern struct dasm_opdef dasm_iset_72[];
-extern struct dasm_opdef dasm_iset_73[];
-extern struct dasm_opdef dasm_iset_74[];
-extern struct dasm_opdef dasm_iset_75[];
-extern struct dasm_opdef dasm_iset_76[];
-extern struct dasm_opdef dasm_iset_77[];
-
 #endif
 
 // vim: tabstop=4 shiftwidth=4 autoindent

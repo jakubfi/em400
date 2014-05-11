@@ -20,10 +20,38 @@
 
 #include "dasm/dasm_formats.h"
 #include "dasm/dasm_iset.h"
-#include "dasm/dasm_extcode.h"
 
+#include "cpu/cpu.h"       /* EXT_OP_xx macros         */
+#include "cpu/registers.h" /* .. need _A() and friends */
 
-struct dasm_opdef dasm_iset_37[] = {
+static struct dasm_opdef dasm_iset_37[];
+static struct dasm_opdef dasm_iset_70[];
+static struct dasm_opdef dasm_iset_71[];
+static struct dasm_opdef dasm_iset_72[];
+static struct dasm_opdef dasm_iset_73[];
+static struct dasm_opdef dasm_iset_74[];
+static struct dasm_opdef dasm_iset_75[];
+static struct dasm_opdef dasm_iset_76[];
+static struct dasm_opdef dasm_iset_77[];
+
+/* 
+ * Unroll macros to become first class functions
+ * to be point towards them in the data structure
+ */
+#define EXT_OP_FUNC(i) static int dt_extcode_##i(int p) { return EXT_OP_##i(p); }
+
+EXT_OP_FUNC(37)
+EXT_OP_FUNC(70)
+EXT_OP_FUNC(71)
+EXT_OP_FUNC(72)
+EXT_OP_FUNC(73)
+EXT_OP_FUNC(74)
+EXT_OP_FUNC(75)
+EXT_OP_FUNC(76)
+EXT_OP_FUNC(77)
+#undef EXT_OP_FUNC
+
+static struct dasm_opdef dasm_iset_37[] = {
 	{ 0, "AD", true, NULL, NULL, D_FD, T_AD },
 	{ 1, "SD", true, NULL, NULL, D_FD, T_SD },
 	{ 2, "MW", true, NULL, NULL, D_FD, T_MW },
@@ -34,7 +62,7 @@ struct dasm_opdef dasm_iset_37[] = {
 	{ 7, "DF", true, NULL, NULL, D_FD, T_DF }
 };
 
-struct dasm_opdef dasm_iset_70[] = {
+static struct dasm_opdef dasm_iset_70[] = {
 	{ 0, "UJS", false, NULL, NULL, D_JS, T_UJS },
 	{ 1, "JLS", false, NULL, NULL, D_JS, T_JLS },
 	{ 2, "JES", false, NULL, NULL, D_JS, T_JES },
@@ -45,14 +73,14 @@ struct dasm_opdef dasm_iset_70[] = {
 	{ 7, "JCS", false, NULL, NULL, D_JS, T_JCS }
 };
 
-struct dasm_opdef dasm_iset_71[] = {
+static struct dasm_opdef dasm_iset_71[] = {
 	{ 0, "BLC", false, NULL, NULL, D_KA2, T_BLC },
 	{ 1, "EXL", false, NULL, NULL, D_KA2, T_EXL },
 	{ 2, "BRC", false, NULL, NULL, D_KA2, T_BRC },
 	{ 3, "NRF", false, NULL, NULL, D_KA2, T_NRF }
 };
 
-struct dasm_opdef dasm_iset_72[] = {
+static struct dasm_opdef dasm_iset_72[] = {
 	{ 0b0000000, "RIC", false, NULL, NULL, D_C, T_RIC },
 	{ 0b0000001, "ZLB", false, NULL, NULL, D_C, T_ZLB },
 	{ 0b0000010, "SXU", false, NULL, NULL, D_C, T_SXU },
@@ -183,7 +211,7 @@ struct dasm_opdef dasm_iset_72[] = {
 	{ 0b1111111, NULL, false, NULL, NULL, DT_ILL, DT_ILL }
 };
 
-struct dasm_opdef dasm_iset_73[] = {
+static struct dasm_opdef dasm_iset_73[] = {
 	{ 0b0000000, "HLT", false, NULL, NULL, D_HLT, T_HLT },
 	{ 0b0000001, "HLT", false, NULL, NULL, D_HLT, T_HLT },
 	{ 0b0000010, "HLT", false, NULL, NULL, D_HLT, T_HLT },
@@ -330,7 +358,7 @@ struct dasm_opdef dasm_iset_73[] = {
 
 };
 
-struct dasm_opdef dasm_iset_74[] = {
+static struct dasm_opdef dasm_iset_74[] = {
 	{ 0, "UJ", true, NULL, NULL, D_J, T_UJ },
 	{ 1, "JL", true, NULL, NULL, D_J, T_JL },
 	{ 2, "JE", true, NULL, NULL, D_J, T_JE },
@@ -341,7 +369,7 @@ struct dasm_opdef dasm_iset_74[] = {
 	{ 7, "LJ", true, NULL, NULL, D_J, T_LJ }
 };
 
-struct dasm_opdef dasm_iset_75[] = {
+static struct dasm_opdef dasm_iset_75[] = {
 	{ 0, "LD", true, NULL, NULL, D_L, T_LD },
 	{ 1, "LF", true, NULL, NULL, D_L, T_LF },
 	{ 2, "LA", true, NULL, NULL, D_L, T_LA },
@@ -352,7 +380,7 @@ struct dasm_opdef dasm_iset_75[] = {
 	{ 7, "TL", true, NULL, NULL, D_L, T_TL }
 };
 
-struct dasm_opdef dasm_iset_76[] = {
+static struct dasm_opdef dasm_iset_76[] = {
 	{ 0, "RD", true, NULL, NULL, D_G, T_RD },
 	{ 1, "RF", true, NULL, NULL, D_G, T_RF },
 	{ 2, "RA", true, NULL, NULL, D_G, T_RA },
@@ -363,7 +391,7 @@ struct dasm_opdef dasm_iset_76[] = {
 	{ 7, "PL", true, NULL, NULL, D_G, T_PL }
 };
 
-struct dasm_opdef dasm_iset_77[] = {
+static struct dasm_opdef dasm_iset_77[] = {
 	{ 0, "MB", true, NULL, NULL, D_BN, T_MB },
 	{ 1, "IM", true, NULL, NULL, D_BN, T_IM },
 	{ 2, "KI", true, NULL, NULL, D_BN, T_KI },
