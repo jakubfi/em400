@@ -145,7 +145,7 @@ lval:
 	NAME { $$ = n_var($1); }
 	| IRZ '[' expr ']' { $$ = n_ireg(N_RZ, n_eval($3)); }
 	| REG { $$ = n_reg($1); }
-	| '[' expr ']' { $$ = n_mem(n_val(QNB), $2); } /* CURRENT_BLOC_ADDR */
+	| '[' expr ']' { $$ = n_mem(n_val(QNB), $2); } /* CURRENT_BLOCK_ADDR */
 	| '[' expr ':' expr ']' { $$ = n_mem($2, $4); }
 	;
 
