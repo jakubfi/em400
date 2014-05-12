@@ -25,10 +25,19 @@
 char * int2binf(char *format, uint64_t value, int size)
 {
     char *i = format;
-    char *buf = malloc(strlen(format)+1);
-	char *o = buf;
+    char *buf;
+	char *o;
+    if (format == NULL)
+	return NULL;
 
-    size--;
+    o = buf = malloc(strlen(format)+1);
+    if (buf == NULL)
+	return NULL;
+
+    if (size > 64)
+	size = 64;
+
+    size --;
 
     while (*i) {
         switch (*i) {

@@ -37,7 +37,7 @@ class TestBed:
         for test_file in self.tests:
             test = Test(test_file)
             result, details = test.run()
-            print("%-30s : %s%s" % (test_file.replace("./", ""), result, details))
+            print("%-40s : %s%s" % (test_file, result, details))
 
 # ------------------------------------------------------------------------
 class Test:
@@ -152,10 +152,11 @@ if len(sys.argv) != 1:
     tests = sys.argv[1:]
 else:
     tests = []
-    for path, dirs, files in os.walk("."):
+    for path, dirs, files in os.walk("bbox"):
         for f in files:
-            if f.endswith(".asm") and "benchmark" not in path and "include" not in path:
+            if f.endswith(".asm"):
                 tests.append(os.path.join(path, f))
+
     tests.sort()
 
 # run tests
