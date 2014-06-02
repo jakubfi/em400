@@ -37,6 +37,7 @@
 #ifdef WITH_DEBUGGER
 #include "debugger/debugger.h"
 #endif
+
 #include "emulog.h"
 
 struct mem_slot_t mem_map[MEM_MAX_NB][MEM_MAX_AB];	// final (as seen by emulation) logical->physical segment mapping

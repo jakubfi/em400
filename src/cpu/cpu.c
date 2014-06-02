@@ -31,12 +31,11 @@
 #include "utils.h"
 #include "errors.h"
 
-#ifdef WITH_EMULOG
- #ifdef WITH_DEBUGGER
+#ifdef WITH_DEBUGGER
 #include "debugger/dasm.h"
- #endif
-#include "emulog.h"
 #endif
+
+#include "emulog.h"
 
 int P;
 uint32_t N;

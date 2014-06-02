@@ -33,15 +33,16 @@
 #ifdef WITH_DEBUGGER
 #include "debugger/debugger.h"
 #include "debugger/decode.h"
+#endif
+
+#include "emulog.h"
+
+#ifdef WITH_EMULOG
+#define EMULOG_INT_INDENT_MAX 4*8
 int exl_was_exl;
 int exl_was_nb;
 int exl_was_addr;
 int exl_was_r4;
-#endif
-
-#ifdef WITH_EMULOG
-#include "emulog.h"
-#define EMULOG_INT_INDENT_MAX 4*8
 extern int emulog_int_level;
 #endif
 
@@ -495,8 +496,14 @@ void op_71_exl()
 {
 	uint16_t data;
 	EMULOGCPU(L_OP, 10, "EXL: %i (r4: 0x%04x)", IR_b, regs[4]);
+#ifdef WITH_EMULOG
+	char *details;
 #ifdef WITH_DEBUGGER
-	char *details = decode_exl(NB, regs[4], IR_b);
+	details = decode_exl(NB, regs[4], IR_b);
+#else
+	details = malloc(128);
+	sprintf(details, "[details missing]");
+#endif
 	emulog_splitlog(L_CRK5, 10, details);
 	free(details);
 	exl_was_exl = IR_b;
@@ -779,7 +786,7 @@ void op_73_lip()
 	USER_ILLEGAL;
 
 	cpu_ctx_restore();
-#ifdef WITH_DEBUGGER
+#ifdef WITH_EMULOG
 	emulog_int_level += 4;
 #endif
 }
@@ -1006,9 +1013,15 @@ void op_77_sp()
 	mem_ret_get(NB, N, &data);
 	regs[R_IC] = data;
 
-#ifdef WITH_DEBUGGER
+#ifdef WITH_EMULOG
 	EMULOGCPU(L_CRK5, 50, "SP: context @ 0x%04x -> IC: 0x%04x", N, data);
-	char *ctx = decode_ctx(0, N, 0);
+	char *ctx;
+#ifdef WITH_DEBUGGER
+	ctx = decode_ctx(0, N, 0);
+#else
+	ctx = malloc(128);
+	sprintf(ctx, "[details missing]");
+#endif
 	emulog_splitlog(L_CRK5, 50, ctx);
 	free(ctx);
 #endif
@@ -1020,10 +1033,16 @@ void op_77_sp()
 	regs[R_SR] = data;
 	int_update_mask();
 
-#ifdef WITH_DEBUGGER
+#ifdef WITH_EMULOG
+	char *details;
 	emulog_int_level = EMULOG_INT_INDENT_MAX;
 	if (exl_was_exl && (regs[R_IC] == exl_was_addr) && (NB == exl_was_nb)) {
-		char *details = decode_exl(exl_was_nb, exl_was_r4, -exl_was_exl);
+#ifdef WITH_DEBUGGER
+		details = decode_exl(exl_was_nb, exl_was_r4, -exl_was_exl);
+#else
+		details = malloc(128);
+		sprintf(details, "[details missing]");
+#endif
 		emulog_splitlog(L_CRK5, 10, details);
 		free(details);
 		exl_was_exl = 0;

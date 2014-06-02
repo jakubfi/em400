@@ -27,6 +27,7 @@
 #ifdef WITH_DEBUGGER
 #include "debugger/debugger.h"
 #endif
+
 #include "emulog.h"
 
 uint16_t *mem_mega[MEM_MAX_MODULES][MEM_MAX_MEGA_SEGMENTS];	// physical memory segments

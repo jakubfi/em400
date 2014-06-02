@@ -283,8 +283,14 @@ void mx_term_cmd_transmit(struct mx_unit_proto_t *unit, uint16_t addr)
 		return;
 	}
 
+#ifdef WITH_EMULOG
+	char *details;
 #ifdef WITH_DEBUGGER
-	char *details = decode_mxpst_term(0, addr, 0);
+	details = decode_mxpst_term(0, addr, 0);
+#else
+	details = malloc(128);
+	sprintf(details, "[details missing]");
+#endif
 	emulog_splitlog(L_TERM, 50, details);
 	free(details);
 #endif

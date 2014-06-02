@@ -143,7 +143,7 @@ int io_dispatch(int dir, uint16_t n, uint16_t *r)
 		int chan_n = (n & 0b0000000000011110) >> 1;
 		struct chan_proto_t *chan = io_chan[chan_n];
 		int res;
-#ifdef WITH_DEBUGGER
+#ifdef WITH_EMULOG
 		char *narg = int2binf("cmd:... .. ...... ch:.... .", n, 16);
 		EMULOG(L_IO, 1, "I/O %s chan = %d, n_arg = %s (0x%04x), r_arg = 0x%04x", dir ? "OUT" : "IN", chan_n, narg, n, *r);
 		free(narg);

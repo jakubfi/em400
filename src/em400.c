@@ -43,6 +43,9 @@
 #ifdef WITH_DEBUGGER
 #include "debugger/debugger.h"
 #include "debugger/ui.h"
+#endif
+
+#ifdef WITH_EMULOG
 #include "emulog.h"
 #endif
 
@@ -147,6 +150,7 @@ void em400_usage()
 	printf("   -x pre_expr  : execute expression on emulator startup\n");
 #endif
 #ifdef WITH_EMULOG
+	printf("\nEmuLog-only options:\n");
 	printf("   -d           : enable full debug logging\n");
 #endif
 }
@@ -329,11 +333,14 @@ void em400_loop()
 // -----------------------------------------------------------------------
 int main(int argc, char** argv)
 {
+	printf("EM400 v%s ", EM400_VERSION);
 #ifdef WITH_DEBUGGER
-	printf("EM400 v%s (+debugger)\n", EM400_VERSION);
-#else
-	printf("EM400 v%s\n", EM400_VERSION);
+	printf("+debugger ");
 #endif
+#ifdef WITH_EMULOG
+	printf("+emulog ");
+#endif
+	printf("\n");
 
 	em400_parse_args(argc, argv);
 	em400_configure();

@@ -20,7 +20,7 @@
 #include <fenv.h>
 
 #include "cfg.h"
-#include "emulog.h"
+#include "mem/mem.h"
 #include "cpu/alu.h"
 #include "cpu/cpu.h"
 #include "cpu/registers.h"

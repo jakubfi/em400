@@ -23,12 +23,13 @@
 #include <unistd.h>
 
 #include "em400.h"
-#include "emulog.h"
 #include "errors.h"
 #include "mem/mem.h"
 #include "io/cchar.h"
 #include "io/cchar_term.h"
 #include "io/term.h"
+
+#include "emulog.h"
 
 #define UNIT ((struct cchar_unit_term_t *)(unit))
 
@@ -181,7 +182,7 @@ int cchar_term_read(struct cchar_unit_proto_t *unit, uint16_t *r_arg)
 	} else {
 		pthread_mutex_lock(&UNIT->buf_mutex);
 		char data = UNIT->buf[UNIT->buf_rpos];
-#ifdef WITH_DEBUGGER
+#ifdef WITH_EMULOG
 		if (data >= 32) {
 			EMULOG(L_TERM, 50, "buf read: %i (%c)", data, data);
 		} else {
@@ -209,7 +210,7 @@ int cchar_term_read(struct cchar_unit_proto_t *unit, uint16_t *r_arg)
 int cchar_term_write(struct cchar_unit_proto_t *unit, uint16_t *r_arg)
 {
 	char data = *r_arg & 255;
-#ifdef WITH_DEBUGGER
+#ifdef WITH_EMULOG
 	if (data >= 32) {
 		EMULOG(L_TERM, 50, "Term write: %i (%c)", data, data);
 	} else {

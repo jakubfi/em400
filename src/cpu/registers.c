@@ -19,12 +19,6 @@
 
 #include "cpu/registers.h"
 
-#ifdef WITH_DEBUGGER
-#include "debugger/debugger.h"
-#include "debugger/ui.h"
-#endif
-#include "emulog.h"
-
 uint16_t regs[R_MAX];
 
 // vim: tabstop=4 shiftwidth=4 autoindent

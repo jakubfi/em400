@@ -19,8 +19,6 @@
 #include <pthread.h>
 #include <arpa/inet.h>
 
-#include "emulog.h"
-#include "debugger/decode.h"
 #include "errors.h"
 #include "mem/mem.h"
 
@@ -28,6 +26,12 @@
 #include "io/e4image.h"
 
 #include "utils.h"
+
+#ifdef WITH_DEBUGGER
+#include "debugger/decode.h"
+#endif
+
+#include "emulog.h"
 
 #define UNIT ((struct mx_unit_winch_t *)(unit))
 
@@ -327,8 +331,14 @@ void mx_winch_cmd_transmit(struct mx_unit_proto_t *unit, uint16_t addr)
 		return;
 	}
 
+#ifdef WITH_EMULOG
+	char *details;
 #ifdef WITH_DEBUGGER
-	char *details = decode_mxpst_winch(0, addr, 0);
+	details = decode_mxpst_winch(0, addr, 0);
+#else
+	details = malloc(128);
+	sprintf(details, "[details missing]");
+#endif
 	emulog_splitlog(L_WNCH, 50, details);
 	free(details);
 #endif
@@ -356,7 +366,7 @@ void mx_winch_cmd_transmit(struct mx_unit_proto_t *unit, uint16_t addr)
 	mem_put(0, addr_len, cf->ret_len);
 	mem_put(0, addr_status, cf->ret_status);
 
-#ifdef WITH_DEBUGGER
+#ifdef WITH_EMULOG
 	char *status = int2binf("........ ........", cf->ret_status, 16);
 	EMULOG(L_WNCH, 10, "MULTIX/winchester (log:%i, phy:%i): transmit done, status: %s, transmitted %i words", unit->log_num, unit->phy_num, status, cf->ret_len);
 	free(status);

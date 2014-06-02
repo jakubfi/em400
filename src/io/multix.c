@@ -34,8 +34,12 @@
 #include "cfg.h"
 #include "errors.h"
 #include "cpu/interrupts.h"
-#include "emulog.h"
+
+#ifdef WITH_DEBUGGER
 #include "debugger/decode.h"
+#endif
+
+#include "emulog.h"
 
 #define CHAN ((struct mx_chan_t *)(chan))
 
@@ -443,8 +447,14 @@ int mx_cmd_setcfg(struct chan_proto_t *chan, uint16_t *r_arg)
 	// decode cf field
 	int res = mx_decode_cf_sc(*r_arg, cf);
 
+#ifdef WITH_EMULOG
+	char *details;
 #ifdef WITH_DEBUGGER
-	char *details = decode_mxpsuk(0, *r_arg, 0);
+	details = decode_mxpsuk(0, *r_arg, 0);
+#else
+	details = malloc(128);
+	sprintf(details, "[details missing]");
+#endif
 	emulog_splitlog(L_MX, 50, details);
 	free(details);
 #endif

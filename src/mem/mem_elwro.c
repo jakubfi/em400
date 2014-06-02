@@ -27,6 +27,7 @@
 #ifdef WITH_DEBUGGER
 #include "debugger/debugger.h"
 #endif
+
 #include "emulog.h"
 
 #define RAL(nb, ab) (((nb)<<4) + (ab))

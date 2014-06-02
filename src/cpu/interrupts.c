@@ -29,6 +29,7 @@
 #ifdef WITH_DEBUGGER
 #include "debugger/debugger.h"
 #endif
+
 #include "emulog.h"
 
 uint32_t RZ;
@@ -146,7 +147,7 @@ void int_update_mask()
 // -----------------------------------------------------------------------
 void int_set(int x)
 {
-#ifdef WITH_DEBUGGER
+#ifdef WITH_EMULOG
 	if (x != cpu_mod_active ? INT_EXTRA : INT_TIMER) {
 		EMULOGCPU(L_INT, 20, "Set: %lld (%s)", x, emulog_int_names[x]);
 	} else {
@@ -230,7 +231,7 @@ void int_serve()
 	sr_mask = int_int2mask[interrupt] & MASK_Q; // put mask and clear Q
 	if (cpu_mod_active && (interrupt >= 12) && (interrupt <= 27)) sr_mask &= MASK_EX; // put extended mask if cpu_mod
 	if (!cpu_ctx_switch(int_spec, int_addr, sr_mask)) return;
-#ifdef WITH_DEBUGGER
+#ifdef WITH_EMULOG
 	emulog_int_level -= 4;
 #endif
 }

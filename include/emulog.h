@@ -59,8 +59,13 @@ int emulog_get_level(int component);
 void emulog_log(int component, int level, char *format, ...);
 void emulog_splitlog(int component, int level, char *text);
 
+#ifdef WITH_EMULOG
 #define EMULOG(component, level, format, ...) emulog_log(component, level, "              |        | " format, ##__VA_ARGS__)
 #define EMULOGCPU(component, level, format, ...) emulog_log(component, level, "%-3s %2i:0x%04x | %s%s | " format, Q?"USR":"OS", NB, cycle_ic, pn1, pn2, ##__VA_ARGS__)
+#else
+#define EMULOG(component, level, format, ...) ;
+#define EMULOGCPU(component, level, format, ...) ;
+#endif
 
 #endif
 
