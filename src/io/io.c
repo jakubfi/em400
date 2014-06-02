@@ -34,7 +34,7 @@
 #include "utils.h"
 #include "errors.h"
 
-#include "debugger/log.h"
+#include "emulog.h"
 
 static struct chan_proto_t chan_proto[] = {
 	{ -1, "char",		cchar_create,	cchar_shutdown,	cchar_reset,	cchar_cmd },
@@ -135,7 +135,7 @@ int io_dispatch(int dir, uint16_t n, uint16_t *r)
 			return mem_cmd(n, *r);
 		} else {
 			// TODO: what to return?
-			LOG(L_IO, 1, "MEM command shouldn't be IN");
+			EMULOG(L_IO, 1, "MEM command shouldn't be IN");
 			return IO_NO;
 		}
 	// channel/unit command
@@ -145,7 +145,7 @@ int io_dispatch(int dir, uint16_t n, uint16_t *r)
 		int res;
 #ifdef WITH_DEBUGGER
 		char *narg = int2binf("cmd:... .. ...... ch:.... .", n, 16);
-		LOG(L_IO, 1, "I/O %s chan = %d, n_arg = %s (0x%04x), r_arg = 0x%04x", dir ? "OUT" : "IN", chan_n, narg, n, *r);
+		EMULOG(L_IO, 1, "I/O %s chan = %d, n_arg = %s (0x%04x), r_arg = 0x%04x", dir ? "OUT" : "IN", chan_n, narg, n, *r);
 		free(narg);
 #endif
 		if (chan) {
@@ -153,7 +153,7 @@ int io_dispatch(int dir, uint16_t n, uint16_t *r)
 		} else {
 			res = IO_NO;
 		}
-		LOG(L_IO, 1, "I/O result: %s", log_io_result[res]);
+		EMULOG(L_IO, 1, "I/O result: %s", emulog_io_result_names[res]);
 		return res;
 	}
 }

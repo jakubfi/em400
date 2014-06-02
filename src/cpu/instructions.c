@@ -38,7 +38,12 @@ int exl_was_nb;
 int exl_was_addr;
 int exl_was_r4;
 #endif
-#include "debugger/log.h"
+
+#ifdef WITH_EMULOG
+#include "emulog.h"
+#define EMULOG_INT_INDENT_MAX 4*8
+extern int emulog_int_level;
+#endif
 
 // convenience memory access macros (with "nomem" handling)
 #define mem_ret_get(nb, a, dptr)			    if (!mem_cpu_get(nb, a, dptr)) return;
@@ -489,10 +494,10 @@ void op_71_blc()
 void op_71_exl()
 {
 	uint16_t data;
-	LOG(L_OP, 10, "EXL: %i (r4: 0x%04x)", IR_b, regs[4]);
+	EMULOGCPU(L_OP, 10, "EXL: %i (r4: 0x%04x)", IR_b, regs[4]);
 #ifdef WITH_DEBUGGER
 	char *details = decode_exl(NB, regs[4], IR_b);
-	log_splitlog(L_CRK5, 10, details);
+	emulog_splitlog(L_CRK5, 10, details);
 	free(details);
 	exl_was_exl = IR_b;
 	exl_was_nb = NB;
@@ -708,7 +713,7 @@ void op_73_hlt()
 {
 	USER_ILLEGAL;
 
-	LOG(L_OP, 1, "HALT 0%02o (alarm: %i)", N, regs[6]&255);
+	EMULOGCPU(L_OP, 1, "HALT 0%02o (alarm: %i)", N, regs[6]&255);
 
 	// handle hlt>=040 as "exit emulation" if user wants to
 	if ((em400_cfg.exit_on_hlt) && (N >= 040)) {
@@ -775,7 +780,7 @@ void op_73_lip()
 
 	cpu_ctx_restore();
 #ifdef WITH_DEBUGGER
-	log_int_level += 4;
+	emulog_int_level += 4;
 #endif
 }
 
@@ -1002,9 +1007,9 @@ void op_77_sp()
 	regs[R_IC] = data;
 
 #ifdef WITH_DEBUGGER
-	LOG(L_CRK5, 50, "SP: context @ 0x%04x -> IC: 0x%04x", N, data);
+	EMULOGCPU(L_CRK5, 50, "SP: context @ 0x%04x -> IC: 0x%04x", N, data);
 	char *ctx = decode_ctx(0, N, 0);
-	log_splitlog(L_CRK5, 50, ctx);
+	emulog_splitlog(L_CRK5, 50, ctx);
 	free(ctx);
 #endif
 
@@ -1016,10 +1021,10 @@ void op_77_sp()
 	int_update_mask();
 
 #ifdef WITH_DEBUGGER
-	log_int_level = LOG_INT_INDENT_MAX;
+	emulog_int_level = EMULOG_INT_INDENT_MAX;
 	if (exl_was_exl && (regs[R_IC] == exl_was_addr) && (NB == exl_was_nb)) {
 		char *details = decode_exl(exl_was_nb, exl_was_r4, -exl_was_exl);
-		log_splitlog(L_CRK5, 10, details);
+		emulog_splitlog(L_CRK5, 10, details);
 		free(details);
 		exl_was_exl = 0;
 	}

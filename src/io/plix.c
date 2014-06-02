@@ -25,7 +25,7 @@
 #include "cfg.h"
 #include "errors.h"
 
-#include "debugger/log.h"
+#include "emulog.h"
 
 // -----------------------------------------------------------------------
 struct chan_proto_t * px_create(struct cfg_unit_t *units)

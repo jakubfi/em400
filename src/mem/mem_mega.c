@@ -15,6 +15,7 @@
 //  Foundation, Inc.,
 //  51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 
+#include <stdlib.h>
 #include <inttypes.h>
 #include <string.h>
 
@@ -26,7 +27,7 @@
 #ifdef WITH_DEBUGGER
 #include "debugger/debugger.h"
 #endif
-#include "debugger/log.h"
+#include "emulog.h"
 
 uint16_t *mem_mega[MEM_MAX_MODULES][MEM_MAX_MEGA_SEGMENTS];	// physical memory segments
 uint16_t *mem_mega_map[MEM_MAX_NB][MEM_MAX_AB];				// internal logical->physical segment mapping
@@ -145,11 +146,11 @@ int mem_mega_cmd(int nb, int ab, int mp, int seg, int flags)
 {
 	// 'free'
 	if ((flags & MEM_MEGA_FREE)) {
-		LOG(L_MEM, 1, "MEGA: del map (%2d, %2d)	 %s%s%s", nb, ab, flags & MEM_MEGA_PROM_SHOW ? "[prom show]" : "", flags & MEM_MEGA_PROM_HIDE ? "[prom hide]" : "", flags & MEM_MEGA_ALLOC_DONE ? " [done]" : "");
+		EMULOG(L_MEM, 1, "MEGA: del map (%2d, %2d)	 %s%s%s", nb, ab, flags & MEM_MEGA_PROM_SHOW ? "[prom show]" : "", flags & MEM_MEGA_PROM_HIDE ? "[prom hide]" : "", flags & MEM_MEGA_ALLOC_DONE ? " [done]" : "");
 		mem_mega_map[nb][ab] = NULL;
 	// 'alloc'
 	} else {
-		LOG(L_MEM, 1, "MEGA: add map (%2d, %2d) -> (%2d, %2d)	 %s%s%s", nb, ab, mp, seg, flags & MEM_MEGA_PROM_SHOW ? "[prom show]" : "", flags & MEM_MEGA_PROM_HIDE ? "[prom hide]" : "", flags & MEM_MEGA_ALLOC_DONE ? " [done]" : "");
+		EMULOG(L_MEM, 1, "MEGA: add map (%2d, %2d) -> (%2d, %2d)	 %s%s%s", nb, ab, mp, seg, flags & MEM_MEGA_PROM_SHOW ? "[prom show]" : "", flags & MEM_MEGA_PROM_HIDE ? "[prom hide]" : "", flags & MEM_MEGA_ALLOC_DONE ? " [done]" : "");
 		mem_mega_map[nb][ab] = mem_mega[mp][seg];
 	}
 

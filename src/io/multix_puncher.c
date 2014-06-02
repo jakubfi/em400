@@ -17,7 +17,7 @@
 
 #include <stdlib.h>
 
-#include "debugger/log.h"
+#include "emulog.h"
 #include "errors.h"
 #include "mem/mem.h"
 
@@ -73,21 +73,21 @@ void mx_puncher_reset(struct mx_unit_proto_t *unit)
 // -----------------------------------------------------------------------
 int mx_puncher_cfg_phy(struct mx_unit_proto_t *unit, struct mx_cf_sc_pl *cfg_phy)
 {
-	LOG(L_PNCH, 10, "MULTIX/puncher (line:%i): configure physical line", unit->phy_num);
+	EMULOG(L_PNCH, 10, "MULTIX/puncher (line:%i): configure physical line", unit->phy_num);
 	return E_OK;
 }
 
 // -----------------------------------------------------------------------
 int mx_puncher_cfg_log(struct mx_unit_proto_t *unit, struct mx_cf_sc_ll *cfg_log)
 {
-	LOG(L_PNCH, 10, "MULTIX/puncher (line:%i): configure logical line", unit->phy_num);
+	EMULOG(L_PNCH, 10, "MULTIX/puncher (line:%i): configure logical line", unit->phy_num);
 	return E_OK;
 }
 
 // -----------------------------------------------------------------------
 void mx_puncher_cmd_attach(struct mx_unit_proto_t *unit, uint16_t addr)
 {
-	LOG(L_PNCH, 10, "MULTIX/puncher (line:%i): attach", unit->log_num);
+	EMULOG(L_PNCH, 10, "MULTIX/puncher (line:%i): attach", unit->log_num);
 	unit->attached = 1;
 	mx_int(unit->chan, unit->log_num, MX_INT_IDOLI);
 }
@@ -95,7 +95,7 @@ void mx_puncher_cmd_attach(struct mx_unit_proto_t *unit, uint16_t addr)
 // -----------------------------------------------------------------------
 void mx_puncher_cmd_detach(struct mx_unit_proto_t *unit, uint16_t addr)
 {
-	LOG(L_PNCH, 10, "MULTIX/puncher (line:%i): detach", unit->log_num);
+	EMULOG(L_PNCH, 10, "MULTIX/puncher (line:%i): detach", unit->log_num);
 	unit->attached = 0;
 	mx_int(unit->chan, unit->log_num, MX_INT_IODLI);
 }
@@ -103,7 +103,7 @@ void mx_puncher_cmd_detach(struct mx_unit_proto_t *unit, uint16_t addr)
 // -----------------------------------------------------------------------
 uint16_t mx_puncher_get_status(struct mx_unit_proto_t *unit)
 {
-	LOG(L_PNCH, 10, "MULTIX/puncher (line:%i): status", unit->log_num);
+	EMULOG(L_PNCH, 10, "MULTIX/puncher (line:%i): status", unit->log_num);
 	return 0;
 }
 
@@ -113,7 +113,7 @@ void mx_puncher_cmd_transmit(struct mx_unit_proto_t *unit, uint16_t addr)
     // we're transmitting
     pthread_mutex_trylock(&unit->transmit_mutex);
 
-    LOG(L_PNCH, 1, "MULTIX/puncher (line:%i): transmit", unit->log_num);
+    EMULOG(L_PNCH, 1, "MULTIX/puncher (line:%i): transmit", unit->log_num);
     int ret = E_OK;
     //MEMBw(0, addr+6, cf->ret_len);
 

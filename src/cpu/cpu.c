@@ -31,19 +31,24 @@
 #include "utils.h"
 #include "errors.h"
 
-#ifdef WITH_DEBUGGER
-#include "debugger/debugger.h"
-#include "debugger/ui.h"
+#ifdef WITH_EMULOG
+ #ifdef WITH_DEBUGGER
 #include "debugger/dasm.h"
+ #endif
+#include "emulog.h"
 #endif
-#include "debugger/log.h"
 
 int P;
 uint32_t N;
 int cpu_mod_active;
 
-#ifdef WITH_DEBUGGER
+#if defined(WITH_DEBUGGER) || defined(WITH_EMULOG)
 uint16_t cycle_ic;
+#endif
+
+#ifdef WITH_EMULOG
+char pn1[4] = "---";
+char pn2[4] = "---";
 #endif
 
 // -----------------------------------------------------------------------
@@ -168,7 +173,7 @@ int cpu_ctx_switch(uint16_t arg, uint16_t ic, uint16_t sr_mask)
 	regs[R_IC] = ic;
 	regs[R_SR] &= sr_mask;
 	int_update_mask();
-	LOG(L_CPU, 20, "ctx switch: 0x%04x", ic);
+	EMULOGCPU(L_CPU, 20, "ctx switch, IC = 0x%04x", ic);
 	return 1;
 }
 
@@ -181,7 +186,7 @@ int cpu_ctx_restore()
 	if (!mem_cpu_get(0, 97, &sp)) return 0;
 	if (!mem_cpu_get(0, sp-4, &data)) return 0;
 	regs[R_IC] = data;
-	LOG(L_CPU, 20, "ctx restore: 0x%04x", data);
+	EMULOGCPU(L_CPU, 20, "ctx restore, IC = 0x%04x", data);
 	if (!mem_cpu_get(0, sp-3, &data)) return 0;
 	regs[0] = data;
 	if (!mem_cpu_get(0, sp-2, &data)) return 0;
@@ -197,14 +202,20 @@ void cpu_step()
 	struct em400_op *op;
 	uint16_t data;
 
-#ifdef WITH_DEBUGGER
+#ifdef WITH_EMULOG
+	char dasm_buf[256];
 	cycle_ic = regs[R_IC];
+ #ifdef WITH_DEBUGGER
+	dt_trans(cycle_ic, dasm_buf, DMODE_DASM);
+ #else
+	sprintf(dasm_buf, "[dasm is missing]");
+ #endif
 #endif
 
 	// fetch instruction
 	if (!mem_cpu_get(QNB, regs[R_IC], regs+R_IR)) {
 		regs[R_MODc] = regs[R_MOD] = 0;
-		LOG(L_CPU, 10, "    (no mem)");
+		EMULOGCPU(L_CPU, 10, "    (no mem)");
 		return;
 	}
 	regs[R_IC]++;
@@ -215,7 +226,7 @@ void cpu_step()
 
 	// end cycle if P is set
 	if (P) {
-		LOG(L_CPU, 10, "    (skip)");
+		EMULOGCPU(L_CPU, 10, "    (skip)");
 		P = 0;
 		// skip also M-arg if present
 		if (op->norm_arg && !IR_C) regs[R_IC]++;
@@ -242,21 +253,28 @@ void cpu_step()
 		N = (uint16_t) IR_T + (uint16_t) regs[R_MOD];
 	}
 
-#ifdef WITH_DEBUGGER
-	char buf[256];
-	dt_trans(cycle_ic, buf, DMODE_DASM);
-	char mbuf[64];
+#ifdef WITH_EMULOG
+	char mod_buf[64];
 	if (regs[R_MODc]) {
-		sprintf(mbuf, "MOD = 0x%04x = %6i", regs[R_MOD], regs[R_MOD]);
+		sprintf(mod_buf, ", MOD = 0x%x = %i", regs[R_MOD], regs[R_MOD]);
 	} else {
-		*mbuf = '\0';
+		*mod_buf = '\0';
 	}
 	if (op->norm_arg) {
-		LOG(L_CPU, 10, "    %-20s N = 0x%04x = %i %s", buf, (uint16_t) N, (int16_t) N, mbuf);
+		EMULOGCPU(L_CPU, 10, "    %-20s N = 0x%x = %i%s",
+			dasm_buf,
+			(uint16_t) N,
+			(int16_t) N,
+			mod_buf
+		);
 	} else if (op->short_arg) {
-		LOG(L_CPU, 10, "    %-20s T = %i  %s", buf, (int16_t) N, mbuf);
+		EMULOGCPU(L_CPU, 10, "    %-20s T = %i%s",
+			dasm_buf,
+			(int16_t) N,
+			mod_buf
+		);
 	} else {
-		LOG(L_CPU, 10, "    %-20s", buf);
+		EMULOGCPU(L_CPU, 10, "    %-20s", dasm_buf);
 	}
 #endif
 

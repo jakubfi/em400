@@ -7,8 +7,18 @@ strdup(cfg_scanner.c)
 strdup(cfg.c)
 strdup(io/e4image.c)
 
+IF(WITH_EMULOG)
+	strdup(logger.c)
+	strdup(emulog.c)
+    set(EMULOG_SOURCES logger.c emulog.c)
+ELSE(WITH_EMULOG)
+    set(EMULOG_SOURCES)
+ENDIF(WITH_EMULOG)
+
+
 ADD_EXECUTABLE(em400
 	em400.c errors.c utils.c cfg.c
+	${EMULOG_SOURCES}
 	${BISON_cfg_parser_OUTPUTS}
 	${FLEX_cfg_scanner_OUTPUTS}
 )
@@ -21,8 +31,8 @@ target_link_libraries(em400
 	rt m
 	${CMAKE_THREAD_LIBS_INIT}
 	${FLEX_LIBRARIES} ${BISON_LIBRARIES}
-	${DEBUGGER_LIBS}
 	cpu mem io
+	${DEBUGGER_LIBS}
 )
 
 install(TARGETS em400 emitool RUNTIME DESTINATION bin)

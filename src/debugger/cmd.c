@@ -29,6 +29,9 @@
 
 #include "errors.h"
 #include "utils.h"
+#ifdef WITH_EMULOG
+#include "emulog.h"
+#endif
 
 #include "debugger/awin.h"
 #include "debugger/dasm.h"
@@ -37,7 +40,7 @@
 #include "debugger/ui.h"
 #include "debugger/parser.h"
 #include "debugger/eval.h"
-#include "debugger/log.h"
+#include "emulog.h"
 #include "debugger/decode.h"
 
 extern char *script_name;
@@ -59,7 +62,7 @@ struct cmd_t dbg_commands[] = {
 	{ "brk",	F_BRK,		"Manipulate breakpoints", "  brk add <expression>\n  brk del <brk_number>\n  brk" },
 	{ "run",	F_RUN,		"Run emulation", "  run" },
 	{ "stk",	F_STACK,	"Show stack", "  stk" },
-	{ "log",	F_LOG,		"Enable logging", "  log\n  log on|off\n  log file <filename>\n  log level <domain>:<level>" },
+	{ "log",	F_EMULOG,	"Enable emulation logging", "  log\n  log on|off\n  log file <filename>\n  log level <component>:<level>" },
 	{ "script",	F_SCRIPT,	"Load and execute script", "  script <filename>" },
 	{ "watch",	F_WATCH,	"Manipulate expression watches", "  watch add <expression>\n  watch del <watch_number>\n  watch" },
 	{ "decode",	F_DECODE,	"Decode memory structures", "  decode\n  decode <decoder> <address>" },
@@ -512,29 +515,95 @@ void dbg_c_brk_disable_all(int wid, int disable)
 }
 
 // -----------------------------------------------------------------------
-void dbg_c_log_show(int wid)
+void dbg_c_emulog_info(int wid)
 {
+#ifndef WITH_EMULOG
+	awtbprint(wid, C_ERROR, "Emulog not available.\n");
+#else
+	int i;
+	char *cname;
+
 	awtbprint(wid, C_LABEL, "Logging to file: ");
-	awtbprint(wid, C_DATA, "%s (%s)\n", log_fname, log_enabled ? "enabled" : "disabled");
+	awtbprint(wid, C_DATA, "%s (%s)\n", emulog_get_fname(), emulog_is_enabled() ? "enabled" : "disabled");
 	awtbprint(wid, C_LABEL, "Levels: ");
-	char **d = log_dname;
-	int i = 0;
-	while (*(d+i)) {
-		awtbprint(wid, C_DATA, "%s:%i ", *(d+i), log_level[i]);
-		i++;
+
+	for (i=0 ; i < LOG_COMP_MAX ; i++) {
+		cname = emulog_get_component_name(i);
+		if (cname) {
+			awtbprint(wid, C_DATA, "%s:%i ", cname, emulog_get_level(i));
+		}
 	}
 	awtbprint(wid, C_LABEL, "\n");
+#endif
 }
 
 // -----------------------------------------------------------------------
-void dbg_c_log_set(int wid, char *domain, int level)
+void dbg_c_emulog_enable(int wid)
 {
-	int d = log_find_domain(domain);
-	if (d < -1) {
-		awtbprint(wid, C_ERROR, "Unknown domain: %s\n", domain);
+#ifndef WITH_EMULOG
+	awtbprint(wid, C_ERROR, "Emulog not available.\n");
+#else
+	if (!emulog_enable()) {
+		awtbprint(wid, C_LABEL, "Logging enabled\n");
 	} else {
-		log_setlevel(d, level);
+		awtbprint(wid, C_ERROR, "Cannot enable logging\n");
 	}
+#endif
+}
+
+// -----------------------------------------------------------------------
+void dbg_c_emulog_disable(int wid)
+{
+#ifndef WITH_EMULOG
+	awtbprint(wid, C_ERROR, "Emulog not available.\n");
+#else
+	if (!emulog_disable()) {
+		awtbprint(wid, C_LABEL, "Logging disabled\n");
+	} else {
+		awtbprint(wid, C_ERROR, "Cannot disable logging\n");
+	}
+#endif
+}
+
+// -----------------------------------------------------------------------
+void dbg_c_emulog_open(int wid, char *filename)
+{
+#ifndef WITH_EMULOG
+	awtbprint(wid, C_ERROR, "Emulog not available.\n");
+#else
+	if (!emulog_open(filename)) {
+		awtbprint(wid, C_LABEL, "Logging to file: ");
+	} else {
+		awtbprint(wid, C_ERROR, "Could not open emulog file: ");
+	}
+	awtbprint(wid, C_DATA, "%s\n", filename);
+#endif
+}
+
+// -----------------------------------------------------------------------
+void dbg_c_emulog_set_level(int wid, char *comp_name, int level)
+{
+#ifndef WITH_EMULOG
+	awtbprint(wid, C_ERROR, "Emulog not available.\n");
+#else
+	int c;
+
+	if (!strcasecmp(comp_name, "all")) {
+		emulog_set_level(-1, level);
+	} else {
+		c = emulog_get_component_id(comp_name);
+		if (c < 0) {
+			awtbprint(wid, C_ERROR, "Unknown component: ");
+			awtbprint(wid, C_DATA, "%s", comp_name);
+		} else {
+			emulog_set_level(c, level);
+			awtbprint(wid, C_LABEL, "Level for component ");
+			awtbprint(wid, C_DATA, "%s ", comp_name);
+			awtbprint(wid, C_LABEL, "set to ");
+			awtbprint(wid, C_DATA, "%i\n", level);
+		}
+	}
+#endif
 }
 
 // -----------------------------------------------------------------------

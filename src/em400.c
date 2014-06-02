@@ -36,10 +36,14 @@
 #include "cfg.h"
 #include "errors.h"
 
+#ifdef WITH_EMULOG
+#include "emulog.h"
+#endif
+
 #ifdef WITH_DEBUGGER
 #include "debugger/debugger.h"
 #include "debugger/ui.h"
-#include "debugger/log.h"
+#include "emulog.h"
 #endif
 
 int em400_console = CONSOLE_NONE;
@@ -48,8 +52,10 @@ int em400_state = STATE_WORK;
 // -----------------------------------------------------------------------
 void em400_shutdown()
 {
+#ifdef WITH_EMULOG
+	emulog_close();
+#endif
 #ifdef WITH_DEBUGGER
-	log_close();
 	dbg_shutdown();
 #endif
 	timer_shutdown();
@@ -139,6 +145,8 @@ void em400_usage()
 	printf("   -l script    : load and execute script on startup\n");
 	printf("   -t test_expr : execute expression when program halts (implies -e -s)\n");
 	printf("   -x pre_expr  : execute expression on emulator startup\n");
+#endif
+#ifdef WITH_EMULOG
 	printf("   -d           : enable full debug logging\n");
 #endif
 }
@@ -203,10 +211,12 @@ void em400_parse_args(int argc, char **argv)
 			case 's':
 				em400_cfg.ui_simple = 1;
 				break;
+#endif
+#ifdef WITH_EMULOG
 			case 'd':
-				log_setlevel(-1, 100);
-				log_open("em400.log");
-				log_enable();
+				emulog_set_level(-1, 100);
+				emulog_open("em400.log");
+				emulog_enable();
 				break;
 #endif
 			default:

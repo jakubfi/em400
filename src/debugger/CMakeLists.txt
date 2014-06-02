@@ -4,7 +4,7 @@ ADD_FLEX_BISON_DEPENDENCY(scanner parser)
 
 ADD_library(debugger
 	awin.c awinch.c dasm.c debugger.c eval.c dasm_iset.c cmd.c ui.c
-	log.c keywords.c decode.c
+	keywords.c decode.c
 	${BISON_parser_OUTPUTS}
 	${FLEX_scanner_OUTPUTS}
 )

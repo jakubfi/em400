@@ -37,7 +37,7 @@
 #ifdef WITH_DEBUGGER
 #include "debugger/debugger.h"
 #endif
-#include "debugger/log.h"
+#include "emulog.h"
 
 struct mem_slot_t mem_map[MEM_MAX_NB][MEM_MAX_AB];	// final (as seen by emulation) logical->physical segment mapping
 
@@ -363,7 +363,7 @@ int mem_load(const char* fname, int nb, int start_ab, int len)
 		return E_FILE_OPEN;
 	}
 
-	LOG(L_MEM, 1, "Loading memory image: %s -> %d:%d", fname, nb, start_ab);
+	EMULOG(L_MEM, 1, "Loading memory image: %s -> %d:%d", fname, nb, start_ab);
 
 	do {
 		// get pointer to segment in a block

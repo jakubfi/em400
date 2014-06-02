@@ -15,6 +15,7 @@
 //  Foundation, Inc.,
 //  51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 
+#include <stdlib.h>
 #include <inttypes.h>
 #include <string.h>
 
@@ -26,7 +27,7 @@
 #ifdef WITH_DEBUGGER
 #include "debugger/debugger.h"
 #endif
-#include "debugger/log.h"
+#include "emulog.h"
 
 #define RAL(nb, ab) (((nb)<<4) + (ab))
 
@@ -132,16 +133,16 @@ void mem_elwro_seg_set(int nb, int ab, struct mem_slot_t *slot)
 int mem_elwro_cmd(int nb, int ab, int mp, int seg)
 {
 	if (!mem_elwro[mp][seg]) {
-		LOG(L_MEM, 1, "Elwro: ignore mapping nonexistent physical segment (%2d, %2d) -> (%2d, %2d)", nb, ab, mp, seg);
+		EMULOG(L_MEM, 1, "Elwro: ignore mapping nonexistent physical segment (%2d, %2d) -> (%2d, %2d)", nb, ab, mp, seg);
 		return IO_NO;
 	}
 
 	if ((mp == 0) && (seg < em400_cfg.mem_os)) {
-		LOG(L_MEM, 1, "Elwro: ignore mapping hardwired segment (%2d, %2d) -> (%2d, %2d)", nb, ab, mp, seg);
+		EMULOG(L_MEM, 1, "Elwro: ignore mapping hardwired segment (%2d, %2d) -> (%2d, %2d)", nb, ab, mp, seg);
 		return IO_NO;
 	}
 
-	LOG(L_MEM, 1, "Elwro: add map (%2d, %2d) -> (%2d, %2d)", nb, ab, mp, seg);
+	EMULOG(L_MEM, 1, "Elwro: add map (%2d, %2d) -> (%2d, %2d)", nb, ab, mp, seg);
 
 	mem_elwro_ral[mp][seg] = RAL(nb, ab);
 

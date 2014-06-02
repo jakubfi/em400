@@ -23,7 +23,7 @@
 #include "debugger/debugger.h"
 #include "debugger/ui.h"
 #endif
-#include "debugger/log.h"
+#include "emulog.h"
 
 uint16_t regs[R_MAX];
 

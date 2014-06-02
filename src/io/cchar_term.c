@@ -23,7 +23,7 @@
 #include <unistd.h>
 
 #include "em400.h"
-#include "debugger/log.h"
+#include "emulog.h"
 #include "errors.h"
 #include "mem/mem.h"
 #include "io/cchar.h"
@@ -174,7 +174,7 @@ int cchar_term_read(struct cchar_unit_proto_t *unit, uint16_t *r_arg)
 {
 	if (UNIT->buf_len <= 0) {
 		pthread_mutex_lock(&UNIT->buf_mutex);
-		LOG(L_TERM, 50, "buffer empty");
+		EMULOG(L_TERM, 50, "buffer empty");
 		UNIT->empty_read = 1;
 		pthread_mutex_unlock(&UNIT->buf_mutex);
 		return IO_EN;
@@ -183,9 +183,9 @@ int cchar_term_read(struct cchar_unit_proto_t *unit, uint16_t *r_arg)
 		char data = UNIT->buf[UNIT->buf_rpos];
 #ifdef WITH_DEBUGGER
 		if (data >= 32) {
-			LOG(L_TERM, 50, "buf read: %i (%c)", data, data);
+			EMULOG(L_TERM, 50, "buf read: %i (%c)", data, data);
 		} else {
-			LOG(L_TERM, 50, "buf read: %i (#%02x)", data, data);
+			EMULOG(L_TERM, 50, "buf read: %i (#%02x)", data, data);
 		}
 #endif
 		UNIT->buf_len--;
@@ -211,9 +211,9 @@ int cchar_term_write(struct cchar_unit_proto_t *unit, uint16_t *r_arg)
 	char data = *r_arg & 255;
 #ifdef WITH_DEBUGGER
 	if (data >= 32) {
-		LOG(L_TERM, 50, "Term write: %i (%c)", data, data);
+		EMULOG(L_TERM, 50, "Term write: %i (%c)", data, data);
 	} else {
-		LOG(L_TERM, 50, "Term write: %i (#%02x)", data, data);
+		EMULOG(L_TERM, 50, "Term write: %i (#%02x)", data, data);
 	}
 #endif
 	term_write(UNIT->term, &data, 1);
@@ -226,26 +226,26 @@ int cchar_term_cmd(struct cchar_unit_proto_t *unit, int dir, int cmd, uint16_t *
 	if (dir == IO_IN) {
 		switch (cmd) {
 		case CCHAR_TERM_CMD_SPU:
-			LOG(L_TERM, 1, "TERM: SPU");
+			EMULOG(L_TERM, 1, "TERM: SPU");
 			break;
 		case CCHAR_TERM_CMD_READ:
 			return cchar_term_read(unit, r_arg);
 		default:
-			LOG(L_TERM, 1, "TERM: unknown IN command");
+			EMULOG(L_TERM, 1, "TERM: unknown IN command");
 			break;
 		}
 	} else {
 		switch (cmd) {
 		case CCHAR_TERM_CMD_RESET:
-			LOG(L_TERM, 1, "TERM: reset");
+			EMULOG(L_TERM, 1, "TERM: reset");
 			break;
 		case CCHAR_TERM_CMD_DISCONNECT:
-			LOG(L_TERM, 1, "TERM: disconnect");
+			EMULOG(L_TERM, 1, "TERM: disconnect");
 			break;
 		case CCHAR_TERM_CMD_WRITE:
 			return cchar_term_write(unit, r_arg);
 		default:
-			LOG(L_TERM, 1, "TERM: unknown OUT command");
+			EMULOG(L_TERM, 1, "TERM: unknown OUT command");
 			break;
 		}
 	}

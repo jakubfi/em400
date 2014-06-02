@@ -29,7 +29,7 @@
 #ifdef WITH_DEBUGGER
 #include "debugger/debugger.h"
 #endif
-#include "debugger/log.h"
+#include "emulog.h"
 
 uint32_t RZ;
 uint32_t RP;
@@ -66,6 +66,46 @@ static const int int_int2mask[32] = {
 	MASK_8, MASK_8, MASK_8, MASK_8, MASK_8, MASK_8,
 	MASK_9, MASK_9, MASK_9, MASK_9
 };
+
+#ifdef WITH_EMULOG
+#define EMULOG_INT_INDENT_MAX 4*8
+const char *emulog_int_indent = "--> --> --> --> --> --> --> --> ";
+int emulog_int_level = EMULOG_INT_INDENT_MAX;
+char *emulog_int_names[] = {
+	"CPU power loss",
+	"memory parity",
+	"no memory",
+	"2nd CPU high",
+	"ext power loss",
+	"timer/special",
+	"illegal opcode",
+	"AWP div overflow",
+	"AWP underflow",
+	"AWP overflow",
+	"AWP div/0",
+	"special/timer",
+	"chan 0",
+	"chan 1",
+	"chan 2",
+	"chan 3",
+	"chan 4",
+	"chan 5",
+	"chan 6",
+	"chan 7",
+	"chan 8",
+	"chan 9",
+	"chan 10",
+	"chan 11",
+	"chan 12",
+	"chan 13",
+	"chan 14",
+	"chan 15",
+	"OPRQ",
+	"2nd CPU low",
+	"software high",
+	"software low"
+};
+#endif
 
 // -----------------------------------------------------------------------
 void int_wait()
@@ -107,10 +147,10 @@ void int_update_mask()
 void int_set(int x)
 {
 #ifdef WITH_DEBUGGER
-	if (x == cpu_mod_active ? INT_EXTRA : INT_TIMER) {
-		LOG(L_INT, 100, "Set: %lld (%s)", x, log_int_name[x]);
+	if (x != cpu_mod_active ? INT_EXTRA : INT_TIMER) {
+		EMULOGCPU(L_INT, 20, "Set: %lld (%s)", x, emulog_int_names[x]);
 	} else {
-		LOG(L_INT, 20, "Set: %lld (%s)", x, log_int_name[x]);
+		EMULOGCPU(L_INT, 100, "Set: %lld (%s)", x, emulog_int_names[x]);
 	}
 #endif
 	pthread_mutex_lock(&int_mutex);
@@ -131,7 +171,7 @@ void int_clear_all()
 // -----------------------------------------------------------------------
 void int_clear(int x)
 {
-	LOG(L_INT, 20, "Clear: %lld (%s)", x, log_int_name[x]);
+	EMULOGCPU(L_INT, 20, "Clear: %lld (%s)", x, emulog_int_names[x]);
 	pthread_mutex_lock(&int_mutex);
 	RZ &= ~INT_BIT(x);
 	int_update_rp();
@@ -141,7 +181,7 @@ void int_clear(int x)
 // -----------------------------------------------------------------------
 void int_put_nchan(uint16_t r)
 {
-	LOG(L_INT, 20, "Set non-channel to: %d", r);
+	EMULOGCPU(L_INT, 20, "Set non-channel to: %d", r);
 	pthread_mutex_lock(&int_mutex);
 	RZ = (RZ & 0b00000000000011111111111111110000) | ((r & 0b1111111111110000) << 16) | (r & 0b0000000000001111);
 	int_update_rp();
@@ -184,14 +224,14 @@ void int_serve()
 		io_chan[interrupt-12]->cmd(io_chan[interrupt-12], IO_IN, 1<<11, &int_spec);
 	}
 
-	LOG(L_INT, 1, "Serve: %d (%s, spec: %i) -> 0x%04x / return: 0x%04x", interrupt, log_int_name[interrupt], int_spec, int_addr, regs[R_IC]);
+	EMULOGCPU(L_INT, 1, "Serve: %d (%s, spec: %i) -> 0x%04x / return: 0x%04x", interrupt, emulog_int_names[interrupt], int_spec, int_addr, regs[R_IC]);
 
 	// put system status on stack
 	sr_mask = int_int2mask[interrupt] & MASK_Q; // put mask and clear Q
 	if (cpu_mod_active && (interrupt >= 12) && (interrupt <= 27)) sr_mask &= MASK_EX; // put extended mask if cpu_mod
 	if (!cpu_ctx_switch(int_spec, int_addr, sr_mask)) return;
 #ifdef WITH_DEBUGGER
-	log_int_level -= 4;
+	emulog_int_level -= 4;
 #endif
 }
 
