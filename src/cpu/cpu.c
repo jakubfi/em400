@@ -41,7 +41,7 @@ int P;
 uint32_t N;
 int cpu_mod_active;
 
-#if defined(WITH_DEBUGGER) || defined(WITH_EMULOG)
+#ifdef WITH_EMULOG
 uint16_t cycle_ic;
 #endif
 

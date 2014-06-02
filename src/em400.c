@@ -361,7 +361,7 @@ int main(int argc, char** argv)
 
 #ifdef WITH_DEBUGGER
 	if (em400_cfg.autotest && em400_cfg.test_expr) {
-		printf("TEST RESULT @ 0x%04x, regs: 0x%04x 0x%04x 0x%04x 0x%04x 0x%04x 0x%04x 0x%04x 0x%04x: ", cycle_ic, regs[0], regs[1], regs[2], regs[3], regs[4], regs[5], regs[6], regs[7]);
+		printf("TEST RESULT @ 0x%04x, regs: 0x%04x 0x%04x 0x%04x 0x%04x 0x%04x 0x%04x 0x%04x 0x%04x: ", regs[R_IC], regs[0], regs[1], regs[2], regs[3], regs[4], regs[5], regs[6], regs[7]);
 		dbg_parse(em400_cfg.test_expr);
 		free(em400_cfg.test_expr);
 		free(em400_cfg.program_name);
