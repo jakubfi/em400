@@ -498,18 +498,20 @@ void op_71_exl()
 	EMULOGCPU(L_OP, 10, "EXL: %i (r4: 0x%04x)", IR_b, regs[4]);
 #ifdef WITH_EMULOG
 	char *details;
+	if (EMULOG_WANTS(L_CRK5, 10)) {
 #ifdef WITH_DEBUGGER
-	details = decode_exl(NB, regs[4], IR_b);
+		details = decode_exl(NB, regs[4], IR_b);
 #else
-	details = malloc(128);
-	sprintf(details, "[details missing]");
+		details = malloc(128);
+		sprintf(details, "[details missing]");
 #endif
-	emulog_splitlog(L_CRK5, 10, details);
-	free(details);
-	exl_was_exl = IR_b;
-	exl_was_nb = NB;
-	exl_was_addr = regs[R_IC];
-	exl_was_r4 = regs[4];
+		emulog_splitlog(L_CRK5, 10, details);
+		free(details);
+		exl_was_exl = IR_b;
+		exl_was_nb = NB;
+		exl_was_addr = regs[R_IC];
+		exl_was_r4 = regs[4];
+	}
 #endif
 	mem_ret_get(0, 96, &data);
 	if (!cpu_ctx_switch(IR_b, data, 0b1111111110011111)) return;
@@ -1016,14 +1018,16 @@ void op_77_sp()
 #ifdef WITH_EMULOG
 	EMULOGCPU(L_CRK5, 50, "SP: context @ 0x%04x -> IC: 0x%04x", N, data);
 	char *ctx;
+	if (EMULOG_WANTS(L_CRK5, 50)) {
 #ifdef WITH_DEBUGGER
-	ctx = decode_ctx(0, N, 0);
+		ctx = decode_ctx(0, N, 0);
 #else
-	ctx = malloc(128);
-	sprintf(ctx, "[details missing]");
+		ctx = malloc(128);
+		sprintf(ctx, "[details missing]");
 #endif
-	emulog_splitlog(L_CRK5, 50, ctx);
-	free(ctx);
+		emulog_splitlog(L_CRK5, 50, ctx);
+		free(ctx);
+	}
 #endif
 
 	mem_ret_get(NB, N+1, &data);
@@ -1035,17 +1039,19 @@ void op_77_sp()
 
 #ifdef WITH_EMULOG
 	char *details;
-	emulog_int_level = EMULOG_INT_INDENT_MAX;
-	if (exl_was_exl && (regs[R_IC] == exl_was_addr) && (NB == exl_was_nb)) {
+	if (EMULOG_WANTS(L_CRK5, 10)) {
+		emulog_int_level = EMULOG_INT_INDENT_MAX;
+		if (exl_was_exl && (regs[R_IC] == exl_was_addr) && (NB == exl_was_nb)) {
 #ifdef WITH_DEBUGGER
-		details = decode_exl(exl_was_nb, exl_was_r4, -exl_was_exl);
+			details = decode_exl(exl_was_nb, exl_was_r4, -exl_was_exl);
 #else
-		details = malloc(128);
-		sprintf(details, "[details missing]");
+			details = malloc(128);
+			sprintf(details, "[details missing]");
 #endif
-		emulog_splitlog(L_CRK5, 10, details);
-		free(details);
-		exl_was_exl = 0;
+			emulog_splitlog(L_CRK5, 10, details);
+			free(details);
+			exl_was_exl = 0;
+		}
 	}
 #endif
 }

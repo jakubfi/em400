@@ -17,6 +17,7 @@
 
 #include <stdio.h>
 #include <pthread.h>
+#include <stdarg.h>
 
 #ifndef LOGGER_H
 #define LOGGER_H

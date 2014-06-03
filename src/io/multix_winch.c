@@ -333,14 +333,16 @@ void mx_winch_cmd_transmit(struct mx_unit_proto_t *unit, uint16_t addr)
 
 #ifdef WITH_EMULOG
 	char *details;
+	if (EMULOG_WANTS(L_WNCH, 50)) {
 #ifdef WITH_DEBUGGER
-	details = decode_mxpst_winch(0, addr, 0);
+		details = decode_mxpst_winch(0, addr, 0);
 #else
-	details = malloc(128);
-	sprintf(details, "[details missing]");
+		details = malloc(128);
+		sprintf(details, "[details missing]");
 #endif
-	emulog_splitlog(L_WNCH, 50, details);
-	free(details);
+		emulog_splitlog(L_WNCH, 50, details);
+		free(details);
+	}
 #endif
 
 	switch (cf->oper) {
@@ -367,9 +369,11 @@ void mx_winch_cmd_transmit(struct mx_unit_proto_t *unit, uint16_t addr)
 	mem_put(0, addr_status, cf->ret_status);
 
 #ifdef WITH_EMULOG
-	char *status = int2binf("........ ........", cf->ret_status, 16);
-	EMULOG(L_WNCH, 10, "MULTIX/winchester (log:%i, phy:%i): transmit done, status: %s, transmitted %i words", unit->log_num, unit->phy_num, status, cf->ret_len);
-	free(status);
+	if (EMULOG_WANTS(L_WNCH, 10)) {
+		char *status = int2binf("........ ........", cf->ret_status, 16);
+		EMULOG(L_WNCH, 10, "MULTIX/winchester (log:%i, phy:%i): transmit done, status: %s, transmitted %i words", unit->log_num, unit->phy_num, status, cf->ret_len);
+		free(status);
+	}
 #endif
 
 	if (ret == E_OK) { // transmission finished OK

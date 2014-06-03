@@ -147,7 +147,7 @@ void int_update_mask()
 // -----------------------------------------------------------------------
 void int_set(int x)
 {
-	EMULOGCPU(L_INT, x != (cpu_mod_active ? INT_EXTRA : INT_TIMER) ? 20 : 100, "Set interrupt: %lld (%s)", x, emulog_int_names[x]);
+	EMULOG(L_INT, x != (cpu_mod_active ? INT_EXTRA : INT_TIMER) ? 20 : 100, "Set interrupt: %lld (%s)", x, emulog_int_names[x]);
 	pthread_mutex_lock(&int_mutex);
 	RZ |= INT_BIT(x);
 	int_update_rp();
@@ -166,7 +166,7 @@ void int_clear_all()
 // -----------------------------------------------------------------------
 void int_clear(int x)
 {
-	EMULOGCPU(L_INT, 20, "Clear interrupt: %lld (%s)", x, emulog_int_names[x]);
+	EMULOG(L_INT, 20, "Clear interrupt: %lld (%s)", x, emulog_int_names[x]);
 	pthread_mutex_lock(&int_mutex);
 	RZ &= ~INT_BIT(x);
 	int_update_rp();

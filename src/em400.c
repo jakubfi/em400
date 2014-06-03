@@ -36,10 +36,6 @@
 #include "cfg.h"
 #include "errors.h"
 
-#ifdef WITH_EMULOG
-#include "emulog.h"
-#endif
-
 #ifdef WITH_DEBUGGER
 #include "debugger/debugger.h"
 #include "debugger/ui.h"
@@ -336,9 +332,6 @@ int main(int argc, char** argv)
 	printf("EM400 v%s ", EM400_VERSION);
 #ifdef WITH_DEBUGGER
 	printf("+debugger ");
-#endif
-#ifdef WITH_EMULOG
-	printf("+emulog ");
 #endif
 	printf("\n");
 

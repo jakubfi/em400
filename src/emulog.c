@@ -24,6 +24,8 @@
 struct logger *l;
 char *emulog_fname;
 
+int emulog_enabled = 1;
+
 const char *emulog_comp_names[] = {
 	"REG",
 	"MEM",
@@ -166,6 +168,12 @@ void emulog_splitlog(int component, int level, char *text)
 		}
 	}
 	EMULOG(component, level, "%s", " `---------------------------------------------------------");
+}
+
+// -----------------------------------------------------------------------
+int emulog_wants(int component, int level)
+{
+	return log_allowed(l, component, level);
 }
 
 

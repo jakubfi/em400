@@ -449,14 +449,16 @@ int mx_cmd_setcfg(struct chan_proto_t *chan, uint16_t *r_arg)
 
 #ifdef WITH_EMULOG
 	char *details;
+	if (EMULOG_WANTS(L_MX, 50)) {
 #ifdef WITH_DEBUGGER
-	details = decode_mxpsuk(0, *r_arg, 0);
+		details = decode_mxpsuk(0, *r_arg, 0);
 #else
-	details = malloc(128);
-	sprintf(details, "[details missing]");
+		details = malloc(128);
+		sprintf(details, "[details missing]");
 #endif
-	emulog_splitlog(L_MX, 50, details);
-	free(details);
+		emulog_splitlog(L_MX, 50, details);
+		free(details);
+	}
 #endif
 
 	// decoding failed

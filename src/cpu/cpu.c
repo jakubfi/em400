@@ -200,12 +200,14 @@ void cpu_step()
 
 #ifdef WITH_EMULOG
 	char dasm_buf[256];
-	cycle_ic = regs[R_IC];
- #ifdef WITH_DEBUGGER
-	dt_trans(cycle_ic, dasm_buf, DMODE_DASM);
- #else
-	sprintf(dasm_buf, "[dasm is missing]");
- #endif
+	if (EMULOG_WANTS(L_CPU, 10)) {
+		cycle_ic = regs[R_IC];
+#ifdef WITH_DEBUGGER
+		dt_trans(cycle_ic, dasm_buf, DMODE_DASM);
+#else
+		sprintf(dasm_buf, "[dasm is missing]");
+#endif
+	}
 #endif
 
 	// fetch instruction
@@ -251,17 +253,19 @@ void cpu_step()
 
 #ifdef WITH_EMULOG
 	char mod_buf[64];
-	if (regs[R_MODc]) {
-		sprintf(mod_buf, ", MOD = 0x%x = %i", regs[R_MOD], regs[R_MOD]);
-	} else {
-		*mod_buf = '\0';
-	}
-	if (op->norm_arg) {
-		EMULOGCPU(L_CPU, 10, "    %-20s N = 0x%x = %i%s", dasm_buf, (uint16_t) N, (int16_t) N, mod_buf);
-	} else if (op->short_arg) {
-		EMULOGCPU(L_CPU, 10, "    %-20s T = %i%s", dasm_buf, (int16_t) N, mod_buf);
-	} else {
-		EMULOGCPU(L_CPU, 10, "    %-20s", dasm_buf);
+	if (EMULOG_WANTS(L_CPU, 10)) {
+		if (regs[R_MODc]) {
+			sprintf(mod_buf, ", MOD = 0x%x = %i", regs[R_MOD], regs[R_MOD]);
+		} else {
+			*mod_buf = '\0';
+		}
+		if (op->norm_arg) {
+			EMULOGCPU(L_CPU, 10, "    %-20s N = 0x%x = %i%s", dasm_buf, (uint16_t) N, (int16_t) N, mod_buf);
+		} else if (op->short_arg) {
+			EMULOGCPU(L_CPU, 10, "    %-20s T = %i%s", dasm_buf, (int16_t) N, mod_buf);
+		} else {
+			EMULOGCPU(L_CPU, 10, "    %-20s", dasm_buf);
+		}
 	}
 #endif
 
