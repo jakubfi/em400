@@ -101,9 +101,9 @@ int emulog_disable()
 }
 
 // -----------------------------------------------------------------------
-int emulog_set_level(int domain, unsigned level)
+int emulog_set_level(int component, unsigned level)
 {
-	return log_set_level(l, domain, level);
+	return log_set_level(l, component, level);
 }
 
 // -----------------------------------------------------------------------

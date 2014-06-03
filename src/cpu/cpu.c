@@ -43,9 +43,6 @@ int cpu_mod_active;
 
 #ifdef WITH_EMULOG
 uint16_t cycle_ic;
-#endif
-
-#ifdef WITH_EMULOG
 char pn1[4] = "---";
 char pn2[4] = "---";
 #endif
@@ -260,18 +257,9 @@ void cpu_step()
 		*mod_buf = '\0';
 	}
 	if (op->norm_arg) {
-		EMULOGCPU(L_CPU, 10, "    %-20s N = 0x%x = %i%s",
-			dasm_buf,
-			(uint16_t) N,
-			(int16_t) N,
-			mod_buf
-		);
+		EMULOGCPU(L_CPU, 10, "    %-20s N = 0x%x = %i%s", dasm_buf, (uint16_t) N, (int16_t) N, mod_buf);
 	} else if (op->short_arg) {
-		EMULOGCPU(L_CPU, 10, "    %-20s T = %i%s",
-			dasm_buf,
-			(int16_t) N,
-			mod_buf
-		);
+		EMULOGCPU(L_CPU, 10, "    %-20s T = %i%s", dasm_buf, (int16_t) N, mod_buf);
 	} else {
 		EMULOGCPU(L_CPU, 10, "    %-20s", dasm_buf);
 	}

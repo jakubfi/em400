@@ -54,7 +54,7 @@ void dbg_c_emulog_info(int wid);
 void dbg_c_emulog_enable(int wid);
 void dbg_c_emulog_disable(int wid);
 void dbg_c_emulog_open(int wid, char *filename);
-void dbg_c_emulog_set_level(int wid, char *domain, int level);
+void dbg_c_emulog_set_level(int wid, char *component, int level);
 void dbg_c_script_load(int wid, char *filename);
 void dbg_c_watch_add(int wid, char *label, struct node_t *n);
 void dbg_c_watch_list(int wid, int count);

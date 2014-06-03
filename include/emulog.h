@@ -51,7 +51,7 @@ int emulog_open(char *filename);
 int emulog_close();
 int emulog_enable();
 int emulog_disable();
-int emulog_set_level(int domain, unsigned level);
+int emulog_set_level(int component, unsigned level);
 int emulog_is_enabled();
 char * emulog_get_component_name(int component);
 int emulog_get_component_id(char *name);
