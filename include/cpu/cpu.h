@@ -24,15 +24,6 @@ extern int P;
 extern uint32_t N;
 extern int cpu_mod_active;
 
-#if defined(WITH_DEBUGGER) || defined(WITH_EMULOG)
-extern uint16_t cycle_ic;
-#endif
-
-#ifdef WITH_EMULOG
-extern char pn1[4];
-extern char pn2[4];
-#endif
-
 int cpu_init();
 void cpu_shutdown();
 void cpu_mod_enable();

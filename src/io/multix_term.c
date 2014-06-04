@@ -283,9 +283,8 @@ void mx_term_cmd_transmit(struct mx_unit_proto_t *unit, uint16_t addr)
 		return;
 	}
 
-#ifdef WITH_EMULOG
-	char *details;
 	if (EMULOG_WANTS(L_TERM, 50)) {
+		char *details;
 #ifdef WITH_DEBUGGER
 		details = decode_mxpst_term(0, addr, 0);
 #else
@@ -295,7 +294,6 @@ void mx_term_cmd_transmit(struct mx_unit_proto_t *unit, uint16_t addr)
 		emulog_splitlog(L_TERM, 50, details);
 		free(details);
 	}
-#endif
 
 	int bytes_sent = 0;
 	int bytes_recv = 0;

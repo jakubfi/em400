@@ -15,6 +15,9 @@
 //  Foundation, Inc.,
 //  51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 
+#include <inttypes.h>
+
+#include "utils.h"
 #include "logger.h"
 
 #ifndef EMULOG_H
@@ -44,7 +47,6 @@ enum emulog_components {
 	L_MAX,
 };
 
-extern char *emulog_io_result_names[];
 extern int emulog_enabled;
 
 char *emulog_get_fname();
@@ -60,16 +62,33 @@ int emulog_get_level(int component);
 void emulog_log(int component, int level, char *format, ...);
 void emulog_splitlog(int component, int level, char *text);
 int emulog_wants(int component, int level);
+void emulog_set_cycle_ic(uint16_t ic);
+uint16_t emulog_get_cycle_ic();
+void emulog_update_pname(uint16_t *r40pname);
+char * emulog_get_pname();
+void emulog_exl_store(int number, int nb, int addr, int r4);
+void emulog_exl_fetch(int *number, int *nb, int *addr, int *r4);
+void emulog_exl_reset();
+void emulog_intlevel_reset();
+void emulog_intlevel_dec();
+void emulog_intlevel_inc();
+const char *emulog_intlevel_get_indent();
 
 #define EMULOG_WANTS(component, level) ((emulog_enabled) && (emulog_wants((component), (level))))
 
-#ifdef WITH_EMULOG
-#define EMULOG(component, level, format, ...) if (EMULOG_WANTS(component, level)) emulog_log(component, level, "              |        | " format, ##__VA_ARGS__)
-#define EMULOGCPU(component, level, format, ...) if (EMULOG_WANTS(component, level)) emulog_log(component, level, "%-3s %2i:0x%04x | %s%s | " format, Q?"USR":"OS", NB, cycle_ic, pn1, pn2, ##__VA_ARGS__)
-#else
-#define EMULOG(component, level, format, ...) ;
-#define EMULOGCPU(component, level, format, ...) ;
-#endif
+#define EMULOG(component, level, format, ...) \
+	if (EMULOG_WANTS(component, level)) \
+		emulog_log(component, level, "              |        | " format, ##__VA_ARGS__)
+
+#define EMULOGCPU(component, level, format, ...) \
+	if (EMULOG_WANTS(component, level)) \
+		emulog_log(component, level, "%-3s %2i:0x%04x | %s | %s " format, \
+			Q ? "USR" : "OS", \
+			NB, \
+			emulog_get_cycle_ic(), \
+			emulog_get_pname(), \
+			emulog_intlevel_get_indent(), \
+			##__VA_ARGS__)
 
 #endif
 

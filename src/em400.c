@@ -41,9 +41,7 @@
 #include "debugger/ui.h"
 #endif
 
-#ifdef WITH_EMULOG
 #include "emulog.h"
-#endif
 
 int em400_console = CONSOLE_NONE;
 int em400_state = STATE_WORK;
@@ -51,9 +49,7 @@ int em400_state = STATE_WORK;
 // -----------------------------------------------------------------------
 void em400_shutdown()
 {
-#ifdef WITH_EMULOG
 	emulog_close();
-#endif
 #ifdef WITH_DEBUGGER
 	dbg_shutdown();
 #endif
@@ -138,16 +134,13 @@ void em400_usage()
 	printf("   -e           : terminate emulation on HLT >= 040\n");
 	printf("   -b           : benchmark emulator\n");
 	printf("   -v           : enable verbose messages\n");
+	printf("   -d           : enable full debug logging\n");
 #ifdef WITH_DEBUGGER
 	printf("\nDebuger-only options:\n");
 	printf("   -s           : use simple debugger interface\n");
 	printf("   -l script    : load and execute script on startup\n");
 	printf("   -t test_expr : execute expression when program halts (implies -e -s)\n");
 	printf("   -x pre_expr  : execute expression on emulator startup\n");
-#endif
-#ifdef WITH_EMULOG
-	printf("\nEmuLog-only options:\n");
-	printf("   -d           : enable full debug logging\n");
 #endif
 }
 
@@ -212,13 +205,11 @@ void em400_parse_args(int argc, char **argv)
 				em400_cfg.ui_simple = 1;
 				break;
 #endif
-#ifdef WITH_EMULOG
 			case 'd':
 				emulog_set_level(-1, 100);
 				emulog_open("em400.log");
 				emulog_enable();
 				break;
-#endif
 			default:
 				em400_usage();
 				exit(1);

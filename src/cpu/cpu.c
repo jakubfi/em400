@@ -41,12 +41,6 @@ int P;
 uint32_t N;
 int cpu_mod_active;
 
-#ifdef WITH_EMULOG
-uint16_t cycle_ic;
-char pn1[4] = "---";
-char pn2[4] = "---";
-#endif
-
 // -----------------------------------------------------------------------
 static int cpu_register_op(struct em400_op **op_tab, uint16_t opcode, uint16_t mask, struct em400_op *op)
 {
@@ -198,17 +192,9 @@ void cpu_step()
 	struct em400_op *op;
 	uint16_t data;
 
-#ifdef WITH_EMULOG
-	char dasm_buf[256];
-	if (EMULOG_WANTS(L_CPU, 10)) {
-		cycle_ic = regs[R_IC];
-#ifdef WITH_DEBUGGER
-		dt_trans(cycle_ic, dasm_buf, DMODE_DASM);
-#else
-		sprintf(dasm_buf, "[dasm is missing]");
-#endif
+	if (emulog_enabled) {
+		emulog_set_cycle_ic(regs[R_IC]);
 	}
-#endif
 
 	// fetch instruction
 	if (!mem_cpu_get(QNB, regs[R_IC], regs+R_IR)) {
@@ -251,9 +237,15 @@ void cpu_step()
 		N = (uint16_t) IR_T + (uint16_t) regs[R_MOD];
 	}
 
-#ifdef WITH_EMULOG
-	char mod_buf[64];
 	if (EMULOG_WANTS(L_CPU, 10)) {
+		char dasm_buf[256];
+		char mod_buf[64];
+#ifdef WITH_DEBUGGER
+		dt_trans(emulog_get_cycle_ic(), dasm_buf, DMODE_DASM);
+#else
+		sprintf(dasm_buf, "[missing dasm]");
+#endif
+
 		if (regs[R_MODc]) {
 			sprintf(mod_buf, ", MOD = 0x%x = %i", regs[R_MOD], regs[R_MOD]);
 		} else {
@@ -267,7 +259,6 @@ void cpu_step()
 			EMULOGCPU(L_CPU, 10, "    %-20s", dasm_buf);
 		}
 	}
-#endif
 
 	// execute instruction
 	op->fun();

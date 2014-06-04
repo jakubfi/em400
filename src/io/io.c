@@ -46,6 +46,13 @@ static struct chan_proto_t chan_proto[] = {
 
 struct chan_proto_t *io_chan[IO_MAX_CHAN];
 
+static const char *io_result_names[] = {
+	"NO DEVICE",
+	"ENGAGED",
+	"OK",
+	"PARITY ERROR"
+};
+
 // -----------------------------------------------------------------------
 static struct chan_proto_t * io_chan_maker(int num, char *name, struct cfg_unit_t *units)
 {
@@ -134,8 +141,8 @@ int io_dispatch(int dir, uint16_t n, uint16_t *r)
 		if (dir == IO_OU) {
 			return mem_cmd(n, *r);
 		} else {
-			// TODO: what to return?
 			EMULOG(L_IO, 1, "MEM command shouldn't be IN");
+			// TODO: what to return?
 			return IO_NO;
 		}
 	// channel/unit command
@@ -143,19 +150,18 @@ int io_dispatch(int dir, uint16_t n, uint16_t *r)
 		int chan_n = (n & 0b0000000000011110) >> 1;
 		struct chan_proto_t *chan = io_chan[chan_n];
 		int res;
-#ifdef WITH_EMULOG
 		if (EMULOG_WANTS(L_IO, 1)) {
-			char *narg = int2binf("cmd:... .. ...... ch:.... .", n, 16);
+			char *narg = int2binf("cmd: ... .. ...... ch: .... .", n, 16);
 			EMULOG(L_IO, 1, "I/O %s chan = %d, n_arg = %s (0x%04x), r_arg = 0x%04x", dir ? "OUT" : "IN", chan_n, narg, n, *r);
 			free(narg);
 		}
-#endif
+
 		if (chan) {
 			res = chan->cmd(chan, dir, n, r);
 		} else {
 			res = IO_NO;
 		}
-		EMULOG(L_IO, 1, "I/O result: %s", emulog_io_result_names[res]);
+		EMULOG(L_IO, 1, "I/O result: %s, r_arg = 0x%04x", io_result_names[res], *r);
 		return res;
 	}
 }

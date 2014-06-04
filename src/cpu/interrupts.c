@@ -68,11 +68,7 @@ static const int int_int2mask[32] = {
 	MASK_9, MASK_9, MASK_9, MASK_9
 };
 
-#ifdef WITH_EMULOG
-#define EMULOG_INT_INDENT_MAX 4*8
-const char *emulog_int_indent = "--> --> --> --> --> --> --> --> ";
-int emulog_int_level = EMULOG_INT_INDENT_MAX;
-char *emulog_int_names[] = {
+static const char *int_names[] = {
 	"CPU power loss",
 	"memory parity",
 	"no memory",
@@ -106,7 +102,6 @@ char *emulog_int_names[] = {
 	"software high",
 	"software low"
 };
-#endif
 
 // -----------------------------------------------------------------------
 void int_wait()
@@ -147,7 +142,7 @@ void int_update_mask()
 // -----------------------------------------------------------------------
 void int_set(int x)
 {
-	EMULOG(L_INT, x != (cpu_mod_active ? INT_EXTRA : INT_TIMER) ? 20 : 100, "Set interrupt: %lld (%s)", x, emulog_int_names[x]);
+	EMULOG(L_INT, x != (cpu_mod_active ? INT_EXTRA : INT_TIMER) ? 20 : 100, "Set interrupt: %lld (%s)", x, int_names[x]);
 	pthread_mutex_lock(&int_mutex);
 	RZ |= INT_BIT(x);
 	int_update_rp();
@@ -166,7 +161,7 @@ void int_clear_all()
 // -----------------------------------------------------------------------
 void int_clear(int x)
 {
-	EMULOG(L_INT, 20, "Clear interrupt: %lld (%s)", x, emulog_int_names[x]);
+	EMULOG(L_INT, 20, "Clear interrupt: %lld (%s)", x, int_names[x]);
 	pthread_mutex_lock(&int_mutex);
 	RZ &= ~INT_BIT(x);
 	int_update_rp();
@@ -219,15 +214,16 @@ void int_serve()
 		io_chan[interrupt-12]->cmd(io_chan[interrupt-12], IO_IN, 1<<11, &int_spec);
 	}
 
-	EMULOGCPU(L_INT, 1, "Serve interrupt: %d (%s, spec: %i) -> 0x%04x / return: 0x%04x", interrupt, emulog_int_names[interrupt], int_spec, int_addr, regs[R_IC]);
+	EMULOGCPU(L_INT, 1, "Serve interrupt: %d (%s, spec: %i) -> 0x%04x / return: 0x%04x", interrupt, int_names[interrupt], int_spec, int_addr, regs[R_IC]);
 
 	// put system status on stack
 	sr_mask = int_int2mask[interrupt] & MASK_Q; // put mask and clear Q
 	if (cpu_mod_active && (interrupt >= 12) && (interrupt <= 27)) sr_mask &= MASK_EX; // put extended mask if cpu_mod
 	if (!cpu_ctx_switch(int_spec, int_addr, sr_mask)) return;
-#ifdef WITH_EMULOG
-	emulog_int_level -= 4;
-#endif
+
+	if (emulog_enabled) {
+		emulog_intlevel_inc();
+	}
 }
 
 

@@ -15,6 +15,7 @@
 //  Foundation, Inc.,
 //  51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 
+#include <inttypes.h>
 #include <stdlib.h>
 #include <string.h>
 
@@ -24,7 +25,18 @@
 struct logger *l;
 char *emulog_fname;
 
-int emulog_enabled = 1;
+int emulog_enabled = 0;
+uint16_t emulog_cycle_ic;
+char emulog_pname[7] = "------";
+
+#define EMULOG_INT_INDENT_MAX 4*8
+int emulog_int_level;
+const char *emulog_int_indent = "--> --> --> --> --> --> --> --> ";
+
+int emulog_exl_number = -1;
+int emulog_exl_nb;
+int emulog_exl_addr;
+int emulog_exl_r4;
 
 const char *emulog_comp_names[] = {
 	"REG",
@@ -46,14 +58,6 @@ const char *emulog_comp_names[] = {
 	NULL
 };
 
-char *emulog_io_result_names[] = {
-	"NO DEVICE",
-	"ENGAGED",
-	"OK",
-	"PARITY ERROR"
-};
-
-
 // -----------------------------------------------------------------------
 char * emulog_get_fname()
 {
@@ -63,6 +67,7 @@ char * emulog_get_fname()
 // -----------------------------------------------------------------------
 int emulog_open(char *filename)
 {
+	if (!emulog_enabled) return 0;
 	emulog_close();
 
 	FILE *f = fopen(filename, "a");
@@ -176,5 +181,80 @@ int emulog_wants(int component, int level)
 	return log_allowed(l, component, level);
 }
 
+// -----------------------------------------------------------------------
+void emulog_set_cycle_ic(uint16_t ic)
+{
+	emulog_cycle_ic = ic;
+}
+
+// -----------------------------------------------------------------------
+uint16_t emulog_get_cycle_ic()
+{
+	return emulog_cycle_ic;
+}
+
+// -----------------------------------------------------------------------
+void emulog_update_pname(uint16_t *r40pname)
+{
+	char *n1 = int2r40(r40pname[0]);
+	char *n2 = int2r40(r40pname[1]);
+	snprintf(emulog_pname, 7, "%s%s", n1, n2);
+	free(n1);
+	free(n2);
+}
+
+// -----------------------------------------------------------------------
+char * emulog_get_pname()
+{
+	return emulog_pname;
+}
+
+// -----------------------------------------------------------------------
+void emulog_exl_store(int number, int nb, int addr, int r4)
+{
+	emulog_exl_number = number;
+	emulog_exl_nb = nb;
+	emulog_exl_addr = addr;
+	emulog_exl_r4 = r4;
+}
+
+// -----------------------------------------------------------------------
+void emulog_exl_fetch(int *number, int *nb, int *addr, int *r4)
+{
+	*number = emulog_exl_number;
+	*nb = emulog_exl_nb;
+	*addr = emulog_exl_addr;
+	*r4 = emulog_exl_r4;
+}
+
+// -----------------------------------------------------------------------
+void emulog_exl_reset()
+{
+	emulog_exl_number = -1;
+}
+
+// -----------------------------------------------------------------------
+void emulog_intlevel_reset()
+{
+	emulog_int_level = EMULOG_INT_INDENT_MAX;
+}
+
+// -----------------------------------------------------------------------
+void emulog_intlevel_dec()
+{
+	emulog_int_level += 4;
+}
+
+// -----------------------------------------------------------------------
+void emulog_intlevel_inc()
+{
+	emulog_int_level -= 4;
+}
+
+// -----------------------------------------------------------------------
+const char *emulog_intlevel_get_indent()
+{
+	return emulog_int_indent + emulog_int_level;
+}
 
 // vim: tabstop=4 shiftwidth=4 autoindent

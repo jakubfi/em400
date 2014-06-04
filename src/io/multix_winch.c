@@ -331,9 +331,9 @@ void mx_winch_cmd_transmit(struct mx_unit_proto_t *unit, uint16_t addr)
 		return;
 	}
 
-#ifdef WITH_EMULOG
-	char *details;
+
 	if (EMULOG_WANTS(L_WNCH, 50)) {
+		char *details;
 #ifdef WITH_DEBUGGER
 		details = decode_mxpst_winch(0, addr, 0);
 #else
@@ -343,7 +343,6 @@ void mx_winch_cmd_transmit(struct mx_unit_proto_t *unit, uint16_t addr)
 		emulog_splitlog(L_WNCH, 50, details);
 		free(details);
 	}
-#endif
 
 	switch (cf->oper) {
 		case MX_WINCH_FORMAT_SPARE:
@@ -368,13 +367,11 @@ void mx_winch_cmd_transmit(struct mx_unit_proto_t *unit, uint16_t addr)
 	mem_put(0, addr_len, cf->ret_len);
 	mem_put(0, addr_status, cf->ret_status);
 
-#ifdef WITH_EMULOG
 	if (EMULOG_WANTS(L_WNCH, 10)) {
 		char *status = int2binf("........ ........", cf->ret_status, 16);
 		EMULOG(L_WNCH, 10, "MULTIX/winchester (log:%i, phy:%i): transmit done, status: %s, transmitted %i words", unit->log_num, unit->phy_num, status, cf->ret_len);
 		free(status);
 	}
-#endif
 
 	if (ret == E_OK) { // transmission finished OK
 		mx_int(unit->chan, unit->log_num, MX_INT_IETRA);

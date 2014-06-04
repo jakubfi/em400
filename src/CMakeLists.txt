@@ -6,18 +6,12 @@ xopen(em400.c 500 "getopt(3)")
 strdup(cfg_scanner.c)
 strdup(cfg.c)
 strdup(io/e4image.c)
-
-IF(WITH_EMULOG)
-	strdup(logger.c)
-	strdup(emulog.c)
-    set(EMULOG_SOURCES logger.c emulog.c)
-ELSE(WITH_EMULOG)
-    set(EMULOG_SOURCES)
-ENDIF(WITH_EMULOG)
-
+strdup(logger.c)
+strdup(emulog.c)
 
 ADD_EXECUTABLE(em400
 	em400.c errors.c utils.c cfg.c
+    logger.c emulog.c
 	${EMULOG_SOURCES}
 	${BISON_cfg_parser_OUTPUTS}
 	${FLEX_cfg_scanner_OUTPUTS}

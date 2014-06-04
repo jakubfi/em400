@@ -37,15 +37,6 @@
 
 #include "emulog.h"
 
-#ifdef WITH_EMULOG
-#define EMULOG_INT_INDENT_MAX 4*8
-int exl_was_exl;
-int exl_was_nb;
-int exl_was_addr;
-int exl_was_r4;
-extern int emulog_int_level;
-#endif
-
 // convenience memory access macros (with "nomem" handling)
 #define mem_ret_get(nb, a, dptr)			    if (!mem_cpu_get(nb, a, dptr)) return;
 #define mem_ret_put(nb, a, data)			    if (!mem_cpu_put(nb, a, data)) return;
@@ -495,24 +486,24 @@ void op_71_blc()
 void op_71_exl()
 {
 	uint16_t data;
-	EMULOGCPU(L_OP, 10, "EXL: %i (r4: 0x%04x)", IR_b, regs[4]);
-#ifdef WITH_EMULOG
-	char *details;
-	if (EMULOG_WANTS(L_CRK5, 10)) {
+
+	if (emulog_enabled) {
+		emulog_exl_store(IR_b, NB, regs[R_IC], regs[4]);
+
+		EMULOGCPU(L_OP, 10, "EXL: %i (r4: 0x%04x)", IR_b, regs[4]);
+		if (EMULOG_WANTS(L_CRK5, 10)) {
+			char *details;
 #ifdef WITH_DEBUGGER
-		details = decode_exl(NB, regs[4], IR_b);
+			details = decode_exl(NB, regs[4], IR_b);
 #else
-		details = malloc(128);
-		sprintf(details, "[details missing]");
+			details = malloc(128);
+			sprintf(details, "[details missing]");
 #endif
-		emulog_splitlog(L_CRK5, 10, details);
-		free(details);
-		exl_was_exl = IR_b;
-		exl_was_nb = NB;
-		exl_was_addr = regs[R_IC];
-		exl_was_r4 = regs[4];
+			emulog_splitlog(L_CRK5, 10, details);
+			free(details);
+		}
 	}
-#endif
+
 	mem_ret_get(0, 96, &data);
 	if (!cpu_ctx_switch(IR_b, data, 0b1111111110011111)) return;
 }
@@ -788,9 +779,9 @@ void op_73_lip()
 	USER_ILLEGAL;
 
 	cpu_ctx_restore();
-#ifdef WITH_EMULOG
-	emulog_int_level += 4;
-#endif
+	if (emulog_enabled) {
+		emulog_intlevel_dec();
+	}
 }
 
 // -----------------------------------------------------------------------
@@ -1014,46 +1005,55 @@ void op_77_sp()
 	uint16_t data;
 	mem_ret_get(NB, N, &data);
 	regs[R_IC] = data;
-
-#ifdef WITH_EMULOG
-	EMULOGCPU(L_CRK5, 50, "SP: context @ 0x%04x -> IC: 0x%04x", N, data);
-	char *ctx;
-	if (EMULOG_WANTS(L_CRK5, 50)) {
-#ifdef WITH_DEBUGGER
-		ctx = decode_ctx(0, N, 0);
-#else
-		ctx = malloc(128);
-		sprintf(ctx, "[details missing]");
-#endif
-		emulog_splitlog(L_CRK5, 50, ctx);
-		free(ctx);
-	}
-#endif
-
 	mem_ret_get(NB, N+1, &data);
 	regs[0] = data;
-
 	mem_ret_get(NB, N+2, &data);
 	regs[R_SR] = data;
+
 	int_update_mask();
 
-#ifdef WITH_EMULOG
-	char *details;
-	if (EMULOG_WANTS(L_CRK5, 10)) {
-		emulog_int_level = EMULOG_INT_INDENT_MAX;
-		if (exl_was_exl && (regs[R_IC] == exl_was_addr) && (NB == exl_was_nb)) {
+	if (emulog_enabled) {
+		uint16_t bprog;
+		uint16_t pname[2];
+		mem_get(0, 0x62, &bprog);
+		mem_mget(0, bprog+52, pname, 2);
+		emulog_update_pname(pname);
+
+		EMULOGCPU(L_CRK5, 50, "SP: context @ 0x%04x -> IC: 0x%04x", N, regs[R_IC]);
+		if (EMULOG_WANTS(L_CRK5, 50)) {
+			char *ctx;
 #ifdef WITH_DEBUGGER
-			details = decode_exl(exl_was_nb, exl_was_r4, -exl_was_exl);
+			ctx = decode_ctx(0, N, 0);
 #else
-			details = malloc(128);
-			sprintf(details, "[details missing]");
+			ctx = malloc(128);
+			sprintf(ctx, "[details missing]");
 #endif
-			emulog_splitlog(L_CRK5, 10, details);
-			free(details);
-			exl_was_exl = 0;
+			emulog_splitlog(L_CRK5, 50, ctx);
+			free(ctx);
+		}
+		if (EMULOG_WANTS(L_CRK5, 10)) {
+			emulog_intlevel_reset();
+
+			int exl_was_number;
+			int exl_was_addr;
+			int exl_was_nb;
+			int exl_was_r4;
+
+			emulog_exl_fetch(&exl_was_number, &exl_was_nb, &exl_was_addr, &exl_was_r4);
+			if ((exl_was_number >= 0) && (regs[R_IC] == exl_was_addr) && (NB == exl_was_nb)) {
+				char *details;
+#ifdef WITH_DEBUGGER
+				details = decode_exl(exl_was_nb, exl_was_r4, -exl_was_number);
+#else
+				details = malloc(128);
+				sprintf(details, "[details missing]");
+#endif
+				emulog_splitlog(L_CRK5, 10, details);
+				free(details);
+				emulog_exl_reset();
+			}
 		}
 	}
-#endif
 }
 
 // -----------------------------------------------------------------------

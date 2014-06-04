@@ -29,9 +29,7 @@
 
 #include "errors.h"
 #include "utils.h"
-#ifdef WITH_EMULOG
 #include "emulog.h"
-#endif
 
 #include "debugger/awin.h"
 #include "debugger/dasm.h"
@@ -517,9 +515,11 @@ void dbg_c_brk_disable_all(int wid, int disable)
 // -----------------------------------------------------------------------
 void dbg_c_emulog_info(int wid)
 {
-#ifndef WITH_EMULOG
-	awtbprint(wid, C_ERROR, "Emulog not available.\n");
-#else
+	if (!emulog_enabled) {
+		awtbprint(wid, C_ERROR, "Emulog not available.\n");
+		return;
+	}
+
 	int i;
 	char *cname;
 
@@ -534,58 +534,62 @@ void dbg_c_emulog_info(int wid)
 		}
 	}
 	awtbprint(wid, C_LABEL, "\n");
-#endif
 }
 
 // -----------------------------------------------------------------------
 void dbg_c_emulog_enable(int wid)
 {
-#ifndef WITH_EMULOG
-	awtbprint(wid, C_ERROR, "Emulog not available.\n");
-#else
+	if (!emulog_enabled) {
+		awtbprint(wid, C_ERROR, "Emulog not available.\n");
+		return;
+	}
+
 	if (!emulog_enable()) {
 		awtbprint(wid, C_LABEL, "Logging enabled\n");
 	} else {
 		awtbprint(wid, C_ERROR, "Cannot enable logging\n");
 	}
-#endif
 }
 
 // -----------------------------------------------------------------------
 void dbg_c_emulog_disable(int wid)
 {
-#ifndef WITH_EMULOG
-	awtbprint(wid, C_ERROR, "Emulog not available.\n");
-#else
+	if (!emulog_enabled) {
+		awtbprint(wid, C_ERROR, "Emulog not available.\n");
+		return;
+	}
+
 	if (!emulog_disable()) {
 		awtbprint(wid, C_LABEL, "Logging disabled\n");
 	} else {
 		awtbprint(wid, C_ERROR, "Cannot disable logging\n");
 	}
-#endif
 }
 
 // -----------------------------------------------------------------------
 void dbg_c_emulog_open(int wid, char *filename)
 {
-#ifndef WITH_EMULOG
-	awtbprint(wid, C_ERROR, "Emulog not available.\n");
-#else
+	if (!emulog_enabled) {
+		awtbprint(wid, C_ERROR, "Emulog not available.\n");
+		return;
+	}
+
 	if (!emulog_open(filename)) {
 		awtbprint(wid, C_LABEL, "Logging to file: ");
 	} else {
 		awtbprint(wid, C_ERROR, "Could not open emulog file: ");
 	}
 	awtbprint(wid, C_DATA, "%s\n", filename);
-#endif
 }
 
 // -----------------------------------------------------------------------
 void dbg_c_emulog_set_level(int wid, char *comp_name, int level)
 {
-#ifndef WITH_EMULOG
-	awtbprint(wid, C_ERROR, "Emulog not available.\n");
-#else
+	if (!emulog_enabled) {
+		awtbprint(wid, C_ERROR, "Emulog not available.\n");
+		return;
+	}
+
 	int c;
 
 	if (!strcasecmp(comp_name, "all")) {
@@ -603,7 +607,6 @@ void dbg_c_emulog_set_level(int wid, char *comp_name, int level)
 			awtbprint(wid, C_DATA, "%i\n", level);
 		}
 	}
-#endif
 }
 
 // -----------------------------------------------------------------------

@@ -447,9 +447,8 @@ int mx_cmd_setcfg(struct chan_proto_t *chan, uint16_t *r_arg)
 	// decode cf field
 	int res = mx_decode_cf_sc(*r_arg, cf);
 
-#ifdef WITH_EMULOG
-	char *details;
 	if (EMULOG_WANTS(L_MX, 50)) {
+		char *details;
 #ifdef WITH_DEBUGGER
 		details = decode_mxpsuk(0, *r_arg, 0);
 #else
@@ -459,7 +458,6 @@ int mx_cmd_setcfg(struct chan_proto_t *chan, uint16_t *r_arg)
 		emulog_splitlog(L_MX, 50, details);
 		free(details);
 	}
-#endif
 
 	// decoding failed
 	if (res != E_OK) {
