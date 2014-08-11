@@ -20,8 +20,8 @@
 #include <string.h>
 #include <inttypes.h>
 #include <arpa/inet.h>
-#include <pthread.h>
 
+#include "atomic.h"
 #include "mem/mem_elwro.h"
 #include "mem/mem_mega.h"
 #include "cpu/cpu.h"
@@ -39,8 +39,6 @@
 #endif
 #include "debugger/log.h"
 
-pthread_spinlock_t mem_spin;
-
 struct mem_slot_t mem_map[MEM_MAX_NB][MEM_MAX_AB];	// final (as seen by emulation) logical->physical segment mapping
 
 #define mem_ptr(nb, addr) (mem_map[nb][(addr) >> 12].seg ? mem_map[nb][(addr) >> 12].seg + ((addr) & 0b0000111111111111) : NULL)
@@ -52,12 +50,11 @@ void mem_update_map()
 
 	for (nb=0 ; nb<MEM_MAX_NB ; nb++) {
 		for (ab=0 ; ab<MEM_MAX_AB ; ab++) {
-			pthread_spin_lock(&mem_spin);
 			mem_elwro_seg_set(nb, ab, &mem_map[nb][ab]);
 			if (!mem_map[nb][ab].seg) {
 				mem_mega_seg_set(nb, ab, &mem_map[nb][ab]);
 			}
-			pthread_spin_unlock(&mem_spin);
+			atom_fence();
 		}
 	}
 }
@@ -68,8 +65,6 @@ int mem_init()
 	int res;
 
 	eprint("Initializing memory (Elwro: %d modules, MEGA: %d modules)\n", em400_cfg.mem_elwro, em400_cfg.mem_mega);
-
-	pthread_spin_init(&mem_spin, 0);
 
 	if (em400_cfg.mem_elwro+em400_cfg.mem_mega > MEM_MAX_MODULES+1) {
 		return E_MEM;
@@ -125,10 +120,8 @@ int mem_cmd(uint16_t n, uint16_t r)
 // -----------------------------------------------------------------------
 void mem_reset()
 {
-	pthread_spin_lock(&mem_spin);
 	mem_elwro_reset();
 	mem_mega_reset();
-	pthread_spin_unlock(&mem_spin);
 	mem_update_map();
 }
 
@@ -137,13 +130,10 @@ int mem_get(int nb, uint16_t addr, uint16_t *data)
 {
 	uint16_t *ptr;
 
-	pthread_spin_lock(&mem_spin);
 	ptr = mem_ptr(nb, addr);
 	if (ptr) {
-		*data = *ptr;
-		pthread_spin_unlock(&mem_spin);
+		*data = atom_load(ptr);
 	} else {
-		pthread_spin_unlock(&mem_spin);
 		return 0;
 	}
 	return 1;
@@ -154,15 +144,12 @@ int mem_put(int nb, uint16_t addr, uint16_t data)
 {
 	uint16_t *ptr;
 
-	pthread_spin_lock(&mem_spin);
 	ptr = mem_ptr(nb, addr);
 	if (ptr) {
 		if (!mem_mega_prom || (mem_map[nb][addr>>12].seg != mem_mega_prom)) {
-			*ptr = data;
+			atom_store(ptr, data);
 		}
-		pthread_spin_unlock(&mem_spin);
 	} else {
-		pthread_spin_unlock(&mem_spin);
 		return 0;
 	}
 	return 1;
@@ -174,17 +161,14 @@ int mem_mget(int nb, uint16_t saddr, uint16_t *dest, int count)
 	int i;
 	uint16_t *ptr;
 
-	pthread_spin_lock(&mem_spin);
 	for (i=0 ; i<count ; i++) {
 		ptr = mem_ptr(nb, (uint16_t) (saddr+i));
 		if (ptr) {
 			*(dest+i) = *ptr;
 		} else {
-			pthread_spin_unlock(&mem_spin);
 			return 0;
 		}
 	}
-	pthread_spin_unlock(&mem_spin);
 	return 1;
 }
 
@@ -194,7 +178,6 @@ int mem_mput(int nb, uint16_t saddr, uint16_t *src, int count)
 	int i;
 	uint16_t *ptr;
 
-	pthread_spin_lock(&mem_spin);
 	for (i=0 ; i<count ; i++) {
 		ptr = mem_ptr(nb, (uint16_t) (saddr+i));
 		if (ptr) {
@@ -202,11 +185,10 @@ int mem_mput(int nb, uint16_t saddr, uint16_t *src, int count)
 				*ptr = *(src+i);
 			}
 		} else {
-			pthread_spin_unlock(&mem_spin);
 			return 0;
 		}
 	}
-	pthread_spin_unlock(&mem_spin);
+	atom_fence();
 	return 1;
 }
 
@@ -317,10 +299,9 @@ int mem_put_byte(int nb, uint32_t addr, uint8_t data)
 // -----------------------------------------------------------------------
 void mem_clear()
 {
-	pthread_spin_lock(&mem_spin);
 	mem_elwro_clear();
 	mem_mega_clear();
-	pthread_spin_unlock(&mem_spin);
+	atom_fence();
 }
 
 // -----------------------------------------------------------------------
@@ -338,11 +319,10 @@ int mem_seg_load(FILE *f, uint16_t *ptr)
 	}
 
 	// we swap bytes from big-endian to host-endianness at load time
-	pthread_spin_lock(&mem_spin);
 	for (int i=0 ; i<res ; i++) {
 		*(ptr+i) = ntohs(*(ptr+i));
 	}
-	pthread_spin_unlock(&mem_spin);
+	atom_fence();
 	
 	return res;
 }
@@ -364,14 +344,11 @@ int mem_load(const char* fname, int nb, int start_ab, int len)
 
 	do {
 		// get pointer to segment in a block
-		pthread_spin_lock(&mem_spin);
 		ptr = mem_map[nb][seg].seg;
 		if (!ptr) {
 			ret = E_MEM_BLOCK_TOO_SMALL;
-			pthread_spin_unlock(&mem_spin);
 			break;
 		}
-		pthread_spin_unlock(&mem_spin);
 
 		// read chunk of data
 		res = mem_seg_load(f, ptr);
