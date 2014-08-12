@@ -177,6 +177,10 @@ struct em400_instr em400_ilist_mera400[] = {
 	{ 0, 0, { 0, 0, 0, NULL } }
 };
 
+// IN/OU user-legal variants
+struct em400_instr em400_instr_in_legal = { O(035), VARMASK_DABC, { 1, 0, 0, op_ou } };
+struct em400_instr em400_instr_ou_legal = { O(036), VARMASK_DABC, { 1, 0, 0, op_in } };
+
 // additional MX-16 instructions
 struct em400_instr em400_instr_sint = { O(073)+00204, VARMASK_B, { 0, 0, 1, op_73_sint } };
 struct em400_instr em400_instr_sind = { O(073)+01204, VARMASK_B, { 0, 0, 1, op_73_sind } };

@@ -51,7 +51,7 @@ uint16_t cycle_ic;
 // returns -1 on success
 // anything >0 means that we've tried to overwrite that opcode
 // (this cannot happen)
-static void cpu_register_op(struct em400_op **op_tab, uint16_t opcode, uint16_t mask, struct em400_op *op)
+static int cpu_register_op(struct em400_op **op_tab, uint16_t opcode, uint16_t mask, struct em400_op *op, int overwrite_check)
 {
 	int i, pos;
 	int offsets[16];
@@ -59,7 +59,7 @@ static void cpu_register_op(struct em400_op **op_tab, uint16_t opcode, uint16_t 
 	int max;
 	uint16_t result;
 
-	if (!mask) return;
+	if (!mask) return E_OK;
 
 	for (i=0 ; i<16 ; i++) {
 		if (mask & (1<<i)) {
@@ -75,28 +75,53 @@ static void cpu_register_op(struct em400_op **op_tab, uint16_t opcode, uint16_t 
 		for (pos=one_count-1 ; pos>=0 ; pos--) {
 			result |= ((i >> pos) & 1) << offsets[pos];
 		}
-		//assert(op->fun && op_tab[opcode|result]->fun);
+		if (overwrite_check && op->fun && op_tab[opcode|result]->fun) {
+			return E_SLID_INIT;
+		}
 		op_tab[opcode | result] = op;
 	}
+	return E_OK;
 }
 
 // -----------------------------------------------------------------------
 int cpu_init()
 {
+	int res;
+
 	regs[R_KB] = em400_cfg.keys;
 
-/*
+	// initialize instruction decoder
+	cpu_register_op(em400_op_tab, 0, 0xffff, &em400_instr_illegal.op, 0);
+	struct em400_instr *instr = em400_ilist_mera400;
+	while (instr->var_mask) {
+		res = cpu_register_op(em400_op_tab, instr->opcode, instr->var_mask, &instr->op, 1);
+		if (res != E_OK) {
+			return res;
+		}
+		instr++;
+	}
+
+	// register CRON instruction, if cpu mod is enabled in configuration
+	if (em400_cfg.cpu_mod) {
+		res = cpu_register_op(em400_op_tab, em400_instr_cron.opcode, em400_instr_cron.var_mask, &em400_instr_cron.op, 1);
+		if (res != E_OK) {
+			return res;
+		}
+	}
+
 	// set IN/OU operations user-legalness
-	iset[035].user_illegal = em400_cfg.cpu_user_io_illegal;
-	iset[036].user_illegal = em400_cfg.cpu_user_io_illegal;
-*/
+	if (!em400_cfg.cpu_user_io_illegal) {
+		cpu_register_op(em400_op_tab, em400_instr_in_legal.opcode, em400_instr_in_legal.var_mask, &em400_instr_in_legal.op, 0);
+		cpu_register_op(em400_op_tab, em400_instr_ou_legal.opcode, em400_instr_ou_legal.var_mask, &em400_instr_ou_legal.op, 0);
+	}
+
+	cpu_reset();
+
 	// init interrupts
 	if (sem_init(&int_ready, 0, 0)) {
 		return E_SEM_INIT;
 	}
 	int_update_mask(regs[R_SR]);
-
-	cpu_reset();
 
 	return E_OK;
 }
@@ -110,7 +135,7 @@ void cpu_shutdown()
 // -----------------------------------------------------------------------
 int cpu_mod_on()
 {
-	// indicate that modifications are enabled
+	// indicate that CPU modifications are preset
 	cpu_mod = 1;
 
 	// set interrupts as for modified CPU
@@ -118,8 +143,8 @@ int cpu_mod_on()
 	int_extra = INT_TIMER;
 
 	// register SINT/SIND instructions
-	cpu_register_op(em400_op_tab, em400_instr_sint.opcode, em400_instr_sint.var_mask, &em400_instr_sint.op);
-	cpu_register_op(em400_op_tab, em400_instr_sind.opcode, em400_instr_sind.var_mask, &em400_instr_sind.op);
+	cpu_register_op(em400_op_tab, em400_instr_sint.opcode, em400_instr_sint.var_mask, &em400_instr_sint.op, 0);
+	cpu_register_op(em400_op_tab, em400_instr_sind.opcode, em400_instr_sind.var_mask, &em400_instr_sind.op, 0);
 
 	return E_OK;
 }
@@ -127,7 +152,7 @@ int cpu_mod_on()
 // -----------------------------------------------------------------------
 int cpu_mod_off()
 {
-	// indicate that modifications are disabled
+	// indicate that CPU modifications are absent
 	cpu_mod = 0;
 
 	// set interrupts as for vanilla CPU
@@ -135,8 +160,8 @@ int cpu_mod_off()
 	int_extra = INT_EXTRA;
 
 	// unregister SINT/SIND instructions (make them illegal)
-	cpu_register_op(em400_op_tab, em400_instr_sint.opcode, em400_instr_sint.var_mask, &em400_instr_illegal.op);
-	cpu_register_op(em400_op_tab, em400_instr_sind.opcode, em400_instr_sind.var_mask, &em400_instr_illegal.op);
+	cpu_register_op(em400_op_tab, em400_instr_sint.opcode, em400_instr_sint.var_mask, &em400_instr_illegal.op, 0);
+	cpu_register_op(em400_op_tab, em400_instr_sind.opcode, em400_instr_sind.var_mask, &em400_instr_illegal.op, 0);
 
 	return E_OK;
 }
@@ -144,19 +169,6 @@ int cpu_mod_off()
 // -----------------------------------------------------------------------
 void cpu_reset()
 {
-	// reset instruction decoder
-	cpu_register_op(em400_op_tab, 0, 0xffff, &em400_instr_illegal.op);
-	struct em400_instr *instr = em400_ilist_mera400;
-	while (instr->var_mask) {
-		cpu_register_op(em400_op_tab, instr->opcode, instr->var_mask, &instr->op);
-		instr++;
-	}
-
-	// register CRON instruction, if cpu mod is enabled in configuration
-	if (em400_cfg.cpu_mod) {
-		cpu_register_op(em400_op_tab, em400_instr_cron.opcode, em400_instr_cron.var_mask, &em400_instr_cron.op);
-	}
-
 	// disable cpu modifications
 	cpu_mod_off();
 

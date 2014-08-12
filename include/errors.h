@@ -61,6 +61,7 @@ enum em400_error {
 	E_NO_OPCODE,
 	E_MUTEX_INIT,
 	E_SEM_INIT,
+	E_SLID_INIT,
 
 	E_OK = 0,
 	E_QUIT_OK
