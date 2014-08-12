@@ -19,45 +19,33 @@
 #define ISET_H
 
 #include <inttypes.h>
-#include <stdbool.h>
 
 typedef void (*opfun)();
 
-struct opdef {
-	uint16_t opcode;			// basic/extended opcode
-	_Bool norm_arg;				// normal argument?
-	_Bool short_arg;			// short argument?
-	_Bool user_illegal;			// illegal in user mode?
-	opfun fun;					// instruction execution function
-	struct opdef *(*get_eop)();	// pointer to extop getter
+struct em400_op {
+	int norm_arg;			// has normal argument?
+	int short_arg;			// has short argument?
+	int user_illegal;		// is illegal in user mode?
+	opfun fun;				// instruction function
 };
 
-#include "cpu/cpu.h"
+struct em400_instr {
+	uint16_t opcode;		// instruction opcode (and extended opcode)
+	uint16_t var_mask;		// variable bits mask
+	struct em400_op op;		// opcode definition
+};
 
-// basic opcodes jump table
-extern struct opdef iset[];
+// opcode table (instruction decoder decision table)
+extern struct em400_op *em400_op_tab[0x10000];
 
-// macros to access sub-opcodes
-#define EXT_OP_37(x) _A(x)
-#define EXT_OP_70(x) _A(x)
-#define EXT_OP_71(x) ((x & 0b0000001100000000) >> 8)
-#define EXT_OP_72(x) (((x & 0b0000001000000000) >> 3) | (x & 0b0000000000111111))
-#define EXT_OP_73(x) (((x & 0b0000001111000000) >> 3) | (x & 0b0000000000000111))
-#define EXT_OP_74(x) _A(x)
-#define EXT_OP_75(x) _A(x)
-#define EXT_OP_76(x) _A(x)
-#define EXT_OP_77(x) _A(x)
-
-// sub-opcodes (2nd level) jump tables
-extern struct opdef iset_37[];
-extern struct opdef iset_70[];
-extern struct opdef iset_71[];
-extern struct opdef iset_72[];
-extern struct opdef iset_73[];
-extern struct opdef iset_74[];
-extern struct opdef iset_75[];
-extern struct opdef iset_76[];
-extern struct opdef iset_77[];
+// instruction list
+extern struct em400_instr em400_ilist_mera400[];
+extern struct em400_instr em400_instr_in_legal;
+extern struct em400_instr em400_instr_ou_legal;
+extern struct em400_instr em400_instr_sint;
+extern struct em400_instr em400_instr_sind;
+extern struct em400_instr em400_instr_cron;
+extern struct em400_instr em400_instr_illegal;
 
 #endif
 

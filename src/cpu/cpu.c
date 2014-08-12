@@ -15,6 +15,9 @@
 //  Foundation, Inc.,
 //  51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 
+#include <string.h>
+#include <assert.h>
+
 #include "cpu/cpu.h"
 #include "cpu/registers.h"
 #include "cpu/interrupts.h"
@@ -36,7 +39,6 @@
 #endif
 #include "debugger/log.h"
 
-//uint16_t regs[R_MAX];
 int P;
 uint32_t N;
 int cpu_mod;
@@ -46,31 +48,84 @@ uint16_t cycle_ic;
 #endif
 
 // -----------------------------------------------------------------------
+static int cpu_register_op(struct em400_op **op_tab, uint16_t opcode, uint16_t mask, struct em400_op *op, int overwrite_check)
+{
+	int i, pos;
+	int offsets[16];
+	int one_count = 0;
+	int max;
+	uint16_t result;
+
+	// if mask is empty - nothing to do
+	if (!mask) return E_OK;
+
+	// store 1's positions in mask, count 1's
+	for (i=0 ; i<16 ; i++) {
+		if (mask & (1<<i)) {
+			offsets[one_count] = i;
+			one_count++;
+		}
+	}
+
+	max = (1 << one_count) - 1;
+
+	// iterate over all variants (as indicated by the mask)
+	for (i=0 ; i<=max ; i++) {
+		result = 0;
+		// shift 1's into positions
+		for (pos=one_count-1 ; pos>=0 ; pos--) {
+			result |= ((i >> pos) & 1) << offsets[pos];
+		}
+		// sanity check: we don't want to overwrite already registered ops
+		if (overwrite_check && op->fun && op_tab[opcode|result]->fun) {
+			return E_SLID_INIT;
+		}
+		// register the op
+		op_tab[opcode | result] = op;
+	}
+	return E_OK;
+}
+
+// -----------------------------------------------------------------------
 int cpu_init()
 {
 	int res;
 
 	regs[R_KB] = em400_cfg.keys;
 
-	// enable enabling cpu modification, if cpu mod is enabled in configuration
+	// initialize instruction decoder
+	cpu_register_op(em400_op_tab, 0, 0xffff, &em400_instr_illegal.op, 0);
+	struct em400_instr *instr = em400_ilist_mera400;
+	while (instr->var_mask) {
+		res = cpu_register_op(em400_op_tab, instr->opcode, instr->var_mask, &instr->op, 1);
+		if (res != E_OK) {
+			return res;
+		}
+		instr++;
+	}
+
+	// register CRON instruction, if cpu mod is enabled in configuration
 	if (em400_cfg.cpu_mod) {
-		res = cpu_mod_enable();
+		res = cpu_register_op(em400_op_tab, em400_instr_cron.opcode, em400_instr_cron.var_mask, &em400_instr_cron.op, 1);
 		if (res != E_OK) {
 			return res;
 		}
 	}
 
 	// set IN/OU operations user-legalness
-	iset[035].user_illegal = em400_cfg.cpu_user_io_illegal;
-	iset[036].user_illegal = em400_cfg.cpu_user_io_illegal;
+	if (!em400_cfg.cpu_user_io_illegal) {
+		cpu_register_op(em400_op_tab, em400_instr_in_legal.opcode, em400_instr_in_legal.var_mask, &em400_instr_in_legal.op, 0);
+		cpu_register_op(em400_op_tab, em400_instr_ou_legal.opcode, em400_instr_ou_legal.var_mask, &em400_instr_ou_legal.op, 0);
+	}
+
+	cpu_reset();
 
 	// init interrupts
 	if (sem_init(&int_ready, 0, 0)) {
-		return E_SPIN_INIT;
+		return E_SEM_INIT;
 	}
 	int_update_mask(regs[R_SR]);
 
-	cpu_reset();
 	return E_OK;
 }
 
@@ -81,75 +136,55 @@ void cpu_shutdown()
 }
 
 // -----------------------------------------------------------------------
-int cpu_op_73_set(int opcode, opfun fun)
-{
-	struct opdef *op = iset_73;
-	while (op && (op->opcode != 0b1111111)) {
-		if (op->opcode == opcode) {
-			op->fun = fun;
-			return E_OK;
-		}
-		op++;
-	}
-	return E_NO_OPCODE;
-}
-
-// -----------------------------------------------------------------------
-int cpu_mod_enable()
-{
-	return cpu_op_73_set(0b0101000, op_73_cron);
-}
-
-// -----------------------------------------------------------------------
 int cpu_mod_on()
 {
-	int res;
-
+	// indicate that CPU modifications are preset
 	cpu_mod = 1;
+
+	// set interrupts as for modified CPU
 	int_timer = INT_EXTRA;
 	int_extra = INT_TIMER;
 
-	res = cpu_op_73_set(0b0010100, op_73_sint);
-	if (res != E_OK) {
-		return res;
-	}
-	res = cpu_op_73_set(0b1010100, op_73_sind);
-	if (res != E_OK) {
-		return res;
-	}
+	// register SINT/SIND instructions
+	cpu_register_op(em400_op_tab, em400_instr_sint.opcode, em400_instr_sint.var_mask, &em400_instr_sint.op, 0);
+	cpu_register_op(em400_op_tab, em400_instr_sind.opcode, em400_instr_sind.var_mask, &em400_instr_sind.op, 0);
+
 	return E_OK;
 }
 
 // -----------------------------------------------------------------------
 int cpu_mod_off()
 {
-	int res;
-
+	// indicate that CPU modifications are absent
 	cpu_mod = 0;
+
+	// set interrupts as for vanilla CPU
 	int_timer = INT_TIMER;
 	int_extra = INT_EXTRA;
 
-	res = cpu_op_73_set(0b0010100, NULL);
-	if (res != E_OK) {
-		return res;
-	}
-	res = cpu_op_73_set(0b1010100, NULL);
-	if (res != E_OK) {
-		return res;
-	}
+	// unregister SINT/SIND instructions (make them illegal)
+	cpu_register_op(em400_op_tab, em400_instr_sint.opcode, em400_instr_sint.var_mask, &em400_instr_illegal.op, 0);
+	cpu_register_op(em400_op_tab, em400_instr_sind.opcode, em400_instr_sind.var_mask, &em400_instr_illegal.op, 0);
+
 	return E_OK;
 }
 
 // -----------------------------------------------------------------------
 void cpu_reset()
 {
-	int i;
-	for (i=0 ; i<R_MAX ; i++) {
+	// disable cpu modifications
+	cpu_mod_off();
+
+	// clear registers
+	for (int i=0 ; i<R_MAX ; i++) {
 		regs[i] = 0;
 	}
+
+	// reset memory configuration
 	mem_reset();
+
+	// clear all interrupts
 	int_clear_all();
-	cpu_mod_off();
 }
 
 // -----------------------------------------------------------------------
@@ -192,8 +227,7 @@ int cpu_ctx_restore()
 // -----------------------------------------------------------------------
 void cpu_step()
 {
-	struct opdef *op;
-	opfun op_fun;
+	struct em400_op *op;
 	uint16_t data;
 
 #ifdef WITH_DEBUGGER
@@ -208,12 +242,9 @@ void cpu_step()
 	}
 	regs[R_IC]++;
 
-	// find instruction
-	op = iset + IR_OP;
-	if (op->get_eop) {
-		op = op->get_eop();
-	}
-	op_fun = op->fun;
+	// find instruction (by design op is always set to something,
+	// even for illegal instructions)
+	op = em400_op_tab[regs[R_IR]];
 
 	// end cycle if P is set
 	if (P) {
@@ -229,13 +260,13 @@ void cpu_step()
 	// end cycle if op is ineffective
 	if (
 	(Q && op->user_illegal)
-	|| ((regs[R_MODc] >= 3) && (op_fun == op_77_md))
-	|| (!op_fun)
+	|| ((regs[R_MODc] >= 3) && (op->fun == op_77_md))
+	|| !op->fun
 	) {
 #ifdef WITH_DEBUGGER
 	char buf[256];
 	dt_trans(cycle_ic, buf, DMODE_DASM);
-	LOG(L_CPU, 10, "    (ineffective) %s Q: %d, MODc=%d (%s%s)", buf, Q, regs[R_MODc], op_fun?"legal":"illegal", op->user_illegal?"":", user illegal");
+	LOG(L_CPU, 10, "    (ineffective) %s Q: %d, MODc=%d (%s%s)", buf, Q, regs[R_MODc], op->fun?"legal":"illegal", op->user_illegal?"":", user illegal");
 #endif
 		regs[R_MODc] = regs[R_MOD] = 0;
 		int_set(INT_ILLEGAL_OPCODE);
@@ -285,11 +316,11 @@ void cpu_step()
 #endif
 
 	// execute instruction
-	op_fun();
+	op->fun();
 
 catch_nomem:
 	// clear mod if instruction wasn't md
-	if (op_fun != op_77_md) {
+	if (op->fun != op_77_md) {
 		regs[R_MODc] = regs[R_MOD] = 0;
 	}
 }
