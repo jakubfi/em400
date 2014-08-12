@@ -242,7 +242,8 @@ void cpu_step()
 	}
 	regs[R_IC]++;
 
-	// find instruction
+	// find instruction (by design op is always set to something,
+	// even for illegal instructions)
 	op = em400_op_tab[regs[R_IR]];
 
 	// end cycle if P is set
@@ -258,9 +259,9 @@ void cpu_step()
 
 	// end cycle if op is ineffective
 	if (
-	!op->fun
-	|| (Q && op->user_illegal)
+	(Q && op->user_illegal)
 	|| ((regs[R_MODc] >= 3) && (op->fun == op_77_md))
+	|| !op->fun
 	) {
 #ifdef WITH_DEBUGGER
 	char buf[256];
