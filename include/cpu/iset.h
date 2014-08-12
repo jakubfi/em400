@@ -36,7 +36,7 @@ struct em400_instr {
 };
 
 // opcode table (instruction decoder decision table)
-extern struct em400_op *em400_op_tab[0xffff+1];
+extern struct em400_op *em400_op_tab[0x10000];
 
 // instruction list
 extern struct em400_instr em400_ilist_mera400[];
@@ -46,17 +46,6 @@ extern struct em400_instr em400_instr_sint;
 extern struct em400_instr em400_instr_sind;
 extern struct em400_instr em400_instr_cron;
 extern struct em400_instr em400_instr_illegal;
-
-// macros to access sub-opcodes
-#define EXT_OP_37(x) _A(x)
-#define EXT_OP_70(x) _A(x)
-#define EXT_OP_71(x) ((x & 0b0000001100000000) >> 8)
-#define EXT_OP_72(x) (((x & 0b0000001000000000) >> 3) | (x & 0b0000000000111111))
-#define EXT_OP_73(x) (((x & 0b0000001111000000) >> 3) | (x & 0b0000000000000111))
-#define EXT_OP_74(x) _A(x)
-#define EXT_OP_75(x) _A(x)
-#define EXT_OP_76(x) _A(x)
-#define EXT_OP_77(x) _A(x)
 
 #endif
 

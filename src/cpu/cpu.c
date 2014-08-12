@@ -48,9 +48,6 @@ uint16_t cycle_ic;
 #endif
 
 // -----------------------------------------------------------------------
-// returns -1 on success
-// anything >0 means that we've tried to overwrite that opcode
-// (this cannot happen)
 static int cpu_register_op(struct em400_op **op_tab, uint16_t opcode, uint16_t mask, struct em400_op *op, int overwrite_check)
 {
 	int i, pos;
@@ -59,8 +56,10 @@ static int cpu_register_op(struct em400_op **op_tab, uint16_t opcode, uint16_t m
 	int max;
 	uint16_t result;
 
+	// if mask is empty - nothing to do
 	if (!mask) return E_OK;
 
+	// store 1's positions in mask, count 1's
 	for (i=0 ; i<16 ; i++) {
 		if (mask & (1<<i)) {
 			offsets[one_count] = i;
@@ -70,14 +69,18 @@ static int cpu_register_op(struct em400_op **op_tab, uint16_t opcode, uint16_t m
 
 	max = (1 << one_count) - 1;
 
+	// iterate over all variants (as indicated by the mask)
 	for (i=0 ; i<=max ; i++) {
 		result = 0;
+		// shift 1's into positions
 		for (pos=one_count-1 ; pos>=0 ; pos--) {
 			result |= ((i >> pos) & 1) << offsets[pos];
 		}
+		// sanity check: we don't want to overwrite already registered ops
 		if (overwrite_check && op->fun && op_tab[opcode|result]->fun) {
 			return E_SLID_INIT;
 		}
+		// register the op
 		op_tab[opcode | result] = op;
 	}
 	return E_OK;
