@@ -1,7 +1,6 @@
 Known bugs:
 
 * r argument for I/O operations is not atomic
-* serious performance regression on ARM (wide N?)
 
 CPU:
 
