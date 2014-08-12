@@ -32,7 +32,7 @@ extern uint16_t cycle_ic;
 int cpu_init();
 void cpu_shutdown();
 int cpu_op_73_set(int opcode, opfun fun);
-int cpu_mod_enable();
+void cpu_mod_enable();
 int cpu_mod_on();
 int cpu_mod_off();
 void cpu_reset();

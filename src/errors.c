@@ -68,6 +68,7 @@ struct _em400_errordesc {
 	{ E_TERM_CONSOLE_TERM, "cannot use console by more than one terminal" },
 	{ E_NO_OPCODE, "could not find opcode to set op_fun()" },
 	{ E_MUTEX_INIT, "could not initialize mutex" },
+	{ E_SEM_INIT, "could not initialize semaphore" },
 
 	{ E_UNKNOWN, "unknown error" }
 };
