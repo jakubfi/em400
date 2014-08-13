@@ -236,9 +236,8 @@ void cpu_step()
 
 	// fetch instruction
 	if (!mem_cpu_get(QNB, regs[R_IC], regs+R_IR)) {
-		regs[R_MODc] = regs[R_MOD] = 0;
 		LOG(L_CPU, 10, "    (no mem)");
-		return;
+		goto finish;
 	}
 	regs[R_IC]++;
 
@@ -251,30 +250,21 @@ void cpu_step()
 		LOG(L_CPU, 10, "    (skip)");
 		P = 0;
 		// skip also M-arg if present
-		if (op->norm_arg && !IR_C) {
-			regs[R_IC]++;
-		}
-		return;
+		if (op->norm_arg && !IR_C) regs[R_IC]++;
+		goto finish;
 	}
 
 	// end cycle if op is ineffective
-	if (
-	(Q && op->user_illegal)
-	|| ((regs[R_MODc] >= 3) && (op->fun == op_77_md))
-	|| !op->fun
-	) {
+	if ((Q && op->user_illegal) || ((regs[R_MODc] >= 3) && (op->fun == op_77_md)) || !op->fun) {
 #ifdef WITH_DEBUGGER
-	char buf[256];
-	dt_trans(cycle_ic, buf, DMODE_DASM);
-	LOG(L_CPU, 10, "    (ineffective) %s Q: %d, MODc=%d (%s%s)", buf, Q, regs[R_MODc], op->fun?"legal":"illegal", op->user_illegal?"":", user illegal");
+		char buf[256];
+		dt_trans(cycle_ic, buf, DMODE_DASM);
+		LOG(L_CPU, 10, "    (ineffective) %s Q: %d, MODc=%d (%s%s)", buf, Q, regs[R_MODc], op->fun?"legal":"illegal", op->user_illegal?"":", user illegal");
 #endif
-		regs[R_MODc] = regs[R_MOD] = 0;
 		int_set(INT_ILLEGAL_OPCODE);
 		// skip also M-arg if present
-		if (op->norm_arg && !IR_C) {
-			regs[R_IC]++;
-		}
-		return;
+		if (op->norm_arg && !IR_C) regs[R_IC]++;
+		goto finish;
 	}
 
 	// process argument
@@ -282,7 +272,7 @@ void cpu_step()
 		if (IR_C) {
 			N = (uint16_t) (regs[IR_C] + regs[R_MOD]);
 		} else {
-			if (!mem_cpu_get(QNB, regs[R_IC], &data)) goto catch_nomem;
+			if (!mem_cpu_get(QNB, regs[R_IC], &data)) goto finish;
 			N = (uint16_t) (data + regs[R_MOD]);
 			regs[R_IC]++;
 		}
@@ -290,7 +280,7 @@ void cpu_step()
 			N += regs[IR_B];
 		}
 		if (IR_D) {
-			if (!mem_cpu_get(QNB, N, &data)) goto catch_nomem;
+			if (!mem_cpu_get(QNB, N, &data)) goto finish;
 			N = data;
 		}
 	} else if (op->short_arg) {
@@ -318,10 +308,11 @@ void cpu_step()
 	// execute instruction
 	op->fun();
 
-catch_nomem:
 	// clear mod if instruction wasn't md
 	if (op->fun != op_77_md) {
-		regs[R_MODc] = regs[R_MOD] = 0;
+finish:
+		regs[R_MODc] = 0;
+		regs[R_MOD] = 0;
 	}
 }
 
