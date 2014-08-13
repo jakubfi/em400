@@ -16,7 +16,6 @@
 //  51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 
 #include <string.h>
-#include <assert.h>
 
 #include "cpu/cpu.h"
 #include "cpu/registers.h"
@@ -120,10 +119,6 @@ int cpu_init()
 
 	cpu_reset();
 
-	// init interrupts
-	if (sem_init(&int_ready, 0, 0)) {
-		return E_SEM_INIT;
-	}
 	int_update_mask(regs[R_SR]);
 
 	return E_OK;
@@ -132,7 +127,6 @@ int cpu_init()
 // -----------------------------------------------------------------------
 void cpu_shutdown()
 {
-	sem_destroy(&int_ready);
 }
 
 // -----------------------------------------------------------------------

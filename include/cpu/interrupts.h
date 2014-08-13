@@ -20,10 +20,9 @@
 
 #include <inttypes.h>
 #include <pthread.h>
-#include <semaphore.h>
 
-extern sem_t int_ready;
 extern uint32_t RZ;
+extern uint32_t RP;
 
 extern int int_timer;
 extern int int_extra;

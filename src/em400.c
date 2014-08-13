@@ -24,6 +24,7 @@
 #include <sys/stat.h>
 #include <sys/types.h>
 
+#include "atomic.h"
 #include "cpu/cpu.h"
 #include "cpu/registers.h"
 #include "mem/mem.h"
@@ -292,7 +293,7 @@ void em400_loop()
 #endif
 		cpu_step();
 
-		if (!P && !regs[R_MODc] && !sem_trywait(&int_ready)) {
+		if (atom_load(&RP) && !P && !regs[R_MODc]) {
 			int_serve();
 		}
 
