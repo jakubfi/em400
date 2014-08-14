@@ -230,8 +230,9 @@ void cpu_step()
 
 	// fetch instruction
 	if (!mem_cpu_get(QNB, regs[R_IC], regs+R_IR)) {
+		regs[R_MODc] = regs[R_MOD] = 0;
 		LOG(L_CPU, 10, "    (no mem)");
-		goto finish;
+		return;
 	}
 	regs[R_IC]++;
 
@@ -245,7 +246,7 @@ void cpu_step()
 		P = 0;
 		// skip also M-arg if present
 		if (op->norm_arg && !IR_C) regs[R_IC]++;
-		goto finish;
+		return;
 	}
 
 	// end cycle if op is ineffective
@@ -255,10 +256,11 @@ void cpu_step()
 		dt_trans(cycle_ic, buf, DMODE_DASM);
 		LOG(L_CPU, 10, "    (ineffective) %s Q: %d, MODc=%d (%s%s)", buf, Q, regs[R_MODc], op->fun?"legal":"illegal", op->user_illegal?"":", user illegal");
 #endif
+		regs[R_MODc] = regs[R_MOD] = 0;
 		int_set(INT_ILLEGAL_OPCODE);
 		// skip also M-arg if present
 		if (op->norm_arg && !IR_C) regs[R_IC]++;
-		goto finish;
+		return;
 	}
 
 	// process argument
