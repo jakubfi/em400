@@ -1,5 +1,7 @@
 ; CONFIG configs/mod.cfg
 
+; CRON is legal for modified (MX-16) CPU
+
 	.cpu mx16
 
 	cron

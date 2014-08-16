@@ -40,6 +40,8 @@ ok:	im	mask
 	rw	r1, seg\3+addr
 	lw	r7, seg\3+addr
 
+; no matter how we build the address, 'lb' will fail for addresses >= 0x8000
+
 	md	1
 	lb	r3, r7+r7
 
@@ -52,7 +54,7 @@ ok:	im	mask
 	lb	r4, r7
 
 	lwt	r1, 0
-	lb	r1, (seg\3+addr)*2 + 1 ; neither this
+	lb	r1, (seg\3+addr)*2 + 1
 
 	hlt	077
 

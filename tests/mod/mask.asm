@@ -1,5 +1,9 @@
 ; CONFIG configs/mod.cfg
 
+; Vanilla CPU masks all interrupts below and including current one.
+; Modified (MX-16) CPU handles interrupt masking differently:
+; any channel interrupt causes masging interrupts  5-31.
+
 	.cpu mx16
 
 	.equ inttable 0x40
@@ -24,12 +28,16 @@ raise:	.word 1\3
 	lw r1, mx
 	rw r1, int_mx
 
+; first, check int masking for vanilla CPU (store mask at [0x200])
 	lw r7, 0x200
 	im mask
 	hlt 0
 	nop
+
 	im zmask
 	mcl
+
+; then, repeat for MX-16 CPU (store mask at [0x201])
 	cron
 	lw r7, 0x201
 	im mask
@@ -38,17 +46,22 @@ raise:	.word 1\3
 
 	hlt 077
 
-empty:	lip
-
+; we use simulated 2nd CPU interrupt to get interrupt mask
+; that was set by previous interrupt
 cpu2x:	md [stackp]
 	lw r1, [-2]
-	rw r1, r7
+	rw r1, r7	; store previous int mask
 	lip
 
-mx:	fi raise
+; we use multix as a source of channel interrupt
+; (as it always sends interrupt after initialization)
+mx:	fi raise	; raise 2nd CPU interrupt
 	md [stackp]
-	ib -4
+	ib -4		; in case interrupt is ready early at 'im' (i.e. before 'hlt')
 	lip
+
+; all other interrupts do nothing
+empty:	lip
 
 stack:	.res 4*16
 

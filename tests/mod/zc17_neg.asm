@@ -42,7 +42,7 @@ ok:	im	mask
 
 	lw	r7, seg\3+addr
 	md	-1
-	lb	r2, r7+r7
+	lb	r2, r7+r7	; this should work just fine
 
 	hlt	077
 
