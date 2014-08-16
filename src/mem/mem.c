@@ -185,6 +185,7 @@ int mem_mput(int nb, uint16_t saddr, uint16_t *src, int count)
 				*ptr = *(src+i);
 			}
 		} else {
+			atom_fence();
 			return 0;
 		}
 	}
