@@ -221,7 +221,7 @@ void int_serve()
 	if (cpu_mod_active && (interrupt >= 12) && (interrupt <= 27)) sr_mask &= MASK_EX; // put extended mask if cpu_mod
 	if (!cpu_ctx_switch(int_spec, int_addr, sr_mask)) return;
 
-	if (emulog_enabled) {
+	if (EMULOG_ENABLED) {
 		emulog_intlevel_inc();
 	}
 }

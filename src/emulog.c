@@ -21,16 +21,18 @@
 
 #include "logger.h"
 #include "emulog.h"
+#include "errors.h"
 
 struct logger *l;
-char *emulog_fname;
 
-int emulog_enabled = 0;
 uint16_t emulog_cycle_ic;
 char emulog_pname[7] = "------";
+FILE *emulog_f;
+int emulog_enabled;
+int emulog_paused;
 
 #define EMULOG_INT_INDENT_MAX 4*8
-int emulog_int_level;
+int emulog_int_level = EMULOG_INT_INDENT_MAX;
 const char *emulog_int_indent = "--> --> --> --> --> --> --> --> ";
 
 int emulog_exl_number = -1;
@@ -39,84 +41,77 @@ int emulog_exl_addr;
 int emulog_exl_r4;
 
 const char *emulog_comp_names[] = {
-	"REG",
-	"MEM",
-	"CPU",
-	"OP",
-	"INT",
-	"IO",
-	"MX",
-	"PX",
-	"CCHR",
-	"CMEM",
-	"TERM",
-	"WNCH",
-	"FLOP",
-	"PNCH",
-	"PNRD",
-	"CRK5",
-	NULL
+   "REG",
+   "MEM",
+   "CPU",
+   "OP",
+   "INT",
+   "IO",
+   "MX",
+   "PX",
+   "CCHR",
+   "CMEM",
+   "TERM",
+   "WNCH",
+   "FLOP",
+   "PNCH",
+   "PNRD",
+   "CRK5",
+   NULL
 };
 
 // -----------------------------------------------------------------------
-char * emulog_get_fname()
+int emulog_init(int paused, char *filename, char *format)
 {
-	return emulog_fname;
+	emulog_f = fopen(filename, "a");
+	if (!emulog_f) {
+		return E_FILE_OPEN;
+	}
+		
+	l = log_init(emulog_f, format, emulog_comp_names);
+
+	if (!l) {
+		fclose(emulog_f);
+		return E_LOGGER;
+	}
+
+	emulog_enabled = 1;
+	emulog_paused = paused;
+
+	return E_OK;
 }
 
 // -----------------------------------------------------------------------
-int emulog_open(char *filename)
+void emulog_shutdown()
 {
-	if (!emulog_enabled) return 0;
-	emulog_close();
-
-	FILE *f = fopen(filename, "a");
-	l = log_init(f, "%t | %4c | %3l | %m", emulog_comp_names);
-
-	if (!l) {
-		return -1;
-	} else {
-		emulog_fname = strdup(filename);
-		return 0;
-	}
-}
-
-// -----------------------------------------------------------------------
-int emulog_close(char *filename)
-{
-	if (!l) {
-		return -1;
-	}
-
 	log_shutdown(l);
-	free(emulog_fname);
-	emulog_fname = NULL;
-
-	return 0;
+	if (emulog_f) {
+		fclose(emulog_f);
+	}
 }
 
 // -----------------------------------------------------------------------
-int emulog_enable()
+void emulog_pause()
 {
-	return log_on(l);
+	atom_store(&emulog_paused, 1);
 }
 
 // -----------------------------------------------------------------------
-int emulog_disable()
+void emulog_rec()
 {
-	return log_off(l);
+	atom_store(&emulog_paused, 0);
+}
+
+// -----------------------------------------------------------------------
+int emulog_is_paused()
+{
+	return atom_load(&emulog_paused);
 }
 
 // -----------------------------------------------------------------------
 int emulog_set_level(int component, unsigned level)
 {
 	return log_set_level(l, component, level);
-}
-
-// -----------------------------------------------------------------------
-int emulog_is_enabled()
-{
-	return log_is_enabled(l);
 }
 
 // -----------------------------------------------------------------------
@@ -140,10 +135,6 @@ int emulog_get_component_id(char *name)
 // -----------------------------------------------------------------------
 void emulog_log(int component, int level, char *msgfmt, ...)
 {
-	if (!log_allowed(l, component, level)) {
-		return;
-	}
-	
 	va_list vl;
 	va_start(vl, msgfmt);
 	log_vdo(l, component, level, msgfmt, vl);
@@ -156,29 +147,26 @@ void emulog_splitlog(int component, int level, char *text)
 	char *p;
 	char *start = text;
 
-	if (!log_allowed(l, component, level)) {
-		return;
-	}
-
-	EMULOG(component, level, "%s", " ,---------------------------------------------------------");
+	log_do(l, component, level, EMULOG_FORMAT_NONCPU "%s", " .---------------------------------------------------------");
 	while (start && *start) {
 		p = strchr(start, '\n');
 		if (p) {
 			*p = '\0';
-			EMULOG(component, level, " | %s", start);
+			log_do(l, component, level, EMULOG_FORMAT_NONCPU " | %s", start);
 			start = p+1;
 		} else {
-			EMULOG(component, level, " | %s", start);
+			log_do(l, component, level, EMULOG_FORMAT_NONCPU " | %s", start);
 			start = NULL;
 		}
 	}
-	EMULOG(component, level, "%s", " `---------------------------------------------------------");
+	log_do(l, component, level, EMULOG_FORMAT_NONCPU "%s", " `---------------------------------------------------------");
+
 }
 
 // -----------------------------------------------------------------------
 int emulog_wants(int component, int level)
 {
-	return log_allowed(l, component, level);
+	return !emulog_paused && log_allowed(l, component, level);
 }
 
 // -----------------------------------------------------------------------

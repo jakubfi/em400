@@ -34,6 +34,7 @@ number	[0-9]+
 text	[^,: \n\t\r\f]+
 chars	[\}\{=:,]
 comment	#.*$
+string	\".+\"
 
 %%
 
@@ -50,10 +51,24 @@ mem_mega_prom	return MEGA_PROM;
 mem_mega_boot	return MEGA_BOOT;
 cpu_stop_on_nomem return CPU_STOP_ON_NOMEM;
 mem_os_segments	return OS_SEG;
-true|yes		{ cyylval.value.v = 1; cyylval.value.s = strdup(cyytext); return BOOL; }
-false|no		{ cyylval.value.v = 0; cyylval.value.s = strdup(cyytext); return BOOL; }
+
+emulog			return EMULOG;
+enabled			return ENABLED;
+paused			return PAUSED;
+file			return LFILE;
+format			return FORMAT;
+
 channel			return CHANNEL;
 unit			return UNIT;
+
+true|yes		{ cyylval.value.v = 1; cyylval.value.s = strdup(cyytext); return BOOL; }
+false|no		{ cyylval.value.v = 0; cyylval.value.s = strdup(cyytext); return BOOL; }
+
+{string} {
+	cyytext[strlen(cyytext)-1] = '\0';
+	cyylval.value.s = strdup(cyytext+1);
+	return STRING;
+}
 
 {number} {
 	cyylval.value.v = strtol(cyytext, NULL, 10);

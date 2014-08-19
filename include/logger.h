@@ -34,12 +34,12 @@
 */
 
 struct logger {
-	int enabled;
 	FILE *out;
 	char *format;
 	char *comp_names[LOG_COMP_MAX];
 	unsigned comp_thr[LOG_COMP_MAX];
 	int quit;
+	int color;
 	pthread_t flusher_th;
 	pthread_mutex_t log_mutex;
 	pthread_cond_t log_cond;
@@ -51,9 +51,6 @@ int log_set_level(struct logger *l, int component, unsigned level);
 int log_get_level(struct logger *l, unsigned component);
 void log_do(struct logger *l, unsigned component, unsigned level, char *msgfmt, ...);
 void log_vdo(struct logger *l, unsigned component, unsigned level, char *msgfmt, va_list ap); 
-int log_on(struct logger *l);
-int log_off(struct logger *l);
-int log_is_enabled(struct logger *l);
 int log_allowed(struct logger *l, unsigned component, unsigned level);
 int log_get_component_id(struct logger *l, char *name);
 char * log_get_component_name(struct logger *l, unsigned component);

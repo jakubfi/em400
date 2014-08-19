@@ -33,6 +33,65 @@ int cyylex_destroy();
 int cfg_error = 0;
 
 // -----------------------------------------------------------------------
+int cfg_default()
+{
+	em400_cfg.program_name = NULL;
+	em400_cfg.cfg_provided = NULL;
+	em400_cfg.exit_on_hlt = 0;
+	em400_cfg.verbose = 0;
+	em400_cfg.benchmark = 0;
+	em400_cfg.cfg_dir = NULL;
+	em400_cfg.home_cfg_file = NULL;
+	em400_cfg.hist_file = NULL;
+
+	em400_cfg.speed_real = 0;
+	em400_cfg.timer_step = 10;
+	em400_cfg.timer_start = 1;
+	em400_cfg.cpu_mod = 0;
+	em400_cfg.cpu_user_io_illegal = 1;
+	em400_cfg.cpu_awp = 1;
+	em400_cfg.keys = 0;
+	em400_cfg.mem_elwro = 1;
+	em400_cfg.mem_mega = 0;
+	em400_cfg.mem_mega_prom = NULL;
+	em400_cfg.mem_mega_boot = 0;
+	em400_cfg.cpu_stop_on_nomem = 1;
+	em400_cfg.mem_os = 2;
+	em400_cfg.emulog_enabled = 0;
+	em400_cfg.emulog_file = strdup("em400.log");
+	em400_cfg.emulog_format = strdup("%t | %4c | %3l | %m");
+
+	em400_cfg.chans = NULL;
+
+#ifdef WITH_DEBUGGER
+	em400_cfg.autotest = 0;
+	em400_cfg.pre_expr = NULL;
+	em400_cfg.test_expr = NULL;
+	em400_cfg.ui_simple = 0;
+#endif
+
+	// setup paths
+	const char cfg_dir[] = ".em400";
+	const char cfg_file[] = "em400.cfg";
+	const char cfg_hist_file[] = "history";
+	char *home = getenv("HOME");
+
+	em400_cfg.cfg_dir = malloc(strlen(home) + strlen(cfg_dir) + 2);
+	em400_cfg.home_cfg_file = malloc(strlen(home) + strlen(cfg_dir) + strlen(cfg_file) + 3);
+	em400_cfg.hist_file = malloc(strlen(home) + strlen(cfg_dir) + strlen(cfg_hist_file) + 3);
+
+	if (!em400_cfg.cfg_dir || !em400_cfg.home_cfg_file || !em400_cfg.hist_file) {
+		return E_ALLOC;
+	}
+
+	sprintf(em400_cfg.cfg_dir, "%s/%s", home, cfg_dir);
+	sprintf(em400_cfg.home_cfg_file, "%s/%s/%s", home, cfg_dir, cfg_file);
+	sprintf(em400_cfg.hist_file, "%s/%s/%s", home, cfg_dir, cfg_hist_file);
+
+	return E_OK;
+}
+
+// -----------------------------------------------------------------------
 int cfg_load(char *cfg_file)
 {
 	eprint("Loading config file: %s\n", cfg_file);
@@ -63,10 +122,12 @@ void cfg_print()
 	eprint("  Emulation speed: %s\n", em400_cfg.speed_real ? "real" : "max");
 	eprint("  Timer step: %i (%s at power-on)\n", em400_cfg.timer_step, em400_cfg.timer_start ? "enabled" : "disabled");
 	eprint("  CPU modifications: %s\n", em400_cfg.cpu_mod ? "true" : "false");
+	eprint("  CPU stop on nomem: %s\n", em400_cfg.cpu_stop_on_nomem ? "true" : "false");
 	eprint("  -- Memory: ---------------------------\n");
 	eprint("  Elwro modules: %i\n", em400_cfg.mem_elwro);
 	eprint("  MEGA modules: %i\n", em400_cfg.mem_mega);
 	eprint("  MEGA PROM image: %s\n", em400_cfg.mem_mega_prom);
+	eprint("  MEGA boot: %s\n", em400_cfg.mem_mega_boot ? "true" : "false");
 	eprint("  Segments for OS: %i\n", em400_cfg.mem_os);
 	eprint("  -- I/O: ------------------------------\n");
 	struct cfg_chan_t *chanc = em400_cfg.chans;

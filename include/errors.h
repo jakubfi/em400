@@ -62,6 +62,7 @@ enum em400_error {
 	E_MUTEX_INIT,
 	E_SEM_INIT,
 	E_SLID_INIT,
+	E_LOGGER,
 
 	E_OK = 0,
 	E_QUIT_OK

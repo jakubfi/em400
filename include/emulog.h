@@ -19,6 +19,7 @@
 
 #include "utils.h"
 #include "logger.h"
+#include "atomic.h"
 
 #ifndef EMULOG_H
 #define EMULOG_H
@@ -49,13 +50,12 @@ enum emulog_components {
 
 extern int emulog_enabled;
 
-char *emulog_get_fname();
-int emulog_open(char *filename);
-int emulog_close();
-int emulog_enable();
-int emulog_disable();
+int emulog_init(int paused, char *filename, char *format);
+void emulog_shutdown();
+void emulog_pause();
+void emulog_rec();
+int emulog_is_paused();
 int emulog_set_level(int component, unsigned level);
-int emulog_is_enabled();
 char * emulog_get_component_name(int component);
 int emulog_get_component_id(char *name);
 int emulog_get_level(int component);
@@ -74,15 +74,19 @@ void emulog_intlevel_dec();
 void emulog_intlevel_inc();
 const char *emulog_intlevel_get_indent();
 
-#define EMULOG_WANTS(component, level) ((emulog_enabled) && (emulog_wants((component), (level))))
+#define EMULOG_FORMAT_NONCPU "              |        | "
+#define EMULOG_FORMAT_CPU "%-3s %2i:0x%04x | %s | %s"
+
+#define EMULOG_ENABLED (emulog_enabled)
+#define EMULOG_WANTS(component, level) (EMULOG_ENABLED && emulog_wants(component, level))
 
 #define EMULOG(component, level, format, ...) \
 	if (EMULOG_WANTS(component, level)) \
-		emulog_log(component, level, "              |        | " format, ##__VA_ARGS__)
+		emulog_log(component, level, EMULOG_FORMAT_NONCPU format, ##__VA_ARGS__)
 
 #define EMULOGCPU(component, level, format, ...) \
 	if (EMULOG_WANTS(component, level)) \
-		emulog_log(component, level, "%-3s %2i:0x%04x | %s | %s " format, \
+		emulog_log(component, level, EMULOG_FORMAT_CPU format, \
 			Q ? "USR" : "OS", \
 			NB, \
 			emulog_get_cycle_ic(), \

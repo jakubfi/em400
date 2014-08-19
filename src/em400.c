@@ -49,7 +49,6 @@ int em400_state = STATE_WORK;
 // -----------------------------------------------------------------------
 void em400_shutdown()
 {
-	emulog_close();
 #ifdef WITH_DEBUGGER
 	dbg_shutdown();
 #endif
@@ -57,11 +56,13 @@ void em400_shutdown()
 	io_shutdown();
 	cpu_shutdown();
 	mem_shutdown();
-	eprint("EM400 exits.\n");
+	if (em400_cfg.emulog_enabled) {
+		emulog_shutdown();
+	}
 }
 
 // -----------------------------------------------------------------------
-void em400_eerr(int err_code, char *format, ...)
+void em400_exit_error(int err_code, char *format, ...)
 {
 	va_list ap;
 	va_start(ap, format);
@@ -77,28 +78,35 @@ void em400_init()
 {
 	int res;
 
+	if (em400_cfg.emulog_enabled) {
+		res = emulog_init(em400_cfg.emulog_paused, em400_cfg.emulog_file, em400_cfg.emulog_format);
+		if (res != E_OK) {
+			em400_exit_error(res, "Error initializing emulog");
+		}
+	}
+
 #ifdef WITH_DEBUGGER
 	em400_console = CONSOLE_DEBUGGER;
 #endif
 
 	res = mem_init();
 	if (res != E_OK) {
-		em400_eerr(res, "Error initializing memory");
+		em400_exit_error(res, "Error initializing memory");
 	}
 
 	res = cpu_init();
 	if (res != E_OK) {
-		em400_eerr(res, "Error initializing CPU");
+		em400_exit_error(res, "Error initializing CPU");
 	}
 
 	res = timer_init();
 	if (res != E_OK) {
-		em400_eerr(res, "Error initializing CPU timer");
+		em400_exit_error(res, "Error initializing CPU timer");
 	}
 
 	res = io_init();
 	if (res != E_OK) {
-		em400_eerr(res, "Error initializing I/O");
+		em400_exit_error(res, "Error initializing I/O");
 	}
 
 	regs[R_KB] = em400_cfg.keys;
@@ -107,7 +115,7 @@ void em400_init()
 		eprint("Loading image '%s' into OS memory\n", em400_cfg.program_name);
 		int res = mem_load(em400_cfg.program_name, 0, 0, 2*4096);
 		if (res < E_OK) {
-			em400_eerr(res, "Could not load program '%s'", em400_cfg.program_name);
+			em400_exit_error(res, "Could not load program '%s'", em400_cfg.program_name);
 		} else {
 			printf("OS memory block image loaded: \"%s\", %i words\n", em400_cfg.program_name, res);
 		}
@@ -116,7 +124,7 @@ void em400_init()
 #ifdef WITH_DEBUGGER
 	res = dbg_init();
 	if (res != E_OK) {
-		em400_eerr(res, "Error initializing debugger");
+		em400_exit_error(res, "Error initializing debugger");
 	}
 #endif
 
@@ -134,7 +142,6 @@ void em400_usage()
 	printf("   -e           : terminate emulation on HLT >= 040\n");
 	printf("   -b           : benchmark emulator\n");
 	printf("   -v           : enable verbose messages\n");
-	printf("   -d           : enable full debug logging\n");
 #ifdef WITH_DEBUGGER
 	printf("\nDebuger-only options:\n");
 	printf("   -s           : use simple debugger interface\n");
@@ -149,14 +156,11 @@ void em400_parse_args(int argc, char **argv)
 {
 	int option;
 
-	em400_cfg.keys = 0;
 #ifdef WITH_DEBUGGER
 	int len;
-	em400_cfg.pre_expr = NULL;
-	em400_cfg.test_expr = NULL;
 #endif
 
-	while ((option = getopt(argc, argv,"bvhec:p:k:l:t:x:sd")) != -1) {
+	while ((option = getopt(argc, argv,"bvhec:p:k:l:t:x:s")) != -1) {
 		switch (option) {
 			case 'b':
 				em400_cfg.benchmark = 1;
@@ -205,11 +209,6 @@ void em400_parse_args(int argc, char **argv)
 				em400_cfg.ui_simple = 1;
 				break;
 #endif
-			case 'd':
-				emulog_set_level(-1, 100);
-				emulog_open("em400.log");
-				emulog_enable();
-				break;
 			default:
 				em400_usage();
 				exit(1);
@@ -220,30 +219,6 @@ void em400_parse_args(int argc, char **argv)
 // -----------------------------------------------------------------------
 void em400_configure()
 {
-	// default configuration
-	em400_cfg.speed_real = 0;
-	em400_cfg.timer_step = 10;
-	em400_cfg.timer_start = 1;
-	em400_cfg.cpu_mod = 0;
-	em400_cfg.cpu_user_io_illegal = 1;
-	em400_cfg.cpu_awp = 1;
-	em400_cfg.mem_elwro = 1;
-	em400_cfg.mem_mega = 0;
-	em400_cfg.mem_os = 2;
-	em400_cfg.chans = NULL;
-	em400_cfg.mem_mega_prom = NULL;
-	em400_cfg.mem_mega_boot = 0;
-	em400_cfg.cpu_stop_on_nomem = 1;
-
-	// ~/.em400/ files
-	char *home = getenv("HOME");
-	int home_len = strlen(home);
-	em400_cfg.cfg_dir = calloc(1, home_len+100);
-	em400_cfg.cfg_file = calloc(1, home_len+100);
-	em400_cfg.hist_file = calloc(1, home_len+100);
-	sprintf(em400_cfg.cfg_dir, "%s/.em400", home);
-	sprintf(em400_cfg.cfg_file, "%s/.em400/em400.cfg", home);
-	sprintf(em400_cfg.hist_file, "%s/.em400/history", home);
 	mkdir(em400_cfg.cfg_dir, 0700);
 
 	// config files to consider
@@ -255,8 +230,8 @@ void em400_configure()
 		cfgf[1] = NULL;
 	// otherwise, search for known configs
 	} else {
-		cfgf[0] = em400_cfg.cfg_file;
-		cfgf[1] = "em400.cfg";
+		cfgf[0] = "em400.cfg";
+		cfgf[1] = em400_cfg.home_cfg_file;
 		cfgf[2] = "/etc/em400/em400.cfg";
 		cfgf[3] = NULL;
 	}
@@ -272,7 +247,7 @@ void em400_configure()
 		cfgfile++;
 	}
 
-	em400_eerr(E_DEFAULT, "Cannot find any usable config file");
+	em400_exit_error(E_DEFAULT, "Cannot find any usable config file");
 }
 
 // -----------------------------------------------------------------------
@@ -320,15 +295,25 @@ void em400_loop()
 // -----------------------------------------------------------------------
 int main(int argc, char** argv)
 {
+	int res;
+
 	printf("EM400 v%s ", EM400_VERSION);
 #ifdef WITH_DEBUGGER
 	printf("+debugger ");
 #endif
 	printf("\n");
 
+	// setup configuration
+	res = cfg_default();
+	if (res != E_OK) {
+		em400_exit_error(res, "Cannot prepare default configuration");
+	}
+	// TODO: order needs to be changed: em400.cfg comes first, then commandline overrides
 	em400_parse_args(argc, argv);
 	em400_configure();
 	cfg_print();
+
+	// done with configuration, initialize em400
 	em400_init();
 
 #ifdef WITH_DEBUGGER

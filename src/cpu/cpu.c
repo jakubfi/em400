@@ -192,14 +192,14 @@ void cpu_step()
 	struct em400_op *op;
 	uint16_t data;
 
-	if (emulog_enabled) {
+	if (EMULOG_ENABLED) {
 		emulog_set_cycle_ic(regs[R_IC]);
 	}
 
 	// fetch instruction
 	if (!mem_cpu_get(QNB, regs[R_IC], regs+R_IR)) {
 		regs[R_MODc] = regs[R_MOD] = 0;
-		EMULOGCPU(L_CPU, 10, "    (no mem)");
+		EMULOGCPU(L_CPU, 10, "    NO MEM: instruction fetch");
 		return;
 	}
 	regs[R_IC]++;
@@ -210,7 +210,7 @@ void cpu_step()
 
 	// end cycle if P is set
 	if (P) {
-		EMULOGCPU(L_CPU, 10, "    (skip)");
+		EMULOGCPU(L_CPU, 10, "    P=1, skip instruction");
 		P = 0;
 		// skip also M-arg if present
 		if (op->norm_arg && !IR_C) regs[R_IC]++;
@@ -222,16 +222,24 @@ void cpu_step()
 		if (IR_C) {
 			N = regs[IR_C] + regs[R_MOD];
 		} else {
-			if (!mem_cpu_get(QNB, regs[R_IC], &data)) goto finish;
-			N = data + regs[R_MOD];
-			regs[R_IC]++;
+			if (!mem_cpu_get(QNB, regs[R_IC], &data)) {
+				EMULOGCPU(L_CPU, 10, "    NO MEM: long arg fetch");
+				goto finish;
+			} else {
+				N = data + regs[R_MOD];
+				regs[R_IC]++;
+			}
 		}
 		if (IR_B) {
 			N = (uint16_t) N + regs[IR_B];
 		}
 		if (IR_D) {
-			if (!mem_cpu_get(QNB, N, &data)) goto finish;
-			N = data;
+			if (!mem_cpu_get(QNB, N, &data)) {
+				EMULOGCPU(L_CPU, 10, "    NO MEM: indirect arg fetch");
+				goto finish;
+			} else {
+				N = data;
+			}
 		}
 	} else if (op->short_arg) {
 		N = (uint16_t) IR_T + (uint16_t) regs[R_MOD];

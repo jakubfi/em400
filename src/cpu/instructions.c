@@ -487,7 +487,7 @@ void op_71_exl()
 {
 	uint16_t data;
 
-	if (emulog_enabled) {
+	if (EMULOG_ENABLED) {
 		emulog_exl_store(IR_b, NB, regs[R_IC], regs[4]);
 
 		EMULOGCPU(L_OP, 10, "EXL: %i (r4: 0x%04x)", IR_b, regs[4]);
@@ -779,7 +779,7 @@ void op_73_lip()
 	USER_ILLEGAL;
 
 	cpu_ctx_restore();
-	if (emulog_enabled) {
+	if (EMULOG_ENABLED) {
 		emulog_intlevel_dec();
 	}
 }
@@ -1012,7 +1012,7 @@ void op_77_sp()
 
 	int_update_mask();
 
-	if (emulog_enabled) {
+	if (EMULOG_ENABLED) {
 		uint16_t bprog;
 		uint16_t pname[2];
 		mem_get(0, 0x62, &bprog);

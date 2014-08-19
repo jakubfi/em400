@@ -19,6 +19,7 @@
 #include <string.h>
 #include <strings.h>
 
+#include "cfg.h"
 #include "em400.h"
 #include "cpu/cpu.h"
 #include "cpu/registers.h"
@@ -60,7 +61,7 @@ struct cmd_t dbg_commands[] = {
 	{ "brk",	F_BRK,		"Manipulate breakpoints", "  brk add <expression>\n  brk del <brk_number>\n  brk" },
 	{ "run",	F_RUN,		"Run emulation", "  run" },
 	{ "stk",	F_STACK,	"Show stack", "  stk" },
-	{ "log",	F_EMULOG,	"Enable emulation logging", "  log\n  log on|off\n  log file <filename>\n  log level <component>:<level>" },
+	{ "emulog",	F_EMULOG,	"Enable emulation logging", "  emulog\n  emulog pause|rec\n  emulog level <component>:<level>" },
 	{ "script",	F_SCRIPT,	"Load and execute script", "  script <filename>" },
 	{ "watch",	F_WATCH,	"Manipulate expression watches", "  watch add <expression>\n  watch del <watch_number>\n  watch" },
 	{ "decode",	F_DECODE,	"Decode memory structures", "  decode\n  decode <decoder> <address>" },
@@ -515,78 +516,67 @@ void dbg_c_brk_disable_all(int wid, int disable)
 // -----------------------------------------------------------------------
 void dbg_c_emulog_info(int wid)
 {
-	if (!emulog_enabled) {
-		awtbprint(wid, C_ERROR, "Emulog not available.\n");
-		return;
-	}
-
 	int i;
 	char *cname;
 
-	awtbprint(wid, C_LABEL, "Logging to file: ");
-	awtbprint(wid, C_DATA, "%s (%s)\n", emulog_get_fname(), emulog_is_enabled() ? "enabled" : "disabled");
-	awtbprint(wid, C_LABEL, "Levels: ");
+	if (!EMULOG_ENABLED) {
+		awtbprint(wid, C_ERROR, "Logging not enabled (neither in config file, nor from commandline)\n");
+		return;
+	}
 
-	for (i=0 ; i < LOG_COMP_MAX ; i++) {
-		cname = emulog_get_component_name(i);
-		if (cname) {
-			awtbprint(wid, C_DATA, "%s:%i ", cname, emulog_get_level(i));
+	int paused = emulog_is_paused();
+
+	awtbprint(wid, C_DATA, "Logging %s\n", paused ? "paused" : "active");
+	if (!paused) {
+		awtbprint(wid, C_LABEL, "Levels: ");
+
+		for (i=0 ; i < LOG_COMP_MAX ; i++) {
+			cname = emulog_get_component_name(i);
+			if (cname) {
+				awtbprint(wid, C_DATA, "%s:%i ", cname, emulog_get_level(i));
+			}
 		}
-	}
-	awtbprint(wid, C_LABEL, "\n");
-}
-
-// -----------------------------------------------------------------------
-void dbg_c_emulog_enable(int wid)
-{
-	if (!emulog_enabled) {
-		awtbprint(wid, C_ERROR, "Emulog not available.\n");
-		return;
-	}
-
-	if (!emulog_enable()) {
-		awtbprint(wid, C_LABEL, "Logging enabled\n");
-	} else {
-		awtbprint(wid, C_ERROR, "Cannot enable logging\n");
+		awtbprint(wid, C_LABEL, "\n");
 	}
 }
 
 // -----------------------------------------------------------------------
-void dbg_c_emulog_disable(int wid)
+void dbg_c_emulog_rec(int wid)
 {
-	if (!emulog_enabled) {
-		awtbprint(wid, C_ERROR, "Emulog not available.\n");
+	if (!EMULOG_ENABLED) {
+		awtbprint(wid, C_ERROR, "Logging not enabled (neither in config file, nor from commandline)\n");
 		return;
 	}
 
-	if (!emulog_disable()) {
-		awtbprint(wid, C_LABEL, "Logging disabled\n");
+	if (emulog_is_paused()) {
+		emulog_rec();
+		awtbprint(wid, C_LABEL, "Logging activated\n");
 	} else {
-		awtbprint(wid, C_ERROR, "Cannot disable logging\n");
+		awtbprint(wid, C_ERROR, "Logging already active\n");
 	}
 }
 
 // -----------------------------------------------------------------------
-void dbg_c_emulog_open(int wid, char *filename)
+void dbg_c_emulog_pause(int wid)
 {
-	if (!emulog_enabled) {
-		awtbprint(wid, C_ERROR, "Emulog not available.\n");
+	if (!EMULOG_ENABLED) {
+		awtbprint(wid, C_ERROR, "Logging not enabled (neither in config file, nor from commandline)\n");
 		return;
 	}
 
-	if (!emulog_open(filename)) {
-		awtbprint(wid, C_LABEL, "Logging to file: ");
+	if (!emulog_is_paused()) {
+		emulog_pause();
+		awtbprint(wid, C_LABEL, "Logging paused\n");
 	} else {
-		awtbprint(wid, C_ERROR, "Could not open emulog file: ");
+		awtbprint(wid, C_ERROR, "Logging already paused\n");
 	}
-	awtbprint(wid, C_DATA, "%s\n", filename);
 }
 
 // -----------------------------------------------------------------------
 void dbg_c_emulog_set_level(int wid, char *comp_name, int level)
 {
-	if (!emulog_enabled) {
-		awtbprint(wid, C_ERROR, "Emulog not available.\n");
+	if (!EMULOG_ENABLED) {
+		awtbprint(wid, C_ERROR, "Logging not enabled (neither in config file, nor from commandline)\n");
 		return;
 	}
 

@@ -60,7 +60,7 @@ struct logger *log_init(FILE *out, char *format, const char **comp_names)
 		} else {
 			l->comp_names[i] = NULL;
 		}
-		l->comp_thr[i] = 100;
+		l->comp_thr[i] = 0;
 	}
 
 	// too many components
@@ -78,7 +78,6 @@ struct logger *log_init(FILE *out, char *format, const char **comp_names)
 
 	l->out = out;
 	l->quit = 0;
-	l->enabled = 1;
 
 	return l;
 
@@ -102,7 +101,6 @@ void log_shutdown(struct logger *l)
 	for (i=0 ; i<LOG_COMP_MAX; i++) {
 		l->comp_thr[i] = 0;
 	}
-	l->enabled = 0;
 	l->quit = 1;
 
 	pthread_mutex_unlock(&l->log_mutex);
@@ -155,42 +153,6 @@ int log_get_level(struct logger *l, unsigned component)
 }
 
 // -----------------------------------------------------------------------
-int log_on(struct logger *l)
-{
-	if (!l) return -1;
-
-	pthread_mutex_lock(&l->log_mutex);
-	l->enabled = 1;
-	pthread_mutex_unlock(&l->log_mutex);
-
-	return 0;
-}
-
-// -----------------------------------------------------------------------
-int log_off(struct logger *l)
-{
-	if (!l) return -1;
-
-	pthread_mutex_lock(&l->log_mutex);
-	l->enabled = 0;
-	pthread_mutex_unlock(&l->log_mutex);
-
-	return 0;
-}
-
-// -----------------------------------------------------------------------
-int log_is_enabled(struct logger *l)
-{
-	if (!l) return 0;
-
-	int enabled;
-	pthread_mutex_lock(&l->log_mutex);
-	enabled = l->enabled;
-	pthread_mutex_unlock(&l->log_mutex);
-	return enabled;
-}
-
-// -----------------------------------------------------------------------
 char * log_get_component_name(struct logger *l, unsigned component)
 {
 	if (!l) return NULL;
@@ -228,15 +190,15 @@ static void * log_flusher(void *ptr)
 
 	// flush log every LOG_FLUSH_DELAY_MS miliseconds
 	while (1) {
-        pthread_mutex_lock(&l->log_mutex);
+		pthread_mutex_lock(&l->log_mutex);
 		fflush(l->out);
 		if (l->quit) {
-	        pthread_mutex_unlock(&l->log_mutex);
+			pthread_mutex_unlock(&l->log_mutex);
 			break;
 		}
-        pthread_mutex_unlock(&l->log_mutex);
+		pthread_mutex_unlock(&l->log_mutex);
 		usleep(LOG_FLUSH_DELAY_MS * 1000);
-    }
+	}
 	pthread_exit(NULL);
 }
 
@@ -303,7 +265,7 @@ static char * log_format(char *format, char *comp_name, unsigned level, char *ms
 int log_allowed(struct logger *l, unsigned component, unsigned level)
 {
 	if (!l) return 0;
-    if (component >= LOG_COMP_MAX) return 0;
+	if (component >= LOG_COMP_MAX) return 0;
 
 	// check if message is to be logged
 	pthread_mutex_lock(&l->log_mutex);
@@ -321,7 +283,7 @@ void log_vdo(struct logger *l, unsigned component, unsigned level, char *msgfmt,
 	char *buf;
 
 	if (!l) return;
-    if (component >= LOG_COMP_MAX) return;
+	if (component >= LOG_COMP_MAX) return;
 
 	// format log entry outside the lock
 	buf = log_format(l->format, l->comp_names[component], level, msgfmt, ap);

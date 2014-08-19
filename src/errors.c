@@ -70,6 +70,7 @@ struct _em400_errordesc {
 	{ E_MUTEX_INIT, "could not initialize mutex" },
 	{ E_SEM_INIT, "could not initialize semaphore" },
 	{ E_SLID_INIT, "FATAL: instruction decoder initialization failed" },
+	{ E_LOGGER, "could not initialize logger" },
 
 	{ E_UNKNOWN, "unknown error" }
 };

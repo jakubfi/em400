@@ -43,7 +43,7 @@ computer {
 
 	# Name of image file containing MEGA PROM memory (1 segment, 4kword max)
 	# (default: none)
-	#mem_mega_prom = mega_prom.img
+	#mem_mega_prom = "mega_prom.img"
 
 	# Enable or disable boot from MEGA PROM memory.
 	# Works only when mem_mega_prom is specified.
@@ -60,6 +60,27 @@ computer {
 	# 4kword segments hardwired for OS memory block (taken from module 0)
 	# allowed values: 1 or 2 (default: 2)
 	mem_os_segments = 2
+}
+
+emulog {
+	# Emulation logging has considerable performance requirements.
+	# Not recommended for daily usage.
+	# Allowed values: "true", "false" (default)
+	enabled = false
+
+	# If enabled, emulog may start in paused state.
+	# Allowed values: "true" (default), "false"
+	paused = true
+
+	# Name of the log file (default: em400.log)
+	file = "em400.log"
+
+	# Logfile format specification:
+	#  %t - timestamp
+	#  %c - component
+	#  %l - level
+	#  %m - message
+	format = "%t | %4c | %3l | %m"
 }
 
 #channel 0 = mem {

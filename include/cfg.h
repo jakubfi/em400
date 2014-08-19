@@ -54,7 +54,7 @@ struct cfg_em400_t {
 	int verbose;
 	int benchmark;
 	char *cfg_dir;
-	char *cfg_file;
+	char *home_cfg_file;
 	char *hist_file;
 
 	int speed_real;
@@ -70,6 +70,10 @@ struct cfg_em400_t {
 	int mem_mega_boot;
 	int cpu_stop_on_nomem;
 	int mem_os;
+	int emulog_enabled;
+	int emulog_paused;
+	char *emulog_file;
+	char *emulog_format;
 
 	struct cfg_chan_t *chans;
 
@@ -82,6 +86,7 @@ struct cfg_em400_t {
 
 } em400_cfg;
 
+int cfg_default();
 int cfg_load(char *cfg_file);
 void cfg_print();
 struct cfg_arg_t * cfg_make_arg(char *arg);
