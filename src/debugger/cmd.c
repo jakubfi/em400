@@ -530,7 +530,7 @@ void dbg_c_emulog_info(int wid)
 	if (!paused) {
 		awtbprint(wid, C_LABEL, "Levels: ");
 
-		for (i=0 ; i < LOG_COMP_MAX ; i++) {
+		for (i=0 ; i < L_MAX ; i++) {
 			cname = emulog_get_component_name(i);
 			if (cname) {
 				awtbprint(wid, C_DATA, "%s:%i ", cname, emulog_get_level(i));

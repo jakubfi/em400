@@ -11,7 +11,7 @@ strdup(emulog.c)
 
 ADD_EXECUTABLE(em400
 	em400.c errors.c utils.c cfg.c
-    logger.c emulog.c
+    emulog.c
 	${EMULOG_SOURCES}
 	${BISON_cfg_parser_OUTPUTS}
 	${FLEX_cfg_scanner_OUTPUTS}

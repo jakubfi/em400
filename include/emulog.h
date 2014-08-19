@@ -15,53 +15,61 @@
 //  Foundation, Inc.,
 //  51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 
+#include <stdio.h>
+#include <pthread.h>
+#include <stdarg.h>
 #include <inttypes.h>
 
 #include "utils.h"
-#include "logger.h"
 #include "atomic.h"
 
 #ifndef EMULOG_H
 #define EMULOG_H
 
+/*
+	Logfile format specification:
+
+	general:
+	%t timestamp
+	%c component
+	%l level
+	%m message
+
+	cpu-related:
+	%q Q
+	%b NB
+	%i IC
+	%p process name
+*/
+
 enum emulog_components {
-	L_REG = 0,
-	L_MEM,
-	L_CPU,
-	L_OP,
-	L_INT,
-
+	L_REG, L_MEM, L_CPU, L_OP, L_INT,
 	L_IO,
-
-	L_MX,
-	L_PX,
-	L_CHAR,
-	L_CMEM,
-
-	L_TERM,
-	L_WNCH,
-	L_FLOP,
-	L_PNCH,
-	L_PNRD,
-
-	L_CRK5,
-	L_MAX,
+	L_MX, L_PX, L_CHAR, L_CMEM,
+	L_TERM, L_WNCH, L_FLOP, L_PNCH, L_PNRD,
+	L_CRK5, L_EM4H,
+	L_MAX
 };
 
 extern int emulog_enabled;
 
-int emulog_init(int paused, char *filename, char *format);
+int emulog_init(int paused, char *filename, char *format, int level);
 void emulog_shutdown();
+
 void emulog_pause();
 void emulog_rec();
 int emulog_is_paused();
+
 int emulog_set_level(int component, unsigned level);
-char * emulog_get_component_name(int component);
+int emulog_get_level(unsigned component);
+
+char * emulog_get_component_name(unsigned component);
 int emulog_get_component_id(char *name);
-int emulog_get_level(int component);
-void emulog_log(int component, int level, char *format, ...);
-void emulog_splitlog(int component, int level, char *text);
-int emulog_wants(int component, int level);
+
+void emulog_log(unsigned component, unsigned level, char *format, ...);
+void emulog_splitlog(unsigned component, unsigned level, char *text);
+int emulog_wants(unsigned component, unsigned level);
+
 void emulog_set_cycle_ic(uint16_t ic);
 uint16_t emulog_get_cycle_ic();
 void emulog_update_pname(uint16_t *r40pname);
