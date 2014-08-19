@@ -59,7 +59,7 @@ int cfg_default()
 	em400_cfg.mem_os = 2;
 	em400_cfg.emulog_enabled = 0;
 	em400_cfg.emulog_file = strdup("em400.log");
-	em400_cfg.emulog_format = strdup("%t | %4c | %3l | %m");
+	em400_cfg.emulog_level = 0;
 
 	em400_cfg.chans = NULL;
 

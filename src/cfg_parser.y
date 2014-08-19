@@ -44,7 +44,7 @@ int cyylex(void);
 %token <value> TEXT
 =======
 %token ELWRO MEGA MEGA_PROM MEGA_BOOT OS_SEG CPU_NOMEM_STOP
-%token EMULOG ENABLED PAUSED LFILE FORMAT
+%token EMULOG ENABLED PAUSED LFILE LEVEL
 %token <value> TEXT STRING
 >>>>>>> emulog conf., cleanups, cfg() cleanups, emulog dbg
 %token <value> VALUE
@@ -115,7 +115,7 @@ emulog_opt:
 	ENABLED '=' BOOL { em400_cfg.emulog_enabled = $3.v; free($3.s); }
 	| PAUSED '=' BOOL { em400_cfg.emulog_paused = $3.v; free($3.s); }
 	| LFILE '=' STRING { free(em400_cfg.emulog_file); em400_cfg.emulog_file = $3.s; }
-	| FORMAT '=' STRING { free(em400_cfg.emulog_format); em400_cfg.emulog_format = $3.s; }
+	| LEVEL '=' VALUE { em400_cfg.emulog_level = $3.v; free($3.s); }
 	;
 %%
 

@@ -26,34 +26,19 @@
 #ifndef EMULOG_H
 #define EMULOG_H
 
-/*
-	Logfile format specification:
-
-	general:
-	%t timestamp
-	%c component
-	%l level
-	%m message
-
-	cpu-related:
-	%q Q
-	%b NB
-	%i IC
-	%p process name
-*/
-
 enum emulog_components {
 	L_REG, L_MEM, L_CPU, L_OP, L_INT,
 	L_IO,
 	L_MX, L_PX, L_CHAR, L_CMEM,
 	L_TERM, L_WNCH, L_FLOP, L_PNCH, L_PNRD,
-	L_CRK5, L_EM4H,
+	L_CRK5,
+	L_EM4H,
 	L_MAX
 };
 
 extern int emulog_enabled;
 
-int emulog_init(int paused, char *filename, char *format, int level);
+int emulog_init(int paused, char *filename, int level);
 void emulog_shutdown();
 
 void emulog_pause();
@@ -82,15 +67,15 @@ void emulog_intlevel_dec();
 void emulog_intlevel_inc();
 const char *emulog_intlevel_get_indent();
 
-#define EMULOG_FORMAT_NONCPU "              |        | "
-#define EMULOG_FORMAT_CPU "%-3s %2i:0x%04x | %s | %s"
+#define EMULOG_FORMAT_SIMPLE "                     | "
+#define EMULOG_FORMAT_CPU "%3s %2i:0x%04x %s | %s"
 
 #define EMULOG_ENABLED (emulog_enabled)
 #define EMULOG_WANTS(component, level) (EMULOG_ENABLED && emulog_wants(component, level))
 
 #define EMULOG(component, level, format, ...) \
 	if (EMULOG_WANTS(component, level)) \
-		emulog_log(component, level, EMULOG_FORMAT_NONCPU format, ##__VA_ARGS__)
+		emulog_log(component, level, EMULOG_FORMAT_SIMPLE format, ##__VA_ARGS__)
 
 #define EMULOGCPU(component, level, format, ...) \
 	if (EMULOG_WANTS(component, level)) \

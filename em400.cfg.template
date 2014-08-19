@@ -75,12 +75,10 @@ emulog {
 	# Name of the log file (default: em400.log)
 	file = "em400.log"
 
-	# Logfile format specification:
-	#  %t - timestamp
-	#  %c - component
-	#  %l - level
-	#  %m - message
-	format = "%t | %4c | %3l | %m"
+	# Initial logging level for all components
+	# Alloved values: 0-100 (default is 0) where 0 means no logging at all
+	# and 100 logs just about everything (slow as hell)
+	level = 0
 }
 
 #channel 0 = mem {

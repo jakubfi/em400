@@ -68,11 +68,11 @@ pthread_mutex_t emulog_mutex;
 pthread_cond_t emulog_cond;
 
 static FILE *emulog_f;
-static char *emulog_format;
 static int emulog_paused;
 static int emulog_quit;
 
 static void * emulog_flusher(void *ptr);
+void emulog_log_timestamp(unsigned component, unsigned level, char *msg);
 
 // high-level stuff
 
@@ -89,7 +89,7 @@ static int emulog_exl_addr;
 static int emulog_exl_r4;
 
 // -----------------------------------------------------------------------
-int emulog_init(int paused, char *filename, char *format, int level)
+int emulog_init(int paused, char *filename, int level)
 {
 	int ret = E_ALLOC;
 
@@ -99,16 +99,9 @@ int emulog_init(int paused, char *filename, char *format, int level)
 		goto cleanup;
 	}
 
-	emulog_format = strdup(format);
-	if (!emulog_format) {
-		ret = E_ALLOC;
-		goto cleanup;
-	}
-
 	// set up thresholds
 	for (int i=0 ; i<L_MAX; i++) {
 		emulog_components[i].thr = level;
-		//emulog_components[i].thr = 100;
 	}
 
 	// set up flusher thread
@@ -118,18 +111,18 @@ int emulog_init(int paused, char *filename, char *format, int level)
 	}
 
 	emulog_quit = 0;
-
 	emulog_enabled = 1;
 	emulog_paused = paused;
 
 	pthread_mutex_init(&emulog_mutex, NULL);
 	pthread_cond_init(&emulog_cond, NULL);
 
+	emulog_log_timestamp(L_EM4H, 0, "Opening log");
+
 	return E_OK;
 
 cleanup:
 	if (emulog_f) fclose(emulog_f);
-	free(emulog_format);
 	return ret;
 }
 
@@ -137,6 +130,8 @@ cleanup:
 void emulog_shutdown()
 {
 	int i;
+
+	emulog_log_timestamp(L_EM4H, 0, "Closing log");
 
 	pthread_mutex_lock(&emulog_mutex);
 
@@ -151,7 +146,6 @@ void emulog_shutdown()
 
 	fflush(emulog_f);
 	fclose(emulog_f);
-	free(emulog_format);
 }
 
 // -----------------------------------------------------------------------
@@ -251,85 +245,20 @@ int emulog_get_component_id(char *name)
 }
 
 // -----------------------------------------------------------------------
-static char * log_format(char *comp_name, unsigned level, char *msg, va_list ap)
-{
-	// needs to be thread-safe
-	char *buf = malloc(EMULOG_MAX_LEN+1);
-	int bpos = 0;
-	char *esc = malloc(EMULOG_MAX_LEN+1);
-	int epos = -1;
-	char *date = malloc(32);
-
-	char *in = emulog_format;
-	char *out = buf;
-	struct timeval ct;
-
-	while (in && *in && (EMULOG_MAX_LEN-bpos > 0)) {
-		if (epos >= 0) { // processing escape sequence
-			if ((*in == '-') || ((*in >= '0') && (*in <= '9'))) {
-				epos += snprintf(esc+epos, EMULOG_MAX_LEN-epos, "%c", *in);
-			} else {
-				switch (*in) {
-					case 'c': // component
-						epos += snprintf(esc+epos, EMULOG_MAX_LEN-epos, "s");
-						bpos += snprintf(out+bpos, EMULOG_MAX_LEN-bpos, esc, comp_name);
-						break;
-					case 'l': // level
-						epos += snprintf(esc+epos, EMULOG_MAX_LEN-epos, "i");
-						bpos += snprintf(out+bpos, EMULOG_MAX_LEN-bpos, esc, level);
-						break;
-					case 't': // timestamp
-						gettimeofday(&ct, NULL);
-						strftime(date, 31, "%Y-%m-%d %H:%M:%S", localtime(&ct.tv_sec));
-						bpos += snprintf(out+bpos, EMULOG_MAX_LEN-bpos, "%s", date);
-						break;
-					case 'm': // message
-						bpos += vsnprintf(out+bpos, EMULOG_MAX_LEN-bpos, msg, ap);
-						break;
-					case '%': // literal %
-						bpos += snprintf(out+bpos, EMULOG_MAX_LEN-bpos, "%%");
-						break;
-					default: // print out unknown escape sequence
-						bpos += snprintf(out+bpos, EMULOG_MAX_LEN-bpos, "%s%c", esc, *in);
-						break;
-				}
-				epos = -1;
-			}
-		} else if (*in == '%') { // start escape sequence
-			epos = 0;
-			epos += snprintf(esc+epos, EMULOG_MAX_LEN-epos, "%%");
-		} else { // literal
-			bpos += snprintf(out+bpos, EMULOG_MAX_LEN-bpos, "%c", *in);
-		}
-		in++;
-	}
-
-	free(esc);
-	free(date);
-
-	return buf;
-}
-
-// -----------------------------------------------------------------------
 void emulog_log(unsigned component, unsigned level, char *msgfmt, ...)
 {
-	char *buf;
-	va_list vl;
-
 	assert(component < L_MAX);
 
-	// format log entry outside the lock
+	va_list vl;
 	va_start(vl, msgfmt);
-	buf = log_format(emulog_components[component].name, level, msgfmt, vl);
-	va_end(vl);
 
-	if (buf) {
-		// write log
-		pthread_mutex_lock(&emulog_mutex);
-		fprintf(emulog_f, "%s\n", buf);
-		pthread_mutex_unlock(&emulog_mutex);
-		free(buf);
-	}
+	pthread_mutex_lock(&emulog_mutex);
+	fprintf(emulog_f, "%4s %3i | ", emulog_components[component].name, level);
+	vfprintf(emulog_f, msgfmt, vl);
+	fprintf(emulog_f, "\n");
+	pthread_mutex_unlock(&emulog_mutex);
+
+	va_end(vl);
 }
 
 // -----------------------------------------------------------------------
@@ -338,21 +267,19 @@ void emulog_splitlog(unsigned component, unsigned level, char *text)
 	char *p;
 	char *start = text;
 
-	assert(component < L_MAX);
-
-	emulog_log(component, level, EMULOG_FORMAT_NONCPU "%s", " .---------------------------------------------------------");
+	emulog_log(component, level, EMULOG_FORMAT_SIMPLE "%s", " .---------------------------------------------------------");
 	while (start && *start) {
 		p = strchr(start, '\n');
 		if (p) {
 			*p = '\0';
-			emulog_log(component, level, EMULOG_FORMAT_NONCPU " | %s", start);
+			emulog_log(component, level, EMULOG_FORMAT_SIMPLE " | %s", start);
 			start = p+1;
 		} else {
-			emulog_log(component, level, EMULOG_FORMAT_NONCPU " | %s", start);
+			emulog_log(component, level, EMULOG_FORMAT_SIMPLE " | %s", start);
 			start = NULL;
 		}
 	}
-	emulog_log(component, level, EMULOG_FORMAT_NONCPU "%s", " `---------------------------------------------------------");
+	emulog_log(component, level, EMULOG_FORMAT_SIMPLE "%s", " `---------------------------------------------------------");
 }
 
 // -----------------------------------------------------------------------
@@ -370,6 +297,16 @@ int emulog_wants(unsigned component, unsigned level)
 	}
 	pthread_mutex_unlock(&emulog_mutex);
 	return 1;
+}
+
+// -----------------------------------------------------------------------
+void emulog_log_timestamp(unsigned component, unsigned level, char *msg)
+{
+	struct timeval ct;
+	char date[32];
+	gettimeofday(&ct, NULL);
+	strftime(date, 31, "%Y-%m-%d %H:%M:%S", localtime(&ct.tv_sec));
+	emulog_log(component, level, EMULOG_FORMAT_SIMPLE "%s: %s", msg, date);
 }
 
 // -----------------------------------------------------------------------

@@ -56,7 +56,7 @@ emulog			return EMULOG;
 enabled			return ENABLED;
 paused			return PAUSED;
 file			return LFILE;
-format			return FORMAT;
+level			return LEVEL;
 
 channel			return CHANNEL;
 unit			return UNIT;
