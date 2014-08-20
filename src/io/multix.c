@@ -284,7 +284,7 @@ void mx_int_report(struct mx_chan_t *chan)
 {
 	// note: called in locked state
 	if (CHAN->int_head) {
-		EMULOG(L_MX, 20, "MULTIX (ch:%i) reporting interrupt %i", chan->proto.num, chan->proto.num + 12);
+		EMULOG(L_MX, 3, "MULTIX (ch:%i) reporting interrupt %i", chan->proto.num, chan->proto.num + 12);
 		int_set(chan->proto.num + 12);
 	}
 }
@@ -394,7 +394,7 @@ int mx_cmd_intspec(struct chan_proto_t *chan, uint16_t *r_arg)
 	struct mx_int_t *inth = mx_int_deq(CHAN);
 	pthread_mutex_unlock(&CHAN->int_mutex);
 
-	EMULOG(L_MX, 10, "MULTIX (ch:%i) command: intspec: int:%i unit:%i", chan->num, inth->interrupt, inth->unit_n);
+	EMULOG(L_MX, 2, "MULTIX (ch:%i) command: intspec: int:%i unit:%i", chan->num, inth->interrupt, inth->unit_n);
 	if (inth) {
 		*r_arg = (inth->interrupt << 8) | (inth->unit_n);
 		free(inth);
@@ -447,7 +447,7 @@ int mx_cmd_setcfg(struct chan_proto_t *chan, uint16_t *r_arg)
 	// decode cf field
 	int res = mx_decode_cf_sc(*r_arg, cf);
 
-	if (EMULOG_WANTS(L_MX, 50)) {
+	if (EMULOG_WANTS(L_MX, 5)) {
 		char *details;
 #ifdef WITH_DEBUGGER
 		details = decode_mxpsuk(0, *r_arg, 0);
@@ -455,7 +455,7 @@ int mx_cmd_setcfg(struct chan_proto_t *chan, uint16_t *r_arg)
 		details = malloc(128);
 		sprintf(details, "[details missing]");
 #endif
-		emulog_splitlog(L_MX, 50, details);
+		emulog_splitlog(L_MX, 5, details);
 		free(details);
 	}
 
@@ -541,7 +541,7 @@ int mx_cmd_forward(struct chan_proto_t *chan, int cmd, int lline_n, uint16_t add
 	}
 
 	int busy = pthread_mutex_trylock(&unit->worker_mutex);
-	EMULOG(L_MX, 20, "MULTIX line %i: worker status: %s", unit->log_num, busy?"busy":"free");
+	EMULOG(L_MX, 3, "MULTIX line %i: worker status: %s", unit->log_num, busy?"busy":"free");
 
 	// line busy ('cancel' is handled separately)
 	if (busy && mx_cmd_int[cmd].int_line_busy) {
@@ -620,7 +620,7 @@ void * mx_unit_worker(void *th_id)
 		// wait for command
 		pthread_mutex_lock(&unit->worker_mutex);
 		while (unit->worker_cmd <= 0) {
-			EMULOG(L_MX, 20, "MULTIX line %i: worker waiting for job...", unit->log_num);
+			EMULOG(L_MX, 3, "MULTIX line %i: worker waiting for job...", unit->log_num);
 			pthread_cond_wait(&unit->worker_cond, &unit->worker_mutex);
 		}
 
@@ -648,11 +648,11 @@ void * mx_unit_worker(void *th_id)
 		}
 
 		unit->worker_cmd = 0;
-		EMULOG(L_MX, 20, "MULTIX line %i: worker done", unit->log_num);
+		EMULOG(L_MX, 3, "MULTIX line %i: worker done", unit->log_num);
 		pthread_mutex_unlock(&unit->worker_mutex);
 	}
 
-	EMULOG(L_MX, 20, "MULTIX line %i: exiting worker loop", unit->log_num);
+	EMULOG(L_MX, 3, "MULTIX line %i: exiting worker loop", unit->log_num);
 	pthread_exit(NULL);
 }
 

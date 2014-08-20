@@ -134,7 +134,7 @@ void cchar_int_report(struct cchar_chan_t *chan)
 		if ((CHAN->int_unit[unit_n] != CCHAR_INT_NONE) && !CHAN->int_mask) {
 			chan->int_reported = unit_n;
 			pthread_mutex_unlock(&CHAN->int_mutex);
-			EMULOG(L_CHAR, 20, "CCHAR (ch:%i) reporting interrupt %i", chan->proto.num, chan->proto.num + 12);
+			EMULOG(L_CHAR, 3, "CCHAR (ch:%i) reporting interrupt %i", chan->proto.num, chan->proto.num + 12);
 			int_set(chan->proto.num + 12);
 			break;
 		} else {

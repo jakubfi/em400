@@ -23,7 +23,6 @@
 #include <unistd.h>
 #include <sys/time.h>
 #include <pthread.h>
-#include <assert.h>
 
 #include <inttypes.h>
 
@@ -186,8 +185,6 @@ int emulog_is_paused()
 // -----------------------------------------------------------------------
 int emulog_set_level(int component, unsigned level)
 {
-	assert(component < L_MAX);
-
 	pthread_mutex_lock(&emulog_mutex);
 
 	// set level for specified component
@@ -210,8 +207,6 @@ int emulog_get_level(unsigned component)
 {
 	int level;
 
-	assert(component < L_MAX);
-
 	pthread_mutex_lock(&emulog_mutex);
 	level = emulog_components[component].thr;
 	pthread_mutex_unlock(&emulog_mutex);
@@ -222,8 +217,6 @@ int emulog_get_level(unsigned component)
 // -----------------------------------------------------------------------
 char * emulog_get_component_name(unsigned component)
 {
-	assert(component < L_MAX);
-
 	return emulog_components[component].name;
 }
 
@@ -232,8 +225,6 @@ int emulog_get_component_id(char *name)
 {
 	int i;
 	int comp = -1;
-
-	assert(name);
 
 	for (i=0 ; (i<L_MAX) ; i++) {
 		if (!strcasecmp(emulog_components[i].name, name)) {
@@ -247,13 +238,11 @@ int emulog_get_component_id(char *name)
 // -----------------------------------------------------------------------
 void emulog_log(unsigned component, unsigned level, char *msgfmt, ...)
 {
-	assert(component < L_MAX);
-
 	va_list vl;
 	va_start(vl, msgfmt);
 
 	pthread_mutex_lock(&emulog_mutex);
-	fprintf(emulog_f, "%4s %3i | ", emulog_components[component].name, level);
+	fprintf(emulog_f, "%4s %1i | ", emulog_components[component].name, level);
 	vfprintf(emulog_f, msgfmt, vl);
 	fprintf(emulog_f, "\n");
 	pthread_mutex_unlock(&emulog_mutex);
@@ -285,8 +274,6 @@ void emulog_splitlog(unsigned component, unsigned level, char *text)
 // -----------------------------------------------------------------------
 int emulog_wants(unsigned component, unsigned level)
 {
-	assert(component < L_MAX);
-
 	if (atom_load(&emulog_paused)) return 0;
 
 	// check if message is to be logged

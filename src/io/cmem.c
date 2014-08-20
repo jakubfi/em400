@@ -158,7 +158,7 @@ void cmem_int_report(struct cmem_chan_t *chan)
 		if ((CHAN->int_unit[unit_n] != CMEM_INT_NONE) && !CHAN->int_mask) {
 			chan->int_reported = unit_n;
 			pthread_mutex_unlock(&CHAN->int_mutex);
-			EMULOG(L_CMEM, 20, "CMEM (ch:%i) reporting interrupt %i", chan->proto.num, chan->proto.num + 12);
+			EMULOG(L_CMEM, 3, "CMEM (ch:%i) reporting interrupt %i", chan->proto.num, chan->proto.num + 12);
 			int_set(chan->proto.num + 12);
 			break;
 		} else {

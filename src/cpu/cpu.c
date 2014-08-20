@@ -163,7 +163,7 @@ int cpu_ctx_switch(uint16_t arg, uint16_t ic, uint16_t sr_mask)
 	regs[R_IC] = ic;
 	regs[R_SR] &= sr_mask;
 	int_update_mask();
-	EMULOGCPU(L_CPU, 20, "ctx switch, IC = 0x%04x", ic);
+	EMULOGCPU(L_CPU, 3, "ctx switch, IC = 0x%04x", ic);
 	return 1;
 }
 
@@ -176,7 +176,7 @@ int cpu_ctx_restore()
 	if (!mem_cpu_get(0, 97, &sp)) return 0;
 	if (!mem_cpu_get(0, sp-4, &data)) return 0;
 	regs[R_IC] = data;
-	EMULOGCPU(L_CPU, 20, "ctx restore, IC = 0x%04x", data);
+	EMULOGCPU(L_CPU, 3, "ctx restore, IC = 0x%04x", data);
 	if (!mem_cpu_get(0, sp-3, &data)) return 0;
 	regs[0] = data;
 	if (!mem_cpu_get(0, sp-2, &data)) return 0;
@@ -199,7 +199,7 @@ void cpu_step()
 	// fetch instruction
 	if (!mem_cpu_get(QNB, regs[R_IC], regs+R_IR)) {
 		regs[R_MODc] = regs[R_MOD] = 0;
-		EMULOGCPU(L_CPU, 10, "    NO MEM: instruction fetch");
+		EMULOGCPU(L_CPU, 2, "    NO MEM: instruction fetch");
 		return;
 	}
 	regs[R_IC]++;
@@ -210,7 +210,7 @@ void cpu_step()
 
 	// end cycle if P is set
 	if (P) {
-		EMULOGCPU(L_CPU, 10, "    P=1, skip instruction");
+		EMULOGCPU(L_CPU, 2, "    P=1, skip instruction");
 		P = 0;
 		// skip also M-arg if present
 		if (op->norm_arg && !IR_C) regs[R_IC]++;
@@ -223,7 +223,7 @@ void cpu_step()
 			N = regs[IR_C] + regs[R_MOD];
 		} else {
 			if (!mem_cpu_get(QNB, regs[R_IC], &data)) {
-				EMULOGCPU(L_CPU, 10, "    NO MEM: long arg fetch");
+				EMULOGCPU(L_CPU, 2, "    NO MEM: long arg fetch");
 				goto finish;
 			} else {
 				N = data + regs[R_MOD];
@@ -235,7 +235,7 @@ void cpu_step()
 		}
 		if (IR_D) {
 			if (!mem_cpu_get(QNB, N, &data)) {
-				EMULOGCPU(L_CPU, 10, "    NO MEM: indirect arg fetch");
+				EMULOGCPU(L_CPU, 2, "    NO MEM: indirect arg fetch");
 				goto finish;
 			} else {
 				N = data;
@@ -245,7 +245,7 @@ void cpu_step()
 		N = (uint16_t) IR_T + (uint16_t) regs[R_MOD];
 	}
 
-	if (EMULOG_WANTS(L_CPU, 10)) {
+	if (EMULOG_WANTS(L_CPU, 2)) {
 		char dasm_buf[256];
 		char mod_buf[64];
 #ifdef WITH_DEBUGGER
@@ -260,11 +260,11 @@ void cpu_step()
 			*mod_buf = '\0';
 		}
 		if (op->norm_arg) {
-			EMULOGCPU(L_CPU, 10, "    %-20s N = 0x%x = %i%s", dasm_buf, (uint16_t) N, (int16_t) N, mod_buf);
+			EMULOGCPU(L_CPU, 2, "    %-20s N = 0x%x = %i%s", dasm_buf, (uint16_t) N, (int16_t) N, mod_buf);
 		} else if (op->short_arg) {
-			EMULOGCPU(L_CPU, 10, "    %-20s T = %i%s", dasm_buf, (int16_t) N, mod_buf);
+			EMULOGCPU(L_CPU, 2, "    %-20s T = %i%s", dasm_buf, (int16_t) N, mod_buf);
 		} else {
-			EMULOGCPU(L_CPU, 10, "    %-20s", dasm_buf);
+			EMULOGCPU(L_CPU, 2, "    %-20s", dasm_buf);
 		}
 	}
 

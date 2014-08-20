@@ -76,8 +76,8 @@ emulog {
 	file = "em400.log"
 
 	# Initial logging level for all components
-	# Alloved values: 0-100 (default is 0) where 0 means no logging at all
-	# and 100 logs just about everything (slow as hell)
+	# Alloved values: 0-9 (default is 0) where 0 means no logging at all
+	# and 9 logs just about everything (slow as hell)
 	level = 0
 }
 

@@ -175,7 +175,7 @@ int cchar_term_read(struct cchar_unit_proto_t *unit, uint16_t *r_arg)
 {
 	if (UNIT->buf_len <= 0) {
 		pthread_mutex_lock(&UNIT->buf_mutex);
-		EMULOG(L_TERM, 50, "buffer empty");
+		EMULOG(L_TERM, 5, "buffer empty");
 		UNIT->empty_read = 1;
 		pthread_mutex_unlock(&UNIT->buf_mutex);
 		return IO_EN;
@@ -184,9 +184,9 @@ int cchar_term_read(struct cchar_unit_proto_t *unit, uint16_t *r_arg)
 		char data = UNIT->buf[UNIT->buf_rpos];
 		if (EMULOG_ENABLED) {
 			if (data >= 32) {
-				EMULOG(L_TERM, 50, "buf read: %i (%c)", data, data);
+				EMULOG(L_TERM, 5, "buf read: %i (%c)", data, data);
 			} else {
-				EMULOG(L_TERM, 50, "buf read: %i (#%02x)", data, data);
+				EMULOG(L_TERM, 5, "buf read: %i (#%02x)", data, data);
 			}
 		}
 
@@ -213,9 +213,9 @@ int cchar_term_write(struct cchar_unit_proto_t *unit, uint16_t *r_arg)
 	char data = *r_arg & 255;
 	if (EMULOG_ENABLED) {
 		if (data >= 32) {
-			EMULOG(L_TERM, 50, "Term write: %i (%c)", data, data);
+			EMULOG(L_TERM, 5, "Term write: %i (%c)", data, data);
 		} else {
-			EMULOG(L_TERM, 50, "Term write: %i (#%02x)", data, data);
+			EMULOG(L_TERM, 5, "Term write: %i (#%02x)", data, data);
 		}
 	}
 	term_write(UNIT->term, &data, 1);

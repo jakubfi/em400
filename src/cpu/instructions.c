@@ -490,8 +490,8 @@ void op_71_exl()
 	if (EMULOG_ENABLED) {
 		emulog_exl_store(IR_b, NB, regs[R_IC], regs[4]);
 
-		EMULOGCPU(L_OP, 10, "EXL: %i (r4: 0x%04x)", IR_b, regs[4]);
-		if (EMULOG_WANTS(L_CRK5, 10)) {
+		EMULOGCPU(L_OP, 2, "EXL: %i (r4: 0x%04x)", IR_b, regs[4]);
+		if (EMULOG_WANTS(L_CRK5, 2)) {
 			char *details;
 #ifdef WITH_DEBUGGER
 			details = decode_exl(NB, regs[4], IR_b);
@@ -499,7 +499,7 @@ void op_71_exl()
 			details = malloc(128);
 			sprintf(details, "[details missing]");
 #endif
-			emulog_splitlog(L_CRK5, 10, details);
+			emulog_splitlog(L_CRK5, 2, details);
 			free(details);
 		}
 	}
@@ -1019,8 +1019,8 @@ void op_77_sp()
 		mem_mget(0, bprog+52, pname, 2);
 		emulog_update_pname(pname);
 
-		EMULOGCPU(L_CRK5, 50, "SP: context @ 0x%04x -> IC: 0x%04x", N, regs[R_IC]);
-		if (EMULOG_WANTS(L_CRK5, 50)) {
+		EMULOGCPU(L_CRK5, 5, "SP: context @ 0x%04x -> IC: 0x%04x", N, regs[R_IC]);
+		if (EMULOG_WANTS(L_CRK5, 5)) {
 			char *ctx;
 #ifdef WITH_DEBUGGER
 			ctx = decode_ctx(0, N, 0);
@@ -1028,10 +1028,10 @@ void op_77_sp()
 			ctx = malloc(128);
 			sprintf(ctx, "[details missing]");
 #endif
-			emulog_splitlog(L_CRK5, 50, ctx);
+			emulog_splitlog(L_CRK5, 5, ctx);
 			free(ctx);
 		}
-		if (EMULOG_WANTS(L_CRK5, 10)) {
+		if (EMULOG_WANTS(L_CRK5, 2)) {
 			emulog_intlevel_reset();
 
 			int exl_was_number;
@@ -1048,7 +1048,7 @@ void op_77_sp()
 				details = malloc(128);
 				sprintf(details, "[details missing]");
 #endif
-				emulog_splitlog(L_CRK5, 10, details);
+				emulog_splitlog(L_CRK5, 2, details);
 				free(details);
 				emulog_exl_reset();
 			}

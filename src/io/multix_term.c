@@ -95,7 +95,7 @@ void mx_term_reset(struct mx_unit_proto_t *unit)
 // -----------------------------------------------------------------------
 int mx_term_cfg_phy(struct mx_unit_proto_t *unit, struct mx_cf_sc_pl *cfg_phy)
 {
-	EMULOG(L_TERM, 10, "MULTIX/terminal (log:%i, phy:%i): configure physical line", unit->log_num, unit->phy_num);
+	EMULOG(L_TERM, 2, "MULTIX/terminal (log:%i, phy:%i): configure physical line", unit->log_num, unit->phy_num);
 	if (unit && cfg_phy) {
 		unit->dir = cfg_phy->dir;
 		unit->used = 1;
@@ -109,14 +109,14 @@ int mx_term_cfg_phy(struct mx_unit_proto_t *unit, struct mx_cf_sc_pl *cfg_phy)
 // -----------------------------------------------------------------------
 int mx_term_cfg_log(struct mx_unit_proto_t *unit, struct mx_cf_sc_ll *cfg_log)
 {
-	EMULOG(L_TERM, 10, "MULTIX/terminal (log:%i, phy:%i): configure logical line", unit->log_num, unit->phy_num);
+	EMULOG(L_TERM, 2, "MULTIX/terminal (log:%i, phy:%i): configure logical line", unit->log_num, unit->phy_num);
 	return E_OK;
 }
 
 // -----------------------------------------------------------------------
 void mx_term_cmd_attach(struct mx_unit_proto_t *unit, uint16_t addr)
 {
-	EMULOG(L_TERM, 10, "MULTIX/terminal (log:%i, phy:%i): attach", unit->log_num, unit->phy_num);
+	EMULOG(L_TERM, 2, "MULTIX/terminal (log:%i, phy:%i): attach", unit->log_num, unit->phy_num);
 	unit->attached = 1;
 	mx_status_set(unit, MX_STATUS_ATTACHED);
 	mx_int(unit->chan, unit->log_num, MX_INT_IDOLI);
@@ -125,7 +125,7 @@ void mx_term_cmd_attach(struct mx_unit_proto_t *unit, uint16_t addr)
 // -----------------------------------------------------------------------
 void mx_term_cmd_detach(struct mx_unit_proto_t *unit, uint16_t addr)
 {
-	EMULOG(L_TERM, 10, "MULTIX/terminal (log:%i, phy:%i): detach", unit->log_num, unit->phy_num);
+	EMULOG(L_TERM, 2, "MULTIX/terminal (log:%i, phy:%i): detach", unit->log_num, unit->phy_num);
 	mx_status_clear(unit, MX_STATUS_ATTACHED);
 	unit->attached = 0;
 	mx_int(unit->chan, unit->log_num, MX_INT_IODLI);
@@ -134,7 +134,7 @@ void mx_term_cmd_detach(struct mx_unit_proto_t *unit, uint16_t addr)
 // -----------------------------------------------------------------------
 uint16_t mx_term_get_status(struct mx_unit_proto_t *unit)
 {
-	EMULOG(L_TERM, 10, "MULTIX/terminal (log:%i, phy:%i): status", unit->log_num, unit->phy_num);
+	EMULOG(L_TERM, 2, "MULTIX/terminal (log:%i, phy:%i): status", unit->log_num, unit->phy_num);
 	return 0;
 }
 
@@ -190,7 +190,7 @@ int mx_term_send(struct mx_unit_proto_t *unit, struct mx_term_cf_transmit_t *cf)
 	}
 
 	tmp[bytes_sent] = 0;
-	EMULOG(L_TERM, 50, "Terminal sent: \"%s\"\n", tmp);
+	EMULOG(L_TERM, 5, "Terminal sent: \"%s\"\n", tmp);
 
 	mx_status_clear(unit, MX_STATUS_SEND);
 
@@ -283,7 +283,7 @@ void mx_term_cmd_transmit(struct mx_unit_proto_t *unit, uint16_t addr)
 		return;
 	}
 
-	if (EMULOG_WANTS(L_TERM, 50)) {
+	if (EMULOG_WANTS(L_TERM, 5)) {
 		char *details;
 #ifdef WITH_DEBUGGER
 		details = decode_mxpst_term(0, addr, 0);
@@ -291,7 +291,7 @@ void mx_term_cmd_transmit(struct mx_unit_proto_t *unit, uint16_t addr)
 		details = malloc(128);
 		sprintf(details, "[details missing]");
 #endif
-		emulog_splitlog(L_TERM, 50, details);
+		emulog_splitlog(L_TERM, 5, details);
 		free(details);
 	}
 
