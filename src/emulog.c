@@ -357,13 +357,17 @@ void emulog_intlevel_reset()
 // -----------------------------------------------------------------------
 void emulog_intlevel_dec()
 {
-	emulog_int_level += 4;
+	if (emulog_int_level < EMULOG_INT_INDENT_MAX) {
+		emulog_int_level += 4;
+	}
 }
 
 // -----------------------------------------------------------------------
 void emulog_intlevel_inc()
 {
-	emulog_int_level -= 4;
+	if (emulog_int_level > 0) {
+		emulog_int_level -= 4;
+	}
 }
 
 // -----------------------------------------------------------------------

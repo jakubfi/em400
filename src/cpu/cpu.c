@@ -199,7 +199,7 @@ void cpu_step()
 	// fetch instruction
 	if (!mem_cpu_get(QNB, regs[R_IC], regs+R_IR)) {
 		regs[R_MODc] = regs[R_MOD] = 0;
-		EMULOGCPU(L_CPU, 2, "    NO MEM: instruction fetch");
+		EMULOGCPU(L_CPU, 2, "        (NO MEM: instruction fetch)");
 		return;
 	}
 	regs[R_IC]++;
@@ -210,7 +210,7 @@ void cpu_step()
 
 	// end cycle if P is set
 	if (P) {
-		EMULOGCPU(L_CPU, 2, "    P=1, skip instruction");
+		EMULOGCPU(L_CPU, 2, "    (skip)");
 		P = 0;
 		// skip also M-arg if present
 		if (op->norm_arg && !IR_C) regs[R_IC]++;
@@ -223,7 +223,7 @@ void cpu_step()
 			N = regs[IR_C] + regs[R_MOD];
 		} else {
 			if (!mem_cpu_get(QNB, regs[R_IC], &data)) {
-				EMULOGCPU(L_CPU, 2, "    NO MEM: long arg fetch");
+				EMULOGCPU(L_CPU, 2, "    (no mem: long arg fetch)");
 				goto finish;
 			} else {
 				N = data + regs[R_MOD];
@@ -235,7 +235,7 @@ void cpu_step()
 		}
 		if (IR_D) {
 			if (!mem_cpu_get(QNB, N, &data)) {
-				EMULOGCPU(L_CPU, 2, "    NO MEM: indirect arg fetch");
+				EMULOGCPU(L_CPU, 2, "    (no mem: indirect arg fetch)");
 				goto finish;
 			} else {
 				N = data;
@@ -251,7 +251,7 @@ void cpu_step()
 #ifdef WITH_DEBUGGER
 		dt_trans(emulog_get_cycle_ic(), dasm_buf, DMODE_DASM);
 #else
-		sprintf(dasm_buf, "[missing dasm]");
+		sprintf(dasm_buf, "(missing dasm)");
 #endif
 
 		if (regs[R_MODc]) {
