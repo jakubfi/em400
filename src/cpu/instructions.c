@@ -779,7 +779,13 @@ void op_73_lip()
 	USER_ILLEGAL;
 
 	cpu_ctx_restore();
-	if (EMULOG_ENABLED) {
+
+	if (EMULOG_ENABLED && em400_cfg.emulog_pname_offset) {
+		uint16_t bprog;
+		uint16_t pname[2];
+		mem_get(0, 0x62, &bprog);
+		mem_mget(0, bprog+em400_cfg.emulog_pname_offset, pname, 2);
+		emulog_update_pname(pname);
 		emulog_intlevel_dec();
 	}
 }
@@ -1013,11 +1019,13 @@ void op_77_sp()
 	int_update_mask();
 
 	if (EMULOG_ENABLED) {
-		uint16_t bprog;
-		uint16_t pname[2];
-		mem_get(0, 0x62, &bprog);
-		mem_mget(0, bprog+52, pname, 2);
-		emulog_update_pname(pname);
+		if (em400_cfg.emulog_pname_offset) {
+			uint16_t bprog;
+			uint16_t pname[2];
+			mem_get(0, 0x62, &bprog);
+			mem_mget(0, bprog+em400_cfg.emulog_pname_offset, pname, 2);
+			emulog_update_pname(pname);
+		}
 
 		EMULOGCPU(L_CRK5, 5, "SP: context @ 0x%04x -> IC: 0x%04x", N, regs[R_IC]);
 		if (EMULOG_WANTS(L_CRK5, 5)) {

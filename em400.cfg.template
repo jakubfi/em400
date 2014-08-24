@@ -77,8 +77,18 @@ emulog {
 
 	# Initial logging level for all components
 	# Alloved values: 0-9 (default is 0) where 0 means no logging at all
-	# and 9 logs just about everything (slow as hell)
+	# and 9 logs just about everything (about 100x slower than with logging disabled)
 	level = 0
+
+	# If you run CROOK operating system within em400 and
+	# want emulog to log active process name, set this
+	# to process name offset in the process structure
+	# (it's 52 for "N" kernels and 54 for "P" kernels).
+	# 0 means do not log process name.
+	# NOTE: this is not 100% accurate, as process name is updated
+	# only when changing context (SP and LIP instructions)
+	# Default: 0
+	pname_offset = 0
 }
 
 #channel 0 = mem {

@@ -74,6 +74,7 @@ struct cfg_em400_t {
 	int emulog_paused;
 	char *emulog_file;
 	int emulog_level;
+	int emulog_pname_offset;
 
 	struct cfg_chan_t *chans;
 
