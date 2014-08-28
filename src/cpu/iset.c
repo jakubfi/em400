@@ -184,7 +184,7 @@ struct em400_instr em400_instr_ou_legal = { O(036), VARMASK_DABC, { 1, 0, 0, op_
 // additional MX-16 instructions
 struct em400_instr em400_instr_sint = { O(073)+00204, VARMASK_B, { 0, 0, 1, op_73_sint } };
 struct em400_instr em400_instr_sind = { O(073)+01204, VARMASK_B, { 0, 0, 1, op_73_sind } };
-struct em400_instr em400_instr_cron = { O(073)+00500, VARMASK_B, { 0, 0, 1, op_73_cron } };
+struct em400_instr em400_instr_cron = { O(073)+00500, VARMASK_DBC, { 0, 0, 1, op_73_cron } };
 
 // illegal instruction
 struct em400_instr em400_instr_illegal = { 0, VARMASK_ALL, { 0, 0, 1, NULL } };
