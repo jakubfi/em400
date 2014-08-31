@@ -326,22 +326,14 @@ void op_cl()
 void op_lb()
 {
 	uint8_t data;
-	if (cpu_mod) {
-		if (!mem_get_byte(NB, N, &data)) return;
-	} else {
-		if (!mem_get_byte(NB, (uint16_t) N, &data)) return;
-	}
+	if (!mem_get_byte(NB, N, &data)) return;
 	reg_safe_write(IR_A, (regs[IR_A] & 0b1111111100000000) | data);
 }
 
 // -----------------------------------------------------------------------
 void op_rb()
 {
-	if (cpu_mod) {
-		if (!mem_put_byte(NB, N, regs[IR_A])) return;
-	} else {
-		if (!mem_put_byte(NB, (uint16_t) N, regs[IR_A])) return;
-	}
+	if (!mem_put_byte(NB, N, regs[IR_A])) return;
 }
 
 // -----------------------------------------------------------------------
