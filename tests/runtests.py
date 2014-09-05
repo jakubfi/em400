@@ -34,10 +34,19 @@ class TestBed:
         self.tests = tests
 
     def run(self):
+        total = 0
+        failed = 0
         for test_file in self.tests:
+            print("%-30s : RUNNING..." % test_file.replace("./", "")),
+            sys.stdout.flush()
             test = Test(test_file)
             result, details = test.run()
-            print("%-30s : %s%s" % (test_file.replace("./", ""), result, details))
+            total += 1
+            print("\r%-30s : %s%s      " % (test_file.replace("./", ""), result, details))
+            if result != "PASSED":
+                failed += 1
+        print("--------------------------------------------")
+        print("Tests run: %i, failed: %i" % (total, failed))
 
 # ------------------------------------------------------------------------
 class Test:
