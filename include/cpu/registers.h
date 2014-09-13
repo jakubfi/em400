@@ -65,6 +65,7 @@ extern uint16_t regs[];
 // SR access macros
 // -----------------------------------------------------------------------
 #define Q	((regs[R_SR] & 0b0000000000100000) >> 5)
+#define BS	((regs[R_SR] & 0b0000000000010000) >> 4)
 #define NB	((regs[R_SR] & 0b0000000000001111) >> 0)
 #define QNB	(Q*NB)
 

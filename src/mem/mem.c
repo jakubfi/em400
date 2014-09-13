@@ -272,7 +272,7 @@ int mem_get_byte(int nb, uint32_t addr, uint8_t *data)
 	int shift;
 	uint16_t orig = 0;
 
-	if (!cpu_mod) addr &= 0xffff;
+	if (!cpu_mod || (Q & BS)) addr &= 0xffff;
 
 	shift = 8 * (~addr & 1);
 	addr >>= 1;
@@ -289,7 +289,7 @@ int mem_put_byte(int nb, uint32_t addr, uint8_t data)
 	int shift;
 	uint16_t orig = 0;
 
-	if (!cpu_mod) addr &= 0xffff;
+	if (!cpu_mod || (Q & BS)) addr &= 0xffff;
 
 	shift = 8 * (~addr & 1);
 	addr >>= 1;
