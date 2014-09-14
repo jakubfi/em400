@@ -266,14 +266,14 @@ void cpu_step()
 	// process argument
 	if (op->norm_arg) {
 		if (IR_C) {
-			N = (uint16_t) (regs[IR_C] + regs[R_MOD]);
+			N = regs[IR_C] + regs[R_MOD];
 		} else {
 			if (!mem_cpu_get(QNB, regs[R_IC], &data)) goto finish;
-			N = (uint16_t) (data + regs[R_MOD]);
+			N = data + regs[R_MOD];
 			regs[R_IC]++;
 		}
 		if (IR_B) {
-			N += regs[IR_B];
+			N = (uint16_t) N + regs[IR_B];
 		}
 		if (IR_D) {
 			if (!mem_cpu_get(QNB, N, &data)) goto finish;

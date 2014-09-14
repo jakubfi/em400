@@ -3,7 +3,9 @@
 ; 17-bit byte addressing works only when:
 ;  * cpu_mod is on (MX-16 CPU)
 ;  * modifications are enabled with CRON
-;  * B-modification is used to get the 17th bit
+;  * one of the following happened:
+;    * carry on pre-mod, no b-mod
+;    * carry on b-mod
 
 	.cpu	mx16
 
@@ -49,18 +51,18 @@ ok:	im	mask
 	cron			; enable cpu modification
 
 	md	1
-	lb	r3, r7+r7	; this should work (B-mod)
+	lb	r3, r7+r7	; this should work (carry on B-mod)
 
 	lw	r4, r7
 	md	1
-	lb	r5, r7+r4	; this should work (B-mod, register number doesn't matter)
+	lb	r5, r7+r4	; this should work (carry on B-mod, register number doesn't matter)
 
 	lwt	r4, 0
 	md	1+r7
-	lb	r4, r7		; this shouldn't work (no B-mod)
+	lb	r4, r7		; this should work (carry on pre-mod, no B-mod)
 
 	lwt	r1, 0
-	lb	r1, (seg\3+addr)*2 + 1 ; neither should this (no B-mod)
+	lb	r1, (seg\3+addr)*2 + 1 ; this shouldn't (no pre-mod, no B-mod)
 
 	mcl			; mcl disables cpu modification
 
@@ -72,7 +74,7 @@ ok:	im	mask
 ; XPCT hex(r1) : 0x0055
 ; XPCT hex(r2) : 0x0055
 ; XPCT hex(r3) : 0x00ba
-; XPCT hex(r4) : 0x0055
+; XPCT hex(r4) : 0x00ba
 ; XPCT hex(r5) : 0x00ba
 ; XPCT hex(r6) : 0x0055
 ; XPCT oct(ir[10-15]) : 077

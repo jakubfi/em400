@@ -3,7 +3,9 @@
 ; 17-bit byte addressing works only when:
 ;  * cpu_mod is on (MX-16 CPU)
 ;  * modifications are enabled with CRON
-;  * B-modification is used to get the 17th bit
+;  * one of the following happened:
+;    * carry on pre-mod, no b-mod
+;    * carry on b-mod
 
 	.cpu	mx16
 
