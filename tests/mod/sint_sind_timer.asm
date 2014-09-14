@@ -66,5 +66,5 @@ extrax:	ib r3
 ; XPCT int([0x102]) : 0
 
 ; XPCT int([0x202]) : 3
-; XPCT int([0x201]) : 0
+; XPCT int([0x201]) : 1
 ; XPCT int([0x200]) : 2
