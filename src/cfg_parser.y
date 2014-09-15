@@ -39,14 +39,9 @@ int cyylex(void);
 
 %token COMPUTER CHANNEL UNIT
 %token SPEED_REAL TIMER_STEP TIMER_START CPU_MOD CPU_USER_IO_ILLEGAL CPU_AWP
-<<<<<<< HEAD
 %token ELWRO MEGA MEGA_PROM MEGA_BOOT OS_SEG CPU_STOP_ON_NOMEM
-%token <value> TEXT
-=======
-%token ELWRO MEGA MEGA_PROM MEGA_BOOT OS_SEG CPU_NOMEM_STOP
 %token EMULOG ENABLED PAUSED LFILE LEVEL PNAME_OFFSET
 %token <value> TEXT STRING
->>>>>>> emulog conf., cleanups, cfg() cleanups, emulog dbg
 %token <value> VALUE
 %token <value> BOOL
 %type <arg> arg arglist

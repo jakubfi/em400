@@ -45,7 +45,7 @@
 
 #define USER_ILLEGAL \
 	if (Q) { \
-		LOG(L_CPU, 10, "    (ineffective user-illegal instruction)"); \
+		EMULOGCPU(L_CPU, 2, "    (ineffective: user-illegal instruction)"); \
 		int_set(INT_ILLEGAL_INSTRUCTION); \
 		return; \
 	}
@@ -1068,7 +1068,7 @@ void op_77_sp()
 void op_77_md()
 {
 	if (regs[R_MODc] >= 3) {
-		LOG(L_CPU, 10, "    (ineffective 4th MD)");
+		EMULOGCPU(L_CPU, 2, "    (ineffective: 4th MD)");
 		int_set(INT_ILLEGAL_INSTRUCTION);
 		regs[R_MOD] = 0;
 		regs[R_MODc] = 0;
@@ -1099,7 +1099,7 @@ void op_77_ib()
 void op_illegal()
 {
 	char *opcode = int2binf("... ... . ... ... ...", regs[R_IR], 16);
-	LOG(L_CPU, 10, "    (ineffective illegal instruction) opcode: %s (0x%04x)", opcode, regs[R_IR]);
+	EMULOGCPU(L_CPU, 2, "    (ineffective: illegal instruction) opcode: %s (0x%04x)", opcode, regs[R_IR]);
 	free(opcode);
 	int_set(INT_ILLEGAL_INSTRUCTION);
 }

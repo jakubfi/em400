@@ -22,7 +22,7 @@
 #include "cpu/timer.h"
 #include "cpu/cpu.h"
 #include "cpu/interrupts.h"
-#include "debugger/log.h"
+#include "emulog.h"
 
 #include "cfg.h"
 #include "errors.h"
@@ -97,14 +97,14 @@ void timer_shutdown()
 // -----------------------------------------------------------------------
 void timer_on()
 {
-	LOG(L_INT, 20, "Starting timer");
+	EMULOG(L_INT, 1, "Stopping timer");
 	atom_store(&timer_enabled, 1);
 }
 
 // -----------------------------------------------------------------------
 void timer_off()
 {
-	LOG(L_INT, 20, "Stopping timer");
+	EMULOG(L_INT, 1, "Stopping timer");
 	atom_store(&timer_enabled, 0);
 }
 
