@@ -74,12 +74,12 @@ char *log_reg_name[] = {
 
 char *log_int_name[] = {
 	"CPU power loss",
-	"memory parity",
+	"memory parity error",
 	"no memory",
 	"2nd CPU high",
 	"ext power loss",
 	"timer/special",
-	"illegal opcode",
+	"illegal instruction",
 	"AWP div overflow",
 	"AWP underflow",
 	"AWP overflow",
