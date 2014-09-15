@@ -191,7 +191,7 @@ void int_serve()
 
 	// put system status on stack
 	sr_mask = int_int2mask[interrupt] & MASK_Q; // put mask and clear Q
-	if (cpu_mod && (interrupt >= 12) && (interrupt <= 27)) sr_mask &= MASK_EX; // put extended mask if cpu_mod
+	if (cpu_mod_active && (interrupt >= 12) && (interrupt <= 27)) sr_mask &= MASK_EX; // put extended mask if cpu_mod
 	if (!cpu_ctx_switch(int_spec, int_addr, sr_mask)) return;
 #ifdef WITH_DEBUGGER
 	log_int_level -= 4;

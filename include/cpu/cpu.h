@@ -22,7 +22,7 @@
 
 extern int P;
 extern uint32_t N;
-extern int cpu_mod;
+extern int cpu_mod_active;
 
 #ifdef WITH_DEBUGGER
 extern uint16_t cycle_ic;

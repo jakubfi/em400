@@ -40,7 +40,7 @@
 
 int P;
 uint32_t N;
-int cpu_mod;
+int cpu_mod_active;
 
 #ifdef WITH_DEBUGGER
 uint16_t cycle_ic;
@@ -127,7 +127,7 @@ void cpu_shutdown()
 int cpu_mod_on()
 {
 	// indicate that CPU modifications are preset
-	cpu_mod = 1;
+	cpu_mod_active = 1;
 
 	// set interrupts as for modified CPU
 	int_timer = INT_EXTRA;
@@ -140,7 +140,7 @@ int cpu_mod_on()
 int cpu_mod_off()
 {
 	// indicate that CPU modifications are absent
-	cpu_mod = 0;
+	cpu_mod_active = 0;
 
 	// set interrupts as for vanilla CPU
 	int_timer = INT_TIMER;
