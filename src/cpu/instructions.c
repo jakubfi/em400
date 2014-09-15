@@ -782,7 +782,9 @@ void op_73_lip()
 // -----------------------------------------------------------------------
 void op_73_cron()
 {
-	cpu_mod_on();
+	if (em400_cfg.cpu_mod) {
+		cpu_mod_on();
+	}
 	// CRON is an illegal instruction anyway
 	int_set(INT_ILLEGAL_INSTRUCTION);
 }

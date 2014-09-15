@@ -47,7 +47,7 @@ uint16_t cycle_ic;
 #endif
 
 // -----------------------------------------------------------------------
-static int cpu_register_op(struct em400_op **op_tab, uint16_t opcode, uint16_t mask, struct em400_op *op, int overwrite_check)
+static int cpu_register_op(struct em400_op **op_tab, uint16_t opcode, uint16_t mask, struct em400_op *op)
 {
 	int i, pos;
 	int offsets[16];
@@ -75,10 +75,10 @@ static int cpu_register_op(struct em400_op **op_tab, uint16_t opcode, uint16_t m
 		for (pos=one_count-1 ; pos>=0 ; pos--) {
 			result |= ((i >> pos) & 1) << offsets[pos];
 		}
-		// sanity check: we don't want to overwrite already registered ops
-//		if (overwrite_check && op->fun && op_tab[opcode|result]->fun) {
-//			return E_SLID_INIT;
-//		}
+		// sanity check: we don't want to overwrite non-illegal registered ops
+		if ((op_tab[opcode | result]) && (op_tab[opcode | result]->fun != op_illegal)) {
+			return E_SLID_INIT;
+		}
 		// register the op
 		op_tab[opcode | result] = op;
 	}
@@ -92,23 +92,15 @@ int cpu_init()
 
 	regs[R_KB] = em400_cfg.keys;
 
-	// initialize instruction decoder
-	cpu_register_op(em400_op_tab, 0, 0xffff, &em400_instr_illegal.op, 0);
+	// initialize instruction decoder with illegal instructions
+	cpu_register_op(em400_op_tab, 0, 0xffff, &em400_instr_illegal.op);
 	struct em400_instr *instr = em400_ilist_mera400;
 	while (instr->var_mask) {
-		res = cpu_register_op(em400_op_tab, instr->opcode, instr->var_mask, &instr->op, 1);
+		res = cpu_register_op(em400_op_tab, instr->opcode, instr->var_mask, &instr->op);
 		if (res != E_OK) {
 			return res;
 		}
 		instr++;
-	}
-
-	// register CRON instruction, if cpu mod is enabled in configuration
-	if (em400_cfg.cpu_mod) {
-		res = cpu_register_op(em400_op_tab, em400_instr_cron.opcode, em400_instr_cron.var_mask, &em400_instr_cron.op, 1);
-		if (res != E_OK) {
-			return res;
-		}
 	}
 
 	cpu_reset();

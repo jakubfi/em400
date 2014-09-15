@@ -134,6 +134,7 @@ struct em400_instr em400_ilist_mera400[] = {
 	{ O(073)+00300, VARMASK_BC,  { 0, 0, op_73_giu } },
 	{ O(073)+00400, VARMASK_DBC, { 0, 0, op_73_lip } },
 	{ O(073)+01300, VARMASK_BC,  { 0, 0, op_73_gil } },
+	{ O(073)+00500, VARMASK_DBC, { 0, 0, op_73_cron } },
 
 	{ O(074)+0000, VARMASK_DBC, { 1, 0, op_74_uj } },
 	{ O(074)+0100, VARMASK_DBC, { 1, 0, op_74_jl } },
@@ -173,9 +174,6 @@ struct em400_instr em400_ilist_mera400[] = {
 
 	{ 0, 0, { 0, 0, NULL } }
 };
-
-// additional MX-16 instructions
-struct em400_instr em400_instr_cron = { O(073)+00500, VARMASK_DBC, { 0, 0, op_73_cron } };
 
 // illegal instruction
 struct em400_instr em400_instr_illegal = { 0, VARMASK_ALL, { 0, 0, op_illegal} };
