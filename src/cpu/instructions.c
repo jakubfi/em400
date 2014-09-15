@@ -786,7 +786,7 @@ void op_73_cron()
 		cpu_mod_on();
 	}
 	// CRON is an illegal instruction anyway
-	int_set(INT_ILLEGAL_INSTRUCTION);
+	op_illegal();
 }
 
 // -----------------------------------------------------------------------
@@ -1063,4 +1063,5 @@ void op_illegal()
 	free(opcode);
 	int_set(INT_ILLEGAL_INSTRUCTION);
 }
+
 // vim: tabstop=4 shiftwidth=4 autoindent
