@@ -1031,4 +1031,12 @@ void op_77_ib()
 	}
 }
 
+// -----------------------------------------------------------------------
+void op_illegal()
+{
+	char *opcode = int2binf("... ... . ... ... ...", regs[R_IR], 16);
+	LOG(L_CPU, 10, "    (ineffective illegal instruction) opcode: %s (0x%04x)", opcode, regs[R_IR]);
+	free(opcode);
+	int_set(INT_ILLEGAL_INSTRUCTION);
+}
 // vim: tabstop=4 shiftwidth=4 autoindent

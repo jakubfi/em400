@@ -187,6 +187,6 @@ struct em400_instr em400_instr_sind = { O(073)+01204, VARMASK_B, { 0, 0, 1, op_7
 struct em400_instr em400_instr_cron = { O(073)+00500, VARMASK_DBC, { 0, 0, 1, op_73_cron } };
 
 // illegal instruction
-struct em400_instr em400_instr_illegal = { 0, VARMASK_ALL, { 0, 0, 1, NULL } };
+struct em400_instr em400_instr_illegal = { 0, VARMASK_ALL, { 0, 0, 1, op_illegal} };
 
 // vim: tabstop=4 shiftwidth=4 autoindent

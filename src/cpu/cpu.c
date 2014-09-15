@@ -76,9 +76,9 @@ static int cpu_register_op(struct em400_op **op_tab, uint16_t opcode, uint16_t m
 			result |= ((i >> pos) & 1) << offsets[pos];
 		}
 		// sanity check: we don't want to overwrite already registered ops
-		if (overwrite_check && op->fun && op_tab[opcode|result]->fun) {
-			return E_SLID_INIT;
-		}
+//		if (overwrite_check && op->fun && op_tab[opcode|result]->fun) {
+//			return E_SLID_INIT;
+//		}
 		// register the op
 		op_tab[opcode | result] = op;
 	}
@@ -250,7 +250,7 @@ void cpu_step()
 	}
 
 	// end cycle if op is ineffective
-	if ((Q && op->user_illegal) || ((regs[R_MODc] >= 3) && (op->fun == op_77_md)) || !op->fun) {
+	if ((Q && op->user_illegal) || ((regs[R_MODc] >= 3) && (op->fun == op_77_md))) {
 #ifdef WITH_DEBUGGER
 		char buf[256];
 		dt_trans(cycle_ic, buf, DMODE_DASM);

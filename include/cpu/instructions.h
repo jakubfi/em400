@@ -165,6 +165,8 @@ void op_77_md();
 void op_77_rz();
 void op_77_ib();
 
+void op_illegal();
+
 #endif
 
 // vim: tabstop=4 shiftwidth=4 autoindent
