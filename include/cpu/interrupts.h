@@ -34,7 +34,7 @@ enum _interrupts {
 	INT_2CPU_HIGH		= 3,
 	INT_IFACE_POWER		= 4,
 	INT_TIMER			= 5,
-	INT_ILLEGAL_OPCODE	= 6,
+	INT_ILLEGAL_INSTRUCTION	= 6,
 	INT_DIV_OF			= 7,
 	INT_FP_UF			= 8,
 	INT_FP_OF			= 9,

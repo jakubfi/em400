@@ -257,7 +257,7 @@ void cpu_step()
 		LOG(L_CPU, 10, "    (ineffective) %s Q: %d, MODc=%d (%s%s)", buf, Q, regs[R_MODc], op->fun?"legal":"illegal", op->user_illegal?"":", user illegal");
 #endif
 		regs[R_MODc] = regs[R_MOD] = 0;
-		int_set(INT_ILLEGAL_OPCODE);
+		int_set(INT_ILLEGAL_INSTRUCTION);
 		// skip also M-arg if present
 		if (op->norm_arg && !IR_C) regs[R_IC]++;
 		return;

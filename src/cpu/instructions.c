@@ -779,7 +779,7 @@ void op_73_cron()
 {
 	cpu_mod_on();
 	// CRON is an illegal instruction anyway
-	int_set(INT_ILLEGAL_OPCODE);
+	int_set(INT_ILLEGAL_INSTRUCTION);
 }
 
 // -----------------------------------------------------------------------
