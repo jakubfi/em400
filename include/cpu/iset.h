@@ -25,7 +25,6 @@ typedef void (*opfun)();
 struct em400_op {
 	int norm_arg;			// has normal argument?
 	int short_arg;			// has short argument?
-	int user_illegal;		// is illegal in user mode?
 	opfun fun;				// instruction function
 };
 
@@ -40,8 +39,6 @@ extern struct em400_op *em400_op_tab[0x10000];
 
 // instruction list
 extern struct em400_instr em400_ilist_mera400[];
-extern struct em400_instr em400_instr_in_legal;
-extern struct em400_instr em400_instr_ou_legal;
 extern struct em400_instr em400_instr_sint;
 extern struct em400_instr em400_instr_sind;
 extern struct em400_instr em400_instr_cron;

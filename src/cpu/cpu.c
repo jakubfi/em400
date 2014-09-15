@@ -111,12 +111,6 @@ int cpu_init()
 		}
 	}
 
-	// set IN/OU operations user-legalness
-	if (!em400_cfg.cpu_user_io_illegal) {
-		cpu_register_op(em400_op_tab, em400_instr_in_legal.opcode, em400_instr_in_legal.var_mask, &em400_instr_in_legal.op, 0);
-		cpu_register_op(em400_op_tab, em400_instr_ou_legal.opcode, em400_instr_ou_legal.var_mask, &em400_instr_ou_legal.op, 0);
-	}
-
 	cpu_reset();
 
 	int_update_mask(regs[R_SR]);
@@ -244,20 +238,6 @@ void cpu_step()
 	if (P) {
 		LOG(L_CPU, 10, "    (skip)");
 		P = 0;
-		// skip also M-arg if present
-		if (op->norm_arg && !IR_C) regs[R_IC]++;
-		return;
-	}
-
-	// end cycle if op is ineffective
-	if (Q && op->user_illegal) {
-#ifdef WITH_DEBUGGER
-		char buf[256];
-		dt_trans(cycle_ic, buf, DMODE_DASM);
-		LOG(L_CPU, 10, "    (ineffective) %s Q: %d, MODc=%d (%s%s)", buf, Q, regs[R_MODc], op->fun?"legal":"illegal", op->user_illegal?"":", user illegal");
-#endif
-		regs[R_MODc] = regs[R_MOD] = 0;
-		int_set(INT_ILLEGAL_INSTRUCTION);
 		// skip also M-arg if present
 		if (op->norm_arg && !IR_C) regs[R_IC]++;
 		return;

@@ -46,6 +46,13 @@ int exl_was_r4;
 #define mem_ret_mget(nb, saddr, dest, count)    if (!mem_cpu_mget(nb, saddr, dest, count)) return;
 #define mem_ret_mput(nb, saddr, src, count) 	if (!mem_cpu_mput(nb, saddr, src, count)) return;
 
+#define USER_ILLEGAL \
+	if (Q) { \
+		LOG(L_CPU, 10, "    (ineffective user-illegal instruction)"); \
+		int_set(INT_ILLEGAL_INSTRUCTION); \
+		return; \
+	}
+
 // -----------------------------------------------------------------------
 // ---- 20 - 36 ----------------------------------------------------------
 // -----------------------------------------------------------------------
@@ -153,6 +160,10 @@ void op_bn()
 // -----------------------------------------------------------------------
 void op_ou()
 {
+	if (em400_cfg.cpu_user_io_illegal) {
+		USER_ILLEGAL;
+	}
+
 	uint16_t data;
 	int io_result = io_dispatch(IO_OU, N, regs+IR_A);
 	mem_ret_get(QNB, regs[R_IC] + io_result, &data);
@@ -162,6 +173,10 @@ void op_ou()
 // -----------------------------------------------------------------------
 void op_in()
 {
+	if (em400_cfg.cpu_user_io_illegal) {
+		USER_ILLEGAL;
+	}
+
 	uint16_t data;
 	int io_result = io_dispatch(IO_IN, N, regs+IR_A);
 	mem_ret_get(QNB, regs[R_IC] + io_result, &data);
@@ -691,6 +706,8 @@ void op_72_lpc()
 // -----------------------------------------------------------------------
 void op_73_hlt()
 {
+	USER_ILLEGAL;
+
 	LOG(L_OP, 1, "HALT 0%02o (alarm: %i)", N, regs[6]&255);
 
 	// handle hlt>=040 as "exit emulation" if user wants to
@@ -706,6 +723,8 @@ void op_73_hlt()
 // -----------------------------------------------------------------------
 void op_73_mcl()
 {
+	USER_ILLEGAL;
+
 	regs[R_SR] = 0;
 	int_update_mask();
 	int_clear_all();
@@ -718,6 +737,8 @@ void op_73_mcl()
 // -----------------------------------------------------------------------
 void op_73_cit()
 {
+	USER_ILLEGAL;
+
 	int_clear(INT_SOFT_U);
 	int_clear(INT_SOFT_L);
 }
@@ -725,18 +746,24 @@ void op_73_cit()
 // -----------------------------------------------------------------------
 void op_73_sil()
 {
+	USER_ILLEGAL;
+
 	int_set(INT_SOFT_L);
 }
 
 // -----------------------------------------------------------------------
 void op_73_siu()
 {
+	USER_ILLEGAL;
+
 	int_set(INT_SOFT_U);
 }
 
 // -----------------------------------------------------------------------
 void op_73_sit()
 {
+	USER_ILLEGAL;
+
 	int_set(INT_SOFT_U);
 	int_set(INT_SOFT_L);
 }
@@ -744,18 +771,24 @@ void op_73_sit()
 // -----------------------------------------------------------------------
 void op_73_giu()
 {
+	USER_ILLEGAL;
+
 	// TODO: 2-cpu configuration
 }
 
 // -----------------------------------------------------------------------
 void op_73_gil()
 {
+	USER_ILLEGAL;
+
 	// TODO: 2-cpu configuration
 }
 
 // -----------------------------------------------------------------------
 void op_73_lip()
 {
+	USER_ILLEGAL;
+
 	cpu_ctx_restore();
 #ifdef WITH_DEBUGGER
 	log_int_level += 4;
@@ -765,12 +798,16 @@ void op_73_lip()
 // -----------------------------------------------------------------------
 void op_73_sint()
 {
+	USER_ILLEGAL;
+
 	int_set(int_extra);
 }
 
 // -----------------------------------------------------------------------
 void op_73_sind()
 {
+	USER_ILLEGAL;
+
 	int_set(int_extra);
 }
 
@@ -946,6 +983,8 @@ void op_76_pl()
 // -----------------------------------------------------------------------
 void op_77_mb()
 {
+	USER_ILLEGAL;
+
 	uint16_t data;
 	mem_ret_get(QNB, N, &data);
 	regs[R_SR] = (regs[R_SR] & 0b111111111000000) | (data & 0b0000000000111111);
@@ -954,6 +993,8 @@ void op_77_mb()
 // -----------------------------------------------------------------------
 void op_77_im()
 {
+	USER_ILLEGAL;
+
 	uint16_t data;
 	mem_ret_get(QNB, N, &data);
 	regs[R_SR] = (regs[R_SR] & 0b000000000111111) | (data & 0b1111111111000000);
@@ -963,6 +1004,8 @@ void op_77_im()
 // -----------------------------------------------------------------------
 void op_77_ki()
 {
+	USER_ILLEGAL;
+
 	uint16_t data = int_get_nchan();
 	mem_ret_put(QNB, N, data);
 }
@@ -970,6 +1013,8 @@ void op_77_ki()
 // -----------------------------------------------------------------------
 void op_77_fi()
 {
+	USER_ILLEGAL;
+
 	uint16_t data;
 	mem_ret_get(QNB, N, &data);
 	int_put_nchan(data);
@@ -978,6 +1023,8 @@ void op_77_fi()
 // -----------------------------------------------------------------------
 void op_77_sp()
 {
+	USER_ILLEGAL;
+
 	uint16_t data;
 	mem_ret_get(NB, N, &data);
 	regs[R_IC] = data;
