@@ -250,7 +250,7 @@ void cpu_step()
 	}
 
 	// end cycle if op is ineffective
-	if ((Q && op->user_illegal) || ((regs[R_MODc] >= 3) && (op->fun == op_77_md))) {
+	if (Q && op->user_illegal) {
 #ifdef WITH_DEBUGGER
 		char buf[256];
 		dt_trans(cycle_ic, buf, DMODE_DASM);
