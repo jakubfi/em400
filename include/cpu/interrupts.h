@@ -24,9 +24,6 @@
 extern uint32_t RZ;
 extern uint32_t RP;
 
-extern int int_timer;
-extern int int_extra;
-
 enum _interrupts {
 	INT_2CPU_POWER		= 0,
 	INT_PARITY			= 1,

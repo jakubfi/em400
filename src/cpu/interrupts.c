@@ -35,9 +35,6 @@ uint32_t RZ;
 uint32_t RP;
 uint32_t int_mask;
 
-int int_timer = INT_TIMER;
-int int_extra = INT_EXTRA;
-
 pthread_mutex_t int_mutex = PTHREAD_MUTEX_INITIALIZER;
 pthread_cond_t int_cond = PTHREAD_COND_INITIALIZER;
 
@@ -110,10 +107,10 @@ void int_update_mask()
 void int_set(int x)
 {
 #ifdef WITH_DEBUGGER
-	if (x != int_timer) {
-		LOG(L_INT, 20, "Set: %lld (%s)", x, log_int_name[x]);
-	} else {
+	if (x == cpu_mod_active ? INT_EXTRA : INT_TIMER) {
 		LOG(L_INT, 100, "Set: %lld (%s)", x, log_int_name[x]);
+	} else {
+		LOG(L_INT, 20, "Set: %lld (%s)", x, log_int_name[x]);
 	}
 #endif
 	pthread_mutex_lock(&int_mutex);

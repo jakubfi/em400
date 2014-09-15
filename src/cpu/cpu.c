@@ -129,10 +129,6 @@ int cpu_mod_on()
 	// indicate that CPU modifications are preset
 	cpu_mod_active = 1;
 
-	// set interrupts as for modified CPU
-	int_timer = INT_EXTRA;
-	int_extra = INT_TIMER;
-
 	return E_OK;
 }
 
@@ -141,10 +137,6 @@ int cpu_mod_off()
 {
 	// indicate that CPU modifications are absent
 	cpu_mod_active = 0;
-
-	// set interrupts as for vanilla CPU
-	int_timer = INT_TIMER;
-	int_extra = INT_EXTRA;
 
 	return E_OK;
 }

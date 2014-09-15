@@ -44,7 +44,11 @@ void * timer_thread(void *ptr)
 		if (!sem_timedwait(&timer_quit, &ts)) {
 			break;
 		}
-		int_set(int_timer);
+		if (cpu_mod_active) {
+			int_set(INT_EXTRA);
+		} else {
+			int_set(INT_TIMER);
+		}
 	}
 	pthread_exit(NULL);
 }
