@@ -42,13 +42,13 @@ extrax:	ib r3
 	lf set1
 	im mask
 	hlt 0		; wait for timer interrupt (int 5)
-	sint		; illegal instruction (int 6)
-	sind		; illegal instrtuction (int 6)
+	sint		; timer interrupt (int 5)
+	sind		; timer interrupt (int 5)
 
 	im zmask
 
 ; then, repeat for CPU with enabled modifications
-	cron
+	cron		; illegal instruction (int 6)
 	lf set2
 	im mask
 	hlt 0		; wait for timer interrupt (int 11)
@@ -61,8 +61,8 @@ extrax:	ib r3
 
 	hlt 077
 
-; XPCT int([0x100]) : 1
-; XPCT int([0x101]) : 2
+; XPCT int([0x100]) : 3
+; XPCT int([0x101]) : 0
 ; XPCT int([0x102]) : 0
 
 ; XPCT int([0x202]) : 3

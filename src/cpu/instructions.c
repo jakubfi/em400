@@ -735,37 +735,21 @@ void op_73_mcl()
 }
 
 // -----------------------------------------------------------------------
-void op_73_cit()
+void op_73_softint()
 {
 	USER_ILLEGAL;
 
-	int_clear(INT_SOFT_U);
-	int_clear(INT_SOFT_L);
-}
+	// SIT, SIL, SIU, CIT
+	if ((IR_C & 3) == 0) {
+		int_clear(INT_SOFT_U);
+		int_clear(INT_SOFT_L);
+	} else {
+		if ((IR_C & 1)) int_set(INT_SOFT_L);
+		if ((IR_C & 2)) int_set(INT_SOFT_U);
+	}
 
-// -----------------------------------------------------------------------
-void op_73_sil()
-{
-	USER_ILLEGAL;
-
-	int_set(INT_SOFT_L);
-}
-
-// -----------------------------------------------------------------------
-void op_73_siu()
-{
-	USER_ILLEGAL;
-
-	int_set(INT_SOFT_U);
-}
-
-// -----------------------------------------------------------------------
-void op_73_sit()
-{
-	USER_ILLEGAL;
-
-	int_set(INT_SOFT_U);
-	int_set(INT_SOFT_L);
+	// SINT, SIND
+	if (em400_cfg.cpu_mod && (IR_C & 4)) int_set(INT_TIMER);
 }
 
 // -----------------------------------------------------------------------
@@ -793,22 +777,6 @@ void op_73_lip()
 #ifdef WITH_DEBUGGER
 	log_int_level += 4;
 #endif
-}
-
-// -----------------------------------------------------------------------
-void op_73_sint()
-{
-	USER_ILLEGAL;
-
-	int_set(int_extra);
-}
-
-// -----------------------------------------------------------------------
-void op_73_sind()
-{
-	USER_ILLEGAL;
-
-	int_set(int_extra);
 }
 
 // -----------------------------------------------------------------------

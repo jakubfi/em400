@@ -133,10 +133,6 @@ int cpu_mod_on()
 	int_timer = INT_EXTRA;
 	int_extra = INT_TIMER;
 
-	// register SINT/SIND instructions
-	cpu_register_op(em400_op_tab, em400_instr_sint.opcode, em400_instr_sint.var_mask, &em400_instr_sint.op, 0);
-	cpu_register_op(em400_op_tab, em400_instr_sind.opcode, em400_instr_sind.var_mask, &em400_instr_sind.op, 0);
-
 	return E_OK;
 }
 
@@ -149,10 +145,6 @@ int cpu_mod_off()
 	// set interrupts as for vanilla CPU
 	int_timer = INT_TIMER;
 	int_extra = INT_EXTRA;
-
-	// unregister SINT/SIND instructions (make them illegal)
-	cpu_register_op(em400_op_tab, em400_instr_sint.opcode, em400_instr_sint.var_mask, &em400_instr_illegal.op, 0);
-	cpu_register_op(em400_op_tab, em400_instr_sind.opcode, em400_instr_sind.var_mask, &em400_instr_illegal.op, 0);
 
 	return E_OK;
 }

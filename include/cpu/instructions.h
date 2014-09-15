@@ -118,15 +118,10 @@ void op_72_lpc();
 
 void op_73_hlt();
 void op_73_mcl();
-void op_73_cit();
-void op_73_sil();
-void op_73_siu();
-void op_73_sit();
+void op_73_softint();
 void op_73_giu();
 void op_73_gil();
 void op_73_lip();
-void op_73_sint();
-void op_73_sind();
 void op_73_cron();
 
 void op_74_uj();

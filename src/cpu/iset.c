@@ -128,15 +128,12 @@ struct em400_instr em400_ilist_mera400[] = {
 	{ O(072)+01010, VARMASK_A,   { 0, 0, op_72_srz } },
 	{ O(072)+01011, VARMASK_A,   { 0, 0, op_72_lpc } },
 
-	{ O(073)+00000, VARMASK_DBC,  { 0, 1, op_73_hlt } },
-	{ O(073)+00100, VARMASK_DBC,  { 0, 0, op_73_mcl } },
-	{ O(073)+00203, VARMASK_DB1C, { 0, 0, op_73_sit } },
-	{ O(073)+00201, VARMASK_DB1C, { 0, 0, op_73_sil } },
-	{ O(073)+00202, VARMASK_DB1C, { 0, 0, op_73_siu } },
-	{ O(073)+00200, VARMASK_DB1C, { 0, 0, op_73_cit } },
-	{ O(073)+00300, VARMASK_BC,   { 0, 0, op_73_giu } },
-	{ O(073)+00400, VARMASK_DBC,  { 0, 0, op_73_lip } },
-	{ O(073)+01300, VARMASK_BC,   { 0, 0, op_73_gil } },
+	{ O(073)+00000, VARMASK_DBC, { 0, 1, op_73_hlt } },
+	{ O(073)+00100, VARMASK_DBC, { 0, 0, op_73_mcl } },
+	{ O(073)+00200, VARMASK_DBC, { 0, 0, op_73_softint } },
+	{ O(073)+00300, VARMASK_BC,  { 0, 0, op_73_giu } },
+	{ O(073)+00400, VARMASK_DBC, { 0, 0, op_73_lip } },
+	{ O(073)+01300, VARMASK_BC,  { 0, 0, op_73_gil } },
 
 	{ O(074)+0000, VARMASK_DBC, { 1, 0, op_74_uj } },
 	{ O(074)+0100, VARMASK_DBC, { 1, 0, op_74_jl } },
@@ -178,8 +175,6 @@ struct em400_instr em400_ilist_mera400[] = {
 };
 
 // additional MX-16 instructions
-struct em400_instr em400_instr_sint = { O(073)+00204, VARMASK_B, { 0, 0, op_73_sint } };
-struct em400_instr em400_instr_sind = { O(073)+01204, VARMASK_B, { 0, 0, op_73_sind } };
 struct em400_instr em400_instr_cron = { O(073)+00500, VARMASK_DBC, { 0, 0, op_73_cron } };
 
 // illegal instruction
