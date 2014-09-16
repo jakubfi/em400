@@ -1,11 +1,8 @@
-17-bit:
-* byte addressing in user mode with BS=1
-* carry on pre-mod only
-
 mega:
 * wspolpraca z elwro w 0
 * segmenty systemowe
 * "done" alokacji
+* 8M?
 
 multix
 
