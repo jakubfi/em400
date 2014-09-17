@@ -20,6 +20,8 @@
 
 int timer_init();
 void timer_shutdown();
+void timer_on();
+void timer_off();
 
 #endif
 

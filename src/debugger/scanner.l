@@ -91,6 +91,7 @@ script	{ BEGIN(texts); return F_SCRIPT; }
 watch	{ BEGIN(opts); return F_WATCH; }
 decode	{ BEGIN(opts); return F_DECODE; }
 find	{ BEGIN(args); return F_FIND; }
+timer	{ BEGIN(opts); return F_TIMER; }
 
 {name}	{ yylval.text = strdup(yytext); return NAME; }
 

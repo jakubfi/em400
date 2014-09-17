@@ -61,7 +61,7 @@ void cfg_print()
 	eprint("  User-provided config: %s\n", em400_cfg.cfg_provided);
 	eprint("  Exit on HLT>=040: %s\n", em400_cfg.exit_on_hlt ? "true" : "false");
 	eprint("  Emulation speed: %s\n", em400_cfg.speed_real ? "real" : "max");
-	eprint("  Timer step: %i\n", em400_cfg.timer_step);
+	eprint("  Timer step: %i (%s at power-on)\n", em400_cfg.timer_step, em400_cfg.timer_enabled ? "enabled" : "disabled");
 	eprint("  CPU modifications: %s\n", em400_cfg.cpu_mod ? "true" : "false");
 	eprint("  -- Memory: ---------------------------\n");
 	eprint("  Elwro modules: %i\n", em400_cfg.mem_elwro);

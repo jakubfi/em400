@@ -38,7 +38,7 @@ int cyylex(void);
 };
 
 %token COMPUTER CHANNEL UNIT
-%token SPEED_REAL TIMER CPU_MOD CPU_USER_IO_ILLEGAL CPU_AWP
+%token SPEED_REAL TIMER_STEP TIMER_ENABLED CPU_MOD CPU_USER_IO_ILLEGAL CPU_AWP
 %token ELWRO MEGA MEGA_PROM OS_SEG CPU_NOMEM_STOP
 %token <value> TEXT
 %token <value> VALUE
@@ -86,7 +86,8 @@ computer_opts:
 
 computer_opt:
 	SPEED_REAL '=' BOOL		{ em400_cfg.speed_real = $3.v; free($3.s); }
-	| TIMER '=' VALUE		{ em400_cfg.timer_step = $3.v; free($3.s); }
+	| TIMER_STEP '=' VALUE	{ em400_cfg.timer_step = $3.v; free($3.s); }
+	| TIMER_ENABLED '=' BOOL{ em400_cfg.timer_enabled = $3.v; free($3.s); }
 	| CPU_MOD '=' BOOL		{ em400_cfg.cpu_mod = $3.v; free($3.s); }
 	| CPU_USER_IO_ILLEGAL '=' BOOL	{ em400_cfg.cpu_user_io_illegal = $3.v; free($3.s); }
 	| CPU_AWP '=' BOOL		{ em400_cfg.cpu_awp = $3.v; free($3.s); }

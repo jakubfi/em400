@@ -5,10 +5,14 @@ computer {
 	speed_real = false
 
 	# Internal timer interrupt cycle (in miliseconds)
-	# allowed values: 0-100, 0 means timer is disabled (default is 10)
+	# allowed values: 2-100 (default is 10)
 	# Note: cycle lengths available for real hardware were:
-	# 2, 4, 8, 10, 20, 40, 80 (10 was default)
+	# 2, 4, 8, 10, 20, 40, 80 (10 was the default)
 	timer_step = 10
+
+	# Enable timer at power on.
+	# allowed values: "true" (default), "false"
+	timer_enabled = true
 
 	# Enable CPU modification (17-bit byte addressing, additional instructions,
 	# additional software interrupt, int 5/11 swap, broader interrupt mask

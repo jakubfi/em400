@@ -19,6 +19,7 @@
 #include <stdlib.h>
 
 #include "cpu/cpu.h"
+#include "cpu/timer.h"
 #include "cpu/registers.h"
 #include "mem/mem.h"
 #include "utils.h"
@@ -47,7 +48,7 @@ char verr[128];
 %token ':' '&' '|' '(' ')'
 %token HEX OCT BIN INT UINT
 %token IRZ
-%token <value> F_QUIT F_MEMCL F_MEM F_REGS F_SREGS F_RESET F_STEP F_HELP F_DASM F_TRANS F_LOAD F_MEMCFG F_BRK F_RUN F_STACK F_LOG F_SCRIPT F_WATCH F_DECODE F_FIND
+%token <value> F_QUIT F_MEMCL F_MEM F_REGS F_SREGS F_RESET F_STEP F_HELP F_DASM F_TRANS F_LOAD F_MEMCFG F_BRK F_RUN F_STACK F_LOG F_SCRIPT F_WATCH F_DECODE F_FIND F_TIMER
 %token ADD DEL TEST
 %token ON OFF FFILE LEVEL
 %type <n> expr lval bitfield basemod
@@ -209,6 +210,8 @@ command:
 	| F_DECODE			{ dbg_c_list_decoders(W_CMD); }
 	| F_DECODE NAME expr{ dbg_c_decode(W_CMD, $2, n_eval($3), 0); }
 	| F_FIND VALUE expr	{ dbg_c_find(W_CMD, $2, n_eval($3)); }
+	| F_TIMER ON 		{ timer_on(); }
+	| F_TIMER OFF		{ timer_off(); }
 	;
 
 %%

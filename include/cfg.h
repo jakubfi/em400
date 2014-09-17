@@ -59,6 +59,7 @@ struct cfg_em400_t {
 
 	int speed_real;
 	int timer_step;
+	int timer_enabled;
 	int cpu_mod;
 	int cpu_user_io_illegal;
 	int cpu_awp;

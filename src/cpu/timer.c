@@ -22,10 +22,13 @@
 #include "cpu/timer.h"
 #include "cpu/cpu.h"
 #include "cpu/interrupts.h"
+#include "debugger/log.h"
 
 #include "cfg.h"
 #include "errors.h"
+#include "atomic.h"
 
+int timer_enabled;
 pthread_t timer_th;
 sem_t timer_quit;
 
@@ -44,34 +47,41 @@ void * timer_thread(void *ptr)
 		if (!sem_timedwait(&timer_quit, &ts)) {
 			break;
 		}
-		if (cpu_mod_active) {
-			int_set(INT_EXTRA);
-		} else {
-			int_set(INT_TIMER);
+		if (atom_load(&timer_enabled)) {
+			if (cpu_mod_active) {
+				int_set(INT_EXTRA);
+			} else {
+				int_set(INT_TIMER);
+			}
 		}
 	}
+
 	pthread_exit(NULL);
 }
 
 // -----------------------------------------------------------------------
 int timer_init()
 {
-	if ((em400_cfg.timer_step < 0) || (em400_cfg.timer_step > 100)) {
+	if ((em400_cfg.timer_step < 2) || (em400_cfg.timer_step > 100)) {
 		return E_TIMER_VALUE;
 	}
 
-	if (em400_cfg.timer_step == 0) {
-		eprint("Timer disabled in configuration\n");
-		return E_OK;
+	eprint("Timer cycle: %i ms\n", em400_cfg.timer_step);
+
+	if (em400_cfg.timer_enabled) {
+		eprint("Starting timer\n");
+		timer_on();
 	} else {
-		eprint("Starting timer: %i ms\n", em400_cfg.timer_step);
-		sem_init(&timer_quit, 0, 0);
-		if (pthread_create(&timer_th, NULL, timer_thread, NULL)) {
-			return E_THREAD;
-		} else {
-			return E_OK;
-		}
+		eprint("Timer disabled at power-on\n");
+		timer_off();
 	}
+
+	sem_init(&timer_quit, 0, 0);
+	if (pthread_create(&timer_th, NULL, timer_thread, NULL)) {
+		return E_THREAD;
+	}
+
+	return E_OK;
 }
 
 // -----------------------------------------------------------------------
@@ -82,6 +92,20 @@ void timer_shutdown()
 		sem_post(&timer_quit);
 		pthread_join(timer_th, NULL);
 	}
+}
+
+// -----------------------------------------------------------------------
+void timer_on()
+{
+	LOG(L_INT, 20, "Enabling timer");
+	atom_store(&timer_enabled, 1);
+}
+
+// -----------------------------------------------------------------------
+void timer_off()
+{
+	LOG(L_INT, 20, "Disabling timer");
+	atom_store(&timer_enabled, 0);
 }
 
 // vim: tabstop=4 shiftwidth=4 autoindent
