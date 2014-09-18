@@ -30,8 +30,6 @@
 
 struct mem_slot_t {
 	uint16_t *seg;
-	int type;
-	int speed;
 };
 
 extern struct mem_slot_t mem_map[MEM_MAX_NB][MEM_MAX_AB];
