@@ -47,6 +47,7 @@ cpu_awp			return CPU_AWP;
 mem_elwro		return ELWRO;
 mem_mega		return MEGA;
 mem_mega_prom	return MEGA_PROM;
+mem_mega_boot	return MEGA_BOOT;
 mem_os_segments	return OS_SEG;
 true|yes		{ cyylval.value.v = 1; cyylval.value.s = strdup(cyytext); return BOOL; }
 false|no		{ cyylval.value.v = 0; cyylval.value.s = strdup(cyytext); return BOOL; }

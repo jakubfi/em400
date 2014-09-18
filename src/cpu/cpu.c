@@ -108,7 +108,7 @@ int cpu_init()
 	int_update_mask(regs[R_SR]);
 
 	if (mem_mega_boot()) {
-		eprint("Enabling bootstrap from MEGA\n");
+		eprint("Bootstrap from MEGA PROM is enabled\n");
 		regs[R_IC] = 0xf000;
 	}
 

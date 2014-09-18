@@ -45,6 +45,11 @@ computer {
 	# (default: none)
 	#mem_mega_prom = mega_prom.img
 
+	# Enable or disable boot from MEGA PROM memory.
+	# Works only when mem_mega_prom is specified.
+	# allowed values: "true, "false" (default)
+	mem_mega_boot = false
+
 	# 4kword segments hardwired for OS memory block (taken from module 0)
 	# allowed values: 1 or 2 (default: 2)
 	mem_os_segments = 2

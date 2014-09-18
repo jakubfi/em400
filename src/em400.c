@@ -231,6 +231,7 @@ void em400_configure()
 	em400_cfg.mem_os = 2;
 	em400_cfg.chans = NULL;
 	em400_cfg.mem_mega_prom = NULL;
+	em400_cfg.mem_mega_boot = 0;
 
 	// ~/.em400/ files
 	char *home = getenv("HOME");
