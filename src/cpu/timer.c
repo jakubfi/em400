@@ -68,7 +68,7 @@ int timer_init()
 
 	eprint("Timer cycle: %i ms\n", em400_cfg.timer_step);
 
-	if (em400_cfg.timer_enabled) {
+	if (em400_cfg.timer_start) {
 		eprint("Starting timer\n");
 		timer_on();
 	} else {
@@ -87,7 +87,7 @@ int timer_init()
 // -----------------------------------------------------------------------
 void timer_shutdown()
 {
-	eprint("Stopping timer\n");
+	eprint("Shuttong down timer\n");
 	if (timer_th) {
 		sem_post(&timer_quit);
 		pthread_join(timer_th, NULL);
@@ -97,14 +97,14 @@ void timer_shutdown()
 // -----------------------------------------------------------------------
 void timer_on()
 {
-	LOG(L_INT, 20, "Enabling timer");
+	LOG(L_INT, 20, "Starting timer");
 	atom_store(&timer_enabled, 1);
 }
 
 // -----------------------------------------------------------------------
 void timer_off()
 {
-	LOG(L_INT, 20, "Disabling timer");
+	LOG(L_INT, 20, "Stopping timer");
 	atom_store(&timer_enabled, 0);
 }
 

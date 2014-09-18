@@ -10,9 +10,9 @@ computer {
 	# 2, 4, 8, 10, 20, 40, 80 (10 was the default)
 	timer_step = 10
 
-	# Enable timer at power on.
+	# Start timer at power on.
 	# allowed values: "true" (default), "false"
-	timer_enabled = true
+	timer_start = true
 
 	# Enable CPU modification (17-bit byte addressing, additional instructions,
 	# additional software interrupt, int 5/11 swap, broader interrupt mask

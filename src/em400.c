@@ -222,7 +222,7 @@ void em400_configure()
 	// default configuration
 	em400_cfg.speed_real = 0;
 	em400_cfg.timer_step = 10;
-	em400_cfg.timer_enabled = 1;
+	em400_cfg.timer_start = 1;
 	em400_cfg.cpu_mod = 0;
 	em400_cfg.cpu_user_io_illegal = 1;
 	em400_cfg.cpu_awp = 1;
