@@ -79,6 +79,8 @@ int mem_mega_init(int modc, char *prom_image)
 		}
 		fclose(f);
 		eprint("  Loaded MEGA PROM image: %s (%i words)\n", prom_image, res);
+	} else {
+		eprint("  Empty MEGA PROM\n");
 	}
 
 	mem_mega_init_done = 0;

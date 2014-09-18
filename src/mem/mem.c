@@ -136,7 +136,7 @@ void mem_reset()
 // -----------------------------------------------------------------------
 int mem_mega_boot()
 {
-	if (mem_mega_prom && (mem_map[0][15].seg == mem_mega_prom)) {
+	if (em400_cfg.mem_mega_prom && mem_mega_prom && (mem_map[0][15].seg == mem_mega_prom)) {
 		return 1;
 	} else {
 		return 0;
