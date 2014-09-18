@@ -107,6 +107,10 @@ int cpu_init()
 
 	int_update_mask(regs[R_SR]);
 
+	if (mem_mega_boot()) {
+		regs[R_IC] = 0xf000;
+	}
+
 	return E_OK;
 }
 

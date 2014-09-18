@@ -38,6 +38,7 @@ int mem_init();
 void mem_shutdown();
 int mem_cmd(uint16_t n, uint16_t r);
 void mem_reset();
+int mem_mega_boot();
 
 int mem_get(int nb, uint16_t addr, uint16_t *data);
 int mem_put(int nb, uint16_t addr, uint16_t data);

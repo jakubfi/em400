@@ -134,6 +134,16 @@ void mem_reset()
 }
 
 // -----------------------------------------------------------------------
+int mem_mega_boot()
+{
+	if (mem_mega_prom && (mem_map[0][15].seg == mem_mega_prom)) {
+		return 1;
+	} else {
+		return 0;
+	}
+}
+
+// -----------------------------------------------------------------------
 int mem_get(int nb, uint16_t addr, uint16_t *data)
 {
 	uint16_t *ptr;
