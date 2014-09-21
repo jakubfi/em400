@@ -68,6 +68,7 @@ struct cfg_em400_t {
 	int mem_mega;
 	char *mem_mega_prom;
 	int mem_mega_boot;
+	int cpu_stop_on_nomem;
 	int mem_os;
 
 	struct cfg_chan_t *chans;

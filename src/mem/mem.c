@@ -216,7 +216,7 @@ int mem_cpu_get(int nb, uint16_t addr, uint16_t *data)
 {
 	if (!mem_get(nb, addr, data)) {
 		int_set(INT_NO_MEM);
-		if (nb == 0) {
+		if ((nb == 0) && (em400_cfg.cpu_stop_on_nomem)) {
 			regs[R_ALARM] = 1;
 #ifdef WITH_DEBUGGER
 			dbg_enter = 1;
@@ -234,7 +234,7 @@ int mem_cpu_put(int nb, uint16_t addr, uint16_t data)
 {
 	if (!mem_put(nb, addr, data)) {
 		int_set(INT_NO_MEM);
-		if (nb == 0) {
+		if ((nb == 0) && (em400_cfg.cpu_stop_on_nomem)) {
 			regs[R_ALARM] = 1;
 #ifdef WITH_DEBUGGER
 			dbg_enter = 1;
@@ -252,7 +252,7 @@ int mem_cpu_mget(int nb, uint16_t saddr, uint16_t *dest, int count)
 {
 	if (!mem_mget(nb, saddr, dest, count)) {
 		int_set(INT_NO_MEM);
-		if (nb == 0) {
+		if ((nb == 0) && (em400_cfg.cpu_stop_on_nomem)) {
 			regs[R_ALARM] = 1;
 #ifdef WITH_DEBUGGER
 			dbg_enter = 1;
@@ -271,7 +271,7 @@ int mem_cpu_mput(int nb, uint16_t saddr, uint16_t *src, int count)
 {
 	if (!mem_mput(nb, saddr, src, count)) {
 		int_set(INT_NO_MEM);
-		if (nb == 0) {
+		if ((nb == 0) && (em400_cfg.cpu_stop_on_nomem)) {
 			regs[R_ALARM] = 1;
 #ifdef WITH_DEBUGGER
 			dbg_enter = 1;

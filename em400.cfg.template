@@ -50,6 +50,13 @@ computer {
 	# allowed values: "true, "false" (default)
 	mem_mega_boot = false
 
+	# MERA-400 cpu stops when operating system tries to access unconfigured
+	# memory segment, but this can be changed to work as for user programs:
+	# only interrupt is fired. This is required to bootstrap from MEGA
+	# and "false" is enforced if mem_mega_boot = true.
+	# allowed values: "true" (default), "false"
+	cpu_stop_on_nomem = true
+
 	# 4kword segments hardwired for OS memory block (taken from module 0)
 	# allowed values: 1 or 2 (default: 2)
 	mem_os_segments = 2
