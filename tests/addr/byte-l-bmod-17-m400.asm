@@ -5,8 +5,8 @@
 
 	.cpu	mx16
 
-	.include addr-skeleton.asm
-	.include addr-fill-7.asm
+	.include addr-skeleton.inc
+	.include addr-fill-7.inc
 
 ; ------------------------------------------------------------------------
 ; ---- MAIN --------------------------------------------------------------

@@ -1,5 +1,5 @@
 
-	.include awp-fp.asm
+	.include awp-fp.inc
 
 operation:
 	lf r7+ARG1

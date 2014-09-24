@@ -107,7 +107,7 @@ else:
     tests = []
     for path, dirs, files in os.walk("."):
         for f in files:
-            if f.endswith(".asm") and "benchmark" in path:
+            if f.endswith(".asm"):
                 tests.append(os.path.join(path, f))
     tests.sort()
 

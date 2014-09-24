@@ -1,5 +1,5 @@
 
-	.include awp-dword.asm
+	.include awp-dword.inc
 
 operation:
 	lw r2, [r7+ARG1]

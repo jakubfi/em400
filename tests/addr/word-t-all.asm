@@ -4,8 +4,8 @@
 
 	.cpu	mera400
 
-	.include addr-skeleton.asm
-	.include addr-fill-lin.asm
+	.include addr-skeleton.inc
+	.include addr-fill-lin.inc
 
 ; ------------------------------------------------------------------------
 ; test addressing modes

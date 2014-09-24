@@ -1,6 +1,6 @@
 ; denormalized 0 doesn't set DIV0 int
 
-	.include awp-fp.asm
+	.include awp-fp.inc
 
 operation:
 	lf r7+ARG1
