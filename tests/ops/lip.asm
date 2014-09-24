@@ -1,18 +1,15 @@
-; PRE [10] = 135
-; PRE [11] = 0xfafa
-; PRE [12] = 0b1100000000000001
 
-	uj start
-	.res 128
 start:
-	lw r1, 14
+	lw r1, stack
 	rw r1, 97
 
 	lip
-	hlt 077
-
-exlp:
+ok:	hlt 077
 	hlt 040
+
+data:	.org	200
+	.word	ok, 0xfafa, 0b1100000000000001, 0
+stack:
 
 ; XPCT int(rz[6]) : 0
 
@@ -22,5 +19,4 @@ exlp:
 ; XPCT hex(r0) : 0xfafa
 ; XPCT oct(ir[10-15]) : 077
 
-; XPCT int([97]) : 10
-
+; XPCT int([97]) : 200

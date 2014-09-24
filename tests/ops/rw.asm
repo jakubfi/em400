@@ -1,34 +1,32 @@
-; PRE r0 = -10
-; PRE r1 = -11
-; PRE r2 = -12
-; PRE r3 = -13
-; PRE r4 = -14
-; PRE r5 = -15
-; PRE r6 = -16
-; PRE r7 = -17
 
-	rw r0, 20
-	rw r1, 21
-	rw r2, 22
-	rw r3, 23
-	rw r4, 24
-	rw r5, 25
-	rw r6, 26
-	rw r7, 27
+	lwt	r0, -10
+	lwt	r1, -11
+	lwt	r2, -12
+	lwt	r3, -13
+	lwt	r4, -14
+	lwt	r5, -15
+	lwt	r6, -16
+	lwt	r7, -17
 
-	hlt 077
+	rw	r0, 120
+	rw	r1, 121
+	rw	r2, 122
+	rw	r3, 123
+	rw	r4, 124
+	rw	r5, 125
+	rw	r6, 126
+	rw	r7, 127
 
-.res	100
+	hlt	077
 
 ; XPCT int(rz[6]) : 0
 ; XPCT int(sr) : 0
 
-; XPCT int([20]) : -10
-; XPCT int([21]) : -11
-; XPCT int([22]) : -12
-; XPCT int([23]) : -13
-; XPCT int([24]) : -14
-; XPCT int([25]) : -15
-; XPCT int([26]) : -16
-; XPCT int([27]) : -17
-
+; XPCT int([120]) : -10
+; XPCT int([121]) : -11
+; XPCT int([122]) : -12
+; XPCT int([123]) : -13
+; XPCT int([124]) : -14
+; XPCT int([125]) : -15
+; XPCT int([126]) : -16
+; XPCT int([127]) : -17

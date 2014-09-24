@@ -1,15 +1,12 @@
-; PRE r1 = 10
-; PRE r2 = 20
 
-	rd data
+	lwt	r1, 10
+	lwt	r2, 20
+	rd	120
 
-	hlt 077
-
-data:	.res 2
+	hlt	077
 
 ; XPCT int(rz[6]) : 0
 ; XPCT int(sr) : 0
 
-; XPCT int([3]) : 10
-; XPCT int([4]) : 20
-
+; XPCT int([120]) : 10
+; XPCT int([121]) : 20

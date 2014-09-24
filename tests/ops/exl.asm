@@ -1,24 +1,25 @@
-; PRE r0 = 0xfafa
 
-	uj start
-	.res 128
-stack:	.res 16
-mask:	.word 0b0000001111000000
+	uj	start
+
+	.res	128
+stack:	.res	16
+mask:	.word	0b0000001111000000
 
 start:
-	lw r1, exlp
-	rw r1, 96
+	lw	r0, 0xfafa
+	lw	r1, exlp
+	rw	r1, 96
 
-	lw r1, stack
-	rw r1, 97
+	lw	r1, stack
+	rw	r1, 97
 
-	im mask
+	im	mask
 
-	exl 23
-	hlt 040
+	exl	23
+	hlt	040
 
 exlp:
-	hlt 077
+	hlt	077
 
 ; XPCT int(rz[6]) : 0
 ; XPCT oct(ir[10-15]) : 077
@@ -34,8 +35,7 @@ exlp:
 
 ; stack contents
 
-; XPCT int([130]) : 158
+; XPCT int([130]) : 160
 ; XPCT hex([131]) : 0xfafa
 ; XPCT bin([132]) : 0b0000001111000000
 ; XPCT int([133]) : 23
-

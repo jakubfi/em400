@@ -1,17 +1,21 @@
 
-; PRE sr = 0b0000001000000000
-; PRE r0 = 0xfafa
-; PRE r1 = 12
-; PRE r2 = 41
-; PRE r3 = 523
-; PRE r4 = 5347
-; PRE r5 = 1
-; PRE r6 = 236
-; PRE r7 = -24886
+	lw	r0, 0xfafa
+	lw	r1, 12
+	lw	r2, 41
+	lw	r3, 523
+	lw	r4, 5347
+	lw	r5, 1
+	lw	r6, 236
+	lw	r7, -24886
 
-	.word 1
+	im	the_sr
+	mb	the_sr
+
+	.word	1
+
+the_sr:	.word	0b1110100000010000
 	mcl
-	hlt 077
+	hlt	077
 
 ; XPCT int(rz[6]) : 0
 ; XPCT int(sr) : 0
@@ -24,4 +28,3 @@
 ; XPCT int(r5) : 1
 ; XPCT int(r6) : 236
 ; XPCT int(r7) : -24886
-
