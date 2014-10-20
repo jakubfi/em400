@@ -94,7 +94,7 @@ int cpu_init()
 
 	// initialize instruction decoder with illegal instructions
 	cpu_register_op(em400_op_tab, 0, 0xffff, &em400_instr_illegal.op);
-	struct em400_instr *instr = em400_ilist_mera400;
+	struct em400_instr *instr = em400_ilist;
 	while (instr->var_mask) {
 		res = cpu_register_op(em400_op_tab, instr->opcode, instr->var_mask, &instr->op);
 		if (res != E_OK) {

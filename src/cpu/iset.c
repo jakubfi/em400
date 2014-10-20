@@ -40,7 +40,7 @@ enum em400_var_masks {
 struct em400_op *em400_op_tab[0x10000];
 
 // base MERA-400 instruction list
-struct em400_instr em400_ilist_mera400[] = {
+struct em400_instr em400_ilist[] = {
 	{ O(020), VARMASK_DABC, { 1, 0, op_lw } },
 	{ O(021), VARMASK_DABC, { 1, 0, op_tw } },
 	{ O(022), VARMASK_DABC, { 1, 0, op_ls } },
