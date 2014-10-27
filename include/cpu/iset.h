@@ -39,7 +39,6 @@ extern struct em400_op *em400_op_tab[0x10000];
 
 // instruction list
 extern struct em400_instr em400_ilist[];
-extern struct em400_instr em400_instr_illegal;
 
 #endif
 

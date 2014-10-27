@@ -41,6 +41,8 @@ struct em400_op *em400_op_tab[0x10000];
 
 // base MERA-400 instruction list
 struct em400_instr em400_ilist[] = {
+	{ 0, VARMASK_ALL, { 0, 0, op_illegal} }, // illegal instructions
+
 	{ O(020), VARMASK_DABC, { 1, 0, op_lw } },
 	{ O(021), VARMASK_DABC, { 1, 0, op_tw } },
 	{ O(022), VARMASK_DABC, { 1, 0, op_ls } },
@@ -174,8 +176,5 @@ struct em400_instr em400_ilist[] = {
 
 	{ 0, 0, { 0, 0, NULL } }
 };
-
-// illegal instruction
-struct em400_instr em400_instr_illegal = { 0, VARMASK_ALL, { 0, 0, op_illegal} };
 
 // vim: tabstop=4 shiftwidth=4 autoindent
