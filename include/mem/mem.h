@@ -20,7 +20,6 @@
 
 #include <inttypes.h>
 #include <stdio.h>
-#include "cpu/cpu.h"
 
 #define MEM_SEGMENT_SIZE 4 * 1024	// segment size (16-bit words)
 #define MEM_MAX_MODULES 16			// physical memory modules
@@ -39,6 +38,8 @@ void mem_shutdown();
 int mem_cmd(uint16_t n, uint16_t r);
 void mem_reset();
 int mem_mega_boot();
+
+uint16_t *mem_ptr(int nb, uint16_t addr);
 
 int mem_get(int nb, uint16_t addr, uint16_t *data);
 int mem_put(int nb, uint16_t addr, uint16_t data);

@@ -63,6 +63,7 @@ enum em400_error {
 	E_SEM_INIT,
 	E_SLID_INIT,
 	E_LOGGER,
+	E_DASM,
 
 	E_OK = 0,
 	E_QUIT_OK

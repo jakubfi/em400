@@ -37,6 +37,8 @@ enum emulog_components {
 };
 
 extern int emulog_enabled;
+void emulog_dasm(int nb);
+char * emulog_get_dasm();
 
 int emulog_init(int paused, char *filename, int level);
 void emulog_shutdown();

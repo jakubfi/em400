@@ -30,11 +30,6 @@
 #include "cfg.h"
 #include "utils.h"
 #include "errors.h"
-
-#ifdef WITH_DEBUGGER
-#include "debugger/dasm.h"
-#endif
-
 #include "emulog.h"
 
 int P;
@@ -246,13 +241,8 @@ void cpu_step()
 	}
 
 	if (EMULOG_WANTS(L_CPU, 2)) {
-		char dasm_buf[256];
 		char mod_buf[64];
-#ifdef WITH_DEBUGGER
-		dt_trans(emulog_get_cycle_ic(), dasm_buf, DMODE_DASM);
-#else
-		sprintf(dasm_buf, "(missing dasm)");
-#endif
+		emulog_dasm(QNB);
 
 		if (regs[R_MODc]) {
 			sprintf(mod_buf, ", MOD = 0x%x = %i", regs[R_MOD], regs[R_MOD]);
@@ -260,11 +250,11 @@ void cpu_step()
 			*mod_buf = '\0';
 		}
 		if (op->norm_arg) {
-			EMULOGCPU(L_CPU, 2, "    %-20s N = 0x%x = %i%s", dasm_buf, (uint16_t) N, (int16_t) N, mod_buf);
+			EMULOGCPU(L_CPU, 2, "    %-20s N = 0x%x = %i%s", emulog_get_dasm(), (uint16_t) N, (int16_t) N, mod_buf);
 		} else if (op->short_arg) {
-			EMULOGCPU(L_CPU, 2, "    %-20s T = %i%s", dasm_buf, (int16_t) N, mod_buf);
+			EMULOGCPU(L_CPU, 2, "    %-20s T = %i%s", emulog_get_dasm(), (int16_t) N, mod_buf);
 		} else {
-			EMULOGCPU(L_CPU, 2, "    %-20s", dasm_buf);
+			EMULOGCPU(L_CPU, 2, "    %-20s", emulog_get_dasm());
 		}
 	}
 

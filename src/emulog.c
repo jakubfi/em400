@@ -28,6 +28,7 @@
 
 #include "emulog.h"
 #include "errors.h"
+#include "emdas.h"
 
 // low-level stuff
 
@@ -87,6 +88,10 @@ static int emulog_exl_nb;
 static int emulog_exl_addr;
 static int emulog_exl_r4;
 
+struct emdas *emd;
+static char *dasm_buf;
+uint16_t *mem_ptr(int nb, uint16_t addr);
+
 // -----------------------------------------------------------------------
 int emulog_init(int paused, char *filename, int level)
 {
@@ -116,12 +121,25 @@ int emulog_init(int paused, char *filename, int level)
 	pthread_mutex_init(&emulog_mutex, NULL);
 	pthread_cond_init(&emulog_cond, NULL);
 
+	// initialize deassembler
+	emd = emdas_create(EMD_ISET_MX16, mem_ptr);
+	if (!emd) {
+		ret = E_DASM;
+		goto cleanup;
+	}
+
+	emdas_set_nl(emd, '\0');
+	emdas_set_features(emd, EMD_FEAT_NONE);
+	emdas_set_tabs(emd, 0, 0, 0, 0);
+	dasm_buf = emdas_get_buf(emd);
+
 	emulog_log_timestamp(L_EM4H, 0, "Opening log");
 
 	return E_OK;
 
 cleanup:
 	if (emulog_f) fclose(emulog_f);
+	emdas_destroy(emd);
 	return ret;
 }
 
@@ -131,6 +149,8 @@ void emulog_shutdown()
 	int i;
 
 	emulog_log_timestamp(L_EM4H, 0, "Closing log");
+
+	emdas_destroy(emd);
 
 	pthread_mutex_lock(&emulog_mutex);
 
@@ -375,5 +395,18 @@ const char *emulog_intlevel_get_indent()
 {
 	return emulog_int_indent + emulog_int_level;
 }
+
+// -----------------------------------------------------------------------
+void emulog_dasm(int nb)
+{
+	emdas_dasm(emd, nb, emulog_cycle_ic);
+}
+
+// -----------------------------------------------------------------------
+char * emulog_get_dasm()
+{
+	return dasm_buf;
+}
+
 
 // vim: tabstop=4 shiftwidth=4 autoindent

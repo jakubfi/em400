@@ -43,7 +43,7 @@
 struct mem_slot_t mem_map[MEM_MAX_NB][MEM_MAX_AB];	// final (as seen by emulation) logical->physical segment mapping
 
 // -----------------------------------------------------------------------
-inline static uint16_t *mem_ptr(int nb, uint16_t addr)
+inline uint16_t *mem_ptr(int nb, uint16_t addr)
 {
 	uint16_t *seg_ptr = mem_map[nb][addr >> 12].seg;
 	if (seg_ptr) {
