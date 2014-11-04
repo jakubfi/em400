@@ -40,7 +40,7 @@ extern int emulog_enabled;
 void emulog_dasm(int nb);
 char * emulog_get_dasm();
 
-int emulog_init(int paused, char *filename, int level);
+int emulog_init(int paused, char *filename, int level, int cpu_mod);
 void emulog_shutdown();
 
 void emulog_pause();

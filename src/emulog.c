@@ -93,7 +93,7 @@ static char *dasm_buf;
 uint16_t *mem_ptr(int nb, uint16_t addr);
 
 // -----------------------------------------------------------------------
-int emulog_init(int paused, char *filename, int level)
+int emulog_init(int paused, char *filename, int level, int cpu_mod)
 {
 	int ret = E_ALLOC;
 
@@ -122,7 +122,7 @@ int emulog_init(int paused, char *filename, int level)
 	pthread_cond_init(&emulog_cond, NULL);
 
 	// initialize deassembler
-	emd = emdas_create(EMD_ISET_MX16, mem_ptr);
+	emd = emdas_create(cpu_mod ? EMD_ISET_MX16 : EMD_ISET_MERA400, mem_ptr);
 	if (!emd) {
 		ret = E_DASM;
 		goto cleanup;
