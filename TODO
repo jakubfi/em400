@@ -1,7 +1,5 @@
 Known bugs:
 
-* r argument for I/O operations is not atomic
-
 CPU:
 
 * no-elwro configuration
