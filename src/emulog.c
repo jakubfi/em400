@@ -76,6 +76,7 @@ void emulog_log_timestamp(unsigned component, unsigned level, char *msg);
 
 // high-level stuff
 
+static uint16_t emulog_cycle_sr;
 static uint16_t emulog_cycle_ic;
 static char emulog_pname[7] = "------";
 
@@ -271,6 +272,28 @@ void emulog_log(unsigned component, unsigned level, char *msgfmt, ...)
 }
 
 // -----------------------------------------------------------------------
+void emulog_log_cpu(unsigned level, char *msgfmt, ...)
+{
+	va_list vl;
+	va_start(vl, msgfmt);
+
+	pthread_mutex_lock(&emulog_mutex);
+	fprintf(emulog_f, "%4s %1i | %3s %2i:0x%04x %s | %s",
+		emulog_components[L_CPU].name, level,
+		(emulog_cycle_sr & 0b0000000000100000) ? "USR" : "OS",
+		(emulog_cycle_sr & 0b0000000000001111),
+		emulog_cycle_ic,
+		emulog_pname,
+		emulog_int_indent + emulog_int_level
+	);
+	vfprintf(emulog_f, msgfmt, vl);
+	fprintf(emulog_f, "\n");
+	pthread_mutex_unlock(&emulog_mutex);
+
+	va_end(vl);
+}
+
+// -----------------------------------------------------------------------
 void emulog_splitlog(unsigned component, unsigned level, char *text)
 {
 	char *p;
@@ -317,15 +340,10 @@ void emulog_log_timestamp(unsigned component, unsigned level, char *msg)
 }
 
 // -----------------------------------------------------------------------
-void emulog_set_cycle_ic(uint16_t ic)
+void emulog_store_cycle_state(uint16_t sr, uint16_t ic)
 {
+	emulog_cycle_sr = sr;
 	emulog_cycle_ic = ic;
-}
-
-// -----------------------------------------------------------------------
-uint16_t emulog_get_cycle_ic()
-{
-	return emulog_cycle_ic;
 }
 
 // -----------------------------------------------------------------------
@@ -336,12 +354,6 @@ void emulog_update_pname(uint16_t *r40pname)
 	snprintf(emulog_pname, 7, "%s%s", n1, n2);
 	free(n1);
 	free(n2);
-}
-
-// -----------------------------------------------------------------------
-char * emulog_get_pname()
-{
-	return emulog_pname;
 }
 
 // -----------------------------------------------------------------------
@@ -391,21 +403,26 @@ void emulog_intlevel_inc()
 }
 
 // -----------------------------------------------------------------------
-const char *emulog_intlevel_get_indent()
+void emulog_log_dasm(unsigned level, int mod, int norm_arg, int short_arg, int16_t n)
 {
-	return emulog_int_indent + emulog_int_level;
-}
-
-// -----------------------------------------------------------------------
-void emulog_dasm(int nb)
-{
+	int nb = ((emulog_cycle_sr & 0b0000000000100000) >> 5) * (emulog_cycle_sr & 0b0000000000001111);
 	emdas_dasm(emd, nb, emulog_cycle_ic);
-}
 
-// -----------------------------------------------------------------------
-char * emulog_get_dasm()
-{
-	return dasm_buf;
+	if (norm_arg) {
+		if (mod) {
+			emulog_log_cpu(level, "   %-20s N = 0x%x = %i, MOD = 0x%x = %i", dasm_buf, (uint16_t) n, n, mod, mod);
+		} else {
+			emulog_log_cpu(level, "   %-20s N = 0x%x = %i", dasm_buf, (uint16_t) n, n);
+		}
+	} else if (short_arg) {
+		if (mod) {
+			emulog_log_cpu(level, "   %-20s T = %i, MOD = 0x%x = %i", dasm_buf, n, mod, mod);
+		} else {
+			emulog_log_cpu(level, "   %-20s T = %i", dasm_buf, n);
+		}
+	} else {
+		emulog_log_cpu(level, "   %-20s", dasm_buf);
+	}
 }
 
 

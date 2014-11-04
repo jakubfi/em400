@@ -188,7 +188,7 @@ void cpu_step()
 	uint16_t data;
 
 	if (EMULOG_ENABLED) {
-		emulog_set_cycle_ic(regs[R_IC]);
+		emulog_store_cycle_state(regs[R_SR], regs[R_IC]);
 	}
 
 	// fetch instruction
@@ -241,21 +241,7 @@ void cpu_step()
 	}
 
 	if (EMULOG_WANTS(L_CPU, 2)) {
-		char mod_buf[64];
-		emulog_dasm(QNB);
-
-		if (regs[R_MODc]) {
-			sprintf(mod_buf, ", MOD = 0x%x = %i", regs[R_MOD], regs[R_MOD]);
-		} else {
-			*mod_buf = '\0';
-		}
-		if (op->norm_arg) {
-			EMULOGCPU(L_CPU, 2, "    %-20s N = 0x%x = %i%s", emulog_get_dasm(), (uint16_t) N, (int16_t) N, mod_buf);
-		} else if (op->short_arg) {
-			EMULOGCPU(L_CPU, 2, "    %-20s T = %i%s", emulog_get_dasm(), (int16_t) N, mod_buf);
-		} else {
-			EMULOGCPU(L_CPU, 2, "    %-20s", emulog_get_dasm());
-		}
+		emulog_log_dasm(2, regs[R_MOD], op->norm_arg, op->short_arg, N);
 	}
 
 	// execute instruction
