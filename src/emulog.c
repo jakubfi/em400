@@ -35,6 +35,10 @@
 #define EMULOG_MAX_LEN (1024 * 4)
 #define EMULOG_FLUSH_DELAY_MS 200
 
+#define EMULOG_F_COMP "%4s %1i | "
+#define EMULOG_F_EMPTY "                     | "
+#define EMULOG_F_CPU "%3s %2i:0x%04x %s | %s"
+
 struct emulog_component {
 	char *name;
 	unsigned thr;
@@ -263,7 +267,7 @@ void emulog_log(unsigned component, unsigned level, char *msgfmt, ...)
 	va_start(vl, msgfmt);
 
 	pthread_mutex_lock(&emulog_mutex);
-	fprintf(emulog_f, "%4s %1i | ", emulog_components[component].name, level);
+	fprintf(emulog_f, EMULOG_F_COMP EMULOG_F_EMPTY, emulog_components[component].name, level);
 	vfprintf(emulog_f, msgfmt, vl);
 	fprintf(emulog_f, "\n");
 	pthread_mutex_unlock(&emulog_mutex);
@@ -278,7 +282,7 @@ void emulog_log_cpu(unsigned level, char *msgfmt, ...)
 	va_start(vl, msgfmt);
 
 	pthread_mutex_lock(&emulog_mutex);
-	fprintf(emulog_f, "%4s %1i | %3s %2i:0x%04x %s | %s",
+	fprintf(emulog_f, EMULOG_F_COMP EMULOG_F_CPU,
 		emulog_components[L_CPU].name, level,
 		(emulog_cycle_sr & 0b0000000000100000) ? "USR" : "OS",
 		(emulog_cycle_sr & 0b0000000000001111),
@@ -299,19 +303,19 @@ void emulog_splitlog(unsigned component, unsigned level, char *text)
 	char *p;
 	char *start = text;
 
-	emulog_log(component, level, EMULOG_FORMAT_SIMPLE "%s", " .---------------------------------------------------------");
+	emulog_log(component, level, "%s", " .---------------------------------------------------------");
 	while (start && *start) {
 		p = strchr(start, '\n');
 		if (p) {
 			*p = '\0';
-			emulog_log(component, level, EMULOG_FORMAT_SIMPLE " | %s", start);
+			emulog_log(component, level, " | %s", start);
 			start = p+1;
 		} else {
-			emulog_log(component, level, EMULOG_FORMAT_SIMPLE " | %s", start);
+			emulog_log(component, level, " | %s", start);
 			start = NULL;
 		}
 	}
-	emulog_log(component, level, EMULOG_FORMAT_SIMPLE "%s", " `---------------------------------------------------------");
+	emulog_log(component, level, "%s", " `---------------------------------------------------------");
 }
 
 // -----------------------------------------------------------------------
@@ -336,7 +340,7 @@ void emulog_log_timestamp(unsigned component, unsigned level, char *msg)
 	char date[32];
 	gettimeofday(&ct, NULL);
 	strftime(date, 31, "%Y-%m-%d %H:%M:%S", localtime(&ct.tv_sec));
-	emulog_log(component, level, EMULOG_FORMAT_SIMPLE "%s: %s", msg, date);
+	emulog_log(component, level, EMULOG_F_EMPTY "%s: %s", msg, date);
 }
 
 // -----------------------------------------------------------------------

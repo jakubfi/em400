@@ -67,15 +67,12 @@ void emulog_intlevel_inc();
 void emulog_log_dasm(unsigned level, int mod, int norm_arg, int short_arg, int16_t n);
 void emulog_log_cpu(unsigned level, char *msgfmt, ...);
 
-#define EMULOG_FORMAT_SIMPLE "                     | "
-#define EMULOG_FORMAT_CPU "%3s %2i:0x%04x %s | %s"
-
 #define EMULOG_ENABLED (emulog_enabled)
 #define EMULOG_WANTS(component, level) (EMULOG_ENABLED && emulog_wants(component, level))
 
 #define EMULOG(component, level, format, ...) \
 	if (EMULOG_WANTS(component, level)) \
-		emulog_log(component, level, EMULOG_FORMAT_SIMPLE format, ##__VA_ARGS__)
+		emulog_log(component, level, format, ##__VA_ARGS__)
 
 #define EMULOGCPU(component, level, format, ...) \
 	if (EMULOG_WANTS(component, level)) \
