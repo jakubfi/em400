@@ -29,15 +29,17 @@
 #include "emulog.h"
 #include "errors.h"
 #include "emdas.h"
+#include "atomic.h"
+#include "utils.h"
+
+#ifdef WITH_DEBUGGER
+#include "debugger/decode.h"
+#endif
 
 // low-level stuff
 
 #define EMULOG_MAX_LEN (1024 * 4)
 #define EMULOG_FLUSH_DELAY_MS 200
-
-#define EMULOG_F_COMP "%4s %1i | "
-#define EMULOG_F_EMPTY "                     | "
-#define EMULOG_F_CPU "%3s %2i:0x%04x %s | %s"
 
 struct emulog_component {
 	char *name;
@@ -67,21 +69,26 @@ struct emulog_component emulog_components[] = {
 
 int emulog_enabled;
 
-pthread_t emulog_flusher_th;
-pthread_mutex_t emulog_mutex;
-pthread_cond_t emulog_cond;
+static pthread_t emulog_flusher_th;
+static pthread_mutex_t emulog_mutex;
+static pthread_cond_t emulog_cond;
 
 static FILE *emulog_f;
 static int emulog_paused;
 static int emulog_quit;
 
 static void * emulog_flusher(void *ptr);
-void emulog_log_timestamp(unsigned component, unsigned level, char *msg);
 
 // high-level stuff
 
+#define EMULOG_F_COMP "%4s %1i | "
+#define EMULOG_F_EMPTY "                     | "
+#define EMULOG_F_CPU "%3s %2i:0x%04x %s | %s"
+
 static uint16_t emulog_cycle_sr;
 static uint16_t emulog_cycle_ic;
+
+static int emulog_pname_offset;
 static char emulog_pname[7] = "------";
 
 #define EMULOG_INT_INDENT_MAX 4*8
@@ -93,12 +100,14 @@ static int emulog_exl_nb;
 static int emulog_exl_addr;
 static int emulog_exl_r4;
 
-struct emdas *emd;
+static struct emdas *emd;
 static char *dasm_buf;
 uint16_t *mem_ptr(int nb, uint16_t addr);
 
+static void emulog_log_timestamp(unsigned component, unsigned level, char *msg);
+
 // -----------------------------------------------------------------------
-int emulog_init(int paused, char *filename, int level, int cpu_mod)
+int emulog_init(int paused, char *filename, int level, int pname_offset, int cpu_mod)
 {
 	int ret = E_ALLOC;
 
@@ -137,6 +146,8 @@ int emulog_init(int paused, char *filename, int level, int cpu_mod)
 	emdas_set_features(emd, EMD_FEAT_NONE);
 	emdas_set_tabs(emd, 0, 0, 0, 0);
 	dasm_buf = emdas_get_buf(emd);
+
+	emulog_pname_offset = pname_offset;
 
 	emulog_log_timestamp(L_EM4H, 0, "Opening log");
 
@@ -261,6 +272,21 @@ int emulog_get_component_id(char *name)
 }
 
 // -----------------------------------------------------------------------
+int emulog_wants(unsigned component, unsigned level)
+{
+	if (atom_load(&emulog_paused)) return 0;
+
+	// check if message is to be logged
+	pthread_mutex_lock(&emulog_mutex);
+	if (level > emulog_components[component].thr) {
+		pthread_mutex_unlock(&emulog_mutex);
+		return 0;
+	}
+	pthread_mutex_unlock(&emulog_mutex);
+	return 1;
+}
+
+// -----------------------------------------------------------------------
 void emulog_log(unsigned component, unsigned level, char *msgfmt, ...)
 {
 	va_list vl;
@@ -276,14 +302,14 @@ void emulog_log(unsigned component, unsigned level, char *msgfmt, ...)
 }
 
 // -----------------------------------------------------------------------
-void emulog_log_cpu(unsigned level, char *msgfmt, ...)
+void emulog_log_cpu(unsigned component, unsigned level, char *msgfmt, ...)
 {
 	va_list vl;
 	va_start(vl, msgfmt);
 
 	pthread_mutex_lock(&emulog_mutex);
 	fprintf(emulog_f, EMULOG_F_COMP EMULOG_F_CPU,
-		emulog_components[L_CPU].name, level,
+		emulog_components[component].name, level,
 		(emulog_cycle_sr & 0b0000000000100000) ? "USR" : "OS",
 		(emulog_cycle_sr & 0b0000000000001111),
 		emulog_cycle_ic,
@@ -303,44 +329,34 @@ void emulog_splitlog(unsigned component, unsigned level, char *text)
 	char *p;
 	char *start = text;
 
-	emulog_log(component, level, "%s", " .---------------------------------------------------------");
+	pthread_mutex_lock(&emulog_mutex);
+
+	fprintf(emulog_f, EMULOG_F_COMP EMULOG_F_EMPTY " .---------------------------------------------------------\n", emulog_components[component].name, level);
 	while (start && *start) {
 		p = strchr(start, '\n');
 		if (p) {
 			*p = '\0';
-			emulog_log(component, level, " | %s", start);
+		}
+		fprintf(emulog_f, EMULOG_F_COMP EMULOG_F_EMPTY " | %s\n", emulog_components[component].name, level, start);
+		if (p) {
 			start = p+1;
 		} else {
-			emulog_log(component, level, " | %s", start);
 			start = NULL;
 		}
 	}
-	emulog_log(component, level, "%s", " `---------------------------------------------------------");
-}
+	fprintf(emulog_f, EMULOG_F_COMP EMULOG_F_EMPTY " `---------------------------------------------------------\n", emulog_components[component].name, level);
 
-// -----------------------------------------------------------------------
-int emulog_wants(unsigned component, unsigned level)
-{
-	if (atom_load(&emulog_paused)) return 0;
-
-	// check if message is to be logged
-	pthread_mutex_lock(&emulog_mutex);
-	if (level > emulog_components[component].thr) {
-		pthread_mutex_unlock(&emulog_mutex);
-		return 0;
-	}
 	pthread_mutex_unlock(&emulog_mutex);
-	return 1;
 }
 
 // -----------------------------------------------------------------------
-void emulog_log_timestamp(unsigned component, unsigned level, char *msg)
+static void emulog_log_timestamp(unsigned component, unsigned level, char *msg)
 {
 	struct timeval ct;
 	char date[32];
 	gettimeofday(&ct, NULL);
 	strftime(date, 31, "%Y-%m-%d %H:%M:%S", localtime(&ct.tv_sec));
-	emulog_log(component, level, EMULOG_F_EMPTY "%s: %s", msg, date);
+	emulog_log(component, level, "%s: %s", msg, date);
 }
 
 // -----------------------------------------------------------------------
@@ -351,37 +367,62 @@ void emulog_store_cycle_state(uint16_t sr, uint16_t ic)
 }
 
 // -----------------------------------------------------------------------
-void emulog_update_pname(uint16_t *r40pname)
-{
-	char *n1 = int2r40(r40pname[0]);
-	char *n2 = int2r40(r40pname[1]);
-	snprintf(emulog_pname, 7, "%s%s", n1, n2);
-	free(n1);
-	free(n2);
-}
-
-// -----------------------------------------------------------------------
-void emulog_exl_store(int number, int nb, int addr, int r4)
+void emulog_handle_syscall(unsigned component, unsigned level, int number, int nb, int addr, int r4)
 {
 	emulog_exl_number = number;
 	emulog_exl_nb = nb;
 	emulog_exl_addr = addr;
 	emulog_exl_r4 = r4;
+
+	char *details;
+#ifdef WITH_DEBUGGER
+	details = decode_exl(nb, r4, number);
+#else
+	details = malloc(128);
+	sprintf(details, "[details missing]");
+#endif
+	emulog_splitlog(component, level, details);
+	free(details);
 }
 
 // -----------------------------------------------------------------------
-void emulog_exl_fetch(int *number, int *nb, int *addr, int *r4)
+void emulog_handle_sp(unsigned component, unsigned level, uint16_t n)
 {
-	*number = emulog_exl_number;
-	*nb = emulog_exl_nb;
-	*addr = emulog_exl_addr;
-	*r4 = emulog_exl_r4;
+	char *ctx;
+
+	emulog_log_cpu(component, level, "SP: context @ 0x%04x -> IC: 0x%04x", n, emulog_cycle_ic);
+
+#ifdef WITH_DEBUGGER
+	ctx = decode_ctx(0, n, 0);
+#else
+	ctx = malloc(128);
+	sprintf(ctx, "[details missing]");
+#endif
+	emulog_splitlog(component, level, ctx);
+	free(ctx);
 }
 
 // -----------------------------------------------------------------------
-void emulog_exl_reset()
+void emulog_handle_syscall_ret(unsigned component, unsigned level, uint16_t n)
 {
-	emulog_exl_number = -1;
+	if ((emulog_exl_number >= 0) && (emulog_cycle_ic == emulog_exl_addr) && ((emulog_cycle_sr & 0x1111) == emulog_exl_nb)) {
+		char *details;
+#ifdef WITH_DEBUGGER
+		details = decode_exl(emulog_exl_nb, emulog_exl_r4, -emulog_exl_number);
+#else
+		details = malloc(128);
+		sprintf(details, "[details missing]");
+#endif
+		emulog_splitlog(component, level, details);
+		free(details);
+		emulog_syscall_reset();
+	}
+}
+
+// -----------------------------------------------------------------------
+void emulog_syscall_reset()
+{
+	emulog_exl_number = -1; // indicate that there is no syscall in progress
 }
 
 // -----------------------------------------------------------------------
@@ -407,26 +448,49 @@ void emulog_intlevel_inc()
 }
 
 // -----------------------------------------------------------------------
-void emulog_log_dasm(unsigned level, int mod, int norm_arg, int short_arg, int16_t n)
+void emulog_log_dasm(unsigned component, unsigned level, int mod, int norm_arg, int short_arg, int16_t n)
 {
 	int nb = ((emulog_cycle_sr & 0b0000000000100000) >> 5) * (emulog_cycle_sr & 0b0000000000001111);
 	emdas_dasm(emd, nb, emulog_cycle_ic);
 
 	if (norm_arg) {
 		if (mod) {
-			emulog_log_cpu(level, "   %-20s N = 0x%x = %i, MOD = 0x%x = %i", dasm_buf, (uint16_t) n, n, mod, mod);
+			emulog_log_cpu(component, level, "    %-20s N = 0x%x = %i, MOD = 0x%x = %i", dasm_buf, (uint16_t) n, n, mod, mod);
 		} else {
-			emulog_log_cpu(level, "   %-20s N = 0x%x = %i", dasm_buf, (uint16_t) n, n);
+			emulog_log_cpu(component, level, "    %-20s N = 0x%x = %i", dasm_buf, (uint16_t) n, n);
 		}
 	} else if (short_arg) {
 		if (mod) {
-			emulog_log_cpu(level, "   %-20s T = %i, MOD = 0x%x = %i", dasm_buf, n, mod, mod);
+			emulog_log_cpu(component, level, "    %-20s T = %i, MOD = 0x%x = %i", dasm_buf, n, mod, mod);
 		} else {
-			emulog_log_cpu(level, "   %-20s T = %i", dasm_buf, n);
+			emulog_log_cpu(component, level, "    %-20s T = %i", dasm_buf, n);
 		}
 	} else {
-		emulog_log_cpu(level, "   %-20s", dasm_buf);
+		emulog_log_cpu(component, level, "    %-20s", dasm_buf);
 	}
+}
+
+// -----------------------------------------------------------------------
+void emulog_update_pname()
+{
+	uint16_t *bprog;
+	uint16_t *pname[2];
+	char *n1, *n2;
+
+	if (!emulog_pname_offset) return;
+
+	bprog = mem_ptr(0, 0x62);
+	if (!bprog) return;
+
+	pname[0] = mem_ptr(0, *bprog + emulog_pname_offset + 0);
+	pname[1] = mem_ptr(0, *bprog + emulog_pname_offset + 1);
+	if (!pname[0] || !pname[1]) return;
+
+	n1 = int2r40(*(pname[0]));
+	n2 = int2r40(*(pname[1]));
+	snprintf(emulog_pname, 7, "%s%s", n1, n2);
+	free(n1);
+	free(n2);
 }
 
 

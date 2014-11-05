@@ -29,12 +29,6 @@
 
 #include "cfg.h"
 #include "utils.h"
-
-#ifdef WITH_DEBUGGER
-#include "debugger/debugger.h"
-#include "debugger/decode.h"
-#endif
-
 #include "emulog.h"
 
 // convenience memory access macros (with "nomem" handling)
@@ -488,19 +482,11 @@ void op_71_exl()
 	uint16_t data;
 
 	if (EMULOG_ENABLED) {
-		emulog_exl_store(IR_b, NB, regs[R_IC], regs[4]);
-
-		EMULOGCPU(L_OP, 2, "EXL: %i (r4: 0x%04x)", IR_b, regs[4]);
-		if (EMULOG_WANTS(L_CRK5, 2)) {
-			char *details;
-#ifdef WITH_DEBUGGER
-			details = decode_exl(NB, regs[4], IR_b);
-#else
-			details = malloc(128);
-			sprintf(details, "[details missing]");
-#endif
-			emulog_splitlog(L_CRK5, 2, details);
-			free(details);
+		if (emulog_wants(L_OP, 2)) {
+			emulog_log_cpu(L_OP, 2, "EXL: %i (r4: 0x%04x)", IR_b, regs[4]);
+		}
+		if (emulog_wants(L_CRK5, 2)) {
+			emulog_handle_syscall(L_CRK5, 2, IR_b, NB, regs[R_IC], regs[4]);
 		}
 	}
 
@@ -737,6 +723,11 @@ void op_73_mcl()
 	mem_reset();
 	io_reset();
 	cpu_mod_off();
+
+	if (EMULOG_ENABLED) {
+		emulog_intlevel_reset();
+		emulog_syscall_reset();
+	}
 }
 
 // -----------------------------------------------------------------------
@@ -780,12 +771,8 @@ void op_73_lip()
 
 	cpu_ctx_restore();
 
-	if (EMULOG_ENABLED && em400_cfg.emulog_pname_offset) {
-		uint16_t bprog;
-		uint16_t pname[2];
-		mem_get(0, 0x62, &bprog);
-		mem_mget(0, bprog+em400_cfg.emulog_pname_offset, pname, 2);
-		emulog_update_pname(pname);
+	if (EMULOG_ENABLED) {
+		emulog_update_pname();
 		emulog_intlevel_dec();
 	}
 }
@@ -1019,47 +1006,13 @@ void op_77_sp()
 	int_update_mask();
 
 	if (EMULOG_ENABLED) {
-		if (em400_cfg.emulog_pname_offset) {
-			uint16_t bprog;
-			uint16_t pname[2];
-			mem_get(0, 0x62, &bprog);
-			mem_mget(0, bprog+em400_cfg.emulog_pname_offset, pname, 2);
-			emulog_update_pname(pname);
+		emulog_update_pname();
+		emulog_intlevel_reset();
+		if (emulog_wants(L_CRK5, 5)) {
+			emulog_handle_sp(L_CRK5, 5, N);
 		}
-
-		EMULOGCPU(L_CRK5, 5, "SP: context @ 0x%04x -> IC: 0x%04x", N, regs[R_IC]);
-		if (EMULOG_WANTS(L_CRK5, 5)) {
-			char *ctx;
-#ifdef WITH_DEBUGGER
-			ctx = decode_ctx(0, N, 0);
-#else
-			ctx = malloc(128);
-			sprintf(ctx, "[details missing]");
-#endif
-			emulog_splitlog(L_CRK5, 5, ctx);
-			free(ctx);
-		}
-		if (EMULOG_WANTS(L_CRK5, 2)) {
-			emulog_intlevel_reset();
-
-			int exl_was_number;
-			int exl_was_addr;
-			int exl_was_nb;
-			int exl_was_r4;
-
-			emulog_exl_fetch(&exl_was_number, &exl_was_nb, &exl_was_addr, &exl_was_r4);
-			if ((exl_was_number >= 0) && (regs[R_IC] == exl_was_addr) && (NB == exl_was_nb)) {
-				char *details;
-#ifdef WITH_DEBUGGER
-				details = decode_exl(exl_was_nb, exl_was_r4, -exl_was_number);
-#else
-				details = malloc(128);
-				sprintf(details, "[details missing]");
-#endif
-				emulog_splitlog(L_CRK5, 2, details);
-				free(details);
-				emulog_exl_reset();
-			}
+		if (emulog_wants(L_CRK5, 2)) {
+			emulog_handle_syscall_ret(L_CRK5, 2, N);
 		}
 	}
 }

@@ -26,10 +26,6 @@
 #include "io/io.h"
 #include "io/chan.h"
 
-#ifdef WITH_DEBUGGER
-#include "debugger/debugger.h"
-#endif
-
 #include "emulog.h"
 
 uint32_t RZ;

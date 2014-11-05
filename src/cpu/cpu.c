@@ -241,7 +241,7 @@ void cpu_step()
 	}
 
 	if (EMULOG_WANTS(L_CPU, 2)) {
-		emulog_log_dasm(2, regs[R_MOD], op->norm_arg, op->short_arg, N);
+		emulog_log_dasm(L_CPU, 2, regs[R_MOD], op->norm_arg, op->short_arg, N);
 	}
 
 	// execute instruction

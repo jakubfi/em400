@@ -15,13 +15,7 @@
 //  Foundation, Inc.,
 //  51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 
-#include <stdio.h>
-#include <pthread.h>
-#include <stdarg.h>
 #include <inttypes.h>
-
-#include "utils.h"
-#include "atomic.h"
 
 #ifndef EMULOG_H
 #define EMULOG_H
@@ -38,7 +32,7 @@ enum emulog_components {
 
 extern int emulog_enabled;
 
-int emulog_init(int paused, char *filename, int level, int cpu_mod);
+int emulog_init(int paused, char *filename, int level, int pname_offset, int cpu_mod);
 void emulog_shutdown();
 
 void emulog_pause();
@@ -47,25 +41,27 @@ int emulog_is_paused();
 
 int emulog_set_level(int component, unsigned level);
 int emulog_get_level(unsigned component);
+int emulog_wants(unsigned component, unsigned level);
 
 char * emulog_get_component_name(unsigned component);
 int emulog_get_component_id(char *name);
 
 void emulog_log(unsigned component, unsigned level, char *format, ...);
 void emulog_splitlog(unsigned component, unsigned level, char *text);
-int emulog_wants(unsigned component, unsigned level);
 
 void emulog_store_cycle_state(uint16_t sr, uint16_t ic);
-void emulog_update_pname(uint16_t *r40pname);
-void emulog_exl_store(int number, int nb, int addr, int r4);
-void emulog_exl_fetch(int *number, int *nb, int *addr, int *r4);
-void emulog_exl_reset();
 void emulog_intlevel_reset();
 void emulog_intlevel_dec();
 void emulog_intlevel_inc();
 
-void emulog_log_dasm(unsigned level, int mod, int norm_arg, int short_arg, int16_t n);
-void emulog_log_cpu(unsigned level, char *msgfmt, ...);
+void emulog_log_dasm(unsigned component, unsigned level, int mod, int norm_arg, int short_arg, int16_t n);
+void emulog_log_cpu(unsigned component, unsigned level, char *msgfmt, ...);
+
+void emulog_update_pname();
+void emulog_handle_sp(unsigned component, unsigned level, uint16_t n);
+void emulog_handle_syscall(unsigned component, unsigned level, int number, int nb, int addr, int r4);
+void emulog_handle_syscall_ret(unsigned component, unsigned level, uint16_t n);
+void emulog_syscall_reset();
 
 #define EMULOG_ENABLED (emulog_enabled)
 #define EMULOG_WANTS(component, level) (EMULOG_ENABLED && emulog_wants(component, level))
@@ -76,7 +72,7 @@ void emulog_log_cpu(unsigned level, char *msgfmt, ...);
 
 #define EMULOGCPU(component, level, format, ...) \
 	if (EMULOG_WANTS(component, level)) \
-		emulog_log_cpu(level, format, ##__VA_ARGS__)
+		emulog_log_cpu(component, level, format, ##__VA_ARGS__)
 
 #endif
 

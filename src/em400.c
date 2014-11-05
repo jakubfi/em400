@@ -79,7 +79,7 @@ void em400_init()
 	int res;
 
 	if (em400_cfg.emulog_enabled) {
-		res = emulog_init(em400_cfg.emulog_paused, em400_cfg.emulog_file, em400_cfg.emulog_level, em400_cfg.cpu_mod);
+		res = emulog_init(em400_cfg.emulog_paused, em400_cfg.emulog_file, em400_cfg.emulog_level, em400_cfg.emulog_pname_offset, em400_cfg.cpu_mod);
 		if (res != E_OK) {
 			em400_exit_error(res, "Error initializing emulog");
 		}
