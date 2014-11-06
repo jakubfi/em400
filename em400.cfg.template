@@ -63,21 +63,18 @@ computer {
 }
 
 emulog {
-	# Emulation logging has considerable performance requirements.
-	# Not recommended for daily usage.
+	# Enable or disable emulation logging.
+	# Not recommended for daily usage due to considerable performance requirements.
 	# Allowed values: "true", "false" (default)
 	enabled = false
-
-	# If enabled, emulog may start in paused state.
-	# Allowed values: "true" (default), "false"
-	paused = true
 
 	# Name of the log file (default: em400.log)
 	file = "em400.log"
 
 	# Initial logging level for all components
-	# Alloved values: 0-9 (default is 0) where 0 means no logging at all
-	# and 9 logs just about everything (about 100x slower than with logging disabled)
+	# Allowed values: 0-9 (default is 0) where 0 means no logging at all
+	# and 9 logs just about everything
+	# (level 9 makes emulation about 100x slower and writes insane amount of data)
 	level = 0
 
 	# If you run CROOK operating system within em400 and

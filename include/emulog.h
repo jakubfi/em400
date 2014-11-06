@@ -15,10 +15,12 @@
 //  Foundation, Inc.,
 //  51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 
-#include <inttypes.h>
-
 #ifndef EMULOG_H
 #define EMULOG_H
+
+#include <inttypes.h>
+
+#include "atomic.h"
 
 enum emulog_components {
 	L_REG, L_MEM, L_CPU, L_OP, L_INT,
@@ -35,9 +37,9 @@ extern int emulog_enabled;
 int emulog_init(int paused, char *filename, int level, int pname_offset, int cpu_mod);
 void emulog_shutdown();
 
-void emulog_pause();
-void emulog_rec();
-int emulog_is_paused();
+void emulog_enable();
+void emulog_disable();
+int emulog_is_enabled();
 
 int emulog_set_level(int component, unsigned level);
 int emulog_get_level(unsigned component);
@@ -63,7 +65,7 @@ void emulog_handle_syscall(unsigned component, unsigned level, int number, int n
 void emulog_handle_syscall_ret(unsigned component, unsigned level, uint16_t n);
 void emulog_syscall_reset();
 
-#define EMULOG_ENABLED (emulog_enabled)
+#define EMULOG_ENABLED (atom_load(&emulog_enabled))
 #define EMULOG_WANTS(component, level) (EMULOG_ENABLED && emulog_wants(component, level))
 
 #define EMULOG(component, level, format, ...) \

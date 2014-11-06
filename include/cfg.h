@@ -71,7 +71,6 @@ struct cfg_em400_t {
 	int cpu_stop_on_nomem;
 	int mem_os;
 	int emulog_enabled;
-	int emulog_paused;
 	char *emulog_file;
 	int emulog_level;
 	int emulog_pname_offset;

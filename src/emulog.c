@@ -74,7 +74,6 @@ static pthread_mutex_t emulog_mutex;
 static pthread_cond_t emulog_cond;
 
 static FILE *emulog_f;
-static int emulog_paused;
 static int emulog_quit;
 
 static void * emulog_flusher(void *ptr);
@@ -107,7 +106,7 @@ uint16_t *mem_ptr(int nb, uint16_t addr);
 static void emulog_log_timestamp(unsigned component, unsigned level, char *msg);
 
 // -----------------------------------------------------------------------
-int emulog_init(int paused, char *filename, int level, int pname_offset, int cpu_mod)
+int emulog_init(int enabled, char *filename, int level, int pname_offset, int cpu_mod)
 {
 	int ret = E_ALLOC;
 
@@ -129,8 +128,7 @@ int emulog_init(int paused, char *filename, int level, int pname_offset, int cpu
 	}
 
 	emulog_quit = 0;
-	emulog_enabled = 1;
-	emulog_paused = paused;
+	atom_store(&emulog_enabled, enabled);
 
 	pthread_mutex_init(&emulog_mutex, NULL);
 	pthread_cond_init(&emulog_cond, NULL);
@@ -201,21 +199,21 @@ static void * emulog_flusher(void *ptr)
 }
 
 // -----------------------------------------------------------------------
-void emulog_pause()
+void emulog_disable()
 {
-	atom_store(&emulog_paused, 1);
+	atom_store(&emulog_enabled, 0);
 }
 
 // -----------------------------------------------------------------------
-void emulog_rec()
+void emulog_enable()
 {
-	atom_store(&emulog_paused, 0);
+	atom_store(&emulog_enabled, 1);
 }
 
 // -----------------------------------------------------------------------
-int emulog_is_paused()
+int emulog_is_enabled()
 {
-	return atom_load(&emulog_paused);
+	return atom_load(&emulog_enabled);
 }
 
 // -----------------------------------------------------------------------
@@ -274,8 +272,6 @@ int emulog_get_component_id(char *name)
 // -----------------------------------------------------------------------
 int emulog_wants(unsigned component, unsigned level)
 {
-	if (atom_load(&emulog_paused)) return 0;
-
 	// check if message is to be logged
 	pthread_mutex_lock(&emulog_mutex);
 	if (level > emulog_components[component].thr) {

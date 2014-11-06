@@ -54,7 +54,6 @@ mem_os_segments	return OS_SEG;
 
 emulog			return EMULOG;
 enabled			return ENABLED;
-paused			return PAUSED;
 file			return LFILE;
 level			return LEVEL;
 pname_offset	return PNAME_OFFSET;

@@ -67,8 +67,8 @@ chars	[-,=+*&|^><:()\]\[~!]
 <opts>test	{ BEGIN(INITIAL); return TEST; }
 <opts>on	{ BEGIN(INITIAL); return ON; }
 <opts>off	{ BEGIN(INITIAL); return OFF; }
-<opts>pause	{ BEGIN(INITIAL); return PAUSE; }
-<opts>rec	{ BEGIN(INITIAL); return REC; }
+<opts>enable { BEGIN(INITIAL); return ON; }
+<opts>disable { BEGIN(INITIAL); return OFF; }
 <opts>mem   { BEGIN(INITIAL); yylval.text = strdup(yytext); return NAME; }
 
 quit	{ return F_QUIT; }
