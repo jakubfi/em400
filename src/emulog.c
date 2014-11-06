@@ -38,7 +38,6 @@
 
 // low-level stuff
 
-#define EMULOG_MAX_LEN (1024 * 4)
 #define EMULOG_FLUSH_DELAY_MS 200
 
 struct emulog_component {
@@ -71,7 +70,6 @@ int emulog_enabled;
 
 static pthread_t emulog_flusher_th;
 static pthread_mutex_t emulog_mutex;
-static pthread_cond_t emulog_cond;
 
 static FILE *emulog_f;
 static int emulog_quit;
@@ -118,7 +116,7 @@ int emulog_init(int enabled, char *filename, int level, int pname_offset, int cp
 
 	// set up thresholds
 	for (int i=0 ; i<L_MAX; i++) {
-		emulog_components[i].thr = level;
+		atom_store(&emulog_components[i].thr, level);
 	}
 
 	// set up flusher thread
@@ -131,7 +129,6 @@ int emulog_init(int enabled, char *filename, int level, int pname_offset, int cp
 	atom_store(&emulog_enabled, enabled);
 
 	pthread_mutex_init(&emulog_mutex, NULL);
-	pthread_cond_init(&emulog_cond, NULL);
 
 	// initialize deassembler
 	emd = emdas_create(cpu_mod ? EMD_ISET_MX16 : EMD_ISET_MERA400, mem_ptr);
@@ -166,13 +163,12 @@ void emulog_shutdown()
 
 	emdas_destroy(emd);
 
-	pthread_mutex_lock(&emulog_mutex);
-
 	for (i=0 ; i<L_MAX; i++) {
-		emulog_components[i].thr = 0;
+		atom_store(&emulog_components[i].thr, 0);
 	}
-	emulog_quit = 1;
 
+	pthread_mutex_lock(&emulog_mutex);
+	emulog_quit = 1;
 	pthread_mutex_unlock(&emulog_mutex);
 
 	pthread_join(emulog_flusher_th, NULL);
@@ -219,19 +215,15 @@ int emulog_is_enabled()
 // -----------------------------------------------------------------------
 int emulog_set_level(int component, unsigned level)
 {
-	pthread_mutex_lock(&emulog_mutex);
-
 	// set level for specified component
 	if (component >= 0) {
-		emulog_components[component].thr = level;
+		atom_store(&emulog_components[component].thr, level);
 	// set level for all components
 	} else {
 		for (int i=0 ; i<L_MAX; i++) {
-			emulog_components[i].thr = level;
+			atom_store(&emulog_components[i].thr, level);
 		}
 	}
-
-	pthread_mutex_unlock(&emulog_mutex);
 
 	return 0;
 }
@@ -241,9 +233,7 @@ int emulog_get_level(unsigned component)
 {
 	int level;
 
-	pthread_mutex_lock(&emulog_mutex);
-	level = emulog_components[component].thr;
-	pthread_mutex_unlock(&emulog_mutex);
+	level = atom_load(&emulog_components[component].thr);
 
 	return level;
 }
@@ -273,12 +263,9 @@ int emulog_get_component_id(char *name)
 int emulog_wants(unsigned component, unsigned level)
 {
 	// check if message is to be logged
-	pthread_mutex_lock(&emulog_mutex);
-	if (level > emulog_components[component].thr) {
-		pthread_mutex_unlock(&emulog_mutex);
+	if (level > atom_load(&emulog_components[component].thr)) {
 		return 0;
 	}
-	pthread_mutex_unlock(&emulog_mutex);
 	return 1;
 }
 

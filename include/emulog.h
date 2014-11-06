@@ -34,7 +34,7 @@ enum emulog_components {
 
 extern int emulog_enabled;
 
-int emulog_init(int paused, char *filename, int level, int pname_offset, int cpu_mod);
+int emulog_init(int enabled, char *filename, int level, int pname_offset, int cpu_mod);
 void emulog_shutdown();
 
 void emulog_enable();
