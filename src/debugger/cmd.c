@@ -522,7 +522,7 @@ void dbg_c_emulog_info(int wid)
 	awtbprint(wid, C_DATA, "Logging %s\n", emulog_is_enabled() ? "enabled" : "disabled");
 	awtbprint(wid, C_LABEL, "Levels: ");
 
-	for (i=0 ; i < L_MAX ; i++) {
+	for (i=0 ; i < L_ALL ; i++) {
 		cname = emulog_get_component_name(i);
 		if (cname) {
 			awtbprint(wid, C_DATA, "%s=%i ", cname, emulog_get_level(i));
@@ -541,8 +541,12 @@ void dbg_c_emulog_disable(int wid)
 // -----------------------------------------------------------------------
 void dbg_c_emulog_enable(int wid)
 {
-	emulog_enable();
-	awtbprint(wid, C_LABEL, "Logging enabled\n");
+	int res = emulog_enable();
+	if (res == E_OK) {
+		awtbprint(wid, C_LABEL, "Logging enabled\n");
+	} else {
+		awtbprint(wid, C_ERROR, "Error opening log file\n");
+	}
 }
 
 // -----------------------------------------------------------------------
@@ -550,20 +554,16 @@ void dbg_c_emulog_set_level(int wid, char *comp_name, int level)
 {
 	int c;
 
-	if (!strcasecmp(comp_name, "all")) {
-		emulog_set_level(-1, level);
+	c = emulog_get_component_id(comp_name);
+	if (c < 0) {
+		awtbprint(wid, C_ERROR, "Unknown component: ");
+		awtbprint(wid, C_DATA, "%s", comp_name);
 	} else {
-		c = emulog_get_component_id(comp_name);
-		if (c < 0) {
-			awtbprint(wid, C_ERROR, "Unknown component: ");
-			awtbprint(wid, C_DATA, "%s", comp_name);
-		} else {
-			emulog_set_level(c, level);
-			awtbprint(wid, C_LABEL, "Level for component ");
-			awtbprint(wid, C_DATA, "%s ", comp_name);
-			awtbprint(wid, C_LABEL, "set to ");
-			awtbprint(wid, C_DATA, "%i\n", level);
-		}
+		emulog_set_level(c, level);
+		awtbprint(wid, C_LABEL, "Level for component ");
+		awtbprint(wid, C_DATA, "%s ", comp_name);
+		awtbprint(wid, C_LABEL, "set to ");
+		awtbprint(wid, C_DATA, "%i\n", level);
 	}
 }
 

@@ -56,9 +56,7 @@ void em400_shutdown()
 	io_shutdown();
 	cpu_shutdown();
 	mem_shutdown();
-	if (em400_cfg.emulog_enabled) {
-		emulog_shutdown();
-	}
+	emulog_shutdown();
 }
 
 // -----------------------------------------------------------------------
@@ -78,11 +76,9 @@ void em400_init()
 {
 	int res;
 
-	if (em400_cfg.emulog_enabled) {
-		res = emulog_init(em400_cfg.emulog_enabled, em400_cfg.emulog_file, em400_cfg.emulog_level, em400_cfg.emulog_pname_offset, em400_cfg.cpu_mod);
-		if (res != E_OK) {
-			em400_exit_error(res, "Error initializing emulog");
-		}
+	res = emulog_init(em400_cfg.emulog_enabled, em400_cfg.emulog_file, em400_cfg.emulog_levels, em400_cfg.emulog_pname_offset, em400_cfg.cpu_mod);
+	if (res != E_OK) {
+		em400_exit_error(res, "Error initializing emulog");
 	}
 
 #ifdef WITH_DEBUGGER
@@ -303,11 +299,12 @@ int main(int argc, char** argv)
 #endif
 	printf("\n");
 
-	// setup configuration
+	// start with the default configuration
 	res = cfg_default();
 	if (res != E_OK) {
 		em400_exit_error(res, "Cannot prepare default configuration");
 	}
+
 	// TODO: order needs to be changed: em400.cfg comes first, then commandline overrides
 	em400_parse_args(argc, argv);
 	em400_configure();

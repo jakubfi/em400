@@ -62,17 +62,19 @@ struct emulog_component emulog_components[] = {
 	{ "PNCH", 0 },
 	{ "PNRD", 0 },
 	{ "CRK5", 0 },
-	{ "EM4H", 0 },
-	{ NULL, 0 }
+	{ "EM4H", 1 },
+	{ "ALL", 0 }
 };
 
 int emulog_enabled;
+int emulog_initialized;
 
 static pthread_t emulog_flusher_th;
 static pthread_mutex_t emulog_mutex;
+static int emulog_flusher_stop;
 
+static char *emulog_file;
 static FILE *emulog_f;
-static int emulog_quit;
 
 static void * emulog_flusher(void *ptr);
 
@@ -104,29 +106,31 @@ uint16_t *mem_ptr(int nb, uint16_t addr);
 static void emulog_log_timestamp(unsigned component, unsigned level, char *msg);
 
 // -----------------------------------------------------------------------
-int emulog_init(int enabled, char *filename, int level, int pname_offset, int cpu_mod)
+int emulog_init(int enabled, char *filename, char *levels, int pname_offset, int cpu_mod)
 {
+	int res;
 	int ret = E_ALLOC;
 
-	emulog_f = fopen(filename, "a");
-	if (!emulog_f) {
-		ret = E_FILE_OPEN;
+	emulog_file = strdup(filename);
+	if (!emulog_file) {
+		ret = E_ALLOC;
 		goto cleanup;
+	}
+
+	if (enabled) {
+		ret = emulog_enable();
+		if (ret != E_OK) {
+			goto cleanup;
+		}
 	}
 
 	// set up thresholds
-	for (int i=0 ; i<L_MAX; i++) {
-		atom_store(&emulog_components[i].thr, level);
-	}
-
-	// set up flusher thread
-	if (pthread_create(&emulog_flusher_th, NULL, emulog_flusher, NULL) != 0) {
-		ret = E_THREAD;
+	res = emulog_setup_levels(levels);
+	if (res < 0) {
+		printf("ret: %i\n", res);
+		ret = E_LEVELS;
 		goto cleanup;
 	}
-
-	emulog_quit = 0;
-	atom_store(&emulog_enabled, enabled);
 
 	pthread_mutex_init(&emulog_mutex, NULL);
 
@@ -144,12 +148,13 @@ int emulog_init(int enabled, char *filename, int level, int pname_offset, int cp
 
 	emulog_pname_offset = pname_offset;
 
-	emulog_log_timestamp(L_EM4H, 0, "Opening log");
+	emulog_initialized = 1;
 
 	return E_OK;
 
 cleanup:
 	if (emulog_f) fclose(emulog_f);
+	free(emulog_file);
 	emdas_destroy(emd);
 	return ret;
 }
@@ -159,22 +164,16 @@ void emulog_shutdown()
 {
 	int i;
 
-	emulog_log_timestamp(L_EM4H, 0, "Closing log");
+	if (!emulog_initialized) return;
 
 	emdas_destroy(emd);
 
-	for (i=0 ; i<L_MAX; i++) {
+	for (i=0 ; i<L_ALL; i++) {
 		atom_store(&emulog_components[i].thr, 0);
 	}
 
-	pthread_mutex_lock(&emulog_mutex);
-	emulog_quit = 1;
-	pthread_mutex_unlock(&emulog_mutex);
-
-	pthread_join(emulog_flusher_th, NULL);
-
-	fflush(emulog_f);
-	fclose(emulog_f);
+	emulog_disable();
+	free(emulog_file);
 }
 
 // -----------------------------------------------------------------------
@@ -184,7 +183,7 @@ static void * emulog_flusher(void *ptr)
 	while (1) {
 		pthread_mutex_lock(&emulog_mutex);
 		fflush(emulog_f);
-		if (emulog_quit) {
+		if (emulog_flusher_stop) {
 			pthread_mutex_unlock(&emulog_mutex);
 			break;
 		}
@@ -197,13 +196,50 @@ static void * emulog_flusher(void *ptr)
 // -----------------------------------------------------------------------
 void emulog_disable()
 {
+	if (!emulog_is_enabled()) {
+		return;
+	}
+
+	emulog_log_timestamp(L_EM4H, 0, "Closing log");
+
 	atom_store(&emulog_enabled, 0);
+
+	// stop flusher thread
+	pthread_mutex_lock(&emulog_mutex);
+	emulog_flusher_stop = 1;
+	pthread_mutex_unlock(&emulog_mutex);
+	pthread_join(emulog_flusher_th, NULL);
+
+	if (emulog_f) {
+		fclose(emulog_f);
+	}
 }
 
 // -----------------------------------------------------------------------
-void emulog_enable()
+int emulog_enable()
 {
+	if (emulog_is_enabled()) {
+		return E_OK;
+	}
+
+	// Open log file
+	emulog_f = fopen(emulog_file, "a");
+	if (!emulog_f) {
+		return E_FILE_OPEN;
+	}
+
+	emulog_log_timestamp(L_EM4H, 0, "Opened log");
+
+	// start up flusher thread
+	emulog_flusher_stop = 0;
+	if (pthread_create(&emulog_flusher_th, NULL, emulog_flusher, NULL) != 0) {
+		fclose(emulog_f);
+		return E_THREAD;
+	}
+
 	atom_store(&emulog_enabled, 1);
+
+	return E_OK;
 }
 
 // -----------------------------------------------------------------------
@@ -213,14 +249,14 @@ int emulog_is_enabled()
 }
 
 // -----------------------------------------------------------------------
-int emulog_set_level(int component, unsigned level)
+int emulog_set_level(unsigned component, unsigned level)
 {
 	// set level for specified component
-	if (component >= 0) {
+	if (component != L_ALL) {
 		atom_store(&emulog_components[component].thr, level);
 	// set level for all components
 	} else {
-		for (int i=0 ; i<L_MAX; i++) {
+		for (int i=0 ; i<L_ALL; i++) {
 			atom_store(&emulog_components[i].thr, level);
 		}
 	}
@@ -250,13 +286,80 @@ int emulog_get_component_id(char *name)
 	int i;
 	int comp = -1;
 
-	for (i=0 ; (i<L_MAX) ; i++) {
+	for (i=0 ; (i<=L_ALL) ; i++) {
 		if (!strcasecmp(emulog_components[i].name, name)) {
 			comp = i;
 			break;
 		}
 	}
 	return comp;
+}
+
+// -----------------------------------------------------------------------
+// I was bored.
+// And then I suddenly felt like moving some chars around, hardcore style.
+int emulog_setup_levels(char *levels)
+{
+	if (!levels || (*levels == '\0')) return 0;
+
+	char *str = levels;
+	const int buf_max = 8;
+	char level_str[buf_max];
+	char comp_name[buf_max];
+	char *buf = comp_name;
+	int i = 0;
+	int have_comp = 0;
+	int found = 0;
+
+	while (1) {
+		if (i > buf_max) {
+			goto bail;
+		}
+
+		if (*str == '=') {
+			if (!have_comp && (i > 0)) {
+				buf[i] = '\0';
+				buf = level_str;
+				i = 0;
+				have_comp = 1;
+			} else {
+				goto bail;
+			}
+		} else if ((*str == ',') || (*str == '\0')) {
+			if (have_comp && (i > 0)) {
+				buf[i] = '\0';
+				buf = comp_name;
+				i = 0;
+				have_comp = 0;
+				char *endptr;
+				int level = strtol(level_str, &endptr, 10);
+				if ((*endptr != '\0') || (level > 9)) {
+					goto bail;
+				}
+				int comp_id = emulog_get_component_id(comp_name);
+				if (comp_id < 0) {
+					goto bail;
+				}
+				emulog_set_level(comp_id, level);
+				found++;
+			} else {
+				goto bail;
+			}
+			if (*str == '\0') {
+				break;
+			}
+		} else {
+			buf[i] = *str;
+			i++;
+		}
+
+		str++;
+	}
+
+	return found;
+
+bail:
+	return -(str - levels + 1);
 }
 
 // -----------------------------------------------------------------------

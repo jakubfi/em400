@@ -29,20 +29,21 @@ enum emulog_components {
 	L_TERM, L_WNCH, L_FLOP, L_PNCH, L_PNRD,
 	L_CRK5,
 	L_EM4H,
-	L_MAX
+	L_ALL
 };
 
 extern int emulog_enabled;
 
-int emulog_init(int enabled, char *filename, int level, int pname_offset, int cpu_mod);
+int emulog_init(int enabled, char *filename, char *levels, int pname_offset, int cpu_mod);
 void emulog_shutdown();
 
-void emulog_enable();
+int emulog_enable();
 void emulog_disable();
 int emulog_is_enabled();
 
-int emulog_set_level(int component, unsigned level);
+int emulog_set_level(unsigned component, unsigned level);
 int emulog_get_level(unsigned component);
+int emulog_setup_levels(char *levels);
 int emulog_wants(unsigned component, unsigned level);
 
 char * emulog_get_component_name(unsigned component);

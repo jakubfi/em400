@@ -50,7 +50,7 @@ char verr[128];
 %token IRZ
 %token <value> F_QUIT F_MEMCL F_MEM F_REGS F_SREGS F_RESET F_STEP F_HELP F_DASM F_TRANS F_LOAD F_MEMCFG F_BRK F_RUN F_STACK F_EMULOG F_SCRIPT F_WATCH F_DECODE F_FIND F_TIMER
 %token ADD DEL TEST
-%token ON OFF LEVEL
+%token ON OFF
 %type <n> expr lval bitfield basemod
 
 %token BF
@@ -194,7 +194,7 @@ command:
 	| F_EMULOG			{ dbg_c_emulog_info(W_CMD); }
 	| F_EMULOG OFF 		{ dbg_c_emulog_disable(W_CMD); }
 	| F_EMULOG ON		{ dbg_c_emulog_enable(W_CMD); }
-	| F_EMULOG NAME ':' VALUE	{ dbg_c_emulog_set_level(W_CMD, $2, $4); }
+	| F_EMULOG NAME '=' VALUE	{ dbg_c_emulog_set_level(W_CMD, $2, $4); }
 	| F_EMULOG error
 	| F_SCRIPT TEXT		{ dbg_c_script_load(W_CMD, $2); }
 	| F_WATCH			{ dbg_c_watch_list(W_CMD, 999999); }

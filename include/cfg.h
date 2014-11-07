@@ -72,7 +72,7 @@ struct cfg_em400_t {
 	int mem_os;
 	int emulog_enabled;
 	char *emulog_file;
-	int emulog_level;
+	char *emulog_levels;
 	int emulog_pname_offset;
 
 	struct cfg_chan_t *chans;

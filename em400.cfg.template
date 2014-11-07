@@ -71,11 +71,22 @@ emulog {
 	# Name of the log file (default: em400.log)
 	file = "em400.log"
 
-	# Initial logging level for all components
-	# Allowed values: 0-9 (default is 0) where 0 means no logging at all
-	# and 9 logs just about everything
-	# (level 9 makes emulation about 100x slower and writes insane amount of data)
-	level = 0
+	# Logging levels are described by a string with the following syntax:
+	#
+	# "<component=level>,<component=level>,..."
+	#
+	# Component is one of:
+	#   em4h - emulator
+	#   reg, mem, cpu, op, int - registers, memory, cpu cycle, instructions, interrupts
+	#   io, mx, px, cchr, cmem - I/O, MULTIX, PLIX, character and memory channel
+	#   term, wnch, flop, pnch, pnrd - terminal, winchester, floppy, tape puncher and reader
+	#   crk5 - CROOK-5
+	#   all - special "component" to set all components' levels to a given value
+	#
+	# Level is an integer from range 0-9, 0 being "do not log" and
+	# "9" being "log insane amount of data" (level 9 can make things slower up to 100x)
+	# default: "all=0,em4h=1"
+	levels = "all=0,em4h=1"
 
 	# If you run CROOK operating system within em400 and
 	# want emulog to log active process name, set this

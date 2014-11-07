@@ -40,7 +40,7 @@ int cyylex(void);
 %token COMPUTER CHANNEL UNIT
 %token SPEED_REAL TIMER_STEP TIMER_START CPU_MOD CPU_USER_IO_ILLEGAL CPU_AWP
 %token ELWRO MEGA MEGA_PROM MEGA_BOOT OS_SEG CPU_STOP_ON_NOMEM
-%token EMULOG ENABLED LFILE LEVEL PNAME_OFFSET
+%token EMULOG ENABLED LFILE LEVELS PNAME_OFFSET
 %token <value> TEXT STRING
 %token <value> VALUE
 %token <value> BOOL
@@ -109,7 +109,7 @@ emulog_opts:
 emulog_opt:
 	ENABLED '=' BOOL { em400_cfg.emulog_enabled = $3.v; free($3.s); }
 	| LFILE '=' STRING { free(em400_cfg.emulog_file); em400_cfg.emulog_file = $3.s; }
-	| LEVEL '=' VALUE { em400_cfg.emulog_level = $3.v; free($3.s); }
+	| LEVELS '=' STRING { free(em400_cfg.emulog_levels); em400_cfg.emulog_levels = $3.s; }
 	| PNAME_OFFSET '=' VALUE { em400_cfg.emulog_pname_offset = $3.v; free($3.s); }
 	;
 %%
