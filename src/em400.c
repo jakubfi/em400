@@ -129,22 +129,32 @@ void em400_init()
 // -----------------------------------------------------------------------
 void em400_usage()
 {
-	printf("Usage: em400 [option] ...\n");
-	printf("\nOptions:\n");
-	printf("   -h           : display help\n");
-	printf("   -c config    : use given config file instead of defaults\n");
-	printf("   -p program   : load program image into OS memory\n");
-	printf("   -k value     : set keys to given value\n");
-	printf("   -e           : terminate emulation on HLT >= 040\n");
-	printf("   -b           : benchmark emulator\n");
-	printf("   -v           : enable verbose messages\n");
+	printf(
+		"Usage: em400 [option] ...\n"
+		"\n"
+		"Options:\n"
+		"   -h           : display help\n"
+		"   -c config    : use given config file instead of defaults\n"
+		"   -p program   : load program image into OS memory\n"
+		"   -l levels    : enable logging with given levels\n"
+		"                  levels syntax: component=level[,component=level[,..]]\n"
+		"                  components: reg, mem, cpu, op, int, io, mx, px, cchar, cmem,\n"
+		"                              term, wnch, flop, pnch, pnrd, crk5, em4h, all\n"
+		"                  level: 0-9\n"
+		"   -L           : disable logging\n"
+		"   -k value     : set keys to given value\n"
+		"   -e           : terminate emulation on HLT >= 040\n"
+		"   -b           : benchmark emulator\n"
+		"   -v           : enable verbose messages\n"
 #ifdef WITH_DEBUGGER
-	printf("\nDebuger-only options:\n");
-	printf("   -s           : use simple debugger interface\n");
-	printf("   -l script    : load and execute script on startup\n");
-	printf("   -t test_expr : execute expression when program halts (implies -e -s)\n");
-	printf("   -x pre_expr  : execute expression on emulator startup\n");
+		"\n"
+		"Debuger-only options:\n"
+		"   -s           : use simple debugger interface\n"
+		"   -r script    : load and execute script on startup\n"
+		"   -t test_expr : execute expression when program halts (implies -e -s)\n"
+		"   -x pre_expr  : execute expression on emulator startup\n"
 #endif
+	);
 }
 
 // -----------------------------------------------------------------------
@@ -156,8 +166,15 @@ void em400_parse_args(int argc, char **argv)
 	int len;
 #endif
 
-	while ((option = getopt(argc, argv,"bvhec:p:k:l:t:x:s")) != -1) {
+	while ((option = getopt(argc, argv,"bvhec:p:k:rl:Lt:x:s")) != -1) {
 		switch (option) {
+			case 'L':
+				em400_cfg.emulog_enabled = 0;
+				break;
+			case 'l':
+				em400_cfg.emulog_enabled = 1;
+				em400_cfg.emulog_levels = strdup(optarg);
+				break;
 			case 'b':
 				em400_cfg.benchmark = 1;
 				break;
@@ -192,7 +209,7 @@ void em400_parse_args(int argc, char **argv)
 				strcpy(em400_cfg.test_expr, optarg);
 				strcpy(em400_cfg.test_expr + len, "\n\0");
 				break;
-			case 'l':
+			case 'r':
 				script_name = strdup(optarg);
 				break;
 			case 'x':
@@ -306,6 +323,8 @@ int main(int argc, char** argv)
 	}
 
 	// TODO: order needs to be changed: em400.cfg comes first, then commandline overrides
+	// we can't do it now, because commandline may specify -c <config>, which needs to
+	// be parsed first
 	em400_parse_args(argc, argv);
 	em400_configure();
 	cfg_print();
