@@ -29,6 +29,8 @@
 #include "utils.h"
 #include "debugger/awin.h"
 
+SCREEN *s;
+
 int aw_attr[64];
 int aw_output;
 char *aw_hist_file;
@@ -55,6 +57,7 @@ void aw_rl_history_read(char *hist_file)
 			break;
 		}
 		if (*b == '\n') {
+			*b = '\0';
 			aw_nc_rl_history_add(buf, b-buf);
 			b = buf;
 		} else {
@@ -121,7 +124,9 @@ int aw_init(int output, char *history)
 
 	NCCHECK 0;
 
-	initscr();
+	//initscr();
+	s = newterm(NULL, stdout, stdin);
+	set_term(s);
 	cbreak();
 	noecho();
 	start_color();
@@ -132,14 +137,17 @@ int aw_init(int output, char *history)
 void aw_shutdown()
 {
 	aw_write_history();
+
 	if (aw_output != O_NCURSES) {
 		clear_history();
-		return;
+	} else {
+		aw_nc_rl_history_delete(aw_history);
+		aw_layout_remove();
+		aw_containers_all_delete(aw_containers);
+		endwin();
+		delscreen(s);
 	}
-	aw_nc_rl_history_delete(aw_history);
-	aw_layout_remove();
-	aw_containers_all_delete(aw_containers);
-	endwin();
+
 	free(aw_hist_file);
 }
 
