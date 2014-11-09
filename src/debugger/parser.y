@@ -23,7 +23,7 @@
 #include "cpu/registers.h"
 #include "mem/mem.h"
 #include "utils.h"
-#include "emulog.h"
+#include "log.h"
 
 #include "debugger/dasm.h"
 #include "debugger/debugger.h"
@@ -48,7 +48,7 @@ char verr[128];
 %token ':' '&' '|' '(' ')'
 %token HEX OCT BIN INT UINT
 %token IRZ
-%token <value> F_QUIT F_MEMCL F_MEM F_REGS F_SREGS F_RESET F_STEP F_HELP F_DASM F_TRANS F_LOAD F_MEMCFG F_BRK F_RUN F_STACK F_EMULOG F_SCRIPT F_WATCH F_DECODE F_FIND F_TIMER
+%token <value> F_QUIT F_MEMCL F_MEM F_REGS F_SREGS F_RESET F_STEP F_HELP F_DASM F_TRANS F_LOAD F_MEMCFG F_BRK F_RUN F_STACK F_LOG F_SCRIPT F_WATCH F_DECODE F_FIND F_TIMER
 %token ADD DEL TEST
 %token ON OFF
 %type <n> expr lval bitfield basemod
@@ -191,11 +191,11 @@ command:
 	| F_BRK OFF			{ dbg_c_brk_disable_all(W_CMD, 1); }
 	| F_BRK ON			{ dbg_c_brk_disable_all(W_CMD, 0); }
 	| F_BRK error
-	| F_EMULOG			{ dbg_c_emulog_info(W_CMD); }
-	| F_EMULOG OFF 		{ dbg_c_emulog_disable(W_CMD); }
-	| F_EMULOG ON		{ dbg_c_emulog_enable(W_CMD); }
-	| F_EMULOG NAME '=' VALUE	{ dbg_c_emulog_set_level(W_CMD, $2, $4); }
-	| F_EMULOG error
+	| F_LOG				{ dbg_c_log_info(W_CMD); }
+	| F_LOG OFF 		{ dbg_c_log_disable(W_CMD); }
+	| F_LOG ON			{ dbg_c_log_enable(W_CMD); }
+	| F_LOG NAME '=' VALUE	{ dbg_c_log_set_level(W_CMD, $2, $4); }
+	| F_LOG error
 	| F_SCRIPT TEXT		{ dbg_c_script_load(W_CMD, $2); }
 	| F_WATCH			{ dbg_c_watch_list(W_CMD, 999999); }
 	| F_WATCH ADD expr	{

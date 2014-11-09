@@ -30,7 +30,7 @@
 #include "cfg.h"
 #include "utils.h"
 #include "errors.h"
-#include "emulog.h"
+#include "log.h"
 
 int P;
 uint32_t N;
@@ -168,7 +168,7 @@ int cpu_ctx_switch(uint16_t arg, uint16_t ic, uint16_t sr_mask)
 	regs[R_IC] = ic;
 	regs[R_SR] &= sr_mask;
 	int_update_mask();
-	EMULOGCPU(L_CPU, 3, "ctx switch, IC = 0x%04x", ic);
+	LOGCPU(L_CPU, 3, "ctx switch, IC = 0x%04x", ic);
 	return 1;
 }
 
@@ -181,7 +181,7 @@ int cpu_ctx_restore()
 	if (!mem_cpu_get(0, 97, &sp)) return 0;
 	if (!mem_cpu_get(0, sp-4, &data)) return 0;
 	regs[R_IC] = data;
-	EMULOGCPU(L_CPU, 3, "ctx restore, IC = 0x%04x", data);
+	LOGCPU(L_CPU, 3, "ctx restore, IC = 0x%04x", data);
 	if (!mem_cpu_get(0, sp-3, &data)) return 0;
 	regs[0] = data;
 	if (!mem_cpu_get(0, sp-2, &data)) return 0;
@@ -197,14 +197,14 @@ void cpu_step()
 	struct em400_op *op;
 	uint16_t data;
 
-	if (EMULOG_ENABLED) {
-		emulog_store_cycle_state(regs[R_SR], regs[R_IC]);
+	if (LOG_ENABLED) {
+		log_store_cycle_state(regs[R_SR], regs[R_IC]);
 	}
 
 	// fetch instruction
 	if (!mem_cpu_get(QNB, regs[R_IC], regs+R_IR)) {
 		regs[R_MODc] = regs[R_MOD] = 0;
-		EMULOGCPU(L_CPU, 2, "        (NO MEM: instruction fetch)");
+		LOGCPU(L_CPU, 2, "        (NO MEM: instruction fetch)");
 		return;
 	}
 	regs[R_IC]++;
@@ -215,7 +215,7 @@ void cpu_step()
 
 	// end cycle if P is set
 	if (P) {
-		EMULOGCPU(L_CPU, 2, "    (skip)");
+		LOGCPU(L_CPU, 2, "    (skip)");
 		P = 0;
 		// skip also M-arg if present
 		if (op->norm_arg && !IR_C) regs[R_IC]++;
@@ -228,7 +228,7 @@ void cpu_step()
 			N = regs[IR_C] + regs[R_MOD];
 		} else {
 			if (!mem_cpu_get(QNB, regs[R_IC], &data)) {
-				EMULOGCPU(L_CPU, 2, "    (no mem: long arg fetch)");
+				LOGCPU(L_CPU, 2, "    (no mem: long arg fetch)");
 				goto finish;
 			} else {
 				N = data + regs[R_MOD];
@@ -240,7 +240,7 @@ void cpu_step()
 		}
 		if (IR_D) {
 			if (!mem_cpu_get(QNB, N, &data)) {
-				EMULOGCPU(L_CPU, 2, "    (no mem: indirect arg fetch)");
+				LOGCPU(L_CPU, 2, "    (no mem: indirect arg fetch)");
 				goto finish;
 			} else {
 				N = data;
@@ -250,8 +250,8 @@ void cpu_step()
 		N = (uint16_t) IR_T + (uint16_t) regs[R_MOD];
 	}
 
-	if (EMULOG_WANTS(L_CPU, 2)) {
-		emulog_log_dasm(L_CPU, 2, regs[R_MOD], op->norm_arg, op->short_arg, N);
+	if (LOG_WANTS(L_CPU, 2)) {
+		log_log_dasm(L_CPU, 2, regs[R_MOD], op->norm_arg, op->short_arg, N);
 	}
 
 	// execute instruction

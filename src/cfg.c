@@ -70,11 +70,11 @@ struct cfg_em400_t * cfg_create_default()
 	cfg->mem_mega_boot = 0;
 	cfg->mem_os = 2;
 
-	// emulog
-	cfg->emulog_enabled = 0;
-	cfg->emulog_file = strdup("em400.log");
-	cfg->emulog_levels = NULL;
-	cfg->emulog_pname_offset = 0;
+	// log
+	cfg->log_enabled = 0;
+	cfg->log_file = strdup("em400.log");
+	cfg->log_levels = NULL;
+	cfg->log_pname_offset = 0;
 
 	// I/O
 	cfg->chans = NULL;
@@ -100,8 +100,8 @@ void cfg_destroy(struct cfg_em400_t *cfg)
 
 	free(cfg->mem_mega_prom);
 
-	free(cfg->emulog_file);
-	free(cfg->emulog_levels);
+	free(cfg->log_file);
+	free(cfg->log_levels);
 
 	cfg_drop_chans(cfg->chans);
 
@@ -126,11 +126,11 @@ struct cfg_em400_t * cfg_from_args(int argc, char **argv)
 	while ((option = getopt(argc, argv,"bvhec:p:k:rl:Lt:x:s")) != -1) {
 		switch (option) {
 			case 'L':
-				cfg->emulog_enabled = 0;
+				cfg->log_enabled = 0;
 				break;
 			case 'l':
-				cfg->emulog_enabled = 1;
-				cfg->emulog_levels = strdup(optarg);
+				cfg->log_enabled = 1;
+				cfg->log_levels = strdup(optarg);
 				break;
 			case 'b':
 				cfg->benchmark = 1;
@@ -256,11 +256,11 @@ struct cfg_em400_t * cfg_overlay(struct cfg_em400_t *a, struct cfg_em400_t *b)
 	CHI(mem_mega_boot);
 	CHI(mem_os);
 
-	// emulog
-	CHI(emulog_enabled);
-	CHS(emulog_file);
-	CHS(emulog_levels);
-	CHI(emulog_pname_offset);
+	// log
+	CHI(log_enabled);
+	CHS(log_file);
+	CHS(log_levels);
+	CHI(log_pname_offset);
 
 	// I/O
 	if (b->chans != def->chans) {

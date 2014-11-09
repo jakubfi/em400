@@ -41,7 +41,7 @@
 #include "debugger/ui.h"
 #endif
 
-#include "emulog.h"
+#include "log.h"
 
 int em400_console = CONSOLE_NONE;
 int em400_state = STATE_WORK;
@@ -56,7 +56,7 @@ void em400_shutdown()
 	io_shutdown();
 	cpu_shutdown();
 	mem_shutdown();
-	emulog_shutdown();
+	log_shutdown();
 }
 
 // -----------------------------------------------------------------------
@@ -76,9 +76,9 @@ void em400_init(struct cfg_em400_t *cfg)
 {
 	int res;
 
-	res = emulog_init(cfg);
+	res = log_init(cfg);
 	if (res != E_OK) {
-		em400_exit_error(res, "Error initializing emulog");
+		em400_exit_error(res, "Error initializing logging");
 	}
 
 #ifdef WITH_DEBUGGER

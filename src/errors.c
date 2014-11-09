@@ -93,7 +93,7 @@ char * get_error(int e)
 // -----------------------------------------------------------------------
 void eprint(char *format, ...)
 {
-	// will be moved to emulog
+	// will be moved to log
 	return;
 	va_list ap;
 	va_start(ap, format);

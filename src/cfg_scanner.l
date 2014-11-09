@@ -52,7 +52,7 @@ mem_mega_boot	return MEGA_BOOT;
 cpu_stop_on_nomem return CPU_STOP_ON_NOMEM;
 mem_os_segments	return OS_SEG;
 
-emulog			return EMULOG;
+log				return LOG;
 enabled			return ENABLED;
 file			return LFILE;
 levels			return LEVELS;

@@ -66,10 +66,10 @@ struct cfg_em400_t {
 	int mem_mega_boot;
 	int cpu_stop_on_nomem;
 	int mem_os;
-	int emulog_enabled;
-	char *emulog_file;
-	char *emulog_levels;
-	int emulog_pname_offset;
+	int log_enabled;
+	char *log_file;
+	char *log_levels;
+	int log_pname_offset;
 
 	struct cfg_chan_t *chans;
 

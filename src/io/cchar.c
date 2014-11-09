@@ -30,7 +30,7 @@
 #include "cfg.h"
 #include "errors.h"
 
-#include "emulog.h"
+#include "log.h"
 
 #define CHAN ((struct cchar_chan_t *)(chan))
 
@@ -134,7 +134,7 @@ void cchar_int_report(struct cchar_chan_t *chan)
 		if ((CHAN->int_unit[unit_n] != CCHAR_INT_NONE) && !CHAN->int_mask) {
 			chan->int_reported = unit_n;
 			pthread_mutex_unlock(&CHAN->int_mutex);
-			EMULOG(L_CHAR, 3, "CCHAR (ch:%i) reporting interrupt %i", chan->proto.num, chan->proto.num + 12);
+			LOG(L_CHAR, 3, "CCHAR (ch:%i) reporting interrupt %i", chan->proto.num, chan->proto.num + 12);
 			int_set(chan->proto.num + 12);
 			break;
 		} else {
@@ -146,7 +146,7 @@ void cchar_int_report(struct cchar_chan_t *chan)
 // -----------------------------------------------------------------------
 void cchar_int(struct cchar_chan_t *chan, int unit_n, int interrupt)
 {
-	EMULOG(L_CHAR, 1, "CCHAR (ch:%i) interrupt %i, unit: %i", chan->proto.num, interrupt, unit_n);
+	LOG(L_CHAR, 1, "CCHAR (ch:%i) interrupt %i, unit: %i", chan->proto.num, interrupt, unit_n);
 	pthread_mutex_lock(&CHAN->int_mutex);
 	CHAN->int_unit[unit_n] = interrupt;
 	pthread_mutex_unlock(&CHAN->int_mutex);
@@ -157,7 +157,7 @@ void cchar_int(struct cchar_chan_t *chan, int unit_n, int interrupt)
 // -----------------------------------------------------------------------
 int cchar_cmd_intspec(struct chan_proto_t *chan, uint16_t *r_arg)
 {
-	EMULOG(L_CHAR, 1, "CCHAR (ch:%i) command: intspec", chan->num);
+	LOG(L_CHAR, 1, "CCHAR (ch:%i) command: intspec", chan->num);
 	pthread_mutex_lock(&CHAN->int_mutex);
 	if (CHAN->int_reported != -1) {
 		*r_arg = (CHAN->int_unit[CHAN->int_reported] << 8) | (CHAN->int_reported << 5);
@@ -183,22 +183,22 @@ int cchar_chan_cmd(struct chan_proto_t *chan, int dir, int cmd, int u_num, uint1
 	if (dir == IO_OU) {
 		switch (cmd) {
 		case CHAN_CMD_EXISTS:
-			EMULOG(L_CHAR, 1, "CCHAR %i (%s): command: check chan exists", chan->num, chan->name);
+			LOG(L_CHAR, 1, "CCHAR %i (%s): command: check chan exists", chan->num, chan->name);
 			break;
 		case CHAN_CMD_MASK_PN:
 			CHAN->int_mask = 1;
-			EMULOG(L_CHAR, 1, "CCHAR %i (%s): command: mask CPU", chan->num, chan->name);
+			LOG(L_CHAR, 1, "CCHAR %i (%s): command: mask CPU", chan->num, chan->name);
 			break;
 		case CHAN_CMD_MASK_NPN:
-			EMULOG(L_CHAR, 1, "CCHAR %i (%s): command: mask ~CPU -> ignored", chan->num, chan->name);
+			LOG(L_CHAR, 1, "CCHAR %i (%s): command: mask ~CPU -> ignored", chan->num, chan->name);
 			// ignore 2nd CPU
 			break;
 		case CHAN_CMD_ASSIGN:
-			EMULOG(L_CHAR, 1, "CCHAR %i (%s:%s): command: assign CPU -> ignored", chan->num, u_num, chan->name);
+			LOG(L_CHAR, 1, "CCHAR %i (%s:%s): command: assign CPU -> ignored", chan->num, u_num, chan->name);
 			// always for CPU 0
 			break;
 		default:
-			EMULOG(L_CHAR, 1, "CCHAR %i:%i (%s): unknow command", chan->num, u_num, chan->name);
+			LOG(L_CHAR, 1, "CCHAR %i:%i (%s): unknow command", chan->num, u_num, chan->name);
 			// shouldn't happen, but as channel always reports OK...
 			break;
 		}
@@ -206,17 +206,17 @@ int cchar_chan_cmd(struct chan_proto_t *chan, int dir, int cmd, int u_num, uint1
 		switch (cmd) {
 		case CHAN_CMD_EXISTS:
 		case CHAN_CMD_STATUS:
-			EMULOG(L_CHAR, 1, "CCHAR %i (%s): command: check chan exists", chan->num, chan->name);
+			LOG(L_CHAR, 1, "CCHAR %i (%s): command: check chan exists", chan->num, chan->name);
 			break;
 		case CHAN_CMD_INTSPEC:
 			return cchar_cmd_intspec(chan, r_arg);
 		case CHAN_CMD_ALLOC:
 			// all units always working with CPU 0
 			*r_arg = 0;
-			EMULOG(L_CHAR, 1, "CCHAR %i:%i (%s): command: get allocation -> %i", chan->num, u_num, chan->name, *r_arg);
+			LOG(L_CHAR, 1, "CCHAR %i:%i (%s): command: get allocation -> %i", chan->num, u_num, chan->name, *r_arg);
 			break;
 		default:
-			EMULOG(L_CHAR, 1, "CCHAR %i:%i (%s): unknow command", chan->num, u_num, chan->name);
+			LOG(L_CHAR, 1, "CCHAR %i:%i (%s): unknow command", chan->num, u_num, chan->name);
 			// shouldn't happen, but as channel always reports OK...
 			break;
 		}

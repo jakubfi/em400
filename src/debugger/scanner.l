@@ -86,7 +86,7 @@ trans	{ BEGIN(args); return F_TRANS; }
 mem		{ BEGIN(args); return F_MEM; }
 load	{ BEGIN(texts); return F_LOAD; }
 brk		{ BEGIN(opts); return F_BRK; }
-emulog	{ BEGIN(opts); return F_EMULOG; }
+log		{ BEGIN(opts); return F_LOG; }
 script	{ BEGIN(texts); return F_SCRIPT; }
 watch	{ BEGIN(opts); return F_WATCH; }
 decode	{ BEGIN(opts); return F_DECODE; }

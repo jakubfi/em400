@@ -40,7 +40,7 @@
 #include "debugger/decode.h"
 #endif
 
-#include "emulog.h"
+#include "log.h"
 
 #define CHAN ((struct mx_chan_t *)(chan))
 
@@ -266,7 +266,7 @@ void mx_shutdown(struct chan_proto_t *chan)
 // -----------------------------------------------------------------------
 void mx_reset(struct chan_proto_t *chan)
 {
-	EMULOG(L_MX, 1, "MULTIX (ch:%i) command: reset", chan->num);
+	LOG(L_MX, 1, "MULTIX (ch:%i) command: reset", chan->num);
 	for (int i=0 ; i<MX_MAX_DEVICES ; i++) {
 		struct mx_unit_proto_t *punit = CHAN->pline[i];
 		if (punit) {
@@ -285,7 +285,7 @@ void mx_int_report(struct mx_chan_t *chan)
 {
 	// note: called in locked state
 	if (CHAN->int_head) {
-		EMULOG(L_MX, 3, "MULTIX (ch:%i) reporting interrupt %i", chan->proto.num, chan->proto.num + 12);
+		LOG(L_MX, 3, "MULTIX (ch:%i) reporting interrupt %i", chan->proto.num, chan->proto.num + 12);
 		int_set(chan->proto.num + 12);
 	}
 }
@@ -295,7 +295,7 @@ void mx_int(struct mx_chan_t *chan, int unit_n, int interrupt)
 {
 	struct mx_int_t *mx_int = malloc(sizeof(struct mx_int_t));
 	if (!mx_int) {
-		EMULOG(L_MX, 1, "MULTIX (ch:%i) cannot allocate memory for interrupt, interrupt LOST: spec:%i, unit: %i", chan->proto.num, interrupt, unit_n);
+		LOG(L_MX, 1, "MULTIX (ch:%i) cannot allocate memory for interrupt, interrupt LOST: spec:%i, unit: %i", chan->proto.num, interrupt, unit_n);
 		return;
 	}
 
@@ -303,7 +303,7 @@ void mx_int(struct mx_chan_t *chan, int unit_n, int interrupt)
 	mx_int->interrupt = interrupt;
 	mx_int->next = NULL;
 
-	EMULOG(L_MX, 1, "MULTIX (ch:%i) interrupt spec:%i, unit: %i", chan->proto.num, interrupt, unit_n);
+	LOG(L_MX, 1, "MULTIX (ch:%i) interrupt spec:%i, unit: %i", chan->proto.num, interrupt, unit_n);
 
 	pthread_mutex_lock(&CHAN->int_mutex);
 
@@ -395,7 +395,7 @@ int mx_cmd_intspec(struct chan_proto_t *chan, uint16_t *r_arg)
 	struct mx_int_t *inth = mx_int_deq(CHAN);
 	pthread_mutex_unlock(&CHAN->int_mutex);
 
-	EMULOG(L_MX, 2, "MULTIX (ch:%i) command: intspec: int:%i unit:%i", chan->num, inth->interrupt, inth->unit_n);
+	LOG(L_MX, 2, "MULTIX (ch:%i) command: intspec: int:%i unit:%i", chan->num, inth->interrupt, inth->unit_n);
 	if (inth) {
 		*r_arg = (inth->interrupt << 8) | (inth->unit_n);
 		free(inth);
@@ -413,7 +413,7 @@ int mx_cmd_intspec(struct chan_proto_t *chan, uint16_t *r_arg)
 // -----------------------------------------------------------------------
 int mx_cmd_test(struct chan_proto_t *chan, unsigned param, uint16_t *r_arg)
 {
-	EMULOG(L_MX, 1, "MULTIX (ch:%i) command: test", chan->num);
+	LOG(L_MX, 1, "MULTIX (ch:%i) command: test", chan->num);
 	mx_int(CHAN, 0, MX_INT_IWYTE);
 	return IO_OK;
 }
@@ -421,14 +421,14 @@ int mx_cmd_test(struct chan_proto_t *chan, unsigned param, uint16_t *r_arg)
 // -----------------------------------------------------------------------
 int mx_cmd_setcfg(struct chan_proto_t *chan, uint16_t *r_arg)
 {
-	EMULOG(L_MX, 1, "MULTIX (ch:%i) command: setcfg", chan->num);
+	LOG(L_MX, 1, "MULTIX (ch:%i) command: setcfg", chan->num);
 	// return field address
 	uint16_t retf_addr = *r_arg + 1;
 	uint16_t retf;
 
 	// fail, if configuration is already set
 	if (CHAN->confset) {
-		EMULOG(L_MX, 1, "MULTIX setconf error: configuration already set");
+		LOG(L_MX, 1, "MULTIX setconf error: configuration already set");
 		mem_put(0, retf_addr, MX_SC_E_CONFSET << 8);
 		mx_int(CHAN, 0, MX_INT_INKON);
 		return IO_OK;
@@ -448,7 +448,7 @@ int mx_cmd_setcfg(struct chan_proto_t *chan, uint16_t *r_arg)
 	// decode cf field
 	int res = mx_decode_cf_sc(*r_arg, cf);
 
-	if (EMULOG_WANTS(L_MX, 5)) {
+	if (LOG_WANTS(L_MX, 5)) {
 		char *details;
 #ifdef WITH_DEBUGGER
 		details = decode_mxpsuk(0, *r_arg, 0);
@@ -456,13 +456,13 @@ int mx_cmd_setcfg(struct chan_proto_t *chan, uint16_t *r_arg)
 		details = malloc(128);
 		sprintf(details, "[details missing]");
 #endif
-		emulog_splitlog(L_MX, 5, details);
+		log_splitlog(L_MX, 5, details);
 		free(details);
 	}
 
 	// decoding failed
 	if (res != E_OK) {
-		EMULOG(L_MX, 1, "MULTIX setconf error: decode failed (error: %i, line: %i)", cf->err_code, cf->err_line);
+		LOG(L_MX, 1, "MULTIX setconf error: decode failed (error: %i, line: %i)", cf->err_code, cf->err_line);
 		retf = (cf->err_code << 8) | cf->err_line;
 		mem_put(0, retf_addr, retf);
 		mx_int(CHAN, 0, MX_INT_INKON);
@@ -484,13 +484,13 @@ int mx_cmd_setcfg(struct chan_proto_t *chan, uint16_t *r_arg)
 			unit = CHAN->pline[unit_n];
 			if (unit) {
 				res = unit->cfg_phy(unit, phy);
-				EMULOG(L_MX, 1, "Physical line %i (type: %i) configured", unit_n, unit->type);
+				LOG(L_MX, 1, "Physical line %i (type: %i) configured", unit_n, unit->type);
 			} else {
 				// if device, that OS tries to configure, is not configured in emulator,
 				// physical/logical configuration is lost.
 				// TODO: this needs to change when dynamic device configuration is added
 				// we would need to use create_nodev() and later in unit code check if device is connected
-				EMULOG(L_MX, 1, "Physical line %i NOT configured (missing in em400 configuration)", unit_n);
+				LOG(L_MX, 1, "Physical line %i NOT configured (missing in em400 configuration)", unit_n);
 			}
 		}
 	}
@@ -503,17 +503,17 @@ int mx_cmd_setcfg(struct chan_proto_t *chan, uint16_t *r_arg)
 			res = unit->cfg_log(unit, log);
 			CHAN->lline[i] = unit;
 			unit->log_num = i;
-			EMULOG(L_MX, 1, "Logical line %i configured (physical: %i, protocol: %i)", i, log->pl_id, log->proto);
+			LOG(L_MX, 1, "Logical line %i configured (physical: %i, protocol: %i)", i, log->pl_id, log->proto);
 		} else {
 			// no logical line, no physical line, as above
-			EMULOG(L_MX, 1, "Logical line %i NOT configured (physical line missing in em400 configuration)", i);
+			LOG(L_MX, 1, "Logical line %i NOT configured (physical line missing in em400 configuration)", i);
 		}
 	}
 
 	mx_int(CHAN, 0, MX_INT_IUKON);
 	mx_free_cf_sc(cf);
 
-	EMULOG(L_MX, 1, "MULTIX configuration set");
+	LOG(L_MX, 1, "MULTIX configuration set");
 
 	return IO_OK;
 }
@@ -542,7 +542,7 @@ int mx_cmd_forward(struct chan_proto_t *chan, int cmd, int lline_n, uint16_t add
 	}
 
 	int busy = pthread_mutex_trylock(&unit->worker_mutex);
-	EMULOG(L_MX, 3, "MULTIX line %i: worker status: %s", unit->log_num, busy?"busy":"free");
+	LOG(L_MX, 3, "MULTIX line %i: worker status: %s", unit->log_num, busy?"busy":"free");
 
 	// line busy ('cancel' is handled separately)
 	if (busy && mx_cmd_int[cmd].int_line_busy) {
@@ -621,7 +621,7 @@ void * mx_unit_worker(void *th_id)
 		// wait for command
 		pthread_mutex_lock(&unit->worker_mutex);
 		while (unit->worker_cmd <= 0) {
-			EMULOG(L_MX, 3, "MULTIX line %i: worker waiting for job...", unit->log_num);
+			LOG(L_MX, 3, "MULTIX line %i: worker waiting for job...", unit->log_num);
 			pthread_cond_wait(&unit->worker_cond, &unit->worker_mutex);
 		}
 
@@ -649,18 +649,18 @@ void * mx_unit_worker(void *th_id)
 		}
 
 		unit->worker_cmd = 0;
-		EMULOG(L_MX, 3, "MULTIX line %i: worker done", unit->log_num);
+		LOG(L_MX, 3, "MULTIX line %i: worker done", unit->log_num);
 		pthread_mutex_unlock(&unit->worker_mutex);
 	}
 
-	EMULOG(L_MX, 3, "MULTIX line %i: exiting worker loop", unit->log_num);
+	LOG(L_MX, 3, "MULTIX line %i: exiting worker loop", unit->log_num);
 	pthread_exit(NULL);
 }
 
 // -----------------------------------------------------------------------
 int mx_cmd_illegal(struct chan_proto_t *chan, int lline_n, int interrupt)
 {
-	EMULOG(L_MX, 1, "MULTIX (ch:%i, line:%i) command: illegal command, reporting int: %d", chan->num, lline_n, interrupt);
+	LOG(L_MX, 1, "MULTIX (ch:%i, line:%i) command: illegal command, reporting int: %d", chan->num, lline_n, interrupt);
 	mx_int(CHAN, 0, interrupt);
 	return IO_OK;
 }
@@ -678,13 +678,13 @@ int mx_cmd(struct chan_proto_t *chan, int dir, uint16_t n_arg, uint16_t *r_arg)
 		case MX_CMD_TEST:
 			return mx_cmd_test(chan, lline_n, r_arg);
 		case MX_CMD_ATTACH:
-			EMULOG(L_MX, 1, "MULTIX (ch:%i, line:%i) command: attach", chan->num, lline_n);
+			LOG(L_MX, 1, "MULTIX (ch:%i, line:%i) command: attach", chan->num, lline_n);
 			return mx_cmd_forward(chan, cmd, lline_n, *r_arg);
 		case MX_CMD_STATUS:
-			EMULOG(L_MX, 1, "MULTIX (ch:%i, line:%i) command: status", chan->num, lline_n);
+			LOG(L_MX, 1, "MULTIX (ch:%i, line:%i) command: status", chan->num, lline_n);
 			return mx_cmd_status(chan, lline_n, *r_arg);
 		case MX_CMD_TRANSMIT:
-			EMULOG(L_MX, 1, "MULTIX (ch:%i, line:%i) command: transmit", chan->num, lline_n);
+			LOG(L_MX, 1, "MULTIX (ch:%i, line:%i) command: transmit", chan->num, lline_n);
 			return mx_cmd_forward(chan, cmd, lline_n, *r_arg);
 		case MX_CMD_SETCFG:
 			return mx_cmd_setcfg(chan, r_arg);
@@ -709,10 +709,10 @@ int mx_cmd(struct chan_proto_t *chan, int dir, uint16_t n_arg, uint16_t *r_arg)
 		case MX_CMD_INTRQ:
 			return mx_cmd_int_requeue(chan);
 		case MX_CMD_DETACH:
-			EMULOG(L_MX, 1, "MULTIX (ch:%i, line:%i) command: detach", chan->num, lline_n);
+			LOG(L_MX, 1, "MULTIX (ch:%i, line:%i) command: detach", chan->num, lline_n);
 			return mx_cmd_forward(chan, cmd, lline_n, *r_arg);
 		case MX_CMD_CANCEL:
-			EMULOG(L_MX, 1, "MULTIX (ch:%i, line:%i) command: cancel transmission", chan->num, lline_n);
+			LOG(L_MX, 1, "MULTIX (ch:%i, line:%i) command: cancel transmission", chan->num, lline_n);
 			return mx_cmd_cancel(chan, lline_n);
 		case MX_CMD_ERR_C:
 			return mx_cmd_illegal(chan, lline_n, MX_INT_IEPSC);

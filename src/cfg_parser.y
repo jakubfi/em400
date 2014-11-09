@@ -42,7 +42,7 @@ int cyylex(void);
 %token COMPUTER CHANNEL UNIT
 %token SPEED_REAL TIMER_STEP TIMER_START CPU_MOD CPU_USER_IO_ILLEGAL CPU_AWP
 %token ELWRO MEGA MEGA_PROM MEGA_BOOT OS_SEG CPU_STOP_ON_NOMEM
-%token EMULOG ENABLED LFILE LEVELS PNAME_OFFSET
+%token LOG ENABLED LFILE LEVELS PNAME_OFFSET
 %token <value> TEXT STRING
 %token <value> VALUE
 %token <value> BOOL
@@ -59,7 +59,7 @@ objects:
 
 object:
 	COMPUTER '{' computer_opts '}'
-	| EMULOG '{' emulog_opts '}'
+	| LOG '{' log_opts '}'
 	| CHANNEL VALUE '=' TEXT { cfg_make_chan(cfg, $2.v, $4.s); free($2.s); } '{' units '}'
 	;
 
@@ -103,16 +103,16 @@ computer_opt:
 	| OS_SEG '=' VALUE		{ cfg->mem_os = $3.v; free($3.s); }
 	;
 
-emulog_opts:
-	emulog_opts emulog_opt
+log_opts:
+	log_opts log_opt
 	|
 	;
 
-emulog_opt:
-	ENABLED '=' BOOL { cfg->emulog_enabled = $3.v; free($3.s); }
-	| LFILE '=' STRING { free(cfg->emulog_file); cfg->emulog_file = $3.s; }
-	| LEVELS '=' STRING { free(cfg->emulog_levels); cfg->emulog_levels = $3.s; }
-	| PNAME_OFFSET '=' VALUE { cfg->emulog_pname_offset = $3.v; free($3.s); }
+log_opt:
+	ENABLED '=' BOOL { cfg->log_enabled = $3.v; free($3.s); }
+	| LFILE '=' STRING { free(cfg->log_file); cfg->log_file = $3.s; }
+	| LEVELS '=' STRING { free(cfg->log_levels); cfg->log_levels = $3.s; }
+	| PNAME_OFFSET '=' VALUE { cfg->log_pname_offset = $3.v; free($3.s); }
 	;
 %%
 

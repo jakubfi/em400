@@ -28,7 +28,7 @@
 #include "debugger/debugger.h"
 #endif
 
-#include "emulog.h"
+#include "log.h"
 
 #define RAL(nb, ab) (((nb)<<4) + (ab))
 
@@ -134,16 +134,16 @@ void mem_elwro_seg_set(int nb, int ab, struct mem_slot_t *slot)
 int mem_elwro_cmd(int nb, int ab, int mp, int seg)
 {
 	if (!mem_elwro[mp][seg]) {
-		EMULOG(L_MEM, 1, "Elwro: ignore mapping nonexistent physical segment (%2d, %2d) -> (%2d, %2d)", nb, ab, mp, seg);
+		LOG(L_MEM, 1, "Elwro: ignore mapping nonexistent physical segment (%2d, %2d) -> (%2d, %2d)", nb, ab, mp, seg);
 		return IO_NO;
 	}
 
 	if ((mp == 0) && (seg < mem_elwro_os_segments)) {
-		EMULOG(L_MEM, 1, "Elwro: ignore mapping hardwired segment (%2d, %2d) -> (%2d, %2d)", nb, ab, mp, seg);
+		LOG(L_MEM, 1, "Elwro: ignore mapping hardwired segment (%2d, %2d) -> (%2d, %2d)", nb, ab, mp, seg);
 		return IO_NO;
 	}
 
-	EMULOG(L_MEM, 1, "Elwro: add map (%2d, %2d) -> (%2d, %2d)", nb, ab, mp, seg);
+	LOG(L_MEM, 1, "Elwro: add map (%2d, %2d) -> (%2d, %2d)", nb, ab, mp, seg);
 
 	mem_elwro_ral[mp][seg] = RAL(nb, ab);
 

@@ -30,7 +30,7 @@
 
 #include "errors.h"
 #include "utils.h"
-#include "emulog.h"
+#include "log.h"
 
 #include "debugger/awin.h"
 #include "debugger/dasm.h"
@@ -39,7 +39,6 @@
 #include "debugger/ui.h"
 #include "debugger/parser.h"
 #include "debugger/eval.h"
-#include "emulog.h"
 #include "debugger/decode.h"
 
 extern char *script_name;
@@ -61,7 +60,7 @@ struct cmd_t dbg_commands[] = {
 	{ "brk",	F_BRK,		"Manipulate breakpoints", "  brk add <expression>\n  brk del <brk_number>\n  brk" },
 	{ "run",	F_RUN,		"Run emulation", "  run" },
 	{ "stk",	F_STACK,	"Show stack", "  stk" },
-	{ "emulog",	F_EMULOG,	"Enable emulation logging", "  emulog\n  emulog on|off\n  emulog level <component>:<level>" },
+	{ "log",	F_LOG,		"Manipulate logging", "  log\n  log on|off\n  log level <component>:<level>" },
 	{ "script",	F_SCRIPT,	"Load and execute script", "  script <filename>" },
 	{ "watch",	F_WATCH,	"Manipulate expression watches", "  watch add <expression>\n  watch del <watch_number>\n  watch" },
 	{ "decode",	F_DECODE,	"Decode memory structures", "  decode\n  decode <decoder> <address>" },
@@ -514,34 +513,34 @@ void dbg_c_brk_disable_all(int wid, int disable)
 }
 
 // -----------------------------------------------------------------------
-void dbg_c_emulog_info(int wid)
+void dbg_c_log_info(int wid)
 {
 	int i;
 	char *cname;
 
-	awtbprint(wid, C_DATA, "Logging %s\n", emulog_is_enabled() ? "enabled" : "disabled");
+	awtbprint(wid, C_DATA, "Logging %s\n", log_is_enabled() ? "enabled" : "disabled");
 	awtbprint(wid, C_LABEL, "Levels: ");
 
 	for (i=0 ; i < L_ALL ; i++) {
-		cname = emulog_get_component_name(i);
+		cname = log_get_component_name(i);
 		if (cname) {
-			awtbprint(wid, C_DATA, "%s=%i ", cname, emulog_get_level(i));
+			awtbprint(wid, C_DATA, "%s=%i ", cname, log_get_level(i));
 		}
 	}
 	awtbprint(wid, C_LABEL, "\n");
 }
 
 // -----------------------------------------------------------------------
-void dbg_c_emulog_disable(int wid)
+void dbg_c_log_disable(int wid)
 {
-	emulog_disable();
+	log_disable();
 	awtbprint(wid, C_LABEL, "Logging disabled\n");
 }
 
 // -----------------------------------------------------------------------
-void dbg_c_emulog_enable(int wid)
+void dbg_c_log_enable(int wid)
 {
-	int res = emulog_enable();
+	int res = log_enable();
 	if (res == E_OK) {
 		awtbprint(wid, C_LABEL, "Logging enabled\n");
 	} else {
@@ -550,16 +549,16 @@ void dbg_c_emulog_enable(int wid)
 }
 
 // -----------------------------------------------------------------------
-void dbg_c_emulog_set_level(int wid, char *comp_name, int level)
+void dbg_c_log_set_level(int wid, char *comp_name, int level)
 {
 	int c;
 
-	c = emulog_get_component_id(comp_name);
+	c = log_get_component_id(comp_name);
 	if (c < 0) {
 		awtbprint(wid, C_ERROR, "Unknown component: ");
 		awtbprint(wid, C_DATA, "%s", comp_name);
 	} else {
-		emulog_set_level(c, level);
+		log_set_level(c, level);
 		awtbprint(wid, C_LABEL, "Level for component ");
 		awtbprint(wid, C_DATA, "%s ", comp_name);
 		awtbprint(wid, C_LABEL, "set to ");

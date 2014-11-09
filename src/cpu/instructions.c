@@ -29,7 +29,7 @@
 
 #include "cfg.h"
 #include "utils.h"
-#include "emulog.h"
+#include "log.h"
 
 // convenience memory access macros (with "nomem" handling)
 #define mem_ret_get(nb, a, dptr)			    if (!mem_cpu_get(nb, a, dptr)) return;
@@ -39,7 +39,7 @@
 
 #define USER_ILLEGAL \
 	if (Q) { \
-		EMULOGCPU(L_CPU, 2, "    (ineffective: user-illegal instruction)"); \
+		LOGCPU(L_CPU, 2, "    (ineffective: user-illegal instruction)"); \
 		int_set(INT_ILLEGAL_INSTRUCTION); \
 		return; \
 	}
@@ -481,12 +481,12 @@ void op_71_exl()
 {
 	uint16_t data;
 
-	if (EMULOG_ENABLED) {
-		if (emulog_wants(L_OP, 2)) {
-			emulog_log_cpu(L_OP, 2, "EXL: %i (r4: 0x%04x)", IR_b, regs[4]);
+	if (LOG_ENABLED) {
+		if (log_wants(L_OP, 2)) {
+			log_log_cpu(L_OP, 2, "EXL: %i (r4: 0x%04x)", IR_b, regs[4]);
 		}
-		if (emulog_wants(L_CRK5, 2)) {
-			emulog_handle_syscall(L_CRK5, 2, IR_b, NB, regs[R_IC], regs[4]);
+		if (log_wants(L_CRK5, 2)) {
+			log_handle_syscall(L_CRK5, 2, IR_b, NB, regs[R_IC], regs[4]);
 		}
 	}
 
@@ -699,7 +699,7 @@ void op_73_hlt()
 {
 	USER_ILLEGAL;
 
-	EMULOGCPU(L_OP, 1, "HALT 0%02o (alarm: %i)", N, regs[6]&255);
+	LOGCPU(L_OP, 1, "HALT 0%02o (alarm: %i)", N, regs[6]&255);
 
 	// handle hlt>=040 as "exit emulation" if user wants to
 	if (exit_on_hlt && (N >= 040)) {
@@ -724,9 +724,9 @@ void op_73_mcl()
 	io_reset();
 	cpu_mod_off();
 
-	if (EMULOG_ENABLED) {
-		emulog_intlevel_reset();
-		emulog_syscall_reset();
+	if (LOG_ENABLED) {
+		log_intlevel_reset();
+		log_syscall_reset();
 	}
 }
 
@@ -771,9 +771,9 @@ void op_73_lip()
 
 	cpu_ctx_restore();
 
-	if (EMULOG_ENABLED) {
-		emulog_update_pname();
-		emulog_intlevel_dec();
+	if (LOG_ENABLED) {
+		log_update_pname();
+		log_intlevel_dec();
 	}
 }
 
@@ -1005,14 +1005,14 @@ void op_77_sp()
 
 	int_update_mask();
 
-	if (EMULOG_ENABLED) {
-		emulog_update_pname();
-		emulog_intlevel_reset();
-		if (emulog_wants(L_CRK5, 5)) {
-			emulog_handle_sp(L_CRK5, 5, N);
+	if (LOG_ENABLED) {
+		log_update_pname();
+		log_intlevel_reset();
+		if (log_wants(L_CRK5, 5)) {
+			log_handle_sp(L_CRK5, 5, N);
 		}
-		if (emulog_wants(L_CRK5, 2)) {
-			emulog_handle_syscall_ret(L_CRK5, 2, N);
+		if (log_wants(L_CRK5, 2)) {
+			log_handle_syscall_ret(L_CRK5, 2, N);
 		}
 	}
 }
@@ -1021,7 +1021,7 @@ void op_77_sp()
 void op_77_md()
 {
 	if (regs[R_MODc] >= 3) {
-		EMULOGCPU(L_CPU, 2, "    (ineffective: 4th MD)");
+		LOGCPU(L_CPU, 2, "    (ineffective: 4th MD)");
 		int_set(INT_ILLEGAL_INSTRUCTION);
 		regs[R_MOD] = 0;
 		regs[R_MODc] = 0;
@@ -1052,7 +1052,7 @@ void op_77_ib()
 void op_illegal()
 {
 	char *opcode = int2binf("... ... . ... ... ...", regs[R_IR], 16);
-	EMULOGCPU(L_CPU, 2, "    (ineffective: illegal instruction) opcode: %s (0x%04x)", opcode, regs[R_IR]);
+	LOGCPU(L_CPU, 2, "    (ineffective: illegal instruction) opcode: %s (0x%04x)", opcode, regs[R_IR]);
 	free(opcode);
 	int_set(INT_ILLEGAL_INSTRUCTION);
 }

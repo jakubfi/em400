@@ -26,7 +26,7 @@
 #include "io/io.h"
 #include "io/chan.h"
 
-#include "emulog.h"
+#include "log.h"
 
 uint32_t RZ;
 uint32_t RP;
@@ -138,7 +138,7 @@ void int_update_mask()
 // -----------------------------------------------------------------------
 void int_set(int x)
 {
-	EMULOG(L_INT, x != (cpu_mod_active ? INT_EXTRA : INT_TIMER) ? 3 : 9, "Set interrupt: %lld (%s)", x, int_names[x]);
+	LOG(L_INT, x != (cpu_mod_active ? INT_EXTRA : INT_TIMER) ? 3 : 9, "Set interrupt: %lld (%s)", x, int_names[x]);
 	pthread_mutex_lock(&int_mutex);
 	RZ |= INT_BIT(x);
 	int_update_rp();
@@ -157,7 +157,7 @@ void int_clear_all()
 // -----------------------------------------------------------------------
 void int_clear(int x)
 {
-	EMULOG(L_INT, 3, "Clear interrupt: %lld (%s)", x, int_names[x]);
+	LOG(L_INT, 3, "Clear interrupt: %lld (%s)", x, int_names[x]);
 	pthread_mutex_lock(&int_mutex);
 	RZ &= ~INT_BIT(x);
 	int_update_rp();
@@ -167,7 +167,7 @@ void int_clear(int x)
 // -----------------------------------------------------------------------
 void int_put_nchan(uint16_t r)
 {
-	EMULOGCPU(L_INT, 3, "Set non-channel interrupts to: %d", r);
+	LOGCPU(L_INT, 3, "Set non-channel interrupts to: %d", r);
 	pthread_mutex_lock(&int_mutex);
 	RZ = (RZ & 0b00000000000011111111111111110000) | ((r & 0b1111111111110000) << 16) | (r & 0b0000000000001111);
 	int_update_rp();
@@ -210,15 +210,15 @@ void int_serve()
 		io_chan[interrupt-12]->cmd(io_chan[interrupt-12], IO_IN, 1<<11, &int_spec);
 	}
 
-	EMULOGCPU(L_INT, 1, "Serve interrupt: %d (%s, spec: %i) -> 0x%04x / return: 0x%04x", interrupt, int_names[interrupt], int_spec, int_addr, regs[R_IC]);
+	LOGCPU(L_INT, 1, "Serve interrupt: %d (%s, spec: %i) -> 0x%04x / return: 0x%04x", interrupt, int_names[interrupt], int_spec, int_addr, regs[R_IC]);
 
 	// put system status on stack
 	sr_mask = int_int2mask[interrupt] & MASK_Q; // put mask and clear Q
 	if (cpu_mod_active && (interrupt >= 12) && (interrupt <= 27)) sr_mask &= MASK_EX; // put extended mask if cpu_mod
 	if (!cpu_ctx_switch(int_spec, int_addr, sr_mask)) return;
 
-	if (EMULOG_ENABLED) {
-		emulog_intlevel_inc();
+	if (LOG_ENABLED) {
+		log_intlevel_inc();
 	}
 }
 

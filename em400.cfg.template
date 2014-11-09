@@ -62,8 +62,8 @@ computer {
 	mem_os_segments = 2
 }
 
-emulog {
-	# Enable or disable emulation logging.
+log {
+	# Enable or disable logging.
 	# Not recommended for daily usage due to considerable performance requirements.
 	# Allowed values: "true", "false" (default)
 	enabled = false
@@ -89,7 +89,7 @@ emulog {
 	levels = "all=0,em4h=1"
 
 	# If you run CROOK operating system within em400 and
-	# want emulog to log active process name, set this
+	# want to log active process name, set this
 	# to process name offset in the process structure
 	# (it's 52 for "N" kernels and 54 for "P" kernels).
 	# 0 means do not log process name.
