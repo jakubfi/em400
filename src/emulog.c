@@ -27,6 +27,7 @@
 #include <inttypes.h>
 
 #include "emulog.h"
+#include "cfg.h"
 #include "errors.h"
 #include "emdas.h"
 #include "atomic.h"
@@ -106,18 +107,18 @@ uint16_t *mem_ptr(int nb, uint16_t addr);
 static void emulog_log_timestamp(unsigned component, unsigned level, char *msg);
 
 // -----------------------------------------------------------------------
-int emulog_init(int enabled, char *filename, char *levels, int pname_offset, int cpu_mod)
+int emulog_init(struct cfg_em400_t *cfg)
 {
 	int res;
 	int ret = E_ALLOC;
 
-	emulog_file = strdup(filename);
+	emulog_file = strdup(cfg->emulog_file);
 	if (!emulog_file) {
 		ret = E_ALLOC;
 		goto cleanup;
 	}
 
-	if (enabled) {
+	if (cfg->emulog_enabled) {
 		ret = emulog_enable();
 		if (ret != E_OK) {
 			goto cleanup;
@@ -125,9 +126,8 @@ int emulog_init(int enabled, char *filename, char *levels, int pname_offset, int
 	}
 
 	// set up thresholds
-	res = emulog_setup_levels(levels);
+	res = emulog_setup_levels(cfg->emulog_levels);
 	if (res < 0) {
-		printf("ret: %i\n", res);
 		ret = E_LEVELS;
 		goto cleanup;
 	}
@@ -135,7 +135,7 @@ int emulog_init(int enabled, char *filename, char *levels, int pname_offset, int
 	pthread_mutex_init(&emulog_mutex, NULL);
 
 	// initialize deassembler
-	emd = emdas_create(cpu_mod ? EMD_ISET_MX16 : EMD_ISET_MERA400, mem_ptr);
+	emd = emdas_create(cfg->cpu_mod ? EMD_ISET_MX16 : EMD_ISET_MERA400, mem_ptr);
 	if (!emd) {
 		ret = E_DASM;
 		goto cleanup;
@@ -146,7 +146,7 @@ int emulog_init(int enabled, char *filename, char *levels, int pname_offset, int
 	emdas_set_tabs(emd, 0, 0, 0, 0);
 	dasm_buf = emdas_get_buf(emd);
 
-	emulog_pname_offset = pname_offset;
+	emulog_pname_offset = cfg->emulog_pname_offset;
 
 	emulog_initialized = 1;
 

@@ -24,11 +24,13 @@
 
 struct cfg_chan_t *this_chan;
 
-void cyyerror(char *s, ...);
+void cyyerror(struct cfg_em400_t *cfg, char *s, ...);
 int cyylex(void);
 %}
 
 %locations
+%parse-param {struct cfg_em400_t *cfg}
+
 %union {
 	struct value_t {
 		int v;
@@ -58,7 +60,7 @@ objects:
 object:
 	COMPUTER '{' computer_opts '}'
 	| EMULOG '{' emulog_opts '}'
-	| CHANNEL VALUE '=' TEXT { cfg_make_chan($2.v, $4.s); free($2.s); } '{' units '}'
+	| CHANNEL VALUE '=' TEXT { cfg_make_chan(cfg, $2.v, $4.s); free($2.s); } '{' units '}'
 	;
 
 units:
@@ -67,8 +69,8 @@ units:
 	;
 
 unit:
-	UNIT VALUE '=' TEXT ':' arglist	{ cfg_make_unit($2.v, $4.s, $6); free($2.s); }
-	| UNIT VALUE '=' TEXT			{ cfg_make_unit($2.v, $4.s, NULL); free($2.s); }
+	UNIT VALUE '=' TEXT ':' arglist	{ cfg_make_unit(cfg, $2.v, $4.s, $6); free($2.s); }
+	| UNIT VALUE '=' TEXT			{ cfg_make_unit(cfg, $2.v, $4.s, NULL); free($2.s); }
 	;
 
 arglist:
@@ -87,18 +89,18 @@ computer_opts:
 	;
 
 computer_opt:
-	SPEED_REAL '=' BOOL		{ em400_cfg.speed_real = $3.v; free($3.s); }
-	| TIMER_STEP '=' VALUE	{ em400_cfg.timer_step = $3.v; free($3.s); }
-	| TIMER_START '=' BOOL	{ em400_cfg.timer_start = $3.v; free($3.s); }
-	| CPU_MOD '=' BOOL		{ em400_cfg.cpu_mod = $3.v; free($3.s); }
-	| CPU_USER_IO_ILLEGAL '=' BOOL	{ em400_cfg.cpu_user_io_illegal = $3.v; free($3.s); }
-	| CPU_AWP '=' BOOL		{ em400_cfg.cpu_awp = $3.v; free($3.s); }
-	| ELWRO '=' VALUE		{ em400_cfg.mem_elwro = $3.v; free($3.s); }
-	| MEGA '=' VALUE		{ em400_cfg.mem_mega = $3.v; free($3.s); }
-	| MEGA_BOOT '=' BOOL	{ em400_cfg.mem_mega_boot = $3.v; em400_cfg.cpu_stop_on_nomem = 0; free($3.s); }
-	| CPU_STOP_ON_NOMEM '=' BOOL { if (!em400_cfg.mem_mega_boot) em400_cfg.cpu_stop_on_nomem = $3.v ; free($3.s)}
-	| MEGA_PROM '=' STRING	{ em400_cfg.mem_mega_prom = $3.s; }
-	| OS_SEG '=' VALUE		{ em400_cfg.mem_os = $3.v; free($3.s); }
+	SPEED_REAL '=' BOOL		{ cfg->speed_real = $3.v; free($3.s); }
+	| TIMER_STEP '=' VALUE	{ cfg->timer_step = $3.v; free($3.s); }
+	| TIMER_START '=' BOOL	{ cfg->timer_start = $3.v; free($3.s); }
+	| CPU_MOD '=' BOOL		{ cfg->cpu_mod = $3.v; free($3.s); }
+	| CPU_USER_IO_ILLEGAL '=' BOOL	{ cfg->cpu_user_io_illegal = $3.v; free($3.s); }
+	| CPU_AWP '=' BOOL		{ cfg->cpu_awp = $3.v; free($3.s); }
+	| ELWRO '=' VALUE		{ cfg->mem_elwro = $3.v; free($3.s); }
+	| MEGA '=' VALUE		{ cfg->mem_mega = $3.v; free($3.s); }
+	| MEGA_BOOT '=' BOOL	{ cfg->mem_mega_boot = $3.v; cfg->cpu_stop_on_nomem = 0; free($3.s); }
+	| CPU_STOP_ON_NOMEM '=' BOOL { if (!cfg->mem_mega_boot) cfg->cpu_stop_on_nomem = $3.v ; free($3.s)}
+	| MEGA_PROM '=' STRING	{ cfg->mem_mega_prom = $3.s; }
+	| OS_SEG '=' VALUE		{ cfg->mem_os = $3.v; free($3.s); }
 	;
 
 emulog_opts:
@@ -107,15 +109,15 @@ emulog_opts:
 	;
 
 emulog_opt:
-	ENABLED '=' BOOL { em400_cfg.emulog_enabled = $3.v; free($3.s); }
-	| LFILE '=' STRING { free(em400_cfg.emulog_file); em400_cfg.emulog_file = $3.s; }
-	| LEVELS '=' STRING { free(em400_cfg.emulog_levels); em400_cfg.emulog_levels = $3.s; }
-	| PNAME_OFFSET '=' VALUE { em400_cfg.emulog_pname_offset = $3.v; free($3.s); }
+	ENABLED '=' BOOL { cfg->emulog_enabled = $3.v; free($3.s); }
+	| LFILE '=' STRING { free(cfg->emulog_file); cfg->emulog_file = $3.s; }
+	| LEVELS '=' STRING { free(cfg->emulog_levels); cfg->emulog_levels = $3.s; }
+	| PNAME_OFFSET '=' VALUE { cfg->emulog_pname_offset = $3.v; free($3.s); }
 	;
 %%
 
 // -----------------------------------------------------------------------
-void cyyerror(char *s, ...)
+void cyyerror(struct cfg_em400_t *cfg, char *s, ...)
 {
 	va_list ap;
 	va_start(ap, s);

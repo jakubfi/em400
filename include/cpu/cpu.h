@@ -20,11 +20,18 @@
 
 #include <inttypes.h>
 
+#include "cfg.h"
+
 extern int P;
 extern uint32_t N;
 extern int cpu_mod_active;
 
-int cpu_init();
+extern int cpu_mod_present;
+extern int cpu_user_io_illegal;
+extern int exit_on_hlt;
+extern int cpu_awp;
+
+int cpu_init(struct cfg_em400_t *cfg);
 void cpu_shutdown();
 void cpu_mod_enable();
 int cpu_mod_on();

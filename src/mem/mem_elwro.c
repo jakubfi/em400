@@ -138,7 +138,7 @@ int mem_elwro_cmd(int nb, int ab, int mp, int seg)
 		return IO_NO;
 	}
 
-	if ((mp == 0) && (seg < em400_cfg.mem_os)) {
+	if ((mp == 0) && (seg < mem_elwro_os_segments)) {
 		EMULOG(L_MEM, 1, "Elwro: ignore mapping hardwired segment (%2d, %2d) -> (%2d, %2d)", nb, ab, mp, seg);
 		return IO_NO;
 	}

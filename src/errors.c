@@ -93,7 +93,8 @@ char * get_error(int e)
 // -----------------------------------------------------------------------
 void eprint(char *format, ...)
 {
-	if (!em400_cfg.verbose) return;
+	// will be moved to emulog
+	return;
 	va_list ap;
 	va_start(ap, format);
 	vprintf(format, ap);

@@ -26,6 +26,8 @@
 #include "cfg.h"
 #include "cfg_parser.h"
 
+#define IO_MAX_CHAN 16
+
 extern FILE *cyyin;
 void cyyerror(char *s, ...);
 int cyyparse();
@@ -33,105 +35,270 @@ int cyylex_destroy();
 int cfg_error = 0;
 
 // -----------------------------------------------------------------------
-int cfg_default()
+struct cfg_em400_t * cfg_create_default()
 {
-	em400_cfg.program_name = NULL;
-	em400_cfg.cfg_provided = NULL;
-	em400_cfg.exit_on_hlt = 0;
-	em400_cfg.verbose = 0;
-	em400_cfg.benchmark = 0;
-	em400_cfg.cfg_dir = NULL;
-	em400_cfg.home_cfg_file = NULL;
-	em400_cfg.hist_file = NULL;
+	struct cfg_em400_t *cfg = malloc(sizeof(struct cfg_em400_t));
+	if (!cfg) return NULL;
 
-	em400_cfg.speed_real = 0;
-	em400_cfg.timer_step = 10;
-	em400_cfg.timer_start = 1;
-	em400_cfg.cpu_mod = 0;
-	em400_cfg.cpu_user_io_illegal = 1;
-	em400_cfg.cpu_awp = 1;
-	em400_cfg.keys = 0;
-	em400_cfg.mem_elwro = 1;
-	em400_cfg.mem_mega = 0;
-	em400_cfg.mem_mega_prom = NULL;
-	em400_cfg.mem_mega_boot = 0;
-	em400_cfg.cpu_stop_on_nomem = 1;
-	em400_cfg.mem_os = 2;
-	em400_cfg.emulog_enabled = 0;
-	em400_cfg.emulog_file = strdup("em400.log");
-	em400_cfg.emulog_levels = NULL;
-	em400_cfg.emulog_pname_offset = 0;
+	// emulator
+	cfg->program_name = NULL;
+	cfg->cfg_provided = NULL;
+	cfg->exit_on_hlt = 0;
+	cfg->verbose = 0;
+	cfg->benchmark = 0;
+	cfg->print_help = 0;
+	cfg->script_name = NULL;
 
-	em400_cfg.chans = NULL;
+	// emulation
+	cfg->speed_real = 0;
+
+	// cpu
+	cfg->timer_step = 10;
+	cfg->timer_start = 1;
+	cfg->cpu_mod = 0;
+	cfg->cpu_user_io_illegal = 1;
+	cfg->cpu_awp = 1;
+	cfg->cpu_stop_on_nomem = 1;
+
+	// technical console
+	cfg->keys = 0;
+
+	// mem
+	cfg->mem_elwro = 1;
+	cfg->mem_mega = 0;
+	cfg->mem_mega_prom = NULL;
+	cfg->mem_mega_boot = 0;
+	cfg->mem_os = 2;
+
+	// emulog
+	cfg->emulog_enabled = 0;
+	cfg->emulog_file = strdup("em400.log");
+	cfg->emulog_levels = NULL;
+	cfg->emulog_pname_offset = 0;
+
+	// I/O
+	cfg->chans = NULL;
 
 #ifdef WITH_DEBUGGER
-	em400_cfg.autotest = 0;
-	em400_cfg.pre_expr = NULL;
-	em400_cfg.test_expr = NULL;
-	em400_cfg.ui_simple = 0;
+	cfg->autotest = 0;
+	cfg->pre_expr = NULL;
+	cfg->test_expr = NULL;
+	cfg->ui_simple = 0;
 #endif
 
-	// setup paths
-	const char cfg_dir[] = ".em400";
-	const char cfg_file[] = "em400.cfg";
-	const char cfg_hist_file[] = "history";
-	char *home = getenv("HOME");
-
-	em400_cfg.cfg_dir = malloc(strlen(home) + strlen(cfg_dir) + 2);
-	em400_cfg.home_cfg_file = malloc(strlen(home) + strlen(cfg_dir) + strlen(cfg_file) + 3);
-	em400_cfg.hist_file = malloc(strlen(home) + strlen(cfg_dir) + strlen(cfg_hist_file) + 3);
-
-	if (!em400_cfg.cfg_dir || !em400_cfg.home_cfg_file || !em400_cfg.hist_file) {
-		return E_ALLOC;
-	}
-
-	sprintf(em400_cfg.cfg_dir, "%s/%s", home, cfg_dir);
-	sprintf(em400_cfg.home_cfg_file, "%s/%s/%s", home, cfg_dir, cfg_file);
-	sprintf(em400_cfg.hist_file, "%s/%s/%s", home, cfg_dir, cfg_hist_file);
-
-	return E_OK;
+	return cfg;
 }
 
 // -----------------------------------------------------------------------
-int cfg_load(char *cfg_file)
+void cfg_destroy(struct cfg_em400_t *cfg)
+{
+	if (!cfg) return;
+
+	free(cfg->program_name);
+	free(cfg->cfg_provided);
+	free(cfg->script_name);
+
+	free(cfg->mem_mega_prom);
+
+	free(cfg->emulog_file);
+	free(cfg->emulog_levels);
+
+	cfg_drop_chans(cfg->chans);
+
+	free(cfg->pre_expr);
+	free(cfg->test_expr);
+
+	free(cfg);
+}
+
+// -----------------------------------------------------------------------
+struct cfg_em400_t * cfg_from_args(int argc, char **argv)
+{
+	struct cfg_em400_t *cfg = cfg_create_default();
+	if (!cfg) return NULL;
+
+	int option;
+
+#ifdef WITH_DEBUGGER
+	int len;
+#endif
+
+	while ((option = getopt(argc, argv,"bvhec:p:k:rl:Lt:x:s")) != -1) {
+		switch (option) {
+			case 'L':
+				cfg->emulog_enabled = 0;
+				break;
+			case 'l':
+				cfg->emulog_enabled = 1;
+				cfg->emulog_levels = strdup(optarg);
+				break;
+			case 'b':
+				cfg->benchmark = 1;
+				break;
+			case 'v':
+				cfg->verbose = 1;
+				break;
+			case 'h':
+				cfg_destroy(cfg);
+				return NULL;
+				break;
+			case 'c':
+				cfg->cfg_provided = strdup(optarg);
+				break;
+			case 'p':
+				cfg->program_name = strdup(optarg);
+				break;
+			case 'k':
+				cfg->keys = atoi(optarg);
+				break;
+			case 'e':
+				cfg->exit_on_hlt = 1;
+#ifdef WITH_DEBUGGER
+				cfg->autotest = 1;
+#endif
+				break;
+#ifdef WITH_DEBUGGER
+			case 't':
+				cfg->autotest = 1;
+				cfg->ui_simple = 1;
+				cfg->exit_on_hlt = 1;
+				len = strlen(optarg);
+				cfg->test_expr = malloc(len+3);
+				strcpy(cfg->test_expr, optarg);
+				strcpy(cfg->test_expr + len, "\n\0");
+				break;
+			case 'r':
+				cfg->script_name = strdup(optarg);
+				break;
+			case 'x':
+				len = strlen(optarg);
+				cfg->pre_expr = malloc(len+3);
+				strcpy(cfg->pre_expr, optarg);
+				strcpy(cfg->pre_expr + len, "\n\0");
+				break;
+			case 's':
+				cfg->ui_simple = 1;
+				break;
+#endif
+			default:
+				cfg_destroy(cfg);
+				return NULL;
+		}
+	}
+
+	return cfg;
+}
+
+
+// -----------------------------------------------------------------------
+struct cfg_em400_t * cfg_from_file(char *cfg_file)
 {
 	eprint("Loading config file: %s\n", cfg_file);
-	FILE * cfg = fopen(cfg_file, "r");
-	if (!cfg) {
-		return E_CFG_OPEN;
+	FILE * cfgf = fopen(cfg_file, "r");
+	if (!cfgf) {
+		return NULL;
 	}
 
-	cyyin = cfg;
+	struct cfg_em400_t *cfg = cfg_create_default();
+
+	cyyin = cfgf;
 	do {
-		cyyparse();
+		cyyparse(cfg);
 	} while (!feof(cyyin));
 
-	fclose(cfg);
+	fclose(cfgf);
 	cyylex_destroy();
 
-	if (cfg_error) return E_CFG_PARSE;
-	return E_OK;
+	if (cfg_error) {
+		cfg_destroy(cfg);
+		return NULL;
+	}
+
+	return cfg;
 }
 
 // -----------------------------------------------------------------------
-void cfg_print()
+struct cfg_em400_t * cfg_overlay(struct cfg_em400_t *a, struct cfg_em400_t *b)
+{
+
+#define CHI(v) if (b->v != def->v) a->v = b->v
+#define CHS(v) if (b->v != def->v) {free(a->v); a->v = b->v; b->v = NULL;}
+
+	struct cfg_em400_t *def = cfg_create_default();
+
+	// emulator
+	CHS(program_name);
+	CHS(cfg_provided);
+	CHI(exit_on_hlt);
+	CHI(verbose);
+	CHI(benchmark);
+	CHI(print_help);
+	CHS(script_name);
+
+	// emulation
+	CHI(speed_real);
+
+	// cpu
+	CHI(timer_step);
+	CHI(timer_start);
+	CHI(cpu_mod);
+	CHI(cpu_user_io_illegal);
+	CHI(cpu_awp);
+	CHI(cpu_stop_on_nomem);
+
+	// technical console
+	CHI(keys);
+
+	// mem
+	CHI(mem_elwro);
+	CHI(mem_mega);
+	CHS(mem_mega_prom);
+	CHI(mem_mega_boot);
+	CHI(mem_os);
+
+	// emulog
+	CHI(emulog_enabled);
+	CHS(emulog_file);
+	CHS(emulog_levels);
+	CHI(emulog_pname_offset);
+
+	// I/O
+	if (b->chans != def->chans) {
+		cfg_drop_chans(a->chans);
+		a->chans = b->chans;
+		b->chans = NULL;
+	}
+
+#ifdef WITH_DEBUGGER
+	CHI(autotest);
+	CHS(pre_expr);
+	CHS(test_expr);
+	CHI(ui_simple);
+#endif
+
+	cfg_destroy(def);
+	return a;
+}
+
+// -----------------------------------------------------------------------
+void cfg_print(struct cfg_em400_t *cfg)
 {
 	eprint("---- Config: ---------------------------\n");
-	eprint("  Program to load: %s\n", em400_cfg.program_name);
-	eprint("  User-provided config: %s\n", em400_cfg.cfg_provided);
-	eprint("  Exit on HLT>=040: %s\n", em400_cfg.exit_on_hlt ? "true" : "false");
-	eprint("  Emulation speed: %s\n", em400_cfg.speed_real ? "real" : "max");
-	eprint("  Timer step: %i (%s at power-on)\n", em400_cfg.timer_step, em400_cfg.timer_start ? "enabled" : "disabled");
-	eprint("  CPU modifications: %s\n", em400_cfg.cpu_mod ? "true" : "false");
-	eprint("  CPU stop on nomem: %s\n", em400_cfg.cpu_stop_on_nomem ? "true" : "false");
+	eprint("  Program to load: %s\n", cfg->program_name);
+	eprint("  User-provided config: %s\n", cfg->cfg_provided);
+	eprint("  Exit on HLT>=040: %s\n", cfg->exit_on_hlt ? "true" : "false");
+	eprint("  Emulation speed: %s\n", cfg->speed_real ? "real" : "max");
+	eprint("  Timer step: %i (%s at power-on)\n", cfg->timer_step, cfg->timer_start ? "enabled" : "disabled");
+	eprint("  CPU modifications: %s\n", cfg->cpu_mod ? "true" : "false");
+	eprint("  CPU stop on nomem: %s\n", cfg->cpu_stop_on_nomem ? "true" : "false");
 	eprint("  -- Memory: ---------------------------\n");
-	eprint("  Elwro modules: %i\n", em400_cfg.mem_elwro);
-	eprint("  MEGA modules: %i\n", em400_cfg.mem_mega);
-	eprint("  MEGA PROM image: %s\n", em400_cfg.mem_mega_prom);
-	eprint("  MEGA boot: %s\n", em400_cfg.mem_mega_boot ? "true" : "false");
-	eprint("  Segments for OS: %i\n", em400_cfg.mem_os);
+	eprint("  Elwro modules: %i\n", cfg->mem_elwro);
+	eprint("  MEGA modules: %i\n", cfg->mem_mega);
+	eprint("  MEGA PROM image: %s\n", cfg->mem_mega_prom);
+	eprint("  MEGA boot: %s\n", cfg->mem_mega_boot ? "true" : "false");
+	eprint("  Segments for OS: %i\n", cfg->mem_os);
 	eprint("  -- I/O: ------------------------------\n");
-	struct cfg_chan_t *chanc = em400_cfg.chans;
+	struct cfg_chan_t *chanc = cfg->chans;
 	while (chanc) {
 		eprint("  Channel %2i: %s\n", chanc->num, chanc->name);
 		struct cfg_unit_t *unitc = chanc->units;
@@ -209,7 +376,7 @@ int cfg_args_decode(struct cfg_arg_t *arg, const char *format, ...)
 }
 
 // -----------------------------------------------------------------------
-void cfg_make_unit(int u_num, char *name, struct cfg_arg_t *arglist)
+void cfg_make_unit(struct cfg_em400_t *cfg, int u_num, char *name, struct cfg_arg_t *arglist)
 {
 	if (u_num < 0) {
 		cyyerror("Incorrect unit number: %i", u_num);
@@ -219,12 +386,12 @@ void cfg_make_unit(int u_num, char *name, struct cfg_arg_t *arglist)
 	u->name = name;
 	u->num = u_num;
 	u->args = arglist;
-	u->next = em400_cfg.chans->units;
-	em400_cfg.chans->units = u;
+	u->next = cfg->chans->units;
+	cfg->chans->units = u;
 }
 
 // -----------------------------------------------------------------------
-void cfg_make_chan(int c_num, char *name)
+void cfg_make_chan(struct cfg_em400_t *cfg, int c_num, char *name)
 {
 	if ((c_num < 0) || (c_num > IO_MAX_CHAN)) {
 		cyyerror("Incorrect channel number: %i", c_num);
@@ -233,9 +400,9 @@ void cfg_make_chan(int c_num, char *name)
 	struct cfg_chan_t *c = malloc(sizeof(struct cfg_chan_t));
 	c->num = c_num;
 	c->name = name;
-	c->next = em400_cfg.chans;
+	c->next = cfg->chans;
 	c->units = NULL;
-	em400_cfg.chans = c;
+	cfg->chans = c;
 }
 
 // -----------------------------------------------------------------------

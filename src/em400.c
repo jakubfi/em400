@@ -72,11 +72,11 @@ void em400_exit_error(int err_code, char *format, ...)
 }
 
 // -----------------------------------------------------------------------
-void em400_init()
+void em400_init(struct cfg_em400_t *cfg)
 {
 	int res;
 
-	res = emulog_init(em400_cfg.emulog_enabled, em400_cfg.emulog_file, em400_cfg.emulog_levels, em400_cfg.emulog_pname_offset, em400_cfg.cpu_mod);
+	res = emulog_init(cfg);
 	if (res != E_OK) {
 		em400_exit_error(res, "Error initializing emulog");
 	}
@@ -85,40 +85,40 @@ void em400_init()
 	em400_console = CONSOLE_DEBUGGER;
 #endif
 
-	res = mem_init();
+	res = mem_init(cfg);
 	if (res != E_OK) {
 		em400_exit_error(res, "Error initializing memory");
 	}
 
-	res = cpu_init();
+	res = cpu_init(cfg);
 	if (res != E_OK) {
 		em400_exit_error(res, "Error initializing CPU");
 	}
 
-	res = timer_init();
+	res = timer_init(cfg);
 	if (res != E_OK) {
 		em400_exit_error(res, "Error initializing CPU timer");
 	}
 
-	res = io_init();
+	res = io_init(cfg);
 	if (res != E_OK) {
 		em400_exit_error(res, "Error initializing I/O");
 	}
 
-	regs[R_KB] = em400_cfg.keys;
+	regs[R_KB] = cfg->keys;
 
-	if (em400_cfg.program_name) {
-		eprint("Loading image '%s' into OS memory\n", em400_cfg.program_name);
-		int res = mem_load(em400_cfg.program_name, 0, 0, 2*4096);
+	if (cfg->program_name) {
+		eprint("Loading image '%s' into OS memory\n", cfg->program_name);
+		int res = mem_load(cfg->program_name, 0, 0, 2*4096);
 		if (res < E_OK) {
-			em400_exit_error(res, "Could not load program '%s'", em400_cfg.program_name);
+			em400_exit_error(res, "Could not load program '%s'", cfg->program_name);
 		} else {
-			printf("OS memory block image loaded: \"%s\", %i words\n", em400_cfg.program_name, res);
+			printf("OS memory block image loaded: \"%s\", %i words\n", cfg->program_name, res);
 		}
 	}
 
 #ifdef WITH_DEBUGGER
-	res = dbg_init();
+	res = dbg_init(cfg);
 	if (res != E_OK) {
 		em400_exit_error(res, "Error initializing debugger");
 	}
@@ -158,113 +158,7 @@ void em400_usage()
 }
 
 // -----------------------------------------------------------------------
-void em400_parse_args(int argc, char **argv)
-{
-	int option;
-
-#ifdef WITH_DEBUGGER
-	int len;
-#endif
-
-	while ((option = getopt(argc, argv,"bvhec:p:k:rl:Lt:x:s")) != -1) {
-		switch (option) {
-			case 'L':
-				em400_cfg.emulog_enabled = 0;
-				break;
-			case 'l':
-				em400_cfg.emulog_enabled = 1;
-				em400_cfg.emulog_levels = strdup(optarg);
-				break;
-			case 'b':
-				em400_cfg.benchmark = 1;
-				break;
-			case 'v':
-				em400_cfg.verbose = 1;
-				break;
-			case 'h':
-				em400_usage();
-				exit(0);
-			case 'c':
-				em400_cfg.cfg_provided = strdup(optarg);
-				break;
-			case 'p':
-				em400_cfg.program_name = strdup(optarg);
-				break;
-			case 'k':
-				em400_cfg.keys = atoi(optarg);
-				break;
-			case 'e':
-				em400_cfg.exit_on_hlt = 1;
-#ifdef WITH_DEBUGGER
-				em400_cfg.autotest = 1;
-#endif
-				break;
-#ifdef WITH_DEBUGGER
-			case 't':
-				em400_cfg.autotest = 1;
-				em400_cfg.ui_simple = 1;
-				em400_cfg.exit_on_hlt = 1;
-				len = strlen(optarg);
-				em400_cfg.test_expr = malloc(len+3);
-				strcpy(em400_cfg.test_expr, optarg);
-				strcpy(em400_cfg.test_expr + len, "\n\0");
-				break;
-			case 'r':
-				script_name = strdup(optarg);
-				break;
-			case 'x':
-				len = strlen(optarg);
-				em400_cfg.pre_expr = malloc(len+3);
-				strcpy(em400_cfg.pre_expr, optarg);
-				strcpy(em400_cfg.pre_expr + len, "\n\0");
-				break;
-			case 's':
-				em400_cfg.ui_simple = 1;
-				break;
-#endif
-			default:
-				em400_usage();
-				exit(1);
-		}
-	}
-}
-
-// -----------------------------------------------------------------------
-void em400_configure()
-{
-	mkdir(em400_cfg.cfg_dir, 0700);
-
-	// config files to consider
-	char *cfgf[4];
-
-	// if user wants specific config file - use it
-	if (em400_cfg.cfg_provided) {
-		cfgf[0] = em400_cfg.cfg_provided;
-		cfgf[1] = NULL;
-	// otherwise, search for known configs
-	} else {
-		cfgf[0] = "em400.cfg";
-		cfgf[1] = em400_cfg.home_cfg_file;
-		cfgf[2] = "/etc/em400/em400.cfg";
-		cfgf[3] = NULL;
-	}
-
-	// try to load one of configuration files
-	char **cfgfile = cfgf;
-	while (*cfgfile) {
-		int res = cfg_load(*cfgfile);
-		if (res == E_OK) {
-			printf("Using config: %s\n", *cfgfile);
-			return;
-		}
-		cfgfile++;
-	}
-
-	em400_exit_error(E_DEFAULT, "Cannot find any usable config file");
-}
-
-// -----------------------------------------------------------------------
-void em400_loop()
+void em400_loop(struct cfg_em400_t *cfg)
 {
 	unsigned int ips_counter = 0;
 	struct timeval ips_start;
@@ -276,7 +170,7 @@ void em400_loop()
 
 	while (em400_state == STATE_WORK) {
 #ifdef WITH_DEBUGGER
-		if (em400_cfg.autotest != 1) {
+		if (cfg->autotest != 1) {
 			dbg_step();
 			if (em400_state != STATE_WORK) {
 				break;
@@ -294,7 +188,7 @@ void em400_loop()
 
 	gettimeofday(&ips_end, NULL);
 
-	if (em400_cfg.benchmark) {
+	if (cfg->benchmark) {
 		ips_time_spent = (double)(ips_end.tv_usec - ips_start.tv_usec)/1000000 + (ips_end.tv_sec - ips_start.tv_sec);
 		if (ips_time_spent > 0) {
 			ips = ips_counter/ips_time_spent;
@@ -304,56 +198,124 @@ void em400_loop()
 }
 
 // -----------------------------------------------------------------------
+struct cfg_em400_t * em400_configure(int argc, char** argv)
+{
+	struct cfg_em400_t *cfg_cmdline = NULL;
+	struct cfg_em400_t *cfg_file = NULL;
+	struct cfg_em400_t *cfg_final = NULL;
+
+	char *conf_dirname = NULL;
+	char *home_cfg_fname = NULL;
+
+	const char *cdir = "/.em400";
+	const char *cfile = "/.em400/em400.cfg";
+	char *home = getenv("HOME");
+
+	conf_dirname = malloc(strlen(home) + strlen(cdir) + 1);
+	if (!conf_dirname) {
+		printf("Memory allocation error");
+		goto cleanup;
+	}
+
+	home_cfg_fname = malloc(strlen(home) + strlen(cfile) + 1);
+	if (!home_cfg_fname) {
+		printf("Memory allocation error");
+		goto cleanup;
+	}
+
+	sprintf(conf_dirname, "%s%s", home, cdir);
+	sprintf(home_cfg_fname, "%s%s", home, cfile);
+
+	mkdir(conf_dirname, 0700);
+
+	// parse commandline first, because:
+	//  * user may need help (-h)
+	//  * user may provide own config file
+	cfg_cmdline = cfg_from_args(argc, argv);
+	if (!cfg_cmdline) {
+		// wrong usage (print help), or -h (print help), exit anyway
+		em400_usage();
+		goto cleanup;
+	}
+
+	char *cfgf;
+
+	// user-provided config file
+	if (cfg_cmdline->cfg_provided) {
+		cfgf = cfg_cmdline->cfg_provided;
+	// default config file ~/.em400/em400.cfg
+	} else {
+		cfgf = home_cfg_fname;
+	}
+
+	// load configuration from file
+	cfg_file = cfg_from_file(cfgf);
+	if (!cfg_file) {
+		printf("Could not load config file: %s\n", cfgf);
+		goto cleanup;
+	}
+
+	// build final configuration by overlaying config file with commandline
+	cfg_final = cfg_overlay(cfg_file, cfg_cmdline);
+
+	if (!cfg_final) {
+		cfg_destroy(cfg_file);
+	}
+
+cleanup:
+	cfg_destroy(cfg_cmdline);
+	free(conf_dirname);
+	free(home_cfg_fname);
+
+	return cfg_final;
+}
+
+// -----------------------------------------------------------------------
 // ---- MAIN -------------------------------------------------------------
 // -----------------------------------------------------------------------
 int main(int argc, char** argv)
 {
-	int res;
-
 	printf("EM400 v%s ", EM400_VERSION);
 #ifdef WITH_DEBUGGER
 	printf("+debugger ");
 #endif
 	printf("\n");
 
-	// start with the default configuration
-	res = cfg_default();
-	if (res != E_OK) {
-		em400_exit_error(res, "Cannot prepare default configuration");
+	struct cfg_em400_t *cfg = em400_configure(argc, argv);
+
+	if (!cfg) {
+		exit(EXIT_FAILURE);
 	}
 
-	// TODO: order needs to be changed: em400.cfg comes first, then commandline overrides
-	// we can't do it now, because commandline may specify -c <config>, which needs to
-	// be parsed first
-	em400_parse_args(argc, argv);
-	em400_configure();
-	cfg_print();
+	if (cfg->print_help) {
+		em400_usage();
+		cfg_destroy(cfg);
+		exit(0);
+	}
 
-	// done with configuration, initialize em400
-	em400_init();
+	em400_init(cfg);
 
 #ifdef WITH_DEBUGGER
-	if (em400_cfg.pre_expr) {
-		dbg_parse(em400_cfg.pre_expr);
+	if (cfg->pre_expr) {
+		dbg_parse(cfg->pre_expr);
 	}
 #endif
 
-	em400_loop();
+	em400_loop(cfg);
 
 	if (em400_state == STATE_MEM_FAIL) {
 		printf("Emulation died, guest CPU segmentation fault.\n");
 	}
 
 #ifdef WITH_DEBUGGER
-	if (em400_cfg.autotest && em400_cfg.test_expr) {
+	if (cfg->autotest && cfg->test_expr) {
 		printf("TEST RESULT @ 0x%04x, regs: 0x%04x 0x%04x 0x%04x 0x%04x 0x%04x 0x%04x 0x%04x 0x%04x: ", regs[R_IC], regs[0], regs[1], regs[2], regs[3], regs[4], regs[5], regs[6], regs[7]);
-		dbg_parse(em400_cfg.test_expr);
-		free(em400_cfg.test_expr);
-		free(em400_cfg.program_name);
+		dbg_parse(cfg->test_expr);
 	}
 #endif
 
 	em400_shutdown();
+	cfg_destroy(cfg);
 
 	return 0;
 }

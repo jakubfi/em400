@@ -20,6 +20,7 @@
 
 #include <inttypes.h>
 
+#include "cfg.h"
 #include "atomic.h"
 
 enum emulog_components {
@@ -34,7 +35,7 @@ enum emulog_components {
 
 extern int emulog_enabled;
 
-int emulog_init(int enabled, char *filename, char *levels, int pname_offset, int cpu_mod);
+int emulog_init(struct cfg_em400_t *cfg);
 void emulog_shutdown();
 
 int emulog_enable();

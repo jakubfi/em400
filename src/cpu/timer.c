@@ -32,11 +32,13 @@ int timer_enabled;
 pthread_t timer_th;
 sem_t timer_quit;
 
+int timer_step;
+
 // -----------------------------------------------------------------------
 void * timer_thread(void *ptr)
 {
 	struct timespec ts;
-	unsigned clock_tick_nsec = em400_cfg.timer_step * 1000000;
+	unsigned clock_tick_nsec = timer_step * 1000000;
 	unsigned new_nsec;
 	clock_gettime(CLOCK_REALTIME , &ts);
 
@@ -60,15 +62,17 @@ void * timer_thread(void *ptr)
 }
 
 // -----------------------------------------------------------------------
-int timer_init()
+int timer_init(struct cfg_em400_t *cfg)
 {
-	if ((em400_cfg.timer_step < 2) || (em400_cfg.timer_step > 100)) {
+	timer_step = cfg->timer_step;
+
+	if ((timer_step < 2) || (timer_step > 100)) {
 		return E_TIMER_VALUE;
 	}
 
-	eprint("Timer cycle: %i ms\n", em400_cfg.timer_step);
+	eprint("Timer cycle: %i ms\n", timer_step);
 
-	if (em400_cfg.timer_start) {
+	if (cfg->timer_start) {
 		eprint("Starting timer\n");
 		timer_on();
 	} else {

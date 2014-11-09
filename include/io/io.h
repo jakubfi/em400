@@ -25,9 +25,6 @@
 
 #define IO_MAX_CHAN	16
 
-struct cfg_unit_t;
-struct cfg_arg_t;
-
 enum io_dir {
 	IO_OU = 0,
 	IO_IN = 1,
@@ -57,7 +54,7 @@ struct chan_proto_t {
 
 extern struct chan_proto_t *io_chan[IO_MAX_CHAN];
 
-int io_init();
+int io_init(struct cfg_em400_t *cfg);
 void io_shutdown();
 void io_reset();
 int io_dispatch(int dir, uint16_t n, uint16_t *r);

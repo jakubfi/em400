@@ -169,7 +169,7 @@ void alu_awp_dispatch(int op, uint16_t arg)
 	uint16_t d[3];
 	uint16_t addr;
 
-	if (em400_cfg.cpu_awp) {
+	if (cpu_awp) {
 		if (!mem_cpu_mget(QNB, arg, d, 3)) return;
 		switch (op) {
 			case AWP_NRF0:

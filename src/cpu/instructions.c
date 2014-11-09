@@ -151,7 +151,7 @@ void op_bn()
 // -----------------------------------------------------------------------
 void op_ou()
 {
-	if (em400_cfg.cpu_user_io_illegal) {
+	if (cpu_user_io_illegal) {
 		USER_ILLEGAL;
 	}
 
@@ -164,7 +164,7 @@ void op_ou()
 // -----------------------------------------------------------------------
 void op_in()
 {
-	if (em400_cfg.cpu_user_io_illegal) {
+	if (cpu_user_io_illegal) {
 		USER_ILLEGAL;
 	}
 
@@ -702,7 +702,7 @@ void op_73_hlt()
 	EMULOGCPU(L_OP, 1, "HALT 0%02o (alarm: %i)", N, regs[6]&255);
 
 	// handle hlt>=040 as "exit emulation" if user wants to
-	if ((em400_cfg.exit_on_hlt) && (N >= 040)) {
+	if (exit_on_hlt && (N >= 040)) {
 		em400_state = STATE_QUIT;
 		return;
 	// otherwise, wait for interrupt
@@ -745,7 +745,7 @@ void op_73_softint()
 	}
 
 	// SINT, SIND
-	if (em400_cfg.cpu_mod && (IR_C & 4)) int_set(INT_TIMER);
+	if (cpu_mod_present && (IR_C & 4)) int_set(INT_TIMER);
 }
 
 // -----------------------------------------------------------------------
@@ -782,7 +782,7 @@ void op_73_cron()
 {
 	USER_ILLEGAL;
 
-	if (em400_cfg.cpu_mod) {
+	if (cpu_mod_present) {
 		cpu_mod_on();
 	}
 	// CRON is an illegal instruction anyway

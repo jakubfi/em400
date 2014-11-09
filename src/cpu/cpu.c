@@ -36,6 +36,11 @@ int P;
 uint32_t N;
 int cpu_mod_active;
 
+int cpu_mod_present;
+int cpu_user_io_illegal;
+int exit_on_hlt;
+int cpu_awp;
+
 // -----------------------------------------------------------------------
 static int cpu_register_op(struct em400_op **op_tab, uint16_t opcode, uint16_t mask, struct em400_op *op)
 {
@@ -76,11 +81,16 @@ static int cpu_register_op(struct em400_op **op_tab, uint16_t opcode, uint16_t m
 }
 
 // -----------------------------------------------------------------------
-int cpu_init()
+int cpu_init(struct cfg_em400_t *cfg)
 {
 	int res;
 
-	regs[R_KB] = em400_cfg.keys;
+	regs[R_KB] = cfg->keys;
+
+	cpu_mod_present = cfg->cpu_mod;
+	cpu_user_io_illegal = cfg->cpu_user_io_illegal;
+	exit_on_hlt = cfg->exit_on_hlt;
+	cpu_awp = cfg->cpu_awp;
 
 	struct em400_instr *instr = em400_ilist;
 	while (instr->var_mask) {

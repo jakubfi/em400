@@ -115,7 +115,7 @@ void aw_write_history()
 int aw_init(int output, char *history)
 {
 	aw_output = output;
-	aw_hist_file = history;
+	aw_hist_file = strdup(history);
 
 	aw_read_history();
 
@@ -140,6 +140,7 @@ void aw_shutdown()
 	aw_layout_remove();
 	aw_containers_all_delete(aw_containers);
 	endwin();
+	free(aw_hist_file);
 }
 
 // -----------------------------------------------------------------------

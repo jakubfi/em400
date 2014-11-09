@@ -26,7 +26,6 @@
 #include "mem/mem.h"
 
 #include "em400.h"
-#include "cfg.h"
 #include "errors.h"
 #include "utils.h"
 
@@ -36,6 +35,8 @@
 #include "debugger/ui.h"
 #include "debugger/parser.h"
 #include "debugger/eval.h"
+
+#include "cfg.h"
 
 char *script_name = NULL;
 
@@ -69,11 +70,11 @@ static void _dbg_sigint_handler(int signum)
 }
 
 // -----------------------------------------------------------------------
-int dbg_init()
+int dbg_init(struct cfg_em400_t *cfg)
 {
 	eprint("Initializing debugger: ");
 	// set UI mode
-	if (em400_cfg.ui_simple == 1) {
+	if (cfg->ui_simple == 1) {
 		eprint("simple\n");
 		ui_mode = O_STD;
 	} else {
@@ -81,9 +82,19 @@ int dbg_init()
 		ui_mode = O_NCURSES;
 	}
 
-	if (aw_init(ui_mode, em400_cfg.hist_file) != 0) {
+	const char *hfile = "/.em400/history";
+	char *home = getenv("HOME");
+	char *hist_file = malloc(strlen(home) + strlen(hfile) + 1);
+	sprintf(hist_file, "%s%s", home, hfile);
+
+	if (aw_init(ui_mode, hist_file) != 0) {
+		free(hist_file);
 		return E_AW_INIT;
 	}
+
+	script_name = cfg->script_name;
+
+	free(hist_file);
 
 	if ((ui_mode == O_NCURSES) &&  (dbg_ui_init() != 0)) {
 		return E_UI_INIT;

@@ -18,7 +18,9 @@
 #ifndef TIMER_H
 #define TIMER_H
 
-int timer_init();
+#include "cfg.h"
+
+int timer_init(struct cfg_em400_t *cfg);
 void timer_shutdown();
 void timer_on();
 void timer_off();

@@ -82,9 +82,9 @@ static struct chan_proto_t * io_chan_maker(int num, char *name, struct cfg_unit_
 }
 
 // -----------------------------------------------------------------------
-int io_init()
+int io_init(struct cfg_em400_t *cfg)
 {
-	struct cfg_chan_t *chanc = em400_cfg.chans;
+	struct cfg_chan_t *chanc = cfg->chans;
 	struct chan_proto_t *chan;
 
 	eprint("Initializing I/O\n");
@@ -100,8 +100,6 @@ int io_init()
 		}
 		chanc = chanc->next;
 	}
-
-	cfg_drop_chans(em400_cfg.chans);
 
 	return E_OK;
 }

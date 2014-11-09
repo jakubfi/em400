@@ -42,6 +42,10 @@
 
 struct mem_slot_t mem_map[MEM_MAX_NB][MEM_MAX_AB];	// final (as seen by emulation) logical->physical segment mapping
 
+static int mega_modules = 0;
+static int mega_boot = 0;
+static int nomem_stop = 0;
+
 // -----------------------------------------------------------------------
 inline uint16_t *mem_ptr(int nb, uint16_t addr)
 {
@@ -69,27 +73,31 @@ void mem_update_map()
 }
 
 // -----------------------------------------------------------------------
-int mem_init()
+int mem_init(struct cfg_em400_t *cfg)
 {
 	int res;
 
-	eprint("Initializing memory (Elwro: %d modules, MEGA: %d modules)\n", em400_cfg.mem_elwro, em400_cfg.mem_mega);
+	eprint("Initializing memory (Elwro: %d modules, MEGA: %d modules)\n", cfg->mem_elwro, cfg->mem_mega);
 
-	if (em400_cfg.mem_elwro+em400_cfg.mem_mega > MEM_MAX_MODULES+1) {
+	if (cfg->mem_elwro + cfg->mem_mega > MEM_MAX_MODULES+1) {
 		return E_MEM;
 	}
 
-	res = mem_elwro_init(em400_cfg.mem_elwro, em400_cfg.mem_os);
+	res = mem_elwro_init(cfg->mem_elwro, cfg->mem_os);
 	if (res != E_OK) {
 		return res;
 	}
 
-	res = mem_mega_init(em400_cfg.mem_mega, em400_cfg.mem_mega_prom);
+	res = mem_mega_init(cfg->mem_mega, cfg->mem_mega_prom);
 	if (res != E_OK) {
 		return res;
 	}
 
 	mem_update_map();
+
+	mega_modules = cfg->mem_mega;
+	mega_boot = cfg->mem_mega_boot;
+	nomem_stop = cfg->cpu_stop_on_nomem;
 
 	return E_OK;
 }
@@ -114,7 +122,7 @@ int mem_cmd(uint16_t n, uint16_t r)
 	int flags	= (n & 0b1111111000000000) >> 9;
 
 	// if MEGA is present and MEM_MEGA_ALLOC is set => command for MEGA
-	if ((em400_cfg.mem_mega > 0) && ((flags & MEM_MEGA_ALLOC))) {
+	if ((mega_modules > 0) && (flags & MEM_MEGA_ALLOC)) {
 		res = mem_mega_cmd(nb, ab, mp, seg, flags);
 	// Elwro otherwise (but mask segment number to 3 bits)
 	} else {
@@ -137,7 +145,7 @@ void mem_reset()
 // -----------------------------------------------------------------------
 int mem_mega_boot()
 {
-	if (em400_cfg.mem_mega_boot && em400_cfg.mem_mega_prom && mem_mega_prom && (mem_map[0][15].seg == mem_mega_prom)) {
+	if (mega_boot && mem_mega_prom && (mem_map[0][15].seg == mem_mega_prom)) {
 		return 1;
 	} else {
 		return 0;
@@ -217,7 +225,7 @@ int mem_cpu_get(int nb, uint16_t addr, uint16_t *data)
 {
 	if (!mem_get(nb, addr, data)) {
 		int_set(INT_NO_MEM);
-		if ((nb == 0) && (em400_cfg.cpu_stop_on_nomem)) {
+		if ((nb == 0) && (nomem_stop)) {
 			regs[R_ALARM] = 1;
 #ifdef WITH_DEBUGGER
 			dbg_enter = 1;
@@ -235,7 +243,7 @@ int mem_cpu_put(int nb, uint16_t addr, uint16_t data)
 {
 	if (!mem_put(nb, addr, data)) {
 		int_set(INT_NO_MEM);
-		if ((nb == 0) && (em400_cfg.cpu_stop_on_nomem)) {
+		if ((nb == 0) && (nomem_stop)) {
 			regs[R_ALARM] = 1;
 #ifdef WITH_DEBUGGER
 			dbg_enter = 1;
@@ -253,7 +261,7 @@ int mem_cpu_mget(int nb, uint16_t saddr, uint16_t *dest, int count)
 {
 	if (!mem_mget(nb, saddr, dest, count)) {
 		int_set(INT_NO_MEM);
-		if ((nb == 0) && (em400_cfg.cpu_stop_on_nomem)) {
+		if ((nb == 0) && (nomem_stop)) {
 			regs[R_ALARM] = 1;
 #ifdef WITH_DEBUGGER
 			dbg_enter = 1;
@@ -272,7 +280,7 @@ int mem_cpu_mput(int nb, uint16_t saddr, uint16_t *src, int count)
 {
 	if (!mem_mput(nb, saddr, src, count)) {
 		int_set(INT_NO_MEM);
-		if ((nb == 0) && (em400_cfg.cpu_stop_on_nomem)) {
+		if ((nb == 0) && (nomem_stop)) {
 			regs[R_ALARM] = 1;
 #ifdef WITH_DEBUGGER
 			dbg_enter = 1;

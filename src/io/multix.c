@@ -23,6 +23,7 @@
 #include <strings.h>
 #include <pthread.h>
 
+#include "mem/mem.h"
 #include "io/io.h"
 #include "io/multix.h"
 #include "io/multix_winch.h"

@@ -20,6 +20,8 @@
 
 #include <inttypes.h>
 
+#include "cfg.h"
+
 #define INPUT_BUF_SIZE 200
 
 struct evlb_t {
@@ -49,7 +51,7 @@ extern int int_serve_top;
 
 struct evlb_t * dbg_brk_check();
 void dbg_step();
-int dbg_init();
+int dbg_init(struct cfg_em400_t *cfg);
 void dbg_shutdown();
 void dbg_fin_cycle();
 int dbg_parse(char *c);
