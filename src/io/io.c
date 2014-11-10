@@ -87,10 +87,10 @@ int io_init(struct cfg_em400_t *cfg)
 	struct cfg_chan_t *chanc = cfg->chans;
 	struct chan_proto_t *chan;
 
-	eprint("Initializing I/O\n");
+	LOG(L_IO, 1, "Initializing I/O");
 
 	while (chanc) {
-		eprint("  Channel %i: %s\n", chanc->num, chanc->name);
+		LOG(L_IO, 1, "Channel %i: %s", chanc->num, chanc->name);
 		chan = io_chan_maker(chanc->num, chanc->name, chanc->units);
 		if (!chan) {
 			return gerr;
@@ -107,11 +107,11 @@ int io_init(struct cfg_em400_t *cfg)
 // -----------------------------------------------------------------------
 void io_shutdown()
 {
-	eprint("Shutdown I/O\n");
+	LOG(L_IO, 1, "Shutdown I/O");
 	for (int c_num=0 ; c_num<IO_MAX_CHAN ; c_num++) {
 		struct chan_proto_t *chan = io_chan[c_num];
 		if (chan) {
-			eprint("  Channel %i: %s\n", chan->num, chan->name);
+			LOG(L_IO, 1, "Channel %i: %s", chan->num, chan->name);
 			chan->shutdown(chan);
 			io_chan[c_num] = NULL;
 		}

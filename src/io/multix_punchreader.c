@@ -28,7 +28,7 @@
 // -----------------------------------------------------------------------
 struct mx_unit_proto_t * mx_punchreader_create(struct cfg_arg_t *args)
 {
-	eprint("      Tape punchreader\n");
+	LOG(L_PNRD, 1, "Tape punchreader");
 
 	struct mx_unit_proto_t *unit = mx_punchreader_create_nodev();
 	if (!unit) {

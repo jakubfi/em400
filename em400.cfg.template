@@ -79,7 +79,7 @@ log {
 	#   em4h - emulator
 	#   reg, mem, cpu, op, int - registers, memory, cpu cycle, instructions, interrupts
 	#   io, mx, px, cchr, cmem - I/O, MULTIX, PLIX, character and memory channel
-	#   term, wnch, flop, pnch, pnrd - terminal, winchester, floppy, tape puncher and reader
+	#   term, wnch, 9045, flop, pnch, pnrd - terminal, winchester, floppy, tape puncher and reader
 	#   crk5 - CROOK-5
 	#   all - special "component" to set all components' levels to a given value
 	#

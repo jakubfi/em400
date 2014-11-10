@@ -77,7 +77,7 @@ int mem_init(struct cfg_em400_t *cfg)
 {
 	int res;
 
-	eprint("Initializing memory (Elwro: %d modules, MEGA: %d modules)\n", cfg->mem_elwro, cfg->mem_mega);
+	LOG(L_MEM, 1, "Initializing memory (Elwro: %d modules, MEGA: %d modules)", cfg->mem_elwro, cfg->mem_mega);
 
 	if (cfg->mem_elwro + cfg->mem_mega > MEM_MAX_MODULES+1) {
 		return E_MEM;
@@ -105,7 +105,7 @@ int mem_init(struct cfg_em400_t *cfg)
 // -----------------------------------------------------------------------
 void mem_shutdown()
 {
-	eprint("Shutdown memory\n");
+	LOG(L_MEM, 1, "Shutdown memory");
 
 	mem_mega_shutdown();
 	mem_elwro_shutdown();

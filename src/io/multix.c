@@ -184,7 +184,7 @@ struct chan_proto_t * mx_create(struct cfg_unit_t *units)
 			goto fail;
 		}
 
-		eprint("    Unit %i: %s\n", cunit->num, proto->name);
+		LOG(L_MX, 1, "Adding unit %i: %s", cunit->num, proto->name);
 
 		struct mx_unit_proto_t *unit = proto->create(cunit->args);
 		if (!unit) {
@@ -247,7 +247,7 @@ void mx_shutdown(struct chan_proto_t *chan)
 	for (int i=0 ; i<MX_MAX_DEVICES ; i++) {
 		struct mx_unit_proto_t *unit = CHAN->pline[i];
 		if (unit) {
-			eprint("    Unit %i: %s\n", unit->phy_num, unit->name);
+			LOG(L_MX, 1, "Removing unit %i: %s", unit->phy_num, unit->name);
 			pthread_mutex_unlock(&unit->transmit_mutex); // cancel any ongoing transmission
 
 			pthread_mutex_lock(&unit->worker_mutex); // wait for worker to become available

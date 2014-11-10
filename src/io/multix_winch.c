@@ -79,7 +79,7 @@ struct mx_unit_proto_t * mx_winch_create(struct cfg_arg_t *args)
 		goto fail;
 	}
 
-	eprint("      Winchester: cyl=%i, head=%i, sectors=%i, spt=%i, image=%s\n", winchester->cylinders, winchester->heads, winchester->spt, winchester->block_size, image_name);
+	LOG(L_WNCH, 1, "Winchester: cyl=%i, head=%i, sectors=%i, spt=%i, image=%s", winchester->cylinders, winchester->heads, winchester->spt, winchester->block_size, image_name);
 
 	free(image_name);
 	image_name = NULL;

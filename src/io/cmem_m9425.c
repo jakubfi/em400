@@ -20,6 +20,7 @@
 #include <inttypes.h>
 
 #include "errors.h"
+#include "log.h"
 #include "mem/mem.h"
 #include "io/cmem.h"
 #include "io/cmem_m9425.h"
@@ -69,7 +70,7 @@ struct cmem_unit_proto_t * cmem_m9425_create(struct cfg_arg_t *args)
 			res = E_IMAGE;
 			goto fail;
 		}
-		eprint("      MERA 9425 (plate %i): cyl=%i, head=%i, sectors=%i, spt=%i, image=%s\n", i, UNIT->disk[i]->cylinders, UNIT->disk[i]->heads, UNIT->disk[i]->spt, UNIT->disk[i]->block_size, image_name[i]);
+		LOG(L_9425, 1, "MERA 9425 (plate %i): cyl=%i, head=%i, sectors=%i, spt=%i, image=%s", i, UNIT->disk[i]->cylinders, UNIT->disk[i]->heads, UNIT->disk[i]->spt, UNIT->disk[i]->block_size, image_name[i]);
 		free(image_name[i]);
 		image_name[i] = NULL;
 	}

@@ -79,7 +79,7 @@ struct chan_proto_t * cmem_create(struct cfg_unit_t *units)
 			return NULL;
 		}
 
-		eprint("    Unit %i: %s\n", cunit->num, proto->name);
+		LOG(L_CMEM, 1, "Adding unit %i: %s", cunit->num, proto->name);
 
 		// create unit based on prototype
 		struct cmem_unit_proto_t *unit = proto->create(cunit->args);

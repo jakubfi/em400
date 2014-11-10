@@ -70,7 +70,7 @@ struct mx_unit_proto_t * mx_floppy_create(struct cfg_arg_t *args)
 		goto fail;
 	}
 
-	eprint("      Floppy: cyl=%i, head=%i, sectors=%i, spt=%i, image=%s\n", floppy->cylinders, floppy->heads, floppy->spt, floppy->block_size, image_name);
+	LOG(L_FLOP, 1, "Floppy: cyl=%i, head=%i, sectors=%i, spt=%i, image=%s", floppy->cylinders, floppy->heads, floppy->spt, floppy->block_size, image_name);
 
 	free(image_name);
 	image_name = NULL;

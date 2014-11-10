@@ -71,7 +71,6 @@ enum em400_error {
 };
 
 char * get_error(int e);
-void eprint(char *format, ...);
 
 #endif
 

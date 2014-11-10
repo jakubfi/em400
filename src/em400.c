@@ -81,6 +81,12 @@ void em400_init(struct cfg_em400_t *cfg)
 		em400_exit_error(res, "Error initializing logging");
 	}
 
+	if (LOG_WANTS(L_EM4H, 2)) {
+		log_log(L_EM4H, 2, "---- Effective configuration: ----------");
+		log_config(L_EM4H, 2, cfg);
+		log_log(L_EM4H, 2, "----------------------------------------");
+	}
+
 #ifdef WITH_DEBUGGER
 	em400_console = CONSOLE_DEBUGGER;
 #endif
@@ -108,12 +114,11 @@ void em400_init(struct cfg_em400_t *cfg)
 	regs[R_KB] = cfg->keys;
 
 	if (cfg->program_name) {
-		eprint("Loading image '%s' into OS memory\n", cfg->program_name);
 		int res = mem_load(cfg->program_name, 0, 0, 2*4096);
 		if (res < E_OK) {
 			em400_exit_error(res, "Could not load program '%s'", cfg->program_name);
 		} else {
-			printf("OS memory block image loaded: \"%s\", %i words\n", cfg->program_name, res);
+			LOG(L_EM4H, 1, "OS memory block image loaded: \"%s\", %i words", cfg->program_name, res);
 		}
 	}
 
@@ -145,7 +150,6 @@ void em400_usage()
 		"   -k value     : set keys to given value\n"
 		"   -e           : terminate emulation on HLT >= 040\n"
 		"   -b           : benchmark emulator\n"
-		"   -v           : enable verbose messages\n"
 #ifdef WITH_DEBUGGER
 		"\n"
 		"Debuger-only options:\n"

@@ -28,7 +28,7 @@
 // -----------------------------------------------------------------------
 struct mx_unit_proto_t * mx_puncher_create(struct cfg_arg_t *args)
 {
-	eprint("      Tape puncher\n");
+	LOG(L_PNCH, 1, "Tape puncher");
 
 	struct mx_unit_proto_t *unit = mx_puncher_create_nodev();
 	if (!unit) {

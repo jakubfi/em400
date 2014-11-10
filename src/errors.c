@@ -90,16 +90,4 @@ char * get_error(int e)
 	return edict->message;
 }
 
-// -----------------------------------------------------------------------
-void eprint(char *format, ...)
-{
-	// will be moved to log
-	return;
-	va_list ap;
-	va_start(ap, format);
-	vprintf(format, ap);
-	va_end(ap);
-}
-
-
 // vim: tabstop=4 shiftwidth=4 autoindent

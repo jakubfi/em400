@@ -53,7 +53,6 @@ struct cfg_em400_t * cfg_create_default()
 	cfg->program_name = NULL;
 	cfg->cfg_filename = home_cfg_fname;
 	cfg->exit_on_hlt = 0;
-	cfg->verbose = 0;
 	cfg->benchmark = 0;
 	cfg->print_help = 0;
 	cfg->script_name = NULL;
@@ -132,7 +131,7 @@ struct cfg_em400_t * cfg_from_args(int argc, char **argv)
 	int len;
 #endif
 
-	while ((option = getopt(argc, argv,"bvhec:p:k:rl:Lt:x:s")) != -1) {
+	while ((option = getopt(argc, argv,"bhec:p:k:rl:Lt:x:s")) != -1) {
 		switch (option) {
 			case 'L':
 				cfg->log_enabled = 0;
@@ -143,9 +142,6 @@ struct cfg_em400_t * cfg_from_args(int argc, char **argv)
 				break;
 			case 'b':
 				cfg->benchmark = 1;
-				break;
-			case 'v':
-				cfg->verbose = 1;
 				break;
 			case 'h':
 				cfg_destroy(cfg);
@@ -202,7 +198,6 @@ struct cfg_em400_t * cfg_from_args(int argc, char **argv)
 // -----------------------------------------------------------------------
 struct cfg_em400_t * cfg_from_file(char *cfg_file)
 {
-	eprint("Loading config file: %s\n", cfg_file);
 	FILE * cfgf = fopen(cfg_file, "r");
 	if (!cfgf) {
 		return NULL;
@@ -239,7 +234,6 @@ struct cfg_em400_t * cfg_overlay(struct cfg_em400_t *a, struct cfg_em400_t *b)
 	CHS(program_name);
 	CHS(cfg_filename);
 	CHI(exit_on_hlt);
-	CHI(verbose);
 	CHI(benchmark);
 	CHI(print_help);
 	CHS(script_name);
@@ -287,43 +281,6 @@ struct cfg_em400_t * cfg_overlay(struct cfg_em400_t *a, struct cfg_em400_t *b)
 
 	cfg_destroy(def);
 	return a;
-}
-
-// -----------------------------------------------------------------------
-void cfg_print(struct cfg_em400_t *cfg)
-{
-	eprint("---- Config: ---------------------------\n");
-	eprint("  Program to load: %s\n", cfg->program_name);
-	eprint("  User-provided config: %s\n", cfg->cfg_filename);
-	eprint("  Exit on HLT>=040: %s\n", cfg->exit_on_hlt ? "true" : "false");
-	eprint("  Emulation speed: %s\n", cfg->speed_real ? "real" : "max");
-	eprint("  Timer step: %i (%s at power-on)\n", cfg->timer_step, cfg->timer_start ? "enabled" : "disabled");
-	eprint("  CPU modifications: %s\n", cfg->cpu_mod ? "true" : "false");
-	eprint("  CPU stop on nomem: %s\n", cfg->cpu_stop_on_nomem ? "true" : "false");
-	eprint("  -- Memory: ---------------------------\n");
-	eprint("  Elwro modules: %i\n", cfg->mem_elwro);
-	eprint("  MEGA modules: %i\n", cfg->mem_mega);
-	eprint("  MEGA PROM image: %s\n", cfg->mem_mega_prom);
-	eprint("  MEGA boot: %s\n", cfg->mem_mega_boot ? "true" : "false");
-	eprint("  Segments for OS: %i\n", cfg->mem_os);
-	eprint("  -- I/O: ------------------------------\n");
-	struct cfg_chan_t *chanc = cfg->chans;
-	while (chanc) {
-		eprint("  Channel %2i: %s\n", chanc->num, chanc->name);
-		struct cfg_unit_t *unitc = chanc->units;
-		while (unitc) {
-			eprint("     Unit %2i: %s (args: ", unitc->num, unitc->name);
-			struct cfg_arg_t *args = unitc->args;
-			while (args) {
-				eprint("%s, ", args->text);
-				args = args->next;
-			}
-			eprint(")\n");
-			unitc = unitc->next;
-		}
-		chanc = chanc->next;
-	}
-	eprint("----------------------------------------\n");
 }
 
 // -----------------------------------------------------------------------

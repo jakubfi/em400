@@ -55,7 +55,7 @@ int mem_mega_init(int modc, char *prom_image)
 	mem_mega_mp_start = MEM_MAX_MODULES-modc;
 	mem_mega_mp_end = MEM_MAX_MODULES-1;
 
-	eprint("  MEGA modules: %d-%d, %d segments\n", mem_mega_mp_start, mem_mega_mp_end, MEM_MAX_MEGA_SEGMENTS);
+	LOG(L_MEM, 1, "MEGA modules: %d-%d, %d segments", mem_mega_mp_start, mem_mega_mp_end, MEM_MAX_MEGA_SEGMENTS);
 
 	for (mp=mem_mega_mp_start ; mp<=mem_mega_mp_end ; mp++) {
 		for (seg=0 ; seg<MEM_MAX_MEGA_SEGMENTS; seg++) {
@@ -80,9 +80,9 @@ int mem_mega_init(int modc, char *prom_image)
 			return res;
 		}
 		fclose(f);
-		eprint("  Loaded MEGA PROM image: %s (%i words)\n", prom_image, res);
+		LOG(L_MEM, 1, "Loaded MEGA PROM image: %s (%i words)", prom_image, res);
 	} else {
-		eprint("  Empty MEGA PROM\n");
+		LOG(L_MEM, 1, "Empty MEGA PROM");
 	}
 
 	mem_mega_init_done = 0;

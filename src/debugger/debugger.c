@@ -27,6 +27,7 @@
 
 #include "em400.h"
 #include "errors.h"
+#include "log.h"
 #include "utils.h"
 
 #include "debugger/dasm.h"
@@ -72,13 +73,12 @@ static void _dbg_sigint_handler(int signum)
 // -----------------------------------------------------------------------
 int dbg_init(struct cfg_em400_t *cfg)
 {
-	eprint("Initializing debugger: ");
 	// set UI mode
 	if (cfg->ui_simple == 1) {
-		eprint("simple\n");
+		LOG(L_EM4H, 1, "Initializing debugger console: readline");
 		ui_mode = O_STD;
 	} else {
-		eprint("ncurses\n");
+		LOG(L_EM4H, 1, "Initializing debugger console: ncurses");
 		ui_mode = O_NCURSES;
 	}
 
@@ -116,7 +116,7 @@ int dbg_init(struct cfg_em400_t *cfg)
 // -----------------------------------------------------------------------
 void dbg_shutdown()
 {
-	eprint("Shutdown debugger\n");
+	LOG(L_EM4H, 1, "Shutdown debugger");
 	aw_shutdown();
 }
 

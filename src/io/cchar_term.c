@@ -88,7 +88,7 @@ struct cchar_unit_proto_t * cchar_term_create(struct cfg_arg_t *args)
 		goto fail;
 	}
 
-	eprint("      Terminal (%s), port: %i\n", type, port);
+	LOG(L_TERM, 1, "Terminal (%s), port: %i", type, port);
 
 	pthread_mutexattr_t attr;
 	pthread_mutexattr_init(&attr);

@@ -48,7 +48,6 @@ struct cfg_em400_t {
 	char *program_name;
 	char *cfg_filename;
 	int exit_on_hlt;
-	int verbose;
 	int benchmark;
 	int print_help;
 	char *script_name;
@@ -85,12 +84,8 @@ struct cfg_em400_t {
 struct cfg_em400_t * cfg_create_default();
 struct cfg_em400_t * cfg_from_args(int argc, char **argv);
 struct cfg_em400_t * cfg_from_file(char *cfg_file);
-
-void cfg_destroy(struct cfg_em400_t *cfg);
-
 struct cfg_em400_t * cfg_overlay(struct cfg_em400_t *a, struct cfg_em400_t *b);
-
-void cfg_print(struct cfg_em400_t *cfg);
+void cfg_destroy(struct cfg_em400_t *cfg);
 
 struct cfg_arg_t * cfg_make_arg(char *arg);
 int cfg_args_decode(struct cfg_arg_t *arg, const char *format, ...);

@@ -60,7 +60,7 @@ int mem_elwro_init(int modc, int seg_os)
 	mem_elwro_mp_start = 0;
 	mem_elwro_mp_end = modc-1;
 
-	eprint("  Elwro modules: %d-%d, %d segments (%d hardwired OS segments)\n", mem_elwro_mp_start, mem_elwro_mp_end, MEM_MAX_ELWRO_SEGMENTS, seg_os);
+	LOG(L_MEM, 1, "Elwro modules: %d-%d, %d segments (%d hardwired OS segments)", mem_elwro_mp_start, mem_elwro_mp_end, MEM_MAX_ELWRO_SEGMENTS, seg_os);
 
 	for (mp=mem_elwro_mp_start ; mp<=mem_elwro_mp_end ; mp++) {
 		for (seg=0 ; seg<MEM_MAX_ELWRO_SEGMENTS; seg++) {

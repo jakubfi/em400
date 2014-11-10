@@ -70,13 +70,13 @@ int timer_init(struct cfg_em400_t *cfg)
 		return E_TIMER_VALUE;
 	}
 
-	eprint("Timer cycle: %i ms\n", timer_step);
+	LOG(L_CPU, 1, "Timer cycle: %i ms", timer_step);
 
 	if (cfg->timer_start) {
-		eprint("Starting timer\n");
+		LOG(L_CPU, 1, "Starting timer");
 		timer_on();
 	} else {
-		eprint("Timer disabled at power-on\n");
+		LOG(L_CPU, 1, "Timer disabled at power-on");
 		timer_off();
 	}
 
@@ -91,7 +91,7 @@ int timer_init(struct cfg_em400_t *cfg)
 // -----------------------------------------------------------------------
 void timer_shutdown()
 {
-	eprint("Shuttong down timer\n");
+	LOG(L_CPU, 1, "Shuttong down timer");
 	if (timer_th) {
 		sem_post(&timer_quit);
 		pthread_join(timer_th, NULL);

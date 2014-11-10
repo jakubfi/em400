@@ -26,8 +26,8 @@
 enum log_components {
 	L_REG, L_MEM, L_CPU, L_OP, L_INT,
 	L_IO,
-	L_MX, L_PX, L_CHAR, L_CMEM,
-	L_TERM, L_WNCH, L_FLOP, L_PNCH, L_PNRD,
+	L_MX, L_PX, L_CCHR, L_CMEM,
+	L_TERM, L_9425, L_WNCH, L_FLOP, L_PNCH, L_PNRD,
 	L_CRK5,
 	L_EM4H,
 	L_ALL
@@ -66,6 +66,7 @@ void log_handle_sp(unsigned component, unsigned level, uint16_t n);
 void log_handle_syscall(unsigned component, unsigned level, int number, int nb, int addr, int r4);
 void log_handle_syscall_ret(unsigned component, unsigned level, uint16_t n);
 void log_syscall_reset();
+void log_config(unsigned component, unsigned level, struct cfg_em400_t *cfg);
 
 #define LOG_ENABLED (atom_load(&log_enabled))
 #define LOG_WANTS(component, level) (LOG_ENABLED && log_wants(component, level))

@@ -52,7 +52,7 @@ struct mx_unit_proto_t * mx_term_create(struct cfg_arg_t *args)
 		goto fail;
 	}
 
-	eprint("      Terminal (%s), port: %i\n", type, port);
+	LOG(L_TERM, 1, "Terminal (%s), port: %i", type, port);
 
 	mx_term_connect(UNIT);
 	return unit;

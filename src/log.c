@@ -58,6 +58,7 @@ struct log_component log_components[] = {
 	{ "CCHR", 0 },
 	{ "CMEM", 0 },
 	{ "TERM", 0 },
+	{ "9425", 0 },
 	{ "WNCH", 0 },
 	{ "FLOP", 0 },
 	{ "PNCH", 0 },
@@ -577,6 +578,59 @@ void log_update_pname()
 	snprintf(log_pname, 7, "%s%s", n1, n2);
 	free(n1);
 	free(n2);
+}
+
+// -----------------------------------------------------------------------
+void log_config(unsigned component, unsigned level, struct cfg_em400_t *cfg)
+{
+	log_log(component, level, "Program to load: %s", cfg->program_name);
+	log_log(component, level, "Loaded config: %s", cfg->cfg_filename);
+	log_log(component, level, "Benchmark: %s", cfg->benchmark ? "yes" : "no");
+	log_log(component, level, "Print help: %s", cfg->print_help ? "yes" : "no");
+	log_log(component, level, "Exit on HLT>=040: %s", cfg->exit_on_hlt ? "yes" : "no");
+	log_log(component, level, "Emulation speed: %s", cfg->speed_real ? "real" : "max");
+	log_log(component, level, "Timer step: %i (%s at power-on)", cfg->timer_step, cfg->timer_start ? "enabled" : "disabled");
+	log_log(component, level, "CPU modifications: %s", cfg->cpu_mod ? "present" : "absent");
+	log_log(component, level, "IN/OU instructions: %s for user programs", cfg->cpu_user_io_illegal ? "illegal" : "legal");
+	log_log(component, level, "Hardware AWP: %s", cfg->cpu_awp ? "present" : "absent");
+	log_log(component, level, "KB: 0x%04x", cfg->keys);
+	log_log(component, level, "CPU stop on nomem in OS block: %s", cfg->cpu_stop_on_nomem ? "yes" : "no");
+	log_log(component, level, "Memory:");
+	log_log(component, level, "   Elwro modules: %i", cfg->mem_elwro);
+	log_log(component, level, "   MEGA modules: %i", cfg->mem_mega);
+	log_log(component, level, "   MEGA PROM image: %s", cfg->mem_mega_prom);
+	log_log(component, level, "   MEGA boot: %s", cfg->mem_mega_boot ? "true" : "false");
+	log_log(component, level, "   Segments for OS: %i", cfg->mem_os);
+	log_log(component, level, "Logging (%s):", cfg->log_enabled ? "enabled" : "disabled");
+	log_log(component, level, "   File: %s", cfg->log_file);
+	log_log(component, level, "   Levels: %s", cfg->log_levels);
+	log_log(component, level, "   CROOK-5 process name offset: %i", cfg->log_pname_offset);
+	log_log(component, level, "I/O:");
+
+	char buf[4096];
+	int bpos;
+
+	struct cfg_chan_t *chanc = cfg->chans;
+	while (chanc) {
+		log_log(component, level, "   Channel %2i: %s", chanc->num, chanc->name);
+
+		struct cfg_unit_t *unitc = chanc->units;
+		while (unitc) {
+			bpos = 0;
+			struct cfg_arg_t *args = unitc->args;
+			while (args) {
+				bpos += sprintf(buf+bpos, "%s", args->text);
+				args = args->next;
+				if (args) {
+					bpos += sprintf(buf+bpos, ", ");
+				}
+			}
+			log_log(component, level, "      Unit %2i: %s (%s)", unitc->num, unitc->name, buf);
+			unitc = unitc->next;
+		}
+
+		chanc = chanc->next;
+	}
 }
 
 
