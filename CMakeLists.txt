@@ -51,6 +51,4 @@ ADD_SUBDIRECTORY(src/mem build/mem)
 ADD_SUBDIRECTORY(src/cpu build/cpu)
 ADD_SUBDIRECTORY(src build)
 
-install(FILES em400.cfg.template DESTINATION /etc/em400 RENAME em400.cfg OPTIONAL)
-
 # vim: tabstop=4
