@@ -198,35 +198,26 @@ void em400_loop(struct cfg_em400_t *cfg)
 }
 
 // -----------------------------------------------------------------------
+void em400_mkconfdir()
+{
+	char *conf_dirname = NULL;
+
+	const char *cdir = "/.em400";
+	char *home = getenv("HOME");
+	conf_dirname = malloc(strlen(home) + strlen(cdir) + 1);
+	if (conf_dirname) {
+		sprintf(conf_dirname, "%s%s", home, cdir);
+		mkdir(conf_dirname, 0700);
+		free(conf_dirname);
+	}
+}
+
+// -----------------------------------------------------------------------
 struct cfg_em400_t * em400_configure(int argc, char** argv)
 {
 	struct cfg_em400_t *cfg_cmdline = NULL;
 	struct cfg_em400_t *cfg_file = NULL;
 	struct cfg_em400_t *cfg_final = NULL;
-
-	char *conf_dirname = NULL;
-	char *home_cfg_fname = NULL;
-
-	const char *cdir = "/.em400";
-	const char *cfile = "/.em400/em400.cfg";
-	char *home = getenv("HOME");
-
-	conf_dirname = malloc(strlen(home) + strlen(cdir) + 1);
-	if (!conf_dirname) {
-		printf("Memory allocation error");
-		goto cleanup;
-	}
-
-	home_cfg_fname = malloc(strlen(home) + strlen(cfile) + 1);
-	if (!home_cfg_fname) {
-		printf("Memory allocation error");
-		goto cleanup;
-	}
-
-	sprintf(conf_dirname, "%s%s", home, cdir);
-	sprintf(home_cfg_fname, "%s%s", home, cfile);
-
-	mkdir(conf_dirname, 0700);
 
 	// parse commandline first, because:
 	//  * user may need help (-h)
@@ -238,20 +229,10 @@ struct cfg_em400_t * em400_configure(int argc, char** argv)
 		goto cleanup;
 	}
 
-	char *cfgf;
-
-	// user-provided config file
-	if (cfg_cmdline->cfg_provided) {
-		cfgf = cfg_cmdline->cfg_provided;
-	// default config file ~/.em400/em400.cfg
-	} else {
-		cfgf = home_cfg_fname;
-	}
-
 	// load configuration from file
-	cfg_file = cfg_from_file(cfgf);
+	cfg_file = cfg_from_file(cfg_cmdline->cfg_filename);
 	if (!cfg_file) {
-		printf("Could not load config file: %s\n", cfgf);
+		printf("Could not load config file: %s\n", cfg_cmdline->cfg_filename);
 		goto cleanup;
 	}
 
@@ -264,8 +245,6 @@ struct cfg_em400_t * em400_configure(int argc, char** argv)
 
 cleanup:
 	cfg_destroy(cfg_cmdline);
-	free(conf_dirname);
-	free(home_cfg_fname);
 
 	return cfg_final;
 }
@@ -280,6 +259,8 @@ int main(int argc, char** argv)
 	printf("+debugger ");
 #endif
 	printf("\n");
+
+	em400_mkconfdir();
 
 	struct cfg_em400_t *cfg = em400_configure(argc, argv);
 

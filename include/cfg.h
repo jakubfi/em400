@@ -46,7 +46,7 @@ struct cfg_chan_t {
 struct cfg_em400_t {
 
 	char *program_name;
-	char *cfg_provided;
+	char *cfg_filename;
 	int exit_on_hlt;
 	int verbose;
 	int benchmark;

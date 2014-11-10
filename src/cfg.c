@@ -40,9 +40,18 @@ struct cfg_em400_t * cfg_create_default()
 	struct cfg_em400_t *cfg = malloc(sizeof(struct cfg_em400_t));
 	if (!cfg) return NULL;
 
+	const char *cfile = "/.em400/em400.cfg";
+	char *home = getenv("HOME");
+	char *home_cfg_fname = malloc(strlen(home) + strlen(cfile) + 1);
+	if (!home_cfg_fname) {
+		cfg_destroy(cfg);
+		return NULL;
+	}
+	sprintf(home_cfg_fname, "%s%s", home, cfile);
+
 	// emulator
 	cfg->program_name = NULL;
-	cfg->cfg_provided = NULL;
+	cfg->cfg_filename = home_cfg_fname;
 	cfg->exit_on_hlt = 0;
 	cfg->verbose = 0;
 	cfg->benchmark = 0;
@@ -95,7 +104,7 @@ void cfg_destroy(struct cfg_em400_t *cfg)
 	if (!cfg) return;
 
 	free(cfg->program_name);
-	free(cfg->cfg_provided);
+	free(cfg->cfg_filename);
 	free(cfg->script_name);
 
 	free(cfg->mem_mega_prom);
@@ -143,7 +152,7 @@ struct cfg_em400_t * cfg_from_args(int argc, char **argv)
 				return NULL;
 				break;
 			case 'c':
-				cfg->cfg_provided = strdup(optarg);
+				cfg->cfg_filename = strdup(optarg);
 				break;
 			case 'p':
 				cfg->program_name = strdup(optarg);
@@ -228,7 +237,7 @@ struct cfg_em400_t * cfg_overlay(struct cfg_em400_t *a, struct cfg_em400_t *b)
 
 	// emulator
 	CHS(program_name);
-	CHS(cfg_provided);
+	CHS(cfg_filename);
 	CHI(exit_on_hlt);
 	CHI(verbose);
 	CHI(benchmark);
@@ -285,7 +294,7 @@ void cfg_print(struct cfg_em400_t *cfg)
 {
 	eprint("---- Config: ---------------------------\n");
 	eprint("  Program to load: %s\n", cfg->program_name);
-	eprint("  User-provided config: %s\n", cfg->cfg_provided);
+	eprint("  User-provided config: %s\n", cfg->cfg_filename);
 	eprint("  Exit on HLT>=040: %s\n", cfg->exit_on_hlt ? "true" : "false");
 	eprint("  Emulation speed: %s\n", cfg->speed_real ? "real" : "max");
 	eprint("  Timer step: %i (%s at power-on)\n", cfg->timer_step, cfg->timer_start ? "enabled" : "disabled");
