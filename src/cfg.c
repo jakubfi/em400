@@ -113,8 +113,10 @@ void cfg_destroy(struct cfg_em400_t *cfg)
 
 	cfg_drop_chans(cfg->chans);
 
+#ifdef WITH_DEBUGGER
 	free(cfg->pre_expr);
 	free(cfg->test_expr);
+#endif
 
 	free(cfg);
 }
