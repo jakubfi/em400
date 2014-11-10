@@ -3,7 +3,7 @@ FLEX_TARGET(scanner scanner.l ${CMAKE_CURRENT_BINARY_DIR}/scanner.c COMPILE_FLAG
 ADD_FLEX_BISON_DEPENDENCY(scanner parser)
 
 ADD_library(debugger
-	awin.c awinch.c dasm.c debugger.c eval.c dasm_iset.c cmd.c ui.c
+	awin.c awinch.c debugger.c eval.c cmd.c ui.c
 	keywords.c decode.c
 	${BISON_parser_OUTPUTS}
 	${FLEX_scanner_OUTPUTS}

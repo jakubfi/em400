@@ -82,7 +82,6 @@ run		{ return F_RUN; }
 stk		{ return F_STACK; }
 help	{ BEGIN(texts); return F_HELP; }
 dasm	{ BEGIN(args); return F_DASM; }
-trans	{ BEGIN(args); return F_TRANS; }
 mem		{ BEGIN(args); return F_MEM; }
 load	{ BEGIN(texts); return F_LOAD; }
 brk		{ BEGIN(opts); return F_BRK; }

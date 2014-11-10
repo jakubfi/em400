@@ -41,7 +41,7 @@ void dbg_c_stack(int wid, int size);
 void dbg_c_reset();
 void dbg_c_mem(int wid, int block, int start, int end, int maxcols, int maxlines);
 void dbg_c_clmem();
-void dbg_c_dt(int wid, int dasm_mode, uint16_t start, int count);
+void dbg_c_dt(int wid, uint16_t start, int count);
 void dbg_c_load(int wid, char* image);
 void dbg_c_memcfg(int wid);
 void dbg_c_brk_add(int wid, char *label, struct node_t *n);

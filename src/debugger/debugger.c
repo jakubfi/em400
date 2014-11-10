@@ -20,6 +20,7 @@
 #include <limits.h>
 #include <pthread.h>
 #include <signal.h>
+#include <emdas.h>
 
 #include "cpu/cpu.h"
 #include "cpu/registers.h"
@@ -30,7 +31,6 @@
 #include "log.h"
 #include "utils.h"
 
-#include "debugger/dasm.h"
 #include "debugger/awin.h"
 #include "debugger/debugger.h"
 #include "debugger/ui.h"
@@ -57,6 +57,9 @@ struct evlb_t *brk_top = NULL;
 // watches
 struct evlb_t *watch_stack = NULL;
 struct evlb_t *watch_top = NULL;
+
+// emdas
+struct emdas *emd;
 
 extern int yyparse();
 typedef struct yy_buffer_state *YY_BUFFER_STATE;
@@ -110,7 +113,16 @@ int dbg_init(struct cfg_em400_t *cfg)
 	// register/memory action is none when debugger starts
 	dbg_fin_cycle();
 
-	return 0;
+	emd = emdas_create(cfg->cpu_mod ? EMD_ISET_MX16 : EMD_ISET_MERA400, mem_ptr);
+	if (!emd) {
+		return E_DASM;
+	}
+
+	emdas_set_nl(emd, '\0');
+	emdas_set_features(emd, EMD_FEAT_NONE);
+	emdas_set_tabs(emd, 0, 0, 4, 4);
+
+	return E_OK;
 }
 
 // -----------------------------------------------------------------------
@@ -118,6 +130,7 @@ void dbg_shutdown()
 {
 	LOG(L_EM4H, 1, "Shutdown debugger");
 	aw_shutdown();
+	emdas_destroy(emd);
 }
 
 // -----------------------------------------------------------------------

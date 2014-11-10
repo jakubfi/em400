@@ -33,7 +33,6 @@
 #include "log.h"
 
 #include "debugger/awin.h"
-#include "debugger/dasm.h"
 #include "debugger/debugger.h"
 #include "debugger/cmd.h"
 #include "debugger/ui.h"
@@ -52,7 +51,6 @@ struct cmd_t dbg_commands[] = {
 	{ "sregs",	F_SREGS,	"Show system registers", "  sregs" },
 	{ "reset",	F_RESET,	"Reset the emulator", "  reset" },
 	{ "dasm",	F_DASM,		"Disassembler", "  dasm [[start] count]" },
-	{ "trans",	F_TRANS,	"Translator", "  trans [[start] count]" },
 	{ "mem",	F_MEM,		"Show memory contents", "  mem [block:] <start> [len]" },
 	{ "memcl",	F_MEMCL,	"Clear memory contents", "  memcl" },
 	{ "load",	F_LOAD,		"Load memory image from file", "  load <file>" },
@@ -134,36 +132,37 @@ void dbg_c_clmem()
 }
 
 // -----------------------------------------------------------------------
-void dbg_c_dt(int wid, int dasm_mode, uint16_t start, int count)
+void dbg_c_dt(int wid, uint16_t ic, int count)
 {
-	char buf[1024];
-	int len;
+	int words;
+	char *buf = emdas_get_buf(emd);
 
 	while (count > 0) {
-		len = dt_trans(start, buf, dasm_mode);
-		if (len) {
-			if (start == regs[R_IC]) {
-				if (P) {
-					awtbprint(wid, C_IRED, "0x%04x", start);
-					awtbprint(wid, C_IRED, " %-20s", buf);
-				} else {
-					awtbprint(wid, C_ILABEL, "0x%04x", start);
-					awtbprint(wid, C_IDATA, " %-20s", buf);
-				}
+		words = emdas_dasm(emd, QNB, ic);
+		emdas_get_buf(emd);
+
+		if (ic == regs[R_IC]) {
+			if (P) {
+				awtbprint(wid, C_IRED, "0x%04x", ic);
+				awtbprint(wid, C_IRED, " %-20s", buf);
 			} else {
-				awtbprint(wid, C_LABEL, "0x%04x", start);
-				if (*buf == '-') {
-					awtbprint(wid, C_DATA, " %-20s", buf);
-				} else if (*buf == '~') {
-					awtbprint(wid, C_ERROR, " %-20s", buf);
-				} else {
-					awtbprint(wid, C_PROMPT, " %-20s", buf);
-				}
+				awtbprint(wid, C_ILABEL, "0x%04x", ic);
+				awtbprint(wid, C_IDATA, " %-20s", buf);
 			}
-			start += len;
+		} else {
+			awtbprint(wid, C_LABEL, "0x%04x", ic);
+			if (*buf == '.') {
+				awtbprint(wid, C_DATA, " %-20s", buf);
+			} else if (*buf == '?') {
+				awtbprint(wid, C_ERROR, " %-20s", buf);
+			} else {
+				awtbprint(wid, C_PROMPT, " %-20s", buf);
+			}
 		}
+
 		awtbprint(wid, C_DATA, "\n");
 		count--;
+		ic += words;
 	}
 }
 

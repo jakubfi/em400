@@ -24,7 +24,6 @@
 #include "cpu/cpu.h"
 #include "cpu/registers.h"
 
-#include "debugger/dasm.h"
 #include "debugger/awin.h"
 #include "debugger/debugger.h"
 #include "debugger/cmd.h"
@@ -111,7 +110,7 @@ void dbg_wu_dasm(int wid)
 		start = regs[R_IC] - offset;
 	}
 	awin_tb_clear(wid);
-	dbg_c_dt(wid, DMODE_DASM, start, w->ih);
+	dbg_c_dt(wid, start, w->ih);
 	awin_tb_update(wid, w->ih);
 }
 

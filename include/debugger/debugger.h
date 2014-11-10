@@ -19,6 +19,7 @@
 #define DEBUGGER_DEBUGGER_H
 
 #include <inttypes.h>
+#include <emdas.h>
 
 #include "cfg.h"
 
@@ -48,6 +49,8 @@ extern struct evlb_t *watch_top;
 extern uint32_t int_act;
 extern int int_serve_stack[32];
 extern int int_serve_top;
+
+extern struct emdas *emd;
 
 struct evlb_t * dbg_brk_check();
 void dbg_step();

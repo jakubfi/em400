@@ -25,7 +25,6 @@
 #include "utils.h"
 #include "log.h"
 
-#include "debugger/dasm.h"
 #include "debugger/debugger.h"
 #include "debugger/ui.h"
 #include "debugger/cmd.h"
@@ -48,7 +47,7 @@ char verr[128];
 %token ':' '&' '|' '(' ')'
 %token HEX OCT BIN INT UINT
 %token IRZ
-%token <value> F_QUIT F_MEMCL F_MEM F_REGS F_SREGS F_RESET F_STEP F_HELP F_DASM F_TRANS F_LOAD F_MEMCFG F_BRK F_RUN F_STACK F_LOG F_SCRIPT F_WATCH F_DECODE F_FIND F_TIMER
+%token <value> F_QUIT F_MEMCL F_MEM F_REGS F_SREGS F_RESET F_STEP F_HELP F_DASM F_LOAD F_MEMCFG F_BRK F_RUN F_STACK F_LOG F_SCRIPT F_WATCH F_DECODE F_FIND F_TIMER
 %token ADD DEL TEST
 %token ON OFF
 %type <n> expr lval bitfield basemod
@@ -165,12 +164,9 @@ command:
 	| F_STACK 				{ dbg_c_stack(W_CMD, 12); }
 	| F_HELP 				{ dbg_c_help(W_CMD, NULL); }
 	| F_HELP TEXT			{ dbg_c_help(W_CMD, $2); free($2); }
-	| F_DASM				{ dbg_c_dt(W_CMD, DMODE_DASM, regs[R_IC], 1); }
-	| F_DASM VALUE			{ dbg_c_dt(W_CMD, DMODE_DASM, regs[R_IC], $2); }
-	| F_DASM expr VALUE		{ dbg_c_dt(W_CMD, DMODE_DASM, n_eval($2), $3); }
-	| F_TRANS				{ dbg_c_dt(W_CMD, DMODE_TRANS, regs[R_IC], 1); }
-	| F_TRANS VALUE			{ dbg_c_dt(W_CMD, DMODE_TRANS, regs[R_IC], $2); }
-	| F_TRANS expr VALUE	{ dbg_c_dt(W_CMD, DMODE_TRANS, n_eval($2), $3); }
+	| F_DASM				{ dbg_c_dt(W_CMD, regs[R_IC], 1); }
+	| F_DASM VALUE			{ dbg_c_dt(W_CMD, regs[R_IC], $2); }
+	| F_DASM expr VALUE		{ dbg_c_dt(W_CMD, n_eval($2), $3); }
 	| F_MEM expr			{ dbg_c_mem(W_CMD, QNB, n_eval($2), n_eval($2)+15, 122, 18); }
 	| F_MEM expr VALUE		{ dbg_c_mem(W_CMD, QNB, n_eval($2), n_eval($2)+$3-1, 122, 18); }
 	| F_MEM VALUE ':' expr	{ dbg_c_mem(W_CMD, $2, n_eval($4), n_eval($4)+15, 122, 18); }

@@ -38,3 +38,5 @@ int aw_sigwinch_init()
 
 	return 0;
 }
+
+// vim: tabstop=4 shiftwidth=4 autoindent
