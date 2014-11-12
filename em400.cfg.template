@@ -109,10 +109,6 @@ log {
 #	unit 2 = term_serial: /dev/ttyS0, 9600, 8, N, 1
 #}
 #
-#channel 2 = plix {
-#	unit 0 = winchester: /home/amo/winchester1.img
-#	unit 1 = winchester: /home/amo/winchester2.img
-#}
 
 channel 1 = multix {
 #	unit 0 = puncher

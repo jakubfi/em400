@@ -28,7 +28,6 @@
 #include "io/cmem.h"
 #include "io/cchar.h"
 #include "io/multix.h"
-#include "io/plix.h"
 
 #include "cfg.h"
 #include "utils.h"
@@ -40,7 +39,6 @@ static struct chan chan_proto[] = {
 	{ -1, "char",		cchar_create,	cchar_shutdown,	cchar_reset,	cchar_cmd },
 	{ -1, "mem",		cmem_create,	cmem_shutdown,	cmem_reset,		cmem_cmd },
 	{ -1, "multix",		mx_create,		mx_shutdown,	mx_reset,		mx_cmd },
-	{ -1, "plix",		px_create,		NULL,			NULL,			NULL },
 	{ -1, NULL,			NULL,			NULL,			NULL,			NULL }
 };
 
