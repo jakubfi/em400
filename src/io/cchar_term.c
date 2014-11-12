@@ -34,7 +34,7 @@
 #define UNIT ((struct cchar_unit_term_t *)(unit))
 
 // -----------------------------------------------------------------------
-struct cchar_unit_proto_t * cchar_term_create(struct cfg_arg_t *args)
+struct cchar_unit_proto_t * cchar_term_create(struct cfg_arg *args)
 {
 	char *type = NULL;
 	int port;

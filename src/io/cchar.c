@@ -59,10 +59,10 @@ struct cchar_unit_proto_t * cchar_unit_proto_get(struct cchar_unit_proto_t *prot
 }
 
 // -----------------------------------------------------------------------
-struct chan_proto_t * cchar_create(struct cfg_unit_t *units)
+struct chan_proto_t * cchar_create(struct cfg_unit *units)
 {
 	struct cchar_chan_t *chan = calloc(1, sizeof(struct cchar_chan_t));
-	struct cfg_unit_t *cunit = units;
+	struct cfg_unit *cunit = units;
 	while (cunit) {
 		// find unit prototype
 		struct cchar_unit_proto_t *proto = cchar_unit_proto_get(cchar_unit_proto, cunit->name);

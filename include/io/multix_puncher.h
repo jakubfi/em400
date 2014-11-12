@@ -28,7 +28,7 @@ struct mx_unit_puncher_t {
 	struct mx_unit_proto_t proto;
 };
 
-struct mx_unit_proto_t * mx_puncher_create(struct cfg_arg_t *args);
+struct mx_unit_proto_t * mx_puncher_create(struct cfg_arg *args);
 struct mx_unit_proto_t * mx_puncher_create_nodev();
 void mx_puncher_connect(struct mx_unit_puncher_t *unit);
 void mx_puncher_disconnect(struct mx_unit_puncher_t *unit);

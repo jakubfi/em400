@@ -36,7 +36,7 @@
 #define UNIT ((struct mx_unit_winch_t *)(unit))
 
 // -----------------------------------------------------------------------
-struct mx_unit_proto_t * mx_winch_create(struct cfg_arg_t *args)
+struct mx_unit_proto_t * mx_winch_create(struct cfg_arg *args)
 {
 	char *image_name = NULL;
 	struct e4i_t *winchester = NULL;

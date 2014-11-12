@@ -28,7 +28,7 @@
 
 struct cmem_unit_proto_t;
 
-typedef struct cmem_unit_proto_t * (*cmem_unit_f_create)(struct cfg_arg_t *args);
+typedef struct cmem_unit_proto_t * (*cmem_unit_f_create)(struct cfg_arg *args);
 typedef void (*cmem_unit_f_shutdown)(struct cmem_unit_proto_t *unit);
 typedef void (*cmem_unit_f_reset)(struct cmem_unit_proto_t *unit);
 typedef int (*cmem_unit_f_cmd)(struct cmem_unit_proto_t *unit, int dir, int cmd, uint16_t *r_arg);
@@ -70,7 +70,7 @@ enum cmem_int_e {
 	CMEM_INT_NONE		= 9999,// no interrupt (em400 marker)
 };
 
-struct chan_proto_t * cmem_create(struct cfg_unit_t *units);
+struct chan_proto_t * cmem_create(struct cfg_unit *units);
 void cmem_shutdown(struct chan_proto_t *chan);
 void cmem_reset(struct chan_proto_t *chan);
 void cmem_int(struct cmem_chan_t *chan, int unit_n, int interrupt);

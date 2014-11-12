@@ -35,9 +35,9 @@ int cyylex_destroy();
 int cfg_error = 0;
 
 // -----------------------------------------------------------------------
-struct cfg_em400_t * cfg_create_default()
+struct cfg_em400 * cfg_create_default()
 {
-	struct cfg_em400_t *cfg = malloc(sizeof(struct cfg_em400_t));
+	struct cfg_em400 *cfg = malloc(sizeof(struct cfg_em400));
 	if (!cfg) return NULL;
 
 	const char *cfile = "/.em400/em400.cfg";
@@ -98,7 +98,7 @@ struct cfg_em400_t * cfg_create_default()
 }
 
 // -----------------------------------------------------------------------
-void cfg_destroy(struct cfg_em400_t *cfg)
+void cfg_destroy(struct cfg_em400 *cfg)
 {
 	if (!cfg) return;
 
@@ -122,9 +122,9 @@ void cfg_destroy(struct cfg_em400_t *cfg)
 }
 
 // -----------------------------------------------------------------------
-struct cfg_em400_t * cfg_from_args(int argc, char **argv)
+struct cfg_em400 * cfg_from_args(int argc, char **argv)
 {
-	struct cfg_em400_t *cfg = cfg_create_default();
+	struct cfg_em400 *cfg = cfg_create_default();
 	if (!cfg) return NULL;
 
 	int option;
@@ -198,14 +198,14 @@ struct cfg_em400_t * cfg_from_args(int argc, char **argv)
 
 
 // -----------------------------------------------------------------------
-struct cfg_em400_t * cfg_from_file(char *cfg_file)
+struct cfg_em400 * cfg_from_file(char *cfg_file)
 {
 	FILE * cfgf = fopen(cfg_file, "r");
 	if (!cfgf) {
 		return NULL;
 	}
 
-	struct cfg_em400_t *cfg = cfg_create_default();
+	struct cfg_em400 *cfg = cfg_create_default();
 
 	cyyin = cfgf;
 	do {
@@ -224,13 +224,13 @@ struct cfg_em400_t * cfg_from_file(char *cfg_file)
 }
 
 // -----------------------------------------------------------------------
-struct cfg_em400_t * cfg_overlay(struct cfg_em400_t *a, struct cfg_em400_t *b)
+struct cfg_em400 * cfg_overlay(struct cfg_em400 *a, struct cfg_em400 *b)
 {
 
 #define CHI(v) if (b->v != def->v) a->v = b->v
 #define CHS(v) if (b->v != def->v) {free(a->v); a->v = b->v; b->v = NULL;}
 
-	struct cfg_em400_t *def = cfg_create_default();
+	struct cfg_em400 *def = cfg_create_default();
 
 	// emulator
 	CHS(program_name);
@@ -286,16 +286,16 @@ struct cfg_em400_t * cfg_overlay(struct cfg_em400_t *a, struct cfg_em400_t *b)
 }
 
 // -----------------------------------------------------------------------
-struct cfg_arg_t * cfg_make_arg(char *s)
+struct cfg_arg * cfg_make_arg(char *s)
 {
-	struct cfg_arg_t *a = malloc(sizeof(struct cfg_arg_t));
+	struct cfg_arg *a = malloc(sizeof(struct cfg_arg));
 	a->text = s;
 	a->next = NULL;
 	return a;
 }
 
 // -----------------------------------------------------------------------
-int cfg_args_decode(struct cfg_arg_t *arg, const char *format, ...)
+int cfg_args_decode(struct cfg_arg *arg, const char *format, ...)
 {
 	int *i;
 	char *c;
@@ -344,13 +344,13 @@ int cfg_args_decode(struct cfg_arg_t *arg, const char *format, ...)
 }
 
 // -----------------------------------------------------------------------
-void cfg_make_unit(struct cfg_em400_t *cfg, int u_num, char *name, struct cfg_arg_t *arglist)
+void cfg_make_unit(struct cfg_em400 *cfg, int u_num, char *name, struct cfg_arg *arglist)
 {
 	if (u_num < 0) {
 		cyyerror("Incorrect unit number: %i", u_num);
 	}
 
-	struct cfg_unit_t *u = malloc(sizeof(struct cfg_unit_t));
+	struct cfg_unit *u = malloc(sizeof(struct cfg_unit));
 	u->name = name;
 	u->num = u_num;
 	u->args = arglist;
@@ -359,13 +359,13 @@ void cfg_make_unit(struct cfg_em400_t *cfg, int u_num, char *name, struct cfg_ar
 }
 
 // -----------------------------------------------------------------------
-void cfg_make_chan(struct cfg_em400_t *cfg, int c_num, char *name)
+void cfg_make_chan(struct cfg_em400 *cfg, int c_num, char *name)
 {
 	if ((c_num < 0) || (c_num > IO_MAX_CHAN)) {
 		cyyerror("Incorrect channel number: %i", c_num);
 	}
 
-	struct cfg_chan_t *c = malloc(sizeof(struct cfg_chan_t));
+	struct cfg_chan *c = malloc(sizeof(struct cfg_chan));
 	c->num = c_num;
 	c->name = name;
 	c->next = cfg->chans;
@@ -374,7 +374,7 @@ void cfg_make_chan(struct cfg_em400_t *cfg, int c_num, char *name)
 }
 
 // -----------------------------------------------------------------------
-void cfg_drop_args(struct cfg_arg_t *a)
+void cfg_drop_args(struct cfg_arg *a)
 {
 	if (!a) {
 		return;
@@ -385,7 +385,7 @@ void cfg_drop_args(struct cfg_arg_t *a)
 }
 
 // -----------------------------------------------------------------------
-void cfg_drop_units(struct cfg_unit_t *u)
+void cfg_drop_units(struct cfg_unit *u)
 {
 	if (!u) {
 		return;
@@ -397,7 +397,7 @@ void cfg_drop_units(struct cfg_unit_t *u)
 }
 
 // -----------------------------------------------------------------------
-void cfg_drop_chans(struct cfg_chan_t *c)
+void cfg_drop_chans(struct cfg_chan *c)
 {
 	if (!c) {
 		return;

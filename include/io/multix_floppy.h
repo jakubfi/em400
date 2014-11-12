@@ -92,7 +92,7 @@ struct mx_floppy_cf_t {
 };
 
 
-struct mx_unit_proto_t * mx_floppy_create(struct cfg_arg_t *args);
+struct mx_unit_proto_t * mx_floppy_create(struct cfg_arg *args);
 struct mx_unit_proto_t * mx_floppy_create_nodev();
 void mx_floppy_connect(struct mx_unit_floppy_t *unit, struct e4i_t *floppy);
 void mx_floppy_disconnect(struct mx_unit_floppy_t *unit);

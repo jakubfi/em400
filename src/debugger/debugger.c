@@ -74,7 +74,7 @@ static void _dbg_sigint_handler(int signum)
 }
 
 // -----------------------------------------------------------------------
-int dbg_init(struct cfg_em400_t *cfg)
+int dbg_init(struct cfg_em400 *cfg)
 {
 	// set UI mode
 	if (cfg->ui_simple == 1) {

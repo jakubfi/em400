@@ -28,7 +28,7 @@
 #include "log.h"
 
 // -----------------------------------------------------------------------
-struct chan_proto_t * px_create(struct cfg_unit_t *units)
+struct chan_proto_t * px_create(struct cfg_unit *units)
 {
 	return NULL;
 }

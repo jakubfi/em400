@@ -108,7 +108,7 @@ uint16_t *mem_ptr(int nb, uint16_t addr);
 static void log_log_timestamp(unsigned component, unsigned level, char *msg);
 
 // -----------------------------------------------------------------------
-int log_init(struct cfg_em400_t *cfg)
+int log_init(struct cfg_em400 *cfg)
 {
 	int res;
 	int ret = E_ALLOC;
@@ -581,7 +581,7 @@ void log_update_pname()
 }
 
 // -----------------------------------------------------------------------
-void log_config(unsigned component, unsigned level, struct cfg_em400_t *cfg)
+void log_config(unsigned component, unsigned level, struct cfg_em400 *cfg)
 {
 	log_log(component, level, "Program to load: %s", cfg->program_name);
 	log_log(component, level, "Loaded config: %s", cfg->cfg_filename);
@@ -610,14 +610,14 @@ void log_config(unsigned component, unsigned level, struct cfg_em400_t *cfg)
 	char buf[4096];
 	int bpos;
 
-	struct cfg_chan_t *chanc = cfg->chans;
+	struct cfg_chan *chanc = cfg->chans;
 	while (chanc) {
 		log_log(component, level, "   Channel %2i: %s", chanc->num, chanc->name);
 
-		struct cfg_unit_t *unitc = chanc->units;
+		struct cfg_unit *unitc = chanc->units;
 		while (unitc) {
 			bpos = 0;
-			struct cfg_arg_t *args = unitc->args;
+			struct cfg_arg *args = unitc->args;
 			while (args) {
 				bpos += sprintf(buf+bpos, "%s", args->text);
 				args = args->next;

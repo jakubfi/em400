@@ -28,7 +28,7 @@
 #define UNIT ((struct mx_unit_terminal_t *)(unit))
 
 // -----------------------------------------------------------------------
-struct mx_unit_proto_t * mx_term_create(struct cfg_arg_t *args)
+struct mx_unit_proto_t * mx_term_create(struct cfg_arg *args)
 {
 	char *type = NULL;
 	int port;

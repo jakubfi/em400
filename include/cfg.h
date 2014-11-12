@@ -21,29 +21,29 @@
 extern int cfg_error;
 
 // -----------------------------------------------------------------------
-struct cfg_arg_t {
+struct cfg_arg {
 	char *text;
-	struct cfg_arg_t *next;
+	struct cfg_arg *next;
 };
 
 // -----------------------------------------------------------------------
-struct cfg_unit_t {
+struct cfg_unit {
 	char *name;
 	int num;
-	struct cfg_arg_t *args;
-	struct cfg_unit_t *next;
+	struct cfg_arg *args;
+	struct cfg_unit *next;
 };
 
 // -----------------------------------------------------------------------
-struct cfg_chan_t {
+struct cfg_chan {
 	char *name;
 	int num;
-	struct cfg_unit_t *units;
-	struct cfg_chan_t *next;
+	struct cfg_unit *units;
+	struct cfg_chan *next;
 };
 
 // -----------------------------------------------------------------------
-struct cfg_em400_t {
+struct cfg_em400 {
 
 	char *program_name;
 	char *cfg_filename;
@@ -70,7 +70,7 @@ struct cfg_em400_t {
 	char *log_levels;
 	int log_pname_offset;
 
-	struct cfg_chan_t *chans;
+	struct cfg_chan *chans;
 
 #ifdef WITH_DEBUGGER
 	int autotest;
@@ -81,17 +81,17 @@ struct cfg_em400_t {
 
 };
 
-struct cfg_em400_t * cfg_create_default();
-struct cfg_em400_t * cfg_from_args(int argc, char **argv);
-struct cfg_em400_t * cfg_from_file(char *cfg_file);
-struct cfg_em400_t * cfg_overlay(struct cfg_em400_t *a, struct cfg_em400_t *b);
-void cfg_destroy(struct cfg_em400_t *cfg);
+struct cfg_em400 * cfg_create_default();
+struct cfg_em400 * cfg_from_args(int argc, char **argv);
+struct cfg_em400 * cfg_from_file(char *cfg_file);
+struct cfg_em400 * cfg_overlay(struct cfg_em400 *a, struct cfg_em400 *b);
+void cfg_destroy(struct cfg_em400 *cfg);
 
-struct cfg_arg_t * cfg_make_arg(char *arg);
-int cfg_args_decode(struct cfg_arg_t *arg, const char *format, ...);
-void cfg_make_unit(struct cfg_em400_t *cfg, int u_num, char *name, struct cfg_arg_t *args);
-void cfg_make_chan(struct cfg_em400_t *cfg, int c_num, char *name);
-void cfg_drop_chans(struct cfg_chan_t *c);
+struct cfg_arg * cfg_make_arg(char *arg);
+int cfg_args_decode(struct cfg_arg *arg, const char *format, ...);
+void cfg_make_unit(struct cfg_em400 *cfg, int u_num, char *name, struct cfg_arg *args);
+void cfg_make_chan(struct cfg_em400 *cfg, int c_num, char *name);
+void cfg_drop_chans(struct cfg_chan *c);
 
 
 #endif

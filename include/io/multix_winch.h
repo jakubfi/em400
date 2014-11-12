@@ -99,7 +99,7 @@ struct mx_winch_cf_t {
 	uint16_t ret_status;
 };
 
-struct mx_unit_proto_t * mx_winch_create(struct cfg_arg_t *args);
+struct mx_unit_proto_t * mx_winch_create(struct cfg_arg *args);
 struct mx_unit_proto_t * mx_winch_create_nodev();
 void mx_winch_connect(struct mx_unit_winch_t *unit, struct e4i_t *winchester);
 void mx_winch_disconnect(struct mx_unit_winch_t *unit);

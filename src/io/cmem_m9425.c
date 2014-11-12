@@ -28,7 +28,7 @@
 #define UNIT ((struct cmem_unit_m9425_t *)(unit))
 
 // -----------------------------------------------------------------------
-struct cmem_unit_proto_t * cmem_m9425_create(struct cfg_arg_t *args)
+struct cmem_unit_proto_t * cmem_m9425_create(struct cfg_arg *args)
 {
 	char *image_name[2] = { NULL, NULL };
 	struct cmem_unit_m9425_t *unit = calloc(1, sizeof(struct cmem_unit_m9425_t));

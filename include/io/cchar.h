@@ -29,7 +29,7 @@
 
 struct cchar_unit_proto_t;
 
-typedef struct cchar_unit_proto_t * (*cchar_unit_f_create)(struct cfg_arg_t *args);
+typedef struct cchar_unit_proto_t * (*cchar_unit_f_create)(struct cfg_arg *args);
 typedef void (*cchar_unit_f_shutdown)(struct cchar_unit_proto_t *unit);
 typedef void (*cchar_unit_f_reset)(struct cchar_unit_proto_t *unit);
 typedef int (*cchar_unit_f_cmd)(struct cchar_unit_proto_t *unit, int dir, int cmd, uint16_t *r_arg);
@@ -61,7 +61,7 @@ struct cchar_chan_t {
     struct cchar_unit_proto_t *unit[CCHAR_MAX_DEVICES];
 };
 
-struct chan_proto_t *cchar_create(struct cfg_unit_t *units);
+struct chan_proto_t *cchar_create(struct cfg_unit *units);
 void cchar_shutdown(struct chan_proto_t *chan);
 void cchar_reset(struct chan_proto_t *chan);
 void cchar_int(struct cchar_chan_t *chan, int unit_n, int interrupt);

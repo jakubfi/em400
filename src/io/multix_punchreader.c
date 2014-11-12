@@ -26,7 +26,7 @@
 #define UNIT ((struct mx_unit_punchreader_t *)(unit))
 
 // -----------------------------------------------------------------------
-struct mx_unit_proto_t * mx_punchreader_create(struct cfg_arg_t *args)
+struct mx_unit_proto_t * mx_punchreader_create(struct cfg_arg *args)
 {
 	LOG(L_PNRD, 1, "Tape punchreader");
 

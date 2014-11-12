@@ -30,7 +30,7 @@ struct mx_unit_proto_t;
 struct mx_cf_sc_pl;
 struct mx_cf_sc_ll;
 
-typedef struct mx_unit_proto_t * (*mx_unit_f_create)(struct cfg_arg_t *args);
+typedef struct mx_unit_proto_t * (*mx_unit_f_create)(struct cfg_arg *args);
 typedef struct mx_unit_proto_t * (*mx_unit_f_create_nodev)();
 typedef void (*mx_unit_f_shutdown)(struct mx_unit_proto_t *unit);
 typedef void (*mx_unit_f_reset)(struct mx_unit_proto_t *unit);
@@ -290,7 +290,7 @@ struct mx_cf_sc {
 
 struct mx_unit_proto_t * mx_unit_proto_get_by_name(struct mx_unit_proto_t *proto, char *name);
 struct mx_unit_proto_t * mx_unit_proto_get_by_type(struct mx_unit_proto_t *proto, int type);
-struct chan_proto_t * mx_create(struct cfg_unit_t *units);
+struct chan_proto_t * mx_create(struct cfg_unit *units);
 void mx_shutdown(struct chan_proto_t *chan);
 void mx_reset(struct chan_proto_t *chan);
 int mx_cmd(struct chan_proto_t *chan, int dir, uint16_t n_arg, uint16_t *r_arg);

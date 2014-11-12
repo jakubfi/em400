@@ -62,7 +62,7 @@ void * timer_thread(void *ptr)
 }
 
 // -----------------------------------------------------------------------
-int timer_init(struct cfg_em400_t *cfg)
+int timer_init(struct cfg_em400 *cfg)
 {
 	timer_step = cfg->timer_step;
 

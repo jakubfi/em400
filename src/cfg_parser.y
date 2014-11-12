@@ -22,21 +22,21 @@
 
 #include "cfg.h"
 
-struct cfg_chan_t *this_chan;
+struct cfg_chan *this_chan;
 
-void cyyerror(struct cfg_em400_t *cfg, char *s, ...);
+void cyyerror(struct cfg_em400 *cfg, char *s, ...);
 int cyylex(void);
 %}
 
 %locations
-%parse-param {struct cfg_em400_t *cfg}
+%parse-param {struct cfg_em400 *cfg}
 
 %union {
 	struct value_t {
 		int v;
 		char *s;
 	} value;
-	struct cfg_arg_t *arg;
+	struct cfg_arg *arg;
 };
 
 %token COMPUTER CHANNEL UNIT
@@ -117,7 +117,7 @@ log_opt:
 %%
 
 // -----------------------------------------------------------------------
-void cyyerror(struct cfg_em400_t *cfg, char *s, ...)
+void cyyerror(struct cfg_em400 *cfg, char *s, ...)
 {
 	va_list ap;
 	va_start(ap, s);

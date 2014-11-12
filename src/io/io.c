@@ -54,7 +54,7 @@ static const char *io_result_names[] = {
 };
 
 // -----------------------------------------------------------------------
-static struct chan_proto_t * io_chan_maker(int num, char *name, struct cfg_unit_t *units)
+static struct chan_proto_t * io_chan_maker(int num, char *name, struct cfg_unit *units)
 {
 	struct chan_proto_t *proto = chan_proto;
 	struct chan_proto_t *chan = NULL;
@@ -82,9 +82,9 @@ static struct chan_proto_t * io_chan_maker(int num, char *name, struct cfg_unit_
 }
 
 // -----------------------------------------------------------------------
-int io_init(struct cfg_em400_t *cfg)
+int io_init(struct cfg_em400 *cfg)
 {
-	struct cfg_chan_t *chanc = cfg->chans;
+	struct cfg_chan *chanc = cfg->chans;
 	struct chan_proto_t *chan;
 
 	LOG(L_IO, 1, "Initializing I/O");

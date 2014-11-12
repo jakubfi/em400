@@ -59,7 +59,7 @@ enum char_term_int_e {
 	CCHAR_TERM_INT_TOO_SLOW	= 5, // transmission too slow
 };
 
-struct cchar_unit_proto_t * cchar_term_create(struct cfg_arg_t *args);
+struct cchar_unit_proto_t * cchar_term_create(struct cfg_arg *args);
 void cchar_term_shutdown(struct cchar_unit_proto_t *unit);
 void cchar_term_reset(struct cchar_unit_proto_t *unit);
 void * cchar_term_worker(void *ptr);

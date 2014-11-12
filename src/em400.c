@@ -72,7 +72,7 @@ void em400_exit_error(int err_code, char *format, ...)
 }
 
 // -----------------------------------------------------------------------
-void em400_init(struct cfg_em400_t *cfg)
+void em400_init(struct cfg_em400 *cfg)
 {
 	int res;
 
@@ -162,7 +162,7 @@ void em400_usage()
 }
 
 // -----------------------------------------------------------------------
-void em400_loop(struct cfg_em400_t *cfg)
+void em400_loop(struct cfg_em400 *cfg)
 {
 	unsigned int ips_counter = 0;
 	struct timeval ips_start;
@@ -217,11 +217,11 @@ void em400_mkconfdir()
 }
 
 // -----------------------------------------------------------------------
-struct cfg_em400_t * em400_configure(int argc, char** argv)
+struct cfg_em400 * em400_configure(int argc, char** argv)
 {
-	struct cfg_em400_t *cfg_cmdline = NULL;
-	struct cfg_em400_t *cfg_file = NULL;
-	struct cfg_em400_t *cfg_final = NULL;
+	struct cfg_em400 *cfg_cmdline = NULL;
+	struct cfg_em400 *cfg_file = NULL;
+	struct cfg_em400 *cfg_final = NULL;
 
 	// parse commandline first, because:
 	//  * user may need help (-h)
@@ -266,7 +266,7 @@ int main(int argc, char** argv)
 
 	em400_mkconfdir();
 
-	struct cfg_em400_t *cfg = em400_configure(argc, argv);
+	struct cfg_em400 *cfg = em400_configure(argc, argv);
 
 	if (!cfg) {
 		exit(EXIT_FAILURE);

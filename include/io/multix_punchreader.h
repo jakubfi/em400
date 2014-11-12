@@ -28,7 +28,7 @@ struct mx_unit_punchreader_t {
 	struct mx_unit_proto_t proto;
 };
 
-struct mx_unit_proto_t * mx_punchreader_create(struct cfg_arg_t *args);
+struct mx_unit_proto_t * mx_punchreader_create(struct cfg_arg *args);
 struct mx_unit_proto_t * mx_punchreader_create_nodev();
 void mx_punchreader_connect(struct mx_unit_punchreader_t *unit);
 void mx_punchreader_disconnect(struct mx_unit_punchreader_t *unit);

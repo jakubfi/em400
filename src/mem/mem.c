@@ -73,7 +73,7 @@ void mem_update_map()
 }
 
 // -----------------------------------------------------------------------
-int mem_init(struct cfg_em400_t *cfg)
+int mem_init(struct cfg_em400 *cfg)
 {
 	int res;
 

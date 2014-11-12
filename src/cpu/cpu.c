@@ -81,7 +81,7 @@ static int cpu_register_op(struct em400_op **op_tab, uint16_t opcode, uint16_t m
 }
 
 // -----------------------------------------------------------------------
-int cpu_init(struct cfg_em400_t *cfg)
+int cpu_init(struct cfg_em400 *cfg)
 {
 	int res;
 

@@ -27,7 +27,7 @@
 #define UNIT ((struct mx_unit_floppy_t *)(unit))
 
 // -----------------------------------------------------------------------
-struct mx_unit_proto_t * mx_floppy_create(struct cfg_arg_t *args)
+struct mx_unit_proto_t * mx_floppy_create(struct cfg_arg *args)
 {
 	char *image_name = NULL;
 	struct e4i_t *floppy = NULL;

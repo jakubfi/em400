@@ -59,7 +59,7 @@ struct cmem_unit_proto_t * cmem_unit_proto_get(struct cmem_unit_proto_t *proto, 
 }
 
 // -----------------------------------------------------------------------
-struct chan_proto_t * cmem_create(struct cfg_unit_t *units)
+struct chan_proto_t * cmem_create(struct cfg_unit *units)
 {
 	struct cmem_chan_t *chan = calloc(1, sizeof(struct cmem_chan_t));
 
@@ -69,7 +69,7 @@ struct chan_proto_t * cmem_create(struct cfg_unit_t *units)
 	pthread_mutex_init(&chan->int_mutex, &attr);
 
 	// initialize units
-	struct cfg_unit_t *cunit = units;
+	struct cfg_unit *cunit = units;
 	while (cunit) {
 		// find unit prototype
 		struct cmem_unit_proto_t *proto = cmem_unit_proto_get(cmem_unit_proto, cunit->name);

@@ -164,7 +164,7 @@ struct mx_unit_proto_t * mx_unit_proto_get_by_type(struct mx_unit_proto_t *proto
 }
 
 // -----------------------------------------------------------------------
-struct chan_proto_t * mx_create(struct cfg_unit_t *units)
+struct chan_proto_t * mx_create(struct cfg_unit *units)
 {
 	struct mx_chan_t *chan = calloc(1, sizeof(struct mx_chan_t));
 	if (!chan) {
@@ -176,7 +176,7 @@ struct chan_proto_t * mx_create(struct cfg_unit_t *units)
 	pthread_mutexattr_init(&attr);
 	pthread_mutex_init(&chan->int_mutex, &attr);
 
-	struct cfg_unit_t *cunit = units;
+	struct cfg_unit *cunit = units;
 	while (cunit) {
 		struct mx_unit_proto_t *proto = mx_unit_proto_get_by_name(mx_unit_proto, cunit->name);
 		if (!proto) {

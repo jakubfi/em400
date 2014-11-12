@@ -20,7 +20,7 @@
 
 #include "cfg.h"
 
-int timer_init(struct cfg_em400_t *cfg);
+int timer_init(struct cfg_em400 *cfg);
 void timer_shutdown();
 void timer_on();
 void timer_off();

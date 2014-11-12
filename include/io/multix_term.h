@@ -99,7 +99,7 @@ struct mx_unit_terminal_t {
 	struct term_t *term;
 };
 
-struct mx_unit_proto_t * mx_term_create(struct cfg_arg_t *args);
+struct mx_unit_proto_t * mx_term_create(struct cfg_arg *args);
 struct mx_unit_proto_t * mx_term_create_nodev();
 void mx_term_connect(struct mx_unit_terminal_t *unit);
 void mx_term_disconnect(struct mx_unit_terminal_t *unit);

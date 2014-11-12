@@ -104,7 +104,7 @@ struct cmem_m9425_cf_t {
 	uint16_t addr;
 };
 
-struct cmem_unit_proto_t * cmem_m9425_create(struct cfg_arg_t *args);
+struct cmem_unit_proto_t * cmem_m9425_create(struct cfg_arg *args);
 void cmem_m9425_shutdown(struct cmem_unit_proto_t *unit);
 void cmem_m9425_reset(struct cmem_unit_proto_t *unit);
 void * cmem_m9425_worker(void *th_id);

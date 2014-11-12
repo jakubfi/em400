@@ -31,7 +31,7 @@ extern int cpu_user_io_illegal;
 extern int exit_on_hlt;
 extern int cpu_awp;
 
-int cpu_init(struct cfg_em400_t *cfg);
+int cpu_init(struct cfg_em400 *cfg);
 void cpu_shutdown();
 void cpu_mod_enable();
 int cpu_mod_on();
