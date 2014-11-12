@@ -36,7 +36,7 @@
 
 #include "log.h"
 
-static struct chan_proto_t chan_proto[] = {
+static struct chan chan_proto[] = {
 	{ -1, "char",		cchar_create,	cchar_shutdown,	cchar_reset,	cchar_cmd },
 	{ -1, "mem",		cmem_create,	cmem_shutdown,	cmem_reset,		cmem_cmd },
 	{ -1, "multix",		mx_create,		mx_shutdown,	mx_reset,		mx_cmd },
@@ -44,7 +44,7 @@ static struct chan_proto_t chan_proto[] = {
 	{ -1, NULL,			NULL,			NULL,			NULL,			NULL }
 };
 
-struct chan_proto_t *io_chan[IO_MAX_CHAN];
+struct chan *io_chan[IO_MAX_CHAN];
 
 static const char *io_result_names[] = {
 	"NO DEVICE",
@@ -54,10 +54,10 @@ static const char *io_result_names[] = {
 };
 
 // -----------------------------------------------------------------------
-static struct chan_proto_t * io_chan_maker(int num, char *name, struct cfg_unit *units)
+static struct chan * io_chan_maker(int num, char *name, struct cfg_unit *units)
 {
-	struct chan_proto_t *proto = chan_proto;
-	struct chan_proto_t *chan = NULL;
+	struct chan *proto = chan_proto;
+	struct chan *chan = NULL;
 
 	while (proto && proto->name) {
 		if (!strcasecmp(name, proto->name)) {
@@ -85,7 +85,7 @@ static struct chan_proto_t * io_chan_maker(int num, char *name, struct cfg_unit 
 int io_init(struct cfg_em400 *cfg)
 {
 	struct cfg_chan *chanc = cfg->chans;
-	struct chan_proto_t *chan;
+	struct chan *chan;
 
 	LOG(L_IO, 1, "Initializing I/O");
 
@@ -109,7 +109,7 @@ void io_shutdown()
 {
 	LOG(L_IO, 1, "Shutdown I/O");
 	for (int c_num=0 ; c_num<IO_MAX_CHAN ; c_num++) {
-		struct chan_proto_t *chan = io_chan[c_num];
+		struct chan *chan = io_chan[c_num];
 		if (chan) {
 			LOG(L_IO, 1, "Channel %i: %s", chan->num, chan->name);
 			chan->shutdown(chan);
@@ -122,7 +122,7 @@ void io_shutdown()
 void io_reset()
 {
 	for (int c_num=0 ; c_num<IO_MAX_CHAN ; c_num++) {
-		struct chan_proto_t *chan = io_chan[c_num];
+		struct chan *chan = io_chan[c_num];
 		if (chan) {
 			chan->reset(chan);
 		}
@@ -146,7 +146,7 @@ int io_dispatch(int dir, uint16_t n, uint16_t *r)
 	// channel/unit command
 	} else {
 		int chan_n = (n & 0b0000000000011110) >> 1;
-		struct chan_proto_t *chan = io_chan[chan_n];
+		struct chan *chan = io_chan[chan_n];
 		int res;
 		if (LOG_WANTS(L_IO, 1)) {
 			char *narg = int2binf("cmd: ... .. ...... ch: .... .", n, 16);

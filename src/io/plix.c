@@ -28,23 +28,23 @@
 #include "log.h"
 
 // -----------------------------------------------------------------------
-struct chan_proto_t * px_create(struct cfg_unit *units)
+struct chan * px_create(struct cfg_unit *units)
 {
 	return NULL;
 }
 
 // -----------------------------------------------------------------------
-void px_shutdown(struct chan_proto_t *chan)
+void px_shutdown(struct chan *chan)
 {
 }
 
 // -----------------------------------------------------------------------
-void px_reset(struct chan_proto_t *chan)
+void px_reset(struct chan *chan)
 {
 }
 
 // -----------------------------------------------------------------------
-int px_cmd(struct chan_proto_t *chan, int dir, uint16_t n_arg, uint16_t *r_arg)
+int px_cmd(struct chan *chan, int dir, uint16_t n_arg, uint16_t *r_arg)
 {
 	return IO_OK;
 }

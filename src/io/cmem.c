@@ -59,7 +59,7 @@ struct cmem_unit_proto_t * cmem_unit_proto_get(struct cmem_unit_proto_t *proto, 
 }
 
 // -----------------------------------------------------------------------
-struct chan_proto_t * cmem_create(struct cfg_unit *units)
+struct chan * cmem_create(struct cfg_unit *units)
 {
 	struct cmem_chan_t *chan = calloc(1, sizeof(struct cmem_chan_t));
 
@@ -111,11 +111,11 @@ struct chan_proto_t * cmem_create(struct cfg_unit *units)
 	pthread_mutex_unlock(&chan->int_mutex);
 
 
-	return (struct chan_proto_t *) chan;
+	return (struct chan *) chan;
 }
 
 // -----------------------------------------------------------------------
-void cmem_shutdown(struct chan_proto_t *chan)
+void cmem_shutdown(struct chan *chan)
 {
 	for (int i=0 ; i<CMEM_MAX_DEVICES ; i++) {
 		struct cmem_unit_proto_t *unit = CHAN->unit[i];
@@ -130,7 +130,7 @@ void cmem_shutdown(struct chan_proto_t *chan)
 }
 
 // -----------------------------------------------------------------------
-void cmem_reset(struct chan_proto_t *chan)
+void cmem_reset(struct chan *chan)
 {
 	LOG(L_CMEM, 1, "CMEM (ch:%i) reset", chan->num);
 	for (int i=0 ; i<CMEM_MAX_DEVICES ; i++) {
@@ -181,7 +181,7 @@ void cmem_int(struct cmem_chan_t *chan, int unit_n, int interrupt)
 }
 
 // -----------------------------------------------------------------------
-int cmem_cmd_intspec(struct chan_proto_t *chan, uint16_t *r_arg)
+int cmem_cmd_intspec(struct chan *chan, uint16_t *r_arg)
 {
 	LOG(L_CMEM, 1, "CMEM (ch:%i) command: intspec", chan->num);
 
@@ -208,7 +208,7 @@ int cmem_cmd_intspec(struct chan_proto_t *chan, uint16_t *r_arg)
 }
 
 // -----------------------------------------------------------------------
-int cmem_chan_cmd(struct chan_proto_t *chan, int dir, int cmd, int u_num, uint16_t *r_arg)
+int cmem_chan_cmd(struct chan *chan, int dir, int cmd, int u_num, uint16_t *r_arg)
 {
 	// any command makes channel take of the interrupt mask
 	pthread_mutex_lock(&CHAN->int_mutex);
@@ -263,7 +263,7 @@ int cmem_chan_cmd(struct chan_proto_t *chan, int dir, int cmd, int u_num, uint16
 }
 
 // -----------------------------------------------------------------------
-int cmem_cmd(struct chan_proto_t *chan, int dir, uint16_t n_arg, uint16_t *r_arg)
+int cmem_cmd(struct chan *chan, int dir, uint16_t n_arg, uint16_t *r_arg)
 {
 	int cmd		= (n_arg & 0b1111110000000000) >> 10;
 	int u_num	= (n_arg & 0b0000000011100000) >> 5;

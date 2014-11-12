@@ -164,7 +164,7 @@ struct mx_unit_proto_t * mx_unit_proto_get_by_type(struct mx_unit_proto_t *proto
 }
 
 // -----------------------------------------------------------------------
-struct chan_proto_t * mx_create(struct cfg_unit *units)
+struct chan * mx_create(struct cfg_unit *units)
 {
 	struct mx_chan_t *chan = calloc(1, sizeof(struct mx_chan_t));
 	if (!chan) {
@@ -234,15 +234,15 @@ struct chan_proto_t * mx_create(struct cfg_unit *units)
 		cunit = cunit->next;
 	}
 
-	return (struct chan_proto_t*) chan;
+	return (struct chan*) chan;
 
 fail:
-	mx_shutdown((struct chan_proto_t*) chan);
+	mx_shutdown((struct chan*) chan);
 	return NULL;
 }
 
 // -----------------------------------------------------------------------
-void mx_shutdown(struct chan_proto_t *chan)
+void mx_shutdown(struct chan *chan)
 {
 	for (int i=0 ; i<MX_MAX_DEVICES ; i++) {
 		struct mx_unit_proto_t *unit = CHAN->pline[i];
@@ -264,7 +264,7 @@ void mx_shutdown(struct chan_proto_t *chan)
 }
 
 // -----------------------------------------------------------------------
-void mx_reset(struct chan_proto_t *chan)
+void mx_reset(struct chan *chan)
 {
 	LOG(L_MX, 1, "MULTIX (ch:%i) command: reset", chan->num);
 	for (int i=0 ; i<MX_MAX_DEVICES ; i++) {
@@ -373,7 +373,7 @@ struct mx_int_t * mx_int_deq(struct mx_chan_t *chan)
 }
 
 // -----------------------------------------------------------------------
-int mx_cmd_int_requeue(struct chan_proto_t *chan)
+int mx_cmd_int_requeue(struct chan *chan)
 {
 	pthread_mutex_lock(&CHAN->int_mutex);
 
@@ -389,7 +389,7 @@ int mx_cmd_int_requeue(struct chan_proto_t *chan)
 }
 
 // -----------------------------------------------------------------------
-int mx_cmd_intspec(struct chan_proto_t *chan, uint16_t *r_arg)
+int mx_cmd_intspec(struct chan *chan, uint16_t *r_arg)
 {
 	pthread_mutex_lock(&CHAN->int_mutex);
 	struct mx_int_t *inth = mx_int_deq(CHAN);
@@ -411,7 +411,7 @@ int mx_cmd_intspec(struct chan_proto_t *chan, uint16_t *r_arg)
 }
 
 // -----------------------------------------------------------------------
-int mx_cmd_test(struct chan_proto_t *chan, unsigned param, uint16_t *r_arg)
+int mx_cmd_test(struct chan *chan, unsigned param, uint16_t *r_arg)
 {
 	LOG(L_MX, 1, "MULTIX (ch:%i) command: test", chan->num);
 	mx_int(CHAN, 0, MX_INT_IWYTE);
@@ -419,7 +419,7 @@ int mx_cmd_test(struct chan_proto_t *chan, unsigned param, uint16_t *r_arg)
 }
 
 // -----------------------------------------------------------------------
-int mx_cmd_setcfg(struct chan_proto_t *chan, uint16_t *r_arg)
+int mx_cmd_setcfg(struct chan *chan, uint16_t *r_arg)
 {
 	LOG(L_MX, 1, "MULTIX (ch:%i) command: setcfg", chan->num);
 	// return field address
@@ -519,7 +519,7 @@ int mx_cmd_setcfg(struct chan_proto_t *chan, uint16_t *r_arg)
 }
 
 // -----------------------------------------------------------------------
-int mx_cmd_forward(struct chan_proto_t *chan, int cmd, int lline_n, uint16_t addr)
+int mx_cmd_forward(struct chan *chan, int cmd, int lline_n, uint16_t addr)
 {
 	struct mx_unit_proto_t *unit = CHAN->lline[lline_n];
 
@@ -561,7 +561,7 @@ int mx_cmd_forward(struct chan_proto_t *chan, int cmd, int lline_n, uint16_t add
 }
 
 // -----------------------------------------------------------------------
-int mx_cmd_cancel(struct chan_proto_t *chan, int lline_n)
+int mx_cmd_cancel(struct chan *chan, int lline_n)
 {
 	struct mx_unit_proto_t *unit = CHAN->lline[lline_n];
 	int transmission = pthread_mutex_trylock(&unit->transmit_mutex);
@@ -593,7 +593,7 @@ void mx_status_clear(struct mx_unit_proto_t *unit, uint16_t status)
 }
 
 // -----------------------------------------------------------------------
-int mx_cmd_status(struct chan_proto_t *chan, int lline_n, uint16_t addr)
+int mx_cmd_status(struct chan *chan, int lline_n, uint16_t addr)
 {
 	struct mx_unit_proto_t *unit = CHAN->lline[lline_n];
 
@@ -658,7 +658,7 @@ void * mx_unit_worker(void *th_id)
 }
 
 // -----------------------------------------------------------------------
-int mx_cmd_illegal(struct chan_proto_t *chan, int lline_n, int interrupt)
+int mx_cmd_illegal(struct chan *chan, int lline_n, int interrupt)
 {
 	LOG(L_MX, 1, "MULTIX (ch:%i, line:%i) command: illegal command, reporting int: %d", chan->num, lline_n, interrupt);
 	mx_int(CHAN, 0, interrupt);
@@ -666,7 +666,7 @@ int mx_cmd_illegal(struct chan_proto_t *chan, int lline_n, int interrupt)
 }
 
 // -----------------------------------------------------------------------
-int mx_cmd(struct chan_proto_t *chan, int dir, uint16_t n_arg, uint16_t *r_arg)
+int mx_cmd(struct chan *chan, int dir, uint16_t n_arg, uint16_t *r_arg)
 {
 	unsigned cmd	 = ((n_arg & 0b1110000000000000) >> 13) | ((dir&1) << 3);
 	unsigned chan_cmd= (n_arg & 0b0001100000000000) >> 11;

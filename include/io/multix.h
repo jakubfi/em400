@@ -95,7 +95,7 @@ struct mx_int_t {
 };
 
 struct mx_chan_t {
-	struct chan_proto_t proto;
+	struct chan proto;
 
 	int confset;
 	struct mx_unit_proto_t *lline[MX_MAX_DEVICES];
@@ -290,10 +290,10 @@ struct mx_cf_sc {
 
 struct mx_unit_proto_t * mx_unit_proto_get_by_name(struct mx_unit_proto_t *proto, char *name);
 struct mx_unit_proto_t * mx_unit_proto_get_by_type(struct mx_unit_proto_t *proto, int type);
-struct chan_proto_t * mx_create(struct cfg_unit *units);
-void mx_shutdown(struct chan_proto_t *chan);
-void mx_reset(struct chan_proto_t *chan);
-int mx_cmd(struct chan_proto_t *chan, int dir, uint16_t n_arg, uint16_t *r_arg);
+struct chan * mx_create(struct cfg_unit *units);
+void mx_shutdown(struct chan *chan);
+void mx_reset(struct chan *chan);
+int mx_cmd(struct chan *chan, int dir, uint16_t n_arg, uint16_t *r_arg);
 void * mx_unit_worker(void *th_id);
 
 void mx_int(struct mx_chan_t *chan, int unit_n, int interrupt);

@@ -49,7 +49,7 @@ struct cchar_unit_proto_t {
 };
 
 struct cchar_chan_t {
-    struct chan_proto_t proto;
+    struct chan proto;
 
 	pthread_mutex_t int_mutex;
 	int int_mask;
@@ -61,11 +61,11 @@ struct cchar_chan_t {
     struct cchar_unit_proto_t *unit[CCHAR_MAX_DEVICES];
 };
 
-struct chan_proto_t *cchar_create(struct cfg_unit *units);
-void cchar_shutdown(struct chan_proto_t *chan);
-void cchar_reset(struct chan_proto_t *chan);
+struct chan *cchar_create(struct cfg_unit *units);
+void cchar_shutdown(struct chan *chan);
+void cchar_reset(struct chan *chan);
 void cchar_int(struct cchar_chan_t *chan, int unit_n, int interrupt);
-int cchar_cmd(struct chan_proto_t *chan, int dir, uint16_t n_arg, uint16_t *r_arg);
+int cchar_cmd(struct chan *chan, int dir, uint16_t n_arg, uint16_t *r_arg);
 
 #endif
 

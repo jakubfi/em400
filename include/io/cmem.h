@@ -48,7 +48,7 @@ struct cmem_unit_proto_t {
 };
 
 struct cmem_chan_t {
-    struct chan_proto_t proto;
+    struct chan proto;
 
 	pthread_mutex_t int_mutex;
 	int int_mask;
@@ -70,11 +70,11 @@ enum cmem_int_e {
 	CMEM_INT_NONE		= 9999,// no interrupt (em400 marker)
 };
 
-struct chan_proto_t * cmem_create(struct cfg_unit *units);
-void cmem_shutdown(struct chan_proto_t *chan);
-void cmem_reset(struct chan_proto_t *chan);
+struct chan * cmem_create(struct cfg_unit *units);
+void cmem_shutdown(struct chan *chan);
+void cmem_reset(struct chan *chan);
 void cmem_int(struct cmem_chan_t *chan, int unit_n, int interrupt);
-int cmem_cmd(struct chan_proto_t *chan, int dir, uint16_t n_arg, uint16_t *r_arg);
+int cmem_cmd(struct chan *chan, int dir, uint16_t n_arg, uint16_t *r_arg);
 
 #endif
 

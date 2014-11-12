@@ -59,7 +59,7 @@ struct cchar_unit_proto_t * cchar_unit_proto_get(struct cchar_unit_proto_t *prot
 }
 
 // -----------------------------------------------------------------------
-struct chan_proto_t * cchar_create(struct cfg_unit *units)
+struct chan * cchar_create(struct cfg_unit *units)
 {
 	struct cchar_chan_t *chan = calloc(1, sizeof(struct cchar_chan_t));
 	struct cfg_unit *cunit = units;
@@ -104,16 +104,16 @@ struct chan_proto_t * cchar_create(struct cfg_unit *units)
 	CHAN->int_reported = -1;
 	pthread_mutex_unlock(&chan->int_mutex);
 
-	return (struct chan_proto_t *) chan;
+	return (struct chan *) chan;
 }
 
 // -----------------------------------------------------------------------
-void cchar_shutdown(struct chan_proto_t *chan)
+void cchar_shutdown(struct chan *chan)
 {
 }
 
 // -----------------------------------------------------------------------
-void cchar_reset(struct chan_proto_t  *chan)
+void cchar_reset(struct chan  *chan)
 {
 }
 
@@ -155,7 +155,7 @@ void cchar_int(struct cchar_chan_t *chan, int unit_n, int interrupt)
 }
 
 // -----------------------------------------------------------------------
-int cchar_cmd_intspec(struct chan_proto_t *chan, uint16_t *r_arg)
+int cchar_cmd_intspec(struct chan *chan, uint16_t *r_arg)
 {
 	LOG(L_CCHR, 1, "CCHAR (ch:%i) command: intspec", chan->num);
 	pthread_mutex_lock(&CHAN->int_mutex);
@@ -178,7 +178,7 @@ int cchar_cmd_intspec(struct chan_proto_t *chan, uint16_t *r_arg)
 
 
 // -----------------------------------------------------------------------
-int cchar_chan_cmd(struct chan_proto_t *chan, int dir, int cmd, int u_num, uint16_t *r_arg)
+int cchar_chan_cmd(struct chan *chan, int dir, int cmd, int u_num, uint16_t *r_arg)
 {
 	if (dir == IO_OU) {
 		switch (cmd) {
@@ -225,7 +225,7 @@ int cchar_chan_cmd(struct chan_proto_t *chan, int dir, int cmd, int u_num, uint1
 }
 
 // -----------------------------------------------------------------------
-int cchar_cmd(struct chan_proto_t *chan, int dir, uint16_t n_arg, uint16_t *r_arg)
+int cchar_cmd(struct chan *chan, int dir, uint16_t n_arg, uint16_t *r_arg)
 {
 	int cmd		= (n_arg & 0b1111110000000000) >> 10;
 	int u_num   = (n_arg & 0b0000000011100000) >> 5;

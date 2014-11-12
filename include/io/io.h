@@ -38,12 +38,12 @@ enum io_result {
 	IO_PE = 3,  // data error (parity error)
 };
 
-typedef struct chan_proto_t * (*chan_f_create)(struct cfg_unit *units);
-typedef void (*chan_f_shutdown)(struct chan_proto_t *chan);
-typedef void (*chan_f_reset)(struct chan_proto_t *chan);
-typedef int (*chan_f_cmd)(struct chan_proto_t *chan, int dir, uint16_t n, uint16_t *r);
+typedef struct chan * (*chan_f_create)(struct cfg_unit *units);
+typedef void (*chan_f_shutdown)(struct chan *chan);
+typedef void (*chan_f_reset)(struct chan *chan);
+typedef int (*chan_f_cmd)(struct chan *chan, int dir, uint16_t n, uint16_t *r);
 
-struct chan_proto_t {
+struct chan {
 	int num;
 	const char *name;
 	chan_f_create create;
@@ -52,7 +52,7 @@ struct chan_proto_t {
 	chan_f_cmd cmd;
 };
 
-extern struct chan_proto_t *io_chan[IO_MAX_CHAN];
+extern struct chan *io_chan[IO_MAX_CHAN];
 
 int io_init(struct cfg_em400 *cfg);
 void io_shutdown();
