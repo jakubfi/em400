@@ -36,10 +36,10 @@
 #include "log.h"
 
 static struct chan chan_proto[] = {
-	{ -1, "char",		cchar_create,	cchar_shutdown,	cchar_reset,	cchar_cmd },
-	{ -1, "mem",		cmem_create,	cmem_shutdown,	cmem_reset,		cmem_cmd },
-	{ -1, "multix",		mx_create,		mx_shutdown,	mx_reset,		mx_cmd },
-	{ -1, NULL,			NULL,			NULL,			NULL,			NULL }
+	{ "char",		cchar_create,	cchar_shutdown,	cchar_reset,	cchar_cmd },
+	{ "mem",		cmem_create,	cmem_shutdown,	cmem_reset,		cmem_cmd },
+	{ "multix",		mx_create,		mx_shutdown,	mx_reset,		mx_cmd },
+	{ NULL,			NULL,			NULL,			NULL,			NULL }
 };
 
 struct chan *io_chan[IO_MAX_CHAN];

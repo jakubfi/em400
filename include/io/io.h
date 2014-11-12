@@ -44,12 +44,12 @@ typedef void (*chan_f_reset)(struct chan *chan);
 typedef int (*chan_f_cmd)(struct chan *chan, int dir, uint16_t n, uint16_t *r);
 
 struct chan {
-	int num;
 	const char *name;
 	chan_f_create create;
 	chan_f_shutdown shutdown;
 	chan_f_reset reset;
 	chan_f_cmd cmd;
+	int num;
 };
 
 extern struct chan *io_chan[IO_MAX_CHAN];
