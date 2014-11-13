@@ -57,6 +57,7 @@ extern struct chan *io_chan[IO_MAX_CHAN];
 int io_init(struct cfg_em400 *cfg);
 void io_shutdown();
 void io_reset();
+void io_get_intspec(int ch, uint16_t *int_spec);
 int io_dispatch(int dir, uint16_t n, uint16_t *r);
 
 #endif

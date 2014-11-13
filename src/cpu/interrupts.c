@@ -24,7 +24,6 @@
 #include "mem/mem.h"
 #include "cpu/interrupts.h"
 #include "io/io.h"
-#include "io/chan.h"
 
 #include "log.h"
 
@@ -189,7 +188,7 @@ void int_serve()
 {
 	int probe = 31;
 	int interrupt;
-	uint16_t int_addr;
+	uint16_t int_vec;
 	uint16_t int_spec = 0;
 	uint16_t sr_mask;
 
@@ -203,19 +202,22 @@ void int_serve()
 	RZ &= ~INT_BIT(interrupt);
 	pthread_mutex_unlock(&int_mutex);
 
-	if (!mem_cpu_get(0, 64+interrupt, &int_addr)) return;
+	// get interrupt vector
+	if (!mem_cpu_get(0, 64+interrupt, &int_vec)) return;
 
-	// get interrupt specification if it's from channel
+	// get interrupt specification for channel interrupts
 	if ((interrupt >= 12) && (interrupt <= 27)) {
-		io_chan[interrupt-12]->cmd(io_chan[interrupt-12], IO_IN, 1<<11, &int_spec);
+		io_get_intspec(interrupt-12, &int_spec);
 	}
 
-	LOGCPU(L_INT, 1, "Serve interrupt: %d (%s, spec: %i) -> 0x%04x / return: 0x%04x", interrupt, int_names[interrupt], int_spec, int_addr, regs[R_IC]);
+	LOGCPU(L_INT, 1, "Serve interrupt: %d (%s, spec: %i) -> 0x%04x / return: 0x%04x", interrupt, int_names[interrupt], int_spec, int_vec, regs[R_IC]);
 
 	// put system status on stack
-	sr_mask = int_int2mask[interrupt] & MASK_Q; // put mask and clear Q
+	sr_mask = int_int2mask[interrupt] & MASK_Q; // calculate mask and clear Q
 	if (cpu_mod_active && (interrupt >= 12) && (interrupt <= 27)) sr_mask &= MASK_EX; // put extended mask if cpu_mod
-	if (!cpu_ctx_switch(int_spec, int_addr, sr_mask)) return;
+
+	// switch context
+	if (!cpu_ctx_switch(int_spec, int_vec, sr_mask)) return;
 
 	if (LOG_ENABLED) {
 		log_intlevel_inc();

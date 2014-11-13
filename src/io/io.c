@@ -128,6 +128,12 @@ void io_reset()
 }
 
 // -----------------------------------------------------------------------
+void io_get_intspec(int ch, uint16_t *int_spec)
+{
+	io_chan[ch]->cmd(io_chan[ch], IO_IN, 1<<11, int_spec);
+}
+
+// -----------------------------------------------------------------------
 int io_dispatch(int dir, uint16_t n, uint16_t *r)
 {
 	int is_mem_cmd = n & 1; // 1 = memory configuration, 0 = I/O command
