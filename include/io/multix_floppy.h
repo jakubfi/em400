@@ -20,7 +20,6 @@
 
 #include <inttypes.h>
 
-#include "io/io.h"
 #include "io/multix.h"
 #include "e4image.h"
 

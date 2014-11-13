@@ -25,6 +25,7 @@
 #include "mem/mem.h"
 #include "cpu/cpu.h"
 #include "io/io.h"
+#include "io/chan.h"
 #include "io/cmem.h"
 #include "io/cchar.h"
 #include "io/multix.h"
@@ -130,7 +131,7 @@ void io_reset()
 // -----------------------------------------------------------------------
 void io_get_intspec(int ch, uint16_t *int_spec)
 {
-	io_chan[ch]->cmd(io_chan[ch], IO_IN, 1<<11, int_spec);
+	io_chan[ch]->cmd(io_chan[ch], IO_IN, CHAN_CMD_INTSPEC<<10, int_spec);
 }
 
 // -----------------------------------------------------------------------

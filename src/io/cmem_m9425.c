@@ -22,7 +22,6 @@
 #include "errors.h"
 #include "log.h"
 #include "mem/mem.h"
-#include "io/cmem.h"
 #include "io/cmem_m9425.h"
 
 #define UNIT ((struct cmem_unit_m9425_t *)(unit))

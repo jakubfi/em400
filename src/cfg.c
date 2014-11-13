@@ -21,12 +21,10 @@
 #include <string.h>
 
 #include "mem/mem.h"
-
+#include "io/defs.h"
 #include "errors.h"
 #include "cfg.h"
 #include "cfg_parser.h"
-
-#define IO_MAX_CHAN 16
 
 extern FILE *cyyin;
 void cyyerror(char *s, ...);

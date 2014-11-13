@@ -24,7 +24,8 @@
 #include <pthread.h>
 
 #include "mem/mem.h"
-#include "io/io.h"
+#include "cpu/interrupts.h"
+
 #include "io/multix.h"
 #include "io/multix_winch.h"
 #include "io/multix_floppy.h"
@@ -34,7 +35,6 @@
 
 #include "cfg.h"
 #include "errors.h"
-#include "cpu/interrupts.h"
 
 #ifdef WITH_DEBUGGER
 #include "debugger/decode.h"

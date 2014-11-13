@@ -28,7 +28,7 @@
 #include "cpu/registers.h"
 #include "mem/mem.h"
 #include "cpu/interrupts.h"
-#include "io/io.h"
+#include "io/defs.h"
 
 #include "em400.h"
 #include "cfg.h"

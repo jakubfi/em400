@@ -22,8 +22,6 @@
 #include <strings.h>
 
 #include "cpu/interrupts.h"
-#include "io/io.h"
-#include "io/chan.h"
 #include "io/cchar.h"
 #include "io/cchar_term.h"
 

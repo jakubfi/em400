@@ -21,7 +21,7 @@
 #include <pthread.h>
 
 #include "e4image.h"
-#include "cmem.h"
+#include "io/cmem.h"
 
 #include "cfg.h"
 

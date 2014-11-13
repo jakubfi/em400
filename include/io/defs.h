@@ -1,4 +1,4 @@
-//  Copyright (c) 2012-2013 Jakub Filipowicz <jakubf@gmail.com>
+//  Copyright (c) 2012-2014 Jakub Filipowicz <jakubf@gmail.com>
 //
 //  This program is free software; you can redistribute it and/or modify
 //  it under the terms of the GNU General Public License as published by
@@ -15,21 +15,23 @@
 //  Foundation, Inc.,
 //  51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 
-#ifndef IO_H
-#define IO_H
+#ifndef IO_DEFS_H
+#define IO_DEFS_H
 
-#include <inttypes.h>
+#define IO_MAX_CHAN	16
 
-#include "cfg.h"
-#include "io/defs.h"
+enum io_dir {
+	IO_OU = 0,
+	IO_IN = 1,
+};
 
-extern struct chan *io_chan[IO_MAX_CHAN];
-
-int io_init(struct cfg_em400 *cfg);
-void io_shutdown();
-void io_reset();
-void io_get_intspec(int ch, uint16_t *int_spec);
-int io_dispatch(int dir, uint16_t n, uint16_t *r);
+enum io_result {
+	// value matters (IN/OU opcodes use it)
+	IO_NO = 0,  // no channel, no control unit, or no memory block
+	IO_EN = 1,  // not ready (engaged)
+	IO_OK = 2,  // OK
+	IO_PE = 3,  // data error (parity error)
+};
 
 #endif
 

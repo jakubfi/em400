@@ -22,7 +22,7 @@
 #include <pthread.h>
 
 #include "cfg.h"
-#include "io.h"
+#include "io/chan.h"
 
 #define MX_MAX_DEVICES 256
 

@@ -21,7 +21,6 @@
 #include <inttypes.h>
 #include <pthread.h>
 
-#include "io/io.h"
 #include "io/multix.h"
 
 enum mx_term_attach_opts_e {

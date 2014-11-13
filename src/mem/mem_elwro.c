@@ -19,8 +19,7 @@
 #include <inttypes.h>
 #include <string.h>
 
-#include "io/io.h"
-#include "mem/mem.h"
+#include "io/defs.h"
 #include "mem/mem_elwro.h"
 #include "errors.h"
 

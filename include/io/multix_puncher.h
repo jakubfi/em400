@@ -21,7 +21,6 @@
 #include <inttypes.h>
 #include <pthread.h>
 
-#include "io/io.h"
 #include "io/multix.h"
 
 struct mx_unit_puncher_t {

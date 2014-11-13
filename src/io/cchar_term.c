@@ -25,7 +25,6 @@
 #include "em400.h"
 #include "errors.h"
 #include "mem/mem.h"
-#include "io/cchar.h"
 #include "io/cchar_term.h"
 #include "io/term.h"
 

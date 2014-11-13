@@ -15,13 +15,16 @@
 //  Foundation, Inc.,
 //  51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 
-#ifndef DRV_CHAN_H
-#define DRV_CHAN_H
+#ifndef CHAN_H
+#define CHAN_H
 
 #include <inttypes.h>
 
+#include "io/defs.h"
+
 // things common for 'classic' mem and char channels
 
+// TODO: needs further cleaning (possibly move down, as interpretation is channel-specific)
 enum chan_cmds_e {
 	// channel OU
 	CHAN_CMD_EXISTS		= 0b000000,
@@ -32,6 +35,20 @@ enum chan_cmds_e {
 	CHAN_CMD_INTSPEC	= 0b000010,
 	CHAN_CMD_ALLOC		= 0b000110,
 	CHAN_CMD_STATUS		= 0b000100,
+};
+
+typedef struct chan * (*chan_f_create)(struct cfg_unit *units);
+typedef void (*chan_f_shutdown)(struct chan *chan);
+typedef void (*chan_f_reset)(struct chan *chan);
+typedef int (*chan_f_cmd)(struct chan *chan, int dir, uint16_t n, uint16_t *r);
+
+struct chan {
+	const char *name;
+	chan_f_create create;
+	chan_f_shutdown shutdown;
+	chan_f_reset reset;
+	chan_f_cmd cmd;
+	int num;
 };
 
 #endif
