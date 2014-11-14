@@ -21,9 +21,6 @@
 #include <inttypes.h>
 
 #include "cfg.h"
-#include "io/defs.h"
-
-extern struct chan *io_chan[IO_MAX_CHAN];
 
 int io_init(struct cfg_em400 *cfg);
 void io_shutdown();

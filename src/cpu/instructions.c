@@ -25,6 +25,7 @@
 #include "mem/mem.h"
 #include "cpu/iset.h"
 #include "cpu/instructions.h"
+#include "io/defs.h"
 #include "io/io.h"
 
 #include "cfg.h"

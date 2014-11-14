@@ -20,9 +20,8 @@
 
 #include <inttypes.h>
 
+#include "cfg.h"
 #include "io/defs.h"
-
-// things common for 'classic' mem and char channels
 
 // TODO: needs further cleaning (possibly move down, as interpretation is channel-specific)
 enum chan_cmds_e {
@@ -37,6 +36,8 @@ enum chan_cmds_e {
 	CHAN_CMD_STATUS		= 0b000100,
 };
 
+struct chan;
+
 typedef struct chan * (*chan_f_create)(struct cfg_unit *units);
 typedef void (*chan_f_shutdown)(struct chan *chan);
 typedef void (*chan_f_reset)(struct chan *chan);
@@ -50,6 +51,8 @@ struct chan {
 	chan_f_cmd cmd;
 	int num;
 };
+
+struct chan * chan_make(int num, char *name, struct cfg_unit *units);
 
 #endif
 

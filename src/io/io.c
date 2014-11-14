@@ -17,68 +17,18 @@
 
 #include <inttypes.h>
 #include <stdlib.h>
-#include <pthread.h>
-#include <stdio.h>
-#include <string.h>
-#include <strings.h>
 
 #include "mem/mem.h"
 #include "cpu/cpu.h"
-#include "io/io.h"
 #include "io/chan.h"
-#include "io/cmem.h"
-#include "io/cchar.h"
-#include "io/multix.h"
 
 #include "cfg.h"
 #include "utils.h"
 #include "errors.h"
-
 #include "log.h"
 
-static struct chan chan_proto[] = {
-	{ "char",		cchar_create,	cchar_shutdown,	cchar_reset,	cchar_cmd },
-	{ "mem",		cmem_create,	cmem_shutdown,	cmem_reset,		cmem_cmd },
-	{ "multix",		mx_create,		mx_shutdown,	mx_reset,		mx_cmd },
-	{ NULL,			NULL,			NULL,			NULL,			NULL }
-};
-
-struct chan *io_chan[IO_MAX_CHAN];
-
-static const char *io_result_names[] = {
-	"NO DEVICE",
-	"ENGAGED",
-	"OK",
-	"PARITY ERROR"
-};
-
-// -----------------------------------------------------------------------
-static struct chan * io_chan_maker(int num, char *name, struct cfg_unit *units)
-{
-	struct chan *proto = chan_proto;
-	struct chan *chan = NULL;
-
-	while (proto && proto->name) {
-		if (!strcasecmp(name, proto->name)) {
-			chan = proto->create(units);
-			break;
-		}
-		proto++;
-	}
-
-	if (chan) {
-		chan->num = num;
-		chan->name = proto->name;
-		chan->create = proto->create;
-		chan->shutdown = proto->shutdown;
-		chan->reset = proto->reset;
-		chan->cmd = proto->cmd;
-	} else if (!proto->name) {
-		gerr = E_IO_CHAN_UNKNOWN;
-	}
-
-	return chan;
-}
+static struct chan *io_chan[IO_MAX_CHAN];
+static const char *io_result_names[] = { "NO DEVICE", "ENGAGED", "OK", "PARITY ERROR" };
 
 // -----------------------------------------------------------------------
 int io_init(struct cfg_em400 *cfg)
@@ -90,7 +40,7 @@ int io_init(struct cfg_em400 *cfg)
 
 	while (chanc) {
 		LOG(L_IO, 1, "Channel %i: %s", chanc->num, chanc->name);
-		chan = io_chan_maker(chanc->num, chanc->name, chanc->units);
+		chan = chan_make(chanc->num, chanc->name, chanc->units);
 		if (!chan) {
 			return gerr;
 		} else {
