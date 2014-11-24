@@ -11,7 +11,7 @@ strdup(log.c)
 
 ADD_EXECUTABLE(em400
 	em400.c errors.c utils.c cfg.c
-    log.c
+	log.c
 	${BISON_cfg_parser_OUTPUTS}
 	${FLEX_cfg_scanner_OUTPUTS}
 )

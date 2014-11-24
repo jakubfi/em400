@@ -27,7 +27,7 @@
 #define TERM_BUF_LEN 1024
 
 struct cchar_unit_term_t {
-    struct cchar_unit_proto_t proto;
+	struct cchar_unit_proto_t proto;
 	struct term_t *term;
 
 	pthread_t worker;

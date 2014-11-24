@@ -77,7 +77,7 @@ enum cmem_m9425_int_e {
 };
 
 struct cmem_unit_m9425_t {
-    struct cmem_unit_proto_t proto;
+	struct cmem_unit_proto_t proto;
 	struct e4i_t *disk[2];
 
 	pthread_t worker;

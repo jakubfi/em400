@@ -293,7 +293,7 @@ void dbg_c_stack(int wid, int size)
 		return;
 	}
 
-	int sp = data; 
+	int sp = data;
 
 	if ((sb <= 0) || (sp-osp > 4) || (sp-osp < -4)) {
 		sb = sp;
@@ -479,7 +479,7 @@ void dbg_c_brk_test(int wid, int nr)
 	} else {
 		awtbprint(wid, C_ERROR, "No such breakpoint: %i\n", nr);
 	}
-} 
+}
 
 // -----------------------------------------------------------------------
 void dbg_c_brk_disable(int wid, int nr, int disable)

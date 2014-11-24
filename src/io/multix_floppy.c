@@ -170,18 +170,18 @@ uint16_t mx_floppy_get_status(struct mx_unit_proto_t *unit)
 // -----------------------------------------------------------------------
 void mx_floppy_cmd_transmit(struct mx_unit_proto_t *unit, uint16_t addr)
 {
-    LOG(L_FLOP, 1, "MULTIX/floppy (line:%i): transmit", unit->log_num);
-    int ret = E_OK;
-    //MEMBw(0, addr+6, cf->ret_len);
+	LOG(L_FLOP, 1, "MULTIX/floppy (line:%i): transmit", unit->log_num);
+	int ret = E_OK;
+	//MEMBw(0, addr+6, cf->ret_len);
 
-    if (ret == E_OK) {
-        mx_int(unit->chan, unit->log_num, MX_INT_IETRA);
-    } else if (ret == E_MX_CANCEL) {
-        mx_int(unit->chan, unit->log_num, MX_INT_ITRAB);
-    } else {
-        //MEMBw(0, addr+6, cf->ret_status);
-        mx_int(unit->chan, unit->log_num, MX_INT_ITRER);
-    }
+	if (ret == E_OK) {
+		mx_int(unit->chan, unit->log_num, MX_INT_IETRA);
+	} else if (ret == E_MX_CANCEL) {
+		mx_int(unit->chan, unit->log_num, MX_INT_ITRAB);
+	} else {
+		//MEMBw(0, addr+6, cf->ret_status);
+		mx_int(unit->chan, unit->log_num, MX_INT_ITRER);
+	}
 }
 
 // -----------------------------------------------------------------------

@@ -37,19 +37,19 @@ typedef int (*cchar_unit_f_cmd)(struct cchar_unit_proto_t *unit, int dir, int cm
 struct cchar_chan_t;
 
 struct cchar_unit_proto_t {
-    const char *name;
+	const char *name;
 
-    cchar_unit_f_create create;
-    cchar_unit_f_shutdown shutdown;
-    cchar_unit_f_reset reset;
-    cchar_unit_f_cmd cmd;
+	cchar_unit_f_create create;
+	cchar_unit_f_shutdown shutdown;
+	cchar_unit_f_reset reset;
+	cchar_unit_f_cmd cmd;
 
-    struct cchar_chan_t *chan;
-    int num;
+	struct cchar_chan_t *chan;
+	int num;
 };
 
 struct cchar_chan_t {
-    struct chan proto;
+	struct chan proto;
 
 	pthread_mutex_t int_mutex;
 	int int_mask;
@@ -58,7 +58,7 @@ struct cchar_chan_t {
 	int was_en;
 	int untransmitted;
 
-    struct cchar_unit_proto_t *unit[CCHAR_MAX_DEVICES];
+	struct cchar_unit_proto_t *unit[CCHAR_MAX_DEVICES];
 };
 
 struct chan *cchar_create(struct cfg_unit *units);

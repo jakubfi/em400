@@ -110,24 +110,24 @@ uint16_t mx_punchreader_get_status(struct mx_unit_proto_t *unit)
 // -----------------------------------------------------------------------
 void mx_punchreader_cmd_transmit(struct mx_unit_proto_t *unit, uint16_t addr)
 {
-    // we're transmitting
-    pthread_mutex_trylock(&unit->transmit_mutex);
+	// we're transmitting
+	pthread_mutex_trylock(&unit->transmit_mutex);
 
-    LOG(L_PNRD, 1, "MULTIX/punchreader (line:%i): transmit", unit->log_num);
-    int ret = E_OK;
-    //MEMBw(0, addr+6, cf->ret_len);
+	LOG(L_PNRD, 1, "MULTIX/punchreader (line:%i): transmit", unit->log_num);
+	int ret = E_OK;
+	//MEMBw(0, addr+6, cf->ret_len);
 
-    if (ret == E_OK) {
-        mx_int(unit->chan, unit->log_num, MX_INT_IETRA);
-    } else if (ret == E_MX_CANCEL) {
-        mx_int(unit->chan, unit->log_num, MX_INT_ITRAB);
-    } else {
-        //MEMBw(0, addr+6, cf->ret_status);
-        mx_int(unit->chan, unit->log_num, MX_INT_ITRER);
-    }
+	if (ret == E_OK) {
+		mx_int(unit->chan, unit->log_num, MX_INT_IETRA);
+	} else if (ret == E_MX_CANCEL) {
+		mx_int(unit->chan, unit->log_num, MX_INT_ITRAB);
+	} else {
+		//MEMBw(0, addr+6, cf->ret_status);
+		mx_int(unit->chan, unit->log_num, MX_INT_ITRER);
+	}
 
-    // done transmitting
-    pthread_mutex_unlock(&unit->transmit_mutex);
+	// done transmitting
+	pthread_mutex_unlock(&unit->transmit_mutex);
 }
 
 // -----------------------------------------------------------------------

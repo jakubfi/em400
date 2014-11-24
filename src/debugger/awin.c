@@ -173,7 +173,7 @@ int aw_fit(int l_av, int l_max, int l_min, int l_left)
 			len = l_max;
 	}
 
-	// shrink up to l_min 
+	// shrink up to l_min
 	while ((len < l_min) || (l_av - len < l_left)) {
 		len--;
 	}

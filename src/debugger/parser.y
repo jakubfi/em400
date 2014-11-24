@@ -76,10 +76,10 @@ line:
 	;
 
 statement:
-	command 
+	command
 	| exprlist 	{ awtbprint(W_CMD, C_DATA, "\n"); }
 	| YERR 		{ yyclearin; yyerror("unknown character: %c", (char) $1); YYABORT; }
-	| 
+	|
 	;
 
 exprlist:

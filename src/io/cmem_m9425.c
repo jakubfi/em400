@@ -158,7 +158,7 @@ int cmem_m9425_cmd(struct cmem_unit_proto_t *unit, int dir, int cmd, uint16_t *r
 				cmem_m9425_reset(unit);
 				cmem_int(unit->chan, unit->num, CMEM_M9425_INT_ZER);
 				break;
-   			case CMEM_M9425_CMD_OTR:
+			case CMEM_M9425_CMD_OTR:
 				break;
 			case CMEM_M9425_CMD_NTR:
 				break;

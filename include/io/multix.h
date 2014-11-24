@@ -215,17 +215,17 @@ enum mx_phy_type_e {
 enum mx_setconf_errors_e {
 	MX_SC_E_OK				= -1,// everything went fine. (it's not multix constant, it's em400 indicator)
 	MX_SC_E_CONFSET			= 0, // configuration already set
-    MX_SC_E_NUMLINES		= 1, // wrong number of physical or logical lines
-    MX_SC_E_DEVTYPE			= 2, // unknown device type in physical line description
-    MX_SC_E_DIR				= 3, // unknown transmission direction
-    MX_SC_E_PHY_INCOMPLETE	= 4, // incomplete physical line description
-    MX_SC_E_PROTO_MISSING	= 5, // missing protocol
-    MX_SC_E_PHY_UNUSED		= 6, // physical line is not used
-    MX_SC_E_DIR_MISMATCH	= 7, // device vs. protocol transmission dricetion mismatch
-    MX_SC_E_PHY_BUSY		= 8, // physical line is busy
-    MX_SC_E_NOMEM			= 9, // memory exhausted
-    MX_SC_E_PROTO_MISMATCH	= 10,// protocol vs. physical line type mismatch
-    MX_SC_E_PROTO_PARAMS	= 11 // wrong protocol parameters
+	MX_SC_E_NUMLINES		= 1, // wrong number of physical or logical lines
+	MX_SC_E_DEVTYPE			= 2, // unknown device type in physical line description
+	MX_SC_E_DIR				= 3, // unknown transmission direction
+	MX_SC_E_PHY_INCOMPLETE	= 4, // incomplete physical line description
+	MX_SC_E_PROTO_MISSING	= 5, // missing protocol
+	MX_SC_E_PHY_UNUSED		= 6, // physical line is not used
+	MX_SC_E_DIR_MISMATCH	= 7, // device vs. protocol transmission dricetion mismatch
+	MX_SC_E_PHY_BUSY		= 8, // physical line is busy
+	MX_SC_E_NOMEM			= 9, // memory exhausted
+	MX_SC_E_PROTO_MISMATCH	= 10,// protocol vs. physical line type mismatch
+	MX_SC_E_PROTO_PARAMS	= 11 // wrong protocol parameters
 };
 
 // "get status" bits
