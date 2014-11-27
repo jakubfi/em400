@@ -1,4 +1,4 @@
-ADD_library(mem
+ADD_LIBRARY(mem
 	mem.c mem_mega.c mem_elwro.c
 )
 

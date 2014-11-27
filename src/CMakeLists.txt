@@ -13,7 +13,7 @@ ADD_EXECUTABLE(emitool
 	emitool.c io/dev/e4image.c
 )
 
-target_link_libraries(em400
+TARGET_LINK_LIBRARIES(em400
 	rt m
 	${CMAKE_THREAD_LIBS_INIT}
 	${FLEX_LIBRARIES} ${BISON_LIBRARIES}
@@ -27,6 +27,6 @@ ADD_SUBDIRECTORY(io io)
 ADD_SUBDIRECTORY(mem mem)
 ADD_SUBDIRECTORY(cpu cpu)
 
-install(TARGETS em400 emitool RUNTIME DESTINATION bin)
+INSTALL(TARGETS em400 emitool RUNTIME DESTINATION bin)
 
 # vim: tabstop=4
