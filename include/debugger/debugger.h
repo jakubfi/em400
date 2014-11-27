@@ -34,8 +34,6 @@ struct evlb_t {
 	struct evlb_t *next;
 };
 
-extern char *script_name;
-
 extern int dbg_loop_fin;
 extern volatile int dbg_enter;
 extern char input_buf[];
@@ -58,8 +56,6 @@ int dbg_init(struct cfg_em400 *cfg);
 void dbg_shutdown();
 void dbg_fin_cycle();
 int dbg_parse(char *c);
-
-int read_script(char *filename);
 
 
 #endif

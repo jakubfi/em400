@@ -50,7 +50,6 @@ struct cfg_em400 {
 	int exit_on_hlt;
 	int benchmark;
 	int print_help;
-	char *script_name;
 
 	int speed_real;
 	int timer_step;

@@ -54,7 +54,6 @@ void dbg_c_log_info(int wid);
 void dbg_c_log_enable(int wid);
 void dbg_c_log_disable(int wid);
 void dbg_c_log_set_level(int wid, char *component, int level);
-void dbg_c_script_load(int wid, char *filename);
 void dbg_c_watch_add(int wid, char *label, struct node_t *n);
 void dbg_c_watch_list(int wid, int count);
 void dbg_c_watch_del(int wid, int nr);

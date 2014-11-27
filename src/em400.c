@@ -154,7 +154,6 @@ void em400_usage()
 		"\n"
 		"Debuger-only options:\n"
 		"   -s           : use simple debugger interface\n"
-		"   -r script    : load and execute script on startup\n"
 		"   -t test_expr : execute expression when program halts (implies -e -s)\n"
 #endif
 	);

@@ -39,8 +39,6 @@
 
 #include "cfg.h"
 
-char *script_name = NULL;
-
 int ui_mode;
 
 // debugger flow
@@ -94,8 +92,6 @@ int dbg_init(struct cfg_em400 *cfg)
 		free(hist_file);
 		return E_AW_INIT;
 	}
-
-	script_name = cfg->script_name;
 
 	free(hist_file);
 
@@ -172,61 +168,6 @@ int dbg_parse(char *c)
 }
 
 // -----------------------------------------------------------------------
-int read_script(char *filename)
-{
-	FILE *sf = fopen(filename, "r");
-	if (!sf) {
-		return INT_MIN;;
-	}
-
-	char *b = input_buf;
-	int lines = 0;
-	int linebeg = 1;
-	int comment = 0;
-
-	while (1) {
-		int c = fread(b, 1, 1, sf);
-
-		if (c <= 0) {
-			break;
-		}
-
-		// skip leading blanks
-		if (((*b == ' ') || (*b == '\t')) && (linebeg)) {
-		// comment start
-		} else if (*b == ';') {
-			comment = 1;
-		// skip comments
-		} else if (comment && (*b != '\n')) {
-		// EOL, do parse
-		} else if (*b == '\n') {
-			linebeg = 1;
-			comment = 0;
-			*(b+1) = '\0';
-			*b = '\0';
-			if (b != input_buf) {
-				awtbprint(W_CMD, C_LABEL, "%s ", input_buf);
-				awtbprint(W_CMD, C_PROMPT, "-> ");
-				*b = '\n';
-				int res = dbg_parse(input_buf);
-				if (res != 0) {
-					return -(lines+1);
-				}
-				b = input_buf;
-				lines++;
-			}
-		// next char
-		} else {
-			linebeg = 0;
-			b++;
-		}
-	}
-
-	fclose(sf);
-	return lines;
-}
-
-// -----------------------------------------------------------------------
 void dbg_step()
 {
 	struct evlb_t *bhit = NULL;
@@ -243,20 +184,6 @@ void dbg_step()
 			awin_tb_scroll_end(W_CMD);
 			aw_layout_redo();
 		} else {
-			aw_layout_refresh();
-		}
-
-		if (script_name) {
-			int sr = read_script(script_name);
-			if (sr == INT_MIN) {
-				awtbprint(W_CMD, C_ERROR, "Cannot open script file: %s\n", script_name);
-			} else if (sr<0) {
-				awtbprint(W_CMD, C_ERROR, "Error at line: %i\n", -sr);
-			} else {
-				awtbprint(W_CMD, C_LABEL, "Read %i line(s)\n", sr);
-			}
-			free(script_name);
-			script_name = NULL;
 			aw_layout_refresh();
 		}
 

@@ -42,8 +42,6 @@
 #include "debugger/eval.h"
 #include "debugger/decode.h"
 
-extern char *script_name;
-
 // -----------------------------------------------------------------------
 struct cmd_t dbg_commands[] = {
 	{ "quit",	F_QUIT,		"Quit the emulator", "  quit" },
@@ -61,7 +59,6 @@ struct cmd_t dbg_commands[] = {
 	{ "run",	F_RUN,		"Run emulation", "  run" },
 	{ "stk",	F_STACK,	"Show stack", "  stk" },
 	{ "log",	F_LOG,		"Manipulate logging", "  log\n  log on|off\n  log level <component>:<level>" },
-	{ "script",	F_SCRIPT,	"Load and execute script", "  script <filename>" },
 	{ "watch",	F_WATCH,	"Manipulate expression watches", "  watch add <expression>\n  watch del <watch_number>\n  watch" },
 	{ "decode",	F_DECODE,	"Decode memory structures", "  decode\n  decode <decoder> <address>" },
 	{ "find",	F_FIND,		"Search memory for a value", "  find <block> <value>" },
@@ -565,14 +562,6 @@ void dbg_c_log_set_level(int wid, char *comp_name, int level)
 		awtbprint(wid, C_LABEL, "set to ");
 		awtbprint(wid, C_DATA, "%i\n", level);
 	}
-}
-
-// -----------------------------------------------------------------------
-void dbg_c_script_load(int wid, char *filename)
-{
-	awtbprint(wid, C_LABEL, "Loading script: ");
-	awtbprint(wid, C_DATA, "%s\n", filename);
-	script_name = filename;
 }
 
 // -----------------------------------------------------------------------

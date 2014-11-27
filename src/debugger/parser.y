@@ -47,7 +47,7 @@ char verr[128];
 %token ':' '&' '|' '(' ')'
 %token HEX OCT BIN INT UINT
 %token IRZ
-%token <value> F_QUIT F_MEMCL F_MEM F_REGS F_SREGS F_RESET F_STEP F_HELP F_DASM F_LOAD F_MEMCFG F_BRK F_RUN F_STACK F_LOG F_SCRIPT F_WATCH F_DECODE F_FIND F_TIMER
+%token <value> F_QUIT F_MEMCL F_MEM F_REGS F_SREGS F_RESET F_STEP F_HELP F_DASM F_LOAD F_MEMCFG F_BRK F_RUN F_STACK F_LOG F_WATCH F_DECODE F_FIND F_TIMER
 %token ADD DEL TEST
 %token ON OFF
 %type <n> expr lval bitfield basemod
@@ -192,7 +192,6 @@ command:
 	| F_LOG ON			{ dbg_c_log_enable(W_CMD); }
 	| F_LOG NAME '=' VALUE	{ dbg_c_log_set_level(W_CMD, $2, $4); }
 	| F_LOG error
-	| F_SCRIPT TEXT		{ dbg_c_script_load(W_CMD, $2); }
 	| F_WATCH			{ dbg_c_watch_list(W_CMD, 999999); }
 	| F_WATCH ADD expr	{
 		char expr[128];
