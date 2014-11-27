@@ -22,7 +22,7 @@
 #include <pthread.h>
 
 #include "io/multix.h"
-#include "e4image.h"
+#include "io/dev/e4image.h"
 
 struct mx_unit_winch_t {
 	struct mx_unit_proto_t proto;

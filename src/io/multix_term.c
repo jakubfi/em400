@@ -23,7 +23,7 @@
 #include "mem/mem.h"
 
 #include "io/multix_term.h"
-#include "io/term.h"
+#include "io/dev/term.h"
 
 #define UNIT ((struct mx_unit_terminal_t *)(unit))
 

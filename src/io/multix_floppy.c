@@ -22,7 +22,7 @@
 #include "mem/mem.h"
 
 #include "io/multix_floppy.h"
-#include "io/e4image.h"
+#include "io/dev/e4image.h"
 
 #define UNIT ((struct mx_unit_floppy_t *)(unit))
 

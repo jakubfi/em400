@@ -10,7 +10,7 @@ ADD_EXECUTABLE(em400
 )
 
 ADD_EXECUTABLE(emitool
-	emitool.c io/e4image.c
+	emitool.c io/dev/e4image.c
 )
 
 target_link_libraries(em400
@@ -18,6 +18,7 @@ target_link_libraries(em400
 	${CMAKE_THREAD_LIBS_INIT}
 	${FLEX_LIBRARIES} ${BISON_LIBRARIES}
 	cpu mem io
+	dev
 	emdas
 	${DEBUGGER_LIBS}
 )

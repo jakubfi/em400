@@ -20,7 +20,7 @@
 
 #include <pthread.h>
 
-#include "e4image.h"
+#include "io/dev/e4image.h"
 #include "io/cmem.h"
 
 #include "cfg.h"

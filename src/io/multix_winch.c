@@ -23,7 +23,7 @@
 #include "mem/mem.h"
 
 #include "io/multix_winch.h"
-#include "io/e4image.h"
+#include "io/dev/e4image.h"
 
 #include "utils.h"
 

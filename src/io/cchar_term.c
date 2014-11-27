@@ -26,7 +26,7 @@
 #include "errors.h"
 #include "mem/mem.h"
 #include "io/cchar_term.h"
-#include "io/term.h"
+#include "io/dev/term.h"
 
 #include "log.h"
 

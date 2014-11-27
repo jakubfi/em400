@@ -23,7 +23,7 @@
 #include <getopt.h>
 #include <stdarg.h>
 
-#include "io/e4image.h"
+#include "io/dev/e4image.h"
 
 enum actions_e{
 	A_UNKNOWN = -1,

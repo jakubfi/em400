@@ -27,7 +27,7 @@
 #include <sys/select.h>
 #include <fcntl.h>
 
-#include "io/term.h"
+#include "io/dev/term.h"
 
 struct term_t {
 	int type;
