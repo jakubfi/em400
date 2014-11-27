@@ -2,9 +2,17 @@
 CMakeCache.txt
 CMakeFiles
 Makefile
-build
 cmake_install.cmake
 install_manifest.txt
+*.a
+src/em400
+src/emitool
+src/cfg_parser.c
+src/cfg_parser.h
+src/cfg_scanner.c
+src/debugger/parser.c
+src/debugger/parser.h
+src/debugger/scanner.c
 
 # --- 3rd party tests
 tests/vendor

@@ -53,20 +53,37 @@ Build instructions
 Do the following in the directory where this README lives:
 
 ```
-	cmake .
-	make
-	make install
+cmake .
+make
+make install
 ```
 
 Running
 ==========================================================================
 
 Emulator is by default built with debugger, which currently is its primary (and only) user interface.
-Just run:
+
+Usage:
 
 ```
-	build/em400
+em400 [option] ...
 ```
 
-and emulate away.
+Where *options* are:
+
+* **-h** - display help
+* **-c config** - use given config file instead of default one (*~/.em400/em400.cfg*)
+* **-p program** - load program image into OS memory
+* **-l levels** - enable logging with given levels. Syntax for describing levels is: `component=level[,component=level[,..]]`. Available components are: reg, mem, cpu, op, int, io, mx, px, cchar, cmem, term, wnch, flop, pnch, pnrd, crk5, em4h, all. Logging level is 0-9.
+* **-L** -  disable logging
+* **-k value** - set keys to given value
+* **-e** - terminate emulation on HLT >= 040
+* **-b** -  benchmark emulator
+
+Debuger-only options:
+
+* **-s** - use simple debugger interface
+* **-r script**  - load and execute script on startup
+* **-t test_expr** - execute expression when program halts (implies -e -s)
+* **-x pre_expr** - execute expression on emulator startup
 

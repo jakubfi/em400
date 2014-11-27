@@ -5,6 +5,6 @@ ADD_LIBRARY(io
 	multix.c multix_winch.c multix_floppy.c multix_puncher.c multix_punchreader.c multix_term.c
 )
 
-ADD_SUBDIRECTORY(dev dev)
+ADD_SUBDIRECTORY(dev)
 
 # vim: tabstop=4
