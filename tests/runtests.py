@@ -1,4 +1,4 @@
-#!/usr/bin/python
+#!/usr/bin/env python
 
 #  Copyright (c) 2013 Jakub Filipowicz <jakubf@gmail.com>
 #
