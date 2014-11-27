@@ -156,7 +156,6 @@ void em400_usage()
 		"   -s           : use simple debugger interface\n"
 		"   -r script    : load and execute script on startup\n"
 		"   -t test_expr : execute expression when program halts (implies -e -s)\n"
-		"   -x pre_expr  : execute expression on emulator startup\n"
 #endif
 	);
 }
@@ -279,13 +278,6 @@ int main(int argc, char** argv)
 	}
 
 	em400_init(cfg);
-
-#ifdef WITH_DEBUGGER
-	if (cfg->pre_expr) {
-		dbg_parse(cfg->pre_expr);
-	}
-#endif
-
 	em400_loop(cfg);
 
 	if (em400_state == STATE_MEM_FAIL) {

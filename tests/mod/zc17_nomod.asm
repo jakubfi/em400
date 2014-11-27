@@ -1,4 +1,4 @@
-; CONFIG configs/minimal.cfg
+; OPTS -c  configs/minimal.cfg
 
 ; 17-bit byte addressing does not work on unmodified cpu
 

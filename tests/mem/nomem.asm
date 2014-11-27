@@ -1,4 +1,4 @@
-; CONFIG configs/no_user_mem.cfg
+; OPTS -c  configs/no_user_mem.cfg
 
 	.equ int_nomem 0x40 + 2
 	.equ stackp 0x61

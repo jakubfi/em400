@@ -1,4 +1,4 @@
-; CONFIG configs/minimal-clock.cfg
+; OPTS -c configs/minimal-clock.cfg
 ; busy loop for a while, waiting for timer to tick
 
 	lwt r1, 0

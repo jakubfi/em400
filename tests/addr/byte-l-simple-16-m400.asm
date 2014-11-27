@@ -1,4 +1,4 @@
-; CONFIG configs/mega_max.cfg
+; OPTS -c configs/mega_max.cfg
 
 ; test simple byte-size memory addressing across all possible
 ; (32k) address space on vanilla cpu

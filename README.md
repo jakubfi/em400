@@ -85,5 +85,4 @@ Debuger-only options:
 * **-s** - use simple debugger interface
 * **-r script**  - load and execute script on startup
 * **-t test_expr** - execute expression when program halts (implies -e -s)
-* **-x pre_expr** - execute expression on emulator startup
 

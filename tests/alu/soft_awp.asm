@@ -1,4 +1,4 @@
-; CONFIG configs/soft_awp.cfg
+; OPTS -c  configs/soft_awp.cfg
 
 	.equ stackp 0x61
 	.equ interrupts 0x40

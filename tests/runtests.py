@@ -86,12 +86,11 @@ class Test:
 
     # ------------------------------------------------------------------------
     def parse(self):
-        self.pre = ""
         self.test_expr = ""
         self.expected = ""
+        self.opts = []
 
         xpcts = []
-        pre_tab = []
 
         for l in open(self.source, "r"):
             # get program name
@@ -99,23 +98,14 @@ class Test:
             if pname:
                 self.prog_name = pname[0]
 
-            # get CONFIG directive
-            if "CONFIG" in l:
-                pcfg = re.findall(";[ \t]*CONFIG[ \t]+(.*)", l)
-                if pcfg:
-                    if not os.path.isfile(pcfg[0]):
-                        raise Exception("Config '%s' does not exist" % pcfg[0])
-                    self.config = pcfg[0]
+            # get OPTS directive
+            if "OPTS" in l:
+                popts = re.findall(";[ \t]*OPTS[ \t]+(.*)", l)
+                if popts:
+                    self.opts = popts[0].split()
                 else:
-                    raise Exception("Incomplete CONFIG directive")
+                    raise Exception("Incomplete OPTS directive")
 
-            # get PRE expressions
-            if "PRE" in l:
-                ppre = re.findall(";[ \t]*PRE[ \t]+(.*)", l)
-                if ppre:
-                    pre_tab.append(ppre[0])
-                else:
-                    raise Exception("Incomplete PRE found")
 
             # get test result conditions
             if "XPCT" in l:
@@ -125,9 +115,6 @@ class Test:
                 else:
                     raise Exception("Incomplete XPCT found")
 
-        if pre_tab:
-            self.pre = ','.join(pre_tab)
-
         if not xpcts:
             raise Exception("No XPCTs foud")
 
@@ -136,9 +123,10 @@ class Test:
 
     # ------------------------------------------------------------------------
     def execute(self):
-        args = [em400, "-c", self.config, "-p", self.output, "-t", self.test_expr]
-        if self.pre:
-            args += ["-x", self.pre]
+        args = [em400, "-p", self.output, "-t", self.test_expr]
+        args += self.opts
+        if not "-c" in self.opts:
+            args += ["-c", self.config]
 
         o = subprocess.check_output(args).decode("utf-8")
 

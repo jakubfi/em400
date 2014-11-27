@@ -1,4 +1,4 @@
-; CONFIG configs/mod.cfg
+; OPTS -c  configs/mod.cfg
 
 ; CRON is illegal for modified (MX-16) CPU
 

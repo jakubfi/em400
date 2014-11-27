@@ -74,7 +74,6 @@ struct cfg_em400 {
 
 #ifdef WITH_DEBUGGER
 	int autotest;
-	char *pre_expr;
 	char *test_expr;
 	int ui_simple;
 #endif

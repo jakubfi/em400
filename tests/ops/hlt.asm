@@ -1,4 +1,4 @@
-; CONFIG configs/minimal-clock.cfg
+; OPTS -c  configs/minimal-clock.cfg
 
 	lw	r1, 0b0000100000000000
 	rw	r1, 20

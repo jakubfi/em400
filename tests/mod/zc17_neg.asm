@@ -1,4 +1,4 @@
-; CONFIG configs/mod.cfg
+; OPTS -c  configs/mod.cfg
 
 ; 17th bit for byte addressing is not set when
 ; negative pre-mod causes carry=1 when added to rC+rB

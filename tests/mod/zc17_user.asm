@@ -1,4 +1,4 @@
-; CONFIG configs/mod-noclock.cfg
+; OPTS -c  configs/mod-noclock.cfg
 
 ; 17-bit byte addressing works in user mode only when BS=0
 

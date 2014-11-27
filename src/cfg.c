@@ -90,7 +90,6 @@ struct cfg_em400 * cfg_create_default()
 
 #ifdef WITH_DEBUGGER
 	cfg->autotest = 0;
-	cfg->pre_expr = NULL;
 	cfg->test_expr = NULL;
 	cfg->ui_simple = 0;
 #endif
@@ -115,7 +114,6 @@ void cfg_destroy(struct cfg_em400 *cfg)
 	cfg_drop_chans(cfg->chans);
 
 #ifdef WITH_DEBUGGER
-	free(cfg->pre_expr);
 	free(cfg->test_expr);
 #endif
 
@@ -134,7 +132,7 @@ struct cfg_em400 * cfg_from_args(int argc, char **argv)
 	int len;
 #endif
 
-	while ((option = getopt(argc, argv,"bhec:p:k:rl:Lt:x:s")) != -1) {
+	while ((option = getopt(argc, argv,"bhec:p:k:rl:Lt:s")) != -1) {
 		switch (option) {
 			case 'L':
 				cfg->log_enabled = 0;
@@ -177,12 +175,6 @@ struct cfg_em400 * cfg_from_args(int argc, char **argv)
 				break;
 			case 'r':
 				cfg->script_name = strdup(optarg);
-				break;
-			case 'x':
-				len = strlen(optarg);
-				cfg->pre_expr = malloc(len+3);
-				strcpy(cfg->pre_expr, optarg);
-				strcpy(cfg->pre_expr + len, "\n\0");
 				break;
 			case 's':
 				cfg->ui_simple = 1;
@@ -277,7 +269,6 @@ struct cfg_em400 * cfg_overlay(struct cfg_em400 *a, struct cfg_em400 *b)
 
 #ifdef WITH_DEBUGGER
 	CHI(autotest);
-	CHS(pre_expr);
 	CHS(test_expr);
 	CHI(ui_simple);
 #endif

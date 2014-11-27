@@ -1,4 +1,4 @@
-; PRE KB = 17234
+; OPTS -k 17234
 
 	rky r1
 

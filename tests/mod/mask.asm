@@ -1,4 +1,4 @@
-; CONFIG configs/mod.cfg
+; OPTS -c  configs/mod.cfg
 
 ; Vanilla CPU masks all interrupts below and including current one.
 ; Modified (MX-16) CPU handles interrupt masking differently:
