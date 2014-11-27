@@ -23,6 +23,10 @@ target_link_libraries(em400
 	${DEBUGGER_LIBS}
 )
 
+ADD_SUBDIRECTORY(io io)
+ADD_SUBDIRECTORY(mem mem)
+ADD_SUBDIRECTORY(cpu cpu)
+
 install(TARGETS em400 emitool RUNTIME DESTINATION bin)
 
 # vim: tabstop=4

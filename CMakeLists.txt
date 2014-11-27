@@ -31,10 +31,6 @@ ELSE(WITH_DEBUGGER)
 	set(DEBUGGER_LIBS)
 ENDIF(WITH_DEBUGGER)
 
-ADD_SUBDIRECTORY(src/io build/io)
-ADD_SUBDIRECTORY(src/io/dev build/io/dev)
-ADD_SUBDIRECTORY(src/mem build/mem)
-ADD_SUBDIRECTORY(src/cpu build/cpu)
 ADD_SUBDIRECTORY(src build)
 
 # vim: tabstop=4
