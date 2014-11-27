@@ -9,21 +9,6 @@ find_package(BISON)
 find_package(FLEX)
 find_package(Threads)
 
-function(xopen FILE STANDARD)
-math(EXPR VER "${STANDARD} / 100")
-message(STATUS "${FILE} needs ${ARGN} from X/Open ${VER}")
-set_property(
-	SOURCE ${FILE}
-	APPEND
-	PROPERTY COMPILE_DEFINITIONS
-	_XOPEN_SOURCE=${STANDARD}
-)
-endfunction(xopen)
-
-function(strdup FILE)
-xopen(${FILE} 500 "strdup()")
-endfunction(strdup)
-
 INCLUDE_DIRECTORIES(${CMAKE_SOURCE_DIR}/include)
 INCLUDE_DIRECTORIES(${CMAKE_BINARY_DIR}/build)
 

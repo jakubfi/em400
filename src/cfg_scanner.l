@@ -16,6 +16,7 @@
 //  Foundation, Inc.,
 //  51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 
+
 #include <stdlib.h>
 
 #include "cfg_parser.h"
@@ -25,6 +26,10 @@ void cyyerror(char *);
 #define YY_USER_ACTION cyylloc.first_line = cyylineno;
 
 %}
+
+%top{
+	#define _XOPEN_SOURCE 500
+}
 
 %option nounput
 %option noinput
