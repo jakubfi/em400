@@ -1,4 +1,4 @@
-; OPTS -c  configs/mega_max.cfg
+; OPTS -c configs/mega_max.cfg
 
 ; test various word addressing methods across all address space
 

@@ -1,4 +1,4 @@
-; OPTS -c  configs/mod.cfg
+; OPTS -c configs/mod.cfg
 
 ; Modified (MX-16) CPU has two additional instructions,
 ; which generate new software interrupt 5: SINT and SIND.

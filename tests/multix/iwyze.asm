@@ -1,4 +1,4 @@
-; OPTS -c  configs/multix.cfg
+; OPTS -c configs/multix.cfg
 
 	.equ stackp 0x61
 	.equ prog_beg 0x70

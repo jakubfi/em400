@@ -1,4 +1,4 @@
-; OPTS -c  configs/mod.cfg
+; OPTS -c configs/mod.cfg
 
 ; 17-bit byte addressing works only when:
 ;  * cpu_mod is on (MX-16 CPU)

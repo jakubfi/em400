@@ -1,4 +1,4 @@
-; OPTS -c  configs/mega_max.cfg
+; OPTS -c configs/mega_max.cfg
 
 ; does MEGA deallocation work?
 
