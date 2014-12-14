@@ -50,10 +50,12 @@ To build and run em400 you need:
 Build instructions
 ==========================================================================
 
-Do the following in the directory where this README lives:
+Do the following in the source directory:
 
 ```
-cmake .
+mkdir build
+cd build
+cmake ..
 make
 make install
 ```

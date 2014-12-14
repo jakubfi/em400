@@ -24,7 +24,7 @@ import re
 import subprocess
 
 assem = "emas"
-em400 = "../src/em400"
+em400 = "../build/src/em400"
 
 # ------------------------------------------------------------------------
 class TestBed:

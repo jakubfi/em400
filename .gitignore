@@ -1,29 +1,5 @@
-# --- build files
-CMakeCache.txt
-CMakeFiles
-Makefile
-cmake_install.cmake
-install_manifest.txt
-*.a
-src/em400
-src/emitool
-src/cfg_parser.c
-src/cfg_parser.h
-src/cfg_scanner.c
-src/debugger/parser.c
-src/debugger/parser.h
-src/debugger/scanner.c
-
-# --- 3rd party tests
+build
 tests/vendor
-
-# --- emulator temporary
-*.e4i*
-*.img
-*.bin
-
-# --- runtime temporary
-*.core
 *.swp
-*.pyc
-*.log
+tools/*.pyc
+boot/boot_winch.bin
