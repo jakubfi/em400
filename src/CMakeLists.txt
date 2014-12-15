@@ -16,7 +16,8 @@ TARGET_LINK_LIBRARIES(em400
 	rt m
 	${CMAKE_THREAD_LIBS_INIT}
 	${FLEX_LIBRARIES} ${BISON_LIBRARIES}
-	cpu mem io dev emdas
+	cpu mem io dev
+	${EMDAS_LIBRARIES}
 	${DEBUGGER_LIBS}
 )
 
