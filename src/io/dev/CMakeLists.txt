@@ -1,4 +1,4 @@
-ADD_LIBRARY(dev
+add_library(dev
 	e4image.c
 	term.c
 )
