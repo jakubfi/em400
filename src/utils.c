@@ -60,33 +60,4 @@ char * int2chars(uint16_t w, char *buf)
 	return buf;
 }
 
-// -----------------------------------------------------------------------
-char r2a(int i)
-{
-	if ((i >= 1) && (i <= 26)) {
-		return i+64;
-	} else if ((i >= 27) && (i <= 36)) {
-		return i+21;
-	} else if (i == 37) {
-		return '_';
-	} else if (i == 38) {
-		return '%';
-	} else if (i == 39) {
-		return '#';
-	} else {
-		return '.';
-	}
-}
-
-// -----------------------------------------------------------------------
-char * int2r40(uint16_t w)
-{
-	char *buf = malloc(4);
-	buf[0] = r2a((w/1600)%40);
-	buf[1] = r2a((w/40)%40);
-	buf[2] = r2a(w%40);
-	buf[3] = '\0';
-	return buf;
-}
-
 // vim: tabstop=4 shiftwidth=4 autoindent

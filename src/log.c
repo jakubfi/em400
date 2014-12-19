@@ -40,7 +40,8 @@
 #include "debugger/decode.h"
 #endif
 
-#include "emcrk/kfind.h"
+#include <emcrk/kfind.h>
+#include <emcrk/r40.h>
 
 // low-level stuff
 
@@ -89,7 +90,7 @@ static void * log_flusher(void *ptr);
 
 #define LOG_F_COMP "%4s %1i | "
 #define LOG_F_EMPTY "                     | "
-#define LOG_F_CPU "%3s %2i:0x%04x %s | %s"
+#define LOG_F_CPU "%3s %2i:0x%04x %-6s | %s"
 
 static uint16_t log_cycle_sr;
 static uint16_t log_cycle_ic;
@@ -565,8 +566,8 @@ void log_log_dasm(unsigned component, unsigned level, int mod, int norm_arg, int
 void log_update_pname()
 {
 	uint16_t *bprog;
-	uint16_t *pname[2];
-	char *n1, *n2;
+	uint16_t *p;
+	uint16_t pname[2];
 
 	if (!kernel) return;
 
@@ -575,15 +576,13 @@ void log_update_pname()
 
 	int log_pname_offset = kernel->mod ? 54 : 52;
 
-	pname[0] = mem_ptr(0, *bprog + log_pname_offset + 0);
-	pname[1] = mem_ptr(0, *bprog + log_pname_offset + 1);
-	if (!pname[0] || !pname[1]) return;
+	for (int i=0 ; i<2 ; i++) {
+		p = mem_ptr(0, *bprog + log_pname_offset + i);
+		if (!p) return;
+		pname[i] = *p;
+	}
 
-	n1 = int2r40(*(pname[0]));
-	n2 = int2r40(*(pname[1]));
-	snprintf(log_pname, 7, "%s%s", n1, n2);
-	free(n1);
-	free(n2);
+	r40_to_str(pname, 2, log_pname);
 }
 
 // -----------------------------------------------------------------------

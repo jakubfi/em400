@@ -42,6 +42,8 @@
 #include "debugger/eval.h"
 #include "debugger/decode.h"
 
+#include <emcrk/r40.h>
+
 // -----------------------------------------------------------------------
 struct cmd_t dbg_commands[] = {
 	{ "quit",	F_QUIT,		"Quit the emulator", "  quit" },
@@ -266,14 +268,14 @@ void dbg_c_regs(int wid)
 {
 	awtbprint(wid, C_LABEL, "    hex    oct    dec    ZMVCLEGY Xuser    ch R40\n");
 	for (int i=0 ; i<=7 ; i++) {
-		char *r = int2r40(regs[i]);
+		char *r = r40_to_str(regs+i, 1, NULL);
 		char c[3];
 		int2chars(regs[i], c);
 
 		awtbprint(wid, C_LABEL, "R%i: ", i);
 		awtbprint(wid, C_DATA, "0x%04x %6o %6i ", regs[i], regs[i], (int16_t) regs[i]);
 		awtbbinprint(wid, C_DATA, "........ ........", regs[i], 16);
-		awtbprint(wid, C_DATA, " %s %s\n", c, r);
+		awtbprint(wid, C_DATA, " %-3s %-3s\n", c, r);
 		free(r);
 	}
 }

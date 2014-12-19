@@ -32,6 +32,8 @@
 #include "debugger/ui.h"
 #include "debugger/decode.h"
 
+#include <emcrk/r40.h>
+
 struct decoder_t decoders[] = {
 	{ "iv", "SYS: interrupt vectors (0x40)", decode_iv },
 	{ "ctx", "SYS: process context", decode_ctx },
@@ -119,10 +121,9 @@ char * decode_ctx(int nb, uint16_t addr, int arg)
 	pos += sprintf(b+pos, "R1-7: 0x%04x 0x%04x 0x%04x 0x%04x 0x%04x 0x%04x 0x%04x\n", data[3], data[4], data[5], data[6], data[7], data[8], data[9]);
 	pos += sprintf(b+pos, "----------------------------------------------\n");
 
-	char *n1 = int2r40(data[52]);
-	char *n2 = int2r40(data[53]);
+	char *name = r40_to_str(data+52, 2, NULL);
 	char *state = int2binf("........ ........", data[12], 16);
-	pos += sprintf(b+pos, "Process 0x%04x %s%s ", addr, n1, n2);
+	pos += sprintf(b+pos, "Process 0x%04x %s ", addr, name);
 	pos += sprintf(b+pos, "State: %s (0x%04x), ", state, data[12]);
 	pos += sprintf(b+pos, "Prio: %i, ", (int16_t) data[13]);
 	pos += sprintf(b+pos, "Size: %iw/%iseg (%s) \n", data[54], data[34]&255, szabme);
@@ -154,8 +155,7 @@ char * decode_ctx(int nb, uint16_t addr, int arg)
 
 	free(r0s);
 	free(srs);
-	free(n1);
-	free(n2);
+	free(name);
 	free(state);
 	free(szabme);
 
@@ -169,13 +169,11 @@ int decode_exl_fil(int nb, uint16_t r4, char *b, int exl_code)
 	int pos = 0;
 	mem_mget(nb, r4, data, 12);
 
-	char *disk = int2r40(data[7]);
-	char *dir1 = int2r40(data[8]);
-	char *dir2 = int2r40(data[9]);
-	char *file1 = int2r40(data[10]);
-	char *file2 = int2r40(data[11]);
+	char *disk = r40_to_str(data+7, 1, NULL);
+	char *dir = r40_to_str(data+8, 2, NULL);
+	char *file = r40_to_str(data+10, 2, NULL);
 
-	pos += sprintf(b+pos, "%s/%s%s/%s%s\n", disk, dir1, dir2, file1, file2);
+	pos += sprintf(b+pos, "%s/%s/%s\n", disk, dir, file);
 	pos += sprintf(b+pos, "Err: %i\n", (int16_t) data[0]);
 	pos += sprintf(b+pos, "Stream ID: %i\n", data[1]);
 	pos += sprintf(b+pos, "Type: %i\n", data[2]);
@@ -185,10 +183,8 @@ int decode_exl_fil(int nb, uint16_t r4, char *b, int exl_code)
 	pos += sprintf(b+pos, "Attributes: 0x%04x\n", data[6]);
 
 	free(disk);
-	free(dir1);
-	free(dir2);
-	free(file1);
-	free(file2);
+	free(dir);
+	free(file);
 
 	return pos;
 }
@@ -267,7 +263,7 @@ int decode_exl_met(int nb, uint16_t r4, char *b, int exl_code)
 	int pos = 0;
 	mem_mget(nb, r4, data, 5);
 
-	char *disk = int2r40(data[0]);
+	char *disk = r40_to_str(data, 1, NULL);
 
 	pos += sprintf(b+pos, "Disk: %s (%i)\n", disk, data[0]);
 	pos += sprintf(b+pos, "DICDIC: %i\n", data[1]);
@@ -287,11 +283,9 @@ int decode_exl_pinf(int nb, uint16_t r4, char *b, int exl_code)
 	int pos = 0;
 	mem_mget(nb, r4, data, 12);
 
-	char *area = int2r40(data[7]);
-	char *u1 = int2r40(data[8]);
-	char *u2 = int2r40(data[9]);
-	char *p1 = int2r40(data[10]);
-	char *p2 = int2r40(data[11]);
+	char *area = r40_to_str(data+7, 1, NULL);
+	char *u = r40_to_str(data+8, 2, NULL);
+	char *p = r40_to_str(data+10, 2, NULL);
 
 	pos += sprintf(b+pos, "System generation number: 0x%04x\n", data[0]);
 	pos += sprintf(b+pos, "Mem available: %i segments\n", data[1]>>8);
@@ -302,14 +296,12 @@ int decode_exl_pinf(int nb, uint16_t r4, char *b, int exl_code)
 	pos += sprintf(b+pos, "Mem used: %i words\n", data[5]);
 	pos += sprintf(b+pos, "Rights: 0x%04x\n", data[6]);
 	pos += sprintf(b+pos, "Area name: %s\n", area);
-	pos += sprintf(b+pos, "User name: %s%s\n", u1, u2);
-	pos += sprintf(b+pos, "Process name: %s%s\n", p1, p2);
+	pos += sprintf(b+pos, "User name: %s\n", u);
+	pos += sprintf(b+pos, "Process name: %s\n", p);
 
 	free(area);
-	free(u1);
-	free(u2);
-	free(p1);
-	free(p2);
+	free(u);
+	free(p);
 
 	return pos;
 }

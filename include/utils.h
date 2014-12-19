@@ -22,8 +22,6 @@
 
 char * int2binf(char *format, uint64_t value, int size);
 char * int2chars(uint16_t w, char *buf);
-char r2a(int i);
-char * int2r40(uint16_t w);
 
 #endif
 
