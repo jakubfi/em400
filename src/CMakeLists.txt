@@ -18,6 +18,7 @@ target_link_libraries(em400
 	${FLEX_LIBRARIES} ${BISON_LIBRARIES}
 	cpu mem io dev
 	${EMDAS_LIBRARIES}
+	${EMCRK_LIBRARIES}
 	${DEBUGGER_LIBS}
 )
 

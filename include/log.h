@@ -67,6 +67,7 @@ void log_handle_syscall(unsigned component, unsigned level, int number, int nb, 
 void log_handle_syscall_ret(unsigned component, unsigned level, uint16_t n);
 void log_syscall_reset();
 void log_config(unsigned component, unsigned level, struct cfg_em400 *cfg);
+void log_check_os();
 
 #define LOG_ENABLED (atom_load(&log_enabled))
 #define LOG_WANTS(component, level) (LOG_ENABLED && log_wants(component, level))

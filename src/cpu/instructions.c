@@ -725,6 +725,10 @@ void op_73_mcl()
 	io_reset();
 	cpu_mod_off();
 
+	// call even if logging is disabled - user may enable it later
+	// and we still want to know if we're running a known OS
+	log_check_os();
+
 	if (LOG_ENABLED) {
 		log_intlevel_reset();
 		log_syscall_reset();

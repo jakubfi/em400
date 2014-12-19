@@ -87,16 +87,6 @@ log {
 	# "9" being "log insane amount of data" (level 9 can make things slower up to 100x)
 	# default: "all=0,em4h=1"
 	levels = "all=0,em4h=1"
-
-	# If you run CROOK operating system within em400 and
-	# want to log active process name, set this
-	# to process name offset in the process structure
-	# (it's 52 for "N" kernels and 54 for "P" kernels).
-	# 0 means do not log process name.
-	# NOTE: this is not 100% accurate, as process name is updated
-	# only when changing context (SP and LIP instructions)
-	# Default: 0
-	pname_offset = 0
 }
 
 #channel 0 = mem {

@@ -82,7 +82,6 @@ struct cfg_em400 * cfg_create_default()
 	cfg->log_enabled = 0;
 	cfg->log_file = strdup("em400.log");
 	cfg->log_levels = NULL;
-	cfg->log_pname_offset = 0;
 
 	// I/O
 	cfg->chans = NULL;
@@ -252,7 +251,6 @@ struct cfg_em400 * cfg_overlay(struct cfg_em400 *a, struct cfg_em400 *b)
 	CHI(log_enabled);
 	CHS(log_file);
 	CHS(log_levels);
-	CHI(log_pname_offset);
 
 	// I/O
 	if (b->chans != def->chans) {

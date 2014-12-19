@@ -40,6 +40,8 @@
 #include "debugger/decode.h"
 #endif
 
+#include "emcrk/kfind.h"
+
 // low-level stuff
 
 #define LOG_FLUSH_DELAY_MS 200
@@ -92,7 +94,6 @@ static void * log_flusher(void *ptr);
 static uint16_t log_cycle_sr;
 static uint16_t log_cycle_ic;
 
-static int log_pname_offset;
 static char log_pname[7] = "------";
 
 #define LOG_INT_INDENT_MAX 4*8
@@ -106,6 +107,8 @@ static int log_exl_r4;
 
 static struct emdas *emd;
 static char *dasm_buf;
+
+struct crk5_kern_result *kernel;
 
 static void log_log_timestamp(unsigned component, unsigned level, char *msg);
 
@@ -149,8 +152,6 @@ int log_init(struct cfg_em400 *cfg)
 	emdas_set_tabs(emd, 0, 0, 0, 0);
 	dasm_buf = emdas_get_buf(emd);
 
-	log_pname_offset = cfg->log_pname_offset;
-
 	log_initialized = 1;
 
 	return E_OK;
@@ -175,6 +176,7 @@ void log_shutdown()
 		atom_store(&log_components[i].thr, 0);
 	}
 
+	crk5_kern_res_drop(kernel);
 	log_disable();
 	free(log_file);
 }
@@ -566,10 +568,12 @@ void log_update_pname()
 	uint16_t *pname[2];
 	char *n1, *n2;
 
-	if (!log_pname_offset) return;
+	if (!kernel) return;
 
 	bprog = mem_ptr(0, 0x62);
 	if (!bprog) return;
+
+	int log_pname_offset = kernel->mod ? 54 : 52;
 
 	pname[0] = mem_ptr(0, *bprog + log_pname_offset + 0);
 	pname[1] = mem_ptr(0, *bprog + log_pname_offset + 1);
@@ -606,7 +610,6 @@ void log_config(unsigned component, unsigned level, struct cfg_em400 *cfg)
 	log_log(component, level, "Logging (%s):", cfg->log_enabled ? "enabled" : "disabled");
 	log_log(component, level, "   File: %s", cfg->log_file);
 	log_log(component, level, "   Levels: %s", cfg->log_levels);
-	log_log(component, level, "   CROOK-5 process name offset: %i", cfg->log_pname_offset);
 	log_log(component, level, "I/O:");
 
 	char buf[4096];
@@ -635,5 +638,40 @@ void log_config(unsigned component, unsigned level, struct cfg_em400 *cfg)
 	}
 }
 
+// -----------------------------------------------------------------------
+void log_check_os()
+{
+	uint16_t *seg;
+
+	uint16_t *kimg = malloc(2 * sizeof(uint16_t) * 4096);
+	if (!kimg) {
+		goto cleanup;
+	}
+
+	for (int i=0; i<2 ; i++) {
+		seg = mem_ptr(0, i*4096);
+		if (!seg) {
+			goto cleanup;
+		}
+		memcpy(kimg+i*4096, seg, 2*4096);
+	}
+
+	kernel = crk5_kern_find(kimg, 2*4096);
+	if (!kernel) {
+		goto cleanup;
+	}
+
+	if (LOG_WANTS(L_CRK5, 1)) {
+		log_log(L_CRK5, 1, "running CROOK for %s CPU, entry point @ 0x%04x, checksum: 0x%04x (%s)",
+			kernel->mod ? "MX-16" : "MERA-400",
+			kernel->entry_point,
+			kernel->cksum_addr,
+			kernel->cksum_stored == kernel->cksum_computed ? "OK" : "incorrect"
+		);
+	}
+
+cleanup:
+	free(kimg);
+}
 
 // vim: tabstop=4 shiftwidth=4 autoindent

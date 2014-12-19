@@ -67,7 +67,6 @@ struct cfg_em400 {
 	int log_enabled;
 	char *log_file;
 	char *log_levels;
-	int log_pname_offset;
 
 	struct cfg_chan *chans;
 

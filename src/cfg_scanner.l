@@ -61,7 +61,6 @@ log				return LOG;
 enabled			return ENABLED;
 file			return LFILE;
 levels			return LEVELS;
-pname_offset	return PNAME_OFFSET;
 
 channel			return CHANNEL;
 unit			return UNIT;

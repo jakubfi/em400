@@ -44,7 +44,7 @@ int cyylex(void);
 %token COMPUTER CHANNEL UNIT
 %token SPEED_REAL TIMER_STEP TIMER_START CPU_MOD CPU_USER_IO_ILLEGAL CPU_AWP
 %token ELWRO MEGA MEGA_PROM MEGA_BOOT OS_SEG CPU_STOP_ON_NOMEM
-%token LOG ENABLED LFILE LEVELS PNAME_OFFSET
+%token LOG ENABLED LFILE LEVELS
 %token <value> TEXT STRING
 %token <value> VALUE
 %token <value> BOOL
@@ -114,7 +114,6 @@ log_opt:
 	ENABLED '=' BOOL { cfg->log_enabled = $3.v; free($3.s); }
 	| LFILE '=' STRING { free(cfg->log_file); cfg->log_file = $3.s; }
 	| LEVELS '=' STRING { free(cfg->log_levels); cfg->log_levels = $3.s; }
-	| PNAME_OFFSET '=' VALUE { cfg->log_pname_offset = $3.v; free($3.s); }
 	;
 %%
 
