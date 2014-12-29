@@ -103,7 +103,7 @@ int cpu_init(struct cfg_em400 *cfg)
 
 	cpu_reset();
 
-	int_update_mask(regs[R_SR]);
+	int_update_mask();
 
 	if (mem_mega_boot()) {
 		LOG(L_CPU, 1, "Bootstrap from MEGA PROM is enabled");

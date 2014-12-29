@@ -102,17 +102,18 @@ static const char *int_names[] = {
 void int_wait()
 {
 	pthread_mutex_lock(&int_mutex);
-	while (!RP) {
+	while (!atom_load(&RP)) {
 		pthread_cond_wait(&int_cond, &int_mutex);
 	}
 	pthread_mutex_unlock(&int_mutex);
 }
 
 // -----------------------------------------------------------------------
-void int_update_rp()
+static void int_update_rp()
 {
-	atom_store(&RP, RZ & int_mask);
-	if (RP) {
+	uint32_t rp = RZ & int_mask;
+	atom_store(&RP, rp);
+	if (rp) {
 		pthread_cond_signal(&int_cond);
 	}
 }
@@ -123,12 +124,13 @@ void int_update_mask()
 	int i;
 	uint32_t xmask = 0b10000000000000000000000000000000;
 
-	pthread_mutex_lock(&int_mutex);
 	for (i=0 ; i<10 ; i++) {
 		if (regs[R_SR] & (1 << (15-i))) {
 			xmask |= int_rm2xmask[i];
 		}
 	}
+
+	pthread_mutex_lock(&int_mutex);
 	int_mask = xmask;
 	int_update_rp();
 	pthread_mutex_unlock(&int_mutex);
@@ -192,13 +194,15 @@ void int_serve()
 	uint16_t int_spec = 0;
 	uint16_t sr_mask;
 
-	pthread_mutex_lock(&int_mutex);
 	// find highest interrupt to serve
-	while ((probe > 0) && !(RP & (1 << probe))) {
+	uint32_t rp = atom_load(&RP);
+	while ((probe > 0) && !(rp & (1 << probe))) {
 		probe--;
 	}
 	interrupt = 31 - probe;
-	// clear interrupt, we update rp together with mask later
+
+	// clear interrupt, we update rp together with mask upon ctx switch
+	pthread_mutex_lock(&int_mutex);
 	RZ &= ~INT_BIT(interrupt);
 	pthread_mutex_unlock(&int_mutex);
 
