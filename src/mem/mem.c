@@ -191,7 +191,7 @@ int mem_mget(int nb, uint16_t saddr, uint16_t *dest, int count)
 	for (i=0 ; i<count ; i++) {
 		ptr = mem_ptr(nb, (uint16_t) (saddr+i));
 		if (ptr) {
-			*(dest+i) = *ptr;
+			*(dest+i) = atom_load(ptr);
 		} else {
 			return 0;
 		}
@@ -209,14 +209,12 @@ int mem_mput(int nb, uint16_t saddr, uint16_t *src, int count)
 		ptr = mem_ptr(nb, (uint16_t) (saddr+i));
 		if (ptr) {
 			if (!mem_mega_prom || (mem_map[nb][(saddr+i)>>12].seg != mem_mega_prom)) {
-				*ptr = *(src+i);
+				atom_store(ptr, *(src+i));
 			}
 		} else {
-			atom_fence();
 			return 0;
 		}
 	}
-	atom_fence();
 	return 1;
 }
 
