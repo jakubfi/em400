@@ -98,6 +98,7 @@ void timer_shutdown()
 		sem_post(&timer_quit);
 		pthread_join(timer_th, NULL);
 	}
+	sem_destroy(&timer_quit);
 }
 
 // -----------------------------------------------------------------------
