@@ -19,8 +19,8 @@
 #define ATOMIC_H
 
 #if defined __ATOMIC_SEQ_CST
-	#define atom_load(ptr) __atomic_load_n(ptr, __ATOMIC_SEQ_CST)
-	#define atom_store(ptr, val) __atomic_store_n(ptr, val, __ATOMIC_SEQ_CST)
+	#define atom_load(ptr) __atomic_load_n(ptr, __ATOMIC_RELAXED)
+	#define atom_store(ptr, val) __atomic_store_n(ptr, val, __ATOMIC_RELAXED)
 	#define atom_fence() __atomic_thread_fence(__ATOMIC_SEQ_CST)
 #elif defined __GCC_HAVE_SYNC_COMPARE_AND_SWAP_2
 	#define atom_load(ptr) __sync_fetch_and_or(ptr, 0)
