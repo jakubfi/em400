@@ -42,6 +42,7 @@
 
 #include <emcrk/kfind.h>
 #include <emcrk/r40.h>
+#include <emcrk/process.h>
 
 // low-level stuff
 
@@ -95,7 +96,7 @@ static void * log_flusher(void *ptr);
 static uint16_t log_cycle_sr;
 static uint16_t log_cycle_ic;
 
-static char log_pname[7] = "------";
+static struct crk5_process *process;
 
 #define LOG_INT_INDENT_MAX 4*8
 static int log_int_level = LOG_INT_INDENT_MAX;
@@ -405,7 +406,7 @@ void log_log_cpu(unsigned component, unsigned level, char *msgfmt, ...)
 		(log_cycle_sr & 0b0000000000100000) ? "USR" : "OS",
 		(log_cycle_sr & 0b0000000000001111),
 		log_cycle_ic,
-		log_pname,
+		process ? process->name : "",
 		log_int_indent + log_int_level
 	);
 	vfprintf(log_f, msgfmt, vl);
@@ -478,20 +479,66 @@ void log_handle_syscall(unsigned component, unsigned level, int number, int nb, 
 }
 
 // -----------------------------------------------------------------------
-void log_handle_sp(unsigned component, unsigned level, uint16_t n)
+void log_log_process(unsigned component, unsigned level)
 {
-	char *ctx;
+	static int last_pid;
 
-	log_log_cpu(component, level, "SP: context @ 0x%04x -> IC: 0x%04x", n, log_cycle_ic);
+	if (!process || !process->name || !*process->name) return;
+	if (process->num == last_pid) return;
 
-#ifdef WITH_DEBUGGER
-	ctx = decode_ctx(0, n, 0);
-#else
-	ctx = malloc(128);
-	sprintf(ctx, "[details missing]");
-#endif
-	log_splitlog(component, level, ctx);
-	free(ctx);
+	last_pid = process->num;
+
+    static char buf[1024];
+    char *b = buf;
+    int pos = 0;
+
+    char *r0s = int2binf("........ ........", process->r0, 16);
+    char *srs = int2binf(".......... . . ....", process->sr, 16);
+    char *szabme = int2binf("........ ........", process->segmap, 16);
+    char *state = int2binf("........ ........", process->state, 16);
+    int ctx_q = (process->sr >> 5) & 1;
+    int ctx_nb = process->sr & 0b1111;
+
+    pos += sprintf(b+pos, "Process 0x%04x %s ", process->addr, process->name);
+    pos += sprintf(b+pos, "----------------------------------------------\n");
+    pos += sprintf(b+pos, "Q:NB: %i:%i IC: 0x%04x R0: %s SR: %s\n", ctx_q, ctx_nb, process->ic, r0s, srs);
+    pos += sprintf(b+pos, "R1-7: 0x%04x 0x%04x 0x%04x 0x%04x 0x%04x 0x%04x 0x%04x\n", process->r1, process->r2, process->r3, process->r4, process->r5, process->r6, process->r7);
+    pos += sprintf(b+pos, "----------------------------------------------\n");
+    pos += sprintf(b+pos, "State: %s (0x%04x), ", state, process->state);
+    pos += sprintf(b+pos, "Prio: %i, ", process->prio);
+    pos += sprintf(b+pos, "Size: %i words, %i segments (%s) \n", process->size, process->segments, szabme);
+
+    pos += sprintf(b+pos, "Next: 0x%04x ",  process->next_proc);
+    pos += sprintf(b+pos, "Parent: 0x%04x ", process->parent);
+    pos += sprintf(b+pos, "Children: 0x%04x, next child: 0x%04x \n", process->children, process->next_child);
+
+    pos += sprintf(b+pos, "NUM: 0x%04x \n", process->num);
+    pos += sprintf(b+pos, "ALLS: 0x%04x \n", process->ALLS);
+    pos += sprintf(b+pos, "CHTIM: 0x%04x \n", process->CHTIM);
+    pos += sprintf(b+pos, "DEVI: 0x%04x ", process->DEVI);
+    pos += sprintf(b+pos, "DEVO: 0x%04x \n", process->DEVO);
+    pos += sprintf(b+pos, "USAL: 0x%04x \n", process->USAL);
+    pos += sprintf(b+pos, "STRLI: 0x%04x \n", process->STRLI);
+    pos += sprintf(b+pos, "BUFLI: 0x%04x \n", process->BUFLI);
+    pos += sprintf(b+pos, "LARUS: 0x%04x \n", process->LARUS);
+    pos += sprintf(b+pos, "LISMEM: 0x%04x \n", process->LISMEM);
+    pos += sprintf(b+pos, "NXTMEM: 0x%04x \n", process->NXTMEM);
+    pos += sprintf(b+pos, "BAR: 0x%04x \n", process->BAR);
+    pos += sprintf(b+pos, "BLPASC: 0x%04x \n", process->BLPASC);
+    pos += sprintf(b+pos, "IC: 0x%04x R0: 0x%04x SR: 0x%04x \n", process->_ic, process->_r0, process->_sr);
+    pos += sprintf(b+pos, "R1-7: 0x%04x 0x%04x 0x%04x 0x%04x 0x%04x 0x%04x 0x%04x\n", process->_r1, process->_r2, process->_r3, process->_r4, process->_r5, process->_r6, process->_r7);
+    pos += sprintf(b+pos, "JDAD: 0x%04x \n", process->JDAD);
+    pos += sprintf(b+pos, "Program start (JPAD): 0x%04x \n", process->start);
+    pos += sprintf(b+pos, "FILDIC position (JACN): 0x%04x \n", process->JACN);
+    pos += sprintf(b+pos, "TABUJB: 0x%04x \n", process->TABUJB);
+
+	log_splitlog(component, level, buf);
+
+    free(r0s);
+    free(srs);
+    free(state);
+    free(szabme);
+
 }
 
 // -----------------------------------------------------------------------
@@ -563,29 +610,32 @@ void log_log_dasm(unsigned component, unsigned level, int mod, int norm_arg, int
 }
 
 // -----------------------------------------------------------------------
-void log_update_pname()
+// called when context is switched to a new process (SP, LIP)
+void log_update_process()
 {
 	uint16_t *bprog;
 	uint16_t *p;
-	uint16_t pname[2];
+	uint16_t buf[62];
+
+	free(process);
+	process = NULL;
 
 	if (!kernel) return;
 
 	bprog = mem_ptr(0, 0x62);
 	if (!bprog) return;
 
-	int log_pname_offset = kernel->mod ? 54 : 52;
-
-	for (int i=0 ; i<2 ; i++) {
-		p = mem_ptr(0, *bprog + log_pname_offset + i);
+	for (int i=0 ; i<62 ; i++) {
+		p = mem_ptr(0, *bprog+i);
 		if (!p) return;
-		pname[i] = *p;
+		buf[i] = *p;
 	}
 
-	r40_to_str(pname, 2, log_pname);
+	process = crk5_process_unpack(buf, *bprog, kernel->mod);
 }
 
 // -----------------------------------------------------------------------
+// called when final configuration is assembled
 void log_config(unsigned component, unsigned level, struct cfg_em400 *cfg)
 {
 	log_log(component, level, "Program to load: %s", cfg->program_name);
@@ -638,9 +688,13 @@ void log_config(unsigned component, unsigned level, struct cfg_em400 *cfg)
 }
 
 // -----------------------------------------------------------------------
+// called at every software reset (MCL)
 void log_check_os()
 {
 	uint16_t *seg;
+
+	free(kernel);
+	kernel = NULL;
 
 	uint16_t *kimg = malloc(2 * sizeof(uint16_t) * 4096);
 	if (!kimg) {

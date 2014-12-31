@@ -168,7 +168,7 @@ void int_clear(int x)
 // -----------------------------------------------------------------------
 void int_put_nchan(uint16_t r)
 {
-	LOGCPU(L_INT, 3, "Set non-channel interrupts to: %d", r);
+	LOG(L_INT, 3, "Set non-channel interrupts to: %d", r);
 	pthread_mutex_lock(&int_mutex);
 	RZ = (RZ & 0b00000000000011111111111111110000) | ((r & 0b1111111111110000) << 16) | (r & 0b0000000000001111);
 	int_update_rp();
@@ -209,12 +209,12 @@ void int_serve()
 	// get interrupt vector
 	if (!mem_cpu_get(0, 64+interrupt, &int_vec)) return;
 
+	LOG(L_INT, 1, "Serve interrupt: %d (%s) -> 0x%04x / return: 0x%04x", interrupt, int_names[interrupt], int_vec, regs[R_IC]);
+
 	// get interrupt specification for channel interrupts
 	if ((interrupt >= 12) && (interrupt <= 27)) {
 		io_get_intspec(interrupt-12, &int_spec);
 	}
-
-	LOGCPU(L_INT, 1, "Serve interrupt: %d (%s, spec: %i) -> 0x%04x / return: 0x%04x", interrupt, int_names[interrupt], int_spec, int_vec, regs[R_IC]);
 
 	// put system status on stack
 	sr_mask = int_int2mask[interrupt] & MASK_Q; // calculate mask and clear Q

@@ -26,6 +26,8 @@
 #include "cpu/registers.h"
 #include "cpu/interrupts.h"
 
+#include "log.h"
+
 int alu_32_V;
 
 // -----------------------------------------------------------------------

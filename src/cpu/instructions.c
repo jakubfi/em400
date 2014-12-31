@@ -482,17 +482,17 @@ void op_71_exl()
 {
 	uint16_t data;
 
+	mem_ret_get(0, 96, &data);
+	if (!cpu_ctx_switch(IR_b, data, 0b1111111110011111)) return;
+
 	if (LOG_ENABLED) {
 		if (log_wants(L_OP, 2)) {
-			log_log_cpu(L_OP, 2, "EXL: %i (r4: 0x%04x)", IR_b, regs[4]);
+			log_log(L_OP, 2, "EXL: %i (r4: 0x%04x)", IR_b, regs[4]);
 		}
 		if (log_wants(L_CRK5, 2)) {
 			log_handle_syscall(L_CRK5, 2, IR_b, NB, regs[R_IC], regs[4]);
 		}
 	}
-
-	mem_ret_get(0, 96, &data);
-	if (!cpu_ctx_switch(IR_b, data, 0b1111111110011111)) return;
 }
 
 // -----------------------------------------------------------------------
@@ -700,7 +700,7 @@ void op_73_hlt()
 {
 	USER_ILLEGAL;
 
-	LOGCPU(L_OP, 1, "HALT 0%02o (alarm: %i)", N, regs[6]&255);
+	LOG(L_OP, 1, "HALT 0%02o (alarm: %i)", N, regs[6]&255);
 
 	// handle hlt>=040 as "exit emulation" if user wants to
 	if (exit_on_hlt && (N >= 040)) {
@@ -777,7 +777,13 @@ void op_73_lip()
 	cpu_ctx_restore();
 
 	if (LOG_ENABLED) {
-		log_update_pname();
+		log_update_process();
+		if (log_wants(L_CRK5, 2)) {
+			log_handle_syscall_ret(L_CRK5, 2, N);
+		}
+		if (log_wants(L_CRK5, 2)) {
+			log_log_process(L_CRK5, 2);
+		}
 		log_intlevel_dec();
 	}
 }
@@ -1011,13 +1017,16 @@ void op_77_sp()
 	int_update_mask();
 
 	if (LOG_ENABLED) {
-		log_update_pname();
+		log_update_process();
 		log_intlevel_reset();
-		if (log_wants(L_CRK5, 5)) {
-			log_handle_sp(L_CRK5, 5, N);
+		if (log_wants(L_OP, 1)) {
+			log_log(L_OP, 1, "SP: context @ 0x%04x", N);
 		}
 		if (log_wants(L_CRK5, 2)) {
 			log_handle_syscall_ret(L_CRK5, 2, N);
+		}
+		if (log_wants(L_CRK5, 2)) {
+			log_log_process(L_CRK5, 2);
 		}
 	}
 }

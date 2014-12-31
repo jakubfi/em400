@@ -61,8 +61,8 @@ void log_intlevel_inc();
 void log_log_dasm(unsigned component, unsigned level, int mod, int norm_arg, int short_arg, int16_t n);
 void log_log_cpu(unsigned component, unsigned level, char *msgfmt, ...);
 
-void log_update_pname();
-void log_handle_sp(unsigned component, unsigned level, uint16_t n);
+void log_update_process();
+void log_log_process(unsigned component, unsigned level);
 void log_handle_syscall(unsigned component, unsigned level, int number, int nb, int addr, int r4);
 void log_handle_syscall_ret(unsigned component, unsigned level, uint16_t n);
 void log_syscall_reset();
