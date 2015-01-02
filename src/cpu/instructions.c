@@ -729,10 +729,9 @@ void op_73_mcl()
 	// and we still want to know if we're running a known OS
 	log_check_os();
 
-	if (LOG_ENABLED) {
-		log_intlevel_reset();
-		log_syscall_reset();
-	}
+	log_reset_process();
+	log_intlevel_reset();
+	log_syscall_reset();
 }
 
 // -----------------------------------------------------------------------

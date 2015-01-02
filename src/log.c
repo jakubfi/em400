@@ -274,11 +274,7 @@ int log_set_level(unsigned component, unsigned level)
 // -----------------------------------------------------------------------
 int log_get_level(unsigned component)
 {
-	int level;
-
-	level = atom_load(&log_components[component].thr);
-
-	return level;
+	return atom_load(&log_components[component].thr);
 }
 
 // -----------------------------------------------------------------------
@@ -610,6 +606,13 @@ void log_log_dasm(unsigned component, unsigned level, int mod, int norm_arg, int
 }
 
 // -----------------------------------------------------------------------
+void log_reset_process()
+{
+	free(process);
+	process = NULL;
+}
+
+// -----------------------------------------------------------------------
 // called when context is switched to a new process (SP, LIP)
 void log_update_process()
 {
@@ -617,8 +620,7 @@ void log_update_process()
 	uint16_t *p;
 	uint16_t buf[62];
 
-	free(process);
-	process = NULL;
+	log_reset_process();
 
 	if (!kernel) return;
 
