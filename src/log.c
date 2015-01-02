@@ -460,25 +460,6 @@ void log_store_cycle_state(uint16_t sr, uint16_t ic)
 }
 
 // -----------------------------------------------------------------------
-void log_handle_syscall(unsigned component, unsigned level, int number, int nb, int addr, int r4)
-{
-	log_exl_number = number;
-	log_exl_nb = nb;
-	log_exl_addr = addr;
-	log_exl_r4 = r4;
-
-	char *details;
-#ifdef WITH_DEBUGGER
-	details = decode_exl(nb, r4, number);
-#else
-	details = malloc(128);
-	sprintf(details, "[details missing]");
-#endif
-	log_splitlog(component, level, details);
-	free(details);
-}
-
-// -----------------------------------------------------------------------
 void log_log_process(unsigned component, unsigned level)
 {
 	static int last_pid;
@@ -501,21 +482,21 @@ void log_log_process(unsigned component, unsigned level)
 
     pos += sprintf(b+pos, "Process 0x%04x %s ", process->addr, process->name);
     pos += sprintf(b+pos, "----------------------------------------------\n");
-    pos += sprintf(b+pos, "Q:NB: %i:%i IC: 0x%04x R0: %s SR: %s\n", ctx_q, ctx_nb, process->ic, r0s, srs);
-    pos += sprintf(b+pos, "R1-7: 0x%04x 0x%04x 0x%04x 0x%04x 0x%04x 0x%04x 0x%04x\n", process->r1, process->r2, process->r3, process->r4, process->r5, process->r6, process->r7);
+    pos += sprintf(b+pos, "Q:NB: %i:%i, IC: 0x%04x, R0: %s, SR: %s\n", ctx_q, ctx_nb, process->ic, r0s, srs);
+    pos += sprintf(b+pos, "R1-7: 0x%04x, 0x%04x, 0x%04x, 0x%04x, 0x%04x, 0x%04x, 0x%04x\n", process->r1, process->r2, process->r3, process->r4, process->r5, process->r6, process->r7);
     pos += sprintf(b+pos, "----------------------------------------------\n");
     pos += sprintf(b+pos, "State: %s (0x%04x), ", state, process->state);
     pos += sprintf(b+pos, "Prio: %i, ", process->prio);
     pos += sprintf(b+pos, "Size: %i words, %i segments (%s) \n", process->size, process->segments, szabme);
 
-    pos += sprintf(b+pos, "Next: 0x%04x ",  process->next_proc);
-    pos += sprintf(b+pos, "Parent: 0x%04x ", process->parent);
+    pos += sprintf(b+pos, "Next: 0x%04x, ",  process->next_proc);
+    pos += sprintf(b+pos, "Parent: 0x%04x, ", process->parent);
     pos += sprintf(b+pos, "Children: 0x%04x, next child: 0x%04x \n", process->children, process->next_child);
 
     pos += sprintf(b+pos, "NUM: 0x%04x \n", process->num);
     pos += sprintf(b+pos, "ALLS: 0x%04x \n", process->ALLS);
     pos += sprintf(b+pos, "CHTIM: 0x%04x \n", process->CHTIM);
-    pos += sprintf(b+pos, "DEVI: 0x%04x ", process->DEVI);
+    pos += sprintf(b+pos, "DEVI: 0x%04x, ", process->DEVI);
     pos += sprintf(b+pos, "DEVO: 0x%04x \n", process->DEVO);
     pos += sprintf(b+pos, "USAL: 0x%04x \n", process->USAL);
     pos += sprintf(b+pos, "STRLI: 0x%04x \n", process->STRLI);
@@ -525,8 +506,8 @@ void log_log_process(unsigned component, unsigned level)
     pos += sprintf(b+pos, "NXTMEM: 0x%04x \n", process->NXTMEM);
     pos += sprintf(b+pos, "BAR: 0x%04x \n", process->BAR);
     pos += sprintf(b+pos, "BLPASC: 0x%04x \n", process->BLPASC);
-    pos += sprintf(b+pos, "IC: 0x%04x R0: 0x%04x SR: 0x%04x \n", process->_ic, process->_r0, process->_sr);
-    pos += sprintf(b+pos, "R1-7: 0x%04x 0x%04x 0x%04x 0x%04x 0x%04x 0x%04x 0x%04x\n", process->_r1, process->_r2, process->_r3, process->_r4, process->_r5, process->_r6, process->_r7);
+    pos += sprintf(b+pos, "IC: 0x%04x, R0: 0x%04x, SR: 0x%04x \n", process->_ic, process->_r0, process->_sr);
+    pos += sprintf(b+pos, "R1-7: 0x%04x, 0x%04x, 0x%04x, 0x%04x, 0x%04x, 0x%04x, 0x%04x\n", process->_r1, process->_r2, process->_r3, process->_r4, process->_r5, process->_r6, process->_r7);
     pos += sprintf(b+pos, "JDAD: 0x%04x \n", process->JDAD);
     pos += sprintf(b+pos, "Program start (JPAD): 0x%04x \n", process->start);
     pos += sprintf(b+pos, "FILDIC position (JACN): 0x%04x \n", process->JACN);
@@ -542,9 +523,28 @@ void log_log_process(unsigned component, unsigned level)
 }
 
 // -----------------------------------------------------------------------
-void log_handle_syscall_ret(unsigned component, unsigned level, uint16_t n)
+void log_handle_syscall(unsigned component, unsigned level, int number, int nb, int addr, int r4)
 {
-	if ((log_exl_number >= 0) && (log_cycle_ic == log_exl_addr) && ((log_cycle_sr & 0x1111) == log_exl_nb)) {
+	log_exl_number = number;
+	log_exl_nb = nb;
+	log_exl_addr = addr;
+	log_exl_r4 = r4;
+
+	char *details;
+#ifdef WITH_DEBUGGER
+	details = decode_exl(nb, r4, number);
+#else
+	details = malloc(128);
+	sprintf(details, "[details missing]");
+#endif
+	log_splitlog(component, level, details);
+	free(details);
+}
+
+// -----------------------------------------------------------------------
+void log_handle_syscall_ret(unsigned component, unsigned level, uint16_t ic, uint16_t sr)
+{
+	if ((log_exl_number >= 0) && (ic == log_exl_addr) && ((sr & 0b1111) == log_exl_nb)) {
 		char *details;
 #ifdef WITH_DEBUGGER
 		details = decode_exl(log_exl_nb, log_exl_r4, -log_exl_number);

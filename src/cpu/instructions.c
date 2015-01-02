@@ -482,9 +482,6 @@ void op_71_exl()
 {
 	uint16_t data;
 
-	mem_ret_get(0, 96, &data);
-	if (!cpu_ctx_switch(IR_b, data, 0b1111111110011111)) return;
-
 	if (LOG_ENABLED) {
 		if (log_wants(L_OP, 2)) {
 			log_log(L_OP, 2, "EXL: %i (r4: 0x%04x)", IR_b, regs[4]);
@@ -493,6 +490,9 @@ void op_71_exl()
 			log_handle_syscall(L_CRK5, 2, IR_b, NB, regs[R_IC], regs[4]);
 		}
 	}
+
+	mem_ret_get(0, 96, &data);
+	if (!cpu_ctx_switch(IR_b, data, 0b1111111110011111)) return;
 }
 
 // -----------------------------------------------------------------------
@@ -779,7 +779,7 @@ void op_73_lip()
 	if (LOG_ENABLED) {
 		log_update_process();
 		if (log_wants(L_CRK5, 2)) {
-			log_handle_syscall_ret(L_CRK5, 2, N);
+			log_handle_syscall_ret(L_CRK5, 2, regs[R_IC], regs[R_SR]);
 		}
 		if (log_wants(L_CRK5, 2)) {
 			log_log_process(L_CRK5, 2);
@@ -1023,7 +1023,7 @@ void op_77_sp()
 			log_log(L_OP, 1, "SP: context @ 0x%04x", N);
 		}
 		if (log_wants(L_CRK5, 2)) {
-			log_handle_syscall_ret(L_CRK5, 2, N);
+			log_handle_syscall_ret(L_CRK5, 2, regs[R_IC], regs[R_SR]);
 		}
 		if (log_wants(L_CRK5, 2)) {
 			log_log_process(L_CRK5, 2);

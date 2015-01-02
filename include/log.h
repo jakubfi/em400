@@ -64,7 +64,7 @@ void log_log_cpu(unsigned component, unsigned level, char *msgfmt, ...);
 void log_update_process();
 void log_log_process(unsigned component, unsigned level);
 void log_handle_syscall(unsigned component, unsigned level, int number, int nb, int addr, int r4);
-void log_handle_syscall_ret(unsigned component, unsigned level, uint16_t n);
+void log_handle_syscall_ret(unsigned component, unsigned level, uint16_t ic, uint16_t sr);
 void log_syscall_reset();
 void log_config(unsigned component, unsigned level, struct cfg_em400 *cfg);
 void log_check_os();
