@@ -456,16 +456,9 @@ void log_store_cycle_state(uint16_t sr, uint16_t ic)
 }
 
 // -----------------------------------------------------------------------
-void log_log_process(unsigned component, unsigned level)
+char * log_ctx_stringify(struct crk5_process *process)
 {
-	static int last_pid;
-
-	if (!process || !process->name || !*process->name) return;
-	if (process->num == last_pid) return;
-
-	last_pid = process->num;
-
-    static char buf[1024];
+	char *buf = malloc(1024);
     char *b = buf;
     int pos = 0;
 
@@ -507,15 +500,30 @@ void log_log_process(unsigned component, unsigned level)
     pos += sprintf(b+pos, "JDAD: 0x%04x \n", process->JDAD);
     pos += sprintf(b+pos, "Program start (JPAD): 0x%04x \n", process->start);
     pos += sprintf(b+pos, "FILDIC position (JACN): 0x%04x \n", process->JACN);
-    pos += sprintf(b+pos, "TABUJB: 0x%04x \n", process->TABUJB);
-
-	log_splitlog(component, level, buf);
 
     free(r0s);
     free(srs);
     free(state);
     free(szabme);
 
+	return buf;
+}
+
+// -----------------------------------------------------------------------
+void log_log_process(unsigned component, unsigned level)
+{
+	static int last_pid;
+
+	if (!process || !process->name || !*process->name) return;
+	if (process->num == last_pid) return;
+
+	last_pid = process->num;
+
+	char *buf = log_ctx_stringify(process);
+
+	log_splitlog(component, level, buf);
+
+	free(buf);
 }
 
 // -----------------------------------------------------------------------
@@ -618,16 +626,16 @@ void log_update_process()
 {
 	uint16_t *bprog;
 	uint16_t *p;
-	uint16_t buf[62];
+	uint16_t buf[CRK5P_PROCESS_SIZE];
 
 	log_reset_process();
 
 	if (!kernel) return;
 
-	bprog = mem_ptr(0, 0x62);
+	bprog = mem_ptr(0, CRK5_BPROG);
 	if (!bprog) return;
 
-	for (int i=0 ; i<62 ; i++) {
+	for (int i=0 ; i<CRK5P_PROCESS_SIZE ; i++) {
 		p = mem_ptr(0, *bprog+i);
 		if (!p) return;
 		buf[i] = *p;

@@ -17,6 +17,7 @@
 
 #include <strings.h>
 #include <stdlib.h>
+#include <emcrk/process.h>
 
 #include "mem/mem.h"
 
@@ -27,6 +28,7 @@
 
 #include "utils.h"
 #include "errors.h"
+#include "log.h"
 
 #include "debugger/awin.h"
 #include "debugger/ui.h"
@@ -36,8 +38,8 @@
 
 struct decoder_t decoders[] = {
 	{ "iv", "SYS: interrupt vectors (0x40)", decode_iv },
-	{ "ctx", "SYS: process context", decode_ctx },
-	{ "exl", "SYS: EXL call", decode_exl },
+	{ "ctx", "CROOK-5: process context", decode_ctx },
+	{ "exl", "CROOK-5: EXL call", decode_exl },
 	{ "mxpsuk", "MULTIX: set configuration", decode_mxpsuk },
 	{ "mxpsdl", "MULTIX: assign line", decode_mxpsdl },
 	{ "mxpstwinch", "MULTIX: transmit (Winchester)", decode_mxpst_winch },
@@ -97,69 +99,22 @@ char * decode_iv(int nb, uint16_t addr, int arg)
 // -----------------------------------------------------------------------
 char * decode_ctx(int nb, uint16_t addr, int arg)
 {
-	char *buf = malloc(16*1024);
-	char *b = buf;
-	int pos = 0;
+	uint16_t *p;
+	uint16_t buf[CRK5P_PROCESS_SIZE];
 
-	if (!buf) {
+	for (int i=0 ; i<CRK5P_PROCESS_SIZE ; i++) {
+		p = mem_ptr(nb, addr+i);
+		if (!p) return NULL;
+		buf[i] = *p;
+	}
+
+	struct crk5_process *process = crk5_process_unpack(buf, addr, 1);
+
+	if (!process) {
 		return NULL;
 	}
 
-	uint16_t data[56];
-
-	mem_mget(nb, addr, data, 56);
-
-	char *r0s = int2binf("........ ........", data[1], 16);
-	char *srs = int2binf(".......... . . ....", data[2], 16);
-	char *szabme = int2binf("........ ........", data[37], 16);
-	int ctx_q = (data[2] >> 5) & 1;
-	int ctx_nb = data[2] & 0b1111;
-
-	// process vector
-	pos += sprintf(b+pos, "Q:NB: %i:%i IC: 0x%04x R0: %s SR: %s\n", ctx_q, ctx_nb, data[0], r0s, srs);
-	// user registers
-	pos += sprintf(b+pos, "R1-7: 0x%04x 0x%04x 0x%04x 0x%04x 0x%04x 0x%04x 0x%04x\n", data[3], data[4], data[5], data[6], data[7], data[8], data[9]);
-	pos += sprintf(b+pos, "----------------------------------------------\n");
-
-	char *name = r40_to_ascii(data+52, 2, NULL);
-	char *state = int2binf("........ ........", data[12], 16);
-	pos += sprintf(b+pos, "Process 0x%04x %s ", addr, name);
-	pos += sprintf(b+pos, "State: %s (0x%04x), ", state, data[12]);
-	pos += sprintf(b+pos, "Prio: %i, ", (int16_t) data[13]);
-	pos += sprintf(b+pos, "Size: %iw/%iseg (%s) \n", data[54], data[34]&255, szabme);
-
-	pos += sprintf(b+pos, "Next: 0x%04x ",  data[10]);
-	pos += sprintf(b+pos, "Parent: 0x%04x ", data[15]);
-	pos += sprintf(b+pos, "Children: 0x%04x Next Child: 0x%04x \n", data[16], data[11]);
-
-	pos += sprintf(b+pos, "PID: 0x%04x \n", data[14]);
-	pos += sprintf(b+pos, "ALLS: 0x%04x \n", data[17]);
-	pos += sprintf(b+pos, "CHTIM: 0x%04x \n", data[18]);
-	pos += sprintf(b+pos, "DEVI: 0x%04x ", data[19]);
-	pos += sprintf(b+pos, "DEVO: 0x%04x \n", data[20]);
-	pos += sprintf(b+pos, "USAL: 0x%04x \n", data[21]);
-	// ROB (8 words)
-	pos += sprintf(b+pos, "STRLI: 0x%04x \n", data[30]);
-	pos += sprintf(b+pos, "BUFLI: 0x%04x \n", data[31]);
-	pos += sprintf(b+pos, "LARUS: 0x%04x \n", data[32]);
-	pos += sprintf(b+pos, "LISMEM: 0x%04x \n", data[33]);
-	pos += sprintf(b+pos, "NXTMEM: 0x%04x \n", data[35]);
-	pos += sprintf(b+pos, "BAR: 0x%04x \n", data[36]);
-	pos += sprintf(b+pos, "BLPASC: 0x%04x \n", data[38]);
-	pos += sprintf(b+pos, "IC: 0x%04x R0: 0x%04x SR: 0x%04x \n", data[39], data[40], data[41]);
-	pos += sprintf(b+pos, "R1-7: 0x%04x 0x%04x 0x%04x 0x%04x 0x%04x 0x%04x 0x%04x\n", data[42], data[43], data[44], data[45], data[46], data[47], data[48]);
-	pos += sprintf(b+pos, "JDAD: 0x%04x \n", data[49]);
-	pos += sprintf(b+pos, "Program start (JPAD): 0x%04x \n", data[50]);
-	pos += sprintf(b+pos, "FILDIC position (JACN): 0x%04x \n", data[51]);
-	pos += sprintf(b+pos, "TABUJB: 0x%04x \n", data[55]);
-
-	free(r0s);
-	free(srs);
-	free(name);
-	free(state);
-	free(szabme);
-
-	return buf;
+	return log_ctx_stringify(process);
 }
 
 // -----------------------------------------------------------------------
