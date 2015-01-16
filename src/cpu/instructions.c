@@ -484,10 +484,10 @@ void op_71_exl()
 
 	if (LOG_ENABLED) {
 		if (log_wants(L_OP, 2)) {
-			log_log(L_OP, 2, "EXL: %i (r4: 0x%04x)", IR_b, regs[4]);
+			log_log_cpu(L_OP, 2, "EXL: %i (r4: 0x%04x)", IR_b, regs[4]);
 		}
 		if (log_wants(L_CRK5, 2)) {
-			log_handle_syscall(L_CRK5, 2, IR_b, NB, regs[R_IC], regs[4]);
+			log_handle_syscall(L_CRK5, 2, IR_b, QNB, regs[R_IC], regs[4]);
 		}
 	}
 
@@ -700,7 +700,7 @@ void op_73_hlt()
 {
 	USER_ILLEGAL;
 
-	LOG(L_OP, 1, "HALT 0%02o (alarm: %i)", N, regs[6]&255);
+	LOGCPU(L_OP, 1, "HALT 0%02o (alarm: %i)", N, regs[6]&255);
 
 	// handle hlt>=040 as "exit emulation" if user wants to
 	if (exit_on_hlt && (N >= 040)) {
@@ -778,7 +778,7 @@ void op_73_lip()
 	if (LOG_ENABLED) {
 		log_update_process();
 		if (log_wants(L_CRK5, 2)) {
-			log_handle_syscall_ret(L_CRK5, 2, regs[R_IC], regs[R_SR]);
+			log_handle_syscall_ret(L_CRK5, 2, regs[R_IC], regs[R_SR], regs[4]);
 		}
 		if (log_wants(L_CRK5, 2)) {
 			log_log_process(L_CRK5, 2);
@@ -1019,10 +1019,10 @@ void op_77_sp()
 		log_update_process();
 		log_intlevel_reset();
 		if (log_wants(L_OP, 1)) {
-			log_log(L_OP, 1, "SP: context @ 0x%04x", N);
+			log_log_cpu(L_OP, 1, "SP: context @ 0x%04x", N);
 		}
 		if (log_wants(L_CRK5, 2)) {
-			log_handle_syscall_ret(L_CRK5, 2, regs[R_IC], regs[R_SR]);
+			log_handle_syscall_ret(L_CRK5, 2, regs[R_IC], regs[R_SR], regs[4]);
 		}
 		if (log_wants(L_CRK5, 2)) {
 			log_log_process(L_CRK5, 2);

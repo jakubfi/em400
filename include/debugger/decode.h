@@ -34,7 +34,6 @@ struct decoder_t * find_decoder(char *name);
 
 char * decode_iv(int nb, uint16_t addr, int arg);
 char * decode_ctx(int nb, uint16_t addr, int arg);
-char * decode_exl(int nb, uint16_t addr, int arg);
 char * decode_mxpsuk(int nb, uint16_t addr, int arg);
 char * decode_mxpsdl(int nb, uint16_t addr, int arg);
 char * decode_mxpst_winch(int nb, uint16_t addr, int arg);
