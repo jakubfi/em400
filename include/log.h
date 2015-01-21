@@ -19,7 +19,6 @@
 #define LOG_H
 
 #include <inttypes.h>
-#include <emcrk/process.h>
 
 #include "cfg.h"
 #include "atomic.h"
@@ -62,15 +61,7 @@ void log_intlevel_inc();
 void log_log_dasm(unsigned component, unsigned level, int mod, int norm_arg, int short_arg, int16_t n);
 void log_log_cpu(unsigned component, unsigned level, char *msgfmt, ...);
 
-void log_reset_process();
-void log_update_process();
-char * log_ctx_stringify(struct crk5_process *process);
-void log_log_process(unsigned component, unsigned level);
-void log_handle_syscall(unsigned component, unsigned level, int number, int nb, int addr, uint16_t r4);
-void log_handle_syscall_ret(unsigned component, unsigned level, uint16_t ic, uint16_t sr, uint16_t r4);
-void log_syscall_reset();
 void log_config(unsigned component, unsigned level, struct cfg_em400 *cfg);
-void log_check_os();
 
 #define LOG_ENABLED (atom_load(&log_enabled))
 #define LOG_WANTS(component, level) (LOG_ENABLED && log_wants(component, level))

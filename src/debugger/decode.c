@@ -31,6 +31,7 @@
 #include "utils.h"
 #include "errors.h"
 #include "log.h"
+#include "log_crk.h"
 
 #include "debugger/awin.h"
 #include "debugger/ui.h"

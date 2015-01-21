@@ -31,6 +31,7 @@
 #include "cfg.h"
 #include "utils.h"
 #include "log.h"
+#include "log_crk.h"
 
 // convenience memory access macros (with "nomem" handling)
 #define mem_ret_get(nb, a, dptr)			    if (!mem_cpu_get(nb, a, dptr)) return;
