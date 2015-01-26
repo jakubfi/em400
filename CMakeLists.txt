@@ -3,7 +3,7 @@ project(em400 C)
 
 set(WITH_DEBUGGER 1)
 
-set(EM400_VERSION 0.2.1)
+set(EM400_VERSION 0.2.2)
 
 find_package(BISON REQUIRED)
 find_package(FLEX REQUIRED)

@@ -43,6 +43,7 @@ To build and run em400 you need:
 * GNU make
 * bison and flex
 * libemdas
+* libemcrk
 * ncurses (used by debugger)
 * readline (used by debugger)
 
