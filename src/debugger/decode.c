@@ -83,13 +83,10 @@ char * decode_iv(int nb, uint16_t addr, int arg)
 // -----------------------------------------------------------------------
 char * decode_ctx(int nb, uint16_t addr, int arg)
 {
-	uint16_t *p;
 	uint16_t buf[CRK5P_PROCESS_SIZE];
 
-	for (int i=0 ; i<CRK5P_PROCESS_SIZE ; i++) {
-		p = mem_ptr(nb, addr+i);
-		if (!p) return NULL;
-		buf[i] = *p;
+	if (!mem_mget(nb, addr, buf, CRK5P_PROCESS_SIZE)) {
+		return NULL;
 	}
 
 	struct crk5_process *process = crk5_process_unpack(buf, addr, 1);

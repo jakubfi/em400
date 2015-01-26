@@ -27,6 +27,7 @@
 #include <emcrk/exl.h>
 #include <emcrk/process.h>
 
+#include "mem/mem.h"
 #include "log.h"
 #include "utils.h"
 
@@ -38,8 +39,6 @@ static int log_exl_addr;
 static int log_exl_r4;
 
 struct crk5_kern_result *kernel;
-
-uint16_t *mem_ptr(int nb, uint16_t addr);
 
 // -----------------------------------------------------------------------
 void log_crk_init()
@@ -289,8 +288,8 @@ static int decode_exl_block(char *b, uint16_t *data, int num, int exl_ret)
 static int log_print_mem(char *b, int nb, uint16_t addr, int max_len, int terminator)
 {
 	int pos = 0;
-	int ch = -1;
-	uint16_t *p;
+	uint16_t ch;
+	uint16_t word;
 	int need = 1;
 	int chars = 0;
 
@@ -300,13 +299,12 @@ static int log_print_mem(char *b, int nb, uint16_t addr, int max_len, int termin
 		if (chars >= max_len) break;
 		if (need) {
 			need = 0;
-			p = mem_ptr(nb, addr);
-			if (!p) break;
+			if (!mem_get(nb, addr, &word)) break;
 			addr++;
-			ch = *p >> 8;
+			ch = word >> 8;
 		} else {
 			need = 1;
-			ch = *p & 0xff;
+			ch = word & 0xff;
 		}
 		if (ch == terminator) break;
 		pos += sprintf(b+pos, "%c", ch);
@@ -539,12 +537,8 @@ static char * log_exl_decode(int nb, uint16_t addr, uint16_t r4_curr, int exl_nu
 			return buf;
 		}
 
-		for (int i=0 ; i<exl->size ; i++) {
-			uint16_t *p = mem_ptr(nb, addr+i);
-			if (!p) {
-				return buf;
-			}
-			data[i] = *p;
+		if (!mem_mget(nb, addr, data, exl->size)) {
+			return buf;
 		}
 
 		pos += exldecs[exl->type](b+pos, data, exl_num, exl_ret);
@@ -604,46 +598,38 @@ void log_reset_process()
 // called when context is switched to a new process (SP, LIP)
 void log_update_process()
 {
-	uint16_t *bprog;
-	uint16_t *p;
+	uint16_t bprog;
 	uint16_t buf[CRK5P_PROCESS_SIZE];
 
 	log_reset_process();
 
 	if (!kernel) return;
 
-	bprog = mem_ptr(0, CRK5_BPROG);
-	if (!bprog) return;
-
-	for (int i=0 ; i<CRK5P_PROCESS_SIZE ; i++) {
-		p = mem_ptr(0, *bprog+i);
-		if (!p) return;
-		buf[i] = *p;
+	if (!mem_get(0, CRK5_BPROG, &bprog)) {
+		return;
 	}
 
-	process = crk5_process_unpack(buf, *bprog, kernel->mod);
+	if (!mem_mget(0, bprog, buf, CRK5P_PROCESS_SIZE)) {
+		return;
+	}
+
+	process = crk5_process_unpack(buf, bprog, kernel->mod);
 }
 
 // -----------------------------------------------------------------------
 // called at every software reset (MCL)
 void log_check_os()
 {
-	uint16_t *seg;
-
 	crk5_kern_res_drop(kernel);
 	kernel = NULL;
 
-	uint16_t *kimg = malloc(2 * sizeof(uint16_t) * 4096);
+	uint16_t *kimg = malloc(sizeof(uint16_t) * 2*4096);
 	if (!kimg) {
 		goto cleanup;
 	}
 
-	for (int i=0; i<2 ; i++) {
-		seg = mem_ptr(0, i*4096);
-		if (!seg) {
-			goto cleanup;
-		}
-		memcpy(kimg+i*4096, seg, 2*4096);
+	if (!mem_mget(0, 0, kimg, 2*4096)) {
+		goto cleanup;
 	}
 
 	kernel = crk5_kern_find(kimg, 2*4096);
