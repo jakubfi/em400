@@ -27,11 +27,8 @@
 
 #include "utils.h"
 
-#ifdef WITH_DEBUGGER
-#include "debugger/decode.h"
-#endif
-
 #include "log.h"
+#include "log_io.h"
 
 #define UNIT ((struct mx_unit_winch_t *)(unit))
 
@@ -334,12 +331,7 @@ void mx_winch_cmd_transmit(struct mx_unit_proto_t *unit, uint16_t addr)
 
 	if (LOG_WANTS(L_WNCH, 5)) {
 		char *details;
-#ifdef WITH_DEBUGGER
 		details = decode_mxpst_winch(0, addr, 0);
-#else
-		details = malloc(128);
-		sprintf(details, "[details missing]");
-#endif
 		log_splitlog(L_WNCH, 5, details);
 		free(details);
 	}

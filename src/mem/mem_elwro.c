@@ -23,10 +23,6 @@
 #include "mem/mem_elwro.h"
 #include "errors.h"
 
-#ifdef WITH_DEBUGGER
-#include "debugger/debugger.h"
-#endif
-
 #include "log.h"
 
 #define RAL(nb, ab) (((nb)<<4) + (ab))

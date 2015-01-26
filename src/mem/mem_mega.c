@@ -23,10 +23,6 @@
 #include "mem/mem_mega.h"
 #include "errors.h"
 
-#ifdef WITH_DEBUGGER
-#include "debugger/debugger.h"
-#endif
-
 #include "log.h"
 
 uint16_t *mem_mega[MEM_MAX_MODULES][MEM_MAX_MEGA_SEGMENTS];	// physical memory segments

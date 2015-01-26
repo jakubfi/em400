@@ -18,7 +18,7 @@
 #include <stdlib.h>
 
 #include "log.h"
-#include "debugger/decode.h"
+#include "log_io.h"
 #include "errors.h"
 #include "mem/mem.h"
 
@@ -285,12 +285,7 @@ void mx_term_cmd_transmit(struct mx_unit_proto_t *unit, uint16_t addr)
 
 	if (LOG_WANTS(L_TERM, 5)) {
 		char *details;
-#ifdef WITH_DEBUGGER
 		details = decode_mxpst_term(0, addr, 0);
-#else
-		details = malloc(128);
-		sprintf(details, "[details missing]");
-#endif
 		log_splitlog(L_TERM, 5, details);
 		free(details);
 	}

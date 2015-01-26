@@ -36,11 +36,8 @@
 #include "cfg.h"
 #include "errors.h"
 
-#ifdef WITH_DEBUGGER
-#include "debugger/decode.h"
-#endif
-
 #include "log.h"
+#include "log_io.h"
 
 #define CHAN ((struct mx_chan_t *)(chan))
 
@@ -450,12 +447,7 @@ int mx_cmd_setcfg(struct chan *chan, uint16_t *r_arg)
 
 	if (LOG_WANTS(L_MX, 5)) {
 		char *details;
-#ifdef WITH_DEBUGGER
 		details = decode_mxpsuk(0, *r_arg, 0);
-#else
-		details = malloc(128);
-		sprintf(details, "[details missing]");
-#endif
 		log_splitlog(L_MX, 5, details);
 		free(details);
 	}
