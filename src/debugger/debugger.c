@@ -109,7 +109,7 @@ int dbg_init(struct cfg_em400 *cfg)
 	// register/memory action is none when debugger starts
 	dbg_fin_cycle();
 
-	emd = emdas_create(cfg->cpu_mod ? EMD_ISET_MX16 : EMD_ISET_MERA400, mem_ptr);
+	emd = emdas_create(cfg->cpu_mod ? EMD_ISET_MX16 : EMD_ISET_MERA400, mem_get);
 	if (!emd) {
 		return E_DASM;
 	}

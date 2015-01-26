@@ -28,6 +28,7 @@
 
 #include <inttypes.h>
 
+#include "mem/mem.h"
 #include "log.h"
 #include "cfg.h"
 #include "errors.h"
@@ -105,7 +106,6 @@ static int log_exl_r4;
 
 static struct emdas *emd;
 static char *dasm_buf;
-uint16_t *mem_ptr(int nb, uint16_t addr);
 
 static void log_log_timestamp(unsigned component, unsigned level, char *msg);
 
@@ -138,7 +138,7 @@ int log_init(struct cfg_em400 *cfg)
 	pthread_mutex_init(&log_mutex, NULL);
 
 	// initialize deassembler
-	emd = emdas_create(cfg->cpu_mod ? EMD_ISET_MX16 : EMD_ISET_MERA400, mem_ptr);
+	emd = emdas_create(cfg->cpu_mod ? EMD_ISET_MX16 : EMD_ISET_MERA400, mem_get);
 	if (!emd) {
 		ret = E_DASM;
 		goto cleanup;
