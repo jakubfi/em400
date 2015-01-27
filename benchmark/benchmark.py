@@ -22,6 +22,7 @@ import os.path
 import sys
 import re
 import subprocess
+import argparse
 
 assem = "emas"
 em400 = "../build/src/em400"
@@ -30,8 +31,9 @@ em400 = "../build/src/em400"
 class TestBed:
 
     # --------------------------------------------------------------------
-    def __init__(self, tests):
+    def __init__(self, tests, baseline):
         self.tests = tests
+        self.baseline = baseline
 
     def run(self):
         for test_file in self.tests:
@@ -49,7 +51,16 @@ class TestBed:
                 if result[i] > result_max:
                     result_max = result[i]
 
-            print("%-40s : %.3f%s" % (test_file.replace("./", ""), result_max/1000000, details))
+            final_result = result_max/1000000;
+            test_name = test_file.replace("./", "")
+            sdiff = ""
+
+            if self.baseline and test_name in baseline:
+                diff = final_result - baseline[test_name]
+                percent = (diff*100) / baseline[test_name]
+                sdiff = "(%+.1f%%)" % (percent)
+
+            print("%-40s : %7.3f %s %s" % (test_name, final_result, sdiff, details))
 
 # ------------------------------------------------------------------------
 class Benchmark:
@@ -98,11 +109,28 @@ class Benchmark:
 
 
 # ------------------------------------------------------------------------
+def read_baseline(bfile):
+    print "Using baseline: %s" % bfile
+    baseline = {}
+    with open(bfile) as f:
+        for line in f:
+            t = line.split(":")
+            if len(t) == 2:
+                baseline[t[0].strip()] = float(t[1].strip())
+    return baseline
+
+
+# ------------------------------------------------------------------------
 # --- MAIN ---------------------------------------------------------------
 # ------------------------------------------------------------------------
 
-if len(sys.argv) != 1:
-    tests = sys.argv[1:]
+parser = argparse.ArgumentParser()
+parser.add_argument("-b", "--baseline", help="baseline test results")
+parser.add_argument('test', nargs='*', help='selected test(s) to run')
+args = parser.parse_args()
+
+if args.test:
+    tests = args.test
 else:
     tests = []
     for path, dirs, files in os.walk("."):
@@ -113,7 +141,12 @@ else:
 
 # run tests
 
-t = TestBed(tests)
+baseline = None
+
+if args.baseline:
+    baseline = read_baseline(args.baseline)
+
+t = TestBed(tests, baseline)
 t.run()
 
 # vim: tabstop=4 expandtab shiftwidth=4 softtabstop=4
