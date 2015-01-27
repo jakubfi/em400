@@ -13,13 +13,13 @@ add_executable(emitool
 )
 
 target_link_libraries(em400
-	rt m
-	${CMAKE_THREAD_LIBS_INIT}
-	${FLEX_LIBRARIES} ${BISON_LIBRARIES}
 	cpu mem io dev
 	${EMDAS_LIBRARIES}
 	${EMCRK_LIBRARIES}
 	${DEBUGGER_LIBS}
+	${FLEX_LIBRARIES} ${BISON_LIBRARIES}
+	${CMAKE_THREAD_LIBS_INIT}
+	rt m
 )
 
 add_subdirectory(io)
