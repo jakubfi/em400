@@ -71,8 +71,8 @@ void alu_fp_mul(uint16_t d1, uint16_t d2, uint16_t d3);
 void alu_fp_div(uint16_t d1, uint16_t d2, uint16_t d3);
 
 #define Fget(x)     (regs[0] & (x) ? 1 : 0)
-#define Fset(x)     regs[0] = regs[0] | (x)
-#define Fclr(x)     regs[0] = regs[0] & ~(x)
+#define Fset(x)     regs[0] |= (x)
+#define Fclr(x)     regs[0] &= ~(x)
 
 #define DWORD(x, y)	(uint32_t) ((x) << 16) | (uint16_t) (y)
 #define DWORDl(z)	(uint16_t) ((z) >> 16)
