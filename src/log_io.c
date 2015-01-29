@@ -18,14 +18,12 @@
 #include <strings.h>
 #include <stdlib.h>
 
-#include "io/multix.h"
-#include "io/multix_winch.h"
-#include "io/multix_term.h"
 #include "io/cmem_m9425.h"
 
 #include "utils.h"
 #include "errors.h"
 
+/*
 // -----------------------------------------------------------------------
 int decode_mxpsuk_pl(struct mx_cf_sc_pl *pl, char *b)
 {
@@ -370,7 +368,7 @@ char * decode_mxpst_term(int nb, uint16_t addr, int arg)
 	mx_term_cf_transmit_free(t);
 	return buf;
 }
-
+*/
 // -----------------------------------------------------------------------
 char * decode_cmempst(int nb, uint16_t addr, int arg)
 {
