@@ -80,7 +80,6 @@ step	{ return F_STEP; }
 regs	{ return F_REGS; }
 sregs	{ return F_SREGS; }
 reset	{ return F_RESET; }
-memcl	{ return F_MEMCL; }
 memcfg	{ return F_MEMCFG; }
 run		{ return F_RUN; }
 stk		{ return F_STACK; }

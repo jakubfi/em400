@@ -47,7 +47,7 @@ char verr[128];
 %token ':' '&' '|' '(' ')'
 %token HEX OCT BIN INT UINT
 %token IRZ
-%token <value> F_QUIT F_MEMCL F_MEM F_REGS F_SREGS F_RESET F_STEP F_HELP F_DASM F_LOAD F_MEMCFG F_BRK F_RUN F_STACK F_LOG F_WATCH F_DECODE F_FIND F_TIMER
+%token <value> F_QUIT F_MEM F_REGS F_SREGS F_RESET F_STEP F_HELP F_DASM F_LOAD F_MEMCFG F_BRK F_RUN F_STACK F_LOG F_WATCH F_DECODE F_FIND F_TIMER
 %token ADD DEL TEST
 %token ON OFF
 %type <n> expr lval bitfield basemod
@@ -158,7 +158,6 @@ command:
 	| F_REGS 				{ dbg_c_regs(W_CMD); }
 	| F_SREGS 				{ dbg_c_sregs(W_CMD); }
 	| F_RESET 				{ dbg_c_reset(); }
-	| F_MEMCL 				{ dbg_c_clmem(); }
 	| F_MEMCFG			 	{ dbg_c_memcfg(W_CMD); }
 	| F_RUN 				{ dbg_c_run(); }
 	| F_STACK 				{ dbg_c_stack(W_CMD, 12); }

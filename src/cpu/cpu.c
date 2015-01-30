@@ -25,6 +25,8 @@
 #include "cpu/instructions.h"
 #include "cpu/interrupts.h"
 #include "cpu/timer.h"
+#include "io/io.h"
+#include "log_crk.h"
 
 #include "em400.h"
 #include "cfg.h"
@@ -101,10 +103,10 @@ int cpu_init(struct cfg_em400 *cfg)
 		instr++;
 	}
 
-	cpu_reset();
-
 	int_update_mask();
 
+	// seems to be checked only at power-on!
+	// (unless power supply sends -PON at hw reset)
 	if (mem_mega_boot()) {
 		LOG(L_CPU, 1, "Bootstrap from MEGA PROM is enabled");
 		regs[R_IC] = 0xf000;
@@ -137,21 +139,37 @@ int cpu_mod_off()
 }
 
 // -----------------------------------------------------------------------
-void cpu_reset()
+// software (MCL) and hardware (CP 'CLEAR') reset
+void cpu_reset(int hw)
 {
-	// disable cpu modifications
-	cpu_mod_off();
-
-	// clear registers
-	for (int i=0 ; i<R_MAX ; i++) {
-		regs[i] = 0;
+	if (hw) {
+		for (int i=0 ; i<R_MAX ; i++) {
+			regs[i] = 0;
+		}
+	} else {
+		regs[0] = 0;
+		regs[R_SR] = 0;
 	}
 
-	// reset memory configuration
+	int_update_mask();
+	int_clear_all();
+	cpu_mod_off();
+
 	mem_reset();
 
-	// clear all interrupts
-	int_clear_all();
+	// TODO: move this before CPU clear routine
+	// I/O reset should return when we're sure that I/O won't change CPU state (backlogged interrupts, memory writes, ...)
+	// this needs MX reset interrupt to become async
+	io_reset();
+
+	// TODO: state = STOP, WAIT=0, jakieś inne rejestry?
+
+	// call even if logging is disabled - user may enable it later
+	// and we still want to know if we're running a known OS
+	log_check_os();
+	log_reset_process();
+	log_intlevel_reset();
+	log_syscall_reset();
 }
 
 // -----------------------------------------------------------------------

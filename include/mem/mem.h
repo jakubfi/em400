@@ -52,7 +52,6 @@ int mem_cpu_mput(int nb, uint16_t saddr, uint16_t *src, int count);
 int mem_get_byte(int nb, uint32_t addr, uint8_t *data);
 int mem_put_byte(int nb, uint32_t addr, uint8_t data);
 
-void mem_clear();
 int mem_seg_load(FILE *f, uint16_t *ptr);
 int mem_load(const char* fname, int nb, int start_ab, int len);
 

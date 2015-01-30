@@ -729,22 +729,7 @@ void op_73_hlt()
 void op_73_mcl()
 {
 	USER_ILLEGAL;
-
-	regs[R_SR] = 0;
-	int_update_mask();
-	int_clear_all();
-	regs[0] = 0;
-	mem_reset();
-	io_reset();
-	cpu_mod_off();
-
-	// call even if logging is disabled - user may enable it later
-	// and we still want to know if we're running a known OS
-	log_check_os();
-
-	log_reset_process();
-	log_intlevel_reset();
-	log_syscall_reset();
+	cpu_reset(0);
 }
 
 // -----------------------------------------------------------------------

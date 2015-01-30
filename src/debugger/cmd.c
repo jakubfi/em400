@@ -54,7 +54,6 @@ struct cmd_t dbg_commands[] = {
 	{ "reset",	F_RESET,	"Reset the emulator", "  reset" },
 	{ "dasm",	F_DASM,		"Disassembler", "  dasm [[start] count]" },
 	{ "mem",	F_MEM,		"Show memory contents", "  mem [block:] <start> [len]" },
-	{ "memcl",	F_MEMCL,	"Clear memory contents", "  memcl" },
 	{ "load",	F_LOAD,		"Load memory image from file", "  load <file>" },
 	{ "memcfg",	F_MEMCFG,	"Show memory configuration", "  memcfg" },
 	{ "brk",	F_BRK,		"Manipulate breakpoints", "  brk add <expression>\n  brk del <brk_number>\n  brk" },
@@ -123,13 +122,7 @@ void dbg_c_run()
 // -----------------------------------------------------------------------
 void dbg_c_reset()
 {
-	cpu_reset();
-}
-
-// -----------------------------------------------------------------------
-void dbg_c_clmem()
-{
-	mem_clear();
+	cpu_reset(1);
 }
 
 // -----------------------------------------------------------------------

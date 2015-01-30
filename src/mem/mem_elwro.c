@@ -83,7 +83,6 @@ void mem_elwro_shutdown()
 	}
 }
 
-
 // -----------------------------------------------------------------------
 void mem_elwro_reset()
 {
@@ -95,17 +94,6 @@ void mem_elwro_reset()
 	}
 
 	mem_elwro_os_hardwire();
-}
-
-// -----------------------------------------------------------------------
-void mem_elwro_clear()
-{
-	int mp, seg;
-	for (mp=mem_elwro_mp_start ; mp<=mem_elwro_mp_end ; mp++) {
-		for (seg=0 ; seg<MEM_MAX_ELWRO_SEGMENTS ; seg++) {
-			memset(mem_elwro[mp][seg], 0, MEM_SEGMENT_SIZE);
-		}
-	}
 }
 
 // -----------------------------------------------------------------------

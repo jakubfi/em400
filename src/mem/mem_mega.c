@@ -112,17 +112,6 @@ void mem_mega_reset()
 }
 
 // -----------------------------------------------------------------------
-void mem_mega_clear()
-{
-	int mp, seg;
-	for (mp=mem_mega_mp_end ; mp<=mem_mega_mp_end ; mp++) {
-		for (seg=0 ; seg<MEM_MAX_MEGA_SEGMENTS ; seg++) {
-			memset(mem_mega[mp][seg], 0, MEM_SEGMENT_SIZE);
-		}
-	}
-}
-
-// -----------------------------------------------------------------------
 void mem_mega_seg_set(int nb, int ab, struct mem_slot_t *slot)
 {
 	// if PROM is shown, use it, ignore mem_mega_init_done

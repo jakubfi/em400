@@ -327,14 +327,6 @@ int mem_put_byte(int nb, uint32_t addr, uint8_t data)
 }
 
 // -----------------------------------------------------------------------
-void mem_clear()
-{
-	mem_elwro_clear();
-	mem_mega_clear();
-	atom_fence();
-}
-
-// -----------------------------------------------------------------------
 int mem_seg_load(FILE *f, uint16_t *ptr)
 {
 	int res;
