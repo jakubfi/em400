@@ -36,8 +36,9 @@ start:
 
 fin:
 	LW r5, 13
+	HLT 077
 fail:
-	hlt 077
+	HLT 040
 
 stack:
 	.res 4
@@ -47,3 +48,4 @@ stack:
 ; XPCT int(alarm) : 0
 ; XPCT int(r3) : 3
 ; XPCT int(r5) : 13
+; XPCT oct(ir[10-15]) : 077
