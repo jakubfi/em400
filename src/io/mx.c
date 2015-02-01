@@ -398,7 +398,7 @@ static void * mx_task_manager(void *ptr)
 //  * do the work (reset, illegal commands, setconf, interrupt requeue)
 //  * or prepare a task (for task manager thread)
 // call with cmd_recv_mutex locked
-static void mx_cmd_task_prepare(struct chan *chan, int cmd, int llinen, uint16_t addr)
+static void mx_cmd_process(struct chan *chan, int cmd, int llinen, uint16_t addr)
 {
 	LOG(L_MX, 1, "MULTIX (ch:%i, lline:%i) receiver accepting line command %i: %s", chan->num, llinen, cmd, mx_cmd_names[cmd]);
 
@@ -482,7 +482,7 @@ static void * mx_cmd_receiver(void *ptr)
 			pthread_cond_wait(&CHAN->cmd_recv_cond, &CHAN->cmd_recv_mutex);
 		}
 
-		mx_cmd_task_prepare(chan, CHAN->cmd_recv, CHAN->cmd_recv_llinen, CHAN->cmd_recv_addr);
+		mx_cmd_process(chan, CHAN->cmd_recv, CHAN->cmd_recv_llinen, CHAN->cmd_recv_addr);
 
 		CHAN->cmd_recv = MX_CMD_NONE;
 		pthread_mutex_unlock(&CHAN->cmd_recv_mutex);
@@ -497,19 +497,18 @@ static void * mx_cmd_receiver(void *ptr)
 // try forwarding command to command receiver thread
 static int mx_cmd_forward(struct chan *chan, int cmd, int llinen, uint16_t addr)
 {
-	// check if we can receive a command (cmd_receiver() is free)
-	if (pthread_mutex_trylock(&CHAN->cmd_recv_mutex) == 0) {
-		LOG(L_MX, 1, "MULTIX (ch:%i, lline:%i) forwarding line command %i: %s", chan->num, llinen, cmd, mx_cmd_names[cmd]);
+	// check if we can receive a command (cmd_receiver() is free and previous command has been taken care of)
+	if ((pthread_mutex_trylock(&CHAN->cmd_recv_mutex) == 0) && (CHAN->cmd_recv != MX_CMD_NONE)) {
+		LOG(L_MX, 1, "MULTIX (ch:%i, lline:%i) forwarding command %i: %s", chan->num, llinen, cmd, mx_cmd_names[cmd]);
 		CHAN->cmd_recv = cmd;
 		CHAN->cmd_recv_llinen = llinen;
 		CHAN->cmd_recv_addr = addr;
 		pthread_cond_signal(&CHAN->cmd_recv_cond);
 		pthread_mutex_unlock(&CHAN->cmd_recv_mutex);
 		return IO_OK;
-	// reply with "engaged" if not ready for a command
-	// (cmd_receiver() is still busy with previous command)
 	} else {
-		LOG(L_MX, 1, "MULTIX (ch:%i, lline:%i) rejected line command %i: %s", chan->num, llinen, cmd, mx_cmd_names[cmd]);
+		// reply with "engaged" if not ready for a command
+		LOG(L_MX, 1, "MULTIX (ch:%i, lline:%i) rejecting command %i: %s", chan->num, llinen, cmd, mx_cmd_names[cmd]);
 		return IO_EN;
 	}
 }
