@@ -156,6 +156,7 @@ void mx_shutdown(struct chan *chan)
 	pthread_mutex_unlock(&CHAN->cmd_recv_mutex);
 	pthread_join(CHAN->cmd_recv_th, NULL);
 	pthread_mutex_destroy(&CHAN->cmd_recv_mutex);
+	pthread_cond_destroy(&CHAN->cmd_recv_cond);
 
 	// stop task manager
 	pthread_mutex_lock(&CHAN->task_mutex);
@@ -165,6 +166,7 @@ void mx_shutdown(struct chan *chan)
 	pthread_mutex_unlock(&CHAN->task_mutex);
 	pthread_join(CHAN->task_manager_th, NULL);
 	pthread_mutex_destroy(&CHAN->task_mutex);
+	pthread_cond_destroy(&CHAN->task_cond);
 
 	// stop and deconfigure lines, protos and devices
 	pthread_mutex_lock(&CHAN->conf_mutex);
@@ -402,15 +404,12 @@ static void mx_cmd_process(struct chan *chan, int cmd, int llinen, uint16_t addr
 {
 	LOG(L_MX, 1, "MULTIX (ch:%i, lline:%i) receiver accepting line command %i: %s", chan->num, llinen, cmd, mx_cmd_names[cmd]);
 
+	// TODO: task mutex for general commands? why?
 	pthread_mutex_lock(&CHAN->task_mutex);
 
 	struct mx_cmd_table *cmd_task = mx_cmd_table + cmd;
 
 	switch (cmd) {
-		case MX_CMD_QUIT:
-			CHAN->task_quit = 1;
-			pthread_cond_signal(&CHAN->task_cond);
-			break;
 		case MX_CMD_FRESET:
 			mx_cmd_reset(chan);
 			break;
@@ -473,22 +472,27 @@ static void * mx_cmd_receiver(void *ptr)
 {
 	struct chan *chan = ptr;
 
-	while (!CHAN->task_quit) {
-		pthread_mutex_lock(&CHAN->cmd_recv_mutex);
+	pthread_mutex_lock(&CHAN->cmd_recv_mutex);
 
+	while (1) {
 		// wait until CPU sends a command
 		while (CHAN->cmd_recv == MX_CMD_NONE) {
 			LOG(L_MX, 3, "MULTIX (ch:%i) receiver awaiting command...", chan->num);
 			pthread_cond_wait(&CHAN->cmd_recv_cond, &CHAN->cmd_recv_mutex);
 		}
 
-		mx_cmd_process(chan, CHAN->cmd_recv, CHAN->cmd_recv_llinen, CHAN->cmd_recv_addr);
-
-		CHAN->cmd_recv = MX_CMD_NONE;
-		pthread_mutex_unlock(&CHAN->cmd_recv_mutex);
+		if (CHAN->cmd_recv == MX_CMD_QUIT) {
+			CHAN->cmd_recv = MX_CMD_NONE;
+			break;
+		} else {
+			mx_cmd_process(chan, CHAN->cmd_recv, CHAN->cmd_recv_llinen, CHAN->cmd_recv_addr);
+			CHAN->cmd_recv = MX_CMD_NONE;
+		}
 	}
 
-	LOG(L_MX, 3, "MULTIX (ch:%i) closing command receiver", chan->num);
+	pthread_mutex_unlock(&CHAN->cmd_recv_mutex);
+
+	LOG(L_MX, 3, "MULTIX (ch:%i) exiting command receiver thread", chan->num);
 	pthread_exit(NULL);
 }
 
