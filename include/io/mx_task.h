@@ -21,8 +21,9 @@
 #include "io/mx.h"
 
 enum mx_tasks {
-	MX_TASK_QUIT	= -2, // quit (em400)
-	MX_TASK_NONE	= -1, // no task (em400)
+	MX_TASK_RESET	= -3, // em400 internal: reset routine
+	MX_TASK_QUIT	= -2, // em400 internal: quit
+	MX_TASK_NONE	= -1, // em400 internal: no task
 	MX_TASK_STR		= 0, // report status
 	MX_TASK_ODL		= 1, // detach line
 	MX_TASK_ORQ		= 2, // OPRQ

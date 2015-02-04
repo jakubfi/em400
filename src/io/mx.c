@@ -1,4 +1,3 @@
-//  Copyright (c) 2013-2014 Jakub Filipowicz <jakubf@gmail.com>
 //
 //  This program is free software; you can redistribute it and/or modify
 //  it under the terms of the GNU General Public License as published by
@@ -15,8 +14,11 @@
 //  Foundation, Inc.,
 //  51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 
+#define _XOPEN_SOURCE 500
+
 #include <inttypes.h>
 #include <stdlib.h>
+#include <unistd.h>
 
 #include "mem/mem.h"
 
@@ -95,7 +97,7 @@ char *mx_cmd_names[] = {
 };
 
 static void * mx_cmd_receiver(void *ptr);
-static void * mx_task_manager(void *ptr);
+static void * mx_main(void *ptr);
 
 // -----------------------------------------------------------------------
 struct chan * mx_create(struct cfg_unit *units)
@@ -108,20 +110,20 @@ struct chan * mx_create(struct cfg_unit *units)
 		goto cleanup;
 	}
 
+	// create devices connected to physical lines
+	struct cfg_unit *cunit = units;
+	while (cunit) {
+		LOG(L_MX, 1, "    Device %i: %s", cunit->num, cunit->name);
+		CHAN->pline[cunit->num].device = dev_create(cunit->name, cunit->args, NULL);
+		// TODO: error handling
+		cunit = cunit->next;
+	}
+
 	// init interrupt queue
 	pthread_mutex_init(&chan->intr_mutex, NULL);
 
-	// init task manager
-	pthread_mutex_init(&chan->task_mutex, NULL);
-	pthread_cond_init(&chan->task_cond, NULL);
-	res = pthread_create(&chan->task_manager_th, NULL, mx_task_manager, chan);
-	if (res != 0) {
-		gerr = E_THREAD;
-		goto cleanup;
-	}
-
 	// init command receiver
-	chan->cmd_recv = MX_CMD_NONE;
+	chan->cmd_recv = MX_CMD_RESET;
 	pthread_mutex_init(&chan->cmd_recv_mutex, NULL);
 	pthread_cond_init(&chan->cmd_recv_cond, NULL);
 	res = pthread_create(&chan->cmd_recv_th, NULL, mx_cmd_receiver, chan);
@@ -130,13 +132,14 @@ struct chan * mx_create(struct cfg_unit *units)
 		goto cleanup;
 	}
 
-	// create devices connected to physical lines
-	struct cfg_unit *cunit = units;
-	while (cunit) {
-		LOG(L_MX, 1, "    Device %i: %s", cunit->num, cunit->name);
-		CHAN->pline[cunit->num].device = dev_create(cunit->name, cunit->args, NULL);
-		// TODO: error handling
-		cunit = cunit->next;
+	// init task manager
+	chan->task_em = MX_TASK_RESET;
+	pthread_mutex_init(&chan->task_mutex, NULL);
+	pthread_cond_init(&chan->task_cond, NULL);
+	res = pthread_create(&chan->task_th, NULL, mx_main, chan);
+	if (res != 0) {
+		gerr = E_THREAD;
+		goto cleanup;
 	}
 
 	return (struct chan*) chan;
@@ -155,18 +158,14 @@ void mx_shutdown(struct chan *chan)
 	pthread_cond_signal(&CHAN->cmd_recv_cond);
 	pthread_mutex_unlock(&CHAN->cmd_recv_mutex);
 	pthread_join(CHAN->cmd_recv_th, NULL);
-	pthread_mutex_destroy(&CHAN->cmd_recv_mutex);
-	pthread_cond_destroy(&CHAN->cmd_recv_cond);
 
 	// stop task manager
 	pthread_mutex_lock(&CHAN->task_mutex);
-	CHAN->task_quit = 1;
+	CHAN->task_em = MX_TASK_QUIT;
 	mx_task_clear_all(CHAN);
 	pthread_cond_signal(&CHAN->task_cond);
 	pthread_mutex_unlock(&CHAN->task_mutex);
-	pthread_join(CHAN->task_manager_th, NULL);
-	pthread_mutex_destroy(&CHAN->task_mutex);
-	pthread_cond_destroy(&CHAN->task_cond);
+	pthread_join(CHAN->task_th, NULL);
 
 	// stop and deconfigure lines, protos and devices
 	pthread_mutex_lock(&CHAN->conf_mutex);
@@ -178,13 +177,18 @@ void mx_shutdown(struct chan *chan)
 		CHAN->lline[i] = NULL;
 	}
 	pthread_mutex_unlock(&CHAN->conf_mutex);
-	pthread_mutex_destroy(&CHAN->conf_mutex);
 
-	// drop interrupt queue
+	// clear interrupt queue
 	pthread_mutex_lock(&CHAN->intr_mutex);
 	mx_intr_clearq(CHAN);
 	CHAN->intr_head = CHAN->intr_tail = NULL;
 	pthread_mutex_unlock(&CHAN->intr_mutex);
+
+	pthread_mutex_destroy(&CHAN->cmd_recv_mutex);
+	pthread_cond_destroy(&CHAN->cmd_recv_cond);
+	pthread_mutex_destroy(&CHAN->task_mutex);
+	pthread_cond_destroy(&CHAN->task_cond);
+	pthread_mutex_destroy(&CHAN->conf_mutex);
 	pthread_mutex_destroy(&CHAN->intr_mutex);
 
 	free(chan);
@@ -193,9 +197,22 @@ void mx_shutdown(struct chan *chan)
 // -----------------------------------------------------------------------
 void mx_reset(struct chan *chan)
 {
-	// initiate asynchronous reset
-	// (actual work done in command receiver thread)
-	mx_cmd(chan, IO_IN, 0, NULL);
+	// Here, we only initialize MULTIX reset, actual reset happend in main loop
+	LOG(L_MX, 1, "Initiating MULTIX reset.");
+
+	// first, make sure no command is received after we return from reset
+	pthread_mutex_lock(&CHAN->cmd_recv_mutex);
+	CHAN->cmd_recv = MX_CMD_RESET;
+	pthread_cond_signal(&CHAN->cmd_recv_cond);
+	pthread_mutex_unlock(&CHAN->cmd_recv_mutex);
+
+	// then, initiate actual reset in main loop (task manager thread)
+	pthread_mutex_lock(&CHAN->task_mutex);
+	CHAN->task_em = MX_TASK_RESET;
+	pthread_cond_signal(&CHAN->task_cond);
+	pthread_mutex_unlock(&CHAN->task_mutex);
+
+	LOG(L_MX, 1, "MULTIX reset initiated");
 }
 
 // -----------------------------------------------------------------------
@@ -277,8 +294,8 @@ void mx_task_detach(struct chan *chan, int llinen)
 // with task_mutex locked
 static int mx_task_get(struct mx_chan *chan)
 {
-	if (chan->task_quit) {
-		return MX_TASK_QUIT;
+	if (chan->task_em != MX_TASK_NONE) {
+		return chan->task_em;
 	}
 
 	for (int t=0 ; t<MX_TASK_MAX ; t++) {
@@ -335,36 +352,35 @@ void mx_task_process(struct chan *chan, int taskn, int llinen, int conditions)
 }
 
 // -----------------------------------------------------------------------
-// thread: task manager
-// mx main loop
-static void * mx_task_manager(void *ptr)
+// thread: main loop
+// mx task manager
+static int mx_task_manager(struct chan *chan)
 {
-	struct chan *chan = ptr;
-
 	static int llinen = -1; // previously processed line
 	int lc;
 	int condition;
+	int taskn;
+
+	pthread_mutex_lock(&CHAN->task_mutex);
 
 	while (1) {
-		pthread_mutex_lock(&CHAN->task_mutex);
 
-		int taskn = mx_task_get(CHAN);
-
-		// wait until receiver sends a command
-		while (taskn == MX_TASK_NONE) {
+		// wait until command receiver prepares a task
+		while ((taskn = mx_task_get(CHAN)) == MX_TASK_NONE) {
 			LOG(L_MX, 3, "MULTIX (ch:%i) task manager waiting for task...", chan->num);
 			pthread_cond_wait(&CHAN->task_cond, &CHAN->task_mutex);
-			taskn = mx_task_get(CHAN);
+			LOG(L_MX, 3, "MULTIX (ch:%i) task manager woken up", chan->num);
 		}
 
 		if (taskn == MX_TASK_QUIT) {
-			// stop processor thread
-			pthread_mutex_unlock(&CHAN->task_mutex);
+			LOG(L_MX, 3, "MULTIX (ch:%i) task manager quits", chan->num);
+			break;
+		} else if (taskn == MX_TASK_RESET) {
+			LOG(L_MX, 3, "MULTIX (ch:%i) task manager resets", chan->num);
 			break;
 		}
 
 		// choose line
-		LOG(L_MX, 3, "MULTIX (ch:%i) task manager woke up", chan->num);
 		for (lc=0 ; lc<MX_LINE_MAX ; lc++) {
 			llinen++;
 			if (llinen >= MX_LINE_MAX) llinen = 0;
@@ -382,11 +398,103 @@ static void * mx_task_manager(void *ptr)
 			LOG(L_MX, 3, "MULTIX (ch:%i) task manager found no active tasks", chan->num);
 			mx_task_clear(CHAN, taskn);
 		}
-
-		pthread_mutex_unlock(&CHAN->task_mutex);
 	}
 
-	LOG(L_MX, 3, "MULTIX (ch:%i) closing task manager", chan->num);
+	pthread_mutex_unlock(&CHAN->task_mutex);
+
+	return taskn;
+}
+
+// -----------------------------------------------------------------------
+// thread: main MULTIX loop
+// initialization routine (called on startup and reset)
+static void mx_initialize(struct chan * chan)
+{
+	LOG(L_MX, 2, "MULTIX (ch:%i) initializing...", chan->num);
+
+	pthread_mutex_lock(&CHAN->conf_mutex);
+
+	// deconfigure
+	CHAN->conf_set = 0;
+
+	// clear lines configuration
+	for (int i=0 ; i<MX_LINE_MAX ; i++) {
+		mx_proto_destroy(CHAN->pline[i].proto);
+		CHAN->pline[i].proto = NULL;
+		CHAN->pline[i].used = 0;
+		CHAN->pline[i].dir = 0;
+		CHAN->pline[i].type = 0;
+		CHAN->pline[i].attached = 0;
+		CHAN->lline[i] = NULL;
+	}
+
+	pthread_mutex_unlock(&CHAN->conf_mutex);
+
+	// TODO: disable interrupts? - chyba nie, tylko task manager wysyła przerwania (?)
+	// TODO: (wysyła również receiver)
+
+	const long reset_wait_msec = 13;
+
+	pthread_mutex_lock(&CHAN->task_mutex);
+
+	// if CHAN->task_em is anything other than MX_TASK_RESET,
+	// that in practice may only mean MX_TASK_QUIT
+	// Anyway, skip reset and let task manager handle it
+
+	while (CHAN->task_em == MX_TASK_RESET) {
+		LOG(L_MX, 2, "MULTIX (ch:%i) initialization delay: %i ms", chan->num, reset_wait_msec);
+		CHAN->task_em = MX_TASK_NONE;
+		struct timespec abstime;
+		clock_gettime(CLOCK_REALTIME, &abstime);
+		long new_nsec = abstime.tv_nsec + reset_wait_msec * 1000000L;
+		abstime.tv_sec += new_nsec / 1000000000L;
+		abstime.tv_nsec = new_nsec % 1000000000L;
+
+		// let's say it takes 13ms to reset MULTIX)
+		pthread_cond_timedwait(&CHAN->task_cond, &CHAN->task_mutex, &abstime);
+		LOG(L_MX, 2, "MULTIX (ch:%i) reset delay woken up", chan->num);
+
+		// if above wakes up again, and CHAN->task_em is MX_TASK_RESET again,
+		// it means that another reset came in and we need to reschedule fake reset routine
+	}
+
+	// drop all tasks
+	mx_task_clear_all(CHAN);
+
+	pthread_mutex_unlock(&CHAN->task_mutex);
+
+	// enable command receiving again (use lock, not trylock, we must clear it)
+	pthread_mutex_lock(&CHAN->cmd_recv_mutex);
+	CHAN->cmd_recv = MX_CMD_NONE;
+	pthread_cond_signal(&CHAN->cmd_recv_cond);
+	pthread_mutex_unlock(&CHAN->cmd_recv_mutex);
+
+	LOG(L_MX, 2, "MULTIX (ch:%i) initialization done", chan->num);
+
+	// report IWYZE (this will also clear intr queue
+	mx_int(CHAN, 0, MX_INTR_IWYZE);
+}
+
+// -----------------------------------------------------------------------
+// thread: main MULTIX loop
+static void * mx_main(void *ptr)
+{
+	struct chan *chan = ptr;
+
+	LOG(L_MX, 3, "MULTIX (ch:%i) Starting main loop thread", chan->num);
+
+	while (1) {
+		// initialize MULTIX
+		mx_initialize(chan);
+
+		// run task manager, quit, if ordered to
+		if (mx_task_manager(ptr) == MX_TASK_QUIT) {
+			LOG(L_MX, 3, "MULTIX (ch:%i) main loop thread quits", chan->num);
+			break;
+		}
+	}
+
+	LOG(L_MX, 3, "MULTIX (ch:%i) exiting main loop thread", chan->num);
 	pthread_exit(NULL);
 }
 
@@ -410,9 +518,6 @@ static void mx_cmd_process(struct chan *chan, int cmd, int llinen, uint16_t addr
 	struct mx_cmd_table *cmd_task = mx_cmd_table + cmd;
 
 	switch (cmd) {
-		case MX_CMD_FRESET:
-			mx_cmd_reset(chan);
-			break;
 		case MX_CMD_TEST:
 			mx_cmd_test(chan);
 			break;
@@ -482,8 +587,16 @@ static void * mx_cmd_receiver(void *ptr)
 		}
 
 		if (CHAN->cmd_recv == MX_CMD_QUIT) {
-			CHAN->cmd_recv = MX_CMD_NONE;
+			LOG(L_MX, 3, "MULTIX (ch:%i) command receiver quits", chan->num);
 			break;
+		} else if (CHAN->cmd_recv == MX_CMD_RESET) {
+			// Keep CHAN->cmd_recv unchanged, so subsequent commands from CPU fail with EN.
+			// Command receiver is now halted until reset is handled in the main loop
+			// and CHAN->cmd_recv is changed to MX_CMD_NONE there
+			while (CHAN->cmd_recv == MX_CMD_RESET) {
+				LOG(L_MX, 3, "MULTIX (ch:%i) receiver waiting for reset to complete...", chan->num);
+				pthread_cond_wait(&CHAN->cmd_recv_cond, &CHAN->cmd_recv_mutex);
+			}
 		} else {
 			mx_cmd_process(chan, CHAN->cmd_recv, CHAN->cmd_recv_llinen, CHAN->cmd_recv_addr);
 			CHAN->cmd_recv = MX_CMD_NONE;
@@ -501,20 +614,27 @@ static void * mx_cmd_receiver(void *ptr)
 // try forwarding command to command receiver thread
 static int mx_cmd_forward(struct chan *chan, int cmd, int llinen, uint16_t addr)
 {
-	// check if we can receive a command (cmd_receiver() is free and previous command has been taken care of)
-	if ((pthread_mutex_trylock(&CHAN->cmd_recv_mutex) == 0) && (CHAN->cmd_recv != MX_CMD_NONE)) {
-		LOG(L_MX, 1, "MULTIX (ch:%i, lline:%i) forwarding command %i: %s", chan->num, llinen, cmd, mx_cmd_names[cmd]);
-		CHAN->cmd_recv = cmd;
-		CHAN->cmd_recv_llinen = llinen;
-		CHAN->cmd_recv_addr = addr;
-		pthread_cond_signal(&CHAN->cmd_recv_cond);
-		pthread_mutex_unlock(&CHAN->cmd_recv_mutex);
-		return IO_OK;
-	} else {
-		// reply with "engaged" if not ready for a command
-		LOG(L_MX, 1, "MULTIX (ch:%i, lline:%i) rejecting command %i: %s", chan->num, llinen, cmd, mx_cmd_names[cmd]);
-		return IO_EN;
+	// check if we can receive a command
+	// is cmd_receiver() free?
+	if (pthread_mutex_trylock(&CHAN->cmd_recv_mutex) == 0) {
+		// has previous command been taken care of?
+		if (CHAN->cmd_recv == MX_CMD_NONE) {
+			LOG(L_MX, 1, "MULTIX (ch:%i, lline:%i) forwarding command %i: %s", chan->num, llinen, cmd, mx_cmd_names[cmd]);
+			CHAN->cmd_recv = cmd;
+			CHAN->cmd_recv_llinen = llinen;
+			CHAN->cmd_recv_addr = addr;
+			pthread_cond_signal(&CHAN->cmd_recv_cond);
+			pthread_mutex_unlock(&CHAN->cmd_recv_mutex);
+			return IO_OK;
+		} else {
+			pthread_mutex_unlock(&CHAN->cmd_recv_mutex);
+		}
 	}
+
+	LOG(L_MX, 1, "MULTIX (ch:%i, lline:%i) receiver busy, rejecting command %i: %s", chan->num, llinen, cmd, mx_cmd_names[cmd]);
+
+	// reply with "engaged" - not yet ready for next command
+	return IO_EN;
 }
 
 // -----------------------------------------------------------------------
@@ -537,14 +657,9 @@ int mx_cmd(struct chan *chan, int dir, uint16_t n_arg, uint16_t *r_arg)
 			// 'exists' does nothing, just returns OK
 			case MX_CMD_EXISTS:
 				return IO_OK;
-			// 'reset' returns OK and resets mx asynchronously
+			// 'reset' initiates reset and returns OK (actual reset is done in main thread)
 			case MX_CMD_RESET:
-				pthread_mutex_lock(&CHAN->cmd_recv_mutex);
-				CHAN->conf_set = 0;
-				CHAN->cmd_recv_llinen = -1;
-				CHAN->cmd_recv = MX_CMD_FRESET;
-				pthread_cond_signal(&CHAN->cmd_recv_cond);
-				pthread_mutex_unlock(&CHAN->cmd_recv_mutex);
+				mx_reset(chan);
 				return IO_OK;
 			// handle other commands (only MX_CMD_INVALID in fact) as illegal in receiver thread
 			default:

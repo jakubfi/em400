@@ -81,40 +81,6 @@ void mx_cmd_illegal(struct chan *chan, int llinen, int intr)
 }
 
 // -----------------------------------------------------------------------
-// call with cmd_recv_mutex locked
-// call with task_mutex locked
-void mx_cmd_reset(struct chan *chan)
-{
-	LOG(L_MX, 2, "MULTIX (ch:%i) RESET", chan->num);
-
-	// clear lines configuration
-	pthread_mutex_lock(&CHAN->conf_mutex);
-	for (int i=0 ; i<MX_LINE_MAX ; i++) {
-		mx_proto_destroy(CHAN->pline[i].proto);
-		CHAN->pline[i].proto = NULL;
-		CHAN->pline[i].used = 0;
-		CHAN->pline[i].dir = 0;
-		CHAN->pline[i].type = 0;
-		CHAN->pline[i].attached = 0;
-		CHAN->lline[i] = NULL;
-	}
-	// conf is now not set
-	CHAN->conf_set = 0;
-	pthread_mutex_unlock(&CHAN->conf_mutex);
-
-	// TODO: disable interrupts? - chyba nie, tylko task manager wysyła przerwania (?)
-
-	// drop all tasks
-	mx_task_clear_all(CHAN);
-
-	// let's say it takes 13ms to reset MULTIX)
-	usleep(13000);
-
-	// report IWYZE (this will also clear intr queue
-	mx_int(CHAN, 0, MX_INTR_IWYZE);
-}
-
-// -----------------------------------------------------------------------
 void mx_cmd_test(struct chan *chan)
 {
 	LOG(L_MX, 2, "MULTIX (ch:%i) TEST", chan->num);

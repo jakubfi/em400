@@ -28,7 +28,7 @@ enum mx_cmd_chan {
 	MX_CMD_INVALID	= 0b11,
 };
 
-// general and line commands: bit 3: 0=OUT/1=IN, bits 1-3: command bits 0-2
+// general and line commands: bit 3: 0=OUT/1=IN, bits 2-0: command bits 0-2
 enum mx_cmd {
 	MX_CMD_ERR_0		= 0b0000,
 	MX_CMD_TEST			= 0b0001,
@@ -49,7 +49,6 @@ enum mx_cmd {
 	MX_CMD_ERR_F		= 0b1111,
 	MX_CMD_QUIT			= 16, // em400 internal: stop emulation
 	MX_CMD_NONE			= 17, // em400 internal: no command
-	MX_CMD_FRESET		= 18, // em400 internal: forwarded reset
 };
 
 // "get status" bits
@@ -67,7 +66,6 @@ enum mx_status {
 void mx_cmd_int_requeue(struct chan *chan);
 void mx_cmd_intspec(struct chan *chan, uint16_t *r_arg);
 void mx_cmd_illegal(struct chan *chan, int llinen, int intr);
-void mx_cmd_reset(struct chan *chan);
 void mx_cmd_test(struct chan *chan);
 void mx_cmd_confset(struct chan *chan, uint16_t addr);
 

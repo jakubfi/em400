@@ -73,7 +73,6 @@ int io_init(struct cfg_em400 *cfg)
 		if (!chan) {
 			return gerr;
 		} else {
-			chan->reset(chan);
 			io_chan[chanc->num] = chan;
 		}
 		chanc = chanc->next;

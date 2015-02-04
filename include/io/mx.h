@@ -63,10 +63,10 @@ struct mx_chan {
 
 	// task manager
 	struct mx_task_line task[MX_TASK_MAX];
-	int task_quit;
+	int task_em;
 	pthread_cond_t task_cond;
 	pthread_mutex_t task_mutex;
-	pthread_t task_manager_th;
+	pthread_t task_th;
 
 	// command receiver
 	pthread_t cmd_recv_th;
