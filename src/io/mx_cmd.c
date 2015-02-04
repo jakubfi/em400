@@ -31,12 +31,12 @@
 
 #include "log.h"
 
-#define CHAN ((struct mx_chan *)(chan))
+#define CHAN ((struct mx *)(chan))
 #define LLINE (CHAN->lline[llinen])
 #define PLINE (CHAN->pline+plinen)
 
 // -----------------------------------------------------------------------
-void mx_cmd_int_requeue(struct chan *chan)
+void mx_cmd_int_requeue(struct mx *chan)
 {
 	pthread_mutex_lock(&CHAN->intr_mutex);
 
@@ -53,7 +53,7 @@ void mx_cmd_int_requeue(struct chan *chan)
 }
 
 // -----------------------------------------------------------------------
-void mx_cmd_intspec(struct chan *chan, uint16_t *r_arg)
+void mx_cmd_intspec(struct mx *chan, uint16_t *r_arg)
 {
 	pthread_mutex_lock(&CHAN->intr_mutex);
 
@@ -74,14 +74,14 @@ void mx_cmd_intspec(struct chan *chan, uint16_t *r_arg)
 }
 
 // -----------------------------------------------------------------------
-void mx_cmd_illegal(struct chan *chan, int llinen, int intr)
+void mx_cmd_illegal(struct mx *chan, int llinen, int intr)
 {
 	LOG(L_MX, 1, "MULTIX (ch:%i, line:%i) command: illegal command, reporting int %d: %s", chan->num, llinen, intr, mx_intr_names[intr]);
 	mx_int(CHAN, 0, intr);
 }
 
 // -----------------------------------------------------------------------
-void mx_cmd_test(struct chan *chan)
+void mx_cmd_test(struct mx *chan)
 {
 	LOG(L_MX, 2, "MULTIX (ch:%i) TEST", chan->num);
 	usleep(13000);
@@ -89,7 +89,7 @@ void mx_cmd_test(struct chan *chan)
 }
 
 // -----------------------------------------------------------------------
-static int mx_decode_cf_phy(struct chan *chan, int addr, int *offset)
+static int mx_decode_cf_phy(struct mx *chan, int addr, int *offset)
 {
 	uint16_t data;
 
@@ -131,7 +131,7 @@ static int mx_decode_cf_phy(struct chan *chan, int addr, int *offset)
 }
 
 // -----------------------------------------------------------------------
-static int mx_decode_cf_log(struct chan *chan, uint16_t addr, int llinen)
+static int mx_decode_cf_log(struct mx *chan, uint16_t addr, int llinen)
 {
 	int res;
 	uint16_t data[4];
@@ -163,7 +163,7 @@ static int mx_decode_cf_log(struct chan *chan, uint16_t addr, int llinen)
 }
 
 // -----------------------------------------------------------------------
-int mx_decode_cf_sc(struct chan *chan, int addr)
+int mx_decode_cf_sc(struct mx *chan, int addr)
 {
 	int res;
 	uint16_t data;
@@ -207,7 +207,7 @@ int mx_decode_cf_sc(struct chan *chan, int addr)
 }
 
 // -----------------------------------------------------------------------
-void mx_cmd_confset(struct chan *chan, uint16_t addr)
+void mx_cmd_confset(struct mx *chan, uint16_t addr)
 {
 	LOG(L_MX, 1, "MULTIX (ch:%i) command: setconf", chan->num);
 

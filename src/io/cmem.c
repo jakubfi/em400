@@ -128,7 +128,7 @@ void cmem_shutdown(struct chan *chan)
 }
 
 // -----------------------------------------------------------------------
-void cmem_reset(struct chan *chan)
+void cmem_reset(struct cmem_chan_t *chan)
 {
 	LOG(L_CMEM, 1, "CMEM (ch:%i) reset", chan->num);
 	for (int i=0 ; i<CMEM_MAX_DEVICES ; i++) {
@@ -156,8 +156,8 @@ void cmem_int_report(struct cmem_chan_t *chan)
 		if ((CHAN->int_unit[unit_n] != CMEM_INT_NONE) && !CHAN->int_mask) {
 			chan->int_reported = unit_n;
 			pthread_mutex_unlock(&CHAN->int_mutex);
-			LOG(L_CMEM, 3, "CMEM (ch:%i) reporting interrupt %i", chan->proto.num, chan->proto.num + 12);
-			int_set(chan->proto.num + 12);
+			LOG(L_CMEM, 3, "CMEM (ch:%i) reporting interrupt %i", chan->num, chan->num + 12);
+			int_set(chan->num + 12);
 			break;
 		} else {
 			pthread_mutex_unlock(&CHAN->int_mutex);
@@ -168,7 +168,7 @@ void cmem_int_report(struct cmem_chan_t *chan)
 // -----------------------------------------------------------------------
 void cmem_int(struct cmem_chan_t *chan, int unit_n, int interrupt)
 {
-	LOG(L_CMEM, 1, "CMEM (ch:%i) interrupt %i, unit: %i", chan->proto.num, interrupt, unit_n);
+	LOG(L_CMEM, 1, "CMEM (ch:%i) interrupt %i, unit: %i", chan->num, interrupt, unit_n);
 	pthread_mutex_lock(&CHAN->int_mutex);
 	if (interrupt < CHAN->int_unit[unit_n]) {
 		CHAN->int_unit[unit_n] = interrupt;
@@ -216,43 +216,43 @@ int cmem_chan_cmd(struct chan *chan, int dir, int cmd, int u_num, uint16_t *r_ar
 	if (dir == IO_OU) {
 		switch (cmd) {
 		case CHAN_CMD_EXISTS:
-			LOG(L_CMEM, 1, "CMEM %i (%s): command: check chan exists", chan->num, chan->name);
+			LOG(L_CMEM, 1, "CMEM %i: command: check chan exists", chan->num);
 			break;
 		case CHAN_CMD_INTSPEC:
 			return cmem_cmd_intspec(chan, r_arg);
 		case CHAN_CMD_STATUS:
 			*r_arg = CHAN->untransmitted;
-			LOG(L_CMEM, 1, "CMEM %i (%s) command: get status", chan->num, chan->name);
+			LOG(L_CMEM, 1, "CMEM %i command: get status", chan->num);
 			break;
 		case CHAN_CMD_ALLOC:
 			// all units always working with CPU 0
 			*r_arg = 0;
-			LOG(L_CMEM, 1, "CMEM %i:%i (%s): command: get allocation -> %i", chan->num, u_num, chan->name, *r_arg);
+			LOG(L_CMEM, 1, "CMEM %i:%i: command: get allocation -> %i", chan->num, u_num, *r_arg);
 			break;
 		default:
-			LOG(L_CMEM, 1, "CMEM %i:%i (%s): unknow command", chan->num, u_num, chan->name);
+			LOG(L_CMEM, 1, "CMEM %i:%i: unknow command", chan->num, u_num);
 			// shouldn't happen, but as channel always reports OK...
 			break;
 		}
 	} else {
 		switch (cmd) {
 		case CHAN_CMD_EXISTS:
-			LOG(L_CMEM, 1, "CMEM %i (%s): command: check chan exists", chan->num, chan->name);
+			LOG(L_CMEM, 1, "CMEM %i: command: check chan exists", chan->num);
 			break;
 		case CHAN_CMD_MASK_PN:
 			CHAN->int_mask = 1;
-			LOG(L_CMEM, 1, "CMEM %i (%s): command: mask CPU", chan->num, chan->name);
+			LOG(L_CMEM, 1, "CMEM %i: command: mask CPU", chan->num);
 			break;
 		case CHAN_CMD_MASK_NPN:
-			LOG(L_CMEM, 1, "CMEM %i (%s): command: mask ~CPU -> ignored", chan->num, chan->name);
+			LOG(L_CMEM, 1, "CMEM %i: command: mask ~CPU -> ignored", chan->num);
 			// ignore 2nd CPU
 			break;
 		case CHAN_CMD_ASSIGN:
-			LOG(L_CMEM, 1, "CMEM %i (%s:%s): command: assign CPU -> ignored", chan->num, u_num, chan->name);
+			LOG(L_CMEM, 1, "CMEM %i: command: assign CPU -> ignored", chan->num);
 			// always for CPU 0
 			break;
 		default:
-			LOG(L_CMEM, 1, "CMEM %i:%i (%s): unknow command", chan->num, u_num, chan->name);
+			LOG(L_CMEM, 1, "CMEM %i:%i: unknow command", chan->num, u_num);
 			// shouldn't happen, but as channel always reports OK...
 			break;
 		}

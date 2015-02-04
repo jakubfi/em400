@@ -22,6 +22,7 @@
 #include <strings.h>
 
 #include "cpu/interrupts.h"
+#include "io/chan.h"
 #include "io/cchar.h"
 #include "io/cchar_term.h"
 
@@ -29,8 +30,6 @@
 #include "errors.h"
 
 #include "log.h"
-
-#define CHAN ((struct cchar_chan_t *)(chan))
 
 // unit prototypes
 struct cchar_unit_proto_t cchar_unit_proto[] = {
@@ -57,9 +56,12 @@ struct cchar_unit_proto_t * cchar_unit_proto_get(struct cchar_unit_proto_t *prot
 }
 
 // -----------------------------------------------------------------------
-struct chan * cchar_create(struct cfg_unit *units)
+void * cchar_create(int num, struct cfg_unit *units)
 {
 	struct cchar_chan_t *chan = calloc(1, sizeof(struct cchar_chan_t));
+
+	chan->num = num;
+
 	struct cfg_unit *cunit = units;
 	while (cunit) {
 		// find unit prototype
@@ -89,7 +91,7 @@ struct chan * cchar_create(struct cfg_unit *units)
 		unit->chan = chan;
 		unit->num = cunit->num;
 
-		CHAN->unit[unit->num] = unit;
+		chan->unit[unit->num] = unit;
 
 		cunit = cunit->next;
 	}
@@ -97,21 +99,21 @@ struct chan * cchar_create(struct cfg_unit *units)
 	// clear unit interrupts
 	pthread_mutex_lock(&chan->int_mutex);
 	for (int unit_n=0 ; unit_n<CCHAR_MAX_DEVICES ; unit_n++) {
-		CHAN->int_unit[unit_n] = CCHAR_INT_NONE;
+		chan->int_unit[unit_n] = CCHAR_INT_NONE;
 	}
-	CHAN->int_reported = -1;
+	chan->int_reported = -1;
 	pthread_mutex_unlock(&chan->int_mutex);
 
-	return (struct chan *) chan;
+	return (void *) chan;
 }
 
 // -----------------------------------------------------------------------
-void cchar_shutdown(struct chan *chan)
+void cchar_shutdown(void *chan)
 {
 }
 
 // -----------------------------------------------------------------------
-void cchar_reset(struct chan  *chan)
+void cchar_reset(void *chan)
 {
 }
 
@@ -119,24 +121,24 @@ void cchar_reset(struct chan  *chan)
 void cchar_int_report(struct cchar_chan_t *chan)
 {
 	// if interrupt is reported and not yet served, there's nothing to do, for now
-	pthread_mutex_lock(&CHAN->int_mutex);
-	if (CHAN->int_reported != -1) {
-		pthread_mutex_unlock(&CHAN->int_mutex);
+	pthread_mutex_lock(&chan->int_mutex);
+	if (chan->int_reported != -1) {
+		pthread_mutex_unlock(&chan->int_mutex);
 		return;
 	}
-	pthread_mutex_unlock(&CHAN->int_mutex);
+	pthread_mutex_unlock(&chan->int_mutex);
 
 	// check if any unit reported interrupt
 	for (int unit_n=0 ; unit_n<CCHAR_MAX_DEVICES ; unit_n++) {
-		pthread_mutex_lock(&CHAN->int_mutex);
-		if ((CHAN->int_unit[unit_n] != CCHAR_INT_NONE) && !CHAN->int_mask) {
+		pthread_mutex_lock(&chan->int_mutex);
+		if ((chan->int_unit[unit_n] != CCHAR_INT_NONE) && !chan->int_mask) {
 			chan->int_reported = unit_n;
-			pthread_mutex_unlock(&CHAN->int_mutex);
-			LOG(L_CCHR, 3, "CCHAR (ch:%i) reporting interrupt %i", chan->proto.num, chan->proto.num + 12);
-			int_set(chan->proto.num + 12);
+			pthread_mutex_unlock(&chan->int_mutex);
+			LOG(L_CCHR, 3, "CCHAR (ch:%i) reporting interrupt %i", chan->num, chan->num + 12);
+			int_set(chan->num + 12);
 			break;
 		} else {
-			pthread_mutex_unlock(&CHAN->int_mutex);
+			pthread_mutex_unlock(&chan->int_mutex);
 		}
 	}
 }
@@ -144,59 +146,59 @@ void cchar_int_report(struct cchar_chan_t *chan)
 // -----------------------------------------------------------------------
 void cchar_int(struct cchar_chan_t *chan, int unit_n, int interrupt)
 {
-	LOG(L_CCHR, 1, "CCHAR (ch:%i) interrupt %i, unit: %i", chan->proto.num, interrupt, unit_n);
-	pthread_mutex_lock(&CHAN->int_mutex);
-	CHAN->int_unit[unit_n] = interrupt;
-	pthread_mutex_unlock(&CHAN->int_mutex);
+	LOG(L_CCHR, 1, "CCHAR (ch:%i) interrupt %i, unit: %i", chan->num, interrupt, unit_n);
+	pthread_mutex_lock(&chan->int_mutex);
+	chan->int_unit[unit_n] = interrupt;
+	pthread_mutex_unlock(&chan->int_mutex);
 
-	cchar_int_report(CHAN);
+	cchar_int_report(chan);
 }
 
 // -----------------------------------------------------------------------
-int cchar_cmd_intspec(struct chan *chan, uint16_t *r_arg)
+int cchar_cmd_intspec(struct cchar_chan_t *chan, uint16_t *r_arg)
 {
 	LOG(L_CCHR, 1, "CCHAR (ch:%i) command: intspec", chan->num);
-	pthread_mutex_lock(&CHAN->int_mutex);
-	if (CHAN->int_reported != -1) {
-		*r_arg = (CHAN->int_unit[CHAN->int_reported] << 8) | (CHAN->int_reported << 5);
+	pthread_mutex_lock(&chan->int_mutex);
+	if (chan->int_reported != -1) {
+		*r_arg = (chan->int_unit[chan->int_reported] << 8) | (chan->int_reported << 5);
 		// mark interrupt as served
-		CHAN->int_unit[CHAN->int_reported] = CCHAR_INT_NONE;
+		chan->int_unit[chan->int_reported] = CCHAR_INT_NONE;
 		// nothing new reported
-		CHAN->int_reported = -1;
+		chan->int_reported = -1;
 	} else {
 		*r_arg = 0;
 	}
-	pthread_mutex_unlock(&CHAN->int_mutex);
+	pthread_mutex_unlock(&chan->int_mutex);
 
 	// report another interrupt if it's there
-	cchar_int_report(CHAN);
+	cchar_int_report(chan);
 
 	return IO_OK;
 }
 
 
 // -----------------------------------------------------------------------
-int cchar_chan_cmd(struct chan *chan, int dir, int cmd, int u_num, uint16_t *r_arg)
+int cchar_chan_cmd(struct cchar_chan_t *chan, int dir, int cmd, int u_num, uint16_t *r_arg)
 {
 	if (dir == IO_OU) {
 		switch (cmd) {
 		case CHAN_CMD_EXISTS:
-			LOG(L_CCHR, 1, "CCHAR %i (%s): command: check chan exists", chan->num, chan->name);
+			LOG(L_CCHR, 1, "CCHAR %i: command: check chan exists", chan->num);
 			break;
 		case CHAN_CMD_MASK_PN:
-			CHAN->int_mask = 1;
-			LOG(L_CCHR, 1, "CCHAR %i (%s): command: mask CPU", chan->num, chan->name);
+			chan->int_mask = 1;
+			LOG(L_CCHR, 1, "CCHAR %i: command: mask CPU", chan->num);
 			break;
 		case CHAN_CMD_MASK_NPN:
-			LOG(L_CCHR, 1, "CCHAR %i (%s): command: mask ~CPU -> ignored", chan->num, chan->name);
+			LOG(L_CCHR, 1, "CCHAR %i: command: mask ~CPU -> ignored", chan->num);
 			// ignore 2nd CPU
 			break;
 		case CHAN_CMD_ASSIGN:
-			LOG(L_CCHR, 1, "CCHAR %i (%s:%s): command: assign CPU -> ignored", chan->num, u_num, chan->name);
+			LOG(L_CCHR, 1, "CCHAR %i:%i: command: assign CPU -> ignored", chan->num, u_num);
 			// always for CPU 0
 			break;
 		default:
-			LOG(L_CCHR, 1, "CCHAR %i:%i (%s): unknow command", chan->num, u_num, chan->name);
+			LOG(L_CCHR, 1, "CCHAR %i:%i: unknow command", chan->num, u_num);
 			// shouldn't happen, but as channel always reports OK...
 			break;
 		}
@@ -204,17 +206,17 @@ int cchar_chan_cmd(struct chan *chan, int dir, int cmd, int u_num, uint16_t *r_a
 		switch (cmd) {
 		case CHAN_CMD_EXISTS:
 		case CHAN_CMD_STATUS:
-			LOG(L_CCHR, 1, "CCHAR %i (%s): command: check chan exists", chan->num, chan->name);
+			LOG(L_CCHR, 1, "CCHAR %i: command: check chan exists", chan->num);
 			break;
 		case CHAN_CMD_INTSPEC:
 			return cchar_cmd_intspec(chan, r_arg);
 		case CHAN_CMD_ALLOC:
 			// all units always working with CPU 0
 			*r_arg = 0;
-			LOG(L_CCHR, 1, "CCHAR %i:%i (%s): command: get allocation -> %i", chan->num, u_num, chan->name, *r_arg);
+			LOG(L_CCHR, 1, "CCHAR %i:%i: command: get allocation -> %i", chan->num, u_num, *r_arg);
 			break;
 		default:
-			LOG(L_CCHR, 1, "CCHAR %i:%i (%s): unknow command", chan->num, u_num, chan->name);
+			LOG(L_CCHR, 1, "CCHAR %i:%i: unknow command", chan->num, u_num);
 			// shouldn't happen, but as channel always reports OK...
 			break;
 		}
@@ -223,20 +225,30 @@ int cchar_chan_cmd(struct chan *chan, int dir, int cmd, int u_num, uint16_t *r_a
 }
 
 // -----------------------------------------------------------------------
-int cchar_cmd(struct chan *chan, int dir, uint16_t n_arg, uint16_t *r_arg)
+int cchar_cmd(void *ch, int dir, uint16_t n_arg, uint16_t *r_arg)
 {
 	int cmd		= (n_arg & 0b1111110000000000) >> 10;
 	int u_num   = (n_arg & 0b0000000011100000) >> 5;
 
+	struct cchar_chan_t *chan = (struct cchar_chan_t *) ch;
+
 	if ((cmd & 0b111000) == 0) { // command for channel
 		return cchar_chan_cmd(chan, dir, cmd, u_num, r_arg);
 	} else { // command for unit
-		if (CHAN->unit[u_num]) {
-			return CHAN->unit[u_num]->cmd(CHAN->unit[u_num], dir, cmd, r_arg);
+		if (chan->unit[u_num]) {
+			return chan->unit[u_num]->cmd(chan->unit[u_num], dir, cmd, r_arg);
 		} else {
 			return IO_NO;
 		}
 	}
 }
+
+struct chan_drv cchar_chan_driver = {
+	.name = "char",
+	.create = cchar_create,
+	.shutdown = cchar_shutdown,
+	.reset = cchar_reset,
+	.cmd = cchar_cmd
+};
 
 // vim: tabstop=4 shiftwidth=4 autoindent

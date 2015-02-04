@@ -36,24 +36,26 @@ enum chan_cmds_e {
 	CHAN_CMD_STATUS		= 0b000100,
 };
 
-struct chan;
+typedef void * (*chan_f_create)(int num, struct cfg_unit *units);
+typedef void (*chan_f_shutdown)(void *ch_obj);
+typedef void (*chan_f_reset)(void *ch_obj);
+typedef int (*chan_f_cmd)(void *ch_obj, int dir, uint16_t n, uint16_t *r);
 
-typedef struct chan * (*chan_f_create)(struct cfg_unit *units);
-typedef void (*chan_f_shutdown)(struct chan *chan);
-typedef void (*chan_f_reset)(struct chan *chan);
-typedef int (*chan_f_cmd)(struct chan *chan, int dir, uint16_t n, uint16_t *r);
-
-struct chan {
+struct chan_drv {
 	const char *name;
 	chan_f_create create;
 	chan_f_shutdown shutdown;
 	chan_f_reset reset;
 	chan_f_cmd cmd;
-	int num;
+};
+
+struct chan {
+	struct chan_drv *drv;
+	void *obj;
 };
 
 struct chan * chan_make(int num, char *name, struct cfg_unit *units);
+void chan_destroy(struct chan *chan);
 
 #endif
 
-// vim: tabstop=4 shiftwidth=4 autoindent

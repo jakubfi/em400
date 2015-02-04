@@ -52,8 +52,8 @@ struct mx_line {
 };
 
 // MULTIX
-struct mx_chan {
-	struct chan proto;
+struct mx {
+	int num;
 
 	// interrupt queue
 	int intrq_len;
@@ -85,12 +85,14 @@ struct mx_chan {
 
 };
 
-struct chan * mx_create(struct cfg_unit *units);
-void mx_shutdown(struct chan *chan);
-void mx_reset(struct chan *chan);
-int mx_cmd(struct chan *chan, int dir, uint16_t n_arg, uint16_t *r_arg);
+void * mx_create(int num, struct cfg_unit *units);
+void mx_shutdown(void *chan);
+void mx_reset(void *chan);
+int mx_cmd(void *chan, int dir, uint16_t n_arg, uint16_t *r_arg);
 
-void mx_task_clear_all(struct mx_chan *chan);
+void mx_task_clear_all(struct mx *multix);
+
+extern struct chan_drv mx_chan_driver;
 
 #endif
 

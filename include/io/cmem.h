@@ -48,7 +48,7 @@ struct cmem_unit_proto_t {
 };
 
 struct cmem_chan_t {
-	struct chan proto;
+	int num;
 
 	pthread_mutex_t int_mutex;
 	int int_mask;

@@ -22,7 +22,7 @@
 #include "log.h"
 #include "cpu/interrupts.h"
 
-#define CHAN ((struct mx_chan *)(chan))
+#define CHAN ((struct mx *)(chan))
 
 const char *mx_intr_names[] = {
 	"INIEA (intr no longer valid)",
@@ -72,17 +72,17 @@ const char *mx_intr_names[] = {
 
 // -----------------------------------------------------------------------
 // call with intr_mutex locked
-void mx_intr_report(struct mx_chan *chan)
+void mx_intr_report(struct mx *chan)
 {
 	if (CHAN->intr_head) {
-		LOG(L_MX, 2, "MULTIX (ch:%i) report interrupt %i -> CPU", chan->proto.num, chan->proto.num + 12);
-		int_set(chan->proto.num + 12);
+		LOG(L_MX, 2, "MULTIX (ch:%i) report interrupt %i -> CPU", chan->num, chan->num + 12);
+		int_set(chan->num + 12);
 	}
 }
 
 // -----------------------------------------------------------------------
 // call with intr_mutex locked
-void mx_intr_clearq(struct mx_chan *chan)
+void mx_intr_clearq(struct mx *chan)
 {
 	struct mx_intr *inth = chan->intr_head;
 	struct mx_intr *next;
@@ -97,11 +97,11 @@ void mx_intr_clearq(struct mx_chan *chan)
 
 // -----------------------------------------------------------------------
 // call with intr_mutex locked
-void mx_intr_setq(struct mx_chan *chan, struct mx_intr *mxintr)
+void mx_intr_setq(struct mx *chan, struct mx_intr *mxintr)
 {
 	if (!mxintr) return;
 
-	LOG(L_MX, 1, "MULTIX (ch:%i) set special intr %i: %s", chan->proto.num, mxintr->intr, mx_intr_names[mxintr->intr]);
+	LOG(L_MX, 1, "MULTIX (ch:%i) set special intr %i: %s", chan->num, mxintr->intr, mx_intr_names[mxintr->intr]);
 
 	mx_intr_clearq(chan);
 
@@ -113,11 +113,11 @@ void mx_intr_setq(struct mx_chan *chan, struct mx_intr *mxintr)
 
 // -----------------------------------------------------------------------
 // call with intr_mutex locked
-void mx_intr_enq(struct mx_chan *chan, struct mx_intr *mxintr)
+void mx_intr_enq(struct mx *chan, struct mx_intr *mxintr)
 {
 	if (!mxintr) return;
 
-	LOG(L_MX, 1, "MULTIX (ch:%i lline:%i) enq line intr %i: %s (%i in queue)", chan->proto.num, mxintr->llinen, mxintr->intr, mx_intr_names[mxintr->intr], chan->intrq_len);
+	LOG(L_MX, 1, "MULTIX (ch:%i lline:%i) enq line intr %i: %s (%i in queue)", chan->num, mxintr->llinen, mxintr->intr, mx_intr_names[mxintr->intr], chan->intrq_len);
 
 	// 'channel faulty' if intr queue full or negative
 	if ((chan->intrq_len >= MX_INTRQ_LEN) || (chan->intrq_len < 0)) {
@@ -141,7 +141,7 @@ void mx_intr_enq(struct mx_chan *chan, struct mx_intr *mxintr)
 
 // -----------------------------------------------------------------------
 // call with intr_mutex locked
-struct mx_intr * mx_intr_deq(struct mx_chan *chan)
+struct mx_intr * mx_intr_deq(struct mx *chan)
 {
 	struct mx_intr *inth = chan->intr_head;
 
@@ -158,11 +158,11 @@ struct mx_intr * mx_intr_deq(struct mx_chan *chan)
 }
 
 // -----------------------------------------------------------------------
-void mx_int(struct mx_chan *chan, int llinen, int intr)
+void mx_int(struct mx *chan, int llinen, int intr)
 {
 	struct mx_intr *mxintr = malloc(sizeof(struct mx_intr));
 	if (!mxintr) {
-		LOG(L_MX, 1, "MULTIX (ch:%i) cannot allocate memory for interrupt, interrupt LOST: spec:%i, lline: %i", chan->proto.num, intr, llinen);
+		LOG(L_MX, 1, "MULTIX (ch:%i) cannot allocate memory for interrupt, interrupt LOST: spec:%i, lline: %i", chan->num, intr, llinen);
 		return;
 	}
 

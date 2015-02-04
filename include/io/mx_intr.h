@@ -25,7 +25,7 @@
 
 extern const char *mx_intr_names[];
 
-struct mx_chan;
+struct mx;
 
 // -----------------------------------------------------------------------
 struct mx_intr {
@@ -75,12 +75,12 @@ enum mx_intrs {
 	MX_INTR_IEPSF = 42	// unknown control command, code=F
 };
 
-void mx_intr_report(struct mx_chan *chan);
-void mx_intr_clearq(struct mx_chan *chan);
-void mx_intr_setq(struct mx_chan *chan, struct mx_intr *mxintr);
-void mx_intr_enq(struct mx_chan *chan, struct mx_intr *mxintr);
-struct mx_intr * mx_intr_deq(struct mx_chan *chan);
-void mx_int(struct mx_chan *chan, int llinen, int intr);
+void mx_intr_report(struct mx *chan);
+void mx_intr_clearq(struct mx *chan);
+void mx_intr_setq(struct mx *chan, struct mx_intr *mxintr);
+void mx_intr_enq(struct mx *chan, struct mx_intr *mxintr);
+struct mx_intr * mx_intr_deq(struct mx *chan);
+void mx_int(struct mx *chan, int llinen, int intr);
 
 
 #endif

@@ -368,7 +368,7 @@ char * decode_mxpst_term(int nb, uint16_t addr, int arg)
 	mx_term_cf_transmit_free(t);
 	return buf;
 }
-*/
+
 // -----------------------------------------------------------------------
 char * decode_cmempst(int nb, uint16_t addr, int arg)
 {
@@ -416,5 +416,5 @@ char * decode_cmempst(int nb, uint16_t addr, int arg)
 
 	return buf;
 }
-
+*/
 // vim: tabstop=4 shiftwidth=4 autoindent

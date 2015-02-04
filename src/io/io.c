@@ -63,17 +63,14 @@ static const char *io_result_names[] = { "NO DEVICE", "ENGAGED", "OK", "PARITY E
 int io_init(struct cfg_em400 *cfg)
 {
 	struct cfg_chan *chanc = cfg->chans;
-	struct chan *chan;
 
 	LOG(L_IO, 1, "Initializing I/O");
 
 	while (chanc) {
 		LOG(L_IO, 1, "Channel %i: %s", chanc->num, chanc->name);
-		chan = chan_make(chanc->num, chanc->name, chanc->units);
-		if (!chan) {
+		io_chan[chanc->num] = chan_make(chanc->num, chanc->name, chanc->units);
+		if (!io_chan[chanc->num]) {
 			return gerr;
-		} else {
-			io_chan[chanc->num] = chan;
 		}
 		chanc = chanc->next;
 	}
@@ -88,8 +85,8 @@ void io_shutdown()
 	for (int c_num=0 ; c_num<IO_MAX_CHAN ; c_num++) {
 		struct chan *chan = io_chan[c_num];
 		if (chan) {
-			LOG(L_IO, 1, "Channel %i: %s", chan->num, chan->name);
-			chan->shutdown(chan);
+			LOG(L_IO, 1, "Channel %i: %s", c_num, chan->drv->name);
+			chan_destroy(chan);
 			io_chan[c_num] = NULL;
 		}
 	}
@@ -101,7 +98,7 @@ void io_reset()
 	for (int c_num=0 ; c_num<IO_MAX_CHAN ; c_num++) {
 		struct chan *chan = io_chan[c_num];
 		if (chan) {
-			chan->reset(chan);
+			chan->drv->reset(chan->obj);
 		}
 	}
 }
@@ -109,7 +106,9 @@ void io_reset()
 // -----------------------------------------------------------------------
 void io_get_intspec(int ch, uint16_t *int_spec)
 {
-	io_chan[ch]->cmd(io_chan[ch], IO_IN, CHAN_CMD_INTSPEC<<10, int_spec);
+	if (io_chan[ch]) {
+		io_chan[ch]->drv->cmd(io_chan[ch]->obj, IO_IN, CHAN_CMD_INTSPEC<<10, int_spec);
+	}
 }
 
 // -----------------------------------------------------------------------
@@ -138,7 +137,7 @@ int io_dispatch(int dir, uint16_t n, uint16_t *r)
 		}
 
 		if (chan) {
-			res = chan->cmd(chan, dir, n, r);
+			res = chan->drv->cmd(chan->obj, dir, n, r);
 		} else {
 			res = IO_NO;
 		}

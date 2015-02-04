@@ -18,7 +18,7 @@
 #ifndef MX_CMD_H
 #define MX_CMD_H
 
-#include "io/chan.h"
+#include "io/mx.h"
 
 // channel commands: always IN, bits 0..2 = 0, bits 3..4 = command
 enum mx_cmd_chan {
@@ -63,11 +63,13 @@ enum mx_status {
 	MX_STATUS_SEND_STARTED	= 0b0000000000000001, // send started
 };
 
-void mx_cmd_int_requeue(struct chan *chan);
-void mx_cmd_intspec(struct chan *chan, uint16_t *r_arg);
-void mx_cmd_illegal(struct chan *chan, int llinen, int intr);
-void mx_cmd_test(struct chan *chan);
-void mx_cmd_confset(struct chan *chan, uint16_t addr);
+struct mx;
+
+void mx_cmd_int_requeue(struct mx *chan);
+void mx_cmd_intspec(struct mx *chan, uint16_t *r_arg);
+void mx_cmd_illegal(struct mx *chan, int llinen, int intr);
+void mx_cmd_test(struct mx *chan);
+void mx_cmd_confset(struct mx *chan, uint16_t addr);
 
 
 #endif

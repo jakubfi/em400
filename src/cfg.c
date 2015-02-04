@@ -146,9 +146,11 @@ struct cfg_em400 * cfg_from_args(int argc, char **argv)
 				return NULL;
 				break;
 			case 'c':
+				free(cfg->cfg_filename);
 				cfg->cfg_filename = strdup(optarg);
 				break;
 			case 'p':
+				free(cfg->program_name);
 				cfg->program_name = strdup(optarg);
 				break;
 			case 'k':

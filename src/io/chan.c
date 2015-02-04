@@ -25,39 +25,43 @@
 #include "errors.h"
 #include "log.h"
 
-static struct chan chan_proto[] = {
-	{ "char",		cchar_create,	cchar_shutdown,	cchar_reset,	cchar_cmd },
-	{ "mem",		cmem_create,	cmem_shutdown,	cmem_reset,		cmem_cmd },
-	{ "multix",		mx_create,		mx_shutdown,	mx_reset,		mx_cmd },
-	{ NULL,			NULL,			NULL,			NULL,			NULL }
+struct chan_drv *chan_drivers[] = {
+	&cchar_chan_driver,
+	&mx_chan_driver,
+	NULL
 };
 
 // -----------------------------------------------------------------------
 struct chan * chan_make(int num, char *name, struct cfg_unit *units)
 {
-	struct chan *proto = chan_proto;
-	struct chan *chan = NULL;
+	struct chan_drv **cdriver = chan_drivers;
 
-	while (proto && proto->name) {
-		if (!strcasecmp(name, proto->name)) {
-			chan = proto->create(units);
-			break;
+	while (*cdriver) {
+		if (!strcasecmp(name, (*cdriver)->name)) {
+			struct chan *chan = malloc(sizeof(struct chan));
+			if (!chan) {
+				return NULL;
+			}
+			chan->drv = *cdriver;
+			chan->obj = chan->drv->create(num, units);
+			if (!chan->obj) {
+				free(chan);
+				return NULL;
+			}
+			return chan;
 		}
-		proto++;
+		cdriver++;
 	}
 
-	if (chan) {
-		chan->num = num;
-		chan->name = proto->name;
-		chan->create = proto->create;
-		chan->shutdown = proto->shutdown;
-		chan->reset = proto->reset;
-		chan->cmd = proto->cmd;
-	} else if (!proto->name) {
-		gerr = E_IO_CHAN_UNKNOWN;
-	}
+	gerr = E_IO_CHAN_UNKNOWN;
+	return NULL;
+}
 
-	return chan;
+// -----------------------------------------------------------------------
+void chan_destroy(struct chan *chan)
+{
+	chan->drv->shutdown(chan->obj);
+	free(chan);
 }
 
 // vim: tabstop=4 shiftwidth=4 autoindent
