@@ -140,6 +140,7 @@ int __e4i_header_read(struct e4i_t *e)
 	e->id_size = ntohs(*(uint16_t*)pos); pos += 2;
 	e->block_size = ntohs(*(uint16_t*)pos); pos += 2;
 
+	free(buf);
 	return E4I_E_OK;
 }
 

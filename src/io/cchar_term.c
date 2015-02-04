@@ -51,7 +51,7 @@ struct cchar_unit_proto_t * cchar_term_create(struct cfg_arg *args)
 	}
 
 	if (!strcasecmp(type, "tcp")) {
-		res = cfg_args_decode(args, "si", &type, &port);
+		res = cfg_args_decode(args->next, "i", &port);
 		if (res != E_OK) {
 			gerr = res;
 			goto fail;
@@ -98,9 +98,12 @@ struct cchar_unit_proto_t * cchar_term_create(struct cfg_arg *args)
 		goto fail;
 	}
 
+	free(type);
+
 	return (struct cchar_unit_proto_t *) unit;
 
 fail:
+	free(type);
 	cchar_term_shutdown((struct cchar_unit_proto_t*) unit);
 	return NULL;
 }

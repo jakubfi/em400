@@ -93,7 +93,7 @@ int timer_init(struct cfg_em400 *cfg)
 // -----------------------------------------------------------------------
 void timer_shutdown()
 {
-	LOG(L_CPU, 1, "Shuttong down timer");
+	LOG(L_CPU, 1, "Shutting down timer");
 	if (timer_th) {
 		sem_post(&timer_quit);
 		pthread_join(timer_th, NULL);
