@@ -18,6 +18,7 @@
 #include <stdlib.h>
 #include <strings.h>
 
+#include "io/chan.h"
 #include "io/cmem.h"
 #include "io/cchar.h"
 #include "io/mx.h"

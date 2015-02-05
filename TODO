@@ -4,14 +4,17 @@ CROOK-5:
  * EXM(-N) does not save files (all kernels)
  * BASIC fails on LIST/SAVE (all kernels)
 
+cpu_mod_active is accessed in timer thread / modified in cpu thread with no sync
+RP is atom read, but written under mutex
+
 Enhancements:
 
 * mem get/put error handling should be done locally (within CPU, within I/O device)
 * mem get/put byte is also a CPU-only thing
 * mem_load, mem_seg_load is possibly an extension of CP protocol
-* atomic RZ
 * deeptrace
 * conditional logging
+* atomic RZ/RP - rework
 
 CPU:
 
