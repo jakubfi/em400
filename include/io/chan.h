@@ -43,14 +43,14 @@ typedef int (*chan_f_cmd)(void *ch_obj, int dir, uint16_t n, uint16_t *r);
 
 struct chan_drv {
 	const char *name;
-	chan_f_create create;
-	chan_f_shutdown shutdown;
-	chan_f_reset reset;
-	chan_f_cmd cmd;
+	const chan_f_create create;
+	const chan_f_shutdown shutdown;
+	const chan_f_reset reset;
+	const chan_f_cmd cmd;
 };
 
 struct chan {
-	struct chan_drv *drv;
+	const struct chan_drv *drv;
 	void *obj;
 };
 

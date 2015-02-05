@@ -26,7 +26,7 @@
 #include "errors.h"
 #include "log.h"
 
-struct chan_drv *chan_drivers[] = {
+const struct chan_drv *chan_drivers[] = {
 	&cchar_chan_driver,
 	&mx_chan_driver,
 	NULL
@@ -35,7 +35,7 @@ struct chan_drv *chan_drivers[] = {
 // -----------------------------------------------------------------------
 struct chan * chan_make(int num, char *name, struct cfg_unit *units)
 {
-	struct chan_drv **cdriver = chan_drivers;
+	const struct chan_drv **cdriver = chan_drivers;
 
 	while (*cdriver) {
 		if (!strcasecmp(name, (*cdriver)->name)) {
