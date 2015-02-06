@@ -24,6 +24,7 @@ int timer_init(struct cfg_em400 *cfg);
 void timer_shutdown();
 void timer_on();
 void timer_off();
+void timer_set_int(int interrupt);
 
 #endif
 

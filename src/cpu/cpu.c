@@ -26,13 +26,13 @@
 #include "cpu/interrupts.h"
 #include "cpu/timer.h"
 #include "io/io.h"
-#include "log_crk.h"
 
 #include "em400.h"
 #include "cfg.h"
 #include "utils.h"
 #include "errors.h"
 #include "log.h"
+#include "log_crk.h"
 
 int P;
 uint32_t N;
@@ -112,6 +112,8 @@ int cpu_init(struct cfg_em400 *cfg)
 		regs[R_IC] = 0xf000;
 	}
 
+	cpu_mod_off();
+
 	return E_OK;
 }
 
@@ -125,6 +127,7 @@ int cpu_mod_on()
 {
 	// indicate that CPU modifications are preset
 	cpu_mod_active = 1;
+	timer_set_int(INT_EXTRA);
 
 	return E_OK;
 }
@@ -134,6 +137,7 @@ int cpu_mod_off()
 {
 	// indicate that CPU modifications are absent
 	cpu_mod_active = 0;
+	timer_set_int(INT_TIMER);
 
 	return E_OK;
 }

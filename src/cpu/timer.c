@@ -17,15 +17,13 @@
 
 #define _XOPEN_SOURCE 600
 
-#include <pthread.h>
 #include <semaphore.h>
 #include <time.h>
 
 #include "cpu/timer.h"
-#include "cpu/cpu.h"
 #include "cpu/interrupts.h"
-#include "log.h"
 
+#include "log.h"
 #include "cfg.h"
 #include "errors.h"
 #include "atomic.h"
@@ -35,6 +33,7 @@ pthread_t timer_th;
 sem_t timer_quit;
 
 int timer_step;
+int timer_int;
 
 // -----------------------------------------------------------------------
 void * timer_thread(void *ptr)
@@ -46,17 +45,13 @@ void * timer_thread(void *ptr)
 
 	while (1) {
 		new_nsec = ts.tv_nsec + clock_tick_nsec;
-		ts.tv_sec += new_nsec / 1000000000;
-		ts.tv_nsec = new_nsec % 1000000000;
+		ts.tv_sec += new_nsec / 1000000000L;
+		ts.tv_nsec = new_nsec % 1000000000L;
 		if (!sem_timedwait(&timer_quit, &ts)) {
 			break;
 		}
 		if (atom_load(&timer_enabled)) {
-			if (cpu_mod_active) {
-				int_set(INT_EXTRA);
-			} else {
-				int_set(INT_TIMER);
-			}
+			int_set(atom_load(&timer_int));
 		}
 	}
 
@@ -67,6 +62,7 @@ void * timer_thread(void *ptr)
 int timer_init(struct cfg_em400 *cfg)
 {
 	timer_step = cfg->timer_step;
+	timer_set_int(INT_TIMER);
 
 	if ((timer_step < 2) || (timer_step > 100)) {
 		return E_TIMER_VALUE;
@@ -113,6 +109,12 @@ void timer_off()
 {
 	LOG(L_INT, 1, "Stopping timer");
 	atom_store(&timer_enabled, 0);
+}
+
+// -----------------------------------------------------------------------
+void timer_set_int(int interrupt)
+{
+	atom_store(&timer_int, interrupt);
 }
 
 // vim: tabstop=4 shiftwidth=4 autoindent
