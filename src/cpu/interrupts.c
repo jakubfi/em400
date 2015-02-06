@@ -18,14 +18,13 @@
 #include <inttypes.h>
 #include <pthread.h>
 
-#include "atomic.h"
 #include "cpu/cpu.h"
-#include "cpu/registers.h"
 #include "mem/mem.h"
 #include "cpu/interrupts.h"
 #include "io/io.h"
 
 #include "log.h"
+#include "atomic.h"
 
 uint32_t RZ;
 uint32_t RP;
@@ -33,6 +32,23 @@ uint32_t int_mask;
 
 pthread_mutex_t int_mutex = PTHREAD_MUTEX_INITIALIZER;
 pthread_cond_t int_cond = PTHREAD_COND_INITIALIZER;
+
+#define INT_BIT(x) (1UL << (31 - x))
+
+enum int_masks_e {
+	MASK_0  = 0b0000000000111111,
+	MASK_1  = 0b1000000000111111,
+	MASK_2  = 0b1100000000111111,
+	MASK_3  = 0b1110000000111111,
+	MASK_4  = 0b1111000000111111,
+	MASK_5  = 0b1111100000111111,
+	MASK_6  = 0b1111110000111111,
+	MASK_7  = 0b1111111000111111,
+	MASK_8  = 0b1111111100111111,
+	MASK_9  = 0b1111111110111111,
+	MASK_Q  = 0b1111111111011111,
+	MASK_EX = MASK_4,
+};
 
 // for extending RM into 32-bit xmask
 static const uint32_t int_rm2xmask[10] = {
@@ -119,13 +135,13 @@ static void int_update_rp()
 }
 
 // -----------------------------------------------------------------------
-void int_update_mask()
+void int_update_mask(uint16_t mask)
 {
 	int i;
 	uint32_t xmask = 0b10000000000000000000000000000000;
 
 	for (i=0 ; i<10 ; i++) {
-		if (regs[R_SR] & (1 << (15-i))) {
+		if (mask & (1 << (15-i))) {
 			xmask |= int_rm2xmask[i];
 		}
 	}
@@ -209,7 +225,7 @@ void int_serve()
 	// get interrupt vector
 	if (!mem_cpu_get(0, 64+interrupt, &int_vec)) return;
 
-	LOG(L_INT, 1, "Serve interrupt: %d (%s) -> 0x%04x / return: 0x%04x", interrupt, int_names[interrupt], int_vec, regs[R_IC]);
+	LOG(L_INT, 1, "Serve interrupt: %d (%s) -> 0x%04x", interrupt, int_names[interrupt], int_vec);
 
 	// get interrupt specification for channel interrupts
 	if ((interrupt >= 12) && (interrupt <= 27)) {
@@ -227,6 +243,5 @@ void int_serve()
 		log_intlevel_inc();
 	}
 }
-
 
 // vim: tabstop=4 shiftwidth=4 autoindent

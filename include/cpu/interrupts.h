@@ -59,25 +59,8 @@ enum _interrupts {
 	INT_SOFT_L			= 31
 };
 
-#define INT_BIT(x) (1UL << (31 - x))
-
-enum int_masks_e {
-	MASK_0	= 0b0000000000111111,
-	MASK_1	= 0b1000000000111111,
-	MASK_2	= 0b1100000000111111,
-	MASK_3	= 0b1110000000111111,
-	MASK_4	= 0b1111000000111111,
-	MASK_5	= 0b1111100000111111,
-	MASK_6	= 0b1111110000111111,
-	MASK_7	= 0b1111111000111111,
-	MASK_8	= 0b1111111100111111,
-	MASK_9	= 0b1111111110111111,
-	MASK_Q	= 0b1111111111011111,
-	MASK_EX	= MASK_4,
-};
-
 void int_wait();
-void int_update_mask();
+void int_update_mask(uint16_t mask);
 void int_set(int x);
 void int_clear(int x);
 void int_clear_all();

@@ -978,7 +978,7 @@ void op_77_im()
 	uint16_t data;
 	if (mem_cpu_get(QNB, N, &data)) {
 		regs[R_SR] = (regs[R_SR] & 0b000000000111111) | (data & 0b1111111111000000);
-		int_update_mask();
+		int_update_mask(regs[R_SR]);
 	}
 }
 
@@ -1014,7 +1014,7 @@ void op_77_sp()
 	regs[0] = data[1];
 	regs[R_SR] = data[2];
 
-	int_update_mask();
+	int_update_mask(regs[R_SR]);
 
 	if (LOG_ENABLED) {
 		log_update_process();

@@ -103,7 +103,7 @@ int cpu_init(struct cfg_em400 *cfg)
 		instr++;
 	}
 
-	int_update_mask();
+	int_update_mask(0);
 
 	// seems to be checked only at power-on!
 	// (unless power supply sends -PON at hw reset)
@@ -155,7 +155,7 @@ void cpu_reset(int hw)
 		regs[R_SR] = 0;
 	}
 
-	int_update_mask();
+	int_update_mask(0);
 	int_clear_all();
 	cpu_mod_off();
 
@@ -202,7 +202,7 @@ int cpu_ctx_switch(uint16_t arg, uint16_t ic, uint16_t sr_mask)
 	regs[R_IC] = ic;
 	regs[R_SR] &= sr_mask;
 
-	int_update_mask();
+	int_update_mask(regs[R_SR]);
 
 	return 1;
 }
@@ -220,7 +220,7 @@ int cpu_ctx_restore()
 	regs[0] = data;
 	if (!mem_cpu_get(0, sp-2, &data)) return 0;
 	regs[R_SR] = data;
-	int_update_mask();
+	int_update_mask(regs[R_SR]);
 	if (!mem_cpu_put(0, 97, sp-4)) return 0;
 
 	LOG(L_CPU, 3, "H/W stack pop @ 0x%04x (IC = 0x%04x, R0 = 0x%04x, SR = 0x%04x)",
