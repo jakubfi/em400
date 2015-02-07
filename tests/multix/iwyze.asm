@@ -4,8 +4,10 @@
 
 	.equ	stackp 0x61
 	.equ	prog_beg 0x70
+	.equ	int_tim 0x40 + 5
+	.equ	int_ex 0x40 + 11
 	.equ	int_mx 0x40 + 12 + 1
-	.equ	unmask_chan 0b0000011110000000
+	.equ	unmask_chan 0b0000111110000000
 	.equ	iwyze 0b0000001000000000
 	.equ	mx_chan 1
 
@@ -19,6 +21,8 @@ mx_proc:
 	CW	r4, iwyze
 	JN	int_fail
 	AW	r3, 1		; increase interrupt counter
+	OR	r6, ?X		; set MX int. indicator
+tim_proc:
 	LIP
 int_fail:
 	HLT	041
@@ -27,23 +31,38 @@ int_fail:
 start:
 	LW	r3, stack
 	RW	r3, stackp
+
 	LW	r3, mx_proc
 	RW	r3, int_mx
+
+	LW	r3, tim_proc
+	RW	r3, int_tim
+	RW	r3, int_ex
+
 	LWT	r3, 0		; reset interrupt counter
+	ER	r6, ?X		; reset MX int. indicator
 
 	; IWYZE by MULTIX initialization
 	IM	mask
-	HLT
+w1:	HLT
+	BB	r6, ?X
+	UJS	w1
+	ER	r6, ?X
 
 	; IWYZE by MCL
 	MCL
 	IM	mask
-	HLT
+w2:	HLT
+	BB	r6, ?X
+	UJS	w2
+	ER	r6, ?X
 
 	; IWYZE, by software MULTIX reset
 	IN	r5, mx_chan\14
-	.word	fail, fail, ok, fail
-ok:	HLT
+	.word	fail, fail, w3, fail
+w3:	HLT
+	BB	r6, ?X
+	UJS	w3
 	HLT	077
 
 fail:	HLT	040
