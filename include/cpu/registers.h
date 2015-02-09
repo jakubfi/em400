@@ -45,7 +45,7 @@ enum _registers {
 
 extern uint16_t regs[];
 
-#define reg_safe_write(r, x) regs[r] = (r|!Q) ? (x) : (regs[r] & 0b1111111100000000) | ((x) & 0b0000000011111111)
+#define reg_restrict_write(r, x) regs[r] = ((r)|!Q) ? (x) : (regs[r] & 0b1111111100000000) | ((x) & 0b0000000011111111)
 
 // -----------------------------------------------------------------------
 // Flags in R0

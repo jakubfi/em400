@@ -53,7 +53,7 @@ void alu_16_add(unsigned reg, uint16_t arg, unsigned carry, int sign)
 		Fset(FL_C);
 	}
 
-	reg_safe_write(reg, (uint16_t) res);
+	reg_restrict_write(reg, (uint16_t) res);
 }
 
 // -----------------------------------------------------------------------
@@ -71,7 +71,7 @@ void alu_16_neg(int reg, uint16_t carry)
 		Fclr(FL_C);
 	}
 	alu_16_set_Z(res);
-	reg_safe_write(reg, res);
+	reg_restrict_write(reg, res);
 }
 
 // -----------------------------------------------------------------------

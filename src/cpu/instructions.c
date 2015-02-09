@@ -47,7 +47,7 @@
 // -----------------------------------------------------------------------
 void op_lw()
 {
-	reg_safe_write(IR_A, N);
+	reg_restrict_write(IR_A, N);
 }
 
 // -----------------------------------------------------------------------
@@ -55,21 +55,21 @@ void op_tw()
 {
 	uint16_t data;
 	if (mem_cpu_get(NB, N, &data)) {
-		reg_safe_write(IR_A, data);
+		reg_restrict_write(IR_A, data);
 	}
 }
 
 // -----------------------------------------------------------------------
 void op_ls()
 {
-	reg_safe_write(IR_A, (regs[IR_A] & ~regs[7]) | (N & regs[7]));
+	reg_restrict_write(IR_A, (regs[IR_A] & ~regs[7]) | (N & regs[7]));
 }
 
 // -----------------------------------------------------------------------
 void op_ri()
 {
 	if (mem_cpu_put(QNB, regs[IR_A], N)) {
-		reg_safe_write(IR_A, regs[IR_A]+1);
+		reg_restrict_write(IR_A, regs[IR_A]+1);
 	}
 }
 
@@ -88,7 +88,7 @@ void op_pw()
 // -----------------------------------------------------------------------
 void op_rj()
 {
-	reg_safe_write(IR_A, regs[R_IC]);
+	reg_restrict_write(IR_A, regs[R_IC]);
 	regs[R_IC] = N;
 }
 
@@ -259,7 +259,7 @@ void op_cw()
 // -----------------------------------------------------------------------
 void op_or()
 {
-	reg_safe_write(IR_A, regs[IR_A] | N);
+	reg_restrict_write(IR_A, regs[IR_A] | N);
 	alu_16_set_Z(regs[IR_A]);
 }
 
@@ -278,7 +278,7 @@ void op_om()
 // -----------------------------------------------------------------------
 void op_nr()
 {
-	reg_safe_write(IR_A, regs[IR_A] & N);
+	reg_restrict_write(IR_A, regs[IR_A] & N);
 	alu_16_set_Z(regs[IR_A]);
 }
 
@@ -297,7 +297,7 @@ void op_nm()
 // -----------------------------------------------------------------------
 void op_er()
 {
-	reg_safe_write(IR_A, regs[IR_A] & ~N);
+	reg_restrict_write(IR_A, regs[IR_A] & ~N);
 	alu_16_set_Z(regs[IR_A]);
 }
 
@@ -316,7 +316,7 @@ void op_em()
 // -----------------------------------------------------------------------
 void op_xr()
 {
-	reg_safe_write(IR_A, regs[IR_A] ^ N);
+	reg_restrict_write(IR_A, regs[IR_A] ^ N);
 	alu_16_set_Z(regs[IR_A]);
 }
 
@@ -343,7 +343,7 @@ void op_lb()
 {
 	uint8_t data;
 	if (mem_get_byte(NB, N, &data)) {
-		reg_safe_write(IR_A, (regs[IR_A] & 0b1111111100000000) | data);
+		reg_restrict_write(IR_A, (regs[IR_A] & 0b1111111100000000) | data);
 	}
 }
 
@@ -375,7 +375,7 @@ void op_awt()
 // -----------------------------------------------------------------------
 void op_trb()
 {
-	reg_safe_write(IR_A, regs[IR_A] + N);
+	reg_restrict_write(IR_A, regs[IR_A] + N);
 	if (regs[IR_A] == 0) {
 		P = 1;
 	}
@@ -384,14 +384,14 @@ void op_trb()
 // -----------------------------------------------------------------------
 void op_irb()
 {
-	reg_safe_write(IR_A, regs[IR_A]+1);
+	reg_restrict_write(IR_A, regs[IR_A]+1);
 	if (regs[IR_A]) regs[R_IC] += N;
 }
 
 // -----------------------------------------------------------------------
 void op_drb()
 {
-	reg_safe_write(IR_A, regs[IR_A]-1);
+	reg_restrict_write(IR_A, regs[IR_A]-1);
 	if (regs[IR_A] != 0) regs[R_IC] += N;
 }
 
@@ -404,7 +404,7 @@ void op_cwt()
 // -----------------------------------------------------------------------
 void op_lwt()
 {
-	reg_safe_write(IR_A, N);
+	reg_restrict_write(IR_A, N);
 }
 
 // -----------------------------------------------------------------------
@@ -412,7 +412,7 @@ void op_lws()
 {
 	uint16_t data;
 	if (mem_cpu_get(QNB, regs[R_IC] + N, &data)) {
-		reg_safe_write(IR_A, data);
+		reg_restrict_write(IR_A, data);
 	}
 }
 
@@ -531,13 +531,13 @@ void op_71_nrf()
 // -----------------------------------------------------------------------
 void op_72_ric()
 {
-	reg_safe_write(IR_A, regs[R_IC]);
+	reg_restrict_write(IR_A, regs[R_IC]);
 }
 
 // -----------------------------------------------------------------------
 void op_72_zlb()
 {
-	reg_safe_write(IR_A, regs[IR_A] & 0b0000000011111111);
+	reg_restrict_write(IR_A, regs[IR_A] & 0b0000000011111111);
 }
 
 // -----------------------------------------------------------------------
@@ -561,14 +561,14 @@ void op_72_slz()
 {
 	if (regs[IR_A] & 0b1000000000000000) Fset(FL_Y);
 	else Fclr(FL_Y);
-	reg_safe_write(IR_A, regs[IR_A]<<1);
+	reg_restrict_write(IR_A, regs[IR_A]<<1);
 }
 
 // -----------------------------------------------------------------------
 void op_72_sly()
 {
 	uint16_t ir_a = regs[IR_A];
-	reg_safe_write(IR_A, (regs[IR_A]<<1) | Fget(FL_Y));
+	reg_restrict_write(IR_A, (regs[IR_A]<<1) | Fget(FL_Y));
 	if (ir_a & 0b1000000000000000) Fset(FL_Y);
 	else Fclr(FL_Y);
 }
@@ -578,14 +578,14 @@ void op_72_slx()
 {
 	if (regs[IR_A] & 0b1000000000000000) Fset(FL_Y);
 	else Fclr(FL_Y);
-	reg_safe_write(IR_A, (regs[IR_A]<<1) | Fget(FL_X));
+	reg_restrict_write(IR_A, (regs[IR_A]<<1) | Fget(FL_X));
 }
 
 // -----------------------------------------------------------------------
 void op_72_sry()
 {
 	uint16_t ir_a = regs[IR_A];
-	reg_safe_write(IR_A, (regs[IR_A]>>1) | Fget(FL_Y)<<15);
+	reg_restrict_write(IR_A, (regs[IR_A]>>1) | Fget(FL_Y)<<15);
 	if (ir_a & 1) Fset(FL_Y);
 	else Fclr(FL_Y);
 }
@@ -600,7 +600,7 @@ void op_72_ngl()
 // -----------------------------------------------------------------------
 void op_72_rpc()
 {
-	reg_safe_write(IR_A, regs[0]);
+	reg_restrict_write(IR_A, regs[0]);
 }
 
 // -----------------------------------------------------------------------
@@ -610,19 +610,19 @@ void op_72_shc()
 
 	uint16_t falling = (regs[IR_A] & ((1<<IR_t)-1)) << (16-IR_t);
 	
-	reg_safe_write(IR_A, (regs[IR_A] >> IR_t) | falling);
+	reg_restrict_write(IR_A, (regs[IR_A] >> IR_t) | falling);
 }
 
 // -----------------------------------------------------------------------
 void op_72_rky()
 {
-	reg_safe_write(IR_A, regs[R_KB]);
+	reg_restrict_write(IR_A, regs[R_KB]);
 }
 
 // -----------------------------------------------------------------------
 void op_72_zrb()
 {
-	reg_safe_write(IR_A, regs[IR_A] & 0b1111111100000000);
+	reg_restrict_write(IR_A, regs[IR_A] & 0b1111111100000000);
 }
 
 // -----------------------------------------------------------------------
@@ -650,14 +650,14 @@ void op_72_svz()
 		Fclr(FL_Y);
 	}
 	alu_16_update_V(regs[IR_A], regs[IR_A], regs[IR_A]<<1);
-	reg_safe_write(IR_A, regs[IR_A]<<1);
+	reg_restrict_write(IR_A, regs[IR_A]<<1);
 }
 
 // -----------------------------------------------------------------------
 void op_72_svy()
 {
 	uint16_t ir_a = regs[IR_A];
-	reg_safe_write(IR_A, regs[IR_A]<<1 | Fget(FL_Y));
+	reg_restrict_write(IR_A, regs[IR_A]<<1 | Fget(FL_Y));
 	alu_16_update_V(ir_a, ir_a, regs[IR_A]);
 	if (ir_a & 0b1000000000000000) {
 		Fset(FL_Y);
@@ -670,7 +670,7 @@ void op_72_svy()
 void op_72_svx()
 {
 	uint16_t ir_a = regs[IR_A];
-	reg_safe_write(IR_A, regs[IR_A]<<1 | Fget(FL_X));
+	reg_restrict_write(IR_A, regs[IR_A]<<1 | Fget(FL_X));
 	alu_16_update_V(ir_a, ir_a, regs[IR_A]);
 	if (ir_a & 0b1000000000000000) {
 		Fset(FL_Y);
@@ -687,7 +687,7 @@ void op_72_srx()
 	} else {
 		Fclr(FL_Y);
 	}
-	reg_safe_write(IR_A, (regs[IR_A]>>1) | Fget(FL_X)<<15);
+	reg_restrict_write(IR_A, (regs[IR_A]>>1) | Fget(FL_X)<<15);
 }
 
 // -----------------------------------------------------------------------
@@ -695,7 +695,7 @@ void op_72_srz()
 {
 	if (regs[IR_A] & 1) Fset(FL_Y);
 	else Fclr(FL_Y);
-	reg_safe_write(IR_A, (regs[IR_A]>>1) & 0b0111111111111111);
+	reg_restrict_write(IR_A, (regs[IR_A]>>1) & 0b0111111111111111);
 }
 
 // -----------------------------------------------------------------------
