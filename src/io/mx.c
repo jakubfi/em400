@@ -441,7 +441,8 @@ static void mx_initialize(struct mx * multix)
 	// TODO: disable interrupts? - chyba nie, tylko task manager wysyła przerwania (?)
 	// TODO: (wysyła również receiver)
 
-	const long reset_wait_msec = 13;
+	// let's say it takes 150 ms to reset MULTIX
+	const long reset_wait_msec = 150;
 
 	pthread_mutex_lock(&multix->task_mutex);
 
@@ -458,7 +459,6 @@ static void mx_initialize(struct mx * multix)
 		abstime.tv_sec += new_nsec / 1000000000L;
 		abstime.tv_nsec = new_nsec % 1000000000L;
 
-		// let's say it takes 13ms to reset MULTIX)
 		pthread_cond_timedwait(&multix->task_cond, &multix->task_mutex, &abstime);
 		LOG(L_MX, 2, "MULTIX (ch:%i) reset delay woken up", multix->num);
 

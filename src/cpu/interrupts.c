@@ -140,7 +140,7 @@ void int_update_mask(uint16_t mask)
 // -----------------------------------------------------------------------
 void int_set(int x)
 {
-	LOG(L_INT, x != (cpu_mod_active ? INT_EXTRA : INT_TIMER) ? 3 : 9, "Set interrupt: %lld (%s)", x, int_names[x]);
+	LOG(L_INT, x != (cpu_mod_active ? INT_EXTRA : INT_TIMER) ? 3 : 9, "Set interrupt: %i (%s)", x, int_names[x]);
 	pthread_mutex_lock(&int_mutex);
 	RZ |= INT_BIT(x);
 	int_update_rp();
@@ -159,7 +159,7 @@ void int_clear_all()
 // -----------------------------------------------------------------------
 void int_clear(int x)
 {
-	LOG(L_INT, 3, "Clear interrupt: %lld (%s)", x, int_names[x]);
+	LOG(L_INT, 3, "Clear interrupt: %i (%s)", x, int_names[x]);
 	pthread_mutex_lock(&int_mutex);
 	RZ &= ~INT_BIT(x);
 	int_update_rp();
@@ -210,7 +210,7 @@ void int_serve()
 	// get interrupt vector
 	if (!mem_cpu_get(0, 64+interrupt, &int_vec)) return;
 
-	LOG(L_INT, 1, "Serve interrupt: %d (%s) -> 0x%04x", interrupt, int_names[interrupt], int_vec);
+	LOG(L_INT, 1, "Serve interrupt: %i (%s) -> 0x%04x", interrupt, int_names[interrupt], int_vec);
 
 	// get interrupt specification for channel interrupts
 	if ((interrupt >= 12) && (interrupt <= 27)) {
