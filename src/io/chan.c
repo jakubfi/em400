@@ -21,14 +21,12 @@
 #include "io/chan.h"
 #include "io/cmem.h"
 #include "io/cchar.h"
-#include "io/mx.h"
 
 #include "errors.h"
 #include "log.h"
 
 const struct chan_drv *chan_drivers[] = {
 	&cchar_chan_driver,
-	&mx_chan_driver,
 	NULL
 };
 
