@@ -74,6 +74,7 @@ struct _em400_errordesc {
 	{ E_LEVELS, "could not set logging levels" },
 	{ E_DASM, "could not initialize disassembler" },
 	{ E_AWP, "could not initialize AWP" },
+	{ E_EVQ, "could not create MULTIX' event queue" },
 
 	{ E_UNKNOWN, "unknown error" }
 };

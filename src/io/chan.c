@@ -19,14 +19,16 @@
 #include <strings.h>
 
 #include "io/chan.h"
-#include "io/cmem.h"
-#include "io/cchar.h"
 
 #include "errors.h"
 #include "log.h"
 
+extern struct chan_drv cchar_chan_driver;
+extern struct chan_drv mx_chan_driver;
+
 const struct chan_drv *chan_drivers[] = {
 	&cchar_chan_driver,
+	&mx_chan_driver,
 	NULL
 };
 
