@@ -261,7 +261,7 @@ static int mx_init(struct mx *multix)
 	} else {
 		mx_evq_clear(multix->evq);
 		mx_irqq_clear(multix->irqq);
-		mx_irqq_enqueue(multix->irqq, MX_INTR_IWYZE, 0);
+		mx_irqq_enqueue(multix->irqq, MX_IRQ_IWYZE, 0);
 		mx_evq_enable(multix->evq);
 		ret = 0;
 
@@ -280,6 +280,68 @@ static int mx_init(struct mx *multix)
 }
 
 // -----------------------------------------------------------------------
+static void mx_ev_handle_cmd(struct mx *multix, struct mx_ev *ev)
+{
+	switch (ev->cmd) {
+		case MX_CMD_ERR_0:
+			mx_irqq_enqueue(multix->irqq, MX_IRQ_IEPS0, 0);
+			break;
+		case MX_CMD_TEST:
+			break;
+		case MX_CMD_ATTACH:
+			break;
+		case MX_CMD_STATUS:
+			break;
+		case MX_CMD_TRANSMIT:
+			break;
+		case MX_CMD_SETCFG:
+			break;
+		case MX_CMD_ERR_6:
+			mx_irqq_enqueue(multix->irqq, MX_IRQ_IEPS6, 0);
+			break;
+		case MX_CMD_ERR_7:
+			mx_irqq_enqueue(multix->irqq, MX_IRQ_IEPS7, 0);
+			break;
+		case MX_CMD_ERR_8:
+			mx_irqq_enqueue(multix->irqq, MX_IRQ_IEPS8, 0);
+			break;
+		case MX_CMD_INTRQ:
+			break;
+		case MX_CMD_DETACH:
+			break;
+		case MX_CMD_ABORT:
+			break;
+		case MX_CMD_ERR_C:
+			mx_irqq_enqueue(multix->irqq, MX_IRQ_IEPSC, 0);
+			break;
+		case MX_CMD_ERR_D:
+			mx_irqq_enqueue(multix->irqq, MX_IRQ_IEPSD, 0);
+			break;
+		case MX_CMD_ERR_E:
+			mx_irqq_enqueue(multix->irqq, MX_IRQ_IEPSE, 0);
+			break;
+		case MX_CMD_ERR_F:
+			mx_irqq_enqueue(multix->irqq, MX_IRQ_IEPSF, 0);
+			break;
+		default:
+			LOG(L_MX, 1, "MULTIX (ch:%i) Unknown general/line command: %i - ignored", multix->num, ev->cmd);
+			break;
+	}
+}
+
+// -----------------------------------------------------------------------
+static void mx_ev_handle(struct mx *multix, struct mx_ev *ev)
+{
+	if (ev->type == MX_EV_INT_RECVD) {
+		mx_irqq_advance(multix->irqq);
+	} else if (ev->type == MX_EV_CMD) {
+		mx_ev_handle_cmd(multix, ev);
+	} else {
+		LOG(L_MX, 1, "MULTIX (ch:%i) Unknown event type: %i", multix->num, ev->type);
+	}
+}
+
+// -----------------------------------------------------------------------
 static void * mx_main(void *ptr)
 {
 	struct mx *multix = ptr;
@@ -293,11 +355,8 @@ static void * mx_main(void *ptr)
 		// if event is empty, that means state is 'quit' or 'reset'
 		while ((ev = mx_evq_dequeue(multix->evq, MX_EVQ_F_WAIT))) {
 			LOG(L_MX, 2, "MULTIX (ch:%i) Got event: %i (%s)", multix->num, ev->type, mx_event_names[ev->type]);
-			if (ev->type == MX_EV_INT_RECVD) {
-				mx_irqq_advance(multix->irqq);
-			}
+			mx_ev_handle(multix, ev);
 			mx_ev_delete(ev);
-
 			// TODO: run task manager
 		}
 		LOG(L_MX, 3, "MULTIX (ch:%i) Got empty event and left event queue", multix->num);
