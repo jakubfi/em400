@@ -19,7 +19,7 @@
 #define MX_IRQ_H
 
 #define MX_INTRQ_LEN 32
-#define MX_INTSPEC_EMPTY 0x1FFFF
+#define MX_INTSPEC_EMPTY 0x10000
 
 struct mx_irq {
 	int line;
