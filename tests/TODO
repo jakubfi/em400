@@ -6,8 +6,6 @@ mega:
 
 multix:
  * nieprawidłowe komendy
- * rozkazy kanałowe:
-   * komenda: podaj specyfikację (z palca: zablokowanego przerwania, bez przerwania)
  * polecenia sterujące ogólne:
    * komenda: cofnij przerwanie niepokwitowane
    * komenda:testuj
