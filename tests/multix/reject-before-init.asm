@@ -13,7 +13,7 @@
 mask:
 	.word	unmask_chan
 mx_proc:
-	HLT	041
+	HLT	041		; test should end before MX int
 
 	.org	prog_beg
 start:
@@ -21,16 +21,16 @@ start:
 	RW	r3, stackp
 	LW	r3, mx_proc
 	RW	r3, int_mx
+	IM	mask
 
 	OU	r5, 0b101\2 + mx_chan\14
 	.word	fail, ok, fail, fail
-ok:	HLT	077
-fail:	HLT	040
+ok:	HLT	077	; EN = command rejected -> this is OK
+fail:	HLT	040	; NO, OK, PE -> this is bad
 
 stack:
 
 ; XPCT int(rz[15]) : 0
 ; XPCT int(rz[6]) : 0
 ; XPCT int(alarm) : 0
-; XPCT int(r3) : 3
 ; XPCT oct(ir[10-15]) : 077
