@@ -220,6 +220,9 @@ static void mx_irqq_send(struct mx_irqq *queue)
 uint16_t mx_irqq_get_intspec(struct mx_irqq *queue)
 {
 	uint16_t intspec = atom_load(&queue->intspec) & 0xFFFF;
+	// intspec is most probably reset in H/W either:
+	// * when CPU reads it
+	// * or when interrupt routine does "MVI A,1  OUT KWINT"
 	atom_store(&queue->intspec, MX_INTSPEC_EMPTY);
 	LOG(L_MX, 3, "MULTIX (ch:%i) Sending intspec to CPU: 0x%04x (%s, line %i)", queue->chnum, intspec, mx_intr_names[intspec>>8], intspec & 0xFF);
 	return intspec;

@@ -30,6 +30,11 @@
 #include "io/mx_irq.h"
 #include "io/chan.h"
 
+// Real multix boots up in probably just under a second
+// ~500ms (for ROM/RAM check) + ~185ms (for RAM cleanup).
+// Here we need just a reasonable delay - big enough for
+// OS scheduler to switch threads between MULTIX and CPU,
+// so we don't finish MULTIX' job before switching to CPU thread.
 #define RESET_WAIT_MSEC 150
 
 enum mx_state {
@@ -171,7 +176,7 @@ int mx_cmd(void *ch, int dir, uint16_t n_arg, uint16_t *r_arg)
 
 	// channel commands
 	if (cmd == MX_CMD_CHAN) {
-		LOG(L_MX, 2, "MULTIX (ch:%i) incomming multix command %i: %s", multix->num, chan_cmd, mx_chan_cmd_names[chan_cmd]);
+		LOG(L_MX, 2, "MULTIX (ch:%i) incomming channel command %i: %s", multix->num, chan_cmd, mx_chan_cmd_names[chan_cmd]);
 
 		switch (chan_cmd) {
 			case MX_CMD_INTSPEC:
@@ -190,6 +195,7 @@ int mx_cmd(void *ch, int dir, uint16_t n_arg, uint16_t *r_arg)
 			default:
 				// handle other commands (only MX_CMD_INVALID in fact) as illegal in main thread
 				if (mx_evq_enqueue(multix->evq, mx_ev_cmd(cmd, 0, 0), MX_EVQ_F_TRY) <= 0) {
+					LOG(L_MX, 2, "MULTIX (ch:%i) ENGAGED", multix->num);
 					return IO_EN;
 				} else {
 					return IO_OK;
@@ -197,7 +203,9 @@ int mx_cmd(void *ch, int dir, uint16_t n_arg, uint16_t *r_arg)
 		}
 	// handle general and line commands in main thread
 	} else {
+		LOG(L_MX, 2, "MULTIX (ch:%i line:%i) incomming general/line command %i: %s", multix->num, llinen, cmd, mx_cmd_names[cmd]);
 		if (mx_evq_enqueue(multix->evq, mx_ev_cmd(cmd, llinen, *r_arg), MX_EVQ_F_TRY) <= 0) {
+			LOG(L_MX, 2, "MULTIX (ch:%i) ENGAGED", multix->num);
 			return IO_EN;
 		} else {
 			return IO_OK;

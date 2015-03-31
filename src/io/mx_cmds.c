@@ -31,7 +31,6 @@ const char *mx_cmd_names[] = {
 	"SETCFG",
 	"ERR_6",
 	"ERR_7",
-	"[chan]",
 	"ERR_8",
 	"INTRQ",
 	"DETACH",
