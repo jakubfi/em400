@@ -295,6 +295,14 @@ static void mx_ev_handle_cmd(struct mx *multix, struct mx_ev *ev)
 			mx_irqq_enqueue(multix->irqq, MX_IRQ_IEPS0, 0);
 			break;
 		case MX_CMD_TEST:
+			// As we're not able to run any real 8085 code, TEST command
+			// won't work. Best we can do is to pretend that test is done
+			// and let the test wrapper on CPU side worry about the (non-)results.
+			mx_evq_disable(multix->evq);
+			mx_evq_clear(multix->evq);
+			mx_irqq_clear(multix->irqq);
+			mx_irqq_enqueue(multix->irqq, MX_IRQ_IWYTE, 0);
+			mx_evq_enable(multix->evq);
 			break;
 		case MX_CMD_ATTACH:
 			break;
