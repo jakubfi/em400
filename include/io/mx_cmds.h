@@ -34,7 +34,7 @@ enum mx_cmd {
 	MX_CMD_ERR_7		= 0b0111,	// (invalid command)
 	MX_CMD_CHAN			= 0b1000,	// (channel commands, see below)
 	MX_CMD_ERR_8		= 0b1000,	// (invalid command)
-	MX_CMD_INTRQ		= 0b1001,	// GENERAL: requeue interrupt
+	MX_CMD_REQUEUE		= 0b1001,	// GENERAL: requeue interrupt
 	MX_CMD_DETACH		= 0b1010,	// LINE: detach
 	MX_CMD_ABORT		= 0b1011,	// LINE: abort transmission
 	MX_CMD_ERR_C		= 0b1100,	// (invalid command)

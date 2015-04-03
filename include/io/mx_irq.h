@@ -84,7 +84,7 @@ void mx_irqq_destroy(struct mx_irqq *queue);
 int mx_irqq_enqueue(struct mx_irqq *queue, int intr, int line);
 void mx_irqq_advance(struct mx_irqq *queue);
 uint16_t mx_irqq_get_intspec(struct mx_irqq *queue);
-void mx_irqq_cancel_current(struct mx_irqq *queue);
+void mx_irqq_irq_requeue(struct mx_irqq *queue);
 
 #endif
 

@@ -321,7 +321,8 @@ static void mx_ev_handle_cmd(struct mx *multix, struct mx_ev *ev)
 		case MX_CMD_ERR_8:
 			mx_irqq_enqueue(multix->irqq, MX_IRQ_IEPS8, 0);
 			break;
-		case MX_CMD_INTRQ:
+		case MX_CMD_REQUEUE:
+			mx_irqq_irq_requeue(multix->irqq);
 			break;
 		case MX_CMD_DETACH:
 			break;

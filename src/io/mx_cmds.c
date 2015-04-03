@@ -32,7 +32,7 @@ const char *mx_cmd_names[] = {
 	"ERR_6",
 	"ERR_7",
 	"ERR_8",
-	"INTRQ",
+	"REQUEUE",
 	"DETACH",
 	"ABORT",
 	"ERR_C",

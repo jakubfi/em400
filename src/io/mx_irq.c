@@ -230,7 +230,7 @@ uint16_t mx_irqq_get_intspec(struct mx_irqq *queue)
 
 // -----------------------------------------------------------------------
 // called by CPU thread
-void mx_irqq_irq_withhold(struct mx_irqq *queue)
+void mx_irqq_irq_requeue(struct mx_irqq *queue)
 {
 	atom_store(&queue->intspec, MX_INTSPEC_EMPTY);
 	mx_irqq_send(queue);
