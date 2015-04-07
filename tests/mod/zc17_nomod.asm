@@ -54,7 +54,7 @@ ok:	im	mask
 	lb	r4, r7
 
 	lwt	r1, 0
-	lb	r1, (seg\3+addr)*2 + 1
+	lb	r1, ((seg\3+addr)*2 + 1) & 0xFFFF
 
 	hlt	077
 

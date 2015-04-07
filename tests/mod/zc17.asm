@@ -62,7 +62,7 @@ ok:	im	mask
 	lb	r4, r7		; this should work (carry on pre-mod, no B-mod)
 
 	lwt	r1, 0
-	lb	r1, (seg\3+addr)*2 + 1 ; this shouldn't (no pre-mod, no B-mod)
+	lb	r1, ((seg\3+addr)*2 + 1) & 0xFFFF ; this shouldn't (no pre-mod, no B-mod)
 
 	mcl			; mcl disables cpu modification
 
