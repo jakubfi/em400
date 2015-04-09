@@ -53,6 +53,7 @@ static struct mx_ev * mx_ev(int type, unsigned cmd, unsigned line, unsigned arg,
 	event->type = type;
 	event->cmd = cmd;
 	event->line = line;
+	event->arg = arg;
 	event->data = data;
 	event->next = NULL;
 

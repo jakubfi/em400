@@ -15,33 +15,39 @@
 //  Foundation, Inc.,
 //  51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 
-#ifndef MX_H
-#define MX_H
+#ifndef MX_PROTO_H
+#define MX_PROTO_H
 
-#include <pthread.h>
+#include <inttypes.h>
 
-#include "io/mx_ev.h"
-#include "io/mx_irq.h"
-#include "io/mx_line.h"
-
-struct mx {
-	int num;
-	pthread_t main_th;
-	struct mx_evq *evq;
-	struct mx_irqq *irqq;
-	struct mx_line lines[MX_LINE_MAX];
-	struct mx_line *log_lines[MX_LINE_MAX];
-
-	int conf_set;
-
-	int state;
-	pthread_mutex_t state_mutex;
-	pthread_cond_t state_cond;
-
-	int reset_ack;
-	pthread_mutex_t reset_ack_mutex;
-	pthread_cond_t reset_ack_cond;
+enum mx_protocols {
+	MX_PROTO_PUNCH_READER		= 0,
+	MX_PROTO_PUNCHER			= 1,
+	MX_PROTO_TERMINAL			= 2,
+	MX_PROTO_SOM_PUNCH_READER	= 3,
+	MX_PROTO_SOM_PUNCHER		= 4,
+	MX_PROTO_SOM_TERMINAL		= 5,
+	MX_PROTO_WINCHESTER			= 6,
+	MX_PROTO_MTAPE				= 7,
+	MX_PROTO_FLOPPY				= 8,
+	MX_PROTO_TTY_ITWL			= 9, // telex for ITWL?
+	MX_PROTO_MAX
 };
+
+struct mx_line;
+
+typedef void (*proto_conf_f)(struct mx_line *line, uint16_t *data);
+
+struct mx_proto {
+	int enabled;
+	char *name;
+	uint16_t dir;
+	int *phy_types;
+};
+
+const char * mx_proto_name(unsigned i);
+const struct mx_proto * mx_proto_get(unsigned i);
+
 
 #endif
 

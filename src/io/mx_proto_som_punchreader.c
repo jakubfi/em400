@@ -15,34 +15,20 @@
 //  Foundation, Inc.,
 //  51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 
-#ifndef MX_H
-#define MX_H
+#include <inttypes.h>
 
-#include <pthread.h>
-
-#include "io/mx_ev.h"
-#include "io/mx_irq.h"
+#include "log.h"
 #include "io/mx_line.h"
+#include "io/mx_proto.h"
 
-struct mx {
-	int num;
-	pthread_t main_th;
-	struct mx_evq *evq;
-	struct mx_irqq *irqq;
-	struct mx_line lines[MX_LINE_MAX];
-	struct mx_line *log_lines[MX_LINE_MAX];
+// -----------------------------------------------------------------------
+int mx_proto_som_punchreader_phy_types[] = { MX_PHY_USART_ASYNC, MX_PHY_8255, -1 };
 
-	int conf_set;
-
-	int state;
-	pthread_mutex_t state_mutex;
-	pthread_cond_t state_cond;
-
-	int reset_ack;
-	pthread_mutex_t reset_ack_mutex;
-	pthread_cond_t reset_ack_cond;
+struct mx_proto mx_proto_som_punchreader = {
+	1,
+	"SOM-3 punched tape reader",
+	MX_DIR_INPUT,
+	mx_proto_som_punchreader_phy_types,
 };
-
-#endif
 
 // vim: tabstop=4 shiftwidth=4 autoindent

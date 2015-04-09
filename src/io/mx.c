@@ -24,17 +24,18 @@
 
 #include "errors.h"
 #include "log.h"
+#include "mem/mem.h"
+#include "io/chan.h"
 #include "io/mx.h"
 #include "io/mx_cmds.h"
 #include "io/mx_ev.h"
 #include "io/mx_irq.h"
-#include "io/chan.h"
 
 // Real multix boots up in probably just under a second
 // ~500ms (for ROM/RAM check) + ~185ms (for RAM cleanup).
 // Here we need just a reasonable delay - big enough for
 // OS scheduler to switch threads between MULTIX and CPU,
-// so we don't finish MULTIX' job before switching to CPU thread.
+// so we don't finish MULTIX' job before switching back to CPU thread.
 #define RESET_WAIT_MSEC 150
 
 enum mx_state {
@@ -43,6 +44,7 @@ enum mx_state {
 
 static void * mx_main(void *ptr);
 void mx_shutdown(void *ch);
+static void mx_deconfigure(struct mx *multix);
 
 // -----------------------------------------------------------------------
 // ---- CPU interface ----------------------------------------------------
@@ -58,6 +60,7 @@ void * mx_create(int num, struct cfg_unit *units)
 	}
 
 	multix->num = num;
+	mx_deconfigure(multix);
 
 	LOG(L_MX, 1, "MULTIX (ch:%i) Creating", multix->num);
 
@@ -172,7 +175,7 @@ int mx_cmd(void *ch, int dir, uint16_t n_arg, uint16_t *r_arg)
 
 	unsigned cmd		= ((n_arg & 0b1110000000000000) >> 13) | ((dir&1) << 3);
 	unsigned chan_cmd	=  (n_arg & 0b0001100000000000) >> 11;
-	unsigned llinen		=  (n_arg & 0b0001111111100000) >> 5;
+	unsigned log_n		=  (n_arg & 0b0001111111100000) >> 5;
 
 	// channel commands
 	if (cmd == MX_CMD_CHAN) {
@@ -203,8 +206,8 @@ int mx_cmd(void *ch, int dir, uint16_t n_arg, uint16_t *r_arg)
 		}
 	// handle general and line commands in main thread
 	} else {
-		LOG(L_MX, 2, "MULTIX (ch:%i line:%i) incomming general/line command %i: %s", multix->num, llinen, cmd, mx_cmd_names[cmd]);
-		if (mx_evq_enqueue(multix->evq, mx_ev_cmd(cmd, llinen, *r_arg), MX_EVQ_F_TRY) <= 0) {
+		LOG(L_MX, 2, "MULTIX (ch:%i line:%i) incomming general/line command %i: %s", multix->num, log_n, cmd, mx_cmd_names[cmd]);
+		if (mx_evq_enqueue(multix->evq, mx_ev_cmd(cmd, log_n, *r_arg), MX_EVQ_F_TRY) <= 0) {
 			LOG(L_MX, 2, "MULTIX (ch:%i) ENGAGED", multix->num);
 			return IO_EN;
 		} else {
@@ -228,11 +231,29 @@ struct chan_drv mx_chan_driver = {
 // -----------------------------------------------------------------------
 
 // -----------------------------------------------------------------------
+static void mx_deconfigure(struct mx *multix)
+{
+	multix->conf_set = 0;
+
+	for (int i=0 ; i<MX_LINE_MAX ; i++) {
+		struct mx_line *line = (multix->lines) + i;
+		line->used = 0;
+		line->attached = 0;
+		line->dir = 0;
+		line->type = 0;
+		line->proto = NULL;
+		multix->log_lines[i] = NULL;
+	}
+}
+
+// -----------------------------------------------------------------------
 static int mx_init(struct mx *multix)
 {
 	LOG(L_MX, 2, "MULTIX (ch:%i) Initializing", multix->num);
 
 	int ret;
+
+	mx_deconfigure(multix);
 
 	pthread_mutex_lock(&multix->state_mutex);
 
@@ -288,6 +309,137 @@ static int mx_init(struct mx *multix)
 }
 
 // -----------------------------------------------------------------------
+static void mx_test(struct mx *multix)
+{
+	// As we're not able to run any real 8085 code, TEST command
+	// won't work. Best we can do is to pretend that test is done
+	// and let the test wrapper on CPU side worry about the (non-)results.
+	mx_deconfigure(multix);
+	mx_evq_disable(multix->evq);
+	mx_evq_clear(multix->evq);
+	mx_irqq_clear(multix->irqq);
+	mx_irqq_enqueue(multix->irqq, MX_IRQ_IWYTE, 0);
+	mx_evq_enable(multix->evq);
+}
+
+// -----------------------------------------------------------------------
+static void mx_setcfg_fin(struct mx_irqq *irq_queue, int irq, uint16_t addr, unsigned result, unsigned line)
+{
+	// if configuration is bad
+	if (irq == MX_IRQ_INKON) {
+		if (result >= MX_SC_E_PROTO_MISSING) {
+			LOG(L_MX, 1, "Configuration not set for logical line %i: %s", line, mx_line_sc_err_name(result));
+		} else if (result >= MX_SC_E_DEVTYPE) {
+			LOG(L_MX, 1, "Configuration not set for physical line %i: %s", line, mx_line_sc_err_name(result));
+		} else {
+			LOG(L_MX, 1, "Configuration not set: %s", mx_line_sc_err_name(result));
+		}
+		// store command result
+		if (!mem_put(0, addr, (result<<8)|line)) {
+			irq = MX_IRQ_INKOT;
+		}
+	} else if (irq == MX_IRQ_IUKON) {
+		LOG(L_MX, 1, "MULTIX configuration successfully set");
+	}
+
+	if (irq == MX_IRQ_INKOT) {
+		LOG(L_MX, 1, "Configuration not set: memory access error");
+	}
+
+	mx_irqq_enqueue(irq_queue, irq, 0);
+}
+
+// -----------------------------------------------------------------------
+static void mx_setcfg(struct mx *multix, uint16_t addr)
+{
+	int res;
+
+	uint16_t data[MX_LINE_MAX+4*MX_LINE_MAX];
+	uint16_t retf_addr = addr + 1;
+
+	// check if configuration is already set
+	if (multix->conf_set) {
+		mx_setcfg_fin(multix->irqq, MX_IRQ_INKON, retf_addr, MX_SC_E_CONFSET, 0);
+		return;
+	}
+
+	mx_deconfigure(multix);
+
+	// read configuration header
+	if (!mem_get(0, addr, data)) {
+		mx_setcfg_fin(multix->irqq, MX_IRQ_INKOT, retf_addr, 0, 0);
+		return;
+	}
+
+	unsigned phy_desc_count = *data >> 8;
+	unsigned log_count = *data & 0xff;
+
+	LOG(L_MX, 3, "MULTIX (ch:%i) Configuring MULTIX: %i physical line descriptors, %i logical lines", multix->num, phy_desc_count, log_count);
+
+	// read line descriptions
+	if (!mem_mget(0, addr+2, data, phy_desc_count + 4*log_count)) {
+		mx_setcfg_fin(multix->irqq, MX_IRQ_INKOT, retf_addr, 0, 0);
+		return;
+	}
+
+	// check if number of phy line descriptors and log line counts are OK
+	if ((phy_desc_count <= 0) || (phy_desc_count > MX_LINE_MAX) || (log_count <= 0) || (log_count > MX_LINE_MAX)) {
+		mx_setcfg_fin(multix->irqq, MX_IRQ_INKON, retf_addr, MX_SC_E_NUMLINES, 0);
+		return;
+	}
+
+	// configure physical lines
+	int cur_line = 0;
+	for (int i=0 ; i<phy_desc_count ; i++) {
+		unsigned count	= (data[i] & 0b0000000000011111) + 1;
+		LOG(L_MX, 3, "  %i Physical line(-s) %i..%i:", count, cur_line, cur_line+count-1);
+		for (int j=0 ; j<count ; j++, cur_line++) {
+			if (cur_line >= MX_LINE_MAX) {
+				mx_setcfg_fin(multix->irqq, MX_IRQ_INKON, retf_addr, MX_SC_E_NUMLINES, 0);
+				return;
+			}
+			res = mx_line_conf_phy(multix->lines+cur_line, data[i]);
+			if (res != MX_SC_E_OK) {
+				mx_setcfg_fin(multix->irqq, MX_IRQ_INKON, retf_addr, res, cur_line);
+				return;
+			}
+		}
+	}
+
+	// check completness of physical lines configuration
+	// MULTIX lines are physically organized in 4-line groups
+	// and configuration needs to reflect this
+	for (int i=0 ; i<MX_LINE_MAX ; i+=4) {
+		for (int j=1 ; j<=3 ; j++) {
+			if (multix->lines[i+j].type != multix->lines[i].type) {
+				mx_setcfg_fin(multix->irqq, MX_IRQ_INKON, retf_addr, MX_SC_E_PHY_INCOMPLETE, i+j);
+				return;
+			}
+		}
+	}
+
+	// configure logical lines
+	for (int i=0 ; i<log_count ; i++) {
+		uint16_t *log_data = data+phy_desc_count+(i*4);
+		unsigned phy_num = log_data[0] & 0xff;
+		struct mx_line *line = multix->lines + phy_num;
+
+		LOG(L_MX, 3, "  Logical line %i -> physical line %i", i, phy_num);
+
+		res = mx_line_conf_log(line, log_data);
+		if (res != MX_SC_E_OK) {
+			mx_setcfg_fin(multix->irqq, MX_IRQ_INKON, retf_addr, res, i);
+			return;
+		}
+
+		multix->log_lines[i] = line;
+	}
+
+	multix->conf_set = 1;
+	mx_setcfg_fin(multix->irqq, MX_IRQ_IUKON, retf_addr, 0, 0);
+}
+
+// -----------------------------------------------------------------------
 static void mx_ev_handle_cmd(struct mx *multix, struct mx_ev *ev)
 {
 	switch (ev->cmd) {
@@ -295,14 +447,7 @@ static void mx_ev_handle_cmd(struct mx *multix, struct mx_ev *ev)
 			mx_irqq_enqueue(multix->irqq, MX_IRQ_IEPS0, 0);
 			break;
 		case MX_CMD_TEST:
-			// As we're not able to run any real 8085 code, TEST command
-			// won't work. Best we can do is to pretend that test is done
-			// and let the test wrapper on CPU side worry about the (non-)results.
-			mx_evq_disable(multix->evq);
-			mx_evq_clear(multix->evq);
-			mx_irqq_clear(multix->irqq);
-			mx_irqq_enqueue(multix->irqq, MX_IRQ_IWYTE, 0);
-			mx_evq_enable(multix->evq);
+			mx_test(multix);
 			break;
 		case MX_CMD_ATTACH:
 			break;
@@ -311,6 +456,7 @@ static void mx_ev_handle_cmd(struct mx *multix, struct mx_ev *ev)
 		case MX_CMD_TRANSMIT:
 			break;
 		case MX_CMD_SETCFG:
+			mx_setcfg(multix, ev->arg);
 			break;
 		case MX_CMD_ERR_6:
 			mx_irqq_enqueue(multix->irqq, MX_IRQ_IEPS6, 0);
@@ -371,7 +517,14 @@ static void * mx_main(void *ptr)
 		// wait for non-empty event
 		// if event is empty, that means state is 'quit' or 'reset'
 		while ((ev = mx_evq_dequeue(multix->evq, MX_EVQ_F_WAIT))) {
-			LOG(L_MX, 2, "MULTIX (ch:%i) Got event: %i (%s)", multix->num, ev->type, mx_event_names[ev->type]);
+			LOG(L_MX, 2, "MULTIX (ch:%i) Got event: %i (%s), cmd: %i, line: %i, arg: 0x%04x ",
+				multix->num,
+				ev->type,
+				mx_event_names[ev->type],
+				ev->cmd,
+				ev->line,
+				ev->arg
+			);
 			mx_ev_handle(multix, ev);
 			mx_ev_delete(ev);
 			// TODO: run task manager

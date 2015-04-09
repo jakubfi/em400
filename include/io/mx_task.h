@@ -15,32 +15,16 @@
 //  Foundation, Inc.,
 //  51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 
-#ifndef MX_H
-#define MX_H
+#ifndef MX_TASK_H
+#define MX_TASK_H
 
-#include <pthread.h>
+#include <inttypes.h>
 
-#include "io/mx_ev.h"
-#include "io/mx_irq.h"
-#include "io/mx_line.h"
-
-struct mx {
-	int num;
-	pthread_t main_th;
-	struct mx_evq *evq;
-	struct mx_irqq *irqq;
-	struct mx_line lines[MX_LINE_MAX];
-	struct mx_line *log_lines[MX_LINE_MAX];
-
-	int conf_set;
-
-	int state;
-	pthread_mutex_t state_mutex;
-	pthread_cond_t state_cond;
-
-	int reset_ack;
-	pthread_mutex_t reset_ack_mutex;
-	pthread_cond_t reset_ack_cond;
+struct mx_task {
+	int reported;
+	int sleep;
+	int condition;
+	uint16_t addr;
 };
 
 #endif
