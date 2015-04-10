@@ -41,6 +41,7 @@ struct mx {
 	int reset_ack;
 	pthread_mutex_t reset_ack_mutex;
 	pthread_cond_t reset_ack_cond;
+	LOG_ID_DEF;
 };
 
 #endif

@@ -83,6 +83,7 @@ struct mx_line {
 
 	// task
 	struct mx_task task;
+	LOG_ID_DEF;
 };
 
 const char * mx_line_dir_name(unsigned i);

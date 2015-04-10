@@ -33,6 +33,7 @@ struct mx_irqq {
 	int maxlen;
 	int chnum;
 	uint32_t intspec; // accessed by CPU thred
+	LOG_ID_DEF;
 };
 
 enum mx_interrupts {

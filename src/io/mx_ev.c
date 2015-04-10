@@ -22,6 +22,7 @@
 #include <pthread.h>
 #include <time.h>
 
+#include "log.h"
 #include "io/mx_ev.h"
 
 enum mx_evq_state {
@@ -163,6 +164,7 @@ static int __mx_evq_queue(struct mx_evq *queue, int mode, struct mx_ev *event, i
 	// user wants to only try, don't wait for mutex
 	if (flags & MX_EVQ_F_TRY) {
 		if (pthread_mutex_trylock(&queue->mutex)) {
+			LOGID(L_MX, 4, queue, "Event queue busy");
 			return -1;
 		}
 	// user wants to wait for mutex
@@ -173,23 +175,34 @@ static int __mx_evq_queue(struct mx_evq *queue, int mode, struct mx_ev *event, i
 	// is queue ready?
 	if (queue->state != MX_EVQ_ENABLED) {
 		pthread_mutex_unlock(&queue->mutex);
+		LOGID(L_MX, 4, queue, "Event queue disabled when trying to enqueue");
 		return -1;
 	}
 
 	// user wants to wait until queue frees up
 	if (flags && MX_EVQ_F_WAIT) {
 		while ((queue->maxlen > 0) && (queue->size >= queue->maxlen)) {
+			LOGID(L_MX, 4, queue, "Enqueue waiting for the event queue to free up (now %i elements)", queue->size);
 			pthread_cond_wait(&queue->cond, &queue->mutex);
 		}
 	// user does not want to wait
 	} else {
 		if ((queue->maxlen > 0) && (queue->size >= queue->maxlen)) {
+			LOGID(L_MX, 4, queue, "Event queue full at enqueue (%i elements)", queue->size);
 			pthread_mutex_unlock(&queue->mutex);
 			return -1;
 		}
 	}
 
 	struct mx_ev *before, *after;
+
+	LOGID(L_MX, 4, queue, "Adding event %i: %s, cmd: %i, line: %i, arg: 0x%04x",
+		event->type,
+		mx_event_names[event->type],
+		event->cmd,
+		event->line,
+		event->arg
+	);
 
 	if (mode == ADD_ENQUEUE) {
 		before = NULL;
@@ -252,6 +265,7 @@ struct mx_ev * mx_evq_dequeue(struct mx_evq *queue, int flags)
 	pthread_mutex_lock(&queue->mutex);
 
 	while (!queue->head && (flags & MX_EVQ_F_WAIT) && (queue->state == MX_EVQ_ENABLED)) {
+		LOGID(L_MX, 3, queue, "Waiting for event");
 		pthread_cond_wait(&queue->cond, &queue->mutex);
 	}
 
@@ -270,6 +284,15 @@ struct mx_ev * mx_evq_dequeue(struct mx_evq *queue, int flags)
 		}
 		queue->size--;
 		ret_event = event;
+		LOGID(L_MX, 2, queue, "Got event: %i (%s), cmd: %i, line: %i, arg: 0x%04x ",
+			ret_event->type,
+			mx_event_names[ret_event->type],
+			ret_event->cmd,
+			ret_event->line,
+			ret_event->arg
+		);
+	} else {
+		LOGID(L_MX, 3, queue, "Got empty event");
 	}
 
 	pthread_mutex_unlock(&queue->mutex);
@@ -280,6 +303,7 @@ struct mx_ev * mx_evq_dequeue(struct mx_evq *queue, int flags)
 // -----------------------------------------------------------------------
 void mx_evq_enable(struct mx_evq *queue)
 {
+	LOGID(L_MX, 4, queue, "Enabling event queue");
 	pthread_mutex_lock(&queue->mutex);
 	queue->state = MX_EVQ_ENABLED;
 	pthread_mutex_unlock(&queue->mutex);
@@ -288,6 +312,7 @@ void mx_evq_enable(struct mx_evq *queue)
 // -----------------------------------------------------------------------
 void mx_evq_disable(struct mx_evq *queue)
 {
+	LOGID(L_MX, 4, queue, "Disabling event queue");
 	pthread_mutex_lock(&queue->mutex);
 	queue->state = MX_EVQ_DISABLED;
 	pthread_cond_signal(&queue->cond);

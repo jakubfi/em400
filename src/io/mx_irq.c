@@ -136,11 +136,11 @@ void mx_irqq_destroy(struct mx_irqq *queue)
 // -----------------------------------------------------------------------
 int mx_irqq_enqueue(struct mx_irqq *queue, int intr, int line)
 {
-	LOG(L_MX, 3, "MULTIX (ch:%i) Enqueue interrupt %i (%s), line %i (queue size: %i)", queue->chnum, intr, mx_intr_names[intr], line, queue->size);
+	LOGID(L_MX, 3, queue, "Enqueue interrupt %i (%s), line %i (queue size: %i)", intr, mx_intr_names[intr], line, queue->size);
 
 	// queue full?
 	if ((queue->maxlen > 0) && (queue->size >= queue->maxlen)) {
-		LOG(L_MX, 3, "MULTIX (ch:%i) Interrupt queue full", queue->chnum);
+		LOGID(L_MX, 3, queue, "Interrupt queue full");
 		return -1;
 	}
 
@@ -173,7 +173,7 @@ int mx_irqq_enqueue(struct mx_irqq *queue, int intr, int line)
 // -----------------------------------------------------------------------
 void mx_irqq_advance(struct mx_irqq *queue)
 {
-	LOG(L_MX, 3, "MULTIX (ch:%i) advancing interrupt queue", queue->chnum);
+	LOGID(L_MX, 3, queue, "Advancing interrupt queue");
 
 	struct mx_irq *irq = queue->head;
 
@@ -194,19 +194,19 @@ static void mx_irqq_send(struct mx_irqq *queue)
 {
 	// interrupt queue empty
 	if (!queue->head) {
-		LOG(L_MX, 3, "MULTIX (ch:%i) No IRQ to send to CPU, queue is empty", queue->chnum);
+		LOGID(L_MX, 3, queue, "No IRQ to send to CPU, queue is empty");
 		return;
 	}
 
 	// current interrupt has not been received by CPU
 	if (atom_load(&queue->intspec) != MX_INTSPEC_EMPTY) {
-		LOG(L_MX, 3, "MULTIX (ch:%i) Cannot send IRQ to CPU, previous one has not been received yet", queue->chnum);
+		LOGID(L_MX, 3, queue, "Cannot send IRQ to CPU, previous one has not been received yet");
 		return;
 	}
 
 	struct mx_irq *irq = queue->head;
 
-	LOG(L_MX, 3, "MULTIX (ch:%i) Sending interrupt to CPU", queue->chnum);
+	LOGID(L_MX, 3, queue, "Sending interrupt to CPU");
 
 	// store interrupt specification
 	atom_store(&queue->intspec, (irq->intr << 8) | irq->line);
@@ -224,7 +224,7 @@ uint16_t mx_irqq_get_intspec(struct mx_irqq *queue)
 	// * when CPU reads it
 	// * or when interrupt routine does "MVI A,1  OUT KWINT"
 	atom_store(&queue->intspec, MX_INTSPEC_EMPTY);
-	LOG(L_MX, 3, "MULTIX (ch:%i) Sending intspec to CPU: 0x%04x (%s, line %i)", queue->chnum, intspec, mx_intr_names[intspec>>8], intspec & 0xFF);
+	LOGID(L_MX, 3, queue, "Sending intspec to CPU: 0x%04x (%s, line %i)", intspec, mx_intr_names[intspec>>8], intspec & 0xFF);
 	return intspec;
 }
 

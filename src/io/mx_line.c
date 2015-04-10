@@ -92,7 +92,7 @@ int mx_line_conf_phy(struct mx_line *line, uint16_t data)
 	unsigned used = (data & 0b0001000000000000) >> 12;
 	unsigned type = (data & 0b0000111100000000) >> 8;
 
-	LOG(L_MX, 3, "    %s (%i), %s (%i), %s", mx_line_type_name(type), type, mx_line_dir_name(dir), dir, used ? "used" : "unused");
+	LOGID(L_MX, 3, line, "    %s (%i), %s (%i), %s", mx_line_type_name(type), type, mx_line_dir_name(dir), dir, used ? "used" : "unused");
 
 	// check type for correctness
 	if (type >= MX_PHY_MAX) {
@@ -126,7 +126,7 @@ int mx_line_conf_log(struct mx_line *line, uint16_t *data)
 {
 	unsigned proto_num = data[0] >> 8;
 
-	LOG(L_MX, 3, "    Protocol %i: %s", proto_num, mx_proto_name(proto_num));
+	LOGID(L_MX, 3, line, "  Logical line protocol %i: %s", proto_num, mx_proto_name(proto_num));
 
 	// make sure physical line is active (configured)
 	if (!line->used) {

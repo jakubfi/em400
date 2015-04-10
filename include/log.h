@@ -60,8 +60,13 @@ void log_intlevel_inc();
 
 void log_log_dasm(unsigned component, unsigned level, int mod, int norm_arg, int short_arg, int16_t n);
 void log_log_cpu(unsigned component, unsigned level, char *msgfmt, ...);
+void log_log_id(unsigned component, unsigned level, char *id, char *msgfmt, ...);
 
 void log_config(unsigned component, unsigned level, struct cfg_em400 *cfg);
+
+#define LOG_ID_LEN 20
+#define LOG_ID_NAME __logid__
+#define LOG_ID_DEF char LOG_ID_NAME[LOG_ID_LEN+1]
 
 #define LOG_ENABLED (atom_load(&log_enabled))
 #define LOG_WANTS(component, level) (LOG_ENABLED && log_wants(component, level))
@@ -75,5 +80,16 @@ void log_config(unsigned component, unsigned level, struct cfg_em400 *cfg);
 		log_log_cpu(component, level, format, ##__VA_ARGS__)
 
 #endif
+
+#define LOG_SET_ID(object, format, ...) \
+	snprintf((object)->LOG_ID_NAME, LOG_ID_LEN, format, ##__VA_ARGS__); \
+	(object)->LOG_ID_NAME[LOG_ID_LEN] = '\0'
+
+#define LOG_GET_ID(object) \
+	(object)->LOG_ID_NAME
+
+#define LOGID(component, level, object, format, ...) \
+	if (LOG_WANTS(component, level)) \
+		log_log_id(component, level, (object)->LOG_ID_NAME, format, ##__VA_ARGS__)
 
 // vim: tabstop=4 shiftwidth=4 autoindent

@@ -48,6 +48,7 @@ struct mx_evq {
 	pthread_mutex_t mutex;
 	pthread_cond_t cond;
 	int state;
+	LOG_ID_DEF;
 };
 
 struct mx_ev * mx_ev_simple(int type);

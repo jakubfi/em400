@@ -62,7 +62,9 @@ void * mx_create(int num, struct cfg_unit *units)
 	multix->num = num;
 	mx_deconfigure(multix);
 
-	LOG(L_MX, 1, "MULTIX (ch:%i) Creating", multix->num);
+	LOG_SET_ID(multix, "MX %i", multix->num);
+
+	LOGID(L_MX, 1, multix, "Creating new MULTIX");
 
 	multix->state = MX_STATE_RESET;
 	if (pthread_mutex_init(&multix->state_mutex, NULL)) {
@@ -86,9 +88,11 @@ void * mx_create(int num, struct cfg_unit *units)
 		gerr = E_EVQ;
 		goto cleanup;
 	}
+	LOG_SET_ID(multix->evq, "%s EV", LOG_GET_ID(multix));
 
 	// create interrupt system
 	multix->irqq = mx_irqq_create(multix->num, MX_INTRQ_LEN);
+	LOG_SET_ID(multix->irqq, "%s IRQ", LOG_GET_ID(multix));
 
 	// initialize main thread
 	if (pthread_create(&multix->main_th, NULL, mx_main, multix)) {
@@ -110,7 +114,7 @@ void mx_shutdown(void *ch)
 
 	struct mx *multix = (struct mx *) ch;
 
-	LOG(L_MX, 1, "MULTIX (ch:%i) Shutting down", multix->num);
+	LOGID(L_MX, 1, multix, "Shutting down");
 
 	// notify main thread to quit
 	pthread_mutex_lock(&multix->state_mutex);
@@ -119,7 +123,7 @@ void mx_shutdown(void *ch)
 
 	mx_evq_disable(multix->evq);
 
-	LOG(L_MX, 3, "MULTIX (ch:%i) Waiting for main thread to join", multix->num);
+	LOGID(L_MX, 3, multix, "Waiting for main thread to join");
 	pthread_join(multix->main_th, NULL);
 
 	// destroy interrupt system
@@ -133,11 +137,9 @@ void mx_shutdown(void *ch)
 	pthread_mutex_destroy(&multix->reset_ack_mutex);
 	pthread_cond_destroy(&multix->reset_ack_cond);
 
-	int num = multix->num;
+	LOGID(L_MX, 3, multix, "Shutdown complete");
 
 	free(multix);
-
-	LOG(L_MX, 3, "MULTIX (ch:%i) Shutdown complete", num);
 }
 
 // -----------------------------------------------------------------------
@@ -145,7 +147,7 @@ void mx_reset(void *ch)
 {
 	struct mx *multix = (struct mx *) ch;
 
-	LOG(L_MX, 2, "MULTIX (ch:%i) Initiating reset", multix->num);
+	LOGID(L_MX, 2, multix, "Initiating reset");
 
 	// set multix state to "reset"
 	pthread_mutex_lock(&multix->state_mutex);
@@ -161,11 +163,11 @@ void mx_reset(void *ch)
 	// wait for reset to really kick in
 	pthread_mutex_lock(&multix->reset_ack_mutex);
 	while (!multix->reset_ack) {
-		LOG(L_MX, 3, "MULTIX (ch:%i) Waiting for reset to kick in", multix->num);
+		LOGID(L_MX, 3, multix, "Waiting for reset to kick in");
 		pthread_cond_wait(&multix->reset_ack_cond, &multix->reset_ack_mutex);
 	}
 	pthread_mutex_unlock(&multix->reset_ack_mutex);
-	LOG(L_MX, 2, "MULTIX (ch:%i) Reset initiated", multix->num);
+	LOGID(L_MX, 2, multix, "Reset initiated");
 }
 
 // -----------------------------------------------------------------------
@@ -179,7 +181,7 @@ int mx_cmd(void *ch, int dir, uint16_t n_arg, uint16_t *r_arg)
 
 	// channel commands
 	if (cmd == MX_CMD_CHAN) {
-		LOG(L_MX, 2, "MULTIX (ch:%i) incomming channel command %i: %s", multix->num, chan_cmd, mx_chan_cmd_names[chan_cmd]);
+		LOGID(L_MX, 2, multix, "Incomming channel command %i: %s", chan_cmd, mx_chan_cmd_names[chan_cmd]);
 
 		switch (chan_cmd) {
 			case MX_CMD_INTSPEC:
@@ -198,7 +200,7 @@ int mx_cmd(void *ch, int dir, uint16_t n_arg, uint16_t *r_arg)
 			default:
 				// handle other commands (only MX_CMD_INVALID in fact) as illegal in main thread
 				if (mx_evq_enqueue(multix->evq, mx_ev_cmd(cmd, 0, 0), MX_EVQ_F_TRY) <= 0) {
-					LOG(L_MX, 2, "MULTIX (ch:%i) ENGAGED", multix->num);
+					LOGID(L_MX, 2, multix, "ENGAGED");
 					return IO_EN;
 				} else {
 					return IO_OK;
@@ -206,9 +208,9 @@ int mx_cmd(void *ch, int dir, uint16_t n_arg, uint16_t *r_arg)
 		}
 	// handle general and line commands in main thread
 	} else {
-		LOG(L_MX, 2, "MULTIX (ch:%i line:%i) incomming general/line command %i: %s", multix->num, log_n, cmd, mx_cmd_names[cmd]);
+		LOGID(L_MX, 2, multix, "Incomming general/line command %i for line %i: %s", cmd, log_n, mx_cmd_names[cmd]);
 		if (mx_evq_enqueue(multix->evq, mx_ev_cmd(cmd, log_n, *r_arg), MX_EVQ_F_TRY) <= 0) {
-			LOG(L_MX, 2, "MULTIX (ch:%i) ENGAGED", multix->num);
+			LOGID(L_MX, 2, multix, "ENGAGED");
 			return IO_EN;
 		} else {
 			return IO_OK;
@@ -243,13 +245,14 @@ static void mx_deconfigure(struct mx *multix)
 		line->type = 0;
 		line->proto = NULL;
 		multix->log_lines[i] = NULL;
+		LOG_SET_ID(line, "%s:? (p?)", LOG_GET_ID(multix));
 	}
 }
 
 // -----------------------------------------------------------------------
 static int mx_init(struct mx *multix)
 {
-	LOG(L_MX, 2, "MULTIX (ch:%i) Initializing", multix->num);
+	LOGID(L_MX, 2, multix, "Initializing");
 
 	int ret;
 
@@ -267,7 +270,7 @@ static int mx_init(struct mx *multix)
 	// loop while state is 'reset'
 	// if another reset comes in during reset loop, we need to restart reset loop
 	while (multix->state == MX_STATE_RESET) {
-		LOG(L_MX, 3, "MULTIX (ch:%i) Initialization delay: %i ms", multix->num, RESET_WAIT_MSEC);
+		LOGID(L_MX, 3, multix, "Initialization delay: %i ms", RESET_WAIT_MSEC);
 		// we set state to 'run' here - if another reset is initiated in cpu thread, state changes
 		multix->state = MX_STATE_RUN;
 		struct timespec abstime;
@@ -278,14 +281,14 @@ static int mx_init(struct mx *multix)
 
 		// wait on condition for RESET_WAIT_MSEC ms
 		if (pthread_cond_timedwait(&multix->state_cond, &multix->state_mutex, &abstime)) {
-			LOG(L_MX, 3, "MULTIX (ch:%i) reset wait interrupted", multix->num);
+			LOGID(L_MX, 3, multix, "Reset wait interrupted");
 		} else {
-			LOG(L_MX, 3, "MULTIX (ch:%i) reset wait done", multix->num);
+			LOGID(L_MX, 3, multix, "Reset wait done");
 		}
 	}
 
 	if (multix->state == MX_STATE_QUIT) {
-		LOG(L_MX, 3, "MULTIX (ch:%i) Quit received during initialization", multix->num);
+		LOGID(L_MX, 3, multix, "Quit received during initialization");
 		ret = -1;
 	} else {
 		mx_evq_clear(multix->evq);
@@ -300,7 +303,7 @@ static int mx_init(struct mx *multix)
 		pthread_cond_signal(&multix->reset_ack_cond);
 		pthread_mutex_unlock(&multix->reset_ack_mutex);
 
-		LOG(L_MX, 2, "MULTIX (ch:%i) Initialization done", multix->num);
+		LOGID(L_MX, 2, multix, "Initialization done");
 	}
 
 	pthread_mutex_unlock(&multix->state_mutex);
@@ -323,30 +326,30 @@ static void mx_test(struct mx *multix)
 }
 
 // -----------------------------------------------------------------------
-static void mx_setcfg_fin(struct mx_irqq *irq_queue, int irq, uint16_t addr, unsigned result, unsigned line)
+static void mx_setcfg_fin(struct mx *multix, int irq, uint16_t addr, unsigned result, unsigned line)
 {
 	// if configuration is bad
 	if (irq == MX_IRQ_INKON) {
 		if (result >= MX_SC_E_PROTO_MISSING) {
-			LOG(L_MX, 1, "Configuration not set for logical line %i: %s", line, mx_line_sc_err_name(result));
+			LOGID(L_MX, 1, multix, "Configuration not set for logical line %i: %s", line, mx_line_sc_err_name(result));
 		} else if (result >= MX_SC_E_DEVTYPE) {
-			LOG(L_MX, 1, "Configuration not set for physical line %i: %s", line, mx_line_sc_err_name(result));
+			LOGID(L_MX, 1, multix, "Configuration not set for physical line %i: %s", line, mx_line_sc_err_name(result));
 		} else {
-			LOG(L_MX, 1, "Configuration not set: %s", mx_line_sc_err_name(result));
+			LOGID(L_MX, 1, multix, "Configuration not set: %s", mx_line_sc_err_name(result));
 		}
 		// store command result
 		if (!mem_put(0, addr, (result<<8)|line)) {
 			irq = MX_IRQ_INKOT;
 		}
 	} else if (irq == MX_IRQ_IUKON) {
-		LOG(L_MX, 1, "MULTIX configuration successfully set");
+		LOGID(L_MX, 1, multix, "Configuration successfully set");
 	}
 
 	if (irq == MX_IRQ_INKOT) {
-		LOG(L_MX, 1, "Configuration not set: memory access error");
+		LOGID(L_MX, 1, multix, "Configuration not set: memory access error");
 	}
 
-	mx_irqq_enqueue(irq_queue, irq, 0);
+	mx_irqq_enqueue(multix->irqq, irq, 0);
 }
 
 // -----------------------------------------------------------------------
@@ -359,7 +362,7 @@ static void mx_setcfg(struct mx *multix, uint16_t addr)
 
 	// check if configuration is already set
 	if (multix->conf_set) {
-		mx_setcfg_fin(multix->irqq, MX_IRQ_INKON, retf_addr, MX_SC_E_CONFSET, 0);
+		mx_setcfg_fin(multix, MX_IRQ_INKON, retf_addr, MX_SC_E_CONFSET, 0);
 		return;
 	}
 
@@ -367,24 +370,24 @@ static void mx_setcfg(struct mx *multix, uint16_t addr)
 
 	// read configuration header
 	if (!mem_get(0, addr, data)) {
-		mx_setcfg_fin(multix->irqq, MX_IRQ_INKOT, retf_addr, 0, 0);
+		mx_setcfg_fin(multix, MX_IRQ_INKOT, retf_addr, 0, 0);
 		return;
 	}
 
 	unsigned phy_desc_count = *data >> 8;
 	unsigned log_count = *data & 0xff;
 
-	LOG(L_MX, 3, "MULTIX (ch:%i) Configuring MULTIX: %i physical line descriptors, %i logical lines", multix->num, phy_desc_count, log_count);
+	LOGID(L_MX, 3, multix, "Configuring: %i physical line descriptors, %i logical lines", multix->num, phy_desc_count, log_count);
 
 	// read line descriptions
 	if (!mem_mget(0, addr+2, data, phy_desc_count + 4*log_count)) {
-		mx_setcfg_fin(multix->irqq, MX_IRQ_INKOT, retf_addr, 0, 0);
+		mx_setcfg_fin(multix, MX_IRQ_INKOT, retf_addr, 0, 0);
 		return;
 	}
 
 	// check if number of phy line descriptors and log line counts are OK
 	if ((phy_desc_count <= 0) || (phy_desc_count > MX_LINE_MAX) || (log_count <= 0) || (log_count > MX_LINE_MAX)) {
-		mx_setcfg_fin(multix->irqq, MX_IRQ_INKON, retf_addr, MX_SC_E_NUMLINES, 0);
+		mx_setcfg_fin(multix, MX_IRQ_INKON, retf_addr, MX_SC_E_NUMLINES, 0);
 		return;
 	}
 
@@ -392,15 +395,16 @@ static void mx_setcfg(struct mx *multix, uint16_t addr)
 	int cur_line = 0;
 	for (int i=0 ; i<phy_desc_count ; i++) {
 		unsigned count	= (data[i] & 0b0000000000011111) + 1;
-		LOG(L_MX, 3, "  %i Physical line(-s) %i..%i:", count, cur_line, cur_line+count-1);
+		LOGID(L_MX, 3, multix, "  %i Physical line(-s) %i..%i:", count, cur_line, cur_line+count-1);
 		for (int j=0 ; j<count ; j++, cur_line++) {
+			LOG_SET_ID(multix->lines+cur_line, "%s:? (p%i)", LOG_GET_ID(multix), cur_line);
 			if (cur_line >= MX_LINE_MAX) {
-				mx_setcfg_fin(multix->irqq, MX_IRQ_INKON, retf_addr, MX_SC_E_NUMLINES, 0);
+				mx_setcfg_fin(multix, MX_IRQ_INKON, retf_addr, MX_SC_E_NUMLINES, 0);
 				return;
 			}
 			res = mx_line_conf_phy(multix->lines+cur_line, data[i]);
 			if (res != MX_SC_E_OK) {
-				mx_setcfg_fin(multix->irqq, MX_IRQ_INKON, retf_addr, res, cur_line);
+				mx_setcfg_fin(multix, MX_IRQ_INKON, retf_addr, res, cur_line);
 				return;
 			}
 		}
@@ -412,7 +416,7 @@ static void mx_setcfg(struct mx *multix, uint16_t addr)
 	for (int i=0 ; i<MX_LINE_MAX ; i+=4) {
 		for (int j=1 ; j<=3 ; j++) {
 			if (multix->lines[i+j].type != multix->lines[i].type) {
-				mx_setcfg_fin(multix->irqq, MX_IRQ_INKON, retf_addr, MX_SC_E_PHY_INCOMPLETE, i+j);
+				mx_setcfg_fin(multix, MX_IRQ_INKON, retf_addr, MX_SC_E_PHY_INCOMPLETE, i+j);
 				return;
 			}
 		}
@@ -424,11 +428,11 @@ static void mx_setcfg(struct mx *multix, uint16_t addr)
 		unsigned phy_num = log_data[0] & 0xff;
 		struct mx_line *line = multix->lines + phy_num;
 
-		LOG(L_MX, 3, "  Logical line %i -> physical line %i", i, phy_num);
+		LOG_SET_ID(line, "%s:%i (p%i)", LOG_GET_ID(multix), i, phy_num);
 
 		res = mx_line_conf_log(line, log_data);
 		if (res != MX_SC_E_OK) {
-			mx_setcfg_fin(multix->irqq, MX_IRQ_INKON, retf_addr, res, i);
+			mx_setcfg_fin(multix, MX_IRQ_INKON, retf_addr, res, i);
 			return;
 		}
 
@@ -436,7 +440,7 @@ static void mx_setcfg(struct mx *multix, uint16_t addr)
 	}
 
 	multix->conf_set = 1;
-	mx_setcfg_fin(multix->irqq, MX_IRQ_IUKON, retf_addr, 0, 0);
+	mx_setcfg_fin(multix, MX_IRQ_IUKON, retf_addr, 0, 0);
 }
 
 // -----------------------------------------------------------------------
@@ -487,7 +491,7 @@ static void mx_ev_handle_cmd(struct mx *multix, struct mx_ev *ev)
 			mx_irqq_enqueue(multix->irqq, MX_IRQ_IEPSF, 0);
 			break;
 		default:
-			LOG(L_MX, 1, "MULTIX (ch:%i) Unknown general/line command: %i - ignored", multix->num, ev->cmd);
+			LOGID(L_MX, 1, multix, "Unknown general/line command: %i - ignored", ev->cmd);
 			break;
 	}
 }
@@ -500,7 +504,7 @@ static void mx_ev_handle(struct mx *multix, struct mx_ev *ev)
 	} else if (ev->type == MX_EV_CMD) {
 		mx_ev_handle_cmd(multix, ev);
 	} else {
-		LOG(L_MX, 1, "MULTIX (ch:%i) Unknown event type: %i", multix->num, ev->type);
+		LOGID(L_MX, 1, multix, "Unknown event type: %i", ev->type);
 	}
 }
 
@@ -510,28 +514,20 @@ static void * mx_main(void *ptr)
 	struct mx *multix = ptr;
 	struct mx_ev *ev;
 
-	LOG(L_MX, 3, "MULTIX (ch:%i) Starting main loop thread", multix->num);
+	LOGID(L_MX, 3, multix, "Starting main loop thread");
 
 	// initialize MX if 'reset' or, break the loop if 'quit'
 	while (!mx_init(multix)) {
 		// wait for non-empty event
 		// if event is empty, that means state is 'quit' or 'reset'
 		while ((ev = mx_evq_dequeue(multix->evq, MX_EVQ_F_WAIT))) {
-			LOG(L_MX, 2, "MULTIX (ch:%i) Got event: %i (%s), cmd: %i, line: %i, arg: 0x%04x ",
-				multix->num,
-				ev->type,
-				mx_event_names[ev->type],
-				ev->cmd,
-				ev->line,
-				ev->arg
-			);
 			mx_ev_handle(multix, ev);
 			mx_ev_delete(ev);
 			// TODO: run task manager
 		}
-		LOG(L_MX, 3, "MULTIX (ch:%i) Got empty event and left event queue", multix->num);
+		LOGID(L_MX, 3, multix, "Leaving event loop");
 	}
-	LOG(L_MX, 3, "MULTIX (ch:%i) exiting main loop thread", multix->num);
+	LOGID(L_MX, 3, multix, "Exiting main loop thread");
 
 	pthread_exit(NULL);
 }
