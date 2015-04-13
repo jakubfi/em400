@@ -173,6 +173,7 @@ void mx_reset(void *ch)
 int mx_cmd(void *ch, int dir, uint16_t n_arg, uint16_t *r_arg)
 {
 	struct mx *multix = (struct mx *) ch;
+	struct mx_ev *ev;
 
 	unsigned cmd		= ((n_arg & 0b1110000000000000) >> 13) | ((dir&1) << 3);
 	unsigned chan_cmd	=  (n_arg & 0b0001100000000000) >> 11;
@@ -187,7 +188,10 @@ int mx_cmd(void *ch, int dir, uint16_t n_arg, uint16_t *r_arg)
 				// get intspec (always there, even if invalid)
 				*r_arg = mx_irqq_get_intspec(multix->irqq);
 				// notify main thread that IRQ has been received byu CPU
-				mx_evq_enqueue(multix->evq, mx_ev_simple(MX_EV_INT_RECVD), MX_EVQ_F_WAIT);
+				ev = mx_ev_simple(MX_EV_INT_RECVD);
+				if (mx_evq_enqueue(multix->evq, ev, MX_EVQ_F_WAIT) <= 0) {
+					mx_ev_delete(ev);
+				}
 				return IO_OK;
 			case MX_CMD_EXISTS:
 				// 'exists' does nothing, just returns OK
@@ -198,8 +202,10 @@ int mx_cmd(void *ch, int dir, uint16_t n_arg, uint16_t *r_arg)
 				return IO_OK;
 			default:
 				// handle other commands (only MX_CMD_INVALID in fact) as illegal in main thread
-				if (mx_evq_enqueue(multix->evq, mx_ev_cmd(cmd, 0, 0), MX_EVQ_F_TRY) <= 0) {
+				ev = mx_ev_cmd(cmd, 0, 0);
+				if (mx_evq_enqueue(multix->evq, ev, MX_EVQ_F_TRY) <= 0) {
 					LOGID(L_MX, 2, multix, "ENGAGED");
+					mx_ev_delete(ev);
 					return IO_EN;
 				} else {
 					return IO_OK;
@@ -208,8 +214,10 @@ int mx_cmd(void *ch, int dir, uint16_t n_arg, uint16_t *r_arg)
 	// handle general and line commands in main thread
 	} else {
 		LOGID(L_MX, 2, multix, "Incomming general/line command %i for line %i: %s", cmd, log_n, mx_cmd_names[cmd]);
-		if (mx_evq_enqueue(multix->evq, mx_ev_cmd(cmd, log_n, *r_arg), MX_EVQ_F_TRY) <= 0) {
+		ev = mx_ev_cmd(cmd, log_n, *r_arg);
+		if (mx_evq_enqueue(multix->evq, ev, MX_EVQ_F_TRY) <= 0) {
 			LOGID(L_MX, 2, multix, "ENGAGED");
+			mx_ev_delete(ev);
 			return IO_EN;
 		} else {
 			return IO_OK;
