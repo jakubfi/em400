@@ -71,10 +71,8 @@ int timer_init(struct cfg_em400 *cfg)
 	LOG(L_CPU, 1, "Timer cycle: %i ms", timer_step);
 
 	if (cfg->timer_start) {
-		LOG(L_CPU, 1, "Starting timer");
 		timer_on();
 	} else {
-		LOG(L_CPU, 1, "Timer disabled at power-on");
 		timer_off();
 	}
 
@@ -100,14 +98,14 @@ void timer_shutdown()
 // -----------------------------------------------------------------------
 void timer_on()
 {
-	LOG(L_INT, 1, "Stopping timer");
+	LOG(L_CPU, 1, "Starting timer");
 	atom_store(&timer_enabled, 1);
 }
 
 // -----------------------------------------------------------------------
 void timer_off()
 {
-	LOG(L_INT, 1, "Stopping timer");
+	LOG(L_CPU, 1, "Stopping timer");
 	atom_store(&timer_enabled, 0);
 }
 
