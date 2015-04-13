@@ -107,6 +107,12 @@ cmpl2:	.word	6\7 + 1\15, 0
 	.word	MX_LDIR_FD + MX_LINE_USED + MX_LTYPE_USARTS + 0
 	.word	MX_LDIR_FD + MX_LINE_UNUSED + MX_LTYPE_USARTS + 0 ; incomplete configuration for line 17 (only 1 line in group)
 
+; only one tape controller group (4 drives)
+
+tap0:	.word	2\7 + 1\15, 0
+	.word	MX_LDIR_NONE + MX_LINE_USED + MX_LTYPE_TAPE + 3
+	.word	MX_LDIR_NONE + MX_LINE_USED + MX_LTYPE_TAPE + 3 ; incomplete configuration for line 4
+
 ; ---------------------------------------------------------------
 ; logical line configuration tests
 ; ---------------------------------------------------------------
@@ -147,6 +153,13 @@ uprot1:	.word	1\7 + 2\15, 0
 	.word	MX_LDIR_FD + MX_LINE_USED + MX_LTYPE_USARTA + 3
 	.word	MX_LPROTO_MONITOR + 1\15, 0, 0, 0
 	.word	MX_LPROTO_ERR + 2\15, 0, 0, 0 ; unknown protocol for logical line 1
+
+; physical line numbers are 5-bit
+; (3 most significant bits in 8-bit physical line number are ignored)
+
+p5bit:	.word	1\7 + 1\15, 0
+	.word	MX_LDIR_FD + MX_LINE_USED + MX_LTYPE_USARTA + 3
+	.word	MX_LPROTO_ERR + 0b111\10 + 1\15, 0, 0, 0 ; unknown protocol for logical line 0 for physical line 1
 
 ; wrong directions for punch reader
 
@@ -413,9 +426,21 @@ tm1s:	.word	1\7 + 1\15, 0
 	.word	MX_LDIR_HD + MX_LINE_USED + MX_LTYPE_USARTS + 3
 	.word	MX_LPROTO_SOM_MONITOR + 2\15, 0, 0, 0 ; wrong line type for SOM monitor
 
-; correct configuration
+; ---------------------------------------------------------------
+; protocol configuration errors
+; ---------------------------------------------------------------
 
-cfgok:	.word	13\7 + 23\15, 0
+; floppy: unknown floppy drive type
+
+fl0:	.word	1\7 + 1\15, 0
+	.word	MX_LDIR_NONE + MX_LINE_USED + MX_LTYPE_FLOPPY + 3
+	.word	MX_LPROTO_FLOPPY + 0\15, MX_FLOPPY_ERR, 0, 0
+
+; ---------------------------------------------------------------
+; correct configuration
+; ---------------------------------------------------------------
+
+cfgok:	.word	13\7 + 22\15, 0
 	.word	MX_LDIR_IN + MX_LINE_USED + MX_LTYPE_USARTA + 0		; 0
 	.word	MX_LDIR_OUT + MX_LINE_USED + MX_LTYPE_USARTA + 0	; 1
 	.word	MX_LDIR_FD + MX_LINE_USED + MX_LTYPE_USARTA + 2		; 2, 3, 4
@@ -439,22 +464,33 @@ cfgok:	.word	13\7 + 23\15, 0
 	.word	MX_LPROTO_PUNCHER + 6, 0, 0, 0
 	.word	MX_LPROTO_MONITOR + 7, 0, 0, 0
 	.word	MX_LPROTO_PUNCHRD + 8, 0, 0, 0
-	.word	MX_LPROTO_SOM_PUNCHRD + 9, 0, 0, 0
+;	.word	MX_LPROTO_SOM_PUNCHRD + 9, 0, 0, 0
 	.word	MX_LPROTO_PUNCHER + 10, 0, 0, 0
-	.word	MX_LPROTO_SOM_PUNCHER + 11, 0, 0, 0
-	.word	MX_LPROTO_TAPE + 12\15, 0, 0, 0
-	.word	MX_LPROTO_FLOPPY + 16\15, 0, 0, 0
-	.word	MX_LPROTO_WINCH + 20\15, 0, 0, 0
-	.word	MX_LPROTO_SOM_PUNCHRD + 24, 0, 0, 0
-	.word	MX_LPROTO_SOM_PUNCHER + 25, 0, 0, 0
-	.word	MX_LPROTO_SOM_PUNCHRD + 26, 0, 0, 0
-	.word	MX_LPROTO_SOM_PUNCHER + 27, 0, 0, 0
-	.word	MX_LPROTO_SOM_MONITOR + 28, 0, 0, 0
-	.word	MX_LPROTO_SOM_PUNCHRD + 29, 0, 0, 0
-	.word	MX_LPROTO_SOM_PUNCHER + 30, 0, 0, 0
-	.word	MX_LPROTO_SOM_MONITOR + 31, 0, 0, 0
+;	.word	MX_LPROTO_SOM_PUNCHER + 11, 0, 0, 0
+	.word	MX_LPROTO_TAPE + 0\8 + 12, 0, 0, 0
+	.word	MX_LPROTO_TAPE + 1\8 + 13, 0, 0, 0
+	.word	MX_LPROTO_TAPE + 0\8 + 14, 0, 0, 0
+	.word	MX_LPROTO_TAPE + 1\8 + 15, 0, 0, 0
+	.word	MX_LPROTO_FLOPPY + 16, MX_FLOPPY_SD, 0, 0
+	.word	MX_LPROTO_FLOPPY + 17, MX_FLOPPY_DD, 0, 0
+	.word	MX_LPROTO_FLOPPY + 18, MX_FLOPPY_HD, 0, 0
+	.word	MX_LPROTO_FLOPPY + 19, MX_FLOPPY_HD + MX_FORMAT_PROTECT, 0, 0
+	.word	MX_LPROTO_WINCH + 20, 0\7 + MX_FORMAT_PROTECT, 0, 0
+	.word	MX_LPROTO_WINCH + 21, 1\7 + MX_LONG_DISK_ADDR, 0, 0
+	.word	MX_LPROTO_WINCH + 22, 3\7 + MX_FORMAT_PROTECT + MX_LONG_DISK_ADDR, 0, 0
+	.word	MX_LPROTO_WINCH + 23, 7\7 + MX_FORMAT_PROTECT, 0, 0	; any winchester configuration is OK for MULTIX
+;	.word	MX_LPROTO_SOM_PUNCHRD + 24, 0, 0, 0
+;	.word	MX_LPROTO_SOM_PUNCHER + 25, 0, 0, 0
+;	.word	MX_LPROTO_SOM_PUNCHRD + 26, 0, 0, 0
+;	.word	MX_LPROTO_SOM_PUNCHER + 27, 0, 0, 0
+;	.word	MX_LPROTO_SOM_MONITOR + 28, 0, 0, 0
+;	.word	MX_LPROTO_SOM_PUNCHRD + 29, 0, 0, 0
+;	.word	MX_LPROTO_SOM_PUNCHER + 30, 0, 0, 0
+;	.word	MX_LPROTO_SOM_MONITOR + 31, 0, 0, 0
 
+; ---------------------------------------------------------------
 ; reconfiguration of properly configured MULTIX
+; ---------------------------------------------------------------
 
 recfg:	.word	1\7 + 1\15, 0
 	.word	MX_LDIR_NONE + MX_LINE_USED + MX_LTYPE_WINCH + 3
@@ -463,6 +499,7 @@ recfg:	.word	1\7 + 1\15, 0
 ; ------------------------------------------------------------------------
 
 ; test blocks
+; NOTE: all SOM protocols are disabled (MULTIX emulation don't support them atm)
 
 	.const	test_size 3
 
@@ -498,6 +535,7 @@ seq:	.word	dummy,	MX_IWYZE\7,	0
 	.word	cmpl0,	MX_INKON\7,	MX_SCERR_INCOMPLETE + 3
 	.word	cmpl1,	MX_INKON\7,	MX_SCERR_INCOMPLETE + 7
 	.word	cmpl2,	MX_INKON\7,	MX_SCERR_INCOMPLETE + 17
+	.word	tap0,	MX_INKON\7,	MX_SCERR_INCOMPLETE + 4
 
 	.word	unus0,	MX_INKON\7,	MX_SCERR_UNUSED + 0
 	.word	unus1,	MX_INKON\7,	MX_SCERR_UNUSED + 3
@@ -505,6 +543,7 @@ seq:	.word	dummy,	MX_IWYZE\7,	0
 	.word	us1,	MX_INKON\7,	MX_SCERR_USED + 3
 	.word	uprot0,	MX_INKON\7,	MX_SCERR_PROTO + 0
 	.word	uprot1,	MX_INKON\7,	MX_SCERR_PROTO + 1
+	.word	p5bit,	MX_INKON\7,	MX_SCERR_PROTO + 0
 	.word	dpr0,	MX_INKON\7,	MX_SCERR_DIR_MISMATCH + 0
 	.word	dpr1,	MX_INKON\7,	MX_SCERR_DIR_MISMATCH + 0
 	.word	dpr2,	MX_INKON\7,	MX_SCERR_DIR_MISMATCH + 0
@@ -526,27 +565,27 @@ seq:	.word	dummy,	MX_IWYZE\7,	0
 	.word	dm6,	MX_INKON\7,	MX_SCERR_DIR_MISMATCH + 0
 	.word	dm7,	MX_INKON\7,	MX_SCERR_DIR_MISMATCH + 0
 	.word	dm8,	MX_INKON\7,	MX_SCERR_DIR_MISMATCH + 0
-	.word	dpr0s,	MX_INKON\7,	MX_SCERR_DIR_MISMATCH + 0
-	.word	dpr1s,	MX_INKON\7,	MX_SCERR_DIR_MISMATCH + 0
-	.word	dpr2s,	MX_INKON\7,	MX_SCERR_DIR_MISMATCH + 0
-	.word	dpr3s,	MX_INKON\7,	MX_SCERR_DIR_MISMATCH + 0
-	.word	dpr4s,	MX_INKON\7,	MX_SCERR_DIR_MISMATCH + 0
-	.word	dpr5s,	MX_INKON\7,	MX_SCERR_DIR_MISMATCH + 0
-	.word	dpu0s,	MX_INKON\7,	MX_SCERR_DIR_MISMATCH + 0
-	.word	dpu1s,	MX_INKON\7,	MX_SCERR_DIR_MISMATCH + 0
-	.word	dpu2s,	MX_INKON\7,	MX_SCERR_DIR_MISMATCH + 0
-	.word	dpu3s,	MX_INKON\7,	MX_SCERR_DIR_MISMATCH + 0
-	.word	dpu4s,	MX_INKON\7,	MX_SCERR_DIR_MISMATCH + 0
-	.word	dpu5s,	MX_INKON\7,	MX_SCERR_DIR_MISMATCH + 0
-	.word	dm0s,	MX_INKON\7,	MX_SCERR_DIR_MISMATCH + 0
-	.word	dm1s,	MX_INKON\7,	MX_SCERR_DIR_MISMATCH + 0
-	.word	dm2s,	MX_INKON\7,	MX_SCERR_DIR_MISMATCH + 0
-	.word	dm3s,	MX_INKON\7,	MX_SCERR_DIR_MISMATCH + 0
-	.word	dm4s,	MX_INKON\7,	MX_SCERR_DIR_MISMATCH + 0
-	.word	dm5s,	MX_INKON\7,	MX_SCERR_DIR_MISMATCH + 0
-	.word	dm6s,	MX_INKON\7,	MX_SCERR_DIR_MISMATCH + 0
-	.word	dm7s,	MX_INKON\7,	MX_SCERR_DIR_MISMATCH + 0
-	.word	dm8s,	MX_INKON\7,	MX_SCERR_DIR_MISMATCH + 0
+;	.word	dpr0s,	MX_INKON\7,	MX_SCERR_DIR_MISMATCH + 0
+;	.word	dpr1s,	MX_INKON\7,	MX_SCERR_DIR_MISMATCH + 0
+;	.word	dpr2s,	MX_INKON\7,	MX_SCERR_DIR_MISMATCH + 0
+;	.word	dpr3s,	MX_INKON\7,	MX_SCERR_DIR_MISMATCH + 0
+;	.word	dpr4s,	MX_INKON\7,	MX_SCERR_DIR_MISMATCH + 0
+;	.word	dpr5s,	MX_INKON\7,	MX_SCERR_DIR_MISMATCH + 0
+;	.word	dpu0s,	MX_INKON\7,	MX_SCERR_DIR_MISMATCH + 0
+;	.word	dpu1s,	MX_INKON\7,	MX_SCERR_DIR_MISMATCH + 0
+;	.word	dpu2s,	MX_INKON\7,	MX_SCERR_DIR_MISMATCH + 0
+;	.word	dpu3s,	MX_INKON\7,	MX_SCERR_DIR_MISMATCH + 0
+;	.word	dpu4s,	MX_INKON\7,	MX_SCERR_DIR_MISMATCH + 0
+;	.word	dpu5s,	MX_INKON\7,	MX_SCERR_DIR_MISMATCH + 0
+;	.word	dm0s,	MX_INKON\7,	MX_SCERR_DIR_MISMATCH + 0
+;	.word	dm1s,	MX_INKON\7,	MX_SCERR_DIR_MISMATCH + 0
+;	.word	dm2s,	MX_INKON\7,	MX_SCERR_DIR_MISMATCH + 0
+;	.word	dm3s,	MX_INKON\7,	MX_SCERR_DIR_MISMATCH + 0
+;	.word	dm4s,	MX_INKON\7,	MX_SCERR_DIR_MISMATCH + 0
+;	.word	dm5s,	MX_INKON\7,	MX_SCERR_DIR_MISMATCH + 0
+;	.word	dm6s,	MX_INKON\7,	MX_SCERR_DIR_MISMATCH + 0
+;	.word	dm7s,	MX_INKON\7,	MX_SCERR_DIR_MISMATCH + 0
+;	.word	dm8s,	MX_INKON\7,	MX_SCERR_DIR_MISMATCH + 0
 	.word	tw0,	MX_INKON\7,	MX_SCERR_TYPE_MISMATCH + 0
 	.word	tw1,	MX_INKON\7,	MX_SCERR_TYPE_MISMATCH + 0
 	.word	tw2,	MX_INKON\7,	MX_SCERR_TYPE_MISMATCH + 0
@@ -570,21 +609,20 @@ seq:	.word	dummy,	MX_IWYZE\7,	0
 	.word	tpr2,	MX_INKON\7,	MX_SCERR_TYPE_MISMATCH + 0
 	.word	tm0,	MX_INKON\7,	MX_SCERR_TYPE_MISMATCH + 0
 	.word	tm1,	MX_INKON\7,	MX_SCERR_TYPE_MISMATCH + 0
-	.word	tpu0s,	MX_INKON\7,	MX_SCERR_TYPE_MISMATCH + 0
-	.word	tpu1s,	MX_INKON\7,	MX_SCERR_TYPE_MISMATCH + 0
-	.word	tpu2s,	MX_INKON\7,	MX_SCERR_TYPE_MISMATCH + 0
-	.word	tpr0s,	MX_INKON\7,	MX_SCERR_TYPE_MISMATCH + 0
-	.word	tpr1s,	MX_INKON\7,	MX_SCERR_TYPE_MISMATCH + 0
-	.word	tpr2s,	MX_INKON\7,	MX_SCERR_TYPE_MISMATCH + 0
-	.word	tm0s,	MX_INKON\7,	MX_SCERR_TYPE_MISMATCH + 0
-	.word	tm1s,	MX_INKON\7,	MX_SCERR_TYPE_MISMATCH + 0
+;	.word	tpu0s,	MX_INKON\7,	MX_SCERR_TYPE_MISMATCH + 0
+;	.word	tpu1s,	MX_INKON\7,	MX_SCERR_TYPE_MISMATCH + 0
+;	.word	tpu2s,	MX_INKON\7,	MX_SCERR_TYPE_MISMATCH + 0
+;	.word	tpr0s,	MX_INKON\7,	MX_SCERR_TYPE_MISMATCH + 0
+;	.word	tpr1s,	MX_INKON\7,	MX_SCERR_TYPE_MISMATCH + 0
+;	.word	tpr2s,	MX_INKON\7,	MX_SCERR_TYPE_MISMATCH + 0
+;	.word	tm0s,	MX_INKON\7,	MX_SCERR_TYPE_MISMATCH + 0
+;	.word	tm1s,	MX_INKON\7,	MX_SCERR_TYPE_MISMATCH + 0
+
+	.word	fl0,	MX_INKON\7,	MX_SCERR_PARAMS + 0
 
 	.word	cfgok,	MX_IUKON\7,	0
 	.word	recfg,	MX_INKON\7,	MX_SCERR_CONFSET
 seqe:
-
-	; --- TODO: ---
-        ; MX_SCERR_PARAMS
 
 ; ------------------------------------------------------------------------
 ; expects:

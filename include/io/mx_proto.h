@@ -36,16 +36,18 @@ enum mx_protocols {
 
 struct mx_line;
 
-typedef void (*proto_conf_f)(struct mx_line *line, uint16_t *data);
+typedef int (*proto_conf_f)(struct mx_line *line, uint16_t *data);
+typedef void (*proto_free_f)(struct mx_line *line);
 
 struct mx_proto {
 	int enabled;
 	char *name;
 	uint16_t dir;
 	int *phy_types;
+	proto_conf_f conf;
+	proto_free_f free;
 };
 
-const char * mx_proto_name(unsigned i);
 const struct mx_proto * mx_proto_get(unsigned i);
 
 

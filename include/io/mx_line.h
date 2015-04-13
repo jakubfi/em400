@@ -74,9 +74,7 @@ struct mx_line {
 	// logical line properties
 	int attached;		// line is attached
 	const struct mx_proto *proto;   // line protocol
-	int dtype;			// disk: type
-	int format_protect;	// disk: format protected
-	int formatter;		// tape: formatter number
+	void * proto_data;	// protocol data
 
 	// actual device
 	//struct dev *device;
@@ -91,6 +89,7 @@ const char * mx_line_type_name(unsigned i);
 const char * mx_line_sc_err_name(unsigned i);
 int mx_line_conf_phy(struct mx_line *line, uint16_t data);
 int mx_line_conf_log(struct mx_line *line, uint16_t *data);
+void mx_line_deconfigure(struct mx_line *line);
 
 #endif
 

@@ -45,18 +45,6 @@ const struct mx_proto * mx_protocols[] = {
 	&mx_proto_ttyitwl,
 };
 
-static const char *mx_invalid_thing = "[invalid]";
-
-// -----------------------------------------------------------------------
-const char * mx_proto_name(unsigned i)
-{
-	if (i < MX_PROTO_MAX) {
-		return mx_protocols[i]->name;
-	} else {
-		return mx_invalid_thing;
-	}
-}
-
 // -----------------------------------------------------------------------
 const struct mx_proto * mx_proto_get(unsigned i)
 {

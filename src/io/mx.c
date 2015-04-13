@@ -53,14 +53,13 @@ static void mx_deconfigure(struct mx *multix);
 // -----------------------------------------------------------------------
 void * mx_create(int num, struct cfg_unit *units)
 {
-	struct mx *multix = malloc(sizeof(struct mx));
+	struct mx *multix = calloc(1, sizeof(struct mx));
 	if (!multix) {
 		gerr = E_ALLOC;
 		goto cleanup;
 	}
 
 	multix->num = num;
-	mx_deconfigure(multix);
 
 	LOG_SET_ID(multix, "MX %i", multix->num);
 
@@ -238,12 +237,8 @@ static void mx_deconfigure(struct mx *multix)
 	multix->conf_set = 0;
 
 	for (int i=0 ; i<MX_LINE_MAX ; i++) {
-		struct mx_line *line = (multix->lines) + i;
-		line->used = 0;
-		line->attached = 0;
-		line->dir = 0;
-		line->type = 0;
-		line->proto = NULL;
+		struct mx_line *line = multix->lines + i;
+		mx_line_deconfigure(line);
 		multix->log_lines[i] = NULL;
 		LOG_SET_ID(line, "%s:? (p?)", LOG_GET_ID(multix));
 	}
@@ -394,7 +389,7 @@ static void mx_setcfg(struct mx *multix, uint16_t addr)
 	// configure physical lines
 	int cur_line = 0;
 	for (int i=0 ; i<phy_desc_count ; i++) {
-		unsigned count	= (data[i] & 0b0000000000011111) + 1;
+		unsigned count		= (data[i] & 0b0000000000011111) + 1;
 		LOGID(L_MX, 3, multix, "  %i Physical line(-s) %i..%i:", count, cur_line, cur_line+count-1);
 		for (int j=0 ; j<count ; j++, cur_line++) {
 			LOG_SET_ID(multix->lines+cur_line, "%s:? (p%i)", LOG_GET_ID(multix), cur_line);
@@ -411,9 +406,14 @@ static void mx_setcfg(struct mx *multix, uint16_t addr)
 	}
 
 	// check completness of physical lines configuration
-	// MULTIX lines are physically organized in 4-line groups
-	// and configuration needs to reflect this
+	int tape_formatters = 0;
 	for (int i=0 ; i<MX_LINE_MAX ; i+=4) {
+		// there can be only one tape formatter (4 lines)
+		if ((multix->lines[i].type == MX_PHY_MTAPE) && (++tape_formatters > 1)) {
+			mx_setcfg_fin(multix, MX_IRQ_INKON, retf_addr, MX_SC_E_PHY_INCOMPLETE, i);
+			return;
+		}
+		// MULTIX lines are physically organized in 4-line groups and configuration needs to reflect this
 		for (int j=1 ; j<=3 ; j++) {
 			if (multix->lines[i+j].type != multix->lines[i].type) {
 				mx_setcfg_fin(multix, MX_IRQ_INKON, retf_addr, MX_SC_E_PHY_INCOMPLETE, i+j);
@@ -425,7 +425,7 @@ static void mx_setcfg(struct mx *multix, uint16_t addr)
 	// configure logical lines
 	for (int i=0 ; i<log_count ; i++) {
 		uint16_t *log_data = data+phy_desc_count+(i*4);
-		unsigned phy_num = log_data[0] & 0xff;
+		unsigned phy_num = log_data[0] & 0b0000000000011111;
 		struct mx_line *line = multix->lines + phy_num;
 
 		LOG_SET_ID(line, "%s:%i (p%i)", LOG_GET_ID(multix), i, phy_num);

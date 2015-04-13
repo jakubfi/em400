@@ -43,3 +43,11 @@
 	.const	MX_LINE_USED		1\3
 	.const	MX_LINE_UNUSED		0\3
 
+	.const	MX_FLOPPY_SD		0\7
+	.const	MX_FLOPPY_DD		1\7
+	.const	MX_FLOPPY_HD		2\7
+	.const	MX_FLOPPY_ERR		3\7
+
+	.const	MX_FORMAT_PROTECT	1\15
+	.const	MX_LONG_DISK_ADDR	1\4
+

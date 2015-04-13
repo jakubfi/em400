@@ -32,6 +32,7 @@ I/O:
 
 Other:
 
+* configuration rework
 * debugger interface
 * gnu getopt_long
 

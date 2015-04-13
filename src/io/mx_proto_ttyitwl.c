@@ -15,6 +15,7 @@
 //  Foundation, Inc.,
 //  51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 
+#include <stdlib.h>
 #include <inttypes.h>
 
 #include "log.h"
@@ -22,13 +23,29 @@
 #include "io/mx_proto.h"
 
 // -----------------------------------------------------------------------
+int mx_proto_ttyitwl_conf(struct mx_line *line, uint16_t *data)
+{
+	// No protocol configuration
+	return MX_SC_E_OK;
+}
+
+// -----------------------------------------------------------------------
+void mx_proto_ttyitwl_free(struct mx_line *line)
+{
+	free(line->proto_data);
+	line->proto_data = NULL;
+}
+
+// -----------------------------------------------------------------------
 int mx_proto_ttyitwl_phy_types[] = { -1 };
 
 struct mx_proto mx_proto_ttyitwl = {
-	1,
-	"TTY ITWL",
-	MX_DIR_NONE,
-	mx_proto_ttyitwl_phy_types,
+	.enabled = 0,
+	.name = "TTY ITWL",
+	.dir = MX_DIR_NONE,
+	.phy_types = mx_proto_ttyitwl_phy_types,
+	.conf = mx_proto_ttyitwl_conf,
+	.free = mx_proto_ttyitwl_free,
 };
 
 // vim: tabstop=4 shiftwidth=4 autoindent
