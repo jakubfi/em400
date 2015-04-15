@@ -21,6 +21,7 @@
 #include <inttypes.h>
 #include <pthread.h>
 #include <unistd.h>
+#include <string.h>
 
 #include "errors.h"
 #include "log.h"
@@ -42,13 +43,28 @@ enum mx_state {
 	MX_STATE_RUN, MX_STATE_QUIT, MX_STATE_RESET
 };
 
-static void * mx_main(void *ptr);
-void mx_shutdown(void *ch);
-static void mx_deconfigure(struct mx *multix);
+const char *mx_state_names[] = {
+	"RUN", "QUIT", "RESET"
+};
 
 // -----------------------------------------------------------------------
-// ---- CPU interface ----------------------------------------------------
+// ---- channel driver interface -----------------------------------------
 // -----------------------------------------------------------------------
+
+void * mx_create(int num, struct cfg_unit *units);
+void mx_shutdown(void *ch);
+void mx_reset(void *ch);
+int mx_cmd(void *ch, int dir, uint16_t n_arg, uint16_t *r_arg);
+
+struct chan_drv mx_chan_driver = {
+	.name = "multix",
+	.create = mx_create,
+	.shutdown = mx_shutdown,
+	.reset = mx_reset,
+	.cmd = mx_cmd
+};
+
+static void * mx_main(void *ptr);
 
 // -----------------------------------------------------------------------
 void * mx_create(int num, struct cfg_unit *units)
@@ -118,6 +134,7 @@ void mx_shutdown(void *ch)
 	// notify main thread to quit
 	pthread_mutex_lock(&multix->state_mutex);
 	multix->state = MX_STATE_QUIT;
+	pthread_cond_signal(&multix->state_cond);
 	pthread_mutex_unlock(&multix->state_mutex);
 
 	mx_evq_disable(multix->evq);
@@ -152,11 +169,12 @@ void mx_reset(void *ch)
 	pthread_mutex_lock(&multix->state_mutex);
 	if (multix->state != MX_STATE_QUIT) {
 		multix->state = MX_STATE_RESET;
+		pthread_cond_signal(&multix->state_cond);
 	}
 	pthread_mutex_unlock(&multix->state_mutex);
 
 	// disable event queue
-	// evq_dequeue() will return and further commands will fail
+	// waiting evq_dequeue()s will return and further commands will fail
 	mx_evq_disable(multix->evq);
 
 	// wait for reset to really kick in
@@ -227,16 +245,7 @@ int mx_cmd(void *ch, int dir, uint16_t n_arg, uint16_t *r_arg)
 }
 
 // -----------------------------------------------------------------------
-struct chan_drv mx_chan_driver = {
-	.name = "multix",
-	.create = mx_create,
-	.shutdown = mx_shutdown,
-	.reset = mx_reset,
-	.cmd = mx_cmd
-};
-
-// -----------------------------------------------------------------------
-// ---- main -------------------------------------------------------------
+// ---- MULTIX -----------------------------------------------------------
 // -----------------------------------------------------------------------
 
 // -----------------------------------------------------------------------
@@ -255,7 +264,7 @@ static void mx_deconfigure(struct mx *multix)
 // -----------------------------------------------------------------------
 static int mx_init(struct mx *multix)
 {
-	LOGID(L_MX, 2, multix, "Initializing");
+	LOGID(L_MX, 2, multix, "Entering initialization loop");
 
 	int ret;
 
@@ -270,24 +279,29 @@ static int mx_init(struct mx *multix)
 	pthread_cond_signal(&multix->reset_ack_cond);
 	pthread_mutex_unlock(&multix->reset_ack_mutex);
 
-	// loop while state is 'reset'
-	// if another reset comes in during reset loop, we need to restart reset loop
+	// loop while state is RESET
 	while (multix->state == MX_STATE_RESET) {
-		LOGID(L_MX, 3, multix, "Initialization delay: %i ms", RESET_WAIT_MSEC);
-		// we set state to 'run' here - if another reset is initiated in cpu thread, state changes
+		// we set state to RUN here - if another reset is initiated in the cpu thread,
+		// and state changes to RESET during wait on state_cond and we'll loop again.
+		// If state changes to QUIT, we exit the loop and handle QUIT
 		multix->state = MX_STATE_RUN;
+
+		// set abstime to RESET_WAIT_MSEC in the future, wall clock
 		struct timespec abstime;
 		clock_gettime(CLOCK_REALTIME, &abstime);
 		long new_nsec = abstime.tv_nsec + RESET_WAIT_MSEC * 1000000L;
 		abstime.tv_sec += new_nsec / 1000000000L;
 		abstime.tv_nsec = new_nsec % 1000000000L;
 
+		LOGID(L_MX, 3, multix, "Starting initialization delay: %i ms", RESET_WAIT_MSEC);
+
 		// wait on condition for RESET_WAIT_MSEC ms
-		if (pthread_cond_timedwait(&multix->state_cond, &multix->state_mutex, &abstime)) {
-			LOGID(L_MX, 3, multix, "Reset wait interrupted");
-		} else {
-			LOGID(L_MX, 3, multix, "Reset wait done");
-		}
+		int res = pthread_cond_timedwait(&multix->state_cond, &multix->state_mutex, &abstime);
+		LOGID(L_MX, 3, multix, "Initialization wait %s (\"%s\"), MULTIX state is now: %s",
+			(res == 0) ? "interrupted" : "finished",
+			strerror(res),
+			mx_state_names[multix->state]
+		);
 	}
 
 	if (multix->state == MX_STATE_QUIT) {
@@ -296,9 +310,8 @@ static int mx_init(struct mx *multix)
 	} else {
 		mx_evq_clear(multix->evq);
 		mx_irqq_clear(multix->irqq);
-		mx_irqq_enqueue(multix->irqq, MX_IRQ_IWYZE, 0);
 		mx_evq_enable(multix->evq);
-		ret = 0;
+		mx_irqq_enqueue(multix->irqq, MX_IRQ_IWYZE, 0);
 
 		// clear reset ack flag
 		pthread_mutex_lock(&multix->reset_ack_mutex);
@@ -307,6 +320,7 @@ static int mx_init(struct mx *multix)
 		pthread_mutex_unlock(&multix->reset_ack_mutex);
 
 		LOGID(L_MX, 2, multix, "Initialization done");
+		ret = 0;
 	}
 
 	pthread_mutex_unlock(&multix->state_mutex);
@@ -320,34 +334,36 @@ static void mx_test(struct mx *multix)
 	// As we're not able to run any real 8085 code, TEST command
 	// won't work. Best we can do is to pretend that test is done
 	// and let the test wrapper on CPU side worry about the (non-)results.
-	mx_deconfigure(multix);
 	mx_evq_disable(multix->evq);
+	mx_deconfigure(multix);
 	mx_evq_clear(multix->evq);
 	mx_irqq_clear(multix->irqq);
-	mx_irqq_enqueue(multix->irqq, MX_IRQ_IWYTE, 0);
 	mx_evq_enable(multix->evq);
+	mx_irqq_enqueue(multix->irqq, MX_IRQ_IWYTE, 0);
 }
 
 // -----------------------------------------------------------------------
 static void mx_setcfg_fin(struct mx *multix, int irq, uint16_t addr, unsigned result, unsigned line)
 {
-	// if configuration is bad
+	// configuration was bad
 	if (irq == MX_IRQ_INKON) {
 		if (result >= MX_SC_E_PROTO_MISSING) {
-			LOGID(L_MX, 1, multix, "Configuration not set for logical line %i: %s", line, mx_line_sc_err_name(result));
+			LOGID(L_MX, 1, multix, "Configuration not set. Error for logical line %i: %s", line, mx_line_sc_err_name(result));
 		} else if (result >= MX_SC_E_DEVTYPE) {
-			LOGID(L_MX, 1, multix, "Configuration not set for physical line %i: %s", line, mx_line_sc_err_name(result));
+			LOGID(L_MX, 1, multix, "Configuration not set. Error for physical line %i: %s", line, mx_line_sc_err_name(result));
 		} else {
 			LOGID(L_MX, 1, multix, "Configuration not set: %s", mx_line_sc_err_name(result));
 		}
 		// store command result
-		if (!mem_put(0, addr, (result<<8)|line)) {
+		if (!mem_put(0, addr, (result<<8) | line)) {
 			irq = MX_IRQ_INKOT;
 		}
+	// configuration was OK
 	} else if (irq == MX_IRQ_IUKON) {
 		LOGID(L_MX, 1, multix, "Configuration successfully set");
 	}
 
+	// couldn't store the result
 	if (irq == MX_IRQ_INKOT) {
 		LOGID(L_MX, 1, multix, "Configuration not set: memory access error");
 	}
@@ -377,8 +393,8 @@ static void mx_setcfg(struct mx *multix, uint16_t addr)
 		return;
 	}
 
-	unsigned phy_desc_count = *data >> 8;
-	unsigned log_count = *data & 0xff;
+	unsigned phy_desc_count	= (*data & 0b1111111100000000) >> 8;
+	unsigned log_count		= (*data & 0b0000000011111111);
 
 	LOGID(L_MX, 3, multix, "Configuring: %i physical line descriptors, %i logical lines", multix->num, phy_desc_count, log_count);
 
@@ -413,7 +429,7 @@ static void mx_setcfg(struct mx *multix, uint16_t addr)
 		}
 	}
 
-	// check completness of physical lines configuration
+	// check the completness of physical lines configuration
 	int tape_formatters = 0;
 	for (int i=0 ; i<MX_LINE_MAX ; i+=4) {
 		// there can be only one tape formatter (4 lines)
@@ -515,6 +531,23 @@ static void mx_ev_handle(struct mx *multix, struct mx_ev *ev)
 		LOGID(L_MX, 1, multix, "Unknown event type: %i", ev->type);
 	}
 }
+
+/*
+	MULTIX firmware loop. The main f/w job is to process line tasks.
+	Tasks are created/updated in H/W interrupt handler routines.
+	Here we simulate hardware interrupts by events in the event queue
+	(events are reported by other threads, as CPU od device threads),
+	and do interrupt routines by processing events from the queue in the
+	main loop, just before starting Task Manager.
+
+	From the Task Manager point of view we don't really care when
+	those interrupts are received, so we may as well do the processing as follows:
+		* While TM is processing data, events from other threads are queued.
+		* TM finishes, and we start processing all events from the queue
+		  or wait for a new event if queue is empty.
+		* TM wakes up and processes all tasks requiring attention (in order
+		  determined by the task and condition significance)
+*/
 
 // -----------------------------------------------------------------------
 static void * mx_main(void *ptr)
