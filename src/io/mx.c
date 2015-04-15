@@ -37,7 +37,9 @@
 // Here we need just a reasonable delay - big enough for
 // OS scheduler to switch threads between MULTIX and CPU,
 // so we don't finish MULTIX' job before switching back to CPU thread.
-#define RESET_WAIT_MSEC 150
+#define MX_RESET_WAIT_MSEC 150
+
+#define MX_TIMER_STEP_MS 500
 
 enum mx_state {
 	MX_STATE_RUN, MX_STATE_QUIT, MX_STATE_RESET
@@ -81,15 +83,15 @@ void * mx_create(int num, struct cfg_unit *units)
 
 	LOGID(L_MX, 1, multix, "Creating new MULTIX");
 
+	// state initialization
 	multix->state = MX_STATE_RESET;
+	multix->reset_ack = 0;
 	if (pthread_mutex_init(&multix->state_mutex, NULL)) {
 		goto cleanup;
 	}
 	if (pthread_cond_init(&multix->state_cond, NULL)) {
 		goto cleanup;
 	}
-
-	multix->reset_ack = 0;
 	if (pthread_mutex_init(&multix->reset_ack_mutex, NULL)) {
 		goto cleanup;
 	}
@@ -100,14 +102,26 @@ void * mx_create(int num, struct cfg_unit *units)
 	// create event queue
 	multix->evq = mx_evq_create(-1);
 	if (!multix->evq) {
-		gerr = E_EVQ;
+		gerr = E_MX_EVQ;
 		goto cleanup;
 	}
 	LOG_SET_ID(multix->evq, "%s EV", LOG_GET_ID(multix));
 
 	// create interrupt system
 	multix->irqq = mx_irqq_create(multix->num, MX_INTRQ_LEN);
+	if (!multix->irqq) {
+		gerr = E_MX_IRQQ;
+		goto cleanup;
+	}
 	LOG_SET_ID(multix->irqq, "%s IRQ", LOG_GET_ID(multix));
+
+	// create timer
+	multix->timer = mx_timer_init(MX_TIMER_STEP_MS, multix->evq);
+	if (!multix->irqq) {
+		gerr = E_MX_TIMER;
+		goto cleanup;
+	}
+	LOG_SET_ID(multix->timer, "%s TIMER", LOG_GET_ID(multix));
 
 	// initialize main thread
 	if (pthread_create(&multix->main_th, NULL, mx_main, multix)) {
@@ -137,10 +151,17 @@ void mx_shutdown(void *ch)
 	pthread_cond_signal(&multix->state_cond);
 	pthread_mutex_unlock(&multix->state_mutex);
 
+	// stop accepting events
 	mx_evq_disable(multix->evq);
 
+	// wait for the main thread to quit
 	LOGID(L_MX, 3, multix, "Waiting for main thread to join");
 	pthread_join(multix->main_th, NULL);
+
+	// At this point we're sure, that MULTIX thread is down
+
+	// shutdown timer
+	mx_timer_shutdown(multix->timer);
 
 	// destroy interrupt system
 	mx_irqq_destroy(multix->irqq);
@@ -148,6 +169,7 @@ void mx_shutdown(void *ch)
 	// destroy event queue
 	mx_evq_destroy(multix->evq);
 
+	// free resources
 	pthread_mutex_destroy(&multix->state_mutex);
 	pthread_cond_destroy(&multix->state_cond);
 	pthread_mutex_destroy(&multix->reset_ack_mutex);
@@ -251,6 +273,7 @@ int mx_cmd(void *ch, int dir, uint16_t n_arg, uint16_t *r_arg)
 // -----------------------------------------------------------------------
 static void mx_deconfigure(struct mx *multix)
 {
+	mx_timer_off(multix->timer);
 	multix->conf_set = 0;
 
 	for (int i=0 ; i<MX_LINE_MAX ; i++) {
@@ -286,16 +309,16 @@ static int mx_init(struct mx *multix)
 		// If state changes to QUIT, we exit the loop and handle QUIT
 		multix->state = MX_STATE_RUN;
 
-		// set abstime to RESET_WAIT_MSEC in the future, wall clock
+		// set abstime to MX_RESET_WAIT_MSEC in the future, wall clock
 		struct timespec abstime;
 		clock_gettime(CLOCK_REALTIME, &abstime);
-		long new_nsec = abstime.tv_nsec + RESET_WAIT_MSEC * 1000000L;
+		long new_nsec = abstime.tv_nsec + MX_RESET_WAIT_MSEC * 1000000L;
 		abstime.tv_sec += new_nsec / 1000000000L;
 		abstime.tv_nsec = new_nsec % 1000000000L;
 
-		LOGID(L_MX, 3, multix, "Starting initialization delay: %i ms", RESET_WAIT_MSEC);
+		LOGID(L_MX, 3, multix, "Starting initialization delay: %i ms", MX_RESET_WAIT_MSEC);
 
-		// wait on condition for RESET_WAIT_MSEC ms
+		// wait on condition for MX_RESET_WAIT_MSEC ms
 		int res = pthread_cond_timedwait(&multix->state_cond, &multix->state_mutex, &abstime);
 		LOGID(L_MX, 3, multix, "Initialization wait %s (\"%s\"), MULTIX state is now: %s",
 			(res == 0) ? "interrupted" : "finished",
@@ -464,6 +487,10 @@ static void mx_setcfg(struct mx *multix, uint16_t addr)
 	}
 
 	multix->conf_set = 1;
+
+	// start timer
+	mx_timer_on(multix->timer);
+
 	mx_setcfg_fin(multix, MX_IRQ_IUKON, retf_addr, 0, 0);
 }
 
@@ -527,6 +554,8 @@ static void mx_ev_handle(struct mx *multix, struct mx_ev *ev)
 		mx_irqq_advance(multix->irqq);
 	} else if (ev->type == MX_EV_CMD) {
 		mx_ev_handle_cmd(multix, ev);
+	} else if (ev->type == MX_EV_TIMER) {
+		LOGID(L_MX, 1, multix, "TIMER TICK");
 	} else {
 		LOGID(L_MX, 1, multix, "Unknown event type: %i", ev->type);
 	}

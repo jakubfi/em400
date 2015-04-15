@@ -284,7 +284,7 @@ struct mx_ev * mx_evq_dequeue(struct mx_evq *queue, int flags)
 		}
 		queue->size--;
 		ret_event = event;
-		LOGID(L_MX, 2, queue, "Got event: %i (%s), cmd: %i, line: %i, arg: 0x%04x ",
+		LOGID(L_MX, 2, queue, "Got event %i: %s, cmd: %i, line: %i, arg: 0x%04x ",
 			ret_event->type,
 			mx_event_names[ret_event->type],
 			ret_event->cmd,

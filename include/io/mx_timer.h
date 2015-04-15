@@ -1,4 +1,4 @@
-//  Copyright (c) 2013-2015 Jakub Filipowicz <jakubf@gmail.com>
+//  Copyright (c) 2015 Jakub Filipowicz <jakubf@gmail.com>
 //
 //  This program is free software; you can redistribute it and/or modify
 //  it under the terms of the GNU General Public License as published by
@@ -15,36 +15,31 @@
 //  Foundation, Inc.,
 //  51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 
-#ifndef MX_H
-#define MX_H
+#ifndef MX_TIMER_H
+#define MX_TIMER_H
 
 #include <pthread.h>
+#include <semaphore.h>
 
+#include "log.h"
 #include "io/mx_ev.h"
-#include "io/mx_irq.h"
-#include "io/mx_line.h"
-#include "io/mx_timer.h"
 
-struct mx {
-	int num;
-	pthread_t main_th;
+struct mx_timer {
+	int timer_enabled;
+	int timer_step_ms;
+
+	pthread_t mx_timer_th;
+	sem_t mx_timer_quit;
+
 	struct mx_evq *evq;
-	struct mx_irqq *irqq;
-	struct mx_line lines[MX_LINE_MAX];
-	struct mx_line *log_lines[MX_LINE_MAX];
-	struct mx_timer *timer;
 
-	int conf_set;
-
-	int state;
-	pthread_mutex_t state_mutex;
-	pthread_cond_t state_cond;
-
-	int reset_ack;
-	pthread_mutex_t reset_ack_mutex;
-	pthread_cond_t reset_ack_cond;
 	LOG_ID_DEF;
 };
+
+struct mx_timer * mx_timer_init();
+void mx_timer_shutdown(struct mx_timer *t);
+void mx_timer_on(struct mx_timer *t);
+void mx_timer_off(struct mx_timer *t);
 
 #endif
 
