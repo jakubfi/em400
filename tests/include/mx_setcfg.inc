@@ -48,6 +48,8 @@
 	.const	MX_FLOPPY_HD		2\7
 	.const	MX_FLOPPY_ERR		3\7
 
+	.const	MX_NO_FORMAT_PROTECT	0\15
 	.const	MX_FORMAT_PROTECT	1\15
+	.const	MX_SHORT_DISK_ADDR	0\4
 	.const	MX_LONG_DISK_ADDR	1\4
 

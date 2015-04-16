@@ -5,6 +5,7 @@
 	.cpu	mx16
 
 	.include hw.inc
+	.include io.inc
 	.include mx.inc
 
 	UJ	start
@@ -629,7 +630,7 @@ seqe:
 ;  r1 - configuration field address
 ;  r4 - RJ return adress
 setcfg:
-	OU	r1, 0b101\2 + MX_CHAN_DEFAULT\14
+	OU	r1, 0b101\2 + MX_CHAN_DEFAULT
 	.word	no, en, ok, pe
 no:	HLT	041
 ok:	UJ	r4

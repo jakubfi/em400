@@ -1,0 +1,16 @@
+
+; default MULTIX I/O channel
+
+	.const	MX_CHAN_DEFAULT IO_CHAN_1
+	.const  MX_IV		IV_CHAN1
+
+; MULTIX I/O commands
+
+	.const	MX_IO_REQUEUE	0b001\2	; IN
+	.const	MX_IO_TEST	0b001\2	; OU
+	.const	MX_IO_SETCFG	0b101\2	; OU
+	.const	MX_IO_ATTACH	0b010\2	; OU
+	.const	MX_IO_DETACH	0b010\2	; IN
+	.const	MX_IO_STATUS	0b011\2	; OU
+	.const	MX_IO_TRANSMIT	0b100\2	; OU
+	.const	MX_IO_ABORT	0b011\2	; IN
