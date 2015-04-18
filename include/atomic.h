@@ -18,11 +18,11 @@
 #ifndef ATOMIC_H
 #define ATOMIC_H
 
-#if defined __ATOMIC_SEQ_CST
+#if (defined __ATOMIC_SEQ_CST) && (defined __ATOMIC_RELAXED)
 	#define atom_load(ptr) __atomic_load_n(ptr, __ATOMIC_RELAXED)
 	#define atom_store(ptr, val) __atomic_store_n(ptr, val, __ATOMIC_RELAXED)
 	#define atom_fence() __atomic_thread_fence(__ATOMIC_SEQ_CST)
-#elif defined __GCC_HAVE_SYNC_COMPARE_AND_SWAP_2
+#elif (defined __GCC_HAVE_SYNC_COMPARE_AND_SWAP_1) || (defined __GCC_HAVE_SYNC_COMPARE_AND_SWAP_2) || (defined __GCC_HAVE_SYNC_COMPARE_AND_SWAP_4) || (defined __GCC_HAVE_SYNC_COMPARE_AND_SWAP_8)
 	#define atom_load(ptr) __sync_fetch_and_or(ptr, 0)
 	#define atom_store(ptr, val) __sync_val_compare_and_swap(ptr, *ptr, val)
 	#define atom_fence() __sync_synchronize()
