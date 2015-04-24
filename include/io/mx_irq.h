@@ -23,7 +23,7 @@
 
 struct mx_irq {
 	int line;
-	int intr;
+	int irq;
 	struct mx_irq *next;
 };
 
@@ -37,6 +37,7 @@ struct mx_irqq {
 };
 
 enum mx_interrupts {
+	MX_IRQ_NONE  = -1,	// em400: no interrupt request needed
 	MX_IRQ_INIEA = 0,	// interrupt no longer valid
 	// special
 	MX_IRQ_INSKA = 1,	// channel faulty
@@ -82,7 +83,7 @@ void mx_irqq_irq_delete(struct mx_irq *event);
 void mx_irqq_clear(struct mx_irqq *queue);
 int mx_irqq_size(struct mx_irqq *queue);
 void mx_irqq_destroy(struct mx_irqq *queue);
-int mx_irqq_enqueue(struct mx_irqq *queue, int intr, int line);
+int mx_irqq_enqueue(struct mx_irqq *queue, int irq, int line);
 void mx_irqq_advance(struct mx_irqq *queue);
 uint16_t mx_irqq_get_intspec(struct mx_irqq *queue);
 void mx_irqq_irq_requeue(struct mx_irqq *queue);

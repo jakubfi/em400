@@ -19,6 +19,7 @@
 
 #include "log.h"
 #include "io/mx_line.h"
+#include "io/mx_irq.h"
 
 const char *mx_phy_type_names[] = {
 	"USART async",
@@ -27,7 +28,7 @@ const char *mx_phy_type_names[] = {
 	"winchester",
 	"magnetic tape",
 	"floppy",
-	"[invalid]",
+	"[invalid-phy-type]",
 };
 
 const char *mx_phy_dir_names[] = {
@@ -39,7 +40,7 @@ const char *mx_phy_dir_names[] = {
 	"[invalid]",
 	"half-duplex",
 	"full-duplex",
-	"[invalid]",
+	"[invalid-phy-dir]",
 };
 
 const char *mx_sc_err_names[] = {
@@ -55,7 +56,7 @@ const char *mx_sc_err_names[] = {
 	"memory exhausted",
 	"protocol vs. physical line type mismatch",
 	"wrong protocol parameters",
-	"[unknown error]",
+	"[unknown-error]",
 };
 
 // -----------------------------------------------------------------------

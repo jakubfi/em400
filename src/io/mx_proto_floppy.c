@@ -33,7 +33,7 @@ const char *mx_floppy_type_names[] = {
 	"SD",
 	"DD",
 	"DD/HD",
-	"[unknown]",
+	"[unknown-floppy-drv-type]",
 };
 
 struct proto_floppy_data {

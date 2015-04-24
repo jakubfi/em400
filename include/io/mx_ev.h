@@ -24,6 +24,7 @@ enum mx_evq_events {
 	MX_EV_TIMER,
 	MX_EV_LINE,
 	MX_EV_NONE,
+	MX_EV_MAX
 };
 
 enum mx_evq_flags {
@@ -31,8 +32,6 @@ enum mx_evq_flags {
 	MX_EVQ_F_WAIT	= 1 << 0,
 	MX_EVQ_F_TRY	= 1 << 1,
 };
-
-extern const char *mx_event_names[];
 
 struct mx_ev {
 	int type;
@@ -47,10 +46,11 @@ struct mx_evq {
 	int maxlen;
 	pthread_mutex_t mutex;
 	pthread_cond_t cond;
-	int state;
+	int enabled;
 	LOG_ID_DEF;
 };
 
+const char * mx_ev_name(unsigned i);
 struct mx_ev * mx_ev_simple(int type);
 struct mx_ev * mx_ev_cmd(unsigned cmd, unsigned line, unsigned arg);
 struct mx_ev * mx_ev_line(unsigned size, void *data);
@@ -60,13 +60,11 @@ struct mx_evq * mx_evq_create(int maxlen);
 void mx_evq_clear(struct mx_evq *queue);
 int mx_evq_size(struct mx_evq *queue);
 void mx_evq_destroy(struct mx_evq *queue);
-int mx_evq_insert(struct mx_evq *queue, struct mx_ev *event, int flags);
-int mx_evq_prequeue(struct mx_evq *queue, struct mx_ev *event, int flags);
 int mx_evq_enqueue(struct mx_evq *queue, struct mx_ev *event, int flags);
-struct mx_ev * mx_evq_dequeue(struct mx_evq *queue, int flags);
+int mx_evq_wait(struct mx_evq *queue);
+struct mx_ev * mx_evq_dequeue(struct mx_evq *queue);
 void mx_evq_enable(struct mx_evq *queue);
 void mx_evq_disable(struct mx_evq *queue);
-
 
 #endif
 

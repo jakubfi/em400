@@ -15,11 +15,14 @@
 //  Foundation, Inc.,
 //  51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 
+#include "io/mx_cmds.h"
+
 const char *mx_chan_cmd_names[] = {
 	"RESET",
 	"INTSPEC",
 	"EXISTS",
-	"INVALID"
+	"INVALID",
+	"[invalid-chan-cmd]"
 };
 
 const char *mx_cmd_names[] = {
@@ -39,6 +42,22 @@ const char *mx_cmd_names[] = {
 	"ERR_D",
 	"ERR_E",
 	"ERR_F",
+	"[invalid-cmd]"
 };
+
+// -----------------------------------------------------------------------
+const char * mx_get_cmd_name(unsigned i)
+{
+	if (i >= MX_CMD_MAX) i = MX_CMD_MAX;
+	return mx_cmd_names[i];
+}
+
+// -----------------------------------------------------------------------
+const char * mx_get_chan_cmd_name(unsigned i)
+{
+	if (i >= MX_CHAN_CMD_MAX) i = MX_CHAN_CMD_MAX;
+	return mx_chan_cmd_names[i];
+}
+
 
 // vim: tabstop=4 shiftwidth=4 autoindent

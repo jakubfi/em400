@@ -17,24 +17,11 @@
 
 #define _XOPEN_SOURCE 500
 
-#include <stdio.h>
 #include <stdlib.h>
 #include <pthread.h>
-#include <time.h>
 
 #include "log.h"
 #include "io/mx_ev.h"
-
-enum mx_evq_state {
-	MX_EVQ_ENABLED,
-	MX_EVQ_DISABLED,
-};
-
-enum mx_ev_add_mode {
-	ADD_ENQUEUE,
-	ADD_PREQUEUE,
-	ADD_INSERT,
-};
 
 const char *mx_event_names[] = {
 	"CMD",
@@ -42,7 +29,15 @@ const char *mx_event_names[] = {
 	"TIMER",
 	"LINE",
 	"NONE",
+	"[invalid-event]"
 };
+
+// -----------------------------------------------------------------------
+const char * mx_ev_name(unsigned i)
+{
+	if (i >= MX_EV_MAX) i = MX_EV_MAX;
+	return mx_event_names[i];
+}
 
 // -----------------------------------------------------------------------
 static struct mx_ev * mx_ev(int type, unsigned cmd, unsigned line, unsigned arg, void *data)
@@ -97,7 +92,7 @@ struct mx_evq * mx_evq_create(int maxlen)
 	queue->tail = NULL;
 	queue->size = 0;
 	queue->maxlen = maxlen;
-	queue->state = MX_EVQ_DISABLED;
+	queue->enabled = 0;
 
 	if (pthread_mutex_init(&queue->mutex, NULL)) {
 		goto cleanup;
@@ -155,7 +150,7 @@ void mx_evq_destroy(struct mx_evq *queue)
 }
 
 // -----------------------------------------------------------------------
-static int __mx_evq_queue(struct mx_evq *queue, int mode, struct mx_ev *event, int flags)
+int mx_evq_enqueue(struct mx_evq *queue, struct mx_ev *event, int flags)
 {
 	if (!event) {
 		return -1;
@@ -173,7 +168,7 @@ static int __mx_evq_queue(struct mx_evq *queue, int mode, struct mx_ev *event, i
 	}
 
 	// is queue ready?
-	if (queue->state != MX_EVQ_ENABLED) {
+	if (!queue->enabled) {
 		pthread_mutex_unlock(&queue->mutex);
 		LOGID(L_MX, 4, queue, "Event queue disabled when trying to enqueue");
 		return -1;
@@ -194,108 +189,84 @@ static int __mx_evq_queue(struct mx_evq *queue, int mode, struct mx_ev *event, i
 		}
 	}
 
-	struct mx_ev *before, *after;
+	// insert event
+	event->next = NULL;
+	if (queue->tail) {
+		queue->tail->next = event;
+	} else {
+		queue->head = event;
+	}
+	queue->tail = event;
 
-	LOGID(L_MX, 4, queue, "Adding event %i: %s, cmd: %i, line: %i, arg: 0x%04x",
+	// update size
+	int cur_size = ++(queue->size);
+
+	// notify waiters
+	pthread_cond_signal(&queue->cond);
+
+	pthread_mutex_unlock(&queue->mutex);
+
+	LOGID(L_MX, 4, queue, "Added event %i: %s (cmd: %i, line: %i, arg: 0x%04x)",
 		event->type,
-		mx_event_names[event->type],
+		mx_ev_name(event->type),
 		event->cmd,
 		event->line,
 		event->arg
 	);
 
-	if (mode == ADD_ENQUEUE) {
-		before = NULL;
-		after = queue->tail;
-	} else {
-		// ADD_PREQUEUE and ADD_INSERT
-		before = queue->head;
-		after = NULL;
-		if (mode == ADD_INSERT) {
-			// find a place for the new event
-			while (before && (event->type > before->type)) {
-				after = before;
-				before = before->next;
-			}
-		}
-	}
-
-	// insert event
-	event->next = before;
-	if (after) {
-		after->next = event;
-	} else {
-		queue->head = event;
-	}
-	if (!before) {
-		queue->tail = event;
-	}
-
-	// update size and notify waiters
-	queue->size++;
-	pthread_cond_signal(&queue->cond);
-	int cur_size = queue->size;
-
-	pthread_mutex_unlock(&queue->mutex);
-
 	return cur_size;
 }
 
 // -----------------------------------------------------------------------
-int mx_evq_insert(struct mx_evq *queue, struct mx_ev *event, int flags)
-{
-	return __mx_evq_queue(queue, ADD_INSERT, event, flags);
-}
-
-// -----------------------------------------------------------------------
-int mx_evq_prequeue(struct mx_evq *queue, struct mx_ev *event, int flags)
-{
-	return __mx_evq_queue(queue, ADD_PREQUEUE, event, flags);
-}
-
-// -----------------------------------------------------------------------
-int mx_evq_enqueue(struct mx_evq *queue, struct mx_ev *event, int flags)
-{
-	return __mx_evq_queue(queue, ADD_ENQUEUE, event, flags);
-}
-
-// -----------------------------------------------------------------------
-struct mx_ev * mx_evq_dequeue(struct mx_evq *queue, int flags)
+int mx_evq_wait(struct mx_evq *queue)
 {
 	pthread_mutex_lock(&queue->mutex);
 
-	while (!queue->head && (flags & MX_EVQ_F_WAIT) && (queue->state == MX_EVQ_ENABLED)) {
+	while (!queue->head && queue->enabled) {
 		LOGID(L_MX, 3, queue, "Waiting for event");
 		pthread_cond_wait(&queue->cond, &queue->mutex);
 	}
 
-	if (queue->state != MX_EVQ_ENABLED) {
+	if (!queue->enabled) {
 		pthread_mutex_unlock(&queue->mutex);
-		return NULL;
+		return -1;
 	}
+
+	pthread_mutex_unlock(&queue->mutex);
+
+	return 0;
+}
+
+// -----------------------------------------------------------------------
+struct mx_ev * mx_evq_dequeue(struct mx_evq *queue)
+{
+	pthread_mutex_lock(&queue->mutex);
 
 	struct mx_ev *event = queue->head;
 	struct mx_ev *ret_event = NULL;
 
-	if (event) {
+	if (queue->enabled && event) {
 		queue->head = event->next;
 		if (!queue->head) {
 			queue->tail = NULL;
 		}
 		queue->size--;
 		ret_event = event;
-		LOGID(L_MX, 2, queue, "Got event %i: %s, cmd: %i, line: %i, arg: 0x%04x ",
+	}
+
+	pthread_mutex_unlock(&queue->mutex);
+
+	if (ret_event) {
+		LOGID(L_MX, 2, queue, "Got event %i: %s (cmd: %i, line: %i, arg: 0x%04x)",
 			ret_event->type,
-			mx_event_names[ret_event->type],
+			mx_ev_name(ret_event->type),
 			ret_event->cmd,
 			ret_event->line,
 			ret_event->arg
 		);
 	} else {
-		LOGID(L_MX, 3, queue, "Got empty event");
+		LOGID(L_MX, 3, queue, "No event");
 	}
-
-	pthread_mutex_unlock(&queue->mutex);
 
 	return ret_event;
 }
@@ -305,7 +276,7 @@ void mx_evq_enable(struct mx_evq *queue)
 {
 	LOGID(L_MX, 4, queue, "Enabling event queue");
 	pthread_mutex_lock(&queue->mutex);
-	queue->state = MX_EVQ_ENABLED;
+	queue->enabled = 1;
 	pthread_mutex_unlock(&queue->mutex);
 }
 
@@ -314,7 +285,7 @@ void mx_evq_disable(struct mx_evq *queue)
 {
 	LOGID(L_MX, 4, queue, "Disabling event queue");
 	pthread_mutex_lock(&queue->mutex);
-	queue->state = MX_EVQ_DISABLED;
+	queue->enabled = 0;
 	pthread_cond_signal(&queue->cond);
 	pthread_mutex_unlock(&queue->mutex);
 }

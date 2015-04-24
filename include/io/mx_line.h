@@ -21,6 +21,8 @@
 #include "io/mx_task.h"
 #include "io/mx_proto.h"
 
+#include "log.h"
+
 #define MX_LINE_MAX 32
 
 // physical line direction
@@ -80,7 +82,7 @@ struct mx_line {
 	//struct dev *device;
 
 	// task
-	struct mx_task task;
+	struct mx_task task[MX_TASK_MAX];
 	LOG_ID_DEF;
 };
 

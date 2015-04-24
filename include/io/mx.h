@@ -27,22 +27,27 @@
 
 struct mx {
 	int num;
-	pthread_t main_th;
-	struct mx_evq *evq;
-	struct mx_irqq *irqq;
-	struct mx_line lines[MX_LINE_MAX];
-	struct mx_line *log_lines[MX_LINE_MAX];
-	struct mx_timer *timer;
+	pthread_t main_th;						// main MULTIX thread
 
-	int conf_set;
+	int conf_set;							// configuration set flag
 
+	struct mx_evq *evq;						// event queue (internal MULTIX "interrupts")
+	struct mx_irqq *irqq;					// interrupt request queue (to CPU)
+	struct mx_timer *timer;					// MULTIX timer (500ms tick)
+
+	int log_line_count;						// max configured logical line number
+	struct mx_line lines[MX_LINE_MAX];		// physical lines
+	struct mx_line *log_lines[MX_LINE_MAX];	// logical lines
+	int task_act[MX_TASK_MAX];				// active tasks
+
+	// reset logic
 	int state;
 	pthread_mutex_t state_mutex;
 	pthread_cond_t state_cond;
-
 	int reset_ack;
 	pthread_mutex_t reset_ack_mutex;
 	pthread_cond_t reset_ack_cond;
+
 	LOG_ID_DEF;
 };
 

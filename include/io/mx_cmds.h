@@ -18,7 +18,7 @@
 #ifndef MX_CMDS_H
 #define MX_CMDS_H
 
-/*	general and line commands:
+/*	general and line commands as seen by MULTIX:
 	0bABBB
 	  |`-> command bits 0-2
 	  `--> 0=OUT / 1=IN
@@ -41,18 +41,24 @@ enum mx_cmd {
 	MX_CMD_ERR_D		= 0b1101,	// (invalid command)
 	MX_CMD_ERR_E		= 0b1110,	// (invalid command)
 	MX_CMD_ERR_F		= 0b1111,	// (invalid command)
+	MX_CMD_MAX
 };
 
-// channel commands: always IN, bits 0..2 = 0, bits 3..4 = command
+/* channel commands as seen by MULTIX:
+   (command is always IN, command bits 0-2 are always = 0)
+   0bAA
+     `-> bits 3-4 of the channel command
+*/
 enum mx_cmd_chan {
-	MX_CMD_RESET	= 0b00,	// software reset
-	MX_CMD_INTSPEC	= 0b01,	// get interrupt specification
-	MX_CMD_EXISTS	= 0b10,	// check if channel exists
-	MX_CMD_INVALID	= 0b11,	// (invalid channel command)
+	MX_CHAN_CMD_RESET	= 0b00,	// software reset
+	MX_CHAN_CMD_INTSPEC	= 0b01,	// get interrupt specification
+	MX_CHAN_CMD_EXISTS	= 0b10,	// check if channel exists
+	MX_CHAN_CMD_INVALID	= 0b11,	// (invalid channel command)
+	MX_CHAN_CMD_MAX
 };
 
-extern const char *mx_chan_cmd_names[];
-extern const char *mx_cmd_names[];
+const char * mx_get_cmd_name(unsigned i);
+const char * mx_get_chan_cmd_name(unsigned i);
 
 #endif
 

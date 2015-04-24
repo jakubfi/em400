@@ -20,6 +20,7 @@
 
 #include "log.h"
 #include "io/mx_line.h"
+#include "io/mx_irq.h"
 #include "io/mx_proto.h"
 
 struct proto_winchester_data {
@@ -59,6 +60,44 @@ void mx_proto_winchester_free(struct mx_line *line)
 }
 
 // -----------------------------------------------------------------------
+uint8_t mx_proto_winchester_status_start(struct mx_line *line, int *irq, uint16_t *data)
+{
+	return MX_COND_NONE;
+}
+
+// -----------------------------------------------------------------------
+uint8_t mx_proto_winchester_detach_start(struct mx_line *line, int *irq, uint16_t *data)
+{
+	return MX_COND_NONE;
+}
+
+// -----------------------------------------------------------------------
+uint8_t mx_proto_winchester_oprq_start(struct mx_line *line, int *irq, uint16_t *data)
+{
+	return MX_COND_NONE;
+}
+
+// -----------------------------------------------------------------------
+uint8_t mx_proto_winchester_transmit_start(struct mx_line *line, int *irq, uint16_t *data)
+{
+	return MX_COND_NONE;
+}
+
+// -----------------------------------------------------------------------
+uint8_t mx_proto_winchester_abort_start(struct mx_line *line, int *irq, uint16_t *data)
+{
+	return MX_COND_NONE;
+}
+
+// -----------------------------------------------------------------------
+uint8_t mx_proto_winchester_attach_start(struct mx_line *line, int *irq, uint16_t *data)
+{
+	line->attached = 1;
+	*irq = MX_IRQ_IDOLI;
+	return MX_COND_NONE;
+}
+
+// -----------------------------------------------------------------------
 int mx_proto_winchester_phy_types[] = { MX_PHY_WINCHESTER, -1 };
 
 struct mx_proto mx_proto_winchester = {
@@ -68,6 +107,14 @@ struct mx_proto mx_proto_winchester = {
 	.phy_types = mx_proto_winchester_phy_types,
 	.conf = mx_proto_winchester_conf,
 	.free = mx_proto_winchester_free,
+	.task = {
+		{ 0, 0, 1, { mx_proto_winchester_status_start, NULL, NULL, NULL, NULL, NULL, NULL, NULL } },
+		{ 0, 0, 0, { mx_proto_winchester_detach_start, NULL, NULL, NULL, NULL, NULL, NULL, NULL } },
+		{ 0, 0, 0, { mx_proto_winchester_oprq_start, NULL, NULL, NULL, NULL, NULL, NULL, NULL } },
+		{ 5, 5, 2, { mx_proto_winchester_transmit_start, NULL, NULL, NULL, NULL, NULL, NULL, NULL } },
+		{ 0, 0, 0, { mx_proto_winchester_abort_start, NULL, NULL, NULL, NULL, NULL, NULL, NULL } },
+		{ 0, 0, 0, { mx_proto_winchester_attach_start, NULL, NULL, NULL, NULL, NULL, NULL, NULL } },
+	}
 };
 
 // vim: tabstop=4 shiftwidth=4 autoindent

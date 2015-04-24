@@ -23,50 +23,50 @@
 #include "cpu/interrupts.h"
 #include "io/mx_irq.h"
 
-const char *mx_intr_names[] = {
-	"INIEA (intr no longer valid)",
-	"INSKA (channel faulty)",
-	"IWYZE (reset done)",
-	"IWYTE (test done)",
-	"INKON ('setconf' rejected)",
-	"IUKON ('setconf' done)",
-	"INKOT ('setconf' failed)",
-	"ISTRE ('status' done)",
-	"INSTR ('status' rejected)",
-	"INKST ('status' no line)",
-	"IDOLI ('attach' done)",
-	"INDOL ('attach' rejected)",
-	"INKDO ('attach' no line)",
-	"IETRA ('transmit' done)",
-	"INTRA ('transmit' rejected)",
-	"INKTR ('transmit' no line)",
-	"ITRER ('transmit' error)",
+const char *mx_irq_names[] = {
+	"INIEA - interrupt no longer valid",
+	"INSKA - channel faulty",
+	"IWYZE - 'reset' done",
+	"IWYTE - 'test' done",
+	"INKON - 'setconf' rejected",
+	"IUKON - 'setconf' done",
+	"INKOT - 'setconf' failed",
+	"ISTRE - 'status' done",
+	"INSTR - 'status' rejected",
+	"INKST - 'status' no line",
+	"IDOLI - 'attach' done",
+	"INDOL - 'attach' rejected",
+	"INKDO - 'attach' no line",
+	"IETRA - 'transmit' done",
+	"INTRA - 'transmit' rejected",
+	"INKTR - 'transmit' no line",
+	"ITRER - 'transmit' error",
 	"???",
 	"???",
-	"ITRAB ('transmit' cancelled)",
-	"IABTR ('cancel' done)",
-	"INABT ('cancel' while transmitting)",
-	"INKAB ('cancel' no line)",
-	"IODLI ('detach' done)",
-	"INODL ('detach' while transmitting)",
-	"INKOD ('detach' no line)",
-	"???",
-	"???",
-	"???",
+	"ITRAB - 'transmit' cancelled",
+	"IABTR - 'cancel' done",
+	"INABT - 'cancel' while transmitting",
+	"INKAB - 'cancel' no line",
+	"IODLI - 'detach' done",
+	"INODL - 'detach' while not transmitting",
+	"INKOD - 'detach' no line",
 	"???",
 	"???",
 	"???",
-	"INPAO (mera-multix transmission failure)",
-	"IPARE (parity error)",
-	"IOPRU (OPRQ)",
-	"IEPS0 (unknown command code=0)",
-	"IEPS6 (unknown command code=6)",
-	"IEPS7 (unknown command code=7)",
-	"IEPS8 (unknown command code=8)",
-	"IEPSC (unknown command code=C)",
-	"IEPSD (unknown command code=D)",
-	"IEPSE (unknown command code=E)",
-	"IEPSF (unknown command code=F)"
+	"???",
+	"???",
+	"???",
+	"INPAO - mera-multix transmission errors",
+	"IPARE - memory parity error",
+	"IOPRU - OPRQ",
+	"IEPS0 - unknown command code=0",
+	"IEPS6 - unknown command code=6",
+	"IEPS7 - unknown command code=7",
+	"IEPS8 - unknown command code=8",
+	"IEPSC - unknown command code=C",
+	"IEPSD - unknown command code=D",
+	"IEPSE - unknown command code=E",
+	"IEPSF - unknown command code=F"
 };
 
 static void mx_irqq_send(struct mx_irqq *queue);
@@ -136,7 +136,7 @@ void mx_irqq_destroy(struct mx_irqq *queue)
 // -----------------------------------------------------------------------
 int mx_irqq_enqueue(struct mx_irqq *queue, int intr, int line)
 {
-	LOGID(L_MX, 3, queue, "Enqueue interrupt %i (%s), line %i (queue size: %i)", intr, mx_intr_names[intr], line, queue->size);
+	LOGID(L_MX, 3, queue, "Enqueue interrupt %i (%s), line %i (queue size: %i)", intr, mx_irq_names[intr], line, queue->size);
 
 	// queue full?
 	if ((queue->maxlen > 0) && (queue->size >= queue->maxlen)) {
@@ -151,7 +151,7 @@ int mx_irqq_enqueue(struct mx_irqq *queue, int intr, int line)
 	}
 
 	irq->line = line;
-	irq->intr = intr;
+	irq->irq = intr;
 	irq->next = NULL;
 
 	// append irq
@@ -209,7 +209,7 @@ static void mx_irqq_send(struct mx_irqq *queue)
 	LOGID(L_MX, 3, queue, "Sending interrupt to CPU");
 
 	// store interrupt specification
-	atom_store(&queue->intspec, (irq->intr << 8) | irq->line);
+	atom_store(&queue->intspec, (irq->irq << 8) | irq->line);
 
 	// notify CPU
 	int_set(queue->chnum + 12);
@@ -224,7 +224,7 @@ uint16_t mx_irqq_get_intspec(struct mx_irqq *queue)
 	// * when CPU reads it
 	// * or when interrupt routine does "MVI A,1  OUT KWINT"
 	atom_store(&queue->intspec, MX_INTSPEC_EMPTY);
-	LOGID(L_MX, 3, queue, "Sending intspec to CPU: 0x%04x (%s, line %i)", intspec, mx_intr_names[intspec>>8], intspec & 0xFF);
+	LOGID(L_MX, 3, queue, "Sending intspec to CPU: 0x%04x (%s, line %i)", intspec, mx_irq_names[intspec>>8], intspec & 0xFF);
 	return intspec;
 }
 

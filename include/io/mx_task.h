@@ -20,12 +20,45 @@
 
 #include <inttypes.h>
 
-struct mx_task {
-	int reported;
-	int sleep;
-	int condition;
-	uint16_t addr;
+struct mx_line;
+
+enum mx_tasks {
+	MX_TASK_UNKNOWN = -1, // em400: task for unknown MULTIX commands
+	MX_TASK_MISPLCD = -2, // em400: task for misplaced MULTIX commands
+	MX_TASK_STATUS	= 0,  // report status (highest priority)
+	MX_TASK_DETACH	= 1,  // detach line
+	MX_TASK_OPRQ	= 2,  // OPRQ
+	MX_TASK_TRANSMIT= 3,  // transmit
+	MX_TASK_ABORT	= 4,  // abort
+	MX_TASK_ATTACH	= 5,  // attach line (lowest priority)
+	MX_TASK_MAX		= 6,  // (task count)
 };
+
+enum mx_task_conditions {
+	MX_COND_NONE	= 0,
+	MX_COND_ACT		= 0b00000001, // active
+	MX_COND_START	= 0b00000001, // reported (highest priority)
+	MX_COND_RECV	= 0b00000010, // receiving done
+	MX_COND_SEND	= 0b00000100, // transmitting done
+	MX_COND_ERR		= 0b00001000, // error
+	MX_COND_OPRQ	= 0b00010000, // OPRQ
+	MX_COND_WINCH	= 0b00100000, // winchester finished, XON for serial lines
+	MX_COND_X		= 0b01000000, // em400: nonexisting condition, shouldn't happen
+	MX_COND_TIMER	= 0b10000000, // timer (lowest priority)
+};
+
+struct mx_task {
+	uint8_t bzaw;	// B.ZAWIESZENIA: /0/=BIT AKTYWNOSCI, /1-7/=BITY ZAWIESZENIA
+	uint8_t bwar;	// B.WARUNKOW: /0/=<START BEZWARUN.>, /1-7/=BITY WARUNKOW
+	uint16_t arg;
+};
+
+const char *mx_task_name(unsigned i);
+int mx_task_is_running(struct mx_task *task);
+void mx_task_start(struct mx_task *task, uint16_t arg);
+int mx_task_is_waiting(struct mx_task *task);
+void mx_task_activate(struct mx_task *task);
+unsigned mx_task_get_condition_num(struct mx_task *task);
 
 #endif
 
