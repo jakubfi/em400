@@ -172,9 +172,6 @@ int decode_mxpsuk_ll(struct mx_cf_sc_ll *ll, char *b)
 				pos += sprintf(b+pos, "Missing floppy logical line description\n");
 			}
 			break;
-		case MX_PROTO_TTY_ITWL:
-			pos += sprintf(b+pos, "TTY ITWL\n");
-			break;
 		default:
 			pos += sprintf(b+pos, "unknown\n");
 			break;

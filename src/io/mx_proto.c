@@ -30,7 +30,6 @@ extern struct mx_proto mx_proto_som_terminal;
 extern struct mx_proto mx_proto_winchester;
 extern struct mx_proto mx_proto_tape;
 extern struct mx_proto mx_proto_floppy;
-extern struct mx_proto mx_proto_ttyitwl;
 
 const struct mx_proto * mx_protocols[] = {
 	&mx_proto_punchrd,
@@ -42,7 +41,6 @@ const struct mx_proto * mx_protocols[] = {
 	&mx_proto_winchester,
 	&mx_proto_tape,
 	&mx_proto_floppy,
-	&mx_proto_ttyitwl,
 };
 
 // -----------------------------------------------------------------------
