@@ -106,7 +106,11 @@ int mx_line_conf_phy(struct mx_line *line, uint16_t data)
 	// check direction: USART
 	} else if ((type == MX_PHY_USART_SYNC) || (type == MX_PHY_USART_ASYNC)) {
 		if ((dir != MX_DIR_OUTPUT) && (dir != MX_DIR_INPUT) && (dir != MX_DIR_HALF_DUPLEX) && (dir != MX_DIR_FULL_DUPLEX)) {
-			return MX_SC_E_DIR;
+			if (used) {
+				return MX_SC_E_DIR;
+			} else if (dir != MX_DIR_NONE) {
+				return MX_SC_E_DIR;
+			}
 		}
 	// check direction: 8255
 	} else if (type == MX_PHY_8255) {
@@ -182,7 +186,7 @@ int mx_line_conf_log(struct mx_line *line, uint16_t *data)
 void mx_line_deconfigure(struct mx_line *line)
 {
 	line->used = 0;
-	line->attached = 0;
+	line->status = MX_LSTATE_NONE;
 	line->dir = 0;
 	line->type = 0;
 	if (line->proto) {

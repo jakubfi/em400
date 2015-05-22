@@ -1,4 +1,4 @@
-//  Copyright (c) 2013-2015 Jakub Filipowicz <jakubf@gmail.com>
+//  Copyright (c) 2015 Jakub Filipowicz <jakubf@gmail.com>
 //
 //  This program is free software; you can redistribute it and/or modify
 //  it under the terms of the GNU General Public License as published by
@@ -18,34 +18,59 @@
 #include <stdlib.h>
 #include <inttypes.h>
 
-#include "log.h"
-#include "io/mx_line.h"
-#include "io/mx_proto.h"
+#include "cfg.h"
+#include "io/dev/dev.h"
 
-// -----------------------------------------------------------------------
-int mx_proto_som_punchreader_conf(struct mx_line *line, uint16_t *data)
-{
-	// No protocol configuration
-	return MX_SC_E_OK;
-}
-
-// -----------------------------------------------------------------------
-void mx_proto_som_punchreader_free(struct mx_line *line)
-{
-	free(line->proto_data);
-	line->proto_data = NULL;
-}
-
-// -----------------------------------------------------------------------
-int mx_proto_som_punchreader_phy_types[] = { MX_PHY_USART_ASYNC, MX_PHY_8255, -1 };
-
-struct mx_proto mx_proto_som_punchreader = {
-	.enabled = 0,
-	.name = "SOM-3 punched tape reader",
-	.dir = MX_DIR_INPUT,
-	.phy_types = mx_proto_som_punchreader_phy_types,
-	.conf = mx_proto_som_punchreader_conf,
-	.free = mx_proto_som_punchreader_free,
+struct dev_punchrd {
 };
+
+// -----------------------------------------------------------------------
+void * dev_punchrd_create(struct cfg_arg *args)
+{
+	struct dev_punchrd *punchrd = malloc(sizeof(struct dev_punchrd));
+	if (!punchrd) {
+		goto cleanup;
+	}
+
+	return punchrd;
+
+cleanup:
+	free(punchrd);
+	return NULL;
+}
+
+// -----------------------------------------------------------------------
+void dev_punchrd_destroy(void *dev)
+{
+	struct dev_punchrd *punchrd = dev;
+	free(punchrd);
+}
+
+// -----------------------------------------------------------------------
+void dev_punchrd_reset(void *dev)
+{
+
+}
+
+// -----------------------------------------------------------------------
+int dev_punchrd_read(struct dev_punchrd *punchrd)
+{
+
+	return 0;
+}
+
+// -----------------------------------------------------------------------
+int dev_punchrd_write(struct dev_punchrd *punchrd)
+{
+	return 0;
+}
+
+struct dev_drv dev_punchrd = {
+	.name = "punchreader",
+	.create = dev_punchrd_create,
+	.destroy = dev_punchrd_destroy,
+	.reset = dev_punchrd_reset
+};
+
 
 // vim: tabstop=4 shiftwidth=4 autoindent

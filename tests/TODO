@@ -5,6 +5,51 @@ mega:
 * 8M?
 
 multix:
- * timer
- * polecenia sterujące ogólne:
+ - timer
+ + niepoprawne polecenia
+ + reset wstępny, MCL, software-owy
+ + opóźniona inicjalizacja
+ + odrzucenie komend przed inicjalizacją
+ + reset przed zakończeniem poprzedniej inicjalizacji
+
+ * polecenia kanałowe (zawsze OK):
+   + zeruj
+     - INSKA - procesor MULTIX jest niesprawny
+     + IWYZE - procesor został wyzerowany
+   + sprawdź istnienie modułu
+   + podaj specyfikację przerwania
+ * polecenia sterujące ogólne (OK, EN):
+   + Cofnij przerwanie niepokwitowane do kolejki
+   + Testuj
+     + IWYTE - poprawne zakończenie testu
+   + Ustaw konfigurację
+     + INKON - nie wykonano polecenia, bo były błędy w polu sterującym lub konfiguracja była już wcześniej ustawiona
+     + IUKON - ustawiono konfigurację
+     + INKOT - nie wykonano polecenia, bo wystąpiły błędy transmisji MERA-MULTIX
+ * polecenia liniowe (OK, EN):
+   * Dołącz linię
+     * IDOLI - dołączono linię
+     * INDOL - nie dołączono bo błędne parametry lub linia już była dołączona
+     * INKDO - brak linii w konfiguracji
+   * Odłącz linię
+     * IODLI - odłączono linię
+     * INODL - linia nie zakończyła transmisji, nie odłączono
+     * INKOD - brak linii w konfiguracji
+   * Podaj status linii
+     * ISTRE - podano status
+     * INSTR - odrzucono polecenie (poprzednie polecenie "podaj status" jest w toku)
+     * INKST - brak linii w konfiguracji
+   * Przesyłaj
+     * IETRA - zakończono przesyłanie poprawnie
+     * ITRER - zakończono przesyłanie z błędami
+     * INTRA - odrzucono polecenie (błędne parametry)
+     * INKTR - brak linii w konfiguracji
+     * ITRAB - zerwano transmisje poleceniem "zerwij"
+   * Zerwij przesyłanie
+     * IABTR - wykonano zerwanie
+     * INABT - nie ma transmisji w tej linii
+     * INKAB - brak linii w konfiguracji
+ * INPAO - brak trans. MERA-MULTIX
+ * IPARE - błąd parzystości MERA-MULTIX
+ * IOPRU - zgłoszenia operatora urządzenia
 

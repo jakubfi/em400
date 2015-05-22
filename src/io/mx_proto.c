@@ -21,10 +21,10 @@
 #include "log.h"
 #include "io/mx_proto.h"
 
-extern struct mx_proto mx_proto_punchreader;
+extern struct mx_proto mx_proto_punchrd;
 extern struct mx_proto mx_proto_puncher;
 extern struct mx_proto mx_proto_terminal;
-extern struct mx_proto mx_proto_som_punchreader;
+extern struct mx_proto mx_proto_som_punchrd;
 extern struct mx_proto mx_proto_som_puncher;
 extern struct mx_proto mx_proto_som_terminal;
 extern struct mx_proto mx_proto_winchester;
@@ -33,10 +33,10 @@ extern struct mx_proto mx_proto_floppy;
 extern struct mx_proto mx_proto_ttyitwl;
 
 const struct mx_proto * mx_protocols[] = {
-	&mx_proto_punchreader,
+	&mx_proto_punchrd,
 	&mx_proto_puncher,
 	&mx_proto_terminal,
-	&mx_proto_som_punchreader,
+	&mx_proto_som_punchrd,
 	&mx_proto_som_puncher,
 	&mx_proto_som_terminal,
 	&mx_proto_winchester,

@@ -17,44 +17,52 @@
 
 #include <stdlib.h>
 #include <inttypes.h>
+#include <arpa/inet.h>
 
-#include "log.h"
 #include "io/mx_line.h"
+#include "io/mx_irq.h"
 #include "io/mx_proto.h"
-#include "io/mx_proto_common.h"
 
 // -----------------------------------------------------------------------
-int mx_proto_tape_conf(struct mx_line *line, uint16_t *data)
+uint8_t mx_proto_status_start(struct mx_line *line, int *irq, uint16_t *data)
 {
-	// No protocol configuration
-	return MX_SC_E_OK;
+	*data = line->status;
+	*irq = MX_IRQ_ISTRE;
+
+	return MX_COND_NONE;
 }
 
 // -----------------------------------------------------------------------
-void mx_proto_tape_free(struct mx_line *line)
+uint8_t mx_proto_detach_start(struct mx_line *line, int *irq, uint16_t *data)
 {
-	free(line->proto_data);
-	line->proto_data = NULL;
-}
-
-// -----------------------------------------------------------------------
-int mx_proto_tape_phy_types[] = { MX_PHY_MTAPE, -1 };
-
-struct mx_proto mx_proto_tape = {
-	.enabled = 1,
-	.name = "magnetic tape",
-	.dir = MX_DIR_NONE,
-	.phy_types = mx_proto_tape_phy_types,
-	.conf = mx_proto_tape_conf,
-	.free = mx_proto_tape_free,
-	.task = {
-		{ 0, 0, 1, { mx_proto_status_start, NULL, NULL, NULL, NULL, NULL, NULL, NULL } },
-		{ 0, 0, 0, { mx_proto_detach_start, NULL, NULL, NULL, NULL, NULL, NULL, NULL } },
-		{ 0, 0, 0, { mx_proto_oprq_start, NULL, NULL, NULL, NULL, NULL, NULL, NULL } },
-		{ 3, 3, 2, { NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL } },
-		{ 0, 0, 0, { NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL } },
-		{ 0, 0, 0, { mx_proto_attach_start, NULL, NULL, NULL, NULL, NULL, NULL, NULL } },
+	if ((line->status & MX_LSTATE_TRANS)) {
+		*irq = MX_IRQ_INODL;
+	} else {
+		line->status = MX_LSTATE_NONE;
+		*irq = MX_IRQ_IODLI;
 	}
-};
+
+	return MX_COND_NONE;
+}
+
+// -----------------------------------------------------------------------
+uint8_t mx_proto_oprq_start(struct mx_line *line, int *irq, uint16_t *data)
+{
+	*irq = MX_IRQ_IOPRU;
+	return MX_COND_NONE;
+}
+
+// -----------------------------------------------------------------------
+uint8_t mx_proto_attach_start(struct mx_line *line, int *irq, uint16_t *data)
+{
+	if ((line->status & MX_LSTATE_ATTACHED)) {
+		*irq = MX_IRQ_INDOL;
+	} else {
+		line->status |= MX_LSTATE_ATTACHED;
+		*irq = MX_IRQ_IDOLI;
+	}
+
+	return MX_COND_NONE;
+}
 
 // vim: tabstop=4 shiftwidth=4 autoindent

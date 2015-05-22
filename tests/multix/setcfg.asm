@@ -1,6 +1,20 @@
 ; OPTS -c configs/multix.cfg
 
-; Test handling of illegal commands
+; Test "set configuration" command:
+;
+;  - physical/logical line count
+;  - physical line types
+;  - physical line directions
+;  - line type vs. direction match
+;  - incomplete physical line configurations
+;  - logical lines for unused physical lines
+;  - logical lines for physical lines already configured as logical lines
+;  - protocols
+;  - physical line numbers are 5-bit in logical line configuration
+;  - physical line direction vs. protocol
+;  - protocol parameters
+;  - configuration of already configured MULTIX
+;  - correct full configuration
 
 	.cpu	mx16
 
@@ -36,7 +50,7 @@ num4:	.word	2\7 + 1\15, 0
 ; physical line configuration tests
 ; ---------------------------------------------------------------
 
-; bad line type
+; wrong line type
 
 type0:	.word	1\7 + 1\15, 0
 	.word	MX_LDIR_IN + MX_LINE_UNUSED + MX_LTYPE_ERR + 0 ; wrong line 0 type
@@ -44,7 +58,7 @@ type1:	.word	2\7 + 1\15, 0
 	.word	MX_LDIR_IN + MX_LINE_UNUSED + MX_LTYPE_USARTS + 0
 	.word	MX_LDIR_IN + MX_LINE_UNUSED + MX_LTYPE_ERR + 0 ; wrong line 1 type
 
-; bad (unknown) directions
+; wrong (unknown) directions
 
 dir1:	.word	1\7 + 1\15, 0
 	.word	MX_LDIR_ERR1 + MX_LINE_UNUSED + MX_LTYPE_USARTA + 0 ; wrong line 0 direction (1)

@@ -55,7 +55,7 @@
 	.const	IV_FP_UF	INTV + I_FP_UF
 	.const	IV_FP_OF	INTV + I_FP_OF
 	.const	IV_FP_ERR	INTV + I_FP_ERR
-	.const	IV_FP_DIV0	INTV + I_FP_DIV0
+	.const	IV_FP_DIV0	INTV + I_DIV0
 	.const	IV_EXTRA	INTV + I_EXTRA
 	.const	IV_CHAN0	INTV + I_CHAN0
 	.const	IV_CHAN1	INTV + I_CHAN1

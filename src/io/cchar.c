@@ -67,7 +67,7 @@ void * cchar_create(int num, struct cfg_unit *units)
 		// find unit prototype
 		struct cchar_unit_proto_t *proto = cchar_unit_proto_get(cchar_unit_proto, cunit->name);
 		if (!proto) {
-			gerr = E_IO_UNIT_UNKNOWN;
+			gerr = E_IO_DEV_UNKNOWN;
 			free(chan);
 			return NULL;
 		}

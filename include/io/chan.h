@@ -59,3 +59,4 @@ void chan_destroy(struct chan *chan);
 
 #endif
 
+// vim: tabstop=4 shiftwidth=4 autoindent

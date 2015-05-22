@@ -24,36 +24,36 @@
 #include "io/mx_proto_common.h"
 
 // -----------------------------------------------------------------------
-int mx_proto_tape_conf(struct mx_line *line, uint16_t *data)
+int mx_proto_som_punchrd_conf(struct mx_line *line, uint16_t *data)
 {
 	// No protocol configuration
 	return MX_SC_E_OK;
 }
 
 // -----------------------------------------------------------------------
-void mx_proto_tape_free(struct mx_line *line)
+void mx_proto_som_punchrd_free(struct mx_line *line)
 {
 	free(line->proto_data);
 	line->proto_data = NULL;
 }
 
 // -----------------------------------------------------------------------
-int mx_proto_tape_phy_types[] = { MX_PHY_MTAPE, -1 };
+int mx_proto_som_punchrd_phy_types[] = { MX_PHY_USART_ASYNC, MX_PHY_8255, -1 };
 
-struct mx_proto mx_proto_tape = {
-	.enabled = 1,
-	.name = "magnetic tape",
-	.dir = MX_DIR_NONE,
-	.phy_types = mx_proto_tape_phy_types,
-	.conf = mx_proto_tape_conf,
-	.free = mx_proto_tape_free,
+struct mx_proto mx_proto_som_punchrd = {
+	.enabled = 0,
+	.name = "SOM-3 punched tape reader",
+	.dir = MX_DIR_INPUT,
+	.phy_types = mx_proto_som_punchrd_phy_types,
+	.conf = mx_proto_som_punchrd_conf,
+	.free = mx_proto_som_punchrd_free,
 	.task = {
 		{ 0, 0, 1, { mx_proto_status_start, NULL, NULL, NULL, NULL, NULL, NULL, NULL } },
 		{ 0, 0, 0, { mx_proto_detach_start, NULL, NULL, NULL, NULL, NULL, NULL, NULL } },
 		{ 0, 0, 0, { mx_proto_oprq_start, NULL, NULL, NULL, NULL, NULL, NULL, NULL } },
-		{ 3, 3, 2, { NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL } },
+		{ 5, 5, 3, { NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL } },
 		{ 0, 0, 0, { NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL } },
-		{ 0, 0, 0, { mx_proto_attach_start, NULL, NULL, NULL, NULL, NULL, NULL, NULL } },
+		{ 1, 0, 0, { mx_proto_attach_start, NULL, NULL, NULL, NULL, NULL, NULL, NULL } },
 	}
 };
 

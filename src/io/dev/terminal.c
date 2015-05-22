@@ -1,4 +1,4 @@
-//  Copyright (c) 2013-2015 Jakub Filipowicz <jakubf@gmail.com>
+//  Copyright (c) 2015 Jakub Filipowicz <jakubf@gmail.com>
 //
 //  This program is free software; you can redistribute it and/or modify
 //  it under the terms of the GNU General Public License as published by
@@ -18,34 +18,59 @@
 #include <stdlib.h>
 #include <inttypes.h>
 
-#include "log.h"
-#include "io/mx_line.h"
-#include "io/mx_proto.h"
+#include "cfg.h"
+#include "io/dev/dev.h"
 
-// -----------------------------------------------------------------------
-int mx_proto_punchreader_conf(struct mx_line *line, uint16_t *data)
-{
-	// No protocol configuration
-	return MX_SC_E_OK;
-}
-
-// -----------------------------------------------------------------------
-void mx_proto_punchreader_free(struct mx_line *line)
-{
-	free(line->proto_data);
-	line->proto_data = NULL;
-}
-
-// -----------------------------------------------------------------------
-int mx_proto_punchreader_phy_types[] = { MX_PHY_USART_ASYNC, MX_PHY_8255, -1 };
-
-struct mx_proto mx_proto_punchreader = {
-	.enabled = 1,
-	.name = "punched tape reader",
-	.dir = MX_DIR_INPUT,
-	.phy_types = mx_proto_punchreader_phy_types,
-	.conf = mx_proto_punchreader_conf,
-	.free = mx_proto_punchreader_free,
+struct dev_terminal {
 };
+
+// -----------------------------------------------------------------------
+void * dev_terminal_create(struct cfg_arg *args)
+{
+	struct dev_terminal *terminal = malloc(sizeof(struct dev_terminal));
+	if (!terminal) {
+		goto cleanup;
+	}
+
+	return terminal;
+
+cleanup:
+	free(terminal);
+	return NULL;
+}
+
+// -----------------------------------------------------------------------
+void dev_terminal_destroy(void *dev)
+{
+	struct dev_terminal *terminal = dev;
+	free(terminal);
+}
+
+// -----------------------------------------------------------------------
+void dev_terminal_reset(void *dev)
+{
+
+}
+
+// -----------------------------------------------------------------------
+int dev_terminal_read(struct dev_terminal *terminal)
+{
+
+	return 0;
+}
+
+// -----------------------------------------------------------------------
+int dev_terminal_write(struct dev_terminal *terminal)
+{
+	return 0;
+}
+
+struct dev_drv dev_terminal = {
+	.name = "terminal",
+	.create = dev_terminal_create,
+	.destroy = dev_terminal_destroy,
+	.reset = dev_terminal_reset
+};
+
 
 // vim: tabstop=4 shiftwidth=4 autoindent

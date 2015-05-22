@@ -21,6 +21,7 @@
 #include "log.h"
 #include "io/mx_line.h"
 #include "io/mx_proto.h"
+#include "io/mx_proto_common.h"
 
 // -----------------------------------------------------------------------
 int mx_proto_terminal_conf(struct mx_line *line, uint16_t *data)
@@ -46,6 +47,14 @@ struct mx_proto mx_proto_terminal = {
 	.phy_types = mx_proto_terminal_phy_types,
 	.conf = mx_proto_terminal_conf,
 	.free = mx_proto_terminal_free,
+	.task = {
+		{ 0, 0, 1, { mx_proto_status_start, NULL, NULL, NULL, NULL, NULL, NULL, NULL } },
+		{ 0, 0, 0, { mx_proto_detach_start, NULL, NULL, NULL, NULL, NULL, NULL, NULL } },
+		{ 0, 0, 0, { mx_proto_oprq_start, NULL, NULL, NULL, NULL, NULL, NULL, NULL } },
+		{ 10, 10, 4, { NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL } },
+		{ 0, 0, 0, { NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL } },
+		{ 3, 0, 0, { mx_proto_attach_start, NULL, NULL, NULL, NULL, NULL, NULL, NULL } },
+	}
 };
 
 // vim: tabstop=4 shiftwidth=4 autoindent

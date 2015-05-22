@@ -18,10 +18,12 @@
 #ifndef MX_LINE_H
 #define MX_LINE_H
 
+#include "log.h"
+
 #include "io/mx_task.h"
 #include "io/mx_proto.h"
 
-#include "log.h"
+#include "io/dev/dev.h"
 
 #define MX_LINE_MAX 32
 
@@ -67,6 +69,27 @@ enum mx_setconf_err {
 	MX_SC_E_OK, // em400: OK
 };
 
+// line status
+enum mx_line_status {
+	MX_LSTATE_NONE			= 0,
+	MX_LSTATE_ATTACHED		= 1 << 0,	// line attached
+	MX_LSTATE_TRANS			= 1 << 1,	// transmission active
+	MX_LSTATE_2				= 1 << 2,	// (unused)
+	MX_LSTATE_3				= 1 << 3,	// (unused)
+	MX_LSTATE_TASK_XOFF		= 1 << 4,	// task suspended due to XOFF
+    MX_LSTATE_TRANS_XOFF	= 1 << 5,	// transmission suspended due to XOFF
+	MX_LSTATE_TRANS_LAST	= 1 << 6,	// transmission of a last fragment
+	MX_LSTATE_7				= 1 << 7,	// (unused)
+	MX_LSTATE_SEND_START	= 1 << 8,	// send started
+	MX_LSTATE_SEND_RUN		= 1 << 9,	// send running
+	MX_LSTATE_RECV_START	= 1 << 10,	// receive started
+	MX_LSTATE_RECV_RUN		= 1 << 11,	// receive running
+	MX_LSTATE_CAN_STOP		= 1 << 12,	// stop after CAN (protocol 5)
+	MX_LSTATE_STOP_CHAR		= 1 << 13,	// stop character received
+	MX_LSTATE_PARITY_ERR	= 1 << 14,	// parity error
+	MX_LSTATE_OPRQ			= 1 << 15,	// OPRQ
+};
+
 struct mx_line {
 	// physical line properties
 	int used;			// line is used (1=physical 2=logical)
@@ -74,12 +97,13 @@ struct mx_line {
 	int type;			// line type
 
 	// logical line properties
-	int attached;		// line is attached
+	uint16_t status;	// line status
 	const struct mx_proto *proto;   // line protocol
 	void * proto_data;	// protocol data
 
 	// actual device
-	//struct dev *device;
+	const struct dev_drv *device;
+	void *dev_obj;
 
 	// task
 	struct mx_task task[MX_TASK_MAX];

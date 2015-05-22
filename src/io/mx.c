@@ -31,6 +31,7 @@
 #include "io/mx_cmds.h"
 #include "io/mx_ev.h"
 #include "io/mx_irq.h"
+#include "io/dev/dev.h"
 
 // Real multix boots up in probably just under a second
 // ~500ms (for ROM/RAM check) + ~185ms (for RAM cleanup).
@@ -128,6 +129,19 @@ void * mx_create(int num, struct cfg_unit *units)
 	if (pthread_create(&multix->main_th, NULL, mx_main, multix)) {
 		gerr = E_THREAD;
 		goto cleanup;
+	}
+
+	// create devices
+	LOGID(L_MX, 1, multix, "Initializing devices");
+	struct cfg_unit *dev_cfg = units;
+	while (dev_cfg) {
+		struct mx_line *line = multix->lines + dev_cfg->num;
+		int res = dev_make(dev_cfg, &line->device, &line->dev_obj);
+		if (res != E_OK) {
+			gerr = res;
+			goto cleanup;
+		}
+		dev_cfg = dev_cfg->next;
 	}
 
 	return multix;
@@ -615,7 +629,7 @@ static int mx_get_line_waiting(struct mx *multix, int task_num)
 			line_num = 0;
 		}
 
-		struct mx_task *task = multix->log_lines[i]->task + task_num;
+		struct mx_task *task = multix->log_lines[line_num]->task + task_num;
 
 		if (mx_task_is_waiting(task)) {
 			LOGID(L_MX, 3, multix, "Line %i is waiting for task %i: %s", line_num, task_num, mx_task_name(task_num));
@@ -645,6 +659,11 @@ static int mx_task_run(struct mx_line *line, struct mx_task *task, const struct 
 		if (!mem_mget(0, task->arg, data, proto_task->input_flen)) {
 			return MX_IRQ_INPAO;
 		}
+	}
+
+	// clear return field if it's there
+	for (int i=proto_task->output_fpos ; i<proto_task->output_fpos+proto_task->output_flen ; i++) {
+		data[i] = 0;
 	}
 
 	// run the protocol handler
