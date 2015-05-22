@@ -72,10 +72,6 @@ dir5:	.word	3\7 + 1\15, 0
 
 ; wrong line type vs. direction combinations
 
-udir0:	.word	1\7 + 1\15, 0
-	.word	MX_LDIR_NONE + MX_LINE_UNUSED + MX_LTYPE_USARTA + 0 ; wrong usart_a line 0 direction (none)
-udir1:	.word	1\7 + 1\15, 0
-	.word	MX_LDIR_NONE + MX_LINE_UNUSED + MX_LTYPE_USARTS + 0 ; wrong usart_s line 0 direction (none)
 pdir0:	.word	1\7 + 1\15, 0
 	.word	MX_LDIR_NONE + MX_LINE_UNUSED + MX_LTYPE_8255 + 0 ; wrong 8255 line 0 direction (none)
 pdir1:	.word	1\7 + 1\15, 0
@@ -530,8 +526,6 @@ seq:	.word	dummy,	MX_IWYZE\7,	0
 	.word	dir1,	MX_INKON\7,	MX_SCERR_DIR + 0
 	.word	dir3,	MX_INKON\7,	MX_SCERR_DIR + 1
 	.word	dir5,	MX_INKON\7,	MX_SCERR_DIR + 2
-	.word	udir0,	MX_INKON\7,	MX_SCERR_DIR + 0
-	.word	udir1,	MX_INKON\7,	MX_SCERR_DIR + 0
 	.word	pdir0,	MX_INKON\7,	MX_SCERR_DIR + 0
 	.word	pdir1,	MX_INKON\7,	MX_SCERR_DIR + 0
 	.word	pdir2,	MX_INKON\7,	MX_SCERR_DIR + 0
