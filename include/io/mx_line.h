@@ -91,19 +91,16 @@ enum mx_line_status {
 };
 
 struct mx_line {
-	// physical line properties
-	int used;			// line is used (1=physical 2=logical)
-	int dir;			// data direction
-	int type;			// line type
+	int used;						// physical line is used
+	int dir;						// physical line direction
+	int type;						// physical line type
 
-	// logical line properties
-	uint16_t status;	// line status
 	const struct mx_proto *proto;   // line protocol
-	void * proto_data;	// protocol data
+	void *proto_data;				// line protocol private data
+	uint16_t status;				// line status
 
-	// actual device
-	const struct dev_drv *device;
-	void *dev_obj;
+	const struct dev_drv *device;	// deivce driver (set in em400 configuration)
+	void *dev_obj;					// device driver private data
 
 	// task
 	struct mx_task task[MX_TASK_MAX];

@@ -25,6 +25,27 @@
 #include "io/mx_line.h"
 #include "io/mx_timer.h"
 
+
+/*
+
+ How devices work with MULTIX:
+
+ .------------.            line             .--------.
+ |            | .-------------------------. |        |
+ |   MULTIX   |<         protocol          >| device |
+ |            | `-------------------------' |        |
+ `------------'                             `--------'
+
+ * Line is a MULTIX abstract for connecting devices
+ * Protocol is a set of methods to properly talk over a line to a device of given type
+ * Devices are brought to life by em400 based on emulator configuration file
+ * Line and device configuration done by MULTIX' "setcfg" command is independet
+   from devices configuration done in em400 configuration file
+ * Above means that MERA-400 may for example try to configure and talk
+   to a device which is not connected
+
+*/
+
 struct mx {
 	int num;
 	pthread_t main_th;						// main MULTIX thread

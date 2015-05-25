@@ -34,14 +34,14 @@
 #include "io/dev/dev.h"
 
 // Real multix boots up in probably just under a second
-// ~500ms (for ROM/RAM check) + ~185ms (for RAM cleanup).
+// (~500ms for ROM/RAM check + ~185ms for RAM cleanup).
 // Here we need just a reasonable delay - big enough for
 // OS scheduler to switch threads between MULTIX and CPU,
 // so we don't finish MULTIX' job before switching back to CPU thread.
 #define MX_RESET_WAIT_MSEC 150
 
 // internel MULTIX' timer step is 500ms
-#define MX_TIMER_STEP_MS 500
+#define MX_TIMER_STEP_MSEC 500
 
 enum mx_state {
 	MX_STATE_RUN, MX_STATE_QUIT, MX_STATE_RESET
@@ -118,7 +118,7 @@ void * mx_create(int num, struct cfg_unit *units)
 	LOG_SET_ID(multix->irqq, "%s IRQ", LOG_GET_ID(multix));
 
 	// create timer
-	multix->timer = mx_timer_init(MX_TIMER_STEP_MS, multix->evq);
+	multix->timer = mx_timer_init(MX_TIMER_STEP_MSEC, multix->evq);
 	if (!multix->irqq) {
 		gerr = E_MX_TIMER;
 		goto cleanup;
@@ -174,6 +174,17 @@ void mx_shutdown(void *ch)
 	pthread_join(multix->main_th, NULL);
 
 	// At this point we're sure that MULTIX thread is down
+
+	LOGID(L_MX, 1, multix, "Destroying devices");
+
+	for (int i=0 ; i<MX_LINE_MAX ; i++) {
+		struct mx_line *line = multix->lines + i;
+		if (line->dev_obj) {
+			line->device->destroy(line->dev_obj);
+			line->device = NULL;
+			line->dev_obj = NULL;
+		}
+	}
 
 	// shutdown timer
 	mx_timer_shutdown(multix->timer);

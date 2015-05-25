@@ -189,10 +189,14 @@ void mx_line_deconfigure(struct mx_line *line)
 	line->status = MX_LSTATE_NONE;
 	line->dir = 0;
 	line->type = 0;
+	if (line->device) {
+		line->device->reset(line->dev_obj);
+	}
 	if (line->proto) {
 		line->proto->free(line);
 	}
 	line->proto = NULL;
+	line->proto_data = NULL;
 }
 
 // vim: tabstop=4 shiftwidth=4 autoindent

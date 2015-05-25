@@ -128,7 +128,7 @@ int log_init(struct cfg_em400 *cfg)
 	pthread_mutex_init(&log_mutex, NULL);
 
 	// initialize deassembler
-	emd = emdas_create(cfg->cpu_mod ? EMD_ISET_MX16 : EMD_ISET_MERA400, mem_get);
+	emd = emdas_create(cfg->cpu_mod ? EMD_ISET_MX16 : EMD_ISET_MERA400, (emdas_getfun) mem_get);
 	if (!emd) {
 		ret = E_DASM;
 		goto cleanup;

@@ -29,6 +29,14 @@ I/O:
 * cchar
 * plix
 * terminal (console, tcp, serial)
+* MULTIX:
+  * winchester:
+    * one controller for all drives
+    * async controller
+    * spare sectors area (requires h/w marking sectors as bad and sector addresses)
+    * formatting
+    * spare area formatting
+    * 16-sector transfers
 
 Other:
 

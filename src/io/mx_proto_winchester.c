@@ -275,6 +275,13 @@ uint8_t mx_proto_winchester_transmit_start(struct mx_line *line, int *irq, uint1
 		return MX_COND_NONE;
 	}
 
+	// check if there is a device connected
+	if (!line->device || !line->dev_obj) {
+		data[6] = MX_WS_NOT_READY;
+		*irq = MX_IRQ_INTRA;
+		return MX_COND_NONE;
+	}
+
 	struct proto_winchester_data *winch = line->proto_data;
 
 	// get operation type
@@ -298,7 +305,7 @@ uint8_t mx_proto_winchester_transmit_start(struct mx_line *line, int *irq, uint1
 			// trrrrrrrrrrrr... done.
 			*irq = MX_IRQ_IETRA;
 			break;
-		default: // shouldn't happen, set 'transmit rejected' interrupt
+		default:
 			*irq = MX_IRQ_INTRA;
 			break;
 	}
