@@ -59,29 +59,46 @@ void dev_flop5_reset(void *dev)
 {
 
 }
-
 // -----------------------------------------------------------------------
-int dev_flop5_read(void *dev, uint8_t *buf, unsigned offset)
+static int _e4i_res(int res)
 {
-	struct dev_flop5 *flop5 = dev;
-
-	if (e4i_bread(flop5->image, buf, offset) == E4I_E_OK) {
-		return 0;
-	} else {
-		return 1;
+	switch (res) {
+		case E4I_E_OK:
+			return DEV_CMD_OK;
+		case E4I_E_UNFORMATTED:
+		case E4I_E_NO_SECTOR:
+			return DEV_CMD_SEEKERR;
+		case E4I_E_WRPROTECT:
+			return DEV_CMD_WRPROTECT;
+		case E4I_E_WRITE:
+			return DEV_CMD_WRERR;
+		case E4I_E_READ:
+			return DEV_CMD_RDERR;
+		default:
+			return DEV_CMD_ERR;
 	}
 }
 
 // -----------------------------------------------------------------------
-int dev_flop5_write(void *dev, uint8_t *buf, unsigned offset, unsigned bytes)
+int dev_flop5_sector_rd(void *dev, uint8_t *buf, struct dev_chs *chs)
 {
+	int res;
 	struct dev_flop5 *flop5 = dev;
 
-	if (e4i_bwrite(flop5->image, buf, offset, bytes) == E4I_E_OK) {
-		return 0;
-	} else {
-		return 1;
-	}
+	res = e4i_swrite(flop5->image, buf, chs->c, chs->h, chs->s, 512);
+
+	return _e4i_res(res);
+}
+
+// -----------------------------------------------------------------------
+int dev_flop5_sector_wr(void *dev, uint8_t *buf, struct dev_chs *chs)
+{
+	int res;
+	struct dev_flop5 *flop5 = dev;
+
+	res = e4i_swrite(flop5->image, buf, chs->c, chs->h, chs->s, 512);
+
+	return _e4i_res(res);
 }
 
 struct dev_drv dev_flop5 = {
@@ -89,8 +106,8 @@ struct dev_drv dev_flop5 = {
 	.create = dev_flop5_create,
 	.destroy = dev_flop5_destroy,
 	.reset = dev_flop5_reset,
-	.read = dev_flop5_read,
-	.write = dev_flop5_write,
+	.sector_rd = dev_flop5_sector_rd,
+	.sector_wr = dev_flop5_sector_wr,
 };
 
 

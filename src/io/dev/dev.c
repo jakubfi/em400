@@ -63,5 +63,27 @@ int dev_make(struct cfg_unit *dev, const struct dev_drv **dev_drv, void **dev_ob
 
 	return E_IO_DEV_UNKNOWN;
 }
+// -----------------------------------------------------------------------
+void dev_chs_next(struct dev_chs *chs, unsigned heads, unsigned spt)
+{
+	(chs->s)++;
+	if (chs->s >= spt) {
+		chs->s = 0;
+		(chs->h)++;
+		if (chs->h >= heads) {
+			chs->h = 0;
+			(chs->c)++;
+		}
+	}
+}
+
+// -----------------------------------------------------------------------
+void dev_lba2chs(unsigned lba, struct dev_chs *chs, unsigned heads, unsigned spt)
+{
+	// translate logical sector address into CHS address
+	chs->c = (lba / (heads * spt));
+	chs->h = (lba / spt) % heads;
+	chs->s = lba % spt;
+}
 
 // vim: tabstop=4 shiftwidth=4 autoindent

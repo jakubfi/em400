@@ -19,6 +19,7 @@
 #include <inttypes.h>
 
 #include "log.h"
+#include "io/mx_irq.h"
 #include "io/mx_line.h"
 #include "io/mx_proto.h"
 #include "io/mx_proto_common.h"
@@ -85,6 +86,29 @@ void mx_proto_floppy_free(struct mx_line *line)
 }
 
 // -----------------------------------------------------------------------
+uint8_t mx_proto_floppy_transmit_start(struct mx_line *line, int *irq, uint16_t *data)
+{
+	data[5] = 0x8000;
+	*irq = MX_IRQ_ITRER;
+	return MX_COND_NONE;
+	// line is not attached
+	if (!(line->status & MX_LSTATE_ATTACHED)) {
+		*irq = MX_IRQ_INTRA;
+		return MX_COND_NONE;
+	}
+
+	// check if there is a device connected
+	if (!line->device || !line->dev_obj) {
+		data[5] = 0xffff;
+		*irq = MX_IRQ_INTRA;
+		return MX_COND_NONE;
+	}
+
+	*irq = MX_IRQ_ITRER;
+	return MX_COND_NONE;
+}
+
+// -----------------------------------------------------------------------
 int mx_proto_floppy_phy_types[] = { MX_PHY_FLOPPY, -1 };
 
 struct mx_proto mx_proto_floppy = {
@@ -98,7 +122,7 @@ struct mx_proto mx_proto_floppy = {
 		{ 0, 0, 1, { mx_proto_status_start, NULL, NULL, NULL, NULL, NULL, NULL, NULL } },
 		{ 0, 0, 0, { mx_proto_detach_start, NULL, NULL, NULL, NULL, NULL, NULL, NULL } },
 		{ 0, 0, 0, { mx_proto_oprq_start, NULL, NULL, NULL, NULL, NULL, NULL, NULL } },
-		{ 4, 4, 3, { NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL } },
+		{ 4, 4, 3, { mx_proto_floppy_transmit_start, NULL, NULL, NULL, NULL, NULL, NULL, NULL } },
 		{ 0, 0, 0, { NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL } },
 		{ 3, 0, 0, { mx_proto_attach_start, NULL, NULL, NULL, NULL, NULL, NULL, NULL } },
 	}

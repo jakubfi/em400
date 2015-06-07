@@ -39,6 +39,7 @@
 // OS scheduler to switch threads between MULTIX and CPU,
 // so we don't finish MULTIX' job before switching back to CPU thread.
 #define MX_RESET_WAIT_MSEC 150
+//#define MX_RESET_WAIT_MSEC 2000
 
 // internel MULTIX' timer step is 500ms
 #define MX_TIMER_STEP_MSEC 500
@@ -668,13 +669,9 @@ static int mx_task_run(struct mx_line *line, struct mx_task *task, const struct 
 	// it's protocol job to store that information for other conditions to use
 	if ((task->bzaw & MX_COND_START) && (proto_task->input_flen > 0)) {
 		if (!mem_mget(0, task->arg, data, proto_task->input_flen)) {
+			task->bzaw = MX_COND_NONE;
 			return MX_IRQ_INPAO;
 		}
-	}
-
-	// clear return field if it's there
-	for (int i=proto_task->output_fpos ; i<proto_task->output_fpos+proto_task->output_flen ; i++) {
-		data[i] = 0;
 	}
 
 	// run the protocol handler
@@ -683,13 +680,14 @@ static int mx_task_run(struct mx_line *line, struct mx_task *task, const struct 
 	proto_task_f handler = proto_task->fun[condition];
 	if (handler) {
 		task->bzaw = handler(line, &irq, data);
+	// TODO: this needs to go in the final version
 	} else {
 		LOGID(L_MX, 1, line, "EMULATION ERROR: No function to handle given task at condition %i for protocol %s", condition, line->proto->name);
 	}
 
 	// if task is done, we may need to update return field
 	if ((task->bzaw == MX_COND_NONE) && (proto_task->output_flen > 0)) {
-		if (!mem_mput(0, task->arg + proto_task->output_fpos, data, proto_task->output_flen)) {
+		if (!mem_mput(0, task->arg + proto_task->output_fpos, data + proto_task->output_fpos, proto_task->output_flen)) {
 			return MX_IRQ_INPAO;
 		}
 	}

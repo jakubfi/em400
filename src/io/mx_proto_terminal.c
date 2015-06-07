@@ -19,9 +19,29 @@
 #include <inttypes.h>
 
 #include "log.h"
+#include "io/mx_irq.h"
 #include "io/mx_line.h"
 #include "io/mx_proto.h"
 #include "io/mx_proto_common.h"
+
+enum mx_term_attach_opts {
+	MX_TERM_WATCH_EOT	= 0b10000000,
+	MX_TERM_NO_PARITY	= 0b01000000,
+	MX_TERM_ODD_PARITY	= 0b00100000,
+	MX_TERM_8BITS		= 0b00010000,
+	MX_TERM_XON_XOFF	= 0b00001000,
+	MX_TERM_BS_CAN		= 0b00000100,
+	MX_TERM_TO_UPPER	= 0b00000010,
+	MX_TERM_WATCH_CALL	= 0b00000001,
+};
+
+enum mx_term_text_proc {
+	MX_TERM_TEXT_PROC_NONE		= 0,
+	MX_TERM_TEXT_PROC_EDITOR	= 2,
+};
+
+struct proto_terminal_data {
+};
 
 // -----------------------------------------------------------------------
 int mx_proto_terminal_conf(struct mx_line *line, uint16_t *data)
@@ -35,6 +55,19 @@ void mx_proto_terminal_free(struct mx_line *line)
 {
 	free(line->proto_data);
 	line->proto_data = NULL;
+}
+
+// -----------------------------------------------------------------------
+uint8_t mx_proto_terminal_attach_start(struct mx_line *line, int *irq, uint16_t *data)
+{
+	if ((line->status & MX_LSTATE_ATTACHED)) {
+		*irq = MX_IRQ_INDOL;
+	}
+
+	line->status |= MX_LSTATE_ATTACHED;
+	*irq = MX_IRQ_IDOLI;
+
+	return MX_COND_NONE;
 }
 
 // -----------------------------------------------------------------------
@@ -53,7 +86,7 @@ struct mx_proto mx_proto_terminal = {
 		{ 0, 0, 0, { mx_proto_oprq_start, NULL, NULL, NULL, NULL, NULL, NULL, NULL } },
 		{ 10, 10, 4, { NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL } },
 		{ 0, 0, 0, { NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL } },
-		{ 3, 0, 0, { mx_proto_attach_start, NULL, NULL, NULL, NULL, NULL, NULL, NULL } },
+		{ 3, 0, 0, { mx_proto_terminal_attach_start, NULL, NULL, NULL, NULL, NULL, NULL, NULL } },
 	}
 };
 

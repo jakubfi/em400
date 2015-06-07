@@ -61,36 +61,55 @@ void dev_winch_reset(void *dev)
 }
 
 // -----------------------------------------------------------------------
-int dev_winch_read(void *dev, uint8_t *buf, unsigned offset)
+static int _e4i_res(int res)
 {
-	struct dev_winch *winch = dev;
-
-	if (e4i_bread(winch->image, buf, offset) == E4I_E_OK) {
-		return 0;
-	} else {
-		return 1;
+	switch (res) {
+		case E4I_E_OK:
+			return DEV_CMD_OK;
+		case E4I_E_UNFORMATTED:
+		case E4I_E_NO_SECTOR:
+			return DEV_CMD_SEEKERR;
+		case E4I_E_WRPROTECT:
+			return DEV_CMD_WRPROTECT;
+		case E4I_E_WRITE:
+			return DEV_CMD_WRERR;
+		case E4I_E_READ:
+			return DEV_CMD_RDERR;
+		default:
+			return DEV_CMD_ERR;
 	}
 }
 
 // -----------------------------------------------------------------------
-int dev_winch_write(void *dev, uint8_t *buf, unsigned offset, unsigned bytes)
+int dev_winch_sector_rd(void *dev, uint8_t *buf, struct dev_chs *chs)
 {
+	int res;
 	struct dev_winch *winch = dev;
 
-	if (e4i_bwrite(winch->image, buf, offset, bytes) == E4I_E_OK) {
-		return 0;
-	} else {
-		return 1;
-	}
+	res = e4i_sread(winch->image, buf, chs->c, chs->h, chs->s);
+
+	return _e4i_res(res);
 }
 
+// -----------------------------------------------------------------------
+int dev_winch_sector_wr(void *dev, uint8_t *buf, struct dev_chs *chs)
+{
+	int res;
+	struct dev_winch *winch = dev;
+
+	res = e4i_swrite(winch->image, buf, chs->c, chs->h, chs->s, 512);
+
+	return _e4i_res(res);
+}
+
+// -----------------------------------------------------------------------
 struct dev_drv dev_winch = {
 	.name = "winchester",
 	.create = dev_winch_create,
 	.destroy = dev_winch_destroy,
 	.reset = dev_winch_reset,
-	.read = dev_winch_read,
-	.write = dev_winch_write,
+	.sector_rd = dev_winch_sector_rd,
+	.sector_wr = dev_winch_sector_wr,
 };
 
 

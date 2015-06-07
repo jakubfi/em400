@@ -20,6 +20,7 @@
 #include <arpa/inet.h>
 
 #include "log.h"
+#include "utils.h"
 #include "mem/mem.h"
 
 #include "io/mx_line.h"
@@ -30,7 +31,7 @@
 // Transmit operations
 enum mx_proto_winchester_ops {
 	MX_WINCH_OP_FORMAT_SPARE	= 0,
-	MX_WINCH_OP_FORMAT			= 1,
+	MX_WINCH_OP_FORMAT_TRACK	= 1,
 	MX_WINCH_OP_READ			= 2,
 	MX_WINCH_OP_WRITE			= 3,
 	MX_WINCH_OP_PARK			= 5,
@@ -70,24 +71,24 @@ enum mx_winch_t_status {
 // transmit: format track and (optionally) move sectors to spare area
 struct mx_winch_cf_format {
 	uint16_t sector_map;
-	int start_sector;
+	unsigned start_sector;
 };
 
 // transmit: read/write
 struct mx_winch_cf_transmit {
-	int ign_crc;
-	int sector_fill;
-	int watch_eof;
-	int cpu;
-	int nb;
-	int addr;
+	unsigned ign_crc;
+	unsigned sector_fill;
+	unsigned watch_eof;
+	unsigned cpu;
+	unsigned nb;
+	uint16_t addr;
 	uint16_t len;
-	int sector;
+	unsigned sector;
 };
 
 // transmit: move heads (park)
 struct mx_winch_cf_park {
-	int cylinder;
+	unsigned cylinder;
 };
 
 struct proto_winchester_data {
@@ -98,6 +99,8 @@ struct proto_winchester_data {
 	struct mx_winch_cf_format format;
 	struct mx_winch_cf_transmit transmit;
 	struct mx_winch_cf_park park;
+	uint16_t ret_len;
+	uint16_t ret_status;
 };
 
 // -----------------------------------------------------------------------
@@ -131,75 +134,103 @@ void mx_proto_winchester_free(struct mx_line *line)
 }
 
 // -----------------------------------------------------------------------
-void mx_proto_winch_cf_decode(uint16_t *data, struct proto_winchester_data *winch)
+void mx_proto_winch_cf_decode(uint16_t *data, struct proto_winchester_data *proto_data)
 {
-	winch->op = (data[0] & 0b0000011100000000) >> 8;
+	proto_data->op = (data[0] & 0b0000011100000000) >> 8;
 
-	switch (winch->op) {
+	switch (proto_data->op) {
 		case MX_WINCH_OP_FORMAT_SPARE:
-			winch->format.sector_map = data[1];
-			winch->format.start_sector = data[2] << 16;
-			winch->format.start_sector += data[3];
+			LOG(L_WNCH, 4, "Format spare area");
 			break;
-		case MX_WINCH_OP_FORMAT:
+		case MX_WINCH_OP_FORMAT_TRACK:
+			proto_data->format.sector_map = data[1];
+			proto_data->format.start_sector = data[2] << 16;
+			proto_data->format.start_sector += data[3];
+			char *map = int2binf("................", data[1], 16);
+			LOG(L_WNCH, 4, "Format track, starting logical sector: %i, sector map: %s", proto_data->format.start_sector, map);
+			free(map);
 			break;
 		case MX_WINCH_OP_READ:
 		case MX_WINCH_OP_WRITE:
-			winch->transmit.ign_crc		= (data[0] & 0b0001000000000000) >> 12;
-			winch->transmit.sector_fill	= (data[0] & 0b0000100000000000) >> 11;
-			winch->transmit.watch_eof	= (data[0] & 0b0000010000000000) >> 10;
-			winch->transmit.cpu			= (data[0] & 0b0000000000010000) >> 4;
-			winch->transmit.nb			= (data[0] & 0b0000000000001111) >> 0;
-			winch->transmit.addr = data[1];
-			winch->transmit.len = data[2]+1;
-			winch->transmit.sector = (data[3] & 255) << 16;
-			winch->transmit.sector += data[4];
+			proto_data->transmit.ign_crc	= (data[0] & 0b0001000000000000) >> 12;
+			proto_data->transmit.sector_fill= (data[0] & 0b0000100000000000) >> 11;
+			proto_data->transmit.watch_eof	= (data[0] & 0b0000010000000000) >> 10;
+			proto_data->transmit.cpu		= (data[0] & 0b0000000000010000) >> 4;
+			proto_data->transmit.nb			= (data[0] & 0b0000000000001111) >> 0;
+			proto_data->transmit.addr = data[1];
+			proto_data->transmit.len = data[2]+1;
+			proto_data->transmit.sector = (data[3] & 255) << 16;
+			proto_data->transmit.sector += data[4];
+
+			LOG(L_WNCH, 4, "%s %i words, starting logical sector %i, memory addres %i:0x%04x, flags: %s%s%s",
+				proto_data->op == MX_WINCH_OP_READ ? "READ" : "WRITE",
+				proto_data->transmit.len,
+				proto_data->transmit.sector,
+				proto_data->transmit.nb,
+				proto_data->transmit.addr,
+				proto_data->transmit.ign_crc ? "CRC_IGNORE " : "",
+				proto_data->transmit.sector_fill ? "SECTOR_FILL " : "",
+				proto_data->transmit.watch_eof ? "EOF_WATCH " : ""
+			);
 			break;
 		case MX_WINCH_OP_PARK:
-			winch->park.cylinder = data[4];
+			proto_data->park.cylinder = data[4];
+			LOG(L_WNCH, 4, "Park heads on cylinder %i", proto_data->park.cylinder);
 			break;
 	}
+
+	proto_data->ret_len = 0;
+	proto_data->ret_status = 0;
 }
 
 // -----------------------------------------------------------------------
-int mx_proto_winchester_read(struct mx_line *line, uint16_t *ret_len, uint16_t *ret_status)
+void mx_proto_winch_cf_encode(uint16_t *data, struct proto_winchester_data *proto_data)
 {
-	uint8_t buf[512];
+	data[5] = proto_data->ret_len;
+	data[6] = proto_data->ret_status;
+}
+
+// -----------------------------------------------------------------------
+int mx_proto_winchester_read(const struct dev_drv *dev, void *dev_obj, struct proto_winchester_data *proto)
+{
 	int buf_pos = 0;
-	int sector = 0;
+	uint8_t buf[512];
+	struct dev_chs chs;
 
-	struct proto_winchester_data *proto = line->proto_data;
+	proto->ret_len = 0;
 
-	// first physical cylinder is used by multix for relocated sectors
-	int offset = proto->heads * 16; // always 16 sectors per track
+	uint16_t dest = proto->transmit.addr;
+
+	dev_lba2chs(proto->transmit.sector, &chs, proto->heads, 16);
+	// first physical cylinder is used internally by multix for relocated sectors
+	chs.c++;
 
 	// transmit data into buffer, sector by sector
-	while (*ret_len < proto->transmit.len) {
-		LOGID(L_WNCH, 4, line, "read sector %i (+%i) -> %i : 0x%04x",
-			proto->transmit.sector + sector,
-			offset,
-			proto->transmit.nb,
-			proto->transmit.addr + sector * 256
-		);
+	while (proto->ret_len < proto->transmit.len) {
+		LOG(L_WNCH, 4, "read sector %i/%i/%i -> %i:0x%04x", chs.c, chs.h, chs.s, proto->transmit.nb, dest);
 
-		// read whole sector into buffer
-		int res = line->device->read(line->dev_obj, buf, offset + proto->transmit.sector + sector);
+		// read the sector into buffer
+		int res = dev->sector_rd(dev_obj, buf, &chs);
 
 		// sector read OK
-		if (res == 0) {
+		if (res == DEV_CMD_OK) {
 			// copy read data into system memory, swapping byte order
-			while ((buf_pos < 512) && (*ret_len < proto->transmit.len)) {
-				uint16_t *buf16 = (uint16_t*)(buf+buf_pos);
-				mem_put(proto->transmit.nb, proto->transmit.addr + sector * 256 + buf_pos/2, ntohs(*buf16));
-				buf_pos += 2;
-				(*ret_len)++;
-			}
-			sector++;
 			buf_pos = 0;
+			while ((buf_pos < 512) && (proto->ret_len < proto->transmit.len)) {
+				uint16_t *buf16 = (uint16_t*)(buf + buf_pos);
+				if (!mem_put(proto->transmit.nb, dest, ntohs(*buf16))) {
+					return MX_IRQ_INPAO;
+				}
+				dest++;
+				buf_pos += 2;
+				(proto->ret_len)++;
+			}
+
+			dev_chs_next(&chs, proto->heads, 16);
 
 		// sector unreadable
 		} else {
-			*ret_status = MX_WS_ERR | MX_WS_NO_SECTOR;
+			proto->ret_status = MX_WS_ERR | MX_WS_NO_SECTOR;
 			return MX_IRQ_INTRA;
 		}
 	}
@@ -208,58 +239,83 @@ int mx_proto_winchester_read(struct mx_line *line, uint16_t *ret_len, uint16_t *
 }
 
 // -----------------------------------------------------------------------
-int mx_proto_winchester_write(struct mx_line *line, uint16_t *ret_len, uint16_t *ret_status)
+int mx_proto_winchester_write(const struct dev_drv *dev, void *dev_obj, struct proto_winchester_data *proto)
 {
 	uint16_t data;
 	int i;
-	int sector = 0;
+	struct dev_chs chs;
 
-	struct proto_winchester_data *proto = line->proto_data;
+	proto->ret_len = 0;
 
-	*ret_len = 0;
+	uint16_t dest = proto->transmit.addr;
 
-	// first physical cylinder is used by multix for relocated sectors
-	int offset = proto->heads * 16; // always 16 sectors per track
+	dev_lba2chs(proto->transmit.sector, &chs, proto->heads, 16);
+	// first physical cylinder is used internally by multix for relocated sectors
+	chs.c++;
 
 	uint8_t *buf = malloc(proto->transmit.len*2);
 	if (!buf) {
-		*ret_status = MX_WS_ERR | MX_WS_REJECTED;
+		proto->ret_status = MX_WS_ERR | MX_WS_REJECTED;
 		return MX_IRQ_INTRA;
 	}
 
 	// fill buffer with data to write
 	for (i=0 ; i<proto->transmit.len ; i++) {
-		mem_get(proto->transmit.nb, proto->transmit.addr + i, &data);
+		if (!mem_get(proto->transmit.nb, dest + i, &data)) {
+			free(buf);
+			return MX_IRQ_INPAO;
+		}
 		buf[i*2] = data>>8;
 		buf[i*2+1] = data&255;
 	}
 
 	// write sectors
-	while (*ret_len < proto->transmit.len) {
-		int transmit = proto->transmit.len - *ret_len;
+	while (proto->ret_len < proto->transmit.len) {
+		int transmit = proto->transmit.len - proto->ret_len;
 		if (transmit > 256) {
 			transmit = 256;
 		}
 
-		LOGID(L_WNCH, 4, line, "write sector %i (+%i) <- %d : 0x%04x, %i words",
-			proto->transmit.sector + sector,
-			offset,
-			proto->transmit.nb,
-			proto->transmit.addr + *ret_len,
-			transmit
-		);
+		LOG(L_WNCH, 4, "write sector %i/%i/%i -> %i:0x%04x", chs.c, chs.h, chs.s, proto->transmit.nb, dest);
 
-		int res = line->device->write(line->dev_obj, buf + *ret_len*2, offset + proto->transmit.sector + sector, transmit*2);
+		int res = dev->sector_wr(dev_obj, buf + proto->ret_len*2, &chs);
 
-		// write OK
-		if (res == 0) {
-			sector++;
-			*ret_len += transmit;
 		// sector not found or incomplete
-		} else {
-			*ret_status = MX_WS_ERR | MX_WS_NO_SECTOR;
+		if (res != DEV_CMD_OK) {
+			free(buf);
+			proto->ret_status = MX_WS_ERR | MX_WS_NO_SECTOR;
 			return MX_IRQ_INTRA;
 		}
+
+		dev_chs_next(&chs, proto->heads, 16);
+		proto->ret_len += transmit;
+	}
+
+	free(buf);
+	return MX_IRQ_IETRA;
+}
+
+// -----------------------------------------------------------------------
+int mx_proto_winchester_format(const struct dev_drv *dev, void *dev_obj, struct proto_winchester_data *proto)
+{
+	struct dev_chs chs;
+	uint8_t *buf = calloc(1, 512);
+
+	dev_lba2chs(proto->format.start_sector, &chs, proto->heads, 16);
+	chs.c++;
+
+	for (int i=0 ; i<16 ; i++) {
+		LOG(L_WNCH, 4, "format sector %i/%i/%i", chs.c, chs.h, chs.s);
+		int res = dev->sector_wr(dev_obj, buf, &chs);
+
+		// sector not found or incomplete
+		if (res != DEV_CMD_OK) {
+			free(buf);
+			proto->ret_status = MX_WS_ERR | MX_WS_NO_SECTOR;
+			return MX_IRQ_INTRA;
+		}
+
+		dev_chs_next(&chs, proto->heads, 16);
 	}
 
 	free(buf);
@@ -269,37 +325,38 @@ int mx_proto_winchester_write(struct mx_line *line, uint16_t *ret_len, uint16_t 
 // -----------------------------------------------------------------------
 uint8_t mx_proto_winchester_transmit_start(struct mx_line *line, int *irq, uint16_t *data)
 {
-	// line is not attached
+	struct proto_winchester_data *proto_data = line->proto_data;
+
+	// unpack control field
+	mx_proto_winch_cf_decode(data, proto_data);
+
+	// check if line is attached
 	if (!(line->status & MX_LSTATE_ATTACHED)) {
 		*irq = MX_IRQ_INTRA;
-		return MX_COND_NONE;
+		goto fin;
 	}
 
 	// check if there is a device connected
 	if (!line->device || !line->dev_obj) {
-		data[6] = MX_WS_NOT_READY;
+		proto_data->ret_status = MX_WS_NOT_READY;
 		*irq = MX_IRQ_INTRA;
-		return MX_COND_NONE;
+		goto fin;
 	}
 
-	struct proto_winchester_data *winch = line->proto_data;
+	LOGID(L_WNCH, 3, line, "Transmit operation %i: %s", proto_data->op, winch_op_names[proto_data->op]);
 
-	// get operation type
-	mx_proto_winch_cf_decode(data, winch);
-
-	LOGID(L_WNCH, 3, line, "Transmit operation %i: %s", winch->op, winch_op_names[winch->op]);
-
-	switch (winch->op) {
+	switch (proto_data->op) {
 		case MX_WINCH_OP_FORMAT_SPARE:
 			*irq = MX_IRQ_IETRA;
 			break;
-		case MX_WINCH_OP_FORMAT:
+		case MX_WINCH_OP_FORMAT_TRACK:
+			*irq = mx_proto_winchester_format(line->device, line->dev_obj, proto_data);
 			break;
 		case MX_WINCH_OP_READ:
-			*irq = mx_proto_winchester_read(line, data+5, data+6);
+			*irq = mx_proto_winchester_read(line->device, line->dev_obj, proto_data);
 			break;
 		case MX_WINCH_OP_WRITE:
-			*irq = mx_proto_winchester_write(line, data+5, data+6);
+			*irq = mx_proto_winchester_write(line->device, line->dev_obj, proto_data);
 			break;
 		case MX_WINCH_OP_PARK:
 			// trrrrrrrrrrrr... done.
@@ -310,13 +367,17 @@ uint8_t mx_proto_winchester_transmit_start(struct mx_line *line, int *irq, uint1
 			break;
 	}
 
+fin:
+	// pack control field
+	mx_proto_winch_cf_encode(data, proto_data);
+
 	return MX_COND_NONE;
 }
 
 // -----------------------------------------------------------------------
 uint8_t mx_proto_winchester_abort_start(struct mx_line *line, int *irq, uint16_t *data)
 {
-	// winchester doesn't support aborting
+	// winchester protocol doesn't support aborting
 	*irq = MX_IRQ_INABT;
 	return MX_COND_NONE;
 }

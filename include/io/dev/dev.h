@@ -22,34 +22,43 @@
 
 #include "cfg.h"
 
-typedef int (*dev_callback_f)(unsigned arg);
+enum dev_cmd_status {
+	DEV_CMD_OK = 0,
+	DEV_CMD_BUSY,
+	DEV_CMD_INVALID,
+	DEV_CMD_NOMEDIUM,
+	DEV_CMD_SEEKERR,
+	DEV_CMD_WRPROTECT,
+	DEV_CMD_WRERR,
+	DEV_CMD_RDERR,
+	DEV_CMD_ERR,
+};
+
+struct dev_chs {
+	unsigned c;
+	unsigned h;
+	unsigned s;
+};
 
 typedef void * (*dev_create_f)(struct cfg_arg *args);
 typedef void (*dev_reset_f)(void *dev);
 typedef void (*dev_destroy_f)(void *dev);
 
-typedef unsigned (*dev_get_block_size_f)(void *dev);
-typedef int (*dev_is_removable_f)(void *dev);
-typedef int (*dev_is_adresable_f)(void *dev);
-
-typedef int (*dev_load_f)(void *dev, const char *image);
-typedef int (*dev_eject_f)(void *dev);
-
-typedef int (*dev_read_f)(void *dev, uint8_t *buf, unsigned addres);
-typedef int (*dev_write_f)(void *dev, uint8_t *buf, unsigned address, unsigned bytes);
-
-typedef int (*dev_register_callback_f)(void *dev, dev_callback_f callback);
+typedef int (*dev_sector_rd_f)(void *dev, uint8_t *buf, struct dev_chs *chs);
+typedef int (*dev_sector_wr_f)(void *dev, uint8_t *buf, struct dev_chs *chs);
 
 struct dev_drv {
 	const char *name;
 	dev_create_f create;
 	dev_destroy_f destroy;
 	dev_reset_f reset;
-	dev_read_f read;
-	dev_write_f write;
+	dev_sector_rd_f sector_rd;
+	dev_sector_wr_f sector_wr;
 };
 
 int dev_make(struct cfg_unit *dev, const struct dev_drv **dev_drv, void **dev_obj);
+void dev_chs_next(struct dev_chs *chs, unsigned heads, unsigned spt);
+void dev_lba2chs(unsigned lba, struct dev_chs *chs, unsigned heads, unsigned spt);
 
 #endif
 
