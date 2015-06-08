@@ -6,6 +6,9 @@
 
 ; MULTIX I/O commands
 
+	.const	MX_IO_RESET	0b000\2 | 0b00\4	; IN
+	.const	MX_IO_EXISTS	0b000\2 | 0b10\4	; IN
+	.const	MX_IO_INTSPEC	0b000\2 | 0b01\4	; IN
 	.const	MX_IO_REQUEUE	0b001\2	; IN
 	.const	MX_IO_TEST	0b001\2	; OU
 	.const	MX_IO_SETCFG	0b101\2	; OU

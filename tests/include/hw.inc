@@ -92,6 +92,7 @@
 	.const	IMASK_SOFT	0b0000000001000000	; I_OPRQ, I_2CPU_LOW, I_SW_HIGH, I_SW_LOW
 	.const	IMASK_CH_ALL	0b0000011110000000	; all channell interrupts
 	.const	IMASK_ALL	0b1111111111000000	; all interrupts
+	.const	IMASK_NONE	0b0000000000000000	; no interrupts
 
 ; Software FP procedure Vectors
 
