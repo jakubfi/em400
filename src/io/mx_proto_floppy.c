@@ -88,6 +88,8 @@ void mx_proto_floppy_free(struct mx_line *line)
 // -----------------------------------------------------------------------
 uint8_t mx_proto_floppy_transmit_start(struct mx_line *line, int *irq, uint16_t *data)
 {
+	// TODO: temporary, so mega bootloader works
+	data[4] = 0;
 	data[5] = 0x8000;
 	*irq = MX_IRQ_ITRER;
 	return MX_COND_NONE;

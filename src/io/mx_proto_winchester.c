@@ -111,8 +111,11 @@ int mx_proto_winchester_conf(struct mx_line *line, uint16_t *data)
 		return MX_SC_E_NOMEM;
 	}
 
+	// this is only used to determine how long sector address is used in spare area,
+	// sectors are always addressed with 3 bytes in new MULTIX
 	proto_data->wide_sector_addr	=  (data[0] & 0b0000100000000000) >> 11;
 	proto_data->heads				= ((data[0] & 0b0000011100000000) >> 8) + 1;
+	// this is ignored by MULTIX
 	proto_data->fprotect			=  (data[0] & 0b0000000011111111);
 
 	LOGID(L_WNCH, 3, line, "    Winchester drive: %i heads, %s sector address%s",
