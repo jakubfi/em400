@@ -18,6 +18,7 @@
 #include <inttypes.h>
 #include <math.h>
 #include <fenv.h>
+#include <limits.h>
 
 #include "cfg.h"
 #include "mem/mem.h"
@@ -28,7 +29,32 @@
 
 #include "log.h"
 
-int alu_32_V;
+int awp_32_V;
+
+#define AWP_DISPATCH_TAB_ADDR 100
+
+#define BIT(n, z)   ((z) & (1ULL << (n)))           // get bit n (n...0 bit numbering)
+#define BITS(n, z)  ((z) & ((1ULL << ((n)+1)) - 1)) // get bits n...0 (n...0 bit numbering)
+
+#define FP_BITS 64
+#define FP_M_MASK 0b1111111111111111111111111111111111111111000000000000000000000000
+#define FP_M_MAX 0b0111111111111111111111111111111111111111000000000000000000000000
+#define FP_CORRECTION (1ULL << (FP_BITS-1-39))
+#define FP_BIT(n, z) ((z) & (1ULL << (FP_BITS-1-n))) // get nth bit of 40-bit mantissa (stored in 64-bit uint, 0...n bit numbering)
+
+#define DWORD(x, y) (uint32_t) ((x) << 16) | (uint16_t) (y)
+#define DWORDl(z)   (uint16_t) ((z) >> 16)
+#define DWORDr(z)   (uint16_t) (z)
+
+void awp_32_set_Z(uint64_t z);
+void awp_32_update_V(uint64_t x, uint64_t y, uint64_t z);
+void awp_32_set_C(uint64_t z);
+void awp_32_set_M(uint64_t z);
+
+void awp_fp_norm();
+void awp_fp_add(uint16_t d1, uint16_t d2, uint16_t d3, int sign);
+void awp_fp_mul(uint16_t d1, uint16_t d2, uint16_t d3);
+void awp_fp_div(uint16_t d1, uint16_t d2, uint16_t d3);
 
 // -----------------------------------------------------------------------
 // ---- 16-bit -----------------------------------------------------------
@@ -166,7 +192,7 @@ void alu_16_update_V(uint64_t x, uint64_t y, uint64_t z)
 // -----------------------------------------------------------------------
 
 // -----------------------------------------------------------------------
-void alu_awp_dispatch(int op, uint16_t arg)
+void awp_dispatch(int op, uint16_t arg)
 {
 	uint16_t d[3];
 	uint16_t addr;
@@ -178,41 +204,41 @@ void alu_awp_dispatch(int op, uint16_t arg)
 			case AWP_NRF1:
 			case AWP_NRF2:
 			case AWP_NRF3:
-				alu_fp_norm();
+				awp_fp_norm();
 				break;
 			case AWP_AD:
-				alu_32_add(d[0], d[1], 1);
+				awp_32_add(d[0], d[1], 1);
 				break;
 			case AWP_SD:
-				alu_32_add(d[0], d[1], -1);
+				awp_32_add(d[0], d[1], -1);
 				break;
 			case AWP_MW:
-				alu_32_mul(d[0]);
+				awp_32_mul(d[0]);
 				break;
 			case AWP_DW:
-				alu_32_div(d[0]);
+				awp_32_div(d[0]);
 				break;
 			case AWP_AF:
-				alu_fp_add(d[0], d[1], d[2], 1);
+				awp_fp_add(d[0], d[1], d[2], 1);
 				break;
 			case AWP_SF:
-				alu_fp_add(d[0], d[1], d[2], -1);
+				awp_fp_add(d[0], d[1], d[2], -1);
 				break;
 			case AWP_MF:
-				alu_fp_mul(d[0], d[1], d[2]);
+				awp_fp_mul(d[0], d[1], d[2]);
 				break;
 			case AWP_DF:
-				alu_fp_div(d[0], d[1], d[2]);
+				awp_fp_div(d[0], d[1], d[2]);
 				break;
 		}
 	} else {
-		if (!mem_cpu_get(0, 100+op, &addr)) return;
-		if (!cpu_ctx_switch(arg, addr, 0b1111111110011111)) return;
+		if (!mem_cpu_get(0, AWP_DISPATCH_TAB_ADDR+op, &addr)) return;
+		if (!cpu_ctx_switch(arg, addr, MASK_9 & MASK_Q)) return;
 	}
 }
 
 // -----------------------------------------------------------------------
-void alu_32_add(uint16_t arg1, uint16_t arg2, int sign)
+void awp_32_add(uint16_t arg1, uint16_t arg2, int sign)
 {
 	uint32_t a1 = DWORD(regs[1], regs[2]);
 	uint32_t a2 = DWORD(arg1, arg2);
@@ -220,26 +246,26 @@ void alu_32_add(uint16_t arg1, uint16_t arg2, int sign)
 	regs[1] = DWORDl(res);
 	regs[2] = DWORDr(res);
 
-	alu_32_update_V(a1, sign*a2, res);
-	alu_32_set_M(res);
-	alu_32_set_C(res);
-	alu_32_set_Z(res);
+	awp_32_update_V(a1, sign*a2, res);
+	awp_32_set_M(res);
+	awp_32_set_C(res);
+	awp_32_set_Z(res);
 }
 
 // -----------------------------------------------------------------------
-void alu_32_mul(int16_t arg)
+void awp_32_mul(int16_t arg)
 {
 	int64_t res = (int16_t) regs[2] * arg;
 	regs[1] = DWORDl(res);
 	regs[2] = DWORDr(res);
-	// alu_32_mul() has no effect on V
-	alu_32_V = 0;
-	alu_32_set_M(res);
-	alu_32_set_Z(res);
+	// awp_32_mul() has no effect on V
+	awp_32_V = 0;
+	awp_32_set_M(res);
+	awp_32_set_Z(res);
 }
 
 // -----------------------------------------------------------------------
-void alu_32_div(int16_t arg)
+void awp_32_div(int16_t arg)
 {
 	if (!arg) {
 		int_set(INT_FP_ERR);
@@ -247,21 +273,21 @@ void alu_32_div(int16_t arg)
 	}
 	int32_t d1 = DWORD(regs[1], regs[2]);
 	int32_t res = d1 / arg;
-	if ((res > 32767) || (res < -32768)) {
+	if ((res > SHRT_MAX) || (res < SHRT_MIN)) {
 		int_set(INT_DIV_OF);
 	} else {
 		regs[2] = res;
 		regs[1] = d1 % arg;
-		// alu_32_div() has no effect on V
-		alu_32_V = 0;
-		// alu_32_div() has no effect on C
-		alu_32_set_M(res);
-		alu_32_set_Z(res);
+		// awp_32_div() has no effect on V
+		awp_32_V = 0;
+		// awp_32_div() has no effect on C
+		awp_32_set_M(res);
+		awp_32_set_Z(res);
 	}
 }
 
 // -----------------------------------------------------------------------
-void alu_32_set_Z(uint64_t z)
+void awp_32_set_Z(uint64_t z)
 {
 	// set Z if:
 	//  * all 16 bits of result are 0
@@ -274,7 +300,7 @@ void alu_32_set_Z(uint64_t z)
 }
 
 // -----------------------------------------------------------------------
-void alu_32_update_V(uint64_t x, uint64_t y, uint64_t z)
+void awp_32_update_V(uint64_t x, uint64_t y, uint64_t z)
 {
 	// update V if:
 	//  * both arguments were positive, and result is negative
@@ -282,14 +308,14 @@ void alu_32_update_V(uint64_t x, uint64_t y, uint64_t z)
 
 	if ((BIT(31, x) && BIT(31, y) && !BIT(31, z)) || (!BIT(31, x) && !(BIT(31, y)) && BIT(31, z))) {
 		Fset(FL_V);
-		alu_32_V = 1;
+		awp_32_V = 1;
 	} else {
-		alu_32_V = 0;
+		awp_32_V = 0;
 	}
 }
 
 // -----------------------------------------------------------------------
-void alu_32_set_C(uint64_t z)
+void awp_32_set_C(uint64_t z)
 {
 	// set C if bit on position -1 is set
 
@@ -301,14 +327,14 @@ void alu_32_set_C(uint64_t z)
 }
 
 // -----------------------------------------------------------------------
-void alu_32_set_M(uint64_t z)
+void awp_32_set_M(uint64_t z)
 {
 	// internal 32-bit V needs to be set prior M
 	// set M if:
 	//  * minus and no overflow (just a plain negative number)
 	//  * OR not minus and overflow (number looks non-negative, but there is overflow, which means a negative number overflown)
 
-	if ((BIT(31, z) && !alu_32_V) || (!BIT(31, z) && alu_32_V)) {
+	if ((BIT(31, z) && !awp_32_V) || (!BIT(31, z) && awp_32_V)) {
 		Fset(FL_M);
 	} else {
 		Fclr(FL_M);
@@ -320,7 +346,7 @@ void alu_32_set_M(uint64_t z)
 // -----------------------------------------------------------------------
 
 // -----------------------------------------------------------------------
-int alu_fp_get(uint16_t d1, uint16_t d2, uint16_t d3, double *f, int check_norm)
+int awp_fp_get(uint16_t d1, uint16_t d2, uint16_t d3, double *f, int check_norm)
 {
 	int64_t m;
 	double m_f;
@@ -351,7 +377,7 @@ int alu_fp_get(uint16_t d1, uint16_t d2, uint16_t d3, double *f, int check_norm)
 }
 
 // -----------------------------------------------------------------------
-void alu_fp_store(double f, int round, int set_c)
+void awp_fp_store(double f, int round, int set_c)
 {
 	// fetch flags as left by fp operation
 	int fe_flags = fetestexcept(FE_OVERFLOW | FE_UNDERFLOW);
@@ -423,63 +449,62 @@ void alu_fp_store(double f, int round, int set_c)
 }
 
 // -----------------------------------------------------------------------
-void alu_fp_norm()
+void awp_fp_norm()
 {
 	double f;
-	if (!alu_fp_get(regs[1], regs[2], regs[3], &f, 0)) {
+	if (!awp_fp_get(regs[1], regs[2], regs[3], &f, 0)) {
 		Fclr(FL_C);
 		feclearexcept(FE_ALL_EXCEPT);
-		alu_fp_store(f, 0, 0);
+		awp_fp_store(f, 0, 0);
 		Fclr(FL_C); // always 0
 	}
 }
 
 // -----------------------------------------------------------------------
-void alu_fp_add(uint16_t d1, uint16_t d2, uint16_t d3, int sign)
+void awp_fp_add(uint16_t d1, uint16_t d2, uint16_t d3, int sign)
 {
 	double f1, f2;
-	if (!alu_fp_get(regs[1], regs[2], regs[3], &f1, 1)) {
-		if (!alu_fp_get(d1, d2, d3, &f2, 1)) {
+	if (!awp_fp_get(regs[1], regs[2], regs[3], &f1, 1)) {
+		if (!awp_fp_get(d1, d2, d3, &f2, 1)) {
 			feclearexcept(FE_ALL_EXCEPT);
 			f2 *= sign;
 			f1 += f2;
-			alu_fp_store(f1, 1, 1);
+			awp_fp_store(f1, 1, 1);
 		}
 	}
 }
 
 // -----------------------------------------------------------------------
-void alu_fp_mul(uint16_t d1, uint16_t d2, uint16_t d3)
+void awp_fp_mul(uint16_t d1, uint16_t d2, uint16_t d3)
 {
 	double f1, f2;
-	if (!alu_fp_get(regs[1], regs[2], regs[3], &f1, 1)) {
-		if (!alu_fp_get(d1, d2, d3, &f2, 1)) {
+	if (!awp_fp_get(regs[1], regs[2], regs[3], &f1, 1)) {
+		if (!awp_fp_get(d1, d2, d3, &f2, 1)) {
 			feclearexcept(FE_ALL_EXCEPT);
 			f1 *= f2;
-			alu_fp_store(f1, 0, 0);
+			awp_fp_store(f1, 0, 0);
 			Fclr(FL_C); // effectively always 0
 		}
 	}
 }
 
 // -----------------------------------------------------------------------
-void alu_fp_div(uint16_t d1, uint16_t d2, uint16_t d3)
+void awp_fp_div(uint16_t d1, uint16_t d2, uint16_t d3)
 {
 	double f1, f2;
-	if (!alu_fp_get(regs[1], regs[2], regs[3], &f1, 1)) {
-		if (!alu_fp_get(d1, d2, d3, &f2, 1)) {
+	if (!awp_fp_get(regs[1], regs[2], regs[3], &f1, 1)) {
+		if (!awp_fp_get(d1, d2, d3, &f2, 1)) {
 			if (f2 == 0.0f) {
 				int_set(INT_FP_ERR);
 				return;
 			} else {
 				feclearexcept(FE_ALL_EXCEPT);
 				f1 /= f2;
-				alu_fp_store(f1, 0, 0);
+				awp_fp_store(f1, 0, 0);
 				Fclr(FL_C); // always 0
 			}
 		}
 	}
 }
-
 
 // vim: tabstop=4 shiftwidth=4 autoindent

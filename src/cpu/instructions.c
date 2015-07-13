@@ -183,49 +183,49 @@ void op_in()
 // -----------------------------------------------------------------------
 void op_37_ad()
 {
-	alu_awp_dispatch(AWP_AD, N);
+	awp_dispatch(AWP_AD, N);
 }
 
 // -----------------------------------------------------------------------
 void op_37_sd()
 {
-	alu_awp_dispatch(AWP_SD, N);
+	awp_dispatch(AWP_SD, N);
 }
 
 // -----------------------------------------------------------------------
 void op_37_mw()
 {
-	alu_awp_dispatch(AWP_MW, N);
+	awp_dispatch(AWP_MW, N);
 }
 
 // -----------------------------------------------------------------------
 void op_37_dw()
 {
-	alu_awp_dispatch(AWP_DW, N);
+	awp_dispatch(AWP_DW, N);
 }
 
 // -----------------------------------------------------------------------
 void op_37_af()
 {
-	alu_awp_dispatch(AWP_AF, N);
+	awp_dispatch(AWP_AF, N);
 }
 
 // -----------------------------------------------------------------------
 void op_37_sf()
 {
-	alu_awp_dispatch(AWP_SF, N);
+	awp_dispatch(AWP_SF, N);
 }
 
 // -----------------------------------------------------------------------
 void op_37_mf()
 {
-	alu_awp_dispatch(AWP_MF, N);
+	awp_dispatch(AWP_MF, N);
 }
 
 // -----------------------------------------------------------------------
 void op_37_df()
 {
-	alu_awp_dispatch(AWP_DF, N);
+	awp_dispatch(AWP_DF, N);
 }
 
 // -----------------------------------------------------------------------
@@ -521,7 +521,7 @@ void op_71_brc()
 void op_71_nrf()
 {
 	int nrf_op = IR_A & 0b011;
-	alu_awp_dispatch(AWP_NRF0+nrf_op, 0);
+	awp_dispatch(nrf_op, 0);
 }
 
 // -----------------------------------------------------------------------
