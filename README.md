@@ -37,13 +37,14 @@ Things that may or may not be implemented:
 Requirements
 ==========================================================================
 
-To build and run em400 you need:
+To build and run em400 you'll need:
 
 * cmake
 * GNU make
 * bison and flex
 * libemdas
 * libemcrk
+* libemawp
 * ncurses (used by debugger)
 * readline (used by debugger)
 

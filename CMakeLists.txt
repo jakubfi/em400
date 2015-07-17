@@ -3,6 +3,8 @@ project(em400 C)
 
 set(WITH_DEBUGGER 1)
 
+set(DEBUG 0)
+
 set(EM400_VERSION 0.2.2)
 
 find_package(BISON REQUIRED)
@@ -10,11 +12,18 @@ find_package(FLEX REQUIRED)
 find_package(Threads REQUIRED)
 find_package(emdas REQUIRED)
 find_package(emcrk REQUIRED)
+find_package(emawp REQUIRED)
 
 include_directories(${CMAKE_SOURCE_DIR}/include)
 include_directories(${CMAKE_BINARY_DIR}/src)
 
-add_definitions(-Wall -g -std=c99 -O3 -DEM400_VERSION="${EM400_VERSION}")
+add_definitions(-Wall -std=c99 -DEM400_VERSION="${EM400_VERSION}")
+
+if(DEBUG)
+	add_definitions(-DDEBUG -g -O0)
+else(DEBUG)
+	add_definitions(-DNDEBUG -O3)
+endif(DEBUG)
 
 if(WITH_DEBUGGER)
 	set(CURSES_NEED_NCURSES TRUE)

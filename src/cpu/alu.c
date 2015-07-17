@@ -16,46 +16,25 @@
 //  51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 
 #include <inttypes.h>
-#include <math.h>
-#include <fenv.h>
-#include <limits.h>
+
+#include <emawp.h>
 
 #include "cfg.h"
 #include "mem/mem.h"
 #include "cpu/alu.h"
-#include "cpu/emawp.h"
 #include "cpu/cpu.h"
 #include "cpu/registers.h"
 #include "cpu/interrupts.h"
 
 #include "log.h"
 
-int awp_32_V;
-
 #define AWP_DISPATCH_TAB_ADDR 100
 
-#define BIT(n, z)   ((z) & (1ULL << (n)))           // get bit n (n...0 bit numbering)
-#define BITS(n, z)  ((z) & ((1ULL << ((n)+1)) - 1)) // get bits n...0 (n...0 bit numbering)
+// all constant names use MERA-400 0...n bit numbering
 
-#define FP_BITS 64
-#define FP_M_MASK 0b1111111111111111111111111111111111111111000000000000000000000000
-#define FP_M_MAX 0b0111111111111111111111111111111111111111000000000000000000000000
-#define FP_CORRECTION (1ULL << (FP_BITS-1-39))
-#define FP_BIT(n, z) ((z) & (1ULL << (FP_BITS-1-n))) // get nth bit of 40-bit mantissa (stored in 64-bit uint, 0...n bit numbering)
-
-#define DWORD(x, y) (uint32_t) ((x) << 16) | (uint16_t) (y)
-#define DWORDl(z)   (uint16_t) ((z) >> 16)
-#define DWORDr(z)   (uint16_t) (z)
-
-void awp_32_set_Z(uint64_t z);
-void awp_32_update_V(uint64_t x, uint64_t y, uint64_t z);
-void awp_32_set_C(uint64_t z);
-void awp_32_set_M(uint64_t z);
-
-void awp_fp_norm();
-void awp_fp_add(uint16_t d1, uint16_t d2, uint16_t d3, int sign);
-void awp_fp_mul(uint16_t d1, uint16_t d2, uint16_t d3);
-void awp_fp_div(uint16_t d1, uint16_t d2, uint16_t d3);
+#define BIT_0		0x08000
+#define BIT_MINUS_1 0x10000
+#define BITS_0_15	0x0ffff
 
 // -----------------------------------------------------------------------
 // ---- 16-bit -----------------------------------------------------------
@@ -128,7 +107,7 @@ void alu_16_set_Z(uint64_t z)
 	//  * all 16 bits of result are 0 and there is no carry
 	//  * OR all 16 bits of result is 0 and carry is set, but overflow is not (case of -1+1)
 
-	if (!BITS(15, z) && (!Fget(FL_C) || (Fget(FL_C) && !Fget(FL_V)))) {
+	if (!(z & BITS_0_15) && (!Fget(FL_C) || (Fget(FL_C) && !Fget(FL_V)))) {
 		Fset(FL_Z);
 	} else {
 		Fclr(FL_Z);
@@ -143,7 +122,7 @@ void alu_16_set_M(uint64_t z)
 	//  * minus and no overflow (just a plain negative number)
 	//  * OR not minus and overflow (number looks non-negative, but there is overflow, which means a negative number overflown)
 
-	if ((BIT(15, z) && !Fget(FL_V)) || (!BIT(15, z) && Fget(FL_V))) {
+	if (((z & BIT_0) && !Fget(FL_V)) || (!(z & BIT_0) && Fget(FL_V))) {
 		Fset(FL_M);
 	} else {
 		Fclr(FL_M);
@@ -155,7 +134,7 @@ void alu_16_set_C(uint64_t z)
 {
 	// set C if bit on position -1 is set
 
-	if (BIT(16, z)) {
+	if ((z & BIT_MINUS_1)) {
 		Fset(FL_C);
 	} else {
 		Fclr(FL_C);
@@ -169,7 +148,10 @@ void alu_16_set_V(uint64_t x, uint64_t y, uint64_t z)
 	//  * both arguments were positive, and result is negative
 	//  * OR both arguments were negative, and result is positive
 
-	if ((BIT(15, x) && BIT(15, y) && !BIT(15, z)) || (!BIT(15, x) && !(BIT(15, y)) && BIT(15, z))) {
+	if (
+	   ( (x & BIT_0) &&  (y & BIT_0) && !(z & BIT_0))
+	|| (!(x & BIT_0) && !(y & BIT_0) &&  (z & BIT_0))
+	) {
 		Fset(FL_V);
 	} else {
 		Fclr(FL_V);
@@ -183,7 +165,10 @@ void alu_16_update_V(uint64_t x, uint64_t y, uint64_t z)
 	//  * both arguments were positive, and result is negative
 	//  * OR both arguments were negative, and result is positive
 
-	if ((BIT(15, x) && BIT(15, y) && !BIT(15, z)) || (!BIT(15, x) && !(BIT(15, y)) && BIT(15, z))) {
+	if (
+	   ( (x & BIT_0) &&  (y & BIT_0) && !(z & BIT_0))
+	|| (!(x & BIT_0) && !(y & BIT_0) &&  (z & BIT_0))
+	) {
 		Fset(FL_V);
 	}
 }
@@ -199,10 +184,8 @@ void awp_dispatch(int op, uint16_t arg)
 	uint16_t d[3];
 	uint16_t addr;
 
-	if (cpu_awp) {
+	if (awp) {
 		if (!mem_cpu_mget(QNB, arg, d, 3)) return;
-
-		awp_load(awp, regs[0], regs[1], regs[2], regs[3]);
 
 		switch (op) {
 			case AWP_NRF0:
@@ -212,10 +195,10 @@ void awp_dispatch(int op, uint16_t arg)
 				res = awp_float_norm(awp);
 				break;
 			case AWP_AD:
-				res = awp_dword_add(awp, d[0], d[1], OP_ADD);
+				res = awp_dword_addsub(awp, d[0], d[1], AWP_OP_ADD);
 				break;
 			case AWP_SD:
-				res = awp_dword_add(awp, d[0], d[1], OP_SUB);
+				res = awp_dword_addsub(awp, d[0], d[1], AWP_OP_SUB);
 				break;
 			case AWP_MW:
 				res = awp_dword_mul(awp, d[0]);
@@ -224,10 +207,10 @@ void awp_dispatch(int op, uint16_t arg)
 				res = awp_dword_div(awp, d[0]);
 				break;
 			case AWP_AF:
-				res = awp_float_add(awp, d[0], d[1], d[2], OP_ADD);
+				res = awp_float_addsub(awp, d[0], d[1], d[2], AWP_OP_ADD);
 				break;
 			case AWP_SF:
-				res = awp_float_add(awp, d[0], d[1], d[2], OP_SUB);
+				res = awp_float_addsub(awp, d[0], d[1], d[2], AWP_OP_SUB);
 				break;
 			case AWP_MF:
 				res = awp_float_mul(awp, d[0], d[1], d[2]);
@@ -235,10 +218,6 @@ void awp_dispatch(int op, uint16_t arg)
 			case AWP_DF:
 				res = awp_float_div(awp, d[0], d[1], d[2]);
 				break;
-		}
-
-		if (res < AWP_CRITICAL) {
-			awp_store(awp, regs+0, regs+1, regs+2, regs+3);
 		}
 
 		switch (res) {
@@ -260,6 +239,5 @@ void awp_dispatch(int op, uint16_t arg)
 		if (!cpu_ctx_switch(arg, addr, MASK_9 & MASK_Q)) return;
 	}
 }
-
 
 // vim: tabstop=4 shiftwidth=4 autoindent

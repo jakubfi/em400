@@ -17,6 +17,8 @@
 
 #include <string.h>
 
+#include <emawp.h>
+
 #include "cpu/cpu.h"
 #include "cpu/registers.h"
 #include "cpu/interrupts.h"
@@ -33,7 +35,6 @@
 #include "errors.h"
 #include "log.h"
 #include "log_crk.h"
-#include "cpu/emawp.h"
 
 int P;
 uint32_t N;
@@ -42,7 +43,6 @@ int cpu_mod_active;
 int cpu_mod_present;
 int cpu_user_io_illegal;
 int exit_on_hlt;
-int cpu_awp;
 
 struct awp *awp;
 
@@ -90,14 +90,16 @@ int cpu_init(struct cfg_em400 *cfg)
 {
 	int res;
 
-	awp = awp_init();
+	if (cfg->cpu_awp) {
+		awp = awp_init(regs+0, regs+1, regs+2, regs+3);
+		if (!awp) return E_AWP;
+	}
 
 	regs[R_KB] = cfg->keys;
 
 	cpu_mod_present = cfg->cpu_mod;
 	cpu_user_io_illegal = cfg->cpu_user_io_illegal;
 	exit_on_hlt = cfg->exit_on_hlt;
-	cpu_awp = cfg->cpu_awp;
 
 	struct em400_instr *instr = em400_ilist;
 	while (instr->var_mask) {
@@ -125,6 +127,7 @@ int cpu_init(struct cfg_em400 *cfg)
 // -----------------------------------------------------------------------
 void cpu_shutdown()
 {
+	awp_destroy(awp);
 }
 
 // -----------------------------------------------------------------------

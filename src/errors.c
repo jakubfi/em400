@@ -73,6 +73,7 @@ struct _em400_errordesc {
 	{ E_LOGGER, "could not initialize logger" },
 	{ E_LEVELS, "could not set logging levels" },
 	{ E_DASM, "could not initialize disassembler" },
+	{ E_AWP, "could not initialize AWP" },
 
 	{ E_UNKNOWN, "unknown error" }
 };

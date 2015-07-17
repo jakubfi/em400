@@ -65,6 +65,7 @@ enum em400_error {
 	E_LOGGER,
 	E_LEVELS,
 	E_DASM,
+	E_AWP,
 
 	E_OK = 0,
 	E_QUIT_OK

@@ -20,8 +20,9 @@
 
 #include <inttypes.h>
 
+#include <emawp.h>
+
 #include "cfg.h"
-#include "cpu/emawp.h"
 
 extern int P;
 extern uint32_t N;
