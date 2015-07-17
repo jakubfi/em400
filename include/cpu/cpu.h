@@ -21,6 +21,7 @@
 #include <inttypes.h>
 
 #include "cfg.h"
+#include "cpu/emawp.h"
 
 extern int P;
 extern uint32_t N;
@@ -30,6 +31,8 @@ extern int cpu_mod_present;
 extern int cpu_user_io_illegal;
 extern int exit_on_hlt;
 extern int cpu_awp;
+
+extern struct awp *awp;
 
 int cpu_init(struct cfg_em400 *cfg);
 void cpu_shutdown();

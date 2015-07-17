@@ -33,6 +33,7 @@
 #include "errors.h"
 #include "log.h"
 #include "log_crk.h"
+#include "cpu/emawp.h"
 
 int P;
 uint32_t N;
@@ -42,6 +43,8 @@ int cpu_mod_present;
 int cpu_user_io_illegal;
 int exit_on_hlt;
 int cpu_awp;
+
+struct awp *awp;
 
 // -----------------------------------------------------------------------
 static int cpu_register_op(struct em400_op **op_tab, uint16_t opcode, uint16_t mask, struct em400_op *op)
@@ -86,6 +89,8 @@ static int cpu_register_op(struct em400_op **op_tab, uint16_t opcode, uint16_t m
 int cpu_init(struct cfg_em400 *cfg)
 {
 	int res;
+
+	awp = awp_init();
 
 	regs[R_KB] = cfg->keys;
 
