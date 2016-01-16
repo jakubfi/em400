@@ -1,0 +1,37 @@
+function(get_release_num RELEASE APP_MAJOR APP_MINOR APP_PATCH APP_EXTRA)
+	if(NOT RELEASE MATCHES "^release-[0-9]+\\.[0-9]+\\.[0-9].*$")
+		MESSAGE(FATAL_ERROR "Wrong application release tag: " ${RELEASE})
+	endif()
+	string(REGEX REPLACE "release-([0-9]+).*$" "\\1" MAJOR ${RELEASE})
+	string(REGEX REPLACE "release-[0-9]+\\.([0-9]+).*$" "\\1" MINOR ${RELEASE})
+	string(REGEX REPLACE "release-[0-9]+\\.[0-9]+\\.([0-9]+).*$" "\\1" PATCH ${RELEASE})
+	string(REGEX REPLACE "release-[0-9]+\\.[0-9]+\\.[0-9]+(.*)$" "\\1" EXTRA ${RELEASE})
+
+	set(${APP_MAJOR} ${MAJOR} PARENT_SCOPE)
+	set(${APP_MINOR} ${MINOR} PARENT_SCOPE)
+	set(${APP_PATCH} ${PATCH} PARENT_SCOPE)
+	set(${APP_EXTRA} ${EXTRA} PARENT_SCOPE)
+endfunction()
+
+execute_process(COMMAND
+	"git" "describe" "--tags" "--match" "release-*"
+	TIMEOUT 10
+	WORKING_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}"
+	RESULT_VARIABLE GIT_RESULT
+	OUTPUT_VARIABLE GIT_OUTPUT
+	ERROR_VARIABLE GIT_ERROR
+	OUTPUT_STRIP_TRAILING_WHITESPACE
+	ERROR_STRIP_TRAILING_WHITESPACE
+)
+
+if(GIT_OUTPUT)
+	get_release_num(${GIT_OUTPUT} APP_VERSION_MAJOR APP_VERSION_MINOR APP_VERSION_PATCH APP_VERSION_EXTRA)
+else()
+	file(STRINGS "appversion" FILE_OUTPUT)
+	get_release_num(${FILE_OUTPUT} APP_VERSION_MAJOR APP_VERSION_MINOR APP_VERSION_PATCH APP_VERSION_EXTRA)
+endif()
+
+set(APP_VERSION ${APP_VERSION_MAJOR}.${APP_VERSION_MINOR}.${APP_VERSION_PATCH}${APP_VERSION_EXTRA})
+
+MESSAGE(STATUS "Application version: " ${APP_VERSION})
+

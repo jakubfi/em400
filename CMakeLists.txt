@@ -5,7 +5,7 @@ set(WITH_DEBUGGER 1)
 
 set(DEBUG 0)
 
-set(EM400_VERSION 0.2.2)
+include(appversion.cmake)
 
 find_package(BISON REQUIRED)
 find_package(FLEX REQUIRED)
@@ -17,7 +17,7 @@ find_package(emawp REQUIRED)
 include_directories(${CMAKE_SOURCE_DIR}/include)
 include_directories(${CMAKE_BINARY_DIR}/src)
 
-add_definitions(-Wall -std=c99 -DEM400_VERSION="${EM400_VERSION}")
+add_definitions(-Wall -std=c99 -DEM400_VERSION="${APP_VERSION}")
 
 if(DEBUG)
 	add_definitions(-DDEBUG -g -O0)

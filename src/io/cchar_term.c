@@ -15,6 +15,8 @@
 //  Foundation, Inc.,
 //  51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 
+#define _XOPEN_SOURCE 500
+
 #include <stdlib.h>
 #include <string.h>
 #include <strings.h>
@@ -126,6 +128,7 @@ void cchar_term_reset(struct cchar_unit_proto_t *unit)
 // -----------------------------------------------------------------------
 void cchar_term_queue_char(struct cchar_unit_proto_t *unit, char data)
 {
+	LOG(L_TERM, 5, "enqueue char: #%02x", data);
 	pthread_mutex_lock(&UNIT->buf_mutex);
 
 	UNIT->buf[UNIT->buf_wpos] = data;
@@ -137,8 +140,9 @@ void cchar_term_queue_char(struct cchar_unit_proto_t *unit, char data)
 	}
 
 	if (UNIT->empty_read) {
-		cchar_int(unit->chan, unit->num, CCHAR_TERM_INT_READY);
+		LOG(L_TERM, 5, "new char available, sending interrupt");
 		UNIT->empty_read = 0;
+		cchar_int(unit->chan, unit->num, CCHAR_TERM_INT_READY);
 	}
 
 	pthread_mutex_unlock(&UNIT->buf_mutex);
@@ -150,23 +154,14 @@ void * cchar_term_worker(void *ptr)
 	struct cchar_unit_proto_t *unit = ptr;
 	char data;
 	int res;
-	static int counter;
 
 	while (1) {
 		res = term_read(UNIT->term, &data, 1);
-		if (res <= 0) {
+		usleep(1000);
+		if ((res <= 0) || (data == 10)) {
 			continue;
 		}
-
-		if (data == 10) {
-			cchar_term_queue_char(unit, 10);
-			cchar_term_queue_char(unit, 13);
-			counter++;
-		} else if (data == 13) {
-			continue;
-		} else {
-			cchar_term_queue_char(unit, data);
-		}
+		cchar_term_queue_char(unit, data);
 	}
 
 	pthread_exit(NULL);
@@ -175,20 +170,19 @@ void * cchar_term_worker(void *ptr)
 // -----------------------------------------------------------------------
 int cchar_term_read(struct cchar_unit_proto_t *unit, uint16_t *r_arg)
 {
+	pthread_mutex_lock(&UNIT->buf_mutex);
 	if (UNIT->buf_len <= 0) {
-		pthread_mutex_lock(&UNIT->buf_mutex);
-		LOG(L_TERM, 5, "buffer empty");
+		LOG(L_TERM, 5, "cchar_term_read(): buffer empty");
 		UNIT->empty_read = 1;
 		pthread_mutex_unlock(&UNIT->buf_mutex);
 		return IO_EN;
 	} else {
-		pthread_mutex_lock(&UNIT->buf_mutex);
-		char data = UNIT->buf[UNIT->buf_rpos];
+		uint8_t data = UNIT->buf[UNIT->buf_rpos];
 		if (LOG_ENABLED) {
 			if (data >= 32) {
-				LOG(L_TERM, 5, "buf read: %i (%c)", data, data);
+				LOG(L_TERM, 5, "cchar_term_read(): %i (%c)", data, data);
 			} else {
-				LOG(L_TERM, 5, "buf read: %i (#%02x)", data, data);
+				LOG(L_TERM, 5, "cchar_term_read(): %i (#%02x)", data, data);
 			}
 		}
 
@@ -198,14 +192,9 @@ int cchar_term_read(struct cchar_unit_proto_t *unit, uint16_t *r_arg)
 		} else {
 			UNIT->buf_rpos++;
 		}
-		UNIT->empty_read = 0;
 		pthread_mutex_unlock(&UNIT->buf_mutex);
-		if (data == 10) {
-			return IO_NO;
-		} else {
-			*r_arg = data;
-			return IO_OK;
-		}
+		*r_arg = data;
+		return IO_OK;
 	}
 }
 
@@ -215,9 +204,9 @@ int cchar_term_write(struct cchar_unit_proto_t *unit, uint16_t *r_arg)
 	char data = *r_arg & 255;
 	if (LOG_ENABLED) {
 		if (data >= 32) {
-			LOG(L_TERM, 5, "Term write: %i (%c)", data, data);
+			LOG(L_TERM, 5, "cchar_term_write(): %i (%c)", data, data);
 		} else {
-			LOG(L_TERM, 5, "Term write: %i (#%02x)", data, data);
+			LOG(L_TERM, 5, "cchar_term_write(): %i (#%02x)", data, data);
 		}
 	}
 	term_write(UNIT->term, &data, 1);
@@ -235,7 +224,7 @@ int cchar_term_cmd(struct cchar_unit_proto_t *unit, int dir, int cmd, uint16_t *
 		case CCHAR_TERM_CMD_READ:
 			return cchar_term_read(unit, r_arg);
 		default:
-			LOG(L_TERM, 1, "TERM: unknown IN command");
+			LOG(L_TERM, 1, "TERM: unknown IN command: %i", cmd);
 			break;
 		}
 	} else {
@@ -249,7 +238,7 @@ int cchar_term_cmd(struct cchar_unit_proto_t *unit, int dir, int cmd, uint16_t *
 		case CCHAR_TERM_CMD_WRITE:
 			return cchar_term_write(unit, r_arg);
 		default:
-			LOG(L_TERM, 1, "TERM: unknown OUT command");
+			LOG(L_TERM, 1, "TERM: unknown OUT command: %i", cmd);
 			break;
 		}
 	}

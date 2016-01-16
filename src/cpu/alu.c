@@ -180,7 +180,7 @@ void alu_16_update_V(uint64_t x, uint64_t y, uint64_t z)
 // -----------------------------------------------------------------------
 void awp_dispatch(int op, uint16_t arg)
 {
-	int res;
+	int res = 0;
 	uint16_t d[3];
 	uint16_t addr;
 
