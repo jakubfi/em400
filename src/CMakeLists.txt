@@ -14,10 +14,10 @@ add_executable(emitool
 
 target_link_libraries(em400
 	cpu mem io dev
+	${DEBUGGER_LIBS}
 	${EMDAS_LIBRARIES}
 	${EMCRK_LIBRARIES}
 	${EMAWP_LIBRARIES}
-	${DEBUGGER_LIBS}
 	${FLEX_LIBRARIES} ${BISON_LIBRARIES}
 	${CMAKE_THREAD_LIBS_INIT}
 	rt m
