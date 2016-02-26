@@ -138,7 +138,7 @@ static int decode_exl_tmem(char *b, uint16_t *data, int num, int exl_ret)
 	if (!exl) return 0;
 
 	pos += sprintf(b+pos, "Err: %i\n", exl->err);
-	pos += sprintf(b+pos, "Stream ID: %i\n", exl->stream_id);
+	pos += sprintf(b+pos, "Stream ID: %i (%s)\n", exl->stream_id, exl->stream_name);
 	pos += sprintf(b+pos, "Addr: 0x%04x\n", exl->addr);
 	pos += sprintf(b+pos, "Segment number: %i\n", exl->seg);
 
@@ -268,7 +268,7 @@ static int decode_exl_block(char *b, uint16_t *data, int num, int exl_ret)
 	}
 
 	if ((num == CRK5_EXL_WRIT) || (num == CRK5_EXL_READ)) {
-		pos += sprintf(b+pos, "Stream ID: %i\n", exl->stream_id);
+		pos += sprintf(b+pos, "Stream ID: %i (%s)\n", exl->stream_id, exl->stream_name);
 	} else if ((num == CRK5_EXL_WRIP) || (num == CRK5_EXL_REAP)) {
 		pos += sprintf(b+pos, "PID: %i\n", exl->stream_id);
 	} else {
@@ -325,7 +325,7 @@ static int decode_exl_rec(char *b, uint16_t *data, int num, int exl_ret)
 	if (!exl) return 0;
 
 	pos += sprintf(b+pos, "Position: %i\n", exl->position);
-	pos += sprintf(b+pos, "Stream ID: %i\n", exl->stream_id);
+	pos += sprintf(b+pos, "Stream ID: %i (%s)\n", exl->stream_id, exl->stream_name);
 	pos += sprintf(b+pos, "Buf addr: 0x%04x\n", exl->buf_addr);
 	pos += sprintf(b+pos, "Ending char: #%02x\n", exl->end_char);
 	pos += sprintf(b+pos, "Max bytes: %i\n", exl->max_len);
@@ -408,7 +408,7 @@ static int decode_exl_fil(char *b, uint16_t *data, int num, int exl_ret)
 	if (!exl) return 0;
 
 	pos += sprintf(b+pos, "Err: %i\n", exl->err);
-	pos += sprintf(b+pos, "Stream ID: %i\n", exl->stream_id);
+	pos += sprintf(b+pos, "Stream ID: %i (%s)\n", exl->stream_id, exl->stream_name);
 	pos += sprintf(b+pos, "Type: %i\n", exl->type);
 	pos += sprintf(b+pos, "Length: %i\n", exl->len);
 	pos += sprintf(b+pos, "Parameter 1: 0x%04x (%i)\n", exl->param[0], exl->param[0]);
@@ -435,7 +435,7 @@ static int decode_exl_str(char *b, uint16_t *data, int num, int exl_ret)
 	if (!exl) return 0;
 
 	pos += sprintf(b+pos, "Err: %i\n", exl->err);
-	pos += sprintf(b+pos, "Stream ID: %i\n", exl->stream_id);
+	pos += sprintf(b+pos, "Stream ID: %i (%s)\n", exl->stream_id, exl->stream_name);
 
 	crk5_exl_str_delete(exl);
 
