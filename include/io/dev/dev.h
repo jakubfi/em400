@@ -46,6 +46,8 @@ typedef void (*dev_destroy_f)(void *dev);
 
 typedef int (*dev_sector_rd_f)(void *dev, uint8_t *buf, struct dev_chs *chs);
 typedef int (*dev_sector_wr_f)(void *dev, uint8_t *buf, struct dev_chs *chs);
+typedef int (*dev_char_rd_f)(void *dev, uint8_t *c);
+typedef int (*dev_char_wr_f)(void *dev, uint8_t *c);
 
 struct dev_drv {
 	const char *name;
@@ -54,6 +56,8 @@ struct dev_drv {
 	dev_reset_f reset;
 	dev_sector_rd_f sector_rd;
 	dev_sector_wr_f sector_wr;
+	dev_char_rd_f char_rd;
+	dev_char_wr_f char_wr;
 };
 
 int dev_make(struct cfg_unit *dev, const struct dev_drv **dev_drv, void **dev_obj);

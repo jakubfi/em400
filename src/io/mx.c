@@ -254,7 +254,7 @@ int mx_cmd(void *ch, int dir, uint16_t n_arg, uint16_t *r_arg)
 			case MX_CHAN_CMD_INTSPEC:
 				// get intspec (always there, even if invalid)
 				*r_arg = mx_irqq_get_intspec(multix->irqq);
-				// notify main thread that IRQ has been received byu CPU
+				// notify main thread that IRQ has been received by CPU
 				ev = mx_ev_simple(MX_EV_INT_RECVD);
 				if (mx_evq_enqueue(multix->evq, ev, MX_EVQ_F_WAIT) <= 0) {
 					mx_ev_delete(ev);
@@ -752,7 +752,7 @@ static int mx_process_one_task(struct mx *multix)
 	MULTIX firmware loop. The main f/w job is to process line tasks.
 	Tasks are created/updated in H/W interrupt handler routines.
 	Here we simulate hardware interrupts by events in the event queue
-	(events are reported by other threads, as CPU od device threads),
+	(events are reported by other threads, as CPU or device threads),
 	and do interrupt routines by processing events from the queue in the
 	main loop, just before starting Task Manager.
 

@@ -32,7 +32,28 @@ enum mx_term_attach_opts {
 	MX_TERM_XON_XOFF	= 0b00001000,
 	MX_TERM_BS_CAN		= 0b00000100,
 	MX_TERM_TO_UPPER	= 0b00000010,
-	MX_TERM_WATCH_CALL	= 0b00000001,
+	MX_TERM_WATCH_OPRQ	= 0b00000001,
+};
+
+enum mx_term_transmit_flags {
+    MX_TERM_TX_BY_SIZE		= 0b10000000,
+    MX_TERM_TX_BY_EOT_EXCL	= 0b01000000,
+    MX_TERM_TX_BY_EOT_INCL	= 0b00100000,
+    MX_TERM_RX_BY_SIZE		= 0b00010000,
+    MX_TERM_RX_BY_EOT_EXCL	= 0b00001000,
+    MX_TERM_RX_BY_EOT_INCL	= 0b00000100,
+    MX_TERM_TX_ECHO			= 0b00000010,
+    MX_TERM_TX_PROMPT		= 0b00000001,
+};
+
+enum mx_term_transmit_status_e {
+	MX_TERM_TX_STATUS_TIMEOUT		= 0b10000000,
+	MX_TERM_TX_STATUS_OPRQ			= 0b01000000,
+	MX_TERM_TX_STATUS_FAILURE		= 0b00100000,
+	MX_TERM_TX_STATUS_PREMATURE_EOF	= 0b00010000,
+	MX_TERM_TX_STATUS_PARITY_ERROR	= 0b00001000,
+	MX_TERM_TX_STATUS_ERROR			= 0b00000100,
+	MX_TERM_TX_STATUS_EOT			= 0b00000001,
 };
 
 enum mx_term_text_proc {
@@ -40,12 +61,60 @@ enum mx_term_text_proc {
 	MX_TERM_TEXT_PROC_EDITOR	= 2,
 };
 
+enum mx_term_parity {
+	MX_TERM_PARITY_NONE,
+	MX_TERM_PARITY_EVEN,
+	MX_TERM_PARITY_ODD,
+};
+
+static const char *mx_term_parity_names[] = {
+	"none", "even", "odd"
+};
+
+struct proto_terminal_cf_transmit {
+	uint8_t flags;
+	uint8_t timeout;
+
+	uint16_t tx_len;
+	uint16_t tx_addr;
+	char tx_eot_ch;
+	unsigned tx_byte_pos;
+	unsigned tx_nb;
+
+	uint16_t rx_len;
+	uint16_t rx_addr;
+	unsigned rx_byte_pos;
+	unsigned rx_nb;
+	unsigned rx_eot_ch;
+	unsigned rx_eot_ch2;
+	char prompt[5];
+};
+
 struct proto_terminal_data {
+	int watch_eof;
+	int parity;
+	int eight_bits;
+	int xon_xoff;
+	int bs_can;
+	int toupper;
+	int watch_oprq;
+	char eot_char;
+	char oprq_char;
+	int proc;
+	uint16_t proc_params;
+	struct proto_terminal_cf_transmit transmit;
 };
 
 // -----------------------------------------------------------------------
 int mx_proto_terminal_conf(struct mx_line *line, uint16_t *data)
 {
+	struct proto_winchester_data *pd = calloc(1, sizeof(struct proto_terminal_data));
+	if (!pd) {
+		return MX_SC_E_NOMEM;
+	}
+
+	line->proto_data = pd;
+
 	// No protocol configuration
 	return MX_SC_E_OK;
 }
@@ -64,10 +133,62 @@ uint8_t mx_proto_terminal_attach_start(struct mx_line *line, int *irq, uint16_t 
 		*irq = MX_IRQ_INDOL;
 	}
 
+	struct proto_terminal_data *pd = line->proto_data;
+
+	pd->watch_eof	= (data[0] & 0b1000000000000000) >> 15;
+	pd->parity		=!(data[0] & 0b0100000000000000) ? MX_TERM_PARITY_NONE :
+					  (data[0] & 0b0010000000000000) ? MX_TERM_PARITY_ODD : MX_TERM_PARITY_EVEN;
+	pd->eight_bits	= (data[0] & 0b0001000000000000) >> 12;
+	pd->xon_xoff	= (data[0] & 0b0000100000000000) >> 11;
+	pd->bs_can		= (data[0] & 0b0000010000000000) >> 10;
+	pd->toupper		= (data[0] & 0b0000001000000000) >> 9;
+	pd->watch_oprq	= (data[0] & 0b0000000100000000) >> 8;
+	pd->eot_char	= (data[0] & 0b0000000011111111) >> 0;
+	pd->oprq_char	= (data[1] & 0b1111111100000000) >> 8;
+	pd->proc		= (data[1] & 0b0000000011111111) >> 0;
+	pd->proc_params	= data[2];
+
+	LOGID(L_TERM, 4, line, "Terminal attached, parity: %s, EOT: #%2x, OPRQ: #%2x, text proc: %i (params: 0x%04x), flags: %s%s%s%s%s%s",
+		mx_term_parity_names[pd->parity],
+		pd->eot_char,
+		pd->oprq_char,
+		pd->proc,
+		pd->proc_params,
+		pd->watch_eof ? "WATCH_EOF " : "",
+		pd->eight_bits ? "8BIT " : "",
+		pd->xon_xoff ? "XON/XOFF " : "",
+		pd->bs_can ? "BS/CAN " : "",
+		pd->toupper ? "TOUPPER " : "",
+		pd->watch_oprq ? "WATCH_OPRQ " : ""
+	);
+
 	line->status |= MX_LSTATE_ATTACHED;
 	*irq = MX_IRQ_IDOLI;
 
 	return MX_COND_NONE;
+}
+
+// -----------------------------------------------------------------------
+void mx_proto_terminal_cf_decode(uint16_t *data, struct proto_terminal_data *pd)
+{
+	pd->transmit.flags		= (data[0] & 0b1111111100000000) >> 8;
+	pd->transmit.timeout	= (data[0] & 0b0000000011111111) >> 0;
+	pd->transmit.tx_len		= data[1];
+	pd->transmit.tx_addr	= data[2];
+	pd->transmit.tx_eot_ch	= (data[3] & 0b1111111100000000) >> 8;
+	pd->transmit.tx_byte_pos= (data[3] & 0b0000000001000000) >> 6;
+	pd->transmit.tx_nb		= (data[3] & 0b0000000000001111) >> 0;
+	pd->transmit.rx_len		= data[4];
+	pd->transmit.rx_addr	= data[5];
+	pd->transmit.rx_byte_pos= (data[6] & 0b0000000001000000) >> 6;
+	pd->transmit.rx_nb		= (data[6] & 0b0000000000001111) >> 0;
+	pd->transmit.rx_eot_ch	= (data[7] & 0b1111111100000000) >> 8;
+	pd->transmit.rx_eot_ch2	= (data[7] & 0b0000000011111111) >> 0;
+	pd->transmit.prompt[0]	= (data[8] & 0b1111111100000000) >> 8;
+	pd->transmit.prompt[1]	= (data[8] & 0b0000000011111111) >> 0;
+	pd->transmit.prompt[2]	= (data[9] & 0b1111111100000000) >> 8;
+	pd->transmit.prompt[3]	= (data[9] & 0b0000000011111111) >> 0;
+	pd->transmit.prompt[4]	= '\0';
 }
 
 // -----------------------------------------------------------------------
