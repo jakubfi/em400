@@ -20,7 +20,7 @@
 #include <stdlib.h>
 #include <inttypes.h>
 #include <pthread.h>
-#include <unistd.h>
+#include <time.h>
 #include <string.h>
 
 #include "errors.h"
@@ -599,6 +599,18 @@ static void mx_ev_handle(struct mx *multix, struct mx_ev *ev)
 	if (ev->type == MX_EV_INT_RECVD) {
 		mx_irqq_advance(multix->irqq);
 	} else if (ev->type == MX_EV_CMD) {
+
+		// We need to make sure that MULTIX doesn't finish processing a command
+		// before CPU emulation thread kicks back in.
+		// Poorly written MERA-400 code may rely on the fact that I/O devices are slow
+		// and use simple "IN/OU HLT" sequence.
+		// If MULTIX sends an interrupt before the HLT
+		// (which is supposed to wait for that interrupt), code halts indefinitely.
+		// Code below makes OS scheduler switch context.
+		// NOTE: sched_yield() doesn't seem to work
+		struct timespec ts = { 0 };
+		nanosleep(&ts, NULL);
+
 		if (ev->cmd == MX_CMD_SETCFG) {
 			mx_setcfg(multix, ev->arg);
 		} else if (ev->cmd == MX_CMD_TEST) {
