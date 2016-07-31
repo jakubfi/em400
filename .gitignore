@@ -1,5 +1,4 @@
 build
-tests/vendor
 tests/images/*.e4i
 *.swp
 tools/*.pyc
