@@ -41,6 +41,10 @@ else()
 	set(DEBUGGER_LIBS)
 endif()
 
+# Workaround for QtCreator to see header files
+FILE(GLOB_RECURSE headers "include/*.h")
+add_custom_target(headers SOURCES ${headers})
+
 add_subdirectory(src)
 
 # vim: tabstop=4

@@ -2,4 +2,4 @@ build
 tests/images/*.e4i
 *.swp
 tools/*.pyc
-boot/boot_winch.bin
+CMakeLists.txt.user
