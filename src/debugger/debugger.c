@@ -106,9 +106,6 @@ int dbg_init(struct cfg_em400 *cfg)
 		return E_UI_SIG_CTRLC;
 	}
 
-	// register/memory action is none when debugger starts
-	dbg_fin_cycle();
-
 	emd = emdas_create(cfg->cpu_mod ? EMD_ISET_MX16 : EMD_ISET_MERA400, mem_get);
 	if (!emd) {
 		return E_DASM;
@@ -153,12 +150,6 @@ struct evlb_t * dbg_brk_check()
 }
 
 // -----------------------------------------------------------------------
-void dbg_fin_cycle()
-{
-	// we're leaving debugger, clear memory/register traces
-}
-
-// -----------------------------------------------------------------------
 int dbg_parse(char *c)
 {
 	YY_BUFFER_STATE yb = yy_scan_string(c);
@@ -173,7 +164,6 @@ void dbg_step()
 	struct evlb_t *bhit = NULL;
 
 	if ((!dbg_enter) && (!(bhit=dbg_brk_check()))) {
-		dbg_fin_cycle();
 		return;
 	}
 
@@ -206,7 +196,6 @@ void dbg_step()
 		}
 
 	}
-	dbg_fin_cycle();
 }
 
 
