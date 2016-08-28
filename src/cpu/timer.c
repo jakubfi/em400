@@ -110,6 +110,12 @@ void timer_off()
 }
 
 // -----------------------------------------------------------------------
+int timer_get_state()
+{
+	return atom_load(&timer_enabled);
+}
+
+// -----------------------------------------------------------------------
 void timer_set_int(int interrupt)
 {
 	atom_store(&timer_int, interrupt);
