@@ -3,6 +3,7 @@ flex_target(cfg_scanner cfg_scanner.l ${CMAKE_CURRENT_BINARY_DIR}/cfg_scanner.c 
 add_flex_bison_dependency(cfg_scanner cfg_parser)
 
 add_executable(em400
+	ectl_cp.c ectl_dev.c ectl_emu.c
 	em400.c errors.c utils.c cfg.c log.c log_crk.c log_io.c
 	${BISON_cfg_parser_OUTPUTS}
 	${FLEX_cfg_scanner_OUTPUTS}
