@@ -717,7 +717,7 @@ void op_73_hlt()
 
 	// handle hlt>=040 as "exit emulation" if user wants to
 	if (exit_on_hlt && (N >= 040)) {
-		em400_state = STATE_QUIT;
+		cpu_state = STATE_QUIT;
 		return;
 	// otherwise, wait for interrupt
 	} else {

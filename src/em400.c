@@ -44,7 +44,6 @@
 #include "log.h"
 
 int em400_console = CONSOLE_NONE;
-int em400_state = STATE_WORK;
 
 // -----------------------------------------------------------------------
 void em400_shutdown()
@@ -265,7 +264,7 @@ int main(int argc, char** argv)
 	em400_init(cfg);
 	em400_loop(cfg);
 
-	if (em400_state == STATE_MEM_FAIL) {
+	if (cpu_state == STATE_STOP) {
 		printf("Emulation died, guest CPU segmentation fault.\n");
 	}
 

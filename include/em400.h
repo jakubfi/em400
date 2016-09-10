@@ -18,20 +18,13 @@
 #ifndef EM400_H
 #define EM400_H
 
-enum em400_states_e {
-	STATE_WORK = 0,
-	STATE_QUIT = 1,
-	STATE_MEM_FAIL = 2,
-};
-
-enum em400_console_e {
+enum em400_console_uses {
 	CONSOLE_NONE = 0,
 	CONSOLE_DEBUGGER,
 	CONSOLE_TERMINAL,
 };
 
 extern int em400_console;
-extern int em400_state;
 
 #endif
 

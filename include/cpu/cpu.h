@@ -24,6 +24,14 @@
 
 #include "cfg.h"
 
+enum cpu_states {
+	STATE_QUIT = 0,
+	STATE_START = 1,
+	STATE_STOP = 2,
+	STATE_HALT = 3,
+};
+
+extern int cpu_state;
 extern int P;
 extern uint32_t N;
 extern int cpu_mod_active;

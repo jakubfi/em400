@@ -228,7 +228,7 @@ int mem_cpu_get(int nb, uint16_t addr, uint16_t *data)
 #ifdef WITH_DEBUGGER
 			dbg_enter = 1;
 #else
-			em400_state = STATE_MEM_FAIL;
+			cpu_state = STATE_STOP;
 #endif
 		}
 		return 0;
@@ -246,7 +246,7 @@ int mem_cpu_put(int nb, uint16_t addr, uint16_t data)
 #ifdef WITH_DEBUGGER
 			dbg_enter = 1;
 #else
-			em400_state = STATE_MEM_FAIL;
+			cpu_state = STATE_STOP;
 #endif
 		}
 		return 0;
@@ -264,7 +264,7 @@ int mem_cpu_mget(int nb, uint16_t saddr, uint16_t *dest, int count)
 #ifdef WITH_DEBUGGER
 			dbg_enter = 1;
 #else
-			em400_state = STATE_MEM_FAIL;
+			cpu_state = STATE_STOP;
 #endif
 		}
 		return 0;
@@ -283,7 +283,7 @@ int mem_cpu_mput(int nb, uint16_t saddr, uint16_t *src, int count)
 #ifdef WITH_DEBUGGER
 			dbg_enter = 1;
 #else
-			em400_state = STATE_MEM_FAIL;
+			cpu_state = STATE_STOP;
 #endif
 		}
 		return 0;

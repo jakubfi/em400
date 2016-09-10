@@ -101,7 +101,7 @@ void dbg_c_help(int wid, char *cmd)
 // -----------------------------------------------------------------------
 void dbg_c_quit()
 {
-	em400_state = STATE_QUIT;
+	cpu_state = STATE_QUIT;
 	dbg_loop_fin = 1;
 }
 

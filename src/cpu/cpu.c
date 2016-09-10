@@ -41,6 +41,8 @@
 #include "debugger/ui.h"
 #endif
 
+int cpu_state = STATE_START;
+
 int P;
 uint32_t N;
 int cpu_mod_active;
@@ -325,11 +327,11 @@ unsigned int cpu_loop(int autotest)
 {
 	unsigned long ips_counter = 0;
 
-	while (em400_state == STATE_WORK) {
+	while (cpu_state == STATE_START) {
 #ifdef WITH_DEBUGGER
 		if (autotest != 1) {
 			dbg_step();
-			if (em400_state != STATE_WORK) {
+			if (cpu_state != STATE_START) {
 				break;
 			}
 		}
