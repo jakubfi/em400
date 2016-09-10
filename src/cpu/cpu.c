@@ -249,7 +249,7 @@ int cpu_ctx_restore()
 }
 
 // -----------------------------------------------------------------------
-void cpu_step()
+static void cpu_step()
 {
 	struct em400_op *op;
 	uint16_t data;
@@ -327,22 +327,37 @@ unsigned int cpu_loop(int autotest)
 {
 	unsigned long ips_counter = 0;
 
-	while (cpu_state == STATE_START) {
-#ifdef WITH_DEBUGGER
-		if (autotest != 1) {
-			dbg_step();
-			if (cpu_state != STATE_START) {
+	while (1) {
+
+		switch (atom_load(&cpu_state)) {
+			case STATE_QUIT:
+				return ips_counter;
+			case STATE_HALT:
+				int_wait();
+				atom_store(&cpu_state, STATE_START);
 				break;
-			}
-		}
+			case STATE_STOP:
+#ifdef WITH_DEBUGGER
+	            dbg_enter = 1;
 #endif
-		cpu_step();
+				break;
+			default:
+				break;
+		}
 
 		if (atom_load(&RP) && !P && !regs[R_MODc]) {
 			int_serve();
 		}
 
+#ifdef WITH_DEBUGGER
+		if (autotest != 1) {
+			dbg_step();
+		}
+#endif
+
+		cpu_step();
 		ips_counter++;
+
 	}
 
 	return ips_counter;

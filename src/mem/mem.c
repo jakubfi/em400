@@ -34,10 +34,6 @@
 #include "cfg.h"
 #include "errors.h"
 
-#ifdef WITH_DEBUGGER
-#include "debugger/debugger.h"
-#endif
-
 #include "log.h"
 
 struct mem_slot_t mem_map[MEM_MAX_NB][MEM_MAX_AB];	// final (as seen by emulation) logical->physical segment mapping
@@ -225,11 +221,7 @@ int mem_cpu_get(int nb, uint16_t addr, uint16_t *data)
 		int_set(INT_NO_MEM);
 		if ((nb == 0) && (nomem_stop)) {
 			regs[R_ALARM] = 1;
-#ifdef WITH_DEBUGGER
-			dbg_enter = 1;
-#else
-			cpu_state = STATE_STOP;
-#endif
+			atom_store(&cpu_state, STATE_STOP);
 		}
 		return 0;
 	}
@@ -243,11 +235,7 @@ int mem_cpu_put(int nb, uint16_t addr, uint16_t data)
 		int_set(INT_NO_MEM);
 		if ((nb == 0) && (nomem_stop)) {
 			regs[R_ALARM] = 1;
-#ifdef WITH_DEBUGGER
-			dbg_enter = 1;
-#else
-			cpu_state = STATE_STOP;
-#endif
+			atom_store(&cpu_state, STATE_STOP);
 		}
 		return 0;
 	}
@@ -261,11 +249,7 @@ int mem_cpu_mget(int nb, uint16_t saddr, uint16_t *dest, int count)
 		int_set(INT_NO_MEM);
 		if ((nb == 0) && (nomem_stop)) {
 			regs[R_ALARM] = 1;
-#ifdef WITH_DEBUGGER
-			dbg_enter = 1;
-#else
-			cpu_state = STATE_STOP;
-#endif
+			atom_store(&cpu_state, STATE_STOP);
 		}
 		return 0;
 	}
@@ -280,11 +264,7 @@ int mem_cpu_mput(int nb, uint16_t saddr, uint16_t *src, int count)
 		int_set(INT_NO_MEM);
 		if ((nb == 0) && (nomem_stop)) {
 			regs[R_ALARM] = 1;
-#ifdef WITH_DEBUGGER
-			dbg_enter = 1;
-#else
-			cpu_state = STATE_STOP;
-#endif
+			atom_store(&cpu_state, STATE_STOP);
 		}
 		return 0;
 	}

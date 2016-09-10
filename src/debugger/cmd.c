@@ -101,7 +101,7 @@ void dbg_c_help(int wid, char *cmd)
 // -----------------------------------------------------------------------
 void dbg_c_quit()
 {
-	cpu_state = STATE_QUIT;
+	atom_store(&cpu_state, STATE_QUIT);
 	dbg_loop_fin = 1;
 }
 
