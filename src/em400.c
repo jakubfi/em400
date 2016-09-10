@@ -165,7 +165,7 @@ void em400_loop(struct cfg_em400 *cfg)
 	struct timeval ips_start;
 	struct timeval ips_end;
 	double ips_time_spent;
-	unsigned int ips;
+	unsigned int ips = 0;
 
 	gettimeofday(&ips_start, NULL);
 #ifdef WITH_DEBUGGER

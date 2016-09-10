@@ -43,7 +43,7 @@ static int mega_boot = 0;
 static int nomem_stop = 0;
 
 // -----------------------------------------------------------------------
-inline uint16_t *mem_ptr(int nb, uint16_t addr)
+static uint16_t *mem_ptr(int nb, uint16_t addr)
 {
 	uint16_t *seg_ptr = mem_map[nb][addr >> 12].seg;
 	if (seg_ptr) {
