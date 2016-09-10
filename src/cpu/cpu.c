@@ -36,6 +36,11 @@
 #include "log.h"
 #include "log_crk.h"
 
+#ifdef WITH_DEBUGGER
+#include "debugger/debugger.h"
+#include "debugger/ui.h"
+#endif
+
 int P;
 uint32_t N;
 int cpu_mod_active;
@@ -314,5 +319,32 @@ finish:
 		regs[R_MOD] = 0;
 	}
 }
+
+// -----------------------------------------------------------------------
+unsigned int cpu_loop(int autotest)
+{
+	unsigned long ips_counter = 0;
+
+	while (em400_state == STATE_WORK) {
+#ifdef WITH_DEBUGGER
+		if (autotest != 1) {
+			dbg_step();
+			if (em400_state != STATE_WORK) {
+				break;
+			}
+		}
+#endif
+		cpu_step();
+
+		if (atom_load(&RP) && !P && !regs[R_MODc]) {
+			int_serve();
+		}
+
+		ips_counter++;
+	}
+
+	return ips_counter;
+}
+
 
 // vim: tabstop=4 shiftwidth=4 autoindent

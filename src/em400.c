@@ -166,28 +166,14 @@ void em400_loop(struct cfg_em400 *cfg)
 	struct timeval ips_start;
 	struct timeval ips_end;
 	double ips_time_spent;
-	int ips = 0;
+	unsigned int ips;
 
 	gettimeofday(&ips_start, NULL);
-
-	while (em400_state == STATE_WORK) {
 #ifdef WITH_DEBUGGER
-		if (cfg->autotest != 1) {
-			dbg_step();
-			if (em400_state != STATE_WORK) {
-				break;
-			}
-		}
+	ips_counter = cpu_loop(cfg->autotest);
+#else
+	ips_counter = cpu_loop(0);
 #endif
-		cpu_step();
-
-		if (atom_load(&RP) && !P && !regs[R_MODc]) {
-			int_serve();
-		}
-
-		ips_counter++;
-	}
-
 	gettimeofday(&ips_end, NULL);
 
 	if (cfg->benchmark) {
