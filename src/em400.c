@@ -26,7 +26,6 @@
 
 #include "atomic.h"
 #include "cpu/cpu.h"
-#include "cpu/registers.h"
 #include "mem/mem.h"
 #include "cpu/interrupts.h"
 #include "cpu/timer.h"

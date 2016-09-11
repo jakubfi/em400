@@ -20,7 +20,6 @@
 #include <emawp.h>
 
 #include "cpu/cpu.h"
-#include "cpu/registers.h"
 #include "cpu/interrupts.h"
 #include "mem/mem.h"
 #include "cpu/iset.h"
@@ -42,6 +41,8 @@
 #endif
 
 int cpu_state = STATE_START;
+
+uint16_t regs[R_MAX];
 
 int P;
 uint32_t N;

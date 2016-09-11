@@ -19,7 +19,6 @@
 
 #include "em400.h"
 #include "cpu/cpu.h"
-#include "cpu/registers.h"
 #include "cpu/interrupts.h"
 #include "cpu/alu.h"
 #include "mem/mem.h"

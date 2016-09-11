@@ -20,7 +20,6 @@
 
 #include "cpu/cpu.h"
 #include "cpu/timer.h"
-#include "cpu/registers.h"
 #include "mem/mem.h"
 #include "utils.h"
 #include "log.h"

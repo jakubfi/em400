@@ -23,7 +23,6 @@
 #include <emdas.h>
 
 #include "cpu/cpu.h"
-#include "cpu/registers.h"
 #include "mem/mem.h"
 
 #include "em400.h"

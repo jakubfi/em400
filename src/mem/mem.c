@@ -25,7 +25,6 @@
 #include "mem/mem_elwro.h"
 #include "mem/mem_mega.h"
 #include "cpu/cpu.h"
-#include "cpu/registers.h"
 #include "mem/mem.h"
 #include "cpu/interrupts.h"
 #include "io/defs.h"

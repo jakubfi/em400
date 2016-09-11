@@ -22,7 +22,6 @@
 #include "errors.h"
 
 #include "cpu/cpu.h"
-#include "cpu/registers.h"
 
 #include "debugger/awin.h"
 #include "debugger/debugger.h"

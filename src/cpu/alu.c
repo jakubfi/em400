@@ -23,7 +23,6 @@
 #include "mem/mem.h"
 #include "cpu/alu.h"
 #include "cpu/cpu.h"
-#include "cpu/registers.h"
 #include "cpu/interrupts.h"
 
 #include "log.h"

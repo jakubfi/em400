@@ -21,8 +21,8 @@
 
 #include "atomic.h"
 #include "ectl_emu.h"
+#include "cpu/cpu.h"
 #include "cpu/timer.h"
-#include "cpu/registers.h"
 #include "cpu/interrupts.h"
 #include "mem/mem.h"
 
