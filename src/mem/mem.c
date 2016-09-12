@@ -219,7 +219,7 @@ int mem_cpu_get(int nb, uint16_t addr, uint16_t *data)
 	if (!mem_get(nb, addr, data)) {
 		int_set(INT_NO_MEM);
 		if ((nb == 0) && (nomem_stop)) {
-			regs[R_ALARM] = 1;
+			rALARM = 1;
 			atom_store(&cpu_state, STATE_STOP);
 		}
 		return 0;
@@ -233,7 +233,7 @@ int mem_cpu_put(int nb, uint16_t addr, uint16_t data)
 	if (!mem_put(nb, addr, data)) {
 		int_set(INT_NO_MEM);
 		if ((nb == 0) && (nomem_stop)) {
-			regs[R_ALARM] = 1;
+			rALARM = 1;
 			atom_store(&cpu_state, STATE_STOP);
 		}
 		return 0;
@@ -247,7 +247,7 @@ int mem_cpu_mget(int nb, uint16_t saddr, uint16_t *dest, int count)
 	if (!mem_mget(nb, saddr, dest, count)) {
 		int_set(INT_NO_MEM);
 		if ((nb == 0) && (nomem_stop)) {
-			regs[R_ALARM] = 1;
+			rALARM = 1;
 			atom_store(&cpu_state, STATE_STOP);
 		}
 		return 0;
@@ -262,7 +262,7 @@ int mem_cpu_mput(int nb, uint16_t saddr, uint16_t *src, int count)
 	if (!mem_mput(nb, saddr, src, count)) {
 		int_set(INT_NO_MEM);
 		if ((nb == 0) && (nomem_stop)) {
-			regs[R_ALARM] = 1;
+			rALARM = 1;
 			atom_store(&cpu_state, STATE_STOP);
 		}
 		return 0;
@@ -324,7 +324,7 @@ int mem_seg_load(FILE *f, uint16_t *ptr)
 		*(ptr+i) = ntohs(*(ptr+i));
 	}
 	atom_fence();
-	
+
 	return res;
 }
 // -----------------------------------------------------------------------

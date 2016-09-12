@@ -45,6 +45,7 @@ int cpu_state = STATE_START;
 uint16_t regs[R_MAX];
 uint16_t rIC;
 uint16_t rKB;
+int rALARM;
 
 int P;
 uint32_t N;
@@ -169,6 +170,7 @@ void cpu_reset(int hw)
 			regs[i] = 0;
 			rIC = 0;
 			rKB = 0;
+			rALARM = 0;
 		}
 	} else {
 		regs[0] = 0;

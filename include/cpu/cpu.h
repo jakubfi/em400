@@ -44,7 +44,6 @@ enum cpu_registers {
 	R_IR,
 	R_MOD,
 	R_MODc,
-	R_ALARM,
 	R_MAX
 };
 
@@ -94,6 +93,7 @@ extern int cpu_state;
 extern uint16_t regs[];
 extern uint16_t rIC;
 extern uint16_t rKB;
+extern int rALARM;
 extern int P;
 extern uint32_t N;
 extern int cpu_mod_active;
