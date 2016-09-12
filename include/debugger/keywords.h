@@ -30,6 +30,7 @@ enum dbg_registers {
 	DBG_R_MOD,
 	DBG_R_MODc,
 	DBG_R_IR,
+	DBG_R_SR,
 };
 
 extern struct kw_t kw_regs[];

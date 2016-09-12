@@ -775,7 +775,7 @@ void op_73_lip()
 	if (LOG_ENABLED) {
 		log_update_process();
 		if (log_wants(L_CRK5, 2)) {
-			log_handle_syscall_ret(L_CRK5, 2, rIC, regs[R_SR], regs[4]);
+			log_handle_syscall_ret(L_CRK5, 2, rIC, rSR, regs[4]);
 		}
 		if (log_wants(L_CRK5, 2)) {
 			log_log_process(L_CRK5, 2);
@@ -965,7 +965,7 @@ void op_77_mb()
 
 	uint16_t data;
 	if (mem_cpu_get(QNB, N, &data)) {
-		regs[R_SR] = (regs[R_SR] & 0b111111111000000) | (data & 0b0000000000111111);
+		rSR = (rSR & 0b111111111000000) | (data & 0b0000000000111111);
 	}
 }
 
@@ -976,8 +976,8 @@ void op_77_im()
 
 	uint16_t data;
 	if (mem_cpu_get(QNB, N, &data)) {
-		regs[R_SR] = (regs[R_SR] & 0b000000000111111) | (data & 0b1111111111000000);
-		int_update_mask(regs[R_SR]);
+		rSR = (rSR & 0b000000000111111) | (data & 0b1111111111000000);
+		int_update_mask(rSR);
 	}
 }
 
@@ -1011,9 +1011,9 @@ void op_77_sp()
 
 	rIC = data[0];
 	regs[0] = data[1];
-	regs[R_SR] = data[2];
+	rSR = data[2];
 
-	int_update_mask(regs[R_SR]);
+	int_update_mask(rSR);
 
 	if (LOG_ENABLED) {
 		log_update_process();
@@ -1022,7 +1022,7 @@ void op_77_sp()
 			log_log_cpu(L_OP, 1, "SP: context @ 0x%04x", N);
 		}
 		if (log_wants(L_CRK5, 2)) {
-			log_handle_syscall_ret(L_CRK5, 2, rIC, regs[R_SR], regs[4]);
+			log_handle_syscall_ret(L_CRK5, 2, rIC, rSR, regs[4]);
 		}
 		if (log_wants(L_CRK5, 2)) {
 			log_log_process(L_CRK5, 2);

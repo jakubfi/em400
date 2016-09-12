@@ -49,6 +49,7 @@ int rALARM;
 uint16_t rMOD;
 int rMODc;
 uint16_t rIR;
+uint16_t rSR;
 
 int P;
 uint32_t N;
@@ -177,10 +178,11 @@ void cpu_reset(int hw)
 			rMOD = 0;
 			rMODc = 0;
 			rIR = 0;
+			rSR = 0;
 		}
 	} else {
 		regs[0] = 0;
-		regs[R_SR] = 0;
+		rSR = 0;
 	}
 
 	int_update_mask(0);
@@ -215,22 +217,22 @@ int cpu_ctx_switch(uint16_t arg, uint16_t ic, uint16_t sr_mask)
 		sp,
 		rIC,
 		regs[0],
-		regs[R_SR],
+		rSR,
 		arg,
 		ic
 	);
 
 	if (!mem_cpu_put(0, sp, rIC)) return 0;
 	if (!mem_cpu_put(0, sp+1, regs[0])) return 0;
-	if (!mem_cpu_put(0, sp+2, regs[R_SR])) return 0;
+	if (!mem_cpu_put(0, sp+2, rSR)) return 0;
 	if (!mem_cpu_put(0, sp+3, arg)) return 0;
 	if (!mem_cpu_put(0, 97, sp+4)) return 0;
 
 	regs[0] = 0;
 	rIC = ic;
-	regs[R_SR] &= sr_mask;
+	rSR &= sr_mask;
 
-	int_update_mask(regs[R_SR]);
+	int_update_mask(rSR);
 
 	return 1;
 }
@@ -247,15 +249,15 @@ int cpu_ctx_restore()
 	if (!mem_cpu_get(0, sp-3, &data)) return 0;
 	regs[0] = data;
 	if (!mem_cpu_get(0, sp-2, &data)) return 0;
-	regs[R_SR] = data;
-	int_update_mask(regs[R_SR]);
+	rSR = data;
+	int_update_mask(rSR);
 	if (!mem_cpu_put(0, 97, sp-4)) return 0;
 
 	LOG(L_CPU, 3, "H/W stack pop @ 0x%04x (IC = 0x%04x, R0 = 0x%04x, SR = 0x%04x)",
 		sp-4,
 		rIC,
 		regs[0],
-		regs[R_SR]
+		rSR
 	);
 
 	return 1;
@@ -268,7 +270,7 @@ static void cpu_step()
 	uint16_t data;
 
 	if (LOG_ENABLED) {
-		log_store_cycle_state(regs[R_SR], rIC);
+		log_store_cycle_state(rSR, rIC);
 	}
 
 	// fetch instruction

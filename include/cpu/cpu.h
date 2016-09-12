@@ -40,7 +40,6 @@ enum cpu_registers {
 	R_R5	= 5,
 	R_R6	= 6,
 	R_R7	= 7,
-	R_SR,
 	R_MAX
 };
 
@@ -61,9 +60,9 @@ enum cpu_registers {
 // -----------------------------------------------------------------------
 // SR access macros
 // -----------------------------------------------------------------------
-#define Q	((regs[R_SR] & 0b0000000000100000) >> 5)
-#define BS	((regs[R_SR] & 0b0000000000010000) >> 4)
-#define NB	((regs[R_SR] & 0b0000000000001111) >> 0)
+#define Q	((rSR & 0b0000000000100000) >> 5)
+#define BS	((rSR & 0b0000000000010000) >> 4)
+#define NB	((rSR & 0b0000000000001111) >> 0)
 #define QNB	(Q*NB)
 
 // -----------------------------------------------------------------------
@@ -94,6 +93,7 @@ extern int rALARM;
 extern uint16_t rMOD;
 extern int rMODc;
 extern uint16_t rIR;
+extern uint16_t rSR;
 extern int P;
 extern uint32_t N;
 extern int cpu_mod_active;
