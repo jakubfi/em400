@@ -162,8 +162,8 @@ command:
 	| F_STACK 				{ dbg_c_stack(W_CMD, 12); }
 	| F_HELP 				{ dbg_c_help(W_CMD, NULL); }
 	| F_HELP TEXT			{ dbg_c_help(W_CMD, $2); free($2); }
-	| F_DASM				{ dbg_c_dt(W_CMD, regs[R_IC], 1); }
-	| F_DASM VALUE			{ dbg_c_dt(W_CMD, regs[R_IC], $2); }
+	| F_DASM				{ dbg_c_dt(W_CMD, rIC, 1); }
+	| F_DASM VALUE			{ dbg_c_dt(W_CMD, rIC, $2); }
 	| F_DASM expr VALUE		{ dbg_c_dt(W_CMD, n_eval($2), $3); }
 	| F_MEM expr			{ dbg_c_mem(W_CMD, QNB, n_eval($2), n_eval($2)+15, 122, 18); }
 	| F_MEM expr VALUE		{ dbg_c_mem(W_CMD, QNB, n_eval($2), n_eval($2)+$3-1, 122, 18); }

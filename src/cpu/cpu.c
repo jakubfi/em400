@@ -43,6 +43,7 @@
 int cpu_state = STATE_START;
 
 uint16_t regs[R_MAX];
+uint16_t rIC = 0;
 
 int P;
 uint32_t N;
@@ -124,7 +125,7 @@ int cpu_init(struct cfg_em400 *cfg)
 	// (unless power supply sends -PON at hw reset)
 	if (mem_mega_boot()) {
 		LOG(L_CPU, 1, "Bootstrap from MEGA PROM is enabled");
-		regs[R_IC] = 0xf000;
+		rIC = 0xf000;
 	}
 
 	cpu_mod_off();
@@ -165,6 +166,7 @@ void cpu_reset(int hw)
 	if (hw) {
 		for (int i=0 ; i<R_MAX ; i++) {
 			regs[i] = 0;
+			rIC = 0;
 		}
 	} else {
 		regs[0] = 0;
@@ -201,21 +203,21 @@ int cpu_ctx_switch(uint16_t arg, uint16_t ic, uint16_t sr_mask)
 
 	LOG(L_CPU, 3, "H/W stack push @ 0x%04x (IC = 0x%04x, R0 = 0x%04x, SR = 0x%04x, arg = 0x%04x), new IC = 0x%04x",
 		sp,
-		regs[R_IC],
+		rIC,
 		regs[0],
 		regs[R_SR],
 		arg,
 		ic
 	);
 
-	if (!mem_cpu_put(0, sp, regs[R_IC])) return 0;
+	if (!mem_cpu_put(0, sp, rIC)) return 0;
 	if (!mem_cpu_put(0, sp+1, regs[0])) return 0;
 	if (!mem_cpu_put(0, sp+2, regs[R_SR])) return 0;
 	if (!mem_cpu_put(0, sp+3, arg)) return 0;
 	if (!mem_cpu_put(0, 97, sp+4)) return 0;
 
 	regs[0] = 0;
-	regs[R_IC] = ic;
+	rIC = ic;
 	regs[R_SR] &= sr_mask;
 
 	int_update_mask(regs[R_SR]);
@@ -231,7 +233,7 @@ int cpu_ctx_restore()
 
 	if (!mem_cpu_get(0, 97, &sp)) return 0;
 	if (!mem_cpu_get(0, sp-4, &data)) return 0;
-	regs[R_IC] = data;
+	rIC = data;
 	if (!mem_cpu_get(0, sp-3, &data)) return 0;
 	regs[0] = data;
 	if (!mem_cpu_get(0, sp-2, &data)) return 0;
@@ -241,7 +243,7 @@ int cpu_ctx_restore()
 
 	LOG(L_CPU, 3, "H/W stack pop @ 0x%04x (IC = 0x%04x, R0 = 0x%04x, SR = 0x%04x)",
 		sp-4,
-		regs[R_IC],
+		rIC,
 		regs[0],
 		regs[R_SR]
 	);
@@ -256,16 +258,16 @@ static void cpu_step()
 	uint16_t data;
 
 	if (LOG_ENABLED) {
-		log_store_cycle_state(regs[R_SR], regs[R_IC]);
+		log_store_cycle_state(regs[R_SR], rIC);
 	}
 
 	// fetch instruction
-	if (!mem_cpu_get(QNB, regs[R_IC], regs+R_IR)) {
+	if (!mem_cpu_get(QNB, rIC, regs+R_IR)) {
 		regs[R_MODc] = regs[R_MOD] = 0;
 		LOGCPU(L_CPU, 2, "        (NO MEM: instruction fetch)");
 		return;
 	}
-	regs[R_IC]++;
+	rIC++;
 
 	// find instruction (by design op is always set to something,
 	// even for illegal instructions)
@@ -276,7 +278,7 @@ static void cpu_step()
 		LOGCPU(L_CPU, 2, "    (skip)");
 		P = 0;
 		// skip also M-arg if present
-		if (op->norm_arg && !IR_C) regs[R_IC]++;
+		if (op->norm_arg && !IR_C) rIC++;
 		return;
 	}
 
@@ -285,12 +287,12 @@ static void cpu_step()
 		if (IR_C) {
 			N = regs[IR_C] + regs[R_MOD];
 		} else {
-			if (!mem_cpu_get(QNB, regs[R_IC], &data)) {
+			if (!mem_cpu_get(QNB, rIC, &data)) {
 				LOGCPU(L_CPU, 2, "    (no mem: long arg fetch)");
 				goto finish;
 			} else {
 				N = data + regs[R_MOD];
-				regs[R_IC]++;
+				rIC++;
 			}
 		}
 		if (IR_B) {
@@ -339,7 +341,7 @@ unsigned int cpu_loop(int autotest)
 				break;
 			case STATE_STOP:
 #ifdef WITH_DEBUGGER
-	            dbg_enter = 1;
+				dbg_enter = 1;
 #endif
 				break;
 			default:

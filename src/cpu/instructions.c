@@ -87,8 +87,8 @@ void op_pw()
 // -----------------------------------------------------------------------
 void op_rj()
 {
-	reg_restrict_write(IR_A, regs[R_IC]);
-	regs[R_IC] = N;
+	reg_restrict_write(IR_A, rIC);
+	rIC = N;
 }
 
 // -----------------------------------------------------------------------
@@ -156,8 +156,8 @@ void op_ou()
 
 	uint16_t data;
 	int io_result = io_dispatch(IO_OU, N, regs+IR_A);
-	if (mem_cpu_get(QNB, regs[R_IC] + io_result, &data)) {
-		regs[R_IC] = data;
+	if (mem_cpu_get(QNB, rIC + io_result, &data)) {
+		rIC = data;
 	}
 }
 
@@ -170,8 +170,8 @@ void op_in()
 
 	uint16_t data;
 	int io_result = io_dispatch(IO_IN, N, regs+IR_A);
-	if (mem_cpu_get(QNB, regs[R_IC] + io_result, &data)) {
-		regs[R_IC] = data;
+	if (mem_cpu_get(QNB, rIC + io_result, &data)) {
+		rIC = data;
 	}
 }
 
@@ -384,14 +384,14 @@ void op_trb()
 void op_irb()
 {
 	reg_restrict_write(IR_A, regs[IR_A]+1);
-	if (regs[IR_A]) regs[R_IC] += N;
+	if (regs[IR_A]) rIC += N;
 }
 
 // -----------------------------------------------------------------------
 void op_drb()
 {
 	reg_restrict_write(IR_A, regs[IR_A]-1);
-	if (regs[IR_A] != 0) regs[R_IC] += N;
+	if (regs[IR_A] != 0) rIC += N;
 }
 
 // -----------------------------------------------------------------------
@@ -410,7 +410,7 @@ void op_lwt()
 void op_lws()
 {
 	uint16_t data;
-	if (mem_cpu_get(QNB, regs[R_IC] + N, &data)) {
+	if (mem_cpu_get(QNB, rIC + N, &data)) {
 		reg_restrict_write(IR_A, data);
 	}
 }
@@ -418,7 +418,7 @@ void op_lws()
 // -----------------------------------------------------------------------
 void op_rws()
 {
-	mem_cpu_put(QNB, regs[R_IC] + N, regs[IR_A]);
+	mem_cpu_put(QNB, rIC + N, regs[IR_A]);
 }
 
 // -----------------------------------------------------------------------
@@ -428,32 +428,32 @@ void op_rws()
 // -----------------------------------------------------------------------
 void op_70_ujs()
 {
-	regs[R_IC] += N;
+	rIC += N;
 }
 
 // -----------------------------------------------------------------------
 void op_70_jls()
 {
-	if (Fget(FL_L)) regs[R_IC] += N;
+	if (Fget(FL_L)) rIC += N;
 }
 
 // -----------------------------------------------------------------------
 void op_70_jes()
 {
-	if (Fget(FL_E)) regs[R_IC] += N;
+	if (Fget(FL_E)) rIC += N;
 }
 
 // -----------------------------------------------------------------------
 void op_70_jgs()
 {
-	if (Fget(FL_G)) regs[R_IC] += N;
+	if (Fget(FL_G)) rIC += N;
 }
 
 // -----------------------------------------------------------------------
 void op_70_jvs()
 {
 	if (Fget(FL_V)) {
-		regs[R_IC] += N;
+		rIC += N;
 		Fclr(FL_V);
 	}
 }
@@ -461,19 +461,19 @@ void op_70_jvs()
 // -----------------------------------------------------------------------
 void op_70_jxs()
 {
-	if (Fget(FL_X)) regs[R_IC] += N;
+	if (Fget(FL_X)) rIC += N;
 }
 
 // -----------------------------------------------------------------------
 void op_70_jys()
 {
-	if (Fget(FL_Y)) regs[R_IC] += N;
+	if (Fget(FL_Y)) rIC += N;
 }
 
 // -----------------------------------------------------------------------
 void op_70_jcs()
 {
-	if (Fget(FL_C)) regs[R_IC] += N;
+	if (Fget(FL_C)) rIC += N;
 }
 
 // -----------------------------------------------------------------------
@@ -498,7 +498,7 @@ void op_71_exl()
 			log_log_cpu(L_OP, 2, "EXL: %i (r4: 0x%04x)", IR_b, regs[4]);
 		}
 		if (log_wants(L_CRK5, 2)) {
-			log_handle_syscall(L_CRK5, 2, IR_b, QNB, regs[R_IC], regs[4]);
+			log_handle_syscall(L_CRK5, 2, IR_b, QNB, rIC, regs[4]);
 		}
 	}
 
@@ -530,7 +530,7 @@ void op_71_nrf()
 // -----------------------------------------------------------------------
 void op_72_ric()
 {
-	reg_restrict_write(IR_A, regs[R_IC]);
+	reg_restrict_write(IR_A, rIC);
 }
 
 // -----------------------------------------------------------------------
@@ -608,7 +608,7 @@ void op_72_shc()
 	if (!IR_t) return;
 
 	uint16_t falling = (regs[IR_A] & ((1<<IR_t)-1)) << (16-IR_t);
-	
+
 	reg_restrict_write(IR_A, (regs[IR_A] >> IR_t) | falling);
 }
 
@@ -775,7 +775,7 @@ void op_73_lip()
 	if (LOG_ENABLED) {
 		log_update_process();
 		if (log_wants(L_CRK5, 2)) {
-			log_handle_syscall_ret(L_CRK5, 2, regs[R_IC], regs[R_SR], regs[4]);
+			log_handle_syscall_ret(L_CRK5, 2, rIC, regs[R_SR], regs[4]);
 		}
 		if (log_wants(L_CRK5, 2)) {
 			log_log_process(L_CRK5, 2);
@@ -803,50 +803,50 @@ void op_73_cron()
 // -----------------------------------------------------------------------
 void op_74_uj()
 {
-	regs[R_IC] = N;
+	rIC = N;
 }
 
 // -----------------------------------------------------------------------
 void op_74_jl()
 {
-	if (Fget(FL_L)) regs[R_IC] = N;
+	if (Fget(FL_L)) rIC = N;
 }
 
 // -----------------------------------------------------------------------
 void op_74_je()
 {
-	if (Fget(FL_E)) regs[R_IC] = N;
+	if (Fget(FL_E)) rIC = N;
 }
 
 // -----------------------------------------------------------------------
 void op_74_jg()
 {
-	if (Fget(FL_G)) regs[R_IC] = N;
+	if (Fget(FL_G)) rIC = N;
 }
 
 // -----------------------------------------------------------------------
 void op_74_jz()
 {
-	if (Fget(FL_Z)) regs[R_IC] = N;
+	if (Fget(FL_Z)) rIC = N;
 }
 
 // -----------------------------------------------------------------------
 void op_74_jm()
 {
-	if (Fget(FL_M)) regs[R_IC] = N;
+	if (Fget(FL_M)) rIC = N;
 }
 
 // -----------------------------------------------------------------------
 void op_74_jn()
 {
-	if (!Fget(FL_E)) regs[R_IC] = N;
+	if (!Fget(FL_E)) rIC = N;
 }
 
 // -----------------------------------------------------------------------
 void op_74_lj()
 {
-	if (mem_cpu_put(QNB, N, regs[R_IC])) {
-		regs[R_IC] = N+1;
+	if (mem_cpu_put(QNB, N, rIC)) {
+		rIC = N+1;
 	}
 }
 
@@ -1009,7 +1009,7 @@ void op_77_sp()
 	uint16_t data[3];
 	if (!mem_cpu_mget(NB, N, data, 3)) return;
 
-	regs[R_IC] = data[0];
+	rIC = data[0];
 	regs[0] = data[1];
 	regs[R_SR] = data[2];
 
@@ -1022,7 +1022,7 @@ void op_77_sp()
 			log_log_cpu(L_OP, 1, "SP: context @ 0x%04x", N);
 		}
 		if (log_wants(L_CRK5, 2)) {
-			log_handle_syscall_ret(L_CRK5, 2, regs[R_IC], regs[R_SR], regs[4]);
+			log_handle_syscall_ret(L_CRK5, 2, rIC, regs[R_SR], regs[4]);
 		}
 		if (log_wants(L_CRK5, 2)) {
 			log_log_process(L_CRK5, 2);

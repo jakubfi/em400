@@ -24,7 +24,7 @@
 #include "debugger/keywords.h"
 
 struct kw_t kw_regs[] = {
-	{ "IC", R_IC },
+	{ "IC", DBG_R_IC },
 	{ "SR", R_SR },
 	{ "IR", R_IR },
 	{ "KB",	R_KB },

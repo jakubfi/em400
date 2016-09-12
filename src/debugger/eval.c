@@ -25,6 +25,7 @@
 #include "cpu/interrupts.h"
 
 #include "debugger/debugger.h"
+#include "debugger/keywords.h"
 #include "debugger/eval.h"
 #include "debugger/ui.h"
 #include "debugger/parser.h"
@@ -238,7 +239,12 @@ int16_t n_eval_var(struct node_t * n)
 // -----------------------------------------------------------------------
 int16_t n_eval_reg(struct node_t * n)
 {
-	return regs[n->val];
+	switch (n->val) {
+	case DBG_R_IC:
+		return rIC;
+	default:
+		return regs[n->val];
+	}
 }
 
 // -----------------------------------------------------------------------

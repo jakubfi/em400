@@ -134,7 +134,7 @@ void dbg_c_dt(int wid, uint16_t ic, int count)
 		words = emdas_dasm(emd, QNB, ic);
 		emdas_get_buf(emd);
 
-		if (ic == regs[R_IC]) {
+		if (ic == rIC) {
 			if (P) {
 				awtbprint(wid, C_IRED, "0x%04x", ic);
 				awtbprint(wid, C_IRED, " %-20s", buf);
@@ -200,7 +200,7 @@ void dbg_c_mem(int wid, int block, int start, int end, int maxcols, int maxlines
 				chars[w*2+1] = '~';
 			} else {
 				// cell with current instruction
-				if (addr == regs[R_IC]) {
+				if (addr == rIC) {
 					attr = C_DATAU;
 				} else {
 					attr = C_DATA;
@@ -231,7 +231,7 @@ void dbg_c_sregs(int wid)
 	awtbprint(wid, C_DATA, "0x%04x  ", regs[R_IR]);
 	awtbbinprint(wid, C_DATA, "...... . ... ... ...", regs[R_IR], 16);
 	awtbprint(wid, C_LABEL, "        IC: ");
-	awtbprint(wid, C_DATA, "0x%04x ", regs[R_IC]);
+	awtbprint(wid, C_DATA, "0x%04x ", rIC);
 	awtbprint(wid, C_DATA, "\n");
 	awtbprint(wid, C_LABEL, "            PMCZs139fS Q s NB");
 	awtbprint(wid, C_LABEL, "          MOD: ");

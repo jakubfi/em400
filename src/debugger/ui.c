@@ -103,10 +103,10 @@ void dbg_wu_dasm(int wid)
 	AWIN *w = aw_window_find(wid);
 	int offset = (w->ih) / 3;
 	int start;
-	if (regs[R_IC] < offset) {
+	if (rIC < offset) {
 		start = 0;
 	} else {
-		start = regs[R_IC] - offset;
+		start = rIC - offset;
 	}
 	awin_tb_clear(wid);
 	dbg_c_dt(wid, start, w->ih);

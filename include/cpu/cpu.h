@@ -40,7 +40,6 @@ enum cpu_registers {
 	R_R5	= 5,
 	R_R6	= 6,
 	R_R7	= 7,
-	R_IC,
 	R_SR,
 	R_IR,
 	R_KB,
@@ -94,6 +93,7 @@ enum cpu_registers {
 
 extern int cpu_state;
 extern uint16_t regs[];
+extern uint16_t rIC;
 extern int P;
 extern uint32_t N;
 extern int cpu_mod_active;

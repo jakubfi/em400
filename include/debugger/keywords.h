@@ -23,6 +23,10 @@ struct kw_t {
 	int value;
 };
 
+enum dbg_registers {
+	DBG_R_IC = 100
+};
+
 extern struct kw_t kw_regs[];
 extern struct kw_t kw_bases[];
 
