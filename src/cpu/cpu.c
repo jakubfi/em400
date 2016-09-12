@@ -48,6 +48,7 @@ uint16_t rKB;
 int rALARM;
 uint16_t rMOD;
 int rMODc;
+uint16_t rIR;
 
 int P;
 uint32_t N;
@@ -175,6 +176,7 @@ void cpu_reset(int hw)
 			rALARM = 0;
 			rMOD = 0;
 			rMODc = 0;
+			rIR = 0;
 		}
 	} else {
 		regs[0] = 0;
@@ -270,7 +272,7 @@ static void cpu_step()
 	}
 
 	// fetch instruction
-	if (!mem_cpu_get(QNB, rIC, regs+R_IR)) {
+	if (!mem_cpu_get(QNB, rIC, &rIR)) {
 		rMODc = rMOD = 0;
 		LOGCPU(L_CPU, 2, "        (NO MEM: instruction fetch)");
 		return;
@@ -279,7 +281,7 @@ static void cpu_step()
 
 	// find instruction (by design op is always set to something,
 	// even for illegal instructions)
-	op = em400_op_tab[regs[R_IR]];
+	op = em400_op_tab[rIR];
 
 	// end cycle if P is set
 	if (P) {

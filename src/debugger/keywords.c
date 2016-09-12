@@ -26,7 +26,7 @@
 struct kw_t kw_regs[] = {
 	{ "IC", DBG_R_IC },
 	{ "SR", R_SR },
-	{ "IR", R_IR },
+	{ "IR", DBG_R_IR },
 	{ "KB",	DBG_R_KB },
 	{ "MOD", DBG_R_MOD },
 	{ "MODC", DBG_R_MODc },

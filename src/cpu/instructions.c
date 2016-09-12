@@ -1066,8 +1066,8 @@ void op_77_ib()
 // -----------------------------------------------------------------------
 void op_illegal()
 {
-	char *opcode = int2binf("... ... . ... ... ...", regs[R_IR], 16);
-	LOGCPU(L_CPU, 2, "    (ineffective: illegal instruction) opcode: %s (0x%04x)", opcode, regs[R_IR]);
+	char *opcode = int2binf("... ... . ... ... ...", rIR, 16);
+	LOGCPU(L_CPU, 2, "    (ineffective: illegal instruction) opcode: %s (0x%04x)", opcode, rIR);
 	free(opcode);
 	int_set(INT_ILLEGAL_INSTRUCTION);
 }

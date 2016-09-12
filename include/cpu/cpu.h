@@ -41,7 +41,6 @@ enum cpu_registers {
 	R_R6	= 6,
 	R_R7	= 7,
 	R_SR,
-	R_IR,
 	R_MAX
 };
 
@@ -78,14 +77,14 @@ enum cpu_registers {
 #define _T(x)	(int8_t) (((x) & 0b0000000000111111) * (((x) & 0b0000001000000000) ? -1 : 1))
 #define _t(x)	(uint8_t) (((x) & 0b0000000000000111) | (((x) & 0b0000001000000000) >> 6)) // only SHC uses it
 #define _b(x)	((x) & 0b0000000011111111)
-#define IR_OP	_OP(regs[R_IR])
-#define IR_D	_D(regs[R_IR])
-#define IR_A	_A(regs[R_IR])
-#define IR_B	_B(regs[R_IR])
-#define IR_C	_C(regs[R_IR])
-#define IR_T	_T(regs[R_IR])
-#define IR_t	_t(regs[R_IR])
-#define IR_b	_b(regs[R_IR])
+#define IR_OP	_OP(rIR)
+#define IR_D	_D(rIR)
+#define IR_A	_A(rIR)
+#define IR_B	_B(rIR)
+#define IR_C	_C(rIR)
+#define IR_T	_T(rIR)
+#define IR_t	_t(rIR)
+#define IR_b	_b(rIR)
 
 extern int cpu_state;
 extern uint16_t regs[];
@@ -94,6 +93,7 @@ extern uint16_t rKB;
 extern int rALARM;
 extern uint16_t rMOD;
 extern int rMODc;
+extern uint16_t rIR;
 extern int P;
 extern uint32_t N;
 extern int cpu_mod_active;

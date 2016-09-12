@@ -228,8 +228,8 @@ void dbg_c_sregs(int wid)
 	awtbprint(wid, C_LABEL, "           P: ");
 	awtbprint(wid, C_DATA, "%i\n", P);
 	awtbprint(wid, C_LABEL, "IR: ");
-	awtbprint(wid, C_DATA, "0x%04x  ", regs[R_IR]);
-	awtbbinprint(wid, C_DATA, "...... . ... ... ...", regs[R_IR], 16);
+	awtbprint(wid, C_DATA, "0x%04x  ", rIR);
+	awtbbinprint(wid, C_DATA, "...... . ... ... ...", rIR, 16);
 	awtbprint(wid, C_LABEL, "        IC: ");
 	awtbprint(wid, C_DATA, "0x%04x ", rIC);
 	awtbprint(wid, C_DATA, "\n");
