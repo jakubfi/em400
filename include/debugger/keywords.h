@@ -24,7 +24,8 @@ struct kw_t {
 };
 
 enum dbg_registers {
-	DBG_R_IC = 100
+	DBG_R_IC = 100,
+	DBG_R_KB,
 };
 
 extern struct kw_t kw_regs[];

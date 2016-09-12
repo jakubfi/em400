@@ -43,7 +43,8 @@
 int cpu_state = STATE_START;
 
 uint16_t regs[R_MAX];
-uint16_t rIC = 0;
+uint16_t rIC;
+uint16_t rKB;
 
 int P;
 uint32_t N;
@@ -104,7 +105,7 @@ int cpu_init(struct cfg_em400 *cfg)
 		if (!awp) return E_AWP;
 	}
 
-	regs[R_KB] = cfg->keys;
+	rKB = cfg->keys;
 
 	cpu_mod_present = cfg->cpu_mod;
 	cpu_user_io_illegal = cfg->cpu_user_io_illegal;
@@ -167,6 +168,7 @@ void cpu_reset(int hw)
 		for (int i=0 ; i<R_MAX ; i++) {
 			regs[i] = 0;
 			rIC = 0;
+			rKB = 0;
 		}
 	} else {
 		regs[0] = 0;

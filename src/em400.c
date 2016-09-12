@@ -109,7 +109,7 @@ void em400_init(struct cfg_em400 *cfg)
 		em400_exit_error(res, "Error initializing I/O");
 	}
 
-	regs[R_KB] = cfg->keys;
+	rKB = cfg->keys;
 
 	if (cfg->program_name) {
 		int res = mem_load(cfg->program_name, 0, 0, 2*4096);

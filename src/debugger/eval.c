@@ -242,6 +242,8 @@ int16_t n_eval_reg(struct node_t * n)
 	switch (n->val) {
 	case DBG_R_IC:
 		return rIC;
+	case DBG_R_KB:
+		return rKB;
 	default:
 		return regs[n->val];
 	}
