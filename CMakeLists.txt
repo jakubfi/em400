@@ -41,9 +41,11 @@ else()
 	set(DEBUGGER_LIBS)
 endif()
 
-# Workaround for QtCreator to see header files
+# Workaround for QtCreator to see header, lexer and parser files
 FILE(GLOB_RECURSE headers "include/*.h")
 add_custom_target(headers SOURCES ${headers})
+FILE(GLOB_RECURSE parser "src/*.[ly]")
+add_custom_target(parser SOURCES ${parser})
 
 add_subdirectory(src)
 
