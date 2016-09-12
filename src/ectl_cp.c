@@ -30,7 +30,7 @@
 void ectl_regs_get(uint16_t *dregs)
 {
 	atom_fence();
-	memcpy(dregs, regs, R_MAX * sizeof(uint16_t));
+	memcpy(dregs, regs, 8 * sizeof(uint16_t));
 }
 
 // -----------------------------------------------------------------------

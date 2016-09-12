@@ -42,7 +42,7 @@
 
 int cpu_state = STATE_START;
 
-uint16_t regs[R_MAX];
+uint16_t regs[8];
 uint16_t rIC;
 uint16_t rKB;
 int rALARM;
@@ -170,7 +170,7 @@ int cpu_mod_off()
 void cpu_reset(int hw)
 {
 	if (hw) {
-		for (int i=0 ; i<R_MAX ; i++) {
+		for (int i=0 ; i<8 ; i++) {
 			regs[i] = 0;
 			rIC = 0;
 			rKB = 0;
