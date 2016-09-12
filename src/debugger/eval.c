@@ -244,6 +244,10 @@ int16_t n_eval_reg(struct node_t * n)
 		return rIC;
 	case DBG_R_KB:
 		return rKB;
+	case DBG_R_MOD:
+		return rMOD;
+	case DBG_R_MODc:
+		return rMODc;
 	default:
 		return regs[n->val];
 	}

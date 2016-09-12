@@ -510,7 +510,7 @@ void op_71_exl()
 // -----------------------------------------------------------------------
 void op_71_brc()
 {
-	uint16_t b = IR_b + regs[R_MOD];
+	uint16_t b = IR_b + rMOD;
 	if ((regs[0] & b) != b) {
 		P = 1;
 	}
@@ -1033,15 +1033,15 @@ void op_77_sp()
 // -----------------------------------------------------------------------
 void op_77_md()
 {
-	if (regs[R_MODc] >= 3) {
+	if (rMODc >= 3) {
 		LOGCPU(L_CPU, 2, "    (ineffective: 4th MD)");
 		int_set(INT_ILLEGAL_INSTRUCTION);
-		regs[R_MOD] = 0;
-		regs[R_MODc] = 0;
+		rMOD = 0;
+		rMODc = 0;
 		return;
 	}
-	regs[R_MOD] = N;
-	regs[R_MODc]++;
+	rMOD = N;
+	rMODc++;
 }
 
 // -----------------------------------------------------------------------

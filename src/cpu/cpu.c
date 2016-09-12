@@ -46,6 +46,8 @@ uint16_t regs[R_MAX];
 uint16_t rIC;
 uint16_t rKB;
 int rALARM;
+uint16_t rMOD;
+int rMODc;
 
 int P;
 uint32_t N;
@@ -171,6 +173,8 @@ void cpu_reset(int hw)
 			rIC = 0;
 			rKB = 0;
 			rALARM = 0;
+			rMOD = 0;
+			rMODc = 0;
 		}
 	} else {
 		regs[0] = 0;
@@ -267,7 +271,7 @@ static void cpu_step()
 
 	// fetch instruction
 	if (!mem_cpu_get(QNB, rIC, regs+R_IR)) {
-		regs[R_MODc] = regs[R_MOD] = 0;
+		rMODc = rMOD = 0;
 		LOGCPU(L_CPU, 2, "        (NO MEM: instruction fetch)");
 		return;
 	}
@@ -289,13 +293,13 @@ static void cpu_step()
 	// process argument
 	if (op->norm_arg) {
 		if (IR_C) {
-			N = regs[IR_C] + regs[R_MOD];
+			N = regs[IR_C] + rMOD;
 		} else {
 			if (!mem_cpu_get(QNB, rIC, &data)) {
 				LOGCPU(L_CPU, 2, "    (no mem: long arg fetch)");
 				goto finish;
 			} else {
-				N = data + regs[R_MOD];
+				N = data + rMOD;
 				rIC++;
 			}
 		}
@@ -311,11 +315,11 @@ static void cpu_step()
 			}
 		}
 	} else if (op->short_arg) {
-		N = (uint16_t) IR_T + (uint16_t) regs[R_MOD];
+		N = (uint16_t) IR_T + (uint16_t) rMOD;
 	}
 
 	if (LOG_WANTS(L_CPU, 2)) {
-		log_log_dasm(L_CPU, 2, regs[R_MOD], op->norm_arg, op->short_arg, N);
+		log_log_dasm(L_CPU, 2, rMOD, op->norm_arg, op->short_arg, N);
 	}
 
 	// execute instruction
@@ -324,8 +328,8 @@ static void cpu_step()
 	// clear mod if instruction wasn't md
 	if (op->fun != op_77_md) {
 finish:
-		regs[R_MODc] = 0;
-		regs[R_MOD] = 0;
+		rMODc = 0;
+		rMOD = 0;
 	}
 }
 
@@ -352,7 +356,7 @@ unsigned int cpu_loop(int autotest)
 				break;
 		}
 
-		if (atom_load(&RP) && !P && !regs[R_MODc]) {
+		if (atom_load(&RP) && !P && !rMODc) {
 			int_serve();
 		}
 

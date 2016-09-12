@@ -27,6 +27,8 @@ enum dbg_registers {
 	DBG_R_IC = 100,
 	DBG_R_KB,
 	DBG_R_ALARM,
+	DBG_R_MOD,
+	DBG_R_MODc,
 };
 
 extern struct kw_t kw_regs[];

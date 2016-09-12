@@ -235,7 +235,7 @@ void dbg_c_sregs(int wid)
 	awtbprint(wid, C_DATA, "\n");
 	awtbprint(wid, C_LABEL, "            PMCZs139fS Q s NB");
 	awtbprint(wid, C_LABEL, "          MOD: ");
-	awtbprint(wid, C_DATA, "0x%04x (%i)", regs[R_MOD], regs[R_MODc]);
+	awtbprint(wid, C_DATA, "0x%04x (%i)", rMOD, rMODc);
 	awtbprint(wid, C_DATA, "\n");
 	awtbprint(wid, C_LABEL, "SR: ");
 	awtbprint(wid, C_DATA, "0x%04x  ", regs[R_SR]);

@@ -28,8 +28,8 @@ struct kw_t kw_regs[] = {
 	{ "SR", R_SR },
 	{ "IR", R_IR },
 	{ "KB",	DBG_R_KB },
-	{ "MOD", R_MOD },
-	{ "MODC", R_MODc },
+	{ "MOD", DBG_R_MOD },
+	{ "MODC", DBG_R_MODc },
 	{ "ALARM", DBG_R_ALARM },
 	{ NULL, 0 }
 };
