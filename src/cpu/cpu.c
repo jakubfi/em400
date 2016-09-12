@@ -42,7 +42,7 @@
 
 int cpu_state = STATE_START;
 
-uint16_t regs[R_MAX];
+uint16_t regs[8];
 uint16_t rIC;
 uint16_t rKB;
 int rALARM;
@@ -169,20 +169,19 @@ int cpu_mod_off()
 // software (MCL) and hardware (CP 'CLEAR') reset
 void cpu_reset(int hw)
 {
+	regs[0] = 0;
+	rSR = 0;
+
 	if (hw) {
-		for (int i=0 ; i<R_MAX ; i++) {
+		for (int i=1 ; i<8 ; i++) {
 			regs[i] = 0;
-			rIC = 0;
-			rKB = 0;
-			rALARM = 0;
-			rMOD = 0;
-			rMODc = 0;
-			rIR = 0;
-			rSR = 0;
 		}
-	} else {
-		regs[0] = 0;
-		rSR = 0;
+		rIC = 0;
+		rKB = 0;
+		rALARM = 0;
+		rMOD = 0;
+		rMODc = 0;
+		rIR = 0;
 	}
 
 	int_update_mask(0);

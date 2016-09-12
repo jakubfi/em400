@@ -18,8 +18,6 @@
 #include <stdio.h>
 #include <strings.h>
 
-#include "cpu/cpu.h"
-
 #include "debugger/parser.h"
 #include "debugger/keywords.h"
 

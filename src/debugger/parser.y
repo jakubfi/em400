@@ -35,6 +35,8 @@ int yylex(void);
 char verr[128];
 %}
 
+%code requires {#include <inttypes.h>}
+
 %union {
 	int16_t value;
 	char *text;
