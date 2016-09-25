@@ -1,6 +1,6 @@
 ; OPTS -c configs/mod_mega_max.cfg
 
-; test full 17-bit byte addressing across all address space
+; test full 17-bit byte addressing across whole address space
 ; on modified (MX-16) cpu with enabled modifications
 
 	.cpu	mx16

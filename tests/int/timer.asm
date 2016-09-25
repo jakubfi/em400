@@ -1,8 +1,8 @@
 ; OPTS -c configs/minimal-clock.cfg
-; busy loop for a while, waiting for timer to tick
+; busy loop for a while, waiting for the timer to tick
 
 	lwt r1, 0
-		lwt r2, -20
+	lwt r2, -20
 
 loop2:	trb r2, 1
 	ujs loop1

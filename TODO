@@ -1,11 +1,12 @@
 Known bugs:
 
 CROOK-5:
- * EXM(-N) does not save files (all kernels)
  * BASIC fails on LIST/SAVE (all kernels)
 
-cpu_mod_active is accessed in timer thread / modified in cpu thread with no sync
 RP is atom read, but written under mutex
+atomics:
+ * overused where not necessary (barrier enforced by a mutex)
+ * relaxed, where seq_cst should probably be used
 
 Enhancements:
 
