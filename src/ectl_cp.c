@@ -26,49 +26,87 @@
 #include "cpu/interrupts.h"
 #include "mem/mem.h"
 
+#include "ectl_cp.h"
+
 // -----------------------------------------------------------------------
 void ectl_regs_get(uint16_t *dregs)
 {
 	atom_fence();
 	memcpy(dregs, regs, 8 * sizeof(uint16_t));
+	dregs[ECTL_REG_IC] = rIC;
+	dregs[ECTL_REG_SR] = rSR;
+	dregs[ECTL_REG_IR] = rIR;
+	dregs[ECTL_REG_KB] = rKB;
+	dregs[ECTL_REG_MOD] = rMOD;
+	dregs[ECTL_REG_MODc] = rMODc;
+	dregs[ECTL_REG_ALARM] = rALARM;
 }
 
 // -----------------------------------------------------------------------
-uint16_t ectl_reg_get(int reg)
+int ectl_reg_get(unsigned reg)
 {
+	if (reg >= ECTL_REG_COUNT) {
+		return -1;
+	}
+
 	atom_fence();
-	return regs[reg];
+	switch (reg) {
+		case ECTL_REG_IC: return rIC;
+		case ECTL_REG_SR: return rSR;
+		case ECTL_REG_IR: return rIR;
+		case ECTL_REG_KB: return rKB;
+		case ECTL_REG_MOD: return rMOD;
+		case ECTL_REG_MODc: return rMODc;
+		case ECTL_REG_ALARM: return rALARM;
+		default: return regs[reg];
+	}
 }
 
 // -----------------------------------------------------------------------
-void ectl_reg_set(int reg, uint16_t val)
+int ectl_reg_set(unsigned reg, uint16_t val)
 {
-	regs[reg] = val;
+	if (reg >= ECTL_REG_COUNT) {
+		return -1;
+	}
+
+	switch (reg) {
+		case ECTL_REG_IC: rIC = val; break;
+		case ECTL_REG_SR: rSR = val; break;
+		case ECTL_REG_IR: rIR = val; break;
+		case ECTL_REG_KB: rKB = val; break;
+		case ECTL_REG_MOD: rMOD = val; break;
+		case ECTL_REG_MODc: rMODc = val; break;
+		case ECTL_REG_ALARM: rALARM = val; break;
+		default: regs[reg] = val; break;
+	}
 	atom_fence();
+	return 0;
 }
 
 // -----------------------------------------------------------------------
 int ectl_mem_get(int nb, uint16_t addr, uint16_t *dest, int count)
 {
+	// TODO: add memory barrier after cleaning atomic_* stuff
 	return mem_mget(nb, addr, dest, count);
 }
 
 // -----------------------------------------------------------------------
 int ectl_mem_set(int nb, uint16_t addr, uint16_t *src, int count)
 {
+	// TODO: add memory barrier after cleaning atomic_* stuff
 	return mem_mput(nb, addr, src, count);
 }
 
 // -----------------------------------------------------------------------
 int ectl_cpu_state_get()
 {
-	return 666;
+	return atom_load(&cpu_state);
 }
 
 // -----------------------------------------------------------------------
-void ectl_cpu_state_set(int state)
+int ectl_cpu_state_set(int state)
 {
-
+	return 666;
 }
 
 // -----------------------------------------------------------------------
@@ -100,7 +138,8 @@ int ectl_clock_get()
 // -----------------------------------------------------------------------
 void ectl_clear()
 {
-
+	cpu_reset(1);
+	atom_fence();
 }
 
 // -----------------------------------------------------------------------

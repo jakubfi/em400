@@ -36,16 +36,16 @@ enum ectl_registers {
 	ECTL_REG_MOD,
 	ECTL_REG_MODc,
 	ECTL_REG_ALARM,
-	ECTL_REG_MAX
+	ECTL_REG_COUNT
 };
 
 void ectl_regs_get(uint16_t *dregs);
-uint16_t ectl_reg_get(int reg);
-void ectl_reg_set(int reg, uint16_t val);
+int ectl_reg_get(unsigned reg);
+int ectl_reg_set(unsigned reg, uint16_t val);
 int ectl_mem_get(int nb, uint16_t addr, uint16_t *dest, int count);
 int ectl_mem_set(int nb, uint16_t addr, uint16_t *src, int count);
 int ectl_cpu_state_get();
-void ectl_cpu_state_set(int state);
+int ectl_cpu_state_set(int state);
 void ectl_cycle();
 void ectl_clock_set(int state);
 int ectl_clock_get();
