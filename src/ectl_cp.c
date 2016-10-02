@@ -31,7 +31,7 @@
 // -----------------------------------------------------------------------
 void ectl_regs_get(uint16_t *dregs)
 {
-	atom_fence();
+	atom_full_fence();
 	memcpy(dregs, regs, 8 * sizeof(uint16_t));
 	dregs[ECTL_REG_IC] = rIC;
 	dregs[ECTL_REG_SR] = rSR;
@@ -49,7 +49,7 @@ int ectl_reg_get(unsigned reg)
 		return -1;
 	}
 
-	atom_fence();
+	atom_full_fence();
 	switch (reg) {
 		case ECTL_REG_IC: return rIC;
 		case ECTL_REG_SR: return rSR;
@@ -79,14 +79,14 @@ int ectl_reg_set(unsigned reg, uint16_t val)
 		case ECTL_REG_ALARM: rALARM = val; break;
 		default: regs[reg] = val; break;
 	}
-	atom_fence();
+	atom_full_fence();
 	return 0;
 }
 
 // -----------------------------------------------------------------------
 int ectl_mem_get(int nb, uint16_t addr, uint16_t *dest, int count)
 {
-	atom_fence();
+	atom_full_fence();
 	return mem_mget(nb, addr, dest, count);
 }
 
@@ -94,7 +94,7 @@ int ectl_mem_get(int nb, uint16_t addr, uint16_t *dest, int count)
 int ectl_mem_set(int nb, uint16_t addr, uint16_t *src, int count)
 {
 	int ret = mem_mput(nb, addr, src, count);
-	atom_fence();
+	atom_full_fence();
 	return ret;
 }
 
@@ -140,7 +140,7 @@ int ectl_clock_get()
 void ectl_clear()
 {
 	cpu_reset(1);
-	atom_fence();
+	atom_full_fence();
 }
 
 // -----------------------------------------------------------------------
