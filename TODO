@@ -2,13 +2,10 @@ Known bugs:
 
 * CROOK-5: BASIC fails on LIST/SAVE (all kernels)
 
-Atomics:
-
-* interrupts (rework): acquire/release, HLT exit is a state change (not a part of interrupt system)
-* proper cpu state handling (with atomics) in cpu_*?
-
 Enhancements:
 
+* interrupts rework: HLT exit is a state change (not a part of interrupt system), better atomics?
+* proper cpu state handling (with atomics) in cpu_*?
 * integrate local console(-s) and debugger into one ncurses user interface
 * mem get/put error handling should be done locally (within CPU, within I/O device)
 * mem get/put byte is also a CPU-only thing

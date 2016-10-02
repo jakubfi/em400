@@ -359,7 +359,7 @@ unsigned int cpu_loop(int autotest)
 				break;
 		}
 
-		if (atom_load(&RP) && !P && !rMODc) {
+		if (atom_load_acquire(&RP) && !P && !rMODc) {
 			int_serve();
 		}
 

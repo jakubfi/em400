@@ -103,7 +103,7 @@ static const char *int_names[] = {
 void int_wait()
 {
 	pthread_mutex_lock(&int_mutex);
-	while (!atom_load(&RP)) {
+	while (!atom_load_acquire(&RP)) {
 		pthread_cond_wait(&int_cond, &int_mutex);
 	}
 	pthread_mutex_unlock(&int_mutex);
@@ -113,7 +113,7 @@ void int_wait()
 static void int_update_rp()
 {
 	uint32_t rp = RZ & int_mask;
-	atom_store(&RP, rp);
+	atom_store_release(&RP, rp);
 	if (rp) {
 		pthread_cond_signal(&int_cond);
 	}
@@ -196,7 +196,7 @@ void int_serve()
 	uint16_t sr_mask;
 
 	// find highest interrupt to serve
-	uint32_t rp = atom_load(&RP);
+	uint32_t rp = atom_load_acquire(&RP);
 	while ((probe > 0) && !(rp & (1 << probe))) {
 		probe--;
 	}
