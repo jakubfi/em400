@@ -58,7 +58,7 @@ void * mx_timer_thread(void *ptr)
 		// accuracy is (-0.5+task_manager_delay) seconds anyway.
 
 		int *enabled = &(t->timer_enabled);
-		if (atom_load(enabled)) {
+		if (atom_load_acquire(enabled)) {
 			struct mx_ev *ev = mx_ev_simple(MX_EV_TIMER);
 			if (mx_evq_enqueue(t->evq, ev, MX_EVQ_F_WAIT) <= 0) {
 				mx_ev_delete(ev);
@@ -80,8 +80,7 @@ struct mx_timer * mx_timer_init(int timer_step_ms, struct mx_evq *evq)
 	t->timer_step_ms = timer_step_ms;
 	sem_init(&(t->mx_timer_quit), 0, 0);
 	t->evq = evq;
-	int *enabled = &(t->timer_enabled);
-	atom_store(enabled, 0);
+	atom_store_release(&(t->timer_enabled), 0);
 
 	if (pthread_create(&(t->mx_timer_th), NULL, mx_timer_thread, t)) {
 		free(t);
@@ -107,16 +106,14 @@ void mx_timer_shutdown(struct mx_timer *t)
 void mx_timer_on(struct mx_timer *t)
 {
 	LOGID(L_MX, 1, t, "Enabling timer");
-	int *enabled = &(t->timer_enabled);
-	atom_store(enabled, 1);
+	atom_store_release(&(t->timer_enabled), 1);
 }
 
 // -----------------------------------------------------------------------
 void mx_timer_off(struct mx_timer *t)
 {
 	LOGID(L_MX, 1, t, "Disabling timer");
-	int *enabled = &(t->timer_enabled);
-	atom_store(enabled, 1);
+	atom_store_release(&(t->timer_enabled), 0);
 }
 
 // vim: tabstop=4 shiftwidth=4 autoindent

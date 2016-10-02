@@ -5,7 +5,7 @@ Known bugs:
 Atomics:
 
 * interrupts (rework): acquire/release, HLT exit is a state change (not a part of interrupt system)
-* MULTIX: ???
+* MULTIX: intspec
 * proper cpu state handling (with atomics) in cpu_*?
 
 Enhancements:
