@@ -4,7 +4,6 @@ Known bugs:
 
 Atomics:
 
-* timer: acquire/release
 * memory: not needed (implicit memory barrier between CPU and IO, no 2nd CPU for now)
 * interrupts (rework): acquire/release, HLT exit is a state change (not a part of interrupt system)
 * ectl: full fences

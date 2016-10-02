@@ -32,8 +32,8 @@ int timer_enabled;
 pthread_t timer_th;
 sem_t timer_quit;
 
-int timer_step;
-int timer_int;
+int timer_step = 10;
+int timer_int = INT_TIMER;
 
 // -----------------------------------------------------------------------
 void * timer_thread(void *ptr)
@@ -50,8 +50,8 @@ void * timer_thread(void *ptr)
 		if (!sem_timedwait(&timer_quit, &ts)) {
 			break;
 		}
-		if (atom_load(&timer_enabled)) {
-			int_set(atom_load(&timer_int));
+		if (atom_load_acquire(&timer_enabled)) {
+			int_set(atom_load_acquire(&timer_int));
 		}
 	}
 
@@ -62,7 +62,6 @@ void * timer_thread(void *ptr)
 int timer_init(struct cfg_em400 *cfg)
 {
 	timer_step = cfg->timer_step;
-	timer_set_int(INT_TIMER);
 
 	if ((timer_step < 2) || (timer_step > 100)) {
 		return E_TIMER_VALUE;
@@ -99,26 +98,26 @@ void timer_shutdown()
 void timer_on()
 {
 	LOG(L_CPU, 1, "Starting timer");
-	atom_store(&timer_enabled, 1);
+	atom_store_release(&timer_enabled, 1);
 }
 
 // -----------------------------------------------------------------------
 void timer_off()
 {
 	LOG(L_CPU, 1, "Stopping timer");
-	atom_store(&timer_enabled, 0);
+	atom_store_release(&timer_enabled, 0);
 }
 
 // -----------------------------------------------------------------------
 int timer_get_state()
 {
-	return atom_load(&timer_enabled);
+	return atom_load_acquire(&timer_enabled);
 }
 
 // -----------------------------------------------------------------------
 void timer_set_int(int interrupt)
 {
-	atom_store(&timer_int, interrupt);
+	atom_store_release(&timer_int, interrupt);
 }
 
 // vim: tabstop=4 shiftwidth=4 autoindent
