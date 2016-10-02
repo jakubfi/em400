@@ -343,12 +343,12 @@ unsigned int cpu_loop(int autotest)
 
 	while (1) {
 
-		switch (atom_load(&cpu_state)) {
+		switch (atom_load_acquire(&cpu_state)) {
 			case STATE_QUIT:
 				return ips_counter;
 			case STATE_HALT:
 				int_wait();
-				atom_store(&cpu_state, STATE_START);
+				atom_store_release(&cpu_state, STATE_START);
 				break;
 			case STATE_STOP:
 #ifdef WITH_DEBUGGER

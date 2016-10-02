@@ -218,7 +218,7 @@ int mem_cpu_get(int nb, uint16_t addr, uint16_t *data)
 		int_set(INT_NO_MEM);
 		if ((nb == 0) && (nomem_stop)) {
 			rALARM = 1;
-			atom_store(&cpu_state, STATE_STOP);
+			atom_store_release(&cpu_state, STATE_STOP);
 		}
 		return 0;
 	}
@@ -232,7 +232,7 @@ int mem_cpu_put(int nb, uint16_t addr, uint16_t data)
 		int_set(INT_NO_MEM);
 		if ((nb == 0) && (nomem_stop)) {
 			rALARM = 1;
-			atom_store(&cpu_state, STATE_STOP);
+			atom_store_release(&cpu_state, STATE_STOP);
 		}
 		return 0;
 	}
@@ -246,7 +246,7 @@ int mem_cpu_mget(int nb, uint16_t saddr, uint16_t *dest, int count)
 		int_set(INT_NO_MEM);
 		if ((nb == 0) && (nomem_stop)) {
 			rALARM = 1;
-			atom_store(&cpu_state, STATE_STOP);
+			atom_store_release(&cpu_state, STATE_STOP);
 		}
 		return 0;
 	}
@@ -261,7 +261,7 @@ int mem_cpu_mput(int nb, uint16_t saddr, uint16_t *src, int count)
 		int_set(INT_NO_MEM);
 		if ((nb == 0) && (nomem_stop)) {
 			rALARM = 1;
-			atom_store(&cpu_state, STATE_STOP);
+			atom_store_release(&cpu_state, STATE_STOP);
 		}
 		return 0;
 	}

@@ -6,7 +6,6 @@ Atomics:
 
 * interrupts (rework): acquire/release, HLT exit is a state change (not a part of interrupt system)
 * log: acquire/release
-* cpu state: acquire/release
 * MULTIX: ???
 * proper cpu state handling (with atomics) in cpu_*?
 

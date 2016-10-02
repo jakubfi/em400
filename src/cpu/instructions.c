@@ -716,11 +716,11 @@ void op_73_hlt()
 
 	// handle hlt>=040 as "exit emulation" if user wants to
 	if (exit_on_hlt && (N >= 040)) {
-		atom_store(&cpu_state, STATE_QUIT);
+		atom_store_release(&cpu_state, STATE_QUIT);
 		return;
 	// otherwise, enter halt state
 	} else {
-		atom_store(&cpu_state, STATE_HALT);
+		atom_store_release(&cpu_state, STATE_HALT);
 	}
 }
 
