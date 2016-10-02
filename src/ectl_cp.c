@@ -86,15 +86,16 @@ int ectl_reg_set(unsigned reg, uint16_t val)
 // -----------------------------------------------------------------------
 int ectl_mem_get(int nb, uint16_t addr, uint16_t *dest, int count)
 {
-	// TODO: add memory barrier after cleaning atomic_* stuff
+	atom_fence();
 	return mem_mget(nb, addr, dest, count);
 }
 
 // -----------------------------------------------------------------------
 int ectl_mem_set(int nb, uint16_t addr, uint16_t *src, int count)
 {
-	// TODO: add memory barrier after cleaning atomic_* stuff
-	return mem_mput(nb, addr, src, count);
+	int ret = mem_mput(nb, addr, src, count);
+	atom_fence();
+	return ret;
 }
 
 // -----------------------------------------------------------------------

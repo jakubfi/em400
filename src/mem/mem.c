@@ -21,7 +21,6 @@
 #include <inttypes.h>
 #include <arpa/inet.h>
 
-#include "atomic.h"
 #include "mem/mem_elwro.h"
 #include "mem/mem_mega.h"
 #include "cpu/cpu.h"
@@ -62,7 +61,6 @@ void mem_update_map()
 			if (!mem_map[nb][ab].seg) {
 				mem_mega_seg_set(nb, ab, &mem_map[nb][ab]);
 			}
-			atom_fence();
 		}
 	}
 }
@@ -154,7 +152,7 @@ int mem_get(int nb, uint16_t addr, uint16_t *data)
 
 	ptr = mem_ptr(nb, addr);
 	if (ptr) {
-		*data = atom_load(ptr);
+		*data = *ptr;
 	} else {
 		return 0;
 	}
@@ -169,7 +167,7 @@ int mem_put(int nb, uint16_t addr, uint16_t data)
 	ptr = mem_ptr(nb, addr);
 	if (ptr) {
 		if (!mem_mega_prom || (mem_map[nb][addr>>12].seg != mem_mega_prom)) {
-			atom_store(ptr, data);
+			*ptr = data;
 		}
 	} else {
 		return 0;
@@ -186,7 +184,7 @@ int mem_mget(int nb, uint16_t saddr, uint16_t *dest, int count)
 	for (i=0 ; i<count ; i++) {
 		ptr = mem_ptr(nb, (uint16_t) (saddr+i));
 		if (ptr) {
-			*(dest+i) = atom_load(ptr);
+			*(dest+i) = *ptr;
 		} else {
 			return 0;
 		}
@@ -204,7 +202,7 @@ int mem_mput(int nb, uint16_t saddr, uint16_t *src, int count)
 		ptr = mem_ptr(nb, (uint16_t) (saddr+i));
 		if (ptr) {
 			if (!mem_mega_prom || (mem_map[nb][(saddr+i)>>12].seg != mem_mega_prom)) {
-				atom_store(ptr, *(src+i));
+				*ptr = *(src+i);
 			}
 		} else {
 			return 0;
@@ -323,7 +321,6 @@ int mem_seg_load(FILE *f, uint16_t *ptr)
 	for (int i=0 ; i<res ; i++) {
 		*(ptr+i) = ntohs(*(ptr+i));
 	}
-	atom_fence();
 
 	return res;
 }
