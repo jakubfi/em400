@@ -19,7 +19,6 @@
 #include <stdlib.h>
 
 #include "log.h"
-#include "atomic.h"
 #include "cpu/interrupts.h"
 #include "io/mx_irq.h"
 
@@ -84,7 +83,7 @@ struct mx_irqq * mx_irqq_create(int chnum, int maxlen)
 	queue->tail = NULL;
 	queue->size = 0;
 	queue->maxlen = maxlen;
-	atom_store(&queue->intspec, MX_INTSPEC_EMPTY);
+	queue->intspec = MX_INTSPEC_EMPTY;
 
 	return queue;
 
@@ -115,7 +114,7 @@ void mx_irqq_clear(struct mx_irqq *queue)
 	queue->head = NULL;
 	queue->tail = NULL;
 
-	atom_store(&queue->intspec, MX_INTSPEC_EMPTY);
+	queue->intspec = MX_INTSPEC_EMPTY;
 }
 
 // -----------------------------------------------------------------------
@@ -199,7 +198,7 @@ static void mx_irqq_send(struct mx_irqq *queue)
 	}
 
 	// current interrupt has not been received by CPU
-	if (atom_load(&queue->intspec) != MX_INTSPEC_EMPTY) {
+	if (queue->intspec != MX_INTSPEC_EMPTY) {
 		LOGID(L_MX, 3, queue, "Cannot send IRQ to CPU, previous one has not been received yet");
 		return;
 	}
@@ -209,7 +208,7 @@ static void mx_irqq_send(struct mx_irqq *queue)
 	LOGID(L_MX, 3, queue, "Sending interrupt to CPU");
 
 	// store interrupt specification
-	atom_store(&queue->intspec, (irq->irq << 8) | irq->line);
+	queue->intspec = (irq->irq << 8) | irq->line;
 
 	// notify CPU
 	int_set(queue->chnum + 12);
@@ -219,11 +218,11 @@ static void mx_irqq_send(struct mx_irqq *queue)
 // called by CPU thread
 uint16_t mx_irqq_get_intspec(struct mx_irqq *queue)
 {
-	uint16_t intspec = atom_load(&queue->intspec) & 0xFFFF;
+	uint16_t intspec = queue->intspec & 0xFFFF;
 	// intspec is most probably reset in H/W either:
 	// * when CPU reads it
 	// * or when interrupt routine does "MVI A,1  OUT KWINT"
-	atom_store(&queue->intspec, MX_INTSPEC_EMPTY);
+	queue->intspec = MX_INTSPEC_EMPTY;
 	LOGID(L_MX, 3, queue, "Sending intspec to CPU: 0x%04x (%s, line %i)", intspec, mx_irq_names[intspec>>8], intspec & 0xFF);
 	return intspec;
 }
@@ -232,7 +231,7 @@ uint16_t mx_irqq_get_intspec(struct mx_irqq *queue)
 // called by CPU thread
 void mx_irqq_irq_requeue(struct mx_irqq *queue)
 {
-	atom_store(&queue->intspec, MX_INTSPEC_EMPTY);
+	queue->intspec = MX_INTSPEC_EMPTY;
 	mx_irqq_send(queue);
 }
 
