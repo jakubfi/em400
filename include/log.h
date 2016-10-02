@@ -68,7 +68,7 @@ void log_config(unsigned component, unsigned level, struct cfg_em400 *cfg);
 #define LOG_ID_NAME __logid__
 #define LOG_ID_DEF char LOG_ID_NAME[LOG_ID_LEN+1]
 
-#define LOG_ENABLED (atom_load(&log_enabled))
+#define LOG_ENABLED (atom_load_acquire(&log_enabled))
 #define LOG_WANTS(component, level) (LOG_ENABLED && log_wants(component, level))
 
 #define LOG(component, level, format, ...) \
