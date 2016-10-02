@@ -1,12 +1,17 @@
 Known bugs:
 
-CROOK-5:
- * BASIC fails on LIST/SAVE (all kernels)
+* CROOK-5: BASIC fails on LIST/SAVE (all kernels)
 
-RP is atom read, but written under mutex
-atomics:
- * overused where not necessary (barrier enforced by a mutex)
- * relaxed, where seq_cst should probably be used
+Atomics:
+
+* timer: acquire/release
+* memory: not needed (implicit memory barrier between CPU and IO, no 2nd CPU for now)
+* interrupts (rework): acquire/release, HLT exit is a state change (not a part of interrupt system)
+* ectl: full fences
+* log: acquire/release
+* cpu state: acquire/release
+* MULTIX: ???
+* proper cpu state handling (with atomics) in cpu_*?
 
 Enhancements:
 
@@ -16,7 +21,6 @@ Enhancements:
 * mem_load, mem_seg_load is possibly an extension of CP protocol
 * deeptrace
 * conditional logging
-* atomic RZ/RP - rework
 
 CPU:
 
