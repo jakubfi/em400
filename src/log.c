@@ -160,7 +160,7 @@ void log_shutdown()
 	emdas_destroy(emd);
 
 	for (i=0 ; i<L_ALL; i++) {
-		atom_store(&log_components[i].thr, 0);
+		atom_store_release(&log_components[i].thr, 0);
 	}
 
 	log_disable();
@@ -194,7 +194,7 @@ void log_disable()
 
 	log_log_timestamp(L_EM4H, 0, "Closing log");
 
-	atom_store(&log_enabled, 0);
+	atom_store_release(&log_enabled, 0);
 
 	// stop flusher thread
 	pthread_mutex_lock(&log_mutex);
@@ -229,7 +229,7 @@ int log_enable()
 		return E_THREAD;
 	}
 
-	atom_store(&log_enabled, 1);
+	atom_store_release(&log_enabled, 1);
 
 	return E_OK;
 }
@@ -237,7 +237,7 @@ int log_enable()
 // -----------------------------------------------------------------------
 int log_is_enabled()
 {
-	return atom_load(&log_enabled);
+	return atom_load_acquire(&log_enabled);
 }
 
 // -----------------------------------------------------------------------
@@ -245,11 +245,11 @@ int log_set_level(unsigned component, unsigned level)
 {
 	// set level for specified component
 	if (component != L_ALL) {
-		atom_store(&log_components[component].thr, level);
+		atom_store_release(&log_components[component].thr, level);
 	// set level for all components
 	} else {
 		for (int i=0 ; i<L_ALL; i++) {
-			atom_store(&log_components[i].thr, level);
+			atom_store_release(&log_components[i].thr, level);
 		}
 	}
 
@@ -259,7 +259,7 @@ int log_set_level(unsigned component, unsigned level)
 // -----------------------------------------------------------------------
 int log_get_level(unsigned component)
 {
-	return atom_load(&log_components[component].thr);
+	return atom_load_acquire(&log_components[component].thr);
 }
 
 // -----------------------------------------------------------------------
@@ -354,7 +354,7 @@ bail:
 int log_wants(unsigned component, unsigned level)
 {
 	// check if message is to be logged
-	if (level > atom_load(&log_components[component].thr)) {
+	if (level > atom_load_acquire(&log_components[component].thr)) {
 		return 0;
 	}
 	return 1;
