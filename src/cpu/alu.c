@@ -184,7 +184,7 @@ void awp_dispatch(int op, uint16_t arg)
 	uint16_t addr;
 
 	if (awp) {
-		if (!mem_cpu_mget(QNB, arg, d, 3)) return;
+		if (!cpu_mem_mget(QNB, arg, d, 3)) return;
 
 		switch (op) {
 			case AWP_NRF0:
@@ -234,7 +234,7 @@ void awp_dispatch(int op, uint16_t arg)
 				break;
 		}
 	} else {
-		if (!mem_cpu_get(0, AWP_DISPATCH_TAB_ADDR+op, &addr)) return;
+		if (!cpu_mem_get(0, AWP_DISPATCH_TAB_ADDR+op, &addr)) return;
 		if (!cpu_ctx_switch(arg, addr, MASK_9 & MASK_Q)) return;
 	}
 }

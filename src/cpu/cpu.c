@@ -58,8 +58,94 @@ int cpu_mod_active;
 int cpu_mod_present;
 int cpu_user_io_illegal;
 int exit_on_hlt;
+static int nomem_stop;
 
 struct awp *awp;
+
+// -----------------------------------------------------------------------
+void cpu_mem_fail(int nb)
+{
+	int_set(INT_NO_MEM);
+	if ((nb == 0) && nomem_stop) {
+		rALARM = 1;
+		atom_store_release(&cpu_state, STATE_STOP);
+	}
+}
+
+// -----------------------------------------------------------------------
+int cpu_mem_get(int nb, uint16_t addr, uint16_t *data)
+{
+	if (!mem_get(nb, addr, data)) {
+		cpu_mem_fail(nb);
+		return 0;
+	}
+	return 1;
+}
+
+// -----------------------------------------------------------------------
+int cpu_mem_put(int nb, uint16_t addr, uint16_t data)
+{
+	if (!mem_put(nb, addr, data)) {
+		cpu_mem_fail(nb);
+		return 0;
+	}
+	return 1;
+}
+
+// -----------------------------------------------------------------------
+int cpu_mem_mget(int nb, uint16_t saddr, uint16_t *dest, int count)
+{
+	if (!mem_mget(nb, saddr, dest, count)) {
+		cpu_mem_fail(nb);
+		return 0;
+	}
+	return 1;
+}
+
+// -----------------------------------------------------------------------
+int cpu_mem_mput(int nb, uint16_t saddr, uint16_t *src, int count)
+{
+	if (!mem_mput(nb, saddr, src, count)) {
+		cpu_mem_fail(nb);
+		return 0;
+	}
+	return 1;
+}
+
+// -----------------------------------------------------------------------
+int cpu_mem_get_byte(int nb, uint32_t addr, uint8_t *data)
+{
+	int shift;
+	uint16_t orig = 0;
+
+	if (!cpu_mod_active || (Q & BS)) addr &= 0xffff;
+
+	shift = 8 * (~addr & 1);
+	addr >>= 1;
+
+	if (!cpu_mem_get(nb, addr, &orig)) return 0;
+	*data = orig >> shift;
+
+	return 1;
+}
+
+// -----------------------------------------------------------------------
+int cpu_mem_put_byte(int nb, uint32_t addr, uint8_t data)
+{
+	int shift;
+	uint16_t orig = 0;
+
+	if (!cpu_mod_active || (Q & BS)) addr &= 0xffff;
+
+	shift = 8 * (~addr & 1);
+	addr >>= 1;
+
+	if (!cpu_mem_get(nb, addr, &orig)) return 0;
+	orig = (orig & (0b1111111100000000 >> shift)) | (((uint16_t) data) << shift);
+	if (!cpu_mem_put(nb, addr, orig)) return 0;
+
+	return 1;
+}
 
 // -----------------------------------------------------------------------
 static int cpu_register_op(struct em400_op **op_tab, uint16_t opcode, uint16_t mask, struct em400_op *op)
@@ -115,6 +201,7 @@ int cpu_init(struct cfg_em400 *cfg)
 	cpu_mod_present = cfg->cpu_mod;
 	cpu_user_io_illegal = cfg->cpu_user_io_illegal;
 	exit_on_hlt = cfg->exit_on_hlt;
+	nomem_stop = cfg->cpu_stop_on_nomem;
 
 	struct em400_instr *instr = em400_ilist;
 	while (instr->var_mask) {
@@ -210,7 +297,7 @@ int cpu_ctx_switch(uint16_t arg, uint16_t ic, uint16_t sr_mask)
 {
 	uint16_t sp;
 
-	if (!mem_cpu_get(0, 97, &sp)) return 0;
+	if (!cpu_mem_get(0, 97, &sp)) return 0;
 
 	LOG(L_CPU, 3, "H/W stack push @ 0x%04x (IC = 0x%04x, R0 = 0x%04x, SR = 0x%04x, arg = 0x%04x), new IC = 0x%04x",
 		sp,
@@ -221,11 +308,11 @@ int cpu_ctx_switch(uint16_t arg, uint16_t ic, uint16_t sr_mask)
 		ic
 	);
 
-	if (!mem_cpu_put(0, sp, rIC)) return 0;
-	if (!mem_cpu_put(0, sp+1, regs[0])) return 0;
-	if (!mem_cpu_put(0, sp+2, rSR)) return 0;
-	if (!mem_cpu_put(0, sp+3, arg)) return 0;
-	if (!mem_cpu_put(0, 97, sp+4)) return 0;
+	if (!cpu_mem_put(0, sp, rIC)) return 0;
+	if (!cpu_mem_put(0, sp+1, regs[0])) return 0;
+	if (!cpu_mem_put(0, sp+2, rSR)) return 0;
+	if (!cpu_mem_put(0, sp+3, arg)) return 0;
+	if (!cpu_mem_put(0, 97, sp+4)) return 0;
 
 	regs[0] = 0;
 	rIC = ic;
@@ -242,15 +329,15 @@ int cpu_ctx_restore()
 	uint16_t data;
 	uint16_t sp;
 
-	if (!mem_cpu_get(0, 97, &sp)) return 0;
-	if (!mem_cpu_get(0, sp-4, &data)) return 0;
+	if (!cpu_mem_get(0, 97, &sp)) return 0;
+	if (!cpu_mem_get(0, sp-4, &data)) return 0;
 	rIC = data;
-	if (!mem_cpu_get(0, sp-3, &data)) return 0;
+	if (!cpu_mem_get(0, sp-3, &data)) return 0;
 	regs[0] = data;
-	if (!mem_cpu_get(0, sp-2, &data)) return 0;
+	if (!cpu_mem_get(0, sp-2, &data)) return 0;
 	rSR = data;
 	int_update_mask(rSR);
-	if (!mem_cpu_put(0, 97, sp-4)) return 0;
+	if (!cpu_mem_put(0, 97, sp-4)) return 0;
 
 	LOG(L_CPU, 3, "H/W stack pop @ 0x%04x (IC = 0x%04x, R0 = 0x%04x, SR = 0x%04x)",
 		sp-4,
@@ -273,11 +360,11 @@ static void cpu_step()
 	}
 
 	// fetch instruction
-	if (!mem_cpu_get(QNB, rIC, &rIR)) {
-		rMODc = rMOD = 0;
+	if (!mem_get(QNB, rIC, &rIR)) {
 		LOGCPU(L_CPU, 2, "        (NO MEM: instruction fetch)");
-		return;
+		goto memfail;
 	}
+
 	rIC++;
 
 	// find instruction (by design op is always set to something,
@@ -298,9 +385,9 @@ static void cpu_step()
 		if (IR_C) {
 			N = regs[IR_C] + rMOD;
 		} else {
-			if (!mem_cpu_get(QNB, rIC, &data)) {
+			if (!mem_get(QNB, rIC, &data)) {
 				LOGCPU(L_CPU, 2, "    (no mem: long arg fetch)");
-				goto finish;
+				goto memfail;
 			} else {
 				N = data + rMOD;
 				rIC++;
@@ -310,9 +397,9 @@ static void cpu_step()
 			N = (uint16_t) N + regs[IR_B];
 		}
 		if (IR_D) {
-			if (!mem_cpu_get(QNB, N, &data)) {
+			if (!mem_get(QNB, N, &data)) {
 				LOGCPU(L_CPU, 2, "    (no mem: indirect arg fetch)");
-				goto finish;
+				goto memfail;
 			} else {
 				N = data;
 			}
@@ -330,10 +417,13 @@ static void cpu_step()
 
 	// clear mod if instruction wasn't md
 	if (op->fun != op_77_md) {
-finish:
-		rMODc = 0;
-		rMOD = 0;
+		rMODc = rMOD = 0;
 	}
+	return;
+
+memfail:
+	cpu_mem_fail(QNB);
+	rMODc = rMOD = 0;
 }
 
 // -----------------------------------------------------------------------

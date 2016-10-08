@@ -53,7 +53,7 @@ void op_lw()
 void op_tw()
 {
 	uint16_t data;
-	if (mem_cpu_get(NB, N, &data)) {
+	if (cpu_mem_get(NB, N, &data)) {
 		reg_restrict_write(IR_A, data);
 	}
 }
@@ -67,7 +67,7 @@ void op_ls()
 // -----------------------------------------------------------------------
 void op_ri()
 {
-	if (mem_cpu_put(QNB, regs[IR_A], N)) {
+	if (cpu_mem_put(QNB, regs[IR_A], N)) {
 		reg_restrict_write(IR_A, regs[IR_A]+1);
 	}
 }
@@ -75,13 +75,13 @@ void op_ri()
 // -----------------------------------------------------------------------
 void op_rw()
 {
-	mem_cpu_put(QNB, N, regs[IR_A]);
+	cpu_mem_put(QNB, N, regs[IR_A]);
 }
 
 // -----------------------------------------------------------------------
 void op_pw()
 {
-	mem_cpu_put(NB, N, regs[IR_A]);
+	cpu_mem_put(NB, N, regs[IR_A]);
 }
 
 // -----------------------------------------------------------------------
@@ -95,11 +95,11 @@ void op_rj()
 void op_is()
 {
 	uint16_t data;
-	if (mem_cpu_get(NB, N, &data)) {
+	if (cpu_mem_get(NB, N, &data)) {
 		if ((data & regs[IR_A]) == regs[IR_A]) {
 			P = 1;
 		} else {
-			mem_cpu_put(NB, N, data | regs[IR_A]);
+			cpu_mem_put(NB, N, data | regs[IR_A]);
 		}
 	}
 }
@@ -116,7 +116,7 @@ void op_bb()
 void op_bm()
 {
 	uint16_t data;
-	if (mem_cpu_get(NB, N, &data)) {
+	if (cpu_mem_get(NB, N, &data)) {
 		if ((data & regs[IR_A]) == regs[IR_A]) {
 			P = 1;
 		}
@@ -156,7 +156,7 @@ void op_ou()
 
 	uint16_t data;
 	int io_result = io_dispatch(IO_OU, N, regs+IR_A);
-	if (mem_cpu_get(QNB, rIC + io_result, &data)) {
+	if (cpu_mem_get(QNB, rIC + io_result, &data)) {
 		rIC = data;
 	}
 }
@@ -170,7 +170,7 @@ void op_in()
 
 	uint16_t data;
 	int io_result = io_dispatch(IO_IN, N, regs+IR_A);
-	if (mem_cpu_get(QNB, rIC + io_result, &data)) {
+	if (cpu_mem_get(QNB, rIC + io_result, &data)) {
 		rIC = data;
 	}
 }
@@ -266,9 +266,9 @@ void op_or()
 void op_om()
 {
 	uint16_t data;
-	if (mem_cpu_get(NB, N, &data)) {
+	if (cpu_mem_get(NB, N, &data)) {
 		data |= regs[IR_A];
-		if (mem_cpu_put(NB, N, data)) {
+		if (cpu_mem_put(NB, N, data)) {
 			alu_16_set_Z(data);
 		}
 	}
@@ -285,9 +285,9 @@ void op_nr()
 void op_nm()
 {
 	uint16_t data;
-	if (mem_cpu_get(NB, N, &data)) {
+	if (cpu_mem_get(NB, N, &data)) {
 		data &= regs[IR_A];
-		if (mem_cpu_put(NB, N, data)) {
+		if (cpu_mem_put(NB, N, data)) {
 			alu_16_set_Z(data);
 		}
 	}
@@ -304,9 +304,9 @@ void op_er()
 void op_em()
 {
 	uint16_t data;
-	if (mem_cpu_get(NB, N, &data)) {
+	if (cpu_mem_get(NB, N, &data)) {
 		data &= ~regs[IR_A];
-		if (mem_cpu_put(NB, N, data)) {
+		if (cpu_mem_put(NB, N, data)) {
 			alu_16_set_Z(data);
 		}
 	}
@@ -323,9 +323,9 @@ void op_xr()
 void op_xm()
 {
 	uint16_t data;
-	if (mem_cpu_get(NB, N, &data)) {
+	if (cpu_mem_get(NB, N, &data)) {
 		data ^= regs[IR_A];
-		if (mem_cpu_put(NB, N, data)) {
+		if (cpu_mem_put(NB, N, data)) {
 			alu_16_set_Z(data);
 		}
 	}
@@ -341,7 +341,7 @@ void op_cl()
 void op_lb()
 {
 	uint8_t data;
-	if (mem_get_byte(NB, N, &data)) {
+	if (cpu_mem_get_byte(NB, N, &data)) {
 		reg_restrict_write(IR_A, (regs[IR_A] & 0b1111111100000000) | data);
 	}
 }
@@ -349,14 +349,14 @@ void op_lb()
 // -----------------------------------------------------------------------
 void op_rb()
 {
-	mem_put_byte(NB, N, regs[IR_A]);
+	cpu_mem_put_byte(NB, N, regs[IR_A]);
 }
 
 // -----------------------------------------------------------------------
 void op_cb()
 {
 	uint8_t data;
-	if (mem_get_byte(NB, N, &data)) {
+	if (cpu_mem_get_byte(NB, N, &data)) {
 		alu_16_set_LEG((uint8_t) regs[IR_A], data);
 	}
 }
@@ -410,7 +410,7 @@ void op_lwt()
 void op_lws()
 {
 	uint16_t data;
-	if (mem_cpu_get(QNB, rIC + N, &data)) {
+	if (cpu_mem_get(QNB, rIC + N, &data)) {
 		reg_restrict_write(IR_A, data);
 	}
 }
@@ -418,7 +418,7 @@ void op_lws()
 // -----------------------------------------------------------------------
 void op_rws()
 {
-	mem_cpu_put(QNB, rIC + N, regs[IR_A]);
+	cpu_mem_put(QNB, rIC + N, regs[IR_A]);
 }
 
 // -----------------------------------------------------------------------
@@ -502,7 +502,7 @@ void op_71_exl()
 		}
 	}
 
-	if (mem_cpu_get(0, 96, &data)) {
+	if (cpu_mem_get(0, 96, &data)) {
 		cpu_ctx_switch(IR_b, data, 0b1111111110011111);
 	}
 }
@@ -845,7 +845,7 @@ void op_74_jn()
 // -----------------------------------------------------------------------
 void op_74_lj()
 {
-	if (mem_cpu_put(QNB, N, rIC)) {
+	if (cpu_mem_put(QNB, N, rIC)) {
 		rIC = N+1;
 	}
 }
@@ -857,49 +857,49 @@ void op_74_lj()
 // -----------------------------------------------------------------------
 void op_75_ld()
 {
-	mem_cpu_mget(QNB, N, regs+1, 2);
+	cpu_mem_mget(QNB, N, regs+1, 2);
 }
 
 // -----------------------------------------------------------------------
 void op_75_lf()
 {
-	mem_cpu_mget(QNB, N, regs+1, 3);
+	cpu_mem_mget(QNB, N, regs+1, 3);
 }
 
 // -----------------------------------------------------------------------
 void op_75_la()
 {
-	mem_cpu_mget(QNB, N, regs+1, 7);
+	cpu_mem_mget(QNB, N, regs+1, 7);
 }
 
 // -----------------------------------------------------------------------
 void op_75_ll()
 {
-	mem_cpu_mget(QNB, N, regs+5, 3);
+	cpu_mem_mget(QNB, N, regs+5, 3);
 }
 
 // -----------------------------------------------------------------------
 void op_75_td()
 {
-	mem_cpu_mget(NB, N, regs+1, 2);
+	cpu_mem_mget(NB, N, regs+1, 2);
 }
 
 // -----------------------------------------------------------------------
 void op_75_tf()
 {
-	mem_cpu_mget(NB, N, regs+1, 3);
+	cpu_mem_mget(NB, N, regs+1, 3);
 }
 
 // -----------------------------------------------------------------------
 void op_75_ta()
 {
-	mem_cpu_mget(NB, N, regs+1, 7);
+	cpu_mem_mget(NB, N, regs+1, 7);
 }
 
 // -----------------------------------------------------------------------
 void op_75_tl()
 {
-	mem_cpu_mget(NB, N, regs+5, 3);
+	cpu_mem_mget(NB, N, regs+5, 3);
 }
 
 // -----------------------------------------------------------------------
@@ -909,49 +909,49 @@ void op_75_tl()
 // -----------------------------------------------------------------------
 void op_76_rd()
 {
-	mem_cpu_mput(QNB, N, regs+1, 2);
+	cpu_mem_mput(QNB, N, regs+1, 2);
 }
 
 // -----------------------------------------------------------------------
 void op_76_rf()
 {
-	mem_cpu_mput(QNB, N, regs+1, 3);
+	cpu_mem_mput(QNB, N, regs+1, 3);
 }
 
 // -----------------------------------------------------------------------
 void op_76_ra()
 {
-	mem_cpu_mput(QNB, N, regs+1, 7);
+	cpu_mem_mput(QNB, N, regs+1, 7);
 }
 
 // -----------------------------------------------------------------------
 void op_76_rl()
 {
-	mem_cpu_mput(QNB, N, regs+5, 3);
+	cpu_mem_mput(QNB, N, regs+5, 3);
 }
 
 // -----------------------------------------------------------------------
 void op_76_pd()
 {
-	mem_cpu_mput(NB, N, regs+1, 2);
+	cpu_mem_mput(NB, N, regs+1, 2);
 }
 
 // -----------------------------------------------------------------------
 void op_76_pf()
 {
-	mem_cpu_mput(NB, N, regs+1, 3);
+	cpu_mem_mput(NB, N, regs+1, 3);
 }
 
 // -----------------------------------------------------------------------
 void op_76_pa()
 {
-	mem_cpu_mput(NB, N, regs+1, 7);
+	cpu_mem_mput(NB, N, regs+1, 7);
 }
 
 // -----------------------------------------------------------------------
 void op_76_pl()
 {
-	mem_cpu_mput(NB, N, regs+5, 3);
+	cpu_mem_mput(NB, N, regs+5, 3);
 }
 
 // -----------------------------------------------------------------------
@@ -964,7 +964,7 @@ void op_77_mb()
 	USER_ILLEGAL;
 
 	uint16_t data;
-	if (mem_cpu_get(QNB, N, &data)) {
+	if (cpu_mem_get(QNB, N, &data)) {
 		rSR = (rSR & 0b111111111000000) | (data & 0b0000000000111111);
 	}
 }
@@ -975,7 +975,7 @@ void op_77_im()
 	USER_ILLEGAL;
 
 	uint16_t data;
-	if (mem_cpu_get(QNB, N, &data)) {
+	if (cpu_mem_get(QNB, N, &data)) {
 		rSR = (rSR & 0b000000000111111) | (data & 0b1111111111000000);
 		int_update_mask(rSR);
 	}
@@ -987,7 +987,7 @@ void op_77_ki()
 	USER_ILLEGAL;
 
 	uint16_t data = int_get_nchan();
-	mem_cpu_put(QNB, N, data);
+	cpu_mem_put(QNB, N, data);
 }
 
 // -----------------------------------------------------------------------
@@ -996,7 +996,7 @@ void op_77_fi()
 	USER_ILLEGAL;
 
 	uint16_t data;
-	if (mem_cpu_get(QNB, N, &data)) {
+	if (cpu_mem_get(QNB, N, &data)) {
 		int_put_nchan(data);
 	}
 }
@@ -1007,7 +1007,7 @@ void op_77_sp()
 	USER_ILLEGAL;
 
 	uint16_t data[3];
-	if (!mem_cpu_mget(NB, N, data, 3)) return;
+	if (!cpu_mem_mget(NB, N, data, 3)) return;
 
 	rIC = data[0];
 	regs[0] = data[1];
@@ -1047,15 +1047,15 @@ void op_77_md()
 // -----------------------------------------------------------------------
 void op_77_rz()
 {
-	mem_cpu_put(QNB, N, 0);
+	cpu_mem_put(QNB, N, 0);
 }
 
 // -----------------------------------------------------------------------
 void op_77_ib()
 {
 	uint16_t data;
-	if (mem_cpu_get(QNB, N, &data)) {
-		if (mem_cpu_put(QNB, N, ++data)) {
+	if (cpu_mem_get(QNB, N, &data)) {
+		if (cpu_mem_put(QNB, N, ++data)) {
 			if (data == 0) {
 				P = 1;
 			}

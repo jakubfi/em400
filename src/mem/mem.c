@@ -23,9 +23,7 @@
 
 #include "mem/mem_elwro.h"
 #include "mem/mem_mega.h"
-#include "cpu/cpu.h"
 #include "mem/mem.h"
-#include "cpu/interrupts.h"
 #include "io/defs.h"
 
 #include "em400.h"
@@ -38,7 +36,6 @@ struct mem_slot_t mem_map[MEM_MAX_NB][MEM_MAX_AB];	// final (as seen by emulatio
 
 static int mega_modules = 0;
 static int mega_boot = 0;
-static int nomem_stop = 0;
 
 // -----------------------------------------------------------------------
 static uint16_t *mem_ptr(int nb, uint16_t addr)
@@ -53,10 +50,8 @@ static uint16_t *mem_ptr(int nb, uint16_t addr)
 // -----------------------------------------------------------------------
 void mem_update_map()
 {
-	int nb, ab;
-
-	for (nb=0 ; nb<MEM_MAX_NB ; nb++) {
-		for (ab=0 ; ab<MEM_MAX_AB ; ab++) {
+	for (int nb=0 ; nb<MEM_MAX_NB ; nb++) {
+		for (int ab=0 ; ab<MEM_MAX_AB ; ab++) {
 			mem_elwro_seg_set(nb, ab, &mem_map[nb][ab]);
 			if (!mem_map[nb][ab].seg) {
 				mem_mega_seg_set(nb, ab, &mem_map[nb][ab]);
@@ -90,7 +85,6 @@ int mem_init(struct cfg_em400 *cfg)
 
 	mega_modules = cfg->mem_mega;
 	mega_boot = cfg->mem_mega_boot;
-	nomem_stop = cfg->cpu_stop_on_nomem;
 
 	return E_OK;
 }
@@ -148,9 +142,7 @@ int mem_mega_boot()
 // -----------------------------------------------------------------------
 int mem_get(int nb, uint16_t addr, uint16_t *data)
 {
-	uint16_t *ptr;
-
-	ptr = mem_ptr(nb, addr);
+	uint16_t *ptr = mem_ptr(nb, addr);
 	if (ptr) {
 		*data = *ptr;
 	} else {
@@ -162,9 +154,7 @@ int mem_get(int nb, uint16_t addr, uint16_t *data)
 // -----------------------------------------------------------------------
 int mem_put(int nb, uint16_t addr, uint16_t data)
 {
-	uint16_t *ptr;
-
-	ptr = mem_ptr(nb, addr);
+	uint16_t *ptr = mem_ptr(nb, addr);
 	if (ptr) {
 		if (!mem_mega_prom || (mem_map[nb][addr>>12].seg != mem_mega_prom)) {
 			*ptr = data;
@@ -178,11 +168,8 @@ int mem_put(int nb, uint16_t addr, uint16_t data)
 // -----------------------------------------------------------------------
 int mem_mget(int nb, uint16_t saddr, uint16_t *dest, int count)
 {
-	int i;
-	uint16_t *ptr;
-
-	for (i=0 ; i<count ; i++) {
-		ptr = mem_ptr(nb, (uint16_t) (saddr+i));
+	for (int i=0 ; i<count ; i++) {
+		uint16_t *ptr = mem_ptr(nb, (uint16_t) (saddr+i));
 		if (ptr) {
 			*(dest+i) = *ptr;
 		} else {
@@ -195,11 +182,8 @@ int mem_mget(int nb, uint16_t saddr, uint16_t *dest, int count)
 // -----------------------------------------------------------------------
 int mem_mput(int nb, uint16_t saddr, uint16_t *src, int count)
 {
-	int i;
-	uint16_t *ptr;
-
-	for (i=0 ; i<count ; i++) {
-		ptr = mem_ptr(nb, (uint16_t) (saddr+i));
+	for (int i=0 ; i<count ; i++) {
+		uint16_t *ptr = mem_ptr(nb, (uint16_t) (saddr+i));
 		if (ptr) {
 			if (!mem_mega_prom || (mem_map[nb][(saddr+i)>>12].seg != mem_mega_prom)) {
 				*ptr = *(src+i);
@@ -208,98 +192,6 @@ int mem_mput(int nb, uint16_t saddr, uint16_t *src, int count)
 			return 0;
 		}
 	}
-	return 1;
-}
-
-// -----------------------------------------------------------------------
-int mem_cpu_get(int nb, uint16_t addr, uint16_t *data)
-{
-	if (!mem_get(nb, addr, data)) {
-		int_set(INT_NO_MEM);
-		if ((nb == 0) && (nomem_stop)) {
-			rALARM = 1;
-			atom_store_release(&cpu_state, STATE_STOP);
-		}
-		return 0;
-	}
-	return 1;
-}
-
-// -----------------------------------------------------------------------
-int mem_cpu_put(int nb, uint16_t addr, uint16_t data)
-{
-	if (!mem_put(nb, addr, data)) {
-		int_set(INT_NO_MEM);
-		if ((nb == 0) && (nomem_stop)) {
-			rALARM = 1;
-			atom_store_release(&cpu_state, STATE_STOP);
-		}
-		return 0;
-	}
-	return 1;
-}
-
-// -----------------------------------------------------------------------
-int mem_cpu_mget(int nb, uint16_t saddr, uint16_t *dest, int count)
-{
-	if (!mem_mget(nb, saddr, dest, count)) {
-		int_set(INT_NO_MEM);
-		if ((nb == 0) && (nomem_stop)) {
-			rALARM = 1;
-			atom_store_release(&cpu_state, STATE_STOP);
-		}
-		return 0;
-	}
-	return 1;
-}
-
-
-// -----------------------------------------------------------------------
-int mem_cpu_mput(int nb, uint16_t saddr, uint16_t *src, int count)
-{
-	if (!mem_mput(nb, saddr, src, count)) {
-		int_set(INT_NO_MEM);
-		if ((nb == 0) && (nomem_stop)) {
-			rALARM = 1;
-			atom_store_release(&cpu_state, STATE_STOP);
-		}
-		return 0;
-	}
-	return 1;
-}
-
-// -----------------------------------------------------------------------
-int mem_get_byte(int nb, uint32_t addr, uint8_t *data)
-{
-	int shift;
-	uint16_t orig = 0;
-
-	if (!cpu_mod_active || (Q & BS)) addr &= 0xffff;
-
-	shift = 8 * (~addr & 1);
-	addr >>= 1;
-
-	if (!mem_cpu_get(nb, addr, &orig)) return 0;
-	*data = orig >> shift;
-
-	return 1;
-}
-
-// -----------------------------------------------------------------------
-int mem_put_byte(int nb, uint32_t addr, uint8_t data)
-{
-	int shift;
-	uint16_t orig = 0;
-
-	if (!cpu_mod_active || (Q & BS)) addr &= 0xffff;
-
-	shift = 8 * (~addr & 1);
-	addr >>= 1;
-
-	if (!mem_cpu_get(nb, addr, &orig)) return 0;
-	orig = (orig & (0b1111111100000000 >> shift)) | (((uint16_t) data) << shift);
-	if (!mem_cpu_put(nb, addr, orig)) return 0;
-
 	return 1;
 }
 

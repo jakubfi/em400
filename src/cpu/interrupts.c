@@ -208,7 +208,7 @@ void int_serve()
 	pthread_mutex_unlock(&int_mutex);
 
 	// get interrupt vector
-	if (!mem_cpu_get(0, 64+interrupt, &int_vec)) return;
+	if (!cpu_mem_get(0, 64+interrupt, &int_vec)) return;
 
 	LOG(L_INT, 1, "Serve interrupt: %i (%s) -> 0x%04x", interrupt, int_names[interrupt], int_vec);
 

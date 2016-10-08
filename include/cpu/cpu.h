@@ -94,6 +94,13 @@ extern int cpu_awp;
 
 extern struct awp *awp;
 
+int cpu_mem_get(int nb, uint16_t addr, uint16_t *data);
+int cpu_mem_put(int nb, uint16_t addr, uint16_t data);
+int cpu_mem_mget(int nb, uint16_t saddr, uint16_t *dest, int count);
+int cpu_mem_mput(int nb, uint16_t saddr, uint16_t *src, int count);
+int cpu_mem_get_byte(int nb, uint32_t addr, uint8_t *data);
+int cpu_mem_put_byte(int nb, uint32_t addr, uint8_t data);
+
 #define reg_restrict_write(r, x) regs[r] = ((r)|!Q) ? (x) : (regs[r] & 0b1111111100000000) | ((x) & 0b0000000011111111)
 int cpu_init(struct cfg_em400 *cfg);
 void cpu_shutdown();
