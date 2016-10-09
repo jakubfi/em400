@@ -31,7 +31,6 @@ uint32_t RP;
 uint32_t int_mask;
 
 pthread_mutex_t int_mutex = PTHREAD_MUTEX_INITIALIZER;
-pthread_cond_t int_cond = PTHREAD_COND_INITIALIZER;
 
 #define INT_BIT(x) (1UL << (31 - x))
 
@@ -100,22 +99,12 @@ static const char *int_names[] = {
 };
 
 // -----------------------------------------------------------------------
-void int_wait()
-{
-	pthread_mutex_lock(&int_mutex);
-	while (!atom_load_acquire(&RP)) {
-		pthread_cond_wait(&int_cond, &int_mutex);
-	}
-	pthread_mutex_unlock(&int_mutex);
-}
-
-// -----------------------------------------------------------------------
 static void int_update_rp()
 {
-	uint32_t rp = RZ & int_mask;
-	atom_store_release(&RP, rp);
-	if (rp) {
-		pthread_cond_signal(&int_cond);
+	// under mutex
+	RP = RZ & int_mask;
+	if (RP) {
+		cpu_unhalt();
 	}
 }
 
@@ -141,6 +130,7 @@ void int_update_mask(uint16_t mask)
 void int_set(int x)
 {
 	LOG(L_INT, x != (cpu_mod_active ? INT_EXTRA : INT_TIMER) ? 3 : 9, "Set interrupt: %i (%s)", x, int_names[x]);
+
 	pthread_mutex_lock(&int_mutex);
 	RZ |= INT_BIT(x);
 	int_update_rp();
@@ -160,6 +150,7 @@ void int_clear_all()
 void int_clear(int x)
 {
 	LOG(L_INT, 3, "Clear interrupt: %i (%s)", x, int_names[x]);
+
 	pthread_mutex_lock(&int_mutex);
 	RZ &= ~INT_BIT(x);
 	int_update_rp();
@@ -170,6 +161,7 @@ void int_clear(int x)
 void int_put_nchan(uint16_t r)
 {
 	LOG(L_INT, 3, "Set non-channel interrupts to: %d", r);
+
 	pthread_mutex_lock(&int_mutex);
 	RZ = (RZ & 0b00000000000011111111111111110000) | ((r & 0b1111111111110000) << 16) | (r & 0b0000000000001111);
 	int_update_rp();
@@ -196,8 +188,7 @@ void int_serve()
 	uint16_t sr_mask;
 
 	// find highest interrupt to serve
-	uint32_t rp = atom_load_acquire(&RP);
-	while ((probe > 0) && !(rp & (1 << probe))) {
+	while ((probe > 0) && !(RP & (1 << probe))) {
 		probe--;
 	}
 	interrupt = 31 - probe;

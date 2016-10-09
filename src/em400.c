@@ -263,7 +263,7 @@ int main(int argc, char** argv)
 	em400_init(cfg);
 	em400_loop(cfg);
 
-	if (atom_load_acquire(&cpu_state) == STATE_STOP) {
+	if (cpu_state_get() == STATE_STOP) {
 		printf("Emulation died, guest CPU segmentation fault.\n");
 	}
 

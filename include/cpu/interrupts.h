@@ -73,7 +73,6 @@ enum int_masks_e {
 	MASK_EX = MASK_4,
 };
 
-void int_wait();
 void int_update_mask(uint16_t mask);
 void int_set(int x);
 void int_clear(int x);

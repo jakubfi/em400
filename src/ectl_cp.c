@@ -101,13 +101,19 @@ int ectl_mem_set(int nb, uint16_t addr, uint16_t *src, int count)
 // -----------------------------------------------------------------------
 int ectl_cpu_state_get()
 {
-	return atom_load_acquire(&cpu_state);
+	return cpu_state_get();
 }
 
 // -----------------------------------------------------------------------
-int ectl_cpu_state_set(int state)
+void ectl_cpu_stop()
 {
-	return 666;
+	cpu_stop();
+}
+
+// -----------------------------------------------------------------------
+void ectl_cpu_start()
+{
+	cpu_start();
 }
 
 // -----------------------------------------------------------------------

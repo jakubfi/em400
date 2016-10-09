@@ -10,12 +10,15 @@
 
 	im	the_sr
 	mb	the_sr
+	sil
+	sit
 
 	.word	1
 
-the_sr:	.word	0b1110100000010000
 	mcl
 	hlt	077
+
+the_sr:	.word	0b1000011110010000
 
 ; XPCT int(rz[6]) : 0
 ; XPCT int(sr) : 0

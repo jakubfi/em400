@@ -25,10 +25,10 @@
 #include "cfg.h"
 
 enum cpu_states {
-	STATE_QUIT = 0,
-	STATE_START = 1,
-	STATE_STOP = 2,
-	STATE_HALT = 3,
+	STATE_START =	0,
+	STATE_STOP =	1 << 0,
+	STATE_HALT =	1 << 1,
+	STATE_QUIT =	1 << 10,
 };
 
 // -----------------------------------------------------------------------
@@ -73,7 +73,7 @@ enum cpu_states {
 #define IR_t	_t(rIR)
 #define IR_b	_b(rIR)
 
-extern int cpu_state;
+#define reg_restrict_write(r, x) regs[r] = ((r)|!Q) ? (x) : (regs[r] & 0b1111111100000000) | ((x) & 0b0000000011111111)
 
 extern uint16_t regs[];
 extern uint16_t rIC;
@@ -83,6 +83,7 @@ extern uint16_t rMOD;
 extern int rMODc;
 extern uint16_t rIR;
 extern uint16_t rSR;
+
 extern int P;
 extern uint32_t N;
 extern int cpu_mod_active;
@@ -90,7 +91,6 @@ extern int cpu_mod_active;
 extern int cpu_mod_present;
 extern int cpu_user_io_illegal;
 extern int exit_on_hlt;
-extern int cpu_awp;
 
 extern struct awp *awp;
 
@@ -101,16 +101,25 @@ int cpu_mem_mput(int nb, uint16_t saddr, uint16_t *src, int count);
 int cpu_mem_get_byte(int nb, uint32_t addr, uint8_t *data);
 int cpu_mem_put_byte(int nb, uint32_t addr, uint8_t data);
 
-#define reg_restrict_write(r, x) regs[r] = ((r)|!Q) ? (x) : (regs[r] & 0b1111111100000000) | ((x) & 0b0000000011111111)
 int cpu_init(struct cfg_em400 *cfg);
 void cpu_shutdown();
+void cpu_reset(int hw);
+
 void cpu_mod_enable();
 int cpu_mod_on();
 int cpu_mod_off();
-void cpu_reset(int hw);
+
 int cpu_ctx_switch(uint16_t arg, uint16_t ic, uint16_t sr_mask);
 int cpu_ctx_restore();
-unsigned int cpu_loop(int autotest);
+
+unsigned cpu_loop(int autotest);
+
+void cpu_quit();
+void cpu_halt();
+void cpu_stop();
+void cpu_start();
+void cpu_unhalt();
+int cpu_state_get();
 
 #endif
 

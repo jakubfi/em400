@@ -16,6 +16,7 @@
 //  51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 
 #include <string.h>
+#include <pthread.h>
 
 #include <emawp.h>
 
@@ -40,7 +41,7 @@
 #include "debugger/ui.h"
 #endif
 
-int cpu_state = STATE_START;
+static int cpu_state;
 
 uint16_t regs[8];
 uint16_t rIC;
@@ -62,13 +63,65 @@ static int nomem_stop;
 
 struct awp *awp;
 
+pthread_mutex_t cpu_wake_mutex = PTHREAD_MUTEX_INITIALIZER;
+pthread_cond_t cpu_wake_cond = PTHREAD_COND_INITIALIZER;
+
+// -----------------------------------------------------------------------
+static void cpu_wait_on(int state)
+{
+	pthread_mutex_lock(&cpu_wake_mutex);
+	while ((cpu_state & state) && !(cpu_state & STATE_QUIT)) {
+		pthread_cond_wait(&cpu_wake_cond, &cpu_wake_mutex);
+	}
+	pthread_mutex_unlock(&cpu_wake_mutex);
+}
+
+// -----------------------------------------------------------------------
+void cpu_quit()
+{
+	atom_store_release(&cpu_state, STATE_QUIT);
+	pthread_cond_signal(&cpu_wake_cond);
+}
+
+// -----------------------------------------------------------------------
+void cpu_halt()
+{
+	atom_or_release(&cpu_state, STATE_HALT);
+}
+
+// -----------------------------------------------------------------------
+void cpu_stop()
+{
+	atom_or_release(&cpu_state, STATE_STOP);
+}
+
+// -----------------------------------------------------------------------
+void cpu_start()
+{
+	atom_and_release(&cpu_state, ~STATE_STOP);
+	pthread_cond_signal(&cpu_wake_cond);
+}
+
+// -----------------------------------------------------------------------
+void cpu_unhalt()
+{
+	atom_and_release(&cpu_state, ~STATE_HALT);
+	pthread_cond_signal(&cpu_wake_cond);
+}
+
+// -----------------------------------------------------------------------
+int cpu_state_get()
+{
+	return atom_load_acquire(&cpu_state);
+}
+
 // -----------------------------------------------------------------------
 void cpu_mem_fail(int nb)
 {
 	int_set(INT_NO_MEM);
 	if ((nb == 0) && nomem_stop) {
 		rALARM = 1;
-		atom_store_release(&cpu_state, STATE_STOP);
+		cpu_stop();
 	}
 }
 
@@ -427,40 +480,45 @@ memfail:
 }
 
 // -----------------------------------------------------------------------
-unsigned int cpu_loop(int autotest)
+unsigned cpu_loop(int autotest)
 {
 	unsigned long ips_counter = 0;
 
 	while (1) {
+		int state = atom_load_acquire(&cpu_state);
 
-		switch (atom_load_acquire(&cpu_state)) {
-			case STATE_QUIT:
-				return ips_counter;
-			case STATE_HALT:
-				int_wait();
-				atom_store_release(&cpu_state, STATE_START);
-				break;
-			case STATE_STOP:
-#ifdef WITH_DEBUGGER
-				dbg_enter = 1;
-#endif
-				break;
-			default:
-				break;
+		// CPU running
+		if (state == STATE_START) {
+			// interrupt
+			if (atom_load_acquire(&RP) && !P && !rMODc) {
+				int_serve();
+			// CPU cycle
+			} else {
+				#ifdef WITH_DEBUGGER
+				if (autotest != 1) {
+					dbg_step();
+				}
+				#endif
+
+				cpu_step();
+				ips_counter++;
+			}
+
+		// CPU stopped
+		} else if ((state & STATE_STOP)) {
+			#ifdef WITH_DEBUGGER
+			dbg_enter = 1;
+			#endif
+			//cpu_wait_on(STATE_STOP);
+
+		// CPU waiting for an interrupt
+		} else if ((state & STATE_HALT)) {
+			cpu_wait_on(STATE_HALT);
+
+		// quit emulation
+		} else if ((state & STATE_QUIT)) {
+			break;
 		}
-
-		if (atom_load_acquire(&RP) && !P && !rMODc) {
-			int_serve();
-		}
-
-#ifdef WITH_DEBUGGER
-		if (autotest != 1) {
-			dbg_step();
-		}
-#endif
-
-		cpu_step();
-		ips_counter++;
 
 	}
 
