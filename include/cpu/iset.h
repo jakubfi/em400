@@ -22,23 +22,19 @@
 
 typedef void (*opfun)();
 
-struct em400_op {
+struct iset_opcode {
 	int norm_arg;			// has normal argument?
 	int short_arg;			// has short argument?
 	opfun fun;				// instruction function
 };
 
-struct em400_instr {
+struct iset_instruction {
 	uint16_t opcode;		// instruction opcode (and extended opcode)
 	uint16_t var_mask;		// variable bits mask
-	struct em400_op op;		// opcode definition
+	struct iset_opcode op;	// opcode definition
 };
 
-// opcode table (instruction decoder decision table)
-extern struct em400_op *em400_op_tab[0x10000];
-
-// instruction list
-extern struct em400_instr em400_ilist[];
+int iset_build();
 
 #endif
 

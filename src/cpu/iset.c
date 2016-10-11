@@ -18,6 +18,8 @@
 #include <stdlib.h>
 #include <inttypes.h>
 
+#include "errors.h"
+
 #include "cpu/iset.h"
 #include "cpu/instructions.h"
 
@@ -36,11 +38,8 @@ enum em400_var_masks {
 
 #define O(x) ((x) << 10)
 
-// opcode table (instruction decoder decision table)
-struct em400_op *em400_op_tab[0x10000];
-
 // base MERA-400 instruction list
-struct em400_instr em400_ilist[] = {
+struct iset_instruction em400_ilist[] = {
 	{ 0, VARMASK_ALL, { 0, 0, op_illegal} }, // illegal instructions
 
 	{ O(020), VARMASK_DABC, { 1, 0, op_lw } },
@@ -176,5 +175,57 @@ struct em400_instr em400_ilist[] = {
 
 	{ 0, 0, { 0, 0, NULL } }
 };
+
+// -----------------------------------------------------------------------
+static int iset_register_op(struct iset_opcode **op_tab, struct iset_instruction *instr)
+{
+	int offsets[16];
+
+	// store 1's positions in mask, count 1's
+	int one_count = 0;
+	for (int i=0 ; i<16 ; i++) {
+		if (instr->var_mask & (1<<i)) {
+			offsets[one_count] = i;
+			one_count++;
+		}
+	}
+
+	int max = (1 << one_count) - 1;
+
+	// iterate over all variants (as indicated by the mask)
+	for (int i=0 ; i<=max ; i++) {
+		uint16_t result = 0;
+		// shift 1's into positions
+		for (int pos=one_count-1 ; pos>=0 ; pos--) {
+			result |= ((i >> pos) & 1) << offsets[pos];
+		}
+
+		struct iset_opcode *op = op_tab[instr->opcode | result];
+
+		// sanity check: we don't want to overwrite non-illegal registered ops
+		if ((op) && (op->fun != op_illegal)) {
+			return E_SLID_INIT;
+		}
+		// register the op
+		op_tab[instr->opcode | result] = &instr->op;
+	}
+	return E_OK;
+}
+
+// -----------------------------------------------------------------------
+int iset_build(struct iset_opcode **op_tab)
+{
+	int res;
+
+	struct iset_instruction *instr = em400_ilist;
+	while (instr->var_mask) {
+		res = iset_register_op(op_tab, instr);
+		if (res != E_OK) {
+			return res;
+		}
+		instr++;
+	}
+	return E_OK;
+}
 
 // vim: tabstop=4 shiftwidth=4 autoindent

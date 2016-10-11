@@ -63,6 +63,9 @@ static int nomem_stop;
 
 struct awp *awp;
 
+// opcode table (instruction decoder decision table)
+struct iset_opcode *cpu_op_tab[0x10000];
+
 pthread_mutex_t cpu_wake_mutex = PTHREAD_MUTEX_INITIALIZER;
 pthread_cond_t cpu_wake_cond = PTHREAD_COND_INITIALIZER;
 
@@ -208,45 +211,6 @@ int cpu_mem_put_byte(int nb, uint32_t addr, uint8_t data)
 }
 
 // -----------------------------------------------------------------------
-static int cpu_register_op(struct em400_op **op_tab, uint16_t opcode, uint16_t mask, struct em400_op *op)
-{
-	int i, pos;
-	int offsets[16];
-	int one_count = 0;
-	int max;
-	uint16_t result;
-
-	// if mask is empty - nothing to do
-	if (!mask) return E_OK;
-
-	// store 1's positions in mask, count 1's
-	for (i=0 ; i<16 ; i++) {
-		if (mask & (1<<i)) {
-			offsets[one_count] = i;
-			one_count++;
-		}
-	}
-
-	max = (1 << one_count) - 1;
-
-	// iterate over all variants (as indicated by the mask)
-	for (i=0 ; i<=max ; i++) {
-		result = 0;
-		// shift 1's into positions
-		for (pos=one_count-1 ; pos>=0 ; pos--) {
-			result |= ((i >> pos) & 1) << offsets[pos];
-		}
-		// sanity check: we don't want to overwrite non-illegal registered ops
-		if ((op_tab[opcode | result]) && (op_tab[opcode | result]->fun != op_illegal)) {
-			return E_SLID_INIT;
-		}
-		// register the op
-		op_tab[opcode | result] = op;
-	}
-	return E_OK;
-}
-
-// -----------------------------------------------------------------------
 int cpu_init(struct cfg_em400 *cfg)
 {
 	int res;
@@ -263,13 +227,9 @@ int cpu_init(struct cfg_em400 *cfg)
 	exit_on_hlt = cfg->exit_on_hlt;
 	nomem_stop = cfg->cpu_stop_on_nomem;
 
-	struct em400_instr *instr = em400_ilist;
-	while (instr->var_mask) {
-		res = cpu_register_op(em400_op_tab, instr->opcode, instr->var_mask, &instr->op);
-		if (res != E_OK) {
-			return res;
-		}
-		instr++;
+	res = iset_build(cpu_op_tab);
+	if (res != E_OK) {
+		return res;
 	}
 
 	int_update_mask(0);
@@ -405,7 +365,7 @@ int cpu_ctx_restore()
 // -----------------------------------------------------------------------
 static void cpu_step()
 {
-	struct em400_op *op;
+	struct iset_opcode *op;
 	uint16_t data;
 
 	if (LOG_ENABLED) {
@@ -422,7 +382,7 @@ static void cpu_step()
 
 	// find instruction (by design op is always set to something,
 	// even for illegal instructions)
-	op = em400_op_tab[rIR];
+	op = cpu_op_tab[rIR];
 
 	// end cycle if P is set
 	if (P) {
