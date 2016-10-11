@@ -296,7 +296,29 @@ int16_t n_eval_ass(struct node_t * n)
 			var_set(n->n1->var, v);
 			return v;
 		case N_REG:
-			regs[n->n1->val] = v;
+			switch (n->n1->val) {
+			case DBG_R_IC:
+				rIC = v;
+				break;
+			case DBG_R_KB:
+				rKB = v;
+				break;
+			case DBG_R_MOD:
+				rMOD = v;
+				break;
+			case DBG_R_MODc:
+				rMODc = v;
+				break;
+			case DBG_R_IR:
+				rIR = v;
+				break;
+			case DBG_R_SR:
+				rSR = v;
+				break;
+			default:
+				regs[n->n1->val] = v;
+				break;
+			}
 			return v;
 		case N_MEM:
 			nb = n_eval(n->n1->n1);
