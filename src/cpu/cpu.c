@@ -70,42 +70,49 @@ pthread_cond_t cpu_wake_cond = PTHREAD_COND_INITIALIZER;
 static void cpu_wait_on(int state)
 {
 	pthread_mutex_lock(&cpu_wake_mutex);
-	while ((cpu_state & state) && !(cpu_state & STATE_QUIT)) {
+	while ((cpu_state & state) && !(cpu_state & (STATE_QUIT | STATE_CLO | STATE_CLM))) {
 		pthread_cond_wait(&cpu_wake_cond, &cpu_wake_mutex);
 	}
 	pthread_mutex_unlock(&cpu_wake_mutex);
 }
 
 // -----------------------------------------------------------------------
-void cpu_quit()
+void cpu_trigger_quit()
 {
-	atom_store_release(&cpu_state, STATE_QUIT);
+	atom_or_release(&cpu_state, STATE_QUIT);
 	pthread_cond_signal(&cpu_wake_cond);
 }
 
 // -----------------------------------------------------------------------
-void cpu_halt()
+void cpu_trigger_halt()
 {
 	atom_or_release(&cpu_state, STATE_HALT);
 }
 
 // -----------------------------------------------------------------------
-void cpu_stop()
+void cpu_trigger_stop()
 {
 	atom_or_release(&cpu_state, STATE_STOP);
 }
 
 // -----------------------------------------------------------------------
-void cpu_start()
+void cpu_trigger_start()
 {
 	atom_and_release(&cpu_state, ~STATE_STOP);
 	pthread_cond_signal(&cpu_wake_cond);
 }
 
 // -----------------------------------------------------------------------
-void cpu_unhalt()
+void cpu_trigger_unhalt()
 {
 	atom_and_release(&cpu_state, ~STATE_HALT);
+	pthread_cond_signal(&cpu_wake_cond);
+}
+
+// -----------------------------------------------------------------------
+void cpu_trigger_clear(int scope)
+{
+	atom_or_release(&cpu_state, scope);
 	pthread_cond_signal(&cpu_wake_cond);
 }
 
@@ -121,7 +128,7 @@ void cpu_mem_fail(int nb)
 	int_set(INT_NO_MEM);
 	if ((nb == 0) && nomem_stop) {
 		rALARM = 1;
-		cpu_stop();
+		cpu_trigger_stop();
 	}
 }
 
@@ -306,36 +313,29 @@ int cpu_mod_off()
 }
 
 // -----------------------------------------------------------------------
-// software (MCL) and hardware (CP 'CLEAR') reset
-void cpu_reset(int hw)
+static void cpu_clear(int scope)
 {
-	regs[0] = 0;
-	rSR = 0;
+	atom_and_release(&cpu_state, ~(STATE_CLM | STATE_CLO));
 
-	if (hw) {
-		for (int i=1 ; i<8 ; i++) {
-			regs[i] = 0;
-		}
+	// I/O reset should return when we're sure that I/O won't change CPU state (backlogged interrupts, memory writes, ...)
+	io_reset();
+	mem_reset();
+	cpu_mod_off();
+
+	if (scope & STATE_CLO) {
 		rIC = 0;
-		rKB = 0;
 		rALARM = 0;
 		rMOD = 0;
 		rMODc = 0;
-		rIR = 0;
+		// according to DTR this should be "STOP"
+		atom_store_release(&cpu_state, STATE_START);
 	}
+
+	regs[0] = 0;
+	rSR = 0;
 
 	int_update_mask(0);
 	int_clear_all();
-	cpu_mod_off();
-
-	mem_reset();
-
-	// TODO: move this before CPU clear routine
-	// I/O reset should return when we're sure that I/O won't change CPU state (backlogged interrupts, memory writes, ...)
-	// this needs MX reset interrupt to become async
-	io_reset();
-
-	// TODO: state = STOP, WAIT=0, jakieś inne rejestry?
 
 	// call even if logging is disabled - user may enable it later
 	// and we still want to know if we're running a known OS
@@ -504,6 +504,14 @@ unsigned cpu_loop(int autotest)
 				ips_counter++;
 			}
 
+		// quit emulation
+		} else if ((state & STATE_QUIT)) {
+			break;
+
+		// CPU reset
+		} else if (state & (STATE_CLM | STATE_CLO)) {
+			cpu_clear(state);
+
 		// CPU stopped
 		} else if ((state & STATE_STOP)) {
 			#ifdef WITH_DEBUGGER
@@ -514,16 +522,10 @@ unsigned cpu_loop(int autotest)
 		// CPU waiting for an interrupt
 		} else if ((state & STATE_HALT)) {
 			cpu_wait_on(STATE_HALT);
-
-		// quit emulation
-		} else if ((state & STATE_QUIT)) {
-			break;
 		}
-
 	}
 
 	return ips_counter;
 }
-
 
 // vim: tabstop=4 shiftwidth=4 autoindent

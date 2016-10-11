@@ -716,11 +716,11 @@ void op_73_hlt()
 
 	// handle hlt>=040 as "exit emulation" if user wants to
 	if (exit_on_hlt && (N >= 040)) {
-		cpu_quit();
+		cpu_trigger_quit();
 		return;
 	// otherwise, enter halt state
 	} else {
-		cpu_halt();
+		cpu_trigger_halt();
 	}
 }
 
@@ -728,7 +728,7 @@ void op_73_hlt()
 void op_73_mcl()
 {
 	USER_ILLEGAL;
-	cpu_reset(0);
+	cpu_trigger_clear(STATE_CLM);
 }
 
 // -----------------------------------------------------------------------

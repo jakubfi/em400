@@ -28,6 +28,8 @@ enum cpu_states {
 	STATE_START =	0,
 	STATE_STOP =	1 << 0,
 	STATE_HALT =	1 << 1,
+	STATE_CLM =		1 << 2,
+	STATE_CLO =		1 << 3,
 	STATE_QUIT =	1 << 10,
 };
 
@@ -103,9 +105,7 @@ int cpu_mem_put_byte(int nb, uint32_t addr, uint8_t data);
 
 int cpu_init(struct cfg_em400 *cfg);
 void cpu_shutdown();
-void cpu_reset(int hw);
 
-void cpu_mod_enable();
 int cpu_mod_on();
 int cpu_mod_off();
 
@@ -114,11 +114,12 @@ int cpu_ctx_restore();
 
 unsigned cpu_loop(int autotest);
 
-void cpu_quit();
-void cpu_halt();
-void cpu_stop();
-void cpu_start();
-void cpu_unhalt();
+void cpu_trigger_quit();
+void cpu_trigger_halt();
+void cpu_trigger_stop();
+void cpu_trigger_start();
+void cpu_trigger_unhalt();
+void cpu_trigger_clear(int scope);
 int cpu_state_get();
 
 #endif
