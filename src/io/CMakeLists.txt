@@ -9,4 +9,9 @@ add_library(io
 
 add_subdirectory(dev)
 
+target_link_libraries(io
+    dev
+)
+
+
 # vim: tabstop=4
