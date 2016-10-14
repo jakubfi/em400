@@ -85,7 +85,7 @@ char * decode_ctx(int nb, uint16_t addr, int arg)
 {
 	uint16_t buf[CRK5P_PROCESS_SIZE];
 
-	if (!mem_mget(nb, addr, buf, CRK5P_PROCESS_SIZE)) {
+	if (mem_mget(nb, addr, buf, CRK5P_PROCESS_SIZE) != CRK5P_PROCESS_SIZE) {
 		return NULL;
 	}
 

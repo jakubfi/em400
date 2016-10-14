@@ -184,7 +184,7 @@ void awp_dispatch(int op, uint16_t arg)
 	uint16_t addr;
 
 	if (awp) {
-		if (!cpu_mem_mget(QNB, arg, d, 3)) return;
+		if (cpu_mem_mget(QNB, arg, d, 3) != 3) return;
 
 		switch (op) {
 			case AWP_NRF0:

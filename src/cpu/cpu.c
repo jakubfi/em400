@@ -158,21 +158,21 @@ int cpu_mem_put(int nb, uint16_t addr, uint16_t data)
 // -----------------------------------------------------------------------
 int cpu_mem_mget(int nb, uint16_t saddr, uint16_t *dest, int count)
 {
-	if (!mem_mget(nb, saddr, dest, count)) {
+	int words;
+	if ((words = mem_mget(nb, saddr, dest, count)) != count) {
 		cpu_mem_fail(nb);
-		return 0;
 	}
-	return 1;
+	return words;
 }
 
 // -----------------------------------------------------------------------
 int cpu_mem_mput(int nb, uint16_t saddr, uint16_t *src, int count)
 {
-	if (!mem_mput(nb, saddr, src, count)) {
+	int words;
+	if ((words = mem_mput(nb, saddr, src, count)) != count) {
 		cpu_mem_fail(nb);
-		return 0;
 	}
-	return 1;
+	return words;
 }
 
 // -----------------------------------------------------------------------

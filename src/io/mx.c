@@ -449,7 +449,8 @@ static void mx_setcfg(struct mx *multix, uint16_t addr)
 	LOGID(L_MX, 3, multix, "Configuring: %i physical line descriptors, %i logical lines", multix->num, phy_desc_count, log_count);
 
 	// read line descriptions
-	if (!mem_mget(0, addr+2, data, phy_desc_count + 4*log_count)) {
+	int mem_size = phy_desc_count + 4*log_count;
+	if (mem_mget(0, addr+2, data, mem_size) != mem_size) {
 		mx_setcfg_fin(multix, MX_IRQ_INKOT, retf_addr, 0, 0);
 		return;
 	}
@@ -680,7 +681,7 @@ static int mx_task_run(struct mx_line *line, struct mx_task *task, const struct 
 	// get task data if condition is START and protocol requires the data
 	// it's protocol job to store that information for other conditions to use
 	if ((task->bzaw & MX_COND_START) && (proto_task->input_flen > 0)) {
-		if (!mem_mget(0, task->arg, data, proto_task->input_flen)) {
+		if (mem_mget(0, task->arg, data, proto_task->input_flen) != proto_task->input_flen) {
 			task->bzaw = MX_COND_NONE;
 			return MX_IRQ_INPAO;
 		}
@@ -699,7 +700,7 @@ static int mx_task_run(struct mx_line *line, struct mx_task *task, const struct 
 
 	// if task is done, we may need to update return field
 	if ((task->bzaw == MX_COND_NONE) && (proto_task->output_flen > 0)) {
-		if (!mem_mput(0, task->arg + proto_task->output_fpos, data + proto_task->output_fpos, proto_task->output_flen)) {
+		if (mem_mput(0, task->arg + proto_task->output_fpos, data + proto_task->output_fpos, proto_task->output_flen) != proto_task->output_flen) {
 			return MX_IRQ_INPAO;
 		}
 	}

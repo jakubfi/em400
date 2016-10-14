@@ -537,7 +537,7 @@ static char * log_exl_decode(int nb, uint16_t addr, uint16_t r4_curr, int exl_nu
 			return buf;
 		}
 
-		if (!mem_mget(nb, addr, data, exl->size)) {
+		if (mem_mget(nb, addr, data, exl->size) != exl->size) {
 			return buf;
 		}
 
@@ -609,7 +609,7 @@ void log_update_process()
 		return;
 	}
 
-	if (!mem_mget(0, bprog, buf, CRK5P_PROCESS_SIZE)) {
+	if (mem_mget(0, bprog, buf, CRK5P_PROCESS_SIZE) != CRK5P_PROCESS_SIZE) {
 		return;
 	}
 
@@ -628,7 +628,7 @@ void log_check_os()
 		goto cleanup;
 	}
 
-	if (!mem_mget(0, 0, kimg, 2*4096)) {
+	if (mem_mget(0, 0, kimg, 2*4096) != 2*4096) {
 		goto cleanup;
 	}
 

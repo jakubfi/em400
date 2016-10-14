@@ -168,31 +168,33 @@ int mem_put(int nb, uint16_t addr, uint16_t data)
 // -----------------------------------------------------------------------
 int mem_mget(int nb, uint16_t saddr, uint16_t *dest, int count)
 {
-	for (int i=0 ; i<count ; i++) {
+	int i;
+	for (i=0 ; i<count ; i++) {
 		uint16_t *ptr = mem_ptr(nb, (uint16_t) (saddr+i));
 		if (ptr) {
 			*(dest+i) = *ptr;
 		} else {
-			return 0;
+			break;
 		}
 	}
-	return 1;
+	return i;
 }
 
 // -----------------------------------------------------------------------
 int mem_mput(int nb, uint16_t saddr, uint16_t *src, int count)
 {
-	for (int i=0 ; i<count ; i++) {
+	int i;
+	for (i=0 ; i<count ; i++) {
 		uint16_t *ptr = mem_ptr(nb, (uint16_t) (saddr+i));
 		if (ptr) {
 			if (!mem_mega_prom || (mem_map[nb][(saddr+i)>>12].seg != mem_mega_prom)) {
 				*ptr = *(src+i);
 			}
 		} else {
-			return 0;
+			break;
 		}
 	}
-	return 1;
+	return i;
 }
 
 // -----------------------------------------------------------------------

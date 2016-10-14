@@ -1007,7 +1007,7 @@ void op_77_sp()
 	USER_ILLEGAL;
 
 	uint16_t data[3];
-	if (!cpu_mem_mget(NB, N, data, 3)) return;
+	if (cpu_mem_mget(NB, N, data, 3) != 3) return;
 
 	rIC = data[0];
 	regs[0] = data[1];
