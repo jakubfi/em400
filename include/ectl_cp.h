@@ -51,6 +51,7 @@ int ectl_cpu_state_get();
 void ectl_cpu_stop();
 void ectl_cpu_start();
 void ectl_cpu_cycle();
+void ectl_cpu_quit();
 void ectl_clock_set(int state);
 int ectl_clock_get();
 void ectl_cpu_clear();
