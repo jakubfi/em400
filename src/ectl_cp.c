@@ -18,6 +18,7 @@
 #include <stdlib.h>
 #include <inttypes.h>
 #include <string.h>
+#include <strings.h>
 
 #include "atomic.h"
 #include "ectl_emu.h"
@@ -27,6 +28,12 @@
 #include "mem/mem.h"
 
 #include "ectl_cp.h"
+
+const char *ectl_reg_names[] = {
+	"R0", "R1", "R2", "R3", "R4", "R5", "R6", "R7",
+	"IC", "SR", "IR", "KB", "MOD", "MODc", "ALARM",
+	"??"
+};
 
 // -----------------------------------------------------------------------
 void ectl_regs_get(uint16_t *dregs)
@@ -59,6 +66,32 @@ int ectl_reg_get(unsigned reg)
 		case ECTL_REG_MODc: return rMODc;
 		case ECTL_REG_ALARM: return rALARM;
 		default: return regs[reg];
+	}
+}
+
+// -----------------------------------------------------------------------
+int ectl_reg_get_id(char *name)
+{
+	const char **rname = ectl_reg_names;
+	int idx = 0;
+	while (idx < ECTL_REG_COUNT) {
+		if (!strcasecmp(name, *rname)) {
+			return idx;
+		}
+		idx++;
+		rname++;
+	}
+
+	return -1;
+}
+
+// -----------------------------------------------------------------------
+const char * ectl_reg_name(unsigned n)
+{
+	if (n < ECTL_REG_COUNT) {
+		return ectl_reg_names[n];
+	} else {
+		return ectl_reg_names[ECTL_REG_COUNT];
 	}
 }
 
@@ -117,7 +150,7 @@ void ectl_cpu_start()
 }
 
 // -----------------------------------------------------------------------
-void ectl_cycle()
+void ectl_cpu_cycle()
 {
 
 }
@@ -143,7 +176,7 @@ int ectl_clock_get()
 }
 
 // -----------------------------------------------------------------------
-void ectl_clear()
+void ectl_cpu_clear()
 {
 	cpu_trigger_clear(STATE_CLO);
 }

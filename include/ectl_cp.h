@@ -39,6 +39,8 @@ enum ectl_registers {
 	ECTL_REG_COUNT
 };
 
+const char * ectl_reg_name(unsigned n);
+int ectl_reg_get_id(char *name);
 void ectl_regs_get(uint16_t *dregs);
 int ectl_reg_get(unsigned reg);
 int ectl_reg_set(unsigned reg, uint16_t val);
@@ -47,10 +49,10 @@ int ectl_mem_set(int nb, uint16_t addr, uint16_t *src, int count);
 int ectl_cpu_state_get();
 void ectl_cpu_stop();
 void ectl_cpu_start();
-void ectl_cycle();
+void ectl_cpu_cycle();
 void ectl_clock_set(int state);
 int ectl_clock_get();
-void ectl_clear();
+void ectl_cpu_clear();
 void ectl_bootstrap(int chan, int unit);
 void ectl_oprq();
 
