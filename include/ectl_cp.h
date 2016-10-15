@@ -56,6 +56,8 @@ int ectl_clock_get();
 void ectl_cpu_clear();
 void ectl_bootstrap(int chan, int unit);
 void ectl_oprq();
+int ectl_int_set(unsigned interrupt);
+uint32_t ectl_int_get();
 
 #endif
 

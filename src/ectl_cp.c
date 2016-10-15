@@ -200,4 +200,22 @@ void ectl_oprq()
 	int_set(INT_OPRQ);
 }
 
+// -----------------------------------------------------------------------
+int ectl_int_set(unsigned interrupt)
+{
+	if (interrupt < 32) {
+		int_set(interrupt);
+		return 0;
+	} else {
+		return -1;
+	}
+}
+
+// -----------------------------------------------------------------------
+uint32_t ectl_int_get()
+{
+	atom_full_fence();
+	return RZ;
+}
+
 // vim: tabstop=4 shiftwidth=4 autoindent
