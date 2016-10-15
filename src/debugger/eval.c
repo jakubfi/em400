@@ -252,6 +252,8 @@ int16_t n_eval_reg(struct node_t * n)
 		return rIR;
 	case DBG_R_SR:
 		return rSR;
+	case DBG_R_ALARM:
+		return rALARM;
 	default:
 		return regs[n->val];
 	}
@@ -314,6 +316,9 @@ int16_t n_eval_ass(struct node_t * n)
 				break;
 			case DBG_R_SR:
 				rSR = v;
+				break;
+			case DBG_R_ALARM:
+				rALARM = v;
 				break;
 			default:
 				regs[n->n1->val] = v;
