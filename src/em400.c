@@ -24,6 +24,7 @@
 #include <sys/stat.h>
 #include <sys/types.h>
 
+#include "ui/ui.h"
 #include "atomic.h"
 #include "cpu/cpu.h"
 #include "mem/mem.h"
@@ -44,9 +45,14 @@
 
 int em400_console = CONSOLE_NONE;
 
+struct ui *ui;
+
 // -----------------------------------------------------------------------
 void em400_shutdown()
 {
+	if (ui) {
+		ui_shutdown(ui);
+	}
 #ifdef WITH_DEBUGGER
 	dbg_shutdown();
 #endif
@@ -127,6 +133,12 @@ void em400_init(struct cfg_em400 *cfg)
 	}
 #endif
 
+	if (cfg->ui_name) {
+		ui = ui_create(cfg->ui_name);
+		if (!ui) {
+			em400_exit_error(gerr, "Error initializing UI");
+		}
+	}
 }
 
 // -----------------------------------------------------------------------
@@ -261,6 +273,12 @@ int main(int argc, char** argv)
 	}
 
 	em400_init(cfg);
+	if (ui) {
+		int res = ui_run(ui);
+		if (res != E_OK) {
+			em400_exit_error(res, "Error running UI");
+		}
+	}
 	em400_loop(cfg);
 
 	if (cpu_state_get() == STATE_STOP) {

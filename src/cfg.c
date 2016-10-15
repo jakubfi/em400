@@ -56,6 +56,7 @@ struct cfg_em400 * cfg_create_default()
 	cfg->exit_on_hlt = 0;
 	cfg->benchmark = 0;
 	cfg->print_help = 0;
+	cfg->ui_name = NULL;
 
 	// emulation
 	cfg->speed_real = 0;
@@ -100,6 +101,7 @@ void cfg_destroy(struct cfg_em400 *cfg)
 {
 	if (!cfg) return;
 
+	free(cfg->ui_name);
 	free(cfg->program_name);
 	free(cfg->cfg_filename);
 
@@ -129,7 +131,7 @@ struct cfg_em400 * cfg_from_args(int argc, char **argv)
 	int len;
 #endif
 
-	while ((option = getopt(argc, argv,"bhec:p:k:l:Lt:s")) != -1) {
+	while ((option = getopt(argc, argv,"bhec:p:k:l:Lt:su:")) != -1) {
 		switch (option) {
 			case 'L':
 				cfg->log_enabled = 0;
@@ -176,6 +178,10 @@ struct cfg_em400 * cfg_from_args(int argc, char **argv)
 				cfg->ui_simple = 1;
 				break;
 #endif
+			case 'u':
+				free(cfg->ui_name);
+				cfg->ui_name = strdup(optarg);
+				break;
 			default:
 				cfg_destroy(cfg);
 				return NULL;
@@ -227,6 +233,7 @@ struct cfg_em400 * cfg_overlay(struct cfg_em400 *a, struct cfg_em400 *b)
 	CHI(exit_on_hlt);
 	CHI(benchmark);
 	CHI(print_help);
+	CHS(ui_name);
 
 	// emulation
 	CHI(speed_real);

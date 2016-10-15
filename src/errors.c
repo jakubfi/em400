@@ -77,6 +77,8 @@ struct _em400_errordesc {
 	{ E_MX_EVQ, "could not create MULTIX' event queue" },
 	{ E_MX_IRQQ, "could not create MULTIX' interrupt queue" },
 	{ E_MX_TIMER, "could not create MULTIX' timer" },
+	{ E_UI_NOTFOUND, "could not fing UI by that name" },
+	{ E_UI_SETUP, "could not setup specified UI" },
 
 	{ E_UNKNOWN, "unknown error" }
 };

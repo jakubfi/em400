@@ -69,6 +69,8 @@ enum em400_error {
 	E_MX_EVQ,
 	E_MX_IRQQ,
 	E_MX_TIMER,
+	E_UI_NOTFOUND,
+	E_UI_SETUP,
 
 	E_OK = 0,
 	E_QUIT_OK

@@ -14,7 +14,7 @@ add_executable(emitool
 )
 
 target_link_libraries(em400
-	cpu mem io
+	cpu mem io ui
 	${DEBUGGER_LIBS}
 	${EMDAS_LIBRARIES}
 	${EMCRK_LIBRARIES}
@@ -27,6 +27,7 @@ target_link_libraries(em400
 add_subdirectory(io)
 add_subdirectory(mem)
 add_subdirectory(cpu)
+add_subdirectory(ui)
 
 if(WITH_DEBUGGER)
 	add_subdirectory(debugger)
