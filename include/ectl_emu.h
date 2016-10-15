@@ -53,35 +53,15 @@ enum ectl_log_components {
 	ECTL_LOG_ALL
 };
 
-enum ectl_capabilities {
-	ECTL_CAPA_NONE		= 0,
-	ECTL_CAPA_MX16		= 1 << 0,
-	ECTL_CAPA_AWP		= 1 << 1,
-	ECTL_CAPA_UIO		= 1 << 2,
-	ECTL_CAPA_NOMEM_STOP= 1 << 3,
-};
-
-enum ectl_mem_types {
-	ECTL_MEM_ANY = 0,
-	ECTL_MEM_ELWRO,
-	ECTL_MEM_MEGA,
-};
-
 typedef int (*ectl_callback_f)(int v);
 
 int ectl_callback_register(int callback, ectl_callback_f callback_f);
-uint16_t ectl_capabilities_get();
 void ectl_log_state_set(int state);
 int ectl_log_state_get();
 int ectl_log_level_set(int component, int level);
 int ectl_log_level_get(int component);
 int ectl_cpu_count();
-int ectl_mem_frames_get(int type, int module);
-uint16_t ectl_mem_layout_get(int nb);
 int ectl_mem_mega_prom_state_get();
-uint32_t ectl_interrupts_get();
-void ectl_interrupt_set(int interrupt);
-void ectl_interrupt_clear(int interrupt);
 
 #endif
 

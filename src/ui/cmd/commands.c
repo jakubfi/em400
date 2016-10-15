@@ -141,6 +141,18 @@ void ui_cmd_help(FILE *out, char *args)
 		}
 	}
 }
+// -----------------------------------------------------------------------
+void ui_cmd_info(FILE *out, char *args)
+{
+	int capa = ectl_capa();
+	ui_cmd_resp(out, RESP_OK, UI_NOEOL, " EM400 %s", ectl_version());
+	for (int i=0 ; i<ECTL_CAPA_COUNT ; i++) {
+		if ((capa & (1<<i))) {
+			fprintf(out, " %s", ectl_capa_name(i));
+		}
+	}
+	fprintf(out, "\n");
+}
 
 // -----------------------------------------------------------------------
 void ui_cmd_clock(FILE *out, char *args)
@@ -379,6 +391,7 @@ struct ui_cmd_command commands[] = {
 	{ "dasm",	"<seg> <addr>",				"Disassemble instruction",	ui_cmd_na },
 	{ "eval",	"<expr>",					"Evaluate expression",		ui_cmd_na },
 	{ "help",	"",							"Show help",				ui_cmd_help },
+	{ "info",	"",							"Show system info",			ui_cmd_info },
 	{ "int",	"[interrupt]",				"Show interrupts, send irq",ui_cmd_int },
 	{ "load",	"<seg> <addr> <file>",		"Load file to memory",		ui_cmd_na },
 	{ "log",	"<on|off>",					"Enable/disable logging",	ui_cmd_na },

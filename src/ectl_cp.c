@@ -224,4 +224,38 @@ uint32_t ectl_int_get()
 	return RZ;
 }
 
+// -----------------------------------------------------------------------
+const char * ectl_version()
+{
+	static const char *ver = EM400_VERSION;
+	return ver;
+}
+
+// -----------------------------------------------------------------------
+const char * ectl_capa_name(unsigned c)
+{
+	char *capa_names[] = { "MX16", "CRON", "AWP", "UIO", "MEGABOOT", "NOMEMSTOP", "???" };
+
+	if (c < ECTL_CAPA_COUNT) {
+		return capa_names[c];
+	} else {
+		return capa_names[ECTL_CAPA_COUNT];
+	}
+}
+
+// -----------------------------------------------------------------------
+int ectl_capa()
+{
+	int capa = 0;
+
+	if (cpu_mod_present) capa |= 1 << ECTL_CAPA_MX16;
+	if (cpu_mod_active) capa |= 1 << ECTL_CAPA_CRON;
+	if (awp) capa |= 1 << ECTL_CAPA_AWP;
+	if (!cpu_user_io_illegal) capa |= 1 << ECTL_CAPA_UIO;
+	if (mem_mega_boot()) capa |= 1 << ECTL_CAPA_MEGABOOT;
+	//TODO: if (nomem_stop) capa |= 1 << ECTL_CAPA_NOMEMSTOP;
+
+	return capa;
+}
+
 // vim: tabstop=4 shiftwidth=4 autoindent

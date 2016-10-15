@@ -39,6 +39,16 @@ enum ectl_registers {
 	ECTL_REG_COUNT
 };
 
+enum ectl_capabilities {
+	ECTL_CAPA_MX16,
+	ECTL_CAPA_CRON,
+	ECTL_CAPA_AWP,
+	ECTL_CAPA_UIO,
+	ECTL_CAPA_MEGABOOT,
+	ECTL_CAPA_NOMEMSTOP,
+	ECTL_CAPA_COUNT
+};
+
 const char * ectl_reg_name(unsigned n);
 int ectl_reg_get_id(char *name);
 void ectl_regs_get(uint16_t *dregs);
@@ -59,6 +69,9 @@ void ectl_bootstrap(int chan, int unit);
 void ectl_oprq();
 int ectl_int_set(unsigned interrupt);
 uint32_t ectl_int_get();
+const char * ectl_version();
+const char * ectl_capa_name(unsigned c);
+int ectl_capa();
 
 #endif
 
