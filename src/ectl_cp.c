@@ -132,6 +132,13 @@ int ectl_mem_set(int nb, uint16_t addr, uint16_t *src, int count)
 }
 
 // -----------------------------------------------------------------------
+int ectl_mem_map(int nb)
+{
+	atom_full_fence();
+	return mem_get_map(nb);
+}
+
+// -----------------------------------------------------------------------
 int ectl_cpu_state_get()
 {
 	return cpu_state_get();

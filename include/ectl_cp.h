@@ -46,6 +46,7 @@ int ectl_reg_get(unsigned reg);
 int ectl_reg_set(unsigned reg, uint16_t val);
 int ectl_mem_get(int nb, uint16_t addr, uint16_t *dest, int count);
 int ectl_mem_set(int nb, uint16_t addr, uint16_t *src, int count);
+int ectl_mem_map(int nb);
 int ectl_cpu_state_get();
 void ectl_cpu_stop();
 void ectl_cpu_start();
