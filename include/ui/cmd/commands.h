@@ -26,6 +26,10 @@ struct ui_cmd_command {
 	ui_cmd_f fun;
 };
 
+enum ui_cmd_response_states { RESP_OK, RESP_ERR };
+enum ui_cmd_eol { UI_NOEOL, UI_EOL };
+
+void ui_cmd_resp(FILE *out, int status, int eol, char *fmt, ...);
 struct ui_cmd_command * ui_cmd_find_command(const char *name);
 
 // vim: tabstop=4 shiftwidth=4 autoindent

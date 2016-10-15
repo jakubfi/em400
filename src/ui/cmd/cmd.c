@@ -132,7 +132,7 @@ static void ui_cmd_process(char *user_input, FILE *out)
 
 	struct ui_cmd_command *cmd_def = ui_cmd_gettok_cmd(user_input, &tok_cmd, &args);
 	if (!cmd_def) {
-		fprintf(out, "ERR: No such command: %s\n", tok_cmd);
+		ui_cmd_resp(out, RESP_ERR, UI_EOL, "No such command: %s", tok_cmd);
 	} else if (cmd_def->fun) {
 		cmd_def->fun(out, args);
 	}
@@ -182,7 +182,7 @@ void ui_cmd_loop(void *data)
 					} else {
 						// a client is already connected
 						if (ui->fd_in >= 0) {
-							fprintf(ui->out, "ERR: Another UI is already connected\n");
+							ui_cmd_resp(ui->out, RESP_ERR, UI_EOL, "Another UI is already connected");
 							fclose(ui->out);
 						} else {
 							recvd = 0;
@@ -209,7 +209,7 @@ void ui_cmd_loop(void *data)
 						} else {
 							// there was a buffer overflow in the meantime
 							if (input_invalid) {
-								fprintf(ui->out, "ERR: Input too long (>%i bytes), command ignored\n", BUF_MAX);
+								ui_cmd_resp(ui->out, RESP_ERR, UI_EOL, "Input too long (>%i bytes), command ignored", BUF_MAX);
 								fflush(ui->out);
 								input_invalid = 0;
 							// valid input
