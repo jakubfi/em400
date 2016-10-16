@@ -23,14 +23,18 @@
 #include "cfg.h"
 #include "atomic.h"
 
+#define LOG_LEVEL_MIN 0
+#define LOG_LEVEL_MAX 9
+
 enum log_components {
 	L_REG, L_MEM, L_CPU, L_OP, L_INT,
 	L_IO,
 	L_MX, L_PX, L_CCHR, L_CMEM,
 	L_TERM, L_9425, L_WNCH, L_FLOP, L_PNCH, L_PNRD,
 	L_CRK5,
-	L_EM4H,
-	L_ALL
+	L_EM4H, L_ECTL,
+	L_ALL,
+	L_COUNT = L_ALL
 };
 
 extern int log_enabled;
@@ -47,8 +51,8 @@ int log_get_level(unsigned component);
 int log_setup_levels(char *levels);
 int log_wants(unsigned component, unsigned level);
 
-char * log_get_component_name(unsigned component);
-int log_get_component_id(char *name);
+const char * log_get_component_name(unsigned component);
+int log_get_component_id(const char *name);
 
 void log_log(unsigned component, unsigned level, char *format, ...);
 void log_splitlog(unsigned component, unsigned level, char *text);

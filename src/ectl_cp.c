@@ -20,6 +20,7 @@
 #include <string.h>
 #include <strings.h>
 
+#include "log.h"
 #include "utils.h"
 #include "atomic.h"
 #include "ectl_emu.h"
@@ -272,6 +273,53 @@ int ectl_load(FILE *f, int seg, uint16_t saddr)
 
 	free(buf);
 	return res;
+}
+
+// -----------------------------------------------------------------------
+int ectl_log_state_get()
+{
+	if (log_is_enabled()) {
+		return ECTL_ON;
+	} else {
+		return ECTL_OFF;
+	}
+}
+
+// -----------------------------------------------------------------------
+int ectl_log_state_set(int state)
+{
+	int res = -1;
+	if (state == ECTL_OFF) {
+		log_disable();
+		res = 0;
+	} else if (state == ECTL_ON) {
+		res = log_enable();
+	}
+	return res;
+}
+
+// -----------------------------------------------------------------------
+int ectl_log_level_get(unsigned component)
+{
+	return log_get_level(component);
+}
+
+// -----------------------------------------------------------------------
+int ectl_log_level_set(unsigned component, unsigned level)
+{
+	return log_set_level(component, level);
+}
+
+// -----------------------------------------------------------------------
+const char * ectl_log_component_name(unsigned component)
+{
+	return log_get_component_name(component);
+}
+
+// -----------------------------------------------------------------------
+int ectl_log_component_id(char *name)
+{
+	return log_get_component_id(name);
 }
 
 // vim: tabstop=4 shiftwidth=4 autoindent

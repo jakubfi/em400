@@ -515,13 +515,12 @@ void dbg_c_brk_disable_all(int wid, int disable)
 void dbg_c_log_info(int wid)
 {
 	int i;
-	char *cname;
 
 	awtbprint(wid, C_DATA, "Logging %s\n", log_is_enabled() ? "enabled" : "disabled");
 	awtbprint(wid, C_LABEL, "Levels: ");
 
 	for (i=0 ; i < L_ALL ; i++) {
-		cname = log_get_component_name(i);
+		const char *cname = log_get_component_name(i);
 		if (cname) {
 			awtbprint(wid, C_DATA, "%s=%i ", cname, log_get_level(i));
 		}

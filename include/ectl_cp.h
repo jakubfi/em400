@@ -21,6 +21,11 @@
 #include <inttypes.h>
 #include <stdio.h>
 
+enum ectl_states {
+	ECTL_OFF = 0,
+	ECTL_ON,
+};
+
 enum ectl_registers {
 	ECTL_REG_R0 = 0,
 	ECTL_REG_R1,
@@ -41,7 +46,7 @@ enum ectl_registers {
 };
 
 enum ectl_capabilities {
-	ECTL_CAPA_MX16,
+	ECTL_CAPA_MX16 = 0,
 	ECTL_CAPA_CRON,
 	ECTL_CAPA_AWP,
 	ECTL_CAPA_UIO,
@@ -49,6 +54,33 @@ enum ectl_capabilities {
 	ECTL_CAPA_NOMEMSTOP,
 	ECTL_CAPA_COUNT
 };
+
+enum ectl_log_components {
+	ECTL_LOG_REG = 0,
+	ECTL_LOG_MEM,
+	ECTL_LOG_CPU,
+	ECTL_LOG_OP,
+	ECTL_LOG_INT,
+	ECTL_LOG_IO,
+	ECTL_LOG_MX,
+	ECTL_LOG_PX,
+	ECTL_LOG_CCHR,
+	ECTL_LOG_CMEM,
+	ECTL_LOG_TERM,
+	ECTL_LOG_9425,
+	ECTL_LOG_WNCH,
+	ECTL_LOG_FLOP,
+	ECTL_LOG_PNCH,
+	ECTL_LOG_PNRD,
+	ECTL_LOG_CRK5,
+	ECTL_LOG_EM4H,
+	ECTL_LOG_ECTL,
+	ECTL_LOG_ALL,
+	ECTL_LOG_COUNT = ECTL_LOG_ALL
+};
+
+#define ECTL_LOG_LEVEL_MIN 0
+#define ECTL_LOG_LEVEL_MAX 9
 
 const char * ectl_reg_name(unsigned n);
 int ectl_reg_get_id(char *name);
@@ -74,6 +106,12 @@ const char * ectl_version();
 const char * ectl_capa_name(unsigned c);
 int ectl_capa();
 int ectl_load(FILE *f, int seg, uint16_t saddr);
+int ectl_log_state_get();
+int ectl_log_state_set(int state);
+int ectl_log_level_get(unsigned component);
+int ectl_log_level_set(unsigned component, unsigned level);
+const char * ectl_log_component_name(unsigned component);
+int ectl_log_component_id(char *name);
 
 #endif
 

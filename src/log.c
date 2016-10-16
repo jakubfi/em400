@@ -42,7 +42,7 @@
 #define LOG_FLUSH_DELAY_MS 200
 
 struct log_component {
-	char *name;
+	const char *name;
 	unsigned thr;
 };
 
@@ -65,6 +65,7 @@ struct log_component log_components[] = {
 	{ "PNRD", 0 },
 	{ "CRK5", 0 },
 	{ "EM4H", 1 },
+	{ "ECTL", 1 },
 	{ "ALL", 0 }
 };
 
@@ -243,6 +244,10 @@ int log_is_enabled()
 // -----------------------------------------------------------------------
 int log_set_level(unsigned component, unsigned level)
 {
+	if ((component > L_ALL) || (level > LOG_LEVEL_MAX)) {
+		return -1;
+	}
+
 	// set level for specified component
 	if (component != L_ALL) {
 		atom_store_release(&log_components[component].thr, level);
@@ -259,17 +264,23 @@ int log_set_level(unsigned component, unsigned level)
 // -----------------------------------------------------------------------
 int log_get_level(unsigned component)
 {
+	if (component > L_ALL) {
+		return -1;
+	}
 	return atom_load_acquire(&log_components[component].thr);
 }
 
 // -----------------------------------------------------------------------
-char * log_get_component_name(unsigned component)
+const char * log_get_component_name(unsigned component)
 {
+	if (component > L_ALL) {
+		return NULL;
+	}
 	return log_components[component].name;
 }
 
 // -----------------------------------------------------------------------
-int log_get_component_id(char *name)
+int log_get_component_id(const char *name)
 {
 	int i;
 	int comp = -1;
@@ -328,7 +339,9 @@ int log_setup_levels(char *levels)
 				if (comp_id < 0) {
 					goto bail;
 				}
-				log_set_level(comp_id, level);
+				if (log_set_level(comp_id, level)) {
+					goto bail;
+				}
 				found++;
 			} else {
 				goto bail;
