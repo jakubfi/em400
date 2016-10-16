@@ -20,6 +20,7 @@
 #include <string.h>
 #include <strings.h>
 
+#include "utils.h"
 #include "atomic.h"
 #include "ectl_emu.h"
 #include "cpu/cpu.h"
@@ -256,6 +257,21 @@ int ectl_capa()
 	//TODO: if (nomem_stop) capa |= 1 << ECTL_CAPA_NOMEMSTOP;
 
 	return capa;
+}
+
+// -----------------------------------------------------------------------
+int ectl_load(FILE *f, int seg, uint16_t saddr)
+{
+	uint16_t *buf = malloc(sizeof(uint16_t) * 0x10000);
+
+	int res = fread(buf, sizeof(uint16_t), 0x10000, f);
+	if (res > 0) {
+		endianswap(buf, res);
+		res = mem_mput(seg, saddr, buf, res);
+	}
+
+	free(buf);
+	return res;
 }
 
 // vim: tabstop=4 shiftwidth=4 autoindent

@@ -22,6 +22,7 @@
 #include "io/defs.h"
 #include "mem/mem_mega.h"
 #include "errors.h"
+#include "utils.h"
 
 #include "log.h"
 
@@ -61,20 +62,26 @@ int mem_mega_init(int modc, char *prom_image)
 		}
 	}
 
-	// allocate and load MEGA PROM
+	// allocate memory for MEGA PROM
 	mem_mega_prom_hidden = 0;
-	mem_mega_prom = calloc(sizeof(uint16_t), MEM_SEGMENT_SIZE);
+	mem_mega_prom = malloc(sizeof(uint16_t) * MEM_SEGMENT_SIZE);
+	if (!mem_mega_prom) {
+		return E_ALLOC;
+	}
+
+	// load PROM image
 	if (prom_image && *prom_image) {
 		f = fopen(prom_image, "rb");
 		if (!f) {
 			return E_FILE_OPEN;
 		}
-		res = mem_seg_load(f, mem_mega_prom);
-		if (res < E_OK) {
+		res = fread(mem_mega_prom, sizeof(uint16_t), MEM_SEGMENT_SIZE, f);
+		if (res != MEM_SEGMENT_SIZE) {
 			fclose(f);
-			return res;
+			return E_FILE_OPERATION;
 		}
 		fclose(f);
+		endianswap(mem_mega_prom, res);
 		LOG(L_MEM, 1, "Loaded MEGA PROM image: %s (%i words)", prom_image, res);
 	} else {
 		LOG(L_MEM, 1, "Empty MEGA PROM");

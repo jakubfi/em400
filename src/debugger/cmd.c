@@ -32,6 +32,7 @@
 #include "errors.h"
 #include "utils.h"
 #include "log.h"
+#include "ectl_cp.h"
 
 #include "debugger/awin.h"
 #include "debugger/debugger.h"
@@ -68,9 +69,15 @@ struct cmd_t dbg_commands[] = {
 // -----------------------------------------------------------------------
 void dbg_c_load(int wid, char* image)
 {
-	int res = mem_load(image, 0, 0, 0);
-	if (res < E_OK) {
-		awtbprint(wid, C_ERROR, "Error loading image \"%s\": %s\n", image, get_error(res));
+	FILE *f = fopen(image, "rb");
+	if (!f) {
+		awtbprint(wid, C_ERROR, "Error opening image \"%s\"\n", image);
+		return;
+	}
+
+	int res = ectl_load(f, 0, 0);
+	if (res < 0) {
+		awtbprint(wid, C_ERROR, "Error loading image \"%s\"\n", image);
 	}
 }
 

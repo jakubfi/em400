@@ -31,6 +31,7 @@
 #include "cpu/interrupts.h"
 #include "cpu/timer.h"
 #include "io/io.h"
+#include "ectl_cp.h"
 
 #include "em400.h"
 #include "cfg.h"
@@ -118,8 +119,12 @@ void em400_init(struct cfg_em400 *cfg)
 	rKB = cfg->keys;
 
 	if (cfg->program_name) {
-		int res = mem_load(cfg->program_name, 0, 0, 2*4096);
-		if (res < E_OK) {
+		FILE *f = fopen(cfg->program_name, "rb");
+		if (!f) {
+			em400_exit_error(res, "Could not open program file: '%s'", cfg->program_name);
+		}
+		int res = ectl_load(f, 0, 0);
+		if (res < 0) {
 			em400_exit_error(res, "Could not load program '%s'", cfg->program_name);
 		} else {
 			LOG(L_EM4H, 1, "OS memory block image loaded: \"%s\", %i words", cfg->program_name, res);

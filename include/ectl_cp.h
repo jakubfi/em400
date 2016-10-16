@@ -15,10 +15,11 @@
 //  Foundation, Inc.,
 //  51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 
-#include <inttypes.h>
-
 #ifndef ECTL_CP_H
 #define ECTL_CP_H
+
+#include <inttypes.h>
+#include <stdio.h>
 
 enum ectl_registers {
 	ECTL_REG_R0 = 0,
@@ -72,6 +73,7 @@ uint32_t ectl_int_get();
 const char * ectl_version();
 const char * ectl_capa_name(unsigned c);
 int ectl_capa();
+int ectl_load(FILE *f, int seg, uint16_t saddr);
 
 #endif
 

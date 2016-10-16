@@ -46,9 +46,6 @@ int mem_mput(int nb, uint16_t saddr, uint16_t *src, int count);
 
 uint16_t mem_get_map(int seg);
 
-int mem_seg_load(FILE *f, uint16_t *ptr);
-int mem_load(const char* fname, int nb, int start_ab, int len);
-
 #endif
 
 // vim: tabstop=4 shiftwidth=4 autoindent

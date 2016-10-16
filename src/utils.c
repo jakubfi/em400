@@ -19,6 +19,7 @@
 #include <string.h>
 #include <inttypes.h>
 #include <ctype.h>
+#include <arpa/inet.h>
 
 // -----------------------------------------------------------------------
 // convert an integer to formatted string with its binary representation
@@ -59,5 +60,15 @@ char * int2chars(uint16_t w, char *buf)
 	buf[2] = '\0';
 	return buf;
 }
+
+// -----------------------------------------------------------------------
+void endianswap(uint16_t *ptr, int size)
+{
+	while (size > 0) {
+		size--;
+		ptr[size] = ntohs(ptr[size]);
+	}
+}
+
 
 // vim: tabstop=4 shiftwidth=4 autoindent
