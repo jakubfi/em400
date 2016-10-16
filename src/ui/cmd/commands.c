@@ -422,6 +422,74 @@ void ui_cmd_quit(FILE *out, char *args)
 }
 
 // -----------------------------------------------------------------------
+void ui_cmd_log(FILE *out, char *args)
+{
+	char *tok_state, *remainder;
+
+	int state = ui_cmd_gettok_bool(args, &tok_state, &remainder);
+
+	if (!tok_state) {
+		ui_cmd_resp(out, RESP_OK, UI_EOL, "LOG %s", ectl_log_state_get() ? "ON" : "OFF");
+	} else {
+		if (state < 0) {
+			ui_cmd_resp(out, RESP_ERR, UI_EOL, "Wrong state: %s", tok_state);
+		} else {
+			if (!ectl_log_state_set(state)) {
+				ui_cmd_resp(out, RESP_OK, UI_EOL, "LOG %s", ectl_log_state_get() ? "ON" : "OFF");
+			} else {
+				ui_cmd_resp(out, RESP_ERR, UI_EOL, "Could not set logging state. LOG is now %s", ectl_log_state_get() ? "ON" : "OFF");
+			}
+		}
+	}
+}
+
+// -----------------------------------------------------------------------
+void ui_cmd_loglvl(FILE *out, char *args)
+{
+	char *tok_comp, *tok_lvl, *remainder;
+
+	ui_cmd_gettok_str(args, &tok_comp, &remainder);
+
+	// print all levels
+	if (!tok_comp) {
+		ui_cmd_resp(out, RESP_OK, UI_NOEOL, "");
+		for (int i=0 ; i<ECTL_LOG_COUNT ; i++) {
+			fprintf(out, " %s=%i", ectl_log_component_name(i), ectl_log_level_get(i));
+		}
+		fprintf(out, "\n");
+		return;
+	}
+
+	// find component
+	int component = ectl_log_component_id(tok_comp);
+	if ((component < 0) || (component >= ECTL_LOG_COUNT)) {
+		ui_cmd_resp(out, RESP_ERR, UI_EOL, "Unknown component name: %s", tok_comp);
+		return;
+	}
+
+	int level = ui_cmd_gettok_int(remainder, &tok_lvl, &remainder);
+
+	// print level for component
+	if (!tok_lvl) {
+		ui_cmd_resp(out, RESP_OK, UI_EOL, "%s=%i", ectl_log_component_name(component), ectl_log_level_get(component));
+		return;
+	}
+
+	// check level
+	if ((level < ECTL_LOG_LEVEL_MIN) || (level > ECTL_LOG_LEVEL_MAX)) {
+		ui_cmd_resp(out, RESP_ERR, UI_EOL, "Wrong level: %s", tok_lvl);
+		return;
+	}
+
+	// set level for component
+	if (!ectl_log_level_set(component, level)) {
+		ui_cmd_resp(out, RESP_OK, UI_EOL, "%s=%i", ectl_log_component_name(component), ectl_log_level_get(component));
+	} else {
+		ui_cmd_resp(out, RESP_ERR, UI_EOL, "Cannot set level %i for component %s", ectl_log_level_get(component), ectl_log_component_name(component));
+	}
+}
+
+// -----------------------------------------------------------------------
 void ui_cmd_na(FILE *out, char *args)
 {
 	ui_cmd_resp(out, RESP_ERR, UI_EOL, "Command not implemented");
@@ -429,33 +497,33 @@ void ui_cmd_na(FILE *out, char *args)
 
 // -----------------------------------------------------------------------
 struct ui_cmd_command commands[] = {
-	{ "bin",	"<val>",					"Initiate binary load",		ui_cmd_na },
-	{ "brk",	"<expr>",					"Set breakpoint",			ui_cmd_na },
-	{ "brkdel",	"<num>",					"Delete breakpoint",		ui_cmd_na },
-	{ "brkls",	"[num]",					"Show breakpoints",			ui_cmd_na },
-	{ "clear",	"",							"CPU clear (reset)",		ui_cmd_clear },
-	{ "clock",	"[on|off]",					"Show/enable/disable clock",ui_cmd_clock },
-	{ "cycle",	"",							"Execute one CPU cycle",	ui_cmd_cycle },
-	{ "dasm",	"<seg> <addr>",				"Disassemble instruction",	ui_cmd_na },
-	{ "eval",	"<expr>",					"Evaluate expression",		ui_cmd_na },
-	{ "help",	"",							"Show help",				ui_cmd_help },
-	{ "info",	"",							"Show system info",			ui_cmd_info },
-	{ "int",	"[interrupt]",				"Show interrupts, send irq",ui_cmd_int },
-	{ "load",	"<seg> <addr> <file>",		"Load file to memory",		ui_cmd_load },
-	{ "log",	"<on|off>",					"Enable/disable logging",	ui_cmd_na },
-	{ "loglvl",	"<component> <level>",		"Set logging level",		ui_cmd_na },
-	{ "mem",	"<seg> <addr> [count]",		"Get memory contents",		ui_cmd_mem },
-	{ "memfind","<seg> <val>",				"Search memory contents",	ui_cmd_na },
-	{ "memmap",	"<seg>",					"Show memory allocation",	ui_cmd_memmap },
-	{ "memw",	"<seg> <addr> <val> ...",	"Set memory contents",		ui_cmd_memw },
-	{ "oprq",	"",							"Send operator request",	ui_cmd_oprq },
-	{ "quit",	"",							"Quit emulation",			ui_cmd_quit },
-	{ "reg",	"<name>",					"Show specific register",	ui_cmd_reg },
-	{ "regs",	"",							"Show all registers",		ui_cmd_regs },
-	{ "regw",	"<name> <value>",			"Set register value",		ui_cmd_regw },
-	{ "start",	"",							"Start CPU",				ui_cmd_start },
-	{ "state",	"",							"Show CPU state",			ui_cmd_state },
-	{ "stop",	"",							"Stop CPU",					ui_cmd_stop },
+	{ "bin",	"<val>",					"Initiate binary load",				ui_cmd_na },
+	{ "brk",	"<expr>",					"Set breakpoint",					ui_cmd_na },
+	{ "brkdel",	"<num>",					"Delete breakpoint",				ui_cmd_na },
+	{ "brkls",	"[num]",					"Show breakpoints",					ui_cmd_na },
+	{ "clear",	"",							"CPU clear (reset)",				ui_cmd_clear },
+	{ "clock",	"[on|off]",					"Show, enable, disable clock",		ui_cmd_clock },
+	{ "cycle",	"",							"Execute one CPU cycle",			ui_cmd_cycle },
+	{ "dasm",	"<seg> <addr>",				"Disassemble instruction",			ui_cmd_na },
+	{ "eval",	"<expr>",					"Evaluate expression",				ui_cmd_na },
+	{ "help",	"",							"Show help",						ui_cmd_help },
+	{ "info",	"",							"Show system info",					ui_cmd_info },
+	{ "int",	"[interrupt]",				"Show interrupts, send irq",		ui_cmd_int },
+	{ "load",	"<seg> <addr> <file>",		"Load file to memory",				ui_cmd_load },
+	{ "log",	"[on|off]",					"Show, enable, disable logging",	ui_cmd_log },
+	{ "loglvl",	"[component [level]]",		"Get, set logging level",			ui_cmd_loglvl },
+	{ "mem",	"<seg> <addr> [count]",		"Get memory contents",				ui_cmd_mem },
+	{ "memfind","<seg> <val>",				"Search memory contents",			ui_cmd_na },
+	{ "memmap",	"<seg>",					"Show memory allocation",			ui_cmd_memmap },
+	{ "memw",	"<seg> <addr> <val> ...",	"Set memory contents",				ui_cmd_memw },
+	{ "oprq",	"",							"Send operator request",			ui_cmd_oprq },
+	{ "quit",	"",							"Quit emulation",					ui_cmd_quit },
+	{ "reg",	"<name>",					"Show specific register",			ui_cmd_reg },
+	{ "regs",	"",							"Show all registers",				ui_cmd_regs },
+	{ "regw",	"<name> <value>",			"Set register value",				ui_cmd_regw },
+	{ "start",	"",							"Start CPU",						ui_cmd_start },
+	{ "state",	"",							"Show CPU state",					ui_cmd_state },
+	{ "stop",	"",							"Stop CPU",							ui_cmd_stop },
 	{ NULL },
 };
 
