@@ -16,6 +16,7 @@
 //  51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 
 char * ui_cmd_skip_ws(char *input);
+char * ui_cmd_remove_trailing_ws(char *input);
 char * ui_cmd_find_ws(char *input);
 char * ui_cmd_cleanup_input(char *input);
 char * ui_cmd_gettok_str(char *input, char **token, char **remainder);

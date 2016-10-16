@@ -317,6 +317,54 @@ void ui_cmd_memw(FILE *out, char *args)
 }
 
 // -----------------------------------------------------------------------
+void ui_cmd_load(FILE *out, char *args)
+{
+	char *tok_seg, *tok_addr, *tok_file, *remainder;
+
+	int seg = ui_cmd_gettok_int(args, &tok_seg, &remainder);
+	if (!tok_seg) {
+		ui_cmd_resp(out, RESP_ERR, UI_EOL, "Missing argument (memory segment)");
+		return;
+	}
+	if ((seg < 0) || (seg > 15)) {
+		ui_cmd_resp(out, RESP_ERR, UI_EOL, "Wrong segment number");
+		return;
+	}
+
+	int addr = ui_cmd_gettok_int(remainder, &tok_addr, &remainder);
+	if (!tok_addr) {
+		ui_cmd_resp(out, RESP_ERR, UI_EOL, "Missing argument (start address)");
+		return;
+	}
+	if (addr < 0) {
+		ui_cmd_resp(out, RESP_ERR, UI_EOL, "Invalid address");
+		return;
+	}
+
+	tok_file = ui_cmd_skip_ws(remainder);
+	if (!tok_file || !*tok_file) {
+		ui_cmd_resp(out, RESP_ERR, UI_EOL, "Missing argument (file name)");
+		return;
+	}
+	tok_file = ui_cmd_remove_trailing_ws(tok_file);
+
+	FILE *f = fopen(tok_file, "rb");
+	if (!f) {
+		ui_cmd_resp(out, RESP_ERR, UI_EOL, "Error opening file: '%s'", tok_file);
+		return;
+	}
+
+	int res = ectl_load(f, seg, addr);
+	if (res < 0) {
+		ui_cmd_resp(out, RESP_ERR, UI_EOL, "Error reading file: '%s'", tok_file);
+	} else {
+		ui_cmd_resp(out, RESP_OK, UI_EOL, "%i words loaded from file '%s'", res, tok_file);
+	}
+
+	fclose(f);
+}
+
+// -----------------------------------------------------------------------
 void ui_cmd_memmap(FILE *out, char *args)
 {
 	char *tok_seg, *remainder;
@@ -393,7 +441,7 @@ struct ui_cmd_command commands[] = {
 	{ "help",	"",							"Show help",				ui_cmd_help },
 	{ "info",	"",							"Show system info",			ui_cmd_info },
 	{ "int",	"[interrupt]",				"Show interrupts, send irq",ui_cmd_int },
-	{ "load",	"<seg> <addr> <file>",		"Load file to memory",		ui_cmd_na },
+	{ "load",	"<seg> <addr> <file>",		"Load file to memory",		ui_cmd_load },
 	{ "log",	"<on|off>",					"Enable/disable logging",	ui_cmd_na },
 	{ "loglvl",	"<component> <level>",		"Set logging level",		ui_cmd_na },
 	{ "mem",	"<seg> <addr> [count]",		"Get memory contents",		ui_cmd_mem },

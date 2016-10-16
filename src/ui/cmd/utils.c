@@ -46,6 +46,19 @@ char * ui_cmd_find_ws(char *input)
 }
 
 // -----------------------------------------------------------------------
+char * ui_cmd_remove_trailing_ws(char *input)
+{
+	if (!input) return NULL;
+
+    char *input_end = input + strlen(input)-1;
+	while (input_end && isspace(*input_end)) {
+		*input_end = '\0';
+		input_end--;
+	}
+	return input;
+}
+
+// -----------------------------------------------------------------------
 char * ui_cmd_gettok_str(char *input, char **token, char **remainder)
 {
 	// skip whitespace
