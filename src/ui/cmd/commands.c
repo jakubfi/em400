@@ -49,49 +49,26 @@ void ui_cmd_resp(FILE *out, int status, int eol, char *fmt, ...)
 }
 
 // -----------------------------------------------------------------------
-void ui_cmd_regs(FILE *out, char *args)
-{
-	uint16_t regs[ECTL_REG_COUNT];
-	ectl_regs_get(regs);
-
-	ui_cmd_resp(out, RESP_OK, UI_NOEOL, "");
-	for (int i=0 ; i<ECTL_REG_COUNT ; i++) {
-		fprintf(out, " %s=0x%04x", ectl_reg_name(i), regs[i]);
-	}
-	fprintf(out, "\n");
-}
-
-// -----------------------------------------------------------------------
 void ui_cmd_reg(FILE *out, char *args)
 {
-    char *tok_reg, *remainder;
+	char *tok_reg, *tok_val, *remainder;
 
 	ui_cmd_gettok_str(args, &tok_reg, &remainder);
+
+	// show all registers
 	if (!tok_reg) {
-		ui_cmd_resp(out, RESP_ERR, UI_EOL, "Missing argument (register_name)");
+		uint16_t regs[ECTL_REG_COUNT];
+		ectl_regs_get(regs);
+
+		ui_cmd_resp(out, RESP_OK, UI_NOEOL, "");
+		for (int i=0 ; i<ECTL_REG_COUNT ; i++) {
+			fprintf(out, " %s=0x%04x", ectl_reg_name(i), regs[i]);
+		}
+		fprintf(out, "\n");
 		return;
 	}
 
-	int id = ectl_reg_get_id(tok_reg);
-	if (id < 0) {
-		ui_cmd_resp(out, RESP_ERR, UI_EOL, "No such register: %s", tok_reg);
-		return;
-	}
-
-	int r = ectl_reg_get(id);
-	ui_cmd_resp(out, RESP_OK, UI_EOL, "0x%04x", r);
-}
-
-// -----------------------------------------------------------------------
-void ui_cmd_regw(FILE *out, char *args)
-{
-    char *tok_reg, *tok_val, *remainder;
-
-	ui_cmd_gettok_str(args, &tok_reg, &remainder);
-	if (!tok_reg) {
-		ui_cmd_resp(out, RESP_ERR, UI_EOL, "Missing argument (register name)");
-		return;
-	}
+	// find register
 	int id = ectl_reg_get_id(tok_reg);
 	if (id < 0) {
 		ui_cmd_resp(out, RESP_ERR, UI_EOL, "No such register: %s", tok_reg);
@@ -99,10 +76,14 @@ void ui_cmd_regw(FILE *out, char *args)
 	}
 
 	int value = ui_cmd_gettok_int(remainder, &tok_val, &remainder);
+
+	// show specific register
 	if (!tok_val) {
-		ui_cmd_resp(out, RESP_ERR, UI_EOL, "Missing argument (value)");
+		ui_cmd_resp(out, RESP_OK, UI_EOL, "%s=0x%04x", ectl_reg_name(id), ectl_reg_get(id));
 		return;
 	}
+
+	// check value
 	if (value < 0) {
 		ui_cmd_resp(out, RESP_ERR, UI_EOL, "Value is not a valid 16-bit integer");
 		return;
@@ -114,7 +95,7 @@ void ui_cmd_regw(FILE *out, char *args)
 		return;
 	}
 
-	ui_cmd_resp(out, RESP_OK, UI_EOL, "0x%04x", (uint16_t) value);
+	ui_cmd_resp(out, RESP_OK, UI_EOL, "%s=0x%04x", ectl_reg_name(id), ectl_reg_get(id));
 }
 
 // -----------------------------------------------------------------------
@@ -124,6 +105,7 @@ void ui_cmd_help(FILE *out, char *args)
 
 	ui_cmd_gettok_str(args, &tok_cmd, &remainder);
 
+	// show all commands
 	if (!tok_cmd) {
 		struct ui_cmd_command *c = commands;
 		ui_cmd_resp(out, RESP_OK, UI_NOEOL, " Available commands:");
@@ -132,14 +114,18 @@ void ui_cmd_help(FILE *out, char *args)
 			c++;
 		}
 		fprintf(out, "\n");
-	} else {
-		struct ui_cmd_command *cmd = ui_cmd_find_command(tok_cmd);
-		if (cmd) {
-			ui_cmd_resp(out, RESP_OK, UI_EOL, "%s %s : %s", cmd->name, cmd->args, cmd->desc);
-		} else {
-			ui_cmd_resp(out, RESP_ERR, UI_EOL, "No help for command: %s", tok_cmd);
-		}
+		return;
 	}
+
+	struct ui_cmd_command *cmd = ui_cmd_find_command(tok_cmd);
+
+	// no such command
+	if (!cmd) {
+		ui_cmd_resp(out, RESP_ERR, UI_EOL, "No help for command: %s", tok_cmd);
+	}
+
+	// show specific command help
+	ui_cmd_resp(out, RESP_OK, UI_EOL, "%s %s : %s", cmd->name, cmd->args, cmd->desc);
 }
 // -----------------------------------------------------------------------
 void ui_cmd_info(FILE *out, char *args)
@@ -161,16 +147,21 @@ void ui_cmd_clock(FILE *out, char *args)
 
 	int state = ui_cmd_gettok_bool(args, &tok_state, &remainder);
 
+	// show clock state
 	if (!tok_state) {
 		ui_cmd_resp(out, RESP_OK, UI_EOL, "CLOCK %s", ectl_clock_get() ? "ON" : "OFF");
-	} else {
-		if (state < 0) {
-			ui_cmd_resp(out, RESP_ERR, UI_EOL, "Wrong state: %s", tok_state);
-		} else {
-			ectl_clock_set(state);
-			ui_cmd_resp(out, RESP_OK, UI_EOL, "CLOCK %s", ectl_clock_get() ? "ON" : "OFF");
-		}
+		return;
 	}
+
+	// is state correct?
+	if (state < 0) {
+		ui_cmd_resp(out, RESP_ERR, UI_EOL, "Wrong state: %s", tok_state);
+		return;
+	}
+
+	// set clock state
+	ectl_clock_set(state);
+	ui_cmd_resp(out, RESP_OK, UI_EOL, "CLOCK %s", ectl_clock_get() ? "ON" : "OFF");
 }
 
 // -----------------------------------------------------------------------
@@ -254,7 +245,6 @@ void ui_cmd_mem(FILE *out, char *args)
 	}
 
 	fprintf(out, "\n");
-
 }
 
 // -----------------------------------------------------------------------
@@ -389,15 +379,19 @@ void ui_cmd_int(FILE *out, char *args)
 	char *tok_int, *remainder;
 
 	int interrupt = ui_cmd_gettok_int(args, &tok_int, &remainder);
+
+	// show interrupts
 	if (!tok_int) {
 		ui_cmd_resp(out, RESP_OK, UI_EOL, "0x%08x", ectl_int_get());
+		return;
+	}
+
+	// set interrupt
+	int res = ectl_int_set(interrupt);
+	if (res) {
+		ui_cmd_resp(out, RESP_ERR, UI_EOL, "Wrong interrupt number: %s", tok_int);
 	} else {
-		int res = ectl_int_set(interrupt);
-		if (res) {
-			ui_cmd_resp(out, RESP_ERR, UI_EOL, "Wrong interrupt number: %s", tok_int);
-		} else {
-			ui_cmd_resp(out, RESP_OK, UI_EOL, "%i", interrupt);
-		}
+		ui_cmd_resp(out, RESP_OK, UI_EOL, "0x%08x", ectl_int_get());
 	}
 }
 
@@ -428,18 +422,23 @@ void ui_cmd_log(FILE *out, char *args)
 
 	int state = ui_cmd_gettok_bool(args, &tok_state, &remainder);
 
+	// show logging state
 	if (!tok_state) {
 		ui_cmd_resp(out, RESP_OK, UI_EOL, "LOG %s", ectl_log_state_get() ? "ON" : "OFF");
+		return;
+	}
+
+	// check state for correctness
+	if (state < 0) {
+		ui_cmd_resp(out, RESP_ERR, UI_EOL, "Wrong state: %s", tok_state);
+		return;
+	}
+
+	// set logging state
+	if (!ectl_log_state_set(state)) {
+		ui_cmd_resp(out, RESP_OK, UI_EOL, "LOG %s", ectl_log_state_get() ? "ON" : "OFF");
 	} else {
-		if (state < 0) {
-			ui_cmd_resp(out, RESP_ERR, UI_EOL, "Wrong state: %s", tok_state);
-		} else {
-			if (!ectl_log_state_set(state)) {
-				ui_cmd_resp(out, RESP_OK, UI_EOL, "LOG %s", ectl_log_state_get() ? "ON" : "OFF");
-			} else {
-				ui_cmd_resp(out, RESP_ERR, UI_EOL, "Could not set logging state. LOG is now %s", ectl_log_state_get() ? "ON" : "OFF");
-			}
-		}
+		ui_cmd_resp(out, RESP_ERR, UI_EOL, "Could not set logging state. LOG is now %s", ectl_log_state_get() ? "ON" : "OFF");
 	}
 }
 
@@ -511,16 +510,14 @@ struct ui_cmd_command commands[] = {
 	{ "int",	"[interrupt]",				"Show interrupts, send irq",		ui_cmd_int },
 	{ "load",	"<seg> <addr> <file>",		"Load file to memory",				ui_cmd_load },
 	{ "log",	"[on|off]",					"Show, enable, disable logging",	ui_cmd_log },
-	{ "loglvl",	"[component [level]]",		"Get, set logging level",			ui_cmd_loglvl },
+	{ "loglvl",	"[component [level]]",		"Manipulate logging levels",		ui_cmd_loglvl },
 	{ "mem",	"<seg> <addr> [count]",		"Get memory contents",				ui_cmd_mem },
 	{ "memfind","<seg> <val>",				"Search memory contents",			ui_cmd_na },
 	{ "memmap",	"<seg>",					"Show memory allocation",			ui_cmd_memmap },
 	{ "memw",	"<seg> <addr> <val> ...",	"Set memory contents",				ui_cmd_memw },
 	{ "oprq",	"",							"Send operator request",			ui_cmd_oprq },
 	{ "quit",	"",							"Quit emulation",					ui_cmd_quit },
-	{ "reg",	"<name>",					"Show specific register",			ui_cmd_reg },
-	{ "regs",	"",							"Show all registers",				ui_cmd_regs },
-	{ "regw",	"<name> <value>",			"Set register value",				ui_cmd_regw },
+	{ "reg",	"[name [value]]",			"Manipulate registers",				ui_cmd_reg },
 	{ "start",	"",							"Start CPU",						ui_cmd_start },
 	{ "state",	"",							"Show CPU state",					ui_cmd_state },
 	{ "stop",	"",							"Stop CPU",							ui_cmd_stop },
