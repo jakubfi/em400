@@ -518,6 +518,7 @@ struct ui_cmd_command commands[] = {
 	{ "oprq",	"",							"Send operator request",			ui_cmd_oprq },
 	{ "quit",	"",							"Quit emulation",					ui_cmd_quit },
 	{ "reg",	"[name [value]]",			"Manipulate registers",				ui_cmd_reg },
+	{ "run",	"",							"Start CPU",						ui_cmd_start },
 	{ "start",	"",							"Start CPU",						ui_cmd_start },
 	{ "state",	"",							"Show CPU state",					ui_cmd_state },
 	{ "stop",	"",							"Stop CPU",							ui_cmd_stop },
