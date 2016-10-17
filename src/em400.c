@@ -53,10 +53,11 @@ void em400_shutdown()
 {
 	if (ui) {
 		ui_shutdown(ui);
+	} else {
+		#ifdef WITH_DEBUGGER
+		dbg_shutdown();
+		#endif
 	}
-#ifdef WITH_DEBUGGER
-	dbg_shutdown();
-#endif
 	timer_shutdown();
 	io_shutdown();
 	cpu_shutdown();
@@ -101,7 +102,7 @@ void em400_init(struct cfg_em400 *cfg)
 		em400_exit_error(res, "Error initializing memory");
 	}
 
-	res = cpu_init(cfg);
+	res = cpu_init(cfg, cfg->ui_name?1:0);
 	if (res != E_OK) {
 		em400_exit_error(res, "Error initializing CPU");
 	}
@@ -131,18 +132,18 @@ void em400_init(struct cfg_em400 *cfg)
 		}
 	}
 
-#ifdef WITH_DEBUGGER
-	res = dbg_init(cfg);
-	if (res != E_OK) {
-		em400_exit_error(res, "Error initializing debugger");
-	}
-#endif
-
 	if (cfg->ui_name) {
 		ui = ui_create(cfg->ui_name);
 		if (!ui) {
 			em400_exit_error(gerr, "Error initializing UI");
 		}
+	} else {
+		#ifdef WITH_DEBUGGER
+		res = dbg_init(cfg);
+		if (res != E_OK) {
+			em400_exit_error(res, "Error initializing debugger");
+		}
+		#endif
 	}
 }
 
@@ -185,9 +186,9 @@ void em400_loop(struct cfg_em400 *cfg)
 
 	gettimeofday(&ips_start, NULL);
 #ifdef WITH_DEBUGGER
-	ips_counter = cpu_loop(cfg->autotest);
+	ips_counter = cpu_loop(cfg->autotest, ui?1:0);
 #else
-	ips_counter = cpu_loop(0);
+	ips_counter = cpu_loop(0, ui?1:0);
 #endif
 	gettimeofday(&ips_end, NULL);
 

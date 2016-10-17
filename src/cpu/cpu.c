@@ -211,7 +211,7 @@ int cpu_mem_put_byte(int nb, uint32_t addr, uint8_t data)
 }
 
 // -----------------------------------------------------------------------
-int cpu_init(struct cfg_em400 *cfg)
+int cpu_init(struct cfg_em400 *cfg, int new_ui)
 {
 	int res;
 
@@ -243,6 +243,12 @@ int cpu_init(struct cfg_em400 *cfg)
 
 	cpu_mod_off();
 
+	if (new_ui) {
+		cpu_trigger_stop();
+	} else {
+		cpu_trigger_start();
+	}
+
 	return E_OK;
 }
 
@@ -273,7 +279,7 @@ int cpu_mod_off()
 }
 
 // -----------------------------------------------------------------------
-static void cpu_clear(int scope)
+static void cpu_clear(int scope, int new_ui)
 {
 	atom_and_release(&cpu_state, ~(STATE_CLM | STATE_CLO));
 
@@ -287,8 +293,11 @@ static void cpu_clear(int scope)
 		rALARM = 0;
 		rMOD = 0;
 		rMODc = 0;
-		// according to DTR this should be "STOP"
-		atom_store_release(&cpu_state, STATE_START);
+		if (new_ui) {
+			atom_store_release(&cpu_state, STATE_STOP);
+		} else {
+			atom_store_release(&cpu_state, STATE_START);
+		}
 	}
 
 	regs[0] = 0;
@@ -440,7 +449,7 @@ memfail:
 }
 
 // -----------------------------------------------------------------------
-unsigned cpu_loop(int autotest)
+unsigned cpu_loop(int autotest, int new_ui)
 {
 	unsigned long ips_counter = 0;
 
@@ -455,7 +464,7 @@ unsigned cpu_loop(int autotest)
 			// CPU cycle
 			} else {
 				#ifdef WITH_DEBUGGER
-				if (autotest != 1) {
+				if ((autotest != 1) && !new_ui) {
 					dbg_step();
 				}
 				#endif
@@ -470,14 +479,16 @@ unsigned cpu_loop(int autotest)
 
 		// CPU reset
 		} else if (state & (STATE_CLM | STATE_CLO)) {
-			cpu_clear(state);
+			cpu_clear(state, new_ui);
 
 		// CPU stopped
 		} else if ((state & STATE_STOP)) {
 			#ifdef WITH_DEBUGGER
 			dbg_enter = 1;
 			#endif
-			//cpu_wait_on(STATE_STOP);
+			if (new_ui) {
+				cpu_wait_on(STATE_STOP);
+			}
 
 		// CPU waiting for an interrupt
 		} else if ((state & STATE_HALT)) {
