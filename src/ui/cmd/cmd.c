@@ -54,6 +54,7 @@ static int __setup_stdio(struct ui_cmd_data *ui)
     ui->type = UI_CMD_STDIO;
     ui->fd_in = 0;
    	ui->fd_out = 1;
+	ui->out = fdopen(ui->fd_out, "w+");
 
 	return 0;
 }

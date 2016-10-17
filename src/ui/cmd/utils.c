@@ -64,7 +64,7 @@ char * ui_cmd_gettok_str(char *input, char **token, char **remainder)
 	// skip whitespace
 	*token = ui_cmd_skip_ws(input);
 
-	if (!**token) {
+	if (!*token || !**token) {
 		*token = NULL;
 		*remainder = NULL;
 	} else {
