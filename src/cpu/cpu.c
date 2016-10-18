@@ -61,6 +61,8 @@ int cpu_user_io_illegal;
 int exit_on_hlt;
 static int nomem_stop;
 
+unsigned long ips_counter;
+
 struct awp *awp;
 
 // opcode table (instruction decoder decision table)
@@ -451,8 +453,6 @@ memfail:
 // -----------------------------------------------------------------------
 unsigned cpu_loop(int autotest, int new_ui)
 {
-	unsigned long ips_counter = 0;
-
 	while (1) {
 		int state = atom_load_acquire(&cpu_state);
 

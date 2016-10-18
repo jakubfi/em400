@@ -23,6 +23,7 @@
 char * int2binf(char *format, uint64_t value, int size);
 char * int2chars(uint16_t w, char *buf);
 void endianswap(uint16_t *ptr, int size);
+double stopwatch_ns();
 
 #endif
 

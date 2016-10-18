@@ -489,6 +489,12 @@ void ui_cmd_loglvl(FILE *out, char *args)
 }
 
 // -----------------------------------------------------------------------
+void ui_cmd_ips(FILE *out, char *args)
+{
+	ui_cmd_resp(out, RESP_OK, UI_EOL, "%li", ectl_ips_get());
+}
+
+// -----------------------------------------------------------------------
 void ui_cmd_na(FILE *out, char *args)
 {
 	ui_cmd_resp(out, RESP_ERR, UI_EOL, "Command not implemented");
@@ -508,6 +514,7 @@ struct ui_cmd_command commands[] = {
 	{ "help",	"",							"Show help",						ui_cmd_help },
 	{ "info",	"",							"Show system info",					ui_cmd_info },
 	{ "int",	"[interrupt]",				"Show interrupts, send irq",		ui_cmd_int },
+	{ "ips",	"",							"Show IPS",							ui_cmd_ips },
 	{ "load",	"<seg> <addr> <file>",		"Load file to memory",				ui_cmd_load },
 	{ "log",	"[on|off]",					"Show, enable, disable logging",	ui_cmd_log },
 	{ "loglvl",	"[component [level]]",		"Manipulate logging levels",		ui_cmd_loglvl },

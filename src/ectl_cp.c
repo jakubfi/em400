@@ -322,4 +322,22 @@ int ectl_log_component_id(char *name)
 	return log_get_component_id(name);
 }
 
+// -----------------------------------------------------------------------
+extern unsigned long ips_counter;
+unsigned long ectl_ips_get()
+{
+	double ips;
+	static unsigned long oips;
+
+	double elapsed_ns = stopwatch_ns();
+	if (elapsed_ns > 0) {
+		ips = (1000000000.0 * (ips_counter - oips)) / elapsed_ns;
+	} else {
+		ips = 0;
+	}
+	oips = ips_counter;
+
+	return ips;
+}
+
 // vim: tabstop=4 shiftwidth=4 autoindent

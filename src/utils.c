@@ -15,11 +15,15 @@
 //  Foundation, Inc.,
 //  51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 
+#define _POSIX_C_SOURCE 199309L
+
 #include <stdlib.h>
 #include <string.h>
 #include <inttypes.h>
 #include <ctype.h>
 #include <arpa/inet.h>
+#include <sys/time.h>
+#include <time.h>
 
 // -----------------------------------------------------------------------
 // convert an integer to formatted string with its binary representation
@@ -70,5 +74,24 @@ void endianswap(uint16_t *ptr, int size)
 	}
 }
 
+// -----------------------------------------------------------------------
+double stopwatch_ns()
+{
+	int mul = 1;
+
+#ifdef CLOCK_REALTIME
+	static struct timespec t, ot;
+	clock_gettime(CLOCK_REALTIME, &t);
+	double elapsed_us = 1000000000.0 * (t.tv_sec - ot.tv_sec) + (t.tv_nsec - ot.tv_nsec);
+#else
+	static struct timeval t, ot;
+	gettimeofday(&t, NULL);
+	double elapsed_us = 1000000.0 * (t.tv_sec - ot.tv_sec) + (t.tv_usec - ot.tv_usec);
+	mul = 1000;
+#endif
+
+	ot = t;
+	return elapsed_us * mul;
+}
 
 // vim: tabstop=4 shiftwidth=4 autoindent
