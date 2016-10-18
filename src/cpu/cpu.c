@@ -224,7 +224,7 @@ int cpu_init(struct cfg_em400 *cfg, int new_ui)
 
 	cpu_mod_present = cfg->cpu_mod;
 	cpu_user_io_illegal = cfg->cpu_user_io_illegal;
-	exit_on_hlt = cfg->exit_on_hlt;
+	exit_on_hlt = cfg->exit_on_hlt & !new_ui;
 	nomem_stop = cfg->cpu_stop_on_nomem;
 
 	res = iset_build(cpu_op_tab);
