@@ -84,7 +84,7 @@ static int __setup_tcp(struct ui_cmd_data *ui)
 
     struct sockaddr_in servaddr;
    	servaddr.sin_family = AF_INET;
-    servaddr.sin_addr.s_addr = htonl(INADDR_ANY);
+    servaddr.sin_addr.s_addr = htonl(INADDR_LOOPBACK);
    	servaddr.sin_port = htons(ui->tcp_port);
 
     res = bind(ui->listenfd, (struct sockaddr*) &servaddr, sizeof(servaddr));
