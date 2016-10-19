@@ -79,7 +79,7 @@ struct cchar_unit_proto_t * cchar_term_create(struct cfg_arg *args)
 				goto fail;
 			}
 		}
-		printf("Console connected as system terminal.\n");
+		fprintf(stderr, "Console connected as system terminal.\n");
 	} else {
 		gerr = E_TERM_UNKNOWN;
 		goto fail;

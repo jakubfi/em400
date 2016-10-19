@@ -38,7 +38,7 @@ struct cmem_unit_proto_t * cmem_m9425_create(struct cfg_arg *args)
 	}
 
 	if ((image_name[0] || image_name[1]) && !strcmp(image_name[0], image_name[1])) {
-		printf("Error opening image: Trying to use the same image for fixed and removable disk");
+		fprintf(stderr, "Error opening image: Trying to use the same image for fixed and removable disk");
 		res = E_IMAGE;
 		goto fail;
 	}
@@ -53,19 +53,19 @@ struct cmem_unit_proto_t * cmem_m9425_create(struct cfg_arg *args)
 		UNIT->disk[i] = e4i_open(image_name[i]);
 
 		if (!UNIT->disk[i]) {
-			printf("Error opening image %s: %s\n", image_name[i], e4i_get_err(e4i_err));
+			fprintf(stderr, "Error opening image %s: %s\n", image_name[i], e4i_get_err(e4i_err));
 			res = E_IMAGE;
 			goto fail;
 		}
 
 		if (UNIT->disk[i]->img_type != E4I_T_HDD) {
-			printf("Error opening image %s: wrong image type, expecting hdd\n", image_name[i]);
+			fprintf(stderr, "Error opening image %s: wrong image type, expecting hdd\n", image_name[i]);
 			res = E_IMAGE;
 			goto fail;
 		}
 
 		if ((UNIT->disk[i]->cylinders != 203) || (UNIT->disk[i]->heads != 2) || (UNIT->disk[i]->spt != 12) || (UNIT->disk[i]->block_size != 512)) {
-			printf("Error opening image %s: wrong geometry\n", image_name[i]);
+			fprintf(stderr, "Error opening image %s: wrong geometry\n", image_name[i]);
 			res = E_IMAGE;
 			goto fail;
 		}

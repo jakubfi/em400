@@ -122,9 +122,9 @@ void cyyerror(struct cfg_em400 *cfg, char *s, ...)
 {
 	va_list ap;
 	va_start(ap, s);
-	printf("Error parsing config, line %d: ", yylloc.first_line);
-	vprintf(s, ap);
-	printf("\n");
+	fprintf(stderr, "Error parsing config, line %d: ", yylloc.first_line);
+	vfprintf(stderr, s, ap);
+	fprintf(stderr, "\n");
 	cfg_error = 1;
 }
 

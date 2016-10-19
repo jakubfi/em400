@@ -70,9 +70,9 @@ void em400_exit_error(int err_code, char *format, ...)
 {
 	va_list ap;
 	va_start(ap, format);
-	vprintf(format, ap);
+	vfprintf(stderr, format, ap);
 	va_end(ap);
-	printf(": %s\n", get_error(err_code));
+	fprintf(stderr, ": %s\n", get_error(err_code));
 	em400_shutdown();
 	exit(EXIT_FAILURE);
 }
@@ -150,7 +150,8 @@ void em400_init(struct cfg_em400 *cfg)
 // -----------------------------------------------------------------------
 void em400_usage()
 {
-	printf(
+	fprintf(stdout,
+		"EM400 version " EM400_VERSION "\n"
 		"Usage: em400 [option] ...\n"
 		"\n"
 		"Options:\n"
@@ -167,8 +168,6 @@ void em400_usage()
 		"   -e           : terminate emulation on HLT >= 040\n"
 		"   -b           : benchmark emulator\n"
 #ifdef WITH_DEBUGGER
-		"\n"
-		"Debuger-only options:\n"
 		"   -s           : use simple debugger interface\n"
 		"   -t test_expr : execute expression when program halts (implies -e -s)\n"
 #endif
@@ -228,7 +227,11 @@ struct cfg_em400 * em400_configure(int argc, char** argv)
 	//  * user may provide own config file
 	cfg_cmdline = cfg_from_args(argc, argv);
 	if (!cfg_cmdline) {
-		// wrong usage (print help), or -h (print help), exit anyway
+		// wrong usage
+		goto cleanup;
+	}
+
+	if (cfg_cmdline->print_help) {
 		em400_usage();
 		goto cleanup;
 	}
@@ -236,7 +239,7 @@ struct cfg_em400 * em400_configure(int argc, char** argv)
 	// load configuration from file
 	cfg_file = cfg_from_file(cfg_cmdline->cfg_filename);
 	if (!cfg_file) {
-		printf("Could not load config file: %s\n", cfg_cmdline->cfg_filename);
+		fprintf(stderr, "Could not load config file: %s\n", cfg_cmdline->cfg_filename);
 		goto cleanup;
 	}
 
@@ -258,12 +261,6 @@ cleanup:
 // -----------------------------------------------------------------------
 int main(int argc, char** argv)
 {
-	printf("EM400 v%s ", EM400_VERSION);
-#ifdef WITH_DEBUGGER
-	printf("+debugger ");
-#endif
-	printf("\n");
-
 	em400_mkconfdir();
 
 	struct cfg_em400 *cfg = em400_configure(argc, argv);
@@ -288,7 +285,7 @@ int main(int argc, char** argv)
 	em400_loop(cfg);
 
 	if (cpu_state_get() == STATE_STOP) {
-		printf("Emulation died, guest CPU segmentation fault.\n");
+		fprintf(stderr, "Emulation died, guest CPU segmentation fault.\n");
 	}
 
 #ifdef WITH_DEBUGGER

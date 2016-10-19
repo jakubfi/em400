@@ -144,8 +144,7 @@ struct cfg_em400 * cfg_from_args(int argc, char **argv)
 				cfg->benchmark = 1;
 				break;
 			case 'h':
-				cfg_destroy(cfg);
-				return NULL;
+				cfg->print_help = 1;
 				break;
 			case 'c':
 				free(cfg->cfg_filename);
