@@ -54,7 +54,10 @@ static int __setup_stdio(struct ui_cmd_data *ui)
     ui->type = UI_CMD_STDIO;
     ui->fd_in = 0;
    	ui->fd_out = 1;
-	ui->out = fdopen(ui->fd_out, "w+");
+	ui->out = fdopen(ui->fd_out, "w");
+	if (!ui->out) {
+		return -1;
+	}
 
 	return 0;
 }
@@ -177,7 +180,7 @@ void ui_cmd_loop(void *data)
 				socklen_t clilen = sizeof(ui->cliaddr);
 				int newfd = accept(ui->listenfd, &ui->cliaddr, &clilen);
 				if (newfd > 0) {
-					ui->out = fdopen(newfd, "w+");
+					ui->out = fdopen(newfd, "w");
 					if (!ui->out) {
 						close(newfd);
 					} else {
