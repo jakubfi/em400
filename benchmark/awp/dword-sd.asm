@@ -18,6 +18,7 @@ loop:
 	sd d10
 	sd d10
 	irb r7, loop
+	ujs loop
 
 	hlt 077
 

@@ -18,6 +18,7 @@ loop:
 	df d1p3
 	df d1p3
 	irb r7, loop
+	ujs loop
 
 	hlt 077
 

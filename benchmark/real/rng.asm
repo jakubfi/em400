@@ -15,4 +15,5 @@ start:
 loop:
 	LJ	rand
 	IRB	r7, loop
+	ujs loop
 	HLT	077

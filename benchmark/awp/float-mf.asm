@@ -18,6 +18,7 @@ loop:
 	mf d1p3
 	mf d1p3
 	irb r7, loop
+	ujs loop
 
 	hlt 077
 

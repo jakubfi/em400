@@ -18,6 +18,7 @@ loop:
 	mw d2
 	mw d2
 	irb r7, loop
+	ujs loop
 
 	hlt 077
 

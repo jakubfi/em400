@@ -41,4 +41,5 @@ loop:
 	siu
 	sil
 	irb r1, loop
+	ujs loop
 	hlt 077

@@ -77,4 +77,4 @@ user_prog:
 
 ; XPCT hex(r1) : 0x21b1
 ; XPCT hex(r2) : 0x12b1
-; XPCT oct(ir[10-16]) : 077
+; XPCT oct(ir[10-15]) : 077

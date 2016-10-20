@@ -62,8 +62,8 @@ loop:
 	la r1
 	la r1
 	la r1
-	la r1
 	irb r0, loop
+	ujs loop
 	hlt 077
 data:
 	.word data

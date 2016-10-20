@@ -38,4 +38,5 @@ loop:	lb r1, r7
 	rb r1, r7+1
 
 	irb r5, loop
+	ujs loop
 	hlt 077

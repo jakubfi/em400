@@ -18,6 +18,7 @@ loop:
 	dw d2
 	dw d2
 	irb r7, loop
+	ujs loop
 
 	hlt 077
 

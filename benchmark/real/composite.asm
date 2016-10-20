@@ -36,6 +36,7 @@ loop:	lwt r2, -1		; short arg
 	rj r7, jump
 
 	irb r1, loop
+	ujs loop
 	hlt 077
 
 jump:	uj r7

@@ -17,6 +17,7 @@ loop:
 	mf d0125
 	af d1m
 	irb r7, loop
+	ujs loop
 
 	hlt 077
 

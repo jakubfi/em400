@@ -62,6 +62,6 @@ loop:
 	ra r2
 	ra r2
 	ra r2
-	ra r2
 	irb r1, loop
+	ujs loop
 	hlt 077

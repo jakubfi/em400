@@ -18,6 +18,7 @@ loop:
 	sf d100
 	sf d100
 	irb r7, loop
+	ujs loop
 
 	hlt 077
 
