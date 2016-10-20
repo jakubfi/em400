@@ -21,7 +21,7 @@
 #include <stdlib.h>
 #include <stdarg.h>
 
-#include "ectl_cp.h"
+#include "ectl.h"
 
 #include "ui/cmd/commands.h"
 #include "ui/cmd/utils.h"

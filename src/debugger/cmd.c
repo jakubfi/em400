@@ -32,7 +32,7 @@
 #include "errors.h"
 #include "utils.h"
 #include "log.h"
-#include "ectl_cp.h"
+#include "ectl.h"
 
 #include "debugger/awin.h"
 #include "debugger/debugger.h"

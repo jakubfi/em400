@@ -31,8 +31,8 @@
 #include "cpu/interrupts.h"
 #include "cpu/timer.h"
 #include "io/io.h"
-#include "ectl_cp.h"
 
+#include "ectl.h"
 #include "em400.h"
 #include "cfg.h"
 #include "errors.h"

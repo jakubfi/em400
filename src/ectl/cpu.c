@@ -23,13 +23,12 @@
 #include "log.h"
 #include "utils.h"
 #include "atomic.h"
-#include "ectl_emu.h"
 #include "cpu/cpu.h"
 #include "cpu/timer.h"
 #include "cpu/interrupts.h"
 #include "mem/mem.h"
 
-#include "ectl_cp.h"
+#include "ectl.h"
 
 const char *ectl_reg_names[] = {
 	"R0", "R1", "R2", "R3", "R4", "R5", "R6", "R7",
