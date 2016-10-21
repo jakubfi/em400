@@ -495,6 +495,26 @@ void ui_cmd_ips(FILE *out, char *args)
 }
 
 // -----------------------------------------------------------------------
+void ui_cmd_eval(FILE *out, char *args)
+{
+	char *tok_expr = ui_cmd_skip_ws(args);
+	if (!tok_expr || !*tok_expr) {
+		ui_cmd_resp(out, RESP_ERR, UI_EOL, "Missing argument (expression)");
+		return;
+	}
+
+	char *error_msg = NULL;
+	int err_beg, err_end;
+	int res = ectl_eval(tok_expr, &error_msg, &err_beg, &err_end);
+	if (error_msg) {
+		ui_cmd_resp(out, RESP_ERR, UI_EOL, "%s (at %i-%i)", error_msg, err_beg, err_end);
+		free(error_msg);
+	} else {
+		ui_cmd_resp(out, RESP_OK, UI_EOL, "%i", res);
+	}
+}
+
+// -----------------------------------------------------------------------
 void ui_cmd_na(FILE *out, char *args)
 {
 	ui_cmd_resp(out, RESP_ERR, UI_EOL, "Command not implemented");
@@ -510,7 +530,7 @@ struct ui_cmd_command commands[] = {
 	{ "clock",	"[on|off]",					"Show, enable, disable clock",		ui_cmd_clock },
 	{ "cycle",	"",							"Execute one CPU cycle",			ui_cmd_cycle },
 	{ "dasm",	"<seg> <addr>",				"Disassemble instruction",			ui_cmd_na },
-	{ "eval",	"<expr>",					"Evaluate expression",				ui_cmd_na },
+	{ "eval",	"<expr>",					"Evaluate expression",				ui_cmd_eval },
 	{ "help",	"",							"Show help",						ui_cmd_help },
 	{ "info",	"",							"Show system info",					ui_cmd_info },
 	{ "int",	"[interrupt]",				"Show interrupts, send irq",		ui_cmd_int },

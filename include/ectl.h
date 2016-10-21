@@ -113,6 +113,7 @@ int ectl_log_level_set(unsigned component, unsigned level);
 const char * ectl_log_component_name(unsigned component);
 int ectl_log_component_id(char *name);
 unsigned long ectl_ips_get();
+int ectl_eval(char *input, char **error_msg, int *err_beg, int *err_end);
 
 #endif
 

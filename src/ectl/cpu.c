@@ -15,6 +15,8 @@
 //  Foundation, Inc.,
 //  51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 
+#define _XOPEN_SOURCE 500
+
 #include <stdlib.h>
 #include <inttypes.h>
 #include <string.h>
@@ -29,12 +31,19 @@
 #include "mem/mem.h"
 
 #include "ectl.h"
+#include "ectl/est.h"
+#include "ectl_parser.h"
 
 const char *ectl_reg_names[] = {
 	"R0", "R1", "R2", "R3", "R4", "R5", "R6", "R7",
 	"IC", "SR", "IR", "KB", "MOD", "MODc", "ALARM",
 	"??"
 };
+
+typedef struct ectl_yy_buffer_state *YY_BUFFER_STATE;
+int ectl_yyparse();
+YY_BUFFER_STATE ectl_yy_scan_string(char *input);
+void ectl_yy_delete_buffer(YY_BUFFER_STATE b);
 
 // -----------------------------------------------------------------------
 void ectl_regs_get(uint16_t *dregs)
@@ -337,6 +346,62 @@ unsigned long ectl_ips_get()
 	oips = ips_counter;
 
 	return ips;
+}
+
+// -----------------------------------------------------------------------
+int ectl_eval(char *input, char **error_msg, int *err_beg, int *err_end)
+{
+	int res = -1;
+	struct ectl_est *tree;
+
+	if (err_beg) {
+		*err_beg = 0;
+	}
+	if (err_end) {
+		*err_end = 0;
+	}
+
+	// parse
+	YY_BUFFER_STATE yb = ectl_yy_scan_string(input);
+	ectl_yyparse(&tree);
+	ectl_yy_delete_buffer(yb);
+	if (!tree) {
+		*error_msg = strdup("Fatal error, parser did not return anything");
+		goto fin;
+	}
+	if (tree->type == ECTL_AST_N_ERR) {
+		*error_msg = strdup(tree->err);
+		if (err_beg) {
+			*err_beg = tree->c_beg;
+		}
+		if (err_end) {
+			*err_end = tree->c_end;
+		}
+		goto fin;
+	}
+
+	// evaluate
+	int val = ectl_est_eval(tree);
+	if (val < 0) {
+		struct ectl_est *err_node = ectl_est_get_eval_err();
+		if (err_node) {
+			*error_msg = strdup(err_node->err);
+			if (err_beg) {
+				*err_beg = err_node->c_beg;
+			}
+			if (err_end) {
+				*err_end = err_node->c_end;
+			}
+		} else {
+			*error_msg = strdup("Evaluation failed");
+		}
+		goto fin;
+	}
+	res = val;
+
+fin:
+	ectl_est_delete(tree);
+	return res;
 }
 
 // vim: tabstop=4 shiftwidth=4 autoindent

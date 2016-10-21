@@ -147,7 +147,7 @@ void ui_cmd_loop(void *data)
 {
 	struct ui_cmd_data *ui = data;
 
-	char buf[BUF_MAX+1];
+	char buf[BUF_MAX+2]; // +1 for '\0', +2 for flex' '\0'
 	int sock_max = 0;
 	int recvd = 0;
 	int input_invalid = 0;

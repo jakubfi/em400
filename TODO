@@ -4,11 +4,9 @@ Known bugs:
 
 Enhancements:
 
-* ectl
-* change the way em400 informs about startup errors
+* ectl: breakpoints
 * new debugger interface
 * integrate local console(-s) and debugger into one ncurses user interface
-* mem_load, mem_seg_load is possibly an extension of ectl
 * deeptrace
 * conditional logging
 * configuration rework
