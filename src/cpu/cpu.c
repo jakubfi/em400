@@ -290,6 +290,12 @@ static void cpu_clear(int scope, int new_ui)
 	mem_reset();
 	cpu_mod_off();
 
+	regs[0] = 0;
+	rSR = 0;
+
+	int_update_mask(0);
+	int_clear_all();
+
 	if (scope & STATE_CLO) {
 		rIC = 0;
 		rALARM = 0;
@@ -301,12 +307,6 @@ static void cpu_clear(int scope, int new_ui)
 			atom_store_release(&cpu_state, STATE_START);
 		}
 	}
-
-	regs[0] = 0;
-	rSR = 0;
-
-	int_update_mask(0);
-	int_clear_all();
 
 	// call even if logging is disabled - user may enable it later
 	// and we still want to know if we're running a known OS
