@@ -58,7 +58,7 @@ int cpu_mod_active;
 
 int cpu_mod_present;
 int cpu_user_io_illegal;
-int exit_on_hlt;
+int hlt_hack;
 static int nomem_stop;
 
 unsigned long ips_counter;
@@ -117,7 +117,7 @@ void cpu_trigger_unhalt()
 // -----------------------------------------------------------------------
 void cpu_trigger_clear(int scope)
 {
-	atom_or_release(&cpu_state, scope);
+	atom_store_release(&cpu_state, scope);
 	pthread_cond_signal(&cpu_wake_cond);
 }
 
@@ -226,7 +226,7 @@ int cpu_init(struct cfg_em400 *cfg, int new_ui)
 
 	cpu_mod_present = cfg->cpu_mod;
 	cpu_user_io_illegal = cfg->cpu_user_io_illegal;
-	exit_on_hlt = cfg->exit_on_hlt & !new_ui;
+	hlt_hack = cfg->exit_on_hlt ? (new_ui ? 2 : 1) : 0;
 	nomem_stop = cfg->cpu_stop_on_nomem;
 
 	res = iset_build(cpu_op_tab);
@@ -283,8 +283,6 @@ int cpu_mod_off()
 // -----------------------------------------------------------------------
 static void cpu_clear(int scope, int new_ui)
 {
-	atom_and_release(&cpu_state, ~(STATE_CLM | STATE_CLO));
-
 	// I/O reset should return when we're sure that I/O won't change CPU state (backlogged interrupts, memory writes, ...)
 	io_reset();
 	mem_reset();
@@ -306,6 +304,8 @@ static void cpu_clear(int scope, int new_ui)
 		} else {
 			atom_store_release(&cpu_state, STATE_START);
 		}
+	} else {
+		atom_and_release(&cpu_state, ~STATE_CLM);
 	}
 
 	// call even if logging is disabled - user may enable it later

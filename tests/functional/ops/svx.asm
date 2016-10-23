@@ -1,0 +1,28 @@
+
+	lw r0, ?VX
+	lw r1, 0b0010000000000001
+	svx r1
+	lw r3, r1
+	rpc r2
+
+	lw r0, ?X
+	svx r1
+	lw r4, r1
+	rpc r5
+
+	lw r0, ?X
+	svx r1
+
+	hlt 077
+
+; XPCT rz[6] : 0
+; XPCT sr : 0
+
+; XPCT r3 : 0b0100000000000011
+; XPCT r2 : 0b0010000010000000
+
+; XPCT r4 : 0b1000000000000111
+; XPCT r5 : 0b0010000010000000
+
+; XPCT r1 : 0b0000000000001111
+; XPCT r0 : 0b0010000110000000

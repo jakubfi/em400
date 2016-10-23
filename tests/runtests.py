@@ -1,6 +1,6 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 
-#  Copyright (c) 2013 Jakub Filipowicz <jakubf@gmail.com>
+#  Copyright (c) 2016 Jakub Filipowicz <jakubf@gmail.com>
 #
 #  This program is free software; you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
@@ -21,144 +21,330 @@ import os
 import os.path
 import sys
 import re
+import time
 import subprocess
+import argparse
 
-assem = "emas"
-em400 = "../build/src/em400"
+DEBUG = 0
+
+R_OK = 0
+R_ERR = 1
+R_UNK = 2
+
+# ------------------------------------------------------------------------
+class EM400:
+
+    # --------------------------------------------------------------------
+    def __init__(self, binary, add_args, polldelay=0.01):
+        self.polldelay = polldelay
+
+        args = [ binary, "-u", "cmd" ] + add_args
+        self.p = subprocess.Popen(args, shell=False, stdin=subprocess.PIPE, stdout=subprocess.PIPE, bufsize=1, universal_newlines=True)
+
+    # --------------------------------------------------------------------
+    def close(self):
+        self.quit()
+        self.p.wait()
+
+    # --------------------------------------------------------------------
+    def cmd_raw(self, command):
+
+        self.p.stdin.write("%s\n" % command)
+        return self.p.stdout.readline().strip()
+
+    # --------------------------------------------------------------------
+    def cmd(self, command):
+        if DEBUG: print("--> %s" % command)
+        self.p.stdin.write("%s\n" % command)
+        resp = self.p.stdout.readline()
+        if DEBUG: print("<-- %s" % resp)
+
+        ret = R_UNK
+        if resp.startswith("OK"):
+            ret = R_OK
+        elif resp.startswith("ERR"):
+            ret = R_ERR
+
+        if ret != R_OK:
+            raise SystemError(re.sub("[A-Za-a]+: ", "", resp))
+        else:
+            return resp.split()[1:]
+
+    # --------------------------------------------------------------------
+    def load(self, seg, addr, filename):
+        self.cmd("LOAD %i %i %s" % (seg, addr, filename))
+
+    # --------------------------------------------------------------------
+    def ips(self):
+        ips = self.cmd("IPS")[0]
+        return int(ips)
+
+    # --------------------------------------------------------------------
+    def reg(self, name):
+        val = self.cmd("REG %s" % name)[0].split("=")[1]
+        return int(val, 0)
+
+    # --------------------------------------------------------------------
+    def state(self):
+        state = self.cmd("STATE")[0]
+        return int(state, 0)
+
+    # --------------------------------------------------------------------
+    def eval(self, expr):
+        val = self.cmd("EVAL %s" % expr)[0]
+        return int(val, 0)
+
+    # --------------------------------------------------------------------
+    def wait_for_stop(self):
+        while not (self.state() & 1):
+            if self.polldelay:
+                time.sleep(self.polldelay)
+
+    # --------------------------------------------------------------------
+    def clear(self):
+        self.cmd("CLEAR")
+        self.wait_for_stop()
+
+    # --------------------------------------------------------------------
+    def start(self):
+        self.cmd("START")
+
+    # --------------------------------------------------------------------
+    def stop(self):
+        self.cmd("STOP")
+
+    # --------------------------------------------------------------------
+    def quit(self):
+        self.cmd("QUIT")
+
+# ------------------------------------------------------------------------
+class TestResult:
+
+    # --------------------------------------------------------------------
+    def __init__(self, name):
+        self.name = None
+        self.passed = None
+        self.checks = []
+        self.error = None
+        self.ips = None
+        self.ips_percent = None
+        self.failcmds = []
+
+    # --------------------------------------------------------------------
+    def add_check(self, t, x, r):
+        self.checks += [(t, x, r)]
+        if self.passed is None:
+            self.passed = (x == r)
+        else:
+            self.passed &= (x == r)
+
+    # --------------------------------------------------------------------
+    def __str__(self):
+        # error
+        if self.error:
+            return "%-50s : %s" % (t, self.error)
+
+        # benchmark
+        if self.ips:
+            if self.ips_percent:
+                pc = "(%+.1f%%)" % self.ips_percent
+            else:
+                pc = ""
+            return "%-50s : %7.3f %s" % (t, self.ips, pc)
+
+        # pass/fail test
+        if self.passed is not None:
+            pf = [ "FAILED", "PASSED" ]
+            ret = "%-50s : %s" % (t, pf[self.passed])
+            for f in self.checks:
+                if f[1] != f[2]:
+                    ret += " %s=%i!=%i" % (f[0], f[2], f[1])
+            return ret
+
+        return "no result"
 
 # ------------------------------------------------------------------------
 class TestBed:
 
     # --------------------------------------------------------------------
-    def __init__(self, tests):
-        self.tests = tests
-
-    def run(self):
-        total = 0
-        failed = 0
-        for test_file in self.tests:
-            test_name = test_file.replace("./", "")
-            sys.stdout.write("%-30s : running..." % test_name)
-            sys.stdout.flush()
-            test = Test(test_file)
-            result, details = test.run()
-            total += 1
-            print("\r%-30s : %s%s         " % (test_name, result, details))
-            if result != "PASSED":
-                failed += 1
-        print("--------------------------------------------")
-        print("Tests run: %i, failed: %i" % (total, failed))
-
-# ------------------------------------------------------------------------
-class Test:
+    def __init__(self, emas, binary, blfile, benchmark_duration=0.5, failcmd=None):
+        self.emas = emas
+        self.binary = binary
+        self.failcmd = failcmd
+        self.benchmark_duration = benchmark_duration
+        self.e = None
+        self.add_opts = None
+        self.default_config = "configs/minimal.cfg"
+        self.bl = self.baseline(blfile)
 
     # --------------------------------------------------------------------
-    def __init__(self, source):
-        self.source = source
-        self.prog_name = source
-        self.config = "configs/minimal.cfg"
+    def close(self):
+        if self.e:
+            self.e.close()
 
-    # ------------------------------------------------------------------------
-    def run(self):
-        details = ""
-        result = "?"
+    # --------------------------------------------------------------------
+    def __runemu(self, add_opts):
+        if self.e is None:
+            self.e = EM400(self.binary, add_opts, polldelay=0.01)
+        else:
+            if self.add_opts != add_opts:
+                self.e.close()
+                self.e = EM400(self.binary, add_opts, polldelay=0.01)
+        self.add_opts = add_opts
 
-        try:
-            phase = "Assembly"
-            self.assembly()
-            phase = "Parse"
-            self.parse()
-            phase = "Run"
-            self.execute()
-            result = "PASSED"
-            phase = ""
-        except Exception as e:
-            result = "FAILED"
-            details = " at %s: %s" % (phase, str(e))
+    # --------------------------------------------------------------------
+    def baseline(self, bfile):
+        if not bfile:
+            return None
 
-        return result, details
+        print("Using baseline: %s" % bfile)
+        baseline = {}
+        with open(bfile) as f:
+            for line in f:
+                t = line.split(":")
+                if len(t) == 2:
+                    baseline[t[0].strip()] = float(t[1].strip())
 
-    # ------------------------------------------------------------------------
-    def assembly(self):
-        self.output = "/tmp/out.bin"
-        args = [assem, "-Iinclude", "-Oraw", "-o" + self.output, self.source]
-        subprocess.check_output(args)
+        return baseline
 
-    # ------------------------------------------------------------------------
-    def parse(self):
-        self.test_expr = ""
-        self.expected = ""
-        self.opts = []
+    # --------------------------------------------------------------------
+    def __assembly(self, source):
+        aout = re.sub(".*/(.*).asm$", "/tmp/\\1.bin", source)
+        args = [self.emas, "-Iinclude", "-Oraw", "-o" + aout, source]
+        p = subprocess.Popen(args, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
+        p.wait()
+        if p.returncode == 0:
+            return aout
+        else:
+            o, e = p.communicate()
+            raise RuntimeError(o.decode('ascii'))
 
-        xpcts = []
-
-        for l in open(self.source, "r"):
-            # get program name
-            pname = re.findall(".prog[ \t]+\"(.*)\"", l)
-            if pname:
-                self.prog_name = pname[0]
-
+    # --------------------------------------------------------------------
+    def __gerparams(self, source):
+        opts = []
+        xpct = []
+        for l in open(source, "r"):
             # get OPTS directive
             if "OPTS" in l:
-                popts = re.findall(";[ \t]*OPTS[ \t]+(.*)", l)
-                if popts:
-                    self.opts = popts[0].split()
-                else:
-                    raise Exception("Incomplete OPTS directive")
-
+                try:
+                    popts = re.findall(";[ \t]*OPTS[ \t]+(.*)", l)[0].split()
+                    opts += popts
+                except:
+                    raise Exception("Malformed OPTS: %s" % l)
 
             # get test result conditions
             if "XPCT" in l:
-                xpct = re.findall(";[ \t]*XPCT[ \t]+([^ \t]+)[ \t]*:[ \t]*([^ \t]+.*)\n", l)
-                if xpct and len(xpct[0]) == 2:
-                    xpcts.append(xpct[0])
-                else:
-                    raise Exception("Incomplete XPCT found")
+                try:
+                    pxpct = re.findall(";[ \t]*XPCT[ \t]+([^ \t]+)[ \t]*:[ \t]*([^ \t]+.*)\n", l)
+                    expr = pxpct[0][0]
+                    val = int(pxpct[0][1], 0) & 0xffff
+                    xpct += [(expr, val)]
+                except:
+                    raise Exception("Malformed XPCT: %s" % l)
 
-        if not xpcts:
-            raise Exception("No XPCTs foud")
+        return opts, xpct
 
-        self.test_expr = ', '.join([x[0] for x in xpcts])
-        self.expected = ' '.join([x[1] for x in xpcts])
+    # --------------------------------------------------------------------
+    def run(self, source):
+        result = TestResult(source)
 
-    # ------------------------------------------------------------------------
-    def execute(self):
-        args = [em400, "-p", self.output, "-t", self.test_expr]
-        args += self.opts
-        if not "-c" in self.opts:
-            args += ["-c", self.config]
+        try:
+            opts, xpct = self.__gerparams(source)
+            aout = self.__assembly(source)
+            self.__runemu(["-e", "-c", self.default_config] + opts)
+            self.e.clear()
+            self.e.load(0, 0, aout)
+            if xpct:
+                self.__passfail(result, xpct)
+            else:
+                self.__benchmark(result, source)
 
-        o = subprocess.check_output(args).decode("utf-8")
+        except Exception as e:
+            result.error = str(e).rstrip()
 
-        tres = re.findall("TEST RESULT @ (.*, regs: .*): (.*)\n", o)
+        if result.passed == 0:
+            if self.failcmd:
+                for cmd in self.failcmd:
+                    result.failcmds += [(cmd, self.e.cmd_raw(cmd))]
 
-        if not tres:
-            raise Exception("No test result found")
+        return result
 
-        self.result = tres[0][1].strip(" ")
-        address = tres[0][0].strip(" ")
+    # --------------------------------------------------------------------
+    def __passfail(self, result, xpct):
+        self.e.start()
+        self.e.wait_for_stop()
+        self.e.stop()
+        for x in xpct:
+            result.add_check(x[0], x[1], self.e.eval(x[0]))
 
-        if self.result != self.expected:
-            raise Exception("@ %s\n%32s xpct: '%s'\n%32s  got: '%s'" % (address, "", self.expected, "", self.result))
+    # --------------------------------------------------------------------
+    def __benchmark(self, result, source):
+        self.e.start()
+        time.sleep(0.05)
+        self.e.ips()
+        time.sleep(self.benchmark_duration)
+        ips = self.e.ips()
+        self.e.stop()
+        result.ips = ips/1000000.0
+        result.passed = 1
 
+        if self.bl and source in self.bl:
+            diff = result.ips - self.bl[t]
+            result.ips_percent = (diff*100.0) / self.bl[t]
+
+# ------------------------------------------------------------------------
+def get_tests(directory):
+    tests = []
+    for path, dirs, files in os.walk(directory):
+        for f in files:
+            if f.endswith(".asm"):
+                tests.append(os.path.join(path, f).lstrip("./"))
+    return tests
 
 # ------------------------------------------------------------------------
 # --- MAIN ---------------------------------------------------------------
 # ------------------------------------------------------------------------
 
-if len(sys.argv) != 1:
-    tests = sys.argv[1:]
+parser = argparse.ArgumentParser()
+parser.add_argument("-b", "--baseline", help="baseline test results")
+parser.add_argument("-f", "--failcmd", help="command to run when test fails", action='append')
+parser.add_argument('test', nargs='*', help='selected test(s) to run')
+args = parser.parse_args()
+
+# enumerate tests
+
+tests = []
+if args.test:
+    for d in args.test:
+        if os.path.isdir(d):
+            tests += get_tests(d)
+        else:
+            tests += [d]
 else:
-    tests = []
-    for path, dirs, files in os.walk("."):
-        for f in files:
-            if f.endswith(".asm"):
-                tests.append(os.path.join(path, f))
-    tests.sort()
+    tests = get_tests(".")
+
+tests.sort()
 
 # run tests
+total = 0
+failed = 0
+tb = TestBed("emas", "../build/src/em400", args.baseline, benchmark_duration=0.5, failcmd=args.failcmd)
+for t in tests:
+    print("%-50s : ..." % t, end="", flush=True)
+    result = tb.run(t)
+    print("\r", end="", flush=True)
+    print(result)
+    total += 1
+    if result.passed != 1:
+        failed += 1
+        if result.failcmds:
+            for f in result.failcmds:
+                print("   +++ %s: %s" % (f[0], f[1]))
 
-t = TestBed(tests)
-t.run()
+tb.close()
+
+print("------------------------------------------------------------")
+print("Tests run: %i, failed: %i" % (total, failed))
+
 
 # vim: tabstop=4 expandtab shiftwidth=4 softtabstop=4

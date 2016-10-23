@@ -4,4 +4,4 @@ tests/images/*.e4i
 *.swp
 tools/*.pyc
 CMakeLists.txt.user
-benchmark/base*
+tests/baselines

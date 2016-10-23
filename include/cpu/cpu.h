@@ -92,7 +92,7 @@ extern int cpu_mod_active;
 
 extern int cpu_mod_present;
 extern int cpu_user_io_illegal;
-extern int exit_on_hlt;
+extern int hlt_hack;
 
 extern struct awp *awp;
 

@@ -1,0 +1,23 @@
+
+	lw r0, 0xfefe
+	lw r1, 0x0001
+	lw r2, 0x0010
+	lw r3, 0x0100
+	lw r4, 0x1000
+	lw r5, 0xf0f0
+	lw r6, 0x0f0f
+	lw r7, 0x1234
+
+	hlt 077
+
+; XPCT rz[6] : 0
+; XPCT sr : 0
+
+; XPCT r0 : 0xfefe
+; XPCT r1 : 0x0001
+; XPCT r2 : 0x0010
+; XPCT r3 : 0x0100
+; XPCT r4 : 0x1000
+; XPCT r5 : 0xf0f0
+; XPCT r6 : 0x0f0f
+; XPCT r7 : 0x1234
