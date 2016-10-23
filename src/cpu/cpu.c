@@ -58,7 +58,7 @@ int cpu_mod_active;
 
 int cpu_mod_present;
 int cpu_user_io_illegal;
-int hlt_hack;
+int stop_on_hlt040;
 static int nomem_stop;
 
 unsigned long ips_counter;
@@ -226,7 +226,7 @@ int cpu_init(struct cfg_em400 *cfg, int new_ui)
 
 	cpu_mod_present = cfg->cpu_mod;
 	cpu_user_io_illegal = cfg->cpu_user_io_illegal;
-	hlt_hack = cfg->exit_on_hlt ? (new_ui ? 2 : 1) : 0;
+	stop_on_hlt040 = cfg->stop_on_hlt040;
 	nomem_stop = cfg->cpu_stop_on_nomem;
 
 	res = iset_build(cpu_op_tab);
@@ -451,7 +451,7 @@ memfail:
 }
 
 // -----------------------------------------------------------------------
-unsigned cpu_loop(int autotest, int new_ui)
+void cpu_loop(int new_ui)
 {
 	while (1) {
 		int state = atom_load_acquire(&cpu_state);
@@ -464,7 +464,7 @@ unsigned cpu_loop(int autotest, int new_ui)
 			// CPU cycle
 			} else {
 				#ifdef WITH_DEBUGGER
-				if ((autotest != 1) && !new_ui) {
+				if (!new_ui) {
 					dbg_step();
 				}
 				#endif
@@ -495,8 +495,6 @@ unsigned cpu_loop(int autotest, int new_ui)
 			cpu_wait_on(STATE_HALT);
 		}
 	}
-
-	return ips_counter;
 }
 
 // vim: tabstop=4 shiftwidth=4 autoindent

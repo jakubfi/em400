@@ -209,7 +209,7 @@ class TestBed:
 
     # --------------------------------------------------------------------
     def __assembly(self, source):
-        aout = re.sub(".*/(.*).asm$", "/tmp/\\1.bin", source)
+        aout = "/tmp/" + os.path.basename(source) + ".bin"
         args = [self.emas, "-Iinclude", "-Oraw", "-o" + aout, source]
         p = subprocess.Popen(args, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
         p.wait()
@@ -330,9 +330,11 @@ total = 0
 failed = 0
 tb = TestBed("emas", "../build/src/em400", args.baseline, benchmark_duration=0.5, failcmd=args.failcmd)
 for t in tests:
-    print("%-50s : ..." % t, end="", flush=True)
+    if sys.stdout.isatty():
+        print("%-50s : ..." % t, end="", flush=True)
     result = tb.run(t)
-    print("\r", end="", flush=True)
+    if sys.stdout.isatty():
+        print("\r", end="", flush=True)
     print(result)
     total += 1
     if result.passed != 1:

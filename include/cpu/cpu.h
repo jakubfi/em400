@@ -92,7 +92,7 @@ extern int cpu_mod_active;
 
 extern int cpu_mod_present;
 extern int cpu_user_io_illegal;
-extern int hlt_hack;
+extern int stop_on_hlt040;
 
 extern struct awp *awp;
 
@@ -112,7 +112,7 @@ int cpu_mod_off();
 int cpu_ctx_switch(uint16_t arg, uint16_t ic, uint16_t sr_mask);
 int cpu_ctx_restore();
 
-unsigned cpu_loop(int autotest, int new_ui);
+void cpu_loop(int new_ui);
 
 void cpu_trigger_quit();
 void cpu_trigger_halt();

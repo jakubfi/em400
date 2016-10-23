@@ -165,39 +165,11 @@ void em400_usage()
 		"                  level: 0-9\n"
 		"   -L           : disable logging\n"
 		"   -k value     : set keys to given value\n"
-		"   -e           : terminate emulation on HLT >= 040\n"
-		"   -b           : benchmark emulator\n"
+		"   -e           : stop CPU instead of halting it on HLT >= 040\n"
 #ifdef WITH_DEBUGGER
 		"   -s           : use simple debugger interface\n"
-		"   -t test_expr : execute expression when program halts (implies -e -s)\n"
 #endif
 	);
-}
-
-// -----------------------------------------------------------------------
-void em400_loop(struct cfg_em400 *cfg)
-{
-	unsigned int ips_counter = 0;
-	struct timeval ips_start;
-	struct timeval ips_end;
-	double ips_time_spent;
-	unsigned int ips = 0;
-
-	gettimeofday(&ips_start, NULL);
-#ifdef WITH_DEBUGGER
-	ips_counter = cpu_loop(cfg->autotest, ui?1:0);
-#else
-	ips_counter = cpu_loop(0, ui?1:0);
-#endif
-	gettimeofday(&ips_end, NULL);
-
-	if (cfg->benchmark) {
-		ips_time_spent = (double)(ips_end.tv_usec - ips_start.tv_usec)/1000000 + (ips_end.tv_sec - ips_start.tv_sec);
-		if (ips_time_spent > 0) {
-			ips = ips_counter/ips_time_spent;
-		}
-		printf("IPS: %i (instructions: %i time: %f)\n", ips, ips_counter, ips_time_spent);
-	}
 }
 
 // -----------------------------------------------------------------------
@@ -205,11 +177,11 @@ void em400_mkconfdir()
 {
 	char *conf_dirname = NULL;
 
-	const char *cdir = "/.em400";
+	const char *cdir = ".em400";
 	char *home = getenv("HOME");
 	conf_dirname = malloc(strlen(home) + strlen(cdir) + 1);
 	if (conf_dirname) {
-		sprintf(conf_dirname, "%s%s", home, cdir);
+		sprintf(conf_dirname, "%s/%s", home, cdir);
 		mkdir(conf_dirname, 0700);
 		free(conf_dirname);
 	}
@@ -282,18 +254,8 @@ int main(int argc, char** argv)
 			em400_exit_error(res, "Error running UI");
 		}
 	}
-	em400_loop(cfg);
 
-	if (cpu_state_get() == STATE_STOP) {
-		fprintf(stderr, "Emulation died, guest CPU segmentation fault.\n");
-	}
-
-#ifdef WITH_DEBUGGER
-	if (cfg->autotest && cfg->test_expr) {
-		printf("TEST RESULT @ 0x%04x, regs: 0x%04x 0x%04x 0x%04x 0x%04x 0x%04x 0x%04x 0x%04x 0x%04x: ", rIC, regs[0], regs[1], regs[2], regs[3], regs[4], regs[5], regs[6], regs[7]);
-		dbg_parse(cfg->test_expr);
-	}
-#endif
+	cpu_loop(ui?1:0);
 
 	em400_shutdown();
 	cfg_destroy(cfg);

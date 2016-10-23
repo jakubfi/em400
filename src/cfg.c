@@ -53,8 +53,7 @@ struct cfg_em400 * cfg_create_default()
 	// emulator
 	cfg->program_name = NULL;
 	cfg->cfg_filename = home_cfg_fname;
-	cfg->exit_on_hlt = 0;
-	cfg->benchmark = 0;
+	cfg->stop_on_hlt040 = 0;
 	cfg->print_help = 0;
 	cfg->ui_name = NULL;
 
@@ -88,8 +87,6 @@ struct cfg_em400 * cfg_create_default()
 	cfg->chans = NULL;
 
 #ifdef WITH_DEBUGGER
-	cfg->autotest = 0;
-	cfg->test_expr = NULL;
 	cfg->ui_simple = 0;
 #endif
 
@@ -112,10 +109,6 @@ void cfg_destroy(struct cfg_em400 *cfg)
 
 	cfg_drop_chans(cfg->chans);
 
-#ifdef WITH_DEBUGGER
-	free(cfg->test_expr);
-#endif
-
 	free(cfg);
 }
 
@@ -127,11 +120,7 @@ struct cfg_em400 * cfg_from_args(int argc, char **argv)
 
 	int option;
 
-#ifdef WITH_DEBUGGER
-	int len;
-#endif
-
-	while ((option = getopt(argc, argv,"bhec:p:k:l:Lt:su:")) != -1) {
+	while ((option = getopt(argc, argv,"hec:p:k:l:Lsu:")) != -1) {
 		switch (option) {
 			case 'L':
 				cfg->log_enabled = 0;
@@ -139,9 +128,6 @@ struct cfg_em400 * cfg_from_args(int argc, char **argv)
 			case 'l':
 				cfg->log_enabled = 1;
 				cfg->log_levels = strdup(optarg);
-				break;
-			case 'b':
-				cfg->benchmark = 1;
 				break;
 			case 'h':
 				cfg->print_help = 1;
@@ -158,21 +144,9 @@ struct cfg_em400 * cfg_from_args(int argc, char **argv)
 				cfg->keys = atoi(optarg);
 				break;
 			case 'e':
-				cfg->exit_on_hlt = 1;
-#ifdef WITH_DEBUGGER
-				cfg->autotest = 1;
-#endif
+				cfg->stop_on_hlt040 = 1;
 				break;
 #ifdef WITH_DEBUGGER
-			case 't':
-				cfg->autotest = 1;
-				cfg->ui_simple = 1;
-				cfg->exit_on_hlt = 1;
-				len = strlen(optarg);
-				cfg->test_expr = malloc(len+3);
-				strcpy(cfg->test_expr, optarg);
-				strcpy(cfg->test_expr + len, "\n\0");
-				break;
 			case 's':
 				cfg->ui_simple = 1;
 				break;
@@ -229,8 +203,7 @@ struct cfg_em400 * cfg_overlay(struct cfg_em400 *a, struct cfg_em400 *b)
 	// emulator
 	CHS(program_name);
 	CHS(cfg_filename);
-	CHI(exit_on_hlt);
-	CHI(benchmark);
+	CHI(stop_on_hlt040);
 	CHI(print_help);
 	CHS(ui_name);
 
@@ -268,8 +241,6 @@ struct cfg_em400 * cfg_overlay(struct cfg_em400 *a, struct cfg_em400 *b)
 	}
 
 #ifdef WITH_DEBUGGER
-	CHI(autotest);
-	CHS(test_expr);
 	CHI(ui_simple);
 #endif
 

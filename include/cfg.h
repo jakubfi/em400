@@ -47,8 +47,7 @@ struct cfg_em400 {
 
 	char *program_name;
 	char *cfg_filename;
-	int exit_on_hlt;
-	int benchmark;
+	int stop_on_hlt040;
 	int print_help;
 	char *ui_name;
 
@@ -72,8 +71,6 @@ struct cfg_em400 {
 	struct cfg_chan *chans;
 
 #ifdef WITH_DEBUGGER
-	int autotest;
-	char *test_expr;
 	int ui_simple;
 #endif
 

@@ -715,12 +715,8 @@ void op_73_hlt()
 	LOGCPU(L_OP, 1, "HALT 0%02o (alarm: %i)", N, regs[6]&255);
 
 	// hlt >= 040 is used by the test suite to check if a test has finished
-	if (hlt_hack && (N >= 040)) {
-		if (hlt_hack == 2) {
-			cpu_trigger_stop();
-		} else {
-			cpu_trigger_quit();
-		}
+	if (stop_on_hlt040 && (N >= 040)) {
+		cpu_trigger_stop();
 	// otherwise, enter halt state
 	} else {
 		cpu_trigger_halt();

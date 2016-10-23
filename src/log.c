@@ -519,9 +519,8 @@ void log_config(unsigned component, unsigned level, struct cfg_em400 *cfg)
 {
 	log_log(component, level, "Program to load: %s", cfg->program_name);
 	log_log(component, level, "Loaded config: %s", cfg->cfg_filename);
-	log_log(component, level, "Benchmark: %s", cfg->benchmark ? "yes" : "no");
 	log_log(component, level, "Print help: %s", cfg->print_help ? "yes" : "no");
-	log_log(component, level, "Exit on HLT>=040: %s", cfg->exit_on_hlt ? "yes" : "no");
+	log_log(component, level, "Stop CPU on HLT>=040: %s", cfg->stop_on_hlt040 ? "yes" : "no");
 	log_log(component, level, "Emulation speed: %s", cfg->speed_real ? "real" : "max");
 	log_log(component, level, "Timer step: %i (%s at power-on)", cfg->timer_step, cfg->timer_start ? "enabled" : "disabled");
 	log_log(component, level, "CPU modifications: %s", cfg->cpu_mod ? "present" : "absent");
