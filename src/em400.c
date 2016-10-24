@@ -165,7 +165,6 @@ void em400_usage()
 		"                  level: 0-9\n"
 		"   -L           : disable logging\n"
 		"   -k value     : set keys to given value\n"
-		"   -e           : stop CPU instead of halting it on HLT >= 040\n"
 #ifdef WITH_DEBUGGER
 		"   -s           : use simple debugger interface\n"
 #endif

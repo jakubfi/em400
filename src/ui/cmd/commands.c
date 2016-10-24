@@ -109,7 +109,7 @@ void ui_cmd_help(FILE *out, char *args)
 	if (!tok_cmd) {
 		struct ui_cmd_command *c = commands;
 		ui_cmd_resp(out, RESP_OK, UI_NOEOL, " Available commands:");
-		while (c && c->name) {
+		while (c && c->name && c->visible) {
 			fprintf(out, " %s", c->name);
 			c++;
 		}
@@ -515,6 +515,27 @@ void ui_cmd_eval(FILE *out, char *args)
 }
 
 // -----------------------------------------------------------------------
+void ui_cmd_stoponhlt040(FILE *out, char *args)
+{
+	char *hlt_state, *remainder;
+
+	int state = ui_cmd_gettok_bool(args, &hlt_state, &remainder);
+	if (!hlt_state) {
+		ui_cmd_resp(out, RESP_ERR, UI_EOL, "Missing argument (state)");
+		return;
+	}
+
+	// is state correct?
+	if (state < 0) {
+		ui_cmd_resp(out, RESP_ERR, UI_EOL, "Wrong state: %s", hlt_state);
+		return;
+	}
+
+	ectl_stoponhlt040_set(state);
+	ui_cmd_resp(out, RESP_OK, UI_EOL, "STOPONHLT040 %i", state);
+}
+
+// -----------------------------------------------------------------------
 void ui_cmd_na(FILE *out, char *args)
 {
 	ui_cmd_resp(out, RESP_ERR, UI_EOL, "Command not implemented");
@@ -522,34 +543,35 @@ void ui_cmd_na(FILE *out, char *args)
 
 // -----------------------------------------------------------------------
 struct ui_cmd_command commands[] = {
-	{ "bin",	"<val>",					"Initiate binary load",				ui_cmd_na },
-	{ "brk",	"<expr>",					"Set breakpoint",					ui_cmd_na },
-	{ "brkdel",	"<num>",					"Delete breakpoint",				ui_cmd_na },
-	{ "brkls",	"[num]",					"Show breakpoints",					ui_cmd_na },
-	{ "clear",	"",							"CPU clear (reset)",				ui_cmd_clear },
-	{ "clock",	"[on|off]",					"Show, enable, disable clock",		ui_cmd_clock },
-	{ "cycle",	"",							"Execute one CPU cycle",			ui_cmd_cycle },
-	{ "dasm",	"<seg> <addr>",				"Disassemble instruction",			ui_cmd_na },
-	{ "eval",	"<expr>",					"Evaluate expression",				ui_cmd_eval },
-	{ "help",	"",							"Show help",						ui_cmd_help },
-	{ "info",	"",							"Show system info",					ui_cmd_info },
-	{ "int",	"[interrupt]",				"Show interrupts, send irq",		ui_cmd_int },
-	{ "ips",	"",							"Show IPS",							ui_cmd_ips },
-	{ "load",	"<seg> <addr> <file>",		"Load file to memory",				ui_cmd_load },
-	{ "log",	"[on|off]",					"Show, enable, disable logging",	ui_cmd_log },
-	{ "loglvl",	"[component [level]]",		"Manipulate logging levels",		ui_cmd_loglvl },
-	{ "mem",	"<seg> <addr> [count]",		"Get memory contents",				ui_cmd_mem },
-	{ "memfind","<seg> <val>",				"Search memory contents",			ui_cmd_na },
-	{ "memmap",	"<seg>",					"Show memory allocation",			ui_cmd_memmap },
-	{ "memw",	"<seg> <addr> <val> ...",	"Set memory contents",				ui_cmd_memw },
-	{ "oprq",	"",							"Send operator request",			ui_cmd_oprq },
-	{ "quit",	"",							"Quit emulation",					ui_cmd_quit },
-	{ "reg",	"[name [value]]",			"Manipulate registers",				ui_cmd_reg },
-	{ "run",	"",							"Start CPU",						ui_cmd_start },
-	{ "start",	"",							"Start CPU",						ui_cmd_start },
-	{ "state",	"",							"Show CPU state",					ui_cmd_state },
-	{ "stop",	"",							"Stop CPU",							ui_cmd_stop },
-	{ NULL },
+	{ 1, "bin",		"<val>",					"Initiate binary load",				ui_cmd_na },
+	{ 1, "brk",		"<expr>",					"Set breakpoint",					ui_cmd_na },
+	{ 1, "brkdel",	"<num>",					"Delete breakpoint",				ui_cmd_na },
+	{ 1, "brkls",	"[num]",					"Show breakpoints",					ui_cmd_na },
+	{ 1, "clear",	"",							"CPU clear (reset)",				ui_cmd_clear },
+	{ 1, "clock",	"[on|off]",					"Show, enable, disable clock",		ui_cmd_clock },
+	{ 1, "cycle",	"",							"Execute one CPU cycle",			ui_cmd_cycle },
+	{ 1, "dasm",	"<seg> <addr>",				"Disassemble instruction",			ui_cmd_na },
+	{ 1, "eval",	"<expr>",					"Evaluate expression",				ui_cmd_eval },
+	{ 1, "help",	"",							"Show help",						ui_cmd_help },
+	{ 1, "info",	"",							"Show system info",					ui_cmd_info },
+	{ 1, "int",		"[interrupt]",				"Show interrupts, send irq",		ui_cmd_int },
+	{ 1, "ips",		"",							"Show IPS",							ui_cmd_ips },
+	{ 1, "load",	"<seg> <addr> <file>",		"Load file to memory",				ui_cmd_load },
+	{ 1, "log",		"[on|off]",					"Show, enable, disable logging",	ui_cmd_log },
+	{ 1, "loglvl",	"[component [level]]",		"Manipulate logging levels",		ui_cmd_loglvl },
+	{ 1, "mem",		"<seg> <addr> [count]",		"Get memory contents",				ui_cmd_mem },
+	{ 1, "memfind",	"<seg> <val>",				"Search memory contents",			ui_cmd_na },
+	{ 1, "memmap",	"<seg>",					"Show memory allocation",			ui_cmd_memmap },
+	{ 1, "memw",	"<seg> <addr> <val> ...",	"Set memory contents",				ui_cmd_memw },
+	{ 1, "oprq",	"",							"Send operator request",			ui_cmd_oprq },
+	{ 1, "quit",	"",							"Quit emulation",					ui_cmd_quit },
+	{ 1, "reg",		"[name [value]]",			"Manipulate registers",				ui_cmd_reg },
+	{ 1, "run",		"",							"Start CPU",						ui_cmd_start },
+	{ 1, "start",	"",							"Start CPU",						ui_cmd_start },
+	{ 1, "state",	"",							"Show CPU state",					ui_cmd_state },
+	{ 1, "stop",	"",							"Stop CPU",							ui_cmd_stop },
+	{ 0, "stoponhlt040", "",					"Stop CPU on HLT >= 040",			ui_cmd_stoponhlt040 },
+	{ 0, NULL, NULL, NULL, NULL },
 };
 
 // -----------------------------------------------------------------------

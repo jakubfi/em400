@@ -53,7 +53,6 @@ struct cfg_em400 * cfg_create_default()
 	// emulator
 	cfg->program_name = NULL;
 	cfg->cfg_filename = home_cfg_fname;
-	cfg->stop_on_hlt040 = 0;
 	cfg->print_help = 0;
 	cfg->ui_name = NULL;
 
@@ -120,7 +119,7 @@ struct cfg_em400 * cfg_from_args(int argc, char **argv)
 
 	int option;
 
-	while ((option = getopt(argc, argv,"hec:p:k:l:Lsu:")) != -1) {
+	while ((option = getopt(argc, argv,"hc:p:k:l:Lsu:")) != -1) {
 		switch (option) {
 			case 'L':
 				cfg->log_enabled = 0;
@@ -142,9 +141,6 @@ struct cfg_em400 * cfg_from_args(int argc, char **argv)
 				break;
 			case 'k':
 				cfg->keys = atoi(optarg);
-				break;
-			case 'e':
-				cfg->stop_on_hlt040 = 1;
 				break;
 #ifdef WITH_DEBUGGER
 			case 's':
@@ -203,7 +199,6 @@ struct cfg_em400 * cfg_overlay(struct cfg_em400 *a, struct cfg_em400 *b)
 	// emulator
 	CHS(program_name);
 	CHS(cfg_filename);
-	CHI(stop_on_hlt040);
 	CHI(print_help);
 	CHS(ui_name);
 

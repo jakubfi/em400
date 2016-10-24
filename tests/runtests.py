@@ -251,8 +251,9 @@ class TestBed:
         try:
             opts, xpct = self.__gerparams(source)
             aout = self.__assembly(source)
-            self.__runemu(["-e", "-c", self.default_config] + opts)
+            self.__runemu(["-c", self.default_config] + opts)
             self.e.clear()
+            self.e.cmd("stoponhlt040 on")
             self.e.load(0, 0, aout)
             if xpct:
                 self.__passfail(result, xpct)

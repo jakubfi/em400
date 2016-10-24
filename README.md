@@ -81,7 +81,6 @@ Where *options* are:
 * **-l levels** - enable logging with given levels. Syntax for describing levels is: `component=level[,component=level[,..]]`. Available components are: reg, mem, cpu, op, int, io, mx, px, cchar, cmem, term, wnch, flop, pnch, pnrd, crk5, em4h, all. Logging level is 0-9.
 * **-L** -  disable logging
 * **-k value** - set keys to given value
-* **-e** - stop CPU instead of halting it on HLT >= 040
 
 Debuger-only options:
 

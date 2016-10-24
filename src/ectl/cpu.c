@@ -404,4 +404,14 @@ fin:
 	return res;
 }
 
+// -----------------------------------------------------------------------
+void ectl_stoponhlt040_set(int state)
+{
+	if (state == ECTL_OFF) {
+		atom_store_release(&stop_on_hlt040, 0);
+	} else {
+		atom_store_release(&stop_on_hlt040, 1);
+	}
+}
+
 // vim: tabstop=4 shiftwidth=4 autoindent

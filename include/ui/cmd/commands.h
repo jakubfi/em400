@@ -20,6 +20,7 @@
 typedef void (*ui_cmd_f)(FILE *out, char *args);
 
 struct ui_cmd_command {
+	int visible;
 	char *name;
 	char *args;
 	char *desc;

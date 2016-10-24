@@ -47,7 +47,6 @@ struct cfg_em400 {
 
 	char *program_name;
 	char *cfg_filename;
-	int stop_on_hlt040;
 	int print_help;
 	char *ui_name;
 
