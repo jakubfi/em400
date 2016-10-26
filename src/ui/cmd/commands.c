@@ -26,7 +26,60 @@
 #include "ui/cmd/commands.h"
 #include "ui/cmd/utils.h"
 
-struct ui_cmd_command commands[];
+void ui_cmd_state(FILE *out, char *args);
+void ui_cmd_reg(FILE *out, char *args);
+void ui_cmd_int(FILE *out, char *args);
+void ui_cmd_mem(FILE *out, char *args);
+void ui_cmd_na(FILE *out, char *args);
+void ui_cmd_eval(FILE *out, char *args);
+void ui_cmd_ips(FILE *out, char *args);
+void ui_cmd_load(FILE *out, char *args);
+void ui_cmd_clock(FILE *out, char *args);
+void ui_cmd_oprq(FILE *out, char *args);
+void ui_cmd_memw(FILE *out, char *args);
+void ui_cmd_cycle(FILE *out, char *args);
+void ui_cmd_start(FILE *out, char *args);
+void ui_cmd_stop(FILE *out, char *args);
+void ui_cmd_clear(FILE *out, char *args);
+void ui_cmd_memmap(FILE *out, char *args);
+void ui_cmd_log(FILE *out, char *args);
+void ui_cmd_loglvl(FILE *out, char *args);
+void ui_cmd_info(FILE *out, char *args);
+void ui_cmd_quit(FILE *out, char *args);
+void ui_cmd_help(FILE *out, char *args);
+void ui_cmd_stoponhlt040(FILE *out, char *args);
+
+struct ui_cmd_command commands[] = {
+	{ 1, "state",	"",							"Show CPU state",					ui_cmd_state },
+	{ 1, "reg",		"[name [value]]",			"Manipulate registers",				ui_cmd_reg },
+	{ 1, "int",		"[interrupt]",				"Show interrupts, send irq",		ui_cmd_int },
+	{ 1, "mem",		"<seg> <addr> [count]",		"Get memory contents",				ui_cmd_mem },
+	{ 1, "brkls",	"[num]",					"Show breakpoints",					ui_cmd_na },
+	{ 1, "eval",	"<expr>",					"Evaluate expression",				ui_cmd_eval },
+	{ 1, "ips",		"",							"Show IPS",							ui_cmd_ips },
+	{ 1, "load",	"<seg> <addr> <file>",		"Load file to memory",				ui_cmd_load },
+	{ 1, "bin",		"<val>",					"Initiate binary load",				ui_cmd_na },
+	{ 1, "brk",		"<expr>",					"Set breakpoint",					ui_cmd_na },
+	{ 1, "brkdel",	"<num>",					"Delete breakpoint",				ui_cmd_na },
+	{ 1, "clock",	"[on|off]",					"Show, enable, disable clock",		ui_cmd_clock },
+	{ 1, "memfind",	"<seg> <val>",				"Search memory contents",			ui_cmd_na },
+	{ 1, "oprq",	"",							"Send operator request",			ui_cmd_oprq },
+	{ 1, "memw",	"<seg> <addr> <val> ...",	"Set memory contents",				ui_cmd_memw },
+	{ 1, "cycle",	"",							"Execute one CPU cycle",			ui_cmd_cycle },
+	{ 1, "start",	"",							"Start CPU",						ui_cmd_start },
+	{ 1, "stop",	"",							"Stop CPU",							ui_cmd_stop },
+	{ 1, "clear",	"",							"CPU clear (reset)",				ui_cmd_clear },
+	{ 1, "memmap",	"<seg>",					"Show memory allocation",			ui_cmd_memmap },
+	{ 1, "log",		"[on|off]",					"Show, enable, disable logging",	ui_cmd_log },
+	{ 1, "loglvl",	"[component [level]]",		"Manipulate logging levels",		ui_cmd_loglvl },
+	{ 1, "dasm",	"<seg> <addr>",				"Disassemble instruction",			ui_cmd_na },
+	{ 1, "info",	"",							"Show system info",					ui_cmd_info },
+	{ 1, "quit",	"",							"Quit emulation",					ui_cmd_quit },
+	{ 1, "help",	"",							"Show help",						ui_cmd_help },
+	{ 0, "stoponhlt040", "",					"Stop CPU on HLT >= 040",			ui_cmd_stoponhlt040 },
+	{ 0, NULL, NULL, NULL, NULL },
+};
+
 
 // -----------------------------------------------------------------------
 void ui_cmd_resp(FILE *out, int status, int eol, char *fmt, ...)
@@ -99,6 +152,12 @@ void ui_cmd_reg(FILE *out, char *args)
 }
 
 // -----------------------------------------------------------------------
+static int cmpstringp(const void *p1, const void *p2)
+{
+	return strcmp(* (char * const *) p1, * (char * const *) p2);
+}
+
+// -----------------------------------------------------------------------
 void ui_cmd_help(FILE *out, char *args)
 {
 	char *tok_cmd, *remainder;
@@ -107,13 +166,25 @@ void ui_cmd_help(FILE *out, char *args)
 
 	// show all commands
 	if (!tok_cmd) {
+		int nelem = sizeof(commands) / sizeof(struct ui_cmd_command);
+		char **cmdnames = malloc(nelem * sizeof(char*));
+
+		int i=0;
 		struct ui_cmd_command *c = commands;
-		ui_cmd_resp(out, RESP_OK, UI_NOEOL, " Available commands:");
-		while (c && c->name && c->visible) {
-			fprintf(out, " %s", c->name);
+		while (c && c->name && c->visible && (i < nelem)) {
+			cmdnames[i] = c->name;
 			c++;
+			i++;
+		}
+		qsort(cmdnames, i, sizeof(char*), cmpstringp);
+
+		ui_cmd_resp(out, RESP_OK, UI_NOEOL, " Available commands:");
+		for (int j=0 ; j<i ; j++) {
+			fprintf(out, " %s", (char *)cmdnames[j]);
 		}
 		fprintf(out, "\n");
+
+		free(cmdnames);
 		return;
 	}
 
@@ -540,40 +611,6 @@ void ui_cmd_na(FILE *out, char *args)
 {
 	ui_cmd_resp(out, RESP_ERR, UI_EOL, "Command not implemented");
 }
-
-// -----------------------------------------------------------------------
-struct ui_cmd_command commands[] = {
-	{ 1, "bin",		"<val>",					"Initiate binary load",				ui_cmd_na },
-	{ 1, "brk",		"<expr>",					"Set breakpoint",					ui_cmd_na },
-	{ 1, "brkdel",	"<num>",					"Delete breakpoint",				ui_cmd_na },
-	{ 1, "brkls",	"[num]",					"Show breakpoints",					ui_cmd_na },
-	{ 1, "clear",	"",							"CPU clear (reset)",				ui_cmd_clear },
-	{ 1, "clock",	"[on|off]",					"Show, enable, disable clock",		ui_cmd_clock },
-	{ 1, "cycle",	"",							"Execute one CPU cycle",			ui_cmd_cycle },
-	{ 1, "dasm",	"<seg> <addr>",				"Disassemble instruction",			ui_cmd_na },
-	{ 1, "eval",	"<expr>",					"Evaluate expression",				ui_cmd_eval },
-	{ 1, "help",	"",							"Show help",						ui_cmd_help },
-	{ 1, "info",	"",							"Show system info",					ui_cmd_info },
-	{ 1, "int",		"[interrupt]",				"Show interrupts, send irq",		ui_cmd_int },
-	{ 1, "ips",		"",							"Show IPS",							ui_cmd_ips },
-	{ 1, "load",	"<seg> <addr> <file>",		"Load file to memory",				ui_cmd_load },
-	{ 1, "log",		"[on|off]",					"Show, enable, disable logging",	ui_cmd_log },
-	{ 1, "loglvl",	"[component [level]]",		"Manipulate logging levels",		ui_cmd_loglvl },
-	{ 1, "mem",		"<seg> <addr> [count]",		"Get memory contents",				ui_cmd_mem },
-	{ 1, "memfind",	"<seg> <val>",				"Search memory contents",			ui_cmd_na },
-	{ 1, "memmap",	"<seg>",					"Show memory allocation",			ui_cmd_memmap },
-	{ 1, "memw",	"<seg> <addr> <val> ...",	"Set memory contents",				ui_cmd_memw },
-	{ 1, "oprq",	"",							"Send operator request",			ui_cmd_oprq },
-	{ 1, "quit",	"",							"Quit emulation",					ui_cmd_quit },
-	{ 1, "reg",		"[name [value]]",			"Manipulate registers",				ui_cmd_reg },
-	{ 1, "run",		"",							"Start CPU",						ui_cmd_start },
-	{ 1, "start",	"",							"Start CPU",						ui_cmd_start },
-	{ 1, "state",	"",							"Show CPU state",					ui_cmd_state },
-	{ 1, "stop",	"",							"Stop CPU",							ui_cmd_stop },
-	{ 0, "stoponhlt040", "",					"Stop CPU on HLT >= 040",			ui_cmd_stoponhlt040 },
-	{ 0, NULL, NULL, NULL, NULL },
-};
-
 // -----------------------------------------------------------------------
 struct ui_cmd_command * ui_cmd_find_command(const char *name)
 {
