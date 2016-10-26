@@ -25,12 +25,11 @@
 #include "cfg.h"
 
 enum cpu_states {
-	STATE_START =	0,
-	STATE_STOP =	1 << 0,
-	STATE_HALT =	1 << 1,
-	STATE_CLM =		1 << 2,
-	STATE_CLO =		1 << 3,
-	STATE_QUIT =	1 << 10,
+	STATE_STOP =	0x1,
+	STATE_HALT =	0x2,
+	STATE_CLM =		0x4,
+	STATE_CLO =		0x8,
+	STATE_QUIT =	0x10,
 };
 
 // -----------------------------------------------------------------------
@@ -114,12 +113,8 @@ int cpu_ctx_restore();
 
 void cpu_loop(int new_ui);
 
-void cpu_trigger_quit();
-void cpu_trigger_halt();
-void cpu_trigger_stop();
-void cpu_trigger_start();
-void cpu_trigger_unhalt();
-void cpu_trigger_clear(int scope);
+void cpu_trigger_state(int state);
+void cpu_clear_state(int state);
 int cpu_state_get();
 
 #endif

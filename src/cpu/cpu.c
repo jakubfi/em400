@@ -41,7 +41,7 @@
 #include "debugger/ui.h"
 #endif
 
-static int cpu_state;
+static int cpu_state = STATE_STOP;
 
 uint16_t regs[8];
 uint16_t rIC;
@@ -82,43 +82,21 @@ static void cpu_wait_on(int state)
 }
 
 // -----------------------------------------------------------------------
-void cpu_trigger_quit()
+void cpu_trigger_state(int state)
 {
-	atom_or_release(&cpu_state, STATE_QUIT);
+	pthread_mutex_lock(&cpu_wake_mutex);
+	cpu_state |= state;
 	pthread_cond_signal(&cpu_wake_cond);
+	pthread_mutex_unlock(&cpu_wake_mutex);
 }
 
 // -----------------------------------------------------------------------
-void cpu_trigger_halt()
+void cpu_clear_state(int state)
 {
-	atom_or_release(&cpu_state, STATE_HALT);
-}
-
-// -----------------------------------------------------------------------
-void cpu_trigger_stop()
-{
-	atom_or_release(&cpu_state, STATE_STOP);
-}
-
-// -----------------------------------------------------------------------
-void cpu_trigger_start()
-{
-	atom_and_release(&cpu_state, ~STATE_STOP);
+	pthread_mutex_lock(&cpu_wake_mutex);
+	cpu_state &= ~state;
 	pthread_cond_signal(&cpu_wake_cond);
-}
-
-// -----------------------------------------------------------------------
-void cpu_trigger_unhalt()
-{
-	atom_and_release(&cpu_state, ~STATE_HALT);
-	pthread_cond_signal(&cpu_wake_cond);
-}
-
-// -----------------------------------------------------------------------
-void cpu_trigger_clear(int scope)
-{
-	atom_store_release(&cpu_state, scope);
-	pthread_cond_signal(&cpu_wake_cond);
+	pthread_mutex_unlock(&cpu_wake_mutex);
 }
 
 // -----------------------------------------------------------------------
@@ -133,7 +111,7 @@ void cpu_mem_fail(int nb)
 	int_set(INT_NO_MEM);
 	if ((nb == 0) && nomem_stop) {
 		rALARM = 1;
-		cpu_trigger_stop();
+		cpu_trigger_state(STATE_STOP);
 	}
 }
 
@@ -244,10 +222,8 @@ int cpu_init(struct cfg_em400 *cfg, int new_ui)
 
 	cpu_mod_off();
 
-	if (new_ui) {
-		cpu_trigger_stop();
-	} else {
-		cpu_trigger_start();
+	if (!new_ui) {
+		cpu_clear_state(STATE_STOP);
 	}
 
 	return E_OK;
@@ -282,6 +258,8 @@ int cpu_mod_off()
 // -----------------------------------------------------------------------
 static void cpu_clear(int scope, int new_ui)
 {
+	cpu_clear_state(scope | STATE_HALT);
+
 	// I/O reset should return when we're sure that I/O won't change CPU state (backlogged interrupts, memory writes, ...)
 	io_reset();
 	mem_reset();
@@ -299,12 +277,10 @@ static void cpu_clear(int scope, int new_ui)
 		rMOD = 0;
 		rMODc = 0;
 		if (new_ui) {
-			atom_store_release(&cpu_state, STATE_STOP);
+			cpu_trigger_state(STATE_STOP);
 		} else {
-			atom_store_release(&cpu_state, STATE_START);
+			cpu_clear_state(STATE_STOP);
 		}
-	} else {
-		atom_and_release(&cpu_state, ~STATE_CLM);
 	}
 
 	// call even if logging is disabled - user may enable it later
@@ -456,7 +432,7 @@ void cpu_loop(int new_ui)
 		int state = atom_load_acquire(&cpu_state);
 
 		// CPU running
-		if (state == STATE_START) {
+		if (state == 0) {
 			// interrupt
 			if (atom_load_acquire(&RP) && !P && !rMODc) {
 				int_serve();

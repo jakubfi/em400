@@ -716,10 +716,10 @@ void op_73_hlt()
 
 	// hlt >= 040 is used by the test suite to check if a test has finished
 	if (atom_load_acquire(&stop_on_hlt040) && (N >= 040)) {
-		cpu_trigger_stop();
+		cpu_trigger_state(STATE_STOP);
 	// otherwise, enter halt state
 	} else {
-		cpu_trigger_halt();
+		cpu_trigger_state(STATE_HALT);
 	}
 }
 
@@ -727,7 +727,7 @@ void op_73_hlt()
 void op_73_mcl()
 {
 	USER_ILLEGAL;
-	cpu_trigger_clear(STATE_CLM);
+	cpu_trigger_state(STATE_CLM);
 }
 
 // -----------------------------------------------------------------------

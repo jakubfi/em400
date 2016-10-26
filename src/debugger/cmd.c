@@ -107,7 +107,7 @@ void dbg_c_help(int wid, char *cmd)
 // -----------------------------------------------------------------------
 void dbg_c_quit()
 {
-	cpu_trigger_quit();
+	cpu_trigger_state(STATE_QUIT);
 	dbg_loop_fin = 1;
 }
 
@@ -128,7 +128,7 @@ void dbg_c_run()
 // -----------------------------------------------------------------------
 void dbg_c_reset()
 {
-	cpu_trigger_clear(STATE_CLO);
+	cpu_trigger_state(STATE_CLO);
 }
 
 // -----------------------------------------------------------------------
