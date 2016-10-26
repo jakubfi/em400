@@ -178,7 +178,7 @@ void em400_mkconfdir()
 
 	const char *cdir = ".em400";
 	char *home = getenv("HOME");
-	conf_dirname = malloc(strlen(home) + strlen(cdir) + 1);
+	conf_dirname = malloc(strlen(home) + strlen(cdir) + 2);
 	if (conf_dirname) {
 		sprintf(conf_dirname, "%s/%s", home, cdir);
 		mkdir(conf_dirname, 0700);
