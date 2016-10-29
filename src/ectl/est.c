@@ -233,6 +233,42 @@ int ectl_est_eval_mem(struct ectl_est *n)
 }
 
 // -----------------------------------------------------------------------
+static int ectl_est_eval_logical(int op, struct ectl_est * n)
+{
+	int v1, v2;
+	v1 = ectl_est_eval(n->n1);
+	if (v1 < 0) {
+		return -1;
+	}
+
+	switch (op) {
+		case AND:
+			if (!v1) {
+				return 0;
+			} else {
+				v2 = ectl_est_eval(n->n2);
+				if (v2 < 0) {
+					return -1;
+				} else {
+					return (v1 && v2);
+				}
+			}
+		case OR:
+			if (v1) {
+				return 1;
+			} else {
+				v2 = ectl_est_eval(n->n2);
+				if (v2 < 0) {
+					return -1;
+				} else {
+					return (v1 || v2);
+				}
+			}
+		default: return __esterr(n, "Unknown operator");
+	}
+}
+
+// -----------------------------------------------------------------------
 int ectl_est_eval_op(struct ectl_est * n)
 {
 	if (!n->n1) {
@@ -240,6 +276,10 @@ int ectl_est_eval_op(struct ectl_est * n)
 	}
 	if ((!n->n2) && ((n->val != '~') || (n->val != '!') || (n->val != UMINUS))) {
 		return __esterr(n, "Missing operand");
+	}
+
+	if ((n->val == AND) || (n->val == OR)) {
+		return ectl_est_eval_logical(n->val, n);
 	}
 
 	int v1 = ectl_est_eval(n->n1);
@@ -268,8 +308,6 @@ int ectl_est_eval_op(struct ectl_est * n)
 		case '<': return (v1 < v2);
 		case GE: return (v1 >= v2);
 		case LE: return (v1 <= v2);
-		case AND: return (v1 && v2);
-		case OR: return (v1 || v2);
 		default: return __esterr(n, "Unknown operator");
 	}
 }
@@ -287,7 +325,7 @@ int ectl_est_eval(struct ectl_est *n)
 		case ECTL_AST_N_RZ: return ectl_est_eval_rz(n);
 		case ECTL_AST_N_OP: return ectl_est_eval_op(n);
 		case ECTL_AST_N_ERR: return -1;
-		default:return -1;
+		default: return -1;
 	}
 }
 
@@ -296,6 +334,5 @@ struct ectl_est * ectl_est_get_eval_err()
 {
 	return ectl_eval_err;
 }
-
 
 // vim: tabstop=4 shiftwidth=4 autoindent

@@ -59,8 +59,8 @@ extern int ectl_yycolumn;
 %token UMINUS "unary minus"
 
 %left '='
-%left OR
-%left AND
+%right OR
+%right AND
 %left '|'
 %left '^'
 %left '&'
