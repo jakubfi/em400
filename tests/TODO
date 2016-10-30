@@ -1,3 +1,8 @@
+ectl
+ * reg write/read
+ * eval
+ * breakpointy
+
 mega:
 * wspolpraca z elwro w 0
 * segmenty systemowe
@@ -6,26 +11,6 @@ mega:
 
 multix:
  - timer
- + niepoprawne polecenia
- + reset wstępny, MCL, software-owy
- + opóźniona inicjalizacja
- + odrzucenie komend przed inicjalizacją
- + reset przed zakończeniem poprzedniej inicjalizacji
-
- * polecenia kanałowe (zawsze OK):
-   + zeruj
-     - INSKA - procesor MULTIX jest niesprawny
-     + IWYZE - procesor został wyzerowany
-   + sprawdź istnienie modułu
-   + podaj specyfikację przerwania
- * polecenia sterujące ogólne (OK, EN):
-   + Cofnij przerwanie niepokwitowane do kolejki
-   + Testuj
-     + IWYTE - poprawne zakończenie testu
-   + Ustaw konfigurację
-     + INKON - nie wykonano polecenia, bo były błędy w polu sterującym lub konfiguracja była już wcześniej ustawiona
-     + IUKON - ustawiono konfigurację
-     + INKOT - nie wykonano polecenia, bo wystąpiły błędy transmisji MERA-MULTIX
  * polecenia liniowe (OK, EN):
    * Dołącz linię
      * IDOLI - dołączono linię

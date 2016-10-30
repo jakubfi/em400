@@ -35,6 +35,7 @@
 #include "errors.h"
 #include "log.h"
 #include "log_crk.h"
+#include "ectl/brk.h"
 
 #ifdef WITH_DEBUGGER
 #include "debugger/debugger.h"
@@ -443,9 +444,12 @@ void cpu_loop(int new_ui)
 					dbg_step();
 				}
 				#endif
-
 				cpu_step();
 				ips_counter++;
+
+				if (ectl_brk_check()) {
+					cpu_trigger_state(STATE_STOP);
+				}
 			}
 
 		// quit emulation

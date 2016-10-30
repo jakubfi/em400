@@ -7,6 +7,7 @@ include_directories(${CMAKE_BINARY_DIR}/src/ectl)
 add_library(ectl
     cpu.c
 	est.c
+	brk.c
     ${BISON_ectl_parser_OUTPUTS}
     ${FLEX_ectl_scanner_OUTPUTS}
 )

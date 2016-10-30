@@ -58,6 +58,7 @@ void em400_shutdown()
 		dbg_shutdown();
 		#endif
 	}
+	ectl_shutdown();
 	timer_shutdown();
 	io_shutdown();
 	cpu_shutdown();
@@ -130,6 +131,11 @@ void em400_init(struct cfg_em400 *cfg)
 		} else {
 			LOG(L_EM4H, 1, "OS memory block image loaded: \"%s\", %i words", cfg->program_name, res);
 		}
+	}
+
+	res = ectl_init();
+	if (res != E_OK) {
+		em400_exit_error(res, "Error initializing ECTL interface");
 	}
 
 	if (cfg->ui_name) {

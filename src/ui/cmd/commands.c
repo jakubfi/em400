@@ -48,19 +48,20 @@ void ui_cmd_info(FILE *out, char *args);
 void ui_cmd_quit(FILE *out, char *args);
 void ui_cmd_help(FILE *out, char *args);
 void ui_cmd_stoponhlt040(FILE *out, char *args);
+void ui_cmd_brk(FILE *out, char *args);
+void ui_cmd_brkdel(FILE *out, char *args);
 
 struct ui_cmd_command commands[] = {
 	{ 1, "state",	"",							"Show CPU state",					ui_cmd_state },
 	{ 1, "reg",		"[name [value]]",			"Manipulate registers",				ui_cmd_reg },
 	{ 1, "int",		"[interrupt]",				"Show interrupts, send irq",		ui_cmd_int },
 	{ 1, "mem",		"<seg> <addr> [count]",		"Get memory contents",				ui_cmd_mem },
-	{ 1, "brkls",	"[num]",					"Show breakpoints",					ui_cmd_na },
 	{ 1, "eval",	"<expr>",					"Evaluate expression",				ui_cmd_eval },
 	{ 1, "ips",		"",							"Show IPS",							ui_cmd_ips },
 	{ 1, "load",	"<seg> <addr> <file>",		"Load file to memory",				ui_cmd_load },
 	{ 1, "bin",		"<val>",					"Initiate binary load",				ui_cmd_na },
-	{ 1, "brk",		"<expr>",					"Set breakpoint",					ui_cmd_na },
-	{ 1, "brkdel",	"<num>",					"Delete breakpoint",				ui_cmd_na },
+	{ 1, "brk",		"<expr>",					"Set breakpoint",					ui_cmd_brk },
+	{ 1, "brkdel",	"<id>",						"Delete breakpoint",				ui_cmd_brkdel },
 	{ 1, "clock",	"[on|off]",					"Show, enable, disable clock",		ui_cmd_clock },
 	{ 1, "memfind",	"<seg> <val>",				"Search memory contents",			ui_cmd_na },
 	{ 1, "oprq",	"",							"Send operator request",			ui_cmd_oprq },
@@ -607,10 +608,51 @@ void ui_cmd_stoponhlt040(FILE *out, char *args)
 }
 
 // -----------------------------------------------------------------------
+void ui_cmd_brk(FILE *out, char *args)
+{
+	char *tok_expr = ui_cmd_skip_ws(args);
+	if (!tok_expr || !*tok_expr) {
+		ui_cmd_resp(out, RESP_ERR, UI_EOL, "Missing argument (expression)");
+		return;
+	}
+
+	char *error_msg = NULL;
+	int err_beg, err_end;
+	int id = ectl_brk_add(tok_expr, &error_msg, &err_beg, &err_end);
+	if (error_msg) {
+		ui_cmd_resp(out, RESP_ERR, UI_EOL, "%s (at %i-%i)", error_msg, err_beg, err_end);
+		free(error_msg);
+		return;
+	}
+
+	ui_cmd_resp(out, RESP_OK, UI_EOL, "Added breakpoint: %i", id);
+}
+
+// -----------------------------------------------------------------------
+void ui_cmd_brkdel(FILE *out, char *args)
+{
+    char *tok_brk, *remainder;
+
+    int brk_num = ui_cmd_gettok_int(args, &tok_brk, &remainder);
+    if (!tok_brk) {
+        ui_cmd_resp(out, RESP_ERR, UI_EOL, "Missing argument (breakpoint number)");
+        return;
+    }
+
+	int res = ectl_brk_del(brk_num);
+	if (res) {
+		ui_cmd_resp(out, RESP_ERR, UI_EOL, "No such breakpoint");
+		return;
+	}
+	ui_cmd_resp(out, RESP_OK, UI_EOL, "Removed breakpoint: %i", brk_num);
+}
+
+// -----------------------------------------------------------------------
 void ui_cmd_na(FILE *out, char *args)
 {
 	ui_cmd_resp(out, RESP_ERR, UI_EOL, "Command not implemented");
 }
+
 // -----------------------------------------------------------------------
 struct ui_cmd_command * ui_cmd_find_command(const char *name)
 {

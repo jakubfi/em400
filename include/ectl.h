@@ -82,6 +82,8 @@ enum ectl_log_components {
 #define ECTL_LOG_LEVEL_MIN 0
 #define ECTL_LOG_LEVEL_MAX 9
 
+int ectl_init();
+void ectl_shutdown();
 const char * ectl_reg_name(unsigned n);
 int ectl_reg_get_id(char *name);
 void ectl_regs_get(uint16_t *dregs);
@@ -115,6 +117,8 @@ int ectl_log_component_id(char *name);
 unsigned long ectl_ips_get();
 int ectl_eval(char *input, char **error_msg, int *err_beg, int *err_end);
 void ectl_stoponhlt040_set(int state);
+int ectl_brk_add(char *input, char **error_msg, int *err_beg, int *err_end);
+int ectl_brk_del(unsigned i);
 
 #endif
 
