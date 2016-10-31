@@ -223,6 +223,8 @@ class TestBed:
     def __gerparams(self, source):
         opts = []
         xpct = []
+        precmd = []
+        postcmd = []
         for l in open(source, "r"):
             # get OPTS directive
             if "OPTS" in l:
@@ -231,34 +233,55 @@ class TestBed:
                     opts += popts
                 except:
                     raise Exception("Malformed OPTS: %s" % l)
-
             # get test result conditions
             if "XPCT" in l:
                 try:
-                    pxpct = re.findall(";[ \t]*XPCT[ \t]+([^ \t]+)[ \t]*:[ \t]*([^ \t]+.*)\n", l)
+                    pxpct = re.findall(";[ \t]*XPCT[ \t]+(.+):(.+)\n", l)
                     expr = pxpct[0][0]
                     val = int(pxpct[0][1], 0) & 0xffff
                     xpct += [(expr, val)]
                 except:
                     raise Exception("Malformed XPCT: %s" % l)
+            # get pre-run commands
+            if "PRECMD" in l:
+                try:
+                    pprecmd = re.findall(";[ \t]*PRECMD[ \t]+(.*)", l)
+                    precmd += pprecmd
+                except:
+                    raise Exception("Malformed PRECMD: %s" % l)
+            # get post-run commands
+            if "POSTCMD" in l:
+                try:
+                    ppostcmd = re.findall(";[ \t]*POSTCMD[ \t]+(.*)", l)
+                    postcmd += ppostcmd
+                except:
+                    raise Exception("Malformed POSTCMD: %s" % l)
 
-        return opts, xpct
+        return opts, xpct, precmd, postcmd
 
     # --------------------------------------------------------------------
     def run(self, source):
         result = TestResult(source)
 
         try:
-            opts, xpct = self.__gerparams(source)
+            opts, xpct, precmd, postcmd = self.__gerparams(source)
             aout = self.__assembly(source)
             self.__runemu(["-c", self.default_config] + opts)
             self.e.clear()
             self.e.cmd("stoponhlt040 on")
             self.e.load(0, 0, aout)
+            if precmd:
+                for c in precmd:
+                    self.e.cmd(c)
+
             if xpct:
                 self.__passfail(result, xpct)
             else:
                 self.__benchmark(result, source)
+
+            if postcmd:
+                for c in postcmd:
+                    self.e.cmd(c)
 
         except Exception as e:
             result.error = str(e).rstrip()

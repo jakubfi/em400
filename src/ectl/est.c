@@ -272,10 +272,10 @@ static int ectl_est_eval_logical(int op, struct ectl_est * n)
 int ectl_est_eval_op(struct ectl_est * n)
 {
 	if (!n->n1) {
-		return __esterr(n, "Missing operand");
+		return __esterr(n, "Missing first operand");
 	}
-	if ((!n->n2) && ((n->val != '~') || (n->val != '!') || (n->val != UMINUS))) {
-		return __esterr(n, "Missing operand");
+	if (!n->n2 && (n->val != '~') && (n->val != '!') && (n->val != UMINUS)) {
+		return __esterr(n, "Missing second operand");
 	}
 
 	if ((n->val == AND) || (n->val == OR)) {
@@ -285,7 +285,7 @@ int ectl_est_eval_op(struct ectl_est * n)
 	int v1 = ectl_est_eval(n->n1);
 	int v2 = ectl_est_eval(n->n2);
 
-	if ((v1 < 0) || ((v2 < 0) && ((n->val != '~') || (n->val != '!') || (n->val != UMINUS)))) {
+	if ((v1 < 0) || ((v2 < 0) && (n->val != '~') && (n->val != '!') && (n->val != UMINUS))) {
 		return -1;
 	}
 

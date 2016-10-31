@@ -1,8 +1,3 @@
-ectl
- * reg write/read
- * eval
- * breakpointy
-
 mega:
 * wspolpraca z elwro w 0
 * segmenty systemowe
