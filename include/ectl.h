@@ -15,15 +15,24 @@
 //  Foundation, Inc.,
 //  51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 
-#ifndef ECTL_CP_H
-#define ECTL_CP_H
+#ifndef ECTL_H
+#define ECTL_H
 
 #include <inttypes.h>
 #include <stdio.h>
 
 enum ectl_states {
 	ECTL_OFF = 0,
-	ECTL_ON,
+	ECTL_ON
+};
+
+enum ectl_cpu_state_bits {
+	ECTL_STATE_STOP = 0,
+	ECTL_STATE_HALT,
+	ECTL_STATE_CLM,
+	ECTL_STATE_CLO,
+	ECTL_STATE_QUIT,
+	ECTL_STATE_COUNT
 };
 
 enum ectl_registers {
@@ -45,7 +54,7 @@ enum ectl_registers {
 	ECTL_REG_COUNT
 };
 
-enum ectl_capabilities {
+enum ectl_capability_bits {
 	ECTL_CAPA_MX16 = 0,
 	ECTL_CAPA_CRON,
 	ECTL_CAPA_AWP,
@@ -82,43 +91,59 @@ enum ectl_log_components {
 #define ECTL_LOG_LEVEL_MIN 0
 #define ECTL_LOG_LEVEL_MAX 9
 
+// maintenance
 int ectl_init();
 void ectl_shutdown();
-const char * ectl_reg_name(unsigned n);
+
+// registers
+const char * ectl_reg_name(unsigned id);
 int ectl_reg_get_id(char *name);
-void ectl_regs_get(uint16_t *dregs);
-int ectl_reg_get(unsigned reg);
-int ectl_reg_set(unsigned reg, uint16_t val);
-int ectl_mem_get(int nb, uint16_t addr, uint16_t *dest, int count);
-int ectl_mem_set(int nb, uint16_t addr, uint16_t *src, int count);
-int ectl_mem_map(int nb);
+void ectl_regs_get(uint16_t *dest);
+int ectl_reg_get(unsigned id);
+int ectl_reg_set(unsigned id, uint16_t val);
+
+// memory
+int ectl_mem_get(int seg, uint16_t addr, uint16_t *dest, int count);
+int ectl_mem_set(int seg, uint16_t addr, uint16_t *src, int count);
+int ectl_mem_map(int seg);
+int ectl_load(FILE *f, int seg, uint16_t saddr);
+void ectl_bootstrap(int chan, int unit);
+
+// CPU state
 int ectl_cpu_state_get();
+const char * ectl_cpu_state_bit_name(int bitpos);
 void ectl_cpu_stop();
 void ectl_cpu_start();
 void ectl_cpu_cycle();
+void ectl_cpu_clear();
 void ectl_cpu_quit();
+void ectl_stoponhlt040_set(int state);
+
+// interrupts
 void ectl_clock_set(int state);
 int ectl_clock_get();
-void ectl_cpu_clear();
-void ectl_bootstrap(int chan, int unit);
 void ectl_oprq();
 int ectl_int_set(unsigned interrupt);
 uint32_t ectl_int_get();
+
+// informational, other
 const char * ectl_version();
-const char * ectl_capa_name(unsigned c);
+const char * ectl_capa_bit_name(unsigned bitpos);
 int ectl_capa();
-int ectl_load(FILE *f, int seg, uint16_t saddr);
+unsigned long ectl_ips_get();
+int ectl_eval(char *expression, char **err_msg, int *err_beg, int *err_end);
+
+// logging
 int ectl_log_state_get();
 int ectl_log_state_set(int state);
 int ectl_log_level_get(unsigned component);
 int ectl_log_level_set(unsigned component, unsigned level);
 const char * ectl_log_component_name(unsigned component);
 int ectl_log_component_id(char *name);
-unsigned long ectl_ips_get();
-int ectl_eval(char *input, char **error_msg, int *err_beg, int *err_end);
-void ectl_stoponhlt040_set(int state);
-int ectl_brk_add(char *input, char **error_msg, int *err_beg, int *err_end);
-int ectl_brk_del(unsigned i);
+
+// breakpoints
+int ectl_brk_add(char *expression, char **err_msg, int *err_beg, int *err_end);
+int ectl_brk_del(unsigned id);
 
 #endif
 

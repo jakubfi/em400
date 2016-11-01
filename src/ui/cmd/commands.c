@@ -30,7 +30,7 @@ void ui_cmd_state(FILE *out, char *args);
 void ui_cmd_reg(FILE *out, char *args);
 void ui_cmd_int(FILE *out, char *args);
 void ui_cmd_mem(FILE *out, char *args);
-void ui_cmd_na(FILE *out, char *args);
+void ui_cmd_bin(FILE *out, char *args);
 void ui_cmd_eval(FILE *out, char *args);
 void ui_cmd_ips(FILE *out, char *args);
 void ui_cmd_load(FILE *out, char *args);
@@ -52,35 +52,32 @@ void ui_cmd_brk(FILE *out, char *args);
 void ui_cmd_brkdel(FILE *out, char *args);
 
 struct ui_cmd_command commands[] = {
-	{ 1, "state",	"",							"Show CPU state",					ui_cmd_state },
+	{ 1, "state",	"",							"Get CPU state",					ui_cmd_state },
 	{ 1, "reg",		"[name [value]]",			"Manipulate registers",				ui_cmd_reg },
-	{ 1, "int",		"[interrupt]",				"Show interrupts, send irq",		ui_cmd_int },
+	{ 1, "int",		"[interrupt]",				"Get interrupts, send IRQ",			ui_cmd_int },
 	{ 1, "mem",		"<seg> <addr> [count]",		"Get memory contents",				ui_cmd_mem },
 	{ 1, "eval",	"<expr>",					"Evaluate expression",				ui_cmd_eval },
-	{ 1, "ips",		"",							"Show IPS",							ui_cmd_ips },
-	{ 1, "load",	"<seg> <addr> <file>",		"Load file to memory",				ui_cmd_load },
-	{ 1, "bin",		"<val>",					"Initiate binary load",				ui_cmd_na },
-	{ 1, "brk",		"<expr>",					"Set breakpoint",					ui_cmd_brk },
+	{ 1, "ips",		"",							"Get average IPS",					ui_cmd_ips },
+	{ 1, "load",	"<seg> <addr> <file>",		"Load file into memory",			ui_cmd_load },
+	{ 1, "bin",		"<io_addr>",				"Initiate binary load",				ui_cmd_bin },
+	{ 1, "brk",		"<expr>",					"Add breakpoint",					ui_cmd_brk },
 	{ 1, "brkdel",	"<id>",						"Delete breakpoint",				ui_cmd_brkdel },
-	{ 1, "clock",	"[on|off]",					"Show, enable, disable clock",		ui_cmd_clock },
-	{ 1, "memfind",	"<seg> <val>",				"Search memory contents",			ui_cmd_na },
+	{ 1, "clock",	"[on|off]",					"Manipulate clock state",			ui_cmd_clock },
 	{ 1, "oprq",	"",							"Send operator request",			ui_cmd_oprq },
 	{ 1, "memw",	"<seg> <addr> <val> ...",	"Set memory contents",				ui_cmd_memw },
 	{ 1, "cycle",	"",							"Execute one CPU cycle",			ui_cmd_cycle },
 	{ 1, "start",	"",							"Start CPU",						ui_cmd_start },
 	{ 1, "stop",	"",							"Stop CPU",							ui_cmd_stop },
-	{ 1, "clear",	"",							"CPU clear (reset)",				ui_cmd_clear },
-	{ 1, "memmap",	"<seg>",					"Show memory allocation",			ui_cmd_memmap },
-	{ 1, "log",		"[on|off]",					"Show, enable, disable logging",	ui_cmd_log },
+	{ 1, "clear",	"",							"Clear CPU (reset)",				ui_cmd_clear },
+	{ 1, "memmap",	"<seg>",					"Get memory allocation map",		ui_cmd_memmap },
+	{ 1, "log",		"[on|off]",					"Manipulate logging state",			ui_cmd_log },
 	{ 1, "loglvl",	"[component [level]]",		"Manipulate logging levels",		ui_cmd_loglvl },
-	{ 1, "dasm",	"<seg> <addr>",				"Disassemble instruction",			ui_cmd_na },
-	{ 1, "info",	"",							"Show system info",					ui_cmd_info },
+	{ 1, "info",	"",							"Get emulator info",				ui_cmd_info },
 	{ 1, "quit",	"",							"Quit emulation",					ui_cmd_quit },
-	{ 1, "help",	"",							"Show help",						ui_cmd_help },
+	{ 1, "help",	"",							"Get help",							ui_cmd_help },
 	{ 0, "stoponhlt040", "",					"Stop CPU on HLT >= 040",			ui_cmd_stoponhlt040 },
 	{ 0, NULL, NULL, NULL, NULL },
 };
-
 
 // -----------------------------------------------------------------------
 void ui_cmd_resp(FILE *out, int status, int eol, char *fmt, ...)
@@ -133,23 +130,23 @@ void ui_cmd_reg(FILE *out, char *args)
 
 	// show specific register
 	if (!tok_val) {
-		ui_cmd_resp(out, RESP_OK, UI_EOL, "%s=0x%04x", ectl_reg_name(id), ectl_reg_get(id));
+		ui_cmd_resp(out, RESP_OK, UI_EOL, "0x%04x", ectl_reg_get(id));
 		return;
 	}
 
 	// check value
 	if (value < 0) {
-		ui_cmd_resp(out, RESP_ERR, UI_EOL, "Value is not a valid 16-bit integer");
+		ui_cmd_resp(out, RESP_ERR, UI_EOL, "Value is not a valid 16-bit integer: %s", tok_val);
 		return;
 	}
 
 	int res = ectl_reg_set(id, value);
 	if (res) {
-		ui_cmd_resp(out, RESP_ERR, UI_EOL, "Wrong register id");
+		ui_cmd_resp(out, RESP_ERR, UI_EOL, "Wrong internal register id: %i", id);
 		return;
 	}
 
-	ui_cmd_resp(out, RESP_OK, UI_EOL, "%s=0x%04x", ectl_reg_name(id), ectl_reg_get(id));
+	ui_cmd_resp(out, RESP_OK, UI_EOL, "0x%04x", ectl_reg_get(id));
 }
 
 // -----------------------------------------------------------------------
@@ -197,7 +194,11 @@ void ui_cmd_help(FILE *out, char *args)
 	}
 
 	// show specific command help
-	ui_cmd_resp(out, RESP_OK, UI_EOL, "%s %s : %s", cmd->name, cmd->args, cmd->desc);
+	if (*cmd->args) {
+		ui_cmd_resp(out, RESP_OK, UI_EOL, "%s %s : %s", cmd->name, cmd->args, cmd->desc);
+	} else {
+		ui_cmd_resp(out, RESP_OK, UI_EOL, "%s : %s", cmd->name, cmd->desc);
+	}
 }
 // -----------------------------------------------------------------------
 void ui_cmd_info(FILE *out, char *args)
@@ -206,7 +207,7 @@ void ui_cmd_info(FILE *out, char *args)
 	ui_cmd_resp(out, RESP_OK, UI_NOEOL, " EM400 %s", ectl_version());
 	for (int i=0 ; i<ECTL_CAPA_COUNT ; i++) {
 		if ((capa & (1<<i))) {
-			fprintf(out, " %s", ectl_capa_name(i));
+			fprintf(out, " %s", ectl_capa_bit_name(i));
 		}
 	}
 	fprintf(out, "\n");
@@ -221,7 +222,7 @@ void ui_cmd_clock(FILE *out, char *args)
 
 	// show clock state
 	if (!tok_state) {
-		ui_cmd_resp(out, RESP_OK, UI_EOL, "CLOCK %s", ectl_clock_get() ? "ON" : "OFF");
+		ui_cmd_resp(out, RESP_OK, UI_EOL, "%i", ectl_clock_get());
 		return;
 	}
 
@@ -233,7 +234,7 @@ void ui_cmd_clock(FILE *out, char *args)
 
 	// set clock state
 	ectl_clock_set(state);
-	ui_cmd_resp(out, RESP_OK, UI_EOL, "CLOCK %s", ectl_clock_get() ? "ON" : "OFF");
+	ui_cmd_resp(out, RESP_OK, UI_EOL, "%i", ectl_clock_get());
 }
 
 // -----------------------------------------------------------------------
@@ -275,7 +276,7 @@ void ui_cmd_mem(FILE *out, char *args)
 		return;
 	}
 	if ((seg < 0) || (seg > 15)) {
-		ui_cmd_resp(out, RESP_ERR, UI_EOL, "Wrong segment number");
+		ui_cmd_resp(out, RESP_ERR, UI_EOL, "Wrong segment number: %i", seg);
 		return;
 	}
 
@@ -285,7 +286,7 @@ void ui_cmd_mem(FILE *out, char *args)
 		return;
 	}
 	if (addr < 0) {
-		ui_cmd_resp(out, RESP_ERR, UI_EOL,  "Invalid address");
+		ui_cmd_resp(out, RESP_ERR, UI_EOL,  "Invalid address: %i", addr);
 		return;
 	}
 
@@ -295,7 +296,7 @@ void ui_cmd_mem(FILE *out, char *args)
 		return;
 	}
 	if (count < 1) {
-		ui_cmd_resp(out, RESP_ERR, UI_EOL, "Invalid word count");
+		ui_cmd_resp(out, RESP_ERR, UI_EOL, "Invalid word count: %i", count);
 		return;
 	}
 
@@ -330,7 +331,7 @@ void ui_cmd_memw(FILE *out, char *args)
 		return;
 	}
 	if ((seg < 0) || (seg > 15)) {
-		ui_cmd_resp(out, RESP_ERR, UI_EOL, "Wrong segment number");
+		ui_cmd_resp(out, RESP_ERR, UI_EOL, "Wrong segment number: %i", seg);
 		return;
 	}
 
@@ -340,7 +341,7 @@ void ui_cmd_memw(FILE *out, char *args)
 		return;
 	}
 	if (addr < 0) {
-		ui_cmd_resp(out, RESP_ERR, UI_EOL, "Invalid address");
+		ui_cmd_resp(out, RESP_ERR, UI_EOL, "Invalid address: %i", addr);
 		return;
 	}
 
@@ -351,7 +352,7 @@ void ui_cmd_memw(FILE *out, char *args)
 		int val = ui_cmd_gettok_int(remainder, &tok_val, &remainder);
 		if (tok_val) {
 			if (val < 0) {
-				ui_cmd_resp(out, RESP_ERR, UI_EOL, "Value on position %i is not a valid 16-bit integer", processed);
+				ui_cmd_resp(out, RESP_ERR, UI_EOL, "Value on position %i is not a valid 16-bit integer: %i", processed, val);
 				return;
 			}
 			mbuf[processed] = val;
@@ -389,7 +390,7 @@ void ui_cmd_load(FILE *out, char *args)
 		return;
 	}
 	if ((seg < 0) || (seg > 15)) {
-		ui_cmd_resp(out, RESP_ERR, UI_EOL, "Wrong segment number");
+		ui_cmd_resp(out, RESP_ERR, UI_EOL, "Wrong segment number: %i", seg);
 		return;
 	}
 
@@ -399,7 +400,7 @@ void ui_cmd_load(FILE *out, char *args)
 		return;
 	}
 	if (addr < 0) {
-		ui_cmd_resp(out, RESP_ERR, UI_EOL, "Invalid address");
+		ui_cmd_resp(out, RESP_ERR, UI_EOL, "Invalid address: %i", addr);
 		return;
 	}
 
@@ -412,15 +413,15 @@ void ui_cmd_load(FILE *out, char *args)
 
 	FILE *f = fopen(tok_file, "rb");
 	if (!f) {
-		ui_cmd_resp(out, RESP_ERR, UI_EOL, "Error opening file: '%s'", tok_file);
+		ui_cmd_resp(out, RESP_ERR, UI_EOL, "Error opening file: %s", tok_file);
 		return;
 	}
 
 	int res = ectl_load(f, seg, addr);
 	if (res < 0) {
-		ui_cmd_resp(out, RESP_ERR, UI_EOL, "Error reading file: '%s'", tok_file);
+		ui_cmd_resp(out, RESP_ERR, UI_EOL, "Error reading file: %s", tok_file);
 	} else {
-		ui_cmd_resp(out, RESP_OK, UI_EOL, "%i words loaded from file '%s'", res, tok_file);
+		ui_cmd_resp(out, RESP_OK, UI_EOL, "%i words loaded from file %s", res, tok_file);
 	}
 
 	fclose(f);
@@ -437,7 +438,7 @@ void ui_cmd_memmap(FILE *out, char *args)
 		return;
 	}
 	if ((seg < 0) || (seg > 15)) {
-		ui_cmd_resp(out, RESP_ERR, UI_EOL, "Wrong segment number");
+		ui_cmd_resp(out, RESP_ERR, UI_EOL, "Wrong segment number: %i", seg);
 		return;
 	}
 
@@ -477,7 +478,18 @@ void ui_cmd_oprq(FILE *out, char *args)
 // -----------------------------------------------------------------------
 void ui_cmd_state(FILE *out, char *args)
 {
-	ui_cmd_resp(out, RESP_OK, UI_EOL, "0x%04x", ectl_cpu_state_get());
+	int state = ectl_cpu_state_get();
+	ui_cmd_resp(out, RESP_OK, UI_NOEOL, " 0x%04x", state);
+	if (state == 0) {
+		fprintf(out, " START");
+	} else {
+		for (int i=0 ; i<ECTL_CAPA_COUNT ; i++) {
+			if ((state & (1<<i))) {
+				fprintf(out, " %s", ectl_cpu_state_bit_name(i));
+			}
+		}
+	}
+	fprintf(out, "\n");
 }
 
 // -----------------------------------------------------------------------
@@ -496,7 +508,7 @@ void ui_cmd_log(FILE *out, char *args)
 
 	// show logging state
 	if (!tok_state) {
-		ui_cmd_resp(out, RESP_OK, UI_EOL, "LOG %s", ectl_log_state_get() ? "ON" : "OFF");
+		ui_cmd_resp(out, RESP_OK, UI_EOL, "%i", ectl_log_state_get());
 		return;
 	}
 
@@ -508,9 +520,9 @@ void ui_cmd_log(FILE *out, char *args)
 
 	// set logging state
 	if (!ectl_log_state_set(state)) {
-		ui_cmd_resp(out, RESP_OK, UI_EOL, "LOG %s", ectl_log_state_get() ? "ON" : "OFF");
+		ui_cmd_resp(out, RESP_OK, UI_EOL, "%i", ectl_log_state_get());
 	} else {
-		ui_cmd_resp(out, RESP_ERR, UI_EOL, "Could not set logging state. LOG is now %s", ectl_log_state_get() ? "ON" : "OFF");
+		ui_cmd_resp(out, RESP_ERR, UI_EOL, "Could not set logging state. LOG state is now %i", ectl_log_state_get());
 	}
 }
 
@@ -542,7 +554,7 @@ void ui_cmd_loglvl(FILE *out, char *args)
 
 	// print level for component
 	if (!tok_lvl) {
-		ui_cmd_resp(out, RESP_OK, UI_EOL, "%s=%i", ectl_log_component_name(component), ectl_log_level_get(component));
+		ui_cmd_resp(out, RESP_OK, UI_EOL, "%i", ectl_log_level_get(component));
 		return;
 	}
 
@@ -554,7 +566,7 @@ void ui_cmd_loglvl(FILE *out, char *args)
 
 	// set level for component
 	if (!ectl_log_level_set(component, level)) {
-		ui_cmd_resp(out, RESP_OK, UI_EOL, "%s=%i", ectl_log_component_name(component), ectl_log_level_get(component));
+		ui_cmd_resp(out, RESP_OK, UI_EOL, "%i", ectl_log_level_get(component));
 	} else {
 		ui_cmd_resp(out, RESP_ERR, UI_EOL, "Cannot set level %i for component %s", ectl_log_level_get(component), ectl_log_component_name(component));
 	}
@@ -648,7 +660,7 @@ void ui_cmd_brkdel(FILE *out, char *args)
 }
 
 // -----------------------------------------------------------------------
-void ui_cmd_na(FILE *out, char *args)
+void ui_cmd_bin(FILE *out, char *args)
 {
 	ui_cmd_resp(out, RESP_ERR, UI_EOL, "Command not implemented");
 }

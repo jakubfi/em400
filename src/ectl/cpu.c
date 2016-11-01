@@ -59,26 +59,26 @@ void ectl_shutdown()
 }
 
 // -----------------------------------------------------------------------
-void ectl_regs_get(uint16_t *dregs)
+void ectl_regs_get(uint16_t *dest)
 {
-	memcpy(dregs, regs, 8 * sizeof(uint16_t));
-	dregs[ECTL_REG_IC] = rIC;
-	dregs[ECTL_REG_SR] = rSR;
-	dregs[ECTL_REG_IR] = rIR;
-	dregs[ECTL_REG_KB] = rKB;
-	dregs[ECTL_REG_MOD] = rMOD;
-	dregs[ECTL_REG_MODc] = rMODc;
-	dregs[ECTL_REG_ALARM] = rALARM;
+	memcpy(dest, regs, 8 * sizeof(uint16_t));
+	dest[ECTL_REG_IC] = rIC;
+	dest[ECTL_REG_SR] = rSR;
+	dest[ECTL_REG_IR] = rIR;
+	dest[ECTL_REG_KB] = rKB;
+	dest[ECTL_REG_MOD] = rMOD;
+	dest[ECTL_REG_MODc] = rMODc;
+	dest[ECTL_REG_ALARM] = rALARM;
 }
 
 // -----------------------------------------------------------------------
-int ectl_reg_get(unsigned reg)
+int ectl_reg_get(unsigned id)
 {
-	if (reg >= ECTL_REG_COUNT) {
+	if (id >= ECTL_REG_COUNT) {
 		return -1;
 	}
 
-	switch (reg) {
+	switch (id) {
 		case ECTL_REG_IC: return rIC;
 		case ECTL_REG_SR: return rSR;
 		case ECTL_REG_IR: return rIR;
@@ -86,7 +86,7 @@ int ectl_reg_get(unsigned reg)
 		case ECTL_REG_MOD: return rMOD;
 		case ECTL_REG_MODc: return rMODc;
 		case ECTL_REG_ALARM: return rALARM;
-		default: return regs[reg];
+		default: return regs[id];
 	}
 }
 
@@ -107,23 +107,23 @@ int ectl_reg_get_id(char *name)
 }
 
 // -----------------------------------------------------------------------
-const char * ectl_reg_name(unsigned n)
+const char * ectl_reg_name(unsigned id)
 {
-	if (n < ECTL_REG_COUNT) {
-		return ectl_reg_names[n];
+	if (id < ECTL_REG_COUNT) {
+		return ectl_reg_names[id];
 	} else {
 		return ectl_reg_names[ECTL_REG_COUNT];
 	}
 }
 
 // -----------------------------------------------------------------------
-int ectl_reg_set(unsigned reg, uint16_t val)
+int ectl_reg_set(unsigned id, uint16_t val)
 {
-	if (reg >= ECTL_REG_COUNT) {
+	if (id >= ECTL_REG_COUNT) {
 		return -1;
 	}
 
-	switch (reg) {
+	switch (id) {
 		case ECTL_REG_IC: rIC = val; break;
 		case ECTL_REG_SR: rSR = val; break;
 		case ECTL_REG_IR: rIR = val; break;
@@ -131,34 +131,46 @@ int ectl_reg_set(unsigned reg, uint16_t val)
 		case ECTL_REG_MOD: rMOD = val; break;
 		case ECTL_REG_MODc: rMODc = val; break;
 		case ECTL_REG_ALARM: rALARM = val; break;
-		default: regs[reg] = val; break;
+		default: regs[id] = val; break;
 	}
 	return 0;
 }
 
 // -----------------------------------------------------------------------
-int ectl_mem_get(int nb, uint16_t addr, uint16_t *dest, int count)
+int ectl_mem_get(int seg, uint16_t addr, uint16_t *dest, int count)
 {
-	return mem_mget(nb, addr, dest, count);
+	return mem_mget(seg, addr, dest, count);
 }
 
 // -----------------------------------------------------------------------
-int ectl_mem_set(int nb, uint16_t addr, uint16_t *src, int count)
+int ectl_mem_set(int seg, uint16_t addr, uint16_t *src, int count)
 {
-	int ret = mem_mput(nb, addr, src, count);
+	int ret = mem_mput(seg, addr, src, count);
 	return ret;
 }
 
 // -----------------------------------------------------------------------
-int ectl_mem_map(int nb)
+int ectl_mem_map(int seg)
 {
-	return mem_get_map(nb);
+	return mem_get_map(seg);
 }
 
 // -----------------------------------------------------------------------
 int ectl_cpu_state_get()
 {
 	return cpu_state_get();
+}
+
+// -----------------------------------------------------------------------
+const char * ectl_cpu_state_bit_name(int bitpos)
+{
+	static const char *state_names[] = { "STOP", "HALT", "CLM", "CLO", "QUIT", "???" };
+
+	if (bitpos < ECTL_STATE_COUNT) {
+		return state_names[bitpos];
+	} else {
+		return state_names[ECTL_STATE_COUNT];
+	}
 }
 
 // -----------------------------------------------------------------------
@@ -248,12 +260,12 @@ const char * ectl_version()
 }
 
 // -----------------------------------------------------------------------
-const char * ectl_capa_name(unsigned c)
+const char * ectl_capa_bit_name(unsigned bitpos)
 {
-	char *capa_names[] = { "MX16", "CRON", "AWP", "UIO", "MEGABOOT", "NOMEMSTOP", "???" };
+	static const char *capa_names[] = { "MX16", "CRON", "AWP", "UIO", "MEGABOOT", "NOMEMSTOP", "???" };
 
-	if (c < ECTL_CAPA_COUNT) {
-		return capa_names[c];
+	if (bitpos < ECTL_CAPA_COUNT) {
+		return capa_names[bitpos];
 	} else {
 		return capa_names[ECTL_CAPA_COUNT];
 	}
@@ -355,21 +367,21 @@ unsigned long ectl_ips_get()
 }
 
 // -----------------------------------------------------------------------
-static struct ectl_est * __ectl_parse(char *input, char **error_msg, int *err_beg, int *err_end)
+static struct ectl_est * __ectl_parse(char *expression, char **err_msg, int *err_beg, int *err_end)
 {
 	struct ectl_est *tree;
 
-	YY_BUFFER_STATE yb = ectl_yy_scan_string(input);
+	YY_BUFFER_STATE yb = ectl_yy_scan_string(expression);
 	ectl_yyparse(&tree);
 	ectl_yy_delete_buffer(yb);
 
 	if (!tree) {
-		*error_msg = strdup("Fatal error, parser did not return anything");
+		*err_msg = strdup("Fatal error, parser did not return anything");
 		return NULL;
 	}
 
 	if (tree->type == ECTL_AST_N_ERR) {
-		*error_msg = strdup(tree->err);
+		*err_msg = strdup(tree->err);
 		*err_beg = tree->c_beg;
 		*err_end = tree->c_end;
 		ectl_est_delete(tree);
@@ -380,11 +392,11 @@ static struct ectl_est * __ectl_parse(char *input, char **error_msg, int *err_be
 }
 
 // -----------------------------------------------------------------------
-int ectl_eval(char *input, char **error_msg, int *err_beg, int *err_end)
+int ectl_eval(char *expression, char **err_msg, int *err_beg, int *err_end)
 {
 	int res = -1;
 
-	struct ectl_est *tree = __ectl_parse(input, error_msg, err_beg, err_end);
+	struct ectl_est *tree = __ectl_parse(expression, err_msg, err_beg, err_end);
 	if (!tree) {
 		goto fin;
 	}
@@ -393,11 +405,11 @@ int ectl_eval(char *input, char **error_msg, int *err_beg, int *err_end)
 	if (res < 0) {
 		struct ectl_est *err_node = ectl_est_get_eval_err();
 		if (err_node) {
-			*error_msg = strdup(err_node->err);
+			*err_msg = strdup(err_node->err);
 			*err_beg = err_node->c_beg;
 			*err_end = err_node->c_end;
 		} else {
-			*error_msg = strdup("Evaluation failed");
+			*err_msg = strdup("Evaluation failed");
 		}
 		goto fin;
 	}
@@ -408,16 +420,16 @@ fin:
 }
 
 // -----------------------------------------------------------------------
-int ectl_brk_add(char *input, char **error_msg, int *err_beg, int *err_end)
+int ectl_brk_add(char *expression, char **err_msg, int *err_beg, int *err_end)
 {
-	struct ectl_est *tree = __ectl_parse(input, error_msg, err_beg, err_end);
+	struct ectl_est *tree = __ectl_parse(expression, err_msg, err_beg, err_end);
 	if (!tree) {
 		return -1;
 	}
 
-	int id = ectl_brk_insert(tree, input);
+	int id = ectl_brk_insert(tree, expression);
 	if (id < 0) {
-		*error_msg = strdup("Cannot add new breakpoint");
+		*err_msg = strdup("Cannot add new breakpoint");
 		ectl_est_delete(tree);
 		return -1;
 	}
