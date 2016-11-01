@@ -116,6 +116,7 @@ void cpu_loop(int new_ui);
 void cpu_trigger_state(int state);
 void cpu_clear_state(int state);
 int cpu_state_get();
+void cpu_trigger_cycle();
 
 #endif
 

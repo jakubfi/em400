@@ -43,7 +43,7 @@
 #endif
 
 static int cpu_state = STATE_STOP;
-
+static int cpu_cycle;
 uint16_t regs[8];
 uint16_t rIC;
 uint16_t rKB;
@@ -73,13 +73,26 @@ pthread_mutex_t cpu_wake_mutex = PTHREAD_MUTEX_INITIALIZER;
 pthread_cond_t cpu_wake_cond = PTHREAD_COND_INITIALIZER;
 
 // -----------------------------------------------------------------------
-static void cpu_wait_on(int state)
+static void cpu_idle_in_halt()
 {
 	pthread_mutex_lock(&cpu_wake_mutex);
-	while ((cpu_state & state) && !(cpu_state & (STATE_QUIT | STATE_CLO | STATE_CLM))) {
+	while (cpu_state == STATE_HALT) {
 		pthread_cond_wait(&cpu_wake_cond, &cpu_wake_mutex);
 	}
 	pthread_mutex_unlock(&cpu_wake_mutex);
+}
+
+// -----------------------------------------------------------------------
+static int cpu_idle_in_stop()
+{
+	pthread_mutex_lock(&cpu_wake_mutex);
+	cpu_cycle = 0;
+	while (((cpu_state & (STATE_STOP|STATE_QUIT|STATE_CLO|STATE_CLM)) == STATE_STOP) && !cpu_cycle) {
+		pthread_cond_wait(&cpu_wake_cond, &cpu_wake_mutex);
+	}
+	int ret = cpu_cycle && !(cpu_state & (STATE_QUIT|STATE_CLO|STATE_CLM));
+	pthread_mutex_unlock(&cpu_wake_mutex);
+	return ret;
 }
 
 // -----------------------------------------------------------------------
@@ -104,6 +117,17 @@ void cpu_clear_state(int state)
 int cpu_state_get()
 {
 	return atom_load_acquire(&cpu_state);
+}
+
+// -----------------------------------------------------------------------
+void cpu_trigger_cycle()
+{
+	pthread_mutex_lock(&cpu_wake_mutex);
+	if (cpu_state & STATE_STOP) {
+		cpu_cycle = 1;
+		pthread_cond_signal(&cpu_wake_cond);
+	}
+	pthread_mutex_unlock(&cpu_wake_mutex);
 }
 
 // -----------------------------------------------------------------------
@@ -434,6 +458,7 @@ void cpu_loop(int new_ui)
 
 		// CPU running
 		if (state == 0) {
+cycle:
 			// interrupt
 			if (atom_load_acquire(&RP) && !P && !rMODc) {
 				int_serve();
@@ -447,6 +472,7 @@ void cpu_loop(int new_ui)
 				cpu_step();
 				ips_counter++;
 
+				// breakpoint hit?
 				if (ectl_brk_check()) {
 					cpu_trigger_state(STATE_STOP);
 				}
@@ -466,12 +492,15 @@ void cpu_loop(int new_ui)
 			dbg_enter = 1;
 			#endif
 			if (new_ui) {
-				cpu_wait_on(STATE_STOP);
+				if (cpu_idle_in_stop()) {
+					// CPU cycle
+					goto cycle;
+				}
 			}
 
 		// CPU waiting for an interrupt
 		} else if ((state & STATE_HALT)) {
-			cpu_wait_on(STATE_HALT);
+			cpu_idle_in_halt();
 		}
 	}
 }
