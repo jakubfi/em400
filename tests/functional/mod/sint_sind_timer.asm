@@ -64,10 +64,10 @@ extrax:	ib r3
 
 	hlt 077
 
-; XPCT [0x100] : 3
+; XPCT [0x100] >= 3 : 1
 ; XPCT [0x101] : 0
 ; XPCT [0x102] : 0
 
-; XPCT [0x202] : 3
+; XPCT [0x202] >= 3 : 1
 ; XPCT [0x201] : 1
 ; XPCT [0x200] : 2

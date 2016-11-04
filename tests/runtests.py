@@ -96,7 +96,7 @@ class EM400:
 
     # --------------------------------------------------------------------
     def wait_for_stop(self):
-        while not (self.state() & 1):
+        while self.state() != 1:
             if self.polldelay:
                 time.sleep(self.polldelay)
 
@@ -112,6 +112,7 @@ class EM400:
     # --------------------------------------------------------------------
     def stop(self):
         self.cmd("STOP")
+        self.wait_for_stop()
 
     # --------------------------------------------------------------------
     def quit(self):
@@ -241,7 +242,7 @@ class TestBed:
             if "XPCT" in l:
                 try:
                     pxpct = re.findall(";[ \t]*XPCT[ \t]+(.+):(.+)\n", l)
-                    expr = pxpct[0][0]
+                    expr = pxpct[0][0].strip()
                     val = int(pxpct[0][1], 0) & 0xffff
                     xpct += [(expr, val)]
                 except:

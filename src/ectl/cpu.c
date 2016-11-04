@@ -92,7 +92,7 @@ int ectl_reg_get(unsigned id)
 		case ECTL_REG_ALARM: reg = rALARM; break;
 		default: reg = regs[id]; break;
 	}
-	LOG(L_ECTL, 2, "ECTL reg get: %i = 0x%04x", id, reg);
+	LOG(L_ECTL, 2, "ECTL reg get: %s = 0x%04x", ectl_reg_name(id), reg);
 	return reg;
 }
 
@@ -129,7 +129,7 @@ int ectl_reg_set(unsigned id, uint16_t val)
 		return -1;
 	}
 
-	LOG(L_ECTL, 2, "ECTL reg set: %i = 0x%04x", id, val);
+	LOG(L_ECTL, 2, "ECTL reg set: %s = 0x%04x", ectl_reg_name(id), val);
 	switch (id) {
 		case ECTL_REG_IC: rIC = val; break;
 		case ECTL_REG_SR: rSR = val; break;
@@ -359,14 +359,14 @@ int ectl_log_state_set(int state)
 int ectl_log_level_get(unsigned component)
 {
 	int level = log_get_level(component);
-	LOG(L_ECTL, 2, "ECTL log level get: %i = %i", component, level);
+	LOG(L_ECTL, 2, "ECTL log level get: %s = %i", ectl_log_component_name(component), level);
 	return level;
 }
 
 // -----------------------------------------------------------------------
 int ectl_log_level_set(unsigned component, unsigned level)
 {
-	LOG(L_ECTL, 2, "ECTL log level set: %i = %i", component, level);
+	LOG(L_ECTL, 2, "ECTL log level set: %s = %i", ectl_log_component_name(component), level);
 	return log_set_level(component, level);
 }
 
@@ -430,7 +430,6 @@ static struct ectl_est * __ectl_parse(char *expression, char **err_msg, int *err
 int ectl_eval(char *expression, char **err_msg, int *err_beg, int *err_end)
 {
 	int res = -1;
-	LOG(L_ECTL, 2, "ECTL eval: %s", expression);
 	struct ectl_est *tree = __ectl_parse(expression, err_msg, err_beg, err_end);
 	if (!tree) {
 		goto fin;
@@ -451,6 +450,7 @@ int ectl_eval(char *expression, char **err_msg, int *err_beg, int *err_end)
 
 fin:
 	ectl_est_delete(tree);
+	LOG(L_ECTL, 2, "ECTL eval: %s = %i %s", expression, res, err_msg);
 	return res;
 }
 
