@@ -167,7 +167,7 @@ class TestResult:
 class TestBed:
 
     # --------------------------------------------------------------------
-    def __init__(self, emas, binary, blfile, benchmark_duration=0.5, failcmd=None):
+    def __init__(self, emas, binary, blfile, benchmark_duration=0.5, failcmd=None, log=0):
         self.emas = emas
         self.binary = binary
         self.failcmd = failcmd
@@ -176,6 +176,7 @@ class TestBed:
         self.add_opts = None
         self.default_config = "configs/minimal.cfg"
         self.bl = self.baseline(blfile)
+        self.log = log
 
     # --------------------------------------------------------------------
     def close(self):
@@ -184,6 +185,9 @@ class TestBed:
 
     # --------------------------------------------------------------------
     def __runemu(self, add_opts):
+        log_opts = []
+        if self.log:
+            add_opts += ["-l", "all=9"]
         if self.e is None:
             self.e = EM400(self.binary, add_opts, polldelay=0.01)
         else:
@@ -332,6 +336,7 @@ def get_tests(directory):
 parser = argparse.ArgumentParser()
 parser.add_argument("-b", "--baseline", help="baseline test results")
 parser.add_argument("-f", "--failcmd", help="command to run when test fails", action='append')
+parser.add_argument("-l", "--log", help="enable em400 logging", action="store_const", default=0, const=1)
 parser.add_argument('test', nargs='*', help='selected test(s) to run')
 args = parser.parse_args()
 
@@ -352,7 +357,7 @@ tests.sort()
 # run tests
 total = 0
 failed = 0
-tb = TestBed("emas", "../build/src/em400", args.baseline, benchmark_duration=0.5, failcmd=args.failcmd)
+tb = TestBed("emas", "../build/src/em400", args.baseline, benchmark_duration=0.5, failcmd=args.failcmd, log=args.log)
 for t in tests:
     if sys.stdout.isatty():
         print("%-50s : ..." % t, end="", flush=True)

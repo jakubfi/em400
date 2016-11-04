@@ -49,18 +49,21 @@ void ectl_yy_delete_buffer(YY_BUFFER_STATE b);
 // -----------------------------------------------------------------------
 int ectl_init()
 {
+	LOG(L_ECTL, 1, "ECTL init");
 	return 0;
 }
 
 // -----------------------------------------------------------------------
 void ectl_shutdown()
 {
+	LOG(L_ECTL, 1, "ECTL shutdown");
 	ectl_brk_del_all();
 }
 
 // -----------------------------------------------------------------------
 void ectl_regs_get(uint16_t *dest)
 {
+	LOG(L_ECTL, 2, "ECTL regs get");
 	memcpy(dest, regs, 8 * sizeof(uint16_t));
 	dest[ECTL_REG_IC] = rIC;
 	dest[ECTL_REG_SR] = rSR;
@@ -78,16 +81,19 @@ int ectl_reg_get(unsigned id)
 		return -1;
 	}
 
+	int reg;
 	switch (id) {
-		case ECTL_REG_IC: return rIC;
-		case ECTL_REG_SR: return rSR;
-		case ECTL_REG_IR: return rIR;
-		case ECTL_REG_KB: return rKB;
-		case ECTL_REG_MOD: return rMOD;
-		case ECTL_REG_MODc: return rMODc;
-		case ECTL_REG_ALARM: return rALARM;
-		default: return regs[id];
+		case ECTL_REG_IC: reg = rIC; break;
+		case ECTL_REG_SR: reg = rSR; break;
+		case ECTL_REG_IR: reg = rIR; break;
+		case ECTL_REG_KB: reg = rKB; break;
+		case ECTL_REG_MOD: reg = rMOD; break;
+		case ECTL_REG_MODc: reg = rMODc; break;
+		case ECTL_REG_ALARM: reg = rALARM; break;
+		default: reg = regs[id]; break;
 	}
+	LOG(L_ECTL, 2, "ECTL reg get: %i = 0x%04x", id, reg);
+	return reg;
 }
 
 // -----------------------------------------------------------------------
@@ -123,6 +129,7 @@ int ectl_reg_set(unsigned id, uint16_t val)
 		return -1;
 	}
 
+	LOG(L_ECTL, 2, "ECTL reg set: %i = 0x%04x", id, val);
 	switch (id) {
 		case ECTL_REG_IC: rIC = val; break;
 		case ECTL_REG_SR: rSR = val; break;
@@ -139,12 +146,14 @@ int ectl_reg_set(unsigned id, uint16_t val)
 // -----------------------------------------------------------------------
 int ectl_mem_get(int seg, uint16_t addr, uint16_t *dest, int count)
 {
+	LOG(L_ECTL, 2, "ECTL mem get: %i:0x%04x", seg, addr);
 	return mem_mget(seg, addr, dest, count);
 }
 
 // -----------------------------------------------------------------------
 int ectl_mem_set(int seg, uint16_t addr, uint16_t *src, int count)
 {
+	LOG(L_ECTL, 2, "ECTL mem set: %i:0x%04x, %i words", seg, addr, count);
 	int ret = mem_mput(seg, addr, src, count);
 	return ret;
 }
@@ -152,13 +161,17 @@ int ectl_mem_set(int seg, uint16_t addr, uint16_t *src, int count)
 // -----------------------------------------------------------------------
 int ectl_mem_map(int seg)
 {
-	return mem_get_map(seg);
+	int map = mem_get_map(seg);
+	LOG(L_ECTL, 2, "ECTL mem map: %i = 0x%04x", seg, map);
+	return map;
 }
 
 // -----------------------------------------------------------------------
 int ectl_cpu_state_get()
 {
-	return cpu_state_get();
+	int state = cpu_state_get();
+	LOG(L_ECTL, 2, "ECTL state get: 0x%04x", state);
+	return state;
 }
 
 // -----------------------------------------------------------------------
@@ -176,30 +189,35 @@ const char * ectl_cpu_state_bit_name(int bitpos)
 // -----------------------------------------------------------------------
 void ectl_cpu_stop()
 {
+	LOG(L_ECTL, 2, "ECTL cpu STOP");
 	cpu_trigger_state(STATE_STOP);
 }
 
 // -----------------------------------------------------------------------
 void ectl_cpu_start()
 {
+	LOG(L_ECTL, 2, "ECTL cpu START");
 	cpu_clear_state(STATE_STOP);
 }
 
 // -----------------------------------------------------------------------
 void ectl_cpu_cycle()
 {
+	LOG(L_ECTL, 2, "ECTL cpu CYCLE");
 	cpu_trigger_cycle();
 }
 
 // -----------------------------------------------------------------------
 void ectl_cpu_quit()
 {
+	LOG(L_ECTL, 2, "ECTL cpu QUIT");
 	cpu_trigger_state(STATE_QUIT);
 }
 
 // -----------------------------------------------------------------------
 void ectl_clock_set(int state)
 {
+	LOG(L_ECTL, 2, "ECTL clock set: %i", state);
 	if (state == ECTL_OFF) {
 		timer_off();
 	} else {
@@ -210,7 +228,9 @@ void ectl_clock_set(int state)
 // -----------------------------------------------------------------------
 int ectl_clock_get()
 {
-	if (timer_get_state()) {
+	int state = timer_get_state();
+	LOG(L_ECTL, 2, "ECTL clock get: %i", state);
+	if (state) {
 		return ECTL_ON;
 	} else {
 		return ECTL_OFF;
@@ -220,18 +240,20 @@ int ectl_clock_get()
 // -----------------------------------------------------------------------
 void ectl_cpu_clear()
 {
+	LOG(L_ECTL, 2, "ECTL cpu CLEAR");
 	cpu_trigger_state(STATE_CLO);
 }
 
 // -----------------------------------------------------------------------
 void ectl_bootstrap(int chan, int unit)
 {
-
+	LOG(L_ECTL, 2, "ECTL bootstrap");
 }
 
 // -----------------------------------------------------------------------
 void ectl_oprq()
 {
+	LOG(L_ECTL, 2, "ECTL OPRQ");
 	int_set(INT_OPRQ);
 }
 
@@ -239,6 +261,7 @@ void ectl_oprq()
 int ectl_int_set(unsigned interrupt)
 {
 	if (interrupt < 32) {
+		LOG(L_ECTL, 2, "ECTL int set %i", interrupt);
 		int_set(interrupt);
 		return 0;
 	} else {
@@ -249,13 +272,16 @@ int ectl_int_set(unsigned interrupt)
 // -----------------------------------------------------------------------
 uint32_t ectl_int_get()
 {
-	return RZ;
+	uint32_t rz = RZ;
+	LOG(L_ECTL, 2, "ECTL interrupts 0x%08x", rz);
+	return rz;
 }
 
 // -----------------------------------------------------------------------
 const char * ectl_version()
 {
 	static const char *ver = EM400_VERSION;
+	LOG(L_ECTL, 2, "ECTL version: %s", ver);
 	return ver;
 }
 
@@ -283,12 +309,14 @@ int ectl_capa()
 	if (mem_mega_boot()) capa |= 1 << ECTL_CAPA_MEGABOOT;
 	//TODO: if (nomem_stop) capa |= 1 << ECTL_CAPA_NOMEMSTOP;
 
+	LOG(L_ECTL, 2, "ECTL capabilities: 0x%04x", capa);
 	return capa;
 }
 
 // -----------------------------------------------------------------------
-int ectl_load(FILE *f, int seg, uint16_t saddr)
+int ectl_load(FILE *f, const char *name, int seg, uint16_t saddr)
 {
+	LOG(L_ECTL, 2, "ECTL load: %i:0x%04x %s", seg, saddr, name);
 	uint16_t *buf = malloc(sizeof(uint16_t) * 0x10000);
 
 	int res = fread(buf, sizeof(uint16_t), 0x10000, f);
@@ -304,7 +332,9 @@ int ectl_load(FILE *f, int seg, uint16_t saddr)
 // -----------------------------------------------------------------------
 int ectl_log_state_get()
 {
-	if (log_is_enabled()) {
+	int state = log_is_enabled();
+	LOG(L_ECTL, 2, "ECTL log state get: %i", state);
+	if (state) {
 		return ECTL_ON;
 	} else {
 		return ECTL_OFF;
@@ -315,6 +345,7 @@ int ectl_log_state_get()
 int ectl_log_state_set(int state)
 {
 	int res = -1;
+	LOG(L_ECTL, 2, "ECTL log state set: %i", state);
 	if (state == ECTL_OFF) {
 		log_disable();
 		res = 0;
@@ -327,12 +358,15 @@ int ectl_log_state_set(int state)
 // -----------------------------------------------------------------------
 int ectl_log_level_get(unsigned component)
 {
-	return log_get_level(component);
+	int level = log_get_level(component);
+	LOG(L_ECTL, 2, "ECTL log level get: %i = %i", component, level);
+	return level;
 }
 
 // -----------------------------------------------------------------------
 int ectl_log_level_set(unsigned component, unsigned level)
 {
+	LOG(L_ECTL, 2, "ECTL log level set: %i = %i", component, level);
 	return log_set_level(component, level);
 }
 
@@ -363,6 +397,7 @@ unsigned long ectl_ips_get()
 	}
 	oips = ips_counter;
 
+	LOG(L_ECTL, 2, "ECTL ips: %li", ips);
 	return ips;
 }
 
@@ -395,7 +430,7 @@ static struct ectl_est * __ectl_parse(char *expression, char **err_msg, int *err
 int ectl_eval(char *expression, char **err_msg, int *err_beg, int *err_end)
 {
 	int res = -1;
-
+	LOG(L_ECTL, 2, "ECTL eval: %s", expression);
 	struct ectl_est *tree = __ectl_parse(expression, err_msg, err_beg, err_end);
 	if (!tree) {
 		goto fin;
@@ -422,6 +457,7 @@ fin:
 // -----------------------------------------------------------------------
 int ectl_brk_add(char *expression, char **err_msg, int *err_beg, int *err_end)
 {
+	LOG(L_ECTL, 2, "ECTL brk add: %s", expression);
 	struct ectl_est *tree = __ectl_parse(expression, err_msg, err_beg, err_end);
 	if (!tree) {
 		return -1;
@@ -440,12 +476,14 @@ int ectl_brk_add(char *expression, char **err_msg, int *err_beg, int *err_end)
 // -----------------------------------------------------------------------
 int ectl_brk_del(unsigned id)
 {
+	LOG(L_ECTL, 2, "ECTL brk del: %i", id);
 	return ectl_brk_delete(id);
 }
 
 // -----------------------------------------------------------------------
 void ectl_stoponhlt040_set(int state)
 {
+	LOG(L_ECTL, 2, "ECTL stop on HLT>=040: %i", state);
 	if (state == ECTL_OFF) {
 		atom_store_release(&stop_on_hlt040, 0);
 	} else {

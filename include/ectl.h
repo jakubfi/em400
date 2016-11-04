@@ -106,7 +106,7 @@ int ectl_reg_set(unsigned id, uint16_t val);
 int ectl_mem_get(int seg, uint16_t addr, uint16_t *dest, int count);
 int ectl_mem_set(int seg, uint16_t addr, uint16_t *src, int count);
 int ectl_mem_map(int seg);
-int ectl_load(FILE *f, int seg, uint16_t saddr);
+int ectl_load(FILE *f, const char *name, int seg, uint16_t saddr);
 void ectl_bootstrap(int chan, int unit);
 
 // CPU state

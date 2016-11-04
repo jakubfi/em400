@@ -125,7 +125,7 @@ void em400_init(struct cfg_em400 *cfg)
 		if (!f) {
 			em400_exit_error(res, "Could not open program file: '%s'", cfg->program_name);
 		}
-		int res = ectl_load(f, 0, 0);
+		int res = ectl_load(f, cfg->program_name, 0, 0);
 		if (res < 0) {
 			em400_exit_error(res, "Could not load program '%s'", cfg->program_name);
 		} else {

@@ -417,7 +417,7 @@ void ui_cmd_load(FILE *out, char *args)
 		return;
 	}
 
-	int res = ectl_load(f, seg, addr);
+	int res = ectl_load(f, tok_file, seg, addr);
 	if (res < 0) {
 		ui_cmd_resp(out, RESP_ERR, UI_EOL, "Error reading file: %s", tok_file);
 	} else {
