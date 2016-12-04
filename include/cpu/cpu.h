@@ -23,6 +23,7 @@
 #include <emawp.h>
 
 #include "cfg.h"
+#include "cpu/flags.h"
 
 enum cpu_states {
 	STATE_STOP =	0x1,
@@ -31,20 +32,6 @@ enum cpu_states {
 	STATE_CLO =		0x8,
 	STATE_QUIT =	0x10,
 };
-
-// -----------------------------------------------------------------------
-// Flags in R0
-// -----------------------------------------------------------------------
-
-#define FL_Z	0b1000000000000000
-#define FL_M	0b0100000000000000
-#define FL_V	0b0010000000000000
-#define FL_C	0b0001000000000000
-#define FL_L	0b0000100000000000
-#define FL_E	0b0000010000000000
-#define FL_G	0b0000001000000000
-#define FL_Y	0b0000000100000000
-#define FL_X	0b0000000010000000
 
 // -----------------------------------------------------------------------
 // SR access macros

@@ -395,10 +395,11 @@ static void cpu_step()
 	// even for illegal instructions)
 	op = cpu_op_tab[rIR];
 
-	// end cycle if P is set
-	if (P) {
-		LOGCPU(L_CPU, 2, "    (skip)");
+	// end cycle if instruction is ineffective
+	if (P || ((regs[0] & op->nef_mask) != op->nef_result)) {
 		P = 0;
+		rMODc = rMOD = 0;
+		LOGCPU(L_CPU, 2, "    (skip)");
 		// skip also M-arg if present
 		if (op->norm_arg && !IR_C) rIC++;
 		return;

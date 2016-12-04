@@ -15,28 +15,22 @@
 //  Foundation, Inc.,
 //  51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 
-#ifndef ISET_H
-#define ISET_H
+#ifndef FLAGS_H
+#define FLAGS_H
 
-#include <inttypes.h>
+// -----------------------------------------------------------------------
+// Flags in R0
+// -----------------------------------------------------------------------
 
-typedef void (*opfun)();
-
-struct iset_opcode {
-	int norm_arg;			// has normal argument?
-	int short_arg;			// has short argument?
-	opfun fun;				// instruction function
-	int nef_mask;			// ineffectiveness mask
-	int nef_result;			// effectiveness result
-};
-
-struct iset_instruction {
-	uint16_t opcode;		// instruction opcode (and extended opcode)
-	uint16_t var_mask;		// variable bits mask
-	struct iset_opcode op;	// opcode definition
-};
-
-int iset_build();
+#define FL_Z    0b1000000000000000
+#define FL_M    0b0100000000000000
+#define FL_V    0b0010000000000000
+#define FL_C    0b0001000000000000
+#define FL_L    0b0000100000000000
+#define FL_E    0b0000010000000000
+#define FL_G    0b0000001000000000
+#define FL_Y    0b0000000100000000
+#define FL_X    0b0000000010000000
 
 #endif
 

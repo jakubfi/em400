@@ -80,14 +80,8 @@ void op_37_sf();
 void op_37_mf();
 void op_37_df();
 
-void op_70_ujs();
-void op_70_jls();
-void op_70_jes();
-void op_70_jgs();
+void op_70_jump();
 void op_70_jvs();
-void op_70_jxs();
-void op_70_jys();
-void op_70_jcs();
 
 void op_71_blc();
 void op_71_exl();
@@ -124,13 +118,7 @@ void op_73_gil();
 void op_73_lip();
 void op_73_cron();
 
-void op_74_uj();
-void op_74_jl();
-void op_74_je();
-void op_74_jg();
-void op_74_jz();
-void op_74_jm();
-void op_74_jn();
+void op_74_jump();
 void op_74_lj();
 
 void op_75_ld();

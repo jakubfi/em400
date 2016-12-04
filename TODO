@@ -1,10 +1,9 @@
 Known bugs:
 
-* CROOK-5: BASIC fails on LIST/SAVE (all kernels)
+(none)
 
 Enhancements:
 
-* ectl: breakpoints
 * new debugger interface
 * integrate local console(-s) and debugger into one ncurses user interface
 * deeptrace
