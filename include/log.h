@@ -18,6 +18,8 @@
 #ifndef LOG_H
 #define LOG_H
 
+#define _WITH_DPRINTF
+#include <stdio.h>
 #include <inttypes.h>
 
 #include "cfg.h"
@@ -86,8 +88,10 @@ void log_config(unsigned component, unsigned level, struct cfg_em400 *cfg);
 #endif
 
 #define LOG_SET_ID(object, format, ...) \
-	snprintf((object)->LOG_ID_NAME, LOG_ID_LEN, format, ##__VA_ARGS__); \
-	(object)->LOG_ID_NAME[LOG_ID_LEN] = '\0'
+	snprintf((object)->LOG_ID_NAME, \
+		sizeof((object)->LOG_ID_NAME), \
+		format, ##__VA_ARGS__); \
+	(object)->LOG_ID_NAME[sizeof((object)->LOG_ID_NAME) - 1] = '\0'
 
 #define LOG_GET_ID(object) \
 	(object)->LOG_ID_NAME
