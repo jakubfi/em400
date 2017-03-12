@@ -16,6 +16,7 @@
 //  51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 
 #define _POSIX_C_SOURCE 200112L
+#define __BSD_VISIBLE 1 /* for INADDR_LOOPBACK */
 
 #include <stdlib.h>
 #include <stdio.h>
