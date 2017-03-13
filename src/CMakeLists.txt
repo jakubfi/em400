@@ -12,6 +12,13 @@ add_executable(emitool
 	emitool.c io/dev/e4image.c
 )
 
+include_directories(
+	${EMDAS_INCLUDE_DIRS}
+	${EMCRK_INCLUDE_DIRS}
+	${EMAWP_INCLUDE_DIRS}
+	${FLEX_INCLUDE_DIRS}
+	${BISON_INCLUDE_DIRS}
+)
 target_link_libraries(em400
 	cpu mem io ui ectl
 	${DEBUGGER_LIBS}

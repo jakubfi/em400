@@ -15,8 +15,9 @@
 //  Foundation, Inc.,
 //  51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 
-#define _XOPEN_SOURCE 500
+#define _XOPEN_SOURCE 700
 
+#include <sys/cdefs.h>
 #include <stdlib.h>
 #include <inttypes.h>
 #include <pthread.h>
