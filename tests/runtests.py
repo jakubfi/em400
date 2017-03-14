@@ -336,6 +336,7 @@ def get_tests(directory):
 
 parser = argparse.ArgumentParser()
 parser.add_argument("-b", "--baseline", help="baseline test results")
+parser.add_argument("-e", "--emulator", help="emulator binary to run", default="../build/src/em400")
 parser.add_argument("-f", "--failcmd", help="command to run when test fails", action='append')
 parser.add_argument("-l", "--log", help="enable em400 logging", action="store_const", default=0, const=1)
 parser.add_argument('test', nargs='*', help='selected test(s) to run')
@@ -358,7 +359,7 @@ tests.sort()
 # run tests
 total = 0
 failed = 0
-tb = TestBed("emas", "../build/src/em400", args.baseline, benchmark_duration=0.5, failcmd=args.failcmd, log=args.log)
+tb = TestBed("emas", args.emulator, args.baseline, benchmark_duration=0.5, failcmd=args.failcmd, log=args.log)
 for t in tests:
     if sys.stdout.isatty():
         print("%-50s : ..." % t, end="", flush=True)
