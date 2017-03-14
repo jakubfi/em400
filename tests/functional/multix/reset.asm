@@ -76,4 +76,4 @@ stack:
 ; XPCT rz[6] : 0
 ; XPCT alarm : 0
 ; XPCT r3 : 3
-; XPCT ir&0x3f : 0o77
+; XPCT ir : 0xec3f

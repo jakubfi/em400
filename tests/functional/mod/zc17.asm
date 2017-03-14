@@ -79,4 +79,4 @@ ok:	im	mask
 ; XPCT r4 : 0x00ba
 ; XPCT r5 : 0x00ba
 ; XPCT r6 : 0x0055
-; XPCT ir&0x3f : 0o77
+; XPCT ir : 0xec3f

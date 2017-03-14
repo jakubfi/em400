@@ -64,4 +64,4 @@ ok:	im	mask
 ; XPCT r3 : 0x0055
 ; XPCT r4 : 0x0055
 ; XPCT r5 : 0x0055
-; XPCT ir&0x3f : 0o77
+; XPCT ir : 0xec3f

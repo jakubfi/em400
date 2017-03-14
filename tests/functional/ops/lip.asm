@@ -17,6 +17,6 @@ stack:
 
 ; XPCT sr : 0b1100000000000001
 ; XPCT r0 : 0xfafa
-; XPCT ir&0x3f : 0o77
+; XPCT ir : 0xec3f
 
 ; XPCT [97] : 200

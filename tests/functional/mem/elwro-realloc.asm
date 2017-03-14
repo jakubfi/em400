@@ -49,4 +49,4 @@ ok2:	tw r1, ab1+addr
 
 ; XPCT r2 : 0x2323
 ; XPCT r7 : 1
-; XPCT ir&0x3f : 0o77
+; XPCT ir : 0xec3f

@@ -56,4 +56,4 @@ ok2:	im mask
 ; XPCT r2 : 0x2323
 ; XPCT r3 : 0x2323
 ; XPCT r7 : 0
-; XPCT ir&0x3f : 0o77
+; XPCT ir : 0xec3f

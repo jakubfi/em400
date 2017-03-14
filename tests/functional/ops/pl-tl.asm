@@ -42,4 +42,4 @@ stack:
 ; XPCT r5 : 50
 ; XPCT r6 : 60
 ; XPCT r7 : 70
-; XPCT ir&0x3f : 0o77
+; XPCT ir : 0xec3f

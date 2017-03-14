@@ -595,4 +595,4 @@ data_nrf:
 data_fin:
 ; 0x622
 
-; XPCT ir&0x3f : 0o77
+; XPCT ir : 0xec3f

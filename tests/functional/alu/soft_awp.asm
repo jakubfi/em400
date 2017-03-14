@@ -78,4 +78,4 @@ start:	lw r1, stack
 ; XPCT [903] : 903
 ; XPCT [904] : 904
 
-; XPCT ir&0x3f : 0o77
+; XPCT ir : 0xec3f

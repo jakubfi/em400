@@ -35,4 +35,4 @@ stack:
 
 ; XPCT r1 : 0b1010101011001100
 ; XPCT r2 : 0b0101010101010101
-; XPCT ir&0x3f : 0o77
+; XPCT ir : 0xec3f

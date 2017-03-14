@@ -64,4 +64,4 @@ skip_t:
 
 test_start:
 
-; XPCT ir&0x3f : 0o77
+; XPCT ir : 0xec3f

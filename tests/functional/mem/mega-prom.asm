@@ -75,4 +75,4 @@ ok3:	lw r5, [ab]
 ; XPCT r4 : 0x0000
 ; XPCT r5 : 0x2323
 ; XPCT r7 : 0
-; XPCT ir&0x3f : 0o77
+; XPCT ir : 0xec3f

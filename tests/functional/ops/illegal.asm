@@ -102,4 +102,4 @@ user_prog_end:
 ; XPCT SR : 0b1111100000000001
 
 ; XPCT r7 : 24
-; XPCT ir&0x3f : 0o77
+; XPCT ir : 0xec3f
