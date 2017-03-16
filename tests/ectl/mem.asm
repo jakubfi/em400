@@ -1,5 +1,3 @@
-; OPTS -c configs/minimal.cfg
-
 ; PRECMD memw 0 100 1 2 3 4 5 6
 
 	HLT 077

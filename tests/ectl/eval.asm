@@ -1,4 +1,3 @@
-; OPTS -c configs/minimal.cfg
 
 	MB	data
 	LW	r1, 1

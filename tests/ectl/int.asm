@@ -1,5 +1,3 @@
-; OPTS -c configs/minimal.cfg
-
 ; PRECMD int 3
 ; PRECMD int 13
 ; PRECMD int 23

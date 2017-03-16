@@ -1,5 +1,3 @@
-; OPTS -c configs/minimal.cfg
-
 ; PRECMD oprq
 
 	HLT 077

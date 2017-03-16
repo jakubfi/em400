@@ -1,4 +1,4 @@
-; OPTS -k 17234
+; PRECMD REG KB 17234
 
 	rky r1
 

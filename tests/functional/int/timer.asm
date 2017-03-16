@@ -1,4 +1,5 @@
-; OPTS -c configs/minimal-clock.cfg
+; PRECMD clock on
+
 ; busy loop for a while, waiting for the timer to tick
 
 	lwt r1, 0
