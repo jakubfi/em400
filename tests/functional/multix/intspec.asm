@@ -1,4 +1,5 @@
 ; OPTS -c configs/multix.cfg
+; PRECMD CLOCK ON
 
 ; INTSPEC should:
 ;  * always return OK
@@ -16,6 +17,7 @@
 
 	UJ	start
 
+zmask:	.word	0
 cmask:	.word	0b0000010000000000
 tmask:	.word	0b0000100000000000
 
@@ -93,6 +95,7 @@ loop:	HLT
 	RJ	r3, get_intspec
 	HLT	045
 
+	IM	zmask
 	HLT	077
 
 stack:

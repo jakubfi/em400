@@ -47,7 +47,6 @@ void ui_cmd_loglvl(FILE *out, char *args);
 void ui_cmd_info(FILE *out, char *args);
 void ui_cmd_quit(FILE *out, char *args);
 void ui_cmd_help(FILE *out, char *args);
-void ui_cmd_stoponhlt040(FILE *out, char *args);
 void ui_cmd_brk(FILE *out, char *args);
 void ui_cmd_brkdel(FILE *out, char *args);
 
@@ -75,7 +74,6 @@ struct ui_cmd_command commands[] = {
 	{ 1, "info",	"",							"Get emulator info",				ui_cmd_info },
 	{ 1, "quit",	"",							"Quit emulation",					ui_cmd_quit },
 	{ 1, "help",	"",							"Get help",							ui_cmd_help },
-	{ 0, "stoponhlt040", "",					"Stop CPU on HLT >= 040",			ui_cmd_stoponhlt040 },
 	{ 0, NULL, NULL, NULL, NULL },
 };
 
@@ -596,27 +594,6 @@ void ui_cmd_eval(FILE *out, char *args)
 	} else {
 		ui_cmd_resp(out, RESP_OK, UI_EOL, "%i", res);
 	}
-}
-
-// -----------------------------------------------------------------------
-void ui_cmd_stoponhlt040(FILE *out, char *args)
-{
-	char *hlt_state, *remainder;
-
-	int state = ui_cmd_gettok_bool(args, &hlt_state, &remainder);
-	if (!hlt_state) {
-		ui_cmd_resp(out, RESP_ERR, UI_EOL, "Missing argument (state)");
-		return;
-	}
-
-	// is state correct?
-	if (state < 0) {
-		ui_cmd_resp(out, RESP_ERR, UI_EOL, "Wrong state: %s", hlt_state);
-		return;
-	}
-
-	ectl_stoponhlt040_set(state);
-	ui_cmd_resp(out, RESP_OK, UI_EOL, "STOPONHLT040 %i", state);
 }
 
 // -----------------------------------------------------------------------

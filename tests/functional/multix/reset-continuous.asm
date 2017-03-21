@@ -1,4 +1,5 @@
 ; OPTS -c configs/multix.cfg
+; PRECMD CLOCK ON
 
 ; If reset is done before previous reset routine finished, no IWYZE should appear
 ; (except the final one)
@@ -15,6 +16,7 @@
 	UJ	start
 
 stack:	.res	4
+mask0:	.word	0
 mask:	.word	unmask_chan
 
 	.org	prog_beg
@@ -24,14 +26,15 @@ tim_proc:
 	CW	r1, 0
 	JES	done
 	AWT	r1, -1
-	IN	r5, 0\2 + mx_chan\14	; reset MULTIX
-	.word	fail, fail, ok, fail
+again:	IN	r5, 0\2 + mx_chan\14	; reset MULTIX
+	.word	fail, again, ok, fail
 fail:	HLT	040
 ok:
 done:	LIP
 
 ; ------------------------------------------------------------------------
 mx_proc:
+	IM	mask0
 	CW	r1, 0		; MULTIX interrupt should come after r1 counter drops to 0
 	JN	too_early	; MULTIX interrupt came too early
 	LW	r4, [stackp]
@@ -58,6 +61,7 @@ start:
 	IM	mask
 loop:	HLT
 	UJS	loop
+	IM	mask0
 	HLT	050
 
 ; XPCT rz[15] : 0

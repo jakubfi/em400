@@ -13,6 +13,7 @@
 
 	UJ	start
 
+mask0:	.word	0
 mask:
 	.word	unmask_chan
 
@@ -27,6 +28,7 @@ mx_proc:
 tim_proc:
 	LIP
 int_fail:
+	IM	mask0
 	HLT	041
 
 ; ------------------------------------------------------------------------
@@ -66,9 +68,11 @@ w2:	HLT
 w3:	HLT
 	BB	r6, ?X
 	UJS	w3
+	IM	mask0
 	HLT	077
 
-fail:	HLT	040
+fail:	IM	mask0
+	HLT	040
 
 stack:
 

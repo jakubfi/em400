@@ -59,7 +59,6 @@ int cpu_mod_active;
 
 int cpu_mod_present;
 int cpu_user_io_illegal;
-int stop_on_hlt040;
 static int nomem_stop;
 
 unsigned long ips_counter;

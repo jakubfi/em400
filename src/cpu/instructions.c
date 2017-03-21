@@ -675,14 +675,7 @@ void op_73_hlt()
 	USER_ILLEGAL;
 
 	LOGCPU(L_OP, 1, "HALT 0%02o (alarm: %i)", N, regs[6]&255);
-
-	// hlt >= 040 is used by the test suite to check if a test has finished
-	if (atom_load_acquire(&stop_on_hlt040) && (N >= 040)) {
-		cpu_trigger_state(STATE_STOP);
-	// otherwise, enter halt state
-	} else {
-		cpu_trigger_state(STATE_HALT);
-	}
+	cpu_trigger_state(STATE_HALT);
 }
 
 // -----------------------------------------------------------------------

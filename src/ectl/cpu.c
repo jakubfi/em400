@@ -480,15 +480,4 @@ int ectl_brk_del(unsigned id)
 	return ectl_brk_delete(id);
 }
 
-// -----------------------------------------------------------------------
-void ectl_stoponhlt040_set(int state)
-{
-	LOG(L_ECTL, 2, "ECTL stop on HLT>=040: %i", state);
-	if (state == ECTL_OFF) {
-		atom_store_release(&stop_on_hlt040, 0);
-	} else {
-		atom_store_release(&stop_on_hlt040, 1);
-	}
-}
-
 // vim: tabstop=4 shiftwidth=4 autoindent

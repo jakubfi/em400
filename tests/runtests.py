@@ -95,15 +95,24 @@ class EM400:
         return int(val, 0)
 
     # --------------------------------------------------------------------
-    def wait_for_stop(self):
-        while self.state() != 1:
+    def wait_for_finish(self):
+        while True:
+            s = self.state()
+            if s & 1:
+                break
+            if s & 2:
+                ir = self.reg("ir")
+                if ir & 0b1111110111000000 == 0b1110110000000000 and ir & 0b0000000000111111 >= 0o40:
+                    break
             if self.polldelay:
                 time.sleep(self.polldelay)
 
     # --------------------------------------------------------------------
     def clear(self):
         self.cmd("CLEAR")
-        self.wait_for_stop()
+        while self.state() != 1:
+            if self.polldelay:
+                time.sleep(self.polldelay)
 
     # --------------------------------------------------------------------
     def start(self):
@@ -112,7 +121,9 @@ class EM400:
     # --------------------------------------------------------------------
     def stop(self):
         self.cmd("STOP")
-        self.wait_for_stop()
+        while self.state() & 1 != 1:
+            if self.polldelay:
+                time.sleep(self.polldelay)
 
     # --------------------------------------------------------------------
     def quit(self):
@@ -273,7 +284,6 @@ class TestBed:
             aout = self.__assembly(source)
             self.__runemu(["-c", self.default_config] + opts)
             self.e.clear()
-            self.e.cmd("stoponhlt040 on")
             self.e.load(0, 0, aout)
             if precmd:
                 for c in precmd:
@@ -301,7 +311,7 @@ class TestBed:
     # --------------------------------------------------------------------
     def __passfail(self, result, xpct):
         self.e.start()
-        self.e.wait_for_stop()
+        self.e.wait_for_finish()
         self.e.stop()
         for x in xpct:
             result.add_check(x[0], x[1], self.e.eval(x[0]))

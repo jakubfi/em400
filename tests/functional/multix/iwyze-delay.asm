@@ -1,4 +1,5 @@
 ; OPTS -c configs/multix.cfg
+; PRECMD CLOCK ON
 
 ; IWYZE MULTIX interrupt should be delayed
 
@@ -16,6 +17,7 @@
 	UJ	start
 
 stack:	.res	8
+mask0:	.word	0
 maskc:	.word	unmask_chan
 maskt:	.word	unmask_timer
 tcount:	.word	-50		; we'll wait 0.5s for multix interrupt (50 x timer tick)
@@ -30,6 +32,7 @@ tim_proc:
 
 ; ------------------------------------------------------------------------
 mx_proc:
+	IM	mask0
 	LW	r4, [stackp]
 	LW	r4, [r4-1]
 	CW	r4, iwyze	; is it IWYZE?

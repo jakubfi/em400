@@ -1,4 +1,5 @@
 ; OPTS -c configs/winchester.cfg
+; PRECMD CLOCK ON
 
 	.cpu	mx16
 
@@ -87,8 +88,11 @@ c_ok:	LW	r1, [mx_last_int]
 	UJS	c_ok
 c_ret:	CW	r3, r1
 	BB	r0, ?E	; intspec as expected?
-	HLT	043
+	UJS	c_fail
 	UJ	r4
+c_fail:
+	IM	msk_0
+	HLT	043
 
 ; ------------------------------------------------------------------------
 ; sector addressing test
@@ -113,13 +117,16 @@ rdc_loop:
         LW      r4, [r1+r3]		; load word
         CW      r4, r6			; compare to sector number
         BB      r0, ?E
-        HLT     050
+        UJS	rdc_fail
         DRB     r3, rdc_loop		; next word
 	; contents OK
 	AWT	r6, 1			; next sector
 	CW	r6, USER_SECTORS	; last sector?
 	JN	rdloop			; no -> loop over
 	UJ	[rdsect]
+rdc_fail:
+	IM	msk_0
+	HLT	050
 
 ; ------------------------------------------------------------------------
 ; test data
@@ -149,7 +156,7 @@ seq:	; [command, field_addr, exp_irq, check_proc]
 	.word	MXCMD_TRANSMIT, read, MX_IETRA\7 + WINCH_LINE, cmpz
 	.word	MXCMD_TRANSMIT, write, MX_IETRA\7 + WINCH_LINE, 0
 	.word	MXCMD_TRANSMIT, read, MX_IETRA\7 + WINCH_LINE, cmpbuf
-	.word	MXCMD_ABORT, -1, MX_INABT\7 + WINCH_LINE, rdsect
+	.word	MXCMD_ABORT, -1, MX_INABT\7 + WINCH_LINE, rdsect ; rdsect is here because it's convenient
 	.word	MXCMD_DETACH, -1, MX_IODLI\7 + WINCH_LINE, 0
 seqe:
 
@@ -163,9 +170,12 @@ cmpz_loop:
 	LW	r4, [r1+r3]
 	CW	r4, 0
 	BB	r0, ?E
-	HLT	051
+	UJS	cmpz_fail
 	DRB	r3, cmpz_loop
 	UJ	[cmpz]
+cmpz_fail:
+	IM	msk_0
+	HLT	051
 
 ; ------------------------------------------------------------------------
 ; compare contents of rdbuf with wrbuf
@@ -178,9 +188,12 @@ cmp_loop:
 	LW	r4, [r1+r3]
 	CW	r4, [r2+r3]
 	BB	r0, ?E
-	HLT	052
+	UJS	cmp_fail
 	DRB	r3, cmp_loop
 	UJ	[cmpbuf]
+cmp_fail:
+	IM	msk_0
+	HLT	052
 
 ; ------------------------------------------------------------------------
 ; ---- MAIN --------------------------------------------------------------
@@ -228,6 +241,7 @@ no_check_proc:
 	CW	r7, seqe
 	JN	next_test
 
+	IM	msk_0
 	HLT	077
 
 ; ------------------------------------------------------------------------

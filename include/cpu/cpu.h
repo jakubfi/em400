@@ -78,7 +78,6 @@ extern int cpu_mod_active;
 
 extern int cpu_mod_present;
 extern int cpu_user_io_illegal;
-extern int stop_on_hlt040;
 
 extern struct awp *awp;
 
