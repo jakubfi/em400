@@ -1,6 +1,6 @@
 Known bugs:
 
-(none)
+* emulation handles illegal instruction 2nd word argument differently
 
 Enhancements:
 
