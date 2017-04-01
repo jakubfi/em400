@@ -482,7 +482,7 @@ void op_71_brc()
 void op_71_nrf()
 {
 	int nrf_op = IR_A & 0b011;
-	awp_dispatch(nrf_op, 0);
+	awp_dispatch(nrf_op, IR_b);
 }
 
 // -----------------------------------------------------------------------

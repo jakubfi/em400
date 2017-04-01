@@ -74,8 +74,8 @@ start:	lw r1, stack
 ; XPCT [1611] : 1611
 ; XPCT [1712] : 1712
 ; XPCT [901] : 901
-; XPCT [902] : 902
-; XPCT [903] : 903
-; XPCT [904] : 904
+; XPCT [966] : 966
+; XPCT [1031] : 1031
+; XPCT [1096] : 1096
 
 ; XPCT ir : 0xec3f
