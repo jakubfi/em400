@@ -14,8 +14,9 @@ ok:
 	mb blk
 	im blk
 
-	rz 10
-	rz 11
+	lwt r1, 0
+	pw r1, 10
+	pw r1, 11
 	lw r1, 0b1111111100000000
 	om r1, 10
 	lw r1, 0b1010101010101010
