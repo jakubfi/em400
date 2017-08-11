@@ -341,6 +341,17 @@ def get_tests(directory):
     return tests
 
 # ------------------------------------------------------------------------
+def get_tests_set(s):
+    files = []
+    with open(s) as f:
+        for line in f:
+            line = line.strip()
+            if line[0] in (";", "#"):
+                continue
+            files += [line]
+    return files
+
+# ------------------------------------------------------------------------
 # --- MAIN ---------------------------------------------------------------
 # ------------------------------------------------------------------------
 
@@ -349,7 +360,7 @@ parser.add_argument("-b", "--baseline", help="baseline test results")
 parser.add_argument("-e", "--emulator", help="emulator binary to run", default="../build/src/em400")
 parser.add_argument("-f", "--failcmd", help="command to run when test fails", action='append')
 parser.add_argument("-l", "--log", help="enable em400 logging", action="store_const", default=0, const=1)
-parser.add_argument('test', nargs='*', help='selected test(s) to run')
+parser.add_argument('test', nargs='*', help='selected test(s) to run (file.asm or directory or testset.set)')
 args = parser.parse_args()
 
 # enumerate tests
@@ -359,6 +370,8 @@ if args.test:
     for d in args.test:
         if os.path.isdir(d):
             tests += get_tests(d)
+        elif d.endswith(".set"):
+            tests += get_tests_set(d)
         else:
             tests += [d]
 else:
