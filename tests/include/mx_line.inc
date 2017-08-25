@@ -16,3 +16,4 @@
 	.const MX_LSTATE_PARITY_ERR	1 << 14	; parity error
 	.const MX_LSTATE_OPRQ		1 << 15	; OPRQ
 
+; vim: tabstop=8 shiftwidth=8 autoindent syntax=emas

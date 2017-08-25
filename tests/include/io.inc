@@ -1,4 +1,3 @@
-
 ; channel numbers for I/O commands
 
 	.const	IO_CHAN_0	0\14
@@ -27,3 +26,5 @@
 ; memory configuration bit
 
 	.const  MEM_CFG		1\15
+
+; vim: tabstop=8 shiftwidth=8 autoindent syntax=emas

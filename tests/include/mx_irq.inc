@@ -33,3 +33,5 @@
 	.const	MX_IEPSD	40
 	.const	MX_IEPSE	41
 	.const	MX_IEPSF	42
+
+; vim: tabstop=8 shiftwidth=8 autoindent syntax=emas

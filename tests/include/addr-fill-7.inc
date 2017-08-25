@@ -11,3 +11,4 @@ next_7:
 	uj	[fill_7]
 mul:	.word   7
 
+; vim: tabstop=8 shiftwidth=8 autoindent syntax=emas

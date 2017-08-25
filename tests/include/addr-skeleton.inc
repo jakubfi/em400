@@ -64,3 +64,4 @@ ok:
 
 	uj	[mem_cfg]
 
+; vim: tabstop=8 shiftwidth=8 autoindent syntax=emas

@@ -54,3 +54,4 @@ exit_fail:
 exit_ok:
 	hlt 077
 
+; vim: tabstop=8 shiftwidth=8 autoindent syntax=emas

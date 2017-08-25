@@ -8,3 +8,4 @@ next_lin:
 	irb	r1, next_lin
 	uj	[fill_lin]
 
+; vim: tabstop=8 shiftwidth=8 autoindent syntax=emas

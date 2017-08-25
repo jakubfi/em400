@@ -53,3 +53,4 @@
 	.const	MX_SHORT_DISK_ADDR	0\4
 	.const	MX_LONG_DISK_ADDR	1\4
 
+; vim: tabstop=8 shiftwidth=8 autoindent syntax=emas

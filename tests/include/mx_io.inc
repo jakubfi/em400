@@ -1,4 +1,3 @@
-
 ; default MULTIX I/O channel
 
 	.const	MX_CHAN_DEFAULT IO_CHAN_1
@@ -17,3 +16,5 @@
 	.const	MX_IO_STATUS	0b011\2	; OU
 	.const	MX_IO_TRANSMIT	0b100\2	; OU
 	.const	MX_IO_ABORT	0b011\2	; IN
+
+; vim: tabstop=8 shiftwidth=8 autoindent syntax=emas
