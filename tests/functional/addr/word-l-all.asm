@@ -1,6 +1,6 @@
 ; OPTS -c configs/mega_max.cfg
 
-; test various word addressing methods across all address space
+; test various word addressing methods across process address space
 
 	.cpu	mera400
 

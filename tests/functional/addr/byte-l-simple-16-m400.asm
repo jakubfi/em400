@@ -1,7 +1,6 @@
 ; OPTS -c configs/mega_max.cfg
 
-; test simple byte-size memory addressing across all possible
-; (32k) address space on vanilla cpu
+; test simple byte-size memory addressing across process (32k) address space on vanilla cpu
 
 	.cpu	mera400
 

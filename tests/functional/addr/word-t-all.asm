@@ -1,6 +1,6 @@
 ; OPTS -c configs/mega_max.cfg
 
-; test various word addressing methods across all address space
+; test various word addressing methods across proces address space
 
 	.cpu	mera400
 
@@ -20,35 +20,35 @@ next_t:
 	; --- long loads ---
 
 	; TEST: N = [rC]
-	tw	r7, [r1]
+	tw	r7, r1
 	cl	r7, r1
 	bb	r0, ?E
 	hlt	042
 	; TEST: N = [rC + rB]
-	tw	r7, [r2+r3]
+	tw	r7, r2+r3
 	cl	r7, r1
 	bb	r0, ?E
 	hlt	043
 	; TEST: N = [M + rB]
-	tw	r7, [test_start+r3]
+	tw	r7, test_start+r3
 	cl	r7, r1
 	bb	r0, ?E
 	hlt	044
 	; TEST: N = [premod + rC]
 	md	test_start
-	tw	r7, [r3]
+	tw	r7, r3
 	cl	r7, r1
 	bb	r0, ?E
 	hlt	045
 	; TEST: N = [premod + rC + rB]
 	md	test_start-4096
-	tw	r7, [r3+r4]
+	tw	r7, r3+r4
 	cl	r7, r1
 	bb	r0, ?E
 	hlt	046
 	; TEST: N = [premod + M + rB]
 	md	test_start-4096
-	tw	r7, [r3+4096]
+	tw	r7, r3+4096
 	cl	r7, r1
 	bb	r0, ?E
 	hlt	047

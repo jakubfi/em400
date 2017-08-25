@@ -1,7 +1,6 @@
 ; OPTS -c configs/mod_mega_max.cfg
 
-; test 16-bit byte addressing across all address space
-; on vanilla (MERA-400) cpu
+; test 16-bit byte addressing across process address space on vanilla (MERA-400) cpu
 
 	.cpu	mx16
 

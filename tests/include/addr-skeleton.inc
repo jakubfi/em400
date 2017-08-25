@@ -1,8 +1,6 @@
-	.const	mega 1\15 + 1\6
-	.const	dealloc 1\5
-	.const	done 1\0
-	.const	pshow 1\2
-	.const	phide 1\1	
+
+	.include mega.inc
+	.include io.inc
 
 	uj	start
 
@@ -34,34 +32,24 @@ int_death:
 ; configure memory
 mem_cfg:
 	.res	1
-	lwt	r1, 2 ; AB, RAL
-	lwt	r2, 0 ; NB, MP
-next_seg:
-	lw	r3, r1 ; AB
+	lwt	r1, 2 ; first page to configure
+next_page:
+	lw	r3, r1 ; page
 	shc	r3, 4
-	nr	r3, 0xf000
-	aw	r3, r2 ; NB
-
-	lw	r4, r1 ; RAL
-	shc	r4, 12
-	nr	r4, 0b0000000011110000
-	aw	r4, r2 ; MP
-	slz	r4
-
-	ou	r3, r4+mega+phide+done
+	lw	r4, r1 ; frame
+	shc	r4, 11
+	nr	r4, 0b0000000011100000 ; take 3 leas sig. bits
+	lw	r2, r1 ; module
+	shc	r2, 2
+	nr	r2, 0b0000000000000010 ; use msb to switch module to 1 for segments >8 (to allow 32K modules)
+	aw	r4, r2
+	ou	r3, r4 + MEGA_ALLOC | MEGA_HIDE_PAS | MEGA_ALLOC_FINISH | MEM_CFG
 	.word	err, err, ok, err
-err:
-	hlt	041
-ok:
-	; next segment/block
+err:	hlt	041
+ok:	; next page
 	awt	r1, 1
 	cw	r1, 16
-	jn	next_seg
-	lwt	r1, 0
-	awt	r2, 1
-	cw	r2, 16
-	jn	next_seg
-
+	jls	next_page
 	uj	[mem_cfg]
 
 ; vim: tabstop=8 shiftwidth=8 autoindent syntax=emas
