@@ -34,7 +34,6 @@
 	UJ	start
 
 msk_0:	.word	IMASK_NONE
-msk_tm:	.word	IMASK_CPU
 msk_mx:	.word	IMASK_CH0_1 | IMASK_CPU
 xlip:	LIP
 
@@ -199,15 +198,12 @@ cmp_fail:
 ; ---- MAIN --------------------------------------------------------------
 ; ------------------------------------------------------------------------
 start:
+	LJ	prngseed
+
 	LW	r1, stack
 	RW	r1, STACKP
 	LW	r1, mx_proc
 	RW	r1, MX_IV
-
-	; seed prng
-	IM	msk_tm
-	LJ	prngseed
-
 	IM	msk_mx
 
 fill:	; fill write buffer with random data

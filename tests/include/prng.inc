@@ -24,8 +24,11 @@ prngtimer:
 ; It is obtained by interrupting a tight loop 32 times with timer interrupt,
 ; each time storing least significant bit of the return address
 ; temp: r1, r2, r4, r7
+im_tm:	.word	IMASK_CPU
+im_0:	.word	0
 otimv:	.res	1
-seed:	.dword	1
+ostck:	.res	1
+cseed:	.dword	1
 prngseed:
 	.res	1
 	LWT	r1, 0
@@ -33,8 +36,13 @@ prngseed:
 	LWT	r7, -32
 	LW	r1, [IV_TIMER]
 	RW	r1, otimv
+	LW	r1, [STACKP]
+	RW	r1, ostck
 	LW	r1, prngtimer
 	RW	r1, IV_TIMER
+	LW	r1, prng_stack
+	RW	r1, STACKP
+	IM	im_tm
 rngloop:
 	NOP
 	NOP
@@ -45,9 +53,12 @@ rngloop:
 	JES	prngseed_fin
 	UJS	rngloop
 prngseed_fin:
-	RD	seed
+	RD	cseed
+	IM	im_0
 	LW	r4, [otimv]
 	RW	r4, IV_TIMER
+	LW	r4, ostck
+	RW	r4, STACKP
 	UJ	[prngseed]
 
 ; ------------------------------------------------------------------------
@@ -63,11 +74,11 @@ rand:	.res	1
 	rw	r3, tmp_r3
 	; lo = self.constapmc * (self.seed & 0xFFFF)
 	lw	r2, constapmc
-	mw	seed+1
+	mw	cseed+1
 	rd	lo
 	; hi = self.constapmc * (self.seed >> 16)
 	lw	r2, constapmc
-	mw	seed
+	mw	cseed
 	rd	hi
 	; lo += (hi & 0x7FFF) << 16
 	lw	r1, [hi+1]
@@ -92,8 +103,19 @@ rand:	.res	1
 	SLX	r2
 	AD	lo
 	; self.seed = lo
-	rd	seed
+	rd	cseed
 	; return lo
 	lw	r3, [tmp_r3]
 	uj	[rand]
 
+; ------------------------------------------------------------------------
+; Seed the PRNG
+; in: [r1, r2] - seed
+seed:	.res	1
+	rd	cseed
+	uj	[seed]
+
+prng_stack:
+	.res	7*4
+
+; vim: tabstop=8 shiftwidth=8 autoindent syntax=emas

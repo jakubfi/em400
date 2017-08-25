@@ -24,3 +24,6 @@
 	.const	IO_INTSPEC	0b000\2 + 0b01\4	; IN
 	.const	IO_EXISTS	0b000\2 + 0b10\4	; IN
 
+; memory configuration bit
+
+	.const  MEM_CFG		1\15
