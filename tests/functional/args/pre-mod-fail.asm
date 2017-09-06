@@ -1,12 +1,12 @@
 ; pre-modification fails on 4th time
 
-	md 1
-	md 1
-	md 1
-	md 1
-	lw r1, 1
+	md	1
+	md	1
+	md	1
+	md	1
+	lw	r1, 1
 
-	hlt 077
+	hlt	077
 
 ; XPCT sr : 0
 

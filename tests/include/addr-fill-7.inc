@@ -9,6 +9,6 @@ next_7:
 	rw	r2, r6
 	irb	r6, next_7
 	uj	[fill_7]
-mul:	.word   7
+mul:	.word	7
 
 ; vim: tabstop=8 shiftwidth=8 autoindent syntax=emas

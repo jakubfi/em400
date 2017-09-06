@@ -1,11 +1,11 @@
 
-	lf data1
-	lw r4, r1
-	lw r5, r2
-	lw r6, r3
-	lf [data2]
+	lf	data1
+	lw	r4, r1
+	lw	r5, r2
+	lw	r6, r3
+	lf	[data2]
 
-	hlt 077
+	hlt	077
 
 data1:	.word	1024, 1025, 1026
 data2:	.word	data3

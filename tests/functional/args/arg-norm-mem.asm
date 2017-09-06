@@ -1,13 +1,13 @@
 ; normal argument points to memory
 
-	lw r1, [dt1]
-	lw r2, [dt2]
-	lw r3, [r2]
-	lw r4, [dt1 + 1]
-	lw r5, [r2 - 1]
-	lw r6, [r1 + r2]
+	lw	r1, [dt1]
+	lw	r2, [dt2]
+	lw	r3, [r2]
+	lw	r4, [dt1 + 1]
+	lw	r5, [r2 - 1]
+	lw	r6, [r1 + r2]
 
-	hlt 077
+	hlt	077
 
 dt1:	.word	0x0001
 dt2:	.word	dt3

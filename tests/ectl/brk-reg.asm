@@ -1,8 +1,8 @@
 ; PRECMD brk r1==1000
 
-	LWT	r1, 0
-loop:	IRB	r1, loop
-	HLT	040
+	lwt	r1, 0
+loop:	irb	r1, loop
+	hlt	040
 
 ; POSTCMD brkdel 0
 

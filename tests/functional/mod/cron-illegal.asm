@@ -2,9 +2,9 @@
 
 ; CRON is illegal for vanilla (MERA-400) CPU
 
-	.cpu mx16
+	.cpu	mx16
 
 	cron
-	hlt 077
+	hlt	077
 
 ; XPCT rz[6] : 1

@@ -12,10 +12,10 @@
 ; PRECMD reg IC 200
 ; PRECMD reg SR 11
 
-	HLT 040
+	hlt	040
 
-	.org 200
-	HLT 077
+	.org	200
+	hlt	077
 
 ; XPCT r0 : 1
 ; XPCT r1 : -1

@@ -8,16 +8,16 @@
 	lwt	r6, -36
 	lwt	r7, -37
 
-	rws r0, data1
-	rws r1, data1+1
-	rws r2, data1+2
-	rws r3, data1+3
-	rws r4, data2
-	rws r5, data2+1
-	rws r6, data2+2
-	rws r7, data2+3
+	rws	r0, data1
+	rws	r1, data1+1
+	rws	r2, data1+2
+	rws	r3, data1+3
+	rws	r4, data2
+	rws	r5, data2+1
+	rws	r6, data2+2
+	rws	r7, data2+3
 
-	hlt 077
+	hlt	077
 
 	.org	20
 data1:	.res	5

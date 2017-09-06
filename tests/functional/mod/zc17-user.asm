@@ -4,17 +4,15 @@
 
 	.cpu	mx16
 
-	.const	ALIGN_INTV	0x40
-	.const	ALIGN_EXLP	0x60
-	.const	ALIGN_STP	0x61
-	.const	ALIGN_CODE	0x70
+	.include hw.inc
+	.include io.inc
 
 	uj	start
 
 ; ---- RUNTIME CONF AND STUFF --------------------------------------------
 
 	.const	USER_BLOCK	1
-	.const	INT_MASK	0b1111100000000000
+	.const	INT_MASK	IMASK_PARITY | IMASK_NOMEM | IMASK_2CPU_HIGH | IMASK_IFPOWER | IMASK_CPU
 	.const	Q		0b0000000000100000
 	.const	BBS		0b0000000000010000
 
@@ -22,24 +20,17 @@
 	.const	MAGIC1		0x4455
 	.const	MAGIC2		0xfeba
 
-sys_mb:
-	.word	0
-user_sr:
-	.word	INT_MASK + USER_BLOCK
-
-; ---- STACK -------------------------------------------------------------
-
-stack:	.res	12*4
-	.res	ALIGN_INTV - .
+sys_mb:	.word	0
+user_sr:.word	INT_MASK + USER_BLOCK
 
 ; ---- INT VECTORS -------------------------------------------------------
-
+	.res	INTV - .
 intv:	.res	6, e
 	.word	x
 	.res	25, e
 exlp:	.word	exl_handler
 stp:	.word	stack
-	.res	ALIGN_CODE - .
+	.res	OS_MEM_BEG - .
 
 ; ---- INT HANDLERS ------------------------------------------------------
 
@@ -66,16 +57,16 @@ exl_handler:
 
 start:
 	lw	r1, 0\3 + 1\15
-	ou 	r1, 3\10 + 0\14 + 1
+	ou 	r1, 3\10 + 0\14 + MEM_CFG
 	.word	e, e, block1, e
 block1:
 	lw	r1, 1\3 + 1\15
-	ou 	r1, 4\10 + 0\14 + 1
-	.word 	e, e, block9, e
+	ou 	r1, 4\10 + 0\14 + MEM_CFG
+	.word	e, e, block9, e
 block9:
 	lw	r1, 9\3 + 1\15
-	ou 	r1, 5\10 + 0\14 + 1
-	.word 	e, e, go, e
+	ou 	r1, 5\10 + 0\14 + MEM_CFG
+	.word	e, e, go, e
 
 go:	
 	cron
@@ -109,14 +100,16 @@ fin:
 	hlt	077
 
 	; IC, R0, SR, expected_read
-userv1:	.word 0, 0, INT_MASK + Q + USER_BLOCK, 0x0044
-userv2:	.word 0, 0, INT_MASK + Q + BBS + USER_BLOCK, 0x00fe
-uservp:	.word userv1
+userv1:	.word	0, 0, INT_MASK + Q + USER_BLOCK, 0x0044
+userv2:	.word	0, 0, INT_MASK + Q + BBS + USER_BLOCK, 0x00fe
+uservp:	.word	userv1
 
 user_prog:
 	lw	r7, 9\3 + ADDR
 	lb	r5, r7+r7
 	exl	0	; exit user process
+
+stack:	.res	12*4
 
 user_prog_end:
 

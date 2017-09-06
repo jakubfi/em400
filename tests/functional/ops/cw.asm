@@ -1,21 +1,21 @@
 
-	lw r1, -1
-	cw r1, 1
-	rpc r2
+	lw	r1, -1
+	cw	r1, 1
+	rpc	r2
 
-	lw r1, 12
-	cw r1, 12
-	rpc r3
+	lw	r1, 12
+	cw	r1, 12
+	rpc	r3
 
-	lw r1, -12
-	cw r1, -12
-	rpc r4
+	lw	r1, -12
+	cw	r1, -12
+	rpc	r4
 
-	lw r1, 1
-	cw r1, -1
-	rpc r5
+	lw	r1, 1
+	cw	r1, -1
+	rpc	r5
 
-	hlt 077
+	hlt	077
 
 ; XPCT rz[6] : 0
 ; XPCT sr : 0

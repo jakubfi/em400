@@ -4,65 +4,60 @@
 ; If reset is done before previous reset routine finished, no IWYZE should appear
 ; (except the final one)
 
-	.equ	stackp 0x61
-	.equ	prog_beg 0x70
-	.equ	int_mx 0x40 + 12 + 1
-	.equ	int_tim 0x40 + 5
-	.equ	int_ex 0x40 + 11
-	.equ	unmask_chan 0b0000111110000000
-	.equ	iwyze 0b0000001000000000
-	.equ	mx_chan 1
+	.include hw.inc
+	.include mx.inc
 
-	UJ	start
+	uj	start
 
-stack:	.res	4
-mask0:	.word	0
-mask:	.word	unmask_chan
+mask0:	.word	IMASK_NONE
+mask:	.word	IMASK_CPU | IMASK_CH0_1
 
-	.org	prog_beg
+	.org	OS_MEM_BEG
 
 ; ------------------------------------------------------------------------
 tim_proc:
-	CW	r1, 0
-	JES	done
-	AWT	r1, -1
-again:	IN	r5, 0\2 + mx_chan\14	; reset MULTIX
+	cw	r1, 0
+	jes	done
+	awt	r1, -1
+again:	in	r5, 0\2 + MX_CHAN	; reset MULTIX
 	.word	fail, again, ok, fail
-fail:	HLT	040
+fail:	hlt	040
 ok:
-done:	LIP
+done:	lip
 
 ; ------------------------------------------------------------------------
 mx_proc:
-	IM	mask0
-	CW	r1, 0		; MULTIX interrupt should come after r1 counter drops to 0
-	JN	too_early	; MULTIX interrupt came too early
-	LW	r4, [stackp]
-	LW	r4, [r4-1]
-	CW	r4, iwyze
-	JN	int_fail
-	HLT	077
+	im	mask0
+	cw	r1, 0		; MULTIX interrupt should come after r1 counter drops to 0
+	jn	too_early	; MULTIX interrupt came too early
+	lw	r4, [STACKP]
+	lw	r4, [r4-1]
+	cw	r4, MX_IWYZE
+	jn	int_fail
+	hlt	077
 int_fail:
-	HLT	041
+	hlt	041
 too_early:
-	HLT	042
+	hlt	042
 
 ; ------------------------------------------------------------------------
 start:
-	LW	r3, stack
-	RW	r3, stackp
-	LW	r3, mx_proc
-	RW	r3, int_mx
-	LW	r3, tim_proc
-	RW	r3, int_tim
-	RW	r3, int_ex
-	LW	r1, 100		; reset counter: wait 100 timer interrupts (100*10ms = 1s)
+	lw	r3, stack
+	rw	r3, STACKP
+	lw	r3, mx_proc
+	rw	r3, MX_IV
+	lw	r3, tim_proc
+	rw	r3, IV_TIMER
+	rw	r3, IV_EXTRA
+	lw	r1, 100		; reset counter: wait 100 timer interrupts (100*10ms = 1s)
 
-	IM	mask
-loop:	HLT
-	UJS	loop
-	IM	mask0
-	HLT	050
+	im	mask
+loop:	hlt
+	ujs	loop
+	im	mask0
+	hlt	050
+
+stack:
 
 ; XPCT rz[15] : 0
 ; XPCT rz[6] : 0

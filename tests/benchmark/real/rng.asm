@@ -1,19 +1,21 @@
+	.cpu mera400
+
 	.include hw.inc
-	UJ	start
+
+	uj	start
 
 	.org	OS_MEM_BEG
 
 	.include prng.inc
 
-
 start:
-	LW	r1, 666
-	LW	r2, 99
-	RD	seed
+	lw	r1, 666
+	lw	r2, 99
+	rd	seed
 
-	LW	r7, -10000
+	lw	r7, -10_000
 loop:
-	LJ	rand
-	IRB	r7, loop
-	ujs loop
-	HLT	077
+	lj	rand
+	irb	r7, loop
+	ujs	loop
+	hlt	077

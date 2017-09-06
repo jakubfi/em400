@@ -1,10 +1,10 @@
 
-	ric r1
-	ric r2
-	ric r3
-	ric r4
+	ric	r1
+	ric	r2
+	ric	r3
+	ric	r4
 
-	hlt 077
+	hlt	077
 
 ; XPCT rz[6] : 0
 ; XPCT sr : 0

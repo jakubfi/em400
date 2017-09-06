@@ -1,15 +1,17 @@
 ; PRECMD clock on
 
+	.include hw.inc
+
 	lw	r1, stack
-	rw	r1, 0x61
+	rw	r1, STACKP
 	lw	r1, fin
-	rw	r1, 0x40 + 5
+	rw	r1, IV_TIMER
 	im	mask
 loop:	hlt
 	ujs	loop
 
 fin:	hlt	077
-mask:	.word	0b0000100000000000
+mask:	.word	IMASK_CPU
 stack:
 
 ; XPCT rz[6] : 0

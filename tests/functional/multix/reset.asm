@@ -2,77 +2,70 @@
 
 ; Check if all MULTIX reset triggers work
 
-	.equ	stackp 0x61
-	.equ	prog_beg 0x70
-	.equ	int_tim 0x40 + 5
-	.equ	int_ex 0x40 + 11
-	.equ	int_mx 0x40 + 12 + 1
-	.equ	unmask_chan 0b0000111110000000
-	.equ	iwyze 0b0000001000000000
-	.equ	mx_chan 1
+	.include hw.inc
+	.include mx.inc
 
-	UJ	start
+	uj	start
 
-mask0:	.word	0
-mask:
-	.word	unmask_chan
+mask0:	.word	IMASK_NONE
+mask:	.word	IMASK_CH0_1
 
 ; ------------------------------------------------------------------------
 mx_proc:
-	LW	r4, [stackp]
-	LW	r4, [r4-1]
-	CW	r4, iwyze
-	JN	int_fail
-	AW	r3, 1		; increase interrupt counter
-	OR	r6, ?X		; set MX int. indicator
+	lw	r4, [STACKP]
+	lw	r4, [r4-1]
+	cw	r4, MX_IWYZE
+	jn	int_fail
+	aw	r3, 1		; increase interrupt counter
+	or	r6, ?X		; set MX int. indicator
 tim_proc:
-	LIP
+	lip
 int_fail:
-	IM	mask0
-	HLT	041
+	im	mask0
+	hlt	041
 
 ; ------------------------------------------------------------------------
-	.org	prog_beg
+	.org	OS_MEM_BEG
 start:
-	LW	r3, stack
-	RW	r3, stackp
+	lw	r3, stack
+	rw	r3, STACKP
 
-	LW	r3, mx_proc
-	RW	r3, int_mx
+	lw	r3, mx_proc
+	rw	r3, MX_IV
 
-	LW	r3, tim_proc
-	RW	r3, int_tim
-	RW	r3, int_ex
+	lw	r3, tim_proc
+	rw	r3, IV_TIMER
+	rw	r3, IV_EXTRA
 
-	LWT	r3, 0		; reset interrupt counter
-	ER	r6, ?X		; reset MX int. indicator
+	lwt	r3, 0		; reset interrupt counter
+	er	r6, ?X		; reset MX int. indicator
 
 	; IWYZE by MULTIX initialization
-	IM	mask
-w1:	HLT
-	BB	r6, ?X
-	UJS	w1
-	ER	r6, ?X
+	im	mask
+w1:	hlt
+	bb	r6, ?X
+	ujs	w1
+	er	r6, ?X
 
 	; IWYZE by MCL
-	MCL
-	IM	mask
-w2:	HLT
-	BB	r6, ?X
-	UJS	w2
-	ER	r6, ?X
+	mcl
+	im	mask
+w2:	hlt
+	bb	r6, ?X
+	ujs	w2
+	er	r6, ?X
 
 	; IWYZE, by software MULTIX reset
-	IN	r5, mx_chan\14
+	in	r5, MX_CHAN
 	.word	fail, fail, w3, fail
-w3:	HLT
-	BB	r6, ?X
-	UJS	w3
-	IM	mask0
-	HLT	077
+w3:	hlt
+	bb	r6, ?X
+	ujs	w3
+	im	mask0
+	hlt	077
 
-fail:	IM	mask0
-	HLT	040
+fail:	im	mask0
+	hlt	040
 
 stack:
 

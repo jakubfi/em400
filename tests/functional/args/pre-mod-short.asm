@@ -1,19 +1,19 @@
 ; pre-modification for instructions with short argument
 
-	md 100
-	lwt r1, 1
-	md -1
-	lwt r2, 1
-	md -16
-	lwt r3, 0
-	md -12
-	lwt r4, 63
-	md 0xffff
-	lwt r5, 1
-	md -63
-	lwt r6, -63
+	md	100
+	lwt	r1, 1
+	md	-1
+	lwt	r2, 1
+	md	-16
+	lwt	r3, 0
+	md	-12
+	lwt	r4, 63
+	md	0xffff
+	lwt	r5, 1
+	md	-63
+	lwt	r6, -63
 
-	hlt 077
+	hlt	077
 
 ; XPCT rz[6] : 0
 ; XPCT sr : 0

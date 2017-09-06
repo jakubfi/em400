@@ -5,11 +5,11 @@
 	rz	112
 	rz	113
 
-	fi 110
-	ki 111
-	fi 112
-	ki 113
-	hlt 077
+	fi	110
+	ki	111
+	fi	112
+	ki	113
+	hlt	077
 
 ; XPCT rz[6] : 0
 ; XPCT sr : 0

@@ -1,8 +1,8 @@
 ; 0 + -1
 
-	lw r1, 0
-	aw r1, -1
-	hlt 077
+	lw	r1, 0
+	aw	r1, -1
+	hlt	077
 
 ; XPCT rz[6] : 0
 ; XPCT sr : 0

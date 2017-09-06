@@ -1,6 +1,6 @@
 ; OPTS -c configs/multix.cfg
 
-	HLT	077
+	hlt	077
 
 ; XPCT rz[12] : 0
 ; XPCT rz[13] : 0

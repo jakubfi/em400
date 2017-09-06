@@ -3,26 +3,18 @@
 
 ; IWYZE MULTIX interrupt should be delayed
 
-	.equ	stackp 0x61
-	.equ	prog_beg 0x70
-	.equ	int_mx 0x40 + 12 + 1
-	.equ	int_tim 0x40 + 5
-	.equ	int_ex 0x40 + 11
-        .equ    unmask_chan  0b0000010000000000
-        .equ    unmask_timer 0b0000110000000000
-
-	.equ	iwyze 0b0000001000000000
-	.equ	mx_chan 1
+	.include hw.inc
+	.include mx.inc
 
 	UJ	start
 
 stack:	.res	8
 mask0:	.word	0
-maskc:	.word	unmask_chan
-maskt:	.word	unmask_timer
+maskc:	.word	IMASK_CH0_1
+maskt:	.word	IMASK_CPU | IMASK_CH0_1
 tcount:	.word	-50		; we'll wait 0.5s for multix interrupt (50 x timer tick)
 
-	.org	prog_beg
+	.org	OS_MEM_BEG
 
 ; ------------------------------------------------------------------------
 tim_proc:
@@ -33,9 +25,9 @@ tim_proc:
 ; ------------------------------------------------------------------------
 mx_proc:
 	IM	mask0
-	LW	r4, [stackp]
+	LW	r4, [STACKP]
 	LW	r4, [r4-1]
-	CW	r4, iwyze	; is it IWYZE?
+	CW	r4, MX_IWYZE	; is it IWYZE?
 	BB	r0, ?E
 	HLT	042
 	CW	r7, [tcount]	; is it after a timer interrupt?
@@ -46,12 +38,12 @@ mx_proc:
 ; ------------------------------------------------------------------------
 start:
 	LW	r3, stack
-	RW	r3, stackp
+	RW	r3, STACKP
 	LW	r3, mx_proc
-	RW	r3, int_mx
+	RW	r3, MX_IV
 	LW	r3, tim_proc
-	RW	r3, int_tim
-	RW	r3, int_ex
+	RW	r3, IV_TIMER
+	RW	r3, IV_EXTRA
 
 	LW	r7, [tcount]
 

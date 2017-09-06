@@ -1,9 +1,9 @@
 
-	lw r1, 15
-	cw r1, 15
-	jn fin
-	hlt 077
-fin:	hlt 040
+	lw	r1, 15
+	cw	r1, 15
+	jn	fin
+	hlt	077
+fin:	hlt	040
 
 ; XPCT rz[6] : 0
 ; XPCT sr : 0

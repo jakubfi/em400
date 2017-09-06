@@ -10,7 +10,7 @@
 	lwt	r7, 0
 	ll	data
 
-	HLT	077
+	hlt	077
 
 data:	.word	0xfafa, 0xbaba, 0xdada
 

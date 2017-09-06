@@ -1,4 +1,4 @@
-	lwt r1, 1
+	lwt	r1, 1
 loop:
 	siu
 	sil
@@ -40,6 +40,6 @@ loop:
 	sil
 	siu
 	sil
-	irb r1, loop
-	ujs loop
-	hlt 077
+	irb	r1, loop
+	ujs	loop
+	hlt	077

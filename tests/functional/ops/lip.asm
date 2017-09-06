@@ -1,11 +1,13 @@
 
+	.include hw.inc
+
 start:
-	lw r1, stack
-	rw r1, 97
+	lw	r1, stack
+	rw	r1, STACKP
 
 	lip
-ok:	hlt 077
-	hlt 040
+ok:	hlt	077
+	hlt	040
 
 data:	.org	200
 	.word	ok, 0xfafa, 0b1100000000000001, 0

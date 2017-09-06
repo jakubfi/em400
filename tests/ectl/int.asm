@@ -3,7 +3,7 @@
 ; PRECMD int 23
 ; PRECMD int 29
 
-	HLT 077
+	hlt	077
 
 ; XPCT RZ[3] : 1
 ; XPCT RZ[13] : 1

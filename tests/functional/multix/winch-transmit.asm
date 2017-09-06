@@ -13,10 +13,10 @@
 
 	; winchester device address
 	.const	WINCH_LINE 2
-	.const	WINCH_ADDR MX_CHAN_DEFAULT | WINCH_LINE\10
+	.const	WINCH_ADDR MX_CHAN | WINCH_LINE\10
 
 	; MULTIX command shortcuts
-	.const	MXCMD_SETCFG	MX_IO_SETCFG | MX_CHAN_DEFAULT | IO_OU
+	.const	MXCMD_SETCFG	MX_IO_SETCFG | MX_CHAN | IO_OU
 	.const	MXCMD_STATUS	MX_IO_STATUS | WINCH_ADDR | IO_OU
 	.const	MXCMD_ATTACH	MX_IO_ATTACH | WINCH_ADDR | IO_OU
 	.const	MXCMD_DETACH	MX_IO_DETACH | WINCH_ADDR | IO_IN
@@ -31,11 +31,11 @@
 	.const	TOTAL_SECTORS CYLINDERS*HEADS*SPT
 	.const	USER_SECTORS TOTAL_SECTORS - 1*HEADS*SPT
 
-	UJ	start
+	uj	start
 
 msk_0:	.word	IMASK_NONE
 msk_mx:	.word	IMASK_CH0_1 | IMASK_CPU
-xlip:	LIP
+xlip:	lip
 
 	.org	INTV
 	.res	16, xlip	; dummy interrupt handlers
@@ -50,15 +50,15 @@ xlip:	LIP
 ; updates:
 ;  mx_last_int
 mx_last_int:
-	.word 0
-tmp_r7:	.res 1
+	.word	0
+tmp_r7:	.res	1
 mx_proc:
-	RW	r7, tmp_r7
-	MD	[STACKP]
-	LW	r7, [-1]
-	RW	r7, mx_last_int
-	LW	r7, [tmp_r7]
-	LIP
+	rw	r7, tmp_r7
+	md	[STACKP]
+	lw	r7, [-1]
+	rw	r7, mx_last_int
+	lw	r7, [tmp_r7]
+	lip
 
 ; ------------------------------------------------------------------------
 ; I/O handler
@@ -68,30 +68,30 @@ mx_proc:
 ;  r3 - expected interrupt specification
 ;  r4 - RJ return adress
 io_cmd:
-	SXL	r1
-	ER	r1, 1
-	RZ	mx_last_int
-repeat:	JXS	c_in
-c_ou:	OU	r2, r1
+	sxl	r1
+	er	r1, 1
+	rz	mx_last_int
+repeat:	jxs	c_in
+c_ou:	ou	r2, r1
 	.word	c_no, c_en, c_ok, c_pe
-c_in:	IN	r2, r1
+c_in:	in	r2, r1
 	.word	c_no, c_en, c_ok, c_pe
-c_no:	HLT	041	; error
-c_en:	UJS	repeat	; repeat if engaged
-c_pe:	HLT	042	; error
-c_ok:	LW	r1, [mx_last_int]
-	NR	r1, r1
-	BB	r0, ?Z	; multix interrupt ready?
-	UJS	c_ret	; yes
-	HLT		; no -> wait
-	UJS	c_ok
-c_ret:	CW	r3, r1
-	BB	r0, ?E	; intspec as expected?
-	UJS	c_fail
-	UJ	r4
+c_no:	hlt	041	; error
+c_en:	ujs	repeat	; repeat if engaged
+c_pe:	hlt	042	; error
+c_ok:	lw	r1, [mx_last_int]
+	nr	r1, r1
+	bb	r0, ?Z	; multix interrupt ready?
+	ujs	c_ret	; yes
+	hlt		; no -> wait
+	ujs	c_ok
+c_ret:	cw	r3, r1
+	bb	r0, ?E	; intspec as expected?
+	ujs	c_fail
+	uj	r4
 c_fail:
-	IM	msk_0
-	HLT	043
+	im	msk_0
+	hlt	043
 
 ; ------------------------------------------------------------------------
 ; sector addressing test
@@ -99,33 +99,33 @@ c_fail:
 ; and check if every word of each sector contains the sector number
 reada:	.word	2\7 + 0\15, rdbuf, 255, 0
 readas:	.word	0, -1, -1
-readat:	.word	MXCMD_TRANSMIT, reada, MX_IETRA\7 + WINCH_LINE
+readat:	.word	MXCMD_TRANSMIT, reada, MX_IETRA + WINCH_LINE
 rdsect:
 	.res	1
 	.const	START_SECT 16
-	LW	r6, START_SECT
+	lw	r6, START_SECT
 rdloop:
-	RW	r6, readas			; update sector number in control field
-	LF	readat
-	RJ	r4, io_cmd			; read sector
+	rw	r6, readas			; update sector number in control field
+	lf	readat
+	rj	r4, io_cmd			; read sector
 
 readok:	; check sector contents
-	LW	r1, rdbuf-1
-	LW	r3, SSIZE
+	lw	r1, rdbuf-1
+	lw	r3, SSIZE
 rdc_loop:
-        LW      r4, [r1+r3]		; load word
-        CW      r4, r6			; compare to sector number
-        BB      r0, ?E
-        UJS	rdc_fail
-        DRB     r3, rdc_loop		; next word
+	lw	r4, [r1+r3]		; load word
+	cw	r4, r6			; compare to sector number
+	bb	r0, ?E
+	ujs	rdc_fail
+	drb	r3, rdc_loop		; next word
 	; contents OK
-	AWT	r6, 1			; next sector
-	CW	r6, USER_SECTORS	; last sector?
-	JN	rdloop			; no -> loop over
-	UJ	[rdsect]
+	awt	r6, 1			; next sector
+	cw	r6, USER_SECTORS	; last sector?
+	jn	rdloop			; no -> loop over
+	uj	[rdsect]
 rdc_fail:
-	IM	msk_0
-	HLT	050
+	im	msk_0
+	hlt	050
 
 ; ------------------------------------------------------------------------
 ; test data
@@ -143,108 +143,108 @@ rdfail:	.word	2\7 + 0\15, rdbuf, 255, 0, USER_SECTORS, -1, -1
 rdfail2:.word	2\7 + 0\15, -1, 255, 0, 0, -1, -1
 
 seq:	; [command, field_addr, exp_irq, check_proc]
-	.word	MXCMD_SETCFG, conf, MX_IUKON\7, 0
-	.word	MXCMD_ATTACH, -1, MX_IDOLI\7 + WINCH_LINE, 0
-	.word	MXCMD_TRANSMIT, park, MX_IETRA\7 + WINCH_LINE, 0
-	.word	MXCMD_TRANSMIT, spare, MX_IETRA\7 + WINCH_LINE, 0
-	.word	MXCMD_TRANSMIT, rdfail, MX_INTRA\7 + WINCH_LINE, 0
-	.word	MXCMD_TRANSMIT, rdfail2, MX_INPAO\7 + WINCH_LINE, 0
-	.word	MXCMD_TRANSMIT, -1, MX_INPAO\7 + WINCH_LINE, 0
-	.word	MXCMD_TRANSMIT, write, MX_IETRA\7 + WINCH_LINE, 0
-	.word	MXCMD_TRANSMIT, format, MX_IETRA\7 + WINCH_LINE, 0
-	.word	MXCMD_TRANSMIT, read, MX_IETRA\7 + WINCH_LINE, cmpz
-	.word	MXCMD_TRANSMIT, write, MX_IETRA\7 + WINCH_LINE, 0
-	.word	MXCMD_TRANSMIT, read, MX_IETRA\7 + WINCH_LINE, cmpbuf
-	.word	MXCMD_ABORT, -1, MX_INABT\7 + WINCH_LINE, rdsect ; rdsect is here because it's convenient
-	.word	MXCMD_DETACH, -1, MX_IODLI\7 + WINCH_LINE, 0
+	.word	MXCMD_SETCFG, conf, MX_IUKON, 0
+	.word	MXCMD_ATTACH, -1, MX_IDOLI + WINCH_LINE, 0
+	.word	MXCMD_TRANSMIT, park, MX_IETRA + WINCH_LINE, 0
+	.word	MXCMD_TRANSMIT, spare, MX_IETRA + WINCH_LINE, 0
+	.word	MXCMD_TRANSMIT, rdfail, MX_INTRA + WINCH_LINE, 0
+	.word	MXCMD_TRANSMIT, rdfail2, MX_INPAO + WINCH_LINE, 0
+	.word	MXCMD_TRANSMIT, -1, MX_INPAO + WINCH_LINE, 0
+	.word	MXCMD_TRANSMIT, write, MX_IETRA + WINCH_LINE, 0
+	.word	MXCMD_TRANSMIT, format, MX_IETRA + WINCH_LINE, 0
+	.word	MXCMD_TRANSMIT, read, MX_IETRA + WINCH_LINE, cmpz
+	.word	MXCMD_TRANSMIT, write, MX_IETRA + WINCH_LINE, 0
+	.word	MXCMD_TRANSMIT, read, MX_IETRA + WINCH_LINE, cmpbuf
+	.word	MXCMD_ABORT, -1, MX_INABT + WINCH_LINE, rdsect ; rdsect is here because it's convenient
+	.word	MXCMD_DETACH, -1, MX_IODLI + WINCH_LINE, 0
 seqe:
 
 ; ------------------------------------------------------------------------
 ; check if rdbuf is zeroes only
 cmpz:
 	.res	1
-	LW	r1, rdbuf-1
-	LW	r3, SSIZE
+	lw	r1, rdbuf-1
+	lw	r3, SSIZE
 cmpz_loop:
-	LW	r4, [r1+r3]
-	CW	r4, 0
-	BB	r0, ?E
-	UJS	cmpz_fail
-	DRB	r3, cmpz_loop
-	UJ	[cmpz]
+	lw	r4, [r1+r3]
+	cw	r4, 0
+	bb	r0, ?E
+	ujs	cmpz_fail
+	drb	r3, cmpz_loop
+	uj	[cmpz]
 cmpz_fail:
-	IM	msk_0
-	HLT	051
+	im	msk_0
+	hlt	051
 
 ; ------------------------------------------------------------------------
 ; compare contents of rdbuf with wrbuf
 cmpbuf:
 	.res	1
-	LW	r1, wrbuf-1
-	LW	r2, rdbuf-1
-	LW	r3, SSIZE
+	lw	r1, wrbuf-1
+	lw	r2, rdbuf-1
+	lw	r3, SSIZE
 cmp_loop:
-	LW	r4, [r1+r3]
-	CW	r4, [r2+r3]
-	BB	r0, ?E
-	UJS	cmp_fail
-	DRB	r3, cmp_loop
-	UJ	[cmpbuf]
+	lw	r4, [r1+r3]
+	cw	r4, [r2+r3]
+	bb	r0, ?E
+	ujs	cmp_fail
+	drb	r3, cmp_loop
+	uj	[cmpbuf]
 cmp_fail:
-	IM	msk_0
-	HLT	052
+	im	msk_0
+	hlt	052
 
 ; ------------------------------------------------------------------------
 ; ---- MAIN --------------------------------------------------------------
 ; ------------------------------------------------------------------------
 start:
-	LJ	prngseed
+	lj	prngseed
 
-	LW	r1, stack
-	RW	r1, STACKP
-	LW	r1, mx_proc
-	RW	r1, MX_IV
-	IM	msk_mx
+	lw	r1, stack
+	rw	r1, STACKP
+	lw	r1, mx_proc
+	rw	r1, MX_IV
+	im	msk_mx
 
 fill:	; fill write buffer with random data
-	LW	r4, wrbuf
-	LW	r3, SSIZE/2
+	lw	r4, wrbuf
+	lw	r3, SSIZE/2
 fill_loop:
-	LJ	rand
-	RD	r4
-	AWT	r4, 2
-	DRB	r3, fill_loop
+	lj	rand
+	rd	r4
+	awt	r4, 2
+	drb	r3, fill_loop
 
 mxinit:	; wait for MX initialization to end
-	LW	r1, [mx_last_int]
-	CW	r1, MX_IWYZE\7
-	JES	run_tests
-	HLT
-	UJS	mxinit
+	lw	r1, [mx_last_int]
+	cw	r1, MX_IWYZE
+	jes	run_tests
+	hlt
+	ujs	mxinit
 
 run_tests:
 	; test loop
-	LW	r7, seq
+	lw	r7, seq
 next_test:
-	LF	r7
-	RJ	r4, io_cmd
-	LW	r1, [r7+3]
-	CW	r1, 0
-	JES	no_check_proc
-	LJ	r1
+	lf	r7
+	rj	r4, io_cmd
+	lw	r1, [r7+3]
+	cw	r1, 0
+	jes	no_check_proc
+	lj	r1
 no_check_proc:
-	AWT	r7, 4
-	CW	r7, seqe
-	JN	next_test
+	awt	r7, 4
+	cw	r7, seqe
+	jn	next_test
 
-	IM	msk_0
-	HLT	077
+	im	msk_0
+	hlt	077
 
 ; ------------------------------------------------------------------------
 ; buffers
-stack:	.res	16*4
 rdbuf:	.res	SSIZE
 wrbuf:	.res	SSIZE
+stack:
 
 ; XPCT rz[15] : 0
 ; XPCT rz[6] : 0

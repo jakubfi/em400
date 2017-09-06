@@ -1,6 +1,5 @@
 
-	.const	int_nomem 0x40 + 2
-	.const	stackp 0x61
+	.include hw.inc
 
 	lw	r0, 0xaafe
 	lw	r1, 0x0001
@@ -13,7 +12,7 @@
 
 	uj	start
 
-blk:	.word	0b0100000000000001
+blk:	.word	IMASK_NOMEM + 1
 data:	.res	8
 stack:	.res	16
 
@@ -23,9 +22,9 @@ nomem_proc:
 	.org	0x70
 start:
 	lw	r1, stack
-	rw	r1, stackp
+	rw	r1, STACKP
 	lw	r1, nomem_proc
-	rw	r1, int_nomem
+	rw	r1, IV_NOMEM
 
 	lw	r1, 0b0000000000000001
 	ou	r1, 0b0000000000000011

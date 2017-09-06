@@ -1,10 +1,10 @@
 
-	sp ctx
-	hlt 040
+	sp	ctx
+	hlt	040
 
-ctx:	.word fin_ok, 0xfafa, 0b0110000000000001
+ctx:	.word	fin_ok, 0xfafa, 0b0110000000000001
 fin_ok:
-	hlt 077
+	hlt	077
 
 ; XPCT rz[6] : 0
 

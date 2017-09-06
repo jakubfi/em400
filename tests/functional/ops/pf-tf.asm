@@ -1,14 +1,13 @@
 
-	.const	int_nomem 0x40 + 2
-	.const	stackp 0x61
+	.include hw.inc
 
 	lw	r1, 50
 	lw	r2, 60
 	lw	r3, 70
 	lw	r4, stack
-	rw	r4, stackp
+	rw	r4, STACKP
 	lw	r4, nomem_proc
-	rw	r4, int_nomem
+	rw	r4, IV_NOMEM
 
 	lw	r4, 0b0000000000000001
 	ou	r4, 0b0000000000000011
@@ -27,7 +26,7 @@ ok:
 
 	hlt	077
 
-blk:	.word	0b0100000000000001
+blk:	.word	IMASK_NOMEM + 1
 
 err:	hlt	040
 

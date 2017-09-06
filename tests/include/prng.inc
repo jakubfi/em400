@@ -4,20 +4,20 @@
 ; out: [r1, r2] - generated seed
 ; temp: r3
 prngtimer:
-	MD	[STACKP]	; load IC of the interrupted program
-	LW	r3, [-4]
+	md	[STACKP]	; load IC of the interrupted program
+	lw	r3, [-4]
 
-	SRZ	r3
-	SLY	r1
-	SRZ	r3
-	SLY	r1
+	srz	r3
+	sly	r1
+	srz	r3
+	sly	r1
 
-	CWT	r7, -16
-	BLC	?E
-	LW	r2, r1
-	AWT	r7, 2
+	cwt	r7, -16
+	blc	?E
+	lw	r2, r1
+	awt	r7, 2
 
-	LIP
+	lip
 
 ; ------------------------------------------------------------------------
 ; Seed PRNG with a reasonably good 32-bit random number
@@ -31,35 +31,35 @@ ostck:	.res	1
 cseed:	.dword	1
 prngseed:
 	.res	1
-	LWT	r1, 0
-	LWT	r2, 0
-	LWT	r7, -32
-	LW	r1, [IV_TIMER]
-	RW	r1, otimv
-	LW	r1, [STACKP]
-	RW	r1, ostck
-	LW	r1, prngtimer
-	RW	r1, IV_TIMER
-	LW	r1, prng_stack
-	RW	r1, STACKP
-	IM	im_tm
+	lwt	r1, 0
+	lwt	r2, 0
+	lwt	r7, -32
+	lw	r1, [IV_TIMER]
+	rw	r1, otimv
+	lw	r1, [STACKP]
+	rw	r1, ostck
+	lw	r1, prngtimer
+	rw	r1, IV_TIMER
+	lw	r1, prng_stack
+	rw	r1, STACKP
+	im	im_tm
 rngloop:
-	NOP
-	NOP
-	NOP
-	NOP
-	NOP
-	CWT	r7, 0
-	JES	prngseed_fin
-	UJS	rngloop
+	nop
+	nop
+	nop
+	nop
+	nop
+	cwt	r7, 0
+	jes	prngseed_fin
+	ujs	rngloop
 prngseed_fin:
-	RD	cseed
-	IM	im_0
-	LW	r4, [otimv]
-	RW	r4, IV_TIMER
-	LW	r4, ostck
-	RW	r4, STACKP
-	UJ	[prngseed]
+	rd	cseed
+	im	im_0
+	lw	r4, [otimv]
+	rw	r4, IV_TIMER
+	lw	r4, ostck
+	rw	r4, STACKP
+	uj	[prngseed]
 
 ; ------------------------------------------------------------------------
 ; Park-Miller-Carta Pseudo-Random Number Generator implementation for MERA-400
@@ -90,18 +90,18 @@ rand:	.res	1
 	lwt	r1, 0
 	lw	r2, [hi]
 	lw	r3, [hi+1]
-	SLZ	r3
+	slz	r3
 	sly	r2
 	sly	r1
 	ad	lo
 	; lo = (lo & 0x7FFFFFFF) + (lo >> 31);
-	SXU	r1
+	sxu	r1
 	er	r1, 1\0
-	RD	lo
+	rd	lo
 	lwt	r1, 0
 	lwt	r2, 0
-	SLX	r2
-	AD	lo
+	slx	r2
+	ad	lo
 	; self.seed = lo
 	rd	cseed
 	; return lo

@@ -1,17 +1,19 @@
 
+	.include hw.inc
+
 	uj	start
 
 	.res	128
 stack:	.res	16
-mask:	.word	0b0000001111000000
+mask:	.word	IMASK_CH2_3 | IMASK_CH4_9 | IMASK_CH10_15 | IMASK_SOFT
 
 start:
 	lw	r0, 0xfafa
 	lw	r1, exlp
-	rw	r1, 96
+	rw	r1, EXLP
 
 	lw	r1, stack
-	rw	r1, 97
+	rw	r1, STACKP
 
 	im	mask
 

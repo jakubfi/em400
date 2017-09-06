@@ -18,7 +18,7 @@
 	.include io.inc
 	.include mx.inc
 
-	UJ	start
+	uj	start
 
 	.org	OS_MEM_BEG
 
@@ -34,75 +34,75 @@ mxdata:	.word	-1
 
 ; ------------------------------------------------------------------------
 
-	.const	MXCMD_SETCFG	MX_IO_SETCFG | MX_CHAN_DEFAULT
-	.const	MXCMD_STATUS	MX_IO_STATUS | MX_CHAN_DEFAULT
-	.const	MXCMD_ATTACH	MX_IO_ATTACH | MX_CHAN_DEFAULT
-	.const	MXCMD_DETACH	MX_IO_DETACH | MX_CHAN_DEFAULT
+	.const	MXCMD_SETCFG	MX_IO_SETCFG | MX_CHAN
+	.const	MXCMD_STATUS	MX_IO_STATUS | MX_CHAN
+	.const	MXCMD_ATTACH	MX_IO_ATTACH | MX_CHAN
+	.const	MXCMD_DETACH	MX_IO_DETACH | MX_CHAN
 
 	.const	test_size	5 ; each test is: [io_type, command, arg, expected_irq, expected_result]
 seq:
 	; initial reset
-	.word	0,    0,                   0,      MX_IWYZE\7, -1
+	.word	0, 0, 0, MX_IWYZE, -1
 
 	; set configuration (OK)
-	.word	c_ou, MXCMD_SETCFG,        conf,   MX_IUKON\7, -1
+	.word	c_ou, MXCMD_SETCFG, conf, MX_IUKON, -1
 
 	; check line status (OK)
-	.word	c_ou, MXCMD_STATUS | 0\10, mxdata, MX_ISTRE\7 + 0, MX_LSTATE_NONE
-	.word	c_ou, MXCMD_STATUS | 1\10, mxdata, MX_ISTRE\7 + 1, MX_LSTATE_NONE
-	.word	c_ou, MXCMD_STATUS | 2\10, mxdata, MX_ISTRE\7 + 2, MX_LSTATE_NONE
-	.word	c_ou, MXCMD_STATUS | 3\10, mxdata, MX_ISTRE\7 + 3, MX_LSTATE_NONE
+	.word	c_ou, MXCMD_STATUS | 0\10, mxdata, MX_ISTRE + 0, MX_LSTATE_NONE
+	.word	c_ou, MXCMD_STATUS | 1\10, mxdata, MX_ISTRE + 1, MX_LSTATE_NONE
+	.word	c_ou, MXCMD_STATUS | 2\10, mxdata, MX_ISTRE + 2, MX_LSTATE_NONE
+	.word	c_ou, MXCMD_STATUS | 3\10, mxdata, MX_ISTRE + 3, MX_LSTATE_NONE
 
 	; check satus for nonexistent line (error)
-	.word	c_ou, MXCMD_STATUS | 4\10, mxdata, MX_INKST\7 + 4, MX_LSTATE_NONE
+	.word	c_ou, MXCMD_STATUS | 4\10, mxdata, MX_INKST + 4, MX_LSTATE_NONE
 
 	; attach lines (OK)
-	.word	c_ou, MXCMD_ATTACH | 0\10, mxdata, MX_IDOLI\7 + 0, -1
-	.word	c_ou, MXCMD_ATTACH | 1\10, -1, MX_IDOLI\7 + 1, -1
-	.word	c_ou, MXCMD_ATTACH | 2\10, mxdata, MX_IDOLI\7 + 2, -1
-	.word	c_ou, MXCMD_ATTACH | 3\10, mxdata, MX_IDOLI\7 + 3, -1
+	.word	c_ou, MXCMD_ATTACH | 0\10, mxdata, MX_IDOLI + 0, -1
+	.word	c_ou, MXCMD_ATTACH | 1\10, -1, MX_IDOLI + 1, -1
+	.word	c_ou, MXCMD_ATTACH | 2\10, mxdata, MX_IDOLI + 2, -1
+	.word	c_ou, MXCMD_ATTACH | 3\10, mxdata, MX_IDOLI + 3, -1
 
 	; check line status (OK)
-	.word	c_ou, MXCMD_STATUS | 0\10, mxdata, MX_ISTRE\7 + 0, MX_LSTATE_ATTACHED
-	.word	c_ou, MXCMD_STATUS | 1\10, mxdata, MX_ISTRE\7 + 1, MX_LSTATE_ATTACHED
-	.word	c_ou, MXCMD_STATUS | 2\10, mxdata, MX_ISTRE\7 + 2, MX_LSTATE_ATTACHED
-	.word	c_ou, MXCMD_STATUS | 3\10, mxdata, MX_ISTRE\7 + 3, MX_LSTATE_ATTACHED
+	.word	c_ou, MXCMD_STATUS | 0\10, mxdata, MX_ISTRE + 0, MX_LSTATE_ATTACHED
+	.word	c_ou, MXCMD_STATUS | 1\10, mxdata, MX_ISTRE + 1, MX_LSTATE_ATTACHED
+	.word	c_ou, MXCMD_STATUS | 2\10, mxdata, MX_ISTRE + 2, MX_LSTATE_ATTACHED
+	.word	c_ou, MXCMD_STATUS | 3\10, mxdata, MX_ISTRE + 3, MX_LSTATE_ATTACHED
 
 	; check line status with bogus result address (error)
-	.word	c_ou, MXCMD_STATUS | 3\10, -1, MX_INPAO\7 + 3, -1
+	.word	c_ou, MXCMD_STATUS | 3\10, -1, MX_INPAO + 3, -1
 
 	; attach nonexistent line (error)
-	.word	c_ou, MXCMD_ATTACH | 4\10, mxdata, MX_INKDO\7 + 4, -1
+	.word	c_ou, MXCMD_ATTACH | 4\10, mxdata, MX_INKDO + 4, -1
 
 	; attach already attached lines (error)
-	.word	c_ou, MXCMD_ATTACH | 0\10, mxdata, MX_INDOL\7 + 0, -1
-	.word	c_ou, MXCMD_ATTACH | 1\10, mxdata, MX_INDOL\7 + 1, -1
-	.word	c_ou, MXCMD_ATTACH | 2\10, -1, MX_INDOL\7 + 2, -1
-	.word	c_ou, MXCMD_ATTACH | 3\10, mxdata, MX_INDOL\7 + 3, -1
+	.word	c_ou, MXCMD_ATTACH | 0\10, mxdata, MX_INDOL + 0, -1
+	.word	c_ou, MXCMD_ATTACH | 1\10, mxdata, MX_INDOL + 1, -1
+	.word	c_ou, MXCMD_ATTACH | 2\10, -1, MX_INDOL + 2, -1
+	.word	c_ou, MXCMD_ATTACH | 3\10, mxdata, MX_INDOL + 3, -1
 
 	; detach lines (OK)
-	.word	c_in, MXCMD_DETACH | 0\10, mxdata, MX_IODLI\7 + 0, -1
-	.word	c_in, MXCMD_DETACH | 1\10, mxdata, MX_IODLI\7 + 1, -1
-	.word	c_in, MXCMD_DETACH | 2\10, mxdata, MX_IODLI\7 + 2, -1
-	.word	c_in, MXCMD_DETACH | 3\10, -1, MX_IODLI\7 + 3, -1
+	.word	c_in, MXCMD_DETACH | 0\10, mxdata, MX_IODLI + 0, -1
+	.word	c_in, MXCMD_DETACH | 1\10, mxdata, MX_IODLI + 1, -1
+	.word	c_in, MXCMD_DETACH | 2\10, mxdata, MX_IODLI + 2, -1
+	.word	c_in, MXCMD_DETACH | 3\10, -1, MX_IODLI + 3, -1
 
 	; check line status (OK)
-	.word	c_ou, MXCMD_STATUS | 0\10, mxdata, MX_ISTRE\7 + 0, MX_LSTATE_NONE
-	.word	c_ou, MXCMD_STATUS | 1\10, mxdata, MX_ISTRE\7 + 1, MX_LSTATE_NONE
-	.word	c_ou, MXCMD_STATUS | 2\10, mxdata, MX_ISTRE\7 + 2, MX_LSTATE_NONE
-	.word	c_ou, MXCMD_STATUS | 3\10, mxdata, MX_ISTRE\7 + 3, MX_LSTATE_NONE
+	.word	c_ou, MXCMD_STATUS | 0\10, mxdata, MX_ISTRE + 0, MX_LSTATE_NONE
+	.word	c_ou, MXCMD_STATUS | 1\10, mxdata, MX_ISTRE + 1, MX_LSTATE_NONE
+	.word	c_ou, MXCMD_STATUS | 2\10, mxdata, MX_ISTRE + 2, MX_LSTATE_NONE
+	.word	c_ou, MXCMD_STATUS | 3\10, mxdata, MX_ISTRE + 3, MX_LSTATE_NONE
 
 	; detach already detached lines (also OK)
-	.word	c_in, MXCMD_DETACH | 0\10, -1, MX_IODLI\7 + 0, -1
-	.word	c_in, MXCMD_DETACH | 1\10, mxdata, MX_IODLI\7 + 1, -1
-	.word	c_in, MXCMD_DETACH | 2\10, mxdata, MX_IODLI\7 + 2, -1
-	.word	c_in, MXCMD_DETACH | 3\10, mxdata, MX_IODLI\7 + 3, -1
+	.word	c_in, MXCMD_DETACH | 0\10, -1, MX_IODLI + 0, -1
+	.word	c_in, MXCMD_DETACH | 1\10, mxdata, MX_IODLI + 1, -1
+	.word	c_in, MXCMD_DETACH | 2\10, mxdata, MX_IODLI + 2, -1
+	.word	c_in, MXCMD_DETACH | 3\10, mxdata, MX_IODLI + 3, -1
 
 	; check line status (OK)
-	.word	c_ou, MXCMD_STATUS | 0\10, mxdata, MX_ISTRE\7 + 0, MX_LSTATE_NONE
-	.word	c_ou, MXCMD_STATUS | 1\10, mxdata, MX_ISTRE\7 + 1, MX_LSTATE_NONE
-	.word	c_ou, MXCMD_STATUS | 2\10, mxdata, MX_ISTRE\7 + 2, MX_LSTATE_NONE
-	.word	c_ou, MXCMD_STATUS | 3\10, mxdata, MX_ISTRE\7 + 3, MX_LSTATE_NONE
+	.word	c_ou, MXCMD_STATUS | 0\10, mxdata, MX_ISTRE + 0, MX_LSTATE_NONE
+	.word	c_ou, MXCMD_STATUS | 1\10, mxdata, MX_ISTRE + 1, MX_LSTATE_NONE
+	.word	c_ou, MXCMD_STATUS | 2\10, mxdata, MX_ISTRE + 2, MX_LSTATE_NONE
+	.word	c_ou, MXCMD_STATUS | 3\10, mxdata, MX_ISTRE + 3, MX_LSTATE_NONE
 
 seqe:
 
@@ -113,70 +113,70 @@ seqe:
 ;  r1 - configuration field address
 ;  r4 - RJ return adress
 io_cmd:
-	UJ	r5
-c_ou:	OU	r1, r3
+	uj	r5
+c_ou:	ou	r1, r3
 	.word	c_no, c_en, c_ok, c_pe
-c_in:	IN	r1, r3
+c_in:	in	r1, r3
 	.word	c_no, c_en, c_ok, c_pe
-c_no:	HLT	041	; error
-c_ok:	UJ	r4	; return
-c_en:	UJ	r5	; repeat if engaged
-c_pe:	HLT	042	; error
+c_no:	hlt	041	; error
+c_ok:	uj	r4	; return
+c_en:	uj	r5	; repeat if engaged
+c_pe:	hlt	042	; error
 
 ; ------------------------------------------------------------------------
 mx_proc:
 
-	LW	r1, [STACKP]
-	LW	r1, [r1-1]	; get intspec from multix
+	lw	r1, [STACKP]
+	lw	r1, [r1-1]	; get intspec from multix
 
 	; check intspec
-	CW	r1, [r2+3]
-	BB	r0, ?E
-	HLT	040
+	cw	r1, [r2+3]
+	bb	r0, ?E
+	hlt	040
 
 	; should we check result?
-	LW	r3, [r2+4]
-	CWT	r3, -1
-	JES	no_res_check
+	lw	r3, [r2+4]
+	cwt	r3, -1
+	jes	no_res_check
 
 	; check result
-	LW	r5, [r2+2]
-	CW	r3, [r5]
-	BB	r0, ?E
-	HLT	043
+	lw	r5, [r2+2]
+	cw	r3, [r5]
+	bb	r0, ?E
+	hlt	043
 
 no_res_check:
 	; load and run next test
-	AWT	r2, test_size
-	CW	r2, seqe	; all tests finished?
-	BLC	?E
-	HLT	077
+	awt	r2, test_size
+	cw	r2, seqe	; all tests finished?
+	blc	?E
+	hlt	077
 
-	LW	r5, [r2]	; load io type
-	LW	r3, [r2+1]	; load next command
-	LW	r1, [r2+2]	; load next argument
-	RJ	r4, io_cmd
+	lw	r5, [r2]	; load io type
+	lw	r3, [r2+1]	; load next command
+	lw	r1, [r2+2]	; load next argument
+	rj	r4, io_cmd
 
-	LIP
+	lip
 
 ; ------------------------------------------------------------------------
 timer_proc:
-	LIP
+	lip
 
 ; ------------------------------------------------------------------------
 start:
-	LW	r1, stack
-	RW	r1, STACKP
-	LW	r1, mx_proc
-	RW	r1, MX_IV
-	LW	r1, timer_proc
-	RW	r1, IV_TIMER
+	lw	r1, stack
+	rw	r1, STACKP
+	lw	r1, mx_proc
+	rw	r1, MX_IV
+	lw	r1, timer_proc
+	rw	r1, IV_TIMER
 
-	LW	r2, seq
-	IM	msk_mx
+	lw	r2, seq
+	im	msk_mx
 
-loop:	HLT
-	UJS	loop
+loop:	hlt
+	ujs	loop
 
 stack:
 

@@ -1,12 +1,12 @@
 ; PRECMD brk (r1==1000)&&(ic==3)
 
-	LWT	r1, 0
-loop:	NOP
-	NOP
-	NOP
-	NOP
-	IRB	r1, loop
-	HLT	040
+	lwt	r1, 0
+loop:	nop
+	nop
+	nop
+	nop
+	irb	r1, loop
+	hlt	040
 
 ; POSTCMD brkdel 0
 

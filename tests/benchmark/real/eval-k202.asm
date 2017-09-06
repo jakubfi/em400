@@ -3,18 +3,20 @@
 ;
 ; Results: http://mera400.pl/index.php/Wydajno%C5%9B%C4%87_EM400
 
-	lw r4, 0
-	lw r3, 0
-	lw r7, adr_1
-	lw r6, adr_2
-	lw r2, adr_pocz
+	.cpu mera400
+
+	lw	r4, 0
+	lw	r3, 0
+	lw	r7, adr_1
+	lw	r6, adr_2
+	lw	r2, adr_pocz
 
 adr_pocz:
-	aw r4, [r7]
-	ac r3, [r6]
-	uj r2
+	aw	r4, [r7]
+	ac	r3, [r6]
+	uj	r2
 
-	hlt 077
+	hlt	077
 
-adr_1:	.word 1
-adr_2:	.word 0
+adr_1:	.word	1
+adr_2:	.word	0

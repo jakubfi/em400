@@ -1,12 +1,12 @@
 
-	lw r1, 0b1000000000000001
-	slz r1
-	lw r3, r1
-	rpc r2
+	lw	r1, 0b1000000000000001
+	slz	r1
+	lw	r3, r1
+	rpc	r2
 
-	slz r1
+	slz	r1
 
-	hlt 077
+	hlt	077
 
 ; XPCT rz[6] : 0
 ; XPCT sr : 0

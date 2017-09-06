@@ -1,19 +1,19 @@
 
-	MB	data
-	LW	r1, 1
-	LW	r2, 2
-	LW	r3, 3
-	LW	r4, 4
-	LW	r5, 5
-	LW	r6, 6
-	LW	r7, 7
-	LW	r0, 0b1100110110001000
-	HLT	077
+	mb	data
+	lw	r1, 1
+	lw	r2, 2
+	lw	r3, 3
+	lw	r4, 4
+	lw	r5, 5
+	lw	r6, 6
+	lw	r7, 7
+	lw	r0, 0b_1100_1101_1000_1000
+	hlt	077
 
-data:	.word 0b0000000000000111
+data:	.word	0b_0000_0000_0000_0111
 
-	.org 100
-	.word 0xdead, 0xbeef
+	.org	100
+	.word	0xdead, 0xbeef
 
 ; XPCT -3 : 0xfffd
 ; XPCT 0xffff : -1

@@ -514,123 +514,123 @@ recfg:	.word	1\7 + 1\15, 0
 
 	.const	test_size 3
 
-seq:	.word	dummy,	MX_IWYZE\7,	0
-	.word	0x6666,	MX_INKOT\7,	0
-	.word	num0,	MX_INKON\7,	MX_SCERR_NUM
-	.word	num1,	MX_INKON\7,	MX_SCERR_NUM
-	.word	num2,	MX_INKON\7,	MX_SCERR_NUM
-	.word	num3,	MX_INKON\7,	MX_SCERR_NUM
-	.word	num4,	MX_INKON\7,	MX_SCERR_NUM
-	.word	type0,	MX_INKON\7,	MX_SCERR_TYPE + 0
-	.word	type1,	MX_INKON\7,	MX_SCERR_TYPE + 1
-	.word	dir1,	MX_INKON\7,	MX_SCERR_DIR + 0
-	.word	dir3,	MX_INKON\7,	MX_SCERR_DIR + 1
-	.word	dir5,	MX_INKON\7,	MX_SCERR_DIR + 2
-	.word	pdir0,	MX_INKON\7,	MX_SCERR_DIR + 0
-	.word	pdir1,	MX_INKON\7,	MX_SCERR_DIR + 0
-	.word	pdir2,	MX_INKON\7,	MX_SCERR_DIR + 0
-	.word	wdir0,	MX_INKON\7,	MX_SCERR_DIR + 0
-	.word	wdir1,	MX_INKON\7,	MX_SCERR_DIR + 0
-	.word	wdir2,	MX_INKON\7,	MX_SCERR_DIR + 0
-	.word	wdir3,	MX_INKON\7,	MX_SCERR_DIR + 0
-	.word	fdir0,	MX_INKON\7,	MX_SCERR_DIR + 0
-	.word	fdir1,	MX_INKON\7,	MX_SCERR_DIR + 0
-	.word	fdir2,	MX_INKON\7,	MX_SCERR_DIR + 0
-	.word	fdir3,	MX_INKON\7,	MX_SCERR_DIR + 0
-	.word	tdir0,	MX_INKON\7,	MX_SCERR_DIR + 0
-	.word	tdir1,	MX_INKON\7,	MX_SCERR_DIR + 0
-	.word	tdir2,	MX_INKON\7,	MX_SCERR_DIR + 0
-	.word	tdir3,	MX_INKON\7,	MX_SCERR_DIR + 0
-	.word	cmpl0,	MX_INKON\7,	MX_SCERR_INCOMPLETE + 3
-	.word	cmpl1,	MX_INKON\7,	MX_SCERR_INCOMPLETE + 7
-	.word	cmpl2,	MX_INKON\7,	MX_SCERR_INCOMPLETE + 17
-	.word	tap0,	MX_INKON\7,	MX_SCERR_INCOMPLETE + 4
+seq:	.word	dummy,	MX_IWYZE,	0
+	.word	0x6666,	MX_INKOT,	0
+	.word	num0,	MX_INKON,	MX_SCERR_NUM
+	.word	num1,	MX_INKON,	MX_SCERR_NUM
+	.word	num2,	MX_INKON,	MX_SCERR_NUM
+	.word	num3,	MX_INKON,	MX_SCERR_NUM
+	.word	num4,	MX_INKON,	MX_SCERR_NUM
+	.word	type0,	MX_INKON,	MX_SCERR_TYPE + 0
+	.word	type1,	MX_INKON,	MX_SCERR_TYPE + 1
+	.word	dir1,	MX_INKON,	MX_SCERR_DIR + 0
+	.word	dir3,	MX_INKON,	MX_SCERR_DIR + 1
+	.word	dir5,	MX_INKON,	MX_SCERR_DIR + 2
+	.word	pdir0,	MX_INKON,	MX_SCERR_DIR + 0
+	.word	pdir1,	MX_INKON,	MX_SCERR_DIR + 0
+	.word	pdir2,	MX_INKON,	MX_SCERR_DIR + 0
+	.word	wdir0,	MX_INKON,	MX_SCERR_DIR + 0
+	.word	wdir1,	MX_INKON,	MX_SCERR_DIR + 0
+	.word	wdir2,	MX_INKON,	MX_SCERR_DIR + 0
+	.word	wdir3,	MX_INKON,	MX_SCERR_DIR + 0
+	.word	fdir0,	MX_INKON,	MX_SCERR_DIR + 0
+	.word	fdir1,	MX_INKON,	MX_SCERR_DIR + 0
+	.word	fdir2,	MX_INKON,	MX_SCERR_DIR + 0
+	.word	fdir3,	MX_INKON,	MX_SCERR_DIR + 0
+	.word	tdir0,	MX_INKON,	MX_SCERR_DIR + 0
+	.word	tdir1,	MX_INKON,	MX_SCERR_DIR + 0
+	.word	tdir2,	MX_INKON,	MX_SCERR_DIR + 0
+	.word	tdir3,	MX_INKON,	MX_SCERR_DIR + 0
+	.word	cmpl0,	MX_INKON,	MX_SCERR_INCOMPLETE + 3
+	.word	cmpl1,	MX_INKON,	MX_SCERR_INCOMPLETE + 7
+	.word	cmpl2,	MX_INKON,	MX_SCERR_INCOMPLETE + 17
+	.word	tap0,	MX_INKON,	MX_SCERR_INCOMPLETE + 4
 
-	.word	unus0,	MX_INKON\7,	MX_SCERR_UNUSED + 0
-	.word	unus1,	MX_INKON\7,	MX_SCERR_UNUSED + 3
-	.word	us0,	MX_INKON\7,	MX_SCERR_USED + 1
-	.word	us1,	MX_INKON\7,	MX_SCERR_USED + 3
-	.word	uprot0,	MX_INKON\7,	MX_SCERR_PROTO + 0
-	.word	uprot1,	MX_INKON\7,	MX_SCERR_PROTO + 1
-	.word	p5bit,	MX_INKON\7,	MX_SCERR_PROTO + 0
-	.word	dpr0,	MX_INKON\7,	MX_SCERR_DIR_MISMATCH + 0
-	.word	dpr1,	MX_INKON\7,	MX_SCERR_DIR_MISMATCH + 0
-	.word	dpr2,	MX_INKON\7,	MX_SCERR_DIR_MISMATCH + 0
-	.word	dpr3,	MX_INKON\7,	MX_SCERR_DIR_MISMATCH + 0
-	.word	dpr4,	MX_INKON\7,	MX_SCERR_DIR_MISMATCH + 0
-	.word	dpr5,	MX_INKON\7,	MX_SCERR_DIR_MISMATCH + 0
-	.word	dpu0,	MX_INKON\7,	MX_SCERR_DIR_MISMATCH + 0
-	.word	dpu1,	MX_INKON\7,	MX_SCERR_DIR_MISMATCH + 0
-	.word	dpu2,	MX_INKON\7,	MX_SCERR_DIR_MISMATCH + 0
-	.word	dpu3,	MX_INKON\7,	MX_SCERR_DIR_MISMATCH + 0
-	.word	dpu4,	MX_INKON\7,	MX_SCERR_DIR_MISMATCH + 0
-	.word	dpu5,	MX_INKON\7,	MX_SCERR_DIR_MISMATCH + 0
-	.word	dm0,	MX_INKON\7,	MX_SCERR_DIR_MISMATCH + 0
-	.word	dm1,	MX_INKON\7,	MX_SCERR_DIR_MISMATCH + 0
-	.word	dm2,	MX_INKON\7,	MX_SCERR_DIR_MISMATCH + 0
-	.word	dm3,	MX_INKON\7,	MX_SCERR_DIR_MISMATCH + 0
-	.word	dm4,	MX_INKON\7,	MX_SCERR_DIR_MISMATCH + 0
-	.word	dm5,	MX_INKON\7,	MX_SCERR_DIR_MISMATCH + 0
-	.word	dm6,	MX_INKON\7,	MX_SCERR_DIR_MISMATCH + 0
-	.word	dm7,	MX_INKON\7,	MX_SCERR_DIR_MISMATCH + 0
-	.word	dm8,	MX_INKON\7,	MX_SCERR_DIR_MISMATCH + 0
-;	.word	dpr0s,	MX_INKON\7,	MX_SCERR_DIR_MISMATCH + 0
-;	.word	dpr1s,	MX_INKON\7,	MX_SCERR_DIR_MISMATCH + 0
-;	.word	dpr2s,	MX_INKON\7,	MX_SCERR_DIR_MISMATCH + 0
-;	.word	dpr3s,	MX_INKON\7,	MX_SCERR_DIR_MISMATCH + 0
-;	.word	dpr4s,	MX_INKON\7,	MX_SCERR_DIR_MISMATCH + 0
-;	.word	dpr5s,	MX_INKON\7,	MX_SCERR_DIR_MISMATCH + 0
-;	.word	dpu0s,	MX_INKON\7,	MX_SCERR_DIR_MISMATCH + 0
-;	.word	dpu1s,	MX_INKON\7,	MX_SCERR_DIR_MISMATCH + 0
-;	.word	dpu2s,	MX_INKON\7,	MX_SCERR_DIR_MISMATCH + 0
-;	.word	dpu3s,	MX_INKON\7,	MX_SCERR_DIR_MISMATCH + 0
-;	.word	dpu4s,	MX_INKON\7,	MX_SCERR_DIR_MISMATCH + 0
-;	.word	dpu5s,	MX_INKON\7,	MX_SCERR_DIR_MISMATCH + 0
-;	.word	dm0s,	MX_INKON\7,	MX_SCERR_DIR_MISMATCH + 0
-;	.word	dm1s,	MX_INKON\7,	MX_SCERR_DIR_MISMATCH + 0
-;	.word	dm2s,	MX_INKON\7,	MX_SCERR_DIR_MISMATCH + 0
-;	.word	dm3s,	MX_INKON\7,	MX_SCERR_DIR_MISMATCH + 0
-;	.word	dm4s,	MX_INKON\7,	MX_SCERR_DIR_MISMATCH + 0
-;	.word	dm5s,	MX_INKON\7,	MX_SCERR_DIR_MISMATCH + 0
-;	.word	dm6s,	MX_INKON\7,	MX_SCERR_DIR_MISMATCH + 0
-;	.word	dm7s,	MX_INKON\7,	MX_SCERR_DIR_MISMATCH + 0
-;	.word	dm8s,	MX_INKON\7,	MX_SCERR_DIR_MISMATCH + 0
-	.word	tw0,	MX_INKON\7,	MX_SCERR_TYPE_MISMATCH + 0
-	.word	tw1,	MX_INKON\7,	MX_SCERR_TYPE_MISMATCH + 0
-	.word	tw2,	MX_INKON\7,	MX_SCERR_TYPE_MISMATCH + 0
-	.word	tw3,	MX_INKON\7,	MX_SCERR_TYPE_MISMATCH + 0
-	.word	tw4,	MX_INKON\7,	MX_SCERR_TYPE_MISMATCH + 0
-	.word	tf0,	MX_INKON\7,	MX_SCERR_TYPE_MISMATCH + 0
-	.word	tf1,	MX_INKON\7,	MX_SCERR_TYPE_MISMATCH + 0
-	.word	tf2,	MX_INKON\7,	MX_SCERR_TYPE_MISMATCH + 0
-	.word	tf3,	MX_INKON\7,	MX_SCERR_TYPE_MISMATCH + 0
-	.word	tf4,	MX_INKON\7,	MX_SCERR_TYPE_MISMATCH + 0
-	.word	tt0,	MX_INKON\7,	MX_SCERR_TYPE_MISMATCH + 0
-	.word	tt1,	MX_INKON\7,	MX_SCERR_TYPE_MISMATCH + 0
-	.word	tt2,	MX_INKON\7,	MX_SCERR_TYPE_MISMATCH + 0
-	.word	tt3,	MX_INKON\7,	MX_SCERR_TYPE_MISMATCH + 0
-	.word	tt4,	MX_INKON\7,	MX_SCERR_TYPE_MISMATCH + 0
-	.word	tpu0,	MX_INKON\7,	MX_SCERR_TYPE_MISMATCH + 0
-	.word	tpu1,	MX_INKON\7,	MX_SCERR_TYPE_MISMATCH + 0
-	.word	tpu2,	MX_INKON\7,	MX_SCERR_TYPE_MISMATCH + 0
-	.word	tpr0,	MX_INKON\7,	MX_SCERR_TYPE_MISMATCH + 0
-	.word	tpr1,	MX_INKON\7,	MX_SCERR_TYPE_MISMATCH + 0
-	.word	tpr2,	MX_INKON\7,	MX_SCERR_TYPE_MISMATCH + 0
-	.word	tm0,	MX_INKON\7,	MX_SCERR_TYPE_MISMATCH + 0
-	.word	tm1,	MX_INKON\7,	MX_SCERR_TYPE_MISMATCH + 0
-;	.word	tpu0s,	MX_INKON\7,	MX_SCERR_TYPE_MISMATCH + 0
-;	.word	tpu1s,	MX_INKON\7,	MX_SCERR_TYPE_MISMATCH + 0
-;	.word	tpu2s,	MX_INKON\7,	MX_SCERR_TYPE_MISMATCH + 0
-;	.word	tpr0s,	MX_INKON\7,	MX_SCERR_TYPE_MISMATCH + 0
-;	.word	tpr1s,	MX_INKON\7,	MX_SCERR_TYPE_MISMATCH + 0
-;	.word	tpr2s,	MX_INKON\7,	MX_SCERR_TYPE_MISMATCH + 0
-;	.word	tm0s,	MX_INKON\7,	MX_SCERR_TYPE_MISMATCH + 0
-;	.word	tm1s,	MX_INKON\7,	MX_SCERR_TYPE_MISMATCH + 0
+	.word	unus0,	MX_INKON,	MX_SCERR_UNUSED + 0
+	.word	unus1,	MX_INKON,	MX_SCERR_UNUSED + 3
+	.word	us0,	MX_INKON,	MX_SCERR_USED + 1
+	.word	us1,	MX_INKON,	MX_SCERR_USED + 3
+	.word	uprot0,	MX_INKON,	MX_SCERR_PROTO + 0
+	.word	uprot1,	MX_INKON,	MX_SCERR_PROTO + 1
+	.word	p5bit,	MX_INKON,	MX_SCERR_PROTO + 0
+	.word	dpr0,	MX_INKON,	MX_SCERR_DIR_MISMATCH + 0
+	.word	dpr1,	MX_INKON,	MX_SCERR_DIR_MISMATCH + 0
+	.word	dpr2,	MX_INKON,	MX_SCERR_DIR_MISMATCH + 0
+	.word	dpr3,	MX_INKON,	MX_SCERR_DIR_MISMATCH + 0
+	.word	dpr4,	MX_INKON,	MX_SCERR_DIR_MISMATCH + 0
+	.word	dpr5,	MX_INKON,	MX_SCERR_DIR_MISMATCH + 0
+	.word	dpu0,	MX_INKON,	MX_SCERR_DIR_MISMATCH + 0
+	.word	dpu1,	MX_INKON,	MX_SCERR_DIR_MISMATCH + 0
+	.word	dpu2,	MX_INKON,	MX_SCERR_DIR_MISMATCH + 0
+	.word	dpu3,	MX_INKON,	MX_SCERR_DIR_MISMATCH + 0
+	.word	dpu4,	MX_INKON,	MX_SCERR_DIR_MISMATCH + 0
+	.word	dpu5,	MX_INKON,	MX_SCERR_DIR_MISMATCH + 0
+	.word	dm0,	MX_INKON,	MX_SCERR_DIR_MISMATCH + 0
+	.word	dm1,	MX_INKON,	MX_SCERR_DIR_MISMATCH + 0
+	.word	dm2,	MX_INKON,	MX_SCERR_DIR_MISMATCH + 0
+	.word	dm3,	MX_INKON,	MX_SCERR_DIR_MISMATCH + 0
+	.word	dm4,	MX_INKON,	MX_SCERR_DIR_MISMATCH + 0
+	.word	dm5,	MX_INKON,	MX_SCERR_DIR_MISMATCH + 0
+	.word	dm6,	MX_INKON,	MX_SCERR_DIR_MISMATCH + 0
+	.word	dm7,	MX_INKON,	MX_SCERR_DIR_MISMATCH + 0
+	.word	dm8,	MX_INKON,	MX_SCERR_DIR_MISMATCH + 0
+;	.word	dpr0s,	MX_INKON,	MX_SCERR_DIR_MISMATCH + 0
+;	.word	dpr1s,	MX_INKON,	MX_SCERR_DIR_MISMATCH + 0
+;	.word	dpr2s,	MX_INKON,	MX_SCERR_DIR_MISMATCH + 0
+;	.word	dpr3s,	MX_INKON,	MX_SCERR_DIR_MISMATCH + 0
+;	.word	dpr4s,	MX_INKON,	MX_SCERR_DIR_MISMATCH + 0
+;	.word	dpr5s,	MX_INKON,	MX_SCERR_DIR_MISMATCH + 0
+;	.word	dpu0s,	MX_INKON,	MX_SCERR_DIR_MISMATCH + 0
+;	.word	dpu1s,	MX_INKON,	MX_SCERR_DIR_MISMATCH + 0
+;	.word	dpu2s,	MX_INKON,	MX_SCERR_DIR_MISMATCH + 0
+;	.word	dpu3s,	MX_INKON,	MX_SCERR_DIR_MISMATCH + 0
+;	.word	dpu4s,	MX_INKON,	MX_SCERR_DIR_MISMATCH + 0
+;	.word	dpu5s,	MX_INKON,	MX_SCERR_DIR_MISMATCH + 0
+;	.word	dm0s,	MX_INKON,	MX_SCERR_DIR_MISMATCH + 0
+;	.word	dm1s,	MX_INKON,	MX_SCERR_DIR_MISMATCH + 0
+;	.word	dm2s,	MX_INKON,	MX_SCERR_DIR_MISMATCH + 0
+;	.word	dm3s,	MX_INKON,	MX_SCERR_DIR_MISMATCH + 0
+;	.word	dm4s,	MX_INKON,	MX_SCERR_DIR_MISMATCH + 0
+;	.word	dm5s,	MX_INKON,	MX_SCERR_DIR_MISMATCH + 0
+;	.word	dm6s,	MX_INKON,	MX_SCERR_DIR_MISMATCH + 0
+;	.word	dm7s,	MX_INKON,	MX_SCERR_DIR_MISMATCH + 0
+;	.word	dm8s,	MX_INKON,	MX_SCERR_DIR_MISMATCH + 0
+	.word	tw0,	MX_INKON,	MX_SCERR_TYPE_MISMATCH + 0
+	.word	tw1,	MX_INKON,	MX_SCERR_TYPE_MISMATCH + 0
+	.word	tw2,	MX_INKON,	MX_SCERR_TYPE_MISMATCH + 0
+	.word	tw3,	MX_INKON,	MX_SCERR_TYPE_MISMATCH + 0
+	.word	tw4,	MX_INKON,	MX_SCERR_TYPE_MISMATCH + 0
+	.word	tf0,	MX_INKON,	MX_SCERR_TYPE_MISMATCH + 0
+	.word	tf1,	MX_INKON,	MX_SCERR_TYPE_MISMATCH + 0
+	.word	tf2,	MX_INKON,	MX_SCERR_TYPE_MISMATCH + 0
+	.word	tf3,	MX_INKON,	MX_SCERR_TYPE_MISMATCH + 0
+	.word	tf4,	MX_INKON,	MX_SCERR_TYPE_MISMATCH + 0
+	.word	tt0,	MX_INKON,	MX_SCERR_TYPE_MISMATCH + 0
+	.word	tt1,	MX_INKON,	MX_SCERR_TYPE_MISMATCH + 0
+	.word	tt2,	MX_INKON,	MX_SCERR_TYPE_MISMATCH + 0
+	.word	tt3,	MX_INKON,	MX_SCERR_TYPE_MISMATCH + 0
+	.word	tt4,	MX_INKON,	MX_SCERR_TYPE_MISMATCH + 0
+	.word	tpu0,	MX_INKON,	MX_SCERR_TYPE_MISMATCH + 0
+	.word	tpu1,	MX_INKON,	MX_SCERR_TYPE_MISMATCH + 0
+	.word	tpu2,	MX_INKON,	MX_SCERR_TYPE_MISMATCH + 0
+	.word	tpr0,	MX_INKON,	MX_SCERR_TYPE_MISMATCH + 0
+	.word	tpr1,	MX_INKON,	MX_SCERR_TYPE_MISMATCH + 0
+	.word	tpr2,	MX_INKON,	MX_SCERR_TYPE_MISMATCH + 0
+	.word	tm0,	MX_INKON,	MX_SCERR_TYPE_MISMATCH + 0
+	.word	tm1,	MX_INKON,	MX_SCERR_TYPE_MISMATCH + 0
+;	.word	tpu0s,	MX_INKON,	MX_SCERR_TYPE_MISMATCH + 0
+;	.word	tpu1s,	MX_INKON,	MX_SCERR_TYPE_MISMATCH + 0
+;	.word	tpu2s,	MX_INKON,	MX_SCERR_TYPE_MISMATCH + 0
+;	.word	tpr0s,	MX_INKON,	MX_SCERR_TYPE_MISMATCH + 0
+;	.word	tpr1s,	MX_INKON,	MX_SCERR_TYPE_MISMATCH + 0
+;	.word	tpr2s,	MX_INKON,	MX_SCERR_TYPE_MISMATCH + 0
+;	.word	tm0s,	MX_INKON,	MX_SCERR_TYPE_MISMATCH + 0
+;	.word	tm1s,	MX_INKON,	MX_SCERR_TYPE_MISMATCH + 0
 
-	.word	fl0,	MX_INKON\7,	MX_SCERR_PARAMS + 0
+	.word	fl0,	MX_INKON,	MX_SCERR_PARAMS + 0
 
-	.word	cfgok,	MX_IUKON\7,	0
-	.word	recfg,	MX_INKON\7,	MX_SCERR_CONFSET
+	.word	cfgok,	MX_IUKON,	0
+	.word	recfg,	MX_INKON,	MX_SCERR_CONFSET
 seqe:
 
 ; ------------------------------------------------------------------------
@@ -638,55 +638,55 @@ seqe:
 ;  r1 - configuration field address
 ;  r4 - RJ return adress
 setcfg:
-	OU	r1, 0b101\2 + MX_CHAN_DEFAULT
+	ou	r1, 0b101\2 + MX_CHAN
 	.word	no, en, ok, pe
-no:	HLT	041
-ok:	UJ	r4
-en:	UJS	setcfg
-pe:	HLT	042
+no:	hlt	041
+ok:	uj	r4
+en:	ujs	setcfg
+pe:	hlt	042
 
 ; ------------------------------------------------------------------------
 mx_proc:
-	LW	r1, [STACKP]
-	LW	r1, [r1-1]	; intspec from mx
+	lw	r1, [STACKP]
+	lw	r1, [r1-1]	; intspec from mx
 
-	CW	r1, [r2+1]	; is intspec as expected?
-	BB	r0, ?E
-	HLT	040		; bad intspec
+	cw	r1, [r2+1]	; is intspec as expected?
+	bb	r0, ?E
+	hlt	040		; bad intspec
 
-	CW	r1, MX_INKOT\7	; skip setconf result if INKOT
-	JES	next
+	cw	r1, MX_INKOT	; skip setconf result if INKOT
+	jes	next
 
-	LW	r1, [r2+2]	; load expected setconf return value
-	LW	r3, [r2]
-	LW	r5, [r3+1]
-	CW	r1, r5		; load setconf return value
-	BB	r0, ?E
-	HLT	043		; bad setconf result
+	lw	r1, [r2+2]	; load expected setconf return value
+	lw	r3, [r2]
+	lw	r5, [r3+1]
+	cw	r1, r5		; load setconf return value
+	bb	r0, ?E
+	hlt	043		; bad setconf result
 
 next:
-	AWT	r2, test_size	; next test
-	CW	r2, seqe	; all tests finished?
-	BLC	?E
-	HLT	077		; all tests OK
+	awt	r2, test_size	; next test
+	cw	r2, seqe	; all tests finished?
+	blc	?E
+	hlt	077		; all tests OK
 
-	LW	r1, [r2]
-	RJ	r4, setcfg
+	lw	r1, [r2]
+	rj	r4, setcfg
 
-	LIP
+	lip
 
 ; ------------------------------------------------------------------------
 start:
-	LW	r1, stack
-	RW	r1, STACKP
-	LW	r1, mx_proc
-	RW	r1, MX_IV
+	lw	r1, stack
+	rw	r1, STACKP
+	lw	r1, mx_proc
+	rw	r1, MX_IV
 
-	LW	r2, seq		; start of all tests
-	IM	msk_mx
+	lw	r2, seq		; start of all tests
+	im	msk_mx
 loop:
-	HLT
-	UJS	loop
+	hlt
+	ujs	loop
 
 stack:
 

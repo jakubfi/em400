@@ -6,68 +6,66 @@
 
 	.cpu	mx16
 
-	.equ	inttable 0x40
-	.equ	int_cpu2 inttable + 3
-	.equ	int_mx inttable + 12 + 1
-	.equ	stackp 0x61
-	.equ	start 0x70
+	.include hw.inc
 
-	UJ	start
+	.equ	int_mx IV_CHAN1
 
-mask:	.word	0b1111110000000000
+	uj	start
+
+mask:	.word	IMASK_PARITY | IMASK_NOMEM | IMASK_2CPU_HIGH | IMASK_IFPOWER | IMASK_CPU | IMASK_CH0_1
 zmask:	.word	0
 raise:	.word	1\3
 
-	.org	inttable
+	.org	INTV
 	.res	32, empty
 
-	.org	start
-
-	RZ	0x200
-	RZ	0x201
-	LW	r1, stack
-	RW	r1, stackp
-	LW	r1, cpu2x
-	RW	r1, int_cpu2
-	LW	r1, mx
-	RW	r1, int_mx
-	LWT	r6, 0
+	.org	OS_MEM_BEG
+start:
+	rz	0x200
+	rz	0x201
+	lw	r1, stack
+	rw	r1, STACKP
+	lw	r1, cpu2x
+	rw	r1, IV_2CPU_HIGH
+	lw	r1, mx
+	rw	r1, int_mx
+	lwt	r6, 0
 
 ; first, check int masking for vanilla CPU (store mask at [0x200])
 
-	LW	r7, 0x200
-	IM	mask
-w1:	HLT
-	BB	r6, ?X	; did we wake up because of MULTIX interrupt?
-	UJS	w1
+	lw	r7, 0x200
+	im	mask
+w1:	hlt
+	bb	r6, ?X	; did we wake up because of MULTIX interrupt?
+	ujs	w1
 
-	ER	r6, ?X
-	IM	zmask
-	MCL
+	er	r6, ?X
+	im	zmask
+	mcl
 
 ; then, repeat for MX-16 CPU (store mask at [0x201])
 
-	CRON
-	AWT	r7, 1
-	IM	mask
-w2:	HLT
-	BB	r6, ?X	; did we wake up because of MULTIX interrupt?
-	UJS	w2
-	HLT	077
+	cron
+	awt	r7, 1
+	im	mask
+w2:	hlt
+	bb	r6, ?X	; did we wake up because of MULTIX interrupt?
+	ujs	w2
+	hlt	077
 
 ; we use simulated 2nd CPU interrupt to get interrupt mask
 ; that was set by previous interrupt
-cpu2x:	MD	[stackp]
-	LW	r1, [-2]
-	RW	r1, r7	; store previous int mask
-	LIP
+cpu2x:	md	[STACKP]
+	lw	r1, [-2]
+	rw	r1, r7	; store previous int mask
+	lip
 
 ; we use multix as a source of channel interrupt
 ; (as it always sends interrupt after initialization)
-mx:	FI	raise	; raise 2nd CPU interrupt
-	OR	r6, ?X	; indicate that we've received MULTIX interrupt
+mx:	fi	raise	; raise 2nd CPU interrupt
+	or	r6, ?X	; indicate that we've received MULTIX interrupt
 ; all other interrupts do nothing
-empty:	LIP
+empty:	lip
 stack:
 
 ; XPCT [0x200] : 0b1111100000000000

@@ -1,7 +1,8 @@
-doc
-build
-tests/images/*.e4i
+/doc
+/build
+/tests/images/*.e4i
 *.swp
-tools/*.pyc
+/tools/*.pyc
 CMakeLists.txt.user
-tests/baselines
+/tests/baselines
+/tests/*.set

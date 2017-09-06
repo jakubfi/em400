@@ -1,7 +1,7 @@
 
-	la data
+	la	data
 
-	hlt 077
+	hlt	077
 
 data:	.word	40, 41, 42, 43, 44, 45, 46
 

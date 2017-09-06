@@ -3,60 +3,55 @@
 ; does MEGA allocation work?
 ; can we read from/write to allocated segments?
 
-	.equ int_nomem 0x40 + 2
-	.equ stackp 0x61
-	.equ magic 0x2323
+	.include hw.inc
+	.include io.inc
+	.include mega.inc
 
-	.equ nb 0
-	.equ ab_s 1\3
-	.equ ab_last 15\3
-	.equ mp 0
-	.equ seg_s 1\10
-	.equ addr 100
+	.const	magic 0x2323
+	.const	nb 0
+	.const	ab_s 1\3
+	.const	ab_last 15\3
+	.const	mp 0
+	.const	seg_s 1\10
+	.const	addr 100
 
-	.equ mega 1\15 + 1\6
-	.equ dealloc 1\5
-	.equ done 1\0
-	.equ pshow 1\2
-	.equ phide 1\1
+	uj	start
 
-	uj start
-
-mask:	.word 0b0100000000000000
-stack:	.res 16
+mask:	.word	IMASK_NOMEM
 
 nomem_proc:
-	awt r7, 1
-err:	hlt 040
+	awt	r7, 1
+err:	hlt	040
 
-	.org 0x70
+	.org	OS_MEM_BEG
 
-start:	lwt r7, 0
-	lwt r1, stack
-	rw r1, stackp
-	lwt r1, nomem_proc
-	rw r1, int_nomem
+start:	lwt	r7, 0
+	lw	r1, stack
+	rw	r1, STACKP
+	lwt	r1, nomem_proc
+	rw	r1, IV_NOMEM
 
-	lw r1, ab_s + nb
-	lw r2, seg_s + mp
+	lw	r1, ab_s + nb
+	lw	r2, seg_s + mp
 
-next:	cw r1, ab_last
-	jes fin
-	aw r1, ab_s
-	aw r2, seg_s
-	ou r1, r2 + mega+phide+done
-	.word err, err, next, err
+next:	cw	r1, ab_last
+	jes	fin
+	aw	r1, ab_s
+	aw	r2, seg_s
+	ou	r1, r2 + MEGA_ALLOC + MEGA_PAS_HIDE + MEGA_ALLOC_FINISH + MEM_CFG
+	.word	err, err, next, err
 
-fin:	im mask
-	lwt r1, 0
-loop:	aw r1, 0x1000
-	rw r1, r1
-	lw r1, [r1]
-	rw r1, r1+0x100
-	cw r1, 0xf000
-	jn loop
+fin:	im	mask
+	lwt	r1, 0
+loop:	aw	r1, 0x1000
+	rw	r1, r1
+	lw	r1, [r1]
+	rw	r1, r1+0x100
+	cw	r1, 0xf000
+	jn	loop
 
-	hlt 077
+	hlt	077
+stack:
 
 ; XPCT r7 : 0
 ; XPCT [0x1100] : 0x1000

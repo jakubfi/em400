@@ -1,6 +1,6 @@
-.word	1
+	.word	1
 
-	hlt 077
+	hlt	077
 
 ; XPCT sr : 0
 

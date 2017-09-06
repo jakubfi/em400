@@ -1,26 +1,26 @@
-	lw r7, -10000
+	lw	r7, -10_000
 
-	lw r2, d10
+	lw	r2, d10
 loop:
-	mw d2
-	mw d2
-	mw d2
-	mw d2
-	mw d2
-	mw d2
-	mw d2
-	mw d2
-	mw d2
-	mw d2
-	mw d2
-	mw d2
-	mw d2
-	mw d2
-	mw d2
-	irb r7, loop
-	ujs loop
+	mw	d2
+	mw	d2
+	mw	d2
+	mw	d2
+	mw	d2
+	mw	d2
+	mw	d2
+	mw	d2
+	mw	d2
+	mw	d2
+	mw	d2
+	mw	d2
+	mw	d2
+	mw	d2
+	mw	d2
+	irb	r7, loop
+	ujs	loop
 
-	hlt 077
+	hlt	077
 
-d10:	.dword 10
-d2:	.dword 2
+d10:	.dword	10
+d2:	.dword	2

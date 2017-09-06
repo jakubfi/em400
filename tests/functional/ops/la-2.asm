@@ -1,7 +1,7 @@
 
-	la [data1]
+	la	[data1]
 
-	hlt 077
+	hlt	077
 
 data1:	.word	data2
 data2:	.word	40, 41, 42, 43, 44, 45, 46

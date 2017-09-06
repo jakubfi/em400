@@ -2,31 +2,28 @@
 
 ; Check if MULTIX rejects commands before initialization completes
 
-	.equ	stackp 0x61
-	.equ	prog_beg 0x70
-	.equ	int_mx 0x40 + 12 + 1
-	.equ	unmask_chan 0b0000011110000000
-	.equ	mx_chan 1
+	.include hw.inc
+	.include mx.inc
 
-	UJ	start
+	uj	start
 
 mask:
-	.word	unmask_chan
+	.word	IMASK_CH0_1
 mx_proc:
-	HLT	041		; test should end before MX int
+	hlt	041		; test should end before mx int
 
-	.org	prog_beg
+	.org	OS_MEM_BEG
 start:
-	LW	r3, stack
-	RW	r3, stackp
-	LW	r3, mx_proc
-	RW	r3, int_mx
-	IM	mask
+	lw	r3, stack
+	rw	r3, STACKP
+	lw	r3, mx_proc
+	rw	r3, MX_IV
+	im	mask
 
-	OU	r5, 0b101\2 + mx_chan\14
+	ou	r5, 0b101\2 + MX_CHAN
 	.word	fail, ok, fail, fail
-ok:	HLT	077	; EN = command rejected -> this is OK
-fail:	HLT	040	; NO, OK, PE -> this is bad
+ok:	hlt	077	; EN = command rejected -> this is OK
+fail:	hlt	040	; NO, OK, PE -> this is bad
 
 stack:
 

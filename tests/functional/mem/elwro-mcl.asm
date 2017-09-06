@@ -2,8 +2,9 @@
 
 	.cpu mera400
 
-	.equ int_nomem 0x40 + 2
-	.equ stackp 0x61
+	.include hw.inc
+	.include io.inc
+
 	.equ segment 1
 	.equ page 0
 	.equ module 1
@@ -12,20 +13,19 @@
 	uj	start
 
 ba:	.word	0b0100000000000000 + segment\15
-stack:	.res	16
 
 nomem_proc:
 	hlt	045
 
-	.org	0x70
+	.org	OS_MEM_BEG
 
-start:	lwt	r1, stack
-	rw	r1, stackp
+start:	lw	r1, stack
+	rw	r1, STACKP
 	lwt	r1, nomem_proc
-	rw	r1, int_nomem
+	rw	r1, IV_NOMEM
 
 	lw	r1, page\3 + segment\15
-	lw	r2, frame\10 + module\14 + 1
+	lw	r2, frame\10 + module\14 + MEM_CFG
 	ou	r1, r2
 	.word	err, err, ok, err
 err:	hlt	044
@@ -49,6 +49,8 @@ ok:	mb	ba
 	lwt	r7, 10
 
 	hlt	046
+
+stack:
 
 ; XPCT r6 : 10
 ; XPCT r7 : 9

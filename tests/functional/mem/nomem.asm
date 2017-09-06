@@ -1,28 +1,27 @@
 ; OPTS -c configs/no_user_mem.cfg
 
-	.equ int_nomem 0x40 + 2
-	.equ stackp 0x61
+	.include hw.inc
 
-	uj start
+	uj	start
 
-mask:	.word 0b0100000000000001
+mask:	.word	IMASK_NOMEM + 1
 nomem_proc:
-	hlt 077
+	hlt	077
 
+	.org	OS_MEM_BEG
 start:
-	lw r3, stack
-	rw r3, stackp
-	lw r3, nomem_proc
-	rw r3, int_nomem
-	im mask
-	mb mask
+	lw	r3, stack
+	rw	r3, STACKP
+	lw	r3, nomem_proc
+	rw	r3, IV_NOMEM
+	im	mask
+	mb	mask
 
-	pw r1, 10
+	pw	r1, 10
 
-	hlt 040
+	hlt	040
 
 stack:
-	.res 4
 
 ; XPCT rz[6] : 0
 ; XPCT ir : 0xec3f

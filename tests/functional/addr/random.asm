@@ -15,7 +15,7 @@
 	.include io.inc
 	.include mega.inc
 
-	.const	mega_cfg MEM_CFG | MEGA_ALLOC_FINISH | MEGA_HIDE_PAS | MEGA_ALLOC
+	.const	mega_cfg MEM_CFG | MEGA_ALLOC_FINISH | MEGA_PAS_HIDE | MEGA_ALLOC
 
 	.const	mframe	0\10 + 2\14 + mega_cfg
 	.const	tframe	1\10 + 2\14 + mega_cfg

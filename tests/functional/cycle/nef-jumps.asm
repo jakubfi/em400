@@ -6,17 +6,17 @@
 
 	.cpu	mera400
 
-	MCL
-	LWT	r0, 0
-	JL	[0x8000]
-	JE	[0x8000]
-	JG	[0x8000]
-	JZ	[0x8000]
-	JM	[0x8000]
-	LW	r0, ?E
-	JN	[0x8000]
+	mcl
+	lwt	r0, 0
+	jl	[0x8000]
+	je	[0x8000]
+	jg	[0x8000]
+	jz	[0x8000]
+	jm	[0x8000]
+	lw	r0, ?E
+	jn	[0x8000]
 
-	HLT	077
+	hlt	077
 
 
 ; XPCT ir : 0xec3f

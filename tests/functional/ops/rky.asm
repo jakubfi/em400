@@ -1,8 +1,8 @@
 ; PRECMD REG KB 17234
 
-	rky r1
+	rky	r1
 
-	hlt 077
+	hlt	077
 
 ; XPCT rz[6] : 0
 ; XPCT sr : 0

@@ -3,9 +3,9 @@
 	lwt	r6, 20
 	lwt	r7, 30
 
-	rl data
+	rl	data
 
-	hlt 077
+	hlt	077
 
 	.org	20
 data:

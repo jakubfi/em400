@@ -4,8 +4,8 @@
 
 	.cpu	mx16
 
-	.const	int_nomem 0x40 + 2
-	.const	stackp 0x61
+	.include hw.inc
+	.include io.inc
 
 	.const	magic1 0x4455
 	.const	magic2 0xfeba
@@ -14,23 +14,22 @@
 
 	uj	start
 
-mask:	.word	0b0100000000000000
-stack:	.res	16
-zeroreg:.word   0, 0, 0, 0, 0, 0, 0
+mask:	.word	IMASK_NOMEM
+zeroreg:.res	7, 0
 
 nomem_proc:
 	hlt	040
 
-	.org	0x70
+	.org	OS_MEM_BEG
 
 start:	la	zeroreg
 	lw	r1, stack
-	rw	r1, stackp
+	rw	r1, STACKP
 	lw	r1, nomem_proc
-	rw	r1, int_nomem
+	rw	r1, IV_NOMEM
 
 	lw	r1, seg\3 + 0\15
-	ou	r1, 3\10 + 0\14 + 1
+	ou	r1, 3\10 + 0\14 + MEM_CFG
 	.word	err, err, ok, err
 
 err:	hlt	040
@@ -59,6 +58,8 @@ ok:	im	mask
 	lb	r1, ((seg\3+addr)*2 + 1) & 0xFFFF
 
 	hlt	077
+
+stack:
 
 ; XPCT r1 : 0x0055
 ; XPCT r3 : 0x0055
