@@ -1,10 +1,10 @@
-; Can't allocate hardwired segments
+; Elwro allows writing logical addresses 0:0 and 0:1 to RAL registers
+; of physical frames other than 0:0 and 0:1 (reserved for OS)
+; In other words: it's allowed to map logical addresses 0:0 and 0:1
+; to physical frames other than 0:0 and 0:1
 
 	.include hw.inc
 	.include io.inc
-
-	; TODO: test disabled, don't know why
-	hlt	077
 
 	uj	start
 
