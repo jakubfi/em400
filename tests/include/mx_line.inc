@@ -1,3 +1,7 @@
+
+	.ifndef __MX_LINE_INC__
+	.const __MX_LINE_INC__ 1
+
 	.const MX_LSTATE_NONE		0
 	.const MX_LSTATE_ATTACHED	1 << 0	; line attached
 	.const MX_LSTATE_TRANS		1 << 1	; transmission active
@@ -15,5 +19,7 @@
 	.const MX_LSTATE_STOP_CHAR	1 << 13	; stop character received
 	.const MX_LSTATE_PARITY_ERR	1 << 14	; parity error
 	.const MX_LSTATE_OPRQ		1 << 15	; OPRQ
+
+	.endif
 
 ; vim: tabstop=8 shiftwidth=8 autoindent syntax=emas

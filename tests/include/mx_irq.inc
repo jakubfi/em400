@@ -1,3 +1,7 @@
+
+	.ifndef __MX_IRQ_INC__
+	.const __MX_IRQ_INC__ 1
+
 	.const	MX_INIEA	0\7
 	.const	MX_INSKA	1\7
 	.const	MX_IWYZE	2\7
@@ -33,5 +37,7 @@
 	.const	MX_IEPSD	40\7
 	.const	MX_IEPSE	41\7
 	.const	MX_IEPSF	42\7
+
+	.endif
 
 ; vim: tabstop=8 shiftwidth=8 autoindent syntax=emas

@@ -1,3 +1,7 @@
+
+	.ifndef __MX_SETCFG_INC__
+	.const __MX_SETCFG_INC__ 1
+
 	.const	MX_SCERR_CONFSET	0\7
 	.const	MX_SCERR_NUM		1\7
 	.const	MX_SCERR_TYPE		2\7
@@ -52,5 +56,7 @@
 	.const	MX_FORMAT_PROTECT	1\15
 	.const	MX_SHORT_DISK_ADDR	0\4
 	.const	MX_LONG_DISK_ADDR	1\4
+
+	.endif
 
 ; vim: tabstop=8 shiftwidth=8 autoindent syntax=emas

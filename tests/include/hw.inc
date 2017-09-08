@@ -1,3 +1,7 @@
+
+	.ifndef __HW_INC__
+	.const __HW_INC__ 1
+
 ; general system pointers
 
 	.const	INTV		0x40	; interrupt vectors table pointer
@@ -108,5 +112,7 @@
 	.const	SFPV_SF		SFPV + 9
 	.const	SFPV_MF		SFPV + 10
 	.const	SFPV_DF		SFPV + 11
+
+	.endif
 
 ; vim: tabstop=8 shiftwidth=8 autoindent syntax=emas
