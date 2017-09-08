@@ -19,7 +19,7 @@ tim_proc:
 	cw	r1, 0
 	jes	done
 	awt	r1, -1
-again:	in	r5, 0\2 + MX_CHAN	; reset MULTIX
+again:	in	r5, IO_RESET | MX_CHAN	; reset MULTIX
 	.word	fail, again, ok, fail
 fail:	hlt	040
 ok:

@@ -36,7 +36,7 @@ tim_proc:
 ; ------------------------------------------------------------------------
 get_intspec:
 	lwt	r5, -13
-	in	r5, 0b01\4 + MX_CHAN
+	in	r5, IO_INTSPEC | MX_CHAN
 	.word	f, f, ok, f
 f:	uj	r3
 ok:	shc	r5, 8
@@ -70,7 +70,7 @@ start:
 	hlt	042
 
 	; reset multix
-	in	r2, 0b00\4 + MX_CHAN
+	in	r2, IO_RESET | MX_CHAN
 	.word	f3, f3, ok3, f3
 f3:	hlt	043
 ok3:

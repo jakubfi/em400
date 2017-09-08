@@ -31,12 +31,12 @@ start:	lwt	r7, 0
 	lw	r1, nomem_proc
 	rw	r1, IV_NOMEM
 
-	lw	r1, ab1 + nb
-	ou	r1, seg + mp + MEM_CFG + MEGA_PAS_HIDE + MEGA_ALLOC_FINISH + MEGA_ALLOC
+	lw	r1, ab1 | nb
+	ou	r1, seg | mp | MEM_CFG | MEGA_PAS_HIDE | MEGA_ALLOC_FINISH | MEGA_ALLOC
 	.word	err, err, ok, err
 
-ok:	lw	r1, ab2 + nb
-	ou	r1, seg + mp + MEM_CFG + MEGA_ALLOC
+ok:	lw	r1, ab2 | nb
+	ou	r1, seg | mp | MEM_CFG | MEGA_ALLOC
 	.word	err, err, ok2, err
 
 ok2:	im	mask

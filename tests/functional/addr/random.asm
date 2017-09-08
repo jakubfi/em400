@@ -17,10 +17,10 @@
 
 	.const	mega_cfg MEM_CFG | MEGA_ALLOC_FINISH | MEGA_PAS_HIDE | MEGA_ALLOC
 
-	.const	mframe	0\10 + 2\14 + mega_cfg
-	.const	tframe	1\10 + 2\14 + mega_cfg
-	.const	dframe	2\10 + 2\14 + mega_cfg
-	.const	cfgpage	15\3 + 0\15
+	.const	mframe	0\10 | 2\14 | mega_cfg
+	.const	tframe	1\10 | 2\14 | mega_cfg
+	.const	dframe	2\10 | 2\14 | mega_cfg
+	.const	cfgpage	15\3 | 0\15
 
 	uj	start
 

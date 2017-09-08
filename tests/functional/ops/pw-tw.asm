@@ -1,5 +1,6 @@
 
 	.include hw.inc
+	.include io.inc
 
 	lw	r0, 0xaafe
 	lw	r1, 0x0001
@@ -12,7 +13,7 @@
 
 	uj	start
 
-blk:	.word	IMASK_NOMEM + 1
+blk:	.word	IMASK_NOMEM | 1
 data:	.res	8
 stack:	.res	16
 
@@ -26,8 +27,8 @@ start:
 	lw	r1, nomem_proc
 	rw	r1, IV_NOMEM
 
-	lw	r1, 0b0000000000000001
-	ou	r1, 0b0000000000000011
+	lw	r1, 0\3 | 1\15
+	ou	r1, 0\10 | 1\14 | MEM_CFG
 	.word	err, err, ok, err
 err:	hlt	040
 ok:

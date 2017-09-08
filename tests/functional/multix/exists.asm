@@ -3,6 +3,7 @@
 ; MULTIX' "check if exists" command should return OK both before and after mx initialization
 
 	.include hw.inc
+	.include io.inc
 	.include mx.inc
 
 	uj	start
@@ -25,14 +26,14 @@ start:
 	rw	r3, MX_IV
 
 	; "exists" before initialization
-	in	r5, 0b10\4 + MX_CHAN
+	in	r5, IO_EXISTS | MX_CHAN
 	.word	fail, fail, ok, fail
 fail:	hlt	040
 ok:	im	mask
 	hlt		; wait for mx int
 
 	; "exists" after initialization
-	in	r5, 0b10\4 + MX_CHAN
+	in	r5, IO_EXISTS | MX_CHAN
 	.word	fail2, fail2, ok2, fail2
 fail2:	hlt	041
 ok2:	hlt	077

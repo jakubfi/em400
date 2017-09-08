@@ -49,12 +49,12 @@ ints:	.res	1
 ; ---- CODE --------------------------------------------------------------
 
 start:
-	lw	r1, 0\3 + 1\15
-	ou 	r1, 3\10 + 0\14 + MEM_CFG
+	lw	r1, 0\3 | 1\15
+	ou 	r1, 3\10 | 0\14 | MEM_CFG
 	.word	e, e, block1, e
 block1:
-	lw	r1, 1\3 + 1\15
-	ou 	r1, 4\10 + 0\14 + MEM_CFG
+	lw	r1, 1\3 | 1\15
+	ou 	r1, 4\10 | 0\14 | MEM_CFG
 	.word	e, e, go, e
 
 go:	
@@ -73,7 +73,7 @@ go:
 	hlt	043
 
 	; IC, R0, SR, expected_read
-userv:	.word	0, 0, INT_MASK + Q + USER_BLOCK, 0x0044
+userv:	.word	0, 0, INT_MASK | Q | USER_BLOCK, 0x0044
 
 user_prog:
 	cron

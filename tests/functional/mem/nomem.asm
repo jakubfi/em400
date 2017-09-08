@@ -4,7 +4,7 @@
 
 	uj	start
 
-mask:	.word	IMASK_NOMEM + 1
+mask:	.word	IMASK_NOMEM | 1
 nomem_proc:
 	hlt	077
 

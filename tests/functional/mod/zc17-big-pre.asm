@@ -33,8 +33,8 @@ start:	la	zeroreg
 	lw	r1, nomem_proc
 	rw	r1, IV_NOMEM
 
-	lw	r1, seg\3 + 0\15
-	ou	r1, 3\10 + 0\14 + MEM_CFG
+	lw	r1, seg\3 | 0\15
+	ou	r1, 3\10 | 0\14 | MEM_CFG
 	.word	err, err, ok, err
 
 err:	hlt	040

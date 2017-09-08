@@ -56,7 +56,7 @@ w2:	hlt
 	er	r6, ?X
 
 	; IWYZE, by software MULTIX reset
-	in	r5, MX_CHAN
+	in	r5, IO_RESET | MX_CHAN
 	.word	fail, fail, w3, fail
 w3:	hlt
 	bb	r6, ?X

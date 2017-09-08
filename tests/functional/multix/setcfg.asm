@@ -22,7 +22,7 @@
 	.include io.inc
 	.include mx.inc
 
-	UJ	start
+	uj	start
 
 msk_mx:	.word	IMASK_CH0_1
 
@@ -638,7 +638,7 @@ seqe:
 ;  r1 - configuration field address
 ;  r4 - RJ return adress
 setcfg:
-	ou	r1, 0b101\2 + MX_CHAN
+	ou	r1, MX_IO_SETCFG | MX_CHAN
 	.word	no, en, ok, pe
 no:	hlt	041
 ok:	uj	r4

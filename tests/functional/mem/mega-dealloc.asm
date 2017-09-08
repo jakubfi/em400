@@ -14,7 +14,7 @@
 
 	uj	start
 
-mask:	.word	IMASK_NOMEM + 1
+mask:	.word	IMASK_NOMEM | 1
 
 nomem_proc:
 	aw	r7, 1
@@ -30,8 +30,8 @@ start:	lwt	r7, 0
 	lw	r1, nomem_proc
 	rw	r1, IV_NOMEM
 
-	lw	r1, ab + nb
-	ou	r1, mp + seg + MEGA_ALLOC + MEGA_PAS_HIDE + MEGA_ALLOC_FINISH + MEM_CFG
+	lw	r1, ab | nb
+	ou	r1, mp | seg | MEGA_ALLOC | MEGA_PAS_HIDE | MEGA_ALLOC_FINISH | MEM_CFG
 	.word	err, err, ok, err
 
 ok:	mb	mask
@@ -39,14 +39,14 @@ ok:	mb	mask
 	lw	r1, magic
 	pw	r1, ab
 
-	lw	r1, ab + nb
-	ou	r1, MEGA_DEALLOC + MEM_CFG
+	lw	r1, ab | nb
+	ou	r1, MEGA_DEALLOC | MEM_CFG
 	.word	err, err, ok2, err
 
 ok2:	tw	r1, ab
 
-	lw	r1, ab + nb
-	ou	r1, mp + seg + MEGA_ALLOC + MEM_CFG
+	lw	r1, ab | nb
+	ou	r1, mp | seg | MEGA_ALLOC | MEM_CFG
 	.word	err, err, ok3, err
 
 ok3:	tw	r2, ab

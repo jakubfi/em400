@@ -24,12 +24,12 @@ start:	lwt	r7, 0
 	im	mask
 
 	lwt	r1, 0
-	ou	r1, 5\10 + 1\14 + MEM_CFG
+	ou	r1, 5\10 | 1\14 | MEM_CFG
 	.word	err0, err0, next, err0
 err0:	hlt	042
 
 next:	lw	r1, 1\3
-	ou	r1, 5\10 + 1\14 + MEM_CFG
+	ou	r1, 5\10 | 1\14 | MEM_CFG
 	.word	err1, err1, ok, err1
 
 err1:	hlt	043

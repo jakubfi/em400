@@ -12,7 +12,7 @@
 
 	uj	start
 
-ba:	.word	0b0100000000000000 + segment\15
+ba:	.word	0b0100000000000000 | segment\15
 
 nomem_proc:
 	hlt	045
@@ -24,8 +24,8 @@ start:	lw	r1, stack
 	lwt	r1, nomem_proc
 	rw	r1, IV_NOMEM
 
-	lw	r1, page\3 + segment\15
-	lw	r2, frame\10 + module\14 + MEM_CFG
+	lw	r1, page\3 | segment\15
+	lw	r2, frame\10 | module\14 | MEM_CFG
 	ou	r1, r2
 	.word	err, err, ok, err
 err:	hlt	044

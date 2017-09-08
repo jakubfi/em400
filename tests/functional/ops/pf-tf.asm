@@ -26,7 +26,7 @@ ok:
 
 	hlt	077
 
-blk:	.word	IMASK_NOMEM + 1
+blk:	.word	IMASK_NOMEM | 1
 
 err:	hlt	040
 

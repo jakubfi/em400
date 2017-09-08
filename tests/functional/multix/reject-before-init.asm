@@ -20,7 +20,7 @@ start:
 	rw	r3, MX_IV
 	im	mask
 
-	ou	r5, 0b101\2 + MX_CHAN
+	ou	r5, MX_IO_SETCFG | MX_CHAN
 	.word	fail, ok, fail, fail
 ok:	hlt	077	; EN = command rejected -> this is OK
 fail:	hlt	040	; NO, OK, PE -> this is bad

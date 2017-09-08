@@ -29,7 +29,7 @@ start:
 	im	mask
 	hlt		; wait for mx int
 
-repeat:	in	r5, 0b001\2 + 0\10 + MX_CHAN
+repeat:	in	r5, MX_IO_REQUEUE | 0\10 | MX_CHAN
 	.word	fail, repeat, ok, fail
 fail:	hlt	041
 ok:	hlt	077

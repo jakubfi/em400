@@ -28,7 +28,7 @@ ok:
 	hlt	077
 
 err:	hlt	077
-blk:	.word	IMASK_NOMEM + 1
+blk:	.word	IMASK_NOMEM | 1
 
 nomem_proc:
 	hlt	040

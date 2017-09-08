@@ -35,7 +35,7 @@ ok:
 	hlt	077
 
 data:	.res	7
-blk:	.word	IMASK_NOMEM + 1
+blk:	.word	IMASK_NOMEM | 1
 
 nomem_proc:
 	hlt	040

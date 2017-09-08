@@ -38,7 +38,7 @@ next:	cw	r1, ab_last
 	jes	fin
 	aw	r1, ab_s
 	aw	r2, seg_s
-	ou	r1, r2 + MEGA_ALLOC + MEGA_PAS_HIDE + MEGA_ALLOC_FINISH + MEM_CFG
+	ou	r1, r2 + MEGA_ALLOC | MEGA_PAS_HIDE | MEGA_ALLOC_FINISH | MEM_CFG
 	.word	err, err, next, err
 
 fin:	im	mask
@@ -46,7 +46,7 @@ fin:	im	mask
 loop:	aw	r1, 0x1000
 	rw	r1, r1
 	lw	r1, [r1]
-	rw	r1, r1+0x100
+	rw	r1, r1 + 0x100
 	cw	r1, 0xf000
 	jn	loop
 

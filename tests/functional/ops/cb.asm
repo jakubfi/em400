@@ -33,7 +33,7 @@ exitok:
 	hlt	077
 
 err:	hlt	040
-blk:	.word	IMASK_NOMEM + 1
+blk:	.word	IMASK_NOMEM | 1
 
 nomem_proc:
 	hlt	040

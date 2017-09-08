@@ -14,7 +14,7 @@ mask:	.word	IMASK_CH0_1
 		; 0=ou
 		; 1=in	cmd		irq
 seq:	.word	-1,	-1,		MX_IWYZE
-	.word	0,	0b001\2,	MX_IWYTE
+	.word	0,	MX_IO_TEST,	MX_IWYTE
 seqe:
 
 	.org	OS_MEM_BEG
