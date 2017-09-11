@@ -136,13 +136,23 @@ void mem_mega_seg_set(int nb, int ab, struct mem_slot_t *slot)
 // -----------------------------------------------------------------------
 int mem_mega_cmd(int nb, int ab, int mp, int seg, int flags)
 {
+	LOG(L_MEM, 1, "MEGA: (%2d, %2d) -> (%2d, %2d)  flags: %s%s%s%s%s",
+		nb,
+		ab,
+		mp,
+		seg,
+		flags & MEM_MEGA_ALLOC ? "alloc " : "",
+		flags & MEM_MEGA_FREE ? "free " : "",
+		flags & MEM_MEGA_PROM_SHOW ? "pshow " : "",
+		flags & MEM_MEGA_PROM_HIDE ? "phide " : "",
+		flags & MEM_MEGA_ALLOC_DONE ? "done" : ""
+	);
+
 	// 'free'
 	if ((flags & MEM_MEGA_FREE)) {
-		LOG(L_MEM, 1, "MEGA: del map (%2d, %2d)	 %s%s%s", nb, ab, flags & MEM_MEGA_PROM_SHOW ? "[prom show]" : "", flags & MEM_MEGA_PROM_HIDE ? "[prom hide]" : "", flags & MEM_MEGA_ALLOC_DONE ? " [done]" : "");
 		mem_mega_map[nb][ab] = NULL;
 	// 'alloc'
 	} else {
-		LOG(L_MEM, 1, "MEGA: add map (%2d, %2d) -> (%2d, %2d)	 %s%s%s", nb, ab, mp, seg, flags & MEM_MEGA_PROM_SHOW ? "[prom show]" : "", flags & MEM_MEGA_PROM_HIDE ? "[prom hide]" : "", flags & MEM_MEGA_ALLOC_DONE ? " [done]" : "");
 		mem_mega_map[nb][ab] = mem_mega[mp][seg];
 	}
 
