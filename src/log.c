@@ -70,7 +70,6 @@ struct log_component log_components[] = {
 };
 
 int log_enabled;
-int log_initialized;
 
 static pthread_t log_flusher_th;
 static pthread_mutex_t log_mutex;
@@ -112,21 +111,12 @@ int log_init(struct cfg_em400 *cfg)
 		goto cleanup;
 	}
 
-	if (cfg->log_enabled) {
-		ret = log_enable();
-		if (ret != E_OK) {
-			goto cleanup;
-		}
-	}
-
 	// set up thresholds
 	res = log_setup_levels(cfg->log_levels);
 	if (res < 0) {
 		ret = E_LEVELS;
 		goto cleanup;
 	}
-
-	pthread_mutex_init(&log_mutex, NULL);
 
 	// initialize deassembler
 	emd = emdas_create(cfg->cpu_mod ? EMD_ISET_MX16 : EMD_ISET_MERA400, (emdas_getfun) mem_get);
@@ -140,33 +130,30 @@ int log_init(struct cfg_em400 *cfg)
 	emdas_set_tabs(emd, 0, 0, 0, 0);
 	dasm_buf = emdas_get_buf(emd);
 
-	log_initialized = 1;
+	pthread_mutex_init(&log_mutex, NULL);
+
+	if (cfg->log_enabled) {
+		ret = log_enable();
+		if (ret != E_OK) {
+			goto cleanup;
+		}
+	}
 
 	return E_OK;
 
 cleanup:
-	if (log_f) fclose(log_f);
-	free(log_file);
-	emdas_destroy(emd);
+	log_shutdown();
 	return ret;
 }
 
 // -----------------------------------------------------------------------
 void log_shutdown()
 {
-	int i;
-
-	if (!log_initialized) return;
-
-	emdas_destroy(emd);
-
-	for (i=0 ; i<L_ALL; i++) {
-		atom_store_release(&log_components[i].thr, 0);
-	}
-
 	log_disable();
+	emdas_destroy(emd);
 	log_crk_shutdown();
 	free(log_file);
+	log_file = NULL;
 }
 
 // -----------------------------------------------------------------------
