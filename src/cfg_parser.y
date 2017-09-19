@@ -21,13 +21,15 @@
 #include <stdarg.h>
 
 #include "cfg.h"
+#include "log.h"
 
 struct cfg_chan *this_chan;
 
-void cyyerror(struct cfg_em400 *cfg, char *s, ...);
+void cyyerror(struct cfg_em400 *cfg, const char *s, ...);
 int cyylex(void);
 %}
 
+%error-verbose
 %locations
 %parse-param {struct cfg_em400 *cfg}
 
@@ -41,14 +43,32 @@ int cyylex(void);
 	struct cfg_arg *arg;
 };
 
-%token COMPUTER CHANNEL UNIT
-%token SPEED_REAL TIMER_STEP TIMER_START CPU_MOD CPU_USER_IO_ILLEGAL CPU_AWP
-%token ELWRO MEGA MEGA_PROM MEGA_BOOT OS_SEG CPU_STOP_ON_NOMEM
-%token LOG ENABLED LFILE LEVELS
-%token <value> TEXT STRING
-%token <value> VALUE
-%token <value> BOOL
-%type <arg> arg arglist
+%token END 0 "end of file"
+%token COMPUTER "`computer`"
+%token CHANNEL "`channel`"
+%token UNIT "`unit`"
+%token SPEED_REAL "`speed_real`"
+%token TIMER_STEP "`timer_step`"
+%token TIMER_START "`timer_start`"
+%token CPU_MOD "`cpu_mod`"
+%token CPU_USER_IO_ILLEGAL "`cpu_user_io_illegal`"
+%token CPU_AWP "`cpu_awp`"
+%token ELWRO "`elwro`"
+%token MEGA "`mega`"
+%token MEGA_PROM "`mega_prom`"
+%token MEGA_BOOT "`mega_boot`"
+%token OS_SEG "`os_seg`"
+%token CPU_STOP_ON_NOMEM "`cpu_stop_on_nomem`"
+%token LOG "`log`"
+%token ENABLED "`enabled`"
+%token LFILE "`file`"
+%token LEVELS "loging levels"
+%token <value> NAME "parameter or device name"
+%token <value> STRING "string"
+%token <value> VALUE "integer value"
+%token <value> BOOL "`true` or `false`"
+%type <arg> arg
+%type <arg> arglist
 
 %token '{' '}' '=' ':' ','
 
@@ -62,7 +82,7 @@ objects:
 object:
 	COMPUTER '{' computer_opts '}'
 	| LOG '{' log_opts '}'
-	| CHANNEL VALUE '=' TEXT { cfg_make_chan(cfg, $2.v, $4.s); free($2.s); } '{' units '}'
+	| CHANNEL VALUE '=' NAME { cfg_make_chan(cfg, $2.v, $4.s); free($2.s); } '{' units '}'
 	;
 
 units:
@@ -71,8 +91,8 @@ units:
 	;
 
 unit:
-	UNIT VALUE '=' TEXT ':' arglist	{ cfg_make_unit(cfg, $2.v, $4.s, $6); free($2.s); }
-	| UNIT VALUE '=' TEXT			{ cfg_make_unit(cfg, $2.v, $4.s, NULL); free($2.s); }
+	UNIT VALUE '=' NAME ':' arglist	{ cfg_make_unit(cfg, $2.v, $4.s, $6); free($2.s); }
+	| UNIT VALUE '=' NAME			{ cfg_make_unit(cfg, $2.v, $4.s, NULL); free($2.s); }
 	;
 
 arglist:
@@ -82,7 +102,7 @@ arglist:
 
 arg:
 	VALUE	{ $$ = cfg_make_arg($1.s); }
-	| TEXT	{ $$ = cfg_make_arg($1.s); }
+	| NAME	{ $$ = cfg_make_arg($1.s); }
 	;
 
 computer_opts:
@@ -118,13 +138,15 @@ log_opt:
 %%
 
 // -----------------------------------------------------------------------
-void cyyerror(struct cfg_em400 *cfg, char *s, ...)
+void cyyerror(struct cfg_em400 *cfg, const char *s, ...)
 {
+	char buf[4096];
 	va_list ap;
 	va_start(ap, s);
-	fprintf(stderr, "Error parsing config, line %d: ", yylloc.first_line);
-	vfprintf(stderr, s, ap);
-	fprintf(stderr, "\n");
+	vsnprintf(buf, 4095, s, ap);
+	va_end(ap);
+
+	log_err("Error parsing config, line %d: %s.", yylloc.first_line, buf);
 	cfg_error = 1;
 }
 

@@ -21,8 +21,6 @@
 
 #include "cfg_parser.h"
 
-void cyyerror(char *);
-
 #define YY_USER_ACTION cyylloc.first_line = cyylineno;
 
 %}
@@ -89,7 +87,7 @@ false|no		{ cyylval.value.v = 0; cyylval.value.s = strdup(cyytext); return BOOL;
 
 {text} {
 	cyylval.value.s = strdup(cyytext);
-	return TEXT;
+	return NAME;
 }
 
 %%
