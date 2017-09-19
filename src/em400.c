@@ -35,7 +35,6 @@
 #include "ectl.h"
 #include "em400.h"
 #include "cfg.h"
-#include "errors.h"
 
 #ifdef WITH_DEBUGGER
 #include "debugger/debugger.h"
@@ -67,25 +66,13 @@ void em400_shutdown()
 }
 
 // -----------------------------------------------------------------------
-void em400_exit_error(int err_code, char *format, ...)
-{
-	va_list ap;
-	va_start(ap, format);
-	vfprintf(stderr, format, ap);
-	va_end(ap);
-	fprintf(stderr, ": %s\n", get_error(err_code));
-	em400_shutdown();
-	exit(EXIT_FAILURE);
-}
-
-// -----------------------------------------------------------------------
-void em400_init(struct cfg_em400 *cfg)
+int em400_init(struct cfg_em400 *cfg)
 {
 	int res;
 
 	res = log_init(cfg);
 	if (res != E_OK) {
-		em400_exit_error(res, "Error initializing logging");
+		return log_err("Failed to initialize logging.");
 	}
 
 	if (LOG_WANTS(L_EM4H, 2)) {
@@ -100,22 +87,22 @@ void em400_init(struct cfg_em400 *cfg)
 
 	res = mem_init(cfg);
 	if (res != E_OK) {
-		em400_exit_error(res, "Error initializing memory");
+		return log_err("Failed to initialize memory.");
 	}
 
-	res = cpu_init(cfg, cfg->ui_name?1:0);
+	res = cpu_init(cfg, cfg->ui_name ? 1 : 0);
 	if (res != E_OK) {
-		em400_exit_error(res, "Error initializing CPU");
+		return log_err("Failed to initialize CPU.");
 	}
 
 	res = timer_init(cfg);
 	if (res != E_OK) {
-		em400_exit_error(res, "Error initializing CPU timer");
+		return log_err("Failed to initialize timer.");
 	}
 
 	res = io_init(cfg);
 	if (res != E_OK) {
-		em400_exit_error(res, "Error initializing I/O");
+		return log_err("Failed to initialize I/O.");
 	}
 
 	rKB = cfg->keys;
@@ -123,11 +110,12 @@ void em400_init(struct cfg_em400 *cfg)
 	if (cfg->program_name) {
 		FILE *f = fopen(cfg->program_name, "rb");
 		if (!f) {
-			em400_exit_error(res, "Could not open program file: '%s'", cfg->program_name);
+			return log_err("Failed to open program file: \"%s\".", cfg->program_name);
 		}
 		int res = ectl_load(f, cfg->program_name, 0, 0);
+		fclose(f);
 		if (res < 0) {
-			em400_exit_error(res, "Could not load program '%s'", cfg->program_name);
+			return log_err("Failed to load program file: \"%s\".", cfg->program_name);
 		} else {
 			LOG(L_EM4H, 1, "OS memory block image loaded: \"%s\", %i words", cfg->program_name, res);
 		}
@@ -135,22 +123,24 @@ void em400_init(struct cfg_em400 *cfg)
 
 	res = ectl_init();
 	if (res != E_OK) {
-		em400_exit_error(res, "Error initializing ECTL interface");
+		return log_err("Failed to initialize ECTL interface.");
 	}
 
 	if (cfg->ui_name) {
 		ui = ui_create(cfg->ui_name);
 		if (!ui) {
-			em400_exit_error(gerr, "Error initializing UI");
+			return log_err("Failed to initialize UI.");
 		}
 	} else {
 		#ifdef WITH_DEBUGGER
 		res = dbg_init(cfg);
 		if (res != E_OK) {
-			em400_exit_error(res, "Error initializing debugger");
+			return log_err("Failed to initialize debugger.");
 		}
 		#endif
 	}
+
+	return E_OK;
 }
 
 // -----------------------------------------------------------------------
@@ -171,6 +161,7 @@ void em400_usage()
 		"                  level: 0-9\n"
 		"   -L           : disable logging\n"
 		"   -k value     : set keys to given value\n"
+		"   -u ui        : EXPERIMENTAL: run specified user interface (available UIs: cmd)\n"
 #ifdef WITH_DEBUGGER
 		"   -s           : use simple debugger interface\n"
 #endif
@@ -205,30 +196,30 @@ struct cfg_em400 * em400_configure(int argc, char** argv)
 	cfg_cmdline = cfg_from_args(argc, argv);
 	if (!cfg_cmdline) {
 		// wrong usage
-		goto cleanup;
+		return NULL;
 	}
 
+	// will only print help
 	if (cfg_cmdline->print_help) {
-		em400_usage();
-		goto cleanup;
+		return cfg_cmdline;
 	}
 
-	// load configuration from file
+	// load configuration from file (there is always a config file, either default one or provided by the user)
 	cfg_file = cfg_from_file(cfg_cmdline->cfg_filename);
 	if (!cfg_file) {
-		fprintf(stderr, "Could not load config file: %s\n", cfg_cmdline->cfg_filename);
-		goto cleanup;
+		log_err("Failed to load config file: \"%s\".", cfg_cmdline->cfg_filename);
+		cfg_destroy(cfg_cmdline);
+		return NULL;
 	}
 
 	// build final configuration by overlaying config file with commandline
 	cfg_final = cfg_overlay(cfg_file, cfg_cmdline);
-
 	if (!cfg_final) {
+		log_err("Failed to overlay commandline options onto config file: \"%s\".", cfg_cmdline->cfg_filename);
 		cfg_destroy(cfg_file);
+		cfg_destroy(cfg_cmdline);
+		return NULL;
 	}
-
-cleanup:
-	cfg_destroy(cfg_cmdline);
 
 	return cfg_final;
 }
@@ -238,34 +229,42 @@ cleanup:
 // -----------------------------------------------------------------------
 int main(int argc, char** argv)
 {
+	int ret = -1;
 	em400_mkconfdir();
 
 	struct cfg_em400 *cfg = em400_configure(argc, argv);
-
 	if (!cfg) {
-		exit(EXIT_FAILURE);
+		log_err("Failed to configure EM400.");
+		goto done;
 	}
 
 	if (cfg->print_help) {
 		em400_usage();
-		cfg_destroy(cfg);
-		exit(0);
+		ret = 0;
+		goto done;
 	}
 
-	em400_init(cfg);
+	int res = em400_init(cfg);
+	if (res != E_OK) {
+		goto done;
+	}
+
 	if (ui) {
 		int res = ui_run(ui);
 		if (res != E_OK) {
-			em400_exit_error(res, "Error running UI");
+			log_err("Failed to start the UI: %s.", ui->drv->name);
+			goto done;
 		}
 	}
 
-	cpu_loop(ui?1:0);
+	cpu_loop(ui ? 1 : 0);
 
+	ret = 0;
+
+done:
 	em400_shutdown();
 	cfg_destroy(cfg);
-
-	return 0;
+	return ret;
 }
 
 // vim: tabstop=4 shiftwidth=4 autoindent

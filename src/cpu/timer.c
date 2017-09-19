@@ -25,7 +25,6 @@
 
 #include "log.h"
 #include "cfg.h"
-#include "errors.h"
 #include "atomic.h"
 
 int timer_enabled;
@@ -64,7 +63,7 @@ int timer_init(struct cfg_em400 *cfg)
 	timer_step = cfg->timer_step;
 
 	if ((timer_step < 2) || (timer_step > 100)) {
-		return E_TIMER_VALUE;
+		return log_err("Timer step should be 2-100 miliseconds, not %i.", timer_step);
 	}
 
 	LOG(L_CPU, 1, "Timer cycle: %i ms", timer_step);
@@ -77,7 +76,7 @@ int timer_init(struct cfg_em400 *cfg)
 
 	sem_init(&timer_quit, 0, 0);
 	if (pthread_create(&timer_th, NULL, timer_thread, NULL)) {
-		return E_THREAD;
+		return log_err("Failed to spawn timer thread.");
 	}
 
 	return E_OK;

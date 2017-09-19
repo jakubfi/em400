@@ -1,6 +1,8 @@
 cmake_minimum_required(VERSION 2.8.4)
 project(em400 C)
 
+# It's still here due to the old UI, conveniently marking all the places where
+# the old UI keeps its tentacles squeezed into the emulation core.
 set(WITH_DEBUGGER 1)
 
 set(DEBUG 0)

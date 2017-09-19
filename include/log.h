@@ -28,6 +28,9 @@
 #define LOG_LEVEL_MIN 0
 #define LOG_LEVEL_MAX 9
 
+#define E_OK 0
+#define E_ERR -1
+
 enum log_components {
 	L_REG, L_MEM, L_CPU, L_OP, L_INT,
 	L_IO,
@@ -56,6 +59,7 @@ int log_wants(unsigned component, unsigned level);
 const char * log_get_component_name(unsigned component);
 int log_get_component_id(const char *name);
 
+int log_err(char *msgfmt, ...);
 void log_log(unsigned component, unsigned level, char *format, ...);
 void log_splitlog(unsigned component, unsigned level, char *text);
 

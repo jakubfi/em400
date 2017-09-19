@@ -33,7 +33,6 @@
 #include "log.h"
 #include "log_crk.h"
 #include "cfg.h"
-#include "errors.h"
 #include "atomic.h"
 #include "utils.h"
 
@@ -103,25 +102,25 @@ static void log_log_timestamp(unsigned component, unsigned level, char *msg);
 int log_init(struct cfg_em400 *cfg)
 {
 	int res;
-	int ret = E_ALLOC;
+	int ret = E_ERR;
 
 	log_file = strdup(cfg->log_file);
 	if (!log_file) {
-		ret = E_ALLOC;
+		log_err("Memory allocation error.");
 		goto cleanup;
 	}
 
 	// set up thresholds
 	res = log_setup_levels(cfg->log_levels);
 	if (res < 0) {
-		ret = E_LEVELS;
+		log_err("Failed to parse log levels definition: \"%s\".", cfg->log_levels);
 		goto cleanup;
 	}
 
 	// initialize deassembler
 	emd = emdas_create(cfg->cpu_mod ? EMD_ISET_MX16 : EMD_ISET_MERA400, (emdas_getfun) mem_get);
 	if (!emd) {
-		ret = E_DASM;
+		log_err("Log deassembler initialization failed.");
 		goto cleanup;
 	}
 
@@ -135,6 +134,7 @@ int log_init(struct cfg_em400 *cfg)
 	if (cfg->log_enabled) {
 		ret = log_enable();
 		if (ret != E_OK) {
+			log_err("Failed to enable logging.");
 			goto cleanup;
 		}
 	}
@@ -205,7 +205,7 @@ int log_enable()
 	// Open log file
 	log_f = fopen(log_file, "a");
 	if (!log_f) {
-		return E_FILE_OPEN;
+		return log_err("Failed to open log file: \"%s\".", log_file);
 	}
 
 	log_log_timestamp(L_EM4H, 0, "Opened log");
@@ -214,7 +214,7 @@ int log_enable()
 	log_flusher_stop = 0;
 	if (pthread_create(&log_flusher_th, NULL, log_flusher, NULL) != 0) {
 		fclose(log_f);
-		return E_THREAD;
+		return log_err("Failed to spawn log flusher thread.");
 	}
 
 	atom_store_release(&log_enabled, 1);
@@ -358,6 +358,31 @@ int log_wants(unsigned component, unsigned level)
 		return 0;
 	}
 	return 1;
+}
+
+// -----------------------------------------------------------------------
+int log_err(char *msgfmt, ...)
+{
+	va_list vl;
+	va_start(vl, msgfmt);
+
+	vfprintf(stderr, msgfmt, vl);
+	fprintf(stderr, "\n");
+
+	va_end(vl);
+
+	if (log_is_enabled()) {
+		va_start(vl, msgfmt);
+		pthread_mutex_lock(&log_mutex);
+		fprintf(log_f, LOG_F_COMP LOG_F_EMPTY, log_components[L_EM4H].name, 0);
+		fprintf(log_f, "ERROR: ");
+		vfprintf(log_f, msgfmt, vl);
+		fprintf(log_f, "\n");
+		pthread_mutex_unlock(&log_mutex);
+		va_end(vl);
+	}
+
+	return E_ERR;
 }
 
 // -----------------------------------------------------------------------

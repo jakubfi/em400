@@ -22,7 +22,7 @@
 #include <string.h>
 #include <strings.h>
 
-#include "errors.h"
+#include "log.h"
 #include "ui/ui.h"
 
 extern struct ui_drv ui_cmd;
@@ -42,7 +42,7 @@ struct ui * ui_create(const char *name)
 		if (!strncasecmp(name, (*drv)->name, strlen((*drv)->name))) {
 			struct ui *ui = calloc(1, sizeof(struct ui));
 			if (!ui) {
-				gerr = E_ALLOC;
+				log_err("Memory allocation error when creating UI.");
 				return NULL;
 			}
 			ui->drv = *drv;
@@ -50,7 +50,7 @@ struct ui * ui_create(const char *name)
 			// setup the UI
 			ui->data = ui->drv->setup(name);
 			if (!ui->data) {
-				gerr = E_UI_SETUP;
+				log_err("Failed to setup UI: %s.", name);
 				return NULL;
 			}
 			return ui;
@@ -58,7 +58,7 @@ struct ui * ui_create(const char *name)
 		drv++;
 	}
 
-	gerr = E_UI_NOTFOUND;
+	log_err("Unknown UI: %s.", name);
 	return NULL;
 }
 
@@ -77,7 +77,7 @@ int ui_run(struct ui *ui)
 {
 	// initialize the UI loop
 	if (pthread_create(&ui->th, NULL, ui_loop, ui)) {
-		return E_THREAD;
+		return log_err("Failed to spawn UI thread.");
 	}
 
 	return E_OK;

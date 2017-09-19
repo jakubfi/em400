@@ -30,8 +30,8 @@
 #include <fcntl.h>
 #include <errno.h>
 
+#include "log.h"
 #include "cfg.h"
-#include "errors.h"
 #include "io/dev/dev.h"
 
 enum dev_terminal_commands { CMD_NONE, CMD_RD, CMD_WR, CMD_QUIT };
@@ -124,41 +124,44 @@ void * dev_terminal_create(struct cfg_arg *args)
 
 	res = cfg_args_decode(args, "s", &type);
 	if (res != E_OK) {
-		gerr = res;
+		log_err("Failed to parse terminal type: \"%s\".", args->text);
 		goto cleanup;
 	}
 
 	if (!strcasecmp(type, "tcp")) {
 		res = cfg_args_decode(args->next, "i", &port);
 		if (res != E_OK) {
-			gerr = res;
+			log_err("Failed to parse terminal TCP port: \"%s\".", args->next->text);
 			goto cleanup;
 		}
 		if (dev_terminal_open_tcp(terminal, port, 100)) {
-			gerr = E_TERM;
+			log_err("Failed to open TCP terminal on port: %i.", port);
 			goto cleanup;
 		}
 	} else if (!strcasecmp(type, "console")) {
 		if (dev_terminal_open_console(terminal)) {
-			gerr = E_TERM;
+			log_err("Failed to open console terminal.");
 			goto cleanup;
 		}
 	} else {
-		gerr = E_TERM_UNKNOWN;
+		log_err("Unknown terminal type: %s.", type);
 		goto cleanup;
 	}
 
 	terminal->cmd = CMD_NONE;
 
 	if (pthread_mutex_init(&terminal->cmd_mutex, NULL)) {
+		log_err("Failed to initialize terminal mutex.");
 		goto cleanup;
 	}
 
 	if (pthread_cond_init(&terminal->cmd_cond, NULL)) {
+		log_err("Failed to initialize terminal cmd conditional.");
 		goto cleanup;
 	}
 
 	if (pthread_create(&terminal->th, NULL, dev_terminal_controller, terminal)) {
+		log_err("Failed to spawn terminal thread.");
 		goto cleanup;
 	}
 
@@ -178,11 +181,13 @@ void dev_terminal_destroy(void *dev)
 	if (!dev) return;
 
 	struct dev_terminal *terminal = dev;
-	pthread_mutex_lock(&terminal->cmd_mutex);
-	terminal->cmd = CMD_QUIT;
-	pthread_cond_signal(&terminal->cmd_cond);
-	pthread_mutex_unlock(&terminal->cmd_mutex);
-	pthread_join(terminal->th, NULL);
+	if (terminal->th) {
+		pthread_mutex_lock(&terminal->cmd_mutex);
+		terminal->cmd = CMD_QUIT;
+		pthread_cond_signal(&terminal->cmd_cond);
+		pthread_mutex_unlock(&terminal->cmd_mutex);
+		pthread_join(terminal->th, NULL);
+	}
 
 	if (terminal->listenfd > 0) {
 		close(terminal->listenfd);

@@ -20,7 +20,6 @@
 
 #include "io/chan.h"
 
-#include "errors.h"
 #include "log.h"
 
 extern struct chan_drv cchar_chan_driver;
@@ -54,7 +53,7 @@ struct chan * chan_make(int num, char *name, struct cfg_unit *units)
 		cdriver++;
 	}
 
-	gerr = E_IO_CHAN_UNKNOWN;
+	log_err("Unknown channel type: %s.", name);
 	return NULL;
 }
 

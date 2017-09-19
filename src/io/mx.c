@@ -24,7 +24,6 @@
 #include <time.h>
 #include <string.h>
 
-#include "errors.h"
 #include "log.h"
 #include "mem/mem.h"
 #include "io/chan.h"
@@ -77,7 +76,7 @@ void * mx_create(int num, struct cfg_unit *units)
 {
 	struct mx *multix = calloc(1, sizeof(struct mx));
 	if (!multix) {
-		gerr = E_ALLOC;
+		log_err("Memory allocation error.");
 		goto cleanup;
 	}
 
@@ -103,36 +102,6 @@ void * mx_create(int num, struct cfg_unit *units)
 		goto cleanup;
 	}
 
-	// create event queue
-	multix->evq = mx_evq_create(-1);
-	if (!multix->evq) {
-		gerr = E_MX_EVQ;
-		goto cleanup;
-	}
-	LOG_SET_ID(multix->evq, "%s EV", LOG_GET_ID(multix));
-
-	// create interrupt system
-	multix->irqq = mx_irqq_create(multix->num, MX_INTRQ_LEN);
-	if (!multix->irqq) {
-		gerr = E_MX_IRQQ;
-		goto cleanup;
-	}
-	LOG_SET_ID(multix->irqq, "%s IRQ", LOG_GET_ID(multix));
-
-	// create timer
-	multix->timer = mx_timer_init(MX_TIMER_STEP_MSEC, multix->evq);
-	if (!multix->irqq) {
-		gerr = E_MX_TIMER;
-		goto cleanup;
-	}
-	LOG_SET_ID(multix->timer, "%s TIMER", LOG_GET_ID(multix));
-
-	// initialize main thread
-	if (pthread_create(&multix->main_th, NULL, mx_main, multix)) {
-		gerr = E_THREAD;
-		goto cleanup;
-	}
-
 	// create devices
 	LOGID(L_MX, 1, multix, "Initializing devices");
 	struct cfg_unit *dev_cfg = units;
@@ -140,10 +109,40 @@ void * mx_create(int num, struct cfg_unit *units)
 		struct mx_line *line = multix->lines + dev_cfg->num;
 		int res = dev_make(dev_cfg, &line->device, &line->dev_obj);
 		if (res != E_OK) {
-			gerr = res;
+			log_err("Failed to create MULTIX device: %s", dev_cfg->name);
 			goto cleanup;
 		}
 		dev_cfg = dev_cfg->next;
+	}
+
+	// create event queue
+	multix->evq = mx_evq_create(-1);
+	if (!multix->evq) {
+		log_err("Failed to create MULTIX' event queue.");
+		goto cleanup;
+	}
+	LOG_SET_ID(multix->evq, "%s EV", LOG_GET_ID(multix));
+
+	// create interrupt system
+	multix->irqq = mx_irqq_create(multix->num, MX_INTRQ_LEN);
+	if (!multix->irqq) {
+		log_err("Failed to create MULTIX' interrupt queue.");
+		goto cleanup;
+	}
+	LOG_SET_ID(multix->irqq, "%s IRQ", LOG_GET_ID(multix));
+
+	// create timer
+	multix->timer = mx_timer_init(MX_TIMER_STEP_MSEC, multix->evq);
+	if (!multix->irqq) {
+		log_err("Failed to create MULTIX' timer.");
+		goto cleanup;
+	}
+	LOG_SET_ID(multix->timer, "%s TIMER", LOG_GET_ID(multix));
+
+	// initialize main thread
+	if (pthread_create(&multix->main_th, NULL, mx_main, multix)) {
+		log_err("Failed to spawn main MULTIX thread.");
+		goto cleanup;
 	}
 
 	return multix;
@@ -163,17 +162,23 @@ void mx_shutdown(void *ch)
 	LOGID(L_MX, 1, multix, "Shutting down");
 
 	// notify main thread to quit
-	pthread_mutex_lock(&multix->state_mutex);
-	multix->state = MX_STATE_QUIT;
-	pthread_cond_signal(&multix->state_cond);
-	pthread_mutex_unlock(&multix->state_mutex);
+	if (multix->main_th) {
+		pthread_mutex_lock(&multix->state_mutex);
+		multix->state = MX_STATE_QUIT;
+		pthread_cond_signal(&multix->state_cond);
+		pthread_mutex_unlock(&multix->state_mutex);
+	}
 
 	// stop accepting events
-	mx_evq_disable(multix->evq);
+	if (multix->evq) {
+		mx_evq_disable(multix->evq);
+	}
 
 	// wait for the main thread to quit
-	LOGID(L_MX, 3, multix, "Waiting for main thread to join");
-	pthread_join(multix->main_th, NULL);
+	if (multix->main_th) {
+		LOGID(L_MX, 3, multix, "Waiting for main thread to join");
+		pthread_join(multix->main_th, NULL);
+	}
 
 	// At this point we're sure that MULTIX thread is down
 
@@ -189,13 +194,19 @@ void mx_shutdown(void *ch)
 	}
 
 	// shutdown timer
-	mx_timer_shutdown(multix->timer);
+	if (multix->timer) {
+		mx_timer_shutdown(multix->timer);
+	}
 
 	// destroy interrupt system
-	mx_irqq_destroy(multix->irqq);
+	if (multix->irqq) {
+		mx_irqq_destroy(multix->irqq);
+	}
 
 	// destroy event queue
-	mx_evq_destroy(multix->evq);
+	if (multix->evq) {
+		mx_evq_destroy(multix->evq);
+	}
 
 	// free resources
 	pthread_mutex_destroy(&multix->state_mutex);

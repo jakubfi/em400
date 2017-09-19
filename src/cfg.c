@@ -22,12 +22,13 @@
 #include <stdarg.h>
 #include <string.h>
 #include <unistd.h>
+#include <assert.h>
 
 #include "mem/mem.h"
 #include "io/defs.h"
-#include "errors.h"
 #include "cfg.h"
 #include "cfg_parser.h"
+#include "log.h"
 
 extern FILE *cyyin;
 void cyyerror(char *s, ...);
@@ -258,24 +259,21 @@ int cfg_args_decode(struct cfg_arg *arg, const char *format, ...)
 	int *i;
 	char *c;
 	char **s;
-	char **eptr = NULL;
+	char *eptr = NULL;
 
-	if (!format) {
-		return E_ARG_FORMAT;
-	}
+	assert(format);
 
 	va_list ap;
 	va_start(ap, format);
 	while (*format) {
-		if (!arg || !arg->text) {
-			return E_ARG_NOT_ENOUGH;
-		}
+		assert(arg);
+		assert(arg->text);
 		switch (*format) {
 			case 'i':
 				i = va_arg(ap, int*);
-				*i = strtol(arg->text, eptr, 10);
-				if (eptr) {
-					return E_ARG_CONVERSION;
+				*i = strtol(arg->text, &eptr, 10);
+				if (*eptr != '\0') {
+					return E_ERR;
 				}
 				break;
 			case 'c':
@@ -286,11 +284,12 @@ int cfg_args_decode(struct cfg_arg *arg, const char *format, ...)
 				s = va_arg(ap, char**);
 				*s = strdup(arg->text);
 				if (!*s) {
-					return E_ALLOC;
+					return log_err("Memory allocation error while parsing configuration arguments.");
 				}
 				break;
 			default:
-				return E_ARG_FORMAT;
+				assert(!"Format unknown to cfg_args_decode()");
+				return E_ERR;
 		}
 		format++;
 		arg = arg->next;

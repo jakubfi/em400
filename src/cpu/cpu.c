@@ -32,7 +32,6 @@
 #include "em400.h"
 #include "cfg.h"
 #include "utils.h"
-#include "errors.h"
 #include "log.h"
 #include "log_crk.h"
 #include "ectl/brk.h"
@@ -221,7 +220,7 @@ int cpu_init(struct cfg_em400 *cfg, int new_ui)
 
 	if (cfg->cpu_awp) {
 		awp = awp_init(regs+0, regs+1, regs+2, regs+3);
-		if (!awp) return E_AWP;
+		if (!awp) return log_err("Failed to initialize AWP.");
 	}
 
 	rKB = cfg->keys;
@@ -232,7 +231,7 @@ int cpu_init(struct cfg_em400 *cfg, int new_ui)
 
 	res = iset_build(cpu_op_tab);
 	if (res != E_OK) {
-		return res;
+		return log_err("Failed to build CPU instruction table.");
 	}
 
 	int_update_mask(0);

@@ -21,7 +21,6 @@
 
 #include "mem/mem.h"
 
-#include "errors.h"
 #include "log_crk.h"
 
 #include "debugger/decode.h"

@@ -24,7 +24,6 @@
 
 #include "cfg.h"
 #include "utils.h"
-#include "errors.h"
 #include "log.h"
 
 /*
@@ -70,7 +69,7 @@ int io_init(struct cfg_em400 *cfg)
 		LOG(L_IO, 1, "Channel %i: %s", chanc->num, chanc->name);
 		io_chan[chanc->num] = chan_make(chanc->num, chanc->name, chanc->units);
 		if (!io_chan[chanc->num]) {
-			return gerr;
+			return log_err("Failed to initialize channel: %s.", chanc->name);
 		}
 		chanc = chanc->next;
 	}

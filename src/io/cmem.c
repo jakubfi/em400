@@ -26,7 +26,6 @@
 #include "io/cmem_m9425.h"
 
 #include "cfg.h"
-#include "errors.h"
 
 #include "log.h"
 
@@ -72,7 +71,7 @@ struct chan * cmem_create(struct cfg_unit *units)
 		// find unit prototype
 		struct cmem_unit_proto_t *proto = cmem_unit_proto_get(cmem_unit_proto, cunit->name);
 		if (!proto) {
-			gerr = E_IO_UNIT_UNKNOWN;
+			log_err("Unknown device type or device incompatibile with channel: %s.", cunit->name);
 			free(chan);
 			return NULL;
 		}

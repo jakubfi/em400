@@ -18,7 +18,7 @@
 #include <stdlib.h>
 #include <inttypes.h>
 
-#include "errors.h"
+#include "log.h"
 
 #include "cpu/flags.h"
 #include "cpu/iset.h"
@@ -205,7 +205,7 @@ static int iset_register_op(struct iset_opcode **op_tab, struct iset_instruction
 
 		// sanity check: we don't want to overwrite non-illegal registered ops
 		if ((op) && (op->fun != op_illegal)) {
-			return E_SLID_INIT;
+			return log_err("Trying to overwrite non-illegal registered op 0x%04x.", (instr->opcode | result));
 		}
 		// register the op
 		op_tab[instr->opcode | result] = &instr->op;
@@ -222,7 +222,7 @@ int iset_build(struct iset_opcode **op_tab)
 	while (instr->var_mask) {
 		res = iset_register_op(op_tab, instr);
 		if (res != E_OK) {
-			return res;
+			return log_err("Failed to register op 0x%04x.", instr->opcode);
 		}
 		instr++;
 	}

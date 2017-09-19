@@ -18,6 +18,7 @@
 #include <stdlib.h>
 #include <inttypes.h>
 
+#include "log.h"
 #include "cfg.h"
 #include "io/dev/dev.h"
 #include "io/dev/e4image.h"
@@ -31,11 +32,13 @@ void * dev_winch_create(struct cfg_arg *args)
 {
 	struct dev_winch *winch = malloc(sizeof(struct dev_winch));
 	if (!winch) {
+		log_err("Memory allocation error while creating Winchester.");
 		goto cleanup;
 	}
 
 	winch->image = e4i_open(args->text);
 	if (!winch->image) {
+		log_err("Failed to open Winchester image: \"%s\": %s.", args->text, e4i_get_err(e4i_err));
 		goto cleanup;
 	}
 

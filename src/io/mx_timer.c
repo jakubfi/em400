@@ -27,7 +27,6 @@
 
 #include "log.h"
 #include "cfg.h"
-#include "errors.h"
 #include "atomic.h"
 
 #define MX_TIMER_TICK_MSEC 500

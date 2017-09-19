@@ -25,7 +25,6 @@
 #include <unistd.h>
 
 #include "em400.h"
-#include "errors.h"
 #include "mem/mem.h"
 #include "io/defs.h"
 #include "io/cchar_term.h"
@@ -44,49 +43,51 @@ struct cchar_unit_proto_t * cchar_term_create(struct cfg_arg *args)
 
 	struct cchar_unit_term_t *unit = calloc(1, sizeof(struct cchar_unit_term_t));
 	if (!unit) {
+		log_err("Failed to allocate memory for unit: %s.", args->text);
 		goto fail;
 	}
 
 	res = cfg_args_decode(args, "s", &type);
 	if (res != E_OK) {
-		gerr = res;
+		log_err("Failed to parse terminal type: \"%s\".", args->text);
 		goto fail;
 	}
 
 	if (!strcasecmp(type, "tcp")) {
 		res = cfg_args_decode(args->next, "i", &port);
 		if (res != E_OK) {
-			gerr = res;
+			log_err("Failed to parse terminal TCP port: \"%s\".", args->next->text);
 			goto fail;
 		}
 		unit->term = term_open_tcp(port, 100);
 		if (!unit->term) {
-			gerr = E_TERM;
+			log_err("Failed to open TCP terminal on port %i.", port);
 			goto fail;
 		}
 	} else if (!strcasecmp(type, "console")) {
 		if (em400_console == CONSOLE_DEBUGGER) {
-			gerr = E_TERM_CONSOLE_DEBUG;
+			log_err("Failed to initialize console terminal; console is being used by the debugger.");
 			goto fail;
 		} else if (em400_console == CONSOLE_TERMINAL) {
-			gerr = E_TERM_CONSOLE_TERM;
+			log_err("Failed to initialize console terminal; console is being used by another terminal.");
 			goto fail;
 		} else {
 			em400_console = CONSOLE_TERMINAL;
 			unit->term = term_open_console();
 			if (!unit->term) {
-				gerr = E_TERM;
+				log_err("Failed to initialize console.");
 				goto fail;
 			}
 		}
 		fprintf(stderr, "Console connected as system terminal.\n");
 	} else {
-		gerr = E_TERM_UNKNOWN;
+		log_err("Unknown terminal type: %s.", type);
 		goto fail;
 	}
 
 	unit->buf = malloc(TERM_BUF_LEN);
 	if (!unit->buf) {
+		log_err("Failed to allocate memory for terminal buffer.");
 		goto fail;
 	}
 
@@ -98,6 +99,7 @@ struct cchar_unit_proto_t * cchar_term_create(struct cfg_arg *args)
 
 	res = pthread_create(&unit->worker, NULL, cchar_term_worker, (void *)unit);
 	if (res != 0) {
+		log_err("Failed to spawn terminal thread.");
 		goto fail;
 	}
 

@@ -19,8 +19,7 @@
 #include <stdlib.h>
 
 #include "utils.h"
-#include "errors.h"
-
+#include "log.h"
 #include "cpu/cpu.h"
 
 #include "debugger/awin.h"
