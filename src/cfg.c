@@ -86,6 +86,11 @@ struct cfg_em400 * cfg_create_default()
 	// I/O
 	cfg->chans = NULL;
 
+	// FPGA
+	cfg->fpga = 0;
+	cfg->fpga_dev = strdup("/dev/ttyUSB0");
+	cfg->fpga_speed = 1000000;
+
 #ifdef WITH_DEBUGGER
 	cfg->ui_simple = 0;
 #endif
@@ -109,6 +114,8 @@ void cfg_destroy(struct cfg_em400 *cfg)
 
 	cfg_drop_chans(cfg->chans);
 
+	free(cfg->fpga_dev);
+
 	free(cfg);
 }
 
@@ -120,7 +127,7 @@ struct cfg_em400 * cfg_from_args(int argc, char **argv)
 
 	int option;
 
-	while ((option = getopt(argc, argv,"hc:p:k:l:Lsu:")) != -1) {
+	while ((option = getopt(argc, argv,"hc:p:k:l:Lsu:F")) != -1) {
 		switch (option) {
 			case 'L':
 				cfg->log_enabled = 0;
@@ -152,6 +159,9 @@ struct cfg_em400 * cfg_from_args(int argc, char **argv)
 				free(cfg->ui_name);
 				cfg->ui_name = strdup(optarg);
 				break;
+			case 'F':
+				cfg->fpga = 1;
+				break;
 			default:
 				cfg_destroy(cfg);
 				return NULL;
@@ -160,7 +170,6 @@ struct cfg_em400 * cfg_from_args(int argc, char **argv)
 
 	return cfg;
 }
-
 
 // -----------------------------------------------------------------------
 struct cfg_em400 * cfg_from_file(char *cfg_file)
@@ -235,6 +244,11 @@ struct cfg_em400 * cfg_overlay(struct cfg_em400 *a, struct cfg_em400 *b)
 		a->chans = b->chans;
 		b->chans = NULL;
 	}
+
+	// FPGA
+	CHI(fpga);
+	CHS(fpga_dev);
+	CHI(fpga_speed);
 
 #ifdef WITH_DEBUGGER
 	CHI(ui_simple);

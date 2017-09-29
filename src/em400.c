@@ -162,6 +162,7 @@ void em400_usage()
 		"   -L           : disable logging\n"
 		"   -k value     : set keys to given value\n"
 		"   -u ui        : EXPERIMENTAL: run specified user interface (available UIs: cmd)\n"
+		"   -F           : use FPGA implementation of the CPU and external memory\n"
 #ifdef WITH_DEBUGGER
 		"   -s           : use simple debugger interface\n"
 #endif

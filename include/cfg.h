@@ -67,12 +67,15 @@ struct cfg_em400 {
 	char *log_file;
 	char *log_levels;
 
+	int fpga;
+	char *fpga_dev;
+	int fpga_speed;
+
 	struct cfg_chan *chans;
 
 #ifdef WITH_DEBUGGER
 	int ui_simple;
 #endif
-
 };
 
 struct cfg_em400 * cfg_create_default();
@@ -86,7 +89,6 @@ int cfg_args_decode(struct cfg_arg *arg, const char *format, ...);
 void cfg_make_unit(struct cfg_em400 *cfg, int u_num, char *name, struct cfg_arg *args);
 void cfg_make_chan(struct cfg_em400 *cfg, int c_num, char *name);
 void cfg_drop_chans(struct cfg_chan *c);
-
 
 #endif
 

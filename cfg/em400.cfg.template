@@ -1,4 +1,9 @@
 computer {
+	# Set CPU and memory backend:
+	# "false" - use emulated CPU and memory (default)
+	# "true" - use FPGA implementation of CPU and memory
+	fpga = false
+
 	# real CPU and I/O emulation speed:
 	# "false" - run as fast as possible (default)
 	# "true" - try to emulate actual instructions, memory and I/O timings
@@ -60,6 +65,13 @@ computer {
 	# 4kword segments hardwired for OS memory block (taken from module 0)
 	# allowed values: 1 or 2 (default: 2)
 	mem_os_segments = 2
+}
+
+fpga {
+	# Device to use for communication with the FPGA backend. Default: /dev/ttyUSB0
+	device = "/dev/ttyUSB1"
+	# FPGA link speed (in baud). Default: 1000000
+	speed = 1000000
 }
 
 log {

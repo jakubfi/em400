@@ -45,6 +45,7 @@ int cyylex(void);
 
 %token END 0 "end of file"
 %token COMPUTER "`computer`"
+%token FPGA "`fpga`"
 %token CHANNEL "`channel`"
 %token UNIT "`unit`"
 %token SPEED_REAL "`speed_real`"
@@ -63,6 +64,8 @@ int cyylex(void);
 %token ENABLED "`enabled`"
 %token LFILE "`file`"
 %token LEVELS "loging levels"
+%token DEVICE "`device`"
+%token SPEED "`speed`"
 %token <value> NAME "parameter or device name"
 %token <value> STRING "string"
 %token <value> VALUE "integer value"
@@ -82,6 +85,7 @@ objects:
 object:
 	COMPUTER '{' computer_opts '}'
 	| LOG '{' log_opts '}'
+	| FPGA '{' fpga_opts '}'
 	| CHANNEL VALUE '=' NAME { cfg_make_chan(cfg, $2.v, $4.s); free($2.s); } '{' units '}'
 	;
 
@@ -123,6 +127,7 @@ computer_opt:
 	| CPU_STOP_ON_NOMEM '=' BOOL { if (!cfg->mem_mega_boot) cfg->cpu_stop_on_nomem = $3.v ; free($3.s); }
 	| MEGA_PROM '=' STRING	{ cfg->mem_mega_prom = $3.s; }
 	| OS_SEG '=' VALUE		{ cfg->mem_os = $3.v; free($3.s); }
+	| FPGA '=' BOOL			{ cfg->fpga = $3.v; free($3.s); }
 	;
 
 log_opts:
@@ -135,6 +140,17 @@ log_opt:
 	| LFILE '=' STRING { free(cfg->log_file); cfg->log_file = $3.s; }
 	| LEVELS '=' STRING { free(cfg->log_levels); cfg->log_levels = $3.s; }
 	;
+
+fpga_opts:
+	fpga_opts fpga_opt
+	|
+	;
+
+fpga_opt:
+	SPEED '=' VALUE { cfg->fpga_speed = $3.v; free($3.s); }
+	| DEVICE '=' STRING { cfg->fpga_dev = $3.s;}
+	;
+
 %%
 
 // -----------------------------------------------------------------------

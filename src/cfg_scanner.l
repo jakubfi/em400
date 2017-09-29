@@ -66,6 +66,10 @@ unit			return UNIT;
 true|yes		{ cyylval.value.v = 1; cyylval.value.s = strdup(cyytext); return BOOL; }
 false|no		{ cyylval.value.v = 0; cyylval.value.s = strdup(cyytext); return BOOL; }
 
+fpga			return FPGA;
+speed			return SPEED;
+device			return DEVICE;
+
 {string} {
 	cyytext[strlen(cyytext)-1] = '\0';
 	cyylval.value.s = strdup(cyytext+1);

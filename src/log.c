@@ -532,19 +532,27 @@ void log_config(unsigned component, unsigned level, struct cfg_em400 *cfg)
 	log_log(component, level, "Program to load: %s", cfg->program_name);
 	log_log(component, level, "Loaded config: %s", cfg->cfg_filename);
 	log_log(component, level, "Print help: %s", cfg->print_help ? "yes" : "no");
-	log_log(component, level, "Emulation speed: %s", cfg->speed_real ? "real" : "max");
-	log_log(component, level, "Timer step: %i (%s at power-on)", cfg->timer_step, cfg->timer_start ? "enabled" : "disabled");
-	log_log(component, level, "CPU modifications: %s", cfg->cpu_mod ? "present" : "absent");
-	log_log(component, level, "IN/OU instructions: %s for user programs", cfg->cpu_user_io_illegal ? "illegal" : "legal");
-	log_log(component, level, "Hardware AWP: %s", cfg->cpu_awp ? "present" : "absent");
+	log_log(component, level, "Use FPGA backend: %s", cfg->fpga ? "yes" : "no");
+	if (!cfg->fpga) {
+		log_log(component, level, "CPU emulation:");
+		log_log(component, level, "   Emulation speed: %s", cfg->speed_real ? "real" : "max");
+		log_log(component, level, "   Timer step: %i (%s at power-on)", cfg->timer_step, cfg->timer_start ? "enabled" : "disabled");
+		log_log(component, level, "   CPU modifications: %s", cfg->cpu_mod ? "present" : "absent");
+		log_log(component, level, "   IN/OU instructions: %s for user programs", cfg->cpu_user_io_illegal ? "illegal" : "legal");
+		log_log(component, level, "   Hardware AWP: %s", cfg->cpu_awp ? "present" : "absent");
+		log_log(component, level, "   CPU stop on nomem in OS block: %s", cfg->cpu_stop_on_nomem ? "yes" : "no");
+		log_log(component, level, "Memory emulation:");
+		log_log(component, level, "   Elwro modules: %i", cfg->mem_elwro);
+		log_log(component, level, "   MEGA modules: %i", cfg->mem_mega);
+		log_log(component, level, "   MEGA PROM image: %s", cfg->mem_mega_prom);
+		log_log(component, level, "   MEGA boot: %s", cfg->mem_mega_boot ? "true" : "false");
+		log_log(component, level, "   Segments for OS: %i", cfg->mem_os);
+	} else {
+		log_log(component, level, "FPGA backend:");
+		log_log(component, level, "   Device: %s", cfg->fpga_dev);
+		log_log(component, level, "   Link speed: %i", cfg->fpga_speed);
+	}
 	log_log(component, level, "KB: 0x%04x", cfg->keys);
-	log_log(component, level, "CPU stop on nomem in OS block: %s", cfg->cpu_stop_on_nomem ? "yes" : "no");
-	log_log(component, level, "Memory:");
-	log_log(component, level, "   Elwro modules: %i", cfg->mem_elwro);
-	log_log(component, level, "   MEGA modules: %i", cfg->mem_mega);
-	log_log(component, level, "   MEGA PROM image: %s", cfg->mem_mega_prom);
-	log_log(component, level, "   MEGA boot: %s", cfg->mem_mega_boot ? "true" : "false");
-	log_log(component, level, "   Segments for OS: %i", cfg->mem_os);
 	log_log(component, level, "Logging (%s):", cfg->log_enabled ? "enabled" : "disabled");
 	log_log(component, level, "   File: %s", cfg->log_file);
 	log_log(component, level, "   Levels: %s", cfg->log_levels);
