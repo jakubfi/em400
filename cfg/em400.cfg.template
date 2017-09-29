@@ -19,19 +19,24 @@ computer {
 	# allowed values: "true" (default), "false"
 	timer_start = true
 
-	# Enable CPU modification (17-bit byte addressing, additional instructions,
-	# additional software interrupt, int 5/11 swap, broader interrupt mask
-	# for I/O interrupts)
-	# allowed values: "true", "false" (default)
-	cpu_mod = false
+	# MERA-400 cpu stops when operating system tries to access unconfigured
+	# memory segment, but this can be changed to work as for user programs:
+	# only interrupt is fired. Allowed values: "true" (default), "false"
+	cpu_stop_on_nomem = true
 
-	# IN/OU operations can be either illegal or legal in user programs
+	# 'IN' and 'OU' instructions can be either illegal or legal in user programs
 	# allowed values: "true" (default), "false"
 	cpu_user_io_illegal = true
 
 	# AWP (hardware 48-bit floating point and 32-bit fixed point arithmetic) is optional
 	# allowed values: "true" (default), "false"
 	cpu_awp = true
+
+	# Enable CPU modification (17-bit byte addressing, additional instructions,
+	# additional software interrupt, int 5/11 swap, broader interrupt mask
+	# for I/O interrupts)
+	# allowed values: "true", "false" (default)
+	cpu_mod = false
 
 	# Memory is organized into 16 physical modules. Each module can be
 	# either elwro or mega. Elwro modules are 32kword big (8 pages),
@@ -46,7 +51,12 @@ computer {
 	# allowed values: 0-16 (default: 0)
 	mem_mega = 0
 
-	# Name of image file containing MEGA PROM memory (1 segment, 4kword max)
+	# 4kword segments hardwired for OS memory block (taken from module 0)
+	# allowed values: 1 or 2 (default: 2)
+	mem_os_segments = 2
+
+	# Name of image file containing MEGA PROM memory.
+	# File has to be 8KB in size (1 full segment, 4kwords).
 	# (default: none)
 	#mem_mega_prom = "mega_prom.img"
 
@@ -54,17 +64,6 @@ computer {
 	# Works only when mem_mega_prom is specified.
 	# allowed values: "true, "false" (default)
 	mem_mega_boot = false
-
-	# MERA-400 cpu stops when operating system tries to access unconfigured
-	# memory segment, but this can be changed to work as for user programs:
-	# only interrupt is fired. This is required to bootstrap from MEGA
-	# and "false" is enforced if mem_mega_boot = true.
-	# allowed values: "true" (default), "false"
-	cpu_stop_on_nomem = true
-
-	# 4kword segments hardwired for OS memory block (taken from module 0)
-	# allowed values: 1 or 2 (default: 2)
-	mem_os_segments = 2
 }
 
 fpga {

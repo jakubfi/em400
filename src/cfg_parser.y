@@ -123,7 +123,7 @@ computer_opt:
 	| CPU_AWP '=' BOOL		{ cfg->cpu_awp = $3.v; free($3.s); }
 	| ELWRO '=' VALUE		{ cfg->mem_elwro = $3.v; free($3.s); }
 	| MEGA '=' VALUE		{ cfg->mem_mega = $3.v; free($3.s); }
-	| MEGA_BOOT '=' BOOL	{ cfg->mem_mega_boot = $3.v; cfg->cpu_stop_on_nomem = 0; free($3.s); }
+	| MEGA_BOOT '=' BOOL	{ cfg->mem_mega_boot = $3.v; free($3.s); }
 	| CPU_STOP_ON_NOMEM '=' BOOL { if (!cfg->mem_mega_boot) cfg->cpu_stop_on_nomem = $3.v ; free($3.s); }
 	| MEGA_PROM '=' STRING	{ cfg->mem_mega_prom = $3.s; }
 	| OS_SEG '=' VALUE		{ cfg->mem_os = $3.v; free($3.s); }
