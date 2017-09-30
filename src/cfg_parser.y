@@ -119,13 +119,13 @@ computer_opt:
 	| TIMER_STEP '=' VALUE	{ cfg->timer_step = $3.v; free($3.s); }
 	| TIMER_START '=' BOOL	{ cfg->timer_start = $3.v; free($3.s); }
 	| CPU_MOD '=' BOOL		{ cfg->cpu_mod = $3.v; free($3.s); }
-	| CPU_USER_IO_ILLEGAL '=' BOOL	{ cfg->cpu_user_io_illegal = $3.v; free($3.s); }
+	| CPU_USER_IO_ILLEGAL '=' BOOL { cfg->cpu_user_io_illegal = $3.v; free($3.s); }
 	| CPU_AWP '=' BOOL		{ cfg->cpu_awp = $3.v; free($3.s); }
 	| ELWRO '=' VALUE		{ cfg->mem_elwro = $3.v; free($3.s); }
 	| MEGA '=' VALUE		{ cfg->mem_mega = $3.v; free($3.s); }
 	| MEGA_BOOT '=' BOOL	{ cfg->mem_mega_boot = $3.v; free($3.s); }
 	| CPU_STOP_ON_NOMEM '=' BOOL { if (!cfg->mem_mega_boot) cfg->cpu_stop_on_nomem = $3.v ; free($3.s); }
-	| MEGA_PROM '=' STRING	{ cfg->mem_mega_prom = $3.s; }
+	| MEGA_PROM '=' STRING	{ free(cfg->mem_mega_prom); cfg->mem_mega_prom = $3.s; }
 	| OS_SEG '=' VALUE		{ cfg->mem_os = $3.v; free($3.s); }
 	| FPGA '=' BOOL			{ cfg->fpga = $3.v; free($3.s); }
 	;
@@ -148,7 +148,7 @@ fpga_opts:
 
 fpga_opt:
 	SPEED '=' VALUE { cfg->fpga_speed = $3.v; free($3.s); }
-	| DEVICE '=' STRING { cfg->fpga_dev = $3.s;}
+	| DEVICE '=' STRING { free(cfg->fpga_dev); cfg->fpga_dev = $3.s; }
 	;
 
 %%

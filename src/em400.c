@@ -187,42 +187,36 @@ void em400_mkconfdir()
 // -----------------------------------------------------------------------
 struct cfg_em400 * em400_configure(int argc, char** argv)
 {
-	struct cfg_em400 *cfg_cmdline = NULL;
-	struct cfg_em400 *cfg_file = NULL;
-	struct cfg_em400 *cfg_final = NULL;
+	struct cfg_em400 *cfg = cfg_create_default();
 
-	// parse commandline first, because:
+	// first, parse the commandline, because:
 	//  * user may need help (-h)
-	//  * user may provide own config file
-	cfg_cmdline = cfg_from_args(argc, argv);
-	if (!cfg_cmdline) {
-		// wrong usage
-		return NULL;
+	//  * user may provide non-default config file
+	if (cfg_from_args(cfg, argc, argv)) {
+		goto fail;
 	}
 
 	// will only print help
-	if (cfg_cmdline->print_help) {
-		return cfg_cmdline;
+	if (cfg->print_help) {
+		return cfg;
 	}
 
-	// load configuration from file (there is always a config file, either default one or provided by the user)
-	cfg_file = cfg_from_file(cfg_cmdline->cfg_filename);
-	if (!cfg_file) {
-		log_err("Failed to load config file: \"%s\".", cfg_cmdline->cfg_filename);
-		cfg_destroy(cfg_cmdline);
-		return NULL;
+	// load configuration from a file (either the default one or provided by the user)
+	if (cfg_from_file(cfg)) {
+		log_err("Failed to load config file: \"%s\".", cfg->cfg_filename);
+		goto fail;
 	}
 
-	// build final configuration by overlaying config file with commandline
-	cfg_final = cfg_overlay(cfg_file, cfg_cmdline);
-	if (!cfg_final) {
-		log_err("Failed to overlay commandline options onto config file: \"%s\".", cfg_cmdline->cfg_filename);
-		cfg_destroy(cfg_file);
-		cfg_destroy(cfg_cmdline);
-		return NULL;
+	// read the commendline again to build final configuration
+	if (cfg_from_args(cfg, argc, argv)) {
+		goto fail;
 	}
 
-	return cfg_final;
+	return cfg;
+
+fail:
+	cfg_destroy(cfg);
+	return NULL;
 }
 
 // -----------------------------------------------------------------------

@@ -79,10 +79,9 @@ struct cfg_em400 {
 };
 
 struct cfg_em400 * cfg_create_default();
-struct cfg_em400 * cfg_from_args(int argc, char **argv);
-struct cfg_em400 * cfg_from_file(char *cfg_file);
-struct cfg_em400 * cfg_overlay(struct cfg_em400 *a, struct cfg_em400 *b);
 void cfg_destroy(struct cfg_em400 *cfg);
+int cfg_from_args(struct cfg_em400 *cfg, int argc, char **argv);
+int cfg_from_file(struct cfg_em400 *cfg);
 
 struct cfg_arg * cfg_make_arg(char *arg);
 int cfg_args_decode(struct cfg_arg *arg, const char *format, ...);

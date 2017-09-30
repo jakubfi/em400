@@ -68,28 +68,28 @@ struct cfg_em400 * cfg_create_default()
 	cfg->cpu_awp = 1;
 	cfg->cpu_stop_on_nomem = 1;
 
-	// technical console
+	// control panel
 	cfg->keys = 0;
 
 	// mem
 	cfg->mem_elwro = 1;
 	cfg->mem_mega = 0;
+	cfg->mem_os = 2;
 	cfg->mem_mega_prom = NULL;
 	cfg->mem_mega_boot = 0;
-	cfg->mem_os = 2;
 
 	// log
 	cfg->log_enabled = 0;
 	cfg->log_file = strdup("em400.log");
-	cfg->log_levels = NULL;
-
-	// I/O
-	cfg->chans = NULL;
+	cfg->log_levels = strdup("all=0,em4h=9");
 
 	// FPGA
 	cfg->fpga = 0;
 	cfg->fpga_dev = strdup("/dev/ttyUSB0");
 	cfg->fpga_speed = 1000000;
+
+	// I/O
+	cfg->chans = NULL;
 
 #ifdef WITH_DEBUGGER
 	cfg->ui_simple = 0;
@@ -106,34 +106,28 @@ void cfg_destroy(struct cfg_em400 *cfg)
 	free(cfg->ui_name);
 	free(cfg->program_name);
 	free(cfg->cfg_filename);
-
 	free(cfg->mem_mega_prom);
-
 	free(cfg->log_file);
 	free(cfg->log_levels);
-
-	cfg_drop_chans(cfg->chans);
-
 	free(cfg->fpga_dev);
-
+	cfg_drop_chans(cfg->chans);
 	free(cfg);
 }
 
 // -----------------------------------------------------------------------
-struct cfg_em400 * cfg_from_args(int argc, char **argv)
+int cfg_from_args(struct cfg_em400 *cfg, int argc, char **argv)
 {
-	struct cfg_em400 *cfg = cfg_create_default();
-	if (!cfg) return NULL;
-
 	int option;
+	optind = 1; // reset to 1 so consecutive calls work
 
-	while ((option = getopt(argc, argv,"hc:p:k:l:Lsu:F")) != -1) {
+	while ((option = getopt(argc, argv, "hc:p:k:l:Lsu:F")) != -1) {
 		switch (option) {
 			case 'L':
 				cfg->log_enabled = 0;
 				break;
 			case 'l':
 				cfg->log_enabled = 1;
+				free(cfg->log_levels);
 				cfg->log_levels = strdup(optarg);
 				break;
 			case 'h':
@@ -163,23 +157,20 @@ struct cfg_em400 * cfg_from_args(int argc, char **argv)
 				cfg->fpga = 1;
 				break;
 			default:
-				cfg_destroy(cfg);
-				return NULL;
+				return E_ERR;
 		}
 	}
 
-	return cfg;
+	return E_OK;
 }
 
 // -----------------------------------------------------------------------
-struct cfg_em400 * cfg_from_file(char *cfg_file)
+int cfg_from_file(struct cfg_em400 *cfg)
 {
-	FILE * cfgf = fopen(cfg_file, "r");
+	FILE *cfgf = fopen(cfg->cfg_filename, "r");
 	if (!cfgf) {
-		return NULL;
+		return E_ERR;
 	}
-
-	struct cfg_em400 *cfg = cfg_create_default();
 
 	cyyin = cfgf;
 	do {
@@ -190,72 +181,10 @@ struct cfg_em400 * cfg_from_file(char *cfg_file)
 	cyylex_destroy();
 
 	if (cfg_error) {
-		cfg_destroy(cfg);
-		return NULL;
+		return E_ERR;
 	}
 
-	return cfg;
-}
-
-// -----------------------------------------------------------------------
-struct cfg_em400 * cfg_overlay(struct cfg_em400 *a, struct cfg_em400 *b)
-{
-
-#define CHI(v) if (b->v != def->v) a->v = b->v
-#define CHS(v) if (b->v != def->v) {free(a->v); a->v = b->v; b->v = NULL;}
-
-	struct cfg_em400 *def = cfg_create_default();
-
-	// emulator
-	CHS(program_name);
-	CHS(cfg_filename);
-	CHI(print_help);
-	CHS(ui_name);
-
-	// emulation
-	CHI(speed_real);
-
-	// cpu
-	CHI(timer_step);
-	CHI(timer_start);
-	CHI(cpu_mod);
-	CHI(cpu_user_io_illegal);
-	CHI(cpu_awp);
-	CHI(cpu_stop_on_nomem);
-
-	// technical console
-	CHI(keys);
-
-	// mem
-	CHI(mem_elwro);
-	CHI(mem_mega);
-	CHS(mem_mega_prom);
-	CHI(mem_mega_boot);
-	CHI(mem_os);
-
-	// log
-	CHI(log_enabled);
-	CHS(log_file);
-	CHS(log_levels);
-
-	// I/O
-	if (b->chans != def->chans) {
-		cfg_drop_chans(a->chans);
-		a->chans = b->chans;
-		b->chans = NULL;
-	}
-
-	// FPGA
-	CHI(fpga);
-	CHS(fpga_dev);
-	CHI(fpga_speed);
-
-#ifdef WITH_DEBUGGER
-	CHI(ui_simple);
-#endif
-
-	cfg_destroy(def);
-	return a;
+	return E_OK;
 }
 
 // -----------------------------------------------------------------------
