@@ -65,6 +65,7 @@ struct log_component log_components[] = {
 	{ "CRK5", 0 },
 	{ "EM4H", 1 },
 	{ "ECTL", 1 },
+	{ "FPGA", 0 },
 	{ "ALL", 0 }
 };
 

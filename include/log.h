@@ -37,7 +37,7 @@ enum log_components {
 	L_MX, L_PX, L_CCHR, L_CMEM,
 	L_TERM, L_9425, L_WNCH, L_FLOP, L_PNCH, L_PNRD,
 	L_CRK5,
-	L_EM4H, L_ECTL,
+	L_EM4H, L_ECTL, L_FPGA,
 	L_ALL,
 	L_COUNT = L_ALL
 };
