@@ -285,6 +285,8 @@ class TestBed:
             self.__runemu(["-c", self.default_config] + opts)
             self.e.clear()
             self.e.load(0, 0, aout)
+            self.e.cmd("CLOCK OFF");
+            self.e.cmd("REG IC 0");
             if precmd:
                 for c in precmd:
                     self.e.cmd(c)
