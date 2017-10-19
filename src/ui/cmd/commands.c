@@ -144,7 +144,7 @@ void ui_cmd_reg(FILE *out, char *args)
 		return;
 	}
 
-	ui_cmd_resp(out, RESP_OK, UI_EOL, "0x%04x", ectl_reg_get(id));
+	ui_cmd_resp(out, RESP_OK, UI_EOL, "0x%04x", value);
 }
 
 // -----------------------------------------------------------------------
@@ -232,7 +232,7 @@ void ui_cmd_clock(FILE *out, char *args)
 
 	// set clock state
 	ectl_clock_set(state);
-	ui_cmd_resp(out, RESP_OK, UI_EOL, "%i", ectl_clock_get());
+	ui_cmd_resp(out, RESP_OK, UI_EOL, "%i", state);
 }
 
 // -----------------------------------------------------------------------
