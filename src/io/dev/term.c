@@ -19,6 +19,7 @@
 
 #include <inttypes.h>
 #include <stdio.h>
+#include <string.h>
 #include <stdlib.h>
 #include <unistd.h>
 #include <sys/socket.h>
@@ -27,6 +28,8 @@
 #include <sys/select.h>
 #include <fcntl.h>
 
+#include "utils.h"
+#include "log.h"
 #include "io/dev/term.h"
 
 struct term_t {
@@ -52,6 +55,39 @@ struct term_t * term_open_console()
 	term->type = TERM_CONSOLE;
 	term->fd_in = 0;
 	term->fd_out = 1;
+
+	return term;
+
+fail:
+	term_close(term);
+	return NULL;
+}
+
+// -----------------------------------------------------------------------
+struct term_t * term_open_serial(char *device, int speed, int timeout_ms)
+{
+	speed_t setspeed = serial_int2speed(speed);
+	if (setspeed == -1) {
+		log_err("Wrong terminal serial port bus speed: %i", speed);
+		return NULL;
+	}
+
+	struct term_t *term = malloc(sizeof(struct term_t));
+	if (!term) {
+		goto fail;
+	}
+
+	term->timeout.tv_sec = 0;
+	term->timeout.tv_nsec = timeout_ms * 1000 * 1000;
+	term->type = TERM_SERIAL;
+
+	int fd = serial_open(device, setspeed);
+	if (fd < 0) {
+		log_err("Failed to open serial port %s", device);
+		goto fail;
+	}
+
+	term->fd_in = term->fd_out = fd;
 
 	return term;
 

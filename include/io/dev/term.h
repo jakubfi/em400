@@ -33,6 +33,7 @@ enum term_type_e {
 
 struct term_t;
 
+struct term_t * term_open_serial(char *device, int speed, int timeout_ms);
 struct term_t * term_open_tcp(int port, int timeout_ms);
 struct term_t * term_open_console();
 void term_close(struct term_t *term);

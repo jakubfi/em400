@@ -19,11 +19,14 @@
 #define UTILS_H
 
 #include <inttypes.h>
+#include <termios.h>
 
 char * int2binf(char *format, uint64_t value, int size);
 char * int2chars(uint16_t w, char *buf);
 void endianswap(uint16_t *ptr, int size);
 double stopwatch_ns();
+speed_t serial_int2speed(int s);
+int serial_open(char *device, int speed);
 
 #endif
 
