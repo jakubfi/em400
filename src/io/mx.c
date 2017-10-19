@@ -24,14 +24,15 @@
 #include <time.h>
 #include <string.h>
 
-#include "log.h"
-#include "mem/mem.h"
+#include "io/io.h"
 #include "io/chan.h"
 #include "io/mx.h"
 #include "io/mx_cmds.h"
 #include "io/mx_ev.h"
 #include "io/mx_irq.h"
 #include "io/dev/dev.h"
+
+#include "log.h"
 
 // Real multix boots up in probably just under a second
 // (~500ms for ROM/RAM check + ~185ms for RAM cleanup).
@@ -417,7 +418,7 @@ static void mx_setcfg_fin(struct mx *multix, int irq, uint16_t addr, unsigned re
 			LOGID(L_MX, 1, multix, "Configuration not set: %s", mx_line_sc_err_name(result));
 		}
 		// store command result
-		if (!mem_put(0, addr, (result<<8) | line)) {
+		if (!io_mem_put(0, addr, (result<<8) | line)) {
 			irq = MX_IRQ_INKOT;
 		}
 	// configuration was OK
@@ -450,7 +451,7 @@ static void mx_setcfg(struct mx *multix, uint16_t addr)
 	mx_deconfigure(multix);
 
 	// read configuration header
-	if (!mem_get(0, addr, data)) {
+	if (!io_mem_get(0, addr, data)) {
 		mx_setcfg_fin(multix, MX_IRQ_INKOT, retf_addr, 0, 0);
 		return;
 	}
@@ -462,7 +463,7 @@ static void mx_setcfg(struct mx *multix, uint16_t addr)
 
 	// read line descriptions
 	int mem_size = phy_desc_count + 4*log_count;
-	if (mem_mget(0, addr+2, data, mem_size) != mem_size) {
+	if (io_mem_mget(0, addr+2, data, mem_size) != mem_size) {
 		mx_setcfg_fin(multix, MX_IRQ_INKOT, retf_addr, 0, 0);
 		return;
 	}
@@ -693,7 +694,7 @@ static int mx_task_run(struct mx_line *line, struct mx_task *task, const struct 
 	// get task data if condition is START and protocol requires the data
 	// it's protocol job to store that information for other conditions to use
 	if ((task->bzaw & MX_COND_START) && (proto_task->input_flen > 0)) {
-		if (mem_mget(0, task->arg, data, proto_task->input_flen) != proto_task->input_flen) {
+		if (io_mem_mget(0, task->arg, data, proto_task->input_flen) != proto_task->input_flen) {
 			task->bzaw = MX_COND_NONE;
 			return MX_IRQ_INPAO;
 		}
@@ -712,7 +713,7 @@ static int mx_task_run(struct mx_line *line, struct mx_task *task, const struct 
 
 	// if task is done, we may need to update return field
 	if ((task->bzaw == MX_COND_NONE) && (proto_task->output_flen > 0)) {
-		if (mem_mput(0, task->arg + proto_task->output_fpos, data + proto_task->output_fpos, proto_task->output_flen) != proto_task->output_flen) {
+		if (io_mem_mput(0, task->arg + proto_task->output_fpos, data + proto_task->output_fpos, proto_task->output_flen) != proto_task->output_flen) {
 			return MX_IRQ_INPAO;
 		}
 	}

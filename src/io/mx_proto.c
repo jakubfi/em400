@@ -18,8 +18,9 @@
 #include <stdlib.h>
 #include <inttypes.h>
 
-#include "log.h"
 #include "io/mx_proto.h"
+
+#include "log.h"
 
 extern struct mx_proto mx_proto_punchrd;
 extern struct mx_proto mx_proto_puncher;

@@ -18,10 +18,11 @@
 #include <stdlib.h>
 #include <inttypes.h>
 
-#include "log.h"
 #include "io/mx_line.h"
 #include "io/mx_proto.h"
 #include "io/mx_proto_common.h"
+
+#include "log.h"
 
 // -----------------------------------------------------------------------
 int mx_proto_som_terminal_conf(struct mx_line *line, uint16_t *data)

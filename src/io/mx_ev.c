@@ -20,8 +20,9 @@
 #include <stdlib.h>
 #include <pthread.h>
 
-#include "log.h"
 #include "io/mx_ev.h"
+
+#include "log.h"
 
 const char *mx_event_names[] = {
 	"CMD",

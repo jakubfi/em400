@@ -19,9 +19,9 @@
 #include <string.h>
 #include <inttypes.h>
 
-#include "log.h"
-#include "mem/mem.h"
 #include "io/cmem_m9425.h"
+
+#include "log.h"
 
 #define UNIT ((struct cmem_unit_m9425_t *)(unit))
 

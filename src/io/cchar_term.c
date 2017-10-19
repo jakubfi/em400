@@ -25,7 +25,6 @@
 #include <unistd.h>
 
 #include "em400.h"
-#include "mem/mem.h"
 #include "io/defs.h"
 #include "io/cchar_term.h"
 #include "io/dev/term.h"

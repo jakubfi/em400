@@ -18,6 +18,8 @@
 #ifndef MX_IRQ_H
 #define MX_IRQ_H
 
+#include "log.h"
+
 #define MX_INTRQ_LEN 32
 #define MX_INTSPEC_EMPTY 0x10000
 

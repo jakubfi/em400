@@ -20,6 +20,7 @@
 
 #include "mem/mem.h"
 #include "cpu/cpu.h"
+#include "cpu/interrupts.h"
 #include "io/chan.h"
 
 #include "cfg.h"
@@ -57,6 +58,7 @@
 
 static struct chan *io_chan[IO_MAX_CHAN];
 static const char *io_result_names[] = { "NO DEVICE", "ENGAGED", "OK", "PARITY ERROR" };
+static int fpga;
 
 // -----------------------------------------------------------------------
 int io_init(struct cfg_em400 *cfg)
@@ -64,6 +66,8 @@ int io_init(struct cfg_em400 *cfg)
 	struct cfg_chan *chanc = cfg->chans;
 
 	LOG(L_IO, 1, "Initializing I/O");
+
+	fpga = cfg->fpga;
 
 	while (chanc) {
 		LOG(L_IO, 1, "Channel %i: %s", chanc->num, chanc->name);
@@ -143,6 +147,36 @@ int io_dispatch(int dir, uint16_t n, uint16_t *r)
 		LOG(L_IO, 1, "I/O result: %s, r_arg = 0x%04x", io_result_names[res], *r);
 		return res;
 	}
+}
+
+// -----------------------------------------------------------------------
+void io_int_set(int x)
+{
+	int_set(x + 12);
+}
+
+// -----------------------------------------------------------------------
+int io_mem_get(int nb, uint16_t addr, uint16_t *data)
+{
+	return mem_get(nb, addr, data);
+}
+
+// -----------------------------------------------------------------------
+int io_mem_put(int nb, uint16_t addr, uint16_t data)
+{
+	return mem_put(nb, addr, data);
+}
+
+// -----------------------------------------------------------------------
+int io_mem_mget(int nb, uint16_t saddr, uint16_t *dest, int count)
+{
+	return mem_mget(nb, saddr, dest, count);
+}
+
+// -----------------------------------------------------------------------
+int io_mem_mput(int nb, uint16_t saddr, uint16_t *src, int count)
+{
+	return mem_mput(nb, saddr, src, count);
 }
 
 // vim: tabstop=4 shiftwidth=4 autoindent

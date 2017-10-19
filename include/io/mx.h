@@ -25,6 +25,7 @@
 #include "io/mx_line.h"
 #include "io/mx_timer.h"
 
+#include "log.h"
 
 /*
 

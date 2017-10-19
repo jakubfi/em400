@@ -21,12 +21,11 @@
 #include <unistd.h>
 #include <strings.h>
 
-#include "cpu/interrupts.h"
+#include "io/io.h"
 #include "io/cmem.h"
 #include "io/cmem_m9425.h"
 
 #include "cfg.h"
-
 #include "log.h"
 
 #define CHAN ((struct cmem_chan_t *)(chan))
@@ -156,7 +155,7 @@ void cmem_int_report(struct cmem_chan_t *chan)
 			chan->int_reported = unit_n;
 			pthread_mutex_unlock(&CHAN->int_mutex);
 			LOG(L_CMEM, 3, "CMEM (ch:%i) reporting interrupt %i", chan->num, chan->num + 12);
-			int_set(chan->num + 12);
+			io_int_set(chan->num);
 			break;
 		} else {
 			pthread_mutex_unlock(&CHAN->int_mutex);

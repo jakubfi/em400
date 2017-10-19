@@ -21,13 +21,12 @@
 #include <unistd.h>
 #include <strings.h>
 
-#include "cpu/interrupts.h"
+#include "io/io.h"
 #include "io/chan.h"
 #include "io/cchar.h"
 #include "io/cchar_term.h"
 
 #include "cfg.h"
-
 #include "log.h"
 
 // unit prototypes
@@ -135,7 +134,7 @@ void cchar_int_report(struct cchar_chan_t *chan)
 			chan->int_reported = unit_n;
 			pthread_mutex_unlock(&chan->int_mutex);
 			LOG(L_CCHR, 3, "CCHAR (ch:%i) reporting interrupt %i", chan->num, chan->num + 12);
-			int_set(chan->num + 12);
+			io_int_set(chan->num);
 			break;
 		} else {
 			pthread_mutex_unlock(&chan->int_mutex);

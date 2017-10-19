@@ -18,11 +18,12 @@
 #include <stdlib.h>
 #include <inttypes.h>
 
-#include "log.h"
 #include "io/mx_irq.h"
 #include "io/mx_line.h"
 #include "io/mx_proto.h"
 #include "io/mx_proto_common.h"
+
+#include "log.h"
 
 enum mx_term_attach_opts {
 	MX_TERM_WATCH_EOT	= 0b10000000,

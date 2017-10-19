@@ -19,14 +19,14 @@
 #include <inttypes.h>
 #include <arpa/inet.h>
 
-#include "log.h"
-#include "utils.h"
-#include "mem/mem.h"
-
+#include "io/io.h"
 #include "io/mx_line.h"
 #include "io/mx_irq.h"
 #include "io/mx_proto.h"
 #include "io/mx_proto_common.h"
+
+#include "log.h"
+#include "utils.h"
 
 // Transmit operations
 enum mx_proto_winchester_ops {
@@ -221,7 +221,7 @@ int mx_proto_winchester_read(const struct dev_drv *dev, void *dev_obj, struct pr
 			buf_pos = 0;
 			while ((buf_pos < 512) && (proto->ret_len < proto->transmit.len)) {
 				uint16_t *buf16 = (uint16_t*)(buf + buf_pos);
-				if (!mem_put(proto->transmit.nb, dest, ntohs(*buf16))) {
+				if (!io_mem_put(proto->transmit.nb, dest, ntohs(*buf16))) {
 					return MX_IRQ_INPAO;
 				}
 				dest++;
@@ -264,7 +264,7 @@ int mx_proto_winchester_write(const struct dev_drv *dev, void *dev_obj, struct p
 
 	// fill buffer with data to write
 	for (i=0 ; i<proto->transmit.len ; i++) {
-		if (!mem_get(proto->transmit.nb, dest + i, &data)) {
+		if (!io_mem_get(proto->transmit.nb, dest + i, &data)) {
 			free(buf);
 			return MX_IRQ_INPAO;
 		}

@@ -18,9 +18,10 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-#include "log.h"
-#include "cpu/interrupts.h"
+#include "io/io.h"
 #include "io/mx_irq.h"
+
+#include "log.h"
 
 const char *mx_irq_names[] = {
 	"INIEA - interrupt no longer valid",
@@ -211,7 +212,7 @@ static void mx_irqq_send(struct mx_irqq *queue)
 	queue->intspec = (irq->irq << 8) | irq->line;
 
 	// notify CPU
-	int_set(queue->chnum + 12);
+	io_int_set(queue->chnum);
 }
 
 // -----------------------------------------------------------------------

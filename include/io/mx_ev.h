@@ -18,6 +18,8 @@
 #ifndef MX_EV_H
 #define MX_EV_H
 
+#include "log.h"
+
 enum mx_evq_events {
 	MX_EV_CMD,
 	MX_EV_INT_RECVD,

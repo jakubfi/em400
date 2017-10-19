@@ -17,9 +17,10 @@
 
 #include <stdlib.h>
 
-#include "log.h"
 #include "io/mx_line.h"
 #include "io/mx_irq.h"
+
+#include "log.h"
 
 const char *mx_phy_type_names[] = {
 	"USART async",
