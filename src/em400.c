@@ -26,6 +26,7 @@
 
 #include "ui/ui.h"
 #include "atomic.h"
+#include "cpu/cp.h"
 #include "cpu/cpu.h"
 #include "mem/mem.h"
 #include "cpu/interrupts.h"
@@ -61,6 +62,7 @@ void em400_shutdown()
 	timer_shutdown();
 	io_shutdown();
 	cpu_shutdown();
+	cp_shutdown();
 	mem_shutdown();
 	log_shutdown();
 }
@@ -88,6 +90,11 @@ int em400_init(struct cfg_em400 *cfg)
 	res = mem_init(cfg);
 	if (res != E_OK) {
 		return log_err("Failed to initialize memory.");
+	}
+
+	res = cp_init(cfg);
+	if (res != E_OK) {
+		return log_err("Failed to initialize control panel.");
 	}
 
 	res = cpu_init(cfg, cfg->ui_name ? 1 : 0);

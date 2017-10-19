@@ -25,9 +25,8 @@
 #include "log.h"
 #include "utils.h"
 #include "atomic.h"
+#include "cpu/cp.h"
 #include "cpu/cpu.h"
-#include "cpu/timer.h"
-#include "cpu/interrupts.h"
 #include "mem/mem.h"
 
 #include "ectl.h"
@@ -35,10 +34,11 @@
 #include "ectl/brk.h"
 #include "ectl_parser.h"
 
+// this must match register order in ectl.h
 static const char *ectl_reg_names[] = {
 	"R0", "R1", "R2", "R3", "R4", "R5", "R6", "R7",
-	"IC", "SR", "IR", "KB", "MOD", "MODc", "ALARM",
-	"??"
+	"IC", "AC", "AR", "IR", "SR", "RZ", "KB", "KB",
+	"MOD", "MODc", "ALARM", "??"
 };
 
 typedef struct ectl_yy_buffer_state *YY_BUFFER_STATE;
@@ -64,34 +64,15 @@ void ectl_shutdown()
 void ectl_regs_get(uint16_t *dest)
 {
 	LOG(L_ECTL, 2, "ECTL regs get");
-	memcpy(dest, regs, 8 * sizeof(uint16_t));
-	dest[ECTL_REG_IC] = rIC;
-	dest[ECTL_REG_SR] = rSR;
-	dest[ECTL_REG_IR] = rIR;
-	dest[ECTL_REG_KB] = rKB;
-	dest[ECTL_REG_MOD] = rMOD;
-	dest[ECTL_REG_MODc] = rMODc;
-	dest[ECTL_REG_ALARM] = rALARM;
+	for (int i=0 ; i<CP_REG_COUNT ; i++) {
+		dest[i] = cp_reg_get(i);
+	}
 }
 
 // -----------------------------------------------------------------------
 int ectl_reg_get(unsigned id)
 {
-	if (id >= ECTL_REG_COUNT) {
-		return -1;
-	}
-
-	int reg;
-	switch (id) {
-		case ECTL_REG_IC: reg = rIC; break;
-		case ECTL_REG_SR: reg = rSR; break;
-		case ECTL_REG_IR: reg = rIR; break;
-		case ECTL_REG_KB: reg = rKB; break;
-		case ECTL_REG_MOD: reg = rMOD; break;
-		case ECTL_REG_MODc: reg = rMODc; break;
-		case ECTL_REG_ALARM: reg = rALARM; break;
-		default: reg = regs[id]; break;
-	}
+	int reg = cp_reg_get(id);
 	LOG(L_ECTL, 2, "ECTL reg get: %s = 0x%04x", ectl_reg_name(id), reg);
 	return reg;
 }
@@ -101,7 +82,7 @@ int ectl_reg_get_id(char *name)
 {
 	const char **rname = ectl_reg_names;
 	int idx = 0;
-	while (idx < ECTL_REG_COUNT) {
+	while (idx < CP_REG_COUNT) {
 		if (!strcasecmp(name, *rname)) {
 			return idx;
 		}
@@ -115,46 +96,47 @@ int ectl_reg_get_id(char *name)
 // -----------------------------------------------------------------------
 const char * ectl_reg_name(unsigned id)
 {
-	if (id < ECTL_REG_COUNT) {
+	if (id < CP_REG_COUNT) {
 		return ectl_reg_names[id];
 	} else {
-		return ectl_reg_names[ECTL_REG_COUNT];
+		return ectl_reg_names[CP_REG_COUNT];
 	}
 }
 
 // -----------------------------------------------------------------------
 int ectl_reg_set(unsigned id, uint16_t val)
 {
-	if (id >= ECTL_REG_COUNT) {
-		return -1;
-	}
-
 	LOG(L_ECTL, 2, "ECTL reg set: %s = 0x%04x", ectl_reg_name(id), val);
-	switch (id) {
-		case ECTL_REG_IC: rIC = val; break;
-		case ECTL_REG_SR: rSR = val; break;
-		case ECTL_REG_IR: rIR = val; break;
-		case ECTL_REG_KB: rKB = val; break;
-		case ECTL_REG_MOD: rMOD = val; break;
-		case ECTL_REG_MODc: rMODc = val; break;
-		case ECTL_REG_ALARM: rALARM = val; break;
-		default: regs[id] = val; break;
-	}
-	return 0;
+	return cp_reg_set(id, val);
 }
 
 // -----------------------------------------------------------------------
-int ectl_mem_get(int seg, uint16_t addr, uint16_t *dest, int count)
+int ectl_mem_get(int seg, uint16_t addr, uint16_t *dest, unsigned count)
 {
-	LOG(L_ECTL, 2, "ECTL mem get: %i:0x%04x", seg, addr);
-	return mem_mget(seg, addr, dest, count);
+	LOG(L_ECTL, 2, "ECTL mem get: %i:0x%04x, %i words", seg, addr, count);
+	int ret = 0;
+	for (unsigned i=0 ; i<count ; i++) {
+		int res = cp_mem_get(seg, addr+i, dest+i);
+		if (res != 1) {
+			break;
+		}
+		ret += res;
+	}
+	return ret;
 }
 
 // -----------------------------------------------------------------------
-int ectl_mem_set(int seg, uint16_t addr, uint16_t *src, int count)
+int ectl_mem_set(int seg, uint16_t addr, uint16_t *src, unsigned count)
 {
 	LOG(L_ECTL, 2, "ECTL mem set: %i:0x%04x, %i words", seg, addr, count);
-	int ret = mem_mput(seg, addr, src, count);
+	int ret = 0;
+	for (unsigned i=0 ; i<count ; i++) {
+		int res = cp_mem_put(seg, addr+i, *(src+i));
+		if (res != 1) {
+			break;
+		}
+		ret += res;
+	}
 	return ret;
 }
 
@@ -169,7 +151,7 @@ int ectl_mem_map(int seg)
 // -----------------------------------------------------------------------
 int ectl_cpu_state_get()
 {
-	int state = cpu_state_get();
+	int state = cp_state();
 	LOG(L_ECTL, 2, "ECTL state get: 0x%04x", state);
 	return state;
 }
@@ -190,89 +172,77 @@ const char * ectl_cpu_state_bit_name(int bitpos)
 void ectl_cpu_stop()
 {
 	LOG(L_ECTL, 2, "ECTL cpu STOP");
-	cpu_trigger_state(STATE_STOP);
+	cp_stop();
 }
 
 // -----------------------------------------------------------------------
 void ectl_cpu_start()
 {
 	LOG(L_ECTL, 2, "ECTL cpu START");
-	cpu_clear_state(STATE_STOP);
+	cp_start();
 }
 
 // -----------------------------------------------------------------------
 void ectl_cpu_cycle()
 {
 	LOG(L_ECTL, 2, "ECTL cpu CYCLE");
-	cpu_trigger_cycle();
+	cp_cycle();
 }
 
 // -----------------------------------------------------------------------
 void ectl_cpu_quit()
 {
 	LOG(L_ECTL, 2, "ECTL cpu QUIT");
-	cpu_trigger_state(STATE_QUIT);
+	cp_off();
 }
 
 // -----------------------------------------------------------------------
 void ectl_clock_set(int state)
 {
 	LOG(L_ECTL, 2, "ECTL clock set: %i", state);
-	if (state == ECTL_OFF) {
-		timer_off();
-	} else {
-		timer_on();
-	}
+	cp_clock_set(state);
 }
 
 // -----------------------------------------------------------------------
 int ectl_clock_get()
 {
-	int state = timer_get_state();
+	int state = cp_clock_get();
 	LOG(L_ECTL, 2, "ECTL clock get: %i", state);
-	if (state) {
-		return ECTL_ON;
-	} else {
-		return ECTL_OFF;
-	}
+	return state;
 }
 
 // -----------------------------------------------------------------------
 void ectl_cpu_clear()
 {
 	LOG(L_ECTL, 2, "ECTL cpu CLEAR");
-	cpu_trigger_state(STATE_CLO);
+	cp_clear();
 }
 
 // -----------------------------------------------------------------------
 void ectl_bootstrap(int chan, int unit)
 {
 	LOG(L_ECTL, 2, "ECTL bootstrap");
+	cp_bin();
 }
 
 // -----------------------------------------------------------------------
 void ectl_oprq()
 {
 	LOG(L_ECTL, 2, "ECTL OPRQ");
-	int_set(INT_OPRQ);
+	cp_oprq();
 }
 
 // -----------------------------------------------------------------------
 int ectl_int_set(unsigned interrupt)
 {
-	if (interrupt < 32) {
-		LOG(L_ECTL, 2, "ECTL int set %i", interrupt);
-		int_set(interrupt);
-		return 0;
-	} else {
-		return -1;
-	}
+	LOG(L_ECTL, 2, "ECTL int set %i", interrupt);
+	return cp_int_set(interrupt);
 }
 
 // -----------------------------------------------------------------------
 uint32_t ectl_int_get()
 {
-	uint32_t rz = RZ;
+	uint32_t rz = cp_int_get();
 	LOG(L_ECTL, 2, "ECTL interrupts 0x%08x", rz);
 	return rz;
 }
@@ -322,7 +292,7 @@ int ectl_load(FILE *f, const char *name, int seg, uint16_t saddr)
 	int res = fread(buf, sizeof(uint16_t), 0x10000, f);
 	if (res > 0) {
 		endianswap(buf, res);
-		res = mem_mput(seg, saddr, buf, res);
+		res = ectl_mem_set(seg, saddr, buf, res);
 	}
 
 	free(buf);

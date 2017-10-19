@@ -20,7 +20,7 @@ include_directories(
 	${BISON_INCLUDE_DIRS}
 )
 target_link_libraries(em400
-	cpu mem io ui ectl
+	ectl cpu mem io ui
 	${DEBUGGER_LIBS}
 	${EMDAS_LIBRARIES}
 	${EMCRK_LIBRARIES}

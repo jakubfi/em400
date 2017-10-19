@@ -35,6 +35,7 @@ enum ectl_cpu_state_bits {
 	ECTL_STATE_COUNT
 };
 
+// this must match register ids in cpu/cp.h
 enum ectl_registers {
 	ECTL_REG_R0 = 0,
 	ECTL_REG_R1,
@@ -45,9 +46,13 @@ enum ectl_registers {
 	ECTL_REG_R6,
 	ECTL_REG_R7,
 	ECTL_REG_IC,
-	ECTL_REG_SR,
+	ECTL_REG_AC,
+	ECTL_REG_AR,
 	ECTL_REG_IR,
+	ECTL_REG_SR,
+	ECTL_REG_RZ,
 	ECTL_REG_KB,
+	ECTL_REG_KB2,
 	ECTL_REG_MOD,
 	ECTL_REG_MODc,
 	ECTL_REG_ALARM,
@@ -103,8 +108,8 @@ int ectl_reg_get(unsigned id);
 int ectl_reg_set(unsigned id, uint16_t val);
 
 // memory
-int ectl_mem_get(int seg, uint16_t addr, uint16_t *dest, int count);
-int ectl_mem_set(int seg, uint16_t addr, uint16_t *src, int count);
+int ectl_mem_get(int seg, uint16_t addr, uint16_t *dest, unsigned count);
+int ectl_mem_set(int seg, uint16_t addr, uint16_t *src, unsigned count);
 int ectl_mem_map(int seg);
 int ectl_load(FILE *f, const char *name, int seg, uint16_t saddr);
 void ectl_bootstrap(int chan, int unit);
