@@ -179,7 +179,7 @@ class TestResult:
 class TestBed:
 
     # --------------------------------------------------------------------
-    def __init__(self, emas, binary, blfile, benchmark_duration=0.5, failcmd=None, log=0):
+    def __init__(self, emas, binary, blfile, benchmark_duration=0.5, failcmd=None, log="", fpga=0):
         self.emas = emas
         self.binary = binary
         self.failcmd = failcmd
@@ -189,6 +189,7 @@ class TestBed:
         self.default_config = "configs/minimal.cfg"
         self.bl = self.baseline(blfile)
         self.log = log
+        self.fpga = fpga
 
     # --------------------------------------------------------------------
     def close(self):
@@ -197,9 +198,10 @@ class TestBed:
 
     # --------------------------------------------------------------------
     def __runemu(self, add_opts):
-        log_opts = []
         if self.log:
-            add_opts += ["-l", "all=9"]
+            add_opts += ["-l", self.log]
+        if self.fpga:
+            add_opts += ["-F"]
         if self.e is None:
             self.e = EM400(self.binary, add_opts, polldelay=0.01)
         else:
@@ -361,7 +363,8 @@ parser = argparse.ArgumentParser()
 parser.add_argument("-b", "--baseline", help="baseline test results")
 parser.add_argument("-e", "--emulator", help="emulator binary to run", default="../build/src/em400")
 parser.add_argument("-f", "--failcmd", help="command to run when test fails", action='append')
-parser.add_argument("-l", "--log", help="enable em400 logging", action="store_const", default=0, const=1)
+parser.add_argument("-l", "--log", help="configure em400 logging", default="")
+parser.add_argument("-F", "--fpga", help="use FPGA CPU backend in em400", action="store_const", const=1, default=0)
 parser.add_argument('test', nargs='*', help='selected test(s) to run (file.asm or directory or testset.set)')
 args = parser.parse_args()
 
@@ -384,7 +387,7 @@ tests.sort()
 # run tests
 total = 0
 failed = 0
-tb = TestBed("emas", args.emulator, args.baseline, benchmark_duration=0.5, failcmd=args.failcmd, log=args.log)
+tb = TestBed("emas", args.emulator, args.baseline, benchmark_duration=0.5, failcmd=args.failcmd, log=args.log, fpga=args.fpga)
 for t in tests:
     if sys.stdout.isatty():
         print("%-50s : ..." % t, end="", flush=True)

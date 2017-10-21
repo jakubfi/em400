@@ -1,8 +1,12 @@
+IO:
+ * testy iobus-a
+   * nieprawidłowe komendy
+
 mega:
-* wspolpraca z elwro w 0
-* segmenty systemowe
-* "done" alokacji
-* 8M?
+ * wspolpraca z elwro w 0
+ * segmenty systemowe
+ * "done" alokacji
+ * 8M?
 
 multix:
  - timer
