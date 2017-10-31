@@ -409,7 +409,7 @@ static void cpu_step()
 			N = regs[IR_C] + rMOD;
 		} else {
 			if (!mem_get(QNB, rIC, &data)) {
-				LOGCPU(L_CPU, 2, "    (no mem: long arg fetch)");
+				LOGCPU(L_CPU, 2, "    (no mem: long arg fetch @ %i:0x%04x)", QNB, (uint16_t) rIC);
 				goto memfail;
 			} else {
 				N = data + rMOD;
@@ -421,7 +421,7 @@ static void cpu_step()
 		}
 		if (IR_D) {
 			if (!mem_get(QNB, N, &data)) {
-				LOGCPU(L_CPU, 2, "    (no mem: indirect arg fetch)");
+				LOGCPU(L_CPU, 2, "    (no mem: indirect arg fetch @ %i:0x%04x)", QNB, (uint16_t) N);
 				goto memfail;
 			} else {
 				N = data;
