@@ -2,6 +2,12 @@ Known bugs:
 
 * emulation handles illegal instruction 2nd word argument differently
 
+Cleanups:
+
+* consistent naming and commands between emu and hw (timer/clock, run/start)
+* 16/32-bit RZ
+* consistent state idicators (stop/start/wait - run/wait)
+
 Enhancements:
 
 * new debugger interface
