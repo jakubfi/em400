@@ -152,6 +152,8 @@ void cchar_term_reset(struct cchar_unit_proto_t *unit)
 // -----------------------------------------------------------------------
 void cchar_term_queue_char(struct cchar_unit_proto_t *unit, char data)
 {
+	int report_int = 0;
+
 	LOG(L_TERM, 5, "enqueue char: #%02x", data);
 	pthread_mutex_lock(&UNIT->buf_mutex);
 
@@ -164,12 +166,16 @@ void cchar_term_queue_char(struct cchar_unit_proto_t *unit, char data)
 	}
 
 	if (UNIT->empty_read) {
-		LOG(L_TERM, 5, "new char available, sending interrupt");
 		UNIT->empty_read = 0;
-		cchar_int(unit->chan, unit->num, CCHAR_TERM_INT_READY);
+		report_int = 1;
 	}
 
 	pthread_mutex_unlock(&UNIT->buf_mutex);
+
+	if (report_int) {
+		LOG(L_TERM, 5, "new char available, sending interrupt");
+		cchar_int(unit->chan, unit->num, CCHAR_TERM_INT_READY);
+	}
 }
 
 // -----------------------------------------------------------------------
