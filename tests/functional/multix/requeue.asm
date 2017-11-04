@@ -26,6 +26,8 @@ start:
 	lw	r3, mx_proc
 	rw	r3, MX_IV
 
+	mcl
+
 	im	mask
 	hlt		; wait for mx int
 

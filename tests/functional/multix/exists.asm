@@ -25,6 +25,8 @@ start:
 	lw	r3, mx_proc
 	rw	r3, MX_IV
 
+	mcl
+
 	; "exists" before initialization
 	in	r5, IO_EXISTS | MX_CHAN
 	.word	fail, fail, ok, fail
