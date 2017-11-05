@@ -207,12 +207,13 @@ int mx_evq_enqueue(struct mx_evq *queue, struct mx_ev *event, int flags)
 
 	pthread_mutex_unlock(&queue->mutex);
 
-	LOGID(L_MX, 4, queue, "Added event %i: %s (cmd: %i, line: %i, arg: 0x%04x)",
+	LOGID(L_MX, 4, queue, "Added event %i: %s (cmd: %i, line: %i, arg: 0x%04x), %i waiting",
 		event->type,
 		mx_ev_name(event->type),
 		event->cmd,
 		event->line,
-		event->arg
+		event->arg,
+		cur_size
 	);
 
 	return cur_size;
@@ -255,15 +256,18 @@ struct mx_ev * mx_evq_dequeue(struct mx_evq *queue)
 		ret_event = event;
 	}
 
+	int cur_size = queue->size;
+
 	pthread_mutex_unlock(&queue->mutex);
 
 	if (ret_event) {
-		LOGID(L_MX, 2, queue, "Got event %i: %s (cmd: %i, line: %i, arg: 0x%04x)",
+		LOGID(L_MX, 2, queue, "Got event %i: %s (cmd: %i, line: %i, arg: 0x%04x), %i waiting",
 			ret_event->type,
 			mx_ev_name(ret_event->type),
 			ret_event->cmd,
 			ret_event->line,
-			ret_event->arg
+			ret_event->arg,
+			cur_size
 		);
 	} else {
 		LOGID(L_MX, 3, queue, "No event");
