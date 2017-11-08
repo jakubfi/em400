@@ -98,12 +98,12 @@ class EM400:
     def wait_for_finish(self):
         while True:
             s = self.state()
-            if s & 1:
-                break
             if s & 2:
                 ir = self.reg("ir")
                 if ir & 0b1111110111000000 == 0b1110110000000000 and ir & 0b0000000000111111 >= 0o40:
                     break
+            elif s & 1:
+                break
             if self.polldelay:
                 time.sleep(self.polldelay)
 
