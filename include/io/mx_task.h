@@ -36,15 +36,16 @@ enum mx_tasks {
 
 enum mx_task_conditions {
 	MX_COND_NONE	= 0,
-	MX_COND_ACT		= 0b00000001, // active
-	MX_COND_START	= 0b00000001, // reported (highest priority)
-	MX_COND_RECV	= 0b00000010, // receiving done
-	MX_COND_SEND	= 0b00000100, // transmitting done
-	MX_COND_ERR		= 0b00001000, // error
-	MX_COND_OPRQ	= 0b00010000, // OPRQ
-	MX_COND_WINCH	= 0b00100000, // winchester finished, XON for serial lines
-	MX_COND_X		= 0b01000000, // em400: nonexisting condition, shouldn't happen
-	MX_COND_TIMER	= 0b10000000, // timer (lowest priority)
+	MX_COND_ACT		= 1 << 0, // active
+	MX_COND_START	= 1 << 0, // reported (highest priority)
+	MX_COND_RECV	= 1 << 1, // receiving done
+	MX_COND_SEND	= 1 << 2, // transmitting done
+	MX_COND_ERR		= 1 << 3, // error
+	MX_COND_OPRQ	= 1 << 4, // OPRQ
+	MX_COND_WINCH	= 1 << 5, // winchester finished or...
+	MX_COND_XON		= 1 << 5, // ...XON for serial lines
+	MX_COND_X		= 1 << 6, // em400: nonexisting condition, shouldn't happen
+	MX_COND_TIMER	= 1 << 7, // timer (lowest priority)
 };
 
 struct mx_task {
