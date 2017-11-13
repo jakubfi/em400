@@ -49,12 +49,12 @@ struct mx_proto mx_proto_som_terminal = {
 	.conf = mx_proto_som_terminal_conf,
 	.free = mx_proto_som_terminal_free,
 	.task = {
-		{ 0, 0, 1, { mx_proto_status_start, NULL, NULL, NULL, NULL, NULL, NULL, NULL } },
-		{ 0, 0, 0, { mx_proto_detach_start, NULL, NULL, NULL, NULL, NULL, NULL, NULL } },
-		{ 0, 0, 0, { mx_proto_oprq_start, NULL, NULL, NULL, NULL, NULL, NULL, NULL } },
-		{ 10, 10, 4, { NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL } },
-		{ 0, 0, 0, { NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL } },
-		{ 1, 0, 0, { mx_proto_attach_start, NULL, NULL, NULL, NULL, NULL, NULL, NULL } },
+		[MX_TASK_STATUS] = { 0, 0, 1, { mx_proto_status_start, NULL, NULL, NULL, NULL, NULL, NULL, NULL } },
+		[MX_TASK_DETACH] = { 0, 0, 0, { mx_proto_detach_start, NULL, NULL, NULL, NULL, NULL, NULL, NULL } },
+		[MX_TASK_OPRQ] = { 0, 0, 0, { mx_proto_oprq_start, NULL, NULL, NULL, NULL, NULL, NULL, NULL } },
+		[MX_TASK_TRANSMIT] = { 10, 10, 4, { NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL } },
+		[MX_TASK_ABORT] = { 0, 0, 0, { NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL } },
+		[MX_TASK_ATTACH] = { 1, 0, 0, { mx_proto_attach_start, NULL, NULL, NULL, NULL, NULL, NULL, NULL } },
 	}
 };
 
