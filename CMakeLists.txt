@@ -7,6 +7,7 @@ set(WITH_DEBUGGER 1)
 
 set(DEBUG 0)
 
+include(GNUInstallDirs)
 include(appversion.cmake)
 
 find_package(BISON REQUIRED)
