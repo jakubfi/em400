@@ -132,6 +132,13 @@ void * mx_create(int num, struct cfg_unit *units)
 	}
 	LOG_SET_ID(multix->irqq, "%s IRQ", LOG_GET_ID(multix));
 
+	// create task set
+	multix->ts = mx_ts_create(multix->irqq);
+	if (!multix->ts) {
+		log_err("Failed to create MULTIX' task set.");
+		goto cleanup;
+	}
+
 	// create timer
 	multix->timer = mx_timer_init(MX_TIMER_STEP_MSEC, multix->evq);
 	if (!multix->irqq) {
@@ -209,6 +216,9 @@ void mx_shutdown(void *ch)
 		mx_evq_destroy(multix->evq);
 	}
 
+	// destroy task set
+	mx_ts_destroy(multix->ts);
+
 	// free resources
 	pthread_mutex_destroy(&multix->state_mutex);
 	pthread_cond_destroy(&multix->state_cond);
@@ -246,6 +256,7 @@ void mx_reset(void *ch)
 		pthread_cond_wait(&multix->reset_ack_cond, &multix->reset_ack_mutex);
 	}
 	pthread_mutex_unlock(&multix->reset_ack_mutex);
+
 	LOGID(L_MX, 2, multix, "Reset initiated");
 }
 
@@ -314,12 +325,11 @@ static void mx_deconfigure(struct mx *multix)
 {
 	mx_timer_off(multix->timer);
 	multix->conf_set = 0;
-	multix->log_line_count = 0;
+	mx_ts_lines_deconfigure(multix->ts);
 
 	for (int i=0 ; i<MX_LINE_MAX ; i++) {
 		struct mx_line *line = multix->lines + i;
 		mx_line_deconfigure(line);
-		multix->log_lines[i] = NULL;
 		LOG_SET_ID(line, "%s:? (p?)", LOG_GET_ID(multix));
 	}
 }
@@ -477,7 +487,7 @@ static void mx_setcfg(struct mx *multix, uint16_t addr)
 	// configure physical lines
 	int cur_line = 0;
 	for (int i=0 ; i<phy_desc_count ; i++) {
-		unsigned count		= (data[i] & 0b0000000000011111) + 1;
+		unsigned count = (data[i] & 0b0000000000011111) + 1;
 		LOGID(L_MX, 3, multix, "  %i Physical line(-s) %i..%i:", count, cur_line, cur_line+count-1);
 		for (int j=0 ; j<count ; j++, cur_line++) {
 			LOG_SET_ID(multix->lines+cur_line, "%s:? (p%i)", LOG_GET_ID(multix), cur_line);
@@ -524,10 +534,9 @@ static void mx_setcfg(struct mx *multix, uint16_t addr)
 			return;
 		}
 
-		multix->log_lines[i] = line;
+		mx_ts_line_configure(multix->ts, i, line);
 	}
 
-	multix->log_line_count = log_count;
 	multix->conf_set = 1;
 
 	// start timer
@@ -545,7 +554,7 @@ struct mx_cmd_route {
 	int irq_reject;
 	int irq_no_line;
 } mx_cmd_routing[] = {
-// command              task                irq_reject
+// command              task                irq_reject		irq_no_line
 /* MX_CMD_ERR_0   */  { MX_TASK_UNKNOWN,	MX_IRQ_IEPS0,	-1 },
 /* MX_CMD_TEST    */  { MX_TASK_MISPLCD,	-1,				-1 },
 /* MX_CMD_ATTACH  */  { MX_TASK_ATTACH,		MX_IRQ_INDOL,	MX_IRQ_INKDO },
@@ -573,36 +582,28 @@ static void mx_task_router(struct mx *multix, unsigned cmd, unsigned line_num, u
 		return;
 	}
 
-	struct mx_line *line = multix->log_lines[line_num];
 	struct mx_cmd_route *route = mx_cmd_routing + cmd;
-	struct mx_task *task = line->task + route->task_num;
 
 	// commands that are possible, but unknown for MULTIX
 	if (route->task_num == MX_TASK_UNKNOWN) {
-		LOGID(L_MX, 1, multix, "Unknown MULTIX command %i: %s", cmd, mx_get_cmd_name(cmd));
+		LOGID(L_MX, 1, multix, "Unhandled MULTIX command %i: %s", cmd, mx_get_cmd_name(cmd));
 		mx_irqq_enqueue(multix->irqq, route->irq_reject, 0);
 
 	// correct commands that are not suppose to be processed here
 	} else if (route->task_num == MX_TASK_MISPLCD) {
-		LOGID(L_MX, 1, multix, "EMULATION ERROR: bad command %i passed in the event: %s", cmd, mx_get_cmd_name(cmd));
+		LOGID(L_MX, 1, multix, "EMULATION ERROR: command %i (%s) should not be passed with an event", cmd, mx_get_cmd_name(cmd));
 
 	// proper commands
 	} else {
-		if (!multix->conf_set || !line) {
-			LOGID(L_MX, 1, multix, "Rejecting command %i: %s - no such line or no MULTIX configuration set", cmd, mx_get_cmd_name(cmd));
-			mx_irqq_enqueue(multix->irqq, route->irq_no_line, line_num);
+		int res = mx_task_queue(multix->ts, line_num, route->task_num, arg, route->irq_no_line, route->irq_reject);
+		if (res == 0) {
+			LOGID(L_MX, 1, multix, "Line %i, task %s queued for start", line_num, mx_task_name(route->task_num));
+		} else if (res == -1) {
+			LOGID(L_MX, 1, multix, "Line %i, task %s not queued: logical line not configured", line_num, mx_task_name(route->task_num));
+		} else if (res == -2) {
+			LOGID(L_MX, 1, multix, "Line %i, task %s not queued: line is busy", line_num, mx_task_name(route->task_num));
 		} else {
-			if (mx_task_is_running(task)) {
-				// task not accepted - already running
-				LOGID(L_MX, 1, line, "Line is busy, task %i: %s has been rejected", route->task_num, mx_task_name(route->task_num));
-				mx_irqq_enqueue(multix->irqq, route->irq_reject, line_num);
-			} else {
-				mx_task_start(task, arg);
-				multix->task_act[route->task_num]++;
-				// nothing to do at this point - if task has been accepted
-				// TM will handle it and send appropriate IRQ
-				LOGID(L_MX, 1, line, "Task %i: \"%s\" has been scheduled for start", route->task_num, mx_task_name(route->task_num));
-			}
+			LOGID(L_MX, 1, multix, "Line %i, task %s not queued: unknown error", line_num, mx_task_name(route->task_num));
 		}
 	}
 }
@@ -642,136 +643,56 @@ static void mx_ev_handle(struct mx *multix, struct mx_ev *ev)
 }
 
 // -----------------------------------------------------------------------
-static int mx_get_task_waiting(struct mx *multix)
-{
-	for (int i=0 ; i<MX_TASK_MAX ; i++) {
-		if (multix->task_act[i]) {
-			LOGID(L_MX, 3, multix, "Got awaiting task %i: %s", i, mx_task_name(i));
-			return i;
-		}
-	}
-
-	LOGID(L_MX, 3, multix, "No tasks waiting");
-
-	return -1;
-}
-
-// -----------------------------------------------------------------------
-static int mx_get_line_waiting(struct mx *multix, int task_num)
-{
-	static int line_num = -1;
-
-	for (int i=0 ; i<multix->log_line_count ; i++) {
-		line_num++;
-		if (line_num >= multix->log_line_count) {
-			line_num = 0;
-		}
-
-		struct mx_task *task = multix->log_lines[line_num]->task + task_num;
-
-		if (mx_task_is_waiting(task)) {
-			LOGID(L_MX, 3, multix, "Line %i is waiting for task %i: %s", line_num, task_num, mx_task_name(task_num));
-			return line_num;
-		}
-	}
-
-	LOGID(L_MX, 3, multix, "No line is waiting for task %i: %s", task_num, mx_task_name(task_num));
-	return -1;
-}
-
-// -----------------------------------------------------------------------
-static int mx_task_run(struct mx_line *line, struct mx_task *task, const struct mx_proto_task *proto_task)
+static int mx_process_one_task(struct mx *multix)
 {
 	uint16_t data[32];
-	int irq = MX_IRQ_NONE; // just in case
+	int irq = MX_IRQ_NONE;
+	int cond_wait = MX_WAIT_NONE;
+	int cond;
 
-	// update line task status
-	mx_task_activate(task);
+	struct mx_task *task = mx_task_dequeue(multix->ts, &cond);
 
-	// get highest condition
-	unsigned condition = mx_task_get_condition_num(task);
+	if (!task) {
+		LOGID(L_MX, 3, multix, "No task waiting");
+		return 1;
+	}
+
+	struct mx_line *line = task->lineptr;
+	const struct mx_proto_task *proto_task = task->proto;
 
 	// get task data if condition is START and protocol requires the data
 	// it's protocol job to store that information for other conditions to use
-	if ((task->bzaw & MX_COND_START) && (proto_task->input_flen > 0)) {
+	if ((cond == 0) && (proto_task->input_flen > 0)) {
 		if (io_mem_mget(0, task->arg, data, proto_task->input_flen) != proto_task->input_flen) {
-			task->bzaw = MX_COND_NONE;
-			return MX_IRQ_INPAO;
+			cond_wait = MX_WAIT_NONE;
+			irq = MX_IRQ_INPAO;
+			goto done;
 		}
 	}
 
 	// run the protocol handler
 	// protocol takes care of all the interaction between the device and line,
 	// but it doesn't interact with the CPU directly
-	proto_task_f handler = proto_task->fun[condition];
+	proto_task_f handler = proto_task->fun[cond];
 	if (handler) {
-		task->bzaw = handler(line, &irq, data);
+		cond_wait = handler(line, &irq, data);
 	// TODO: this needs to go in the final version
 	} else {
-		LOGID(L_MX, 1, line, "EMULATION ERROR: No function to handle given task at condition %i for protocol %s", condition, line->proto->name);
+		LOGID(L_MX, 1, line, "EMULATION ERROR: No function to handle given task at condition %i for protocol %s", cond, line->proto->name);
 	}
 
 	// if task is done, we may need to update return field
-	if ((task->bzaw == MX_COND_NONE) && (proto_task->output_flen > 0)) {
+	if ((cond_wait == MX_WAIT_NONE) && (proto_task->output_flen > 0)) {
 		if (io_mem_mput(0, task->arg + proto_task->output_fpos, data + proto_task->output_fpos, proto_task->output_flen) != proto_task->output_flen) {
-			return MX_IRQ_INPAO;
+			irq = MX_IRQ_INPAO;
 		}
 	}
 
-	// irq is sent to CPU in mx_process_one_task(), which knows the line number
-	return irq;
-}
+done:
 
-// -----------------------------------------------------------------------
-static int mx_process_one_task(struct mx *multix)
-{
-	int task_num;
-	int line_num;
+	mx_task_finalize(multix->ts, task, cond_wait, irq);
 
-	// find a task awaiting execution
-	if ((task_num = mx_get_task_waiting(multix)) == -1) {
-		return 0;
-	}
-
-	// find first line waiting for the task
-	if ((line_num = mx_get_line_waiting(multix, task_num)) == -1) {
-		// no line waiting on that task
-		multix->task_act[task_num] = 0;
-		return 0;
-	}
-
-	struct mx_line *line = multix->log_lines[line_num];
-	struct mx_task *task = line->task + task_num;
-	const struct mx_proto_task *proto_task = line->proto->task + task_num;
-
-	LOGID(L_MX, 3, line, "Running line task %i: %s, condition(-s) met: %s%s%s%s%s%s%s%s",
-		task_num,
-		mx_task_name(task_num),
-		task->bwar & MX_COND_TIMER ? "timer " : "",
-		task->bwar & MX_COND_X ? "X " : "",
-		task->bwar & MX_COND_WINCH ? "winchester " : "",
-		task->bwar & MX_COND_OPRQ ? "oprq " : "",
-		task->bwar & MX_COND_ERR ? "error " : "",
-		task->bwar & MX_COND_SEND ? "send " : "",
-		task->bwar & MX_COND_RECV ? "receive " : "",
-		task->bwar & MX_COND_START ? "start" : ""
-	);
-
-	// start line task
-	int proto_irq = mx_task_run(line, task, proto_task);
-
-	// if task doesn't require any more attention, finish it
-	if (task->bwar == MX_COND_NONE) {
-		LOGID(L_MX, 3, line, "Line task %s is finished", mx_task_name(task_num));
-		multix->task_act[task_num]--;
-	}
-
-	// If task wants to send an IRQ, do it here
-	if (proto_irq != MX_IRQ_NONE) {
-		mx_irqq_enqueue(multix->irqq, proto_irq, line_num);
-	}
-
-	return 1;
+	return 0;
 }
 
 /* -----------------------------------------------------------------------
@@ -818,7 +739,7 @@ static void * mx_main(void *ptr)
 			}
 
 			// get the highest priority task and process it
-			if (!mx_process_one_task(multix)) {
+			if (mx_process_one_task(multix)) {
 				// no task processed -> wait for a new event,
 				queue_disabled = mx_evq_wait(multix->evq);
 			}

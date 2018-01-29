@@ -136,7 +136,7 @@ int mx_line_conf_phy(struct mx_line *line, uint16_t data)
 int mx_line_conf_log(struct mx_line *line, uint16_t *data)
 {
 	unsigned proto_num	= (data[0] & 0b1111111100000000) >> 8;
-	// formetter number is not really used anywhere in emulation,
+	// formatter number is not really used anywhere in emulation,
 	// but let's at least log its number
 	unsigned tape_fmter	= (data[0] & 0b0000000010000000) >> 7;
 

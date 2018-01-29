@@ -93,22 +93,22 @@ uint8_t mx_proto_floppy_transmit_start(struct mx_line *line, int *irq, uint16_t 
 	data[4] = 0;
 	data[5] = 0x8000;
 	*irq = MX_IRQ_ITRER;
-	return MX_COND_NONE;
+	return MX_WAIT_NONE;
 	// line is not attached
 	if (!(line->status & MX_LSTATE_ATTACHED)) {
 		*irq = MX_IRQ_INTRA;
-		return MX_COND_NONE;
+		return MX_WAIT_NONE;
 	}
 
 	// check if there is a device connected
 	if (!line->device || !line->dev_obj) {
 		data[5] = 0xffff;
 		*irq = MX_IRQ_INTRA;
-		return MX_COND_NONE;
+		return MX_WAIT_NONE;
 	}
 
 	*irq = MX_IRQ_ITRER;
-	return MX_COND_NONE;
+	return MX_WAIT_NONE;
 }
 
 // -----------------------------------------------------------------------

@@ -19,6 +19,11 @@
 #define MX_TASK_H
 
 #include <inttypes.h>
+#include <pthread.h>
+#include "io/mx_irq.h"
+
+// due to an include loop
+#define MX_LINE_MAX 32
 
 struct mx_line;
 
@@ -34,32 +39,63 @@ enum mx_tasks {
 	MX_TASK_MAX		= 6,  // (task count)
 };
 
-enum mx_task_conditions {
-	MX_COND_NONE	= 0,
-	MX_COND_ACT		= 1 << 0, // active
-	MX_COND_START	= 1 << 0, // reported (highest priority)
-	MX_COND_RECV	= 1 << 1, // receiving done
-	MX_COND_SEND	= 1 << 2, // transmitting done
-	MX_COND_ERR		= 1 << 3, // error
-	MX_COND_OPRQ	= 1 << 4, // OPRQ
-	MX_COND_WINCH	= 1 << 5, // winchester finished or...
-	MX_COND_XON		= 1 << 5, // ...XON for serial lines
-	MX_COND_X		= 1 << 6, // em400: nonexisting condition, shouldn't happen
-	MX_COND_TIMER	= 1 << 7, // timer (lowest priority)
+enum mx_task_wait_conditions {
+	MX_WAIT_NONE	= 0,
+	MX_TASK_ACT		= 1 << 0, // active
+	MX_WAIT_RECV	= 1 << 1, // receiving done
+	MX_WAIT_SEND	= 1 << 2, // transmitting done
+	MX_WAIT_ERR		= 1 << 3, // error
+	MX_WAIT_OPRQ	= 1 << 4, // OPRQ
+	MX_WAIT_WINCH	= 1 << 5, // winchester controller is now free
+	MX_WAIT_XON		= 1 << 5, // XON for serial lines
+	// bit 6 is unused
+	MX_WAIT_TIMER	= 1 << 7, // timer
+};
+
+enum mx_task_signal_conditions {
+	MX_SIGNAL_NONE	= 0,
+	MX_SIGNAL_START	= 1 << 0, // task start (highest priority)
+	MX_SIGNAL_RECV	= 1 << 1, // receiving done
+	MX_SIGNAL_SEND	= 1 << 2, // transmitting done
+	MX_SIGNAL_ERR	= 1 << 3, // error
+	MX_SIGNAL_OPRQ	= 1 << 4, // OPRQ
+	MX_SIGNAL_WINCH	= 1 << 5, // winchester: HDD controller is now free
+	MX_SIGNAL_XON	= 1 << 5, // serial lines: XON
+	// bit 6 is unused
+	MX_SIGNAL_TIMER	= 1 << 7, // timer (lowest priority)
 };
 
 struct mx_task {
-	uint8_t bzaw;	// B.ZAWIESZENIA: /0/=BIT AKTYWNOSCI, /1-7/=BITY ZAWIESZENIA
-	uint8_t bwar;	// B.WARUNKOW: /0/=<START BEZWARUN.>, /1-7/=BITY WARUNKOW
+	struct mx_task_group * tg; // task group this task belongs to
+	const struct mx_proto_task *proto; // protocol for this particular on this particular logical line
+	struct mx_line *lineptr; // points to a physical line
+	unsigned line_num; // logical line number
+	uint8_t cond_wait;	// (bzaw) conditions task is waiting for (set by the task) bit 0: task is currently active, bits 7-1: wait conditions
+	uint8_t cond_signal;// (bwar) conditions signalled for the task (set elswhere)
 	uint16_t arg;
 };
 
-const char *mx_task_name(unsigned i);
-int mx_task_is_running(struct mx_task *task);
-void mx_task_start(struct mx_task *task, uint16_t arg);
-int mx_task_is_waiting(struct mx_task *task);
-void mx_task_activate(struct mx_task *task);
+struct mx_task_group {
+	int scheduled;
+	struct mx_task line[MX_LINE_MAX]; // these are logical lines
+};
+
+struct mx_taskset {
+	pthread_mutex_t ts_mutex;
+	struct mx_irqq *irqq;
+	struct mx_task_group task[MX_TASK_MAX];
+};
+
+struct mx_taskset * mx_ts_create(struct mx_irqq *irqq);
+void mx_ts_destroy(struct mx_taskset *ts);
+int mx_ts_line_configure(struct mx_taskset *ts, unsigned line_num, struct mx_line *line);
+void mx_ts_lines_deconfigure(struct mx_taskset *ts);
+const char * mx_task_name(unsigned i);
+const char * mx_cond_name(unsigned i);
 unsigned mx_task_get_condition_num(struct mx_task *task);
+int mx_task_queue(struct mx_taskset *ts, unsigned line_num, int task_num, uint16_t arg, int irq_no_line, int irq_reject);
+struct mx_task * mx_task_dequeue(struct mx_taskset *ts, int *cond);
+void mx_task_finalize(struct mx_taskset *ts, struct mx_task *task, int cond_wait, int irq);
 
 #endif
 

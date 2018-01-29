@@ -166,7 +166,7 @@ uint8_t mx_proto_terminal_attach_start(struct mx_line *line, int *irq, uint16_t 
 	line->status |= MX_LSTATE_ATTACHED;
 	*irq = MX_IRQ_IDOLI;
 
-	return MX_COND_NONE;
+	return MX_WAIT_NONE;
 }
 
 // -----------------------------------------------------------------------

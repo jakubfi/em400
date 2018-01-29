@@ -374,7 +374,7 @@ fin:
 	// pack control field
 	mx_proto_winch_cf_encode(data, proto_data);
 
-	return MX_COND_NONE;
+	return MX_WAIT_NONE;
 }
 
 // -----------------------------------------------------------------------
@@ -382,7 +382,7 @@ uint8_t mx_proto_winchester_abort_start(struct mx_line *line, int *irq, uint16_t
 {
 	// winchester protocol doesn't support aborting
 	*irq = MX_IRQ_INABT;
-	return MX_COND_NONE;
+	return MX_WAIT_NONE;
 }
 
 // -----------------------------------------------------------------------

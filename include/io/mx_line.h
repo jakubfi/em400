@@ -20,7 +20,6 @@
 
 #include "log.h"
 
-#include "io/mx_task.h"
 #include "io/mx_proto.h"
 
 #include "io/dev/dev.h"
@@ -99,11 +98,9 @@ struct mx_line {
 	void *proto_data;				// line protocol private data
 	uint16_t status;				// line status
 
-	const struct dev_drv *device;	// deivce driver (set in em400 configuration)
+	const struct dev_drv *device;	// device driver (set in em400 configuration)
 	void *dev_obj;					// device driver private data
 
-	// task
-	struct mx_task task[MX_TASK_MAX];
 	LOG_ID_DEF;
 };
 

@@ -29,7 +29,7 @@ uint8_t mx_proto_status_start(struct mx_line *line, int *irq, uint16_t *data)
 	*data = line->status;
 	*irq = MX_IRQ_ISTRE;
 
-	return MX_COND_NONE;
+	return MX_WAIT_NONE;
 }
 
 // -----------------------------------------------------------------------
@@ -42,14 +42,14 @@ uint8_t mx_proto_detach_start(struct mx_line *line, int *irq, uint16_t *data)
 		*irq = MX_IRQ_IODLI;
 	}
 
-	return MX_COND_NONE;
+	return MX_WAIT_NONE;
 }
 
 // -----------------------------------------------------------------------
 uint8_t mx_proto_oprq_start(struct mx_line *line, int *irq, uint16_t *data)
 {
 	*irq = MX_IRQ_IOPRU;
-	return MX_COND_NONE;
+	return MX_WAIT_NONE;
 }
 
 // -----------------------------------------------------------------------
@@ -62,7 +62,7 @@ uint8_t mx_proto_attach_start(struct mx_line *line, int *irq, uint16_t *data)
 		*irq = MX_IRQ_IDOLI;
 	}
 
-	return MX_COND_NONE;
+	return MX_WAIT_NONE;
 }
 
 // vim: tabstop=4 shiftwidth=4 autoindent

@@ -23,6 +23,7 @@
 #include "io/mx_ev.h"
 #include "io/mx_irq.h"
 #include "io/mx_line.h"
+#include "io/mx_task.h"
 #include "io/mx_timer.h"
 
 #include "log.h"
@@ -57,10 +58,9 @@ struct mx {
 	struct mx_irqq *irqq;					// interrupt request queue (to CPU)
 	struct mx_timer *timer;					// MULTIX timer (500ms tick)
 
-	int log_line_count;						// max configured logical line number
 	struct mx_line lines[MX_LINE_MAX];		// physical lines
-	struct mx_line *log_lines[MX_LINE_MAX];	// logical lines
-	int task_act[MX_TASK_MAX];				// active tasks
+
+	struct mx_taskset *ts;
 
 	// reset logic
 	int state;
