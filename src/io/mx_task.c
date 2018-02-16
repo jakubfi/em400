@@ -48,48 +48,61 @@ static const char *mx_cond_names[] = {
 struct mx_taskset * mx_ts_create(struct mx_irqq *irqq)
 {
 	struct mx_taskset *ts = calloc(1, sizeof(struct mx_taskset));
+	if (!ts) {
+		goto cleanup;
+	}
+
 	ts->irqq = irqq;
-	if (pthread_mutex_init(&ts->ts_mutex, NULL)) {
-		free(ts);
-		return NULL;
+
+    if (pthread_cond_init(&ts->cond, NULL)) {
+        goto cleanup;
+    }
+
+	if (pthread_mutex_init(&ts->mutex, NULL)) {
+		goto cleanup;
 	}
 
 	return ts;
+
+cleanup:
+	mx_ts_destroy(ts);
+	return NULL;
 }
 
 // -----------------------------------------------------------------------
 void mx_ts_destroy(struct mx_taskset *ts)
 {
 	if (!ts) return;
-	pthread_mutex_destroy(&ts->ts_mutex);
+	pthread_mutex_destroy(&ts->mutex);
+	pthread_cond_destroy(&ts->cond);
 	free(ts);
 }
 
 // -----------------------------------------------------------------------
 int mx_ts_line_configure(struct mx_taskset *ts, unsigned line_num, struct mx_line *line)
 {
-	pthread_mutex_lock(&ts->ts_mutex);
+	pthread_mutex_lock(&ts->mutex);
 	for (int tn=0 ; tn<MX_TASK_MAX ; tn++) {
 		ts->task[tn].line[line_num].lineptr = line;
 		ts->task[tn].line[line_num].line_num = line_num;
 		ts->task[tn].line[line_num].proto = line->proto->task + tn;
 		ts->task[tn].line[line_num].tg = ts->task + tn;
 	}
-	pthread_mutex_unlock(&ts->ts_mutex);
+	pthread_mutex_unlock(&ts->mutex);
 	return 0;
 }
 
 // -----------------------------------------------------------------------
 void mx_ts_lines_deconfigure(struct mx_taskset *ts)
 {
-	pthread_mutex_lock(&ts->ts_mutex);
+	pthread_mutex_lock(&ts->mutex);
 	for (int tn=0 ; tn<MX_TASK_MAX ; tn++) {
 		for (int ln=0 ; ln<MX_LINE_MAX ; ln++) {
 			ts->task[tn].line[ln].lineptr = NULL;
 			ts->task[tn].line[ln].proto = NULL;
 		}
 	}
-	pthread_mutex_unlock(&ts->ts_mutex);
+	pthread_mutex_unlock(&ts->mutex);
 }
 
 // -----------------------------------------------------------------------
@@ -116,7 +129,7 @@ int mx_task_queue(struct mx_taskset *ts, unsigned line_num, int task_num, uint16
 	struct mx_task *task = ts->task[task_num].line + line_num;
 	int ret = 0;
 
-	pthread_mutex_lock(&ts->ts_mutex);
+	pthread_mutex_lock(&ts->mutex);
 
 	// if line is not configured
 	if (!task->lineptr) {
@@ -138,9 +151,10 @@ int mx_task_queue(struct mx_taskset *ts, unsigned line_num, int task_num, uint16
 	task->arg = arg;
 	task->cond_signal = MX_SIGNAL_START; // task is scheduled for unconditional start
 	ts->task[task_num].scheduled++;
+	pthread_cond_signal(&ts->cond);
 
 done:
-	pthread_mutex_unlock(&ts->ts_mutex);
+	pthread_mutex_unlock(&ts->mutex);
 	return ret;
 }
 
@@ -180,7 +194,8 @@ struct mx_task * mx_task_dequeue(struct mx_taskset *ts, int *cond)
 	static int cur_line_num = 0;
 	struct mx_task *task = NULL;
 
-	pthread_mutex_lock(&ts->ts_mutex);
+	pthread_mutex_lock(&ts->mutex);
+	pthread_cond_wait(&ts->cond, &ts->mutex);
 
 	// find highest priority scheduled task
 	for (int tn=0 ; tn<MX_TASK_MAX ; tn++) {
@@ -193,7 +208,7 @@ struct mx_task * mx_task_dequeue(struct mx_taskset *ts, int *cond)
 				if (task->lineptr && mx_task_is_waiting(task)) {
 					*cond = mx_task_get_max_condition_num(task);
 					mx_task_activate(task);
-					pthread_mutex_unlock(&ts->ts_mutex);
+					pthread_mutex_unlock(&ts->mutex);
 					LOG(L_MX, 3,"Line %i running task %i: %s", cur_line_num, tn, mx_task_name(tn));
 					return task;
 				}
@@ -204,7 +219,7 @@ struct mx_task * mx_task_dequeue(struct mx_taskset *ts, int *cond)
 		}
 	}
 
-	pthread_mutex_unlock(&ts->ts_mutex);
+	pthread_mutex_unlock(&ts->mutex);
 
 	return NULL;
 }
@@ -212,7 +227,7 @@ struct mx_task * mx_task_dequeue(struct mx_taskset *ts, int *cond)
 // -----------------------------------------------------------------------
 void mx_task_finalize(struct mx_taskset *ts, struct mx_task *task, int cond_wait, int irq)
 {
-	pthread_mutex_lock(&ts->ts_mutex);
+	pthread_mutex_lock(&ts->mutex);
 
 	task->cond_wait = cond_wait;
 
@@ -227,7 +242,15 @@ void mx_task_finalize(struct mx_taskset *ts, struct mx_task *task, int cond_wait
 		mx_irqq_enqueue(ts->irqq, irq, task->line_num);
 	}
 
-	pthread_mutex_unlock(&ts->ts_mutex);
+	pthread_mutex_unlock(&ts->mutex);
+}
+
+// -----------------------------------------------------------------------
+void mx_task_idle_run(struct mx_taskset *ts)
+{
+	pthread_mutex_lock(&ts->mutex);
+	pthread_cond_signal(&ts->cond);
+	pthread_mutex_unlock(&ts->mutex);
 }
 
 // vim: tabstop=4 shiftwidth=4 autoindent

@@ -51,10 +51,11 @@
 struct mx {
 	int num;
 	pthread_t main_th;						// main MULTIX thread
+	pthread_t evproc_th;					// event processor thread
 
 	int conf_set;							// configuration set flag
 
-	struct mx_evq *evq;						// event queue (internal MULTIX "interrupts")
+	struct mx_evt *evt;						// event table (internal MULTIX "interrupts")
 	struct mx_irqq *irqq;					// interrupt request queue (to CPU)
 	struct mx_timer *timer;					// MULTIX timer (500ms tick)
 

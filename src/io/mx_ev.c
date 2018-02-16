@@ -20,16 +20,18 @@
 #include <stdlib.h>
 #include <pthread.h>
 
+#include "io/defs.h"
 #include "io/mx_ev.h"
 
 #include "log.h"
 
 const char *mx_event_names[] = {
-	"CMD",
+	"QUIT",
+	"RESET",
 	"INT_RECVD",
 	"TIMER",
 	"LINE",
-	"NONE",
+	"CMD",
 	"[invalid-event]"
 };
 
@@ -41,258 +43,170 @@ const char * mx_ev_name(unsigned i)
 }
 
 // -----------------------------------------------------------------------
-static struct mx_ev * mx_ev(int type, unsigned cmd, unsigned line, unsigned arg, void *data)
+struct mx_evt * mx_evt_create()
 {
-	struct mx_ev *event = malloc(sizeof(struct mx_ev));
-
-	if (!event) return NULL;
-
-	event->type = type;
-	event->cmd = cmd;
-	event->line = line;
-	event->arg = arg;
-	event->data = data;
-	event->next = NULL;
-
-	return event;
-}
-
-// -----------------------------------------------------------------------
-struct mx_ev * mx_ev_simple(int type)
-{
-	return mx_ev(type, 0, 0, 0, NULL);
-}
-
-// -----------------------------------------------------------------------
-struct mx_ev * mx_ev_cmd(unsigned cmd, unsigned line, unsigned arg)
-{
-	return mx_ev(MX_EV_CMD, cmd, line, arg, NULL);
-}
-
-// -----------------------------------------------------------------------
-struct mx_ev * mx_ev_line(unsigned size, void *data)
-{
-	return mx_ev(MX_EV_LINE, 0, 0, size, data);
-}
-
-// -----------------------------------------------------------------------
-void mx_ev_delete(struct mx_ev *event)
-{
-	free(event->data);
-	free(event);
-}
-
-// -----------------------------------------------------------------------
-struct mx_evq * mx_evq_create(int maxlen)
-{
-	struct mx_evq *queue = malloc(sizeof(struct mx_evq));
-	if (!queue) {
-		goto cleanup;
-	}
-	queue->head = NULL;
-	queue->tail = NULL;
-	queue->size = 0;
-	queue->maxlen = maxlen;
-	queue->enabled = 0;
-
-	if (pthread_mutex_init(&queue->mutex, NULL)) {
-		goto cleanup;
-	}
-	if (pthread_cond_init(&queue->cond, NULL)) {
+	struct mx_evt *evt = malloc(sizeof(struct mx_evt));
+	if (!evt) {
 		goto cleanup;
 	}
 
-	return queue;
+	if (pthread_mutex_init(&evt->mutex, NULL)) {
+		goto cleanup;
+	}
+	if (pthread_cond_init(&evt->cond, NULL)) {
+		goto cleanup;
+	}
+
+	mx_evt_clear(evt);
+
+	return evt;
 
 cleanup:
-	mx_evq_destroy(queue);
+	mx_evt_destroy(evt);
 	return NULL;
 }
 
 // -----------------------------------------------------------------------
-void mx_evq_clear(struct mx_evq *queue)
+void mx_evt_clear(struct mx_evt *evt)
 {
-	pthread_mutex_lock(&queue->mutex);
+	pthread_mutex_lock(&evt->mutex);
 
-	struct mx_ev *event = queue->head;
-	struct mx_ev *t;
-
-	while (event) {
-		t = event->next;
-		mx_ev_delete(event);
-		event = t;
+	for (int i=0 ; i<MX_EV_MAX ; i++) {
+		evt->event[i].active = 0;
 	}
+	pthread_cond_signal(&evt->cond);
 
-	queue->size = 0;
-	queue->head = NULL;
-	queue->tail = NULL;
-
-	pthread_mutex_unlock(&queue->mutex);
+	pthread_mutex_unlock(&evt->mutex);
 }
 
 // -----------------------------------------------------------------------
-int mx_evq_size(struct mx_evq *queue)
+void mx_evt_destroy(struct mx_evt *evt)
 {
-	pthread_mutex_lock(&queue->mutex);
-	int size = queue->size;
-	pthread_mutex_unlock(&queue->mutex);
-	return size;
+	if (!evt) return;
+
+	mx_evt_disable(evt);
+	mx_evt_clear(evt);
+	pthread_mutex_destroy(&evt->mutex);
+	pthread_cond_destroy(&evt->cond);
+
+	free(evt);
 }
 
 // -----------------------------------------------------------------------
-void mx_evq_destroy(struct mx_evq *queue)
+void mx_evt_quit(struct mx_evt *evt)
 {
-	if (!queue) return;
-	mx_evq_disable(queue);
-	mx_evq_clear(queue);
-	pthread_mutex_destroy(&queue->mutex);
-	pthread_cond_destroy(&queue->cond);
-	free(queue);
+	pthread_mutex_lock(&evt->mutex);
+	evt->event[MX_EV_QUIT].active = 1;
+	pthread_cond_signal(&evt->cond);
+	pthread_mutex_unlock(&evt->mutex);
+	LOGID(L_MX, 4, evt, "Event sent: quit");
 }
 
 // -----------------------------------------------------------------------
-int mx_evq_enqueue(struct mx_evq *queue, struct mx_ev *event, int flags)
+void mx_evt_timer(struct mx_evt *evt)
 {
-	if (!event) {
-		return -1;
+	pthread_mutex_lock(&evt->mutex);
+	evt->event[MX_EV_TIMER].active = 1;
+	pthread_cond_signal(&evt->cond);
+	pthread_mutex_unlock(&evt->mutex);
+	LOGID(L_MX, 4, evt, "Event sent: timer");
+}
+
+// -----------------------------------------------------------------------
+int mx_evt_intrecvd(struct mx_evt *evt)
+{
+	pthread_mutex_lock(&evt->mutex);
+	evt->event[MX_EV_INT_RECVD].active = 1;
+	pthread_cond_signal(&evt->cond);
+	pthread_mutex_unlock(&evt->mutex);
+	LOGID(L_MX, 4, evt, "Event sent: interrupt received");
+	return IO_OK;
+}
+
+// -----------------------------------------------------------------------
+int mx_evt_cmd(struct mx_evt *evt, int cmd, int log_n, uint16_t r_arg)
+{
+	if (pthread_mutex_trylock(&evt->mutex)) {
+		LOGID(L_MX, 4, evt, "Event processor busy");
+		return IO_EN;
 	}
 
-	// user wants to only try, don't wait for mutex
-	if (flags & MX_EVQ_F_TRY) {
-		if (pthread_mutex_trylock(&queue->mutex)) {
-			LOGID(L_MX, 4, queue, "Event queue busy");
-			return -1;
-		}
-	// user wants to wait for mutex
-	} else {
-		pthread_mutex_lock(&queue->mutex);
+	if (!evt->enabled) {
+		pthread_mutex_unlock(&evt->mutex);
+		LOGID(L_MX, 4, evt, "Events are disabled");
+		return IO_EN;
 	}
 
-	// is queue ready?
-	if (!queue->enabled) {
-		pthread_mutex_unlock(&queue->mutex);
-		LOGID(L_MX, 4, queue, "Event queue disabled when trying to enqueue");
-		return -1;
+	if (evt->event[MX_EV_CMD].active) {
+		LOGID(L_MX, 4, evt, "Previous cmd event not processed");
+		pthread_mutex_unlock(&evt->mutex);
+		return IO_EN;
 	}
 
-	// user wants to wait until queue frees up
-	if (flags && MX_EVQ_F_WAIT) {
-		while ((queue->maxlen > 0) && (queue->size >= queue->maxlen)) {
-			LOGID(L_MX, 4, queue, "Enqueue waiting for the event queue to free up (now %i elements)", queue->size);
-			pthread_cond_wait(&queue->cond, &queue->mutex);
-		}
-	// user does not want to wait
-	} else {
-		if ((queue->maxlen > 0) && (queue->size >= queue->maxlen)) {
-			LOGID(L_MX, 4, queue, "Event queue full at enqueue (%i elements)", queue->size);
-			pthread_mutex_unlock(&queue->mutex);
-			return -1;
-		}
-	}
+	evt->event[MX_EV_CMD].active = 1;
+	evt->event[MX_EV_CMD].cmd = cmd;
+	evt->event[MX_EV_CMD].line = log_n;
+	evt->event[MX_EV_CMD].arg = r_arg;
+	pthread_cond_signal(&evt->cond);
 
-	// insert event
-	event->next = NULL;
-	if (queue->tail) {
-		queue->tail->next = event;
-	} else {
-		queue->head = event;
-	}
-	queue->tail = event;
+	pthread_mutex_unlock(&evt->mutex);
 
-	// update size
-	int cur_size = ++(queue->size);
-
-	// notify waiters
-	pthread_cond_signal(&queue->cond);
-
-	pthread_mutex_unlock(&queue->mutex);
-
-	LOGID(L_MX, 4, queue, "Added event %i: %s (cmd: %i, line: %i, arg: 0x%04x), %i waiting",
-		event->type,
-		mx_ev_name(event->type),
-		event->cmd,
-		event->line,
-		event->arg,
-		cur_size
+	LOGID(L_MX, 4, evt, "Event sent: cmd: %i, line: %i, arg: 0x%04x",
+		cmd,
+		log_n,
+		r_arg
 	);
 
-	return cur_size;
+	return IO_OK;
 }
 
 // -----------------------------------------------------------------------
-int mx_evq_wait(struct mx_evq *queue)
+static int mx_evt_topevent(struct mx_evt *evt)
 {
-	pthread_mutex_lock(&queue->mutex);
-
-	while (!queue->head && queue->enabled) {
-		LOGID(L_MX, 3, queue, "Waiting for event");
-		pthread_cond_wait(&queue->cond, &queue->mutex);
+	int i;
+	for (i=0 ; i<MX_EV_MAX ; i++) {
+		if (evt->event[i].active) break;
 	}
-
-	if (!queue->enabled) {
-		pthread_mutex_unlock(&queue->mutex);
-		return -1;
-	}
-
-	pthread_mutex_unlock(&queue->mutex);
-
-	return 0;
+	LOGID(L_MX, 4, evt, "Max event: %i", i);
+	return i;
 }
 
 // -----------------------------------------------------------------------
-struct mx_ev * mx_evq_dequeue(struct mx_evq *queue)
+int mx_evt_get(struct mx_evt *evt)
 {
-	pthread_mutex_lock(&queue->mutex);
+	int top_event;
 
-	struct mx_ev *event = queue->head;
-	struct mx_ev *ret_event = NULL;
+	pthread_mutex_lock(&evt->mutex);
 
-	if (queue->enabled && event) {
-		queue->head = event->next;
-		if (!queue->head) {
-			queue->tail = NULL;
-		}
-		queue->size--;
-		ret_event = event;
+	while ((top_event = mx_evt_topevent(evt)) == MX_EV_MAX) {
+		pthread_cond_wait(&evt->cond, &evt->mutex);
 	}
 
-	int cur_size = queue->size;
+	evt->event[top_event].active = 0;
 
-	pthread_mutex_unlock(&queue->mutex);
+	pthread_mutex_unlock(&evt->mutex);
 
-	if (ret_event) {
-		LOGID(L_MX, 2, queue, "Got event %i: %s (cmd: %i, line: %i, arg: 0x%04x), %i waiting",
-			ret_event->type,
-			mx_ev_name(ret_event->type),
-			ret_event->cmd,
-			ret_event->line,
-			ret_event->arg,
-			cur_size
-		);
-	} else {
-		LOGID(L_MX, 3, queue, "No event");
-	}
-
-	return ret_event;
+	return top_event;
 }
 
 // -----------------------------------------------------------------------
-void mx_evq_enable(struct mx_evq *queue)
+void mx_evt_enable(struct mx_evt *evt)
 {
-	LOGID(L_MX, 4, queue, "Enabling event queue");
-	pthread_mutex_lock(&queue->mutex);
-	queue->enabled = 1;
-	pthread_mutex_unlock(&queue->mutex);
+	LOGID(L_MX, 4, evt, "Enabling events");
+	pthread_mutex_lock(&evt->mutex);
+	evt->enabled = 1;
+	pthread_cond_signal(&evt->cond);
+	pthread_mutex_unlock(&evt->mutex);
 }
 
 // -----------------------------------------------------------------------
-void mx_evq_disable(struct mx_evq *queue)
+void mx_evt_disable(struct mx_evt *evt)
 {
-	LOGID(L_MX, 4, queue, "Disabling event queue");
-	pthread_mutex_lock(&queue->mutex);
-	queue->enabled = 0;
-	pthread_cond_signal(&queue->cond);
-	pthread_mutex_unlock(&queue->mutex);
+	LOGID(L_MX, 4, evt, "Disabling events");
+	pthread_mutex_lock(&evt->mutex);
+	evt->enabled = 0;
+	pthread_cond_signal(&evt->cond);
+	pthread_mutex_unlock(&evt->mutex);
 }
 
 // vim: tabstop=4 shiftwidth=4 autoindent

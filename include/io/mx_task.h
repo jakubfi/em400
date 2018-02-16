@@ -81,7 +81,8 @@ struct mx_task_group {
 };
 
 struct mx_taskset {
-	pthread_mutex_t ts_mutex;
+	pthread_mutex_t mutex;
+	pthread_cond_t cond;
 	struct mx_irqq *irqq;
 	struct mx_task_group task[MX_TASK_MAX];
 };
@@ -96,6 +97,7 @@ unsigned mx_task_get_condition_num(struct mx_task *task);
 int mx_task_queue(struct mx_taskset *ts, unsigned line_num, int task_num, uint16_t arg, int irq_no_line, int irq_reject);
 struct mx_task * mx_task_dequeue(struct mx_taskset *ts, int *cond);
 void mx_task_finalize(struct mx_taskset *ts, struct mx_task *task, int cond_wait, int irq);
+void mx_task_idle_run(struct mx_taskset *ts);
 
 #endif
 

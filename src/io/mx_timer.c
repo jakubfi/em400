@@ -58,10 +58,7 @@ void * mx_timer_thread(void *ptr)
 
 		int *enabled = &(t->timer_enabled);
 		if (atom_load_acquire(enabled)) {
-			struct mx_ev *ev = mx_ev_simple(MX_EV_TIMER);
-			if (mx_evq_enqueue(t->evq, ev, MX_EVQ_F_WAIT) <= 0) {
-				mx_ev_delete(ev);
-			}
+			mx_evt_timer(t->evt);
 		}
 	}
 
@@ -69,7 +66,7 @@ void * mx_timer_thread(void *ptr)
 }
 
 // -----------------------------------------------------------------------
-struct mx_timer * mx_timer_init(int timer_step_ms, struct mx_evq *evq)
+struct mx_timer * mx_timer_init(int timer_step_ms, struct mx_evt *evt)
 {
 	struct mx_timer *t = malloc(sizeof(struct mx_timer));
 	if (!t) {
@@ -78,7 +75,7 @@ struct mx_timer * mx_timer_init(int timer_step_ms, struct mx_evq *evq)
 
 	t->timer_step_ms = timer_step_ms;
 	sem_init(&(t->mx_timer_quit), 0, 0);
-	t->evq = evq;
+	t->evt = evt;
 	atom_store_release(&(t->timer_enabled), 0);
 
 	if (pthread_create(&(t->mx_timer_th), NULL, mx_timer_thread, t)) {

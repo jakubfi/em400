@@ -31,12 +31,12 @@ struct mx_timer {
 	pthread_t mx_timer_th;
 	sem_t mx_timer_quit;
 
-	struct mx_evq *evq;
+	struct mx_evt *evt;
 
 	LOG_ID_DEF;
 };
 
-struct mx_timer * mx_timer_init();
+struct mx_timer * mx_timer_init(int timer_step_ms, struct mx_evt *evt);
 void mx_timer_shutdown(struct mx_timer *t);
 void mx_timer_on(struct mx_timer *t);
 void mx_timer_off(struct mx_timer *t);

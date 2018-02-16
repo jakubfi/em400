@@ -71,6 +71,7 @@ struct chan_drv mx_chan_driver = {
 };
 
 static void * mx_main(void *ptr);
+static void * mx_evproc(void *ptr);
 
 // -----------------------------------------------------------------------
 void * mx_create(int num, struct cfg_unit *units)
@@ -117,12 +118,12 @@ void * mx_create(int num, struct cfg_unit *units)
 	}
 
 	// create event queue
-	multix->evq = mx_evq_create(-1);
-	if (!multix->evq) {
+	multix->evt = mx_evt_create();
+	if (!multix->evt) {
 		log_err("Failed to create MULTIX' event queue.");
 		goto cleanup;
 	}
-	LOG_SET_ID(multix->evq, "%s EV", LOG_GET_ID(multix));
+	LOG_SET_ID(multix->evt, "%s EV", LOG_GET_ID(multix));
 
 	// create interrupt system
 	multix->irqq = mx_irqq_create(multix->num, MX_INTRQ_LEN);
@@ -140,16 +141,22 @@ void * mx_create(int num, struct cfg_unit *units)
 	}
 
 	// create timer
-	multix->timer = mx_timer_init(MX_TIMER_STEP_MSEC, multix->evq);
+	multix->timer = mx_timer_init(MX_TIMER_STEP_MSEC, multix->evt);
 	if (!multix->irqq) {
 		log_err("Failed to create MULTIX' timer.");
 		goto cleanup;
 	}
 	LOG_SET_ID(multix->timer, "%s TIMER", LOG_GET_ID(multix));
 
-	// initialize main thread
+	// initialize the main thread
 	if (pthread_create(&multix->main_th, NULL, mx_main, multix)) {
 		log_err("Failed to spawn main MULTIX thread.");
+		goto cleanup;
+	}
+
+	// initialize event processor thread
+	if (pthread_create(&multix->evproc_th, NULL, mx_evproc, multix)) {
+		log_err("Failed to spawn event processor thread.");
 		goto cleanup;
 	}
 
@@ -175,16 +182,25 @@ void mx_shutdown(void *ch)
 		multix->state = MX_STATE_QUIT;
 		pthread_cond_signal(&multix->state_cond);
 		pthread_mutex_unlock(&multix->state_mutex);
+		mx_task_idle_run(multix->ts);
 	}
 
+	mx_evt_quit(multix->evt);
+
 	// stop accepting events
-	if (multix->evq) {
-		mx_evq_disable(multix->evq);
+	if (multix->evt) {
+		mx_evt_disable(multix->evt);
+	}
+
+	// wait for the event processor thread
+	if (multix->evproc_th) {
+		LOGID(L_MX, 3, multix, "Waiting for the event processor thread to join");
+		pthread_join(multix->evproc_th, NULL);
 	}
 
 	// wait for the main thread to quit
 	if (multix->main_th) {
-		LOGID(L_MX, 3, multix, "Waiting for main thread to join");
+		LOGID(L_MX, 3, multix, "Waiting for the main thread to join");
 		pthread_join(multix->main_th, NULL);
 	}
 
@@ -212,8 +228,8 @@ void mx_shutdown(void *ch)
 	}
 
 	// destroy event queue
-	if (multix->evq) {
-		mx_evq_destroy(multix->evq);
+	if (multix->evt) {
+		mx_evt_destroy(multix->evt);
 	}
 
 	// destroy task set
@@ -246,8 +262,9 @@ void mx_reset(void *ch)
 	pthread_mutex_unlock(&multix->state_mutex);
 
 	// disable event queue
-	// waiting evq_dequeue()s will return and further commands will fail
-	mx_evq_disable(multix->evq);
+	// waiting evt_get()s will return and further commands will fail
+	mx_evt_disable(multix->evt);
+	mx_task_idle_run(multix->ts);
 
 	// wait for reset to really kick in
 	pthread_mutex_lock(&multix->reset_ack_mutex);
@@ -264,7 +281,6 @@ void mx_reset(void *ch)
 int mx_cmd(void *ch, int dir, uint16_t n_arg, uint16_t *r_arg)
 {
 	struct mx *multix = (struct mx *) ch;
-	struct mx_ev *ev;
 
 	unsigned cmd		= ((n_arg & 0b1110000000000000) >> 13) | ((dir&1) << 3);
 	unsigned chan_cmd	=  (n_arg & 0b0001100000000000) >> 11;
@@ -276,43 +292,20 @@ int mx_cmd(void *ch, int dir, uint16_t n_arg, uint16_t *r_arg)
 
 		switch (chan_cmd) {
 			case MX_CHAN_CMD_INTSPEC:
-				// get intspec (always there, even if invalid)
 				*r_arg = mx_irqq_get_intspec(multix->irqq);
-				// notify main thread that IRQ has been received by CPU
-				ev = mx_ev_simple(MX_EV_INT_RECVD);
-				if (mx_evq_enqueue(multix->evq, ev, MX_EVQ_F_WAIT) <= 0) {
-					mx_ev_delete(ev);
-				}
-				return IO_OK;
+				return mx_evt_intrecvd(multix->evt);
 			case MX_CHAN_CMD_EXISTS:
-				// 'exists' does nothing, just returns OK
 				return IO_OK;
 			case MX_CHAN_CMD_RESET:
 				// initiate reset and return OK (actual reset is done in main thread)
 				mx_reset(multix);
 				return IO_OK;
 			default:
-				// handle other commands (only MX_CMD_INVALID in fact) as illegal in main thread
-				ev = mx_ev_cmd(cmd, 0, 0);
-				if (mx_evq_enqueue(multix->evq, ev, MX_EVQ_F_TRY) <= 0) {
-					LOGID(L_MX, 2, multix, "ENGAGED");
-					mx_ev_delete(ev);
-					return IO_EN;
-				} else {
-					return IO_OK;
-				}
+				return mx_evt_cmd(multix->evt, cmd, 0, 0);
 		}
-	// handle general and line commands in main thread
 	} else {
 		LOGID(L_MX, 2, multix, "Incomming general/line command %i for line %i: %s", cmd, log_n, mx_get_cmd_name(cmd));
-		ev = mx_ev_cmd(cmd, log_n, *r_arg);
-		if (mx_evq_enqueue(multix->evq, ev, MX_EVQ_F_TRY) <= 0) {
-			LOGID(L_MX, 2, multix, "ENGAGED");
-			mx_ev_delete(ev);
-			return IO_EN;
-		} else {
-			return IO_OK;
-		}
+		return mx_evt_cmd(multix->evt, cmd, log_n, *r_arg);
 	}
 }
 
@@ -381,9 +374,9 @@ static int mx_init(struct mx *multix)
 		LOGID(L_MX, 3, multix, "Quit received during initialization");
 		ret = -1;
 	} else {
-		mx_evq_clear(multix->evq);
+		mx_evt_clear(multix->evt);
 		mx_irqq_clear(multix->irqq);
-		mx_evq_enable(multix->evq);
+		mx_evt_enable(multix->evt);
 		mx_irqq_enqueue(multix->irqq, MX_IRQ_IWYZE, 0);
 
 		// clear reset ack flag
@@ -407,11 +400,11 @@ static void mx_test(struct mx *multix)
 	// As we're not able to run any real 8085 code, TEST command
 	// won't work. Best we can do is to pretend that test is done
 	// and let the test wrapper on CPU side worry about the (non-)results.
-	mx_evq_disable(multix->evq);
+	mx_evt_disable(multix->evt);
 	mx_deconfigure(multix);
-	mx_evq_clear(multix->evq);
+	mx_evt_clear(multix->evt);
 	mx_irqq_clear(multix->irqq);
-	mx_evq_enable(multix->evq);
+	mx_evt_enable(multix->evt);
 	mx_irqq_enqueue(multix->irqq, MX_IRQ_IWYTE, 0);
 }
 
@@ -609,11 +602,13 @@ static void mx_task_router(struct mx *multix, unsigned cmd, unsigned line_num, u
 }
 
 // -----------------------------------------------------------------------
-static void mx_ev_handle(struct mx *multix, struct mx_ev *ev)
+static int mx_ev_handle(struct mx *multix, int ev)
 {
-	if (ev->type == MX_EV_INT_RECVD) {
+	if (ev == MX_EV_QUIT) {
+		return 1;
+	} else if (ev == MX_EV_INT_RECVD) {
 		mx_irqq_advance(multix->irqq);
-	} else if (ev->type == MX_EV_CMD) {
+	} else if (ev == MX_EV_CMD) {
 
 		// We need to make sure that MULTIX doesn't finish processing a command
 		// before CPU emulation thread kicks back in.
@@ -626,20 +621,47 @@ static void mx_ev_handle(struct mx *multix, struct mx_ev *ev)
 		struct timespec ts = { 0 };
 		nanosleep(&ts, NULL);
 
-		if (ev->cmd == MX_CMD_SETCFG) {
-			mx_setcfg(multix, ev->arg);
-		} else if (ev->cmd == MX_CMD_TEST) {
+		struct mx_ev *event = multix->evt->event + ev;
+
+		if (event->cmd == MX_CMD_SETCFG) {
+			mx_setcfg(multix, event->arg);
+		} else if (event->cmd == MX_CMD_TEST) {
 			mx_test(multix);
-		} else if (ev->cmd == MX_CMD_REQUEUE) {
+		} else if (event->cmd == MX_CMD_REQUEUE) {
 			mx_irqq_irq_requeue(multix->irqq);
 		} else {
-			mx_task_router(multix, ev->cmd, ev->line, ev->arg);
+			mx_task_router(multix, event->cmd, event->line, event->arg);
 		}
-	} else if (ev->type == MX_EV_TIMER) {
+	} else if (ev == MX_EV_TIMER) {
 		LOGID(L_MX, 1, multix, "TIMER TICK");
 	} else {
-		LOGID(L_MX, 1, multix, "Unknown event type: %i", ev->type);
+		LOGID(L_MX, 1, multix, "Unknown event: %i", ev);
 	}
+	return 0;
+}
+
+// -----------------------------------------------------------------------
+static void * mx_evproc(void *ptr)
+{
+	struct mx *multix = ptr;
+	int ev;
+	int quit = 0;
+
+	while (!quit) {
+		LOGID(L_MX, 3, multix, "Start waiting for event");
+		ev = mx_evt_get(multix->evt);
+		LOGID(L_MX, 3, multix, "After event dequeue");
+		if (ev == MX_EV_QUIT) {
+			break;
+		} else {
+			mx_ev_handle(multix, ev);
+		}
+		LOGID(L_MX, 3, multix, "Event queue loop bottom");
+	}
+
+	LOGID(L_MX, 3, multix, "Exiting event processor loop thread");
+
+	pthread_exit(NULL);
 }
 
 // -----------------------------------------------------------------------
@@ -720,8 +742,6 @@ done:
 static void * mx_main(void *ptr)
 {
 	struct mx *multix = ptr;
-	struct mx_ev *ev;
-	int queue_disabled = 0;
 
 	LOGID(L_MX, 3, multix, "Starting main loop thread");
 
@@ -731,21 +751,9 @@ static void * mx_main(void *ptr)
 		LOGID(L_MX, 3, multix, "Entering main MULTIX loop");
 
 		// MULTIX main loop
-		do {
-			// process all events
-			while ((ev = mx_evq_dequeue(multix->evq))) {
-				mx_ev_handle(multix, ev);
-				mx_ev_delete(ev);
-			}
-
-			// get the highest priority task and process it
-			if (mx_process_one_task(multix)) {
-				// no task processed -> wait for a new event,
-				queue_disabled = mx_evq_wait(multix->evq);
-			}
-		// leave the main loop if queue is disabled
-		// (meaning emulation quit or multix reset)
-		} while (!queue_disabled);
+		while ((multix->state != MX_STATE_QUIT) && (multix->state != MX_STATE_RESET)) {
+			mx_process_one_task(multix);
+		}
 
 		LOGID(L_MX, 3, multix, "Left main MULTIX loop");
 	}
