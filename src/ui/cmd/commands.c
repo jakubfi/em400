@@ -49,6 +49,7 @@ void ui_cmd_quit(FILE *out, char *args);
 void ui_cmd_help(FILE *out, char *args);
 void ui_cmd_brk(FILE *out, char *args);
 void ui_cmd_brkdel(FILE *out, char *args);
+void ui_cmd_stopn(FILE *out, char *args);
 
 struct ui_cmd_command commands[] = {
 	{ 1, "state",	"",							"Get CPU state",					ui_cmd_state },
@@ -61,6 +62,7 @@ struct ui_cmd_command commands[] = {
 	{ 1, "bin",		"<io_addr>",				"Initiate binary load",				ui_cmd_bin },
 	{ 1, "brk",		"<expr>",					"Add breakpoint",					ui_cmd_brk },
 	{ 1, "brkdel",	"<id>",						"Delete breakpoint",				ui_cmd_brkdel },
+	{ 1, "stopn",	"<addr>|off",				"Stop CPU on address",				ui_cmd_stopn },
 	{ 1, "clock",	"[on|off]",					"Manipulate clock state",			ui_cmd_clock },
 	{ 1, "oprq",	"",							"Send operator request",			ui_cmd_oprq },
 	{ 1, "memw",	"<seg> <addr> <val> ...",	"Set memory contents",				ui_cmd_memw },
@@ -417,7 +419,7 @@ void ui_cmd_load(FILE *out, char *args)
 
 	int res = ectl_load(f, tok_file, seg, addr);
 	if (res < 0) {
-		ui_cmd_resp(out, RESP_ERR, UI_EOL, "Error reading file: %s", tok_file);
+		ui_cmd_resp(out, RESP_ERR, UI_EOL, "File upload failed: %s", tok_file);
 	} else {
 		ui_cmd_resp(out, RESP_OK, UI_EOL, "%i words loaded from file %s", res, tok_file);
 	}
@@ -640,6 +642,26 @@ void ui_cmd_brkdel(FILE *out, char *args)
 void ui_cmd_bin(FILE *out, char *args)
 {
 	ui_cmd_resp(out, RESP_ERR, UI_EOL, "Command not implemented");
+}
+
+// -----------------------------------------------------------------------
+void ui_cmd_stopn(FILE *out, char *args)
+{
+    char *tok_addr, *remainder;
+
+    int addr = ui_cmd_gettok_int(args, &tok_addr, &remainder);
+    if (!tok_addr) {
+        ui_cmd_resp(out, RESP_ERR, UI_EOL, "Missing argument (address)");
+        return;
+    }
+
+	int res = ectl_stopn(addr);
+	if (res) {
+		ui_cmd_resp(out, RESP_ERR, UI_EOL, "Unable to set stop address");
+		return;
+	}
+	ui_cmd_resp(out, RESP_OK, UI_EOL, "Stop on address: 0x%04x", addr);
+
 }
 
 // -----------------------------------------------------------------------

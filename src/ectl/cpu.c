@@ -72,6 +72,7 @@ void ectl_regs_get(uint16_t *dest)
 // -----------------------------------------------------------------------
 int ectl_reg_get(unsigned id)
 {
+	LOG(L_ECTL, 2, "ECTL reg get");
 	int reg = cp_reg_get(id);
 	LOG(L_ECTL, 2, "ECTL reg get: %s = 0x%04x", ectl_reg_name(id), reg);
 	return reg;
@@ -114,35 +115,20 @@ int ectl_reg_set(unsigned id, uint16_t val)
 int ectl_mem_get(int seg, uint16_t addr, uint16_t *dest, unsigned count)
 {
 	LOG(L_ECTL, 2, "ECTL mem get: %i:0x%04x, %i words", seg, addr, count);
-	int ret = 0;
-	for (unsigned i=0 ; i<count ; i++) {
-		int res = cp_mem_get(seg, addr+i, dest+i);
-		if (res != 1) {
-			break;
-		}
-		ret += res;
-	}
-	return ret;
+	return cp_mem_mget(seg, addr, dest, count);
 }
 
 // -----------------------------------------------------------------------
 int ectl_mem_set(int seg, uint16_t addr, uint16_t *src, unsigned count)
 {
 	LOG(L_ECTL, 2, "ECTL mem set: %i:0x%04x, %i words", seg, addr, count);
-	int ret = 0;
-	for (unsigned i=0 ; i<count ; i++) {
-		int res = cp_mem_put(seg, addr+i, *(src+i));
-		if (res != 1) {
-			break;
-		}
-		ret += res;
-	}
-	return ret;
+	return cp_mem_mput(seg, addr, src, count);
 }
 
 // -----------------------------------------------------------------------
 int ectl_mem_map(int seg)
 {
+	LOG(L_ECTL, 2, "ECTL mem map");
 	int map = mem_get_map(seg);
 	LOG(L_ECTL, 2, "ECTL mem map: %i = 0x%04x", seg, map);
 	return map;
@@ -151,6 +137,7 @@ int ectl_mem_map(int seg)
 // -----------------------------------------------------------------------
 int ectl_cpu_state_get()
 {
+	LOG(L_ECTL, 2, "ECTL state get");
 	int state = cp_state();
 	LOG(L_ECTL, 2, "ECTL state get: 0x%04x", state);
 	return state;
@@ -206,6 +193,7 @@ void ectl_clock_set(int state)
 // -----------------------------------------------------------------------
 int ectl_clock_get()
 {
+	LOG(L_ECTL, 2, "ECTL clock get");
 	int state = cp_clock_get();
 	LOG(L_ECTL, 2, "ECTL clock get: %i", state);
 	return state;
@@ -242,8 +230,9 @@ int ectl_int_set(unsigned interrupt)
 // -----------------------------------------------------------------------
 uint32_t ectl_int_get()
 {
+	LOG(L_ECTL, 2, "ECTL interrupts get");
 	uint32_t rz = cp_int_get();
-	LOG(L_ECTL, 2, "ECTL interrupts 0x%08x", rz);
+	LOG(L_ECTL, 2, "ECTL interrupts get: 0x%08x", rz);
 	return rz;
 }
 
@@ -287,15 +276,24 @@ int ectl_capa()
 int ectl_load(FILE *f, const char *name, int seg, uint16_t saddr)
 {
 	LOG(L_ECTL, 2, "ECTL load: %i:0x%04x %s", seg, saddr, name);
-	uint16_t *buf = malloc(sizeof(uint16_t) * 0x10000);
+	uint16_t *bufw = malloc(sizeof(uint16_t) * 0x10000);
+	uint16_t *bufr = malloc(sizeof(uint16_t) * 0x10000);
 
-	int res = fread(buf, sizeof(uint16_t), 0x10000, f);
+	int res = fread(bufw, sizeof(uint16_t), 0x10000, f);
 	if (res > 0) {
-		endianswap(buf, res);
-		res = ectl_mem_set(seg, saddr, buf, res);
+		endianswap(bufw, res);
+		res = ectl_mem_set(seg, saddr, bufw, res);
+		LOG(L_ECTL, 2, "ECTL verify");
+		ectl_mem_get(seg, saddr, bufr, res);
+		int cmpres = memcmp(bufw, bufr, res * sizeof(uint16_t));
+		LOG(L_ECTL, 2, "ECTL verify (%i words): %s", res, cmpres ? "FAILED" : "OK");
+		if (cmpres != 0) {
+			res = -1;
+		}
 	}
 
-	free(buf);
+	free(bufw);
+	free(bufr);
 	return res;
 }
 
@@ -399,6 +397,7 @@ static struct ectl_est * __ectl_parse(char *expression, char **err_msg, int *err
 // -----------------------------------------------------------------------
 int ectl_eval(char *expression, char **err_msg, int *err_beg, int *err_end)
 {
+	LOG(L_ECTL, 2, "ECTL eval: %s", expression);
 	int res = -1;
 	struct ectl_est *tree = __ectl_parse(expression, err_msg, err_beg, err_end);
 	if (!tree) {
@@ -448,6 +447,20 @@ int ectl_brk_del(unsigned id)
 {
 	LOG(L_ECTL, 2, "ECTL brk del: %i", id);
 	return ectl_brk_delete(id);
+}
+
+// -----------------------------------------------------------------------
+int ectl_stopn(uint16_t addr)
+{
+	LOG(L_ECTL, 2, "ECTL stopn (%s) @ 0x%04x", (addr&0x8000)?"OS":"USER", addr&0x7fff);
+	return cp_stopn(addr);
+}
+
+// -----------------------------------------------------------------------
+int ectl_stopn_off()
+{
+	LOG(L_ECTL, 2, "ECTL stopn off");
+	return cp_stopn_off();
 }
 
 // vim: tabstop=4 shiftwidth=4 autoindent

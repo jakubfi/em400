@@ -293,7 +293,8 @@ int mx_cmd(void *ch, int dir, uint16_t n_arg, uint16_t *r_arg)
 		switch (chan_cmd) {
 			case MX_CHAN_CMD_INTSPEC:
 				*r_arg = mx_irqq_get_intspec(multix->irqq);
-				return mx_evt_intrecvd(multix->evt);
+				int ret = mx_evt_intrecvd(multix->evt);
+				return ret;
 			case MX_CHAN_CMD_EXISTS:
 				return IO_OK;
 			case MX_CHAN_CMD_RESET:
@@ -609,17 +610,7 @@ static int mx_ev_handle(struct mx *multix, int ev)
 	} else if (ev == MX_EV_INT_RECVD) {
 		mx_irqq_advance(multix->irqq);
 	} else if (ev == MX_EV_CMD) {
-
-		// We need to make sure that MULTIX doesn't finish processing a command
-		// before CPU emulation thread kicks back in.
-		// Poorly written MERA-400 code may rely on the fact that I/O devices are slow
-		// and use simple "IN/OU HLT" sequence.
-		// If MULTIX sends an interrupt before the HLT
-		// (which is supposed to wait for that interrupt), code halts indefinitely.
-		// Code below makes OS scheduler switch context.
-		// NOTE: sched_yield() doesn't seem to work
-		struct timespec ts = { 0 };
-		nanosleep(&ts, NULL);
+		LOGID(L_MX, 1, multix, "Event handle: command");
 
 		struct mx_ev *event = multix->evt->event + ev;
 
@@ -630,6 +621,7 @@ static int mx_ev_handle(struct mx *multix, int ev)
 		} else if (event->cmd == MX_CMD_REQUEUE) {
 			mx_irqq_irq_requeue(multix->irqq);
 		} else {
+			LOGID(L_MX, 1, multix, "Event handle: regular command");
 			mx_task_router(multix, event->cmd, event->line, event->arg);
 		}
 	} else if (ev == MX_EV_TIMER) {
@@ -672,7 +664,9 @@ static int mx_process_one_task(struct mx *multix)
 	int cond_wait = MX_WAIT_NONE;
 	int cond;
 
+	LOGID(L_MX, 3, multix, "TASK: wait");
 	struct mx_task *task = mx_task_dequeue(multix->ts, &cond);
+	LOGID(L_MX, 3, multix, "TASK: got");
 
 	if (!task) {
 		LOGID(L_MX, 3, multix, "No task waiting");

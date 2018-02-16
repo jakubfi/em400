@@ -20,7 +20,7 @@ include_directories(
 	${BISON_INCLUDE_DIRS}
 )
 target_link_libraries(em400
-	ectl cpu mem io ui
+	fpga cpu mem io ui ectl
 	${DEBUGGER_LIBS}
 	${EMDAS_LIBRARIES}
 	${EMCRK_LIBRARIES}
@@ -30,6 +30,7 @@ target_link_libraries(em400
 	rt m
 )
 
+add_subdirectory(fpga)
 add_subdirectory(io)
 add_subdirectory(mem)
 add_subdirectory(cpu)

@@ -51,8 +51,8 @@ void cp_shutdown();
 
 int cp_reg_get(unsigned id);
 int cp_reg_set(unsigned id, uint16_t v);
-int cp_mem_get(int nb, uint16_t addr, uint16_t *data);
-int cp_mem_put(int nb, uint16_t addr, uint16_t data);
+int cp_mem_mget(unsigned nb, uint16_t addr, uint16_t *data, unsigned count);
+int cp_mem_mput(unsigned nb, uint16_t addr, uint16_t *data, unsigned count);
 void cp_stop();
 void cp_start();
 void cp_cycle();
@@ -65,7 +65,8 @@ void cp_oprq();
 int cp_int_set(unsigned i);
 uint32_t cp_int_get();
 int cp_state();
-
+int cp_stopn(uint16_t addr);
+int cp_stopn_off();
 
 #endif
 

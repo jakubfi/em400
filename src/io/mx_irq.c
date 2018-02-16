@@ -213,6 +213,7 @@ static void mx_irqq_send(struct mx_irqq *queue)
 
 	// notify CPU
 	io_int_set(queue->chnum);
+	LOGID(L_MX, 3, queue, "Interrupt sent");
 }
 
 // -----------------------------------------------------------------------

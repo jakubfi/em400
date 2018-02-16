@@ -150,6 +150,9 @@ int ectl_log_component_id(char *name);
 int ectl_brk_add(char *expression, char **err_msg, int *err_beg, int *err_end);
 int ectl_brk_del(unsigned id);
 
+int ectl_stopn(uint16_t addr);
+int ectl_stopn_off();
+
 #endif
 
 // vim: tabstop=4 shiftwidth=4 autoindent

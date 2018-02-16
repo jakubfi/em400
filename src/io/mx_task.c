@@ -129,6 +129,8 @@ int mx_task_queue(struct mx_taskset *ts, unsigned line_num, int task_num, uint16
 	struct mx_task *task = ts->task[task_num].line + line_num;
 	int ret = 0;
 
+	LOG(L_MX, 3, "Queue task");
+	
 	pthread_mutex_lock(&ts->mutex);
 
 	// if line is not configured
@@ -189,13 +191,10 @@ static void mx_task_activate(struct mx_task *task)
 }
 
 // -----------------------------------------------------------------------
-struct mx_task * mx_task_dequeue(struct mx_taskset *ts, int *cond)
+static struct mx_task * mx_task_top(struct mx_taskset *ts, int *cond)
 {
-	static int cur_line_num = 0;
 	struct mx_task *task = NULL;
-
-	pthread_mutex_lock(&ts->mutex);
-	pthread_cond_wait(&ts->cond, &ts->mutex);
+	static int cur_line_num = 0;
 
 	// find highest priority scheduled task
 	for (int tn=0 ; tn<MX_TASK_MAX ; tn++) {
@@ -219,9 +218,20 @@ struct mx_task * mx_task_dequeue(struct mx_taskset *ts, int *cond)
 		}
 	}
 
+	return NULL;
+}
+
+// -----------------------------------------------------------------------
+struct mx_task * mx_task_dequeue(struct mx_taskset *ts, int *cond)
+{
+	struct mx_task *task = NULL;
+
+	pthread_mutex_lock(&ts->mutex);
+	task = mx_task_top(ts, cond);
+	if (!task) pthread_cond_wait(&ts->cond, &ts->mutex);
 	pthread_mutex_unlock(&ts->mutex);
 
-	return NULL;
+	return task;
 }
 
 // -----------------------------------------------------------------------

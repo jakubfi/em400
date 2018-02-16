@@ -5,7 +5,7 @@ project(em400 C)
 # the old UI keeps its tentacles squeezed into the emulation core.
 set(WITH_DEBUGGER 1)
 
-set(DEBUG 0)
+set(DEBUG 1)
 
 include(GNUInstallDirs)
 include(appversion.cmake)

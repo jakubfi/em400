@@ -22,6 +22,7 @@
 #include "cpu/cpu.h"
 #include "cpu/interrupts.h"
 #include "io/chan.h"
+#include "fpga/iobus.h"
 
 #include "cfg.h"
 #include "utils.h"
@@ -152,31 +153,51 @@ int io_dispatch(int dir, uint16_t n, uint16_t *r)
 // -----------------------------------------------------------------------
 void io_int_set(int x)
 {
-	int_set(x + 12);
+	if (fpga) {
+		iob_int_send(x);
+	} else {
+		int_set(x + 12);
+	}
 }
 
 // -----------------------------------------------------------------------
 int io_mem_get(int nb, uint16_t addr, uint16_t *data)
 {
-	return mem_get(nb, addr, data);
+	if (fpga) {
+		return iob_mem_get(nb, addr, data);
+	} else {
+		return mem_get(nb, addr, data);
+	}
 }
 
 // -----------------------------------------------------------------------
 int io_mem_put(int nb, uint16_t addr, uint16_t data)
 {
-	return mem_put(nb, addr, data);
+	if (fpga) {
+		return iob_mem_put(nb, addr, data);
+	} else {
+		return mem_put(nb, addr, data);
+	}
 }
 
 // -----------------------------------------------------------------------
 int io_mem_mget(int nb, uint16_t saddr, uint16_t *dest, int count)
 {
-	return mem_mget(nb, saddr, dest, count);
+	if (fpga) {
+		return iob_mem_mget(nb, saddr, dest, count);
+	} else {
+		return mem_mget(nb, saddr, dest, count);
+	}
 }
 
 // -----------------------------------------------------------------------
 int io_mem_mput(int nb, uint16_t saddr, uint16_t *src, int count)
 {
-	return mem_mput(nb, saddr, src, count);
+	if (fpga) {
+		return iob_mem_mput(nb, saddr, src, count);
+	} else {
+		return mem_mput(nb, saddr, src, count);
+	}
 }
 
 // vim: tabstop=4 shiftwidth=4 autoindent

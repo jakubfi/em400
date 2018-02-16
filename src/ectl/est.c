@@ -22,9 +22,7 @@
 #include <stdarg.h>
 #include <ctype.h>
 
-#include "cpu/cpu.h"
-#include "mem/mem.h"
-#include "cpu/interrupts.h"
+#include "cpu/cp.h"
 
 #include "ectl.h"
 #include "ectl/est.h"
@@ -157,19 +155,11 @@ int ectl_est_eval_val(struct ectl_est * n)
 // -----------------------------------------------------------------------
 int ectl_est_eval_reg(struct ectl_est * n)
 {
-	if ((n->val >= 0) && (n->val < 8)) {
-		return regs[n->val];
+	int reg = cp_reg_get(n->val);
+	if (reg == -1) {
+		return __esterr(n, "No such register");
 	} else {
-		switch (n->val) {
-			case ECTL_REG_IC: return rIC;
-			case ECTL_REG_KB: return rKB;
-			case ECTL_REG_MOD: return rMOD;
-			case ECTL_REG_MODc: return rMODc;
-			case ECTL_REG_IR: return rIR;
-			case ECTL_REG_SR: return rSR;
-			case ECTL_REG_ALARM: return rALARM;
-			default: return __esterr(n, "No such register");
-		}
+		return reg;
 	}
 }
 
@@ -190,7 +180,7 @@ int ectl_est_eval_flag(struct ectl_est * n)
 		case 'X': pos = 8; break;
 		default: return __esterr(n, "No such flag: %c", n->val);
 	}
-	return (regs[0] >> (15-pos)) & 1;
+	return (cp_reg_get(0) >> (15-pos)) & 1;
 }
 
 // -----------------------------------------------------------------------
@@ -200,7 +190,7 @@ int ectl_est_eval_rz(struct ectl_est * n)
 		return __esterr(n, "Wrong interrupt: %i", n->val);
 	}
 
-	return (RZ >> (31 - n->val)) & 1;
+	return (cp_int_get() >> (31 - n->val)) & 1;
 }
 
 // -----------------------------------------------------------------------
@@ -225,7 +215,7 @@ int ectl_est_eval_mem(struct ectl_est *n)
 	}
 
 	uint16_t data;
-	if (mem_get(nb, addr, &data) == 0) {
+	if (cp_mem_mget(nb, addr, &data, 1) == 0) {
 		return __esterr(n, "Memory at %i:%i is not configured", nb, addr);
 	}
 

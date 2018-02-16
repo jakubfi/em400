@@ -32,6 +32,7 @@
 #include "cpu/interrupts.h"
 #include "cpu/timer.h"
 #include "io/io.h"
+#include "fpga/iobus.h"
 
 #include "ectl.h"
 #include "em400.h"
@@ -86,6 +87,11 @@ int em400_init(struct cfg_em400 *cfg)
 #ifdef WITH_DEBUGGER
 	em400_console = CONSOLE_DEBUGGER;
 #endif
+	if (cfg->fpga) {
+		if (iob_init(cfg->fpga_dev, cfg->fpga_speed) == E_ERR) {
+			log_err("Failed to set up FPGA I/O bus.");
+		}
+	}
 
 	res = mem_init(cfg);
 	if (res != E_OK) {
@@ -114,6 +120,11 @@ int em400_init(struct cfg_em400 *cfg)
 
 	rKB = cfg->keys;
 
+	res = ectl_init();
+	if (res != E_OK) {
+		return log_err("Failed to initialize ECTL interface.");
+	}
+
 	if (cfg->program_name) {
 		FILE *f = fopen(cfg->program_name, "rb");
 		if (!f) {
@@ -126,11 +137,6 @@ int em400_init(struct cfg_em400 *cfg)
 		} else {
 			LOG(L_EM4H, 1, "OS memory block image loaded: \"%s\", %i words", cfg->program_name, res);
 		}
-	}
-
-	res = ectl_init();
-	if (res != E_OK) {
-		return log_err("Failed to initialize ECTL interface.");
 	}
 
 	if (cfg->ui_name) {
@@ -259,7 +265,11 @@ int main(int argc, char** argv)
 		}
 	}
 
-	cpu_loop(ui ? 1 : 0);
+	if (cfg->fpga) {
+		iob_loop();
+	} else {
+		cpu_loop(ui ? 1 : 0);
+	}
 
 	ret = 0;
 
