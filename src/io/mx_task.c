@@ -263,4 +263,10 @@ void mx_task_idle_run(struct mx_taskset *ts)
 	pthread_mutex_unlock(&ts->mutex);
 }
 
+// -----------------------------------------------------------------------
+void mx_task_dma_done()
+{
+
+}
+
 // vim: tabstop=4 shiftwidth=4 autoindent

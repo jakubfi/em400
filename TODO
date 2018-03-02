@@ -4,6 +4,8 @@ Known bugs:
 
 Cleanups:
 
+* move mx_* to mx/
+* use the new queue where applicable
 * consistent naming and commands between emu and hw (timer/clock, run/start)
 * 16/32-bit RZ
 * consistent state idicators (stop/start/wait - run/wait)
