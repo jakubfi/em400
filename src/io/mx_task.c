@@ -152,7 +152,6 @@ int mx_task_queue(struct mx_taskset *ts, unsigned line_num, int task_num, uint16
 	// schedule task start
 	task->arg = arg;
 	task->cond_signal = MX_SIGNAL_START; // task is scheduled for unconditional start
-	ts->task[task_num].scheduled++;
 	pthread_cond_signal(&ts->cond);
 
 done:
@@ -198,23 +197,17 @@ static struct mx_task * mx_task_top(struct mx_taskset *ts, int *cond)
 
 	// find highest priority scheduled task
 	for (int tn=0 ; tn<MX_TASK_MAX ; tn++) {
-		if (ts->task[tn].scheduled) {
-
-			// find first line waiting on the task
-			for (int ln=0 ; ln<MX_LINE_MAX ; ln++) {
-				cur_line_num = (cur_line_num+1) % MX_LINE_MAX;
-				task = ts->task[tn].line + cur_line_num;
-				if (task->lineptr && mx_task_is_waiting(task)) {
-					*cond = mx_task_get_max_condition_num(task);
-					mx_task_activate(task);
-					pthread_mutex_unlock(&ts->mutex);
-					LOG(L_MX, 3,"Line %i running task %i: %s", cur_line_num, tn, mx_task_name(tn));
-					return task;
-				}
+		// find first line waiting on the task
+		for (int ln=0 ; ln<MX_LINE_MAX ; ln++) {
+			cur_line_num = (cur_line_num+1) % MX_LINE_MAX;
+			task = ts->task[tn].line + cur_line_num;
+			if (task->lineptr && mx_task_is_waiting(task)) {
+				*cond = mx_task_get_max_condition_num(task);
+				mx_task_activate(task);
+				pthread_mutex_unlock(&ts->mutex);
+				LOG(L_MX, 3,"Line %i running task %i: %s", cur_line_num, tn, mx_task_name(tn));
+				return task;
 			}
-
-			// task seems scheduled, but no line was waiting on that task
-			ts->task[tn].scheduled = 0;
 		}
 	}
 
@@ -243,13 +236,11 @@ void mx_task_finalize(struct mx_taskset *ts, struct mx_task *task, int cond_wait
 
 	// if task doesn't require any more attention, finish it
 	if (cond_wait == MX_WAIT_NONE) {
-		task->tg->scheduled--;
 		LOG(L_MX, 3, "Line %i task is finished", task->line_num);
-	}
-
-	// If task wants to send an IRQ, do it here
-	if (irq != MX_IRQ_NONE) {
-		mx_irqq_enqueue(ts->irqq, irq, task->line_num);
+		// If task wants to send an IRQ, do it here
+		if (irq != MX_IRQ_NONE) {
+			mx_irqq_enqueue(ts->irqq, irq, task->line_num);
+		}
 	}
 
 	pthread_mutex_unlock(&ts->mutex);

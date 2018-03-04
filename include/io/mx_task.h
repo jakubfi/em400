@@ -76,7 +76,6 @@ struct mx_task {
 };
 
 struct mx_task_group {
-	int scheduled;
 	struct mx_task line[MX_LINE_MAX]; // these are logical lines
 };
 
