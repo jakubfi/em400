@@ -199,6 +199,7 @@ int elst_append(ELST l, void *ptr)
 
 	pthread_mutex_lock(&l->mutex);
 	int count = elst_nlock_append(l, ptr);
+	pthread_cond_signal(&l->cond);
 	pthread_mutex_unlock(&l->mutex);
 	return count;
 }
@@ -219,6 +220,7 @@ int elst_prepend(ELST l, void *ptr)
 
 	pthread_mutex_lock(&l->mutex);
 	int count = elst_nlock_prepend(l, ptr);
+	pthread_cond_signal(&l->cond);
 	pthread_mutex_unlock(&l->mutex);
 	return count;
 }
@@ -247,6 +249,7 @@ int elst_insert(ELST l, void *ptr, int prio)
 
 	pthread_mutex_lock(&l->mutex);
 	int count = elst_nlock_insert(l, ptr, prio);
+	pthread_cond_signal(&l->cond);
 	pthread_mutex_unlock(&l->mutex);
 
 	return count;
