@@ -27,7 +27,7 @@
 
 #include "em400.h"
 #include "log.h"
-#include "utils.h"
+#include "utils/utils.h"
 
 #include "debugger/awin.h"
 #include "debugger/debugger.h"

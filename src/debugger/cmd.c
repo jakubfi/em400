@@ -29,7 +29,7 @@
 #include "mem/mem_mega.h"
 #include "mem/mem_elwro.h"
 
-#include "utils.h"
+#include "utils/utils.h"
 #include "log.h"
 #include "ectl.h"
 

@@ -26,7 +26,7 @@
 #include "io/mx_proto_common.h"
 
 #include "log.h"
-#include "utils.h"
+#include "utils/utils.h"
 
 // Transmit operations
 enum mx_proto_winchester_ops {

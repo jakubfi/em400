@@ -31,7 +31,7 @@
 
 #include "em400.h"
 #include "cfg.h"
-#include "utils.h"
+#include "utils/utils.h"
 #include "log.h"
 #include "log_crk.h"
 #include "ectl/brk.h"

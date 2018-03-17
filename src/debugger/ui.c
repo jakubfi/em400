@@ -18,7 +18,7 @@
 #include <string.h>
 #include <stdlib.h>
 
-#include "utils.h"
+#include "utils/utils.h"
 #include "log.h"
 #include "cpu/cpu.h"
 

@@ -29,7 +29,7 @@
 
 #include "mem/mem.h"
 #include "log.h"
-#include "utils.h"
+#include "utils/utils.h"
 
 static struct crk5_process *process;
 

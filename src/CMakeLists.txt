@@ -3,7 +3,7 @@ flex_target(cfg_scanner cfg_scanner.l ${CMAKE_CURRENT_BINARY_DIR}/cfg_scanner.c 
 add_flex_bison_dependency(cfg_scanner cfg_parser)
 
 add_executable(em400
-	em400.c utils.c cfg.c log.c log_crk.c log_io.c elst.c
+	em400.c cfg.c log.c log_crk.c log_io.c
 	${BISON_cfg_parser_OUTPUTS}
 	${FLEX_cfg_scanner_OUTPUTS}
 )
@@ -20,7 +20,7 @@ include_directories(
 	${BISON_INCLUDE_DIRS}
 )
 target_link_libraries(em400
-	fpga cpu mem io ui ectl
+	fpga cpu mem io ui ectl utils
 	${DEBUGGER_LIBS}
 	${EMDAS_LIBRARIES}
 	${EMCRK_LIBRARIES}
@@ -36,6 +36,7 @@ add_subdirectory(mem)
 add_subdirectory(cpu)
 add_subdirectory(ectl)
 add_subdirectory(ui)
+add_subdirectory(utils)
 
 if(WITH_DEBUGGER)
 	add_subdirectory(debugger)

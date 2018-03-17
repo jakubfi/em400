@@ -23,7 +23,7 @@
 #include <strings.h>
 
 #include "log.h"
-#include "utils.h"
+#include "utils/utils.h"
 #include "atomic.h"
 #include "cpu/cp.h"
 #include "cpu/cpu.h"

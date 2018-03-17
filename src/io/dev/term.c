@@ -28,7 +28,7 @@
 #include <sys/select.h>
 #include <fcntl.h>
 
-#include "utils.h"
+#include "utils/utils.h"
 #include "log.h"
 #include "io/dev/term.h"
 

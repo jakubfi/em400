@@ -34,7 +34,7 @@
 #include "log_crk.h"
 #include "cfg.h"
 #include "atomic.h"
-#include "utils.h"
+#include "utils/utils.h"
 
 // low-level stuff
 

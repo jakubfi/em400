@@ -21,7 +21,7 @@
 #include "cpu/cpu.h"
 #include "cpu/timer.h"
 #include "mem/mem.h"
-#include "utils.h"
+#include "utils/utils.h"
 #include "log.h"
 
 #include "debugger/debugger.h"

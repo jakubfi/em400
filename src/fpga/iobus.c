@@ -30,7 +30,7 @@
 
 #include "log.h"
 
-#include "utils.h"
+#include "utils/utils.h"
 #include "fpga/iobus.h"
 #include "io/io.h"
 #include "io/defs.h"

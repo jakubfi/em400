@@ -25,7 +25,7 @@
 #include "fpga/iobus.h"
 
 #include "cfg.h"
-#include "utils.h"
+#include "utils/utils.h"
 #include "log.h"
 
 /*
