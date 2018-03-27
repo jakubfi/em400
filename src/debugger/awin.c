@@ -28,7 +28,7 @@
 #include <readline/readline.h>
 #include <readline/history.h>
 
-#include "utils.h"
+#include "utils/utils.h"
 #include "debugger/awin.h"
 
 SCREEN *s;
@@ -470,17 +470,18 @@ void aw_window_nc_delete(AWIN *w)
 	if (!w) {
 		return;
 	}
-	wborder(w->bwin, ' ', ' ', ' ',' ',' ',' ',' ',' ');
+
 	if (w->win) {
 		wrefresh(w->win);
 		delwin(w->win);
-		w->win = NULL;
 	}
 	if (w->border && w->bwin) {
+		wborder(w->bwin, ' ', ' ', ' ',' ',' ',' ',' ',' ');
 		wrefresh(w->bwin);
 		delwin(w->bwin);
-		w->bwin = NULL;
 	}
+	w->win = NULL;
+	w->bwin = NULL;
 }
 
 // -----------------------------------------------------------------------
@@ -491,14 +492,16 @@ void aw_window_nc_create(AWIN *w)
 	}
 	if (w->border) {
 		w->bwin = newwin(w->bh, w->bw, w->by, w->bx);
-		wattron(w->bwin, aw_attr[w->battr]);
-		box(w->bwin, 0, 0);
-		mvwprintw(w->bwin, 0, 3, "[ %s ]", w->title);
-		wattroff(w->bwin, aw_attr[w->battr]);
+		if (w->bwin) {
+			wattron(w->bwin, aw_attr[w->battr]);
+			box(w->bwin, 0, 0);
+			mvwprintw(w->bwin, 0, 3, "[ %s ]", w->title);
+			wattroff(w->bwin, aw_attr[w->battr]);
+		}
 	}
 	w->win = newwin(w->ih, w->iw, w->iy, w->ix);
 
-	if (w->scrollable) {
+	if (w->win && w->scrollable) {
 		scrollok(w->win, TRUE);
 	}
 }
@@ -576,12 +579,12 @@ void aw_layout_refresh()
 	while (c) {
 		AWIN *w = c->win;
 		while (w) {
-			if (!w->scrollable) {
+			if (!w->scrollable && w->win) {
 				wmove(w->win, 0, 0);
 			}
 			w->fun(w->id);
-			wrefresh(w->bwin);
-			wrefresh(w->win);
+			if (w->bwin) wrefresh(w->bwin);
+			if (w->win) wrefresh(w->win);
 			w = w->next;
 		}
 		c = c->next;
@@ -622,14 +625,14 @@ void aw_clear_win(int id)
 {
 	NCCHECK;
 	AWIN *w = aw_window_find(id);
-	werase(w->win);
+	if (w && w->win) werase(w->win);
 }
 
 // -----------------------------------------------------------------------
 void awprint(int id, int attr, char *format, ...)
 {
 	AWIN *w = aw_window_find(id);
-	if ((aw_output == O_NCURSES) && (!w)) {
+	if ((aw_output == O_NCURSES) && (!w || !w->win)) {
 		return;
 	}
 
@@ -662,7 +665,7 @@ void awtbbinprint(int id, int attr, char *format, uint32_t value, int size)
 void awfillbg(int id, int attr, char c, int len)
 {
 	AWIN *w = aw_window_find(id);
-	if ((aw_output == O_NCURSES) && (!w)) {
+	if ((aw_output == O_NCURSES) && (!w | !w->win)) {
 		return;
 	}
 
@@ -764,7 +767,7 @@ int aw_nc_readline(int id, int pattr, char *prompt, int iattr, char *buffer, int
 	struct h_entry *he;
 
 	AWIN *w = aw_window_find(id);
-	if (!w) {
+	if (!w || !w->win) {
 		return -1;
 	}
 
