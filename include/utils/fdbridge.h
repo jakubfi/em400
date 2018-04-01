@@ -15,35 +15,40 @@
 //  Foundation, Inc.,
 //  51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 
-#ifndef __ELST_H__
-#define __ELST_H__
+#ifndef FDBRIDGE_H
+#define FDBRIDGE_H
+
+#include <inttypes.h>
+
+#include "elst.h"
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
-typedef struct elst *ELST;
+enum fdbridge_event_types {
+	EV_DATA = 10000,
+	EV_EOF,
+	EV_CONNECT,
+	EV_ERROR,
+};
 
-ELST elst_create(int capacity);
-void elst_destroy(ELST l);
+struct fdbridge_event {
+	int type;
+	int sender;
+	int len;
+	void *ptr;
+};
 
-void elst_nlock_clear(ELST l);
-int elst_nlock_count(ELST l);
-int elst_nlock_append(ELST l, void *ptr);
-int elst_nlock_prepend(ELST l, void *ptr);
-int elst_nlock_insert(ELST l, void *ptr, int prio);
-void * elst_nlock_pop(ELST l);
+int fdbridge_init(unsigned fdcount);
+void fdbridge_destroy();
+void fdbridge_ev_free(struct fdbridge_event *e);
 
-void elst_clear(ELST l);
-int elst_count(ELST l);
-int elst_append(ELST l, void *ptr);
-int elst_prepend(ELST l, void *ptr);
-int elst_insert(ELST l, void *ptr, int prio);
-void * elst_pop(ELST l);
-void * elst_wait_pop(ELST l, int timeout);
+int fdbridge_add_stdin(ELST q);
+int fdbridge_add_tcp(uint16_t port, ELST q);
 
 #ifdef __cplusplus
-}
+extern "C" {
 #endif
 
 #endif

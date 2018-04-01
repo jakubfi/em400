@@ -18,10 +18,9 @@
 #include <stdlib.h>
 #include <inttypes.h>
 
-#include "io/mx_irq.h"
-#include "io/mx_line.h"
-#include "io/mx_proto.h"
-#include "io/mx_proto_common.h"
+#include "io/mx/mx.h"
+#include "io/mx/line.h"
+#include "io/mx/irq.h"
 
 #include "log.h"
 
@@ -37,14 +36,14 @@ enum mx_term_attach_opts {
 };
 
 enum mx_term_transmit_flags {
-    MX_TERM_TX_BY_SIZE		= 0b10000000,
-    MX_TERM_TX_BY_EOT_EXCL	= 0b01000000,
-    MX_TERM_TX_BY_EOT_INCL	= 0b00100000,
-    MX_TERM_RX_BY_SIZE		= 0b00010000,
-    MX_TERM_RX_BY_EOT_EXCL	= 0b00001000,
-    MX_TERM_RX_BY_EOT_INCL	= 0b00000100,
-    MX_TERM_TX_ECHO			= 0b00000010,
-    MX_TERM_TX_PROMPT		= 0b00000001,
+	MX_TERM_TX_BY_SIZE		= 0b10000000,
+	MX_TERM_TX_BY_EOT_EXCL	= 0b01000000,
+	MX_TERM_TX_BY_EOT_INCL	= 0b00100000,
+	MX_TERM_RX_BY_SIZE		= 0b00010000,
+	MX_TERM_RX_BY_EOT_EXCL	= 0b00001000,
+	MX_TERM_RX_BY_EOT_INCL	= 0b00000100,
+	MX_TERM_TX_ECHO			= 0b00000010,
+	MX_TERM_TX_PROMPT		= 0b00000001,
 };
 
 enum mx_term_transmit_status_e {
@@ -107,26 +106,47 @@ struct proto_terminal_data {
 };
 
 // -----------------------------------------------------------------------
-int mx_proto_terminal_conf(struct mx_line *line, uint16_t *data)
+int mx_terminal_init(struct mx_line *pline, uint16_t *data)
 {
 	struct proto_winchester_data *pd = calloc(1, sizeof(struct proto_terminal_data));
 	if (!pd) {
 		return MX_SC_E_NOMEM;
 	}
 
-	line->proto_data = pd;
+	pline->proto_data = pd;
 
-	// No protocol configuration
 	return MX_SC_E_OK;
 }
 
 // -----------------------------------------------------------------------
-void mx_proto_terminal_free(struct mx_line *line)
+void mx_terminal_destroy(struct mx_line *pline)
 {
-	free(line->proto_data);
-	line->proto_data = NULL;
+	if (!pline || !pline->proto_data) return;
+	free(pline->proto_data);
+	pline->proto_data = NULL;
 }
 
+// -----------------------------------------------------------------------
+int mx_terminal_attach(struct mx_line *lline)
+{
+	pthread_mutex_lock(&lline->status_mutex);
+	lline->status |= MX_LSTATE_ATTACHED;
+	mx_int_enqueue(lline->multix, MX_IRQ_IDOLI, lline->log_n);
+	pthread_mutex_unlock(&lline->status_mutex);
+	return 0;
+}
+
+// -----------------------------------------------------------------------
+int mx_terminal_detach(struct mx_line *lline)
+{
+	pthread_mutex_lock(&lline->status_mutex);
+	lline->status &= ~MX_LSTATE_ATTACHED;
+	mx_int_enqueue(lline->multix, MX_IRQ_IODLI, lline->log_n);
+	pthread_mutex_unlock(&lline->status_mutex);
+	return 0;
+}
+
+/*
 // -----------------------------------------------------------------------
 uint8_t mx_proto_terminal_attach_start(struct mx_line *line, int *irq, uint16_t *data)
 {
@@ -191,24 +211,20 @@ void mx_proto_terminal_cf_decode(uint16_t *data, struct proto_terminal_data *pd)
 	pd->transmit.prompt[3]	= (data[9] & 0b0000000011111111) >> 0;
 	pd->transmit.prompt[4]	= '\0';
 }
+*/
 
 // -----------------------------------------------------------------------
-int mx_proto_terminal_phy_types[] = { MX_PHY_USART_ASYNC, -1 };
-
-struct mx_proto mx_proto_terminal = {
-	.enabled = 1,
+const struct mx_proto mx_drv_terminal = {
 	.name = "terminal",
 	.dir = MX_DIR_INPUT | MX_DIR_OUTPUT,
-	.phy_types = mx_proto_terminal_phy_types,
-	.conf = mx_proto_terminal_conf,
-	.free = mx_proto_terminal_free,
-	.task = {
-		[MX_TASK_STATUS] = { 0, 0, 1, { mx_proto_status_start, NULL, NULL, NULL, NULL, NULL, NULL, NULL } },
-		[MX_TASK_DETACH] = { 0, 0, 0, { mx_proto_detach_start, NULL, NULL, NULL, NULL, NULL, NULL, NULL } },
-		[MX_TASK_OPRQ] = { 0, 0, 0, { mx_proto_oprq_start, NULL, NULL, NULL, NULL, NULL, NULL, NULL } },
-		[MX_TASK_TRANSMIT] = { 10, 10, 4, { NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL } },
-		[MX_TASK_ABORT] = { 0, 0, 0, { NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL } },
-		[MX_TASK_ATTACH] = { 3, 0, 0, { mx_proto_terminal_attach_start, NULL, NULL, NULL, NULL, NULL, NULL, NULL } },
+	.phy_types = { MX_PHY_USART_ASYNC, MX_PHY_8255, -1 },
+	.init = mx_terminal_init,
+	.destroy = mx_terminal_destroy,
+	.cmd = {
+		[MX_CMD_ATTACH] = { 3, 0, 0, mx_terminal_attach },
+		[MX_CMD_TRANSMIT] = { 10, 10, 4, NULL },
+		[MX_CMD_DETACH] = { 0, 0, 0, mx_terminal_detach },
+		[MX_CMD_ABORT] = { 0, 0, 0, NULL },
 	}
 };
 

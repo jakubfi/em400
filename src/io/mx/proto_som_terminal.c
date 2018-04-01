@@ -17,44 +17,34 @@
 
 #include <stdlib.h>
 #include <inttypes.h>
-
-#include "io/mx_line.h"
-#include "io/mx_proto.h"
-#include "io/mx_proto_common.h"
+#include "io/mx/mx.h"
+#include "io/mx/line.h"
 
 #include "log.h"
 
 // -----------------------------------------------------------------------
-int mx_proto_som_terminal_conf(struct mx_line *line, uint16_t *data)
+int mx_som_terminal_init(struct mx_line *pline, uint16_t *data)
 {
-	// No protocol configuration
 	return MX_SC_E_OK;
 }
 
 // -----------------------------------------------------------------------
-void mx_proto_som_terminal_free(struct mx_line *line)
+void mx_som_terminal_destroy(struct mx_line *pline)
 {
-	free(line->proto_data);
-	line->proto_data = NULL;
 }
 
 // -----------------------------------------------------------------------
-int mx_proto_som_terminal_phy_types[] = { MX_PHY_USART_ASYNC, -1 };
-
-struct mx_proto mx_proto_som_terminal = {
-	.enabled = 0,
-	.name = "SOM-3 terminal",
+const struct mx_proto mx_drv_som_terminal = {
+	.name = "som_terminal",
 	.dir = MX_DIR_INPUT | MX_DIR_OUTPUT,
-	.phy_types = mx_proto_som_terminal_phy_types,
-	.conf = mx_proto_som_terminal_conf,
-	.free = mx_proto_som_terminal_free,
-	.task = {
-		[MX_TASK_STATUS] = { 0, 0, 1, { mx_proto_status_start, NULL, NULL, NULL, NULL, NULL, NULL, NULL } },
-		[MX_TASK_DETACH] = { 0, 0, 0, { mx_proto_detach_start, NULL, NULL, NULL, NULL, NULL, NULL, NULL } },
-		[MX_TASK_OPRQ] = { 0, 0, 0, { mx_proto_oprq_start, NULL, NULL, NULL, NULL, NULL, NULL, NULL } },
-		[MX_TASK_TRANSMIT] = { 10, 10, 4, { NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL } },
-		[MX_TASK_ABORT] = { 0, 0, 0, { NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL } },
-		[MX_TASK_ATTACH] = { 1, 0, 0, { mx_proto_attach_start, NULL, NULL, NULL, NULL, NULL, NULL, NULL } },
+	.phy_types = { MX_PHY_USART_ASYNC, MX_PHY_8255, -1 },
+	.init = mx_som_terminal_init,
+	.destroy = mx_som_terminal_destroy,
+	.cmd = {
+		[MX_CMD_ATTACH] = { 1, 0, 0, NULL },
+		[MX_CMD_TRANSMIT] = { 10, 10, 4, NULL },
+		[MX_CMD_DETACH] = { 0, 0, 0, NULL },
+		[MX_CMD_ABORT] = { 0, 0, 0, NULL },
 	}
 };
 

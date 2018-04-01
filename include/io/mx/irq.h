@@ -1,4 +1,4 @@
-//  Copyright (c) 2015 Jakub Filipowicz <jakubf@gmail.com>
+//  Copyright (c) 2015-2018 Jakub Filipowicz <jakubf@gmail.com>
 //
 //  This program is free software; you can redistribute it and/or modify
 //  it under the terms of the GNU General Public License as published by
@@ -18,28 +18,9 @@
 #ifndef MX_IRQ_H
 #define MX_IRQ_H
 
-#include "log.h"
-
 #define MX_INTRQ_LEN 32
-#define MX_INTSPEC_EMPTY 0x10000
-
-struct mx_irq {
-	int line;
-	int irq;
-	struct mx_irq *next;
-};
-
-struct mx_irqq {
-	struct mx_irq *head, *tail;
-	int size;
-	int maxlen;
-	int chnum;
-	uint32_t intspec; // accessed by CPU thred
-	LOG_ID_DEF;
-};
 
 enum mx_interrupts {
-	MX_IRQ_NONE  = -1,	// em400: no interrupt request needed
 	MX_IRQ_INIEA = 0,	// interrupt no longer valid
 	// special
 	MX_IRQ_INSKA = 1,	// channel faulty
@@ -60,6 +41,8 @@ enum mx_interrupts {
 	MX_IRQ_INTRA = 14,	// 'transmit' rejected (errors in field, line not attached, previous transmission ongoing)
 	MX_IRQ_INKTR = 15,	// 'transmit' for non existent line
 	MX_IRQ_ITRER = 16,	// 'transmit' finished with error (parity or other)
+	MX_IRQ_IRQ17 = 17,	// unused
+	MX_IRQ_IRQ18 = 18,	// unused
 	MX_IRQ_ITRAB = 19,	// 'transmit' cancelled (as ordered by 'cancel transmission')
 	MX_IRQ_IABTR = 20,	// 'cancel transmission' OK
 	MX_IRQ_INABT = 21,	// 'cancel transmission' while no transmission
@@ -67,6 +50,12 @@ enum mx_interrupts {
 	MX_IRQ_IODLI = 23,	// 'detach line' OK
 	MX_IRQ_INODL = 24,	// 'detach line' for a line with ongoing transmission
 	MX_IRQ_INKOD = 25,	// 'detach line' for non existent line
+	MX_IRQ_IRQ26 = 26,	// unused
+	MX_IRQ_IRQ27 = 27,	// unused
+	MX_IRQ_IRQ28 = 28,	// unused
+	MX_IRQ_IRQ29 = 29,	// unused
+	MX_IRQ_IRQ30 = 30,	// unused
+	MX_IRQ_IRQ31 = 31,	// unused
 	MX_IRQ_INPAO = 32,	// mera-multix transmission failure
 	MX_IRQ_IPARE = 33,	// mera-multix parity error
 	MX_IRQ_IOPRU = 34,	// operator request
@@ -77,18 +66,11 @@ enum mx_interrupts {
 	MX_IRQ_IEPSC = 39,	// unknown control command, code=C
 	MX_IRQ_IEPSD = 40,	// unknown control command, code=D
 	MX_IRQ_IEPSE = 41,	// unknown control command, code=E
-	MX_IRQ_IEPSF = 42	// unknown control command, code=F
+	MX_IRQ_IEPSF = 42,	// unknown control command, code=F
+	MX_IRQ_CNT
 };
 
-struct mx_irqq * mx_irqq_create(int chnum, int maxlen);
-void mx_irqq_irq_delete(struct mx_irq *event);
-void mx_irqq_clear(struct mx_irqq *queue);
-int mx_irqq_size(struct mx_irqq *queue);
-void mx_irqq_destroy(struct mx_irqq *queue);
-int mx_irqq_enqueue(struct mx_irqq *queue, int irq, int line);
-void mx_irqq_advance(struct mx_irqq *queue);
-uint16_t mx_irqq_get_intspec(struct mx_irqq *queue);
-void mx_irqq_irq_requeue(struct mx_irqq *queue);
+const char * mx_irq_name(unsigned i);
 
 #endif
 

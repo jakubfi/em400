@@ -1,4 +1,4 @@
-//  Copyright (c) 2015 Jakub Filipowicz <jakubf@gmail.com>
+//  Copyright (c) 2018 Jakub Filipowicz <jakubf@gmail.com>
 //
 //  This program is free software; you can redistribute it and/or modify
 //  it under the terms of the GNU General Public License as published by
@@ -15,31 +15,28 @@
 //  Foundation, Inc.,
 //  51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 
-#ifndef MX_TIMER_H
-#define MX_TIMER_H
+#ifndef EVENT_H
+#define EVENT_H
 
-#include <pthread.h>
-#include <semaphore.h>
+#include "io/mx/event.h"
 
-#include "log.h"
-#include "io/mx_ev.h"
-
-struct mx_timer {
-	int timer_enabled;
-	int timer_step_ms;
-
-	pthread_t mx_timer_th;
-	sem_t mx_timer_quit;
-
-	struct mx_evt *evt;
-
-	LOG_ID_DEF;
+const char *mx_event_type_names[] = {
+	"COMMAND",
+	"INT_PUSH",
+	"RESET",
+	"QUIT",
+	"[unknown]"
 };
 
-struct mx_timer * mx_timer_init(int timer_step_ms, struct mx_evt *evt);
-void mx_timer_shutdown(struct mx_timer *t);
-void mx_timer_on(struct mx_timer *t);
-void mx_timer_off(struct mx_timer *t);
+// -----------------------------------------------------------------------
+const char * mx_get_event_name(unsigned ev)
+{
+	if (ev < MX_EV_CNT) {
+		return mx_event_type_names[ev];
+	} else {
+		return mx_event_type_names[MX_EV_CNT];
+	}
+}
 
 #endif
 

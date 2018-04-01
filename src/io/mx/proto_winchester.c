@@ -1,4 +1,4 @@
-//  Copyright (c) 2013-2015 Jakub Filipowicz <jakubf@gmail.com>
+//  Copyright (c) 2013-2018 Jakub Filipowicz <jakubf@gmail.com>
 //
 //  This program is free software; you can redistribute it and/or modify
 //  it under the terms of the GNU General Public License as published by
@@ -16,17 +16,17 @@
 //  51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 
 #include <stdlib.h>
+#include <string.h>
 #include <inttypes.h>
 #include <arpa/inet.h>
 
-#include "io/io.h"
-#include "io/mx_line.h"
-#include "io/mx_irq.h"
-#include "io/mx_proto.h"
-#include "io/mx_proto_common.h"
-
 #include "log.h"
+#include "utils/elst.h"
 #include "utils/utils.h"
+#include "io/mx/mx.h"
+#include "io/mx/line.h"
+#include "io/mx/irq.h"
+#include "io/dev/dev.h"
 
 // Transmit operations
 enum mx_proto_winchester_ops {
@@ -56,13 +56,13 @@ enum mx_winch_t_status {
 	MX_WS_HEADS_MOVING	= 0b0001000000000000,   // drive not ready, heads are still moving
 	MX_WS_SPARE_OVLF	= 0b0000100000000000,   // spare area full (during MX_WINCH_OP_FORMAT)
 	MX_WS_SPARE_MAP_ERR	= 0b0000010000000000,   // error in spare sectors map
-	MX_WS_UNUSED_B6		= 0b0000001000000000,
+	MX_WS_UNUSED_B6		= 0b0000001000000000,	// (unused)
 	MX_WS_ERR			= 0b0000000100000000,   // error during processing operation, see below:
 	MX_WS_BAD_SECT		= 0b0000000010000000,   // sector is marked as bad
 	MX_WS_BAD_CRC		= 0b0000000001000000,   // data CRC error
-	MX_WS_UNUSED_B10	= 0b0000000000100000,
+	MX_WS_UNUSED_B10	= 0b0000000000100000,	// (unused)
 	MX_WS_NO_SECTOR		= 0b0000000000010000,   // sector not found (disk address field incorrect)
-	MX_WS_UNUSED_B12	= 0b0000000000001000,
+	MX_WS_UNUSED_B12	= 0b0000000000001000,	// (unused)
 	MX_WS_REJECTED		= 0b0000000000000100,   // command rejected ('cause disk is not ready)
 	MX_WS_ERR_T0		= 0b0000000000000010,   // cannot position heads on track 0
 	MX_WS_ERR_A1		= 0b0000000000000001	// cannot find MFM A1 data mark
@@ -104,12 +104,13 @@ struct proto_winchester_data {
 };
 
 // -----------------------------------------------------------------------
-int mx_proto_winchester_conf(struct mx_line *line, uint16_t *data)
+int mx_winch_init(struct mx_line *pline, uint16_t *data)
 {
 	struct proto_winchester_data *proto_data = malloc(sizeof(struct proto_winchester_data));
 	if (!proto_data) {
 		return MX_SC_E_NOMEM;
 	}
+	pline->proto_data = proto_data;
 
 	// this is only used to determine how long sector address is used in spare area,
 	// sectors are always addressed with 3 bytes in new MULTIX
@@ -118,26 +119,25 @@ int mx_proto_winchester_conf(struct mx_line *line, uint16_t *data)
 	// this is ignored by MULTIX
 	proto_data->fprotect			=  (data[0] & 0b0000000011111111);
 
-	LOGID(L_WNCH, 3, line, "    Winchester drive: %i heads, %s sector address%s",
+	LOG(L_WNCH, 3, "    Winchester drive: %i heads, %s sector address%s",
 		proto_data->heads,
 		proto_data->wide_sector_addr ? "long" : "short",
 		proto_data->fprotect ? ", format-protected" : ""
 	);
 
-	line->proto_data = proto_data;
-
 	return MX_SC_E_OK;
 }
 
 // -----------------------------------------------------------------------
-void mx_proto_winchester_free(struct mx_line *line)
+void mx_winch_destroy(struct mx_line *pline)
 {
-	free(line->proto_data);
-	line->proto_data = NULL;
+	if (!pline || !pline->proto_data) return;
+	free(pline->proto_data);
+	pline->proto_data = NULL;
 }
 
 // -----------------------------------------------------------------------
-void mx_proto_winch_cf_decode(uint16_t *data, struct proto_winchester_data *proto_data)
+static void mx_winch_cf_decode(uint16_t *data, struct proto_winchester_data *proto_data)
 {
 	proto_data->op = (data[0] & 0b0000011100000000) >> 8;
 
@@ -187,14 +187,41 @@ void mx_proto_winch_cf_decode(uint16_t *data, struct proto_winchester_data *prot
 }
 
 // -----------------------------------------------------------------------
-void mx_proto_winch_cf_encode(uint16_t *data, struct proto_winchester_data *proto_data)
+static void mx_winch_cf_encode(uint16_t *data, struct proto_winchester_data *proto_data)
 {
 	data[5] = proto_data->ret_len;
 	data[6] = proto_data->ret_status;
 }
 
 // -----------------------------------------------------------------------
-int mx_proto_winchester_read(const struct dev_drv *dev, void *dev_obj, struct proto_winchester_data *proto)
+int mx_winch_attach(struct mx_line *lline)
+{
+	pthread_mutex_lock(&lline->status_mutex);
+	lline->status |= MX_LSTATE_ATTACHED;
+	mx_int_enqueue(lline->multix, MX_IRQ_IDOLI, lline->log_n);
+	pthread_mutex_unlock(&lline->status_mutex);
+	return 0;
+}
+
+// -----------------------------------------------------------------------
+int mx_winch_detach(struct mx_line *lline)
+{
+	pthread_mutex_lock(&lline->status_mutex);
+	lline->status &= ~MX_LSTATE_ATTACHED;
+	mx_int_enqueue(lline->multix, MX_IRQ_IODLI, lline->log_n);
+	pthread_mutex_unlock(&lline->status_mutex);
+	return 0;
+}
+
+// -----------------------------------------------------------------------
+int mx_winch_abort(struct mx_line *lline)
+{
+	mx_int_enqueue(lline->multix, MX_IRQ_INABT, lline->log_n);
+	return 0;
+}
+
+// -----------------------------------------------------------------------
+static int mx_winch_read(struct mx *multix, const struct dev_drv *dev, void *dev_obj, struct proto_winchester_data *proto)
 {
 	int buf_pos = 0;
 	uint8_t buf[512];
@@ -221,7 +248,8 @@ int mx_proto_winchester_read(const struct dev_drv *dev, void *dev_obj, struct pr
 			buf_pos = 0;
 			while ((buf_pos < 512) && (proto->ret_len < proto->transmit.len)) {
 				uint16_t *buf16 = (uint16_t*)(buf + buf_pos);
-				if (!io_mem_put(proto->transmit.nb, dest, ntohs(*buf16))) {
+				*buf16 = ntohs(*buf16);
+				if (mx_mem_mput(multix, proto->transmit.nb, dest, buf16, 1)) {
 					return MX_IRQ_INPAO;
 				}
 				dest++;
@@ -242,7 +270,49 @@ int mx_proto_winchester_read(const struct dev_drv *dev, void *dev_obj, struct pr
 }
 
 // -----------------------------------------------------------------------
-int mx_proto_winchester_write(const struct dev_drv *dev, void *dev_obj, struct proto_winchester_data *proto)
+static int mx_winch_read_new(struct mx *multix, const struct dev_drv *dev, void *dev_obj, struct proto_winchester_data *proto)
+{
+	struct dev_chs chs;
+	// TODO: move buffer to line?
+	uint8_t buf[512];
+
+	dev_lba2chs(proto->transmit.sector, &chs, proto->heads, 16);
+	// first physical cylinder is used internally by multix for relocated sectors
+	chs.c++;
+
+	proto->ret_len = 0;
+	while (proto->ret_len < proto->transmit.len) {
+		// TODO: cancelation point
+		int transmit = proto->transmit.len - proto->ret_len;
+		if (transmit > 256) transmit = 256;
+
+		LOG(L_WNCH, 4, "read sector %i/%i/%i -> %i:0x%04x", chs.c, chs.h, chs.s, proto->transmit.nb, proto->transmit.addr + proto->ret_len);
+
+		// read the sector into buffer
+		int res = dev->sector_rd(dev_obj, buf, &chs);
+
+		// sector read failed
+		if (res != DEV_CMD_OK) {
+			proto->ret_status = MX_WS_ERR | MX_WS_NO_SECTOR;
+			return MX_IRQ_INTRA;
+		}
+
+		// copy read data into system memory, swapping byte order
+		endianswap((uint16_t*)buf, transmit);
+		if (mx_mem_mput(multix, proto->transmit.nb, proto->transmit.addr + proto->ret_len, (uint16_t*)(buf), transmit)) {
+			return MX_IRQ_INPAO;
+		}
+
+		dev_chs_next(&chs, proto->heads, 16);
+		proto->ret_len += transmit;
+	}
+
+	return MX_IRQ_IETRA;
+
+}
+
+// -----------------------------------------------------------------------
+static int mx_winch_write(struct mx *multix, const struct dev_drv *dev, void *dev_obj, struct proto_winchester_data *proto)
 {
 	uint16_t data;
 	int i;
@@ -264,7 +334,7 @@ int mx_proto_winchester_write(const struct dev_drv *dev, void *dev_obj, struct p
 
 	// fill buffer with data to write
 	for (i=0 ; i<proto->transmit.len ; i++) {
-		if (!io_mem_get(proto->transmit.nb, dest + i, &data)) {
+		if (mx_mem_mget(multix, proto->transmit.nb, dest + i, &data, 1)) {
 			free(buf);
 			return MX_IRQ_INPAO;
 		}
@@ -299,10 +369,52 @@ int mx_proto_winchester_write(const struct dev_drv *dev, void *dev_obj, struct p
 }
 
 // -----------------------------------------------------------------------
-int mx_proto_winchester_format(const struct dev_drv *dev, void *dev_obj, struct proto_winchester_data *proto)
+static int mx_winch_write_new(struct mx *multix, const struct dev_drv *dev, void *dev_obj, struct proto_winchester_data *proto)
+{   
+	struct dev_chs chs;
+	// TODO: move buffer to line?
+	uint8_t buf[512];
+
+	dev_lba2chs(proto->transmit.sector, &chs, proto->heads, 16);
+	// first physical cylinder is used internally by multix for relocated sectors
+	chs.c++;
+
+	proto->ret_len = 0;
+	while (proto->ret_len < proto->transmit.len) {
+		// TODO: cancelation point
+		int transmit = proto->transmit.len - proto->ret_len;
+		if (transmit > 256) transmit = 256;
+
+		// fill buffer with data to write
+		if (mx_mem_mget(multix, proto->transmit.nb, proto->transmit.addr + proto->ret_len, (uint16_t*)buf, transmit)) {
+			return MX_IRQ_INPAO;
+		}
+		endianswap((uint16_t*)buf, transmit);
+
+		LOG(L_WNCH, 4, "write sector %i/%i/%i <- %i:0x%04x", chs.c, chs.h, chs.s, proto->transmit.nb, proto->transmit.addr + proto->ret_len);
+
+		int res = dev->sector_wr(dev_obj, buf, &chs);
+
+		// sector not found or incomplete
+		if (res != DEV_CMD_OK) {
+			proto->ret_status = MX_WS_ERR | MX_WS_NO_SECTOR;
+			return MX_IRQ_INTRA;
+		}
+
+		dev_chs_next(&chs, proto->heads, 16);
+		proto->ret_len += transmit;
+	}
+
+	return MX_IRQ_IETRA;
+}
+
+// -----------------------------------------------------------------------
+static int mx_winch_format(struct mx *multix, const struct dev_drv *dev, void *dev_obj, struct proto_winchester_data *proto)
 {
 	struct dev_chs chs;
-	uint8_t *buf = calloc(1, 512);
+	// TODO: move buffer to line?
+	uint8_t buf[512];
+	memset(buf, '\0', 512);
 
 	dev_lba2chs(proto->format.start_sector, &chs, proto->heads, 16);
 	chs.c++;
@@ -313,7 +425,6 @@ int mx_proto_winchester_format(const struct dev_drv *dev, void *dev_obj, struct 
 
 		// sector not found or incomplete
 		if (res != DEV_CMD_OK) {
-			free(buf);
 			proto->ret_status = MX_WS_ERR | MX_WS_NO_SECTOR;
 			return MX_IRQ_INTRA;
 		}
@@ -321,87 +432,95 @@ int mx_proto_winchester_format(const struct dev_drv *dev, void *dev_obj, struct 
 		dev_chs_next(&chs, proto->heads, 16);
 	}
 
-	free(buf);
 	return MX_IRQ_IETRA;
 }
 
 // -----------------------------------------------------------------------
-uint8_t mx_proto_winchester_transmit_start(struct mx_line *line, int *irq, uint16_t *data)
+int mx_winch_transmit(struct mx_line *lline)
 {
-	struct proto_winchester_data *proto_data = line->proto_data;
+	int irq = MX_IRQ_INIEA;
+
+	struct proto_winchester_data *proto_data = lline->proto_data;
+	const struct mx_cmd *cmd = lline->proto->cmd + MX_CMD_TRANSMIT;
+
+	// read command
+	if (mx_mem_mget(lline->multix, 0, lline->cmd_data_addr, lline->cmd_data, cmd->input_flen)) {
+		irq = MX_IRQ_INPAO;
+		goto fin;
+	}
 
 	// unpack control field
-	mx_proto_winch_cf_decode(data, proto_data);
-
-	// check if line is attached
-	if (!(line->status & MX_LSTATE_ATTACHED)) {
-		*irq = MX_IRQ_INTRA;
-		goto fin;
-	}
+	mx_winch_cf_decode(lline->cmd_data, proto_data);
 
 	// check if there is a device connected
-	if (!line->device || !line->dev_obj) {
+	if (!lline->dev || !lline->dev_data) {
 		proto_data->ret_status = MX_WS_NOT_READY;
-		*irq = MX_IRQ_INTRA;
+		irq = MX_IRQ_INTRA;
 		goto fin;
 	}
 
-	LOGID(L_WNCH, 3, line, "Transmit operation %i: %s", proto_data->op, winch_op_names[proto_data->op]);
+	LOG(L_WNCH, 3, "Transmit operation %i: %s", proto_data->op, winch_op_names[proto_data->op]);
+
+	// TODO: gdzie indziej?
+	pthread_mutex_lock(&lline->status_mutex);
+	lline->status |= MX_LSTATE_TRANS;
+	pthread_mutex_unlock(&lline->status_mutex);
 
 	switch (proto_data->op) {
 		case MX_WINCH_OP_FORMAT_SPARE:
-			*irq = MX_IRQ_IETRA;
+			// TODO: huh?
+			irq = MX_IRQ_IETRA;
 			break;
 		case MX_WINCH_OP_FORMAT_TRACK:
-			*irq = mx_proto_winchester_format(line->device, line->dev_obj, proto_data);
+			irq = mx_winch_format(lline->multix, lline->dev, lline->dev_data, proto_data);
 			break;
 		case MX_WINCH_OP_READ:
-			*irq = mx_proto_winchester_read(line->device, line->dev_obj, proto_data);
+			irq = mx_winch_read_new(lline->multix, lline->dev, lline->dev_data, proto_data);
 			break;
 		case MX_WINCH_OP_WRITE:
-			*irq = mx_proto_winchester_write(line->device, line->dev_obj, proto_data);
+			irq = mx_winch_write_new(lline->multix, lline->dev, lline->dev_data, proto_data);
 			break;
 		case MX_WINCH_OP_PARK:
 			// trrrrrrrrrrrr... done.
-			*irq = MX_IRQ_IETRA;
+			irq = MX_IRQ_IETRA;
 			break;
 		default:
-			*irq = MX_IRQ_INTRA;
+			irq = MX_IRQ_INTRA;
 			break;
 	}
 
 fin:
 	// pack control field
-	mx_proto_winch_cf_encode(data, proto_data);
+	mx_winch_cf_encode(lline->cmd_data + cmd->output_fpos, proto_data);
 
-	return MX_WAIT_NONE;
+	// TODO: atomowo
+	pthread_mutex_lock(&lline->status_mutex);
+	lline->status &= ~MX_LSTATE_TRANS;
+	pthread_mutex_unlock(&lline->status_mutex);
+	if (irq != MX_IRQ_INIEA) {
+		if (irq != MX_IRQ_INPAO) {
+			if (mx_mem_mput(lline->multix, 0, lline->cmd_data_addr + cmd->output_fpos, lline->cmd_data + cmd->output_fpos, cmd->output_flen)) {
+				irq = MX_IRQ_INPAO;
+			}
+		}
+		mx_int_enqueue(lline->multix, irq, lline->log_n);
+	}
+
+	return 0;
 }
 
 // -----------------------------------------------------------------------
-uint8_t mx_proto_winchester_abort_start(struct mx_line *line, int *irq, uint16_t *data)
-{
-	// winchester protocol doesn't support aborting
-	*irq = MX_IRQ_INABT;
-	return MX_WAIT_NONE;
-}
-
-// -----------------------------------------------------------------------
-int mx_proto_winchester_phy_types[] = { MX_PHY_WINCHESTER, -1 };
-
-struct mx_proto mx_proto_winchester = {
-	.enabled = 1,
+const struct mx_proto mx_drv_winchester = {
 	.name = "winchester",
 	.dir = MX_DIR_NONE,
-	.phy_types = mx_proto_winchester_phy_types,
-	.conf = mx_proto_winchester_conf,
-	.free = mx_proto_winchester_free,
-	.task = {
-		[MX_TASK_STATUS] = { 0, 0, 1, { mx_proto_status_start, NULL, NULL, NULL, NULL, NULL, NULL, NULL } },
-		[MX_TASK_DETACH] = { 0, 0, 0, { mx_proto_detach_start, NULL, NULL, NULL, NULL, NULL, NULL, NULL } },
-		[MX_TASK_OPRQ] = { 0, 0, 0, { mx_proto_oprq_start, NULL, NULL, NULL, NULL, NULL, NULL, NULL } },
-		[MX_TASK_TRANSMIT] = { 5, 5, 2, { mx_proto_winchester_transmit_start, NULL, NULL, NULL, NULL, NULL, NULL, NULL } },
-		[MX_TASK_ABORT] = { 0, 0, 0, { mx_proto_winchester_abort_start, NULL, NULL, NULL, NULL, NULL, NULL, NULL } },
-		[MX_TASK_ATTACH] = { 0, 0, 0, { mx_proto_attach_start, NULL, NULL, NULL, NULL, NULL, NULL, NULL } },
+	.phy_types = { MX_PHY_WINCHESTER, -1 },
+	.init = mx_winch_init,
+	.destroy = mx_winch_destroy,
+	.cmd = {
+		[MX_CMD_ATTACH] = { 0, 0, 0, mx_winch_attach },
+		[MX_CMD_TRANSMIT] = { 5, 5, 2, mx_winch_transmit },
+		[MX_CMD_DETACH] = { 0, 0, 0, mx_winch_detach },
+		[MX_CMD_ABORT] = { 0, 0, 0, NULL },
 	}
 };
 

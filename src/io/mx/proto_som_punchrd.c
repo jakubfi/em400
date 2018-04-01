@@ -17,52 +17,35 @@
 
 #include <stdlib.h>
 #include <inttypes.h>
-#include <arpa/inet.h>
+#include "io/mx/mx.h"
+#include "io/mx/line.h"
 
-#include "io/mx_line.h"
-#include "io/mx_irq.h"
-#include "io/mx_proto.h"
+#include "log.h"
 
 // -----------------------------------------------------------------------
-uint8_t mx_proto_status_start(struct mx_line *line, int *irq, uint16_t *data)
+int mx_som_punchrd_init(struct mx_line *pline, uint16_t *data)
 {
-	*data = line->status;
-	*irq = MX_IRQ_ISTRE;
-
-	return MX_WAIT_NONE;
+	return MX_SC_E_OK;
 }
 
 // -----------------------------------------------------------------------
-uint8_t mx_proto_detach_start(struct mx_line *line, int *irq, uint16_t *data)
+void mx_som_punchrd_destroy(struct mx_line *pline)
 {
-	if ((line->status & MX_LSTATE_TRANS)) {
-		*irq = MX_IRQ_INODL;
-	} else {
-		line->status = MX_LSTATE_NONE;
-		*irq = MX_IRQ_IODLI;
+}
+
+// -----------------------------------------------------------------------
+const struct mx_proto mx_drv_som_punchrd = {
+	.name = "som_punchreader",
+	.dir = MX_DIR_INPUT,
+	.phy_types = { MX_PHY_USART_ASYNC, MX_PHY_8255, -1 },
+	.init = mx_som_punchrd_init,
+	.destroy = mx_som_punchrd_destroy,
+	.cmd = {
+		[MX_CMD_ATTACH] = { 1, 0, 0, NULL },
+		[MX_CMD_TRANSMIT] = { 5, 5, 3, NULL },
+		[MX_CMD_DETACH] = { 0, 0, 0, NULL },
+		[MX_CMD_ABORT] = { 0, 0, 0, NULL },
 	}
-
-	return MX_WAIT_NONE;
-}
-
-// -----------------------------------------------------------------------
-uint8_t mx_proto_oprq_start(struct mx_line *line, int *irq, uint16_t *data)
-{
-	*irq = MX_IRQ_IOPRU;
-	return MX_WAIT_NONE;
-}
-
-// -----------------------------------------------------------------------
-uint8_t mx_proto_attach_start(struct mx_line *line, int *irq, uint16_t *data)
-{
-	if ((line->status & MX_LSTATE_ATTACHED)) {
-		*irq = MX_IRQ_INDOL;
-	} else {
-		line->status |= MX_LSTATE_ATTACHED;
-		*irq = MX_IRQ_IDOLI;
-	}
-
-	return MX_WAIT_NONE;
-}
+};
 
 // vim: tabstop=4 shiftwidth=4 autoindent

@@ -17,41 +17,35 @@
 
 #include <stdlib.h>
 #include <inttypes.h>
-
-#include "io/mx_proto.h"
+#include "io/mx/mx.h"
+#include "io/mx/line.h"
 
 #include "log.h"
 
-extern struct mx_proto mx_proto_punchrd;
-extern struct mx_proto mx_proto_puncher;
-extern struct mx_proto mx_proto_terminal;
-extern struct mx_proto mx_proto_som_punchrd;
-extern struct mx_proto mx_proto_som_puncher;
-extern struct mx_proto mx_proto_som_terminal;
-extern struct mx_proto mx_proto_winchester;
-extern struct mx_proto mx_proto_tape;
-extern struct mx_proto mx_proto_floppy;
-
-const struct mx_proto * mx_protocols[] = {
-	&mx_proto_punchrd,
-	&mx_proto_puncher,
-	&mx_proto_terminal,
-	&mx_proto_som_punchrd,
-	&mx_proto_som_puncher,
-	&mx_proto_som_terminal,
-	&mx_proto_winchester,
-	&mx_proto_tape,
-	&mx_proto_floppy,
-};
+// -----------------------------------------------------------------------
+int mx_som_puncher_init(struct mx_line *pline, uint16_t *data)
+{
+	return MX_SC_E_OK;
+}
 
 // -----------------------------------------------------------------------
-const struct mx_proto * mx_proto_get(unsigned i)
+void mx_som_puncher_destroy(struct mx_line *pline)
 {
-	if ((i < MX_PROTO_MAX) && mx_protocols[i]->enabled) {
-		return mx_protocols[i];
-	} else {
-		return NULL;
-	}
 }
+
+// -----------------------------------------------------------------------
+const struct mx_proto mx_drv_som_puncher = {
+	.name = "som_puncher",
+	.dir = MX_DIR_OUTPUT,
+	.phy_types = { MX_PHY_USART_ASYNC, MX_PHY_8255, -1 },
+	.init = mx_som_puncher_init,
+	.destroy = mx_som_puncher_destroy,
+	.cmd = {
+		[MX_CMD_ATTACH] = { 0, 0, 0, NULL },
+		[MX_CMD_TRANSMIT] = { 5, 5, 2, NULL },
+		[MX_CMD_DETACH] = { 0, 0, 0, NULL },
+		[MX_CMD_ABORT] = { 0, 0, 0, NULL },
+	}
+};
 
 // vim: tabstop=4 shiftwidth=4 autoindent

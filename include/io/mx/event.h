@@ -15,26 +15,28 @@
 //  Foundation, Inc.,
 //  51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 
-#ifndef MX_DMA_H
-#define MX_DMA_H
+#include <inttypes.h>
+#include "utils/fdbridge.h"
 
-#include <pthread.h>
-
-#include "utils/elst.h"
-#include "log.h"
-#include "io/mx_task.h"
-
-enum mx_dma_action { MX_DMA_READ, MX_DMA_WRITE, MX_DMA_QUIT };
-
-struct mx_dma {
-	pthread_t thread;
-	ELST list;
+// event types are also priorities for the event queue
+enum mx_event_types {
+	MX_EV_CMD,
+	MX_EV_INT_PUSH,
+	MX_EV_RESET,
+	MX_EV_QUIT, // highest priority
+	MX_EV_CNT
 };
 
-struct mx_dma * mx_dma_create();
-void mx_dma_shutdown(struct mx_dma *dma);
-int mx_dma_action(struct mx_dma *dma, struct mx_task *task, int action, unsigned nb, uint16_t addr, unsigned len, uint16_t *ptr);
+union mx_event {
+	struct fdbridge_event fd;
+	struct {
+		int type;
+		int cmd;
+		int log_n;
+		uint16_t arg;
+	} d;
+};
 
-#endif
+const char * mx_get_event_name(unsigned ev);
 
 // vim: tabstop=4 shiftwidth=4 autoindent

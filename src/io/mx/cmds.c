@@ -1,4 +1,4 @@
-//  Copyright (c) 2013-2015 Jakub Filipowicz <jakubf@gmail.com>
+//  Copyright (c) 2013-2018 Jakub Filipowicz <jakubf@gmail.com>
 //
 //  This program is free software; you can redistribute it and/or modify
 //  it under the terms of the GNU General Public License as published by
@@ -15,7 +15,7 @@
 //  Foundation, Inc.,
 //  51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 
-#include "io/mx_cmds.h"
+#include "io/mx/cmds.h"
 
 const char *mx_chan_cmd_names[] = {
 	"RESET",
@@ -48,16 +48,21 @@ const char *mx_cmd_names[] = {
 // -----------------------------------------------------------------------
 const char * mx_get_cmd_name(unsigned i)
 {
-	if (i >= MX_CMD_MAX) i = MX_CMD_MAX;
-	return mx_cmd_names[i];
+	if (i < MX_CMD_CNT) {
+		return mx_cmd_names[i];
+	} else {
+		return mx_cmd_names[MX_CMD_CNT];
+	}
 }
 
 // -----------------------------------------------------------------------
 const char * mx_get_chan_cmd_name(unsigned i)
 {
-	if (i >= MX_CHAN_CMD_MAX) i = MX_CHAN_CMD_MAX;
-	return mx_chan_cmd_names[i];
+	if (i < MX_CHAN_CMD_CNT) {
+		return mx_chan_cmd_names[i];
+	} else {
+		return mx_chan_cmd_names[MX_CHAN_CMD_CNT];
+	}
 }
-
 
 // vim: tabstop=4 shiftwidth=4 autoindent

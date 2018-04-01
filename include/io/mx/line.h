@@ -19,12 +19,8 @@
 #define MX_LINE_H
 
 #include "log.h"
-
-#include "io/mx_proto.h"
-
-#include "io/dev/dev.h"
-
-#define MX_LINE_MAX 32
+#include "utils/elst.h"
+#include "io/mx/mx.h"
 
 // physical line direction
 enum mx_phy_dir {
@@ -33,7 +29,7 @@ enum mx_phy_dir {
 	MX_DIR_OUTPUT		= 0b100,
 	MX_DIR_HALF_DUPLEX	= 0b110,
 	MX_DIR_FULL_DUPLEX	= 0b111,
-	MX_DIR_MAX
+	MX_DIR_CNT
 };
 
 // physical line types
@@ -44,7 +40,21 @@ enum mx_phy_type {
 	MX_PHY_WINCHESTER	= 3,
 	MX_PHY_MTAPE		= 4,
 	MX_PHY_FLOPPY		= 5,
-	MX_PHY_MAX
+	MX_PHY_CNT
+};
+
+// protocols
+enum mx_protocols {
+	MX_PROTO_PUNCH_READER		= 0,
+	MX_PROTO_PUNCHER			= 1,
+	MX_PROTO_TERMINAL			= 2,
+	MX_PROTO_SOM_PUNCH_READER	= 3,
+	MX_PROTO_SOM_PUNCHER		= 4,
+	MX_PROTO_SOM_TERMINAL		= 5,
+	MX_PROTO_WINCHESTER			= 6,
+	MX_PROTO_MTAPE				= 7,
+	MX_PROTO_FLOPPY				= 8,
+	MX_PROTO_CNT
 };
 
 // "set configuration" return field values
@@ -64,52 +74,41 @@ enum mx_setconf_err {
 	MX_SC_E_NOMEM			= 9, // memory exhausted
 	MX_SC_E_PROTO_MISMATCH	= 10, // protocol vs. physical line type mismatch
 	MX_SC_E_PROTO_PARAMS	= 11, // wrong protocol parameters
-	MX_SC_E_MAX,
+	MX_SC_E_CNT,
 	MX_SC_E_OK, // em400: OK
 };
 
 // line status
 enum mx_line_status {
 	MX_LSTATE_NONE			= 0,
-	MX_LSTATE_ATTACHED		= 1 << 0,	// line attached
-	MX_LSTATE_TRANS			= 1 << 1,	// transmission active
-	MX_LSTATE_2				= 1 << 2,	// (unused)
-	MX_LSTATE_3				= 1 << 3,	// (unused)
-	MX_LSTATE_TASK_XOFF		= 1 << 4,	// task suspended due to XOFF
-    MX_LSTATE_TRANS_XOFF	= 1 << 5,	// transmission suspended due to XOFF
-	MX_LSTATE_TRANS_LAST	= 1 << 6,	// transmission of a last fragment
-	MX_LSTATE_7				= 1 << 7,	// (unused)
-	MX_LSTATE_SEND_START	= 1 << 8,	// send started
-	MX_LSTATE_SEND_RUN		= 1 << 9,	// send running
-	MX_LSTATE_RECV_START	= 1 << 10,	// receive started
-	MX_LSTATE_RECV_RUN		= 1 << 11,	// receive running
-	MX_LSTATE_CAN_STOP		= 1 << 12,	// stop after CAN (protocol 5)
-	MX_LSTATE_STOP_CHAR		= 1 << 13,	// stop character received
-	MX_LSTATE_PARITY_ERR	= 1 << 14,	// parity error
-	MX_LSTATE_OPRQ			= 1 << 15,	// OPRQ
-};
-
-struct mx_line {
-	int used;						// physical line is used
-	int dir;						// physical line direction
-	int type;						// physical line type
-
-	const struct mx_proto *proto;   // line protocol
-	void *proto_data;				// line protocol private data
-	uint16_t status;				// line status
-
-	const struct dev_drv *device;	// device driver (set in em400 configuration)
-	void *dev_obj;					// device driver private data
-
-	LOG_ID_DEF;
+	MX_LSTATE_SEND_START	= 1 << 0,	// send started
+	MX_LSTATE_SEND_RUN		= 1 << 1,	// send running
+	MX_LSTATE_RECV_START	= 1 << 2,	// receive started
+	MX_LSTATE_RECV_RUN		= 1 << 3,	// receive running
+	MX_LSTATE_CAN_STOP		= 1 << 4,	// stop after CAN (protocol 5)
+	MX_LSTATE_STOP_CHAR		= 1 << 5,	// stop character received
+	MX_LSTATE_PARITY_ERR	= 1 << 6,	// parity error
+	MX_LSTATE_OPRQ			= 1 << 7,	// OPRQ
+	MX_LSTATE_ATTACHED		= 1 << 8,	// line attached
+	MX_LSTATE_TRANS			= 1 << 9,	// transmission active
+	MX_LSTATE_5				= 1 << 10,	// (unused)
+	MX_LSTATE_4				= 1 << 11,	// (unused)
+	MX_LSTATE_TASK_XOFF		= 1 << 12,	// task suspended due to XOFF
+	MX_LSTATE_TRANS_XOFF	= 1 << 13,	// transmission suspended due to XOFF
+	MX_LSTATE_TRANS_LAST	= 1 << 14,	// transmission of a last fragment
+	MX_LSTATE_0				= 1 << 15,	// (unused)
+	// em400 specific: these are not sent to the cpu, and may or may not be in use
+	// by the emulation depending on whether command is processed sync or async
+	MX_LSTATE_ATTACH		= 1 << 16,	// 'attach' running
+	MX_LSTATE_DETACH		= 1 << 17,	// 'detach' running
+	MX_LSTATE_ABORT			= 1 << 19,	// 'abort' running
 };
 
 const char * mx_line_dir_name(unsigned i);
 const char * mx_line_type_name(unsigned i);
 const char * mx_line_sc_err_name(unsigned i);
-int mx_line_conf_phy(struct mx_line *line, uint16_t data);
-int mx_line_conf_log(struct mx_line *line, uint16_t *data);
-void mx_line_deconfigure(struct mx_line *line);
+
+const struct mx_proto* mx_proto_get(unsigned i);
 
 #endif
 

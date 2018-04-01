@@ -15,8 +15,11 @@
 //  Foundation, Inc.,
 //  51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 
+#define _XOPEN_SOURCE 700
+
 #include <stdlib.h>
 #include <pthread.h>
+#include <errno.h>
 #include <assert.h>
 
 #define ELST_USED 0
@@ -40,7 +43,7 @@ struct elst {
 
 typedef struct elst * ELST;
 
-void elst_clear(ELST l);
+void elst_nlock_clear(ELST l);
 
 // -----------------------------------------------------------------------
 ELST elst_create(int capacity)
@@ -67,7 +70,7 @@ ELST elst_create(int capacity)
 	}
 
 	l->capacity = capacity;
-	elst_clear(l);
+	elst_nlock_clear(l);
 
 	return l;
 
@@ -89,11 +92,9 @@ void elst_destroy(ELST l)
 }
 
 // -----------------------------------------------------------------------
-void elst_clear(ELST l)
+void elst_nlock_clear(ELST l)
 {
 	assert(l);
-
-	pthread_mutex_lock(&l->mutex);
 
 	struct elst_item *d = l->data;
 
@@ -108,7 +109,15 @@ void elst_clear(ELST l)
 
 	l->count = 0;
 	l->hwm = ELST_RESVD_ITEMS;
+}
 
+// -----------------------------------------------------------------------
+void elst_clear(ELST l)
+{
+	assert(l);
+
+	pthread_mutex_lock(&l->mutex);
+	elst_nlock_clear(l);
 	pthread_mutex_unlock(&l->mutex);
 }
 
@@ -263,9 +272,11 @@ void * elst_nlock_pop(ELST l)
 	struct elst_item *d = l->data;
 
 	int first = d[ELST_USED].n;
-	__unlink(d, first);
-	__link(d, first, d[ELST_FREE].p, ELST_FREE);
-	l->count--;
+	if (first != ELST_USED) {
+		__unlink(d, first);
+		__link(d, first, d[ELST_FREE].p, ELST_FREE);
+		l->count--;
+	}
 
 	return d[first].ptr;
 }
@@ -283,23 +294,40 @@ void * elst_pop(ELST l)
 }
 
 // -----------------------------------------------------------------------
-void * elst_wait_pop(ELST l)
+void * elst_wait_pop(ELST l, unsigned timeout_ms)
 {
 	assert(l);
 
+	struct timespec abstime;
+	clock_gettime(CLOCK_REALTIME, &abstime);
+	long new_nsec = abstime.tv_nsec + timeout_ms * 1000000L;
+	abstime.tv_sec += new_nsec / 1000000000L;
+	abstime.tv_nsec = new_nsec % 1000000000L;
+
 	pthread_mutex_lock(&l->mutex);
 
+	int res = 0;
 	int first;
 	struct elst_item *d = l->data;
 
 	while ((first = d[ELST_USED].n) == ELST_USED) {
-		pthread_cond_wait(&l->cond, &l->mutex);
+		if (timeout_ms == 0) {
+			pthread_cond_wait(&l->cond, &l->mutex);
+		} else {
+			res = pthread_cond_timedwait(&l->cond, &l->mutex, &abstime);
+			if (res == ETIMEDOUT) break;
+		}
+		// TODO: error handling
+		// TODO: retrigger if not finished
 	}
 
-	void *ptr = d[first].ptr;
-	__unlink(d, first);
-	__link(d, first, d[ELST_FREE].p, ELST_FREE);
-	l->count--;
+	void *ptr = NULL;
+	if (res == 0) {
+		ptr = d[first].ptr;
+		__unlink(d, first);
+		__link(d, first, d[ELST_FREE].p, ELST_FREE);
+		l->count--;
+	}
 
 	pthread_mutex_unlock(&l->mutex);
 
