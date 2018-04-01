@@ -52,6 +52,7 @@ cleanup:
 // -----------------------------------------------------------------------
 void dev_winch_destroy(void *dev)
 {
+	if (!dev) return;
 	struct dev_winch *winch = dev;
 	e4i_close(winch->image);
 	free(dev);

@@ -42,6 +42,7 @@ cleanup:
 // -----------------------------------------------------------------------
 void dev_punchrd_destroy(void *dev)
 {
+	if (!dev) return;
 	struct dev_punchrd *punchrd = dev;
 	free(punchrd);
 }

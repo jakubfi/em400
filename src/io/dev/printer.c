@@ -42,6 +42,7 @@ cleanup:
 // -----------------------------------------------------------------------
 void dev_printer_destroy(void *dev)
 {
+	if (!dev) return;
 	struct dev_printer *printer = dev;
 	free(printer);
 }

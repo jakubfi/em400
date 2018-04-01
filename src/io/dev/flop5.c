@@ -52,6 +52,7 @@ cleanup:
 // -----------------------------------------------------------------------
 void dev_flop5_destroy(void *dev)
 {
+	if (!dev) return;
 	struct dev_flop5 *flop5 = dev;
 	e4i_close(flop5->image);
 	free(dev);
