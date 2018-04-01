@@ -223,55 +223,6 @@ int mx_winch_abort(struct mx_line *lline)
 // -----------------------------------------------------------------------
 static int mx_winch_read(struct mx *multix, const struct dev_drv *dev, void *dev_obj, struct proto_winchester_data *proto)
 {
-	int buf_pos = 0;
-	uint8_t buf[512];
-	struct dev_chs chs;
-
-	proto->ret_len = 0;
-
-	uint16_t dest = proto->transmit.addr;
-
-	dev_lba2chs(proto->transmit.sector, &chs, proto->heads, 16);
-	// first physical cylinder is used internally by multix for relocated sectors
-	chs.c++;
-
-	// transmit data into buffer, sector by sector
-	while (proto->ret_len < proto->transmit.len) {
-		LOG(L_WNCH, 4, "read sector %i/%i/%i -> %i:0x%04x", chs.c, chs.h, chs.s, proto->transmit.nb, dest);
-
-		// read the sector into buffer
-		int res = dev->sector_rd(dev_obj, buf, &chs);
-
-		// sector read OK
-		if (res == DEV_CMD_OK) {
-			// copy read data into system memory, swapping byte order
-			buf_pos = 0;
-			while ((buf_pos < 512) && (proto->ret_len < proto->transmit.len)) {
-				uint16_t *buf16 = (uint16_t*)(buf + buf_pos);
-				*buf16 = ntohs(*buf16);
-				if (mx_mem_mput(multix, proto->transmit.nb, dest, buf16, 1)) {
-					return MX_IRQ_INPAO;
-				}
-				dest++;
-				buf_pos += 2;
-				(proto->ret_len)++;
-			}
-
-			dev_chs_next(&chs, proto->heads, 16);
-
-		// sector unreadable
-		} else {
-			proto->ret_status = MX_WS_ERR | MX_WS_NO_SECTOR;
-			return MX_IRQ_INTRA;
-		}
-	}
-
-	return MX_IRQ_IETRA;
-}
-
-// -----------------------------------------------------------------------
-static int mx_winch_read_new(struct mx *multix, const struct dev_drv *dev, void *dev_obj, struct proto_winchester_data *proto)
-{
 	struct dev_chs chs;
 	// TODO: move buffer to line?
 	uint8_t buf[512];
@@ -313,63 +264,6 @@ static int mx_winch_read_new(struct mx *multix, const struct dev_drv *dev, void 
 
 // -----------------------------------------------------------------------
 static int mx_winch_write(struct mx *multix, const struct dev_drv *dev, void *dev_obj, struct proto_winchester_data *proto)
-{
-	uint16_t data;
-	int i;
-	struct dev_chs chs;
-
-	proto->ret_len = 0;
-
-	uint16_t dest = proto->transmit.addr;
-
-	dev_lba2chs(proto->transmit.sector, &chs, proto->heads, 16);
-	// first physical cylinder is used internally by multix for relocated sectors
-	chs.c++;
-
-	uint8_t *buf = malloc(proto->transmit.len*2);
-	if (!buf) {
-		proto->ret_status = MX_WS_ERR | MX_WS_REJECTED;
-		return MX_IRQ_INTRA;
-	}
-
-	// fill buffer with data to write
-	for (i=0 ; i<proto->transmit.len ; i++) {
-		if (mx_mem_mget(multix, proto->transmit.nb, dest + i, &data, 1)) {
-			free(buf);
-			return MX_IRQ_INPAO;
-		}
-		buf[i*2] = data>>8;
-		buf[i*2+1] = data&255;
-	}
-
-	// write sectors
-	while (proto->ret_len < proto->transmit.len) {
-		int transmit = proto->transmit.len - proto->ret_len;
-		if (transmit > 256) {
-			transmit = 256;
-		}
-
-		LOG(L_WNCH, 4, "write sector %i/%i/%i -> %i:0x%04x", chs.c, chs.h, chs.s, proto->transmit.nb, dest);
-
-		int res = dev->sector_wr(dev_obj, buf + proto->ret_len*2, &chs);
-
-		// sector not found or incomplete
-		if (res != DEV_CMD_OK) {
-			free(buf);
-			proto->ret_status = MX_WS_ERR | MX_WS_NO_SECTOR;
-			return MX_IRQ_INTRA;
-		}
-
-		dev_chs_next(&chs, proto->heads, 16);
-		proto->ret_len += transmit;
-	}
-
-	free(buf);
-	return MX_IRQ_IETRA;
-}
-
-// -----------------------------------------------------------------------
-static int mx_winch_write_new(struct mx *multix, const struct dev_drv *dev, void *dev_obj, struct proto_winchester_data *proto)
 {   
 	struct dev_chs chs;
 	// TODO: move buffer to line?
@@ -475,10 +369,10 @@ int mx_winch_transmit(struct mx_line *lline)
 			irq = mx_winch_format(lline->multix, lline->dev, lline->dev_data, proto_data);
 			break;
 		case MX_WINCH_OP_READ:
-			irq = mx_winch_read_new(lline->multix, lline->dev, lline->dev_data, proto_data);
+			irq = mx_winch_read(lline->multix, lline->dev, lline->dev_data, proto_data);
 			break;
 		case MX_WINCH_OP_WRITE:
-			irq = mx_winch_write_new(lline->multix, lline->dev, lline->dev_data, proto_data);
+			irq = mx_winch_write(lline->multix, lline->dev, lline->dev_data, proto_data);
 			break;
 		case MX_WINCH_OP_PARK:
 			// trrrrrrrrrrrr... done.
