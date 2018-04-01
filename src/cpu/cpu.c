@@ -75,7 +75,7 @@ static void cpu_idle_in_halt()
 {
 	pthread_mutex_lock(&cpu_wake_mutex);
 	while ((cpu_state == STATE_HALT) && !atom_load_acquire(&RP)) {
-		LOG(L_CPU, 1, "idling n halt");
+		LOG(L_CPU, 1, "idling in halt");
 		pthread_cond_wait(&cpu_wake_cond, &cpu_wake_mutex);
 	}
 	cpu_state &= ~STATE_HALT;
