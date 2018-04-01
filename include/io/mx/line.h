@@ -109,6 +109,10 @@ const char * mx_line_type_name(unsigned i);
 const char * mx_line_sc_err_name(unsigned i);
 
 const struct mx_proto* mx_proto_get(unsigned i);
+uint8_t mx_irq_noline(int cmd);
+uint8_t mx_irq_reject(int cmd);
+int mx_line_cmd_allowed(struct mx_line *line, int cmd);
+uint32_t mx_cmd_state(int cmd);
 
 #endif
 

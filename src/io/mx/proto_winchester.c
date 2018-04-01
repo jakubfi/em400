@@ -388,9 +388,6 @@ fin:
 	mx_winch_cf_encode(lline->cmd_data + cmd->output_fpos, proto_data);
 
 	// TODO: atomowo
-	pthread_mutex_lock(&lline->status_mutex);
-	lline->status &= ~MX_LSTATE_TRANS;
-	pthread_mutex_unlock(&lline->status_mutex);
 	if (irq != MX_IRQ_INIEA) {
 		if (irq != MX_IRQ_INPAO) {
 			if (mx_mem_mput(lline->multix, 0, lline->cmd_data_addr + cmd->output_fpos, lline->cmd_data + cmd->output_fpos, cmd->output_flen)) {

@@ -20,6 +20,8 @@
 
 #include "cfg.h"
 #include "io/mx/line.h"
+#include "io/mx/irq.h"
+#include "io/mx/cmds.h"
 #include "io/mx/event.h"
 #include "utils/elst.h"
 #include "log.h"
@@ -135,6 +137,79 @@ const struct mx_proto * mx_proto_get(unsigned i)
 }
 
 // -----------------------------------------------------------------------
+static const struct mx_cmd_route {
+	int irq_reject; // interrupt when line can't process the command
+	int irq_no_line; // interrupt when line is not configured
+	uint32_t fail_pos; // positive status mask (bits that need to be set for the command to be accepted)
+	uint32_t fail_neg; // negative status mask (bits that need to be clear for the command to be accepted)
+	uint32_t cmd_state; // state bits to set when starting command
+} mx_cmd_routing[MX_CMD_CNT] = {
+	[MX_CMD_ATTACH] = {
+		.irq_reject = MX_IRQ_INDOL,
+		.irq_no_line = MX_IRQ_INKDO,
+		.fail_pos = MX_LSTATE_ATTACH | MX_LSTATE_ATTACHED,
+		.fail_neg = MX_LSTATE_NONE,
+		.cmd_state = MX_LSTATE_ATTACH,
+	},
+	[MX_CMD_STATUS] = {
+		.irq_reject = MX_IRQ_INSTR,
+		.irq_no_line = MX_IRQ_INKST,
+		.fail_pos = MX_LSTATE_NONE,
+		.fail_neg = MX_LSTATE_NONE,
+		.cmd_state = MX_LSTATE_NONE,
+	},
+	[MX_CMD_TRANSMIT] = {
+		.irq_reject = MX_IRQ_INTRA,
+		.irq_no_line = MX_IRQ_INKTR,
+		.fail_pos = MX_LSTATE_TRANS,
+		.fail_neg = MX_LSTATE_ATTACHED,
+		.cmd_state = MX_LSTATE_TRANS,
+	},
+	[MX_CMD_DETACH] = {
+		.irq_reject = MX_IRQ_INODL,
+		.irq_no_line = MX_IRQ_INKOD,
+		.fail_pos = MX_LSTATE_TRANS | MX_LSTATE_DETACH,
+		.fail_neg = MX_LSTATE_NONE, // what if line is not attached?
+		.cmd_state = MX_LSTATE_DETACH,
+	},
+	[MX_CMD_ABORT] = {
+		.irq_reject = MX_IRQ_INABT,
+		.irq_no_line = MX_IRQ_INKAB,
+		.fail_pos = MX_LSTATE_NONE,
+		.fail_neg = MX_LSTATE_TRANS, // what if abort is running or line is not attached?
+		.cmd_state = MX_LSTATE_ABORT,
+	},
+};
+
+// -----------------------------------------------------------------------
+uint8_t mx_irq_noline(int cmd)
+{
+	return mx_cmd_routing[cmd].irq_no_line;
+}
+
+// -----------------------------------------------------------------------
+uint8_t mx_irq_reject(int cmd)
+{
+	return mx_cmd_routing[cmd].irq_reject;
+}
+
+// -----------------------------------------------------------------------
+int mx_line_cmd_allowed(struct mx_line *line, int cmd)
+{
+	const struct mx_cmd_route *route = mx_cmd_routing + cmd;
+	return (
+		(line->status & route->fail_pos) ||
+		(route->fail_neg && !(line->status & route->fail_neg))
+	);
+}
+
+// -----------------------------------------------------------------------
+uint32_t mx_cmd_state(int cmd)
+{
+	return mx_cmd_routing[cmd].cmd_state;
+}
+
+// -----------------------------------------------------------------------
 void * mx_line_thread(void *ptr)
 {
 	int quit = 0;
@@ -151,7 +226,12 @@ void * mx_line_thread(void *ptr)
 				break;
 			case MX_EV_CMD:
 				LOG(L_MX, 3, "Line %i (%s) got cmd %s", line->log_n, line->proto->name, mx_get_cmd_name(ev->d.cmd));
+				// run command
 				line->proto->cmd[ev->d.cmd].fun(line);
+				// clear line status for this command
+				pthread_mutex_lock(&line->status_mutex);
+				line->status &= ~mx_cmd_state(ev->d.cmd);
+				pthread_mutex_unlock(&line->status_mutex);
 				break;
 			default:
 				LOG(L_MX, 3, "Line %i (%s) got unknown event type %i. Ignored.", line->log_n, line->proto->name, ev->d.type);

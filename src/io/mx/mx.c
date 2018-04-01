@@ -593,20 +593,6 @@ static int mx_cmd_requeue(struct mx *multix)
 }
 
 // -----------------------------------------------------------------------
-static const struct mx_cmd_route {
-	int irq_reject; // interrupt when line can't process the command
-	int irq_no_line; // interrupt when line is not configured
-	uint32_t fail_pos; // positive status mask (bits that need to be set for the command to be accepted)
-	uint32_t fail_neg; // negative status mask (bits that need to be clear for the command to be accepted)
-} mx_cmd_routing[MX_CMD_CNT] = {
-	[MX_CMD_ATTACH]   = { MX_IRQ_INDOL,	MX_IRQ_INKDO, MX_LSTATE_ATTACH | MX_LSTATE_ATTACHED, MX_LSTATE_NONE },
-	[MX_CMD_STATUS]   = { MX_IRQ_INSTR,	MX_IRQ_INKST, MX_LSTATE_NONE, MX_LSTATE_NONE },
-	[MX_CMD_TRANSMIT] = { MX_IRQ_INTRA,	MX_IRQ_INKTR, MX_LSTATE_TRANS, MX_LSTATE_ATTACHED },
-	[MX_CMD_DETACH]   = { MX_IRQ_INODL,	MX_IRQ_INKOD, MX_LSTATE_TRANS, MX_LSTATE_NONE }, // what if detach is running or line is not attached?
-	[MX_CMD_ABORT]    = { MX_IRQ_INABT,	MX_IRQ_INKAB, MX_LSTATE_NONE, MX_LSTATE_TRANS }, // what if abort is running or line is not attached?
-};
-
-// -----------------------------------------------------------------------
 static int mx_conf_check(struct mx *multix, struct mx_line *lline, union mx_event *ev)
 {
 	// is multix configured?
@@ -627,11 +613,9 @@ static int mx_conf_check(struct mx *multix, struct mx_line *lline, union mx_even
 // -----------------------------------------------------------------------
 static int mx_cmd_dispatch(struct mx *multix, struct mx_line *lline, union mx_event *ev)
 {
-	const struct mx_cmd_route *route = mx_cmd_routing + ev->d.cmd;
-
 	// is multix and line configured?
 	if (mx_conf_check(multix, lline, ev)) {
-		mx_int_enqueue(multix, route->irq_no_line, ev->d.log_n);
+		mx_int_enqueue(multix, mx_irq_noline(ev->d.cmd), ev->d.log_n);
 		return 1;
 	}
 
@@ -639,19 +623,20 @@ static int mx_cmd_dispatch(struct mx *multix, struct mx_line *lline, union mx_ev
 
 	if (!cmd->fun) {
 		LOG(L_MX, 1, "Rejecting command: no protocol function to handle command %s for protocol %s in line %i", mx_get_cmd_name(ev->d.cmd), lline->proto->name, lline->log_n);
-		mx_int_enqueue(lline->multix, route->irq_reject, ev->d.log_n);
+		mx_int_enqueue(lline->multix, mx_irq_reject(ev->d.cmd), ev->d.log_n);
 		return 1;
 	}
 
 	// can line process the command?
 	pthread_mutex_lock(&lline->status_mutex);
-	if ((lline->status & route->fail_pos) || (route->fail_neg && !(lline->status & route->fail_neg))) {
+	if (mx_line_cmd_allowed(lline, ev->d.cmd)) {
 		LOG(L_MX, 3, "Rejecting command, line %i state does not allow execution: 0x%08x", ev->d.log_n, lline->status);
-		mx_int_enqueue(lline->multix, route->irq_reject, ev->d.log_n);
+		mx_int_enqueue(lline->multix, mx_irq_reject(ev->d.cmd), ev->d.log_n);
 		pthread_mutex_unlock(&lline->status_mutex);
 		return 1;
 	}
 	// TODO: update line status to actual line status
+	lline->status |= mx_cmd_state(ev->d.cmd);
 	pthread_mutex_unlock(&lline->status_mutex);
 
 	// process asynchronously in the protocol thread
@@ -666,10 +651,8 @@ static int mx_cmd_dispatch(struct mx *multix, struct mx_line *lline, union mx_ev
 // -----------------------------------------------------------------------
 static void mx_cmd_status(struct mx *multix, struct mx_line *lline, union mx_event *ev)
 {
-	const struct mx_cmd_route *route = mx_cmd_routing + ev->d.cmd;
-
 	if (mx_conf_check(multix, lline, ev)) {
-		mx_int_enqueue(multix, route->irq_no_line, ev->d.log_n);
+		mx_int_enqueue(multix, mx_irq_noline(ev->d.cmd), ev->d.log_n);
 		return;
 	}
 
