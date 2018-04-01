@@ -62,6 +62,7 @@ struct log_component log_components[] = {
 	{ "FLOP", 0 },
 	{ "PNCH", 0 },
 	{ "PNRD", 0 },
+	{ "TAPE", 0 },
 	{ "CRK5", 0 },
 	{ "EM4H", 1 },
 	{ "ECTL", 1 },
