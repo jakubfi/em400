@@ -210,18 +210,19 @@ static void mx_floppy_transmit_encode(uint16_t *data, struct proto_floppy_data *
 // -----------------------------------------------------------------------
 int mx_floppy_attach(struct mx_line *lline)
 {
+	int irq;
 	struct proto_floppy_data *proto_data = lline->proto_data;
 
 	if (mx_floppy_att_decode(lline->cmd_data, proto_data)) {
-		mx_int_enqueue(lline->multix, MX_IRQ_INDOL, lline->log_n);
+		irq = MX_IRQ_INDOL;
 	} else {
 		pthread_mutex_lock(&lline->status_mutex);
 		lline->status |= MX_LSTATE_ATTACHED;
-		mx_int_enqueue(lline->multix, MX_IRQ_IDOLI, lline->log_n);
 		pthread_mutex_unlock(&lline->status_mutex);
+		irq = MX_IRQ_INDOL;
 	}
 
-	return 0;
+	return irq;
 }
 
 // -----------------------------------------------------------------------
@@ -229,30 +230,23 @@ int mx_floppy_detach(struct mx_line *lline)
 { 
 	pthread_mutex_lock(&lline->status_mutex);
 	lline->status &= ~MX_LSTATE_ATTACHED;
-	mx_int_enqueue(lline->multix, MX_IRQ_IODLI, lline->log_n);
 	pthread_mutex_unlock(&lline->status_mutex);
-	return 0;
+
+	return MX_IRQ_IODLI;
 }
 
 // -----------------------------------------------------------------------
 int mx_floppy_abort(struct mx_line *lline)
 { 
-	mx_int_enqueue(lline->multix, MX_IRQ_INABT, lline->log_n);
-	return 0;
+	return MX_IRQ_INABT;
 }
 
 // -----------------------------------------------------------------------
 int mx_floppy_transmit(struct mx_line *lline)
 {
-	int irq = MX_IRQ_INIEA;
+	int irq;
 	struct proto_floppy_data *proto_data = lline->proto_data;
 	const struct mx_cmd *cmd = lline->proto->cmd + MX_CMD_TRANSMIT;
-
-	// read command
-	if (mx_mem_mget(lline->multix, 0, lline->cmd_data_addr, lline->cmd_data, cmd->input_flen)) {
-		irq = MX_IRQ_INPAO;
-		goto fin;
-	}
 
 	if (mx_floppy_transmit_decode(lline->cmd_data, proto_data)) {
 		irq = MX_IRQ_INTRA;
@@ -268,11 +262,6 @@ int mx_floppy_transmit(struct mx_line *lline)
 
 	LOG(L_FLOP, 3, "Transmit operation %i: %s", proto_data->op, floppy_op_names[proto_data->op]);
 
-	// TODO: gdzie indziej?
-	pthread_mutex_lock(&lline->status_mutex);
-	lline->status |= MX_LSTATE_TRANS;
-	pthread_mutex_unlock(&lline->status_mutex);
-
 	// TODO: temporary, so mega bootloader works
 	proto_data->ret_status = MX_FS_NO_DISC;
 	irq = MX_IRQ_ITRER;
@@ -281,20 +270,7 @@ fin:
 	// pack control field
 	mx_floppy_transmit_encode(lline->cmd_data + cmd->output_fpos, proto_data);
 
-	// TODO: atomowo
-	pthread_mutex_lock(&lline->status_mutex);
-	lline->status &= ~MX_LSTATE_TRANS;
-	pthread_mutex_unlock(&lline->status_mutex);
-	if (irq != MX_IRQ_INIEA) {
-		if (irq != MX_IRQ_INPAO) {
-			if (mx_mem_mput(lline->multix, 0, lline->cmd_data_addr + cmd->output_fpos, lline->cmd_data + cmd->output_fpos, cmd->output_flen)) {
-				irq = MX_IRQ_INPAO;
-			}
-		}
-		mx_int_enqueue(lline->multix, irq, lline->log_n);
-	}
-
-	return 0;
+	return irq;
 }
 
 // -----------------------------------------------------------------------

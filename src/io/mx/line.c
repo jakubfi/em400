@@ -210,6 +210,40 @@ uint32_t mx_cmd_state(int cmd)
 }
 
 // -----------------------------------------------------------------------
+static void mx_line_process_cmd(struct mx_line *line, union mx_event *ev)
+{
+	int irq;
+	const struct mx_cmd *cmd = line->proto->cmd + ev->d.cmd;
+
+	LOG(L_MX, 3, "Line %i (%s) got cmd %s", line->log_n, line->proto->name, mx_get_cmd_name(ev->d.cmd));
+
+	// read the command parameters
+	if (cmd->input_flen) {
+		if (mx_mem_mget(line->multix, 0, line->cmd_data_addr, line->cmd_data, cmd->input_flen)) {
+			irq = MX_IRQ_INPAO;
+			goto fin;
+		}
+	}
+
+	// run command
+	irq = line->proto->cmd[ev->d.cmd].fun(line);
+
+fin:
+	// store command output
+	if ((cmd->output_flen) && (irq != MX_IRQ_INPAO)) {
+		if (mx_mem_mput(line->multix, 0, line->cmd_data_addr + cmd->output_fpos, line->cmd_data + cmd->output_fpos, cmd->output_flen)) {
+			irq = MX_IRQ_INPAO;
+		}
+	}
+
+	// clear line status for this command and send the interrupt
+	pthread_mutex_lock(&line->status_mutex);
+	line->status &= ~mx_cmd_state(ev->d.cmd);
+	mx_int_enqueue(line->multix, irq, line->log_n);
+	pthread_mutex_unlock(&line->status_mutex);
+}
+
+// -----------------------------------------------------------------------
 void * mx_line_thread(void *ptr)
 {
 	int quit = 0;
@@ -225,13 +259,7 @@ void * mx_line_thread(void *ptr)
 				quit = 1;
 				break;
 			case MX_EV_CMD:
-				LOG(L_MX, 3, "Line %i (%s) got cmd %s", line->log_n, line->proto->name, mx_get_cmd_name(ev->d.cmd));
-				// run command
-				line->proto->cmd[ev->d.cmd].fun(line);
-				// clear line status for this command
-				pthread_mutex_lock(&line->status_mutex);
-				line->status &= ~mx_cmd_state(ev->d.cmd);
-				pthread_mutex_unlock(&line->status_mutex);
+				mx_line_process_cmd(line, ev);
 				break;
 			default:
 				LOG(L_MX, 3, "Line %i (%s) got unknown event type %i. Ignored.", line->log_n, line->proto->name, ev->d.type);

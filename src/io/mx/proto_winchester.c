@@ -187,10 +187,10 @@ static void mx_winch_cf_decode(uint16_t *data, struct proto_winchester_data *pro
 }
 
 // -----------------------------------------------------------------------
-static void mx_winch_cf_encode(uint16_t *data, struct proto_winchester_data *proto_data)
+static void mx_winch_transmit_encode(uint16_t *data, struct proto_winchester_data *proto_data)
 {
-	data[5] = proto_data->ret_len;
-	data[6] = proto_data->ret_status;
+	data[0] = proto_data->ret_len;
+	data[1] = proto_data->ret_status;
 }
 
 // -----------------------------------------------------------------------
@@ -198,9 +198,9 @@ int mx_winch_attach(struct mx_line *lline)
 {
 	pthread_mutex_lock(&lline->status_mutex);
 	lline->status |= MX_LSTATE_ATTACHED;
-	mx_int_enqueue(lline->multix, MX_IRQ_IDOLI, lline->log_n);
 	pthread_mutex_unlock(&lline->status_mutex);
-	return 0;
+
+	return MX_IRQ_IDOLI;
 }
 
 // -----------------------------------------------------------------------
@@ -208,16 +208,9 @@ int mx_winch_detach(struct mx_line *lline)
 {
 	pthread_mutex_lock(&lline->status_mutex);
 	lline->status &= ~MX_LSTATE_ATTACHED;
-	mx_int_enqueue(lline->multix, MX_IRQ_IODLI, lline->log_n);
 	pthread_mutex_unlock(&lline->status_mutex);
-	return 0;
-}
 
-// -----------------------------------------------------------------------
-int mx_winch_abort(struct mx_line *lline)
-{
-	mx_int_enqueue(lline->multix, MX_IRQ_INABT, lline->log_n);
-	return 0;
+	return MX_IRQ_IODLI;
 }
 
 // -----------------------------------------------------------------------
@@ -259,7 +252,6 @@ static int mx_winch_read(struct mx *multix, const struct dev_drv *dev, void *dev
 	}
 
 	return MX_IRQ_IETRA;
-
 }
 
 // -----------------------------------------------------------------------
@@ -332,19 +324,10 @@ static int mx_winch_format(struct mx *multix, const struct dev_drv *dev, void *d
 // -----------------------------------------------------------------------
 int mx_winch_transmit(struct mx_line *lline)
 {
-	int irq = MX_IRQ_INIEA;
+	int irq;
 
 	struct proto_winchester_data *proto_data = lline->proto_data;
 	const struct mx_cmd *cmd = lline->proto->cmd + MX_CMD_TRANSMIT;
-
-	// read command
-	if (mx_mem_mget(lline->multix, 0, lline->cmd_data_addr, lline->cmd_data, cmd->input_flen)) {
-		irq = MX_IRQ_INPAO;
-		goto fin;
-	}
-
-	// unpack control field
-	mx_winch_cf_decode(lline->cmd_data, proto_data);
 
 	// check if there is a device connected
 	if (!lline->dev || !lline->dev_data) {
@@ -353,16 +336,14 @@ int mx_winch_transmit(struct mx_line *lline)
 		goto fin;
 	}
 
-	LOG(L_WNCH, 3, "Transmit operation %i: %s", proto_data->op, winch_op_names[proto_data->op]);
+	// unpack control field
+	mx_winch_cf_decode(lline->cmd_data, proto_data);
 
-	// TODO: gdzie indziej?
-	pthread_mutex_lock(&lline->status_mutex);
-	lline->status |= MX_LSTATE_TRANS;
-	pthread_mutex_unlock(&lline->status_mutex);
+	LOG(L_WNCH, 3, "Transmit operation %i: %s", proto_data->op, winch_op_names[proto_data->op]);
 
 	switch (proto_data->op) {
 		case MX_WINCH_OP_FORMAT_SPARE:
-			// TODO: huh?
+			// TODO: em400 does not support spare area
 			irq = MX_IRQ_IETRA;
 			break;
 		case MX_WINCH_OP_FORMAT_TRACK:
@@ -385,19 +366,9 @@ int mx_winch_transmit(struct mx_line *lline)
 
 fin:
 	// pack control field
-	mx_winch_cf_encode(lline->cmd_data + cmd->output_fpos, proto_data);
+	mx_winch_transmit_encode(lline->cmd_data + cmd->output_fpos, proto_data);
 
-	// TODO: atomowo
-	if (irq != MX_IRQ_INIEA) {
-		if (irq != MX_IRQ_INPAO) {
-			if (mx_mem_mput(lline->multix, 0, lline->cmd_data_addr + cmd->output_fpos, lline->cmd_data + cmd->output_fpos, cmd->output_flen)) {
-				irq = MX_IRQ_INPAO;
-			}
-		}
-		mx_int_enqueue(lline->multix, irq, lline->log_n);
-	}
-
-	return 0;
+	return irq;
 }
 
 // -----------------------------------------------------------------------

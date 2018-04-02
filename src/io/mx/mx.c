@@ -635,7 +635,7 @@ static int mx_cmd_dispatch(struct mx *multix, struct mx_line *lline, union mx_ev
 		pthread_mutex_unlock(&lline->status_mutex);
 		return 1;
 	}
-	// TODO: update line status to actual line status
+	// update line status
 	lline->status |= mx_cmd_state(ev->d.cmd);
 	pthread_mutex_unlock(&lline->status_mutex);
 
