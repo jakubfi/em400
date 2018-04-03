@@ -25,6 +25,7 @@
 #include "io/mx/cmds.h"
 
 #define MX_LINE_CNT 32
+#define MX_LINE_BUF_SIZE 512
 
 struct mx_line;
 struct mx;
@@ -71,6 +72,7 @@ struct mx_line {
 	void *proto_data;				// protocol private data
 	uint16_t cmd_data[16];			// command data buffer
 	uint16_t cmd_data_addr;			// command data address
+	uint8_t buf[MX_LINE_BUF_SIZE];	// line data buffer
 };
 
 struct mx {
