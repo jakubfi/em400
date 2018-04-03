@@ -1,29 +1,31 @@
 Known bugs:
 
-* emulation handles illegal instruction 2nd word argument differently
+* emulation handles illegal instruction 2nd word argument differently (but does it matter?)
 
 Cleanups:
 
-* move mx_* to mx/
-* use the new queue where applicable
 * consistent naming and commands between emu and hw (timer/clock, run/start)
 * 16/32-bit RZ
 * consistent state idicators (stop/start/wait - run/wait)
 
 Enhancements:
 
-* new debugger interface
-* integrate local console(-s) and debugger into one ncurses user interface
+* merge cpu sources for better instruction performance (?)
+* graphical interface
+* new debugger interface (also graphical?)
+* integrate local console(-s) into user interface
 * deeptrace
 * conditional logging
 * configuration rework
 * gnu getopt_long
 * librarize
+* make em400 C++ friendly
 
 CPU:
 
+* review cpu cycle in context of NEF and interrupt handling
 * no-elwro configuration
-* overlaid elwro/mega
+* overlaid elwro/mega configuration
 * timings (instructions, memory access, disk latencies, serial lines, ...)
 
 I/O:
@@ -35,12 +37,10 @@ I/O:
 * terminal (console, tcp, serial)
 * MULTIX:
   * winchester:
-    * one controller for all drives
-    * async controller
+    * one controller for all drives (?)
     * spare sectors area (requires h/w marking sectors as bad and sector addresses)
-    * formatting
-    * spare area formatting
-    * 16-sector transfers
+    * formatting (and handling unformatted drive - requires h/w formatting)
+    * spare area formatting (and handling of sector migration - requires h/w work)
 
 To clarify:
 
@@ -57,7 +57,9 @@ MERA-400 features that em400 does not emulate:
   * device allocations per cpu
   * multix 2cpu interrupt queue
 * memory parity (itself and interrupts)
-* interface
-* priority based interface reservation
+* interface:
+  * as a communication bus
+  * reservation
+  * priorities
 * MULTIX:
   * SOM protocols
