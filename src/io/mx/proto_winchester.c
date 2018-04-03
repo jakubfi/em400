@@ -214,95 +214,95 @@ int mx_winch_detach(struct mx_line *lline)
 }
 
 // -----------------------------------------------------------------------
-static int mx_winch_read(struct mx *multix, const struct dev_drv *dev, void *dev_obj, struct proto_winchester_data *proto)
+static int mx_winch_read(struct mx *multix, const struct dev_drv *dev, void *dev_obj, struct proto_winchester_data *proto_data)
 {
 	struct dev_chs chs;
 	// TODO: move buffer to line?
 	uint8_t buf[512];
 
-	dev_lba2chs(proto->transmit.sector, &chs, proto->heads, 16);
+	dev_lba2chs(proto_data->transmit.sector, &chs, proto_data->heads, 16);
 	// first physical cylinder is used internally by multix for relocated sectors
 	chs.c++;
 
-	proto->ret_len = 0;
-	while (proto->ret_len < proto->transmit.len) {
+	proto_data->ret_len = 0;
+	while (proto_data->ret_len < proto_data->transmit.len) {
 		// TODO: cancelation point
-		int transmit = proto->transmit.len - proto->ret_len;
+		int transmit = proto_data->transmit.len - proto_data->ret_len;
 		if (transmit > 256) transmit = 256;
 
-		LOG(L_WNCH, 4, "read sector %i/%i/%i -> %i:0x%04x", chs.c, chs.h, chs.s, proto->transmit.nb, proto->transmit.addr + proto->ret_len);
+		LOG(L_WNCH, 4, "read sector %i/%i/%i -> %i:0x%04x", chs.c, chs.h, chs.s, proto_data->transmit.nb, proto_data->transmit.addr + proto_data->ret_len);
 
 		// read the sector into buffer
 		int res = dev->sector_rd(dev_obj, buf, &chs);
 
 		// sector read failed
 		if (res != DEV_CMD_OK) {
-			proto->ret_status = MX_WS_ERR | MX_WS_NO_SECTOR;
+			proto_data->ret_status = MX_WS_ERR | MX_WS_NO_SECTOR;
 			return MX_IRQ_INTRA;
 		}
 
 		// copy read data into system memory, swapping byte order
 		endianswap((uint16_t*)buf, transmit);
-		if (mx_mem_mput(multix, proto->transmit.nb, proto->transmit.addr + proto->ret_len, (uint16_t*)(buf), transmit)) {
+		if (mx_mem_mput(multix, proto_data->transmit.nb, proto_data->transmit.addr + proto_data->ret_len, (uint16_t*)(buf), transmit)) {
 			return MX_IRQ_INPAO;
 		}
 
-		dev_chs_next(&chs, proto->heads, 16);
-		proto->ret_len += transmit;
+		dev_chs_next(&chs, proto_data->heads, 16);
+		proto_data->ret_len += transmit;
 	}
 
 	return MX_IRQ_IETRA;
 }
 
 // -----------------------------------------------------------------------
-static int mx_winch_write(struct mx *multix, const struct dev_drv *dev, void *dev_obj, struct proto_winchester_data *proto)
+static int mx_winch_write(struct mx *multix, const struct dev_drv *dev, void *dev_obj, struct proto_winchester_data *proto_data)
 {   
 	struct dev_chs chs;
 	// TODO: move buffer to line?
 	uint8_t buf[512];
 
-	dev_lba2chs(proto->transmit.sector, &chs, proto->heads, 16);
+	dev_lba2chs(proto_data->transmit.sector, &chs, proto_data->heads, 16);
 	// first physical cylinder is used internally by multix for relocated sectors
 	chs.c++;
 
-	proto->ret_len = 0;
-	while (proto->ret_len < proto->transmit.len) {
+	proto_data->ret_len = 0;
+	while (proto_data->ret_len < proto_data->transmit.len) {
 		// TODO: cancelation point
-		int transmit = proto->transmit.len - proto->ret_len;
+		int transmit = proto_data->transmit.len - proto_data->ret_len;
 		if (transmit > 256) transmit = 256;
 
 		// fill buffer with data to write
-		if (mx_mem_mget(multix, proto->transmit.nb, proto->transmit.addr + proto->ret_len, (uint16_t*)buf, transmit)) {
+		if (mx_mem_mget(multix, proto_data->transmit.nb, proto_data->transmit.addr + proto_data->ret_len, (uint16_t*)buf, transmit)) {
 			return MX_IRQ_INPAO;
 		}
 		endianswap((uint16_t*)buf, transmit);
 
-		LOG(L_WNCH, 4, "write sector %i/%i/%i <- %i:0x%04x", chs.c, chs.h, chs.s, proto->transmit.nb, proto->transmit.addr + proto->ret_len);
+		LOG(L_WNCH, 4, "write sector %i/%i/%i <- %i:0x%04x", chs.c, chs.h, chs.s, proto_data->transmit.nb, proto_data->transmit.addr + proto_data->ret_len);
 
 		int res = dev->sector_wr(dev_obj, buf, &chs);
 
 		// sector not found or incomplete
 		if (res != DEV_CMD_OK) {
-			proto->ret_status = MX_WS_ERR | MX_WS_NO_SECTOR;
+			proto_data->ret_status = MX_WS_ERR | MX_WS_NO_SECTOR;
 			return MX_IRQ_INTRA;
 		}
 
-		dev_chs_next(&chs, proto->heads, 16);
-		proto->ret_len += transmit;
+		dev_chs_next(&chs, proto_data->heads, 16);
+		proto_data->ret_len += transmit;
 	}
 
 	return MX_IRQ_IETRA;
 }
 
 // -----------------------------------------------------------------------
-static int mx_winch_format(struct mx *multix, const struct dev_drv *dev, void *dev_obj, struct proto_winchester_data *proto)
+static int mx_winch_format(struct mx *multix, const struct dev_drv *dev, void *dev_obj, struct proto_winchester_data *proto_data)
 {
 	struct dev_chs chs;
 	// TODO: move buffer to line?
 	uint8_t buf[512];
 	memset(buf, '\0', 512);
 
-	dev_lba2chs(proto->format.start_sector, &chs, proto->heads, 16);
+	dev_lba2chs(proto_data->format.start_sector, &chs, proto_data->heads, 16);
 	chs.c++;
 
 	for (int i=0 ; i<16 ; i++) {
@@ -311,11 +311,11 @@ static int mx_winch_format(struct mx *multix, const struct dev_drv *dev, void *d
 
 		// sector not found or incomplete
 		if (res != DEV_CMD_OK) {
-			proto->ret_status = MX_WS_ERR | MX_WS_NO_SECTOR;
+			proto_data->ret_status = MX_WS_ERR | MX_WS_NO_SECTOR;
 			return MX_IRQ_INTRA;
 		}
 
-		dev_chs_next(&chs, proto->heads, 16);
+		dev_chs_next(&chs, proto_data->heads, 16);
 	}
 
 	return MX_IRQ_IETRA;
