@@ -2,6 +2,8 @@
 
 import sys
 
+# Fill winchester image with sector addresses
+
 f = open(sys.argv[1], "rb+")
 f.seek(0x1a + 1*4*16*512)
 

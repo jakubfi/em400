@@ -1,4 +1,4 @@
-; OPTS -c configs/winchester.cfg
+; OPTS -c configs/winchester1.cfg
 ; PRECMD CLOCK ON
 
 	.cpu	mx16
@@ -30,6 +30,11 @@
 	.const	SSIZE 256
 	.const	TOTAL_SECTORS CYLINDERS*HEADS*SPT
 	.const	USER_SECTORS TOTAL_SECTORS - 1*HEADS*SPT
+
+	; buffer locations
+	.const	rdbuf	prog_end
+	.const	wrbuf	prog_end+SSIZE
+	.const	stack	prog_end+(2*SSIZE)
 
 	uj	start
 
@@ -94,40 +99,6 @@ c_fail:
 	hlt	043
 
 ; ------------------------------------------------------------------------
-; sector addressing test
-; read the whole disk (sectors 16..USER_SECTORS to be precise)
-; and check if every word of each sector contains the sector number
-reada:	.word	2\7 + 0\15, rdbuf, 255, 0
-readas:	.word	0, -1, -1
-readat:	.word	MXCMD_TRANSMIT, reada, MX_IETRA + WINCH_LINE
-rdsect:
-	.res	1
-	.const	START_SECT 16
-	lw	r6, START_SECT
-rdloop:
-	rw	r6, readas			; update sector number in control field
-	lf	readat
-	rj	r4, io_cmd			; read sector
-
-readok:	; check sector contents
-	lw	r1, rdbuf-1
-	lw	r3, SSIZE
-rdc_loop:
-	lw	r4, [r1+r3]		; load word
-	cw	r4, r6			; compare to sector number
-	bb	r0, ?E
-	ujs	rdc_fail
-	drb	r3, rdc_loop		; next word
-	; contents OK
-	awt	r6, 1			; next sector
-	cw	r6, USER_SECTORS	; last sector?
-	jn	rdloop			; no -> loop over
-	uj	[rdsect]
-rdc_fail:
-	im	msk_0
-	hlt	050
-
-; ------------------------------------------------------------------------
 ; test data
 conf:	.word	1\7 | 3\15, 0
 	.word	MX_LDIR_NONE | MX_LINE_USED | MX_LTYPE_WINCH | 3
@@ -139,8 +110,8 @@ park:	.word	5\7, 0, 0, 0, 644, -1, -1
 format:	.word	1\7, 0, 0, 0, 0, -1, -1
 write:	.word	3\7 + 0\15, wrbuf, 255, 0, 0, -1, -1
 read:	.word	2\7 + 0\15, rdbuf, 255, 0, 0, -1, -1
-rdfail:	.word	2\7 + 0\15, rdbuf, 255, 0, USER_SECTORS, -1, -1
-rdfail2:.word	2\7 + 0\15, -1, 255, 0, 0, -1, -1
+rdfail:	.word	2\7 + 0\15, rdbuf, 255, 0, USER_SECTORS, -1, -1 ; sector beyond addresable disk space
+rdfail2:.word	2\7 + 0\15, -1, 255, 0, 0, -1, -1 ; "segmentation fault"
 
 seq:	; [command, field_addr, exp_irq, check_proc]
 	.word	MXCMD_SETCFG, conf, MX_IUKON, 0
@@ -155,7 +126,6 @@ seq:	; [command, field_addr, exp_irq, check_proc]
 	.word	MXCMD_TRANSMIT, read, MX_IETRA + WINCH_LINE, cmpz
 	.word	MXCMD_TRANSMIT, write, MX_IETRA + WINCH_LINE, 0
 	.word	MXCMD_TRANSMIT, read, MX_IETRA + WINCH_LINE, cmpbuf
-	.word	MXCMD_ABORT, -1, MX_INABT + WINCH_LINE, rdsect ; rdsect is here because it's convenient
 	.word	MXCMD_DETACH, -1, MX_IODLI + WINCH_LINE, 0
 seqe:
 
@@ -239,12 +209,8 @@ no_check_proc:
 
 	im	msk_0
 	hlt	077
+prog_end:
 
-; ------------------------------------------------------------------------
-; buffers
-rdbuf:	.res	SSIZE
-wrbuf:	.res	SSIZE
-stack:
 
 ; XPCT rz[15] : 0
 ; XPCT rz[6] : 0
