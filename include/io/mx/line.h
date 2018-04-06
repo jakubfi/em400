@@ -97,11 +97,10 @@ enum mx_line_status {
 	MX_LSTATE_TRANS_XOFF	= 1 << 13,	// transmission suspended due to XOFF
 	MX_LSTATE_TRANS_LAST	= 1 << 14,	// transmission of a last fragment
 	MX_LSTATE_0				= 1 << 15,	// (unused)
-	// em400 specific: these are not sent to the cpu, and may or may not be in use
-	// by the emulation depending on whether command is processed sync or async
+	// em400 specific: these are not sent to the cpu
 	MX_LSTATE_ATTACH		= 1 << 16,	// 'attach' running
 	MX_LSTATE_DETACH		= 1 << 17,	// 'detach' running
-	MX_LSTATE_ABORT			= 1 << 19,	// 'abort' running
+	MX_LSTATE_ABORT			= 1 << 18,	// 'abort' running
 };
 
 const char * mx_line_dir_name(unsigned i);

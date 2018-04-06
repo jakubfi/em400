@@ -283,16 +283,12 @@ static void mx_int_push(struct mx *multix)
 			send = 1;
 			free(i);
 		}
-	} else {
-		LOG(L_MX, 3, "Can't push interrupt, previous was not received");
 	}
 	pthread_mutex_unlock(&multix->int_mutex);
 
 	if (send) {
-		LOG(L_MX, 3, "Sending interrupt to CPU");
+		LOG(L_MX, 3, "Pushing interrupt to CPU");
 		mx_int_set(multix);
-	} else {
-		LOG(L_MX, 3, "No interrupt waiting to be sent to CPU");
 	}
 }
 
@@ -611,6 +607,32 @@ static int mx_conf_check(struct mx *multix, struct mx_line *lline, union mx_even
 }
 
 // -----------------------------------------------------------------------
+static inline void __log_status(int level, const char *txt, int log_n, uint32_t status)
+{
+	LOG(L_MX, level, "%s: line %i status: 0x%08x: %s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s",
+		txt,
+		log_n,
+		status,
+		(status & MX_LSTATE_SEND_START) ? "send_start, " : "",
+		(status & MX_LSTATE_SEND_RUN) ? "send_run, " : "",
+		(status & MX_LSTATE_RECV_START) ? "recv_start, " : "",
+		(status & MX_LSTATE_RECV_RUN) ? "recv_run, " : "",
+		(status & MX_LSTATE_CAN_STOP) ? "can_stop, " : "",
+		(status & MX_LSTATE_STOP_CHAR) ? "stop_char, " : "",
+		(status & MX_LSTATE_PARITY_ERR) ? "parity_err, " : "",
+		(status & MX_LSTATE_OPRQ) ? "oprq, " : "",
+		(status & MX_LSTATE_ATTACHED) ? "attached, " : "",
+		(status & MX_LSTATE_TRANS) ? "transmission, " : "",
+		(status & MX_LSTATE_TASK_XOFF) ? "task_xoff, " : "",
+		(status & MX_LSTATE_TRANS_XOFF) ? "trans_xoff, " : "",
+		(status & MX_LSTATE_TRANS_LAST) ? "trans_last, " : "",
+		(status & MX_LSTATE_ATTACH) ? "attaching, " : "",
+		(status & MX_LSTATE_DETACH) ? "detaching, " : "",
+		(status & MX_LSTATE_ABORT) ? "aborting, " : ""
+	);
+}
+
+// -----------------------------------------------------------------------
 static int mx_cmd_dispatch(struct mx *multix, struct mx_line *lline, union mx_event *ev)
 {
 	// is multix and line configured?
@@ -630,7 +652,7 @@ static int mx_cmd_dispatch(struct mx *multix, struct mx_line *lline, union mx_ev
 	// can line process the command?
 	pthread_mutex_lock(&lline->status_mutex);
 	if (mx_line_cmd_allowed(lline, ev->d.cmd)) {
-		LOG(L_MX, 3, "Rejecting command, line %i state does not allow execution: 0x%08x", ev->d.log_n, lline->status);
+		__log_status(3, "Rejecting command, line status does not allow execution", ev->d.log_n, lline->status);
 		mx_int_enqueue(lline->multix, mx_irq_reject(ev->d.cmd), ev->d.log_n);
 		pthread_mutex_unlock(&lline->status_mutex);
 		return 1;
@@ -662,6 +684,7 @@ static void mx_cmd_status(struct mx *multix, struct mx_line *lline, union mx_eve
 
 	pthread_mutex_lock(&lline->status_mutex);
 
+	__log_status(3, "Reporting line status", lline->log_n, lline->status);
 	uint16_t status = lline->status & 0xffff;
 	if (mx_mem_mput(multix, 0, ev->d.arg, &status, 1)) {
 		mx_int_enqueue(multix, MX_IRQ_INPAO, lline->log_n);
