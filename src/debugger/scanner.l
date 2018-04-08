@@ -24,7 +24,7 @@
 #include "debugger/ui.h"
 #include "debugger/cmd.h"
 #include "debugger/keywords.h"
-#include "parser.h"
+#include "debugger_parser.h"
 
 void yyerror(char *s, ...);
 %}

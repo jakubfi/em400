@@ -28,7 +28,7 @@
 #include "debugger/keywords.h"
 #include "debugger/eval.h"
 #include "debugger/ui.h"
-#include "debugger/parser.h"
+#include "debugger_parser.h"
 
 struct node_t *node_stack = NULL;
 struct var_t *var_stack = NULL;

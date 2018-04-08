@@ -37,7 +37,7 @@
 #include "debugger/debugger.h"
 #include "debugger/cmd.h"
 #include "debugger/ui.h"
-#include "debugger/parser.h"
+#include "debugger_parser.h"
 #include "debugger/eval.h"
 #include "debugger/decode.h"
 

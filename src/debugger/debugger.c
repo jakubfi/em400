@@ -32,7 +32,7 @@
 #include "debugger/awin.h"
 #include "debugger/debugger.h"
 #include "debugger/ui.h"
-#include "debugger/parser.h"
+#include "debugger_parser.h"
 #include "debugger/eval.h"
 
 #include "cfg.h"

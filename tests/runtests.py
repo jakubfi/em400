@@ -363,7 +363,7 @@ def get_tests_set(s):
 
 parser = argparse.ArgumentParser()
 parser.add_argument("-b", "--baseline", help="baseline test results")
-parser.add_argument("-e", "--emulator", help="emulator binary to run", default="../build/src/em400")
+parser.add_argument("-e", "--emulator", help="emulator binary to run", default="../build/em400")
 parser.add_argument("-f", "--failcmd", help="command to run when test fails", action='append')
 parser.add_argument("-l", "--log", help="configure em400 logging", default="")
 parser.add_argument("-F", "--fpga", help="use FPGA CPU backend in em400", action="store_const", const=1, default=0)
