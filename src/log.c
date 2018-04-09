@@ -86,7 +86,7 @@ static void * log_flusher(void *ptr);
 
 #define LOG_F_COMP "%4s %1i | %8s | "
 #define LOG_F_FUN "%24s() | "
-#define LOG_F_CPU "%s%x:0x%04x %-6s           | %s"
+#define LOG_F_CPU "%x:0x%04x %-6s            | %s"
 
 static uint16_t log_cycle_sr;
 static uint16_t log_cycle_ic;
@@ -422,8 +422,7 @@ void log_log_cpu(unsigned component, unsigned level, char *msgfmt, ...)
 		log_components[component].name,
 		level,
 		thname,
-		(log_cycle_sr & 0b0000000000100000) ? " " : "+",
-		(log_cycle_sr & 0b0000000000001111),
+		(log_cycle_sr & 0b0000000000100000) ? (log_cycle_sr & 0b0000000000001111) : 0,
 		log_cycle_ic,
 		log_get_current_process(),
 		log_int_indent + log_int_level
