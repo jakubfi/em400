@@ -16,6 +16,7 @@
 //  51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 
 #define _XOPEN_SOURCE 500
+#define _GNU_SOURCE
 
 #include <stdlib.h>
 #include <stdio.h>
@@ -83,9 +84,9 @@ static void * log_flusher(void *ptr);
 
 // high-level stuff
 
-#define LOG_F_COMP "%4s %1i | "
-#define LOG_F_EMPTY "                     | "
-#define LOG_F_CPU "%-3s %2i:0x%04x %-6s | %s"
+#define LOG_F_COMP "%4s %1i | %8s | "
+#define LOG_F_FUN "%24s() | "
+#define LOG_F_CPU "%s%x:0x%04x %-6s           | %s"
 
 static uint16_t log_cycle_sr;
 static uint16_t log_cycle_ic;
@@ -97,7 +98,7 @@ static const char *log_int_indent = "--> --> --> --> --> --> --> --> ";
 static struct emdas *emd;
 static char *dasm_buf;
 
-static void log_log_timestamp(unsigned component, unsigned level, char *msg);
+static void log_log_timestamp(unsigned component, unsigned level, char *msg, const char *func);
 
 // -----------------------------------------------------------------------
 int log_init(struct cfg_em400 *cfg)
@@ -107,21 +108,21 @@ int log_init(struct cfg_em400 *cfg)
 
 	log_file = strdup(cfg->log_file);
 	if (!log_file) {
-		log_err("Memory allocation error.");
+		LOGERR("Memory allocation error.");
 		goto cleanup;
 	}
 
 	// set up thresholds
 	res = log_setup_levels(cfg->log_levels);
 	if (res < 0) {
-		log_err("Failed to parse log levels definition: \"%s\".", cfg->log_levels);
+		LOGERR("Failed to parse log levels definition: \"%s\".", cfg->log_levels);
 		goto cleanup;
 	}
 
 	// initialize deassembler
 	emd = emdas_create(cfg->cpu_mod ? EMD_ISET_MX16 : EMD_ISET_MERA400, (emdas_getfun) mem_get);
 	if (!emd) {
-		log_err("Log deassembler initialization failed.");
+		LOGERR("Log deassembler initialization failed.");
 		goto cleanup;
 	}
 
@@ -135,7 +136,7 @@ int log_init(struct cfg_em400 *cfg)
 	if (cfg->log_enabled) {
 		ret = log_enable();
 		if (ret != E_OK) {
-			log_err("Failed to enable logging.");
+			LOGERR("Failed to enable logging.");
 			goto cleanup;
 		}
 	}
@@ -181,7 +182,7 @@ void log_disable()
 		return;
 	}
 
-	log_log_timestamp(L_EM4H, 0, "Closing log");
+	log_log_timestamp(L_EM4H, 0, "Closing log", __func__);
 
 	atom_store_release(&log_enabled, 0);
 
@@ -206,16 +207,16 @@ int log_enable()
 	// Open log file
 	log_f = fopen(log_file, "a");
 	if (!log_f) {
-		return log_err("Failed to open log file: \"%s\".", log_file);
+		return LOGERR("Failed to open log file: \"%s\".", log_file);
 	}
 
-	log_log_timestamp(L_EM4H, 0, "Opened log");
+	log_log_timestamp(L_EM4H, 0, "Opened log", __func__);
 
 	// start up flusher thread
 	log_flusher_stop = 0;
 	if (pthread_create(&log_flusher_th, NULL, log_flusher, NULL) != 0) {
 		fclose(log_f);
-		return log_err("Failed to spawn log flusher thread.");
+		return LOGERR("Failed to spawn log flusher thread.");
 	}
 
 	atom_store_release(&log_enabled, 1);
@@ -362,10 +363,13 @@ int log_wants(unsigned component, unsigned level)
 }
 
 // -----------------------------------------------------------------------
-int log_err(char *msgfmt, ...)
+int log_err(const char *func, char *msgfmt, ...)
 {
 	va_list vl;
 	va_start(vl, msgfmt);
+
+	char thname[16];
+	pthread_getname_np(pthread_self(), thname, 16);
 
 	vfprintf(stderr, msgfmt, vl);
 	fprintf(stderr, "\n");
@@ -375,7 +379,7 @@ int log_err(char *msgfmt, ...)
 	if (log_is_enabled()) {
 		va_start(vl, msgfmt);
 		pthread_mutex_lock(&log_mutex);
-		fprintf(log_f, LOG_F_COMP LOG_F_EMPTY, log_components[L_EM4H].name, 0);
+		fprintf(log_f, LOG_F_COMP LOG_F_FUN, log_components[L_EM4H].name, 0, thname, func);
 		fprintf(log_f, "ERROR: ");
 		vfprintf(log_f, msgfmt, vl);
 		fprintf(log_f, "\n");
@@ -387,13 +391,16 @@ int log_err(char *msgfmt, ...)
 }
 
 // -----------------------------------------------------------------------
-void log_log(unsigned component, unsigned level, char *msgfmt, ...)
+void log_log(unsigned component, unsigned level, const char *func, char *msgfmt, ...)
 {
 	va_list vl;
 	va_start(vl, msgfmt);
 
+	char thname[16];
+	pthread_getname_np(pthread_self(), thname, 16);
+
 	pthread_mutex_lock(&log_mutex);
-	fprintf(log_f, LOG_F_COMP LOG_F_EMPTY, log_components[component].name, level);
+	fprintf(log_f, LOG_F_COMP LOG_F_FUN, log_components[component].name, level, thname, func);
 	vfprintf(log_f, msgfmt, vl);
 	fprintf(log_f, "\n");
 	pthread_mutex_unlock(&log_mutex);
@@ -407,10 +414,15 @@ void log_log_cpu(unsigned component, unsigned level, char *msgfmt, ...)
 	va_list vl;
 	va_start(vl, msgfmt);
 
+	char thname[16];
+	pthread_getname_np(pthread_self(), thname, 16);
+
 	pthread_mutex_lock(&log_mutex);
 	fprintf(log_f, LOG_F_COMP LOG_F_CPU,
-		log_components[component].name, level,
-		(log_cycle_sr & 0b0000000000100000) ? "USR" : "OS",
+		log_components[component].name,
+		level,
+		thname,
+		(log_cycle_sr & 0b0000000000100000) ? " " : "+",
 		(log_cycle_sr & 0b0000000000001111),
 		log_cycle_ic,
 		log_get_current_process(),
@@ -424,39 +436,42 @@ void log_log_cpu(unsigned component, unsigned level, char *msgfmt, ...)
 }
 
 // -----------------------------------------------------------------------
-void log_splitlog(unsigned component, unsigned level, char *text)
+void log_splitlog(unsigned component, unsigned level, const char *func, char *text)
 {
 	char *p;
 	char *start = text;
 
+    char thname[16];
+    pthread_getname_np(pthread_self(), thname, 16);
+
 	pthread_mutex_lock(&log_mutex);
 
-	fprintf(log_f, LOG_F_COMP LOG_F_EMPTY ".-------------------------------------------------------------------\n", log_components[component].name, level);
+	fprintf(log_f, LOG_F_COMP LOG_F_FUN ".-------------------------------------------------------------------\n", log_components[component].name, level, thname, func);
 	while (start && *start) {
 		p = strchr(start, '\n');
 		if (p) {
 			*p = '\0';
 		}
-		fprintf(log_f, LOG_F_COMP LOG_F_EMPTY "| %s\n", log_components[component].name, level, start);
+		fprintf(log_f, LOG_F_COMP LOG_F_FUN "| %s\n", log_components[component].name, level, thname, func, start);
 		if (p) {
 			start = p+1;
 		} else {
 			start = NULL;
 		}
 	}
-	fprintf(log_f, LOG_F_COMP LOG_F_EMPTY "`-------------------------------------------------------------------\n", log_components[component].name, level);
+	fprintf(log_f, LOG_F_COMP LOG_F_FUN "`-------------------------------------------------------------------\n", log_components[component].name, level, thname, func);
 
 	pthread_mutex_unlock(&log_mutex);
 }
 
 // -----------------------------------------------------------------------
-static void log_log_timestamp(unsigned component, unsigned level, char *msg)
+static void log_log_timestamp(unsigned component, unsigned level, char *msg, const char *func)
 {
 	struct timeval ct;
 	char date[32];
 	gettimeofday(&ct, NULL);
 	strftime(date, 31, "%Y-%m-%d %H:%M:%S", localtime(&ct.tv_sec));
-	log_log(component, level, "%s: %s", msg, date);
+	log_log(component, level, func, "%s: %s", msg, date);
 }
 
 // -----------------------------------------------------------------------
@@ -513,43 +528,46 @@ void log_log_dasm(unsigned component, unsigned level, int mod, int norm_arg, int
 
 // -----------------------------------------------------------------------
 // called when final configuration is assembled
-void log_config(unsigned component, unsigned level, struct cfg_em400 *cfg)
+void log_config(unsigned component, unsigned level, struct cfg_em400 *cfg, const char *func)
 {
-	log_log(component, level, "Program to load: %s", cfg->program_name);
-	log_log(component, level, "Loaded config: %s", cfg->cfg_filename);
-	log_log(component, level, "Print help: %s", cfg->print_help ? "yes" : "no");
-	log_log(component, level, "Use FPGA backend: %s", cfg->fpga ? "yes" : "no");
+	if (!LOG_WANTS(component, level)) return;
+
+	log_log(component, level, func, "---- Effective configuration: ----------");
+	log_log(component, level, func, "Program to load: %s", cfg->program_name);
+	log_log(component, level, func, "Loaded config: %s", cfg->cfg_filename);
+	log_log(component, level, func, "Print help: %s", cfg->print_help ? "yes" : "no");
+	log_log(component, level, func, "Use FPGA backend: %s", cfg->fpga ? "yes" : "no");
 	if (!cfg->fpga) {
-		log_log(component, level, "CPU emulation:");
-		log_log(component, level, "   Emulation speed: %s", cfg->speed_real ? "real" : "max");
-		log_log(component, level, "   Timer step: %i (%s at power-on)", cfg->timer_step, cfg->timer_start ? "enabled" : "disabled");
-		log_log(component, level, "   CPU modifications: %s", cfg->cpu_mod ? "present" : "absent");
-		log_log(component, level, "   IN/OU instructions: %s for user programs", cfg->cpu_user_io_illegal ? "illegal" : "legal");
-		log_log(component, level, "   Hardware AWP: %s", cfg->cpu_awp ? "present" : "absent");
-		log_log(component, level, "   CPU stop on nomem in OS block: %s", cfg->cpu_stop_on_nomem ? "yes" : "no");
-		log_log(component, level, "Memory emulation:");
-		log_log(component, level, "   Elwro modules: %i", cfg->mem_elwro);
-		log_log(component, level, "   MEGA modules: %i", cfg->mem_mega);
-		log_log(component, level, "   MEGA PROM image: %s", cfg->mem_mega_prom);
-		log_log(component, level, "   MEGA boot: %s", cfg->mem_mega_boot ? "true" : "false");
-		log_log(component, level, "   Segments for OS: %i", cfg->mem_os);
+		log_log(component, level, func, "CPU emulation:");
+		log_log(component, level, func, "   Emulation speed: %s", cfg->speed_real ? "real" : "max");
+		log_log(component, level, func, "   Timer step: %i (%s at power-on)", cfg->timer_step, cfg->timer_start ? "enabled" : "disabled");
+		log_log(component, level, func, "   CPU modifications: %s", cfg->cpu_mod ? "present" : "absent");
+		log_log(component, level, func, "   IN/OU instructions: %s for user programs", cfg->cpu_user_io_illegal ? "illegal" : "legal");
+		log_log(component, level, func, "   Hardware AWP: %s", cfg->cpu_awp ? "present" : "absent");
+		log_log(component, level, func, "   CPU stop on nomem in OS block: %s", cfg->cpu_stop_on_nomem ? "yes" : "no");
+		log_log(component, level, func, "Memory emulation:");
+		log_log(component, level, func, "   Elwro modules: %i", cfg->mem_elwro);
+		log_log(component, level, func, "   MEGA modules: %i", cfg->mem_mega);
+		log_log(component, level, func, "   MEGA PROM image: %s", cfg->mem_mega_prom);
+		log_log(component, level, func, "   MEGA boot: %s", cfg->mem_mega_boot ? "true" : "false");
+		log_log(component, level, func, "   Segments for OS: %i", cfg->mem_os);
 	} else {
-		log_log(component, level, "FPGA backend:");
-		log_log(component, level, "   Device: %s", cfg->fpga_dev);
-		log_log(component, level, "   Link speed: %i", cfg->fpga_speed);
+		log_log(component, level, func, "FPGA backend:");
+		log_log(component, level, func, "   Device: %s", cfg->fpga_dev);
+		log_log(component, level, func, "   Link speed: %i", cfg->fpga_speed);
 	}
-	log_log(component, level, "KB: 0x%04x", cfg->keys);
-	log_log(component, level, "Logging (%s):", cfg->log_enabled ? "enabled" : "disabled");
-	log_log(component, level, "   File: %s", cfg->log_file);
-	log_log(component, level, "   Levels: %s", cfg->log_levels);
-	log_log(component, level, "I/O:");
+	log_log(component, level, func, "KB: 0x%04x", cfg->keys);
+	log_log(component, level, func, "Logging (%s):", cfg->log_enabled ? "enabled" : "disabled");
+	log_log(component, level, func, "   File: %s", cfg->log_file);
+	log_log(component, level, func, "   Levels: %s", cfg->log_levels);
+	log_log(component, level, func, "I/O:");
 
 	char buf[4096];
 	int bpos;
 
 	struct cfg_chan *chanc = cfg->chans;
 	while (chanc) {
-		log_log(component, level, "   Channel %2i: %s", chanc->num, chanc->name);
+		log_log(component, level, func, "   Channel %2i: %s", chanc->num, chanc->name);
 
 		struct cfg_unit *unitc = chanc->units;
 		while (unitc) {
@@ -562,12 +580,13 @@ void log_config(unsigned component, unsigned level, struct cfg_em400 *cfg)
 					bpos += sprintf(buf+bpos, ", ");
 				}
 			}
-			log_log(component, level, "      Unit %2i: %s (%s)", unitc->num, unitc->name, buf);
+			log_log(component, level, func, "      Unit %2i: %s (%s)", unitc->num, unitc->name, buf);
 			unitc = unitc->next;
 		}
 
 		chanc = chanc->next;
 	}
+	log_log(component, level, func, "----------------------------------------");
 }
 
 // vim: tabstop=4 shiftwidth=4 autoindent

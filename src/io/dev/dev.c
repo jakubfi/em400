@@ -49,7 +49,7 @@ int dev_make(struct cfg_unit *dev, const struct dev_drv **dev_drv, void **dev_ob
 			*dev_drv = *driver;
 			*dev_obj = (*driver)->create(dev->args);
 			if (!*dev_obj) {
-				return log_err("Failed to initialize device: %s.", dev->name);
+				return LOGERR("Failed to initialize device: %s.", dev->name);
 			}
 			LOG(L_EM4H, 1, "Created device: %s", dev->name);
 			return E_OK;
@@ -57,7 +57,7 @@ int dev_make(struct cfg_unit *dev, const struct dev_drv **dev_drv, void **dev_ob
 		driver++;
 	}
 
-	return log_err("Unknown device type: %s.", dev->name);
+	return LOGERR("Unknown device type: %s.", dev->name);
 }
 // -----------------------------------------------------------------------
 void dev_chs_next(struct dev_chs *chs, unsigned heads, unsigned spt)

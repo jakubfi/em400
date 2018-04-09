@@ -42,7 +42,7 @@ struct ui * ui_create(const char *name)
 		if (!strncasecmp(name, (*drv)->name, strlen((*drv)->name))) {
 			struct ui *ui = calloc(1, sizeof(struct ui));
 			if (!ui) {
-				log_err("Memory allocation error when creating UI.");
+				LOGERR("Memory allocation error when creating UI.");
 				return NULL;
 			}
 			ui->drv = *drv;
@@ -50,7 +50,7 @@ struct ui * ui_create(const char *name)
 			// setup the UI
 			ui->data = ui->drv->setup(name);
 			if (!ui->data) {
-				log_err("Failed to setup UI: %s.", name);
+				LOGERR("Failed to setup UI: %s.", name);
 				return NULL;
 			}
 			return ui;
@@ -58,7 +58,7 @@ struct ui * ui_create(const char *name)
 		drv++;
 	}
 
-	log_err("Unknown UI: %s.", name);
+	LOGERR("Unknown UI: %s.", name);
 	return NULL;
 }
 
@@ -77,7 +77,7 @@ int ui_run(struct ui *ui)
 {
 	// initialize the UI loop
 	if (pthread_create(&ui->th, NULL, ui_loop, ui)) {
-		return log_err("Failed to spawn UI thread.");
+		return LOGERR("Failed to spawn UI thread.");
 	}
 
 	return E_OK;

@@ -59,9 +59,9 @@ int log_wants(unsigned component, unsigned level);
 const char * log_get_component_name(unsigned component);
 int log_get_component_id(const char *name);
 
-int log_err(char *msgfmt, ...);
-void log_log(unsigned component, unsigned level, char *format, ...);
-void log_splitlog(unsigned component, unsigned level, char *text);
+int log_err(const char *func, char *msgfmt, ...);
+void log_log(unsigned component, unsigned level, const char *func, char *format, ...);
+void log_splitlog(unsigned component, unsigned level, const char *func, char *text);
 
 void log_store_cycle_state(uint16_t sr, uint16_t ic);
 void log_intlevel_reset();
@@ -70,19 +70,25 @@ void log_intlevel_inc();
 
 void log_log_dasm(unsigned component, unsigned level, int mod, int norm_arg, int short_arg, int16_t n);
 void log_log_cpu(unsigned component, unsigned level, char *msgfmt, ...);
-void log_config(unsigned component, unsigned level, struct cfg_em400 *cfg);
+void log_config(unsigned component, unsigned level, struct cfg_em400 *cfg, const char *func);
 
 #define LOG_ENABLED (atom_load_acquire(&log_enabled))
 #define LOG_WANTS(component, level) (LOG_ENABLED && log_wants(component, level))
 
 #define LOG(component, level, format, ...) \
 	if (LOG_WANTS(component, level)) \
-		log_log(component, level, format, ##__VA_ARGS__)
+		log_log(component, level, __func__, format, ##__VA_ARGS__)
 
 #define LOGCPU(component, level, format, ...) \
 	if (LOG_WANTS(component, level)) \
 		log_log_cpu(component, level, format, ##__VA_ARGS__)
 
+#define LOGERR(format, ...) \
+	log_err(__func__, format, ##__VA_ARGS__)
+
 #endif
+
+#define LOGBLOB(component, level, txt) \
+	log_splitlog(component, level, __func__, txt)
 
 // vim: tabstop=4 shiftwidth=4 autoindent

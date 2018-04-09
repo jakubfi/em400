@@ -68,7 +68,7 @@ struct term_t * term_open_serial(char *device, int speed, int timeout_ms)
 {
 	speed_t setspeed = serial_int2speed(speed);
 	if (setspeed == -1) {
-		log_err("Wrong terminal serial port bus speed: %i", speed);
+		LOGERR("Wrong terminal serial port bus speed: %i", speed);
 		return NULL;
 	}
 
@@ -83,7 +83,7 @@ struct term_t * term_open_serial(char *device, int speed, int timeout_ms)
 
 	int fd = serial_open(device, setspeed);
 	if (fd < 0) {
-		log_err("Failed to open serial port %s", device);
+		LOGERR("Failed to open serial port %s", device);
 		goto fail;
 	}
 

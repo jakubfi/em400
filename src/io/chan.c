@@ -53,7 +53,7 @@ struct chan * chan_make(int num, char *name, struct cfg_unit *units)
 		cdriver++;
 	}
 
-	log_err("Unknown channel type: %s.", name);
+	LOGERR("Unknown channel type: %s.", name);
 	return NULL;
 }
 

@@ -162,7 +162,7 @@ void cyyerror(struct cfg_em400 *cfg, const char *s, ...)
 	vsnprintf(buf, 4095, s, ap);
 	va_end(ap);
 
-	log_err("Error parsing config, line %d: %s.", yylloc.first_line, buf);
+	LOGERR("Error parsing config, line %d: %s.", yylloc.first_line, buf);
 	cfg_error = 1;
 }
 

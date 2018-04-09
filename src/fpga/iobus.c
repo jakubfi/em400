@@ -73,24 +73,24 @@ int iob_init(char *bus_dev, int speed)
 {
 	speed_t setspeed = serial_int2speed(speed);
 	if (setspeed == -1) {
-		return log_err("Wrong FPGA bus speed: %i", speed);
+		return LOGERR("Wrong FPGA bus speed: %i", speed);
 	}
 
 	xbus = serial_open(bus_dev, setspeed);
 
 	if (pthread_mutex_init(&bus_mutex, NULL)) {
 		iob_close();
-		return log_err("Failed to initialize FPGA bus mutex");
+		return LOGERR("Failed to initialize FPGA bus mutex");
 	}
 
 	if (pipe(ibus)) {
 		iob_close();
-		return log_err("Failed to initialize internal FPGA bus pipe");
+		return LOGERR("Failed to initialize internal FPGA bus pipe");
 	}
 
 	if (pipe(ibusi)) {
 		iob_close();
-		return log_err("Failed to initialize internal FPGA bus pipe");
+		return LOGERR("Failed to initialize internal FPGA bus pipe");
 	}
 
 	LOG(L_FPGA, 1, "FPGA IO bus initialized");

@@ -32,13 +32,13 @@ void * dev_flop5_create(struct cfg_arg *args)
 {
 	struct dev_flop5 *flop5 = malloc(sizeof(struct dev_flop5));
 	if (!flop5) {
-		log_err("Memory allocation error while creating 5-inch floppy drive.");
+		LOGERR("Memory allocation error while creating 5-inch floppy drive.");
 		goto cleanup;
 	}
 
 	flop5->image = e4i_open(args->text);
 	if (!flop5->image) {
-		log_err("Failed to open 5-inch floppy image: \"%s\": %s.", args->text, e4i_get_err(e4i_err));
+		LOGERR("Failed to open 5-inch floppy image: \"%s\": %s.", args->text, e4i_get_err(e4i_err));
 		goto cleanup;
 	}
 

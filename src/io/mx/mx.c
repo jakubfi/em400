@@ -56,7 +56,7 @@ void * mx_create(int num, struct cfg_unit *units)
 
 	struct mx *multix = calloc(1, sizeof(struct mx));
 	if (!multix) {
-		log_err("Memory allocation error.");
+		LOGERR("Memory allocation error.");
 		goto cleanup;
 	}
 	// initialize multix structure
@@ -68,7 +68,7 @@ void * mx_create(int num, struct cfg_unit *units)
 		pline->multix = multix;
 		pline->devq = elst_create(1024);
 		if (pthread_mutex_init(&pline->status_mutex, NULL)) {
-			log_err("Failed to initialize line %i status mutex.", i);
+			LOGERR("Failed to initialize line %i status mutex.", i);
 			goto cleanup;
 		}
 	}
@@ -76,12 +76,12 @@ void * mx_create(int num, struct cfg_unit *units)
 	// --- create interrupt system (devices need it)
 
 	if (pthread_mutex_init(&multix->int_mutex, NULL)) {
-		log_err("Failed to initialize interrupt mutex.");
+		LOGERR("Failed to initialize interrupt mutex.");
 		goto cleanup;
 	}
 	multix->intq = elst_create(1024);
 	if (!multix->intq) {
-		log_err("Failed to create interrupt queue.");
+		LOGERR("Failed to create interrupt queue.");
 		goto cleanup;
 	}
 
@@ -93,7 +93,7 @@ void * mx_create(int num, struct cfg_unit *units)
 		struct mx_line *line = multix->plines + dev_cfg->num;
 		int res = dev_make(dev_cfg, &line->dev, &line->dev_data);
 		if (res != E_OK) {
-			log_err("Failed to create MULTIX device: %s", dev_cfg->name);
+			LOGERR("Failed to create MULTIX device: %s", dev_cfg->name);
 			goto cleanup;
 		}
 		dev_cfg = dev_cfg->next;
@@ -103,13 +103,15 @@ void * mx_create(int num, struct cfg_unit *units)
 
 	multix->eventq = elst_create(1024);
 	if (!multix->eventq) {
-		log_err("Failed to create event queue.");
+		LOGERR("Failed to create event queue.");
 		goto cleanup;
 	}
 	if (pthread_create(&multix->ev_thread, NULL, __mx_evproc, multix)) {
-		log_err("Failed to spawn event processor thread.");
+		LOGERR("Failed to spawn event processor thread.");
 		goto cleanup;
 	}
+
+	pthread_setname_np(multix->ev_thread, "multixev");
 
 	return multix;
 
@@ -443,6 +445,10 @@ static int mx_line_conf_log(struct mx *multix, int phy_n, int log_n, uint16_t *d
 	if (pthread_create(&pline->thread, NULL, mx_line_thread, pline)) {
 		return MX_SC_E_NOMEM;
 	}
+
+	char thname[16];
+	snprintf(thname, 15, "mxline%02i", pline->log_n);
+	pthread_setname_np(pline->thread, thname);
 
 	return MX_SC_E_OK;
 }

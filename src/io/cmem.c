@@ -70,7 +70,7 @@ struct chan * cmem_create(struct cfg_unit *units)
 		// find unit prototype
 		struct cmem_unit_proto_t *proto = cmem_unit_proto_get(cmem_unit_proto, cunit->name);
 		if (!proto) {
-			log_err("Unknown device type or device incompatibile with channel: %s.", cunit->name);
+			LOGERR("Unknown device type or device incompatibile with channel: %s.", cunit->name);
 			free(chan);
 			return NULL;
 		}

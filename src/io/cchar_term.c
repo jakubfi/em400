@@ -44,71 +44,71 @@ struct cchar_unit_proto_t * cchar_term_create(struct cfg_arg *args)
 
 	struct cchar_unit_term_t *unit = calloc(1, sizeof(struct cchar_unit_term_t));
 	if (!unit) {
-		log_err("Failed to allocate memory for unit: %s.", args->text);
+		LOGERR("Failed to allocate memory for unit: %s.", args->text);
 		goto fail;
 	}
 
 	res = cfg_args_decode(args, "s", &type);
 
 	if (res != E_OK) {
-		log_err("Failed to parse terminal type: \"%s\".", args->text);
+		LOGERR("Failed to parse terminal type: \"%s\".", args->text);
 		goto fail;
 	}
 
 	if (!strcasecmp(type, "tcp")) {
 		res = cfg_args_decode(args->next, "i", &port);
 		if (res != E_OK) {
-			log_err("Failed to parse terminal TCP port: \"%s\".", args->next->text);
+			LOGERR("Failed to parse terminal TCP port: \"%s\".", args->next->text);
 			goto fail;
 		}
 		unit->term = term_open_tcp(port, 100);
 		if (!unit->term) {
-			log_err("Failed to open TCP terminal on port %i.", port);
+			LOGERR("Failed to open TCP terminal on port %i.", port);
 			goto fail;
 		}
 
 	} else if (!strcasecmp(type, "serial")) {
 		res = cfg_args_decode(args->next, "s", &device);
 		if (res != E_OK) {
-			log_err("Failed to parse terminal serial device: \"%s\".", args->next->text);
+			LOGERR("Failed to parse terminal serial device: \"%s\".", args->next->text);
 			goto fail;
 		}
 		res = cfg_args_decode(args->next->next, "i", &speed);
 		if (res != E_OK) {
-			log_err("Failed to parse terminal serial speed: \"%i\".", args->next->next->text);
+			LOGERR("Failed to parse terminal serial speed: \"%i\".", args->next->next->text);
 			goto fail;
 		}
 		unit->term = term_open_serial(device, speed, 100);
 		if (!unit->term) {
-			log_err("Failed to open serial terminal at %s, speed: %i).", device, speed);
+			LOGERR("Failed to open serial terminal at %s, speed: %i).", device, speed);
 			goto fail;
 		}
 
 	} else if (!strcasecmp(type, "console")) {
 		if (em400_console == CONSOLE_DEBUGGER) {
-			log_err("Failed to initialize console terminal; console is being used by the debugger.");
+			LOGERR("Failed to initialize console terminal; console is being used by the debugger.");
 			goto fail;
 		} else if (em400_console == CONSOLE_TERMINAL) {
-			log_err("Failed to initialize console terminal; console is being used by another terminal.");
+			LOGERR("Failed to initialize console terminal; console is being used by another terminal.");
 			goto fail;
 		} else {
 			em400_console = CONSOLE_TERMINAL;
 			unit->term = term_open_console();
 			if (!unit->term) {
-				log_err("Failed to initialize console.");
+				LOGERR("Failed to initialize console.");
 				goto fail;
 			}
 		}
 		fprintf(stderr, "Console connected as system terminal.\n");
 
 	} else {
-		log_err("Unknown terminal type: %s.", type);
+		LOGERR("Unknown terminal type: %s.", type);
 		goto fail;
 	}
 
 	unit->buf = malloc(TERM_BUF_LEN);
 	if (!unit->buf) {
-		log_err("Failed to allocate memory for terminal buffer.");
+		LOGERR("Failed to allocate memory for terminal buffer.");
 		goto fail;
 	}
 
@@ -120,7 +120,7 @@ struct cchar_unit_proto_t * cchar_term_create(struct cfg_arg *args)
 
 	res = pthread_create(&unit->worker, NULL, cchar_term_worker, (void *)unit);
 	if (res != 0) {
-		log_err("Failed to spawn terminal thread.");
+		LOGERR("Failed to spawn terminal thread.");
 		goto fail;
 	}
 

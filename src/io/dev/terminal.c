@@ -124,44 +124,44 @@ void * dev_terminal_create(struct cfg_arg *args)
 
 	res = cfg_args_decode(args, "s", &type);
 	if (res != E_OK) {
-		log_err("Failed to parse terminal type: \"%s\".", args->text);
+		LOGERR("Failed to parse terminal type: \"%s\".", args->text);
 		goto cleanup;
 	}
 
 	if (!strcasecmp(type, "tcp")) {
 		res = cfg_args_decode(args->next, "i", &port);
 		if (res != E_OK) {
-			log_err("Failed to parse terminal TCP port: \"%s\".", args->next->text);
+			LOGERR("Failed to parse terminal TCP port: \"%s\".", args->next->text);
 			goto cleanup;
 		}
 		if (dev_terminal_open_tcp(terminal, port, 100)) {
-			log_err("Failed to open TCP terminal on port: %i.", port);
+			LOGERR("Failed to open TCP terminal on port: %i.", port);
 			goto cleanup;
 		}
 	} else if (!strcasecmp(type, "console")) {
 		if (dev_terminal_open_console(terminal)) {
-			log_err("Failed to open console terminal.");
+			LOGERR("Failed to open console terminal.");
 			goto cleanup;
 		}
 	} else {
-		log_err("Unknown terminal type: %s.", type);
+		LOGERR("Unknown terminal type: %s.", type);
 		goto cleanup;
 	}
 
 	terminal->cmd = CMD_NONE;
 
 	if (pthread_mutex_init(&terminal->cmd_mutex, NULL)) {
-		log_err("Failed to initialize terminal mutex.");
+		LOGERR("Failed to initialize terminal mutex.");
 		goto cleanup;
 	}
 
 	if (pthread_cond_init(&terminal->cmd_cond, NULL)) {
-		log_err("Failed to initialize terminal cmd conditional.");
+		LOGERR("Failed to initialize terminal cmd conditional.");
 		goto cleanup;
 	}
 
 	if (pthread_create(&terminal->th, NULL, dev_terminal_controller, terminal)) {
-		log_err("Failed to spawn terminal thread.");
+		LOGERR("Failed to spawn terminal thread.");
 		goto cleanup;
 	}
 

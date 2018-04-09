@@ -222,7 +222,7 @@ int cpu_init(struct cfg_em400 *cfg, int new_ui)
 
 	if (cfg->cpu_awp) {
 		awp = awp_init(regs+0, regs+1, regs+2, regs+3);
-		if (!awp) return log_err("Failed to initialize AWP.");
+		if (!awp) return LOGERR("Failed to initialize AWP.");
 	}
 
 	rKB = cfg->keys;
@@ -233,7 +233,7 @@ int cpu_init(struct cfg_em400 *cfg, int new_ui)
 
 	res = iset_build(cpu_op_tab);
 	if (res != E_OK) {
-		return log_err("Failed to build CPU instruction table.");
+		return LOGERR("Failed to build CPU instruction table.");
 	}
 
 	int_update_mask(0);

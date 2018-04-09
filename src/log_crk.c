@@ -124,7 +124,7 @@ void log_log_process(unsigned component, unsigned level)
 
 	char *buf = log_ctx_stringify(process);
 
-	log_splitlog(component, level, buf);
+	LOGBLOB(component, level, buf);
 
 	free(buf);
 }
@@ -560,7 +560,7 @@ void log_handle_syscall(unsigned component, unsigned level, int num, int nb, int
 
 	char *details = log_exl_decode(nb, r4, r4, num, 0);
 	if (details) {
-		log_splitlog(component, level, details);
+		LOGBLOB(component, level, details);
 	}
 
 	free(details);
@@ -580,7 +580,7 @@ void log_handle_syscall_ret(unsigned component, unsigned level, uint16_t ic, uin
 	if ((log_exl_number >= 0) && (ic == log_exl_addr) && ((sr & 0b1111) == log_exl_nb)) {
 		char *details = log_exl_decode(log_exl_nb, log_exl_r4, r4, log_exl_number, 1);
 		if (details) {
-			log_splitlog(component, level, details);
+			LOGBLOB(component, level, details);
 		}
 		free(details);
 		log_syscall_reset();
@@ -637,14 +637,12 @@ void log_check_os()
 		goto cleanup;
 	}
 
-	if (LOG_WANTS(L_CRK5, 1)) {
-		log_log(L_CRK5, 1, "running CROOK for %s CPU, entry point @ 0x%04x, checksum: 0x%04x (%s)",
-			kernel->mod ? "MX-16" : "MERA-400",
-			kernel->entry_point,
-			kernel->cksum_addr,
-			kernel->cksum_stored == kernel->cksum_computed ? "OK" : "incorrect"
-		);
-	}
+	LOG(L_CRK5, 1, "running CROOK for %s CPU, entry point @ 0x%04x, checksum: 0x%04x (%s)",
+		kernel->mod ? "MX-16" : "MERA-400",
+		kernel->entry_point,
+		kernel->cksum_addr,
+		kernel->cksum_stored == kernel->cksum_computed ? "OK" : "incorrect"
+	);
 
 cleanup:
 	free(kimg);

@@ -75,65 +75,61 @@ int em400_init(struct cfg_em400 *cfg)
 
 	res = log_init(cfg);
 	if (res != E_OK) {
-		return log_err("Failed to initialize logging.");
+		return LOGERR("Failed to initialize logging.");
 	}
 
-	if (LOG_WANTS(L_EM4H, 2)) {
-		log_log(L_EM4H, 2, "---- Effective configuration: ----------");
-		log_config(L_EM4H, 2, cfg);
-		log_log(L_EM4H, 2, "----------------------------------------");
-	}
+	log_config(L_EM4H, 0, cfg, __func__);
 
 #ifdef WITH_DEBUGGER
 	em400_console = CONSOLE_DEBUGGER;
 #endif
 	if (cfg->fpga) {
 		if (iob_init(cfg->fpga_dev, cfg->fpga_speed) == E_ERR) {
-			log_err("Failed to set up FPGA I/O bus.");
+			LOGERR("Failed to set up FPGA I/O bus.");
 		}
 	}
 
 	res = mem_init(cfg);
 	if (res != E_OK) {
-		return log_err("Failed to initialize memory.");
+		return LOGERR("Failed to initialize memory.");
 	}
 
 	res = cp_init(cfg);
 	if (res != E_OK) {
-		return log_err("Failed to initialize control panel.");
+		return LOGERR("Failed to initialize control panel.");
 	}
 
 	res = cpu_init(cfg, cfg->ui_name ? 1 : 0);
 	if (res != E_OK) {
-		return log_err("Failed to initialize CPU.");
+		return LOGERR("Failed to initialize CPU.");
 	}
 
 	res = timer_init(cfg);
 	if (res != E_OK) {
-		return log_err("Failed to initialize timer.");
+		return LOGERR("Failed to initialize timer.");
 	}
 
 	res = io_init(cfg);
 	if (res != E_OK) {
-		return log_err("Failed to initialize I/O.");
+		return LOGERR("Failed to initialize I/O.");
 	}
 
 	rKB = cfg->keys;
 
 	res = ectl_init();
 	if (res != E_OK) {
-		return log_err("Failed to initialize ECTL interface.");
+		return LOGERR("Failed to initialize ECTL interface.");
 	}
 
 	if (cfg->program_name) {
 		FILE *f = fopen(cfg->program_name, "rb");
 		if (!f) {
-			return log_err("Failed to open program file: \"%s\".", cfg->program_name);
+			return LOGERR("Failed to open program file: \"%s\".", cfg->program_name);
 		}
 		int res = ectl_load(f, cfg->program_name, 0, 0);
 		fclose(f);
 		if (res < 0) {
-			return log_err("Failed to load program file: \"%s\".", cfg->program_name);
+			return LOGERR("Failed to load program file: \"%s\".", cfg->program_name);
 		} else {
 			LOG(L_EM4H, 1, "OS memory block image loaded: \"%s\", %i words", cfg->program_name, res);
 		}
@@ -142,13 +138,13 @@ int em400_init(struct cfg_em400 *cfg)
 	if (cfg->ui_name) {
 		ui = ui_create(cfg->ui_name);
 		if (!ui) {
-			return log_err("Failed to initialize UI.");
+			return LOGERR("Failed to initialize UI.");
 		}
 	} else {
 		#ifdef WITH_DEBUGGER
 		res = dbg_init(cfg);
 		if (res != E_OK) {
-			return log_err("Failed to initialize debugger.");
+			return LOGERR("Failed to initialize debugger.");
 		}
 		#endif
 	}
@@ -216,7 +212,7 @@ struct cfg_em400 * em400_configure(int argc, char** argv)
 
 	// load configuration from a file (either the default one or provided by the user)
 	if (cfg_from_file(cfg)) {
-		log_err("Failed to load config file: \"%s\".", cfg->cfg_filename);
+		LOGERR("Failed to load config file: \"%s\".", cfg->cfg_filename);
 		goto fail;
 	}
 
@@ -242,7 +238,7 @@ int main(int argc, char** argv)
 
 	struct cfg_em400 *cfg = em400_configure(argc, argv);
 	if (!cfg) {
-		log_err("Failed to configure EM400.");
+		LOGERR("Failed to configure EM400.");
 		goto done;
 	}
 
@@ -260,7 +256,7 @@ int main(int argc, char** argv)
 	if (ui) {
 		int res = ui_run(ui);
 		if (res != E_OK) {
-			log_err("Failed to start the UI: %s.", ui->drv->name);
+			LOGERR("Failed to start the UI: %s.", ui->drv->name);
 			goto done;
 		}
 	}

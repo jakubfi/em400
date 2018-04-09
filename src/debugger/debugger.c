@@ -88,25 +88,25 @@ int dbg_init(struct cfg_em400 *cfg)
 
 	if (aw_init(ui_mode, hist_file) != 0) {
 		free(hist_file);
-		return log_err("AWIN initialization failed.");
+		return LOGERR("AWIN initialization failed.");
 	}
 
 	free(hist_file);
 
 	if ((ui_mode == O_NCURSES) &&  (dbg_ui_init() != 0)) {
-		return log_err("Ncurses UI initialization failed.");
+		return LOGERR("Ncurses UI initialization failed.");
 	}
 
 	aw_layout_changed = 1;
 
 	// prepare handler for ctrl-c (break emulation, enter debugger loop)
 	if (signal(SIGINT, _dbg_sigint_handler) == SIG_ERR) {
-		return log_err("Failed to install Ctrl-C UI handler.");
+		return LOGERR("Failed to install Ctrl-C UI handler.");
 	}
 
 	emd = emdas_create(cfg->cpu_mod ? EMD_ISET_MX16 : EMD_ISET_MERA400, mem_get);
 	if (!emd) {
-		return log_err("Failed to initialize debugger's deassembler.");
+		return LOGERR("Failed to initialize debugger's deassembler.");
 	}
 
 	emdas_set_nl(emd, '\0');

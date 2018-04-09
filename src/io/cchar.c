@@ -65,7 +65,7 @@ void * cchar_create(int num, struct cfg_unit *units)
 		// find unit prototype
 		struct cchar_unit_proto_t *proto = cchar_unit_proto_get(cchar_unit_proto, cunit->name);
 		if (!proto) {
-			log_err("Unknown device type or device incompatibile with channel: %s.", cunit->name);
+			LOGERR("Unknown device type or device incompatibile with channel: %s.", cunit->name);
 			free(chan);
 			return NULL;
 		}
@@ -74,7 +74,7 @@ void * cchar_create(int num, struct cfg_unit *units)
 		// create unit based on prototype
 		struct cchar_unit_proto_t *unit = proto->create(cunit->args);
 		if (!unit) {
-			log_err("Failed to create unit: %s.", cunit->name);
+			LOGERR("Failed to create unit: %s.", cunit->name);
 			free(chan);
 			return NULL;
 		}

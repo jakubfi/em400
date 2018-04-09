@@ -227,7 +227,7 @@ int cfg_args_decode(struct cfg_arg *arg, const char *format, ...)
 				s = va_arg(ap, char**);
 				*s = strdup(arg->text);
 				if (!*s) {
-					return log_err("Memory allocation error while parsing configuration arguments.");
+					return LOGERR("Memory allocation error while parsing configuration arguments.");
 				}
 				break;
 			default:

@@ -44,7 +44,7 @@ int mem_mega_init(int modc, char *prom_image)
 	}
 
 	if ((modc < 0) || (modc > MEM_MAX_MODULES)) {
-		return log_err("Wrong number of MEGA modules: %i. Should be 1-%i", modc, MEM_MAX_MODULES);
+		return LOGERR("Wrong number of MEGA modules: %i. Should be 1-%i", modc, MEM_MAX_MODULES);
 	}
 
 	mem_mega_mp_start = MEM_MAX_MODULES-modc;
@@ -56,7 +56,7 @@ int mem_mega_init(int modc, char *prom_image)
 		for (seg=0 ; seg<MEM_MAX_MEGA_SEGMENTS; seg++) {
 			mem_mega[mp][seg] = calloc(sizeof(uint16_t), MEM_SEGMENT_SIZE);
 			if (!mem_mega[mp][seg]) {
-				return log_err("Memory allocation failed for MEGA map.");
+				return LOGERR("Memory allocation failed for MEGA map.");
 			}
 		}
 	}
@@ -65,19 +65,19 @@ int mem_mega_init(int modc, char *prom_image)
 	mem_mega_prom_hidden = 0;
 	mem_mega_prom = malloc(sizeof(uint16_t) * MEM_SEGMENT_SIZE);
 	if (!mem_mega_prom) {
-		return log_err("Memory allocation error for MEGA PROM.");
+		return LOGERR("Memory allocation error for MEGA PROM.");
 	}
 
 	// load PROM image
 	if (prom_image && *prom_image) {
 		f = fopen(prom_image, "rb");
 		if (!f) {
-			return log_err("Failed to open PROM image: \"%s\".", prom_image);
+			return LOGERR("Failed to open PROM image: \"%s\".", prom_image);
 		}
 		res = fread(mem_mega_prom, sizeof(uint16_t), MEM_SEGMENT_SIZE, f);
 		if (res != MEM_SEGMENT_SIZE) {
 			fclose(f);
-			return log_err("Read only %i words of MEGA PROM. Expecting %i.", res, MEM_SEGMENT_SIZE);
+			return LOGERR("Read only %i words of MEGA PROM. Expecting %i.", res, MEM_SEGMENT_SIZE);
 		}
 		fclose(f);
 		endianswap(mem_mega_prom, res);

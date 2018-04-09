@@ -67,17 +67,17 @@ int mem_init(struct cfg_em400 *cfg)
 	LOG(L_MEM, 1, "Initializing memory (Elwro: %d modules, MEGA: %d modules)", cfg->mem_elwro, cfg->mem_mega);
 
 	if (cfg->mem_elwro + cfg->mem_mega > MEM_MAX_MODULES+1) {
-		return log_err("Sum of Elwro and MEGA memory modules is greater than allowed %i.", MEM_MAX_MODULES+1);
+		return LOGERR("Sum of Elwro and MEGA memory modules is greater than allowed %i.", MEM_MAX_MODULES+1);
 	}
 
 	res = mem_elwro_init(cfg->mem_elwro, cfg->mem_os);
 	if (res != E_OK) {
-		return log_err("Failed to initialize Elwro memory.");
+		return LOGERR("Failed to initialize Elwro memory.");
 	}
 
 	res = mem_mega_init(cfg->mem_mega, cfg->mem_mega_prom);
 	if (res != E_OK) {
-		return log_err("Failed to initialize MEGA memory.");
+		return LOGERR("Failed to initialize MEGA memory.");
 	}
 
 	mem_update_map();

@@ -33,18 +33,18 @@ struct cmem_unit_proto_t * cmem_m9425_create(struct cfg_arg *args)
 	int res;
 
 	if (!unit) {
-		log_err("Failed to allocate memory for unit: %s.", args->text);
+		LOGERR("Failed to allocate memory for unit: %s.", args->text);
 		goto fail;
 	}
 
 	if ((image_name[0] || image_name[1]) && !strcmp(image_name[0], image_name[1])) {
-		log_err("Error opening image: \"%s\". Trying to use the same image for fixed and removable disk.", image_name[0]);
+		LOGERR("Error opening image: \"%s\". Trying to use the same image for fixed and removable disk.", image_name[0]);
 		goto fail;
 	}
 
 	res = cfg_args_decode(args, "ss", &image_name[0], &image_name[1]);
 	if (res != E_OK) {
-		log_err("Failed to parse MERA 9425 image names from string: \"%s\".", args->text);
+		LOGERR("Failed to parse MERA 9425 image names from string: \"%s\".", args->text);
 		goto fail;
 	}
 
@@ -52,17 +52,17 @@ struct cmem_unit_proto_t * cmem_m9425_create(struct cfg_arg *args)
 		UNIT->disk[i] = e4i_open(image_name[i]);
 
 		if (!UNIT->disk[i]) {
-			log_err("Error opening image \"%s\": %s.", image_name[i], e4i_get_err(e4i_err));
+			LOGERR("Error opening image \"%s\": %s.", image_name[i], e4i_get_err(e4i_err));
 			goto fail;
 		}
 
 		if (UNIT->disk[i]->img_type != E4I_T_HDD) {
-			log_err("Error opening image \"%s\": wrong image type, expecting hdd.", image_name[i]);
+			LOGERR("Error opening image \"%s\": wrong image type, expecting hdd.", image_name[i]);
 			goto fail;
 		}
 
 		if ((UNIT->disk[i]->cylinders != 203) || (UNIT->disk[i]->heads != 2) || (UNIT->disk[i]->spt != 12) || (UNIT->disk[i]->block_size != 512)) {
-			log_err("Error opening image \"%s\": wrong geometry.", image_name[i]);
+			LOGERR("Error opening image \"%s\": wrong geometry.", image_name[i]);
 			goto fail;
 		}
 		LOG(L_9425, 1, "MERA 9425 (plate %i): cyl=%i, head=%i, sectors=%i, spt=%i, image=%s", i, UNIT->disk[i]->cylinders, UNIT->disk[i]->heads, UNIT->disk[i]->spt, UNIT->disk[i]->block_size, image_name[i]);
@@ -72,7 +72,7 @@ struct cmem_unit_proto_t * cmem_m9425_create(struct cfg_arg *args)
 
 	res = pthread_create(&unit->worker, NULL, cmem_m9425_worker, (void*) unit);
 	if (res != 0) {
-		log_err("Failed to spawn 9425 worker thread.");
+		LOGERR("Failed to spawn 9425 worker thread.");
 		goto fail;
 	}
 

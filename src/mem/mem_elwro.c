@@ -47,10 +47,10 @@ int mem_elwro_init(int modc, int seg_os)
 	int mp, seg;
 
 	if ((modc < 1) || (modc > MEM_MAX_MODULES)) {
-		return log_err("Wrong number of Elwro modules: %i. Should be 1-%i.", modc, MEM_MAX_MODULES);
+		return LOGERR("Wrong number of Elwro modules: %i. Should be 1-%i.", modc, MEM_MAX_MODULES);
 	}
 	if ((seg_os < 1) || (seg_os > 2)) {
-		return log_err("Wrong number of OS memory segments: %i. Should be 1 or 2.", seg_os);
+		return LOGERR("Wrong number of OS memory segments: %i. Should be 1 or 2.", seg_os);
 	}
 
 	mem_elwro_os_segments = seg_os;
@@ -63,7 +63,7 @@ int mem_elwro_init(int modc, int seg_os)
 		for (seg=0 ; seg<MEM_MAX_ELWRO_SEGMENTS; seg++) {
 			mem_elwro[mp][seg] = calloc(sizeof(uint16_t), MEM_SEGMENT_SIZE);
 			if (!mem_elwro[mp][seg]) {
-				log_err("Memory allocation failed for Elwro map.");
+				LOGERR("Memory allocation failed for Elwro map.");
 			}
 		}
 	}
