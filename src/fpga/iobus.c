@@ -111,30 +111,21 @@ void iob_quit()
 }
 
 // -----------------------------------------------------------------------
-void iob_msg_log(struct iob_msg *m, char *prefix)
+void iob_msg_log(struct iob_msg *m, char *buf)
 {
-	char buf[1024];
 	int bpos;
-	if (prefix && *prefix) {
-		bpos = sprintf(buf, "  %s %s/%s: ",
-			prefix,
-			m->is_req ? "req" : "resp",
-			m->is_req ? iob_req_names[m->cmd] : iob_resp_names[m->cmd]
-		);
-	} else {
-		bpos = sprintf(buf, "  %s/%s: ",
-			m->is_req ? "req" : "resp",
-			m->is_req ? iob_req_names[m->cmd] : iob_resp_names[m->cmd]
-		);
-	}
+	bpos = sprintf(buf, "  %s/%s",
+		m->is_req ? "req" : "resp",
+		m->is_req ? iob_req_names[m->cmd] : iob_resp_names[m->cmd]
+	);
 
 	if (m->is_req) {
 		switch (m->cmd) {
 		case IOB_CMD_CPF:
-			sprintf(buf+bpos, "%s = %i", iob_fnkey_names[m->nb], m->pn);
+			sprintf(buf+bpos, ": %s = %i", iob_fnkey_names[m->nb], m->pn);
 			break;
 		case IOB_CMD_CPR:
-			sprintf(buf+bpos, "rot = %s", iob_reg_names[m->nb]);
+			sprintf(buf+bpos, ": rot = %s", iob_reg_names[m->nb]);
 			break;
 		case IOB_CMD_CPD:
 			sprintf(buf+bpos, ": keys = 0x%04x (%i)", m->dt, m->dt);
@@ -143,22 +134,22 @@ void iob_msg_log(struct iob_msg *m, char *prefix)
 		case IOB_CMD_CL:
 			break;
 		case IOB_CMD_IN:
-			sprintf(buf+bpos, "channel %i", m->dt>>1);
+			sprintf(buf+bpos, ": channel %i", m->dt>>1);
 			break;
 		case IOB_CMD_R:
-			sprintf(buf+bpos, "[%i:0x%04x]", m->nb, m->ad);
+			sprintf(buf+bpos, ": [%i:0x%04x]", m->nb, m->ad);
 			break;
 		case IOB_CMD_W:
-			sprintf(buf+bpos, "[%i:0x%04x] = 0x%04x", m->nb, m->ad, m->dt);
+			sprintf(buf+bpos, ": [%i:0x%04x] = 0x%04x", m->nb, m->ad, m->dt);
 			break;
 		case IOB_CMD_S:
-			sprintf(buf+bpos, "addr: 0x%04x, data: 0x%04x", m->ad, m->dt);
+			sprintf(buf+bpos, ": addr: 0x%04x, data: 0x%04x", m->ad, m->dt);
 			break;
 		case IOB_CMD_F:
-			sprintf(buf+bpos, "addr: 0x%04x", m->ad);
+			sprintf(buf+bpos, ": addr: 0x%04x", m->ad);
 			break;
 		default:
-			sprintf(buf+bpos, "argc: %i, args:<%s%s%s>, pn:%i, q:%i, nb:%i, ad:0x%04x, dt:0x%04x (%s)",
+			sprintf(buf+bpos, ": argc: %i, args:<%s%s%s>, pn:%i, q:%i, nb:%i, ad:0x%04x, dt:0x%04x (%s)",
 				m->b_argc,
 				m->has_a1 ? "1" : ".",
 				m->has_a2 ? "2" : ".",
@@ -174,7 +165,7 @@ void iob_msg_log(struct iob_msg *m, char *prefix)
 		case IOB_CMD_OK:
 			if (m->has_a3) {
 				if (m->has_a2) {
-					sprintf(buf+bpos, "data: 0x%04x (%i), rot: %s, leds: %s%s%s%s%s%s%s%s%s%s", m->ad, m->ad, iob_reg_names[m->dt&15],
+					sprintf(buf+bpos, ": data: 0x%04x (%i), rot: %s, leds: %s%s%s%s%s%s%s%s%s%s", m->ad, m->ad, iob_reg_names[m->dt&15],
 						m->dt>>6 & IOB_LED_ALARM ? "ALARM " : "",
 						m->dt>>6 & IOB_LED_WAIT ? "WAIT " : "",
 						m->dt>>6 & IOB_LED_RUN ? "RUN " : "",
@@ -187,14 +178,16 @@ void iob_msg_log(struct iob_msg *m, char *prefix)
 						m->dt>>6 & IOB_LED_MODE ? "MODE " : ""
 					);
 				} else {
-					sprintf(buf+bpos, "0x%04x (%i)", m->dt, m->dt);
+					sprintf(buf+bpos, ": 0x%04x (%i)", m->dt, m->dt);
 				}
 			}
 			break;
 		case IOB_CMD_PE:
+		case IOB_CMD_NO:
+		case IOB_CMD_EN:
 			break;
 		default:
-			sprintf(buf+bpos, "argc: %i, args:<%s%s%s>, pn:%i, q:%i, nb:%i, ad:0x%04x, dt:0x%04x (%s)",
+			sprintf(buf+bpos, ": argc: %i, args:<%s%s%s>, pn:%i, q:%i, nb:%i, ad:0x%04x, dt:0x%04x (%s)",
 				m->b_argc,
 				m->has_a1 ? "1" : ".",
 				m->has_a2 ? "2" : ".",
@@ -206,7 +199,6 @@ void iob_msg_log(struct iob_msg *m, char *prefix)
 			break;
 		}
 	}
-	LOG(L_FPGA, 2, buf);
 }
 
 // -----------------------------------------------------------------------
@@ -245,14 +237,6 @@ static struct iob_msg * iob_msg_read(int bus)
 	int res;
 	int total_recvd = 0;
 
-	char name[20];
-	if (bus == xbus) sprintf(name, "->xbus");
-	else if (bus == ibus[BW]) sprintf(name, "ibus<-");
-	else if (bus == ibus[BR]) sprintf(name, "<-ibus");
-	else if (bus == ibusi[BW]) sprintf(name, "->ibusi");
-	else if (bus == ibusi[BR]) sprintf(name, "ibusi->");
-	else sprintf(name, "?");
-
 	struct iob_msg *m = calloc(1, sizeof(struct iob_msg));
 	if (!m) {
 		goto done;
@@ -261,7 +245,7 @@ static struct iob_msg * iob_msg_read(int bus)
 	// read command
 	res = read(bus, buf, 1);
 	if (res != 1) {
-		LOG(L_FPGA, 1, "read returned: %i", res);
+		LOG(L_FPGA, 1, "ERROR: command read returned: %i", res);
 		m->is_valid = 0;
 		m->invalid_reason = strdup("failed to read command byte");
 		goto done;
@@ -287,23 +271,21 @@ static struct iob_msg * iob_msg_read(int bus)
 	bpos += 1;
 
 	if (!iob_check_msg(m)) {
-		LOG(L_FPGA, 1, "read message is invalid");
 		goto done;
 	}
 
 	// read arguments
 
-	// TODO: retries/timeout
+	// TODO: retries/timeout ?
 	int need = m->b_argc;
 	while (need > 0) {
 		res = read(bus, buf+bpos+m->b_argc-need, need);
-		if (res <= 0) LOG(L_FPGA, 1, "READ RETURNED: %i", res);
-		need -= res;
+		if (res <= 0) {
+			LOG(L_FPGA, 1, "ERROR: argument read returned: %i, need to read %i more bytes", res, need);
+		} else {
+			need -= res;
+		}
 		total_recvd += res;
-	}
-
-	if (bus == xbus) {
-		LOG(L_FPGA, 9, "    input buf: [%02x %02x %02x %02x %02x %02x], received: %i", buf[0], buf[1], buf[2], buf[3], buf[4], buf[5], total_recvd);
 	}
 
 	if (m->has_a1) {
@@ -322,7 +304,18 @@ static struct iob_msg * iob_msg_read(int bus)
 	}
 
 done:
-	if (bus == xbus) iob_msg_log(m, "");
+	if (bus == xbus) {
+		char lbuf1[1024];
+		char lbuf2[64];
+		iob_msg_log(m, lbuf1);
+		for (int i=0 ; i<total_recvd ; i++) {
+			sprintf(lbuf2+3*i, " %02x", buf[i]);
+		}
+		LOG(L_FPGA, 2, "%s%s ::%s", m->is_valid ? "" : "ERROR ", lbuf1, lbuf2);
+		if (!m->is_valid) {
+			LOG(L_FPGA, 2, "Message invalid: %s", m->invalid_reason);
+		}
+	}
 	return m;
 }
 
@@ -332,15 +325,6 @@ int iob_msg_send(int bus, struct iob_msg *m)
 	uint8_t buf[6];
 	int res = 0;
 	int bpos = 0;
-
-	char name[20];
-	if (bus == xbus) sprintf(name, "xbus<-");
-	else if (bus == ibus[BW]) sprintf(name, "ibus<-");
-	else if (bus == ibus[BR]) sprintf(name, "<-ibus");
-	else if (bus == ibusi[BW]) sprintf(name, "->ibusi");
-	else if (bus == ibusi[BR]) sprintf(name, "ibusi->");
-	else sprintf(name, "?");
-	if (bus == xbus) iob_msg_log(m, "");
 
 	buf[bpos] = (m->is_req << 7) | (m->cmd << 3) | (m->has_a1 << 2) | (m->has_a2 << 1) | (m->has_a3 << 0);
 	bpos++;
@@ -362,18 +346,30 @@ int iob_msg_send(int bus, struct iob_msg *m)
 	iob_update_argc(m);
 	iob_check_msg(m);
 
+	if (bus == xbus) {
+		char lbuf1[1024];
+		char lbuf2[64];
+		iob_msg_log(m, lbuf1);
+		for (int i=0 ; i<1+m->b_argc ; i++) {
+			sprintf(lbuf2+3*i, " %02x", buf[i]);
+		}
+		LOG(L_FPGA, 2, "%s%s ::%s", m->is_valid ? "" : "ERROR ", lbuf1, lbuf2);
+		if (!m->is_valid) {
+			LOG(L_FPGA, 2, "Message invalid: %s", m->invalid_reason);
+		}
+	}
+
 	if (m->is_valid) {
 		int need = 1+m->b_argc;
 		while (need > 0) {
 			res = write(bus, buf, need);
-			need -= res;
+			if (res <= 0) {
+				LOG(L_FPGA, 1, "ERROR: write returned: %i, need to write %i more bytes", res, need);
+			} else {
+				need -= res;
+			}
 		}
 		tcdrain(bus);
-		if (bus == xbus) {
-			LOG(L_FPGA, 9, "    output buf: [%02x %02x %02x %02x %02x %02x], sent: %i", buf[0], buf[1], buf[2], buf[3], buf[4], buf[5], res);
-		}
-	} else {
-		LOG(L_FPGA, 1, "Trying to send invalid message");
 	}
 
 	return res;
@@ -440,7 +436,7 @@ void iob_loop()
 			if (FD_ISSET(xbus, &fds)) {
 				mi = iob_msg_read(xbus);
 				if (!mi->is_valid) {
-					LOG(L_FPGA, 1, "Message invalid, ignoring");
+					LOG(L_FPGA, 1, "ERROR: Message invalid, ignoring: ", mi->invalid_reason);
 					iob_msg_free(mi);
 					continue;
 				}
@@ -466,7 +462,7 @@ void iob_loop()
 							}
 							break;
 						default:
-							LOG(L_FPGA, 1, "Not an I/O request, ignored");
+							LOG(L_FPGA, 1, "ERROR: Not an I/O request, ignored");
 							break;
 					}
 				} else {
@@ -479,11 +475,11 @@ void iob_loop()
 								free(intreq);
 								intreq = NULL;
 							} else {
-								LOG(L_FPGA, 1, "Noone waiting for the reply, ignored");
+								LOG(L_FPGA, 1, "ERROR: Noone waiting for the reply, ignored");
 							}
 							break;
 						default:
-							LOG(L_FPGA, 1, "Not an I/O reply, ignored");
+							LOG(L_FPGA, 1, "ERROR: Not an I/O reply, ignored");
 							break;
 					}
 
@@ -495,7 +491,7 @@ void iob_loop()
 			} else if (FD_ISSET(ibus[BR], &fds)) {
 				intreq = iob_msg_read(ibus[BR]);
 				if (!intreq->is_valid) {
-					LOG(L_FPGA, 1, "Message invalid, ignoring");
+					LOG(L_FPGA, 1, "ERROR: Message invalid, ignoring: %s", intreq->invalid_reason);
 					iob_msg_free(intreq);
 					intreq = NULL;
 					continue;
@@ -521,13 +517,13 @@ void iob_loop()
 						free(mo);
 						break;
 					default:
-						LOG(L_FPGA, 1, "Not an I/O request nor reply, ignored");
+						LOG(L_FPGA, 1, "ERROR: Not an I/O request nor reply, ignored");
 						free(intreq);
 						intreq = NULL;
 						break;
 				}
 			} else {
-				LOG(L_FPGA, 1, "No know fd");
+				LOG(L_FPGA, 1, "ERROR: No know fd");
 			}
 		}
 	}
