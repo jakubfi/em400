@@ -42,10 +42,10 @@ static const char * winch_op_names[] = {
 	"format",
 	"read",
 	"write",
-	"[unknown]",
+	"[unknown-winch-op-4]",
 	"park",
-	"[unknown]",
-	"[unknown]"
+	"[unknown-winch-op-6]",
+	"[unknown-winch-op-7]"
 };
 
 // Winchester return field (state word) flags
@@ -119,7 +119,7 @@ int mx_winch_init(struct mx_line *pline, uint16_t *data)
 	// this is ignored by MULTIX
 	proto_data->fprotect			=  (data[0] & 0b0000000011111111);
 
-	LOG(L_WNCH, 3, "    Winchester drive: %i heads, %s sector address%s",
+	LOG(L_WNCH, 3, "Winchester drive: %i heads, %s sector address%s",
 		proto_data->heads,
 		proto_data->wide_sector_addr ? "long" : "short",
 		proto_data->fprotect ? ", format-protected" : ""

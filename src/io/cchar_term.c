@@ -202,7 +202,7 @@ int cchar_term_read(struct cchar_unit_proto_t *unit, uint16_t *r_arg)
 {
 	pthread_mutex_lock(&UNIT->buf_mutex);
 	if (UNIT->buf_len <= 0) {
-		LOG(L_TERM, 5, "cchar_term_read(): buffer empty");
+		LOG(L_TERM, 5, "buffer empty");
 		UNIT->empty_read = 1;
 		pthread_mutex_unlock(&UNIT->buf_mutex);
 		return IO_EN;
@@ -210,9 +210,9 @@ int cchar_term_read(struct cchar_unit_proto_t *unit, uint16_t *r_arg)
 		uint8_t data = UNIT->buf[UNIT->buf_rpos];
 		if (LOG_ENABLED) {
 			if (data >= 32) {
-				LOG(L_TERM, 5, "cchar_term_read(): %i (%c)", data, data);
+				LOG(L_TERM, 5, "%i (%c)", data, data);
 			} else {
-				LOG(L_TERM, 5, "cchar_term_read(): %i (#%02x)", data, data);
+				LOG(L_TERM, 5, "%i (#%02x)", data, data);
 			}
 		}
 
@@ -234,9 +234,9 @@ int cchar_term_write(struct cchar_unit_proto_t *unit, uint16_t *r_arg)
 	char data = *r_arg & 255;
 	if (LOG_ENABLED) {
 		if (data >= 32) {
-			LOG(L_TERM, 5, "cchar_term_write(): %i (%c)", data, data);
+			LOG(L_TERM, 5, "%i (%c)", data, data);
 		} else {
-			LOG(L_TERM, 5, "cchar_term_write(): %i (#%02x)", data, data);
+			LOG(L_TERM, 5, "%i (#%02x)", data, data);
 		}
 	}
 	term_write(UNIT->term, &data, 1);
@@ -249,26 +249,26 @@ int cchar_term_cmd(struct cchar_unit_proto_t *unit, int dir, int cmd, uint16_t *
 	if (dir == IO_IN) {
 		switch (cmd) {
 		case CCHAR_TERM_CMD_SPU:
-			LOG(L_TERM, 1, "TERM: SPU");
+			LOG(L_TERM, 1, "command: SPU");
 			break;
 		case CCHAR_TERM_CMD_READ:
 			return cchar_term_read(unit, r_arg);
 		default:
-			LOG(L_TERM, 1, "TERM: unknown IN command: %i", cmd);
+			LOG(L_TERM, 1, "unknown IN command: %i", cmd);
 			break;
 		}
 	} else {
 		switch (cmd) {
 		case CCHAR_TERM_CMD_RESET:
-			LOG(L_TERM, 1, "TERM: reset");
+			LOG(L_TERM, 1, "command: reset");
 			break;
 		case CCHAR_TERM_CMD_DISCONNECT:
-			LOG(L_TERM, 1, "TERM: disconnect");
+			LOG(L_TERM, 1, "command: disconnect");
 			break;
 		case CCHAR_TERM_CMD_WRITE:
 			return cchar_term_write(unit, r_arg);
 		default:
-			LOG(L_TERM, 1, "TERM: unknown OUT command: %i", cmd);
+			LOG(L_TERM, 1, "unknown OUT command: %i", cmd);
 			break;
 		}
 	}

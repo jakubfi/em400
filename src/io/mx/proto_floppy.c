@@ -48,12 +48,12 @@ enum mx_proto_floppy_ops {
 };
 
 static const char * floppy_op_names[] = {
-	"[unknown-0]",
+	"[unknown-floppy-op-0]",
 	"format",
 	"read",
 	"write",
 	"sect. error write",
-	"[unknown]"
+	"[unknown-floppy-op]"
 };
 
 enum mx_floppy_t_status {
@@ -109,7 +109,7 @@ int mx_floppy_init(struct mx_line *pline, uint16_t *data)
 	proto_data->type	 = (data[0] & 0b1111111100000000) >> 8;
 	proto_data->fprotect = (data[0] & 0b0000000011111111);
 
-	LOG(L_FLOP, 3, "    %s floppy drive%s",
+	LOG(L_FLOP, 3, "%s floppy drive%s",
 		mx_proto_floppy_get_type_name(proto_data->type),
 		proto_data->fprotect ? ", format-protected" : ""
 	);

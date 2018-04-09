@@ -25,7 +25,7 @@ const char *mx_event_type_names[] = {
 	"INT_PUSH",
 	"RESET",
 	"QUIT",
-	"[unknown]"
+	"[invalid-event]"
 };
 
 // -----------------------------------------------------------------------

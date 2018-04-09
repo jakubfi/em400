@@ -37,12 +37,12 @@ const char *mx_phy_type_names[] = {
 };
 
 const char *mx_phy_dir_names[] = {
-	"[none]",
-	"[invalid]",
+	"[none-0]",
+	"[invalid-phy-dir-1]",
 	"input",
-	"[invalid]",
+	"[invalid-phy-dir-3]",
 	"output",
-	"[invalid]",
+	"[invalid-phy-dir-5]",
 	"half-duplex",
 	"full-duplex",
 	"[invalid-phy-dir]",
@@ -58,7 +58,7 @@ const char * mx_protocol_names[] = {
 	"winchester",
 	"magnetic tape",
 	"floppy drive",
-	"[unknown]"
+	"[invalid-protocol]"
 };
 
 const char *mx_sc_err_names[] = {
