@@ -86,7 +86,6 @@ static void * log_flusher(void *ptr);
 #define LOG_F_COMP "%4s %1i | "
 #define LOG_F_EMPTY "                     | "
 #define LOG_F_CPU "%-3s %2i:0x%04x %-6s | %s"
-#define LOG_F_ID "%-*s | "
 
 static uint16_t log_cycle_sr;
 static uint16_t log_cycle_ic;
@@ -417,21 +416,6 @@ void log_log_cpu(unsigned component, unsigned level, char *msgfmt, ...)
 		log_get_current_process(),
 		log_int_indent + log_int_level
 	);
-	vfprintf(log_f, msgfmt, vl);
-	fprintf(log_f, "\n");
-	pthread_mutex_unlock(&log_mutex);
-
-	va_end(vl);
-}
-
-// -----------------------------------------------------------------------
-void log_log_id(unsigned component, unsigned level, char *id, char *msgfmt, ...)
-{
-	va_list vl;
-	va_start(vl, msgfmt);
-
-	pthread_mutex_lock(&log_mutex);
-	fprintf(log_f, LOG_F_COMP LOG_F_ID, log_components[component].name, level, LOG_ID_LEN, id);
 	vfprintf(log_f, msgfmt, vl);
 	fprintf(log_f, "\n");
 	pthread_mutex_unlock(&log_mutex);
