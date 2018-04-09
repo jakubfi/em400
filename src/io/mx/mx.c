@@ -32,7 +32,7 @@
 #include "io/mx/event.h"
 #include "io/mx/line.h"
 
-enum mx_condition { MX5_UNINITIALIZED, MX5_INITIALIZED, MX5_CONFIGURED, MX5_QUIT };
+enum mx_condition { MX_UNINITIALIZED, MX_INITIALIZED, MX_CONFIGURED, MX_QUIT };
 
 // Real multix boots up in probably just under a second
 // (~500ms for ROM/RAM check + ~185ms for RAM cleanup).
@@ -63,7 +63,7 @@ void * mx_create(int num, struct cfg_unit *units)
 	}
 	// initialize multix structure
 	multix->chnum = num;
-	atom_store_release(&multix->state, MX5_UNINITIALIZED);
+	atom_store_release(&multix->state, MX_UNINITIALIZED);
 	for (int i=0 ; i<MX_LINE_CNT ; i++) {
 		struct mx_line *pline = multix->plines + i;
 		pline->phy_n = i;
@@ -208,7 +208,7 @@ void mx_shutdown(void *ch)
 
 	// --- make multix uninitialized (further interface commands will be dropped)
 
-	atom_store_release(&multix->state, MX5_UNINITIALIZED);
+	atom_store_release(&multix->state, MX_UNINITIALIZED);
 
 	// --- destroy event system
 
@@ -244,7 +244,7 @@ void mx_shutdown(void *ch)
 // -----------------------------------------------------------------------
 int mx_mem_mget(struct mx *multix, int nb, uint16_t addr, uint16_t *data, int len)
 {
-	if (atom_load_acquire(&multix->state) != MX5_UNINITIALIZED) {
+	if (atom_load_acquire(&multix->state) != MX_UNINITIALIZED) {
 		if (io_mem_mget(nb, addr, data, len) != len) {
 			return -1;
 		}
@@ -257,7 +257,7 @@ int mx_mem_mget(struct mx *multix, int nb, uint16_t addr, uint16_t *data, int le
 // -----------------------------------------------------------------------
 int mx_mem_mput(struct mx *multix, int nb, uint16_t addr, uint16_t *data, int len)
 {
-	if (atom_load_acquire(&multix->state) != MX5_UNINITIALIZED) {
+	if (atom_load_acquire(&multix->state) != MX_UNINITIALIZED) {
 		if (io_mem_mput(nb, addr, data, len) != len) {
 			return -1;
 		}
@@ -270,7 +270,7 @@ int mx_mem_mput(struct mx *multix, int nb, uint16_t addr, uint16_t *data, int le
 // -----------------------------------------------------------------------
 static void mx_int_set(struct mx *multix)
 {
-	if (atom_load_acquire(&multix->state) != MX5_UNINITIALIZED) {
+	if (atom_load_acquire(&multix->state) != MX_UNINITIALIZED) {
 		io_int_set(multix->chnum);
 	} else {
 		LOG(L_MX, 2, "LOST interrupt due to multix initializing");
@@ -470,7 +470,7 @@ static int mx_cmd_setcfg(struct mx *multix, uint16_t addr)
 	uint16_t ret_err = 0;
 
 	// check if configuration isn't set already
-	if (atom_load_acquire(&multix->state) == MX5_CONFIGURED) {
+	if (atom_load_acquire(&multix->state) == MX_CONFIGURED) {
 		CFGERR(MX_SC_E_CONFSET, 0);
 		goto fail;
 	}
@@ -547,7 +547,7 @@ static int mx_cmd_setcfg(struct mx *multix, uint16_t addr)
 
 	ret_int = MX_IRQ_IUKON;
 
-	atom_store_release(&multix->state, MX5_CONFIGURED);
+	atom_store_release(&multix->state, MX_CONFIGURED);
 
 fail:
 	// update return field only if setcfg failed
@@ -569,7 +569,7 @@ fail:
 // -----------------------------------------------------------------------
 static int mx_cmd_test(struct mx *multix)
 {
-	if (atom_load_acquire(&multix->state) == MX5_QUIT) {
+	if (atom_load_acquire(&multix->state) == MX_QUIT) {
 		LOG(L_MX, 1, "Test request ignored, Multix is shutting down");
 		return 0;
 	}
@@ -603,7 +603,7 @@ static int mx_cmd_requeue(struct mx *multix)
 static int mx_conf_check(struct mx *multix, struct mx_line *lline, union mx_event *ev)
 {
 	// is multix configured?
-	if (atom_load_acquire(&multix->state) == MX5_UNINITIALIZED) {
+	if (atom_load_acquire(&multix->state) == MX_UNINITIALIZED) {
 		LOG(L_MX, 3, "EV%04x: Rejecting command, MULTIX not initialized", ev->d.id);
 		return -1;
 	}
@@ -729,7 +729,7 @@ static void * mx_evproc(void *ptr)
 		if (!ev) { // initialization finished, maybe?
 			if (timeout) { // loop was indeed waiting for the initialization timeout
 				timeout = 0;
-				atom_store_release(&multix->state, MX5_INITIALIZED);
+				atom_store_release(&multix->state, MX_INITIALIZED);
 				LOG(L_MX, 3, "Multix is now initialized");
 				mx_int_enqueue(multix, MX_IRQ_IWYZE, 0);
 			} else {
@@ -829,7 +829,7 @@ static int mx_event(struct mx *multix, int type, int cmd, int log_n, uint16_t r_
 {
 	static unsigned id;
 
-	if (atom_load_acquire(&multix->state) == MX5_QUIT) {
+	if (atom_load_acquire(&multix->state) == MX_QUIT) {
 		LOG(L_MX, 1, "Create new event ignored, Multix is shutting down");
 		return IO_EN;
 	}
@@ -864,13 +864,13 @@ void mx_reset(void *ch)
 {
 	struct mx *multix = (struct mx *) ch;
 
-	if (atom_load_acquire(&multix->state) == MX5_QUIT) {
+	if (atom_load_acquire(&multix->state) == MX_QUIT) {
 		LOG(L_MX, 1, "Received reset request ignored, Multix is shutting down");
 		return;
 	}
 
 	LOG(L_MX, 2, "Received reset request");
-	atom_store_release(&multix->state, MX5_UNINITIALIZED); // as early as possible
+	atom_store_release(&multix->state, MX_UNINITIALIZED); // as early as possible
 	mx_event(multix, MX_EV_RESET, 0, 0, 0);
 	// actual reset is done in event processor thread
 }
@@ -899,7 +899,7 @@ int mx_cmd(void *ch, int dir, uint16_t n_arg, uint16_t *r_arg)
 		}
 	}
 
-	if (atom_load_acquire(&multix->state) == MX5_UNINITIALIZED) {
+	if (atom_load_acquire(&multix->state) == MX_UNINITIALIZED) {
 		// ignore commands (respond with EN) when multix is initializing
 		LOG(L_MX, 2, "EN for received general or line %i command: %s (%i)", log_n, mx_get_cmd_name(cmd), cmd);
 		return IO_EN;
