@@ -215,7 +215,7 @@ static void mx_line_process_cmd(struct mx_line *line, union mx_event *ev)
 	int irq;
 	const struct mx_cmd *cmd = line->proto->cmd + ev->d.cmd;
 
-	LOG(L_MX, 3, "Line %i (%s) got cmd %s", line->log_n, line->proto->name, mx_get_cmd_name(ev->d.cmd));
+	LOG(L_MX, 3, "EV%04x: Line %i (%s) got cmd %s", ev->d.id, line->log_n, line->proto->name, mx_get_cmd_name(ev->d.cmd));
 
 	// read the command parameters
 	if (cmd->input_flen) {
@@ -262,7 +262,7 @@ void * mx_line_thread(void *ptr)
 				mx_line_process_cmd(line, ev);
 				break;
 			default:
-				LOG(L_MX, 3, "Line %i (%s) got unknown event type %i. Ignored.", line->log_n, line->proto->name, ev->d.type);
+				LOG(L_MX, 3, "EV%04x: Line %i (%s) got unknown event type %i. Ignored.", ev->d.id, line->log_n, line->proto->name, ev->d.type);
 				break;
 		}
 		free(ev);

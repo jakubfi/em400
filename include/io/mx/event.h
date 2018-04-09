@@ -34,6 +34,7 @@ union mx_event {
 		int cmd;
 		int log_n;
 		uint16_t arg;
+		unsigned id;
 	} d;
 };
 

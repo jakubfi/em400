@@ -155,6 +155,7 @@ static void mx_lines_deinit(struct mx *multix)
 		struct mx_line *lline = multix->llines[i];
 		if (lline) {
 			lline->joinable = 0;
+			// create event for line thread, not event processor thread
 			union mx_event *ev = malloc(sizeof(union mx_event));
 			if (ev) {
 				ev->d.type = MX_EV_QUIT;
@@ -603,13 +604,13 @@ static int mx_conf_check(struct mx *multix, struct mx_line *lline, union mx_even
 {
 	// is multix configured?
 	if (atom_load_acquire(&multix->state) == MX5_UNINITIALIZED) {
-		LOG(L_MX, 3, "Rejecting command, MULTIX not initialized");
+		LOG(L_MX, 3, "EV%04x: Rejecting command, MULTIX not initialized", ev->d.id);
 		return -1;
 	}
 
 	// is the line configured?
 	if (!lline) {
-		LOG(L_MX, 3, "Rejecting command, line %i not configured", ev->d.log_n);
+		LOG(L_MX, 3, "EV%04x: Rejecting command, line %i not configured", ev->d.log_n, ev->d.id);
 		return -1;
 	}
 
@@ -617,9 +618,10 @@ static int mx_conf_check(struct mx *multix, struct mx_line *lline, union mx_even
 }
 
 // -----------------------------------------------------------------------
-static inline void log_line_status(int level, const char *txt, int log_n, uint32_t status)
+static inline void log_line_status(int level, const char *txt, int log_n, uint32_t status, unsigned evid)
 {
-	LOG(L_MX, level, "%s: line %i status: 0x%08x: %s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s",
+	LOG(L_MX, level, "EV%04x: %s: line %i status: 0x%08x: %s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s",
+		evid,
 		txt,
 		log_n,
 		status,
@@ -654,7 +656,7 @@ static int mx_cmd_dispatch(struct mx *multix, struct mx_line *lline, union mx_ev
 	const struct mx_cmd *cmd = lline->proto->cmd + ev->d.cmd;
 
 	if (!cmd->fun) {
-		LOG(L_MX, 1, "Rejecting command: no protocol function to handle command %s for protocol %s in line %i", mx_get_cmd_name(ev->d.cmd), lline->proto->name, lline->log_n);
+		LOG(L_MX, 1, "EV%04x: Rejecting command: no protocol function to handle command %s for protocol %s in line %i", ev->d.id, mx_get_cmd_name(ev->d.cmd), lline->proto->name, lline->log_n);
 		mx_int_enqueue(lline->multix, mx_irq_reject(ev->d.cmd), ev->d.log_n);
 		return 1;
 	}
@@ -662,7 +664,7 @@ static int mx_cmd_dispatch(struct mx *multix, struct mx_line *lline, union mx_ev
 	// can line process the command?
 	pthread_mutex_lock(&lline->status_mutex);
 	if (mx_line_cmd_allowed(lline, ev->d.cmd)) {
-		log_line_status(3, "Rejecting command, line status does not allow execution", ev->d.log_n, lline->status);
+		log_line_status(3, "Rejecting command, line status does not allow execution", ev->d.log_n, lline->status, ev->d.id);
 		mx_int_enqueue(lline->multix, mx_irq_reject(ev->d.cmd), ev->d.log_n);
 		pthread_mutex_unlock(&lline->status_mutex);
 		return 1;
@@ -673,7 +675,7 @@ static int mx_cmd_dispatch(struct mx *multix, struct mx_line *lline, union mx_ev
 
 	// process asynchronously in the protocol thread
 
-	LOG(L_MX, 3, "Enqueue command %s for %s in line %i", mx_get_cmd_name(ev->d.cmd), lline->proto->name, lline->log_n);
+	LOG(L_MX, 3, "EV%04x: Enqueue command %s for %s in line %i", ev->d.id, mx_get_cmd_name(ev->d.cmd), lline->proto->name, lline->log_n);
 	lline->cmd_data_addr = ev->d.arg;
 	elst_append(lline->devq, ev);
 
@@ -694,7 +696,7 @@ static void mx_cmd_status(struct mx *multix, struct mx_line *lline, union mx_eve
 
 	pthread_mutex_lock(&lline->status_mutex);
 
-	log_line_status(3, "Reporting line status", lline->log_n, lline->status);
+	log_line_status(3, "Reporting line status", lline->log_n, lline->status, ev->d.id);
 	uint16_t status = lline->status & 0xffff;
 	if (mx_mem_mput(multix, 0, ev->d.arg, &status, 1)) {
 		mx_int_enqueue(multix, MX_IRQ_INPAO, lline->log_n);
@@ -715,7 +717,11 @@ static void * mx_evproc(void *ptr)
 	LOG(L_MX, 3, "Entering event loop");
 
 	while (!quit) {
-		LOG(L_MX, 3, "Waiting for event, timeout: %i ms", timeout);
+		if (timeout > 0) {
+			LOG(L_MX, 3, "Initialization delay: %i ms", timeout);
+		} else {
+			LOG(L_MX, 3, "Event processor waiting for event");
+		}
 		union mx_event *ev = elst_wait_pop(multix->eventq, timeout);
 
 		int ev_free = 1;
@@ -730,7 +736,7 @@ static void * mx_evproc(void *ptr)
 				LOG(L_MX, 1, "ERROR: Received unexpected NULL event");
 			}
 		} else { // regular event processing
-			LOG(L_MX, 3, "Received event: %s", mx_get_event_name(ev->d.type));
+			LOG(L_MX, 3, "EV%04x: Received event: %s", ev->d.id, mx_get_event_name(ev->d.type));
 			switch (ev->d.type) {
 				case MX_EV_QUIT:
 					// not ignored when resetting MULTIX
@@ -755,7 +761,7 @@ static void * mx_evproc(void *ptr)
 					break;
 				case MX_EV_CMD:
 					if (timeout) continue; // ignore commands when restting MULTIX
-					LOG(L_MX, 3, "Received command: %s", mx_get_cmd_name(ev->d.cmd));
+					LOG(L_MX, 3, "EV%04x: Received command: %s", ev->d.id, mx_get_cmd_name(ev->d.cmd));
 					struct mx_line *lline = multix->llines[ev->d.log_n];
 					switch (ev->d.cmd) {
 						case MX_CMD_REQUEUE:
@@ -821,6 +827,8 @@ static void * mx_evproc(void *ptr)
 // -----------------------------------------------------------------------
 static int mx_event(struct mx *multix, int type, int cmd, int log_n, uint16_t r_arg)
 {
+	static unsigned id;
+
 	if (atom_load_acquire(&multix->state) == MX5_QUIT) {
 		LOG(L_MX, 1, "Create new event ignored, Multix is shutting down");
 		return IO_EN;
@@ -833,13 +841,15 @@ static int mx_event(struct mx *multix, int type, int cmd, int log_n, uint16_t r_
 	ev->d.cmd = cmd;
 	ev->d.log_n = log_n;
 	ev->d.arg = r_arg;
+	ev->d.id = id++;
 
-	LOG(L_MX, 2, "Created new event: %s, command: %i (%s), line: %i, arg: 0x%04x ",
-		mx_get_event_name(type),
-		cmd,
-		(type == MX_EV_CMD) ? mx_get_cmd_name(cmd) : "",
-		log_n,
-		r_arg
+	LOG(L_MX, 2, "EV%04x: Created new event %s, command: %i (%s), line: %i, arg: 0x%04x ",
+		ev->d.id,
+		mx_get_event_name(ev->d.type),
+		ev->d.cmd,
+		(ev->d.type == MX_EV_CMD) ? mx_get_cmd_name(ev->d.cmd) : "",
+		ev->d.log_n,
+		ev->d.arg
 	);
 
 	// type is also the priority
