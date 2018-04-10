@@ -137,7 +137,7 @@ void mx_winch_destroy(struct mx_line *pline)
 }
 
 // -----------------------------------------------------------------------
-static void mx_winch_cf_decode(uint16_t *data, struct proto_winchester_data *proto_data)
+static void mx_winch_trans_decode(uint16_t *data, struct proto_winchester_data *proto_data)
 {
 	proto_data->op = (data[0] & 0b0000011100000000) >> 8;
 
@@ -159,7 +159,7 @@ static void mx_winch_cf_decode(uint16_t *data, struct proto_winchester_data *pro
 			proto_data->transmit.sector_fill= (data[0] & 0b0000100000000000) >> 11;
 			proto_data->transmit.watch_eof	= (data[0] & 0b0000010000000000) >> 10;
 			proto_data->transmit.cpu		= (data[0] & 0b0000000000010000) >> 4;
-			proto_data->transmit.nb			= (data[0] & 0b0000000000001111) >> 0;
+			proto_data->transmit.nb			= (data[0] & 0b0000000000001111);
 			proto_data->transmit.addr = data[1];
 			proto_data->transmit.len = data[2]+1;
 			proto_data->transmit.sector = (data[3] & 255) << 16;
@@ -329,7 +329,7 @@ int mx_winch_transmit(struct mx_line *line)
 	}
 
 	// unpack control field
-	mx_winch_cf_decode(line->cmd_data, proto_data);
+	mx_winch_trans_decode(line->cmd_data, proto_data);
 
 	LOG(L_WNCH, "Transmit operation %i: %s", proto_data->op, winch_op_names[proto_data->op]);
 

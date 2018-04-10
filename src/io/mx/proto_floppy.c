@@ -219,7 +219,7 @@ int mx_floppy_attach(struct mx_line *lline)
 		pthread_mutex_lock(&lline->status_mutex);
 		lline->status |= MX_LSTATE_ATTACHED;
 		pthread_mutex_unlock(&lline->status_mutex);
-		irq = MX_IRQ_INDOL;
+		irq = MX_IRQ_IDOLI;
 	}
 
 	return irq;
