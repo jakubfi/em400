@@ -15,8 +15,8 @@
 //  Foundation, Inc.,
 //  51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 
-#ifndef MX5_H
-#define MX5_H
+#ifndef MX_H
+#define MX_H
 
 #include <inttypes.h>
 #include <pthread.h>
