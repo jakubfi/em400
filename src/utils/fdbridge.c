@@ -131,13 +131,13 @@ int fdbridge_init(unsigned fdcount)
 // -----------------------------------------------------------------------
 static inline void __fdbridge_wakeup()
 {
-	write(fd_ctl[1], ".", 1);
+	if (write(fd_ctl[1], ".", 1));
 }
 
 // -----------------------------------------------------------------------
 static inline void __fdbridge_quit()
 {
-	write(fd_ctl[1], "q", 1);
+	if (write(fd_ctl[1], "q", 1));
 }
 
 // -----------------------------------------------------------------------
@@ -253,9 +253,10 @@ int fdbridge_add_stdin(ELST q)
 static int __serve_control()
 {
 	char c;
-	read(ufds[0].fd, &c, 1);
-	if (c == 'q') {
-		return -1;
+	if (read(ufds[0].fd, &c, 1) == 1) {
+		if (c == 'q') {
+			return -1;
+		}
 	}
 	return 0;
 }
@@ -272,7 +273,7 @@ static void __serve_conn(int i)
 	if (ufds[i+1].type != FD_NONE) {
 		// client already connected - reject connection
 		const char reject[] = "Endpoint already connected. Bye.\n";
-		write(fd, reject, strlen(reject));
+		if (write(fd, reject, strlen(reject)));
 		close(fd);
 	} else {
 		// accept new TCP connection

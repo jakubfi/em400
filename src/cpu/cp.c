@@ -134,7 +134,7 @@ int cp_reg_set(unsigned id, uint16_t v)
 // -----------------------------------------------------------------------
 int cp_mem_mget(unsigned nb, uint16_t addr, uint16_t *data, unsigned count)
 {
-	uint16_t old_sr;
+	uint16_t old_sr = 0;
 	struct iob_cp_status *stat;
 
 	if (fpga) {
@@ -171,7 +171,7 @@ int cp_mem_mget(unsigned nb, uint16_t addr, uint16_t *data, unsigned count)
 // -----------------------------------------------------------------------
 int cp_mem_mput(unsigned nb, uint16_t addr, uint16_t *data, unsigned count)
 {
-	uint16_t old_sr;
+	uint16_t old_sr = 0;
 	struct iob_cp_status *stat;
 
 	if (fpga) {
