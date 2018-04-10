@@ -9,16 +9,16 @@ au! BufNewFile,BufRead *.[Ll][Oo][Gg] call s:FTem400log()
 
 			" log levels
 			if 1 == 2
-			elseif (ln =~? '^\(EM4H\| MEM\| CPU\| INT  IO\|CCHR\|TERM\|  MX\) [0-9] |')
+			elseif (ln =~? '^\(EM4H\| MEM\| CPU\| INT  IO\|CCHR\|TERM\|  MX\) |')
 				let level = level + 1
 			" emulator initialization
-			elseif (ln =~ 'Emulation speed')
+			elseif (ln =~ 'Effective configuration')
 				let level = level + 1
 			" emulator initialization
-			elseif (ln =~? 'CPU modifications')
+			elseif (ln =~? 'Program to load')
 				let level = level + 1
 			" emulator initialization
-			elseif (ln =~? 'Hardware AWP')
+			elseif (ln =~? 'CPU emulation')
 				let level = level + 1
 			endif
 

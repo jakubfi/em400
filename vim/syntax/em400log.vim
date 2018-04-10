@@ -18,27 +18,27 @@ set cpo&vim
 
 syn match em400logHALT			"HALT \d\+[ \t]*(alarm:.*)" contained
 
-syn match em400logREG			"^[ \t]*REG [0-9] |.*"
-syn match em400logMEM			"^[ \t]*MEM [0-9] |.*"
-syn match em400logCPU			"^[ \t]*CPU [0-9] |.*"
-syn match em400logOP			"^[ \t]*OP [0-9] |.*" contains=em400logHALT
-syn match em400logINT			"^[ \t]*INT [0-9] |.*"
+syn match em400logREG			"^[ \t]*REG |.*"
+syn match em400logMEM			"^[ \t]*MEM |.*"
+syn match em400logCPU			"^[ \t]*CPU |.*"
+syn match em400logOP			"^[ \t]*OP |.*" contains=em400logHALT
+syn match em400logINT			"^[ \t]*INT |.*"
 
-syn match em400logIO			"^[ \t]*IO [0-9] |.*"
+syn match em400logIO			"^[ \t]*IO |.*"
 
-syn match em400logMX			"^[ \t]*MX [0-9] |.*"
-syn match em400logPX			"^[ \t]*PX [0-9] |.*"
-syn match em400logCCHR			"^[ \t]*CCHR [0-9] |.*"
-syn match em400logCMEM			"^[ \t]*CMEM [0-9] |.*"
+syn match em400logMX			"^[ \t]*MX |.*"
+syn match em400logPX			"^[ \t]*PX |.*"
+syn match em400logCCHR			"^[ \t]*CCHR |.*"
+syn match em400logCMEM			"^[ \t]*CMEM |.*"
 
-syn match em400logTERM			"^[ \t]*TERM [0-9] |.*"
-syn match em400log9425			"^[ \t]*9425 [0-9] |.*"
-syn match em400logWNCH			"^[ \t]*WNCH [0-9] |.*"
-syn match em400logFLOP			"^[ \t]*FLOP [0-9] |.*"
-syn match em400logPNCH			"^[ \t]*PNCH [0-9] |.*"
-syn match em400logPNRD			"^[ \t]*PNRD [0-9] |.*"
-syn match em400logCRK5			"^[ \t]*CRK5 [0-9] |.*"
-syn match em400logEM4H			"^[ \t]*EM4H [0-9] |.*"
+syn match em400logTERM			"^[ \t]*TERM |.*"
+syn match em400log9425			"^[ \t]*9425 |.*"
+syn match em400logWNCH			"^[ \t]*WNCH |.*"
+syn match em400logFLOP			"^[ \t]*FLOP |.*"
+syn match em400logPNCH			"^[ \t]*PNCH |.*"
+syn match em400logPNRD			"^[ \t]*PNRD |.*"
+syn match em400logCRK5			"^[ \t]*CRK5 |.*"
+syn match em400logEM4H			"^[ \t]*EM4H |.*"
 
 " Define the default highlighting.
 " For version 5.7 and earlier: only when not done already
