@@ -442,23 +442,13 @@ void log_intlevel_inc()
 }
 
 // -----------------------------------------------------------------------
-void log_log_dasm(int mod, int norm_arg, int short_arg, int16_t n)
+void log_log_dasm(int arg, int16_t n)
 {
-	int nb = ((log_cycle_sr & 0b0000000000100000) >> 5) * (log_cycle_sr & 0b0000000000001111);
+	int nb = (log_cycle_sr & 0b0000000000100000) ? (log_cycle_sr & 0b0000000000001111) : 0;
 	emdas_dasm(emd, nb, log_cycle_ic);
 
-	if (norm_arg) {
-		if (mod) {
-			log_log_cpu(L_CPU, "    %-20s N = 0x%x = %i, MOD = 0x%x = %i", dasm_buf, (uint16_t) n, n, mod, mod);
-		} else {
-			log_log_cpu(L_CPU, "    %-20s N = 0x%x = %i", dasm_buf, (uint16_t) n, n);
-		}
-	} else if (short_arg) {
-		if (mod) {
-			log_log_cpu(L_CPU, "    %-20s T = %i, MOD = 0x%x = %i", dasm_buf, n, mod, mod);
-		} else {
-			log_log_cpu(L_CPU, "    %-20s T = %i", dasm_buf, n);
-		}
+	if (arg) {
+		log_log_cpu(L_CPU, "    %-20s N = 0x%04x = %i", dasm_buf, (uint16_t) n, n);
 	} else {
 		log_log_cpu(L_CPU, "    %-20s", dasm_buf);
 	}

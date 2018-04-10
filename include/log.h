@@ -80,7 +80,7 @@ void log_intlevel_reset();
 void log_intlevel_dec();
 void log_intlevel_inc();
 
-void log_log_dasm(int mod, int norm_arg, int short_arg, int16_t n);
+void log_log_dasm(int arg, int16_t n);
 void log_log_cpu(unsigned component, char *msgfmt, ...);
 void log_config(struct cfg_em400 *cfg, const char *func);
 

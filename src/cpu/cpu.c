@@ -75,7 +75,7 @@ static void cpu_idle_in_halt()
 {
 	pthread_mutex_lock(&cpu_wake_mutex);
 	while ((cpu_state == STATE_HALT) && !atom_load_acquire(&RP)) {
-		LOG(L_CPU, "idling in halt");
+		LOG(L_CPU, "idling in state HALT");
 		pthread_cond_wait(&cpu_wake_cond, &cpu_wake_mutex);
 	}
 	cpu_state &= ~STATE_HALT;
@@ -88,6 +88,7 @@ static int cpu_idle_in_stop()
 	pthread_mutex_lock(&cpu_wake_mutex);
 	cpu_cycle = 0;
 	while (((cpu_state & (STATE_STOP|STATE_QUIT|STATE_CLO|STATE_CLM)) == STATE_STOP) && !cpu_cycle) {
+		LOG(L_CPU, "idling in state STOP");
 		pthread_cond_wait(&cpu_wake_cond, &cpu_wake_mutex);
 	}
 	int ret = cpu_cycle && !(cpu_state & (STATE_QUIT|STATE_CLO|STATE_CLM));
@@ -323,14 +324,7 @@ int cpu_ctx_switch(uint16_t arg, uint16_t ic, uint16_t sr_mask)
 
 	if (!cpu_mem_get(0, 97, &sp)) return 0;
 
-	LOG(L_CPU, "H/W stack push @ 0x%04x (IC = 0x%04x, R0 = 0x%04x, SR = 0x%04x, arg = 0x%04x), new IC = 0x%04x",
-		sp,
-		rIC,
-		regs[0],
-		rSR,
-		arg,
-		ic
-	);
+	LOG(L_CPU, "Store current process ctx [IC: 0x%04x, R0: 0x%04x, SR: 0x%04x, 0x%04x] @ 0x%04x, set new IC: 0x%04x", rIC, regs[0], rSR, arg, sp, ic);
 
 	if (!cpu_mem_put(0, sp, rIC)) return 0;
 	if (!cpu_mem_put(0, sp+1, regs[0])) return 0;
@@ -363,12 +357,7 @@ int cpu_ctx_restore()
 	int_update_mask(rSR);
 	if (!cpu_mem_put(0, 97, sp-4)) return 0;
 
-	LOG(L_CPU, "H/W stack pop @ 0x%04x (IC = 0x%04x, R0 = 0x%04x, SR = 0x%04x)",
-		sp-4,
-		rIC,
-		regs[0],
-		rSR
-	);
+	LOG(L_CPU, "Loaded process ctx @ 0x%04x: [IC: 0x%04x, R0: 0x%04x, SR: 0x%04x]", sp-4, rIC, regs[0], rSR);
 
 	return 1;
 }
@@ -379,7 +368,7 @@ static void cpu_step()
 	struct iset_opcode *op;
 	uint16_t data;
 
-	if (LOG_ENABLED) {
+	if (LOG_WANTS(L_CPU)) {
 		log_store_cycle_state(rSR, rIC);
 	}
 
@@ -434,7 +423,7 @@ static void cpu_step()
 	}
 
 	if (LOG_WANTS(L_CPU)) {
-		log_log_dasm(rMOD, op->norm_arg, op->short_arg, N);
+		log_log_dasm(op->norm_arg || op->short_arg, N);
 	}
 
 	// execute instruction
