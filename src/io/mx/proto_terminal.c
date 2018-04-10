@@ -127,35 +127,8 @@ void mx_terminal_destroy(struct mx_line *pline)
 }
 
 // -----------------------------------------------------------------------
-int mx_terminal_attach(struct mx_line *lline)
+static int mx_terminal_att_decode(uint16_t *data, struct proto_terminal_data *pd)
 {
-	pthread_mutex_lock(&lline->status_mutex);
-	lline->status |= MX_LSTATE_ATTACHED;
-	mx_int_enqueue(lline->multix, MX_IRQ_IDOLI, lline->log_n);
-	pthread_mutex_unlock(&lline->status_mutex);
-	return 0;
-}
-
-// -----------------------------------------------------------------------
-int mx_terminal_detach(struct mx_line *lline)
-{
-	pthread_mutex_lock(&lline->status_mutex);
-	lline->status &= ~MX_LSTATE_ATTACHED;
-	mx_int_enqueue(lline->multix, MX_IRQ_IODLI, lline->log_n);
-	pthread_mutex_unlock(&lline->status_mutex);
-	return 0;
-}
-
-/*
-// -----------------------------------------------------------------------
-uint8_t mx_proto_terminal_attach_start(struct mx_line *line, int *irq, uint16_t *data)
-{
-	if ((line->status & MX_LSTATE_ATTACHED)) {
-		*irq = MX_IRQ_INDOL;
-	}
-
-	struct proto_terminal_data *pd = line->proto_data;
-
 	pd->watch_eof	= (data[0] & 0b1000000000000000) >> 15;
 	pd->parity		=!(data[0] & 0b0100000000000000) ? MX_TERM_PARITY_NONE :
 					  (data[0] & 0b0010000000000000) ? MX_TERM_PARITY_ODD : MX_TERM_PARITY_EVEN;
@@ -169,7 +142,7 @@ uint8_t mx_proto_terminal_attach_start(struct mx_line *line, int *irq, uint16_t 
 	pd->proc		= (data[1] & 0b0000000011111111) >> 0;
 	pd->proc_params	= data[2];
 
-	LOGID(L_TERM, line, "Terminal attached, parity: %s, EOT: #%2x, OPRQ: #%2x, text proc: %i (params: 0x%04x), flags: %s%s%s%s%s%s",
+	LOG(L_TERM, "parity %s, EOT: #%2x, OPRQ: #%2x, text proc: %i (params: 0x%04x), flags: %s%s%s%s%s%s",
 		mx_term_parity_names[pd->parity],
 		pd->eot_char,
 		pd->oprq_char,
@@ -183,35 +156,85 @@ uint8_t mx_proto_terminal_attach_start(struct mx_line *line, int *irq, uint16_t 
 		pd->watch_oprq ? "WATCH_OPRQ " : ""
 	);
 
-	line->status |= MX_LSTATE_ATTACHED;
-	*irq = MX_IRQ_IDOLI;
-
-	return MX_WAIT_NONE;
+	return 0;
 }
 
 // -----------------------------------------------------------------------
-void mx_proto_terminal_cf_decode(uint16_t *data, struct proto_terminal_data *pd)
+static int mx_terminal_trans_decode(uint16_t *data, struct proto_terminal_data *pd)
 {
 	pd->transmit.flags		= (data[0] & 0b1111111100000000) >> 8;
-	pd->transmit.timeout	= (data[0] & 0b0000000011111111) >> 0;
+	pd->transmit.timeout	= (data[0] & 0b0000000011111111);
 	pd->transmit.tx_len		= data[1];
 	pd->transmit.tx_addr	= data[2];
 	pd->transmit.tx_eot_ch	= (data[3] & 0b1111111100000000) >> 8;
 	pd->transmit.tx_byte_pos= (data[3] & 0b0000000001000000) >> 6;
-	pd->transmit.tx_nb		= (data[3] & 0b0000000000001111) >> 0;
+	pd->transmit.tx_nb		= (data[3] & 0b0000000000001111);
 	pd->transmit.rx_len		= data[4];
 	pd->transmit.rx_addr	= data[5];
 	pd->transmit.rx_byte_pos= (data[6] & 0b0000000001000000) >> 6;
-	pd->transmit.rx_nb		= (data[6] & 0b0000000000001111) >> 0;
+	pd->transmit.rx_nb		= (data[6] & 0b0000000000001111);
 	pd->transmit.rx_eot_ch	= (data[7] & 0b1111111100000000) >> 8;
-	pd->transmit.rx_eot_ch2	= (data[7] & 0b0000000011111111) >> 0;
+	pd->transmit.rx_eot_ch2	= (data[7] & 0b0000000011111111);
 	pd->transmit.prompt[0]	= (data[8] & 0b1111111100000000) >> 8;
-	pd->transmit.prompt[1]	= (data[8] & 0b0000000011111111) >> 0;
+	pd->transmit.prompt[1]	= (data[8] & 0b0000000011111111);
 	pd->transmit.prompt[2]	= (data[9] & 0b1111111100000000) >> 8;
-	pd->transmit.prompt[3]	= (data[9] & 0b0000000011111111) >> 0;
+	pd->transmit.prompt[3]	= (data[9] & 0b0000000011111111);
 	pd->transmit.prompt[4]	= '\0';
+
+	return 0;
 }
-*/
+
+// -----------------------------------------------------------------------
+int mx_terminal_attach(struct mx_line *line)
+{
+	int irq;
+	struct proto_terminal_data *proto_data = line->proto_data;
+
+	if (mx_terminal_att_decode(line->cmd_data, proto_data)) {
+		irq = MX_IRQ_INDOL;
+	} else {
+		pthread_mutex_lock(&line->status_mutex);
+		line->status |= MX_LSTATE_ATTACHED;
+		pthread_mutex_unlock(&line->status_mutex);
+		irq = MX_IRQ_IDOLI;
+	}
+
+	return irq;
+}
+
+// -----------------------------------------------------------------------
+int mx_terminal_detach(struct mx_line *line)
+{
+	pthread_mutex_lock(&line->status_mutex);
+	line->status &= ~MX_LSTATE_ATTACHED;
+	pthread_mutex_unlock(&line->status_mutex);
+	return MX_IRQ_IODLI;
+}
+
+// -----------------------------------------------------------------------
+int mx_terminal_transmit(struct mx_line *line)
+{
+	int irq;
+	struct proto_terminal_data *proto_data = line->proto_data;
+	//const struct mx_cmd *cmd = line->proto->cmd + MX_CMD_TRANSMIT;
+
+	// check if there is a device connected
+	if (!line->dev || !line->dev_data) {
+		irq = MX_IRQ_INTRA;
+		goto fin;
+	}
+
+	if (mx_terminal_trans_decode(line->cmd_data, proto_data)) {
+		irq = MX_IRQ_INTRA;
+		goto fin;
+	}
+
+	// TODO: do real transmission
+	irq = MX_IRQ_IETRA;
+
+fin:
+	return irq;
+}
 
 // -----------------------------------------------------------------------
 const struct mx_proto mx_drv_terminal = {
@@ -222,7 +245,7 @@ const struct mx_proto mx_drv_terminal = {
 	.destroy = mx_terminal_destroy,
 	.cmd = {
 		[MX_CMD_ATTACH] = { 3, 0, 0, mx_terminal_attach },
-		[MX_CMD_TRANSMIT] = { 10, 10, 4, NULL },
+		[MX_CMD_TRANSMIT] = { 10, 10, 4, mx_terminal_transmit },
 		[MX_CMD_DETACH] = { 0, 0, 0, mx_terminal_detach },
 		[MX_CMD_ABORT] = { 0, 0, 0, NULL },
 	}
