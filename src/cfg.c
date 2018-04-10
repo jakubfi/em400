@@ -308,4 +308,64 @@ void cfg_drop_chans(struct cfg_chan *c)
 	free(c);
 }
 
+// -----------------------------------------------------------------------
+void cfg_log(struct cfg_em400 *cfg)
+{
+	LOG(L_EM4H, "---- Effective configuration: ----------");
+	LOG(L_EM4H, "Program to load: %s", cfg->program_name);
+	LOG(L_EM4H, "Loaded config: %s", cfg->cfg_filename);
+	LOG(L_EM4H, "Print help: %s", cfg->print_help ? "yes" : "no");
+	LOG(L_EM4H, "Use FPGA backend: %s", cfg->fpga ? "yes" : "no");
+	if (!cfg->fpga) {
+		LOG(L_EM4H, "CPU emulation:");
+		LOG(L_EM4H, "   Emulation speed: %s", cfg->speed_real ? "real" : "max");
+		LOG(L_EM4H, "   Timer step: %i (%s at power-on)", cfg->timer_step, cfg->timer_start ? "enabled" : "disabled");
+		LOG(L_EM4H, "   CPU modifications: %s", cfg->cpu_mod ? "present" : "absent");
+		LOG(L_EM4H, "   IN/OU instructions: %s for user programs", cfg->cpu_user_io_illegal ? "illegal" : "legal");
+		LOG(L_EM4H, "   Hardware AWP: %s", cfg->cpu_awp ? "present" : "absent");
+		LOG(L_EM4H, "   CPU stop on nomem in OS block: %s", cfg->cpu_stop_on_nomem ? "yes" : "no");
+		LOG(L_EM4H, "Memory emulation:");
+		LOG(L_EM4H, "   Elwro modules: %i", cfg->mem_elwro);
+		LOG(L_EM4H, "   MEGA modules: %i", cfg->mem_mega);
+		LOG(L_EM4H, "   MEGA PROM image: %s", cfg->mem_mega_prom);
+		LOG(L_EM4H, "   MEGA boot: %s", cfg->mem_mega_boot ? "true" : "false");
+		LOG(L_EM4H, "   Hardwired segments for OS: %i", cfg->mem_os);
+	} else {
+		LOG(L_EM4H, "FPGA backend:");
+		LOG(L_EM4H, "   Device: %s", cfg->fpga_dev);
+		LOG(L_EM4H, "   Link speed: %i", cfg->fpga_speed);
+	}
+	LOG(L_EM4H, "KB: 0x%04x", cfg->keys);
+	LOG(L_EM4H, "Logging (%s):", cfg->log_enabled ? "enabled" : "disabled");
+	LOG(L_EM4H, "   File: %s", cfg->log_file);
+	LOG(L_EM4H, "   Components: %s", cfg->log_components);
+	LOG(L_EM4H, "I/O:");
+
+	char buf[4096];
+	int bpos;
+
+	struct cfg_chan *chanc = cfg->chans;
+	while (chanc) {
+		LOG(L_EM4H, "   Channel %2i: %s", chanc->num, chanc->name);
+
+		struct cfg_unit *unitc = chanc->units;
+		while (unitc) {
+			bpos = 0;
+			struct cfg_arg *args = unitc->args;
+			while (args) {
+				bpos += sprintf(buf+bpos, "%s", args->text);
+				args = args->next;
+				if (args) {
+					bpos += sprintf(buf+bpos, ", ");
+				}
+			}
+			LOG(L_EM4H, "      Unit %2i: %s (%s)", unitc->num, unitc->name, buf);
+			unitc = unitc->next;
+		}
+
+		chanc = chanc->next;
+	}
+	LOG(L_EM4H, "----------------------------------------");
+}
+
 // vim: tabstop=4 shiftwidth=4 autoindent

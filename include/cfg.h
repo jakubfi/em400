@@ -89,6 +89,8 @@ void cfg_make_unit(struct cfg_em400 *cfg, int u_num, char *name, struct cfg_arg 
 void cfg_make_chan(struct cfg_em400 *cfg, int c_num, char *name);
 void cfg_drop_chans(struct cfg_chan *c);
 
+void cfg_log(struct cfg_em400 *cfg);
+
 #endif
 
 // vim: tabstop=4 shiftwidth=4 autoindent

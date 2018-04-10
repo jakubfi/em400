@@ -78,7 +78,8 @@ int em400_init(struct cfg_em400 *cfg)
 		return LOGERR("Failed to initialize logging.");
 	}
 
-	log_config(cfg, __func__);
+	// log configuration as early as possible
+	cfg_log(cfg);
 
 #ifdef WITH_DEBUGGER
 	em400_console = CONSOLE_DEBUGGER;
