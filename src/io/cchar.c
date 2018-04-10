@@ -69,7 +69,7 @@ void * cchar_create(int num, struct cfg_unit *units)
 			free(chan);
 			return NULL;
 		}
-		LOG(L_CCHR, 1, "Adding unit %i: %s", cunit->num, proto->name);
+		LOG(L_CCHR, "Adding unit %i: %s", cunit->num, proto->name);
 
 		// create unit based on prototype
 		struct cchar_unit_proto_t *unit = proto->create(cunit->args);
@@ -133,7 +133,7 @@ void cchar_int_report(struct cchar_chan_t *chan)
 		if ((chan->int_unit[unit_n] != CCHAR_INT_NONE) && !chan->int_mask) {
 			chan->int_reported = unit_n;
 			pthread_mutex_unlock(&chan->int_mutex);
-			LOG(L_CCHR, 3, "CCHAR (ch:%i) reporting interrupt %i", chan->num, chan->num + 12);
+			LOG(L_CCHR, "CCHAR (ch:%i) reporting interrupt %i", chan->num, chan->num + 12);
 			io_int_set(chan->num);
 			break;
 		} else {
@@ -145,7 +145,7 @@ void cchar_int_report(struct cchar_chan_t *chan)
 // -----------------------------------------------------------------------
 void cchar_int(struct cchar_chan_t *chan, int unit_n, int interrupt)
 {
-	LOG(L_CCHR, 1, "CCHAR (ch:%i) interrupt %i, unit: %i", chan->num, interrupt, unit_n);
+	LOG(L_CCHR, "CCHAR (ch:%i) interrupt %i, unit: %i", chan->num, interrupt, unit_n);
 	pthread_mutex_lock(&chan->int_mutex);
 	chan->int_unit[unit_n] = interrupt;
 	pthread_mutex_unlock(&chan->int_mutex);
@@ -156,7 +156,7 @@ void cchar_int(struct cchar_chan_t *chan, int unit_n, int interrupt)
 // -----------------------------------------------------------------------
 int cchar_cmd_intspec(struct cchar_chan_t *chan, uint16_t *r_arg)
 {
-	LOG(L_CCHR, 1, "CCHAR (ch:%i) command: intspec", chan->num);
+	LOG(L_CCHR, "CCHAR (ch:%i) command: intspec", chan->num);
 	pthread_mutex_lock(&chan->int_mutex);
 	if (chan->int_reported != -1) {
 		*r_arg = (chan->int_unit[chan->int_reported] << 8) | (chan->int_reported << 5);
@@ -182,22 +182,22 @@ int cchar_chan_cmd(struct cchar_chan_t *chan, int dir, int cmd, int u_num, uint1
 	if (dir == IO_OU) {
 		switch (cmd) {
 		case CHAN_CMD_EXISTS:
-			LOG(L_CCHR, 1, "CCHAR %i: command: check chan exists", chan->num);
+			LOG(L_CCHR, "CCHAR %i: command: check chan exists", chan->num);
 			break;
 		case CHAN_CMD_MASK_PN:
 			chan->int_mask = 1;
-			LOG(L_CCHR, 1, "CCHAR %i: command: mask CPU", chan->num);
+			LOG(L_CCHR, "CCHAR %i: command: mask CPU", chan->num);
 			break;
 		case CHAN_CMD_MASK_NPN:
-			LOG(L_CCHR, 1, "CCHAR %i: command: mask ~CPU -> ignored", chan->num);
+			LOG(L_CCHR, "CCHAR %i: command: mask ~CPU -> ignored", chan->num);
 			// ignore 2nd CPU
 			break;
 		case CHAN_CMD_ASSIGN:
-			LOG(L_CCHR, 1, "CCHAR %i:%i: command: assign CPU -> ignored", chan->num, u_num);
+			LOG(L_CCHR, "CCHAR %i:%i: command: assign CPU -> ignored", chan->num, u_num);
 			// always for CPU 0
 			break;
 		default:
-			LOG(L_CCHR, 1, "CCHAR %i:%i: unknow command", chan->num, u_num);
+			LOG(L_CCHR, "CCHAR %i:%i: unknow command", chan->num, u_num);
 			// shouldn't happen, but as channel always reports OK...
 			break;
 		}
@@ -205,17 +205,17 @@ int cchar_chan_cmd(struct cchar_chan_t *chan, int dir, int cmd, int u_num, uint1
 		switch (cmd) {
 		case CHAN_CMD_EXISTS:
 		case CHAN_CMD_STATUS:
-			LOG(L_CCHR, 1, "CCHAR %i: command: check chan exists", chan->num);
+			LOG(L_CCHR, "CCHAR %i: command: check chan exists", chan->num);
 			break;
 		case CHAN_CMD_INTSPEC:
 			return cchar_cmd_intspec(chan, r_arg);
 		case CHAN_CMD_ALLOC:
 			// all units always working with CPU 0
 			*r_arg = 0;
-			LOG(L_CCHR, 1, "CCHAR %i:%i: command: get allocation -> %i", chan->num, u_num, *r_arg);
+			LOG(L_CCHR, "CCHAR %i:%i: command: get allocation -> %i", chan->num, u_num, *r_arg);
 			break;
 		default:
-			LOG(L_CCHR, 1, "CCHAR %i:%i: unknow command", chan->num, u_num);
+			LOG(L_CCHR, "CCHAR %i:%i: unknow command", chan->num, u_num);
 			// shouldn't happen, but as channel always reports OK...
 			break;
 		}

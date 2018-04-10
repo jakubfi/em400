@@ -75,7 +75,7 @@ static void cpu_idle_in_halt()
 {
 	pthread_mutex_lock(&cpu_wake_mutex);
 	while ((cpu_state == STATE_HALT) && !atom_load_acquire(&RP)) {
-		LOG(L_CPU, 1, "idling in halt");
+		LOG(L_CPU, "idling in halt");
 		pthread_cond_wait(&cpu_wake_cond, &cpu_wake_mutex);
 	}
 	cpu_state &= ~STATE_HALT;
@@ -241,7 +241,7 @@ int cpu_init(struct cfg_em400 *cfg, int new_ui)
 	// seems to be checked only at power-on!
 	// (unless power supply sends -PON at hw reset)
 	if (mem_mega_boot()) {
-		LOG(L_CPU, 1, "Bootstrap from MEGA PROM is enabled");
+		LOG(L_CPU, "Bootstrap from MEGA PROM is enabled");
 		rIC = 0xf000;
 	}
 
@@ -323,7 +323,7 @@ int cpu_ctx_switch(uint16_t arg, uint16_t ic, uint16_t sr_mask)
 
 	if (!cpu_mem_get(0, 97, &sp)) return 0;
 
-	LOG(L_CPU, 3, "H/W stack push @ 0x%04x (IC = 0x%04x, R0 = 0x%04x, SR = 0x%04x, arg = 0x%04x), new IC = 0x%04x",
+	LOG(L_CPU, "H/W stack push @ 0x%04x (IC = 0x%04x, R0 = 0x%04x, SR = 0x%04x, arg = 0x%04x), new IC = 0x%04x",
 		sp,
 		rIC,
 		regs[0],
@@ -363,7 +363,7 @@ int cpu_ctx_restore()
 	int_update_mask(rSR);
 	if (!cpu_mem_put(0, 97, sp-4)) return 0;
 
-	LOG(L_CPU, 3, "H/W stack pop @ 0x%04x (IC = 0x%04x, R0 = 0x%04x, SR = 0x%04x)",
+	LOG(L_CPU, "H/W stack pop @ 0x%04x (IC = 0x%04x, R0 = 0x%04x, SR = 0x%04x)",
 		sp-4,
 		rIC,
 		regs[0],
@@ -385,7 +385,7 @@ static void cpu_step()
 
 	// fetch instruction
 	if (!mem_get(QNB, rIC, &rIR)) {
-		LOGCPU(L_CPU, 2, "        (NO MEM: instruction fetch)");
+		LOGCPU(L_CPU, "        (NO MEM: instruction fetch)");
 		goto memfail;
 	}
 
@@ -399,7 +399,7 @@ static void cpu_step()
 	if (P || ((regs[0] & op->nef_mask) != op->nef_result)) {
 		P = 0;
 		rMODc = rMOD = 0;
-		LOGCPU(L_CPU, 2, "    (skip)");
+		LOGCPU(L_CPU, "    (skip)");
 		// skip also M-arg if present
 		if (op->norm_arg && !IR_C) rIC++;
 		return;
@@ -411,7 +411,7 @@ static void cpu_step()
 			N = regs[IR_C] + rMOD;
 		} else {
 			if (!mem_get(QNB, rIC, &data)) {
-				LOGCPU(L_CPU, 2, "    (no mem: long arg fetch @ %i:0x%04x)", QNB, (uint16_t) rIC);
+				LOGCPU(L_CPU, "    (no mem: long arg fetch @ %i:0x%04x)", QNB, (uint16_t) rIC);
 				goto memfail;
 			} else {
 				N = data + rMOD;
@@ -423,7 +423,7 @@ static void cpu_step()
 		}
 		if (IR_D) {
 			if (!mem_get(QNB, N, &data)) {
-				LOGCPU(L_CPU, 2, "    (no mem: indirect arg fetch @ %i:0x%04x)", QNB, (uint16_t) N);
+				LOGCPU(L_CPU, "    (no mem: indirect arg fetch @ %i:0x%04x)", QNB, (uint16_t) N);
 				goto memfail;
 			} else {
 				N = data;
@@ -433,8 +433,8 @@ static void cpu_step()
 		N = (uint16_t) IR_T + (uint16_t) rMOD;
 	}
 
-	if (LOG_WANTS(L_CPU, 2)) {
-		log_log_dasm(L_CPU, 2, rMOD, op->norm_arg, op->short_arg, N);
+	if (LOG_WANTS(L_CPU)) {
+		log_log_dasm(rMOD, op->norm_arg, op->short_arg, N);
 	}
 
 	// execute instruction

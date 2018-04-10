@@ -169,7 +169,7 @@ uint8_t mx_proto_terminal_attach_start(struct mx_line *line, int *irq, uint16_t 
 	pd->proc		= (data[1] & 0b0000000011111111) >> 0;
 	pd->proc_params	= data[2];
 
-	LOGID(L_TERM, 4, line, "Terminal attached, parity: %s, EOT: #%2x, OPRQ: #%2x, text proc: %i (params: 0x%04x), flags: %s%s%s%s%s%s",
+	LOGID(L_TERM, line, "Terminal attached, parity: %s, EOT: #%2x, OPRQ: #%2x, text proc: %i (params: 0x%04x), flags: %s%s%s%s%s%s",
 		mx_term_parity_names[pd->parity],
 		pd->eot_char,
 		pd->oprq_char,

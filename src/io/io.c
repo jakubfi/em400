@@ -66,12 +66,12 @@ int io_init(struct cfg_em400 *cfg)
 {
 	struct cfg_chan *chanc = cfg->chans;
 
-	LOG(L_IO, 1, "Initializing I/O");
+	LOG(L_IO, "Initializing I/O");
 
 	fpga = cfg->fpga;
 
 	while (chanc) {
-		LOG(L_IO, 1, "Channel %i: %s", chanc->num, chanc->name);
+		LOG(L_IO, "Channel %i: %s", chanc->num, chanc->name);
 		io_chan[chanc->num] = chan_make(chanc->num, chanc->name, chanc->units);
 		if (!io_chan[chanc->num]) {
 			return LOGERR("Failed to initialize channel: %s.", chanc->name);
@@ -85,11 +85,11 @@ int io_init(struct cfg_em400 *cfg)
 // -----------------------------------------------------------------------
 void io_shutdown()
 {
-	LOG(L_IO, 1, "Shutdown I/O");
+	LOG(L_IO, "Shutdown I/O");
 	for (int c_num=0 ; c_num<IO_MAX_CHAN ; c_num++) {
 		struct chan *chan = io_chan[c_num];
 		if (chan) {
-			LOG(L_IO, 1, "Channel %i: %s", c_num, chan->drv->name);
+			LOG(L_IO, "Channel %i: %s", c_num, chan->drv->name);
 			chan_destroy(chan);
 			io_chan[c_num] = NULL;
 		}
@@ -125,7 +125,7 @@ int io_dispatch(int dir, uint16_t n, uint16_t *r)
 		if (dir == IO_OU) {
 			return mem_cmd(n, *r);
 		} else {
-			LOG(L_IO, 1, "MEM command shouldn't be IN");
+			LOG(L_IO, "MEM command shouldn't be IN");
 			// TODO: what to return?
 			return IO_NO;
 		}
@@ -134,9 +134,9 @@ int io_dispatch(int dir, uint16_t n, uint16_t *r)
 		int chan_n = (n & 0b0000000000011110) >> 1;
 		struct chan *chan = io_chan[chan_n];
 		int res;
-		if (LOG_WANTS(L_IO, 1)) {
+		if (LOG_WANTS(L_IO)) {
 			char *narg = int2binf("cmd: ... .. ...... ch: .... .", n, 16);
-			LOG(L_IO, 1, "I/O %s chan = %d, n_arg = %s (0x%04x), r_arg = 0x%04x", dir ? "IN" : "OUT", chan_n, narg, n, *r);
+			LOG(L_IO, "I/O %s chan = %d, n_arg = %s (0x%04x), r_arg = 0x%04x", dir ? "IN" : "OUT", chan_n, narg, n, *r);
 			free(narg);
 		}
 
@@ -145,7 +145,7 @@ int io_dispatch(int dir, uint16_t n, uint16_t *r)
 		} else {
 			res = IO_NO;
 		}
-		LOG(L_IO, 1, "I/O result: %s, r_arg = 0x%04x", io_result_names[res], *r);
+		LOG(L_IO, "I/O result: %s, r_arg = 0x%04x", io_result_names[res], *r);
 		return res;
 	}
 }

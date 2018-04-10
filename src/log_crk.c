@@ -113,7 +113,7 @@ char * log_ctx_stringify(struct crk5_process *process)
 }
 
 // -----------------------------------------------------------------------
-void log_log_process(unsigned component, unsigned level)
+void log_log_process(unsigned component)
 {
 	static int last_pid;
 
@@ -124,7 +124,7 @@ void log_log_process(unsigned component, unsigned level)
 
 	char *buf = log_ctx_stringify(process);
 
-	LOGBLOB(component, level, buf);
+	LOGBLOB(component, buf);
 
 	free(buf);
 }
@@ -551,7 +551,7 @@ static char * log_exl_decode(int nb, uint16_t addr, uint16_t r4_curr, int exl_nu
 
 // -----------------------------------------------------------------------
 // called at every EXL
-void log_handle_syscall(unsigned component, unsigned level, int num, int nb, int addr, uint16_t r4)
+void log_handle_syscall(unsigned component, int num, int nb, int addr, uint16_t r4)
 {
 	log_exl_number = num;
 	log_exl_nb = nb;
@@ -560,7 +560,7 @@ void log_handle_syscall(unsigned component, unsigned level, int num, int nb, int
 
 	char *details = log_exl_decode(nb, r4, r4, num, 0);
 	if (details) {
-		LOGBLOB(component, level, details);
+		LOGBLOB(component, details);
 	}
 
 	free(details);
@@ -574,13 +574,13 @@ void log_syscall_reset()
 
 // -----------------------------------------------------------------------
 // called at every LIP and SP, after new process context is set
-void log_handle_syscall_ret(unsigned component, unsigned level, uint16_t ic, uint16_t sr, uint16_t r4)
+void log_handle_syscall_ret(unsigned component, uint16_t ic, uint16_t sr, uint16_t r4)
 {
 	// check if current context is where we left at last EXL
 	if ((log_exl_number >= 0) && (ic == log_exl_addr) && ((sr & 0b1111) == log_exl_nb)) {
 		char *details = log_exl_decode(log_exl_nb, log_exl_r4, r4, log_exl_number, 1);
 		if (details) {
-			LOGBLOB(component, level, details);
+			LOGBLOB(component, details);
 		}
 		free(details);
 		log_syscall_reset();
@@ -637,7 +637,7 @@ void log_check_os()
 		goto cleanup;
 	}
 
-	LOG(L_CRK5, 1, "running CROOK for %s CPU, entry point @ 0x%04x, checksum: 0x%04x (%s)",
+	LOG(L_CRK5, "running CROOK for %s CPU, entry point @ 0x%04x, checksum: 0x%04x (%s)",
 		kernel->mod ? "MX-16" : "MERA-400",
 		kernel->entry_point,
 		kernel->cksum_addr,

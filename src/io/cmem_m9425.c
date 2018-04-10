@@ -65,7 +65,7 @@ struct cmem_unit_proto_t * cmem_m9425_create(struct cfg_arg *args)
 			LOGERR("Error opening image \"%s\": wrong geometry.", image_name[i]);
 			goto fail;
 		}
-		LOG(L_9425, 1, "MERA 9425 (plate %i): cyl=%i, head=%i, sectors=%i, spt=%i, image=%s", i, UNIT->disk[i]->cylinders, UNIT->disk[i]->heads, UNIT->disk[i]->spt, UNIT->disk[i]->block_size, image_name[i]);
+		LOG(L_9425, "MERA 9425 (plate %i): cyl=%i, head=%i, sectors=%i, spt=%i, image=%s", i, UNIT->disk[i]->cylinders, UNIT->disk[i]->heads, UNIT->disk[i]->spt, UNIT->disk[i]->block_size, image_name[i]);
 		free(image_name[i]);
 		image_name[i] = NULL;
 	}

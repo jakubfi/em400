@@ -82,22 +82,23 @@ log {
 	# Name of the log file (default: em400.log)
 	file = "em400.log"
 
-	# Logging levels are described by a string with the following syntax:
+	# Select which components write logs for.
 	#
-	# "<component=level>,<component=level>,..."
+	# "<component>,..."
 	#
-	# Component is one of:
+	# Available components are:
 	#   em4h - emulator
 	#   reg, mem, cpu, op, int - registers, memory, cpu cycle, instructions, interrupts
-	#   io, mx, px, cchr, cmem - I/O, MULTIX, PLIX, character and memory channel
-	#   term, wnch, 9425, flop, pnch, pnrd - terminal, winchester, floppy, tape puncher and reader
+	#   io, mx, px, cchr, cmem - general I/O, MULTIX, PLIX, character and memory channel
+	#   term, 9425, wnch, flop, pnch, pnrd, tape - terminal, mera 9425, winchester, floppy, tape puncher and reader, magnetic tape
 	#   crk5 - CROOK-5
-	#   all - special "component" to set all components' levels to a given value
+	#   em4h - emulator, general
+	#   ectl - emulator, remote control
+	#   fpga - emulation-fpga I/O bridge
+	#   all - special "component" to enable or disable all components
 	#
-	# Level is an integer from range 0-9, 0 being "do not log" and
-	# "9" being "log insane amount of data" (level 9 can make things slower up to 100x)
-	# default: "all=0,em4h=1"
-	levels = "all=0,em4h=1"
+	# default: none
+	components = "em4h,cpu"
 }
 
 #channel 0 = mem {

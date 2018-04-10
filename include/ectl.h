@@ -86,15 +86,14 @@ enum ectl_log_components {
 	ECTL_LOG_FLOP,
 	ECTL_LOG_PNCH,
 	ECTL_LOG_PNRD,
+	ECTL_LOG_TAPE,
 	ECTL_LOG_CRK5,
 	ECTL_LOG_EM4H,
 	ECTL_LOG_ECTL,
+	ECTL_LOG_FPGA,
 	ECTL_LOG_ALL,
-	ECTL_LOG_COUNT = ECTL_LOG_ALL
+	ECTL_LOG_COUNT,
 };
-
-#define ECTL_LOG_LEVEL_MIN 0
-#define ECTL_LOG_LEVEL_MAX 9
 
 // maintenance
 int ectl_init();
@@ -141,8 +140,8 @@ int ectl_eval(char *expression, char **err_msg, int *err_beg, int *err_end);
 // logging
 int ectl_log_state_get();
 int ectl_log_state_set(int state);
-int ectl_log_level_get(unsigned component);
-int ectl_log_level_set(unsigned component, unsigned level);
+int ectl_log_component_get(unsigned component);
+int ectl_log_component_set(unsigned component, int state);
 const char * ectl_log_component_name(unsigned component);
 int ectl_log_component_id(char *name);
 

@@ -41,37 +41,33 @@
 
 #define LOG_FLUSH_DELAY_MS 200
 
-struct log_component {
-	const char *name;
-	unsigned thr;
+static const char * log_component_names[] = {
+	"REG",
+	"MEM",
+	"CPU",
+	"OP",
+	"INT",
+	"IO",
+	"MX",
+	"PX",
+	"CCHR",
+	"CMEM",
+	"TERM",
+	"9425",
+	"WNCH",
+	"FLOP",
+	"PNCH",
+	"PNRD",
+	"TAPE",
+	"CRK5",
+	"EM4H",
+	"ECTL",
+	"FPGA",
+	"ALL",
 };
 
-struct log_component log_components[] = {
-	{ "REG", 0 },
-	{ "MEM", 0 },
-	{ "CPU", 0 },
-	{ "OP", 0 },
-	{ "INT", 0 },
-	{ "IO", 0 },
-	{ "MX", 0 },
-	{ "PX", 0 },
-	{ "CCHR", 0 },
-	{ "CMEM", 0 },
-	{ "TERM", 0 },
-	{ "9425", 0 },
-	{ "WNCH", 0 },
-	{ "FLOP", 0 },
-	{ "PNCH", 0 },
-	{ "PNRD", 0 },
-	{ "TAPE", 0 },
-	{ "CRK5", 0 },
-	{ "EM4H", 1 },
-	{ "ECTL", 1 },
-	{ "FPGA", 0 },
-	{ "ALL", 0 }
-};
-
-int log_enabled;
+unsigned log_components_enabled;
+unsigned log_components_selected;
 
 static pthread_t log_flusher_th;
 static pthread_mutex_t log_mutex;
@@ -84,7 +80,7 @@ static void * log_flusher(void *ptr);
 
 // high-level stuff
 
-#define LOG_F_COMP "%4s %1i | %8s | "
+#define LOG_F_COMP "%4s | %8s | "
 #define LOG_F_FUN "%24s() | "
 #define LOG_F_CPU "%x:0x%04x %-6s            | %s"
 
@@ -98,12 +94,12 @@ static const char *log_int_indent = "--> --> --> --> --> --> --> --> ";
 static struct emdas *emd;
 static char *dasm_buf;
 
-static void log_log_timestamp(unsigned component, unsigned level, char *msg, const char *func);
+static void log_log_timestamp(unsigned component, char *msg, const char *func);
+static void log_components_update();
 
 // -----------------------------------------------------------------------
 int log_init(struct cfg_em400 *cfg)
 {
-	int res;
 	int ret = E_ERR;
 
 	log_file = strdup(cfg->log_file);
@@ -112,10 +108,9 @@ int log_init(struct cfg_em400 *cfg)
 		goto cleanup;
 	}
 
-	// set up thresholds
-	res = log_setup_levels(cfg->log_levels);
-	if (res < 0) {
-		LOGERR("Failed to parse log levels definition: \"%s\".", cfg->log_levels);
+	// set up components to log
+	if (log_setup_components(cfg->log_components) < 0) {
+		LOGERR("Failed to parse log component definition: \"%s\".", cfg->log_components);
 		goto cleanup;
 	}
 
@@ -182,9 +177,9 @@ void log_disable()
 		return;
 	}
 
-	log_log_timestamp(L_EM4H, 0, "Closing log", __func__);
+	log_log_timestamp(L_EM4H, "Closing log", __func__);
 
-	atom_store_release(&log_enabled, 0);
+	atom_store_release(&log_components_enabled, 0);
 
 	// stop flusher thread
 	pthread_mutex_lock(&log_mutex);
@@ -210,7 +205,7 @@ int log_enable()
 		return LOGERR("Failed to open log file: \"%s\".", log_file);
 	}
 
-	log_log_timestamp(L_EM4H, 0, "Opened log", __func__);
+	log_log_timestamp(L_EM4H, "Opened log", __func__);
 
 	// start up flusher thread
 	log_flusher_stop = 0;
@@ -219,147 +214,92 @@ int log_enable()
 		return LOGERR("Failed to spawn log flusher thread.");
 	}
 
-	atom_store_release(&log_enabled, 1);
+	log_components_update();
 
 	return E_OK;
 }
 
 // -----------------------------------------------------------------------
-int log_is_enabled()
+unsigned log_is_enabled()
 {
-	return atom_load_acquire(&log_enabled);
+	return atom_load_acquire(&log_components_enabled);
 }
 
 // -----------------------------------------------------------------------
-int log_set_level(unsigned component, unsigned level)
+static void log_components_update()
 {
-	if ((component > L_ALL) || (level > LOG_LEVEL_MAX)) {
-		return -1;
-	}
+	atom_store_release(&log_components_enabled, log_components_selected);
+}
 
-	// set level for specified component
-	if (component != L_ALL) {
-		atom_store_release(&log_components[component].thr, level);
-	// set level for all components
+// -----------------------------------------------------------------------
+void log_component_enable(unsigned component)
+{
+	if (component == L_ALL) {
+		atom_store_release(&log_components_selected, -1);
 	} else {
-		for (int i=0 ; i<L_ALL; i++) {
-			atom_store_release(&log_components[i].thr, level);
-		}
+		atom_or_release(&log_components_selected, 1 << component);
 	}
-
-	return 0;
+	if (log_is_enabled()) log_components_update();
 }
 
 // -----------------------------------------------------------------------
-int log_get_level(unsigned component)
+void log_component_disable(unsigned component)
 {
-	if (component > L_ALL) {
-		return -1;
+	if (component == L_ALL) {
+		atom_store_release(&log_components_selected, 0);
+	} else {
+		atom_and_release(&log_components_selected, ~(1 << component));
 	}
-	return atom_load_acquire(&log_components[component].thr);
+	if (log_is_enabled()) log_components_update();
+}
+
+// -----------------------------------------------------------------------
+unsigned log_component_get(unsigned component)
+{
+	return atom_load_acquire(&log_components_selected) & (1 << component);
 }
 
 // -----------------------------------------------------------------------
 const char * log_get_component_name(unsigned component)
 {
-	if (component > L_ALL) {
+	if (component > L_CNT) {
 		return NULL;
 	}
-	return log_components[component].name;
+	return log_component_names[component];
 }
 
 // -----------------------------------------------------------------------
 int log_get_component_id(const char *name)
 {
-	int i;
 	int comp = -1;
 
-	for (i=0 ; (i<=L_ALL) ; i++) {
-		if (!strcasecmp(log_components[i].name, name)) {
+	for (unsigned i=0 ; i<=L_ALL ; i++) {
+		if (name && !strcasecmp(log_component_names[i], name)) {
 			comp = i;
 			break;
 		}
 	}
+
 	return comp;
 }
 
 // -----------------------------------------------------------------------
-// I was bored.
-// And then I suddenly felt like moving some chars around, hardcore style.
-int log_setup_levels(char *levels)
+int log_setup_components(char *components)
 {
-	if (!levels || (*levels == '\0')) return 0;
-
-	char *str = levels;
-	const int buf_max = 8;
-	char level_str[buf_max];
-	char comp_name[buf_max];
-	char *buf = comp_name;
-	int i = 0;
-	int have_comp = 0;
-	int found = 0;
-
-	while (1) {
-		if (i > buf_max) {
-			goto bail;
+	char *cmp = strdup(components);
+	char *c = strtok(cmp, ",");
+	while (c && *c) {
+		while (*c == ' ') c++;
+		if (*c) {
+			char *space = strchr(c, ' ');
+			if (space) *space = '\0';
+			unsigned id = log_get_component_id(c);
+			log_component_enable(id);
+			c = strtok(NULL, ",");
 		}
-
-		if (*str == '=') {
-			if (!have_comp && (i > 0)) {
-				buf[i] = '\0';
-				buf = level_str;
-				i = 0;
-				have_comp = 1;
-			} else {
-				goto bail;
-			}
-		} else if ((*str == ',') || (*str == '\0')) {
-			if (have_comp && (i > 0)) {
-				buf[i] = '\0';
-				buf = comp_name;
-				i = 0;
-				have_comp = 0;
-				char *endptr;
-				int level = strtol(level_str, &endptr, 10);
-				if ((*endptr != '\0') || (level > 9)) {
-					goto bail;
-				}
-				int comp_id = log_get_component_id(comp_name);
-				if (comp_id < 0) {
-					goto bail;
-				}
-				if (log_set_level(comp_id, level)) {
-					goto bail;
-				}
-				found++;
-			} else {
-				goto bail;
-			}
-			if (*str == '\0') {
-				break;
-			}
-		} else {
-			buf[i] = *str;
-			i++;
-		}
-
-		str++;
 	}
-
-	return found;
-
-bail:
-	return -(str - levels + 1);
-}
-
-// -----------------------------------------------------------------------
-int log_wants(unsigned component, unsigned level)
-{
-	// check if message is to be logged
-	if (level > atom_load_acquire(&log_components[component].thr)) {
-		return 0;
-	}
-	return 1;
+	free(cmp);
+	return 0;
 }
 
 // -----------------------------------------------------------------------
@@ -379,7 +319,7 @@ int log_err(const char *func, char *msgfmt, ...)
 	if (log_is_enabled()) {
 		va_start(vl, msgfmt);
 		pthread_mutex_lock(&log_mutex);
-		fprintf(log_f, LOG_F_COMP LOG_F_FUN, log_components[L_EM4H].name, 0, thname, func);
+		fprintf(log_f, LOG_F_COMP LOG_F_FUN, log_component_names[L_EM4H], thname, func);
 		fprintf(log_f, "ERROR: ");
 		vfprintf(log_f, msgfmt, vl);
 		fprintf(log_f, "\n");
@@ -391,7 +331,7 @@ int log_err(const char *func, char *msgfmt, ...)
 }
 
 // -----------------------------------------------------------------------
-void log_log(unsigned component, unsigned level, const char *func, char *msgfmt, ...)
+void log_log(unsigned component, const char *func, char *msgfmt, ...)
 {
 	va_list vl;
 	va_start(vl, msgfmt);
@@ -400,7 +340,7 @@ void log_log(unsigned component, unsigned level, const char *func, char *msgfmt,
 	pthread_getname_np(pthread_self(), thname, 16);
 
 	pthread_mutex_lock(&log_mutex);
-	fprintf(log_f, LOG_F_COMP LOG_F_FUN, log_components[component].name, level, thname, func);
+	fprintf(log_f, LOG_F_COMP LOG_F_FUN, log_component_names[component], thname, func);
 	vfprintf(log_f, msgfmt, vl);
 	fprintf(log_f, "\n");
 	pthread_mutex_unlock(&log_mutex);
@@ -409,7 +349,7 @@ void log_log(unsigned component, unsigned level, const char *func, char *msgfmt,
 }
 
 // -----------------------------------------------------------------------
-void log_log_cpu(unsigned component, unsigned level, char *msgfmt, ...)
+void log_log_cpu(unsigned component, char *msgfmt, ...)
 {
 	va_list vl;
 	va_start(vl, msgfmt);
@@ -419,8 +359,7 @@ void log_log_cpu(unsigned component, unsigned level, char *msgfmt, ...)
 
 	pthread_mutex_lock(&log_mutex);
 	fprintf(log_f, LOG_F_COMP LOG_F_CPU,
-		log_components[component].name,
-		level,
+		log_component_names[component],
 		thname,
 		(log_cycle_sr & 0b0000000000100000) ? (log_cycle_sr & 0b0000000000001111) : 0,
 		log_cycle_ic,
@@ -435,7 +374,7 @@ void log_log_cpu(unsigned component, unsigned level, char *msgfmt, ...)
 }
 
 // -----------------------------------------------------------------------
-void log_splitlog(unsigned component, unsigned level, const char *func, char *text)
+void log_splitlog(unsigned component, const char *func, char *text)
 {
 	char *p;
 	char *start = text;
@@ -445,32 +384,32 @@ void log_splitlog(unsigned component, unsigned level, const char *func, char *te
 
 	pthread_mutex_lock(&log_mutex);
 
-	fprintf(log_f, LOG_F_COMP LOG_F_FUN ".-------------------------------------------------------------------\n", log_components[component].name, level, thname, func);
+	fprintf(log_f, LOG_F_COMP LOG_F_FUN ".-------------------------------------------------------------------\n", log_component_names[component], thname, func);
 	while (start && *start) {
 		p = strchr(start, '\n');
 		if (p) {
 			*p = '\0';
 		}
-		fprintf(log_f, LOG_F_COMP LOG_F_FUN "| %s\n", log_components[component].name, level, thname, func, start);
+		fprintf(log_f, LOG_F_COMP LOG_F_FUN "| %s\n", log_component_names[component], thname, func, start);
 		if (p) {
 			start = p+1;
 		} else {
 			start = NULL;
 		}
 	}
-	fprintf(log_f, LOG_F_COMP LOG_F_FUN "`-------------------------------------------------------------------\n", log_components[component].name, level, thname, func);
+	fprintf(log_f, LOG_F_COMP LOG_F_FUN "`-------------------------------------------------------------------\n", log_component_names[component], thname, func);
 
 	pthread_mutex_unlock(&log_mutex);
 }
 
 // -----------------------------------------------------------------------
-static void log_log_timestamp(unsigned component, unsigned level, char *msg, const char *func)
+static void log_log_timestamp(unsigned component, char *msg, const char *func)
 {
 	struct timeval ct;
 	char date[32];
 	gettimeofday(&ct, NULL);
 	strftime(date, 31, "%Y-%m-%d %H:%M:%S", localtime(&ct.tv_sec));
-	log_log(component, level, func, "%s: %s", msg, date);
+	log_log(component, func, "%s: %s", msg, date);
 }
 
 // -----------------------------------------------------------------------
@@ -503,70 +442,68 @@ void log_intlevel_inc()
 }
 
 // -----------------------------------------------------------------------
-void log_log_dasm(unsigned component, unsigned level, int mod, int norm_arg, int short_arg, int16_t n)
+void log_log_dasm(int mod, int norm_arg, int short_arg, int16_t n)
 {
 	int nb = ((log_cycle_sr & 0b0000000000100000) >> 5) * (log_cycle_sr & 0b0000000000001111);
 	emdas_dasm(emd, nb, log_cycle_ic);
 
 	if (norm_arg) {
 		if (mod) {
-			log_log_cpu(component, level, "    %-20s N = 0x%x = %i, MOD = 0x%x = %i", dasm_buf, (uint16_t) n, n, mod, mod);
+			log_log_cpu(L_CPU, "    %-20s N = 0x%x = %i, MOD = 0x%x = %i", dasm_buf, (uint16_t) n, n, mod, mod);
 		} else {
-			log_log_cpu(component, level, "    %-20s N = 0x%x = %i", dasm_buf, (uint16_t) n, n);
+			log_log_cpu(L_CPU, "    %-20s N = 0x%x = %i", dasm_buf, (uint16_t) n, n);
 		}
 	} else if (short_arg) {
 		if (mod) {
-			log_log_cpu(component, level, "    %-20s T = %i, MOD = 0x%x = %i", dasm_buf, n, mod, mod);
+			log_log_cpu(L_CPU, "    %-20s T = %i, MOD = 0x%x = %i", dasm_buf, n, mod, mod);
 		} else {
-			log_log_cpu(component, level, "    %-20s T = %i", dasm_buf, n);
+			log_log_cpu(L_CPU, "    %-20s T = %i", dasm_buf, n);
 		}
 	} else {
-		log_log_cpu(component, level, "    %-20s", dasm_buf);
+		log_log_cpu(L_CPU, "    %-20s", dasm_buf);
 	}
 }
 
 // -----------------------------------------------------------------------
 // called when final configuration is assembled
-void log_config(unsigned component, unsigned level, struct cfg_em400 *cfg, const char *func)
+void log_config(struct cfg_em400 *cfg, const char *func)
 {
-	if (!LOG_WANTS(component, level)) return;
-
-	log_log(component, level, func, "---- Effective configuration: ----------");
-	log_log(component, level, func, "Program to load: %s", cfg->program_name);
-	log_log(component, level, func, "Loaded config: %s", cfg->cfg_filename);
-	log_log(component, level, func, "Print help: %s", cfg->print_help ? "yes" : "no");
-	log_log(component, level, func, "Use FPGA backend: %s", cfg->fpga ? "yes" : "no");
+	LOG(L_EM4H, "---- Effective configuration: ----------");
+	LOG(L_EM4H, "Program to load: %s", cfg->program_name);
+	LOG(L_EM4H, "Loaded config: %s", cfg->cfg_filename);
+	LOG(L_EM4H, "Print help: %s", cfg->print_help ? "yes" : "no");
+	LOG(L_EM4H, "Use FPGA backend: %s", cfg->fpga ? "yes" : "no");
 	if (!cfg->fpga) {
-		log_log(component, level, func, "CPU emulation:");
-		log_log(component, level, func, "   Emulation speed: %s", cfg->speed_real ? "real" : "max");
-		log_log(component, level, func, "   Timer step: %i (%s at power-on)", cfg->timer_step, cfg->timer_start ? "enabled" : "disabled");
-		log_log(component, level, func, "   CPU modifications: %s", cfg->cpu_mod ? "present" : "absent");
-		log_log(component, level, func, "   IN/OU instructions: %s for user programs", cfg->cpu_user_io_illegal ? "illegal" : "legal");
-		log_log(component, level, func, "   Hardware AWP: %s", cfg->cpu_awp ? "present" : "absent");
-		log_log(component, level, func, "   CPU stop on nomem in OS block: %s", cfg->cpu_stop_on_nomem ? "yes" : "no");
-		log_log(component, level, func, "Memory emulation:");
-		log_log(component, level, func, "   Elwro modules: %i", cfg->mem_elwro);
-		log_log(component, level, func, "   MEGA modules: %i", cfg->mem_mega);
-		log_log(component, level, func, "   MEGA PROM image: %s", cfg->mem_mega_prom);
-		log_log(component, level, func, "   MEGA boot: %s", cfg->mem_mega_boot ? "true" : "false");
-		log_log(component, level, func, "   Segments for OS: %i", cfg->mem_os);
+		LOG(L_EM4H, "CPU emulation:");
+		LOG(L_EM4H, "   Emulation speed: %s", cfg->speed_real ? "real" : "max");
+		LOG(L_EM4H, "   Timer step: %i (%s at power-on)", cfg->timer_step, cfg->timer_start ? "enabled" : "disabled");
+		LOG(L_EM4H, "   CPU modifications: %s", cfg->cpu_mod ? "present" : "absent");
+		LOG(L_EM4H, "   IN/OU instructions: %s for user programs", cfg->cpu_user_io_illegal ? "illegal" : "legal");
+		LOG(L_EM4H, "   Hardware AWP: %s", cfg->cpu_awp ? "present" : "absent");
+		LOG(L_EM4H, "   CPU stop on nomem in OS block: %s", cfg->cpu_stop_on_nomem ? "yes" : "no");
+		LOG(L_EM4H, "Memory emulation:");
+		LOG(L_EM4H, "   Elwro modules: %i", cfg->mem_elwro);
+		LOG(L_EM4H, "   MEGA modules: %i", cfg->mem_mega);
+		LOG(L_EM4H, "   MEGA PROM image: %s", cfg->mem_mega_prom);
+		LOG(L_EM4H, "   MEGA boot: %s", cfg->mem_mega_boot ? "true" : "false");
+		LOG(L_EM4H, "   Segments for OS: %i", cfg->mem_os);
 	} else {
-		log_log(component, level, func, "FPGA backend:");
-		log_log(component, level, func, "   Device: %s", cfg->fpga_dev);
-		log_log(component, level, func, "   Link speed: %i", cfg->fpga_speed);
+		LOG(L_EM4H, "FPGA backend:");
+		LOG(L_EM4H, "   Device: %s", cfg->fpga_dev);
+		LOG(L_EM4H, "   Link speed: %i", cfg->fpga_speed);
 	}
-	log_log(component, level, func, "KB: 0x%04x", cfg->keys);
-	log_log(component, level, func, "Logging (%s):", cfg->log_enabled ? "enabled" : "disabled");
-	log_log(component, level, func, "   File: %s", cfg->log_file);
-	log_log(component, level, func, "   Levels: %s", cfg->log_levels);
-	log_log(component, level, func, "I/O:");
+	LOG(L_EM4H, "KB: 0x%04x", cfg->keys);
+	LOG(L_EM4H, "Logging (%s):", cfg->log_enabled ? "enabled" : "disabled");
+	LOG(L_EM4H, "   File: %s", cfg->log_file);
+	LOG(L_EM4H, "   Components: %s", cfg->log_components);
+	LOG(L_EM4H, "I/O:");
 
 	char buf[4096];
 	int bpos;
 
 	struct cfg_chan *chanc = cfg->chans;
 	while (chanc) {
-		log_log(component, level, func, "   Channel %2i: %s", chanc->num, chanc->name);
+		LOG(L_EM4H, "   Channel %2i: %s", chanc->num, chanc->name);
 
 		struct cfg_unit *unitc = chanc->units;
 		while (unitc) {
@@ -579,13 +516,13 @@ void log_config(unsigned component, unsigned level, struct cfg_em400 *cfg, const
 					bpos += sprintf(buf+bpos, ", ");
 				}
 			}
-			log_log(component, level, func, "      Unit %2i: %s (%s)", unitc->num, unitc->name, buf);
+			LOG(L_EM4H, "      Unit %2i: %s (%s)", unitc->num, unitc->name, buf);
 			unitc = unitc->next;
 		}
 
 		chanc = chanc->next;
 	}
-	log_log(component, level, func, "----------------------------------------");
+	LOG(L_EM4H, "----------------------------------------");
 }
 
 // vim: tabstop=4 shiftwidth=4 autoindent

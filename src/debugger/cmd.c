@@ -58,7 +58,7 @@ struct cmd_t dbg_commands[] = {
 	{ "brk",	F_BRK,		"Manipulate breakpoints", "  brk add <expression>\n  brk del <brk_number>\n  brk" },
 	{ "run",	F_RUN,		"Run emulation", "  run" },
 	{ "stk",	F_STACK,	"Show stack", "  stk" },
-	{ "log",	F_LOG,		"Manipulate logging", "  log\n  log on|off\n  log level <component>:<level>" },
+	{ "log",	F_LOG,		"Manipulate logging", "  log\n  log on|off\n  log <component> on|off" },
 	{ "watch",	F_WATCH,	"Manipulate expression watches", "  watch add <expression>\n  watch del <watch_number>\n  watch" },
 	{ "decode",	F_DECODE,	"Decode memory structures", "  decode\n  decode <decoder> <address>" },
 	{ "find",	F_FIND,		"Search memory for a value", "  find <block> <value>" },
@@ -516,12 +516,19 @@ void dbg_c_log_info(int wid)
 	int i;
 
 	awtbprint(wid, C_DATA, "Logging %s\n", log_is_enabled() ? "enabled" : "disabled");
-	awtbprint(wid, C_LABEL, "Levels: ");
-
+	awtbprint(wid, C_LABEL, "Enabled components: ");
 	for (i=0 ; i < L_ALL ; i++) {
-		const char *cname = log_get_component_name(i);
-		if (cname) {
-			awtbprint(wid, C_DATA, "%s=%i ", cname, log_get_level(i));
+		if (log_component_get(i)) {
+			const char *cname = log_get_component_name(i);
+			awtbprint(wid, C_DATA, "%s ", cname);
+		}
+	}
+	awtbprint(wid, C_LABEL, "\n");
+	awtbprint(wid, C_LABEL, "Disabled components: ");
+	for (i=0 ; i < L_ALL ; i++) {
+		if (!log_component_get(i)) {
+			const char *cname = log_get_component_name(i);
+			awtbprint(wid, C_DATA, "%s ", cname);
 		}
 	}
 	awtbprint(wid, C_LABEL, "\n");
@@ -546,7 +553,7 @@ void dbg_c_log_enable(int wid)
 }
 
 // -----------------------------------------------------------------------
-void dbg_c_log_set_level(int wid, char *comp_name, int level)
+void dbg_c_log_set_state(int wid, char *comp_name, int state)
 {
 	int c;
 
@@ -555,11 +562,15 @@ void dbg_c_log_set_level(int wid, char *comp_name, int level)
 		awtbprint(wid, C_ERROR, "Unknown component: ");
 		awtbprint(wid, C_DATA, "%s", comp_name);
 	} else {
-		log_set_level(c, level);
-		awtbprint(wid, C_LABEL, "Level for component ");
+		if (state) {
+			log_component_enable(c);
+		} else {
+			log_component_disable(c);
+		}
+		awtbprint(wid, C_LABEL, "Component ");
 		awtbprint(wid, C_DATA, "%s ", comp_name);
-		awtbprint(wid, C_LABEL, "set to ");
-		awtbprint(wid, C_DATA, "%i\n", level);
+		awtbprint(wid, C_LABEL, "is now ");
+		awtbprint(wid, C_DATA, "%s\n", state ? "enabled" : "disabled");
 	}
 }
 

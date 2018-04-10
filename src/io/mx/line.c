@@ -215,7 +215,7 @@ static void mx_line_process_cmd(struct mx_line *line, union mx_event *ev)
 	int irq;
 	const struct mx_cmd *cmd = line->proto->cmd + ev->d.cmd;
 
-	LOG(L_MX, 3, "EV%04x: Line %i (%s) got cmd %s", ev->d.id, line->log_n, line->proto->name, mx_get_cmd_name(ev->d.cmd));
+	LOG(L_MX, "EV%04x: Line %i (%s) got cmd %s", ev->d.id, line->log_n, line->proto->name, mx_get_cmd_name(ev->d.cmd));
 
 	// read the command parameters
 	if (cmd->input_flen) {
@@ -249,10 +249,10 @@ void * mx_line_thread(void *ptr)
 	int quit = 0;
 	struct mx_line *line = ptr;
 
-	LOG(L_MX, 3, "Entering line %i loop, device: %s", line->log_n, line->proto->name);
+	LOG(L_MX, "Entering line %i loop, device: %s", line->log_n, line->proto->name);
 
 	while (!quit) {
-		LOG(L_MX, 3, "Line %i (%s) waiting for event", line->log_n, line->proto->name);
+		LOG(L_MX, "Line %i (%s) waiting for event", line->log_n, line->proto->name);
 		union mx_event *ev = elst_wait_pop(line->devq, 0);
 		switch (ev->d.type) {
 			case MX_EV_QUIT:
@@ -262,13 +262,13 @@ void * mx_line_thread(void *ptr)
 				mx_line_process_cmd(line, ev);
 				break;
 			default:
-				LOG(L_MX, 3, "EV%04x: Line %i (%s) got unknown event type %i. Ignored.", ev->d.id, line->log_n, line->proto->name, ev->d.type);
+				LOG(L_MX, "EV%04x: Line %i (%s) got unknown event type %i. Ignored.", ev->d.id, line->log_n, line->proto->name, ev->d.type);
 				break;
 		}
 		free(ev);
 	}
 
-	LOG(L_MX, 3, "Left line %i loop, device: %s", line->log_n, line->proto->name);
+	LOG(L_MX, "Left line %i loop, device: %s", line->log_n, line->proto->name);
 
 	pthread_exit(NULL);
 }

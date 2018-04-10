@@ -64,7 +64,7 @@ int mem_init(struct cfg_em400 *cfg)
 {
 	int res;
 
-	LOG(L_MEM, 1, "Initializing memory (Elwro: %d modules, MEGA: %d modules)", cfg->mem_elwro, cfg->mem_mega);
+	LOG(L_MEM, "Initializing memory (Elwro: %d modules, MEGA: %d modules)", cfg->mem_elwro, cfg->mem_mega);
 
 	if (cfg->mem_elwro + cfg->mem_mega > MEM_MAX_MODULES+1) {
 		return LOGERR("Sum of Elwro and MEGA memory modules is greater than allowed %i.", MEM_MAX_MODULES+1);
@@ -91,7 +91,7 @@ int mem_init(struct cfg_em400 *cfg)
 // -----------------------------------------------------------------------
 void mem_shutdown()
 {
-	LOG(L_MEM, 1, "Shutdown memory");
+	LOG(L_MEM, "Shutdown memory");
 
 	mem_mega_shutdown();
 	mem_elwro_shutdown();

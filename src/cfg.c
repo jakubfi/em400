@@ -81,7 +81,7 @@ struct cfg_em400 * cfg_create_default()
 	// log
 	cfg->log_enabled = 0;
 	cfg->log_file = strdup("em400.log");
-	cfg->log_levels = strdup("all=0,em4h=9");
+	cfg->log_components = strdup("");
 
 	// FPGA
 	cfg->fpga = 0;
@@ -108,7 +108,7 @@ void cfg_destroy(struct cfg_em400 *cfg)
 	free(cfg->cfg_filename);
 	free(cfg->mem_mega_prom);
 	free(cfg->log_file);
-	free(cfg->log_levels);
+	free(cfg->log_components);
 	free(cfg->fpga_dev);
 	cfg_drop_chans(cfg->chans);
 	free(cfg);
@@ -127,8 +127,8 @@ int cfg_from_args(struct cfg_em400 *cfg, int argc, char **argv)
 				break;
 			case 'l':
 				cfg->log_enabled = 1;
-				free(cfg->log_levels);
-				cfg->log_levels = strdup(optarg);
+				free(cfg->log_components);
+				cfg->log_components = strdup(optarg);
 				break;
 			case 'h':
 				cfg->print_help = 1;

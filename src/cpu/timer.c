@@ -66,7 +66,7 @@ int timer_init(struct cfg_em400 *cfg)
 		return LOGERR("Timer step should be 2-100 miliseconds, not %i.", timer_step);
 	}
 
-	LOG(L_CPU, 1, "Timer cycle: %i ms", timer_step);
+	LOG(L_CPU, "Timer cycle: %i ms", timer_step);
 
 	if (cfg->timer_start) {
 		timer_on();
@@ -85,7 +85,7 @@ int timer_init(struct cfg_em400 *cfg)
 // -----------------------------------------------------------------------
 void timer_shutdown()
 {
-	LOG(L_CPU, 1, "Shutting down timer");
+	LOG(L_CPU, "Shutting down timer");
 	if (timer_th) {
 		sem_post(&timer_quit);
 		pthread_join(timer_th, NULL);
@@ -96,14 +96,14 @@ void timer_shutdown()
 // -----------------------------------------------------------------------
 void timer_on()
 {
-	LOG(L_CPU, 1, "Starting timer");
+	LOG(L_CPU, "Starting timer");
 	atom_store_release(&timer_enabled, 1);
 }
 
 // -----------------------------------------------------------------------
 void timer_off()
 {
-	LOG(L_CPU, 1, "Stopping timer");
+	LOG(L_CPU, "Stopping timer");
 	atom_store_release(&timer_enabled, 0);
 }
 

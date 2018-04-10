@@ -57,7 +57,7 @@ int mem_elwro_init(int modc, int seg_os)
 	mem_elwro_mp_start = 0;
 	mem_elwro_mp_end = modc-1;
 
-	LOG(L_MEM, 1, "Elwro modules: %d-%d, %d segments (%d hardwired OS segments)", mem_elwro_mp_start, mem_elwro_mp_end, MEM_MAX_ELWRO_SEGMENTS, seg_os);
+	LOG(L_MEM, "Elwro modules: %d-%d, %d segments (%d hardwired OS segments)", mem_elwro_mp_start, mem_elwro_mp_end, MEM_MAX_ELWRO_SEGMENTS, seg_os);
 
 	for (mp=mem_elwro_mp_start ; mp<=mem_elwro_mp_end ; mp++) {
 		for (seg=0 ; seg<MEM_MAX_ELWRO_SEGMENTS; seg++) {
@@ -119,16 +119,16 @@ void mem_elwro_seg_set(int nb, int ab, struct mem_slot_t *slot)
 int mem_elwro_cmd(int nb, int ab, int mp, int seg)
 {
 	if (!mem_elwro[mp][seg]) {
-		LOG(L_MEM, 1, "Elwro: ignore mapping nonexistent physical segment (%2d, %2d) -> (%2d, %2d)", nb, ab, mp, seg);
+		LOG(L_MEM, "Elwro: ignore mapping nonexistent physical segment (%2d, %2d) -> (%2d, %2d)", nb, ab, mp, seg);
 		return IO_NO;
 	}
 
 	if ((mp == 0) && (seg < mem_elwro_os_segments)) {
-		LOG(L_MEM, 1, "Elwro: ignore mapping hardwired segment (%2d, %2d) -> (%2d, %2d)", nb, ab, mp, seg);
+		LOG(L_MEM, "Elwro: ignore mapping hardwired segment (%2d, %2d) -> (%2d, %2d)", nb, ab, mp, seg);
 		return IO_NO;
 	}
 
-	LOG(L_MEM, 1, "Elwro: add map (%2d, %2d) -> (%2d, %2d)", nb, ab, mp, seg);
+	LOG(L_MEM, "Elwro: add map (%2d, %2d) -> (%2d, %2d)", nb, ab, mp, seg);
 
 	mem_elwro_ral[mp][seg] = RAL(nb, ab);
 

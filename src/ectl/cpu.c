@@ -49,21 +49,21 @@ void ectl_yy_delete_buffer(YY_BUFFER_STATE b);
 // -----------------------------------------------------------------------
 int ectl_init()
 {
-	LOG(L_ECTL, 1, "ECTL init");
+	LOG(L_ECTL, "ECTL init");
 	return 0;
 }
 
 // -----------------------------------------------------------------------
 void ectl_shutdown()
 {
-	LOG(L_ECTL, 1, "ECTL shutdown");
+	LOG(L_ECTL, "ECTL shutdown");
 	ectl_brk_del_all();
 }
 
 // -----------------------------------------------------------------------
 void ectl_regs_get(uint16_t *dest)
 {
-	LOG(L_ECTL, 2, "ECTL regs get");
+	LOG(L_ECTL, "ECTL regs get");
 	for (int i=0 ; i<CP_REG_COUNT ; i++) {
 		dest[i] = cp_reg_get(i);
 	}
@@ -72,9 +72,9 @@ void ectl_regs_get(uint16_t *dest)
 // -----------------------------------------------------------------------
 int ectl_reg_get(unsigned id)
 {
-	LOG(L_ECTL, 2, "ECTL reg get");
+	LOG(L_ECTL, "ECTL reg get");
 	int reg = cp_reg_get(id);
-	LOG(L_ECTL, 2, "ECTL reg get: %s = 0x%04x", ectl_reg_name(id), reg);
+	LOG(L_ECTL, "ECTL reg get: %s = 0x%04x", ectl_reg_name(id), reg);
 	return reg;
 }
 
@@ -107,39 +107,39 @@ const char * ectl_reg_name(unsigned id)
 // -----------------------------------------------------------------------
 int ectl_reg_set(unsigned id, uint16_t val)
 {
-	LOG(L_ECTL, 2, "ECTL reg set: %s = 0x%04x", ectl_reg_name(id), val);
+	LOG(L_ECTL, "ECTL reg set: %s = 0x%04x", ectl_reg_name(id), val);
 	return cp_reg_set(id, val);
 }
 
 // -----------------------------------------------------------------------
 int ectl_mem_get(int seg, uint16_t addr, uint16_t *dest, unsigned count)
 {
-	LOG(L_ECTL, 2, "ECTL mem get: %i:0x%04x, %i words", seg, addr, count);
+	LOG(L_ECTL, "ECTL mem get: %i:0x%04x, %i words", seg, addr, count);
 	return cp_mem_mget(seg, addr, dest, count);
 }
 
 // -----------------------------------------------------------------------
 int ectl_mem_set(int seg, uint16_t addr, uint16_t *src, unsigned count)
 {
-	LOG(L_ECTL, 2, "ECTL mem set: %i:0x%04x, %i words", seg, addr, count);
+	LOG(L_ECTL, "ECTL mem set: %i:0x%04x, %i words", seg, addr, count);
 	return cp_mem_mput(seg, addr, src, count);
 }
 
 // -----------------------------------------------------------------------
 int ectl_mem_map(int seg)
 {
-	LOG(L_ECTL, 2, "ECTL mem map");
+	LOG(L_ECTL, "ECTL mem map");
 	int map = mem_get_map(seg);
-	LOG(L_ECTL, 2, "ECTL mem map: %i = 0x%04x", seg, map);
+	LOG(L_ECTL, "ECTL mem map: %i = 0x%04x", seg, map);
 	return map;
 }
 
 // -----------------------------------------------------------------------
 int ectl_cpu_state_get()
 {
-	LOG(L_ECTL, 2, "ECTL state get");
+	LOG(L_ECTL, "ECTL state get");
 	int state = cp_state();
-	LOG(L_ECTL, 2, "ECTL state get: 0x%04x", state);
+	LOG(L_ECTL, "ECTL state get: 0x%04x", state);
 	return state;
 }
 
@@ -158,81 +158,81 @@ const char * ectl_cpu_state_bit_name(int bitpos)
 // -----------------------------------------------------------------------
 void ectl_cpu_stop()
 {
-	LOG(L_ECTL, 2, "ECTL cpu STOP");
+	LOG(L_ECTL, "ECTL cpu STOP");
 	cp_stop();
 }
 
 // -----------------------------------------------------------------------
 void ectl_cpu_start()
 {
-	LOG(L_ECTL, 2, "ECTL cpu START");
+	LOG(L_ECTL, "ECTL cpu START");
 	cp_start();
 }
 
 // -----------------------------------------------------------------------
 void ectl_cpu_cycle()
 {
-	LOG(L_ECTL, 2, "ECTL cpu CYCLE");
+	LOG(L_ECTL, "ECTL cpu CYCLE");
 	cp_cycle();
 }
 
 // -----------------------------------------------------------------------
 void ectl_cpu_quit()
 {
-	LOG(L_ECTL, 2, "ECTL cpu QUIT");
+	LOG(L_ECTL, "ECTL cpu QUIT");
 	cp_off();
 }
 
 // -----------------------------------------------------------------------
 void ectl_clock_set(int state)
 {
-	LOG(L_ECTL, 2, "ECTL clock set: %i", state);
+	LOG(L_ECTL, "ECTL clock set: %i", state);
 	cp_clock_set(state);
 }
 
 // -----------------------------------------------------------------------
 int ectl_clock_get()
 {
-	LOG(L_ECTL, 2, "ECTL clock get");
+	LOG(L_ECTL, "ECTL clock get");
 	int state = cp_clock_get();
-	LOG(L_ECTL, 2, "ECTL clock get: %i", state);
+	LOG(L_ECTL, "ECTL clock get: %i", state);
 	return state;
 }
 
 // -----------------------------------------------------------------------
 void ectl_cpu_clear()
 {
-	LOG(L_ECTL, 2, "ECTL cpu CLEAR");
+	LOG(L_ECTL, "ECTL cpu CLEAR");
 	cp_clear();
 }
 
 // -----------------------------------------------------------------------
 void ectl_bootstrap(int chan, int unit)
 {
-	LOG(L_ECTL, 2, "ECTL bootstrap");
+	LOG(L_ECTL, "ECTL bootstrap");
 	cp_bin();
 }
 
 // -----------------------------------------------------------------------
 void ectl_oprq()
 {
-	LOG(L_ECTL, 2, "ECTL OPRQ");
+	LOG(L_ECTL, "ECTL OPRQ");
 	cp_oprq();
 }
 
 // -----------------------------------------------------------------------
 int ectl_int_set(unsigned interrupt)
 {
-	LOG(L_ECTL, 2, "ECTL int set %i", interrupt);
+	LOG(L_ECTL, "ECTL int set %i", interrupt);
 	return cp_int_set(interrupt);
 }
 
 // -----------------------------------------------------------------------
 uint32_t ectl_int_get()
 {
-	LOG(L_ECTL, 2, "ECTL interrupts get");
+	LOG(L_ECTL, "ECTL interrupts get");
 	uint32_t rz = cp_int_get();
-	LOG(L_ECTL, 2, "ECTL interrupts get: 0x%08x", rz);
+	LOG(L_ECTL, "ECTL interrupts get: 0x%08x", rz);
 	return rz;
 }
 
@@ -240,7 +240,7 @@ uint32_t ectl_int_get()
 const char * ectl_version()
 {
 	static const char *ver = EM400_VERSION;
-	LOG(L_ECTL, 2, "ECTL version: %s", ver);
+	LOG(L_ECTL, "ECTL version: %s", ver);
 	return ver;
 }
 
@@ -268,14 +268,14 @@ int ectl_capa()
 	if (mem_mega_boot()) capa |= 1 << ECTL_CAPA_MEGABOOT;
 	//TODO: if (nomem_stop) capa |= 1 << ECTL_CAPA_NOMEMSTOP;
 
-	LOG(L_ECTL, 2, "ECTL capabilities: 0x%04x", capa);
+	LOG(L_ECTL, "ECTL capabilities: 0x%04x", capa);
 	return capa;
 }
 
 // -----------------------------------------------------------------------
 int ectl_load(FILE *f, const char *name, int seg, uint16_t saddr)
 {
-	LOG(L_ECTL, 2, "ECTL load: %i:0x%04x %s", seg, saddr, name);
+	LOG(L_ECTL, "ECTL load: %i:0x%04x %s", seg, saddr, name);
 	uint16_t *bufw = malloc(sizeof(uint16_t) * 0x10000);
 	uint16_t *bufr = malloc(sizeof(uint16_t) * 0x10000);
 
@@ -283,10 +283,10 @@ int ectl_load(FILE *f, const char *name, int seg, uint16_t saddr)
 	if (res > 0) {
 		endianswap(bufw, res);
 		res = ectl_mem_set(seg, saddr, bufw, res);
-		LOG(L_ECTL, 2, "ECTL verify");
+		LOG(L_ECTL, "ECTL verify");
 		ectl_mem_get(seg, saddr, bufr, res);
 		int cmpres = memcmp(bufw, bufr, res * sizeof(uint16_t));
-		LOG(L_ECTL, 2, "ECTL verify (%i words): %s", res, cmpres ? "FAILED" : "OK");
+		LOG(L_ECTL, "ECTL verify (%i words): %s", res, cmpres ? "FAILED" : "OK");
 		if (cmpres != 0) {
 			res = -1;
 		}
@@ -301,7 +301,7 @@ int ectl_load(FILE *f, const char *name, int seg, uint16_t saddr)
 int ectl_log_state_get()
 {
 	int state = log_is_enabled();
-	LOG(L_ECTL, 2, "ECTL log state get: %i", state);
+	LOG(L_ECTL, "ECTL log state get: %i", state);
 	if (state) {
 		return ECTL_ON;
 	} else {
@@ -313,7 +313,7 @@ int ectl_log_state_get()
 int ectl_log_state_set(int state)
 {
 	int res = -1;
-	LOG(L_ECTL, 2, "ECTL log state set: %i", state);
+	LOG(L_ECTL, "ECTL log state set: %i", state);
 	if (state == ECTL_OFF) {
 		log_disable();
 		res = 0;
@@ -324,18 +324,23 @@ int ectl_log_state_set(int state)
 }
 
 // -----------------------------------------------------------------------
-int ectl_log_level_get(unsigned component)
+int ectl_log_component_get(unsigned component)
 {
-	int level = log_get_level(component);
-	LOG(L_ECTL, 2, "ECTL log level get: %s = %i", ectl_log_component_name(component), level);
-	return level;
+	int state = log_component_get(component) ? 1 : 0;
+	LOG(L_ECTL, "ECTL log component %s: %i", ectl_log_component_name(component), state);
+	return state;
 }
 
 // -----------------------------------------------------------------------
-int ectl_log_level_set(unsigned component, unsigned level)
+int ectl_log_component_set(unsigned component, int state)
 {
-	LOG(L_ECTL, 2, "ECTL log level set: %s = %i", ectl_log_component_name(component), level);
-	return log_set_level(component, level);
+	LOG(L_ECTL, "ECTL log component %s: %i", ectl_log_component_name(component), state);
+	if (state == ECTL_OFF) {
+		log_component_disable(component);
+	} else {
+		log_component_enable(component);
+	}
+	return state;
 }
 
 // -----------------------------------------------------------------------
@@ -365,7 +370,7 @@ unsigned long ectl_ips_get()
 	}
 	oips = ips_counter;
 
-	LOG(L_ECTL, 2, "ECTL ips: %li", ips);
+	LOG(L_ECTL, "ECTL ips: %li", ips);
 	return ips;
 }
 
@@ -397,7 +402,7 @@ static struct ectl_est * __ectl_parse(char *expression, char **err_msg, int *err
 // -----------------------------------------------------------------------
 int ectl_eval(char *expression, char **err_msg, int *err_beg, int *err_end)
 {
-	LOG(L_ECTL, 2, "ECTL eval: %s", expression);
+	LOG(L_ECTL, "ECTL eval: %s", expression);
 	int res = -1;
 	struct ectl_est *tree = __ectl_parse(expression, err_msg, err_beg, err_end);
 	if (!tree) {
@@ -419,14 +424,14 @@ int ectl_eval(char *expression, char **err_msg, int *err_beg, int *err_end)
 
 fin:
 	ectl_est_delete(tree);
-	LOG(L_ECTL, 2, "ECTL eval: %s = %i %s", expression, res, err_msg);
+	LOG(L_ECTL, "ECTL eval: %s = %i %s", expression, res, err_msg);
 	return res;
 }
 
 // -----------------------------------------------------------------------
 int ectl_brk_add(char *expression, char **err_msg, int *err_beg, int *err_end)
 {
-	LOG(L_ECTL, 2, "ECTL brk add: %s", expression);
+	LOG(L_ECTL, "ECTL brk add: %s", expression);
 	struct ectl_est *tree = __ectl_parse(expression, err_msg, err_beg, err_end);
 	if (!tree) {
 		return -1;
@@ -445,21 +450,21 @@ int ectl_brk_add(char *expression, char **err_msg, int *err_beg, int *err_end)
 // -----------------------------------------------------------------------
 int ectl_brk_del(unsigned id)
 {
-	LOG(L_ECTL, 2, "ECTL brk del: %i", id);
+	LOG(L_ECTL, "ECTL brk del: %i", id);
 	return ectl_brk_delete(id);
 }
 
 // -----------------------------------------------------------------------
 int ectl_stopn(uint16_t addr)
 {
-	LOG(L_ECTL, 2, "ECTL stopn (%s) @ 0x%04x", (addr&0x8000)?"OS":"USER", addr&0x7fff);
+	LOG(L_ECTL, "ECTL stopn (%s) @ 0x%04x", (addr&0x8000)?"OS":"USER", addr&0x7fff);
 	return cp_stopn(addr);
 }
 
 // -----------------------------------------------------------------------
 int ectl_stopn_off()
 {
-	LOG(L_ECTL, 2, "ECTL stopn off");
+	LOG(L_ECTL, "ECTL stopn off");
 	return cp_stopn_off();
 }
 

@@ -119,7 +119,7 @@ int mx_winch_init(struct mx_line *pline, uint16_t *data)
 	// this is ignored by MULTIX
 	proto_data->fprotect			=  (data[0] & 0b0000000011111111);
 
-	LOG(L_WNCH, 3, "Winchester drive: %i heads, %s sector address%s",
+	LOG(L_WNCH, "Winchester drive: %i heads, %s sector address%s",
 		proto_data->heads,
 		proto_data->wide_sector_addr ? "long" : "short",
 		proto_data->fprotect ? ", format-protected" : ""
@@ -143,14 +143,14 @@ static void mx_winch_cf_decode(uint16_t *data, struct proto_winchester_data *pro
 
 	switch (proto_data->op) {
 		case MX_WINCH_OP_FORMAT_SPARE:
-			LOG(L_WNCH, 4, "Format spare area");
+			LOG(L_WNCH, "Format spare area");
 			break;
 		case MX_WINCH_OP_FORMAT_TRACK:
 			proto_data->format.sector_map = data[1];
 			proto_data->format.start_sector = data[2] << 16;
 			proto_data->format.start_sector += data[3];
 			char *map = int2binf("................", data[1], 16);
-			LOG(L_WNCH, 4, "Format track, starting logical sector: %i, sector map: %s", proto_data->format.start_sector, map);
+			LOG(L_WNCH, "Format track, starting logical sector: %i, sector map: %s", proto_data->format.start_sector, map);
 			free(map);
 			break;
 		case MX_WINCH_OP_READ:
@@ -165,7 +165,7 @@ static void mx_winch_cf_decode(uint16_t *data, struct proto_winchester_data *pro
 			proto_data->transmit.sector = (data[3] & 255) << 16;
 			proto_data->transmit.sector += data[4];
 
-			LOG(L_WNCH, 4, "%s %i words, starting logical sector %i, memory addres %i:0x%04x, flags: %s%s%s",
+			LOG(L_WNCH, "%s %i words, starting logical sector %i, memory addres %i:0x%04x, flags: %s%s%s",
 				proto_data->op == MX_WINCH_OP_READ ? "READ" : "WRITE",
 				proto_data->transmit.len,
 				proto_data->transmit.sector,
@@ -178,7 +178,7 @@ static void mx_winch_cf_decode(uint16_t *data, struct proto_winchester_data *pro
 			break;
 		case MX_WINCH_OP_PARK:
 			proto_data->park.cylinder = data[4];
-			LOG(L_WNCH, 4, "Park heads on cylinder %i", proto_data->park.cylinder);
+			LOG(L_WNCH, "Park heads on cylinder %i", proto_data->park.cylinder);
 			break;
 	}
 
@@ -227,7 +227,7 @@ static int mx_winch_read(struct mx *multix, struct mx_line *line, const struct d
 		int transmit = proto_data->transmit.len - proto_data->ret_len;
 		if (transmit > 256) transmit = 256;
 
-		LOG(L_WNCH, 4, "read sector %i/%i/%i -> %i:0x%04x", chs.c, chs.h, chs.s, proto_data->transmit.nb, proto_data->transmit.addr + proto_data->ret_len);
+		LOG(L_WNCH, "read sector %i/%i/%i -> %i:0x%04x", chs.c, chs.h, chs.s, proto_data->transmit.nb, proto_data->transmit.addr + proto_data->ret_len);
 
 		// read the sector into buffer
 		int res = dev->sector_rd(dev_data, line->buf, &chs);
@@ -271,7 +271,7 @@ static int mx_winch_write(struct mx *multix, struct mx_line *line, const struct 
 		}
 		endianswap((uint16_t*)line->buf, transmit);
 
-		LOG(L_WNCH, 4, "write sector %i/%i/%i <- %i:0x%04x", chs.c, chs.h, chs.s, proto_data->transmit.nb, proto_data->transmit.addr + proto_data->ret_len);
+		LOG(L_WNCH, "write sector %i/%i/%i <- %i:0x%04x", chs.c, chs.h, chs.s, proto_data->transmit.nb, proto_data->transmit.addr + proto_data->ret_len);
 
 		int res = dev->sector_wr(dev_data, line->buf, &chs);
 
@@ -298,7 +298,7 @@ static int mx_winch_format(struct mx *multix, struct mx_line *line, const struct
 	chs.c++;
 
 	for (int i=0 ; i<16 ; i++) {
-		LOG(L_WNCH, 4, "format sector %i/%i/%i", chs.c, chs.h, chs.s);
+		LOG(L_WNCH, "format sector %i/%i/%i", chs.c, chs.h, chs.s);
 		int res = dev->sector_wr(dev_data, line->buf, &chs);
 
 		// sector not found or incomplete
@@ -331,11 +331,11 @@ int mx_winch_transmit(struct mx_line *line)
 	// unpack control field
 	mx_winch_cf_decode(line->cmd_data, proto_data);
 
-	LOG(L_WNCH, 3, "Transmit operation %i: %s", proto_data->op, winch_op_names[proto_data->op]);
+	LOG(L_WNCH, "Transmit operation %i: %s", proto_data->op, winch_op_names[proto_data->op]);
 
 	switch (proto_data->op) {
 		case MX_WINCH_OP_FORMAT_SPARE:
-			LOG(L_WNCH, 4, "Formatting spare area (unhandled)");
+			LOG(L_WNCH, "Formatting spare area (unhandled)");
 			// TODO: em400 does not support spare area
 			irq = MX_IRQ_IETRA;
 			break;
@@ -349,7 +349,7 @@ int mx_winch_transmit(struct mx_line *line)
 			irq = mx_winch_write(line->multix, line, line->dev, line->dev_data, proto_data);
 			break;
 		case MX_WINCH_OP_PARK:
-			LOG(L_WNCH, 4, "Parking heads on cylinder %i (unhandled)", proto_data->park.cylinder);
+			LOG(L_WNCH, "Parking heads on cylinder %i (unhandled)", proto_data->park.cylinder);
 			// trrrrrrrrrrrr... done.
 			irq = MX_IRQ_IETRA;
 			break;

@@ -51,7 +51,7 @@ int dev_make(struct cfg_unit *dev, const struct dev_drv **dev_drv, void **dev_ob
 			if (!*dev_obj) {
 				return LOGERR("Failed to initialize device: %s.", dev->name);
 			}
-			LOG(L_EM4H, 1, "Created device: %s", dev->name);
+			LOG(L_EM4H, "Created device: %s", dev->name);
 			return E_OK;
 		}
 		driver++;

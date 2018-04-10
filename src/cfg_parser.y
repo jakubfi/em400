@@ -63,7 +63,7 @@ int cyylex(void);
 %token LOG "`log`"
 %token ENABLED "`enabled`"
 %token LFILE "`file`"
-%token LEVELS "loging levels"
+%token COMPONENTS "loging components"
 %token DEVICE "`device`"
 %token SPEED "`speed`"
 %token <value> NAME "parameter or device name"
@@ -138,7 +138,7 @@ log_opts:
 log_opt:
 	ENABLED '=' BOOL { cfg->log_enabled = $3.v; free($3.s); }
 	| LFILE '=' STRING { free(cfg->log_file); cfg->log_file = $3.s; }
-	| LEVELS '=' STRING { free(cfg->log_levels); cfg->log_levels = $3.s; }
+	| COMPONENTS '=' STRING { free(cfg->log_components); cfg->log_components = $3.s; }
 	;
 
 fpga_opts:

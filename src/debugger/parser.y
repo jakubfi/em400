@@ -190,7 +190,8 @@ command:
 	| F_LOG				{ dbg_c_log_info(W_CMD); }
 	| F_LOG OFF 		{ dbg_c_log_disable(W_CMD); }
 	| F_LOG ON			{ dbg_c_log_enable(W_CMD); }
-	| F_LOG NAME '=' VALUE	{ dbg_c_log_set_level(W_CMD, $2, $4); }
+	| F_LOG NAME ON		{ dbg_c_log_set_state(W_CMD, $2, 1); }
+	| F_LOG NAME OFF	{ dbg_c_log_set_state(W_CMD, $2, 0); }
 	| F_LOG error
 	| F_WATCH			{ dbg_c_watch_list(W_CMD, 999999); }
 	| F_WATCH ADD expr	{

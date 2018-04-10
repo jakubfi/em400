@@ -93,7 +93,7 @@ int iob_init(char *bus_dev, int speed)
 		return LOGERR("Failed to initialize internal FPGA bus pipe");
 	}
 
-	LOG(L_FPGA, 1, "FPGA IO bus initialized");
+	LOG(L_FPGA, "FPGA IO bus initialized");
 
 	return E_OK;
 }
@@ -245,7 +245,7 @@ static struct iob_msg * iob_msg_read(int bus)
 	// read command
 	res = read(bus, buf, 1);
 	if (res != 1) {
-		LOG(L_FPGA, 1, "ERROR: command read returned: %i", res);
+		LOG(L_FPGA, "ERROR: command read returned: %i", res);
 		m->is_valid = 0;
 		m->invalid_reason = strdup("failed to read command byte");
 		goto done;
@@ -281,7 +281,7 @@ static struct iob_msg * iob_msg_read(int bus)
 	while (need > 0) {
 		res = read(bus, buf+bpos+m->b_argc-need, need);
 		if (res <= 0) {
-			LOG(L_FPGA, 1, "ERROR: argument read returned: %i, need to read %i more bytes", res, need);
+			LOG(L_FPGA, "ERROR: argument read returned: %i, need to read %i more bytes", res, need);
 		} else {
 			need -= res;
 		}
@@ -311,9 +311,9 @@ done:
 		for (int i=0 ; i<total_recvd ; i++) {
 			sprintf(lbuf2+3*i, " %02x", buf[i]);
 		}
-		LOG(L_FPGA, 2, "%s%s ::%s", m->is_valid ? "" : "ERROR ", lbuf1, lbuf2);
+		LOG(L_FPGA, "%s%s ::%s", m->is_valid ? "" : "ERROR ", lbuf1, lbuf2);
 		if (!m->is_valid) {
-			LOG(L_FPGA, 2, "Message invalid: %s", m->invalid_reason);
+			LOG(L_FPGA, "Message invalid: %s", m->invalid_reason);
 		}
 	}
 	return m;
@@ -353,9 +353,9 @@ int iob_msg_send(int bus, struct iob_msg *m)
 		for (int i=0 ; i<1+m->b_argc ; i++) {
 			sprintf(lbuf2+3*i, " %02x", buf[i]);
 		}
-		LOG(L_FPGA, 2, "%s%s ::%s", m->is_valid ? "" : "ERROR ", lbuf1, lbuf2);
+		LOG(L_FPGA, "%s%s ::%s", m->is_valid ? "" : "ERROR ", lbuf1, lbuf2);
 		if (!m->is_valid) {
-			LOG(L_FPGA, 2, "Message invalid: %s", m->invalid_reason);
+			LOG(L_FPGA, "Message invalid: %s", m->invalid_reason);
 		}
 	}
 
@@ -364,7 +364,7 @@ int iob_msg_send(int bus, struct iob_msg *m)
 		while (need > 0) {
 			res = write(bus, buf, need);
 			if (res <= 0) {
-				LOG(L_FPGA, 1, "ERROR: write returned: %i, need to write %i more bytes", res, need);
+				LOG(L_FPGA, "ERROR: write returned: %i, need to write %i more bytes", res, need);
 			} else {
 				need -= res;
 			}
@@ -391,7 +391,7 @@ static struct iob_msg * iob_dialog(struct iob_msg* mo)
 	pthread_mutex_lock(&bus_mutex);
 
 	iob_msg_send(ibus[BW], mo);
-	//LOG(L_FPGA, 2, "Client is waiting for reply");
+	//LOG(L_FPGA, "Client is waiting for reply");
 
 	FD_ZERO(&fds);
 	FD_SET(ibusi[BR], &fds);
@@ -436,7 +436,7 @@ void iob_loop()
 			if (FD_ISSET(xbus, &fds)) {
 				mi = iob_msg_read(xbus);
 				if (!mi->is_valid) {
-					LOG(L_FPGA, 1, "ERROR: Message invalid, ignoring: ", mi->invalid_reason);
+					LOG(L_FPGA, "ERROR: Message invalid, ignoring: ", mi->invalid_reason);
 					iob_msg_free(mi);
 					continue;
 				}
@@ -453,16 +453,16 @@ void iob_loop()
 								iob_reply_send(xbus, mi, io_res);
 								gettimeofday(&xt2, NULL);
 								double elapsed_us = 1000000.0 * (xt2.tv_sec - xt1.tv_sec) + (xt2.tv_usec - xt1.tv_usec);
-								LOG(L_FPGA, 1, "External request service time: %.0f us", elapsed_us);
+								LOG(L_FPGA, "External request service time: %.0f us", elapsed_us);
 							}
 							// resend discarded internal req
 							if (intreq) {
-								LOG(L_FPGA, 1, "Retransmit request");
+								LOG(L_FPGA, "Retransmit request");
 								iob_msg_send(xbus, intreq);
 							}
 							break;
 						default:
-							LOG(L_FPGA, 1, "ERROR: Not an I/O request, ignored");
+							LOG(L_FPGA, "ERROR: Not an I/O request, ignored");
 							break;
 					}
 				} else {
@@ -475,11 +475,11 @@ void iob_loop()
 								free(intreq);
 								intreq = NULL;
 							} else {
-								LOG(L_FPGA, 1, "ERROR: Noone waiting for the reply, ignored");
+								LOG(L_FPGA, "ERROR: Noone waiting for the reply, ignored");
 							}
 							break;
 						default:
-							LOG(L_FPGA, 1, "ERROR: Not an I/O reply, ignored");
+							LOG(L_FPGA, "ERROR: Not an I/O reply, ignored");
 							break;
 					}
 
@@ -491,7 +491,7 @@ void iob_loop()
 			} else if (FD_ISSET(ibus[BR], &fds)) {
 				intreq = iob_msg_read(ibus[BR]);
 				if (!intreq->is_valid) {
-					LOG(L_FPGA, 1, "ERROR: Message invalid, ignoring: %s", intreq->invalid_reason);
+					LOG(L_FPGA, "ERROR: Message invalid, ignoring: %s", intreq->invalid_reason);
 					iob_msg_free(intreq);
 					intreq = NULL;
 					continue;
@@ -517,13 +517,13 @@ void iob_loop()
 						free(mo);
 						break;
 					default:
-						LOG(L_FPGA, 1, "ERROR: Not an I/O request nor reply, ignored");
+						LOG(L_FPGA, "ERROR: Not an I/O request nor reply, ignored");
 						free(intreq);
 						intreq = NULL;
 						break;
 				}
 			} else {
-				LOG(L_FPGA, 1, "ERROR: No know fd");
+				LOG(L_FPGA, "ERROR: No know fd");
 			}
 		}
 	}

@@ -58,7 +58,7 @@ mem_os_segments	return OS_SEG;
 log				return LOG;
 enabled			return ENABLED;
 file			return LFILE;
-levels			return LEVELS;
+components		return COMPONENTS;
 
 channel			return CHANNEL;
 unit			return UNIT;

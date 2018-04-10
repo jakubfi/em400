@@ -109,7 +109,7 @@ int mx_floppy_init(struct mx_line *pline, uint16_t *data)
 	proto_data->type	 = (data[0] & 0b1111111100000000) >> 8;
 	proto_data->fprotect = (data[0] & 0b0000000011111111);
 
-	LOG(L_FLOP, 3, "%s floppy drive%s",
+	LOG(L_FLOP, "%s floppy drive%s",
 		mx_proto_floppy_get_type_name(proto_data->type),
 		proto_data->fprotect ? ", format-protected" : ""
 	);
@@ -143,13 +143,13 @@ static int mx_floppy_att_decode(uint16_t *data, struct proto_floppy_data *proto_
 	proto_data->s1num =   (data[2] & 0b0000000011111111) >> 0;
 
 	if (slen > 3) {
-		LOG(L_FLOP, 4, "Attaching floppy: wrong number of words per sector selection: %i", slen);
+		LOG(L_FLOP, "Attaching floppy: wrong number of words per sector selection: %i", slen);
 		return -1;
 	}
 
 	proto_data->slen = 64 * (1 << slen);
 
-	LOG(L_FLOP, 4, "Attaching floppy: %i heads, %i cyls, %i words per sector, %i sectors per track, %i retransmissions, first sector = %i",
+	LOG(L_FLOP, "Attaching floppy: %i heads, %i cyls, %i words per sector, %i sectors per track, %i retransmissions, first sector = %i",
 		proto_data->heads,
 		proto_data->cyls,
 		proto_data->slen,
@@ -168,7 +168,7 @@ static int mx_floppy_transmit_decode(uint16_t *data, struct proto_floppy_data *p
 
 	switch (proto_data->op) {
 		case MX_FLOPPY_OP_FORMAT:
-			LOG(L_FLOP, 4, "Format track, starting sector: %i", proto_data->sect);
+			LOG(L_FLOP, "Format track, starting sector: %i", proto_data->sect);
 			break;
 		case MX_FLOPPY_OP_READ:
 		case MX_FLOPPY_OP_WRITE:
@@ -176,7 +176,7 @@ static int mx_floppy_transmit_decode(uint16_t *data, struct proto_floppy_data *p
 			proto_data->nb =      (data[0] & 0b0000000000011111) >> 0;
 			proto_data->addr =     data[1];
 			proto_data->len =      data[2] + 1;
-			LOG(L_FLOP, 4, "%s %i words, starting sector: %i, memory address: %i:0x%04x %s",
+			LOG(L_FLOP, "%s %i words, starting sector: %i, memory address: %i:0x%04x %s",
 				(proto_data->op == MX_FLOPPY_OP_READ) ? "Read" : "Write",
 				proto_data->len,
 				proto_data->sect,
@@ -186,7 +186,7 @@ static int mx_floppy_transmit_decode(uint16_t *data, struct proto_floppy_data *p
 			);
 			break;
 		case MX_FLOPPY_OP_ERRSECT:
-			LOG(L_FLOP, 4, "Mark sector %i as bad", proto_data->sect);
+			LOG(L_FLOP, "Mark sector %i as bad", proto_data->sect);
 			break;
 		default:
 			return -1;
@@ -199,7 +199,7 @@ static int mx_floppy_transmit_decode(uint16_t *data, struct proto_floppy_data *p
 // -----------------------------------------------------------------------
 static void mx_floppy_transmit_encode(uint16_t *data, struct proto_floppy_data *proto_data)
 {
-	LOG(L_FLOP, 4, "Transmit status: ret_len=0x%04x, ret_status=0x%08x", proto_data->ret_len, proto_data->ret_status);
+	LOG(L_FLOP, "Transmit status: ret_len=0x%04x, ret_status=0x%08x", proto_data->ret_len, proto_data->ret_status);
 	if ((proto_data->op == MX_FLOPPY_OP_READ) || (proto_data->op == MX_FLOPPY_OP_WRITE)) {
 		data[0] = proto_data->ret_len;
 	}
@@ -260,7 +260,7 @@ int mx_floppy_transmit(struct mx_line *lline)
 		goto fin;
 	}
 
-	LOG(L_FLOP, 3, "Transmit operation %i: %s", proto_data->op, floppy_op_names[proto_data->op]);
+	LOG(L_FLOP, "Transmit operation %i: %s", proto_data->op, floppy_op_names[proto_data->op]);
 
 	// TODO: temporary, so mega bootloader works
 	proto_data->ret_status = MX_FS_NO_DISC;

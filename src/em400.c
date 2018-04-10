@@ -78,7 +78,7 @@ int em400_init(struct cfg_em400 *cfg)
 		return LOGERR("Failed to initialize logging.");
 	}
 
-	log_config(L_EM4H, 0, cfg, __func__);
+	log_config(cfg, __func__);
 
 #ifdef WITH_DEBUGGER
 	em400_console = CONSOLE_DEBUGGER;
@@ -131,7 +131,7 @@ int em400_init(struct cfg_em400 *cfg)
 		if (res < 0) {
 			return LOGERR("Failed to load program file: \"%s\".", cfg->program_name);
 		} else {
-			LOG(L_EM4H, 1, "OS memory block image loaded: \"%s\", %i words", cfg->program_name, res);
+			LOG(L_EM4H, "OS memory block image loaded: \"%s\", %i words", cfg->program_name, res);
 		}
 	}
 
@@ -160,20 +160,18 @@ void em400_usage()
 		"Usage: em400 [option] ...\n"
 		"\n"
 		"Options:\n"
-		"   -h           : display help\n"
-		"   -c config    : use given config file instead of defaults\n"
-		"   -p program   : load program image into OS memory\n"
-		"   -l levels    : enable logging with given levels\n"
-		"                  levels syntax: component=level[,component=level[,..]]\n"
-		"                  components: reg, mem, cpu, op, int, io, mx, px, cchar, cmem,\n"
-		"                              term, wnch, flop, pnch, pnrd, crk5, em4h, all\n"
-		"                  level: 0-9\n"
-		"   -L           : disable logging\n"
-		"   -k value     : set keys to given value\n"
-		"   -u ui        : EXPERIMENTAL: run specified user interface (available UIs: cmd)\n"
-		"   -F           : use FPGA implementation of the CPU and external memory\n"
+		"   -h                : isplay help\n"
+		"   -c config         : config file to use instead of ~/.em400/em400.cfg\n"
+		"   -p program        : load program image into OS memory at address 0\n"
+		"   -l cmp[,cmp[,...] : enable logging for specified components, allowed are:\n"
+		"                       reg, mem, cpu, op, int, io, mx, px, cchar, cmem, term\n"
+		"                       wnch, flop, pnch, pnrd, tape, crk5, em4h, ectl, fpga, all\n"
+		"   -L                : disable logging\n"
+		"   -k value          : value to initially set keys to\n"
+		"   -u ui             : user interface to use (available UIs: cmd)\n"
+		"   -F                : use FPGA implementation of the CPU and external memory\n"
 #ifdef WITH_DEBUGGER
-		"   -s           : use simple debugger interface\n"
+		"   -s                : use simple (readline) debugger interface\n"
 #endif
 	);
 }

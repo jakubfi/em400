@@ -43,7 +43,7 @@ void ui_cmd_stop(FILE *out, char *args);
 void ui_cmd_clear(FILE *out, char *args);
 void ui_cmd_memmap(FILE *out, char *args);
 void ui_cmd_log(FILE *out, char *args);
-void ui_cmd_loglvl(FILE *out, char *args);
+void ui_cmd_logc(FILE *out, char *args);
 void ui_cmd_info(FILE *out, char *args);
 void ui_cmd_quit(FILE *out, char *args);
 void ui_cmd_help(FILE *out, char *args);
@@ -72,7 +72,7 @@ struct ui_cmd_command commands[] = {
 	{ 1, "clear",	"",							"Clear CPU (reset)",				ui_cmd_clear },
 	{ 1, "memmap",	"<seg>",					"Get memory allocation map",		ui_cmd_memmap },
 	{ 1, "log",		"[on|off]",					"Manipulate logging state",			ui_cmd_log },
-	{ 1, "loglvl",	"[component [level]]",		"Manipulate logging levels",		ui_cmd_loglvl },
+	{ 1, "logc",	"[component [state]]",		"Manipulate log compoment state",	ui_cmd_logc },
 	{ 1, "info",	"",							"Get emulator info",				ui_cmd_info },
 	{ 1, "quit",	"",							"Quit emulation",					ui_cmd_quit },
 	{ 1, "help",	"",							"Get help",							ui_cmd_help },
@@ -527,17 +527,19 @@ void ui_cmd_log(FILE *out, char *args)
 }
 
 // -----------------------------------------------------------------------
-void ui_cmd_loglvl(FILE *out, char *args)
+void ui_cmd_logc(FILE *out, char *args)
 {
 	char *tok_comp, *tok_lvl, *remainder;
 
 	ui_cmd_gettok_str(args, &tok_comp, &remainder);
 
-	// print all levels
+	// print all components
 	if (!tok_comp) {
 		ui_cmd_resp(out, RESP_OK, UI_NOEOL, "");
 		for (int i=0 ; i<ECTL_LOG_COUNT ; i++) {
-			fprintf(out, " %s=%i", ectl_log_component_name(i), ectl_log_level_get(i));
+			if (ectl_log_component_get(i)) {
+				fprintf(out, " %s", ectl_log_component_name(i));
+			}
 		}
 		fprintf(out, "\n");
 		return;
@@ -550,26 +552,17 @@ void ui_cmd_loglvl(FILE *out, char *args)
 		return;
 	}
 
-	int level = ui_cmd_gettok_int(remainder, &tok_lvl, &remainder);
+	int state = ui_cmd_gettok_int(remainder, &tok_lvl, &remainder);
 
-	// print level for component
+	// print component state
 	if (!tok_lvl) {
-		ui_cmd_resp(out, RESP_OK, UI_EOL, "%i", ectl_log_level_get(component));
+		ui_cmd_resp(out, RESP_OK, UI_EOL, "%i", ectl_log_component_get(component));
 		return;
 	}
 
-	// check level
-	if ((level < ECTL_LOG_LEVEL_MIN) || (level > ECTL_LOG_LEVEL_MAX)) {
-		ui_cmd_resp(out, RESP_ERR, UI_EOL, "Wrong level: %s", tok_lvl);
-		return;
-	}
-
-	// set level for component
-	if (!ectl_log_level_set(component, level)) {
-		ui_cmd_resp(out, RESP_OK, UI_EOL, "%i", ectl_log_level_get(component));
-	} else {
-		ui_cmd_resp(out, RESP_ERR, UI_EOL, "Cannot set level %i for component %s", ectl_log_level_get(component), ectl_log_component_name(component));
-	}
+	// set component state
+	ectl_log_component_set(component, state);
+	ui_cmd_resp(out, RESP_OK, UI_EOL, "%i", ectl_log_component_get(component));
 }
 
 // -----------------------------------------------------------------------

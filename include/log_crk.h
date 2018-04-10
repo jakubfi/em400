@@ -28,9 +28,9 @@ void log_reset_process();
 void log_update_process();
 char * log_get_current_process();
 char * log_ctx_stringify(struct crk5_process *process);
-void log_log_process(unsigned component, unsigned level);
-void log_handle_syscall(unsigned component, unsigned level, int number, int nb, int addr, uint16_t r4);
-void log_handle_syscall_ret(unsigned component, unsigned level, uint16_t ic, uint16_t sr, uint16_t r4);
+void log_log_process(unsigned component);
+void log_handle_syscall(unsigned component, int number, int nb, int addr, uint16_t r4);
+void log_handle_syscall_ret(unsigned component, uint16_t ic, uint16_t sr, uint16_t r4);
 void log_syscall_reset();
 void log_check_os();
 

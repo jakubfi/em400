@@ -52,7 +52,7 @@ void mx_reset(void *ch);
 // -----------------------------------------------------------------------
 void * mx_create(int num, struct cfg_unit *units)
 {
-	LOG(L_MX, 1, "Creating new MULTIX");
+	LOG(L_MX, "Creating new MULTIX");
 
 	// --- create multix itself (everything needs it)
 
@@ -89,7 +89,7 @@ void * mx_create(int num, struct cfg_unit *units)
 
 	// --- create devices (event system need them)
 
-	LOG(L_MX, 1, "Initializing devices");
+	LOG(L_MX, "Initializing devices");
 	struct cfg_unit *dev_cfg = units;
 	while (dev_cfg) {
 		struct mx_line *line = multix->plines + dev_cfg->num;
@@ -115,7 +115,7 @@ void * mx_create(int num, struct cfg_unit *units)
 
 	pthread_setname_np(multix->ev_thread, "multixev");
 
-	LOG(L_MX, 1, "MULTIX created");
+	LOG(L_MX, "MULTIX created");
 
 	return multix;
 
@@ -148,7 +148,7 @@ cleanup:
 // -----------------------------------------------------------------------
 static void mx_lines_deinit(struct mx *multix)
 {
-	LOG(L_MX, 2, "Deinitializing logical lines");
+	LOG(L_MX, "Deinitializing logical lines");
 
 	// send QUIT event to all protocol threads
 	for (int i=0 ; i<MX_LINE_CNT ; i++) {
@@ -173,7 +173,7 @@ static void mx_lines_deinit(struct mx *multix)
 			if (lline->joinable) {
 				pthread_join(lline->thread, NULL);
 			} else {
-				LOG(L_MX, 1, "Failed to send QUIT event to %s on line %i, terminating event thread", lline->proto->name, lline->log_n );
+				LOG(L_MX, "Failed to send QUIT event to %s on line %i, terminating event thread", lline->proto->name, lline->log_n );
 				pthread_cancel(lline->thread);
 			}
 			lline->log_n = -1;
@@ -182,7 +182,7 @@ static void mx_lines_deinit(struct mx *multix)
 		multix->llines[i] = NULL;
 	}
 
-	LOG(L_MX, 2, "Deinitializing physical lines");
+	LOG(L_MX, "Deinitializing physical lines");
 
 	for (int i=0 ; i<MX_LINE_CNT ; i++) {
 		struct mx_line *pline = multix->plines + i;
@@ -202,7 +202,7 @@ void mx_shutdown(void *ch)
 {
 	if (!ch) return;
 
-	LOG(L_MX, 1, "Multix shutting down");
+	LOG(L_MX, "Multix shutting down");
 
 	struct mx *multix = (struct mx *) ch;
 
@@ -238,7 +238,7 @@ void mx_shutdown(void *ch)
 		pthread_mutex_destroy(&pline->status_mutex);
 	}
 	free(multix);
-	LOG(L_MX, 3, "Shutdown complete");
+	LOG(L_MX, "Shutdown complete");
 }
 
 // -----------------------------------------------------------------------
@@ -249,7 +249,7 @@ int mx_mem_mget(struct mx *multix, int nb, uint16_t addr, uint16_t *data, int le
 			return -1;
 		}
 	} else {
-		LOG(L_MX, 2, "LOST memory read due to multix initializing");
+		LOG(L_MX, "LOST memory read due to multix initializing");
 	}
 	return 0;
 }
@@ -262,7 +262,7 @@ int mx_mem_mput(struct mx *multix, int nb, uint16_t addr, uint16_t *data, int le
 			return -1;
 		}
 	} else {
-		LOG(L_MX, 2, "LOST memory write due to multix initializing");
+		LOG(L_MX, "LOST memory write due to multix initializing");
 	}
 	return 0;
 }
@@ -273,7 +273,7 @@ static void mx_int_set(struct mx *multix)
 	if (atom_load_acquire(&multix->state) != MX_UNINITIALIZED) {
 		io_int_set(multix->chnum);
 	} else {
-		LOG(L_MX, 2, "LOST interrupt due to multix initializing");
+		LOG(L_MX, "LOST interrupt due to multix initializing");
 	}
 }
 
@@ -294,7 +294,7 @@ static void mx_int_push(struct mx *multix)
 	pthread_mutex_unlock(&multix->int_mutex);
 
 	if (send) {
-		LOG(L_MX, 3, "Pushing interrupt to CPU");
+		LOG(L_MX, "Pushing interrupt to CPU");
 		mx_int_set(multix);
 	}
 }
@@ -302,7 +302,7 @@ static void mx_int_push(struct mx *multix)
 // -----------------------------------------------------------------------
 int mx_int_enqueue(struct mx *multix, int intr, int line)
 {
-	LOG(L_MX, 3, "Enqueue interrupt %i (%s), line %i", intr, mx_irq_name(intr), line);
+	LOG(L_MX, "Enqueue interrupt %i (%s), line %i", intr, mx_irq_name(intr), line);
 
 	// TODO: this is silly
 	uint16_t *i = malloc(sizeof(uint16_t));
@@ -327,7 +327,7 @@ static uint16_t mx_int_get_spec(struct mx *multix)
 	multix->intspec = MX_IRQ_INIEA;
 	pthread_mutex_unlock(&multix->int_mutex);
 
-	LOG(L_MX, 3, "Sending intspec to CPU: 0x%04x (%s, line %i)", lintspec, mx_irq_name(lintspec>>8), lintspec & 0xFF);
+	LOG(L_MX, "Sending intspec to CPU: 0x%04x (%s, line %i)", lintspec, mx_irq_name(lintspec>>8), lintspec & 0xFF);
 
 	return lintspec;
 }
@@ -348,7 +348,7 @@ static int mx_line_conf_phy(struct mx *multix, int phy_n, uint16_t data)
 	unsigned used = (data & 0b0001000000000000) >> 12;
 	unsigned type = (data & 0b0000111100000000) >> 8;
 
-	LOG(L_MX, 3, "%s (type %i), %s (%i), %s",
+	LOG(L_MX, "%s (type %i), %s (%i), %s",
 		mx_line_type_name(type),
 		type,
 		mx_line_dir_name(dir),
@@ -397,7 +397,7 @@ static int mx_line_conf_log(struct mx *multix, int phy_n, int log_n, uint16_t *d
 	struct mx_line *pline = multix->plines + phy_n;
 	const struct mx_proto *proto = mx_proto_get(proto_num);
 
-	LOG(L_MX, 3, "Logical line %i is physical line %i, protocol %i: %s%s",
+	LOG(L_MX, "Logical line %i is physical line %i, protocol %i: %s%s",
 		log_n,
 		phy_n,
 		proto_num,
@@ -484,7 +484,7 @@ static int mx_cmd_setcfg(struct mx *multix, uint16_t addr)
 	unsigned phy_desc_count = (data[0] & 0b1111111100000000) >> 8;
 	unsigned log_count      = (data[0] & 0b0000000011111111);
 
-	LOG(L_MX, 3, "Configuration for MULTIX on channel %i has %i physical line descriptors, %i logical lines", multix->chnum, phy_desc_count, log_count);
+	LOG(L_MX, "Configuration for MULTIX on channel %i has %i physical line descriptors, %i logical lines", multix->chnum, phy_desc_count, log_count);
 
 	// read line descriptions
 	int read_size = phy_desc_count + 4*log_count;
@@ -503,7 +503,7 @@ static int mx_cmd_setcfg(struct mx *multix, uint16_t addr)
 	int cur_line = 0;
 	for (int i=0 ; i<phy_desc_count ; i++) {
 		unsigned count = (data[i] & 0b11111) + 1;
-		LOG(L_MX, 3, "%i Physical line(-s) %i..%i:", count, cur_line, cur_line+count-1);
+		LOG(L_MX, "%i Physical line(-s) %i..%i:", count, cur_line, cur_line+count-1);
 		for (int j=0 ; j<count ; j++, cur_line++) {
 			if (cur_line >= MX_LINE_CNT) {
 				CFGERR(MX_SC_E_NUMLINES, 0);
@@ -552,7 +552,7 @@ static int mx_cmd_setcfg(struct mx *multix, uint16_t addr)
 fail:
 	// update return field only if setcfg failed
 	if (ret_int == MX_IRQ_INKON) {
-		LOG(L_MX, 2, "Configuration error: %s", mx_line_sc_err_name(ret_err>>8));
+		LOG(L_MX, "Configuration error: %s", mx_line_sc_err_name(ret_err>>8));
 		// clear lines configuration only if setcfg tried to configure something
 		// and failed, not when configuration is already properly set
 		if (ret_err != MX_SC_E_CONFSET) {
@@ -570,7 +570,7 @@ fail:
 static int mx_cmd_test(struct mx *multix)
 {
 	if (atom_load_acquire(&multix->state) == MX_QUIT) {
-		LOG(L_MX, 1, "Test request ignored, Multix is shutting down");
+		LOG(L_MX, "Test request ignored, Multix is shutting down");
 		return 0;
 	}
 	// As we're not able to run any real 8085 code, TEST command
@@ -604,13 +604,13 @@ static int mx_conf_check(struct mx *multix, struct mx_line *lline, union mx_even
 {
 	// is multix configured?
 	if (atom_load_acquire(&multix->state) == MX_UNINITIALIZED) {
-		LOG(L_MX, 3, "EV%04x: Rejecting command, MULTIX not initialized", ev->d.id);
+		LOG(L_MX, "EV%04x: Rejecting command, MULTIX not initialized", ev->d.id);
 		return -1;
 	}
 
 	// is the line configured?
 	if (!lline) {
-		LOG(L_MX, 3, "EV%04x: Rejecting command, line %i not configured", ev->d.log_n, ev->d.id);
+		LOG(L_MX, "EV%04x: Rejecting command, line %i not configured", ev->d.log_n, ev->d.id);
 		return -1;
 	}
 
@@ -618,9 +618,9 @@ static int mx_conf_check(struct mx *multix, struct mx_line *lline, union mx_even
 }
 
 // -----------------------------------------------------------------------
-static inline void log_line_status(int level, const char *txt, int log_n, uint32_t status, unsigned evid)
+static inline void log_line_status(const char *txt, int log_n, uint32_t status, unsigned evid)
 {
-	LOG(L_MX, level, "EV%04x: %s: line %i status: 0x%08x: %s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s",
+	LOG(L_MX, "EV%04x: %s: line %i status: 0x%08x: %s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s",
 		evid,
 		txt,
 		log_n,
@@ -656,7 +656,7 @@ static int mx_cmd_dispatch(struct mx *multix, struct mx_line *lline, union mx_ev
 	const struct mx_cmd *cmd = lline->proto->cmd + ev->d.cmd;
 
 	if (!cmd->fun) {
-		LOG(L_MX, 1, "EV%04x: Rejecting command: no protocol function to handle command %s for protocol %s in line %i", ev->d.id, mx_get_cmd_name(ev->d.cmd), lline->proto->name, lline->log_n);
+		LOG(L_MX, "EV%04x: Rejecting command: no protocol function to handle command %s for protocol %s in line %i", ev->d.id, mx_get_cmd_name(ev->d.cmd), lline->proto->name, lline->log_n);
 		mx_int_enqueue(lline->multix, mx_irq_reject(ev->d.cmd), ev->d.log_n);
 		return 1;
 	}
@@ -664,7 +664,7 @@ static int mx_cmd_dispatch(struct mx *multix, struct mx_line *lline, union mx_ev
 	// can line process the command?
 	pthread_mutex_lock(&lline->status_mutex);
 	if (mx_line_cmd_allowed(lline, ev->d.cmd)) {
-		log_line_status(3, "Rejecting command, line status does not allow execution", ev->d.log_n, lline->status, ev->d.id);
+		log_line_status("Rejecting command, line status does not allow execution", ev->d.log_n, lline->status, ev->d.id);
 		mx_int_enqueue(lline->multix, mx_irq_reject(ev->d.cmd), ev->d.log_n);
 		pthread_mutex_unlock(&lline->status_mutex);
 		return 1;
@@ -675,7 +675,7 @@ static int mx_cmd_dispatch(struct mx *multix, struct mx_line *lline, union mx_ev
 
 	// process asynchronously in the protocol thread
 
-	LOG(L_MX, 3, "EV%04x: Enqueue command %s for %s in line %i", ev->d.id, mx_get_cmd_name(ev->d.cmd), lline->proto->name, lline->log_n);
+	LOG(L_MX, "EV%04x: Enqueue command %s for %s in line %i", ev->d.id, mx_get_cmd_name(ev->d.cmd), lline->proto->name, lline->log_n);
 	lline->cmd_data_addr = ev->d.arg;
 	elst_append(lline->devq, ev);
 
@@ -696,7 +696,7 @@ static void mx_cmd_status(struct mx *multix, struct mx_line *lline, union mx_eve
 
 	pthread_mutex_lock(&lline->status_mutex);
 
-	log_line_status(3, "Reporting line status", lline->log_n, lline->status, ev->d.id);
+	log_line_status("Reporting line status", lline->log_n, lline->status, ev->d.id);
 	uint16_t status = lline->status & 0xffff;
 	if (mx_mem_mput(multix, 0, ev->d.arg, &status, 1)) {
 		mx_int_enqueue(multix, MX_IRQ_INPAO, lline->log_n);
@@ -714,13 +714,13 @@ static void * mx_evproc(void *ptr)
 	int timeout = MX_INIT_TIME_MSEC;
 	struct mx *multix = ptr;
 
-	LOG(L_MX, 3, "Entering event loop");
+	LOG(L_MX, "Entering event loop");
 
 	while (!quit) {
 		if (timeout > 0) {
-			LOG(L_MX, 3, "Initialization delay: %i ms", timeout);
+			LOG(L_MX, "Initialization delay: %i ms", timeout);
 		} else {
-			LOG(L_MX, 3, "Event processor waiting for event");
+			LOG(L_MX, "Event processor waiting for event");
 		}
 		union mx_event *ev = elst_wait_pop(multix->eventq, timeout);
 
@@ -730,13 +730,13 @@ static void * mx_evproc(void *ptr)
 			if (timeout) { // loop was indeed waiting for the initialization timeout
 				timeout = 0;
 				atom_store_release(&multix->state, MX_INITIALIZED);
-				LOG(L_MX, 3, "Multix is now initialized");
+				LOG(L_MX, "Multix is now initialized");
 				mx_int_enqueue(multix, MX_IRQ_IWYZE, 0);
 			} else {
-				LOG(L_MX, 1, "ERROR: Received unexpected NULL event");
+				LOG(L_MX, "ERROR: Received unexpected NULL event");
 			}
 		} else { // regular event processing
-			LOG(L_MX, 3, "EV%04x: Received event: %s", ev->d.id, mx_get_event_name(ev->d.type));
+			LOG(L_MX, "EV%04x: Received event: %s", ev->d.id, mx_get_event_name(ev->d.type));
 			switch (ev->d.type) {
 				case MX_EV_QUIT:
 					// not ignored when resetting MULTIX
@@ -761,7 +761,7 @@ static void * mx_evproc(void *ptr)
 					break;
 				case MX_EV_CMD:
 					if (timeout) continue; // ignore commands when restting MULTIX
-					LOG(L_MX, 3, "EV%04x: Received command: %s", ev->d.id, mx_get_cmd_name(ev->d.cmd));
+					LOG(L_MX, "EV%04x: Received command: %s", ev->d.id, mx_get_cmd_name(ev->d.cmd));
 					struct mx_line *lline = multix->llines[ev->d.log_n];
 					switch (ev->d.cmd) {
 						case MX_CMD_REQUEUE:
@@ -819,7 +819,7 @@ static void * mx_evproc(void *ptr)
 		}
 	}
 
-	LOG(L_MX, 3, "Left event loop");
+	LOG(L_MX, "Left event loop");
 
 	pthread_exit(NULL);
 }
@@ -830,7 +830,7 @@ static int mx_event(struct mx *multix, int type, int cmd, int log_n, uint16_t r_
 	static unsigned id;
 
 	if (atom_load_acquire(&multix->state) == MX_QUIT) {
-		LOG(L_MX, 1, "Create new event ignored, Multix is shutting down");
+		LOG(L_MX, "Create new event ignored, Multix is shutting down");
 		return IO_EN;
 	}
 
@@ -843,7 +843,7 @@ static int mx_event(struct mx *multix, int type, int cmd, int log_n, uint16_t r_
 	ev->d.arg = r_arg;
 	ev->d.id = id++;
 
-	LOG(L_MX, 2, "EV%04x: Created new event %s, command: %i (%s), line: %i, arg: 0x%04x ",
+	LOG(L_MX, "EV%04x: Created new event %s, command: %i (%s), line: %i, arg: 0x%04x ",
 		ev->d.id,
 		mx_get_event_name(ev->d.type),
 		ev->d.cmd,
@@ -865,11 +865,11 @@ void mx_reset(void *ch)
 	struct mx *multix = (struct mx *) ch;
 
 	if (atom_load_acquire(&multix->state) == MX_QUIT) {
-		LOG(L_MX, 1, "Received reset request ignored, Multix is shutting down");
+		LOG(L_MX, "Received reset request ignored, Multix is shutting down");
 		return;
 	}
 
-	LOG(L_MX, 2, "Received reset request");
+	LOG(L_MX, "Received reset request");
 	atom_store_release(&multix->state, MX_UNINITIALIZED); // as early as possible
 	mx_event(multix, MX_EV_RESET, 0, 0, 0);
 	// actual reset is done in event processor thread
@@ -885,7 +885,7 @@ int mx_cmd(void *ch, int dir, uint16_t n_arg, uint16_t *r_arg)
 	const unsigned log_n    =  (n_arg & 0b0001111111100000) >> 5;
 
 	if (cmd == MX_CMD_CHAN) { // channel commands
-		LOG(L_MX, 2, "Received channel command: %s (%i)", mx_get_chan_cmd_name(chan_cmd), chan_cmd);
+		LOG(L_MX, "Received channel command: %s (%i)", mx_get_chan_cmd_name(chan_cmd), chan_cmd);
 		switch (chan_cmd) {
 			case MX_CHAN_CMD_INTSPEC:
 				*r_arg = mx_int_get_spec(multix);
@@ -901,10 +901,10 @@ int mx_cmd(void *ch, int dir, uint16_t n_arg, uint16_t *r_arg)
 
 	if (atom_load_acquire(&multix->state) == MX_UNINITIALIZED) {
 		// ignore commands (respond with EN) when multix is initializing
-		LOG(L_MX, 2, "EN for received general or line %i command: %s (%i)", log_n, mx_get_cmd_name(cmd), cmd);
+		LOG(L_MX, "EN for received general or line %i command: %s (%i)", log_n, mx_get_cmd_name(cmd), cmd);
 		return IO_EN;
 	} else {
-		LOG(L_MX, 2, "Received general or line %i command: %s (%i)", log_n, mx_get_cmd_name(cmd), cmd);
+		LOG(L_MX, "Received general or line %i command: %s (%i)", log_n, mx_get_cmd_name(cmd), cmd);
 		return mx_event(multix, MX_EV_CMD, cmd, log_n, *r_arg);
 	}
 }

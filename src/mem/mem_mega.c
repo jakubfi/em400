@@ -50,7 +50,7 @@ int mem_mega_init(int modc, char *prom_image)
 	mem_mega_mp_start = MEM_MAX_MODULES-modc;
 	mem_mega_mp_end = MEM_MAX_MODULES-1;
 
-	LOG(L_MEM, 1, "MEGA modules: %d-%d, %d segments", mem_mega_mp_start, mem_mega_mp_end, MEM_MAX_MEGA_SEGMENTS);
+	LOG(L_MEM, "MEGA modules: %d-%d, %d segments", mem_mega_mp_start, mem_mega_mp_end, MEM_MAX_MEGA_SEGMENTS);
 
 	for (mp=mem_mega_mp_start ; mp<=mem_mega_mp_end ; mp++) {
 		for (seg=0 ; seg<MEM_MAX_MEGA_SEGMENTS; seg++) {
@@ -81,9 +81,9 @@ int mem_mega_init(int modc, char *prom_image)
 		}
 		fclose(f);
 		endianswap(mem_mega_prom, res);
-		LOG(L_MEM, 1, "Loaded MEGA PROM image: %s (%i words)", prom_image, res);
+		LOG(L_MEM, "Loaded MEGA PROM image: %s (%i words)", prom_image, res);
 	} else {
-		LOG(L_MEM, 1, "Empty MEGA PROM");
+		LOG(L_MEM, "Empty MEGA PROM");
 	}
 
 	mem_mega_init_done = 0;
@@ -135,7 +135,7 @@ void mem_mega_seg_set(int nb, int ab, struct mem_slot_t *slot)
 // -----------------------------------------------------------------------
 int mem_mega_cmd(int nb, int ab, int mp, int seg, int flags)
 {
-	LOG(L_MEM, 1, "MEGA: (%2d, %2d) -> (%2d, %2d)  flags: %s%s%s%s%s",
+	LOG(L_MEM, "MEGA: (%2d, %2d) -> (%2d, %2d)  flags: %s%s%s%s%s",
 		nb,
 		ab,
 		mp,

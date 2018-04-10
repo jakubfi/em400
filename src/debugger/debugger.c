@@ -74,10 +74,10 @@ int dbg_init(struct cfg_em400 *cfg)
 {
 	// set UI mode
 	if (cfg->ui_simple == 1) {
-		LOG(L_EM4H, 1, "Initializing debugger console: readline");
+		LOG(L_EM4H, "Initializing debugger console: readline");
 		ui_mode = O_STD;
 	} else {
-		LOG(L_EM4H, 1, "Initializing debugger console: ncurses");
+		LOG(L_EM4H, "Initializing debugger console: ncurses");
 		ui_mode = O_NCURSES;
 	}
 
@@ -119,7 +119,7 @@ int dbg_init(struct cfg_em400 *cfg)
 // -----------------------------------------------------------------------
 void dbg_shutdown()
 {
-	LOG(L_EM4H, 1, "Shutdown debugger");
+	LOG(L_EM4H, "Shutdown debugger");
 	aw_shutdown();
 	emdas_destroy(emd);
 }

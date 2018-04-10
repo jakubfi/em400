@@ -34,7 +34,7 @@
 
 #define USER_ILLEGAL \
 	if (Q) { \
-		LOGCPU(L_CPU, 2, "    (ineffective: user-illegal instruction)"); \
+		LOGCPU(L_CPU, "    (ineffective: user-illegal instruction)"); \
 		int_set(INT_ILLEGAL_INSTRUCTION); \
 		return; \
 	}
@@ -456,11 +456,11 @@ void op_71_exl()
 	uint16_t data;
 
 	if (LOG_ENABLED) {
-		if (log_wants(L_OP, 2)) {
-			log_log_cpu(L_OP, 2, "EXL: %i (r4: 0x%04x)", IR_b, regs[4]);
+		if (LOG_WANTS(L_OP)) {
+			log_log_cpu(L_OP, "EXL: %i (r4: 0x%04x)", IR_b, regs[4]);
 		}
-		if (log_wants(L_CRK5, 2)) {
-			log_handle_syscall(L_CRK5, 2, IR_b, QNB, rIC, regs[4]);
+		if (LOG_WANTS(L_CRK5)) {
+			log_handle_syscall(L_CRK5, IR_b, QNB, rIC, regs[4]);
 		}
 	}
 
@@ -674,7 +674,7 @@ void op_73_hlt()
 {
 	USER_ILLEGAL;
 
-	LOGCPU(L_OP, 1, "HALT 0%02o (alarm: %i)", N, regs[6]&255);
+	LOGCPU(L_OP, "HALT 0%02o (alarm: %i)", N, regs[6]&255);
 	cpu_trigger_state(STATE_HALT);
 }
 
@@ -728,11 +728,11 @@ void op_73_lip()
 
 	if (LOG_ENABLED) {
 		log_update_process();
-		if (log_wants(L_CRK5, 2)) {
-			log_handle_syscall_ret(L_CRK5, 2, rIC, rSR, regs[4]);
+		if (LOG_WANTS(L_CRK5)) {
+			log_handle_syscall_ret(L_CRK5, rIC, rSR, regs[4]);
 		}
-		if (log_wants(L_CRK5, 2)) {
-			log_log_process(L_CRK5, 2);
+		if (LOG_WANTS(L_CRK5)) {
+			log_log_process(L_CRK5);
 		}
 		log_intlevel_dec();
 	}
@@ -936,14 +936,14 @@ void op_77_sp()
 	if (LOG_ENABLED) {
 		log_update_process();
 		log_intlevel_reset();
-		if (log_wants(L_OP, 1)) {
-			log_log_cpu(L_OP, 1, "SP: context @ 0x%04x", N);
+		if (LOG_WANTS(L_OP)) {
+			log_log_cpu(L_OP, "SP: context @ 0x%04x", N);
 		}
-		if (log_wants(L_CRK5, 2)) {
-			log_handle_syscall_ret(L_CRK5, 2, rIC, rSR, regs[4]);
+		if (LOG_WANTS(L_CRK5)) {
+			log_handle_syscall_ret(L_CRK5, rIC, rSR, regs[4]);
 		}
-		if (log_wants(L_CRK5, 2)) {
-			log_log_process(L_CRK5, 2);
+		if (LOG_WANTS(L_CRK5)) {
+			log_log_process(L_CRK5);
 		}
 	}
 }
@@ -952,7 +952,7 @@ void op_77_sp()
 void op_77_md()
 {
 	if (rMODc >= 3) {
-		LOGCPU(L_CPU, 2, "    (ineffective: 4th MD)");
+		LOGCPU(L_CPU, "    (ineffective: 4th MD)");
 		int_set(INT_ILLEGAL_INSTRUCTION);
 		rMOD = 0;
 		rMODc = 0;
@@ -985,7 +985,7 @@ void op_77_ib()
 void op_illegal()
 {
 	char *opcode = int2binf("... ... . ... ... ...", rIR, 16);
-	LOGCPU(L_CPU, 2, "    (ineffective: illegal instruction) opcode: %s (0x%04x)", opcode, rIR);
+	LOGCPU(L_CPU, "    (ineffective: illegal instruction) opcode: %s (0x%04x)", opcode, rIR);
 	free(opcode);
 	int_set(INT_ILLEGAL_INSTRUCTION);
 }

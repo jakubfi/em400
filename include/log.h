@@ -25,70 +25,83 @@
 #include "cfg.h"
 #include "atomic.h"
 
-#define LOG_LEVEL_MIN 0
-#define LOG_LEVEL_MAX 9
-
 #define E_OK 0
 #define E_ERR -1
 
 enum log_components {
-	L_REG, L_MEM, L_CPU, L_OP, L_INT,
+	L_REG,
+	L_MEM,
+	L_CPU,
+	L_OP,
+	L_INT,
 	L_IO,
-	L_MX, L_PX, L_CCHR, L_CMEM,
-	L_TERM, L_9425, L_WNCH, L_FLOP, L_PNCH, L_PNRD, L_TAPE,
+	L_MX,
+	L_PX,
+	L_CCHR,
+	L_CMEM,
+	L_TERM,
+	L_9425,
+	L_WNCH,
+	L_FLOP,
+	L_PNCH,
+	L_PNRD,
+	L_TAPE,
 	L_CRK5,
-	L_EM4H, L_ECTL, L_FPGA,
+	L_EM4H,
+	L_ECTL,
+	L_FPGA,
 	L_ALL,
-	L_COUNT = L_ALL
+	L_CNT
 };
 
-extern int log_enabled;
+extern unsigned log_components_enabled;
 
 int log_init(struct cfg_em400 *cfg);
 void log_shutdown();
 
 int log_enable();
 void log_disable();
-int log_is_enabled();
+unsigned log_is_enabled();
 
-int log_set_level(unsigned component, unsigned level);
-int log_get_level(unsigned component);
-int log_setup_levels(char *levels);
-int log_wants(unsigned component, unsigned level);
+void log_component_enable(unsigned component);
+void log_component_disable(unsigned component);
+unsigned log_component_get(unsigned component);
+int log_setup_components(char *components);
 
 const char * log_get_component_name(unsigned component);
 int log_get_component_id(const char *name);
 
 int log_err(const char *func, char *msgfmt, ...);
-void log_log(unsigned component, unsigned level, const char *func, char *format, ...);
-void log_splitlog(unsigned component, unsigned level, const char *func, char *text);
+void log_log(unsigned component, const char *func, char *format, ...);
+void log_splitlog(unsigned component, const char *func, char *text);
 
 void log_store_cycle_state(uint16_t sr, uint16_t ic);
 void log_intlevel_reset();
 void log_intlevel_dec();
 void log_intlevel_inc();
 
-void log_log_dasm(unsigned component, unsigned level, int mod, int norm_arg, int short_arg, int16_t n);
-void log_log_cpu(unsigned component, unsigned level, char *msgfmt, ...);
-void log_config(unsigned component, unsigned level, struct cfg_em400 *cfg, const char *func);
+void log_log_dasm(int mod, int norm_arg, int short_arg, int16_t n);
+void log_log_cpu(unsigned component, char *msgfmt, ...);
+void log_config(struct cfg_em400 *cfg, const char *func);
 
-#define LOG_ENABLED (atom_load_acquire(&log_enabled))
-#define LOG_WANTS(component, level) (LOG_ENABLED && log_wants(component, level))
+#define LOG_ENABLED atom_load_acquire(&log_components_enabled)
+#define LOG_WANTS(component) (LOG_ENABLED & (1 << (component)))
 
-#define LOG(component, level, format, ...) \
-	if (LOG_WANTS(component, level)) \
-		log_log(component, level, __func__, format, ##__VA_ARGS__)
+#define LOG(component, format, ...) \
+	if (LOG_WANTS(component)) \
+		log_log(component, __func__, format, ##__VA_ARGS__)
 
-#define LOGCPU(component, level, format, ...) \
-	if (LOG_WANTS(component, level)) \
-		log_log_cpu(component, level, format, ##__VA_ARGS__)
+#define LOGCPU(component, format, ...) \
+	if (LOG_WANTS(component)) \
+		log_log_cpu(component, format, ##__VA_ARGS__)
 
 #define LOGERR(format, ...) \
 	log_err(__func__, format, ##__VA_ARGS__)
 
-#endif
+#define LOGBLOB(component, txt) \
+	log_splitlog(component, __func__, txt)
 
-#define LOGBLOB(component, level, txt) \
-	log_splitlog(component, level, __func__, txt)
+
+#endif
 
 // vim: tabstop=4 shiftwidth=4 autoindent
