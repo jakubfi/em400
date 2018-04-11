@@ -40,9 +40,8 @@ int mx_punchrd_attach(struct mx_line *lline, uint16_t *cmd_data)
 {
 	pthread_mutex_lock(&lline->status_mutex);
 	lline->status |= MX_LSTATE_ATTACHED;
-	mx_int_enqueue(lline->multix, MX_IRQ_IDOLI, lline->log_n);
 	pthread_mutex_unlock(&lline->status_mutex);
-	return 0;
+	return MX_IRQ_IDOLI;
 }
 
 // -----------------------------------------------------------------------
@@ -50,9 +49,8 @@ int mx_punchrd_detach(struct mx_line *lline, uint16_t *cmd_data)
 {
 	pthread_mutex_lock(&lline->status_mutex);
 	lline->status &= ~MX_LSTATE_ATTACHED;
-	mx_int_enqueue(lline->multix, MX_IRQ_IODLI, lline->log_n);
 	pthread_mutex_unlock(&lline->status_mutex);
-	return 0;
+	return MX_IRQ_IODLI;
 }
 
 // -----------------------------------------------------------------------
