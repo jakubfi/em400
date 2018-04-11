@@ -15,7 +15,11 @@
 //  Foundation, Inc.,
 //  51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 
+#ifndef MX_EVENT
+#define MX_EVENT
+
 #include <inttypes.h>
+
 #include "utils/fdbridge.h"
 
 // event types are also priorities for the event queue
@@ -39,5 +43,7 @@ union mx_event {
 };
 
 const char * mx_get_event_name(unsigned ev);
+
+#endif
 
 // vim: tabstop=4 shiftwidth=4 autoindent
