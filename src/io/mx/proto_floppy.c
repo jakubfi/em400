@@ -133,60 +133,65 @@ void mx_floppy_destroy(struct mx_line *pline)
 }
 
 // -----------------------------------------------------------------------
-static int mx_floppy_att_decode(uint16_t *data, struct proto_floppy_data *proto_data)
+int mx_floppy_att_decode(uint16_t *data, void *proto_data)
 {
-	proto_data->retrans = (data[0] & 0b0000111100000000) >> 8;
-	proto_data->spt =     (data[0] & 0b0000000011111111) >> 0;
-	unsigned slen =       (data[1] & 0b1111111100000000) >> 8;
-	proto_data->cyls =    (data[1] & 0b0000000011111111) >> 0;
-	proto_data->heads =   (data[2] & 0b1111111100000000) >> 8;
-	proto_data->s1num =   (data[2] & 0b0000000011111111) >> 0;
+	struct proto_floppy_data *pd = proto_data;
+
+	pd->retrans =  (data[0] & 0b0000111100000000) >> 8;
+	pd->spt =      (data[0] & 0b0000000011111111) >> 0;
+	unsigned slen =(data[1] & 0b1111111100000000) >> 8;
+	pd->cyls =     (data[1] & 0b0000000011111111) >> 0;
+	pd->heads =    (data[2] & 0b1111111100000000) >> 8;
+	pd->s1num =    (data[2] & 0b0000000011111111) >> 0;
 
 	if (slen > 3) {
 		LOG(L_FLOP, "Attaching floppy: wrong number of words per sector selection: %i", slen);
 		return -1;
 	}
 
-	proto_data->slen = 64 * (1 << slen);
+	pd->slen = 64 * (1 << slen);
 
 	LOG(L_FLOP, "Attaching floppy: %i heads, %i cyls, %i words per sector, %i sectors per track, %i retransmissions, first sector = %i",
-		proto_data->heads,
-		proto_data->cyls,
-		proto_data->slen,
-		proto_data->spt,
-		proto_data->retrans,
-		proto_data->s1num
+		pd->heads,
+		pd->cyls,
+		pd->slen,
+		pd->spt,
+		pd->retrans,
+		pd->s1num
 	);
+
 	return 0;
 }
 
 // -----------------------------------------------------------------------
-static int mx_floppy_transmit_decode(uint16_t *data, struct proto_floppy_data *proto_data)
+int mx_floppy_transmit_decode(uint16_t *data, void *proto_data)
 {
-	proto_data->op =  (data[0] & 0b0000011100000000) >> 8;
-	proto_data->sect = data[3];
+	struct proto_floppy_data *pd = proto_data;
 
-	switch (proto_data->op) {
+	pd->op =  (data[0] & 0b0000011100000000) >> 8;
+	pd->sect = data[3];
+
+	switch (pd->op) {
 		case MX_FLOPPY_OP_FORMAT:
-			LOG(L_FLOP, "Format track, starting sector: %i", proto_data->sect);
+			LOG(L_FLOP, "Format track, starting sector: %i", pd->sect);
 			break;
 		case MX_FLOPPY_OP_READ:
 		case MX_FLOPPY_OP_WRITE:
-			proto_data->ign_crc = (data[0] & 0b0001000000000000) >> 12;
-			proto_data->nb =      (data[0] & 0b0000000000011111) >> 0;
-			proto_data->addr =     data[1];
-			proto_data->len =      data[2] + 1;
+			pd->ign_crc = (data[0] & 0b0001000000000000) >> 12;
+			pd->nb =      (data[0] & 0b0000000000011111) >> 0;
+			pd->addr =     data[1];
+			pd->len =      data[2] + 1;
 			LOG(L_FLOP, "%s %i words, starting sector: %i, memory address: %i:0x%04x %s",
-				(proto_data->op == MX_FLOPPY_OP_READ) ? "Read" : "Write",
-				proto_data->len,
-				proto_data->sect,
-				proto_data->nb,
-				proto_data->addr,
-				proto_data->ign_crc ? "(ignore CRC)" : ""
+				(pd->op == MX_FLOPPY_OP_READ) ? "Read" : "Write",
+				pd->len,
+				pd->sect,
+				pd->nb,
+				pd->addr,
+				pd->ign_crc ? "(ignore CRC)" : ""
 			);
 			break;
 		case MX_FLOPPY_OP_ERRSECT:
-			LOG(L_FLOP, "Mark sector %i as bad", proto_data->sect);
+			LOG(L_FLOP, "Mark sector %i as bad", pd->sect);
 			break;
 		default:
 			return -1;
@@ -197,30 +202,27 @@ static int mx_floppy_transmit_decode(uint16_t *data, struct proto_floppy_data *p
 }
 
 // -----------------------------------------------------------------------
-static void mx_floppy_transmit_encode(uint16_t *data, struct proto_floppy_data *proto_data)
+void mx_floppy_transmit_encode(uint16_t *data, void *proto_data)
 {
-	LOG(L_FLOP, "Transmit status: ret_len=0x%04x, ret_status=0x%08x", proto_data->ret_len, proto_data->ret_status);
-	if ((proto_data->op == MX_FLOPPY_OP_READ) || (proto_data->op == MX_FLOPPY_OP_WRITE)) {
-		data[0] = proto_data->ret_len;
+	struct proto_floppy_data *pd = proto_data;
+
+	LOG(L_FLOP, "Transmission result: len=%i, status=0x%08x", pd->ret_len, pd->ret_status);
+	if ((pd->op == MX_FLOPPY_OP_READ) || (pd->op == MX_FLOPPY_OP_WRITE)) {
+		data[0] = pd->ret_len;
 	}
-	data[1] = proto_data->ret_status >> 16;
-	data[2] = proto_data->ret_status & 0xffff;
+	data[1] = pd->ret_status >> 16;
+	data[2] = pd->ret_status & 0xffff;
 }
 
 // -----------------------------------------------------------------------
 int mx_floppy_attach(struct mx_line *lline, uint16_t *cmd_data)
 {
 	int irq;
-	struct proto_floppy_data *proto_data = lline->proto_data;
 
-	if (mx_floppy_att_decode(cmd_data, proto_data)) {
-		irq = MX_IRQ_INDOL;
-	} else {
-		pthread_mutex_lock(&lline->status_mutex);
-		lline->status |= MX_LSTATE_ATTACHED;
-		pthread_mutex_unlock(&lline->status_mutex);
-		irq = MX_IRQ_IDOLI;
-	}
+	pthread_mutex_lock(&lline->status_mutex);
+	lline->status |= MX_LSTATE_ATTACHED;
+	pthread_mutex_unlock(&lline->status_mutex);
+	irq = MX_IRQ_IDOLI;
 
 	return irq;
 }
@@ -246,12 +248,6 @@ int mx_floppy_transmit(struct mx_line *lline, uint16_t *cmd_data)
 {
 	int irq;
 	struct proto_floppy_data *proto_data = lline->proto_data;
-	const struct mx_cmd *cmd = lline->proto->cmd + MX_CMD_TRANSMIT;
-
-	if (mx_floppy_transmit_decode(cmd_data, proto_data)) {
-		irq = MX_IRQ_INTRA;
-		goto fin;
-	}
 
 	// check if there is a device connected
 	if (!lline->dev || !lline->dev_data) {
@@ -267,9 +263,6 @@ int mx_floppy_transmit(struct mx_line *lline, uint16_t *cmd_data)
 	irq = MX_IRQ_ITRER;
 
 fin:
-	// pack control field
-	mx_floppy_transmit_encode(cmd_data + cmd->output_fpos, proto_data);
-
 	return irq;
 }
 
@@ -281,10 +274,10 @@ const struct mx_proto mx_drv_floppy = {
 	.init = mx_floppy_init,
 	.destroy = mx_floppy_destroy,
 	.cmd = {
-		[MX_CMD_ATTACH] = { 3, 0, 0, mx_floppy_attach },
-		[MX_CMD_TRANSMIT] = { 4, 4, 3, mx_floppy_transmit },
-		[MX_CMD_DETACH] = { 0, 0, 0, mx_floppy_detach },
-		[MX_CMD_ABORT] = { 0, 0, 0, mx_floppy_abort },
+		[MX_CMD_ATTACH] = { 3, 0, NULL, NULL, mx_floppy_attach },
+		[MX_CMD_TRANSMIT] = { 4, 3, mx_floppy_transmit_decode, mx_floppy_transmit_encode, mx_floppy_transmit },
+		[MX_CMD_DETACH] = { 0, 0, NULL, NULL, mx_floppy_detach },
+		[MX_CMD_ABORT] = { 0, 0, NULL, NULL, mx_floppy_abort },
 	}
 };
 

@@ -61,10 +61,10 @@ const struct mx_proto mx_drv_puncher = {
 	.init = mx_puncher_init,
 	.destroy = mx_puncher_destroy,
 	.cmd = {
-		[MX_CMD_ATTACH] = { 1, 0, 0, mx_puncher_attach },
-		[MX_CMD_TRANSMIT] = { 4, 4, 2, NULL },
-		[MX_CMD_DETACH] = { 0, 0, 0, mx_puncher_detach },
-		[MX_CMD_ABORT] = { 0, 0, 0, NULL },
+		[MX_CMD_ATTACH] = { 1, 0, NULL, NULL, mx_puncher_attach },
+		[MX_CMD_TRANSMIT] = { 4, 2, NULL, NULL, NULL },
+		[MX_CMD_DETACH] = { 0, 0, NULL, NULL, mx_puncher_detach },
+		[MX_CMD_ABORT] = { 0, 0, NULL, NULL, NULL },
 	}
 };
 

@@ -137,60 +137,69 @@ void mx_winch_destroy(struct mx_line *pline)
 }
 
 // -----------------------------------------------------------------------
-static void mx_winch_trans_decode(uint16_t *data, struct proto_winchester_data *proto_data)
+int mx_winch_trans_decode(uint16_t *data, void *proto_data)
 {
-	proto_data->op = (data[0] & 0b0000011100000000) >> 8;
+	struct proto_winchester_data *pd = proto_data;
 
-	switch (proto_data->op) {
+	pd->op = (data[0] & 0b0000011100000000) >> 8;
+
+	switch (pd->op) {
 		case MX_WINCH_OP_FORMAT_SPARE:
 			LOG(L_WNCH, "Format spare area");
 			break;
 		case MX_WINCH_OP_FORMAT_TRACK:
-			proto_data->format.sector_map = data[1];
-			proto_data->format.start_sector = data[2] << 16;
-			proto_data->format.start_sector += data[3];
+			pd->format.sector_map = data[1];
+			pd->format.start_sector = data[2] << 16;
+			pd->format.start_sector += data[3];
 			char *map = int2binf("................", data[1], 16);
-			LOG(L_WNCH, "Format track, starting logical sector: %i, sector map: %s", proto_data->format.start_sector, map);
+			LOG(L_WNCH, "Format track, starting logical sector: %i, sector map: %s", pd->format.start_sector, map);
 			free(map);
 			break;
 		case MX_WINCH_OP_READ:
 		case MX_WINCH_OP_WRITE:
-			proto_data->transmit.ign_crc	= (data[0] & 0b0001000000000000) >> 12;
-			proto_data->transmit.sector_fill= (data[0] & 0b0000100000000000) >> 11;
-			proto_data->transmit.watch_eof	= (data[0] & 0b0000010000000000) >> 10;
-			proto_data->transmit.cpu		= (data[0] & 0b0000000000010000) >> 4;
-			proto_data->transmit.nb			= (data[0] & 0b0000000000001111);
-			proto_data->transmit.addr = data[1];
-			proto_data->transmit.len = data[2]+1;
-			proto_data->transmit.sector = (data[3] & 255) << 16;
-			proto_data->transmit.sector += data[4];
+			pd->transmit.ign_crc    = (data[0] & 0b0001000000000000) >> 12;
+			pd->transmit.sector_fill= (data[0] & 0b0000100000000000) >> 11;
+			pd->transmit.watch_eof  = (data[0] & 0b0000010000000000) >> 10;
+			pd->transmit.cpu        = (data[0] & 0b0000000000010000) >> 4;
+			pd->transmit.nb         = (data[0] & 0b0000000000001111);
+			pd->transmit.addr       = data[1];
+			pd->transmit.len        = data[2]+1;
+			pd->transmit.sector     = (data[3] & 255) << 16;
+			pd->transmit.sector    += data[4];
 
 			LOG(L_WNCH, "%s %i words, starting logical sector %i, memory addres %i:0x%04x, flags: %s%s%s",
-				proto_data->op == MX_WINCH_OP_READ ? "READ" : "WRITE",
-				proto_data->transmit.len,
-				proto_data->transmit.sector,
-				proto_data->transmit.nb,
-				proto_data->transmit.addr,
-				proto_data->transmit.ign_crc ? "CRC_IGNORE " : "",
-				proto_data->transmit.sector_fill ? "SECTOR_FILL " : "",
-				proto_data->transmit.watch_eof ? "EOF_WATCH " : ""
+				pd->op == MX_WINCH_OP_READ ? "READ" : "WRITE",
+				pd->transmit.len,
+				pd->transmit.sector,
+				pd->transmit.nb,
+				pd->transmit.addr,
+				pd->transmit.ign_crc ? "CRC_IGNORE " : "",
+				pd->transmit.sector_fill ? "SECTOR_FILL " : "",
+				pd->transmit.watch_eof ? "EOF_WATCH " : ""
 			);
 			break;
 		case MX_WINCH_OP_PARK:
-			proto_data->park.cylinder = data[4];
-			LOG(L_WNCH, "Park heads on cylinder %i", proto_data->park.cylinder);
+			pd->park.cylinder = data[4];
+			LOG(L_WNCH, "Park heads on cylinder %i", pd->park.cylinder);
 			break;
 	}
 
-	proto_data->ret_len = 0;
-	proto_data->ret_status = 0;
+	pd->ret_len = 0;
+	pd->ret_status = 0;
+
+	return 0;
 }
 
 // -----------------------------------------------------------------------
-static void mx_winch_transmit_encode(uint16_t *data, struct proto_winchester_data *proto_data)
+void mx_winch_transmit_encode(uint16_t *data, void *proto_data)
 {
-	data[0] = proto_data->ret_len;
-	data[1] = proto_data->ret_status;
+	struct proto_winchester_data *pd = proto_data;
+
+	LOG(L_WNCH, "Transmission result: len=%i, status=0x%04x", pd->ret_len, pd->ret_status);
+	if ((pd->op == MX_WINCH_OP_READ) || (pd->op == MX_WINCH_OP_WRITE)) {
+		data[0] = pd->ret_len;
+	}
+	data[1] = pd->ret_status;
 }
 
 // -----------------------------------------------------------------------
@@ -319,7 +328,6 @@ int mx_winch_transmit(struct mx_line *line, uint16_t *cmd_data)
 	int irq;
 
 	struct proto_winchester_data *proto_data = line->proto_data;
-	const struct mx_cmd *cmd = line->proto->cmd + MX_CMD_TRANSMIT;
 
 	// check if there is a device connected
 	if (!line->dev || !line->dev_data) {
@@ -327,9 +335,6 @@ int mx_winch_transmit(struct mx_line *line, uint16_t *cmd_data)
 		irq = MX_IRQ_INTRA;
 		goto fin;
 	}
-
-	// unpack control field
-	mx_winch_trans_decode(cmd_data, proto_data);
 
 	LOG(L_WNCH, "Transmit operation %i: %s", proto_data->op, winch_op_names[proto_data->op]);
 
@@ -359,9 +364,6 @@ int mx_winch_transmit(struct mx_line *line, uint16_t *cmd_data)
 	}
 
 fin:
-	// pack control field
-	mx_winch_transmit_encode(cmd_data + cmd->output_fpos, proto_data);
-
 	return irq;
 }
 
@@ -373,10 +375,10 @@ const struct mx_proto mx_drv_winchester = {
 	.init = mx_winch_init,
 	.destroy = mx_winch_destroy,
 	.cmd = {
-		[MX_CMD_ATTACH] = { 0, 0, 0, mx_winch_attach },
-		[MX_CMD_TRANSMIT] = { 5, 5, 2, mx_winch_transmit },
-		[MX_CMD_DETACH] = { 0, 0, 0, mx_winch_detach },
-		[MX_CMD_ABORT] = { 0, 0, 0, NULL },
+		[MX_CMD_ATTACH] = { 0, 0, NULL, NULL, mx_winch_attach },
+		[MX_CMD_TRANSMIT] = { 5, 2, mx_winch_trans_decode, mx_winch_transmit_encode, mx_winch_transmit },
+		[MX_CMD_DETACH] = { 0, 0, NULL, NULL, mx_winch_detach },
+		[MX_CMD_ABORT] = { 0, 0, NULL, NULL, NULL },
 	}
 };
 

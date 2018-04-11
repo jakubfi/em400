@@ -127,8 +127,10 @@ void mx_terminal_destroy(struct mx_line *pline)
 }
 
 // -----------------------------------------------------------------------
-static int mx_terminal_att_decode(uint16_t *data, struct proto_terminal_data *pd)
+int mx_terminal_att_decode(uint16_t *data, void *proto_data)
 {
+	struct proto_terminal_data *pd = proto_data;
+
 	pd->watch_eof	= (data[0] & 0b1000000000000000) >> 15;
 	pd->parity		=!(data[0] & 0b0100000000000000) ? MX_TERM_PARITY_NONE :
 					  (data[0] & 0b0010000000000000) ? MX_TERM_PARITY_ODD : MX_TERM_PARITY_EVEN;
@@ -160,8 +162,10 @@ static int mx_terminal_att_decode(uint16_t *data, struct proto_terminal_data *pd
 }
 
 // -----------------------------------------------------------------------
-static int mx_terminal_trans_decode(uint16_t *data, struct proto_terminal_data *pd)
+int mx_terminal_trans_decode(uint16_t *data, void *proto_data)
 {
+	struct proto_terminal_data *pd = proto_data;
+
 	pd->transmit.flags		= (data[0] & 0b1111111100000000) >> 8;
 	pd->transmit.timeout	= (data[0] & 0b0000000011111111);
 	pd->transmit.tx_len		= data[1];
@@ -215,16 +219,9 @@ int mx_terminal_detach(struct mx_line *line, uint16_t *cmd_data)
 int mx_terminal_transmit(struct mx_line *line, uint16_t *cmd_data)
 {
 	int irq;
-	struct proto_terminal_data *proto_data = line->proto_data;
-	//const struct mx_cmd *cmd = line->proto->cmd + MX_CMD_TRANSMIT;
 
 	// check if there is a device connected
 	if (!line->dev || !line->dev_data) {
-		irq = MX_IRQ_INTRA;
-		goto fin;
-	}
-
-	if (mx_terminal_trans_decode(cmd_data, proto_data)) {
 		irq = MX_IRQ_INTRA;
 		goto fin;
 	}
@@ -244,10 +241,10 @@ const struct mx_proto mx_drv_terminal = {
 	.init = mx_terminal_init,
 	.destroy = mx_terminal_destroy,
 	.cmd = {
-		[MX_CMD_ATTACH] = { 3, 0, 0, mx_terminal_attach },
-		[MX_CMD_TRANSMIT] = { 10, 10, 4, mx_terminal_transmit },
-		[MX_CMD_DETACH] = { 0, 0, 0, mx_terminal_detach },
-		[MX_CMD_ABORT] = { 0, 0, 0, NULL },
+		[MX_CMD_ATTACH] = { 3, 0, mx_terminal_att_decode, NULL, mx_terminal_attach },
+		[MX_CMD_TRANSMIT] = { 10, 4, mx_terminal_trans_decode, NULL, mx_terminal_transmit },
+		[MX_CMD_DETACH] = { 0, 0, NULL, NULL, mx_terminal_detach },
+		[MX_CMD_ABORT] = { 0, 0, NULL, NULL, NULL },
 	}
 };
 

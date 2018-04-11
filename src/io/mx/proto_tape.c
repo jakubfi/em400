@@ -42,10 +42,10 @@ const struct mx_proto mx_drv_tape = {
 	.init = mx_tape_init,
 	.destroy = mx_tape_destroy,
 	.cmd = {
-		[MX_CMD_ATTACH] = { 0, 0, 0, NULL },
-		[MX_CMD_TRANSMIT] = { 3, 3, 2, NULL },
-		[MX_CMD_DETACH] = { 0, 0, 0, NULL },
-		[MX_CMD_ABORT] = { 0, 0, 0, NULL },
+		[MX_CMD_ATTACH] = { 0, 0, NULL, NULL, NULL },
+		[MX_CMD_TRANSMIT] = { 3, 2, NULL, NULL, NULL },
+		[MX_CMD_DETACH] = { 0, 0, NULL, NULL, NULL },
+		[MX_CMD_ABORT] = { 0, 0, NULL, NULL, NULL },
 	}
 };
 

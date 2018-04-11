@@ -655,7 +655,7 @@ static int mx_cmd_dispatch(struct mx *multix, struct mx_line *lline, union mx_ev
 
 	const struct mx_cmd *cmd = lline->proto->cmd + ev->d.cmd;
 
-	if (!cmd->fun) {
+	if (!cmd->run) {
 		LOG(L_MX, "EV%04x: Rejecting command: no protocol function to handle command %s for protocol %s in line %i", ev->d.id, mx_get_cmd_name(ev->d.cmd), lline->proto->name, lline->log_n);
 		mx_int_enqueue(lline->multix, mx_irq_reject(ev->d.cmd), ev->d.log_n);
 		return 1;

@@ -61,10 +61,10 @@ const struct mx_proto mx_drv_punchrd = {
 	.init = mx_punchrd_init,
 	.destroy = mx_punchrd_destroy,
 	.cmd = {
-		[MX_CMD_ATTACH] = { 2, 0, 0, mx_punchrd_attach },
-		[MX_CMD_TRANSMIT] = { 5, 5, 3, NULL },
-		[MX_CMD_DETACH] = { 0, 0, 0, mx_punchrd_detach },
-		[MX_CMD_ABORT] = { 0, 0, 0, NULL },
+		[MX_CMD_ATTACH] = { 2, 0, NULL, NULL, mx_punchrd_attach },
+		[MX_CMD_TRANSMIT] = { 5, 3, NULL, NULL, NULL },
+		[MX_CMD_DETACH] = { 0, 0, NULL, NULL, mx_punchrd_detach },
+		[MX_CMD_ABORT] = { 0, 0, NULL, NULL, NULL },
 	}
 };
 

@@ -26,6 +26,8 @@
 #include "utils/elst.h"
 #include "log.h"
 
+#define MAX_CMD_DATA_LEN 16
+
 const char *mx_phy_type_names[] = {
 	"USART async",
 	"8255",
@@ -218,23 +220,36 @@ static void mx_line_process_cmd(struct mx_line *line, union mx_event *ev)
 	LOG(L_MX, "EV%04x: Line %i (%s) got cmd %s", ev->d.id, line->log_n, line->proto->name, mx_get_cmd_name(ev->d.cmd));
 
 	uint16_t cmd_data_addr = ev->d.arg;
-	uint16_t cmd_data[16];
+	uint16_t cmd_data[MAX_CMD_DATA_LEN];
 
-	// read the command parameters
-	if (cmd->input_flen) {
+	// check for emulation errors
+	if (cmd->input_flen + cmd->output_flen > MAX_CMD_DATA_LEN) {
+		LOG(L_MX, "ERROR: EV%04x: protocol data (%i words) won't fit in the data buffer (%i words)", cmd->input_flen + cmd->output_flen, MAX_CMD_DATA_LEN);
+		irq = MX_IRQ_INPAO;
+		goto fin;
+	}
+
+	// read command parameters if applicable
+	if ((cmd->input_flen > 0) && cmd->decode) {
 		if (mx_mem_mget(line->multix, 0, cmd_data_addr, cmd_data, cmd->input_flen)) {
 			irq = MX_IRQ_INPAO;
 			goto fin;
 		}
+		// decode command parameters
+		if (cmd->decode(cmd_data, line->proto_data)) {
+			irq = MX_IRQ_INTRA;
+			goto fin;
+		}
 	}
 
-	// run command
-	irq = line->proto->cmd[ev->d.cmd].fun(line, cmd_data);
+	// run the command
+	irq = cmd->run(line, cmd_data);
 
 fin:
-	// store command output
-	if ((cmd->output_flen) && (irq != MX_IRQ_INPAO)) {
-		if (mx_mem_mput(line->multix, 0, cmd_data_addr + cmd->output_fpos, cmd_data + cmd->output_fpos, cmd->output_flen)) {
+	// store command output if applicable
+	if ((cmd->output_flen > 0) && (cmd->encode) && (irq != MX_IRQ_INPAO)) {
+		cmd->encode(cmd_data, line->proto_data);
+		if (mx_mem_mput(line->multix, 0, cmd_data_addr + cmd->input_flen, cmd_data + cmd->input_flen, cmd->output_flen)) {
 			irq = MX_IRQ_INPAO;
 		}
 	}
