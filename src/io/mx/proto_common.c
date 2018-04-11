@@ -1,4 +1,4 @@
-//  Copyright (c) 2013-2015 Jakub Filipowicz <jakubf@gmail.com>
+//  Copyright (c) 2013-2018 Jakub Filipowicz <jakubf@gmail.com>
 //
 //  This program is free software; you can redistribute it and/or modify
 //  it under the terms of the GNU General Public License as published by
@@ -17,36 +17,30 @@
 
 #include <stdlib.h>
 #include <inttypes.h>
-#include "io/mx/mx.h"
-#include "io/mx/line.h"
-#include "io/mx/proto_common.h"
 
 #include "log.h"
+#include "io/mx/mx.h"
+#include "io/mx/line.h"
+#include "io/mx/irq.h"
 
 // -----------------------------------------------------------------------
-int mx_som_punchrd_init(struct mx_line *pline, uint16_t *data)
+int mx_dummy_attach(struct mx_line *line, uint16_t *cmd_data)
 {
-	return MX_SC_E_OK;
+	pthread_mutex_lock(&line->status_mutex);
+	line->status |= MX_LSTATE_ATTACHED;
+	pthread_mutex_unlock(&line->status_mutex);
+
+	return MX_IRQ_IDOLI;
 }
 
 // -----------------------------------------------------------------------
-void mx_som_punchrd_destroy(struct mx_line *pline)
+int mx_dummy_detach(struct mx_line *line, uint16_t *cmd_data)
 {
-}
+	pthread_mutex_lock(&line->status_mutex);
+	line->status &= ~MX_LSTATE_ATTACHED;
+	pthread_mutex_unlock(&line->status_mutex);
 
-// -----------------------------------------------------------------------
-const struct mx_proto mx_drv_som_punchrd = {
-	.name = "som_punchreader",
-	.dir = MX_DIR_INPUT,
-	.phy_types = { MX_PHY_USART_ASYNC, MX_PHY_8255, -1 },
-	.init = mx_som_punchrd_init,
-	.destroy = mx_som_punchrd_destroy,
-	.cmd = {
-		[MX_CMD_ATTACH] = { 1, 0, NULL, NULL, mx_dummy_attach },
-		[MX_CMD_TRANSMIT] = { 5, 3, NULL, NULL, NULL },
-		[MX_CMD_DETACH] = { 0, 0, NULL, NULL, mx_dummy_detach },
-		[MX_CMD_ABORT] = { 0, 0, NULL, NULL, NULL },
-	}
-};
+	return MX_IRQ_IODLI;
+}
 
 // vim: tabstop=4 shiftwidth=4 autoindent

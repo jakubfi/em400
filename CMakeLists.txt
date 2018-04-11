@@ -82,6 +82,7 @@ set(SOURCES_EM400
 	src/io/mx/irq.c
 	src/io/mx/event.c
 	src/io/mx/line.c
+	src/io/mx/proto_common.c
 	src/io/mx/proto_winchester.c
 	src/io/mx/proto_floppy.c
 	src/io/mx/proto_tape.c

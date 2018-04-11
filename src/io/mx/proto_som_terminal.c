@@ -17,8 +17,10 @@
 
 #include <stdlib.h>
 #include <inttypes.h>
+
 #include "io/mx/mx.h"
 #include "io/mx/line.h"
+#include "io/mx/proto_common.h"
 
 #include "log.h"
 
@@ -41,9 +43,9 @@ const struct mx_proto mx_drv_som_terminal = {
 	.init = mx_som_terminal_init,
 	.destroy = mx_som_terminal_destroy,
 	.cmd = {
-		[MX_CMD_ATTACH] = { 1, 0, NULL, NULL, NULL },
+		[MX_CMD_ATTACH] = { 1, 0, NULL, NULL, mx_dummy_attach },
 		[MX_CMD_TRANSMIT] = { 10, 4, NULL, NULL, NULL },
-		[MX_CMD_DETACH] = { 0, 0, NULL, NULL, NULL },
+		[MX_CMD_DETACH] = { 0, 0, NULL, NULL, mx_dummy_detach },
 		[MX_CMD_ABORT] = { 0, 0, NULL, NULL, NULL },
 	}
 };

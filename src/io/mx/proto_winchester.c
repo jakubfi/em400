@@ -27,6 +27,7 @@
 #include "io/mx/line.h"
 #include "io/mx/irq.h"
 #include "io/dev/dev.h"
+#include "io/mx/proto_common.h"
 
 // Transmit operations
 enum mx_proto_winchester_ops {
@@ -203,26 +204,6 @@ void mx_winch_transmit_encode(uint16_t *data, void *proto_data)
 }
 
 // -----------------------------------------------------------------------
-int mx_winch_attach(struct mx_line *line, uint16_t *cmd_data)
-{
-	pthread_mutex_lock(&line->status_mutex);
-	line->status |= MX_LSTATE_ATTACHED;
-	pthread_mutex_unlock(&line->status_mutex);
-
-	return MX_IRQ_IDOLI;
-}
-
-// -----------------------------------------------------------------------
-int mx_winch_detach(struct mx_line *line, uint16_t *cmd_data)
-{
-	pthread_mutex_lock(&line->status_mutex);
-	line->status &= ~MX_LSTATE_ATTACHED;
-	pthread_mutex_unlock(&line->status_mutex);
-
-	return MX_IRQ_IODLI;
-}
-
-// -----------------------------------------------------------------------
 static int mx_winch_read(struct mx *multix, struct mx_line *line, const struct dev_drv *dev, void *dev_data, struct proto_winchester_data *proto_data)
 {
 	struct dev_chs chs;
@@ -375,9 +356,9 @@ const struct mx_proto mx_drv_winchester = {
 	.init = mx_winch_init,
 	.destroy = mx_winch_destroy,
 	.cmd = {
-		[MX_CMD_ATTACH] = { 0, 0, NULL, NULL, mx_winch_attach },
+		[MX_CMD_ATTACH] = { 0, 0, NULL, NULL, mx_dummy_attach },
 		[MX_CMD_TRANSMIT] = { 5, 2, mx_winch_trans_decode, mx_winch_transmit_encode, mx_winch_transmit },
-		[MX_CMD_DETACH] = { 0, 0, NULL, NULL, mx_winch_detach },
+		[MX_CMD_DETACH] = { 0, 0, NULL, NULL, mx_dummy_detach },
 		[MX_CMD_ABORT] = { 0, 0, NULL, NULL, NULL },
 	}
 };

@@ -21,6 +21,7 @@
 #include "io/mx/mx.h"
 #include "io/mx/line.h"
 #include "io/mx/irq.h"
+#include "io/mx/proto_common.h"
 
 #include "log.h"
 
@@ -215,29 +216,6 @@ void mx_floppy_transmit_encode(uint16_t *data, void *proto_data)
 }
 
 // -----------------------------------------------------------------------
-int mx_floppy_attach(struct mx_line *lline, uint16_t *cmd_data)
-{
-	int irq;
-
-	pthread_mutex_lock(&lline->status_mutex);
-	lline->status |= MX_LSTATE_ATTACHED;
-	pthread_mutex_unlock(&lline->status_mutex);
-	irq = MX_IRQ_IDOLI;
-
-	return irq;
-}
-
-// -----------------------------------------------------------------------
-int mx_floppy_detach(struct mx_line *lline, uint16_t *cmd_data)
-{ 
-	pthread_mutex_lock(&lline->status_mutex);
-	lline->status &= ~MX_LSTATE_ATTACHED;
-	pthread_mutex_unlock(&lline->status_mutex);
-
-	return MX_IRQ_IODLI;
-}
-
-// -----------------------------------------------------------------------
 int mx_floppy_abort(struct mx_line *lline, uint16_t *cmd_data)
 { 
 	return MX_IRQ_INABT;
@@ -274,9 +252,9 @@ const struct mx_proto mx_drv_floppy = {
 	.init = mx_floppy_init,
 	.destroy = mx_floppy_destroy,
 	.cmd = {
-		[MX_CMD_ATTACH] = { 3, 0, NULL, NULL, mx_floppy_attach },
+		[MX_CMD_ATTACH] = { 3, 0, NULL, NULL, mx_dummy_attach },
 		[MX_CMD_TRANSMIT] = { 4, 3, mx_floppy_transmit_decode, mx_floppy_transmit_encode, mx_floppy_transmit },
-		[MX_CMD_DETACH] = { 0, 0, NULL, NULL, mx_floppy_detach },
+		[MX_CMD_DETACH] = { 0, 0, NULL, NULL, mx_dummy_detach },
 		[MX_CMD_ABORT] = { 0, 0, NULL, NULL, mx_floppy_abort },
 	}
 };

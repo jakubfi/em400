@@ -21,7 +21,7 @@
 #include "io/mx/mx.h"
 #include "io/mx/line.h"
 #include "io/mx/irq.h"
-
+#include "io/mx/proto_common.h"
 
 // -----------------------------------------------------------------------
 int mx_puncher_init(struct mx_line *pline, uint16_t *data)
@@ -32,25 +32,6 @@ int mx_puncher_init(struct mx_line *pline, uint16_t *data)
 // -----------------------------------------------------------------------
 void mx_puncher_destroy(struct mx_line *pline)
 {
-	if (!pline || !pline->proto_data) return;
-}
-
-// -----------------------------------------------------------------------
-int mx_puncher_attach(struct mx_line *lline, uint16_t *cmd_data)
-{
-	pthread_mutex_lock(&lline->status_mutex);
-	lline->status |= MX_LSTATE_ATTACHED;
-	pthread_mutex_unlock(&lline->status_mutex);
-	return MX_IRQ_IDOLI;
-}
-
-// -----------------------------------------------------------------------
-int mx_puncher_detach(struct mx_line *lline, uint16_t *cmd_data)
-{
-	pthread_mutex_lock(&lline->status_mutex);
-	lline->status &= ~MX_LSTATE_ATTACHED;
-	pthread_mutex_unlock(&lline->status_mutex);
-	return MX_IRQ_IODLI;
 }
 
 // -----------------------------------------------------------------------
@@ -61,9 +42,9 @@ const struct mx_proto mx_drv_puncher = {
 	.init = mx_puncher_init,
 	.destroy = mx_puncher_destroy,
 	.cmd = {
-		[MX_CMD_ATTACH] = { 1, 0, NULL, NULL, mx_puncher_attach },
+		[MX_CMD_ATTACH] = { 1, 0, NULL, NULL, mx_dummy_attach },
 		[MX_CMD_TRANSMIT] = { 4, 2, NULL, NULL, NULL },
-		[MX_CMD_DETACH] = { 0, 0, NULL, NULL, mx_puncher_detach },
+		[MX_CMD_DETACH] = { 0, 0, NULL, NULL, mx_dummy_detach },
 		[MX_CMD_ABORT] = { 0, 0, NULL, NULL, NULL },
 	}
 };
