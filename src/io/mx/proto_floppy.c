@@ -208,12 +208,12 @@ static void mx_floppy_transmit_encode(uint16_t *data, struct proto_floppy_data *
 }
 
 // -----------------------------------------------------------------------
-int mx_floppy_attach(struct mx_line *lline)
+int mx_floppy_attach(struct mx_line *lline, uint16_t *cmd_data)
 {
 	int irq;
 	struct proto_floppy_data *proto_data = lline->proto_data;
 
-	if (mx_floppy_att_decode(lline->cmd_data, proto_data)) {
+	if (mx_floppy_att_decode(cmd_data, proto_data)) {
 		irq = MX_IRQ_INDOL;
 	} else {
 		pthread_mutex_lock(&lline->status_mutex);
@@ -226,7 +226,7 @@ int mx_floppy_attach(struct mx_line *lline)
 }
 
 // -----------------------------------------------------------------------
-int mx_floppy_detach(struct mx_line *lline)
+int mx_floppy_detach(struct mx_line *lline, uint16_t *cmd_data)
 { 
 	pthread_mutex_lock(&lline->status_mutex);
 	lline->status &= ~MX_LSTATE_ATTACHED;
@@ -236,19 +236,19 @@ int mx_floppy_detach(struct mx_line *lline)
 }
 
 // -----------------------------------------------------------------------
-int mx_floppy_abort(struct mx_line *lline)
+int mx_floppy_abort(struct mx_line *lline, uint16_t *cmd_data)
 { 
 	return MX_IRQ_INABT;
 }
 
 // -----------------------------------------------------------------------
-int mx_floppy_transmit(struct mx_line *lline)
+int mx_floppy_transmit(struct mx_line *lline, uint16_t *cmd_data)
 {
 	int irq;
 	struct proto_floppy_data *proto_data = lline->proto_data;
 	const struct mx_cmd *cmd = lline->proto->cmd + MX_CMD_TRANSMIT;
 
-	if (mx_floppy_transmit_decode(lline->cmd_data, proto_data)) {
+	if (mx_floppy_transmit_decode(cmd_data, proto_data)) {
 		irq = MX_IRQ_INTRA;
 		goto fin;
 	}
@@ -268,7 +268,7 @@ int mx_floppy_transmit(struct mx_line *lline)
 
 fin:
 	// pack control field
-	mx_floppy_transmit_encode(lline->cmd_data + cmd->output_fpos, proto_data);
+	mx_floppy_transmit_encode(cmd_data + cmd->output_fpos, proto_data);
 
 	return irq;
 }

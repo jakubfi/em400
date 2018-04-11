@@ -194,7 +194,7 @@ static void mx_winch_transmit_encode(uint16_t *data, struct proto_winchester_dat
 }
 
 // -----------------------------------------------------------------------
-int mx_winch_attach(struct mx_line *line)
+int mx_winch_attach(struct mx_line *line, uint16_t *cmd_data)
 {
 	pthread_mutex_lock(&line->status_mutex);
 	line->status |= MX_LSTATE_ATTACHED;
@@ -204,7 +204,7 @@ int mx_winch_attach(struct mx_line *line)
 }
 
 // -----------------------------------------------------------------------
-int mx_winch_detach(struct mx_line *line)
+int mx_winch_detach(struct mx_line *line, uint16_t *cmd_data)
 {
 	pthread_mutex_lock(&line->status_mutex);
 	line->status &= ~MX_LSTATE_ATTACHED;
@@ -314,7 +314,7 @@ static int mx_winch_format(struct mx *multix, struct mx_line *line, const struct
 }
 
 // -----------------------------------------------------------------------
-int mx_winch_transmit(struct mx_line *line)
+int mx_winch_transmit(struct mx_line *line, uint16_t *cmd_data)
 {
 	int irq;
 
@@ -329,7 +329,7 @@ int mx_winch_transmit(struct mx_line *line)
 	}
 
 	// unpack control field
-	mx_winch_trans_decode(line->cmd_data, proto_data);
+	mx_winch_trans_decode(cmd_data, proto_data);
 
 	LOG(L_WNCH, "Transmit operation %i: %s", proto_data->op, winch_op_names[proto_data->op]);
 
@@ -360,7 +360,7 @@ int mx_winch_transmit(struct mx_line *line)
 
 fin:
 	// pack control field
-	mx_winch_transmit_encode(line->cmd_data + cmd->output_fpos, proto_data);
+	mx_winch_transmit_encode(cmd_data + cmd->output_fpos, proto_data);
 
 	return irq;
 }

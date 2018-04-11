@@ -185,12 +185,12 @@ static int mx_terminal_trans_decode(uint16_t *data, struct proto_terminal_data *
 }
 
 // -----------------------------------------------------------------------
-int mx_terminal_attach(struct mx_line *line)
+int mx_terminal_attach(struct mx_line *line, uint16_t *cmd_data)
 {
 	int irq;
 	struct proto_terminal_data *proto_data = line->proto_data;
 
-	if (mx_terminal_att_decode(line->cmd_data, proto_data)) {
+	if (mx_terminal_att_decode(cmd_data, proto_data)) {
 		irq = MX_IRQ_INDOL;
 	} else {
 		pthread_mutex_lock(&line->status_mutex);
@@ -203,7 +203,7 @@ int mx_terminal_attach(struct mx_line *line)
 }
 
 // -----------------------------------------------------------------------
-int mx_terminal_detach(struct mx_line *line)
+int mx_terminal_detach(struct mx_line *line, uint16_t *cmd_data)
 {
 	pthread_mutex_lock(&line->status_mutex);
 	line->status &= ~MX_LSTATE_ATTACHED;
@@ -212,7 +212,7 @@ int mx_terminal_detach(struct mx_line *line)
 }
 
 // -----------------------------------------------------------------------
-int mx_terminal_transmit(struct mx_line *line)
+int mx_terminal_transmit(struct mx_line *line, uint16_t *cmd_data)
 {
 	int irq;
 	struct proto_terminal_data *proto_data = line->proto_data;
@@ -224,7 +224,7 @@ int mx_terminal_transmit(struct mx_line *line)
 		goto fin;
 	}
 
-	if (mx_terminal_trans_decode(line->cmd_data, proto_data)) {
+	if (mx_terminal_trans_decode(cmd_data, proto_data)) {
 		irq = MX_IRQ_INTRA;
 		goto fin;
 	}

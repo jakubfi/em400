@@ -217,21 +217,24 @@ static void mx_line_process_cmd(struct mx_line *line, union mx_event *ev)
 
 	LOG(L_MX, "EV%04x: Line %i (%s) got cmd %s", ev->d.id, line->log_n, line->proto->name, mx_get_cmd_name(ev->d.cmd));
 
+	uint16_t cmd_data_addr = ev->d.arg;
+	uint16_t cmd_data[16];
+
 	// read the command parameters
 	if (cmd->input_flen) {
-		if (mx_mem_mget(line->multix, 0, line->cmd_data_addr, line->cmd_data, cmd->input_flen)) {
+		if (mx_mem_mget(line->multix, 0, cmd_data_addr, cmd_data, cmd->input_flen)) {
 			irq = MX_IRQ_INPAO;
 			goto fin;
 		}
 	}
 
 	// run command
-	irq = line->proto->cmd[ev->d.cmd].fun(line);
+	irq = line->proto->cmd[ev->d.cmd].fun(line, cmd_data);
 
 fin:
 	// store command output
 	if ((cmd->output_flen) && (irq != MX_IRQ_INPAO)) {
-		if (mx_mem_mput(line->multix, 0, line->cmd_data_addr + cmd->output_fpos, line->cmd_data + cmd->output_fpos, cmd->output_flen)) {
+		if (mx_mem_mput(line->multix, 0, cmd_data_addr + cmd->output_fpos, cmd_data + cmd->output_fpos, cmd->output_flen)) {
 			irq = MX_IRQ_INPAO;
 		}
 	}

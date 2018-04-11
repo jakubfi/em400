@@ -36,7 +36,7 @@ void mx_punchrd_destroy(struct mx_line *pline)
 }
 
 // -----------------------------------------------------------------------
-int mx_punchrd_attach(struct mx_line *lline)
+int mx_punchrd_attach(struct mx_line *lline, uint16_t *cmd_data)
 {
 	pthread_mutex_lock(&lline->status_mutex);
 	lline->status |= MX_LSTATE_ATTACHED;
@@ -46,7 +46,7 @@ int mx_punchrd_attach(struct mx_line *lline)
 }
 
 // -----------------------------------------------------------------------
-int mx_punchrd_detach(struct mx_line *lline)
+int mx_punchrd_detach(struct mx_line *lline, uint16_t *cmd_data)
 {
 	pthread_mutex_lock(&lline->status_mutex);
 	lline->status &= ~MX_LSTATE_ATTACHED;

@@ -32,7 +32,7 @@ struct mx;
 
 typedef int (*mx_proto_init_fun)(struct mx_line *pline, uint16_t *data);
 typedef void (*mx_proto_destroy_fun)(struct mx_line *pline);
-typedef int (*mx_proto_cmd_fun)(struct mx_line *pline);
+typedef int (*mx_proto_cmd_fun)(struct mx_line *pline, uint16_t *data);
 
 struct mx_cmd {
 	const int input_flen;
@@ -70,8 +70,6 @@ struct mx_line {
 	int joinable;					// is the protocol thread joinable after QUIT?
 	const struct mx_proto *proto;	// protocol driver
 	void *proto_data;				// protocol private data
-	uint16_t cmd_data[16];			// command data buffer
-	uint16_t cmd_data_addr;			// command data address
 	uint8_t buf[MX_LINE_BUF_SIZE];	// line data buffer
 };
 

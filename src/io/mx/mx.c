@@ -676,7 +676,6 @@ static int mx_cmd_dispatch(struct mx *multix, struct mx_line *lline, union mx_ev
 	// process asynchronously in the protocol thread
 
 	LOG(L_MX, "EV%04x: Enqueue command %s for %s in line %i", ev->d.id, mx_get_cmd_name(ev->d.cmd), lline->proto->name, lline->log_n);
-	lline->cmd_data_addr = ev->d.arg;
 	elst_append(lline->devq, ev);
 
 	return 0; // don't delete the event
