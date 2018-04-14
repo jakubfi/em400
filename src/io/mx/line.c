@@ -156,9 +156,9 @@ static const struct mx_cmd_route {
 	[MX_CMD_STATUS] = {
 		.irq_reject = MX_IRQ_INSTR,
 		.irq_no_line = MX_IRQ_INKST,
-		.fail_pos = MX_LSTATE_NONE,
+		.fail_pos = MX_LSTATE_STATUS,
 		.fail_neg = MX_LSTATE_NONE,
-		.cmd_state = MX_LSTATE_NONE,
+		.cmd_state = MX_LSTATE_STATUS,
 	},
 	[MX_CMD_TRANSMIT] = {
 		.irq_reject = MX_IRQ_INTRA,
@@ -267,11 +267,11 @@ void * mx_line_thread(void *ptr)
 	int quit = 0;
 	struct mx_line *line = ptr;
 
-	LOG(L_MX, "Entering line %i loop, device: %s", line->log_n, line->proto->name);
+	LOG(L_MX, "Entering line %i protocol loop, device: %s", line->log_n, line->proto->name);
 
 	while (!quit) {
 		LOG(L_MX, "Line %i (%s) waiting for event", line->log_n, line->proto->name);
-		union mx_event *ev = elst_wait_pop(line->devq, 0);
+		union mx_event *ev = elst_wait_pop(line->protoq, 0);
 		switch (ev->d.type) {
 			case MX_EV_QUIT:
 				quit = 1;
@@ -280,7 +280,7 @@ void * mx_line_thread(void *ptr)
 				mx_line_process_cmd(line, ev);
 				break;
 			default:
-				LOG(L_MX, "EV%04x: Line %i (%s) got unknown event type %i. Ignored.", ev->d.id, line->log_n, line->proto->name, ev->d.type);
+				LOG(L_MX, "EV%04x: Line %i (%s) protocol thread got unknown event type %i. Ignored.", ev->d.id, line->log_n, line->proto->name, ev->d.type);
 				break;
 		}
 		free(ev);
@@ -290,5 +290,68 @@ void * mx_line_thread(void *ptr)
 
 	pthread_exit(NULL);
 }
+
+// -----------------------------------------------------------------------
+void log_line_status(const char *txt, int log_n, uint32_t status, unsigned evid)
+{
+	LOG(L_MX, "EV%04x: %s: line %i status: 0x%08x: %s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s",
+		evid,
+		txt,
+		log_n,
+		status,
+		(status & MX_LSTATE_SEND_START) ? "send_start, " : "",
+		(status & MX_LSTATE_SEND_RUN) ? "send_run, " : "",
+		(status & MX_LSTATE_RECV_START) ? "recv_start, " : "",
+		(status & MX_LSTATE_RECV_RUN) ? "recv_run, " : "",
+		(status & MX_LSTATE_CAN_STOP) ? "can_stop, " : "",
+		(status & MX_LSTATE_STOP_CHAR) ? "stop_char, " : "",
+		(status & MX_LSTATE_PARITY_ERR) ? "parity_err, " : "",
+		(status & MX_LSTATE_OPRQ) ? "oprq, " : "",
+		(status & MX_LSTATE_ATTACHED) ? "attached, " : "",
+		(status & MX_LSTATE_TRANS) ? "transmission, " : "",
+		(status & MX_LSTATE_TASK_XOFF) ? "task_xoff, " : "",
+		(status & MX_LSTATE_TRANS_XOFF) ? "trans_xoff, " : "",
+		(status & MX_LSTATE_TRANS_LAST) ? "trans_last, " : "",
+		(status & MX_LSTATE_ATTACH) ? "attaching, " : "",
+		(status & MX_LSTATE_DETACH) ? "detaching, " : "",
+		(status & MX_LSTATE_ABORT) ? "aborting, " : ""
+	);
+}
+
+// -----------------------------------------------------------------------
+void * mx_line_status_thread(void *ptr)
+{
+	int quit = 0;
+	struct mx_line *line = ptr;
+
+	LOG(L_MX, "Entering line %i status loop", line->log_n);
+
+	while (!quit) {
+		LOG(L_MX, "Line %i waiting for status event", line->log_n);
+		union mx_event *ev = elst_wait_pop(line->statusq, 0);
+		if ((ev->d.type == MX_EV_CMD) && (ev->d.cmd == MX_CMD_STATUS)) {
+			pthread_mutex_lock(&line->status_mutex);
+			log_line_status("Reporting line status", line->log_n, line->status, ev->d.id);
+			uint16_t status = line->status & 0xffff;
+			if (mx_mem_mput(line->multix, 0, ev->d.arg, &status, 1)) {
+				mx_int_enqueue(line->multix, MX_IRQ_INPAO, line->log_n);
+			} else {
+				mx_int_enqueue(line->multix, MX_IRQ_ISTRE, line->log_n);
+			}
+			line->status &= ~mx_cmd_state(ev->d.cmd);
+			pthread_mutex_unlock(&line->status_mutex);
+		} else if (ev->d.type == MX_EV_QUIT) {
+			quit = 1;
+		} else {
+			LOG(L_MX, "EV%04x: Line %i (%s) status thread got unknown event type %i. Ignored.", ev->d.id, line->log_n, line->proto->name, ev->d.type);
+		}
+		free(ev);
+	}
+
+	LOG(L_MX, "Left line %i status loop", line->log_n);
+
+	pthread_exit(NULL);
+}
+
 
 // vim: tabstop=4 shiftwidth=4 autoindent

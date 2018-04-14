@@ -44,7 +44,6 @@ enum mx_condition { MX_UNINITIALIZED, MX_INITIALIZED, MX_CONFIGURED, MX_QUIT };
 typedef int (*mx_cmd_fun)(struct mx *multix, int log_n, uint16_t arg);
 
 static void * mx_evproc(void *ptr);
-void * mx_line_thread(void *ptr);
 static int mx_event(struct mx *multix, int type, int cmd, int log_n, uint16_t r_arg);
 int mx_int_enqueue(struct mx *multix, int intr, int line);
 void mx_reset(void *ch);
@@ -68,7 +67,8 @@ void * mx_create(int num, struct cfg_unit *units)
 		struct mx_line *pline = multix->plines + i;
 		pline->phy_n = i;
 		pline->multix = multix;
-		pline->devq = elst_create(1024);
+		pline->protoq = elst_create(1024);
+		pline->statusq = elst_create(1024);
 		if (pthread_mutex_init(&pline->status_mutex, NULL)) {
 			LOGERR("Failed to initialize line %i status mutex.", i);
 			goto cleanup;
@@ -136,7 +136,7 @@ cleanup:
 		// --- destroy multix itself
 		for (int i=0 ; i<MX_LINE_CNT ; i++) {
 			struct mx_line *pline = multix->plines + i;
-			elst_destroy(pline->devq);
+			elst_destroy(pline->protoq);
 			pthread_mutex_destroy(&pline->status_mutex);
 		}
 		free(multix);
@@ -150,36 +150,36 @@ static void mx_lines_deinit(struct mx *multix)
 {
 	LOG(L_MX, "Deinitializing logical lines");
 
-	// send QUIT event to all protocol threads
+	// send QUIT event to all line threads
 	for (int i=0 ; i<MX_LINE_CNT ; i++) {
 		struct mx_line *lline = multix->llines[i];
 		if (lline) {
-			lline->joinable = 0;
-			// create event for line thread, not event processor thread
+			// quit the protocol thread
 			union mx_event *ev = malloc(sizeof(union mx_event));
 			if (ev) {
 				ev->d.type = MX_EV_QUIT;
-				if (elst_insert(lline->devq, ev, MX_EV_QUIT) > 0) {
-					lline->joinable = 1;
+				if (elst_insert(lline->protoq, ev, MX_EV_QUIT) > 0) {
+					pthread_join(lline->proto_th, NULL);
+				} else {
+					LOG(L_MX, "Failed to send QUIT event to %s protocol queue on line %i, terminating event thread", lline->proto->name, lline->log_n );
+					pthread_cancel(lline->proto_th);
 				}
 			}
-		}
-	}
-
-	// join line threads and reset line configuration
-	for (int i=0 ; i<MX_LINE_CNT ; i++) {
-		struct mx_line *lline = multix->llines[i];
-		if (lline) {
-			if (lline->joinable) {
-				pthread_join(lline->thread, NULL);
-			} else {
-				LOG(L_MX, "Failed to send QUIT event to %s on line %i, terminating event thread", lline->proto->name, lline->log_n );
-				pthread_cancel(lline->thread);
+			// quit the status thread
+			union mx_event *ev2 = malloc(sizeof(union mx_event));
+			if (ev2) {
+				ev2->d.type = MX_EV_QUIT;
+				if (elst_insert(lline->statusq, ev2, MX_EV_QUIT) > 0) {
+					pthread_join(lline->status_th, NULL);
+				} else {
+					LOG(L_MX, "Failed to send QUIT event to %s status queue on line %i, terminating event thread", lline->proto->name, lline->log_n );
+					pthread_cancel(lline->status_th);
+				}
 			}
 			lline->log_n = -1;
 			lline->status = MX_LSTATE_NONE;
+			multix->llines[i] = NULL;
 		}
-		multix->llines[i] = NULL;
 	}
 
 	LOG(L_MX, "Deinitializing physical lines");
@@ -234,7 +234,7 @@ void mx_shutdown(void *ch)
 			pline->dev = NULL;
 			pline->dev_data = NULL;
 		}
-		elst_destroy(pline->devq);
+		elst_destroy(pline->protoq);
 		pthread_mutex_destroy(&pline->status_mutex);
 	}
 	free(multix);
@@ -445,15 +445,20 @@ static int mx_line_conf_log(struct mx *multix, int phy_n, int log_n, uint16_t *d
 	pline->proto = proto;
 	multix->llines[log_n] = pline;
 
-	elst_clear(pline->devq);
+	elst_clear(pline->protoq);
 
 	char thname[16];
 	snprintf(thname, 15, "mxline%02i", pline->log_n);
-
-	if (pthread_create(&pline->thread, NULL, mx_line_thread, pline)) {
+	if (pthread_create(&pline->proto_th, NULL, mx_line_thread, pline)) {
 		return MX_SC_E_NOMEM;
 	}
-	pthread_setname_np(pline->thread, thname);
+	pthread_setname_np(pline->proto_th, thname);
+
+	snprintf(thname, 15, "mxstat%02i", pline->log_n);
+	if (pthread_create(&pline->status_th, NULL, mx_line_status_thread, pline)) {
+		return MX_SC_E_NOMEM;
+	}
+	pthread_setname_np(pline->status_th, thname);
 
 	return MX_SC_E_OK;
 }
@@ -618,33 +623,6 @@ static int mx_conf_check(struct mx *multix, struct mx_line *lline, union mx_even
 }
 
 // -----------------------------------------------------------------------
-static inline void log_line_status(const char *txt, int log_n, uint32_t status, unsigned evid)
-{
-	LOG(L_MX, "EV%04x: %s: line %i status: 0x%08x: %s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s",
-		evid,
-		txt,
-		log_n,
-		status,
-		(status & MX_LSTATE_SEND_START) ? "send_start, " : "",
-		(status & MX_LSTATE_SEND_RUN) ? "send_run, " : "",
-		(status & MX_LSTATE_RECV_START) ? "recv_start, " : "",
-		(status & MX_LSTATE_RECV_RUN) ? "recv_run, " : "",
-		(status & MX_LSTATE_CAN_STOP) ? "can_stop, " : "",
-		(status & MX_LSTATE_STOP_CHAR) ? "stop_char, " : "",
-		(status & MX_LSTATE_PARITY_ERR) ? "parity_err, " : "",
-		(status & MX_LSTATE_OPRQ) ? "oprq, " : "",
-		(status & MX_LSTATE_ATTACHED) ? "attached, " : "",
-		(status & MX_LSTATE_TRANS) ? "transmission, " : "",
-		(status & MX_LSTATE_TASK_XOFF) ? "task_xoff, " : "",
-		(status & MX_LSTATE_TRANS_XOFF) ? "trans_xoff, " : "",
-		(status & MX_LSTATE_TRANS_LAST) ? "trans_last, " : "",
-		(status & MX_LSTATE_ATTACH) ? "attaching, " : "",
-		(status & MX_LSTATE_DETACH) ? "detaching, " : "",
-		(status & MX_LSTATE_ABORT) ? "aborting, " : ""
-	);
-}
-
-// -----------------------------------------------------------------------
 static int mx_cmd_dispatch(struct mx *multix, struct mx_line *lline, union mx_event *ev)
 {
 	// is multix and line configured?
@@ -655,7 +633,7 @@ static int mx_cmd_dispatch(struct mx *multix, struct mx_line *lline, union mx_ev
 
 	const struct mx_cmd *cmd = lline->proto->cmd + ev->d.cmd;
 
-	if (!cmd->run) {
+	if (!cmd->run && (ev->d.cmd != MX_CMD_STATUS)) { // NOTE: 'status' command is not a protocol command
 		LOG(L_MX, "EV%04x: Rejecting command: no protocol function to handle command %s for protocol %s in line %i", ev->d.id, mx_get_cmd_name(ev->d.cmd), lline->proto->name, lline->log_n);
 		mx_int_enqueue(lline->multix, mx_irq_reject(ev->d.cmd), ev->d.log_n);
 		return 1;
@@ -674,36 +652,14 @@ static int mx_cmd_dispatch(struct mx *multix, struct mx_line *lline, union mx_ev
 	pthread_mutex_unlock(&lline->status_mutex);
 
 	// process asynchronously in the protocol thread
-
 	LOG(L_MX, "EV%04x: Enqueue command %s for %s in line %i", ev->d.id, mx_get_cmd_name(ev->d.cmd), lline->proto->name, lline->log_n);
-	elst_append(lline->devq, ev);
+	if (ev->d.cmd == MX_CMD_STATUS) {
+		elst_append(lline->statusq, ev);
+	} else {
+		elst_append(lline->protoq, ev);
+	}
 
 	return 0; // don't delete the event
-}
-
-// -----------------------------------------------------------------------
-static void mx_cmd_status(struct mx *multix, struct mx_line *lline, union mx_event *ev)
-{
-	if (mx_conf_check(multix, lline, ev)) {
-		mx_int_enqueue(multix, mx_irq_noline(ev->d.cmd), ev->d.log_n);
-		return;
-	}
-
-	// Status is always processed synchronously.
-	// Lock status so other thread won't change it
-	// and won't send an interrupt before 'status' does
-
-	pthread_mutex_lock(&lline->status_mutex);
-
-	log_line_status("Reporting line status", lline->log_n, lline->status, ev->d.id);
-	uint16_t status = lline->status & 0xffff;
-	if (mx_mem_mput(multix, 0, ev->d.arg, &status, 1)) {
-		mx_int_enqueue(multix, MX_IRQ_INPAO, lline->log_n);
-	} else {
-		mx_int_enqueue(multix, MX_IRQ_ISTRE, lline->log_n);
-	}
-
-	pthread_mutex_unlock(&lline->status_mutex);
 }
 
 // -----------------------------------------------------------------------
@@ -767,8 +723,6 @@ static void * mx_evproc(void *ptr)
 							mx_cmd_requeue(multix);
 							break;
 						case MX_CMD_STATUS:
-							mx_cmd_status(multix, lline, ev);
-							break;
 						case MX_CMD_TRANSMIT:
 						case MX_CMD_ATTACH:
 						case MX_CMD_DETACH:

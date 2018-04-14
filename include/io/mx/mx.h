@@ -68,12 +68,14 @@ struct mx_line {
 	const struct dev_drv *dev;		// device driver
 	void *dev_data;					// device data
 
-	ELST devq;						// protocol event queue
-	pthread_t thread;				// protocol thread
-	int joinable;					// is the protocol thread joinable after QUIT?
+	ELST protoq;					// protocol event queue
 	const struct mx_proto *proto;	// protocol driver
 	void *proto_data;				// protocol private data
+	pthread_t proto_th;				// protocol thread
 	uint8_t buf[MX_LINE_BUF_SIZE];	// line transmission data buffer
+
+	ELST statusq;					// status event queue
+	pthread_t status_th;			// status thread
 };
 
 struct mx {

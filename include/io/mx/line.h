@@ -101,6 +101,7 @@ enum mx_line_status {
 	MX_LSTATE_ATTACH		= 1 << 16,	// 'attach' running
 	MX_LSTATE_DETACH		= 1 << 17,	// 'detach' running
 	MX_LSTATE_ABORT			= 1 << 18,	// 'abort' running
+	MX_LSTATE_STATUS		= 1 << 19,	// 'status' running
 };
 
 const char * mx_line_dir_name(unsigned i);
@@ -112,6 +113,9 @@ uint8_t mx_irq_noline(int cmd);
 uint8_t mx_irq_reject(int cmd);
 int mx_line_cmd_allowed(struct mx_line *line, int cmd);
 uint32_t mx_cmd_state(int cmd);
+void * mx_line_thread(void *ptr);
+void log_line_status(const char *txt, int log_n, uint32_t status, unsigned evid);
+void * mx_line_status_thread(void *ptr);
 
 #endif
 
