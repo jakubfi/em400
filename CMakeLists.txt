@@ -93,6 +93,8 @@ set(SOURCES_EM400
 	src/io/mx/proto_som_punchrd.c
 	src/io/mx/proto_som_terminal.c
 
+	src/io/iotester.c
+
 	src/ui/ui.c
 	src/ui/cmd/cmd.c
 	src/ui/cmd/commands.c
