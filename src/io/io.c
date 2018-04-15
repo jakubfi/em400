@@ -151,12 +151,22 @@ int io_dispatch(int dir, uint16_t n, uint16_t *r)
 }
 
 // -----------------------------------------------------------------------
+void io_int_set_pa()
+{
+	if (fpga) {
+		iob_pa_send();
+	} else {
+		int_set(INT_IFACE_POWER);
+	}
+}
+
+// -----------------------------------------------------------------------
 void io_int_set(int x)
 {
 	if (fpga) {
-		iob_int_send(x);
+		iob_int_send(x & 0b1111);
 	} else {
-		int_set(x + 12);
+		int_set((x & 0b1111) + 12);
 	}
 }
 

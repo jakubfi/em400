@@ -507,6 +507,7 @@ void iob_loop()
 					case IOB_CMD_CPD:
 					case IOB_CMD_CPR:
 					case IOB_CMD_CPF:
+					case IOB_CMD_PA:
 						iob_msg_send(xbus, intreq);
 						free(intreq);
 						intreq = NULL;
@@ -633,6 +634,20 @@ void iob_int_send(int x)
 
 	iob_msg_free(mi);
 	iob_msg_free(mo);
+}
+
+// -----------------------------------------------------------------------
+void iob_pa_send()
+{
+	struct iob_msg *mo = calloc(1, sizeof(struct iob_msg));
+
+	mo->cmd = IOB_CMD_PA;
+	mo->is_req = 1;
+
+	iob_dialog(mo);
+
+	iob_msg_free(mo);
+
 }
 
 // -----------------------------------------------------------------------

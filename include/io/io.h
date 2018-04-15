@@ -29,6 +29,7 @@ void io_get_intspec(int ch, uint16_t *int_spec);
 int io_dispatch(int dir, uint16_t n, uint16_t *r);
 
 void io_int_set(int x);
+void io_int_set_pa();
 int io_mem_get(int nb, uint16_t addr, uint16_t *data);
 int io_mem_put(int nb, uint16_t addr, uint16_t data);
 int io_mem_mget(int nb, uint16_t saddr, uint16_t *dest, int count);
