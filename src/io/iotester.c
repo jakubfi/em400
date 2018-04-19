@@ -15,15 +15,20 @@
 //  Foundation, Inc.,
 //  51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 
+#define _GNU_SOURCE
+
 #include <inttypes.h>
 #include <stdlib.h>
 #include <pthread.h>
+#include <unistd.h>
 
 #include "log.h"
 #include "atomic.h"
 #include "io/io.h"
 #include "io/chan.h"
 #include "utils/elst.h"
+
+#define INIT_DELAY_US 200000
 
 enum it_event_types { EV_CMD, EV_RESET, EV_QUIT, };
 
@@ -46,6 +51,7 @@ enum it_commands {
 	CMD_RMM	= 0b0111, // SEND
 	CMD_IRQ	= 0b1000, // SEND
 	CMD_PA	= 0b1001, // SEND
+	CMD_ERI = 0b1010, // SEND
 };
 
 struct iotester {
@@ -91,6 +97,10 @@ void * it_create(int num, struct cfg_unit *units)
 		free(it);
 		return NULL;
 	}
+
+	char name[16];
+	sprintf(name, "iotest%02i", it->chnum);
+	pthread_setname_np(it->thread, name);
 
 	LOG(L_IO, "I/O tester created");
 
@@ -147,6 +157,7 @@ static void * it_cmdproc(void *ptr)
 	uint16_t am = 0;
 	uint16_t ab = 0;
 	uint16_t buf[0x10000];
+	int reset_int = 0;
 
 	while (!quit) {
 		struct it_event *ev = elst_wait_pop(it->evq, 0);
@@ -156,7 +167,16 @@ static void * it_cmdproc(void *ptr)
 				quit = 1;
 				break;
 			case EV_RESET:
-				LOG(L_IO, "Reset");
+				if (!reset_int) {
+					LOG(L_IO, "Reset (no interrupt sent)");
+				} else {
+					reset_int = 0;
+					LOG(L_IO, "Reset delay %ius", INIT_DELAY_US);
+					usleep(INIT_DELAY_US);
+					LOG(L_IO, "Reset done, sending interrupt with intspec 0xffff");
+					atom_store_release(&it->intspec, 0xffff);
+					io_int_set(it->chnum);
+				}
 				break;
 			case EV_CMD:
 				r = ev->r;
@@ -217,6 +237,10 @@ static void * it_cmdproc(void *ptr)
 					case CMD_PA:
 						LOG(L_IO, "Sending Power Alarm interrupt");
 						io_int_set_pa();
+						break;
+					case CMD_ERI:
+						reset_int = 1;
+						LOG(L_IO, "Interrupt after reset enabled");
 						break;
 					default:
 						LOG(L_IO, "Unknown 'SEND' command: %i", ev->cmd);

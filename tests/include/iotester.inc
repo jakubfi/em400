@@ -16,6 +16,7 @@
 	.const	CMD_RMM	0b0_0111_000000_0000_0 ; SEND
 	.const	CMD_IRQ	0b0_1000_000000_0000_0 ; SEND
 	.const	CMD_PA	0b0_1001_000000_0000_0 ; SEND
+	.const	CMD_ERI	0b0_1010_000000_0000_0 ; SEND
 	.const	PGM_END -1
 
 iotester_chan:
@@ -53,6 +54,7 @@ iotester_setchan:
 	.res	1
 	slz	r1
 	rw	r1, iotester_chan
+	srz	r1
 	uj	[iotester_setchan]
 
 ; ---------------------------------------------------
@@ -137,13 +139,26 @@ ecook:	uj	[iotester_eco]
 ; ---------------------------------------------------
 iotester_pa:
 	.res	1
-paen:	ou	r1, CMD_PA
+paen:
+	md	[iotester_chan]
+	ou	r1, CMD_PA
 	.word	pano, paen, paok, pape
 pano:	hlt	065
 pape:	hlt	066
 paok:	hlt
 	nop
 	uj	[iotester_pa]
+
+; ---------------------------------------------------
+iotester_eri:
+	.res	1
+erien:
+	md	[iotester_chan]
+	ou	r1, CMD_ERI
+	.word	erino, erien, eriok, eripe
+erino:	hlt	067
+eripe:	hlt	070
+eriok:	uj	[iotester_eri]
 
 ; ---------------------------------------------------
 ; r4 - program address
