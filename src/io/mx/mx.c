@@ -113,7 +113,9 @@ void * mx_create(int num, struct cfg_unit *units)
 		goto cleanup;
 	}
 
-	pthread_setname_np(multix->ev_thread, "multixev");
+	char name[16];
+	snprintf(name, 15, "mxev%02i", multix->chnum);
+	pthread_setname_np(multix->ev_thread, name);
 
 	LOG(L_MX, "MULTIX created");
 
@@ -448,13 +450,13 @@ static int mx_line_conf_log(struct mx *multix, int phy_n, int log_n, uint16_t *d
 	elst_clear(pline->protoq);
 
 	char thname[16];
-	snprintf(thname, 15, "mxline%02i", pline->log_n);
+	snprintf(thname, 15, "mxl%02i:%02i", multix->chnum, pline->log_n);
 	if (pthread_create(&pline->proto_th, NULL, mx_line_thread, pline)) {
 		return MX_SC_E_NOMEM;
 	}
 	pthread_setname_np(pline->proto_th, thname);
 
-	snprintf(thname, 15, "mxstat%02i", pline->log_n);
+	snprintf(thname, 15, "mxs%02i:%02i", multix->chnum, pline->log_n);
 	if (pthread_create(&pline->status_th, NULL, mx_line_status_thread, pline)) {
 		return MX_SC_E_NOMEM;
 	}
