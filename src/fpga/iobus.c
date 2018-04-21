@@ -455,11 +455,6 @@ void iob_loop()
 								double elapsed_us = 1000000.0 * (xt2.tv_sec - xt1.tv_sec) + (xt2.tv_usec - xt1.tv_usec);
 								LOG(L_FPGA, "External request service time: %.0f us", elapsed_us);
 							}
-							// resend discarded internal req
-							if (intreq) {
-								LOG(L_FPGA, "Retransmit request");
-								iob_msg_send(xbus, intreq);
-							}
 							break;
 						default:
 							LOG(L_FPGA, "ERROR: Not an I/O request, ignored");
