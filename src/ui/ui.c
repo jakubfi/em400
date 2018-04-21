@@ -16,6 +16,7 @@
 //  51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 
 #define _XOPEN_SOURCE 500
+#define _GNU_SOURCE
 
 #include <stdlib.h>
 #include <pthread.h>
@@ -79,6 +80,8 @@ int ui_run(struct ui *ui)
 	if (pthread_create(&ui->th, NULL, ui_loop, ui)) {
 		return LOGERR("Failed to spawn UI thread.");
 	}
+
+	pthread_setname_np(ui->th, "ui");
 
 	return E_OK;
 }
