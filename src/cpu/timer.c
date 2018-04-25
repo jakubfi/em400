@@ -16,6 +16,7 @@
 //  51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 
 #define _XOPEN_SOURCE 600
+#define _GNU_SOURCE
 
 #include <semaphore.h>
 #include <time.h>
@@ -78,6 +79,8 @@ int timer_init(struct cfg_em400 *cfg)
 	if (pthread_create(&timer_th, NULL, timer_thread, NULL)) {
 		return LOGERR("Failed to spawn timer thread.");
 	}
+
+	pthread_setname_np(timer_th, "timer");
 
 	return E_OK;
 }

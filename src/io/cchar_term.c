@@ -16,6 +16,7 @@
 //  51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 
 #define _XOPEN_SOURCE 500
+#define _GNU_SOURCE
 
 #include <stdlib.h>
 #include <string.h>
@@ -123,6 +124,8 @@ struct cchar_unit_proto_t * cchar_term_create(struct cfg_arg *args)
 		LOGERR("Failed to spawn terminal thread.");
 		goto fail;
 	}
+
+	pthread_setname_np(unit->worker, "term");
 
 	free(type);
 

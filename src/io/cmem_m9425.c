@@ -76,6 +76,8 @@ struct cmem_unit_proto_t * cmem_m9425_create(struct cfg_arg *args)
 		goto fail;
 	}
 
+	pthread_setname_np(unit->worker, "m9425");
+
 	return (struct cmem_unit_proto_t *) unit;
 
 fail:

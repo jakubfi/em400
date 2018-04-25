@@ -214,6 +214,8 @@ int log_enable()
 		return LOGERR("Failed to spawn log flusher thread.");
 	}
 
+	pthread_setname_np(log_flusher_th, "lflush");
+
 	log_components_update();
 
 	return E_OK;
