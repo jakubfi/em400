@@ -30,7 +30,7 @@ struct dev_winch {
 // -----------------------------------------------------------------------
 void * dev_winch_create(struct cfg_arg *args)
 {
-	struct dev_winch *winch = malloc(sizeof(struct dev_winch));
+	struct dev_winch *winch = (struct dev_winch *) malloc(sizeof(struct dev_winch));
 	if (!winch) {
 		LOGERR("Memory allocation error while creating Winchester.");
 		goto cleanup;
@@ -53,7 +53,7 @@ cleanup:
 void dev_winch_destroy(void *dev)
 {
 	if (!dev) return;
-	struct dev_winch *winch = dev;
+	struct dev_winch *winch = (struct dev_winch *) dev;
 	e4i_close(winch->image);
 	free(dev);
 }
@@ -88,7 +88,7 @@ static int _e4i_res(int res)
 int dev_winch_sector_rd(void *dev, uint8_t *buf, struct dev_chs *chs)
 {
 	int res;
-	struct dev_winch *winch = dev;
+	struct dev_winch *winch = (struct dev_winch *) dev;
 
 	res = e4i_sread(winch->image, buf, chs->c, chs->h, chs->s);
 
@@ -99,7 +99,7 @@ int dev_winch_sector_rd(void *dev, uint8_t *buf, struct dev_chs *chs)
 int dev_winch_sector_wr(void *dev, uint8_t *buf, struct dev_chs *chs)
 {
 	int res;
-	struct dev_winch *winch = dev;
+	struct dev_winch *winch = (struct dev_winch *) dev;
 
 	res = e4i_swrite(winch->image, buf, chs->c, chs->h, chs->s, 512);
 

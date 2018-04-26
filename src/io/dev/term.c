@@ -45,7 +45,7 @@ struct term_t {
 // -----------------------------------------------------------------------
 struct term_t * term_open_console()
 {
-	struct term_t *term = malloc(sizeof(struct term_t));
+	struct term_t *term = (struct term_t *) malloc(sizeof(struct term_t));
 	if (!term) {
 		goto fail;
 	}
@@ -66,13 +66,15 @@ fail:
 // -----------------------------------------------------------------------
 struct term_t * term_open_serial(char *device, int speed, int timeout_ms)
 {
+	int fd;
+
 	speed_t setspeed = serial_int2speed(speed);
-	if (setspeed == -1) {
+	if (setspeed == 0) {
 		LOGERR("Wrong terminal serial port bus speed: %i", speed);
 		return NULL;
 	}
 
-	struct term_t *term = malloc(sizeof(struct term_t));
+	struct term_t *term = (struct term_t *) malloc(sizeof(struct term_t));
 	if (!term) {
 		goto fail;
 	}
@@ -81,7 +83,7 @@ struct term_t * term_open_serial(char *device, int speed, int timeout_ms)
 	term->timeout.tv_nsec = timeout_ms * 1000 * 1000;
 	term->type = TERM_SERIAL;
 
-	int fd = serial_open(device, setspeed);
+	fd = serial_open(device, setspeed);
 	if (fd < 0) {
 		LOGERR("Failed to open serial port %s", device);
 		goto fail;
@@ -100,8 +102,10 @@ fail:
 struct term_t * term_open_tcp(int port, int timeout_ms)
 {
 	int res;
+	int flags;
+	int on;
 
-	struct term_t *term = malloc(sizeof(struct term_t));
+	struct term_t *term = (struct term_t *) malloc(sizeof(struct term_t));
 	if (!term) {
 		goto fail;
 	}
@@ -117,10 +121,10 @@ struct term_t * term_open_tcp(int port, int timeout_ms)
 		goto fail;
 	}
 
-	int flags = fcntl(term->listenfd, F_GETFL, 0);
+	flags = fcntl(term->listenfd, F_GETFL, 0);
 	fcntl(term->listenfd, F_SETFL, flags | O_NONBLOCK);
 
-	int on = 1;
+	on = 1;
 	res = setsockopt(term->listenfd, SOL_SOCKET, SO_REUSEADDR, &on, sizeof(on));
 	if (res < 0) {
 		goto fail;

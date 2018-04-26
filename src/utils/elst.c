@@ -33,7 +33,7 @@ struct elst_item {
 };
 
 struct elst {
-	int capacity;
+	unsigned capacity;
 	unsigned count;
 	unsigned hwm;
 	pthread_mutex_t mutex;

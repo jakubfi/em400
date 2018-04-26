@@ -110,7 +110,7 @@ void e4i_header_print(struct e4i_t *e)
 // -----------------------------------------------------------------------
 int __e4i_header_read(struct e4i_t *e)
 {
-	uint8_t *buf = calloc(1, E4I_HEADER_SIZE);
+	uint8_t *buf = (uint8_t *) calloc(1, E4I_HEADER_SIZE);
 	if (!buf) {
 		return E4I_E_ALLOC;
 	}
@@ -147,7 +147,7 @@ int __e4i_header_read(struct e4i_t *e)
 // -----------------------------------------------------------------------
 int __e4i_header_write(struct e4i_t *e)
 {
-	uint8_t *buf = calloc(1, E4I_HEADER_SIZE);
+	uint8_t *buf = (uint8_t *) calloc(1, E4I_HEADER_SIZE);
 	if (!buf) {
 		return E4I_E_ALLOC;
 	}
@@ -228,7 +228,7 @@ struct e4i_t * e4i_open(char *img_name)
 	int res;
 	e4i_err = E4I_E_OK;
 
-	struct e4i_t *e = calloc(1, sizeof(struct e4i_t));
+	struct e4i_t *e = (struct e4i_t *) calloc(1, sizeof(struct e4i_t));
 	if (!e) {
 		e4i_err = E4I_E_ALLOC;
 		return NULL;
@@ -275,7 +275,7 @@ struct e4i_t * __e4i_create(char *img_name, uint16_t id_size, uint16_t block_siz
 		return NULL;
 	}
 
-	struct e4i_t *e = calloc(1, sizeof(struct e4i_t));
+	struct e4i_t *e = (struct e4i_t *) calloc(1, sizeof(struct e4i_t));
 	if (!e) {
 		e4i_err = E4I_E_ALLOC;
 		return NULL;
@@ -351,7 +351,7 @@ int e4i_import(struct e4i_t *e, char *src_name, uint16_t img_type, uint16_t img_
 		fclose(source);
 		return E4I_E_SOURCE_OPEN;
 	}
-	int source_len = ftell(source);
+	unsigned source_len = ftell(source);
 
 	// check source size for media with fixed size
 	if (!(e->flags & E4I_F_APPEND)) {
@@ -367,8 +367,8 @@ int e4i_import(struct e4i_t *e, char *src_name, uint16_t img_type, uint16_t img_
 	}
 
 	int ret = E4I_E_OK;
-	int bufsize = e->id_size + e->block_size;
-	uint8_t *buf = calloc(bufsize, 1);
+	unsigned bufsize = e->id_size + e->block_size;
+	uint8_t *buf = (uint8_t *) calloc(bufsize, 1);
 
 	for (long s=0 ; s < source_len/bufsize ; s++) {
 		if (fread(buf, 1, bufsize, source) != bufsize) {
@@ -409,8 +409,8 @@ int __e4i_init_disk(struct e4i_t *e, e4i_id_gen_f *genf, uint16_t img_type, uint
 
 	int ret = E4I_E_OK;
 	int bufsize = e->id_size + e->block_size;
-	uint8_t *buf = calloc(bufsize, 1);
-	uint8_t *id_buf = calloc(e->id_size, 1);
+	uint8_t *buf = (uint8_t *) calloc(bufsize, 1);
+	uint8_t *id_buf = (uint8_t *) calloc(e->id_size, 1);
 
 	for (long s=0 ; s<e->blocks ; s++) {
 		if (genf) {

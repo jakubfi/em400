@@ -40,7 +40,7 @@ int ectl_brk_insert(struct ectl_est *tree, char *expr)
 		return -1;
 	}
 
-	struct ectl_brkpoint *brkp = malloc(sizeof(struct ectl_brkpoint));
+	struct ectl_brkpoint *brkp = (struct ectl_brkpoint *) malloc(sizeof(struct ectl_brkpoint));
 	if (!brkp) {
 		return -1;
 	}

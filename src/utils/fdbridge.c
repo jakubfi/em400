@@ -60,7 +60,7 @@ static void * __fdbridge_loop(void *ptr);
 // -----------------------------------------------------------------------
 static struct fdbridge_event * __ev_new(int type, int sender, int len, void *ptr)
 {
-	struct fdbridge_event *e = malloc(sizeof(struct fdbridge_event));
+	struct fdbridge_event *e = (struct fdbridge_event *) malloc(sizeof(struct fdbridge_event));
 	if (!e) {
 		return NULL;
 	}
@@ -101,7 +101,7 @@ int fdbridge_init(unsigned fdcount)
 		return -3;
 	}
 
-	ufds = malloc(pos_count * sizeof(struct fdpt));
+	ufds = (struct fdpt *) malloc(pos_count * sizeof(struct fdpt));
 	if (!ufds) {
 		close(fd_ctl[0]);
 		close(fd_ctl[1]);

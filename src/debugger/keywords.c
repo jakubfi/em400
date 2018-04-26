@@ -43,7 +43,7 @@ struct kw_t kw_bases[] = {
 
 
 // -----------------------------------------------------------------------
-int find_token(struct kw_t *tok_table, char *text)
+int find_token(struct kw_t *tok_table, const char *text)
 {
 	struct kw_t *t = tok_table;
 	while (t && t->name) {

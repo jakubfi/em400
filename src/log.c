@@ -16,7 +16,9 @@
 //  51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 
 #define _XOPEN_SOURCE 500
+#ifndef _GNU_SOURCE
 #define _GNU_SOURCE
+#endif
 
 #include <stdlib.h>
 #include <stdio.h>
@@ -94,7 +96,7 @@ static const char *log_int_indent = "--> --> --> --> --> --> --> --> ";
 static struct emdas *emd;
 static char *dasm_buf;
 
-static void log_log_timestamp(unsigned component, char *msg, const char *func);
+static void log_log_timestamp(unsigned component, const char *msg, const char *func);
 static void log_components_update();
 
 // -----------------------------------------------------------------------
@@ -305,7 +307,7 @@ int log_setup_components(char *components)
 }
 
 // -----------------------------------------------------------------------
-int log_err(const char *func, char *msgfmt, ...)
+int log_err(const char *func, const char *msgfmt, ...)
 {
 	va_list vl;
 	va_start(vl, msgfmt);
@@ -333,7 +335,7 @@ int log_err(const char *func, char *msgfmt, ...)
 }
 
 // -----------------------------------------------------------------------
-void log_log(unsigned component, const char *func, char *msgfmt, ...)
+void log_log(unsigned component, const char *func, const char *msgfmt, ...)
 {
 	va_list vl;
 	va_start(vl, msgfmt);
@@ -351,7 +353,7 @@ void log_log(unsigned component, const char *func, char *msgfmt, ...)
 }
 
 // -----------------------------------------------------------------------
-void log_log_cpu(unsigned component, char *msgfmt, ...)
+void log_log_cpu(unsigned component, const char *msgfmt, ...)
 {
 	va_list vl;
 	va_start(vl, msgfmt);
@@ -376,10 +378,10 @@ void log_log_cpu(unsigned component, char *msgfmt, ...)
 }
 
 // -----------------------------------------------------------------------
-void log_splitlog(unsigned component, const char *func, char *text)
+void log_splitlog(unsigned component, const char *func, const char *text)
 {
 	char *p;
-	char *start = text;
+	const char *start = text;
 
     char thname[16];
     pthread_getname_np(pthread_self(), thname, 16);
@@ -388,7 +390,7 @@ void log_splitlog(unsigned component, const char *func, char *text)
 
 	fprintf(log_f, LOG_F_COMP LOG_F_FUN ".-------------------------------------------------------------------\n", log_component_names[component], thname, func);
 	while (start && *start) {
-		p = strchr(start, '\n');
+		p = (char *) strchr(start, '\n');
 		if (p) {
 			*p = '\0';
 		}
@@ -405,7 +407,7 @@ void log_splitlog(unsigned component, const char *func, char *text)
 }
 
 // -----------------------------------------------------------------------
-static void log_log_timestamp(unsigned component, char *msg, const char *func)
+static void log_log_timestamp(unsigned component, const char *msg, const char *func)
 {
 	struct timeval ct;
 	char date[32];

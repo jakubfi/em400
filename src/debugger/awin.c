@@ -331,7 +331,7 @@ int aw_container_fit(ACONT *c)
 ACONT * aw_container_add(int calign, int walign, int max, int min, int left)
 {
 	NCCHECK NULL;
-	ACONT *c = malloc(sizeof(ACONT));
+	ACONT *c = (ACONT *) malloc(sizeof(ACONT));
 	if (!c) {
 		return NULL;
 	}
@@ -419,7 +419,7 @@ int aw_window_fit(ACONT *c, AWIN *w)
 }
 
 // -----------------------------------------------------------------------
-AWIN * aw_window_add(ACONT *container, int id, char *title, int border, int scrollable, void (*fun)(int wid), int max, int min, int left, int attr)
+AWIN * aw_window_add(ACONT *container, int id, const char *title, int border, int scrollable, void (*fun)(int wid), int max, int min, int left, int attr)
 {
 	NCCHECK NULL;
 	if (!container) {
@@ -430,7 +430,7 @@ AWIN * aw_window_add(ACONT *container, int id, char *title, int border, int scro
 		return NULL;
 	}
 
-	AWIN *w = malloc(sizeof(AWIN));
+	AWIN *w = (AWIN *) malloc(sizeof(AWIN));
 	if (!w) {
 		return NULL;
 	}
@@ -446,7 +446,7 @@ AWIN * aw_window_add(ACONT *container, int id, char *title, int border, int scro
 	w->battr = attr;
 	w->scrollable = scrollable;
 	w->fun = fun;
-	w->tb = calloc(1, sizeof(struct awin_tb));
+	w->tb = (struct awin_tb *) calloc(1, sizeof(struct awin_tb));
 	w->tb->maxlines = 1024;
 	w->next = NULL;
 
@@ -629,7 +629,7 @@ void aw_clear_win(int id)
 }
 
 // -----------------------------------------------------------------------
-void awprint(int id, int attr, char *format, ...)
+void awprint(int id, int attr, const char *format, ...)
 {
 	AWIN *w = aw_window_find(id);
 	if ((aw_output == O_NCURSES) && (!w || !w->win)) {
@@ -654,7 +654,7 @@ void awprint(int id, int attr, char *format, ...)
 }
 
 // -----------------------------------------------------------------------
-void awtbbinprint(int id, int attr, char *format, uint32_t value, int size)
+void awtbbinprint(int id, int attr, const char *format, uint32_t value, int size)
 {
 	char *buf = int2binf(format, value, size);
 	awtbprint(id, attr, "%s", buf);
@@ -681,7 +681,7 @@ void awfillbg(int id, int attr, char c, int len)
 		}
 	}
 
-	char *fill = malloc(len+1);
+	char *fill = (char *) malloc(len+1);
 	if (len > 0) {
 		memset(fill, c, len);
 	}
@@ -710,7 +710,7 @@ void aw_nc_rl_history_add(char *cmd, int len)
 		}
 	}
 
-	struct h_entry *he = malloc(sizeof(struct h_entry));
+	struct h_entry *he = (struct h_entry *) malloc(sizeof(struct h_entry));
 	he->cmd = strdup(cmd);
 	he->len = len;
 	he->next = NULL;
@@ -758,7 +758,7 @@ struct h_entry * aw_nc_rl_history_get_next()
 }
 
 // -----------------------------------------------------------------------
-int aw_nc_readline(int id, int pattr, char *prompt, int iattr, char *buffer, int buflen)
+int aw_nc_readline(int id, int pattr, const char *prompt, int iattr, char *buffer, int buflen)
 {
 	int pos = 0;
 	int len = 0;
@@ -854,7 +854,7 @@ int aw_nc_readline(int id, int pattr, char *prompt, int iattr, char *buffer, int
 }
 
 // -----------------------------------------------------------------------
-int aw_readline(int id, int pattr, char *prompt, int iattr, char *buffer, int buflen)
+int aw_readline(int id, int pattr, const char *prompt, int iattr, char *buffer, int buflen)
 {
 	char *rlin;
 	switch (aw_output) {
@@ -974,7 +974,7 @@ void awin_tb_scroll_home(int wid)
 }
 
 // -----------------------------------------------------------------------
-void awtbprint(int wid, int attr, char *format, ...)
+void awtbprint(int wid, int attr, const char *format, ...)
 {
 	char buf[32000];
 
@@ -999,21 +999,21 @@ void awtbprint(int wid, int attr, char *format, ...)
 				flen = len;
 			}
 
-			struct awin_tb_fragment *fragment = calloc(1, sizeof(struct awin_tb_fragment));
+			struct awin_tb_fragment *fragment = (struct awin_tb_fragment *) calloc(1, sizeof(struct awin_tb_fragment));
 			fragment->len = flen;
-			fragment->text = calloc(1, flen+1);
+			fragment->text = (char *) calloc(1, flen+1);
 			memcpy(fragment->text, beg, flen);
 			fragment->attr = attr;
 
 			// if tb is empty, create an empty line
 			if (!win->tb->end) {
-				awin_tb_append(win->tb, calloc(1, sizeof(struct awin_tb_line)));
+				awin_tb_append(win->tb, (struct awin_tb_line *) calloc(1, sizeof(struct awin_tb_line)));
 			}
 			// append fragment
 			awin_tb_line_append(win->tb->end, fragment);
 			// if nl, create new empty line
 			if (n) {
-				awin_tb_append(win->tb, calloc(1, sizeof(struct awin_tb_line)));
+				awin_tb_append(win->tb, (struct awin_tb_line *) calloc(1, sizeof(struct awin_tb_line)));
 				beg = n+1;
 			} else {
 				beg = NULL;

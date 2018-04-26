@@ -37,7 +37,7 @@ struct ectl_est *ectl_eval_err;
 // -----------------------------------------------------------------------
 static struct ectl_est * ectl_est_create()
 {
-	struct ectl_est *n = malloc(sizeof(struct ectl_est));
+	struct ectl_est *n = (struct ectl_est *) malloc(sizeof(struct ectl_est));
 	n->type = ECTL_AST_N_NONE;
 	n->val = 0;
 	n->nb = 0;
@@ -128,7 +128,7 @@ struct ectl_est * ectl_est_err(char *err)
 }
 
 // -----------------------------------------------------------------------
-static int __esterr(struct ectl_est * n, char *format, ...)
+static int __esterr(struct ectl_est * n, const char *format, ...)
 {
 	char buf[1024];
 	va_list ap;

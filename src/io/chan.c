@@ -40,7 +40,7 @@ struct chan * chan_make(int num, char *name, struct cfg_unit *units)
 
 	while (*cdriver) {
 		if (!strcasecmp(name, (*cdriver)->name)) {
-			struct chan *chan = malloc(sizeof(struct chan));
+			struct chan *chan = (struct chan *) malloc(sizeof(struct chan));
 			if (!chan) {
 				return NULL;
 			}

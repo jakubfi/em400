@@ -54,16 +54,16 @@ void log_crk_shutdown()
 }
 
 // -----------------------------------------------------------------------
-char * log_get_current_process()
+const char * log_get_current_process()
 {
-	static char *process_name_none = "";
+	static const char *process_name_none = "";
 	return process ? process->name : process_name_none;
 }
 
 // -----------------------------------------------------------------------
 char * log_ctx_stringify(struct crk5_process *process)
 {
-	char *buf = malloc(1024);
+	char *buf = (char *) malloc(1024);
 	char *b = buf;
 	int pos = 0;
 
@@ -514,7 +514,7 @@ exldec exldecs[] = {
 static char * log_exl_decode(int nb, uint16_t addr, uint16_t r4_curr, int exl_num, int exl_ret)
 {
 	int pos = 0;
-	char *buf = malloc(1024);
+	char *buf = (char *) malloc(1024);
 	if (!buf) return NULL;
 	char *b = buf;
 
@@ -532,7 +532,7 @@ static char * log_exl_decode(int nb, uint16_t addr, uint16_t r4_curr, int exl_nu
 	} else {
 		pos += sprintf(b+pos, "EXL %i (%s - %s), arg @ %i:0x%04x\n", exl_num, exl->name, exl->desc, nb, addr);
 
-		uint16_t *data = malloc(sizeof(uint16_t) * exl->size);
+		uint16_t *data = (uint16_t *) malloc(sizeof(uint16_t) * exl->size);
 		if (!data) {
 			return buf;
 		}
@@ -623,7 +623,7 @@ void log_check_os()
 	crk5_kern_res_drop(kernel);
 	kernel = NULL;
 
-	uint16_t *kimg = malloc(sizeof(uint16_t) * 2*4096);
+	uint16_t *kimg = (uint16_t *) malloc(sizeof(uint16_t) * 2*4096);
 	if (!kimg) {
 		goto cleanup;
 	}

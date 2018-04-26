@@ -16,7 +16,9 @@
 //  51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 
 #define _XOPEN_SOURCE 600
+#ifndef _GNU_SOURCE
 #define _GNU_SOURCE
+#endif
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -118,7 +120,7 @@ void * dev_terminal_create(struct cfg_arg *args)
 	char *type = NULL;
 	int port;
 
-	struct dev_terminal *terminal = malloc(sizeof(struct dev_terminal));
+	struct dev_terminal *terminal = (struct dev_terminal *) malloc(sizeof(struct dev_terminal));
 	if (!terminal) {
 		goto cleanup;
 	}
@@ -183,7 +185,7 @@ void dev_terminal_destroy(void *dev)
 {
 	if (!dev) return;
 
-	struct dev_terminal *terminal = dev;
+	struct dev_terminal *terminal = (struct dev_terminal *) dev;
 	if (terminal->th) {
 		pthread_mutex_lock(&terminal->cmd_mutex);
 		terminal->cmd = CMD_QUIT;
@@ -223,7 +225,7 @@ static void dev_terminal_try_accept(struct dev_terminal *terminal)
 // -----------------------------------------------------------------------
 void *dev_terminal_controller(void *ptr)
 {
-	struct dev_terminal *terminal = ptr;
+	struct dev_terminal *terminal = (struct dev_terminal *) ptr;
 	struct timespec abstime;
 	int res;
 
@@ -283,14 +285,14 @@ static int dev_terminal_cmd(struct dev_terminal *terminal, int cmd)
 // -----------------------------------------------------------------------
 int dev_terminal_read(void *dev, uint8_t *c)
 {
-	struct dev_terminal *terminal = dev;
+	struct dev_terminal *terminal = (struct dev_terminal *) dev;
 	return dev_terminal_cmd(terminal, CMD_RD);
 }
 
 // -----------------------------------------------------------------------
 int dev_terminal_write(void *dev, uint8_t *c)
 {
-	struct dev_terminal *terminal = dev;
+	struct dev_terminal *terminal = (struct dev_terminal *) dev;
 	return dev_terminal_cmd(terminal, CMD_WR);
 }
 
@@ -299,6 +301,8 @@ struct dev_drv dev_terminal = {
 	.create = dev_terminal_create,
 	.destroy = dev_terminal_destroy,
 	.reset = dev_terminal_reset,
+	.sector_rd = NULL,
+	.sector_wr = NULL,
 	.char_rd = dev_terminal_read,
 	.char_wr = dev_terminal_write,
 };

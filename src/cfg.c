@@ -31,7 +31,7 @@
 #include "log.h"
 
 extern FILE *cyyin;
-void cyyerror(char *s, ...);
+void cyyerror(const char *s, ...);
 int cyyparse();
 int cyylex_destroy();
 int cfg_error = 0;
@@ -39,12 +39,12 @@ int cfg_error = 0;
 // -----------------------------------------------------------------------
 struct cfg_em400 * cfg_create_default()
 {
-	struct cfg_em400 *cfg = malloc(sizeof(struct cfg_em400));
+	struct cfg_em400 *cfg = (struct cfg_em400 *) malloc(sizeof(struct cfg_em400));
 	if (!cfg) return NULL;
 
 	const char *cfile = "/.em400/em400.cfg";
 	char *home = getenv("HOME");
-	char *home_cfg_fname = malloc(strlen(home) + strlen(cfile) + 1);
+	char *home_cfg_fname = (char *) malloc(strlen(home) + strlen(cfile) + 1);
 	if (!home_cfg_fname) {
 		cfg_destroy(cfg);
 		return NULL;
@@ -190,7 +190,7 @@ int cfg_from_file(struct cfg_em400 *cfg)
 // -----------------------------------------------------------------------
 struct cfg_arg * cfg_make_arg(char *s)
 {
-	struct cfg_arg *a = malloc(sizeof(struct cfg_arg));
+	struct cfg_arg *a = (struct cfg_arg *) malloc(sizeof(struct cfg_arg));
 	a->text = s;
 	a->next = NULL;
 	return a;
@@ -250,7 +250,7 @@ void cfg_make_unit(struct cfg_em400 *cfg, int u_num, char *name, struct cfg_arg 
 		cyyerror("Incorrect unit number: %i", u_num);
 	}
 
-	struct cfg_unit *u = malloc(sizeof(struct cfg_unit));
+	struct cfg_unit *u = (struct cfg_unit *) malloc(sizeof(struct cfg_unit));
 	u->name = name;
 	u->num = u_num;
 	u->args = arglist;
@@ -265,7 +265,7 @@ void cfg_make_chan(struct cfg_em400 *cfg, int c_num, char *name)
 		cyyerror("Incorrect channel number: %i", c_num);
 	}
 
-	struct cfg_chan *c = malloc(sizeof(struct cfg_chan));
+	struct cfg_chan *c = (struct cfg_chan *) malloc(sizeof(struct cfg_chan));
 	c->num = c_num;
 	c->name = name;
 	c->next = cfg->chans;

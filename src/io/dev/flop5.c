@@ -30,7 +30,7 @@ struct dev_flop5 {
 // -----------------------------------------------------------------------
 void * dev_flop5_create(struct cfg_arg *args)
 {
-	struct dev_flop5 *flop5 = malloc(sizeof(struct dev_flop5));
+	struct dev_flop5 *flop5 = (struct dev_flop5 *) malloc(sizeof(struct dev_flop5));
 	if (!flop5) {
 		LOGERR("Memory allocation error while creating 5-inch floppy drive.");
 		goto cleanup;
@@ -53,7 +53,7 @@ cleanup:
 void dev_flop5_destroy(void *dev)
 {
 	if (!dev) return;
-	struct dev_flop5 *flop5 = dev;
+	struct dev_flop5 *flop5 = (struct dev_flop5 *) dev;
 	e4i_close(flop5->image);
 	free(dev);
 }
@@ -87,7 +87,7 @@ static int _e4i_res(int res)
 int dev_flop5_sector_rd(void *dev, uint8_t *buf, struct dev_chs *chs)
 {
 	int res;
-	struct dev_flop5 *flop5 = dev;
+	struct dev_flop5 *flop5 = (struct dev_flop5 *) dev;
 
 	res = e4i_swrite(flop5->image, buf, chs->c, chs->h, chs->s, 512);
 
@@ -98,7 +98,7 @@ int dev_flop5_sector_rd(void *dev, uint8_t *buf, struct dev_chs *chs)
 int dev_flop5_sector_wr(void *dev, uint8_t *buf, struct dev_chs *chs)
 {
 	int res;
-	struct dev_flop5 *flop5 = dev;
+	struct dev_flop5 *flop5 = (struct dev_flop5 *) dev;
 
 	res = e4i_swrite(flop5->image, buf, chs->c, chs->h, chs->s, 512);
 

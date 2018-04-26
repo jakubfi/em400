@@ -28,6 +28,10 @@
 #define E_OK 0
 #define E_ERR -1
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 enum log_components {
 	L_REG,
 	L_MEM,
@@ -71,9 +75,9 @@ int log_setup_components(char *components);
 const char * log_get_component_name(unsigned component);
 int log_get_component_id(const char *name);
 
-int log_err(const char *func, char *msgfmt, ...);
-void log_log(unsigned component, const char *func, char *format, ...);
-void log_splitlog(unsigned component, const char *func, char *text);
+int log_err(const char *func, const char *msgfmt, ...);
+void log_log(unsigned component, const char *func, const char *format, ...);
+void log_splitlog(unsigned component, const char *func, const char *text);
 
 void log_store_cycle_state(uint16_t sr, uint16_t ic);
 void log_intlevel_reset();
@@ -81,7 +85,7 @@ void log_intlevel_dec();
 void log_intlevel_inc();
 
 void log_log_dasm(int arg, int16_t n);
-void log_log_cpu(unsigned component, char *msgfmt, ...);
+void log_log_cpu(unsigned component, const char *msgfmt, ...);
 void log_config(struct cfg_em400 *cfg, const char *func);
 
 #define LOG_ENABLED atom_load_acquire(&log_components_enabled)
@@ -101,6 +105,9 @@ void log_config(struct cfg_em400 *cfg, const char *func);
 #define LOGBLOB(component, txt) \
 	log_splitlog(component, __func__, txt)
 
+#ifdef __cplusplus
+}
+#endif
 
 #endif
 

@@ -83,7 +83,7 @@ int dbg_init(struct cfg_em400 *cfg)
 
 	const char *hfile = "/.em400/history";
 	char *home = getenv("HOME");
-	char *hist_file = malloc(strlen(home) + strlen(hfile) + 1);
+	char *hist_file = (char *) malloc(strlen(home) + strlen(hfile) + 1);
 	sprintf(hist_file, "%s%s", home, hfile);
 
 	if (aw_init(ui_mode, hist_file) != 0) {

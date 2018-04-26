@@ -36,7 +36,7 @@ struct iset_instruction {
 	struct iset_opcode op;	// opcode definition
 };
 
-int iset_build();
+int iset_build(struct iset_opcode **op_tab);
 
 #endif
 

@@ -102,7 +102,7 @@ static const char * mx_proto_floppy_get_type_name(unsigned i)
 // -----------------------------------------------------------------------
 int mx_floppy_init(struct mx_line *pline, uint16_t *data)
 {
-	struct proto_floppy_data *proto_data = malloc(sizeof(struct proto_floppy_data));
+	struct proto_floppy_data *proto_data = (struct proto_floppy_data *) malloc(sizeof(struct proto_floppy_data));
 	if (!proto_data) {
 		return MX_SC_E_NOMEM;
 	}
@@ -136,7 +136,7 @@ void mx_floppy_destroy(struct mx_line *pline)
 // -----------------------------------------------------------------------
 int mx_floppy_att_decode(uint16_t *data, void *proto_data)
 {
-	struct proto_floppy_data *pd = proto_data;
+	struct proto_floppy_data *pd = (struct proto_floppy_data *) proto_data;
 
 	pd->retrans =  (data[0] & 0b0000111100000000) >> 8;
 	pd->spt =      (data[0] & 0b0000000011111111) >> 0;
@@ -167,7 +167,7 @@ int mx_floppy_att_decode(uint16_t *data, void *proto_data)
 // -----------------------------------------------------------------------
 int mx_floppy_transmit_decode(uint16_t *data, void *proto_data)
 {
-	struct proto_floppy_data *pd = proto_data;
+	struct proto_floppy_data *pd = (struct proto_floppy_data *) proto_data;
 
 	pd->op =  (data[0] & 0b0000011100000000) >> 8;
 	pd->sect = data[3];
@@ -205,7 +205,7 @@ int mx_floppy_transmit_decode(uint16_t *data, void *proto_data)
 // -----------------------------------------------------------------------
 void mx_floppy_transmit_encode(uint16_t *data, void *proto_data)
 {
-	struct proto_floppy_data *pd = proto_data;
+	struct proto_floppy_data *pd = (struct proto_floppy_data *) proto_data;
 
 	LOG(L_FLOP, "Transmission result: len=%i, status=0x%08x", pd->ret_len, pd->ret_status);
 	if ((pd->op == MX_FLOPPY_OP_READ) || (pd->op == MX_FLOPPY_OP_WRITE)) {
@@ -225,7 +225,7 @@ int mx_floppy_abort(struct mx_line *lline, uint16_t *cmd_data)
 int mx_floppy_transmit(struct mx_line *lline, uint16_t *cmd_data)
 {
 	int irq;
-	struct proto_floppy_data *proto_data = lline->proto_data;
+	struct proto_floppy_data *proto_data = (struct proto_floppy_data *) lline->proto_data;
 
 	// check if there is a device connected
 	if (!lline->dev || !lline->dev_data) {

@@ -80,7 +80,7 @@ struct ui_cmd_command commands[] = {
 };
 
 // -----------------------------------------------------------------------
-void ui_cmd_resp(FILE *out, int status, int eol, char *fmt, ...)
+void ui_cmd_resp(FILE *out, int status, int eol, const char *fmt, ...)
 {
 	va_list ap;
 	va_start(ap, fmt);
@@ -165,7 +165,7 @@ void ui_cmd_help(FILE *out, char *args)
 	// show all commands
 	if (!tok_cmd) {
 		int nelem = sizeof(commands) / sizeof(struct ui_cmd_command);
-		char **cmdnames = malloc(nelem * sizeof(char*));
+		const char **cmdnames = (const char **) malloc(nelem * sizeof(char*));
 
 		int i=0;
 		struct ui_cmd_command *c = commands;
@@ -300,7 +300,7 @@ void ui_cmd_mem(FILE *out, char *args)
 		return;
 	}
 
-	uint16_t *mbuf = malloc(count * sizeof(uint16_t));
+	uint16_t *mbuf = (uint16_t *) malloc(count * sizeof(uint16_t));
 	int processed = 0;
 
 	ui_cmd_resp(out, RESP_OK, UI_NOEOL, "");
@@ -345,7 +345,7 @@ void ui_cmd_memw(FILE *out, char *args)
 		return;
 	}
 
-	uint16_t *mbuf = malloc(0x10000 * sizeof(uint16_t));
+	uint16_t *mbuf = (uint16_t *) malloc(0x10000 * sizeof(uint16_t));
 	int processed = 0;
 
 	do {

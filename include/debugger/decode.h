@@ -23,8 +23,8 @@
 typedef char * (*decoder_fun_t)(int nb, uint16_t addr, int arg);
 
 struct decoder_t {
-	char *name;
-	char *desc;
+	const char *name;
+	const char *desc;
 	decoder_fun_t f_decode;
 };
 

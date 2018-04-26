@@ -15,7 +15,9 @@
 //  Foundation, Inc.,
 //  51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 
+#ifndef _GNU_SOURCE
 #define _GNU_SOURCE
+#endif
 
 #include <inttypes.h>
 #include <stdlib.h>
@@ -69,7 +71,7 @@ void * it_create(int num, struct cfg_unit *units)
 {
 	LOG(L_IO, "Creating new I/O tester");
 
-	struct iotester *it = calloc(1, sizeof(struct iotester));
+	struct iotester *it = (struct iotester *) calloc(1, sizeof(struct iotester));
 	if (!it) {
 		LOGERR("Memory allocation error.");
 		return NULL;
@@ -110,7 +112,7 @@ void * it_create(int num, struct cfg_unit *units)
 // -----------------------------------------------------------------------
 struct it_event *it_event_new(int type, int cmd, uint16_t r)
 {
-	struct it_event *ev = calloc(1, sizeof(struct it_event));
+	struct it_event *ev = (struct it_event *) calloc(1, sizeof(struct it_event));
 	ev->type = type;
 	ev->cmd = cmd;
 	ev->r = r;
@@ -147,7 +149,7 @@ void it_reset(void *ch)
 static void * it_cmdproc(void *ptr)
 {
 	int quit = 0;
-	struct iotester *it = ptr;
+	struct iotester *it = (struct iotester *) ptr;
 
 	LOG(L_IO, "Entering main I/O tester loop");
 
@@ -160,7 +162,7 @@ static void * it_cmdproc(void *ptr)
 	int reset_int = 0;
 
 	while (!quit) {
-		struct it_event *ev = elst_wait_pop(it->evq, 0);
+		struct it_event *ev = (struct it_event *) elst_wait_pop(it->evq, 0);
 		switch (ev->type) {
 			case EV_QUIT:
 				LOG(L_IO, "Quit");

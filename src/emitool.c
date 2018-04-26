@@ -41,8 +41,8 @@ enum flags_e {
 
 struct preset_t {
 	int type;
-	char *name;
-	char *description;
+	const char *name;
+	const char *description;
 	int cyls;
 	int heads;
 	int spt;
@@ -53,9 +53,9 @@ struct preset_t {
 };
 
 struct kv_t {
-	char *name;
+	const char *name;
 	int value;
-	char *description;
+	const char *description;
 };
 
 int m9425_idgenf(struct e4i_t *e, uint8_t *buf, int id_len, uint32_t block);
@@ -97,10 +97,10 @@ e4i_id_gen_f *genf = NULL;
 // -----------------------------------------------------------------------
 int m9425_idgenf(struct e4i_t *e, uint8_t *buf, int id_len, uint32_t block)
 {
-	uint16_t cylinder = block / (e->heads * e->spt);
-	int rem = block % (e->heads * e->spt);
-	uint8_t head = rem / e->spt;
-	uint8_t sector = rem / e->spt;
+	const uint16_t cylinder = block / (e->heads * e->spt);
+	const int rem = block % (e->heads * e->spt);
+	const uint8_t head = rem / e->spt;
+	const uint8_t sector = rem / e->spt;
 
 	*(buf+0) = (cylinder>>8) & 1;
 	*(buf+1) = cylinder & 255;
@@ -119,7 +119,7 @@ int m9425_idgenf(struct e4i_t *e, uint8_t *buf, int id_len, uint32_t block)
 }
 
 // -----------------------------------------------------------------------
-void error(char *format, ...)
+void error(const char *format, ...)
 {
 	va_list ap;
 	va_start(ap, format);
@@ -132,51 +132,56 @@ void error(char *format, ...)
 // -----------------------------------------------------------------------
 void print_help()
 {
-	printf("\nOptions:\n");
-	printf("  --help                    : print help\n");
-	printf("  --image, -i <filename>    : e4i working media file name\n");
-	printf("  --get, -g                 : show media header\n");
-	printf("  --preset, -p <name>       : select media preset\n");
-	printf("  --src, -r <filename>      : read raw input data from file <filename>\n");
-	printf("  --blocks, -b <blocks>     : total blocks on media (LBA adressing)\n");
-	printf("  --cyls, -c <cylinders>    : number of cylinders (CHS addressing)\n");
-	printf("  --heads, -h <heads>       : number of heads (CHS addressing)\n");
-	printf("  --spt, -s <sectors>       : sectors per track (CHS addressing)\n");
-	printf("  --sector, -l <bytes>      : sector/block length\n");
-	printf("  --id, -x <bytes>          : sector ID field length\n");
-	printf("  --flag, -f <flag>|<^flag> : set/clear flag\n");
-	printf("  --append, -a              : appendable media\n");
-	printf("  --type, -t <type>         : image type\n");
-	printf("  --utype, -u <type>        : user image type\n");
-	printf("\n");
-	printf("Usage scenarios:\n");
-	printf("  * Show media header:\n");
-	printf("      e4itool --image <filename> --get\n");
-	printf("  * Create empty media:\n");
-	printf("      e4itool --image <filename> --blocks <blocks> --sector <bytes> [--id <bytes>]\n");
-	printf("      e4itool --image <filename> --cyls <c> --heads <h> --spt <sectors> --sector <bytes> [--id <bytes>]\n");
-	printf("      e4itool --image <filename> --append --sector <bytes> [--id <bytes>]\n");
-	printf("  * Create empty media using a preset:\n");
-	printf("      e4itool --image <filename> --preset <name> [--cyls <c>] [--heads <h>] [--spt <sectors>] [--sector <bytes>] [--id <bytes>]\n");
-	printf("  * Create media from raw data:\n");
-	printf("      e4itool --image <filename> --src <source> --sector <bytes> --id <bytes>\n");
-	printf("      e4itool --image <filename> --src <source> --cyls <c> --heads <h> --spt <sectors> --sector <bytes> --id <bytes>\n");
-	printf("  * Change flags:\n");
-	printf("      e4itool --image <filename> --flag <name>|<^name> --flag <name>|<^name> ...\n");
-	printf("\n");
-	printf("Known image presets (--preset) (C/H/S, id size, sector size):\n");
-	struct preset_t *p = known_presets;
+	printf(
+		"\nOptions:\n"
+		"  --help                    : print help\n"
+		"  --image, -i <filename>    : e4i working media file name\n"
+		"  --get, -g                 : show media header\n"
+		"  --preset, -p <name>       : select media preset\n"
+		"  --src, -r <filename>      : read raw input data from file <filename>\n"
+		"  --blocks, -b <blocks>     : total blocks on media (LBA adressing)\n"
+		"  --cyls, -c <cylinders>    : number of cylinders (CHS addressing)\n"
+		"  --heads, -h <heads>       : number of heads (CHS addressing)\n"
+		"  --spt, -s <sectors>       : sectors per track (CHS addressing)\n"
+		"  --sector, -l <bytes>      : sector/block length\n"
+		"  --id, -x <bytes>          : sector ID field length\n"
+		"  --flag, -f <flag>|<^flag> : set/clear flag\n"
+		"  --append, -a              : appendable media\n"
+		"  --type, -t <type>         : image type\n"
+		"  --utype, -u <type>        : user image type\n"
+		"\n"
+		"Usage scenarios:\n"
+		"  * Show media header:\n"
+		"      e4itool --image <filename> --get\n"
+		"  * Create empty media:\n"
+		"      e4itool --image <filename> --blocks <blocks> --sector <bytes> [--id <bytes>]\n"
+		"      e4itool --image <filename> --cyls <c> --heads <h> --spt <sectors> --sector <bytes> [--id <bytes>]\n"
+		"      e4itool --image <filename> --append --sector <bytes> [--id <bytes>]\n"
+		"  * Create empty media using a preset:\n"
+		"      e4itool --image <filename> --preset <name> [--cyls <c>] [--heads <h>] [--spt <sectors>] [--sector <bytes>] [--id <bytes>]\n"
+		"  * Create media from raw data:\n"
+		"      e4itool --image <filename> --src <source> --sector <bytes> --id <bytes>\n"
+		"      e4itool --image <filename> --src <source> --cyls <c> --heads <h> --spt <sectors> --sector <bytes> --id <bytes>\n"
+		"  * Change flags:\n"
+		"      e4itool --image <filename> --flag <name>|<^name> --flag <name>|<^name> ...\n"
+		"\n"
+		"Known image presets (--preset) (C/H/S, id size, sector size):\n"
+	);
+
+	const struct preset_t *p = known_presets;
 	while (p && p->name) {
 		printf("  * %s (%i/%i/%i, %i, %i) : %s\n", p->name, p->cyls, p->heads, p->spt, p->id, p->sector, p->description);
 		p++;
 	}
-	printf("\n");
-	printf("Known image types (--type):\n");
-	struct kv_t *k = known_types;
+
+	printf("\nKnown image types (--type):\n");
+
+	const struct kv_t *k = known_types;
 	while (k && k->name) {
 		printf("  * %s : %s\n", k->name, k->description);
 		k++;
 	}
+
 	printf("\n");
 }
 

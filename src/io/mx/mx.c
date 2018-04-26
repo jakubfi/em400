@@ -15,7 +15,9 @@
 //  Foundation, Inc.,
 //  51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 
+#ifndef _GNU_SOURCE
 #define _GNU_SOURCE
+#endif
 
 #include <stdlib.h>
 #include <pthread.h>
@@ -51,11 +53,13 @@ void mx_reset(void *ch);
 // -----------------------------------------------------------------------
 void * mx_create(int num, struct cfg_unit *units)
 {
+	struct cfg_unit *dev_cfg;
+
 	LOG(L_MX, "Creating new MULTIX");
 
 	// --- create multix itself (everything needs it)
 
-	struct mx *multix = calloc(1, sizeof(struct mx));
+	struct mx *multix = (struct mx *) calloc(1, sizeof(struct mx));
 	if (!multix) {
 		LOGERR("Memory allocation error.");
 		goto cleanup;
@@ -90,7 +94,7 @@ void * mx_create(int num, struct cfg_unit *units)
 	// --- create devices (event system need them)
 
 	LOG(L_MX, "Initializing devices");
-	struct cfg_unit *dev_cfg = units;
+	dev_cfg = units;
 	while (dev_cfg) {
 		struct mx_line *line = multix->plines + dev_cfg->num;
 		int res = dev_make(dev_cfg, &line->dev, &line->dev_data);
@@ -157,7 +161,7 @@ static void mx_lines_deinit(struct mx *multix)
 		struct mx_line *lline = multix->llines[i];
 		if (lline) {
 			// quit the protocol thread
-			union mx_event *ev = malloc(sizeof(union mx_event));
+			union mx_event *ev = (union mx_event *) malloc(sizeof(union mx_event));
 			if (ev) {
 				ev->d.type = MX_EV_QUIT;
 				if (elst_insert(lline->protoq, ev, MX_EV_QUIT) > 0) {
@@ -168,7 +172,7 @@ static void mx_lines_deinit(struct mx *multix)
 				}
 			}
 			// quit the status thread
-			union mx_event *ev2 = malloc(sizeof(union mx_event));
+			union mx_event *ev2 = (union mx_event *) malloc(sizeof(union mx_event));
 			if (ev2) {
 				ev2->d.type = MX_EV_QUIT;
 				if (elst_insert(lline->statusq, ev2, MX_EV_QUIT) > 0) {
@@ -286,7 +290,7 @@ static void mx_int_push(struct mx *multix)
 
 	pthread_mutex_lock(&multix->int_mutex);
 	if (multix->intspec == MX_IRQ_INIEA) {
-		uint16_t *i = elst_nlock_pop(multix->intq);
+		uint16_t *i = (uint16_t *) elst_nlock_pop(multix->intq);
 		if (i) {
 			multix->intspec = *i;
 			send = 1;
@@ -307,7 +311,7 @@ int mx_int_enqueue(struct mx *multix, int intr, int line)
 	LOG(L_MX, "Enqueue interrupt %i (%s), line %i", intr, mx_irq_name(intr), line);
 
 	// TODO: this is silly
-	uint16_t *i = malloc(sizeof(uint16_t));
+	uint16_t *i = (uint16_t *) malloc(sizeof(uint16_t));
 	*i = (intr << 8) | line;
 
 	pthread_mutex_lock(&multix->int_mutex);
@@ -476,6 +480,12 @@ static int mx_cmd_setcfg(struct mx *multix, uint16_t addr)
 	int ret_int;
 	uint16_t ret_err = 0;
 
+	unsigned phy_desc_count;
+	unsigned log_count;
+	int read_size;
+	int cur_line;
+	int tape_formatters;
+
 	// check if configuration isn't set already
 	if (atom_load_acquire(&multix->state) == MX_CONFIGURED) {
 		CFGERR(MX_SC_E_CONFSET, 0);
@@ -488,13 +498,13 @@ static int mx_cmd_setcfg(struct mx *multix, uint16_t addr)
 		goto fail;
 	}
 
-	unsigned phy_desc_count = (data[0] & 0b1111111100000000) >> 8;
-	unsigned log_count      = (data[0] & 0b0000000011111111);
+	phy_desc_count = (data[0] & 0b1111111100000000) >> 8;
+	log_count      = (data[0] & 0b0000000011111111);
 
 	LOG(L_MX, "Configuration for MULTIX on channel %i has %i physical line descriptors, %i logical lines", multix->chnum, phy_desc_count, log_count);
 
 	// read line descriptions
-	int read_size = phy_desc_count + 4*log_count;
+	read_size = phy_desc_count + 4*log_count;
 	if (mx_mem_mget(multix, 0, addr+2, data, read_size)) {
 		ret_int = MX_IRQ_INKOT;
 		goto fail;
@@ -507,11 +517,11 @@ static int mx_cmd_setcfg(struct mx *multix, uint16_t addr)
 	}
 
 	// configure physical lines
-	int cur_line = 0;
-	for (int i=0 ; i<phy_desc_count ; i++) {
+	cur_line = 0;
+	for (unsigned i=0 ; i<phy_desc_count ; i++) {
 		unsigned count = (data[i] & 0b11111) + 1;
 		LOG(L_MX, "%i Physical line(-s) %i..%i:", count, cur_line, cur_line+count-1);
-		for (int j=0 ; j<count ; j++, cur_line++) {
+		for (unsigned j=0 ; j<count ; j++, cur_line++) {
 			if (cur_line >= MX_LINE_CNT) {
 				CFGERR(MX_SC_E_NUMLINES, 0);
 				goto fail;
@@ -525,15 +535,15 @@ static int mx_cmd_setcfg(struct mx *multix, uint16_t addr)
 	}
 
 	// check the completness of physical lines configuration
-	int tape_formatters = 0;
-	for (int i=0 ; i<MX_LINE_CNT ; i+=4) {
+	tape_formatters = 0;
+	for (unsigned i=0 ; i<MX_LINE_CNT ; i+=4) {
 		// there can be only one tape formatter (4 lines)
 		if ((multix->plines[i].type == MX_PHY_MTAPE) && (++tape_formatters > 1)) {
 			CFGERR(MX_SC_E_PHY_INCOMPLETE, i);
 			goto fail;
 		}
 		// MULTIX lines are physically organized in 4-line groups and configuration needs to reflect this
-		for (int j=1 ; j<=3 ; j++) {
+		for (unsigned j=1 ; j<=3 ; j++) {
 			if (multix->plines[i+j].type != multix->plines[i].type) {
 				CFGERR(MX_SC_E_PHY_INCOMPLETE, i+j);
 				goto fail;
@@ -542,7 +552,7 @@ static int mx_cmd_setcfg(struct mx *multix, uint16_t addr)
 	}
 
 	// configure logical lines
-	for (int i=0 ; i<log_count ; i++) {
+	for (unsigned i=0 ; i<log_count ; i++) {
 		uint16_t *log_data = data + phy_desc_count + i*4;
 		unsigned phy_num = log_data[0] & 0b11111;
 		res = mx_line_conf_log(multix, phy_num, i, log_data);
@@ -593,7 +603,7 @@ static int mx_cmd_requeue(struct mx *multix)
 {
 	pthread_mutex_lock(&multix->int_mutex);
 	if (multix->intspec != MX_IRQ_INIEA) {
-		uint16_t *i = malloc(sizeof(uint16_t));
+		uint16_t *i = (uint16_t *) malloc(sizeof(uint16_t));
 		*i = multix->intspec;
 		// TODO: handle queue full
 		elst_nlock_prepend(multix->intq, i);
@@ -669,7 +679,8 @@ static void * mx_evproc(void *ptr)
 {
 	int quit = 0;
 	int timeout = MX_INIT_TIME_MSEC;
-	struct mx *multix = ptr;
+	struct mx *multix = (struct mx *) ptr;
+	struct mx_line *lline;
 
 	LOG(L_MX, "Entering event loop");
 
@@ -679,7 +690,7 @@ static void * mx_evproc(void *ptr)
 		} else {
 			LOG(L_MX, "Event processor waiting for event");
 		}
-		union mx_event *ev = elst_wait_pop(multix->eventq, timeout);
+		union mx_event *ev = (union mx_event *) elst_wait_pop(multix->eventq, timeout);
 
 		int ev_free = 1;
 
@@ -719,7 +730,7 @@ static void * mx_evproc(void *ptr)
 				case MX_EV_CMD:
 					if (timeout) continue; // ignore commands when restting MULTIX
 					LOG(L_MX, "EV%04x: Received command: %s", ev->d.id, mx_get_cmd_name(ev->d.cmd));
-					struct mx_line *lline = multix->llines[ev->d.log_n];
+					lline = multix->llines[ev->d.log_n];
 					switch (ev->d.cmd) {
 						case MX_CMD_REQUEUE:
 							mx_cmd_requeue(multix);
@@ -789,7 +800,7 @@ static int mx_event(struct mx *multix, int type, int cmd, int log_n, uint16_t r_
 		return IO_EN;
 	}
 
-	union mx_event *ev = malloc(sizeof(union mx_event));
+	union mx_event *ev = (union mx_event *) malloc(sizeof(union mx_event));
 	if (!ev) return IO_EN;
 
 	ev->d.type = type;

@@ -109,7 +109,7 @@ struct proto_terminal_data {
 // -----------------------------------------------------------------------
 int mx_terminal_init(struct mx_line *pline, uint16_t *data)
 {
-	struct proto_winchester_data *pd = calloc(1, sizeof(struct proto_terminal_data));
+	struct proto_terminal_data *pd = (struct proto_terminal_data *) calloc(1, sizeof(struct proto_terminal_data));
 	if (!pd) {
 		return MX_SC_E_NOMEM;
 	}
@@ -130,7 +130,7 @@ void mx_terminal_destroy(struct mx_line *pline)
 // -----------------------------------------------------------------------
 int mx_terminal_att_decode(uint16_t *data, void *proto_data)
 {
-	struct proto_terminal_data *pd = proto_data;
+	struct proto_terminal_data *pd = (struct proto_terminal_data *) proto_data;
 
 	pd->watch_eof	= (data[0] & 0b1000000000000000) >> 15;
 	pd->parity		=!(data[0] & 0b0100000000000000) ? MX_TERM_PARITY_NONE :
@@ -165,7 +165,7 @@ int mx_terminal_att_decode(uint16_t *data, void *proto_data)
 // -----------------------------------------------------------------------
 int mx_terminal_trans_decode(uint16_t *data, void *proto_data)
 {
-	struct proto_terminal_data *pd = proto_data;
+	struct proto_terminal_data *pd = (struct proto_terminal_data *) proto_data;
 
 	pd->transmit.flags		= (data[0] & 0b1111111100000000) >> 8;
 	pd->transmit.timeout	= (data[0] & 0b0000000011111111);

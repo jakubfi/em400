@@ -25,6 +25,10 @@
 #define E4I_IMAGE_V_MAJOR 1
 #define E4I_IMAGE_V_MINOR 0
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 extern int e4i_err;
 
 enum e4i_errors_e {
@@ -159,6 +163,10 @@ int e4i_bwrite_id(struct e4i_t *e, uint8_t *buf, int block);
 int e4i_bget(struct e4i_t *e, uint8_t *buf, int count);
 int e4i_bappend(struct e4i_t *e, uint8_t *buf, int count);
 int e4i_rewind(struct e4i_t *e);
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif
 

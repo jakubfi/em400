@@ -56,7 +56,7 @@ struct cchar_unit_proto_t * cchar_unit_proto_get(struct cchar_unit_proto_t *prot
 // -----------------------------------------------------------------------
 void * cchar_create(int num, struct cfg_unit *units)
 {
-	struct cchar_chan_t *chan = calloc(1, sizeof(struct cchar_chan_t));
+	struct cchar_chan_t *chan = (struct cchar_chan_t *) calloc(1, sizeof(struct cchar_chan_t));
 
 	chan->num = num;
 

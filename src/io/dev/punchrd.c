@@ -27,7 +27,7 @@ struct dev_punchrd {
 // -----------------------------------------------------------------------
 void * dev_punchrd_create(struct cfg_arg *args)
 {
-	struct dev_punchrd *punchrd = malloc(sizeof(struct dev_punchrd));
+	struct dev_punchrd *punchrd = (struct dev_punchrd *) malloc(sizeof(struct dev_punchrd));
 	if (!punchrd) {
 		goto cleanup;
 	}
@@ -43,7 +43,7 @@ cleanup:
 void dev_punchrd_destroy(void *dev)
 {
 	if (!dev) return;
-	struct dev_punchrd *punchrd = dev;
+	struct dev_punchrd *punchrd = (struct dev_punchrd *) dev;
 	free(punchrd);
 }
 

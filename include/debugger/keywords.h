@@ -19,7 +19,7 @@
 #define KEYWORDS_H
 
 struct kw_t {
-	char *name;
+	const char *name;
 	int value;
 };
 
@@ -36,7 +36,7 @@ enum dbg_registers {
 extern struct kw_t kw_regs[];
 extern struct kw_t kw_bases[];
 
-int find_token(struct kw_t *tok_table, char *text);
+int find_token(struct kw_t *tok_table, const char *text);
 
 #endif
 

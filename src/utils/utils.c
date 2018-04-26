@@ -29,10 +29,10 @@
 
 // -----------------------------------------------------------------------
 // convert an integer to formatted string with its binary representation
-char * int2binf(char *format, uint64_t value, int size)
+char * int2binf(const char *format, uint64_t value, int size)
 {
-	char *i = format;
-	char *buf = malloc(strlen(format)+1);
+	const char *i = format;
+	char *buf = (char *) malloc(strlen(format)+1);
 	char *o = buf;
 
 	size--;
@@ -134,7 +134,7 @@ speed_t serial_int2speed(int s)
 		{ 3000000,	B3000000 },
 		{ 3500000,	B3500000 },
 		{ 4000000,	B4000000 },
-		{ 0,		-1 }
+		{ 0,		0 }
 	};
 	struct a_speeds *sp = speeds;
 

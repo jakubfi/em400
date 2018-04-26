@@ -106,14 +106,14 @@ void * ui_cmd_setup(const char *call_name)
 {
     int res;
 
-	struct ui_cmd_data *ui = calloc(1, sizeof(struct ui_cmd_data));
+	struct ui_cmd_data *ui = (struct ui_cmd_data *) calloc(1, sizeof(struct ui_cmd_data));
 	if (!ui) {
 		return NULL;
 	}
 
     ui->timeout_ms = 100;
 
-	char *arg = strchr(call_name, ':');
+	const char *arg = strchr(call_name, ':');
 	if (arg && *(arg+1)) {
 		arg++;
 		ui->tcp_port = atoi(arg);
@@ -146,7 +146,7 @@ static void ui_cmd_process(char *user_input, FILE *out)
 // -----------------------------------------------------------------------
 void ui_cmd_loop(void *data)
 {
-	struct ui_cmd_data *ui = data;
+	struct ui_cmd_data *ui = (struct ui_cmd_data *) data;
 
 	char buf[BUF_MAX+2]; // +1 for '\0', +2 for flex' '\0'
 	int sock_max = 0;
@@ -240,14 +240,14 @@ void ui_cmd_loop(void *data)
 // -----------------------------------------------------------------------
 void ui_cmd_ui_stop(void *data)
 {
-	struct ui_cmd_data *ui = data;
+	struct ui_cmd_data *ui = (struct ui_cmd_data *) data;
 	ui->quit = 1;
 }
 
 // -----------------------------------------------------------------------
 void ui_cmd_destroy(void *data)
 {
-	struct ui_cmd_data *ui = data;
+	struct ui_cmd_data *ui = (struct ui_cmd_data *) data;
 
 	if (!ui) return;
 

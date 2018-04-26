@@ -20,12 +20,20 @@
 
 #include "cfg.h"
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 int timer_init(struct cfg_em400 *cfg);
 void timer_shutdown();
 void timer_on();
 void timer_off();
 int timer_get_state();
 void timer_set_int(int interrupt);
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif
 

@@ -47,7 +47,7 @@ void var_set(char *name, uint16_t value)
 	if (v) {
 		v->value = value;
 	} else {
-		v = malloc(sizeof(struct var_t));
+		v = (struct var_t *) malloc(sizeof(struct var_t));
 		v->name = strdup(name);
 		v->value = value;
 		v->next = var_stack;
@@ -75,7 +75,7 @@ struct var_t * var_get(char *name)
 // -----------------------------------------------------------------------
 struct node_t * n_create()
 {
-	struct node_t *n = malloc(sizeof(struct node_t));
+	struct node_t *n = (struct node_t *) malloc(sizeof(struct node_t));
 	n->type = N_NONE;
 	n->base = HEX;
 	n->val = 0;

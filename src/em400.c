@@ -184,7 +184,7 @@ void em400_mkconfdir()
 
 	const char *cdir = ".em400";
 	char *home = getenv("HOME");
-	conf_dirname = malloc(strlen(home) + strlen(cdir) + 2);
+	conf_dirname = (char *) malloc(strlen(home) + strlen(cdir) + 2);
 	if (conf_dirname) {
 		sprintf(conf_dirname, "%s/%s", home, cdir);
 		mkdir(conf_dirname, 0700);
@@ -232,6 +232,7 @@ fail:
 // -----------------------------------------------------------------------
 int main(int argc, char** argv)
 {
+	int res;
 	int ret = -1;
 	em400_mkconfdir();
 
@@ -247,7 +248,7 @@ int main(int argc, char** argv)
 		goto done;
 	}
 
-	int res = em400_init(cfg);
+	res = em400_init(cfg);
 	if (res != E_OK) {
 		goto done;
 	}

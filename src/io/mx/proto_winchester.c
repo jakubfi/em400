@@ -107,7 +107,7 @@ struct proto_winchester_data {
 // -----------------------------------------------------------------------
 int mx_winch_init(struct mx_line *pline, uint16_t *data)
 {
-	struct proto_winchester_data *proto_data = malloc(sizeof(struct proto_winchester_data));
+	struct proto_winchester_data *proto_data = (struct proto_winchester_data *) malloc(sizeof(struct proto_winchester_data));
 	if (!proto_data) {
 		return MX_SC_E_NOMEM;
 	}
@@ -140,7 +140,8 @@ void mx_winch_destroy(struct mx_line *pline)
 // -----------------------------------------------------------------------
 int mx_winch_trans_decode(uint16_t *data, void *proto_data)
 {
-	struct proto_winchester_data *pd = proto_data;
+	struct proto_winchester_data *pd = (struct proto_winchester_data *) proto_data;
+	char *map;
 
 	pd->op = (data[0] & 0b0000011100000000) >> 8;
 
@@ -152,7 +153,7 @@ int mx_winch_trans_decode(uint16_t *data, void *proto_data)
 			pd->format.sector_map = data[1];
 			pd->format.start_sector = data[2] << 16;
 			pd->format.start_sector += data[3];
-			char *map = int2binf("................", data[1], 16);
+			map = int2binf("................", data[1], 16);
 			LOG(L_WNCH, "Format track, starting logical sector: %i, sector map: %s", pd->format.start_sector, map);
 			free(map);
 			break;
@@ -194,7 +195,7 @@ int mx_winch_trans_decode(uint16_t *data, void *proto_data)
 // -----------------------------------------------------------------------
 void mx_winch_transmit_encode(uint16_t *data, void *proto_data)
 {
-	struct proto_winchester_data *pd = proto_data;
+	struct proto_winchester_data *pd = (struct proto_winchester_data *) proto_data;
 
 	LOG(L_WNCH, "Transmission result: len=%i, status=0x%04x", pd->ret_len, pd->ret_status);
 	if ((pd->op == MX_WINCH_OP_READ) || (pd->op == MX_WINCH_OP_WRITE)) {
@@ -308,7 +309,7 @@ int mx_winch_transmit(struct mx_line *line, uint16_t *cmd_data)
 {
 	int irq;
 
-	struct proto_winchester_data *proto_data = line->proto_data;
+	struct proto_winchester_data *proto_data = (struct proto_winchester_data *) line->proto_data;
 
 	// check if there is a device connected
 	if (!line->dev || !line->dev_data) {

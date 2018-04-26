@@ -16,7 +16,9 @@
 //  51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 
 #define _XOPEN_SOURCE 500
+#ifndef _GNU_SOURCE
 #define _GNU_SOURCE
+#endif
 
 #include <stdlib.h>
 #include <string.h>
@@ -43,7 +45,7 @@ struct cchar_unit_proto_t * cchar_term_create(struct cfg_arg *args)
 	char *device = NULL;
 	int speed;
 
-	struct cchar_unit_term_t *unit = calloc(1, sizeof(struct cchar_unit_term_t));
+	struct cchar_unit_term_t *unit = (struct cchar_unit_term_t *) calloc(1, sizeof(struct cchar_unit_term_t));
 	if (!unit) {
 		LOGERR("Failed to allocate memory for unit: %s.", args->text);
 		goto fail;
@@ -107,7 +109,7 @@ struct cchar_unit_proto_t * cchar_term_create(struct cfg_arg *args)
 		goto fail;
 	}
 
-	unit->buf = malloc(TERM_BUF_LEN);
+	unit->buf = (char *) malloc(TERM_BUF_LEN);
 	if (!unit->buf) {
 		LOGERR("Failed to allocate memory for terminal buffer.");
 		goto fail;
@@ -184,7 +186,7 @@ void cchar_term_queue_char(struct cchar_unit_proto_t *unit, char data)
 // -----------------------------------------------------------------------
 void * cchar_term_worker(void *ptr)
 {
-	struct cchar_unit_proto_t *unit = ptr;
+	struct cchar_unit_proto_t *unit = (struct cchar_unit_proto_t *) ptr;
 	char data;
 	int res;
 

@@ -47,7 +47,7 @@ struct decoder_t * find_decoder(char *name)
 // -----------------------------------------------------------------------
 char * decode_iv(int nb, uint16_t addr, int arg)
 {
-	char *buf = malloc(16*1024);
+	char *buf = (char *) malloc(16*1024);
 	char *b = buf;
 	int pos = 0;
 

@@ -48,7 +48,7 @@ int fdbridge_add_stdin(ELST q);
 int fdbridge_add_tcp(uint16_t port, ELST q);
 
 #ifdef __cplusplus
-extern "C" {
+}
 #endif
 
 #endif

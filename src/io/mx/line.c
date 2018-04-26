@@ -146,6 +146,8 @@ static const struct mx_cmd_route {
 	uint32_t fail_neg; // negative status mask (bits that need to be clear for the command to be accepted)
 	uint32_t cmd_state; // state bits to set when starting command
 } mx_cmd_routing[MX_CMD_CNT] = {
+	[MX_CMD_ERR_0] = {0, 0, 0, 0, 0},
+	[MX_CMD_TEST] = {0, 0, 0, 0, 0},
 	[MX_CMD_ATTACH] = {
 		.irq_reject = MX_IRQ_INDOL,
 		.irq_no_line = MX_IRQ_INKDO,
@@ -167,6 +169,11 @@ static const struct mx_cmd_route {
 		.fail_neg = MX_LSTATE_ATTACHED,
 		.cmd_state = MX_LSTATE_TRANS,
 	},
+	[MX_CMD_SETCFG] = {0, 0, 0, 0, 0},
+	[MX_CMD_ERR_6] = {0, 0, 0, 0, 0},
+	[MX_CMD_ERR_7] = {0, 0, 0, 0, 0},
+	[MX_CMD_ERR_8] = {0, 0, 0, 0, 0},
+	[MX_CMD_REQUEUE] = {0, 0, 0, 0, 0},
 	[MX_CMD_DETACH] = {
 		.irq_reject = MX_IRQ_INODL,
 		.irq_no_line = MX_IRQ_INKOD,
@@ -181,6 +188,10 @@ static const struct mx_cmd_route {
 		.fail_neg = MX_LSTATE_TRANS, // what if abort is running or line is not attached?
 		.cmd_state = MX_LSTATE_ABORT,
 	},
+	[MX_CMD_ERR_C] = {0, 0, 0, 0, 0},
+	[MX_CMD_ERR_D] = {0, 0, 0, 0, 0},
+	[MX_CMD_ERR_E] = {0, 0, 0, 0, 0},
+	[MX_CMD_ERR_F] = {0, 0, 0, 0, 0},
 };
 
 // -----------------------------------------------------------------------
@@ -265,13 +276,13 @@ fin:
 void * mx_line_thread(void *ptr)
 {
 	int quit = 0;
-	struct mx_line *line = ptr;
+	struct mx_line *line = (struct mx_line *) ptr;
 
 	LOG(L_MX, "Entering line %i protocol loop, device: %s", line->log_n, line->proto->name);
 
 	while (!quit) {
 		LOG(L_MX, "Line %i (%s) waiting for event", line->log_n, line->proto->name);
-		union mx_event *ev = elst_wait_pop(line->protoq, 0);
+		union mx_event *ev = (union mx_event *) elst_wait_pop(line->protoq, 0);
 		switch (ev->d.type) {
 			case MX_EV_QUIT:
 				quit = 1;
@@ -322,13 +333,13 @@ void log_line_status(const char *txt, int log_n, uint32_t status, unsigned evid)
 void * mx_line_status_thread(void *ptr)
 {
 	int quit = 0;
-	struct mx_line *line = ptr;
+	struct mx_line *line = (struct mx_line *) ptr;
 
 	LOG(L_MX, "Entering line %i status loop", line->log_n);
 
 	while (!quit) {
 		LOG(L_MX, "Line %i waiting for status event", line->log_n);
-		union mx_event *ev = elst_wait_pop(line->statusq, 0);
+		union mx_event *ev = (union mx_event *) elst_wait_pop(line->statusq, 0);
 		if ((ev->d.type == MX_EV_CMD) && (ev->d.cmd == MX_CMD_STATUS)) {
 			pthread_mutex_lock(&line->status_mutex);
 			log_line_status("Reporting line status", line->log_n, line->status, ev->d.id);
@@ -352,6 +363,5 @@ void * mx_line_status_thread(void *ptr)
 
 	pthread_exit(NULL);
 }
-
 
 // vim: tabstop=4 shiftwidth=4 autoindent

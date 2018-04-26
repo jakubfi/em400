@@ -45,25 +45,25 @@ static int quit;
 
 pthread_mutex_t bus_mutex;
 
-char *iob_req_names[] = {
+const char *iob_req_names[] = {
 	"PA", "CLEAR", "WRITE", "READ",
 	"SEND", "FETCH", "INT",	"e0111",
 	"CPD", "CPR", "CPF", "CPS",
 	"e1100", "e1101", "e1110", "e1111"
 };
 
-char * iob_resp_names[] = {
+const char * iob_resp_names[] = {
 	"e0000", "EN", "OK", "PE",
 	"NO", "e0101", "e0110", "e0111",
 	"e1100", "e1101", "e1110", "e1111"
 };
 
-char *iob_fnkey_names[] = {
+const char *iob_fnkey_names[] = {
 	"START", "MODE", "CLOCK", "STOP*N", "STEP", "FETCH", "STORE", "CYCLE",
 	"LOAD", "BIN", "OPRQ", "CLEAR", "12", "13", "14", "15"
 };
 
-char *iob_reg_names[] = {
+const char *iob_reg_names[] = {
 	"R0", "R1", "R2", "R3", "R4", "R5", "R6", "R7",
 	"IC", "AC", "AR", "IR", "SR", "RZ", "KB", "KB"
 };
@@ -72,7 +72,7 @@ char *iob_reg_names[] = {
 int iob_init(char *bus_dev, int speed)
 {
 	speed_t setspeed = serial_int2speed(speed);
-	if (setspeed == -1) {
+	if (setspeed == 0) {
 		return LOGERR("Wrong FPGA bus speed: %i", speed);
 	}
 
@@ -236,8 +236,9 @@ static struct iob_msg * iob_msg_read(int bus)
 	int bpos = 0;
 	int res;
 	int total_recvd = 0;
+	int need;
 
-	struct iob_msg *m = calloc(1, sizeof(struct iob_msg));
+	struct iob_msg *m = (struct iob_msg *) calloc(1, sizeof(struct iob_msg));
 	if (!m) {
 		goto done;
 	}
@@ -277,7 +278,7 @@ static struct iob_msg * iob_msg_read(int bus)
 	// read arguments
 
 	// TODO: retries/timeout ?
-	int need = m->b_argc;
+	need = m->b_argc;
 	while (need > 0) {
 		res = read(bus, buf+bpos+m->b_argc-need, need);
 		if (res <= 0) {
@@ -403,7 +404,7 @@ static struct iob_msg * iob_dialog(struct iob_msg* mo)
 		mi = iob_msg_read(ibusi[BR]);
 	} else {
 		// fake reply so main MX loop does not stuck waiting for reset to end
-		mi = calloc(1, sizeof(struct iob_msg));
+		mi = (struct iob_msg *) calloc(1, sizeof(struct iob_msg));
 		mi->cmd = IOB_CMD_OK;
 	}
 
@@ -417,6 +418,7 @@ void iob_loop()
 {
 	int io_res;
 	struct iob_msg *mi;
+	struct iob_msg *mo;
 	struct iob_msg *intreq = NULL;
 	fd_set fds;
 	struct timeval timeout;
@@ -507,7 +509,7 @@ void iob_loop()
 						free(intreq);
 						intreq = NULL;
 						// fake reply
-						struct iob_msg *mo = calloc(1, sizeof(struct iob_msg));
+						mo = (struct iob_msg *) calloc(1, sizeof(struct iob_msg));
 						mo->cmd = IOB_CMD_OK;
 						iob_msg_send(ibusi[BW], mo);
 						free(mo);
@@ -533,7 +535,7 @@ void iob_reply_send(int bus, struct iob_msg *mi, int io_res)
 		return;
 	}
 
-	struct iob_msg *mo = calloc(1, sizeof(struct iob_msg));
+	struct iob_msg *mo = (struct iob_msg *) calloc(1, sizeof(struct iob_msg));
 
 	mo->cmd = io_res;
 
@@ -549,7 +551,7 @@ void iob_reply_send(int bus, struct iob_msg *mi, int io_res)
 // -----------------------------------------------------------------------
 void iob_cp_set_keys(uint16_t k)
 {
-	struct iob_msg *mo = calloc(1, sizeof(struct iob_msg));
+	struct iob_msg *mo = (struct iob_msg *) calloc(1, sizeof(struct iob_msg));
 
 	mo->cmd = IOB_CMD_CPD;
 	mo->is_req = 1;
@@ -564,7 +566,7 @@ void iob_cp_set_keys(uint16_t k)
 // -----------------------------------------------------------------------
 void iob_cp_set_rotary(int r)
 {
-	struct iob_msg *mo = calloc(1, sizeof(struct iob_msg));
+	struct iob_msg *mo = (struct iob_msg *) calloc(1, sizeof(struct iob_msg));
 
 	mo->cmd = IOB_CMD_CPR;
 	mo->is_req = 1;
@@ -579,7 +581,7 @@ void iob_cp_set_rotary(int r)
 // -----------------------------------------------------------------------
 void iob_cp_set_fn(int fn, int v)
 {
-	struct iob_msg *mo = calloc(1, sizeof(struct iob_msg));
+	struct iob_msg *mo = (struct iob_msg *) calloc(1, sizeof(struct iob_msg));
 
 	mo->cmd = IOB_CMD_CPF;
 	mo->is_req = 1;
@@ -595,14 +597,14 @@ void iob_cp_set_fn(int fn, int v)
 // -----------------------------------------------------------------------
 struct iob_cp_status * iob_cp_get_status()
 {
-	struct iob_msg *mo = calloc(1, sizeof(struct iob_msg));
+	struct iob_msg *mo = (struct iob_msg *) calloc(1, sizeof(struct iob_msg));
 
 	mo->cmd = IOB_CMD_CPS;
 	mo->is_req = 1;
 
 	struct iob_msg *mi = iob_dialog(mo);
 
-	struct iob_cp_status *stat = malloc(sizeof(struct iob_cp_status));
+	struct iob_cp_status *stat = (struct iob_cp_status *) malloc(sizeof(struct iob_cp_status));
 	stat->data = mi->ad;
 	stat->rot = mi->dt & 0b1111;
 	stat->leds = mi->dt >> 6;
@@ -616,7 +618,7 @@ struct iob_cp_status * iob_cp_get_status()
 // -----------------------------------------------------------------------
 void iob_int_send(int x)
 {
-	struct iob_msg *mo = calloc(1, sizeof(struct iob_msg));
+	struct iob_msg *mo = (struct iob_msg *) calloc(1, sizeof(struct iob_msg));
 
 	mo->cmd = IOB_CMD_IN;
 	mo->is_req = 1;
@@ -634,7 +636,7 @@ void iob_int_send(int x)
 // -----------------------------------------------------------------------
 void iob_pa_send()
 {
-	struct iob_msg *mo = calloc(1, sizeof(struct iob_msg));
+	struct iob_msg *mo = (struct iob_msg *) calloc(1, sizeof(struct iob_msg));
 
 	mo->cmd = IOB_CMD_PA;
 	mo->is_req = 1;
@@ -649,7 +651,7 @@ void iob_pa_send()
 int iob_mem_get(int nb, uint16_t addr, uint16_t *data)
 {
 	int ret;
-	struct iob_msg *mo = calloc(1, sizeof(struct iob_msg));
+	struct iob_msg *mo = (struct iob_msg *) calloc(1, sizeof(struct iob_msg));
 
 	mo->cmd = IOB_CMD_R;
 	mo->is_req = 1;
@@ -678,7 +680,7 @@ int iob_mem_get(int nb, uint16_t addr, uint16_t *data)
 int iob_mem_put(int nb, uint16_t addr, uint16_t data)
 {
 	int ret;
-	struct iob_msg *mo = calloc(1, sizeof(struct iob_msg));
+	struct iob_msg *mo = (struct iob_msg *) calloc(1, sizeof(struct iob_msg));
 
 	mo->cmd = IOB_CMD_W;
 	mo->is_req = 1;

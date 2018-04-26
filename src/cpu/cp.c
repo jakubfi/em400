@@ -151,7 +151,7 @@ int cp_mem_mget(unsigned nb, uint16_t addr, uint16_t *data, unsigned count)
 		iob_cp_set_keys(addr);
 		iob_cp_set_fn(IOB_FN_LOAD, 1);
 		iob_cp_set_rotary(CP_REG_AC);
-		for (int i=0 ; i<count ; i++) {
+		for (unsigned i=0 ; i<count ; i++) {
 			iob_cp_set_fn(IOB_FN_FETCH, 1);
 			stat = iob_cp_get_status();
 			*(data+i) = stat->data;
@@ -189,7 +189,7 @@ int cp_mem_mput(unsigned nb, uint16_t addr, uint16_t *data, unsigned count)
 		iob_cp_set_keys(addr);
 		iob_cp_set_fn(IOB_FN_LOAD, 1);
 		iob_cp_set_rotary(CP_REG_KB);
-		for (int i=0 ; i<count ; i++) {
+		for (unsigned i=0 ; i<count ; i++) {
 			iob_cp_set_keys(*(data+i));
 			iob_cp_set_fn(IOB_FN_STORE, 1);
 		}

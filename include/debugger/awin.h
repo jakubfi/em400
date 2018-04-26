@@ -136,17 +136,17 @@ void aw_layout_redo();
 void aw_layout_refresh();
 
 ACONT * aw_container_add(int calign, int walign, int max, int min, int left);
-AWIN * aw_window_add(ACONT *container, int id, char *title, int border, int scrollable, void (*fun)(int wid), int max, int min, int left, int attr);
+AWIN * aw_window_add(ACONT *container, int id, const char *title, int border, int scrollable, void (*fun)(int wid), int max, int min, int left, int attr);
 
 void aw_attr_new(int id, int bgcolor, int fgcolor, int attr);
 void aw_clear_win(int id);
-void awprint(int id, int attr, char *format, ...);
+void awprint(int id, int attr, const char *format, ...);
 void awfillbg(int id, int attr, char c, int len);
 
 void aw_nc_rl_history_add(char *cmd, int len);
 void aw_nc_rl_history_delete(struct h_entry *h);
-int aw_nc_readline(int id, int pattr, char *prompt, int iattr, char *buffer, int buflen);
-int aw_readline(int id, int pattr, char *prompt, int iattr, char *buffer, int buflen);
+int aw_nc_readline(int id, int pattr, const char *prompt, int iattr, char *buffer, int buflen);
+int aw_readline(int id, int pattr, const char *prompt, int iattr, char *buffer, int buflen);
 
 void awin_tb_append(struct awin_tb *tb, struct awin_tb_line *line);
 void awin_tb_line_append(struct awin_tb_line *line, struct awin_tb_fragment *fragment);
@@ -154,8 +154,8 @@ struct awin_tb_line * aw_tb_get_last(struct awin_tb *tb, int lines);
 void awin_tb_scroll(int wid, int lines);
 void awin_tb_scroll_end(int wid);
 void awin_tb_scroll_home(int wid);
-void awtbprint(int wid, int attr, char *format, ...);
-void awtbbinprint(int id, int attr, char *format, uint32_t value, int size);
+void awtbprint(int wid, int attr, const char *format, ...);
+void awtbbinprint(int id, int attr, const char *format, uint32_t value, int size);
 void awin_tb_update(int wid, int height);
 void awin_tb_clear(int wid);
 

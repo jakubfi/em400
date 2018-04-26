@@ -42,7 +42,6 @@ set(SOURCES_EM400
 	src/cfg.c
  	src/log.c
 	src/log_crk.c
- 	src/log_io.c
 
 	src/utils/utils.c
 	src/utils/elst.c
@@ -66,6 +65,7 @@ set(SOURCES_EM400
 	src/io/chan.c
 	src/io/cchar.c
 	src/io/cchar_term.c
+	src/io/iotester.c
 
 	src/io/dev/dev.c
 	src/io/dev/e4image.c
@@ -93,9 +93,8 @@ set(SOURCES_EM400
 	src/io/mx/proto_som_punchrd.c
 	src/io/mx/proto_som_terminal.c
 
-	src/io/iotester.c
-
 	src/ui/ui.c
+
 	src/ui/cmd/cmd.c
 	src/ui/cmd/commands.c
 	src/ui/cmd/utils.c

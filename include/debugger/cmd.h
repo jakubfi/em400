@@ -24,10 +24,10 @@
 #define MEMDUMP_COLS 16
 
 struct cmd_t {
-	char *cmd;
+	const char *cmd;
 	int tok;
-	char *doc;
-	char *help;
+	const char *doc;
+	const char *help;
 };
 
 int dbg_is_cmd(char *cmd);

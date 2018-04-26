@@ -27,7 +27,7 @@ struct dev_printer {
 // -----------------------------------------------------------------------
 void * dev_printer_create(struct cfg_arg *args)
 {
-	struct dev_printer *printer = malloc(sizeof(struct dev_printer));
+	struct dev_printer *printer = (struct dev_printer *) malloc(sizeof(struct dev_printer));
 	if (!printer) {
 		goto cleanup;
 	}
@@ -43,7 +43,7 @@ cleanup:
 void dev_printer_destroy(void *dev)
 {
 	if (!dev) return;
-	struct dev_printer *printer = dev;
+	struct dev_printer *printer = (struct dev_printer *) dev;
 	free(printer);
 }
 

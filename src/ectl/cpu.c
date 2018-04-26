@@ -276,8 +276,8 @@ int ectl_capa()
 int ectl_load(FILE *f, const char *name, int seg, uint16_t saddr)
 {
 	LOG(L_ECTL, "ECTL load: %i:0x%04x %s", seg, saddr, name);
-	uint16_t *bufw = malloc(sizeof(uint16_t) * 0x10000);
-	uint16_t *bufr = malloc(sizeof(uint16_t) * 0x10000);
+	uint16_t *bufw = (uint16_t *) malloc(sizeof(uint16_t) * 0x10000);
+	uint16_t *bufr = (uint16_t *) malloc(sizeof(uint16_t) * 0x10000);
 
 	int res = fread(bufw, sizeof(uint16_t), 0x10000, f);
 	if (res > 0) {

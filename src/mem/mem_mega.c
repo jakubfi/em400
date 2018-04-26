@@ -54,7 +54,7 @@ int mem_mega_init(int modc, char *prom_image)
 
 	for (mp=mem_mega_mp_start ; mp<=mem_mega_mp_end ; mp++) {
 		for (seg=0 ; seg<MEM_MAX_MEGA_SEGMENTS; seg++) {
-			mem_mega[mp][seg] = calloc(sizeof(uint16_t), MEM_SEGMENT_SIZE);
+			mem_mega[mp][seg] = (uint16_t *) calloc(sizeof(uint16_t), MEM_SEGMENT_SIZE);
 			if (!mem_mega[mp][seg]) {
 				return LOGERR("Memory allocation failed for MEGA map.");
 			}
@@ -63,7 +63,7 @@ int mem_mega_init(int modc, char *prom_image)
 
 	// allocate memory for MEGA PROM
 	mem_mega_prom_hidden = 0;
-	mem_mega_prom = malloc(sizeof(uint16_t) * MEM_SEGMENT_SIZE);
+	mem_mega_prom = (uint16_t *) malloc(sizeof(uint16_t) * MEM_SEGMENT_SIZE);
 	if (!mem_mega_prom) {
 		return LOGERR("Memory allocation error for MEGA PROM.");
 	}

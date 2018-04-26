@@ -197,7 +197,7 @@ void dbg_c_mem(int wid, int block, int start, int end, int maxcols, int maxlines
 	while ((maxlines > 0) && (addr <= end)) {
 		// row header
 		awtbprint(wid, C_LABEL, "0x%04x: ", addr);
-		char *chars = malloc(words*2+1);
+		char *chars = (char *) malloc(words*2+1);
 		for (int w=0 ; w<words ; w++) {
 			res = mem_get(block, addr, &data);
 			if (!res) {
@@ -387,7 +387,7 @@ void dbg_c_brk_add(int wid, char *label, struct node_t *n)
 {
 	static int brkcnt;
 
-	struct evlb_t *b = malloc(sizeof(struct evlb_t));
+	struct evlb_t *b = (struct evlb_t *) malloc(sizeof(struct evlb_t));
 	b->nr = brkcnt++;
 	b->value = 0;
 	b->disabled = 0;
@@ -597,7 +597,7 @@ void dbg_c_watch_list(int wid, int count)
 void dbg_c_watch_add(int wid, char *label, struct node_t *n)
 {
 	static int watchcnt;
-	struct evlb_t *w = malloc(sizeof(struct evlb_t));
+	struct evlb_t *w = (struct evlb_t *) malloc(sizeof(struct evlb_t));
 	w->nr = watchcnt++;
 	w->value = 0;
 	w->disabled = 0;

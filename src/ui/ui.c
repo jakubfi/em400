@@ -16,7 +16,9 @@
 //  51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 
 #define _XOPEN_SOURCE 500
+#ifndef _GNU_SOURCE
 #define _GNU_SOURCE
+#endif
 
 #include <stdlib.h>
 #include <pthread.h>
@@ -41,7 +43,7 @@ struct ui * ui_create(const char *name)
 	struct ui_drv **drv = uis;
 	while (drv && *drv) {
 		if (!strncasecmp(name, (*drv)->name, strlen((*drv)->name))) {
-			struct ui *ui = calloc(1, sizeof(struct ui));
+			struct ui *ui = (struct ui *) calloc(1, sizeof(struct ui));
 			if (!ui) {
 				LOGERR("Memory allocation error when creating UI.");
 				return NULL;

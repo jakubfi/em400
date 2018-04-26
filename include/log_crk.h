@@ -26,7 +26,7 @@ void log_crk_shutdown();
 
 void log_reset_process();
 void log_update_process();
-char * log_get_current_process();
+const char * log_get_current_process();
 char * log_ctx_stringify(struct crk5_process *process);
 void log_log_process(unsigned component);
 void log_handle_syscall(unsigned component, int number, int nb, int addr, uint16_t r4);
