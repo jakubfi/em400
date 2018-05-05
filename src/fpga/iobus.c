@@ -403,6 +403,7 @@ static struct iob_msg * iob_dialog(struct iob_msg* mo)
 	if (select_res > 0) {
 		mi = iob_msg_read(ibusi[BR]);
 	} else {
+		LOG(L_FPGA, "select() returned %i", select_res);
 		// fake reply so main MX loop does not stuck waiting for reset to end
 		mi = (struct iob_msg *) calloc(1, sizeof(struct iob_msg));
 		mi->cmd = IOB_CMD_OK;
