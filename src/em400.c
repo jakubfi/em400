@@ -161,7 +161,7 @@ void em400_usage()
 		"Usage: em400 [option] ...\n"
 		"\n"
 		"Options:\n"
-		"   -h                : isplay help\n"
+		"   -h                : display help\n"
 		"   -c config         : config file to use instead of ~/.em400/em400.cfg\n"
 		"   -p program        : load program image into OS memory at address 0\n"
 		"   -l cmp[,cmp[,...] : enable logging for specified components, allowed are:\n"
