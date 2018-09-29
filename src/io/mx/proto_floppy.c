@@ -237,6 +237,7 @@ int mx_floppy_transmit(struct mx_line *lline, uint16_t *cmd_data)
 	LOG(L_FLOP, "Transmit operation %i: %s", proto_data->op, floppy_op_names[proto_data->op]);
 
 	// TODO: temporary, so mega bootloader works
+	proto_data->ret_len = 0;
 	proto_data->ret_status = MX_FS_NO_DISC;
 	irq = MX_IRQ_ITRER;
 

@@ -259,7 +259,7 @@ static void mx_line_process_cmd(struct mx_line *line, union mx_event *ev)
 fin:
 	// store command output if applicable
 	if ((cmd->output_flen > 0) && (cmd->encode) && (irq != MX_IRQ_INPAO)) {
-		cmd->encode(cmd_data, line->proto_data);
+		cmd->encode(cmd_data + cmd->input_flen, line->proto_data);
 		if (mx_mem_mput(line->multix, 0, cmd_data_addr + cmd->input_flen, cmd_data + cmd->input_flen, cmd->output_flen)) {
 			irq = MX_IRQ_INPAO;
 		}
