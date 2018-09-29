@@ -82,6 +82,7 @@ struct cfg_em400 * cfg_create_default()
 	cfg->log_enabled = 0;
 	cfg->log_file = strdup("em400.log");
 	cfg->log_components = strdup("");
+	cfg->line_buffered = 1;
 
 	// FPGA
 	cfg->fpga = 0;
@@ -339,6 +340,7 @@ void cfg_log(struct cfg_em400 *cfg)
 	LOG(L_EM4H, "Logging (%s):", cfg->log_enabled ? "enabled" : "disabled");
 	LOG(L_EM4H, "   File: %s", cfg->log_file);
 	LOG(L_EM4H, "   Components: %s", cfg->log_components);
+	LOG(L_EM4H, "   Buffering: %s", cfg->line_buffered ? "line" : "full");
 	LOG(L_EM4H, "I/O:");
 
 	char buf[4096];

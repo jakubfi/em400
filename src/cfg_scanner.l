@@ -59,6 +59,7 @@ log				return LOG;
 enabled			return ENABLED;
 file			return LFILE;
 components		return COMPONENTS;
+line_buffered	return LINEBUF;
 
 channel			return CHANNEL;
 unit			return UNIT;

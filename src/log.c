@@ -80,6 +80,8 @@ static FILE *log_f;
 
 static void * log_flusher(void *ptr);
 
+static int line_buffered;
+
 // high-level stuff
 
 #define LOG_F_COMP "%4s | %8s | "
@@ -130,6 +132,8 @@ int log_init(struct cfg_em400 *cfg)
 
 	pthread_mutex_init(&log_mutex, NULL);
 
+	line_buffered = cfg->line_buffered;
+
 	if (cfg->log_enabled) {
 		ret = log_enable();
 		if (ret != E_OK) {
@@ -158,7 +162,8 @@ void log_shutdown()
 // -----------------------------------------------------------------------
 static void * log_flusher(void *ptr)
 {
-	// flush log every LOG_FLUSH_DELAY_MS miliseconds
+	// flush log every LOG_FLUSH_DELAY_MS miliseconds so user
+	// doesn't wait indefinitely for log output when stepping the CPU
 	while (1) {
 		pthread_mutex_lock(&log_mutex);
 		fflush(log_f);
@@ -187,7 +192,9 @@ void log_disable()
 	pthread_mutex_lock(&log_mutex);
 	log_flusher_stop = 1;
 	pthread_mutex_unlock(&log_mutex);
-	pthread_join(log_flusher_th, NULL);
+	if (!line_buffered) {
+		pthread_join(log_flusher_th, NULL);
+	}
 
 	if (log_f) {
 		fclose(log_f);
@@ -209,14 +216,17 @@ int log_enable()
 
 	log_log_timestamp(L_EM4H, "Opened log", __func__);
 
-	// start up flusher thread
-	log_flusher_stop = 0;
-	if (pthread_create(&log_flusher_th, NULL, log_flusher, NULL) != 0) {
-		fclose(log_f);
-		return LOGERR("Failed to spawn log flusher thread.");
+	if (line_buffered) {
+		setlinebuf(log_f);
+	} else {
+		// start up flusher thread only when in fully buffered mode
+		log_flusher_stop = 0;
+		if (pthread_create(&log_flusher_th, NULL, log_flusher, NULL) != 0) {
+			fclose(log_f);
+			return LOGERR("Failed to spawn log flusher thread.");
+		}
+		pthread_setname_np(log_flusher_th, "lflush");
 	}
-
-	pthread_setname_np(log_flusher_th, "lflush");
 
 	log_components_update();
 

@@ -66,6 +66,7 @@ struct cfg_em400 {
 	int log_enabled;
 	char *log_file;
 	char *log_components;
+	int line_buffered;
 
 	int fpga;
 	char *fpga_dev;

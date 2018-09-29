@@ -64,6 +64,7 @@ int cyylex(void);
 %token ENABLED "`enabled`"
 %token LFILE "`file`"
 %token COMPONENTS "loging components"
+%token LINEBUF "line buffered"
 %token DEVICE "`device`"
 %token SPEED "`speed`"
 %token <value> NAME "parameter or device name"
@@ -139,6 +140,7 @@ log_opt:
 	ENABLED '=' BOOL { cfg->log_enabled = $3.v; free($3.s); }
 	| LFILE '=' STRING { free(cfg->log_file); cfg->log_file = $3.s; }
 	| COMPONENTS '=' STRING { free(cfg->log_components); cfg->log_components = $3.s; }
+	| LINEBUF '=' BOOL { cfg->line_buffered = $3.v; free($3.s); }
 	;
 
 fpga_opts:

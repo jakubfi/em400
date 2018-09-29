@@ -99,6 +99,10 @@ log {
 	#
 	# default: none
 	components = "em4h,cpu"
+
+	# Use line buffered log output. If disabled, log is fully buffered.
+	# Default is true.
+	line_buffered = true
 }
 
 #channel 0 = mem {
