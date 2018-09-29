@@ -1,6 +1,10 @@
 Known bugs:
 
-* emulation handles illegal instruction 2nd word argument differently (but does it matter?)
+* emulation handles illegal instruction 2nd word argument differently (but does it really matter?)
+  (IN/OU z bezpośrednim argumentem normalnym: emulator czyta argument i podczas
+  wykonywania instrukcji decyduje o nielegalności w trybie użytkownika, a h/w czyta pierwsze słowo,
+  decyduje o nielegalności i ze względu na to, że ten przypadek ustawia XI, to nie jest zwiększany
+  IC, przez co argument jest traktowany jako kolejny rozkaz, który może się okazać nielegalny)
 
 Cleanups:
 
