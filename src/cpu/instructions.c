@@ -1,4 +1,4 @@
-//  Copyright (c) 2012-2013 Jakub Filipowicz <jakubf@gmail.com>
+//  Copyright (c) 2012-2018 Jakub Filipowicz <jakubf@gmail.com>
 //
 //  This program is free software; you can redistribute it and/or modify
 //  it under the terms of the GNU General Public License as published by
@@ -31,13 +31,6 @@
 #include "utils/utils.h"
 #include "log.h"
 #include "log_crk.h"
-
-#define USER_ILLEGAL \
-	if (Q) { \
-		LOGCPU(L_CPU, "    (ineffective: user-illegal instruction)"); \
-		int_set(INT_ILLEGAL_INSTRUCTION); \
-		return; \
-	}
 
 // -----------------------------------------------------------------------
 // ---- 20 - 36 ----------------------------------------------------------
@@ -150,10 +143,6 @@ void op_bn()
 // -----------------------------------------------------------------------
 void op_ou()
 {
-	if (cpu_user_io_illegal) {
-		USER_ILLEGAL;
-	}
-
 	uint16_t data;
 	int io_result = io_dispatch(IO_OU, N, regs+IR_A);
 	if (cpu_mem_get(QNB, rIC + io_result, &data)) {
@@ -164,10 +153,6 @@ void op_ou()
 // -----------------------------------------------------------------------
 void op_in()
 {
-	if (cpu_user_io_illegal) {
-		USER_ILLEGAL;
-	}
-
 	uint16_t data;
 	int io_result = io_dispatch(IO_IN, N, regs+IR_A);
 	if (cpu_mem_get(QNB, rIC + io_result, &data)) {
@@ -672,8 +657,6 @@ void op_72_lpc()
 // -----------------------------------------------------------------------
 void op_73_hlt()
 {
-	USER_ILLEGAL;
-
 	LOGCPU(L_OP, "HALT 0%02o (alarm: %i)", N, regs[6]&255);
 	cpu_trigger_state(STATE_HALT);
 }
@@ -681,15 +664,12 @@ void op_73_hlt()
 // -----------------------------------------------------------------------
 void op_73_mcl()
 {
-	USER_ILLEGAL;
 	cpu_trigger_state(STATE_CLM);
 }
 
 // -----------------------------------------------------------------------
 void op_73_softint()
 {
-	USER_ILLEGAL;
-
 	// SIT, SIL, SIU, CIT
 	if ((IR_C & 3) == 0) {
 		int_clear(INT_SOFT_U);
@@ -706,24 +686,18 @@ void op_73_softint()
 // -----------------------------------------------------------------------
 void op_73_giu()
 {
-	USER_ILLEGAL;
-
 	// TODO: 2-cpu configuration
 }
 
 // -----------------------------------------------------------------------
 void op_73_gil()
 {
-	USER_ILLEGAL;
-
 	// TODO: 2-cpu configuration
 }
 
 // -----------------------------------------------------------------------
 void op_73_lip()
 {
-	USER_ILLEGAL;
-
 	cpu_ctx_restore();
 
 	if (LOG_ENABLED) {
@@ -741,13 +715,11 @@ void op_73_lip()
 // -----------------------------------------------------------------------
 void op_73_cron()
 {
-	USER_ILLEGAL;
-
 	if (cpu_mod_present) {
 		cpu_mod_on();
 	}
 	// CRON is an illegal instruction anyway
-	op_illegal();
+	int_set(INT_ILLEGAL_INSTRUCTION);
 }
 
 // -----------------------------------------------------------------------
@@ -879,8 +851,6 @@ void op_76_pl()
 // -----------------------------------------------------------------------
 void op_77_mb()
 {
-	USER_ILLEGAL;
-
 	uint16_t data;
 	if (cpu_mem_get(QNB, N, &data)) {
 		rSR = (rSR & 0b111111111000000) | (data & 0b0000000000111111);
@@ -890,8 +860,6 @@ void op_77_mb()
 // -----------------------------------------------------------------------
 void op_77_im()
 {
-	USER_ILLEGAL;
-
 	uint16_t data;
 	if (cpu_mem_get(QNB, N, &data)) {
 		rSR = (rSR & 0b000000000111111) | (data & 0b1111111111000000);
@@ -902,8 +870,6 @@ void op_77_im()
 // -----------------------------------------------------------------------
 void op_77_ki()
 {
-	USER_ILLEGAL;
-
 	uint16_t data = int_get_nchan();
 	cpu_mem_put(QNB, N, data);
 }
@@ -911,8 +877,6 @@ void op_77_ki()
 // -----------------------------------------------------------------------
 void op_77_fi()
 {
-	USER_ILLEGAL;
-
 	uint16_t data;
 	if (cpu_mem_get(QNB, N, &data)) {
 		int_put_nchan(data);
@@ -922,8 +886,6 @@ void op_77_fi()
 // -----------------------------------------------------------------------
 void op_77_sp()
 {
-	USER_ILLEGAL;
-
 	uint16_t data[3];
 	if (cpu_mem_mget(NB, N, data, 3) != 3) return;
 
@@ -979,15 +941,6 @@ void op_77_ib()
 			}
 		}
 	}
-}
-
-// -----------------------------------------------------------------------
-void op_illegal()
-{
-	char *opcode = int2binf("... ... . ... ... ...", rIR, 16);
-	LOGCPU(L_CPU, "    (ineffective: illegal instruction) opcode: %s (0x%04x)", opcode, rIR);
-	free(opcode);
-	int_set(INT_ILLEGAL_INSTRUCTION);
 }
 
 // vim: tabstop=4 shiftwidth=4 autoindent

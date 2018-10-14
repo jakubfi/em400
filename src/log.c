@@ -456,15 +456,15 @@ void log_intlevel_inc()
 }
 
 // -----------------------------------------------------------------------
-void log_log_dasm(int arg, int16_t n)
+void log_log_dasm(int arg, int16_t n, const char *comment)
 {
 	int nb = (log_cycle_sr & 0b0000000000100000) ? (log_cycle_sr & 0b0000000000001111) : 0;
 	emdas_dasm(emd, nb, log_cycle_ic);
 
 	if (arg) {
-		log_log_cpu(L_CPU, "    %-20s N = 0x%04x = %i", dasm_buf, (uint16_t) n, n);
+		log_log_cpu(L_CPU, "    %s%-20s N = 0x%04x = %i", comment, dasm_buf, (uint16_t) n, n);
 	} else {
-		log_log_cpu(L_CPU, "    %-20s", dasm_buf);
+		log_log_cpu(L_CPU, "    %s%-20s", comment, dasm_buf);
 	}
 }
 

@@ -1,4 +1,4 @@
-//  Copyright (c) 2012-2013 Jakub Filipowicz <jakubf@gmail.com>
+//  Copyright (c) 2012-2018 Jakub Filipowicz <jakubf@gmail.com>
 //
 //  This program is free software; you can redistribute it and/or modify
 //  it under the terms of the GNU General Public License as published by
@@ -16,6 +16,7 @@
 //  51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 
 #include <string.h>
+#include <stdlib.h>
 #include <pthread.h>
 
 #include <emawp.h>
@@ -232,7 +233,7 @@ int cpu_init(struct cfg_em400 *cfg, int new_ui)
 	cpu_user_io_illegal = cfg->cpu_user_io_illegal;
 	nomem_stop = cfg->cpu_stop_on_nomem;
 
-	res = iset_build(cpu_op_tab);
+	res = iset_build(cpu_op_tab, cpu_user_io_illegal);
 	if (res != E_OK) {
 		return LOGERR("Failed to build CPU instruction table.");
 	}
@@ -374,33 +375,40 @@ static void cpu_step()
 
 	// fetch instruction
 	if (!mem_get(QNB, rIC, &rIR)) {
-		LOGCPU(L_CPU, "        (NO MEM: instruction fetch)");
+		LOGCPU(L_CPU, "        no mem, instruction fetch");
 		goto memfail;
 	}
-
+	op = cpu_op_tab[rIR];
 	rIC++;
 
-	// find instruction (by design op is always set to something,
-	// even for illegal instructions)
-	op = cpu_op_tab[rIR];
-
-	// end cycle if instruction is ineffective
-	if (P || ((regs[0] & op->nef_mask) != op->nef_result)) {
-		P = 0;
-		rMODc = rMOD = 0;
-		LOGCPU(L_CPU, "    (skip)");
-		// skip also M-arg if present
-		if (op->norm_arg && !IR_C) rIC++;
-		return;
+	// check instruction effectivness
+	if (P || ((regs[0] & op->jmp_nef_mask) != op->jmp_nef_result)) {
+		if (LOG_WANTS(L_CPU)) {
+			log_log_dasm(0, 0, "skip: ");
+		}
+	    if ((op->flags & OP_FL_ARG_NORM) && !IR_C) rIC++;
+		goto ineffective;
+	} else if (op->flags & OP_FL_ILLEGAL) {
+		char *opcode = int2binf("... ... . ... ... ...", rIR, 16);
+		LOGCPU(L_CPU, "    illegal: %s (0x%04x)", opcode, rIR);
+		free(opcode);
+		int_set(INT_ILLEGAL_INSTRUCTION);
+		goto ineffective;
+	} else if (Q && (op->flags & OP_FL_USR_ILLEGAL)) {
+		if (LOG_WANTS(L_CPU)) {
+			log_log_dasm(0, 0, "illegal: ");
+		}
+		int_set(INT_ILLEGAL_INSTRUCTION);
+		goto ineffective;
 	}
 
-	// process argument
-	if (op->norm_arg) {
+	// prepare argument
+	if ((op->flags & OP_FL_ARG_NORM)) {
 		if (IR_C) {
 			N = regs[IR_C] + rMOD;
 		} else {
 			if (!mem_get(QNB, rIC, &data)) {
-				LOGCPU(L_CPU, "    (no mem: long arg fetch @ %i:0x%04x)", QNB, (uint16_t) rIC);
+				LOGCPU(L_CPU, "    no mem, long arg fetch @ %i:0x%04x", QNB, (uint16_t) rIC);
 				goto memfail;
 			} else {
 				N = data + rMOD;
@@ -412,18 +420,18 @@ static void cpu_step()
 		}
 		if (IR_D) {
 			if (!mem_get(QNB, N, &data)) {
-				LOGCPU(L_CPU, "    (no mem: indirect arg fetch @ %i:0x%04x)", QNB, (uint16_t) N);
+				LOGCPU(L_CPU, "    no mem, indirect arg fetch @ %i:0x%04x", QNB, (uint16_t) N);
 				goto memfail;
 			} else {
 				N = data;
 			}
 		}
-	} else if (op->short_arg) {
+	} else if ((op->flags & OP_FL_ARG_SHORT)) {
 		N = (uint16_t) IR_T + (uint16_t) rMOD;
 	}
 
 	if (LOG_WANTS(L_CPU)) {
-		log_log_dasm(op->norm_arg || op->short_arg, N);
+		log_log_dasm((op->flags & (OP_FL_ARG_NORM | OP_FL_ARG_SHORT)), N, "");
 	}
 
 	// execute instruction
@@ -437,7 +445,10 @@ static void cpu_step()
 
 memfail:
 	cpu_mem_fail(QNB);
-	rMODc = rMOD = 0;
+ineffective:
+	P = 0;
+	rMOD = 0;
+	rMODc = 0;
 }
 
 // -----------------------------------------------------------------------

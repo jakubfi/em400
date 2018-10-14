@@ -20,14 +20,22 @@
 
 #include <inttypes.h>
 
+enum opcode_flags {
+	OP_FL_NONE			= 0,
+	OP_FL_ARG_NORM		= 0x1,	// instruction with normal argument
+	OP_FL_ARG_SHORT		= 0x2,	// instruction with short argument
+	OP_FL_ILLEGAL		= 0x4,	// illegal instruction
+	OP_FL_USR_ILLEGAL	= 0x8,	// instruction illegal in user mode
+	OP_FL_IO			= 0x10,	// I/O instruction
+};
+
 typedef void (*opfun)();
 
 struct iset_opcode {
-	int norm_arg;			// has normal argument?
-	int short_arg;			// has short argument?
+	unsigned flags;			// opcode flags
 	opfun fun;				// instruction function
-	int nef_mask;			// ineffectiveness mask
-	int nef_result;			// effectiveness result
+	unsigned jmp_nef_mask;	// jump ineffectiveness mask (R0 is checked through this mask)
+	unsigned jmp_nef_result;// jump effectiveness result (result for the jump to be effective)
 };
 
 struct iset_instruction {
@@ -36,7 +44,7 @@ struct iset_instruction {
 	struct iset_opcode op;	// opcode definition
 };
 
-int iset_build(struct iset_opcode **op_tab);
+int iset_build(struct iset_opcode **op_tab, int cpu_user_io_illegal);
 
 #endif
 

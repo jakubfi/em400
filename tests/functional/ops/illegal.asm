@@ -10,10 +10,7 @@
 	uj	start
 
 exl_handler:
-	cw	r7, 24
-	bb	r0, ?L
 	hlt	077
-	hlt	041
 
 illegal_handler:
 	awt	r7, 1
@@ -97,4 +94,5 @@ user_prog_end:
 ; XPCT rz[6] : 0
 ; XPCT SR : 0b1111100000000001
 
+; XPCT r7 : 26
 ; XPCT ir : 0xec3f
