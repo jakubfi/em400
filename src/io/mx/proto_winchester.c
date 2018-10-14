@@ -141,7 +141,7 @@ void mx_winch_destroy(struct mx_line *pline)
 int mx_winch_trans_decode(uint16_t *data, void *proto_data)
 {
 	struct proto_winchester_data *pd = (struct proto_winchester_data *) proto_data;
-	char *map;
+	char map[64];
 
 	pd->op = (data[0] & 0b0000011100000000) >> 8;
 
@@ -153,9 +153,8 @@ int mx_winch_trans_decode(uint16_t *data, void *proto_data)
 			pd->format.sector_map = data[1];
 			pd->format.start_sector = data[2] << 16;
 			pd->format.start_sector += data[3];
-			map = int2binf("................", data[1], 16);
+			int2binf(map, "................", data[1], 16);
 			LOG(L_WNCH, "Format track, starting logical sector: %i, sector map: %s", pd->format.start_sector, map);
-			free(map);
 			break;
 		case MX_WINCH_OP_READ:
 		case MX_WINCH_OP_WRITE:

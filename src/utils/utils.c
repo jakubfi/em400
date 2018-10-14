@@ -29,10 +29,9 @@
 
 // -----------------------------------------------------------------------
 // convert an integer to formatted string with its binary representation
-char * int2binf(const char *format, uint64_t value, int size)
+char * int2binf(char *buf, const char *format, uint64_t value, int size)
 {
 	const char *i = format;
-	char *buf = (char *) malloc(strlen(format)+1);
 	char *o = buf;
 
 	size--;

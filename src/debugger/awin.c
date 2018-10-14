@@ -656,7 +656,8 @@ void awprint(int id, int attr, const char *format, ...)
 // -----------------------------------------------------------------------
 void awtbbinprint(int id, int attr, const char *format, uint32_t value, int size)
 {
-	char *buf = int2binf(format, value, size);
+	char *buf = malloc(strlen(format)+1);
+	int2binf(buf, format, value, size);
 	awtbprint(id, attr, "%s", buf);
 	free(buf);
 }

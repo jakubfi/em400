@@ -119,6 +119,7 @@ void io_get_intspec(int ch, uint16_t *int_spec)
 int io_dispatch(int dir, uint16_t n, uint16_t *r)
 {
 	int is_mem_cmd = n & 1; // 1 = memory configuration, 0 = I/O command
+	char narg[64];
 
 	// software memory configuration
 	if (is_mem_cmd) {
@@ -135,9 +136,8 @@ int io_dispatch(int dir, uint16_t n, uint16_t *r)
 		struct chan *chan = io_chan[chan_n];
 		int res;
 		if (LOG_WANTS(L_IO)) {
-			char *narg = int2binf("cmd: ... .. ...... ch: .... .", n, 16);
+			int2binf(narg, "cmd: ... .. ...... ch: .... .", n, 16);
 			LOG(L_IO, "I/O %s, chan: %d, n_arg: %s (0x%04x), r_arg: 0x%04x", dir ? "fetch" : "send", chan_n, narg, n, *r);
-			free(narg);
 		}
 
 		if (chan) {

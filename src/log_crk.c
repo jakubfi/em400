@@ -67,10 +67,15 @@ char * log_ctx_stringify(struct crk5_process *process)
 	char *b = buf;
 	int pos = 0;
 
-	char *r0s = int2binf("........ ........", process->r0, 16);
-	char *srs = int2binf(".......... . . ....", process->sr, 16);
-	char *szabme = int2binf("........ ........", process->segmap, 16);
-	char *state = int2binf("........ ........", process->state, 16);
+	char r0s[64];
+	char srs[64];
+	char szabme[64];
+	char state[64];
+
+	int2binf(r0s, "........ ........", process->r0, 16);
+	int2binf(srs, ".......... . . ....", process->sr, 16);
+	int2binf(szabme, "........ ........", process->segmap, 16);
+	int2binf(state, "........ ........", process->state, 16);
 	int ctx_q = (process->sr >> 5) & 1;
 	int ctx_nb = process->sr & 0b1111;
 
@@ -103,11 +108,6 @@ char * log_ctx_stringify(struct crk5_process *process)
 	pos += sprintf(b+pos, "JDAD: 0x%04x \n", process->JDAD);
 	pos += sprintf(b+pos, "Program start (JPAD): 0x%04x \n", process->start);
 	pos += sprintf(b+pos, "FILDIC position (JACN): 0x%04x \n", process->JACN);
-
-	free(r0s);
-	free(srs);
-	free(state);
-	free(szabme);
 
 	return buf;
 }

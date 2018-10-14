@@ -368,6 +368,7 @@ static void cpu_step()
 {
 	struct iset_opcode *op;
 	uint16_t data;
+	char opcode[64];
 
 	if (LOG_WANTS(L_CPU)) {
 		log_store_cycle_state(rSR, rIC);
@@ -389,9 +390,8 @@ static void cpu_step()
 	    if ((op->flags & OP_FL_ARG_NORM) && !IR_C) rIC++;
 		goto ineffective;
 	} else if (op->flags & OP_FL_ILLEGAL) {
-		char *opcode = int2binf("... ... . ... ... ...", rIR, 16);
+		int2binf(opcode, "... ... . ... ... ...", rIR, 16);
 		LOGCPU(L_CPU, "    illegal: %s (0x%04x)", opcode, rIR);
-		free(opcode);
 		int_set(INT_ILLEGAL_INSTRUCTION);
 		goto ineffective;
 	} else if (Q && (op->flags & OP_FL_USR_ILLEGAL)) {
