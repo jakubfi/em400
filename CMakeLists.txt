@@ -11,14 +11,6 @@ include(appversion.cmake)
 # It's still here due to the old UI, conveniently marking all the places where
 # the old UI keeps its tentacles squeezed into the emulation core.
 set(WITH_DEBUGGER 1)
-# This needs to be changed into build types
-set(DEBUG 0)
-
-if(DEBUG)
-	add_definitions(-DDEBUG -g -O0)
-else(DEBUG)
-	add_definitions(-DNDEBUG -O3)
-endif(DEBUG)
 
 # ---- Libraries ---------------------------------------------------------
 
