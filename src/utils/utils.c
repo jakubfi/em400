@@ -27,6 +27,8 @@
 #include <termios.h>
 #include <fcntl.h>
 
+#include "utils/utils.h"
+
 // -----------------------------------------------------------------------
 // convert an integer to formatted string with its binary representation
 char * int2binf(char *buf, const char *format, uint64_t value, int size)
@@ -152,9 +154,15 @@ int serial_open(char *device, speed_t speed)
 	if (fd > 0) {
 		struct termios tty;
 		memset(&tty, 0, sizeof tty);
-		tcgetattr(fd, &tty);
-		cfsetospeed(&tty, speed);
-		cfsetispeed(&tty, speed);
+		if (tcgetattr(fd, &tty) != 0) {
+			return -1;
+		}
+		if (cfsetospeed(&tty, speed) != 0) {
+			return -1;
+		}
+		if (cfsetispeed(&tty, speed) != 0) {
+			return -1;
+		}
 		tty.c_cflag = (tty.c_cflag & ~CSIZE) | CS8;
 		tty.c_iflag &= ~IGNBRK;
 		tty.c_iflag &= ~INLCR;
@@ -167,10 +175,51 @@ int serial_open(char *device, speed_t speed)
 		tty.c_cflag |= (CLOCAL | CREAD);
 		tty.c_cflag &= ~(PARENB | PARODD);
 		tty.c_cflag &= ~CSTOPB;
-		tcsetattr(fd, TCSANOW, &tty);
+		if (tcsetattr(fd, TCSANOW, &tty) != 0) {
+			return -1;
+		}
 	}
 
 	return fd;
+}
+
+// -----------------------------------------------------------------------
+int parity(unsigned int v)
+{
+	int parity = 0;
+	while (v) {
+		parity = !parity;
+		v = v & (v-1);
+	}
+	return parity;
+}
+
+// -----------------------------------------------------------------------
+void word2bin(uint16_t w, uint8_t *b)
+{
+	for (int i=2 ; i>=0 ; i--) {
+		b[i] = (w & 0b00111111) | 0b01000000;
+	    b[i] |= parity(b[i]) << 7;
+		w >>= 6;
+	}
+}
+
+// -----------------------------------------------------------------------
+uint16_t bin2word(uint8_t *b)
+{
+	return ((b[0] & 0b1111) << 12) + ((b[1] & 0b111111) << 6) + (b[2] & 0b111111);
+}
+
+// -----------------------------------------------------------------------
+int bin_is_end(uint8_t b)
+{
+	return ((b & BIN_ENDBYTE) == BIN_ENDBYTE);
+}
+
+// -----------------------------------------------------------------------
+int bin_is_valid(uint8_t b)
+{
+	return (b & 0b01000000) != 0;
 }
 
 // vim: tabstop=4 shiftwidth=4 autoindent

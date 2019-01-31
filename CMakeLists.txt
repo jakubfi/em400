@@ -194,4 +194,18 @@ install(TARGETS emitool
 	RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
 )
 
+# ---- Target: embin -----------------------------------------------------
+
+add_executable(embin
+	src/embin.c
+	src/utils/utils.c
+)
+set_property(TARGET embin PROPERTY C_STANDARD 99)
+target_include_directories(embin PRIVATE ${CMAKE_SOURCE_DIR}/include)
+target_compile_options(embin PUBLIC -Wall)
+
+install(TARGETS embin
+	RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
+)
+
 # vim: tabstop=4

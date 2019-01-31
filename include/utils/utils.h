@@ -21,12 +21,19 @@
 #include <inttypes.h>
 #include <termios.h>
 
+#define BIN_ENDBYTE 0b01010000
+
 char * int2binf(char *buf, const char *format, uint64_t value, int size);
 char * int2chars(uint16_t w, char *buf);
 void endianswap(uint16_t *ptr, int size);
 double stopwatch_ns();
 speed_t serial_int2speed(int s);
-int serial_open(char *device, int speed);
+int serial_open(char *device, speed_t speed);
+int parity(unsigned int v);
+void word2bin(uint16_t w, uint8_t *b);
+uint16_t bin2word(uint8_t *b);
+int bin_is_end(uint8_t b);
+int bin_is_valid(uint8_t b);
 
 #endif
 
