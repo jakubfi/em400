@@ -225,7 +225,7 @@ static int mx_winch_read(struct mx *multix, struct mx_line *line, const struct d
 		// sector read failed
 		if (res != DEV_CMD_OK) {
 			proto_data->ret_status = MX_WS_ERR | MX_WS_NO_SECTOR;
-			return MX_IRQ_INTRA;
+			return MX_IRQ_ITRER;
 		}
 
 		// copy read data into system memory, swapping byte order
@@ -268,7 +268,7 @@ static int mx_winch_write(struct mx *multix, struct mx_line *line, const struct 
 		// sector not found or incomplete
 		if (res != DEV_CMD_OK) {
 			proto_data->ret_status = MX_WS_ERR | MX_WS_NO_SECTOR;
-			return MX_IRQ_INTRA;
+			return MX_IRQ_ITRER;
 		}
 
 		dev_chs_next(&chs, proto_data->heads, 16); // next logical sector
@@ -294,7 +294,7 @@ static int mx_winch_format(struct mx *multix, struct mx_line *line, const struct
 		// sector not found or incomplete
 		if (res != DEV_CMD_OK) {
 			proto_data->ret_status = MX_WS_ERR | MX_WS_NO_SECTOR;
-			return MX_IRQ_INTRA;
+			return MX_IRQ_ITRER;
 		}
 
 		dev_chs_next(&chs, proto_data->heads, 16); // next logical sector
@@ -312,8 +312,9 @@ int mx_winch_transmit(struct mx_line *line, uint16_t *cmd_data)
 
 	// check if there is a device connected
 	if (!line->dev || !line->dev_data) {
+		proto_data->ret_len = 0;
 		proto_data->ret_status = MX_WS_NOT_READY;
-		irq = MX_IRQ_INTRA;
+		irq = MX_IRQ_ITRER;
 		goto fin;
 	}
 
