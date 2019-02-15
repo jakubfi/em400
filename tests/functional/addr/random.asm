@@ -30,7 +30,7 @@
 mask_none:
 	.word	IMASK_NONE
 mask_mem:
-	.word	I_PARITY | I_NOMEM
+	.word	IMASK_PARITY | IMASK_NOMEM
 known_random:
 	.res	2
 mb_dframe:
