@@ -27,9 +27,13 @@
 	.const	IO_INTSPEC	0b000\2 | 0b01\4	; IN
 	.const	IO_EXISTS	0b000\2 | 0b10\4	; IN
 
-; memory configuration bit
+; memory configuration
 
-	.const  MEM_CFG		1\15
+	.const	MEM_CFG		1\15
+	.const	MEM_PAGE	3	; bit position in r argument
+	.const	MEM_SEGMENT	15	; bit position in r argument
+	.const	MEM_FRAME	10	; bit position in N argument
+	.const	MEM_MODULE	14	; bit position in N argument
 
 	.endif
 

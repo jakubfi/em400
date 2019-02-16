@@ -230,7 +230,7 @@ class TestBed:
     # --------------------------------------------------------------------
     def __assembly(self, source):
         aout = "/tmp/" + os.path.basename(source) + ".bin"
-        args = [self.emas, "-Iinclude", "-Oraw", "-o" + aout, source]
+        args = [self.emas, "-DEM400", "-Iinclude", "-Oraw", "-o" + aout, source]
         p = subprocess.Popen(args, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
         p.wait()
         if p.returncode == 0:
