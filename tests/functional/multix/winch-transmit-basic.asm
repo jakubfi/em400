@@ -118,7 +118,7 @@ seq:	; [command, field_addr, exp_irq, check_proc]
 	.word	MXCMD_ATTACH, -1, MX_IDOLI + WINCH_LINE, 0
 	.word	MXCMD_TRANSMIT, park, MX_IETRA + WINCH_LINE, 0
 	.word	MXCMD_TRANSMIT, spare, MX_IETRA + WINCH_LINE, 0
-	.word	MXCMD_TRANSMIT, rdfail, MX_INTRA + WINCH_LINE, 0
+	.word	MXCMD_TRANSMIT, rdfail, MX_ITRER + WINCH_LINE, 0
 	.word	MXCMD_TRANSMIT, rdfail2, MX_INPAO + WINCH_LINE, 0
 	.word	MXCMD_TRANSMIT, -1, MX_INPAO + WINCH_LINE, 0
 	.word	MXCMD_TRANSMIT, write, MX_IETRA + WINCH_LINE, 0
