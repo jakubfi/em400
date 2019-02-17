@@ -11,11 +11,11 @@
 
 	.cpu	mera400
 
-	.include hw.inc
+	.include cpu.inc
 	.include io.inc
 	.include mega.inc
 
-	.const	mega_cfg MEM_CFG | MEGA_ALLOC_FINISH | MEGA_PAS_HIDE | MEGA_ALLOC
+	.const	mega_cfg MEM_CFG | MEGA_ALLOC_DONE | MEGA_EPROM_HIDE | MEGA_ALLOC
 
 	.const	mframe	0\10 | 2\14 | mega_cfg
 	.const	tframe	1\10 | 2\14 | mega_cfg
@@ -24,7 +24,7 @@
 
 	uj	start
 
-	.org	OS_MEM_BEG
+	.org	OS_START
 
 	.include prng.inc
 mask_none:
@@ -60,9 +60,9 @@ start:
 	lw	r1, stack
 	rw	r1, STACKP
 	lw	r1, parity
-	rw	r1, IV_PARITY
+	rw	r1, INTV_PARITY
 	lw	r1, nomem
-	rw	r1, IV_NOMEM
+	rw	r1, INTV_NOMEM
 
 ; fill the masking frame with a known value
 	lw	r1, cfgpage

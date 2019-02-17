@@ -5,7 +5,7 @@
 ; is write to PROM ineffective?
 ; does PROM allocate only last segment of block 0?
 
-	.include hw.inc
+	.include cpu.inc
 	.include io.inc
 	.include mega.inc
 
@@ -25,20 +25,20 @@ nomem_proc:
 
 err:	hlt	040
 
-	.org	OS_MEM_BEG
+	.org	OS_START
 
 start:	lwt	r7, 0
 	lw	r1, stack
 	rw	r1, STACKP
 	lw	r1, nomem_proc
-	rw	r1, IV_NOMEM
+	rw	r1, INTV_NOMEM
 
 	lw	r1, 14\3 | nb
 	ou	r1, mp | 3\10 | MEGA_ALLOC | MEM_CFG
 	.word	err, err, ok0, err
 
 ok0:	lw	r1, ab | nb
-	ou	r1, mp | seg | MEGA_ALLOC | MEGA_PAS_HIDE | MEGA_ALLOC_FINISH | MEM_CFG
+	ou	r1, mp | seg | MEGA_ALLOC | MEGA_EPROM_HIDE | MEGA_ALLOC_DONE | MEM_CFG
 	.word	err, err, ok, err
 
 ok:	im	mask
@@ -46,7 +46,7 @@ ok:	im	mask
 	rw	r1, ab
 
 	lw	r1, 0
-	ou	r1, MEGA_ALLOC + MEGA_PAS_SHOW + MEM_CFG
+	ou	r1, MEGA_ALLOC + MEGA_EPROM_SHOW + MEM_CFG
 	.word	err, err, ok2, err
 
 ok2:	lw	r2, magic
@@ -57,7 +57,7 @@ ok2:	lw	r2, magic
 	lw	r4, [ab]
 
 	lw	r1, 0
-	ou	r1, MEGA_ALLOC | MEGA_PAS_HIDE | MEM_CFG
+	ou	r1, MEGA_ALLOC | MEGA_EPROM_HIDE | MEM_CFG
 	.word	err, err, ok3, err
 
 ok3:	lw	r5, [ab]

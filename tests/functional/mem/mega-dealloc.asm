@@ -2,7 +2,7 @@
 
 ; does MEGA deallocation work?
 
-	.include hw.inc
+	.include cpu.inc
 	.include io.inc
 	.include mega.inc
 
@@ -22,16 +22,16 @@ nomem_proc:
 
 err:	hlt	040
 
-	.org	OS_MEM_BEG
+	.org	OS_START
 
 start:	lwt	r7, 0
 	lw	r1, stack
 	rw	r1, STACKP
 	lw	r1, nomem_proc
-	rw	r1, IV_NOMEM
+	rw	r1, INTV_NOMEM
 
 	lw	r1, ab | nb
-	ou	r1, mp | seg | MEGA_ALLOC | MEGA_PAS_HIDE | MEGA_ALLOC_FINISH | MEM_CFG
+	ou	r1, mp | seg | MEGA_ALLOC | MEGA_EPROM_HIDE | MEGA_ALLOC_DONE | MEM_CFG
 	.word	err, err, ok, err
 
 ok:	mb	mask
@@ -40,7 +40,7 @@ ok:	mb	mask
 	pw	r1, ab
 
 	lw	r1, ab | nb
-	ou	r1, MEGA_DEALLOC | MEM_CFG
+	ou	r1, MEGA_FREE | MEM_CFG
 	.word	err, err, ok2, err
 
 ok2:	tw	r1, ab

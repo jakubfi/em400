@@ -1,21 +1,21 @@
 
-	.include hw.inc
+	.include cpu.inc
 
 	uj	start
 
 stack:	.res	4
 softx:	lip
 
-mask:	.word	IMASK_SOFT
+mask:	.word	IMASK_GROUP_L
 one:	.word	1
 minus1:	.word	-1
 
-	.org	OS_MEM_BEG
+	.org	OS_START
 
 start:	lwt	r1, stack
 	rw	r1, STACKP
 	lwt	r1, softx
-	rw	r1, IV_SW_HIGH
+	rw	r1, INTV_SW_H
 	im	mask
 	lwt	r1, 0
 

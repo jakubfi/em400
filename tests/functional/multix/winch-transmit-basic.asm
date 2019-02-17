@@ -3,9 +3,9 @@
 
 	.cpu	mx16
 
-	.include hw.inc
+	.include cpu.inc
 	.include io.inc
-	.include mx.inc
+	.include multix.inc
 
 	; use bit 15 of the register I/O argument for IN/OU selection
 	.const IO_IN 1
@@ -13,10 +13,10 @@
 
 	; winchester device address
 	.const	WINCH_LINE 2
-	.const	WINCH_ADDR MX_CHAN | WINCH_LINE\10
+	.const	WINCH_ADDR 1\IO_CHAN | WINCH_LINE\10
 
 	; MULTIX command shortcuts
-	.const	MXCMD_SETCFG	MX_IO_SETCFG | MX_CHAN | IO_OU
+	.const	MXCMD_SETCFG	MX_IO_SETCFG | 1\IO_CHAN | IO_OU
 	.const	MXCMD_STATUS	MX_IO_STATUS | WINCH_ADDR | IO_OU
 	.const	MXCMD_ATTACH	MX_IO_ATTACH | WINCH_ADDR | IO_OU
 	.const	MXCMD_DETACH	MX_IO_DETACH | WINCH_ADDR | IO_IN
@@ -39,14 +39,14 @@
 	uj	start
 
 msk_0:	.word	IMASK_NONE
-msk_mx:	.word	IMASK_CH0_1 | IMASK_CPU
+msk_mx:	.word	IMASK_CH0_1 | IMASK_GROUP_H
 xlip:	lip
 
 	.org	INTV
 	.res	16, xlip	; dummy interrupt handlers
 	.word	xlip		; dummy EXL handler
 
-	.org	OS_MEM_BEG
+	.org	OS_START
 
 	.include prng.inc
 
@@ -173,7 +173,7 @@ start:
 	lw	r1, stack
 	rw	r1, STACKP
 	lw	r1, mx_proc
-	rw	r1, MX_IV
+	rw	r1, INTV_CH1
 	im	msk_mx
 
 fill:	; fill write buffer with random data

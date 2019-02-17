@@ -1,5 +1,5 @@
 
-	.include hw.inc
+	.include cpu.inc
 
 	lw	r2, 20
 	lw	r3, 30
@@ -11,7 +11,7 @@
 	lw	r1, stack
 	rw	r1, STACKP
 	lw	r1, nomem_proc
-	rw	r1, IV_NOMEM
+	rw	r1, INTV_NOMEM
 
 	lw	r1, 0b0000000000000001
 	ou	r1, 0b0000000000000011

@@ -4,11 +4,11 @@
 
 	.cpu	mera400
 
-	.include hw.inc
+	.include cpu.inc
 
 	uj	start
 
-	.org	OS_MEM_BEG
+	.org	OS_START
 
 	.include iotester.inc
 

@@ -1,6 +1,6 @@
 ; OPTS -c configs/soft_awp.cfg
 
-	.include hw.inc
+	.include cpu.inc
 
 	uj	start
 

@@ -4,19 +4,19 @@
 
 	.cpu	mera400
 
-	.include hw.inc
+	.include cpu.inc
 
 	uj	start
 
 	.org	INTV
 	.res	32, io_iv
 
-	.org	OS_MEM_BEG
+	.org	OS_START
 
 	.include iotester.inc
 
 mask_0:	.word	IMASK_NONE
-mask_ch:.word	IMASK_CH_ALL
+mask_ch:.word	IMASK_ALL_CH
 
 io_iv:	md	[STACKP]
 	lw	r1, [-1]

@@ -2,9 +2,9 @@
 
 ; MULTIX' "check if exists" command should return OK both before and after mx initialization
 
-	.include hw.inc
+	.include cpu.inc
 	.include io.inc
-	.include mx.inc
+	.include multix.inc
 
 	uj	start
 
@@ -18,24 +18,24 @@ mx_proc:
 	hlt	042		; not iwyze
 	lip
 
-	.org	OS_MEM_BEG
+	.org	OS_START
 start:
 	lw	r3, stack
 	rw	r3, STACKP
 	lw	r3, mx_proc
-	rw	r3, MX_IV
+	rw	r3, INTV_CH1
 
 	mcl
 
 	; "exists" before initialization
-	in	r5, IO_EXISTS | MX_CHAN
+	in	r5, IO_EXISTS | 1\IO_CHAN
 	.word	fail, fail, ok, fail
 fail:	hlt	040
 ok:	im	mask
 	hlt		; wait for mx int
 
 	; "exists" after initialization
-	in	r5, IO_EXISTS | MX_CHAN
+	in	r5, IO_EXISTS | 1\IO_CHAN
 	.word	fail2, fail2, ok2, fail2
 fail2:	hlt	041
 ok2:	hlt	077

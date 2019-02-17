@@ -1,6 +1,6 @@
 ; in user mode, only LPC may change upper r0 byte
 
-	.include hw.inc
+	.include cpu.inc
 	.include io.inc
 
 	.const	user_block 1
@@ -19,7 +19,7 @@ exl_handler:
 sys_sr:	.word	IMASK_NOMEM | 0
 user_sr:.word	IMASK_NOMEM | user_block
 
-	.org	OS_MEM_BEG
+	.org	OS_START
 start:
 	lwt	r1, 0\3 | user_block\15
 	ou	r1, 1\14 | MEM_CFG
@@ -28,9 +28,9 @@ err:
 	hlt	040
 setup:
 	lwt	r1, nomem_handler
-	rw	r1, IV_NOMEM
+	rw	r1, INTV_NOMEM
 	lwt	r1, exl_handler
-	rw	r1, EXLP
+	rw	r1, EXLV
 	lw	r1, stack
 	rw	r1, STACKP
 

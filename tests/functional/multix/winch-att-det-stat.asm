@@ -14,13 +14,13 @@
 
 	.cpu	mx16
 
-	.include hw.inc
+	.include cpu.inc
 	.include io.inc
-	.include mx.inc
+	.include multix.inc
 
 	uj	start
 
-	.org	OS_MEM_BEG
+	.org	OS_START
 
 msk_mx:	.word	IMASK_CH0_1
 
@@ -34,10 +34,10 @@ mxdata:	.word	-1
 
 ; ------------------------------------------------------------------------
 
-	.const	MXCMD_SETCFG	MX_IO_SETCFG | MX_CHAN
-	.const	MXCMD_STATUS	MX_IO_STATUS | MX_CHAN
-	.const	MXCMD_ATTACH	MX_IO_ATTACH | MX_CHAN
-	.const	MXCMD_DETACH	MX_IO_DETACH | MX_CHAN
+	.const	MXCMD_SETCFG	MX_IO_SETCFG | 1\IO_CHAN
+	.const	MXCMD_STATUS	MX_IO_STATUS | 1\IO_CHAN
+	.const	MXCMD_ATTACH	MX_IO_ATTACH | 1\IO_CHAN
+	.const	MXCMD_DETACH	MX_IO_DETACH | 1\IO_CHAN
 
 	.const	test_size	5 ; each test is: [io_type, command, arg, expected_irq, expected_result]
 seq:
@@ -168,9 +168,9 @@ start:
 	lw	r1, stack
 	rw	r1, STACKP
 	lw	r1, mx_proc
-	rw	r1, MX_IV
+	rw	r1, INTV_CH1
 	lw	r1, timer_proc
-	rw	r1, IV_TIMER
+	rw	r1, INTV_TIMER
 
 	lw	r2, seq
 	im	msk_mx

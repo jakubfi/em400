@@ -4,7 +4,7 @@
 
 	.cpu	mera400
 
-	.include hw.inc
+	.include cpu.inc
 
 	.const	BUF_SIZE 1024
 	.const	STACK_SIZE 32*4
@@ -16,12 +16,12 @@
 	.org	INTV
 	.res	32, iotester_iv
 
-	.org	OS_MEM_BEG
+	.org	OS_START
 
 	.include iotester.inc
 
 mask_0:	.word	IMASK_NONE
-mask_ch:.word	IMASK_CH_ALL
+mask_ch:.word	IMASK_ALL_CH
 
 ; ------------------------------------------------
 start:

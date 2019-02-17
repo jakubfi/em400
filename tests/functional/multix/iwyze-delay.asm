@@ -3,18 +3,18 @@
 
 ; IWYZE MULTIX interrupt should be delayed
 
-	.include hw.inc
-	.include mx.inc
+	.include cpu.inc
+	.include multix.inc
 
 	UJ	start
 
 stack:	.res	8
 mask0:	.word	0
 maskc:	.word	IMASK_CH0_1
-maskt:	.word	IMASK_CPU | IMASK_CH0_1
+maskt:	.word	IMASK_GROUP_H | IMASK_CH0_1
 tcount:	.word	-50		; we'll wait 0.5s for multix interrupt (50 x timer tick)
 
-	.org	OS_MEM_BEG
+	.org	OS_START
 
 ; ------------------------------------------------------------------------
 tim_proc:
@@ -40,10 +40,10 @@ start:
 	LW	r3, stack
 	RW	r3, STACKP
 	LW	r3, mx_proc
-	RW	r3, MX_IV
+	RW	r3, INTV_CH1
 	LW	r3, tim_proc
-	RW	r3, IV_TIMER
-	RW	r3, IV_EXTRA
+	RW	r3, INTV_TIMER
+	RW	r3, INTV_UNUSED
 
 	LW	r7, [tcount]
 

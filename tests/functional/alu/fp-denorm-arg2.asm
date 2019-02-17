@@ -7,7 +7,7 @@ operation:
 	uj	r5
 
 tests:
-	.word	0, 0, INT_ENORM
+	.word	0, 0, I_FP_ERR
 	.float	3
 	.word	0x2000, 0x0000, 0x0004 ; 4 (denormalized)
 	.float	3

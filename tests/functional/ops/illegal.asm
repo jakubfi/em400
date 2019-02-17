@@ -1,6 +1,6 @@
 ; in user mode, some instructions are illegal
 
-	.include hw.inc
+	.include cpu.inc
 
 	.equ user_block 1
 	.equ user_prog_dest 0
@@ -21,9 +21,9 @@ nomem_handler:
 
 sys_mb:
 zerod:	.word	0
-user_sr:.word	IMASK_PARITY | IMASK_NOMEM | IMASK_2CPU_HIGH | IMASK_IFPOWER | IMASK_CPU | user_block
+user_sr:.word	IMASK_PARITY | IMASK_NOMEM | IMASK_CPU_H | IMASK_IFPOWER | IMASK_GROUP_H | user_block
 
-	.org OS_MEM_BEG
+	.org OS_START
 start:
 	lwt	r7, 0
 	lwt	r1, user_block
@@ -33,13 +33,13 @@ err:
 	hlt	040
 setup:
 	lwt	r1, exl_handler
-	rw	r1, EXLP
+	rw	r1, EXLV
 	lw	r1, stack
 	rw	r1, STACKP
 	lwt	r1, illegal_handler
-	rw	r1, IV_ILLEGAL
+	rw	r1, INTV_ILLEGAL
 	lwt	r1, nomem_handler
-	rw	r1, IV_NOMEM
+	rw	r1, INTV_NOMEM
 
 	mb	user_sr
 	im	user_sr

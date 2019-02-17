@@ -8,16 +8,16 @@
 ;  * give IWYZE when executed 'by hand' after initialization with interrupts disabled
 ;  * give 0 afterwards
 
-	.include hw.inc
-	.include mx.inc
+	.include cpu.inc
+	.include multix.inc
 
 	uj	start
 
 zmask:	.word	IMASK_NONE
 cmask:	.word	IMASK_CH0_1
-tmask:	.word	IMASK_CPU
+tmask:	.word	IMASK_GROUP_H
 
-	.org	OS_MEM_BEG
+	.org	OS_START
 
 ; ------------------------------------------------------------------------
 mx_proc:
@@ -36,7 +36,7 @@ tim_proc:
 ; ------------------------------------------------------------------------
 get_intspec:
 	lwt	r5, -13
-	in	r5, IO_INTSPEC | MX_CHAN
+	in	r5, IO_INTSPEC | 1\IO_CHAN
 	.word	f, f, ok, f
 f:	uj	r3
 ok:	shc	r5, 8
@@ -50,9 +50,9 @@ start:
 	lw	r3, stack
 	rw	r3, STACKP
 	lw	r3, mx_proc
-	rw	r3, MX_IV
+	rw	r3, INTV_CH1
 	lw	r3, tim_proc
-	rw	r3, IV_TIMER
+	rw	r3, INTV_TIMER
 
 	lwt	r7, 0	; reset wait timer counter
 
@@ -70,7 +70,7 @@ start:
 	hlt	042
 
 	; reset multix
-	in	r2, IO_RESET | MX_CHAN
+	in	r2, IO_RESET | 1\IO_CHAN
 	.word	f3, f3, ok3, f3
 f3:	hlt	043
 ok3:

@@ -2,7 +2,7 @@
 
 ; does MEGA allow to allocate the same physical segment for two logical segments?
 
-	.include hw.inc
+	.include cpu.inc
 	.include io.inc
 	.include mega.inc
 
@@ -23,16 +23,16 @@ nomem_proc:
 	lip
 err:	hlt	040
 
-	.org	OS_MEM_BEG
+	.org	OS_START
 
 start:	lwt	r7, 0
 	lw	r1, stack
 	rw	r1, STACKP
 	lw	r1, nomem_proc
-	rw	r1, IV_NOMEM
+	rw	r1, INTV_NOMEM
 
 	lw	r1, ab1 | nb
-	ou	r1, seg | mp | MEM_CFG | MEGA_PAS_HIDE | MEGA_ALLOC_FINISH | MEGA_ALLOC
+	ou	r1, seg | mp | MEM_CFG | MEGA_EPROM_HIDE | MEGA_ALLOC_DONE | MEGA_ALLOC
 	.word	err, err, ok, err
 
 ok:	lw	r1, ab2 | nb

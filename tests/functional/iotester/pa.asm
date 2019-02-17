@@ -4,11 +4,11 @@
 
 	.cpu	mera400
 
-	.include hw.inc
+	.include cpu.inc
 
 	uj	start
 
-	.org	OS_MEM_BEG
+	.org	OS_START
 
 	.include iotester.inc
 
@@ -24,7 +24,7 @@ start:
 	lw	r1, stack
 	rw	r1, STACKP
 	lw	r1, if_power
-	rw	r1, IV_IFPOWER
+	rw	r1, INTV_IFPOWER
 	im	mask_if
 
 	lj	iotester_pa

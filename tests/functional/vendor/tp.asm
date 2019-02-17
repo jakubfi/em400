@@ -10,7 +10,7 @@
 
 	.cpu	mera400
 
-	.include hw.inc
+	.include cpu.inc
 	.include io.inc
 
 	; use EM400 compatibile hlt codes if running in an emulator
@@ -2852,21 +2852,21 @@ x0c65:	hlt	ERR_CODE
 
 x0c66:	mcl
 x0c67:	lw	r1, int_sw_low_proc1
-x0c69:	rw	r1, IV_SW_LOW
+x0c69:	rw	r1, INTV_SW_L
 x0c6b:	lw	r1, stack
 x0c6d:	rw	r1, stackp
-x0c6f:	lw	r1, IMASK_SOFT
+x0c6f:	lw	r1, IMASK_GROUP_L
 x0c71:	rw	r1, tmp_mask
 x0c73:	im	tmp_mask
-x0c75:	lwt	r1, 1 ; I_SW_LOW
+x0c75:	lwt	r1, 1 ; I_SW_L
 x0c76:	rw	r1, intrs
 x0c78:	fi	intrs
 
 int_sw_low_proc1:
 x0c7a:	lw	r1, int31
-x0c7c:	rw	r1, IV_SW_LOW
+x0c7c:	rw	r1, INTV_SW_L
 x0c7e:	lw	r1, [stack+2] ; load SR from the stack
-x0c80:	cw	r1, IMASK_SOFT
+x0c80:	cw	r1, IMASK_GROUP_L
 x0c82:	jes	1
 x0c83:	hlt	ERR_CODE
 
@@ -2896,7 +2896,7 @@ x0c92:	lw	r1, IMASK_ALL
 x0c94:	rw	r1, tmp_mask_2
 x0c96:	im	tmp_mask_2
 x0c98:	lw	r1, exl_proc
-x0c9a:	rw	r1, EXLP
+x0c9a:	rw	r1, EXLV
 x0c9c:	exl	255
 
 exl_proc:
@@ -2924,8 +2924,8 @@ x0cb6:	hlt	ERR_CODE
 ; (interrupts 28-31 are masked when serving exl)
 
 x0cb7:	lw	r1, exl_int_proc
-x0cb9:	rw	r1, IV_SW_LOW
-x0cbb:	lwt	r1, I_SW_LOW
+x0cb9:	rw	r1, INTV_SW_L
+x0cbb:	lwt	r1, I_SW_L
 x0cbc:	rw	r1, intrs
 x0cbe:	fi	intrs ; this shouldn't report any interrupt
 x0cc0:	mcl
@@ -2933,12 +2933,12 @@ x0cc1:	ujs	exl_int_continue
 
 exl_int_proc: ; this shouldn't be called
 x0cc2:	lw	r1, int31
-x0cc4:	rw	r1, IV_SW_LOW
+x0cc4:	rw	r1, INTV_SW_L
 x0cc6:	hlt	ERR_CODE
 
 exl_int_continue:
 x0cc7:	lw	r1, int31
-x0cc9:	rw	r1, IV_SW_LOW
+x0cc9:	rw	r1, INTV_SW_L
 x0ccb:	mcl
 x0ccc:	ujs	sp_test
 
@@ -2961,7 +2961,7 @@ x0cd5:	hlt	ERR_CODE
 ; at this point SR should already be set to IMASK_ALL by the sp call
 
 x0cd6:	lw	r1, int_sw_low_proc2
-x0cd8:	rw	r1, IV_SW_LOW
+x0cd8:	rw	r1, INTV_SW_L
 x0cda:	lw	r1, stack
 x0cdc:	rw	r1, stackp
 x0cde:	lwt	r1, 1
@@ -2970,7 +2970,7 @@ x0ce1:	fi	intrs
 
 int_sw_low_proc2:
 x0ce3:	lw	r1, int31
-x0ce5:	rw	r1, IV_SW_LOW
+x0ce5:	rw	r1, INTV_SW_L
 x0ce7:	lw	r1, IMASK_ALL
 x0ce9:	cw	r1, [stack+2] ; SR
 x0ceb:	jes	1
@@ -2978,15 +2978,15 @@ x0cec:	hlt	ERR_CODE
 
 ; mb
 
-x0ced:	lw	r1, IMASK_SOFT | 0\SR_Q | 1\SR_BS | 15\SR_NB ; try to sneak setting mask for soft interrupts
+x0ced:	lw	r1, IMASK_GROUP_L | 0\SR_Q | 1\SR_BS | 15\SR_NB ; try to sneak setting mask for soft interrupts
 x0cef:	rw	r1, temp3
 x0cf1:	mcl
 x0cf2:	mb	temp3
 x0cf4:	lw	r1, int_sw_low_proc3
-x0cf6:	rw	r1, IV_SW_LOW
+x0cf6:	rw	r1, INTV_SW_L
 x0cf8:	lw	r1, stack
 x0cfa:	rw	r1, stackp
-x0cfc:	lw	r1, IMASK_SOFT
+x0cfc:	lw	r1, IMASK_GROUP_L
 x0cfe:	rw	r1, tmp_mask
 x0d00:	im	tmp_mask
 x0d02:	lwt	r1, 1
@@ -2995,9 +2995,9 @@ x0d05:	fi	intr2
 
 int_sw_low_proc3:
 x0d07:	lw	r1, int31
-x0d09:	rw	r1, IV_SW_LOW
+x0d09:	rw	r1, INTV_SW_L
 x0d0b:	lw	r1, [stack+2] ; SR
-x0d0d:	cw	r1, IMASK_SOFT | 0\SR_Q | 1\SR_BS | 15\SR_NB ; SR should not change (=no interrupt served)
+x0d0d:	cw	r1, IMASK_GROUP_L | 0\SR_Q | 1\SR_BS | 15\SR_NB ; SR should not change (=no interrupt served)
 x0d0f:	jes	1
 x0d10:	hlt	ERR_CODE
 
@@ -3019,7 +3019,7 @@ x0d20:	fi	intr2 ; should do nothing
 ; no other interrupt should be served after lip
 
 x0d22:	lw	r1, lip_err
-x0d24:	rw	r1, IV_PARITY
+x0d24:	rw	r1, INTV_PARITY
 x0d26:	lw	r1, stack+4
 x0d28:	rw	r1, STACKP
 x0d2a:	lip
@@ -3042,7 +3042,7 @@ lip_err:
 x0d36:	hlt	ERR_CODE
 
 x0d37:	lw	r1, int01
-x0d39:	rw	r1, IV_PARITY
+x0d39:	rw	r1, INTV_PARITY
 x0d3b:	ujs	nb_gt0
 
 tmp_mask:
@@ -3839,7 +3839,7 @@ x1119:	hlt	ERR_CODE
 ; initial tests run in NB=15
 
 x111a:	lw	r1, nb15_initial_exl_proc
-x111c:	rw	r1, EXLP
+x111c:	rw	r1, EXLV
 x111e:	lj	nb15_initial_copy
 x1120:	mb	nb0
 x1122:	sp	nb15_initial_sp ; jumps to nb15_initial_copy_start in NB=15
@@ -4031,9 +4031,9 @@ test_user_illegal:
 ; test nielegalnych rozkazów w bloku użytkowym (Q=1, NB=1)
 
 x11d6:	lw	r1, int_user_illegal_proc
-x11d8:	rw	r1, IV_ILLEGAL
+x11d8:	rw	r1, INTV_ILLEGAL
 x11da:	lw	r1, int_user_illegal_exl_proc
-x11dc:	rw	r1, EXLP
+x11dc:	rw	r1, EXLV
 x11de:	lf	user_illegal_stack ; trick for jumping to user code with 'lip' later on
 x11e0:	rf	stack
 x11e2:	lw	r1, stack+4
@@ -4069,7 +4069,7 @@ x1200:	rw	r1, stack
 x1202:	ujs	int_user_illegal_next
 int_user_illegal_done:
 x1203:	lw	r1, int06
-x1205:	rw	r1, IV_ILLEGAL
+x1205:	rw	r1, INTV_ILLEGAL
 x1207:	lw	r1, stack
 x1209:	rw	r1, stackp
 x120b:	uj	int_user_illegal_finished
@@ -4083,7 +4083,7 @@ x1212:	ujs	int_user_illegal_proc
 user_illegal_stack:
 x1213:	.word	nb1_code_start	; IC (NB=1)
 x1214:	.word	0		; R0
-x1215:	.word	IMASK_CPU | 1\SR_Q | 1\SR_NB	; SR
+x1215:	.word	IMASK_GROUP_H | 1\SR_Q | 1\SR_NB	; SR
 
 leave_to_nb0_snippet:
 x1216:	exl	0 ; this should never be reached, each illegal istruction should set the interrupt
@@ -4127,34 +4127,34 @@ int_user_illegal_finished:
 x122f:	ujs	soft_int_test
 
 soft_int_test_vectors:
-x1230:	.word	I_MASKABLE - I_SW_HIGH - I_SW_LOW
-x1231:	.word	I_MASKABLE - I_SW_HIGH
-x1232:	.word	I_SW_HIGH
-x1233:	.word	I_SW_HIGH | I_SW_LOW
+x1230:	.word	I_MASKABLE - I_SW_H - I_SW_L
+x1231:	.word	I_MASKABLE - I_SW_H
+x1232:	.word	I_SW_H
+x1233:	.word	I_SW_H | I_SW_L
 
 soft_int_siu_vectors:
-x1234:	.word	I_MASKABLE - I_SW_LOW
+x1234:	.word	I_MASKABLE - I_SW_L
 x1235:	.word	I_MASKABLE
-x1236:	.word	I_SW_HIGH
-x1237:	.word	I_SW_HIGH | I_SW_LOW
+x1236:	.word	I_SW_H
+x1237:	.word	I_SW_H | I_SW_L
 
 soft_int_sil_vectors:
-x1238:	.word	I_MASKABLE - I_SW_HIGH
-x1239:	.word	I_MASKABLE - I_SW_HIGH
-x123a:	.word	I_SW_HIGH | I_SW_LOW
-x123b:	.word	I_SW_HIGH | I_SW_LOW
+x1238:	.word	I_MASKABLE - I_SW_H
+x1239:	.word	I_MASKABLE - I_SW_H
+x123a:	.word	I_SW_H | I_SW_L
+x123b:	.word	I_SW_H | I_SW_L
 
 soft_int_cit_vectors:
-x123c:	.word	I_MASKABLE - I_SW_HIGH - I_SW_LOW
-x123d:	.word	I_MASKABLE - I_SW_HIGH - I_SW_LOW
+x123c:	.word	I_MASKABLE - I_SW_H - I_SW_L
+x123d:	.word	I_MASKABLE - I_SW_H - I_SW_L
 x123e:	.word	I_NONE
 x123f:	.word	I_NONE
 
 soft_int_sit_vectors:
 x1240:	.word	I_MASKABLE
 x1241:	.word	I_MASKABLE
-x1242:	.word	I_SW_HIGH | I_SW_LOW
-x1243:	.word	I_SW_HIGH | I_SW_LOW
+x1242:	.word	I_SW_H | I_SW_L
+x1243:	.word	I_SW_H | I_SW_L
 
 soft_int_test:
 
@@ -4348,7 +4348,7 @@ x12fa:	hlt	ERR_CODE
 ; software AWP should mask interrupts 28-31 (SR9)
 
 x12fb:	lw	r1, soft_awp_int_sw_low_proc
-x12fd:	rw	r1, IV_SW_LOW
+x12fd:	rw	r1, INTV_SW_L
 x12ff:	lwt	r1, 1 ; software low interrupt
 x1300:	rw	r1, soft_awp_intr
 x1302:	fi	soft_awp_intr ; this shouldn't report any interrupt
@@ -4358,7 +4358,7 @@ soft_awp_int_sw_low_proc:
 x1306:	lw	r0, [soft_awp_current_op_idx]
 x1308:	hlt	ERR_CODE
 x1309:	lw	r1, int31
-x130b:	rw	r1, IV_SW_LOW
+x130b:	rw	r1, INTV_SW_L
 x130d:	uj	[soft_awp_routine]
 
 ; ------------------------------------------------------------------------
@@ -5067,7 +5067,7 @@ x165a:	fi	itest_intr1
 ; interrupt I_PARITY
 
 x165c:	lw	r1, itest_int_parity_proc
-x165e:	rw	r1, IV_PARITY
+x165e:	rw	r1, INTV_PARITY
 x1660:	lwt	r0, -1
 x1661:	lw	r1, IMASK_PARITY
 x1663:	rw	r1, itest_mask
@@ -5101,14 +5101,14 @@ x1686:	cw	r1, I_MASKABLE-I_PARITY ; I_PARITY should be gone now
 x1688:	jes	1
 x1689:	hlt	ERR_CODE
 x168a:	lw	r1, int01
-x168c:	rw	r1, IV_PARITY
+x168c:	rw	r1, INTV_PARITY
 x168e:	lip
 
 ; interrupt I_NOMEM
 
 itest_int_nomem:
 x168f:	lw	r1, itest_int_nomem_proc
-x1691:	rw	r1, IV_NOMEM
+x1691:	rw	r1, INTV_NOMEM
 x1693:	lw	r1, IMASK_NOMEM
 x1695:	rw	r1, itest_mask
 x1697:	lwt	r0, -1
@@ -5142,15 +5142,15 @@ x16b9:	cw	r1, I_MASKABLE-I_PARITY-I_NOMEM ; I_NOMEM should be gone now
 x16bb:	jes	1
 x16bc:	hlt	ERR_CODE
 x16bd:	lw	r1, int02
-x16bf:	rw	r1, IV_NOMEM
+x16bf:	rw	r1, INTV_NOMEM
 x16c1:	lip
 
-; interrupt I_2CPU_HIGH
+; interrupt I_CPU_H
 
 itest_int_cpu_h:
 x16c2:	lw	r1, itest_int_cpu_h_proc
-x16c4:	rw	r1, IV_2CPU_HIGH
-x16c6:	lw	r1, IMASK_2CPU_HIGH
+x16c4:	rw	r1, INTV_CPU_H
+x16c6:	lw	r1, IMASK_CPU_H
 x16c8:	rw	r1, itest_mask
 x16ca:	lwt	r0, -1
 x16cb:	im	itest_mask
@@ -5164,7 +5164,7 @@ x16d3:	hlt	ERR_CODE
 x16d4:	cwt	r2, -1
 x16d5:	jes	1
 x16d6:	hlt	ERR_CODE
-x16d7:	cw	r3, IMASK_2CPU_HIGH
+x16d7:	cw	r3, IMASK_CPU_H
 x16d9:	jes	1
 x16da:	hlt	ERR_CODE
 x16db:	cwt	r4, 0
@@ -5179,18 +5179,18 @@ x16e6:	jes	1
 x16e7:	hlt	ERR_CODE
 x16e8:	ki	itest_intr2
 x16ea:	lw	r1, [itest_intr2]
-x16ec:	cw	r1, I_MASKABLE-I_PARITY-I_NOMEM-I_2CPU_HIGH ; I_2CPU_HIGH should be gone now
+x16ec:	cw	r1, I_MASKABLE-I_PARITY-I_NOMEM-I_CPU_H ; I_CPU_H should be gone now
 x16ee:	jes	1
 x16ef:	hlt	ERR_CODE
 x16f0:	lw	r1, int03
-x16f2:	rw	r1, IV_2CPU_HIGH
+x16f2:	rw	r1, INTV_CPU_H
 x16f4:	lip
 
 ; interrupt I_IFPOWER
 
 itest_int_ifpower:
 x16f5:	lw	r1, itest_int_ifpower_proc
-x16f7:	rw	r1, IV_IFPOWER
+x16f7:	rw	r1, INTV_IFPOWER
 x16f9:	lw	r1, IMASK_IFPOWER
 x16fb:	rw	r1, itest_mask
 x16fd:	lwt	r0, -1
@@ -5220,11 +5220,11 @@ x1719:	jes	1
 x171a:	hlt	ERR_CODE
 x171b:	ki	itest_intr2
 x171d:	lw	r1, [itest_intr2]
-x171f:	cw	r1, I_MASKABLE-I_PARITY-I_NOMEM-I_2CPU_HIGH-I_IFPOWER ; I_IFPOWER should be gone now
+x171f:	cw	r1, I_MASKABLE-I_PARITY-I_NOMEM-I_CPU_H-I_IFPOWER ; I_IFPOWER should be gone now
 x1721:	jes	1
 x1722:	hlt	ERR_CODE
 x1723:	lw	r1, int04
-x1725:	rw	r1, IV_IFPOWER
+x1725:	rw	r1, INTV_IFPOWER
 x1727:	lip
 
 ; interrupts I_TIMER, I_ILLEGAL, I_DIV_OF, I_FP_UF, I_FP_OF, I_FP_ERR, I_EXTRA
@@ -5237,8 +5237,8 @@ x172e:	lw	r4, itest_int_fp_uf_proc
 x1730:	lw	r5, itest_int_fp_of_proc
 x1732:	lw	r6, itest_int_fp_err_proc
 x1734:	lw	r7, itest_int_extra_proc
-x1736:	ra	IV_TIMER ; set vectors for IV_TIMER - IV_EXTRA
-x1738:	lw	r1, IMASK_CPU
+x1736:	ra	INTV_TIMER ; set vectors for INTV_TIMER - INTV_UNUSED
+x1738:	lw	r1, IMASK_GROUP_H
 x173a:	rw	r1, itest_mask
 x173c:	lwt	r0, -1
 x173d:	im	itest_mask
@@ -5253,7 +5253,7 @@ x1746:	hlt	ERR_CODE
 x1747:	cwt	r2, -1
 x1748:	jes	1
 x1749:	hlt	ERR_CODE
-x174a:	cw	r3, IMASK_CPU
+x174a:	cw	r3, IMASK_GROUP_H
 x174c:	jes	1
 x174d:	hlt	ERR_CODE
 x174e:	cwt	r4, 0
@@ -5268,11 +5268,11 @@ x1759:	jes	1
 x175a:	hlt	ERR_CODE
 x175b:	ki	itest_intr2
 x175d:	lw	r1, [itest_intr2]
-x175f:	cw	r1, I_MASKABLE-I_PARITY-I_NOMEM-I_2CPU_HIGH-I_IFPOWER-I_TIMER
+x175f:	cw	r1, I_MASKABLE-I_PARITY-I_NOMEM-I_CPU_H-I_IFPOWER-I_TIMER
 x1761:	jes	1
 x1762:	hlt	ERR_CODE
 x1763:	lw	r1, int05
-x1765:	rw	r1, IV_TIMER
+x1765:	rw	r1, INTV_TIMER
 x1767:	lip
 
 itest_int_illegal_proc:
@@ -5283,7 +5283,7 @@ x176d:	hlt	ERR_CODE
 x176e:	cwt	r2, -1
 x176f:	jes	1
 x1770:	hlt	ERR_CODE
-x1771:	cw	r3, IMASK_CPU
+x1771:	cw	r3, IMASK_GROUP_H
 x1773:	jes	1
 x1774:	hlt	ERR_CODE
 x1775:	cwt	r4, 0
@@ -5298,11 +5298,11 @@ x1780:	jes	1
 x1781:	hlt	ERR_CODE
 x1782:	ki	itest_intr2
 x1784:	lw	r1, [itest_intr2]
-x1786:	cw	r1, I_MASKABLE-I_PARITY-I_NOMEM-I_2CPU_HIGH-I_IFPOWER-I_TIMER-I_ILLEGAL
+x1786:	cw	r1, I_MASKABLE-I_PARITY-I_NOMEM-I_CPU_H-I_IFPOWER-I_TIMER-I_ILLEGAL
 x1788:	jes	1
 x1789:	hlt	ERR_CODE
 x178a:	lw	r1, int06
-x178c:	rw	r1, IV_ILLEGAL
+x178c:	rw	r1, INTV_ILLEGAL
 x178e:	lip
 
 itest_int_div_of_proc:
@@ -5313,7 +5313,7 @@ x1794:	hlt	ERR_CODE
 x1795:	cwt	r2, -1
 x1796:	jes	1
 x1797:	hlt	ERR_CODE
-x1798:	cw	r3, IMASK_CPU
+x1798:	cw	r3, IMASK_GROUP_H
 x179a:	jes	1
 x179b:	hlt	ERR_CODE
 x179c:	cwt	r4, 0
@@ -5328,11 +5328,11 @@ x17a7:	jes	1
 x17a8:	hlt	ERR_CODE
 x17a9:	ki	itest_intr2
 x17ab:	lw	r1, [itest_intr2]
-x17ad:	cw	r1, I_FP_UF|I_FP_OF|I_FP_ERR|I_EXTRA|I_OPRQ|I_2CPU_LOW|I_SW_HIGH|I_SW_LOW
+x17ad:	cw	r1, I_FP_UF|I_FP_OF|I_FP_ERR|I_EXTRA|I_OPRQ|I_CPU_L|I_SW_H|I_SW_L
 x17af:	jes	1
 x17b0:	hlt	ERR_CODE
 x17b1:	lw	r1, int07
-x17b3:	rw	r1, IV_DIV_OF
+x17b3:	rw	r1, INTV_DIV_OF
 x17b5:	lip
 
 itest_int_fp_uf_proc:
@@ -5343,7 +5343,7 @@ x17bb:	hlt	ERR_CODE
 x17bc:	cwt	r2, -1
 x17bd:	jes	1
 x17be:	hlt	ERR_CODE
-x17bf:	cw	r3, IMASK_CPU
+x17bf:	cw	r3, IMASK_GROUP_H
 x17c1:	jes	1
 x17c2:	hlt	ERR_CODE
 x17c3:	cwt	r4, 0
@@ -5358,11 +5358,11 @@ x17ce:	jes	1
 x17cf:	hlt	ERR_CODE
 x17d0:	ki	itest_intr2
 x17d2:	lw	r1, [itest_intr2]
-x17d4:	cw	r1, I_FP_OF|I_FP_ERR|I_EXTRA|I_OPRQ|I_2CPU_LOW|I_SW_HIGH|I_SW_LOW
+x17d4:	cw	r1, I_FP_OF|I_FP_ERR|I_EXTRA|I_OPRQ|I_CPU_L|I_SW_H|I_SW_L
 x17d6:	jes	1
 x17d7:	hlt	ERR_CODE
 x17d8:	lw	r1, int08
-x17da:	rw	r1, IV_FP_UF
+x17da:	rw	r1, INTV_FP_UF
 x17dc:	lip
 
 itest_int_fp_of_proc:
@@ -5373,7 +5373,7 @@ x17e2:	hlt	ERR_CODE
 x17e3:	cwt	r2, -1
 x17e4:	jes	1
 x17e5:	hlt	ERR_CODE
-x17e6:	cw	r3, IMASK_CPU
+x17e6:	cw	r3, IMASK_GROUP_H
 x17e8:	jes	1
 x17e9:	hlt	ERR_CODE
 x17ea:	cwt	r4, 0
@@ -5388,11 +5388,11 @@ x17f5:	jes	1
 x17f6:	hlt	ERR_CODE
 x17f7:	ki	itest_intr2
 x17f9:	lw	r1, [itest_intr2]
-x17fb:	cw	r1, I_FP_ERR|I_EXTRA|I_OPRQ|I_2CPU_LOW|I_SW_HIGH|I_SW_LOW
+x17fb:	cw	r1, I_FP_ERR|I_EXTRA|I_OPRQ|I_CPU_L|I_SW_H|I_SW_L
 x17fd:	jes	1
 x17fe:	hlt	ERR_CODE
 x17ff:	lw	r1, int09
-x1801:	rw	r1, IV_FP_OF
+x1801:	rw	r1, INTV_FP_OF
 x1803:	lip
 
 itest_int_fp_err_proc:
@@ -5403,7 +5403,7 @@ x1809:	hlt	ERR_CODE
 x180a:	cwt	r2, -1
 x180b:	jes	1
 x180c:	hlt	ERR_CODE
-x180d:	cw	r3, IMASK_CPU
+x180d:	cw	r3, IMASK_GROUP_H
 x180f:	jes	1
 x1810:	hlt	ERR_CODE
 x1811:	cwt	r4, 0
@@ -5418,11 +5418,11 @@ x181c:	jes	1
 x181d:	hlt	ERR_CODE
 x181e:	ki	itest_intr2
 x1820:	lw	r1, [itest_intr2]
-x1822:	cw	r1, I_EXTRA|I_OPRQ|I_2CPU_LOW|I_SW_HIGH|I_SW_LOW
+x1822:	cw	r1, I_EXTRA|I_OPRQ|I_CPU_L|I_SW_H|I_SW_L
 x1824:	jes	1
 x1825:	hlt	ERR_CODE
 x1826:	lw	r1, int10
-x1828:	rw	r1, IV_FP_ERR
+x1828:	rw	r1, INTV_FP_ERR
 x182a:	lip
 
 itest_int_extra_proc:
@@ -5433,7 +5433,7 @@ x1830:	hlt	ERR_CODE
 x1831:	cwt	r2, -1
 x1832:	jes	1
 x1833:	hlt	ERR_CODE
-x1834:	cw	r3, IMASK_CPU
+x1834:	cw	r3, IMASK_GROUP_H
 x1836:	jes	1
 x1837:	hlt	ERR_CODE
 x1838:	cwt	r4, 0
@@ -5448,23 +5448,23 @@ x1843:	jes	1
 x1844:	hlt	ERR_CODE
 x1845:	ki	itest_intr2
 x1847:	lw	r1, [itest_intr2]
-x1849:	cw	r1, I_OPRQ|I_2CPU_LOW|I_SW_HIGH|I_SW_LOW
+x1849:	cw	r1, I_OPRQ|I_CPU_L|I_SW_H|I_SW_L
 x184b:	jes	1
 x184c:	hlt	ERR_CODE
 x184d:	lw	r1, int11
-x184f:	rw	r1, IV_EXTRA
+x184f:	rw	r1, INTV_UNUSED
 x1851:	lip
 
-; interrupts I_OPRQ, I_2CPU_LOW, I_SW_HIGH, I_SW_LOW
+; interrupts I_OPRQ, I_CPU_L, I_SW_H, I_SW_L
 
 itest_oprq:
 x1852:	lw	r1, itest_int_oprq_proc
 x1854:	lw	r2, itest_int_cpu_l_proc
 x1856:	lw	r3, itest_int_sw_h_proc
 x1858:	lw	r4, itest_int_sw_l_proc
-x185a:	rf	IV_OPRQ
-x185c:	rw	r4, IV_SW_LOW
-x185e:	lw	r1, IMASK_SOFT
+x185a:	rf	INTV_OPRQ
+x185c:	rw	r4, INTV_SW_L
+x185e:	lw	r1, IMASK_GROUP_L
 x1860:	rw	r1, itest_mask
 x1862:	lwt	r0, -1
 x1863:	im	itest_mask
@@ -5479,7 +5479,7 @@ x186c:	hlt	ERR_CODE
 x186d:	cwt	r2, -1
 x186e:	jes	1
 x186f:	hlt	ERR_CODE
-x1870:	cw	r3, IMASK_SOFT
+x1870:	cw	r3, IMASK_GROUP_L
 x1872:	jes	1
 x1873:	hlt	ERR_CODE
 x1874:	cwt	r4, 0
@@ -5498,7 +5498,7 @@ x1885:	cwt	r1, 7
 x1886:	jes	1
 x1887:	hlt	ERR_CODE
 x1888:	lw	r1, int28
-x188a:	rw	r1, IV_OPRQ
+x188a:	rw	r1, INTV_OPRQ
 x188c:	lip
 
 itest_int_cpu_l_proc:
@@ -5509,7 +5509,7 @@ x1892:	hlt	ERR_CODE
 x1893:	cwt	r2, -1
 x1894:	jes	1
 x1895:	hlt	ERR_CODE
-x1896:	cw	r3, IMASK_SOFT
+x1896:	cw	r3, IMASK_GROUP_L
 x1898:	jes	1
 x1899:	hlt	ERR_CODE
 x189a:	cwt	r4, 0
@@ -5528,7 +5528,7 @@ x18ab:	cwt	r1, 3
 x18ac:	jes	1
 x18ad:	hlt	ERR_CODE
 x18ae:	lw	r1, int29
-x18b0:	rw	r1, IV_2CPU_LOW
+x18b0:	rw	r1, INTV_CPU_L
 x18b2:	lip
 
 itest_int_sw_h_proc:
@@ -5539,7 +5539,7 @@ x18b8:	hlt	ERR_CODE
 x18b9:	cwt	r2, -1
 x18ba:	jes	1
 x18bb:	hlt	ERR_CODE
-x18bc:	cw	r3, IMASK_SOFT
+x18bc:	cw	r3, IMASK_GROUP_L
 x18be:	jes	1
 x18bf:	hlt	ERR_CODE
 x18c0:	cwt	r4, 0
@@ -5558,7 +5558,7 @@ x18d1:	cwt	r1, 1
 x18d2:	jes	1
 x18d3:	hlt	ERR_CODE
 x18d4:	lw	r1, int30
-x18d6:	rw	r1, IV_SW_HIGH
+x18d6:	rw	r1, INTV_SW_H
 x18d8:	lip
 
 itest_int_sw_l_proc:
@@ -5569,7 +5569,7 @@ x18de:	hlt	ERR_CODE
 x18df:	cwt	r2, -1
 x18e0:	jes	1
 x18e1:	hlt	ERR_CODE
-x18e2:	cw	r3, IMASK_SOFT
+x18e2:	cw	r3, IMASK_GROUP_L
 x18e4:	jes	1
 x18e5:	hlt	ERR_CODE
 x18e6:	cwt	r4, 0
@@ -5588,16 +5588,16 @@ x18f7:	cwt	r1, 0
 x18f8:	jes	1
 x18f9:	hlt	ERR_CODE
 x18fa:	lw	r1, int31
-x18fc:	rw	r1, IV_SW_LOW
+x18fc:	rw	r1, INTV_SW_L
 x18fe:	lip
 
 ; oprq interrupt should be served
 
 test_next:
 x18ff:	lw	r1, i_oprq_proc
-x1901:	rw	r1, IV_OPRQ
+x1901:	rw	r1, INTV_OPRQ
 x1903:	lwt	r0, -1
-x1904:	fi	itest_intr1 ; set all interrupts while mask is set to IMASK_SOFT
+x1904:	fi	itest_intr1 ; set all interrupts while mask is set to IMASK_GROUP_H
 i_oprq_proc:
 x1906:	lw	r1, [stack]
 x1908:	cw	r1, i_oprq_proc
@@ -5609,14 +5609,14 @@ x1910:	cw	r1, I_MASKABLE-I_OPRQ ; I_OPRQ should be gone now
 x1912:	jes	1
 x1913:	hlt	ERR_CODE
 x1914:	lw	r1, int28
-x1916:	rw	r1, IV_OPRQ
+x1916:	rw	r1, INTV_OPRQ
 
 ; cpu low interrupt should be served
 
 x1918:	lw	r1, i_cpu_l_proc
-x191a:	rw	r1, IV_2CPU_LOW
+x191a:	rw	r1, INTV_CPU_L
 x191c:	lwt	r0, -1
-x191d:	lw	r1, IMASK_SOFT
+x191d:	lw	r1, IMASK_GROUP_L
 x191f:	rw	r1, itest_mask
 x1921:	im	itest_mask
 i_cpu_l_proc:
@@ -5626,16 +5626,16 @@ x1927:	jes	1
 x1928:	hlt	ERR_CODE
 x1929:	ki	itest_intr2
 x192b:	lw	r1, [itest_intr2]
-x192d:	cw	r1, I_MASKABLE-I_OPRQ-I_2CPU_LOW; I_2CPU_LOW should be gone now
+x192d:	cw	r1, I_MASKABLE-I_OPRQ-I_CPU_L; I_CPU_L should be gone now
 x192f:	jes	1
 x1930:	hlt	ERR_CODE
 x1931:	lw	r1, int29
-x1933:	rw	r1, IV_2CPU_LOW
+x1933:	rw	r1, INTV_CPU_L
 
 ; sw high should be served
 
 x1935:	lw	r1, i_sw_h_proc
-x1937:	rw	r1, IV_SW_HIGH
+x1937:	rw	r1, INTV_SW_H
 x1939:	lwt	r0, -1
 x193a:	im	itest_mask
 i_sw_h_proc:
@@ -5645,16 +5645,16 @@ x1940:	jes	1
 x1941:	hlt	ERR_CODE
 x1942:	ki	itest_intr2
 x1944:	lw	r1, [itest_intr2]
-x1946:	cw	r1, I_MASKABLE-I_OPRQ-I_2CPU_LOW-I_SW_HIGH ; I_SW_HIGH should be gone now
+x1946:	cw	r1, I_MASKABLE-I_OPRQ-I_CPU_L-I_SW_H ; I_SW_H should be gone now
 x1948:	jes	1
 x1949:	hlt	ERR_CODE
 x194a:	lw	r1, int30
-x194c:	rw	r1, IV_SW_HIGH
+x194c:	rw	r1, INTV_SW_H
 
 ; sw low should be served
 
 x194e:	lw	r1, i_sw_l_proc
-x1950:	rw	r1, IV_SW_LOW
+x1950:	rw	r1, INTV_SW_L
 x1952:	lwt	r0, -1
 x1953:	im	itest_mask
 i_sw_l_proc:
@@ -5664,7 +5664,7 @@ x1959:	jes	1
 x195a:	hlt	ERR_CODE
 x195b:	ki	itest_intr2
 x195d:	lw	r1, [itest_intr2]
-x195f:	cw	r1, I_MASKABLE-I_OPRQ-I_2CPU_LOW-I_SW_HIGH-I_SW_LOW ; I_SW_LOW should be gone now
+x195f:	cw	r1, I_MASKABLE-I_OPRQ-I_CPU_L-I_SW_H-I_SW_L ; I_SW_L should be gone now
 x1961:	jes	1
 x1962:	hlt	ERR_CODE
 
@@ -5673,7 +5673,7 @@ x1962:	hlt	ERR_CODE
 x1963:	lw	r1, i_return
 x1965:	rw	r1, stack + 3*4 ; IC = i_return
 x1967:	lw	r1, int31
-x1969:	rw	r1, IV_SW_LOW
+x1969:	rw	r1, INTV_SW_L
 x196b:	rz	stack + 3*4 + 2 ; SR = 0
 x196d:	lip
 i_return:
@@ -5685,11 +5685,11 @@ x1973:	hlt	ERR_CODE
 ; timer should be served
 
 x1974:	lw	r1, i_timer_proc
-x1976:	rw	r1, IV_TIMER
+x1976:	rw	r1, INTV_TIMER
 x1978:	lwt	r0, -1
-x1979:	lw	r1, IMASK_CPU
+x1979:	lw	r1, IMASK_GROUP_H
 x197b:	rw	r1, itest_mask
-x197d:	fi	itest_intr1 ; set all interrupts while mask is set to IMASK_CPU
+x197d:	fi	itest_intr1 ; set all interrupts while mask is set to IMASK_GROUP_H
 x197f:	im	itest_mask
 i_timer_proc:
 x1981:	lw	r1, [stack + 3*4]
@@ -5702,12 +5702,12 @@ x198b:	cw	r1, I_MASKABLE-I_TIMER ; I_TIMER should be gone now
 x198d:	jes	1
 x198e:	hlt	ERR_CODE
 x198f:	lw	r1, int05
-x1991:	rw	r1, IV_TIMER
+x1991:	rw	r1, INTV_TIMER
 
 ; illegal instruction should be served
 
 x1993:	lw	r1, i_illegal_proc
-x1995:	rw	r1, IV_ILLEGAL
+x1995:	rw	r1, INTV_ILLEGAL
 x1997:	lwt	r0, -1
 x1998:	im	itest_mask
 i_illegal_proc:
@@ -5721,12 +5721,12 @@ x19a4:	cw	r1, I_MASKABLE-I_TIMER-I_ILLEGAL ; I_ILLEGAL should be gone now
 x19a6:	jes	1
 x19a7:	hlt	ERR_CODE
 x19a8:	lw	r1, int06
-x19aa:	rw	r1, IV_ILLEGAL
+x19aa:	rw	r1, INTV_ILLEGAL
 
 ; division overflow should be served
 
 x19ac:	lw	r1, i_div_of_proc
-x19ae:	rw	r1, IV_DIV_OF
+x19ae:	rw	r1, INTV_DIV_OF
 x19b0:	lwt	r0, -1
 x19b1:	im	itest_mask
 i_div_of_proc:
@@ -5740,12 +5740,12 @@ x19bd:	cw	r1, I_MASKABLE-I_TIMER-I_ILLEGAL-I_DIV_OF ; I_DIV_OF should be gone no
 x19bf:	jes	1
 x19c0:	hlt	ERR_CODE
 x19c1:	lw	r1, int07
-x19c3:	rw	r1, IV_DIV_OF
+x19c3:	rw	r1, INTV_DIV_OF
 
 ; floating point underflow should be served
 
 x19c5:	lw	r1, i_fp_uf_proc
-x19c7:	rw	r1, IV_FP_UF
+x19c7:	rw	r1, INTV_FP_UF
 x19c9:	lwt	r0, -1
 x19ca:	im	itest_mask
 i_fp_uf_proc:
@@ -5759,12 +5759,12 @@ x19d6:	cw	r1, I_MASKABLE-I_TIMER-I_ILLEGAL-I_DIV_OF-I_FP_UF ; I_FP_UF should be 
 x19d8:	jes	1
 x19d9:	hlt	ERR_CODE
 x19da:	lw	r1, int08
-x19dc:	rw	r1, IV_FP_UF
+x19dc:	rw	r1, INTV_FP_UF
 
 ; floating point overflow should be served
 
 x19de:	lw	r1, i_fp_of_proc
-x19e0:	rw	r1, IV_FP_OF
+x19e0:	rw	r1, INTV_FP_OF
 x19e2:	lwt	r0, -1
 x19e3:	im	itest_mask
 i_fp_of_proc:
@@ -5778,12 +5778,12 @@ x19ef:	cw	r1, I_MASKABLE-I_TIMER-I_ILLEGAL-I_DIV_OF-I_FP_UF-I_FP_OF ; I_FP_OF sh
 x19f1:	jes	1
 x19f2:	hlt	ERR_CODE
 x19f3:	lw	r1, int09
-x19f5:	rw	r1, IV_FP_OF
+x19f5:	rw	r1, INTV_FP_OF
 
 ; floating point error should be served
 
 x19f7:	lw	r1, i_fp_err_proc
-x19f9:	rw	r1, IV_FP_ERR
+x19f9:	rw	r1, INTV_FP_ERR
 x19fb:	lwt	r0, -1
 x19fc:	im	itest_mask
 i_fp_err_proc:
@@ -5797,12 +5797,12 @@ x1a08:	cw	r1, I_MASKABLE-I_TIMER-I_ILLEGAL-I_DIV_OF-I_FP_UF-I_FP_OF-I_FP_ERR ; I
 x1a0a:	jes	1
 x1a0b:	hlt	ERR_CODE
 x1a0c:	lw	r1, int10
-x1a0e:	rw	r1, IV_FP_ERR
+x1a0e:	rw	r1, INTV_FP_ERR
 
 ; extra (unused interrupt) should be served
 
 x1a10:	lw	r1, i_extra_proc
-x1a12:	rw	r1, IV_EXTRA
+x1a12:	rw	r1, INTV_UNUSED
 x1a14:	lwt	r0, -1
 x1a15:	im	itest_mask
 i_extra_proc:
@@ -5818,7 +5818,7 @@ x1a24:	hlt	ERR_CODE
 x1a25:	lw	r1, i_return2
 x1a27:	rw	r1, stack + 9*4 ; IC
 x1a29:	lw	r1, int11
-x1a2b:	rw	r1, IV_EXTRA
+x1a2b:	rw	r1, INTV_UNUSED
 x1a2d:	rz	stack + 9*4 + 2 ; SR
 x1a2f:	lip
 
@@ -5831,7 +5831,7 @@ x1a35:	hlt	ERR_CODE
 ; ifpower should be served
 
 x1a36:	lw	r1, i_ifpower_proc
-x1a38:	rw	r1, IV_IFPOWER
+x1a38:	rw	r1, INTV_IFPOWER
 x1a3a:	lwt	r0, -1
 x1a3b:	lw	r1, IMASK_IFPOWER
 x1a3d:	rw	r1, itest_mask
@@ -5848,16 +5848,16 @@ x1a4d:	cw	r1, I_MASKABLE-I_IFPOWER ; I_IFPOWER should be gone now
 x1a4f:	jes	1
 x1a50:	hlt	ERR_CODE
 x1a51:	lw	r1, int04
-x1a53:	rw	r1, IV_IFPOWER
+x1a53:	rw	r1, INTV_IFPOWER
 x1a55:	lw	r1, i_cpu_h
 x1a57:	rw	r1, stack + 9*4 ; IC
 x1a59:	lip
 
 i_cpu_h:
 x1a5a:	lw	r1, i_cpu_h_proc
-x1a5c:	rw	r1, IV_2CPU_HIGH
+x1a5c:	rw	r1, INTV_CPU_H
 x1a5e:	lwt	r0, -1
-x1a5f:	lw	r1, IMASK_2CPU_HIGH
+x1a5f:	lw	r1, IMASK_CPU_H
 x1a61:	rw	r1, itest_mask
 x1a63:	im	itest_mask
 i_cpu_h_proc:
@@ -5867,18 +5867,18 @@ x1a69:	jes	1
 x1a6a:	hlt	ERR_CODE
 x1a6b:	ki	itest_intr2
 x1a6d:	lw	r1, [itest_intr2]
-x1a6f:	cw	r1, I_MASKABLE-I_IFPOWER-I_2CPU_HIGH ; I_2CPU_HIGH should be gone now
+x1a6f:	cw	r1, I_MASKABLE-I_IFPOWER-I_CPU_H ; I_CPU_H should be gone now
 x1a71:	jes	1
 x1a72:	hlt	ERR_CODE
 x1a73:	lw	r1, int03
-x1a75:	rw	r1, IV_2CPU_HIGH
+x1a75:	rw	r1, INTV_CPU_H
 x1a77:	lw	r1, i_nomem
 x1a79:	rw	r1, stack + 9*4 ; IC
 x1a7b:	lip
 
 i_nomem:
 x1a7c:	lw	r1, i_nomem_proc
-x1a7e:	rw	r1, IV_NOMEM
+x1a7e:	rw	r1, INTV_NOMEM
 x1a80:	lwt	r0, -1
 x1a81:	lw	r1, IMASK_NOMEM
 x1a83:	rw	r1, itest_mask
@@ -5890,11 +5890,11 @@ x1a8b:	jes	1
 x1a8c:	hlt	ERR_CODE
 x1a8d:	ki	itest_intr2
 x1a8f:	lw	r1, [itest_intr2]
-x1a91:	cw	r1, I_MASKABLE-I_IFPOWER-I_2CPU_HIGH-I_NOMEM ; I_NOMEM should be gone now
+x1a91:	cw	r1, I_MASKABLE-I_IFPOWER-I_CPU_H-I_NOMEM ; I_NOMEM should be gone now
 x1a93:	jes	1
 x1a94:	hlt	ERR_CODE
 x1a95:	lw	r1, int02
-x1a97:	rw	r1, IV_NOMEM
+x1a97:	rw	r1, INTV_NOMEM
 x1a99:	lw	r1, i_power
 x1a9b:	rw	r1, stack + 9*4 ; IC
 x1a9d:	rz	stack + 9*4 + 2 ; SR
@@ -5902,7 +5902,7 @@ x1a9f:	lip
 
 i_power:
 x1aa0:	lw	r1, i_power_proc
-x1aa2:	rw	r1, IV_POWER
+x1aa2:	rw	r1, INTV_POWER
 x1aa4:	rz	itest_intr1
 x1aa6:	fi	itest_intr1
 x1aa8:	lw	r1, I_POWER
@@ -5939,7 +5939,7 @@ x1ad3:	cwt	r1, 0
 x1ad4:	jes	1
 x1ad5:	hlt	ERR_CODE
 x1ad6:	lw	r1, int00
-x1ad8:	rw	r1, IV_POWER
+x1ad8:	rw	r1, INTV_POWER
 x1ada:	lj	reset_stack
 x1adc:	lw	r1, IMASK_ALL
 x1ade:	rw	r1, mask

@@ -4,22 +4,22 @@
 ; If reset is done before previous reset routine finished, no IWYZE should appear
 ; (except the final one)
 
-	.include hw.inc
-	.include mx.inc
+	.include cpu.inc
+	.include multix.inc
 
 	uj	start
 
 mask0:	.word	IMASK_NONE
-mask:	.word	IMASK_CPU | IMASK_CH0_1
+mask:	.word	IMASK_GROUP_H | IMASK_CH0_1
 
-	.org	OS_MEM_BEG
+	.org	OS_START
 
 ; ------------------------------------------------------------------------
 tim_proc:
 	cw	r1, 0
 	jes	done
 	awt	r1, -1
-again:	in	r5, IO_RESET | MX_CHAN	; reset MULTIX
+again:	in	r5, IO_RESET | 1\IO_CHAN	; reset MULTIX
 	.word	fail, again, ok, fail
 fail:	hlt	040
 ok:
@@ -45,10 +45,10 @@ start:
 	lw	r3, stack
 	rw	r3, STACKP
 	lw	r3, mx_proc
-	rw	r3, MX_IV
+	rw	r3, INTV_CH1
 	lw	r3, tim_proc
-	rw	r3, IV_TIMER
-	rw	r3, IV_EXTRA
+	rw	r3, INTV_TIMER
+	rw	r3, INTV_UNUSED
 	lw	r1, 100		; reset counter: wait 100 timer interrupts (100*10ms = 1s)
 
 	im	mask

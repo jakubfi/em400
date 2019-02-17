@@ -3,7 +3,7 @@
 ; In other words: it's allowed to map logical addresses 0:0 and 0:1
 ; to physical frames other than 0:0 and 0:1
 
-	.include hw.inc
+	.include cpu.inc
 	.include io.inc
 
 	uj	start
@@ -14,13 +14,13 @@ nomem_proc:
 	awt	r7, 1
 	hlt	041
 
-	.org	OS_MEM_BEG
+	.org	OS_START
 
 start:	lwt	r7, 0
 	lw	r1, stack
 	rw	r1, STACKP
 	lwt	r1, nomem_proc
-	rw	r1, IV_NOMEM
+	rw	r1, INTV_NOMEM
 	im	mask
 
 	lwt	r1, 0

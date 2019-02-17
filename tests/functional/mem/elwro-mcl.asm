@@ -2,7 +2,7 @@
 
 	.cpu mera400
 
-	.include hw.inc
+	.include cpu.inc
 	.include io.inc
 
 	.equ segment 1
@@ -17,12 +17,12 @@ ba:	.word	0b0100000000000000 | segment\15
 nomem_proc:
 	hlt	045
 
-	.org	OS_MEM_BEG
+	.org	OS_START
 
 start:	lw	r1, stack
 	rw	r1, STACKP
 	lwt	r1, nomem_proc
-	rw	r1, IV_NOMEM
+	rw	r1, INTV_NOMEM
 
 	lw	r1, page\3 | segment\15
 	lw	r2, frame\10 | module\14 | MEM_CFG

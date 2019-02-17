@@ -2,8 +2,8 @@
 
 ; Check if all MULTIX reset triggers work
 
-	.include hw.inc
-	.include mx.inc
+	.include cpu.inc
+	.include multix.inc
 
 	uj	start
 
@@ -25,17 +25,17 @@ int_fail:
 	hlt	041
 
 ; ------------------------------------------------------------------------
-	.org	OS_MEM_BEG
+	.org	OS_START
 start:
 	lw	r3, stack
 	rw	r3, STACKP
 
 	lw	r3, mx_proc
-	rw	r3, MX_IV
+	rw	r3, INTV_CH1
 
 	lw	r3, tim_proc
-	rw	r3, IV_TIMER
-	rw	r3, IV_EXTRA
+	rw	r3, INTV_TIMER
+	rw	r3, INTV_UNUSED
 
 	lwt	r3, 0		; reset interrupt counter
 	er	r6, ?X		; reset MX int. indicator
@@ -56,7 +56,7 @@ w2:	hlt
 	er	r6, ?X
 
 	; IWYZE, by software MULTIX reset
-	in	r5, IO_RESET | MX_CHAN
+	in	r5, IO_RESET | 1\IO_CHAN
 	.word	fail, fail, w3, fail
 w3:	hlt
 	bb	r6, ?X

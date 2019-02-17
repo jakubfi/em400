@@ -5,7 +5,7 @@
 
 	.cpu	mera400
 
-	.include hw.inc
+	.include cpu.inc
 
 	uj	start
 
@@ -15,12 +15,12 @@
 	.org	STACKP
 	.word	stack
 
-	.org	OS_MEM_BEG
+	.org	OS_START
 
 	.include iotester.inc
 
 mask_0:	.word	IMASK_NONE
-mask_ch:.word	IMASK_CH_ALL
+mask_ch:.word	IMASK_ALL_CH
 
 ; ------------------------------------------------
 ; r3 - current channel number

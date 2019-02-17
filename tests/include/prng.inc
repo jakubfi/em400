@@ -24,7 +24,7 @@ prngtimer:
 ; It is obtained by interrupting a tight loop 32 times with timer interrupt,
 ; each time storing least significant bit of the return address
 ; temp: r1, r2, r4, r7
-im_tm:	.word	IMASK_CPU
+im_tm:	.word	IMASK_GROUP_H
 im_0:	.word	0
 otimv:	.res	1
 ostck:	.res	1
@@ -34,12 +34,12 @@ prngseed:
 	lwt	r1, 0
 	lwt	r2, 0
 	lwt	r7, -32
-	lw	r1, [IV_TIMER]
+	lw	r1, [INTV_TIMER]
 	rw	r1, otimv
 	lw	r1, [STACKP]
 	rw	r1, ostck
 	lw	r1, prngtimer
-	rw	r1, IV_TIMER
+	rw	r1, INTV_TIMER
 	lw	r1, prng_stack
 	rw	r1, STACKP
 	im	im_tm
@@ -56,7 +56,7 @@ prngseed_fin:
 	rd	cseed
 	im	im_0
 	lw	r4, [otimv]
-	rw	r4, IV_TIMER
+	rw	r4, INTV_TIMER
 	lw	r4, ostck
 	rw	r4, STACKP
 	uj	[prngseed]

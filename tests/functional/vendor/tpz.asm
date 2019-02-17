@@ -5,7 +5,7 @@
 ; Based on the original test provided by the manufacturer.
 ; The only difference is that this version uses changed HLT codes.
 
-	.include hw.inc
+	.include cpu.inc
 
 	ujs	init
 

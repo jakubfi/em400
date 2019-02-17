@@ -2,8 +2,8 @@
 
 ; Check if MULTIX rejects commands before initialization completes
 
-	.include hw.inc
-	.include mx.inc
+	.include cpu.inc
+	.include multix.inc
 
 	uj	start
 
@@ -16,19 +16,19 @@ mx_proc:
 	hlt	041		; test should end before mx int
 good:	hlt	077
 
-	.org	OS_MEM_BEG
+	.org	OS_START
 start:
 	lwt	r4, 0
 	lw	r3, stack
 	rw	r3, STACKP
 	lw	r3, mx_proc
-	rw	r3, MX_IV
+	rw	r3, INTV_CH1
 
 	mcl
 
 	im	mask
 
-	ou	r5, MX_IO_SETCFG | MX_CHAN
+	ou	r5, MX_IO_SETCFG | 1\IO_CHAN
 	.word	fail, ok, fail, fail
 ok:	lwt	r4, 1	; EN = command rejected -> this is OK
 fail:	hlt		; NO, OK, PE -> this is bad

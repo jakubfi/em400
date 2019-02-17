@@ -3,7 +3,7 @@
 ; does MEGA allocation work?
 ; can we read from/write to allocated segments?
 
-	.include hw.inc
+	.include cpu.inc
 	.include io.inc
 	.include mega.inc
 
@@ -23,13 +23,13 @@ nomem_proc:
 	awt	r7, 1
 err:	hlt	040
 
-	.org	OS_MEM_BEG
+	.org	OS_START
 
 start:	lwt	r7, 0
 	lw	r1, stack
 	rw	r1, STACKP
 	lwt	r1, nomem_proc
-	rw	r1, IV_NOMEM
+	rw	r1, INTV_NOMEM
 
 	lw	r1, ab_s + nb
 	lw	r2, seg_s + mp
@@ -38,7 +38,7 @@ next:	cw	r1, ab_last
 	jes	fin
 	aw	r1, ab_s
 	aw	r2, seg_s
-	ou	r1, r2 + MEGA_ALLOC | MEGA_PAS_HIDE | MEGA_ALLOC_FINISH | MEM_CFG
+	ou	r1, r2 + MEGA_ALLOC | MEGA_EPROM_HIDE | MEGA_ALLOC_DONE | MEM_CFG
 	.word	err, err, next, err
 
 fin:	im	mask

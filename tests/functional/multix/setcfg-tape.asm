@@ -2,16 +2,16 @@
 
 	.cpu	mx16
 
-	.include hw.inc
+	.include cpu.inc
 	.include io.inc
-	.include mx.inc
+	.include multix.inc
 
 	mcl
 	uj	start
 
 msk_mx:	.word	IMASK_CH0_1
 
-	.org	OS_MEM_BEG
+	.org	OS_START
 
 ; ---------------------------------------------------------------
 ; physical lines - only one tape controller group (4 drives)
@@ -33,7 +33,7 @@ seqe:
 ;  r1 - configuration field address
 ;  r4 - RJ return adress
 setcfg:
-	ou	r1, MX_IO_SETCFG | MX_CHAN
+	ou	r1, MX_IO_SETCFG | 1\IO_CHAN
 	.word	no, en, ok, pe
 no:	hlt	041
 ok:	uj	r4
@@ -75,7 +75,7 @@ start:
 	lw	r1, stack
 	rw	r1, STACKP
 	lw	r1, mx_proc
-	rw	r1, MX_IV
+	rw	r1, INTV_CH1
 
 	lw	r2, seq		; start of all tests
 	im	msk_mx

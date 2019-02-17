@@ -1,5 +1,5 @@
 
-	.include hw.inc
+	.include cpu.inc
 	.include io.inc
 
 	lw	r0, 0xaafe
@@ -25,7 +25,7 @@ start:
 	lw	r1, stack
 	rw	r1, STACKP
 	lw	r1, nomem_proc
-	rw	r1, IV_NOMEM
+	rw	r1, INTV_NOMEM
 
 	lw	r1, 0\3 | 1\15
 	ou	r1, 0\10 | 1\14 | MEM_CFG

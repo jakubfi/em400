@@ -4,7 +4,7 @@
 
 	.cpu	mx16
 
-	.include hw.inc
+	.include cpu.inc
 	.include io.inc
 
 	uj	start
@@ -12,7 +12,7 @@
 ; ---- RUNTIME CONF AND STUFF --------------------------------------------
 
 	.const	USER_BLOCK	1
-	.const	INT_MASK	IMASK_PARITY | IMASK_NOMEM | IMASK_2CPU_HIGH | IMASK_IFPOWER | IMASK_CPU
+	.const	INT_MASK	IMASK_PARITY | IMASK_NOMEM | IMASK_CPU_H | IMASK_IFPOWER | IMASK_GROUP_H
 	.const	Q		0b0000000000100000
 
 sys_mb:	.word	0
@@ -30,7 +30,7 @@ intv:	.res	6, e
 	.res	25, e
 exlp:	.word	e
 stp:	.word	stack
-	.res	OS_MEM_BEG - .
+	.res	OS_START - .
 
 ; ---- INT HANDLERS ------------------------------------------------------
 

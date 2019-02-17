@@ -3,14 +3,14 @@
 ; When installing a mask that allows an interrupt to be served
 ; it should be served right after the instruction cycle ends.
 
-	.include hw.inc
+	.include cpu.inc
 
 	uj	start
 
-	.org	OS_MEM_BEG
+	.org	OS_START
 start:
 	lw	r1, proc
-	rw	r1, IV_2CPU_HIGH
+	rw	r1, INTV_CPU_H
 	lw	r1, stack
 	rw	r1, STACKP
 	fi	ints
@@ -25,7 +25,7 @@ proc:	lw	r1, [stack]
 
 done:	hlt	077
 
-mask:	.word	IMASK_2CPU_HIGH
+mask:	.word	IMASK_CPU_H
 ints:	.word	0x7fff
 stack:
 

@@ -1,5 +1,5 @@
 
-	.include hw.inc
+	.include cpu.inc
 
 start:
 	lw	r1, stack

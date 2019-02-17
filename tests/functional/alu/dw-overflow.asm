@@ -7,7 +7,7 @@ operation:
 	uj	r5
 
 tests:
-	.word	0, 0, INT_DIV_OF
+	.word	0, 0, I_DIV_OF
 	.word	0b0111111111111111, 0b1111111111111111
 	.word	2, 0
 	.word	0b0111111111111111, 0b1111111111111111

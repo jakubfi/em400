@@ -1,6 +1,6 @@
 ; Mapping pages >1 in segment 0
 
-	.include hw.inc
+	.include cpu.inc
 	.include io.inc
 
 	.const	ADDR 0x3333
@@ -14,13 +14,13 @@ nomem_proc:
 	awt	r7, 1
 	hlt	041
 
-	.org	OS_MEM_BEG
+	.org	OS_START
 
 start:	lwt	r7, 0
 	lw	r1, stack
 	rw	r1, STACKP
 	lwt	r1, nomem_proc
-	rw	r1, IV_NOMEM
+	rw	r1, INTV_NOMEM
 	im	mask
 
 	lw	r1, 3\3 | 0\15

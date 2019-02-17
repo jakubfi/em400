@@ -6,27 +6,27 @@
 
 	.cpu	mx16
 
-	.include hw.inc
+	.include cpu.inc
 
-	.equ	int_mx IV_CHAN1
+	.equ	int_mx INTV_CH1
 
 	uj	start
 
-mask:	.word	IMASK_PARITY | IMASK_NOMEM | IMASK_2CPU_HIGH | IMASK_IFPOWER | IMASK_CPU | IMASK_CH0_1
+mask:	.word	IMASK_PARITY | IMASK_NOMEM | IMASK_CPU_H | IMASK_IFPOWER | IMASK_GROUP_H | IMASK_CH0_1
 zmask:	.word	0
 raise:	.word	1\3
 
 	.org	INTV
 	.res	32, empty
 
-	.org	OS_MEM_BEG
+	.org	OS_START
 start:
 	rz	0x200
 	rz	0x201
 	lw	r1, stack
 	rw	r1, STACKP
 	lw	r1, cpu2x
-	rw	r1, IV_2CPU_HIGH
+	rw	r1, INTV_CPU_H
 	lw	r1, mx
 	rw	r1, int_mx
 	lwt	r6, 0

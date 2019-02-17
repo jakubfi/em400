@@ -4,8 +4,8 @@
 ; The only thing we can test here is if MULTIX acknowledges the command.
 ; Everything else happens under the blanket and cannot be verified from CPU perspective
 
-	.include hw.inc
-	.include mx.inc
+	.include cpu.inc
+	.include multix.inc
 
 	uj	start
 
@@ -19,19 +19,19 @@ mx_proc:
 	hlt	042		; not iwyze
 	lip
 
-	.org	OS_MEM_BEG
+	.org	OS_START
 start:
 	lw	r3, stack
 	rw	r3, STACKP
 	lw	r3, mx_proc
-	rw	r3, MX_IV
+	rw	r3, INTV_CH1
 
 	mcl
 
 	im	mask
 	hlt		; wait for mx int
 
-repeat:	in	r5, MX_IO_REQUEUE | 0\10 | MX_CHAN
+repeat:	in	r5, MX_IO_REQUEUE | 0\10 | 1\IO_CHAN
 	.word	fail, repeat, ok, fail
 fail:	hlt	041
 ok:	hlt	077

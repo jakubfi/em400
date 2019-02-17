@@ -7,11 +7,11 @@
 
 	.cpu	mx16
 
-	.include hw.inc
+	.include cpu.inc
 
 	uj	start
 
-mask:	.word	IMASK_CPU
+mask:	.word	IMASK_GROUP_H
 zmask:	.word	0, 0, 0
 set1:	.word	0x100, 0x101, 0x102	; interrupt counters for vanilla CPU (timer, illegal, extra)
 set2:	.word	0x200, 0x201, 0x202	; interrupt counters for MC-16 CPU (timer, illegal, extra)
@@ -25,17 +25,17 @@ illx:	ib	r2
 extrax:	ib	r3
 	lip
 
-	.org	OS_MEM_BEG
+	.org	OS_START
 start:
 	lf	zmask
 	rf	0x100
 	rf	0x200
 	lw	r1, timerx
-	rw	r1, IV_TIMER
+	rw	r1, INTV_TIMER
 	lw	r1, extrax
-	rw	r1, IV_EXTRA
+	rw	r1, INTV_UNUSED
 	lw	r1, illx
-	rw	r1, IV_ILLEGAL
+	rw	r1, INTV_ILLEGAL
 
 ; first, check for vanilla CPU
 	lf	set1

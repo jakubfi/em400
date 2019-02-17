@@ -3,11 +3,7 @@
 ;  * fin - end of test data
 ;  * operation - data load and arithmetic operation, then "uj r5". r7 = pointer to current test data
 
-	.const	INT_ILL_OPCODE 1\6
-	.const	INT_DIV_OF 1\7
-	.const	INT_FP_UF 1\8
-	.const	INT_FP_OF 1\9
-	.const	INT_DIV0 1\10
+	.include cpu.inc
 
 ; each test is 9 words long and contains:
 
@@ -35,7 +31,7 @@ loop:
 	cw	r2, [r7+RES+1]
 	jn	exit_fail
 	ki	intbuf
-	lw	r4, INT_ILL_OPCODE | INT_DIV_OF | INT_FP_UF | INT_FP_OF | INT_DIV0
+	lw	r4, I_ILLEGAL | I_DIV_OF | I_FP_UF | I_FP_OF | I_DIV0
 	nm	r4, intbuf
 	lw	r4, [intbuf]
 	cw	r4, [r7+INT_OUT]

@@ -1,5 +1,5 @@
 
-	.include hw.inc
+	.include cpu.inc
 	.include io.inc
 	.include mega.inc
 
@@ -44,7 +44,7 @@ next_page:
 	shc	r2, 2
 	nr	r2, 0b0000000000000010 ; use msb to switch module to 1 for segments >8 (to allow 32K modules)
 	aw	r4, r2
-	ou	r3, r4 + MEGA_ALLOC | MEGA_PAS_HIDE | MEGA_ALLOC_FINISH | MEM_CFG
+	ou	r3, r4 + MEGA_ALLOC | MEGA_EPROM_HIDE | MEGA_ALLOC_DONE | MEM_CFG
 	.word	err, err, ok, err
 err:	hlt	041
 ok:	; next page

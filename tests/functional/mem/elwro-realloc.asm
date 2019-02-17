@@ -1,7 +1,7 @@
 ; does Elwro prohibit allocating the same physical segment for two logical segments?
 ; is data in physical segment preserved between allocations?
 
-	.include hw.inc
+	.include cpu.inc
 	.include io.inc
 
 	.const	magic 0x2323
@@ -21,13 +21,13 @@ nomem_proc:
 	lip
 err:	hlt	040
 
-	.org	OS_MEM_BEG
+	.org	OS_START
 
 start:	lwt	r7, 0
 	lw	r1, stack
 	rw	r1, STACKP
 	lw	r1, nomem_proc
-	rw	r1, IV_NOMEM
+	rw	r1, INTV_NOMEM
 
 	lw	r1, ab1 | nb
 	ou	r1, mp | seg | MEM_CFG

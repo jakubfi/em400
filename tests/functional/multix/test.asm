@@ -4,8 +4,8 @@
 ; The only proper thing that current MULTIX emulation does here
 ; is sending IWYTE interrupt
 
-	.include hw.inc
-	.include mx.inc
+	.include cpu.inc
+	.include multix.inc
 
 	uj	start
 
@@ -17,7 +17,7 @@ seq:	.word	-1,	-1,		MX_IWYZE
 	.word	0,	MX_IO_TEST,	MX_IWYTE
 seqe:
 
-	.org	OS_MEM_BEG
+	.org	OS_START
 
 ; ------------------------------------------------------------------------
 mx_proc:
@@ -42,9 +42,9 @@ mx_proc:
 	lw	r4, c_ou
 	uj	r4
 
-c_ou:	ou	r5, r1 + MX_CHAN
+c_ou:	ou	r5, r1 + 1\IO_CHAN
 	.word	c_no, c_en, c_ok, c_pe
-c_in:	in	r5, r1 + MX_CHAN
+c_in:	in	r5, r1 + 1\IO_CHAN
 	.word	c_no, c_en, c_ok, c_pe
 c_no:
 c_pe:	hlt	041
@@ -56,7 +56,7 @@ start:
 	lw	r1, stack
 	rw	r1, STACKP
 	lw	r1, mx_proc
-	rw	r1, MX_IV
+	rw	r1, INTV_CH1
 
 	lw	r2, seq
 	im	mask

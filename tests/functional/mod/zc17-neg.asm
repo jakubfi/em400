@@ -5,7 +5,7 @@
 
 	.cpu	mx16
 
-	.include hw.inc
+	.include cpu.inc
 	.include io.inc
 
 	.const	magic 0xfeba
@@ -20,13 +20,13 @@ zeroreg:.res	7, 0
 nomem_proc:
 	hlt	040
 
-	.org	OS_MEM_BEG
+	.org	OS_START
 
 start:	la	zeroreg
 	lw	r1, stack
 	rw	r1, STACKP
 	lw	r1, nomem_proc
-	rw	r1, IV_NOMEM
+	rw	r1, INTV_NOMEM
 
 	lw	r1, seg\3 | 0\15
 	ou	r1, 3\10 | 0\14 | MEM_CFG
