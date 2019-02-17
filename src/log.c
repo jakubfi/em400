@@ -184,7 +184,7 @@ void log_disable()
 		return;
 	}
 
-	log_log_timestamp(L_EM4H, "Closing log", __func__);
+	log_log_timestamp(L_EM4H, "EM400 version " EM400_VERSION " closing log file", __func__);
 
 	atom_store_release(&log_components_enabled, 0);
 
@@ -214,10 +214,11 @@ int log_enable()
 		return LOGERR("Failed to open log file: \"%s\".", log_file);
 	}
 
-	log_log_timestamp(L_EM4H, "Opened log", __func__);
+	log_log_timestamp(L_EM4H, "EM400 version " EM400_VERSION " opened log file", __func__);
 
 	if (line_buffered) {
 		setlinebuf(log_f);
+		fflush(log_f);
 	} else {
 		// start up flusher thread only when in fully buffered mode
 		log_flusher_stop = 0;
@@ -423,7 +424,7 @@ static void log_log_timestamp(unsigned component, const char *msg, const char *f
 	char date[32];
 	gettimeofday(&ct, NULL);
 	strftime(date, 31, "%Y-%m-%d %H:%M:%S", localtime(&ct.tv_sec));
-	log_log(component, func, "%s: %s", msg, date);
+	log_log(component, func, "%s %s", date, msg);
 }
 
 // -----------------------------------------------------------------------
