@@ -6,7 +6,7 @@
 	.include cpu.inc
 	.include multix.inc
 
-	UJ	start
+	uj	start
 
 stack:	.res	8
 mask0:	.word	0
@@ -18,44 +18,44 @@ tcount:	.word	-50		; we'll wait 0.5s for multix interrupt (50 x timer tick)
 
 ; ------------------------------------------------------------------------
 tim_proc:
-	IB	tcount		; allow only <-tcount> timer interrupts
-	LIP
-	HLT	044		; then die
+	ib	tcount		; allow only <-tcount> timer interrupts
+	lip
+	hlt	044		; then die
 
 ; ------------------------------------------------------------------------
 mx_proc:
-	IM	mask0
-	LW	r4, [STACKP]
-	LW	r4, [r4-1]
-	CW	r4, MX_IWYZE	; is it IWYZE?
-	BB	r0, ?E
-	HLT	042
-	CW	r7, [tcount]	; is it after a timer interrupt?
-	BLC	?E
-	HLT	043
-	HLT	077		; we're good
+	im	mask0
+	lw	r4, [STACKP]
+	lw	r4, [r4-1]
+	cw	r4, MX_IWYZE	; is it IWYZE?
+	bb	r0, ?E
+	hlt	042
+	cw	r7, [tcount]	; is it after a timer interrupt?
+	blc	?E
+	hlt	043
+	hlt	077		; we're good
 
 ; ------------------------------------------------------------------------
 start:
-	LW	r3, stack
-	RW	r3, STACKP
-	LW	r3, mx_proc
-	RW	r3, INTV_CH1
-	LW	r3, tim_proc
-	RW	r3, INTV_TIMER
-	RW	r3, INTV_UNUSED
+	lw	r3, stack
+	rw	r3, STACKP
+	lw	r3, mx_proc
+	rw	r3, INTV_CH1
+	lw	r3, tim_proc
+	rw	r3, INTV_TIMER
+	rw	r3, INTV_UNUSED
 
-	LW	r7, [tcount]
+	lw	r7, [tcount]
 
 	; we need to take care of the fact, that the timer interrupt has higher priority
 	; than channel interrupts and is always served before MX int, even if
 	; MX int comes first
-	IM	maskc	; first, install mask to enable channel interrupts only
+	im	maskc	; first, install mask to enable channel interrupts only
 			; if MX interrupt is already there, it's bad
 	IM	maskt	; then, enable timer interrupt too and wait for MX int
 
-loop:	HLT		; wait for multix interrupt (or timeout)
-	UJS	loop
+loop:	hlt		; wait for multix interrupt (or timeout)
+	ujs	loop
 
 ; XPCT rz[15] : 0
 ; XPCT rz[6] : 0
