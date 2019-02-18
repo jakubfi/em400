@@ -10,7 +10,7 @@
 
 	.const	magic 0xfeba
 	.const	addr 0x200
-	.const	seg 4
+	.const	page 4
 
 	uj	start
 
@@ -28,8 +28,8 @@ start:	la	zeroreg
 	lw	r1, nomem_proc
 	rw	r1, INTV_NOMEM
 
-	lw	r1, seg\3 | 0\15
-	ou	r1, 3\10 | 0\14 | MEM_CFG
+	lw	r1, page\MEM_PAGE | 0\MEM_SEGMENT
+	ou	r1, 3\MEM_FRAME | 0\MEM_MODULE | MEM_CFG
 	.word	err, err, ok, err
 
 err:	hlt	040
@@ -37,11 +37,11 @@ err:	hlt	040
 ok:	im	mask
 
 	lw	r1, magic
-	rw	r1, seg\3+addr-1
+	rw	r1, page\3+addr-1
 
 	cron
 
-	lw	r7, seg\3+addr
+	lw	r7, page\3+addr
 	md	-1
 	lb	r2, r7+r7	; this should work just fine
 

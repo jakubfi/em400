@@ -10,7 +10,7 @@
 	.const	magic1 0x4455
 	.const	magic2 0xfeba
 	.const	addr 0x200
-	.const	seg 9
+	.const	page 9
 
 	uj	start
 
@@ -28,18 +28,18 @@ start:	la	zeroreg
 	lw	r1, nomem_proc
 	rw	r1, INTV_NOMEM
 
-	lw	r1, seg\3 | 0\15
-	ou	r1, 3\10 | 0\14 | MEM_CFG
+	lw	r1, page\MEM_PAGE | 0\MEM_SEGMENT
+	ou	r1, 3\MEM_FRAME | 0\MEM_MODULE | MEM_CFG
 	.word	err, err, ok, err
 
 err:	hlt	040
 
 ok:	im	mask
 	lw	r1, magic1
-	rw	r1, (seg\3+addr) & 0b0111111111111111
+	rw	r1, (page\3+addr) & 0b0111111111111111
 	lw	r1, magic2
-	rw	r1, seg\3+addr
-	lw	r7, seg\3+addr
+	rw	r1, page\3+addr
+	lw	r7, page\3+addr
 
 ; no matter how we build the address, 'lb' will fail for addresses >= 0x8000
 
@@ -55,7 +55,7 @@ ok:	im	mask
 	lb	r4, r7
 
 	lwt	r1, 0
-	lb	r1, ((seg\3+addr)*2 + 1) & 0xFFFF
+	lb	r1, ((page\3+addr)*2 + 1) & 0xFFFF
 
 	hlt	077
 

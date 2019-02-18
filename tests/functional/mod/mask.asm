@@ -13,8 +13,8 @@
 	uj	start
 
 mask:	.word	IMASK_PARITY | IMASK_NOMEM | IMASK_CPU_H | IMASK_IFPOWER | IMASK_GROUP_H | IMASK_CH0_1
-zmask:	.word	0
-raise:	.word	1\3
+zmask:	.word	IMASK_NONE
+cpuh:	.word	I_CPU_H
 
 	.org	INTV
 	.res	32, empty
@@ -62,7 +62,7 @@ cpu2x:	md	[STACKP]
 
 ; we use multix as a source of channel interrupt
 ; (as it always sends interrupt after initialization)
-mx:	fi	raise	; raise 2nd CPU interrupt
+mx:	fi	cpuh	; raise 2nd CPU interrupt
 	or	r6, ?X	; indicate that we've received MULTIX interrupt
 ; all other interrupts do nothing
 empty:	lip

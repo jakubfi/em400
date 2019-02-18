@@ -11,17 +11,15 @@
 
 ; ---- RUNTIME CONF AND STUFF --------------------------------------------
 
-	.const	USER_BLOCK	1
+	.const	USER_BLOCK	1\SR_NB
 	.const	INT_MASK	IMASK_PARITY | IMASK_NOMEM | IMASK_CPU_H | IMASK_IFPOWER | IMASK_GROUP_H
-	.const	Q		0b0000000000100000
-	.const	BBS		0b0000000000010000
 
 	.const	ADDR		0x200
 	.const	MAGIC1		0x4455
 	.const	MAGIC2		0xfeba
 
 sys_mb:	.word	0
-user_sr:.word	INT_MASK + USER_BLOCK
+user_sr:.word	INT_MASK | USER_BLOCK
 
 ; ---- INT VECTORS -------------------------------------------------------
 	.res	INTV - .
@@ -56,16 +54,16 @@ exl_handler:
 ; ---- CODE --------------------------------------------------------------
 
 start:
-	lw	r1, 0\3 | 1\15
-	ou 	r1, 3\10 | 0\14 | MEM_CFG
+	lw	r1, 0\MEM_PAGE | 1\MEM_SEGMENT
+	ou 	r1, 3\MEM_FRAME | 0\MEM_MODULE | MEM_CFG
 	.word	e, e, block1, e
 block1:
-	lw	r1, 1\3 | 1\15
-	ou 	r1, 4\10 | 0\14 | MEM_CFG
+	lw	r1, 1\MEM_PAGE | 1\MEM_SEGMENT
+	ou 	r1, 4\MEM_FRAME | 0\MEM_MODULE | MEM_CFG
 	.word	e, e, block9, e
 block9:
-	lw	r1, 9\3 | 1\15
-	ou 	r1, 5\10 | 0\14 | MEM_CFG
+	lw	r1, 9\MEM_PAGE | 1\MEM_SEGMENT
+	ou 	r1, 5\MEM_FRAME | 0\MEM_MODULE | MEM_CFG
 	.word	e, e, go, e
 
 go:	
@@ -100,8 +98,8 @@ fin:
 	hlt	077
 
 	; IC, R0, SR, expected_read
-userv1:	.word	0, 0, INT_MASK | Q | USER_BLOCK, 0x0044
-userv2:	.word	0, 0, INT_MASK | Q | BBS | USER_BLOCK, 0x00fe
+userv1:	.word	0, 0, INT_MASK | 1\SR_Q | USER_BLOCK, 0x0044
+userv2:	.word	0, 0, INT_MASK | 1\SR_Q | 1\SR_BS | USER_BLOCK, 0x00fe
 uservp:	.word	userv1
 
 user_prog:
