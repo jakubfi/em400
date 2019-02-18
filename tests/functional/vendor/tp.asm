@@ -5227,7 +5227,7 @@ x1723:	lw	r1, int04
 x1725:	rw	r1, INTV_IFPOWER
 x1727:	lip
 
-; interrupts I_TIMER, I_ILLEGAL, I_DIV_OF, I_FP_UF, I_FP_OF, I_FP_ERR, I_EXTRA
+; interrupts I_TIMER, I_ILLEGAL, I_DIV_OF, I_FP_UF, I_FP_OF, I_FP_ERR, I_UNUSED
 
 itest_int_cpu:
 x1728:	lw	r1, itest_int_timer_proc
@@ -5328,7 +5328,7 @@ x17a7:	jes	1
 x17a8:	hlt	ERR_CODE
 x17a9:	ki	itest_intr2
 x17ab:	lw	r1, [itest_intr2]
-x17ad:	cw	r1, I_FP_UF|I_FP_OF|I_FP_ERR|I_EXTRA|I_OPRQ|I_CPU_L|I_SW_H|I_SW_L
+x17ad:	cw	r1, I_FP_UF|I_FP_OF|I_FP_ERR|I_UNUSED|I_OPRQ|I_CPU_L|I_SW_H|I_SW_L
 x17af:	jes	1
 x17b0:	hlt	ERR_CODE
 x17b1:	lw	r1, int07
@@ -5358,7 +5358,7 @@ x17ce:	jes	1
 x17cf:	hlt	ERR_CODE
 x17d0:	ki	itest_intr2
 x17d2:	lw	r1, [itest_intr2]
-x17d4:	cw	r1, I_FP_OF|I_FP_ERR|I_EXTRA|I_OPRQ|I_CPU_L|I_SW_H|I_SW_L
+x17d4:	cw	r1, I_FP_OF|I_FP_ERR|I_UNUSED|I_OPRQ|I_CPU_L|I_SW_H|I_SW_L
 x17d6:	jes	1
 x17d7:	hlt	ERR_CODE
 x17d8:	lw	r1, int08
@@ -5388,7 +5388,7 @@ x17f5:	jes	1
 x17f6:	hlt	ERR_CODE
 x17f7:	ki	itest_intr2
 x17f9:	lw	r1, [itest_intr2]
-x17fb:	cw	r1, I_FP_ERR|I_EXTRA|I_OPRQ|I_CPU_L|I_SW_H|I_SW_L
+x17fb:	cw	r1, I_FP_ERR|I_UNUSED|I_OPRQ|I_CPU_L|I_SW_H|I_SW_L
 x17fd:	jes	1
 x17fe:	hlt	ERR_CODE
 x17ff:	lw	r1, int09
@@ -5418,7 +5418,7 @@ x181c:	jes	1
 x181d:	hlt	ERR_CODE
 x181e:	ki	itest_intr2
 x1820:	lw	r1, [itest_intr2]
-x1822:	cw	r1, I_EXTRA|I_OPRQ|I_CPU_L|I_SW_H|I_SW_L
+x1822:	cw	r1, I_UNUSED|I_OPRQ|I_CPU_L|I_SW_H|I_SW_L
 x1824:	jes	1
 x1825:	hlt	ERR_CODE
 x1826:	lw	r1, int10
@@ -5812,7 +5812,7 @@ x1a1b:	jes	1
 x1a1c:	hlt	ERR_CODE
 x1a1d:	ki	itest_intr2
 x1a1f:	lw	r1, [itest_intr2]
-x1a21:	cw	r1, I_MASKABLE-I_TIMER-I_ILLEGAL-I_DIV_OF-I_FP_UF-I_FP_OF-I_FP_ERR-I_EXTRA ; I_EXTRA should be gone now
+x1a21:	cw	r1, I_MASKABLE-I_TIMER-I_ILLEGAL-I_DIV_OF-I_FP_UF-I_FP_OF-I_FP_ERR-I_UNUSED ; I_UNUSED should be gone now
 x1a23:	jes	1
 x1a24:	hlt	ERR_CODE
 x1a25:	lw	r1, i_return2
