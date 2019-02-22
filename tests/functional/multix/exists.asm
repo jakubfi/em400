@@ -28,14 +28,14 @@ start:
 	mcl
 
 	; "exists" before initialization
-	in	r5, IO_EXISTS | 1\IO_CHAN
+	in	r5, MX_CMD_EXISTS | 1\IO_CHAN
 	.word	fail, fail, ok, fail
 fail:	hlt	040
 ok:	im	mask
 	hlt		; wait for mx int
 
 	; "exists" after initialization
-	in	r5, IO_EXISTS | 1\IO_CHAN
+	in	r5, MX_CMD_EXISTS | 1\IO_CHAN
 	.word	fail2, fail2, ok2, fail2
 fail2:	hlt	041
 ok2:	hlt	077

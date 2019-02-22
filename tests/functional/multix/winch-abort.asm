@@ -28,10 +28,10 @@ mxdata:	.word	-1
 
 ; ------------------------------------------------------------------------
 
-	.const	MXCMD_SETCFG	MX_IO_SETCFG | 1\IO_CHAN
-	.const	MXCMD_ABORT	MX_IO_ABORT | 1\IO_CHAN
-        .const	MXCMD_ATTACH	MX_IO_ATTACH | 1\IO_CHAN
-        .const	MXCMD_DETACH	MX_IO_DETACH | 1\IO_CHAN
+	.const	MXCMD_SETCFG	MX_CMD_SETCFG | 1\IO_CHAN
+	.const	MXCMD_ABORT	MX_CMD_ABORT | 1\IO_CHAN
+        .const	MXCMD_ATTACH	MX_CMD_ATTACH | 1\IO_CHAN
+        .const	MXCMD_DETACH	MX_CMD_DETACH | 1\IO_CHAN
 
 	.const	test_size	5 ; each test is: [io_type, command, arg, expected_irq, expected_result]
 seq:

@@ -3,6 +3,7 @@
 ; Check if all MULTIX reset triggers work
 
 	.include cpu.inc
+	.include io.inc
 	.include multix.inc
 
 	uj	start
@@ -56,7 +57,7 @@ w2:	hlt
 	er	r6, ?X
 
 	; IWYZE, by software MULTIX reset
-	in	r5, IO_RESET | 1\IO_CHAN
+	in	r5, MX_CMD_RESET | 1\IO_CHAN
 	.word	fail, fail, w3, fail
 w3:	hlt
 	bb	r6, ?X

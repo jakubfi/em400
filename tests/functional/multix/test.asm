@@ -5,6 +5,7 @@
 ; is sending IWYTE interrupt
 
 	.include cpu.inc
+	.include io.inc
 	.include multix.inc
 
 	uj	start
@@ -14,7 +15,7 @@ mask:	.word	IMASK_CH0_1
 		; 0=ou
 		; 1=in	cmd		irq
 seq:	.word	-1,	-1,		MX_IWYZE
-	.word	0,	MX_IO_TEST,	MX_IWYTE
+	.word	0,	MX_CMD_TEST,	MX_IWYTE
 seqe:
 
 	.org	OS_START

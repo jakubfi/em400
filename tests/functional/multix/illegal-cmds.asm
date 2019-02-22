@@ -3,6 +3,7 @@
 ; Test handling of illegal commands
 
 	.include cpu.inc
+	.include io.inc
 	.include multix.inc
 
 	uj	start

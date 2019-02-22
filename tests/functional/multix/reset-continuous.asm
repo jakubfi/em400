@@ -5,6 +5,7 @@
 ; (except the final one)
 
 	.include cpu.inc
+	.include io.inc
 	.include multix.inc
 
 	uj	start
@@ -19,7 +20,7 @@ tim_proc:
 	cw	r1, 0
 	jes	done
 	awt	r1, -1
-again:	in	r5, IO_RESET | 1\IO_CHAN	; reset MULTIX
+again:	in	r5, MX_CMD_RESET | 1\IO_CHAN	; reset MULTIX
 	.word	fail, again, ok, fail
 fail:	hlt	040
 ok:

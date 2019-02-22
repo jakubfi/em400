@@ -5,6 +5,7 @@
 ; Everything else happens under the blanket and cannot be verified from CPU perspective
 
 	.include cpu.inc
+	.include io.inc
 	.include multix.inc
 
 	uj	start
@@ -31,7 +32,7 @@ start:
 	im	mask
 	hlt		; wait for mx int
 
-repeat:	in	r5, MX_IO_REQUEUE | 0\10 | 1\IO_CHAN
+repeat:	in	r5, MX_CMD_REQUEUE | 0\10 | 1\IO_CHAN
 	.word	fail, repeat, ok, fail
 fail:	hlt	041
 ok:	hlt	077

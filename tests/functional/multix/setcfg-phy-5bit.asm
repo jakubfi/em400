@@ -36,7 +36,7 @@ seqe:
 ;  r1 - configuration field address
 ;  r4 - RJ return adress
 setcfg:
-	ou	r1, MX_IO_SETCFG | 1\IO_CHAN
+	ou	r1, MX_CMD_SETCFG | 1\IO_CHAN
 	.word	no, en, ok, pe
 no:	hlt	041
 ok:	uj	r4

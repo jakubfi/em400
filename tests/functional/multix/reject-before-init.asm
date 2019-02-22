@@ -3,6 +3,7 @@
 ; Check if MULTIX rejects commands before initialization completes
 
 	.include cpu.inc
+	.include io.inc
 	.include multix.inc
 
 	uj	start
@@ -28,7 +29,7 @@ start:
 
 	im	mask
 
-	ou	r5, MX_IO_SETCFG | 1\IO_CHAN
+	ou	r5, MX_CMD_SETCFG | 1\IO_CHAN
 	.word	fail, ok, fail, fail
 ok:	lwt	r4, 1	; EN = command rejected -> this is OK
 fail:	hlt		; NO, OK, PE -> this is bad
