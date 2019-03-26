@@ -264,7 +264,7 @@ void dbg_c_sregs(int wid)
 // -----------------------------------------------------------------------
 void dbg_c_regs(int wid)
 {
-	awtbprint(wid, C_LABEL, "    hex    oct    dec    ZMVCLEGY Xuser    ch R40\n");
+	awtbprint(wid, C_LABEL, "    hex    oct    dec    ZMVCLEGY X1234567 ch R40\n");
 	for (int i=0 ; i<=7 ; i++) {
 		char *r = r40_to_ascii(regs+i, 1, NULL);
 		char c[3];
