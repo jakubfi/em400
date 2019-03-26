@@ -150,21 +150,23 @@ void do_encode(int fi, int fo, int progress)
 	int in_read = 0;
 
 	while (1) {
+		w = 0;
 		res = read(fi, &w, 2);
-		if (res == 2) {
-			in_read++;
-			w = ntohs(w);
-			word2bin(w, b);
-			write(fo, b, 3);
-			if (progress) {
-				tcdrain(fo);
-				print_bar(in_size, in_read);
-			}
-		} else {
+
+		if (res == 0) {
 			// no more input data, write the ending byte
 			b[0] = BIN_ENDBYTE;
 			write(fo, b, 1);
 			break;
+		}
+
+		in_read++;
+		w = ntohs(w);
+		word2bin(w, b);
+		write(fo, b, 3);
+		if (progress) {
+			tcdrain(fo);
+			print_bar(in_size, in_read);
 		}
 	}
 	if (progress) fprintf(stderr, "\n");
