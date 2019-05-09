@@ -119,16 +119,16 @@ void mem_elwro_seg_set(int nb, int ab, struct mem_slot_t *slot)
 int mem_elwro_cmd(int nb, int ab, int mp, int seg)
 {
 	if (!mem_elwro[mp][seg]) {
-		LOG(L_MEM, "Elwro: ignore mapping nonexistent physical segment (%2d, %2d) -> (%2d, %2d)", nb, ab, mp, seg);
+		LOG(L_MEM, "Elwro: ignored mapping to a nonexistent physical segment: logical [%d, %d] -> physical [%d, %d]", nb, ab, mp, seg);
 		return IO_NO;
 	}
 
 	if ((mp == 0) && (seg < mem_elwro_os_segments)) {
-		LOG(L_MEM, "Elwro: ignore mapping hardwired segment (%2d, %2d) -> (%2d, %2d)", nb, ab, mp, seg);
+		LOG(L_MEM, "Elwro: ignored mapping to a hardwired segment: logical [%d, %d] -> physical [%d, %2d]", nb, ab, mp, seg);
 		return IO_NO;
 	}
 
-	LOG(L_MEM, "Elwro: add map (%2d, %2d) -> (%2d, %2d)", nb, ab, mp, seg);
+	LOG(L_MEM, "Elwro: adding map: logical [%d, %d] -> physical [%d, %d]", nb, ab, mp, seg);
 
 	mem_elwro_ral[mp][seg] = RAL(nb, ab);
 
