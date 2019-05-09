@@ -20,7 +20,7 @@
 #include <string.h>
 
 #include "io/defs.h"
-#include "mem/mem_elwro.h"
+#include "mem/elwro.h"
 
 #include "log.h"
 

@@ -21,8 +21,8 @@
 #include <inttypes.h>
 #include <arpa/inet.h>
 
-#include "mem/mem_elwro.h"
-#include "mem/mem_mega.h"
+#include "mem/elwro.h"
+#include "mem/mega.h"
 #include "mem/mem.h"
 #include "io/defs.h"
 

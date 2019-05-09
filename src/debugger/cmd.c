@@ -26,8 +26,8 @@
 #include "cpu/cpu.h"
 #include "cpu/interrupts.h"
 #include "mem/mem.h"
-#include "mem/mem_mega.h"
-#include "mem/mem_elwro.h"
+#include "mem/mega.h"
+#include "mem/elwro.h"
 
 #include "utils/utils.h"
 #include "log.h"

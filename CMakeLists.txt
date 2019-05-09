@@ -48,8 +48,8 @@ set(SOURCES_EM400
 	src/cpu/cp.c
 
 	src/mem/mem.c
-	src/mem/mem_mega.c
-	src/mem/mem_elwro.c
+	src/mem/mega.c
+	src/mem/elwro.c
 
 	src/fpga/iobus.c
 

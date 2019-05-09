@@ -20,7 +20,7 @@
 #include <string.h>
 
 #include "io/defs.h"
-#include "mem/mem_mega.h"
+#include "mem/mega.h"
 #include "utils/utils.h"
 
 #include "log.h"
