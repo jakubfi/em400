@@ -7,6 +7,13 @@
 
 	.include cpu.inc
 
+	; use EM400 compatibile hlt codes if running in an emulator
+	.ifdef	EM400
+	.const	ERR_CODE 040
+	.else
+	.const	ERR_CODE 0
+	.endif
+
 	ujs	init
 
 ; ------------------------------------------------------------------------
@@ -51,20 +58,21 @@ fret:	lw	r7, [r6]
 f2:	lws	r7, status
 	cwt	r7, 0
 	jes	fphlt1
-	hlt	040
+	hlt	ERR_CODE
 	ujs	fret
-fphlt1:	hlt	040
+fphlt1:	hlt	ERR_CODE
 	ujs	fret
 f3:	lws	r7, status
 	cwt	r7, 0
 	jes	fphlt2
-	hlt	040
+	hlt	ERR_CODE
 	ujs	fret
-fphlt2:	hlt	040
+fphlt2:	hlt	ERR_CODE
 	ujs	fret
 
 ; ------------------------------------------------------------------------
 	.org 0x40
+
 	.word	powerx
 	.word	parx
 	.word	nomemx
@@ -135,7 +143,7 @@ nomemx:	awt	r0, 1
 parx:	awt	r0, 1
 powerx:	lws	r3, stackp
 	ld	r3-4
-	hlt	040
+	hlt	ERR_CODE
 	uj	init
 
 ; ------------------------------------------------------------------------
@@ -150,7 +158,7 @@ jmp1:	lj	check_
 	cw	r4, data_sd
 	jes	test_sd
 	ujs	loop1
-halt1:	hlt	040
+halt1:	hlt	ERR_CODE
 	ujs	jmp1
 
 ; ------------------------------------------------------------------------
@@ -164,7 +172,7 @@ jmp2:	lj	check_
 	cw	r4, data_mw
 	jes	test_mw
 	ujs	loop2
-halt2:	hlt	040
+halt2:	hlt	ERR_CODE
 	ujs	jmp2
 
 ; ------------------------------------------------------------------------
@@ -189,16 +197,16 @@ chexi:	awt	r4, 8
 chk:	lws	r0, tmp
 	brc	2
 	ujs	chhlt1
-	hlt	040
+	hlt	ERR_CODE
 	ujs	load
-chhlt1:	hlt	040
+chhlt1:	hlt	ERR_CODE
 	ujs	load
 chhlt3:	lws	r0, 6
 	brc	2
 	ujs	chhlt2
-	hlt	040
+	hlt	ERR_CODE
 	ujs	chexi
-chhlt2:	hlt	040
+chhlt2:	hlt	ERR_CODE
 	ujs	chexi
 tmp:	.res	1
 
@@ -225,13 +233,13 @@ ok3b:	awt	r4, 6
 	cw	r4, data_dw
 	jes	test_dw
 	ujs	loop3
-halt3:	hlt	040
+halt3:	hlt	ERR_CODE
 	ujs	jmp3
 gdzies:	lws	r0, tmp
-	hlt	040
+	hlt	ERR_CODE
 	ujs	load3
 exi3:	lws	r0, tmp
-	hlt	040
+	hlt	ERR_CODE
 	ujs	ok3b
 
 ; ------------------------------------------------------------------------
@@ -257,16 +265,16 @@ ok4b:	awt	r4, 7
 	cw	r4, data_af
 	jes	test_af
 	ujs	loop4
-halt4:	hlt	040
+halt4:	hlt	ERR_CODE
 	ujs	jmp4
 exi4c:	lw	r0, [tmp]
-	hlt	040
+	hlt	ERR_CODE
 	ujs	load4
 exi4a:	lw	r0, [tmp]
-	hlt	040
+	hlt	ERR_CODE
 	ujs	ok4a
 exi4b:	lw	r0, [tmp]
-	hlt	040
+	hlt	ERR_CODE
 	ujs	ok4b
 
 ; ------------------------------------------------------------------------
@@ -281,7 +289,7 @@ load5:	lj	fchk_
 	cw	r4, data_sf
 	jes	test_sf
 	ujs	loop5
-hlt5:	hlt	040
+hlt5:	hlt	ERR_CODE
 	ujs	load5
 
 ; ------------------------------------------------------------------------
@@ -295,7 +303,7 @@ load6:	lj	fchk_
 	cw	r4, data_mf
 	jes	test_mf
 	ujs	loop6
-halt6:	hlt	040
+halt6:	hlt	ERR_CODE
 	ujs	load6
 
 ; ------------------------------------------------------------------------
@@ -310,7 +318,7 @@ load7:	lj	fchk_
 	cw	r4, data_df
 	jes	test_df
 	ujs	loop7
-halt7:	hlt	040
+halt7:	hlt	ERR_CODE
 	ujs	load7
 
 ; ------------------------------------------------------------------------
@@ -325,7 +333,7 @@ load8:	lj	fchk_
 	cw	r4, data_nrf
 	jes	test_nrf
 	ujs	loop8
-halt8:	hlt	040
+halt8:	hlt	ERR_CODE
 	ujs	load8
 
 ; ------------------------------------------------------------------------
@@ -348,10 +356,10 @@ fok2:	cw	r3, r7
 fretch: awt	r4, 11
 	uj	[fchk_]
 fhlt1:	lws	r0, ftmp
-	hlt	040
+	hlt	ERR_CODE
 	ujs	fload
 fhlt2:	lws	r0, ftmp
-	hlt	040
+	hlt	ERR_CODE
 	ujs	fretch
 ftmp:	.res	1
 
@@ -361,7 +369,7 @@ test_nrf:
 loop9:
 	lw	r0, [r4]
 	lf	r4+2
-	nrf	;  192
+	nrf	192
 	jxs	hlt9a
 jmp9:	rws	r0, ftmp
 	lw	r5, [r4+1]
@@ -380,16 +388,20 @@ ok9b:	cw	r3, r7
 	ujs	hlt9c
 ok9c:	awt	r4, 8
 	cw	r4, data_fin
+	.ifdef  EM400 ; finish and indicate no error if running in EM400 emulator
 	hlt	077
+	.res	1 ; padding for consistent addressing
+	.else ; loop over if running on a real hardware
 	je	test_ad
+	.endif
 	ujs	loop9
-hlt9a:	hlt	040
+hlt9a:	hlt	ERR_CODE
 	ujs	jmp9
 hlt9b:	lws	r0, ftmp
-	hlt	040
+	hlt	ERR_CODE
 	ujs	load9
 hlt9c:	lws	r0, ftmp
-	hlt	040
+	hlt	ERR_CODE
 	ujs	ok9c
 
 ; ------------------------------------------------------------------------
