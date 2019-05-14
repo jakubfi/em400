@@ -2807,7 +2807,7 @@ x0c32:	jes	kifi_test
 x0c33:	lj	reset_stack
 x0c35:	mcl
 
-	.ifdef EM400 ; finish and indicate no error if running in EM400 emulator
+	.ifdef	EM400 ; finish and indicate no error if running in EM400 emulator
 x0c36:	hlt	077
 	.res	1 ; padding for consistent addressing
 	.else ; loop over if running on a real hardware
