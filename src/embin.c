@@ -42,7 +42,7 @@ uint8_t b[3];
 char *name_stdout = "(stdout)";
 
 // -----------------------------------------------------------------------
-void error(const char *format, ...)
+void error(int e, const char *format, ...)
 {
 	va_list ap;
 	va_start(ap, format);
@@ -50,7 +50,7 @@ void error(const char *format, ...)
 	vfprintf(stderr, format, ap);
 	fprintf(stderr, "\nUse --help to get help on usage.\n");
 	va_end(ap);
-	exit(1);
+	exit(e);
 }
 
 // -----------------------------------------------------------------------
@@ -106,8 +106,7 @@ void parse_opts(int argc, char **argv)
 			case 's':
 				speed = serial_int2speed(atoi(optarg));
 				if (speed <= 0) {
-					error("Cannot set serial port speed: %s", optarg);
-					exit(3);
+					error(3, "Cannot set serial port speed: %s", optarg);
 				}
 				break;
 			case 'n':
@@ -120,8 +119,7 @@ void parse_opts(int argc, char **argv)
 	}
 
 	if (optind >= argc) {
-		error("Missing input file name");
-		exit(1);
+		error(2, "Missing input file name");
 	}
 
 	in_file = argv[optind];
@@ -158,14 +156,18 @@ void do_encode(int fi, int fo, int progress)
 		if (res == 0) {
 			// no more input data, write the ending byte
 			b[0] = BIN_ENDBYTE;
-			write(fo, b, 1);
+			if (write(fo, b, 1) != 1) {
+				error(10, "Write failed");
+			}
 			break;
 		}
 
 		in_read++;
 		w = ntohs(w);
 		word2bin(w, b);
-		write(fo, b, 3);
+		if (write(fo, b, 3) != 3) {
+			error(10, "Write failed");
+		}
 		if (progress) {
 			tcdrain(fo);
 			print_bar(in_size, in_read);
@@ -183,7 +185,7 @@ void do_decode(int fi, int fo)
 	while (1) {
 		res = read(fi, b+pos, 1);
 		if (res <= 0) {
-			error("Input stream ended prematurely, without the ending byte. Output is most likely invalid.");
+			error(10, "Input stream ended prematurely, without the ending byte. Output is most likely invalid.");
 			break;
 		} else if ((pos==0) && bin_is_end(b[pos])) {
 			// ending byte on position 0 means stream has ended
@@ -197,7 +199,9 @@ void do_decode(int fi, int fo)
 				pos = 0;
 				w = bin2word(b);
 				w = ntohs(w);
-				write(fo, &w, 2);
+				if (write(fo, &w, 2) != 2) {
+					error(10, "Write failed");
+				}
 			}
 		} else {
 			// Invalid bytes are silently ignored. This is how CPU works too.
@@ -219,8 +223,7 @@ int main(int argc, char **argv)
 
 	if (out_file) {
 		if (lstat(out_file, &sb)) {
-			error("Cannot stat output file: %s. Error: %s", out_file, strerror(errno));
-			exit(2);
+			error(2, "Cannot stat output file: %s. Error: %s", out_file, strerror(errno));
 		}
 
 		// try as a serial port
@@ -236,25 +239,20 @@ int main(int argc, char **argv)
 	}
 
 	if (fo < 0) {
-		error("Cannot open output file: %s. Error: %s", out_file, strerror(errno));
-		exit(2);
+		error(2, "Cannot open output file: %s. Error: %s", out_file, strerror(errno));
 	}
 
 	if (lstat(in_file, &sb)) {
-		error("Cannot access input file: %s. Error: %s", in_file, strerror(errno));
-		exit(2);
+		error(2, "Cannot access input file: %s. Error: %s", in_file, strerror(errno));
 	}
 
 	if (S_ISDIR(sb.st_mode)) {
-		error("Input %s is a directory.", in_file);
-		exit(2);
+		error(2, "Input %s is a directory.", in_file);
 	}
 
 	fi = open(in_file, O_RDONLY);
 	if (fi < 0) {
-		error("Cannot open input file: %s. Error: %s", in_file, strerror(errno));
-		close(fo);
-		exit(2);
+		error(2, "Cannot open input file: %s. Error: %s", in_file, strerror(errno));
 	}
 
 	if (encode) {
