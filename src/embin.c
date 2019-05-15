@@ -25,6 +25,8 @@
 #include <unistd.h>
 #include <arpa/inet.h>
 #include <stdarg.h>
+#include <errno.h>
+#include <string.h>
 
 #include "utils/utils.h"
 
@@ -210,14 +212,19 @@ int main(int argc, char **argv)
 {
 	int fi, fo;
 	int using_serial = 0;
+	struct stat sb;
 
 	speed = serial_int2speed(9600);
 	parse_opts(argc, argv);
 
 	if (out_file) {
-		struct stat sb;
+		if (lstat(out_file, &sb)) {
+			error("Cannot stat output file: %s. Error: %s", out_file, strerror(errno));
+			exit(2);
+		}
+
 		// try as a serial port
-		if ((!lstat(out_file, &sb)) && ((sb.st_mode & S_IFMT) == S_IFCHR) && ((fo = serial_open(out_file, speed)) > 0)) {
+		if (((sb.st_mode & S_IFMT) == S_IFCHR) && ((fo = serial_open(out_file, speed)) > 0)) {
 			using_serial = 1;
 		// if this fails, try as a regular file
 		} else {
@@ -229,13 +236,23 @@ int main(int argc, char **argv)
 	}
 
 	if (fo < 0) {
-		error("Cannot open output file: %s", out_file);
+		error("Cannot open output file: %s. Error: %s", out_file, strerror(errno));
+		exit(2);
+	}
+
+	if (lstat(in_file, &sb)) {
+		error("Cannot access input file: %s. Error: %s", in_file, strerror(errno));
+		exit(2);
+	}
+
+	if (S_ISDIR(sb.st_mode)) {
+		error("Input %s is a directory.", in_file);
 		exit(2);
 	}
 
 	fi = open(in_file, O_RDONLY);
 	if (fi < 0) {
-		error("Cannot open input file: %s", in_file);
+		error("Cannot open input file: %s. Error: %s", in_file, strerror(errno));
 		close(fo);
 		exit(2);
 	}
