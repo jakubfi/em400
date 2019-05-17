@@ -63,7 +63,7 @@ int mem_elwro_init(int modc, int seg_os)
 		for (seg=0 ; seg<MEM_MAX_ELWRO_SEGMENTS; seg++) {
 			mem_elwro[mp][seg] = (uint16_t *) calloc(sizeof(uint16_t), MEM_SEGMENT_SIZE);
 			if (!mem_elwro[mp][seg]) {
-				LOGERR("Memory allocation failed for Elwro map.");
+				return LOGERR("Memory allocation failed for Elwro map.");
 			}
 		}
 	}

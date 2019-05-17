@@ -86,7 +86,7 @@ int em400_init(struct cfg_em400 *cfg)
 #endif
 	if (cfg->fpga) {
 		if (iob_init(cfg->fpga_dev, cfg->fpga_speed) == E_ERR) {
-			LOGERR("Failed to set up FPGA I/O bus.");
+			return LOGERR("Failed to set up FPGA I/O bus.");
 		}
 	}
 
