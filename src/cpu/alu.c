@@ -40,59 +40,17 @@
 // -----------------------------------------------------------------------
 
 // -----------------------------------------------------------------------
-void alu_16_add(unsigned reg, uint16_t arg, unsigned carry, int sign)
-{
-	if (sign < 0) {
-		arg = -arg;
-	}
-
-	uint64_t res = regs[reg] + arg + carry;
-
-	alu_16_set_V(regs[reg], arg+carry, res);
-	alu_16_set_M(res);
-	alu_16_set_C(res);
-	alu_16_set_Z(res);
-
-	// 0-0 always sets carry
-	if ((sign < 0) && (regs[IR_A] == 0) && (N == 0)) {
-		Fset(FL_C);
-	}
-
-	reg_restrict_write(reg, (uint16_t) res);
-}
-
-// -----------------------------------------------------------------------
-void alu_16_neg(int reg, uint16_t carry)
-{
-	uint16_t a = regs[reg];
-	uint32_t res = (~a) + carry;
-
-	alu_16_set_V(~a, carry, res);
-	alu_16_set_M(res);
-	// -0 sets carry
-	if ((regs[IR_A] == 0) && (carry)) {
-		Fset(FL_C);
-	} else {
-		Fclr(FL_C);
-	}
-	alu_16_set_Z(res);
-	reg_restrict_write(reg, res);
-}
-
-// -----------------------------------------------------------------------
 void alu_16_set_LEG(int32_t a, int32_t b)
 {
 	if (a == b) {
 		Fset(FL_E);
-		Fclr(FL_G);
-		Fclr(FL_L);
+		Fclr(FL_G | FL_L);
 	} else {
-		Fclr(FL_E);
 		if (a < b) {
 			Fset(FL_L);
-			Fclr(FL_G);
+			Fclr(FL_E | FL_G);
 		} else {
-			Fclr(FL_L);
+			Fclr(FL_E | FL_L);
 			Fset(FL_G);
 		}
 	}
@@ -170,6 +128,46 @@ void alu_16_update_V(uint64_t x, uint64_t y, uint64_t z)
 	) {
 		Fset(FL_V);
 	}
+}
+
+// -----------------------------------------------------------------------
+void alu_16_add(unsigned reg, uint16_t arg, unsigned carry, int sign)
+{
+	if (sign < 0) {
+		arg = -arg;
+	}
+
+	uint64_t res = regs[reg] + arg + carry;
+
+	alu_16_set_V(regs[reg], arg+carry, res);
+	alu_16_set_M(res);
+	alu_16_set_C(res);
+	alu_16_set_Z(res);
+
+	// 0-0 always sets carry
+	if ((sign < 0) && (regs[IR_A] == 0) && (N == 0)) {
+		Fset(FL_C);
+	}
+
+	reg_restrict_write(reg, (uint16_t) res);
+}
+
+// -----------------------------------------------------------------------
+void alu_16_neg(int reg, uint16_t carry)
+{
+	uint16_t a = regs[reg];
+	uint32_t res = (~a) + carry;
+
+	alu_16_set_V(~a, carry, res);
+	alu_16_set_M(res);
+	// -0 sets carry
+	if ((regs[IR_A] == 0) && (carry)) {
+		Fset(FL_C);
+	} else {
+		Fclr(FL_C);
+	}
+	alu_16_set_Z(res);
+	reg_restrict_write(reg, res);
 }
 
 // -----------------------------------------------------------------------

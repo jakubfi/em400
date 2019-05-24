@@ -20,7 +20,7 @@
 
 #include <inttypes.h>
 
-enum alu_awp_ops_e {
+enum alu_awp_ops {
 	AWP_NRF0 = 0, AWP_NRF1 = 1, AWP_NRF2 = 2, AWP_NRF3 = 3, // NRFs need to be at positions 0-3
 	AWP_AD, AWP_SD, AWP_MW, AWP_DW,
 	AWP_AF, AWP_SF, AWP_MF, AWP_DF,
@@ -30,16 +30,13 @@ void alu_16_add(unsigned reg, uint16_t arg, unsigned carry, int sign);
 void alu_16_neg(int reg, uint16_t carry);
 void alu_16_set_LEG(int32_t a, int32_t b);
 void alu_16_set_Z(uint64_t z);
-void alu_16_set_M(uint64_t z);
-void alu_16_set_C(uint64_t z);
-void alu_16_set_V(uint64_t x, uint64_t y, uint64_t z);
 void alu_16_update_V(uint64_t x, uint64_t y, uint64_t z);
 
 void awp_dispatch(int op, uint16_t arg);
 
 #define Fget(x) (regs[0] & (x) ? 1 : 0)
-#define Fset(x) regs[0] |= (x)
-#define Fclr(x) regs[0] &= ~(x)
+#define Fset(x) (regs[0] |= (x))
+#define Fclr(x) (regs[0] &= ~(x))
 
 #endif
 
