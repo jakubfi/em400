@@ -48,7 +48,7 @@ static const uint32_t int_rm2xmask[10] = {
 	0b00000000000000000000000000001111
 };
 
-// bit masks (to use on SR) for each interrupt
+// bit masks (to use on RM) for each interrupt
 static const int int_int2mask[32] = {
 	MASK_0,
 	MASK_0,
@@ -115,7 +115,7 @@ void int_update_mask(uint16_t mask)
 	uint32_t xmask = 0b10000000000000000000000000000000;
 
 	for (i=0 ; i<10 ; i++) {
-		if (mask & (1 << (15-i))) {
+		if (mask & (1 << (9-i))) {
 			xmask |= int_rm2xmask[i];
 		}
 	}
@@ -185,7 +185,7 @@ void int_serve()
 	int interrupt;
 	uint16_t int_vec;
 	uint16_t int_spec = 0;
-	uint16_t sr_mask;
+	uint16_t int_mask;
 
 	// find highest interrupt to serve
 	while ((probe > 0) && !(RP & (1 << probe))) {
@@ -208,12 +208,14 @@ void int_serve()
 		io_get_intspec(interrupt-12, &int_spec);
 	}
 
-	// put system status on stack
-	sr_mask = int_int2mask[interrupt] & MASK_Q; // calculate mask and clear Q
-	if (cpu_mod_active && (interrupt >= 12) && (interrupt <= 27)) sr_mask &= MASK_EX; // put extended mask if cpu_mod
+	int_mask = int_int2mask[interrupt]; // get new interrupt mask for the given interrupt
+	if (cpu_mod_active && (interrupt >= 12) && (interrupt <= 27)) {
+		// extend interrupt mask if cpu_mod is enabled
+		int_mask &= MASK_EX;
+	}
 
 	// switch context
-	if (!cpu_ctx_switch(int_spec, int_vec, sr_mask)) return;
+	if (!cpu_ctx_switch(int_spec, int_vec, int_mask)) return;
 
 	if (LOG_ENABLED) {
 		log_intlevel_inc();

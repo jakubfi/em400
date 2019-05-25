@@ -51,7 +51,7 @@ int rALARM;
 uint16_t rMOD;
 int rMODc;
 uint16_t rIR;
-uint16_t rSR;
+unsigned RM, Q, BS, NB;
 
 int P;
 uint32_t N;
@@ -293,9 +293,9 @@ static void cpu_clear(int scope, int new_ui)
 	cpu_mod_off();
 
 	regs[0] = 0;
-	rSR = 0;
+	SR_write(0);
 
-	int_update_mask(0);
+	int_update_mask(RM);
 	int_clear_all();
 
 	if (scope & STATE_CLO) {
@@ -319,25 +319,27 @@ static void cpu_clear(int scope, int new_ui)
 }
 
 // -----------------------------------------------------------------------
-int cpu_ctx_switch(uint16_t arg, uint16_t ic, uint16_t sr_mask)
+int cpu_ctx_switch(uint16_t arg, uint16_t ic, uint16_t int_mask)
 {
 	uint16_t sp;
 
 	if (!cpu_mem_get(0, 97, &sp)) return 0;
 
-	LOG(L_CPU, "Store current process ctx [IC: 0x%04x, R0: 0x%04x, SR: 0x%04x, 0x%04x] @ 0x%04x, set new IC: 0x%04x", rIC, regs[0], rSR, arg, sp, ic);
+	LOG(L_CPU, "Store current process ctx [IC: 0x%04x, R0: 0x%04x, SR: 0x%04x, 0x%04x] @ 0x%04x, set new IC: 0x%04x", rIC, regs[0], SR_read(), arg, sp, ic);
+
 
 	if (!cpu_mem_put(0, sp, rIC)) return 0;
 	if (!cpu_mem_put(0, sp+1, regs[0])) return 0;
-	if (!cpu_mem_put(0, sp+2, rSR)) return 0;
+	if (!cpu_mem_put(0, sp+2, SR_read())) return 0;
 	if (!cpu_mem_put(0, sp+3, arg)) return 0;
 	if (!cpu_mem_put(0, 97, sp+4)) return 0;
 
 	regs[0] = 0;
 	rIC = ic;
-	rSR &= sr_mask;
+	Q = 0;
+	RM &= int_mask;
 
-	int_update_mask(rSR);
+	int_update_mask(RM);
 
 	return 1;
 }
@@ -354,11 +356,11 @@ int cpu_ctx_restore()
 	if (!cpu_mem_get(0, sp-3, &data)) return 0;
 	regs[0] = data;
 	if (!cpu_mem_get(0, sp-2, &data)) return 0;
-	rSR = data;
-	int_update_mask(rSR);
+	SR_write(data);
+	int_update_mask(RM);
 	if (!cpu_mem_put(0, 97, sp-4)) return 0;
 
-	LOG(L_CPU, "Loaded process ctx @ 0x%04x: [IC: 0x%04x, R0: 0x%04x, SR: 0x%04x]", sp-4, rIC, regs[0], rSR);
+	LOG(L_CPU, "Loaded process ctx @ 0x%04x: [IC: 0x%04x, R0: 0x%04x, SR: 0x%04x]", sp-4, rIC, regs[0], SR_read());
 
 	return 1;
 }
@@ -371,7 +373,7 @@ static void cpu_step()
 	char opcode[64];
 
 	if (LOG_WANTS(L_CPU)) {
-		log_store_cycle_state(rSR, rIC);
+		log_store_cycle_state(SR_read(), rIC);
 	}
 
 	// fetch instruction

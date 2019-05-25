@@ -81,7 +81,7 @@ int cp_reg_get(unsigned id)
 			// n/a case CP_REG_AC:
 			// n/a case CP_REG_AR:
 			case CP_REG_IR: reg = rIR; break;
-			case CP_REG_SR: reg = rSR; break;
+			case CP_REG_SR: reg = SR_read(); break;
 			// n/a case CP_REG_RZ:
 			case CP_REG_KB: reg = rKB; break;
 			case CP_REG_KB2: reg = rKB; break;
@@ -118,7 +118,7 @@ int cp_reg_set(unsigned id, uint16_t v)
 			case CP_REG_AC: return -1;
 			case CP_REG_AR: return -1;
 			case CP_REG_IR: rIR = v; break;
-			case CP_REG_SR: rSR = v; break;
+			case CP_REG_SR: SR_write(v); break;
 			case CP_REG_RZ: return -1;
 			case CP_REG_KB: rKB = v; break;
 			case CP_REG_KB2: rKB = v; break;

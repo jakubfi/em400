@@ -36,9 +36,12 @@ enum cpu_states {
 // -----------------------------------------------------------------------
 // SR access macros
 // -----------------------------------------------------------------------
-#define Q	((rSR & 0b0000000000100000) >> 5)
-#define BS	((rSR & 0b0000000000010000) >> 4)
-#define NB	((rSR & 0b0000000000001111) >> 0)
+#define SR_read() (RM<<6 | Q<<5 | BS<<4 | NB)
+#define SR_write(sr) \
+	RM = (sr >> 6) & 0b1111111111; \
+	Q = (sr >> 5) & 1; \
+	BS = (sr >> 4) & 1; \
+	NB = sr & 0b1111
 #define QNB	(Q*NB)
 
 // -----------------------------------------------------------------------
@@ -70,7 +73,7 @@ extern int rALARM;
 extern uint16_t rMOD;
 extern int rMODc;
 extern uint16_t rIR;
-extern uint16_t rSR;
+extern unsigned RM, Q, BS, NB;
 
 extern int P;
 extern uint32_t N;
@@ -94,7 +97,7 @@ void cpu_shutdown();
 int cpu_mod_on();
 int cpu_mod_off();
 
-int cpu_ctx_switch(uint16_t arg, uint16_t ic, uint16_t sr_mask);
+int cpu_ctx_switch(uint16_t arg, uint16_t ic, uint16_t int_mask);
 int cpu_ctx_restore();
 
 void cpu_loop(int new_ui);

@@ -233,7 +233,7 @@ void awp_dispatch(int op, uint16_t arg)
 		}
 	} else {
 		if (!cpu_mem_get(0, AWP_DISPATCH_TAB_ADDR+op, &addr)) return;
-		if (!cpu_ctx_switch(arg, addr, MASK_9 & MASK_Q)) return;
+		if (!cpu_ctx_switch(arg, addr, MASK_9)) return;
 	}
 }
 
