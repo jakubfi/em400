@@ -1,0 +1,32 @@
+os: linux
+dist: xenial
+language: c
+
+compiler:
+- gcc
+- clang
+
+before_install:
+- git clone https://github.com/jakubfi/travis-utils travis-utils
+- BUILD_DEP=$TRAVIS_BUILD_DIR/travis-utils/em-build-dep.sh
+- $BUILD_DEP emawp
+- $BUILD_DEP emelf
+- $BUILD_DEP emdas
+- $BUILD_DEP emcrk
+- $BUILD_DEP emas
+
+script:
+- INSTALL_DIR=$TRAVIS_BUILD_DIR/image
+- BUILD_DIR=$TRAVIS_BUILD_DIR/build
+- mkdir $INSTALL_DIR
+- mkdir $BUILD_DIR && cd $BUILD_DIR
+- cmake -DCMAKE_INSTALL_PREFIX=$INSTALL_DIR -DCMAKE_BUILD_TYPE=Release $TRAVIS_BUILD_DIR
+- cmake --build $BUILD_DIR -- -j2 VERBOSE=1
+- cmake --build $BUILD_DIR --target install -- -j2 VERBOSE=1
+- find $INSTALL_DIR -ls
+- cd $TRAVIS_BUILD_DIR/tests/images
+- make
+- cd $TRAVIS_BUILD_DIR/tests
+- python3 ./runtests.py ectl functional
+
+# vim: tabstop=2 expandtab shiftwidth=2 softtabstop=2
