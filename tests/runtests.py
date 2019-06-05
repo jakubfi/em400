@@ -409,5 +409,6 @@ tb.close()
 print("------------------------------------------------------------")
 print("Tests run: %i, failed: %i" % (total, failed))
 
+sys.exit(failed)
 
 # vim: tabstop=4 expandtab shiftwidth=4 softtabstop=4
