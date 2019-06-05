@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 
 import sys
 
@@ -8,6 +8,7 @@ f = open(sys.argv[1], "rb+")
 f.seek(0x1a + 1*4*16*512)
 
 for sect in range(0, 614*4*16):
-    f.write(256 * ("%c%c" % (sect/256, sect%256)))
+    word = bytes([(sect>>8) & 0xff, sect & 0xff])
+    f.write(256 * word)
 
 f.close()
