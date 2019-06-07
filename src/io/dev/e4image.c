@@ -290,7 +290,7 @@ static struct e4i_t * __e4i_create(char *img_name, uint16_t id_size, uint16_t bl
 	}
 
 	// fill header data
-	strncpy(e->magic, E4I_MAGIC, 4);
+	memcpy(e->magic, E4I_MAGIC, 4);
 	e->v_major = E4I_IMAGE_V_MAJOR;
 	e->v_minor = E4I_IMAGE_V_MINOR;
 	e->flags = flags;
