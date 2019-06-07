@@ -108,7 +108,7 @@ void e4i_header_print(struct e4i_t *e)
 }
 
 // -----------------------------------------------------------------------
-int __e4i_header_read(struct e4i_t *e)
+static int __e4i_header_read(struct e4i_t *e)
 {
 	uint8_t *buf = (uint8_t *) calloc(1, E4I_HEADER_SIZE);
 	if (!buf) {
@@ -145,7 +145,7 @@ int __e4i_header_read(struct e4i_t *e)
 }
 
 // -----------------------------------------------------------------------
-int __e4i_header_write(struct e4i_t *e)
+static int __e4i_header_write(struct e4i_t *e)
 {
 	uint8_t *buf = (uint8_t *) calloc(1, E4I_HEADER_SIZE);
 	if (!buf) {
@@ -202,7 +202,7 @@ int e4i_flag_clear(struct e4i_t *e, uint32_t flag)
 }
 
 // -----------------------------------------------------------------------
-int __e4i_header_check(struct e4i_t *e)
+static int __e4i_header_check(struct e4i_t *e)
 {
 	if (strncmp(e->magic, E4I_MAGIC, 4) != 0) {
 		return E4I_E_MAGIC;
@@ -264,11 +264,11 @@ struct e4i_t * e4i_open(char *img_name)
 }
 
 // -----------------------------------------------------------------------
-struct e4i_t * __e4i_create(char *img_name, uint16_t id_size, uint16_t block_size, uint16_t cylinders, uint8_t heads, uint8_t spt, uint32_t blocks, uint32_t flags)
+static struct e4i_t * __e4i_create(char *img_name, uint16_t id_size, uint16_t block_size, uint16_t cylinders, uint8_t heads, uint8_t spt, uint32_t blocks, uint32_t flags)
 {
 	e4i_err = E4I_E_OK;
 
-	// we don't destroy images
+	// don't destroy images
 	struct stat st;
 	if (stat(img_name, &st) == 0) {
 		e4i_err = E4I_E_EXISTS;
@@ -335,6 +335,30 @@ struct e4i_t * e4i_create_seq(char *img_name, uint16_t id_size, uint16_t block_s
 }
 
 // -----------------------------------------------------------------------
+static int __e4i_write_ignore_flags(struct e4i_t *e, uint8_t *buf, int block, int bytes, int boffset, int max_bytes)
+{
+	int res;
+	int csize = e->id_size + e->block_size;
+
+	if (bytes > max_bytes) {
+		return E4I_E_WRITE;
+	}
+
+	res = fseek(e->image, E4I_HEADER_SIZE + block*csize + boffset, SEEK_SET);
+	if (res < 0) {
+		return E4I_E_NO_SECTOR;
+	}
+
+	res = fwrite(buf, 1, bytes, e->image);
+	if (res != bytes) {
+		return E4I_E_WRITE;
+	}
+
+	return E4I_E_OK;
+
+}
+
+// -----------------------------------------------------------------------
 int e4i_import(struct e4i_t *e, char *src_name, uint16_t img_type, uint16_t img_utype)
 {
 	if (e->flags & E4I_F_FORMATTED) {
@@ -395,7 +419,7 @@ int e4i_import(struct e4i_t *e, char *src_name, uint16_t img_type, uint16_t img_
 }
 
 // -----------------------------------------------------------------------
-int __e4i_init_disk(struct e4i_t *e, e4i_id_gen_f *genf, uint16_t img_type, uint16_t img_utype)
+static int __e4i_init_disk(struct e4i_t *e, e4i_id_gen_f *genf, uint16_t img_type, uint16_t img_utype)
 {
 	if ((e->id_size > 0) && !genf) {
 		return E4I_E_GENF_MISSING;
@@ -440,7 +464,7 @@ int __e4i_init_disk(struct e4i_t *e, e4i_id_gen_f *genf, uint16_t img_type, uint
 }
 
 // -----------------------------------------------------------------------
-int __e4i_init_seq(struct e4i_t *e, uint16_t img_type, uint16_t img_utype)
+static int __e4i_init_seq(struct e4i_t *e, uint16_t img_type, uint16_t img_utype)
 {
 	e->flags |= E4I_F_FORMATTED;
 	e->img_type = img_type;
@@ -459,13 +483,13 @@ int e4i_init(struct e4i_t *e, e4i_id_gen_f *genf, uint16_t img_type, uint16_t im
 }
 
 // -----------------------------------------------------------------------
-int __e4i_s2b(struct e4i_t *e, int cyl, int head, int sect)
+static int __e4i_s2b(struct e4i_t *e, int cyl, int head, int sect)
 {
 	return sect + (head * e->spt) + (cyl * e->heads * e->spt);
 }
 
 // -----------------------------------------------------------------------
-int __e4i_read(struct e4i_t *e, uint8_t *buf, int block, int boffset, int struct_size)
+static int __e4i_read(struct e4i_t *e, uint8_t *buf, int block, int boffset, int struct_size)
 {
 	if (!(e->flags & E4I_F_FORMATTED)) {
 		return E4I_E_UNFORMATTED;
@@ -488,31 +512,7 @@ int __e4i_read(struct e4i_t *e, uint8_t *buf, int block, int boffset, int struct
 }
 
 // -----------------------------------------------------------------------
-int __e4i_write_ignore_flags(struct e4i_t *e, uint8_t *buf, int block, int bytes, int boffset, int max_bytes)
-{
-	int res;
-	int csize = e->id_size + e->block_size;
-
-	if (bytes > max_bytes) {
-		return E4I_E_WRITE;
-	}
-
-	res = fseek(e->image, E4I_HEADER_SIZE + block*csize + boffset, SEEK_SET);
-	if (res < 0) {
-		return E4I_E_NO_SECTOR;
-	}
-
-	res = fwrite(buf, 1, bytes, e->image);
-	if (res != bytes) {
-		return E4I_E_WRITE;
-	}
-
-	return E4I_E_OK;
-
-}
-
-// -----------------------------------------------------------------------
-int __e4i_write(struct e4i_t *e, uint8_t *buf, int block, int bytes, int boffset, int max_bytes)
+static int __e4i_write(struct e4i_t *e, uint8_t *buf, int block, int bytes, int boffset, int max_bytes)
 {
 	if (e->flags & (E4I_F_WRPROTECT | E4I_F_MASTERCOPY)) {
 		return E4I_E_WRPROTECT;

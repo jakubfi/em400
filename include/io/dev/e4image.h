@@ -113,11 +113,6 @@ struct e4i_t {
 
 typedef int (e4i_id_gen_f)(struct e4i_t *e, uint8_t *buf, int id_len, uint32_t block);
 
-// INTERNAL: header access
-int __e4i_header_read(struct e4i_t *e);
-int __e4i_header_write(struct e4i_t *e);
-int __e4i_header_check(struct e4i_t *e);
-
 void e4i_header_print(struct e4i_t *e);
 
 struct e4i_t * e4i_open(char *img_name);
@@ -127,25 +122,12 @@ const char * e4i_get_err(int i);
 int e4i_flag_set(struct e4i_t *e, uint32_t flag);
 int e4i_flag_clear(struct e4i_t *e, uint32_t flag);
 
-// INTERNAL: create media
-struct e4i_t * __e4i_create(char *img_name, uint16_t id_size, uint16_t block_size, uint16_t cylinders, uint8_t heads, uint8_t spt, uint32_t blocks, uint32_t flags);
-
 struct e4i_t * e4i_create_chs(char *img_name, uint16_t id_size, uint16_t block_size, uint16_t cylinders, uint8_t heads, uint8_t spt);
 struct e4i_t * e4i_create_lba(char *img_name, uint16_t id_size, uint16_t block_size, uint32_t blocks, int append);
 struct e4i_t * e4i_create_seq(char *img_name, uint16_t id_size, uint16_t block_size);
 
-// INTERNAL: media initialization
-int __e4i_init_disk(struct e4i_t *e, e4i_id_gen_f *genf, uint16_t img_type, uint16_t img_utype);
-int __e4i_init_seq(struct e4i_t *e, uint16_t img_type, uint16_t img_utype);
-
 int e4i_init(struct e4i_t *e, e4i_id_gen_f *genf, uint16_t img_type, uint16_t img_utype);
 int e4i_import(struct e4i_t *e, char *src_name, uint16_t img_type, uint16_t img_utype);
-
-// INTERNAL: block access
-int __e4i_s2b(struct e4i_t *e, int cyl, int head, int sect);
-int __e4i_read(struct e4i_t *e, uint8_t *buf, int block, int boffset, int struct_size);
-int __e4i_write(struct e4i_t *e, uint8_t *buf, int block, int bytes, int boffset, int max_bytes);
-int __e4i_write_ignore_flags(struct e4i_t *e, uint8_t *buf, int block, int bytes, int boffset, int max_bytes);
 
 // CHS access
 int e4i_sread(struct e4i_t *e, uint8_t *buf, int cyl, int head, int sect);
