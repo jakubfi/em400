@@ -642,7 +642,7 @@ void awprint(int id, int attr, const char *format, ...)
 	switch (aw_output) {
 		case O_NCURSES:
 			wattron(w->win, aw_attr[attr]);
-			vwprintw(w->win, format, vl);
+			vw_printw(w->win, format, vl);
 			wattroff(w->win, aw_attr[attr]);
 			break;
 		case O_STD:
