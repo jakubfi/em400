@@ -229,6 +229,13 @@ int ectl_int_set(unsigned interrupt)
 }
 
 // -----------------------------------------------------------------------
+int ectl_int_clear(unsigned interrupt)
+{
+	LOG(L_ECTL, "ECTL int clear %i", interrupt);
+	return cp_int_clear(interrupt);
+}
+
+// -----------------------------------------------------------------------
 uint32_t ectl_int_get()
 {
 	LOG(L_ECTL, "ECTL interrupts get");

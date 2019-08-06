@@ -68,6 +68,7 @@ void cp_clear();
 void cp_bin();
 void cp_oprq();
 int cp_int_set(unsigned i);
+int cp_int_clear(unsigned i);
 uint32_t cp_int_get();
 int cp_state();
 int cp_stopn(uint16_t addr);

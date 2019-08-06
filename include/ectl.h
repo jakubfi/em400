@@ -133,6 +133,7 @@ void ectl_clock_set(int state);
 int ectl_clock_get();
 void ectl_oprq();
 int ectl_int_set(unsigned interrupt);
+int ectl_int_clear(unsigned interrupt);
 uint32_t ectl_int_get();
 
 // informational, other
