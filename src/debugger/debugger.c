@@ -22,20 +22,13 @@
 #include <signal.h>
 #include <emdas.h>
 
-#include "cpu/cpu.h"
-#include "mem/mem.h"
-
-#include "em400.h"
-#include "log.h"
-#include "utils/utils.h"
+#include "ectl.h"
 
 #include "debugger/awin.h"
 #include "debugger/debugger.h"
 #include "debugger/ui.h"
 #include "debugger_parser.h"
 #include "debugger/eval.h"
-
-#include "cfg.h"
 
 int ui_mode;
 
@@ -70,14 +63,18 @@ static void _dbg_sigint_handler(int signum)
 }
 
 // -----------------------------------------------------------------------
+int dbg_mem_get(int nb, uint16_t addr, uint16_t *data)
+{
+	return ectl_mem_get(nb, addr, data, 1);
+}
+
+// -----------------------------------------------------------------------
 int dbg_init(struct cfg_em400 *cfg)
 {
 	// set UI mode
 	if (cfg->ui_simple == 1) {
-		LOG(L_EM4H, "Initializing debugger console: readline");
 		ui_mode = O_STD;
 	} else {
-		LOG(L_EM4H, "Initializing debugger console: ncurses");
 		ui_mode = O_NCURSES;
 	}
 
@@ -88,38 +85,37 @@ int dbg_init(struct cfg_em400 *cfg)
 
 	if (aw_init(ui_mode, hist_file) != 0) {
 		free(hist_file);
-		return LOGERR("AWIN initialization failed.");
+		return -1;
 	}
 
 	free(hist_file);
 
 	if ((ui_mode == O_NCURSES) &&  (dbg_ui_init() != 0)) {
-		return LOGERR("Ncurses UI initialization failed.");
+		return -1;
 	}
 
 	aw_layout_changed = 1;
 
 	// prepare handler for ctrl-c (break emulation, enter debugger loop)
 	if (signal(SIGINT, _dbg_sigint_handler) == SIG_ERR) {
-		return LOGERR("Failed to install Ctrl-C UI handler.");
+		return -1;
 	}
 
-	emd = emdas_create(cfg->cpu_mod ? EMD_ISET_MX16 : EMD_ISET_MERA400, mem_get);
+	emd = emdas_create(cfg->cpu_mod ? EMD_ISET_MX16 : EMD_ISET_MERA400, dbg_mem_get);
 	if (!emd) {
-		return LOGERR("Failed to initialize debugger's deassembler.");
+		return -1;
 	}
 
 	emdas_set_nl(emd, '\0');
 	emdas_set_features(emd, EMD_FEAT_NONE);
 	emdas_set_tabs(emd, 0, 0, 4, 4);
 
-	return E_OK;
+	return 0;
 }
 
 // -----------------------------------------------------------------------
 void dbg_shutdown()
 {
-	LOG(L_EM4H, "Shutdown debugger");
 	aw_shutdown();
 	emdas_destroy(emd);
 }
@@ -135,7 +131,7 @@ struct evlb_t * dbg_brk_check()
 			awtbprint(W_CMD, C_LABEL, ": \"");
 			awtbprint(W_CMD, C_DATA, "%s", b->label);
 			awtbprint(W_CMD, C_LABEL, "\" (at: ");
-			awtbprint(W_CMD, C_DATA, "0x%04x", rIC);
+			awtbprint(W_CMD, C_DATA, "0x%04x", ectl_reg_get(ECTL_REG_IC));
 			awtbprint(W_CMD, C_LABEL, ", cnt: ");
 			awtbprint(W_CMD, C_DATA, "%i", b->value);
 			awtbprint(W_CMD, C_LABEL, ")\n");

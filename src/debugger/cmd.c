@@ -21,16 +21,7 @@
 #include <string.h>
 #include <strings.h>
 
-#include "cfg.h"
-#include "em400.h"
-#include "cpu/cpu.h"
-#include "cpu/interrupts.h"
-#include "mem/mem.h"
-#include "mem/mega.h"
-#include "mem/elwro.h"
-
 #include "utils/utils.h"
-#include "log.h"
 #include "ectl.h"
 
 #include "debugger/awin.h"
@@ -106,7 +97,7 @@ void dbg_c_help(int wid, char *cmd)
 // -----------------------------------------------------------------------
 void dbg_c_quit()
 {
-	cpu_trigger_state(STATE_QUIT);
+	ectl_cpu_quit();
 	dbg_loop_fin = 1;
 }
 
@@ -127,7 +118,7 @@ void dbg_c_run()
 // -----------------------------------------------------------------------
 void dbg_c_reset()
 {
-	cpu_trigger_state(STATE_CLO);
+	ectl_cpu_clear();
 }
 
 // -----------------------------------------------------------------------
@@ -137,11 +128,11 @@ void dbg_c_dt(int wid, uint16_t ic, int count)
 	char *buf = emdas_get_buf(emd);
 
 	while (count > 0) {
-		words = emdas_dasm(emd, QNB, ic);
+		words = emdas_dasm(emd, ectl_reg_get(ECTL_REG_Q) * ectl_reg_get(ECTL_REG_NB), ic);
 		emdas_get_buf(emd);
 
-		if (ic == rIC) {
-			if (P) {
+		if (ic == ectl_reg_get(ECTL_REG_IC)) {
+			if (ectl_reg_get(ECTL_REG_P)) {
 				awtbprint(wid, C_IRED, "0x%04x", ic);
 				awtbprint(wid, C_IRED, " %-20s", buf);
 			} else {
@@ -199,14 +190,14 @@ void dbg_c_mem(int wid, int block, int start, int end, int maxcols, int maxlines
 		awtbprint(wid, C_LABEL, "0x%04x: ", addr);
 		char *chars = (char *) malloc(words*2+1);
 		for (int w=0 ; w<words ; w++) {
-			res = mem_get(block, addr, &data);
+			res = ectl_mem_get(block, addr, &data, 1);
 			if (!res) {
 				awtbprint(wid, C_ERROR, "~~~~ ");
 				chars[w*2] = '~';
 				chars[w*2+1] = '~';
 			} else {
 				// cell with current instruction
-				if (addr == rIC) {
+				if (addr == ectl_reg_get(ECTL_REG_IC)) {
 					attr = C_DATAU;
 				} else {
 					attr = C_DATA;
@@ -232,32 +223,32 @@ void dbg_c_sregs(int wid)
 {
 	awtbprint(wid, C_LABEL, "            OPCODE D A   B   C");
 	awtbprint(wid, C_LABEL, "           P: ");
-	awtbprint(wid, C_DATA, "%i\n", P);
+	awtbprint(wid, C_DATA, "%i\n", ectl_reg_get(ECTL_REG_P));
 	awtbprint(wid, C_LABEL, "IR: ");
-	awtbprint(wid, C_DATA, "0x%04x  ", rIR);
-	awtbbinprint(wid, C_DATA, "...... . ... ... ...", rIR, 16);
+	awtbprint(wid, C_DATA, "0x%04x  ", ectl_reg_get(ECTL_REG_IR));
+	awtbbinprint(wid, C_DATA, "...... . ... ... ...", ectl_reg_get(ECTL_REG_IR), 16);
 	awtbprint(wid, C_LABEL, "        IC: ");
-	awtbprint(wid, C_DATA, "0x%04x ", rIC);
+	awtbprint(wid, C_DATA, "0x%04x ", ectl_reg_get(ECTL_REG_IC));
 	awtbprint(wid, C_DATA, "\n");
 	awtbprint(wid, C_LABEL, "            PMCZs139fS Q s NB");
 	awtbprint(wid, C_LABEL, "          MOD: ");
-	awtbprint(wid, C_DATA, "0x%04x (%i)", rMOD, rMODc);
+	awtbprint(wid, C_DATA, "0x%04x (%i)", ectl_reg_get(ECTL_REG_MOD), ectl_reg_get(ECTL_REG_MODc));
 	awtbprint(wid, C_DATA, "\n");
 	awtbprint(wid, C_LABEL, "SR: ");
-	awtbprint(wid, C_DATA, "0x%04x  ", SR_read());
-	awtbbinprint(wid, C_DATA, ".......... . . ....", SR_read(), 16);
+	awtbprint(wid, C_DATA, "0x%04x  ", ectl_reg_get(ECTL_REG_SR));
+	awtbbinprint(wid, C_DATA, ".......... . . ....", ectl_reg_get(ECTL_REG_SR), 16);
 	awtbprint(wid, C_DATA, "\n");
 
 	awtbprint(wid, C_LABEL, "KB: ");
-	awtbprint(wid, C_DATA, "0x%04x  ", rKB);
-	awtbbinprint(wid, C_DATA, "........ ........", rKB, 16);
+	awtbprint(wid, C_DATA, "0x%04x  ", ectl_reg_get(ECTL_REG_KB));
+	awtbbinprint(wid, C_DATA, "........ ........", ectl_reg_get(ECTL_REG_KB), 16);
 	awtbprint(wid, C_DATA, "\n\n");
 
 	awtbprint(wid, C_LABEL, "                ZPMCZ TIFFFFx 01 23 456789 abcdef OCSS");
 	awtbprint(wid, C_DATA, "\n");
 	awtbprint(wid, C_LABEL, "RZ: ");
-	awtbprint(wid, C_DATA, "0x%08x  ", RZ);
-	awtbbinprint(wid, C_DATA, "..... ....... .. .. ...... ...... ....", RZ, 32);
+	awtbprint(wid, C_DATA, "0x%08x  ", ectl_int_get32());
+	awtbbinprint(wid, C_DATA, "..... ....... .. .. ...... ...... ....", ectl_int_get32(), 32);
 	awtbprint(wid, C_DATA, "\n");
 }
 
@@ -266,13 +257,14 @@ void dbg_c_regs(int wid)
 {
 	awtbprint(wid, C_LABEL, "    hex    oct    dec    ZMVCLEGY X1234567 ch R40\n");
 	for (int i=0 ; i<=7 ; i++) {
-		char *r = r40_to_ascii(regs+i, 1, NULL);
+		uint16_t reg = ectl_reg_get(i);
+		char *r = r40_to_ascii(&reg, 1, NULL);
 		char c[3];
-		int2chars(regs[i], c);
+		int2chars(reg, c);
 
 		awtbprint(wid, C_LABEL, "R%i: ", i);
-		awtbprint(wid, C_DATA, "0x%04x %6o %6i ", regs[i], regs[i], (int16_t) regs[i]);
-		awtbbinprint(wid, C_DATA, "........ ........", regs[i], 16);
+		awtbprint(wid, C_DATA, "0x%04x %6o %6i ", reg, reg, (int16_t) reg);
+		awtbbinprint(wid, C_DATA, "........ ........", reg, 16);
 		awtbprint(wid, C_DATA, " %-3s %-3s\n", c, r);
 		free(r);
 	}
@@ -286,7 +278,7 @@ void dbg_c_stack(int wid, int size)
 	uint16_t data;
 	int res;
 
-	res = mem_get(0, 97, &data);
+	res = ectl_mem_get(0, 97, &data, 1);
 	if (!res) {
 		awtbprint(wid, C_ERROR, "~~~~");
 		return;
@@ -299,7 +291,7 @@ void dbg_c_stack(int wid, int size)
 	}
 
 	osp = sp;
-	res = mem_get(0, sp, &data);
+	res = ectl_mem_get(0, sp, &data, 1);
 
 	while ((sp >= sb) && res) {
 		if (sp == osp) {
@@ -310,69 +302,24 @@ void dbg_c_stack(int wid, int size)
 			awtbprint(wid, C_DATA, "%04x \n", data);
 		}
 		sp--;
-		res = mem_get(0, sp, &data);
+		res = ectl_mem_get(0, sp, &data, 1);
 	}
-}
-
-// -----------------------------------------------------------------------
-char dbg_mem_getalloc(int mod, int seg)
-{
-	int i, j;
-
-	if (!mem_map[mod][seg].seg) {
-		return '.';
-	} else if (mem_map[mod][seg].seg == mem_mega_prom) {
-		return 'p';
-	} else {
-		for (i=0 ; i<MEM_MAX_MODULES ; i++) {
-			for (j=0 ; j<MEM_MAX_MEGA_SEGMENTS ; j++) {
-				if ((j<MEM_MAX_ELWRO_SEGMENTS) && (mem_map[mod][seg].seg == mem_elwro[i][j])) {
-					return 'e';
-				} else if (mem_map[mod][seg].seg == mem_mega[i][j]) {
-					return 'm';
-				}
-			}
-		}
-	}
-
-	return '?';
 }
 
 // -----------------------------------------------------------------------
 void dbg_c_memcfg(int wid)
 {
-	int i, j, cnt;
-	char c;
-	awtbprint(wid, C_LABEL, "module  :  0  1  2  3  4  5  6  7  8  9 10 11 12 13 14 15\n");
-
-	awtbprint(wid, C_LABEL, "Elwro   : ");
-	for (i=0 ; i<MEM_MAX_MODULES ; i++) {
-		cnt = 0;
-		for (j=0 ; j<MEM_MAX_ELWRO_SEGMENTS ; j++) {
-			if (mem_elwro[i][j]) cnt++;
-		}
-		awtbprint(wid, C_DATA, "%2i ", cnt);
-	}
-	awtbprint(wid, C_DATA, "\n");
-
-	awtbprint(wid, C_LABEL, "MEGA    : ");
-	for (i=0 ; i<MEM_MAX_MODULES ; i++) {
-		cnt = 0;
-		for (j=0 ; j<MEM_MAX_MEGA_SEGMENTS ; j++) {
-			if (mem_mega[i][j]) cnt++;
-		}
-		awtbprint(wid, C_DATA, "%2i ", cnt);
-	}
-	awtbprint(wid, C_DATA, "\n");
-
-	awtbprint(wid, C_LABEL, "\nAllocation map:\n");
+	awtbprint(wid, C_LABEL, "Allocation map:\n");
 	awtbprint(wid, C_LABEL, "    0 1 2 3 4 5 6 7 8 9 a b c d e f\n");
-	for (i=0 ; i<MEM_MAX_MODULES ; i++) {
-		cnt = 0;
+
+	for (int i=0 ; i<16 ; i++) {
 		awtbprint(wid, C_LABEL, "%2i: ", i);
-		for (j=0 ; j<MEM_MAX_MEGA_SEGMENTS ; j++) {
-			c = dbg_mem_getalloc(i, j);
-			if (c != '.') {
+		uint16_t map = ectl_mem_map(i);
+		int cnt = 0;
+		for (int j=0 ; j<16 ; j++) {
+			char c = '.';
+			if (map & (1<<j)) {
+				c = '+';
 				cnt++;
 			}
 			awtbprint(wid, C_DATA, "%c ", c);
@@ -515,19 +462,19 @@ void dbg_c_log_info(int wid)
 {
 	int i;
 
-	awtbprint(wid, C_DATA, "Logging %s\n", log_is_enabled() ? "enabled" : "disabled");
+	awtbprint(wid, C_DATA, "Logging %s\n", ectl_log_state_get() ? "enabled" : "disabled");
 	awtbprint(wid, C_LABEL, "Enabled components: ");
-	for (i=0 ; i < L_ALL ; i++) {
-		if (log_component_get(i)) {
-			const char *cname = log_get_component_name(i);
+	for (i=0 ; i < ECTL_LOG_ALL ; i++) {
+		if (ectl_log_component_get(i)) {
+			const char *cname = ectl_log_component_name(i);
 			awtbprint(wid, C_DATA, "%s ", cname);
 		}
 	}
 	awtbprint(wid, C_LABEL, "\n");
 	awtbprint(wid, C_LABEL, "Disabled components: ");
-	for (i=0 ; i < L_ALL ; i++) {
-		if (!log_component_get(i)) {
-			const char *cname = log_get_component_name(i);
+	for (i=0 ; i < ECTL_LOG_ALL ; i++) {
+		if (!ectl_log_component_get(i)) {
+			const char *cname = ectl_log_component_name(i);
 			awtbprint(wid, C_DATA, "%s ", cname);
 		}
 	}
@@ -537,15 +484,15 @@ void dbg_c_log_info(int wid)
 // -----------------------------------------------------------------------
 void dbg_c_log_disable(int wid)
 {
-	log_disable();
+	ectl_log_state_set(ECTL_OFF);
 	awtbprint(wid, C_LABEL, "Logging disabled\n");
 }
 
 // -----------------------------------------------------------------------
 void dbg_c_log_enable(int wid)
 {
-	int res = log_enable();
-	if (res == E_OK) {
+	int res = ectl_log_state_set(ECTL_ON);
+	if (!res) {
 		awtbprint(wid, C_LABEL, "Logging enabled\n");
 	} else {
 		awtbprint(wid, C_ERROR, "Error opening log file\n");
@@ -557,15 +504,15 @@ void dbg_c_log_set_state(int wid, char *comp_name, int state)
 {
 	int c;
 
-	c = log_get_component_id(comp_name);
+	c = ectl_log_component_id(comp_name);
 	if (c < 0) {
 		awtbprint(wid, C_ERROR, "Unknown component: ");
 		awtbprint(wid, C_DATA, "%s", comp_name);
 	} else {
 		if (state) {
-			log_component_enable(c);
+			ectl_log_component_set(c, ECTL_ON);
 		} else {
-			log_component_disable(c);
+			ectl_log_component_set(c, ECTL_OFF);
 		}
 		awtbprint(wid, C_LABEL, "Component ");
 		awtbprint(wid, C_DATA, "%s ", comp_name);
@@ -671,7 +618,7 @@ void dbg_c_decode(int wid, char *name, uint16_t addr, int arg)
 		return;
 	}
 
-	buf = d->f_decode(NB, addr, arg);
+	buf = d->f_decode(ectl_reg_get(ECTL_REG_NB), addr, arg);
 
 	if (!buf) {
 		awtbprint(wid, C_ERROR, "Cannot decode structure\n");
@@ -689,23 +636,24 @@ void dbg_c_decode(int wid, char *name, uint16_t addr, int arg)
 void dbg_c_find(int wid, uint16_t block, uint16_t value)
 {
 	int found = 0;
-	for (int seg=0 ; seg<MEM_MAX_SEGMENTS ; seg++) {
-		if (mem_map[block][seg].seg) {
-			awtbprint(wid, C_LABEL, "Segment %x: ", seg);
-			for (int word=0 ; word<MEM_SEGMENT_SIZE ; word++) {
-				if (mem_map[block][seg].seg[word] == value) {
-					awtbprint(wid, C_DATA, "0x%04x ", (seg<<12)+word);
-					found++;
-					if (found >= 8) {
-						awtbprint(wid, C_DATA, "\n           ");
-						found = 0;
-					}
+	uint16_t data[4096];
+
+	for (int seg=0 ; seg<16 ; seg++) {
+		int words = ectl_mem_get(block, seg*4096, data, 4096);
+		for (int word=0 ; word<words ; word++) {
+			if (data[word] == value) {
+				found++;
+				awtbprint(wid, C_DATA, "0x%04x ", (seg<<12)+word);
+				if (found >= 8) {
+					awtbprint(wid, C_DATA, "\n");
+					found = 0;
 				}
 			}
-			if (found < 8) {
-				awtbprint(wid, C_DATA, "\n");
-			}
 		}
+	}
+
+	if (found != 0) {
+		awtbprint(wid, C_DATA, "\n");
 	}
 }
 

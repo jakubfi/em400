@@ -20,9 +20,7 @@
 #include <string.h>
 #include <stdlib.h>
 
-#include "cpu/cpu.h"
-#include "mem/mem.h"
-#include "cpu/interrupts.h"
+#include "ectl.h"
 
 #include "debugger/debugger.h"
 #include "debugger/keywords.h"
@@ -241,28 +239,28 @@ int16_t n_eval_reg(struct node_t * n)
 {
 	switch (n->val) {
 	case DBG_R_IC:
-		return rIC;
+		return ectl_reg_get(ECTL_REG_IC);
 	case DBG_R_KB:
-		return rKB;
+		return ectl_reg_get(ECTL_REG_KB);
 	case DBG_R_MOD:
-		return rMOD;
+		return ectl_reg_get(ECTL_REG_MOD);
 	case DBG_R_MODc:
-		return rMODc;
+		return ectl_reg_get(ECTL_REG_MODc);
 	case DBG_R_IR:
-		return rIR;
+		return ectl_reg_get(ECTL_REG_IR);
 	case DBG_R_SR:
-		return SR_read();
+		return ectl_reg_get(ECTL_REG_SR);
 	case DBG_R_ALARM:
-		return rALARM;
+		return ectl_reg_get(ECTL_REG_ALARM);
 	default:
-		return regs[n->val];
+		return ectl_reg_get(n->val);
 	}
 }
 
 // -----------------------------------------------------------------------
 int16_t n_eval_ireg(struct node_t * n)
 {
-	return (RZ >> (31 - n->val)) & 1;
+	return (ectl_int_get32() >> (31 - n->val)) & 1;
 }
 
 // -----------------------------------------------------------------------
@@ -300,35 +298,35 @@ int16_t n_eval_ass(struct node_t * n)
 		case N_REG:
 			switch (n->n1->val) {
 			case DBG_R_IC:
-				rIC = v;
+				ectl_reg_set(ECTL_REG_IC, v);
 				break;
 			case DBG_R_KB:
-				rKB = v;
+				ectl_reg_set(ECTL_REG_KB, v);
 				break;
 			case DBG_R_MOD:
-				rMOD = v;
+				ectl_reg_set(ECTL_REG_MOD, v);
 				break;
 			case DBG_R_MODc:
-				rMODc = v;
+				ectl_reg_set(ECTL_REG_MODc, v);
 				break;
 			case DBG_R_IR:
-				rIR = v;
+				ectl_reg_set(ECTL_REG_IR, v);
 				break;
 			case DBG_R_SR:
-				SR_write(v);
+				ectl_reg_set(ECTL_REG_SR, v);
 				break;
 			case DBG_R_ALARM:
-				rALARM = v;
+				ectl_reg_set(ECTL_REG_ALARM, v);
 				break;
 			default:
-				regs[n->n1->val] = v;
+				ectl_reg_set(n->n1->val, v);
 				break;
 			}
 			return v;
 		case N_MEM:
 			nb = n_eval(n->n1->n1);
 			addr = n_eval(n->n1->n2);
-			res = mem_put(nb, addr, v);
+			res = ectl_mem_set(nb, addr, (uint16_t*)&v, 1);
 			if (res) {
 				return v;
 			} else {
@@ -336,9 +334,9 @@ int16_t n_eval_ass(struct node_t * n)
 			}
 		case N_RZ:
 			if (v) {
-				int_set(n->n1->val);
+				ectl_int_set(n->n1->val);
 			} else {
-				int_clear(n->n1->val);
+				ectl_int_clear(n->n1->val);
 			}
 			return v;
 		default:
@@ -353,7 +351,7 @@ int16_t n_eval_mem(struct node_t *n)
 	uint16_t addr = n_eval(n->n2);
 	int res;
 	uint16_t data;
-	res = mem_get(nb, addr, &data);
+	res = ectl_mem_get(nb, addr, &data, 1);
 	if (res) {
 		return data;
 	} else {

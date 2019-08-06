@@ -18,8 +18,6 @@
 
 #include <stdlib.h>
 
-#include "cpu/cpu.h"
-
 #include "debugger/debugger.h"
 #include "debugger/ui.h"
 #include "debugger/cmd.h"

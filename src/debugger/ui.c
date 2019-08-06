@@ -18,9 +18,7 @@
 #include <string.h>
 #include <stdlib.h>
 
-#include "utils/utils.h"
-#include "log.h"
-#include "cpu/cpu.h"
+#include "ectl.h"
 
 #include "debugger/awin.h"
 #include "debugger/debugger.h"
@@ -81,7 +79,7 @@ int dbg_ui_init()
 	aw_attr_new(C_FRAME, COLOR_BLACK, COLOR_WHITE, A_NORMAL);
 	aw_attr_new(C_INPUT, COLOR_BLACK, COLOR_WHITE, A_NORMAL);
 
-	return E_OK;
+	return 0;
 }
 
 // -----------------------------------------------------------------------
@@ -102,10 +100,10 @@ void dbg_wu_dasm(int wid)
 	AWIN *w = aw_window_find(wid);
 	int offset = (w->ih) / 3;
 	int start;
-	if (rIC < offset) {
+	if (ectl_reg_get(ECTL_REG_IC) < offset) {
 		start = 0;
 	} else {
-		start = rIC - offset;
+		start = ectl_reg_get(ECTL_REG_IC) - offset;
 	}
 	awin_tb_clear(wid);
 	dbg_c_dt(wid, start, w->ih);

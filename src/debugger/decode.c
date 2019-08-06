@@ -19,15 +19,11 @@
 #include <stdlib.h>
 #include <emcrk/process.h>
 
-#include "mem/mem.h"
-
-#include "log_crk.h"
-
+#include "ectl.h"
 #include "debugger/decode.h"
 
 struct decoder_t decoders[] = {
 	{ "iv", "SYS: interrupt vectors (0x40)", decode_iv },
-	{ "ctx", "CROOK-5: process context", decode_ctx },
 	{ NULL, NULL, NULL}
 };
 
@@ -56,7 +52,7 @@ char * decode_iv(int nb, uint16_t addr, int arg)
 	}
 
 	uint16_t data[33];
-	mem_mget(nb, addr, data, 33);
+	ectl_mem_get(nb, addr, data, 33);
 
 	pos += sprintf(b+pos, "0  NMI        = 0x%04x    16 channel 4  = 0x%04x\n", data[0],  data[addr+16]);
 	pos += sprintf(b+pos, "1  mem parity = 0x%04x    17 channel 5  = 0x%04x\n", data[1],  data[addr+17]);
@@ -78,24 +74,5 @@ char * decode_iv(int nb, uint16_t addr, int arg)
 
 	return buf;
 }
-
-// -----------------------------------------------------------------------
-char * decode_ctx(int nb, uint16_t addr, int arg)
-{
-	uint16_t buf[CRK5P_PROCESS_SIZE];
-
-	if (mem_mget(nb, addr, buf, CRK5P_PROCESS_SIZE) != CRK5P_PROCESS_SIZE) {
-		return NULL;
-	}
-
-	struct crk5_process *process = crk5_process_unpack(buf, addr, 1);
-
-	if (!process) {
-		return NULL;
-	}
-
-	return log_ctx_stringify(process);
-}
-
 
 // vim: tabstop=4 shiftwidth=4 autoindent
