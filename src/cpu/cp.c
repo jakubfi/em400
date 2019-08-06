@@ -88,7 +88,11 @@ int cp_reg_get(unsigned id)
 			case CP_REG_MOD: reg = rMOD; break;
 			case CP_REG_MODc: reg = rMODc; break;
 			case CP_REG_ALARM: reg = rALARM; break;
-			default: return -1;
+			case CP_REG_RM: reg = RM; break;
+			case CP_REG_Q: reg = Q; break;
+			case CP_REG_BS: reg = BS; break;
+			case CP_REG_NB: reg = NB; break;
+			default: reg = -1; break;
 		}
 	}
 	return reg;
@@ -115,16 +119,20 @@ int cp_reg_set(unsigned id, uint16_t v)
 			case CP_REG_R6:
 			case CP_REG_R7: regs[id] = v; break;
 			case CP_REG_IC: rIC = v; break;
-			case CP_REG_AC: return -1;
-			case CP_REG_AR: return -1;
+			// n/a case CP_REG_AC:
+			// n/a case CP_REG_AR:
 			case CP_REG_IR: rIR = v; break;
 			case CP_REG_SR: SR_write(v); break;
-			case CP_REG_RZ: return -1;
+			// n/a case CP_REG_RZ:
 			case CP_REG_KB: rKB = v; break;
 			case CP_REG_KB2: rKB = v; break;
 			case CP_REG_MOD: rMOD = v; break;
 			case CP_REG_MODc: rMODc = v; break;
 			case CP_REG_ALARM: rALARM = v; break;
+			case CP_REG_RM: RM = v & 0b1111111111; break;
+			case CP_REG_Q: Q = v ? 1 : 0; break;
+			case CP_REG_BS: BS = v ? 1 : 0; break;
+			case CP_REG_NB: NB = v & 0b1111; break;
 			default: return -1;
 		}
 	}

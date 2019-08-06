@@ -56,6 +56,10 @@ enum ectl_registers {
 	ECTL_REG_MOD,
 	ECTL_REG_MODc,
 	ECTL_REG_ALARM,
+	ECTL_REG_RM,
+	ECTL_REG_Q,
+	ECTL_REG_BS,
+	ECTL_REG_NB,
 	ECTL_REG_COUNT
 };
 

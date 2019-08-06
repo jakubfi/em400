@@ -56,6 +56,10 @@ kb			{ ectl_yylval.value = ECTL_REG_KB; return REG; }
 mod			{ ectl_yylval.value = ECTL_REG_MOD; return REG; }
 modc		{ ectl_yylval.value = ECTL_REG_MODc; return REG; }
 alarm		{ ectl_yylval.value = ECTL_REG_ALARM; return REG; }
+rm			{ ectl_yylval.value = ECTL_REG_RM; return REG; }
+q			{ ectl_yylval.value = ECTL_REG_Q; return REG; }
+bs			{ ectl_yylval.value = ECTL_REG_BS; return REG; }
+nb			{ ectl_yylval.value = ECTL_REG_NB; return REG; }
 [zmvclegyx]	{ ectl_yylval.value = *yytext ; return FLAG; }
 rz			{ return IRZ; }
 

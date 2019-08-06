@@ -43,6 +43,10 @@ enum cp_registers {
 	CP_REG_MOD,
 	CP_REG_MODc,
 	CP_REG_ALARM,
+	CP_REG_RM,
+	CP_REG_Q,
+	CP_REG_BS,
+	CP_REG_NB,
 	CP_REG_COUNT
 };
 
