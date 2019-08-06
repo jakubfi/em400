@@ -48,6 +48,7 @@ enum cp_registers {
 	CP_REG_BS,
 	CP_REG_NB,
 	CP_REG_P,
+	CP_REG_RZ_IO,
 	CP_REG_COUNT
 };
 
@@ -69,7 +70,6 @@ void cp_bin();
 void cp_oprq();
 int cp_int_set(unsigned i);
 int cp_int_clear(unsigned i);
-uint32_t cp_int_get();
 int cp_state();
 int cp_stopn(uint16_t addr);
 int cp_stopn_off();

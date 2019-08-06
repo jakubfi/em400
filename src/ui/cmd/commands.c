@@ -455,7 +455,7 @@ void ui_cmd_int(FILE *out, char *args)
 
 	// show interrupts
 	if (!tok_int) {
-		ui_cmd_resp(out, RESP_OK, UI_EOL, "0x%08x", ectl_int_get());
+		ui_cmd_resp(out, RESP_OK, UI_EOL, "0x%08x", ectl_int_get32());
 		return;
 	}
 
@@ -464,7 +464,7 @@ void ui_cmd_int(FILE *out, char *args)
 	if (res) {
 		ui_cmd_resp(out, RESP_ERR, UI_EOL, "Wrong interrupt number: %s", tok_int);
 	} else {
-		ui_cmd_resp(out, RESP_OK, UI_EOL, "0x%08x", ectl_int_get());
+		ui_cmd_resp(out, RESP_OK, UI_EOL, "0x%08x", ectl_int_get32());
 	}
 }
 

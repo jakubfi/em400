@@ -38,7 +38,8 @@
 static const char *ectl_reg_names[] = {
 	"R0", "R1", "R2", "R3", "R4", "R5", "R6", "R7",
 	"IC", "AC", "AR", "IR", "SR", "RZ", "KB", "KB",
-	"MOD", "MODc", "ALARM", "RM", "Q", "BS", "NB", "P",
+	"MOD", "MODc", "ALARM", "RM", "Q", "BS", "NB",
+	"P", "RZ_IO",
 	"??"
 };
 
@@ -236,12 +237,15 @@ int ectl_int_clear(unsigned interrupt)
 }
 
 // -----------------------------------------------------------------------
-uint32_t ectl_int_get()
+uint32_t ectl_int_get32()
 {
 	LOG(L_ECTL, "ECTL interrupts get");
-	uint32_t rz = cp_int_get();
-	LOG(L_ECTL, "ECTL interrupts get: 0x%08x", rz);
-	return rz;
+	uint16_t rz = ectl_reg_get(ECTL_REG_RZ);
+	uint16_t rz_io = ectl_reg_get(ECTL_REG_RZ_IO);
+	uint32_t rz32 = ((rz & 0b1111111111110000) << 16) | (rz_io << 4) | (rz & 0b1111);
+	LOG(L_ECTL, "ECTL interrupts get: 0x%08x", rz32);
+
+	return rz32;
 }
 
 // -----------------------------------------------------------------------

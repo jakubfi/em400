@@ -190,7 +190,7 @@ int ectl_est_eval_rz(struct ectl_est * n)
 		return __esterr(n, "Wrong interrupt: %i", n->val);
 	}
 
-	return (cp_int_get() >> (31 - n->val)) & 1;
+	return (ectl_int_get32() >> (31 - n->val)) & 1;
 }
 
 // -----------------------------------------------------------------------

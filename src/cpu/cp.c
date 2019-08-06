@@ -84,7 +84,7 @@ int cp_reg_get(unsigned id)
 			// n/a case CP_REG_AR:
 			case CP_REG_IR: reg = rIR; break;
 			case CP_REG_SR: reg = SR_read(); break;
-			// n/a case CP_REG_RZ:
+			case CP_REG_RZ: reg = int_get_nchan(); break;
 			case CP_REG_KB: reg = rKB; break;
 			case CP_REG_KB2: reg = rKB; break;
 			case CP_REG_MOD: reg = rMOD; break;
@@ -95,6 +95,7 @@ int cp_reg_get(unsigned id)
 			case CP_REG_BS: reg = BS; break;
 			case CP_REG_NB: reg = NB; break;
 			case CP_REG_P: reg = P; break;
+			case CP_REG_RZ_IO: reg = int_get_chan(); break;
 			default: reg = -1; break;
 		}
 	}
@@ -137,6 +138,7 @@ int cp_reg_set(unsigned id, uint16_t v)
 			case CP_REG_BS: BS = v ? 1 : 0; break;
 			case CP_REG_NB: NB = v & 0b1111; break;
 			case CP_REG_P: P = v ? 1 : 0; break;
+			// n/a case CP_REG_RZ_IO:
 			default: return -1;
 		}
 	}
@@ -331,21 +333,6 @@ int cp_int_clear(unsigned i)
 	} else {
 		return -1;
 	}
-}
-
-// -----------------------------------------------------------------------
-uint32_t cp_int_get()
-{
-	uint32_t rz;
-	if (fpga) {
-		iob_cp_set_rotary(CP_REG_RZ);
-        struct iob_cp_status *stat = iob_cp_get_status();
-        rz = (((uint32_t)stat->data & 0b1111111111110000) << 16) | (stat->data & 0b1111);
-        free(stat);
-	} else {
-		rz = RZ;
-	}
-	return rz;
 }
 
 // -----------------------------------------------------------------------

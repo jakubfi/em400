@@ -79,6 +79,7 @@ void int_clear(int x);
 void int_clear_all();
 void int_put_nchan(uint16_t r);
 uint16_t int_get_nchan();
+uint16_t int_get_chan();
 void int_serve();
 
 #endif

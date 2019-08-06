@@ -179,6 +179,16 @@ uint16_t int_get_nchan()
 }
 
 // -----------------------------------------------------------------------
+uint16_t int_get_chan()
+{
+	uint32_t r;
+	pthread_mutex_lock(&int_mutex);
+	r = RZ;
+	pthread_mutex_unlock(&int_mutex);
+	return (r >> 4) & 0xffff;
+}
+
+// -----------------------------------------------------------------------
 void int_serve()
 {
 	int probe = 31;

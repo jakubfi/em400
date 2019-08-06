@@ -61,6 +61,7 @@ enum ectl_registers {
 	ECTL_REG_BS,
 	ECTL_REG_NB,
 	ECTL_REG_P,
+	ECTL_REG_RZ_IO,
 	ECTL_REG_COUNT
 };
 
@@ -134,7 +135,7 @@ int ectl_clock_get();
 void ectl_oprq();
 int ectl_int_set(unsigned interrupt);
 int ectl_int_clear(unsigned interrupt);
-uint32_t ectl_int_get();
+uint32_t ectl_int_get32();
 
 // informational, other
 const char * ectl_version();
