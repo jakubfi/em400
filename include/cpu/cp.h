@@ -47,6 +47,7 @@ enum cp_registers {
 	CP_REG_Q,
 	CP_REG_BS,
 	CP_REG_NB,
+	CP_REG_P,
 	CP_REG_COUNT
 };
 

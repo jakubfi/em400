@@ -60,6 +60,7 @@ enum ectl_registers {
 	ECTL_REG_Q,
 	ECTL_REG_BS,
 	ECTL_REG_NB,
+	ECTL_REG_P,
 	ECTL_REG_COUNT
 };
 

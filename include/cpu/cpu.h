@@ -74,8 +74,8 @@ extern uint16_t rMOD;
 extern int rMODc;
 extern uint16_t rIR;
 extern unsigned RM, Q, BS, NB;
-
 extern int P;
+
 extern uint32_t N;
 extern int cpu_mod_active;
 

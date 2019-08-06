@@ -63,6 +63,8 @@ int cp_reg_get(unsigned id)
 				reg = (reg & IOB_LED_MODE) >> 9;
 			} else if (id == CP_REG_ALARM) {
 				reg = reg & IOB_LED_ALARM;
+			} else if (id == CP_REG_P) {
+				reg = reg & IOB_LED_P;
 			} else {
 				return -1;
 			}
@@ -92,6 +94,7 @@ int cp_reg_get(unsigned id)
 			case CP_REG_Q: reg = Q; break;
 			case CP_REG_BS: reg = BS; break;
 			case CP_REG_NB: reg = NB; break;
+			case CP_REG_P: reg = P; break;
 			default: reg = -1; break;
 		}
 	}
@@ -133,6 +136,7 @@ int cp_reg_set(unsigned id, uint16_t v)
 			case CP_REG_Q: Q = v ? 1 : 0; break;
 			case CP_REG_BS: BS = v ? 1 : 0; break;
 			case CP_REG_NB: NB = v & 0b1111; break;
+			case CP_REG_P: P = v ? 1 : 0; break;
 			default: return -1;
 		}
 	}
