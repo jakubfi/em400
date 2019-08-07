@@ -487,7 +487,7 @@ cycle:
 
 		// CPU reset
 		} else if (state & (STATE_CLM | STATE_CLO)) {
-			cpu_clear(state, new_ui);
+			cpu_clear(state & (STATE_CLM | STATE_CLO), new_ui);
 
 		// CPU stopped
 		} else if ((state & STATE_STOP)) {
