@@ -34,6 +34,7 @@ int dbg_is_cmd(char *cmd);
 void dbg_c_step();
 void dbg_c_quit();
 void dbg_c_run();
+void dbg_c_stop();
 void dbg_c_help(int wid, char *cmd);
 void dbg_c_regs(int wid);
 void dbg_c_sregs(int wid);

@@ -55,7 +55,7 @@ struct cfg_em400 * cfg_create_default()
 	cfg->program_name = NULL;
 	cfg->cfg_filename = home_cfg_fname;
 	cfg->print_help = 0;
-	cfg->ui_name = NULL;
+	cfg->ui_name = strdup("curses");
 
 	// emulation
 	cfg->speed_real = 0;

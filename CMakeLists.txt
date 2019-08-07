@@ -6,12 +6,6 @@ project(em400
 include(GNUInstallDirs)
 include(appversion.cmake)
 
-# ---- Settings ----------------------------------------------------------
-
-# It's still here due to the old UI, conveniently marking all the places where
-# the old UI keeps its tentacles squeezed into the emulation core.
-set(WITH_DEBUGGER 1)
-
 # ---- Libraries ---------------------------------------------------------
 
 find_package(BISON REQUIRED)
@@ -20,12 +14,11 @@ find_package(Threads REQUIRED)
 find_package(emdas REQUIRED)
 find_package(emcrk REQUIRED)
 find_package(emawp REQUIRED)
-if(WITH_DEBUGGER)
-	set(CURSES_NEED_NCURSES TRUE)
-	find_package(Curses REQUIRED)
-	find_path(READLINE_INCLUDE_DIR readline/readline.h)
-	find_library(READLINE_LIBRARY NAMES readline)
-endif(WITH_DEBUGGER)
+
+set(CURSES_NEED_NCURSES TRUE)
+find_package(Curses REQUIRED)
+find_path(READLINE_INCLUDE_DIR readline/readline.h)
+find_library(READLINE_LIBRARY NAMES readline)
 
 # ---- Sources -----------------------------------------------------------
 
@@ -122,32 +115,30 @@ flex_target(ectl_scanner
 )
 add_flex_bison_dependency(ectl_scanner ectl_parser)
 
-if(WITH_DEBUGGER)
-	bison_target(debugger_parser
-		src/ui/curses/parser.y
-		${CMAKE_CURRENT_BINARY_DIR}/debugger_parser.c
-	)
-	flex_target(debugger_scanner
-		src/ui/curses/scanner.l
-		${CMAKE_CURRENT_BINARY_DIR}/debugger_scanner.c
-		COMPILE_FLAGS "--never-interactive"
-	)
-	add_flex_bison_dependency(debugger_scanner debugger_parser)
-	set(SOURCES_DEBUGGER
-		src/ui/curses/awin.c
-		src/ui/curses/awinch.c
-		src/ui/curses/debugger.c
-		src/ui/curses/eval.c
-		src/ui/curses/cmd.c
-		src/ui/curses/ui.c
-		src/ui/curses/keywords.c
-		src/ui/curses/decode.c
-		${BISON_debugger_parser_OUTPUTS}
-		${FLEX_debugger_scanner_OUTPUTS}
-	)
-	add_definitions(-DWITH_DEBUGGER)
-	set(DEBUGGER_LIBS ${CURSES_LIBRARIES} ${READLINE_LIBRARY})
-endif(WITH_DEBUGGER)
+# TODO: cleanup
+bison_target(debugger_parser
+	src/ui/curses/parser.y
+	${CMAKE_CURRENT_BINARY_DIR}/debugger_parser.c
+)
+flex_target(debugger_scanner
+	src/ui/curses/scanner.l
+	${CMAKE_CURRENT_BINARY_DIR}/debugger_scanner.c
+	COMPILE_FLAGS "--never-interactive"
+)
+add_flex_bison_dependency(debugger_scanner debugger_parser)
+set(SOURCES_DEBUGGER
+	src/ui/curses/awin.c
+	src/ui/curses/awinch.c
+	src/ui/curses/debugger.c
+	src/ui/curses/eval.c
+	src/ui/curses/cmd.c
+	src/ui/curses/ui.c
+	src/ui/curses/keywords.c
+	src/ui/curses/decode.c
+	${BISON_debugger_parser_OUTPUTS}
+	${FLEX_debugger_scanner_OUTPUTS}
+)
+set(DEBUGGER_LIBS ${CURSES_LIBRARIES} ${READLINE_LIBRARY})
 
 # ---- Target: em400 -----------------------------------------------------
 

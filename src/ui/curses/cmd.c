@@ -48,6 +48,7 @@ struct cmd_t dbg_commands[] = {
 	{ "memcfg",	F_MEMCFG,	"Show memory configuration", "  memcfg" },
 	{ "brk",	F_BRK,		"Manipulate breakpoints", "  brk add <expression>\n  brk del <brk_number>\n  brk" },
 	{ "run",	F_RUN,		"Run emulation", "  run" },
+	{ "stop",	F_STOP,		"Stop emulation", "  stop" },
 	{ "stk",	F_STACK,	"Show stack", "  stk" },
 	{ "log",	F_LOG,		"Manipulate logging", "  log\n  log on|off\n  log <component> on|off" },
 	{ "watch",	F_WATCH,	"Manipulate expression watches", "  watch add <expression>\n  watch del <watch_number>\n  watch" },
@@ -98,21 +99,24 @@ void dbg_c_help(int wid, char *cmd)
 void dbg_c_quit()
 {
 	ectl_cpu_quit();
-	dbg_loop_fin = 1;
 }
 
 // -----------------------------------------------------------------------
 void dbg_c_step()
 {
-	dbg_enter = 1;
-	dbg_loop_fin = 1;
+	ectl_cpu_cycle();
 }
 
 // -----------------------------------------------------------------------
 void dbg_c_run()
 {
-	dbg_enter = 0;
-	dbg_loop_fin = 1;
+	ectl_cpu_start();
+}
+
+// -----------------------------------------------------------------------
+void dbg_c_stop()
+{
+	ectl_cpu_stop();
 }
 
 // -----------------------------------------------------------------------
@@ -332,10 +336,18 @@ void dbg_c_memcfg(int wid)
 // -----------------------------------------------------------------------
 void dbg_c_brk_add(int wid, char *label, struct node_t *n)
 {
-	static int brkcnt;
+    char *error_msg = NULL;
+    int err_beg, err_end;
+    int id = ectl_brk_add(label, &error_msg, &err_beg, &err_end);
+
+	if (error_msg) {
+		awtbprint(wid, C_ERROR, "Error: %s (at %i-%i)", error_msg, err_beg, err_end);
+		free(error_msg);
+		return;
+	}
 
 	struct evlb_t *b = (struct evlb_t *) malloc(sizeof(struct evlb_t));
-	b->nr = brkcnt++;
+	b->nr = id;
 	b->value = 0;
 	b->disabled = 0;
 	b->label = strdup(label);
@@ -410,6 +422,8 @@ void dbg_c_brk_del(int wid, int nr)
 		prev = b;
 		b = b->next;
 	}
+	ectl_brk_del(nr);
+
 	awtbprint(wid, C_ERROR, "No such breakpoint: %i\n", nr);
 }
 
@@ -417,13 +431,22 @@ void dbg_c_brk_del(int wid, int nr)
 void dbg_c_brk_test(int wid, int nr)
 {
 	struct evlb_t *b = dbg_c_brk_get(nr);
-	if (b) {
+	if (!b) {
+		awtbprint(wid, C_ERROR, "No such breakpoint: %i\n", nr);
+		return;
+	}
+
+	char *error_msg = NULL;
+	int err_beg, err_end;
+	int res = ectl_eval(b->label, &error_msg, &err_beg, &err_end);
+	if (error_msg) {
+		awtbprint(wid, C_ERROR, "%s (at %i-%i)", error_msg, err_beg, err_end);
+		free(error_msg);
+	} else {
 		awtbprint(wid, C_LABEL, "Breakpoint ");
 		awtbprint(wid, C_DATA, "%i", b->nr);
 		awtbprint(wid, C_LABEL, " evaluates to: ");
-		awtbprint(wid, C_DATA, "%i\n", n_eval(b->n));
-	} else {
-		awtbprint(wid, C_ERROR, "No such breakpoint: %i\n", nr);
+		awtbprint(wid, C_DATA, "%i\n", res);
 	}
 }
 

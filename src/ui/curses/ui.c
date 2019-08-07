@@ -70,7 +70,7 @@ int dbg_ui_init()
 	aw_attr_new(C_DATA, COLOR_BLACK, COLOR_WHITE, A_BOLD);
 	aw_attr_new(C_DATAU, COLOR_BLACK, COLOR_WHITE, A_BOLD|A_UNDERLINE);
 	aw_attr_new(C_ILABEL, COLOR_WHITE, COLOR_BLACK, A_NORMAL);
-	aw_attr_new(C_IDATA, COLOR_WHITE, COLOR_BLUE, A_NORMAL);
+	aw_attr_new(C_IDATA, COLOR_WHITE, COLOR_BLACK, A_BOLD);
 	aw_attr_new(C_ERROR, COLOR_BLACK, COLOR_RED, A_BOLD);
 	aw_attr_new(C_READ, COLOR_BLACK, COLOR_GREEN, A_BOLD);
 	aw_attr_new(C_WRITE, COLOR_RED, COLOR_WHITE, A_BOLD);
@@ -138,7 +138,29 @@ void dbg_wu_cmd(int wid)
 // -----------------------------------------------------------------------
 void dbg_wu_status(int wid)
 {
-	awfillbg(wid, C_ILABEL, ' ', 0);
+	AWIN *w = aw_window_find(wid);
+	awin_tb_clear(wid);
+
+	char status[64];
+	int pos = 0;
+    int state = ectl_cpu_state_get();
+	if (state == 0) {
+		pos += sprintf(status, "START");
+	} else {
+		for (int i=0 ; i<ECTL_CAPA_COUNT ; i++) {
+			if ((state & (1<<i))) {
+				pos += sprintf(status+pos, "%s ", ectl_cpu_state_bit_name(i));
+			}
+		}
+	}
+
+	awtbprint(wid, C_ILABEL, "  CPU status: ");
+	awtbprint(wid, C_IDATA, "%-10s", status);
+
+	awtbprint(wid, C_ILABEL, "  Speed:");
+	awtbprint(wid, C_IDATA, " %.2f", (float)ectl_ips_get()/1000000);
+	awtbprint(wid, C_ILABEL, " MIPS                                                                                                                                                                                                                                             ");
+	awin_tb_update(wid, w->ih);
 }
 
 // -----------------------------------------------------------------------

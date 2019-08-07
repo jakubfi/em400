@@ -761,8 +761,8 @@ struct h_entry * aw_nc_rl_history_get_next()
 // -----------------------------------------------------------------------
 int aw_nc_readline(int id, int pattr, const char *prompt, int iattr, char *buffer, int buflen)
 {
-	int pos = 0;
-	int len = 0;
+	static int pos = 0;
+	static int len = 0;
 	int x, y;
 	int c;
 	struct h_entry *he;
@@ -773,26 +773,32 @@ int aw_nc_readline(int id, int pattr, const char *prompt, int iattr, char *buffe
 	}
 
 	flushinp();
+	wtimeout(w->win, 100);
 	keypad(w->win, TRUE);
 	getyx(w->win, y, x);
 	wattron(w->win, aw_attr[pattr]);
 	mvwprintw(w->win, y, 0, "%s", prompt);
 	wattroff(w->win, aw_attr[pattr]);
+	wattron(w->win, aw_attr[iattr]);
 	getyx(w->win, y, x);
 
-	wattron(w->win, aw_attr[iattr]);
 	while (1) {
 		buffer[len] = ' ';
 		mvwaddnstr(w->win, y, x, buffer, len+1);
 		wmove(w->win, y, x+pos);
 		c = wgetch(w->win);
 
-		if ((c == KEY_ENTER) || (c == '\n') || (c == '\r')) {
+		if (c == ERR) {
+			return c;
+		} else if ((c == KEY_ENTER) || (c == '\n') || (c == '\r')) {
 			c = KEY_ENTER;
 			if ((len > 0) && (strncasecmp(buffer, "quit", 4))) {
 				aw_nc_rl_history_add(buffer, len);
 			}
 			wmove(w->win, y, x+len);
+			buffer[len] = '\0';
+			pos = 0;
+			len = 0;
 			break;
 		} else if (isprint(c)) {
 			if (pos < buflen-1) {
@@ -849,7 +855,6 @@ int aw_nc_readline(int id, int pattr, const char *prompt, int iattr, char *buffe
 		}
 	}
 	wattroff(w->win, aw_attr[iattr]);
-	buffer[len] = '\0';
 
 	return c;
 }

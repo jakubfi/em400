@@ -23,6 +23,8 @@
 #include <emdas.h>
 
 #include "ectl.h"
+#include "atomic.h"
+#include "ui/ui.h"
 
 #include "ui/curses/awin.h"
 #include "ui/curses/debugger.h"
@@ -32,9 +34,7 @@
 
 int ui_mode;
 
-// debugger flow
-int dbg_loop_fin = 0;
-volatile int dbg_enter = 1;
+int dbg_quit = 0;
 
 // store user input here
 char input_buf[INPUT_BUF_SIZE];
@@ -59,7 +59,6 @@ void yy_delete_buffer(YY_BUFFER_STATE b);
 static void _dbg_sigint_handler(int signum)
 {
 	signal(SIGINT, _dbg_sigint_handler);
-	dbg_enter = 1;
 }
 
 // -----------------------------------------------------------------------
@@ -69,7 +68,7 @@ int dbg_mem_get(int nb, uint16_t addr, uint16_t *data)
 }
 
 // -----------------------------------------------------------------------
-int dbg_init()
+void * dbg_init(const char *call_name)
 {
 	ui_mode = O_NCURSES;
 
@@ -80,32 +79,37 @@ int dbg_init()
 
 	if (aw_init(ui_mode, hist_file) != 0) {
 		free(hist_file);
-		return -1;
+		return NULL;
 	}
 
 	free(hist_file);
 
 	if ((ui_mode == O_NCURSES) &&  (dbg_ui_init() != 0)) {
-		return -1;
+		return NULL;
 	}
 
 	aw_layout_changed = 1;
 
-	// prepare handler for ctrl-c (break emulation, enter debugger loop)
 	if (signal(SIGINT, _dbg_sigint_handler) == SIG_ERR) {
-		return -1;
+		return NULL;
 	}
 
 	emd = emdas_create(EMD_ISET_MX16, dbg_mem_get);
 	if (!emd) {
-		return -1;
+		return NULL;
 	}
 
 	emdas_set_nl(emd, '\0');
 	emdas_set_features(emd, EMD_FEAT_NONE);
 	emdas_set_tabs(emd, 0, 0, 4, 4);
 
-	return 0;
+	return (void *)-1;
+}
+
+// -----------------------------------------------------------------------
+void dbg_stop()
+{
+	atom_store_release(&dbg_quit, 1);
 }
 
 // -----------------------------------------------------------------------
@@ -113,29 +117,6 @@ void dbg_shutdown()
 {
 	aw_shutdown();
 	emdas_destroy(emd);
-}
-
-// -----------------------------------------------------------------------
-struct evlb_t * dbg_brk_check()
-{
-	struct evlb_t *b = brk_stack;
-	while (b) {
-		if ((!b->disabled) && (n_eval(b->n))) {
-			awtbprint(W_CMD, C_LABEL, "Hit breakpoint ");
-			awtbprint(W_CMD, C_DATA, "%i", b->nr);
-			awtbprint(W_CMD, C_LABEL, ": \"");
-			awtbprint(W_CMD, C_DATA, "%s", b->label);
-			awtbprint(W_CMD, C_LABEL, "\" (at: ");
-			awtbprint(W_CMD, C_DATA, "0x%04x", ectl_reg_get(ECTL_REG_IC));
-			awtbprint(W_CMD, C_LABEL, ", cnt: ");
-			awtbprint(W_CMD, C_DATA, "%i", b->value);
-			awtbprint(W_CMD, C_LABEL, ")\n");
-			b->value++;
-			return b;
-		}
-		b = b->next;
-	}
-	return NULL;
 }
 
 // -----------------------------------------------------------------------
@@ -148,17 +129,10 @@ int dbg_parse(char *c)
 }
 
 // -----------------------------------------------------------------------
-void dbg_step()
+void dbg_loop(void *data)
 {
-	struct evlb_t *bhit = NULL;
+	while (!atom_load_acquire(&dbg_quit)) {
 
-	if ((!dbg_enter) && (!(bhit=dbg_brk_check()))) {
-		return;
-	}
-
-	dbg_loop_fin = 0;
-
-	while (!dbg_loop_fin) {
 		if (aw_layout_changed) {
 			awin_tb_scroll_end(W_CMD);
 			aw_layout_redo();
@@ -183,8 +157,16 @@ void dbg_step()
 		} else if (res == KEY_PPAGE) {
 			awin_tb_scroll(W_CMD, -10);
 		}
-
 	}
 }
+
+// -----------------------------------------------------------------------
+struct ui_drv ui_curses = {
+	.name = "curses",
+	.setup = dbg_init,
+	.loop = dbg_loop,
+	.stop = dbg_stop,
+	.destroy = dbg_shutdown
+};
 
 // vim: tabstop=4 shiftwidth=4 autoindent

@@ -92,7 +92,7 @@ int cpu_mem_mput(int nb, uint16_t saddr, uint16_t *src, int count);
 int cpu_mem_get_byte(int nb, uint32_t addr, uint8_t *data);
 int cpu_mem_put_byte(int nb, uint32_t addr, uint8_t data);
 
-int cpu_init(struct cfg_em400 *cfg, int new_ui);
+int cpu_init(struct cfg_em400 *cfg);
 void cpu_shutdown();
 
 int cpu_mod_on();
@@ -101,7 +101,7 @@ int cpu_mod_off();
 int cpu_ctx_switch(uint16_t arg, uint16_t ic, uint16_t int_mask);
 int cpu_ctx_restore();
 
-void cpu_loop(int new_ui);
+void cpu_loop();
 
 void cpu_trigger_state(int state);
 void cpu_clear_state(int state);

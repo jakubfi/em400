@@ -38,11 +38,6 @@
 #include "em400.h"
 #include "cfg.h"
 
-#ifdef WITH_DEBUGGER
-#include "ui/curses/debugger.h"
-#include "ui/curses/ui.h"
-#endif
-
 #include "log.h"
 
 int em400_console = CONSOLE_NONE;
@@ -52,13 +47,7 @@ struct ui *ui;
 // -----------------------------------------------------------------------
 void em400_shutdown()
 {
-	if (ui) {
-		ui_shutdown(ui);
-	} else {
-		#ifdef WITH_DEBUGGER
-		dbg_shutdown();
-		#endif
-	}
+	ui_shutdown(ui);
 	ectl_shutdown();
 	timer_shutdown();
 	io_shutdown();
@@ -81,9 +70,9 @@ int em400_init(struct cfg_em400 *cfg)
 	// log configuration as early as possible
 	cfg_log(cfg);
 
-#ifdef WITH_DEBUGGER
+	// TODO: ???
 	em400_console = CONSOLE_DEBUGGER;
-#endif
+
 	if (cfg->fpga) {
 		if (iob_init(cfg->fpga_dev, cfg->fpga_speed) == E_ERR) {
 			return LOGERR("Failed to set up FPGA I/O bus.");
@@ -100,7 +89,7 @@ int em400_init(struct cfg_em400 *cfg)
 		return LOGERR("Failed to initialize control panel.");
 	}
 
-	res = cpu_init(cfg, cfg->ui_name ? 1 : 0);
+	res = cpu_init(cfg);
 	if (res != E_OK) {
 		return LOGERR("Failed to initialize CPU.");
 	}
@@ -136,18 +125,9 @@ int em400_init(struct cfg_em400 *cfg)
 		}
 	}
 
-	if (cfg->ui_name) {
-		ui = ui_create(cfg->ui_name);
-		if (!ui) {
-			return LOGERR("Failed to initialize UI.");
-		}
-	} else {
-		#ifdef WITH_DEBUGGER
-		res = dbg_init();
-		if (res != E_OK) {
-			return LOGERR("Failed to initialize debugger.");
-		}
-		#endif
+	ui = ui_create(cfg->ui_name);
+	if (!ui) {
+		return LOGERR("Failed to initialize UI %s.", cfg->ui_name);
 	}
 
 	return E_OK;
@@ -169,7 +149,7 @@ void em400_usage()
 		"                       wnch, flop, pnch, pnrd, tape, crk5, em4h, ectl, fpga, all\n"
 		"   -L                : disable logging\n"
 		"   -k value          : value to initially set keys to\n"
-		"   -u ui             : user interface to use (available UIs: cmd)\n"
+		"   -u ui             : user interface to use (available UIs: cmd, curses. Default: curses)\n"
 		"   -F                : use FPGA implementation of the CPU and external memory\n"
 	);
 }
@@ -250,18 +230,16 @@ int main(int argc, char** argv)
 		goto done;
 	}
 
-	if (ui) {
-		int res = ui_run(ui);
-		if (res != E_OK) {
-			LOGERR("Failed to start the UI: %s.", ui->drv->name);
-			goto done;
-		}
+	res = ui_run(ui);
+	if (res != E_OK) {
+		LOGERR("Failed to start the UI: %s.", ui->drv->name);
+		goto done;
 	}
 
 	if (cfg->fpga) {
 		iob_loop();
 	} else {
-		cpu_loop(ui ? 1 : 0);
+		cpu_loop();
 	}
 
 	ret = 0;

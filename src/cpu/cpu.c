@@ -37,11 +37,6 @@
 #include "log_crk.h"
 #include "ectl/brk.h"
 
-#ifdef WITH_DEBUGGER
-#include "ui/curses/debugger.h"
-#include "ui/curses/ui.h"
-#endif
-
 static int cpu_state = STATE_STOP;
 static int cpu_cycle;
 uint16_t regs[8];
@@ -218,7 +213,7 @@ int cpu_mem_put_byte(int nb, uint32_t addr, uint8_t data)
 }
 
 // -----------------------------------------------------------------------
-int cpu_init(struct cfg_em400 *cfg, int new_ui)
+int cpu_init(struct cfg_em400 *cfg)
 {
 	int res;
 
@@ -248,10 +243,6 @@ int cpu_init(struct cfg_em400 *cfg, int new_ui)
 	}
 
 	cpu_mod_off();
-
-	if (!new_ui) {
-		cpu_clear_state(STATE_STOP);
-	}
 
 	return E_OK;
 }
@@ -283,7 +274,7 @@ int cpu_mod_off()
 }
 
 // -----------------------------------------------------------------------
-static void cpu_clear(int scope, int new_ui)
+static void cpu_clear(int scope)
 {
 	cpu_clear_state(scope | STATE_HALT);
 
@@ -303,11 +294,7 @@ static void cpu_clear(int scope, int new_ui)
 		rALARM = 0;
 		rMOD = 0;
 		rMODc = 0;
-		if (new_ui) {
-			cpu_trigger_state(STATE_STOP);
-		} else {
-			cpu_clear_state(STATE_STOP);
-		}
+		cpu_trigger_state(STATE_STOP);
 	}
 
 	// call even if logging is disabled - user may enable it later
@@ -454,7 +441,7 @@ ineffective:
 }
 
 // -----------------------------------------------------------------------
-void cpu_loop(int new_ui)
+void cpu_loop()
 {
 	while (1) {
 		int state = atom_load_acquire(&cpu_state);
@@ -467,11 +454,6 @@ cycle:
 				int_serve();
 			// CPU cycle
 			} else {
-				#ifdef WITH_DEBUGGER
-				if (!new_ui) {
-					dbg_step();
-				}
-				#endif
 				cpu_step();
 				ips_counter++;
 
@@ -487,18 +469,13 @@ cycle:
 
 		// CPU reset
 		} else if (state & (STATE_CLM | STATE_CLO)) {
-			cpu_clear(state & (STATE_CLM | STATE_CLO), new_ui);
+			cpu_clear(state & (STATE_CLM | STATE_CLO));
 
 		// CPU stopped
 		} else if ((state & STATE_STOP)) {
-			#ifdef WITH_DEBUGGER
-			dbg_enter = 1;
-			#endif
-			if (new_ui) {
-				if (cpu_idle_in_stop()) {
-					// CPU cycle
-					goto cycle;
-				}
+			if (cpu_idle_in_stop()) {
+				// CPU cycle
+				goto cycle;
 			}
 
 		// CPU waiting for an interrupt

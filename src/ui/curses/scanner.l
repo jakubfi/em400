@@ -80,6 +80,7 @@ sregs	{ return F_SREGS; }
 reset	{ return F_RESET; }
 memcfg	{ return F_MEMCFG; }
 run		{ return F_RUN; }
+stop	{ return F_STOP; }
 stk		{ return F_STACK; }
 help	{ BEGIN(texts); return F_HELP; }
 dasm	{ BEGIN(args); return F_DASM; }

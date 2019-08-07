@@ -29,9 +29,11 @@
 #include "ui/ui.h"
 
 extern struct ui_drv ui_cmd;
+extern struct ui_drv ui_curses;
 
 struct ui_drv* uis[] = {
 	&ui_cmd,
+	&ui_curses,
 	NULL
 };
 
