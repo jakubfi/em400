@@ -171,9 +171,6 @@ void em400_usage()
 		"   -k value          : value to initially set keys to\n"
 		"   -u ui             : user interface to use (available UIs: cmd)\n"
 		"   -F                : use FPGA implementation of the CPU and external memory\n"
-#ifdef WITH_DEBUGGER
-		"   -s                : use simple (readline) debugger interface\n"
-#endif
 	);
 }
 

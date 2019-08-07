@@ -71,12 +71,7 @@ int dbg_mem_get(int nb, uint16_t addr, uint16_t *data)
 // -----------------------------------------------------------------------
 int dbg_init(struct cfg_em400 *cfg)
 {
-	// set UI mode
-	if (cfg->ui_simple == 1) {
-		ui_mode = O_STD;
-	} else {
-		ui_mode = O_NCURSES;
-	}
+	ui_mode = O_NCURSES;
 
 	const char *hfile = "/.em400/history";
 	char *home = getenv("HOME");
@@ -191,6 +186,5 @@ void dbg_step()
 
 	}
 }
-
 
 // vim: tabstop=4 shiftwidth=4 autoindent

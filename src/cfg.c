@@ -92,10 +92,6 @@ struct cfg_em400 * cfg_create_default()
 	// I/O
 	cfg->chans = NULL;
 
-#ifdef WITH_DEBUGGER
-	cfg->ui_simple = 0;
-#endif
-
 	return cfg;
 }
 
@@ -121,7 +117,7 @@ int cfg_from_args(struct cfg_em400 *cfg, int argc, char **argv)
 	int option;
 	optind = 1; // reset to 1 so consecutive calls work
 
-	while ((option = getopt(argc, argv, "hc:p:k:l:Lsu:F")) != -1) {
+	while ((option = getopt(argc, argv, "hc:p:k:l:Lu:F")) != -1) {
 		switch (option) {
 			case 'L':
 				cfg->log_enabled = 0;
@@ -145,11 +141,6 @@ int cfg_from_args(struct cfg_em400 *cfg, int argc, char **argv)
 			case 'k':
 				cfg->keys = atoi(optarg);
 				break;
-#ifdef WITH_DEBUGGER
-			case 's':
-				cfg->ui_simple = 1;
-				break;
-#endif
 			case 'u':
 				free(cfg->ui_name);
 				cfg->ui_name = strdup(optarg);

@@ -73,10 +73,6 @@ struct cfg_em400 {
 	int fpga_speed;
 
 	struct cfg_chan *chans;
-
-#ifdef WITH_DEBUGGER
-	int ui_simple;
-#endif
 };
 
 struct cfg_em400 * cfg_create_default();
