@@ -18,7 +18,7 @@
 #include <signal.h>
 #include <stdio.h>
 
-#include "debugger/awin.h"
+#include "ui/curses/awin.h"
 
 volatile int aw_layout_changed;
 

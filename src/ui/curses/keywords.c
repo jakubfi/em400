@@ -19,7 +19,7 @@
 #include <strings.h>
 
 #include "debugger_parser.h"
-#include "debugger/keywords.h"
+#include "ui/curses/keywords.h"
 
 struct kw_t kw_regs[] = {
 	{ "IC", DBG_R_IC },

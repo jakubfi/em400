@@ -18,8 +18,8 @@
 #ifndef DEBUGGER_CMD_H
 #define DEBUGGER_CMD_H
 
-#include "debugger/debugger.h"
-#include "debugger/eval.h"
+#include "ui/curses/debugger.h"
+#include "ui/curses/eval.h"
 
 #define MEMDUMP_COLS 16
 

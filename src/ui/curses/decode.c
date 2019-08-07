@@ -20,7 +20,7 @@
 #include <emcrk/process.h>
 
 #include "ectl.h"
-#include "debugger/decode.h"
+#include "ui/curses/decode.h"
 
 struct decoder_t decoders[] = {
 	{ "iv", "SYS: interrupt vectors (0x40)", decode_iv },

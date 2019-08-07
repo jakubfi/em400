@@ -38,8 +38,8 @@
 #include "ectl/brk.h"
 
 #ifdef WITH_DEBUGGER
-#include "debugger/debugger.h"
-#include "debugger/ui.h"
+#include "ui/curses/debugger.h"
+#include "ui/curses/ui.h"
 #endif
 
 static int cpu_state = STATE_STOP;

@@ -20,10 +20,10 @@
 
 #include "ectl.h"
 
-#include "debugger/awin.h"
-#include "debugger/debugger.h"
-#include "debugger/cmd.h"
-#include "debugger/ui.h"
+#include "ui/curses/awin.h"
+#include "ui/curses/debugger.h"
+#include "ui/curses/cmd.h"
+#include "ui/curses/ui.h"
 
 
 // -----------------------------------------------------------------------

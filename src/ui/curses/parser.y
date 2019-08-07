@@ -20,10 +20,10 @@
 
 #include "ectl.h"
 
-#include "debugger/debugger.h"
-#include "debugger/ui.h"
-#include "debugger/cmd.h"
-#include "debugger/eval.h"
+#include "ui/curses/debugger.h"
+#include "ui/curses/ui.h"
+#include "ui/curses/cmd.h"
+#include "ui/curses/eval.h"
 
 void reset_scanner();
 void yyerror(char *s, ...);

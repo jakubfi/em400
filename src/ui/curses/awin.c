@@ -29,7 +29,7 @@
 #include <readline/history.h>
 
 #include "utils/utils.h"
-#include "debugger/awin.h"
+#include "ui/curses/awin.h"
 
 SCREEN *s;
 

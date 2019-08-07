@@ -18,10 +18,10 @@
 
 #include <stdlib.h>
 
-#include "debugger/debugger.h"
-#include "debugger/ui.h"
-#include "debugger/cmd.h"
-#include "debugger/keywords.h"
+#include "ui/curses/debugger.h"
+#include "ui/curses/ui.h"
+#include "ui/curses/cmd.h"
+#include "ui/curses/keywords.h"
 #include "debugger_parser.h"
 
 void yyerror(char *s, ...);

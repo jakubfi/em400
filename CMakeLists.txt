@@ -124,24 +124,24 @@ add_flex_bison_dependency(ectl_scanner ectl_parser)
 
 if(WITH_DEBUGGER)
 	bison_target(debugger_parser
-		src/debugger/parser.y
+		src/ui/curses/parser.y
 		${CMAKE_CURRENT_BINARY_DIR}/debugger_parser.c
 	)
 	flex_target(debugger_scanner
-		src/debugger/scanner.l
+		src/ui/curses/scanner.l
 		${CMAKE_CURRENT_BINARY_DIR}/debugger_scanner.c
 		COMPILE_FLAGS "--never-interactive"
 	)
 	add_flex_bison_dependency(debugger_scanner debugger_parser)
 	set(SOURCES_DEBUGGER
-		src/debugger/awin.c
-		src/debugger/awinch.c
-		src/debugger/debugger.c
-		src/debugger/eval.c
-		src/debugger/cmd.c
-		src/debugger/ui.c
-		src/debugger/keywords.c
-		src/debugger/decode.c
+		src/ui/curses/awin.c
+		src/ui/curses/awinch.c
+		src/ui/curses/debugger.c
+		src/ui/curses/eval.c
+		src/ui/curses/cmd.c
+		src/ui/curses/ui.c
+		src/ui/curses/keywords.c
+		src/ui/curses/decode.c
 		${BISON_debugger_parser_OUTPUTS}
 		${FLEX_debugger_scanner_OUTPUTS}
 	)

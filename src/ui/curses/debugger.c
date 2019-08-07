@@ -24,11 +24,11 @@
 
 #include "ectl.h"
 
-#include "debugger/awin.h"
-#include "debugger/debugger.h"
-#include "debugger/ui.h"
+#include "ui/curses/awin.h"
+#include "ui/curses/debugger.h"
+#include "ui/curses/ui.h"
+#include "ui/curses/eval.h"
 #include "debugger_parser.h"
-#include "debugger/eval.h"
 
 int ui_mode;
 

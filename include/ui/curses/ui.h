@@ -18,7 +18,7 @@
 #ifndef DEBUGGER_UI_H
 #define DEBUGGER_UI_H
 
-#include "debugger/awin.h"
+#include "ui/curses/awin.h"
 
 enum _ui_attributes {
 	C_PROMPT = 1,

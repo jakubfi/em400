@@ -22,10 +22,10 @@
 
 #include "ectl.h"
 
-#include "debugger/debugger.h"
-#include "debugger/keywords.h"
-#include "debugger/eval.h"
-#include "debugger/ui.h"
+#include "ui/curses/debugger.h"
+#include "ui/curses/keywords.h"
+#include "ui/curses/eval.h"
+#include "ui/curses/ui.h"
 #include "debugger_parser.h"
 
 struct node_t *node_stack = NULL;

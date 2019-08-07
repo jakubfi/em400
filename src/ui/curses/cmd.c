@@ -24,13 +24,13 @@
 #include "utils/utils.h"
 #include "ectl.h"
 
-#include "debugger/awin.h"
-#include "debugger/debugger.h"
-#include "debugger/cmd.h"
-#include "debugger/ui.h"
+#include "ui/curses/awin.h"
+#include "ui/curses/debugger.h"
+#include "ui/curses/cmd.h"
+#include "ui/curses/ui.h"
+#include "ui/curses/eval.h"
+#include "ui/curses/decode.h"
 #include "debugger_parser.h"
-#include "debugger/eval.h"
-#include "debugger/decode.h"
 
 #include <emcrk/r40.h>
 
