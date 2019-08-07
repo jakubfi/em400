@@ -143,7 +143,7 @@ int em400_init(struct cfg_em400 *cfg)
 		}
 	} else {
 		#ifdef WITH_DEBUGGER
-		res = dbg_init(cfg);
+		res = dbg_init();
 		if (res != E_OK) {
 			return LOGERR("Failed to initialize debugger.");
 		}

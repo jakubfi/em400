@@ -52,7 +52,7 @@ extern struct emdas *emd;
 
 struct evlb_t * dbg_brk_check();
 void dbg_step();
-int dbg_init(struct cfg_em400 *cfg);
+int dbg_init();
 void dbg_shutdown();
 int dbg_parse(char *c);
 

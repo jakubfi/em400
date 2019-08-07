@@ -69,7 +69,7 @@ int dbg_mem_get(int nb, uint16_t addr, uint16_t *data)
 }
 
 // -----------------------------------------------------------------------
-int dbg_init(struct cfg_em400 *cfg)
+int dbg_init()
 {
 	ui_mode = O_NCURSES;
 
@@ -96,7 +96,7 @@ int dbg_init(struct cfg_em400 *cfg)
 		return -1;
 	}
 
-	emd = emdas_create(cfg->cpu_mod ? EMD_ISET_MX16 : EMD_ISET_MERA400, dbg_mem_get);
+	emd = emdas_create(EMD_ISET_MX16, dbg_mem_get);
 	if (!emd) {
 		return -1;
 	}
