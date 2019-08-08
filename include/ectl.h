@@ -32,6 +32,7 @@ enum ectl_cpu_state_bits {
 	ECTL_STATE_CLM,
 	ECTL_STATE_CLO,
 	ECTL_STATE_QUIT,
+	ECTL_STATE_BRK,
 	ECTL_STATE_COUNT
 };
 

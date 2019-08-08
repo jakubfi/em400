@@ -234,7 +234,7 @@ void cp_start()
 	if (fpga) {
 		iob_cp_set_fn(IOB_FN_START, 1);
 	} else {
-		cpu_clear_state(STATE_STOP);
+		cpu_clear_state(STATE_STOP | STATE_BRK);
 	}
 }
 

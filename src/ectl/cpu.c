@@ -148,7 +148,7 @@ int ectl_cpu_state_get()
 // -----------------------------------------------------------------------
 const char * ectl_cpu_state_bit_name(int bitpos)
 {
-	static const char *state_names[] = { "STOP", "HALT", "CLM", "CLO", "QUIT", "???" };
+	static const char *state_names[] = { "STOP", "HALT", "CLM", "CLO", "QUIT", "BRK", "???" };
 
 	if (bitpos < ECTL_STATE_COUNT) {
 		return state_names[bitpos];

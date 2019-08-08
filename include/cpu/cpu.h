@@ -31,6 +31,7 @@ enum cpu_states {
 	STATE_CLM =		0x4,
 	STATE_CLO =		0x8,
 	STATE_QUIT =	0x10,
+	STATE_BRK = 	0x20,
 };
 
 // -----------------------------------------------------------------------

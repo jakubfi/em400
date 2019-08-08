@@ -477,7 +477,7 @@ cycle:
 
 				// breakpoint hit?
 				if (ectl_brk_check()) {
-					cpu_trigger_state(STATE_STOP);
+					cpu_trigger_state(STATE_STOP | STATE_BRK);
 				}
 			}
 
