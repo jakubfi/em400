@@ -79,7 +79,7 @@ regs	{ return F_REGS; }
 sregs	{ return F_SREGS; }
 reset	{ return F_RESET; }
 memcfg	{ return F_MEMCFG; }
-run		{ return F_RUN; }
+start	{ return F_START; }
 stop	{ return F_STOP; }
 stk		{ return F_STACK; }
 help	{ BEGIN(texts); return F_HELP; }

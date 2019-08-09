@@ -2,7 +2,7 @@ Known bugs:
 
 Cleanups:
 
-* consistent naming and commands between emu and hw (timer/clock, run/start)
+* consistent naming and commands between emu and hw (timer/clock, cycle/step)
 * consistent state idicators (stop/start/wait - run/wait)
 
 Enhancements:

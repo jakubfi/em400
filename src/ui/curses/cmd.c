@@ -47,7 +47,7 @@ struct cmd_t dbg_commands[] = {
 	{ "load",	F_LOAD,		"Load memory image from file", "  load <file>" },
 	{ "memcfg",	F_MEMCFG,	"Show memory configuration", "  memcfg" },
 	{ "brk",	F_BRK,		"Manipulate breakpoints", "  brk add <expression>\n  brk del <brk_number>\n  brk" },
-	{ "run",	F_RUN,		"Run emulation", "  run" },
+	{ "start",	F_START,	"Start emulation", "  start" },
 	{ "stop",	F_STOP,		"Stop emulation", "  stop" },
 	{ "stk",	F_STACK,	"Show stack", "  stk" },
 	{ "log",	F_LOG,		"Manipulate logging", "  log\n  log on|off\n  log <component> on|off" },
@@ -108,7 +108,7 @@ void dbg_c_step()
 }
 
 // -----------------------------------------------------------------------
-void dbg_c_run()
+void dbg_c_start()
 {
 	ectl_cpu_start();
 }
