@@ -43,8 +43,8 @@ string	\".+\"
 
 computer		return COMPUTER;
 speed_real		return SPEED_REAL;
-timer_step		return TIMER_STEP;
-timer_start		return TIMER_START;
+clock_period	return CLOCK_PERIOD;
+clock_start		return CLOCK_START;
 cpu_mod			return CPU_MOD;
 cpu_user_io_illegal		return CPU_USER_IO_ILLEGAL;
 cpu_awp			return CPU_AWP;

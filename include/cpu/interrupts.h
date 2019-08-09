@@ -30,7 +30,7 @@ enum named_interrupts {
 	INT_NO_MEM			= 2,
 	INT_2CPU_HIGH		= 3,
 	INT_IFACE_POWER		= 4,
-	INT_TIMER			= 5,
+	INT_CLOCK			= 5,
 	INT_ILLEGAL_INSTRUCTION	= 6,
 	INT_DIV_OF			= 7,
 	INT_FP_UF			= 8,

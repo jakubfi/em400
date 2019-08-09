@@ -680,7 +680,7 @@ void op_73_softint()
 	}
 
 	// SINT, SIND
-	if (cpu_mod_present && (IR_C & 4)) int_set(INT_TIMER);
+	if (cpu_mod_present && (IR_C & 4)) int_set(INT_CLOCK);
 }
 
 // -----------------------------------------------------------------------

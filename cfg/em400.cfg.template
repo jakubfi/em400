@@ -9,15 +9,15 @@ computer {
 	# "true" - try to emulate actual instructions, memory and I/O timings
 	speed_real = false
 
-	# Internal timer interrupt cycle (in miliseconds)
+	# Internal clock interrupt period (in miliseconds)
 	# allowed values: 2-100 (default is 10)
 	# Note: cycle lengths available for real hardware were:
 	# 2, 4, 8, 10, 20, 40, 80 (10 was the default)
-	timer_step = 10
+	clock_period = 10
 
-	# Start timer at power on.
+	# Start clock at power on.
 	# allowed values: "true" (default), "false"
-	timer_start = true
+	clock_start = true
 
 	# MERA-400 cpu stops when operating system tries to access unconfigured
 	# memory segment, but this can be changed to work as for user programs:

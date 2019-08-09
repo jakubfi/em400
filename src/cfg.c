@@ -61,8 +61,8 @@ struct cfg_em400 * cfg_create_default()
 	cfg->speed_real = 0;
 
 	// cpu
-	cfg->timer_step = 10;
-	cfg->timer_start = 1;
+	cfg->clock_period= 10;
+	cfg->clock_start = 1;
 	cfg->cpu_mod = 0;
 	cfg->cpu_user_io_illegal = 1;
 	cfg->cpu_awp = 1;
@@ -311,7 +311,7 @@ void cfg_log(struct cfg_em400 *cfg)
 	if (!cfg->fpga) {
 		LOG(L_EM4H, "CPU emulation:");
 		LOG(L_EM4H, "   Emulation speed: %s", cfg->speed_real ? "real" : "max");
-		LOG(L_EM4H, "   Timer step: %i (%s at power-on)", cfg->timer_step, cfg->timer_start ? "enabled" : "disabled");
+		LOG(L_EM4H, "   Clock period: %i (%s at power-on)", cfg->clock_period, cfg->clock_start ? "enabled" : "disabled");
 		LOG(L_EM4H, "   CPU modifications: %s", cfg->cpu_mod ? "present" : "absent");
 		LOG(L_EM4H, "   IN/OU instructions: %s for user programs", cfg->cpu_user_io_illegal ? "illegal" : "legal");
 		LOG(L_EM4H, "   Hardware AWP: %s", cfg->cpu_awp ? "present" : "absent");

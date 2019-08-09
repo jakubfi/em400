@@ -49,8 +49,8 @@ int cyylex(void);
 %token CHANNEL "`channel`"
 %token UNIT "`unit`"
 %token SPEED_REAL "`speed_real`"
-%token TIMER_STEP "`timer_step`"
-%token TIMER_START "`timer_start`"
+%token CLOCK_PERIOD "`clock_period`"
+%token CLOCK_START "`clock_start`"
 %token CPU_MOD "`cpu_mod`"
 %token CPU_USER_IO_ILLEGAL "`cpu_user_io_illegal`"
 %token CPU_AWP "`cpu_awp`"
@@ -117,8 +117,8 @@ computer_opts:
 
 computer_opt:
 	SPEED_REAL '=' BOOL		{ cfg->speed_real = $3.v; free($3.s); }
-	| TIMER_STEP '=' VALUE	{ cfg->timer_step = $3.v; free($3.s); }
-	| TIMER_START '=' BOOL	{ cfg->timer_start = $3.v; free($3.s); }
+	| CLOCK_PERIOD '=' VALUE{ cfg->clock_period = $3.v; free($3.s); }
+	| CLOCK_START '=' BOOL	{ cfg->clock_start = $3.v; free($3.s); }
 	| CPU_MOD '=' BOOL		{ cfg->cpu_mod = $3.v; free($3.s); }
 	| CPU_USER_IO_ILLEGAL '=' BOOL { cfg->cpu_user_io_illegal = $3.v; free($3.s); }
 	| CPU_AWP '=' BOOL		{ cfg->cpu_awp = $3.v; free($3.s); }

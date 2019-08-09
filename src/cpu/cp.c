@@ -22,7 +22,7 @@
 #include "cpu/cpu.h"
 #include "cpu/interrupts.h"
 #include "mem/mem.h"
-#include "cpu/timer.h"
+#include "cpu/clock.h"
 #include "fpga/iobus.h"
 
 #include "cfg.h"
@@ -265,9 +265,9 @@ void cp_clock_set(int state)
 		iob_cp_set_fn(IOB_FN_CLOCK, state);
 	} else {
 		if (state == 0) {
-			timer_off();
+			clock_off();
 		} else {
-			timer_on();
+			clock_on();
 		}
 	}
 }
@@ -281,7 +281,7 @@ int cp_clock_get()
 		state = stat->leds & IOB_LED_CLOCK ? 1 : 0;
 		free(stat);
 	} else {
-		state = timer_get_state();
+		state = clock_get_state();
 	}
 
 	return state;

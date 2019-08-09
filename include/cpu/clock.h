@@ -15,8 +15,8 @@
 //  Foundation, Inc.,
 //  51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 
-#ifndef TIMER_H
-#define TIMER_H
+#ifndef CLOCK_H
+#define CLOCK_H
 
 #include "cfg.h"
 
@@ -24,12 +24,12 @@
 extern "C" {
 #endif
 
-int timer_init(struct cfg_em400 *cfg);
-void timer_shutdown();
-void timer_on();
-void timer_off();
-int timer_get_state();
-void timer_set_int(int interrupt);
+int clock_init(struct cfg_em400 *cfg);
+void clock_shutdown();
+void clock_on();
+void clock_off();
+int clock_get_state();
+void clock_set_int(int interrupt);
 
 #ifdef __cplusplus
 }

@@ -25,7 +25,7 @@ find_library(READLINE_LIBRARY NAMES readline)
 set(SOURCES_EM400
 	src/em400.c
 	src/cfg.c
- 	src/log.c
+	src/log.c
 	src/log_crk.c
 
 	src/utils/utils.c
@@ -33,8 +33,8 @@ set(SOURCES_EM400
 	src/utils/fdbridge.c
 
 	src/cpu/instructions.c
- 	src/cpu/timer.c
- 	src/cpu/cpu.c
+	src/cpu/clock.c
+	src/cpu/cpu.c
 	src/cpu/interrupts.c
 	src/cpu/iset.c
 	src/cpu/alu.c

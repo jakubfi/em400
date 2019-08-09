@@ -23,25 +23,25 @@
 #include <semaphore.h>
 #include <time.h>
 
-#include "cpu/timer.h"
+#include "cpu/clock.h"
 #include "cpu/interrupts.h"
 
 #include "log.h"
 #include "cfg.h"
 #include "atomic.h"
 
-int timer_enabled;
-pthread_t timer_th;
-sem_t timer_quit;
+int clock_enabled;
+pthread_t clock_th;
+sem_t clock_quit;
 
-int timer_step = 10;
-int timer_int = INT_TIMER;
+int clock_period = 10;
+int clock_int = INT_CLOCK;
 
 // -----------------------------------------------------------------------
-void * timer_thread(void *ptr)
+void * clock_thread(void *ptr)
 {
 	struct timespec ts;
-	unsigned clock_tick_nsec = timer_step * 1000000;
+	unsigned clock_tick_nsec = clock_period * 1000000;
 	unsigned new_nsec;
 	clock_gettime(CLOCK_REALTIME , &ts);
 
@@ -49,11 +49,11 @@ void * timer_thread(void *ptr)
 		new_nsec = ts.tv_nsec + clock_tick_nsec;
 		ts.tv_sec += new_nsec / 1000000000L;
 		ts.tv_nsec = new_nsec % 1000000000L;
-		if (!sem_timedwait(&timer_quit, &ts)) {
+		if (!sem_timedwait(&clock_quit, &ts)) {
 			break;
 		}
-		if (atom_load_acquire(&timer_enabled)) {
-			int_set(atom_load_acquire(&timer_int));
+		if (atom_load_acquire(&clock_enabled)) {
+			int_set(atom_load_acquire(&clock_int));
 		}
 	}
 
@@ -61,67 +61,67 @@ void * timer_thread(void *ptr)
 }
 
 // -----------------------------------------------------------------------
-int timer_init(struct cfg_em400 *cfg)
+int clock_init(struct cfg_em400 *cfg)
 {
-	timer_step = cfg->timer_step;
+	clock_period = cfg->clock_period;
 
-	if ((timer_step < 2) || (timer_step > 100)) {
-		return LOGERR("Timer step should be 2-100 miliseconds, not %i.", timer_step);
+	if ((clock_period < 2) || (clock_period > 100)) {
+		return LOGERR("Timer step should be 2-100 miliseconds, not %i.", clock_period);
 	}
 
-	LOG(L_CPU, "Timer cycle: %i ms", timer_step);
+	LOG(L_CPU, "Timer cycle: %i ms", clock_period);
 
-	if (cfg->timer_start) {
-		timer_on();
+	if (cfg->clock_start) {
+		clock_on();
 	} else {
-		timer_off();
+		clock_off();
 	}
 
-	sem_init(&timer_quit, 0, 0);
-	if (pthread_create(&timer_th, NULL, timer_thread, NULL)) {
-		return LOGERR("Failed to spawn timer thread.");
+	sem_init(&clock_quit, 0, 0);
+	if (pthread_create(&clock_th, NULL, clock_thread, NULL)) {
+		return LOGERR("Failed to spawn clock thread.");
 	}
 
-	pthread_setname_np(timer_th, "timer");
+	pthread_setname_np(clock_th, "clock");
 
 	return E_OK;
 }
 
 // -----------------------------------------------------------------------
-void timer_shutdown()
+void clock_shutdown()
 {
-	LOG(L_CPU, "Shutting down timer");
-	if (timer_th) {
-		sem_post(&timer_quit);
-		pthread_join(timer_th, NULL);
+	LOG(L_CPU, "Shutting down clock");
+	if (clock_th) {
+		sem_post(&clock_quit);
+		pthread_join(clock_th, NULL);
 	}
-	sem_destroy(&timer_quit);
+	sem_destroy(&clock_quit);
 }
 
 // -----------------------------------------------------------------------
-void timer_on()
+void clock_on()
 {
-	LOG(L_CPU, "Starting timer");
-	atom_store_release(&timer_enabled, 1);
+	LOG(L_CPU, "Starting clock");
+	atom_store_release(&clock_enabled, 1);
 }
 
 // -----------------------------------------------------------------------
-void timer_off()
+void clock_off()
 {
-	LOG(L_CPU, "Stopping timer");
-	atom_store_release(&timer_enabled, 0);
+	LOG(L_CPU, "Stopping clock");
+	atom_store_release(&clock_enabled, 0);
 }
 
 // -----------------------------------------------------------------------
-int timer_get_state()
+int clock_get_state()
 {
-	return atom_load_acquire(&timer_enabled);
+	return atom_load_acquire(&clock_enabled);
 }
 
 // -----------------------------------------------------------------------
-void timer_set_int(int interrupt)
+void clock_set_int(int interrupt)
 {
-	atom_store_release(&timer_int, interrupt);
+	atom_store_release(&clock_int, interrupt);
 }
 
 // vim: tabstop=4 shiftwidth=4 autoindent

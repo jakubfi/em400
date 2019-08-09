@@ -51,8 +51,8 @@ struct cfg_em400 {
 	char *ui_name;
 
 	int speed_real;
-	int timer_step;
-	int timer_start;
+	int clock_period;
+	int clock_start;
 	int cpu_mod;
 	int cpu_user_io_illegal;
 	int cpu_awp;

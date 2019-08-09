@@ -30,7 +30,7 @@
 #include "cpu/cpu.h"
 #include "mem/mem.h"
 #include "cpu/interrupts.h"
-#include "cpu/timer.h"
+#include "cpu/clock.h"
 #include "io/io.h"
 #include "fpga/iobus.h"
 
@@ -49,7 +49,7 @@ void em400_shutdown()
 {
 	ui_shutdown(ui);
 	ectl_shutdown();
-	timer_shutdown();
+	clock_shutdown();
 	io_shutdown();
 	cpu_shutdown();
 	cp_shutdown();
@@ -94,9 +94,9 @@ int em400_init(struct cfg_em400 *cfg)
 		return LOGERR("Failed to initialize CPU.");
 	}
 
-	res = timer_init(cfg);
+	res = clock_init(cfg);
 	if (res != E_OK) {
-		return LOGERR("Failed to initialize timer.");
+		return LOGERR("Failed to initialize clock.");
 	}
 
 	res = io_init(cfg);

@@ -27,7 +27,7 @@
 #include "cpu/iset.h"
 #include "cpu/instructions.h"
 #include "cpu/interrupts.h"
-#include "cpu/timer.h"
+#include "cpu/clock.h"
 #include "io/io.h"
 
 #include "em400.h"
@@ -258,7 +258,7 @@ int cpu_mod_on()
 {
 	// indicate that CPU modifications are preset
 	cpu_mod_active = 1;
-	timer_set_int(INT_EXTRA);
+	clock_set_int(INT_EXTRA);
 
 	return E_OK;
 }
@@ -268,7 +268,7 @@ int cpu_mod_off()
 {
 	// indicate that CPU modifications are absent
 	cpu_mod_active = 0;
-	timer_set_int(INT_TIMER);
+	clock_set_int(INT_CLOCK);
 
 	return E_OK;
 }
