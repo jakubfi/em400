@@ -353,7 +353,7 @@ int cpu_ctx_restore()
 }
 
 // -----------------------------------------------------------------------
-static void cpu_step()
+static void cpu_do_cycle()
 {
 	struct iset_opcode *op;
 	uint16_t data;
@@ -454,7 +454,7 @@ cycle:
 				int_serve();
 			// CPU cycle
 			} else {
-				cpu_step();
+				cpu_do_cycle();
 				ips_counter++;
 
 				// breakpoint hit?

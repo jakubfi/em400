@@ -37,7 +37,7 @@
 // -----------------------------------------------------------------------
 struct cmd_t dbg_commands[] = {
 	{ "quit",	F_QUIT,		"Quit the emulator", "  quit" },
-	{ "step",	F_STEP,		"Execute instruction at IC", "  step" },
+	{ "cycle",	F_CYCLE,	"Execute one instruction at IC", "  cycle" },
 	{ "help",	F_HELP,		"Print help", "  help" },
 	{ "regs",	F_REGS,		"Show user registers", "  regs" },
 	{ "sregs",	F_SREGS,	"Show system registers", "  sregs" },
@@ -102,7 +102,7 @@ void dbg_c_quit()
 }
 
 // -----------------------------------------------------------------------
-void dbg_c_step()
+void dbg_c_cycle()
 {
 	ectl_cpu_cycle();
 }

@@ -31,7 +31,7 @@ struct cmd_t {
 };
 
 int dbg_is_cmd(char *cmd);
-void dbg_c_step();
+void dbg_c_cycle();
 void dbg_c_quit();
 void dbg_c_start();
 void dbg_c_stop();

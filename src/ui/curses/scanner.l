@@ -74,7 +74,7 @@ chars	[-,=+*&|^><:()\]\[~!]
 <opts>mem   { BEGIN(INITIAL); yylval.text = strdup(yytext); return NAME; }
 
 quit	{ return F_QUIT; }
-step	{ return F_STEP; }
+cycle	{ return F_CYCLE; }
 regs	{ return F_REGS; }
 sregs	{ return F_SREGS; }
 reset	{ return F_RESET; }
