@@ -110,11 +110,15 @@ class EM400:
                 time.sleep(self.polldelay)
 
     # --------------------------------------------------------------------
-    def clear(self):
-        self.cmd("CLEAR")
-        while self.state() != 1:
+    def wait_for_stop(self):
+        while self.state() & 1 != 1:
             if self.polldelay:
                 time.sleep(self.polldelay)
+
+    # --------------------------------------------------------------------
+    def clear(self):
+        self.cmd("CLEAR")
+        self.wait_for_stop()
 
     # --------------------------------------------------------------------
     def start(self):
@@ -123,9 +127,7 @@ class EM400:
     # --------------------------------------------------------------------
     def stop(self):
         self.cmd("STOP")
-        while self.state() & 1 != 1:
-            if self.polldelay:
-                time.sleep(self.polldelay)
+        self.wait_for_stop()
 
     # --------------------------------------------------------------------
     def quit(self):
