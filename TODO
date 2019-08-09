@@ -2,9 +2,7 @@ Known bugs:
 
 Cleanups:
 
-* consistent state idicators (stop/start/wait - run/wait)
-
-Enhancements:
+Enhancements (possible):
 
 * merge cpu sources for better instruction performance (?)
 * graphical interface

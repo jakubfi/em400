@@ -28,7 +28,7 @@ enum ectl_states {
 
 enum ectl_cpu_state_bits {
 	ECTL_STATE_STOP = 0,
-	ECTL_STATE_HALT,
+	ECTL_STATE_WAIT,
 	ECTL_STATE_CLM,
 	ECTL_STATE_CLO,
 	ECTL_STATE_QUIT,

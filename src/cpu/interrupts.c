@@ -104,7 +104,7 @@ static void int_update_rp()
 	// under mutex
 	RP = RZ & int_mask;
 	if (RP) {
-		cpu_clear_state(STATE_HALT);
+		cpu_clear_state(STATE_WAIT);
 	}
 }
 

@@ -658,7 +658,7 @@ void op_72_lpc()
 void op_73_hlt()
 {
 	LOGCPU(L_OP, "HALT 0%02o (alarm: %i)", N, regs[6]&255);
-	cpu_trigger_state(STATE_HALT);
+	cpu_trigger_state(STATE_WAIT);
 }
 
 // -----------------------------------------------------------------------

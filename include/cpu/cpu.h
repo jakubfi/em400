@@ -27,7 +27,7 @@
 
 enum cpu_states {
 	STATE_STOP =	0x1,
-	STATE_HALT =	0x2,
+	STATE_WAIT =	0x2,
 	STATE_CLM =		0x4,
 	STATE_CLO =		0x8,
 	STATE_QUIT =	0x10,

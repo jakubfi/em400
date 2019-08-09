@@ -342,7 +342,7 @@ int cp_state()
 
 	if (fpga) {
 		struct iob_cp_status *stat = iob_cp_get_status();
-		if (stat->leds & IOB_LED_WAIT) status |= STATE_HALT;
+		if (stat->leds & IOB_LED_WAIT) status |= STATE_WAIT;
 		if (!(stat->leds & IOB_LED_RUN)) status |= STATE_STOP;
 		free(stat);
 	} else {

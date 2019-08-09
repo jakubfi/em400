@@ -67,14 +67,14 @@ pthread_mutex_t cpu_wake_mutex = PTHREAD_MUTEX_INITIALIZER;
 pthread_cond_t cpu_wake_cond = PTHREAD_COND_INITIALIZER;
 
 // -----------------------------------------------------------------------
-static void cpu_idle_in_halt()
+static void cpu_idle_in_wait()
 {
 	pthread_mutex_lock(&cpu_wake_mutex);
-	while ((cpu_state == STATE_HALT) && !atom_load_acquire(&RP)) {
-		LOG(L_CPU, "idling in state HALT");
+	while ((cpu_state == STATE_WAIT) && !atom_load_acquire(&RP)) {
+		LOG(L_CPU, "idling in state WAIT");
 		pthread_cond_wait(&cpu_wake_cond, &cpu_wake_mutex);
 	}
-	cpu_state &= ~STATE_HALT;
+	cpu_state &= ~STATE_WAIT;
 	pthread_mutex_unlock(&cpu_wake_mutex);
 }
 
@@ -276,7 +276,7 @@ int cpu_mod_off()
 // -----------------------------------------------------------------------
 static void cpu_clear(int scope)
 {
-	cpu_clear_state(scope | STATE_HALT);
+	cpu_clear_state(scope | STATE_WAIT);
 
 	// I/O reset should return when we're sure that I/O won't change CPU state (backlogged interrupts, memory writes, ...)
 	io_reset();
@@ -479,8 +479,8 @@ cycle:
 			}
 
 		// CPU waiting for an interrupt
-		} else if ((state & STATE_HALT)) {
-			cpu_idle_in_halt();
+		} else if ((state & STATE_WAIT)) {
+			cpu_idle_in_wait();
 		}
 	}
 }
