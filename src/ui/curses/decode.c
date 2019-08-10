@@ -59,7 +59,7 @@ char * decode_iv(int nb, uint16_t addr, int arg)
 	pos += sprintf(b+pos, "2  no mem     = 0x%04x    18 channel 6  = 0x%04x\n", data[2],  data[addr+18]);
 	pos += sprintf(b+pos, "3  2nd CPU    = 0x%04x    19 channel 7  = 0x%04x\n", data[3],  data[addr+19]);
 	pos += sprintf(b+pos, "4  I/F power  = 0x%04x    20 channel 8  = 0x%04x\n", data[4],  data[addr+20]);
-	pos += sprintf(b+pos, "5  timer      = 0x%04x    21 channel 9  = 0x%04x\n", data[5],  data[addr+21]);
+	pos += sprintf(b+pos, "5  clock      = 0x%04x    21 channel 9  = 0x%04x\n", data[5],  data[addr+21]);
 	pos += sprintf(b+pos, "6  illegal op = 0x%04x    22 channel 10 = 0x%04x\n", data[6],  data[addr+22]);
 	pos += sprintf(b+pos, "7  div overfl = 0x%04x    23 channel 11 = 0x%04x\n", data[7],  data[addr+23]);
 	pos += sprintf(b+pos, "8  FP underfl = 0x%04x    24 channel 12 = 0x%04x\n", data[8],  data[addr+24]);

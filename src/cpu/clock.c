@@ -66,10 +66,10 @@ int clock_init(struct cfg_em400 *cfg)
 	clock_period = cfg->clock_period;
 
 	if ((clock_period < 2) || (clock_period > 100)) {
-		return LOGERR("Timer step should be 2-100 miliseconds, not %i.", clock_period);
+		return LOGERR("Clock period should be between 2 and 100 miliseconds, not %i.", clock_period);
 	}
 
-	LOG(L_CPU, "Timer cycle: %i ms", clock_period);
+	LOG(L_CPU, "Clock period: %i ms", clock_period);
 
 	if (cfg->clock_start) {
 		clock_on();
