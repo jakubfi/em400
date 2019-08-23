@@ -22,36 +22,6 @@
 
 #include "cfg.h"
 
-// this must match register ids in ectl.h
-enum cp_registers {
-	CP_REG_R0 = 0,
-	CP_REG_R1,
-	CP_REG_R2,
-	CP_REG_R3,
-	CP_REG_R4,
-	CP_REG_R5,
-	CP_REG_R6,
-	CP_REG_R7,
-	CP_REG_IC,
-	CP_REG_AC,
-	CP_REG_AR,
-	CP_REG_IR,
-	CP_REG_SR,
-	CP_REG_RZ,
-	CP_REG_KB,
-	CP_REG_KB2,
-	CP_REG_MOD,
-	CP_REG_MODc,
-	CP_REG_ALARM,
-	CP_REG_RM,
-	CP_REG_Q,
-	CP_REG_BS,
-	CP_REG_NB,
-	CP_REG_P,
-	CP_REG_RZ_IO,
-	CP_REG_COUNT
-};
-
 int cp_init(struct cfg_em400 *cfg);
 void cp_shutdown();
 

@@ -36,7 +36,6 @@ enum ectl_cpu_state_bits {
 	ECTL_STATE_COUNT
 };
 
-// this must match register ids in cpu/cp.h
 enum ectl_registers {
 	ECTL_REG_R0 = 0,
 	ECTL_REG_R1,

@@ -28,6 +28,8 @@
 #include "cfg.h"
 #include "log.h"
 
+#include "ectl.h" // for global constants/enums
+
 static int fpga;
 
 // -----------------------------------------------------------------------
@@ -50,7 +52,7 @@ int cp_reg_get(unsigned id)
 	struct iob_cp_status *stat;
 
 	if (fpga) {
-		if (id <= CP_REG_KB2) {
+		if (id <= ECTL_REG_KB2) {
 			iob_cp_set_rotary(id);
 			stat = iob_cp_get_status();
 			reg = stat->data;
@@ -59,11 +61,11 @@ int cp_reg_get(unsigned id)
 			stat = iob_cp_get_status();
 			reg = stat->leds;
 			free(stat);
-			if ((id == CP_REG_MOD) || (id == CP_REG_MODc)) {
+			if ((id == ECTL_REG_MOD) || (id == ECTL_REG_MODc)) {
 				reg = (reg & IOB_LED_MODE) >> 9;
-			} else if (id == CP_REG_ALARM) {
+			} else if (id == ECTL_REG_ALARM) {
 				reg = reg & IOB_LED_ALARM;
-			} else if (id == CP_REG_P) {
+			} else if (id == ECTL_REG_P) {
 				reg = reg & IOB_LED_P;
 			} else {
 				return -1;
@@ -71,31 +73,31 @@ int cp_reg_get(unsigned id)
 		}
 	} else {
 		switch (id) {
-			case CP_REG_R0:
-			case CP_REG_R1:
-			case CP_REG_R2:
-			case CP_REG_R3:
-			case CP_REG_R4:
-			case CP_REG_R5:
-			case CP_REG_R6:
-			case CP_REG_R7: reg = regs[id]; break;
-			case CP_REG_IC: reg = rIC; break;
-			// n/a case CP_REG_AC:
-			// n/a case CP_REG_AR:
-			case CP_REG_IR: reg = rIR; break;
-			case CP_REG_SR: reg = SR_read(); break;
-			case CP_REG_RZ: reg = int_get_nchan(); break;
-			case CP_REG_KB: reg = rKB; break;
-			case CP_REG_KB2: reg = rKB; break;
-			case CP_REG_MOD: reg = rMOD; break;
-			case CP_REG_MODc: reg = rMODc; break;
-			case CP_REG_ALARM: reg = rALARM; break;
-			case CP_REG_RM: reg = RM; break;
-			case CP_REG_Q: reg = Q; break;
-			case CP_REG_BS: reg = BS; break;
-			case CP_REG_NB: reg = NB; break;
-			case CP_REG_P: reg = P; break;
-			case CP_REG_RZ_IO: reg = int_get_chan(); break;
+			case ECTL_REG_R0:
+			case ECTL_REG_R1:
+			case ECTL_REG_R2:
+			case ECTL_REG_R3:
+			case ECTL_REG_R4:
+			case ECTL_REG_R5:
+			case ECTL_REG_R6:
+			case ECTL_REG_R7: reg = regs[id]; break;
+			case ECTL_REG_IC: reg = rIC; break;
+			// n/a case ECTL_REG_AC:
+			// n/a case ECTL_REG_AR:
+			case ECTL_REG_IR: reg = rIR; break;
+			case ECTL_REG_SR: reg = SR_read(); break;
+			case ECTL_REG_RZ: reg = int_get_nchan(); break;
+			case ECTL_REG_KB: reg = rKB; break;
+			case ECTL_REG_KB2: reg = rKB; break;
+			case ECTL_REG_MOD: reg = rMOD; break;
+			case ECTL_REG_MODc: reg = rMODc; break;
+			case ECTL_REG_ALARM: reg = rALARM; break;
+			case ECTL_REG_RM: reg = RM; break;
+			case ECTL_REG_Q: reg = Q; break;
+			case ECTL_REG_BS: reg = BS; break;
+			case ECTL_REG_NB: reg = NB; break;
+			case ECTL_REG_P: reg = P; break;
+			case ECTL_REG_RZ_IO: reg = int_get_chan(); break;
 			default: reg = -1; break;
 		}
 	}
@@ -106,7 +108,7 @@ int cp_reg_get(unsigned id)
 int cp_reg_set(unsigned id, uint16_t v)
 {
 	if (fpga) {
-		if (id >= CP_REG_KB2) {
+		if (id >= ECTL_REG_KB2) {
 			return -1;
 		}
 		iob_cp_set_rotary(id);
@@ -114,31 +116,31 @@ int cp_reg_set(unsigned id, uint16_t v)
 		iob_cp_set_fn(IOB_FN_LOAD, 1);
 	} else {
 		switch (id) {
-			case CP_REG_R0:
-			case CP_REG_R1:
-			case CP_REG_R2:
-			case CP_REG_R3:
-			case CP_REG_R4:
-			case CP_REG_R5:
-			case CP_REG_R6:
-			case CP_REG_R7: regs[id] = v; break;
-			case CP_REG_IC: rIC = v; break;
-			// n/a case CP_REG_AC:
-			// n/a case CP_REG_AR:
-			case CP_REG_IR: rIR = v; break;
-			case CP_REG_SR: SR_write(v); break;
-			// n/a case CP_REG_RZ:
-			case CP_REG_KB: rKB = v; break;
-			case CP_REG_KB2: rKB = v; break;
-			case CP_REG_MOD: rMOD = v; break;
-			case CP_REG_MODc: rMODc = v; break;
-			case CP_REG_ALARM: rALARM = v; break;
-			case CP_REG_RM: RM = v & 0b1111111111; break;
-			case CP_REG_Q: Q = v ? 1 : 0; break;
-			case CP_REG_BS: BS = v ? 1 : 0; break;
-			case CP_REG_NB: NB = v & 0b1111; break;
-			case CP_REG_P: P = v ? 1 : 0; break;
-			// n/a case CP_REG_RZ_IO:
+			case ECTL_REG_R0:
+			case ECTL_REG_R1:
+			case ECTL_REG_R2:
+			case ECTL_REG_R3:
+			case ECTL_REG_R4:
+			case ECTL_REG_R5:
+			case ECTL_REG_R6:
+			case ECTL_REG_R7: regs[id] = v; break;
+			case ECTL_REG_IC: rIC = v; break;
+			// n/a case ECTL_REG_AC:
+			// n/a case ECTL_REG_AR:
+			case ECTL_REG_IR: rIR = v; break;
+			case ECTL_REG_SR: SR_write(v); break;
+			// n/a case ECTL_REG_RZ:
+			case ECTL_REG_KB: rKB = v; break;
+			case ECTL_REG_KB2: rKB = v; break;
+			case ECTL_REG_MOD: rMOD = v; break;
+			case ECTL_REG_MODc: rMODc = v; break;
+			case ECTL_REG_ALARM: rALARM = v; break;
+			case ECTL_REG_RM: RM = v & 0b1111111111; break;
+			case ECTL_REG_Q: Q = v ? 1 : 0; break;
+			case ECTL_REG_BS: BS = v ? 1 : 0; break;
+			case ECTL_REG_NB: NB = v & 0b1111; break;
+			case ECTL_REG_P: P = v ? 1 : 0; break;
+			// n/a case ECTL_REG_RZ_IO:
 			default: return -1;
 		}
 	}
@@ -153,7 +155,7 @@ int cp_mem_mget(unsigned nb, uint16_t addr, uint16_t *data, unsigned count)
 
 	if (fpga) {
 		if (nb) {
-			iob_cp_set_rotary(CP_REG_SR);
+			iob_cp_set_rotary(ECTL_REG_SR);
 			stat = iob_cp_get_status();
 			old_sr = stat->data;
 			free(stat);
@@ -161,10 +163,10 @@ int cp_mem_mget(unsigned nb, uint16_t addr, uint16_t *data, unsigned count)
 			iob_cp_set_keys(sr);
 			iob_cp_set_fn(IOB_FN_LOAD, 1);
 		}
-		iob_cp_set_rotary(CP_REG_AR);
+		iob_cp_set_rotary(ECTL_REG_AR);
 		iob_cp_set_keys(addr);
 		iob_cp_set_fn(IOB_FN_LOAD, 1);
-		iob_cp_set_rotary(CP_REG_AC);
+		iob_cp_set_rotary(ECTL_REG_AC);
 		for (unsigned i=0 ; i<count ; i++) {
 			iob_cp_set_fn(IOB_FN_FETCH, 1);
 			stat = iob_cp_get_status();
@@ -172,7 +174,7 @@ int cp_mem_mget(unsigned nb, uint16_t addr, uint16_t *data, unsigned count)
 			free(stat);
 		}
 		if (nb) {
-			iob_cp_set_rotary(CP_REG_SR);
+			iob_cp_set_rotary(ECTL_REG_SR);
 			iob_cp_set_keys(old_sr);
 			iob_cp_set_fn(IOB_FN_LOAD, 1);
 		}
@@ -190,7 +192,7 @@ int cp_mem_mput(unsigned nb, uint16_t addr, uint16_t *data, unsigned count)
 
 	if (fpga) {
 		if (nb) {
-			iob_cp_set_rotary(CP_REG_SR);
+			iob_cp_set_rotary(ECTL_REG_SR);
 			stat = iob_cp_get_status();
 			old_sr = stat->data;
 			free(stat);
@@ -199,16 +201,16 @@ int cp_mem_mput(unsigned nb, uint16_t addr, uint16_t *data, unsigned count)
 			iob_cp_set_fn(IOB_FN_LOAD, 1);
 		}
 
-		iob_cp_set_rotary(CP_REG_AR);
+		iob_cp_set_rotary(ECTL_REG_AR);
 		iob_cp_set_keys(addr);
 		iob_cp_set_fn(IOB_FN_LOAD, 1);
-		iob_cp_set_rotary(CP_REG_KB);
+		iob_cp_set_rotary(ECTL_REG_KB);
 		for (unsigned i=0 ; i<count ; i++) {
 			iob_cp_set_keys(*(data+i));
 			iob_cp_set_fn(IOB_FN_STORE, 1);
 		}
 		if (nb) {
-			iob_cp_set_rotary(CP_REG_SR);
+			iob_cp_set_rotary(ECTL_REG_SR);
 			iob_cp_set_keys(old_sr);
 			iob_cp_set_fn(IOB_FN_LOAD, 1);
 		}
@@ -356,7 +358,7 @@ int cp_state()
 int cp_stopn(uint16_t addr)
 {
 	if (fpga) {
-		iob_cp_set_rotary(CP_REG_KB);
+		iob_cp_set_rotary(ECTL_REG_KB);
 		iob_cp_set_keys(addr);
 		iob_cp_set_fn(IOB_FN_STOPN, 1);
 		return 0;

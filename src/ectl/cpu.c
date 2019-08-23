@@ -66,7 +66,7 @@ void ectl_shutdown()
 void ectl_regs_get(uint16_t *dest)
 {
 	LOG(L_ECTL, "ECTL regs get");
-	for (int i=0 ; i<CP_REG_COUNT ; i++) {
+	for (int i=0 ; i<ECTL_REG_COUNT ; i++) {
 		dest[i] = cp_reg_get(i);
 	}
 }
@@ -85,7 +85,7 @@ int ectl_reg_get_id(char *name)
 {
 	const char **rname = ectl_reg_names;
 	int idx = 0;
-	while (idx < CP_REG_COUNT) {
+	while (idx < ECTL_REG_COUNT) {
 		if (!strcasecmp(name, *rname)) {
 			return idx;
 		}
@@ -99,10 +99,10 @@ int ectl_reg_get_id(char *name)
 // -----------------------------------------------------------------------
 const char * ectl_reg_name(unsigned id)
 {
-	if (id < CP_REG_COUNT) {
+	if (id < ECTL_REG_COUNT) {
 		return ectl_reg_names[id];
 	} else {
-		return ectl_reg_names[CP_REG_COUNT];
+		return ectl_reg_names[ECTL_REG_COUNT];
 	}
 }
 
