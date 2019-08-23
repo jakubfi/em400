@@ -25,38 +25,14 @@
 #include "cfg.h"
 #include "atomic.h"
 
+#include "ectl.h" // for global constants
+
 #define E_OK 0
 #define E_ERR -1
 
 #ifdef __cplusplus
 extern "C" {
 #endif
-
-enum log_components {
-	L_REG,
-	L_MEM,
-	L_CPU,
-	L_OP,
-	L_INT,
-	L_IO,
-	L_MX,
-	L_PX,
-	L_CCHR,
-	L_CMEM,
-	L_TERM,
-	L_9425,
-	L_WNCH,
-	L_FLOP,
-	L_PNCH,
-	L_PNRD,
-	L_TAPE,
-	L_CRK5,
-	L_EM4H,
-	L_ECTL,
-	L_FPGA,
-	L_ALL,
-	L_CNT
-};
 
 extern unsigned log_components_enabled;
 

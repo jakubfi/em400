@@ -277,7 +277,7 @@ unsigned log_component_get(unsigned component)
 // -----------------------------------------------------------------------
 const char * log_get_component_name(unsigned component)
 {
-	if (component > L_CNT) {
+	if (component > L_COUNT) {
 		return NULL;
 	}
 	return log_component_names[component];

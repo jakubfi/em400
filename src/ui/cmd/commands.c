@@ -536,7 +536,7 @@ void ui_cmd_logc(FILE *out, char *args)
 	// print all components
 	if (!tok_comp) {
 		ui_cmd_resp(out, RESP_OK, UI_NOEOL, "");
-		for (int i=0 ; i<ECTL_LOG_COUNT ; i++) {
+		for (int i=0 ; i<L_COUNT ; i++) {
 			if (ectl_log_component_get(i)) {
 				fprintf(out, " %s", ectl_log_component_name(i));
 			}
@@ -547,7 +547,7 @@ void ui_cmd_logc(FILE *out, char *args)
 
 	// find component
 	int component = ectl_log_component_id(tok_comp);
-	if ((component < 0) || (component >= ECTL_LOG_COUNT)) {
+	if ((component < 0) || (component >= L_COUNT)) {
 		ui_cmd_resp(out, RESP_ERR, UI_EOL, "Unknown component name: %s", tok_comp);
 		return;
 	}
