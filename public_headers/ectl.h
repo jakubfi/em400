@@ -1,4 +1,4 @@
-//  Copyright (c) 2016 Jakub Filipowicz <jakubf@gmail.com>
+//  Copyright (c) 2016-2019 Jakub Filipowicz <jakubf@gmail.com>
 //
 //  This program is free software; you can redistribute it and/or modify
 //  it under the terms of the GNU General Public License as published by
@@ -15,11 +15,17 @@
 //  Foundation, Inc.,
 //  51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 
+#pragma once
+
 #ifndef ECTL_H
 #define ECTL_H
 
 #include <inttypes.h>
 #include <stdio.h>
+
+#ifdef __cplusplus
+extern "C" {
+#endif
 
 enum ectl_states {
 	ECTL_OFF = 0,
@@ -157,6 +163,10 @@ int ectl_brk_del(unsigned id);
 
 int ectl_stopn(uint16_t addr);
 int ectl_stopn_off();
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif
 

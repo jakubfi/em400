@@ -153,6 +153,7 @@ add_executable(em400
 
 set_property(TARGET em400 PROPERTY C_STANDARD 99)
 target_include_directories(em400 PRIVATE ${CMAKE_SOURCE_DIR}/include)
+target_include_directories(em400 PRIVATE ${CMAKE_SOURCE_DIR}/public_headers)
 target_include_directories(em400 PRIVATE ${CMAKE_BINARY_DIR})
 target_compile_definitions(em400 PRIVATE EM400_VERSION="${APP_VERSION}")
 target_compile_options(em400 PUBLIC -Wall)
