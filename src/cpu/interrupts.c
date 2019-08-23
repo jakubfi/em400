@@ -26,6 +26,8 @@
 #include "log.h"
 #include "atomic.h"
 
+#include "ectl.h" // for global constants
+
 uint32_t RZ;
 uint32_t RP;
 uint32_t int_mask;
@@ -104,7 +106,7 @@ static void int_update_rp()
 	// under mutex
 	RP = RZ & int_mask;
 	if (RP) {
-		cpu_clear_state(STATE_WAIT);
+		cpu_clear_state(ECTL_STATE_WAIT);
 	}
 }
 

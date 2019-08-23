@@ -226,7 +226,7 @@ void cp_stop()
 	if (fpga) {
 		iob_cp_set_fn(IOB_FN_START, 0);
 	} else {
-		cpu_trigger_state(STATE_STOP);
+		cpu_trigger_state(ECTL_STATE_STOP);
 	}
 }
 
@@ -236,7 +236,7 @@ void cp_start()
 	if (fpga) {
 		iob_cp_set_fn(IOB_FN_START, 1);
 	} else {
-		cpu_clear_state(STATE_STOP | STATE_BRK);
+		cpu_clear_state(ECTL_STATE_STOP | ECTL_STATE_BRK);
 	}
 }
 
@@ -256,7 +256,7 @@ void cp_off()
 	if (fpga) {
 		iob_quit();
 	} else {
-		cpu_trigger_state(STATE_QUIT);
+		cpu_trigger_state(ECTL_STATE_QUIT);
 	}
 }
 
@@ -295,7 +295,7 @@ void cp_clear()
 	if (fpga) {
 		iob_cp_set_fn(IOB_FN_CLEAR, 1);
 	} else {
-		cpu_trigger_state(STATE_CLO);
+		cpu_trigger_state(ECTL_STATE_CLO);
 	}
 }
 
@@ -344,8 +344,8 @@ int cp_state()
 
 	if (fpga) {
 		struct iob_cp_status *stat = iob_cp_get_status();
-		if (stat->leds & IOB_LED_WAIT) status |= STATE_WAIT;
-		if (!(stat->leds & IOB_LED_RUN)) status |= STATE_STOP;
+		if (stat->leds & IOB_LED_WAIT) status |= ECTL_STATE_WAIT;
+		if (!(stat->leds & IOB_LED_RUN)) status |= ECTL_STATE_STOP;
 		free(stat);
 	} else {
 		status = cpu_state_get();

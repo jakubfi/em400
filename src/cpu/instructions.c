@@ -32,6 +32,8 @@
 #include "log.h"
 #include "log_crk.h"
 
+#include "ectl.h" // for global constants
+
 // -----------------------------------------------------------------------
 // ---- 20 - 36 ----------------------------------------------------------
 // -----------------------------------------------------------------------
@@ -658,13 +660,13 @@ void op_72_lpc()
 void op_73_hlt()
 {
 	LOGCPU(L_OP, "HALT 0%02o (alarm: %i)", N, regs[6]&255);
-	cpu_trigger_state(STATE_WAIT);
+	cpu_trigger_state(ECTL_STATE_WAIT);
 }
 
 // -----------------------------------------------------------------------
 void op_73_mcl()
 {
-	cpu_trigger_state(STATE_CLM);
+	cpu_trigger_state(ECTL_STATE_CLM);
 }
 
 // -----------------------------------------------------------------------

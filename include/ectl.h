@@ -26,14 +26,13 @@ enum ectl_states {
 	ECTL_ON
 };
 
-enum ectl_cpu_state_bits {
-	ECTL_STATE_STOP = 0,
-	ECTL_STATE_WAIT,
-	ECTL_STATE_CLM,
-	ECTL_STATE_CLO,
-	ECTL_STATE_QUIT,
-	ECTL_STATE_BRK,
-	ECTL_STATE_COUNT
+enum ectl_cpu_states {
+	ECTL_STATE_STOP = 0x1,
+	ECTL_STATE_WAIT	= 0x2,
+	ECTL_STATE_CLM	= 0x4,
+	ECTL_STATE_CLO	= 0x8,
+	ECTL_STATE_QUIT	= 0x10,
+	ECTL_STATE_BRK	= 0x20,
 };
 
 enum ectl_registers {

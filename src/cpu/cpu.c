@@ -37,7 +37,9 @@
 #include "log_crk.h"
 #include "ectl/brk.h"
 
-static int cpu_state = STATE_STOP;
+#include "ectl.h" // for global constants
+
+static int cpu_state = ECTL_STATE_STOP;
 static int cpu_cycle;
 uint16_t regs[8];
 uint16_t rIC;
@@ -70,11 +72,11 @@ pthread_cond_t cpu_wake_cond = PTHREAD_COND_INITIALIZER;
 static void cpu_idle_in_wait()
 {
 	pthread_mutex_lock(&cpu_wake_mutex);
-	while ((cpu_state == STATE_WAIT) && !atom_load_acquire(&RP)) {
+	while ((cpu_state == ECTL_STATE_WAIT) && !atom_load_acquire(&RP)) {
 		LOG(L_CPU, "idling in state WAIT");
 		pthread_cond_wait(&cpu_wake_cond, &cpu_wake_mutex);
 	}
-	cpu_state &= ~STATE_WAIT;
+	cpu_state &= ~ECTL_STATE_WAIT;
 	pthread_mutex_unlock(&cpu_wake_mutex);
 }
 
@@ -83,11 +85,11 @@ static int cpu_idle_in_stop()
 {
 	pthread_mutex_lock(&cpu_wake_mutex);
 	cpu_cycle = 0;
-	while (((cpu_state & (STATE_STOP|STATE_QUIT|STATE_CLO|STATE_CLM)) == STATE_STOP) && !cpu_cycle) {
+	while (((cpu_state & (ECTL_STATE_STOP|ECTL_STATE_QUIT|ECTL_STATE_CLO|ECTL_STATE_CLM)) == ECTL_STATE_STOP) && !cpu_cycle) {
 		LOG(L_CPU, "idling in state STOP");
 		pthread_cond_wait(&cpu_wake_cond, &cpu_wake_mutex);
 	}
-	int ret = cpu_cycle && !(cpu_state & (STATE_QUIT|STATE_CLO|STATE_CLM));
+	int ret = cpu_cycle && !(cpu_state & (ECTL_STATE_QUIT|ECTL_STATE_CLO|ECTL_STATE_CLM));
 	pthread_mutex_unlock(&cpu_wake_mutex);
 	return ret;
 }
@@ -120,7 +122,7 @@ int cpu_state_get()
 void cpu_trigger_cycle()
 {
 	pthread_mutex_lock(&cpu_wake_mutex);
-	if (cpu_state & STATE_STOP) {
+	if (cpu_state & ECTL_STATE_STOP) {
 		cpu_cycle = 1;
 		pthread_cond_signal(&cpu_wake_cond);
 	}
@@ -133,7 +135,7 @@ void cpu_mem_fail(int nb)
 	int_set(INT_NO_MEM);
 	if ((nb == 0) && nomem_stop) {
 		rALARM = 1;
-		cpu_trigger_state(STATE_STOP);
+		cpu_trigger_state(ECTL_STATE_STOP);
 	}
 }
 
@@ -276,7 +278,7 @@ int cpu_mod_off()
 // -----------------------------------------------------------------------
 static void cpu_clear(int scope)
 {
-	cpu_clear_state(scope | STATE_WAIT);
+	cpu_clear_state(scope | ECTL_STATE_WAIT);
 
 	// I/O reset should return when we're sure that I/O won't change CPU state (backlogged interrupts, memory writes, ...)
 	io_reset();
@@ -289,12 +291,12 @@ static void cpu_clear(int scope)
 	int_update_mask(RM);
 	int_clear_all();
 
-	if (scope & STATE_CLO) {
+	if (scope & ECTL_STATE_CLO) {
 		rIC = 0;
 		rALARM = 0;
 		rMOD = 0;
 		rMODc = 0;
-		cpu_trigger_state(STATE_STOP);
+		cpu_trigger_state(ECTL_STATE_STOP);
 	}
 
 	// call even if logging is disabled - user may enable it later
@@ -459,27 +461,27 @@ cycle:
 
 				// breakpoint hit?
 				if (ectl_brk_check()) {
-					cpu_trigger_state(STATE_STOP | STATE_BRK);
+					cpu_trigger_state(ECTL_STATE_STOP | ECTL_STATE_BRK);
 				}
 			}
 
 		// quit emulation
-		} else if ((state & STATE_QUIT)) {
+		} else if ((state & ECTL_STATE_QUIT)) {
 			break;
 
 		// CPU reset
-		} else if (state & (STATE_CLM | STATE_CLO)) {
-			cpu_clear(state & (STATE_CLM | STATE_CLO));
+		} else if (state & (ECTL_STATE_CLM | ECTL_STATE_CLO)) {
+			cpu_clear(state & (ECTL_STATE_CLM | ECTL_STATE_CLO));
 
 		// CPU stopped
-		} else if ((state & STATE_STOP)) {
+		} else if ((state & ECTL_STATE_STOP)) {
 			if (cpu_idle_in_stop()) {
 				// CPU cycle
 				goto cycle;
 			}
 
 		// CPU waiting for an interrupt
-		} else if ((state & STATE_WAIT)) {
+		} else if ((state & ECTL_STATE_WAIT)) {
 			cpu_idle_in_wait();
 		}
 	}

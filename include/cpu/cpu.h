@@ -25,15 +25,6 @@
 #include "cfg.h"
 #include "cpu/flags.h"
 
-enum cpu_states {
-	STATE_STOP =	0x1,
-	STATE_WAIT =	0x2,
-	STATE_CLM =		0x4,
-	STATE_CLO =		0x8,
-	STATE_QUIT =	0x10,
-	STATE_BRK = 	0x20,
-};
-
 // -----------------------------------------------------------------------
 // SR access macros
 // -----------------------------------------------------------------------
