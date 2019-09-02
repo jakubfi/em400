@@ -25,7 +25,6 @@
 #include <sys/types.h>
 
 #include "ui/ui.h"
-#include "atomic.h"
 #include "cpu/cp.h"
 #include "cpu/cpu.h"
 #include "mem/mem.h"
@@ -34,7 +33,6 @@
 #include "io/io.h"
 #include "fpga/iobus.h"
 
-#include "ectl.h"
 #include "em400.h"
 #include "cfg.h"
 

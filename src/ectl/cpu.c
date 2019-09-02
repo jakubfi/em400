@@ -471,7 +471,7 @@ int ectl_brk_del(unsigned id)
 // -----------------------------------------------------------------------
 int ectl_stopn(uint16_t addr)
 {
-	LOG(L_ECTL, "ECTL stopn (%s) @ 0x%04x", (addr&0x8000)?"OS":"USER", addr&0x7fff);
+	LOG(L_ECTL, "ECTL stopn (%s) @ 0x%04x", (addr&0x8000) ? "OS" : "USER", addr&0x7fff);
 	return cp_stopn(addr);
 }
 
