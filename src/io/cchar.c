@@ -109,6 +109,17 @@ void * cchar_create(int num, struct cfg_unit *units)
 // -----------------------------------------------------------------------
 void cchar_shutdown(void *chan)
 {
+	if (!chan) return;
+
+	struct cchar_chan_t *ch = (struct cchar_chan_t *) chan;
+
+	for (int i=0 ; i<CCHAR_MAX_DEVICES ; i++) {
+		struct cchar_unit_proto_t *u = ch->unit[i];
+		if (u) {
+			u->shutdown(u);
+		}
+	}
+	free(chan);
 }
 
 // -----------------------------------------------------------------------

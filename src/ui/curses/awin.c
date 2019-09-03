@@ -44,6 +44,8 @@ ACONT *aw_containers, *aw_container_last;
 int wmin, wmax;
 int chmin, chmax, cvmin, cvmax;
 
+void awin_tb_drop_lines(struct awin_tb_line *line);
+
 // -----------------------------------------------------------------------
 void aw_rl_history_read(char *hist_file)
 {
@@ -190,7 +192,10 @@ void aw_windows_all_delete(AWIN *w)
 	}
 	aw_windows_all_delete(w->next);
 	free(w->title);
+	awin_tb_drop_lines(w->tb->beg);
+	free(w->tb);
 	aw_window_nc_delete(w);
+	free(w);
 }
 
 // -----------------------------------------------------------------------
@@ -201,6 +206,7 @@ void aw_containers_all_delete(ACONT *c)
 	}
 	aw_containers_all_delete(c->next);
 	aw_windows_all_delete(c->win);
+	free(c);
 }
 
 // -----------------------------------------------------------------------

@@ -142,10 +142,13 @@ fail:
 // -----------------------------------------------------------------------
 void cchar_term_shutdown(struct cchar_unit_proto_t *unit)
 {
-	if (unit) {
-		free(UNIT->buf);
-		if (UNIT->term) term_close(UNIT->term);
-		free(UNIT);
+	struct cchar_unit_term_t *u = (struct cchar_unit_term_t *) unit;
+	if (u) {
+		pthread_cancel(u->worker);
+		pthread_join(u->worker, NULL);
+		free(u->buf);
+		if (u->term) term_close(u->term);
+		free(u);
 	}
 }
 

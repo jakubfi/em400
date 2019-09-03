@@ -143,6 +143,7 @@ cleanup:
 		for (int i=0 ; i<MX_LINE_CNT ; i++) {
 			struct mx_line *pline = multix->plines + i;
 			elst_destroy(pline->protoq);
+			elst_destroy(pline->statusq);
 			pthread_mutex_destroy(&pline->status_mutex);
 		}
 		free(multix);
@@ -241,6 +242,7 @@ void mx_shutdown(void *ch)
 			pline->dev_data = NULL;
 		}
 		elst_destroy(pline->protoq);
+		elst_destroy(pline->statusq);
 		pthread_mutex_destroy(&pline->status_mutex);
 	}
 	free(multix);

@@ -50,7 +50,8 @@ struct evlb_t *watch_top = NULL;
 // emdas
 struct emdas *emd;
 
-extern int yyparse();
+int yyparse();
+int yylex_destroy();
 typedef struct yy_buffer_state *YY_BUFFER_STATE;
 YY_BUFFER_STATE yy_scan_string(char *yy_str);
 void yy_delete_buffer(YY_BUFFER_STATE b);
@@ -125,6 +126,7 @@ int dbg_parse(char *c)
 	YY_BUFFER_STATE yb = yy_scan_string(c);
 	int res = yyparse();
 	yy_delete_buffer(yb);
+	yylex_destroy();
 	return res;
 }
 

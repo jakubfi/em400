@@ -69,8 +69,6 @@ static int __setup_tcp(struct ui_cmd_data *ui)
 	int res;
 
     ui->type = UI_CMD_TCP;
-    ui->fd_in = -1;
-   	ui->fd_out = -1;
 
 	ui->listenfd = socket(AF_INET, SOCK_STREAM, 0);
    	if (!ui->listenfd) {
@@ -112,6 +110,9 @@ void * ui_cmd_setup(const char *call_name)
 	}
 
     ui->timeout_ms = 100;
+    ui->fd_in = -1;
+	ui->fd_out = -1;
+	ui->listenfd = -1;
 
 	const char *arg = strchr(call_name, ':');
 	if (arg && *(arg+1)) {
@@ -251,11 +252,11 @@ void ui_cmd_destroy(void *data)
 
 	if (!ui) return;
 
-	if (ui->type == UI_CMD_TCP) {
+	if (ui->listenfd >= 0) {
 		close(ui->listenfd);
-		if (ui->out) {
-			fclose(ui->out);
-		}
+	}
+	if (ui->out) {
+		fclose(ui->out);
 	}
 
 	free(ui);
