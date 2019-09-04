@@ -39,7 +39,7 @@
 
 #include "ectl.h" // for global constants
 
-static int cpu_state = ECTL_STATE_STOP;
+static int cpu_state = ECTL_STATE_OFF;
 static int cpu_cycle;
 uint16_t regs[8];
 uint16_t rIC;
@@ -85,11 +85,11 @@ static int cpu_idle_in_stop()
 {
 	pthread_mutex_lock(&cpu_wake_mutex);
 	cpu_cycle = 0;
-	while (((cpu_state & (ECTL_STATE_STOP|ECTL_STATE_QUIT|ECTL_STATE_CLO|ECTL_STATE_CLM)) == ECTL_STATE_STOP) && !cpu_cycle) {
+	while (((cpu_state & (ECTL_STATE_STOP|ECTL_STATE_OFF|ECTL_STATE_CLO|ECTL_STATE_CLM)) == ECTL_STATE_STOP) && !cpu_cycle) {
 		LOG(L_CPU, "idling in state STOP");
 		pthread_cond_wait(&cpu_wake_cond, &cpu_wake_mutex);
 	}
-	int ret = cpu_cycle && !(cpu_state & (ECTL_STATE_QUIT|ECTL_STATE_CLO|ECTL_STATE_CLM));
+	int ret = cpu_cycle && !(cpu_state & (ECTL_STATE_OFF|ECTL_STATE_CLO|ECTL_STATE_CLM));
 	pthread_mutex_unlock(&cpu_wake_mutex);
 	return ret;
 }
@@ -445,6 +445,10 @@ ineffective:
 // -----------------------------------------------------------------------
 void cpu_loop()
 {
+    pthread_mutex_lock(&cpu_wake_mutex);
+    cpu_state = ECTL_STATE_STOP;
+    pthread_mutex_unlock(&cpu_wake_mutex);
+
 	while (1) {
 		int state = atom_load_acquire(&cpu_state);
 
@@ -466,7 +470,7 @@ cycle:
 			}
 
 		// quit emulation
-		} else if ((state & ECTL_STATE_QUIT)) {
+		} else if ((state & ECTL_STATE_OFF)) {
 			break;
 
 		// CPU reset

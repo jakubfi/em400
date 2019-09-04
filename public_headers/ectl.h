@@ -37,7 +37,7 @@ enum ectl_cpu_states {
 	ECTL_STATE_WAIT	= 0x2,
 	ECTL_STATE_CLM	= 0x4,
 	ECTL_STATE_CLO	= 0x8,
-	ECTL_STATE_QUIT	= 0x10,
+	ECTL_STATE_OFF	= 0x10,
 	ECTL_STATE_BRK	= 0x20,
 };
 
@@ -131,7 +131,7 @@ void ectl_cpu_stop();
 void ectl_cpu_start();
 void ectl_cpu_cycle();
 void ectl_cpu_clear();
-void ectl_cpu_quit();
+void ectl_cpu_off();
 void ectl_stoponhlt040_set(int state);
 
 // interrupts

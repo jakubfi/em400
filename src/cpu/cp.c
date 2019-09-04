@@ -256,7 +256,7 @@ void cp_off()
 	if (fpga) {
 		iob_quit();
 	} else {
-		cpu_trigger_state(ECTL_STATE_QUIT);
+		cpu_trigger_state(ECTL_STATE_OFF);
 	}
 }
 

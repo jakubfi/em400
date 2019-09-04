@@ -111,9 +111,13 @@ class EM400:
 
     # --------------------------------------------------------------------
     def wait_for_stop(self):
-        while self.state() & 1 != 1:
-            if self.polldelay:
-                time.sleep(self.polldelay)
+        while True:
+            state = self.state()
+            if state != 1 and state != 0x21:
+                if self.polldelay:
+                    time.sleep(self.polldelay)
+            else:
+                break
 
     # --------------------------------------------------------------------
     def clear(self):
@@ -289,6 +293,7 @@ class TestBed:
             opts, xpct, precmd, postcmd = self.__gerparams(source)
             aout = self.__assembly(source)
             self.__runemu(["-c", self.default_config] + opts)
+            self.e.wait_for_stop()
             self.e.clear()
             self.e.load(0, 0, aout)
             self.e.cmd("CLOCK OFF");
