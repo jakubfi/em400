@@ -180,7 +180,7 @@ int cp_mem_mget(unsigned nb, uint16_t addr, uint16_t *data, unsigned count)
 		}
 		return count;
 	} else {
-		return mem_mget(nb, addr, data, count);
+		return cpu_mem_mget(nb, addr, data, count);
 	}
 }
 
@@ -216,7 +216,7 @@ int cp_mem_mput(unsigned nb, uint16_t addr, uint16_t *data, unsigned count)
 		}
 		return count;
 	} else {
-		return mem_mput(nb, addr, data, count);
+		return cpu_mem_mput(nb, addr, data, count);
 	}
 }
 
@@ -278,6 +278,7 @@ void cp_clock_set(int state)
 int cp_clock_get()
 {
 	int state;
+
 	if (fpga) {
 		struct iob_cp_status *stat = iob_cp_get_status();
 		state = stat->leds & IOB_LED_CLOCK ? 1 : 0;
