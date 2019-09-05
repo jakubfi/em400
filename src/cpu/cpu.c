@@ -237,8 +237,7 @@ int cpu_init(struct cfg_em400 *cfg)
 
 	int_update_mask(0);
 
-	// seems to be checked only at power-on!
-	// (unless power supply sends -PON at hw reset)
+	// this is checked only at power-on
 	if (mem_mega_boot()) {
 		LOG(L_CPU, "Bootstrap from MEGA PROM is enabled");
 		rIC = 0xf000;
@@ -258,7 +257,6 @@ void cpu_shutdown()
 // -----------------------------------------------------------------------
 int cpu_mod_on()
 {
-	// indicate that CPU modifications are preset
 	cpu_mod_active = 1;
 	clock_set_int(INT_EXTRA);
 
@@ -268,7 +266,6 @@ int cpu_mod_on()
 // -----------------------------------------------------------------------
 int cpu_mod_off()
 {
-	// indicate that CPU modifications are absent
 	cpu_mod_active = 0;
 	clock_set_int(INT_CLOCK);
 
@@ -334,24 +331,22 @@ int cpu_ctx_switch(uint16_t arg, uint16_t ic, uint16_t int_mask)
 }
 
 // -----------------------------------------------------------------------
-int cpu_ctx_restore()
+void cpu_ctx_restore()
 {
-	uint16_t data;
+	uint16_t sr;
 	uint16_t sp;
 
-	if (!cpu_mem_get(0, 97, &sp)) return 0;
-	if (!cpu_mem_get(0, sp-4, &data)) return 0;
-	rIC = data;
-	if (!cpu_mem_get(0, sp-3, &data)) return 0;
-	regs[0] = data;
-	if (!cpu_mem_get(0, sp-2, &data)) return 0;
-	SR_write(data);
+	if (!cpu_mem_get(0, 97, &sp)) return;
+	if (!cpu_mem_get(0, sp-4, &rIC)) return;
+	if (!cpu_mem_get(0, sp-3, regs)) return;
+	if (!cpu_mem_get(0, sp-2, &sr)) return;
+	SR_write(sr);
 	int_update_mask(RM);
-	if (!cpu_mem_put(0, 97, sp-4)) return 0;
+	if (!cpu_mem_put(0, 97, sp-4)) return;
 
-	LOG(L_CPU, "Loaded process ctx @ 0x%04x: [IC: 0x%04x, R0: 0x%04x, SR: 0x%04x]", sp-4, rIC, regs[0], SR_read());
+	LOG(L_CPU, "Loaded process ctx @ 0x%04x: [IC: 0x%04x, R0: 0x%04x, SR: 0x%04x]", sp-4, rIC, regs[0], sr);
 
-	return 1;
+	return;
 }
 
 // -----------------------------------------------------------------------
@@ -359,7 +354,7 @@ static void cpu_do_cycle()
 {
 	struct iset_opcode *op;
 	uint16_t data;
-	char opcode[64];
+	char opcode[32];
 
 	if (LOG_WANTS(L_CPU)) {
 		log_store_cycle_state(SR_read(), rIC);

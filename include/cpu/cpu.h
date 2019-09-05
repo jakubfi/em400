@@ -90,7 +90,7 @@ int cpu_mod_on();
 int cpu_mod_off();
 
 int cpu_ctx_switch(uint16_t arg, uint16_t ic, uint16_t int_mask);
-int cpu_ctx_restore();
+void cpu_ctx_restore();
 
 void cpu_loop();
 
