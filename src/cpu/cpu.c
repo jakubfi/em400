@@ -40,7 +40,6 @@
 #include "ectl.h" // for global constants
 
 static int cpu_state = ECTL_STATE_OFF;
-static int cpu_cycle;
 uint16_t regs[8];
 uint16_t rIC;
 uint16_t rKB;
@@ -84,12 +83,11 @@ static void cpu_idle_in_wait()
 static int cpu_idle_in_stop()
 {
 	pthread_mutex_lock(&cpu_wake_mutex);
-	cpu_cycle = 0;
-	while (((cpu_state & (ECTL_STATE_STOP|ECTL_STATE_OFF|ECTL_STATE_CLO|ECTL_STATE_CLM)) == ECTL_STATE_STOP) && !cpu_cycle) {
+	while ((cpu_state & (ECTL_STATE_STOP|ECTL_STATE_OFF|ECTL_STATE_CLO|ECTL_STATE_CLM|ECTL_STATE_CYCLE)) == ECTL_STATE_STOP) {
 		LOG(L_CPU, "idling in state STOP");
 		pthread_cond_wait(&cpu_wake_cond, &cpu_wake_mutex);
 	}
-	int ret = cpu_cycle && !(cpu_state & (ECTL_STATE_OFF|ECTL_STATE_CLO|ECTL_STATE_CLM));
+	int ret = cpu_state;
 	pthread_mutex_unlock(&cpu_wake_mutex);
 	return ret;
 }
@@ -123,7 +121,7 @@ void cpu_trigger_cycle()
 {
 	pthread_mutex_lock(&cpu_wake_mutex);
 	if (cpu_state & ECTL_STATE_STOP) {
-		cpu_cycle = 1;
+		cpu_state |= ECTL_STATE_CYCLE;
 		pthread_cond_signal(&cpu_wake_cond);
 	}
 	pthread_mutex_unlock(&cpu_wake_mutex);
@@ -474,8 +472,9 @@ cycle:
 
 		// CPU stopped
 		} else if ((state & ECTL_STATE_STOP)) {
-			if (cpu_idle_in_stop()) {
-				// CPU cycle
+			if ((cpu_idle_in_stop() && ECTL_STATE_CYCLE)) {
+				// CPU cycle triggered while in stop
+				cpu_clear_state(ECTL_STATE_CYCLE);
 				goto cycle;
 			}
 

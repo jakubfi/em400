@@ -39,6 +39,7 @@ enum ectl_cpu_states {
 	ECTL_STATE_CLO	= 0x8,
 	ECTL_STATE_OFF	= 0x10,
 	ECTL_STATE_BRK	= 0x20,
+	ECTL_STATE_CYCLE= 0x40,
 };
 
 enum ectl_registers {

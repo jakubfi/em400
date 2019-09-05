@@ -148,7 +148,7 @@ int ectl_cpu_state_get()
 // -----------------------------------------------------------------------
 const char * ectl_cpu_state_bit_name(int bitpos)
 {
-	const char *state_names[] = { "STOP", "WAIT", "CLM", "CLO", "OFF", "BRK" };
+	const char *state_names[] = { "STOP", "WAIT", "CLM", "CLO", "OFF", "BRK", "CYCLE" };
 	const char *state_unknown = "???";
 	const int state_count = sizeof(state_names) / sizeof(char*);
 
