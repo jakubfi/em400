@@ -21,6 +21,8 @@
 #include <string.h>
 
 #include "atomic.h"
+#include "ectl.h"
+#include "cpu/cp.h"
 #include "ectl/est.h"
 
 struct ectl_brkpoint {
@@ -28,6 +30,7 @@ struct ectl_brkpoint {
 	char *expr;
 	struct ectl_est *tree;
 	struct ectl_brkpoint *next;
+	int deleted;
 };
 
 static struct ectl_brkpoint *ectl_brk_list;
@@ -48,7 +51,8 @@ int ectl_brk_insert(struct ectl_est *tree, char *expr)
 	brkp->id = ectl_brk_id;
 	brkp->tree = tree;
 	brkp->expr = strdup(expr);
-	brkp->next = ectl_brk_list;
+	brkp->next = atom_load_acquire(&ectl_brk_list);
+	brkp->deleted = 0;
 	atom_store_release(&ectl_brk_list, brkp);
 	ectl_brk_id++;
 
@@ -68,9 +72,9 @@ static void ectl_brk_free(struct ectl_brkpoint *brkp)
 // -----------------------------------------------------------------------
 void ectl_brk_del_all()
 {
-	struct ectl_brkpoint *brkp = ectl_brk_list;
+	struct ectl_brkpoint *brkp = atom_load_acquire(&ectl_brk_list);
 	while (brkp) {
-		struct ectl_brkpoint *next = brkp->next;
+		struct ectl_brkpoint *next = atom_load_acquire(&brkp->next);
 		ectl_brk_free(brkp);
 		brkp = next;
 	}
@@ -80,13 +84,13 @@ void ectl_brk_del_all()
 }
 
 // -----------------------------------------------------------------------
-int ectl_brk_delete(unsigned id)
+static void ectl_brk_cleanup()
 {
-	struct ectl_brkpoint *brkp = ectl_brk_list;
+	struct ectl_brkpoint *brkp = atom_load_acquire(&ectl_brk_list);
 	struct ectl_brkpoint *prev = NULL;
 
 	while (brkp) {
-		if (brkp->id == id) {
+		if (brkp->deleted) {
 			if (prev) {
 				atom_store_release(&(prev->next), brkp->next);
 			} else {
@@ -95,28 +99,47 @@ int ectl_brk_delete(unsigned id)
 			if (!ectl_brk_list) {
 				ectl_brk_id = 0;
 			}
-			// TODO: this needs to be freed when CPU is in STOP state
-			// or ectl_brk_check() will eventually fail
 			ectl_brk_free(brkp);
-			return 0;
 		}
 		prev = brkp;
-		brkp = brkp->next;
+		brkp = atom_load_acquire(&brkp->next);
+	}
+}
+
+// -----------------------------------------------------------------------
+int ectl_brk_delete(unsigned id)
+{
+	int ret = -1;
+
+	struct ectl_brkpoint *brkp = atom_load_acquire(&ectl_brk_list);
+
+	while (brkp) {
+		if (brkp->id == id) {
+			brkp->deleted = 1;
+			ret = 0;
+			break;
+		}
+		brkp = atom_load_acquire(&brkp->next);
 	}
 
-	return -1;
+	if (cp_state() && ECTL_STATE_STOP) {
+		ectl_brk_cleanup();
+	}
+
+	return ret;
 }
+
 
 // -----------------------------------------------------------------------
 int ectl_brk_check()
 {
-	struct ectl_brkpoint *brkp = ectl_brk_list;
+	struct ectl_brkpoint *brkp = atom_load_acquire(&ectl_brk_list);
 
 	while (brkp) {
-		if (ectl_est_eval(brkp->tree) > 0) {
+		if ((!brkp->deleted) && (ectl_est_eval(brkp->tree) > 0)) {
 			return 1;
 		}
-		brkp = brkp->next;
+		brkp = atom_load_acquire(&brkp->next);
 	}
 
 	return 0;

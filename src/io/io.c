@@ -127,7 +127,6 @@ int io_dispatch(int dir, uint16_t n, uint16_t *r)
 			return mem_cmd(n, *r);
 		} else {
 			LOG(L_IO, "MEM command shouldn't be IN");
-			// TODO: what to return?
 			return IO_NO;
 		}
 	// channel/unit command
