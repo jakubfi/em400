@@ -34,6 +34,7 @@ char *out_file;
 char *in_file;
 int encode = 1;
 int progress = 1;
+int verbose = 0;
 speed_t speed;
 
 uint16_t w;
@@ -65,6 +66,7 @@ void print_help()
 		"  --decode|--encode, -d|-e : decode or encode (encode by default)\n"
 		"  --speed, -s <baud>       : baudrate to use when output is a serial port (9600 default)\n"
 		"  --no-progress, -n        : don't print progress bar during serial transmission\n"
+		"  --verbose, -v            : be more verbose\n"
 	);
 }
 
@@ -78,6 +80,7 @@ void parse_opts(int argc, char **argv)
 		{ "output",		required_argument,	0, 'o' },
 		{ "decode",		no_argument,		0, 'd' },
 		{ "encode",		no_argument,		0, 'e' },
+		{ "verbose",	no_argument,		0, 'v' },
 		{ "speed",		required_argument,	0, 's' },
 		{ "no-progress",no_argument,		0, 'n' },
 		{ "help",		no_argument,		0, 'h' },
@@ -85,7 +88,7 @@ void parse_opts(int argc, char **argv)
 	};
 
 	while (1) {
-		opt = getopt_long(argc, argv,"o:des:nh", opts, &idx);
+		opt = getopt_long(argc, argv,"o:devs:nh", opts, &idx);
 		if (opt == -1) {
 			break;
 		}
@@ -102,6 +105,9 @@ void parse_opts(int argc, char **argv)
 				break;
 			case 'e':
 				encode = 1;
+				break;
+			case 'v':
+				verbose = 1;
 				break;
 			case 's':
 				speed = serial_int2speed(atoi(optarg));
@@ -148,6 +154,7 @@ void do_encode(int fi, int fo, int progress)
 	int in_size = lseek(fi, 0L, SEEK_END) / 2;
 	lseek(fi, 0L, SEEK_SET);
 	int in_read = 0;
+	int out_bytes = 0;
 
 	while (1) {
 		w = 0;
@@ -159,27 +166,36 @@ void do_encode(int fi, int fo, int progress)
 			if (write(fo, b, 1) != 1) {
 				error(10, "Write failed");
 			}
+			out_bytes++;
 			break;
 		}
 
 		in_read++;
 		w = ntohs(w);
 		word2bin(w, b);
-		if (write(fo, b, 3) != 3) {
+		res = write(fo, b, 3);
+		if (res != 3) {
 			error(10, "Write failed");
 		}
+		out_bytes += res;
 		if (progress) {
 			tcdrain(fo);
 			print_bar(in_size, in_read);
 		}
 	}
 	if (progress) fprintf(stderr, "\n");
+	if (verbose) {
+		fprintf(stderr, "%i words in, %i bytes out.\n", in_read, out_bytes);
+	}
 }
 
 // -----------------------------------------------------------------------
 void do_decode(int fi, int fo)
 {
 	int res;
+	int in_bytes_valid = 0;
+	int in_bytes_invalid = 0;
+	int out_words = 0;
 
 	int pos = 0;
 	while (1) {
@@ -189,8 +205,10 @@ void do_decode(int fi, int fo)
 			break;
 		} else if ((pos==0) && bin_is_end(b[pos])) {
 			// ending byte on position 0 means stream has ended
+			in_bytes_valid++;
 			break;
 		} else if (bin_is_valid(b[pos])) {
+			in_bytes_valid++;
 			if (pos<2) {
 				// collect next word
 				pos++;
@@ -199,13 +217,19 @@ void do_decode(int fi, int fo)
 				pos = 0;
 				w = bin2word(b);
 				w = ntohs(w);
-				if (write(fo, &w, 2) != 2) {
+				res = write(fo, &w, 2);
+				if (res != 2) {
 					error(10, "Write failed");
 				}
+				out_words += 1;
 			}
 		} else {
 			// Invalid bytes are silently ignored. This is how CPU works too.
+			in_bytes_invalid++;
 		}
+	}
+	if (verbose) {
+		fprintf(stderr, "%i valid and %i invalid bytes in, %i words out.\n", in_bytes_valid, in_bytes_invalid, out_words);
 	}
 }
 
