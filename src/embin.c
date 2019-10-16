@@ -35,6 +35,7 @@ char *in_file;
 int encode = 1;
 int progress = 1;
 int verbose = 0;
+int cont = 0;
 speed_t speed;
 
 uint16_t w;
@@ -66,6 +67,9 @@ void print_help()
 		"  --decode|--encode, -d|-e : decode or encode (encode by default)\n"
 		"  --speed, -s <baud>       : baudrate to use when output is a serial port (9600 default)\n"
 		"  --no-progress, -n        : don't print progress bar during serial transmission\n"
+		"  --continue, -c           : continue decoding input stream after the first data block has ended.\n"
+		"                             this requires a filename specified with -o filename.\n"
+		"                             if more blocks are found, they are written in subsequent *_N files\n"
 		"  --verbose, -v            : be more verbose\n"
 	);
 }
@@ -83,12 +87,13 @@ void parse_opts(int argc, char **argv)
 		{ "verbose",	no_argument,		0, 'v' },
 		{ "speed",		required_argument,	0, 's' },
 		{ "no-progress",no_argument,		0, 'n' },
+		{ "continue",	no_argument,		0, 'c' },
 		{ "help",		no_argument,		0, 'h' },
 		{ 0,			0,					0, 0 }
 	};
 
 	while (1) {
-		opt = getopt_long(argc, argv,"o:devs:nh", opts, &idx);
+		opt = getopt_long(argc, argv,"o:devs:nch", opts, &idx);
 		if (opt == -1) {
 			break;
 		}
@@ -117,6 +122,9 @@ void parse_opts(int argc, char **argv)
 				break;
 			case 'n':
 				progress = 0;
+				break;
+			case 'c':
+				cont = 1;
 				break;
 			default:
 				exit(1);
@@ -190,8 +198,9 @@ void do_encode(int fi, int fo, int progress)
 }
 
 // -----------------------------------------------------------------------
-void do_decode(int fi, int fo)
+int do_decode(int fi, int fo)
 {
+	int ret = 0;
 	int res;
 	int in_bytes_valid = 0;
 	int in_bytes_invalid = 0;
@@ -202,10 +211,12 @@ void do_decode(int fi, int fo)
 		res = read(fi, b+pos, 1);
 		if (res <= 0) {
 			error(10, "Input stream ended prematurely, without the ending byte. Output is most likely invalid.");
+			ret = -1;
 			break;
 		} else if ((pos==0) && bin_is_end(b[pos])) {
 			// ending byte on position 0 means stream has ended
 			in_bytes_valid++;
+			ret = 0;
 			break;
 		} else if (bin_is_valid(b[pos])) {
 			in_bytes_valid++;
@@ -231,6 +242,7 @@ void do_decode(int fi, int fo)
 	if (verbose) {
 		fprintf(stderr, "%i valid and %i invalid bytes in, %i words out.\n", in_bytes_valid, in_bytes_invalid, out_words);
 	}
+	return ret;
 }
 
 // -----------------------------------------------------------------------
@@ -246,12 +258,10 @@ int main(int argc, char **argv)
 	parse_opts(argc, argv);
 
 	if (out_file) {
-		if (lstat(out_file, &sb)) {
-			error(2, "Cannot stat output file: %s. Error: %s", out_file, strerror(errno));
-		}
+		int res = lstat(out_file, &sb);
 
 		// try as a serial port
-		if (((sb.st_mode & S_IFMT) == S_IFCHR) && ((fo = serial_open(out_file, speed)) > 0)) {
+		if (!res && ((sb.st_mode & S_IFMT) == S_IFCHR) && ((fo = serial_open(out_file, speed)) > 0)) {
 			using_serial = 1;
 		// if this fails, try as a regular file
 		} else {
@@ -260,6 +270,10 @@ int main(int argc, char **argv)
 	} else {
 		out_file = name_stdout;
 		fo = STDOUT_FILENO;
+	}
+
+	if (cont && (encode || using_serial || (out_file == name_stdout))) {
+		error(3, "--continue can only be used with --decode and when file is specified as output.\n");
 	}
 
 	if (fo < 0) {
@@ -282,7 +296,23 @@ int main(int argc, char **argv)
 	if (encode) {
 		do_encode(fi, fo, using_serial && progress);
 	} else {
-		do_decode(fi, fo);
+		if (!cont) {
+			do_decode(fi, fo);
+		} else {
+			int res;
+			int seq = 0;
+			const int maxlen = strlen(out_file) + 16;
+			char *out_file_cont = malloc(maxlen+1);
+			snprintf(out_file_cont, maxlen, "%s", out_file);
+			do {
+				fprintf(stderr, "Decoding data block to: %s\n", out_file_cont);
+				res = do_decode(fi, fo);
+				close(fo);
+				seq++;
+				snprintf(out_file_cont, maxlen, "%s_%i", out_file, seq);
+				fo = open(out_file_cont, O_CREAT|O_WRONLY, 0644);
+			} while (cont && !res);
+		}
 	}
 
 	close(fi);
