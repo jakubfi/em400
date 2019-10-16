@@ -42,6 +42,7 @@ void ui_cmd_start(FILE *out, char *args);
 void ui_cmd_stop(FILE *out, char *args);
 void ui_cmd_clear(FILE *out, char *args);
 void ui_cmd_memmap(FILE *out, char *args);
+void ui_cmd_memcfg(FILE *out, char *args);
 void ui_cmd_log(FILE *out, char *args);
 void ui_cmd_logc(FILE *out, char *args);
 void ui_cmd_info(FILE *out, char *args);
@@ -71,6 +72,7 @@ struct ui_cmd_command commands[] = {
 	{ 1, "stop",	"",							"Stop CPU",							ui_cmd_stop },
 	{ 1, "clear",	"",							"Clear CPU (reset)",				ui_cmd_clear },
 	{ 1, "memmap",	"<seg>",					"Get memory allocation map",		ui_cmd_memmap },
+	{ 1, "memcfg",	"<seg> <page> <m> <f>",		"Configure memory",					ui_cmd_memcfg },
 	{ 1, "log",		"[on|off]",					"Manipulate logging state",			ui_cmd_log },
 	{ 1, "logc",	"[component [state]]",		"Manipulate log compoment state",	ui_cmd_logc },
 	{ 1, "info",	"",							"Get emulator info",				ui_cmd_info },
@@ -444,6 +446,59 @@ void ui_cmd_memmap(FILE *out, char *args)
 
 	int map = ectl_mem_map(seg);
 	ui_cmd_resp(out, RESP_OK, UI_EOL, "0x%04x", map);
+}
+
+// -----------------------------------------------------------------------
+void ui_cmd_memcfg(FILE *out, char *args)
+{
+	char *tok_seg, *tok_page, *tok_m, *tok_f, *remainder;
+
+	int seg = ui_cmd_gettok_int(args, &tok_seg, &remainder);
+	if (!tok_seg) {
+		ui_cmd_resp(out, RESP_ERR, UI_EOL, "Missing argument (memory segment)");
+		return;
+	}
+	if ((seg < 0) || (seg > 15)) {
+		ui_cmd_resp(out, RESP_ERR, UI_EOL, "Wrong segment number: %i", seg);
+		return;
+	}
+
+	int page = ui_cmd_gettok_int(remainder, &tok_page, &remainder);
+	if (!tok_page) {
+		ui_cmd_resp(out, RESP_ERR, UI_EOL, "Missing argument (memory page)");
+		return;
+	}
+	if ((page < 0) || (page > 15)) {
+		ui_cmd_resp(out, RESP_ERR, UI_EOL, "Invalid page number: %i", page);
+		return;
+	}
+
+	int m = ui_cmd_gettok_int(remainder, &tok_m, &remainder);
+	if (!tok_m) {
+		ui_cmd_resp(out, RESP_ERR, UI_EOL, "Missing argument (memory module)");
+		return;
+	}
+	if ((m < 0) || (m > 15)) {
+		ui_cmd_resp(out, RESP_ERR, UI_EOL, "Wrong module number: %i", seg);
+		return;
+	}
+
+	int f = ui_cmd_gettok_int(remainder, &tok_f, &remainder);
+	if (!tok_f) {
+		ui_cmd_resp(out, RESP_ERR, UI_EOL, "Missing argument (memory frame)");
+		return;
+	}
+	if ((f < 0) || (f > 15)) {
+		ui_cmd_resp(out, RESP_ERR, UI_EOL, "Invalid frame number: %i", page);
+		return;
+	}
+
+	int res = ectl_mem_cfg(seg, page, m, f);
+	if (!res) {
+		ui_cmd_resp(out, RESP_OK, UI_EOL, "Logical %i:%i mapped to physical %i:%i", seg, page, m, f);
+	} else {
+		ui_cmd_resp(out, RESP_ERR, UI_EOL, "Failed mapping logical %i:%i to physical %i:%i", seg, page, m, f);
+	}
 }
 
 // -----------------------------------------------------------------------

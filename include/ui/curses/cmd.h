@@ -45,6 +45,7 @@ void dbg_c_clmem();
 void dbg_c_dt(int wid, uint16_t start, int count);
 void dbg_c_load(int wid, char* image);
 void dbg_c_memcfg(int wid);
+void dbg_c_memmap(int wid, int seg, int page, int module, int frame);
 void dbg_c_brk_add(int wid, char *label, struct node_t *n);
 void dbg_c_brk_list(int wid);
 void dbg_c_brk_del(int wid, int nr);

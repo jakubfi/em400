@@ -28,6 +28,7 @@
 #include "cpu/cp.h"
 #include "cpu/cpu.h"
 #include "mem/mem.h"
+#include "io/defs.h"
 
 #include "ectl.h"
 #include "ectl/est.h"
@@ -134,6 +135,19 @@ int ectl_mem_map(int seg)
 	int map = mem_get_map(seg);
 	LOG(L_ECTL, "ECTL mem map: %i = 0x%04x", seg, map);
 	return map;
+}
+
+// -----------------------------------------------------------------------
+int ectl_mem_cfg(int nb, int ab, int mp, int seg)
+{
+	uint16_t r = (nb & 0b1111) | (ab << 12);
+	uint16_t n = ((mp & 0b1111) << 1) | ((seg & 0b1111) << 5);
+	int res = mem_cmd(n, r);
+	if (res == IO_OK) {
+		return 0;
+	} else {
+		return -1;
+	}
 }
 
 // -----------------------------------------------------------------------
