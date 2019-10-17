@@ -50,6 +50,7 @@ set(SOURCES_EM400
 	src/io/chan.c
 	src/io/cchar.c
 	src/io/cchar_term.c
+	src/io/cchar_flop8.c
 	src/io/iotester.c
 
 	src/io/dev/dev.c

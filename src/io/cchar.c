@@ -25,6 +25,7 @@
 #include "io/chan.h"
 #include "io/cchar.h"
 #include "io/cchar_term.h"
+#include "io/cchar_flop8.h"
 
 #include "cfg.h"
 #include "log.h"
@@ -37,6 +38,13 @@ struct cchar_unit_proto_t cchar_unit_proto[] = {
 		cchar_term_shutdown,
 		cchar_term_reset,
 		cchar_term_cmd
+	},
+	{
+		"floppy8",
+		cchar_flop8_create,
+		cchar_flop8_shutdown,
+		cchar_flop8_reset,
+		cchar_flop8_cmd
 	},
 	{ NULL, NULL, NULL, NULL, NULL }
 };
