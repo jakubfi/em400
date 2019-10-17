@@ -60,7 +60,7 @@ struct ui_cmd_command commands[] = {
 	{ 1, "eval",	"<expr>",					"Evaluate expression",				ui_cmd_eval },
 	{ 1, "ips",		"",							"Get average IPS",					ui_cmd_ips },
 	{ 1, "load",	"<seg> <addr> <file>",		"Load file into memory",			ui_cmd_load },
-	{ 1, "bin",		"<io_addr>",				"Initiate binary load",				ui_cmd_bin },
+	{ 1, "bin",		"<cmd> <addr>",				"Initiate binary load",				ui_cmd_bin },
 	{ 1, "brk",		"<expr>",					"Add breakpoint",					ui_cmd_brk },
 	{ 1, "brkdel",	"<id>",						"Delete breakpoint",				ui_cmd_brkdel },
 	{ 1, "stopn",	"<addr>|off",				"Stop CPU on address",				ui_cmd_stopn },
@@ -689,7 +689,16 @@ void ui_cmd_brkdel(FILE *out, char *args)
 // -----------------------------------------------------------------------
 void ui_cmd_bin(FILE *out, char *args)
 {
-	ui_cmd_resp(out, RESP_ERR, UI_EOL, "Command not implemented");
+	char *tok_addr, *remainder;
+
+	uint16_t addr = ui_cmd_gettok_int(args, &tok_addr, &remainder);
+	if (!tok_addr) {
+		ui_cmd_resp(out, RESP_ERR, UI_EOL, "Missing argument (load addres)");
+		return;
+	}
+
+	int cnt = ectl_bin(addr);
+	ui_cmd_resp(out, RESP_OK, UI_EOL, "Loaded %i words", cnt);
 }
 
 // -----------------------------------------------------------------------

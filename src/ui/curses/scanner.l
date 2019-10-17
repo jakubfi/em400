@@ -86,6 +86,7 @@ stk		{ return F_STACK; }
 help	{ BEGIN(texts); return F_HELP; }
 dasm	{ BEGIN(args); return F_DASM; }
 mem		{ BEGIN(args); return F_MEM; }
+binload	{ BEGIN(args); return F_BIN; }
 load	{ BEGIN(texts); return F_LOAD; }
 brk		{ BEGIN(opts); return F_BRK; }
 log		{ BEGIN(opts); return F_LOG; }

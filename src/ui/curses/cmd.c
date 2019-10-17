@@ -44,6 +44,7 @@ struct cmd_t dbg_commands[] = {
 	{ "reset",	F_RESET,	"Reset the emulator", "  reset" },
 	{ "dasm",	F_DASM,		"Disassembler", "  dasm [[start] count]" },
 	{ "mem",	F_MEM,		"Show memory contents", "  mem [block:] <start> [len]" },
+	{ "binload",F_BIN,		"Initiate binary load", "bin <io_cmd> <load_addr>" },
 	{ "load",	F_LOAD,		"Load memory image from file", "  load <file>" },
 	{ "memcfg",	F_MEMCFG,	"Show memory configuration", "  memcfg" },
 	{ "memmap",	F_MEMMAP,	"Configure memory", "  memmap <seg> <page> <module> <frame>" },
@@ -159,6 +160,15 @@ void dbg_c_dt(int wid, uint16_t ic, int count)
 		count--;
 		ic += words;
 	}
+}
+
+// -----------------------------------------------------------------------
+void dbg_c_bin(int wid, uint16_t addr)
+{
+	int cnt = ectl_bin(addr);
+	awtbprint(wid, C_LABEL, "Loaded ");
+	awtbprint(wid, C_DATA, "%i ", cnt);
+	awtbprint(wid, C_LABEL, "words.\n");
 }
 
 // -----------------------------------------------------------------------

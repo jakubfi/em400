@@ -225,10 +225,10 @@ void ectl_cpu_clear()
 }
 
 // -----------------------------------------------------------------------
-void ectl_bootstrap(int chan, int unit)
+int ectl_bin(uint16_t ar)
 {
 	LOG(L_ECTL, "ECTL bootstrap");
-	cp_bin();
+	return cp_bin(ar);
 }
 
 // -----------------------------------------------------------------------

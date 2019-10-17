@@ -44,7 +44,7 @@ char verr[128];
 %token ':' '&' '|' '(' ')'
 %token HEX OCT BIN INT UINT
 %token IRZ
-%token <value> F_QUIT F_MEM F_REGS F_SREGS F_RESET F_CYCLE F_HELP F_DASM F_LOAD F_MEMCFG F_MEMMAP F_BRK F_START F_STOP F_STACK F_LOG F_WATCH F_DECODE F_FIND F_CLOCK
+%token <value> F_QUIT F_MEM F_BIN F_REGS F_SREGS F_RESET F_CYCLE F_HELP F_DASM F_LOAD F_MEMCFG F_MEMMAP F_BRK F_START F_STOP F_STACK F_LOG F_WATCH F_DECODE F_FIND F_CLOCK
 %token ADD DEL TEST
 %token ON OFF
 %type <n> expr lval bitfield basemod
@@ -169,6 +169,7 @@ command:
 	| F_MEM expr VALUE		{ dbg_c_mem(W_CMD, ectl_reg_get(ECTL_REG_Q) * ectl_reg_get(ECTL_REG_NB), n_eval($2), n_eval($2)+$3-1, 122, 18); }
 	| F_MEM VALUE ':' expr	{ dbg_c_mem(W_CMD, $2, n_eval($4), n_eval($4)+15, 122, 18); }
 	| F_MEM VALUE ':' expr VALUE { dbg_c_mem(W_CMD, $2, n_eval($4), n_eval($4)+$5-1, 122, 18); }
+	| F_BIN VALUE			{ dbg_c_bin(W_CMD, $2); }
 	| F_LOAD TEXT			{ dbg_c_load(W_CMD, $2); }
 	| F_BRK					{ dbg_c_brk_list(W_CMD); }
 	| F_BRK ADD expr	{

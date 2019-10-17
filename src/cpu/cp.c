@@ -18,12 +18,15 @@
 #include <stdlib.h>
 #include <unistd.h>
 
+#include "io/defs.h"
+#include "io/io.h"
 #include "cpu/cp.h"
 #include "cpu/cpu.h"
 #include "cpu/interrupts.h"
 #include "mem/mem.h"
 #include "cpu/clock.h"
 #include "fpga/iobus.h"
+#include "utils/utils.h"
 
 #include "cfg.h"
 #include "log.h"
@@ -300,9 +303,37 @@ void cp_clear()
 }
 
 // -----------------------------------------------------------------------
-void cp_bin()
+int cp_bin(uint16_t ar)
 {
+	uint16_t addr = ar;
+	int words = 0;
+	uint16_t data;
+	uint8_t bdata[3];
+	int cnt = 0;
+	int res;
 
+	while (1) {
+		res = io_dispatch(IO_IN, rKB, &data);
+		if (res != IO_OK) {
+			continue;
+		}
+		bdata[cnt] = data & 0xff;
+		if ((cnt == 0) && bin_is_end(bdata[cnt])) {
+			break;
+		} else if (bin_is_valid(bdata[cnt])) {
+			cnt++;
+			if (cnt >= 3) {
+				cnt = 0;
+				if (cpu_mem_put(0, addr, bin2word(bdata)) == 0) {
+					break;
+				}
+				addr++;
+				words++;
+			}
+		}
+	}
+
+	return words;
 }
 
 // -----------------------------------------------------------------------
