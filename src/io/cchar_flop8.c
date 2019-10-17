@@ -114,8 +114,6 @@ static int cchar_flop8_read(struct cchar_unit_proto_t *unit, uint16_t *r_arg)
 	uint8_t data;
 	int lba;
 
-	LOG(L_FLOP, "Read: disk %i, track %i, sector %i, byte %i", u->disk, u->track, u->sector, u->byte);
-
 	lba = (u->track-1) * 26 + (u->sector-1);
 	res = fseek(u->f[u->disk], lba*128 + u->byte, SEEK_SET);
 	if (res != 0) {
