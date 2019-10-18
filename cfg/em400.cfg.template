@@ -4,10 +4,14 @@ computer {
 	# "true" - use FPGA implementation of CPU and memory
 	fpga = false
 
-	# real CPU and I/O emulation speed:
+	# throttle CPU emulation speed:
 	# "false" - run as fast as possible (default)
-	# "true" - try to emulate actual instructions, memory and I/O timings
-	speed_real = false
+	# "true" - insert delays as specified below
+	cpu_throttle = false
+	# execute this many instructions before sleeping (default: 100)
+	throttle_granularity = 100
+	# then sleep for this many useconds (default: 100)
+	throttle_usec = 100
 
 	# Internal clock interrupt period (in miliseconds)
 	# allowed values: 2-100 (default is 10)

@@ -42,7 +42,9 @@ string	\".+\"
 %%
 
 computer		return COMPUTER;
-speed_real		return SPEED_REAL;
+cpu_throttle	return CPU_THROTTLE;
+throttle_granularity return THROTTLE_GRANULARITY;
+throttle_usec	return THROTTLE_USEC;
 clock_period	return CLOCK_PERIOD;
 clock_start		return CLOCK_START;
 cpu_mod			return CPU_MOD;

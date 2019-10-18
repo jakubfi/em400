@@ -50,7 +50,9 @@ struct cfg_em400 {
 	int print_help;
 	char *ui_name;
 
-	int speed_real;
+	int cpu_throttle;
+	int throttle_granularity;
+	int throttle_usec;
 	int clock_period;
 	int clock_start;
 	int cpu_mod;

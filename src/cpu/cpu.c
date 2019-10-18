@@ -18,6 +18,7 @@
 #include <string.h>
 #include <stdlib.h>
 #include <pthread.h>
+#include <unistd.h>
 
 #include <emawp.h>
 
@@ -52,6 +53,7 @@ unsigned RM, Q, BS, NB;
 int P;
 uint32_t N;
 int cpu_mod_active;
+static int cpu_throttle, throttle_granularity, throttle_usec;
 
 int cpu_mod_present;
 int cpu_user_io_illegal;
@@ -227,6 +229,9 @@ int cpu_init(struct cfg_em400 *cfg)
 	cpu_mod_present = cfg->cpu_mod;
 	cpu_user_io_illegal = cfg->cpu_user_io_illegal;
 	nomem_stop = cfg->cpu_stop_on_nomem;
+	cpu_throttle = cfg->cpu_throttle;
+	throttle_granularity = cfg->throttle_granularity;
+	throttle_usec = cfg->throttle_usec;
 
 	res = iset_build(cpu_op_tab, cpu_user_io_illegal);
 	if (res != E_OK) {
@@ -455,6 +460,9 @@ cycle:
 			} else {
 				cpu_do_cycle();
 				ips_counter++;
+				if (cpu_throttle && ((ips_counter % throttle_granularity) == 0)) {
+					usleep(throttle_usec);
+				}
 
 				// breakpoint hit?
 				if (ectl_brk_check()) {
