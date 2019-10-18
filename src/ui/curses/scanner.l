@@ -77,7 +77,7 @@ quit	{ return F_QUIT; }
 cycle	{ return F_CYCLE; }
 regs	{ return F_REGS; }
 sregs	{ return F_SREGS; }
-reset	{ return F_RESET; }
+clear	{ return F_CLEAR; }
 memcfg	{ return F_MEMCFG; }
 memmap	{ return F_MEMMAP; }
 start	{ return F_START; }

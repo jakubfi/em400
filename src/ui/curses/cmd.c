@@ -41,7 +41,7 @@ struct cmd_t dbg_commands[] = {
 	{ "help",	F_HELP,		"Print help", "  help" },
 	{ "regs",	F_REGS,		"Show user registers", "  regs" },
 	{ "sregs",	F_SREGS,	"Show system registers", "  sregs" },
-	{ "reset",	F_RESET,	"Reset the emulator", "  reset" },
+	{ "clear",	F_CLEAR,	"CPU clear (reset)", "  clear" },
 	{ "dasm",	F_DASM,		"Disassembler", "  dasm [[start] count]" },
 	{ "mem",	F_MEM,		"Show memory contents", "  mem [block:] <start> [len]" },
 	{ "binload",F_BIN,		"Initiate binary load", "bin <io_cmd> <load_addr>" },
@@ -122,7 +122,7 @@ void dbg_c_stop()
 }
 
 // -----------------------------------------------------------------------
-void dbg_c_reset()
+void dbg_c_clear()
 {
 	ectl_cpu_clear();
 }

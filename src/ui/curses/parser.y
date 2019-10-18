@@ -44,7 +44,7 @@ char verr[128];
 %token ':' '&' '|' '(' ')'
 %token HEX OCT BIN INT UINT
 %token IRZ
-%token <value> F_QUIT F_MEM F_BIN F_REGS F_SREGS F_RESET F_CYCLE F_HELP F_DASM F_LOAD F_MEMCFG F_MEMMAP F_BRK F_START F_STOP F_STACK F_LOG F_WATCH F_DECODE F_FIND F_CLOCK
+%token <value> F_QUIT F_MEM F_BIN F_REGS F_SREGS F_CLEAR F_CYCLE F_HELP F_DASM F_LOAD F_MEMCFG F_MEMMAP F_BRK F_START F_STOP F_STACK F_LOG F_WATCH F_DECODE F_FIND F_CLOCK
 %token ADD DEL TEST
 %token ON OFF
 %type <n> expr lval bitfield basemod
@@ -154,7 +154,7 @@ command:
 	| F_CYCLE 				{ dbg_c_cycle(); }
 	| F_REGS 				{ dbg_c_regs(W_CMD); }
 	| F_SREGS 				{ dbg_c_sregs(W_CMD); }
-	| F_RESET 				{ dbg_c_reset(); }
+	| F_CLEAR 				{ dbg_c_clear(); }
 	| F_MEMCFG			 	{ dbg_c_memcfg(W_CMD); }
 	| F_MEMMAP VALUE VALUE VALUE VALUE { dbg_c_memmap(W_CMD, $2, $3, $4, $5); }
 	| F_START 				{ dbg_c_start(); }

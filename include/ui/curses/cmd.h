@@ -39,7 +39,7 @@ void dbg_c_help(int wid, char *cmd);
 void dbg_c_regs(int wid);
 void dbg_c_sregs(int wid);
 void dbg_c_stack(int wid, int size);
-void dbg_c_reset();
+void dbg_c_clear();
 void dbg_c_mem(int wid, int block, int start, int end, int maxcols, int maxlines);
 void dbg_c_bin(int wid, uint16_t addr);
 void dbg_c_clmem();
