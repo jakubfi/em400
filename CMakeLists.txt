@@ -5,6 +5,7 @@ project(em400
 
 include(GNUInstallDirs)
 include(appversion.cmake)
+include(FindALSA)
 
 # ---- Libraries ---------------------------------------------------------
 
@@ -39,6 +40,7 @@ set(SOURCES_EM400
 	src/cpu/iset.c
 	src/cpu/alu.c
 	src/cpu/cp.c
+	src/cpu/buzzer.c
 
 	src/mem/mem.c
 	src/mem/mega.c
@@ -166,6 +168,7 @@ target_link_libraries(em400
 	${EMAWP_LIBRARIES}
 	${FLEX_LIBRARIES} ${BISON_LIBRARIES}
 	${CMAKE_THREAD_LIBS_INIT}
+	${ALSA_LIBRARIES}
 	rt m
 )
 

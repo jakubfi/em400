@@ -19,6 +19,7 @@
 #include <stdlib.h>
 #include <pthread.h>
 #include <unistd.h>
+#include <signal.h>
 
 #include <emawp.h>
 
@@ -29,6 +30,7 @@
 #include "cpu/instructions.h"
 #include "cpu/interrupts.h"
 #include "cpu/clock.h"
+#include "cpu/buzzer.h"
 #include "io/io.h"
 
 #include "em400.h"
@@ -259,6 +261,15 @@ int cpu_init(struct cfg_em400 *cfg)
 	}
 
 	cpu_mod_off();
+
+	if (buzzer_init() != E_OK) {
+		return LOGERR("Failed to initialize buzzer");
+	}
+
+	sigset_t set;
+	sigemptyset(&set);
+	sigaddset(&set, SIGRTMIN);
+	pthread_sigmask(SIG_BLOCK, &set, NULL);
 
 	return E_OK;
 }
@@ -491,6 +502,7 @@ cycle:
 					instruction_time = 0;
 					clock_nanosleep(CLOCK_MONOTONIC, TIMER_ABSTIME, &req, NULL);
 				}
+				buzzer_update(rIR);
 
 				// breakpoint hit?
 				if (ectl_brk_check()) {
@@ -506,9 +518,11 @@ cycle:
 		} else if (state & (ECTL_STATE_CLM | ECTL_STATE_CLO)) {
 			cpu_clear(state & (ECTL_STATE_CLM | ECTL_STATE_CLO));
 			clock_gettime(CLOCK_MONOTONIC, &req);
+			buzzer_silence();
 
 		// CPU stopped
 		} else if ((state & ECTL_STATE_STOP)) {
+			buzzer_silence();
 			if ((cpu_idle_in_stop() && ECTL_STATE_CYCLE)) {
 				// CPU cycle triggered while in stop
 				cpu_clear_state(ECTL_STATE_CYCLE);
@@ -520,6 +534,7 @@ cycle:
 
 		// CPU waiting for an interrupt
 		} else if ((state & ECTL_STATE_WAIT)) {
+			buzzer_silence();
 			cpu_idle_in_wait();
 			clock_gettime(CLOCK_MONOTONIC, &req);
 		}
