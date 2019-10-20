@@ -244,6 +244,8 @@ int cpu_init(struct cfg_em400 *cfg)
 	if (mem_mega_boot()) {
 		LOG(L_CPU, "Bootstrap from MEGA PROM is enabled");
 		rIC = 0xf000;
+	} else {
+		rIC = 0;
 	}
 
 	cpu_mod_off();
@@ -292,7 +294,6 @@ static void cpu_clear(int scope)
 	int_clear_all();
 
 	if (scope & ECTL_STATE_CLO) {
-		rIC = 0;
 		rALARM = 0;
 		rMOD = 0;
 		rMODc = 0;
