@@ -84,14 +84,14 @@ void * sound_thread(void *ptr)
 		exit(EXIT_FAILURE);
 	}
 
-	err = snd_pcm_set_params(handle, SND_PCM_FORMAT_S8, SND_PCM_ACCESS_RW_INTERLEAVED, 1, FREQ, 1, 10000);
+	err = snd_pcm_set_params(handle, SND_PCM_FORMAT_S8, SND_PCM_ACCESS_RW_INTERLEAVED, 1, FREQ, 1, 30000);
 	if (err < 0) {
 		printf("Playback open error: %s\n", snd_strerror(err));
 		exit(EXIT_FAILURE);
 	}
 
 	while (1) {
-		int wsize = wp-rp >= 128 ? 128 : wp-rp;
+		int wsize = wp-rp >= 512 ? 512 : wp-rp;
 		frames = snd_pcm_writei(handle, rp, wsize);
 		rp += frames;
 		if (frames < 0) {
@@ -115,7 +115,6 @@ extern uint16_t rIR;
 static void feeder_sighandler(int sig, siginfo_t *si, void *uc)
 {
 	*wp++ = buzzer_val;
-	//*wp++ = rIR & 0x8000 ? VOLUME : -VOLUME;
 	if (wp == buffer_end) {
 		wp = buffer;
 	}
@@ -144,7 +143,7 @@ int buzzer_init()
 	}
 
 	its.it_value.tv_sec = 0;
-	its.it_value.tv_nsec = 1000000000 / FREQ - 80;
+	its.it_value.tv_nsec = 1000000000 / FREQ - 100;
 	its.it_interval.tv_sec = its.it_value.tv_sec;
 	its.it_interval.tv_nsec = its.it_value.tv_nsec;
 

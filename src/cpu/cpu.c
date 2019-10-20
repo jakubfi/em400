@@ -492,6 +492,8 @@ cycle:
 			// CPU cycle
 			} else {
 				cpu_do_cycle();
+				int ile = 600 + mem_counter * 1100;
+				for (volatile long a=0 ; a<ile/1.5 ; a++);
 				ips_counter++;
 				if (speed_real && ((ips_counter % throttle_granularity) == 0)) {
 					req.tv_nsec += instruction_time * cpu_delay_factor;
