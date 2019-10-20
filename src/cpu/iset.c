@@ -61,7 +61,7 @@ struct iset_instruction em400_ilist[] = {
 
 	{ O(037)+0000, VARMASK_DBC, { OP_FL_ARG_NORM, op_37_ad, 0, 0, 5200 } },
 	{ O(037)+0100, VARMASK_DBC, { OP_FL_ARG_NORM, op_37_sd, 0, 0, 5200 } },
-	{ O(037)+0200, VARMASK_DBC, { OP_FL_ARG_NORM, op_37_mw, 0, 0, (3500*11900)/2 } },
+	{ O(037)+0200, VARMASK_DBC, { OP_FL_ARG_NORM, op_37_mw, 0, 0, (3500+11900)/2 } },
 	{ O(037)+0300, VARMASK_DBC, { OP_FL_ARG_NORM, op_37_dw, 0, 0, (4900+15300)/2 } },
 	{ O(037)+0400, VARMASK_DBC, { OP_FL_ARG_NORM, op_37_af, 0, 0, (5400+19000)/2 } },
 	{ O(037)+0500, VARMASK_DBC, { OP_FL_ARG_NORM, op_37_sf, 0, 0, (5400+19000)/2 } },
