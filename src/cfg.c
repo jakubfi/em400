@@ -58,9 +58,9 @@ struct cfg_em400 * cfg_create_default()
 	cfg->ui_name = strdup("curses");
 
 	// emulation
-	cfg->cpu_throttle = 0;
-	cfg->throttle_granularity = 100;
-	cfg->throttle_usec = 100;
+	cfg->speed_real = 0;
+	cfg->cpu_speed_factor = 1;
+	cfg->throttle_granularity = 4;
 
 	// cpu
 	cfg->clock_period= 10;
@@ -312,9 +312,9 @@ void cfg_log(struct cfg_em400 *cfg)
 	LOG(L_EM4H, "Use FPGA backend: %s", cfg->fpga ? "yes" : "no");
 	if (!cfg->fpga) {
 		LOG(L_EM4H, "CPU emulation:");
-		LOG(L_EM4H, "   CPU emulation throttle: %s", cfg->cpu_throttle ? "enabled" : "disabled");
-		LOG(L_EM4H, "   Throttle granularity: %i cycles", cfg->throttle_granularity);
-		LOG(L_EM4H, "   Throttle time: %i useconds", cfg->throttle_usec);
+		LOG(L_EM4H, "   Emulation speed: %s", cfg->speed_real ? "real" : "maximum");
+		LOG(L_EM4H, "   CPU speed factor: %f", cfg->cpu_speed_factor);
+		LOG(L_EM4H, "   Throttle granularity: %i CPU cycles", cfg->throttle_granularity);
 		LOG(L_EM4H, "   Clock period: %i (%s at power-on)", cfg->clock_period, cfg->clock_start ? "enabled" : "disabled");
 		LOG(L_EM4H, "   CPU modifications: %s", cfg->cpu_mod ? "present" : "absent");
 		LOG(L_EM4H, "   IN/OU instructions: %s for user programs", cfg->cpu_user_io_illegal ? "illegal" : "legal");

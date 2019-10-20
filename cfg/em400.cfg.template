@@ -4,14 +4,19 @@ computer {
 	# "true" - use FPGA implementation of CPU and memory
 	fpga = false
 
-	# throttle CPU emulation speed:
+	# Control CPU emulation speed:
 	# "false" - run as fast as possible (default)
-	# "true" - insert delays as specified below
-	cpu_throttle = false
-	# execute this many instructions before sleeping (default: 100)
-	throttle_granularity = 100
-	# then sleep for this many useconds (default: 100)
-	throttle_usec = 100
+	# "true" - try to emulate real hardware CPU and memory speeds
+        speed_real = false
+	# If speed_real is set to "true", cpu_speed_factor controls how much
+	# faster or slower emulated CPU runs compared to the real hardware
+	# Use a floating point number.
+        cpu_speed_factor = 1
+	# Execute this many instructions before sleeping (default: 3).
+	# Use with caution. If "real" emulation speed is slower than
+	# it should be, you may need to set granularity to a higher
+	# value (eg. 4...10).
+	throttle_granularity = 3
 
 	# Internal clock interrupt period (in miliseconds)
 	# allowed values: 2-100 (default is 10)

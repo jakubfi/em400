@@ -34,6 +34,7 @@
 %option yylineno
 
 number	[0-9]+
+float	[0-9]+.[0-9]+
 text	[^,: \n\t\r\f]+
 chars	[\}\{=:,]
 comment	#.*$
@@ -42,9 +43,9 @@ string	\".+\"
 %%
 
 computer		return COMPUTER;
-cpu_throttle	return CPU_THROTTLE;
+speed_real		return SPEED_REAL;
+cpu_speed_factor return CPU_SPEED_FACTOR;
 throttle_granularity return THROTTLE_GRANULARITY;
-throttle_usec	return THROTTLE_USEC;
 clock_period	return CLOCK_PERIOD;
 clock_start		return CLOCK_START;
 cpu_mod			return CPU_MOD;
@@ -83,6 +84,12 @@ device			return DEVICE;
 	cyylval.value.v = strtol(cyytext, NULL, 10);
 	cyylval.value.s = strdup(cyytext);
 	return VALUE;
+}
+
+{float} {
+	cyylval.value.f = strtof(cyytext, NULL);
+	cyylval.value.s = strdup(cyytext);
+	return FLOAT;
 }
 
 {chars} {

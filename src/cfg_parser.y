@@ -38,6 +38,7 @@ int cyylex(void);
 %union {
 	struct value_t {
 		int v;
+		float f;
 		char *s;
 	} value;
 	struct cfg_arg *arg;
@@ -48,9 +49,9 @@ int cyylex(void);
 %token FPGA "`fpga`"
 %token CHANNEL "`channel`"
 %token UNIT "`unit`"
-%token CPU_THROTTLE "`cpu_throttle`"
+%token SPEED_REAL "`speed_real`"
+%token CPU_SPEED_FACTOR "`cpu_speed_factor`"
 %token THROTTLE_GRANULARITY "`throttle_granularity`"
-%token THROTTLE_USEC "`throttle_usec`"
 %token CLOCK_PERIOD "`clock_period`"
 %token CLOCK_START "`clock_start`"
 %token CPU_MOD "`cpu_mod`"
@@ -72,6 +73,7 @@ int cyylex(void);
 %token <value> NAME "parameter or device name"
 %token <value> STRING "string"
 %token <value> VALUE "integer value"
+%token <value> FLOAT "floating point value"
 %token <value> BOOL "`true` or `false`"
 %type <arg> arg
 %type <arg> arglist
@@ -118,9 +120,10 @@ computer_opts:
 	;
 
 computer_opt:
-	CPU_THROTTLE '=' BOOL	{ cfg->cpu_throttle = $3.v; free($3.s); }
+	SPEED_REAL '=' BOOL		{ cfg->speed_real = $3.v; free($3.s); }
+	| CPU_SPEED_FACTOR '=' FLOAT { cfg->cpu_speed_factor = $3.f; free($3.s); }
+	| CPU_SPEED_FACTOR '=' VALUE { cfg->cpu_speed_factor = $3.v; free($3.s); }
 	| THROTTLE_GRANULARITY '=' VALUE { cfg->throttle_granularity = $3.v; free($3.s); }
-	| THROTTLE_USEC '=' VALUE { cfg->throttle_usec = $3.v; free($3.s); }
 	| CLOCK_PERIOD '=' VALUE{ cfg->clock_period = $3.v; free($3.s); }
 	| CLOCK_START '=' BOOL	{ cfg->clock_start = $3.v; free($3.s); }
 	| CPU_MOD '=' BOOL		{ cfg->cpu_mod = $3.v; free($3.s); }

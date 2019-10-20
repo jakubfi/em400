@@ -38,10 +38,6 @@ enum em400_var_masks {
 };
 
 #define O(x) ((x) << 10)
-#define TIME_MEM 1050
-#define TIME_PREMOD 300
-#define TIME_BMOD 300
-#define TIME DMOD 1050
 
 // MERA-400 instruction list
 struct iset_instruction em400_ilist[] = {
@@ -81,7 +77,7 @@ struct iset_instruction em400_ilist[] = {
 	{ O(046), VARMASK_DABC, { OP_FL_ARG_NORM, op_nr, 0, 0, 1700 } },
 	{ O(047), VARMASK_DABC, { OP_FL_ARG_NORM, op_nm, 0, 0, 3400 } },
 	{ O(050), VARMASK_DABC, { OP_FL_ARG_NORM, op_er, 0, 0, 1700 } },
-	{ O(051), VARMASK_DABC, { OP_FL_ARG_NORM, op_em, 0, 0, 3400 } },
+	{ O(051), VARMASK_DABC, { OP_FL_ARG_NORM, op_em, 0, 0, 3500 } },
 	{ O(052), VARMASK_DABC, { OP_FL_ARG_NORM, op_xr, 0, 0, 1800 } },
 	{ O(053), VARMASK_DABC, { OP_FL_ARG_NORM, op_xm, 0, 0, 3500 } },
 	{ O(054), VARMASK_DABC, { OP_FL_ARG_NORM, op_cl, 0, 0, 1800 } },
@@ -108,7 +104,7 @@ struct iset_instruction em400_ilist[] = {
 	{ O(070)+0700, VARMASK_DBC, { OP_FL_ARG_SHORT, op_70_jump, FL_C, FL_C, 2000 } },	// jcs
 
 	{ O(071)+00000, VARMASK_BYTE, { OP_FL_NONE, op_71_blc, 0, 0, 1700 } },
-	{ O(071)+00400, VARMASK_BYTE, { OP_FL_NONE, op_71_exl, 0, 0, TIME_MEM } },
+	{ O(071)+00400, VARMASK_BYTE, { OP_FL_NONE, op_71_exl, 0, 0, TIME_MEM + 500 } },
 	{ O(071)+01000, VARMASK_BYTE, { OP_FL_NONE, op_71_brc, 0, 0, 1700 } },
 	{ O(071)+01400, VARMASK_BYTE, { OP_FL_NONE, op_71_nrf, 0, 0, (3800+15800)/2 } },
 

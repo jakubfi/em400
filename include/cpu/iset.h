@@ -20,6 +20,14 @@
 
 #include <inttypes.h>
 
+// various execution phase time values
+#define TIME_MEM 1050			// memory access
+#define TIME_PREMOD 300			// premodification
+#define TIME_BMOD 300			// B-modification
+#define TIME_DMOD 1050			// D-modification
+#define TIME_SHIFT 100			// single SHC shift
+#define TIME_INEFFECTIVE 300	// ineffective instruction handling
+
 enum opcode_flags {
 	OP_FL_NONE			= 0,
 	OP_FL_ARG_NORM		= 0x1,	// instruction with normal argument

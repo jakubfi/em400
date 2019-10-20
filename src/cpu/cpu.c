@@ -53,13 +53,17 @@ unsigned RM, Q, BS, NB;
 int P;
 uint32_t N;
 int cpu_mod_active;
-static int cpu_throttle, throttle_granularity, throttle_usec;
+
+unsigned long ips_counter;
+static unsigned instruction_time;
+static int speed_real;
+static int throttle_granularity;
+static float cpu_delay_factor;
+struct timespec req;
 
 int cpu_mod_present;
 int cpu_user_io_illegal;
 static int nomem_stop;
-
-unsigned long ips_counter;
 
 struct awp *awp;
 
@@ -229,9 +233,9 @@ int cpu_init(struct cfg_em400 *cfg)
 	cpu_mod_present = cfg->cpu_mod;
 	cpu_user_io_illegal = cfg->cpu_user_io_illegal;
 	nomem_stop = cfg->cpu_stop_on_nomem;
-	cpu_throttle = cfg->cpu_throttle;
+	speed_real = cfg->speed_real;
 	throttle_granularity = cfg->throttle_granularity;
-	throttle_usec = cfg->throttle_usec;
+	cpu_delay_factor = 1.0f/cfg->cpu_speed_factor;
 
 	res = iset_build(cpu_op_tab, cpu_user_io_illegal);
 	if (res != E_OK) {
@@ -377,7 +381,7 @@ static void cpu_do_cycle()
 		if (LOG_WANTS(L_CPU)) {
 			log_log_dasm(0, 0, "skip: ");
 		}
-	    if ((op->flags & OP_FL_ARG_NORM) && !IR_C) rIC++;
+		if ((op->flags & OP_FL_ARG_NORM) && !IR_C) rIC++;
 		goto ineffective;
 	} else if (op->flags & OP_FL_ILLEGAL) {
 		int2binf(opcode, "... ... . ... ... ...", rIR, 16);
@@ -404,9 +408,11 @@ static void cpu_do_cycle()
 				N = data + rMOD;
 				rIC++;
 			}
+			if (speed_real) instruction_time += TIME_MEM;
 		}
 		if (IR_B) {
 			N = (uint16_t) N + regs[IR_B];
+			if (speed_real) instruction_time += TIME_BMOD;
 		}
 		if (IR_D) {
 			if (!cpu_mem_get(QNB, N, &data)) {
@@ -415,13 +421,23 @@ static void cpu_do_cycle()
 			} else {
 				N = data;
 			}
+			if (speed_real) instruction_time += TIME_DMOD;
 		}
 	} else if ((op->flags & OP_FL_ARG_SHORT)) {
 		N = (uint16_t) IR_T + (uint16_t) rMOD;
 	}
 
+	if (rMODc) {
+		if (speed_real) instruction_time += TIME_PREMOD;
+	}
+
 	if (LOG_WANTS(L_CPU)) {
 		log_log_dasm((op->flags & (OP_FL_ARG_NORM | OP_FL_ARG_SHORT)), N, "");
+	}
+
+	if (speed_real) {
+		instruction_time += op->time;
+		if (op->fun == op_72_shc) instruction_time += IR_t * TIME_SHIFT;
 	}
 
 	// execute instruction
@@ -434,6 +450,7 @@ static void cpu_do_cycle()
 	return;
 
 ineffective:
+	if (speed_real) instruction_time += TIME_MEM + TIME_INEFFECTIVE;
 	P = 0;
 	rMOD = 0;
 	rMODc = 0;
@@ -442,9 +459,9 @@ ineffective:
 // -----------------------------------------------------------------------
 void cpu_loop()
 {
-    pthread_mutex_lock(&cpu_wake_mutex);
-    cpu_state = ECTL_STATE_STOP;
-    pthread_mutex_unlock(&cpu_wake_mutex);
+	pthread_mutex_lock(&cpu_wake_mutex);
+	cpu_state = ECTL_STATE_STOP;
+	pthread_mutex_unlock(&cpu_wake_mutex);
 
 	while (1) {
 		int state = atom_load_acquire(&cpu_state);
@@ -459,8 +476,14 @@ cycle:
 			} else {
 				cpu_do_cycle();
 				ips_counter++;
-				if (cpu_throttle && ((ips_counter % throttle_granularity) == 0)) {
-					usleep(throttle_usec);
+				if (speed_real && ((ips_counter % throttle_granularity) == 0)) {
+					req.tv_nsec += instruction_time * cpu_delay_factor;
+					if (req.tv_nsec > 1000000000) {
+						req.tv_nsec -= 1000000000;
+						req.tv_sec++;
+					}
+					instruction_time = 0;
+					clock_nanosleep(CLOCK_MONOTONIC, TIMER_ABSTIME, &req, NULL);
 				}
 
 				// breakpoint hit?
@@ -476,18 +499,23 @@ cycle:
 		// CPU reset
 		} else if (state & (ECTL_STATE_CLM | ECTL_STATE_CLO)) {
 			cpu_clear(state & (ECTL_STATE_CLM | ECTL_STATE_CLO));
+			clock_gettime(CLOCK_MONOTONIC, &req);
 
 		// CPU stopped
 		} else if ((state & ECTL_STATE_STOP)) {
 			if ((cpu_idle_in_stop() && ECTL_STATE_CYCLE)) {
 				// CPU cycle triggered while in stop
 				cpu_clear_state(ECTL_STATE_CYCLE);
+				clock_gettime(CLOCK_MONOTONIC, &req);
 				goto cycle;
+			} else {
+				clock_gettime(CLOCK_MONOTONIC, &req);
 			}
 
 		// CPU waiting for an interrupt
 		} else if ((state & ECTL_STATE_WAIT)) {
 			cpu_idle_in_wait();
+			clock_gettime(CLOCK_MONOTONIC, &req);
 		}
 	}
 }
