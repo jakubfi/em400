@@ -148,7 +148,6 @@ void cpu_mem_fail(int nb)
 // -----------------------------------------------------------------------
 int cpu_mem_get(int nb, uint16_t addr, uint16_t *data)
 {
-	mem_counter++;
 	if (!mem_get(nb, addr, data)) {
 		cpu_mem_fail(nb);
 		return 0;
@@ -159,7 +158,6 @@ int cpu_mem_get(int nb, uint16_t addr, uint16_t *data)
 // -----------------------------------------------------------------------
 int cpu_mem_put(int nb, uint16_t addr, uint16_t data)
 {
-	mem_counter++;
 	if (!mem_put(nb, addr, data)) {
 		cpu_mem_fail(nb);
 		return 0;
@@ -170,7 +168,6 @@ int cpu_mem_put(int nb, uint16_t addr, uint16_t data)
 // -----------------------------------------------------------------------
 int cpu_mem_mget(int nb, uint16_t saddr, uint16_t *dest, int count)
 {
-	mem_counter += count;
 	int words;
 	if ((words = mem_mget(nb, saddr, dest, count)) != count) {
 		cpu_mem_fail(nb);
@@ -181,7 +178,6 @@ int cpu_mem_mget(int nb, uint16_t saddr, uint16_t *dest, int count)
 // -----------------------------------------------------------------------
 int cpu_mem_mput(int nb, uint16_t saddr, uint16_t *src, int count)
 {
-	mem_counter += count;
 	int words;
 	if ((words = mem_mput(nb, saddr, src, count)) != count) {
 		cpu_mem_fail(nb);
@@ -192,7 +188,6 @@ int cpu_mem_mput(int nb, uint16_t saddr, uint16_t *src, int count)
 // -----------------------------------------------------------------------
 int cpu_mem_get_byte(int nb, uint32_t addr, uint8_t *data)
 {
-	mem_counter++;
 	int shift;
 	uint16_t orig = 0;
 
@@ -210,7 +205,6 @@ int cpu_mem_get_byte(int nb, uint32_t addr, uint8_t *data)
 // -----------------------------------------------------------------------
 int cpu_mem_put_byte(int nb, uint32_t addr, uint8_t data)
 {
-	mem_counter += 2;
 	int shift;
 	uint16_t orig = 0;
 
@@ -492,8 +486,6 @@ cycle:
 			// CPU cycle
 			} else {
 				cpu_do_cycle();
-				int ile = 600 + mem_counter * 1100;
-				for (volatile long a=0 ; a<ile/1.5 ; a++);
 				ips_counter++;
 				if (speed_real && ((ips_counter % throttle_granularity) == 0)) {
 					req.tv_nsec += instruction_time * cpu_delay_factor;
