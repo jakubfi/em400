@@ -364,9 +364,9 @@ static void cpu_do_cycle()
 	}
 
 	// fetch instruction
-	if (!mem_get(QNB, rIC, &rIR)) {
+	if (!cpu_mem_get(QNB, rIC, &rIR)) {
 		LOGCPU(L_CPU, "        no mem, instruction fetch");
-		goto memfail;
+		goto ineffective;
 	}
 	op = cpu_op_tab[rIR];
 	rIC++;
@@ -396,9 +396,9 @@ static void cpu_do_cycle()
 		if (IR_C) {
 			N = regs[IR_C] + rMOD;
 		} else {
-			if (!mem_get(QNB, rIC, &data)) {
+			if (!cpu_mem_get(QNB, rIC, &data)) {
 				LOGCPU(L_CPU, "    no mem, long arg fetch @ %i:0x%04x", QNB, (uint16_t) rIC);
-				goto memfail;
+				goto ineffective;
 			} else {
 				N = data + rMOD;
 				rIC++;
@@ -408,9 +408,9 @@ static void cpu_do_cycle()
 			N = (uint16_t) N + regs[IR_B];
 		}
 		if (IR_D) {
-			if (!mem_get(QNB, N, &data)) {
+			if (!cpu_mem_get(QNB, N, &data)) {
 				LOGCPU(L_CPU, "    no mem, indirect arg fetch @ %i:0x%04x", QNB, (uint16_t) N);
-				goto memfail;
+				goto ineffective;
 			} else {
 				N = data;
 			}
@@ -432,8 +432,6 @@ static void cpu_do_cycle()
 	}
 	return;
 
-memfail:
-	cpu_mem_fail(QNB);
 ineffective:
 	P = 0;
 	rMOD = 0;
