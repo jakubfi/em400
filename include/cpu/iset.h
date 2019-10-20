@@ -36,6 +36,7 @@ struct iset_opcode {
 	opfun fun;				// instruction function
 	unsigned jmp_nef_mask;	// jump ineffectiveness mask (R0 is checked through this mask)
 	unsigned jmp_nef_result;// jump effectiveness result (result for the jump to be effective)
+	unsigned time;			// instruction time in ns
 };
 
 struct iset_instruction {
