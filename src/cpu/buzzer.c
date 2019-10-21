@@ -23,8 +23,6 @@
 #include <inttypes.h>
 #include <pthread.h>
 #include <alsa/asoundlib.h>
-#include <time.h>
-#include <signal.h>
 
 #include "log.h"
 
