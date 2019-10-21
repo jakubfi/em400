@@ -47,9 +47,6 @@ unsigned char *rp = buffer;
 #define FREQ 48000
 #define SAMPLE_PERIOD (1000000000/FREQ)
 
-int time_pool;
-int last_instruction_time;
-
 // -----------------------------------------------------------------------
 void buzzer_silence()
 {
@@ -57,16 +54,11 @@ void buzzer_silence()
 }
 
 // -----------------------------------------------------------------------
-void buzzer_time_reset()
-{
-	last_instruction_time = 0;
-}
-
-// -----------------------------------------------------------------------
 void buzzer_update(uint16_t ir, unsigned instruction_time)
 {
 	static int cnt;
 	static uint16_t pir;
+	static int time_pool;
 
 	if ((ir ^ pir) & 0x8000) {
 		cnt++;
@@ -81,8 +73,7 @@ void buzzer_update(uint16_t ir, unsigned instruction_time)
 	}
 	pir = ir;
 
-	time_pool += instruction_time - last_instruction_time;
-	last_instruction_time = instruction_time;
+	time_pool += instruction_time;
 
 	while (time_pool >= SAMPLE_PERIOD) {
 		time_pool -= SAMPLE_PERIOD;
@@ -119,20 +110,15 @@ void * sound_thread(void *ptr)
 		if (buzzer_val == 0) {
 			wsize = 512;
 			frames = snd_pcm_writei(handle, zbuffer, wsize);
-			printf("in stop: %li\n", frames);
 		} else {
 			wsize = 512;
 			frames = snd_pcm_writei(handle, rp, wsize);
 			rp += frames;
 		}
 		if (frames < 0) {
-			frames = snd_pcm_recover(handle, frames, 0);
-		}
-		if (frames < 0) {
 			printf("snd_pcm_writei failed: %s\n", snd_strerror(frames));
-			break;
 		}
-		if (frames > 0 && frames < wsize) {
+		if (frames > 0 && (frames < wsize)) {
 			printf("Short write (expected %i, wrote %li)\n", wsize, frames);
 		}
 	}

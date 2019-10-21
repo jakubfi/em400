@@ -419,11 +419,11 @@ static int cpu_do_cycle()
 				N = data + rMOD;
 				rIC++;
 			}
-			if (speed_real) instruction_time += TIME_MEM * cpu_delay_factor;
+			if (speed_real) instruction_time += TIME_MEM;
 		}
 		if (IR_B) {
 			N = (uint16_t) N + regs[IR_B];
-			if (speed_real) instruction_time += TIME_BMOD * cpu_delay_factor ;
+			if (speed_real) instruction_time += TIME_BMOD;
 		}
 		if (IR_D) {
 			if (!cpu_mem_get(QNB, N, &data)) {
@@ -432,14 +432,14 @@ static int cpu_do_cycle()
 			} else {
 				N = data;
 			}
-			if (speed_real) instruction_time += TIME_DMOD * cpu_delay_factor;
+			if (speed_real) instruction_time += TIME_DMOD;
 		}
 	} else if ((op->flags & OP_FL_ARG_SHORT)) {
 		N = (uint16_t) IR_T + (uint16_t) rMOD;
 	}
 
 	if (rMODc) {
-		if (speed_real) instruction_time += TIME_PREMOD * cpu_delay_factor;
+		if (speed_real) instruction_time += TIME_PREMOD;
 	}
 
 	if (LOG_WANTS(L_CPU)) {
@@ -447,8 +447,8 @@ static int cpu_do_cycle()
 	}
 
 	if (speed_real) {
-		instruction_time += op->time * cpu_delay_factor;
-		if (op->fun == op_72_shc) instruction_time += (IR_t * TIME_SHIFT) * cpu_delay_factor;
+		instruction_time += op->time;
+		if (op->fun == op_72_shc) instruction_time += IR_t * TIME_SHIFT;
 	}
 
 	// execute instruction
@@ -461,7 +461,7 @@ static int cpu_do_cycle()
 	return instruction_time;
 
 ineffective:
-	if (speed_real) instruction_time += (TIME_MEM + TIME_INEFFECTIVE) * cpu_delay_factor;
+	if (speed_real) instruction_time += TIME_MEM + TIME_INEFFECTIVE;
 	P = 0;
 	rMOD = 0;
 	rMODc = 0;
@@ -475,7 +475,7 @@ void cpu_loop()
 	cpu_state = ECTL_STATE_STOP;
 	pthread_mutex_unlock(&cpu_wake_mutex);
 
-	int cpu_time = 0;
+	int cpu_time;
 	int cpu_time_cumulative = 0;
 
 	while (1) {
@@ -491,11 +491,13 @@ cycle:
 			} else {
 				cpu_time = cpu_do_cycle();
 				ips_counter++;
-				buzzer_update(rIR, cpu_time * cpu_delay_factor);
+
 				if (speed_real) {
-					cpu_time_cumulative += cpu_time * cpu_delay_factor;
+					cpu_time *= cpu_delay_factor;
+					buzzer_update(rIR, cpu_time);
+					cpu_time_cumulative += cpu_time;
 					if ((ips_counter % throttle_granularity) == 0) {
-						req.tv_nsec += cpu_time;
+						req.tv_nsec += cpu_time_cumulative;
 						if (req.tv_nsec > 1000000000) {
 							req.tv_nsec -= 1000000000;
 							req.tv_sec++;
