@@ -28,7 +28,7 @@
 
 #include "log.h"
 
-pthread_t sound_th;
+pthread_t buzzer_th;
 
 static int buzzer_val = 0;
 
@@ -36,7 +36,7 @@ snd_pcm_t *handle;
 static char *device = "default";
 snd_output_t *output = NULL;
 #define BUF_SIZE 100*1024*1024
-#define headstart 4*1024
+#define headstart 1024
 unsigned char buffer[BUF_SIZE];
 unsigned char zbuffer[16*1024];
 unsigned char *buffer_end = buffer + BUF_SIZE;
@@ -85,7 +85,7 @@ void buzzer_update(uint16_t ir, unsigned instruction_time)
 }
 
 // -----------------------------------------------------------------------
-void * sound_thread(void *ptr)
+void * buzzer_thread(void *ptr)
 {
 	int err;
 	snd_pcm_t *handle;
@@ -97,7 +97,7 @@ void * sound_thread(void *ptr)
 		exit(EXIT_FAILURE);
 	}
 
-	err = snd_pcm_set_params(handle, SND_PCM_FORMAT_S8, SND_PCM_ACCESS_RW_INTERLEAVED, 1, FREQ, 1, 50000);
+	err = snd_pcm_set_params(handle, SND_PCM_FORMAT_S8, SND_PCM_ACCESS_RW_INTERLEAVED, 1, FREQ, 1, 10000);
 	if (err < 0) {
 		printf("Playback open error: %s\n", snd_strerror(err));
 		exit(EXIT_FAILURE);
@@ -130,11 +130,11 @@ void * sound_thread(void *ptr)
 // -----------------------------------------------------------------------
 int buzzer_init()
 {
-	if (pthread_create(&sound_th, NULL, sound_thread, NULL)) {
-		return LOGERR("Failed to spawn sound thread.");
+	if (pthread_create(&buzzer_th, NULL, buzzer_thread, NULL)) {
+		return LOGERR("Failed to spawn buzzer thread.");
 	}
 
-	pthread_setname_np(sound_th, "sound");
+	pthread_setname_np(buzzer_th, "buzzr");
 
 	return E_OK;
 }
