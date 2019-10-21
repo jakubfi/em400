@@ -419,11 +419,11 @@ static void cpu_do_cycle()
 				N = data + rMOD;
 				rIC++;
 			}
-			if (speed_real) instruction_time += TIME_MEM;
+			if (speed_real) instruction_time += TIME_MEM * cpu_delay_factor;
 		}
 		if (IR_B) {
 			N = (uint16_t) N + regs[IR_B];
-			if (speed_real) instruction_time += TIME_BMOD;
+			if (speed_real) instruction_time += TIME_BMOD * cpu_delay_factor ;
 		}
 		if (IR_D) {
 			if (!cpu_mem_get(QNB, N, &data)) {
@@ -432,14 +432,14 @@ static void cpu_do_cycle()
 			} else {
 				N = data;
 			}
-			if (speed_real) instruction_time += TIME_DMOD;
+			if (speed_real) instruction_time += TIME_DMOD * cpu_delay_factor;
 		}
 	} else if ((op->flags & OP_FL_ARG_SHORT)) {
 		N = (uint16_t) IR_T + (uint16_t) rMOD;
 	}
 
 	if (rMODc) {
-		if (speed_real) instruction_time += TIME_PREMOD;
+		if (speed_real) instruction_time += TIME_PREMOD * cpu_delay_factor;
 	}
 
 	if (LOG_WANTS(L_CPU)) {
@@ -447,8 +447,8 @@ static void cpu_do_cycle()
 	}
 
 	if (speed_real) {
-		instruction_time += op->time;
-		if (op->fun == op_72_shc) instruction_time += IR_t * TIME_SHIFT;
+		instruction_time += op->time * cpu_delay_factor;
+		if (op->fun == op_72_shc) instruction_time += (IR_t * TIME_SHIFT) * cpu_delay_factor;
 	}
 
 	// execute instruction
@@ -461,7 +461,7 @@ static void cpu_do_cycle()
 	return;
 
 ineffective:
-	if (speed_real) instruction_time += TIME_MEM + TIME_INEFFECTIVE;
+	if (speed_real) instruction_time += (TIME_MEM + TIME_INEFFECTIVE) * cpu_delay_factor;
 	P = 0;
 	rMOD = 0;
 	rMODc = 0;
@@ -487,16 +487,17 @@ cycle:
 			} else {
 				cpu_do_cycle();
 				ips_counter++;
+				buzzer_update(rIR, instruction_time);
 				if (speed_real && ((ips_counter % throttle_granularity) == 0)) {
-					req.tv_nsec += instruction_time * cpu_delay_factor;
+					req.tv_nsec += instruction_time;
 					if (req.tv_nsec > 1000000000) {
 						req.tv_nsec -= 1000000000;
 						req.tv_sec++;
 					}
 					instruction_time = 0;
+					buzzer_time_reset();
 					clock_nanosleep(CLOCK_MONOTONIC, TIMER_ABSTIME, &req, NULL);
 				}
-				buzzer_update(rIR);
 
 				// breakpoint hit?
 				if (ectl_brk_check()) {

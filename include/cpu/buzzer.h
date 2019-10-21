@@ -22,7 +22,7 @@
 
 void buzzer_silence();
 int buzzer_init();
-void buzzer_update(uint16_t ir);
+void buzzer_update(uint16_t ir, unsigned instruction_time);
 
 #endif
 

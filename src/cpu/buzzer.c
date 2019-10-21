@@ -36,14 +36,19 @@ snd_pcm_t *handle;
 static char *device = "default";
 snd_output_t *output = NULL;
 #define BUF_SIZE 100*1024*1024
-#define headstart 2*1024
+#define headstart 4*1024
 unsigned char buffer[BUF_SIZE];
+unsigned char zbuffer[16*1024];
 unsigned char *buffer_end = buffer + BUF_SIZE;
 unsigned char *wp = buffer+headstart;
 unsigned char *rp = buffer;
 
 #define VOLUME 10
 #define FREQ 48000
+#define SAMPLE_PERIOD (1000000000/FREQ)
+
+int time_pool;
+int last_instruction_time;
 
 // -----------------------------------------------------------------------
 void buzzer_silence()
@@ -52,7 +57,13 @@ void buzzer_silence()
 }
 
 // -----------------------------------------------------------------------
-void buzzer_update(uint16_t ir)
+void buzzer_time_reset()
+{
+	last_instruction_time = 0;
+}
+
+// -----------------------------------------------------------------------
+void buzzer_update(uint16_t ir, unsigned instruction_time)
 {
 	static int cnt;
 	static uint16_t pir;
@@ -69,6 +80,17 @@ void buzzer_update(uint16_t ir)
 		}
 	}
 	pir = ir;
+
+	time_pool += instruction_time - last_instruction_time;
+	last_instruction_time = instruction_time;
+
+	while (time_pool >= SAMPLE_PERIOD) {
+		time_pool -= SAMPLE_PERIOD;
+		*wp++ = buzzer_val;
+		if (wp == buffer_end) {
+			wp = buffer;
+		}
+	}
 }
 
 // -----------------------------------------------------------------------
@@ -84,16 +106,25 @@ void * sound_thread(void *ptr)
 		exit(EXIT_FAILURE);
 	}
 
-	err = snd_pcm_set_params(handle, SND_PCM_FORMAT_S8, SND_PCM_ACCESS_RW_INTERLEAVED, 1, FREQ, 1, 30000);
+	err = snd_pcm_set_params(handle, SND_PCM_FORMAT_S8, SND_PCM_ACCESS_RW_INTERLEAVED, 1, FREQ, 1, 50000);
 	if (err < 0) {
 		printf("Playback open error: %s\n", snd_strerror(err));
 		exit(EXIT_FAILURE);
 	}
 
+	for (int i=0 ; i<16*1024 ; i++) zbuffer[i] = 0;
+
 	while (1) {
-		int wsize = wp-rp >= 512 ? 512 : wp-rp;
-		frames = snd_pcm_writei(handle, rp, wsize);
-		rp += frames;
+		int wsize;
+		if (buzzer_val == 0) {
+			wsize = 512;
+			frames = snd_pcm_writei(handle, zbuffer, wsize);
+			printf("in stop: %li\n", frames);
+		} else {
+			wsize = 512;
+			frames = snd_pcm_writei(handle, rp, wsize);
+			rp += frames;
+		}
 		if (frames < 0) {
 			frames = snd_pcm_recover(handle, frames, 0);
 		}
@@ -110,46 +141,46 @@ void * sound_thread(void *ptr)
 	pthread_exit(NULL);
 }
 
-extern uint16_t rIR;
+//extern uint16_t rIR;
 // -----------------------------------------------------------------------
-static void feeder_sighandler(int sig, siginfo_t *si, void *uc)
-{
-	*wp++ = buzzer_val;
-	if (wp == buffer_end) {
-		wp = buffer;
-	}
-}
+//static void feeder_sighandler(int sig, siginfo_t *si, void *uc)
+//{
+//	*wp++ = buzzer_val;
+//	if (wp == buffer_end) {
+//		wp = buffer;
+//	}
+//}
 
 // -----------------------------------------------------------------------
 int buzzer_init()
 {
-	struct sigaction sa;
-
-	sa.sa_flags = SA_SIGINFO;
-	sa.sa_sigaction = feeder_sighandler;
-	sigemptyset(&sa.sa_mask);
-	if (sigaction(SIGRTMIN, &sa, NULL) == -1) {
-		exit(EXIT_FAILURE);
-	}
-
-	timer_t timerid;
-	struct itimerspec its;
-	struct sigevent sev;
-	sev.sigev_notify = SIGEV_SIGNAL;
-	sev.sigev_signo = SIGRTMIN;
-	sev.sigev_value.sival_ptr = &timerid;
-	if (timer_create(CLOCK_REALTIME, &sev, &timerid) == -1) {
-		exit(EXIT_FAILURE);
-	}
-
-	its.it_value.tv_sec = 0;
-	its.it_value.tv_nsec = 1000000000 / FREQ - 100;
-	its.it_interval.tv_sec = its.it_value.tv_sec;
-	its.it_interval.tv_nsec = its.it_value.tv_nsec;
-
-	if (timer_settime(timerid, 0, &its, NULL) == -1) {
-		exit(EXIT_FAILURE);
-	}
+//	struct sigaction sa;
+//
+//	sa.sa_flags = SA_SIGINFO;
+//	sa.sa_sigaction = feeder_sighandler;
+//	sigemptyset(&sa.sa_mask);
+//	if (sigaction(SIGRTMIN, &sa, NULL) == -1) {
+//		exit(EXIT_FAILURE);
+//	}
+//
+//	timer_t timerid;
+//	struct itimerspec its;
+//	struct sigevent sev;
+//	sev.sigev_notify = SIGEV_SIGNAL;
+//	sev.sigev_signo = SIGRTMIN;
+//	sev.sigev_value.sival_ptr = &timerid;
+//	if (timer_create(CLOCK_REALTIME, &sev, &timerid) == -1) {
+//		exit(EXIT_FAILURE);
+//	}
+//
+//	its.it_value.tv_sec = 0;
+//	its.it_value.tv_nsec = SAMPLE_PERIOD - 100;
+//	its.it_interval.tv_sec = its.it_value.tv_sec;
+//	its.it_interval.tv_nsec = its.it_value.tv_nsec;
+//
+//	if (timer_settime(timerid, 0, &its, NULL) == -1) {
+//		exit(EXIT_FAILURE);
+//	}
 
 	if (pthread_create(&sound_th, NULL, sound_thread, NULL)) {
 		return LOGERR("Failed to spawn sound thread.");
