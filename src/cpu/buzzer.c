@@ -127,47 +127,9 @@ void * sound_thread(void *ptr)
 	pthread_exit(NULL);
 }
 
-//extern uint16_t rIR;
-// -----------------------------------------------------------------------
-//static void feeder_sighandler(int sig, siginfo_t *si, void *uc)
-//{
-//	*wp++ = buzzer_val;
-//	if (wp == buffer_end) {
-//		wp = buffer;
-//	}
-//}
-
 // -----------------------------------------------------------------------
 int buzzer_init()
 {
-//	struct sigaction sa;
-//
-//	sa.sa_flags = SA_SIGINFO;
-//	sa.sa_sigaction = feeder_sighandler;
-//	sigemptyset(&sa.sa_mask);
-//	if (sigaction(SIGRTMIN, &sa, NULL) == -1) {
-//		exit(EXIT_FAILURE);
-//	}
-//
-//	timer_t timerid;
-//	struct itimerspec its;
-//	struct sigevent sev;
-//	sev.sigev_notify = SIGEV_SIGNAL;
-//	sev.sigev_signo = SIGRTMIN;
-//	sev.sigev_value.sival_ptr = &timerid;
-//	if (timer_create(CLOCK_REALTIME, &sev, &timerid) == -1) {
-//		exit(EXIT_FAILURE);
-//	}
-//
-//	its.it_value.tv_sec = 0;
-//	its.it_value.tv_nsec = SAMPLE_PERIOD - 100;
-//	its.it_interval.tv_sec = its.it_value.tv_sec;
-//	its.it_interval.tv_nsec = its.it_value.tv_nsec;
-//
-//	if (timer_settime(timerid, 0, &its, NULL) == -1) {
-//		exit(EXIT_FAILURE);
-//	}
-
 	if (pthread_create(&sound_th, NULL, sound_thread, NULL)) {
 		return LOGERR("Failed to spawn sound thread.");
 	}
