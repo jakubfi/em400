@@ -55,7 +55,6 @@ uint32_t N;
 int cpu_mod_active;
 
 unsigned long ips_counter;
-static unsigned instruction_time;
 static int speed_real;
 static int throttle_granularity;
 static float cpu_delay_factor;
@@ -358,11 +357,12 @@ void cpu_ctx_restore()
 }
 
 // -----------------------------------------------------------------------
-static void cpu_do_cycle()
+static int cpu_do_cycle()
 {
 	struct iset_opcode *op;
 	uint16_t data;
 	char opcode[32];
+	int instruction_time = 0;
 
 	if (LOG_WANTS(L_CPU)) {
 		log_store_cycle_state(SR_read(), rIC);
@@ -447,13 +447,14 @@ static void cpu_do_cycle()
 	if (op->fun != op_77_md) {
 		rMODc = rMOD = 0;
 	}
-	return;
+	return instruction_time;
 
 ineffective:
 	if (speed_real) instruction_time += TIME_MEM + TIME_INEFFECTIVE;
 	P = 0;
 	rMOD = 0;
 	rMODc = 0;
+	return instruction_time;
 }
 
 // -----------------------------------------------------------------------
@@ -462,6 +463,9 @@ void cpu_loop()
 	pthread_mutex_lock(&cpu_wake_mutex);
 	cpu_state = ECTL_STATE_STOP;
 	pthread_mutex_unlock(&cpu_wake_mutex);
+
+	int cpu_time;
+	int cpu_time_cumulative = 0;
 
 	while (1) {
 		int state = atom_load_acquire(&cpu_state);
@@ -474,16 +478,20 @@ cycle:
 				int_serve();
 			// CPU cycle
 			} else {
-				cpu_do_cycle();
+				cpu_time = cpu_do_cycle();
 				ips_counter++;
-				if (speed_real && ((ips_counter % throttle_granularity) == 0)) {
-					req.tv_nsec += instruction_time * cpu_delay_factor;
-					if (req.tv_nsec > 1000000000) {
-						req.tv_nsec -= 1000000000;
-						req.tv_sec++;
+				if (speed_real) {
+					cpu_time *= cpu_delay_factor;
+					cpu_time_cumulative += cpu_time;
+					if ((ips_counter % throttle_granularity) == 0) {
+						req.tv_nsec += cpu_time_cumulative;
+						if (req.tv_nsec > 1000000000) {
+							req.tv_nsec -= 1000000000;
+							req.tv_sec++;
+						}
+						cpu_time_cumulative = 0;
+						clock_nanosleep(CLOCK_MONOTONIC, TIMER_ABSTIME, &req, NULL);
 					}
-					instruction_time = 0;
-					clock_nanosleep(CLOCK_MONOTONIC, TIMER_ABSTIME, &req, NULL);
 				}
 
 				// breakpoint hit?
