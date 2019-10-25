@@ -15,6 +15,11 @@
 //  Foundation, Inc.,
 //  51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 
+#define _XOPEN_SOURCE 600
+#ifndef _GNU_SOURCE
+#define _GNU_SOURCE
+#endif
+
 #include <string.h>
 #include <stdlib.h>
 #include <pthread.h>
@@ -56,11 +61,13 @@ int P;
 uint32_t N;
 int cpu_mod_active;
 
+struct timespec cpu_timer;
 unsigned long ips_counter;
 static int speed_real;
 static int throttle_granularity;
 static float cpu_delay_factor;
-struct timespec req;
+pthread_t idler_th;
+struct timespec idle_timer;
 
 int cpu_mod_present;
 int cpu_user_io_illegal;
@@ -104,7 +111,7 @@ void cpu_trigger_state(int state)
 {
 	pthread_mutex_lock(&cpu_wake_mutex);
 	cpu_state |= state;
-	pthread_cond_signal(&cpu_wake_cond);
+	pthread_cond_broadcast(&cpu_wake_cond);
 	pthread_mutex_unlock(&cpu_wake_mutex);
 }
 
@@ -113,7 +120,7 @@ void cpu_clear_state(int state)
 {
 	pthread_mutex_lock(&cpu_wake_mutex);
 	cpu_state &= ~state;
-	pthread_cond_signal(&cpu_wake_cond);
+	pthread_cond_broadcast(&cpu_wake_cond);
 	pthread_mutex_unlock(&cpu_wake_mutex);
 }
 
@@ -129,7 +136,7 @@ void cpu_trigger_cycle()
 	pthread_mutex_lock(&cpu_wake_mutex);
 	if (cpu_state & ECTL_STATE_STOP) {
 		cpu_state |= ECTL_STATE_CYCLE;
-		pthread_cond_signal(&cpu_wake_cond);
+		pthread_cond_broadcast(&cpu_wake_cond);
 	}
 	pthread_mutex_unlock(&cpu_wake_mutex);
 }
@@ -220,6 +227,38 @@ int cpu_mem_put_byte(int nb, uint32_t addr, uint8_t data)
 }
 
 // -----------------------------------------------------------------------
+static void * idler_thread(void *ptr)
+{
+	int state;
+
+	while (1) {
+		pthread_mutex_lock(&cpu_wake_mutex);
+		while ((cpu_state & (ECTL_STATE_STOP|ECTL_STATE_WAIT)) == 0) {
+//printf("idler WAIT\n");
+			pthread_cond_wait(&cpu_wake_cond, &cpu_wake_mutex);
+		}
+		pthread_mutex_unlock(&cpu_wake_mutex);
+//printf("idler GO!\n");
+
+		do {
+			idle_timer.tv_nsec += 4000;
+			if (idle_timer.tv_nsec > 1000000000) {
+				idle_timer.tv_nsec -= 1000000000;
+				idle_timer.tv_sec++;
+			}
+			clock_nanosleep(CLOCK_MONOTONIC, TIMER_ABSTIME, &idle_timer, NULL);
+
+			state = atom_load_acquire(&cpu_state);
+			if ((state & (ECTL_STATE_STOP|ECTL_STATE_WAIT))) {
+				buzzer_update(rIR, 4000);
+			}
+		} while ((state & (ECTL_STATE_STOP|ECTL_STATE_WAIT)));
+	}
+
+	pthread_exit(NULL);
+}
+
+// -----------------------------------------------------------------------
 int cpu_init(struct cfg_em400 *cfg)
 {
 	int res;
@@ -255,14 +294,14 @@ int cpu_init(struct cfg_em400 *cfg)
 
 	cpu_mod_off();
 
+	if (pthread_create(&idler_th, NULL, idler_thread, NULL)) {
+		return LOGERR("Failed to spawn CPU idler thread.");
+	}
+	pthread_setname_np(idler_th, "idler");
+
 	if (buzzer_init() != E_OK) {
 		return LOGERR("Failed to initialize buzzer");
 	}
-
-	sigset_t set;
-	sigemptyset(&set);
-	sigaddset(&set, SIGRTMIN);
-	pthread_sigmask(SIG_BLOCK, &set, NULL);
 
 	return E_OK;
 }
@@ -474,9 +513,12 @@ void cpu_loop()
 	pthread_mutex_lock(&cpu_wake_mutex);
 	cpu_state = ECTL_STATE_STOP;
 	pthread_mutex_unlock(&cpu_wake_mutex);
+	cpu_trigger_state(0);
 
 	int cpu_time;
 	int cpu_time_cumulative = 0;
+
+	clock_gettime(CLOCK_MONOTONIC, &cpu_timer);
 
 	while (1) {
 		int state = atom_load_acquire(&cpu_state);
@@ -497,13 +539,13 @@ cycle:
 					buzzer_update(rIR, cpu_time);
 					cpu_time_cumulative += cpu_time;
 					if ((ips_counter % throttle_granularity) == 0) {
-						req.tv_nsec += cpu_time_cumulative;
-						if (req.tv_nsec > 1000000000) {
-							req.tv_nsec -= 1000000000;
-							req.tv_sec++;
+						cpu_timer.tv_nsec += cpu_time_cumulative;
+						if (cpu_timer.tv_nsec > 1000000000) {
+							cpu_timer.tv_nsec -= 1000000000;
+							cpu_timer.tv_sec++;
 						}
 						cpu_time_cumulative = 0;
-						clock_nanosleep(CLOCK_MONOTONIC, TIMER_ABSTIME, &req, NULL);
+						clock_nanosleep(CLOCK_MONOTONIC, TIMER_ABSTIME, &cpu_timer, NULL);
 					}
 				}
 
@@ -520,26 +562,29 @@ cycle:
 		// CPU reset
 		} else if (state & (ECTL_STATE_CLM | ECTL_STATE_CLO)) {
 			cpu_clear(state & (ECTL_STATE_CLM | ECTL_STATE_CLO));
-			clock_gettime(CLOCK_MONOTONIC, &req);
-			buzzer_silence();
 
 		// CPU stopped
 		} else if ((state & ECTL_STATE_STOP)) {
-			buzzer_silence();
+			idle_timer.tv_sec = cpu_timer.tv_sec;
+			idle_timer.tv_nsec = cpu_timer.tv_nsec;
 			if ((cpu_idle_in_stop() && ECTL_STATE_CYCLE)) {
 				// CPU cycle triggered while in stop
 				cpu_clear_state(ECTL_STATE_CYCLE);
-				clock_gettime(CLOCK_MONOTONIC, &req);
+				cpu_timer.tv_sec = idle_timer.tv_sec;
+				cpu_timer.tv_nsec = idle_timer.tv_nsec;
 				goto cycle;
 			} else {
-				clock_gettime(CLOCK_MONOTONIC, &req);
+				cpu_timer.tv_sec = idle_timer.tv_sec;
+				cpu_timer.tv_nsec = idle_timer.tv_nsec;
 			}
 
 		// CPU waiting for an interrupt
 		} else if ((state & ECTL_STATE_WAIT)) {
-			buzzer_silence();
+			idle_timer.tv_sec = cpu_timer.tv_sec;
+			idle_timer.tv_nsec = cpu_timer.tv_nsec;
 			cpu_idle_in_wait();
-			clock_gettime(CLOCK_MONOTONIC, &req);
+			cpu_timer.tv_sec = idle_timer.tv_sec;
+			cpu_timer.tv_nsec = idle_timer.tv_nsec;
 		}
 	}
 }

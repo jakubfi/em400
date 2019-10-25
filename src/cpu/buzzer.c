@@ -22,6 +22,7 @@
 
 #include <inttypes.h>
 #include <pthread.h>
+#include <string.h>
 #include <alsa/asoundlib.h>
 
 #include "log.h"
@@ -33,23 +34,16 @@ static int buzzer_val = 0;
 snd_pcm_t *handle;
 static char *device = "default";
 snd_output_t *output = NULL;
-#define BUF_SIZE 100*1024*1024
-#define headstart 1024
+#define BUF_SIZE (1024*4)
+#define headstart 2048
 unsigned char buffer[BUF_SIZE];
-unsigned char zbuffer[16*1024];
-unsigned char *buffer_end = buffer + BUF_SIZE;
+unsigned char *buf_end = buffer + BUF_SIZE;
 unsigned char *wp = buffer+headstart;
 unsigned char *rp = buffer;
 
 #define VOLUME 10
 #define FREQ 48000
 #define SAMPLE_PERIOD (1000000000/FREQ)
-
-// -----------------------------------------------------------------------
-void buzzer_silence()
-{
-	buzzer_val = 0;
-}
 
 // -----------------------------------------------------------------------
 void buzzer_update(uint16_t ir, unsigned instruction_time)
@@ -76,7 +70,7 @@ void buzzer_update(uint16_t ir, unsigned instruction_time)
 	while (time_pool >= SAMPLE_PERIOD) {
 		time_pool -= SAMPLE_PERIOD;
 		*wp++ = buzzer_val;
-		if (wp == buffer_end) {
+		if (wp == buf_end) {
 			wp = buffer;
 		}
 	}
@@ -101,18 +95,15 @@ void * buzzer_thread(void *ptr)
 		exit(EXIT_FAILURE);
 	}
 
-	for (int i=0 ; i<16*1024 ; i++) zbuffer[i] = 0;
-
 	while (1) {
 		int wsize;
-		if (buzzer_val == 0) {
-			wsize = 512;
-			frames = snd_pcm_writei(handle, zbuffer, wsize);
-		} else {
-			wsize = 512;
-			frames = snd_pcm_writei(handle, rp, wsize);
-			rp += frames;
+		wsize = 512;
+		if (rp >= buf_end) {
+			rp = buffer;
 		}
+		frames = snd_pcm_writei(handle, rp, wsize);
+		rp += frames;
+
 		if (frames < 0) {
 			printf("snd_pcm_writei failed: %s\n", snd_strerror(frames));
 		}
@@ -136,6 +127,5 @@ int buzzer_init()
 
 	return E_OK;
 }
-
 
 // vim: tabstop=4 shiftwidth=4 autoindent
