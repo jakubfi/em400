@@ -511,7 +511,7 @@ cycle:
 
 		// CPU stopped
 		} else if ((state & ECTL_STATE_STOP)) {
-			if ((cpu_idle_in_stop() && ECTL_STATE_CYCLE)) {
+			if ((cpu_idle_in_stop() & ECTL_STATE_CYCLE)) {
 				// CPU cycle triggered while in stop
 				cpu_clear_state(ECTL_STATE_CYCLE);
 				clock_gettime(CLOCK_MONOTONIC, &req);
