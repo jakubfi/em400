@@ -168,7 +168,7 @@ static int cchar_flop8_seek(struct cchar_unit_proto_t *unit, uint16_t *r_arg)
 	u->sector = *r_arg & 0b11111;
 	u->track = (*r_arg >> 5) & 0b1111111;
 	u->byte = 0;
-	LOG(L_FLOP, "Seek: %i/%i", u->track, u->sector);
+	LOG(L_FLOP, "Seek to track %i sector %i", u->track, u->sector);
 	return IO_OK;
 }
 

@@ -23,10 +23,10 @@ CPU:
 * review cpu cycle in context of interrupt handling
 * no-elwro configuration
 * overlaid elwro/mega configuration
-* timings (instructions, memory access, disk latencies, serial lines, ...)
 
 I/O:
 
+* speed_real (disk latencies, serial lines, ...)
 * handling no memory for io devices
 * cmem
 * cchar
