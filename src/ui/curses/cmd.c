@@ -48,6 +48,7 @@ struct cmd_t dbg_commands[] = {
 	{ "load",	F_LOAD,		"Load memory image from file", "  load <file>" },
 	{ "memcfg",	F_MEMCFG,	"Show memory configuration", "  memcfg" },
 	{ "memmap",	F_MEMMAP,	"Configure memory", "  memmap <seg> <page> <module> <frame>" },
+	{ "memdump",F_MEMDUMP,	"Dump memory contents into a file", "  memdump <block> <filename>" },
 	{ "brk",	F_BRK,		"Manipulate breakpoints", "  brk add <expression>\n  brk del <brk_number>\n  brk" },
 	{ "start",	F_START,	"Start emulation", "  start" },
 	{ "stop",	F_STOP,		"Stop emulation", "  stop" },
@@ -700,6 +701,33 @@ void dbg_c_find(int wid, uint16_t block, uint16_t value)
 	if (found != 0) {
 		awtbprint(wid, C_DATA, "\n");
 	}
+}
+
+// -----------------------------------------------------------------------
+void dbg_c_memdump(int wid, int block, char *name)
+{
+	uint16_t data[4096];
+	int written = 0;
+
+	FILE *f = fopen(name, "w");
+	if (!f) {
+		awtbprint(wid, C_ERROR, "Cannot open file \"%s\" for writing\n", name);
+	}
+
+	for (int seg=0 ; seg<16 ; seg++) {
+		int words = ectl_mem_get(block, seg*4096, data, 4096);
+		if (words != 4096) break;
+		endianswap(data, 4096);
+		int res = fwrite(data, 1, 2*4096, f);
+		if (res < 0) {
+			awtbprint(wid, C_ERROR, "Write error\n");
+			break;
+		}
+		written += res;
+	}
+	awtbprint(wid, C_LABEL, "Written %i bytes of block %i to file \"%s\"\n", written, block, name);
+
+	fclose(f);
 }
 
 // vim: tabstop=4 shiftwidth=4 autoindent

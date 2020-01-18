@@ -94,6 +94,7 @@ watch	{ BEGIN(opts); return F_WATCH; }
 decode	{ BEGIN(opts); return F_DECODE; }
 find	{ BEGIN(args); return F_FIND; }
 clock	{ BEGIN(opts); return F_CLOCK; }
+memdump	{ BEGIN(args); return F_MEMDUMP; }
 
 {name}	{ yylval.text = strdup(yytext); return NAME; }
 
