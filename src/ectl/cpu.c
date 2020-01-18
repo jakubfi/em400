@@ -27,6 +27,7 @@
 #include "atomic.h"
 #include "cpu/cp.h"
 #include "cpu/cpu.h"
+#include "cpu/interrupts.h"
 #include "mem/mem.h"
 #include "io/defs.h"
 
@@ -241,15 +242,23 @@ void ectl_oprq()
 // -----------------------------------------------------------------------
 int ectl_int_set(unsigned interrupt)
 {
+	if (interrupt >= 32) {
+		return -1;
+	}
+	int_set(interrupt);
 	LOG(L_ECTL, "ECTL int set %i", interrupt);
-	return cp_int_set(interrupt);
+	return 0;
 }
 
 // -----------------------------------------------------------------------
 int ectl_int_clear(unsigned interrupt)
 {
+	if (interrupt >= 32) {
+		return -1;
+	}
+	int_clear(interrupt);
 	LOG(L_ECTL, "ECTL int clear %i", interrupt);
-	return cp_int_clear(interrupt);
+	return 0;
 }
 
 // -----------------------------------------------------------------------
