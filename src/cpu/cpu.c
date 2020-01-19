@@ -72,6 +72,7 @@ struct timespec idle_timer;
 int cpu_mod_present;
 int cpu_user_io_illegal;
 static int nomem_stop;
+static int buzzer;
 
 struct awp *awp;
 
@@ -286,7 +287,7 @@ int cpu_init(struct cfg_em400 *cfg)
 
 	// this is checked only at power-on
 	if (mem_mega_boot()) {
-		LOG(L_CPU, "Bootstrap from MEGA PROM is enabled");
+		LOG(L_CPU, "Bootstrap from MEGA PROM is enabled.");
 		rIC = 0xf000;
 	} else {
 		rIC = 0;
@@ -294,13 +295,15 @@ int cpu_init(struct cfg_em400 *cfg)
 
 	cpu_mod_off();
 
-	if (pthread_create(&idler_th, NULL, idler_thread, NULL)) {
-		return LOGERR("Failed to spawn CPU idler thread.");
-	}
-	pthread_setname_np(idler_th, "idler");
-
-	if (buzzer_init() != E_OK) {
-		return LOGERR("Failed to initialize buzzer");
+	buzzer = cfg->buzzer;
+	if (buzzer) {
+		if (buzzer_init(cfg) != E_OK) {
+			return LOGERR("Failed to initialize buzzer.");
+		}
+		if (pthread_create(&idler_th, NULL, idler_thread, NULL)) {
+			return LOGERR("Failed to spawn CPU idler thread.");
+		}
+		pthread_setname_np(idler_th, "idler");
 	}
 
 	return E_OK;
@@ -536,7 +539,9 @@ cycle:
 
 				if (speed_real) {
 					cpu_time *= cpu_delay_factor;
-					buzzer_update(rIR, cpu_time);
+					if (buzzer) {
+						buzzer_update(rIR, cpu_time);
+					}
 					cpu_time_cumulative += cpu_time;
 					if ((ips_counter % throttle_granularity) == 0) {
 						cpu_timer.tv_nsec += cpu_time_cumulative;

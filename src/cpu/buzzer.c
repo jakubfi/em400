@@ -117,8 +117,12 @@ void * buzzer_thread(void *ptr)
 }
 
 // -----------------------------------------------------------------------
-int buzzer_init()
+int buzzer_init(struct cfg_em400 *cfg)
 {
+	if ((cfg->speed_real == 0) || (cfg->cpu_speed_factor < 0.5) || (cfg->cpu_speed_factor > 1.5)) {
+		return LOGERR("EM400 needs to be configured with speed_real=true and 1.5 >= cpu_speed_factor >= 0.5 for the buzzer emulation to work.");
+	}
+
 	if (pthread_create(&buzzer_th, NULL, buzzer_thread, NULL)) {
 		return LOGERR("Failed to spawn buzzer thread.");
 	}

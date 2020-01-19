@@ -52,6 +52,7 @@ int cyylex(void);
 %token SPEED_REAL "`speed_real`"
 %token CPU_SPEED_FACTOR "`cpu_speed_factor`"
 %token THROTTLE_GRANULARITY "`throttle_granularity`"
+%token BUZZER "`buzzer`"
 %token CLOCK_PERIOD "`clock_period`"
 %token CLOCK_START "`clock_start`"
 %token CPU_MOD "`cpu_mod`"
@@ -124,6 +125,7 @@ computer_opt:
 	| CPU_SPEED_FACTOR '=' FLOAT { cfg->cpu_speed_factor = $3.f; free($3.s); }
 	| CPU_SPEED_FACTOR '=' VALUE { cfg->cpu_speed_factor = $3.v; free($3.s); }
 	| THROTTLE_GRANULARITY '=' VALUE { cfg->throttle_granularity = $3.v; free($3.s); }
+	| BUZZER '=' BOOL		{ cfg->buzzer= $3.v; free($3.s); }
 	| CLOCK_PERIOD '=' VALUE{ cfg->clock_period = $3.v; free($3.s); }
 	| CLOCK_START '=' BOOL	{ cfg->clock_start = $3.v; free($3.s); }
 	| CPU_MOD '=' BOOL		{ cfg->cpu_mod = $3.v; free($3.s); }
