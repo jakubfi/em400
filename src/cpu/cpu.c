@@ -567,7 +567,7 @@ cycle:
 		} else if ((state & ECTL_STATE_STOP)) {
 			idle_timer.tv_sec = cpu_timer.tv_sec;
 			idle_timer.tv_nsec = cpu_timer.tv_nsec;
-			if ((cpu_idle_in_stop() && ECTL_STATE_CYCLE)) {
+			if ((cpu_idle_in_stop() & ECTL_STATE_CYCLE)) {
 				// CPU cycle triggered while in stop
 				cpu_clear_state(ECTL_STATE_CYCLE);
 				cpu_timer.tv_sec = idle_timer.tv_sec;

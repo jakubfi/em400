@@ -312,23 +312,27 @@ int cp_bin(uint16_t ar)
 	int cnt = 0;
 	int res;
 
-	while (1) {
-		res = io_dispatch(IO_IN, rKB, &data);
-		if (res != IO_OK) {
-			continue;
-		}
-		bdata[cnt] = data & 0xff;
-		if ((cnt == 0) && bin_is_end(bdata[cnt])) {
-			break;
-		} else if (bin_is_valid(bdata[cnt])) {
-			cnt++;
-			if (cnt >= 3) {
-				cnt = 0;
-				if (cpu_mem_put(0, addr, bin2word(bdata)) == 0) {
-					break;
+	if (fpga) {
+		// unsupported
+	} else {
+		while (1) {
+			res = io_dispatch(IO_IN, rKB, &data);
+			if (res != IO_OK) {
+				continue;
+			}
+			bdata[cnt] = data & 0xff;
+			if ((cnt == 0) && bin_is_end(bdata[cnt])) {
+				break;
+			} else if (bin_is_valid(bdata[cnt])) {
+				cnt++;
+				if (cnt >= 3) {
+					cnt = 0;
+					if (cpu_mem_put(0, addr, bin2word(bdata)) == 0) {
+						break;
+					}
+					addr++;
+					words++;
 				}
-				addr++;
-				words++;
 			}
 		}
 	}
@@ -343,28 +347,6 @@ void cp_oprq()
 		iob_cp_set_fn(IOB_FN_OPRQ, 1);
 	} else {
 		int_set(INT_OPRQ);
-	}
-}
-
-// -----------------------------------------------------------------------
-int cp_int_set(unsigned i)
-{
-	if (i < 32) {
-		int_set(i);
-		return 0;
-	} else {
-		return -1;
-	}
-}
-
-// -----------------------------------------------------------------------
-int cp_int_clear(unsigned i)
-{
-	if (i < 32) {
-		int_clear(i);
-		return 0;
-	} else {
-		return -1;
 	}
 }
 
@@ -394,6 +376,7 @@ int cp_stopn(uint16_t addr)
 		iob_cp_set_fn(IOB_FN_STOPN, 1);
 		return 0;
 	} else {
+		// unsupported
 		return -1;
 	}
 }
@@ -405,6 +388,7 @@ int cp_stopn_off()
 		iob_cp_set_fn(IOB_FN_STOPN, 0);
 		return 0;
 	} else {
+		// unsupported
 		return -1;
 	}
 }
