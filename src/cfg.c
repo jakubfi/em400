@@ -62,6 +62,7 @@ struct cfg_em400 * cfg_create_default()
 	cfg->cpu_speed_factor = 1;
 	cfg->throttle_granularity = 4;
 	cfg->buzzer = 0;
+	cfg->buzzer_volume = 10;
 
 	// cpu
 	cfg->clock_period= 10;
@@ -316,7 +317,7 @@ void cfg_log(struct cfg_em400 *cfg)
 		LOG(L_EM4H, "   Emulation speed: %s", cfg->speed_real ? "real" : "maximum");
 		LOG(L_EM4H, "   CPU speed factor: %f", cfg->cpu_speed_factor);
 		LOG(L_EM4H, "   Throttle granularity: %i CPU cycles", cfg->throttle_granularity);
-		LOG(L_EM4H, "   Buzzer emulation: %s", cfg->buzzer ? "yes" : "no");
+		LOG(L_EM4H, "   Buzzer emulation: %s (volume: %i)", cfg->buzzer ? "yes" : "no", cfg->buzzer_volume);
 		LOG(L_EM4H, "   Clock period: %i (%s at power-on)", cfg->clock_period, cfg->clock_start ? "enabled" : "disabled");
 		LOG(L_EM4H, "   CPU modifications: %s", cfg->cpu_mod ? "present" : "absent");
 		LOG(L_EM4H, "   IN/OU instructions: %s for user programs", cfg->cpu_user_io_illegal ? "illegal" : "legal");

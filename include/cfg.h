@@ -54,6 +54,7 @@ struct cfg_em400 {
 	float cpu_speed_factor;
 	int throttle_granularity;
 	int buzzer;
+	int buzzer_volume;
 	int clock_period;
 	int clock_start;
 	int cpu_mod;

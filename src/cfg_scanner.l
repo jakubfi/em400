@@ -47,6 +47,7 @@ speed_real		return SPEED_REAL;
 cpu_speed_factor return CPU_SPEED_FACTOR;
 throttle_granularity return THROTTLE_GRANULARITY;
 buzzer			return BUZZER;
+buzzer_volume	return BUZZER_VOLUME;
 clock_period	return CLOCK_PERIOD;
 clock_start		return CLOCK_START;
 cpu_mod			return CPU_MOD;

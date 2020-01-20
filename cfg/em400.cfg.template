@@ -23,6 +23,10 @@ computer {
 	# and 1.5 >= cpu_speed_factor >= 0.5
 	buzzer = false
 
+	# Software buzzer volume control (0-127)
+	# Default is 10. 10 is enough, really.
+	buzzer_volume = 10
+
 	# Internal clock interrupt period (in miliseconds)
 	# allowed values: 2-100 (default is 10)
 	# Note: cycle lengths available for real hardware were:

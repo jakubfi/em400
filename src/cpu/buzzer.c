@@ -41,16 +41,16 @@ unsigned char *buf_end = buffer + BUF_SIZE;
 unsigned char *wp = buffer+headstart;
 unsigned char *rp = buffer;
 
-#define VOLUME 10
+int volume = 10;
 #define FREQ 48000
-#define SAMPLE_PERIOD (1000000000/FREQ)
+#define SAMPLE_PERIOD (1000000000.0f/FREQ)
 
 // -----------------------------------------------------------------------
 void buzzer_update(uint16_t ir, unsigned instruction_time)
 {
 	static int cnt;
 	static uint16_t pir;
-	static int time_pool;
+	static float time_pool;
 
 	if ((ir ^ pir) & 0x8000) {
 		cnt++;
@@ -58,7 +58,7 @@ void buzzer_update(uint16_t ir, unsigned instruction_time)
 			if (buzzer_val) {
 				buzzer_val *= -1;
 			} else {
-				buzzer_val = VOLUME;
+				buzzer_val = volume;
 			}
 			cnt = 0;
 		}
@@ -122,6 +122,11 @@ int buzzer_init(struct cfg_em400 *cfg)
 	if ((cfg->speed_real == 0) || (cfg->cpu_speed_factor < 0.5) || (cfg->cpu_speed_factor > 1.5)) {
 		return LOGERR("EM400 needs to be configured with speed_real=true and 1.5 >= cpu_speed_factor >= 0.5 for the buzzer emulation to work.");
 	}
+
+	if ((cfg->buzzer_volume > 127) || (cfg->buzzer_volume < 0)) {
+		return LOGERR("Buzzer volume has to be set between 0 and 127.");
+	}
+	volume = cfg->buzzer_volume;
 
 	if (pthread_create(&buzzer_th, NULL, buzzer_thread, NULL)) {
 		return LOGERR("Failed to spawn buzzer thread.");
