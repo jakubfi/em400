@@ -29,21 +29,25 @@
 
 pthread_t buzzer_th;
 
+#define HEADSTART (2*1024)
+#define CHUNK_SIZE (256)
+#define BUF_SIZE (4*HEADSTART)
+
+#define FREQ 48000
+#define SAMPLE_PERIOD (1000000000.0f/FREQ)
+#define BUF_US (1000000*HEADSTART)/FREQ
+
+int volume = 10;
 static int buzzer_val = 0;
 
 snd_pcm_t *handle;
 static char *device = "default";
 snd_output_t *output = NULL;
-#define BUF_SIZE (1024*4)
-#define headstart 2048
+
 unsigned char buffer[BUF_SIZE];
 unsigned char *buf_end = buffer + BUF_SIZE;
-unsigned char *wp = buffer+headstart;
+unsigned char *wp = buffer+HEADSTART;
 unsigned char *rp = buffer;
-
-int volume = 10;
-#define FREQ 48000
-#define SAMPLE_PERIOD (1000000000.0f/FREQ)
 
 // -----------------------------------------------------------------------
 void buzzer_update(uint16_t ir, unsigned instruction_time)
@@ -89,7 +93,7 @@ void * buzzer_thread(void *ptr)
 		exit(EXIT_FAILURE);
 	}
 
-	err = snd_pcm_set_params(handle, SND_PCM_FORMAT_S8, SND_PCM_ACCESS_RW_INTERLEAVED, 1, FREQ, 1, 10000);
+	err = snd_pcm_set_params(handle, SND_PCM_FORMAT_S8, SND_PCM_ACCESS_RW_INTERLEAVED, 1, FREQ, 1, BUF_US);
 	if (err < 0) {
 		printf("Playback open error: %s\n", snd_strerror(err));
 		exit(EXIT_FAILURE);
@@ -97,15 +101,20 @@ void * buzzer_thread(void *ptr)
 
 	while (1) {
 		int wsize;
-		wsize = 512;
-		if (rp >= buf_end) {
-			rp = buffer;
+		if (buf_end - rp < CHUNK_SIZE) {
+			wsize = buf_end - rp;
+		} else {
+			wsize = CHUNK_SIZE;
 		}
 		frames = snd_pcm_writei(handle, rp, wsize);
 		rp += frames;
+		if (rp >= buf_end) {
+			rp = buffer;
+		}
 
 		if (frames < 0) {
 			printf("snd_pcm_writei failed: %s\n", snd_strerror(frames));
+			exit(1);
 		}
 		if (frames > 0 && (frames < wsize)) {
 			printf("Short write (expected %i, wrote %li)\n", wsize, frames);
