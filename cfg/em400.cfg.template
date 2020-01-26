@@ -8,10 +8,12 @@ computer {
 	# "false" - run as fast as possible (default)
 	# "true" - try to emulate real hardware CPU and memory speeds
         speed_real = false
+
 	# If speed_real is set to "true", cpu_speed_factor controls how much
 	# faster or slower emulated CPU runs compared to the real hardware
 	# Use a floating point number.
         cpu_speed_factor = 1
+
 	# Execute this many instructions before sleeping (default: 3).
 	# Use with caution. If "real" emulation speed is slower than
 	# it should be, you may need to set granularity to a higher
@@ -50,10 +52,13 @@ computer {
 	# allowed values: "true" (default), "false"
 	cpu_awp = true
 
-	# Enable CPU modification (17-bit byte addressing, additional instructions,
-	# additional software interrupt, int 5/11 swap, broader interrupt mask
-	# for I/O interrupts)
-	# allowed values: "true", "false" (default)
+	# Enable CPU modifications found in MX-16 CPU:
+	#  * 17-bit byte addressing,
+	#  *  additional instructions,
+	#  *  additional software interrupt,
+	#  *  interrupts 5 and 11 swapped,
+	#  *  broader interrupt mask for I/O interrupts
+	# Allowed values: "true", "false" (default)
 	cpu_mod = false
 
 	# Memory is organized into 16 physical modules. Each module can be
