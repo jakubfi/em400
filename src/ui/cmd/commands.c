@@ -670,13 +670,13 @@ void ui_cmd_brk(FILE *out, char *args)
 // -----------------------------------------------------------------------
 void ui_cmd_brkdel(FILE *out, char *args)
 {
-    char *tok_brk, *remainder;
+	char *tok_brk, *remainder;
 
-    int brk_num = ui_cmd_gettok_int(args, &tok_brk, &remainder);
-    if (!tok_brk) {
-        ui_cmd_resp(out, RESP_ERR, UI_EOL, "Missing argument (breakpoint number)");
-        return;
-    }
+	int brk_num = ui_cmd_gettok_int(args, &tok_brk, &remainder);
+	if (!tok_brk) {
+		ui_cmd_resp(out, RESP_ERR, UI_EOL, "Missing argument (breakpoint number)");
+		return;
+	}
 
 	int res = ectl_brk_del(brk_num);
 	if (res) {
@@ -704,13 +704,13 @@ void ui_cmd_bin(FILE *out, char *args)
 // -----------------------------------------------------------------------
 void ui_cmd_stopn(FILE *out, char *args)
 {
-    char *tok_addr, *remainder;
+	char *tok_addr, *remainder;
 
-    int addr = ui_cmd_gettok_int(args, &tok_addr, &remainder);
-    if (!tok_addr) {
-        ui_cmd_resp(out, RESP_ERR, UI_EOL, "Missing argument (address)");
-        return;
-    }
+	int addr = ui_cmd_gettok_int(args, &tok_addr, &remainder);
+	if (!tok_addr) {
+		ui_cmd_resp(out, RESP_ERR, UI_EOL, "Missing argument (address)");
+		return;
+	}
 
 	int res = ectl_stopn(addr);
 	if (res) {

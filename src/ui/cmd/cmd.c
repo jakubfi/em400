@@ -52,8 +52,8 @@ void ui_cmd_destroy(void *data);
 // -----------------------------------------------------------------------
 static int __setup_stdio(struct ui_cmd_data *ui)
 {
-    ui->type = UI_CMD_STDIO;
-    ui->fd_in = 0;
+	ui->type = UI_CMD_STDIO;
+	ui->fd_in = 0;
    	ui->fd_out = 1;
 	ui->out = fdopen(ui->fd_out, "w");
 	if (!ui->out) {
@@ -68,33 +68,33 @@ static int __setup_tcp(struct ui_cmd_data *ui)
 {
 	int res;
 
-    ui->type = UI_CMD_TCP;
+	ui->type = UI_CMD_TCP;
 
 	ui->listenfd = socket(AF_INET, SOCK_STREAM, 0);
    	if (!ui->listenfd) {
-       	return 1;
-    }
+	   	return 1;
+	}
 
-    int on = 1;
+	int on = 1;
    	res = setsockopt(ui->listenfd, SOL_SOCKET, SO_REUSEADDR, &on, sizeof(on));
-    if (res < 0) {
-   	    return 1;
-    }
+	if (res < 0) {
+   		return 1;
+	}
 
-    struct sockaddr_in servaddr;
+	struct sockaddr_in servaddr;
    	servaddr.sin_family = AF_INET;
-    servaddr.sin_addr.s_addr = htonl(INADDR_LOOPBACK);
+	servaddr.sin_addr.s_addr = htonl(INADDR_LOOPBACK);
    	servaddr.sin_port = htons(ui->tcp_port);
 
-    res = bind(ui->listenfd, (struct sockaddr*) &servaddr, sizeof(servaddr));
+	res = bind(ui->listenfd, (struct sockaddr*) &servaddr, sizeof(servaddr));
    	if (res < 0) {
-       	return 1;
-    }
+	   	return 1;
+	}
 
-    res = listen(ui->listenfd, 16);
-	    if (res < 0) {
-   	    return 1;
-    }
+	res = listen(ui->listenfd, 16);
+		if (res < 0) {
+   		return 1;
+	}
 
 	return 0;
 }
@@ -102,15 +102,15 @@ static int __setup_tcp(struct ui_cmd_data *ui)
 // -----------------------------------------------------------------------
 void * ui_cmd_setup(const char *call_name)
 {
-    int res;
+	int res;
 
 	struct ui_cmd_data *ui = (struct ui_cmd_data *) calloc(1, sizeof(struct ui_cmd_data));
 	if (!ui) {
 		return NULL;
 	}
 
-    ui->timeout_ms = 100;
-    ui->fd_in = -1;
+	ui->timeout_ms = 100;
+	ui->fd_in = -1;
 	ui->fd_out = -1;
 	ui->listenfd = -1;
 

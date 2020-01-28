@@ -359,9 +359,9 @@ void dbg_c_memmap(int wid, int seg, int page, int module, int frame)
 // -----------------------------------------------------------------------
 void dbg_c_brk_add(int wid, char *label, struct node_t *n)
 {
-    char *error_msg = NULL;
-    int err_beg, err_end;
-    int id = ectl_brk_add(label, &error_msg, &err_beg, &err_end);
+	char *error_msg = NULL;
+	int err_beg, err_end;
+	int id = ectl_brk_add(label, &error_msg, &err_beg, &err_end);
 
 	if (error_msg) {
 		awtbprint(wid, C_ERROR, "Error: %s (at %i-%i)", error_msg, err_beg, err_end);
