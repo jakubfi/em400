@@ -38,7 +38,7 @@ int pulseaudio_init(struct cfg_em400 *cfg)
 	};
 	const pa_buffer_attr ba = {
 		.maxlength = -1,
-		.tlength = cfg->sound_buffer_size * bytes_per_frame,
+		.tlength = 2 * cfg->sound_buffer_len * bytes_per_frame,
 		.prebuf = -1,
 		.minreq = -1,
 		.fragsize = -1,

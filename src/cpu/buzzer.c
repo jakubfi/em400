@@ -21,7 +21,6 @@
 #endif
 
 #include <inttypes.h>
-#include <pthread.h>
 #include <string.h>
 #include <stdlib.h>
 
@@ -30,20 +29,15 @@
 
 static const struct snd_drv *snd;
 
-static pthread_t buzzer_th;
-
 static unsigned rate;
-static unsigned headstart;
-static unsigned buffer_size;
 static float sample_period;
-static unsigned chunk_size;
+static unsigned buffer_len;
 static unsigned volume;
 static int buzzer_val = 0;
 
 static int16_t *buffer;
-static int16_t *buf_end;
+static int16_t *buffer_end;
 static int16_t *wp;
-static int16_t *rp;
 
 // -----------------------------------------------------------------------
 void buzzer_update(int ir, unsigned instruction_time)
@@ -77,39 +71,12 @@ void buzzer_update(int ir, unsigned instruction_time)
 		int sample = (volume*32767/100) * buzzer_val;
 		*wp++ = sample;
 		*wp++ = sample;
-		if (wp >= buf_end) {
-			wp = buffer;
-		}
-	}
-}
-
-// -----------------------------------------------------------------------
-void * buzzer_thread(void *ptr)
-{
-	size_t frames_written;
-	size_t frames_requested;
-	size_t frames_left;
-
-	while (1) {
-		frames_left = (buf_end - rp)/2;
-		if (frames_left < chunk_size) {
-			frames_requested = frames_left;
-		} else {
-			frames_requested = chunk_size;
-		}
-		frames_written = snd->play(rp, frames_requested);
-		rp += frames_written*2;
-		if (rp >= buf_end) {
-			rp = buffer;
-		}
-
-		if ((frames_written > 0) && (frames_written < frames_requested)) {
-			printf("Short write (expected %li, wrote %li)\n", frames_requested, frames_written);
-		}
 	}
 
-	snd->shutdown();
-	pthread_exit(NULL);
+	if (wp >= buffer_end) {
+		snd->play(buffer, buffer_len);
+		wp = buffer;
+	}
 }
 
 // -----------------------------------------------------------------------
@@ -125,32 +92,22 @@ int buzzer_init(struct cfg_em400 *cfg)
 
 	volume = cfg->sound_volume;
 	rate = cfg->sound_rate;
-	headstart = cfg->sound_buffer_size;
 	sample_period = 1000000000.0f / rate;
-	chunk_size = cfg->sound_chunk_size;
+	buffer_len = cfg->sound_buffer_len;
 
-	buffer_size = 4 * headstart;
-	buffer = malloc(sizeof(int16_t) * 2 * buffer_size);
+	buffer = malloc(sizeof(int16_t) * 2 * buffer_len);
 	if (!buffer) {
 		return LOGERR("Cannot allocate memory for sound buffer.");
 	}
 
-	memset(buffer, 0, sizeof(int16_t) * 2 * buffer_size);
-
-	buf_end = buffer + buffer_size*2;
-	wp = buffer + headstart*2;
-	rp = buffer;
+	memset(buffer, 0, sizeof(int16_t) * 2 * buffer_len);
+	buffer_end = buffer + buffer_len * 2;
+	wp = buffer;
 
 	snd = snd_init(cfg);
 	if (!snd) {
 		return LOGERR("Could not find sound driver: %s", cfg->sound_driver);
 	}
-
-	if (pthread_create(&buzzer_th, NULL, buzzer_thread, NULL)) {
-		return LOGERR("Failed to spawn buzzer thread.");
-	}
-
-	pthread_setname_np(buzzer_th, "buzzr");
 
 	return E_OK;
 }

@@ -61,8 +61,11 @@ long alsa_play(int16_t *buf, size_t frames)
 
 	res = snd_pcm_writei(handle, buf, frames);
 	if (res < 0) {
-		printf("snd_pcm_writei failed: %s\n", snd_strerror((int)res));
-		exit(1);
+		res = snd_pcm_recover(handle, res, 0);
+		if (res < 0) {
+			printf("snd_pcm_writei failed, recovery failed: %s\n", snd_strerror((int)res));
+			exit(1);
+		}
 	}
 
 	return res;

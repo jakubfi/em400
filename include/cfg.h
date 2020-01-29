@@ -77,8 +77,7 @@ struct cfg_em400 {
 	char *sound_driver;
 	char *sound_device;
     unsigned sound_rate;
-    unsigned sound_buffer_size;
-    unsigned sound_chunk_size;
+    unsigned sound_buffer_len;
 	int sound_enabled;
 	unsigned sound_volume;
 

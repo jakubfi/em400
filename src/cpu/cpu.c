@@ -25,6 +25,7 @@
 #include <pthread.h>
 #include <unistd.h>
 #include <signal.h>
+#include <errno.h>
 
 #include <emawp.h>
 
@@ -251,6 +252,7 @@ static void * idler_thread(void *ptr)
 				idle_timer.tv_nsec -= 1000000000;
 				idle_timer.tv_sec++;
 			}
+
 			clock_nanosleep(CLOCK_MONOTONIC, TIMER_ABSTIME, &idle_timer, NULL);
 
 			state = atom_load_acquire(&cpu_state);
@@ -559,7 +561,10 @@ cycle:
 							cpu_timer.tv_sec++;
 						}
 						cpu_time_cumulative = 0;
-						clock_nanosleep(CLOCK_MONOTONIC, TIMER_ABSTIME, &cpu_timer, NULL);
+						int res = EINTR;
+						while (res == EINTR) {
+							res = clock_nanosleep(CLOCK_MONOTONIC, TIMER_ABSTIME, &cpu_timer, NULL);
+						}
 					}
 				}
 

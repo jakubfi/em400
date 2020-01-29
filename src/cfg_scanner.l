@@ -77,8 +77,7 @@ device			return DEVICE;
 sound			return SOUND;
 driver			return DRIVER;
 rate			return RATE;
-buffer_size		return BUFFER_SIZE;
-chunk_size		return CHUNK_SIZE;
+buffer_len		return BUFFER_LEN;
 volume			return VOLUME;
 
 {string} {

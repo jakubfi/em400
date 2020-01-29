@@ -97,8 +97,7 @@ struct cfg_em400 * cfg_create_default()
 	cfg->sound_driver = strdup("alsa");
 	cfg->sound_device = strdup("default");
 	cfg->sound_rate = 48000;
-	cfg->sound_buffer_size = 2*1024;
-	cfg->sound_chunk_size = 256;
+	cfg->sound_buffer_len = 256;
 
 	// I/O
 	cfg->chans = NULL;
@@ -343,8 +342,7 @@ void cfg_log(struct cfg_em400 *cfg)
 	LOG(L_EM4H, "   Driver: %s", cfg->sound_driver);
 	LOG(L_EM4H, "   Device: %s", cfg->sound_device);
 	LOG(L_EM4H, "   Rate: %i", cfg->sound_rate);
-	LOG(L_EM4H, "   Buffer size: %i", cfg->sound_buffer_size);
-	LOG(L_EM4H, "   Chunk size: %i", cfg->sound_chunk_size);
+	LOG(L_EM4H, "   Buffer len: %i frames", cfg->sound_buffer_len);
 	LOG(L_EM4H, "   Software volume: %i%%", cfg->sound_volume);
 	LOG(L_EM4H, "Logging (%s):", cfg->log_enabled ? "enabled" : "disabled");
 	LOG(L_EM4H, "   File: %s", cfg->log_file);

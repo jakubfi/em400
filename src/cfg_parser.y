@@ -73,8 +73,7 @@ int cyylex(void);
 %token SPEED "`speed`"
 %token DRIVER "`driver`"
 %token RATE "`rate`"
-%token BUFFER_SIZE "`buffer_size`"
-%token CHUNK_SIZE "`chunk_size`"
+%token BUFFER_LEN "`buffer_len`"
 %token VOLUME "`volume`"
 %token <value> NAME "parameter or device name"
 %token <value> STRING "string"
@@ -176,8 +175,7 @@ sound_opt:
 	DEVICE '=' STRING { free(cfg->sound_device); cfg->sound_device = $3.s; }
 	| DRIVER '=' STRING { free(cfg->sound_driver); cfg->sound_driver = $3.s; }
 	| RATE '=' VALUE { cfg->sound_rate = $3.v; free($3.s); }
-	| BUFFER_SIZE '=' VALUE { cfg->sound_buffer_size = $3.v; free($3.s); }
-	| CHUNK_SIZE '=' VALUE { cfg->sound_chunk_size = $3.v; free($3.s); }
+	| BUFFER_LEN '=' VALUE { cfg->sound_buffer_len = $3.v; free($3.s); }
 	| ENABLED '=' BOOL { cfg->sound_enabled = $3.v; free($3.s); }
 	| VOLUME '=' VALUE	{ cfg->sound_volume = $3.v; free($3.s); }
 	;
