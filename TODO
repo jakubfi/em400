@@ -4,9 +4,10 @@ Cleanups:
 
 Code enhancements (possible):
 
+* move binary load to cpu thread
+* configuration rework
 * librarize
 * make em400 C++ friendly
-* configuration rework
 * gnu getopt_long
 * merge cpu sources for better instruction performance (-5%..+14%)
 

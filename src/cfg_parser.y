@@ -47,13 +47,12 @@ int cyylex(void);
 %token END 0 "end of file"
 %token COMPUTER "`computer`"
 %token FPGA "`fpga`"
+%token SOUND "`sound`"
 %token CHANNEL "`channel`"
 %token UNIT "`unit`"
 %token SPEED_REAL "`speed_real`"
 %token CPU_SPEED_FACTOR "`cpu_speed_factor`"
 %token THROTTLE_GRANULARITY "`throttle_granularity`"
-%token BUZZER "`buzzer`"
-%token BUZZER_VOLUME "`buzzer_volume`"
 %token CLOCK_PERIOD "`clock_period`"
 %token CLOCK_START "`clock_start`"
 %token CPU_MOD "`cpu_mod`"
@@ -72,6 +71,11 @@ int cyylex(void);
 %token LINEBUF "line buffered"
 %token DEVICE "`device`"
 %token SPEED "`speed`"
+%token DRIVER "`driver`"
+%token RATE "`rate`"
+%token BUFFER_SIZE "`buffer_size`"
+%token CHUNK_SIZE "`chunk_size`"
+%token VOLUME "`volume`"
 %token <value> NAME "parameter or device name"
 %token <value> STRING "string"
 %token <value> VALUE "integer value"
@@ -93,6 +97,7 @@ object:
 	COMPUTER '{' computer_opts '}'
 	| LOG '{' log_opts '}'
 	| FPGA '{' fpga_opts '}'
+	| SOUND '{' sound_opts '}'
 	| CHANNEL VALUE '=' NAME { cfg_make_chan(cfg, $2.v, $4.s); free($2.s); } '{' units '}'
 	;
 
@@ -126,8 +131,6 @@ computer_opt:
 	| CPU_SPEED_FACTOR '=' FLOAT { cfg->cpu_speed_factor = $3.f; free($3.s); }
 	| CPU_SPEED_FACTOR '=' VALUE { cfg->cpu_speed_factor = $3.v; free($3.s); }
 	| THROTTLE_GRANULARITY '=' VALUE { cfg->throttle_granularity = $3.v; free($3.s); }
-	| BUZZER '=' BOOL		{ cfg->buzzer = $3.v; free($3.s); }
-	| BUZZER_VOLUME '=' VALUE	{ cfg->buzzer_volume = $3.v; free($3.s); }
 	| CLOCK_PERIOD '=' VALUE{ cfg->clock_period = $3.v; free($3.s); }
 	| CLOCK_START '=' BOOL	{ cfg->clock_start = $3.v; free($3.s); }
 	| CPU_MOD '=' BOOL		{ cfg->cpu_mod = $3.v; free($3.s); }
@@ -162,6 +165,21 @@ fpga_opts:
 fpga_opt:
 	SPEED '=' VALUE { cfg->fpga_speed = $3.v; free($3.s); }
 	| DEVICE '=' STRING { free(cfg->fpga_dev); cfg->fpga_dev = $3.s; }
+	;
+
+sound_opts:
+	sound_opts sound_opt
+	|
+	;
+
+sound_opt:
+	DEVICE '=' STRING { free(cfg->sound_device); cfg->sound_device = $3.s; }
+	| DRIVER '=' STRING { free(cfg->sound_driver); cfg->sound_driver = $3.s; }
+	| RATE '=' VALUE { cfg->sound_rate = $3.v; free($3.s); }
+	| BUFFER_SIZE '=' VALUE { cfg->sound_buffer_size = $3.v; free($3.s); }
+	| CHUNK_SIZE '=' VALUE { cfg->sound_chunk_size = $3.v; free($3.s); }
+	| ENABLED '=' BOOL { cfg->sound_enabled = $3.v; free($3.s); }
+	| VOLUME '=' VALUE	{ cfg->sound_volume = $3.v; free($3.s); }
 	;
 
 %%

@@ -1,11 +1,11 @@
 cmake_minimum_required(VERSION 3.1 FATAL_ERROR)
 project(em400
+	DESCRIPTION "MERA-400 emulator"
 	LANGUAGES C
 )
 
 include(GNUInstallDirs)
 include(appversion.cmake)
-include(FindALSA)
 
 # ---- Libraries ---------------------------------------------------------
 
@@ -15,11 +15,24 @@ find_package(Threads REQUIRED)
 find_package(emdas REQUIRED)
 find_package(emcrk REQUIRED)
 find_package(emawp REQUIRED)
+find_library(MATH_LIBRARY m)
+find_library(RT_LIBRARY rt)
 
 set(CURSES_NEED_NCURSES TRUE)
 find_package(Curses REQUIRED)
 find_path(READLINE_INCLUDE_DIR readline/readline.h)
-find_library(READLINE_LIBRARY NAMES readline)
+find_library(READLINE_LIBRARY readline)
+
+include(FindALSA)
+include(FindPulseAudio.cmake)
+find_library(PULSEAUDIO_SIMPLE_LIBRARY pulse-simple)
+
+if(PULSEAUDIO_FOUND OR ALSA_FOUND)
+	set(HAVE_SOUND 1)
+	message(STATUS "Sound enabled: ALSA: ${ALSA_FOUND}, PulseAudio: ${PULSEAUDIO_FOUND}")
+else()
+	message(STATUS "No supported sound libraries found, disabling sound")
+endif()
 
 # ---- Sources -----------------------------------------------------------
 
@@ -40,7 +53,6 @@ set(SOURCES_EM400
 	src/cpu/iset.c
 	src/cpu/alu.c
 	src/cpu/cp.c
-	src/cpu/buzzer.c
 
 	src/mem/mem.c
 	src/mem/mega.c
@@ -91,6 +103,19 @@ set(SOURCES_EM400
 	src/ectl/est.c
 	src/ectl/brk.c
 )
+
+if(HAVE_SOUND)
+	list(APPEND SOURCES_EM400
+		src/sound/sound.c
+		src/cpu/buzzer.c
+	)
+endif()
+if(ALSA_FOUND)
+	list(APPEND SOURCES_EM400 src/sound/alsa.c)
+endif()
+if(PULSEAUDIO_FOUND)
+	list(APPEND SOURCES_EM400 src/sound/pulseaudio.c)
+endif()
 
 bison_target(cfg_parser
 	src/cfg_parser.y
@@ -168,9 +193,23 @@ target_link_libraries(em400
 	${EMAWP_LIBRARIES}
 	${FLEX_LIBRARIES} ${BISON_LIBRARIES}
 	${CMAKE_THREAD_LIBS_INIT}
-	${ALSA_LIBRARIES}
-	rt m
+	${RT_LIBRARY}
+	${MATH_LIBRARY}
 )
+
+if (HAVE_SOUND)
+	target_compile_definitions(em400 PRIVATE HAVE_SOUND)
+	if(ALSA_FOUND)
+		target_include_directories(em400 PRIVATE ${ALSA_INCLUDE_DIRS})
+		target_link_libraries(em400 ${ALSA_LIBRARIES})
+		target_compile_definitions(em400 PRIVATE HAVE_ALSA)
+	endif()
+	if(PULSEAUDIO_FOUND)
+		target_include_directories(em400 PRIVATE ${PULSEAUDIO_INCLUDE_DIRS})
+		target_link_libraries(em400 ${PULSEAUDIO_LIBRARIES} ${PULSEAUDIO_SIMPLE_LIBRARY})
+		target_compile_definitions(em400 PRIVATE HAVE_PULSEAUDIO)
+	endif()
+endif()
 
 install(TARGETS em400
 	RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}

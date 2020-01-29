@@ -35,7 +35,9 @@
 #include "cpu/instructions.h"
 #include "cpu/interrupts.h"
 #include "cpu/clock.h"
+#ifdef HAVE_SOUND
 #include "cpu/buzzer.h"
+#endif
 #include "io/io.h"
 
 #include "em400.h"
@@ -72,7 +74,10 @@ struct timespec idle_timer;
 int cpu_mod_present;
 int cpu_user_io_illegal;
 static int nomem_stop;
-static int buzzer;
+
+#ifdef HAVE_SOUND
+static int sound_enabled;
+#endif
 
 struct awp *awp;
 
@@ -228,6 +233,7 @@ int cpu_mem_put_byte(int nb, uint32_t addr, uint8_t data)
 }
 
 // -----------------------------------------------------------------------
+#ifdef HAVE_SOUND
 static void * idler_thread(void *ptr)
 {
 	int state;
@@ -235,11 +241,9 @@ static void * idler_thread(void *ptr)
 	while (1) {
 		pthread_mutex_lock(&cpu_wake_mutex);
 		while ((cpu_state & (ECTL_STATE_STOP|ECTL_STATE_WAIT)) == 0) {
-//printf("idler WAIT\n");
 			pthread_cond_wait(&cpu_wake_cond, &cpu_wake_mutex);
 		}
 		pthread_mutex_unlock(&cpu_wake_mutex);
-//printf("idler GO!\n");
 
 		do {
 			idle_timer.tv_nsec += 4000;
@@ -251,13 +255,14 @@ static void * idler_thread(void *ptr)
 
 			state = atom_load_acquire(&cpu_state);
 			if ((state & (ECTL_STATE_STOP|ECTL_STATE_WAIT))) {
-				buzzer_update(rIR, 4000);
+				buzzer_update(-1, 4000);
 			}
 		} while ((state & (ECTL_STATE_STOP|ECTL_STATE_WAIT)));
 	}
 
 	pthread_exit(NULL);
 }
+#endif
 
 // -----------------------------------------------------------------------
 int cpu_init(struct cfg_em400 *cfg)
@@ -295,8 +300,9 @@ int cpu_init(struct cfg_em400 *cfg)
 
 	cpu_mod_off();
 
-	buzzer = cfg->buzzer;
-	if (buzzer) {
+#ifdef HAVE_SOUND
+	sound_enabled = cfg->sound_enabled;
+	if (sound_enabled) {
 		if (buzzer_init(cfg) != E_OK) {
 			return LOGERR("Failed to initialize buzzer.");
 		}
@@ -305,6 +311,7 @@ int cpu_init(struct cfg_em400 *cfg)
 		}
 		pthread_setname_np(idler_th, "idler");
 	}
+#endif
 
 	return E_OK;
 }
@@ -539,9 +546,11 @@ cycle:
 
 				if (speed_real) {
 					cpu_time *= cpu_delay_factor;
-					if (buzzer) {
+#ifdef HAVE_SOUND
+					if (sound_enabled) {
 						buzzer_update(rIR, cpu_time);
 					}
+#endif
 					cpu_time_cumulative += cpu_time;
 					if ((ips_counter % throttle_granularity) == 0) {
 						cpu_timer.tv_nsec += cpu_time_cumulative;

@@ -46,8 +46,6 @@ computer		return COMPUTER;
 speed_real		return SPEED_REAL;
 cpu_speed_factor return CPU_SPEED_FACTOR;
 throttle_granularity return THROTTLE_GRANULARITY;
-buzzer			return BUZZER;
-buzzer_volume	return BUZZER_VOLUME;
 clock_period	return CLOCK_PERIOD;
 clock_start		return CLOCK_START;
 cpu_mod			return CPU_MOD;
@@ -75,6 +73,13 @@ false|no		{ cyylval.value.v = 0; cyylval.value.s = strdup(cyytext); return BOOL;
 fpga			return FPGA;
 speed			return SPEED;
 device			return DEVICE;
+
+sound			return SOUND;
+driver			return DRIVER;
+rate			return RATE;
+buffer_size		return BUFFER_SIZE;
+chunk_size		return CHUNK_SIZE;
+volume			return VOLUME;
 
 {string} {
 	cyytext[strlen(cyytext)-1] = '\0';

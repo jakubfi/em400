@@ -19,11 +19,20 @@
 #define SOUND_H
 
 #include <inttypes.h>
+#include <stdlib.h>
+#include "cfg.h"
 
-void buzzer_silence();
-int buzzer_init();
-void buzzer_update(int ir, unsigned instruction_time);
+typedef int (*snd_drv_init)(struct cfg_em400 *cfg);
+typedef void (*snd_drv_shutdown)(void);
+typedef long (*snd_drv_play)(int16_t *buf, size_t frames);
+
+struct snd_drv {
+	char *name;
+	snd_drv_init init;
+	snd_drv_shutdown shutdown;
+	snd_drv_play play;
+};
+
+const struct snd_drv * snd_init(struct cfg_em400 *cfg);
 
 #endif
-
-// vim: tabstop=4 shiftwidth=4 autoindent

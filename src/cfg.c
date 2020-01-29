@@ -61,8 +61,6 @@ struct cfg_em400 * cfg_create_default()
 	cfg->speed_real = 0;
 	cfg->cpu_speed_factor = 1;
 	cfg->throttle_granularity = 4;
-	cfg->buzzer = 0;
-	cfg->buzzer_volume = 10;
 
 	// cpu
 	cfg->clock_period= 10;
@@ -93,6 +91,15 @@ struct cfg_em400 * cfg_create_default()
 	cfg->fpga_dev = strdup("/dev/ttyUSB0");
 	cfg->fpga_speed = 1000000;
 
+	// Sound
+	cfg->sound_enabled = 0;
+	cfg->sound_volume = 10;
+	cfg->sound_driver = strdup("alsa");
+	cfg->sound_device = strdup("default");
+	cfg->sound_rate = 48000;
+	cfg->sound_buffer_size = 2*1024;
+	cfg->sound_chunk_size = 256;
+
 	// I/O
 	cfg->chans = NULL;
 
@@ -111,6 +118,8 @@ void cfg_destroy(struct cfg_em400 *cfg)
 	free(cfg->log_file);
 	free(cfg->log_components);
 	free(cfg->fpga_dev);
+	free(cfg->sound_driver);
+	free(cfg->sound_device);
 	cfg_drop_chans(cfg->chans);
 	free(cfg);
 }
@@ -311,34 +320,37 @@ void cfg_log(struct cfg_em400 *cfg)
 	LOG(L_EM4H, "Program to load: %s", cfg->program_name);
 	LOG(L_EM4H, "Loaded config: %s", cfg->cfg_filename);
 	LOG(L_EM4H, "Print help: %s", cfg->print_help ? "yes" : "no");
-	LOG(L_EM4H, "Use FPGA backend: %s", cfg->fpga ? "yes" : "no");
-	if (!cfg->fpga) {
-		LOG(L_EM4H, "CPU emulation:");
-		LOG(L_EM4H, "   Emulation speed: %s", cfg->speed_real ? "real" : "maximum");
-		LOG(L_EM4H, "   CPU speed factor: %f", cfg->cpu_speed_factor);
-		LOG(L_EM4H, "   Throttle granularity: %i CPU cycles", cfg->throttle_granularity);
-		LOG(L_EM4H, "   Buzzer emulation: %s (volume: %i)", cfg->buzzer ? "yes" : "no", cfg->buzzer_volume);
-		LOG(L_EM4H, "   Clock period: %i (%s at power-on)", cfg->clock_period, cfg->clock_start ? "enabled" : "disabled");
-		LOG(L_EM4H, "   CPU modifications: %s", cfg->cpu_mod ? "present" : "absent");
-		LOG(L_EM4H, "   IN/OU instructions: %s for user programs", cfg->cpu_user_io_illegal ? "illegal" : "legal");
-		LOG(L_EM4H, "   Hardware AWP: %s", cfg->cpu_awp ? "present" : "absent");
-		LOG(L_EM4H, "   CPU stop on nomem in OS block: %s", cfg->cpu_stop_on_nomem ? "yes" : "no");
-		LOG(L_EM4H, "Memory emulation:");
-		LOG(L_EM4H, "   Elwro modules: %i", cfg->mem_elwro);
-		LOG(L_EM4H, "   MEGA modules: %i", cfg->mem_mega);
-		LOG(L_EM4H, "   MEGA PROM image: %s", cfg->mem_mega_prom);
-		LOG(L_EM4H, "   MEGA boot: %s", cfg->mem_mega_boot ? "true" : "false");
-		LOG(L_EM4H, "   Hardwired segments for OS: %i", cfg->mem_os);
-	} else {
-		LOG(L_EM4H, "FPGA backend:");
-		LOG(L_EM4H, "   Device: %s", cfg->fpga_dev);
-		LOG(L_EM4H, "   Link speed: %i", cfg->fpga_speed);
-	}
-	LOG(L_EM4H, "KB: 0x%04x", cfg->keys);
+	LOG(L_EM4H, "CPU emulation:");
+	LOG(L_EM4H, "   Emulation speed: %s", cfg->speed_real ? "real" : "maximum");
+	LOG(L_EM4H, "      CPU speed factor: %f", cfg->cpu_speed_factor);
+	LOG(L_EM4H, "      Throttle granularity: %i CPU cycles", cfg->throttle_granularity);
+	LOG(L_EM4H, "   Clock period: %i (%s at power-on)", cfg->clock_period, cfg->clock_start ? "enabled" : "disabled");
+	LOG(L_EM4H, "   CPU modifications: %s", cfg->cpu_mod ? "present" : "absent");
+	LOG(L_EM4H, "   IN/OU instructions: %s for user programs", cfg->cpu_user_io_illegal ? "illegal" : "legal");
+	LOG(L_EM4H, "   Hardware AWP: %s", cfg->cpu_awp ? "present" : "absent");
+	LOG(L_EM4H, "   CPU stop on nomem in OS block: %s", cfg->cpu_stop_on_nomem ? "yes" : "no");
+	LOG(L_EM4H, "   Keys at startup set to: 0x%04x", cfg->keys);
+	LOG(L_EM4H, "FPGA backend: %s", cfg->fpga ? "enabled" : "disabled");
+	LOG(L_EM4H, "   Device: %s", cfg->fpga_dev);
+	LOG(L_EM4H, "   Link speed: %i", cfg->fpga_speed);
+	LOG(L_EM4H, "Memory emulation:");
+	LOG(L_EM4H, "   Elwro modules: %i", cfg->mem_elwro);
+	LOG(L_EM4H, "   MEGA modules: %i", cfg->mem_mega);
+	LOG(L_EM4H, "   MEGA PROM image: %s", cfg->mem_mega_prom);
+	LOG(L_EM4H, "   MEGA boot: %s", cfg->mem_mega_boot ? "true" : "false");
+	LOG(L_EM4H, "   Hardwired segments for OS: %i", cfg->mem_os);
+	LOG(L_EM4H, "Sound emulation: %s", cfg->sound_enabled ? "enabled" : "disabled");
+	LOG(L_EM4H, "   Driver: %s", cfg->sound_driver);
+	LOG(L_EM4H, "   Device: %s", cfg->sound_device);
+	LOG(L_EM4H, "   Rate: %i", cfg->sound_rate);
+	LOG(L_EM4H, "   Buffer size: %i", cfg->sound_buffer_size);
+	LOG(L_EM4H, "   Chunk size: %i", cfg->sound_chunk_size);
+	LOG(L_EM4H, "   Software volume: %i%%", cfg->sound_volume);
 	LOG(L_EM4H, "Logging (%s):", cfg->log_enabled ? "enabled" : "disabled");
 	LOG(L_EM4H, "   File: %s", cfg->log_file);
 	LOG(L_EM4H, "   Components: %s", cfg->log_components);
 	LOG(L_EM4H, "   Buffering: %s", cfg->line_buffered ? "line" : "full");
+
 	LOG(L_EM4H, "I/O:");
 
 	char buf[4096];

@@ -53,8 +53,6 @@ struct cfg_em400 {
 	int speed_real;
 	float cpu_speed_factor;
 	int throttle_granularity;
-	int buzzer;
-	int buzzer_volume;
 	int clock_period;
 	int clock_start;
 	int cpu_mod;
@@ -75,6 +73,14 @@ struct cfg_em400 {
 	int fpga;
 	char *fpga_dev;
 	int fpga_speed;
+
+	char *sound_driver;
+	char *sound_device;
+    unsigned sound_rate;
+    unsigned sound_buffer_size;
+    unsigned sound_chunk_size;
+	int sound_enabled;
+	unsigned sound_volume;
 
 	struct cfg_chan *chans;
 };
