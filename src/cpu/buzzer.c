@@ -29,11 +29,9 @@
 
 static const struct snd_drv *snd;
 
-static unsigned rate;
 static float sample_period;
 static unsigned buffer_len;
 static unsigned volume;
-static int buzzer_val = 0;
 
 static int16_t *buffer;
 static int16_t *buffer_end;
@@ -45,6 +43,10 @@ void buzzer_update(int ir, unsigned instruction_time)
 	static int cnt;
 	static int pir;
 	static double time_pool;
+	static int old_level;
+	static int buzzer_val;
+
+	// update current level (freq divider)
 
 	if (ir == -1) {
 		buzzer_val = 0;
@@ -64,14 +66,20 @@ void buzzer_update(int ir, unsigned instruction_time)
 		pir = ir;
 	}
 
+	// fill the sound buffer (+filtering)
+
 	time_pool += instruction_time;
 
 	while (time_pool >= sample_period) {
 		time_pool -= sample_period;
-		int sample = (volume*32767/100) * buzzer_val;
-		*wp++ = sample;
-		*wp++ = sample;
+		int dst_level = (volume*32767/100) * buzzer_val;
+		int level = old_level + (dst_level-old_level) * 0.7;
+		*wp++ = level;
+		*wp++ = level;
+		old_level = level;
 	}
+
+	// dump buffer to the soundcard
 
 	if (wp >= buffer_end) {
 		snd->play(buffer, buffer_len);
@@ -91,8 +99,7 @@ int buzzer_init(struct cfg_em400 *cfg)
 	}
 
 	volume = cfg->sound_volume;
-	rate = cfg->sound_rate;
-	sample_period = 1000000000.0f / rate;
+	sample_period = 1000000000.0f / cfg->sound_rate;;
 	buffer_len = cfg->sound_buffer_len;
 
 	buffer = malloc(sizeof(int16_t) * 2 * buffer_len);
