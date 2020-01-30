@@ -106,6 +106,7 @@ set(SOURCES_EM400
 
 if(HAVE_SOUND)
 	list(APPEND SOURCES_EM400
+		src/sound/file.c
 		src/sound/sound.c
 		src/cpu/buzzer.c
 	)

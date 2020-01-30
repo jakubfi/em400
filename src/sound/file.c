@@ -1,4 +1,4 @@
-//  Copyright (c) 2020 Jakub Filipowicz <jakubf@gmail.com>
+//  Copyright (c) 2019 Jakub Filipowicz <jakubf@gmail.com>
 //
 //  This program is free software; you can redistribute it and/or modify
 //  it under the terms of the GNU General Public License as published by
@@ -15,47 +15,52 @@
 //  Foundation, Inc.,
 //  51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 
-#include <stdlib.h>
-#include <strings.h>
+#include <stdio.h>
 
 #include "log.h"
+#include "cfg.h"
 #include "sound/sound.h"
 
-#ifdef HAVE_ALSA
-extern const struct snd_drv snd_drv_alsa;
-#endif
-#ifdef HAVE_PULSEAUDIO
-extern const struct snd_drv snd_drv_pulseaudio;
-#endif
-extern const struct snd_drv snd_drv_file;
-
-static const struct snd_drv *snd_drivers[] = {
-#ifdef HAVE_ALSA
-	&snd_drv_alsa,
-#endif
-#ifdef HAVE_PULSEAUDIO
-	&snd_drv_pulseaudio,
-#endif
-	&snd_drv_file,
-	NULL
-};
+FILE *out;
 
 // -----------------------------------------------------------------------
-const struct snd_drv * snd_init(struct cfg_em400 *cfg)
+int file_init(struct cfg_em400 *cfg)
 {
-	const struct snd_drv **snd_drv = snd_drivers;
-	while (snd_drv && *snd_drv) {
-		if (!strcasecmp(cfg->sound_driver, (*snd_drv)->name)) {
-			if ((*snd_drv)->init(cfg) == E_OK) {
-				return *snd_drv;
-			} else {
-				return NULL;
-			}
-		}
-		snd_drv++;
+	out = fopen(cfg->sound_device, "w");
+	if (!out) {
+		return LOGERR("Error opening sound output file: %s\n", cfg->sound_device);
 	}
 
-	return NULL;
+	return E_OK;
 }
+
+// -----------------------------------------------------------------------
+void file_shutdown()
+{
+	if (out) {
+		fclose(out);
+	}
+}
+
+// -----------------------------------------------------------------------
+long file_play(int16_t *buf, size_t frames)
+{
+	long res;
+
+	res = fwrite(buf, frames, 4, out);
+	if (res < 0) {
+		printf("Sound output write failed");
+	}
+
+	return res;
+}
+
+// -----------------------------------------------------------------------
+const struct snd_drv snd_drv_file = {
+	.name = "file",
+	.init = file_init,
+	.shutdown = file_shutdown,
+	.play = file_play,
+};
 
 // vim: tabstop=4 shiftwidth=4 autoindent
