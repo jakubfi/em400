@@ -70,7 +70,6 @@ static int speed_real;
 static int throttle_granularity;
 static float cpu_delay_factor;
 pthread_t idler_th;
-struct timespec idle_timer;
 
 int cpu_mod_present;
 int cpu_user_io_illegal;
@@ -493,7 +492,7 @@ void cpu_loop()
 	int cpu_time;
 	int cpu_time_cumulative = 0;
 
-	clock_gettime(CLOCK_MONOTONIC, &cpu_timer);
+	clock_gettime(CLOCK_REALTIME, &cpu_timer);
 
 	while (1) {
 		int state = atom_load_acquire(&cpu_state);
@@ -526,7 +525,7 @@ cycle:
 						cpu_time_cumulative = 0;
 						int res = EINTR;
 						while (res == EINTR) {
-							res = clock_nanosleep(CLOCK_MONOTONIC, TIMER_ABSTIME, &cpu_timer, NULL);
+							res = clock_nanosleep(CLOCK_REALTIME, TIMER_ABSTIME, &cpu_timer, NULL);
 						}
 					}
 				}
@@ -547,26 +546,15 @@ cycle:
 
 		// CPU stopped
 		} else if ((state & ECTL_STATE_STOP)) {
-			idle_timer.tv_sec = cpu_timer.tv_sec;
-			idle_timer.tv_nsec = cpu_timer.tv_nsec;
 			if ((cpu_idle_in_stop() & ECTL_STATE_CYCLE)) {
 				// CPU cycle triggered while in stop
 				cpu_clear_state(ECTL_STATE_CYCLE);
-				cpu_timer.tv_sec = idle_timer.tv_sec;
-				cpu_timer.tv_nsec = idle_timer.tv_nsec;
 				goto cycle;
-			} else {
-				cpu_timer.tv_sec = idle_timer.tv_sec;
-				cpu_timer.tv_nsec = idle_timer.tv_nsec;
 			}
 
 		// CPU waiting for an interrupt
 		} else if ((state & ECTL_STATE_WAIT)) {
-			idle_timer.tv_sec = cpu_timer.tv_sec;
-			idle_timer.tv_nsec = cpu_timer.tv_nsec;
 			cpu_idle_in_wait();
-			cpu_timer.tv_sec = idle_timer.tv_sec;
-			cpu_timer.tv_nsec = idle_timer.tv_nsec;
 		}
 	}
 }
