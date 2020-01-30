@@ -234,39 +234,6 @@ int cpu_mem_put_byte(int nb, uint32_t addr, uint8_t data)
 }
 
 // -----------------------------------------------------------------------
-#ifdef HAVE_SOUND
-static void * idler_thread(void *ptr)
-{
-	int state;
-
-	while (1) {
-		pthread_mutex_lock(&cpu_wake_mutex);
-		while ((cpu_state & (ECTL_STATE_STOP|ECTL_STATE_WAIT)) == 0) {
-			pthread_cond_wait(&cpu_wake_cond, &cpu_wake_mutex);
-		}
-		pthread_mutex_unlock(&cpu_wake_mutex);
-
-		do {
-			idle_timer.tv_nsec += 4000;
-			if (idle_timer.tv_nsec > 1000000000) {
-				idle_timer.tv_nsec -= 1000000000;
-				idle_timer.tv_sec++;
-			}
-
-			clock_nanosleep(CLOCK_MONOTONIC, TIMER_ABSTIME, &idle_timer, NULL);
-
-			state = atom_load_acquire(&cpu_state);
-			if ((state & (ECTL_STATE_STOP|ECTL_STATE_WAIT))) {
-				buzzer_update(-1, 4000);
-			}
-		} while ((state & (ECTL_STATE_STOP|ECTL_STATE_WAIT)));
-	}
-
-	pthread_exit(NULL);
-}
-#endif
-
-// -----------------------------------------------------------------------
 int cpu_init(struct cfg_em400 *cfg)
 {
 	int res;
@@ -308,10 +275,6 @@ int cpu_init(struct cfg_em400 *cfg)
 		if (buzzer_init(cfg) != E_OK) {
 			return LOGERR("Failed to initialize buzzer.");
 		}
-		if (pthread_create(&idler_th, NULL, idler_thread, NULL)) {
-			return LOGERR("Failed to spawn CPU idler thread.");
-		}
-		pthread_setname_np(idler_th, "idler");
 	}
 #endif
 

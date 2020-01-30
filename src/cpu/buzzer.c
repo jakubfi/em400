@@ -15,14 +15,8 @@
 //  Foundation, Inc.,
 //  51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 
-#define _XOPEN_SOURCE 600
-#ifndef _GNU_SOURCE
-#define _GNU_SOURCE
-#endif
-
 #include <inttypes.h>
 #include <string.h>
-#include <stdlib.h>
 
 #include "sound/sound.h"
 #include "log.h"
@@ -74,6 +68,7 @@ void buzzer_update(int ir, unsigned instruction_time)
 		time_pool -= sample_period;
 		int dst_level = (volume*32767/100) * buzzer_val;
 		int level = old_level + (dst_level-old_level) * 0.7;
+		// two channels
 		*wp++ = level;
 		*wp++ = level;
 		old_level = level;
