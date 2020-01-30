@@ -67,11 +67,12 @@ int cyylex(void);
 %token LOG "`log`"
 %token ENABLED "`enabled`"
 %token LFILE "`file`"
-%token COMPONENTS "loging components"
-%token LINEBUF "line buffered"
+%token COMPONENTS "`loging components`"
+%token LINEBUF "`line buffered`"
 %token DEVICE "`device`"
 %token SPEED "`speed`"
 %token DRIVER "`driver`"
+%token OUTPUT "`output`"
 %token RATE "`rate`"
 %token BUFFER_LEN "`buffer_len`"
 %token VOLUME "`volume`"
@@ -172,8 +173,8 @@ sound_opts:
 	;
 
 sound_opt:
-	DEVICE '=' STRING { free(cfg->sound_device); cfg->sound_device = $3.s; }
-	| DRIVER '=' STRING { free(cfg->sound_driver); cfg->sound_driver = $3.s; }
+	DRIVER '=' STRING { free(cfg->sound_driver); cfg->sound_driver = $3.s; }
+	| OUTPUT '=' STRING { free(cfg->sound_output); cfg->sound_output = $3.s; }
 	| RATE '=' VALUE { cfg->sound_rate = $3.v; free($3.s); }
 	| BUFFER_LEN '=' VALUE { cfg->sound_buffer_len = $3.v; free($3.s); }
 	| ENABLED '=' BOOL { cfg->sound_enabled = $3.v; free($3.s); }

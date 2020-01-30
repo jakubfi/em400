@@ -95,7 +95,7 @@ struct cfg_em400 * cfg_create_default()
 	cfg->sound_enabled = 0;
 	cfg->sound_volume = 10;
 	cfg->sound_driver = strdup("alsa");
-	cfg->sound_device = strdup("default");
+	cfg->sound_output = strdup("default");
 	cfg->sound_rate = 48000;
 	cfg->sound_buffer_len = 256;
 
@@ -118,7 +118,7 @@ void cfg_destroy(struct cfg_em400 *cfg)
 	free(cfg->log_components);
 	free(cfg->fpga_dev);
 	free(cfg->sound_driver);
-	free(cfg->sound_device);
+	free(cfg->sound_output);
 	cfg_drop_chans(cfg->chans);
 	free(cfg);
 }
@@ -340,7 +340,7 @@ void cfg_log(struct cfg_em400 *cfg)
 	LOG(L_EM4H, "   Hardwired segments for OS: %i", cfg->mem_os);
 	LOG(L_EM4H, "Sound emulation: %s", cfg->sound_enabled ? "enabled" : "disabled");
 	LOG(L_EM4H, "   Driver: %s", cfg->sound_driver);
-	LOG(L_EM4H, "   Device: %s", cfg->sound_device);
+	LOG(L_EM4H, "   Output: %s", cfg->sound_output);
 	LOG(L_EM4H, "   Rate: %i", cfg->sound_rate);
 	LOG(L_EM4H, "   Buffer len: %i frames", cfg->sound_buffer_len);
 	LOG(L_EM4H, "   Software volume: %i%%", cfg->sound_volume);

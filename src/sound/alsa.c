@@ -28,7 +28,7 @@ static snd_pcm_t *handle;
 int alsa_init(struct cfg_em400 *cfg)
 {
 	int err;
-	err = snd_pcm_open(&handle, cfg->sound_device, SND_PCM_STREAM_PLAYBACK, 0);
+	err = snd_pcm_open(&handle, cfg->sound_output, SND_PCM_STREAM_PLAYBACK, 0);
 	if (err < 0) {
 		return LOGERR("ALSA snd_pcm_open() error: %s\n", snd_strerror(err));
 	}

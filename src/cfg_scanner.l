@@ -76,6 +76,7 @@ device			return DEVICE;
 
 sound			return SOUND;
 driver			return DRIVER;
+output			return OUTPUT;
 rate			return RATE;
 buffer_len		return BUFFER_LEN;
 volume			return VOLUME;

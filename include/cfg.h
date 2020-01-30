@@ -75,7 +75,7 @@ struct cfg_em400 {
 	int fpga_speed;
 
 	char *sound_driver;
-	char *sound_device;
+	char *sound_output;
     unsigned sound_rate;
     unsigned sound_buffer_len;
 	int sound_enabled;

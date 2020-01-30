@@ -26,9 +26,9 @@ FILE *out;
 // -----------------------------------------------------------------------
 int file_init(struct cfg_em400 *cfg)
 {
-	out = fopen(cfg->sound_device, "w");
+	out = fopen(cfg->sound_output, "w");
 	if (!out) {
-		return LOGERR("Error opening sound output file: %s\n", cfg->sound_device);
+		return LOGERR("Error opening sound output file: %s\n", cfg->sound_output);
 	}
 
 	return E_OK;
