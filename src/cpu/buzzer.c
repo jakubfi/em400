@@ -38,35 +38,30 @@ void buzzer_update(int ir, unsigned instruction_time)
 	static int pir;
 	static double time_pool;
 	static int old_level;
-	static int buzzer_val;
+	static int dst_level;
 
 	// update current level (freq divider)
 
 	if (ir == -1) {
-		buzzer_val = 0;
+		dst_level = 0;
 	} else {
-		int has_changed = (ir ^ pir) & 0x8000;
-		if (has_changed) {
-			cnt++;
-			if (cnt >= 32) {
-				if (buzzer_val != 0) {
-					buzzer_val *= -1;
-				} else {
-					buzzer_val = 1;
-				}
+		int level_has_changed = (ir ^ pir) & 0x8000;
+		pir = ir;
+		if (level_has_changed) {
+			if (++cnt >= 32) {
 				cnt = 0;
+				if (dst_level) dst_level *= -1;
+				else dst_level = volume*32767/100;
 			}
 		}
-		pir = ir;
 	}
 
-	// fill the sound buffer (+filtering)
+	// fill the sound buffer (+apply filter)
 
 	time_pool += instruction_time;
 
 	while (time_pool >= sample_period) {
 		time_pool -= sample_period;
-		int dst_level = (volume*32767/100) * buzzer_val;
 		int level = old_level + (dst_level-old_level) * 0.7;
 		// two channels
 		*wp++ = level;
@@ -77,6 +72,7 @@ void buzzer_update(int ir, unsigned instruction_time)
 	// dump buffer to the soundcard
 
 	if (wp >= buffer_end) {
+		wp = buffer;
 		int written = 0;
 		while (written != buffer_len) {
 			int res = snd->play(buffer+written, buffer_len-written);
@@ -84,7 +80,6 @@ void buzzer_update(int ir, unsigned instruction_time)
 				written += res;
 			}
 		}
-		wp = buffer;
 	}
 }
 
@@ -107,8 +102,6 @@ int buzzer_init(struct cfg_em400 *cfg)
 	if (!buffer) {
 		return LOGERR("Cannot allocate memory for sound buffer.");
 	}
-
-	memset(buffer, 0, sizeof(int16_t) * 2 * buffer_len);
 	buffer_end = buffer + buffer_len * 2;
 	wp = buffer;
 
