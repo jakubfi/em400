@@ -31,6 +31,10 @@ int pulseaudio_init(struct cfg_em400 *cfg)
 {
 	int err;
 
+	// Don't know the relation between tlength and latency.
+	// This seems to work fine.
+	const unsigned tlength = cfg->sound_buffer_len * 1000000/cfg->sound_rate;
+
 	const pa_sample_spec ss = {
 		.format = PA_SAMPLE_S16LE,
 		.rate = cfg->sound_rate,
@@ -38,7 +42,7 @@ int pulseaudio_init(struct cfg_em400 *cfg)
 	};
 	const pa_buffer_attr ba = {
 		.maxlength = -1,
-		.tlength = 2 * cfg->sound_buffer_len * bytes_per_frame,
+		.tlength = tlength,
 		.prebuf = -1,
 		.minreq = -1,
 		.fragsize = -1,
@@ -48,6 +52,12 @@ int pulseaudio_init(struct cfg_em400 *cfg)
 	if (!s) {
 		return LOGERR("pa_simple_new() failed: %s\n", pa_strerror(err));
 	}
+
+	LOG(L_EM4H, "PulseAudio initialized. Buffer size: %i samples, rate: %i Hz, tlength: %i",
+		cfg->sound_buffer_len,
+		cfg->sound_rate,
+		tlength
+	);
 
 	return E_OK;
 }
