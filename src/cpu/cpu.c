@@ -523,10 +523,7 @@ cycle:
 							cpu_timer.tv_sec++;
 						}
 						cpu_time_cumulative = 0;
-						int res = EINTR;
-						while (res == EINTR) {
-							res = clock_nanosleep(CLOCK_REALTIME, TIMER_ABSTIME, &cpu_timer, NULL);
-						}
+						while (clock_nanosleep(CLOCK_REALTIME, TIMER_ABSTIME, &cpu_timer, NULL) == EINTR);
 					}
 				}
 
