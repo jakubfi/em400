@@ -77,7 +77,13 @@ void buzzer_update(int ir, unsigned instruction_time)
 	// dump buffer to the soundcard
 
 	if (wp >= buffer_end) {
-		snd->play(buffer, buffer_len);
+		int written = 0;
+		while (written != buffer_len) {
+			int res = snd->play(buffer+written, buffer_len-written);
+			if (res > 0) {
+				written += res;
+			}
+		}
 		wp = buffer;
 	}
 }
