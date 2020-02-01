@@ -93,11 +93,11 @@ struct cfg_em400 * cfg_create_default()
 
 	// Sound
 	cfg->sound_enabled = 0;
-	cfg->sound_volume = 10;
-	cfg->sound_driver = strdup("alsa");
+	cfg->sound_volume = 30;
+	cfg->sound_driver = strdup("pulseaudio");
 	cfg->sound_output = strdup("default");
-	cfg->sound_rate = 48000;
-	cfg->sound_buffer_len = 256;
+	cfg->sound_rate = 44100;
+	cfg->sound_buffer_len = 1024;
 
 	// I/O
 	cfg->chans = NULL;

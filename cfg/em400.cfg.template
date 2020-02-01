@@ -88,28 +88,25 @@ sound {
 	# have to be disabled.
 	enabled = false
 
-	# Sound driver to use: pulseaudio or alsa
+	# Sound driver to use: pulseaudio, alsa or file (raw PCM dump)
 	# Default: pulseaudio
 	driver = pulseaudio
 
-	# ALSA sound device to use. Default: "default"
-	device = default
+	# For alsa, this is the output device to use.
+	# For file output, it's the file name. Unused for pulseaudio.
+	# Default: "default"
+	output = default
 
 	# Samplerate. Default: 44100
 	rate = 44100
 
-	# Sound buffer size (in samples, multiplies of 1024).
+	# Sound buffer size (in samples, powers of 2).
 	# Increase if sound is choppy, higher values = more latency.
-	buffer_size = 2048
-
-	# Sound transfer chunk size (in samples, powers of 2).
-	# Should be set to 1/4 of the buffer size or less.
-	# You may try fiddling with it if sound is choppy.
-	chunk_size = 256
+	buffer_len = 1024
 
 	# Software buzzer volume control (0-100)
-	# Default is 10. 10 is enough, really.
-	volume = 10
+	# Default is 30.
+	volume = 30
 }
 
 fpga {
