@@ -48,7 +48,7 @@ long file_play(int16_t *buf, size_t frames)
 {
 	long res;
 
-	res = fwrite(buf, frames, 4, out);
+	res = fwrite(buf, 4, frames, out);
 	if (res < 0) {
 		printf("Sound output write failed");
 	}
