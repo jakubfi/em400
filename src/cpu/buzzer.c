@@ -48,7 +48,7 @@ void buzzer_update(int ir, unsigned instruction_time)
 		int level_has_changed = (ir ^ pir) & 0x8000;
 		pir = ir;
 		if (level_has_changed) {
-			if (++cnt >= 32) {
+			if (++cnt >= 16) {
 				cnt = 0;
 				if (dst_level) dst_level *= -1;
 				else dst_level = volume*32767/100;
