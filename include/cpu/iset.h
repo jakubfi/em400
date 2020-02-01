@@ -26,7 +26,8 @@
 #define TIME_BMOD 300			// B-modification
 #define TIME_DMOD 1050			// D-modification
 #define TIME_SHIFT 100			// single SHC shift
-#define TIME_INEFFECTIVE 300	// ineffective instruction handling
+#define TIME_MEM_ARG 850		// memory argument
+#define TIME_P 1400				// skip (P) time
 
 enum opcode_flags {
 	OP_FL_NONE			= 0,

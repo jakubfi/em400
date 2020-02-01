@@ -432,7 +432,7 @@ static int cpu_do_cycle()
 				N = data + rMOD;
 				rIC++;
 			}
-			if (speed_real) instruction_time += TIME_MEM;
+			if (speed_real) instruction_time += TIME_MEM_ARG;
 		}
 		if (IR_B) {
 			N = (uint16_t) N + regs[IR_B];
@@ -474,7 +474,7 @@ static int cpu_do_cycle()
 	return instruction_time;
 
 ineffective:
-	if (speed_real) instruction_time += TIME_MEM + TIME_INEFFECTIVE;
+	if (speed_real) instruction_time += TIME_P;
 	P = 0;
 	rMOD = 0;
 	rMODc = 0;

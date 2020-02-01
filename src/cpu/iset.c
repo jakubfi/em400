@@ -131,7 +131,7 @@ struct iset_instruction em400_ilist[] = {
 	{ O(072)+01011, VARMASK_A,   { OP_FL_NONE, op_72_lpc, 0, 0, 1300 } },
 
 	{ O(073)+00000, VARMASK_DBC, { OP_FL_USR_ILLEGAL | OP_FL_ARG_SHORT, op_73_hlt, 0, 0, TIME_MEM + 300 } },
-	{ O(073)+00100, VARMASK_DBC, { OP_FL_USR_ILLEGAL, op_73_mcl, 0, 0, TIME_MEM + 300 } },
+	{ O(073)+00100, VARMASK_DBC, { OP_FL_USR_ILLEGAL, op_73_mcl, 0, 0, 17120 } },
 	{ O(073)+00200, VARMASK_DBC, { OP_FL_USR_ILLEGAL, op_73_softint, 0, 0, TIME_MEM + 300 } },
 	{ O(073)+00300, VARMASK_BC,  { OP_FL_USR_ILLEGAL, op_73_giu, 0, 0, TIME_MEM + 300 } },
 	{ O(073)+00400, VARMASK_DBC, { OP_FL_USR_ILLEGAL, op_73_lip, 0, 0, TIME_MEM + 300 } },
