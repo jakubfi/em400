@@ -41,7 +41,7 @@ enum em400_var_masks {
 
 // MERA-400 instruction list
 struct iset_instruction em400_ilist[] = {
-	{ 0, VARMASK_ALL, { OP_FL_ILLEGAL, NULL, 0, 0, TIME_MEM } }, // illegal instructions
+	{ 0, VARMASK_ALL, { OP_FL_ILLEGAL, NULL, 0, 0, TIME_P } },// // illegal instructions
 
 	{ O(020), VARMASK_DABC, { OP_FL_ARG_NORM, op_lw, 0, 0, 1650 } },
 	{ O(021), VARMASK_DABC, { OP_FL_ARG_NORM, op_tw, 0, 0, 1650 } },
@@ -104,7 +104,7 @@ struct iset_instruction em400_ilist[] = {
 	{ O(070)+0700, VARMASK_DBC, { OP_FL_ARG_SHORT, op_70_jump, FL_C, FL_C, 2000 } },	// jcs
 
 	{ O(071)+00000, VARMASK_BYTE, { OP_FL_NONE, op_71_blc, 0, 0, 1700 } },
-	{ O(071)+00400, VARMASK_BYTE, { OP_FL_NONE, op_71_exl, 0, 0, TIME_MEM + 500 } },
+	{ O(071)+00400, VARMASK_BYTE, { OP_FL_NONE, op_71_exl, 0, 0, 10000 } },//
 	{ O(071)+01000, VARMASK_BYTE, { OP_FL_NONE, op_71_brc, 0, 0, 1700 } },
 	{ O(071)+01400, VARMASK_BYTE, { OP_FL_NONE, op_71_nrf, 0, 0, (3800+15800)/2 } },
 
@@ -134,7 +134,7 @@ struct iset_instruction em400_ilist[] = {
 	{ O(073)+00100, VARMASK_DBC, { OP_FL_USR_ILLEGAL, op_73_mcl, 0, 0, 17120 } },
 	{ O(073)+00200, VARMASK_DBC, { OP_FL_USR_ILLEGAL, op_73_softint, 0, 0, TIME_MEM + 300 } },
 	{ O(073)+00300, VARMASK_BC,  { OP_FL_USR_ILLEGAL, op_73_giu, 0, 0, TIME_MEM + 300 } },
-	{ O(073)+00400, VARMASK_DBC, { OP_FL_USR_ILLEGAL, op_73_lip, 0, 0, TIME_MEM + 300 } },
+	{ O(073)+00400, VARMASK_DBC, { OP_FL_USR_ILLEGAL, op_73_lip, 0, 0, 9000 } },//
 	{ O(073)+01300, VARMASK_BC,  { OP_FL_USR_ILLEGAL, op_73_gil, 0, 0, TIME_MEM + 300 } },
 	{ O(073)+00500, VARMASK_DBC, { OP_FL_USR_ILLEGAL, op_73_cron, 0, 0, TIME_MEM + 300 } },
 
