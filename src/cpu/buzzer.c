@@ -62,7 +62,7 @@ void buzzer_update(int ir, unsigned instruction_time)
 
 	while (time_pool >= sample_period) {
 		time_pool -= sample_period;
-		int level = old_level + (dst_level-old_level) * 0.7;
+		int level = old_level + (dst_level-old_level) * 0.6;
 		// two channels
 		*wp++ = level;
 		*wp++ = level;
