@@ -395,7 +395,7 @@ static int cpu_do_cycle()
 	// fetch instruction
 	if (!cpu_mem_get(QNB, rIC, &rIR)) {
 		LOGCPU(L_CPU, "        no mem, instruction fetch");
-		goto ineffective;
+		goto ineffective_memfail;
 	}
 	op = cpu_op_tab[rIR];
 	rIC++;
@@ -427,12 +427,15 @@ static int cpu_do_cycle()
 		} else {
 			if (!cpu_mem_get(QNB, rIC, &data)) {
 				LOGCPU(L_CPU, "    no mem, long arg fetch @ %i:0x%04x", QNB, (uint16_t) rIC);
-				goto ineffective;
+				goto ineffective_memfail;
 			} else {
 				N = data + rMOD;
 				rIC++;
 			}
 			if (speed_real) instruction_time += TIME_MEM_ARG;
+		}
+		if (rMODc) {
+			if (speed_real) instruction_time += TIME_PREMOD;
 		}
 		if (IR_B) {
 			N = (uint16_t) N + regs[IR_B];
@@ -441,7 +444,7 @@ static int cpu_do_cycle()
 		if (IR_D) {
 			if (!cpu_mem_get(QNB, N, &data)) {
 				LOGCPU(L_CPU, "    no mem, indirect arg fetch @ %i:0x%04x", QNB, (uint16_t) N);
-				goto ineffective;
+				goto ineffective_memfail;
 			} else {
 				N = data;
 			}
@@ -449,10 +452,9 @@ static int cpu_do_cycle()
 		}
 	} else if ((op->flags & OP_FL_ARG_SHORT)) {
 		N = (uint16_t) IR_T + (uint16_t) rMOD;
-	}
-
-	if (rMODc) {
-		if (speed_real) instruction_time += TIME_PREMOD;
+		if (rMODc) {
+			if (speed_real) instruction_time += TIME_PREMOD;
+		}
 	}
 
 	if (LOG_WANTS(L_CPU)) {
@@ -473,6 +475,8 @@ static int cpu_do_cycle()
 	}
 	return instruction_time;
 
+ineffective_memfail:
+	if (speed_real) instruction_time += TIME_NOANS_IF;
 ineffective:
 	if (speed_real) instruction_time += TIME_P;
 	P = 0;
@@ -503,6 +507,7 @@ cycle:
 			// interrupt
 			if (atom_load_acquire(&RP) && !P && !rMODc) {
 				int_serve();
+				cpu_time_cumulative += TIME_INT_SERVE;
 			// CPU cycle
 			} else {
 				cpu_time = cpu_do_cycle();

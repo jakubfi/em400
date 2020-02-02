@@ -28,6 +28,8 @@
 #define TIME_SHIFT 100			// single SHC shift
 #define TIME_MEM_ARG 850		// memory argument
 #define TIME_P 1400				// skip (P) time
+#define TIME_NOANS_IF 15000		// timeout on the interface
+#define TIME_INT_SERVE 9000		// interrupt serve
 
 enum opcode_flags {
 	OP_FL_NONE			= 0,
