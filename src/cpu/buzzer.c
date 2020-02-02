@@ -40,6 +40,9 @@ void buzzer_update(int ir, unsigned instruction_time)
 	static int old_level;
 	static int dst_level;
 
+	static int odst_level;
+	static int lpcounter;
+
 	// update current level (freq divider)
 
 	if (ir == -1) {
@@ -61,12 +64,21 @@ void buzzer_update(int ir, unsigned instruction_time)
 	time_pool += instruction_time;
 
 	while (time_pool >= sample_period) {
+		if (odst_level != dst_level) {
+			lpcounter = 0;
+		} else {
+			lpcounter++;
+		}
 		time_pool -= sample_period;
 		int level = old_level + (dst_level-old_level) * 0.6;
+		if (lpcounter > 20) {
+			level = level * 15/(lpcounter);
+		}
 		// two channels
 		*wp++ = level;
 		*wp++ = level;
 		old_level = level;
+		odst_level = dst_level;
 	}
 
 	// dump buffer to the soundcard
