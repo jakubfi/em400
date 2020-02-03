@@ -432,14 +432,14 @@ static int cpu_do_cycle()
 				N = data + rMOD;
 				rIC++;
 			}
-			if (speed_real) instruction_time += TIME_MEM_ARG;
+			instruction_time += TIME_MEM_ARG;
 		}
 		if (rMODc) {
-			if (speed_real) instruction_time += TIME_PREMOD;
+			instruction_time += TIME_PREMOD;
 		}
 		if (IR_B) {
 			N = (uint16_t) N + regs[IR_B];
-			if (speed_real) instruction_time += TIME_BMOD;
+			instruction_time += TIME_BMOD;
 		}
 		if (IR_D) {
 			if (!cpu_mem_get(QNB, N, &data)) {
@@ -448,12 +448,12 @@ static int cpu_do_cycle()
 			} else {
 				N = data;
 			}
-			if (speed_real) instruction_time += TIME_DMOD;
+			instruction_time += TIME_DMOD;
 		}
 	} else if ((op->flags & OP_FL_ARG_SHORT)) {
 		N = (uint16_t) IR_T + (uint16_t) rMOD;
 		if (rMODc) {
-			if (speed_real) instruction_time += TIME_PREMOD;
+			instruction_time += TIME_PREMOD;
 		}
 	}
 
@@ -476,9 +476,9 @@ static int cpu_do_cycle()
 	return instruction_time;
 
 ineffective_memfail:
-	if (speed_real) instruction_time += TIME_NOANS_IF;
+	instruction_time += TIME_NOANS_IF;
 ineffective:
-	if (speed_real) instruction_time += TIME_P;
+	instruction_time += TIME_P;
 	P = 0;
 	rMOD = 0;
 	rMODc = 0;
