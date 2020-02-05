@@ -569,7 +569,11 @@ cycle:
 
 		// CPU stopped
 		} else if ((state & ECTL_STATE_STOP)) {
-			if ((cpu_idle_in_stop() & ECTL_STATE_CYCLE)) {
+			buzzer_stop();
+			int res = cpu_idle_in_stop();
+			clock_gettime(CLOCK_REALTIME, &cpu_timer);
+			buzzer_start();
+			if (res & ECTL_STATE_CYCLE) {
 				// CPU cycle triggered while in stop
 				cpu_clear_state(ECTL_STATE_CYCLE);
 				goto cycle;

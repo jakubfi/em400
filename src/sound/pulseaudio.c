@@ -76,11 +76,25 @@ long pulseaudio_play(int16_t *buf, size_t frames)
 }
 
 // -----------------------------------------------------------------------
+void pulseaudio_start()
+{
+
+}
+
+// -----------------------------------------------------------------------
+void pulseaudio_stop()
+{
+
+}
+
+// -----------------------------------------------------------------------
 const struct snd_drv snd_drv_pulseaudio = {
 	.name = "pulseaudio",
 	.init = pulseaudio_init,
 	.shutdown = pulseaudio_shutdown,
 	.play = pulseaudio_play,
+	.start = pulseaudio_start,
+	.stop = pulseaudio_stop,
 };
 
 // vim: tabstop=4 shiftwidth=4 autoindent

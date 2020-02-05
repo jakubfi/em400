@@ -73,11 +73,25 @@ long alsa_play(int16_t *buf, size_t frames)
 }
 
 // -----------------------------------------------------------------------
+void alsa_start()
+{
+	snd_pcm_prepare(handle);
+}
+
+// -----------------------------------------------------------------------
+void alsa_stop()
+{
+	snd_pcm_drain(handle);
+}
+
+// -----------------------------------------------------------------------
 const struct snd_drv snd_drv_alsa = {
 	.name = "alsa",
 	.init = alsa_init,
 	.shutdown = alsa_shutdown,
 	.play = alsa_play,
+	.start = alsa_start,
+	.stop = alsa_stop,
 };
 
 // vim: tabstop=4 shiftwidth=4 autoindent

@@ -96,6 +96,18 @@ void buzzer_update(int ir, unsigned instruction_time)
 }
 
 // -----------------------------------------------------------------------
+void buzzer_start()
+{
+	snd->start();
+}
+
+// -----------------------------------------------------------------------
+void buzzer_stop()
+{
+	snd->stop();
+}
+
+// -----------------------------------------------------------------------
 int buzzer_init(struct cfg_em400 *cfg)
 {
 	if ((cfg->speed_real == 0) || (cfg->cpu_speed_factor < 0.5f) || (cfg->cpu_speed_factor > 1.5f)) {
