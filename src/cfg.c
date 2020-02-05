@@ -97,7 +97,8 @@ struct cfg_em400 * cfg_create_default()
 	cfg->sound_driver = strdup("pulseaudio");
 	cfg->sound_output = strdup("default");
 	cfg->sound_rate = 44100;
-	cfg->sound_buffer_len = 1024;
+	cfg->sound_buffer_len = 128;
+	cfg->sound_latency = 20;
 
 	// I/O
 	cfg->chans = NULL;
@@ -343,6 +344,7 @@ void cfg_log(struct cfg_em400 *cfg)
 	LOG(L_EM4H, "   Output: %s", cfg->sound_output);
 	LOG(L_EM4H, "   Rate: %i", cfg->sound_rate);
 	LOG(L_EM4H, "   Buffer len: %i frames", cfg->sound_buffer_len);
+	LOG(L_EM4H, "   Latency : %i ms", cfg->sound_latency);
 	LOG(L_EM4H, "   Software volume: %i%%", cfg->sound_volume);
 	LOG(L_EM4H, "Logging (%s):", cfg->log_enabled ? "enabled" : "disabled");
 	LOG(L_EM4H, "   File: %s", cfg->log_file);

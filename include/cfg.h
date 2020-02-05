@@ -80,6 +80,7 @@ struct cfg_em400 {
     unsigned sound_buffer_len;
 	int sound_enabled;
 	unsigned sound_volume;
+	unsigned sound_latency;
 
 	struct cfg_chan *chans;
 };

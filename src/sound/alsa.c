@@ -39,19 +39,12 @@ int alsa_init(struct cfg_em400 *cfg)
 	const unsigned channels = 2;
 	const unsigned rate = cfg->sound_rate;
 	const unsigned resample = 1;
-	const unsigned latency_us = 4 * cfg->sound_buffer_len * 1000000/cfg->sound_rate;
+	const unsigned latency_us = cfg->sound_latency * 1000;
 
 	err = snd_pcm_set_params(handle, pcm_format, pcm_access, channels, rate, resample, latency_us);
 	if (err < 0) {
 		return LOGERR("ALSA snd_pcm_set_params() error: %s\n", snd_strerror(err));
 	}
-
-	LOG(L_EM4H, "ALSA initialized. Output: %s, buffer size: %i samples, rate: %i Hz, latency: %i us",
-		cfg->sound_output,
-		cfg->sound_buffer_len,
-		cfg->sound_rate,
-		latency_us
-	);
 
 	return E_OK;
 }

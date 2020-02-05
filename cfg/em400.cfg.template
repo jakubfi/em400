@@ -100,9 +100,12 @@ sound {
 	# Samplerate. Default: 44100
 	rate = 44100
 
-	# Sound buffer size (in samples, powers of 2).
-	# Increase if sound is choppy, higher values = more latency.
-	buffer_len = 1024
+	# Sound buffer size (in samples, powers of 2, default 128).
+	buffer_len = 128
+
+	# Sound output latency (in miliseconds, default 20).
+	# Increase if sound is choppy>
+	latency = 20
 
 	# Software buzzer volume control (0-100)
 	# Default is 30.

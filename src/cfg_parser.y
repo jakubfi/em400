@@ -76,6 +76,7 @@ int cyylex(void);
 %token RATE "`rate`"
 %token BUFFER_LEN "`buffer_len`"
 %token VOLUME "`volume`"
+%token LATENCY "`latency`"
 %token <value> NAME "parameter or device name"
 %token <value> STRING "string"
 %token <value> VALUE "integer value"
@@ -179,6 +180,7 @@ sound_opt:
 	| BUFFER_LEN '=' VALUE { cfg->sound_buffer_len = $3.v; free($3.s); }
 	| ENABLED '=' BOOL { cfg->sound_enabled = $3.v; free($3.s); }
 	| VOLUME '=' VALUE	{ cfg->sound_volume = $3.v; free($3.s); }
+	| LATENCY '=' VALUE	{ cfg->sound_latency = $3.v; free($3.s); }
 	;
 
 %%
