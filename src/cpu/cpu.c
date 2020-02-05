@@ -90,10 +90,31 @@ pthread_cond_t cpu_wake_cond = PTHREAD_COND_INITIALIZER;
 // -----------------------------------------------------------------------
 static void cpu_idle_in_wait()
 {
+	LOG(L_CPU, "idling in state WAIT");
+
+	// something around <throttle_granularity> instruction cycles
+	const unsigned loop_wait = throttle_granularity * 2*TIME_MEM;
+
 	pthread_mutex_lock(&cpu_wake_mutex);
 	while ((cpu_state == ECTL_STATE_WAIT) && !atom_load_acquire(&RP)) {
-		LOG(L_CPU, "idling in state WAIT");
-		pthread_cond_wait(&cpu_wake_cond, &cpu_wake_mutex);
+#ifdef HAVE_SOUND
+		if (speed_real && sound_enabled) {
+			// update buzzer anyway
+			// don't care if pthread_cond_timedwait() sleeps less than loop_wait,
+			// this will eventually equalize with subsequent cpu instructions
+			cpu_timer.tv_nsec += loop_wait;
+			if (cpu_timer.tv_nsec > 1000000000) {
+				cpu_timer.tv_nsec -= 1000000000;
+				cpu_timer.tv_sec++;
+			}
+			buzzer_update(rIR, loop_wait);
+			while (pthread_cond_timedwait(&cpu_wake_cond, &cpu_wake_mutex, &cpu_timer) == EINTR);
+#else
+		if (0) {
+#endif
+		} else {
+			pthread_cond_wait(&cpu_wake_cond, &cpu_wake_mutex);
+		}
 	}
 	cpu_state &= ~ECTL_STATE_WAIT;
 	pthread_mutex_unlock(&cpu_wake_mutex);
