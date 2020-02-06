@@ -92,28 +92,9 @@ static void cpu_idle_in_wait()
 {
 	LOG(L_CPU, "idling in state WAIT");
 
-	const unsigned loop_wait = throttle_granularity;
-
 	pthread_mutex_lock(&cpu_wake_mutex);
 	while ((cpu_state == ECTL_STATE_WAIT) && !atom_load_acquire(&RP)) {
-#ifdef HAVE_SOUND
-		if (speed_real && sound_enabled) {
-			// update buzzer anyway
-			// don't care if pthread_cond_timedwait() sleeps less than loop_wait,
-			// this will eventually equalize with subsequent cpu instructions
-			cpu_timer.tv_nsec += loop_wait;
-			if (cpu_timer.tv_nsec > 1000000000) {
-				cpu_timer.tv_nsec -= 1000000000;
-				cpu_timer.tv_sec++;
-			}
-			buzzer_update(rIR, loop_wait);
-			while (pthread_cond_timedwait(&cpu_wake_cond, &cpu_wake_mutex, &cpu_timer) == EINTR);
-#else
-		if (0) {
-#endif
-		} else {
 			pthread_cond_wait(&cpu_wake_cond, &cpu_wake_mutex);
-		}
 	}
 	cpu_state &= ~ECTL_STATE_WAIT;
 	pthread_mutex_unlock(&cpu_wake_mutex);
@@ -516,7 +497,7 @@ void cpu_loop()
 	int cpu_time;
 	int cpu_time_cumulative = 0;
 
-	clock_gettime(CLOCK_REALTIME, &cpu_timer);
+	clock_gettime(CLOCK_MONOTONIC, &cpu_timer);
 
 	while (1) {
 		int state = atom_load_acquire(&cpu_state);
@@ -527,34 +508,11 @@ cycle:
 			// interrupt
 			if (atom_load_acquire(&RP) && !P && !rMODc) {
 				int_serve();
-				cpu_time = TIME_INT_SERVE * cpu_delay_factor;
-				cpu_time_cumulative += cpu_time;
-				if (sound_enabled) {
-					buzzer_update(rIR, cpu_time);
-				}
+				cpu_time = TIME_INT_SERVE;
 			// CPU cycle
 			} else {
 				cpu_time = cpu_do_cycle();
 				ips_counter++;
-
-				if (speed_real) {
-					cpu_time *= cpu_delay_factor;
-#ifdef HAVE_SOUND
-					if (sound_enabled) {
-						buzzer_update(rIR, cpu_time);
-					}
-#endif
-					cpu_time_cumulative += cpu_time;
-					if (cpu_time_cumulative > throttle_granularity) {
-						cpu_timer.tv_nsec += cpu_time_cumulative;
-						while (cpu_timer.tv_nsec > 1000000000) {
-							cpu_timer.tv_nsec -= 1000000000;
-							cpu_timer.tv_sec++;
-						}
-						cpu_time_cumulative = 0;
-						while (clock_nanosleep(CLOCK_REALTIME, TIMER_ABSTIME, &cpu_timer, NULL) == EINTR);
-					}
-				}
 
 				// breakpoint hit?
 				if (ectl_brk_check()) {
@@ -569,13 +527,15 @@ cycle:
 		// CPU reset
 		} else if (state & (ECTL_STATE_CLM | ECTL_STATE_CLO)) {
 			cpu_clear(state & (ECTL_STATE_CLM | ECTL_STATE_CLO));
+			cpu_time = 0;
 
 		// CPU stopped
 		} else if ((state & ECTL_STATE_STOP)) {
 			buzzer_stop();
 			int res = cpu_idle_in_stop();
-			clock_gettime(CLOCK_REALTIME, &cpu_timer);
 			buzzer_start();
+			clock_gettime(CLOCK_MONOTONIC, &cpu_timer);
+			cpu_time = 0;
 			if (res & ECTL_STATE_CYCLE) {
 				// CPU cycle triggered while in stop
 				cpu_clear_state(ECTL_STATE_CYCLE);
@@ -584,7 +544,32 @@ cycle:
 
 		// CPU waiting for an interrupt
 		} else if ((state & ECTL_STATE_WAIT)) {
-			cpu_idle_in_wait();
+			if (speed_real && sound_enabled) {
+				// busy wait for halt when sound is on
+				cpu_time += throttle_granularity;
+			} else {
+				cpu_idle_in_wait();
+			}
+		}
+
+		// realtime and sound management
+		if (speed_real && (cpu_time != 0)) {
+			cpu_time *= cpu_delay_factor;
+#ifdef HAVE_SOUND
+			if (sound_enabled) {
+				buzzer_update(rIR, cpu_time);
+			}
+#endif
+			cpu_time_cumulative += cpu_time;
+			if (cpu_time_cumulative >= throttle_granularity) {
+				cpu_timer.tv_nsec += cpu_time_cumulative;
+				while (cpu_timer.tv_nsec > 1000000000) {
+					cpu_timer.tv_nsec -= 1000000000;
+					cpu_timer.tv_sec++;
+				}
+				cpu_time_cumulative = 0;
+				while (clock_nanosleep(CLOCK_MONOTONIC, TIMER_ABSTIME, &cpu_timer, NULL) == EINTR);
+			}
 		}
 	}
 }
