@@ -1,55 +1,52 @@
+# Note: values in the template are the default ones
+
 computer {
-	# Set CPU and memory backend:
-	# "false" - use emulated CPU and memory (default)
+	# Choose CPU and memory backend:
+	# "false" - use emulated CPU and memory
 	# "true" - use FPGA implementation of CPU and memory
 	fpga = false
 
 	# Control CPU emulation speed:
-	# "false" - run as fast as possible (default)
+	# "false" - run as fast as possible
 	# "true" - try to emulate real hardware CPU and memory speeds
         speed_real = false
 
 	# If speed_real is set to "true", cpu_speed_factor controls how much
-	# faster or slower emulated CPU runs compared to the real hardware
-	# Use a floating point number.
+	# faster (>1.0) or slower (<1.0) emulated CPU runs compared to
+	# the real hardware. Value is a floating point number.
         cpu_speed_factor = 1
 
-	# Execute this many instructions before sleeping (default: 3).
+	# Execute instructions for this much time (in us) before sleeping.
 	# Use with caution. If "real" emulation speed is slower than
-	# it should be, you may need to set granularity to a higher
-	# value (eg. 4...10).
-	throttle_granularity = 3
+	# it should be, you may need to set granularity to a higher value.
+	throttle_granularity = 10
 
 	# Internal clock interrupt period (in miliseconds)
-	# allowed values: 2-100 (default is 10)
-	# Note: cycle lengths available for real hardware were:
-	# 2, 4, 8, 10, 20, 40, 80 (10 was the default)
+	# Allowed values: 2-100
+	# Note: cycle lengths available in real hardware are:
+	# 2, 4, 8, 10, 20, 40, 80
 	clock_period = 10
 
-	# Start clock at power on.
-	# allowed values: "true" (default), "false"
+	# Choose whether to start clock at power on.
 	clock_start = true
 
 	# MERA-400 cpu stops when operating system tries to access unconfigured
-	# memory segment, but this can be changed to work as for user programs:
-	# only interrupt is fired. Allowed values: "true" (default), "false"
+	# memory segment, but this can be changed to work as for user programs
+	# (only interrupt is fired in such configuration)
 	cpu_stop_on_nomem = true
 
 	# 'IN' and 'OU' instructions can be either illegal or legal in user programs
-	# allowed values: "true" (default), "false"
 	cpu_user_io_illegal = true
 
 	# AWP (hardware 48-bit floating point and 32-bit fixed point arithmetic) is optional
-	# allowed values: "true" (default), "false"
 	cpu_awp = true
 
-	# Enable CPU modifications found in MX-16 CPU:
+	# Enable or disable CPU modifications found in MX-16 CPU:
 	#  * 17-bit byte addressing,
 	#  *  additional instructions,
 	#  *  additional software interrupt,
 	#  *  interrupts 5 and 11 swapped,
 	#  *  broader interrupt mask for I/O interrupts
-	# Allowed values: "true", "false" (default)
 	cpu_mod = false
 
 	# Memory is organized into 16 physical modules. Each module can be
@@ -59,29 +56,28 @@ computer {
 	# Elwro modules are populated starting from 0 up, mega modules
 	# from 15 down. Module 0 may be overlapped by mega module
 
-	# allowed values: 1-16 (default: 1)
+	# allowed values: 1-16
 	mem_elwro = 1
 
-	# allowed values: 0-16 (default: 0)
+	# allowed values: 0-16
 	mem_mega = 0
 
 	# 4kword segments hardwired for OS memory block (taken from module 0)
-	# allowed values: 1 or 2 (default: 2)
+	# allowed values: 1 or 2
 	mem_os_segments = 2
 
 	# Name of image file containing MEGA PROM memory.
 	# File has to be 8KB in size (1 full segment, 4kwords).
-	# (default: none)
+	# Unset by default
 	#mem_mega_prom = "mega_prom.img"
 
 	# Enable or disable boot from MEGA PROM memory.
 	# Works only when mem_mega_prom is specified.
-	# allowed values: "true, "false" (default)
 	mem_mega_boot = false
 }
 
 sound {
-	# Internal buzzer emulation (default: false)
+	# Internal buzzer emulation.
 	# For this to work, set speed_real to true
 	# and 1.5 >= cpu_speed_factor >= 0.5
 	# Note that for sound to work properly logging will most likely
@@ -89,46 +85,42 @@ sound {
 	enabled = false
 
 	# Sound driver to use: pulseaudio, alsa or file (raw PCM dump)
-	# Default: pulseaudio
 	driver = pulseaudio
 
 	# For alsa, this is the output device to use.
 	# For file output, it's the file name. Unused for pulseaudio.
-	# Default: "default"
 	output = default
 
-	# Samplerate. Default: 44100
+	# Samplerate.
 	rate = 44100
 
-	# Sound buffer size (in samples, powers of 2, default 128).
+	# Sound buffer size (in samples, powers of 2).
 	buffer_len = 128
 
-	# Sound output latency (in miliseconds, default 20).
-	# Increase if sound is choppy>
+	# Sound output latency (in miliseconds).
+	# Increase if sound is choppy.
 	latency = 20
 
 	# Software buzzer volume control (0-100)
-	# Default is 30.
 	volume = 30
 }
 
 fpga {
-	# Device to use for communication with the FPGA backend. Default: /dev/ttyUSB0
+	# Device to use for communication with the FPGA backend.
 	device = "/dev/ttyUSB1"
-	# FPGA link speed (in baud). Default: 1000000
+
+	# FPGA link speed (baud).
 	speed = 1000000
 }
 
 log {
 	# Enable or disable logging.
-	# Not recommended for daily usage due to considerable performance requirements.
-	# Allowed values: "true", "false" (default)
 	enabled = false
 
-	# Name of the log file (default: em400.log)
+	# Name of the log file
 	file = "em400.log"
 
-	# Select which components write logs for.
+	# Select which components write logs for (separated by commas, no spaces allowed.
 	#
 	# "<component>,..."
 	#
@@ -143,11 +135,10 @@ log {
 	#   fpga - emulation-fpga I/O bridge
 	#   all - special "component" to enable or disable all components
 	#
-	# default: none
-	components = "em4h,cpu"
+	# Note that logging cpu cycle information slows down the emulation considerably (>1000 times)
+	components = "em4h"
 
-	# Use line buffered log output. If disabled, log is fully buffered.
-	# Default is true.
+	# Use line buffered or fully buffered log output.
 	line_buffered = true
 }
 

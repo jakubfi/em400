@@ -92,8 +92,7 @@ static void cpu_idle_in_wait()
 {
 	LOG(L_CPU, "idling in state WAIT");
 
-	// something around <throttle_granularity> instruction cycles
-	const unsigned loop_wait = throttle_granularity * 2*TIME_MEM;
+	const unsigned loop_wait = throttle_granularity;
 
 	pthread_mutex_lock(&cpu_wake_mutex);
 	while ((cpu_state == ECTL_STATE_WAIT) && !atom_load_acquire(&RP)) {
@@ -269,7 +268,7 @@ int cpu_init(struct cfg_em400 *cfg)
 	cpu_user_io_illegal = cfg->cpu_user_io_illegal;
 	nomem_stop = cfg->cpu_stop_on_nomem;
 	speed_real = cfg->speed_real;
-	throttle_granularity = cfg->throttle_granularity;
+	throttle_granularity = 1000 * cfg->throttle_granularity;
 	cpu_delay_factor = 1.0f/cfg->cpu_speed_factor;
 
 	res = iset_build(cpu_op_tab, cpu_user_io_illegal);
@@ -528,7 +527,11 @@ cycle:
 			// interrupt
 			if (atom_load_acquire(&RP) && !P && !rMODc) {
 				int_serve();
-				cpu_time_cumulative += TIME_INT_SERVE;
+				cpu_time = TIME_INT_SERVE * cpu_delay_factor;
+				cpu_time_cumulative += cpu_time;
+				if (sound_enabled) {
+					buzzer_update(rIR, cpu_time);
+				}
 			// CPU cycle
 			} else {
 				cpu_time = cpu_do_cycle();
@@ -542,9 +545,9 @@ cycle:
 					}
 #endif
 					cpu_time_cumulative += cpu_time;
-					if ((ips_counter % throttle_granularity) == 0) {
+					if (cpu_time_cumulative > throttle_granularity) {
 						cpu_timer.tv_nsec += cpu_time_cumulative;
-						if (cpu_timer.tv_nsec > 1000000000) {
+						while (cpu_timer.tv_nsec > 1000000000) {
 							cpu_timer.tv_nsec -= 1000000000;
 							cpu_timer.tv_sec++;
 						}
