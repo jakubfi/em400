@@ -110,12 +110,12 @@ void buzzer_stop()
 // -----------------------------------------------------------------------
 int buzzer_init(struct cfg_em400 *cfg)
 {
-	if ((cfg->speed_real == 0) || (cfg->cpu_speed_factor < 0.5f) || (cfg->cpu_speed_factor > 1.5f)) {
-		return LOGERR("EM400 needs to be configured with speed_real=true and 1.5 >= cpu_speed_factor >= 0.5 for the buzzer emulation to work.");
-	}
-
-	if ((cfg->sound_volume > 100) || (cfg->sound_volume < 0)) {
-		return LOGERR("Buzzer volume has to be set between 0 and 100.");
+	if (cfg->sound_volume > 100) {
+		LOGERR("Adjusting sound volume from %i to 100 (max allowed).", cfg->sound_volume);
+		cfg->sound_volume = 100;
+	} else if (cfg->sound_volume < 0) {
+		LOGERR("Adjusting sound volume from %i to 0 (min allowed).", cfg->sound_volume);
+		cfg->sound_volume = 0;
 	}
 
 	volume = cfg->sound_volume;

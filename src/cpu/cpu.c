@@ -272,6 +272,10 @@ int cpu_init(struct cfg_em400 *cfg)
 #ifdef HAVE_SOUND
 	sound_enabled = cfg->sound_enabled;
 	if (sound_enabled) {
+		if ((cfg->speed_real == 0) || (cfg->cpu_speed_factor < 0.5f) || (cfg->cpu_speed_factor > 1.5f)) {
+			return LOGERR("EM400 needs to be configured with speed_real=true and 1.5 >= cpu_speed_factor >= 0.5 for the buzzer emulation to work.");
+		}
+
 		if (buzzer_init(cfg) != E_OK) {
 			return LOGERR("Failed to initialize buzzer.");
 		}
