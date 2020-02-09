@@ -25,6 +25,7 @@ int buzzer_init();
 void buzzer_update(int ir, unsigned instruction_time);
 void buzzer_stop();
 void buzzer_start();
+void buzzer_shutdown();
 
 #endif
 

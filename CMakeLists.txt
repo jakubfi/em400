@@ -28,7 +28,6 @@ include(FindPulseAudio.cmake)
 find_library(PULSEAUDIO_SIMPLE_LIBRARY pulse-simple)
 
 if(PULSEAUDIO_FOUND OR ALSA_FOUND)
-	set(HAVE_SOUND 1)
 	message(STATUS "Sound enabled: ALSA: ${ALSA_FOUND}, PulseAudio: ${PULSEAUDIO_FOUND}")
 else()
 	message(STATUS "No supported sound libraries found, disabling sound")
@@ -102,15 +101,12 @@ set(SOURCES_EM400
 	src/ectl/cpu.c
 	src/ectl/est.c
 	src/ectl/brk.c
+
+	src/sound/file.c
+	src/sound/sound.c
+	src/cpu/buzzer.c
 )
 
-if(HAVE_SOUND)
-	list(APPEND SOURCES_EM400
-		src/sound/file.c
-		src/sound/sound.c
-		src/cpu/buzzer.c
-	)
-endif()
 if(ALSA_FOUND)
 	list(APPEND SOURCES_EM400 src/sound/alsa.c)
 endif()
@@ -201,18 +197,15 @@ target_link_libraries(em400
 	${MATH_LIBRARY}
 )
 
-if (HAVE_SOUND)
-	target_compile_definitions(em400 PRIVATE HAVE_SOUND)
-	if(ALSA_FOUND)
-		target_include_directories(em400 PUBLIC SYSTEM ${ALSA_INCLUDE_DIRS})
-		target_link_libraries(em400 ${ALSA_LIBRARIES})
-		target_compile_definitions(em400 PRIVATE HAVE_ALSA)
-	endif()
-	if(PULSEAUDIO_FOUND)
-		target_include_directories(em400 PUBLIC SYSTEM  ${PULSEAUDIO_INCLUDE_DIRS})
-		target_link_libraries(em400 ${PULSEAUDIO_LIBRARIES} ${PULSEAUDIO_SIMPLE_LIBRARY})
-		target_compile_definitions(em400 PRIVATE HAVE_PULSEAUDIO)
-	endif()
+if(ALSA_FOUND)
+	target_include_directories(em400 PUBLIC SYSTEM ${ALSA_INCLUDE_DIRS})
+	target_link_libraries(em400 ${ALSA_LIBRARIES})
+	target_compile_definitions(em400 PRIVATE HAVE_ALSA)
+endif()
+if(PULSEAUDIO_FOUND)
+	target_include_directories(em400 PUBLIC SYSTEM  ${PULSEAUDIO_INCLUDE_DIRS})
+	target_link_libraries(em400 ${PULSEAUDIO_LIBRARIES} ${PULSEAUDIO_SIMPLE_LIBRARY})
+	target_compile_definitions(em400 PRIVATE HAVE_PULSEAUDIO)
 endif()
 
 install(TARGETS em400

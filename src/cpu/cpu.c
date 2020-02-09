@@ -36,9 +36,7 @@
 #include "cpu/instructions.h"
 #include "cpu/interrupts.h"
 #include "cpu/clock.h"
-#ifdef HAVE_SOUND
 #include "cpu/buzzer.h"
-#endif
 #include "io/io.h"
 
 #include "em400.h"
@@ -75,9 +73,7 @@ int cpu_mod_present;
 int cpu_user_io_illegal;
 static int nomem_stop;
 
-#ifdef HAVE_SOUND
 static int sound_enabled;
-#endif
 
 struct awp *awp;
 
@@ -254,6 +250,7 @@ int cpu_init(struct cfg_em400 *cfg)
 
 	res = iset_build(cpu_op_tab, cpu_user_io_illegal);
 	if (res != E_OK) {
+		awp_destroy(awp);
 		return LOGERR("Failed to build CPU instruction table.");
 	}
 
@@ -269,18 +266,19 @@ int cpu_init(struct cfg_em400 *cfg)
 
 	cpu_mod_off();
 
-#ifdef HAVE_SOUND
 	sound_enabled = cfg->sound_enabled;
+
 	if (sound_enabled) {
 		if ((cfg->speed_real == 0) || (cfg->cpu_speed_factor < 0.5f) || (cfg->cpu_speed_factor > 1.5f)) {
+			awp_destroy(awp);
 			return LOGERR("EM400 needs to be configured with speed_real=true and 1.5 >= cpu_speed_factor >= 0.5 for the buzzer emulation to work.");
 		}
 
 		if (buzzer_init(cfg) != E_OK) {
-			return LOGERR("Failed to initialize buzzer.");
+			awp_destroy(awp);
+			return LOGERR("Failed to initialize buzzer. Sound driver \"%s\" is not compiled in or failed to initialize.", cfg->sound_driver);
 		}
 	}
-#endif
 
 	return E_OK;
 }
@@ -288,6 +286,9 @@ int cpu_init(struct cfg_em400 *cfg)
 // -----------------------------------------------------------------------
 void cpu_shutdown()
 {
+	if (sound_enabled) {
+		buzzer_shutdown();
+	}
 	awp_destroy(awp);
 }
 
@@ -535,11 +536,17 @@ cycle:
 
 		// CPU stopped
 		} else if ((state & ECTL_STATE_STOP)) {
-			buzzer_stop();
+			if (sound_enabled) {
+				buzzer_stop();
+			}
 			int res = cpu_idle_in_stop();
-			buzzer_start();
-			clock_gettime(CLOCK_MONOTONIC, &cpu_timer);
-			cpu_time = 0;
+			if (speed_real) {
+				if (sound_enabled) {
+					buzzer_start();
+				}
+				clock_gettime(CLOCK_MONOTONIC, &cpu_timer);
+				cpu_time = 0;
+			}
 			if (res & ECTL_STATE_CYCLE) {
 				// CPU cycle triggered while in stop
 				cpu_clear_state(ECTL_STATE_CYCLE);
@@ -548,10 +555,11 @@ cycle:
 
 		// CPU waiting for an interrupt
 		} else if ((state & ECTL_STATE_WAIT)) {
-			if (speed_real && sound_enabled) {
-				// busy wait for halt when sound is on
+			if (sound_enabled) {
+				// busy wait for halt when sound is on, but not for speed_real
 				cpu_time += throttle_granularity;
 			} else {
+				// for speed_real just wait
 				cpu_idle_in_wait();
 			}
 		}
@@ -559,11 +567,9 @@ cycle:
 		// realtime and sound management
 		if (speed_real && (cpu_time != 0)) {
 			cpu_time *= cpu_delay_factor;
-#ifdef HAVE_SOUND
 			if (sound_enabled) {
 				buzzer_update(rIR, cpu_time);
 			}
-#endif
 			cpu_time_cumulative += cpu_time;
 			if (cpu_time_cumulative >= throttle_granularity) {
 				cpu_timer.tv_nsec += cpu_time_cumulative;

@@ -137,4 +137,10 @@ int buzzer_init(struct cfg_em400 *cfg)
 	return E_OK;
 }
 
+// -----------------------------------------------------------------------
+void buzzer_shutdown()
+{
+	snd->shutdown();
+}
+
 // vim: tabstop=4 shiftwidth=4 autoindent
