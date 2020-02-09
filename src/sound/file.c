@@ -57,11 +57,24 @@ long file_play(int16_t *buf, size_t frames)
 }
 
 // -----------------------------------------------------------------------
+void file_stop()
+{
+}
+
+// -----------------------------------------------------------------------
+void file_start()
+{
+}
+
+// -----------------------------------------------------------------------
 const struct snd_drv snd_drv_file = {
 	.name = "file",
 	.init = file_init,
 	.shutdown = file_shutdown,
 	.play = file_play,
+	.start = file_start,
+	.stop = file_stop,
+
 };
 
 // vim: tabstop=4 shiftwidth=4 autoindent
