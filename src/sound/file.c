@@ -29,7 +29,7 @@ int file_init(struct cfg_em400 *cfg)
 {
 	out = fopen(cfg->sound_output, "w");
 	if (!out) {
-		return LOGERR("Error opening sound output file: %s\n", cfg->sound_output);
+		return LOGERR("Error opening sound output file: %s", cfg->sound_output);
 	}
 
 	return E_OK;
@@ -50,7 +50,7 @@ long file_play(int16_t *buf, size_t frames)
 
 	res = fwrite(buf, 4, frames, out);
 	if (res < 0) {
-		printf("Sound output write failed");
+		LOG(L_EM4H, "Sound output file write failed");
 	}
 
 	return res;

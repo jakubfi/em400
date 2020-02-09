@@ -31,7 +31,7 @@ int alsa_init(struct cfg_em400 *cfg)
 	int err;
 	err = snd_pcm_open(&handle, cfg->sound_output, SND_PCM_STREAM_PLAYBACK, 0);
 	if (err < 0) {
-		return LOGERR("ALSA snd_pcm_open() error: %s\n", snd_strerror(err));
+		return LOGERR("ALSA snd_pcm_open() error: %s", snd_strerror(err));
 	}
 
 	const unsigned pcm_format = SND_PCM_FORMAT_S16;
@@ -43,7 +43,7 @@ int alsa_init(struct cfg_em400 *cfg)
 
 	err = snd_pcm_set_params(handle, pcm_format, pcm_access, channels, rate, resample, latency_us);
 	if (err < 0) {
-		return LOGERR("ALSA snd_pcm_set_params() error: %s\n", snd_strerror(err));
+		return LOGERR("ALSA snd_pcm_set_params() error: %s", snd_strerror(err));
 	}
 
 	return E_OK;
@@ -62,10 +62,11 @@ long alsa_play(int16_t *buf, size_t frames)
 
 	res = snd_pcm_writei(handle, buf, frames);
 	if (res < 0) {
-		res = snd_pcm_recover(handle, res, 0);
-		if (res < 0) {
-			printf("snd_pcm_writei failed, recovery failed: %s\n", snd_strerror((int)res));
-			exit(1);
+		int rres = snd_pcm_recover(handle, res, 1);
+		if (rres < 0) {
+			LOG(L_EM4H, "ALSA stream recovery failed: %s", snd_strerror((int)rres));
+		} else {
+			LOG(L_EM4H, "ALSA playback failed (recovered): %s", snd_strerror((int)res));
 		}
 	}
 

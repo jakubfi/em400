@@ -46,7 +46,7 @@ int pulseaudio_init(struct cfg_em400 *cfg)
 
 	s = pa_simple_new(NULL, "EM400", PA_STREAM_PLAYBACK, NULL, "buzzer", &ss, NULL, &ba, &err);
 	if (!s) {
-		return LOGERR("pa_simple_new() failed: %s\n", pa_strerror(err));
+		return LOGERR("PulseAudio stream open failed: %s", pa_strerror(err));
 	}
 
 	return E_OK;
@@ -68,8 +68,7 @@ long pulseaudio_play(int16_t *buf, size_t frames)
 
 	res = pa_simple_write(s, buf, frames*bytes_per_frame, &err);
 	if (res < 0) {
-		printf("pa_simple_write() failed: %s\n", pa_strerror(err));
-		exit(1);
+		LOG(L_EM4H, "PulseAudio write failed: %s", pa_strerror(err));
 	}
 
 	return frames;
