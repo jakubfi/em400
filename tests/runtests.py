@@ -210,12 +210,20 @@ class TestBed:
             add_opts += ["-l", self.log]
         if self.fpga:
             add_opts += ["-F"]
+
         if self.e is None:
+            if DEBUG:
+                print("Spawning fresh EM400: %s %s" % (self.binary, " ".join(add_opts)))
             self.e = EM400(self.binary, add_opts, polldelay=0.01)
         else:
             if self.add_opts != add_opts:
+                if DEBUG:
+                    print("Spawning EM400 with new options: %s %s" % (self.binary, " ".join(add_opts)))
                 self.e.close()
                 self.e = EM400(self.binary, add_opts, polldelay=0.01)
+            else:
+                if DEBUG:
+                    print("Reusing existing EM400 instance")
         self.add_opts = add_opts
 
     # --------------------------------------------------------------------
@@ -374,8 +382,11 @@ parser.add_argument("-e", "--emulator", help="emulator binary to run", default="
 parser.add_argument("-f", "--failcmd", help="command to run when test fails", action='append')
 parser.add_argument("-l", "--log", help="configure em400 logging", default="")
 parser.add_argument("-F", "--fpga", help="use FPGA CPU backend in em400", action="store_const", const=1, default=0)
+parser.add_argument("-v", "--verbose", help="be verbose", action="store_const", const=1, default=0)
 parser.add_argument('test', nargs='*', help='selected test(s) to run (file.asm or directory or testset.set)')
 args = parser.parse_args()
+
+DEBUG = args.verbose
 
 # enumerate tests
 
@@ -398,11 +409,16 @@ total = 0
 failed = 0
 tb = TestBed("emas", args.emulator, args.baseline, benchmark_duration=0.5, failcmd=args.failcmd, log=args.log, fpga=args.fpga)
 for t in tests:
-    if sys.stdout.isatty():
-        print("%-50s : ..." % t, end="", flush=True)
+    if not DEBUG:
+        if sys.stdout.isatty():
+            print("%-50s : ..." % t, end="", flush=True)
+    else:
+        print("Starting test: %s" % t)
+
     result = tb.run(t)
-    if sys.stdout.isatty():
-        print("\r", end="", flush=True)
+    if not DEBUG:
+        if sys.stdout.isatty():
+            print("\r", end="", flush=True)
     print(result)
     total += 1
     if result.passed != 1:
