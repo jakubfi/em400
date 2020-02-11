@@ -56,8 +56,10 @@ int pulseaudio_init(struct cfg_em400 *cfg)
 void pulseaudio_shutdown()
 {
 	int err;
-	pa_simple_flush(s, &err);
-	pa_simple_free(s);
+	if (s) {
+		pa_simple_flush(s, &err);
+		pa_simple_free(s);
+	}
 }
 
 // -----------------------------------------------------------------------

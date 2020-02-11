@@ -104,6 +104,7 @@ set(SOURCES_EM400
 
 	src/sound/file.c
 	src/sound/sound.c
+	src/sound/biquad.c
 	src/cpu/buzzer.c
 )
 

@@ -103,6 +103,11 @@ sound {
 
 	# Software buzzer volume control (0-100)
 	volume = 30
+
+	# Enable or disable speaker frequency response modeling.
+	# When enabled, EM400 sounds like the real hardware.
+	# In fact, disabling it is considered a criminal offence.
+	speaker_filter = true
 }
 
 fpga {

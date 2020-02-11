@@ -81,6 +81,7 @@ rate			return RATE;
 buffer_len		return BUFFER_LEN;
 volume			return VOLUME;
 latency			return LATENCY;
+speaker_filter	return SPEAKER_FILTER;
 
 {string} {
 	cyytext[strlen(cyytext)-1] = '\0';

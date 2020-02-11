@@ -99,6 +99,7 @@ struct cfg_em400 * cfg_create_default()
 	cfg->sound_rate = 44100;
 	cfg->sound_buffer_len = 128;
 	cfg->sound_latency = 20;
+	cfg->speaker_filter = 1;
 
 	// I/O
 	cfg->chans = NULL;
@@ -346,6 +347,7 @@ void cfg_log(struct cfg_em400 *cfg)
 	LOG(L_EM4H, "   Buffer len: %i frames", cfg->sound_buffer_len);
 	LOG(L_EM4H, "   Latency : %i ms", cfg->sound_latency);
 	LOG(L_EM4H, "   Software volume: %i%%", cfg->sound_volume);
+	LOG(L_EM4H, "   Speaker response modeling: %s", cfg->speaker_filter? "enabled" : "disabled");
 	LOG(L_EM4H, "Logging (%s):", cfg->log_enabled ? "enabled" : "disabled");
 	LOG(L_EM4H, "   File: %s", cfg->log_file);
 	LOG(L_EM4H, "   Components: %s", cfg->log_components);

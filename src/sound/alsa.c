@@ -52,7 +52,9 @@ int alsa_init(struct cfg_em400 *cfg)
 // -----------------------------------------------------------------------
 void alsa_shutdown()
 {
-	snd_pcm_close(handle);
+	if (handle) {
+		snd_pcm_close(handle);
+	}
 }
 
 // -----------------------------------------------------------------------
