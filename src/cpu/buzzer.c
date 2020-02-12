@@ -77,6 +77,7 @@ void buzzer_update(int ir, unsigned instruction_time)
 	static int pir;
 	static double time_pool;
 	static float level = 1;
+	static float level_prev = 1;
 
 	// update current level (freq divider)
 	if ((ir ^ pir) & 0x8000) {
@@ -91,7 +92,9 @@ void buzzer_update(int ir, unsigned instruction_time)
 	time_pool += instruction_time;
 	while (time_pool >= sample_period) {
 		time_pool -= sample_period;
-		*snd_buf_in_pos++ = level;
+		// *0.5 for slightly less aliasing
+		*snd_buf_in_pos++ = level_prev + (level - level_prev) * 0.5;
+		level_prev = level;
 
 		// if buffer is full, flush it
 		if (snd_buf_in_pos >= snd_buf_in_end) {
@@ -163,7 +166,7 @@ int buzzer_init(struct cfg_em400 *cfg)
 		goto cleanup;
 	}
 
-	sf_highpass(&bq_hp, cfg->sound_rate, SPEAKER_HP, 0.0f);
+	sf_highpass(&bq_hp, cfg->sound_rate, SPEAKER_HP, 2.0f);
 	sf_lowpass(&bq_lp, cfg->sound_rate, SPEAKER_LP, 0.0f);
 
 	return E_OK;
