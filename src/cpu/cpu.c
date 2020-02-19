@@ -505,6 +505,7 @@ void cpu_loop()
 	clock_gettime(CLOCK_MONOTONIC, &cpu_timer);
 
 	while (1) {
+		cpu_time = 0;
 		int state = atom_load_acquire(&cpu_state);
 
 		// CPU running
@@ -532,7 +533,6 @@ cycle:
 		// CPU reset
 		} else if (state & (ECTL_STATE_CLM | ECTL_STATE_CLO)) {
 			cpu_clear(state & (ECTL_STATE_CLM | ECTL_STATE_CLO));
-			cpu_time = 0;
 
 		// CPU stopped
 		} else if ((state & ECTL_STATE_STOP)) {
@@ -545,7 +545,6 @@ cycle:
 					buzzer_start();
 				}
 				clock_gettime(CLOCK_MONOTONIC, &cpu_timer);
-				cpu_time = 0;
 			}
 			if (res & ECTL_STATE_CYCLE) {
 				// CPU cycle triggered while in stop
@@ -557,7 +556,7 @@ cycle:
 		} else if ((state & ECTL_STATE_WAIT)) {
 			if (sound_enabled) {
 				// busy wait for halt when sound is on, but not for speed_real
-				cpu_time += throttle_granularity;
+				cpu_time = throttle_granularity;
 			} else {
 				// for speed_real just wait
 				cpu_idle_in_wait();
