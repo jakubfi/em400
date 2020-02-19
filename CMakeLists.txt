@@ -181,8 +181,8 @@ set_property(TARGET em400 PROPERTY C_STANDARD 99)
 target_include_directories(em400 PUBLIC SYSTEM ${EMCRK_INCLUDE_DIRS})
 target_include_directories(em400 PUBLIC SYSTEM ${EMAWP_INCLUDE_DIRS})
 target_include_directories(em400 PUBLIC SYSTEM ${EMDAS_INCLUDE_DIRS})
-target_include_directories(em400 PRIVATE ${CMAKE_SOURCE_DIR}/include)
-target_include_directories(em400 PRIVATE ${CMAKE_SOURCE_DIR}/public_headers)
+target_include_directories(em400 PRIVATE ${CMAKE_SOURCE_DIR}/src)
+target_include_directories(em400 PUBLIC ${CMAKE_SOURCE_DIR}/include)
 target_include_directories(em400 PRIVATE ${CMAKE_BINARY_DIR})
 target_compile_definitions(em400 PRIVATE EM400_VERSION="${APP_VERSION}")
 target_compile_options(em400 PUBLIC -Wall)
@@ -220,7 +220,7 @@ add_executable(emitool
 	src/io/dev/e4image.c
 )
 set_property(TARGET emitool PROPERTY C_STANDARD 99)
-target_include_directories(emitool PRIVATE ${CMAKE_SOURCE_DIR}/include)
+target_include_directories(emitool PRIVATE ${CMAKE_SOURCE_DIR}/src)
 target_compile_options(emitool PUBLIC -Wall)
 
 install(TARGETS emitool
@@ -234,7 +234,7 @@ add_executable(embin
 	src/utils/utils.c
 )
 set_property(TARGET embin PROPERTY C_STANDARD 99)
-target_include_directories(embin PRIVATE ${CMAKE_SOURCE_DIR}/include)
+target_include_directories(embin PRIVATE ${CMAKE_SOURCE_DIR}/src)
 target_compile_options(embin PUBLIC -Wall)
 
 install(TARGETS embin
