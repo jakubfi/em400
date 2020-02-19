@@ -5,7 +5,7 @@ project(em400
 )
 
 include(GNUInstallDirs)
-include(appversion.cmake)
+include(cmake/appversion.cmake)
 
 # ---- Libraries ---------------------------------------------------------
 
@@ -24,7 +24,7 @@ find_path(READLINE_INCLUDE_DIR readline/readline.h)
 find_library(READLINE_LIBRARY readline)
 
 include(FindALSA)
-include(FindPulseAudio.cmake)
+include(cmake/FindPulseAudio.cmake)
 find_library(PULSEAUDIO_SIMPLE_LIBRARY pulse-simple)
 
 if(PULSEAUDIO_FOUND OR ALSA_FOUND)
