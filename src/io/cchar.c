@@ -50,7 +50,7 @@ struct cchar_unit_proto_t cchar_unit_proto[] = {
 };
 
 // -----------------------------------------------------------------------
-struct cchar_unit_proto_t * cchar_unit_proto_get(struct cchar_unit_proto_t *proto, char *name)
+static struct cchar_unit_proto_t * cchar_unit_proto_get(struct cchar_unit_proto_t *proto, char *name)
 {
 	while (proto && proto->name) {
 		if (strcasecmp(name, proto->name) == 0) {
@@ -146,7 +146,7 @@ void cchar_reset(void *chan)
 }
 
 // -----------------------------------------------------------------------
-void cchar_int_report(struct cchar_chan_t *chan)
+static void cchar_int_report(struct cchar_chan_t *chan)
 {
 	// if interrupt is reported and not yet served, there's nothing to do, for now
 	pthread_mutex_lock(&chan->int_mutex);
@@ -175,6 +175,7 @@ void cchar_int_report(struct cchar_chan_t *chan)
 void cchar_int(struct cchar_chan_t *chan, int unit_n, int interrupt)
 {
 	LOG(L_CCHR, "CCHAR (ch:%i) interrupt %i, unit: %i", chan->num, interrupt, unit_n);
+
 	pthread_mutex_lock(&chan->int_mutex);
 	chan->int_unit[unit_n] = interrupt;
 	pthread_mutex_unlock(&chan->int_mutex);
@@ -183,9 +184,10 @@ void cchar_int(struct cchar_chan_t *chan, int unit_n, int interrupt)
 }
 
 // -----------------------------------------------------------------------
-int cchar_cmd_intspec(struct cchar_chan_t *chan, uint16_t *r_arg)
+static int cchar_cmd_intspec(struct cchar_chan_t *chan, uint16_t *r_arg)
 {
 	LOG(L_CCHR, "CCHAR (ch:%i) command: intspec", chan->num);
+
 	pthread_mutex_lock(&chan->int_mutex);
 	if (chan->int_reported != -1) {
 		*r_arg = (chan->int_unit[chan->int_reported] << 8) | (chan->int_reported << 5);
@@ -206,7 +208,7 @@ int cchar_cmd_intspec(struct cchar_chan_t *chan, uint16_t *r_arg)
 
 
 // -----------------------------------------------------------------------
-int cchar_chan_cmd(struct cchar_chan_t *chan, int dir, int cmd, int u_num, uint16_t *r_arg)
+static int cchar_chan_cmd(struct cchar_chan_t *chan, int dir, int cmd, int u_num, uint16_t *r_arg)
 {
 	if (dir == IO_OU) {
 		switch (cmd) {
@@ -218,12 +220,11 @@ int cchar_chan_cmd(struct cchar_chan_t *chan, int dir, int cmd, int u_num, uint1
 			LOG(L_CCHR, "CCHAR %i: command: mask CPU", chan->num);
 			break;
 		case CHAN_CMD_MASK_NPN:
-			LOG(L_CCHR, "CCHAR %i: command: mask ~CPU -> ignored", chan->num);
-			// ignore 2nd CPU
+			LOG(L_CCHR, "CCHAR %i: command: mask ~CPU (ignored)", chan->num);
 			break;
 		case CHAN_CMD_ASSIGN:
-			LOG(L_CCHR, "CCHAR %i:%i: command: assign CPU -> ignored", chan->num, u_num);
-			// always for CPU 0
+			// nothing to assign, always assigned to CPU 0
+			LOG(L_CCHR, "CCHAR %i:%i: command: assign CPU (ignored)", chan->num, u_num);
 			break;
 		default:
 			LOG(L_CCHR, "CCHAR %i:%i: unknow command", chan->num, u_num);
@@ -249,28 +250,32 @@ int cchar_chan_cmd(struct cchar_chan_t *chan, int dir, int cmd, int u_num, uint1
 			break;
 		}
 	}
+
 	return IO_OK;
 }
 
 // -----------------------------------------------------------------------
 int cchar_cmd(void *ch, int dir, uint16_t n_arg, uint16_t *r_arg)
 {
-	int cmd		= (n_arg & 0b1111110000000000) >> 10;
-	int u_num   = (n_arg & 0b0000000011100000) >> 5;
+	const unsigned cmd = (n_arg & 0b1111110000000000) >> 10;
+	const unsigned u_num = (n_arg & 0b0000000011100000) >> 5;
+	const unsigned is_chan_cmd = (cmd & 0b111000) == 0;
 
 	struct cchar_chan_t *chan = (struct cchar_chan_t *) ch;
 
-	if ((cmd & 0b111000) == 0) { // command for channel
+	if (is_chan_cmd) {
 		return cchar_chan_cmd(chan, dir, cmd, u_num, r_arg);
-	} else { // command for unit
-		if (chan->unit[u_num]) {
-			return chan->unit[u_num]->cmd(chan->unit[u_num], dir, cmd, r_arg);
+	} else {
+		struct cchar_unit_proto_t *u = (struct cchar_unit_proto_t *) chan->unit[u_num];
+		if (u) {
+			return u->cmd(u, dir, cmd, r_arg);
 		} else {
 			return IO_NO;
 		}
 	}
 }
 
+// -----------------------------------------------------------------------
 struct chan_drv cchar_chan_driver = {
 	.name = "char",
 	.create = cchar_create,
