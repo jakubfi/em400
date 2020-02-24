@@ -223,14 +223,14 @@ uint32_t mx_cmd_state(int cmd)
 }
 
 // -----------------------------------------------------------------------
-static void mx_line_process_cmd(struct mx_line *line, union mx_event *ev)
+static void mx_line_process_cmd(struct mx_line *line, struct mx_event *ev)
 {
 	int irq;
-	const struct mx_cmd *cmd = line->proto->cmd + ev->d.cmd;
+	const struct mx_cmd *cmd = line->proto->cmd + ev->cmd;
 
-	LOG(L_MX, "EV%04x: Line %i (%s) got cmd %s", ev->d.id, line->log_n, line->proto->name, mx_get_cmd_name(ev->d.cmd));
+	LOG(L_MX, "EV%04x: Line %i (%s) got cmd %s", ev->id, line->log_n, line->proto->name, mx_get_cmd_name(ev->cmd));
 
-	uint16_t cmd_data_addr = ev->d.arg;
+	uint16_t cmd_data_addr = ev->arg;
 	uint16_t cmd_data[MAX_CMD_DATA_LEN];
 
 	// check for emulation errors
@@ -267,7 +267,7 @@ fin:
 
 	// clear line status for this command and send the interrupt
 	pthread_mutex_lock(&line->status_mutex);
-	line->status &= ~mx_cmd_state(ev->d.cmd);
+	line->status &= ~mx_cmd_state(ev->cmd);
 	mx_int_enqueue(line->multix, irq, line->log_n);
 	pthread_mutex_unlock(&line->status_mutex);
 }
@@ -282,8 +282,8 @@ void * mx_line_thread(void *ptr)
 
 	while (!quit) {
 		LOG(L_MX, "Line %i (%s) waiting for event", line->log_n, line->proto->name);
-		union mx_event *ev = (union mx_event *) elst_wait_pop(line->protoq, 0);
-		switch (ev->d.type) {
+		struct mx_event *ev = (struct mx_event *) elst_wait_pop(line->protoq, 0);
+		switch (ev->type) {
 			case MX_EV_QUIT:
 				quit = 1;
 				break;
@@ -291,7 +291,7 @@ void * mx_line_thread(void *ptr)
 				mx_line_process_cmd(line, ev);
 				break;
 			default:
-				LOG(L_MX, "EV%04x: Line %i (%s) protocol thread got unknown event type %i. Ignored.", ev->d.id, line->log_n, line->proto->name, ev->d.type);
+				LOG(L_MX, "EV%04x: Line %i (%s) protocol thread got unknown event type %i. Ignored.", ev->id, line->log_n, line->proto->name, ev->type);
 				break;
 		}
 		free(ev);
@@ -339,22 +339,22 @@ void * mx_line_status_thread(void *ptr)
 
 	while (!quit) {
 		LOG(L_MX, "Line %i waiting for status event", line->log_n);
-		union mx_event *ev = (union mx_event *) elst_wait_pop(line->statusq, 0);
-		if ((ev->d.type == MX_EV_CMD) && (ev->d.cmd == MX_CMD_STATUS)) {
+		struct mx_event *ev = (struct mx_event *) elst_wait_pop(line->statusq, 0);
+		if ((ev->type == MX_EV_CMD) && (ev->cmd == MX_CMD_STATUS)) {
 			pthread_mutex_lock(&line->status_mutex);
-			log_line_status("Reporting line status", line->log_n, line->status, ev->d.id);
+			log_line_status("Reporting line status", line->log_n, line->status, ev->id);
 			uint16_t status = line->status & 0xffff;
-			if (mx_mem_mput(line->multix, 0, ev->d.arg, &status, 1)) {
+			if (mx_mem_mput(line->multix, 0, ev->arg, &status, 1)) {
 				mx_int_enqueue(line->multix, MX_IRQ_INPAO, line->log_n);
 			} else {
 				mx_int_enqueue(line->multix, MX_IRQ_ISTRE, line->log_n);
 			}
-			line->status &= ~mx_cmd_state(ev->d.cmd);
+			line->status &= ~mx_cmd_state(ev->cmd);
 			pthread_mutex_unlock(&line->status_mutex);
-		} else if (ev->d.type == MX_EV_QUIT) {
+		} else if (ev->type == MX_EV_QUIT) {
 			quit = 1;
 		} else {
-			LOG(L_MX, "EV%04x: Line %i (%s) status thread got unknown event type %i. Ignored.", ev->d.id, line->log_n, line->proto->name, ev->d.type);
+			LOG(L_MX, "EV%04x: Line %i (%s) status thread got unknown event type %i. Ignored.", ev->id, line->log_n, line->proto->name, ev->type);
 		}
 		free(ev);
 	}

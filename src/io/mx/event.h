@@ -20,8 +20,6 @@
 
 #include <inttypes.h>
 
-#include "utils/fdbridge.h"
-
 // event types are also priorities for the event queue
 enum mx_event_types {
 	MX_EV_CMD,
@@ -31,15 +29,12 @@ enum mx_event_types {
 	MX_EV_CNT
 };
 
-union mx_event {
-	struct fdbridge_event fd;
-	struct {
-		int type;
-		int cmd;
-		int log_n;
-		uint16_t arg;
-		unsigned id;
-	} d;
+struct mx_event {
+	int type;
+	int cmd;
+	int log_n;
+	uint16_t arg;
+	unsigned id;
 };
 
 const char * mx_get_event_name(unsigned ev);
