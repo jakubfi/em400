@@ -20,32 +20,22 @@
 
 #include <inttypes.h>
 
-#include "elst.h"
-
 #ifdef __cplusplus
 extern "C" {
 #endif
 
-enum fdbridge_event_types {
-	EV_DATA = 10000,
-	EV_EOF,
-	EV_CONNECT,
-	EV_ERROR,
-};
+enum fdb_conditions { FDB_DATA, FDB_CLOSE, FDB_ERROR };
 
-struct fdbridge_event {
-	int type;
-	int sender;
-	int len;
-	void *ptr;
-};
+typedef int (*fdb_cb)(int fdb, int condition);
 
-int fdbridge_init(unsigned fdcount);
-void fdbridge_destroy();
-void fdbridge_ev_free(struct fdbridge_event *e);
+int fdb_init(unsigned fdcount);
+void fdb_destroy();
 
-int fdbridge_add_stdin(ELST q);
-int fdbridge_add_tcp(uint16_t port, ELST q);
+int fdb_add_stdin(fdb_cb cb);
+int fdb_add_tcp(uint16_t port, fdb_cb cb);
+
+int fdb_read(int fdb, char *buf, int count);
+int fdb_write(int fdb, char c);
 
 #ifdef __cplusplus
 }
