@@ -201,7 +201,7 @@ chk:	lws	r0, tmp
 	ujs	load
 chhlt1:	hlt	ERR_CODE
 	ujs	load
-chhlt3:	lws	r0, 6
+chhlt3:	lws	r0, tmp
 	brc	2
 	ujs	chhlt2
 	hlt	ERR_CODE
