@@ -25,7 +25,10 @@
 #include <arpa/inet.h>
 #include <fcntl.h>
 #include <pthread.h>
+#include <semaphore.h>
+#include <errno.h>
 
+#include "utils/utils.h"
 #include "utils/fdbridge.h"
 
 struct fdpt {
@@ -33,6 +36,7 @@ struct fdpt {
 	int fd;
 	struct sockaddr cliaddr;
 	fdb_cb cb;
+	void *user_ctx;
 };
 
 enum fd_types {
@@ -40,6 +44,7 @@ enum fd_types {
 	FD_CTL,
 	FD_FD,
 	FD_TCP,
+	FD_SERIAL,
 };
 
 static int fd_ctl[2];
@@ -138,7 +143,7 @@ void fdb_destroy()
 }
 
 // -----------------------------------------------------------------------
-static int add_fd(int type, int fd, fdb_cb cb, int reserve)
+static int add_fd(int type, int fd, fdb_cb cb, void *user_ctx, int reserve)
 {
 	int id = pos_next;
 
@@ -148,6 +153,7 @@ static int add_fd(int type, int fd, fdb_cb cb, int reserve)
 		ufds[pos_next].type = type;
 		ufds[pos_next].fd = fd;
 		ufds[pos_next].cb = cb;
+		ufds[pos_next].user_ctx = user_ctx;
 		pos_next += reserve;
 	} else {
 		id = -100;
@@ -159,7 +165,24 @@ static int add_fd(int type, int fd, fdb_cb cb, int reserve)
 }
 
 // -----------------------------------------------------------------------
-int fdb_add_tcp(uint16_t port, fdb_cb cb)
+int fdb_add_serial(char *device, int speed, fdb_cb cb, void *user_ctx)
+{
+	int id;
+
+	int fd = serial_open(device, speed);
+	if (fd < 0) {
+		return -1;
+	}
+
+	if ((id = add_fd(FD_SERIAL, fd, cb, user_ctx, 1)) >= 0) {
+		fdb_wakeup();
+	}
+
+	return id;
+}
+
+// -----------------------------------------------------------------------
+int fdb_add_tcp(uint16_t port, fdb_cb cb, void *user_ctx)
 {
 	int res;
 	int fd;
@@ -197,19 +220,19 @@ int fdb_add_tcp(uint16_t port, fdb_cb cb)
 		return -4;
 	}
 
-	if ((id = add_fd(FD_TCP, fd, cb, 2)) > 0) {
+	if ((id = add_fd(FD_TCP, fd, cb, user_ctx, 2)) > 0) {
 		fdb_wakeup();
 	}
 
-	return id;
+	return id+1;
 }
 
 // -----------------------------------------------------------------------
-int fdb_add_stdin(fdb_cb cb)
+int fdb_add_stdin(fdb_cb cb, void *user_ctx)
 {
 	int id = -1;
 
-	if ((id = add_fd(FD_FD, 0, cb, 1)) >= 0) {
+	if ((id = add_fd(FD_FD, 0, cb, user_ctx, 1)) >= 0) {
 		fdb_wakeup();
 	}
 
@@ -247,13 +270,14 @@ static void serve_conn(int i)
 		ufds[i+1].fd = fd;
 		ufds[i+1].type = FD_FD;
 		ufds[i+1].cb = ufds[i].cb;
+		ufds[i+1].user_ctx = ufds[i].user_ctx;
 	}
 }
 
 // -----------------------------------------------------------------------
 static void serve_data(int i)
 {
-	ufds[i].cb(i, FDB_DATA);
+	ufds[i].cb(ufds[i].user_ctx, FDB_DATA);
 }
 
 // -----------------------------------------------------------------------
@@ -281,6 +305,11 @@ static void * fdb_loop(void *ptr)
 
 		int retval = select(maxfd+1, &rfds, NULL, NULL, NULL);
 
+							sem_t clock_quit;
+							struct timespec ts;
+							sem_init(&clock_quit, 0, 0);
+							long new_nsec = 1000000000L / (9600/(8+2));
+
 		if (retval > 0) {
 			// fd needs attention
 			for (int i=0 ; i<lpos_max; i++) {
@@ -290,6 +319,14 @@ static void * fdb_loop(void *ptr)
 							if (serve_control()) goto loop_quit;
 							break;
 						case FD_FD:
+							clock_gettime(CLOCK_REALTIME , &ts);
+							ts.tv_nsec += new_nsec;
+							if (ts.tv_nsec >= 1000000000L) {
+								ts.tv_nsec -= 1000000000L;
+								ts.tv_sec += 1;
+							}
+							sem_timedwait(&clock_quit, &ts);
+
 							serve_data(i);
 							break;
 						case FD_TCP:
@@ -316,6 +353,24 @@ loop_quit:
 int fdb_read(int fdb, char *buf, int count)
 {
 	return read(ufds[fdb].fd, buf, count);
+}
+
+// -----------------------------------------------------------------------
+int fdb_write(int fdb, char *buf, int count)
+{
+	return write(ufds[fdb].fd, buf, count);
+}
+
+// -----------------------------------------------------------------------
+void fdb_remove(int i)
+{
+	if (ufds[i].type == FD_TCP) {
+		close(ufds[i].fd);
+	} else if ((ufds[i].type == FD_FD) && (ufds[i-1].type == FD_TCP)) {
+		close(ufds[i].fd);
+		ufds[i].type = FD_NONE;
+		ufds[i-1].type = FD_NONE;
+	}
 }
 
 // vim: tabstop=4 shiftwidth=4 autoindent
