@@ -19,7 +19,7 @@
 #include <string.h>
 
 #include "sound/sound.h"
-#include "sound/biquad.h"
+#include "external/biquad/biquad.h"
 #include "log.h"
 
 // Tonsil GD 6/0,5 frequency response, more or less

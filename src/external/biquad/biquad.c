@@ -4,7 +4,7 @@
 // MIT License
 // Project Home: https://github.com/voidqk/sndfilter
 
-#include "sound/biquad.h"
+#include "external/biquad/biquad.h"
 #include <math.h>
 
 // biquad filtering is based on a small sliding window, where the different filters are a result of
