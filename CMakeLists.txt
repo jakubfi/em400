@@ -106,6 +106,9 @@ set(SOURCES_EM400
 	src/sound/sound.c
 	src/external/biquad/biquad.c
 	src/cpu/buzzer.c
+
+	src/external/iniparser/dictionary.c
+	src/external/iniparser/iniparser.c
 )
 
 if(ALSA_FOUND)
