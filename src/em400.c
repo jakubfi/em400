@@ -46,7 +46,7 @@ struct ui *ui;
 int em400_init(dictionary *cfg)
 {
 	if (log_init(cfg) != E_OK) return LOGERR("Failed to initialize logging.");
-	if (iob_init(cfg) == E_ERR) return LOGERR("Failed to set up FPGA I/O bus.");
+	if (iob_init(cfg) != E_OK) return LOGERR("Failed to set up FPGA I/O bus.");
 	if (mem_init(cfg) != E_OK) return LOGERR("Failed to initialize memory.");
 	if (cpu_init(cfg) != E_OK) return LOGERR("Failed to initialize CPU.");
 	if (cp_init(cfg) != E_OK) return LOGERR("Failed to initialize control panel.");
@@ -87,9 +87,10 @@ int em400_preload_program(const char *program_name)
 	fclose(f);
 	if (res < 0) {
 		return LOGERR("Failed to preload program file: \"%s\".", program_name);
+	} else {
+		LOG(L_EM4H, "OS memory block preloaded with \"%s\", %i words", program_name, res);
 	}
 
-	LOG(L_EM4H, "OS memory block preloaded with \"%s\", %i words", program_name, res);
 	return E_OK;
 }
 
@@ -111,7 +112,7 @@ void em400_usage()
 		"   -k value          : value to initially set keys to\n"
 		"   -u ui             : user interface to use (available UIs: cmd, curses. Default: curses)\n"
 		"   -F                : use FPGA implementation of the CPU and external memory\n"
-		"   -O sec:key=val    : set confituration key in section [sec] to a specific value\n"
+		"   -O sec:key=value  : override configuration entry \"key\" in section [sec] to a specific value\n"
 	);
 }
 
@@ -128,26 +129,35 @@ void em400_mkconfdir()
 	}
 }
 
+const char em400_cmdline_opts[] = "hc:p:k:l:Lu:FO:";
+
 // -----------------------------------------------------------------------
-char * em400_cmdline_1(int argc, char **argv, int *print_help)
+int em400_cmdline_1(int argc, char **argv, int *print_help, char **config)
 {
 	int option;
-	char *config = NULL;
 
-	while ((option = getopt(argc, argv, "hc:p:k:l:Lu:FO:")) != -1) {
+	while ((option = getopt(argc, argv, em400_cmdline_opts)) != -1) {
 		switch (option) {
 			case 'h':
 				*print_help = 1;
 				break;
 			case 'c':
-				config = strdup(optarg);
+				*config = strdup(optarg);
 				break;
-			default:
+            case 'p':
+            case 'k':
+            case 'L':
+            case 'l':
+            case 'u':
+            case 'F':
+			case 'O':
 				break;
+            default:
+                return E_ERR;
 		}
 	}
 
-	return config;
+	return E_OK;
 }
 
 // -----------------------------------------------------------------------
@@ -157,17 +167,9 @@ int em400_cmdline_2(dictionary *cfg, int argc, char **argv)
     optind = 1; // reset to 1 so consecutive calls work
 	char *key, *val, *colon;
 
-    while ((option = getopt(argc, argv, "hc:p:k:l:Lu:FO:")) != -1) {
+    while ((option = getopt(argc, argv, em400_cmdline_opts)) != -1) {
         switch (option) {
-            case 'L':
-				iniparser_set(cfg, "log:enabled", "false");
-                break;
-            case 'l':
-				iniparser_set(cfg, "log:enabled", "true");
-				iniparser_set(cfg, "log:components", optarg);
-                break;
             case 'h':
-                break;
             case 'c':
                 break;
             case 'p':
@@ -175,6 +177,13 @@ int em400_cmdline_2(dictionary *cfg, int argc, char **argv)
                 break;
             case 'k':
                 iniparser_set(cfg, "cpu:kb", optarg);
+                break;
+            case 'L':
+				iniparser_set(cfg, "log:enabled", "false");
+                break;
+            case 'l':
+				iniparser_set(cfg, "log:enabled", "true");
+				iniparser_set(cfg, "log:components", optarg);
                 break;
             case 'u':
                 iniparser_set(cfg, "ui:interface", optarg);
@@ -200,18 +209,11 @@ int em400_cmdline_2(dictionary *cfg, int argc, char **argv)
 }
 
 // -----------------------------------------------------------------------
-//static int ini_error_callback(const char *format, ...)
-//{
-//	return 0;
-//}
-
-// -----------------------------------------------------------------------
 // ---- MAIN -------------------------------------------------------------
 // -----------------------------------------------------------------------
 int main(int argc, char** argv)
 {
-	int res;
-	int ret = -1;
+	int return_code = -1;
 
 	int print_help = 0;
 	char *config = NULL;
@@ -219,11 +221,14 @@ int main(int argc, char** argv)
 
 	em400_mkconfdir();
 
-	config = em400_cmdline_1(argc, argv, &print_help);
+	if (em400_cmdline_1(argc, argv, &print_help, &config) != E_OK) {
+		LOGERR("Failed to parse commandline arguments.");
+		goto done;
+	}
 
 	if (print_help) {
 		em400_usage();
-		ret = 0;
+		return_code = 0;
 		goto done;
 	}
 
@@ -238,7 +243,6 @@ int main(int argc, char** argv)
 		sprintf(config, "%s%s", home, cfile);
 	}
 
-	//iniparser_set_error_callback(ini_error_callback);
 	cfg = iniparser_load(config);
 	if (!cfg) {
 		LOGERR("Failed to load config file: \"%s\".", config);
@@ -246,8 +250,7 @@ int main(int argc, char** argv)
 	}
 
 	// read the commandline again to build final configuration
-	res = em400_cmdline_2(cfg, argc, argv);
-	if (res != E_OK) {
+	if (em400_cmdline_2(cfg, argc, argv) != E_OK) {
 		LOGERR("Failed to parse commandline arguments.");
 		goto done;
 	}
@@ -256,8 +259,7 @@ int main(int argc, char** argv)
 
 	em400_preload_program(iniparser_getstring(cfg, "memory:preload", NULL));
 
-	res = ui_run(ui);
-	if (res != E_OK) {
+	if (ui_run(ui) != E_OK) {
 		LOGERR("Failed to start the UI: %s.", ui->drv->name);
 		goto done;
 	}
@@ -268,13 +270,13 @@ int main(int argc, char** argv)
 		cpu_loop();
 	}
 
-	ret = 0;
+	return_code = 0;
 
 done:
 	em400_shutdown();
 	iniparser_freedict(cfg);
 	free(config);
-	return ret;
+	return return_code;
 }
 
 // vim: tabstop=4 shiftwidth=4 autoindent
