@@ -56,7 +56,7 @@ static void buzzer_flush()
 	// prepare final sample output
 	for (int i=0 ; i<buffer_len ; i++) {
 		// stereo 16-bit signed sample output at given volume
-		int v = snd_buf_in[i] * volume * 32767/100;
+		int v = (snd_buf_in[i]/3.0f) * volume * 32767/100;
 		output_buffer[2*i] = v;
 		output_buffer[2*i+1] = v;
 	}
