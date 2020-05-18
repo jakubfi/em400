@@ -48,7 +48,7 @@ struct cchar_unit_proto_t * cchar_flop8_create(dictionary *cfg, const char *sect
 	}
 
 	for (int id=0 ; id<4 ; id++) {
-		sprintf(key, "%s:drive%i", section, id);
+		sprintf(key, "%s:image_%i", section, id);
 		const char *image = iniparser_getstring(cfg, key, NULL);
 		if (!image) continue;
 
@@ -59,9 +59,9 @@ struct cchar_unit_proto_t * cchar_flop8_create(dictionary *cfg, const char *sect
 		}
 		unit->f[id] = fopen(image, "r");
 		if (unit->f[id]) {
-			LOG(L_FLOP, "Drive %i: \"%s\".", id, image);
+			LOG(L_FLOP, "Drive %i: %s.", id, image);
 		} else {
-			LOG(L_FLOP, "Failed to open image: \"%s\".", image);
+			LOG(L_FLOP, "Failed to open image: %s.", image);
 		}
 	}
 

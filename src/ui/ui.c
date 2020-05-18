@@ -43,7 +43,7 @@ pthread_t ui_th;
 // -----------------------------------------------------------------------
 struct ui * ui_create(dictionary *cfg)
 {
-	const char *name = iniparser_getstring(cfg, "ui:interface", NULL);
+	const char *name = iniparser_getstring(cfg, "ui:interface", "curses");
 
 	struct ui_drv **drv = uis;
 	while (drv && *drv) {
