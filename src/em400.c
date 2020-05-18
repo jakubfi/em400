@@ -255,7 +255,10 @@ int main(int argc, char** argv)
 		goto done;
 	}
 
-	em400_init(cfg);
+	if (em400_init(cfg) != E_OK) {
+		LOGERR("Failed to initialize EM400.");
+		goto done;
+	}
 
 	em400_preload_program(iniparser_getstring(cfg, "memory:preload", NULL));
 

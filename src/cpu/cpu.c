@@ -282,12 +282,10 @@ int cpu_init(dictionary *cfg)
 
 	if (sound_enabled) {
 		if ((speed_real == 0) || (cpu_speed_factor < 0.5f) || (cpu_speed_factor > 1.5f)) {
-			awp_destroy(awp);
 			return LOGERR("EM400 needs to be configured with speed_real=true and 1.5 >= cpu_speed_factor >= 0.5 for the buzzer emulation to work.");
 		}
 
 		if (buzzer_init(cfg) != E_OK) {
-			awp_destroy(awp);
 			return LOGERR("Failed to initialize buzzer.");
 		}
 	}
@@ -301,7 +299,9 @@ void cpu_shutdown()
 	if (sound_enabled) {
 		buzzer_shutdown();
 	}
-	awp_destroy(awp);
+	if (awp) {
+		awp_destroy(awp);
+	}
 }
 
 // -----------------------------------------------------------------------

@@ -68,7 +68,7 @@ int mem_init(dictionary *cfg)
 	mega_modules = iniparser_getint(cfg, "memory:mega_modules", 0);
 	const int cfg_os = iniparser_getint(cfg, "memory:hardwired_segments", 2);
 	const char *mega_modules_prom = iniparser_getstring(cfg, "memory:mega_prom", NULL);
-	mega_boot = iniparser_getboolean(cfg, "mem:mega_boot", 0);
+	mega_boot = iniparser_getboolean(cfg, "memory:mega_boot", 0);
 
 	if (cfg_elwro + mega_modules > MEM_MAX_MODULES+1) {
 		return LOGERR("Sum of Elwro and MEGA memory modules is greater than allowed %i.", MEM_MAX_MODULES+1);

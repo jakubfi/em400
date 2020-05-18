@@ -24,7 +24,7 @@ struct dev_printer {
 };
 
 // -----------------------------------------------------------------------
-void * dev_printer_create(struct cfg_arg *args)
+void * dev_printer_create(dictionary *cfg, const char *section)
 {
 	struct dev_printer *printer = (struct dev_printer *) malloc(sizeof(struct dev_printer));
 	if (!printer) {

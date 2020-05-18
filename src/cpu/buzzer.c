@@ -123,7 +123,7 @@ void buzzer_shutdown()
 	free(snd_buf_tmp);
 	free(snd_buf_in);
 	free(output_buffer);
-	snd->shutdown();
+	if (snd) snd->shutdown();
 }
 
 // -----------------------------------------------------------------------
