@@ -247,7 +247,7 @@ int cpu_init(dictionary *cfg)
 	nomem_stop = iniparser_getboolean(cfg, "cpu:stop_on_nomem", 1);
 	speed_real = iniparser_getboolean(cfg, "cpu:speed_real", 0);
 	throttle_granularity = 1000 * iniparser_getint(cfg, "cpu:throttle_granularity", 10);
-	int cpu_speed_factor = iniparser_getdouble(cfg, "cpu:speed_factor", 1.0f);
+	double cpu_speed_factor = iniparser_getdouble(cfg, "cpu:speed_factor", 1.0f);
 	cpu_delay_factor = 1.0f/cpu_speed_factor;
 
 	res = iset_build(cpu_op_tab, cpu_user_io_illegal);
@@ -260,13 +260,23 @@ int cpu_init(dictionary *cfg)
 
 	// this is checked only at power-on
 	if (mem_mega_boot()) {
-		LOG(L_CPU, "Bootstrap from MEGA PROM is enabled.");
 		rIC = 0xf000;
 	} else {
 		rIC = 0;
 	}
 
 	cpu_mod_off();
+
+	LOG(L_CPU, "CPU initialized. AWP: %s, KB=0x%04x, modifications: %s, user I/O: %s, stop on nomem: %s",
+		awp_enabled ? "enabled" : "disabled",
+		rKB,
+		cpu_mod_present ? "present" : "absent",
+		cpu_user_io_illegal ? "illegal" : "legal",
+		nomem_stop ? "true" : "false");
+	LOG(L_CPU, "CPU speed: %s, throttle granularity: %i, speed factor: %.2f",
+		speed_real ? "real" : "max",
+		throttle_granularity/1000,
+		cpu_speed_factor);
 
 	sound_enabled = iniparser_getboolean(cfg, "sound:enabled", 0);
 

@@ -40,12 +40,15 @@ int alsa_init(dictionary *cfg)
 	const unsigned channels = 2;
 	const unsigned rate = iniparser_getint(cfg, "sound:rate", SOUND_DEFAULT_RATE);
 	const unsigned resample = 1;
-	const unsigned latency_us = 1000 * iniparser_getint(cfg, "sound:latency", SOUND_DEFAULT_LATENCY);
+	const unsigned latency = iniparser_getint(cfg, "sound:latency", SOUND_DEFAULT_LATENCY);
+	const unsigned latency_us = 1000 * latency;
 
 	err = snd_pcm_set_params(handle, pcm_format, pcm_access, channels, rate, resample, latency_us);
 	if (err < 0) {
 		return LOGERR("ALSA snd_pcm_set_params() error: %s", snd_strerror(err));
 	}
+
+	LOG(L_EM4H, "ALSA sound output initialized. Output: %s, rate: %i, latency: %i ms", cfg_output, rate, latency);
 
 	return E_OK;
 }

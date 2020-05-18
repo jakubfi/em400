@@ -70,8 +70,6 @@ int mem_init(dictionary *cfg)
 	const char *mega_modules_prom = iniparser_getstring(cfg, "memory:mega_prom", NULL);
 	mega_boot = iniparser_getboolean(cfg, "mem:mega_boot", 0);
 
-	LOG(L_MEM, "Initializing memory (Elwro: %d modules, MEGA: %d modules)", cfg_elwro, mega_modules);
-
 	if (cfg_elwro + mega_modules > MEM_MAX_MODULES+1) {
 		return LOGERR("Sum of Elwro and MEGA memory modules is greater than allowed %i.", MEM_MAX_MODULES+1);
 	}
@@ -87,6 +85,8 @@ int mem_init(dictionary *cfg)
 	}
 
 	mem_update_map();
+
+	LOG(L_MEM, "Memory initialized. Elwro modules: %d, MEGA modules: %d, hardwired OS segments: %d, MEGA prom: %s, MEGA boot: %s", cfg_elwro, mega_modules, cfg_os, mega_modules_prom, mega_boot ? "true" : "false");
 
 	return E_OK;
 }

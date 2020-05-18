@@ -69,8 +69,6 @@ int clock_init(dictionary *cfg)
 		return LOGERR("Clock period should be between 2 and 100 miliseconds, not %i.", clock_period);
 	}
 
-	LOG(L_CPU, "Clock period: %i ms", clock_period);
-
 	const int cfg_clock_start = iniparser_getboolean(cfg, "cpu:clock_start", 0);
 	if (cfg_clock_start) {
 		clock_on();
@@ -84,6 +82,8 @@ int clock_init(dictionary *cfg)
 	}
 
 	pthread_setname_np(clock_th, "clock");
+
+	LOG(L_CPU, "Clock initialized (%s). Period: %i ms", cfg_clock_start ? "started" : "stopped", clock_period);
 
 	return E_OK;
 }

@@ -73,10 +73,11 @@ const char *iob_reg_names[] = {
 int iob_init(dictionary *cfg)
 {
 	if (iniparser_getboolean(cfg, "cpu:fpga", 0) == 0) {
+		LOG(L_FPGA, "FPGA IO bus is disabled.");
 		return E_OK;
 	}
 
-	const char *bus_dev = iniparser_getstring(cfg, "fpga:string", NULL);
+	const char *bus_dev = iniparser_getstring(cfg, "fpga:device", NULL);
 	int speed = iniparser_getint(cfg, "fpga:speed", 0);
 
 	speed_t setspeed = serial_int2speed(speed);
@@ -105,7 +106,7 @@ int iob_init(dictionary *cfg)
 		return LOGERR("Failed to initialize internal FPGA bus pipe");
 	}
 
-	LOG(L_FPGA, "FPGA IO bus initialized");
+	LOG(L_FPGA, "FPGA IO bus initialized. Device: %s, speed: %i", bus_dev, speed);
 
 	return E_OK;
 }

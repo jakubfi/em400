@@ -70,8 +70,6 @@ static void * it_cmdproc(void *ptr);
 // -----------------------------------------------------------------------
 void * it_create(int num, dictionary *cfg)
 {
-	LOG(L_IO, "Creating new I/O tester");
-
 	struct iotester *it = (struct iotester *) calloc(1, sizeof(struct iotester));
 	if (!it) {
 		LOGERR("Memory allocation error.");

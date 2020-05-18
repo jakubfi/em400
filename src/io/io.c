@@ -64,8 +64,6 @@ static int fpga;
 // -----------------------------------------------------------------------
 int io_init(dictionary *cfg)
 {
-	LOG(L_IO, "Initializing I/O");
-
 	fpga = iniparser_getboolean(cfg, "cpu:fpga", 0);
 
 	for (int i=0 ; i<16 ; i++) {
@@ -73,7 +71,7 @@ int io_init(dictionary *cfg)
 		sprintf(ch, "io:channel_%i", i);
 		const char *ch_name = iniparser_getstring(cfg, ch, NULL);
 		if (ch_name) {
-			LOG(L_IO, "Channel %i: %s", i, ch_name);
+			LOG(L_IO, "Initializing I/O channel %i: %s", i, ch_name);
 			io_chan[i] = chan_make(i, ch_name, cfg);
 			if (!io_chan[i]) {
 				return LOGERR("Failed to initialize channel %i: %s.", i, ch_name);

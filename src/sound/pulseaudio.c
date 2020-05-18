@@ -31,14 +31,17 @@ int pulseaudio_init(dictionary *cfg)
 {
 	int err;
 
+	const int rate = iniparser_getint(cfg, "sound:rate", SOUND_DEFAULT_RATE);
+	const int latency = iniparser_getint(cfg, "sound:latency", SOUND_DEFAULT_LATENCY);
+
 	const pa_sample_spec ss = {
 		.format = PA_SAMPLE_S16LE,
-		.rate = iniparser_getint(cfg, "sound:rate", SOUND_DEFAULT_RATE),
+		.rate = rate,
 		.channels = 2
 	};
 	const pa_buffer_attr ba = {
 		.maxlength = -1,
-		.tlength = 100 * iniparser_getint(cfg, "sound:latency", SOUND_DEFAULT_LATENCY),
+		.tlength = 100 * latency,
 		.prebuf = -1,
 		.minreq = -1,
 		.fragsize = -1,
@@ -48,6 +51,8 @@ int pulseaudio_init(dictionary *cfg)
 	if (!s) {
 		return LOGERR("PulseAudio stream open failed: %s", pa_strerror(err));
 	}
+
+	LOG(L_EM4H, "Pulseaudio sound output initialized. Rate: %i, latency: %i ms", rate, latency);
 
 	return E_OK;
 }

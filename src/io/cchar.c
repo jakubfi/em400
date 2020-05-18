@@ -81,7 +81,6 @@ void * cchar_create(int num, dictionary *cfg)
 			free(chan);
 			return NULL;
 		}
-		LOG(L_CCHR, "Adding unit %i: %s", i, proto->name);
 
 		// create unit based on prototype
 		sprintf(key, "dev%i.%i", num, i);
@@ -90,6 +89,8 @@ void * cchar_create(int num, dictionary *cfg)
 			LOGERR("Failed to create unit: %s.", unit_name);
 			free(chan);
 			return NULL;
+		} else {
+			LOG(L_CCHR, "Connected device %i: %s", i, proto->name);
 		}
 
 		// fill in functions

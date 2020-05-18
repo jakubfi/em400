@@ -143,6 +143,8 @@ int log_init(dictionary *cfg)
 		if (ret != E_OK) {
 			LOGERR("Failed to enable logging.");
 			goto cleanup;
+		} else {
+			LOG(L_EM4H, "Logging enabled. File: %s, components: %s, line buffering: %s", cfg_logfile, log_components, line_buffered ? "true" : "false");
 		}
 	}
 

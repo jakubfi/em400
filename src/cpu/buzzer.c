@@ -171,6 +171,8 @@ int buzzer_init(dictionary *cfg)
 	sf_highpass(&bq_hp, sample_rate, SPEAKER_HP, 2.0f);
 	sf_lowpass(&bq_lp, sample_rate, SPEAKER_LP, 0.0f);
 
+	LOG(L_CPU, "Buzzer enabled. Volume: %i, speaker filter: %s, buffer length: %i frames", volume, speaker_filter ? "enabled" : "disabled", buffer_len);
+
 	return E_OK;
 
 cleanup:
