@@ -223,7 +223,7 @@ static int __e4i_header_check(struct e4i_t *e)
 }
 
 // -----------------------------------------------------------------------
-struct e4i_t * e4i_open(char *img_name)
+struct e4i_t * e4i_open(const char *img_name)
 {
 	int res;
 	e4i_err = E4I_E_OK;

@@ -18,7 +18,6 @@
 #include <stdlib.h>
 #include <inttypes.h>
 
-#include "cfg.h"
 #include "io/dev/dev.h"
 
 struct dev_printer {

@@ -36,7 +36,7 @@ enum mem_mega_flags {
 extern uint16_t *mem_mega[MEM_MAX_MODULES][MEM_MAX_SEGMENTS];
 extern uint16_t *mem_mega_prom;	// this needs to be visible, we check in mem_put() if we can write to segment
 
-int mem_mega_init(int modc, char *prom_image);
+int mem_mega_init(int modc, const char *prom_image);
 void mem_mega_shutdown();
 void mem_mega_reset();
 void mem_mega_seg_set(int nb, int ab, struct mem_slot_t *slot);

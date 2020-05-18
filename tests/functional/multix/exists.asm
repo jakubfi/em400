@@ -1,4 +1,4 @@
-; OPTS -c configs/multix.cfg
+; OPTS -c configs/multix.ini
 
 ; MULTIX' "check if exists" command should return OK both before and after mx initialization
 

@@ -1,4 +1,4 @@
-; OPTS -c configs/multix.cfg
+; OPTS -c configs/multix.ini
 
 ; Test the "TEST" command
 ; The only proper thing that current MULTIX emulation does here

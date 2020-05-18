@@ -20,6 +20,7 @@
 
 #include "sound/sound.h"
 #include "external/biquad/biquad.h"
+#include "external/iniparser/iniparser.h"
 #include "log.h"
 
 // Tonsil GD 6/0,5 frequency response, more or less
@@ -126,12 +127,13 @@ void buzzer_shutdown()
 }
 
 // -----------------------------------------------------------------------
-int buzzer_init(struct cfg_em400 *cfg)
+int buzzer_init(dictionary *cfg)
 {
-	volume = cfg->sound_volume;
-	speaker_filter = cfg->speaker_filter;
-	sample_period = 1000000000.0f / cfg->sound_rate;
-	buffer_len = cfg->sound_buffer_len;
+	volume = iniparser_getint(cfg, "sound:volume", SOUND_DEFAULT_VOLUME);
+	speaker_filter = iniparser_getboolean(cfg, "sound:filter", 1);
+	int sample_rate = iniparser_getint(cfg, "sound:rate", SOUND_DEFAULT_RATE);
+	sample_period = 1000000000.0f / sample_rate;
+	buffer_len = iniparser_getint(cfg, "sound:buffer_len", SOUND_DEFAULT_BUFFER_LEN);
 
 	if (volume > 100) {
 		LOGERR("Adjusting sound volume from %i to 100 (max allowed).", volume);
@@ -162,12 +164,12 @@ int buzzer_init(struct cfg_em400 *cfg)
 
 	snd = snd_init(cfg);
 	if (!snd) {
-		LOGERR("Could not find sound driver: %s", cfg->sound_driver);
+		LOGERR("Could not initialize sound subsystem.");
 		goto cleanup;
 	}
 
-	sf_highpass(&bq_hp, cfg->sound_rate, SPEAKER_HP, 2.0f);
-	sf_lowpass(&bq_lp, cfg->sound_rate, SPEAKER_LP, 0.0f);
+	sf_highpass(&bq_hp, sample_rate, SPEAKER_HP, 2.0f);
+	sf_lowpass(&bq_lp, sample_rate, SPEAKER_LP, 0.0f);
 
 	return E_OK;
 

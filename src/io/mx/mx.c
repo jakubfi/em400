@@ -33,6 +33,7 @@
 #include "io/mx/irq.h"
 #include "io/mx/event.h"
 #include "io/mx/line.h"
+#include "external/iniparser/iniparser.h"
 
 enum mx_condition { MX_UNINITIALIZED, MX_INITIALIZED, MX_CONFIGURED, MX_QUIT };
 
@@ -51,10 +52,8 @@ int mx_int_enqueue(struct mx *multix, int intr, int line);
 void mx_reset(void *ch);
 
 // -----------------------------------------------------------------------
-void * mx_create(int num, struct cfg_unit *units)
+void * mx_create(int num, dictionary *cfg)
 {
-	struct cfg_unit *dev_cfg;
-
 	LOG(L_MX, "Creating new MULTIX");
 
 	// --- create multix itself (everything needs it)
@@ -94,15 +93,17 @@ void * mx_create(int num, struct cfg_unit *units)
 	// --- create devices (event system need them)
 
 	LOG(L_MX, "Initializing devices");
-	dev_cfg = units;
-	while (dev_cfg) {
-		struct mx_line *line = multix->plines + dev_cfg->num;
-		int res = dev_make(dev_cfg, &line->dev, &line->dev_data);
+	for (int i=0 ; i<16 ; i++) {
+		char key[32];
+		sprintf(key, "dev%i.%i", num, i);
+		if (!iniparser_find_entry(cfg, key)) continue;
+
+		struct mx_line *line = multix->plines + i;
+		int res = dev_make(cfg, key, &line->dev, &line->dev_data);
 		if (res != E_OK) {
-			LOGERR("Failed to create MULTIX device: %s", dev_cfg->name);
+			LOGERR("Failed to create MULTIX device: %s", key);
 			goto cleanup;
 		}
-		dev_cfg = dev_cfg->next;
 	}
 
 	// --- create event system (MERA-400 interface needs it)

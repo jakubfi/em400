@@ -19,16 +19,16 @@
 #include <inttypes.h>
 
 #include "log.h"
-#include "cfg.h"
 #include "io/dev/dev.h"
 #include "io/dev/e4image.h"
+#include "external/iniparser/iniparser.h"
 
 struct dev_winch {
 	struct e4i_t *image;
 };
 
 // -----------------------------------------------------------------------
-void * dev_winch_create(struct cfg_arg *args)
+void * dev_winch_create(dictionary *cfg, const char *section)
 {
 	struct dev_winch *winch = (struct dev_winch *) malloc(sizeof(struct dev_winch));
 	if (!winch) {
@@ -36,9 +36,13 @@ void * dev_winch_create(struct cfg_arg *args)
 		goto cleanup;
 	}
 
-	winch->image = e4i_open(args->text);
+	char key[32];
+	sprintf(key, "%s:image", section);
+	const char *image = iniparser_getstring(cfg, key, NULL);
+
+	winch->image = e4i_open(image);
 	if (!winch->image) {
-		LOGERR("Failed to open Winchester image: \"%s\": %s.", args->text, e4i_get_err(e4i_err));
+		LOGERR("Failed to open Winchester image: \"%s\": %s.", image, e4i_get_err(e4i_err));
 		goto cleanup;
 	}
 

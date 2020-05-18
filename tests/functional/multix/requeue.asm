@@ -1,4 +1,4 @@
-; OPTS -c configs/multix.cfg
+; OPTS -c configs/multix.ini
 
 ; Test "REQUEUE INTERRUPT" command
 ; The only thing we can test here is if MULTIX acknowledges the command.

@@ -148,7 +148,7 @@ speed_t serial_int2speed(int s)
 }
 
 // -----------------------------------------------------------------------
-int serial_open(char *device, speed_t speed)
+int serial_open(const char *device, speed_t speed)
 {
 	int fd = open(device, O_RDWR | O_NOCTTY | O_SYNC);
 	if (fd > 0) {

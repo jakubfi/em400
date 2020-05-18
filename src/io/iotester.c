@@ -29,6 +29,7 @@
 #include "io/io.h"
 #include "io/chan.h"
 #include "utils/elst.h"
+#include "external/iniparser/iniparser.h"
 
 #define INIT_DELAY_US 200000
 
@@ -67,7 +68,7 @@ struct iotester {
 static void * it_cmdproc(void *ptr);
 
 // -----------------------------------------------------------------------
-void * it_create(int num, struct cfg_unit *units)
+void * it_create(int num, dictionary *cfg)
 {
 	LOG(L_IO, "Creating new I/O tester");
 
@@ -80,10 +81,12 @@ void * it_create(int num, struct cfg_unit *units)
 	it->chnum = num;
 	srand(time(NULL));
 
-	struct cfg_unit *dev_cfg = units;
-	while (dev_cfg) {
-		LOG(L_IO, "IOtester can't connect devices. Ignored device: %s", dev_cfg->name);
-		dev_cfg = dev_cfg->next;
+	for (int i=0 ; i<16 ; i++) {
+		char section[16];
+		sprintf(section, "dev%i.%i", num, i);
+		if (iniparser_find_entry(cfg, section)) {
+			LOG(L_IO, "IOtester can't connect devices. Ignored device: %s", section);
+		}
 	}
 
 	it->evq = elst_create(1024);

@@ -20,8 +20,8 @@
 
 #include <inttypes.h>
 
-#include "cfg.h"
 #include "io/defs.h"
+#include "external/iniparser/iniparser.h"
 
 // TODO: needs further cleaning (possibly move down, as interpretation is channel-specific)
 enum chan_cmds_e {
@@ -36,7 +36,7 @@ enum chan_cmds_e {
 	CHAN_CMD_STATUS		= 0b000100,
 };
 
-typedef void * (*chan_f_create)(int num, struct cfg_unit *units);
+typedef void * (*chan_f_create)(int num, dictionary *cfg);
 typedef void (*chan_f_shutdown)(void *ch_obj);
 typedef void (*chan_f_reset)(void *ch_obj);
 typedef int (*chan_f_cmd)(void *ch_obj, int dir, uint16_t n, uint16_t *r);
@@ -54,7 +54,7 @@ struct chan {
 	void *obj;
 };
 
-struct chan * chan_make(int num, char *name, struct cfg_unit *units);
+struct chan * chan_make(int num, const char *name, dictionary *cfg);
 void chan_destroy(struct chan *chan);
 
 #endif

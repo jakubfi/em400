@@ -20,16 +20,17 @@
 #include <alsa/error.h>
 
 #include "log.h"
-#include "cfg.h"
+#include "external/iniparser/iniparser.h"
 #include "sound/sound.h"
 
 static snd_pcm_t *handle;
 
 // -----------------------------------------------------------------------
-int alsa_init(struct cfg_em400 *cfg)
+int alsa_init(dictionary *cfg)
 {
 	int err;
-	err = snd_pcm_open(&handle, cfg->sound_output, SND_PCM_STREAM_PLAYBACK, 0);
+	const char *cfg_output = iniparser_getstring(cfg, "sound:output", SOUND_DEFAULT_OUTPUT);
+	err = snd_pcm_open(&handle, cfg_output, SND_PCM_STREAM_PLAYBACK, 0);
 	if (err < 0) {
 		return LOGERR("ALSA snd_pcm_open() error: %s", snd_strerror(err));
 	}
@@ -37,9 +38,9 @@ int alsa_init(struct cfg_em400 *cfg)
 	const unsigned pcm_format = SND_PCM_FORMAT_S16;
 	const unsigned pcm_access = SND_PCM_ACCESS_RW_INTERLEAVED;
 	const unsigned channels = 2;
-	const unsigned rate = cfg->sound_rate;
+	const unsigned rate = iniparser_getint(cfg, "sound:rate", SOUND_DEFAULT_RATE);
 	const unsigned resample = 1;
-	const unsigned latency_us = cfg->sound_latency * 1000;
+	const unsigned latency_us = 1000 * iniparser_getint(cfg, "sound:latency", SOUND_DEFAULT_LATENCY);
 
 	err = snd_pcm_set_params(handle, pcm_format, pcm_access, channels, rate, resample, latency_us);
 	if (err < 0) {

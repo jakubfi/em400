@@ -194,7 +194,7 @@ class TestBed:
         self.benchmark_duration = benchmark_duration
         self.e = None
         self.add_opts = None
-        self.default_config = "configs/minimal.cfg"
+        self.default_config = "configs/minimal.ini"
         self.bl = self.baseline(blfile)
         self.log = log
         self.fpga = fpga

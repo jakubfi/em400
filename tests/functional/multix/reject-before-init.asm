@@ -1,4 +1,4 @@
-; OPTS -c configs/multix.cfg
+; OPTS -c configs/multix.ini
 
 ; Check if MULTIX rejects commands before initialization completes
 

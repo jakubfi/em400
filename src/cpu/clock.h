@@ -18,13 +18,13 @@
 #ifndef CLOCK_H
 #define CLOCK_H
 
-#include "cfg.h"
+#include "external/iniparser/dictionary.h"
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
-int clock_init(struct cfg_em400 *cfg);
+int clock_init(dictionary *cfg);
 void clock_shutdown();
 void clock_on();
 void clock_off();

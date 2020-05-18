@@ -19,9 +19,10 @@
 #define SOUND_H
 
 #include <inttypes.h>
+#include "external/iniparser/dictionary.h"
 
 void buzzer_silence();
-int buzzer_init();
+int buzzer_init(dictionary *cfg);
 void buzzer_update(int ir, unsigned instruction_time);
 void buzzer_stop();
 void buzzer_start();

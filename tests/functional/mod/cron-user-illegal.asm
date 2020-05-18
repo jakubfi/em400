@@ -1,4 +1,4 @@
-; OPTS -c configs/mod-noclock.cfg
+; OPTS -c configs/mod-noclock.ini
 
 ; CRON is not only illegal, it's illegal in user mode too (and does nothing)
 

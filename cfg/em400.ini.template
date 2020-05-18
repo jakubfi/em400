@@ -1,0 +1,173 @@
+# Note: values in the template are the default ones
+
+[cpu]
+# Choose CPU and memory backend:
+# "false" - use emulated CPU and memory
+# "true" - use FPGA implementation for CPU and external memory
+fpga = false
+
+# Control CPU emulation speed:
+# "false" - run as fast as possible
+# "true" - try to emulate real hardware CPU and memory speeds
+speed_real = false
+
+# If speed_real is set to "true", cpu_speed_factor controls how much
+# faster (>1.0) or slower (<1.0) emulated CPU runs compared to
+# the real hardware. Value is a floating point number.
+speed_factor = 1
+
+# Execute instructions for this much time (in us) before sleeping.
+# Use with caution. If "real" emulation speed is slower than
+# it should be, you may need to set granularity to a higher value.
+throttle_granularity = 10
+
+# Internal clock interrupt period (in miliseconds)
+# Allowed values: 2-100
+# Note: cycle lengths available in real hardware are:
+# 2, 4, 8, 10, 20, 40, 80
+clock_period = 10
+
+# Choose whether to start clock at power on.
+clock_start = true
+
+# MERA-400 cpu stops when operating system tries to access unconfigured
+# memory segment, but this can be changed to work as for user programs
+# (only interrupt is fired in such configuration)
+stop_on_nomem = true
+
+# 'IN' and 'OU' instructions can be either illegal or legal in user programs
+user_io_illegal = true
+
+# AWP (hardware 48-bit floating point and 32-bit fixed point arithmetic) is optional
+awp = true
+
+# Enable or disable CPU modifications found in MX-16 CPU:
+#  * 17-bit byte addressing,
+#  *  additional instructions,
+#  *  additional software interrupt,
+#  *  interrupts 5 and 11 swapped,
+#  *  broader interrupt mask for I/O interrupts
+modifications = false
+
+[memory]
+# Memory is organized into 16 physical modules. Each module can be
+# either elwro or mega. Elwro modules are 32kword big (8 pages),
+# mega modules are 64kword in size (16 pages).
+# Module 0 always has to be populated with elwro memory.
+# Elwro modules are populated starting from 0 up, mega modules
+# from 15 down. Module 0 may overlap with mega module
+
+# allowed values: 1-16
+elwro_modules = 4
+
+# allowed values: 0-16
+mega_modules = 0
+
+# 4kword segments hardwired for OS memory block (taken from module 0)
+# allowed values: 1 or 2
+hardwired_segments = 2
+
+# Name of image file containing MEGA PROM memory.
+# File has to be 8KB in size (1 full segment, 4kwords).
+# Unset by default
+#mega_prom = mega_prom.img
+
+# Enable or disable boot from MEGA PROM memory.
+# Works only when mem_mega_prom is specified.
+mega_boot = false
+
+[sound]
+# Internal buzzer emulation.
+# For this to work, set speed_real to true
+# and 1.5 >= cpu_speed_factor >= 0.5
+# Note that for sound to work properly logging will most likely
+# have to be disabled.
+enabled = false
+
+# Sound driver to use: pulseaudio, alsa or file (raw PCM dump)
+driver = pulseaudio
+
+# For alsa, this is the output device to use.
+# For file output, it's the file name. Unused for pulseaudio.
+output = default
+
+# Samplerate.
+rate = 44100
+
+# Sound buffer size (in samples, powers of 2).
+buffer_len = 128
+
+# Sound output latency (in miliseconds).
+# Increase if sound is choppy.
+latency = 20
+
+# Software buzzer volume control (0-100)
+volume = 30
+
+# Enable or disable speaker frequency response modeling.
+# When enabled, EM400 sounds like the real hardware.
+# In fact, disabling it is considered a criminal offence.
+filter = true
+
+[fpga]
+# Device to use for communication with the FPGA backend.
+device = /dev/ttyUSB1
+
+# FPGA link speed (baud).
+speed = 1000000
+
+[log]
+# Enable or disable logging.
+enabled = false
+
+# Name of the log file
+file = em400.log
+
+# Select which components write logs for (separated by commas, no spaces allowed.
+#
+# "<component>,..."
+#
+# Available components are:
+#   em4h - emulator
+#   reg, mem, cpu, op, int - registers, memory, cpu cycle, instructions, interrupts
+#   io, mx, px, cchr, cmem - general I/O, MULTIX, PLIX, character and memory channel
+#   term, 9425, wnch, flop, pnch, pnrd, tape - terminal, mera 9425, winchester, floppy, tape puncher and reader, magnetic tape
+#   crk5 - CROOK-5
+#   em4h - emulator, general
+#   ectl - emulator, remote control
+#   fpga - emulation-fpga I/O bridge
+#   all - special "component" to enable or disable all components
+#
+# Note that logging cpu cycle information slows down the emulation considerably (>1000 times)
+components = em4h
+
+# Use line buffered or fully buffered log output.
+line_buffered = true
+
+[io]
+channel_1 = multix
+channel_15 = char
+
+[dev1.4]
+type = terminal
+transport = tcp
+port = 32000
+
+[dev1.5]
+type = terminal
+transport = serial
+device = /dev/ttyS0
+speed = 9600
+
+[dev15.20]
+type = flop5
+image = floppy1.e4i
+
+[dev15.21]
+type = flop5
+image = floppy2.e4i
+
+[dev15.28]
+type = winchester
+image = winchester.e4i
+

@@ -21,7 +21,7 @@
 #include <inttypes.h>
 #include <stdio.h>
 
-#include "cfg.h"
+#include "external/iniparser/dictionary.h"
 
 #define MEM_SEGMENT_SIZE 4 * 1024	// segment size (16-bit words)
 #define MEM_MAX_MODULES 16			// physical memory modules
@@ -35,7 +35,7 @@ struct mem_slot_t {
 
 extern struct mem_slot_t mem_map[MEM_MAX_NB][MEM_MAX_AB];
 
-int mem_init(struct cfg_em400 *cfg);
+int mem_init(dictionary *cfg);
 void mem_shutdown();
 int mem_cmd(uint16_t n, uint16_t r);
 void mem_reset();

@@ -1,4 +1,4 @@
-; OPTS -c configs/multix.cfg
+; OPTS -c configs/multix.ini
 ; PRECMD CLOCK ON
 
 ; If reset is done before previous reset routine finished, no IWYZE should appear

@@ -23,8 +23,6 @@
 #include "io/dev/e4image.h"
 #include "io/cmem.h"
 
-#include "cfg.h"
-
 // cmem control field - modes of operation
 enum cmem_m9425_transmission_type_e {
 	CMEM_M9425_RD	= 0b00, // read data

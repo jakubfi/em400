@@ -1,4 +1,4 @@
-; OPTS -c configs/mod_mega_max.cfg
+; OPTS -c configs/mod_mega_max.ini
 
 ; test full 17-bit byte addressing across process address space on modified (MX-16) cpu with enabled modifications
 

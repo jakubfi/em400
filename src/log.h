@@ -22,10 +22,10 @@
 #include <stdio.h>
 #include <inttypes.h>
 
-#include "cfg.h"
 #include "atomic.h"
 
 #include "ectl.h" // for global constants
+#include "external/iniparser/dictionary.h"
 
 #define E_OK 0
 #define E_ERR -1
@@ -36,7 +36,7 @@ extern "C" {
 
 extern unsigned log_components_enabled;
 
-int log_init(struct cfg_em400 *cfg);
+int log_init(dictionary *cfg);
 void log_shutdown();
 
 int log_enable();
@@ -46,7 +46,7 @@ unsigned log_is_enabled();
 void log_component_enable(unsigned component);
 void log_component_disable(unsigned component);
 unsigned log_component_get(unsigned component);
-int log_setup_components(char *components);
+int log_setup_components(const char *components);
 
 const char * log_get_component_name(unsigned component);
 int log_get_component_id(const char *name);
@@ -62,7 +62,6 @@ void log_intlevel_inc();
 
 void log_log_dasm(int arg, int16_t n, const char *comment);
 void log_log_cpu(unsigned component, const char *msgfmt, ...);
-void log_config(struct cfg_em400 *cfg, const char *func);
 
 #define LOG_ENABLED atom_load_acquire(&log_components_enabled)
 #define LOG_WANTS(component) (LOG_ENABLED & (1 << (component)))

@@ -115,7 +115,7 @@ typedef int (e4i_id_gen_f)(struct e4i_t *e, uint8_t *buf, int id_len, uint32_t b
 
 void e4i_header_print(struct e4i_t *e);
 
-struct e4i_t * e4i_open(char *img_name);
+struct e4i_t * e4i_open(const char *img_name);
 void e4i_close(struct e4i_t *e);
 const char * e4i_get_err(int i);
 

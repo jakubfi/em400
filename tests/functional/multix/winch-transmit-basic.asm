@@ -1,4 +1,4 @@
-; OPTS -c configs/winchester1.cfg
+; OPTS -c configs/winchester1.ini
 ; PRECMD CLOCK ON
 
 	.cpu	mx16

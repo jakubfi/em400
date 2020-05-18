@@ -19,17 +19,18 @@
 #include <stdio.h>
 
 #include "log.h"
-#include "cfg.h"
+#include "external/iniparser/iniparser.h"
 #include "sound/sound.h"
 
 FILE *out;
 
 // -----------------------------------------------------------------------
-int file_init(struct cfg_em400 *cfg)
+int file_init(dictionary *cfg)
 {
-	out = fopen(cfg->sound_output, "w");
+	const char *cfg_output = iniparser_getstring(cfg, "sound:output", "output.raw");
+	out = fopen(cfg_output, "w");
 	if (!out) {
-		return LOGERR("Error opening sound output file: %s", cfg->sound_output);
+		return LOGERR("Error opening sound output file: %s", cfg_output);
 	}
 
 	return E_OK;

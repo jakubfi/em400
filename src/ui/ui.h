@@ -19,6 +19,7 @@
 #define UI_H
 
 #include <pthread.h>
+#include "external/iniparser/dictionary.h"
 
 typedef void * (*ui_f_setup)(const char *);
 typedef void (*ui_f_loop)(void*);
@@ -39,7 +40,7 @@ struct ui {
 	void *data;
 };
 
-struct ui * ui_create(const char *name);
+struct ui * ui_create(dictionary *cfg);
 int ui_run(struct ui *ui);
 void ui_shutdown(struct ui *ui);
 

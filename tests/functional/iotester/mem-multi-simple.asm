@@ -1,4 +1,4 @@
-; OPTS -c configs/iotester.cfg
+; OPTS -c configs/iotester.ini
 
 ; Test memory operations: read/write multiword
 

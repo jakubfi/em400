@@ -20,25 +20,25 @@
 #include <pulse/error.h>
 
 #include "log.h"
-#include "cfg.h"
+#include "external/iniparser/iniparser.h"
 #include "sound/sound.h"
 
 static pa_simple *s;
 static int bytes_per_frame = 4;
 
 // -----------------------------------------------------------------------
-int pulseaudio_init(struct cfg_em400 *cfg)
+int pulseaudio_init(dictionary *cfg)
 {
 	int err;
 
 	const pa_sample_spec ss = {
 		.format = PA_SAMPLE_S16LE,
-		.rate = cfg->sound_rate,
+		.rate = iniparser_getint(cfg, "sound:rate", SOUND_DEFAULT_RATE),
 		.channels = 2
 	};
 	const pa_buffer_attr ba = {
 		.maxlength = -1,
-		.tlength = cfg->sound_latency * 1000,
+		.tlength = 100 * iniparser_getint(cfg, "sound:latency", SOUND_DEFAULT_LATENCY),
 		.prebuf = -1,
 		.minreq = -1,
 		.fragsize = -1,

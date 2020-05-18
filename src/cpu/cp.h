@@ -20,9 +20,9 @@
 
 #include <inttypes.h>
 
-#include "cfg.h"
+#include "external/iniparser/dictionary.h"
 
-int cp_init(struct cfg_em400 *cfg);
+int cp_init(dictionary *cfg);
 void cp_shutdown();
 
 int cp_reg_get(unsigned id);

@@ -34,8 +34,8 @@
 #include <errno.h>
 
 #include "log.h"
-#include "cfg.h"
 #include "io/dev/dev.h"
+#include "external/iniparser/iniparser.h"
 
 enum dev_terminal_commands { CMD_NONE, CMD_RD, CMD_WR, CMD_QUIT };
 enum dev_terminal_type { TERM_CONSOLE, TERM_TCP };
@@ -114,40 +114,31 @@ int dev_terminal_open_tcp(struct dev_terminal *terminal, int port, int timeout_m
 }
 
 // -----------------------------------------------------------------------
-void * dev_terminal_create(struct cfg_arg *args)
+void * dev_terminal_create(dictionary *cfg, const char *section)
 {
-	int res;
-	char *type = NULL;
-	int port;
-
 	struct dev_terminal *terminal = (struct dev_terminal *) malloc(sizeof(struct dev_terminal));
 	if (!terminal) {
 		goto cleanup;
 	}
 
-	res = cfg_args_decode(args, "s", &type);
-	if (res != E_OK) {
-		LOGERR("Failed to parse terminal type: \"%s\".", args->text);
-		goto cleanup;
-	}
+	char key[32];
+	sprintf(key, "%s:transport", section);
+	const char *transport = iniparser_getstring(cfg, key, NULL);
 
-	if (!strcasecmp(type, "tcp")) {
-		res = cfg_args_decode(args->next, "i", &port);
-		if (res != E_OK) {
-			LOGERR("Failed to parse terminal TCP port: \"%s\".", args->next->text);
-			goto cleanup;
-		}
+	if (!strcasecmp(transport, "tcp")) {
+		sprintf(key, "%s:port", section);
+		const int port = iniparser_getint(cfg, key, -1);
 		if (dev_terminal_open_tcp(terminal, port, 100)) {
 			LOGERR("Failed to open TCP terminal on port: %i.", port);
 			goto cleanup;
 		}
-	} else if (!strcasecmp(type, "console")) {
+	} else if (!strcasecmp(transport, "console")) {
 		if (dev_terminal_open_console(terminal)) {
 			LOGERR("Failed to open console terminal.");
 			goto cleanup;
 		}
 	} else {
-		LOGERR("Unknown terminal type: %s.", type);
+		LOGERR("Unknown terminal transport: %s.", transport);
 		goto cleanup;
 	}
 
@@ -170,13 +161,10 @@ void * dev_terminal_create(struct cfg_arg *args)
 
 	pthread_setname_np(terminal->th, "term");
 
-	free(type);
-
 	return terminal;
 
 cleanup:
 	dev_terminal_destroy(terminal);
-	free(type);
 	return NULL;
 }
 

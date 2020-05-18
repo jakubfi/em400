@@ -1,4 +1,4 @@
-; OPTS -c configs/minimal.cfg
+; OPTS -c configs/minimal.ini
 
 ; PRECMD reg r0 1
 ; PRECMD reg r1 0xffff

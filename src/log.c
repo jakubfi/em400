@@ -35,9 +35,9 @@
 #include "mem/mem.h"
 #include "log.h"
 #include "log_crk.h"
-#include "cfg.h"
 #include "atomic.h"
 #include "utils/utils.h"
+#include "external/iniparser/iniparser.h"
 
 // low-level stuff
 
@@ -102,24 +102,27 @@ static void log_log_timestamp(unsigned component, const char *msg, const char *f
 static void log_components_update();
 
 // -----------------------------------------------------------------------
-int log_init(struct cfg_em400 *cfg)
+int log_init(dictionary *cfg)
 {
 	int ret = E_ERR;
 
-	log_file = strdup(cfg->log_file);
+	const char *cfg_logfile = iniparser_getstring(cfg, "log:file", "em400.log");
+	log_file = strdup(cfg_logfile);
 	if (!log_file) {
 		LOGERR("Memory allocation error.");
 		goto cleanup;
 	}
 
 	// set up components to log
-	if (log_setup_components(cfg->log_components) < 0) {
-		LOGERR("Failed to parse log component definition: \"%s\".", cfg->log_components);
+	const char *log_components = iniparser_getstring(cfg, "log:components", "em4h");
+	if (log_setup_components(log_components) < 0) {
+		LOGERR("Failed to parse log component definition: \"%s\".", log_components);
 		goto cleanup;
 	}
 
 	// initialize deassembler
-	emd = emdas_create(cfg->cpu_mod ? EMD_ISET_MX16 : EMD_ISET_MERA400, (emdas_getfun) mem_get);
+	int cpu_mod = iniparser_getboolean(cfg, "cpu:modifications", 0);
+	emd = emdas_create(cpu_mod ? EMD_ISET_MX16 : EMD_ISET_MERA400, (emdas_getfun) mem_get);
 	if (!emd) {
 		LOGERR("Log deassembler initialization failed.");
 		goto cleanup;
@@ -132,9 +135,10 @@ int log_init(struct cfg_em400 *cfg)
 
 	pthread_mutex_init(&log_mutex, NULL);
 
-	line_buffered = cfg->line_buffered;
+	line_buffered = iniparser_getboolean(cfg, "log:line_buffered", 1);
 
-	if (cfg->log_enabled) {
+	int log_enabled = iniparser_getboolean(cfg, "log:enabled", 0);
+	if (log_enabled) {
 		ret = log_enable();
 		if (ret != E_OK) {
 			LOGERR("Failed to enable logging.");
@@ -299,7 +303,7 @@ int log_get_component_id(const char *name)
 }
 
 // -----------------------------------------------------------------------
-int log_setup_components(char *components)
+int log_setup_components(const char *components)
 {
 	char *cmp = strdup(components);
 	char *c = strtok(cmp, ",");

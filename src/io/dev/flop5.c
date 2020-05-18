@@ -19,16 +19,16 @@
 #include <inttypes.h>
 
 #include "log.h"
-#include "cfg.h"
 #include "io/dev/dev.h"
 #include "io/dev/e4image.h"
+#include "external/iniparser/iniparser.h"
 
 struct dev_flop5 {
 	struct e4i_t *image;
 };
 
 // -----------------------------------------------------------------------
-void * dev_flop5_create(struct cfg_arg *args)
+void * dev_flop5_create(dictionary *cfg, const char *section)
 {
 	struct dev_flop5 *flop5 = (struct dev_flop5 *) malloc(sizeof(struct dev_flop5));
 	if (!flop5) {
@@ -36,9 +36,13 @@ void * dev_flop5_create(struct cfg_arg *args)
 		goto cleanup;
 	}
 
-	flop5->image = e4i_open(args->text);
+	char key[32];
+	sprintf(key, "%s:image", section);
+	const char *image = iniparser_getstring(cfg, key, NULL);
+
+	flop5->image = e4i_open(image);
 	if (!flop5->image) {
-		LOGERR("Failed to open 5-inch floppy image: \"%s\": %s.", args->text, e4i_get_err(e4i_err));
+		LOGERR("Failed to open 5-inch floppy image: \"%s\": %s.", image, e4i_get_err(e4i_err));
 		goto cleanup;
 	}
 

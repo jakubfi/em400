@@ -20,6 +20,7 @@
 
 #include "log.h"
 #include "sound/sound.h"
+#include "external/iniparser/iniparser.h"
 
 #ifdef HAVE_ALSA
 extern const struct snd_drv snd_drv_alsa;
@@ -41,20 +42,24 @@ static const struct snd_drv *snd_drivers[] = {
 };
 
 // -----------------------------------------------------------------------
-const struct snd_drv * snd_init(struct cfg_em400 *cfg)
+const struct snd_drv * snd_init(dictionary *cfg)
 {
+	const char *cfg_driver = iniparser_getstring(cfg, "sound:driver", SOUND_DEFAULT_DRIVER);
+
 	const struct snd_drv **snd_drv = snd_drivers;
 	while (snd_drv && *snd_drv) {
-		if (!strcasecmp(cfg->sound_driver, (*snd_drv)->name)) {
+		if (!strcasecmp(cfg_driver, (*snd_drv)->name)) {
 			if ((*snd_drv)->init(cfg) == E_OK) {
 				return *snd_drv;
 			} else {
+				LOGERR("Error initializing sound driver: %s", cfg_driver);
 				return NULL;
 			}
 		}
 		snd_drv++;
 	}
 
+	LOGERR("Could not find sound driver: %s", cfg_driver);
 	return NULL;
 }
 

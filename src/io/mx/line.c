@@ -18,7 +18,6 @@
 #include <stdlib.h>
 #include <strings.h>
 
-#include "cfg.h"
 #include "io/mx/line.h"
 #include "io/mx/irq.h"
 #include "io/mx/cmds.h"

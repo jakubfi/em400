@@ -30,45 +30,39 @@
 #include "em400.h"
 #include "io/defs.h"
 #include "io/cchar_flop8.h"
+#include "external/iniparser/iniparser.h"
 
 #include "log.h"
 
 #define UNIT ((struct cchar_unit_flop8_t *)(unit))
 
 // -----------------------------------------------------------------------
-struct cchar_unit_proto_t * cchar_flop8_create(struct cfg_arg *args)
+struct cchar_unit_proto_t * cchar_flop8_create(dictionary *cfg, const char *section)
 {
-	int res;
+	char key[32];
 
 	struct cchar_unit_flop8_t *unit = (struct cchar_unit_flop8_t *) calloc(1, sizeof(struct cchar_unit_flop8_t));
 	if (!unit) {
-		LOGERR("Failed to allocate memory for unit: %s.", args->text);
+		LOGERR("Failed to allocate memory for unit: %s.", section);
 		goto fail;
 	}
 
-	struct cfg_arg *a = args;
-	int id = 0;
+	for (int id=0 ; id<4 ; id++) {
+		sprintf(key, "%s:drive%i", section, id);
+		const char *image = iniparser_getstring(cfg, key, NULL);
+		if (!image) continue;
 
-	while (id < 4) {
-		if (a) {
-			res = cfg_args_decode(a, "s", &unit->image[id]);
-			if (res == E_OK) {
-				unit->f[id] = fopen(unit->image[id], "r");
-				if (unit->f[id]) {
-					LOG(L_FLOP, "Drive %i: \"%s\".", id, unit->image[id]);
-				} else {
-					LOG(L_FLOP, "Failed to open image: \"%s\".", unit->image[id]);
-				}
-			} else {
-				LOGERR("Failed to parse image name: %s.", a->text);
-				goto fail;
-			}
-		} else {
-			break;
+		unit->image[id] = strdup(image);
+		if (!unit->image[id]) {
+			LOGERR("Memory allocation error.");
+			goto fail;
 		}
-
-		a = a->next;
-		id++;
+		unit->f[id] = fopen(image, "r");
+		if (unit->f[id]) {
+			LOG(L_FLOP, "Drive %i: \"%s\".", id, image);
+		} else {
+			LOG(L_FLOP, "Failed to open image: \"%s\".", image);
+		}
 	}
 
 	unit->track = 1;

@@ -27,8 +27,8 @@
 #include "io/cchar_term.h"
 #include "io/cchar_flop8.h"
 
-#include "cfg.h"
 #include "log.h"
+#include "external/iniparser/iniparser.h"
 
 // unit prototypes
 struct cchar_unit_proto_t cchar_unit_proto[] = {
@@ -50,7 +50,7 @@ struct cchar_unit_proto_t cchar_unit_proto[] = {
 };
 
 // -----------------------------------------------------------------------
-static struct cchar_unit_proto_t * cchar_unit_proto_get(struct cchar_unit_proto_t *proto, char *name)
+static struct cchar_unit_proto_t * cchar_unit_proto_get(struct cchar_unit_proto_t *proto, const char *name)
 {
 	while (proto && proto->name) {
 		if (strcasecmp(name, proto->name) == 0) {
@@ -62,27 +62,32 @@ static struct cchar_unit_proto_t * cchar_unit_proto_get(struct cchar_unit_proto_
 }
 
 // -----------------------------------------------------------------------
-void * cchar_create(int num, struct cfg_unit *units)
+void * cchar_create(int num, dictionary *cfg)
 {
 	struct cchar_chan_t *chan = (struct cchar_chan_t *) calloc(1, sizeof(struct cchar_chan_t));
 
 	chan->num = num;
+	for (int i=0 ; i<16 ; i++) {
+		char key[32];
+		sprintf(key, "dev%i.%i", num, i);
+		if (!iniparser_find_entry(cfg, key)) continue;
 
-	struct cfg_unit *cunit = units;
-	while (cunit) {
 		// find unit prototype
-		struct cchar_unit_proto_t *proto = cchar_unit_proto_get(cchar_unit_proto, cunit->name);
+		sprintf(key, "dev%i.%i:type", num, i);
+		const char *unit_name = iniparser_getstring(cfg, key, NULL);
+		struct cchar_unit_proto_t *proto = cchar_unit_proto_get(cchar_unit_proto, unit_name);
 		if (!proto) {
-			LOGERR("Unknown device type or device incompatibile with channel: %s.", cunit->name);
+			LOGERR("Unknown device type or device incompatibile with channel: %s.", unit_name);
 			free(chan);
 			return NULL;
 		}
-		LOG(L_CCHR, "Adding unit %i: %s", cunit->num, proto->name);
+		LOG(L_CCHR, "Adding unit %i: %s", i, proto->name);
 
 		// create unit based on prototype
-		struct cchar_unit_proto_t *unit = proto->create(cunit->args);
+		sprintf(key, "dev%i.%i", num, i);
+		struct cchar_unit_proto_t *unit = proto->create(cfg, key);
 		if (!unit) {
-			LOGERR("Failed to create unit: %s.", cunit->name);
+			LOGERR("Failed to create unit: %s.", unit_name);
 			free(chan);
 			return NULL;
 		}
@@ -96,11 +101,10 @@ void * cchar_create(int num, struct cfg_unit *units)
 
 		// remember the channel unit is connected to
 		unit->chan = chan;
-		unit->num = cunit->num;
+		unit->num = i;
 
-		chan->unit[unit->num] = unit;
+		chan->unit[i] = unit;
 
-		cunit = cunit->next;
 	}
 
 	// clear unit interrupts

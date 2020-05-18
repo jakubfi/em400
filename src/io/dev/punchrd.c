@@ -18,14 +18,14 @@
 #include <stdlib.h>
 #include <inttypes.h>
 
-#include "cfg.h"
 #include "io/dev/dev.h"
+#include "external/iniparser/iniparser.h"
 
 struct dev_punchrd {
 };
 
 // -----------------------------------------------------------------------
-void * dev_punchrd_create(struct cfg_arg *args)
+void * dev_punchrd_create(dictionary *cfg, const char *section)
 {
 	struct dev_punchrd *punchrd = (struct dev_punchrd *) malloc(sizeof(struct dev_punchrd));
 	if (!punchrd) {

@@ -24,7 +24,7 @@
 #include "io/chan.h"
 #include "fpga/iobus.h"
 
-#include "cfg.h"
+#include "external/iniparser/iniparser.h"
 #include "utils/utils.h"
 #include "log.h"
 
@@ -62,21 +62,23 @@ static const char *io_result_names[] = { "NO DEVICE", "ENGAGED", "OK", "PARITY E
 static int fpga;
 
 // -----------------------------------------------------------------------
-int io_init(struct cfg_em400 *cfg)
+int io_init(dictionary *cfg)
 {
-	struct cfg_chan *chanc = cfg->chans;
-
 	LOG(L_IO, "Initializing I/O");
 
-	fpga = cfg->fpga;
+	fpga = iniparser_getboolean(cfg, "cpu:fpga", 0);
 
-	while (chanc) {
-		LOG(L_IO, "Channel %i: %s", chanc->num, chanc->name);
-		io_chan[chanc->num] = chan_make(chanc->num, chanc->name, chanc->units);
-		if (!io_chan[chanc->num]) {
-			return LOGERR("Failed to initialize channel: %s.", chanc->name);
+	for (int i=0 ; i<16 ; i++) {
+		char ch[16];
+		sprintf(ch, "io:channel_%i", i);
+		const char *ch_name = iniparser_getstring(cfg, ch, NULL);
+		if (ch_name) {
+			LOG(L_IO, "Channel %i: %s", i, ch_name);
+			io_chan[i] = chan_make(i, ch_name, cfg);
+			if (!io_chan[i]) {
+				return LOGERR("Failed to initialize channel %i: %s.", i, ch_name);
+			}
 		}
-		chanc = chanc->next;
 	}
 
 	return E_OK;

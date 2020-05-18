@@ -21,8 +21,6 @@
 #include <inttypes.h>
 #include <emdas.h>
 
-#include "cfg.h"
-
 #define INPUT_BUF_SIZE 200
 
 struct evlb_t {

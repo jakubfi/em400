@@ -1,4 +1,4 @@
-; OPTS -c configs/minimal.cfg
+; OPTS -c configs/minimal.ini
 ;
 ; MERA-400 CPU test
 ;

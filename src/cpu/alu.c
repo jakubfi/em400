@@ -19,7 +19,6 @@
 
 #include <emawp.h>
 
-#include "cfg.h"
 #include "mem/mem.h"
 #include "cpu/alu.h"
 #include "cpu/cpu.h"

@@ -20,9 +20,9 @@
 
 #include <inttypes.h>
 
-#include "cfg.h"
+#include "external/iniparser/dictionary.h"
 
-int io_init(struct cfg_em400 *cfg);
+int io_init(dictionary *cfg);
 void io_shutdown();
 void io_reset();
 void io_get_intspec(int ch, uint16_t *int_spec);

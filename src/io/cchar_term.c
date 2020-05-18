@@ -33,61 +33,46 @@
 #include "io/dev/term.h"
 
 #include "log.h"
+#include "external/iniparser/iniparser.h"
 
 #define UNIT ((struct cchar_unit_term_t *)(unit))
 
 // -----------------------------------------------------------------------
-struct cchar_unit_proto_t * cchar_term_create(struct cfg_arg *args)
+struct cchar_unit_proto_t * cchar_term_create(dictionary *cfg, const char *section)
 {
-	char *type = NULL;
-	int port;
-	int res;
-	char *device = NULL;
-	int speed;
+	char key[32];
 
 	struct cchar_unit_term_t *unit = (struct cchar_unit_term_t *) calloc(1, sizeof(struct cchar_unit_term_t));
 	if (!unit) {
-		LOGERR("Failed to allocate memory for unit: %s.", args->text);
+		LOGERR("Failed to allocate memory for device: %s.", section);
 		goto fail;
 	}
 
-	res = cfg_args_decode(args, "s", &type);
-
-	if (res != E_OK) {
-		LOGERR("Failed to parse terminal type: \"%s\".", args->text);
-		goto fail;
-	}
-
-	if (!strcasecmp(type, "tcp")) {
-		res = cfg_args_decode(args->next, "i", &port);
-		if (res != E_OK) {
-			LOGERR("Failed to parse terminal TCP port: \"%s\".", args->next->text);
-			goto fail;
-		}
+	sprintf(key, "%s:transport", section);
+	const char *transport = iniparser_getstring(cfg, key, NULL);
+	if (!strcasecmp(transport, "tcp")) {
+		sprintf(key, "%s:port", section);
+		int port = iniparser_getint(cfg, key, -1);
 		unit->term = term_open_tcp(port, 100);
 		if (!unit->term) {
 			LOGERR("Failed to open TCP terminal on port %i.", port);
 			goto fail;
 		}
+		LOG(L_TERM, "Terminal (%s), port: %i", transport, port);
 
-	} else if (!strcasecmp(type, "serial")) {
-		res = cfg_args_decode(args->next, "s", &device);
-		if (res != E_OK) {
-			LOGERR("Failed to parse terminal serial device: \"%s\".", args->next->text);
-			goto fail;
-		}
-		res = cfg_args_decode(args->next->next, "i", &speed);
-		if (res != E_OK) {
-			LOGERR("Failed to parse terminal serial speed: \"%i\".", args->next->next->text);
-			goto fail;
-		}
+	} else if (!strcasecmp(transport, "serial")) {
+		sprintf(key, "%s:device", section);
+		const char * device = iniparser_getstring(cfg, key, NULL);
+		sprintf(key, "%s:speed", section);
+		int speed = iniparser_getint(cfg, key, 0);
 		unit->term = term_open_serial(device, speed, 100);
 		if (!unit->term) {
 			LOGERR("Failed to open serial terminal at %s, speed: %i).", device, speed);
 			goto fail;
 		}
+		LOG(L_TERM, "Terminal (%s), device: %s, speed: %i", transport, device, speed);
 
-	} else if (!strcasecmp(type, "console")) {
+	} else if (!strcasecmp(transport, "console")) {
 		if (em400_console == CONSOLE_DEBUGGER) {
 			LOGERR("Failed to initialize console terminal; console is being used by the debugger.");
 			goto fail;
@@ -105,7 +90,7 @@ struct cchar_unit_proto_t * cchar_term_create(struct cfg_arg *args)
 		fprintf(stderr, "Console connected as system terminal.\n");
 
 	} else {
-		LOGERR("Unknown terminal type: %s.", type);
+		LOGERR("Unknown terminal transport: %s.", transport);
 		goto fail;
 	}
 
@@ -115,13 +100,11 @@ struct cchar_unit_proto_t * cchar_term_create(struct cfg_arg *args)
 		goto fail;
 	}
 
-	LOG(L_TERM, "Terminal (%s), port: %i", type, port);
-
 	pthread_mutexattr_t attr;
 	pthread_mutexattr_init(&attr);
 	pthread_mutex_init(&unit->buf_mutex, &attr);
 
-	res = pthread_create(&unit->worker, NULL, cchar_term_worker, (void *)unit);
+	int res = pthread_create(&unit->worker, NULL, cchar_term_worker, (void *)unit);
 	if (res != 0) {
 		LOGERR("Failed to spawn terminal thread.");
 		goto fail;
@@ -129,12 +112,9 @@ struct cchar_unit_proto_t * cchar_term_create(struct cfg_arg *args)
 
 	pthread_setname_np(unit->worker, "term");
 
-	free(type);
-
 	return (struct cchar_unit_proto_t *) unit;
 
 fail:
-	free(type);
 	cchar_term_shutdown((struct cchar_unit_proto_t*) unit);
 	return NULL;
 }

@@ -64,7 +64,7 @@ fail:
 }
 
 // -----------------------------------------------------------------------
-struct term_t * term_open_serial(char *device, int speed, int timeout_ms)
+struct term_t * term_open_serial(const char *device, int speed, int timeout_ms)
 {
 	int fd;
 

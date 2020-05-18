@@ -25,7 +25,6 @@
 #include "io/cmem.h"
 #include "io/cmem_m9425.h"
 
-#include "cfg.h"
 #include "log.h"
 
 #define CHAN ((struct cmem_chan_t *)(chan))

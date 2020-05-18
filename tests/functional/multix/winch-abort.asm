@@ -1,4 +1,4 @@
-; OPTS -c configs/multix.cfg
+; OPTS -c configs/multix.ini
 
 ; Test winchester protocol:
 ;  - abort on non-configured multix

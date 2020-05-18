@@ -20,9 +20,16 @@
 
 #include <inttypes.h>
 #include <stdlib.h>
-#include "cfg.h"
+#include "external/iniparser/dictionary.h"
 
-typedef int (*snd_drv_init)(struct cfg_em400 *cfg);
+#define SOUND_DEFAULT_DRIVER "pulseaudio"
+#define SOUND_DEFAULT_OUTPUT "default"
+#define SOUND_DEFAULT_VOLUME 30
+#define SOUND_DEFAULT_RATE 44100
+#define SOUND_DEFAULT_LATENCY 20
+#define SOUND_DEFAULT_BUFFER_LEN 128
+
+typedef int (*snd_drv_init)(dictionary *cfg);
 typedef void (*snd_drv_shutdown)(void);
 typedef long (*snd_drv_play)(int16_t *buf, size_t frames);
 typedef void (*snd_drv_stop)(void);
@@ -36,6 +43,6 @@ struct snd_drv {
 	snd_drv_stop stop;
 };
 
-const struct snd_drv * snd_init(struct cfg_em400 *cfg);
+const struct snd_drv * snd_init(dictionary *cfg);
 
 #endif

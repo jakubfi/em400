@@ -34,6 +34,7 @@
 #include "fpga/iobus.h"
 #include "io/io.h"
 #include "io/defs.h"
+#include "external/iniparser/iniparser.h"
 
 #define BR 0
 #define BW 1
@@ -69,14 +70,25 @@ const char *iob_reg_names[] = {
 };
 
 // -----------------------------------------------------------------------
-int iob_init(char *bus_dev, int speed)
+int iob_init(dictionary *cfg)
 {
+	if (iniparser_getboolean(cfg, "cpu:fpga", 0) == 0) {
+		return E_OK;
+	}
+
+	const char *bus_dev = iniparser_getstring(cfg, "fpga:string", NULL);
+	int speed = iniparser_getint(cfg, "fpga:speed", 0);
+
 	speed_t setspeed = serial_int2speed(speed);
 	if (setspeed == 0) {
 		return LOGERR("Wrong FPGA bus speed: %i", speed);
 	}
 
 	xbus = serial_open(bus_dev, setspeed);
+
+	if (xbus < 0) {
+		return LOGERR("Failed to open FPGA bus device: %s", bus_dev);
+	}
 
 	if (pthread_mutex_init(&bus_mutex, NULL)) {
 		iob_close();

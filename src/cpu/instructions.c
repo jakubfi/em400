@@ -27,7 +27,6 @@
 #include "io/defs.h"
 #include "io/io.h"
 
-#include "cfg.h"
 #include "utils/utils.h"
 #include "log.h"
 #include "log_crk.h"

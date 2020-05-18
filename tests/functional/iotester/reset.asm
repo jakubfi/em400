@@ -1,4 +1,4 @@
-; OPTS -c configs/iotester.cfg
+; OPTS -c configs/iotester.ini
 
 ; Test if I/O channel receives "clear" on the interface
 

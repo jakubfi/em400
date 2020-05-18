@@ -18,9 +18,9 @@
 #include <stdlib.h>
 #include <strings.h>
 
-#include "cfg.h"
 #include "log.h"
 #include "io/dev/dev.h"
+#include "external/iniparser/iniparser.h"
 
 extern struct dev_drv dev_winch;
 extern struct dev_drv dev_flop5;
@@ -40,24 +40,28 @@ const struct dev_drv *dev_drivers[] = {
 };
 
 // -----------------------------------------------------------------------
-int dev_make(struct cfg_unit *dev, const struct dev_drv **dev_drv, void **dev_obj)
+int dev_make(dictionary *cfg, const char *section, const struct dev_drv **dev_drv, void **dev_obj)
 {
 	const struct dev_drv **driver = dev_drivers;
 
+	char key[32];
+	sprintf(key, "%s:type", section);
+	const char *type = iniparser_getstring(cfg, key, NULL);
+
 	while (*driver) {
-		if (!strcasecmp(dev->name, (*driver)->name)) {
+		if (!strcasecmp(type, (*driver)->name)) {
 			*dev_drv = *driver;
-			*dev_obj = (*driver)->create(dev->args);
+			*dev_obj = (*driver)->create(cfg, section);
 			if (!*dev_obj) {
-				return LOGERR("Failed to initialize device: %s.", dev->name);
+				return LOGERR("Failed to initialize device: %s.", type);
 			}
-			LOG(L_EM4H, "Created device: %s", dev->name);
+			LOG(L_EM4H, "Created device: %s", type);
 			return E_OK;
 		}
 		driver++;
 	}
 
-	return LOGERR("Unknown device type: %s.", dev->name);
+	return LOGERR("Unknown device type: %s.", type);
 }
 // -----------------------------------------------------------------------
 void dev_chs_next(struct dev_chs *chs, unsigned heads, unsigned spt)

@@ -40,13 +40,13 @@
 #include "io/io.h"
 
 #include "em400.h"
-#include "cfg.h"
 #include "utils/utils.h"
 #include "log.h"
 #include "log_crk.h"
 #include "ectl/brk.h"
 
 #include "ectl.h" // for global constants
+#include "external/iniparser/iniparser.h"
 
 static int cpu_state = ECTL_STATE_OFF;
 uint16_t regs[8];
@@ -230,23 +230,25 @@ int cpu_mem_put_byte(int nb, uint32_t addr, uint8_t data)
 }
 
 // -----------------------------------------------------------------------
-int cpu_init(struct cfg_em400 *cfg)
+int cpu_init(dictionary *cfg)
 {
 	int res;
 
-	if (cfg->cpu_awp) {
+	int awp_enabled = iniparser_getboolean(cfg, "cpu:awp", 1);
+	if (awp_enabled) {
 		awp = awp_init(regs+0, regs+1, regs+2, regs+3);
 		if (!awp) return LOGERR("Failed to initialize AWP.");
 	}
 
-	rKB = cfg->keys;
+	rKB = iniparser_getint(cfg, "cpu:kb", 0);
 
-	cpu_mod_present = cfg->cpu_mod;
-	cpu_user_io_illegal = cfg->cpu_user_io_illegal;
-	nomem_stop = cfg->cpu_stop_on_nomem;
-	speed_real = cfg->speed_real;
-	throttle_granularity = 1000 * cfg->throttle_granularity;
-	cpu_delay_factor = 1.0f/cfg->cpu_speed_factor;
+	cpu_mod_present = iniparser_getboolean(cfg, "cpu:modifications", 0);
+	cpu_user_io_illegal = iniparser_getboolean(cfg, "cpu:user_io_illegal", 1);
+	nomem_stop = iniparser_getboolean(cfg, "cpu:stop_on_nomem", 1);
+	speed_real = iniparser_getboolean(cfg, "cpu:speed_real", 0);
+	throttle_granularity = 1000 * iniparser_getint(cfg, "cpu:throttle_granularity", 10);
+	int cpu_speed_factor = iniparser_getdouble(cfg, "cpu:speed_factor", 1.0f);
+	cpu_delay_factor = 1.0f/cpu_speed_factor;
 
 	res = iset_build(cpu_op_tab, cpu_user_io_illegal);
 	if (res != E_OK) {
@@ -266,17 +268,17 @@ int cpu_init(struct cfg_em400 *cfg)
 
 	cpu_mod_off();
 
-	sound_enabled = cfg->sound_enabled;
+	sound_enabled = iniparser_getboolean(cfg, "sound:enabled", 0);
 
 	if (sound_enabled) {
-		if ((cfg->speed_real == 0) || (cfg->cpu_speed_factor < 0.5f) || (cfg->cpu_speed_factor > 1.5f)) {
+		if ((speed_real == 0) || (cpu_speed_factor < 0.5f) || (cpu_speed_factor > 1.5f)) {
 			awp_destroy(awp);
 			return LOGERR("EM400 needs to be configured with speed_real=true and 1.5 >= cpu_speed_factor >= 0.5 for the buzzer emulation to work.");
 		}
 
 		if (buzzer_init(cfg) != E_OK) {
 			awp_destroy(awp);
-			return LOGERR("Failed to initialize buzzer. Sound driver \"%s\" is not compiled in or failed to initialize.", cfg->sound_driver);
+			return LOGERR("Failed to initialize buzzer.");
 		}
 	}
 

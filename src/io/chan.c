@@ -19,8 +19,8 @@
 #include <strings.h>
 
 #include "io/chan.h"
-
 #include "log.h"
+#include "external/iniparser/iniparser.h"
 
 extern struct chan_drv cchar_chan_driver;
 extern struct chan_drv mx_chan_driver;
@@ -34,7 +34,7 @@ const struct chan_drv *chan_drivers[] = {
 };
 
 // -----------------------------------------------------------------------
-struct chan * chan_make(int num, char *name, struct cfg_unit *units)
+struct chan * chan_make(int num, const char *name, dictionary *cfg)
 {
 	const struct chan_drv **cdriver = chan_drivers;
 
@@ -45,7 +45,7 @@ struct chan * chan_make(int num, char *name, struct cfg_unit *units)
 				return NULL;
 			}
 			chan->drv = *cdriver;
-			chan->obj = chan->drv->create(num, units);
+			chan->obj = chan->drv->create(num, cfg);
 			if (!chan->obj) {
 				free(chan);
 				return NULL;

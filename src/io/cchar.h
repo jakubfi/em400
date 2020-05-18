@@ -21,14 +21,14 @@
 #include <inttypes.h>
 #include <pthread.h>
 
-#include "cfg.h"
+#include "external/iniparser/iniparser.h"
 
 #define CCHAR_MAX_DEVICES 8
 #define CCHAR_INT_NONE 9999 // no interrupt (em400 marker)
 
 struct cchar_unit_proto_t;
 
-typedef struct cchar_unit_proto_t * (*cchar_unit_f_create)(struct cfg_arg *args);
+typedef struct cchar_unit_proto_t * (*cchar_unit_f_create)(dictionary *cfg, const char *section);
 typedef void (*cchar_unit_f_shutdown)(struct cchar_unit_proto_t *unit);
 typedef void (*cchar_unit_f_reset)(struct cchar_unit_proto_t *unit);
 typedef int (*cchar_unit_f_cmd)(struct cchar_unit_proto_t *unit, int dir, int cmd, uint16_t *r_arg);
@@ -60,7 +60,7 @@ struct cchar_chan_t {
 	struct cchar_unit_proto_t *unit[CCHAR_MAX_DEVICES];
 };
 
-void *cchar_create(int num, struct cfg_unit *units);
+void *cchar_create(int num, dictionary *cfg);
 void cchar_shutdown(void *chan);
 void cchar_reset(void *chan);
 void cchar_int(struct cchar_chan_t *chan, int unit_n, int interrupt);

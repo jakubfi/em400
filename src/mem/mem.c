@@ -27,7 +27,7 @@
 #include "io/defs.h"
 
 #include "em400.h"
-#include "cfg.h"
+#include "external/iniparser/iniparser.h"
 
 #include "log.h"
 
@@ -60,30 +60,33 @@ void mem_update_map()
 }
 
 // -----------------------------------------------------------------------
-int mem_init(struct cfg_em400 *cfg)
+int mem_init(dictionary *cfg)
 {
 	int res;
 
-	LOG(L_MEM, "Initializing memory (Elwro: %d modules, MEGA: %d modules)", cfg->mem_elwro, cfg->mem_mega);
+	const int cfg_elwro = iniparser_getint(cfg, "memory:elwro_modules", 4);
+	mega_modules = iniparser_getint(cfg, "memory:mega_modules", 0);
+	const int cfg_os = iniparser_getint(cfg, "memory:hardwired_segments", 2);
+	const char *mega_modules_prom = iniparser_getstring(cfg, "memory:mega_prom", NULL);
+	mega_boot = iniparser_getboolean(cfg, "mem:mega_boot", 0);
 
-	if (cfg->mem_elwro + cfg->mem_mega > MEM_MAX_MODULES+1) {
+	LOG(L_MEM, "Initializing memory (Elwro: %d modules, MEGA: %d modules)", cfg_elwro, mega_modules);
+
+	if (cfg_elwro + mega_modules > MEM_MAX_MODULES+1) {
 		return LOGERR("Sum of Elwro and MEGA memory modules is greater than allowed %i.", MEM_MAX_MODULES+1);
 	}
 
-	res = mem_elwro_init(cfg->mem_elwro, cfg->mem_os);
+	res = mem_elwro_init(cfg_elwro, cfg_os);
 	if (res != E_OK) {
 		return LOGERR("Failed to initialize Elwro memory.");
 	}
 
-	res = mem_mega_init(cfg->mem_mega, cfg->mem_mega_prom);
+	res = mem_mega_init(mega_modules, mega_modules_prom);
 	if (res != E_OK) {
 		return LOGERR("Failed to initialize MEGA memory.");
 	}
 
 	mem_update_map();
-
-	mega_modules = cfg->mem_mega;
-	mega_boot = cfg->mem_mega_boot;
 
 	return E_OK;
 }

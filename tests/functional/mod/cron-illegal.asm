@@ -1,4 +1,4 @@
-; OPTS -c configs/minimal.cfg
+; OPTS -c configs/minimal.ini
 
 ; CRON is illegal for vanilla (MERA-400) CPU
 

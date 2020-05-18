@@ -28,7 +28,7 @@
 #include "fpga/iobus.h"
 #include "utils/utils.h"
 
-#include "cfg.h"
+#include "external/iniparser/iniparser.h"
 #include "log.h"
 
 #include "ectl.h" // for global constants/enums
@@ -36,9 +36,9 @@
 static int fpga;
 
 // -----------------------------------------------------------------------
-int cp_init(struct cfg_em400 *cfg)
+int cp_init(dictionary *cfg)
 {
-	fpga = cfg->fpga;
+	fpga = iniparser_getboolean(cfg, "cpu:fpga", 0);
 	return E_OK;
 }
 

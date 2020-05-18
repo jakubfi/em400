@@ -1,4 +1,4 @@
-; OPTS -c configs/minimal.cfg
+; OPTS -c configs/minimal.ini
 
 ; When installing a mask that allows an interrupt to be served
 ; it should be served right after the instruction cycle ends.

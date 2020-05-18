@@ -34,100 +34,62 @@
 #include "fpga/iobus.h"
 
 #include "em400.h"
-#include "cfg.h"
+#include "external/iniparser/iniparser.h"
 
 #include "log.h"
 
-int em400_console = CONSOLE_NONE;
+int em400_console = CONSOLE_DEBUGGER;
 
 struct ui *ui;
+
+// -----------------------------------------------------------------------
+int em400_init(dictionary *cfg)
+{
+	if (log_init(cfg) != E_OK) return LOGERR("Failed to initialize logging.");
+	if (iob_init(cfg) == E_ERR) return LOGERR("Failed to set up FPGA I/O bus.");
+	if (mem_init(cfg) != E_OK) return LOGERR("Failed to initialize memory.");
+	if (cpu_init(cfg) != E_OK) return LOGERR("Failed to initialize CPU.");
+	if (cp_init(cfg) != E_OK) return LOGERR("Failed to initialize control panel.");
+	if (clock_init(cfg) != E_OK) return LOGERR("Failed to initialize clock.");
+	if (io_init(cfg) != E_OK) return LOGERR("Failed to initialize I/O.");
+	if (ectl_init() != E_OK) return LOGERR("Failed to initialize ECTL interface.");
+	if (!(ui = ui_create(cfg))) return LOGERR("Failed to initialize UI.");
+
+	return E_OK;
+}
 
 // -----------------------------------------------------------------------
 void em400_shutdown()
 {
 	ui_shutdown(ui);
 	ectl_shutdown();
-	clock_shutdown();
 	io_shutdown();
-	cpu_shutdown();
+	clock_shutdown();
 	cp_shutdown();
+	cpu_shutdown();
 	mem_shutdown();
 	log_shutdown();
 }
 
 // -----------------------------------------------------------------------
-int em400_init(struct cfg_em400 *cfg)
+int em400_preload_program(const char *program_name)
 {
-	int res;
-
-	res = log_init(cfg);
-	if (res != E_OK) {
-		return LOGERR("Failed to initialize logging.");
+	if (!program_name) {
+		return E_OK;
 	}
 
-	// log configuration as early as possible
-	cfg_log(cfg);
-
-	// TODO: ???
-	em400_console = CONSOLE_DEBUGGER;
-
-	if (cfg->fpga) {
-		if (iob_init(cfg->fpga_dev, cfg->fpga_speed) == E_ERR) {
-			return LOGERR("Failed to set up FPGA I/O bus.");
-		}
+	FILE *f = fopen(program_name, "rb");
+	if (!f) {
+		return LOGERR("Failed to open program file: \"%s\".", program_name);
 	}
 
-	res = mem_init(cfg);
-	if (res != E_OK) {
-		return LOGERR("Failed to initialize memory.");
+	int res = ectl_load(f, program_name, 0, 0);
+	fclose(f);
+	if (res < 0) {
+		return LOGERR("Failed to preload program file: \"%s\".", program_name);
 	}
 
-	res = cp_init(cfg);
-	if (res != E_OK) {
-		return LOGERR("Failed to initialize control panel.");
-	}
-
-	res = cpu_init(cfg);
-	if (res != E_OK) {
-		return LOGERR("Failed to initialize CPU.");
-	}
-
-	res = clock_init(cfg);
-	if (res != E_OK) {
-		return LOGERR("Failed to initialize clock.");
-	}
-
-	res = io_init(cfg);
-	if (res != E_OK) {
-		return LOGERR("Failed to initialize I/O.");
-	}
-
-	rKB = cfg->keys;
-
-	res = ectl_init();
-	if (res != E_OK) {
-		return LOGERR("Failed to initialize ECTL interface.");
-	}
-
-	if (cfg->program_name) {
-		FILE *f = fopen(cfg->program_name, "rb");
-		if (!f) {
-			return LOGERR("Failed to open program file: \"%s\".", cfg->program_name);
-		}
-		int res = ectl_load(f, cfg->program_name, 0, 0);
-		fclose(f);
-		if (res < 0) {
-			return LOGERR("Failed to load program file: \"%s\".", cfg->program_name);
-		} else {
-			LOG(L_EM4H, "OS memory block image loaded: \"%s\", %i words", cfg->program_name, res);
-		}
-	}
-
-	ui = ui_create(cfg->ui_name);
-	if (!ui) {
-		return LOGERR("Failed to initialize UI %s.", cfg->ui_name);
-	}
-
+	LOG(L_EM4H, "OS memory block preloaded with \"%s\", %i words", program_name, res);
 	return E_OK;
 }
 
@@ -149,58 +111,99 @@ void em400_usage()
 		"   -k value          : value to initially set keys to\n"
 		"   -u ui             : user interface to use (available UIs: cmd, curses. Default: curses)\n"
 		"   -F                : use FPGA implementation of the CPU and external memory\n"
+		"   -O sec:key=val    : set confituration key in section [sec] to a specific value\n"
 	);
 }
 
 // -----------------------------------------------------------------------
 void em400_mkconfdir()
 {
-	char *conf_dirname = NULL;
-
-	const char *cdir = ".em400";
-	char *home = getenv("HOME");
-	conf_dirname = (char *) malloc(strlen(home) + strlen(cdir) + 2);
+	const char *home = getenv("HOME");
+	const char *cdir = "/.em400";
+	char *conf_dirname = (char *) malloc(strlen(home) + strlen(cdir) + 1);
 	if (conf_dirname) {
-		sprintf(conf_dirname, "%s/%s", home, cdir);
+		sprintf(conf_dirname, "%s%s", home, cdir);
 		mkdir(conf_dirname, 0700);
 		free(conf_dirname);
 	}
 }
 
 // -----------------------------------------------------------------------
-struct cfg_em400 * em400_configure(int argc, char** argv)
+char * em400_cmdline_1(int argc, char **argv, int *print_help)
 {
-	struct cfg_em400 *cfg = cfg_create_default();
+	int option;
+	char *config = NULL;
 
-	// first, parse the commandline, because:
-	//  * user may need help (-h)
-	//  * user may provide non-default config file
-	if (cfg_from_args(cfg, argc, argv)) {
-		goto fail;
+	while ((option = getopt(argc, argv, "hc:p:k:l:Lu:FO:")) != -1) {
+		switch (option) {
+			case 'h':
+				*print_help = 1;
+				break;
+			case 'c':
+				config = strdup(optarg);
+				break;
+			default:
+				break;
+		}
 	}
 
-	// will only print help
-	if (cfg->print_help) {
-		return cfg;
-	}
-
-	// load configuration from a file (either the default one or provided by the user)
-	if (cfg_from_file(cfg)) {
-		LOGERR("Failed to load config file: \"%s\".", cfg->cfg_filename);
-		goto fail;
-	}
-
-	// read the commendline again to build final configuration
-	if (cfg_from_args(cfg, argc, argv)) {
-		goto fail;
-	}
-
-	return cfg;
-
-fail:
-	cfg_destroy(cfg);
-	return NULL;
+	return config;
 }
+
+// -----------------------------------------------------------------------
+int em400_cmdline_2(dictionary *cfg, int argc, char **argv)
+{
+    int option;
+    optind = 1; // reset to 1 so consecutive calls work
+	char *key, *val, *colon;
+
+    while ((option = getopt(argc, argv, "hc:p:k:l:Lu:FO:")) != -1) {
+        switch (option) {
+            case 'L':
+				iniparser_set(cfg, "log:enabled", "false");
+                break;
+            case 'l':
+				iniparser_set(cfg, "log:enabled", "true");
+				iniparser_set(cfg, "log:components", optarg);
+                break;
+            case 'h':
+                break;
+            case 'c':
+                break;
+            case 'p':
+                iniparser_set(cfg, "memory:preload", optarg);
+                break;
+            case 'k':
+                iniparser_set(cfg, "cpu:kb", optarg);
+                break;
+            case 'u':
+                iniparser_set(cfg, "ui:interface", optarg);
+                break;
+            case 'F':
+                iniparser_set(cfg, "cpu:fpga", "true");
+                break;
+			case 'O':
+				colon = strchr(optarg, ':');
+				key = strtok(optarg, "=");
+				val = strtok(NULL, "=");
+				if (!colon || !key || !val) {
+					return LOGERR("Syntax error for -O switch. Should be: -O section:key=value");
+				}
+				iniparser_set(cfg, key, val);
+				break;
+            default:
+                return E_ERR;
+        }
+    }
+
+    return E_OK;
+}
+
+// -----------------------------------------------------------------------
+//static int ini_error_callback(const char *format, ...)
+//{
+//	return 0;
+//}
 
 // -----------------------------------------------------------------------
 // ---- MAIN -------------------------------------------------------------
@@ -209,24 +212,49 @@ int main(int argc, char** argv)
 {
 	int res;
 	int ret = -1;
+
+	int print_help = 0;
+	char *config = NULL;
+	dictionary *cfg;
+
 	em400_mkconfdir();
 
-	struct cfg_em400 *cfg = em400_configure(argc, argv);
-	if (!cfg) {
-		LOGERR("Failed to configure EM400.");
-		goto done;
-	}
+	config = em400_cmdline_1(argc, argv, &print_help);
 
-	if (cfg->print_help) {
+	if (print_help) {
 		em400_usage();
 		ret = 0;
 		goto done;
 	}
 
-	res = em400_init(cfg);
-	if (res != E_OK) {
+	if (!config) {
+		const char *home = getenv("HOME");
+		const char *cfile = "/.em400/em400.ini";
+		config = (char *) malloc(strlen(home) + strlen(cfile) + 1);
+		if (!config) {
+			LOGERR("Memory allocation error.");
+			goto done;
+		}
+		sprintf(config, "%s%s", home, cfile);
+	}
+
+	//iniparser_set_error_callback(ini_error_callback);
+	cfg = iniparser_load(config);
+	if (!cfg) {
+		LOGERR("Failed to load config file: \"%s\".", config);
 		goto done;
 	}
+
+	// read the commandline again to build final configuration
+	res = em400_cmdline_2(cfg, argc, argv);
+	if (res != E_OK) {
+		LOGERR("Failed to parse commandline arguments.");
+		goto done;
+	}
+
+	em400_init(cfg);
+
+	em400_preload_program(iniparser_getstring(cfg, "memory:preload", NULL));
 
 	res = ui_run(ui);
 	if (res != E_OK) {
@@ -234,7 +262,7 @@ int main(int argc, char** argv)
 		goto done;
 	}
 
-	if (cfg->fpga) {
+	if (iniparser_getboolean(cfg, "cpu:fpga", 0)) {
 		iob_loop();
 	} else {
 		cpu_loop();
@@ -244,7 +272,8 @@ int main(int argc, char** argv)
 
 done:
 	em400_shutdown();
-	cfg_destroy(cfg);
+	iniparser_freedict(cfg);
+	free(config);
 	return ret;
 }
 

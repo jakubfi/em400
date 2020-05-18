@@ -33,7 +33,7 @@ int mem_mega_prom_hidden;									// is PROM hidden?
 int mem_mega_init_done;										// is initialization done?
 
 // -----------------------------------------------------------------------
-int mem_mega_init(int modc, char *prom_image)
+int mem_mega_init(int modc, const char *prom_image)
 {
 	int res;
 	int mp, seg;

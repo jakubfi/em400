@@ -1,4 +1,4 @@
-; OPTS -c configs/iotester.cfg
+; OPTS -c configs/iotester.ini
 
 ; Test if I/O channel properly sends all possible IRQs
 ; Test if sending interrupt specification works

@@ -1,4 +1,4 @@
-; OPTS -c configs/mega_max.cfg
+; OPTS -c configs/mega_max.ini
 
 ; does PROM show/hide work?
 ; is data preserved between PROM hide/shows?

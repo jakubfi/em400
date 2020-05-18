@@ -20,7 +20,7 @@
 
 #include <inttypes.h>
 
-#include "cfg.h"
+#include "external/iniparser/iniparser.h"
 
 enum dev_cmd_status {
 	DEV_CMD_OK = 0,
@@ -40,7 +40,7 @@ struct dev_chs {
 	unsigned s;
 };
 
-typedef void * (*dev_create_f)(struct cfg_arg *args);
+typedef void * (*dev_create_f)(dictionary *cfg, const char *section);
 typedef void (*dev_reset_f)(void *dev);
 typedef void (*dev_destroy_f)(void *dev);
 
@@ -60,7 +60,7 @@ struct dev_drv {
 	dev_char_wr_f char_wr;
 };
 
-int dev_make(struct cfg_unit *dev, const struct dev_drv **dev_drv, void **dev_obj);
+int dev_make(dictionary *cfg, const char *section, const struct dev_drv **dev_drv, void **dev_obj);
 void dev_chs_next(struct dev_chs *chs, unsigned heads, unsigned spt);
 void dev_lba2chs(unsigned lba, struct dev_chs *chs, unsigned heads, unsigned spt);
 

@@ -21,7 +21,6 @@
 #include <inttypes.h>
 #include <pthread.h>
 
-#include "cfg.h"
 #include "io/chan.h"
 
 #define CMEM_MAX_DEVICES 8

@@ -27,7 +27,7 @@
 #include "cpu/interrupts.h"
 
 #include "log.h"
-#include "cfg.h"
+#include "external/iniparser/iniparser.h"
 #include "atomic.h"
 
 int clock_enabled;
@@ -61,9 +61,9 @@ void * clock_thread(void *ptr)
 }
 
 // -----------------------------------------------------------------------
-int clock_init(struct cfg_em400 *cfg)
+int clock_init(dictionary *cfg)
 {
-	clock_period = cfg->clock_period;
+	clock_period = iniparser_getint(cfg, "cpu:clock_period", 10);
 
 	if ((clock_period < 2) || (clock_period > 100)) {
 		return LOGERR("Clock period should be between 2 and 100 miliseconds, not %i.", clock_period);
@@ -71,7 +71,8 @@ int clock_init(struct cfg_em400 *cfg)
 
 	LOG(L_CPU, "Clock period: %i ms", clock_period);
 
-	if (cfg->clock_start) {
+	const int cfg_clock_start = iniparser_getboolean(cfg, "cpu:clock_start", 0);
+	if (cfg_clock_start) {
 		clock_on();
 	} else {
 		clock_off();

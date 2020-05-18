@@ -19,6 +19,7 @@
 #define __FPGA_H
 
 #include <inttypes.h>
+#include "external/iniparser/dictionary.h"
 
 struct iob_msg {
 	int is_valid;
@@ -92,7 +93,7 @@ enum iob_fnkeys {
 	IOB_FN_CLEAR	= 0b1011
 };
 
-int iob_init(char *bus_dev, int speed);
+int iob_init(dictionary *cfg);
 void iob_close();
 void iob_quit();
 void iob_loop();

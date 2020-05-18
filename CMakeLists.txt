@@ -37,7 +37,6 @@ endif()
 
 set(SOURCES_EM400
 	src/em400.c
-	src/cfg.c
 	src/log.c
 	src/log_crk.c
 
@@ -118,19 +117,6 @@ if(PULSEAUDIO_FOUND)
 	list(APPEND SOURCES_EM400 src/sound/pulseaudio.c)
 endif()
 
-bison_target(cfg_parser
-	src/cfg_parser.y
-	${CMAKE_CURRENT_BINARY_DIR}/cfg_parser.c
-	DEFINES_FILE ${CMAKE_CURRENT_BINARY_DIR}/cfg_parser.h
-	COMPILE_FLAGS "-p cyy"
-)
-flex_target(cfg_scanner
-	src/cfg_scanner.l
-	${CMAKE_CURRENT_BINARY_DIR}/cfg_scanner.c
-	COMPILE_FLAGS "-P cyy --never-interactive"
-)
-add_flex_bison_dependency(cfg_scanner cfg_parser)
-
 bison_target(ectl_parser
 	src/ectl/parser.y
 	${CMAKE_CURRENT_BINARY_DIR}/ectl_parser.c
@@ -174,8 +160,6 @@ set(DEBUGGER_LIBS ${CURSES_LIBRARIES} ${READLINE_LIBRARY})
 add_executable(em400
 	${SOURCES_EM400}
 	${SOURCES_DEBUGGER}
-	${BISON_cfg_parser_OUTPUTS}
-	${FLEX_cfg_scanner_OUTPUTS}
 	${BISON_ectl_parser_OUTPUTS}
 	${FLEX_ectl_scanner_OUTPUTS}
 )
