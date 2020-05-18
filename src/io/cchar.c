@@ -67,7 +67,7 @@ void * cchar_create(int num, dictionary *cfg)
 	struct cchar_chan_t *chan = (struct cchar_chan_t *) calloc(1, sizeof(struct cchar_chan_t));
 
 	chan->num = num;
-	for (int i=0 ; i<16 ; i++) {
+	for (int i=0 ; i<CCHAR_MAX_DEVICES ; i++) {
 		char key[32];
 		sprintf(key, "dev%i.%i", num, i);
 		if (!iniparser_find_entry(cfg, key)) continue;

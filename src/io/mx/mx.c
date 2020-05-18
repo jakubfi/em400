@@ -93,7 +93,7 @@ void * mx_create(int num, dictionary *cfg)
 	// --- create devices (event system need them)
 
 	LOG(L_MX, "Initializing devices");
-	for (int i=0 ; i<16 ; i++) {
+	for (int i=0 ; i<MX_LINE_CNT ; i++) {
 		char key[32];
 		sprintf(key, "dev%i.%i", num, i);
 		if (!iniparser_find_entry(cfg, key)) continue;
