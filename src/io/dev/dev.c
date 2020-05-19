@@ -45,6 +45,9 @@ int dev_make(em400_cfg *cfg, int ch_num, int dev_num, const struct dev_drv **dev
 	const struct dev_drv **driver = dev_drivers;
 
 	const char *type = cfg_fgetstr(cfg, "dev%i.%i:type", ch_num, dev_num);
+	if (!type) {
+		return LOGERR("Device %i.%i is missing 'type' option", ch_num, dev_num);
+	}
 
 	while (*driver) {
 		if (!strcasecmp(type, (*driver)->name)) {

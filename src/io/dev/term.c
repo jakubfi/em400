@@ -110,6 +110,10 @@ struct term_t * term_open_tcp(int port, int timeout_ms)
 		goto fail;
 	}
 
+	if (port < 0) {
+		goto fail;
+	}
+
 	term->timeout.tv_sec = 0;
 	term->timeout.tv_nsec = timeout_ms * 1000 * 1000;
 	term->type = TERM_TCP;
@@ -155,6 +159,7 @@ fail:
 // -----------------------------------------------------------------------
 void term_close(struct term_t *term)
 {
+	if (!term) return;
 	if (term->listenfd > 0) {
 		close(term->listenfd);
 	}

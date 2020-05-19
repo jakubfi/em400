@@ -122,6 +122,10 @@ void * dev_terminal_create(em400_cfg *cfg, int ch_num, int dev_num)
 	}
 
 	const char *transport = cfg_fgetstr(cfg, "dev%i.%i:transport", ch_num, dev_num);
+	if (!transport) {
+		LOGERR("Terminal %i.%i has no transport set.", ch_num, dev_num);
+		goto cleanup;
+	}
 
 	if (!strcasecmp(transport, "tcp")) {
 		const int port = cfg_fgetint(cfg, "dev%i.%i:port", ch_num, dev_num);

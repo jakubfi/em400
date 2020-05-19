@@ -68,10 +68,9 @@ void * cchar_create(int ch_num, em400_cfg *cfg)
 
 	chan->num = ch_num;
 	for (int dev_num=0 ; dev_num<CCHAR_MAX_DEVICES ; dev_num++) {
-		if (!cfg_fcontains(cfg, "dev%i.%i", ch_num, dev_num)) continue;
-
 		// find unit prototype
 		const char *unit_name = cfg_fgetstr(cfg, "dev%i.%i:type", ch_num, dev_num);
+		if (!unit_name) continue;
 		struct cchar_unit_proto_t *proto = cchar_unit_proto_get(cchar_unit_proto, unit_name);
 		if (!proto) {
 			LOGERR("Unknown device type or device incompatibile with channel: %s.", unit_name);

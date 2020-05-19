@@ -47,6 +47,10 @@ struct cchar_unit_proto_t * cchar_term_create(em400_cfg *cfg, int ch_num, int de
 	}
 
 	const char *transport = cfg_fgetstr(cfg, "dev%i.%i:transport", ch_num, dev_num);
+	if (!transport) {
+		LOGERR("Terminal %i.%i has no transport set.", ch_num, dev_num);
+		goto fail;
+	}
 	if (!strcasecmp(transport, "tcp")) {
 		int port = cfg_fgetint(cfg, "dev%i.%i:port", ch_num, dev_num);
 		unit->term = term_open_tcp(port, 100);
@@ -59,9 +63,13 @@ struct cchar_unit_proto_t * cchar_term_create(em400_cfg *cfg, int ch_num, int de
 	} else if (!strcasecmp(transport, "serial")) {
 		const char * device = cfg_fgetstr(cfg, "dev%i.%i:device", ch_num, dev_num);
 		int speed = cfg_fgetint(cfg, "dev%i.%i:speed", ch_num, dev_num);
+		if (!device || (speed < 0)) {
+			LOGERR("Serial terminal needs both 'device' and 'speed' configuration.");
+			goto fail;
+		}
 		unit->term = term_open_serial(device, speed, 100);
 		if (!unit->term) {
-			LOGERR("Failed to open serial terminal at %s, speed: %i).", device, speed);
+			LOGERR("Failed to open serial terminal at %s, speed: %i.", device, speed);
 			goto fail;
 		}
 		LOG(L_TERM, "Terminal (%s), device: %s, speed: %i", transport, device, speed);
@@ -118,8 +126,10 @@ void cchar_term_shutdown(struct cchar_unit_proto_t *unit)
 {
 	struct cchar_unit_term_t *u = (struct cchar_unit_term_t *) unit;
 	if (u) {
-		pthread_cancel(u->worker);
-		pthread_join(u->worker, NULL);
+		if (u->worker) {
+			pthread_cancel(u->worker);
+			pthread_join(u->worker, NULL);
+		}
 		free(u->buf);
 		if (u->term) term_close(u->term);
 		free(u);
