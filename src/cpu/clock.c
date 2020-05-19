@@ -63,13 +63,13 @@ void * clock_thread(void *ptr)
 // -----------------------------------------------------------------------
 int clock_init(dictionary *cfg)
 {
-	clock_period = cfg_getint(cfg, "cpu:clock_period", 10);
+	clock_period = cfg_getint(cfg, "cpu:clock_period", CFG_DEFAULT_CPU_CLOCK_PERIOD);
 
 	if ((clock_period < 2) || (clock_period > 100)) {
 		return LOGERR("Clock period should be between 2 and 100 miliseconds, not %i.", clock_period);
 	}
 
-	const int cfg_clock_start = cfg_getbool(cfg, "cpu:clock_start", 0);
+	const int cfg_clock_start = cfg_getbool(cfg, "cpu:clock_start", CFG_DEFAULT_CPU_CLOCK_START);
 	if (cfg_clock_start) {
 		clock_on();
 	} else {

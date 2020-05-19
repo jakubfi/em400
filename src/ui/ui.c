@@ -43,7 +43,7 @@ pthread_t ui_th;
 // -----------------------------------------------------------------------
 struct ui * ui_create(dictionary *cfg)
 {
-	const char *name = cfg_getstr(cfg, "ui:interface", "curses");
+	const char *name = cfg_getstr(cfg, "ui:interface", CFG_DEFAULT_UI_INTERFACE);
 
 	struct ui_drv **drv = uis;
 	while (drv && *drv) {

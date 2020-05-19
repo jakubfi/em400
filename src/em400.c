@@ -260,14 +260,14 @@ int main(int argc, char** argv)
 		goto done;
 	}
 
-	em400_preload_program(cfg_getstr(cfg, "memory:preload", NULL));
+	em400_preload_program(cfg_getstr(cfg, "memory:preload", CFG_DEFAULT_MEMORY_PRELOAD));
 
 	if (ui_run(ui) != E_OK) {
 		LOGERR("Failed to start the UI: %s.", ui->drv->name);
 		goto done;
 	}
 
-	if (cfg_getbool(cfg, "cpu:fpga", 0)) {
+	if (cfg_getbool(cfg, "cpu:fpga", CFG_DEFAULT_CPU_FPGA)) {
 		iob_loop();
 	} else {
 		cpu_loop();

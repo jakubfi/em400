@@ -129,11 +129,11 @@ void buzzer_shutdown()
 // -----------------------------------------------------------------------
 int buzzer_init(dictionary *cfg)
 {
-	volume = cfg_getint(cfg, "sound:volume", SOUND_DEFAULT_VOLUME);
-	speaker_filter = cfg_getbool(cfg, "sound:filter", 1);
-	int sample_rate = cfg_getint(cfg, "sound:rate", SOUND_DEFAULT_RATE);
+	volume = cfg_getint(cfg, "sound:volume", CFG_DEFAULT_SOUND_VOLUME);
+	speaker_filter = cfg_getbool(cfg, "sound:filter", CFG_DEFAULT_SOUND_FILTER);
+	int sample_rate = cfg_getint(cfg, "sound:rate", CFG_DEFAULT_SOUND_RATE);
 	sample_period = 1000000000.0f / sample_rate;
-	buffer_len = cfg_getint(cfg, "sound:buffer_len", SOUND_DEFAULT_BUFFER_LEN);
+	buffer_len = cfg_getint(cfg, "sound:buffer_len", CFG_DEFAULT_SOUND_BUFFER_LEN);
 
 	if (volume > 100) {
 		LOGERR("Adjusting sound volume from %i to 100 (max allowed).", volume);

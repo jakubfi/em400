@@ -22,13 +22,6 @@
 #include <stdlib.h>
 #include "cfg.h"
 
-#define SOUND_DEFAULT_DRIVER "pulseaudio"
-#define SOUND_DEFAULT_OUTPUT "default"
-#define SOUND_DEFAULT_VOLUME 30
-#define SOUND_DEFAULT_RATE 44100
-#define SOUND_DEFAULT_LATENCY 20
-#define SOUND_DEFAULT_BUFFER_LEN 128
-
 typedef int (*snd_drv_init)(dictionary *cfg);
 typedef void (*snd_drv_shutdown)(void);
 typedef long (*snd_drv_play)(int16_t *buf, size_t frames);

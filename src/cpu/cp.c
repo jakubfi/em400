@@ -38,7 +38,7 @@ static int fpga;
 // -----------------------------------------------------------------------
 int cp_init(dictionary *cfg)
 {
-	fpga = cfg_getbool(cfg, "cpu:fpga", 0);
+	fpga = cfg_getbool(cfg, "cpu:fpga", CFG_DEFAULT_CPU_FPGA);
 	return E_OK;
 }
 

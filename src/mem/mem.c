@@ -64,11 +64,11 @@ int mem_init(dictionary *cfg)
 {
 	int res;
 
-	const int cfg_elwro = cfg_getint(cfg, "memory:elwro_modules", 4);
-	mega_modules = cfg_getint(cfg, "memory:mega_modules", 0);
-	const int cfg_os = cfg_getint(cfg, "memory:hardwired_segments", 2);
-	const char *mega_modules_prom = cfg_getstr(cfg, "memory:mega_prom", NULL);
-	mega_boot = cfg_getbool(cfg, "memory:mega_boot", 0);
+	const int cfg_elwro = cfg_getint(cfg, "memory:elwro_modules", CFG_DEFAULT_MEMORY_ELWRO_MODULES);
+	mega_modules = cfg_getint(cfg, "memory:mega_modules", CFG_DEFAULT_MEMORY_MEGA_MODULES);
+	const int cfg_os = cfg_getint(cfg, "memory:hardwired_segments", CFG_DEFAULT_MEMORY_HARDWIRED_SEGMENTS);
+	const char *mega_modules_prom = cfg_getstr(cfg, "memory:mega_prom", CFG_DEFAULT_MEMORY_MEGA_PROM);
+	mega_boot = cfg_getbool(cfg, "memory:mega_boot", CFG_DEFAULT_MEMORY_MEGA_BOOT);
 
 	if (cfg_elwro + mega_modules > MEM_MAX_MODULES+1) {
 		return LOGERR("Sum of Elwro and MEGA memory modules is greater than allowed %i.", MEM_MAX_MODULES+1);

@@ -234,20 +234,20 @@ int cpu_init(dictionary *cfg)
 {
 	int res;
 
-	int awp_enabled = cfg_getbool(cfg, "cpu:awp", 1);
+	int awp_enabled = cfg_getbool(cfg, "cpu:awp", CFG_DEFAULT_CPU_AWP);
 	if (awp_enabled) {
 		awp = awp_init(regs+0, regs+1, regs+2, regs+3);
 		if (!awp) return LOGERR("Failed to initialize AWP.");
 	}
 
-	rKB = cfg_getint(cfg, "cpu:kb", 0);
+	rKB = cfg_getint(cfg, "cpu:kb", CFG_DEFAULT_CPU_KB);
 
-	cpu_mod_present = cfg_getbool(cfg, "cpu:modifications", 0);
-	cpu_user_io_illegal = cfg_getbool(cfg, "cpu:user_io_illegal", 1);
-	nomem_stop = cfg_getbool(cfg, "cpu:stop_on_nomem", 1);
-	speed_real = cfg_getbool(cfg, "cpu:speed_real", 0);
-	throttle_granularity = 1000 * cfg_getint(cfg, "cpu:throttle_granularity", 10);
-	double cpu_speed_factor = cfg_getdouble(cfg, "cpu:speed_factor", 1.0f);
+	cpu_mod_present = cfg_getbool(cfg, "cpu:modifications", CFG_DEFAULT_CPU_MODIFICATIONS);
+	cpu_user_io_illegal = cfg_getbool(cfg, "cpu:user_io_illegal", CFG_DEFAULT_CPU_IO_USER_ILLEGAL);
+	nomem_stop = cfg_getbool(cfg, "cpu:stop_on_nomem", CFG_DEFAULT_CPU_STOP_ON_NOMEM);
+	speed_real = cfg_getbool(cfg, "cpu:speed_real", CFG_DEFAULT_CPU_SPEED_REAL);
+	throttle_granularity = 1000 * cfg_getint(cfg, "cpu:throttle_granularity", CFG_DEFAULT_CPU_THROTTLE_GRANULARITY);
+	double cpu_speed_factor = cfg_getdouble(cfg, "cpu:speed_factor", CFG_DEFAULT_CPU_SPEED_FACTOR);
 	cpu_delay_factor = 1.0f/cpu_speed_factor;
 
 	res = iset_build(cpu_op_tab, cpu_user_io_illegal);
@@ -278,7 +278,7 @@ int cpu_init(dictionary *cfg)
 		throttle_granularity/1000,
 		cpu_speed_factor);
 
-	sound_enabled = cfg_getbool(cfg, "sound:enabled", 0);
+	sound_enabled = cfg_getbool(cfg, "sound:enabled", CFG_DEFAULT_SOUND_ENABLED);
 
 	if (sound_enabled) {
 		if ((speed_real == 0) || (cpu_speed_factor < 0.5f) || (cpu_speed_factor > 1.5f)) {

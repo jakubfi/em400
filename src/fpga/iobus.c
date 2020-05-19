@@ -72,13 +72,13 @@ const char *iob_reg_names[] = {
 // -----------------------------------------------------------------------
 int iob_init(dictionary *cfg)
 {
-	if (cfg_getbool(cfg, "cpu:fpga", 0) == 0) {
+	if (cfg_getbool(cfg, "cpu:fpga", CFG_DEFAULT_CPU_FPGA) == 0) {
 		LOG(L_FPGA, "FPGA IO bus is disabled.");
 		return E_OK;
 	}
 
-	const char *bus_dev = cfg_getstr(cfg, "fpga:device", NULL);
-	int speed = cfg_getint(cfg, "fpga:speed", 0);
+	const char *bus_dev = cfg_getstr(cfg, "fpga:device", CFG_DEFAULT_FPGA_DEVICE);
+	int speed = cfg_getint(cfg, "fpga:speed", CFG_DEFAULT_FPGA_SPEED);
 
 	speed_t setspeed = serial_int2speed(speed);
 	if (setspeed == 0) {

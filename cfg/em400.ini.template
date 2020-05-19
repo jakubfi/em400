@@ -111,7 +111,7 @@ filter = true
 
 [fpga]
 # Device to use for communication with the FPGA backend.
-device = /dev/ttyUSB1
+device = /dev/ttyUSB0
 
 # FPGA link speed (baud).
 speed = 1000000

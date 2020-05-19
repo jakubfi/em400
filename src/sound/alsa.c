@@ -29,7 +29,7 @@ static snd_pcm_t *handle;
 int alsa_init(dictionary *cfg)
 {
 	int err;
-	const char *cfg_output = cfg_getstr(cfg, "sound:output", SOUND_DEFAULT_OUTPUT);
+	const char *cfg_output = cfg_getstr(cfg, "sound:output", CFG_DEFAULT_SOUND_OUTPUT);
 	err = snd_pcm_open(&handle, cfg_output, SND_PCM_STREAM_PLAYBACK, 0);
 	if (err < 0) {
 		return LOGERR("ALSA snd_pcm_open() error: %s", snd_strerror(err));
@@ -38,9 +38,9 @@ int alsa_init(dictionary *cfg)
 	const unsigned pcm_format = SND_PCM_FORMAT_S16;
 	const unsigned pcm_access = SND_PCM_ACCESS_RW_INTERLEAVED;
 	const unsigned channels = 2;
-	const unsigned rate = cfg_getint(cfg, "sound:rate", SOUND_DEFAULT_RATE);
+	const unsigned rate = cfg_getint(cfg, "sound:rate", CFG_DEFAULT_SOUND_RATE);
 	const unsigned resample = 1;
-	const unsigned latency = cfg_getint(cfg, "sound:latency", SOUND_DEFAULT_LATENCY);
+	const unsigned latency = cfg_getint(cfg, "sound:latency", CFG_DEFAULT_SOUND_LATENCY);
 	const unsigned latency_us = 1000 * latency;
 
 	err = snd_pcm_set_params(handle, pcm_format, pcm_access, channels, rate, resample, latency_us);

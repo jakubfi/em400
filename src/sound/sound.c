@@ -44,7 +44,7 @@ static const struct snd_drv *snd_drivers[] = {
 // -----------------------------------------------------------------------
 const struct snd_drv * snd_init(dictionary *cfg)
 {
-	const char *cfg_driver = cfg_getstr(cfg, "sound:driver", SOUND_DEFAULT_DRIVER);
+	const char *cfg_driver = cfg_getstr(cfg, "sound:driver", CFG_DEFAULT_SOUND_DRIVER);
 
 	const struct snd_drv **snd_drv = snd_drivers;
 	while (snd_drv && *snd_drv) {

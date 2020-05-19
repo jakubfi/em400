@@ -31,8 +31,8 @@ int pulseaudio_init(dictionary *cfg)
 {
 	int err;
 
-	const int rate = cfg_getint(cfg, "sound:rate", SOUND_DEFAULT_RATE);
-	const int latency = cfg_getint(cfg, "sound:latency", SOUND_DEFAULT_LATENCY);
+	const int rate = cfg_getint(cfg, "sound:rate", CFG_DEFAULT_SOUND_RATE);
+	const int latency = cfg_getint(cfg, "sound:latency", CFG_DEFAULT_SOUND_LATENCY);
 
 	const pa_sample_spec ss = {
 		.format = PA_SAMPLE_S16LE,

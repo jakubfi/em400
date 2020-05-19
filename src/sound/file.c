@@ -27,7 +27,7 @@ FILE *out;
 // -----------------------------------------------------------------------
 int file_init(dictionary *cfg)
 {
-	const char *cfg_output = cfg_getstr(cfg, "sound:output", "output.raw");
+	const char *cfg_output = cfg_getstr(cfg, "sound:output", CFG_DEFAULT_SOUND_OUTPUT_FILE);
 	out = fopen(cfg_output, "w");
 	if (!out) {
 		return LOGERR("Error opening sound output file: %s", cfg_output);
