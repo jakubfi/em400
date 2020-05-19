@@ -35,7 +35,7 @@ struct mem_slot_t {
 
 extern struct mem_slot_t mem_map[MEM_MAX_NB][MEM_MAX_AB];
 
-int mem_init(dictionary *cfg);
+int mem_init(em400_cfg *cfg);
 void mem_shutdown();
 int mem_cmd(uint16_t n, uint16_t r);
 void mem_reset();

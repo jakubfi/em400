@@ -102,7 +102,7 @@ static void log_log_timestamp(unsigned component, const char *msg, const char *f
 static void log_components_update();
 
 // -----------------------------------------------------------------------
-int log_init(dictionary *cfg)
+int log_init(em400_cfg *cfg)
 {
 	int ret = E_ERR;
 

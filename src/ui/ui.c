@@ -41,7 +41,7 @@ struct ui_drv* uis[] = {
 pthread_t ui_th;
 
 // -----------------------------------------------------------------------
-struct ui * ui_create(dictionary *cfg)
+struct ui * ui_create(em400_cfg *cfg)
 {
 	const char *name = cfg_getstr(cfg, "ui:interface", CFG_DEFAULT_UI_INTERFACE);
 

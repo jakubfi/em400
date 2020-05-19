@@ -22,7 +22,7 @@
 
 #include "cfg.h"
 
-int io_init(dictionary *cfg);
+int io_init(em400_cfg *cfg);
 void io_shutdown();
 void io_reset();
 void io_get_intspec(int ch, uint16_t *int_spec);

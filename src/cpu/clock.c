@@ -61,7 +61,7 @@ void * clock_thread(void *ptr)
 }
 
 // -----------------------------------------------------------------------
-int clock_init(dictionary *cfg)
+int clock_init(em400_cfg *cfg)
 {
 	clock_period = cfg_getint(cfg, "cpu:clock_period", CFG_DEFAULT_CPU_CLOCK_PERIOD);
 

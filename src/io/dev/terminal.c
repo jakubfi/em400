@@ -114,7 +114,7 @@ int dev_terminal_open_tcp(struct dev_terminal *terminal, int port, int timeout_m
 }
 
 // -----------------------------------------------------------------------
-void * dev_terminal_create(dictionary *cfg, int ch_num, int dev_num)
+void * dev_terminal_create(em400_cfg *cfg, int ch_num, int dev_num)
 {
 	struct dev_terminal *terminal = (struct dev_terminal *) malloc(sizeof(struct dev_terminal));
 	if (!terminal) {

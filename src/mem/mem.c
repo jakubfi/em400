@@ -60,7 +60,7 @@ void mem_update_map()
 }
 
 // -----------------------------------------------------------------------
-int mem_init(dictionary *cfg)
+int mem_init(em400_cfg *cfg)
 {
 	int res;
 

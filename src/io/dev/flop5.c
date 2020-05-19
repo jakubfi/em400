@@ -28,7 +28,7 @@ struct dev_flop5 {
 };
 
 // -----------------------------------------------------------------------
-void * dev_flop5_create(dictionary *cfg, int ch_num, int dev_num)
+void * dev_flop5_create(em400_cfg *cfg, int ch_num, int dev_num)
 {
 	struct dev_flop5 *flop5 = (struct dev_flop5 *) malloc(sizeof(struct dev_flop5));
 	if (!flop5) {

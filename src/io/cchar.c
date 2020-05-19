@@ -62,7 +62,7 @@ static struct cchar_unit_proto_t * cchar_unit_proto_get(struct cchar_unit_proto_
 }
 
 // -----------------------------------------------------------------------
-void * cchar_create(int ch_num, dictionary *cfg)
+void * cchar_create(int ch_num, em400_cfg *cfg)
 {
 	struct cchar_chan_t *chan = (struct cchar_chan_t *) calloc(1, sizeof(struct cchar_chan_t));
 

@@ -68,7 +68,7 @@ struct iotester {
 static void * it_cmdproc(void *ptr);
 
 // -----------------------------------------------------------------------
-void * it_create(int num, dictionary *cfg)
+void * it_create(int num, em400_cfg *cfg)
 {
 	struct iotester *it = (struct iotester *) calloc(1, sizeof(struct iotester));
 	if (!it) {

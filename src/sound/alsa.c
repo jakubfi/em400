@@ -26,7 +26,7 @@
 static snd_pcm_t *handle;
 
 // -----------------------------------------------------------------------
-int alsa_init(dictionary *cfg)
+int alsa_init(em400_cfg *cfg)
 {
 	int err;
 	const char *cfg_output = cfg_getstr(cfg, "sound:output", CFG_DEFAULT_SOUND_OUTPUT);

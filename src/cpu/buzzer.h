@@ -22,7 +22,7 @@
 #include "cfg.h"
 
 void buzzer_silence();
-int buzzer_init(dictionary *cfg);
+int buzzer_init(em400_cfg *cfg);
 void buzzer_update(int ir, unsigned instruction_time);
 void buzzer_stop();
 void buzzer_start();

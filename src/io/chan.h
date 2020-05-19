@@ -36,7 +36,7 @@ enum chan_cmds_e {
 	CHAN_CMD_STATUS		= 0b000100,
 };
 
-typedef void * (*chan_f_create)(int num, dictionary *cfg);
+typedef void * (*chan_f_create)(int num, em400_cfg *cfg);
 typedef void (*chan_f_shutdown)(void *ch_obj);
 typedef void (*chan_f_reset)(void *ch_obj);
 typedef int (*chan_f_cmd)(void *ch_obj, int dir, uint16_t n, uint16_t *r);
@@ -54,7 +54,7 @@ struct chan {
 	void *obj;
 };
 
-struct chan * chan_make(int num, const char *name, dictionary *cfg);
+struct chan * chan_make(int num, const char *name, em400_cfg *cfg);
 void chan_destroy(struct chan *chan);
 
 #endif

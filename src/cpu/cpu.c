@@ -230,7 +230,7 @@ int cpu_mem_put_byte(int nb, uint32_t addr, uint8_t data)
 }
 
 // -----------------------------------------------------------------------
-int cpu_init(dictionary *cfg)
+int cpu_init(em400_cfg *cfg)
 {
 	int res;
 

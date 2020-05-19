@@ -25,7 +25,7 @@ struct dev_punchrd {
 };
 
 // -----------------------------------------------------------------------
-void * dev_punchrd_create(dictionary *cfg, int ch_num, int dev_num)
+void * dev_punchrd_create(em400_cfg *cfg, int ch_num, int dev_num)
 {
 	struct dev_punchrd *punchrd = (struct dev_punchrd *) malloc(sizeof(struct dev_punchrd));
 	if (!punchrd) {

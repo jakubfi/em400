@@ -62,7 +62,7 @@ static const char *io_result_names[] = { "NO DEVICE", "ENGAGED", "OK", "PARITY E
 static int fpga;
 
 // -----------------------------------------------------------------------
-int io_init(dictionary *cfg)
+int io_init(em400_cfg *cfg)
 {
 	fpga = cfg_getbool(cfg, "cpu:fpga", CFG_DEFAULT_CPU_FPGA);
 

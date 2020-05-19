@@ -42,7 +42,7 @@ static const struct snd_drv *snd_drivers[] = {
 };
 
 // -----------------------------------------------------------------------
-const struct snd_drv * snd_init(dictionary *cfg)
+const struct snd_drv * snd_init(em400_cfg *cfg)
 {
 	const char *cfg_driver = cfg_getstr(cfg, "sound:driver", CFG_DEFAULT_SOUND_DRIVER);
 

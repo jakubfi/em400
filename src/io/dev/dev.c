@@ -40,7 +40,7 @@ const struct dev_drv *dev_drivers[] = {
 };
 
 // -----------------------------------------------------------------------
-int dev_make(dictionary *cfg, int ch_num, int dev_num, const struct dev_drv **dev_drv, void **dev_obj)
+int dev_make(em400_cfg *cfg, int ch_num, int dev_num, const struct dev_drv **dev_drv, void **dev_obj)
 {
 	const struct dev_drv **driver = dev_drivers;
 

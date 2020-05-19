@@ -22,7 +22,7 @@
 #include <stdlib.h>
 #include "cfg.h"
 
-typedef int (*snd_drv_init)(dictionary *cfg);
+typedef int (*snd_drv_init)(em400_cfg *cfg);
 typedef void (*snd_drv_shutdown)(void);
 typedef long (*snd_drv_play)(int16_t *buf, size_t frames);
 typedef void (*snd_drv_stop)(void);
@@ -36,6 +36,6 @@ struct snd_drv {
 	snd_drv_stop stop;
 };
 
-const struct snd_drv * snd_init(dictionary *cfg);
+const struct snd_drv * snd_init(em400_cfg *cfg);
 
 #endif

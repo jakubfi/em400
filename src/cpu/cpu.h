@@ -83,7 +83,7 @@ int cpu_mem_mput(int nb, uint16_t saddr, uint16_t *src, int count);
 int cpu_mem_get_byte(int nb, uint32_t addr, uint8_t *data);
 int cpu_mem_put_byte(int nb, uint32_t addr, uint8_t data);
 
-int cpu_init(dictionary *cfg);
+int cpu_init(em400_cfg *cfg);
 void cpu_shutdown();
 
 int cpu_mod_on();

@@ -22,7 +22,7 @@
 
 #include "cfg.h"
 
-int cp_init(dictionary *cfg);
+int cp_init(em400_cfg *cfg);
 void cp_shutdown();
 
 int cp_reg_get(unsigned id);

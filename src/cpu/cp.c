@@ -36,7 +36,7 @@
 static int fpga;
 
 // -----------------------------------------------------------------------
-int cp_init(dictionary *cfg)
+int cp_init(em400_cfg *cfg)
 {
 	fpga = cfg_getbool(cfg, "cpu:fpga", CFG_DEFAULT_CPU_FPGA);
 	return E_OK;

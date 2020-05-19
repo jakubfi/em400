@@ -36,7 +36,7 @@ extern "C" {
 
 extern unsigned log_components_enabled;
 
-int log_init(dictionary *cfg);
+int log_init(em400_cfg *cfg);
 void log_shutdown();
 
 int log_enable();

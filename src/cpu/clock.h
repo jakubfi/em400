@@ -24,7 +24,7 @@
 extern "C" {
 #endif
 
-int clock_init(dictionary *cfg);
+int clock_init(em400_cfg *cfg);
 void clock_shutdown();
 void clock_on();
 void clock_off();

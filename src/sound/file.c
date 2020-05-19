@@ -25,7 +25,7 @@
 FILE *out;
 
 // -----------------------------------------------------------------------
-int file_init(dictionary *cfg)
+int file_init(em400_cfg *cfg)
 {
 	const char *cfg_output = cfg_getstr(cfg, "sound:output", CFG_DEFAULT_SOUND_OUTPUT_FILE);
 	out = fopen(cfg_output, "w");

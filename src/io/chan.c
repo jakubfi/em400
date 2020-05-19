@@ -34,7 +34,7 @@ const struct chan_drv *chan_drivers[] = {
 };
 
 // -----------------------------------------------------------------------
-struct chan * chan_make(int num, const char *name, dictionary *cfg)
+struct chan * chan_make(int num, const char *name, em400_cfg *cfg)
 {
 	const struct chan_drv **cdriver = chan_drivers;
 

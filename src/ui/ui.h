@@ -40,7 +40,7 @@ struct ui {
 	void *data;
 };
 
-struct ui * ui_create(dictionary *cfg);
+struct ui * ui_create(em400_cfg *cfg);
 int ui_run(struct ui *ui);
 void ui_shutdown(struct ui *ui);
 

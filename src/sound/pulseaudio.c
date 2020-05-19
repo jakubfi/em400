@@ -27,7 +27,7 @@ static pa_simple *s;
 static int bytes_per_frame = 4;
 
 // -----------------------------------------------------------------------
-int pulseaudio_init(dictionary *cfg)
+int pulseaudio_init(em400_cfg *cfg)
 {
 	int err;
 

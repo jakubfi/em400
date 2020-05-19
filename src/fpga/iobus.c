@@ -70,7 +70,7 @@ const char *iob_reg_names[] = {
 };
 
 // -----------------------------------------------------------------------
-int iob_init(dictionary *cfg)
+int iob_init(em400_cfg *cfg)
 {
 	if (cfg_getbool(cfg, "cpu:fpga", CFG_DEFAULT_CPU_FPGA) == 0) {
 		LOG(L_FPGA, "FPGA IO bus is disabled.");

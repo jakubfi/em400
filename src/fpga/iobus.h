@@ -93,7 +93,7 @@ enum iob_fnkeys {
 	IOB_FN_CLEAR	= 0b1011
 };
 
-int iob_init(dictionary *cfg);
+int iob_init(em400_cfg *cfg);
 void iob_close();
 void iob_quit();
 void iob_loop();

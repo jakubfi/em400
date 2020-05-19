@@ -43,7 +43,7 @@ int em400_console = CONSOLE_DEBUGGER;
 struct ui *ui;
 
 // -----------------------------------------------------------------------
-int em400_init(dictionary *cfg)
+int em400_init(em400_cfg *cfg)
 {
 	if (log_init(cfg) != E_OK) return LOGERR("Failed to initialize logging.");
 	if (iob_init(cfg) != E_OK) return LOGERR("Failed to set up FPGA I/O bus.");
@@ -161,7 +161,7 @@ int em400_cmdline_1(int argc, char **argv, int *print_help, char **config)
 }
 
 // -----------------------------------------------------------------------
-int em400_cmdline_2(dictionary *cfg, int argc, char **argv)
+int em400_cmdline_2(em400_cfg *cfg, int argc, char **argv)
 {
     int option;
     optind = 1; // reset to 1 so consecutive calls work
@@ -217,7 +217,7 @@ int main(int argc, char** argv)
 
 	int print_help = 0;
 	char *config = NULL;
-	dictionary *cfg;
+	em400_cfg *cfg;
 
 	em400_mkconfdir();
 

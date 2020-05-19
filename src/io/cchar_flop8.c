@@ -37,7 +37,7 @@
 #define UNIT ((struct cchar_unit_flop8_t *)(unit))
 
 // -----------------------------------------------------------------------
-struct cchar_unit_proto_t * cchar_flop8_create(dictionary *cfg, int ch_num, int dev_num)
+struct cchar_unit_proto_t * cchar_flop8_create(em400_cfg *cfg, int ch_num, int dev_num)
 {
 	struct cchar_unit_flop8_t *unit = (struct cchar_unit_flop8_t *) calloc(1, sizeof(struct cchar_unit_flop8_t));
 	if (!unit) {

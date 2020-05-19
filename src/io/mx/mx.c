@@ -52,7 +52,7 @@ int mx_int_enqueue(struct mx *multix, int intr, int line);
 void mx_reset(void *ch);
 
 // -----------------------------------------------------------------------
-void * mx_create(int ch_num, dictionary *cfg)
+void * mx_create(int ch_num, em400_cfg *cfg)
 {
 	LOG(L_MX, "Creating new MULTIX");
 

@@ -28,7 +28,7 @@ struct dev_winch {
 };
 
 // -----------------------------------------------------------------------
-void * dev_winch_create(dictionary *cfg, int ch_num, int dev_num)
+void * dev_winch_create(em400_cfg *cfg, int ch_num, int dev_num)
 {
 	struct dev_winch *winch = (struct dev_winch *) malloc(sizeof(struct dev_winch));
 	if (!winch) {
