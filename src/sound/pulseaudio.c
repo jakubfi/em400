@@ -20,7 +20,7 @@
 #include <pulse/error.h>
 
 #include "log.h"
-#include "external/iniparser/iniparser.h"
+#include "cfg.h"
 #include "sound/sound.h"
 
 static pa_simple *s;
@@ -31,8 +31,8 @@ int pulseaudio_init(dictionary *cfg)
 {
 	int err;
 
-	const int rate = iniparser_getint(cfg, "sound:rate", SOUND_DEFAULT_RATE);
-	const int latency = iniparser_getint(cfg, "sound:latency", SOUND_DEFAULT_LATENCY);
+	const int rate = cfg_getint(cfg, "sound:rate", SOUND_DEFAULT_RATE);
+	const int latency = cfg_getint(cfg, "sound:latency", SOUND_DEFAULT_LATENCY);
 
 	const pa_sample_spec ss = {
 		.format = PA_SAMPLE_S16LE,

@@ -1,4 +1,4 @@
-//  Copyright (c) 2012-2013 Jakub Filipowicz <jakubf@gmail.com>
+//  Copyright (c) 2020 Jakub Filipowicz <jakubf@gmail.com>
 //
 //  This program is free software; you can redistribute it and/or modify
 //  it under the terms of the GNU General Public License as published by
@@ -15,26 +15,21 @@
 //  Foundation, Inc.,
 //  51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 
-#ifndef CLOCK_H
-#define CLOCK_H
+#ifndef _CFG_H_
+#define _CFG_H_
 
+#include "external/iniparser/iniparser.h"
 #include "cfg.h"
 
-#ifdef __cplusplus
-extern "C" {
-#endif
+typedef dictionary em400_cfg;
 
-int clock_init(dictionary *cfg);
-void clock_shutdown();
-void clock_on();
-void clock_off();
-int clock_get_state();
-void clock_set_int(int interrupt);
-
-#ifdef __cplusplus
-}
-#endif
+#define cfg_getdouble iniparser_getdouble
+#define cfg_getint iniparser_getint
+#define cfg_getstr iniparser_getstring
+#define cfg_getbool iniparser_getboolean
+#define cfg_contains iniparser_find_entry
+#define cfg_set iniparser_set
+#define cfg_load iniparser_load
+#define cfg_free iniparser_freedict
 
 #endif
-
-// vim: tabstop=4 shiftwidth=4 autoindent

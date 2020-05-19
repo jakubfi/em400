@@ -34,7 +34,7 @@
 #include "fpga/iobus.h"
 #include "io/io.h"
 #include "io/defs.h"
-#include "external/iniparser/iniparser.h"
+#include "cfg.h"
 
 #define BR 0
 #define BW 1
@@ -72,13 +72,13 @@ const char *iob_reg_names[] = {
 // -----------------------------------------------------------------------
 int iob_init(dictionary *cfg)
 {
-	if (iniparser_getboolean(cfg, "cpu:fpga", 0) == 0) {
+	if (cfg_getbool(cfg, "cpu:fpga", 0) == 0) {
 		LOG(L_FPGA, "FPGA IO bus is disabled.");
 		return E_OK;
 	}
 
-	const char *bus_dev = iniparser_getstring(cfg, "fpga:device", NULL);
-	int speed = iniparser_getint(cfg, "fpga:speed", 0);
+	const char *bus_dev = cfg_getstr(cfg, "fpga:device", NULL);
+	int speed = cfg_getint(cfg, "fpga:speed", 0);
 
 	speed_t setspeed = serial_int2speed(speed);
 	if (setspeed == 0) {

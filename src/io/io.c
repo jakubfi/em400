@@ -24,7 +24,7 @@
 #include "io/chan.h"
 #include "fpga/iobus.h"
 
-#include "external/iniparser/iniparser.h"
+#include "cfg.h"
 #include "utils/utils.h"
 #include "log.h"
 
@@ -64,12 +64,12 @@ static int fpga;
 // -----------------------------------------------------------------------
 int io_init(dictionary *cfg)
 {
-	fpga = iniparser_getboolean(cfg, "cpu:fpga", 0);
+	fpga = cfg_getbool(cfg, "cpu:fpga", 0);
 
 	for (int i=0 ; i<16 ; i++) {
 		char ch[16];
 		sprintf(ch, "io:channel_%i", i);
-		const char *ch_name = iniparser_getstring(cfg, ch, NULL);
+		const char *ch_name = cfg_getstr(cfg, ch, NULL);
 		if (ch_name) {
 			LOG(L_IO, "Initializing I/O channel %i: %s", i, ch_name);
 			io_chan[i] = chan_make(i, ch_name, cfg);

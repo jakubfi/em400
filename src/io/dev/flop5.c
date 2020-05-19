@@ -21,7 +21,7 @@
 #include "log.h"
 #include "io/dev/dev.h"
 #include "io/dev/e4image.h"
-#include "external/iniparser/iniparser.h"
+#include "cfg.h"
 
 struct dev_flop5 {
 	struct e4i_t *image;
@@ -38,7 +38,7 @@ void * dev_flop5_create(dictionary *cfg, const char *section)
 
 	char key[32];
 	sprintf(key, "%s:image", section);
-	const char *image = iniparser_getstring(cfg, key, NULL);
+	const char *image = cfg_getstr(cfg, key, NULL);
 
 	flop5->image = e4i_open(image);
 	if (!flop5->image) {

@@ -33,7 +33,7 @@
 #include "io/mx/irq.h"
 #include "io/mx/event.h"
 #include "io/mx/line.h"
-#include "external/iniparser/iniparser.h"
+#include "cfg.h"
 
 enum mx_condition { MX_UNINITIALIZED, MX_INITIALIZED, MX_CONFIGURED, MX_QUIT };
 
@@ -96,7 +96,7 @@ void * mx_create(int num, dictionary *cfg)
 	for (int i=0 ; i<MX_LINE_CNT ; i++) {
 		char key[32];
 		sprintf(key, "dev%i.%i", num, i);
-		if (!iniparser_find_entry(cfg, key)) continue;
+		if (!cfg_contains(cfg, key)) continue;
 
 		struct mx_line *line = multix->plines + i;
 		int res = dev_make(cfg, key, &line->dev, &line->dev_data);

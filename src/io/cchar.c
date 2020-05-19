@@ -28,7 +28,7 @@
 #include "io/cchar_flop8.h"
 
 #include "log.h"
-#include "external/iniparser/iniparser.h"
+#include "cfg.h"
 
 // unit prototypes
 struct cchar_unit_proto_t cchar_unit_proto[] = {
@@ -70,11 +70,11 @@ void * cchar_create(int num, dictionary *cfg)
 	for (int i=0 ; i<CCHAR_MAX_DEVICES ; i++) {
 		char key[32];
 		sprintf(key, "dev%i.%i", num, i);
-		if (!iniparser_find_entry(cfg, key)) continue;
+		if (!cfg_contains(cfg, key)) continue;
 
 		// find unit prototype
 		sprintf(key, "dev%i.%i:type", num, i);
-		const char *unit_name = iniparser_getstring(cfg, key, NULL);
+		const char *unit_name = cfg_getstr(cfg, key, NULL);
 		struct cchar_unit_proto_t *proto = cchar_unit_proto_get(cchar_unit_proto, unit_name);
 		if (!proto) {
 			LOGERR("Unknown device type or device incompatibile with channel: %s.", unit_name);

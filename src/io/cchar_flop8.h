@@ -20,7 +20,7 @@
 
 #include <stdio.h>
 #include "io/cchar.h"
-#include "external/iniparser/iniparser.h"
+#include "cfg.h"
 
 struct cchar_unit_flop8_t {
 	struct cchar_unit_proto_t proto;

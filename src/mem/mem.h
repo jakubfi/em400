@@ -21,7 +21,7 @@
 #include <inttypes.h>
 #include <stdio.h>
 
-#include "external/iniparser/dictionary.h"
+#include "cfg.h"
 
 #define MEM_SEGMENT_SIZE 4 * 1024	// segment size (16-bit words)
 #define MEM_MAX_MODULES 16			// physical memory modules

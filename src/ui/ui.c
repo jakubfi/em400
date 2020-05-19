@@ -27,7 +27,7 @@
 
 #include "log.h"
 #include "ui/ui.h"
-#include "external/iniparser/iniparser.h"
+#include "cfg.h"
 
 extern struct ui_drv ui_cmd;
 extern struct ui_drv ui_curses;
@@ -43,7 +43,7 @@ pthread_t ui_th;
 // -----------------------------------------------------------------------
 struct ui * ui_create(dictionary *cfg)
 {
-	const char *name = iniparser_getstring(cfg, "ui:interface", "curses");
+	const char *name = cfg_getstr(cfg, "ui:interface", "curses");
 
 	struct ui_drv **drv = uis;
 	while (drv && *drv) {

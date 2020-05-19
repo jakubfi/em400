@@ -46,7 +46,7 @@
 #include "ectl/brk.h"
 
 #include "ectl.h" // for global constants
-#include "external/iniparser/iniparser.h"
+#include "cfg.h"
 
 static int cpu_state = ECTL_STATE_OFF;
 uint16_t regs[8];
@@ -234,20 +234,20 @@ int cpu_init(dictionary *cfg)
 {
 	int res;
 
-	int awp_enabled = iniparser_getboolean(cfg, "cpu:awp", 1);
+	int awp_enabled = cfg_getbool(cfg, "cpu:awp", 1);
 	if (awp_enabled) {
 		awp = awp_init(regs+0, regs+1, regs+2, regs+3);
 		if (!awp) return LOGERR("Failed to initialize AWP.");
 	}
 
-	rKB = iniparser_getint(cfg, "cpu:kb", 0);
+	rKB = cfg_getint(cfg, "cpu:kb", 0);
 
-	cpu_mod_present = iniparser_getboolean(cfg, "cpu:modifications", 0);
-	cpu_user_io_illegal = iniparser_getboolean(cfg, "cpu:user_io_illegal", 1);
-	nomem_stop = iniparser_getboolean(cfg, "cpu:stop_on_nomem", 1);
-	speed_real = iniparser_getboolean(cfg, "cpu:speed_real", 0);
-	throttle_granularity = 1000 * iniparser_getint(cfg, "cpu:throttle_granularity", 10);
-	double cpu_speed_factor = iniparser_getdouble(cfg, "cpu:speed_factor", 1.0f);
+	cpu_mod_present = cfg_getbool(cfg, "cpu:modifications", 0);
+	cpu_user_io_illegal = cfg_getbool(cfg, "cpu:user_io_illegal", 1);
+	nomem_stop = cfg_getbool(cfg, "cpu:stop_on_nomem", 1);
+	speed_real = cfg_getbool(cfg, "cpu:speed_real", 0);
+	throttle_granularity = 1000 * cfg_getint(cfg, "cpu:throttle_granularity", 10);
+	double cpu_speed_factor = cfg_getdouble(cfg, "cpu:speed_factor", 1.0f);
 	cpu_delay_factor = 1.0f/cpu_speed_factor;
 
 	res = iset_build(cpu_op_tab, cpu_user_io_illegal);
@@ -278,7 +278,7 @@ int cpu_init(dictionary *cfg)
 		throttle_granularity/1000,
 		cpu_speed_factor);
 
-	sound_enabled = iniparser_getboolean(cfg, "sound:enabled", 0);
+	sound_enabled = cfg_getbool(cfg, "sound:enabled", 0);
 
 	if (sound_enabled) {
 		if ((speed_real == 0) || (cpu_speed_factor < 0.5f) || (cpu_speed_factor > 1.5f)) {

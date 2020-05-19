@@ -20,7 +20,7 @@
 
 #include "sound/sound.h"
 #include "external/biquad/biquad.h"
-#include "external/iniparser/iniparser.h"
+#include "cfg.h"
 #include "log.h"
 
 // Tonsil GD 6/0,5 frequency response, more or less
@@ -129,11 +129,11 @@ void buzzer_shutdown()
 // -----------------------------------------------------------------------
 int buzzer_init(dictionary *cfg)
 {
-	volume = iniparser_getint(cfg, "sound:volume", SOUND_DEFAULT_VOLUME);
-	speaker_filter = iniparser_getboolean(cfg, "sound:filter", 1);
-	int sample_rate = iniparser_getint(cfg, "sound:rate", SOUND_DEFAULT_RATE);
+	volume = cfg_getint(cfg, "sound:volume", SOUND_DEFAULT_VOLUME);
+	speaker_filter = cfg_getbool(cfg, "sound:filter", 1);
+	int sample_rate = cfg_getint(cfg, "sound:rate", SOUND_DEFAULT_RATE);
 	sample_period = 1000000000.0f / sample_rate;
-	buffer_len = iniparser_getint(cfg, "sound:buffer_len", SOUND_DEFAULT_BUFFER_LEN);
+	buffer_len = cfg_getint(cfg, "sound:buffer_len", SOUND_DEFAULT_BUFFER_LEN);
 
 	if (volume > 100) {
 		LOGERR("Adjusting sound volume from %i to 100 (max allowed).", volume);

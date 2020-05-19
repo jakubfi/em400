@@ -28,7 +28,7 @@
 #include "fpga/iobus.h"
 #include "utils/utils.h"
 
-#include "external/iniparser/iniparser.h"
+#include "cfg.h"
 #include "log.h"
 
 #include "ectl.h" // for global constants/enums
@@ -38,7 +38,7 @@ static int fpga;
 // -----------------------------------------------------------------------
 int cp_init(dictionary *cfg)
 {
-	fpga = iniparser_getboolean(cfg, "cpu:fpga", 0);
+	fpga = cfg_getbool(cfg, "cpu:fpga", 0);
 	return E_OK;
 }
 

@@ -21,7 +21,7 @@
 #include <pthread.h>
 
 #include "io/cchar.h"
-#include "external/iniparser/iniparser.h"
+#include "cfg.h"
 
 #define TERM_BUF_LEN 1024
 

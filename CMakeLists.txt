@@ -39,6 +39,7 @@ set(SOURCES_EM400
 	src/em400.c
 	src/log.c
 	src/log_crk.c
+	src/cfg.c
 
 	src/utils/utils.c
 	src/utils/elst.c

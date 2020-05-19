@@ -20,7 +20,7 @@
 
 #include "io/chan.h"
 #include "log.h"
-#include "external/iniparser/iniparser.h"
+#include "cfg.h"
 
 extern struct chan_drv cchar_chan_driver;
 extern struct chan_drv mx_chan_driver;

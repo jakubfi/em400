@@ -20,7 +20,7 @@
 
 #include "log.h"
 #include "io/dev/dev.h"
-#include "external/iniparser/iniparser.h"
+#include "cfg.h"
 
 extern struct dev_drv dev_winch;
 extern struct dev_drv dev_flop5;
@@ -46,7 +46,7 @@ int dev_make(dictionary *cfg, const char *section, const struct dev_drv **dev_dr
 
 	char key[32];
 	sprintf(key, "%s:type", section);
-	const char *type = iniparser_getstring(cfg, key, NULL);
+	const char *type = cfg_getstr(cfg, key, NULL);
 
 	while (*driver) {
 		if (!strcasecmp(type, (*driver)->name)) {

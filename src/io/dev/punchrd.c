@@ -19,7 +19,7 @@
 #include <inttypes.h>
 
 #include "io/dev/dev.h"
-#include "external/iniparser/iniparser.h"
+#include "cfg.h"
 
 struct dev_punchrd {
 };

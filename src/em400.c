@@ -34,7 +34,7 @@
 #include "fpga/iobus.h"
 
 #include "em400.h"
-#include "external/iniparser/iniparser.h"
+#include "cfg.h"
 
 #include "log.h"
 
@@ -173,23 +173,23 @@ int em400_cmdline_2(dictionary *cfg, int argc, char **argv)
             case 'c':
                 break;
             case 'p':
-                iniparser_set(cfg, "memory:preload", optarg);
+                cfg_set(cfg, "memory:preload", optarg);
                 break;
             case 'k':
-                iniparser_set(cfg, "cpu:kb", optarg);
+                cfg_set(cfg, "cpu:kb", optarg);
                 break;
             case 'L':
-				iniparser_set(cfg, "log:enabled", "false");
+				cfg_set(cfg, "log:enabled", "false");
                 break;
             case 'l':
-				iniparser_set(cfg, "log:enabled", "true");
-				iniparser_set(cfg, "log:components", optarg);
+				cfg_set(cfg, "log:enabled", "true");
+				cfg_set(cfg, "log:components", optarg);
                 break;
             case 'u':
-                iniparser_set(cfg, "ui:interface", optarg);
+                cfg_set(cfg, "ui:interface", optarg);
                 break;
             case 'F':
-                iniparser_set(cfg, "cpu:fpga", "true");
+                cfg_set(cfg, "cpu:fpga", "true");
                 break;
 			case 'O':
 				colon = strchr(optarg, ':');
@@ -198,7 +198,7 @@ int em400_cmdline_2(dictionary *cfg, int argc, char **argv)
 				if (!colon || !key || !val) {
 					return LOGERR("Syntax error for -O switch. Should be: -O section:key=value");
 				}
-				iniparser_set(cfg, key, val);
+				cfg_set(cfg, key, val);
 				break;
             default:
                 return E_ERR;
@@ -243,7 +243,7 @@ int main(int argc, char** argv)
 		sprintf(config, "%s%s", home, cfile);
 	}
 
-	cfg = iniparser_load(config);
+	cfg = cfg_load(config);
 	if (!cfg) {
 		LOGERR("Failed to load config file: \"%s\".", config);
 		goto done;
@@ -260,14 +260,14 @@ int main(int argc, char** argv)
 		goto done;
 	}
 
-	em400_preload_program(iniparser_getstring(cfg, "memory:preload", NULL));
+	em400_preload_program(cfg_getstr(cfg, "memory:preload", NULL));
 
 	if (ui_run(ui) != E_OK) {
 		LOGERR("Failed to start the UI: %s.", ui->drv->name);
 		goto done;
 	}
 
-	if (iniparser_getboolean(cfg, "cpu:fpga", 0)) {
+	if (cfg_getbool(cfg, "cpu:fpga", 0)) {
 		iob_loop();
 	} else {
 		cpu_loop();
@@ -277,7 +277,7 @@ int main(int argc, char** argv)
 
 done:
 	em400_shutdown();
-	iniparser_freedict(cfg);
+	cfg_free(cfg);
 	free(config);
 	return return_code;
 }

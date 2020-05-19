@@ -19,7 +19,7 @@
 #define __FPGA_H
 
 #include <inttypes.h>
-#include "external/iniparser/dictionary.h"
+#include "cfg.h"
 
 struct iob_msg {
 	int is_valid;

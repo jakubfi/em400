@@ -29,7 +29,7 @@
 #include "io/io.h"
 #include "io/chan.h"
 #include "utils/elst.h"
-#include "external/iniparser/iniparser.h"
+#include "cfg.h"
 
 #define INIT_DELAY_US 200000
 
@@ -82,7 +82,7 @@ void * it_create(int num, dictionary *cfg)
 	for (int i=0 ; i<16 ; i++) {
 		char section[16];
 		sprintf(section, "dev%i.%i", num, i);
-		if (iniparser_find_entry(cfg, section)) {
+		if (cfg_contains(cfg, section)) {
 			LOG(L_IO, "IOtester can't connect devices. Ignored device: %s", section);
 		}
 	}

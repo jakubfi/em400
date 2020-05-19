@@ -23,7 +23,7 @@
 #include <emawp.h>
 
 #include "cpu/flags.h"
-#include "external/iniparser/dictionary.h"
+#include "cfg.h"
 
 // -----------------------------------------------------------------------
 // SR access macros

@@ -20,7 +20,7 @@
 
 #include <inttypes.h>
 #include <stdlib.h>
-#include "external/iniparser/dictionary.h"
+#include "cfg.h"
 
 #define SOUND_DEFAULT_DRIVER "pulseaudio"
 #define SOUND_DEFAULT_OUTPUT "default"

@@ -20,7 +20,7 @@
 
 #include <inttypes.h>
 
-#include "external/iniparser/dictionary.h"
+#include "cfg.h"
 
 int cp_init(dictionary *cfg);
 void cp_shutdown();

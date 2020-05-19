@@ -21,7 +21,7 @@
 #include <inttypes.h>
 #include <pthread.h>
 
-#include "external/iniparser/iniparser.h"
+#include "cfg.h"
 
 #define CCHAR_MAX_DEVICES 8
 #define CCHAR_INT_NONE 9999 // no interrupt (em400 marker)

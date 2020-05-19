@@ -35,7 +35,7 @@
 
 #include "log.h"
 #include "io/dev/dev.h"
-#include "external/iniparser/iniparser.h"
+#include "cfg.h"
 
 enum dev_terminal_commands { CMD_NONE, CMD_RD, CMD_WR, CMD_QUIT };
 enum dev_terminal_type { TERM_CONSOLE, TERM_TCP };
@@ -123,11 +123,11 @@ void * dev_terminal_create(dictionary *cfg, const char *section)
 
 	char key[32];
 	sprintf(key, "%s:transport", section);
-	const char *transport = iniparser_getstring(cfg, key, NULL);
+	const char *transport = cfg_getstr(cfg, key, NULL);
 
 	if (!strcasecmp(transport, "tcp")) {
 		sprintf(key, "%s:port", section);
-		const int port = iniparser_getint(cfg, key, -1);
+		const int port = cfg_getint(cfg, key, -1);
 		if (dev_terminal_open_tcp(terminal, port, 100)) {
 			LOGERR("Failed to open TCP terminal on port: %i.", port);
 			goto cleanup;

@@ -27,7 +27,7 @@
 #include "io/defs.h"
 
 #include "em400.h"
-#include "external/iniparser/iniparser.h"
+#include "cfg.h"
 
 #include "log.h"
 
@@ -64,11 +64,11 @@ int mem_init(dictionary *cfg)
 {
 	int res;
 
-	const int cfg_elwro = iniparser_getint(cfg, "memory:elwro_modules", 4);
-	mega_modules = iniparser_getint(cfg, "memory:mega_modules", 0);
-	const int cfg_os = iniparser_getint(cfg, "memory:hardwired_segments", 2);
-	const char *mega_modules_prom = iniparser_getstring(cfg, "memory:mega_prom", NULL);
-	mega_boot = iniparser_getboolean(cfg, "memory:mega_boot", 0);
+	const int cfg_elwro = cfg_getint(cfg, "memory:elwro_modules", 4);
+	mega_modules = cfg_getint(cfg, "memory:mega_modules", 0);
+	const int cfg_os = cfg_getint(cfg, "memory:hardwired_segments", 2);
+	const char *mega_modules_prom = cfg_getstr(cfg, "memory:mega_prom", NULL);
+	mega_boot = cfg_getbool(cfg, "memory:mega_boot", 0);
 
 	if (cfg_elwro + mega_modules > MEM_MAX_MODULES+1) {
 		return LOGERR("Sum of Elwro and MEGA memory modules is greater than allowed %i.", MEM_MAX_MODULES+1);

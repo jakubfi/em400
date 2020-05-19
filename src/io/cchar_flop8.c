@@ -30,7 +30,7 @@
 #include "em400.h"
 #include "io/defs.h"
 #include "io/cchar_flop8.h"
-#include "external/iniparser/iniparser.h"
+#include "cfg.h"
 
 #include "log.h"
 
@@ -49,7 +49,7 @@ struct cchar_unit_proto_t * cchar_flop8_create(dictionary *cfg, const char *sect
 
 	for (int id=0 ; id<4 ; id++) {
 		sprintf(key, "%s:image_%i", section, id);
-		const char *image = iniparser_getstring(cfg, key, NULL);
+		const char *image = cfg_getstr(cfg, key, NULL);
 		if (!image) continue;
 
 		unit->image[id] = strdup(image);

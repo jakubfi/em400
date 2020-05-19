@@ -19,7 +19,7 @@
 #define UI_H
 
 #include <pthread.h>
-#include "external/iniparser/dictionary.h"
+#include "cfg.h"
 
 typedef void * (*ui_f_setup)(const char *);
 typedef void (*ui_f_loop)(void*);

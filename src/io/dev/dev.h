@@ -20,7 +20,7 @@
 
 #include <inttypes.h>
 
-#include "external/iniparser/iniparser.h"
+#include "cfg.h"
 
 enum dev_cmd_status {
 	DEV_CMD_OK = 0,

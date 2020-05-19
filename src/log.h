@@ -25,7 +25,7 @@
 #include "atomic.h"
 
 #include "ectl.h" // for global constants
-#include "external/iniparser/dictionary.h"
+#include "cfg.h"
 
 #define E_OK 0
 #define E_ERR -1

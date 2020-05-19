@@ -21,7 +21,7 @@
 #include <inttypes.h>
 
 #include "io/defs.h"
-#include "external/iniparser/iniparser.h"
+#include "cfg.h"
 
 // TODO: needs further cleaning (possibly move down, as interpretation is channel-specific)
 enum chan_cmds_e {

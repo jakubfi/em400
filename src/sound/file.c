@@ -19,7 +19,7 @@
 #include <stdio.h>
 
 #include "log.h"
-#include "external/iniparser/iniparser.h"
+#include "cfg.h"
 #include "sound/sound.h"
 
 FILE *out;
@@ -27,7 +27,7 @@ FILE *out;
 // -----------------------------------------------------------------------
 int file_init(dictionary *cfg)
 {
-	const char *cfg_output = iniparser_getstring(cfg, "sound:output", "output.raw");
+	const char *cfg_output = cfg_getstr(cfg, "sound:output", "output.raw");
 	out = fopen(cfg_output, "w");
 	if (!out) {
 		return LOGERR("Error opening sound output file: %s", cfg_output);

@@ -20,7 +20,7 @@
 
 #include "log.h"
 #include "sound/sound.h"
-#include "external/iniparser/iniparser.h"
+#include "cfg.h"
 
 #ifdef HAVE_ALSA
 extern const struct snd_drv snd_drv_alsa;
@@ -44,7 +44,7 @@ static const struct snd_drv *snd_drivers[] = {
 // -----------------------------------------------------------------------
 const struct snd_drv * snd_init(dictionary *cfg)
 {
-	const char *cfg_driver = iniparser_getstring(cfg, "sound:driver", SOUND_DEFAULT_DRIVER);
+	const char *cfg_driver = cfg_getstr(cfg, "sound:driver", SOUND_DEFAULT_DRIVER);
 
 	const struct snd_drv **snd_drv = snd_drivers;
 	while (snd_drv && *snd_drv) {

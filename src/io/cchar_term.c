@@ -33,7 +33,7 @@
 #include "io/dev/term.h"
 
 #include "log.h"
-#include "external/iniparser/iniparser.h"
+#include "cfg.h"
 
 #define UNIT ((struct cchar_unit_term_t *)(unit))
 
@@ -49,10 +49,10 @@ struct cchar_unit_proto_t * cchar_term_create(dictionary *cfg, const char *secti
 	}
 
 	sprintf(key, "%s:transport", section);
-	const char *transport = iniparser_getstring(cfg, key, NULL);
+	const char *transport = cfg_getstr(cfg, key, NULL);
 	if (!strcasecmp(transport, "tcp")) {
 		sprintf(key, "%s:port", section);
-		int port = iniparser_getint(cfg, key, -1);
+		int port = cfg_getint(cfg, key, -1);
 		unit->term = term_open_tcp(port, 100);
 		if (!unit->term) {
 			LOGERR("Failed to open TCP terminal on port %i.", port);
@@ -62,9 +62,9 @@ struct cchar_unit_proto_t * cchar_term_create(dictionary *cfg, const char *secti
 
 	} else if (!strcasecmp(transport, "serial")) {
 		sprintf(key, "%s:device", section);
-		const char * device = iniparser_getstring(cfg, key, NULL);
+		const char * device = cfg_getstr(cfg, key, NULL);
 		sprintf(key, "%s:speed", section);
-		int speed = iniparser_getint(cfg, key, 0);
+		int speed = cfg_getint(cfg, key, 0);
 		unit->term = term_open_serial(device, speed, 100);
 		if (!unit->term) {
 			LOGERR("Failed to open serial terminal at %s, speed: %i).", device, speed);

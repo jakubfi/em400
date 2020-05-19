@@ -37,7 +37,7 @@
 #include "log_crk.h"
 #include "atomic.h"
 #include "utils/utils.h"
-#include "external/iniparser/iniparser.h"
+#include "cfg.h"
 
 // low-level stuff
 
@@ -106,7 +106,7 @@ int log_init(dictionary *cfg)
 {
 	int ret = E_ERR;
 
-	const char *cfg_logfile = iniparser_getstring(cfg, "log:file", "em400.log");
+	const char *cfg_logfile = cfg_getstr(cfg, "log:file", "em400.log");
 	log_file = strdup(cfg_logfile);
 	if (!log_file) {
 		LOGERR("Memory allocation error.");
@@ -114,14 +114,14 @@ int log_init(dictionary *cfg)
 	}
 
 	// set up components to log
-	const char *log_components = iniparser_getstring(cfg, "log:components", "em4h");
+	const char *log_components = cfg_getstr(cfg, "log:components", "em4h");
 	if (log_setup_components(log_components) < 0) {
 		LOGERR("Failed to parse log component definition: \"%s\".", log_components);
 		goto cleanup;
 	}
 
 	// initialize deassembler
-	int cpu_mod = iniparser_getboolean(cfg, "cpu:modifications", 0);
+	int cpu_mod = cfg_getbool(cfg, "cpu:modifications", 0);
 	emd = emdas_create(cpu_mod ? EMD_ISET_MX16 : EMD_ISET_MERA400, (emdas_getfun) mem_get);
 	if (!emd) {
 		LOGERR("Log deassembler initialization failed.");
@@ -135,9 +135,9 @@ int log_init(dictionary *cfg)
 
 	pthread_mutex_init(&log_mutex, NULL);
 
-	line_buffered = iniparser_getboolean(cfg, "log:line_buffered", 1);
+	line_buffered = cfg_getbool(cfg, "log:line_buffered", 1);
 
-	int log_enabled = iniparser_getboolean(cfg, "log:enabled", 0);
+	int log_enabled = cfg_getbool(cfg, "log:enabled", 0);
 	if (log_enabled) {
 		ret = log_enable();
 		if (ret != E_OK) {
