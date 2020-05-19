@@ -46,7 +46,7 @@ struct cchar_unit_proto_t * cchar_flop8_create(em400_cfg *cfg, int ch_num, int d
 	}
 
 	for (int id=0 ; id<4 ; id++) {
-		const char *image = cfg_fgetstr(cfg, "dev%i.%i:image_%i", ch_num, dev_num);
+		const char *image = cfg_fgetstr(cfg, "dev%i.%i:image_%i", ch_num, dev_num, id);
 		if (!image) continue;
 
 		unit->image[id] = strdup(image);
