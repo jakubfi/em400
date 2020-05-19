@@ -22,45 +22,56 @@
 #include "cfg.h"
 
 // -----------------------------------------------------------------------
-const char * cfg_fgetstr(em400_cfg *cfg, const char *def, const char *key_format, ...)
+const char * cfg_fgetstr(em400_cfg *cfg, const char *key_format, ...)
 {
 	char key[MAX_KEY_LEN];
 	va_list vl;
 	va_start(vl, key_format);
 	vsnprintf(key, MAX_KEY_LEN, key_format, vl);
 	va_end(vl);
-	return cfg_getstr(cfg, key, def);
+	return cfg_getstr(cfg, key, NULL);
 }
 
 // -----------------------------------------------------------------------
-int cfg_fgetint(em400_cfg *cfg, int def, const char *key_format, ...)
+int cfg_fgetint(em400_cfg *cfg, const char *key_format, ...)
 {
 	char key[MAX_KEY_LEN];
 	va_list vl;
 	va_start(vl, key_format);
 	vsnprintf(key, MAX_KEY_LEN, key_format, vl);
 	va_end(vl);
-	return cfg_getint(cfg, key, def);
+	return cfg_getint(cfg, key, -1);
 }
 
 // -----------------------------------------------------------------------
-double cfg_fgetdouble(em400_cfg *cfg, double def, const char *key_format, ...)
+double cfg_fgetdouble(em400_cfg *cfg, const char *key_format, ...)
 {
 	char key[MAX_KEY_LEN];
 	va_list vl;
 	va_start(vl, key_format);
 	vsnprintf(key, MAX_KEY_LEN, key_format, vl);
 	va_end(vl);
-	return cfg_getdouble(cfg, key, def);
+	return cfg_getdouble(cfg, key, -1);
 }
 
 // -----------------------------------------------------------------------
-int cfg_fgetbool(em400_cfg *cfg, int def, const char *key_format, ...)
+int cfg_fgetbool(em400_cfg *cfg, const char *key_format, ...)
 {
 	char key[MAX_KEY_LEN];
 	va_list vl;
 	va_start(vl, key_format);
 	vsnprintf(key, MAX_KEY_LEN, key_format, vl);
 	va_end(vl);
-	return cfg_getbool(cfg, key, def);
+	return cfg_getbool(cfg, key, -1);
+}
+
+// -----------------------------------------------------------------------
+int cfg_fcontains(em400_cfg *cfg, const char *key_format, ...)
+{
+	char key[MAX_KEY_LEN];
+	va_list vl;
+	va_start(vl, key_format);
+	vsnprintf(key, MAX_KEY_LEN, key_format, vl);
+	va_end(vl);
+	return cfg_contains(cfg, key);
 }

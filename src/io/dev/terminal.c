@@ -114,20 +114,17 @@ int dev_terminal_open_tcp(struct dev_terminal *terminal, int port, int timeout_m
 }
 
 // -----------------------------------------------------------------------
-void * dev_terminal_create(dictionary *cfg, const char *section)
+void * dev_terminal_create(dictionary *cfg, int ch_num, int dev_num)
 {
 	struct dev_terminal *terminal = (struct dev_terminal *) malloc(sizeof(struct dev_terminal));
 	if (!terminal) {
 		goto cleanup;
 	}
 
-	char key[32];
-	sprintf(key, "%s:transport", section);
-	const char *transport = cfg_getstr(cfg, key, NULL);
+	const char *transport = cfg_fgetstr(cfg, "dev%i.%i:transport", ch_num, dev_num);
 
 	if (!strcasecmp(transport, "tcp")) {
-		sprintf(key, "%s:port", section);
-		const int port = cfg_getint(cfg, key, -1);
+		const int port = cfg_fgetint(cfg, "dev%i.%i:port", ch_num, dev_num);
 		if (dev_terminal_open_tcp(terminal, port, 100)) {
 			LOGERR("Failed to open TCP terminal on port: %i.", port);
 			goto cleanup;

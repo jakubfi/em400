@@ -52,7 +52,7 @@ int mx_int_enqueue(struct mx *multix, int intr, int line);
 void mx_reset(void *ch);
 
 // -----------------------------------------------------------------------
-void * mx_create(int num, dictionary *cfg)
+void * mx_create(int ch_num, dictionary *cfg)
 {
 	LOG(L_MX, "Creating new MULTIX");
 
@@ -64,7 +64,7 @@ void * mx_create(int num, dictionary *cfg)
 		goto cleanup;
 	}
 	// initialize multix structure
-	multix->chnum = num;
+	multix->chnum = ch_num;
 	atom_store_release(&multix->state, MX_UNINITIALIZED);
 	for (int i=0 ; i<MX_LINE_CNT ; i++) {
 		struct mx_line *pline = multix->plines + i;
@@ -90,18 +90,16 @@ void * mx_create(int num, dictionary *cfg)
 		goto cleanup;
 	}
 
-	// --- create devices (event system need them)
+	// --- create devices (event system needs them)
 
 	LOG(L_MX, "Initializing devices");
-	for (int i=0 ; i<MX_LINE_CNT ; i++) {
-		char key[32];
-		sprintf(key, "dev%i.%i", num, i);
-		if (!cfg_contains(cfg, key)) continue;
+	for (int pline_num=0 ; pline_num<MX_LINE_CNT ; pline_num++) {
+		if (!cfg_fcontains(cfg, "dev%i.%i", ch_num, pline_num)) continue;
 
-		struct mx_line *line = multix->plines + i;
-		int res = dev_make(cfg, key, &line->dev, &line->dev_data);
+		struct mx_line *line = multix->plines + pline_num;
+		int res = dev_make(cfg, ch_num, pline_num, &line->dev, &line->dev_data);
 		if (res != E_OK) {
-			LOGERR("Failed to create MULTIX device: %s", key);
+			LOGERR("Failed to create MULTIX device: %i.%i", ch_num, pline_num);
 			goto cleanup;
 		}
 	}

@@ -62,19 +62,16 @@ static struct cchar_unit_proto_t * cchar_unit_proto_get(struct cchar_unit_proto_
 }
 
 // -----------------------------------------------------------------------
-void * cchar_create(int num, dictionary *cfg)
+void * cchar_create(int ch_num, dictionary *cfg)
 {
 	struct cchar_chan_t *chan = (struct cchar_chan_t *) calloc(1, sizeof(struct cchar_chan_t));
 
-	chan->num = num;
-	for (int i=0 ; i<CCHAR_MAX_DEVICES ; i++) {
-		char key[32];
-		sprintf(key, "dev%i.%i", num, i);
-		if (!cfg_contains(cfg, key)) continue;
+	chan->num = ch_num;
+	for (int dev_num=0 ; dev_num<CCHAR_MAX_DEVICES ; dev_num++) {
+		if (!cfg_fcontains(cfg, "dev%i.%i", ch_num, dev_num)) continue;
 
 		// find unit prototype
-		sprintf(key, "dev%i.%i:type", num, i);
-		const char *unit_name = cfg_getstr(cfg, key, NULL);
+		const char *unit_name = cfg_fgetstr(cfg, "dev%i.%i:type", ch_num, dev_num);
 		struct cchar_unit_proto_t *proto = cchar_unit_proto_get(cchar_unit_proto, unit_name);
 		if (!proto) {
 			LOGERR("Unknown device type or device incompatibile with channel: %s.", unit_name);
@@ -83,14 +80,13 @@ void * cchar_create(int num, dictionary *cfg)
 		}
 
 		// create unit based on prototype
-		sprintf(key, "dev%i.%i", num, i);
-		struct cchar_unit_proto_t *unit = proto->create(cfg, key);
+		struct cchar_unit_proto_t *unit = proto->create(cfg, ch_num, dev_num);
 		if (!unit) {
 			LOGERR("Failed to create unit: %s.", unit_name);
 			free(chan);
 			return NULL;
 		} else {
-			LOG(L_CCHR, "Connected device %i: %s", i, proto->name);
+			LOG(L_CCHR, "Connected device %i: %s", dev_num, proto->name);
 		}
 
 		// fill in functions
@@ -102,9 +98,9 @@ void * cchar_create(int num, dictionary *cfg)
 
 		// remember the channel unit is connected to
 		unit->chan = chan;
-		unit->num = i;
+		unit->num = dev_num;
 
-		chan->unit[i] = unit;
+		chan->unit[dev_num] = unit;
 
 	}
 

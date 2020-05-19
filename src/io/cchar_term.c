@@ -38,21 +38,17 @@
 #define UNIT ((struct cchar_unit_term_t *)(unit))
 
 // -----------------------------------------------------------------------
-struct cchar_unit_proto_t * cchar_term_create(dictionary *cfg, const char *section)
+struct cchar_unit_proto_t * cchar_term_create(dictionary *cfg, int ch_num, int dev_num)
 {
-	char key[32];
-
 	struct cchar_unit_term_t *unit = (struct cchar_unit_term_t *) calloc(1, sizeof(struct cchar_unit_term_t));
 	if (!unit) {
-		LOGERR("Failed to allocate memory for device: %s.", section);
+		LOGERR("Failed to allocate memory for terminal: %i.%i", ch_num, dev_num);
 		goto fail;
 	}
 
-	sprintf(key, "%s:transport", section);
-	const char *transport = cfg_getstr(cfg, key, NULL);
+	const char *transport = cfg_fgetstr(cfg, "dev%i.%i:transport", ch_num, dev_num);
 	if (!strcasecmp(transport, "tcp")) {
-		sprintf(key, "%s:port", section);
-		int port = cfg_getint(cfg, key, -1);
+		int port = cfg_fgetint(cfg, "dev%i.%i:port", ch_num, dev_num);
 		unit->term = term_open_tcp(port, 100);
 		if (!unit->term) {
 			LOGERR("Failed to open TCP terminal on port %i.", port);
@@ -61,10 +57,8 @@ struct cchar_unit_proto_t * cchar_term_create(dictionary *cfg, const char *secti
 		LOG(L_TERM, "Terminal (%s), port: %i", transport, port);
 
 	} else if (!strcasecmp(transport, "serial")) {
-		sprintf(key, "%s:device", section);
-		const char * device = cfg_getstr(cfg, key, NULL);
-		sprintf(key, "%s:speed", section);
-		int speed = cfg_getint(cfg, key, 0);
+		const char * device = cfg_fgetstr(cfg, "dev%i.%i:device", ch_num, dev_num);
+		int speed = cfg_fgetint(cfg, "dev%i.%i:speed", ch_num, dev_num);
 		unit->term = term_open_serial(device, speed, 100);
 		if (!unit->term) {
 			LOGERR("Failed to open serial terminal at %s, speed: %i).", device, speed);

@@ -28,7 +28,7 @@ struct dev_winch {
 };
 
 // -----------------------------------------------------------------------
-void * dev_winch_create(dictionary *cfg, const char *section)
+void * dev_winch_create(dictionary *cfg, int ch_num, int dev_num)
 {
 	struct dev_winch *winch = (struct dev_winch *) malloc(sizeof(struct dev_winch));
 	if (!winch) {
@@ -36,9 +36,7 @@ void * dev_winch_create(dictionary *cfg, const char *section)
 		goto cleanup;
 	}
 
-	char key[32];
-	sprintf(key, "%s:image", section);
-	const char *image = cfg_getstr(cfg, key, NULL);
+	const char *image = cfg_fgetstr(cfg, "dev%i.%i:image", ch_num, dev_num);
 
 	winch->image = e4i_open(image);
 	if (!winch->image) {

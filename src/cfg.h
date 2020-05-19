@@ -71,4 +71,10 @@ typedef dictionary em400_cfg;
 #define cfg_load iniparser_load
 #define cfg_free iniparser_freedict
 
+const char * cfg_fgetstr(em400_cfg *cfg, const char *key_format, ...);
+int cfg_fgetint(em400_cfg *cfg, const char *key_format, ...);
+double cfg_fgetdouble(em400_cfg *cfg, const char *key_format, ...);
+int cfg_fgetbool(em400_cfg *cfg, const char *key_format, ...);
+int cfg_fcontains(em400_cfg *cfg, const char *key_format, ...);
+
 #endif

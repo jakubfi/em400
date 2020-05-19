@@ -28,7 +28,7 @@
 
 struct cchar_unit_proto_t;
 
-typedef struct cchar_unit_proto_t * (*cchar_unit_f_create)(dictionary *cfg, const char *section);
+typedef struct cchar_unit_proto_t * (*cchar_unit_f_create)(dictionary *cfg, int ch_num, int dev_num);
 typedef void (*cchar_unit_f_shutdown)(struct cchar_unit_proto_t *unit);
 typedef void (*cchar_unit_f_reset)(struct cchar_unit_proto_t *unit);
 typedef int (*cchar_unit_f_cmd)(struct cchar_unit_proto_t *unit, int dir, int cmd, uint16_t *r_arg);

@@ -40,18 +40,16 @@ const struct dev_drv *dev_drivers[] = {
 };
 
 // -----------------------------------------------------------------------
-int dev_make(dictionary *cfg, const char *section, const struct dev_drv **dev_drv, void **dev_obj)
+int dev_make(dictionary *cfg, int ch_num, int dev_num, const struct dev_drv **dev_drv, void **dev_obj)
 {
 	const struct dev_drv **driver = dev_drivers;
 
-	char key[32];
-	sprintf(key, "%s:type", section);
-	const char *type = cfg_getstr(cfg, key, NULL);
+	const char *type = cfg_fgetstr(cfg, "dev%i.%i:type", ch_num, dev_num);
 
 	while (*driver) {
 		if (!strcasecmp(type, (*driver)->name)) {
 			*dev_drv = *driver;
-			*dev_obj = (*driver)->create(cfg, section);
+			*dev_obj = (*driver)->create(cfg, ch_num, dev_num);
 			if (!*dev_obj) {
 				return LOGERR("Failed to initialize device: %s.", type);
 			}
@@ -63,6 +61,7 @@ int dev_make(dictionary *cfg, const char *section, const struct dev_drv **dev_dr
 
 	return LOGERR("Unknown device type: %s.", type);
 }
+
 // -----------------------------------------------------------------------
 void dev_chs_next(struct dev_chs *chs, unsigned heads, unsigned spt)
 {

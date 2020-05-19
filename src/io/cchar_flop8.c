@@ -37,19 +37,16 @@
 #define UNIT ((struct cchar_unit_flop8_t *)(unit))
 
 // -----------------------------------------------------------------------
-struct cchar_unit_proto_t * cchar_flop8_create(dictionary *cfg, const char *section)
+struct cchar_unit_proto_t * cchar_flop8_create(dictionary *cfg, int ch_num, int dev_num)
 {
-	char key[32];
-
 	struct cchar_unit_flop8_t *unit = (struct cchar_unit_flop8_t *) calloc(1, sizeof(struct cchar_unit_flop8_t));
 	if (!unit) {
-		LOGERR("Failed to allocate memory for unit: %s.", section);
+		LOGERR("Failed to allocate memory for floppy: %i.%i", ch_num, dev_num);
 		goto fail;
 	}
 
 	for (int id=0 ; id<4 ; id++) {
-		sprintf(key, "%s:image_%i", section, id);
-		const char *image = cfg_getstr(cfg, key, NULL);
+		const char *image = cfg_fgetstr(cfg, "dev%i.%i:image_%i", ch_num, dev_num);
 		if (!image) continue;
 
 		unit->image[id] = strdup(image);

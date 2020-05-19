@@ -25,7 +25,7 @@ struct dev_puncher {
 };
 
 // -----------------------------------------------------------------------
-void * dev_puncher_create(dictionary *cfg, const char *section)
+void * dev_puncher_create(dictionary *cfg, int ch_num, int dev_num)
 {
 	struct dev_puncher *puncher = (struct dev_puncher *) malloc(sizeof(struct dev_puncher));
 	if (!puncher) {
