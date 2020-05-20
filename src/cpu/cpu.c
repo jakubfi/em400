@@ -51,13 +51,10 @@
 
 static int cpu_state = ECTL_STATE_OFF;
 uint16_t regs[8];
-uint16_t rIC;
-uint16_t rKB;
+uint16_t rIC, rKB, rIR, rAR;
 int rALARM;
 uint16_t rMOD;
 int rMODc;
-uint16_t rIR;
-uint16_t rAR;
 unsigned RM, Q, BS, NB;
 
 int P;
@@ -69,7 +66,6 @@ unsigned long ips_counter;
 static int speed_real;
 static int throttle_granularity;
 static float cpu_delay_factor;
-pthread_t idler_th;
 
 int cpu_mod_present;
 int cpu_user_io_illegal;
@@ -139,11 +135,27 @@ int cpu_state_get()
 void cpu_trigger_cycle()
 {
 	pthread_mutex_lock(&cpu_wake_mutex);
-	if (cpu_state & ECTL_STATE_STOP) {
+	if ((cpu_state & ECTL_STATE_STOP)) {
 		cpu_state |= ECTL_STATE_CYCLE;
 		pthread_cond_broadcast(&cpu_wake_cond);
 	}
 	pthread_mutex_unlock(&cpu_wake_mutex);
+}
+
+// -----------------------------------------------------------------------
+int cpu_trigger_bin()
+{
+	int res = 1;
+
+	pthread_mutex_lock(&cpu_wake_mutex);
+	if ((cpu_state & ECTL_STATE_STOP)) {
+		cpu_state |= ECTL_STATE_BIN;
+		res = 0;
+		pthread_cond_broadcast(&cpu_wake_cond);
+	}
+	pthread_mutex_unlock(&cpu_wake_mutex);
+
+	return res;
 }
 
 // -----------------------------------------------------------------------
@@ -401,22 +413,6 @@ void cpu_ctx_restore()
 }
 
 // -----------------------------------------------------------------------
-int cpu_trigger_bin()
-{
-	int res = 1;
-
-	pthread_mutex_lock(&cpu_wake_mutex);
-	if (cpu_state == ECTL_STATE_STOP) {
-		cpu_state |= ECTL_STATE_BIN;
-		res = 0;
-	}
-	pthread_cond_broadcast(&cpu_wake_cond);
-	pthread_mutex_unlock(&cpu_wake_mutex);
-
-	return res;
-}
-
-// -----------------------------------------------------------------------
 static void cpu_bin()
 {
 	int words = 0;
@@ -564,7 +560,6 @@ void cpu_loop()
 	pthread_mutex_lock(&cpu_wake_mutex);
 	cpu_state = ECTL_STATE_STOP;
 	pthread_mutex_unlock(&cpu_wake_mutex);
-	cpu_trigger_state(0);
 
 	int cpu_time;
 	int cpu_time_cumulative = 0;

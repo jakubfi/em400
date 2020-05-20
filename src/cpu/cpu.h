@@ -59,13 +59,10 @@
 #define reg_restrict_write(r, x) regs[r] = ((r)|!Q) ? (x) : (regs[r] & 0b1111111100000000) | ((x) & 0b0000000011111111)
 
 extern uint16_t regs[];
-extern uint16_t rIC;
-extern uint16_t rKB;
+extern uint16_t rIC, rKB, rIR, rAR;
 extern int rALARM;
 extern uint16_t rMOD;
 extern int rMODc;
-extern uint16_t rIR;
-extern uint16_t rAR;
 extern unsigned RM, Q, BS, NB;
 extern int P;
 
