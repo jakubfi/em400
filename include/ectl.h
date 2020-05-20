@@ -40,7 +40,10 @@ enum ectl_cpu_states {
 	ECTL_STATE_OFF	= 0x10,
 	ECTL_STATE_BRK	= 0x20,
 	ECTL_STATE_CYCLE= 0x40,
+	ECTL_STATE_BIN	= 0x80,
 };
+
+#define ECTL_STATE_BITS_COUNT 8
 
 enum ectl_registers {
 	ECTL_REG_R0 = 0,

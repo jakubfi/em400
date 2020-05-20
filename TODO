@@ -4,7 +4,6 @@ Cleanups:
 
 Code enhancements (possible):
 
-* move binary load to cpu thread
 * librarize
 * make em400 C++ friendly
 * gnu getopt_long

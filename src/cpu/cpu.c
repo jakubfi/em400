@@ -37,6 +37,7 @@
 #include "cpu/interrupts.h"
 #include "cpu/clock.h"
 #include "cpu/buzzer.h"
+#include "io/defs.h"
 #include "io/io.h"
 
 #include "em400.h"
@@ -56,6 +57,7 @@ int rALARM;
 uint16_t rMOD;
 int rMODc;
 uint16_t rIR;
+uint16_t rAR;
 unsigned RM, Q, BS, NB;
 
 int P;
@@ -100,7 +102,7 @@ static void cpu_idle_in_wait()
 static int cpu_idle_in_stop()
 {
 	pthread_mutex_lock(&cpu_wake_mutex);
-	while ((cpu_state & (ECTL_STATE_STOP|ECTL_STATE_OFF|ECTL_STATE_CLO|ECTL_STATE_CLM|ECTL_STATE_CYCLE)) == ECTL_STATE_STOP) {
+	while ((cpu_state & (ECTL_STATE_STOP|ECTL_STATE_OFF|ECTL_STATE_CLO|ECTL_STATE_CLM|ECTL_STATE_CYCLE|ECTL_STATE_BIN)) == ECTL_STATE_STOP) {
 		LOG(L_CPU, "idling in state STOP");
 		pthread_cond_wait(&cpu_wake_cond, &cpu_wake_mutex);
 	}
@@ -399,6 +401,59 @@ void cpu_ctx_restore()
 }
 
 // -----------------------------------------------------------------------
+int cpu_trigger_bin()
+{
+	int res = 1;
+
+	pthread_mutex_lock(&cpu_wake_mutex);
+	if (cpu_state == ECTL_STATE_STOP) {
+		cpu_state |= ECTL_STATE_BIN;
+		res = 0;
+	}
+	pthread_cond_broadcast(&cpu_wake_cond);
+	pthread_mutex_unlock(&cpu_wake_mutex);
+
+	return res;
+}
+
+// -----------------------------------------------------------------------
+static void cpu_bin()
+{
+	int words = 0;
+	uint16_t data;
+	uint8_t bdata[3];
+	int cnt = 0;
+
+	LOG(L_CPU, "Binary load started @ 0x%04x", rAR);
+
+	while (1) {
+		int state = atom_load_acquire(&cpu_state);
+		if (state & ~(ECTL_STATE_STOP | ECTL_STATE_BIN)) {
+			break;
+		}
+
+		int res = io_dispatch(IO_IN, rIC, &data);
+		if (res != IO_OK) continue;
+
+		bdata[cnt] = data & 0xff;
+		if ((cnt == 0) && bin_is_end(bdata[cnt])) {
+			LOG(L_CPU, "Binary load done, %i words loaded", words);
+			break;
+		} else if (bin_is_valid(bdata[cnt])) {
+			cnt++;
+			if (cnt >= 3) {
+				cnt = 0;
+				if (cpu_mem_put(0, rAR, bin2word(bdata)) == 0) {
+					break;
+				}
+				words++;
+				rAR++;
+			}
+		}
+	}
+}
+
+// -----------------------------------------------------------------------
 static int cpu_do_cycle()
 {
 	struct iset_opcode *op;
@@ -552,6 +607,10 @@ cycle:
 				buzzer_stop();
 			}
 			int res = cpu_idle_in_stop();
+			if (res & ECTL_STATE_BIN) {
+				cpu_bin();
+				cpu_clear_state(ECTL_STATE_BIN);
+			}
 			if (speed_real) {
 				if (sound_enabled) {
 					buzzer_start();

@@ -166,10 +166,8 @@ void dbg_c_dt(int wid, uint16_t ic, int count)
 // -----------------------------------------------------------------------
 void dbg_c_bin(int wid, uint16_t addr)
 {
-	int cnt = ectl_bin(addr);
-	awtbprint(wid, C_LABEL, "Loaded ");
-	awtbprint(wid, C_DATA, "%i ", cnt);
-	awtbprint(wid, C_LABEL, "words.\n");
+	int res = ectl_bin(addr);
+	awtbprint(wid, C_LABEL, "Binary load %s\n", res == 0 ? "initialized" : "ignored due to current CPU state");
 }
 
 // -----------------------------------------------------------------------

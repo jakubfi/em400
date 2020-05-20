@@ -538,7 +538,7 @@ void ui_cmd_state(FILE *out, char *args)
 	if (state == 0) {
 		fprintf(out, " START");
 	} else {
-		for (int i=0 ; i<ECTL_CAPA_COUNT ; i++) {
+		for (int i=0 ; i<ECTL_STATE_BITS_COUNT ; i++) {
 			if ((state & (1<<i))) {
 				fprintf(out, " %s", ectl_cpu_state_bit_name(i));
 			}
@@ -697,8 +697,8 @@ void ui_cmd_bin(FILE *out, char *args)
 		return;
 	}
 
-	int cnt = ectl_bin(addr);
-	ui_cmd_resp(out, RESP_OK, UI_EOL, "Loaded %i words", cnt);
+	int res = ectl_bin(addr);
+	ui_cmd_resp(out, RESP_OK, UI_EOL, "Binary load %s", res == 0 ? "initialized" : "ignored due to current CPU state.");
 }
 
 // -----------------------------------------------------------------------

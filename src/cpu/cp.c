@@ -305,39 +305,16 @@ void cp_clear()
 // -----------------------------------------------------------------------
 int cp_bin(uint16_t ar)
 {
-	uint16_t addr = ar;
-	int words = 0;
-	uint16_t data;
-	uint8_t bdata[3];
-	int cnt = 0;
-	int res;
+	int res = 1;
 
 	if (fpga) {
 		// unsupported
 	} else {
-		while (1) {
-			res = io_dispatch(IO_IN, rKB, &data);
-			if (res != IO_OK) {
-				continue;
-			}
-			bdata[cnt] = data & 0xff;
-			if ((cnt == 0) && bin_is_end(bdata[cnt])) {
-				break;
-			} else if (bin_is_valid(bdata[cnt])) {
-				cnt++;
-				if (cnt >= 3) {
-					cnt = 0;
-					if (cpu_mem_put(0, addr, bin2word(bdata)) == 0) {
-						break;
-					}
-					addr++;
-					words++;
-				}
-			}
-		}
+		rAR = ar;
+		res = cpu_trigger_bin();
 	}
 
-	return words;
+	return res;
 }
 
 // -----------------------------------------------------------------------

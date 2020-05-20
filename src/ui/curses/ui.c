@@ -147,7 +147,7 @@ void dbg_wu_status(int wid)
 	if (state == 0) {
 		pos += sprintf(status, "START");
 	} else {
-		for (int i=0 ; i<ECTL_CAPA_COUNT ; i++) {
+		for (int i=0 ; i<ECTL_STATE_BITS_COUNT ; i++) {
 			if ((state & (1<<i))) {
 				pos += sprintf(status+pos, "%s ", ectl_cpu_state_bit_name(i));
 			}

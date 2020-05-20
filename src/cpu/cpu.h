@@ -65,6 +65,7 @@ extern int rALARM;
 extern uint16_t rMOD;
 extern int rMODc;
 extern uint16_t rIR;
+extern uint16_t rAR;
 extern unsigned RM, Q, BS, NB;
 extern int P;
 
@@ -98,6 +99,7 @@ void cpu_trigger_state(int state);
 void cpu_clear_state(int state);
 int cpu_state_get();
 void cpu_trigger_cycle();
+int cpu_trigger_bin();
 
 #endif
 
