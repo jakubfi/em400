@@ -6,7 +6,6 @@ Code enhancements (possible):
 
 * librarize
 * make em400 C++ friendly
-* gnu getopt_long
 * merge cpu sources for better instruction performance (-5%..+14%)
 
 Features (possible):
@@ -20,6 +19,8 @@ Features (possible):
 
 CPU:
 
+* review states?
+* AR access?
 * review cpu cycle in context of interrupt handling
 * no-elwro configuration
 * overlaid elwro/mega configuration
