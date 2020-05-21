@@ -325,7 +325,7 @@ struct e4i_t * e4i_create_chs(char *img_name, uint16_t id_size, uint16_t block_s
 // -----------------------------------------------------------------------
 struct e4i_t * e4i_create_lba(char *img_name, uint16_t id_size, uint16_t block_size, uint32_t blocks, int append)
 {
-	return __e4i_create(img_name, id_size, block_size, 0, 0, 0, blocks, E4I_F_LBA | append ? E4I_F_APPEND : 0);
+	return __e4i_create(img_name, id_size, block_size, 0, 0, 0, blocks, E4I_F_LBA | (append ? E4I_F_APPEND : 0));
 }
 
 // -----------------------------------------------------------------------

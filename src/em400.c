@@ -217,7 +217,7 @@ int main(int argc, char** argv)
 
 	int print_help = 0;
 	char *config = NULL;
-	em400_cfg *cfg;
+	em400_cfg *cfg = NULL;
 
 	em400_mkconfdir();
 
