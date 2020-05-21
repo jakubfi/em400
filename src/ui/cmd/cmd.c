@@ -252,10 +252,10 @@ void ui_cmd_destroy(void *data)
 
 	if (!ui) return;
 
-	if (ui->listenfd >= 0) {
+	if (ui->listenfd > 0) {
 		close(ui->listenfd);
 	}
-	if (ui->out) {
+	if (ui->out && (ui->fd_out > 2)) {
 		fclose(ui->out);
 	}
 
