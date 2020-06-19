@@ -176,6 +176,9 @@ halt2:	hlt	ERR_CODE
 	ujs	jmp2
 
 ; ------------------------------------------------------------------------
+; r4 - current test address
+; [r4] - r0 loaded before the test
+; r5 - r0 required after the test
 check_:	.res	1
 check:
 	rws	r0, tmp
@@ -198,16 +201,16 @@ chk:	lws	r0, tmp
 	brc	2
 	ujs	chhlt1
 	hlt	ERR_CODE
-	ujs	load
+	ujs	load		; 0x00c4
 chhlt1:	hlt	ERR_CODE
-	ujs	load
+	ujs	load		; 0x00c6
 chhlt3:	lws	r0, tmp
 	brc	2
 	ujs	chhlt2
 	hlt	ERR_CODE
-	ujs	chexi
+	ujs	chexi		; 0x00cd
 chhlt2:	hlt	ERR_CODE
-	ujs	chexi
+	ujs	chexi		; 0x00cf
 tmp:	.res	1
 
 ; ------------------------------------------------------------------------
