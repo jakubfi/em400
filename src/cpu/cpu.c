@@ -598,6 +598,7 @@ cycle:
 
 		// CPU stopped
 		} else if ((state & ECTL_STATE_STOP)) {
+			cpu_clear_state(ECTL_STATE_WAIT);
 			if (sound_enabled) {
 				buzzer_stop();
 			}
