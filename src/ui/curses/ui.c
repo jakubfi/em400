@@ -158,7 +158,7 @@ void dbg_wu_status(int wid)
 	awtbprint(wid, C_IDATA, "%-10s", status);
 
 	awtbprint(wid, C_ILABEL, "  Speed:");
-	awtbprint(wid, C_IDATA, " %.2f", (float)ectl_ips_get()/1000000);
+	awtbprint(wid, C_IDATA, " %.3f", (float)ectl_ips_get()/1000000);
 	awtbprint(wid, C_ILABEL, " MIPS                                                                                                                                                                                                                                             ");
 	awin_tb_update(wid, w->ih);
 }
