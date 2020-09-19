@@ -332,7 +332,7 @@ void op_lb()
 {
 	uint8_t data;
 	if (cpu_mem_get_byte(NB, N, &data)) {
-		reg_restrict_write(IR_A, (regs[IR_A] & 0b1111111100000000) | data);
+		reg_restrict_write(IR_A, (regs[IR_A] & 0xff00) | data);
 	}
 }
 
@@ -488,7 +488,7 @@ void op_72_ric()
 // -----------------------------------------------------------------------
 void op_72_zlb()
 {
-	reg_restrict_write(IR_A, regs[IR_A] & 0b0000000011111111);
+	reg_restrict_write(IR_A, regs[IR_A] & 0x00ff);
 }
 
 // -----------------------------------------------------------------------
@@ -613,7 +613,7 @@ void op_72_rky()
 // -----------------------------------------------------------------------
 void op_72_zrb()
 {
-	reg_restrict_write(IR_A, regs[IR_A] & 0b1111111100000000);
+	reg_restrict_write(IR_A, regs[IR_A] & 0xff00);
 }
 
 // -----------------------------------------------------------------------
