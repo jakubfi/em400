@@ -490,7 +490,7 @@ void op_72_zlb()
 // -----------------------------------------------------------------------
 void op_72_sxu()
 {
-	if (regs[IR_A] & 0b1000000000000000) {
+	if (regs[IR_A] & 0x8000) {
 		Fset(FL_X);
 	} else {
 		Fclr(FL_X);
@@ -504,37 +504,76 @@ void op_72_nga()
 }
 
 // -----------------------------------------------------------------------
+void shift_left(uint16_t shift_in, int check_v)
+{
+	uint16_t result = regs[IR_A]<<1 | shift_in;
+	if (check_v) alu_16_update_V(regs[IR_A], regs[IR_A], result);
+	if (regs[IR_A] & 0x8000) Fset(FL_Y);
+	else Fclr(FL_Y);
+	reg_restrict_write(IR_A, result);
+}
+
+// -----------------------------------------------------------------------
 void op_72_slz()
 {
-	if (regs[IR_A] & 0b1000000000000000) Fset(FL_Y);
-	else Fclr(FL_Y);
-	reg_restrict_write(IR_A, regs[IR_A]<<1);
+	shift_left(0, 0);
 }
 
 // -----------------------------------------------------------------------
 void op_72_sly()
 {
-	uint16_t ir_a = regs[IR_A];
-	reg_restrict_write(IR_A, (regs[IR_A]<<1) | Fget(FL_Y));
-	if (ir_a & 0b1000000000000000) Fset(FL_Y);
-	else Fclr(FL_Y);
+	shift_left(Fget(FL_Y), 0);
 }
 
 // -----------------------------------------------------------------------
 void op_72_slx()
 {
-	if (regs[IR_A] & 0b1000000000000000) Fset(FL_Y);
+	shift_left(Fget(FL_X), 0);
+}
+
+// -----------------------------------------------------------------------
+void op_72_svz()
+{
+	shift_left(0, 1);
+}
+
+// -----------------------------------------------------------------------
+void op_72_svy()
+{
+	shift_left(Fget(FL_Y), 1);
+}
+
+// -----------------------------------------------------------------------
+void op_72_svx()
+{
+	shift_left(Fget(FL_X), 1);
+}
+
+// -----------------------------------------------------------------------
+void shift_right(uint16_t shift_in)
+{
+	uint16_t result = (regs[IR_A]>>1) | shift_in;
+	if (regs[IR_A] & 1) Fset(FL_Y);
 	else Fclr(FL_Y);
-	reg_restrict_write(IR_A, (regs[IR_A]<<1) | Fget(FL_X));
+	reg_restrict_write(IR_A, result);
 }
 
 // -----------------------------------------------------------------------
 void op_72_sry()
 {
-	uint16_t ir_a = regs[IR_A];
-	reg_restrict_write(IR_A, (regs[IR_A]>>1) | Fget(FL_Y)<<15);
-	if (ir_a & 1) Fset(FL_Y);
-	else Fclr(FL_Y);
+	shift_right(Fget(FL_Y)<<15);
+}
+
+// -----------------------------------------------------------------------
+void op_72_srx()
+{
+	shift_right(Fget(FL_X)<<15);
+}
+
+// -----------------------------------------------------------------------
+void op_72_srz()
+{
+	shift_right(0);
 }
 
 // -----------------------------------------------------------------------
@@ -586,63 +625,6 @@ void op_72_sxl()
 void op_72_ngc()
 {
 	alu_16_neg(IR_A, Fget(FL_C));
-}
-
-// -----------------------------------------------------------------------
-void op_72_svz()
-{
-	if (regs[IR_A] & 0b1000000000000000) {
-		Fset(FL_Y);
-	} else {
-		Fclr(FL_Y);
-	}
-	alu_16_update_V(regs[IR_A], regs[IR_A], regs[IR_A]<<1);
-	reg_restrict_write(IR_A, regs[IR_A]<<1);
-}
-
-// -----------------------------------------------------------------------
-void op_72_svy()
-{
-	uint16_t ir_a = regs[IR_A];
-	reg_restrict_write(IR_A, regs[IR_A]<<1 | Fget(FL_Y));
-	alu_16_update_V(ir_a, ir_a, regs[IR_A]);
-	if (ir_a & 0b1000000000000000) {
-		Fset(FL_Y);
-	} else {
-		Fclr(FL_Y);
-	}
-}
-
-// -----------------------------------------------------------------------
-void op_72_svx()
-{
-	uint16_t ir_a = regs[IR_A];
-	reg_restrict_write(IR_A, regs[IR_A]<<1 | Fget(FL_X));
-	alu_16_update_V(ir_a, ir_a, regs[IR_A]);
-	if (ir_a & 0b1000000000000000) {
-		Fset(FL_Y);
-	} else {
-		Fclr(FL_Y);
-	}
-}
-
-// -----------------------------------------------------------------------
-void op_72_srx()
-{
-	if (regs[IR_A] & 1) {
-		Fset(FL_Y);
-	} else {
-		Fclr(FL_Y);
-	}
-	reg_restrict_write(IR_A, (regs[IR_A]>>1) | Fget(FL_X)<<15);
-}
-
-// -----------------------------------------------------------------------
-void op_72_srz()
-{
-	if (regs[IR_A] & 1) Fset(FL_Y);
-	else Fclr(FL_Y);
-	reg_restrict_write(IR_A, (regs[IR_A]>>1) & 0b0111111111111111);
 }
 
 // -----------------------------------------------------------------------
