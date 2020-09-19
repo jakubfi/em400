@@ -56,117 +56,45 @@ void alu_16_set_LEG(int32_t a, int32_t b)
 }
 
 // -----------------------------------------------------------------------
-void alu_16_set_Z(uint64_t z)
+void alu_16_set_Z_bool(uint16_t z)
 {
-	// for arithmetic zero, V and C needs to be set prior Z
-	// set Z if:
-	//  * all 16 bits of result are 0 and there is no carry
-	//  * OR all 16 bits of result is 0 and carry is set, but overflow is not (case of -1+1)
+	if (z == 0) Fset(FL_Z);
+	else Fclr(FL_Z);
+}
 
-	if (!(z & BITS_0_15) && (!Fget(FL_C) || (Fget(FL_C) && !Fget(FL_V)))) {
+// -----------------------------------------------------------------------
+void alu_16_add(int16_t r, int16_t n, unsigned carry, int sign)
+{
+	if (sign < 0) n = -n;
+
+	int res = r + n + carry;
+	unsigned ures = (uint16_t) r + (uint16_t) n + carry;
+
+	// V is never implicitly cleared
+	if (((r ^ res) & BIT_0) && ((n+carry ^ res) & BIT_0)) {
+		Fset(FL_V);
+	}
+
+	if (res == 0) {
 		Fset(FL_Z);
+		Fclr(FL_M);
 	} else {
 		Fclr(FL_Z);
+		if (res < 0) {
+			Fset(FL_M);
+		} else {
+			Fclr(FL_M);
+		}
 	}
-}
-
-// -----------------------------------------------------------------------
-void alu_16_set_M(uint64_t z)
-{
-	// V needs to be set prior M
-	// set M if:
-	//  * minus and no overflow (just a plain negative number)
-	//  * OR not minus and overflow (number looks non-negative, but there is overflow, which means a negative number overflown)
-
-	if (((z & BIT_0) && !Fget(FL_V)) || (!(z & BIT_0) && Fget(FL_V))) {
-		Fset(FL_M);
-	} else {
-		Fclr(FL_M);
-	}
-}
-
-// -----------------------------------------------------------------------
-void alu_16_set_C(uint64_t z)
-{
-	// set C if bit on position -1 is set
-
-	if ((z & BIT_MINUS_1)) {
-		Fset(FL_C);
-	} else {
-		Fclr(FL_C);
-	}
-}
-
-// -----------------------------------------------------------------------
-void alu_16_set_V(uint64_t x, uint64_t y, uint64_t z)
-{
-	// set V if:
-	//  * both arguments were positive, and result is negative
-	//  * OR both arguments were negative, and result is positive
-
-	if (
-	   ( (x & BIT_0) &&  (y & BIT_0) && !(z & BIT_0))
-	|| (!(x & BIT_0) && !(y & BIT_0) &&  (z & BIT_0))
-	) {
-		Fset(FL_V);
-	} else {
-		Fclr(FL_V);
-	}
-}
-
-// -----------------------------------------------------------------------
-void alu_16_update_V(uint64_t x, uint64_t y, uint64_t z)
-{
-	// update V if it's not set AND:
-	//  * both arguments were positive, and result is negative
-	//  * OR both arguments were negative, and result is positive
-
-	if (
-	   ( (x & BIT_0) &&  (y & BIT_0) && !(z & BIT_0))
-	|| (!(x & BIT_0) && !(y & BIT_0) &&  (z & BIT_0))
-	) {
-		Fset(FL_V);
-	}
-}
-
-// -----------------------------------------------------------------------
-void alu_16_add(unsigned reg, uint16_t arg, unsigned carry, int sign)
-{
-	if (sign < 0) {
-		arg = -arg;
-	}
-
-	uint64_t res = regs[reg] + arg + carry;
-
-	alu_16_set_V(regs[reg], arg+carry, res);
-	alu_16_set_M(res);
-	alu_16_set_C(res);
-	alu_16_set_Z(res);
 
 	// 0-0 always sets carry
-	if ((sign < 0) && (regs[IR_A] == 0) && (N == 0)) {
-		Fset(FL_C);
-	}
-
-	reg_restrict_write(reg, (uint16_t) res);
-}
-
-// -----------------------------------------------------------------------
-void alu_16_neg(int reg, uint16_t carry)
-{
-	uint16_t a = regs[reg];
-	uint32_t res = (~a) + carry;
-
-	alu_16_set_V(~a, carry, res);
-	alu_16_set_M(res);
-	// -0 sets carry
-	if ((regs[IR_A] == 0) && (carry)) {
+	if ((ures & BIT_MINUS_1) || ((sign < 0) && (r == 0) && (n == 0))) {
 		Fset(FL_C);
 	} else {
 		Fclr(FL_C);
 	}
-	alu_16_set_Z(res);
-	reg_restrict_write(reg, res);
+
+	reg_restrict_write(IR_A, (uint16_t) res);
 }
 
 // -----------------------------------------------------------------------

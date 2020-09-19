@@ -220,19 +220,19 @@ void op_37_df()
 // -----------------------------------------------------------------------
 void op_aw()
 {
-	alu_16_add(IR_A, N, 0, 1);
+	alu_16_add(regs[IR_A], N, 0, 1);
 }
 
 // -----------------------------------------------------------------------
 void op_ac()
 {
-	alu_16_add(IR_A, N, Fget(FL_C), 1);
+	alu_16_add(regs[IR_A], N, Fget(FL_C), 1);
 }
 
 // -----------------------------------------------------------------------
 void op_sw()
 {
-	alu_16_add(IR_A, N, 0, -1);
+	alu_16_add(regs[IR_A], N, 0, -1);
 }
 
 // -----------------------------------------------------------------------
@@ -245,7 +245,7 @@ void op_cw()
 void op_or()
 {
 	uint16_t result = regs[IR_A] | N;
-	alu_16_set_Z(result);
+	alu_16_set_Z_bool(result);
 	reg_restrict_write(IR_A, result);
 }
 
@@ -256,7 +256,7 @@ void op_om()
 	if (cpu_mem_get(NB, N, &data)) {
 		data |= regs[IR_A];
 		if (cpu_mem_put(NB, N, data)) {
-			alu_16_set_Z(data);
+			alu_16_set_Z_bool(data);
 		}
 	}
 }
@@ -265,7 +265,7 @@ void op_om()
 void op_nr()
 {
 	uint16_t result = regs[IR_A] & N;
-	alu_16_set_Z(result);
+	alu_16_set_Z_bool(result);
 	reg_restrict_write(IR_A, result);
 }
 
@@ -276,7 +276,7 @@ void op_nm()
 	if (cpu_mem_get(NB, N, &data)) {
 		data &= regs[IR_A];
 		if (cpu_mem_put(NB, N, data)) {
-			alu_16_set_Z(data);
+			alu_16_set_Z_bool(data);
 		}
 	}
 }
@@ -285,7 +285,7 @@ void op_nm()
 void op_er()
 {
 	uint16_t result = regs[IR_A] & ~N;
-	alu_16_set_Z(result);
+	alu_16_set_Z_bool(result);
 	reg_restrict_write(IR_A, result);
 }
 
@@ -296,7 +296,7 @@ void op_em()
 	if (cpu_mem_get(NB, N, &data)) {
 		data &= ~regs[IR_A];
 		if (cpu_mem_put(NB, N, data)) {
-			alu_16_set_Z(data);
+			alu_16_set_Z_bool(data);
 		}
 	}
 }
@@ -305,7 +305,7 @@ void op_em()
 void op_xr()
 {
 	uint16_t result = regs[IR_A] ^ N;
-	alu_16_set_Z(result);
+	alu_16_set_Z_bool(result);
 	reg_restrict_write(IR_A, result);
 }
 
@@ -316,7 +316,7 @@ void op_xm()
 	if (cpu_mem_get(NB, N, &data)) {
 		data ^= regs[IR_A];
 		if (cpu_mem_put(NB, N, data)) {
-			alu_16_set_Z(data);
+			alu_16_set_Z_bool(data);
 		}
 	}
 }
@@ -358,7 +358,7 @@ void op_cb()
 // -----------------------------------------------------------------------
 void op_awt()
 {
-	alu_16_add(IR_A, N, 0, 1);
+	alu_16_add(regs[IR_A], N, 0, 1);
 }
 
 // -----------------------------------------------------------------------
@@ -504,14 +504,16 @@ void op_72_sxu()
 // -----------------------------------------------------------------------
 void op_72_nga()
 {
-	alu_16_neg(IR_A, 1);
+	alu_16_add(~regs[IR_A], 0, 1, 1);
 }
 
 // -----------------------------------------------------------------------
 void shift_left(uint16_t shift_in, int check_v)
 {
 	uint16_t result = regs[IR_A]<<1 | shift_in;
-	if (check_v) alu_16_update_V(regs[IR_A], regs[IR_A], result);
+	if (check_v && ((regs[IR_A] ^ result) & 0x8000)) {
+		Fset(FL_V);
+	}
 	if (regs[IR_A] & 0x8000) Fset(FL_Y);
 	else Fclr(FL_Y);
 	reg_restrict_write(IR_A, result);
@@ -584,7 +586,7 @@ void op_72_srz()
 void op_72_ngl()
 {
 	uint16_t result = ~regs[IR_A];
-	alu_16_set_Z(result);
+	alu_16_set_Z_bool(result);
 	regs[IR_A] = result;
 }
 
@@ -629,7 +631,7 @@ void op_72_sxl()
 // -----------------------------------------------------------------------
 void op_72_ngc()
 {
-	alu_16_neg(IR_A, Fget(FL_C));
+	alu_16_add(~regs[IR_A], 0, Fget(FL_C), 1);
 }
 
 // -----------------------------------------------------------------------
