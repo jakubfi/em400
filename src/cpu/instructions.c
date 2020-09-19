@@ -244,8 +244,9 @@ void op_cw()
 // -----------------------------------------------------------------------
 void op_or()
 {
-	reg_restrict_write(IR_A, regs[IR_A] | N);
-	alu_16_set_Z(regs[IR_A]);
+	uint16_t result = regs[IR_A] | N;
+	alu_16_set_Z(result);
+	reg_restrict_write(IR_A, result);
 }
 
 // -----------------------------------------------------------------------
@@ -263,8 +264,9 @@ void op_om()
 // -----------------------------------------------------------------------
 void op_nr()
 {
-	reg_restrict_write(IR_A, regs[IR_A] & N);
-	alu_16_set_Z(regs[IR_A]);
+	uint16_t result = regs[IR_A] & N;
+	alu_16_set_Z(result);
+	reg_restrict_write(IR_A, result);
 }
 
 // -----------------------------------------------------------------------
@@ -282,8 +284,9 @@ void op_nm()
 // -----------------------------------------------------------------------
 void op_er()
 {
-	reg_restrict_write(IR_A, regs[IR_A] & ~N);
-	alu_16_set_Z(regs[IR_A]);
+	uint16_t result = regs[IR_A] & ~N;
+	alu_16_set_Z(result);
+	reg_restrict_write(IR_A, result);
 }
 
 // -----------------------------------------------------------------------
@@ -301,8 +304,9 @@ void op_em()
 // -----------------------------------------------------------------------
 void op_xr()
 {
-	reg_restrict_write(IR_A, regs[IR_A] ^ N);
-	alu_16_set_Z(regs[IR_A]);
+	uint16_t result = regs[IR_A] ^ N;
+	alu_16_set_Z(result);
+	reg_restrict_write(IR_A, result);
 }
 
 // -----------------------------------------------------------------------
