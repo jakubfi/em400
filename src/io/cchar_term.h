@@ -37,6 +37,7 @@ struct cchar_unit_term_t {
 	int buf_len;
 	int empty_read;
 	pthread_mutex_t buf_mutex;
+	int ignore_lf;
 };
 
 // commands

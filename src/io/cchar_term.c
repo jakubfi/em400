@@ -46,6 +46,8 @@ struct cchar_unit_proto_t * cchar_term_create(em400_cfg *cfg, int ch_num, int de
 		goto fail;
 	}
 
+	unit->ignore_lf = cfg_fgetbool(cfg, "dev%i.%i:ignore_lf", ch_num, dev_num);
+
 	const char *transport = cfg_fgetstr(cfg, "dev%i.%i:transport", ch_num, dev_num);
 	if (!transport) {
 		LOGERR("Terminal %i.%i has no transport set.", ch_num, dev_num);
@@ -58,7 +60,7 @@ struct cchar_unit_proto_t * cchar_term_create(em400_cfg *cfg, int ch_num, int de
 			LOGERR("Failed to open TCP terminal on port %i.", port);
 			goto fail;
 		}
-		LOG(L_TERM, "Terminal (%s), port: %i", transport, port);
+		LOG(L_TERM, "Terminal (%s), port: %i. LF ignore = %s", transport, port, unit->ignore_lf ? "True" : "False");
 
 	} else if (!strcasecmp(transport, "serial")) {
 		const char * device = cfg_fgetstr(cfg, "dev%i.%i:device", ch_num, dev_num);
@@ -72,7 +74,7 @@ struct cchar_unit_proto_t * cchar_term_create(em400_cfg *cfg, int ch_num, int de
 			LOGERR("Failed to open serial terminal at %s, speed: %i.", device, speed);
 			goto fail;
 		}
-		LOG(L_TERM, "Terminal (%s), device: %s, speed: %i", transport, device, speed);
+		LOG(L_TERM, "Terminal (%s), device: %s, speed: %i. LF ignore = %s", transport, device, speed, unit->ignore_lf ? "True" : "False");
 
 	} else if (!strcasecmp(transport, "console")) {
 		if (em400_console == CONSOLE_DEBUGGER) {
@@ -89,7 +91,7 @@ struct cchar_unit_proto_t * cchar_term_create(em400_cfg *cfg, int ch_num, int de
 				goto fail;
 			}
 		}
-		fprintf(stderr, "Console connected as system terminal.\n");
+		fprintf(stderr, "Console connected as system terminal. LF ignore = %s\n", unit->ignore_lf ? "True" : "False");
 
 	} else {
 		LOGERR("Unknown terminal transport: %s.", transport);
@@ -173,17 +175,17 @@ void cchar_term_queue_char(struct cchar_unit_proto_t *unit, char data)
 // -----------------------------------------------------------------------
 void * cchar_term_worker(void *ptr)
 {
-	struct cchar_unit_proto_t *unit = (struct cchar_unit_proto_t *) ptr;
+	struct cchar_unit_term_t *unit = (struct cchar_unit_term_t *) ptr;
 	char data;
 	int res;
 
 	while (1) {
 		res = term_read(UNIT->term, &data, 1);
 		usleep(1000);
-		if ((res <= 0) || (data == 10)) {
+		if ((res <= 0) || ((data == 10) && unit->ignore_lf)) {
 			continue;
 		}
-		cchar_term_queue_char(unit, data);
+		cchar_term_queue_char((struct cchar_unit_proto_t *) unit, data);
 	}
 
 	pthread_exit(NULL);
