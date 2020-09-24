@@ -30,7 +30,7 @@ extern int ectl_yycolumn;
 
 %}
 
-%error-verbose
+%define parse.error verbose
 %locations
 
 %parse-param {struct ectl_est **tree}

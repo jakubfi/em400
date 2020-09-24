@@ -16,7 +16,7 @@
 //  51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 
 #include <inttypes.h>
-
+#include <assert.h>
 #include <emawp.h>
 
 #include "mem/mem.h"
@@ -71,7 +71,7 @@ void alu_16_add(int16_t r, int16_t n, unsigned carry, int sign)
 	unsigned ures = (uint16_t) r + (uint16_t) n + carry;
 
 	// V is never implicitly cleared
-	if (((r ^ res) & BIT_0) && ((n+carry ^ res) & BIT_0)) {
+	if (((r ^ res) & BIT_0) && (((n+carry) ^ res) & BIT_0)) {
 		Fset(FL_V);
 	}
 
@@ -105,42 +105,60 @@ void alu_16_add(int16_t r, int16_t n, unsigned carry, int sign)
 void awp_dispatch(int op, uint16_t arg)
 {
 	int res = 0;
-	uint16_t d[3];
+	uint16_t n[3];
 	uint16_t addr;
 
-	if (awp) {
-		if (cpu_mem_mget(QNB, arg, d, 3) != 3) return;
+	assert(op >= AWP_NRF0);
+	assert(op <= AWP_DF);
+
+	static const int awp_arg_count[] = {
+		1, // AWP_NRF0
+		1, // AWP_NRF1
+		1, // AWP_NRF2
+		1, // AWP_NRF3
+		2, // AWP_AD
+		2, // AWP_SD
+		1, // AWP_MW
+		1, // AWP_DW
+		3, // AWP_AF
+		3, // AWP_SF
+		3, // AWP_MF
+		3, // AWP_DF
+	};
+
+	if (awp_enabled) {
+		if (cpu_mem_mget(QNB, arg, n, awp_arg_count[op]) != awp_arg_count[op]) return;
 
 		switch (op) {
 			case AWP_NRF0:
 			case AWP_NRF1:
 			case AWP_NRF2:
 			case AWP_NRF3:
-				res = awp_float_norm(awp);
+				res = awp_float_norm(regs);
 				break;
 			case AWP_AD:
-				res = awp_dword_addsub(awp, d[0], d[1], AWP_OP_ADD);
+				res = awp_dword_addsub(regs, n, AWP_OP_ADD);
 				break;
 			case AWP_SD:
-				res = awp_dword_addsub(awp, d[0], d[1], AWP_OP_SUB);
+				res = awp_dword_addsub(regs, n, AWP_OP_SUB);
 				break;
 			case AWP_MW:
-				res = awp_dword_mul(awp, d[0]);
+				res = awp_dword_mul(regs, n[0]);
 				break;
 			case AWP_DW:
-				res = awp_dword_div(awp, d[0]);
+				res = awp_dword_div(regs, n[0]);
 				break;
 			case AWP_AF:
-				res = awp_float_addsub(awp, d[0], d[1], d[2], AWP_OP_ADD);
+				res = awp_float_addsub(regs, n, AWP_OP_ADD);
 				break;
 			case AWP_SF:
-				res = awp_float_addsub(awp, d[0], d[1], d[2], AWP_OP_SUB);
+				res = awp_float_addsub(regs, n, AWP_OP_SUB);
 				break;
 			case AWP_MF:
-				res = awp_float_mul(awp, d[0], d[1], d[2]);
+				res = awp_float_mul(regs, n);
 				break;
 			case AWP_DF:
-				res = awp_float_div(awp, d[0], d[1], d[2]);
+				res = awp_float_div(regs, n);
 				break;
 		}
 

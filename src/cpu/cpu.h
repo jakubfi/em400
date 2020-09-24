@@ -20,8 +20,6 @@
 
 #include <inttypes.h>
 
-#include <emawp.h>
-
 #include "cpu/flags.h"
 #include "cfg.h"
 
@@ -72,7 +70,7 @@ extern int cpu_mod_active;
 extern int cpu_mod_present;
 extern int cpu_user_io_illegal;
 
-extern struct awp *awp;
+extern int awp_enabled;
 
 int cpu_mem_get(int nb, uint16_t addr, uint16_t *data);
 int cpu_mem_put(int nb, uint16_t addr, uint16_t data);

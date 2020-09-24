@@ -73,7 +73,7 @@ static int nomem_stop;
 
 static int sound_enabled;
 
-struct awp *awp;
+int awp_enabled;
 
 // opcode table (instruction decoder decision table)
 struct iset_opcode *cpu_op_tab[0x10000];
@@ -248,11 +248,7 @@ int cpu_init(em400_cfg *cfg)
 {
 	int res;
 
-	int awp_enabled = cfg_getbool(cfg, "cpu:awp", CFG_DEFAULT_CPU_AWP);
-	if (awp_enabled) {
-		awp = awp_init(regs+0, regs+1, regs+2, regs+3);
-		if (!awp) return LOGERR("Failed to initialize AWP.");
-	}
+	awp_enabled = cfg_getbool(cfg, "cpu:awp", CFG_DEFAULT_CPU_AWP);
 
 	rKB = cfg_getint(cfg, "cpu:kb", CFG_DEFAULT_CPU_KB);
 
@@ -266,7 +262,6 @@ int cpu_init(em400_cfg *cfg)
 
 	res = iset_build(cpu_op_tab, cpu_user_io_illegal);
 	if (res != E_OK) {
-		awp_destroy(awp);
 		return LOGERR("Failed to build CPU instruction table.");
 	}
 
@@ -312,9 +307,6 @@ void cpu_shutdown()
 {
 	if (sound_enabled) {
 		buzzer_shutdown();
-	}
-	if (awp) {
-		awp_destroy(awp);
 	}
 }
 
