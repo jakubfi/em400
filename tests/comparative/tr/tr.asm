@@ -1,0 +1,102 @@
+
+	.cpu	mera400
+
+	.include cpu.inc
+	.include io.inc
+
+	uj	start
+
+imask:	.word	IMASK_ALL & ~(IMASK_CPU_H | IMASK_GROUP_L)
+
+dummy:	lip
+
+stack:	.res	11*4, 0xdead
+
+	.org	INTV
+	.res	32, dummy
+	.org	EXLV
+	.word	exlproc
+	.org	STACKP
+	.word	stack
+	.org	OS_START
+
+	.include kz.asm
+	.include stdio.asm
+	.include crc.asm
+	#include "stdio_macros.h"
+
+; ------------------------------------------------------------------------
+exlproc:
+	lj	crc16_cont
+	lip
+
+; ------------------------------------------------------------------------
+
+	.const	CH	15
+	.const	PC	CH\IO_CHAN | 0\IO_DEV
+uzdat_list:
+	.word	PC, -1
+
+;
+; OPIS TESTU:
+;
+; pole	dł.	opis
+; --------------------------------------------
+; N	1	długość testu w słowach
+; ARGS	1	ilość danych wejściowych w słowach
+; RES	1	ilość danych wyjściowych w słowach
+; PROG	N	program testu
+;
+; dane wejściowe i wyjściowe są tuż za ciałem testu
+;
+; WYKONANIE TESTU:
+;
+; zapis operacji: 1 - uruchom załadowany test, 2 - załaduj następny test
+; zapis ARGS danych wejściowych
+; odczyt RES danych wyjściowych
+;
+
+; ------------------------------------------------------------------------
+testlen:.res	1
+argcnt:	.res	1
+rescnt:	.res	1
+op:	.res	1
+
+	.const	TEST_END 0x0200
+
+; ------------------------------------------------------------------------
+; ------------------------------------------------------------------------
+; ------------------------------------------------------------------------
+start:
+	kz_init(CH, uzdat_list)
+	im	imask
+
+.test_load:
+	readw(testlen, PC, 1)
+	readw(argcnt, PC, 1)
+	readw(rescnt, PC, 1)
+	readw(testproc, PC, [testlen])
+
+.loop:
+	read(op, PC, 1)
+	lw	r1, TEST_END
+	cw	r1, [op]
+	je	.test_load
+
+	lwt	r1, 0
+	cw	r1, [argcnt]
+	jes	.noargs
+
+	md	[testlen]
+	readw(testproc, PC, [argcnt])
+.noargs:
+	lj	crc16_init
+
+	rj	r4, testproc
+
+	md	[testlen]
+	writew(testproc, PC, [rescnt])
+
+	uj	.loop
+
+testproc:
