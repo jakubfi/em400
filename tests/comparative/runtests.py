@@ -299,18 +299,21 @@ class ComparativeTest:
 
             count += 1;
 
-            i  = " ".join(["0x{:04x}".format(x) for x in args] or ["none"])
-            o1 = " ".join(["0x{:04x}".format(x) for x in outputs[0]])
-            o2 = " ".join(["0x{:04x}".format(x) for x in outputs[1]])
+            try:
+                i  = " ".join(["0x{:04x}".format(x) for x in args] or ["none"])
+                o1 = " ".join(["0x{:04x}".format(x) for x in outputs[0]])
+                o2 = " ".join(["0x{:04x}".format(x) for x in outputs[1]])
 
-            if outputs[0] == outputs[1]:
-                if self.verbose:
-                    print("OK: {} -> {}".format(i, o1))
-            else:
-                print("FAIL: input: {}".format(i))
-                print("    output1: {}".format(o1))
-                print("    output2: {}".format(o2))
-                failed += 1
+                if outputs[0] == outputs[1]:
+                    if self.verbose:
+                        print("OK: {} -> {}".format(i, o1))
+                else:
+                    print("FAIL: input: {}".format(i))
+                    print("    output1: {}".format(o1))
+                    print("    output2: {}".format(o2))
+                    failed += 1
+            except IndexError:
+                pass
 
             if not self.verbose and count % 10 == 0:
                 print("Processed: {}\r".format(count), end='', flush=True)
@@ -358,7 +361,7 @@ tcp.setblocking(True)
 kz_hw = KZ(s, echo_cancel=True, debug=False)
 kz_emu = KZ(tcp, echo_cancel=False, debug=False)
 
-c = ComparativeTest(kz_emu, kz_hw, limit=args.limit, verbose=args.verbose)
+c = ComparativeTest(None, kz_emu, limit=args.limit, verbose=args.verbose)
 tests_failed = 0
 tests_count = 0
 for test in args.test:

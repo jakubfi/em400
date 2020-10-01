@@ -18,8 +18,7 @@
 #ifndef CCHAR_TERM_CONS_H
 #define CCHAR_TERM_CONS_H
 
-#include <pthread.h>
-
+#include "io/dev/fdbridge.h"
 #include "io/cchar.h"
 #include "cfg.h"
 
@@ -27,16 +26,7 @@
 
 struct cchar_unit_term_t {
 	struct cchar_unit_proto_t proto;
-	struct term_t *term;
-
-	pthread_t worker;
-
-	char *buf;
-	int buf_wpos;
-	int buf_rpos;
-	int buf_len;
-	int empty_read;
-	pthread_mutex_t buf_mutex;
+	struct fdb *term;
 	int ignore_lf;
 };
 

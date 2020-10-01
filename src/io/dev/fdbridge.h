@@ -24,20 +24,19 @@
 extern "C" {
 #endif
 
-enum fdb_conditions { FDB_DATA, FDB_CLOSE, FDB_ERROR };
-
+struct fdb;
+enum fdb_conditions { FDB_READY, FDB_LOST };
 typedef int (*fdb_cb)(void *user_ctx, int condition);
 
-int fdb_init(unsigned fdcount);
-void fdb_destroy();
-
-int fdb_add_stdin(fdb_cb cb, void *user_ctx);
-int fdb_add_tcp(uint16_t port, fdb_cb cb, void *user_ctx);
-int fdb_add_serial(char *device, int speed, fdb_cb cb, void *user_ctx);
-void fdb_remove(int i);
-
-int fdb_read(int fdb, char *buf, int count);
-int fdb_write(int fdb, char *buf, int count);
+struct fdb * fdb_open_stdin();
+struct fdb * fdb_open_tcp(uint16_t port);
+struct fdb * fdb_open_serial(const char *device, int speed);
+int fdb_set_callback(struct fdb *fdb, fdb_cb cb, void *user_ctx);
+void fdb_set_speed(struct fdb *fdb, int speed);
+void fdb_reset(struct fdb *fdb);
+void fdb_close(struct fdb *fdb);
+int fdb_read(struct fdb *fdb);
+int fdb_write(struct fdb *fdb, unsigned char c);
 
 #ifdef __cplusplus
 }

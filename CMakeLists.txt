@@ -43,7 +43,6 @@ set(SOURCES_EM400
 
 	src/utils/utils.c
 	src/utils/elst.c
-	src/utils/fdbridge.c
 
 	src/cpu/instructions.c
 	src/cpu/clock.c
@@ -75,6 +74,7 @@ set(SOURCES_EM400
 	src/io/dev/puncher.c
 	src/io/dev/terminal.c
 	src/io/dev/printer.c
+	src/io/dev/fdbridge.c
 
 	src/io/mx/mx.c
 	src/io/mx/cmds.c

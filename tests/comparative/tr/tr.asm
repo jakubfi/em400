@@ -6,7 +6,7 @@
 
 	uj	start
 
-imask:	.word	IMASK_ALL & ~(IMASK_CPU_H | IMASK_GROUP_L)
+imask:	.word	IMASK_ALL
 
 dummy:	lip
 xpower:	hlt 077 ujs -2

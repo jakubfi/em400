@@ -1,0 +1,417 @@
+//  Copyright (c) 2018 Jakub Filipowicz <jakubf@gmail.com>
+//
+//  This program is free software; you can redistribute it and/or modify
+//  it under the terms of the GNU General Public License as published by
+//  the Free Software Foundation; either version 2 of the License, or
+//  (at your option) any later version.
+//
+//  This program is distributed in the hope that it will be useful,
+//  but WITHOUT ANY WARRANTY; without even the implied warranty of
+//  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+//  GNU General Public License for more details.
+//
+//  You should have received a copy of the GNU General Public License
+//  along with this program; if not, write to the Free Software
+//  Foundation, Inc.,
+//  51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
+
+#include <stdlib.h>
+#include <string.h>
+#include <stdio.h>
+#include <unistd.h>
+#include <sys/select.h>
+#include <sys/socket.h>
+#include <netinet/in.h>
+#include <arpa/inet.h>
+#include <fcntl.h>
+#include <pthread.h>
+#include <semaphore.h>
+#include <errno.h>
+
+#include "log.h"
+#include "utils/utils.h"
+#include "io/dev/fdbridge.h"
+
+enum fdb_fds {
+	FDB_FD_CTL_OUT,
+	FDB_FD_CTL_IN,
+	FDB_FD_FD,
+	FDB_FD_LISTEN,
+	FDB_FD_COUNT
+};
+
+struct fdb {
+	int data_read;
+	int data_write;
+	int type;
+	int sleep_us;
+	int fds[FDB_FD_COUNT];
+	struct sockaddr cliaddr;
+	fdb_cb cb;
+	void *user_ctx;
+	pthread_t loop_thread;
+	pthread_mutex_t data_mutex;
+	int awaiting_read;
+	int awaiting_write;
+};
+
+enum fd_types {
+	FD_SERIAL,
+	FD_TCP,
+	FD_FD,
+};
+
+static void * fdb_loop(void *ptr);
+
+// -----------------------------------------------------------------------
+static inline void fdb_quit(struct fdb *fdb)
+{
+	if (write(fdb->fds[FDB_FD_CTL_IN], "q", 1))
+	;
+}
+
+// -----------------------------------------------------------------------
+struct fdb * fdb_new(int type)
+{
+	struct fdb *fdb = calloc(1, sizeof(struct fdb));
+	if (!fdb) return NULL;
+	for (int i=0 ; i<FDB_FD_COUNT ; i++) {
+		fdb->fds[i] = -1;
+	}
+	fdb->data_read = -1;
+	fdb->data_write = -1;
+	fdb->type = type;
+
+	return fdb;
+}
+
+// -----------------------------------------------------------------------
+void fdb_reset(struct fdb *fdb)
+{
+	pthread_mutex_lock(&fdb->data_mutex);
+	fdb->data_read = -1;
+	fdb->data_write = -1;
+	fdb->awaiting_read = 0;
+	fdb->awaiting_write = 0;
+	pthread_mutex_unlock(&fdb->data_mutex);
+}
+
+// -----------------------------------------------------------------------
+void fdb_close(struct fdb *fdb)
+{
+	// quit the loop
+	fdb_quit(fdb);
+	pthread_join(fdb->loop_thread, NULL);
+
+	for (int i=0 ; i<FDB_FD_COUNT ; i++) {
+		if (fdb->fds[i] != -1) {
+			close(fdb->fds[i]);
+		}
+	}
+	free(fdb);
+}
+
+// -----------------------------------------------------------------------
+int fdb_set_callback(struct fdb *fdb, fdb_cb cb, void *user_ctx)
+{
+	if (!fdb) return -1;
+	fdb->cb = cb;
+	fdb->user_ctx = user_ctx;
+	return 0;
+}
+
+// -----------------------------------------------------------------------
+void fdb_set_speed(struct fdb *fdb, int speed)
+{
+	fdb->sleep_us = 10L * 1000 * 1000 / speed;
+}
+
+// -----------------------------------------------------------------------
+int fdb_manage(struct fdb *fdb)
+{
+	int res = pipe(fdb->fds);
+	if (res) {
+		return -1;
+	}
+
+	if (pthread_create(&fdb->loop_thread, NULL, fdb_loop, fdb)) {
+		close(fdb->fds[FDB_FD_CTL_IN]);
+		close(fdb->fds[FDB_FD_CTL_OUT]);
+		return -2;
+	}
+
+	return 0;
+}
+
+// -----------------------------------------------------------------------
+struct fdb * fdb_open_serial(const char *device, int speed)
+{
+	struct fdb *fdb = fdb_new(FD_SERIAL);
+	if (!fdb) return NULL;
+
+	fdb->fds[FDB_FD_FD] = serial_open(device, serial_int2speed(speed));
+	if (fdb->fds[FDB_FD_FD] < 0) {
+		free(fdb);
+		return NULL;
+	}
+
+	if (fdb_manage(fdb)) {
+		close(fdb->fds[FDB_FD_FD]);
+		free(fdb);
+		return NULL;
+	}
+
+	return fdb;
+}
+
+// -----------------------------------------------------------------------
+struct fdb * fdb_open_tcp(uint16_t port)
+{
+	struct fdb *fdb = fdb_new(FD_TCP);
+	if (!fdb) return NULL;
+
+	int res;
+
+	fdb->fds[FDB_FD_LISTEN] = socket(AF_INET, SOCK_STREAM, 0);
+	if (fdb->fds[FDB_FD_LISTEN] < 0) {
+		return NULL;
+	}
+
+	int flags = fcntl(fdb->fds[FDB_FD_LISTEN], F_GETFL, 0);
+	fcntl(fdb->fds[FDB_FD_LISTEN], F_SETFL, flags | O_NONBLOCK);
+	
+	int on = 1;
+	res = setsockopt(fdb->fds[FDB_FD_LISTEN], SOL_SOCKET, SO_REUSEADDR, &on, sizeof(on));
+	if (res < 0) {
+		close(fdb->fds[FDB_FD_LISTEN]);
+		return NULL;
+	}
+	
+	struct sockaddr_in servaddr;
+	servaddr.sin_family = AF_INET;
+	servaddr.sin_addr.s_addr = htonl(INADDR_ANY);
+	servaddr.sin_port = htons(port);
+
+	res = bind(fdb->fds[FDB_FD_LISTEN], (struct sockaddr*) &servaddr, sizeof(servaddr));
+	if (res < 0) {
+		close(fdb->fds[FDB_FD_LISTEN]);
+		return NULL;
+	}
+
+	res = listen(fdb->fds[FDB_FD_LISTEN], 1);
+	if (res < 0) {
+		close(fdb->fds[FDB_FD_LISTEN]);
+		return NULL;
+	}
+
+	if (fdb_manage(fdb)) {
+		close(fdb->fds[FDB_FD_LISTEN]);
+		free(fdb);
+		return NULL;
+	}
+
+	return fdb;
+}
+
+// -----------------------------------------------------------------------
+struct fdb * fdb_open_stdin()
+{
+	struct fdb *fdb = fdb_new(FD_FD);
+	if (!fdb) return NULL;
+
+	fdb->fds[FDB_FD_FD] = 0;
+
+	if (fdb_manage(fdb)) {
+		free(fdb);
+		return NULL;
+	}
+
+	return fdb;
+}
+
+// -----------------------------------------------------------------------
+static int serve_control(struct fdb *fdb)
+{
+	char c;
+	char data;
+	if (read(fdb->fds[FDB_FD_CTL_OUT], &c, 1) == 1) {
+		switch (c) {
+			case 'q':
+				return -1;
+			case 'w':
+				pthread_mutex_lock(&fdb->data_mutex);
+				data = fdb->data_write;
+				pthread_mutex_unlock(&fdb->data_mutex);
+				if (fdb->fds[FDB_FD_FD] >= 0) {
+					write(fdb->fds[FDB_FD_FD], &data, 1);
+					LOG(L_TERM, "data written to the line: #%02x", (uint8_t) data);
+//					tcdrain(fdb->fds[FDB_FD_FD]);
+				} else {
+					LOG(L_TERM, "no client connected, data lost: #%02x", (uint8_t) data);
+				}
+				if (fdb->sleep_us > 0) {
+					LOG(L_TERM, "transmission delay, sleeping %i us", fdb->sleep_us);
+					usleep(fdb->sleep_us);
+				}
+				pthread_mutex_lock(&fdb->data_mutex);
+				fdb->data_write = -1;
+				int awaiting_write = fdb->awaiting_write;
+				pthread_mutex_unlock(&fdb->data_mutex);
+				LOG(L_TERM, "data written");
+				if (awaiting_write) {
+					LOG(L_TERM, "notify client: transmitter ready");
+					fdb->cb(fdb->user_ctx, FDB_READY);
+				}
+				break;
+			default:
+				break;
+		}
+	}
+	return 0;
+}
+
+// -----------------------------------------------------------------------
+static void serve_conn(struct fdb *fdb)
+{
+	socklen_t clilen = sizeof(fdb->cliaddr);
+	int fd = accept(fdb->fds[FDB_FD_LISTEN], &fdb->cliaddr, &clilen);
+
+	if (fdb->fds[FDB_FD_FD] >= 0) {
+		// client already connected - reject connection
+		const char reject[] = "Endpoint already connected. Bye.\n";
+		if (write(fd, reject, strlen(reject)))
+		;
+		close(fd);
+	} else {
+		// accept new TCP connection
+		fdb->fds[FDB_FD_FD] = fd;
+	}
+}
+
+// -----------------------------------------------------------------------
+static void serve_data(struct fdb *fdb)
+{
+	unsigned char data;
+	int res;
+
+	res = read(fdb->fds[FDB_FD_FD], &data, 1);
+	if (res == 0) {
+		LOG(L_TERM, "client disconnected, empty read");
+		close(fdb->fds[FDB_FD_FD]);
+		fdb->fds[FDB_FD_FD] = -2;
+	} else {
+		LOG(L_TERM, "data read from the line: #%02x", (uint8_t) data);
+		if (fdb->sleep_us > 0) {
+			LOG(L_TERM, "transmission delay, sleeping %i us", fdb->sleep_us);
+			usleep(fdb->sleep_us);
+		}
+		pthread_mutex_lock(&fdb->data_mutex);
+		if (fdb->data_read == -1) {
+			// buffer empty, can receive data
+			fdb->data_read = data;
+			int awaiting_read = fdb->awaiting_read;
+			pthread_mutex_unlock(&fdb->data_mutex);
+			LOG(L_TERM, "data ready to be read");
+			if (awaiting_read) {
+				LOG(L_TERM, "notify client: receiver ready");
+				fdb->cb(fdb->user_ctx, FDB_READY);
+			}
+		} else {
+			// buffer full, notify the CPU
+			pthread_mutex_unlock(&fdb->data_mutex);
+			LOG(L_TERM, "notify client: buffer full");
+			fdb->cb(fdb->user_ctx, FDB_LOST);
+		}
+	}
+}
+
+// -----------------------------------------------------------------------
+static void * fdb_loop(void *ptr)
+{
+	struct fdb *fdb = (struct fdb *) ptr;
+	fd_set rfds;
+	int maxfd = 0;
+
+	while (1) {
+		FD_ZERO(&rfds);
+		for (int i=0 ; i<FDB_FD_COUNT ; i++) {
+			if ((fdb->fds[i] != -1) && (i != FDB_FD_CTL_IN)) {
+				FD_SET(fdb->fds[i], &rfds);
+				if (fdb->fds[i] > maxfd) maxfd = fdb->fds[i];
+			}
+		}
+
+		int retval = select(maxfd+1, &rfds, NULL, NULL, NULL);
+		if (retval > 0) {
+			// fd needs attention
+			for (int i=FDB_FD_CTL_OUT ; i<FDB_FD_COUNT ; i++) {
+				if ((fdb->fds[i] != -1) && FD_ISSET(fdb->fds[i], &rfds)) {
+					switch (i) {
+						case FDB_FD_CTL_OUT:
+							if (serve_control(fdb)) {
+								goto loop_quit;
+							}
+							break;
+						case FDB_FD_FD:
+							serve_data(fdb);
+							break;
+						case FDB_FD_LISTEN:
+							serve_conn(fdb);
+							break;
+						default:
+							// action on unknown FD
+							break;
+					}
+				}
+			}
+		} else if (retval == 0) {
+			// timeout - unused
+		} else {
+			// error
+		}
+	}
+
+loop_quit:
+	pthread_exit(NULL);
+}
+
+// -----------------------------------------------------------------------
+int fdb_read(struct fdb *fdb)
+{
+	pthread_mutex_lock(&fdb->data_mutex);
+	if (fdb->data_read >= 0) {
+		fdb->awaiting_read = 0;
+		int tmp = fdb->data_read;
+		fdb->data_read = -1;
+		pthread_mutex_unlock(&fdb->data_mutex);
+		return tmp;
+	} else {
+		fdb->awaiting_read = 1;
+		pthread_mutex_unlock(&fdb->data_mutex);
+		return -1;
+	}
+}
+
+// -----------------------------------------------------------------------
+int fdb_write(struct fdb *fdb, unsigned char c)
+{
+	pthread_mutex_lock(&fdb->data_mutex);
+	fdb->awaiting_read = 0; // ?
+	if (fdb->data_write >= 0) {
+		fdb->awaiting_write = 1;
+		pthread_mutex_unlock(&fdb->data_mutex);
+		return -1;
+	} else {
+		fdb->awaiting_write = 0;
+		fdb->data_write = c;
+		pthread_mutex_unlock(&fdb->data_mutex);
+		int res = write(fdb->fds[FDB_FD_CTL_IN], "w", 1);
+		if (res != 1) {
+			return 0;
+		} else {
+			return 0;
+		}
+	}
+}
+
+// vim: tabstop=4 shiftwidth=4 autoindent
