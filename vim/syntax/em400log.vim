@@ -55,7 +55,7 @@ if version >= 508 || !exists("did_em400log_syntax_inits")
 
 	HiLink em400logREG		Label
 	HiLink em400logMEM		Special
-	HiLink em400logCPU		Label
+"	HiLink em400logCPU		Label
 	HiLink em400logOP		Label
 	HiLink em400logINT		Constant
 
