@@ -9,11 +9,17 @@
 imask:	.word	IMASK_ALL & ~(IMASK_CPU_H | IMASK_GROUP_L)
 
 dummy:	lip
+xpower:	hlt 077 ujs -2
+xparity:hlt 076 ujs -2
+xnomem:	hlt 075 ujs -2
+x2cpu:	hlt 074 ujs -2
+xpower2:hlt 073 ujs -2
 
 stack:	.res	11*4, 0xdead
 
 	.org	INTV
-	.res	32, dummy
+	.word	xpower, xparity, xnomem, x2cpu, xpower2
+	.res	27, dummy
 	.org	EXLV
 	.word	exlproc
 	.org	STACKP
