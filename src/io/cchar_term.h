@@ -27,7 +27,6 @@
 struct cchar_unit_term_t {
 	struct cchar_unit_proto_t proto;
 	struct fdb *term;
-	int ignore_lf;
 };
 
 // commands

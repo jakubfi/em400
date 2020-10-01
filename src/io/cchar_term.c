@@ -44,7 +44,6 @@ struct cchar_unit_proto_t * cchar_term_create(em400_cfg *cfg, int ch_num, int de
 		return NULL;
 	}
 
-	unit->ignore_lf = cfg_fgetbool(cfg, "dev%i.%i:ignore_lf", ch_num, dev_num);
 	const char *transport = cfg_fgetstr(cfg, "dev%i.%i:transport", ch_num, dev_num);
 	const int speed = cfg_fgetint(cfg, "dev%i.%i:speed", ch_num, dev_num);
 	const char * device = cfg_fgetstr(cfg, "dev%i.%i:device", ch_num, dev_num);
