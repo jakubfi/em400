@@ -115,7 +115,7 @@ int fdb_callback(void *ctx, int condition)
 
 	switch (condition) {
 		case FDB_READY:
-			LOG(L_TERM, "line ready, sending interrupt");
+			LOG(L_TERM, "line data ready");
 			cchar_int(unit->chan, unit->num, CCHAR_TERM_INT_READY);
 			break;
 		case FDB_LOST:

@@ -15,6 +15,8 @@
 //  Foundation, Inc.,
 //  51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 
+#define _GNU_SOURCE
+
 #include <stdlib.h>
 #include <string.h>
 #include <stdio.h>
@@ -140,6 +142,8 @@ int fdb_manage(struct fdb *fdb)
 		return -2;
 	}
 
+	pthread_setname_np(fdb->loop_thread, "fdbr");
+
 	return 0;
 }
 
@@ -233,7 +237,7 @@ struct fdb * fdb_open_stdin()
 static int serve_control(struct fdb *fdb)
 {
 	char c;
-	char data;
+	unsigned char data;
 	if (read(fdb->fds[FDB_FD_CTL_OUT], &c, 1) == 1) {
 		switch (c) {
 			case 'q':
@@ -244,22 +248,19 @@ static int serve_control(struct fdb *fdb)
 				pthread_mutex_unlock(&fdb->data_mutex);
 				if (fdb->fds[FDB_FD_FD] >= 0) {
 					write(fdb->fds[FDB_FD_FD], &data, 1);
-					LOG(L_TERM, "data written to the line: #%02x", (uint8_t) data);
-//					tcdrain(fdb->fds[FDB_FD_FD]);
+					LOG(L_TERM, "transmitting data: %i (#%02x)", data, data);
 				} else {
-					LOG(L_TERM, "no client connected, data lost: #%02x", (uint8_t) data);
+					LOG(L_TERM, "no client connected, data lost: %i (#%02x)", data, data);
 				}
 				if (fdb->sleep_us > 0) {
-					LOG(L_TERM, "transmission delay, sleeping %i us", fdb->sleep_us);
 					usleep(fdb->sleep_us);
 				}
 				pthread_mutex_lock(&fdb->data_mutex);
 				fdb->data_write = -1;
 				int awaiting_write = fdb->awaiting_write;
 				pthread_mutex_unlock(&fdb->data_mutex);
-				LOG(L_TERM, "data written");
+				LOG(L_TERM, "data transmitted");
 				if (awaiting_write) {
-					LOG(L_TERM, "notify client: transmitter ready");
 					fdb->cb(fdb->user_ctx, FDB_READY);
 				}
 				break;
@@ -300,9 +301,8 @@ static void serve_data(struct fdb *fdb)
 		close(fdb->fds[FDB_FD_FD]);
 		fdb->fds[FDB_FD_FD] = -2;
 	} else {
-		LOG(L_TERM, "data read from the line: #%02x", (uint8_t) data);
+		LOG(L_TERM, "receiver active");
 		if (fdb->sleep_us > 0) {
-			LOG(L_TERM, "transmission delay, sleeping %i us", fdb->sleep_us);
 			usleep(fdb->sleep_us);
 		}
 		pthread_mutex_lock(&fdb->data_mutex);
@@ -311,15 +311,13 @@ static void serve_data(struct fdb *fdb)
 			fdb->data_read = data;
 			int awaiting_read = fdb->awaiting_read;
 			pthread_mutex_unlock(&fdb->data_mutex);
-			LOG(L_TERM, "data ready to be read");
+			LOG(L_TERM, "data ready: %i (#%02x)", data, data);
 			if (awaiting_read) {
-				LOG(L_TERM, "notify client: receiver ready");
 				fdb->cb(fdb->user_ctx, FDB_READY);
 			}
 		} else {
 			// buffer full, notify the CPU
 			pthread_mutex_unlock(&fdb->data_mutex);
-			LOG(L_TERM, "notify client: buffer full");
 			fdb->cb(fdb->user_ctx, FDB_LOST);
 		}
 	}
