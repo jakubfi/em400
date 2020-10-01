@@ -34,6 +34,8 @@
 #include "utils/utils.h"
 #include "io/dev/fdbridge.h"
 
+#define FDB_BUF_SIZE 64
+
 enum fdb_fds {
 	FDB_FD_CTL_OUT,
 	FDB_FD_CTL_IN,
@@ -43,8 +45,12 @@ enum fdb_fds {
 };
 
 struct fdb {
-	int data_read;
-	int data_write;
+	char rdbuf[FDB_BUF_SIZE];
+	char *rdbuf_r;
+	char *rdbuf_w;
+	char *rdbuf_end;
+	int rdbuf_count;
+	int wrbuf;
 	int type;
 	int sleep_us;
 	int fds[FDB_FD_COUNT];
@@ -66,10 +72,75 @@ enum fd_types {
 static void * fdb_loop(void *ptr);
 
 // -----------------------------------------------------------------------
-static inline void fdb_quit(struct fdb *fdb)
+int buf_get(struct fdb *fdb)
+{
+	int data;
+
+	pthread_mutex_lock(&fdb->data_mutex);
+	if (fdb->rdbuf_count <= 0) {
+		data = -1;
+		fdb->awaiting_read = 1;
+	} else {
+		fdb->awaiting_read = 0;
+		data = (unsigned char) *fdb->rdbuf_r;
+		fdb->rdbuf_r++;
+		fdb->rdbuf_count--;
+		if (fdb->rdbuf_r > fdb->rdbuf_end) {
+			fdb->rdbuf_r = fdb->rdbuf;
+		}
+	}
+	pthread_mutex_unlock(&fdb->data_mutex);
+
+	return data;
+}
+
+// -----------------------------------------------------------------------
+int buf_append(struct fdb *fdb, char c)
+{
+	int ret = 0;
+	int awaiting_read = 0;
+
+	pthread_mutex_lock(&fdb->data_mutex);
+	if (fdb->rdbuf_count >= FDB_BUF_SIZE) {
+		ret = -1;
+	} else {
+		*fdb->rdbuf_w = c;
+		fdb->rdbuf_w++;
+		fdb->rdbuf_count++;
+		if (fdb->rdbuf_w > fdb->rdbuf_end) {
+			fdb->rdbuf_w = fdb->rdbuf;
+		}
+		awaiting_read = fdb->awaiting_read;
+	}
+	pthread_mutex_unlock(&fdb->data_mutex);
+
+	if (fdb->rdbuf_count > 1) {
+		LOG(L_TERM, "write buffer fill: %i\n", fdb->rdbuf_count);
+	}
+
+	if (awaiting_read) {
+		fdb->cb(fdb->user_ctx, FDB_READY);
+	}
+
+	return ret;
+}
+
+// -----------------------------------------------------------------------
+void fdb_quit(struct fdb *fdb)
 {
 	if (write(fdb->fds[FDB_FD_CTL_IN], "q", 1))
 	;
+}
+
+// -----------------------------------------------------------------------
+void fdb_reset(struct fdb *fdb)
+{
+	pthread_mutex_lock(&fdb->data_mutex);
+	fdb->wrbuf = -1;
+	fdb->awaiting_read = 0;
+	fdb->awaiting_write = 0;
+	fdb->rdbuf_r = fdb->rdbuf_w = fdb->rdbuf;
+	pthread_mutex_unlock(&fdb->data_mutex);
 }
 
 // -----------------------------------------------------------------------
@@ -80,22 +151,11 @@ struct fdb * fdb_new(int type)
 	for (int i=0 ; i<FDB_FD_COUNT ; i++) {
 		fdb->fds[i] = -1;
 	}
-	fdb->data_read = -1;
-	fdb->data_write = -1;
 	fdb->type = type;
+	fdb->rdbuf_end = fdb->rdbuf + FDB_BUF_SIZE-1;
+	fdb_reset(fdb);
 
 	return fdb;
-}
-
-// -----------------------------------------------------------------------
-void fdb_reset(struct fdb *fdb)
-{
-	pthread_mutex_lock(&fdb->data_mutex);
-	fdb->data_read = -1;
-	fdb->data_write = -1;
-	fdb->awaiting_read = 0;
-	fdb->awaiting_write = 0;
-	pthread_mutex_unlock(&fdb->data_mutex);
 }
 
 // -----------------------------------------------------------------------
@@ -244,7 +304,7 @@ static int serve_control(struct fdb *fdb)
 				return -1;
 			case 'w':
 				pthread_mutex_lock(&fdb->data_mutex);
-				data = fdb->data_write;
+				data = fdb->wrbuf;
 				pthread_mutex_unlock(&fdb->data_mutex);
 				if (fdb->fds[FDB_FD_FD] >= 0) {
 					write(fdb->fds[FDB_FD_FD], &data, 1);
@@ -256,7 +316,7 @@ static int serve_control(struct fdb *fdb)
 					usleep(fdb->sleep_us);
 				}
 				pthread_mutex_lock(&fdb->data_mutex);
-				fdb->data_write = -1;
+				fdb->wrbuf = -1;
 				int awaiting_write = fdb->awaiting_write;
 				pthread_mutex_unlock(&fdb->data_mutex);
 				LOG(L_TERM, "data transmitted");
@@ -305,19 +365,9 @@ static void serve_data(struct fdb *fdb)
 		if (fdb->sleep_us > 0) {
 			usleep(fdb->sleep_us);
 		}
-		pthread_mutex_lock(&fdb->data_mutex);
-		if (fdb->data_read == -1) {
-			// buffer empty, can receive data
-			fdb->data_read = data;
-			int awaiting_read = fdb->awaiting_read;
-			pthread_mutex_unlock(&fdb->data_mutex);
+		if (!buf_append(fdb, data)) {
 			LOG(L_TERM, "data ready: %i (#%02x)", data, data);
-			if (awaiting_read) {
-				fdb->cb(fdb->user_ctx, FDB_READY);
-			}
 		} else {
-			// buffer full, notify the CPU
-			pthread_mutex_unlock(&fdb->data_mutex);
 			fdb->cb(fdb->user_ctx, FDB_LOST);
 		}
 	}
@@ -376,32 +426,21 @@ loop_quit:
 // -----------------------------------------------------------------------
 int fdb_read(struct fdb *fdb)
 {
-	pthread_mutex_lock(&fdb->data_mutex);
-	if (fdb->data_read >= 0) {
-		fdb->awaiting_read = 0;
-		int tmp = fdb->data_read;
-		fdb->data_read = -1;
-		pthread_mutex_unlock(&fdb->data_mutex);
-		return tmp;
-	} else {
-		fdb->awaiting_read = 1;
-		pthread_mutex_unlock(&fdb->data_mutex);
-		return -1;
-	}
+	return buf_get(fdb);
 }
 
 // -----------------------------------------------------------------------
 int fdb_write(struct fdb *fdb, unsigned char c)
 {
 	pthread_mutex_lock(&fdb->data_mutex);
-	fdb->awaiting_read = 0; // ?
-	if (fdb->data_write >= 0) {
+	fdb->awaiting_read = 0;
+	if (fdb->wrbuf >= 0) {
 		fdb->awaiting_write = 1;
 		pthread_mutex_unlock(&fdb->data_mutex);
 		return -1;
 	} else {
 		fdb->awaiting_write = 0;
-		fdb->data_write = c;
+		fdb->wrbuf = c;
 		pthread_mutex_unlock(&fdb->data_mutex);
 		int res = write(fdb->fds[FDB_FD_CTL_IN], "w", 1);
 		if (res != 1) {
