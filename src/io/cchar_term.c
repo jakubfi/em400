@@ -138,7 +138,7 @@ int cchar_term_read(struct cchar_unit_term_t *unit, uint16_t *r_arg)
 		return IO_EN;
 	}
 
-	if (data >= 32) {
+	if ((data >= 32) && (data < 127)) {
 		LOG(L_TERM, "terminal read: %i (%c)", data, data);
 	} else {
 		LOG(L_TERM, "terminal read: %i (#%02x)", data, data);
@@ -158,7 +158,7 @@ int cchar_term_write(struct cchar_unit_term_t *unit, uint16_t *r_arg)
 		return IO_EN;
 	}
 
-	if (data >= 32) {
+	if ((data >= 32) && (data < 127)) {
 		LOG(L_TERM, "terminal write: %i (%c)", data, data);
 	} else {
 		LOG(L_TERM, "terminal write: %i (#%02x)", data, data);
