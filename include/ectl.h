@@ -106,6 +106,7 @@ enum ectl_log_components {
 	L_EM4H,
 	L_ECTL,
 	L_FPGA,
+	L_FDBR,
 	L_ALL,
 	L_COUNT,
 };

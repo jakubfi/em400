@@ -32,6 +32,7 @@ syn match em400logCCHR			"^[ \t]*CCHR |.*"
 syn match em400logCMEM			"^[ \t]*CMEM |.*"
 
 syn match em400logTERM			"^[ \t]*TERM |.*"
+syn match em400logFDBR			"^[ \t]*FDBR |.*"
 syn match em400log9425			"^[ \t]*9425 |.*"
 syn match em400logWNCH			"^[ \t]*WNCH |.*"
 syn match em400logFLOP			"^[ \t]*FLOP |.*"
@@ -67,6 +68,7 @@ if version >= 508 || !exists("did_em400log_syntax_inits")
 	HiLink em400logCMEM		Type
 
 	HiLink em400logTERM		PreProc
+	HiLink em400logFDBR		PreProc
 	HiLink em400log9425		PreProc
 	HiLink em400logWNCH		PreProc
 	HiLink em400logFLOP		PreProc

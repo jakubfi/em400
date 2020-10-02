@@ -115,7 +115,7 @@ int buf_append(struct fdb *fdb, char c)
 	pthread_mutex_unlock(&fdb->data_mutex);
 
 	if (fdb->rdbuf_count > 1) {
-		LOG(L_TERM, "write buffer fill: %i\n", fdb->rdbuf_count);
+		LOG(L_FDBR, "write buffer fill: %i\n", fdb->rdbuf_count);
 	}
 
 	if (awaiting_read) {
@@ -308,9 +308,9 @@ static int serve_control(struct fdb *fdb)
 				pthread_mutex_unlock(&fdb->data_mutex);
 				if (fdb->fds[FDB_FD_FD] >= 0) {
 					write(fdb->fds[FDB_FD_FD], &data, 1);
-					LOG(L_TERM, "transmitting data: %i (#%02x)", data, data);
+					LOG(L_FDBR, "transmitting data: %i (#%02x)", data, data);
 				} else {
-					LOG(L_TERM, "no client connected, data lost: %i (#%02x)", data, data);
+					LOG(L_FDBR, "no client connected, data lost: %i (#%02x)", data, data);
 				}
 				if (fdb->sleep_us > 0) {
 					usleep(fdb->sleep_us);
@@ -319,7 +319,7 @@ static int serve_control(struct fdb *fdb)
 				fdb->wrbuf = -1;
 				int awaiting_write = fdb->awaiting_write;
 				pthread_mutex_unlock(&fdb->data_mutex);
-				LOG(L_TERM, "data transmitted");
+				LOG(L_FDBR, "data transmitted");
 				if (awaiting_write) {
 					fdb->cb(fdb->user_ctx, FDB_READY);
 				}
@@ -357,16 +357,16 @@ static void serve_data(struct fdb *fdb)
 
 	res = read(fdb->fds[FDB_FD_FD], &data, 1);
 	if (res == 0) {
-		LOG(L_TERM, "client disconnected, empty read");
+		LOG(L_FDBR, "client disconnected, empty read");
 		close(fdb->fds[FDB_FD_FD]);
 		fdb->fds[FDB_FD_FD] = -2;
 	} else {
-		LOG(L_TERM, "receiver active");
+		LOG(L_FDBR, "receiver active");
 		if (fdb->sleep_us > 0) {
 			usleep(fdb->sleep_us);
 		}
 		if (!buf_append(fdb, data)) {
-			LOG(L_TERM, "data ready: %i (#%02x)", data, data);
+			LOG(L_FDBR, "data ready: %i (#%02x)", data, data);
 		} else {
 			fdb->cb(fdb->user_ctx, FDB_LOST);
 		}

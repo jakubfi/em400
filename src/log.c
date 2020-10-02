@@ -65,6 +65,7 @@ static const char * log_component_names[] = {
 	"EM4H",
 	"ECTL",
 	"FPGA",
+	"FDBR",
 	"ALL",
 };
 
