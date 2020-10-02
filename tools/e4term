@@ -1,0 +1,26 @@
+#!/usr/bin/env bash
+
+TERM_OPTS="-icanon -icrnl -ctlecho"
+
+HOST=127.0.0.1
+if [ $# == 1 ] ; then
+	PORT=$1
+elif [ $# == 2 ] ; then
+	HOST=$1
+	PORT=$2
+else
+	echo "Usage: $0 [host] <port>"
+	exit 1
+fi
+
+function stty_restore()
+{
+	stty $STTY_SAVE
+}
+
+STTY_SAVE=$(stty -g)
+trap stty_restore INT
+
+stty $TERM_OPTS
+nc $HOST $PORT
+stty_restore

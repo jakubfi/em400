@@ -201,6 +201,14 @@ install(TARGETS em400
 	RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
 )
 
+install(FILES
+	${CMAKE_SOURCE_DIR}/tools/e4term
+	PERMISSIONS OWNER_EXECUTE GROUP_EXECUTE WORLD_EXECUTE
+				OWNER_READ GROUP_READ WORLD_READ
+				OWNER_WRITE
+	DESTINATION ${CMAKE_INSTALL_BINDIR}
+)
+
 # ---- Target: emitool ---------------------------------------------------
 
 add_executable(emitool
