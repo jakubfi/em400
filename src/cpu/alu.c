@@ -63,38 +63,82 @@ void alu_16_set_Z_bool(uint16_t z)
 }
 
 // -----------------------------------------------------------------------
-void alu_16_add(int16_t r, int16_t n, unsigned carry, int sign)
+void alu_16_add(int16_t r, int16_t n, unsigned carry)
 {
-	if (sign < 0) n = -n;
-
-	int res = r + n + carry;
+	int sres = r + n + carry;
 	unsigned ures = (uint16_t) r + (uint16_t) n + carry;
 
-	// V is never implicitly cleared
-	if (((r ^ res) & BIT_0) && (((n+carry) ^ res) & BIT_0)) {
-		Fset(FL_V);
-	}
-
-	if (res == 0) {
+	if (sres == 0) {
 		Fset(FL_Z);
-		Fclr(FL_M);
 	} else {
 		Fclr(FL_Z);
-		if (res < 0) {
-			Fset(FL_M);
-		} else {
-			Fclr(FL_M);
-		}
 	}
 
-	// NOTE: x-0 always sets carry
-	if ((ures & BIT_MINUS_1) || ((sign < 0) && (n == 0))) {
+	if (ures & BIT_MINUS_1) {
 		Fset(FL_C);
 	} else {
 		Fclr(FL_C);
 	}
 
-	reg_restrict_write(IR_A, (uint16_t) res);
+	// Straight from the schematic:
+	// Set M when one of the following is true:
+	//  * C=1 and n[0] == r[0]
+	//  * C=0 and n[0] != r[0]
+	int diff_bit_zero = ((r^n) & BIT_0) >> 15;
+	if (Fget(FL_C) != diff_bit_zero) {
+		Fset(FL_M);
+	} else {
+		Fclr(FL_M);
+	}
+
+	// NOTE: straight from the schematic
+	if (((ures & BIT_0) >> 15) ^ Fget(FL_M)) {
+		Fset(FL_V);
+	} else {
+		// V is never cleared
+	}
+
+	reg_restrict_write(IR_A, (uint16_t) ures);
+}
+
+
+// -----------------------------------------------------------------------
+void alu_16_sub(int16_t r, int16_t n)
+{
+	int sres = r - n;
+	unsigned ures = (uint16_t) r + (uint16_t) -n;
+
+	if (sres == 0) {
+		Fset(FL_Z);
+	} else {
+		Fclr(FL_Z);
+	}
+
+	// NOTE: x-0 always sets carry
+	if ((ures & BIT_MINUS_1) || (n == 0)) {
+		Fset(FL_C);
+	} else {
+		Fclr(FL_C);
+	}
+
+	// straight from the schematic
+	// Set M when one of the following is true:
+	//  * C=1 and n[0] != r[0]
+	//  * C=0 and n[0] == r[0]
+	int diff_bit_zero = ((r^n) & BIT_0) >> 15;
+	if (Fget(FL_C) == diff_bit_zero) {
+		Fset(FL_M);
+	} else {
+		Fclr(FL_M);
+	}
+
+	// NOTE: straight from the schematic
+	if (((ures & BIT_0) >> 15) ^ Fget(FL_M)) {
+		Fset(FL_V);
+	} else {
+		// V is never cleared
+	}
+	reg_restrict_write(IR_A, (uint16_t) ures);
 }
 
 // -----------------------------------------------------------------------

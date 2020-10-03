@@ -26,7 +26,8 @@ enum alu_awp_ops {
 	AWP_AF, AWP_SF, AWP_MF, AWP_DF,
 };
 
-void alu_16_add(int16_t r, int16_t n, unsigned carry, int sign);
+void alu_16_add(int16_t r, int16_t n, unsigned carry);
+void alu_16_sub(int16_t r, int16_t n);
 void alu_16_set_LEG(int32_t a, int32_t b);
 void alu_16_set_Z_bool(uint16_t z);
 
