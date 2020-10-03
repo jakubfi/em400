@@ -11,6 +11,7 @@ import time
 import signal
 import socket
 import argparse
+import struct
 
 # ------------------------------------------------------------------------
 class KZ():
@@ -64,6 +65,9 @@ class KZ():
             print("Read byte: {}".format(x))
         return x
 
+    def read_bytes(self, num):
+        return self._read(num)
+
     def write_byte(self, x):
         if self.debug:
             print("Write byte: {}".format(x))
@@ -112,9 +116,9 @@ class EMAS:
 
 # ------------------------------------------------------------------------
 class Seq:
-    def __init__(self, words, sequence):
+    def __init__(self, datatype, sequence):
+        self.datatype = datatype
         self.sequence = sequence
-        self.words = words
         self.infinite = False
         self.current = None
         self.reset()
@@ -122,32 +126,36 @@ class Seq:
     def reset(self):
         self.i = iter(self.sequence)
 
-    def __iter__(self):
-        return self
-
-    def __next__(self):
+    def advance(self):
         self.current = next(self.i)
-        return self.current
+
+    def __str__(self):
+        return str(self.datatype(self.current))
+
+    def __bytes__(self):
+        return bencode(self.current, self.datatype.size*2)
 
 # ------------------------------------------------------------------------
 class Rnd:
-    def __init__(self, start, end, words, bitmask=-1):
+    def __init__(self, datatype, start, end, bitmask=-1):
+        self.datatype = datatype
         self.bitmask = bitmask
         self.start = start
         self.end = end
-        self.words = words
         self.infinite = True
         self.current = None
 
     def reset(self):
         pass
 
-    def __iter__(self):
-        return self
-
-    def __next__(self):
+    def advance(self):
         self.current = random.randrange(self.start, self.end) & self.bitmask
-        return self.current
+
+    def __str__(self):
+        return str(self.datatype(self.current))
+
+    def __bytes__(self):
+        return bencode(self.current, self.datatype.size*2)
 
 # ------------------------------------------------------------------------
 class ArgProduct:
@@ -156,12 +164,9 @@ class ArgProduct:
         self.limit = limit
 
     def len(self):
-        return sum([x.words for x in self.iterators])
+        return sum([x.datatype.size for x in self.iterators])
 
-    def __iter__(self):
-        return self
-
-    def __next__(self):
+    def advance(self):
         if self.limit is not None and self.limit <= 0:
             raise StopIteration
 
@@ -173,33 +178,136 @@ class ArgProduct:
         finite_seqs = False
         for i in reversed(self.iterators):  # start from least significant
             if i.infinite:
-                result.append(next(i))
+                i.advance()
             else:
                 finite_seqs = True
                 if i.current is None or need_next:
                     try:
-                        result.append(next(i))
+                        i.advance()
                         need_next = False
                     except StopIteration:
                         i.reset()
-                        result.append(next(i))
+                        i.advance()
                         need_next = True
-                else:
-                    result.append(i.current)
         if need_next and finite_seqs:
             raise StopIteration
         if self.limit is not None:
             self.limit -= 1
 
-        result.reverse()
-        return result
+    def __str__(self):
+        data = ', '.join([str(i) for i in self.iterators])
+        return data
 
-    def as_bytes(self):
-        return b''.join([bencode(i.current, i.words*2) for i in self.iterators])
+    def __bytes__(self):
+        return b''.join([bytes(i) for i in self.iterators])
+
+# ------------------------------------------------------------------------
+class Word:
+    size = 1
+
+    def __init__(self, val):
+        self.val = val
+
+    @classmethod
+    def from_bytes(cls, b):
+        val = struct.unpack(">H", b)[0]
+        return cls(val)
+
+    def __str__(self):
+        return "{:04x}".format(self.val)
+
+# ------------------------------------------------------------------------
+class Int:
+    size = 1
+
+    def __init__(self, val):
+        self.val = val
+
+    @classmethod
+    def from_bytes(cls, b):
+        val = struct.unpack(">h", b)[0]
+        return cls(val)
+
+    def __str__(self):
+        return str(self.val)
+
+# ------------------------------------------------------------------------
+class Dword:
+    size = 2
+
+    def __init__(self, val):
+        self.val = val
+
+    @classmethod
+    def from_bytes(cls, b):
+        v = struct.unpack(">I", b)[0]
+        return cls(v)
+
+    def __str__(self):
+        return "{:08x}".format(self.val)
+
+# ------------------------------------------------------------------------
+class Dint:
+    size = 2
+
+    def __init__(self, val):
+        self.val = val
+
+    @classmethod
+    def from_bytes(cls, b):
+        v = struct.unpack(">i", b)[0]
+        return cls(v)
+
+    def __str__(self):
+        return str(self.val)
+
+# ------------------------------------------------------------------------
+class Flags:
+    size = 1
+
+    def __init__(self, val):
+        self.val = val
+
+    @classmethod
+    def from_bytes(cls, b):
+        v = struct.unpack(">H", b)[0]
+        return cls(v)
+
+    def __str__(self):
+        flags = "ZMVCLEGYX1234567"
+        out = ""
+        for i in range(0, 16):
+            if (self.val >> (15-i)) & 1:
+                out += flags[i]
+        if out == "":
+            out = "none"
+        return "{}".format(out)
+
+# ------------------------------------------------------------------------
+class Float:
+    size = 3
+
+    def __init__(self, val):
+        self.val = val
+        w1 = val & 0xffff
+        w2 = (val>>16) & 0xffff
+        w3 = (val>>32) & 0xffff
+        self.m = (w1<<24) | (w2<<8) | (w3 >> 8) & 0xff
+        self.e = w3 & 0xff
+
+    @classmethod
+    def from_bytes(cls, b):
+        t = struct.unpack(">HHH", b)
+        v = (t[0] << 32) | (t[1] << 16) | (t[2])
+        return cls(v)
+
+    def __str__(self):
+        return ".{:010x} * 2^{:02x}".format(self.m, self.e)
 
 # ------------------------------------------------------------------------
 class ComparativeTest:
     def __init__(self, sys_a, sys_b, limit=None, verbose=0):
+        self.result = []
         self.systems = [x for x in [sys_a, sys_b] if x is not None]
         self.global_limit = limit
         self.verbose = verbose
@@ -211,6 +319,7 @@ class ComparativeTest:
         self.args = None
         self.limit = None
         self.output_size = None
+        self.result = []
 
     def load(self, filename):
         self.reset()
@@ -222,6 +331,7 @@ class ComparativeTest:
         
         f = open(self.filename, "r")
         inputs = []
+
         for line in f:
             if "INPUT" in line:
                 try:
@@ -233,7 +343,7 @@ class ComparativeTest:
             if "OUTPUT" in line:
                 try:
                     s = re.search(";[ \t]*OUTPUT[ \t]+(.*)", line)
-                    self.output_size = int(s.group(1))
+                    self.result.append(eval((s.group(1))))
                 except:
                     raise Exception("Malformed OUTPUT: %s" % line)
 
@@ -245,6 +355,7 @@ class ComparativeTest:
                     raise Exception("Malformed LIMIT: %s" % line)
 
         limit = self.global_limit if self.global_limit is not None else self.limit
+        self.output_size = sum([x.size for x in self.result])
         self.args = ArgProduct(limit, inputs)
         f.close()
 
@@ -276,9 +387,8 @@ class ComparativeTest:
                 break
 
             try:
-                args = next(self.args)
+                self.args.advance()
             except StopIteration:
-                args = []
                 if not self.args.len():
                     finished = True
                     pass
@@ -288,32 +398,33 @@ class ComparativeTest:
             for s in self.systems:
                 s.write_byte(1)
                 if self.args.len():
-                    s.write_bytes(self.args.as_bytes())
+                    s.write_bytes(bytes(self.args))
 
-            outputs = []
+            result = []
             for s in self.systems:
-                output = []
-                for i in range(0, self.output_size):
-                    output.append(s.read_word())
-                outputs.append(output)
+                system_result = []
+                for i in self.result:
+                    result_raw = s.read_bytes(i.size*2)
+                    system_result.append(i.from_bytes(result_raw))
+                result.append(system_result)
 
             count += 1;
 
-            try:
-                i  = " ".join(["0x{:04x}".format(x) for x in args] or ["none"])
-                o1 = " ".join(["0x{:04x}".format(x) for x in outputs[0]])
-                o2 = " ".join(["0x{:04x}".format(x) for x in outputs[1]])
+            i  = str(self.args)
+            o1 = ", ".join([str(x) for x in result[0]])
+            if len(self.systems) == 2:
+                o2 = ", ".join([str(x) for x in result[1]])
 
-                if outputs[0] == outputs[1]:
+                if [x.val for x in result[0]] == [x.val for x in result[1]]:
                     if self.verbose:
-                        print("OK: {} -> {}".format(i, o1))
+                        print("OK: [{}]  ->  [{}]".format(i, o1))
                 else:
-                    print("FAIL: input: {}".format(i))
-                    print("    output1: {}".format(o1))
-                    print("    output2: {}".format(o2))
+                    print("FAIL: input: [{}]".format(i))
+                    print("         HW: [{}]".format(o1))
+                    print("        EMU: [{}]".format(o2))
                     failed += 1
-            except IndexError:
-                pass
+            elif self.verbose:
+                print("OK: {}  ->  {}".format(i, o1))
 
             if not self.verbose and count % 10 == 0:
                 print("Processed: {}\r".format(count), end='', flush=True)
@@ -361,7 +472,7 @@ tcp.setblocking(True)
 kz_hw = KZ(s, echo_cancel=True, debug=False)
 kz_emu = KZ(tcp, echo_cancel=False, debug=False)
 
-c = ComparativeTest(None, kz_emu, limit=args.limit, verbose=args.verbose)
+c = ComparativeTest(kz_hw, kz_emu, limit=args.limit, verbose=args.verbose)
 tests_failed = 0
 tests_count = 0
 for test in args.test:

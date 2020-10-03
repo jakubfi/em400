@@ -1,5 +1,5 @@
-; INPUT Seq(1, range(0, 65536))
-; OUTPUT 1
+; INPUT Seq(Int, range(-32768, 32767))
+; OUTPUT Int
 
 	ric	r7
 	awt	r7, data-.

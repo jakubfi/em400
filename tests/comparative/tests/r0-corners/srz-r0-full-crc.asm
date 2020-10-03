@@ -1,4 +1,4 @@
-; OUTPUT 1
+; OUTPUT Word
 
 	rws	r4, return
 

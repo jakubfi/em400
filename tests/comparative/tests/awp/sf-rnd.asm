@@ -1,12 +1,10 @@
-; LIMIT 500
-; INPUT Rnd(0, 65536, 1)
-; INPUT Rnd(0, 65536, 1)
-; INPUT Rnd(0, 65536, 1)
-; INPUT Rnd(0, 65536, 1)
-; INPUT Rnd(0, 65536, 1)
-; INPUT Rnd(0, 65536, 1)
-; INPUT Rnd(0, 65536, 1)
-; OUTPUT 5
+; LIMIT 200
+; INPUT Rnd(Flags, 0, 65536)
+; INPUT Rnd(Float, 0, 65536**3-1)
+; INPUT Rnd(Float, 0, 65536**3-1)
+; OUTPUT Flags
+; OUTPUT Float
+; OUTPUT Word
 
 	ric	r7
 	awt	r7, data-.
