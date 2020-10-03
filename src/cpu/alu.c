@@ -87,8 +87,8 @@ void alu_16_add(int16_t r, int16_t n, unsigned carry, int sign)
 		}
 	}
 
-	// 0-0 always sets carry
-	if ((ures & BIT_MINUS_1) || ((sign < 0) && (r == 0) && (n == 0))) {
+	// NOTE: x-0 always sets carry
+	if ((ures & BIT_MINUS_1) || ((sign < 0) && (n == 0))) {
 		Fset(FL_C);
 	} else {
 		Fclr(FL_C);
