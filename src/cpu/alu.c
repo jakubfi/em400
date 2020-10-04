@@ -181,10 +181,10 @@ void awp_dispatch(int op, uint16_t arg)
 				res = awp_float_norm(regs);
 				break;
 			case AWP_AD:
-				res = awp_dword_addsub(regs, n, AWP_OP_ADD);
+				res = awp_dword_add(regs, n);
 				break;
 			case AWP_SD:
-				res = awp_dword_addsub(regs, n, AWP_OP_SUB);
+				res = awp_dword_sub(regs, n);
 				break;
 			case AWP_MW:
 				res = awp_dword_mul(regs, n[0]);
