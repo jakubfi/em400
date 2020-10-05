@@ -1,3 +1,4 @@
+; INPUT Seq(Flags, [x<<12 for x in range(0,16)])
 ; INPUT Seq(Int, [0, 1, -1, 32767, -32768])
 ; INPUT Seq(Int, [0, 1, -1, 32767, -32768])
 ; OUTPUT Flags
@@ -6,9 +7,9 @@
 	ric	r7
 	awt	r7, data-.
 
-	lw	r0, ?C
-	lw	r1, [r7]
-	lw	r2, [r7+1]
+	lw	r0, [r7]
+	lw	r1, [r7+1]
+	lw	r2, [r7+2]
 
 	ac	r1, r2
 
