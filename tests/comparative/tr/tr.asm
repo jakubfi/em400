@@ -14,12 +14,13 @@ xparity:hlt 076 ujs -2
 xnomem:	hlt 075 ujs -2
 x2cpu:	hlt 074 ujs -2
 xpower2:hlt 073 ujs -2
+xill:	hlt 072 ujs -2
 
 stack:	.res	11*4, 0xdead
 
 	.org	INTV
-	.word	xpower, xparity, xnomem, x2cpu, xpower2
-	.res	27, dummy
+	.word	xpower, xparity, xnomem, x2cpu, xpower2, dummy, xill
+	.res	25, dummy
 	.org	EXLV
 	.word	exlproc
 	.org	STACKP
