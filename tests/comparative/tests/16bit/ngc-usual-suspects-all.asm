@@ -3,9 +3,6 @@
 ; OUTPUT Flags
 ; OUTPUT Int
 
-	ric	r7
-	awt	r7, data-.
-
 	lw	r0, [r7]
 	lw	r1, [r7+1]
 

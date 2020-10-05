@@ -4,9 +4,6 @@
 ; OUTPUT Flags
 ; OUTPUT Dint
 
-	ric	r7
-	awt	r7, data-.
-
 	lw	r0, [r7]
 	ld	r7+1
 

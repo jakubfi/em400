@@ -5,12 +5,6 @@
 ; OUTPUT Float
 ; OUTPUT Word
 
-	ric	r7
-	awt	r7, data-.
-
-	rz	r7+100		; clear interrupts
-	fi	r7+100
-
 	lw	r0, [r7]	; load r0
 
 	lf	r7+1		; load floating point argument

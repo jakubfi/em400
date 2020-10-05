@@ -2,9 +2,6 @@
 
 	rws	r4, return
 
-	ric	r7
-	awt	r7, data-.
-
 	lw	r6, 0		; start from the value 0
 loop:
 	lw	r0, r6		; load current value

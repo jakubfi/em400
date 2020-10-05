@@ -5,9 +5,6 @@
 ; OUTPUT Flags
 ; OUTPUT Dint
 
-	ric	r7
-	awt	r7, data-.
-
 	lw	r0, [r7]	; load r0
 	lw	r2, [r7+1]	; load r2
 	mw	r7+2		; execute operation

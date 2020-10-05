@@ -7,6 +7,8 @@
 	uj	start
 
 imask:	.word	IMASK_ALL
+imask_zero:
+	.word	0
 
 dummy:	lip
 xpower:	hlt 077 ujs -2
@@ -99,7 +101,14 @@ start:
 .noargs:
 	lj	crc16_init
 
+	im	imask_zero
+	fi	imask_zero
+	md	[testlen]
+	lw	r7, testproc
+
 	rj	r4, testproc
+
+	im	imask
 
 	md	[testlen]
 	writew(testproc, PC, [rescnt])

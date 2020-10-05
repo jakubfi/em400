@@ -6,9 +6,6 @@
 ; OUTPUT Float
 ; OUTPUT Word
 
-	ric	r7
-	awt	r7, data-.
-
 	lw	r0, [r7]	; load r0
 
 	lf	r7+4		; normalize mem arg
@@ -17,9 +14,6 @@
 
 	lf	r7+1		; load and normalize r arg
 	nrf
-
-	rz	r7+100		; clear interrupts
-	fi	r7+100
 
 	af	r7+4		; execute operation
 
