@@ -14,7 +14,7 @@ find_package(FLEX REQUIRED)
 find_package(Threads REQUIRED)
 find_package(emdas REQUIRED)
 find_package(emcrk REQUIRED)
-find_package(emawp 2.0 REQUIRED)
+find_package(emawp 3.0 REQUIRED)
 find_library(MATH_LIBRARY m)
 find_library(RT_LIBRARY rt)
 
