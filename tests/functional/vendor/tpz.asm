@@ -30,45 +30,50 @@ init:	mcl
 
 ; ------------------------------------------------------------------------
 mask:	.word	IMASK_ALL
-status:	.word	0
+fp_test:
+	.word	0
 
 ; ------------------------------------------------------------------------
-fxp_ofx:lwt	r5, 0
+fxp_ofx:lwt	r5, 0		; nadmiar dzielenia stałoprzecinkowego
 	ujs	fpint
-fp_ufx:	lw	r5, 0x20
+fp_ufx:	lw	r5, 0x20	; podmiar zmiennoprzecinkowy
 	ujs	fpint
-fp_ofx:	lw	r5, 0x40
+fp_ofx:	lw	r5, 0x40	; nadmiar zmiennoprzecinkowy
 	ujs	fpint
-div0x:	lw	r5, 0x60
+div0x:	lw	r5, 0x60	; błąd danych zmiennoprzecinkowych lub dzielenie przez zero
 
 ; ------------------------------------------------------------------------
 fpint:	lw	r6, [stackp]
 	awt	r6, -4
-	lw	r0, [r6+1]
-	jxs	f1
-	ujs	f2
-f1:	lw	r7, 0x60
+	lw	r0, [r6+1]	; r0 = r0
+	jxs	expected_int
+	ujs	unexpected_int
+expected_int:
+	lw	r7, 0x60
 	bs	r0, r5
-	ujs	f3
-fret:	lw	r7, [r6]
+	ujs	check_int
+continue_test:
+	lw	r7, [r6]
 	lw	r0, [r6+1]
 	rw	r6, stackp
 	im	mask
 	uj	r7+1
-f2:	lws	r7, status
-	cwt	r7, 0
+unexpected_int:
+	lws	r7, fp_test
+	cwt	r7, 0		; =0 - testy stałoprzecinkowe, !=0 - zmiennoprzecinkowe
 	jes	fphlt1
-	hlt	ERR_CODE
-	ujs	fret
-fphlt1:	hlt	ERR_CODE
-	ujs	fret
-f3:	lws	r7, status
+	hlt	ERR_CODE	; @ 0x002f
+	ujs	continue_test
+fphlt1:	hlt	ERR_CODE	; @ 0x0031
+	ujs	continue_test
+check_int:
+	lws	r7, fp_test
 	cwt	r7, 0
 	jes	fphlt2
-	hlt	ERR_CODE
-	ujs	fret
-fphlt2:	hlt	ERR_CODE
-	ujs	fret
+	hlt	ERR_CODE	; @ 0x0036
+	ujs	continue_test
+fphlt2:	hlt	ERR_CODE	; @ 0x0038
+	ujs	continue_test
 
 ; ------------------------------------------------------------------------
 	.org 0x40
@@ -148,7 +153,7 @@ powerx:	lws	r3, stackp
 
 ; ------------------------------------------------------------------------
 test_ad:
-	rz	status
+	rz	fp_test
 	lw	r4, data_ad
 loop1:	lw	r0, [r4]
 	ld	r4+2
@@ -282,7 +287,7 @@ exi4b:	lw	r0, [tmp]
 
 ; ------------------------------------------------------------------------
 test_af:
-	ib	status
+	ib	fp_test
 	lw	r4, data_af
 loop5:	lw	r0, [r4]
 	lf	r4+2
