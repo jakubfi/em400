@@ -1,6 +1,6 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 
-#  Copyright (c) 2013 Jakub Filipowicz <jakubf@gmail.com>
+#  Copyright (c) 2013, 2021 Jakub Filipowicz <jakubf@gmail.com>
 #
 #  This program is free software; you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
@@ -49,7 +49,7 @@ class DirEntry:
             st.st_atime = int(time.time())
             st.st_mtime = st.st_atime
             st.st_ctime = st.st_atime
-            st.st_mode = stat.S_IFDIR | 0755
+            st.st_mode = stat.S_IFDIR | 0o755
 
             self.entries.append(DirEntry(T_SPEC, 0, 0, ".", st))
             self.entries.append(DirEntry(T_SPEC, 0, 0, "..", st))
@@ -92,7 +92,7 @@ class C5Fuse(fuse.Fuse):
         st.st_atime = int(time.time())
         st.st_mtime = st.st_atime
         st.st_ctime = st.st_atime
-        st.st_mode = stat.S_IFDIR | 0755
+        st.st_mode = stat.S_IFDIR | 0o755
         st.st_size = 1
         st.st_nlink = 2
 
@@ -107,7 +107,7 @@ class C5Fuse(fuse.Fuse):
                 st.st_atime = int(time.time())
                 st.st_mtime = st.st_atime
                 st.st_ctime = st.st_atime
-                st.st_mode = stat.S_IFDIR | 0755
+                st.st_mode = stat.S_IFDIR | 0o755
                 st.st_size = self.c5fs.dicdic[i].subdirs
                 st.st_nlink = 2
 
@@ -121,7 +121,7 @@ class C5Fuse(fuse.Fuse):
                 st.st_atime = int(time.time())
                 st.st_mtime = st.st_atime
                 st.st_ctime = st.st_atime
-                st.st_mode = stat.S_IFREG | 0644
+                st.st_mode = stat.S_IFREG | 0o644
                 st.st_size = self.c5fs.fildic[i].size * 512
                 st.st_nlink = 1
 
@@ -163,7 +163,7 @@ class C5Fuse(fuse.Fuse):
 # ------------------------------------------------------------------------
 
 if len(sys.argv) < 3:
-    print "Usage: c5fuse.py image:offset[:label_offset] mountpoint "
+    print("Usage: c5fuse.py image:offset[:label_offset] mountpoint ")
     sys.exit(1)
 
 o = sys.argv[1].split(':')
@@ -177,6 +177,4 @@ fs = C5Fuse()
 fs.parse(errex=1)
 fs.main()
 
-
 # vim: tabstop=4 expandtab shiftwidth=4 softtabstop=4
-
