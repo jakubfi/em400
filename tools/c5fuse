@@ -163,15 +163,19 @@ class C5Fuse(fuse.Fuse):
 # ------------------------------------------------------------------------
 
 if len(sys.argv) < 3:
-    print("Usage: c5fuse.py image:offset[:label_offset] mountpoint ")
+    print("Usage: c5fuse image:start_sector[:label_offset] mountpoint ")
     sys.exit(1)
 
 o = sys.argv[1].split(':')
 image = o[0]
-offset = int(o[1])
+offset = 26
 label_offset = 0
-if len(o) == 3:
-    label_offset = int(o[2])
+
+try:
+    offset += 512 * int(o[1])
+    label_offset = 512 * int(o[2])
+except IndexError:
+    pass
 
 fs = C5Fuse()
 fs.parse(errex=1)

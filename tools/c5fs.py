@@ -103,7 +103,7 @@ class C5FS:
 
     # --------------------------------------------------------------------
     def read_label(self):
-        data = wload(self.image, self.offset+self.label_offset, 17)
+        data = wload(self.image, self.offset + self.label_offset, 17)
         self.label = r40_str(data[0:1])
         self.dicdic_start = data[1]
         self.fildic_start = data[2]
@@ -117,7 +117,7 @@ class C5FS:
     # --------------------------------------------------------------------
     def read_dicdic(self):
         dicdic_size = 256 * (self.fildic_start - self.dicdic_start)
-        data = wload(self.image, self.offset + self.dicdic_start, dicdic_size)
+        data = wload(self.image, self.offset + 512 * self.dicdic_start, dicdic_size)
 
         self.dicdic = {}
         # DICDIC entries start at 8th word in first DICDIC sector
@@ -145,7 +145,7 @@ class C5FS:
     # --------------------------------------------------------------------
     def read_fildic(self):
         fildic_size = 256 * (self.map_start - self.fildic_start)
-        data = wload(self.image, self.offset + self.fildic_start, fildic_size)
+        data = wload(self.image, self.offset + 512 * self.fildic_start, fildic_size)
 
         self.fildic = {}
         # FILDIC starts at the beginning of first sector
@@ -191,7 +191,7 @@ class C5FS:
     # --------------------------------------------------------------------
     def get_file(self, pos):
         name = "%s.%s" % (self.fildic[pos].name, self.fildic[pos].ext)
-        start = 512 * (self.offset + self.fildic[pos].start)
+        start = self.offset + 512 * self.fildic[pos].start
         size = 512 * (self.fildic[pos].size)
 
         fin = open(self.image, "rb")

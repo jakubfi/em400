@@ -32,9 +32,9 @@ def r40_str(words):
     return ''.join(chars)
 
 # ------------------------------------------------------------------------
-def wload(ifile, sector, ilen):
+def wload(ifile, offset, ilen):
     f = open(ifile, "rb")
-    f.seek(sector * 512)
+    f.seek(offset)
     odata = []
     pos = 0
     while pos < ilen:
