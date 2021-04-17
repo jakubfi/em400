@@ -104,13 +104,13 @@ class C5FS:
     # --------------------------------------------------------------------
     def read_label(self):
         data = wload(self.image, self.offset + self.label_offset, 17)
-        self.label = r40_str(data[0:1])
+        self.label = r40_str(data[0:1]).strip()
         self.dicdic_start = data[1]
         self.fildic_start = data[2]
         self.map_start = data[3]
         self.map_end = data[4]
         self.disk_end = data[5]
-        self.disk_name = r40_str(data[6:8]).lower()
+        self.disk_name = r40_str(data[6:8]).strip()
         self.init_date = "%i-%i-%i" % (data[8], data[9], data[10])
         self.init_date_time = "%i-%i-%i %i:%i:%i" % (data[11], data[12], data[13], data[14], data[15], data[16])
 
