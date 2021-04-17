@@ -1,5 +1,5 @@
-#!/usr/bin/python
-# -*- coding: UTF-8 -*-
+#!/usr/bin/env python3
+
 #  Copyright (c) 2013 Jakub Filipowicz <jakubf@gmail.com>
 #
 #  This program is free software; you can redistribute it and/or modify
@@ -45,7 +45,7 @@ class WordConf:
 
         bitlen = bit_end - bit_start + 1
 
-        if self.conf.has_key(key):
+        if key in self.conf:
             raise KeyError("Key '%s' alredy defined" % key)
         if bit_end < bit_start:
             raise ValueError("Starting bit > ending bit")
@@ -103,7 +103,7 @@ class WordConf:
         return self.get(self.keys[key_id])
 
     # --------------------------------------------------------------------
-    def next(self):
+    def __next__(self):
         if (self.pos > len(self.conf)-1):
             raise StopIteration
 
@@ -130,34 +130,34 @@ class M400Conf:
 
         self.config = {}
 
-        self.config["sys1"] = self.parse_sys1(self.data[04])
-        self.config["multix"] = self.parse_multix(self.data[05])
-        self.config["sys2"] = self.parse_sys2(self.data[06])
-        self.config["sys3"] = self.parse_sys3(self.data[07])
+        self.config["sys1"] = self.parse_sys1(self.data[0o4])
+        self.config["multix"] = self.parse_multix(self.data[0o5])
+        self.config["sys2"] = self.parse_sys2(self.data[0o6])
+        self.config["sys3"] = self.parse_sys3(self.data[0o7])
 
         for i in range(0, 8):
-           self.config["mem%i"%i] = self.parse_mem(self.data[010+i])
+           self.config["mem%i"%i] = self.parse_mem(self.data[0o10+i])
 
         for i in range(0, 16):
-            self.config["disk%i"%i] = self.parse_disk(self.data[020+i])
+            self.config["disk%i"%i] = self.parse_disk(self.data[0o20+i])
 
         for i in range(0, 4):
-            self.config["tape%i"%i] = self.parse_tapes(self.data[040+i])
+            self.config["tape%i"%i] = self.parse_tapes(self.data[0o40+i])
 
-        self.config["io1"] = self.parse_io1(self.data[044])
-        self.config["io2"] = self.parse_io2(self.data[045])
-        self.config["io3"] = self.parse_io3(self.data[046])
-        self.config["io4"] = self.parse_io4(self.data[047])
-        self.config["io5"] = self.parse_io5(self.data[050])
-        self.config["io6"] = self.parse_io6(self.data[051])
-        self.config["io7"] = self.parse_io7(self.data[052])
-        self.config["io8"] = self.parse_io8(self.data[053])
-        self.config["rtc"] = self.parse_rtc(self.data[056])
-        self.config["mon"] = self.parse_mon(self.data[057])
-        self.config["oprq"] = self.parse_oprq(self.data[060])
+        self.config["io1"] = self.parse_io1(self.data[0o44])
+        self.config["io2"] = self.parse_io2(self.data[0o45])
+        self.config["io3"] = self.parse_io3(self.data[0o46])
+        self.config["io4"] = self.parse_io4(self.data[0o47])
+        self.config["io5"] = self.parse_io5(self.data[0o50])
+        self.config["io6"] = self.parse_io6(self.data[0o51])
+        self.config["io7"] = self.parse_io7(self.data[0o52])
+        self.config["io8"] = self.parse_io8(self.data[0o53])
+        self.config["rtc"] = self.parse_rtc(self.data[0o56])
+        self.config["mon"] = self.parse_mon(self.data[0o57])
+        self.config["oprq"] = self.parse_oprq(self.data[0o60])
 
         for i in range(0, 15):
-            self.config["char%i"%i] = self.parse_char(self.data[061+i])
+            self.config["char%i"%i] = self.parse_char(self.data[0o61+i])
 
     # --------------------------------------------------------------------
     def sections(self):
@@ -357,18 +357,18 @@ elif len(sys.argv) == 2:
     image = sys.argv[1]
     offset = 0
 else:
-    print "Usage: m4konf.py <image> [offset]"
+    print("Usage: m4konf.py <image> [offset]")
     sys.exit(1)
 
 try:
     m4c = M400Conf(image, offset)
-except Exception, e:
-    print "Cannot load system configuration: %s" % str(e)
+except Exception as e:
+    print( "Cannot load system configuration: %s" % str(e))
     sys.exit(1)
 
 while True:
     try:
-        command = raw_input("KONF> ").split()
+        command = input("KONF> ").split()
         cmd = command[0]
         args = command[1:]
     except EOFError:
@@ -382,13 +382,13 @@ while True:
         break
 
     elif cmd == "sections":
-        print sorted(m4c.sections())
+        print(sorted(m4c.sections()))
 
     elif cmd == "print":
         try:
             section = args[0]
         except:
-            print "  Use: print <section>|all"
+            print("  Use: print <section>|all")
             continue
 
         if section == 'all':
@@ -397,15 +397,15 @@ while True:
             sections = [ section ]
 
         for s in sections:
-            print "[%s]" % s
+            print("[%s]" % s)
             try:
                 for name, desc, val, dval in m4c.config[s]:
-                    print "  %-7s = %-3i   # %s = %s" % (name, val, desc, dval)
+                    print("  %-7s = %-3i   # %s = %s" % (name, val, desc, dval))
             except ValueError:
-                print "  Disabled"
+                print("  Disabled")
                 continue
             except:
-                print "  No section: %s" % s
+                print("  No section: %s" % s)
 
     elif cmd == "set":
         try:
@@ -413,18 +413,18 @@ while True:
             key = args[1]
             value = int(args[2])
         except:
-            print "  Use: set <section> <key> <value>"
+            print("  Use: set <section> <key> <value>")
             continue
         try:
             m4c.config[section].set(key, value)
-        except Exception, e:
-            print "  Cannot set %s/%s = %i. Error: %s" % (section, key, value, str(e))
+        except Exception as e:
+            print("  Cannot set %s/%s = %i. Error: %s" % (section, key, value, str(e)))
 
     elif cmd == "write":
-        print "  Not implemented"
+        print("  Not implemented")
 
     else:
-        print "  Unknown command"
+        print("  Unknown command")
 
 
 # vim: tabstop=4 expandtab shiftwidth=4 softtabstop=4
