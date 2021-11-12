@@ -49,6 +49,9 @@ awp = true
 #  *  broader interrupt mask for I/O interrupts
 modifications = false
 
+# Initial value to set in KB register
+kb = 0
+
 [memory]
 # Memory is organized into 16 physical modules. Each module can be
 # either elwro or mega. Elwro modules are 32kword big (8 pages),
@@ -75,6 +78,9 @@ hardwired_segments = 2
 # Enable or disable boot from MEGA PROM memory.
 # Works only when mem_mega_prom is specified.
 mega_boot = false
+
+# Preload a program into OS memory, starting from address 0
+preload = program.bin
 
 [sound]
 # Internal buzzer emulation.
@@ -143,6 +149,10 @@ components = em4h
 
 # Use line buffered or fully buffered log output.
 line_buffered = true
+
+[ui]
+# Default user interface to use
+interface = curses
 
 [io]
 channel_1 = multix
