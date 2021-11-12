@@ -353,24 +353,26 @@ class TestBed:
             result.ips_percent = (diff*100.0) / self.bl[t]
 
 # ------------------------------------------------------------------------
-def get_tests(directory):
+def collect_tests(i):
     tests = []
-    for path, dirs, files in os.walk(directory):
-        for f in files:
-            if f.endswith(".asm"):
-                tests.append(os.path.join(path, f).lstrip("./"))
-    return tests
 
-# ------------------------------------------------------------------------
-def get_tests_set(s):
-    files = []
-    with open(s) as f:
-        for line in f:
-            line = line.strip()
-            if line[0] in (";", "#"):
-                continue
-            files += [line]
-    return files
+    if os.path.isfile(i) and i.endswith(".asm"):
+        tests.append(i)
+    elif os.path.isdir(i):
+        for path, dirs, files in os.walk(i):
+            for f in files:
+                tests.append("{}/{}".format(path, f))
+    elif os.path.isfile(i) and i.endswith(".set"):
+        with open(i) as f:
+            for line in f:
+                line = line.strip()
+                if line.startswith((";", "#")):
+                    continue
+                tests += collect_tests(line)
+    else:
+        print("Skipping: {}".format(i))
+
+    return tests
 
 # ------------------------------------------------------------------------
 # --- MAIN ---------------------------------------------------------------
@@ -383,24 +385,17 @@ parser.add_argument("-f", "--failcmd", help="command to run when test fails", ac
 parser.add_argument("-l", "--log", help="configure em400 logging", default="")
 parser.add_argument("-F", "--fpga", help="use FPGA CPU backend in em400", action="store_const", const=1, default=0)
 parser.add_argument("-v", "--verbose", help="be verbose", action="store_const", const=1, default=0)
-parser.add_argument('test', nargs='*', help='selected test(s) to run (file.asm or directory or testset.set)')
+parser.add_argument('test', nargs='*', help='Test to run (asm source, directory or test set). Default set is run when no tests are provided.')
 args = parser.parse_args()
 
 DEBUG = args.verbose
 
 # enumerate tests
-
-tests = []
 if args.test:
-    for d in args.test:
-        if os.path.isdir(d):
-            tests += get_tests(d)
-        elif d.endswith(".set"):
-            tests += get_tests_set(d)
-        else:
-            tests += [d]
+    for i in args.test:
+        tests = collect_tests(i)
 else:
-    tests = get_tests(".")
+    tests = collect_tests("sets/default.set")
 
 tests.sort()
 
