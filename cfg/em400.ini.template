@@ -154,30 +154,57 @@ line_buffered = true
 # Default user interface to use
 interface = curses
 
+# I/O channels configuration.
+#
+# There are 16 available channels: channel_0 to channel_15.
+# Channel is configured by assigning a channel type to the channel.
+# Currently available channel types are: multix and char
+
 [io]
 channel_1 = multix
 channel_15 = char
 
+# I/O devices configuration.
+#
+# Each device has its own section named devX.Y, where:
+#  * X is the channel number which the device connects to
+#  * Y is the device number
+#
+# Every device section requires a device type to be specified. Currently supported types are:
+#  * terminal (only for "char" channel type) - serial console terminal
+#  * winchester (only for "multix" channel type) - hard disk drive (uses e4i disk images)
+#  * floppy (in development, only for "multix" channel type) - 5" floppy drive
+#  * floppy8 (in development, only for "char" channel type) - 8" floppy drive (uses raw images)
+#
+# Other options are specific for each device.
+# Below are example device configurations.
+
+# Terminal that can be accessed through TCP connection on port 32000 (using e4term from tools/ directory)
 [dev1.4]
 type = terminal
 transport = tcp
 port = 32000
 
+# Terminal connected to /dev/ttyS0 serial port with speed of 9600 baud (8N1)
 [dev1.5]
 type = terminal
 transport = serial
 device = /dev/ttyS0
 speed = 9600
 
+# 5" floppy drive with floppy1.e4i image
 [dev15.20]
-type = flop5
+type = floppy
 image = floppy1.e4i
 
-[dev15.21]
-type = flop5
-image = floppy2.e4i
-
+# Winchester hard disk drive with winchester.e4i image
 [dev15.28]
 type = winchester
 image = winchester.e4i
+
+# 8" floppy drive with two images attached in bays 0 and 1
+[dev15.2]
+type = floppy8
+image_0 = flop8_0.img
+image_1 = flop8_1.img
 
