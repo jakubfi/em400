@@ -2951,7 +2951,7 @@ x0ccf:	.word	IMASK_ALL	; SR
 
 sp_test:
 
-xc0d0:	mcl
+x0cd0:	mcl
 x0cd1:	sp	sp_test_data
 sp_continue:
 x0cd3:	cwt	r0, -1
