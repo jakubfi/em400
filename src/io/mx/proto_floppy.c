@@ -17,6 +17,8 @@
 
 #include <stdlib.h>
 #include <inttypes.h>
+#include <time.h>
+#include <errno.h>
 
 #include "io/mx/mx.h"
 #include "io/mx/line.h"
@@ -241,6 +243,16 @@ int mx_floppy_transmit(struct mx_line *lline, uint16_t *cmd_data)
 	proto_data->ret_len = 0;
 	proto_data->ret_status = MX_FS_NO_DISC;
 	irq = MX_IRQ_ITRER;
+
+	// MEGA bootloader does a simple OU+HLT to the floppy drive.
+	// HLT is supposed to wait for the interrupt.
+	// It may happen that interrupt is served even before HLT, causing
+	// HLT to wait indefinitely.
+	// Do some "work" to make sure MEGA bootloader doesn't stall in speed_real mode.
+	struct timespec timer;
+	timer.tv_nsec = 100 * 1000000;
+	timer.tv_sec = 0;
+	while (clock_nanosleep(CLOCK_MONOTONIC, 0, &timer, &timer) == EINTR);
 
 fin:
 	return irq;

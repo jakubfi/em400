@@ -536,6 +536,17 @@ static int cpu_do_cycle()
 	if (op->fun != op_77_md) {
 		rMODc = rMOD = 0;
 	}
+
+	// Negative instruction time means "skip time keeping for this cycle".
+	// Do this after each OU instruction.
+	// This is required for minimalistic I/O routines using OU+HLT to work.
+	// Without it, it may happen that interrupt HLT was supposed to wait for
+	// is served just after OU, causing HLT to sleep indefinitely.
+	if (speed_real) {
+		if (op->fun == op_ou) {
+			instruction_time *= -1;
+		}
+	}
 	return instruction_time;
 
 ineffective_memfail:
@@ -626,12 +637,17 @@ cycle:
 
 		// realtime and sound management
 		if (speed_real && (cpu_time != 0)) {
+			int skip_time_keeping = 0;
+			if (cpu_time < 0) {
+				cpu_time *= -1;
+				skip_time_keeping = 1;
+			}
 			cpu_time *= cpu_delay_factor;
 			if (sound_enabled) {
 				buzzer_update(rIR, cpu_time);
 			}
 			cpu_time_cumulative += cpu_time;
-			if (cpu_time_cumulative >= throttle_granularity) {
+			if (!skip_time_keeping && (cpu_time_cumulative >= throttle_granularity)) {
 				cpu_timer.tv_nsec += cpu_time_cumulative;
 				while (cpu_timer.tv_nsec > 1000000000) {
 					cpu_timer.tv_nsec -= 1000000000;
