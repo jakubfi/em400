@@ -291,11 +291,13 @@ int cpu_init(em400_cfg *cfg)
 
 	if (sound_enabled) {
 		if ((speed_real == 0) || (cpu_speed_factor < 0.5f) || (cpu_speed_factor > 1.5f)) {
-			return LOGERR("EM400 needs to be configured with speed_real=true and 1.5 >= cpu_speed_factor >= 0.5 for the buzzer emulation to work.");
-		}
-
-		if (buzzer_init(cfg) != E_OK) {
-			return LOGERR("Failed to initialize buzzer.");
+			LOGERR("EM400 needs to be configured with speed_real=true and 1.5 >= cpu_speed_factor >= 0.5 for the buzzer emulation to work.");
+			LOGERR("Disabling sound.");
+			sound_enabled = 0;
+		} else {
+			if (buzzer_init(cfg) != E_OK) {
+				return LOGERR("Failed to initialize buzzer.");
+			}
 		}
 	}
 
