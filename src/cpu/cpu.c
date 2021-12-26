@@ -290,8 +290,8 @@ int cpu_init(em400_cfg *cfg)
 	sound_enabled = cfg_getbool(cfg, "sound:enabled", CFG_DEFAULT_SOUND_ENABLED);
 
 	if (sound_enabled) {
-		if ((speed_real == 0) || (cpu_speed_factor < 0.5f) || (cpu_speed_factor > 1.5f)) {
-			LOGERR("EM400 needs to be configured with speed_real=true and 1.5 >= cpu_speed_factor >= 0.5 for the buzzer emulation to work.");
+		if ((speed_real == 0) || (cpu_speed_factor < 0.1f) || (cpu_speed_factor > 2.0f)) {
+			LOGERR("EM400 needs to be configured with speed_real=true and 2.0 >= cpu_speed_factor >= 0.1 for the buzzer emulation to work.");
 			LOGERR("Disabling sound.");
 			sound_enabled = 0;
 		} else {
