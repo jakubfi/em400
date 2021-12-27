@@ -141,21 +141,10 @@ void dbg_wu_status(int wid)
 	AWIN *w = aw_window_find(wid);
 	awin_tb_clear(wid);
 
-	char status[64];
-	int pos = 0;
-    int state = ectl_cpu_state_get();
-	if (state == 0) {
-		pos += sprintf(status, "START");
-	} else {
-		for (int i=0 ; i<ECTL_STATE_BITS_COUNT ; i++) {
-			if ((state & (1<<i))) {
-				pos += sprintf(status+pos, "%s ", ectl_cpu_state_bit_name(i));
-			}
-		}
-	}
+    const char *state = ectl_cpu_state_get();
 
-	awtbprint(wid, C_ILABEL, "  CPU status: ");
-	awtbprint(wid, C_IDATA, "%-10s", status);
+	awtbprint(wid, C_ILABEL, "  CPU state: ");
+	awtbprint(wid, C_IDATA, "%-10s", state);
 
 	awtbprint(wid, C_ILABEL, "  Speed:");
 	awtbprint(wid, C_IDATA, " %.3f", (float)ectl_ips_get()/1000000);

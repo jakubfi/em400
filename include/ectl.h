@@ -33,17 +33,17 @@ enum ectl_states {
 };
 
 enum ectl_cpu_states {
-	ECTL_STATE_STOP = 0x1,
-	ECTL_STATE_WAIT	= 0x2,
-	ECTL_STATE_CLM	= 0x4,
-	ECTL_STATE_CLO	= 0x8,
-	ECTL_STATE_OFF	= 0x10,
-	ECTL_STATE_BRK	= 0x20,
-	ECTL_STATE_CYCLE= 0x40,
-	ECTL_STATE_BIN	= 0x80,
+	ECTL_STATE_RUN = 0,
+	ECTL_STATE_STOP,
+	ECTL_STATE_WAIT,
+	ECTL_STATE_CLM,
+	ECTL_STATE_CLO,
+	ECTL_STATE_OFF,
+	ECTL_STATE_CYCLE,
+	ECTL_STATE_BIN,
+// NOTE: update state names in ectl_cpu_state_get() when adding new states
+	ECTL_STATE_UNKNOWN,
 };
-
-#define ECTL_STATE_BITS_COUNT 8
 
 enum ectl_registers {
 	ECTL_REG_R0 = 0,
@@ -131,8 +131,7 @@ int ectl_load(FILE *f, const char *name, int seg, uint16_t saddr);
 int ectl_bin(uint16_t ar);
 
 // CPU state
-int ectl_cpu_state_get();
-const char * ectl_cpu_state_bit_name(int bitpos);
+const char * ectl_cpu_state_get();
 void ectl_cpu_stop();
 void ectl_cpu_start();
 void ectl_cpu_cycle();

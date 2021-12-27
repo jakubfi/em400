@@ -229,7 +229,7 @@ void cp_stop()
 	if (fpga) {
 		iob_cp_set_fn(IOB_FN_START, 0);
 	} else {
-		cpu_trigger_state(ECTL_STATE_STOP);
+		cpu_state_change(ECTL_STATE_STOP, -1);
 	}
 }
 
@@ -239,7 +239,7 @@ void cp_start()
 	if (fpga) {
 		iob_cp_set_fn(IOB_FN_START, 1);
 	} else {
-		cpu_clear_state(ECTL_STATE_STOP | ECTL_STATE_BRK);
+		cpu_state_change(ECTL_STATE_RUN, ECTL_STATE_STOP);
 	}
 }
 
@@ -249,7 +249,7 @@ void cp_cycle()
 	if (fpga) {
 		iob_cp_set_fn(IOB_FN_CYCLE, 1);
 	} else {
-		cpu_trigger_cycle();
+		cpu_state_change(ECTL_STATE_CYCLE, ECTL_STATE_STOP);
 	}
 }
 
@@ -259,7 +259,7 @@ void cp_off()
 	if (fpga) {
 		iob_quit();
 	} else {
-		cpu_trigger_state(ECTL_STATE_OFF);
+		cpu_state_change(ECTL_STATE_OFF, -1);
 	}
 }
 
@@ -298,7 +298,7 @@ void cp_clear()
 	if (fpga) {
 		iob_cp_set_fn(IOB_FN_CLEAR, 1);
 	} else {
-		cpu_trigger_state(ECTL_STATE_CLO);
+		cpu_state_change(ECTL_STATE_CLO, -1);
 	}
 }
 
@@ -311,7 +311,7 @@ int cp_bin(uint16_t ar)
 		// unsupported
 	} else {
 		rAR = ar;
-		res = cpu_trigger_bin();
+		res = cpu_state_change(ECTL_STATE_BIN, ECTL_STATE_STOP);
 	}
 
 	return res;

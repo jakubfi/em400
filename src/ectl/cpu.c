@@ -152,26 +152,17 @@ int ectl_mem_cfg(int nb, int ab, int mp, int seg)
 }
 
 // -----------------------------------------------------------------------
-int ectl_cpu_state_get()
+const char * ectl_cpu_state_get()
 {
+	static const char *state_names[] = {
+		"RUN", "STOP", "WAIT", "CLM", "CLO", "OFF", "CYCLE", "BIN", "???"
+	};
+
 	LOG(L_ECTL, "ECTL state get");
-	int state = cp_state();
-	LOG(L_ECTL, "ECTL state get: 0x%04x", state);
-	return state;
-}
-
-// -----------------------------------------------------------------------
-const char * ectl_cpu_state_bit_name(int bitpos)
-{
-	const char *state_names[] = { "STOP", "WAIT", "CLM", "CLO", "OFF", "BRK", "CYCLE", "BIN" };
-	const char *state_unknown = "???";
-	const int state_count = sizeof(state_names) / sizeof(char*);
-
-	if (bitpos < state_count) {
-		return state_names[bitpos];
-	} else {
-		return state_unknown;
-	}
+	unsigned state = cp_state();
+	if (state > ECTL_STATE_UNKNOWN) state = ECTL_STATE_UNKNOWN;
+	LOG(L_ECTL, "ECTL state get: %s", state_names[state]);
+	return state_names[state];
 }
 
 // -----------------------------------------------------------------------

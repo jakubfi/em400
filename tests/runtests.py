@@ -87,7 +87,7 @@ class EM400:
     # --------------------------------------------------------------------
     def state(self):
         state = self.cmd("STATE")[0]
-        return int(state, 0)
+        return state
 
     # --------------------------------------------------------------------
     def eval(self, expr):
@@ -98,13 +98,13 @@ class EM400:
     def wait_for_finish(self):
         while True:
             s = self.state()
-            if s & 2:
+            if s == "WAIT":
                 ir = self.reg("ir")
                 if ir & 0b1111110111000000 == 0b1110110000000000 and ir & 0b0000000000111111 >= 0o40:
                     ir = self.reg("ir")
                     if ir & 0b1111110111000000 == 0b1110110000000000 and ir & 0b0000000000111111 >= 0o40:
                         break
-            elif s & 1:
+            elif s == "STOP":
                 break
             if self.polldelay:
                 time.sleep(self.polldelay)
@@ -113,7 +113,7 @@ class EM400:
     def wait_for_stop(self):
         while True:
             state = self.state()
-            if state != 1 and state != 0x21:
+            if state != "STOP":
                 if self.polldelay:
                     time.sleep(self.polldelay)
             else:

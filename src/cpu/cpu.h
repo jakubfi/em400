@@ -90,11 +90,8 @@ void cpu_ctx_restore();
 
 void cpu_loop();
 
-void cpu_trigger_state(int state);
-void cpu_clear_state(int state);
+int cpu_state_change(int to, int from);
 int cpu_state_get();
-void cpu_trigger_cycle();
-int cpu_trigger_bin();
 
 #endif
 

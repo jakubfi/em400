@@ -533,18 +533,8 @@ void ui_cmd_oprq(FILE *out, char *args)
 // -----------------------------------------------------------------------
 void ui_cmd_state(FILE *out, char *args)
 {
-	int state = ectl_cpu_state_get();
-	ui_cmd_resp(out, RESP_OK, UI_NOEOL, " 0x%04x", state);
-	if (state == 0) {
-		fprintf(out, " START");
-	} else {
-		for (int i=0 ; i<ECTL_STATE_BITS_COUNT ; i++) {
-			if ((state & (1<<i))) {
-				fprintf(out, " %s", ectl_cpu_state_bit_name(i));
-			}
-		}
-	}
-	fprintf(out, "\n");
+	const char *state = ectl_cpu_state_get();
+	ui_cmd_resp(out, RESP_OK, UI_EOL, "%s", state);
 }
 
 // -----------------------------------------------------------------------

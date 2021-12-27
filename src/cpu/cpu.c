@@ -1,4 +1,4 @@
-//  Copyright (c) 2012-2018 Jakub Filipowicz <jakubf@gmail.com>
+//  Copyright (c) 2012-2021 Jakub Filipowicz <jakubf@gmail.com>
 //
 //  This program is free software; you can redistribute it and/or modify
 //  it under the terms of the GNU General Public License as published by
@@ -61,7 +61,8 @@ int P;
 uint32_t N;
 int cpu_mod_active;
 
-struct timespec cpu_timer;
+static struct timespec cpu_timer;
+static int cpu_time_cumulative;
 unsigned long ips_counter;
 static int speed_real;
 static int throttle_granularity;
@@ -82,7 +83,7 @@ pthread_mutex_t cpu_wake_mutex = PTHREAD_MUTEX_INITIALIZER;
 pthread_cond_t cpu_wake_cond = PTHREAD_COND_INITIALIZER;
 
 // -----------------------------------------------------------------------
-static void cpu_idle_in_wait()
+static void cpu_do_wait()
 {
 	LOG(L_CPU, "idling in state WAIT");
 
@@ -95,34 +96,34 @@ static void cpu_idle_in_wait()
 }
 
 // -----------------------------------------------------------------------
-static int cpu_idle_in_stop()
+static int cpu_do_stop()
 {
+	LOG(L_CPU, "idling in state STOP");
+
 	pthread_mutex_lock(&cpu_wake_mutex);
 	while ((cpu_state & (ECTL_STATE_STOP|ECTL_STATE_OFF|ECTL_STATE_CLO|ECTL_STATE_CLM|ECTL_STATE_CYCLE|ECTL_STATE_BIN)) == ECTL_STATE_STOP) {
-		LOG(L_CPU, "idling in state STOP");
 		pthread_cond_wait(&cpu_wake_cond, &cpu_wake_mutex);
 	}
-	int ret = cpu_state;
+	int res = cpu_state;
 	pthread_mutex_unlock(&cpu_wake_mutex);
-	return ret;
+
+	return res;
 }
 
 // -----------------------------------------------------------------------
-void cpu_trigger_state(int state)
+int cpu_state_change(int to, int from)
 {
-	pthread_mutex_lock(&cpu_wake_mutex);
-	cpu_state |= state;
-	pthread_cond_broadcast(&cpu_wake_cond);
-	pthread_mutex_unlock(&cpu_wake_mutex);
-}
+	int res = 1;
 
-// -----------------------------------------------------------------------
-void cpu_clear_state(int state)
-{
 	pthread_mutex_lock(&cpu_wake_mutex);
-	cpu_state &= ~state;
-	pthread_cond_broadcast(&cpu_wake_cond);
+	if ((from == -1) || (cpu_state == from)) {
+		cpu_state = to;
+		pthread_cond_broadcast(&cpu_wake_cond);
+		res = 0;
+	}
 	pthread_mutex_unlock(&cpu_wake_mutex);
+
+	return res;
 }
 
 // -----------------------------------------------------------------------
@@ -132,39 +133,12 @@ int cpu_state_get()
 }
 
 // -----------------------------------------------------------------------
-void cpu_trigger_cycle()
-{
-	pthread_mutex_lock(&cpu_wake_mutex);
-	if ((cpu_state & ECTL_STATE_STOP)) {
-		cpu_state |= ECTL_STATE_CYCLE;
-		pthread_cond_broadcast(&cpu_wake_cond);
-	}
-	pthread_mutex_unlock(&cpu_wake_mutex);
-}
-
-// -----------------------------------------------------------------------
-int cpu_trigger_bin()
-{
-	int res = 1;
-
-	pthread_mutex_lock(&cpu_wake_mutex);
-	if ((cpu_state & ECTL_STATE_STOP)) {
-		cpu_state |= ECTL_STATE_BIN;
-		res = 0;
-		pthread_cond_broadcast(&cpu_wake_cond);
-	}
-	pthread_mutex_unlock(&cpu_wake_mutex);
-
-	return res;
-}
-
-// -----------------------------------------------------------------------
-void cpu_mem_fail(int nb)
+static void cpu_mem_fail(int nb)
 {
 	int_set(INT_NO_MEM);
 	if ((nb == 0) && nomem_stop) {
 		rALARM = 1;
-		cpu_trigger_state(ECTL_STATE_STOP);
+		cpu_state_change(ECTL_STATE_STOP, -1);
 	}
 }
 
@@ -331,10 +305,8 @@ int cpu_mod_off()
 }
 
 // -----------------------------------------------------------------------
-static void cpu_clear(int scope)
+static void cpu_do_clear(int scope)
 {
-	cpu_clear_state(scope | ECTL_STATE_WAIT);
-
 	// I/O reset should return when we're sure that I/O won't change CPU state (backlogged interrupts, memory writes, ...)
 	io_reset();
 	mem_reset();
@@ -346,11 +318,10 @@ static void cpu_clear(int scope)
 	int_update_mask(RM);
 	int_clear_all();
 
-	if (scope & ECTL_STATE_CLO) {
+	if (scope == ECTL_STATE_CLO) {
 		rALARM = 0;
 		rMOD = 0;
 		rMODc = 0;
-		cpu_trigger_state(ECTL_STATE_STOP);
 	}
 
 	// call even if logging is disabled - user may enable it later
@@ -402,12 +373,10 @@ void cpu_ctx_restore()
 	if (!cpu_mem_put(0, 97, sp-4)) return;
 
 	LOG(L_CPU, "Loaded process ctx @ 0x%04x: [IC: 0x%04x, R0: 0x%04x, SR: 0x%04x]", sp-4, rIC, regs[0], sr);
-
-	return;
 }
 
 // -----------------------------------------------------------------------
-static void cpu_bin()
+static void cpu_do_bin()
 {
 	int words = 0;
 	uint16_t data;
@@ -417,11 +386,6 @@ static void cpu_bin()
 	LOG(L_CPU, "Binary load started @ 0x%04x", rAR);
 
 	while (1) {
-		int state = atom_load_acquire(&cpu_state);
-		if (state & ~(ECTL_STATE_STOP | ECTL_STATE_BIN)) {
-			break;
-		}
-
 		int res = io_dispatch(IO_IN, rIC, &data);
 		if (res != IO_OK) continue;
 
@@ -454,6 +418,8 @@ static int cpu_do_cycle()
 	if (LOG_WANTS(L_CPU)) {
 		log_store_cycle_state(SR_read(), rIC);
 	}
+
+	ips_counter++;
 
 	// fetch instruction
 	if (!cpu_mem_get(QNB, rIC, &rIR)) {
@@ -524,11 +490,6 @@ static int cpu_do_cycle()
 		log_log_dasm((op->flags & (OP_FL_ARG_NORM | OP_FL_ARG_SHORT)), N, "");
 	}
 
-	if (speed_real) {
-		instruction_time += op->time;
-		if (op->fun == op_72_shc) instruction_time += IR_t * TIME_SHIFT;
-	}
-
 	// execute instruction
 	op->fun();
 
@@ -537,16 +498,19 @@ static int cpu_do_cycle()
 		rMODc = rMOD = 0;
 	}
 
-	// Negative instruction time means "skip time keeping for this cycle".
-	// Do this after each OU instruction.
-	// This is required for minimalistic I/O routines using OU+HLT to work.
-	// Without it, it may happen that interrupt HLT was supposed to wait for
-	// is served just after OU, causing HLT to sleep indefinitely.
-	if (speed_real) {
-		if (op->fun == op_ou) {
-			instruction_time *= -1;
-		}
+
+	instruction_time += op->time;
+	if (op->fun == op_72_shc) {
+		instruction_time += IR_t * TIME_SHIFT;
+	} else if (op->fun == op_ou) {
+		// Negative instruction time means "skip time keeping for this cycle".
+		// Do this after each OU instruction.
+		// This is required for minimalistic I/O routines using OU+HLT to work.
+		// Without it, it may happen that interrupt HLT was supposed to wait for
+		// is served just after OU, causing HLT to sleep indefinitely.
+		instruction_time *= -1;
 	}
+
 	return instruction_time;
 
 ineffective_memfail:
@@ -560,103 +524,90 @@ ineffective:
 }
 
 // -----------------------------------------------------------------------
+static void cpu_timekeeping(int cpu_time)
+{
+	int skip_sleep = 0;
+
+	if (cpu_time < 0) {
+		cpu_time *= -1;
+		skip_sleep = 1;
+	}
+
+	cpu_time *= cpu_delay_factor;
+	cpu_time_cumulative += cpu_time;
+
+	if (sound_enabled) {
+		buzzer_update(rIR, cpu_time);
+	}
+
+	if (!skip_sleep && (cpu_time_cumulative >= throttle_granularity)) {
+		cpu_timer.tv_nsec += cpu_time_cumulative;
+		while (cpu_timer.tv_nsec >= 1000000000) {
+			cpu_timer.tv_nsec -= 1000000000;
+			cpu_timer.tv_sec++;
+		}
+		cpu_time_cumulative = 0;
+		while (clock_nanosleep(CLOCK_MONOTONIC, TIMER_ABSTIME, &cpu_timer, NULL) == EINTR);
+	}
+}
+
+// -----------------------------------------------------------------------
 void cpu_loop()
 {
-	pthread_mutex_lock(&cpu_wake_mutex);
-	cpu_state = ECTL_STATE_STOP;
-	pthread_mutex_unlock(&cpu_wake_mutex);
-
-	int cpu_time;
-	int cpu_time_cumulative = 0;
-
+	cpu_state_change(ECTL_STATE_STOP, -1);
 	clock_gettime(CLOCK_MONOTONIC, &cpu_timer);
 
 	while (1) {
-		cpu_time = 0;
+		int cpu_time = 0;
 		int state = atom_load_acquire(&cpu_state);
 
-		// CPU running
-		if (state == 0) {
-cycle:
-			// interrupt
-			if (atom_load_acquire(&RP) && !P && !rMODc) {
-				int_serve();
-				cpu_time = TIME_INT_SERVE;
-			// CPU cycle
-			} else {
-				cpu_time = cpu_do_cycle();
-				ips_counter++;
-
-				// breakpoint hit?
-				if (ectl_brk_check()) {
-					cpu_trigger_state(ECTL_STATE_STOP | ECTL_STATE_BRK);
+		switch (state) {
+			case ECTL_STATE_CYCLE:
+				cpu_state_change(ECTL_STATE_STOP, -1);
+				[[fallthrough]];
+			case ECTL_STATE_RUN:
+				if (atom_load_acquire(&RP) && !P && !rMODc) {
+					int_serve();
+					cpu_time = TIME_INT_SERVE;
+				} else {
+					cpu_time = cpu_do_cycle();
+					if (ectl_brk_check()) {
+						cpu_state_change(ECTL_STATE_STOP, -1);
+					}
 				}
-			}
-
-		// quit emulation
-		} else if ((state & ECTL_STATE_OFF)) {
-			break;
-
-		// CPU reset
-		} else if (state & (ECTL_STATE_CLM | ECTL_STATE_CLO)) {
-			cpu_clear(state & (ECTL_STATE_CLM | ECTL_STATE_CLO));
-
-		// CPU stopped
-		} else if ((state & ECTL_STATE_STOP)) {
-			cpu_clear_state(ECTL_STATE_WAIT);
-			if (sound_enabled) {
-				buzzer_stop();
-			}
-			int res = cpu_idle_in_stop();
-			if (res & ECTL_STATE_BIN) {
-				cpu_bin();
-				cpu_clear_state(ECTL_STATE_BIN);
-			}
-			if (speed_real) {
-				if (sound_enabled) {
-					buzzer_start();
+				break;
+			case ECTL_STATE_OFF:
+				if (sound_enabled) buzzer_stop();
+				return;
+			case ECTL_STATE_CLM:
+				cpu_do_clear(ECTL_STATE_CLM);
+				cpu_state_change(ECTL_STATE_RUN, -1);
+				break;
+			case ECTL_STATE_CLO:
+				if (sound_enabled) buzzer_stop();
+				cpu_do_clear(ECTL_STATE_CLO);
+				cpu_state_change(ECTL_STATE_STOP, -1);
+				break;
+			case ECTL_STATE_BIN:
+				cpu_state_change(ECTL_STATE_STOP, -1);
+				cpu_do_bin();
+				break;
+			case ECTL_STATE_STOP:
+				if (sound_enabled) buzzer_stop();
+				int res = cpu_do_stop();
+				if (speed_real && (res == ECTL_STATE_RUN)) {
+					if (sound_enabled) buzzer_start();
+					clock_gettime(CLOCK_MONOTONIC, &cpu_timer);
+					cpu_time_cumulative = 0;
 				}
-				clock_gettime(CLOCK_MONOTONIC, &cpu_timer);
-			}
-			if (res & ECTL_STATE_CYCLE) {
-				// CPU cycle triggered while in stop
-				cpu_clear_state(ECTL_STATE_CYCLE);
-				goto cycle;
-			}
-
-		// CPU waiting for an interrupt
-		} else if ((state & ECTL_STATE_WAIT)) {
-			if (sound_enabled) {
-				// busy wait for halt when sound is on, but not for speed_real
-				cpu_time = throttle_granularity;
-			} else {
-				// for speed_real just wait
-				cpu_idle_in_wait();
-			}
+				break;
+			case ECTL_STATE_WAIT:
+				if (speed_real) cpu_time = throttle_granularity;
+				else cpu_do_wait();
+				break;
 		}
 
-		// realtime and sound management
-		if (speed_real && (cpu_time != 0)) {
-			int skip_time_keeping = 0;
-			if (cpu_time < 0) {
-				cpu_time *= -1;
-				skip_time_keeping = 1;
-			}
-			cpu_time *= cpu_delay_factor;
-			if (sound_enabled) {
-				buzzer_update(rIR, cpu_time);
-			}
-			cpu_time_cumulative += cpu_time;
-			if (!skip_time_keeping && (cpu_time_cumulative >= throttle_granularity)) {
-				cpu_timer.tv_nsec += cpu_time_cumulative;
-				while (cpu_timer.tv_nsec > 1000000000) {
-					cpu_timer.tv_nsec -= 1000000000;
-					cpu_timer.tv_sec++;
-				}
-				cpu_time_cumulative = 0;
-				while (clock_nanosleep(CLOCK_MONOTONIC, TIMER_ABSTIME, &cpu_timer, NULL) == EINTR);
-			}
-		}
+		if (speed_real) cpu_timekeeping(cpu_time);
 	}
 }
 

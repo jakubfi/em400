@@ -648,13 +648,13 @@ void op_72_lpc()
 void op_73_hlt()
 {
 	LOGCPU(L_OP, "HALT 0%02o (alarm: %i)", N, regs[6]&255);
-	cpu_trigger_state(ECTL_STATE_WAIT);
+	cpu_state_change(ECTL_STATE_WAIT, ECTL_STATE_RUN);
 }
 
 // -----------------------------------------------------------------------
 void op_73_mcl()
 {
-	cpu_trigger_state(ECTL_STATE_CLM);
+	cpu_state_change(ECTL_STATE_CLM, ECTL_STATE_RUN);
 }
 
 // -----------------------------------------------------------------------

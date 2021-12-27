@@ -106,7 +106,7 @@ static void int_update_rp()
 	// under mutex
 	RP = RZ & int_mask;
 	if (RP) {
-		cpu_clear_state(ECTL_STATE_WAIT);
+		cpu_state_change(ECTL_STATE_RUN, ECTL_STATE_WAIT);
 	}
 }
 
