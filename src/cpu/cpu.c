@@ -88,7 +88,7 @@ static void cpu_do_wait()
 	LOG(L_CPU, "idling in state WAIT");
 
 	pthread_mutex_lock(&cpu_wake_mutex);
-	while ((cpu_state == ECTL_STATE_WAIT) && !atom_load_acquire(&RP)) {
+	while ((cpu_state == ECTL_STATE_WAIT) && !(atom_load_acquire(&RP) && !P && !rMODc)) {
 			pthread_cond_wait(&cpu_wake_cond, &cpu_wake_mutex);
 	}
 	cpu_state &= ~ECTL_STATE_WAIT;
@@ -602,7 +602,13 @@ void cpu_loop()
 				}
 				break;
 			case ECTL_STATE_WAIT:
-				if (speed_real) cpu_time = throttle_granularity;
+				if (speed_real) {
+					if (atom_load_acquire(&RP) && !P && !rMODc) {
+						cpu_state_change(ECTL_STATE_RUN, -1);
+					} else {
+						cpu_time = throttle_granularity;
+					}
+				}
 				else cpu_do_wait();
 				break;
 		}
