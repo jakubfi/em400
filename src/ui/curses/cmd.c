@@ -438,12 +438,12 @@ void dbg_c_brk_del(int wid, int nr)
 			free(b->label);
 			n_free_tree(b->n);
 			free(b);
+			ectl_brk_del(nr);
 			return;
 		}
 		prev = b;
 		b = b->next;
 	}
-	ectl_brk_del(nr);
 
 	awtbprint(wid, C_ERROR, "No such breakpoint: %i\n", nr);
 }
