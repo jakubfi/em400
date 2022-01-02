@@ -17,7 +17,6 @@
 
 #include <strings.h>
 #include <stdlib.h>
-#include <emcrk/process.h>
 
 #include "ectl.h"
 #include "ui/curses/decode.h"
