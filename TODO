@@ -19,7 +19,6 @@ Features (possible):
 
 CPU:
 
-* do binary load in CPU loop
 * AR access?
 * review cpu cycle in context of interrupt handling
 * no-elwro configuration

@@ -376,35 +376,39 @@ void cpu_ctx_restore()
 }
 
 // -----------------------------------------------------------------------
-static void cpu_do_bin()
+static int cpu_do_bin(int start)
 {
-	int words = 0;
-	uint16_t data;
-	uint8_t bdata[3];
-	int cnt = 0;
+	static int words = 0;
+	static uint16_t data;
+	static uint8_t bdata[3];
+	static int cnt = 0;
 
-	LOG(L_CPU, "Binary load started @ 0x%04x", rAR);
+	if (start) {
+		LOG(L_CPU, "Binary load initiated @ 0x%04x", rAR);
+		words = 0;
+		cnt = 0;
+		return 0;
+	}
 
-	while (1) {
-		int res = io_dispatch(IO_IN, rIC, &data);
-		if (res != IO_OK) continue;
-
+	int res = io_dispatch(IO_IN, rIC, &data);
+	if (res == IO_OK) {
 		bdata[cnt] = data & 0xff;
 		if ((cnt == 0) && bin_is_end(bdata[cnt])) {
 			LOG(L_CPU, "Binary load done, %i words loaded", words);
-			break;
+			return 1;
 		} else if (bin_is_valid(bdata[cnt])) {
 			cnt++;
 			if (cnt >= 3) {
 				cnt = 0;
-				if (cpu_mem_put(0, rAR, bin2word(bdata)) == 0) {
-					break;
+				if (cpu_mem_put(0, rAR, bin2word(bdata)) == 1) {
+					words++;
+					rAR++;
 				}
-				words++;
-				rAR++;
 			}
 		}
 	}
+
+	return 0;
 }
 
 // -----------------------------------------------------------------------
@@ -589,8 +593,7 @@ void cpu_loop()
 				cpu_state_change(ECTL_STATE_STOP, -1);
 				break;
 			case ECTL_STATE_BIN:
-				cpu_state_change(ECTL_STATE_STOP, -1);
-				cpu_do_bin();
+				if (cpu_do_bin(0)) cpu_state_change(ECTL_STATE_STOP, -1);
 				break;
 			case ECTL_STATE_STOP:
 				if (sound_enabled) buzzer_stop();
@@ -599,6 +602,8 @@ void cpu_loop()
 					if (sound_enabled) buzzer_start();
 					clock_gettime(CLOCK_MONOTONIC, &cpu_timer);
 					cpu_time_cumulative = 0;
+				} else if (res == ECTL_STATE_BIN) {
+					cpu_do_bin(1); // initiate binary load
 				}
 				break;
 			case ECTL_STATE_WAIT:
