@@ -365,7 +365,7 @@ static void serve_data(struct fdb *fdb)
 	if (res == 0) {
 		LOG(L_FDBR, "Empty read (EOF). Client disconnected.");
 		close(fdb->fds[FDB_FD_FD]);
-		fdb->fds[FDB_FD_FD] = -2;
+		fdb->fds[FDB_FD_FD] = -1;
 	} else {
 		LOG(L_FDBR, "Received data: %i (#%02x)", data, data);
 		if (fdb->sleep_us > 0) {
