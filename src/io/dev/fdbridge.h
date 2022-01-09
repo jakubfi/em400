@@ -34,6 +34,7 @@ struct fdb * fdb_open_serial(const char *device, int speed);
 int fdb_set_callback(struct fdb *fdb, fdb_cb cb, void *user_ctx);
 void fdb_set_speed(struct fdb *fdb, int speed);
 void fdb_reset(struct fdb *fdb);
+void fdb_await_read(struct fdb *fdb);
 void fdb_close(struct fdb *fdb);
 int fdb_read(struct fdb *fdb);
 int fdb_write(struct fdb *fdb, unsigned char c);

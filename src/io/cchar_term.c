@@ -104,6 +104,7 @@ void cchar_term_shutdown(struct cchar_unit_proto_t *unit)
 // -----------------------------------------------------------------------
 void cchar_term_reset(struct cchar_unit_proto_t *unit)
 {
+	LOG(L_TERM, "command: reset");
 	struct cchar_unit_term_t *u = (struct cchar_unit_term_t *) unit;
 	fdb_reset(u->term);
 }
@@ -167,6 +168,14 @@ int cchar_term_write(struct cchar_unit_term_t *unit, uint16_t *r_arg)
 }
 
 // -----------------------------------------------------------------------
+int cchar_term_disconnect(struct cchar_unit_term_t *unit)
+{
+	LOG(L_TERM, "command: disconnect");
+	fdb_await_read(unit->term);
+	return IO_OK;
+}
+
+// -----------------------------------------------------------------------
 int cchar_term_cmd(struct cchar_unit_proto_t *unit, int dir, int cmd, uint16_t *r_arg)
 {
 	struct cchar_unit_term_t *u = (struct cchar_unit_term_t *) unit;
@@ -184,11 +193,10 @@ int cchar_term_cmd(struct cchar_unit_proto_t *unit, int dir, int cmd, uint16_t *
 	} else {
 		switch (cmd) {
 		case CCHAR_TERM_CMD_RESET:
-			LOG(L_TERM, "command: reset");
+			cchar_term_reset(unit);
 			break;
 		case CCHAR_TERM_CMD_DISCONNECT:
-			LOG(L_TERM, "command: disconnect");
-			break;
+			return cchar_term_disconnect(u);
 		case CCHAR_TERM_CMD_WRITE:
 			return cchar_term_write(u, r_arg);
 		default:

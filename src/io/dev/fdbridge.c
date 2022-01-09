@@ -144,6 +144,14 @@ void fdb_reset(struct fdb *fdb)
 }
 
 // -----------------------------------------------------------------------
+void fdb_await_read(struct fdb *fdb)
+{
+	pthread_mutex_lock(&fdb->data_mutex);
+	fdb->awaiting_read = 1;
+	pthread_mutex_unlock(&fdb->data_mutex);
+}
+
+// -----------------------------------------------------------------------
 struct fdb * fdb_new(int type)
 {
 	struct fdb *fdb = calloc(1, sizeof(struct fdb));
@@ -307,7 +315,8 @@ static int serve_control(struct fdb *fdb)
 				data = fdb->wrbuf;
 				pthread_mutex_unlock(&fdb->data_mutex);
 				if (fdb->fds[FDB_FD_FD] >= 0) {
-					write(fdb->fds[FDB_FD_FD], &data, 1);
+					if (write(fdb->fds[FDB_FD_FD], &data, 1))
+					;
 					LOG(L_FDBR, "transmitting data: %i (#%02x)", data, data);
 				} else {
 					LOG(L_FDBR, "no client connected, data lost: %i (#%02x)", data, data);
