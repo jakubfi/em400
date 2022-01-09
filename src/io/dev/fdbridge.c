@@ -1,4 +1,4 @@
-//  Copyright (c) 2018 Jakub Filipowicz <jakubf@gmail.com>
+//  Copyright (c) 2018, 2022 Jakub Filipowicz <jakubf@gmail.com>
 //
 //  This program is free software; you can redistribute it and/or modify
 //  it under the terms of the GNU General Public License as published by
@@ -114,9 +114,7 @@ int buf_append(struct fdb *fdb, char c)
 	}
 	pthread_mutex_unlock(&fdb->data_mutex);
 
-	if (fdb->rdbuf_count > 1) {
-		LOG(L_FDBR, "write buffer fill: %i\n", fdb->rdbuf_count);
-	}
+	LOG(L_FDBR, "Read buffer after append: %i elements", fdb->rdbuf_count);
 
 	if (awaiting_read) {
 		fdb->cb(fdb->user_ctx, FDB_READY);
@@ -316,10 +314,10 @@ static int serve_control(struct fdb *fdb)
 				pthread_mutex_unlock(&fdb->data_mutex);
 				if (fdb->fds[FDB_FD_FD] >= 0) {
 					if (write(fdb->fds[FDB_FD_FD], &data, 1))
-					;
-					LOG(L_FDBR, "transmitting data: %i (#%02x)", data, data);
+					; // don't care about write() result
+					LOG(L_FDBR, "Output data: %i (#%02x)", data, data);
 				} else {
-					LOG(L_FDBR, "no client connected, data lost: %i (#%02x)", data, data);
+					LOG(L_FDBR, "Output data lost (endpoint not connected): %i (#%02x)", data, data);
 				}
 				if (fdb->sleep_us > 0) {
 					usleep(fdb->sleep_us);
@@ -328,7 +326,6 @@ static int serve_control(struct fdb *fdb)
 				fdb->wrbuf = -1;
 				int awaiting_write = fdb->awaiting_write;
 				pthread_mutex_unlock(&fdb->data_mutex);
-				LOG(L_FDBR, "data transmitted");
 				if (awaiting_write) {
 					fdb->cb(fdb->user_ctx, FDB_READY);
 				}
@@ -350,7 +347,7 @@ static void serve_conn(struct fdb *fdb)
 		// client already connected - reject connection
 		const char reject[] = "Endpoint already connected. Bye.\n";
 		if (write(fd, reject, strlen(reject)))
-		;
+		; // don't care about write() result
 		close(fd);
 	} else {
 		// accept new TCP connection
@@ -366,17 +363,17 @@ static void serve_data(struct fdb *fdb)
 
 	res = read(fdb->fds[FDB_FD_FD], &data, 1);
 	if (res == 0) {
-		LOG(L_FDBR, "client disconnected, empty read");
+		LOG(L_FDBR, "Empty read (EOF). Client disconnected.");
 		close(fdb->fds[FDB_FD_FD]);
 		fdb->fds[FDB_FD_FD] = -2;
 	} else {
-		LOG(L_FDBR, "receiver active");
+		LOG(L_FDBR, "Received data: %i (#%02x)", data, data);
 		if (fdb->sleep_us > 0) {
 			usleep(fdb->sleep_us);
 		}
 		if (!buf_append(fdb, data)) {
-			LOG(L_FDBR, "data ready: %i (#%02x)", data, data);
 		} else {
+			LOG(L_FDBR, "Input data lost (buffer full): %i (#%02x)", data, data);
 			fdb->cb(fdb->user_ctx, FDB_LOST);
 		}
 	}

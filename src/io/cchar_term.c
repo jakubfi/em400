@@ -1,4 +1,4 @@
-//  Copyright (c) 2013-2020 Jakub Filipowicz <jakubf@gmail.com>
+//  Copyright (c) 2013-2020, 2022 Jakub Filipowicz <jakubf@gmail.com>
 //
 //  This program is free software; you can redistribute it and/or modify
 //  it under the terms of the GNU General Public License as published by
@@ -104,7 +104,7 @@ void cchar_term_shutdown(struct cchar_unit_proto_t *unit)
 // -----------------------------------------------------------------------
 void cchar_term_reset(struct cchar_unit_proto_t *unit)
 {
-	LOG(L_TERM, "command: reset");
+	LOG(L_TERM, "Command: reset");
 	struct cchar_unit_term_t *u = (struct cchar_unit_term_t *) unit;
 	fdb_reset(u->term);
 }
@@ -116,11 +116,11 @@ int fdb_callback(void *ctx, int condition)
 
 	switch (condition) {
 		case FDB_READY:
-			LOG(L_TERM, "line data ready");
+			LOG(L_TERM, "Callback: line data ready");
 			cchar_int(unit->chan, unit->num, CCHAR_TERM_INT_READY);
 			break;
 		case FDB_LOST:
-			LOG(L_TERM, "character lost, transmission too slow");
+			LOG(L_TERM, "Callback: data lost, transmission too slow");
 			cchar_int(unit->chan, unit->num, CCHAR_TERM_INT_TOO_SLOW);
 		default:
 			break;
@@ -134,14 +134,14 @@ int cchar_term_read(struct cchar_unit_term_t *unit, uint16_t *r_arg)
 	int data = fdb_read(unit->term);
 
 	if (data < 0) {
-		LOG(L_TERM, "empty read");
+		LOG(L_TERM, "Receive from terminal: empty read");
 		return IO_EN;
 	}
 
 	if ((data >= 32) && (data < 127)) {
-		LOG(L_TERM, "terminal read: %i (%c)", data, data);
+		LOG(L_TERM, "Receive from terminal: %i (%c)", data, data);
 	} else {
-		LOG(L_TERM, "terminal read: %i (#%02x)", data, data);
+		LOG(L_TERM, "Receive from terminal: %i (#%02x)", data, data);
 	}
 
 	*r_arg = data;
@@ -151,26 +151,26 @@ int cchar_term_read(struct cchar_unit_term_t *unit, uint16_t *r_arg)
 // -----------------------------------------------------------------------
 int cchar_term_write(struct cchar_unit_term_t *unit, uint16_t *r_arg)
 {
+	int res = IO_OK;
 	char data = *r_arg & 0xff;
 
 	if (fdb_write(unit->term, data) < 0) {
-		LOG(L_TERM, "transmitter busy");
-		return IO_EN;
+		res = IO_EN;
 	}
 
 	if ((data >= 32) && (data < 127)) {
-		LOG(L_TERM, "terminal write: %i (%c)", data, data);
+		LOG(L_TERM, "Send to terminal: %i (%c)%s", data, data, res == IO_EN ? " failed (transmitter busy)" : "");
 	} else {
-		LOG(L_TERM, "terminal write: %i (#%02x)", data, data);
+		LOG(L_TERM, "Send to terminal: %i (#%02x)%s", data, data, res == IO_EN ? "failed (transmitter busy)" : "");
 	}
 
-	return IO_OK;
+	return res;
 }
 
 // -----------------------------------------------------------------------
 int cchar_term_disconnect(struct cchar_unit_term_t *unit)
 {
-	LOG(L_TERM, "command: disconnect");
+	LOG(L_TERM, "Command: disconnect");
 	fdb_await_read(unit->term);
 	return IO_OK;
 }
@@ -182,12 +182,12 @@ int cchar_term_cmd(struct cchar_unit_proto_t *unit, int dir, int cmd, uint16_t *
 	if (dir == IO_IN) {
 		switch (cmd) {
 		case CCHAR_TERM_CMD_SPU:
-			LOG(L_TERM, "command: SPU");
+			LOG(L_TERM, "Command: SPU");
 			break;
 		case CCHAR_TERM_CMD_READ:
 			return cchar_term_read(u, r_arg);
 		default:
-			LOG(L_TERM, "unknown IN command: %i", cmd);
+			LOG(L_TERM, "Unknown IN command: %i", cmd);
 			break;
 		}
 	} else {
@@ -200,7 +200,7 @@ int cchar_term_cmd(struct cchar_unit_proto_t *unit, int dir, int cmd, uint16_t *
 		case CCHAR_TERM_CMD_WRITE:
 			return cchar_term_write(u, r_arg);
 		default:
-			LOG(L_TERM, "unknown OUT command: %i", cmd);
+			LOG(L_TERM, "Unknown OUT command: %i", cmd);
 			break;
 		}
 	}
