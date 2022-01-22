@@ -533,7 +533,7 @@ void ui_cmd_oprq(FILE *out, char *args)
 // -----------------------------------------------------------------------
 void ui_cmd_state(FILE *out, char *args)
 {
-	const char *state = ectl_cpu_state_get();
+	const char *state = ectl_cpu_state_name(ectl_cpu_state_get());
 	ui_cmd_resp(out, RESP_OK, UI_EOL, "%s", state);
 }
 

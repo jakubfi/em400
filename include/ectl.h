@@ -131,7 +131,8 @@ int ectl_load(FILE *f, const char *name, int seg, uint16_t saddr);
 int ectl_bin(uint16_t ar);
 
 // CPU state
-const char * ectl_cpu_state_get();
+const char * ectl_cpu_state_name();
+unsigned ectl_cpu_state_get();
 void ectl_cpu_stop();
 void ectl_cpu_start();
 void ectl_cpu_cycle();

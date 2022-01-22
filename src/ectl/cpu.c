@@ -36,6 +36,18 @@
 #include "ectl/brk.h"
 #include "ectl_parser.h"
 
+const char *state_names[] = {
+	"RUN",
+	"STOP",
+	"WAIT",
+	"CLM",
+	"CLO",
+	"OFF",
+	"CYCLE",
+	"BIN",
+	"???"
+};
+
 // this must match register order in ectl.h
 static const char *ectl_reg_names[] = {
 	"R0", "R1", "R2", "R3", "R4", "R5", "R6", "R7",
@@ -152,17 +164,24 @@ int ectl_mem_cfg(int nb, int ab, int mp, int seg)
 }
 
 // -----------------------------------------------------------------------
-const char * ectl_cpu_state_get()
+const char * ectl_cpu_state_name(unsigned state)
 {
-	static const char *state_names[] = {
-		"RUN", "STOP", "WAIT", "CLM", "CLO", "OFF", "CYCLE", "BIN", "???"
-	};
+	if (state > ECTL_STATE_UNKNOWN) {
+		return state_names[ECTL_STATE_UNKNOWN];
+	} else {
+		return state_names[state];
+	}
 
+}
+
+// -----------------------------------------------------------------------
+unsigned ectl_cpu_state_get()
+{
 	LOG(L_ECTL, "ECTL state get");
 	unsigned state = cp_state();
 	if (state > ECTL_STATE_UNKNOWN) state = ECTL_STATE_UNKNOWN;
 	LOG(L_ECTL, "ECTL state get: %s", state_names[state]);
-	return state_names[state];
+	return state;
 }
 
 // -----------------------------------------------------------------------
