@@ -567,7 +567,7 @@ void cpu_loop()
 
 		switch (state) {
 			case ECTL_STATE_CYCLE:
-				cpu_state_change(ECTL_STATE_STOP, -1);
+				cpu_state_change(ECTL_STATE_STOP, ECTL_STATE_CYCLE);
 				[[fallthrough]];
 			case ECTL_STATE_RUN:
 				if (atom_load_acquire(&RP) && !P && !rMODc) {
@@ -576,7 +576,7 @@ void cpu_loop()
 				} else {
 					cpu_time = cpu_do_cycle();
 					if (ectl_brk_check()) {
-						cpu_state_change(ECTL_STATE_STOP, -1);
+						cpu_state_change(ECTL_STATE_STOP, ECTL_STATE_RUN);
 					}
 				}
 				break;
@@ -585,15 +585,15 @@ void cpu_loop()
 				return;
 			case ECTL_STATE_CLM:
 				cpu_do_clear(ECTL_STATE_CLM);
-				cpu_state_change(ECTL_STATE_RUN, -1);
+				cpu_state_change(ECTL_STATE_RUN, ECTL_STATE_CLM);
 				break;
 			case ECTL_STATE_CLO:
 				if (sound_enabled) buzzer_stop();
 				cpu_do_clear(ECTL_STATE_CLO);
-				cpu_state_change(ECTL_STATE_STOP, -1);
+				cpu_state_change(ECTL_STATE_STOP, ECTL_STATE_CLO);
 				break;
 			case ECTL_STATE_BIN:
-				if (cpu_do_bin(0)) cpu_state_change(ECTL_STATE_STOP, -1);
+				if (cpu_do_bin(0)) cpu_state_change(ECTL_STATE_STOP, ECTL_STATE_BIN);
 				break;
 			case ECTL_STATE_STOP:
 				if (sound_enabled) buzzer_stop();
@@ -609,7 +609,7 @@ void cpu_loop()
 			case ECTL_STATE_WAIT:
 				if (speed_real) {
 					if (atom_load_acquire(&RP) && !P && !rMODc) {
-						cpu_state_change(ECTL_STATE_RUN, -1);
+						cpu_state_change(ECTL_STATE_RUN, ECTL_STATE_WAIT);
 					} else {
 						cpu_time = throttle_granularity;
 					}
