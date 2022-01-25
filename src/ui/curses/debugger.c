@@ -30,7 +30,7 @@
 #include "ui/curses/debugger.h"
 #include "ui/curses/ui.h"
 #include "ui/curses/eval.h"
-#include "debugger_parser.h"
+#include "ui_curses_parser.h"
 
 int ui_mode;
 

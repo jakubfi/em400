@@ -22,7 +22,7 @@
 #include "ui/curses/ui.h"
 #include "ui/curses/cmd.h"
 #include "ui/curses/keywords.h"
-#include "debugger_parser.h"
+#include "ui_curses_parser.h"
 
 void yyerror(char *s, ...);
 %}

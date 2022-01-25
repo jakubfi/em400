@@ -45,38 +45,67 @@ endif()
 # ---- Sources -----------------------------------------------------------
 
 set(SOURCES_EM400
+	src/atomic.h
 	src/em400.c
+	src/em400.h
 	src/log.c
+	src/log.h
+	src/log_io.h
 	src/log_crk.c
+	src/log_crk.h
 	src/cfg.c
+	src/cfg.h
 
 	src/utils/utils.c
+	src/utils/utils.h
 	src/utils/elst.c
+	src/utils/elst.h
 
+	src/cpu/flags.h
 	src/cpu/instructions.c
+	src/cpu/instructions.h
 	src/cpu/clock.c
+	src/cpu/clock.h
 	src/cpu/cpu.c
+	src/cpu/cpu.h
 	src/cpu/interrupts.c
+	src/cpu/interrupts.h
 	src/cpu/iset.c
+	src/cpu/iset.h
 	src/cpu/alu.c
+	src/cpu/alu.h
 	src/cpu/cp.c
+	src/cpu/cp.h
 
 	src/mem/mem.c
+	src/mem/mem.h
 	src/mem/mega.c
+	src/mem/mega.h
 	src/mem/elwro.c
+	src/mem/elwro.h
 
 	src/fpga/iobus.c
+	src/fpga/iobus.h
 
+	src/io/defs.h
 	src/io/io.c
+	src/io/io.h
 	src/io/chan.c
+	src/io/chan.h
 	src/io/cchar.c
+	src/io/cchar.h
 	src/io/cchar_term.c
+	src/io/cchar_term.h
 	src/io/cchar_flop8.c
+	src/io/cchar_flop8.h
 	src/io/iotester.c
 
 	src/io/dev/dev.c
+	src/io/dev/dev.h
 	src/io/dev/e4image.c
+	src/io/dev/e4image.h
 	src/io/dev/term.c
+	src/io/dev/term.h
 	src/io/dev/winchester.c
 	src/io/dev/flop5.c
 	src/io/dev/punchrd.c
@@ -84,13 +113,20 @@ set(SOURCES_EM400
 	src/io/dev/terminal.c
 	src/io/dev/printer.c
 	src/io/dev/fdbridge.c
+	src/io/dev/fdbridge.h
 
 	src/io/mx/mx.c
+	src/io/mx/mx.h
 	src/io/mx/cmds.c
+	src/io/mx/cmds.h
 	src/io/mx/irq.c
+	src/io/mx/irq.h
 	src/io/mx/event.c
+	src/io/mx/event.h
 	src/io/mx/line.c
+	src/io/mx/line.h
 	src/io/mx/proto_common.c
+	src/io/mx/proto_common.h
 	src/io/mx/proto_winchester.c
 	src/io/mx/proto_floppy.c
 	src/io/mx/proto_tape.c
@@ -102,22 +138,35 @@ set(SOURCES_EM400
 	src/io/mx/proto_som_terminal.c
 
 	src/ui/ui.c
+	src/ui/ui.h
 
 	src/ui/cmd/cmd.c
 	src/ui/cmd/commands.c
+	src/ui/cmd/commands.h
 	src/ui/cmd/utils.c
+	src/ui/cmd/utils.h
 
 	src/ectl/cpu.c
 	src/ectl/est.c
+	src/ectl/est.h
 	src/ectl/brk.c
+	src/ectl/brk.h
 
 	src/sound/file.c
 	src/sound/sound.c
+	src/sound/sound.h
 	src/external/biquad/biquad.c
+	src/external/biquad/biquad.h
 	src/cpu/buzzer.c
+	src/cpu/buzzer.h
 
 	src/external/iniparser/dictionary.c
+	src/external/iniparser/dictionary.h
 	src/external/iniparser/iniparser.c
+	src/external/iniparser/iniparser.h
+
+	src/ectl/parser.y
+	src/ectl/scanner.l
 )
 
 if(ALSA_FOUND)
@@ -141,27 +190,36 @@ flex_target(ectl_scanner
 add_flex_bison_dependency(ectl_scanner ectl_parser)
 
 # TODO: cleanup
-bison_target(debugger_parser
+bison_target(ui_curses_parser
 	src/ui/curses/parser.y
-	${CMAKE_CURRENT_BINARY_DIR}/debugger_parser.c
+	${CMAKE_CURRENT_BINARY_DIR}/ui_curses_parser.c
 )
-flex_target(debugger_scanner
+flex_target(ui_curses_scanner
 	src/ui/curses/scanner.l
-	${CMAKE_CURRENT_BINARY_DIR}/debugger_scanner.c
+	${CMAKE_CURRENT_BINARY_DIR}/ui_curses_scanner.c
 	COMPILE_FLAGS "--never-interactive"
 )
-add_flex_bison_dependency(debugger_scanner debugger_parser)
+add_flex_bison_dependency(ui_curses_scanner ui_curses_parser)
 set(SOURCES_DEBUGGER
 	src/ui/curses/awin.c
+	src/ui/curses/awin.h
 	src/ui/curses/awinch.c
 	src/ui/curses/debugger.c
+	src/ui/curses/debugger.h
 	src/ui/curses/eval.c
+	src/ui/curses/eval.h
 	src/ui/curses/cmd.c
+	src/ui/curses/cmd.h
 	src/ui/curses/ui.c
+	src/ui/curses/ui.h
 	src/ui/curses/keywords.c
+	src/ui/curses/keywords.h
 	src/ui/curses/decode.c
-	${BISON_debugger_parser_OUTPUTS}
-	${FLEX_debugger_scanner_OUTPUTS}
+	src/ui/curses/decode.h
+	src/ui/curses/parser.y
+	src/ui/curses/scanner.l
+	${BISON_ui_curses_parser_OUTPUTS}
+	${FLEX_ui_curses_scanner_OUTPUTS}
 )
 set(DEBUGGER_LIBS ${CURSES_LIBRARIES} ${READLINE_LIBRARY})
 
