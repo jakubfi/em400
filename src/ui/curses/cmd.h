@@ -41,7 +41,7 @@ void dbg_c_sregs(int wid);
 void dbg_c_stack(int wid, int size);
 void dbg_c_clear();
 void dbg_c_mem(int wid, int block, int start, int end, int maxcols, int maxlines);
-void dbg_c_bin(int wid, uint16_t addr);
+void dbg_c_bin(int wid);
 void dbg_c_clmem();
 void dbg_c_dt(int wid, uint16_t start, int count);
 void dbg_c_load(int wid, char* image);

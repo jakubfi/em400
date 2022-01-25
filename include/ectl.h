@@ -128,7 +128,7 @@ int ectl_mem_set(int seg, uint16_t addr, uint16_t *src, unsigned count);
 int ectl_mem_map(int seg);
 int ectl_mem_cfg(int nb, int ab, int mp, int seg);
 int ectl_load(FILE *f, const char *name, int seg, uint16_t saddr);
-int ectl_bin(uint16_t ar);
+int ectl_bin();
 
 // CPU state
 const char * ectl_cpu_state_name();

@@ -85,8 +85,8 @@ int cp_reg_get(unsigned id)
 			case ECTL_REG_R6:
 			case ECTL_REG_R7: reg = regs[id]; break;
 			case ECTL_REG_IC: reg = rIC; break;
-			// n/a case ECTL_REG_AC:
-			// n/a case ECTL_REG_AR:
+			case ECTL_REG_AC: reg = rAC; break;
+			case ECTL_REG_AR: reg = rAR; break;
 			case ECTL_REG_IR: reg = rIR; break;
 			case ECTL_REG_SR: reg = SR_read(); break;
 			case ECTL_REG_RZ: reg = int_get_nchan(); break;
@@ -128,8 +128,8 @@ int cp_reg_set(unsigned id, uint16_t v)
 			case ECTL_REG_R6:
 			case ECTL_REG_R7: regs[id] = v; break;
 			case ECTL_REG_IC: rIC = v; break;
-			// n/a case ECTL_REG_AC:
-			// n/a case ECTL_REG_AR:
+			case ECTL_REG_AC: rAC = v; break;
+			case ECTL_REG_AR: rAR = v ; break;
 			case ECTL_REG_IR: rIR = v; break;
 			case ECTL_REG_SR: SR_write(v); break;
 			// n/a case ECTL_REG_RZ:
@@ -303,14 +303,13 @@ void cp_clear()
 }
 
 // -----------------------------------------------------------------------
-int cp_bin(uint16_t ar)
+int cp_bin()
 {
 	int res = 1;
 
 	if (fpga) {
 		// unsupported
 	} else {
-		rAR = ar;
 		res = cpu_state_change(ECTL_STATE_BIN, ECTL_STATE_STOP);
 	}
 

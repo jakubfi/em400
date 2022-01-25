@@ -20,15 +20,18 @@
 
 #include "debugger_parser.h"
 #include "ui/curses/keywords.h"
+#include "ectl.h"
 
 struct kw_t kw_regs[] = {
-	{ "IC", DBG_R_IC },
-	{ "SR", DBG_R_SR },
-	{ "IR", DBG_R_IR },
-	{ "KB",	DBG_R_KB },
-	{ "MOD", DBG_R_MOD },
-	{ "MODC", DBG_R_MODc },
-	{ "ALARM", DBG_R_ALARM },
+	{ "IC", ECTL_REG_IC },
+	{ "SR", ECTL_REG_SR },
+	{ "IR", ECTL_REG_IR },
+	{ "AR", ECTL_REG_AR },
+	{ "AC", ECTL_REG_AC },
+	{ "KB",	ECTL_REG_KB },
+	{ "MOD", ECTL_REG_MOD },
+	{ "MODC", ECTL_REG_MODc },
+	{ "ALARM", ECTL_REG_ALARM },
 	{ NULL, 0 }
 };
 

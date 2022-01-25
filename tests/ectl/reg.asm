@@ -11,6 +11,8 @@
 ; PRECMD reg KB 9
 ; PRECMD reg IC 200
 ; PRECMD reg SR 11
+; PRECMD reg AR 666
+; PRECMD reg AC 333
 
 	hlt	040
 
@@ -29,3 +31,5 @@
 ; XPCT ir&0x3f : 0o77
 ; XPCT IC : 201
 ; XPCT SR : 11
+; XPCT AR : 666
+; XPCT AC : 333

@@ -50,10 +50,13 @@ const char *state_names[] = {
 
 // this must match register order in ectl.h
 static const char *ectl_reg_names[] = {
+	// registers available on rotary switch (real hw)
 	"R0", "R1", "R2", "R3", "R4", "R5", "R6", "R7",
 	"IC", "AC", "AR", "IR", "SR", "RZ", "KB", "KB",
-	"MOD", "MODc", "ALARM", "RM", "Q", "BS", "NB",
-	"P", "RZ_IO",
+	// em400 "registers"
+	"MOD", "MODc",
+	// internal CPU registers (real hw)
+	"ALARM", "RM", "Q", "BS", "NB", "P", "RZ_IO",
 	"??"
 };
 
@@ -236,10 +239,10 @@ void ectl_cpu_clear()
 }
 
 // -----------------------------------------------------------------------
-int ectl_bin(uint16_t ar)
+int ectl_bin()
 {
-	LOG(L_ECTL, "ECTL bootstrap");
-	return cp_bin(ar);
+	LOG(L_ECTL, "ECTL binary load");
+	return cp_bin();
 }
 
 // -----------------------------------------------------------------------

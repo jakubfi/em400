@@ -164,9 +164,9 @@ void dbg_c_dt(int wid, uint16_t ic, int count)
 }
 
 // -----------------------------------------------------------------------
-void dbg_c_bin(int wid, uint16_t addr)
+void dbg_c_bin(int wid)
 {
-	int res = ectl_bin(addr);
+	int res = ectl_bin();
 	awtbprint(wid, C_LABEL, "Binary load %s\n", res == 0 ? "initialized" : "ignored due to current CPU state");
 }
 
@@ -238,28 +238,36 @@ void dbg_c_sregs(int wid)
 	awtbprint(wid, C_LABEL, "            OPCODE D A   B   C");
 	awtbprint(wid, C_LABEL, "           P: ");
 	awtbprint(wid, C_DATA, "%i\n", ectl_reg_get(ECTL_REG_P));
+
 	awtbprint(wid, C_LABEL, "IR: ");
 	awtbprint(wid, C_DATA, "0x%04x  ", ectl_reg_get(ECTL_REG_IR));
 	awtbbinprint(wid, C_DATA, "...... . ... ... ...", ectl_reg_get(ECTL_REG_IR), 16);
 	awtbprint(wid, C_LABEL, "        IC: ");
 	awtbprint(wid, C_DATA, "0x%04x ", ectl_reg_get(ECTL_REG_IC));
 	awtbprint(wid, C_DATA, "\n");
+
 	awtbprint(wid, C_LABEL, "            PMCZs139fS Q s NB");
-	awtbprint(wid, C_LABEL, "          MOD: ");
-	awtbprint(wid, C_DATA, "0x%04x (%i)", ectl_reg_get(ECTL_REG_MOD), ectl_reg_get(ECTL_REG_MODc));
+	awtbprint(wid, C_LABEL, "           AR: ");
+	awtbprint(wid, C_DATA, "0x%04x", ectl_reg_get(ECTL_REG_AR));
 	awtbprint(wid, C_DATA, "\n");
+
 	awtbprint(wid, C_LABEL, "SR: ");
 	awtbprint(wid, C_DATA, "0x%04x  ", ectl_reg_get(ECTL_REG_SR));
 	awtbbinprint(wid, C_DATA, ".......... . . ....", ectl_reg_get(ECTL_REG_SR), 16);
+	awtbprint(wid, C_LABEL, "         AC: ");
+	awtbprint(wid, C_DATA, "0x%04x", ectl_reg_get(ECTL_REG_AC));
 	awtbprint(wid, C_DATA, "\n");
 
 	awtbprint(wid, C_LABEL, "KB: ");
 	awtbprint(wid, C_DATA, "0x%04x  ", ectl_reg_get(ECTL_REG_KB));
 	awtbbinprint(wid, C_DATA, "........ ........", ectl_reg_get(ECTL_REG_KB), 16);
+	awtbprint(wid, C_LABEL, "          MOD: ");
+	awtbprint(wid, C_DATA, "0x%04x (%i)", ectl_reg_get(ECTL_REG_MOD), ectl_reg_get(ECTL_REG_MODc));
 	awtbprint(wid, C_DATA, "\n\n");
 
 	awtbprint(wid, C_LABEL, "                ZPMCZ TIFFFFx 01 23 456789 abcdef OCSS");
 	awtbprint(wid, C_DATA, "\n");
+
 	awtbprint(wid, C_LABEL, "RZ: ");
 	awtbprint(wid, C_DATA, "0x%08x  ", ectl_int_get32());
 	awtbbinprint(wid, C_DATA, "..... ....... .. .. ...... ...... ....", ectl_int_get32(), 32);

@@ -193,6 +193,7 @@ void ui_cmd_help(FILE *out, char *args)
 	// no such command
 	if (!cmd) {
 		ui_cmd_resp(out, RESP_ERR, UI_EOL, "No help for command: %s", tok_cmd);
+		return;
 	}
 
 	// show specific command help
@@ -347,7 +348,7 @@ void ui_cmd_memw(FILE *out, char *args)
 		return;
 	}
 
-	uint16_t *mbuf = (uint16_t *) malloc(0x10000 * sizeof(uint16_t));
+	uint16_t mbuf[0x10000];
 	int processed = 0;
 
 	do {
@@ -679,15 +680,7 @@ void ui_cmd_brkdel(FILE *out, char *args)
 // -----------------------------------------------------------------------
 void ui_cmd_bin(FILE *out, char *args)
 {
-	char *tok_addr, *remainder;
-
-	uint16_t addr = ui_cmd_gettok_int(args, &tok_addr, &remainder);
-	if (!tok_addr) {
-		ui_cmd_resp(out, RESP_ERR, UI_EOL, "Missing argument (load addres)");
-		return;
-	}
-
-	int res = ectl_bin(addr);
+	int res = ectl_bin();
 	ui_cmd_resp(out, RESP_OK, UI_EOL, "Binary load %s", res == 0 ? "initialized" : "ignored due to current CPU state.");
 }
 

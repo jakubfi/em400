@@ -237,24 +237,7 @@ int16_t n_eval_var(struct node_t * n)
 // -----------------------------------------------------------------------
 int16_t n_eval_reg(struct node_t * n)
 {
-	switch (n->val) {
-	case DBG_R_IC:
-		return ectl_reg_get(ECTL_REG_IC);
-	case DBG_R_KB:
-		return ectl_reg_get(ECTL_REG_KB);
-	case DBG_R_MOD:
-		return ectl_reg_get(ECTL_REG_MOD);
-	case DBG_R_MODc:
-		return ectl_reg_get(ECTL_REG_MODc);
-	case DBG_R_IR:
-		return ectl_reg_get(ECTL_REG_IR);
-	case DBG_R_SR:
-		return ectl_reg_get(ECTL_REG_SR);
-	case DBG_R_ALARM:
-		return ectl_reg_get(ECTL_REG_ALARM);
-	default:
-		return ectl_reg_get(n->val);
-	}
+	return ectl_reg_get(n->val);
 }
 
 // -----------------------------------------------------------------------
@@ -296,32 +279,7 @@ int16_t n_eval_ass(struct node_t * n)
 			var_set(n->n1->var, v);
 			return v;
 		case N_REG:
-			switch (n->n1->val) {
-			case DBG_R_IC:
-				ectl_reg_set(ECTL_REG_IC, v);
-				break;
-			case DBG_R_KB:
-				ectl_reg_set(ECTL_REG_KB, v);
-				break;
-			case DBG_R_MOD:
-				ectl_reg_set(ECTL_REG_MOD, v);
-				break;
-			case DBG_R_MODc:
-				ectl_reg_set(ECTL_REG_MODc, v);
-				break;
-			case DBG_R_IR:
-				ectl_reg_set(ECTL_REG_IR, v);
-				break;
-			case DBG_R_SR:
-				ectl_reg_set(ECTL_REG_SR, v);
-				break;
-			case DBG_R_ALARM:
-				ectl_reg_set(ECTL_REG_ALARM, v);
-				break;
-			default:
-				ectl_reg_set(n->n1->val, v);
-				break;
-			}
+			ectl_reg_set(n->n1->val, v);
 			return v;
 		case N_MEM:
 			nb = n_eval(n->n1->n1);

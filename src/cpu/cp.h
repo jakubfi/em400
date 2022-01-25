@@ -36,7 +36,7 @@ void cp_off();
 void cp_clock_set(int state);
 int cp_clock_get();
 void cp_clear();
-int cp_bin(uint16_t ar);
+int cp_bin();
 void cp_oprq();
 int cp_state();
 int cp_stopn(uint16_t addr);

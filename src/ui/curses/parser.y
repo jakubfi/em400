@@ -169,7 +169,7 @@ command:
 	| F_MEM expr VALUE		{ dbg_c_mem(W_CMD, ectl_reg_get(ECTL_REG_Q) * ectl_reg_get(ECTL_REG_NB), n_eval($2), n_eval($2)+$3-1, 122, 18); }
 	| F_MEM VALUE ':' expr	{ dbg_c_mem(W_CMD, $2, n_eval($4), n_eval($4)+15, 122, 18); }
 	| F_MEM VALUE ':' expr VALUE { dbg_c_mem(W_CMD, $2, n_eval($4), n_eval($4)+$5-1, 122, 18); }
-	| F_BIN VALUE			{ dbg_c_bin(W_CMD, $2); }
+	| F_BIN					{ dbg_c_bin(W_CMD); }
 	| F_LOAD TEXT			{ dbg_c_load(W_CMD, $2); }
 	| F_BRK					{ dbg_c_brk_list(W_CMD); }
 	| F_BRK ADD expr	{

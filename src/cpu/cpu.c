@@ -51,7 +51,7 @@
 
 static int cpu_state = ECTL_STATE_OFF;
 uint16_t regs[8];
-uint16_t rIC, rKB, rIR, rAR;
+uint16_t rIC, rKB, rIR, rAR, rAC;
 int rALARM;
 uint16_t rMOD;
 int rMODc;
