@@ -568,7 +568,6 @@ void cpu_loop()
 		switch (state) {
 			case ECTL_STATE_CYCLE:
 				cpu_state_change(ECTL_STATE_STOP, ECTL_STATE_CYCLE);
-				[[fallthrough]];
 			case ECTL_STATE_RUN:
 				if (atom_load_acquire(&RP) && !P && !rMODc) {
 					int_serve();

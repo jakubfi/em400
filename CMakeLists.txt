@@ -1,8 +1,17 @@
-cmake_minimum_required(VERSION 3.1 FATAL_ERROR)
+cmake_minimum_required(VERSION 3.9.6)
 project(em400
 	DESCRIPTION "MERA-400 emulator"
 	LANGUAGES C
 )
+
+include(CheckIPOSupported)
+check_ipo_supported(RESULT IPO_SUPPORTED OUTPUT IPO_ERROR)
+
+if(IPO_SUPPORTED)
+	message(STATUS "IPO supported")
+else()
+	message(STATUS "IPO not supported, disabling: ${error}")
+endif()
 
 include(GNUInstallDirs)
 include(cmake/appversion.cmake)
@@ -174,6 +183,9 @@ target_include_directories(em400 PUBLIC ${CMAKE_SOURCE_DIR}/include)
 target_include_directories(em400 PRIVATE ${CMAKE_BINARY_DIR})
 target_compile_definitions(em400 PRIVATE EM400_VERSION="${APP_VERSION}")
 target_compile_options(em400 PUBLIC -Wall)
+if(IPO_SUPPORTED)
+	set_property(TARGET em400 PROPERTY INTERPROCEDURAL_OPTIMIZATION TRUE)
+endif()
 
 target_link_libraries(em400
 	${DEBUGGER_LIBS}

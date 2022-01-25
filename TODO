@@ -6,7 +6,6 @@ Code enhancements (possible):
 
 * librarize
 * make em400 C++ friendly
-* merge cpu sources for better instruction performance (-5%..+14%)
 
 Features (possible):
 
