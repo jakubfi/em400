@@ -26,7 +26,7 @@
 #include "ui/curses/keywords.h"
 #include "ui/curses/eval.h"
 #include "ui/curses/ui.h"
-#include "ui_curses_parser.h"
+#include "uicurses_parser.h"
 
 struct node_t *node_stack = NULL;
 struct var_t *var_stack = NULL;

@@ -1,0 +1,13 @@
+<RCC>
+    <qresource prefix="/">
+        <file>icons/start.svg</file>
+        <file>icons/bin.svg</file>
+        <file>icons/clear.svg</file>
+        <file>icons/clock.svg</file>
+        <file>icons/cycle.svg</file>
+        <file>icons/oprq.svg</file>
+        <file>icons/stop.svg</file>
+        <file>icons/open.svg</file>
+        <file>icons/em400.svg</file>
+    </qresource>
+</RCC>
