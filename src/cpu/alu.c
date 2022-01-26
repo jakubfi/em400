@@ -84,7 +84,7 @@ void alu_16_add(int16_t reg, int16_t n, unsigned carry)
 	// Set M when one of the following is true:
 	//  * C=1 and n[0] == r[0]
 	//  * C=0 and n[0] != r[0]
-	int diff_bit_zero = ((reg^n) & BIT_0) >> 15;
+	int diff_bit_zero = ((reg ^ n) & BIT_0) >> 15;
 	if (FGET(FL_C) != diff_bit_zero) {
 		FSET(FL_M);
 	} else {
@@ -125,7 +125,7 @@ void alu_16_sub(int16_t reg, int16_t n)
 	// Set M when one of the following is true:
 	//  * C=1 and n[0] != r[0]
 	//  * C=0 and n[0] == r[0]
-	int diff_bit_zero = ((reg^n) & BIT_0) >> 15;
+	int diff_bit_zero = ((reg ^ n) & BIT_0) >> 15;
 	if (FGET(FL_C) == diff_bit_zero) {
 		FSET(FL_M);
 	} else {

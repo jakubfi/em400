@@ -185,7 +185,7 @@ static int iset_register_op(struct iset_opcode **op_tab, struct iset_instruction
 	// store 1's positions in mask, count 1's
 	int one_count = 0;
 	for (int i=0 ; i<16 ; i++) {
-		if (instr->var_mask & (1<<i)) {
+		if (instr->var_mask & (1 << i)) {
 			offsets[one_count] = i;
 			one_count++;
 		}

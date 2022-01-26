@@ -117,7 +117,7 @@ void int_update_mask(uint16_t mask)
 	uint32_t xmask = 0b10000000000000000000000000000000;
 
 	for (i=0 ; i<10 ; i++) {
-		if (mask & (1 << (9-i))) {
+		if (mask & (1 << (9 - i))) {
 			xmask |= int_rm2xmask[i];
 		}
 	}

@@ -62,7 +62,7 @@ void op_ls()
 void op_ri()
 {
 	if (cpu_mem_put(QNB, r[IR_A], ac)) {
-		REG_RESTRICT_WRITE(IR_A, r[IR_A]+1);
+		REG_RESTRICT_WRITE(IR_A, r[IR_A] + 1);
 	}
 }
 
@@ -373,14 +373,14 @@ void op_trb()
 // -----------------------------------------------------------------------
 void op_irb()
 {
-	REG_RESTRICT_WRITE(IR_A, r[IR_A]+1);
+	REG_RESTRICT_WRITE(IR_A, r[IR_A] + 1);
 	if (r[IR_A]) ic += ac;
 }
 
 // -----------------------------------------------------------------------
 void op_drb()
 {
-	REG_RESTRICT_WRITE(IR_A, r[IR_A]-1);
+	REG_RESTRICT_WRITE(IR_A, r[IR_A] - 1);
 	if (r[IR_A] != 0) ic += ac;
 }
 
@@ -487,7 +487,7 @@ void op_72_ric()
 // -----------------------------------------------------------------------
 void op_72_zlb()
 {
-	REG_RESTRICT_WRITE(IR_A, r[IR_A] & 0x00ff);
+	REG_RESTRICT_WRITE(IR_A, r[IR_A] & 0xff);
 }
 
 // -----------------------------------------------------------------------
@@ -509,7 +509,7 @@ void op_72_nga()
 // -----------------------------------------------------------------------
 void shift_left(uint16_t shift_in, int check_v)
 {
-	uint16_t result = r[IR_A]<<1 | shift_in;
+	uint16_t result = (r[IR_A] << 1) | shift_in;
 	if (check_v && ((r[IR_A] ^ result) & 0x8000)) {
 		FSET(FL_V);
 	}
@@ -555,9 +555,9 @@ void op_72_svx()
 }
 
 // -----------------------------------------------------------------------
-void shift_right(uint16_t shift_in)
+static inline void shift_right(uint16_t shift_in)
 {
-	uint16_t result = (r[IR_A]>>1) | shift_in;
+	uint16_t result = (r[IR_A] >> 1) | shift_in;
 	if (r[IR_A] & 1) FSET(FL_Y);
 	else FCLR(FL_Y);
 	REG_RESTRICT_WRITE(IR_A, result);
@@ -566,13 +566,13 @@ void shift_right(uint16_t shift_in)
 // -----------------------------------------------------------------------
 void op_72_sry()
 {
-	shift_right(FGET(FL_Y)<<15);
+	shift_right(FGET(FL_Y) << 15);
 }
 
 // -----------------------------------------------------------------------
 void op_72_srx()
 {
-	shift_right(FGET(FL_X)<<15);
+	shift_right(FGET(FL_X) << 15);
 }
 
 // -----------------------------------------------------------------------
@@ -600,7 +600,7 @@ void op_72_shc()
 {
 	if (!IR_t) return;
 
-	uint16_t falling = (r[IR_A] & ((1<<IR_t)-1)) << (16-IR_t);
+	uint16_t falling = (r[IR_A] & ((1 << IR_t) - 1)) << (16 - IR_t);
 
 	REG_RESTRICT_WRITE(IR_A, (r[IR_A] >> IR_t) | falling);
 }
@@ -646,7 +646,7 @@ void op_72_lpc()
 // -----------------------------------------------------------------------
 void op_73_hlt()
 {
-	LOGCPU(L_OP, "HALT 0%02o (alarm: %i)", ac, r[6]&255);
+	LOGCPU(L_OP, "HALT 0%02o (alarm: %i)", ac, r[6] & 0xff);
 	cpu_state_change(ECTL_STATE_WAIT, ECTL_STATE_RUN);
 }
 
@@ -895,8 +895,6 @@ void op_77_sp()
 		}
 		if (LOG_WANTS(L_CRK5)) {
 			log_handle_syscall_ret(L_CRK5, ic, SR_READ(), r[4]);
-		}
-		if (LOG_WANTS(L_CRK5)) {
 			log_log_process(L_CRK5);
 		}
 	}
