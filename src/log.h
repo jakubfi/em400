@@ -67,12 +67,10 @@ void log_log_cpu(unsigned component, const char *msgfmt, ...);
 #define LOG_WANTS(component) (LOG_ENABLED & (1 << (component)))
 
 #define LOG(component, format, ...) \
-	if (LOG_WANTS(component)) \
-		log_log(component, __func__, format, ##__VA_ARGS__)
+	if (LOG_WANTS(component)) log_log(component, __func__, format, ##__VA_ARGS__)
 
 #define LOGCPU(component, format, ...) \
-	if (LOG_WANTS(component)) \
-		log_log_cpu(component, format, ##__VA_ARGS__)
+	if (LOG_WANTS(component)) log_log_cpu(component, format, ##__VA_ARGS__)
 
 #define LOGERR(format, ...) \
 	log_err(__func__, format, ##__VA_ARGS__)

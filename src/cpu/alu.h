@@ -33,9 +33,9 @@ void alu_16_set_Z_bool(uint16_t z);
 
 void awp_dispatch(int op, uint16_t arg);
 
-#define Fget(x) (regs[0] & (x) ? 1 : 0)
-#define Fset(x) (regs[0] |= (x))
-#define Fclr(x) (regs[0] &= ~(x))
+#define FGET(x) (r[0] & (x) ? 1 : 0)
+#define FSET(x) (r[0] |= (x))
+#define FCLR(x) (r[0] &= ~(x))
 
 #endif
 

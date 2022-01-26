@@ -50,31 +50,32 @@
 #include "cfg.h"
 
 static int cpu_state = ECTL_STATE_OFF;
-uint16_t regs[8];
-uint16_t rIC, rKB, rIR, rAR, rAC;
+
+uint16_t r[8];
+uint16_t ic, kb, ir, ar, ac;
 int rALARM;
 uint16_t rMOD;
-int rMODc;
-unsigned RM, Q, BS, NB;
+int mc;
+unsigned rm, q, bs, nb;
+int p;
 
-int P;
 uint32_t N;
-int cpu_mod_active;
 
+int cpu_mod_present;
+int cpu_mod_active;
+int cpu_user_io_illegal;
+int awp_enabled;
+static int nomem_stop;
+
+unsigned long ips_counter;
+
+static int speed_real;
 static struct timespec cpu_timer;
 static int cpu_time_cumulative;
-unsigned long ips_counter;
-static int speed_real;
 static int throttle_granularity;
 static float cpu_delay_factor;
 
-int cpu_mod_present;
-int cpu_user_io_illegal;
-static int nomem_stop;
-
 static int sound_enabled;
-
-int awp_enabled;
 
 // opcode table (instruction decoder decision table)
 struct iset_opcode *cpu_op_tab[0x10000];
@@ -88,7 +89,7 @@ static void cpu_do_wait()
 	LOG(L_CPU, "idling in state WAIT");
 
 	pthread_mutex_lock(&cpu_wake_mutex);
-	while ((cpu_state == ECTL_STATE_WAIT) && !(atom_load_acquire(&RP) && !P && !rMODc)) {
+	while ((cpu_state == ECTL_STATE_WAIT) && !(atom_load_acquire(&rp) && !p && !mc)) {
 			pthread_cond_wait(&cpu_wake_cond, &cpu_wake_mutex);
 	}
 	cpu_state &= ~ECTL_STATE_WAIT;
@@ -116,7 +117,7 @@ int cpu_state_change(int to, int from)
 	int res = 1;
 
 	pthread_mutex_lock(&cpu_wake_mutex);
-	if ((from == -1) || (cpu_state == from)) {
+	if ((from == ECTL_STATE_ANY) || (cpu_state == from)) {
 		cpu_state = to;
 		pthread_cond_broadcast(&cpu_wake_cond);
 		res = 0;
@@ -138,7 +139,7 @@ static void cpu_mem_fail(int nb)
 	int_set(INT_NO_MEM);
 	if ((nb == 0) && nomem_stop) {
 		rALARM = 1;
-		cpu_state_change(ECTL_STATE_STOP, -1);
+		cpu_state_change(ECTL_STATE_STOP, ECTL_STATE_ANY);
 	}
 }
 
@@ -188,7 +189,7 @@ int cpu_mem_get_byte(int nb, uint32_t addr, uint8_t *data)
 	int shift;
 	uint16_t orig = 0;
 
-	if (!cpu_mod_active || (Q & BS)) addr &= 0xffff;
+	if (!cpu_mod_active || (q & bs)) addr &= 0xffff;
 
 	shift = 8 * (~addr & 1);
 	addr >>= 1;
@@ -205,7 +206,7 @@ int cpu_mem_put_byte(int nb, uint32_t addr, uint8_t data)
 	int shift;
 	uint16_t orig = 0;
 
-	if (!cpu_mod_active || (Q & BS)) addr &= 0xffff;
+	if (!cpu_mod_active || (q & bs)) addr &= 0xffff;
 
 	shift = 8 * (~addr & 1);
 	addr >>= 1;
@@ -224,7 +225,7 @@ int cpu_init(em400_cfg *cfg)
 
 	awp_enabled = cfg_getbool(cfg, "cpu:awp", CFG_DEFAULT_CPU_AWP);
 
-	rKB = cfg_getint(cfg, "cpu:kb", CFG_DEFAULT_CPU_KB);
+	kb = cfg_getint(cfg, "cpu:kb", CFG_DEFAULT_CPU_KB);
 
 	cpu_mod_present = cfg_getbool(cfg, "cpu:modifications", CFG_DEFAULT_CPU_MODIFICATIONS);
 	cpu_user_io_illegal = cfg_getbool(cfg, "cpu:user_io_illegal", CFG_DEFAULT_CPU_IO_USER_ILLEGAL);
@@ -243,16 +244,16 @@ int cpu_init(em400_cfg *cfg)
 
 	// this is checked only at power-on
 	if (mem_mega_boot()) {
-		rIC = 0xf000;
+		ic = 0xf000;
 	} else {
-		rIC = 0;
+		ic = 0;
 	}
 
 	cpu_mod_off();
 
 	LOG(L_CPU, "CPU initialized. AWP: %s, KB=0x%04x, modifications: %s, user I/O: %s, stop on nomem: %s",
 		awp_enabled ? "enabled" : "disabled",
-		rKB,
+		kb,
 		cpu_mod_present ? "present" : "absent",
 		cpu_user_io_illegal ? "illegal" : "legal",
 		nomem_stop ? "true" : "false");
@@ -312,16 +313,16 @@ static void cpu_do_clear(int scope)
 	mem_reset();
 	cpu_mod_off();
 
-	regs[0] = 0;
-	SR_write(0);
+	r[0] = 0;
+	SR_WRITE(0);
 
-	int_update_mask(RM);
+	int_update_mask(rm);
 	int_clear_all();
 
 	if (scope == ECTL_STATE_CLO) {
 		rALARM = 0;
 		rMOD = 0;
-		rMODc = 0;
+		mc = 0;
 	}
 
 	// call even if logging is disabled - user may enable it later
@@ -333,27 +334,27 @@ static void cpu_do_clear(int scope)
 }
 
 // -----------------------------------------------------------------------
-int cpu_ctx_switch(uint16_t arg, uint16_t ic, uint16_t int_mask)
+int cpu_ctx_switch(uint16_t arg, uint16_t new_ic, uint16_t int_mask)
 {
 	uint16_t sp;
 
 	if (!cpu_mem_get(0, 97, &sp)) return 0;
 
-	LOG(L_CPU, "Store current process ctx [IC: 0x%04x, R0: 0x%04x, SR: 0x%04x, 0x%04x] @ 0x%04x, set new IC: 0x%04x", rIC, regs[0], SR_read(), arg, sp, ic);
+	LOG(L_CPU, "Store current process ctx [IC: 0x%04x, R0: 0x%04x, SR: 0x%04x, 0x%04x] @ 0x%04x, set new IC: 0x%04x", ic, r[0], SR_READ(), arg, sp, new_ic);
 
 
-	if (!cpu_mem_put(0, sp, rIC)) return 0;
-	if (!cpu_mem_put(0, sp+1, regs[0])) return 0;
-	if (!cpu_mem_put(0, sp+2, SR_read())) return 0;
+	if (!cpu_mem_put(0, sp, ic)) return 0;
+	if (!cpu_mem_put(0, sp+1, r[0])) return 0;
+	if (!cpu_mem_put(0, sp+2, SR_READ())) return 0;
 	if (!cpu_mem_put(0, sp+3, arg)) return 0;
 	if (!cpu_mem_put(0, 97, sp+4)) return 0;
 
-	regs[0] = 0;
-	rIC = ic;
-	Q = 0;
-	RM &= int_mask;
+	r[0] = 0;
+	ic = new_ic;
+	q = 0;
+	rm &= int_mask;
 
-	int_update_mask(RM);
+	int_update_mask(rm);
 
 	return 1;
 }
@@ -365,14 +366,14 @@ void cpu_ctx_restore()
 	uint16_t sp;
 
 	if (!cpu_mem_get(0, 97, &sp)) return;
-	if (!cpu_mem_get(0, sp-4, &rIC)) return;
-	if (!cpu_mem_get(0, sp-3, regs)) return;
+	if (!cpu_mem_get(0, sp-4, &ic)) return;
+	if (!cpu_mem_get(0, sp-3, r)) return;
 	if (!cpu_mem_get(0, sp-2, &sr)) return;
-	SR_write(sr);
-	int_update_mask(RM);
+	SR_WRITE(sr);
+	int_update_mask(rm);
 	if (!cpu_mem_put(0, 97, sp-4)) return;
 
-	LOG(L_CPU, "Loaded process ctx @ 0x%04x: [IC: 0x%04x, R0: 0x%04x, SR: 0x%04x]", sp-4, rIC, regs[0], sr);
+	LOG(L_CPU, "Loaded process ctx @ 0x%04x: [IC: 0x%04x, R0: 0x%04x, SR: 0x%04x]", sp-4, ic, r[0], sr);
 }
 
 // -----------------------------------------------------------------------
@@ -384,13 +385,13 @@ static int cpu_do_bin(int start)
 	static int cnt = 0;
 
 	if (start) {
-		LOG(L_CPU, "Binary load initiated @ 0x%04x", rAR);
+		LOG(L_CPU, "Binary load initiated @ 0x%04x", ar);
 		words = 0;
 		cnt = 0;
 		return 0;
 	}
 
-	int res = io_dispatch(IO_IN, rIC, &data);
+	int res = io_dispatch(IO_IN, ic, &data);
 	if (res == IO_OK) {
 		bdata[cnt] = data & 0xff;
 		if ((cnt == 0) && bin_is_end(bdata[cnt])) {
@@ -400,9 +401,9 @@ static int cpu_do_bin(int start)
 			cnt++;
 			if (cnt >= 3) {
 				cnt = 0;
-				if (cpu_mem_put(0, rAR, bin2word(bdata)) == 1) {
+				if (cpu_mem_put(0, ar, bin2word(bdata)) == 1) {
 					words++;
-					rAR++;
+					ar++;
 				}
 			}
 		}
@@ -420,32 +421,32 @@ static int cpu_do_cycle()
 	int instruction_time = 0;
 
 	if (LOG_WANTS(L_CPU)) {
-		log_store_cycle_state(SR_read(), rIC);
+		log_store_cycle_state(SR_READ(), ic);
 	}
 
 	ips_counter++;
 
 	// fetch instruction
-	if (!cpu_mem_get(QNB, rIC, &rIR)) {
+	if (!cpu_mem_get(QNB, ic, &ir)) {
 		LOGCPU(L_CPU, "        no mem, instruction fetch");
 		goto ineffective_memfail;
 	}
-	op = cpu_op_tab[rIR];
-	rIC++;
+	op = cpu_op_tab[ir];
+	ic++;
 
 	// check instruction effectivness
-	if (P || ((regs[0] & op->jmp_nef_mask) != op->jmp_nef_result)) {
+	if (p || ((r[0] & op->jmp_nef_mask) != op->jmp_nef_result)) {
 		if (LOG_WANTS(L_CPU)) {
 			log_log_dasm(0, 0, "skip: ");
 		}
-		if ((op->flags & OP_FL_ARG_NORM) && !IR_C) rIC++;
+		if ((op->flags & OP_FL_ARG_NORM) && !IR_C) ic++;
 		goto ineffective;
 	} else if (op->flags & OP_FL_ILLEGAL) {
-		int2binf(opcode, "... ... . ... ... ...", rIR, 16);
-		LOGCPU(L_CPU, "    illegal: %s (0x%04x)", opcode, rIR);
+		int2binf(opcode, "... ... . ... ... ...", ir, 16);
+		LOGCPU(L_CPU, "    illegal: %s (0x%04x)", opcode, ir);
 		int_set(INT_ILLEGAL_INSTRUCTION);
 		goto ineffective;
-	} else if (Q && (op->flags & OP_FL_USR_ILLEGAL)) {
+	} else if (q && (op->flags & OP_FL_USR_ILLEGAL)) {
 		if (LOG_WANTS(L_CPU)) {
 			log_log_dasm(0, 0, "illegal: ");
 		}
@@ -456,22 +457,22 @@ static int cpu_do_cycle()
 	// prepare argument
 	if ((op->flags & OP_FL_ARG_NORM)) {
 		if (IR_C) {
-			N = regs[IR_C] + rMOD;
+			N = r[IR_C] + rMOD;
 		} else {
-			if (!cpu_mem_get(QNB, rIC, &data)) {
-				LOGCPU(L_CPU, "    no mem, long arg fetch @ %i:0x%04x", QNB, (uint16_t) rIC);
+			if (!cpu_mem_get(QNB, ic, &data)) {
+				LOGCPU(L_CPU, "    no mem, long arg fetch @ %i:0x%04x", QNB, (uint16_t) ic);
 				goto ineffective_memfail;
 			} else {
 				N = data + rMOD;
-				rIC++;
+				ic++;
 			}
 			instruction_time += TIME_MEM_ARG;
 		}
-		if (rMODc) {
+		if (mc) {
 			instruction_time += TIME_PREMOD;
 		}
 		if (IR_B) {
-			N = (uint16_t) N + regs[IR_B];
+			N = (uint16_t) N + r[IR_B];
 			instruction_time += TIME_BMOD;
 		}
 		if (IR_D) {
@@ -485,7 +486,7 @@ static int cpu_do_cycle()
 		}
 	} else if ((op->flags & OP_FL_ARG_SHORT)) {
 		N = (uint16_t) IR_T + (uint16_t) rMOD;
-		if (rMODc) {
+		if (mc) {
 			instruction_time += TIME_PREMOD;
 		}
 	}
@@ -499,7 +500,7 @@ static int cpu_do_cycle()
 
 	// clear mod if instruction wasn't md
 	if (op->fun != op_77_md) {
-		rMODc = rMOD = 0;
+		mc = rMOD = 0;
 	}
 
 
@@ -521,9 +522,9 @@ ineffective_memfail:
 	instruction_time += TIME_NOANS_IF;
 ineffective:
 	instruction_time += TIME_P;
-	P = 0;
+	p = 0;
 	rMOD = 0;
-	rMODc = 0;
+	mc = 0;
 	return instruction_time;
 }
 
@@ -541,7 +542,7 @@ static void cpu_timekeeping(int cpu_time)
 	cpu_time_cumulative += cpu_time;
 
 	if (sound_enabled) {
-		buzzer_update(rIR, cpu_time);
+		buzzer_update(ir, cpu_time);
 	}
 
 	if (!skip_sleep && (cpu_time_cumulative >= throttle_granularity)) {
@@ -558,7 +559,7 @@ static void cpu_timekeeping(int cpu_time)
 // -----------------------------------------------------------------------
 void cpu_loop()
 {
-	cpu_state_change(ECTL_STATE_STOP, -1);
+	cpu_state_change(ECTL_STATE_STOP, ECTL_STATE_ANY);
 	clock_gettime(CLOCK_MONOTONIC, &cpu_timer);
 
 	while (1) {
@@ -569,7 +570,7 @@ void cpu_loop()
 			case ECTL_STATE_CYCLE:
 				cpu_state_change(ECTL_STATE_STOP, ECTL_STATE_CYCLE);
 			case ECTL_STATE_RUN:
-				if (atom_load_acquire(&RP) && !P && !rMODc) {
+				if (atom_load_acquire(&rp) && !p && !mc) {
 					int_serve();
 					cpu_time = TIME_INT_SERVE;
 				} else {
@@ -607,7 +608,7 @@ void cpu_loop()
 				break;
 			case ECTL_STATE_WAIT:
 				if (speed_real) {
-					if (atom_load_acquire(&RP) && !P && !rMODc) {
+					if (atom_load_acquire(&rp) && !p && !mc) {
 						cpu_state_change(ECTL_STATE_RUN, ECTL_STATE_WAIT);
 					} else {
 						cpu_time = throttle_granularity;

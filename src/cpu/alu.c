@@ -42,15 +42,15 @@
 void alu_16_set_LEG(int32_t a, int32_t b)
 {
 	if (a == b) {
-		Fset(FL_E);
-		Fclr(FL_G | FL_L);
+		FSET(FL_E);
+		FCLR(FL_G | FL_L);
 	} else {
 		if (a < b) {
-			Fset(FL_L);
-			Fclr(FL_E | FL_G);
+			FSET(FL_L);
+			FCLR(FL_E | FL_G);
 		} else {
-			Fclr(FL_E | FL_L);
-			Fset(FL_G);
+			FCLR(FL_E | FL_L);
+			FSET(FL_G);
 		}
 	}
 }
@@ -58,87 +58,87 @@ void alu_16_set_LEG(int32_t a, int32_t b)
 // -----------------------------------------------------------------------
 void alu_16_set_Z_bool(uint16_t z)
 {
-	if (z == 0) Fset(FL_Z);
-	else Fclr(FL_Z);
+	if (z == 0) FSET(FL_Z);
+	else FCLR(FL_Z);
 }
 
 // -----------------------------------------------------------------------
-void alu_16_add(int16_t r, int16_t n, unsigned carry)
+void alu_16_add(int16_t reg, int16_t n, unsigned carry)
 {
-	int sres = r + n + carry;
-	unsigned ures = (uint16_t) r + (uint16_t) n + carry;
+	int sres = reg + n + carry;
+	unsigned ures = (uint16_t) reg + (uint16_t) n + carry;
 
 	if (sres == 0) {
-		Fset(FL_Z);
+		FSET(FL_Z);
 	} else {
-		Fclr(FL_Z);
+		FCLR(FL_Z);
 	}
 
 	if (ures & BIT_MINUS_1) {
-		Fset(FL_C);
+		FSET(FL_C);
 	} else {
-		Fclr(FL_C);
+		FCLR(FL_C);
 	}
 
 	// Straight from the schematic:
 	// Set M when one of the following is true:
 	//  * C=1 and n[0] == r[0]
 	//  * C=0 and n[0] != r[0]
-	int diff_bit_zero = ((r^n) & BIT_0) >> 15;
-	if (Fget(FL_C) != diff_bit_zero) {
-		Fset(FL_M);
+	int diff_bit_zero = ((reg^n) & BIT_0) >> 15;
+	if (FGET(FL_C) != diff_bit_zero) {
+		FSET(FL_M);
 	} else {
-		Fclr(FL_M);
+		FCLR(FL_M);
 	}
 
 	// NOTE: straight from the schematic
-	if (((ures & BIT_0) >> 15) ^ Fget(FL_M)) {
-		Fset(FL_V);
+	if (((ures & BIT_0) >> 15) ^ FGET(FL_M)) {
+		FSET(FL_V);
 	} else {
 		// V is never cleared
 	}
 
-	reg_restrict_write(IR_A, (uint16_t) ures);
+	REG_RESTRICT_WRITE(IR_A, (uint16_t) ures);
 }
 
 
 // -----------------------------------------------------------------------
-void alu_16_sub(int16_t r, int16_t n)
+void alu_16_sub(int16_t reg, int16_t n)
 {
-	int sres = r - n;
-	unsigned ures = (uint16_t) r + (uint16_t) -n;
+	int sres = reg - n;
+	unsigned ures = (uint16_t) reg + (uint16_t) -n;
 
 	if (sres == 0) {
-		Fset(FL_Z);
+		FSET(FL_Z);
 	} else {
-		Fclr(FL_Z);
+		FCLR(FL_Z);
 	}
 
 	// NOTE: x-0 always sets carry
 	if ((ures & BIT_MINUS_1) || (n == 0)) {
-		Fset(FL_C);
+		FSET(FL_C);
 	} else {
-		Fclr(FL_C);
+		FCLR(FL_C);
 	}
 
 	// straight from the schematic
 	// Set M when one of the following is true:
 	//  * C=1 and n[0] != r[0]
 	//  * C=0 and n[0] == r[0]
-	int diff_bit_zero = ((r^n) & BIT_0) >> 15;
-	if (Fget(FL_C) == diff_bit_zero) {
-		Fset(FL_M);
+	int diff_bit_zero = ((reg^n) & BIT_0) >> 15;
+	if (FGET(FL_C) == diff_bit_zero) {
+		FSET(FL_M);
 	} else {
-		Fclr(FL_M);
+		FCLR(FL_M);
 	}
 
 	// NOTE: straight from the schematic
-	if (((ures & BIT_0) >> 15) ^ Fget(FL_M)) {
-		Fset(FL_V);
+	if (((ures & BIT_0) >> 15) ^ FGET(FL_M)) {
+		FSET(FL_V);
 	} else {
 		// V is never cleared
 	}
-	reg_restrict_write(IR_A, (uint16_t) ures);
+	REG_RESTRICT_WRITE(IR_A, (uint16_t) ures);
 }
 
 // -----------------------------------------------------------------------
@@ -178,31 +178,31 @@ void awp_dispatch(int op, uint16_t arg)
 			case AWP_NRF1:
 			case AWP_NRF2:
 			case AWP_NRF3:
-				res = awp_float_norm(regs);
+				res = awp_float_norm(r);
 				break;
 			case AWP_AD:
-				res = awp_dword_add(regs, n);
+				res = awp_dword_add(r, n);
 				break;
 			case AWP_SD:
-				res = awp_dword_sub(regs, n);
+				res = awp_dword_sub(r, n);
 				break;
 			case AWP_MW:
-				res = awp_dword_mul(regs, n[0]);
+				res = awp_dword_mul(r, n[0]);
 				break;
 			case AWP_DW:
-				res = awp_dword_div(regs, n[0]);
+				res = awp_dword_div(r, n[0]);
 				break;
 			case AWP_AF:
-				res = awp_float_add(regs, n);
+				res = awp_float_add(r, n);
 				break;
 			case AWP_SF:
-				res = awp_float_sub(regs, n);
+				res = awp_float_sub(r, n);
 				break;
 			case AWP_MF:
-				res = awp_float_mul(regs, n);
+				res = awp_float_mul(r, n);
 				break;
 			case AWP_DF:
-				res = awp_float_div(regs, n);
+				res = awp_float_div(r, n);
 				break;
 		}
 

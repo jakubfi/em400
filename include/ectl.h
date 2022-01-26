@@ -33,6 +33,7 @@ enum ectl_states {
 };
 
 enum ectl_cpu_states {
+	ECTL_STATE_ANY = -1,
 	ECTL_STATE_RUN = 0,
 	ECTL_STATE_STOP,
 	ECTL_STATE_WAIT,

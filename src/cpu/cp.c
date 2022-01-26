@@ -83,23 +83,23 @@ int cp_reg_get(unsigned id)
 			case ECTL_REG_R4:
 			case ECTL_REG_R5:
 			case ECTL_REG_R6:
-			case ECTL_REG_R7: reg = regs[id]; break;
-			case ECTL_REG_IC: reg = rIC; break;
-			case ECTL_REG_AC: reg = rAC; break;
-			case ECTL_REG_AR: reg = rAR; break;
-			case ECTL_REG_IR: reg = rIR; break;
-			case ECTL_REG_SR: reg = SR_read(); break;
+			case ECTL_REG_R7: reg = r[id]; break;
+			case ECTL_REG_IC: reg = ic; break;
+			case ECTL_REG_AC: reg = ac; break;
+			case ECTL_REG_AR: reg = ar; break;
+			case ECTL_REG_IR: reg = ir; break;
+			case ECTL_REG_SR: reg = SR_READ(); break;
 			case ECTL_REG_RZ: reg = int_get_nchan(); break;
-			case ECTL_REG_KB: reg = rKB; break;
-			case ECTL_REG_KB2: reg = rKB; break;
+			case ECTL_REG_KB: reg = kb; break;
+			case ECTL_REG_KB2: reg = kb; break;
 			case ECTL_REG_MOD: reg = rMOD; break;
-			case ECTL_REG_MODc: reg = rMODc; break;
+			case ECTL_REG_MODc: reg = mc; break;
 			case ECTL_REG_ALARM: reg = rALARM; break;
-			case ECTL_REG_RM: reg = RM; break;
-			case ECTL_REG_Q: reg = Q; break;
-			case ECTL_REG_BS: reg = BS; break;
-			case ECTL_REG_NB: reg = NB; break;
-			case ECTL_REG_P: reg = P; break;
+			case ECTL_REG_RM: reg = rm; break;
+			case ECTL_REG_Q: reg = q; break;
+			case ECTL_REG_BS: reg = bs; break;
+			case ECTL_REG_NB: reg = nb; break;
+			case ECTL_REG_P: reg = p; break;
 			case ECTL_REG_RZ_IO: reg = int_get_chan(); break;
 			default: reg = -1; break;
 		}
@@ -126,23 +126,23 @@ int cp_reg_set(unsigned id, uint16_t v)
 			case ECTL_REG_R4:
 			case ECTL_REG_R5:
 			case ECTL_REG_R6:
-			case ECTL_REG_R7: regs[id] = v; break;
-			case ECTL_REG_IC: rIC = v; break;
-			case ECTL_REG_AC: rAC = v; break;
-			case ECTL_REG_AR: rAR = v ; break;
-			case ECTL_REG_IR: rIR = v; break;
-			case ECTL_REG_SR: SR_write(v); break;
+			case ECTL_REG_R7: r[id] = v; break;
+			case ECTL_REG_IC: ic = v; break;
+			case ECTL_REG_AC: ac = v; break;
+			case ECTL_REG_AR: ar = v ; break;
+			case ECTL_REG_IR: ir = v; break;
+			case ECTL_REG_SR: SR_WRITE(v); break;
 			// n/a case ECTL_REG_RZ:
-			case ECTL_REG_KB: rKB = v; break;
-			case ECTL_REG_KB2: rKB = v; break;
+			case ECTL_REG_KB: kb = v; break;
+			case ECTL_REG_KB2: kb = v; break;
 			case ECTL_REG_MOD: rMOD = v; break;
-			case ECTL_REG_MODc: rMODc = v; break;
+			case ECTL_REG_MODc: mc = v; break;
 			case ECTL_REG_ALARM: rALARM = v; break;
-			case ECTL_REG_RM: RM = v & 0b1111111111; break;
-			case ECTL_REG_Q: Q = v ? 1 : 0; break;
-			case ECTL_REG_BS: BS = v ? 1 : 0; break;
-			case ECTL_REG_NB: NB = v & 0b1111; break;
-			case ECTL_REG_P: P = v ? 1 : 0; break;
+			case ECTL_REG_RM: rm = v & 0b1111111111; break;
+			case ECTL_REG_Q: q = v ? 1 : 0; break;
+			case ECTL_REG_BS: bs = v ? 1 : 0; break;
+			case ECTL_REG_NB: nb = v & 0b1111; break;
+			case ECTL_REG_P: p = v ? 1 : 0; break;
 			// n/a case ECTL_REG_RZ_IO:
 			default: return -1;
 		}

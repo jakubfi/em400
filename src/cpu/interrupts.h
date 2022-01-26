@@ -21,8 +21,8 @@
 #include <inttypes.h>
 #include <pthread.h>
 
-extern uint32_t RZ;
-extern uint32_t RP;
+extern uint32_t rz;
+extern uint32_t rp;
 
 enum named_interrupts {
 	INT_2CPU_POWER		= 0,

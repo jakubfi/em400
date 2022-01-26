@@ -28,8 +28,8 @@
 
 #include "ectl.h" // for global constants
 
-uint32_t RZ;
-uint32_t RP;
+uint32_t rz;
+uint32_t rp;
 uint32_t int_mask;
 
 pthread_mutex_t int_mutex = PTHREAD_MUTEX_INITIALIZER;
@@ -104,8 +104,8 @@ static const char *int_names[] = {
 static void int_update_rp()
 {
 	// under mutex
-	RP = RZ & int_mask;
-	if (RP && !P && !rMODc) {
+	rp = rz & int_mask;
+	if (rp && !p && !mc) {
 		cpu_state_change(ECTL_STATE_RUN, ECTL_STATE_WAIT);
 	}
 }
@@ -134,7 +134,7 @@ void int_set(int x)
 	LOG(L_INT, "Set interrupt: %i (%s)", x, int_names[x]);
 
 	pthread_mutex_lock(&int_mutex);
-	RZ |= INT_BIT(x);
+	rz |= INT_BIT(x);
 	int_update_rp();
 	pthread_mutex_unlock(&int_mutex);
 }
@@ -143,7 +143,7 @@ void int_set(int x)
 void int_clear_all()
 {
 	pthread_mutex_lock(&int_mutex);
-	RZ = 0;
+	rz = 0;
 	int_update_rp();
 	pthread_mutex_unlock(&int_mutex);
 }
@@ -154,7 +154,7 @@ void int_clear(int x)
 	LOG(L_INT, "Clear interrupt: %i (%s)", x, int_names[x]);
 
 	pthread_mutex_lock(&int_mutex);
-	RZ &= ~INT_BIT(x);
+	rz &= ~INT_BIT(x);
 	int_update_rp();
 	pthread_mutex_unlock(&int_mutex);
 }
@@ -165,7 +165,7 @@ void int_put_nchan(uint16_t r)
 	LOG(L_INT, "Set non-channel interrupts to: %d", r);
 
 	pthread_mutex_lock(&int_mutex);
-	RZ = (RZ & 0b00000000000011111111111111110000) | ((r & 0b1111111111110000) << 16) | (r & 0b0000000000001111);
+	rz = (rz & 0b00000000000011111111111111110000) | ((r & 0b1111111111110000) << 16) | (r & 0b0000000000001111);
 	int_update_rp();
 	pthread_mutex_unlock(&int_mutex);
 }
@@ -175,7 +175,7 @@ uint16_t int_get_nchan()
 {
 	uint32_t r;
 	pthread_mutex_lock(&int_mutex);
-	r = RZ;
+	r = rz;
 	pthread_mutex_unlock(&int_mutex);
 	return ((r & 0b11111111111100000000000000000000) >> 16) | (r & 0b00000000000000000000000000001111);
 }
@@ -185,7 +185,7 @@ uint16_t int_get_chan()
 {
 	uint32_t r;
 	pthread_mutex_lock(&int_mutex);
-	r = RZ;
+	r = rz;
 	pthread_mutex_unlock(&int_mutex);
 	return (r >> 4) & 0xffff;
 }
@@ -200,14 +200,14 @@ void int_serve()
 	uint16_t int_mask;
 
 	// find highest interrupt to serve
-	while ((probe > 0) && !(RP & (1 << probe))) {
+	while ((probe > 0) && !(rp & (1 << probe))) {
 		probe--;
 	}
 	interrupt = 31 - probe;
 
 	// clear interrupt, we update rp together with mask upon ctx switch
 	pthread_mutex_lock(&int_mutex);
-	RZ &= ~INT_BIT(interrupt);
+	rz &= ~INT_BIT(interrupt);
 	pthread_mutex_unlock(&int_mutex);
 
 	// get interrupt vector
