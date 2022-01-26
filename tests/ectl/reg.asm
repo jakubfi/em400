@@ -31,5 +31,5 @@
 ; XPCT ir&0x3f : 0o77
 ; XPCT IC : 201
 ; XPCT SR : 11
-; XPCT AR : 666
-; XPCT AC : 333
+; XPCT AR : 63
+; XPCT AC : 63
