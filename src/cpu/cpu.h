@@ -59,14 +59,12 @@
 #define REG_RESTRICT_WRITE(i, v) r[i] = ((i)|!q) ? (v) : (r[i] & 0b1111111100000000) | ((v) & 0b0000000011111111)
 
 extern uint16_t r[8];
-extern uint16_t ic, kb, ir, ar, ac;
+extern uint16_t ic, kb, ir;
+extern int ac, ar;
 extern bool rALARM;
-extern uint16_t rMOD;
 extern int mc;
 extern unsigned rm, nb;
 extern bool p, q, bs;
-
-extern uint32_t N;
 
 extern bool cpu_mod_present;
 extern bool cpu_mod_active;

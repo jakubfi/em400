@@ -42,7 +42,7 @@ hex		0x[0-9a-f]+
 bin		0b[01]+
 dec		[0-9]+
 reg		r[0-7]
-regs	ic|sr|ir|ar|ac|kb|mod|modc|zc17|alarm
+regs	ic|sr|ir|ar|ac|kb|mod|mc|zc17|alarm
 bases	int|uint|bin|oct|hex
 name	[a-z%#_][a-z0-9#%]*
 text	[^\n\t\r ]+

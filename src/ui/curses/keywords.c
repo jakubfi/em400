@@ -29,8 +29,7 @@ struct kw_t kw_regs[] = {
 	{ "AR", ECTL_REG_AR },
 	{ "AC", ECTL_REG_AC },
 	{ "KB",	ECTL_REG_KB },
-	{ "MOD", ECTL_REG_MOD },
-	{ "MODC", ECTL_REG_MODc },
+	{ "MC", ECTL_REG_MC },
 	{ "ALARM", ECTL_REG_ALARM },
 	{ NULL, 0 }
 };

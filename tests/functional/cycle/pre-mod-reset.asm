@@ -9,4 +9,4 @@
 ; XPCT sr : 0
 ; XPCT rz[6] : 0
 
-; XPCT mod : 0
+; XPCT mc : 0

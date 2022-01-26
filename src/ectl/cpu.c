@@ -53,10 +53,10 @@ static const char *ectl_reg_names[] = {
 	// registers available on rotary switch (real hw)
 	"R0", "R1", "R2", "R3", "R4", "R5", "R6", "R7",
 	"IC", "AC", "AR", "IR", "SR", "RZ", "KB", "KB",
-	// em400 "registers"
-	"MOD", "MODc",
 	// internal CPU registers (real hw)
-	"ALARM", "RM", "Q", "BS", "NB", "P", "RZ_IO",
+	"MC", "ALARM", "RM", "Q", "BS", "NB", "P",
+	// em400 extension of RZ
+	"RZ_IO",
 	"??"
 };
 

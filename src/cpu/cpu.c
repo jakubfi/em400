@@ -52,14 +52,12 @@
 static int cpu_state = ECTL_STATE_OFF;
 
 uint16_t r[8];
-uint16_t ic, kb, ir, ar, ac;
+uint16_t ic, kb, ir;
+int ac, ar;
 bool rALARM;
-uint16_t rMOD;
 int mc;
 unsigned rm, nb;
 bool p, q, bs;
-
-uint32_t N;
 
 bool cpu_mod_present;
 bool cpu_mod_active;
@@ -321,7 +319,6 @@ static void cpu_do_clear(int scope)
 
 	if (scope == ECTL_STATE_CLO) {
 		rALARM = 0;
-		rMOD = 0;
 		mc = 0;
 	}
 
@@ -341,7 +338,6 @@ int cpu_ctx_switch(uint16_t arg, uint16_t new_ic, uint16_t int_mask)
 	if (!cpu_mem_get(0, 97, &sp)) return 0;
 
 	LOG(L_CPU, "Store current process ctx [IC: 0x%04x, R0: 0x%04x, SR: 0x%04x, 0x%04x] @ 0x%04x, set new IC: 0x%04x", ic, r[0], SR_READ(), arg, sp, new_ic);
-
 
 	if (!cpu_mem_put(0, sp, ic)) return 0;
 	if (!cpu_mem_put(0, sp+1, r[0])) return 0;
@@ -417,12 +413,10 @@ static int cpu_do_cycle()
 {
 	struct iset_opcode *op;
 	uint16_t data;
-	char opcode[32];
+	static char opcode[32];
 	int instruction_time = 0;
 
-	if (LOG_WANTS(L_CPU)) {
-		log_store_cycle_state(SR_READ(), ic);
-	}
+	if (LOG_WANTS(L_CPU)) log_store_cycle_state(SR_READ(), ic);
 
 	ips_counter++;
 
@@ -431,77 +425,78 @@ static int cpu_do_cycle()
 		LOGCPU(L_CPU, "        no mem, instruction fetch");
 		goto ineffective_memfail;
 	}
+
 	op = cpu_op_tab[ir];
+	unsigned flags = op->flags;
 	ic++;
 
 	// check instruction effectivness
 	if (p || ((r[0] & op->jmp_nef_mask) != op->jmp_nef_result)) {
-		if (LOG_WANTS(L_CPU)) {
-			log_log_dasm(0, 0, "skip: ");
-		}
-		if ((op->flags & OP_FL_ARG_NORM) && !IR_C) ic++;
+		if (LOG_WANTS(L_CPU)) log_log_dasm(0, 0, "skip: ");
+		if ((flags & OP_FL_ARG_NORM) && !IR_C) ic++;
 		goto ineffective;
-	} else if (op->flags & OP_FL_ILLEGAL) {
+	} else if (flags & OP_FL_ILLEGAL) {
 		int2binf(opcode, "... ... . ... ... ...", ir, 16);
 		LOGCPU(L_CPU, "    illegal: %s (0x%04x)", opcode, ir);
 		int_set(INT_ILLEGAL_INSTRUCTION);
 		goto ineffective;
-	} else if (q && (op->flags & OP_FL_USR_ILLEGAL)) {
-		if (LOG_WANTS(L_CPU)) {
-			log_log_dasm(0, 0, "illegal: ");
-		}
+	} else if (q && (flags & OP_FL_USR_ILLEGAL)) {
+		if (LOG_WANTS(L_CPU)) log_log_dasm(0, 0, "illegal: ");
 		int_set(INT_ILLEGAL_INSTRUCTION);
 		goto ineffective;
 	}
 
-	// prepare argument
-	if ((op->flags & OP_FL_ARG_NORM)) {
+	// get the argument
+	if (flags & OP_FL_ARG_NORM) {
 		if (IR_C) {
-			N = r[IR_C] + rMOD;
+			ac = r[IR_C];
 		} else {
 			if (!cpu_mem_get(QNB, ic, &data)) {
 				LOGCPU(L_CPU, "    no mem, long arg fetch @ %i:0x%04x", QNB, (uint16_t) ic);
 				goto ineffective_memfail;
-			} else {
-				N = data + rMOD;
-				ic++;
 			}
+			ac = data;
+			ic++;
 			instruction_time += TIME_MEM_ARG;
 		}
-		if (mc) {
-			instruction_time += TIME_PREMOD;
-		}
-		if (IR_B) {
-			N = (uint16_t) N + r[IR_B];
-			instruction_time += TIME_BMOD;
-		}
-		if (IR_D) {
-			if (!cpu_mem_get(QNB, N, &data)) {
-				LOGCPU(L_CPU, "    no mem, indirect arg fetch @ %i:0x%04x", QNB, (uint16_t) N);
-				goto ineffective_memfail;
-			} else {
-				N = data;
-			}
-			instruction_time += TIME_DMOD;
-		}
-	} else if ((op->flags & OP_FL_ARG_SHORT)) {
-		N = (uint16_t) IR_T + (uint16_t) rMOD;
-		if (mc) {
-			instruction_time += TIME_PREMOD;
-		}
+	} else if (flags & OP_FL_ARG_SHORT) {
+		ac = IR_T;
+	} else if (flags & OP_FL_ARG_BYTE) {
+		ac = IR_b;
 	}
 
-	if (LOG_WANTS(L_CPU)) {
-		log_log_dasm((op->flags & (OP_FL_ARG_NORM | OP_FL_ARG_SHORT)), N, "");
+	// pre-mod
+	if (mc) {
+		ac += ar;
+		instruction_time += TIME_PREMOD;
 	}
+
+	// B-mod
+	if ((flags & OP_FL_ARG_NORM) && IR_B) {
+		ac = (uint16_t) ac + r[IR_B]; // uint16_t cast is required for 17-bit byte addressing to work correctly
+		instruction_time += TIME_BMOD;
+	}
+
+	// D-mod
+	if ((flags & OP_FL_ARG_NORM) && IR_D) {
+		if (!cpu_mem_get(QNB, ac, &data)) {
+			LOGCPU(L_CPU, "    no mem, indirect arg fetch @ %i:0x%04x", QNB, (uint16_t) ac);
+			goto ineffective_memfail;
+		} else {
+			ac = data;
+		}
+		instruction_time += TIME_DMOD;
+	}
+
+	ar = ac;
+
+	if (LOG_WANTS(L_CPU)) log_log_dasm((op->flags & (OP_FL_ARG_NORM | OP_FL_ARG_SHORT)), ac, "");
 
 	// execute instruction
 	op->fun();
 
-	// clear mod if instruction wasn't md
-	if (op->fun != op_77_md) {
-		mc = rMOD = 0;
-	}
+	// clear modification counter if instruction was not MD
+	if (op->fun != op_77_md) mc = 0;
 
 
 	instruction_time += op->time;
@@ -523,7 +518,6 @@ ineffective_memfail:
 ineffective:
 	instruction_time += TIME_P;
 	p = 0;
-	rMOD = 0;
 	mc = 0;
 	return instruction_time;
 }

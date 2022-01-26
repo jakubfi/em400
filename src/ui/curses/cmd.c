@@ -261,8 +261,8 @@ void dbg_c_sregs(int wid)
 	awtbprint(wid, C_LABEL, "KB: ");
 	awtbprint(wid, C_DATA, "0x%04x  ", ectl_reg_get(ECTL_REG_KB));
 	awtbbinprint(wid, C_DATA, "........ ........", ectl_reg_get(ECTL_REG_KB), 16);
-	awtbprint(wid, C_LABEL, "          MOD: ");
-	awtbprint(wid, C_DATA, "0x%04x (%i)", ectl_reg_get(ECTL_REG_MOD), ectl_reg_get(ECTL_REG_MODc));
+	awtbprint(wid, C_LABEL, "           MC: ");
+	awtbprint(wid, C_DATA, "%i", ectl_reg_get(ECTL_REG_MC));
 	awtbprint(wid, C_DATA, "\n\n");
 
 	awtbprint(wid, C_LABEL, "                ZPMCZ TIFFFFx 01 23 456789 abcdef OCSS");

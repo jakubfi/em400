@@ -64,7 +64,7 @@ int cp_reg_get(unsigned id)
 			stat = iob_cp_get_status();
 			reg = stat->leds;
 			free(stat);
-			if ((id == ECTL_REG_MOD) || (id == ECTL_REG_MODc)) {
+			if (id == ECTL_REG_MC) {
 				reg = (reg & IOB_LED_MODE) >> 9;
 			} else if (id == ECTL_REG_ALARM) {
 				reg = reg & IOB_LED_ALARM;
@@ -85,15 +85,14 @@ int cp_reg_get(unsigned id)
 			case ECTL_REG_R6:
 			case ECTL_REG_R7: reg = r[id]; break;
 			case ECTL_REG_IC: reg = ic; break;
-			case ECTL_REG_AC: reg = ac; break;
-			case ECTL_REG_AR: reg = ar; break;
+			case ECTL_REG_AC: reg = (uint16_t) ac; break;
+			case ECTL_REG_AR: reg = (uint16_t) ar; break;
 			case ECTL_REG_IR: reg = ir; break;
 			case ECTL_REG_SR: reg = SR_READ(); break;
 			case ECTL_REG_RZ: reg = int_get_nchan(); break;
-			case ECTL_REG_KB: reg = kb; break;
+			case ECTL_REG_KB:
 			case ECTL_REG_KB2: reg = kb; break;
-			case ECTL_REG_MOD: reg = rMOD; break;
-			case ECTL_REG_MODc: reg = mc; break;
+			case ECTL_REG_MC: reg = mc; break;
 			case ECTL_REG_ALARM: reg = rALARM; break;
 			case ECTL_REG_RM: reg = rm; break;
 			case ECTL_REG_Q: reg = q; break;
@@ -133,10 +132,9 @@ int cp_reg_set(unsigned id, uint16_t v)
 			case ECTL_REG_IR: ir = v; break;
 			case ECTL_REG_SR: SR_WRITE(v); break;
 			// n/a case ECTL_REG_RZ:
-			case ECTL_REG_KB: kb = v; break;
+			case ECTL_REG_KB:
 			case ECTL_REG_KB2: kb = v; break;
-			case ECTL_REG_MOD: rMOD = v; break;
-			case ECTL_REG_MODc: mc = v; break;
+			case ECTL_REG_MC: mc = v; break;
 			case ECTL_REG_ALARM: rALARM = v; break;
 			case ECTL_REG_RM: rm = v & 0b1111111111; break;
 			case ECTL_REG_Q: q = v ? 1 : 0; break;

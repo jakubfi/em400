@@ -103,10 +103,10 @@ struct iset_instruction em400_ilist[] = {
 	{ O(070)+0600, VARMASK_DBC, { OP_FL_ARG_SHORT, op_70_jump, FL_Y, FL_Y, 2000 } },	// jys
 	{ O(070)+0700, VARMASK_DBC, { OP_FL_ARG_SHORT, op_70_jump, FL_C, FL_C, 2000 } },	// jcs
 
-	{ O(071)+00000, VARMASK_BYTE, { OP_FL_NONE, op_71_blc, 0, 0, 1700 } },
-	{ O(071)+00400, VARMASK_BYTE, { OP_FL_NONE, op_71_exl, 0, 0, 10000 } },//
-	{ O(071)+01000, VARMASK_BYTE, { OP_FL_NONE, op_71_brc, 0, 0, 1700 } },
-	{ O(071)+01400, VARMASK_BYTE, { OP_FL_NONE, op_71_nrf, 0, 0, (3800+15800)/2 } },
+	{ O(071)+00000, VARMASK_BYTE, { OP_FL_ARG_BYTE, op_71_blc, 0, 0, 1700 } },
+	{ O(071)+00400, VARMASK_BYTE, { OP_FL_ARG_BYTE, op_71_exl, 0, 0, 10000 } },//
+	{ O(071)+01000, VARMASK_BYTE, { OP_FL_ARG_BYTE, op_71_brc, 0, 0, 1700 } },
+	{ O(071)+01400, VARMASK_BYTE, { OP_FL_ARG_BYTE, op_71_nrf, 0, 0, (3800+15800)/2 } },
 
 	{ O(072)+00000, VARMASK_A,   { OP_FL_NONE, op_72_ric, 0, 0, 1400 } },
 	{ O(072)+00001, VARMASK_A,   { OP_FL_NONE, op_72_zlb, 0, 0, 1400 } },

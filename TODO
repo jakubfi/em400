@@ -1,6 +1,8 @@
 Known bugs:
 
 Cleanups:
+* pre-modification vs. SHC
+* pre-modification vs. EXL and NRF
 
 Code enhancements (possible):
 
@@ -18,7 +20,6 @@ Features (possible):
 
 CPU:
 
-* AR access?
 * review cpu cycle in context of interrupt handling
 * no-elwro configuration
 * overlaid elwro/mega configuration

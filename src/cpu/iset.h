@@ -38,6 +38,7 @@ enum opcode_flags {
 	OP_FL_ILLEGAL		= 0x4,	// illegal instruction
 	OP_FL_USR_ILLEGAL	= 0x8,	// instruction illegal in user mode
 	OP_FL_IO			= 0x10,	// I/O instruction
+	OP_FL_ARG_BYTE		= 0x20, // byte argument
 };
 
 typedef void (*opfun)();
