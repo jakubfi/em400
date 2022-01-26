@@ -26,7 +26,7 @@
 #include <unistd.h>
 #include <signal.h>
 #include <errno.h>
-
+#include <stdbool.h>
 #include <emawp.h>
 
 #include "cpu/cpu.h"
@@ -53,19 +53,19 @@ static int cpu_state = ECTL_STATE_OFF;
 
 uint16_t r[8];
 uint16_t ic, kb, ir, ar, ac;
-int rALARM;
+bool rALARM;
 uint16_t rMOD;
 int mc;
-unsigned rm, q, bs, nb;
-int p;
+unsigned rm, nb;
+bool p, q, bs;
 
 uint32_t N;
 
-int cpu_mod_present;
-int cpu_mod_active;
-int cpu_user_io_illegal;
-int awp_enabled;
-static int nomem_stop;
+bool cpu_mod_present;
+bool cpu_mod_active;
+bool cpu_user_io_illegal;
+bool awp_enabled;
+static bool nomem_stop;
 
 unsigned long ips_counter;
 

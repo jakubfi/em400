@@ -19,6 +19,7 @@
 #define CPU_H
 
 #include <inttypes.h>
+#include <stdbool.h>
 
 #include "cpu/flags.h"
 #include "cfg.h"
@@ -26,14 +27,14 @@
 // -----------------------------------------------------------------------
 // SR access macros
 // -----------------------------------------------------------------------
-#define SR_READ() (rm<<6 | q<<5 | bs<<4 | nb)
-#define SR_WRITE(sr) \
-	rm = (sr >> 6) & 0b1111111111; \
-	q = (sr >> 5) & 1; \
-	bs = (sr >> 4) & 1; \
-	nb = sr & 0b1111
+#define SR_READ() (rm << 6 | q << 5 | bs << 4 | nb)
+#define SR_WRITE(sr)				\
+	rm = (sr >> 6) & 0b1111111111;	\
+	q =  sr & 0b100000;				\
+	bs = sr & 0b010000;				\
+	nb = sr & 0b001111
 
-#define QNB	(q*nb)
+#define QNB	(q * nb)
 
 // -----------------------------------------------------------------------
 // IR access macros
@@ -59,18 +60,18 @@
 
 extern uint16_t r[8];
 extern uint16_t ic, kb, ir, ar, ac;
-extern int rALARM;
+extern bool rALARM;
 extern uint16_t rMOD;
 extern int mc;
-extern unsigned rm, q, bs, nb;
-extern int p;
+extern unsigned rm, nb;
+extern bool p, q, bs;
 
 extern uint32_t N;
 
-extern int cpu_mod_present;
-extern int cpu_mod_active;
-extern int cpu_user_io_illegal;
-extern int awp_enabled;
+extern bool cpu_mod_present;
+extern bool cpu_mod_active;
+extern bool cpu_user_io_illegal;
+extern bool awp_enabled;
 
 int cpu_mem_get(int nb, uint16_t addr, uint16_t *data);
 int cpu_mem_put(int nb, uint16_t addr, uint16_t data);
