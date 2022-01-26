@@ -1,4 +1,4 @@
-//  Copyright (c) 2016 Jakub Filipowicz <jakubf@gmail.com>
+//  Copyright (c) 2016-2022 Jakub Filipowicz <jakubf@gmail.com>
 //
 //  This program is free software; you can redistribute it and/or modify
 //  it under the terms of the GNU General Public License as published by
@@ -174,7 +174,6 @@ const char * ectl_cpu_state_name(unsigned state)
 	} else {
 		return state_names[state];
 	}
-
 }
 
 // -----------------------------------------------------------------------

@@ -137,10 +137,10 @@ int cp_reg_set(unsigned id, uint16_t v)
 			case ECTL_REG_MC: mc = v; break;
 			case ECTL_REG_ALARM: rALARM = v; break;
 			case ECTL_REG_RM: rm = v & 0b1111111111; break;
-			case ECTL_REG_Q: q = v ? 1 : 0; break;
-			case ECTL_REG_BS: bs = v ? 1 : 0; break;
+			case ECTL_REG_Q: q = v; break;
+			case ECTL_REG_BS: bs = v; break;
 			case ECTL_REG_NB: nb = v & 0b1111; break;
-			case ECTL_REG_P: p = v ? 1 : 0; break;
+			case ECTL_REG_P: p = v; break;
 			// n/a case ECTL_REG_RZ_IO:
 			default: return -1;
 		}

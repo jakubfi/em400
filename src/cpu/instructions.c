@@ -91,7 +91,7 @@ void op_is()
 	uint16_t data;
 	if (cpu_mem_get(nb, ac, &data)) {
 		if ((data & r[IR_A]) == r[IR_A]) {
-			p = 1;
+			p = true;
 		} else {
 			cpu_mem_put(nb, ac, data | r[IR_A]);
 		}
@@ -102,7 +102,7 @@ void op_is()
 void op_bb()
 {
 	if ((r[IR_A] & (uint16_t) ac) == (uint16_t) ac) {
-		p = 1;
+		p = true;
 	}
 }
 
@@ -112,7 +112,7 @@ void op_bm()
 	uint16_t data;
 	if (cpu_mem_get(nb, ac, &data)) {
 		if ((data & r[IR_A]) == r[IR_A]) {
-			p = 1;
+			p = true;
 		}
 	}
 }
@@ -121,7 +121,7 @@ void op_bm()
 void op_bs()
 {
 	if ((r[IR_A] & r[7]) == ((uint16_t) ac & r[7])) {
-		p = 1;
+		p = true;
 	}
 }
 
@@ -129,7 +129,7 @@ void op_bs()
 void op_bc()
 {
 	if ((r[IR_A] & (uint16_t) ac) != (uint16_t) ac) {
-		p = 1;
+		p = true;
 	}
 }
 
@@ -137,7 +137,7 @@ void op_bc()
 void op_bn()
 {
 	if ((r[IR_A] & (uint16_t) ac) == 0) {
-		p = 1;
+		p = true;
 	}
 }
 
@@ -366,7 +366,7 @@ void op_trb()
 {
 	REG_RESTRICT_WRITE(IR_A, r[IR_A] + ac);
 	if (r[IR_A] == 0) {
-		p = 1;
+		p = true;
 	}
 }
 
@@ -436,7 +436,7 @@ void op_70_jvs()
 void op_71_blc()
 {
 	if (((r[0] >> 8) & ac) != ac) {
-		p = 1;
+		p = true;
 	}
 }
 
@@ -463,7 +463,7 @@ void op_71_exl()
 void op_71_brc()
 {
 	if ((r[0] & ac) != ac) {
-		p = 1;
+		p = true;
 	}
 }
 
@@ -842,9 +842,10 @@ void op_77_mb()
 {
 	uint16_t data;
 	if (cpu_mem_get(QNB, ac, &data)) {
-		q = (data >> 5) & 1;
-		bs = (data >> 4) & 1;
-		nb = data & 0b1111;
+		q =  data & 0b100000;
+		bs = data & 0b010000;
+		nb = data & 0b001111;
+
 	}
 }
 
@@ -926,7 +927,7 @@ void op_77_ib()
 	if (cpu_mem_get(QNB, ac, &data)) {
 		if (cpu_mem_put(QNB, ac, ++data)) {
 			if (data == 0) {
-				p = 1;
+				p = true;
 			}
 		}
 	}

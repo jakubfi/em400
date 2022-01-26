@@ -347,7 +347,7 @@ int cpu_ctx_switch(uint16_t arg, uint16_t new_ic, uint16_t int_mask)
 
 	r[0] = 0;
 	ic = new_ic;
-	q = 0;
+	q = false;
 	rm &= int_mask;
 
 	int_update_mask(rm);
@@ -517,7 +517,7 @@ ineffective_memfail:
 	instruction_time += TIME_NOANS_IF;
 ineffective:
 	instruction_time += TIME_P;
-	p = 0;
+	p = false;
 	mc = 0;
 	return instruction_time;
 }
