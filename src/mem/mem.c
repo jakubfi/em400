@@ -172,7 +172,7 @@ int mem_mget(int nb, uint16_t saddr, uint16_t *dest, int count)
 {
 	int i;
 	for (i=0 ; i<count ; i++) {
-		uint16_t *ptr = mem_ptr(nb, (uint16_t) (saddr+i));
+		uint16_t *ptr = mem_ptr(nb, saddr+i);
 		if (ptr) {
 			*(dest+i) = *ptr;
 		} else {
@@ -187,7 +187,7 @@ int mem_mput(int nb, uint16_t saddr, uint16_t *src, int count)
 {
 	int i;
 	for (i=0 ; i<count ; i++) {
-		uint16_t *ptr = mem_ptr(nb, (uint16_t) (saddr+i));
+		uint16_t *ptr = mem_ptr(nb, saddr+i);
 		if (ptr) {
 			if (!mem_mega_prom || (mem_map[nb][(saddr+i)>>12].seg != mem_mega_prom)) {
 				*ptr = *(src+i);

@@ -46,7 +46,7 @@
 #define _C(x)	(((x) & 0b0000000000000111) >> 0)
 #define _T(x)	(int8_t) (((x) & 0b0000000000111111) * (((x) & 0b0000001000000000) ? -1 : 1))
 #define _t(x)	(uint8_t) (((x) & 0b0000000000000111) | (((x) & 0b0000001000000000) >> 6)) // only SHC uses it
-#define _b(x)	((x) & 0b0000000011111111)
+#define _b(x)	((x) & 0x00ff)
 #define IR_OP	_OP(ir)
 #define IR_D	_D(ir)
 #define IR_A	_A(ir)
@@ -56,11 +56,10 @@
 #define IR_t	_t(ir)
 #define IR_b	_b(ir)
 
-#define REG_RESTRICT_WRITE(i, v) r[i] = ((i)|!q) ? (v) : (r[i] & 0b1111111100000000) | ((v) & 0b0000000011111111)
+#define REG_RESTRICT_WRITE(i, v) r[i] = ((i)|!q) ? (v) : (r[i] & 0xff00) | ((v) & 0x00ff)
 
 extern uint16_t r[8];
-extern uint16_t ic, kb, ir;
-extern int ac, ar;
+extern uint16_t ic, kb, ir, ac, ar;
 extern bool rALARM;
 extern int mc;
 extern unsigned rm, nb;
@@ -75,8 +74,8 @@ int cpu_mem_get(int nb, uint16_t addr, uint16_t *data);
 int cpu_mem_put(int nb, uint16_t addr, uint16_t data);
 int cpu_mem_mget(int nb, uint16_t saddr, uint16_t *dest, int count);
 int cpu_mem_mput(int nb, uint16_t saddr, uint16_t *src, int count);
-int cpu_mem_get_byte(int nb, uint32_t addr, uint8_t *data);
-int cpu_mem_put_byte(int nb, uint32_t addr, uint8_t data);
+int cpu_mem_get_byte(int nb, int addr, uint8_t *data);
+int cpu_mem_put_byte(int nb, int addr, uint8_t data);
 
 int cpu_init(em400_cfg *cfg);
 void cpu_shutdown();

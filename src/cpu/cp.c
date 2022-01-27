@@ -85,8 +85,8 @@ int cp_reg_get(unsigned id)
 			case ECTL_REG_R6:
 			case ECTL_REG_R7: reg = r[id]; break;
 			case ECTL_REG_IC: reg = ic; break;
-			case ECTL_REG_AC: reg = (uint16_t) ac; break;
-			case ECTL_REG_AR: reg = (uint16_t) ar; break;
+			case ECTL_REG_AC: reg = ac; break;
+			case ECTL_REG_AR: reg = ar; break;
 			case ECTL_REG_IR: reg = ir; break;
 			case ECTL_REG_SR: reg = SR_READ(); break;
 			case ECTL_REG_RZ: reg = int_get_nchan(); break;
@@ -181,7 +181,7 @@ int cp_mem_mget(unsigned nb, uint16_t addr, uint16_t *data, unsigned count)
 		}
 		return count;
 	} else {
-		return mem_mget(nb, addr, data, count);
+		return cpu_mem_mget(nb, addr, data, count);
 	}
 }
 
@@ -217,7 +217,7 @@ int cp_mem_mput(unsigned nb, uint16_t addr, uint16_t *data, unsigned count)
 		}
 		return count;
 	} else {
-		return mem_mput(nb, addr, data, count);
+		return cpu_mem_mput(nb, addr, data, count);
 	}
 }
 

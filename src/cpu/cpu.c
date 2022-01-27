@@ -52,12 +52,13 @@
 static int cpu_state = ECTL_STATE_OFF;
 
 uint16_t r[8];
-uint16_t ic, kb, ir;
-int ac, ar;
+uint16_t ic, kb, ir, ac, ar;
 bool rALARM;
 int mc;
 unsigned rm, nb;
 bool p, q, bs;
+
+static bool zc17;
 
 bool cpu_mod_present;
 bool cpu_mod_active;
@@ -182,16 +183,25 @@ int cpu_mem_mput(int nb, uint16_t saddr, uint16_t *src, int count)
 }
 
 // -----------------------------------------------------------------------
-int cpu_mem_get_byte(int nb, uint32_t addr, uint8_t *data)
+static int cpu_byte_addr_fixup(int *addr)
 {
-	int shift;
-	uint16_t orig = 0;
+	// fixup address if 17-bit byte addressing is active
+	if (cpu_mod_active && !(q & bs)) {
+		*addr |= zc17 << 16;
+	}
 
-	if (!cpu_mod_active || (q & bs)) addr &= 0xffff;
+	int shift = 8 * (~*addr & 1);
+	*addr >>= 1;
 
-	shift = 8 * (~addr & 1);
-	addr >>= 1;
+	return shift;
+}
 
+// -----------------------------------------------------------------------
+int cpu_mem_get_byte(int nb, int addr, uint8_t *data)
+{
+	int shift = cpu_byte_addr_fixup(&addr);
+
+	uint16_t orig;
 	if (!cpu_mem_get(nb, addr, &orig)) return 0;
 	*data = orig >> shift;
 
@@ -199,18 +209,13 @@ int cpu_mem_get_byte(int nb, uint32_t addr, uint8_t *data)
 }
 
 // -----------------------------------------------------------------------
-int cpu_mem_put_byte(int nb, uint32_t addr, uint8_t data)
+int cpu_mem_put_byte(int nb, int addr, uint8_t data)
 {
-	int shift;
-	uint16_t orig = 0;
+	int shift = cpu_byte_addr_fixup(&addr);
 
-	if (!cpu_mod_active || (q & bs)) addr &= 0xffff;
-
-	shift = 8 * (~addr & 1);
-	addr >>= 1;
-
+	uint16_t orig;
 	if (!cpu_mem_get(nb, addr, &orig)) return 0;
-	orig = (orig & (0b1111111100000000 >> shift)) | (((uint16_t) data) << shift);
+	orig = (orig & (0xff00 >> shift)) | (data << shift);
 	if (!cpu_mem_put(nb, addr, orig)) return 0;
 
 	return 1;
@@ -452,7 +457,7 @@ static int cpu_do_cycle()
 			ac = r[IR_C];
 		} else {
 			if (!cpu_mem_get(QNB, ic, &data)) {
-				LOGCPU(L_CPU, "    no mem, long arg fetch @ %i:0x%04x", QNB, (uint16_t) ic);
+				LOGCPU(L_CPU, "    no mem, long arg fetch @ %i:0x%04x", QNB, ic);
 				goto ineffective_memfail;
 			}
 			ac = data;
@@ -467,28 +472,32 @@ static int cpu_do_cycle()
 
 	// pre-mod
 	if (mc) {
+		zc17 = (ac + ar) > 0xffff;
 		ac += ar;
 		instruction_time += TIME_PREMOD;
+	} else {
+		zc17 = false;
 	}
 
 	// B-mod
 	if ((flags & OP_FL_ARG_NORM) && IR_B) {
-		ac = (uint16_t) ac + r[IR_B]; // uint16_t cast is required for 17-bit byte addressing to work correctly
+		zc17 = (ac + r[IR_B]) > 0xffff;
+		ac += r[IR_B];
 		instruction_time += TIME_BMOD;
 	}
 
+	ar = ac;
+
 	// D-mod
 	if ((flags & OP_FL_ARG_NORM) && IR_D) {
-		if (!cpu_mem_get(QNB, ac, &data)) {
-			LOGCPU(L_CPU, "    no mem, indirect arg fetch @ %i:0x%04x", QNB, (uint16_t) ac);
+		if (!cpu_mem_get(QNB, ar, &data)) {
+			LOGCPU(L_CPU, "    no mem, indirect arg fetch @ %i:0x%04x", QNB, ar);
 			goto ineffective_memfail;
 		} else {
-			ac = data;
+			ar = ac = data;
 		}
 		instruction_time += TIME_DMOD;
 	}
-
-	ar = ac;
 
 	if (LOG_WANTS(L_CPU)) log_log_dasm((op->flags & (OP_FL_ARG_NORM | OP_FL_ARG_SHORT)), ac, "");
 

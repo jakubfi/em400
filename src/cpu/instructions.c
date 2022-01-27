@@ -47,7 +47,7 @@ void op_lw()
 void op_tw()
 {
 	uint16_t data;
-	if (cpu_mem_get(nb, ac, &data)) {
+	if (cpu_mem_get(nb, ar, &data)) {
 		REG_RESTRICT_WRITE(IR_A, data);
 	}
 }
@@ -55,13 +55,16 @@ void op_tw()
 // -----------------------------------------------------------------------
 void op_ls()
 {
-	REG_RESTRICT_WRITE(IR_A, (r[IR_A] & ~r[7]) | (ac & r[7]));
+	ar = ac & r[7];
+	ac = r[IR_A] & ~r[7];
+	REG_RESTRICT_WRITE(IR_A, ac | ar);
 }
 
 // -----------------------------------------------------------------------
 void op_ri()
 {
-	if (cpu_mem_put(QNB, r[IR_A], ac)) {
+	ar = r[IR_A];
+	if (cpu_mem_put(QNB, ar, ac)) {
 		REG_RESTRICT_WRITE(IR_A, r[IR_A] + 1);
 	}
 }
@@ -69,13 +72,13 @@ void op_ri()
 // -----------------------------------------------------------------------
 void op_rw()
 {
-	cpu_mem_put(QNB, ac, r[IR_A]);
+	cpu_mem_put(QNB, ar, r[IR_A]);
 }
 
 // -----------------------------------------------------------------------
 void op_pw()
 {
-	cpu_mem_put(nb, ac, r[IR_A]);
+	cpu_mem_put(nb, ar, r[IR_A]);
 }
 
 // -----------------------------------------------------------------------
@@ -89,19 +92,20 @@ void op_rj()
 void op_is()
 {
 	uint16_t data;
-	if (cpu_mem_get(nb, ac, &data)) {
-		if ((data & r[IR_A]) == r[IR_A]) {
-			p = true;
-		} else {
-			cpu_mem_put(nb, ac, data | r[IR_A]);
-		}
+
+	if (!cpu_mem_get(nb, ar, &data)) return;
+	ac = data;
+	if ((ac & r[IR_A]) == r[IR_A]) {
+		p = true;
+	} else {
+		cpu_mem_put(nb, ar, ac | r[IR_A]);
 	}
 }
 
 // -----------------------------------------------------------------------
 void op_bb()
 {
-	if ((r[IR_A] & (uint16_t) ac) == (uint16_t) ac) {
+	if ((r[IR_A] & ac) == ac) {
 		p = true;
 	}
 }
@@ -110,7 +114,7 @@ void op_bb()
 void op_bm()
 {
 	uint16_t data;
-	if (cpu_mem_get(nb, ac, &data)) {
+	if (cpu_mem_get(nb, ar, &data)) {
 		if ((data & r[IR_A]) == r[IR_A]) {
 			p = true;
 		}
@@ -120,7 +124,7 @@ void op_bm()
 // -----------------------------------------------------------------------
 void op_bs()
 {
-	if ((r[IR_A] & r[7]) == ((uint16_t) ac & r[7])) {
+	if ((r[IR_A] & r[7]) == (ac & r[7])) {
 		p = true;
 	}
 }
@@ -128,7 +132,7 @@ void op_bs()
 // -----------------------------------------------------------------------
 void op_bc()
 {
-	if ((r[IR_A] & (uint16_t) ac) != (uint16_t) ac) {
+	if ((r[IR_A] & ac) != ac) {
 		p = true;
 	}
 }
@@ -136,7 +140,7 @@ void op_bc()
 // -----------------------------------------------------------------------
 void op_bn()
 {
-	if ((r[IR_A] & (uint16_t) ac) == 0) {
+	if ((r[IR_A] & ac) == 0) {
 		p = true;
 	}
 }
@@ -253,9 +257,9 @@ void op_or()
 void op_om()
 {
 	uint16_t data;
-	if (cpu_mem_get(nb, ac, &data)) {
+	if (cpu_mem_get(nb, ar, &data)) {
 		data |= r[IR_A];
-		if (cpu_mem_put(nb, ac, data)) {
+		if (cpu_mem_put(nb, ar, data)) {
 			alu_16_set_Z_bool(data);
 		}
 	}
@@ -273,9 +277,9 @@ void op_nr()
 void op_nm()
 {
 	uint16_t data;
-	if (cpu_mem_get(nb, ac, &data)) {
+	if (cpu_mem_get(nb, ar, &data)) {
 		data &= r[IR_A];
-		if (cpu_mem_put(nb, ac, data)) {
+		if (cpu_mem_put(nb, ar, data)) {
 			alu_16_set_Z_bool(data);
 		}
 	}
@@ -293,9 +297,9 @@ void op_er()
 void op_em()
 {
 	uint16_t data;
-	if (cpu_mem_get(nb, ac, &data)) {
+	if (cpu_mem_get(nb, ar, &data)) {
 		data &= ~r[IR_A];
-		if (cpu_mem_put(nb, ac, data)) {
+		if (cpu_mem_put(nb, ar, data)) {
 			alu_16_set_Z_bool(data);
 		}
 	}
@@ -313,9 +317,9 @@ void op_xr()
 void op_xm()
 {
 	uint16_t data;
-	if (cpu_mem_get(nb, ac, &data)) {
+	if (cpu_mem_get(nb, ar, &data)) {
 		data ^= r[IR_A];
-		if (cpu_mem_put(nb, ac, data)) {
+		if (cpu_mem_put(nb, ar, data)) {
 			alu_16_set_Z_bool(data);
 		}
 	}
@@ -324,14 +328,14 @@ void op_xm()
 // -----------------------------------------------------------------------
 void op_cl()
 {
-	alu_16_set_LEG(r[IR_A], (uint16_t) ac);
+	alu_16_set_LEG(r[IR_A], ac);
 }
 
 // -----------------------------------------------------------------------
 void op_lb()
 {
 	uint8_t data;
-	if (cpu_mem_get_byte(nb, ac, &data)) {
+	if (cpu_mem_get_byte(nb, ar, &data)) {
 		REG_RESTRICT_WRITE(IR_A, (r[IR_A] & 0xff00) | data);
 	}
 }
@@ -339,14 +343,14 @@ void op_lb()
 // -----------------------------------------------------------------------
 void op_rb()
 {
-	cpu_mem_put_byte(nb, ac, r[IR_A]);
+	cpu_mem_put_byte(nb, ar, r[IR_A]);
 }
 
 // -----------------------------------------------------------------------
 void op_cb()
 {
 	uint8_t data;
-	if (cpu_mem_get_byte(nb, ac, &data)) {
+	if (cpu_mem_get_byte(nb, ar, &data)) {
 		alu_16_set_LEG((uint8_t) r[IR_A], data);
 	}
 }
@@ -400,7 +404,8 @@ void op_lwt()
 void op_lws()
 {
 	uint16_t data;
-	if (cpu_mem_get(QNB, ic + ac, &data)) {
+	ar = ic + ac;
+	if (cpu_mem_get(QNB, ar, &data)) {
 		REG_RESTRICT_WRITE(IR_A, data);
 	}
 }
@@ -408,7 +413,8 @@ void op_lws()
 // -----------------------------------------------------------------------
 void op_rws()
 {
-	cpu_mem_put(QNB, ic + ac, r[IR_A]);
+	ar = ic + ac;
+	cpu_mem_put(QNB, ar, r[IR_A]);
 }
 
 // -----------------------------------------------------------------------
@@ -724,7 +730,7 @@ void op_74_jump()
 // -----------------------------------------------------------------------
 void op_74_lj()
 {
-	if (cpu_mem_put(QNB, ac, ic)) {
+	if (cpu_mem_put(QNB, ar, ic)) {
 		ic = ac+1;
 	}
 }
@@ -736,49 +742,49 @@ void op_74_lj()
 // -----------------------------------------------------------------------
 void op_75_ld()
 {
-	cpu_mem_mget(QNB, ac, r+1, 2);
+	cpu_mem_mget(QNB, ar, r+1, 2);
 }
 
 // -----------------------------------------------------------------------
 void op_75_lf()
 {
-	cpu_mem_mget(QNB, ac, r+1, 3);
+	cpu_mem_mget(QNB, ar, r+1, 3);
 }
 
 // -----------------------------------------------------------------------
 void op_75_la()
 {
-	cpu_mem_mget(QNB, ac, r+1, 7);
+	cpu_mem_mget(QNB, ar, r+1, 7);
 }
 
 // -----------------------------------------------------------------------
 void op_75_ll()
 {
-	cpu_mem_mget(QNB, ac, r+5, 3);
+	cpu_mem_mget(QNB, ar, r+5, 3);
 }
 
 // -----------------------------------------------------------------------
 void op_75_td()
 {
-	cpu_mem_mget(nb, ac, r+1, 2);
+	cpu_mem_mget(nb, ar, r+1, 2);
 }
 
 // -----------------------------------------------------------------------
 void op_75_tf()
 {
-	cpu_mem_mget(nb, ac, r+1, 3);
+	cpu_mem_mget(nb, ar, r+1, 3);
 }
 
 // -----------------------------------------------------------------------
 void op_75_ta()
 {
-	cpu_mem_mget(nb, ac, r+1, 7);
+	cpu_mem_mget(nb, ar, r+1, 7);
 }
 
 // -----------------------------------------------------------------------
 void op_75_tl()
 {
-	cpu_mem_mget(nb, ac, r+5, 3);
+	cpu_mem_mget(nb, ar, r+5, 3);
 }
 
 // -----------------------------------------------------------------------
@@ -788,49 +794,49 @@ void op_75_tl()
 // -----------------------------------------------------------------------
 void op_76_rd()
 {
-	cpu_mem_mput(QNB, ac, r+1, 2);
+	cpu_mem_mput(QNB, ar, r+1, 2);
 }
 
 // -----------------------------------------------------------------------
 void op_76_rf()
 {
-	cpu_mem_mput(QNB, ac, r+1, 3);
+	cpu_mem_mput(QNB, ar, r+1, 3);
 }
 
 // -----------------------------------------------------------------------
 void op_76_ra()
 {
-	cpu_mem_mput(QNB, ac, r+1, 7);
+	cpu_mem_mput(QNB, ar, r+1, 7);
 }
 
 // -----------------------------------------------------------------------
 void op_76_rl()
 {
-	cpu_mem_mput(QNB, ac, r+5, 3);
+	cpu_mem_mput(QNB, ar, r+5, 3);
 }
 
 // -----------------------------------------------------------------------
 void op_76_pd()
 {
-	cpu_mem_mput(nb, ac, r+1, 2);
+	cpu_mem_mput(nb, ar, r+1, 2);
 }
 
 // -----------------------------------------------------------------------
 void op_76_pf()
 {
-	cpu_mem_mput(nb, ac, r+1, 3);
+	cpu_mem_mput(nb, ar, r+1, 3);
 }
 
 // -----------------------------------------------------------------------
 void op_76_pa()
 {
-	cpu_mem_mput(nb, ac, r+1, 7);
+	cpu_mem_mput(nb, ar, r+1, 7);
 }
 
 // -----------------------------------------------------------------------
 void op_76_pl()
 {
-	cpu_mem_mput(nb, ac, r+5, 3);
+	cpu_mem_mput(nb, ar, r+5, 3);
 }
 
 // -----------------------------------------------------------------------
@@ -841,7 +847,7 @@ void op_76_pl()
 void op_77_mb()
 {
 	uint16_t data;
-	if (cpu_mem_get(QNB, ac, &data)) {
+	if (cpu_mem_get(QNB, ar, &data)) {
 		q =  data & 0b100000;
 		bs = data & 0b010000;
 		nb = data & 0b001111;
@@ -853,7 +859,7 @@ void op_77_mb()
 void op_77_im()
 {
 	uint16_t data;
-	if (cpu_mem_get(QNB, ac, &data)) {
+	if (cpu_mem_get(QNB, ar, &data)) {
 		rm = (data >> 6) & 0b1111111111;
 		int_update_mask(rm);
 	}
@@ -863,14 +869,14 @@ void op_77_im()
 void op_77_ki()
 {
 	uint16_t data = int_get_nchan();
-	cpu_mem_put(QNB, ac, data);
+	cpu_mem_put(QNB, ar, data);
 }
 
 // -----------------------------------------------------------------------
 void op_77_fi()
 {
 	uint16_t data;
-	if (cpu_mem_get(QNB, ac, &data)) {
+	if (cpu_mem_get(QNB, ar, &data)) {
 		int_put_nchan(data);
 	}
 }
@@ -879,7 +885,7 @@ void op_77_fi()
 void op_77_sp()
 {
 	uint16_t data[3];
-	if (cpu_mem_mget(nb, ac, data, 3) != 3) return;
+	if (cpu_mem_mget(nb, ar, data, 3) != 3) return;
 
 	ic = data[0];
 	r[0] = data[1];
@@ -915,15 +921,15 @@ void op_77_md()
 // -----------------------------------------------------------------------
 void op_77_rz()
 {
-	cpu_mem_put(QNB, ac, 0);
+	cpu_mem_put(QNB, ar, 0);
 }
 
 // -----------------------------------------------------------------------
 void op_77_ib()
 {
 	uint16_t data;
-	if (cpu_mem_get(QNB, ac, &data)) {
-		if (cpu_mem_put(QNB, ac, ++data)) {
+	if (cpu_mem_get(QNB, ar, &data)) {
+		if (cpu_mem_put(QNB, ar, ++data)) {
 			if (data == 0) {
 				p = true;
 			}
