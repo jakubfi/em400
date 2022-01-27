@@ -320,6 +320,7 @@ class TestBed:
                     self.e.cmd(c)
 
         except Exception as e:
+            result.passed = 0
             result.error = str(e).rstrip()
 
         if result.passed == 0:
@@ -392,8 +393,9 @@ DEBUG = args.verbose
 
 # enumerate tests
 if args.test:
+    tests = []
     for i in args.test:
-        tests = collect_tests(i)
+        tests.extend(collect_tests(i))
 else:
     tests = collect_tests("sets/default.set")
 
