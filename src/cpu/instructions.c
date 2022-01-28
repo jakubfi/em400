@@ -308,27 +308,47 @@ void op_cl()
 }
 
 // -----------------------------------------------------------------------
+static inline int cpu_byte_addr_fixup()
+{
+	int shift = 8 * (~ar & 1);
+	ar >>= 1;
+
+	// fixup address if 17-bit byte addressing is active
+	if (cpu_mod_active && !(q & bs)) {
+		ar |= zc17 << 15;
+	}
+
+	return shift;
+}
+
+// -----------------------------------------------------------------------
 void op_lb()
 {
-	uint8_t data;
-	if (cpu_mem_get_byte(nb, ar, &data)) {
-		REG_RESTRICT_WRITE(IR_A, (r[IR_A] & 0xff00) | data);
-	}
+	int shift = cpu_byte_addr_fixup();
+
+	if (!cpu_mem_get(nb, ar, &ac)) return;
+	ac >>= shift;
+
+	REG_RESTRICT_WRITE(IR_A, (r[IR_A] & 0xff00) | (ac & 0xff));
 }
 
 // -----------------------------------------------------------------------
 void op_rb()
 {
-	cpu_mem_put_byte(nb, ar, r[IR_A]);
+	int shift = cpu_byte_addr_fixup();
+
+	if (!cpu_mem_get(nb, ar, &ac)) return;
+	cpu_mem_put(nb, ar, (ac & (0xff00 >> shift)) | ((r[IR_A] & 0xff) << shift));
 }
 
 // -----------------------------------------------------------------------
 void op_cb()
 {
-	uint8_t data;
-	if (cpu_mem_get_byte(nb, ar, &data)) {
-		alu_16_set_LEG((uint8_t) r[IR_A], data);
-	}
+	int shift = cpu_byte_addr_fixup();
+
+	if (!cpu_mem_get(nb, ar, &ac)) return;
+	ac >>= shift;
+	alu_16_set_LEG((uint8_t) r[IR_A], ac & 0xff);
 }
 
 // -----------------------------------------------------------------------

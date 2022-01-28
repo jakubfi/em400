@@ -58,7 +58,7 @@ int mc;
 unsigned rm, nb;
 bool p, q, bs;
 
-static bool zc17;
+bool zc17;
 
 bool cpu_mod_present;
 bool cpu_mod_active;
@@ -180,45 +180,6 @@ int cpu_mem_mput(int nb, uint16_t saddr, uint16_t *src, int count)
 		cpu_mem_fail(nb);
 	}
 	return words;
-}
-
-// -----------------------------------------------------------------------
-static int cpu_byte_addr_fixup(int *addr)
-{
-	// fixup address if 17-bit byte addressing is active
-	if (cpu_mod_active && !(q & bs)) {
-		*addr |= zc17 << 16;
-	}
-
-	int shift = 8 * (~*addr & 1);
-	*addr >>= 1;
-
-	return shift;
-}
-
-// -----------------------------------------------------------------------
-int cpu_mem_get_byte(int nb, int addr, uint8_t *data)
-{
-	int shift = cpu_byte_addr_fixup(&addr);
-
-	uint16_t orig;
-	if (!cpu_mem_get(nb, addr, &orig)) return 0;
-	*data = orig >> shift;
-
-	return 1;
-}
-
-// -----------------------------------------------------------------------
-int cpu_mem_put_byte(int nb, int addr, uint8_t data)
-{
-	int shift = cpu_byte_addr_fixup(&addr);
-
-	uint16_t orig;
-	if (!cpu_mem_get(nb, addr, &orig)) return 0;
-	orig = (orig & (0xff00 >> shift)) | (data << shift);
-	if (!cpu_mem_put(nb, addr, orig)) return 0;
-
-	return 1;
 }
 
 // -----------------------------------------------------------------------

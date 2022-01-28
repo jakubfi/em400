@@ -65,6 +65,8 @@ extern int mc;
 extern unsigned rm, nb;
 extern bool p, q, bs;
 
+extern bool zc17;
+
 extern bool cpu_mod_present;
 extern bool cpu_mod_active;
 extern bool cpu_user_io_illegal;
@@ -74,8 +76,6 @@ int cpu_mem_get(int nb, uint16_t addr, uint16_t *data);
 int cpu_mem_put(int nb, uint16_t addr, uint16_t data);
 int cpu_mem_mget(int nb, uint16_t saddr, uint16_t *dest, int count);
 int cpu_mem_mput(int nb, uint16_t saddr, uint16_t *src, int count);
-int cpu_mem_get_byte(int nb, int addr, uint8_t *data);
-int cpu_mem_put_byte(int nb, int addr, uint8_t data);
 
 int cpu_init(em400_cfg *cfg);
 void cpu_shutdown();
