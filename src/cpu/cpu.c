@@ -378,7 +378,6 @@ static int cpu_do_bin(int start)
 static int cpu_do_cycle()
 {
 	struct iset_opcode *op;
-	uint16_t data;
 	static char opcode[32];
 	int instruction_time = 0;
 
@@ -412,16 +411,18 @@ static int cpu_do_cycle()
 		goto ineffective;
 	}
 
+	// AC and AR in argument preparation is simplified compared to real h/w.
+	// Only AC is updated, AR is synchronized at the end
+
 	// get the argument
 	if (flags & OP_FL_ARG_NORM) {
 		if (IR_C) {
 			ac = r[IR_C];
 		} else {
-			if (!cpu_mem_get(QNB, ic, &data)) {
+			if (!cpu_mem_get(QNB, ic, &ac)) {
 				LOGCPU(L_CPU, "    no mem, long arg fetch @ %i:0x%04x", QNB, ic);
 				goto ineffective_memfail;
 			}
-			ac = data;
 			ic++;
 			instruction_time += TIME_MEM_ARG;
 		}
@@ -451,11 +452,11 @@ static int cpu_do_cycle()
 
 	// D-mod
 	if ((flags & OP_FL_ARG_NORM) && IR_D) {
-		if (!cpu_mem_get(QNB, ar, &data)) {
+		if (!cpu_mem_get(QNB, ac, &ac)) {
 			LOGCPU(L_CPU, "    no mem, indirect arg fetch @ %i:0x%04x", QNB, ar);
 			goto ineffective_memfail;
 		} else {
-			ar = ac = data;
+			ar = ac;
 		}
 		instruction_time += TIME_DMOD;
 	}
