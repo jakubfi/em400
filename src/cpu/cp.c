@@ -181,7 +181,12 @@ int cp_mem_mget(unsigned nb, uint16_t addr, uint16_t *data, unsigned count)
 		}
 		return count;
 	} else {
-		return cpu_mem_mget(nb, addr, data, count);
+		// TODO: can't use cpu_mem_mget, as it may fail in "cpu fashion" (with interrupt and all).
+		// cp_mem_mget() may be used by the interface to display stuff when cpu is RUN state too,
+		// and it could happen that ui tries to read unconfigured memory as well.
+		// On the other hand, access from control panel is a regular CPU memory access,
+		// thus it should use cpu_mem_get() and fail on unconfigured memory...
+		return mem_mget(nb, addr, data, count);
 	}
 }
 
@@ -217,7 +222,7 @@ int cp_mem_mput(unsigned nb, uint16_t addr, uint16_t *data, unsigned count)
 		}
 		return count;
 	} else {
-		return cpu_mem_mput(nb, addr, data, count);
+		return mem_mput(nb, addr, data, count);
 	}
 }
 
