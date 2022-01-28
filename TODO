@@ -3,6 +3,8 @@ Known bugs:
 Cleanups:
 * pre-modification vs. SHC
 * pre-modification vs. EXL and NRF
+* "microoperationalize" and verify instruction flow against memory error (what
+  comes after what): byte instructions, EXL, LIP, SP, group instructions
 
 Code enhancements (possible):
 

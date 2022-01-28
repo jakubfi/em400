@@ -91,10 +91,8 @@ void op_rj()
 // -----------------------------------------------------------------------
 void op_is()
 {
-	uint16_t data;
+	if (!cpu_mem_get(nb, ar, &ac)) return;
 
-	if (!cpu_mem_get(nb, ar, &data)) return;
-	ac = data;
 	if ((ac & r[IR_A]) == r[IR_A]) {
 		p = true;
 	} else {
@@ -105,64 +103,48 @@ void op_is()
 // -----------------------------------------------------------------------
 void op_bb()
 {
-	if ((r[IR_A] & ac) == ac) {
-		p = true;
-	}
+	p = (r[IR_A] & ac) == ac;
 }
 
 // -----------------------------------------------------------------------
 void op_bm()
 {
-	uint16_t data;
-	if (cpu_mem_get(nb, ar, &data)) {
-		if ((data & r[IR_A]) == r[IR_A]) {
-			p = true;
-		}
+	if (cpu_mem_get(nb, ar, &ac)) {
+		p = (ac & r[IR_A]) == r[IR_A];
 	}
 }
 
 // -----------------------------------------------------------------------
 void op_bs()
 {
-	if ((r[IR_A] & r[7]) == (ac & r[7])) {
-		p = true;
-	}
+	ac ^= r[IR_A];
+	p = !(ac & r[7]);
 }
 
 // -----------------------------------------------------------------------
 void op_bc()
 {
-	if ((r[IR_A] & ac) != ac) {
-		p = true;
-	}
+	p = (r[IR_A] & ac) != ac;
 }
 
 // -----------------------------------------------------------------------
 void op_bn()
 {
-	if ((r[IR_A] & ac) == 0) {
-		p = true;
-	}
+	p = (r[IR_A] & ac) == 0;
 }
 
 // -----------------------------------------------------------------------
 void op_ou()
 {
-	uint16_t data;
-	int io_result = io_dispatch(IO_OU, ac, r+IR_A);
-	if (cpu_mem_get(QNB, ic + io_result, &data)) {
-		ic = data;
-	}
+	ic += io_dispatch(IO_OU, ar, r+IR_A);
+	cpu_mem_get(QNB, ic, &ic);
 }
 
 // -----------------------------------------------------------------------
 void op_in()
 {
-	uint16_t data;
-	int io_result = io_dispatch(IO_IN, ac, r+IR_A);
-	if (cpu_mem_get(QNB, ic + io_result, &data)) {
-		ic = data;
-	}
+	ic += io_dispatch(IO_IN, ar, r+IR_A);
+	cpu_mem_get(QNB, ic, &ic);
 }
 
 // -----------------------------------------------------------------------
@@ -248,80 +230,74 @@ void op_cw()
 // -----------------------------------------------------------------------
 void op_or()
 {
-	uint16_t result = r[IR_A] | ac;
-	alu_16_set_Z_bool(result);
-	REG_RESTRICT_WRITE(IR_A, result);
+	uint16_t data = r[IR_A] | ac;
+	alu_16_set_Z_bool(data);
+	// reg writes needs to go after flag setting to cover corner cases
+	// where logical operations are performed on r0
+	REG_RESTRICT_WRITE(IR_A, data);
 }
 
 // -----------------------------------------------------------------------
 void op_om()
 {
-	uint16_t data;
-	if (cpu_mem_get(nb, ar, &data)) {
-		data |= r[IR_A];
-		if (cpu_mem_put(nb, ar, data)) {
-			alu_16_set_Z_bool(data);
-		}
+	if (cpu_mem_get(nb, ar, &ac)) {
+		uint16_t data = ac | r[IR_A];
+		alu_16_set_Z_bool(data);
+		cpu_mem_put(nb, ar, data);
 	}
 }
 
 // -----------------------------------------------------------------------
 void op_nr()
 {
-	uint16_t result = r[IR_A] & ac;
-	alu_16_set_Z_bool(result);
-	REG_RESTRICT_WRITE(IR_A, result);
+	uint16_t data = r[IR_A] & ac;
+	alu_16_set_Z_bool(data);
+	REG_RESTRICT_WRITE(IR_A, data);
 }
 
 // -----------------------------------------------------------------------
 void op_nm()
 {
-	uint16_t data;
-	if (cpu_mem_get(nb, ar, &data)) {
-		data &= r[IR_A];
-		if (cpu_mem_put(nb, ar, data)) {
-			alu_16_set_Z_bool(data);
-		}
+	if (cpu_mem_get(nb, ar, &ac)) {
+		uint16_t data = ac & r[IR_A];
+		alu_16_set_Z_bool(data);
+		cpu_mem_put(nb, ar, data);
 	}
 }
 
 // -----------------------------------------------------------------------
 void op_er()
 {
-	uint16_t result = r[IR_A] & ~ac;
-	alu_16_set_Z_bool(result);
-	REG_RESTRICT_WRITE(IR_A, result);
+	uint16_t data = r[IR_A] & ~ac;
+	alu_16_set_Z_bool(data);
+	REG_RESTRICT_WRITE(IR_A, data);
 }
 
 // -----------------------------------------------------------------------
 void op_em()
 {
-	uint16_t data;
-	if (cpu_mem_get(nb, ar, &data)) {
-		data &= ~r[IR_A];
-		if (cpu_mem_put(nb, ar, data)) {
-			alu_16_set_Z_bool(data);
-		}
+	if (cpu_mem_get(nb, ar, &ac)) {
+		uint16_t data = ac & ~r[IR_A];
+		alu_16_set_Z_bool(data);
+		cpu_mem_put(nb, ar, data);
 	}
 }
 
 // -----------------------------------------------------------------------
 void op_xr()
 {
-	uint16_t result = r[IR_A] ^ ac;
-	alu_16_set_Z_bool(result);
-	REG_RESTRICT_WRITE(IR_A, result);
+	uint16_t data = r[IR_A] ^ ac;
+	alu_16_set_Z_bool(data);
+	REG_RESTRICT_WRITE(IR_A, data);
 }
 
 // -----------------------------------------------------------------------
 void op_xm()
 {
-	uint16_t data;
-	if (cpu_mem_get(nb, ar, &data)) {
-		data ^= r[IR_A];
-		if (cpu_mem_put(nb, ar, data)) {
-			alu_16_set_Z_bool(data);
-		}
+	if (cpu_mem_get(nb, ar, &ac)) {
+		uint16_t data = ac ^ r[IR_A];
+		alu_16_set_Z_bool(data);
+		cpu_mem_put(nb, ar, data);
 	}
 }
 
@@ -369,9 +345,7 @@ void op_awt()
 void op_trb()
 {
 	REG_RESTRICT_WRITE(IR_A, r[IR_A] + ac);
-	if (r[IR_A] == 0) {
-		p = true;
-	}
+	p = r[IR_A] == 0;
 }
 
 // -----------------------------------------------------------------------
@@ -441,9 +415,7 @@ void op_70_jvs()
 // -----------------------------------------------------------------------
 void op_71_blc()
 {
-	if (((r[0] >> 8) & ac) != ac) {
-		p = true;
-	}
+	p = ((r[0] >> 8) & ac) != ac;
 }
 
 // -----------------------------------------------------------------------
@@ -468,9 +440,7 @@ void op_71_exl()
 // -----------------------------------------------------------------------
 void op_71_brc()
 {
-	if ((r[0] & ac) != ac) {
-		p = true;
-	}
+	p = (r[0] & ac) != ac;
 }
 
 // -----------------------------------------------------------------------
@@ -509,19 +479,20 @@ void op_72_sxu()
 // -----------------------------------------------------------------------
 void op_72_nga()
 {
-	alu_16_add(~r[IR_A], 0, 1);
+	ac = r[IR_A];
+	alu_16_add(~ac, 0, 1);
 }
 
 // -----------------------------------------------------------------------
 void shift_left(uint16_t shift_in, int check_v)
 {
-	uint16_t result = (r[IR_A] << 1) | shift_in;
-	if (check_v && ((r[IR_A] ^ result) & 0x8000)) {
+	uint16_t data = (r[IR_A] << 1) | shift_in;
+	if (check_v && ((r[IR_A] ^ data) & 0x8000)) {
 		FSET(FL_V);
 	}
 	if (r[IR_A] & 0x8000) FSET(FL_Y);
 	else FCLR(FL_Y);
-	REG_RESTRICT_WRITE(IR_A, result);
+	REG_RESTRICT_WRITE(IR_A, data);
 }
 
 // -----------------------------------------------------------------------
@@ -563,10 +534,10 @@ void op_72_svx()
 // -----------------------------------------------------------------------
 static inline void shift_right(uint16_t shift_in)
 {
-	uint16_t result = (r[IR_A] >> 1) | shift_in;
+	uint16_t data = (r[IR_A] >> 1) | shift_in;
 	if (r[IR_A] & 1) FSET(FL_Y);
 	else FCLR(FL_Y);
-	REG_RESTRICT_WRITE(IR_A, result);
+	REG_RESTRICT_WRITE(IR_A, data);
 }
 
 // -----------------------------------------------------------------------
@@ -590,9 +561,9 @@ void op_72_srz()
 // -----------------------------------------------------------------------
 void op_72_ngl()
 {
-	uint16_t result = ~r[IR_A];
-	alu_16_set_Z_bool(result);
-	r[IR_A] = result;
+	uint16_t data = ~r[IR_A];
+	alu_16_set_Z_bool(data);
+	r[IR_A] = data;
 }
 
 // -----------------------------------------------------------------------
@@ -606,9 +577,9 @@ void op_72_shc()
 {
 	if (!IR_t) return;
 
-	uint16_t falling = (r[IR_A] & ((1 << IR_t) - 1)) << (16 - IR_t);
+	uint16_t data = (r[IR_A] & ((1 << IR_t) - 1)) << (16 - IR_t);
 
-	REG_RESTRICT_WRITE(IR_A, (r[IR_A] >> IR_t) | falling);
+	REG_RESTRICT_WRITE(IR_A, (r[IR_A] >> IR_t) | data);
 }
 
 // -----------------------------------------------------------------------
@@ -636,7 +607,8 @@ void op_72_sxl()
 // -----------------------------------------------------------------------
 void op_72_ngc()
 {
-	alu_16_add(~r[IR_A], 0, FGET(FL_C));
+	ac = r[IR_A];
+	alu_16_add(~ac, 0, FGET(FL_C));
 }
 
 // -----------------------------------------------------------------------
@@ -743,24 +715,28 @@ void op_74_lj()
 void op_75_ld()
 {
 	cpu_mem_mget(QNB, ar, r+1, 2);
+	ar += 2;
 }
 
 // -----------------------------------------------------------------------
 void op_75_lf()
 {
 	cpu_mem_mget(QNB, ar, r+1, 3);
+	ar += 3;
 }
 
 // -----------------------------------------------------------------------
 void op_75_la()
 {
 	cpu_mem_mget(QNB, ar, r+1, 7);
+	ar += 7;
 }
 
 // -----------------------------------------------------------------------
 void op_75_ll()
 {
 	cpu_mem_mget(QNB, ar, r+5, 3);
+	ar += 3;
 }
 
 // -----------------------------------------------------------------------
@@ -773,18 +749,21 @@ void op_75_td()
 void op_75_tf()
 {
 	cpu_mem_mget(nb, ar, r+1, 3);
+	ar += 3;
 }
 
 // -----------------------------------------------------------------------
 void op_75_ta()
 {
 	cpu_mem_mget(nb, ar, r+1, 7);
+	ar += 7;
 }
 
 // -----------------------------------------------------------------------
 void op_75_tl()
 {
 	cpu_mem_mget(nb, ar, r+5, 3);
+	ar += 3;
 }
 
 // -----------------------------------------------------------------------
@@ -795,48 +774,56 @@ void op_75_tl()
 void op_76_rd()
 {
 	cpu_mem_mput(QNB, ar, r+1, 2);
+	ar += 2;
 }
 
 // -----------------------------------------------------------------------
 void op_76_rf()
 {
 	cpu_mem_mput(QNB, ar, r+1, 3);
+	ar += 3;
 }
 
 // -----------------------------------------------------------------------
 void op_76_ra()
 {
 	cpu_mem_mput(QNB, ar, r+1, 7);
+	ar += 7;
 }
 
 // -----------------------------------------------------------------------
 void op_76_rl()
 {
 	cpu_mem_mput(QNB, ar, r+5, 3);
+	ar += 3;
 }
 
 // -----------------------------------------------------------------------
 void op_76_pd()
 {
 	cpu_mem_mput(nb, ar, r+1, 2);
+	ar += 2;
 }
 
 // -----------------------------------------------------------------------
 void op_76_pf()
 {
 	cpu_mem_mput(nb, ar, r+1, 3);
+	ar += 3;
 }
 
 // -----------------------------------------------------------------------
 void op_76_pa()
 {
 	cpu_mem_mput(nb, ar, r+1, 7);
+	ar += 7;
 }
 
 // -----------------------------------------------------------------------
 void op_76_pl()
 {
 	cpu_mem_mput(nb, ar, r+5, 3);
+	ar += 3;
 }
 
 // -----------------------------------------------------------------------
@@ -909,13 +896,13 @@ void op_77_sp()
 // -----------------------------------------------------------------------
 void op_77_md()
 {
-	if (mc >= 3) {
-		LOGCPU(L_CPU, "    (ineffective: 4th MD)");
-		int_set(INT_ILLEGAL_INSTRUCTION);
+	if (mc < 3) {
+		mc++;
+	} else {
 		mc = 0;
-		return;
+		int_set(INT_ILLEGAL_INSTRUCTION);
+		LOGCPU(L_CPU, "    (ineffective: 4th MD)");
 	}
-	mc++;
 }
 
 // -----------------------------------------------------------------------
@@ -927,13 +914,10 @@ void op_77_rz()
 // -----------------------------------------------------------------------
 void op_77_ib()
 {
-	uint16_t data;
-	if (cpu_mem_get(QNB, ar, &data)) {
-		if (cpu_mem_put(QNB, ar, ++data)) {
-			if (data == 0) {
-				p = true;
-			}
-		}
+	if (cpu_mem_get(QNB, ar, &ac)) {
+		ac++;
+		p = (ac == 0);
+		cpu_mem_put(QNB, ar, ac);
 	}
 }
 
