@@ -34,8 +34,6 @@ void op_bn();
 void op_ou();
 void op_in();
 
-struct opdef * op_37();
-
 void op_aw();
 void op_ac();
 void op_sw();
@@ -61,15 +59,6 @@ void op_cwt();
 void op_lwt();
 void op_lws();
 void op_rws();
-
-struct opdef * op_70();
-struct opdef * op_71();
-struct opdef * op_72();
-struct opdef * op_73();
-struct opdef * op_74();
-struct opdef * op_75();
-struct opdef * op_76();
-struct opdef * op_77();
 
 void op_37_ad();
 void op_37_sd();
