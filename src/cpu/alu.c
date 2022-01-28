@@ -150,16 +150,15 @@ void awp_dispatch(int op, uint16_t arg)
 {
 	int res = 0;
 	uint16_t n[3];
-	uint16_t addr;
 
 	assert(op >= AWP_NRF0);
 	assert(op <= AWP_DF);
 
 	static const int awp_arg_count[] = {
-		1, // AWP_NRF0
-		1, // AWP_NRF1
-		1, // AWP_NRF2
-		1, // AWP_NRF3
+		0, // AWP_NRF0
+		0, // AWP_NRF1
+		0, // AWP_NRF2
+		0, // AWP_NRF3
 		2, // AWP_AD
 		2, // AWP_SD
 		1, // AWP_MW
@@ -221,8 +220,8 @@ void awp_dispatch(int op, uint16_t arg)
 				break;
 		}
 	} else {
-		if (!cpu_mem_get(0, AWP_DISPATCH_TAB_ADDR+op, &addr)) return;
-		if (!cpu_ctx_switch(arg, addr, MASK_9)) return;
+		if (!cpu_mem_get(0, AWP_DISPATCH_TAB_ADDR+op, &ar)) return;
+		if (!cpu_ctx_switch(arg, ar, MASK_9)) return;
 	}
 }
 

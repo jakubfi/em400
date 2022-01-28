@@ -154,49 +154,49 @@ void op_in()
 // -----------------------------------------------------------------------
 void op_37_ad()
 {
-	awp_dispatch(AWP_AD, ac);
+	awp_dispatch(AWP_AD, ar);
 }
 
 // -----------------------------------------------------------------------
 void op_37_sd()
 {
-	awp_dispatch(AWP_SD, ac);
+	awp_dispatch(AWP_SD, ar);
 }
 
 // -----------------------------------------------------------------------
 void op_37_mw()
 {
-	awp_dispatch(AWP_MW, ac);
+	awp_dispatch(AWP_MW, ar);
 }
 
 // -----------------------------------------------------------------------
 void op_37_dw()
 {
-	awp_dispatch(AWP_DW, ac);
+	awp_dispatch(AWP_DW, ar);
 }
 
 // -----------------------------------------------------------------------
 void op_37_af()
 {
-	awp_dispatch(AWP_AF, ac);
+	awp_dispatch(AWP_AF, ar);
 }
 
 // -----------------------------------------------------------------------
 void op_37_sf()
 {
-	awp_dispatch(AWP_SF, ac);
+	awp_dispatch(AWP_SF, ar);
 }
 
 // -----------------------------------------------------------------------
 void op_37_mf()
 {
-	awp_dispatch(AWP_MF, ac);
+	awp_dispatch(AWP_MF, ar);
 }
 
 // -----------------------------------------------------------------------
 void op_37_df()
 {
-	awp_dispatch(AWP_DF, ac);
+	awp_dispatch(AWP_DF, ar);
 }
 
 // -----------------------------------------------------------------------
@@ -466,8 +466,8 @@ void op_71_brc()
 // -----------------------------------------------------------------------
 void op_71_nrf()
 {
-	int nrf_op = IR_A & 0b011;
-	awp_dispatch(nrf_op, IR_b);
+	int nrf_op = IR_A & 0b011; // used by soft-awp, apparently (TODO: check in h/w)
+	awp_dispatch(nrf_op, ar);
 }
 
 // -----------------------------------------------------------------------
