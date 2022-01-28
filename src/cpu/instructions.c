@@ -452,7 +452,7 @@ void op_71_exl()
 		}
 	}
 
-	if (cpu_mem_get(0, 96, &data)) {
+	if (cpu_mem_get(0, EXL_VECTOR, &data)) {
 		cpu_ctx_switch(ac, data, MASK_9);
 	}
 }
@@ -894,13 +894,11 @@ void op_77_fi()
 // -----------------------------------------------------------------------
 void op_77_sp()
 {
-	uint16_t data[3];
-	if (cpu_mem_mget(nb, ar, data, 3) != 3) return;
-
-	ic = data[0];
-	r[0] = data[1];
-	SR_WRITE(data[2]);
-
+	uint16_t sr;
+	if (!cpu_mem_get(nb, ar, &ic)) return;
+	if (!cpu_mem_get(nb, ++ar, r+0)) return;
+	if (!cpu_mem_get(nb, ++ar, &sr)) return;
+	SR_WRITE(sr);
 	int_update_mask(rm);
 
 	if (LOG_ENABLED) {

@@ -1,9 +1,12 @@
 Known bugs:
 
 Cleanups:
+
 * pre-modification vs. SHC
 * pre-modification vs. EXL and NRF
-* "microoperationalize" and verify instruction flow against memory errors (what comes after what): EXL, LIP, SP
+* drop cpu_mem_mget()/_mput()
+* fix AC usage in ext. interrupts
+* revert SR back to one register?
 
 Code enhancements (possible):
 

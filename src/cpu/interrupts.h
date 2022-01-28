@@ -21,6 +21,10 @@
 #include <inttypes.h>
 #include <pthread.h>
 
+#define INT_VECTORS 0x40
+#define EXL_VECTOR 0x60
+#define STACK_POINTER 0x61
+
 extern uint32_t rz;
 extern uint32_t rp;
 

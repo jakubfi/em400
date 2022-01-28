@@ -299,23 +299,20 @@ static void cpu_do_clear(int scope)
 // -----------------------------------------------------------------------
 int cpu_ctx_switch(uint16_t arg, uint16_t new_ic, uint16_t int_mask)
 {
-	uint16_t sp;
+	if (!cpu_mem_get(0, STACK_POINTER, &ar)) return 0;
 
-	if (!cpu_mem_get(0, 97, &sp)) return 0;
+	LOG(L_CPU, "Store current process ctx [IC: 0x%04x, R0: 0x%04x, SR: 0x%04x, 0x%04x] @ 0x%04x, set new IC: 0x%04x", ic, r[0], SR_READ(), arg, ar, new_ic);
 
-	LOG(L_CPU, "Store current process ctx [IC: 0x%04x, R0: 0x%04x, SR: 0x%04x, 0x%04x] @ 0x%04x, set new IC: 0x%04x", ic, r[0], SR_READ(), arg, sp, new_ic);
-
-	if (!cpu_mem_put(0, sp, ic)) return 0;
-	if (!cpu_mem_put(0, sp+1, r[0])) return 0;
-	if (!cpu_mem_put(0, sp+2, SR_READ())) return 0;
-	if (!cpu_mem_put(0, sp+3, arg)) return 0;
-	if (!cpu_mem_put(0, 97, sp+4)) return 0;
+	if (!cpu_mem_put(0, ar, ic)) return 0;
+	if (!cpu_mem_put(0, ++ar, r[0])) return 0;
+	if (!cpu_mem_put(0, ++ar, SR_READ())) return 0;
+	if (!cpu_mem_put(0, ++ar, arg)) return 0;
+	if (!cpu_mem_put(0, STACK_POINTER, ++ar)) return 0;
 
 	r[0] = 0;
 	ic = new_ic;
 	q = false;
 	rm &= int_mask;
-
 	int_update_mask(rm);
 
 	return 1;
@@ -325,17 +322,17 @@ int cpu_ctx_switch(uint16_t arg, uint16_t new_ic, uint16_t int_mask)
 void cpu_ctx_restore()
 {
 	uint16_t sr;
-	uint16_t sp;
 
-	if (!cpu_mem_get(0, 97, &sp)) return;
-	if (!cpu_mem_get(0, sp-4, &ic)) return;
-	if (!cpu_mem_get(0, sp-3, r)) return;
-	if (!cpu_mem_get(0, sp-2, &sr)) return;
+	if (!cpu_mem_get(0, STACK_POINTER, &ar)) return;
+	ar -= 4;
+	if (!cpu_mem_put(0, STACK_POINTER, ar)) return;
+	if (!cpu_mem_get(0, ar, &ic)) return;
+	if (!cpu_mem_get(0, ++ar, r)) return;
+	if (!cpu_mem_get(0, ++ar, &sr)) return;
 	SR_WRITE(sr);
 	int_update_mask(rm);
-	if (!cpu_mem_put(0, 97, sp-4)) return;
 
-	LOG(L_CPU, "Loaded process ctx @ 0x%04x: [IC: 0x%04x, R0: 0x%04x, SR: 0x%04x]", sp-4, ic, r[0], sr);
+	LOG(L_CPU, "Loaded process ctx @ 0x%04x: [IC: 0x%04x, R0: 0x%04x, SR: 0x%04x]", ar-2, ic, r[0], sr);
 }
 
 // -----------------------------------------------------------------------
