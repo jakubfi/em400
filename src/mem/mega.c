@@ -18,6 +18,7 @@
 #include <stdlib.h>
 #include <inttypes.h>
 #include <string.h>
+#include <stdbool.h>
 
 #include "io/defs.h"
 #include "mem/mega.h"
@@ -29,8 +30,8 @@ uint16_t *mem_mega[MEM_MAX_MODULES][MEM_MAX_MEGA_SEGMENTS];	// physical memory s
 uint16_t *mem_mega_map[MEM_MAX_NB][MEM_MAX_AB];				// internal logical->physical segment mapping
 int mem_mega_mp_start, mem_mega_mp_end;   					// modules allocated for MEGA
 uint16_t *mem_mega_prom;									// PROM contents
-int mem_mega_prom_hidden;									// is PROM hidden?
-int mem_mega_init_done;										// is initialization done?
+bool mem_mega_prom_hidden;									// is PROM hidden?
+bool mem_mega_init_done;									// is initialization done?
 
 // -----------------------------------------------------------------------
 int mem_mega_init(int modc, const char *prom_image)
@@ -47,13 +48,13 @@ int mem_mega_init(int modc, const char *prom_image)
 		return LOGERR("Wrong number of MEGA modules: %i. Should be 1-%i", modc, MEM_MAX_MODULES);
 	}
 
-	mem_mega_mp_start = MEM_MAX_MODULES-modc;
-	mem_mega_mp_end = MEM_MAX_MODULES-1;
+	mem_mega_mp_start = MEM_MAX_MODULES - modc;
+	mem_mega_mp_end = MEM_MAX_MODULES - 1;
 
 	LOG(L_MEM, "MEGA modules: %d-%d, %d segments", mem_mega_mp_start, mem_mega_mp_end, MEM_MAX_MEGA_SEGMENTS);
 
 	for (mp=mem_mega_mp_start ; mp<=mem_mega_mp_end ; mp++) {
-		for (seg=0 ; seg<MEM_MAX_MEGA_SEGMENTS; seg++) {
+		for (seg=0 ; seg<MEM_MAX_MEGA_SEGMENTS ; seg++) {
 			mem_mega[mp][seg] = (uint16_t *) calloc(sizeof(uint16_t), MEM_SEGMENT_SIZE);
 			if (!mem_mega[mp][seg]) {
 				return LOGERR("Memory allocation failed for MEGA map.");
@@ -62,7 +63,7 @@ int mem_mega_init(int modc, const char *prom_image)
 	}
 
 	// allocate memory for MEGA PROM
-	mem_mega_prom_hidden = 0;
+	mem_mega_prom_hidden = false;
 	mem_mega_prom = (uint16_t *) malloc(sizeof(uint16_t) * MEM_SEGMENT_SIZE);
 	if (!mem_mega_prom) {
 		return LOGERR("Memory allocation error for MEGA PROM.");
@@ -86,7 +87,7 @@ int mem_mega_init(int modc, const char *prom_image)
 		LOG(L_MEM, "Empty MEGA PROM");
 	}
 
-	mem_mega_init_done = 0;
+	mem_mega_init_done = false;
 
 	return E_OK;
 }
@@ -114,7 +115,7 @@ void mem_mega_reset()
 			mem_mega_map[nb][ab] = NULL;
 		}
 	}
-	mem_mega_prom_hidden = 0;
+	mem_mega_prom_hidden = false;
 }
 
 // -----------------------------------------------------------------------
@@ -136,10 +137,7 @@ void mem_mega_seg_set(int nb, int ab, struct mem_slot_t *slot)
 int mem_mega_cmd(int nb, int ab, int mp, int seg, int flags)
 {
 	LOG(L_MEM, "MEGA: (%2d, %2d) -> (%2d, %2d)  flags: %s%s%s%s%s",
-		nb,
-		ab,
-		mp,
-		seg,
+		nb, ab, mp, seg,
 		flags & MEM_MEGA_ALLOC ? "alloc " : "",
 		flags & MEM_MEGA_FREE ? "free " : "",
 		flags & MEM_MEGA_PROM_SHOW ? "pshow " : "",
@@ -157,21 +155,20 @@ int mem_mega_cmd(int nb, int ab, int mp, int seg, int flags)
 
 	// 'PROM hide'
 	if ((flags & MEM_MEGA_PROM_HIDE)) {
-		mem_mega_prom_hidden = 1;
+		mem_mega_prom_hidden = true;
 	}
 
 	// 'PROM show'
 	if ((flags & MEM_MEGA_PROM_SHOW)) {
-		mem_mega_prom_hidden = 0;
+		mem_mega_prom_hidden = false;
 	}
 
 	// 'allocation done'
 	if ((flags & MEM_MEGA_ALLOC_DONE)) {
-		mem_mega_init_done = 1;
+		mem_mega_init_done = true;
 	}
 
 	return IO_OK;
 }
-
 
 // vim: tabstop=4 shiftwidth=4 autoindent

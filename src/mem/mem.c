@@ -19,6 +19,7 @@
 #include <stdio.h>
 #include <string.h>
 #include <inttypes.h>
+#include <stdbool.h>
 #include <arpa/inet.h>
 
 #include "mem/elwro.h"
@@ -34,7 +35,7 @@
 struct mem_slot_t mem_map[MEM_MAX_NB][MEM_MAX_AB];	// final (as seen by emulation) logical->physical segment mapping
 
 static int mega_modules = 0;
-static int mega_boot = 0;
+static bool mega_boot = false;
 
 // -----------------------------------------------------------------------
 static uint16_t *mem_ptr(int nb, uint16_t addr)
@@ -174,7 +175,7 @@ int mem_mget(int nb, uint16_t saddr, uint16_t *dest, int count)
 	for (i=0 ; i<count ; i++) {
 		uint16_t *ptr = mem_ptr(nb, saddr+i);
 		if (ptr) {
-			*(dest+i) = *ptr;
+			dest[i] = *ptr;
 		} else {
 			break;
 		}
@@ -190,7 +191,7 @@ int mem_mput(int nb, uint16_t saddr, uint16_t *src, int count)
 		uint16_t *ptr = mem_ptr(nb, saddr+i);
 		if (ptr) {
 			if (!mem_mega_prom || (mem_map[nb][(saddr+i)>>12].seg != mem_mega_prom)) {
-				*ptr = *(src+i);
+				*ptr = src[i];
 			}
 		} else {
 			break;

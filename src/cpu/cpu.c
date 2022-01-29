@@ -137,7 +137,7 @@ static void cpu_mem_fail(int nb)
 {
 	int_set(INT_NO_MEM);
 	if ((nb == 0) && nomem_stop) {
-		rALARM = 1;
+		rALARM = true;
 		cpu_state_change(ECTL_STATE_STOP, ECTL_STATE_ANY);
 	}
 }
@@ -229,10 +229,10 @@ int cpu_init(em400_cfg *cfg)
 	sound_enabled = cfg_getbool(cfg, "sound:enabled", CFG_DEFAULT_SOUND_ENABLED);
 
 	if (sound_enabled) {
-		if ((speed_real == 0) || (cpu_speed_factor < 0.1f) || (cpu_speed_factor > 2.0f)) {
+		if (!speed_real || (cpu_speed_factor < 0.1f) || (cpu_speed_factor > 2.0f)) {
 			LOGERR("EM400 needs to be configured with speed_real=true and 2.0 >= cpu_speed_factor >= 0.1 for the buzzer emulation to work.");
 			LOGERR("Disabling sound.");
-			sound_enabled = 0;
+			sound_enabled = false;
 		} else {
 			if (buzzer_init(cfg) != E_OK) {
 				return LOGERR("Failed to initialize buzzer.");
@@ -254,7 +254,7 @@ void cpu_shutdown()
 // -----------------------------------------------------------------------
 int cpu_mod_on()
 {
-	cpu_mod_active = 1;
+	cpu_mod_active = true;
 	clock_set_int(INT_EXTRA);
 
 	return E_OK;
@@ -263,7 +263,7 @@ int cpu_mod_on()
 // -----------------------------------------------------------------------
 int cpu_mod_off()
 {
-	cpu_mod_active = 0;
+	cpu_mod_active = false;
 	clock_set_int(INT_CLOCK);
 
 	return E_OK;
@@ -284,7 +284,7 @@ static void cpu_do_clear(int scope)
 	int_clear_all();
 
 	if (scope == ECTL_STATE_CLO) {
-		rALARM = 0;
+		rALARM = false;
 		mc = 0;
 	}
 
@@ -493,11 +493,11 @@ ineffective:
 // -----------------------------------------------------------------------
 static void cpu_timekeeping(int cpu_time)
 {
-	int skip_sleep = 0;
+	bool skip_sleep = false;
 
 	if (cpu_time < 0) {
 		cpu_time *= -1;
-		skip_sleep = 1;
+		skip_sleep = true;
 	}
 
 	cpu_time *= cpu_delay_factor;
@@ -532,7 +532,7 @@ void cpu_loop()
 			case ECTL_STATE_CYCLE:
 				cpu_state_change(ECTL_STATE_STOP, ECTL_STATE_CYCLE);
 			case ECTL_STATE_RUN:
-				if (atom_load_acquire(&rp) && !p && !mc) {
+				if (atom_load_acquire(&rp) && !p && (mc == 0)) {
 					int_serve();
 					cpu_time = TIME_INT_SERVE;
 				} else {

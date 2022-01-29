@@ -34,9 +34,7 @@ int mem_elwro_mp_start, mem_elwro_mp_end;						// modules allocated for Elwro
 // -----------------------------------------------------------------------
 void mem_elwro_os_hardwire()
 {
-	int seg;
-
-	for (seg=0 ; seg<mem_elwro_os_segments ; seg++) {
+	for (int seg=0 ; seg<mem_elwro_os_segments ; seg++) {
 		mem_elwro_ral[0][seg] = RAL(0, seg);
 	}
 }
@@ -55,12 +53,12 @@ int mem_elwro_init(int modc, int seg_os)
 
 	mem_elwro_os_segments = seg_os;
 	mem_elwro_mp_start = 0;
-	mem_elwro_mp_end = modc-1;
+	mem_elwro_mp_end = modc - 1;
 
 	LOG(L_MEM, "Elwro modules: %d-%d, %d segments (%d hardwired OS segments)", mem_elwro_mp_start, mem_elwro_mp_end, MEM_MAX_ELWRO_SEGMENTS, seg_os);
 
 	for (mp=mem_elwro_mp_start ; mp<=mem_elwro_mp_end ; mp++) {
-		for (seg=0 ; seg<MEM_MAX_ELWRO_SEGMENTS; seg++) {
+		for (seg=0 ; seg<MEM_MAX_ELWRO_SEGMENTS ; seg++) {
 			mem_elwro[mp][seg] = (uint16_t *) calloc(sizeof(uint16_t), MEM_SEGMENT_SIZE);
 			if (!mem_elwro[mp][seg]) {
 				return LOGERR("Memory allocation failed for Elwro map.");

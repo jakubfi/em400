@@ -148,9 +148,6 @@ void alu_16_sub(int16_t reg, int16_t n)
 // -----------------------------------------------------------------------
 void awp_dispatch(int op, uint16_t arg)
 {
-	int res = 0;
-	uint16_t n[3];
-
 	assert(op >= AWP_NRF0);
 	assert(op <= AWP_DF);
 
@@ -170,8 +167,9 @@ void awp_dispatch(int op, uint16_t arg)
 	};
 
 	if (awp_enabled) {
+		uint16_t n[3];
 		if (cpu_mem_mget(QNB, arg, n, awp_arg_count[op]) != awp_arg_count[op]) return;
-
+		int res = 0;
 		switch (op) {
 			case AWP_NRF0:
 			case AWP_NRF1:

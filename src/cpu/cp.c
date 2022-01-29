@@ -17,6 +17,7 @@
 
 #include <stdlib.h>
 #include <unistd.h>
+#include <stdbool.h>
 
 #include "io/defs.h"
 #include "io/io.h"
@@ -33,7 +34,7 @@
 
 #include "ectl.h" // for global constants/enums
 
-static int fpga;
+static bool fpga;
 
 // -----------------------------------------------------------------------
 int cp_init(em400_cfg *cfg)
