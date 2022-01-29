@@ -20,7 +20,7 @@
 
 #include "log.h"
 
-#include "cpu/flags.h"
+#include "cpu/cpu.h"
 #include "cpu/iset.h"
 #include "cpu/instructions.h"
 

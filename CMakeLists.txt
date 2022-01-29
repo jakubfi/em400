@@ -61,7 +61,6 @@ set(SOURCES_EM400
 	src/utils/elst.c
 	src/utils/elst.h
 
-	src/cpu/flags.h
 	src/cpu/instructions.c
 	src/cpu/instructions.h
 	src/cpu/clock.c
