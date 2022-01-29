@@ -36,6 +36,13 @@ pthread_mutex_t int_mutex = PTHREAD_MUTEX_INITIALIZER;
 
 #define INT_BIT(x) (1UL << (31 - x))
 
+#define RZ_CHAN_BITMASK			0b00000000000011111111111111110000
+#define RZ_NCHAN_HIGH_BITMASK	0b11111111111100000000000000000000
+#define RZ_NCHAN_LOW_BITMASK	0b00000000000000000000000000001111
+
+#define R_NCHAN_HIGH_BITMASK	0b1111111111110000
+#define R_NCHAN_LOW_BITMASK		0b0000000000001111
+
 // for extending RM into 32-bit xmask
 static const uint32_t int_rm2xmask[10] = {
 	0b01000000000000000000000000000000,
@@ -103,7 +110,7 @@ static const char *int_names[] = {
 // -----------------------------------------------------------------------
 static void int_update_rp()
 {
-	// under mutex
+	// function called under mutex
 	rp = rz & int_mask;
 	if (rp && !p && !mc) {
 		cpu_state_change(ECTL_STATE_RUN, ECTL_STATE_WAIT);
@@ -114,7 +121,7 @@ static void int_update_rp()
 void int_update_mask(uint16_t mask)
 {
 	int i;
-	uint32_t xmask = 0b10000000000000000000000000000000;
+	uint32_t xmask = 1 << 31;
 
 	for (i=0 ; i<10 ; i++) {
 		if (mask & (1 << (9 - i))) {
@@ -165,7 +172,7 @@ void int_put_nchan(uint16_t r)
 	LOG(L_INT, "Set non-channel interrupts to: %d", r);
 
 	pthread_mutex_lock(&int_mutex);
-	rz = (rz & 0b00000000000011111111111111110000) | ((r & 0b1111111111110000) << 16) | (r & 0b0000000000001111);
+	rz = (rz & RZ_CHAN_BITMASK) | ((r & R_NCHAN_HIGH_BITMASK) << 16) | (r & R_NCHAN_LOW_BITMASK);
 	int_update_rp();
 	pthread_mutex_unlock(&int_mutex);
 }
@@ -173,65 +180,58 @@ void int_put_nchan(uint16_t r)
 // -----------------------------------------------------------------------
 uint16_t int_get_nchan()
 {
-	uint32_t r;
+	uint32_t rz_tmp;
 	pthread_mutex_lock(&int_mutex);
-	r = rz;
+	rz_tmp = rz;
 	pthread_mutex_unlock(&int_mutex);
-	return ((r & 0b11111111111100000000000000000000) >> 16) | (r & 0b00000000000000000000000000001111);
+	return ((rz_tmp & RZ_NCHAN_HIGH_BITMASK) >> 16) | (rz_tmp & RZ_NCHAN_LOW_BITMASK);
 }
 
 // -----------------------------------------------------------------------
 uint16_t int_get_chan()
 {
-	uint32_t r;
+	uint32_t rz_tmp;
 	pthread_mutex_lock(&int_mutex);
-	r = rz;
+	rz_tmp = rz;
 	pthread_mutex_unlock(&int_mutex);
-	return (r >> 4) & 0xffff;
+	return rz_tmp >> 4;
 }
 
 // -----------------------------------------------------------------------
 void int_serve()
 {
-	int probe = 31;
-	int interrupt;
-	uint16_t int_vec;
-	uint16_t int_spec = 0;
-	uint16_t int_mask;
-
 	// find highest interrupt to serve
-	while ((probe > 0) && !(rp & (1 << probe))) {
-		probe--;
-	}
-	interrupt = 31 - probe;
+	unsigned interrupt = 31;
+	unsigned i = rp;
+	while (i >>= 1) interrupt--;
 
-	// clear interrupt, we update rp together with mask upon ctx switch
+	// clear interrupt; rp gets updated int context switch, together with interrupt mask
 	pthread_mutex_lock(&int_mutex);
 	rz &= ~INT_BIT(interrupt);
 	pthread_mutex_unlock(&int_mutex);
 
 	// get interrupt vector
+	uint16_t int_vec;
 	if (!cpu_mem_get(0, INT_VECTORS + interrupt, &int_vec)) return;
 
 	LOG(L_INT, "Serve interrupt: %i (%s) -> 0x%04x", interrupt, int_names[interrupt], int_vec);
 
-	// get interrupt specification for channel interrupts
-	if ((interrupt >= 12) && (interrupt <= 27)) {
-		io_get_intspec(interrupt-12, &int_spec);
-	}
+	// get new interrupt mask for the given interrupt
+	uint16_t int_mask = int_int2mask[interrupt];
 
-	int_mask = int_int2mask[interrupt]; // get new interrupt mask for the given interrupt
-	if (cpu_mod_active && (interrupt >= 12) && (interrupt <= 27)) {
+	// get interrupt specification for channel interrupts
+	uint16_t int_spec = 0;
+	if ((interrupt >= 12) && (interrupt < 12 + 16)) {
+		io_get_intspec(interrupt - 12, &ac);
+		int_spec = ac;
 		// extend interrupt mask if cpu_mod is enabled
-		int_mask &= MASK_EX;
+		if (cpu_mod_active) int_mask &= MASK_EX;
 	}
 
 	// switch context
 	if (!cpu_ctx_switch(int_spec, int_vec, int_mask)) return;
 
-	if (LOG_ENABLED) {
-		log_intlevel_inc();
-	}
+	if (LOG_ENABLED) log_intlevel_inc();
 }
 
 // vim: tabstop=4 shiftwidth=4 autoindent

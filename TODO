@@ -2,8 +2,6 @@ Known bugs:
 
 Cleanups:
 
-* fix AC usage in ext. interrupts
-
 Code enhancements (possible):
 
 * librarize
