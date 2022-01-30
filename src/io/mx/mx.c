@@ -584,6 +584,7 @@ static int mx_cmd_setcfg(struct mx *multix, uint16_t addr)
 	ret_int = MX_IRQ_IUKON;
 
 	atom_store_release(&multix->state, MX_CONFIGURED);
+	LOG(L_MX, "Multix configuration is now ready");
 
 fail:
 	// update return field only if setcfg failed
@@ -640,7 +641,7 @@ static void mx_cmd_dispatch(struct mx *multix, struct mx_line *lline, struct mx_
 {
 	// is multix and line configured?
 	if (!lline) {
-		LOG(L_MX, "EV%04x: Rejecting command, line %i not configured", ev->log_n, ev->id);
+		LOG(L_MX, "(EV%04x) Rejecting command, line %i not configured", ev->log_n, ev->id);
 		mx_int_enqueue(multix, mx_irq_noline(ev->cmd), ev->log_n);
 		return;
 	}
@@ -648,7 +649,7 @@ static void mx_cmd_dispatch(struct mx *multix, struct mx_line *lline, struct mx_
 	const struct mx_cmd *cmd = lline->proto->cmd + ev->cmd;
 
 	if (!cmd->run && (ev->cmd != MX_CMD_STATUS)) { // NOTE: 'status' command is not a protocol command
-		LOG(L_MX, "EV%04x: Rejecting command: no protocol function to handle command %s for protocol %s in line %i", ev->id, mx_get_cmd_name(ev->cmd), lline->proto->name, lline->log_n);
+		LOG(L_MX, "(EV%04x) Rejecting command: no protocol function to handle command %s for protocol %s in line %i", ev->id, mx_get_cmd_name(ev->cmd), lline->proto->name, lline->log_n);
 		mx_int_enqueue(lline->multix, mx_irq_reject(ev->cmd), ev->log_n);
 		return;
 	}
@@ -670,7 +671,7 @@ static void mx_cmd_dispatch(struct mx *multix, struct mx_line *lline, struct mx_
 	memcpy(ev_dup, ev, sizeof(struct mx_event));
 
 	// process asynchronously in the protocol thread
-	LOG(L_MX, "EV%04x: Enqueue command %s for %s in line %i", ev_dup->id, mx_get_cmd_name(ev_dup->cmd), lline->proto->name, lline->log_n);
+	LOG(L_MX, "(EV%04x) Enqueue command %s for %s in line %i", ev_dup->id, mx_get_cmd_name(ev_dup->cmd), lline->proto->name, lline->log_n);
 	if (ev->cmd == MX_CMD_STATUS) {
 		elst_append(lline->statusq, ev_dup);
 	} else {

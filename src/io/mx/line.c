@@ -227,14 +227,14 @@ static void mx_line_process_cmd(struct mx_line *line, struct mx_event *ev)
 	int irq;
 	const struct mx_cmd *cmd = line->proto->cmd + ev->cmd;
 
-	LOG(L_MX, "EV%04x: Line %i (%s) got cmd %s", ev->id, line->log_n, line->proto->name, mx_get_cmd_name(ev->cmd));
+	LOG(L_MX, "(EV%04x) Line %i (%s) got cmd %s", ev->id, line->log_n, line->proto->name, mx_get_cmd_name(ev->cmd));
 
 	uint16_t cmd_data_addr = ev->arg;
 	uint16_t cmd_data[MAX_CMD_DATA_LEN];
 
 	// check for emulation errors
 	if (cmd->input_flen + cmd->output_flen > MAX_CMD_DATA_LEN) {
-		LOG(L_MX, "ERROR: EV%04x: protocol data (%i words) won't fit in the data buffer (%i words)", cmd->input_flen + cmd->output_flen, MAX_CMD_DATA_LEN);
+		LOG(L_MX, "(EV%04x) ERROR protocol data (%i words) won't fit in the data buffer (%i words)", cmd->input_flen + cmd->output_flen, MAX_CMD_DATA_LEN);
 		irq = MX_IRQ_INPAO;
 		goto fin;
 	}
@@ -290,7 +290,7 @@ void * mx_line_thread(void *ptr)
 				mx_line_process_cmd(line, ev);
 				break;
 			default:
-				LOG(L_MX, "EV%04x: Line %i (%s) protocol thread got unknown event type %i. Ignored.", ev->id, line->log_n, line->proto->name, ev->type);
+				LOG(L_MX, "(EV%04x) Line %i (%s) protocol thread got unknown event type %i. Ignored.", ev->id, line->log_n, line->proto->name, ev->type);
 				break;
 		}
 		free(ev);
@@ -304,7 +304,7 @@ void * mx_line_thread(void *ptr)
 // -----------------------------------------------------------------------
 void log_line_status(const char *txt, int log_n, uint32_t status, unsigned evid)
 {
-	LOG(L_MX, "EV%04x: %s: line %i status: 0x%08x: %s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s",
+	LOG(L_MX, "(EV%04x) %s: line %i status: 0x%08x: %s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s",
 		evid,
 		txt,
 		log_n,
@@ -353,7 +353,7 @@ void * mx_line_status_thread(void *ptr)
 		} else if (ev->type == MX_EV_QUIT) {
 			quit = 1;
 		} else {
-			LOG(L_MX, "EV%04x: Line %i (%s) status thread got unknown event type %i. Ignored.", ev->id, line->log_n, line->proto->name, ev->type);
+			LOG(L_MX, "(EV%04x) Line %i (%s) status thread got unknown event type %i. Ignored.", ev->id, line->log_n, line->proto->name, ev->type);
 		}
 		free(ev);
 	}
