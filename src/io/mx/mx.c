@@ -21,6 +21,7 @@
 
 #include <stdlib.h>
 #include <pthread.h>
+#include <stdbool.h>
 
 #include "atomic.h"
 #include "log.h"
@@ -35,6 +36,14 @@
 #include "io/mx/line.h"
 #include "cfg.h"
 
+// Doing asynchronous reset that mimics hardware is hard in multithreaded software.
+// Trick used here is as follows:
+//  * Upon receiving a reset request, set the state to MX_UNINITIALIZED and let everything run, but...
+//  * cut all communication between multix and the CPU/memory. That means:
+//     * every command received from the CPU thread (except RESET and QUIT) will fail
+//     * every memory access initiated by multix will fail
+//     * no interrupt will be sent from multix to the CPU
+// This way threads can continue, but any processing that stated just before the reset will have no effect.
 enum mx_condition { MX_UNINITIALIZED, MX_INITIALIZED, MX_CONFIGURED, MX_QUIT };
 
 // Real multix boots up in probably just under a second
@@ -46,10 +55,10 @@ enum mx_condition { MX_UNINITIALIZED, MX_INITIALIZED, MX_CONFIGURED, MX_QUIT };
 
 typedef int (*mx_cmd_fun)(struct mx *multix, int log_n, uint16_t arg);
 
-static void * mx_evproc(void *ptr);
+static void * mx_event_loop(void *ptr);
 static int mx_event(struct mx *multix, int type, int cmd, int log_n, uint16_t r_arg);
 int mx_int_enqueue(struct mx *multix, int intr, int line);
-void mx_reset(void *ch);
+void mx_cmd_reset(void *ch);
 
 // -----------------------------------------------------------------------
 void * mx_create(int ch_num, em400_cfg *cfg)
@@ -111,7 +120,7 @@ void * mx_create(int ch_num, em400_cfg *cfg)
 		LOGERR("Failed to create event queue.");
 		goto cleanup;
 	}
-	if (pthread_create(&multix->ev_thread, NULL, mx_evproc, multix)) {
+	if (pthread_create(&multix->ev_thread, NULL, mx_event_loop, multix)) {
 		LOGERR("Failed to spawn event processor thread.");
 		goto cleanup;
 	}
@@ -251,12 +260,13 @@ void mx_shutdown(void *ch)
 // -----------------------------------------------------------------------
 int mx_mem_mget(struct mx *multix, int nb, uint16_t addr, uint16_t *data, int len)
 {
-	if (atom_load_acquire(&multix->state) != MX_UNINITIALIZED) {
-		if (io_mem_mget(nb, addr, data, len) != len) {
-			return -1;
-		}
-	} else {
+	if (atom_load_acquire(&multix->state) == MX_UNINITIALIZED) {
 		LOG(L_MX, "LOST memory read due to multix initializing");
+		return 0;
+	}
+
+	if (io_mem_mget(nb, addr, data, len) != len) {
+		return -1;
 	}
 	return 0;
 }
@@ -264,12 +274,13 @@ int mx_mem_mget(struct mx *multix, int nb, uint16_t addr, uint16_t *data, int le
 // -----------------------------------------------------------------------
 int mx_mem_mput(struct mx *multix, int nb, uint16_t addr, uint16_t *data, int len)
 {
-	if (atom_load_acquire(&multix->state) != MX_UNINITIALIZED) {
-		if (io_mem_mput(nb, addr, data, len) != len) {
-			return -1;
-		}
-	} else {
+	if (atom_load_acquire(&multix->state) == MX_UNINITIALIZED) {
 		LOG(L_MX, "LOST memory write due to multix initializing");
+		return 0;
+	}
+
+	if (io_mem_mput(nb, addr, data, len) != len) {
+		return -1;
 	}
 	return 0;
 }
@@ -277,11 +288,12 @@ int mx_mem_mput(struct mx *multix, int nb, uint16_t addr, uint16_t *data, int le
 // -----------------------------------------------------------------------
 static void mx_int_set(struct mx *multix)
 {
-	if (atom_load_acquire(&multix->state) != MX_UNINITIALIZED) {
-		io_int_set(multix->chnum);
-	} else {
+	if (atom_load_acquire(&multix->state) == MX_UNINITIALIZED) {
 		LOG(L_MX, "LOST interrupt due to multix initializing");
+		return;
 	}
+
+	io_int_set(multix->chnum);
 }
 
 // -----------------------------------------------------------------------
@@ -476,7 +488,7 @@ static int mx_cmd_setcfg(struct mx *multix, uint16_t addr)
 #define CFGERR(err, line) ret_int = MX_IRQ_INKON; ret_err = (((err)<<8) | (line))
 
 	int res;
-	uint16_t data[MX_LINE_CNT+4*MX_LINE_CNT];
+	uint16_t data[MX_LINE_CNT+4*MX_LINE_CNT] = { 0 };
 
 	int ret_int;
 	uint16_t ret_err = 0;
@@ -594,7 +606,7 @@ static int mx_cmd_test(struct mx *multix)
 	// As we're not able to run any real 8085 code, TEST command
 	// won't work. Best we can do is to pretend that test is done
 	// and let the test wrapper on CPU side worry about the (non-)results.
-	// TODO: I think real multix would self-reset after test finish...
+	// TODO: I think the real multix would self-reset after test finish...
 	mx_int_enqueue(multix, MX_IRQ_IWYTE, 0);
 	return 0;
 }
@@ -618,30 +630,13 @@ static int mx_cmd_requeue(struct mx *multix)
 }
 
 // -----------------------------------------------------------------------
-static int mx_conf_check(struct mx *multix, struct mx_line *lline, struct mx_event *ev)
-{
-	// is multix configured?
-	if (atom_load_acquire(&multix->state) == MX_UNINITIALIZED) {
-		LOG(L_MX, "EV%04x: Rejecting command, MULTIX not initialized", ev->id);
-		return -1;
-	}
-
-	// is the line configured?
-	if (!lline) {
-		LOG(L_MX, "EV%04x: Rejecting command, line %i not configured", ev->log_n, ev->id);
-		return -1;
-	}
-
-	return 0;
-}
-
-// -----------------------------------------------------------------------
-static int mx_cmd_dispatch(struct mx *multix, struct mx_line *lline, struct mx_event *ev)
+static void mx_cmd_dispatch(struct mx *multix, struct mx_line *lline, struct mx_event *ev)
 {
 	// is multix and line configured?
-	if (mx_conf_check(multix, lline, ev)) {
+	if (!lline) {
+		LOG(L_MX, "EV%04x: Rejecting command, line %i not configured", ev->log_n, ev->id);
 		mx_int_enqueue(multix, mx_irq_noline(ev->cmd), ev->log_n);
-		return 1;
+		return;
 	}
 
 	const struct mx_cmd *cmd = lline->proto->cmd + ev->cmd;
@@ -649,7 +644,7 @@ static int mx_cmd_dispatch(struct mx *multix, struct mx_line *lline, struct mx_e
 	if (!cmd->run && (ev->cmd != MX_CMD_STATUS)) { // NOTE: 'status' command is not a protocol command
 		LOG(L_MX, "EV%04x: Rejecting command: no protocol function to handle command %s for protocol %s in line %i", ev->id, mx_get_cmd_name(ev->cmd), lline->proto->name, lline->log_n);
 		mx_int_enqueue(lline->multix, mx_irq_reject(ev->cmd), ev->log_n);
-		return 1;
+		return;
 	}
 
 	// can line process the command?
@@ -658,136 +653,165 @@ static int mx_cmd_dispatch(struct mx *multix, struct mx_line *lline, struct mx_e
 		log_line_status("Rejecting command, line status does not allow execution", ev->log_n, lline->status, ev->id);
 		mx_int_enqueue(lline->multix, mx_irq_reject(ev->cmd), ev->log_n);
 		pthread_mutex_unlock(&lline->status_mutex);
-		return 1;
+		return;
 	}
 	// update line status
 	lline->status |= mx_cmd_state(ev->cmd);
 	pthread_mutex_unlock(&lline->status_mutex);
 
-	// process asynchronously in the protocol thread
-	LOG(L_MX, "EV%04x: Enqueue command %s for %s in line %i", ev->id, mx_get_cmd_name(ev->cmd), lline->proto->name, lline->log_n);
-	if (ev->cmd == MX_CMD_STATUS) {
-		elst_append(lline->statusq, ev);
-	} else {
-		elst_append(lline->protoq, ev);
-	}
+	// duplicate the event, as the original gets deleted in event loop
+	struct mx_event *ev_dup = malloc(sizeof(struct mx_event));
+	memcpy(ev_dup, ev, sizeof(struct mx_event));
 
-	return 0; // don't delete the event
+	// process asynchronously in the protocol thread
+	LOG(L_MX, "EV%04x: Enqueue command %s for %s in line %i", ev_dup->id, mx_get_cmd_name(ev_dup->cmd), lline->proto->name, lline->log_n);
+	if (ev->cmd == MX_CMD_STATUS) {
+		elst_append(lline->statusq, ev_dup);
+	} else {
+		elst_append(lline->protoq, ev_dup);
+	}
 }
 
 // -----------------------------------------------------------------------
-static void * mx_evproc(void *ptr)
+static void mx_process_cmd_event(struct mx *multix, struct mx_event *ev)
 {
-	int quit = 0;
-	int timeout = MX_INIT_TIME_MSEC;
-	struct mx *multix = (struct mx *) ptr;
 	struct mx_line *lline;
 
-	LOG(L_MX, "Entering event loop");
+	switch (ev->cmd) {
+		case MX_CMD_REQUEUE:
+			mx_cmd_requeue(multix);
+			break;
+		case MX_CMD_STATUS:
+		case MX_CMD_TRANSMIT:
+		case MX_CMD_ATTACH:
+		case MX_CMD_DETACH:
+		case MX_CMD_ABORT:
+			lline = multix->llines[ev->log_n];
+			mx_cmd_dispatch(multix, lline, ev);
+			break;
+		case MX_CMD_SETCFG:
+			mx_cmd_setcfg(multix, ev->arg);
+			break;
+		case MX_CMD_TEST:
+			mx_cmd_test(multix);
+			break;
+		case MX_CMD_ERR_0:
+			mx_int_enqueue(multix, MX_IRQ_IEPS0, 0);
+			break;
+		case MX_CMD_ERR_6:
+			mx_int_enqueue(multix, MX_IRQ_IEPS6, 0);
+			break;
+		case MX_CMD_ERR_7:
+			mx_int_enqueue(multix, MX_IRQ_IEPS7, 0);
+			break;
+		case MX_CMD_ERR_8:
+			mx_int_enqueue(multix, MX_IRQ_IEPS8, 0);
+			break;
+		case MX_CMD_ERR_C:
+			mx_int_enqueue(multix, MX_IRQ_IEPSC, 0);
+			break;
+		case MX_CMD_ERR_D:
+			mx_int_enqueue(multix, MX_IRQ_IEPSD, 0);
+			break;
+		case MX_CMD_ERR_E:
+			mx_int_enqueue(multix, MX_IRQ_IEPSE, 0);
+			break;
+		case MX_CMD_ERR_F:
+			mx_int_enqueue(multix, MX_IRQ_IEPSF, 0);
+			break;
+		default:
+			break;
+	}
+}
+
+// -----------------------------------------------------------------------
+static void log_event(const char *text, struct mx_event *ev)
+{
+	char buf[1024];
+	char *b = buf;
+	b += sprintf(b, "(EV%04x) %s: %s", ev->id, text, mx_get_event_name(ev->type));
+	if (ev->type == MX_EV_CMD) {
+		b += sprintf(b, ", command: %s (%i)", mx_get_cmd_name(ev->cmd), ev->cmd);
+		switch (ev->cmd) {
+		case MX_CMD_STATUS: // z linią
+		case MX_CMD_TRANSMIT:
+		case MX_CMD_ATTACH:
+		case MX_CMD_DETACH:
+		case MX_CMD_ABORT:
+			sprintf(b, ", line: %i, arg: 0x%04x", ev->log_n, ev->arg);
+			break;
+		case MX_CMD_SETCFG: // z arg
+			break;
+			sprintf(b, ", arg: 0x%04x", ev->arg);
+		}
+	}
+	LOG(L_MX, "%s", buf);
+}
+
+// -----------------------------------------------------------------------
+bool mx_init_dummy(struct mx *multix)
+{
+	bool quit = false;
+	int timeout = MX_INIT_TIME_MSEC;
+
+	LOG(L_MX, "Initialization delay: %i ms", timeout);
 
 	while (!quit) {
-		if (timeout > 0) {
-			LOG(L_MX, "Initialization delay: %i ms", timeout);
-		} else {
-			LOG(L_MX, "Event processor waiting for event");
-		}
 		struct mx_event *ev = (struct mx_event *) elst_wait_pop(multix->eventq, timeout);
-
-		int ev_free = 1;
-
-		if (!ev) { // initialization finished, maybe?
-			if (timeout) { // loop was indeed waiting for the initialization timeout
-				timeout = 0;
-				atom_store_release(&multix->state, MX_INITIALIZED);
-				LOG(L_MX, "Multix is now initialized");
-				mx_int_enqueue(multix, MX_IRQ_IWYZE, 0);
+		if (!ev) {
+			atom_store_release(&multix->state, MX_INITIALIZED);
+			LOG(L_MX, "Multix is now initialized");
+			mx_int_enqueue(multix, MX_IRQ_IWYZE, 0);
+			break;
+		} else {
+			log_event("Got new event while still initializing", ev);
+			if (ev->type == MX_EV_RESET) {
+				// another reset, rinse and repeat
+			} else if (ev->type == MX_EV_QUIT) {
+				quit = true;
 			} else {
-				LOG(L_MX, "ERROR: Received unexpected NULL event");
+				// no other events should appear at this stage
 			}
-		} else { // regular event processing
-			LOG(L_MX, "EV%04x: Received event: %s", ev->id, mx_get_event_name(ev->type));
-			switch (ev->type) {
-				case MX_EV_QUIT:
-					// not ignored when resetting MULTIX
-					// called by mx_shutdown()
-					// here we just need to exit the event processor loop
-					// mx_shutdown() will do all the cleanup
-					quit = 1;
-					break;
-				case MX_EV_RESET:
-					// not ignored when resetting MULTIX - just do it all over again
-					// reset makes multix uninitialized (as before setcfg)
-					mx_lines_deinit(multix);
-					elst_clear(multix->eventq);
-					mx_int_reset(multix);
-					// set init wait timeout and let the event loop run again
-					// (it will timeout on elst_wait_pop() and continue with sending interrupt)
-					timeout = MX_INIT_TIME_MSEC;
-					break;
-				case MX_EV_INT_PUSH:
-					if (timeout) continue; // ignore INT_PUSH when resetting MULTIX
-					mx_int_push(multix);
-					break;
-				case MX_EV_CMD:
-					if (timeout) continue; // ignore commands when restting MULTIX
-					LOG(L_MX, "EV%04x: Received command: %s", ev->id, mx_get_cmd_name(ev->cmd));
-					lline = multix->llines[ev->log_n];
-					switch (ev->cmd) {
-						case MX_CMD_REQUEUE:
-							mx_cmd_requeue(multix);
-							break;
-						case MX_CMD_STATUS:
-						case MX_CMD_TRANSMIT:
-						case MX_CMD_ATTACH:
-						case MX_CMD_DETACH:
-						case MX_CMD_ABORT:
-							ev_free = mx_cmd_dispatch(multix, lline, ev);
-							break;
-						case MX_CMD_SETCFG:
-							mx_cmd_setcfg(multix, ev->arg);
-							break;
-						case MX_CMD_TEST:
-							mx_cmd_test(multix);
-							break;
-						case MX_CMD_ERR_0:
-							mx_int_enqueue(multix, MX_IRQ_IEPS0, 0);
-							break;
-						case MX_CMD_ERR_6:
-							mx_int_enqueue(multix, MX_IRQ_IEPS6, 0);
-							break;
-						case MX_CMD_ERR_7:
-							mx_int_enqueue(multix, MX_IRQ_IEPS7, 0);
-							break;
-						case MX_CMD_ERR_8:
-							mx_int_enqueue(multix, MX_IRQ_IEPS8, 0);
-							break;
-						case MX_CMD_ERR_C:
-							mx_int_enqueue(multix, MX_IRQ_IEPSC, 0);
-							break;
-						case MX_CMD_ERR_D:
-							mx_int_enqueue(multix, MX_IRQ_IEPSD, 0);
-							break;
-						case MX_CMD_ERR_E:
-							mx_int_enqueue(multix, MX_IRQ_IEPSE, 0);
-							break;
-						case MX_CMD_ERR_F:
-							mx_int_enqueue(multix, MX_IRQ_IEPSF, 0);
-							break;
-						default:
-							break;
-					}
-					break;
-				default:
-					break;
-			}
-		}
-		if (ev_free) {
 			free(ev);
 		}
 	}
+	return quit;
+}
 
-	LOG(L_MX, "Left event loop");
+// -----------------------------------------------------------------------
+static void * mx_event_loop(void *ptr)
+{
+	bool quit;
+	struct mx *multix = (struct mx *) ptr;
 
+	quit = mx_init_dummy(multix);
+
+	while (!quit) {
+		struct mx_event *ev = (struct mx_event *) elst_wait_pop(multix->eventq, 0);
+		log_event("Processing event", ev);
+
+		switch (ev->type) {
+			case MX_EV_QUIT:
+				quit = true;
+				break;
+			case MX_EV_RESET:
+				mx_lines_deinit(multix);
+				elst_clear(multix->eventq);
+				mx_int_reset(multix);
+				quit = mx_init_dummy(multix);
+				break;
+			case MX_EV_INT_PUSH:
+				mx_int_push(multix);
+				break;
+			case MX_EV_CMD:
+				mx_process_cmd_event(multix, ev);
+			default:
+				break;
+		}
+		free(ev);
+	}
+
+	LOG(L_MX, "Leaving event loop");
 	pthread_exit(NULL);
 }
 
@@ -796,8 +820,13 @@ static int mx_event(struct mx *multix, int type, int cmd, int log_n, uint16_t r_
 {
 	static unsigned id;
 
-	if (atom_load_acquire(&multix->state) == MX_QUIT) {
-		LOG(L_MX, "Create new event ignored, Multix is shutting down");
+	int state = atom_load_acquire(&multix->state);
+
+	if (state == MX_QUIT) {
+		LOG(L_MX, "Adding new event ignored: Multix is shutting down");
+		return IO_EN;
+	} else if ((state == MX_UNINITIALIZED) && (type != MX_EV_RESET) && (type != MX_EV_QUIT)) {
+		LOG(L_MX, "Adding new event ignored: Multix is initializing and event is not RESET nor QUIT.");
 		return IO_EN;
 	}
 
@@ -810,33 +839,28 @@ static int mx_event(struct mx *multix, int type, int cmd, int log_n, uint16_t r_
 	ev->arg = r_arg;
 	ev->id = id++;
 
-	LOG(L_MX, "EV%04x: Created new event %s, command: %i (%s), line: %i, arg: 0x%04x ",
-		ev->id,
-		mx_get_event_name(ev->type),
-		ev->cmd,
-		(ev->type == MX_EV_CMD) ? mx_get_cmd_name(ev->cmd) : "",
-		ev->log_n,
-		ev->arg
-	);
+	log_event("New event", ev);
 
 	// type is also the priority
 	if (elst_insert(multix->eventq, ev, type) < 0) {
+		log_event("ERROR: Could not add event to the queue", ev);
+		free(ev);
 		return IO_EN;
 	}
+
 	return IO_OK;
 }
 
 // -----------------------------------------------------------------------
-void mx_reset(void *ch)
+void mx_cmd_reset(void *ch)
 {
 	struct mx *multix = (struct mx *) ch;
 
 	if (atom_load_acquire(&multix->state) == MX_QUIT) {
-		LOG(L_MX, "Received reset request ignored, Multix is shutting down");
+		LOG(L_MX, "Reset request ignored, Multix is shutting down");
 		return;
 	}
 
-	LOG(L_MX, "Received reset request");
 	atom_store_release(&multix->state, MX_UNINITIALIZED); // as early as possible
 	mx_event(multix, MX_EV_RESET, 0, 0, 0);
 	// actual reset is done in event processor thread
@@ -851,29 +875,27 @@ int mx_cmd(void *ch, int dir, uint16_t n_arg, uint16_t *r_arg)
 	const unsigned chan_cmd =  (n_arg & 0b0001100000000000) >> 11;
 	const unsigned log_n    =  (n_arg & 0b0001111111100000) >> 5;
 
-	if (cmd == MX_CMD_CHAN) { // channel commands
-		LOG(L_MX, "Received channel command: %s (%i)", mx_get_chan_cmd_name(chan_cmd), chan_cmd);
+	if (cmd == MX_CMD_CHAN) {
+		LOG(L_MX, "Channel command: %s (%i)", mx_get_chan_cmd_name(chan_cmd), chan_cmd);
 		switch (chan_cmd) {
 			case MX_CHAN_CMD_INTSPEC:
 				*r_arg = mx_int_get_spec(multix);
 				mx_event(multix, MX_EV_INT_PUSH, 0, 0, 0);
-				return IO_OK; // always OK
+				return IO_OK;
 			case MX_CHAN_CMD_EXISTS:
-				return IO_OK; // always OK
+				return IO_OK;
 			case MX_CHAN_CMD_RESET:
-				mx_reset(multix);
-				return IO_OK; // always OK, although there is no actual response for reset on the system bus
+				mx_cmd_reset(multix);
+				return IO_OK;
+			default: // MX_CHAN_CMD_INVALID
+				// fallthrough to line or general event processing
+				break;
 		}
+	} else {
+		LOG(L_MX, "General or line %i command: %s (%i)", log_n, mx_get_cmd_name(cmd), cmd);
 	}
 
-	if (atom_load_acquire(&multix->state) == MX_UNINITIALIZED) {
-		// ignore commands (respond with EN) when multix is initializing
-		LOG(L_MX, "EN for received general or line %i command: %s (%i)", log_n, mx_get_cmd_name(cmd), cmd);
-		return IO_EN;
-	} else {
-		LOG(L_MX, "Received general or line %i command: %s (%i)", log_n, mx_get_cmd_name(cmd), cmd);
-		return mx_event(multix, MX_EV_CMD, cmd, log_n, *r_arg);
-	}
+	return mx_event(multix, MX_EV_CMD, cmd, log_n, *r_arg);
 }
 
 // -----------------------------------------------------------------------
@@ -881,7 +903,7 @@ const struct chan_drv mx_chan_driver = {
 	.name = "multix",
 	.create = mx_create,
 	.shutdown = mx_shutdown,
-	.reset = mx_reset,
+	.reset = mx_cmd_reset,
 	.cmd = mx_cmd
 };
 
