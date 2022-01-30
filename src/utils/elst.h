@@ -24,7 +24,9 @@ extern "C" {
 
 typedef struct elst *ELST;
 
-ELST elst_create(int capacity);
+typedef void (*elst_data_destructor)(void *ptr);
+
+ELST elst_create(int capacity, elst_data_destructor d);
 void elst_destroy(ELST l);
 
 void elst_nlock_clear(ELST l);
@@ -40,7 +42,7 @@ int elst_append(ELST l, void *ptr);
 int elst_prepend(ELST l, void *ptr);
 int elst_insert(ELST l, void *ptr, int prio);
 void * elst_pop(ELST l);
-void * elst_wait_pop(ELST l, int timeout);
+void * elst_wait_pop(ELST l, unsigned timeout);
 
 #ifdef __cplusplus
 }

@@ -68,6 +68,12 @@ struct iotester {
 static void * it_cmdproc(void *ptr);
 
 // -----------------------------------------------------------------------
+void it_event_destructor(void *ptr)
+{
+	free(ptr);
+}
+
+// -----------------------------------------------------------------------
 void * it_create(int num, em400_cfg *cfg)
 {
 	struct iotester *it = (struct iotester *) calloc(1, sizeof(struct iotester));
@@ -87,7 +93,7 @@ void * it_create(int num, em400_cfg *cfg)
 		}
 	}
 
-	it->evq = elst_create(1024);
+	it->evq = elst_create(1024, it_event_destructor);
 	if (!it->evq) {
 		LOGERR("Failed to create event queue.");
 		free(it);

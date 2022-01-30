@@ -61,6 +61,12 @@ int mx_int_enqueue(struct mx *multix, int intr, int line);
 void mx_cmd_reset(void *ch);
 
 // -----------------------------------------------------------------------
+void mx_event_destructor(void *ptr)
+{
+	free(ptr);
+}
+
+// -----------------------------------------------------------------------
 void * mx_create(int ch_num, em400_cfg *cfg)
 {
 	LOG(L_MX, "Creating new MULTIX");
@@ -79,8 +85,8 @@ void * mx_create(int ch_num, em400_cfg *cfg)
 		struct mx_line *pline = multix->plines + i;
 		pline->phy_n = i;
 		pline->multix = multix;
-		pline->protoq = elst_create(1024);
-		pline->statusq = elst_create(1024);
+		pline->protoq = elst_create(1024, mx_event_destructor);
+		pline->statusq = elst_create(1024, mx_event_destructor);
 		if (pthread_mutex_init(&pline->status_mutex, NULL)) {
 			LOGERR("Failed to initialize line %i status mutex.", i);
 			goto cleanup;
@@ -93,7 +99,7 @@ void * mx_create(int ch_num, em400_cfg *cfg)
 		LOGERR("Failed to initialize interrupt mutex.");
 		goto cleanup;
 	}
-	multix->intq = elst_create(1024);
+	multix->intq = elst_create(1024, mx_event_destructor);
 	if (!multix->intq) {
 		LOGERR("Failed to create interrupt queue.");
 		goto cleanup;
@@ -115,7 +121,7 @@ void * mx_create(int ch_num, em400_cfg *cfg)
 
 	// --- create event system (MERA-400 interface needs it)
 
-	multix->eventq = elst_create(1024);
+	multix->eventq = elst_create(1024, mx_event_destructor);
 	if (!multix->eventq) {
 		LOGERR("Failed to create event queue.");
 		goto cleanup;

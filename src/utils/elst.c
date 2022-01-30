@@ -22,6 +22,8 @@
 #include <errno.h>
 #include <assert.h>
 
+#include "elst.h"
+
 #define ELST_USED 0
 #define ELST_FREE 1
 #define ELST_RESVD_ITEMS 2
@@ -39,14 +41,13 @@ struct elst {
 	pthread_mutex_t mutex;
 	pthread_cond_t cond;
 	struct elst_item *data;
+	elst_data_destructor destructor;
 };
-
-typedef struct elst * ELST;
 
 void elst_nlock_clear(ELST l);
 
 // -----------------------------------------------------------------------
-ELST elst_create(int capacity)
+ELST elst_create(int capacity, elst_data_destructor d)
 {
 	assert(capacity>0);
 
@@ -70,7 +71,17 @@ ELST elst_create(int capacity)
 	}
 
 	l->capacity = capacity;
-	elst_nlock_clear(l);
+	l->destructor = d;
+	l->count = 0;
+	l->hwm = ELST_RESVD_ITEMS;
+	// initialize used item list
+	l->data[ELST_USED].p = ELST_USED;
+	l->data[ELST_USED].n = ELST_USED;
+	l->data[ELST_USED].ptr = NULL;
+	// initialize free item list
+	l->data[ELST_FREE].p = ELST_FREE;
+	l->data[ELST_FREE].n = ELST_FREE;
+	l->data[ELST_FREE].ptr = NULL;
 
 	return l;
 
@@ -85,6 +96,7 @@ void elst_destroy(ELST l)
 {
 	if (!l) return;
 
+	elst_clear(l);
 	pthread_cond_destroy(&l->cond);
 	pthread_mutex_destroy(&l->mutex);
 	free(l->data);
@@ -95,20 +107,10 @@ void elst_destroy(ELST l)
 void elst_nlock_clear(ELST l)
 {
 	assert(l);
-
-	struct elst_item *d = l->data;
-
-	// initialize used item list
-	d[ELST_USED].p = ELST_USED;
-	d[ELST_USED].n = ELST_USED;
-	d[ELST_USED].ptr = NULL;
-	// initialize free item list
-	d[ELST_FREE].p = ELST_FREE;
-	d[ELST_FREE].n = ELST_FREE;
-	d[ELST_FREE].ptr = NULL;
-
-	l->count = 0;
-	l->hwm = ELST_RESVD_ITEMS;
+	void *p;
+	while ((p = elst_nlock_pop(l))) {
+		l->destructor(p);
+	}
 }
 
 // -----------------------------------------------------------------------
