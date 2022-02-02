@@ -157,6 +157,8 @@ void DasmView::update_contents(int new_nb, int new_addr)
 void DasmView::paintEvent(QPaintEvent *event)
 {
 	QPainter painter(this);
+
+	// backgroud
 	painter.fillRect(event->rect(), this->palette().color(QPalette::Base));
 	painter.setFont(font);
 
@@ -190,6 +192,10 @@ void DasmView::paintEvent(QPaintEvent *event)
 
 		y += line_height;
 	}
+
+	// frame around the widget
+	painter.setPen(this->palette().color(QPalette::Mid));
+	painter.drawRect(0, 0, right, bottom);
 }
 
 // -----------------------------------------------------------------------
@@ -217,19 +223,19 @@ void DasmView::resizeEvent(QResizeEvent *event)
 void DasmView::wheelEvent(QWheelEvent *event)
 {
 	int wheel_step = 1;
-	int items;
 
 	if (listing.empty()) return;
 
-	if (event->delta() > 0) { // backwards
+	int delta = wheel_step * (event->angleDelta().y() / 120);
+	if (delta > 0) { // backwards
 		if (listing.first().addr > 0) {
-			items = prepend(wheel_step, listing);
-			while (wheel_step-- >= items) listing.removeLast();
+			int items = prepend(delta, listing);
+			while (items-- > 0) listing.removeLast();
 		}
 	} else { // forward
 		if (listing.last().addr < 0xffff) {
-			items = append(wheel_step, listing);
-			while (wheel_step-- >= items) listing.removeFirst();
+			int items = append(-delta, listing);
+			while (items-- > 0) listing.removeFirst();
 		}
 	}
 
