@@ -218,7 +218,9 @@ void MainWindow::cpu_reg_changed(int reg)
 // -----------------------------------------------------------------------
 void MainWindow::update_dasm_view()
 {
-
+	int nb = e.get_reg(ECTL_REG_Q) * e.get_reg(ECTL_REG_NB);
+	int ic = e.get_reg(ECTL_REG_IC);
+	ui->dasm->update_contents(nb, ic);
 }
 
 // -----------------------------------------------------------------------
