@@ -267,6 +267,8 @@ if (Qt5Widgets_FOUND)
 	list(APPEND SOURCES_EM400 src/ui/qt5/emumodel.h)
 	list(APPEND SOURCES_EM400 src/ui/qt5/dasmview.cpp)
 	list(APPEND SOURCES_EM400 src/ui/qt5/dasmview.h)
+	list(APPEND SOURCES_EM400 src/ui/qt5/asmline.cpp)
+	list(APPEND SOURCES_EM400 src/ui/qt5/asmline.h)
 endif()
 
 # --- internal parser

@@ -3,19 +3,7 @@
 
 #include <QWidget>
 #include "emumodel.h"
-
-// -----------------------------------------------------------------------
-class AsmLine {
-
-public:
-	int nb;
-	int addr;
-	int length;
-	QString text;
-	AsmLine(int nb, int addr, int length, const char *text);
-	AsmLine(int nb, int addr, int length, QString text);
-	~AsmLine();
-};
+#include "asmline.h"
 
 // -----------------------------------------------------------------------
 class DasmView : public QWidget {
@@ -31,9 +19,9 @@ public slots:
 	void update_contents(int nb, int addr);
 
 private:
+	int fuzziness = 5;
 	int dasm_total_lines;
 	int bottom, right;
-	int context;
 	int offset;
 	int half_font_width;
 	int line_height;
@@ -43,7 +31,7 @@ private:
 	int dasm_x_start, dasm_y_start;
 	int divider_x_pos;
 
-	int nb, addr;
+	int cnb, caddr;
 
 	EmuModel *e;
 	struct emdas *emd;
@@ -56,9 +44,9 @@ private:
 	void internal_update_contents();
 
 	AsmLine dasm_exact(int nb, int addr);
-	AsmLine dasm_fuzzy(int nb, int addr, int fuzziness=5);
-	int prepend(int i);
-	int append(int i);
+	AsmLine dasm_fuzzy(int nb, int addr);
+	int prepend(int i, QList<AsmLine>& l);
+	int append(int i, QList<AsmLine>& l);
 	int delete_last(int i);
 	int delete_first(int i);
 
