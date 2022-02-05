@@ -37,6 +37,8 @@ jobs:
     - name: Build
       # Build your program with the given configuration
       run: cmake --build ${{github.workspace}}/build --config ${{env.BUILD_TYPE}}
+    - name: Prepare disk images
+      run: cd ${{github.workspace}}/test/images && make 
     - name: Test
       working-directory: ${{github.workspace}}/tests
       # Execute tests defined by the CMake configuration.  
