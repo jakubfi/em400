@@ -19,13 +19,13 @@ jobs:
     steps:
     - uses: actions/checkout@v2
     - name: Build emawp
-      run: git clone https://github.com/jakubfi/emawp && cd emawp && mkdir build && cd build && cmake .. && make && sudo make install
+      run: git clone https://github.com/jakubfi/emawp && cd emawp && mkdir build && cd build && cmake .. && make && sudo make install && sudo ldconfig
     - name: Build emcrk
-      run: git clone https://github.com/jakubfi/emcrk && cd emcrk && mkdir build && cd build && cmake .. && make && sudo make install
+      run: git clone https://github.com/jakubfi/emcrk && cd emcrk && mkdir build && cd build && cmake .. && make && sudo make install && sudo ldconfig
     - name: Build emelf
-      run: git clone https://github.com/jakubfi/emelf && cd emelf && mkdir build && cd build && cmake .. && make && sudo make install
+      run: git clone https://github.com/jakubfi/emelf && cd emelf && mkdir build && cd build && cmake .. && make && sudo make install && sudo ldconfig
     - name: Build emdas
-      run: git clone https://github.com/jakubfi/emdas && cd emdas && mkdir build && cd build && cmake .. && make && sudo make install
+      run: git clone https://github.com/jakubfi/emdas && cd emdas && mkdir build && cd build && cmake .. && make && sudo make install && sudo ldconfig
     - name: Build emas
       run: git clone https://github.com/jakubfi/emas && cd emas && mkdir build && cd build && cmake .. && make && sudo make install
     - name: Install dependencies
