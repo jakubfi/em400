@@ -20,30 +20,29 @@ jobs:
       CC: ${{ matrix.compiler.CC }}
       CXX: ${{ matrix.compiler.CXX }}
 
-  steps:
-    - uses: actions/checkout@v2
-    - name: Install compiler ${{ matrix.compiler.compiler }}
-      run: sudo apt-get -y install ${{ matrix.compiler.packages }}
-    - name: Build emawp
-      run: git clone https://github.com/jakubfi/emawp && cd emawp && mkdir build && cd build && cmake .. && make && sudo make install && sudo ldconfig
-    - name: Build emcrk
-      run: git clone https://github.com/jakubfi/emcrk && cd emcrk && mkdir build && cd build && cmake .. && make && sudo make install && sudo ldconfig
-    - name: Build emelf
-      run: git clone https://github.com/jakubfi/emelf && cd emelf && mkdir build && cd build && cmake .. && make && sudo make install && sudo ldconfig
-    - name: Build emdas
-      run: git clone https://github.com/jakubfi/emdas && cd emdas && mkdir build && cd build && cmake .. && make && sudo make install && sudo ldconfig
-    - name: Build emas
-      run: git clone https://github.com/jakubfi/emas && cd emas && mkdir build && cd build && cmake .. && make && sudo make install
-    - name: Install dependencies
-      run: sudo apt install libpulse0 libpulse-dev libasound2 libasound2-dev libncurses5 libncurses5-dev flex libfl-dev bison libbison-dev libreadline5 libreadline-dev
-    - name: Configure project
-      run: cmake -B ${{github.workspace}}/build -DCMAKE_BUILD_TYPE=${{env.BUILD_TYPE}}
-    - name: Build
-      run: cmake --build ${{github.workspace}}/build --config ${{env.BUILD_TYPE}}
-    - name: Prepare test disk images
-      working-directory: ${{github.workspace}}/tests
-      run: cd images && make 
-    - name: Test
-      working-directory: ${{github.workspace}}/tests
-      run: ./runtests.py
-      
+    steps:
+      - uses: actions/checkout@v2
+      - name: Install compiler ${{ matrix.compiler.compiler }}
+        run: sudo apt-get -y install ${{ matrix.compiler.packages }}
+      - name: Build emawp
+        run: git clone https://github.com/jakubfi/emawp && cd emawp && mkdir build && cd build && cmake .. && make && sudo make install && sudo ldconfig
+      - name: Build emcrk
+        run: git clone https://github.com/jakubfi/emcrk && cd emcrk && mkdir build && cd build && cmake .. && make && sudo make install && sudo ldconfig
+      - name: Build emelf
+        run: git clone https://github.com/jakubfi/emelf && cd emelf && mkdir build && cd build && cmake .. && make && sudo make install && sudo ldconfig
+      - name: Build emdas
+        run: git clone https://github.com/jakubfi/emdas && cd emdas && mkdir build && cd build && cmake .. && make && sudo make install && sudo ldconfig
+      - name: Build emas
+        run: git clone https://github.com/jakubfi/emas && cd emas && mkdir build && cd build && cmake .. && make && sudo make install
+      - name: Install dependencies
+        run: sudo apt install libpulse0 libpulse-dev libasound2 libasound2-dev libncurses5 libncurses5-dev flex libfl-dev bison libbison-dev libreadline5 libreadline-dev
+      - name: Configure project
+        run: cmake -B ${{github.workspace}}/build -DCMAKE_BUILD_TYPE=${{env.BUILD_TYPE}}
+      - name: Build
+        run: cmake --build ${{github.workspace}}/build --config ${{env.BUILD_TYPE}}
+      - name: Prepare test disk images
+        working-directory: ${{github.workspace}}/tests
+        run: cd images && make 
+      - name: Test
+        working-directory: ${{github.workspace}}/tests
+        run: ./runtests.py
