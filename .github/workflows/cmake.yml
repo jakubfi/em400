@@ -26,6 +26,8 @@ jobs:
       run: git clone https://github.com/jakubfi/emelf && cd emelf && mkdir build && cd build && cmake .. && make && sudo make install
     - name: Build emdas
       run: git clone https://github.com/jakubfi/emdas && cd emdas && mkdir build && cd build && cmake .. && make && sudo make install
+    - name: Install dependencies
+      run: sudo apt install ncurses ncurses-dev flex flex-dev bison bison-dev
     - name: Configure CMake
       # Configure CMake in a 'build' subdirectory. `CMAKE_BUILD_TYPE` is only required if you are using a single-configuration generator such as make.
       # See https://cmake.org/cmake/help/latest/variable/CMAKE_BUILD_TYPE.html?highlight=cmake_build_type
