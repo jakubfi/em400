@@ -2,9 +2,9 @@ name: CMake
 
 on:
   push:
-    branches: [ master, action-test ]
+    branches: [ master ]
   pull_request:
-    branches: [ master, action-test ]
+    branches: [ master ]
 
 env:
   BUILD_TYPE: Release
@@ -29,7 +29,7 @@ jobs:
     - name: Build emas
       run: git clone https://github.com/jakubfi/emas && cd emas && mkdir build && cd build && cmake .. && make && sudo make install
     - name: Install dependencies
-      run: sudo apt install libncurses5 libncurses5-dev flex libfl-dev bison libbison-dev libreadline5 libreadline-dev
+      run: sudo apt install libpulse0 libpulse-dev libasound2 libasound2-dev libncurses5 libncurses5-dev flex libfl-dev bison libbison-dev libreadline5 libreadline-dev
     - name: Configure CMake
       # Configure CMake in a 'build' subdirectory. `CMAKE_BUILD_TYPE` is only required if you are using a single-configuration generator such as make.
       # See https://cmake.org/cmake/help/latest/variable/CMAKE_BUILD_TYPE.html?highlight=cmake_build_type
