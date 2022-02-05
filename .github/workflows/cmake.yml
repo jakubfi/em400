@@ -26,6 +26,8 @@ jobs:
       run: git clone https://github.com/jakubfi/emelf && cd emelf && mkdir build && cd build && cmake .. && make && sudo make install
     - name: Build emdas
       run: git clone https://github.com/jakubfi/emdas && cd emdas && mkdir build && cd build && cmake .. && make && sudo make install
+    - name: Build emas
+      run: git clone https://github.com/jakubfi/emas && cd emas && mkdir build && cd build && cmake .. && make && sudo make install
     - name: Install dependencies
       run: sudo apt install libncurses5 libncurses5-dev flex libfl-dev bison libbison-dev libreadline5 libreadline-dev
     - name: Configure CMake
