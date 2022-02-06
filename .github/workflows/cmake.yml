@@ -23,7 +23,7 @@ jobs:
 
     steps:
       - uses: actions/checkout@v2
-      - name: Install compiler packages: ${{matrix.compiler.compiler}}
+      - name: Install packages for ${{matrix.compiler.compiler}}
         run: sudo apt-get -y install ${{matrix.compiler.packages}}
       - name: Build and install emawp
         run: git clone https://github.com/jakubfi/emawp && cd emawp && mkdir build && cd build && cmake .. && make && sudo make install && sudo ldconfig
