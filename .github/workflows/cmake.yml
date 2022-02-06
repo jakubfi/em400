@@ -1,0 +1,50 @@
+name: CI
+
+on:
+  push:
+    branches: [master]
+  pull_request:
+    branches: [master]
+
+jobs:
+  build:
+    name: build on ${{matrix.os}} with ${{matrix.compiler.compiler}}
+    runs-on: ${{matrix.os}}
+    strategy:
+      matrix:
+        os: [ ubuntu-20.04 ]
+        compiler:
+          - { compiler: GNU10, CC: gcc-10, CXX: g++-10, packages: gcc-10 g++-10 }
+          - { compiler: LLVM12, CC: clang-12, CXX: clang++-12, packages: clang-12 libomp-12-dev libclang-common-12-dev llvm-12-dev clang++-12 libc++-12-dev libc++1-12 libc++abi1-12 lld-12 }
+    env:
+      BUILD_TYPE: Release
+      CC: ${{matrix.compiler.CC}}
+      CXX: ${{matrix.compiler.CXX}}
+
+    steps:
+      - uses: actions/checkout@v2
+      - name: Install packages for ${{matrix.compiler.compiler}}
+        run: sudo apt-get -y install ${{matrix.compiler.packages}}
+      - name: Build and install emawp
+        run: git clone https://github.com/jakubfi/emawp && cd emawp && mkdir build && cd build && cmake .. && make && sudo make install && sudo ldconfig
+      - name: Build and install emcrk
+        run: git clone https://github.com/jakubfi/emcrk && cd emcrk && mkdir build && cd build && cmake .. && make && sudo make install && sudo ldconfig
+      - name: Build and install emdas
+        run: git clone https://github.com/jakubfi/emdas && cd emdas && mkdir build && cd build && cmake .. && make && sudo make install && sudo ldconfig
+      - name: Build and install emas
+        run: git clone https://github.com/jakubfi/emas && cd emas && mkdir build && cd build && cmake .. && make && sudo make install
+      - name: Install dependencies
+        run: sudo apt install libpulse0 libpulse-dev libasound2 libasound2-dev libncurses5 libncurses5-dev flex libfl-dev bison libbison-dev libreadline5 libreadline-dev
+      - name: Configure project
+        run: cmake -B ${{github.workspace}}/build -DCMAKE_BUILD_TYPE=${{env.BUILD_TYPE}}
+      - name: Build
+        run: cmake --build ${{github.workspace}}/build --config ${{env.BUILD_TYPE}}
+      - name: Prepare test disk images
+        working-directory: ${{github.workspace}}/tests
+        run: cd images && make 
+      - name: Run tests (speed max)
+        working-directory: ${{github.workspace}}/tests
+        run: ./runtests.py
+      - name: Run tests (speed real)
+        working-directory: ${{github.workspace}}/tests
+        run: ./runtests.py -O cpu:speed_real=true -O cpu:speed_factor=1
