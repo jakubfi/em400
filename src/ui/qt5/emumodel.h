@@ -20,6 +20,8 @@ public:
 	int get_state_simplified();
 	int get_reg(int i) { return r[i]; }
 	int get_state() { return cpu_state; }
+	int get_mem(int nb, int addr);
+	int get_mem(int nb, int addr, uint16_t *m, int count);
 	void start();
 	void stop();
 	void clear();

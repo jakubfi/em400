@@ -125,6 +125,24 @@ void EmuModel::on_timer_timeout()
 	check_regs();
 
 }
+
+// -----------------------------------------------------------------------
+int EmuModel::get_mem(int nb, int addr, uint16_t *m, int count)
+{
+	return ectl_mem_get(nb, addr, m, count);
+}
+
+// -----------------------------------------------------------------------
+int EmuModel::get_mem(int nb, int addr)
+{
+	uint16_t v;
+	if (ectl_mem_get(nb, addr, &v, 1)) {
+		return v;
+	} else {
+		return -1;
+	}
+}
+
 // -----------------------------------------------------------------------
 bool EmuModel::load(QString filename)
 {

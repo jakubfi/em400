@@ -6,7 +6,7 @@
 
 
 // -----------------------------------------------------------------------
-int dbg_mem_get(int nb, uint16_t addr, uint16_t *data)
+static int dbg_mem_get(int nb, uint16_t addr, uint16_t *data)
 {
 	return ectl_mem_get(nb, addr, data, 1);
 }
