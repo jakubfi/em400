@@ -187,7 +187,7 @@ class TestResult:
 class TestBed:
 
     # --------------------------------------------------------------------
-    def __init__(self, emas, binary, blfile, benchmark_duration=0.5, failcmd=None, log="", fpga=0):
+    def __init__(self, emas, binary, blfile, benchmark_duration=0.5, failcmd=None, log="", fpga=0, options=[]):
         self.emas = emas
         self.binary = binary
         self.failcmd = failcmd
@@ -198,6 +198,7 @@ class TestBed:
         self.bl = self.baseline(blfile)
         self.log = log
         self.fpga = fpga
+        self.options = options
 
     # --------------------------------------------------------------------
     def close(self):
@@ -210,6 +211,9 @@ class TestBed:
             add_opts += ["-l", self.log]
         if self.fpga:
             add_opts += ["-F"]
+        if self.options:
+            for o in self.options:
+                add_opts += ["-O", o]
 
         if self.e is None:
             if DEBUG:
@@ -385,6 +389,7 @@ parser.add_argument("-e", "--emulator", help="emulator binary to run", default="
 parser.add_argument("-f", "--failcmd", help="command to run when test fails", action='append')
 parser.add_argument("-l", "--log", help="configure em400 logging", default="")
 parser.add_argument("-F", "--fpga", help="use FPGA CPU backend in em400", action="store_const", const=1, default=0)
+parser.add_argument("-O", "--option", help="add the following option when running em400", action='append')
 parser.add_argument("-v", "--verbose", help="be verbose", action="store_const", const=1, default=0)
 parser.add_argument('test', nargs='*', help='Test to run (asm source, directory or test set). Default set is run when no tests are provided.')
 args = parser.parse_args()
@@ -404,7 +409,7 @@ tests.sort()
 # run tests
 total = 0
 failed = 0
-tb = TestBed("emas", args.emulator, args.baseline, benchmark_duration=0.5, failcmd=args.failcmd, log=args.log, fpga=args.fpga)
+tb = TestBed("emas", args.emulator, args.baseline, benchmark_duration=0.5, failcmd=args.failcmd, log=args.log, fpga=args.fpga, options=args.option)
 for t in tests:
     if not DEBUG:
         if sys.stdout.isatty():
