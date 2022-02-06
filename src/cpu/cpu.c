@@ -136,9 +136,9 @@ int cpu_state_get()
 static void cpu_mem_fail(int nb)
 {
 	int_set(INT_NO_MEM);
-	if ((nb == 0) && nomem_stop) {
+	if (nb == 0) {
 		rALARM = true;
-		cpu_state_change(ECTL_STATE_STOP, ECTL_STATE_ANY);
+		if (nomem_stop) cpu_state_change(ECTL_STATE_STOP, ECTL_STATE_ANY);
 	}
 }
 
@@ -383,14 +383,13 @@ static int cpu_do_cycle()
 	ips_counter++;
 
 	// fetch instruction
-	if (!cpu_mem_get(QNB, ic, &ir)) {
+	if (!cpu_mem_get(QNB, ic++, &ir)) {
 		LOGCPU(L_CPU, "        no mem, instruction fetch");
 		goto ineffective_memfail;
 	}
 
 	op = cpu_op_tab[ir];
 	unsigned flags = op->flags;
-	ic++;
 
 	// check instruction effectivness
 	if (p || ((r[0] & op->jmp_nef_mask) != op->jmp_nef_result)) {
