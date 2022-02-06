@@ -47,4 +47,4 @@ jobs:
         run: ./runtests.py
       - name: Run tests (speed real)
         working-directory: ${{github.workspace}}/tests
-        run: ./runtests.py -O cpu:speed_real=true -O speed_factor=1
+        run: ./runtests.py -O cpu:speed_real=true -O cpu:speed_factor=1
