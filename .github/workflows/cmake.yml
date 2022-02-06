@@ -23,15 +23,15 @@ jobs:
 
     steps:
       - uses: actions/checkout@v2
-      - name: Install compiler ${{matrix.compiler.compiler}}
+      - name: Install compiler packages: ${{matrix.compiler.compiler}}
         run: sudo apt-get -y install ${{matrix.compiler.packages}}
-      - name: Build emawp
+      - name: Build and install emawp
         run: git clone https://github.com/jakubfi/emawp && cd emawp && mkdir build && cd build && cmake .. && make && sudo make install && sudo ldconfig
-      - name: Build emcrk
+      - name: Build and install emcrk
         run: git clone https://github.com/jakubfi/emcrk && cd emcrk && mkdir build && cd build && cmake .. && make && sudo make install && sudo ldconfig
-      - name: Build emdas
+      - name: Build and install emdas
         run: git clone https://github.com/jakubfi/emdas && cd emdas && mkdir build && cd build && cmake .. && make && sudo make install && sudo ldconfig
-      - name: Build emas
+      - name: Build and install emas
         run: git clone https://github.com/jakubfi/emas && cd emas && mkdir build && cd build && cmake .. && make && sudo make install
       - name: Install dependencies
         run: sudo apt install libpulse0 libpulse-dev libasound2 libasound2-dev libncurses5 libncurses5-dev flex libfl-dev bison libbison-dev libreadline5 libreadline-dev
@@ -42,6 +42,9 @@ jobs:
       - name: Prepare test disk images
         working-directory: ${{github.workspace}}/tests
         run: cd images && make 
-      - name: Test
+      - name: Run tests (speed max)
         working-directory: ${{github.workspace}}/tests
         run: ./runtests.py
+      - name: Run tests (speed real)
+        working-directory: ${{github.workspace}}/tests
+        run: ./runtests.py -O cpu:speed_real=true -O speed_factor=1
