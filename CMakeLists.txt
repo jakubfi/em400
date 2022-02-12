@@ -230,7 +230,6 @@ add_executable(em400
 )
 
 set_property(TARGET em400 PROPERTY C_STANDARD 99)
-target_include_directories(em400 PUBLIC SYSTEM ${EMDAS_INCLUDE_DIRS})
 target_include_directories(em400 PRIVATE ${CMAKE_SOURCE_DIR}/src)
 target_include_directories(em400 PUBLIC ${CMAKE_SOURCE_DIR}/include)
 target_include_directories(em400 PRIVATE ${CMAKE_BINARY_DIR})
@@ -242,7 +241,7 @@ endif()
 
 target_link_libraries(em400
 	${DEBUGGER_LIBS}
-	${EMDAS_LIBRARIES}
+	emdas
 	emcrk
 	emawp
 	${FLEX_LIBRARIES} ${BISON_LIBRARIES}
