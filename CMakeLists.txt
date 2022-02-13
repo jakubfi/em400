@@ -4,17 +4,18 @@ project(em400
 	LANGUAGES C
 )
 
-include(CheckIPOSupported)
-check_ipo_supported(RESULT IPO_SUPPORTED OUTPUT IPO_ERROR)
-
-if(IPO_SUPPORTED)
-	message(STATUS "IPO supported")
-else()
-	message(STATUS "IPO not supported, disabling: ${error}")
-endif()
-
 include(GNUInstallDirs)
 include(cmake/appversion.cmake)
+
+# ---- IPO support -------------------------------------------------------
+
+include(CheckIPOSupported)
+check_ipo_supported(RESULT IPO_SUPPORTED OUTPUT IPO_ERROR)
+if(IPO_SUPPORTED)
+	message(STATUS "LTO supported and enabled")
+else()
+	message(STATUS "LTO disabled: ${IPO_ERROR}")
+endif()
 
 # ---- Libraries ---------------------------------------------------------
 
@@ -143,6 +144,24 @@ set(SOURCES_EM400
 	src/ui/cmd/utils.c
 	src/ui/cmd/utils.h
 
+	src/ui/curses/awin.c
+	src/ui/curses/awin.h
+	src/ui/curses/awinch.c
+	src/ui/curses/debugger.c
+	src/ui/curses/debugger.h
+	src/ui/curses/eval.c
+	src/ui/curses/eval.h
+	src/ui/curses/cmd.c
+	src/ui/curses/cmd.h
+	src/ui/curses/ui.c
+	src/ui/curses/ui.h
+	src/ui/curses/keywords.c
+	src/ui/curses/keywords.h
+	src/ui/curses/decode.c
+	src/ui/curses/decode.h
+	src/ui/curses/parser.y
+	src/ui/curses/scanner.l
+
 	src/ectl/cpu.c
 	src/ectl/est.c
 	src/ectl/est.h
@@ -186,7 +205,6 @@ flex_target(ectl_scanner
 )
 add_flex_bison_dependency(ectl_scanner ectl_parser)
 
-# TODO: cleanup
 bison_target(ui_curses_parser
 	src/ui/curses/parser.y
 	${CMAKE_CURRENT_BINARY_DIR}/ui_curses_parser.c
@@ -197,36 +215,15 @@ flex_target(ui_curses_scanner
 	COMPILE_FLAGS "--never-interactive"
 )
 add_flex_bison_dependency(ui_curses_scanner ui_curses_parser)
-set(SOURCES_DEBUGGER
-	src/ui/curses/awin.c
-	src/ui/curses/awin.h
-	src/ui/curses/awinch.c
-	src/ui/curses/debugger.c
-	src/ui/curses/debugger.h
-	src/ui/curses/eval.c
-	src/ui/curses/eval.h
-	src/ui/curses/cmd.c
-	src/ui/curses/cmd.h
-	src/ui/curses/ui.c
-	src/ui/curses/ui.h
-	src/ui/curses/keywords.c
-	src/ui/curses/keywords.h
-	src/ui/curses/decode.c
-	src/ui/curses/decode.h
-	src/ui/curses/parser.y
-	src/ui/curses/scanner.l
-	${BISON_ui_curses_parser_OUTPUTS}
-	${FLEX_ui_curses_scanner_OUTPUTS}
-)
-set(DEBUGGER_LIBS ${CURSES_LIBRARIES} ${READLINE_LIBRARY})
 
 # ---- Target: em400 -----------------------------------------------------
 
 add_executable(em400
 	${SOURCES_EM400}
-	${SOURCES_DEBUGGER}
 	${BISON_ectl_parser_OUTPUTS}
 	${FLEX_ectl_scanner_OUTPUTS}
+	${BISON_ui_curses_parser_OUTPUTS}
+	${FLEX_ui_curses_scanner_OUTPUTS}
 )
 
 set_property(TARGET em400 PROPERTY C_STANDARD 99)
@@ -240,7 +237,8 @@ if(IPO_SUPPORTED)
 endif()
 
 target_link_libraries(em400
-	${DEBUGGER_LIBS}
+	${CURSES_LIBRARIES}
+	${READLINE_LIBRARY}
 	emdas
 	emcrk
 	emawp
@@ -256,7 +254,7 @@ if(ALSA_FOUND)
 	target_compile_definitions(em400 PRIVATE HAVE_ALSA)
 endif()
 if(PULSEAUDIO_FOUND)
-	target_include_directories(em400 PUBLIC SYSTEM  ${PULSEAUDIO_INCLUDE_DIRS})
+	target_include_directories(em400 PUBLIC SYSTEM ${PULSEAUDIO_INCLUDE_DIRS})
 	target_link_libraries(em400 ${PULSEAUDIO_LIBRARIES} ${PULSEAUDIO_SIMPLE_LIBRARY})
 	target_compile_definitions(em400 PRIVATE HAVE_PULSEAUDIO)
 endif()
