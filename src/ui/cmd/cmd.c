@@ -18,15 +18,11 @@
 #define _POSIX_C_SOURCE 200112L
 #define __BSD_VISIBLE 1 /* for INADDR_LOOPBACK */
 
+#include <stdbool.h>
 #include <stdlib.h>
 #include <stdio.h>
-#include <unistd.h>
 #include <sys/socket.h>
-#include <netinet/in.h>
 #include <arpa/inet.h>
-#include <sys/select.h>
-#include <fcntl.h>
-#include <errno.h>
 #include <string.h>
 
 #include "ui/ui.h"
@@ -37,7 +33,6 @@
 
 struct ui_cmd_data {
 	int quit;
-	int timeout_ms;
 	int type;
 	int listenfd, fd_in, fd_out;
 	FILE *out;
@@ -109,7 +104,6 @@ void * ui_cmd_setup(const char *call_name)
 		return NULL;
 	}
 
-	ui->timeout_ms = 100;
 	ui->fd_in = -1;
 	ui->fd_out = -1;
 	ui->listenfd = -1;
@@ -132,7 +126,7 @@ void * ui_cmd_setup(const char *call_name)
 }
 
 // -----------------------------------------------------------------------
-static void ui_cmd_process(char *user_input, FILE *out)
+static bool ui_cmd_process(char *user_input, FILE *out)
 {
 	char *tok_cmd, *args;
 
@@ -141,7 +135,9 @@ static void ui_cmd_process(char *user_input, FILE *out)
 		ui_cmd_resp(out, RESP_ERR, UI_EOL, "No such command: %s", tok_cmd);
 	} else if (cmd_def->fun) {
 		cmd_def->fun(out, args);
+		if ((cmd_def->flags & UI_CMD_FLAG_QUIT)) return true;
 	}
+	return false;
 }
 
 // -----------------------------------------------------------------------
@@ -149,89 +145,59 @@ void ui_cmd_loop(void *data)
 {
 	struct ui_cmd_data *ui = (struct ui_cmd_data *) data;
 
-	char buf[BUF_MAX+2]; // +1 for '\0', +2 for flex' '\0'
-	int sock_max = 0;
+	char buf[BUF_MAX+2]; // +1 for '\0' and +1 for flex' '\0'
 	int recvd = 0;
 	int input_invalid = 0;
 
 	while (!ui->quit) {
-		fd_set fds;
-		FD_ZERO(&fds);
 
 		if (ui->type == UI_CMD_TCP) {
-			FD_SET(ui->listenfd, &fds);
-			sock_max = ui->listenfd;
+			// accept connection
+			socklen_t clilen = sizeof(ui->cliaddr);
+			ui->fd_in = accept(ui->listenfd, &ui->cliaddr, &clilen);
+			if (ui->fd_in < 0) continue;
+			ui->out = fdopen(ui->fd_in, "w");
+			if (!ui->out) {
+				close(ui->fd_in);
+				continue;
+			}
 		}
 
-		if (ui->fd_in >= 0) {
-			FD_SET(ui->fd_in, &fds);
-			sock_max = ui->fd_in;
-		}
+		while (!ui->quit) {
 
-		struct timeval timeout;
-		timeout.tv_sec = 0;
-		timeout.tv_usec = ui->timeout_ms * 1000;
-		int select_res = select(sock_max+1, &fds, NULL, NULL, &timeout);
-
-		if (select_res > 0) {
-
-			// new TCP connection
-			if ((ui->type == UI_CMD_TCP) && (FD_ISSET(ui->listenfd, &fds))) {
-
-				// accept connection
-				socklen_t clilen = sizeof(ui->cliaddr);
-				int newfd = accept(ui->listenfd, &ui->cliaddr, &clilen);
-				if (newfd > 0) {
-					ui->out = fdopen(newfd, "w");
-					if (!ui->out) {
-						close(newfd);
+			// buffer overflow
+			if (recvd >= BUF_MAX) {
+				recvd = 0;
+				input_invalid = 1;
+			// collect input
+			} else {
+				int read_res = read(ui->fd_in, buf+recvd, BUF_MAX-recvd);
+				if (read_res > 0) {
+					// input not done yet
+					if (*(buf+recvd+read_res-1) != '\n') {
+						recvd += read_res;
+					// input done
 					} else {
-						// a client is already connected
-						if (ui->fd_in >= 0) {
-							ui_cmd_resp(ui->out, RESP_ERR, UI_EOL, "Another UI is already connected");
-							fclose(ui->out);
+						// there was a buffer overflow in the meantime
+						if (input_invalid) {
+							ui_cmd_resp(ui->out, RESP_ERR, UI_EOL, "Input too long (>%i bytes), command ignored", BUF_MAX);
+							fflush(ui->out);
+							input_invalid = 0;
+						// valid input
 						} else {
+							*(buf+recvd+read_res-1) = '\0';
 							recvd = 0;
-							ui->fd_in = ui->fd_out = newfd;
+							ui->quit = ui_cmd_process(buf, ui->out);
+							fflush(ui->out);
 						}
 					}
-				}
-
-			// data on client connection ready
-			} else if ((ui->fd_in >= 0) && (FD_ISSET(ui->fd_in, &fds))) {
-
-				// buffer overflow
-				if (recvd >= BUF_MAX) {
-					recvd = 0;
-					input_invalid = 1;
-				// collect input
+				// EOF
 				} else {
-					int read_res = read(ui->fd_in, buf+recvd, BUF_MAX-recvd);
-					if (read_res > 0) {
-						// input not done yet
-						if (*(buf+recvd+read_res-1) != '\n') {
-							recvd += read_res;
-						// input done
-						} else {
-							// there was a buffer overflow in the meantime
-							if (input_invalid) {
-								ui_cmd_resp(ui->out, RESP_ERR, UI_EOL, "Input too long (>%i bytes), command ignored", BUF_MAX);
-								fflush(ui->out);
-								input_invalid = 0;
-							// valid input
-							} else {
-								*(buf+recvd+read_res-1) = '\0';
-								recvd = 0;
-								ui_cmd_process(buf, ui->out);
-								fflush(ui->out);
-							}
-						}
-					} else if (read_res <= 0) {
-						recvd = 0;
-						fclose(ui->out);
-						ui->out = NULL;
-						ui->fd_in = -1;
-					}
+					recvd = 0;
+					fclose(ui->out);
+					ui->out = NULL;
+					ui->fd_in = -1;
+					break;
 				}
 			}
 		}

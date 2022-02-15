@@ -20,13 +20,17 @@
 typedef void (*ui_cmd_f)(FILE *out, char *args);
 
 struct ui_cmd_command {
-	int visible;
+	unsigned flags;
 	const char *name;
 	const char *args;
 	const char *desc;
 	ui_cmd_f fun;
 };
 
+enum ui_cmd_flags {
+	UI_CMD_FLAG_NONE		= 0,
+	UI_CMD_FLAG_QUIT		= 0x1,
+};
 enum ui_cmd_response_states { RESP_OK, RESP_ERR };
 enum ui_cmd_eol { UI_NOEOL, UI_EOL };
 

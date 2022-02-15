@@ -53,32 +53,32 @@ void ui_cmd_brkdel(FILE *out, char *args);
 void ui_cmd_stopn(FILE *out, char *args);
 
 struct ui_cmd_command commands[] = {
-	{ 1, "state",	"",							"Get CPU state",					ui_cmd_state },
-	{ 1, "reg",		"[name [value]]",			"Manipulate registers",				ui_cmd_reg },
-	{ 1, "int",		"[interrupt]",				"Get interrupts, send IRQ",			ui_cmd_int },
-	{ 1, "mem",		"<seg> <addr> [count]",		"Get memory contents",				ui_cmd_mem },
-	{ 1, "eval",	"<expr>",					"Evaluate expression",				ui_cmd_eval },
-	{ 1, "ips",		"",							"Get average IPS",					ui_cmd_ips },
-	{ 1, "load",	"<seg> <addr> <file>",		"Load file into memory",			ui_cmd_load },
-	{ 1, "bin",		"<cmd> <addr>",				"Initiate binary load",				ui_cmd_bin },
-	{ 1, "brk",		"<expr>",					"Add breakpoint",					ui_cmd_brk },
-	{ 1, "brkdel",	"<id>",						"Delete breakpoint",				ui_cmd_brkdel },
-	{ 1, "stopn",	"<addr>|off",				"Stop CPU on address",				ui_cmd_stopn },
-	{ 1, "clock",	"[on|off]",					"Manipulate clock state",			ui_cmd_clock },
-	{ 1, "oprq",	"",							"Send operator request",			ui_cmd_oprq },
-	{ 1, "memw",	"<seg> <addr> <val> ...",	"Set memory contents",				ui_cmd_memw },
-	{ 1, "cycle",	"",							"Execute one CPU cycle",			ui_cmd_cycle },
-	{ 1, "start",	"",							"Start CPU",						ui_cmd_start },
-	{ 1, "stop",	"",							"Stop CPU",							ui_cmd_stop },
-	{ 1, "clear",	"",							"Clear CPU (reset)",				ui_cmd_clear },
-	{ 1, "memmap",	"<seg>",					"Get memory allocation map",		ui_cmd_memmap },
-	{ 1, "memcfg",	"<seg> <page> <m> <f>",		"Configure memory",					ui_cmd_memcfg },
-	{ 1, "log",		"[on|off]",					"Manipulate logging state",			ui_cmd_log },
-	{ 1, "logc",	"[component [state]]",		"Manipulate log compoment state",	ui_cmd_logc },
-	{ 1, "info",	"",							"Get emulator info",				ui_cmd_info },
-	{ 1, "quit",	"",							"Quit emulation",					ui_cmd_quit },
-	{ 1, "help",	"",							"Get help",							ui_cmd_help },
-	{ 0, NULL, NULL, NULL, NULL },
+	{ UI_CMD_FLAG_NONE, "state",	"",							"Get CPU state",					ui_cmd_state },
+	{ UI_CMD_FLAG_NONE, "reg",		"[name [value]]",			"Manipulate registers",				ui_cmd_reg },
+	{ UI_CMD_FLAG_NONE, "int",		"[interrupt]",				"Get interrupts, send IRQ",			ui_cmd_int },
+	{ UI_CMD_FLAG_NONE, "mem",		"<seg> <addr> [count]",		"Get memory contents",				ui_cmd_mem },
+	{ UI_CMD_FLAG_NONE, "eval",		"<expr>",					"Evaluate expression",				ui_cmd_eval },
+	{ UI_CMD_FLAG_NONE, "ips",		"",							"Get average IPS",					ui_cmd_ips },
+	{ UI_CMD_FLAG_NONE, "load",		"<seg> <addr> <file>",		"Load file into memory",			ui_cmd_load },
+	{ UI_CMD_FLAG_NONE, "bin",		"<cmd> <addr>",				"Initiate binary load",				ui_cmd_bin },
+	{ UI_CMD_FLAG_NONE, "brk",		"<expr>",					"Add breakpoint",					ui_cmd_brk },
+	{ UI_CMD_FLAG_NONE, "brkdel",	"<id>",						"Delete breakpoint",				ui_cmd_brkdel },
+	{ UI_CMD_FLAG_NONE, "stopn",	"<addr>|off",				"Stop CPU on address",				ui_cmd_stopn },
+	{ UI_CMD_FLAG_NONE, "clock",	"[on|off]",					"Manipulate clock state",			ui_cmd_clock },
+	{ UI_CMD_FLAG_NONE, "oprq",		"",							"Send operator request",			ui_cmd_oprq },
+	{ UI_CMD_FLAG_NONE, "memw",		"<seg> <addr> <val> ...",	"Set memory contents",				ui_cmd_memw },
+	{ UI_CMD_FLAG_NONE, "cycle",	"",							"Execute one CPU cycle",			ui_cmd_cycle },
+	{ UI_CMD_FLAG_NONE, "start",	"",							"Start CPU",						ui_cmd_start },
+	{ UI_CMD_FLAG_NONE, "stop",		"",							"Stop CPU",							ui_cmd_stop },
+	{ UI_CMD_FLAG_NONE, "clear",	"",							"Clear CPU (reset)",				ui_cmd_clear },
+	{ UI_CMD_FLAG_NONE, "memmap",	"<seg>",					"Get memory allocation map",		ui_cmd_memmap },
+	{ UI_CMD_FLAG_NONE, "memcfg",	"<seg> <page> <m> <f>",		"Configure memory",					ui_cmd_memcfg },
+	{ UI_CMD_FLAG_NONE, "log",		"[on|off]",					"Manipulate logging state",			ui_cmd_log },
+	{ UI_CMD_FLAG_NONE, "logc",		"[component [state]]",		"Manipulate log compoment state",	ui_cmd_logc },
+	{ UI_CMD_FLAG_NONE, "info",		"",							"Get emulator info",				ui_cmd_info },
+	{ UI_CMD_FLAG_QUIT, "quit",		"",							"Quit emulation",					ui_cmd_quit },
+	{ UI_CMD_FLAG_NONE, "help",		"",							"Get help",							ui_cmd_help },
+	{ UI_CMD_FLAG_NONE, NULL, NULL, NULL, NULL },
 };
 
 // -----------------------------------------------------------------------
@@ -171,7 +171,7 @@ void ui_cmd_help(FILE *out, char *args)
 
 		int i=0;
 		struct ui_cmd_command *c = commands;
-		while (c && c->name && c->visible && (i < nelem)) {
+		while (c && c->name && (i < nelem)) {
 			cmdnames[i] = c->name;
 			c++;
 			i++;
