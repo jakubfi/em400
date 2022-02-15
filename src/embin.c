@@ -23,12 +23,19 @@
 #include <sys/stat.h>
 #include <fcntl.h>
 #include <unistd.h>
+#ifdef _WIN32
+#include <winsock2.h>
+#else
 #include <arpa/inet.h>
+#endif
 #include <stdarg.h>
 #include <errno.h>
 #include <string.h>
 
 #include "utils/utils.h"
+#ifndef _WIN32
+#include "utils/serial.h"
+#endif
 
 char *out_file;
 char *in_file;
@@ -36,7 +43,9 @@ int encode = 1;
 int progress = 1;
 int verbose = 0;
 int cont = 0;
+#ifndef _WIN32
 speed_t speed;
+#endif
 
 uint16_t w;
 uint8_t b[3];
@@ -63,10 +72,13 @@ void print_help()
 		"Usage: embin [options] input\n"
 		"Options:\n"
 		"  --help                   : print help\n"
-		"  --output, -o <output>    : output file name or serial port, stdout is used if no file name given\n"
 		"  --decode|--encode, -d|-e : decode or encode (encode by default)\n"
+		"  --output, -o <output>    : output file name, stdout is used if no file name given\n"
+#ifndef _WIN32
+		"                             output can also be a serial port\n"
 		"  --speed, -s <baud>       : baudrate to use when output is a serial port (9600 default)\n"
 		"  --no-progress, -n        : don't print progress bar during serial transmission\n"
+#endif
 		"  --continue, -c           : continue decoding input stream after the first data block has ended.\n"
 		"                             this requires a filename specified with -o filename.\n"
 		"                             if more blocks are found, they are written in subsequent *_N files\n"
@@ -85,15 +97,21 @@ void parse_opts(int argc, char **argv)
 		{ "decode",		no_argument,		0, 'd' },
 		{ "encode",		no_argument,		0, 'e' },
 		{ "verbose",	no_argument,		0, 'v' },
+#ifndef _WIN32
 		{ "speed",		required_argument,	0, 's' },
 		{ "no-progress",no_argument,		0, 'n' },
+#endif
 		{ "continue",	no_argument,		0, 'c' },
 		{ "help",		no_argument,		0, 'h' },
 		{ 0,			0,					0, 0 }
 	};
 
 	while (1) {
+#ifdef _WIN32
+		opt = getopt_long(argc, argv,"o:devch", opts, &idx);
+#else
 		opt = getopt_long(argc, argv,"o:devs:nch", opts, &idx);
+#endif
 		if (opt == -1) {
 			break;
 		}
@@ -114,6 +132,7 @@ void parse_opts(int argc, char **argv)
 			case 'v':
 				verbose = 1;
 				break;
+#ifndef _WIN32
 			case 's':
 				speed = serial_int2speed(atoi(optarg));
 				if (speed <= 0) {
@@ -123,6 +142,7 @@ void parse_opts(int argc, char **argv)
 			case 'n':
 				progress = 0;
 				break;
+#endif
 			case 'c':
 				cont = 1;
 				break;
@@ -187,7 +207,9 @@ void do_encode(int fi, int fo, int progress)
 		}
 		out_bytes += res;
 		if (progress) {
+#ifndef _WIN32
 			tcdrain(fo);
+#endif
 			print_bar(in_size, in_read);
 		}
 	}
@@ -252,19 +274,23 @@ int main(int argc, char **argv)
 {
 	int fi, fo;
 	int using_serial = 0;
-	struct stat sb;
 
+#ifndef _WIN32
+	struct stat sb;
 	speed = serial_int2speed(9600);
+#endif
 	parse_opts(argc, argv);
 
 	if (out_file) {
+#ifndef _WIN32
 		int res = lstat(out_file, &sb);
-
 		// try as a serial port
 		if (!res && ((sb.st_mode & S_IFMT) == S_IFCHR) && ((fo = serial_open(out_file, speed)) > 0)) {
 			using_serial = 1;
 		// if this fails, try as a regular file
-		} else {
+		} else
+#endif
+		{
 			fo = open(out_file, O_CREAT|O_WRONLY, 0644);
 		}
 	} else {
@@ -279,7 +305,7 @@ int main(int argc, char **argv)
 	if (fo < 0) {
 		error(2, "Cannot open output file: %s. Error: %s", out_file, strerror(errno));
 	}
-
+#ifndef _WIN32
 	if (lstat(in_file, &sb)) {
 		error(2, "Cannot access input file: %s. Error: %s", in_file, strerror(errno));
 	}
@@ -287,7 +313,7 @@ int main(int argc, char **argv)
 	if (S_ISDIR(sb.st_mode)) {
 		error(2, "Input %s is a directory.", in_file);
 	}
-
+#endif
 	fi = open(in_file, O_RDONLY);
 	if (fi < 0) {
 		error(2, "Cannot open input file: %s. Error: %s", in_file, strerror(errno));

@@ -31,7 +31,7 @@
 #include <errno.h>
 
 #include "log.h"
-#include "utils/utils.h"
+#include "utils/serial.h"
 #include "io/dev/fdbridge.h"
 
 #define FDB_BUF_SIZE 64

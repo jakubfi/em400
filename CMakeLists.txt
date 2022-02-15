@@ -25,8 +25,10 @@ find_package(Threads REQUIRED)
 find_package(emdas REQUIRED)
 find_package(emcrk REQUIRED)
 find_package(emawp 3.0 REQUIRED)
-find_library(MATH_LIBRARY m)
-find_library(RT_LIBRARY rt)
+if(NOT WIN32)
+	find_library(MATH_LIBRARY m)
+	find_library(RT_LIBRARY rt)
+endif()
 
 set(CURSES_NEED_NCURSES TRUE)
 find_package(Curses REQUIRED)
@@ -61,6 +63,8 @@ set(SOURCES_EM400
 	src/utils/utils.h
 	src/utils/elst.c
 	src/utils/elst.h
+	src/utils/serial.c
+	src/utils/serial.h
 
 	src/cpu/instructions.c
 	src/cpu/instructions.h
@@ -244,9 +248,14 @@ target_link_libraries(em400
 	emawp
 	${FLEX_LIBRARIES} ${BISON_LIBRARIES}
 	${CMAKE_THREAD_LIBS_INIT}
-	${RT_LIBRARY}
-	${MATH_LIBRARY}
 )
+
+if(NOT WIN32)
+	target_link_libraries(em400
+		${RT_LIBRARY}
+		${MATH_LIBRARY}
+	)
+endif()
 
 if(ALSA_FOUND)
 	target_include_directories(em400 PUBLIC SYSTEM ${ALSA_INCLUDE_DIRS})
@@ -277,6 +286,9 @@ add_executable(emitool
 	src/emitool.c
 	src/io/dev/e4image.c
 )
+if(WIN32)
+	target_link_libraries(emitool ws2_32)
+endif()
 set_property(TARGET emitool PROPERTY C_STANDARD 99)
 target_include_directories(emitool PRIVATE ${CMAKE_SOURCE_DIR}/src)
 target_compile_options(emitool PUBLIC -Wall)
@@ -291,6 +303,11 @@ add_executable(embin
 	src/embin.c
 	src/utils/utils.c
 )
+if(NOT WIN32)
+	target_sources(embin PRIVATE src/utils/serial.c)
+else()
+	target_link_libraries(embin ws2_32)
+endif()
 set_property(TARGET embin PROPERTY C_STANDARD 99)
 target_include_directories(embin PRIVATE ${CMAKE_SOURCE_DIR}/src)
 target_compile_options(embin PUBLIC -Wall)

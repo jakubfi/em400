@@ -23,7 +23,11 @@
 #include <sys/stat.h>
 #include <unistd.h>
 #include <string.h>
+#ifdef _WIN32
+#include <winsock2.h>
+#else
 #include <arpa/inet.h>
+#endif
 
 #include "io/dev/e4image.h"
 
