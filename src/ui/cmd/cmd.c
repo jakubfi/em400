@@ -21,8 +21,13 @@
 #include <stdbool.h>
 #include <stdlib.h>
 #include <stdio.h>
+#ifdef _WIN32
+#include <winsock2.h>
+typedef int socklen_t;
+#else
 #include <sys/socket.h>
 #include <arpa/inet.h>
+#endif
 #include <string.h>
 
 #include "ui/ui.h"
@@ -70,7 +75,11 @@ static int __setup_tcp(struct ui_cmd_data *ui)
 	   	return 1;
 	}
 
+#ifdef _WIN32
+	char on = 1;
+#else
 	int on = 1;
+#endif
    	res = setsockopt(ui->listenfd, SOL_SOCKET, SO_REUSEADDR, &on, sizeof(on));
 	if (res < 0) {
    		return 1;
