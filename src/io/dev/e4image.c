@@ -239,7 +239,7 @@ struct e4i_t * e4i_open(const char *img_name)
 	}
 
 	// open image
-	e->image = fopen(img_name, "r+");
+	e->image = fopen(img_name, "rb+");
 	if (!e->image) {
 		e4i_err = E4I_E_OPEN;
 		e4i_close(e);
@@ -286,7 +286,7 @@ static struct e4i_t * __e4i_create(char *img_name, uint16_t id_size, uint16_t bl
 	}
 
 	// create image file
-	e->image = fopen(img_name, "w+");
+	e->image = fopen(img_name, "wb+");
 	if (!e->image) {
 		free(e);
 		e4i_err = E4I_E_OPEN;
@@ -370,7 +370,7 @@ int e4i_import(struct e4i_t *e, char *src_name, uint16_t img_type, uint16_t img_
 	}
 
 	// open
-	FILE *source = fopen(src_name, "r");
+	FILE *source = fopen(src_name, "rb");
 	if (!source) {
 		return E4I_E_SOURCE_OPEN;
 	}
