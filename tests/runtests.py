@@ -24,6 +24,7 @@ import re
 import time
 import subprocess
 import argparse
+import tempfile
 
 DEBUG = 0
 
@@ -247,8 +248,8 @@ class TestBed:
 
     # --------------------------------------------------------------------
     def __assembly(self, source):
-        aout = "/tmp/" + os.path.basename(source) + ".bin"
-        args = [self.emas, "-DEM400", "-Iinclude", "-Oraw", "-o" + aout, source]
+        aout = tempfile.gettempdir() + "/" + os.path.basename(source) + ".bin"
+        args = [self.emas, "-D", "EM400", "-I", "include", "-O", "raw", "-o", aout, source]
         p = subprocess.Popen(args, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
         p.wait()
         if p.returncode == 0:
