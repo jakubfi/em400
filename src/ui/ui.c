@@ -32,18 +32,32 @@
 extern struct ui_drv ui_cmd;
 extern struct ui_drv ui_curses;
 
+// in order of preference
 struct ui_drv* uis[] = {
-	&ui_cmd,
+#ifdef UI_CURSES
 	&ui_curses,
+#endif
+	&ui_cmd,
 	NULL
 };
 
 pthread_t ui_th;
 
 // -----------------------------------------------------------------------
+void ui_print_uis(FILE *fd)
+{
+	struct ui_drv **u = uis;
+	while (*u) {
+		if (u != uis) fprintf(fd, ",");
+		fprintf(fd, " %s", (*u)->name);
+		u++;
+	}
+}
+
+// -----------------------------------------------------------------------
 struct ui * ui_create(em400_cfg *cfg)
 {
-	const char *name = cfg_getstr(cfg, "ui:interface", CFG_DEFAULT_UI_INTERFACE);
+	const char *name = cfg_getstr(cfg, "ui:interface", uis[0]->name);
 
 	struct ui_drv **drv = uis;
 	while (drv && *drv) {

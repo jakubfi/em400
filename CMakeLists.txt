@@ -30,11 +30,6 @@ if(NOT WIN32)
 	find_library(RT_LIBRARY rt)
 endif()
 
-set(CURSES_NEED_NCURSES TRUE)
-find_package(Curses REQUIRED)
-find_path(READLINE_INCLUDE_DIR readline/readline.h)
-find_library(READLINE_LIBRARY readline)
-
 include(FindALSA)
 include(cmake/FindPulseAudio.cmake)
 find_library(PULSEAUDIO_SIMPLE_LIBRARY pulse-simple)
@@ -45,7 +40,71 @@ else()
 	message(STATUS "No supported sound libraries found, disabling sound")
 endif()
 
-# ---- Sources -----------------------------------------------------------
+# ---- UI curses ---------------------------------------------------------
+
+find_package(Curses)
+
+set(UI_CURSES OFF)
+if(CURSES_FOUND)
+	if(WIN32)
+		message(STATUS "Curses library found, but curses UI is disabled on Windows")
+	else()
+		set(UI_CURSES ON)
+		message(STATUS "Curses library found. Curses UI enabled.")
+	endif()
+else()
+	message(STATUS "Curses library not found. Curses UI disabled.")
+endif()
+
+if(UI_CURSES)
+	set(CURSES_NEED_NCURSES TRUE)
+	find_path(READLINE_INCLUDE_DIR readline/readline.h)
+	find_library(READLINE_LIBRARY readline)
+
+	bison_target(ui_curses_parser
+		src/ui/curses/parser.y
+		${CMAKE_CURRENT_BINARY_DIR}/ui_curses_parser.c
+	)
+	flex_target(ui_curses_scanner
+		src/ui/curses/scanner.l
+		${CMAKE_CURRENT_BINARY_DIR}/ui_curses_scanner.c
+		COMPILE_FLAGS "--never-interactive"
+	)
+	add_flex_bison_dependency(ui_curses_scanner ui_curses_parser)
+
+	add_library(ui-curses STATIC
+		src/ui/curses/awin.c
+		src/ui/curses/awin.h
+		src/ui/curses/awinch.c
+		src/ui/curses/debugger.c
+		src/ui/curses/debugger.h
+		src/ui/curses/eval.c
+		src/ui/curses/eval.h
+		src/ui/curses/cmd.c
+		src/ui/curses/cmd.h
+		src/ui/curses/ui.c
+		src/ui/curses/ui.h
+		src/ui/curses/keywords.c
+		src/ui/curses/keywords.h
+		src/ui/curses/decode.c
+		src/ui/curses/decode.h
+		src/ui/curses/parser.y
+		src/ui/curses/scanner.l
+		${BISON_ui_curses_parser_OUTPUTS}
+		${FLEX_ui_curses_scanner_OUTPUTS}
+	)
+
+	target_link_libraries(ui-curses
+		${FLEX_LIBRARIES}
+		${BISON_LIBRARIES}
+	)
+
+	target_include_directories(ui-curses PRIVATE ${CMAKE_SOURCE_DIR}/src)
+	target_include_directories(ui-curses PRIVATE ${CMAKE_SOURCE_DIR}/include)
+	target_include_directories(ui-curses PRIVATE ${CMAKE_BINARY_DIR})
+endif(UI_CURSES)
+
+# ---- Target: em400 -----------------------------------------------------
 
 set(SOURCES_EM400
 	src/atomic.h
@@ -148,24 +207,6 @@ set(SOURCES_EM400
 	src/ui/cmd/utils.c
 	src/ui/cmd/utils.h
 
-	src/ui/curses/awin.c
-	src/ui/curses/awin.h
-	src/ui/curses/awinch.c
-	src/ui/curses/debugger.c
-	src/ui/curses/debugger.h
-	src/ui/curses/eval.c
-	src/ui/curses/eval.h
-	src/ui/curses/cmd.c
-	src/ui/curses/cmd.h
-	src/ui/curses/ui.c
-	src/ui/curses/ui.h
-	src/ui/curses/keywords.c
-	src/ui/curses/keywords.h
-	src/ui/curses/decode.c
-	src/ui/curses/decode.h
-	src/ui/curses/parser.y
-	src/ui/curses/scanner.l
-
 	src/ectl/cpu.c
 	src/ectl/est.c
 	src/ectl/est.h
@@ -209,25 +250,10 @@ flex_target(ectl_scanner
 )
 add_flex_bison_dependency(ectl_scanner ectl_parser)
 
-bison_target(ui_curses_parser
-	src/ui/curses/parser.y
-	${CMAKE_CURRENT_BINARY_DIR}/ui_curses_parser.c
-)
-flex_target(ui_curses_scanner
-	src/ui/curses/scanner.l
-	${CMAKE_CURRENT_BINARY_DIR}/ui_curses_scanner.c
-	COMPILE_FLAGS "--never-interactive"
-)
-add_flex_bison_dependency(ui_curses_scanner ui_curses_parser)
-
-# ---- Target: em400 -----------------------------------------------------
-
 add_executable(em400
 	${SOURCES_EM400}
 	${BISON_ectl_parser_OUTPUTS}
 	${FLEX_ectl_scanner_OUTPUTS}
-	${BISON_ui_curses_parser_OUTPUTS}
-	${FLEX_ui_curses_scanner_OUTPUTS}
 )
 
 set_property(TARGET em400 PROPERTY C_STANDARD 99)
@@ -236,19 +262,28 @@ target_include_directories(em400 PUBLIC ${CMAKE_SOURCE_DIR}/include)
 target_include_directories(em400 PRIVATE ${CMAKE_BINARY_DIR})
 target_compile_definitions(em400 PRIVATE EM400_VERSION="${APP_VERSION}")
 target_compile_options(em400 PUBLIC -Wall)
+if(UI_CURSES)
+	target_compile_definitions(em400 PRIVATE UI_CURSES)
+endif(UI_CURSES)
 if(IPO_SUPPORTED)
 	set_property(TARGET em400 PROPERTY INTERPROCEDURAL_OPTIMIZATION TRUE)
 endif()
 
 target_link_libraries(em400
-	${CURSES_LIBRARIES}
-	${READLINE_LIBRARY}
 	emdas
 	emcrk
 	emawp
 	${FLEX_LIBRARIES} ${BISON_LIBRARIES}
 	${CMAKE_THREAD_LIBS_INIT}
 )
+
+if(UI_CURSES)
+	target_link_libraries(em400
+		${CURSES_LIBRARIES}
+		${READLINE_LIBRARY}
+		ui-curses
+	)
+endif(UI_CURSES)
 
 if(NOT WIN32)
 	target_link_libraries(em400

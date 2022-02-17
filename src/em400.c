@@ -110,7 +110,11 @@ void em400_usage()
 		"                      wnch, flop, pnch, pnrd, tape, crk5, em4h, ectl, fpga, all\n"
 		"   -L               : Disable logging\n"
 		"   -k value         : Value to initially set keys to\n"
-		"   -u ui            : User interface to use. Available UIs: curses (default), cmd (minimal, for remote control)\n"
+		"   -u ui            : User interface to use. Available UIs (first is the default):"
+	);
+	ui_print_uis(stdout);
+	fprintf(stdout, "\n");
+	fprintf(stdout,
 		"   -F               : Use FPGA implementation of the CPU and external memory (experimental)\n"
 		"   -O sec:key=value : Override configuration entry \"key\" in section [sec] with a specific value\n"
 	);

@@ -40,6 +40,7 @@ struct ui {
 	void *data;
 };
 
+void ui_print_uis(FILE *fd);
 struct ui * ui_create(em400_cfg *cfg);
 int ui_run(struct ui *ui);
 void ui_shutdown(struct ui *ui);

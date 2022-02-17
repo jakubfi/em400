@@ -50,8 +50,6 @@ typedef dictionary em400_cfg;
 #define CFG_DEFAULT_FPGA_DEVICE "/dev/ttyUSB0"
 #define CFG_DEFAULT_FPGA_SPEED 1000000
 
-#define CFG_DEFAULT_UI_INTERFACE "curses"
-
 #define CFG_DEFAULT_SOUND_ENABLED 0
 #define CFG_DEFAULT_SOUND_DRIVER "pulseaudio"
 #define CFG_DEFAULT_SOUND_OUTPUT "default"
