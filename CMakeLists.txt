@@ -7,42 +7,11 @@ project(em400
 include(GNUInstallDirs)
 include(cmake/appversion.cmake)
 
-# ---- IPO support -------------------------------------------------------
-
-include(CheckIPOSupported)
-check_ipo_supported(RESULT IPO_SUPPORTED OUTPUT IPO_ERROR)
-if(IPO_SUPPORTED)
-	message(STATUS "LTO supported and enabled")
-else()
-	message(STATUS "LTO disabled: ${IPO_ERROR}")
-endif()
-
-# ---- Libraries ---------------------------------------------------------
-
-find_package(BISON REQUIRED)
-find_package(FLEX REQUIRED)
-find_package(Threads REQUIRED)
-find_package(emdas REQUIRED)
-find_package(emcrk REQUIRED)
-find_package(emawp 3.0 REQUIRED)
-if(NOT WIN32)
-	find_library(MATH_LIBRARY m)
-	find_library(RT_LIBRARY rt)
-endif()
-
-include(FindALSA)
-include(cmake/FindPulseAudio.cmake)
-find_library(PULSEAUDIO_SIMPLE_LIBRARY pulse-simple)
-
-if(PULSEAUDIO_FOUND OR ALSA_FOUND)
-	message(STATUS "Sound enabled: ALSA: ${ALSA_FOUND}, PulseAudio: ${PULSEAUDIO_FOUND}")
-else()
-	message(STATUS "No supported sound libraries found, disabling sound")
-endif()
-
 # ---- UI curses ---------------------------------------------------------
 
 find_package(Curses)
+find_package(BISON REQUIRED)
+find_package(FLEX REQUIRED)
 
 set(UI_CURSES OFF)
 if(CURSES_FOUND)
@@ -60,6 +29,7 @@ if(UI_CURSES)
 	set(CURSES_NEED_NCURSES TRUE)
 	find_path(READLINE_INCLUDE_DIR readline/readline.h)
 	find_library(READLINE_LIBRARY readline)
+	find_library(TINFO_LIBRARY tinfo)
 
 	bison_target(ui_curses_parser
 		src/ui/curses/parser.y
@@ -95,6 +65,9 @@ if(UI_CURSES)
 	)
 
 	target_link_libraries(ui-curses
+		${CURSES_LIBRARIES}
+		${TINFO_LIBRARY}
+		${READLINE_LIBRARY}
 		${FLEX_LIBRARIES}
 		${BISON_LIBRARIES}
 	)
@@ -105,6 +78,41 @@ if(UI_CURSES)
 endif(UI_CURSES)
 
 # ---- Target: em400 -----------------------------------------------------
+
+find_package(BISON REQUIRED)
+find_package(FLEX REQUIRED)
+find_package(Threads REQUIRED)
+find_package(emdas REQUIRED)
+find_package(emcrk REQUIRED)
+find_package(emawp 3.0 REQUIRED)
+if(NOT WIN32)
+	find_library(MATH_LIBRARY m)
+	find_library(RT_LIBRARY rt)
+endif()
+
+# --- IPO support
+
+include(CheckIPOSupported)
+check_ipo_supported(RESULT IPO_SUPPORTED OUTPUT IPO_ERROR)
+if(IPO_SUPPORTED)
+	message(STATUS "LTO supported and enabled")
+else()
+	message(STATUS "LTO disabled: ${IPO_ERROR}")
+endif()
+
+# --- Sound
+
+include(FindALSA)
+include(cmake/FindPulseAudio.cmake)
+find_library(PULSEAUDIO_SIMPLE_LIBRARY pulse-simple)
+
+if(PULSEAUDIO_FOUND OR ALSA_FOUND)
+	message(STATUS "Sound enabled: ALSA: ${ALSA_FOUND}, PulseAudio: ${PULSEAUDIO_FOUND}")
+else()
+	message(STATUS "No supported sound libraries found, disabling sound")
+endif()
+
+# --- EM400
 
 set(SOURCES_EM400
 	src/atomic.h
@@ -237,6 +245,8 @@ if(PULSEAUDIO_FOUND)
 	list(APPEND SOURCES_EM400 src/sound/pulseaudio.c)
 endif()
 
+# --- internal parser
+
 bison_target(ectl_parser
 	src/ectl/parser.y
 	${CMAKE_CURRENT_BINARY_DIR}/ectl_parser.c
@@ -250,6 +260,8 @@ flex_target(ectl_scanner
 )
 add_flex_bison_dependency(ectl_scanner ectl_parser)
 
+# --- em400 target
+
 add_executable(em400
 	${SOURCES_EM400}
 	${BISON_ectl_parser_OUTPUTS}
@@ -257,11 +269,11 @@ add_executable(em400
 )
 
 set_property(TARGET em400 PROPERTY C_STANDARD 99)
+target_compile_options(em400 PRIVATE -Wall)
 target_include_directories(em400 PRIVATE ${CMAKE_SOURCE_DIR}/src)
-target_include_directories(em400 PUBLIC ${CMAKE_SOURCE_DIR}/include)
+target_include_directories(em400 PRIVATE ${CMAKE_SOURCE_DIR}/include)
 target_include_directories(em400 PRIVATE ${CMAKE_BINARY_DIR})
 target_compile_definitions(em400 PRIVATE EM400_VERSION="${APP_VERSION}")
-target_compile_options(em400 PUBLIC -Wall)
 if(UI_CURSES)
 	target_compile_definitions(em400 PRIVATE UI_CURSES)
 endif(UI_CURSES)
@@ -273,14 +285,13 @@ target_link_libraries(em400
 	emdas
 	emcrk
 	emawp
-	${FLEX_LIBRARIES} ${BISON_LIBRARIES}
+	${FLEX_LIBRARIES}
+	${BISON_LIBRARIES}
 	${CMAKE_THREAD_LIBS_INIT}
 )
 
 if(UI_CURSES)
 	target_link_libraries(em400
-		${CURSES_LIBRARIES}
-		${READLINE_LIBRARY}
 		ui-curses
 	)
 endif(UI_CURSES)
