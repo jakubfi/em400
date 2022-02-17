@@ -18,7 +18,7 @@
 #include <stdio.h>
 #include <strings.h>
 
-#include "uicurses_parser.h"
+#include "ui_curses_parser.h"
 #include "ui/curses/keywords.h"
 #include "ectl.h"
 

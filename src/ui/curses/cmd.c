@@ -30,7 +30,7 @@
 #include "ui/curses/ui.h"
 #include "ui/curses/eval.h"
 #include "ui/curses/decode.h"
-#include "uicurses_parser.h"
+#include "ui_curses_parser.h"
 
 #include <emcrk/r40.h>
 
