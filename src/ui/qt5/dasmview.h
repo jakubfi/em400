@@ -2,6 +2,7 @@
 #define DASMVIEW_H
 
 #include <QWidget>
+#include <QScrollBar>
 #include "emumodel.h"
 #include "asmline.h"
 
@@ -17,30 +18,29 @@ public:
 
 public slots:
 	void update_contents(int nb, int addr);
+	void update_contents_no_nb(int new_addr);
 
 private:
-	int fuzziness = 5;
-	int dasm_total_lines;
-	int bottom, right;
-	int offset;
-	int half_font_width;
-	int line_height;
-	int interline;
-	int addr_x_start, addr_y_start;
-	int addr_len; // characters
-	int dasm_x_start, dasm_y_start;
-	int divider_x_pos;
+	EmuModel *e;
 
 	int cnb, caddr;
 
-	EmuModel *e;
+	QFont font;
+	int font_height, font_width, font_descent; // calculated
+
+	const int fuzziness = 5;			// fuzziness when searching for instruction start address
+	const int dasm_line_length = 26;	// length of disassembly line
+	int dasm_total_lines;				// lines of disassembly visible
+	int line_height;					// disassembly line height in pixels, with space between lines
+	const int interline = 4;			// additional interline, in pixels
+	const int addr_len = 4;				// address length, in characters
+
+	QScrollBar *scroll;
+
 	struct emdas *emd;
 	QList<AsmLine> listing;
-	QFont font;
-	int font_height, font_width, font_descent;
 
 	void set_font(QString name, int size=0);
-	void update_font_related_dimensions();
 	void internal_update_contents();
 
 	AsmLine dasm_exact(int nb, int addr);
@@ -54,6 +54,10 @@ protected:
 	void paintEvent(QPaintEvent *event);
 	void resizeEvent(QResizeEvent *event);
 	void wheelEvent(QWheelEvent *event);
+	QSize minimumSizeHint() const;
+	QSize sizeHint() const;
+	void enterEvent(QEvent *event);
+	void leaveEvent(QEvent *event);
 
 };
 

@@ -1,6 +1,7 @@
 #include <QPainter>
 #include <QPaintEvent>
 #include <QDebug>
+#include <QScrollBar>
 #include <emdas.h>
 #include "dasmview.h"
 
@@ -21,16 +22,24 @@ DasmView::DasmView(QWidget *parent) :
 	emdas_set_tabs(emd, 0, 0, 5, 4);
 
 	cnb = caddr = -1;
-	bottom = 100;
-	right = 100;
 
 	set_font("Monospace");
+
+	setFocusPolicy(Qt::WheelFocus);
+
+	scroll = new QScrollBar(Qt::Vertical, this);
+	scroll->setMinimum(0);
+	scroll->setMaximum(65535);
+	scroll->setVisible(false);
+
+	connect(scroll, &QScrollBar::valueChanged, this, &DasmView::update_contents_no_nb);
 }
 
 // -----------------------------------------------------------------------
 DasmView::~DasmView()
 {
 	emdas_destroy(emd);
+	delete scroll;
 }
 
 // -----------------------------------------------------------------------
@@ -43,26 +52,7 @@ void DasmView::set_font(QString name, int size)
 	font_height = fm.lineSpacing();
 	font_width = fm.horizontalAdvance('9');
 	font_descent = fm.descent();
-
-	update_font_related_dimensions();
-}
-
-// -----------------------------------------------------------------------
-void DasmView::update_font_related_dimensions()
-{
-	offset = 5; // pixels
-	interline = 4;
-	half_font_width = font_width / 2;
 	line_height = font_height + interline;
-
-	addr_x_start = half_font_width;
-	addr_y_start = font_height;
-	addr_len = 5; // characters
-
-	dasm_x_start = addr_x_start + font_width * (addr_len + 1);
-	dasm_y_start = addr_y_start;
-
-	divider_x_pos = dasm_x_start - font_width;
 }
 
 // -----------------------------------------------------------------------
@@ -109,7 +99,7 @@ int DasmView::prepend(int i, QList<AsmLine>& l)
 	// remove extra items at the begining
 	while (tmp_l.length() > i) tmp_l.removeFirst();
 
-	int count = tmp_l.count();
+	const int count = tmp_l.count();
 	tmp_l.append(l);
 	l.swap(tmp_l);
 
@@ -139,15 +129,26 @@ int DasmView::append(int i, QList<AsmLine>& l)
 void DasmView::internal_update_contents()
 {
 	listing.clear();
-	int i = append(dasm_total_lines, listing);
+	const int i = append(dasm_total_lines, listing);
 	// if the list does not fill all the space, prepend the difference
 	prepend(dasm_total_lines - i, listing);
+	scroll->setValue(caddr);
 }
 
 // -----------------------------------------------------------------------
 void DasmView::update_contents(int new_nb, int new_addr)
 {
+	if ((new_nb == cnb) && (new_addr == caddr)) return;
 	cnb = new_nb;
+	caddr = new_addr;
+	internal_update_contents();
+	update();
+}
+
+// -----------------------------------------------------------------------
+void DasmView::update_contents_no_nb(int new_addr)
+{
+	if (new_addr == caddr) return;
 	caddr = new_addr;
 	internal_update_contents();
 	update();
@@ -158,75 +159,93 @@ void DasmView::paintEvent(QPaintEvent *event)
 {
 	QPainter painter(this);
 
-	// backgroud
-	painter.fillRect(event->rect(), this->palette().color(QPalette::Base));
-	painter.setFont(font);
+	const int line_y_start = font_height;
+	const int addr_x_start = font_width / 2;
+	const int divider_x_pos = addr_x_start + font_width * (addr_len + 1);
+	const int dasm_x_start = divider_x_pos + font_width;
 
-	// divider line
-	painter.setPen(this->palette().color(QPalette::Background));
-	painter.drawLine(divider_x_pos, 0, divider_x_pos, bottom);
+	// background
+	painter.fillRect(event->rect(), palette().color(QPalette::Base));
+
+	// addr-code divider line
+	painter.setPen(palette().color(QPalette::Background));
+	painter.drawLine(divider_x_pos, 0, divider_x_pos, height());
 
 	// disassembly
 	QColor bar_color;
-	int y = dasm_y_start;
+	int y = line_y_start;
 	Q_FOREACH (const AsmLine &l, listing) {
+		const bool at_ic = l.addr == e->get_reg(ECTL_REG_IC);
+
 		// bar for IC location
-		if (l.addr == e->get_reg(ECTL_REG_IC)) {
+		if (at_ic) {
 			// change bar color if "P" flag is set (instruction won't be executed)
-			if (e->get_reg(ECTL_REG_P)) bar_color = QColor(Qt::red).lighter();
-			else bar_color = this->palette().color(QPalette::Mid);
-			painter.fillRect(QRect(0, y+font_descent+1, right+1, -(font_height+interline)), bar_color);
+			if (e->get_reg(ECTL_REG_P)) {
+				bar_color = QColor(Qt::red).lighter();
+			} else {
+				if (hasFocus()) {
+					bar_color = palette().color(QPalette::Highlight);
+				} else {
+					bar_color = palette().color(QPalette::Inactive, QPalette::Highlight);
+				}
+			}
+			painter.fillRect(QRect(0, y+font_descent+1, width()+1, -(font_height+interline)), bar_color);
 		}
 
 		// address
 		font.setBold(true);
-		painter.setFont(font);
-		painter.setPen(this->palette().color(QPalette::PlaceholderText));
+		if (at_ic) painter.setPen(palette().color(QPalette::HighlightedText));
+		else painter.setPen(palette().color(QPalette::PlaceholderText));
 		painter.drawText(addr_x_start, y, QString("%1").arg((uint16_t)l.addr, 4, 16, QLatin1Char('0')));
 
-		// program line
+		// code
 		font.setBold(false);
-		painter.setFont(font);
-		painter.setPen(this->palette().color(QPalette::Text));
+		if (at_ic) painter.setPen(palette().color(QPalette::HighlightedText));
+		else painter.setPen(palette().color(QPalette::Text));
 		painter.drawText(dasm_x_start, y, l.text);
 
 		y += line_height;
 	}
 
 	// frame around the widget
-	painter.setPen(this->palette().color(QPalette::Mid));
-	painter.drawRect(0, 0, right, bottom);
+	painter.setPen(palette().color(QPalette::Mid));
+	painter.drawRect(0, 0, width()-1, height()-1);
 }
 
 // -----------------------------------------------------------------------
 void DasmView::resizeEvent(QResizeEvent *event)
 {
-	int old_dasm_total_lines = dasm_total_lines;
+	const int old_dasm_total_lines = dasm_total_lines;
 
-	bottom = this->rect().bottom(); // view height, in pixels
-	right = this->rect().right(); // view width, in pixels
-	dasm_total_lines = bottom / line_height + 1; // +1 for the line at the bottom edge of the window
+	dasm_total_lines = (height() / line_height) + 1; // +1 for the line at the bottom edge of the window
 
 	if (caddr >= 0) {
 		int rows_delta = dasm_total_lines - old_dasm_total_lines;
 		if (rows_delta > 0) { // more rows visible
-			int i = append(rows_delta, listing);
+			const int i = append(rows_delta, listing);
 			prepend(rows_delta - i, listing);
 		} else { // less rows visible
 			while (rows_delta++ < 0) listing.removeLast();
 		}
 	}
+	scroll->setGeometry(width() - scroll->sizeHint().width(), 0, scroll->sizeHint().width(), height());
+
 	QWidget::resizeEvent(event);
 }
 
 // -----------------------------------------------------------------------
 void DasmView::wheelEvent(QWheelEvent *event)
 {
-	int wheel_step = 1;
-
 	if (listing.empty()) return;
 
-	int delta = wheel_step * (event->angleDelta().y() / 120);
+	static int tickcount;
+	const int wheel_step = 3;
+	const int one_line_advance = 120 / wheel_step;
+
+	tickcount += event->angleDelta().y();
+	const int delta = tickcount / one_line_advance;
+	tickcount -= delta * one_line_advance;
+
 	if (delta > 0) { // backwards
 		if (listing.first().addr > 0) {
 			int items = prepend(delta, listing);
@@ -238,7 +257,32 @@ void DasmView::wheelEvent(QWheelEvent *event)
 			while (items-- > 0) listing.removeFirst();
 		}
 	}
-
+	scroll->setValue(listing.first().addr); // TODO: this should all be in one place...
 	QWidget::wheelEvent(event);
 	update();
+
+}
+
+// -----------------------------------------------------------------------
+QSize DasmView::minimumSizeHint() const
+{
+	return QSize(dasm_line_length * font_width, -1);
+}
+
+// -----------------------------------------------------------------------
+QSize DasmView::sizeHint() const
+{
+	return minimumSizeHint();
+}
+
+// -----------------------------------------------------------------------
+void DasmView::enterEvent(QEvent *event)
+{
+	scroll->setVisible(true);
+}
+
+// -----------------------------------------------------------------------
+void DasmView::leaveEvent(QEvent *event)
+{
+	scroll->setVisible(false);
 }

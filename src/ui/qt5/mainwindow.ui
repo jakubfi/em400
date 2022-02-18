@@ -1260,104 +1260,10 @@
            </property>
           </widget>
          </item>
-         <item>
-          <widget class="QScrollBar" name="verticalScrollBar">
-           <property name="maximum">
-            <number>65535</number>
-           </property>
-           <property name="sliderPosition">
-            <number>0</number>
-           </property>
-           <property name="orientation">
-            <enum>Qt::Vertical</enum>
-           </property>
-          </widget>
-         </item>
         </layout>
        </item>
        <item>
-        <layout class="QHBoxLayout" name="horizontalLayout_2">
-         <item>
-          <widget class="QLabel" name="label_30">
-           <property name="sizePolicy">
-            <sizepolicy hsizetype="Maximum" vsizetype="Preferred">
-             <horstretch>0</horstretch>
-             <verstretch>0</verstretch>
-            </sizepolicy>
-           </property>
-           <property name="text">
-            <string>Go to:</string>
-           </property>
-          </widget>
-         </item>
-         <item>
-          <widget class="QSpinBox" name="goto_addr">
-           <property name="prefix">
-            <string>0x</string>
-           </property>
-           <property name="maximum">
-            <number>65535</number>
-           </property>
-           <property name="displayIntegerBase">
-            <number>16</number>
-           </property>
-          </widget>
-         </item>
-         <item>
-          <widget class="QComboBox" name="goto_reg">
-           <item>
-            <property name="text">
-             <string>From register</string>
-            </property>
-           </item>
-           <item>
-            <property name="text">
-             <string>IC</string>
-            </property>
-           </item>
-           <item>
-            <property name="text">
-             <string>AR</string>
-            </property>
-           </item>
-           <item>
-            <property name="text">
-             <string>R1</string>
-            </property>
-           </item>
-           <item>
-            <property name="text">
-             <string>R2</string>
-            </property>
-           </item>
-           <item>
-            <property name="text">
-             <string>R3</string>
-            </property>
-           </item>
-           <item>
-            <property name="text">
-             <string>R4</string>
-            </property>
-           </item>
-           <item>
-            <property name="text">
-             <string>R5</string>
-            </property>
-           </item>
-           <item>
-            <property name="text">
-             <string>R6</string>
-            </property>
-           </item>
-           <item>
-            <property name="text">
-             <string>R7</string>
-            </property>
-           </item>
-          </widget>
-         </item>
-        </layout>
+        <layout class="QHBoxLayout" name="horizontalLayout_2"/>
        </item>
       </layout>
      </widget>
@@ -1487,28 +1393,30 @@
   </customwidget>
  </customwidgets>
  <tabstops>
-  <tabstop>r0</tabstop>
-  <tabstop>r1</tabstop>
-  <tabstop>r2</tabstop>
-  <tabstop>r3</tabstop>
-  <tabstop>r4</tabstop>
-  <tabstop>r5</tabstop>
-  <tabstop>r6</tabstop>
-  <tabstop>r7</tabstop>
-  <tabstop>r0_2</tabstop>
-  <tabstop>r1_2</tabstop>
-  <tabstop>r2_2</tabstop>
-  <tabstop>r3_2</tabstop>
-  <tabstop>r4_2</tabstop>
-  <tabstop>r5_2</tabstop>
-  <tabstop>r6_2</tabstop>
-  <tabstop>r7_2</tabstop>
   <tabstop>ic</tabstop>
   <tabstop>ir</tabstop>
   <tabstop>sr</tabstop>
   <tabstop>kb</tabstop>
   <tabstop>rz</tabstop>
   <tabstop>ar</tabstop>
+  <tabstop>ac</tabstop>
+  <tabstop>mc</tabstop>
+  <tabstop>r0</tabstop>
+  <tabstop>r0_2</tabstop>
+  <tabstop>r1</tabstop>
+  <tabstop>r1_2</tabstop>
+  <tabstop>r2</tabstop>
+  <tabstop>r2_2</tabstop>
+  <tabstop>r3</tabstop>
+  <tabstop>r3_2</tabstop>
+  <tabstop>r4</tabstop>
+  <tabstop>r4_2</tabstop>
+  <tabstop>r5</tabstop>
+  <tabstop>r5_2</tabstop>
+  <tabstop>r6</tabstop>
+  <tabstop>r6_2</tabstop>
+  <tabstop>r7</tabstop>
+  <tabstop>r7_2</tabstop>
  </tabstops>
  <resources>
   <include location="resources.qrc"/>

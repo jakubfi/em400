@@ -201,6 +201,7 @@ void MainWindow::cpu_reg_changed(int reg)
 	if (!r[reg]) return;
 
 	r[reg]->setValue(e.get_reg(reg));
+	ui->mem->update_contents(0, 0);
 
 	if (reg <= ECTL_REG_R7) {
 		r2[reg]->setValue((int16_t)e.get_reg(reg));
