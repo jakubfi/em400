@@ -85,10 +85,8 @@ extern bool cpu_mod_active;
 extern bool cpu_user_io_illegal;
 extern bool awp_enabled;
 
-int cpu_mem_get(int nb, uint16_t addr, uint16_t *data);
-int cpu_mem_put(int nb, uint16_t addr, uint16_t data);
-int cpu_mem_mget(int nb, uint16_t saddr, uint16_t *dest, int count);
-int cpu_mem_mput(int nb, uint16_t saddr, uint16_t *src, int count);
+bool cpu_mem_read(bool barnb, uint16_t addr, uint16_t *data);
+bool cpu_mem_write(bool barnb, uint16_t addr, uint16_t data);
 
 int cpu_init(em400_cfg *cfg);
 void cpu_shutdown();
@@ -103,29 +101,6 @@ void cpu_loop();
 
 int cpu_state_change(int to, int from);
 int cpu_state_get();
-
-#endif
-
-// vim: tabstop=4 shiftwidth=4 autoindent
-//  Copyright (c) 2012-2013 Jakub Filipowicz <jakubf@gmail.com>
-//
-//  This program is free software; you can redistribute it and/or modify
-//  it under the terms of the GNU General Public License as published by
-//  the Free Software Foundation; either version 2 of the License, or
-//  (at your option) any later version.
-//
-//  This program is distributed in the hope that it will be useful,
-//  but WITHOUT ANY WARRANTY; without even the implied warranty of
-//  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-//  GNU General Public License for more details.
-//
-//  You should have received a copy of the GNU General Public License
-//  along with this program; if not, write to the Free Software
-//  Foundation, Inc.,
-//  51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
-
-#ifndef FLAGS_H
-#define FLAGS_H
 
 #endif
 

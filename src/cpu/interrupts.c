@@ -212,7 +212,7 @@ void int_serve()
 
 	// get interrupt vector
 	uint16_t int_vec;
-	if (!cpu_mem_get(0, INT_VECTORS + interrupt, &int_vec)) return;
+	if (!cpu_mem_read(false, INT_VECTORS + interrupt, &int_vec)) return;
 
 	LOG(L_INT, "Serve interrupt: %i (%s) -> 0x%04x", interrupt, int_names[interrupt], int_vec);
 

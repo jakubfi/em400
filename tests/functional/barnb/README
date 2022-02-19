@@ -1,0 +1,5 @@
+Instructions that always access memory using NB, should
+not cause alarm and should not stop the CPU when called
+by the OS (Q=0) with argument location in memory segment 0 (NB=0)
+even if the memory access failed (segment not configured).
+Interupt 2 should be set anyway.

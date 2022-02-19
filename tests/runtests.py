@@ -367,7 +367,8 @@ def collect_tests(i):
     elif os.path.isdir(i):
         for path, dirs, files in os.walk(i):
             for f in files:
-                tests.append("{}/{}".format(path, f))
+                if f.endswith(".asm"):
+                    tests.append("{}/{}".format(path, f))
     elif os.path.isfile(i) and i.endswith(".set"):
         with open(i) as f:
             for line in f:

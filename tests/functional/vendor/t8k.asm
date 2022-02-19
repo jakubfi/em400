@@ -1396,3 +1396,5 @@ test_num:	.word 0x0000
 repetitions:	.word 0x0000
 phase:		.word 0x0000
 freemem_start:
+
+; XPCT ir : 0xec3f

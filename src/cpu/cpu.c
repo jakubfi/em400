@@ -133,53 +133,33 @@ int cpu_state_get()
 }
 
 // -----------------------------------------------------------------------
-static void cpu_mem_fail(int nb)
+static void cpu_mem_fail(bool barnb)
 {
 	int_set(INT_NO_MEM);
-	if (nb == 0) {
+	if (!barnb) {
 		rALARM = true;
 		if (nomem_stop) cpu_state_change(ECTL_STATE_STOP, ECTL_STATE_ANY);
 	}
 }
 
 // -----------------------------------------------------------------------
-int cpu_mem_get(int nb, uint16_t addr, uint16_t *data)
+bool cpu_mem_read(bool barnb, uint16_t addr, uint16_t *data)
 {
-	if (!mem_get(nb, addr, data)) {
-		cpu_mem_fail(nb);
-		return 0;
+	if (!mem_get(barnb * nb, addr, data)) {
+		cpu_mem_fail(barnb);
+		return false;
 	}
-	return 1;
+	return true;
 }
 
 // -----------------------------------------------------------------------
-int cpu_mem_put(int nb, uint16_t addr, uint16_t data)
+bool cpu_mem_write(bool barnb, uint16_t addr, uint16_t data)
 {
-	if (!mem_put(nb, addr, data)) {
-		cpu_mem_fail(nb);
-		return 0;
+	if (!mem_put(barnb * nb, addr, data)) {
+		cpu_mem_fail(barnb);
+		return false;
 	}
-	return 1;
-}
-
-// -----------------------------------------------------------------------
-int cpu_mem_mget(int nb, uint16_t saddr, uint16_t *dest, int count)
-{
-	int words;
-	if ((words = mem_mget(nb, saddr, dest, count)) != count) {
-		cpu_mem_fail(nb);
-	}
-	return words;
-}
-
-// -----------------------------------------------------------------------
-int cpu_mem_mput(int nb, uint16_t saddr, uint16_t *src, int count)
-{
-	int words;
-	if ((words = mem_mput(nb, saddr, src, count)) != count) {
-		cpu_mem_fail(nb);
-	}
-	return words;
+	return true;
 }
 
 // -----------------------------------------------------------------------
@@ -299,15 +279,15 @@ static void cpu_do_clear(int scope)
 // -----------------------------------------------------------------------
 int cpu_ctx_switch(uint16_t arg, uint16_t new_ic, uint16_t int_mask)
 {
-	if (!cpu_mem_get(0, STACK_POINTER, &ar)) return 0;
+	if (!cpu_mem_read(false, STACK_POINTER, &ar)) return 0;
 
 	LOG(L_CPU, "Store current process ctx [IC: 0x%04x, R0: 0x%04x, SR: 0x%04x, 0x%04x] @ 0x%04x, set new IC: 0x%04x", ic, r[0], SR_READ(), arg, ar, new_ic);
 
-	if (!cpu_mem_put(0, ar, ic)) return 0;
-	if (!cpu_mem_put(0, ++ar, r[0])) return 0;
-	if (!cpu_mem_put(0, ++ar, SR_READ())) return 0;
-	if (!cpu_mem_put(0, ++ar, arg)) return 0;
-	if (!cpu_mem_put(0, STACK_POINTER, ++ar)) return 0;
+	if (!cpu_mem_write(false, ar, ic)) return 0;
+	if (!cpu_mem_write(false, ++ar, r[0])) return 0;
+	if (!cpu_mem_write(false, ++ar, SR_READ())) return 0;
+	if (!cpu_mem_write(false, ++ar, arg)) return 0;
+	if (!cpu_mem_write(false, STACK_POINTER, ++ar)) return 0;
 
 	r[0] = 0;
 	ic = new_ic;
@@ -323,12 +303,12 @@ void cpu_ctx_restore()
 {
 	uint16_t sr;
 
-	if (!cpu_mem_get(0, STACK_POINTER, &ar)) return;
+	if (!cpu_mem_read(false, STACK_POINTER, &ar)) return;
 	ar -= 4;
-	if (!cpu_mem_put(0, STACK_POINTER, ar)) return;
-	if (!cpu_mem_get(0, ar, &ic)) return;
-	if (!cpu_mem_get(0, ++ar, r)) return;
-	if (!cpu_mem_get(0, ++ar, &sr)) return;
+	if (!cpu_mem_write(false, STACK_POINTER, ar)) return;
+	if (!cpu_mem_read(false, ar, &ic)) return;
+	if (!cpu_mem_read(false, ++ar, r)) return;
+	if (!cpu_mem_read(false, ++ar, &sr)) return;
 	SR_WRITE(sr);
 	int_update_mask(rm);
 
@@ -360,7 +340,7 @@ static int cpu_do_bin(int start)
 			cnt++;
 			if (cnt >= 3) {
 				cnt = 0;
-				if (cpu_mem_put(0, ar, bin2word(bdata)) == 1) {
+				if (cpu_mem_write(q, ar, bin2word(bdata)) == 1) {
 					words++;
 					ar++;
 				}
@@ -383,7 +363,7 @@ static int cpu_do_cycle()
 	ips_counter++;
 
 	// fetch instruction
-	if (!cpu_mem_get(QNB, ic++, &ir)) {
+	if (!cpu_mem_read(q, ic++, &ir)) {
 		LOGCPU(L_CPU, "        no mem, instruction fetch");
 		goto ineffective_memfail;
 	}
@@ -415,7 +395,7 @@ static int cpu_do_cycle()
 		if (IR_C) {
 			ac = r[IR_C];
 		} else {
-			if (!cpu_mem_get(QNB, ic, &ac)) {
+			if (!cpu_mem_read(q, ic, &ac)) {
 				LOGCPU(L_CPU, "    no mem, long arg fetch @ %i:0x%04x", QNB, ic);
 				goto ineffective_memfail;
 			}
@@ -448,7 +428,7 @@ static int cpu_do_cycle()
 
 	// D-mod
 	if ((flags & OP_FL_ARG_NORM) && IR_D) {
-		if (!cpu_mem_get(QNB, ac, &ac)) {
+		if (!cpu_mem_read(q, ac, &ac)) {
 			LOGCPU(L_CPU, "    no mem, indirect arg fetch @ %i:0x%04x", QNB, ar);
 			goto ineffective_memfail;
 		} else {
