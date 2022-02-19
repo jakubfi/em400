@@ -59,23 +59,24 @@ MainWindow::MainWindow(QWidget *parent) :
 
 	connect(&e, &EmuModel::cpu_state_changed, this, &MainWindow::cpu_state_changed);
 	connect(&e, &EmuModel::cpu_reg_changed, this, &MainWindow::cpu_reg_changed);
+	connect(&e, &EmuModel::cpu_ips_tick, this, &MainWindow::cpu_ips_update);
+	connect(&e, &EmuModel::cpu_alarm, this, &MainWindow::cpu_alarm_update);
 
 	// menu actions
 	connect(ui->actionLoad_OS_image, &QAction::triggered, this, &MainWindow::load_os_image);
 	connect(load, &QAction::triggered, this, &MainWindow::load_os_image);
 
 	// create status bar
-	cpu_state_label = new QLabel("CPU state:");
-	ui->statusbar->addWidget(cpu_state_label);
-
-	cpu_state = new QLabel("STOP");
+	cpu_state = new QLabel();
 	cpu_state->setStyleSheet("font-weight: bold");
 	ui->statusbar->addWidget(cpu_state);
 
-	alarm = new QLabel("");
+	alarm = new QLabel();
 	alarm->setStyleSheet("font-weight: bold; color: red");
 	ui->statusbar->addWidget(alarm);
 
+	ips = new QLabel();
+	ui->statusbar->addWidget(ips);
 
 	e.enable();
 }
@@ -180,17 +181,23 @@ void MainWindow::cpu_state_changed(int state)
 	QString named_state;
 	unsigned s = e.get_state_simplified();
 	if (s == ECTL_STATE_STOP) {
-		named_state = "STOP";
+		named_state = " STOP";
 		cpu_state->setStyleSheet("font-weight: bold; color: black");
 	} else if (s == ECTL_STATE_RUN) {
-		named_state = "RUN";
+		named_state = " RUN";
 		cpu_state->setStyleSheet("font-weight: bold; color: green");
 	} else {
-		named_state = "WAIT";
+		named_state = " WAIT";
 		cpu_state->setStyleSheet("font-weight: bold; color: #d57500");
 	}
 
 	cpu_state->setText(named_state);
+
+	if (e.get_reg(ECTL_REG_ALARM) == 1) {
+		alarm->setText("ALARM");
+	} else {
+		alarm->setText("");
+	}
 
 	disable_widgets(state==ECTL_STATE_RUN);
 }
@@ -207,12 +214,6 @@ void MainWindow::cpu_reg_changed(int reg)
 		r2[reg]->setValue((int16_t)e.get_reg(reg));
 	} else if (reg == ECTL_REG_IC) {
 		update_dasm_view();
-	} else if (reg == ECTL_REG_ALARM) {
-		if (e.get_reg(ECTL_REG_ALARM)) {
-			alarm->setText("ALARM");
-		} else {
-			alarm->setText("");
-		}
 	}
 }
 
@@ -222,6 +223,19 @@ void MainWindow::update_dasm_view()
 	int nb = e.get_reg(ECTL_REG_Q) * e.get_reg(ECTL_REG_NB);
 	int ic = e.get_reg(ECTL_REG_IC);
 	ui->dasm->update_contents(nb, ic);
+}
+
+// -----------------------------------------------------------------------
+void MainWindow::cpu_ips_update(unsigned long ips)
+{
+	QString mips_t = QString("%1 MIPS").arg(QString::number(ips/1000000.0, 'f', 3));
+	this->ips->setText(mips_t);
+}
+
+// -----------------------------------------------------------------------
+void MainWindow::cpu_alarm_update(bool a)
+{
+	alarm->setText(a ? "ALARM" : "");
 }
 
 // -----------------------------------------------------------------------

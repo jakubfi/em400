@@ -35,7 +35,8 @@ public:
 
 private:
 	QTimer timer;
-	int cpu_state = -1;
+	QTimer ips_timer;
+	int cpu_state;
 	int r[ECTL_REG_COUNT];
 
 	void check_state();
@@ -43,10 +44,13 @@ private:
 
 private slots:
 	void on_timer_timeout();
+	void on_ips_timer_timeout();
 
 signals:
 	void cpu_state_changed(int state);
 	void cpu_reg_changed(int reg);
+	void cpu_ips_tick(unsigned long ips);
+	void cpu_alarm(bool alarm);
 
 };
 

@@ -7,12 +7,21 @@
 // -----------------------------------------------------------------------
 EmuModel::EmuModel()
 {
-	// make sure all "changed" signals are fired upon enable()
-	for (int i=0 ; i<ECTL_REG_COUNT ; i++) r[i] = 0x10000;
-	cpu_state = -1;
+	for (int i=0 ; i<ECTL_REG_COUNT ; i++) {
+		r[i] = 0;
+		emit cpu_reg_changed(i);
+	}
+	cpu_state = ECTL_STATE_OFF;
+	emit cpu_state_changed(cpu_state);
+	emit cpu_alarm(false);
+	emit cpu_ips_tick(0);
 
 	set_refresh_rate(60);
 	connect(&timer, &QTimer::timeout, this, &EmuModel::on_timer_timeout);
+
+	ips_timer.setInterval(500);
+	connect(&ips_timer, &QTimer::timeout, this, &EmuModel::on_ips_timer_timeout);
+	ips_timer.start();
 
 }
 
@@ -113,7 +122,11 @@ void EmuModel::check_regs()
 		int reg = ectl_reg_get(i);
 		if (reg != r[i]) {
 			r[i] = reg;
-			emit cpu_reg_changed(i);
+			if (i == ECTL_REG_ALARM) {
+				emit cpu_alarm(r[i]);
+			} else {
+				emit cpu_reg_changed(i);
+			}
 		}
 	}
 }
@@ -123,7 +136,12 @@ void EmuModel::on_timer_timeout()
 {
 	check_state();
 	check_regs();
+}
 
+// -----------------------------------------------------------------------
+void EmuModel::on_ips_timer_timeout()
+{
+	emit cpu_ips_tick(ectl_ips_get());
 }
 
 // -----------------------------------------------------------------------

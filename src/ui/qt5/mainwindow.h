@@ -27,6 +27,7 @@ private:
 	QLabel *cpu_state;
 	QLabel *cpu_state_label;
 	QLabel *alarm;
+	QLabel *ips;
 
 	QAction *load, *start, *stop, *cycle, *bin, *clock;
 	QSpinBox *r[ECTL_REG_COUNT];
@@ -46,6 +47,8 @@ private slots:
 	void update_dasm_view();
 	void cpu_state_changed(int state);
 	void cpu_reg_changed(int reg);
+	void cpu_ips_update(unsigned long ips);
+	void cpu_alarm_update(bool a);
 
 	void load_os_image();
 };
