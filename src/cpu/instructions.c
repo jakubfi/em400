@@ -448,7 +448,7 @@ void op_71_exl()
 			log_log_cpu(L_OP, "EXL: %i (r4: 0x%04x)", ac, r[4]);
 		}
 		if (LOG_WANTS(L_CRK5)) {
-			log_handle_syscall(L_CRK5, ac, QNB, ic, r[4]);
+			log_handle_syscall(L_CRK5, ac, nb, ic, r[4]);
 		}
 	}
 

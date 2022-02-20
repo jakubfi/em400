@@ -89,7 +89,7 @@ expr:
 	VALUE					{ $$ = ectl_est_val($1); }
 	| REG					{ $$ = ectl_est_reg($1); }
 	| FLAG					{ $$ = ectl_est_flag($1); }
-	| '[' expr ']'			{ $$ = ectl_est_mem(ectl_est_val(QNB), $2); }
+	| '[' expr ']'			{ $$ = ectl_est_mem(ectl_est_val(q*nb), $2); }
 	| '[' expr ':' expr ']'	{ $$ = ectl_est_mem($2, $4); }
 	| IRZ '[' expr ']'		{ $$ = ectl_est_rz(ectl_est_eval($3)); }
 	| '-' expr %prec UMINUS	{ $$ = ectl_est_op(UMINUS, $2, NULL); }

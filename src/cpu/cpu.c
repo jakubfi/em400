@@ -396,7 +396,7 @@ static int cpu_do_cycle()
 			ac = r[IR_C];
 		} else {
 			if (!cpu_mem_read(q, ic, &ac)) {
-				LOGCPU(L_CPU, "    no mem, long arg fetch @ %i:0x%04x", QNB, ic);
+				LOGCPU(L_CPU, "    no mem, long arg fetch @ %i:0x%04x", q*nb, ic);
 				goto ineffective_memfail;
 			}
 			ic++;
@@ -429,7 +429,7 @@ static int cpu_do_cycle()
 	// D-mod
 	if ((flags & OP_FL_ARG_NORM) && IR_D) {
 		if (!cpu_mem_read(q, ac, &ac)) {
-			LOGCPU(L_CPU, "    no mem, indirect arg fetch @ %i:0x%04x", QNB, ar);
+			LOGCPU(L_CPU, "    no mem, indirect arg fetch @ %i:0x%04x", q*nb, ar);
 			goto ineffective_memfail;
 		} else {
 			ar = ac;
