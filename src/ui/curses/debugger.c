@@ -63,9 +63,9 @@ static void _dbg_sigint_handler(int signum)
 }
 
 // -----------------------------------------------------------------------
-int dbg_mem_get(int nb, uint16_t addr, uint16_t *data)
+int dbg_mem_read(int nb, uint16_t addr, uint16_t *data)
 {
-	return ectl_mem_get(nb, addr, data, 1);
+	return ectl_mem_read_n(nb, addr, data, 1);
 }
 
 // -----------------------------------------------------------------------
@@ -95,7 +95,7 @@ void * dbg_init(const char *call_name)
 		return NULL;
 	}
 
-	emd = emdas_create(EMD_ISET_MX16, dbg_mem_get);
+	emd = emdas_create(EMD_ISET_MX16, dbg_mem_read);
 	if (!emd) {
 		return NULL;
 	}

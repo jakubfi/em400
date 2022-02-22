@@ -189,7 +189,7 @@ int cmem_m9425_cmd(struct cmem_unit_proto_t *unit, int dir, int cmd, uint16_t *r
 int cmem_m9425_decode_cf_t(int addr, struct cmem_m9425_cf_t *cf)
 {
 	uint16_t data[7];
-	mem_mget(0, addr, data, 7);
+	mem_read(0, addr, data, 7);
 
 	cf->cf_len			= (data[0] & 0b0000111100000000) >> 8;
 	cf->cpu				= (data[0] & 0b0000000000010000) >> 4;

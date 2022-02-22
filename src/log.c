@@ -123,7 +123,7 @@ int log_init(em400_cfg *cfg)
 
 	// initialize deassembler
 	int cpu_mod = cfg_getbool(cfg, "cpu:modifications", CFG_DEFAULT_CPU_MODIFICATIONS);
-	emd = emdas_create(cpu_mod ? EMD_ISET_MX16 : EMD_ISET_MERA400, (emdas_getfun) mem_get);
+	emd = emdas_create(cpu_mod ? EMD_ISET_MX16 : EMD_ISET_MERA400, (emdas_getfun) mem_read_1);
 	if (!emd) {
 		LOGERR("Log deassembler initialization failed.");
 		goto cleanup;

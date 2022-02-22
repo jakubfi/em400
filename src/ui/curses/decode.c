@@ -51,7 +51,7 @@ char * decode_iv(int nb, uint16_t addr, int arg)
 	}
 
 	uint16_t data[33];
-	ectl_mem_get(nb, addr, data, 33);
+	ectl_mem_read_n(nb, addr, data, 33);
 
 	pos += sprintf(b+pos, "0  NMI        = 0x%04x    16 channel 4  = 0x%04x\n", data[0],  data[addr+16]);
 	pos += sprintf(b+pos, "1  mem parity = 0x%04x    17 channel 5  = 0x%04x\n", data[1],  data[addr+17]);

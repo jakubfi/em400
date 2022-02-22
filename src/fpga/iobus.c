@@ -662,7 +662,7 @@ void iob_pa_send()
 }
 
 // -----------------------------------------------------------------------
-bool iob_mem_get(int nb, uint16_t addr, uint16_t *data)
+bool iob_mem_read_1(int nb, uint16_t addr, uint16_t *data)
 {
 	int ret;
 	struct iob_msg *mo = (struct iob_msg *) calloc(1, sizeof(struct iob_msg));
@@ -691,7 +691,7 @@ bool iob_mem_get(int nb, uint16_t addr, uint16_t *data)
 }
 
 // -----------------------------------------------------------------------
-bool iob_mem_put(int nb, uint16_t addr, uint16_t data)
+bool iob_mem_write_1(int nb, uint16_t addr, uint16_t data)
 {
 	int ret;
 	struct iob_msg *mo = (struct iob_msg *) calloc(1, sizeof(struct iob_msg));
@@ -721,39 +721,35 @@ bool iob_mem_put(int nb, uint16_t addr, uint16_t data)
 }
 
 // -----------------------------------------------------------------------
-int iob_mem_mget(int nb, uint16_t saddr, uint16_t *dest, int count)
+bool iob_mem_read_n(int nb, uint16_t saddr, uint16_t *dest, int count)
 {
 	int ret;
-	int words = 0;
 	int cnt = 0;
 	uint16_t d;
 
 	while (cnt < count) {
-		ret = iob_mem_get(nb, saddr+cnt, &d);
-		if (!ret) break;
+		ret = iob_mem_read_1(nb, saddr+cnt, &d);
+		if (!ret) return false;
 		*(dest+cnt) = d;
-		words += ret;
 		cnt++;
 	}
 
-	return words;
+	return true;
 }
 
 // -----------------------------------------------------------------------
-int iob_mem_mput(int nb, uint16_t saddr, uint16_t *src, int count)
+bool iob_mem_write_n(int nb, uint16_t saddr, uint16_t *src, int count)
 {
 	int ret;
-	int words = 0;
 	int cnt = 0;
 
 	while (cnt < count) {
-		ret = iob_mem_put(nb, saddr+cnt, *(src+cnt));
-		if (!ret) break;
-		words += ret;
+		ret = iob_mem_write_1(nb, saddr+cnt, *(src+cnt));
+		if (!ret) return false;
 		cnt++;
 	}
 
-	return words;
+	return true;
 }
 
 // vim: tabstop=4 shiftwidth=4 autoindent

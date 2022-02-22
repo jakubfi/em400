@@ -150,7 +150,7 @@ int cp_reg_set(unsigned id, uint16_t v)
 }
 
 // -----------------------------------------------------------------------
-int cp_mem_mget(unsigned nb, uint16_t addr, uint16_t *data, unsigned count)
+bool cp_mem_read_n(unsigned nb, uint16_t addr, uint16_t *data, unsigned count)
 {
 	uint16_t old_sr = 0;
 	struct iob_cp_status *stat;
@@ -180,19 +180,19 @@ int cp_mem_mget(unsigned nb, uint16_t addr, uint16_t *data, unsigned count)
 			iob_cp_set_keys(old_sr);
 			iob_cp_set_fn(IOB_FN_LOAD, 1);
 		}
-		return count;
+		return true;
 	} else {
-		// TODO: can't use cpu_mem_mget, as it may fail in "cpu fashion" (with interrupt and all).
-		// cp_mem_mget() may be used by the interface to display stuff when cpu is RUN state too,
+		// TODO: can't use cpu_mem_read, as it may fail in "cpu fashion" (with interrupt and all).
+		// cp_mem_read() may be used by the interface to display stuff when cpu is RUN state too,
 		// and it could happen that ui tries to read unconfigured memory as well.
 		// On the other hand, access from control panel is a regular CPU memory access,
 		// thus it should use cpu_mem_get() and fail on unconfigured memory...
-		return mem_mget(nb, addr, data, count);
+		return mem_read_n(nb, addr, data, count);
 	}
 }
 
 // -----------------------------------------------------------------------
-int cp_mem_mput(unsigned nb, uint16_t addr, uint16_t *data, unsigned count)
+bool cp_mem_write_n(unsigned nb, uint16_t addr, uint16_t *data, unsigned count)
 {
 	uint16_t old_sr = 0;
 	struct iob_cp_status *stat;
@@ -221,9 +221,9 @@ int cp_mem_mput(unsigned nb, uint16_t addr, uint16_t *data, unsigned count)
 			iob_cp_set_keys(old_sr);
 			iob_cp_set_fn(IOB_FN_LOAD, 1);
 		}
-		return count;
+		return true;
 	} else {
-		return mem_mput(nb, addr, data, count);
+		return mem_write_n(nb, addr, data, count);
 	}
 }
 

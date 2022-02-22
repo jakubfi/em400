@@ -19,6 +19,7 @@
 #define CP_H
 
 #include <inttypes.h>
+#include <stdbool.h>
 
 #include "cfg.h"
 
@@ -27,8 +28,8 @@ void cp_shutdown();
 
 int cp_reg_get(unsigned id);
 int cp_reg_set(unsigned id, uint16_t v);
-int cp_mem_mget(unsigned nb, uint16_t addr, uint16_t *data, unsigned count);
-int cp_mem_mput(unsigned nb, uint16_t addr, uint16_t *data, unsigned count);
+bool cp_mem_read_n(unsigned nb, uint16_t addr, uint16_t *data, unsigned count);
+bool cp_mem_write_n(unsigned nb, uint16_t addr, uint16_t *data, unsigned count);
 void cp_stop();
 void cp_start();
 void cp_cycle();

@@ -95,8 +95,8 @@ struct mx {
 };
 
 int mx_int_enqueue(struct mx *multix, int intr, int line);
-bool mx_mem_mget(struct mx *multix, int nb, uint16_t addr, uint16_t *data, int len);
-bool mx_mem_mput(struct mx *multix, int nb, uint16_t addr, uint16_t *data, int len);
+bool mx_mem_read(struct mx *multix, int nb, uint16_t addr, uint16_t *data, int len);
+bool mx_mem_write(struct mx *multix, int nb, uint16_t addr, uint16_t *data, int len);
 
 #endif
 

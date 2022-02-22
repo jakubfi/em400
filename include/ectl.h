@@ -21,6 +21,7 @@
 #define ECTL_H
 
 #include <inttypes.h>
+#include <stdbool.h>
 #include <stdio.h>
 
 #ifdef __cplusplus
@@ -123,11 +124,11 @@ int ectl_reg_get(unsigned id);
 int ectl_reg_set(unsigned id, uint16_t val);
 
 // memory
-int ectl_mem_get(int seg, uint16_t addr, uint16_t *dest, unsigned count);
-int ectl_mem_set(int seg, uint16_t addr, uint16_t *src, unsigned count);
+bool ectl_mem_read_n(int seg, uint16_t addr, uint16_t *dest, unsigned count);
+bool ectl_mem_write_n(int seg, uint16_t addr, uint16_t *src, unsigned count);
 int ectl_mem_map(int seg);
 int ectl_mem_cfg(int nb, int ab, int mp, int seg);
-int ectl_load(FILE *f, const char *name, int seg, uint16_t saddr);
+bool ectl_load(FILE *f, const char *name, int seg, uint16_t saddr);
 int ectl_bin();
 
 // CPU state

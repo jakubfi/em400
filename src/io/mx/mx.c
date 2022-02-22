@@ -264,31 +264,25 @@ void mx_shutdown(void *ch)
 }
 
 // -----------------------------------------------------------------------
-bool mx_mem_mget(struct mx *multix, int nb, uint16_t addr, uint16_t *data, int len)
+bool mx_mem_read(struct mx *multix, int nb, uint16_t addr, uint16_t *data, int len)
 {
 	if (atom_load_acquire(&multix->state) == MX_UNINITIALIZED) {
 		LOG(L_MX, "LOST memory read due to multix initializing");
 		return true;
 	}
 
-	if (io_mem_mget(nb, addr, data, len) != len) {
-		return false;
-	}
-	return true;
+	return io_mem_read_n(nb, addr, data, len);
 }
 
 // -----------------------------------------------------------------------
-bool mx_mem_mput(struct mx *multix, int nb, uint16_t addr, uint16_t *data, int len)
+bool mx_mem_write(struct mx *multix, int nb, uint16_t addr, uint16_t *data, int len)
 {
 	if (atom_load_acquire(&multix->state) == MX_UNINITIALIZED) {
 		LOG(L_MX, "LOST memory write due to multix initializing");
 		return true;
 	}
 
-	if (io_mem_mput(nb, addr, data, len) != len) {
-		return false;
-	}
-	return true;
+	return io_mem_write_n(nb, addr, data, len);
 }
 
 // -----------------------------------------------------------------------
@@ -512,7 +506,7 @@ static int mx_cmd_setcfg(struct mx *multix, uint16_t addr)
 	}
 
 	// read configuration header
-	if (!mx_mem_mget(multix, 0, addr, data, 1)) {
+	if (!mx_mem_read(multix, 0, addr, data, 1)) {
 		ret_int = MX_IRQ_INKOT;
 		goto fail;
 	}
@@ -524,7 +518,7 @@ static int mx_cmd_setcfg(struct mx *multix, uint16_t addr)
 
 	// read line descriptions
 	read_size = phy_desc_count + 4*log_count;
-	if (!mx_mem_mget(multix, 0, addr+2, data, read_size)) {
+	if (!mx_mem_read(multix, 0, addr+2, data, read_size)) {
 		ret_int = MX_IRQ_INKOT;
 		goto fail;
 	}
@@ -595,7 +589,7 @@ fail:
 		if (ret_err != MX_SC_E_CONFSET) {
 			mx_lines_deinit(multix);
 		}
-		if (!mx_mem_mput(multix, 0, addr+1, &ret_err, 1)) {
+		if (!mx_mem_write(multix, 0, addr+1, &ret_err, 1)) {
 			ret_int = MX_IRQ_INKOT;
 		}
 	}

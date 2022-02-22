@@ -241,7 +241,7 @@ static void mx_line_process_cmd(struct mx_line *line, struct mx_event *ev)
 
 	// read command parameters if applicable
 	if ((cmd->input_flen > 0) && cmd->decode) {
-		if (!mx_mem_mget(line->multix, 0, cmd_data_addr, cmd_data, cmd->input_flen)) {
+		if (!mx_mem_read(line->multix, 0, cmd_data_addr, cmd_data, cmd->input_flen)) {
 			irq = MX_IRQ_INPAO;
 			goto fin;
 		}
@@ -259,7 +259,7 @@ fin:
 	// store command output if applicable
 	if ((cmd->output_flen > 0) && (cmd->encode) && (irq != MX_IRQ_INPAO)) {
 		cmd->encode(cmd_data + cmd->input_flen, line->proto_data);
-		if (!mx_mem_mput(line->multix, 0, cmd_data_addr + cmd->input_flen, cmd_data + cmd->input_flen, cmd->output_flen)) {
+		if (!mx_mem_write(line->multix, 0, cmd_data_addr + cmd->input_flen, cmd_data + cmd->input_flen, cmd->output_flen)) {
 			irq = MX_IRQ_INPAO;
 		}
 	}
@@ -343,7 +343,7 @@ void * mx_line_status_thread(void *ptr)
 			pthread_mutex_lock(&line->status_mutex);
 			log_line_status("Reporting line status", line->log_n, line->status, ev->id);
 			uint16_t status = line->status & 0xffff;
-			if (!mx_mem_mput(line->multix, 0, ev->arg, &status, 1)) {
+			if (!mx_mem_write(line->multix, 0, ev->arg, &status, 1)) {
 				mx_int_enqueue(line->multix, MX_IRQ_INPAO, line->log_n);
 			} else {
 				mx_int_enqueue(line->multix, MX_IRQ_ISTRE, line->log_n);

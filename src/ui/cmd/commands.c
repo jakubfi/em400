@@ -309,7 +309,11 @@ void ui_cmd_mem(FILE *out, char *args)
 	ui_cmd_resp(out, RESP_OK, UI_NOEOL, "");
 
 	while (processed < count) {
-		int words = ectl_mem_get(seg, addr+processed, mbuf, count-processed);
+		int words = count - processed;
+		if (!ectl_mem_read_n(seg, addr+processed, mbuf, words)) {
+			ui_cmd_resp(out, RESP_ERR, UI_EOL, "Memory read failed");
+			return;
+		}
 		for (int i=0 ; i<words ; i++) {
 			fprintf(out, " 0x%04x", mbuf[i]);
 		}
@@ -373,13 +377,12 @@ void ui_cmd_memw(FILE *out, char *args)
 		return;
 	}
 
-	int res = ectl_mem_set(seg, addr, mbuf, processed);
-	if (res != processed) {
-		ui_cmd_resp(out, RESP_ERR, UI_EOL, "Memory write failed at address 0x%04x (%i words written)", addr+res, res);
+	if (!ectl_mem_write_n(seg, addr, mbuf, processed)) {
+		ui_cmd_resp(out, RESP_ERR, UI_EOL, "Memory write failed when writing %i words at address 0x%04x", processed, addr);
 		return;
 	}
 
-	ui_cmd_resp(out, RESP_OK, UI_EOL, "%i words written", res);
+	ui_cmd_resp(out, RESP_OK, UI_EOL, "%i words written", processed);
 }
 
 // -----------------------------------------------------------------------
@@ -420,8 +423,8 @@ void ui_cmd_load(FILE *out, char *args)
 		return;
 	}
 
-	int res = ectl_load(f, tok_file, seg, addr);
-	if (res < 0) {
+	bool res = ectl_load(f, tok_file, seg, addr);
+	if (!res) {
 		ui_cmd_resp(out, RESP_ERR, UI_EOL, "File upload failed: %s", tok_file);
 	} else {
 		ui_cmd_resp(out, RESP_OK, UI_EOL, "%i words loaded from file %s", res, tok_file);

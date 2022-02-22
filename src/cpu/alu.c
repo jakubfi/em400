@@ -169,7 +169,7 @@ void awp_dispatch(int op, uint16_t arg)
 	if (awp_enabled) {
 		uint16_t n[3];
 		for (int i=0 ; i<awp_arg_count[op] ; i++) {
-			if (!cpu_mem_read(q, arg+i, n+i)) return;
+			if (!cpu_mem_read_1(q, arg+i, n+i)) return;
 		}
 		int res = 0;
 		switch (op) {
@@ -220,7 +220,7 @@ void awp_dispatch(int op, uint16_t arg)
 				break;
 		}
 	} else {
-		if (!cpu_mem_read(false, AWP_DISPATCH_TAB_ADDR+op, &ar)) return;
+		if (!cpu_mem_read_1(false, AWP_DISPATCH_TAB_ADDR+op, &ar)) return;
 		cpu_ctx_switch(arg, ar, MASK_9);
 	}
 }

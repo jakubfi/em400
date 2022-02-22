@@ -168,42 +168,42 @@ void io_int_set(int x)
 }
 
 // -----------------------------------------------------------------------
-bool io_mem_get(int nb, uint16_t addr, uint16_t *data)
+bool io_mem_read_1(int nb, uint16_t addr, uint16_t *data)
 {
 	if (fpga) {
-		return iob_mem_get(nb, addr, data);
+		return iob_mem_read_1(nb, addr, data);
 	} else {
-		return mem_get(nb, addr, data);
+		return mem_read_1(nb, addr, data);
 	}
 }
 
 // -----------------------------------------------------------------------
-bool io_mem_put(int nb, uint16_t addr, uint16_t data)
+bool io_mem_write_1(int nb, uint16_t addr, uint16_t data)
 {
 	if (fpga) {
-		return iob_mem_put(nb, addr, data);
+		return iob_mem_write_1(nb, addr, data);
 	} else {
-		return mem_put(nb, addr, data);
+		return mem_write_1(nb, addr, data);
 	}
 }
 
 // -----------------------------------------------------------------------
-int io_mem_mget(int nb, uint16_t saddr, uint16_t *dest, int count)
+bool io_mem_read_n(int nb, uint16_t saddr, uint16_t *dest, int count)
 {
 	if (fpga) {
-		return iob_mem_mget(nb, saddr, dest, count);
+		return iob_mem_read_n(nb, saddr, dest, count);
 	} else {
-		return mem_mget(nb, saddr, dest, count);
+		return mem_read_n(nb, saddr, dest, count);
 	}
 }
 
 // -----------------------------------------------------------------------
-int io_mem_mput(int nb, uint16_t saddr, uint16_t *src, int count)
+bool io_mem_write_n(int nb, uint16_t saddr, uint16_t *src, int count)
 {
 	if (fpga) {
-		return iob_mem_mput(nb, saddr, src, count);
+		return iob_mem_read_n(nb, saddr, src, count);
 	} else {
-		return mem_mput(nb, saddr, src, count);
+		return mem_write_n(nb, saddr, src, count);
 	}
 }
 

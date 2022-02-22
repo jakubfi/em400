@@ -102,10 +102,10 @@ void iob_loop();
 void iob_reply_send(int bus, struct iob_msg *mi, int io_res);
 void iob_int_send(int x);
 void iob_pa_send();
-bool iob_mem_get(int nb, uint16_t addr, uint16_t *data);
-bool iob_mem_put(int nb, uint16_t addr, uint16_t data);
-int iob_mem_mget(int nb, uint16_t saddr, uint16_t *dest, int count);
-int iob_mem_mput(int nb, uint16_t saddr, uint16_t *src, int count);
+bool iob_mem_read_1(int nb, uint16_t addr, uint16_t *data);
+bool iob_mem_write_1(int nb, uint16_t addr, uint16_t data);
+bool iob_mem_read_n(int nb, uint16_t saddr, uint16_t *dest, int count);
+bool iob_mem_write_n(int nb, uint16_t saddr, uint16_t *src, int count);
 
 void iob_cp_set_keys(uint16_t k);
 void iob_cp_set_rotary(int r);

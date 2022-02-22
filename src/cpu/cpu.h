@@ -83,8 +83,8 @@ extern bool cpu_mod_active;
 extern bool cpu_user_io_illegal;
 extern bool awp_enabled;
 
-bool cpu_mem_read(bool barnb, uint16_t addr, uint16_t *data);
-bool cpu_mem_write(bool barnb, uint16_t addr, uint16_t data);
+bool cpu_mem_read_1(bool barnb, uint16_t addr, uint16_t *data);
+bool cpu_mem_write_1(bool barnb, uint16_t addr, uint16_t data);
 
 int cpu_init(em400_cfg *cfg);
 void cpu_shutdown();

@@ -131,17 +131,17 @@ int ectl_reg_set(unsigned id, uint16_t val)
 }
 
 // -----------------------------------------------------------------------
-int ectl_mem_get(int seg, uint16_t addr, uint16_t *dest, unsigned count)
+bool ectl_mem_read_n(int seg, uint16_t addr, uint16_t *dest, unsigned count)
 {
-	LOG(L_ECTL, "ECTL mem get: %i:0x%04x, %i words", seg, addr, count);
-	return cp_mem_mget(seg, addr, dest, count);
+	LOG(L_ECTL, "ECTL mem read: %i:0x%04x, %i words", seg, addr, count);
+	return cp_mem_read_n(seg, addr, dest, count);
 }
 
 // -----------------------------------------------------------------------
-int ectl_mem_set(int seg, uint16_t addr, uint16_t *src, unsigned count)
+bool ectl_mem_write_n(int seg, uint16_t addr, uint16_t *src, unsigned count)
 {
-	LOG(L_ECTL, "ECTL mem set: %i:0x%04x, %i words", seg, addr, count);
-	return cp_mem_mput(seg, addr, src, count);
+	LOG(L_ECTL, "ECTL mem write: %i:0x%04x, %i words", seg, addr, count);
+	return cp_mem_write_n(seg, addr, src, count);
 }
 
 // -----------------------------------------------------------------------
@@ -322,25 +322,37 @@ int ectl_capa()
 }
 
 // -----------------------------------------------------------------------
-int ectl_load(FILE *f, const char *name, int seg, uint16_t saddr)
+bool ectl_load(FILE *f, const char *name, int seg, uint16_t saddr)
 {
 	LOG(L_ECTL, "ECTL load: %i:0x%04x %s", seg, saddr, name);
+
+	bool res = false;
 	uint16_t *bufw = (uint16_t *) malloc(sizeof(uint16_t) * 0x10000);
 	uint16_t *bufr = (uint16_t *) malloc(sizeof(uint16_t) * 0x10000);
 
-	int res = fread(bufw, sizeof(uint16_t), 0x10000, f);
-	if (res > 0) {
-		endianswap(bufw, res);
-		res = ectl_mem_set(seg, saddr, bufw, res);
-		LOG(L_ECTL, "ECTL verify");
-		ectl_mem_get(seg, saddr, bufr, res);
-		int cmpres = memcmp(bufw, bufr, res * sizeof(uint16_t));
-		LOG(L_ECTL, "ECTL verify (%i words): %s", res, cmpres ? "FAILED" : "OK");
-		if (cmpres != 0) {
-			res = -1;
-		}
+	int words_read = fread(bufw, sizeof(uint16_t), 0x10000, f);
+	if (words_read <= 0) {
+		LOG(L_ECTL, "ECTL load failed to read from file");
+		goto cleanup;
+	}
+	endianswap(bufw, words_read);
+	if (!ectl_mem_write_n(seg, saddr, bufw, words_read)) {
+		LOG(L_ECTL, "ECTL load failed to write memory");
+		goto cleanup;
+	}
+	LOG(L_ECTL, "ECTL load verify start");
+	if (!ectl_mem_read_n(seg, saddr, bufr, words_read)) {
+		LOG(L_ECTL, "ECTL load failed to readmemory");
+		goto cleanup;
+	}
+	int cmpres = memcmp(bufw, bufr, words_read * sizeof(uint16_t));
+	LOG(L_ECTL, "ECTL load verify (%i words): %s", words_read, cmpres ? "FAILED" : "OK");
+	if (cmpres != 0) {
+		goto cleanup;
 	}
 
+	res = true;
+cleanup:
 	free(bufw);
 	free(bufr);
 	return res;

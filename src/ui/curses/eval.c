@@ -284,7 +284,7 @@ int16_t n_eval_ass(struct node_t * n)
 		case N_MEM:
 			nb = n_eval(n->n1->n1);
 			addr = n_eval(n->n1->n2);
-			res = ectl_mem_set(nb, addr, (uint16_t*)&v, 1);
+			res = ectl_mem_write_n(nb, addr, (uint16_t*)&v, 1);
 			if (res) {
 				return v;
 			} else {
@@ -309,7 +309,7 @@ int16_t n_eval_mem(struct node_t *n)
 	uint16_t addr = n_eval(n->n2);
 	int res;
 	uint16_t data;
-	res = ectl_mem_get(nb, addr, &data, 1);
+	res = ectl_mem_read_n(nb, addr, &data, 1);
 	if (res) {
 		return data;
 	} else {

@@ -211,7 +211,7 @@ static void * it_cmdproc(void *ptr)
 					case CMD_WM:
 						LOG(L_IO, "single: buf[0x%04x] -> [%i:0x%04x], %i words", ab, nb, am, r);
 						for (int i=0 ; i<r ; i++) {
-							res = io_mem_put(nb, am+i, buf[ab+i]);
+							res = io_mem_write_1(nb, am+i, buf[ab+i]);
 							if (!res) break;
 						}
 						atom_store_release(&it->intspec, res);
@@ -220,7 +220,7 @@ static void * it_cmdproc(void *ptr)
 					case CMD_RM:
 						LOG(L_IO, "single: [%i:0x%04x] -> buf[0x%04x], %i words", nb, am, ab, r);
 						for (int i=0 ; i<r ; i++) {
-							res = io_mem_get(nb, am+i, buf+ab+i);
+							res = io_mem_read_1(nb, am+i, buf+ab+i);
 							if (!res) break;
 						}
 						atom_store_release(&it->intspec, res);
@@ -228,13 +228,13 @@ static void * it_cmdproc(void *ptr)
 						break;
 					case CMD_WMM:
 						LOG(L_IO, "multi: buf[0x%04x] -> [%i:0x%04x], %i words", ab, nb, am, r);
-						res = io_mem_mput(nb, am, buf+ab, r);
+						res = io_mem_write_n(nb, am, buf+ab, r);
 						atom_store_release(&it->intspec, res);
 						io_int_set(it->chnum);
 						break;
 					case CMD_RMM:
 						LOG(L_IO, "multi: [%i:0x%04x] -> buf[0x%04x], %i words", nb, am, ab, r);
-						res = io_mem_mget(nb, am, buf+ab, r);
+						res = io_mem_read_n(nb, am, buf+ab, r);
 						atom_store_release(&it->intspec, res);
 						io_int_set(it->chnum);
 						break;

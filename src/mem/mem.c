@@ -139,7 +139,7 @@ bool mem_mega_boot()
 }
 
 // -----------------------------------------------------------------------
-bool mem_get(int nb, uint16_t addr, uint16_t *data)
+bool mem_read_1(int nb, uint16_t addr, uint16_t *data)
 {
 	uint16_t *ptr = mem_ptr(nb, addr);
 	if (ptr) {
@@ -151,7 +151,7 @@ bool mem_get(int nb, uint16_t addr, uint16_t *data)
 }
 
 // -----------------------------------------------------------------------
-bool mem_put(int nb, uint16_t addr, uint16_t data)
+bool mem_write_1(int nb, uint16_t addr, uint16_t data)
 {
 	uint16_t *ptr = mem_ptr(nb, addr);
 	if (ptr) {
@@ -165,35 +165,33 @@ bool mem_put(int nb, uint16_t addr, uint16_t data)
 }
 
 // -----------------------------------------------------------------------
-int mem_mget(int nb, uint16_t saddr, uint16_t *dest, int count)
+bool mem_read_n(int nb, uint16_t saddr, uint16_t *dest, int count)
 {
-	int i;
-	for (i=0 ; i<count ; i++) {
-		uint16_t *ptr = mem_ptr(nb, saddr+i);
+	for ( ; count>0 ; count--, saddr++, dest++) {
+		uint16_t *ptr = mem_ptr(nb, saddr);
 		if (ptr) {
-			dest[i] = *ptr;
+			*dest = *ptr;
 		} else {
-			break;
+			return false;
 		}
 	}
-	return i;
+	return true;
 }
 
 // -----------------------------------------------------------------------
-int mem_mput(int nb, uint16_t saddr, uint16_t *src, int count)
+bool mem_write_n(int nb, uint16_t saddr, uint16_t *src, int count)
 {
-	int i;
-	for (i=0 ; i<count ; i++) {
-		uint16_t *ptr = mem_ptr(nb, saddr+i);
+	for ( ; count>0 ; count--, saddr++, src++) {
+		uint16_t *ptr = mem_ptr(nb, saddr);
 		if (ptr) {
-			if (!mem_mega_prom || (mem_map[nb][(saddr+i)>>12] != mem_mega_prom)) {
-				*ptr = src[i];
+			if (!mem_mega_prom || (mem_map[nb][saddr>>12] != mem_mega_prom)) {
+				*ptr = *src;
 			}
 		} else {
-			break;
+			return false;
 		}
 	}
-	return i;
+	return true;
 }
 
 // -----------------------------------------------------------------------

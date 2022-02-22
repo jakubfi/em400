@@ -215,7 +215,7 @@ int ectl_est_eval_mem(struct ectl_est *n)
 	}
 
 	uint16_t data;
-	if (cp_mem_mget(nb, addr, &data, 1) == 0) {
+	if (!cp_mem_read_n(nb, addr, &data, 1)) {
 		return __esterr(n, "Memory at %i:%i is not configured", nb, addr);
 	}
 

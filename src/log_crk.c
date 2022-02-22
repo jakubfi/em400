@@ -299,7 +299,7 @@ static int log_print_mem(char *b, int nb, uint16_t addr, int max_len, int termin
 		if (chars >= max_len) break;
 		if (need) {
 			need = 0;
-			if (!mem_get(nb, addr, &word)) break;
+			if (!mem_read_1(nb, addr, &word)) break;
 			addr++;
 			ch = word >> 8;
 		} else {
@@ -537,7 +537,7 @@ static char * log_exl_decode(int nb, uint16_t addr, uint16_t r4_curr, int exl_nu
 			return buf;
 		}
 
-		if (mem_mget(nb, addr, data, exl->size) != exl->size) {
+		if (!mem_read_n(nb, addr, data, exl->size)) {
 			return buf;
 		}
 
@@ -605,11 +605,11 @@ void log_update_process()
 
 	if (!kernel) return;
 
-	if (!mem_get(0, CRK5_BPROG, &bprog)) {
+	if (!mem_read_1(0, CRK5_BPROG, &bprog)) {
 		return;
 	}
 
-	if (mem_mget(0, bprog, buf, CRK5P_PROCESS_SIZE) != CRK5P_PROCESS_SIZE) {
+	if (!mem_read_n(0, bprog, buf, CRK5P_PROCESS_SIZE)) {
 		return;
 	}
 
@@ -628,7 +628,7 @@ void log_check_os()
 		goto cleanup;
 	}
 
-	if (mem_mget(0, 0, kimg, 2*4096) != 2*4096) {
+	if (!mem_read_n(0, 0, kimg, 2*4096)) {
 		goto cleanup;
 	}
 
