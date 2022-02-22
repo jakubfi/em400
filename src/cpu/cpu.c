@@ -314,7 +314,7 @@ void cpu_ctx_restore()
 }
 
 // -----------------------------------------------------------------------
-static int cpu_do_bin(int start)
+static bool cpu_do_bin(bool start)
 {
 	static int words = 0;
 	static uint16_t data;
@@ -325,7 +325,7 @@ static int cpu_do_bin(int start)
 		LOG(L_CPU, "Binary load initiated @ 0x%04x", ar);
 		words = 0;
 		cnt = 0;
-		return 0;
+		return false;
 	}
 
 	int res = io_dispatch(IO_IN, ic, &data);
@@ -333,7 +333,7 @@ static int cpu_do_bin(int start)
 		bdata[cnt] = data & 0xff;
 		if ((cnt == 0) && bin_is_end(bdata[cnt])) {
 			LOG(L_CPU, "Binary load done, %i words loaded", words);
-			return 1;
+			return true;
 		} else if (bin_is_valid(bdata[cnt])) {
 			cnt++;
 			if (cnt >= 3) {
@@ -346,7 +346,7 @@ static int cpu_do_bin(int start)
 		}
 	}
 
-	return 0;
+	return false;
 }
 
 // -----------------------------------------------------------------------
@@ -532,7 +532,7 @@ void cpu_loop()
 				cpu_state_change(ECTL_STATE_STOP, ECTL_STATE_CLO);
 				break;
 			case ECTL_STATE_BIN:
-				if (cpu_do_bin(0)) cpu_state_change(ECTL_STATE_STOP, ECTL_STATE_BIN);
+				if (cpu_do_bin(false)) cpu_state_change(ECTL_STATE_STOP, ECTL_STATE_BIN);
 				break;
 			case ECTL_STATE_STOP:
 				if (sound_enabled) buzzer_stop();
@@ -542,7 +542,7 @@ void cpu_loop()
 					clock_gettime(CLOCK_MONOTONIC, &cpu_timer);
 					cpu_time_cumulative = 0;
 				} else if (res == ECTL_STATE_BIN) {
-					cpu_do_bin(1); // initiate binary load
+					cpu_do_bin(true); // initiate binary load
 				}
 				break;
 			case ECTL_STATE_WAIT:
