@@ -277,25 +277,23 @@ static void cpu_do_clear(int scope)
 }
 
 // -----------------------------------------------------------------------
-int cpu_ctx_switch(uint16_t arg, uint16_t new_ic, uint16_t int_mask)
+void cpu_ctx_switch(uint16_t arg, uint16_t new_ic, uint16_t int_mask)
 {
-	if (!cpu_mem_read(false, STACK_POINTER, &ar)) return 0;
+	if (!cpu_mem_read(false, STACK_POINTER, &ar)) return;
 
 	LOG(L_CPU, "Store current process ctx [IC: 0x%04x, R0: 0x%04x, SR: 0x%04x, 0x%04x] @ 0x%04x, set new IC: 0x%04x", ic, r[0], SR_READ(), arg, ar, new_ic);
 
-	if (!cpu_mem_write(false, ar, ic)) return 0;
-	if (!cpu_mem_write(false, ++ar, r[0])) return 0;
-	if (!cpu_mem_write(false, ++ar, SR_READ())) return 0;
-	if (!cpu_mem_write(false, ++ar, arg)) return 0;
-	if (!cpu_mem_write(false, STACK_POINTER, ++ar)) return 0;
+	if (!cpu_mem_write(false, ar, ic)) return;
+	if (!cpu_mem_write(false, ++ar, r[0])) return;
+	if (!cpu_mem_write(false, ++ar, SR_READ())) return;
+	if (!cpu_mem_write(false, ++ar, arg)) return;
+	if (!cpu_mem_write(false, STACK_POINTER, ++ar)) return;
 
 	r[0] = 0;
 	ic = new_ic;
 	q = false;
 	rm &= int_mask;
 	int_update_mask(rm);
-
-	return 1;
 }
 
 // -----------------------------------------------------------------------

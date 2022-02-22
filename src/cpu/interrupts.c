@@ -229,7 +229,7 @@ void int_serve()
 	}
 
 	// switch context
-	if (!cpu_ctx_switch(int_spec, int_vec, int_mask)) return;
+	cpu_ctx_switch(int_spec, int_vec, int_mask);
 
 	if (LOG_ENABLED) log_intlevel_inc();
 }
