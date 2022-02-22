@@ -42,8 +42,8 @@ int mem_cmd(uint16_t n, uint16_t r);
 void mem_reset();
 bool mem_mega_boot();
 
-int mem_get(int nb, uint16_t addr, uint16_t *data);
-int mem_put(int nb, uint16_t addr, uint16_t data);
+bool mem_get(int nb, uint16_t addr, uint16_t *data);
+bool mem_put(int nb, uint16_t addr, uint16_t data);
 int mem_mget(int nb, uint16_t saddr, uint16_t *dest, int count);
 int mem_mput(int nb, uint16_t saddr, uint16_t *src, int count);
 

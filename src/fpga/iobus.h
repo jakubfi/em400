@@ -19,6 +19,7 @@
 #define __FPGA_H
 
 #include <inttypes.h>
+#include <stdbool.h>
 #include "cfg.h"
 
 struct iob_msg {
@@ -101,8 +102,8 @@ void iob_loop();
 void iob_reply_send(int bus, struct iob_msg *mi, int io_res);
 void iob_int_send(int x);
 void iob_pa_send();
-int iob_mem_get(int nb, uint16_t addr, uint16_t *data);
-int iob_mem_put(int nb, uint16_t addr, uint16_t data);
+bool iob_mem_get(int nb, uint16_t addr, uint16_t *data);
+bool iob_mem_put(int nb, uint16_t addr, uint16_t data);
 int iob_mem_mget(int nb, uint16_t saddr, uint16_t *dest, int count);
 int iob_mem_mput(int nb, uint16_t saddr, uint16_t *src, int count);
 

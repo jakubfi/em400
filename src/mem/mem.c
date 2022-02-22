@@ -139,19 +139,19 @@ bool mem_mega_boot()
 }
 
 // -----------------------------------------------------------------------
-int mem_get(int nb, uint16_t addr, uint16_t *data)
+bool mem_get(int nb, uint16_t addr, uint16_t *data)
 {
 	uint16_t *ptr = mem_ptr(nb, addr);
 	if (ptr) {
 		*data = *ptr;
 	} else {
-		return 0;
+		return false;
 	}
-	return 1;
+	return true;
 }
 
 // -----------------------------------------------------------------------
-int mem_put(int nb, uint16_t addr, uint16_t data)
+bool mem_put(int nb, uint16_t addr, uint16_t data)
 {
 	uint16_t *ptr = mem_ptr(nb, addr);
 	if (ptr) {
@@ -159,9 +159,9 @@ int mem_put(int nb, uint16_t addr, uint16_t data)
 			*ptr = data;
 		}
 	} else {
-		return 0;
+		return false;
 	}
-	return 1;
+	return true;
 }
 
 // -----------------------------------------------------------------------

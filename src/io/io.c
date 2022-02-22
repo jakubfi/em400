@@ -168,7 +168,7 @@ void io_int_set(int x)
 }
 
 // -----------------------------------------------------------------------
-int io_mem_get(int nb, uint16_t addr, uint16_t *data)
+bool io_mem_get(int nb, uint16_t addr, uint16_t *data)
 {
 	if (fpga) {
 		return iob_mem_get(nb, addr, data);
@@ -178,7 +178,7 @@ int io_mem_get(int nb, uint16_t addr, uint16_t *data)
 }
 
 // -----------------------------------------------------------------------
-int io_mem_put(int nb, uint16_t addr, uint16_t data)
+bool io_mem_put(int nb, uint16_t addr, uint16_t data)
 {
 	if (fpga) {
 		return iob_mem_put(nb, addr, data);

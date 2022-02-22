@@ -662,7 +662,7 @@ void iob_pa_send()
 }
 
 // -----------------------------------------------------------------------
-int iob_mem_get(int nb, uint16_t addr, uint16_t *data)
+bool iob_mem_get(int nb, uint16_t addr, uint16_t *data)
 {
 	int ret;
 	struct iob_msg *mo = (struct iob_msg *) calloc(1, sizeof(struct iob_msg));
@@ -679,9 +679,9 @@ int iob_mem_get(int nb, uint16_t addr, uint16_t *data)
 
 	if (mi->cmd == IOB_CMD_OK) {
 		*data = mi->dt;
-		ret = 1;
+		ret = true;
 	} else {
-		ret = 0;
+		ret = false;
 	}
 
 	iob_msg_free(mi);
@@ -691,7 +691,7 @@ int iob_mem_get(int nb, uint16_t addr, uint16_t *data)
 }
 
 // -----------------------------------------------------------------------
-int iob_mem_put(int nb, uint16_t addr, uint16_t data)
+bool iob_mem_put(int nb, uint16_t addr, uint16_t data)
 {
 	int ret;
 	struct iob_msg *mo = (struct iob_msg *) calloc(1, sizeof(struct iob_msg));
@@ -709,9 +709,9 @@ int iob_mem_put(int nb, uint16_t addr, uint16_t data)
 	struct iob_msg *mi = iob_dialog(mo);
 
 	if (mi->cmd == IOB_CMD_OK) {
-		ret = 1;
+		ret = true;
 	} else {
-		ret = 0;
+		ret = false;
 	}
 
 	iob_msg_free(mi);

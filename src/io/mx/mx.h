@@ -19,6 +19,7 @@
 #define MX_H
 
 #include <inttypes.h>
+#include <stdbool.h>
 #include <pthread.h>
 
 #include "utils/elst.h"
@@ -94,8 +95,8 @@ struct mx {
 };
 
 int mx_int_enqueue(struct mx *multix, int intr, int line);
-int mx_mem_mget(struct mx *multix, int nb, uint16_t addr, uint16_t *data, int len);
-int mx_mem_mput(struct mx *multix, int nb, uint16_t addr, uint16_t *data, int len);
+bool mx_mem_mget(struct mx *multix, int nb, uint16_t addr, uint16_t *data, int len);
+bool mx_mem_mput(struct mx *multix, int nb, uint16_t addr, uint16_t *data, int len);
 
 #endif
 

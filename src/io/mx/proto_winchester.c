@@ -230,7 +230,7 @@ static int mx_winch_read(struct mx *multix, struct mx_line *line, const struct d
 
 		// copy read data into system memory, swapping byte order
 		endianswap((uint16_t*)line->buf, transmit);
-		if (mx_mem_mput(multix, proto_data->transmit.nb, proto_data->transmit.addr + proto_data->ret_len, (uint16_t*)(line->buf), transmit)) {
+		if (!mx_mem_mput(multix, proto_data->transmit.nb, proto_data->transmit.addr + proto_data->ret_len, (uint16_t*)(line->buf), transmit)) {
 			return MX_IRQ_INPAO;
 		}
 
@@ -256,7 +256,7 @@ static int mx_winch_write(struct mx *multix, struct mx_line *line, const struct 
 		if (transmit > 256) transmit = 256;
 
 		// fill buffer with data to write
-		if (mx_mem_mget(multix, proto_data->transmit.nb, proto_data->transmit.addr + proto_data->ret_len, (uint16_t*)line->buf, transmit)) {
+		if (!mx_mem_mget(multix, proto_data->transmit.nb, proto_data->transmit.addr + proto_data->ret_len, (uint16_t*)line->buf, transmit)) {
 			return MX_IRQ_INPAO;
 		}
 		endianswap((uint16_t*)line->buf, transmit);
