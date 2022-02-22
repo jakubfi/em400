@@ -97,7 +97,7 @@ void mem_elwro_reset()
 }
 
 // -----------------------------------------------------------------------
-void mem_elwro_seg_set(int nb, int ab, struct mem_slot_t *slot)
+uint16_t * mem_elwro_get_seg_ptr(int nb, int ab)
 {
 	int mp, seg;
 
@@ -105,12 +105,11 @@ void mem_elwro_seg_set(int nb, int ab, struct mem_slot_t *slot)
 	for (mp=mem_elwro_mp_start ; mp<=mem_elwro_mp_end ; mp++) {
 		for (seg=0 ; seg<MEM_MAX_ELWRO_SEGMENTS ; seg++) {
 			if (mem_elwro_ral[mp][seg] == RAL(nb, ab)) {
-				slot->seg = mem_elwro[mp][seg];
-				return;
+				return mem_elwro[mp][seg];
 			}
 		}
 	}
-	slot->seg = NULL;
+	return NULL;
 }
 
 // -----------------------------------------------------------------------

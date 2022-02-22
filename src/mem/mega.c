@@ -119,17 +119,17 @@ void mem_mega_reset()
 }
 
 // -----------------------------------------------------------------------
-void mem_mega_seg_set(int nb, int ab, struct mem_slot_t *slot)
+uint16_t * mem_mega_get_seg_ptr(int nb, int ab)
 {
 	// if PROM is shown, use it, ignore mem_mega_init_done
 	if ((nb == 0) && (ab == 15) && !mem_mega_prom_hidden) {
-		slot->seg = mem_mega_prom;
+		return mem_mega_prom;
 	// if MEGA configuration is not done, all memory access fails
 	} else if (!mem_mega_init_done) {
-		slot->seg = NULL;
-	// return segment pointer as internal MEGA configuration says
+		return NULL;
+	// otherwise return segment pointer as internal MEGA configuration says
 	} else {
-		slot->seg = mem_mega_map[nb][ab];
+		return mem_mega_map[nb][ab];
 	}
 }
 

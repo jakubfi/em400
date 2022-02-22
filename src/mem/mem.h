@@ -30,11 +30,7 @@
 #define MEM_MAX_NB 16				// logical blocks
 #define MEM_MAX_AB 16				// logical segments in a logical block
 
-struct mem_slot_t {
-	uint16_t *seg;
-};
-
-extern struct mem_slot_t mem_map[MEM_MAX_NB][MEM_MAX_AB];
+extern uint16_t * mem_map[MEM_MAX_NB][MEM_MAX_AB];
 
 int mem_init(em400_cfg *cfg);
 void mem_shutdown();

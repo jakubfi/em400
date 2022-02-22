@@ -39,7 +39,7 @@ extern uint16_t *mem_mega_prom;	// this needs to be visible, we check in mem_put
 int mem_mega_init(int modc, const char *prom_image);
 void mem_mega_shutdown();
 void mem_mega_reset();
-void mem_mega_seg_set(int nb, int ab, struct mem_slot_t *slot);
+uint16_t * mem_mega_get_seg_ptr(int nb, int ab);
 int mem_mega_cmd(int nb, int ab, int mp, int seg, int flags);
 
 #endif

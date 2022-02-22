@@ -32,7 +32,7 @@
 
 #include "log.h"
 
-struct mem_slot_t mem_map[MEM_MAX_NB][MEM_MAX_AB];	// final (as seen by emulation) logical->physical segment mapping
+uint16_t * mem_map[MEM_MAX_NB][MEM_MAX_AB]; // final (as seen by emulation) logical->physical segment mapping
 
 static int mega_modules = 0;
 static bool mega_boot = false;
@@ -40,7 +40,7 @@ static bool mega_boot = false;
 // -----------------------------------------------------------------------
 static uint16_t *mem_ptr(int nb, uint16_t addr)
 {
-	uint16_t *seg_ptr = mem_map[nb][addr >> 12].seg;
+	uint16_t *seg_ptr = mem_map[nb][addr >> 12];
 	return seg_ptr ? seg_ptr + (addr & 0b0000111111111111) : NULL;
 }
 
@@ -49,9 +49,9 @@ void mem_update_map()
 {
 	for (int nb=0 ; nb<MEM_MAX_NB ; nb++) {
 		for (int ab=0 ; ab<MEM_MAX_AB ; ab++) {
-			mem_elwro_seg_set(nb, ab, &mem_map[nb][ab]);
-			if (!mem_map[nb][ab].seg) {
-				mem_mega_seg_set(nb, ab, &mem_map[nb][ab]);
+			mem_map[nb][ab] = mem_elwro_get_seg_ptr(nb, ab);
+			if (!mem_map[nb][ab]) {
+				mem_map[nb][ab] = mem_mega_get_seg_ptr(nb, ab);
 			}
 		}
 	}
@@ -132,7 +132,7 @@ void mem_reset()
 // -----------------------------------------------------------------------
 bool mem_mega_boot()
 {
-	if (mega_boot && mem_mega_prom && (mem_map[0][15].seg == mem_mega_prom)) {
+	if (mega_boot && mem_mega_prom && (mem_map[0][15] == mem_mega_prom)) {
 		return true;
 	}
 	return false;
@@ -155,7 +155,7 @@ bool mem_put(int nb, uint16_t addr, uint16_t data)
 {
 	uint16_t *ptr = mem_ptr(nb, addr);
 	if (ptr) {
-		if (!mem_mega_prom || (mem_map[nb][addr>>12].seg != mem_mega_prom)) {
+		if (!mem_mega_prom || (mem_map[nb][addr>>12] != mem_mega_prom)) {
 			*ptr = data;
 		}
 	} else {
@@ -186,7 +186,7 @@ int mem_mput(int nb, uint16_t saddr, uint16_t *src, int count)
 	for (i=0 ; i<count ; i++) {
 		uint16_t *ptr = mem_ptr(nb, saddr+i);
 		if (ptr) {
-			if (!mem_mega_prom || (mem_map[nb][(saddr+i)>>12].seg != mem_mega_prom)) {
+			if (!mem_mega_prom || (mem_map[nb][(saddr+i)>>12] != mem_mega_prom)) {
 				*ptr = src[i];
 			}
 		} else {
@@ -201,7 +201,7 @@ uint16_t mem_get_map(int seg)
 {
 	uint16_t map = 0;
 	for (int page=0 ; page<MEM_MAX_AB ; page++) {
-		if (mem_map[seg][page].seg) {
+		if (mem_map[seg][page]) {
 			map |= 1 << page;
 		}
 	}

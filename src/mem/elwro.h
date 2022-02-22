@@ -29,7 +29,7 @@ extern uint16_t *mem_elwro[MEM_MAX_MODULES][MEM_MAX_ELWRO_SEGMENTS];
 int mem_elwro_init(int modc, int osc);
 void mem_elwro_shutdown();
 void mem_elwro_reset();
-void mem_elwro_seg_set(int nb, int ab, struct mem_slot_t *slot);
+uint16_t * mem_elwro_get_seg_ptr(int nb, int ab);
 int mem_elwro_cmd(int nb, int ab, int mp, int seg);
 
 #endif
