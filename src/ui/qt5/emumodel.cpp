@@ -147,14 +147,14 @@ void EmuModel::on_ips_timer_timeout()
 // -----------------------------------------------------------------------
 int EmuModel::get_mem(int nb, int addr, uint16_t *m, int count)
 {
-	return ectl_mem_get(nb, addr, m, count);
+	return ectl_mem_read_n(nb, addr, m, count);
 }
 
 // -----------------------------------------------------------------------
 int EmuModel::get_mem(int nb, int addr)
 {
 	uint16_t v;
-	if (ectl_mem_get(nb, addr, &v, 1)) {
+	if (ectl_mem_read_n(nb, addr, &v, 1)) {
 		return v;
 	} else {
 		return -1;
