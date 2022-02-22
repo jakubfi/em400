@@ -130,13 +130,12 @@ void mem_reset()
 }
 
 // -----------------------------------------------------------------------
-int mem_mega_boot()
+bool mem_mega_boot()
 {
 	if (mega_boot && mem_mega_prom && (mem_map[0][15].seg == mem_mega_prom)) {
-		return 1;
-	} else {
-		return 0;
+		return true;
 	}
+	return false;
 }
 
 // -----------------------------------------------------------------------

@@ -19,6 +19,7 @@
 #define MEMORY_H
 
 #include <inttypes.h>
+#include <stdbool.h>
 #include <stdio.h>
 
 #include "cfg.h"
@@ -39,7 +40,7 @@ int mem_init(em400_cfg *cfg);
 void mem_shutdown();
 int mem_cmd(uint16_t n, uint16_t r);
 void mem_reset();
-int mem_mega_boot();
+bool mem_mega_boot();
 
 int mem_get(int nb, uint16_t addr, uint16_t *data);
 int mem_put(int nb, uint16_t addr, uint16_t data);
