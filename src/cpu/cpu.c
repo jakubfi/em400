@@ -283,11 +283,11 @@ void cpu_ctx_switch(uint16_t arg, uint16_t new_ic, uint16_t int_mask)
 
 	LOG(L_CPU, "Store current process ctx [IC: 0x%04x, R0: 0x%04x, SR: 0x%04x, 0x%04x] @ 0x%04x, set new IC: 0x%04x", ic, r[0], SR_READ(), arg, ar, new_ic);
 
-	if (!cpu_mem_write_1(false, ar, ic)) return;
-	if (!cpu_mem_write_1(false, ++ar, r[0])) return;
-	if (!cpu_mem_write_1(false, ++ar, SR_READ())) return;
-	if (!cpu_mem_write_1(false, ++ar, arg)) return;
-	if (!cpu_mem_write_1(false, STACK_POINTER, ++ar)) return;
+	uint16_t vector[] = { ic, r[0], SR_READ(), arg };
+	for (int i=0 ; i<4 ; i++, ar++) {
+		if (!cpu_mem_write_1(false, ar, vector[i])) return;
+	}
+	if (!cpu_mem_write_1(false, STACK_POINTER, ar)) return;
 
 	r[0] = 0;
 	ic = new_ic;
@@ -297,20 +297,23 @@ void cpu_ctx_switch(uint16_t arg, uint16_t new_ic, uint16_t int_mask)
 }
 
 // -----------------------------------------------------------------------
-void cpu_ctx_restore()
+void cpu_sp_rewind()
 {
-	uint16_t sr;
-
 	if (!cpu_mem_read_1(false, STACK_POINTER, &ar)) return;
 	ar -= 4;
 	if (!cpu_mem_write_1(false, STACK_POINTER, ar)) return;
-	if (!cpu_mem_read_1(false, ar, &ic)) return;
-	if (!cpu_mem_read_1(false, ++ar, r)) return;
-	if (!cpu_mem_read_1(false, ++ar, &sr)) return;
-	SR_WRITE(sr);
-	int_update_mask(rm);
+}
 
-	LOG(L_CPU, "Loaded process ctx @ 0x%04x: [IC: 0x%04x, R0: 0x%04x, SR: 0x%04x]", ar-2, ic, r[0], sr);
+// -----------------------------------------------------------------------
+void cpu_ctx_restore(bool barnb)
+{
+	uint16_t sr_tmp;
+	uint16_t *vector[] = { &ic, r+0, &sr_tmp };
+	for (int i=0 ; i<3 ; i++, ar++) {
+		if (!cpu_mem_read_1(barnb, ar, vector[i])) return;
+	}
+	SR_WRITE(sr_tmp);
+	int_update_mask(rm);
 }
 
 // -----------------------------------------------------------------------

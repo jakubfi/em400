@@ -685,7 +685,10 @@ void op_73_gil()
 // -----------------------------------------------------------------------
 void op_73_lip()
 {
-	cpu_ctx_restore();
+	cpu_sp_rewind();
+	cpu_ctx_restore(false);
+
+	LOG(L_CPU, "Loaded process ctx @ 0x%04x: [IC: 0x%04x, R0: 0x%04x, SR: 0x%04x]", ar-2, ic, r[0], SR_READ());
 
 	if (LOG_ENABLED) {
 		log_update_process();
@@ -894,12 +897,7 @@ void op_77_fi()
 // -----------------------------------------------------------------------
 void op_77_sp()
 {
-	uint16_t sr;
-	if (!cpu_mem_read_1(true, ar, &ic)) return;
-	if (!cpu_mem_read_1(true, ++ar, r+0)) return;
-	if (!cpu_mem_read_1(true, ++ar, &sr)) return;
-	SR_WRITE(sr);
-	int_update_mask(rm);
+	cpu_ctx_restore(true);
 
 	if (LOG_ENABLED) {
 		log_update_process();
