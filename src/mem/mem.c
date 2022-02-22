@@ -41,10 +41,7 @@ static bool mega_boot = false;
 static uint16_t *mem_ptr(int nb, uint16_t addr)
 {
 	uint16_t *seg_ptr = mem_map[nb][addr >> 12].seg;
-	if (seg_ptr) {
-		return seg_ptr + (addr & 0b0000111111111111);
-	}
-	return NULL;
+	return seg_ptr ? seg_ptr + (addr & 0b0000111111111111) : NULL;
 }
 
 // -----------------------------------------------------------------------
