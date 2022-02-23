@@ -356,7 +356,6 @@ static bool cpu_do_bin(bool start)
 static int cpu_do_cycle()
 {
 	struct iset_opcode *op;
-	static char opcode[32];
 	int instruction_time = 0;
 
 	if (LOG_WANTS(L_CPU)) log_store_cycle_state(SR_READ(), ic);
@@ -372,18 +371,28 @@ static int cpu_do_cycle()
 	op = cpu_op_tab[ir];
 	unsigned flags = op->flags;
 
-	// check instruction effectivness
+	// check instruction effectiveness
 	if (p || ((r[0] & op->jmp_nef_mask) != op->jmp_nef_result)) {
 		if (LOG_WANTS(L_CPU)) log_log_dasm(0, 0, "skip: ");
+		// if the instruction is ineffective, argument for 2-word instructions is skipped
 		if ((flags & OP_FL_ARG_NORM) && !IR_C) ic++;
 		goto ineffective;
-	} else if (flags & OP_FL_ILLEGAL) {
-		int2binf(opcode, "... ... . ... ... ...", ir, 16);
-		LOGCPU(L_CPU, "    illegal: %s (0x%04x)", opcode, ir);
+	}
+
+	// check instruction legalness
+	// NOTE: for illegal and user-illegal 2-word instructions argument is _not_ skipped
+	if (flags & OP_FL_ILLEGAL) {
+		LOGCPU(L_CPU, "    illegal: 0x%04x", ir);
 		int_set(INT_ILLEGAL_INSTRUCTION);
 		goto ineffective;
-	} else if (q && (flags & OP_FL_USR_ILLEGAL)) {
-		if (LOG_WANTS(L_CPU)) log_log_dasm(0, 0, "illegal: ");
+	}
+	if (q && (flags & OP_FL_USR_ILLEGAL)) {
+		if (LOG_WANTS(L_CPU)) log_log_dasm(0, 0, "user illegal: ");
+		int_set(INT_ILLEGAL_INSTRUCTION);
+		goto ineffective;
+	}
+	if ((op->fun == op_77_md) && (mc == 3)) {
+		if (LOG_WANTS(L_CPU)) log_log_dasm(0, 0, "illegal (4th md): ");
 		int_set(INT_ILLEGAL_INSTRUCTION);
 		goto ineffective;
 	}
@@ -432,22 +441,19 @@ static int cpu_do_cycle()
 		if (!cpu_mem_read_1(q, ac, &ac)) {
 			LOGCPU(L_CPU, "    no mem, indirect arg fetch @ %i:0x%04x", q*nb, ar);
 			goto ineffective_memfail;
-		} else {
-			ar = ac;
 		}
+		ar = ac;
 		instruction_time += TIME_DMOD;
 	}
 
-	if (LOG_WANTS(L_CPU)) log_log_dasm((op->flags & (OP_FL_ARG_NORM | OP_FL_ARG_SHORT)), ac, "");
-
 	// execute instruction
+	if (LOG_WANTS(L_CPU)) log_log_dasm((op->flags & (OP_FL_ARG_NORM | OP_FL_ARG_SHORT)), ac, "");
 	op->fun();
+	instruction_time += op->time;
 
 	// clear modification counter if instruction was not MD
 	if (op->fun != op_77_md) mc = 0;
 
-
-	instruction_time += op->time;
 	if (op->fun == op_72_shc) {
 		instruction_time += IR_t * TIME_SHIFT;
 	} else if (op->fun == op_ou) {
