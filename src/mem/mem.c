@@ -16,18 +16,14 @@
 //  51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 
 #include <stdlib.h>
-#include <stdio.h>
-#include <string.h>
 #include <inttypes.h>
 #include <stdbool.h>
-#include <arpa/inet.h>
 
 #include "mem/elwro.h"
 #include "mem/mega.h"
 #include "mem/mem.h"
 #include "io/defs.h"
 
-#include "em400.h"
 #include "cfg.h"
 
 #include "log.h"

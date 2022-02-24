@@ -1,4 +1,4 @@
-//  Copyright (c) 2012-2018 Jakub Filipowicz <jakubf@gmail.com>
+//  Copyright (c) 2012-2022 Jakub Filipowicz <jakubf@gmail.com>
 //
 //  This program is free software; you can redistribute it and/or modify
 //  it under the terms of the GNU General Public License as published by
@@ -15,19 +15,12 @@
 //  Foundation, Inc.,
 //  51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 
-#include <stdlib.h>
-
-#include "em400.h"
 #include "cpu/cpu.h"
 #include "cpu/interrupts.h"
 #include "cpu/alu.h"
-#include "mem/mem.h"
-#include "cpu/iset.h"
-#include "cpu/instructions.h"
 #include "io/defs.h"
 #include "io/io.h"
 
-#include "utils/utils.h"
 #include "log.h"
 #include "log_crk.h"
 

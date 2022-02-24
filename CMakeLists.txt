@@ -220,6 +220,9 @@ set(SOURCES_EM400
 	src/ectl/est.h
 	src/ectl/brk.c
 	src/ectl/brk.h
+	src/ectl/parser.y
+	src/ectl/scanner.l
+	include/ectl.h
 
 	src/sound/file.c
 	src/sound/sound.c
@@ -233,9 +236,6 @@ set(SOURCES_EM400
 	src/external/iniparser/dictionary.h
 	src/external/iniparser/iniparser.c
 	src/external/iniparser/iniparser.h
-
-	src/ectl/parser.y
-	src/ectl/scanner.l
 )
 
 if(ALSA_FOUND)

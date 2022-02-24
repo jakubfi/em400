@@ -17,7 +17,6 @@
 
 #include <stdlib.h>
 #include <inttypes.h>
-#include <string.h>
 
 #include "io/defs.h"
 #include "mem/elwro.h"
