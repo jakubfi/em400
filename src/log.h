@@ -78,6 +78,9 @@ void log_log_cpu(unsigned component, const char *msgfmt, ...);
 #define LOGBLOB(component, txt) \
 	log_splitlog(component, __func__, txt)
 
+#define LOGDASM(arg, ac, comment) \
+	if (LOG_WANTS(L_CPU)) log_log_dasm(arg, ac, comment);
+
 #ifdef __cplusplus
 }
 #endif

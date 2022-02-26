@@ -373,7 +373,7 @@ static int cpu_do_cycle()
 
 	// check instruction effectiveness
 	if (p || ((r[0] & op->jmp_nef_mask) != op->jmp_nef_result)) {
-		if (LOG_WANTS(L_CPU)) log_log_dasm(0, 0, "skip: ");
+		LOGDASM(0, 0, "skip: ");
 		// if the instruction is ineffective, argument for 2-word instructions is skipped
 		if ((flags & OP_FL_ARG_NORM) && !IR_C) ic++;
 		goto ineffective;
@@ -387,12 +387,12 @@ static int cpu_do_cycle()
 		goto ineffective;
 	}
 	if (q && (flags & OP_FL_USR_ILLEGAL)) {
-		if (LOG_WANTS(L_CPU)) log_log_dasm(0, 0, "user illegal: ");
+		LOGDASM(0, 0, "user illegal: ");
 		int_set(INT_ILLEGAL_INSTRUCTION);
 		goto ineffective;
 	}
 	if ((op->fun == op_77_md) && (mc == 3)) {
-		if (LOG_WANTS(L_CPU)) log_log_dasm(0, 0, "illegal (4th md): ");
+		LOGDASM(0, 0, "illegal (4th md): ");
 		int_set(INT_ILLEGAL_INSTRUCTION);
 		goto ineffective;
 	}
@@ -447,7 +447,7 @@ static int cpu_do_cycle()
 	}
 
 	// execute instruction
-	if (LOG_WANTS(L_CPU)) log_log_dasm((op->flags & (OP_FL_ARG_NORM | OP_FL_ARG_SHORT)), ac, "");
+	LOGDASM((op->flags & (OP_FL_ARG_NORM | OP_FL_ARG_SHORT)), ac, "");
 	op->fun();
 	instruction_time += op->time;
 
