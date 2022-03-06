@@ -57,28 +57,63 @@ MainWindow::MainWindow(QWidget *parent) :
 	ui->toolBar->addSeparator();
 	ui->toolBar->addAction(QIcon(":/icons/clear.svg"), "Clear", this, &MainWindow::clear_clicked);
 
+	// connect signals from EmuModel
 	connect(&e, &EmuModel::cpu_state_changed, this, &MainWindow::cpu_state_changed);
 	connect(&e, &EmuModel::cpu_reg_changed, this, &MainWindow::cpu_reg_changed);
 	connect(&e, &EmuModel::cpu_ips_tick, this, &MainWindow::cpu_ips_update);
 	connect(&e, &EmuModel::cpu_alarm, this, &MainWindow::cpu_alarm_update);
+	connect(&e, &EmuModel::cpu_p, this, &MainWindow::cpu_p_update);
 
-	// menu actions
+	// connect menu actions
 	connect(ui->actionLoad_OS_image, &QAction::triggered, this, &MainWindow::load_os_image);
 	connect(load, &QAction::triggered, this, &MainWindow::load_os_image);
 
+	// connect register edits
+	for (int i=ECTL_REG_R0 ; i<ECTL_REG_COUNT ; i++) {
+		if (r[i]) connect(r[i], &QSpinBox::editingFinished, [=](){ e.set_reg(i, r[i]->value()); });
+		if ((i <= ECTL_REG_R7) && r2[i]) connect(r2[i], &QSpinBox::editingFinished, [=](){ e.set_reg(i, r2[i]->value()); });
+	}
+
 	// create status bar
 	cpu_state = new QLabel();
-	cpu_state->setStyleSheet("font-weight: bold");
-	ui->statusbar->addWidget(cpu_state);
+	cpu_state->setStyleSheet("font-weight: bold;");
+	ui->statusbar->addPermanentWidget(cpu_state);
 
-	alarm = new QLabel();
-	alarm->setStyleSheet("font-weight: bold; color: red");
-	ui->statusbar->addWidget(alarm);
+	p = new QLabel("P");
+	p->setStyleSheet("font-weight: bold; color: #d57500;");
+	ui->statusbar->addPermanentWidget(p);
+
+	alarm = new QLabel("ALARM");
+	alarm->setStyleSheet("font-weight: bold; color: red;");
+	ui->statusbar->addPermanentWidget(alarm);
 
 	ips = new QLabel();
-	ui->statusbar->addWidget(ips);
+	ui->statusbar->addPermanentWidget(ips);
 
-	e.enable();
+	QFont font("Monospace");
+
+	QLabel *flags_label = new QLabel("<span>Flags:</span>");
+	flags_label->setFont(font);
+	ui->statusbar->addWidget(flags_label);
+	flags = new QLabel();
+	alarm->setStyleSheet("font-weight: normal;");
+	flags->setFont(font);
+	ui->statusbar->addWidget(flags);
+
+	QLabel *status_label = new QLabel(" <span>Status:</span>");
+	status_label->setFont(font);
+	ui->statusbar->addWidget(status_label);
+	q = new QLabel("<span>Q</span>");
+	q->setFont(font);
+	ui->statusbar->addWidget(q);
+	bs = new QLabel("<span>BS</span>");
+	bs->setFont(font);
+	ui->statusbar->addWidget(bs);
+	nb = new QLabel("<span>NB=0</span>");
+	nb->setFont(font);
+	ui->statusbar->addWidget(nb);
+
+	e.enable(60);
 }
 
 // -----------------------------------------------------------------------
@@ -126,12 +161,6 @@ void MainWindow::oprq_clicked()
 }
 
 // -----------------------------------------------------------------------
-void MainWindow::on_ic_editingFinished()
-{
-	e.set_reg(ECTL_REG_IC, ui->ic->value());
-}
-
-// -----------------------------------------------------------------------
 void MainWindow::closeEvent(QCloseEvent* event)
 {
 	e.off();
@@ -146,33 +175,11 @@ void MainWindow::disable_widgets(bool state)
 	cycle->setDisabled(state);
 	bin->setDisabled(state);
 
-	ui->ic->setDisabled(state);
-	ui->ir->setDisabled(state);
-	ui->sr->setDisabled(state);
-	ui->kb->setDisabled(state);
-	ui->rz->setDisabled(state);
-	ui->mc->setDisabled(state);
-	ui->ac->setDisabled(state);
-	ui->ar->setDisabled(state);
-
-	ui->r0->setDisabled(state);
-	ui->r1->setDisabled(state);
-	ui->r2->setDisabled(state);
-	ui->r3->setDisabled(state);
-	ui->r4->setDisabled(state);
-	ui->r5->setDisabled(state);
-	ui->r6->setDisabled(state);
-	ui->r7->setDisabled(state);
-
-	ui->r0_2->setDisabled(state);
-	ui->r1_2->setDisabled(state);
-	ui->r2_2->setDisabled(state);
-	ui->r3_2->setDisabled(state);
-	ui->r4_2->setDisabled(state);
-	ui->r5_2->setDisabled(state);
-	ui->r6_2->setDisabled(state);
-	ui->r7_2->setDisabled(state);
-
+	for (int i=ECTL_REG_R0 ; i<ECTL_REG_COUNT ; i++) {
+		if (i == ECTL_REG_KB) continue; // keys are always enabled
+		if (r[i]) r[i]->setDisabled(state);
+		if ((i <= ECTL_REG_R7) && r2[i]) r2[i]->setDisabled(state);
+	}
 }
 
 // -----------------------------------------------------------------------
@@ -181,39 +188,68 @@ void MainWindow::cpu_state_changed(int state)
 	QString named_state;
 	unsigned s = e.get_state_simplified();
 	if (s == ECTL_STATE_STOP) {
-		named_state = " STOP";
-		cpu_state->setStyleSheet("font-weight: bold; color: black");
+		named_state = "STOP";
+		cpu_state->setStyleSheet("font-weight: bold; color: black;");
 	} else if (s == ECTL_STATE_RUN) {
-		named_state = " RUN";
-		cpu_state->setStyleSheet("font-weight: bold; color: green");
+		named_state = "RUN";
+		cpu_state->setStyleSheet("font-weight: bold; color: green;");
 	} else {
-		named_state = " WAIT";
-		cpu_state->setStyleSheet("font-weight: bold; color: #d57500");
+		named_state = "WAIT";
+		cpu_state->setStyleSheet("font-weight: bold; color: #d57500;");
 	}
 
 	cpu_state->setText(named_state);
-
-	if (e.get_reg(ECTL_REG_ALARM) == 1) {
-		alarm->setText("ALARM");
-	} else {
-		alarm->setText("");
-	}
 
 	disable_widgets(state==ECTL_STATE_RUN);
 }
 
 // -----------------------------------------------------------------------
-void MainWindow::cpu_reg_changed(int reg)
+void MainWindow::update_sr_status(uint16_t sr)
+{
+	int vnb = sr & 0b1111;
+	int vbs = sr & 0b10000;
+	int vq = sr & 0b100000;
+
+	if (vq) q->setStyleSheet("font-weight: bold; color: black;");
+	else q->setStyleSheet("font-weight: normal; color: gray;");
+
+	if (vbs) bs->setStyleSheet("font-weight: bold; color: black;");
+	else bs->setStyleSheet("font-weight: normal; color: gray;");
+
+	nb->setText(QString("<span>NB=%1</span>").arg(vnb));
+}
+
+// -----------------------------------------------------------------------
+void MainWindow::update_r0_status(uint16_t r0)
+{
+	QString f = "ZMVCLEGYX1234567";
+	QString txt;
+	for (int i=0 ; i<16 ; i++) {
+		if (r0 & 1<<(15-i))	txt.append(QString("<b>%1</b>").arg(f[i]));
+		else txt.append(QString("<font color=gray>%1</font>").arg(f[i]));
+	}
+	flags->setText(txt);
+}
+
+// -----------------------------------------------------------------------
+void MainWindow::cpu_reg_changed(int reg, uint16_t val)
 {
 	if (!r[reg]) return;
 
-	r[reg]->setValue(e.get_reg(reg));
+	// update all register values
+	r[reg]->setValue(val);
+
+	// TODO: where to update memory view?
 	ui->mem->update_contents(0, 0);
 
+	// do register-specific things
 	if (reg <= ECTL_REG_R7) {
-		r2[reg]->setValue((int16_t)e.get_reg(reg));
+		if (reg == ECTL_REG_R0) update_r0_status(val);
+		r2[reg]->setValue((int16_t)val);
 	} else if (reg == ECTL_REG_IC) {
 		update_dasm_view();
+	} else if (reg == ECTL_REG_SR) {
+		update_sr_status(val);
 	}
 }
 
@@ -233,9 +269,15 @@ void MainWindow::cpu_ips_update(unsigned long ips)
 }
 
 // -----------------------------------------------------------------------
-void MainWindow::cpu_alarm_update(bool a)
+void MainWindow::cpu_alarm_update(bool state)
 {
-	alarm->setText(a ? "ALARM" : "");
+	alarm->setHidden(!state);
+}
+
+// -----------------------------------------------------------------------
+void MainWindow::cpu_p_update(bool state)
+{
+	p->setHidden(!state);
 }
 
 // -----------------------------------------------------------------------

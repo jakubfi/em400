@@ -7,22 +7,9 @@
 // -----------------------------------------------------------------------
 EmuModel::EmuModel()
 {
-	for (int i=0 ; i<ECTL_REG_COUNT ; i++) {
-		r[i] = 0;
-		emit cpu_reg_changed(i);
-	}
-	cpu_state = ECTL_STATE_OFF;
-	emit cpu_state_changed(cpu_state);
-	emit cpu_alarm(false);
-	emit cpu_ips_tick(0);
-
-	set_refresh_rate(60);
-	connect(&timer, &QTimer::timeout, this, &EmuModel::on_timer_timeout);
-
 	ips_timer.setInterval(500);
 	connect(&ips_timer, &QTimer::timeout, this, &EmuModel::on_ips_timer_timeout);
-	ips_timer.start();
-
+	connect(&timer, &QTimer::timeout, this, &EmuModel::on_timer_timeout);
 }
 
 // -----------------------------------------------------------------------
@@ -32,9 +19,21 @@ EmuModel::~EmuModel()
 }
 
 // -----------------------------------------------------------------------
-void EmuModel::set_refresh_rate(int hz)
+void EmuModel::enable(int hz)
 {
+	sync_state(true);
+	sync_regs(true);
+	on_ips_timer_timeout();
+	ips_timer.start();
 	timer.setInterval(1000/hz);
+	timer.start();
+}
+
+// -----------------------------------------------------------------------
+void EmuModel::disable()
+{
+	ips_timer.stop();
+	timer.stop();
 }
 
 // -----------------------------------------------------------------------
@@ -106,26 +105,28 @@ void EmuModel::off()
 }
 
 // -----------------------------------------------------------------------
-void EmuModel::check_state()
+void EmuModel::sync_state(bool force)
 {
 	int state = get_state_simplified();
-	if (state != cpu_state) {
+	if (force || (state != cpu_state)) {
 		cpu_state = state;
 		emit cpu_state_changed(state);
 	}
 }
 
 // -----------------------------------------------------------------------
-void EmuModel::check_regs()
+void EmuModel::sync_regs(bool force)
 {
 	for (int i=ECTL_REG_R0 ; i<ECTL_REG_COUNT ; i++) {
 		int reg = ectl_reg_get(i);
-		if (reg != r[i]) {
+		if (force || (reg != r[i])) {
 			r[i] = reg;
 			if (i == ECTL_REG_ALARM) {
 				emit cpu_alarm(r[i]);
+			} else if (i == ECTL_REG_P) {
+				emit cpu_p(r[i]);
 			} else {
-				emit cpu_reg_changed(i);
+				emit cpu_reg_changed(i, reg);
 			}
 		}
 	}
@@ -134,8 +135,8 @@ void EmuModel::check_regs()
 // -----------------------------------------------------------------------
 void EmuModel::on_timer_timeout()
 {
-	check_state();
-	check_regs();
+	sync_state(false);
+	sync_regs(false);
 }
 
 // -----------------------------------------------------------------------
