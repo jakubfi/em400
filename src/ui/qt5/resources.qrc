@@ -8,6 +8,6 @@
         <file>icons/oprq.svg</file>
         <file>icons/stop.svg</file>
         <file>icons/open.svg</file>
-        <file>icons/em400.svg</file>
+        <file>icons/em400/em400_32.png</file>
     </qresource>
 </RCC>
