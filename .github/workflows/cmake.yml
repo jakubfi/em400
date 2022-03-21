@@ -23,6 +23,8 @@ jobs:
 
     steps:
       - uses: actions/checkout@v2
+      - name: Update repositories
+        run: sudo apt-get update
       - name: Install packages for ${{matrix.compiler.compiler}}
         run: sudo apt-get -y install ${{matrix.compiler.packages}}
       - name: Build and install emawp
