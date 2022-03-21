@@ -176,5 +176,6 @@ bool EmuModel::load(QString filename)
 	ectl_load(f, "name", 0, 0);
 	fclose(f);
 	sync_state(true);
+	sync_regs(true);
 	return true;
 }

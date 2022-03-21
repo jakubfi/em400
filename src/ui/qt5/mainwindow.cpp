@@ -241,6 +241,8 @@ void MainWindow::cpu_reg_changed(int reg, uint16_t val)
 
 	// TODO: where to update memory view?
 	ui->mem->update_contents(0, 0);
+	// TODO: where/how to force-update everything?
+	update_dasm_view();
 
 	// do register-specific things
 	if (reg <= ECTL_REG_R7) {

@@ -133,16 +133,16 @@ void DasmView::internal_update_contents()
 	// if the list does not fill all the space, prepend the difference
 	prepend(dasm_total_lines - i, listing);
 	scroll->setValue(caddr);
+	update();
 }
 
 // -----------------------------------------------------------------------
 void DasmView::update_contents(int new_nb, int new_addr)
 {
-	if ((new_nb == cnb) && (new_addr == caddr)) return;
+//	if ((new_nb == cnb) && (new_addr == caddr)) return;
 	cnb = new_nb;
 	caddr = new_addr;
 	internal_update_contents();
-	update();
 }
 
 // -----------------------------------------------------------------------
@@ -151,7 +151,6 @@ void DasmView::update_contents_no_nb(int new_addr)
 	if (new_addr == caddr) return;
 	caddr = new_addr;
 	internal_update_contents();
-	update();
 }
 
 // -----------------------------------------------------------------------
