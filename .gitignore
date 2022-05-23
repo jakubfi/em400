@@ -1,6 +1,7 @@
 /doc
 /build
 /tests/images/*.e4i
+/tests/images/*.img
 *.swp
 /tools/*.pyc
 CMakeLists.txt.user

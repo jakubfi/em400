@@ -15,11 +15,6 @@
 //  Foundation, Inc.,
 //  51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 
-#define _XOPEN_SOURCE 500
-#ifndef _GNU_SOURCE
-#define _GNU_SOURCE
-#endif
-
 #include <stdlib.h>
 #include <string.h>
 #include <strings.h>
@@ -34,37 +29,97 @@
 
 #include "log.h"
 
-#define UNIT ((struct cchar_unit_flop8_t *)(unit))
+#define DRIVES 4
+#define TRACKS 77
+#define TRACK_LAST 73
+#define SPT 26
+#define SECTOR_BYTES 128
+#define DISK_SIZE_BYTES (TRACKS * SPT * SECTOR_BYTES)
+
+// commands
+enum cchar_flop8_commands {
+	// OU
+	CCHAR_FLOP8_CMD_RESET		= 0b100000, // reset
+	CCHAR_FLOP8_CMD_DISCONNECT	= 0b101000, // disconnect (soft reset)
+	CCHAR_FLOP8_CMD_WRITE		= 0b110000, // write
+	CCHAR_FLOP8_CMD_SEEK_W		= 0b111000, // seek for write
+	CCHAR_FLOP8_CMD_SEEK_WC		= 0b111100, // seek for write+check
+	CCHAR_FLOP8_CMD_SEEK_B		= 0b111110, // seek for bad sector
+	CCHAR_FLOP8_CMD_SEEK_R		= 0b111010, // seek for read
+	// IN
+	CCHAR_FLOP8_CMD_SPU			= 0b100000, // check device
+	CCHAR_FLOP8_CMD_READ		= 0b101000, // read
+};
+
+// floppy drive
+enum cchar_flop8_drives {
+	CCHAR_FLOP8_DRIVE_0		= 0b000,
+	CCHAR_FLOP8_DRIVE_1		= 0b001,
+	CCHAR_FLOP8_DRIVE_2		= 0b100,
+	CCHAR_FLOP8_DRIVE_3		= 0b101,
+};
+
+// floppy side
+enum cchar_flop8_sides {
+	CCHAR_FLOP8_SIDE_A		= 0,
+	CCHAR_FLOP8_SIDE_B		= 1,
+};
+
+// interrupts
+enum char_flop_interrupts {
+	CCHAR_FLOP8_INT_OUTDATED		= 0b00000, // interrupt out of date
+	CCHAR_FLOP8_INT_READY			= 0b00001, // device is ready
+	CCHAR_FLOP8_INT_HW_ERR			= 0b00010, // hardware error
+	CCHAR_FLOP8_INT_SECT_NOT_FOUND	= 0b11010, // sector not found
+	CCHAR_FLOP8_INT_CRC_ERR			= 0b01010, // data CRC error
+	CCHAR_FLOP8_INT_SECT_BAD		= 0b10010, // sector marked as bad
+};
+
+typedef struct cchar_unit_flop8 {
+	struct cchar_unit_proto_t proto;
+	char *image[DRIVES];
+	FILE *f[DRIVES];
+	int drive, side, track, sector, byte;
+} flop8;
 
 // -----------------------------------------------------------------------
 struct cchar_unit_proto_t * cchar_flop8_create(em400_cfg *cfg, int ch_num, int dev_num)
 {
-	struct cchar_unit_flop8_t *unit = (struct cchar_unit_flop8_t *) calloc(1, sizeof(struct cchar_unit_flop8_t));
+	flop8 *unit = (flop8 *) calloc(1, sizeof(flop8));
 	if (!unit) {
-		LOGERR("Failed to allocate memory for floppy: %i.%i", ch_num, dev_num);
+		LOGERR("Failed to allocate memory for 8-inch floppy: %i.%i", ch_num, dev_num);
 		goto fail;
 	}
 
-	for (int id=0 ; id<4 ; id++) {
+	for (int id=0 ; id<DRIVES ; id++) {
 		const char *image = cfg_fgetstr(cfg, "dev%i.%i:image_%i", ch_num, dev_num, id);
 		if (!image) continue;
 
 		unit->image[id] = strdup(image);
 		if (!unit->image[id]) {
-			LOGERR("Memory allocation error.");
+			LOGERR("8-inch floppy image data memory allocation error.");
 			goto fail;
 		}
-		unit->f[id] = fopen(image, "r");
+		unit->f[id] = fopen(image, "r+b");
 		if (unit->f[id]) {
 			LOG(L_FLOP, "Drive %i: %s.", id, image);
 		} else {
-			LOG(L_FLOP, "Failed to open image: %s.", image);
+			LOGERR("Failed to open 8-inch floppy image: %s (drive %i).", image, id);
+			goto fail;
+		}
+
+		fseek(unit->f[id], 0L, SEEK_END);
+		int sz = ftell(unit->f[id]);
+		if (sz != DISK_SIZE_BYTES) {
+			LOGERR("Wrong 8-inch floppy drive %i image '%s' size: %i instead of %i.", id, image, sz, DISK_SIZE_BYTES);
+			goto fail;
 		}
 	}
 
+	unit->drive = 0;
+	unit->side = 0;
 	unit->track = 1;
 	unit->sector = 1;
-	unit->disk = 0;
 	unit->byte = 0;
 
 	return (struct cchar_unit_proto_t *) unit;
@@ -77,58 +132,76 @@ fail:
 // -----------------------------------------------------------------------
 void cchar_flop8_shutdown(struct cchar_unit_proto_t *unit)
 {
-	struct cchar_unit_flop8_t *u = (struct cchar_unit_flop8_t *) unit;
-	if (u) {
-		for (int i=0 ; i<4 ; i++) {
-			if (u->f[i]) fclose(u->f[i]);
-			if (u->image[i]) free(u->image[i]);
-		}
-		free(u);
+	flop8 *u = (flop8 *) unit;
+	if (!u) return;
+
+	for (int i=0 ; i<DRIVES ; i++) {
+		if (u->f[i]) fclose(u->f[i]);
+		if (u->image[i]) free(u->image[i]);
 	}
+	free(u);
 }
 
 // -----------------------------------------------------------------------
 void cchar_flop8_reset(struct cchar_unit_proto_t *unit)
 {
-	struct cchar_unit_flop8_t *u = (struct cchar_unit_flop8_t *) unit;
+	flop8 *u = (flop8 *) unit;
+	u->drive = 0;
+	u->side = 0;
 	u->track = 1;
 	u->sector = 1;
-	u->disk = 0;
 	u->byte = 0;
 }
 
 // -----------------------------------------------------------------------
-static int cchar_flop8_read(struct cchar_unit_proto_t *unit, uint16_t *r_arg)
+static int cchar_flop8_access(struct cchar_unit_proto_t *unit, uint16_t *r_arg, int cmd)
 {
-	struct cchar_unit_flop8_t *u = (struct cchar_unit_flop8_t *) unit;
+	flop8 *u = (flop8 *) unit;
 	int res;
 	uint8_t data;
-	int lba;
 
-	lba = (u->track-1) * 26 + (u->sector-1);
-	res = fseek(u->f[u->disk], lba*128 + u->byte, SEEK_SET);
+	if (!u->f[u->drive]) {
+		LOG(L_FLOP, "No image attached to drive %i", u->drive);
+		// TODO: send interrupt
+		return IO_EN;
+	}
+
+	int offset = (u->track * SPT + (u->sector-1)) * SECTOR_BYTES + u->byte;
+	res = fseek(u->f[u->drive], offset, SEEK_SET);
 	if (res != 0) {
-		LOG(L_FLOP, "Failed floppy seek");
-	}
-	res = fread(&data, 1, 1, u->f[u->disk]);
-	if (res != 1) {
-		LOG(L_FLOP, "Failed floppy read");
+		LOG(L_FLOP, "Image file seek failed");
+		// TODO: send interrupt
 	}
 
-	*r_arg = data;
+	if (cmd == CCHAR_FLOP8_CMD_READ) {
+		res = fread(&data, 1, 1, u->f[u->drive]);
+		if (res != 1) {
+			LOG(L_FLOP, "Failed floppy read");
+			// TODO: send interrupt
+		}
+		*r_arg = data;
+	} else {
+		data = *r_arg & 0xff;
+		res = fwrite(&data, 1, 1, u->f[u->drive]);
+		if (res != 1) {
+			LOG(L_FLOP, "Failed floppy write");
+			// TODO: send interrupt
+		}
+	}
 
 	u->byte++;
-	if (u->byte >= 128) {
+	if (u->byte >= SECTOR_BYTES) {
 		u->byte = 0;
 		u->sector++;
 		LOG(L_FLOP, "sector end, next sector: %i", u->sector);
-		if (u->sector > 26) {
+		if (u->sector > SPT) {
 			u->sector = 1;
 			u->track++;
 			LOG(L_FLOP, "track end, next track: %i", u->track);
-			if (u->track > 73) {
+			if (u->track > TRACK_LAST) {
 				u->track = 1;
 				LOG(L_FLOP, "disk end");
+				// TODO: send interrupt
 			}
 		}
 	}
@@ -137,29 +210,19 @@ static int cchar_flop8_read(struct cchar_unit_proto_t *unit, uint16_t *r_arg)
 }
 
 // -----------------------------------------------------------------------
-static int cchar_flop8_write(struct cchar_unit_proto_t *unit, uint16_t *r_arg)
+static int cchar_flop8_seek(struct cchar_unit_proto_t *unit, uint16_t *r_arg, int cmd)
 {
+	flop8 *u = (flop8 *) unit;
 
-	return IO_OK;
-}
-
-// -----------------------------------------------------------------------
-static int cchar_flop8_seek(struct cchar_unit_proto_t *unit, uint16_t *r_arg)
-{
-	struct cchar_unit_flop8_t *u = (struct cchar_unit_flop8_t *) unit;
-
-	uint8_t disk = (*r_arg >> 13) & 0b111;
-	switch (disk) {
-		case 0b000: u->disk = 0; break;
-//		case 0b001: u->disk = 1; break;
-//		case 0b100: u->disk = 2; break;
-//		case 0b101: u->disk = 3; break;
-		default: u->disk = 1; break;
-	}
-	u->sector = *r_arg & 0b11111;
+	int drive = (*r_arg >> 13) & 0b111;
+	u->drive = (drive & 1) | ((drive >> 1) & 2);
+	u->side = (*r_arg >> 12) & 1;
 	u->track = (*r_arg >> 5) & 0b1111111;
+	u->sector = *r_arg & 0b11111;
 	u->byte = 0;
-	LOG(L_FLOP, "Seek to track %i sector %i", u->track, u->sector);
+
+	LOG(L_FLOP, "Set new address: drive %i, side: %i, track %i, sector %i", u->drive, u->side, u->track, u->sector);
+
 	return IO_OK;
 }
 
@@ -172,7 +235,7 @@ int cchar_flop8_cmd(struct cchar_unit_proto_t *unit, int dir, int cmd, uint16_t 
 			LOG(L_FLOP, "command: SPU");
 			break;
 		case CCHAR_FLOP8_CMD_READ:
-			return cchar_flop8_read(unit, r_arg);
+			return cchar_flop8_access(unit, r_arg, CCHAR_FLOP8_CMD_READ);
 		default:
 			LOG(L_FLOP, "unknown IN command: %i", cmd);
 			break;
@@ -188,9 +251,12 @@ int cchar_flop8_cmd(struct cchar_unit_proto_t *unit, int dir, int cmd, uint16_t 
 			cchar_flop8_reset(unit);
 			break;
 		case CCHAR_FLOP8_CMD_WRITE:
-			return cchar_flop8_write(unit, r_arg);
-		case CCHAR_FLOP8_CMD_SEEK:
-			return cchar_flop8_seek(unit, r_arg);
+			return cchar_flop8_access(unit, r_arg, CCHAR_FLOP8_CMD_WRITE);
+		case CCHAR_FLOP8_CMD_SEEK_R:
+		case CCHAR_FLOP8_CMD_SEEK_W:
+		case CCHAR_FLOP8_CMD_SEEK_WC:
+		case CCHAR_FLOP8_CMD_SEEK_B:
+			return cchar_flop8_seek(unit, r_arg, cmd);
 		default:
 			LOG(L_FLOP, "unknown OUT command: %i", cmd);
 			break;
