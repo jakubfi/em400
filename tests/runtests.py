@@ -163,7 +163,7 @@ class TestResult:
     def __str__(self):
         # error
         if self.error:
-            return "%-50s : %s" % (t, self.error)
+            return "%-60s %s" % (t, self.error)
 
         # benchmark
         if self.ips:
@@ -171,12 +171,12 @@ class TestResult:
                 pc = "(%+.1f%%)" % self.ips_percent
             else:
                 pc = ""
-            return "%-50s : %7.3f %s" % (t, self.ips, pc)
+            return "%-60s %7.3f %s" % (t, self.ips, pc)
 
         # pass/fail test
         if self.passed is not None:
-            pf = [ "FAILED", "PASSED" ]
-            ret = "%-50s : %s" % (t, pf[self.passed])
+            pf = [ "\033[91mFAILED\033[0m", "\033[92mPASSED\033[0m" ]
+            ret = "%-60s %s" % (t, pf[self.passed])
             for f in self.checks:
                 if f[1] != f[2]:
                     ret += " %s=%i!=%i" % (f[0], f[2], f[1])
@@ -415,7 +415,7 @@ tb = TestBed("emas", args.emulator, args.baseline, benchmark_duration=0.5, failc
 for t in tests:
     if not DEBUG:
         if sys.stdout.isatty():
-            print("%-50s : ..." % t, end="", flush=True)
+            print("%-60s ..." % t, end="", flush=True)
     else:
         print("Starting test: %s" % t)
 
@@ -433,7 +433,7 @@ for t in tests:
 
 tb.close()
 
-print("------------------------------------------------------------")
+print("----------------------------------------------------------------------")
 print("Tests run: %i, failed: %i" % (total, failed))
 
 sys.exit(failed)
