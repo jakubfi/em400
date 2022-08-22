@@ -143,6 +143,9 @@ void cchar_reset(void *chan)
 			u->reset(u);
 		}
 	}
+	pthread_mutex_lock(&ch->int_mutex);
+	ch->int_reported = -1;
+	pthread_mutex_unlock(&ch->int_mutex);
 }
 
 // -----------------------------------------------------------------------
