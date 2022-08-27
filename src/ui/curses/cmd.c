@@ -516,7 +516,7 @@ void dbg_c_log_info(int wid)
 
 	awtbprint(wid, C_DATA, "Logging %s\n", ectl_log_state_get() ? "enabled" : "disabled");
 	awtbprint(wid, C_LABEL, "Enabled components: ");
-	for (i=0 ; i < L_ALL ; i++) {
+	for (i=1 ; i < L_COUNT ; i++) {
 		if (ectl_log_component_get(i)) {
 			const char *cname = ectl_log_component_name(i);
 			awtbprint(wid, C_DATA, "%s ", cname);
@@ -524,7 +524,7 @@ void dbg_c_log_info(int wid)
 	}
 	awtbprint(wid, C_LABEL, "\n");
 	awtbprint(wid, C_LABEL, "Disabled components: ");
-	for (i=0 ; i < L_ALL ; i++) {
+	for (i=1 ; i < L_COUNT ; i++) {
 		if (!ectl_log_component_get(i)) {
 			const char *cname = ectl_log_component_name(i);
 			awtbprint(wid, C_DATA, "%s ", cname);

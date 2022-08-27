@@ -278,7 +278,7 @@ int log_get_component_id(const char *name)
 {
 	int comp = -1;
 
-	for (unsigned i=0 ; i<=L_ALL ; i++) {
+	for (unsigned i=0 ; i<L_COUNT ; i++) {
 		if (name && !strcasecmp(log_component_names[i], name)) {
 			comp = i;
 			break;
