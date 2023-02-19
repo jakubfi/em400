@@ -43,6 +43,7 @@ int encode = 1;
 int progress = 1;
 int verbose = 0;
 int cont = 0;
+int invert = 0;
 #ifndef _WIN32
 speed_t speed;
 #endif
@@ -76,6 +77,7 @@ void print_help()
 		"  --output, -o <output>    : output file name, stdout is used if no file name given\n"
 #ifndef _WIN32
 		"                             output can also be a serial port\n"
+		"  --invert, -I             : invert bits in binary streams\n"
 		"  --speed, -s <baud>       : baudrate to use when output is a serial port (9600 default)\n"
 		"  --no-progress, -n        : don't print progress bar during serial transmission\n"
 #endif
@@ -94,6 +96,7 @@ void parse_opts(int argc, char **argv)
 
 	static struct option opts[] = {
 		{ "output",		required_argument,	0, 'o' },
+		{ "invert",		no_argument,		0, 'I' },
 		{ "decode",		no_argument,		0, 'd' },
 		{ "encode",		no_argument,		0, 'e' },
 		{ "verbose",	no_argument,		0, 'v' },
@@ -108,9 +111,9 @@ void parse_opts(int argc, char **argv)
 
 	while (1) {
 #ifdef _WIN32
-		opt = getopt_long(argc, argv,"o:devch", opts, &idx);
+		opt = getopt_long(argc, argv,"o:Idevch", opts, &idx);
 #else
-		opt = getopt_long(argc, argv,"o:devs:nch", opts, &idx);
+		opt = getopt_long(argc, argv,"o:Idevs:nch", opts, &idx);
 #endif
 		if (opt == -1) {
 			break;
@@ -131,6 +134,9 @@ void parse_opts(int argc, char **argv)
 				break;
 			case 'v':
 				verbose = 1;
+				break;
+			case 'I':
+				invert = 1;
 				break;
 #ifndef _WIN32
 			case 's':
@@ -190,7 +196,8 @@ void do_encode(int fi, int fo, int progress)
 
 		if (res == 0) {
 			// no more input data, write the ending byte
-			b[0] = BIN_ENDBYTE;
+			if (invert) b[0] = ~BIN_ENDBYTE;
+			else b[0] = BIN_ENDBYTE;
 			if (write(fo, b, 1) != 1) {
 				error(10, "Write failed");
 			}
@@ -201,6 +208,9 @@ void do_encode(int fi, int fo, int progress)
 		in_read++;
 		w = ntohs(w);
 		word2bin(w, b);
+		if (invert) {
+			for (int i=0 ; i<3 ; i++) b[i] = ~b[i];
+		}
 		res = write(fo, b, 3);
 		if (res != 3) {
 			error(10, "Write failed");
@@ -231,6 +241,7 @@ int do_decode(int fi, int fo)
 	int pos = 0;
 	while (1) {
 		res = read(fi, b+pos, 1);
+		if (invert) b[pos] = ~b[pos];
 		if (res <= 0) {
 			error(10, "Input stream ended prematurely, without the ending byte. Output is most likely invalid.");
 			ret = -1;
