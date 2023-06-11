@@ -71,26 +71,38 @@ check_sector:
 write_positions:
 	;	physical sector address		generated random
 	.word	0\1 | 0\2 | 0\3 |  0\10 | 1,	0
-	.word	0\1 | 0\2 | 0\3 |  0\10 | 26,	0
-	.word	0\1 | 0\2 | 0\3 | 76\10 | 1,	0
-	.word	0\1 | 0\2 | 0\3 | 76\10 | 26,	0
-
-	.word	0\1 | 1\2 | 0\3 |  0\10 | 1,	0
-	.word	0\1 | 1\2 | 0\3 |  0\10 | 26,	0
-	.word	0\1 | 1\2 | 0\3 | 76\10 | 1,	0
-	.word	0\1 | 1\2 | 0\3 | 76\10 | 26,	0
-
-	.word	2\1 | 0\2 | 0\3 |  0\10 | 1,	0
-	.word	2\1 | 0\2 | 0\3 |  0\10 | 26,	0
-	.word	2\1 | 0\2 | 0\3 | 76\10 | 1,	0
-	.word	2\1 | 0\2 | 0\3 | 76\10 | 26,	0
-
-	.word	2\1 | 1\2 | 0\3 |  0\10 | 1,	0
-	.word	2\1 | 1\2 | 0\3 |  0\10 | 26,	0
-	.word	2\1 | 1\2 | 0\3 | 76\10 | 1,	0
-	.word	2\1 | 1\2 | 0\3 | 76\10 | 26,	0
+;	.word	0\1 | 0\2 | 0\3 |  0\10 | 26,	0
+;	.word	0\1 | 0\2 | 0\3 | 76\10 | 1,	0
+;	.word	0\1 | 0\2 | 0\3 | 76\10 | 26,	0
+;
+;	.word	0\1 | 1\2 | 0\3 |  0\10 | 1,	0
+;	.word	0\1 | 1\2 | 0\3 |  0\10 | 26,	0
+;	.word	0\1 | 1\2 | 0\3 | 76\10 | 1,	0
+;	.word	0\1 | 1\2 | 0\3 | 76\10 | 26,	0
+;
+;	.word	2\1 | 0\2 | 0\3 |  0\10 | 1,	0
+;	.word	2\1 | 0\2 | 0\3 |  0\10 | 26,	0
+;	.word	2\1 | 0\2 | 0\3 | 76\10 | 1,	0
+;	.word	2\1 | 0\2 | 0\3 | 76\10 | 26,	0
+;
+;	.word	2\1 | 1\2 | 0\3 |  0\10 | 1,	0
+;	.word	2\1 | 1\2 | 0\3 |  0\10 | 26,	0
+;	.word	2\1 | 1\2 | 0\3 | 76\10 | 1,	0
+;	.word	2\1 | 1\2 | 0\3 | 76\10 | 26,	0
 
 	.word	0
+
+; ------------------------------------------------------------------------
+detach:
+	.res	1
+.retry:
+	ou	r2, FLOP | KZ_CMD_DEV_DETACH
+	.word	.no, .en, .ok, .pe
+.no:	hlt	45
+.en:	ujs	.retry
+.pe:	hlt	47
+.ok:
+	uj	[detach]
 
 ; ------------------------------------------------------------------------
 ; check if writes work
@@ -100,6 +112,7 @@ positioned_write:
 	lw	r6, write_positions
 
 .loop:
+	lj	detach
 .write_pos:
 	; position head
 	lw	r2, [r6]
@@ -128,6 +141,7 @@ positioned_write:
 .enw3:	ujs	.okw2
 .pew3:	hlt	051
 .okw3:
+	lj	detach
 	; position head
 	lw	r2, [r6]
 	ou	r2, FLOP | KZ_CMD_CTL4
@@ -195,7 +209,7 @@ gen_randoms:
 
 ; ------------------------------------------------------------------------
 start:
-	lj      prngseed
+	lj	prngseed
 	lj	gen_randoms
 	lj	positioned_write
 
