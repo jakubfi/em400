@@ -17,213 +17,584 @@
 
 #include <stdlib.h>
 #include <string.h>
+#include <stdbool.h>
 #include <strings.h>
 #include <inttypes.h>
 #include <stdio.h>
 #include <unistd.h>
+#include <pthread.h>
 
 #include "em400.h"
+#include "atomic.h"
 #include "io/defs.h"
+#include "io/cchar.h"
 #include "io/cchar_flop8.h"
 #include "cfg.h"
 
 #include "log.h"
 
-#define DRIVES 4
-#define TRACKS 77
-#define TRACK_LAST 73
-#define SPT 26
-#define SECTOR_BYTES 128
-#define DISK_SIZE_BYTES (TRACKS * SPT * SECTOR_BYTES)
+#define F8_DRIVE_CNT 4
+#define F8_TRACK_CNT 77
+#define F8_TRACK_LAST 73
+#define F8_SECTOR_PER_TRACK 26
+#define F8_BYTES_PER_SECTOR 128
+#define F8_DISK_SIZE_BYTES (F8_TRACK_CNT * F8_SECTOR_PER_TRACK * F8_BYTES_PER_SECTOR)
 
-// commands
-enum cchar_flop8_commands {
+enum f8_states {
+	F8ST_IDLE,					// St.0 idle state
+	F8ST_SECT_RD,				// St.1 disk to buffer read
+	F8ST_SECT_RD_CANCEL,		// cancel reading current sector
+	F8ST_BUF_RD,				// St.2 buffer to cpu read
+	F8ST_BUF_WR_INIT,			// first state after buffer write (prepare for write)
+	F8ST_BUF_WR,				// cpu to buffer write St.3 (bad sector mark, F8) St.5 (regular data FB)
+	F8ST_SECT_WR,				// buffer to disk write St.6 (with check), St.7 (no check)
+	F8ST_QUIT,
+};
+
+enum f8_commands {
+	F8CMD_QUIT		= -1,
 	// OU
-	CCHAR_FLOP8_CMD_RESET		= 0b100000, // reset
-	CCHAR_FLOP8_CMD_DISCONNECT	= 0b101000, // disconnect (soft reset)
-	CCHAR_FLOP8_CMD_WRITE		= 0b110000, // write
-	CCHAR_FLOP8_CMD_SEEK_W		= 0b111000, // seek for write
-	CCHAR_FLOP8_CMD_SEEK_WC		= 0b111100, // seek for write+check
-	CCHAR_FLOP8_CMD_SEEK_B		= 0b111110, // seek for bad sector
-	CCHAR_FLOP8_CMD_SEEK_R		= 0b111010, // seek for read
+	F8CMD_RESET		= 0b100000, // reset
+	F8CMD_DETACH	= 0b101000, // detach (soft reset)
+	F8CMD_WRITE		= 0b110000, // write
+	F8CMD_CTL_W		= 0b111000, // control for write
+	F8CMD_CTL_WC	= 0b111100, // control for write+check
+	F8CMD_CTL_B		= 0b111110, // control for bad sector
+	F8CMD_CTL_R		= 0b111010, // control for read
 	// IN
-	CCHAR_FLOP8_CMD_SPU			= 0b100000, // check device
-	CCHAR_FLOP8_CMD_READ		= 0b101000, // read
+	F8CMD_SPU		= 0b100000, // check device
+	F8CMD_READ		= 0b101000, // read
 };
 
-// floppy drive
-enum cchar_flop8_drives {
-	CCHAR_FLOP8_DRIVE_0		= 0b000,
-	CCHAR_FLOP8_DRIVE_1		= 0b001,
-	CCHAR_FLOP8_DRIVE_2		= 0b100,
-	CCHAR_FLOP8_DRIVE_3		= 0b101,
+#define F8_INT_NONE 0
+enum f8_interrupt_priorities {
+	F8_INT_SECT_NOT_FOUND, // highest prio
+	F8_INT_CRC_ERR,
+	F8_INT_SECT_BAD,
+	F8_INT_HW_ERR,
+	F8_INT_DISK_END,
+	F8_INT_READY, // lowest prio
+};
+static const int f8_interrupt_specs[] = {
+	0b11010, // sector not found
+	0b01010, // data CRC error
+	0b10010, // sector marked as bad
+	0b00010, // hardware error
+	0b00100, // track==73 && sector==26
+	0b00001, // device is ready
 };
 
-// floppy side
-enum cchar_flop8_sides {
-	CCHAR_FLOP8_SIDE_A		= 0,
-	CCHAR_FLOP8_SIDE_B		= 1,
+enum f8_drives {
+	F8_DRV_0	= 0b000 << 13,
+	F8_DRV_1	= 0b001 << 13,
+	F8_DRV_2	= 0b100 << 13,
+	F8_DRV_3	= 0b101 << 13,
 };
 
-// interrupts
-enum char_flop_interrupts {
-	CCHAR_FLOP8_INT_OUTDATED		= 0b00000, // interrupt out of date
-	CCHAR_FLOP8_INT_READY			= 0b00001, // device is ready
-	CCHAR_FLOP8_INT_HW_ERR			= 0b00010, // hardware error
-	CCHAR_FLOP8_INT_SECT_NOT_FOUND	= 0b11010, // sector not found
-	CCHAR_FLOP8_INT_CRC_ERR			= 0b01010, // data CRC error
-	CCHAR_FLOP8_INT_SECT_BAD		= 0b10010, // sector marked as bad
+enum f8_sides {
+	F8_SIDE_A	= 0 << 12,
+	F8_SIDE_B	= 1 << 12,
 };
 
-typedef struct cchar_unit_flop8 {
+#define F8_ADDR_TRACK(n) (n << 5)
+#define F8_ADDR_SECTOR(n) (n)
+
+#define INITIAL_ADDRESS (F8_DRV_0 | F8_SIDE_A | F8_ADDR_TRACK(1) | F8_ADDR_SECTOR(1))
+
+typedef struct flop8 {
 	struct cchar_unit_proto_t proto;
-	char *image[DRIVES];
-	FILE *f[DRIVES];
-	int drive, side, track, sector, byte;
+	char *image[F8_DRIVE_CNT];
+	FILE *f[F8_DRIVE_CNT];
+	int drive, side, track, sector;
+	int buf_pos;
+	uint8_t buf[F8_BYTES_PER_SECTOR];
+	pthread_t worker;
+	pthread_mutex_t state_mutex;
+	pthread_cond_t state_cond;
+	int state;
+	int operation;
+	bool pending_write;
+	bool force_interrupt;
+	int interrupts;
 } flop8;
+
+static void * flop8_worker_loop(void *ptr);
+static void flop8_reset_state(flop8 *u);
+
+// -----------------------------------------------------------------------
+static void flop8_set_address(flop8 *u, uint16_t addr)
+{
+	int drive = (addr >> 13) & 0b111;
+	u->drive = (drive & 1) | ((drive >> 1) & 2);
+	u->side = (addr >> 12) & 1;
+	u->track = (addr >> 5) & 0b1111111;
+	u->sector = addr & 0b11111;
+	u->buf_pos = 0;
+}
 
 // -----------------------------------------------------------------------
 struct cchar_unit_proto_t * cchar_flop8_create(em400_cfg *cfg, int ch_num, int dev_num)
 {
-	flop8 *unit = (flop8 *) calloc(1, sizeof(flop8));
-	if (!unit) {
+	flop8 *flop = (flop8 *) calloc(1, sizeof(flop8));
+	if (!flop) {
 		LOGERR("Failed to allocate memory for 8-inch floppy: %i.%i", ch_num, dev_num);
 		goto fail;
 	}
 
-	for (int id=0 ; id<DRIVES ; id++) {
+	for (int id=0 ; id<F8_DRIVE_CNT ; id++) {
 		const char *image = cfg_fgetstr(cfg, "dev%i.%i:image_%i", ch_num, dev_num, id);
 		if (!image) continue;
 
-		unit->image[id] = strdup(image);
-		if (!unit->image[id]) {
+		flop->image[id] = strdup(image);
+		if (!flop->image[id]) {
 			LOGERR("8-inch floppy image data memory allocation error.");
 			goto fail;
 		}
-		unit->f[id] = fopen(image, "r+b");
-		if (unit->f[id]) {
+		flop->f[id] = fopen(image, "r+b");
+		if (flop->f[id]) {
 			LOG(L_FLOP, "Drive %i: %s.", id, image);
 		} else {
 			LOGERR("Failed to open 8-inch floppy image: %s (drive %i).", image, id);
 			goto fail;
 		}
 
-		fseek(unit->f[id], 0L, SEEK_END);
-		int sz = ftell(unit->f[id]);
-		if (sz != DISK_SIZE_BYTES) {
-			LOGERR("Wrong 8-inch floppy drive %i image '%s' size: %i instead of %i.", id, image, sz, DISK_SIZE_BYTES);
+		fseek(flop->f[id], 0L, SEEK_END);
+		int sz = ftell(flop->f[id]);
+		if (sz != F8_DISK_SIZE_BYTES) {
+			LOGERR("Wrong 8-inch floppy drive %i image '%s' size: %i instead of %i.", id, image, sz, F8_DISK_SIZE_BYTES);
 			goto fail;
 		}
 	}
 
-	unit->drive = 0;
-	unit->side = 0;
-	unit->track = 1;
-	unit->sector = 1;
-	unit->byte = 0;
+	if (pthread_mutex_init(&flop->state_mutex, NULL)) {
+		LOGERR("Failed to initialize 8-inch floppy status mutex.");
+		goto fail;
+	}
 
-	return (struct cchar_unit_proto_t *) unit;
+	if (pthread_cond_init(&flop->state_cond, NULL)) {
+		LOGERR("Failed to initialize 8-inch floppy status cond.");
+		goto fail;
+	}
+
+	if (pthread_create(&flop->worker, NULL, flop8_worker_loop, flop)) {
+		LOGERR("Failed to spawn 8-inch floppy worker thread.");
+		goto fail;
+	}
+
+	flop8_reset_state(flop);
+
+	return (struct cchar_unit_proto_t *) flop;
 
 fail:
-	cchar_flop8_shutdown((struct cchar_unit_proto_t*) unit);
+	cchar_flop8_shutdown((struct cchar_unit_proto_t*) flop);
 	return NULL;
+}
+
+// -----------------------------------------------------------------------
+static void flop8_reset_state(flop8 *flop)
+{
+	pthread_mutex_lock(&flop->state_mutex);
+	flop8_set_address(flop, INITIAL_ADDRESS);
+	flop->state = F8ST_IDLE;
+	flop->pending_write = false;
+	flop->force_interrupt = false;
+	atom_store_release(&flop->interrupts, F8_INT_NONE);
+	pthread_mutex_unlock(&flop->state_mutex);
 }
 
 // -----------------------------------------------------------------------
 void cchar_flop8_shutdown(struct cchar_unit_proto_t *unit)
 {
-	flop8 *u = (flop8 *) unit;
-	if (!u) return;
+	flop8 *flop = (flop8 *) unit;
+	if (!flop) return;
 
-	for (int i=0 ; i<DRIVES ; i++) {
-		if (u->f[i]) fclose(u->f[i]);
-		if (u->image[i]) free(u->image[i]);
+	pthread_mutex_lock(&flop->state_mutex);
+	flop->state = F8ST_QUIT;
+	pthread_cond_signal(&flop->state_cond);
+	pthread_mutex_unlock(&flop->state_mutex);
+
+	if (flop->worker) pthread_join(flop->worker, NULL);
+	pthread_mutex_destroy(&flop->state_mutex);
+	pthread_cond_destroy(&flop->state_cond);
+
+	for (int i=0 ; i<F8_DRIVE_CNT ; i++) {
+		if (flop->f[i]) fclose(flop->f[i]);
+		if (flop->image[i]) free(flop->image[i]);
 	}
-	free(u);
+	free(flop);
 }
 
 // -----------------------------------------------------------------------
 void cchar_flop8_reset(struct cchar_unit_proto_t *unit)
 {
-	flop8 *u = (flop8 *) unit;
-	u->drive = 0;
-	u->side = 0;
-	u->track = 1;
-	u->sector = 1;
-	u->byte = 0;
+	flop8 *flop = (flop8 *) unit;
+	LOG(L_FLOP, "reset");
+	flop8_reset_state(flop);
+	cchar_int_cancel(flop->proto.chan, flop->proto.num);
+	LOG(L_FLOP, "reset done");
 }
 
 // -----------------------------------------------------------------------
-static int cchar_flop8_access(struct cchar_unit_proto_t *unit, uint16_t *r_arg, int cmd)
+static bool f8_sector_advance(flop8 *flop)
 {
-	flop8 *u = (flop8 *) unit;
-	int res;
-	uint8_t data;
+	flop->sector++;
+	flop->buf_pos = 0;
 
-	if (!u->f[u->drive]) {
-		LOG(L_FLOP, "No image attached to drive %i", u->drive);
-		// TODO: send interrupt
-		return IO_EN;
+	LOG(L_FLOP, "next sector: %i", flop->sector);
+
+	if (flop->sector > F8_SECTOR_PER_TRACK) {
+		flop->sector = 1;
+		flop->track++;
+		LOG(L_FLOP, "track end, next track: %i", flop->track);
+		if (flop->track > F8_TRACK_LAST) {
+			flop->track = 1;
+			LOG(L_FLOP, "disk end");
+			return true;
+		}
 	}
+	return false;
+}
 
-	int offset = (u->track * SPT + (u->sector-1)) * SECTOR_BYTES + u->byte;
-	res = fseek(u->f[u->drive], offset, SEEK_SET);
+// -----------------------------------------------------------------------
+static bool f8_img_seek(flop8 *flop)
+{
+	pthread_mutex_lock(&flop->state_mutex);
+	LOG(L_FLOP, "Seek: track %i, sector %i", flop->track, flop->sector);
+	int offset = (flop->track * F8_SECTOR_PER_TRACK + (flop->sector-1)) * F8_BYTES_PER_SECTOR;
+	pthread_mutex_unlock(&flop->state_mutex);
+	int res = fseek(flop->f[flop->drive], offset, SEEK_SET);
 	if (res != 0) {
 		LOG(L_FLOP, "Image file seek failed");
-		// TODO: send interrupt
+		return true;
+	}
+	return false;
+}
+
+// -----------------------------------------------------------------------
+static bool f8_img_read_sector(flop8 *flop)
+{
+	pthread_mutex_lock(&flop->state_mutex);
+	int res = fread(&flop->buf, 1, F8_BYTES_PER_SECTOR, flop->f[flop->drive]);
+	if (res != F8_BYTES_PER_SECTOR) {
+		LOG(L_FLOP, "Failed floppy read");
+		return true;
+	}
+	pthread_mutex_unlock(&flop->state_mutex);
+	LOG(L_FLOP, "Read sector (%x %x %x ...)", flop->buf[0], flop->buf[1], flop->buf[2]);
+	return false;
+}
+
+// -----------------------------------------------------------------------
+static bool f8_img_write_sector(flop8 *flop)
+{
+	LOG(L_FLOP, "Write sector (%x %x %x ...)", flop->buf[0], flop->buf[1], flop->buf[2]);
+	int res = fwrite(&flop->buf, 1, F8_BYTES_PER_SECTOR, flop->f[flop->drive]);
+	if (res != F8_BYTES_PER_SECTOR) {
+		LOG(L_FLOP, "Failed floppy write");
+		return true;
+	}
+	return false;
+}
+
+// -----------------------------------------------------------------------
+static void * flop8_worker_loop(void *ptr)
+{
+	flop8 *flop = (flop8 *) ptr;
+	int interrupt;
+	int state;
+	bool quit = false;
+
+	while (!quit) {
+
+		pthread_mutex_lock(&flop->state_mutex);
+		while (flop->state == F8ST_IDLE) {
+			LOG(L_FLOP, "Worker waiting for state change");
+			pthread_cond_wait(&flop->state_cond, &flop->state_mutex);
+		}
+		interrupt = F8_INT_NONE;
+		state = flop->state;
+		pthread_mutex_unlock(&flop->state_mutex);
+
+		switch (state) {
+			case F8ST_QUIT:
+				LOG(L_FLOP, "Worker processing state: QUIT");
+				quit = true;
+				break;
+			case F8ST_SECT_RD:
+				LOG(L_FLOP, "Worker processing state: SECTOR READ");
+				if (!flop->f[flop->drive]) {
+					LOG(L_FLOP, "No image attached to drive %i", flop->drive);
+					interrupt |= 1 << F8_INT_HW_ERR;
+					pthread_mutex_lock(&flop->state_mutex);
+					flop->state = F8ST_IDLE;
+					pthread_mutex_unlock(&flop->state_mutex);
+				} else {
+					if ((flop->sector == 26) && (flop->track == 73)) {
+						interrupt |= 1 << F8_INT_DISK_END;
+					}
+					f8_img_seek(flop);
+					f8_img_read_sector(flop);
+					interrupt |= 1 << F8_INT_READY;
+					pthread_mutex_lock(&flop->state_mutex);
+					flop->buf_pos = 0;
+					flop->state = F8ST_BUF_RD;
+					pthread_mutex_unlock(&flop->state_mutex);
+				}
+				break;
+			case F8ST_SECT_RD_CANCEL:
+				LOG(L_FLOP, "Worker processing state: SECTOR READ CANCEL");
+				f8_sector_advance(flop);
+				interrupt |= 1 << F8_INT_READY;
+				pthread_mutex_lock(&flop->state_mutex);
+				flop->state = F8ST_IDLE;
+				pthread_mutex_unlock(&flop->state_mutex);
+				break;
+			case F8ST_BUF_WR_INIT:
+				LOG(L_FLOP, "Worker processing state: WRITE INIT");
+				if (!flop->f[flop->drive]) {
+					LOG(L_FLOP, "No image attached to drive %i", flop->drive);
+					interrupt |= 1 << F8_INT_HW_ERR;
+					pthread_mutex_lock(&flop->state_mutex);
+					flop->state = F8ST_IDLE;
+					pthread_mutex_unlock(&flop->state_mutex);
+				} else {
+					// TODO: start the engine
+					// TODO: ustalenie sposobu/rodzaju zapisu
+					if ((flop->sector == 26) && (flop->track == 73)) {
+						interrupt |= 1 << F8_INT_DISK_END;
+					}
+					interrupt |= 1 << F8_INT_READY;
+					pthread_mutex_lock(&flop->state_mutex);
+					flop->state = F8ST_BUF_WR;
+					flop->buf_pos = 0;
+					pthread_mutex_unlock(&flop->state_mutex);
+				}
+				break;
+			case F8ST_SECT_WR:
+				LOG(L_FLOP, "Worker processing state: SECTOR WRITE");
+				f8_img_seek(flop);
+				f8_img_write_sector(flop);
+				f8_sector_advance(flop);
+				// TODO: jeśli z kontrolą - odczyt
+				pthread_mutex_lock(&flop->state_mutex);
+				if (flop->force_interrupt) {
+					interrupt |= 1 << F8_INT_READY;
+				}
+				if (flop->pending_write) {
+					flop->state = F8ST_BUF_WR_INIT;
+					flop->pending_write = false;
+				} else {
+					flop->state = F8ST_IDLE;
+				}
+				pthread_mutex_unlock(&flop->state_mutex);
+				break;
+		}
+
+		if (interrupt != F8_INT_NONE) {
+			LOG(L_FLOP, "Worker sending interrupt");
+			atom_store_release(&flop->interrupts, interrupt);
+			cchar_int_trigger(flop->proto.chan);
+			flop->force_interrupt = false;
+		}
+
 	}
 
-	if (cmd == CCHAR_FLOP8_CMD_READ) {
-		res = fread(&data, 1, 1, u->f[u->drive]);
-		if (res != 1) {
-			LOG(L_FLOP, "Failed floppy read");
-			// TODO: send interrupt
-		}
-		*r_arg = data;
-	} else {
-		data = *r_arg & 0xff;
-		res = fwrite(&data, 1, 1, u->f[u->drive]);
-		if (res != 1) {
-			LOG(L_FLOP, "Failed floppy write");
-			// TODO: send interrupt
+	LOG(L_FLOP, "Leaving 8-inch floppy worker loop");
+	pthread_exit(NULL);
+}
+
+// -----------------------------------------------------------------------
+bool cchar_flop8_has_interrupt(struct cchar_unit_proto_t *unit)
+{
+	flop8 *flop = (flop8 *) unit;
+	return atom_load_acquire(&flop->interrupts) ? true : false;
+}
+
+// -----------------------------------------------------------------------
+int cchar_flop8_intspec(struct cchar_unit_proto_t *unit)
+{
+	flop8 *flop = (flop8 *) unit;
+
+	int spec = F8_INT_NONE;
+	int ints = atom_load_acquire(&flop->interrupts);
+
+	for (int shift=0 ; shift<=5 ; shift++) {
+		if (ints & (1<<shift)) {
+			spec = f8_interrupt_specs[shift];
+			atom_store_release(&flop->interrupts, ints & ~(1<<shift));
+			break;
 		}
 	}
 
-	u->byte++;
-	if (u->byte >= SECTOR_BYTES) {
-		u->byte = 0;
-		u->sector++;
-		LOG(L_FLOP, "sector end, next sector: %i", u->sector);
-		if (u->sector > SPT) {
-			u->sector = 1;
-			u->track++;
-			LOG(L_FLOP, "track end, next track: %i", u->track);
-			if (u->track > TRACK_LAST) {
-				u->track = 1;
-				LOG(L_FLOP, "disk end");
-				// TODO: send interrupt
+	return spec;
+}
+
+// -----------------------------------------------------------------------
+static int f8_cmd_read(struct cchar_unit_proto_t *unit, uint16_t *r_arg)
+{
+	flop8 *flop = (flop8 *) unit;
+	int io_ret;
+
+	pthread_mutex_lock(&flop->state_mutex);
+	switch (flop->state) {
+		case F8ST_IDLE:
+			LOG(L_FLOP, "command: read (state: idle)");
+			flop->state = F8ST_SECT_RD;
+			pthread_cond_signal(&flop->state_cond);
+			io_ret = IO_EN;
+			break;
+		case F8ST_BUF_RD:
+			*r_arg = flop->buf[flop->buf_pos];
+			LOG(L_FLOP, "command: read byte 0x%02x (state: buffer read)", *r_arg);
+			flop->buf_pos++;
+			if (flop->buf_pos >= F8_BYTES_PER_SECTOR) {
+				// last byte, set next sector address
+				f8_sector_advance(flop);
+				flop->state = F8ST_IDLE;
 			}
-		}
+			atom_store_release(&flop->interrupts, F8_INT_NONE);
+			io_ret = IO_OK;
+			break;
+		default:
+			LOG(L_FLOP, "command: read (state: other)");
+			io_ret = IO_EN;
+			break;
 	}
+	pthread_mutex_unlock(&flop->state_mutex);
+
+	return io_ret;
+}
+
+// -----------------------------------------------------------------------
+static int f8_cmd_write(struct cchar_unit_proto_t *unit, uint16_t *r_arg)
+{
+	flop8 *flop = (flop8 *) unit;
+	int io_ret;
+
+	pthread_mutex_lock(&flop->state_mutex);
+	switch (flop->state) {
+		case F8ST_IDLE:
+			LOG(L_FLOP, "command: write (state: idle)");
+			flop->state = F8ST_BUF_WR_INIT;
+			pthread_cond_signal(&flop->state_cond);
+			io_ret = IO_EN;
+			break;
+		case F8ST_BUF_WR:
+			flop->buf[flop->buf_pos] = *r_arg;
+			LOG(L_FLOP, "command: write byte 0x%02x (state: buffer write)", flop->buf[flop->buf_pos]);
+			flop->buf_pos++;
+			if (flop->buf_pos >= F8_BYTES_PER_SECTOR) {
+				flop->state = F8ST_SECT_WR;
+				pthread_cond_signal(&flop->state_cond);
+			}
+			atom_store_release(&flop->interrupts, F8_INT_NONE);
+			io_ret = IO_OK;
+			break;
+		case F8ST_SECT_WR:
+			LOG(L_FLOP, "command: write (state: sector write)");
+			flop->pending_write = true;
+			pthread_cond_signal(&flop->state_cond);
+			io_ret = IO_EN;
+			break;
+		default:
+			LOG(L_FLOP, "command: write (state: other)");
+			io_ret = IO_EN;
+			break;
+	}
+	pthread_mutex_unlock(&flop->state_mutex);
+
+	return io_ret;
+}
+
+// -----------------------------------------------------------------------
+static int f8_cmd_control(struct cchar_unit_proto_t *unit, uint16_t *r_arg, int cmd)
+{
+	flop8 *flop = (flop8 *) unit;
+	int io_ret;
+
+	pthread_mutex_lock(&flop->state_mutex);
+	switch (flop->state) {
+		case F8ST_IDLE:
+			LOG(L_FLOP, "command: control (state: idle)");
+			flop->operation = cmd;
+			flop8_set_address(flop, *r_arg);
+			LOG(L_FLOP, "Set new address: drive %i, side: %i, track %i, sector %i", flop->drive, flop->side, flop->track, flop->sector);
+			io_ret = IO_OK;
+			break;
+		default:
+			LOG(L_FLOP, "command: control (state: other)");
+			io_ret = IO_EN;
+			break;
+	}
+	pthread_mutex_unlock(&flop->state_mutex);
+
+	return io_ret;
+}
+
+// -----------------------------------------------------------------------
+static int f8_cmd_reset(struct cchar_unit_proto_t *unit)
+{
+	LOG(L_FLOP, "command: reset");
+	flop8 *flop = (flop8*) unit;
+	flop8_reset_state(flop);
+	cchar_int_cancel(flop->proto.chan, flop->proto.num);
 
 	return IO_OK;
 }
 
 // -----------------------------------------------------------------------
-static int cchar_flop8_seek(struct cchar_unit_proto_t *unit, uint16_t *r_arg, int cmd)
+static int f8_cmd_spu()
 {
-	flop8 *u = (flop8 *) unit;
-
-	int drive = (*r_arg >> 13) & 0b111;
-	u->drive = (drive & 1) | ((drive >> 1) & 2);
-	u->side = (*r_arg >> 12) & 1;
-	u->track = (*r_arg >> 5) & 0b1111111;
-	u->sector = *r_arg & 0b11111;
-	u->byte = 0;
-
-	LOG(L_FLOP, "Set new address: drive %i, side: %i, track %i, sector %i", u->drive, u->side, u->track, u->sector);
+	LOG(L_FLOP, "command: SPU");
 
 	return IO_OK;
+}
+
+// -----------------------------------------------------------------------
+static int f8_cmd_detach(struct cchar_unit_proto_t *unit)
+{
+	LOG(L_FLOP, "command: detach");
+	flop8 *flop = (flop8 *) unit;
+	int io_ret;
+
+	pthread_mutex_lock(&flop->state_mutex);
+	switch (flop->state) {
+		case F8ST_IDLE:
+			LOG(L_FLOP, "command: detach (state: idle)");
+			atom_store_release(&flop->interrupts, F8_INT_NONE);
+			io_ret = IO_OK;
+			break;
+		case F8ST_BUF_RD:
+			LOG(L_FLOP, "command: detach (state: buffer read)");
+			flop->state = F8ST_SECT_RD_CANCEL;
+			pthread_cond_signal(&flop->state_cond);
+			io_ret = IO_EN;
+			break;
+		case F8ST_BUF_WR:
+			LOG(L_FLOP, "command: detach (state: buffer write)");
+			while (flop->buf_pos < F8_BYTES_PER_SECTOR) {
+				flop->buf[flop->buf_pos] = 0;
+				flop->buf_pos++;
+			}
+			flop->state = F8ST_SECT_WR;
+			flop->force_interrupt = true;
+			pthread_cond_signal(&flop->state_cond);
+			io_ret = IO_EN;
+			break;
+		case F8ST_SECT_WR:
+			LOG(L_FLOP, "command: detach (state: sector write)");
+			flop->force_interrupt = true;
+			flop->pending_write = false;
+			io_ret = IO_EN;
+			break;
+		default:
+			LOG(L_FLOP, "command: detach (state: other)");
+			io_ret = IO_EN;
+			break;
+	}
+	pthread_mutex_unlock(&flop->state_mutex);
+
+	return io_ret;
 }
 
 // -----------------------------------------------------------------------
@@ -231,38 +602,32 @@ int cchar_flop8_cmd(struct cchar_unit_proto_t *unit, int dir, int cmd, uint16_t 
 {
 	if (dir == IO_IN) {
 		switch (cmd) {
-		case CCHAR_FLOP8_CMD_SPU:
-			LOG(L_FLOP, "command: SPU");
-			break;
-		case CCHAR_FLOP8_CMD_READ:
-			return cchar_flop8_access(unit, r_arg, CCHAR_FLOP8_CMD_READ);
-		default:
-			LOG(L_FLOP, "unknown IN command: %i", cmd);
-			break;
+			case F8CMD_SPU:
+				return f8_cmd_spu();
+			case F8CMD_READ:
+				return f8_cmd_read(unit, r_arg);
+			default:
+				LOG(L_FLOP, "unknown IN command: %i", cmd);
+				return IO_OK;
 		}
 	} else {
 		switch (cmd) {
-		case CCHAR_FLOP8_CMD_RESET:
-			LOG(L_FLOP, "command: reset");
-			cchar_flop8_reset(unit);
-			break;
-		case CCHAR_FLOP8_CMD_DISCONNECT:
-			LOG(L_FLOP, "command: disconnect");
-			cchar_flop8_reset(unit);
-			break;
-		case CCHAR_FLOP8_CMD_WRITE:
-			return cchar_flop8_access(unit, r_arg, CCHAR_FLOP8_CMD_WRITE);
-		case CCHAR_FLOP8_CMD_SEEK_R:
-		case CCHAR_FLOP8_CMD_SEEK_W:
-		case CCHAR_FLOP8_CMD_SEEK_WC:
-		case CCHAR_FLOP8_CMD_SEEK_B:
-			return cchar_flop8_seek(unit, r_arg, cmd);
-		default:
-			LOG(L_FLOP, "unknown OUT command: %i", cmd);
-			break;
+			case F8CMD_RESET:
+				return f8_cmd_reset(unit);
+			case F8CMD_DETACH:
+				return f8_cmd_detach(unit);
+			case F8CMD_WRITE:
+				return f8_cmd_write(unit, r_arg);
+			case F8CMD_CTL_R:
+			case F8CMD_CTL_W:
+			case F8CMD_CTL_WC:
+			case F8CMD_CTL_B:
+				return f8_cmd_control(unit, r_arg, cmd);
+			default:
+				LOG(L_FLOP, "unknown OUT command: %i", cmd);
+				return IO_OK;
 		}
 	}
-	return IO_OK;
 }
 
 // vim: tabstop=4 shiftwidth=4 autoindent

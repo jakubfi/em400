@@ -18,6 +18,8 @@
 #ifndef CCHAR_TERM_CONS_H
 #define CCHAR_TERM_CONS_H
 
+#include <stdbool.h>
+
 #include "io/dev/fdbridge.h"
 #include "io/cchar.h"
 #include "cfg.h"
@@ -27,6 +29,7 @@
 struct cchar_unit_term_t {
 	struct cchar_unit_proto_t proto;
 	struct fdb *term;
+	int spec;
 };
 
 // commands
@@ -53,6 +56,8 @@ void cchar_term_shutdown(struct cchar_unit_proto_t *unit);
 void cchar_term_reset(struct cchar_unit_proto_t *unit);
 void * cchar_term_worker(void *ptr);
 int cchar_term_cmd(struct cchar_unit_proto_t *unit, int dir, int cmd, uint16_t *r_arg);
+int cchar_term_intspec(struct cchar_unit_proto_t *unit);
+bool cchar_term_has_interrupt(struct cchar_unit_proto_t *unit);
 
 
 #endif

@@ -1,4 +1,6 @@
-; OPTS -c configs/flop8_0.ini
+; OPTS -c configs/flop8_prewrite.ini
+
+; read floppy contents with positioning (not using interruts)
 
 	.cpu	mera400
 
@@ -8,8 +10,8 @@
 	mcl
 	uj	start
 
-	.const	FLOP_CHAN 1
-	.const	FLOP_DEV 0
+	.const	FLOP_CHAN 7
+	.const	FLOP_DEV 2
 	.const	FLOP FLOP_CHAN\IO_CHAN | FLOP_DEV\IO_DEV
 
 	.org	OS_START
@@ -22,10 +24,9 @@
 check_sector:
 	.res	1
 
-	lw	r0, ?X	; flag to indicate which byte is processed
+	lwt	r0, 0	; flag to indicate which byte is processed
 	lwt	r1, 0
 .addr_loop:
-	xr	r0, ?X
 	in	r7, FLOP | KZ_CMD_DEV_READ
 	.word	.no1, .en1, .ok1, .pe1
 .no1:	hlt	040
@@ -34,6 +35,7 @@ check_sector:
 .ok1:	zlb	r7
 	or	r1, r7
 	jxs	.check_addr
+	xr	r0, ?X
 	shc	r1, 8
 	ujs	.addr_loop
 
@@ -65,23 +67,6 @@ check_sector:
 	uj	[check_sector]
 
 ; ------------------------------------------------------------------------
-; check if step-by-step sector addressing (starting from track 1 sector 1) works right after reset
-read_after_reset:
-	.res	1
-	lw	r5, 26	; initially, head is positioned on track 1 sector 1 (logical sector 26)
-.loop:
-	lj	check_sector
-
-.next_sector:
-	awt	r5, 1
-	cw	r5, 26*73	; sectors to check
-	jes	.end
-	ujs	.loop
-
-.end:
-	uj	[read_after_reset]
-
-; ------------------------------------------------------------------------
 ; check if positioning for read works
 positioned_read:
 	.res	1
@@ -89,14 +74,22 @@ positioned_read:
 	lw	r6, .positions
 
 .loop:
+	; detach drive
+	ou	r2, FLOP | KZ_CMD_DEV_DETACH
+	.word	.no1, .en1, .ok1, .pe1
+.no1:	hlt	45
+.en1:	hlt	46
+.pe1:	hlt	47
+.ok1:
+.position:
 	; position head
 	lw	r2, [r6]
 	ou	r2, FLOP | KZ_CMD_CTL4
-	.word	.no, .en, .ok, .pe
-.no:	hlt	062
-.en:	ujs	.loop
-.pe:	hlt	063
-.ok:
+	.word	.no2, .en2, .ok2, .pe2
+.no2:	hlt	062
+.en2:	ujs	.position
+.pe2:	hlt	063
+.ok2:
 	; check sector
 	lw	r5, [r6+1]
 	lj	check_sector
@@ -137,7 +130,6 @@ positioned_read:
 
 ; ------------------------------------------------------------------------
 start:
-	lj	read_after_reset
 	lj	positioned_read
 
 	hlt	077

@@ -1,4 +1,4 @@
-; OPTS -c configs/flop8_1.ini
+; OPTS -c configs/flop8_empty.ini
 ; PRECMD CLOCK ON
 
 	.cpu	mera400
@@ -9,8 +9,8 @@
 	mcl
 	uj	start
 
-	.const	FLOP_CHAN 1
-	.const	FLOP_DEV 0
+	.const	FLOP_CHAN 7
+	.const	FLOP_DEV 2
 	.const	FLOP FLOP_CHAN\IO_CHAN | FLOP_DEV\IO_DEV
 
 	.org	OS_START
@@ -161,21 +161,8 @@ positioned_write:
 	shc	r3, 8
 	zlb	r3
 	cw	r3, r2
-	jes	.read3
-	hlt	061
-
-.read3:
-	; read byte 3
-	in	r2, FLOP | KZ_CMD_DEV_READ
-	.word	.nor4, .enr4, .okr4, .per4
-.nor4:	hlt	062
-.enr4:	ujs	.read3
-.per4:	hlt	063
-.okr4:
-	lw	r3, 2
-	cw	r3, r2
 	jes	.loop_over
-	hlt	064
+	hlt	061
 
 .loop_over:
 	awt	r6, 2

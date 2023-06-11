@@ -30,6 +30,8 @@
 #include "log.h"
 #include "cfg.h"
 
+#define NO_INTERRUPT_REPORTED -1
+
 // unit prototypes
 struct cchar_unit_proto_t cchar_unit_proto[] = {
 	{
@@ -37,16 +39,20 @@ struct cchar_unit_proto_t cchar_unit_proto[] = {
 		cchar_term_create,
 		cchar_term_shutdown,
 		cchar_term_reset,
-		cchar_term_cmd
+		cchar_term_cmd,
+		cchar_term_intspec,
+		cchar_term_has_interrupt,
 	},
 	{
 		"floppy8",
 		cchar_flop8_create,
 		cchar_flop8_shutdown,
 		cchar_flop8_reset,
-		cchar_flop8_cmd
+		cchar_flop8_cmd,
+		cchar_flop8_intspec,
+		cchar_flop8_has_interrupt,
 	},
-	{ NULL, NULL, NULL, NULL, NULL }
+	{ NULL, NULL, NULL, NULL, NULL, NULL, NULL }
 };
 
 // -----------------------------------------------------------------------
@@ -94,21 +100,19 @@ void * cchar_create(int ch_num, em400_cfg *cfg)
 		unit->shutdown = proto->shutdown;
 		unit->reset = proto->reset;
 		unit->cmd = proto->cmd;
+		unit->intspec = proto->intspec;
+		unit->has_interrupt = proto->has_interrupt;
 
 		// remember the channel unit is connected to
 		unit->chan = chan;
 		unit->num = dev_num;
 
 		chan->unit[dev_num] = unit;
-
 	}
 
 	// clear unit interrupts
 	pthread_mutex_lock(&chan->int_mutex);
-	for (int unit_n=0 ; unit_n<CCHAR_MAX_DEVICES ; unit_n++) {
-		chan->int_unit[unit_n] = CCHAR_INT_NONE;
-	}
-	chan->int_reported = -1;
+	chan->interrupting_device = NO_INTERRUPT_REPORTED;
 	pthread_mutex_unlock(&chan->int_mutex);
 
 	return (void *) chan;
@@ -143,68 +147,66 @@ void cchar_reset(void *chan)
 			u->reset(u);
 		}
 	}
+
 	pthread_mutex_lock(&ch->int_mutex);
-	ch->int_reported = -1;
+	ch->interrupting_device = NO_INTERRUPT_REPORTED;
 	pthread_mutex_unlock(&ch->int_mutex);
 }
 
 // -----------------------------------------------------------------------
-static void cchar_int_report(struct cchar_chan_t *chan)
+void cchar_int_trigger(struct cchar_chan_t *chan)
 {
-	// if interrupt is reported and not yet served, there's nothing to do, for now
 	pthread_mutex_lock(&chan->int_mutex);
-	if (chan->int_reported != -1) {
-		pthread_mutex_unlock(&chan->int_mutex);
-		return;
+	if (chan->interrupting_device != NO_INTERRUPT_REPORTED) {
+		// interrupt reported to the CPU but not yet served, nothing more to do
+		LOG(L_CCHR, "CCHAR (ch:%i) not reporting interrupt. Reported by unit: %i has yet to be served", chan->num, chan->interrupting_device);
+	} else {
+		// check if any unit reported interrupt
+		for (int unit_n=0 ; unit_n<CCHAR_MAX_DEVICES ; unit_n++) {
+			struct cchar_unit_proto_t *unit = chan->unit[unit_n];
+			if (unit && unit->has_interrupt(unit)) {
+				LOG(L_CCHR, "CCHAR (ch:%i) reporting interrupt from unit %i", chan->num, unit_n);
+				chan->interrupting_device = unit_n;
+				io_int_set(chan->num);
+				break;
+			}
+		}
+		LOG(L_CCHR, "CCHAR (ch:%i) No more interrupt lines active", chan->num);
 	}
 	pthread_mutex_unlock(&chan->int_mutex);
-
-	// check if any unit reported interrupt
-	for (int unit_n=0 ; unit_n<CCHAR_MAX_DEVICES ; unit_n++) {
-		pthread_mutex_lock(&chan->int_mutex);
-		if ((chan->int_unit[unit_n] != CCHAR_INT_NONE) && !chan->int_mask) {
-			chan->int_reported = unit_n;
-			pthread_mutex_unlock(&chan->int_mutex);
-			LOG(L_CCHR, "CCHAR (ch:%i) reporting interrupt %i", chan->num, chan->num + 12);
-			io_int_set(chan->num);
-			break;
-		} else {
-			pthread_mutex_unlock(&chan->int_mutex);
-		}
-	}
 }
 
 // -----------------------------------------------------------------------
-void cchar_int(struct cchar_chan_t *chan, int unit_n, int interrupt)
+void cchar_int_cancel(struct cchar_chan_t *chan, int unit_n)
 {
-	LOG(L_CCHR, "CCHAR (ch:%i) interrupt %i, unit: %i", chan->num, interrupt, unit_n);
+	LOG(L_CCHR, "CCHAR (ch:%i) unit: %i cancel interrupt", chan->num, unit_n);
 
 	pthread_mutex_lock(&chan->int_mutex);
-	chan->int_unit[unit_n] = interrupt;
+	if (chan->interrupting_device == unit_n) {
+		chan->interrupting_device = NO_INTERRUPT_REPORTED;
+	}
 	pthread_mutex_unlock(&chan->int_mutex);
 
-	cchar_int_report(chan);
+	cchar_int_trigger(chan);
 }
 
 // -----------------------------------------------------------------------
 static int cchar_cmd_intspec(struct cchar_chan_t *chan, uint16_t *r_arg)
 {
-	LOG(L_CCHR, "CCHAR (ch:%i) command: intspec", chan->num);
-
 	pthread_mutex_lock(&chan->int_mutex);
-	if (chan->int_reported != -1) {
-		*r_arg = (chan->int_unit[chan->int_reported] << 8) | (chan->int_reported << 5);
-		// mark interrupt as served
-		chan->int_unit[chan->int_reported] = CCHAR_INT_NONE;
-		// nothing new reported
-		chan->int_reported = -1;
+	if (chan->interrupting_device != NO_INTERRUPT_REPORTED) {
+		struct cchar_unit_proto_t *unit = chan->unit[chan->interrupting_device];
+		int intspec = unit->intspec(unit);
+		LOG(L_CCHR, "CCHAR (ch:%i) device %i interrupt specification: %i", chan->num, chan->interrupting_device, intspec);
+		*r_arg = (intspec << 8) | (chan->interrupting_device << 5);
+		chan->interrupting_device = NO_INTERRUPT_REPORTED;
 	} else {
 		*r_arg = 0;
 	}
 	pthread_mutex_unlock(&chan->int_mutex);
 
-	// report another interrupt if it's there
-	cchar_int_report(chan);
+	// try reporting another interrupt
+	cchar_int_trigger(chan);
 
 	return IO_OK;
 }
@@ -219,7 +221,6 @@ static int cchar_chan_cmd(struct cchar_chan_t *chan, int dir, int cmd, int u_num
 			LOG(L_CCHR, "CCHAR %i: command: check chan exists", chan->num);
 			break;
 		case CHAN_CMD_MASK_PN:
-			chan->int_mask = 1;
 			LOG(L_CCHR, "CCHAR %i: command: mask CPU", chan->num);
 			break;
 		case CHAN_CMD_MASK_NPN:
@@ -248,7 +249,7 @@ static int cchar_chan_cmd(struct cchar_chan_t *chan, int dir, int cmd, int u_num
 			LOG(L_CCHR, "CCHAR %i:%i: command: get allocation -> %i", chan->num, u_num, *r_arg);
 			break;
 		default:
-			LOG(L_CCHR, "CCHAR %i:%i: unknow command", chan->num, u_num);
+			LOG(L_CCHR, "CCHAR %i:%i: unknown command", chan->num, u_num);
 			// shouldn't happen, but as channel always reports OK...
 			break;
 		}

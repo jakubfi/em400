@@ -19,6 +19,7 @@
 #define CCHAR_H
 
 #include <inttypes.h>
+#include <stdbool.h>
 #include <pthread.h>
 
 #include "cfg.h"
@@ -32,6 +33,8 @@ typedef struct cchar_unit_proto_t * (*cchar_unit_f_create)(em400_cfg *cfg, int c
 typedef void (*cchar_unit_f_shutdown)(struct cchar_unit_proto_t *unit);
 typedef void (*cchar_unit_f_reset)(struct cchar_unit_proto_t *unit);
 typedef int (*cchar_unit_f_cmd)(struct cchar_unit_proto_t *unit, int dir, int cmd, uint16_t *r_arg);
+typedef int (*cchar_unit_f_intspec)(struct cchar_unit_proto_t *unit);
+typedef bool (*cchar_unit_f_has_interrupt)(struct cchar_unit_proto_t *unit);
 
 struct cchar_chan_t;
 
@@ -42,6 +45,8 @@ struct cchar_unit_proto_t {
 	cchar_unit_f_shutdown shutdown;
 	cchar_unit_f_reset reset;
 	cchar_unit_f_cmd cmd;
+	cchar_unit_f_intspec intspec;
+	cchar_unit_f_has_interrupt has_interrupt;
 
 	struct cchar_chan_t *chan;
 	int num;
@@ -52,8 +57,7 @@ struct cchar_chan_t {
 
 	pthread_mutex_t int_mutex;
 	int int_mask;
-	int int_unit[CCHAR_MAX_DEVICES];
-	int int_reported;
+	int interrupting_device;
 	int was_en;
 	int untransmitted;
 
@@ -63,7 +67,8 @@ struct cchar_chan_t {
 void *cchar_create(int num, em400_cfg *cfg);
 void cchar_shutdown(void *chan);
 void cchar_reset(void *chan);
-void cchar_int(struct cchar_chan_t *chan, int unit_n, int interrupt);
+void cchar_int_trigger(struct cchar_chan_t *chan);
+void cchar_int_cancel(struct cchar_chan_t *chan, int unit_n);
 int cchar_cmd(void *chan, int dir, uint16_t n_arg, uint16_t *r_arg);
 
 extern struct chan_drv cchar_chan_driver;

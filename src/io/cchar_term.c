@@ -23,9 +23,11 @@
 #include <stdlib.h>
 #include <strings.h>
 #include <inttypes.h>
+#include <stdbool.h>
 #include <stdio.h>
 
 #include "em400.h"
+#include "atomic.h"
 #include "io/defs.h"
 #include "io/cchar_term.h"
 #include "io/dev/fdbridge.h"
@@ -46,8 +48,10 @@ struct cchar_unit_proto_t * cchar_term_create(em400_cfg *cfg, int ch_num, int de
 
 	const char *transport = cfg_fgetstr(cfg, "dev%i.%i:transport", ch_num, dev_num);
 	const int speed = cfg_fgetint(cfg, "dev%i.%i:speed", ch_num, dev_num);
-	const char * device = cfg_fgetstr(cfg, "dev%i.%i:device", ch_num, dev_num);
+	const char *device = cfg_fgetstr(cfg, "dev%i.%i:device", ch_num, dev_num);
 	const int port = cfg_fgetint(cfg, "dev%i.%i:port", ch_num, dev_num);
+
+	LOG(L_TERM, "Creating terminal: transport: %s, speed: %i, device: %s, port: %i", transport, speed, device, port);
 
 	if (!strcasecmp(transport, "tcp")) {
 		if (!port) {
@@ -55,6 +59,9 @@ struct cchar_unit_proto_t * cchar_term_create(em400_cfg *cfg, int ch_num, int de
 			goto fail;
 		}
 		unit->term = fdb_open_tcp(port);
+		if (speed > 0) {
+			fdb_set_speed(unit->term, speed);
+		}
 	} else if (!strcasecmp(transport, "serial")) {
 		if (!device || (speed < 0)) {
 			LOGERR("Serial terminal needs both 'device' and 'speed' configuration.");
@@ -82,7 +89,6 @@ struct cchar_unit_proto_t * cchar_term_create(em400_cfg *cfg, int ch_num, int de
 	}
 
 	fdb_set_callback(unit->term, fdb_callback, unit);
-	fdb_set_speed(unit->term, speed);
 
 	return (struct cchar_unit_proto_t *) unit;
 
@@ -113,19 +119,39 @@ void cchar_term_reset(struct cchar_unit_proto_t *unit)
 int fdb_callback(void *ctx, int condition)
 {
 	struct cchar_unit_proto_t *unit = (struct cchar_unit_proto_t *) ctx;
+	struct cchar_unit_term_t *term = (struct cchar_unit_term_t*) ctx;
 
 	switch (condition) {
 		case FDB_READY:
 			LOG(L_TERM, "Callback: line data ready");
-			cchar_int(unit->chan, unit->num, CCHAR_TERM_INT_READY);
+			atom_store_release(&term->spec, CCHAR_TERM_INT_READY);
+			cchar_int_trigger(unit->chan);
 			break;
 		case FDB_LOST:
 			LOG(L_TERM, "Callback: data lost, transmission too slow");
-			cchar_int(unit->chan, unit->num, CCHAR_TERM_INT_TOO_SLOW);
+			atom_store_release(&term->spec, CCHAR_TERM_INT_TOO_SLOW);
+			cchar_int_trigger(unit->chan);
 		default:
 			break;
 	}
 	return 0;
+}
+
+// -----------------------------------------------------------------------
+int cchar_term_intspec(struct cchar_unit_proto_t *unit)
+{
+	struct cchar_unit_term_t *term = (struct cchar_unit_term_t*) unit;
+	int spec = atom_load_acquire(&term->spec);
+	atom_store_release(&term->spec, CCHAR_TERM_INT_OUTDATED);
+
+	return spec;
+}
+
+// -----------------------------------------------------------------------
+bool cchar_term_has_interrupt(struct cchar_unit_proto_t *unit)
+{
+	struct cchar_unit_term_t *term = (struct cchar_unit_term_t*) unit;
+	return atom_load_acquire(&term->spec) ? true : false;
 }
 
 // -----------------------------------------------------------------------
@@ -161,7 +187,7 @@ int cchar_term_write(struct cchar_unit_term_t *unit, uint16_t *r_arg)
 	if ((data >= 32) && (data < 127)) {
 		LOG(L_TERM, "Send to terminal: %i (%c)%s", data, data, res == IO_EN ? " failed (transmitter busy)" : "");
 	} else {
-		LOG(L_TERM, "Send to terminal: %i (#%02x)%s", data, data, res == IO_EN ? "failed (transmitter busy)" : "");
+		LOG(L_TERM, "Send to terminal: %i (#%02x)%s", data, data, res == IO_EN ? " failed (transmitter busy)" : "");
 	}
 
 	return res;
