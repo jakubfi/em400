@@ -102,7 +102,8 @@ class C5Fuse(fuse.Fuse):
     # --------------------------------------------------------------------
     def buildtree(self, tree):
         for i in self.c5fs.dicdic:
-            if self.c5fs.dicdic[i].topid == tree.eid:
+            xid = self.c5fs.dicdic[i].id if self.c5fs.dicdic[i].id < self.c5fs.dicdic[i].topid else self.c5fs.dicdic[i].topid
+            if xid == tree.eid:
                 st = fuse.Stat()
                 st.st_atime = int(time.time())
                 st.st_mtime = st.st_atime

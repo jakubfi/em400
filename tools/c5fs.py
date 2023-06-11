@@ -44,7 +44,7 @@ class DDEntry:
 
     # --------------------------------------------------------------------
     def __str__(self):
-        return "%4s [%5i]: %6s [%3s] (id:%-5i top:%-5i) subdirs: %i, budget: %i, OSL: %s (%s)" % (self.type, self.pos, self.name, self.password, self.id, self.topid, self.subdirs, self.budget, self.osl, self.osl_arg)
+        return "%4s [pos: %5i]: %6s [%3s] (id:%-5i top:%-5i) subdirs: %i, budget: %i, OSL: %s (%s)" % (self.type, self.pos, self.name, self.password, self.id, self.topid, self.subdirs, self.budget, self.osl, self.osl_arg)
 
 # ------------------------------------------------------------------------
 class FDEntry:
