@@ -506,7 +506,7 @@ data_mw:
 
 ; ------------------------------------------------------------------------
 data_dw:
-;	r0 pre  r0 want a1      a2      b1      wynik   reszta
+;	r0 pre  r0 want a1      a2      b1     wynik r1 reszta r2
 ; 0x231
 .word	0x4008, 0x8008, 0x0000, 0x0000, 0x0800, 0x0000, 0x0000
 ; 0x238
