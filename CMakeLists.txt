@@ -114,12 +114,14 @@ endif()
 
 # --- QT
 
+set(UI_QT OFF)
 find_package(Qt5 COMPONENTS Widgets)
 
 if (Qt5Widgets_FOUND)
 	message(STATUS "Found QT: ${Qt5Widgets_VERSION_STRING}")
 	set(CMAKE_CXX_STANDARD 11)
 	set(CMAKE_CXX_STANDARD_REQUIRED ON)
+	set(UI_QT ON)
 else()
 	message(STATUS "QT not found")
 endif()
@@ -257,7 +259,7 @@ if(PULSEAUDIO_FOUND)
 	list(APPEND SOURCES_EM400 src/sound/pulseaudio.c)
 endif()
 
-if (Qt5Widgets_FOUND)
+if (UI_QT)
 	list(APPEND SOURCES_EM400 src/ui/qt5/qt5.cpp)
 	list(APPEND SOURCES_EM400 src/ui/qt5/mainwindow.ui)
 	list(APPEND SOURCES_EM400 src/ui/qt5/mainwindow.cpp)
@@ -306,13 +308,14 @@ target_include_directories(em400 PRIVATE ${CMAKE_BINARY_DIR})
 target_compile_definitions(em400 PRIVATE EM400_VERSION="${APP_VERSION}")
 if(UI_CURSES)
 	target_compile_definitions(em400 PRIVATE UI_CURSES)
+	target_link_libraries(em400 ui-curses)
 endif(UI_CURSES)
 
 if(IPO_SUPPORTED)
 	set_property(TARGET em400 PROPERTY INTERPROCEDURAL_OPTIMIZATION TRUE)
 endif()
 
-if (Qt5Widgets_FOUND)
+if (UI_QT)
 	set_property(TARGET em400 PROPERTY AUTOMOC ON)
 	set_property(TARGET em400 PROPERTY AUTOUIC ON)
 	set_property(TARGET em400 PROPERTY AUTORCC ON)
@@ -323,6 +326,8 @@ if (Qt5Widgets_FOUND)
 	set_property(SOURCE ${CMAKE_CURRENT_BINARY_DIR}/uicurses_parser.h PROPERTY SKIP_AUTOGEN ON)
 	set_property(SOURCE ${CMAKE_CURRENT_BINARY_DIR}/uicurses_scanner.c PROPERTY SKIP_AUTOGEN ON)
 	target_include_directories(em400 PRIVATE ${Qt5Widgets_INCLUDE_DIRS})
+	target_compile_definitions(em400 PRIVATE UI_QT)
+	target_link_libraries(em400 ${Qt5Widgets_LIBRARIES})
 endif()
 
 target_link_libraries(em400
@@ -332,14 +337,7 @@ target_link_libraries(em400
 	${FLEX_LIBRARIES}
 	${BISON_LIBRARIES}
 	${CMAKE_THREAD_LIBS_INIT}
-	${Qt5Widgets_LIBRARIES}
 )
-
-if(UI_CURSES)
-	target_link_libraries(em400
-		ui-curses
-	)
-endif(UI_CURSES)
 
 if(NOT WIN32)
 	target_link_libraries(em400
