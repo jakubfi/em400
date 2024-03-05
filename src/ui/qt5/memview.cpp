@@ -12,9 +12,9 @@ MemView::MemView(QWidget *parent) :
 	cnb = caddr = 0;
 	bottom = 100;
 	right = 100;
-	words_per_line = 8;
+    words_per_line = 16;
 
-	set_font("Monospace");
+    set_font("Monospace", 12);
 }
 
 // -----------------------------------------------------------------------

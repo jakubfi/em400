@@ -31,14 +31,14 @@ MainWindow::MainWindow(QWidget *parent) :
 	r[ECTL_REG_KB] = ui->kb;
 	r[ECTL_REG_MC] = ui->mc;
 
-	r2[ECTL_REG_R0] = ui->r0_2;
-	r2[ECTL_REG_R1] = ui->r1_2;
-	r2[ECTL_REG_R2] = ui->r2_2;
-	r2[ECTL_REG_R3] = ui->r3_2;
-	r2[ECTL_REG_R4] = ui->r4_2;
-	r2[ECTL_REG_R5] = ui->r5_2;
-	r2[ECTL_REG_R6] = ui->r6_2;
-	r2[ECTL_REG_R7] = ui->r7_2;
+    r2[ECTL_REG_R0] = ui->r0;
+    r2[ECTL_REG_R1] = ui->r1;
+    r2[ECTL_REG_R2] = ui->r2;
+    r2[ECTL_REG_R3] = ui->r3;
+    r2[ECTL_REG_R4] = ui->r4;
+    r2[ECTL_REG_R5] = ui->r5;
+    r2[ECTL_REG_R6] = ui->r6;
+    r2[ECTL_REG_R7] = ui->r7;
 
 	ui->dasm->connect_emu(&e);
 

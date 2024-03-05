@@ -9,5 +9,7 @@
         <file>icons/stop.svg</file>
         <file>icons/open.svg</file>
         <file>icons/em400/em400_32.png</file>
+        <file>pulpit/0.jpg</file>
+        <file>pulpit/1.jpg</file>
     </qresource>
 </RCC>
