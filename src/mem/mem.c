@@ -141,6 +141,7 @@ bool mem_read_1(int nb, uint16_t addr, uint16_t *data)
 	if (ptr) {
 		*data = *ptr;
 	} else {
+		*data = 0;
 		return false;
 	}
 	return true;
@@ -168,6 +169,7 @@ bool mem_read_n(int nb, uint16_t saddr, uint16_t *dest, int count)
 		if (ptr) {
 			*dest = *ptr;
 		} else {
+			*dest = 0;
 			return false;
 		}
 	}
