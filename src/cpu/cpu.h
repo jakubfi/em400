@@ -70,11 +70,12 @@
 #define REG_RESTRICT_WRITE(i, v) r[i] = ((i)|!q) ? (v) : (r[i] & 0xff00) | ((v) & 0x00ff)
 
 extern uint16_t r[8];
-extern uint16_t ic, kb, ir, ac, ar;
+extern uint16_t ic, kb, ir, ac, ar, at;
 extern bool rALARM;
 extern int mc;
 extern unsigned rm, nb;
 extern bool p, q, bs;
+extern uint16_t w;
 
 extern bool zc17;
 

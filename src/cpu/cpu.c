@@ -52,11 +52,12 @@
 static int cpu_state = ECTL_STATE_OFF;
 
 uint16_t r[8];
-uint16_t ic, kb, ir, ac, ar;
+uint16_t ic, kb, ir, ac, ar, at;
 bool rALARM;
 int mc;
 unsigned rm, nb;
 bool p, q, bs;
+uint16_t w;
 
 bool zc17;
 
