@@ -409,7 +409,6 @@ static int cpu_do_cycle()
 		} else {
 			if (!cpu_mem_read_1(q, ic, &ac)) {
 				LOGCPU(L_CPU, "    no mem, long arg fetch @ %i:0x%04x", q*nb, ic);
-				goto ineffective;
 			}
 			ic++;
 			instruction_time += TIME_MEM_ARG;
@@ -442,7 +441,6 @@ static int cpu_do_cycle()
 	if ((flags & OP_FL_ARG_NORM) && IR_D) {
 		if (!cpu_mem_read_1(q, ac, &ac)) {
 			LOGCPU(L_CPU, "    no mem, indirect arg fetch @ %i:0x%04x", q*nb, ar);
-			goto ineffective;
 		}
 		ar = ac;
 		instruction_time += TIME_DMOD;
