@@ -365,11 +365,10 @@ static int cpu_do_cycle()
 
 	ips_counter++;
 
-	// fetch instruction
-	if (!cpu_mem_read_1(q, ic++, &ir)) {
-		LOGCPU(L_CPU, "        no mem, instruction fetch");
-		goto ineffective;
-	}
+// P1 - instruction fetch
+	cpu_mem_read_1(q, ic, &w);
+	ir = w;
+	ic++;
 
 	op = cpu_op_tab[ir];
 	unsigned flags = op->flags;
