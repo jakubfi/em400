@@ -373,30 +373,23 @@ static int cpu_do_cycle()
 	op = cpu_op_tab[ir];
 	unsigned flags = op->flags;
 
-	// check instruction effectiveness
+	// ineffective instructions
 	if (p || ((r[0] & op->jmp_nef_mask) != op->jmp_nef_result)) {
 		LOGDASM(0, 0, "skip: ");
-		// if the instruction is ineffective, argument for 2-word instructions is skipped
-		if ((flags & OP_FL_ARG_NORM) && !IR_C) ic++;
-		goto ineffective;
+		goto P2;
 	}
-
-	// check instruction legalness
-	// NOTE: for illegal and user-illegal 2-word instructions argument is _not_ skipped
+	// illegal instructions (also ineffective)
 	if (flags & OP_FL_ILLEGAL) {
 		LOGCPU(L_CPU, "    illegal: 0x%04x", ir);
-		int_set(INT_ILLEGAL_INSTRUCTION);
-		goto ineffective;
+		goto P2;
 	}
 	if (q && (flags & OP_FL_USR_ILLEGAL)) {
 		LOGDASM(0, 0, "user illegal: ");
-		int_set(INT_ILLEGAL_INSTRUCTION);
-		goto ineffective;
+		goto P2;
 	}
 	if ((op->fun == op_77_md) && (mc == 3)) {
 		LOGDASM(0, 0, "illegal (4th md): ");
-		int_set(INT_ILLEGAL_INSTRUCTION);
-		goto ineffective;
+		goto P2;
 	}
 
 	// AC and AR in argument preparation is simplified compared to real h/w.
@@ -467,7 +460,15 @@ static int cpu_do_cycle()
 
 	return instruction_time;
 
-ineffective:
+P2: // ineffective and illegal instructions handler
+	bool XI = (flags & OP_FL_ILLEGAL) || (q && (flags & OP_FL_USR_ILLEGAL)) || ((op->fun == op_77_md) && (mc == 3));
+	if (XI && !p) {
+		// instruction is illegal and skip flag is not set
+		int_set(INT_ILLEGAL_INSTRUCTION);
+	} else {
+		// instruction is ineffective, immediate word argument is skipped
+		if ((flags & OP_FL_ARG_NORM) && !IR_C) ic++;
+	}
 	instruction_time += TIME_P;
 	p = false;
 	mc = 0;
