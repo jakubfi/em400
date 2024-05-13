@@ -359,19 +359,29 @@ static bool cpu_do_bin(bool start)
 static int cpu_do_cycle()
 {
 	struct iset_opcode *op;
-	instruction_time = 0;
+	bool PR = true;
+	unsigned flags;
 
 	if (LOG_WANTS(L_CPU)) log_store_cycle_state(SR_READ(), ic);
 
 	ips_counter++;
+	instruction_time = 0;
 
-// P1 - instruction fetch
+P1:
 	cpu_mem_read_1(q, ic, &w);
-	ir = w;
 	ic++;
+	if (PR) {
+		ir = w;
+		PR = false;
+	} else {
+		ac = w;
+		if (!mc) ar = w;
+		instruction_time += TIME_MEM_ARG;
+		goto P3_P4_P5;
+	}
 
 	op = cpu_op_tab[ir];
-	unsigned flags = op->flags;
+	flags = op->flags;
 
 	// ineffective instructions
 	if (p || ((r[0] & op->jmp_nef_mask) != op->jmp_nef_result)) {
@@ -392,60 +402,63 @@ static int cpu_do_cycle()
 		goto P2;
 	}
 
-	// AC and AR in argument preparation is simplified compared to real h/w.
-	// Only AC is updated, AR is synchronized at the end
-
-	// get the argument
-	if (flags & OP_FL_ARG_NORM) {
-		if (IR_C) {
-			ac = r[IR_C];
-		} else {
-			if (!cpu_mem_read_1(q, ic, &ac)) {
-				LOGCPU(L_CPU, "    no mem, long arg fetch @ %i:0x%04x", q*nb, ic);
-			}
-			ic++;
-			instruction_time += TIME_MEM_ARG;
-		}
-	} else if (flags & OP_FL_ARG_SHORT) {
-		ac = IR_T;
-	} else if (flags & OP_FL_ARG_BYTE) {
-		ac = IR_b;
+	if ((flags & OP_FL_ARG_NORM) && (IR_C == 0)) {
+		goto P1;
 	}
 
-	// pre-mod
+P3_P4_P5:
+// P3
+	if (flags & OP_FL_ARG_NORM && IR_C) {
+		w = r[IR_C];
+		ac = w;
+		if (!mc) ar = w;
+	} else if (flags & OP_FL_ARG_SHORT) {
+		w = IR_T;
+		ac = w;
+		if (!mc) ar = w;
+	} else if (flags & OP_FL_ARG_BYTE) {
+		w = IR_b;
+		ac = w;
+		if (!mc) ar = w;
+	}
+
+// P4 pre-mod
 	if (mc) {
 		zc17 = (ac + ar) > 0xffff;
-		ac += ar;
+		w = ac + ar;
+		ac = w;
+		ar = w;
 		instruction_time += TIME_PREMOD;
 	} else {
+		mc = 0;
 		zc17 = false;
 	}
 
-	// B-mod
+// P4 B-mod
 	if ((flags & OP_FL_ARG_NORM) && IR_B) {
 		zc17 = (ac + r[IR_B]) > 0xffff;
-		ac += r[IR_B];
+		w = ac + r[IR_B];
+		ac = w;
+		ar = w;
 		instruction_time += TIME_BMOD;
 	}
 
-	ar = ac;
-
-	// D-mod
+// P5 D-mod
 	if ((flags & OP_FL_ARG_NORM) && IR_D) {
-		if (!cpu_mem_read_1(q, ac, &ac)) {
+		if (!cpu_mem_read_1(q, ar, &w)) {
 			LOGCPU(L_CPU, "    no mem, indirect arg fetch @ %i:0x%04x", q*nb, ar);
 		}
-		ar = ac;
+		ar = w;
+		ac = w;
 		instruction_time += TIME_DMOD;
 	}
+
+	if (op->fun != op_77_md) mc = 0;
 
 	// execute instruction
 	LOGDASM((op->flags & (OP_FL_ARG_NORM | OP_FL_ARG_SHORT)), ac, "");
 	op->fun();
 	instruction_time += op->time;
-
-	// clear modification counter if instruction was not MD
-	if (op->fun != op_77_md) mc = 0;
 
 	if (op->fun == op_72_shc) {
 		instruction_time += IR_t * TIME_SHIFT;
