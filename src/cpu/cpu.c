@@ -68,6 +68,7 @@ bool awp_enabled;
 static bool nomem_stop;
 
 unsigned long ips_counter;
+static unsigned instruction_time;
 
 static int speed_real;
 static struct timespec cpu_timer;
@@ -136,6 +137,7 @@ int cpu_state_get()
 // -----------------------------------------------------------------------
 static void cpu_mem_fail(bool barnb)
 {
+	instruction_time += TIME_NOANS_IF;
 	int_set(INT_NO_MEM);
 	if (!barnb) {
 		rALARM = true;
@@ -357,7 +359,7 @@ static bool cpu_do_bin(bool start)
 static int cpu_do_cycle()
 {
 	struct iset_opcode *op;
-	int instruction_time = 0;
+	instruction_time = 0;
 
 	if (LOG_WANTS(L_CPU)) log_store_cycle_state(SR_READ(), ic);
 
@@ -366,7 +368,7 @@ static int cpu_do_cycle()
 	// fetch instruction
 	if (!cpu_mem_read_1(q, ic++, &ir)) {
 		LOGCPU(L_CPU, "        no mem, instruction fetch");
-		goto ineffective_memfail;
+		goto ineffective;
 	}
 
 	op = cpu_op_tab[ir];
@@ -408,7 +410,7 @@ static int cpu_do_cycle()
 		} else {
 			if (!cpu_mem_read_1(q, ic, &ac)) {
 				LOGCPU(L_CPU, "    no mem, long arg fetch @ %i:0x%04x", q*nb, ic);
-				goto ineffective_memfail;
+				goto ineffective;
 			}
 			ic++;
 			instruction_time += TIME_MEM_ARG;
@@ -441,7 +443,7 @@ static int cpu_do_cycle()
 	if ((flags & OP_FL_ARG_NORM) && IR_D) {
 		if (!cpu_mem_read_1(q, ac, &ac)) {
 			LOGCPU(L_CPU, "    no mem, indirect arg fetch @ %i:0x%04x", q*nb, ar);
-			goto ineffective_memfail;
+			goto ineffective;
 		}
 		ar = ac;
 		instruction_time += TIME_DMOD;
@@ -468,8 +470,6 @@ static int cpu_do_cycle()
 
 	return instruction_time;
 
-ineffective_memfail:
-	instruction_time += TIME_NOANS_IF;
 ineffective:
 	instruction_time += TIME_P;
 	p = false;
