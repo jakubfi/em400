@@ -240,7 +240,7 @@ class TestBed:
         baseline = {}
         with open(bfile) as f:
             for line in f:
-                t = line.split(":")
+                t = line.split()
                 if len(t) == 2:
                     baseline[t[0].strip()] = float(t[1].strip())
 
