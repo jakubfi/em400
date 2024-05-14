@@ -878,8 +878,6 @@ void op_72_shc()
 WX:
 	lk = (lk - 1) & 0b1111;
 	step_point();
-	if (at & 1) FSET(FL_Y);
-	else FCLR(FL_Y);
 	bool shift_in = at & 1;
 	at >>= 1;
 	at |= shift_in << 15;
