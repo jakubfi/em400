@@ -348,6 +348,7 @@ int log_err(const char *func, const char *msgfmt, ...)
 // -----------------------------------------------------------------------
 void log_log(unsigned component, const char *func, const char *msgfmt, ...)
 {
+	if (!LOG_WANTS(component)) return;
 	va_list vl;
 	va_start(vl, msgfmt);
 
@@ -365,8 +366,10 @@ void log_log(unsigned component, const char *func, const char *msgfmt, ...)
 }
 
 // -----------------------------------------------------------------------
-void log_log_cpu(unsigned component, const char *msgfmt, ...)
+void log_cpu(unsigned component, const char *msgfmt, ...)
 {
+	if (!LOG_WANTS(component)) return;
+
 	va_list vl;
 	va_start(vl, msgfmt);
 
@@ -475,15 +478,17 @@ void log_intlevel_inc()
 }
 
 // -----------------------------------------------------------------------
-void log_log_dasm(int arg, int16_t ac, const char *comment)
+void log_dasm(int arg, int16_t ac, const char *comment)
 {
+	if (!LOG_WANTS(L_CPU)) return;
+
 	const int nb = (log_cycle_sr & 0b0000000000100000) ? (log_cycle_sr & 0b0000000000001111) : 0;
 	emdas_dasm(emd, nb, log_cycle_ic);
 
 	if (arg) {
-		log_log_cpu(L_CPU, "    %s%-20s AC = 0x%04x = %i", comment, dasm_buf, (uint16_t) ac, ac);
+		log_cpu(L_CPU, "    %s%-20s AC = 0x%04x = %i", comment, dasm_buf, (uint16_t) ac, ac);
 	} else {
-		log_log_cpu(L_CPU, "    %s%-20s", comment, dasm_buf);
+		log_cpu(L_CPU, "    %s%-20s", comment, dasm_buf);
 	}
 }
 

@@ -60,26 +60,15 @@ void log_intlevel_reset();
 void log_intlevel_dec();
 void log_intlevel_inc();
 
-void log_log_dasm(int arg, int16_t n, const char *comment);
-void log_log_cpu(unsigned component, const char *msgfmt, ...);
+void log_dasm(int arg, int16_t n, const char *comment);
+void log_cpu(unsigned component, const char *msgfmt, ...);
 
 #define LOG_ENABLED atom_load_acquire(&log_components_enabled)
 #define LOG_WANTS(component) (LOG_ENABLED & (1 << (component)))
 
-#define LOG(component, format, ...) \
-	if (LOG_WANTS(component)) log_log(component, __func__, format, ##__VA_ARGS__)
-
-#define LOGCPU(component, format, ...) \
-	if (LOG_WANTS(component)) log_log_cpu(component, format, ##__VA_ARGS__)
-
-#define LOGERR(format, ...) \
-	log_err(__func__, format, ##__VA_ARGS__)
-
-#define LOGBLOB(component, txt) \
-	log_splitlog(component, __func__, txt)
-
-#define LOGDASM(arg, ac, comment) \
-	if (LOG_WANTS(L_CPU)) log_log_dasm(arg, ac, comment);
+#define LOG(component, format, ...) log_log(component, __func__, format, ##__VA_ARGS__)
+#define LOGERR(format, ...) log_err(__func__, format, ##__VA_ARGS__)
+#define LOGBLOB(component, txt) log_splitlog(component, __func__, txt)
 
 #ifdef __cplusplus
 }

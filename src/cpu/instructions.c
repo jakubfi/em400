@@ -694,9 +694,7 @@ void op_71_exl()
 	uint16_t data;
 
 	if (LOG_ENABLED) {
-		if (LOG_WANTS(L_OP)) {
-			log_log_cpu(L_OP, "EXL: %i (r4: 0x%04x)", ac, r[4]);
-		}
+		log_cpu(L_OP, "EXL: %i (r4: 0x%04x)", ac, r[4]);
 		if (LOG_WANTS(L_CRK5)) {
 			log_handle_syscall(L_CRK5, ac, nb, ic, r[4]);
 		}
@@ -946,7 +944,7 @@ void op_72_lpc()
 // -----------------------------------------------------------------------
 void op_73_hlt()
 {
-	LOGCPU(L_OP, "HALT 0%02o (alarm: %i)", ac, r[6] & 0xff);
+	log_cpu(L_OP, "HALT 0%02o (alarm: %i)", ac, r[6] & 0xff);
 // WX:
 	step_point();
 	cpu_state_change(ECTL_STATE_WAIT, ECTL_STATE_RUN);
@@ -1240,9 +1238,7 @@ void op_77_sp()
 	if (LOG_ENABLED) {
 		log_update_process();
 		log_intlevel_reset();
-		if (LOG_WANTS(L_OP)) {
-			log_log_cpu(L_OP, "SP: context @ 0x%04x", ac);
-		}
+		log_cpu(L_OP, "SP: context @ 0x%04x", ac);
 		if (LOG_WANTS(L_CRK5)) {
 			log_handle_syscall_ret(L_CRK5, ic, SR_READ(), r[4]);
 			log_log_process(L_CRK5);
