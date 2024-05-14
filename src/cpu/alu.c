@@ -98,7 +98,8 @@ void alu_16_add(int16_t reg, int16_t n, unsigned carry)
 		// V is never cleared
 	}
 
-	w = ures;
+	at = ures;
+	w = at;
 	REG_RESTRICT_WRITE(IR_A, w);
 }
 
@@ -138,7 +139,10 @@ void alu_16_sub(int16_t reg, int16_t n)
 	} else {
 		// V is never cleared
 	}
-	REG_RESTRICT_WRITE(IR_A, ures);
+
+	at = ures;
+	w = at;
+	REG_RESTRICT_WRITE(IR_A, w);
 }
 
 // -----------------------------------------------------------------------
