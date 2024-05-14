@@ -61,7 +61,7 @@ static const char *ectl_reg_names[] = {
 };
 
 typedef struct ectl_yy_buffer_state *YY_BUFFER_STATE;
-int ectl_yyparse();
+int ectl_yyparse(struct ectl_est **tree);
 YY_BUFFER_STATE ectl_yy_scan_string(char *input);
 void ectl_yy_delete_buffer(YY_BUFFER_STATE b);
 

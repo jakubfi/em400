@@ -361,6 +361,7 @@ static int cpu_do_cycle()
 	struct iset_opcode *op;
 	bool PR = true;
 	unsigned flags;
+	bool xi;
 
 	if (LOG_WANTS(L_CPU)) log_store_cycle_state(SR_READ(), ic);
 
@@ -474,8 +475,8 @@ P3_P4_P5:
 	return instruction_time;
 
 P2: // ineffective and illegal instructions handler
-	bool XI = (flags & OP_FL_ILLEGAL) || (q && (flags & OP_FL_USR_ILLEGAL)) || ((op->fun == op_77_md) && (mc == 3));
-	if (XI && !p) {
+	xi = (flags & OP_FL_ILLEGAL) || (q && (flags & OP_FL_USR_ILLEGAL)) || ((op->fun == op_77_md) && (mc == 3));
+	if (xi && !p) {
 		// instruction is illegal and skip flag is not set
 		int_set(INT_ILLEGAL_INSTRUCTION);
 	} else {
