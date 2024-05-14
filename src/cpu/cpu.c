@@ -385,27 +385,15 @@ P1:
 	flags = op->flags;
 
 	// ineffective instructions
-	if (p || ((r[0] & op->jmp_nef_mask) != op->jmp_nef_result)) {
-		LOGDASM(0, 0, "skip: ");
-		goto P2;
-	}
+	if (p) goto P2;
+	if((r[0] & op->jmp_nef_mask) != op->jmp_nef_result) goto P2;
 	// illegal instructions (also ineffective)
-	if (flags & OP_FL_ILLEGAL) {
-		LOGCPU(L_CPU, "    illegal: 0x%04x", ir);
-		goto P2;
-	}
-	if (q && (flags & OP_FL_USR_ILLEGAL)) {
-		LOGDASM(0, 0, "user illegal: ");
-		goto P2;
-	}
-	if ((op->fun == op_77_md) && (mc == 3)) {
-		LOGDASM(0, 0, "illegal (4th md): ");
-		goto P2;
-	}
+	if (flags & OP_FL_ILLEGAL) goto P2;
+	if (q && (flags & OP_FL_USR_ILLEGAL)) goto P2;
+	if ((op->fun == op_77_md) && (mc == 3)) goto P2;
 
-	if ((flags & OP_FL_ARG_NORM) && (IR_C == 0)) {
-		goto P1;
-	}
+	// process immediate argument
+	if ((flags & OP_FL_ARG_NORM) && (IR_C == 0)) goto P1;
 
 P3_P4_P5:
 // P3
@@ -427,8 +415,7 @@ P3_P4_P5:
 	if (mc) {
 		zc17 = (ac + ar) > 0xffff;
 		w = ac + ar;
-		ac = w;
-		ar = w;
+		ar = ac = w;
 		instruction_time += TIME_PREMOD;
 	} else {
 		mc = 0;
@@ -439,18 +426,14 @@ P3_P4_P5:
 	if ((flags & OP_FL_ARG_NORM) && IR_B) {
 		zc17 = (ac + r[IR_B]) > 0xffff;
 		w = ac + r[IR_B];
-		ac = w;
-		ar = w;
+		ar = ac = w;
 		instruction_time += TIME_BMOD;
 	}
 
 // P5 D-mod
 	if ((flags & OP_FL_ARG_NORM) && IR_D) {
-		if (!cpu_mem_read_1(q, ar, &w)) {
-			LOGCPU(L_CPU, "    no mem, indirect arg fetch @ %i:0x%04x", q*nb, ar);
-		}
-		ar = w;
-		ac = w;
+		cpu_mem_read_1(q, ar, &w);
+		ar = ac = w;
 		instruction_time += TIME_DMOD;
 	}
 
@@ -478,9 +461,11 @@ P2: // ineffective and illegal instructions handler
 	xi = (flags & OP_FL_ILLEGAL) || (q && (flags & OP_FL_USR_ILLEGAL)) || ((op->fun == op_77_md) && (mc == 3));
 	if (xi && !p) {
 		// instruction is illegal and skip flag is not set
+		LOGDASM(0, 0, "ILL: ");
 		int_set(INT_ILLEGAL_INSTRUCTION);
 	} else {
 		// instruction is ineffective, immediate word argument is skipped
+		LOGDASM(0, 0, "NEF: ");
 		if ((flags & OP_FL_ARG_NORM) && !IR_C) ic++;
 	}
 	instruction_time += TIME_P;
