@@ -49,7 +49,7 @@ private slots:
 	void closeEvent(QCloseEvent* event);
 	void update_dasm_view();
 	void cpu_state_changed(int state);
-	void cpu_reg_changed(int reg, uint16_t val);
+    void cpu_reg_changed(int reg, uint16_t val);
 	void cpu_ips_update(unsigned long ips);
 	void cpu_alarm_update(bool state);
 	void cpu_p_update(bool state);

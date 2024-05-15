@@ -98,6 +98,9 @@ enum ectl_log_components {
 int ectl_init();
 void ectl_shutdown();
 
+// buses
+int ectl_bus_w_get();
+
 // registers
 const char * ectl_reg_name(unsigned id);
 int ectl_reg_get_id(char *name);

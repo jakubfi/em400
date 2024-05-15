@@ -9,7 +9,21 @@
         <file>icons/stop.svg</file>
         <file>icons/open.svg</file>
         <file>icons/em400/em400_32.png</file>
-        <file>pulpit/0.jpg</file>
-        <file>pulpit/1.jpg</file>
+        <file>pulpit/00.png</file>
+        <file>pulpit/01.png</file>
+        <file>pulpit/02.png</file>
+        <file>pulpit/03.png</file>
+        <file>pulpit/04.png</file>
+        <file>pulpit/05.png</file>
+        <file>pulpit/06.png</file>
+        <file>pulpit/07.png</file>
+        <file>pulpit/08.png</file>
+        <file>pulpit/09.png</file>
+        <file>pulpit/10.png</file>
+        <file>pulpit/11.png</file>
+        <file>pulpit/12.png</file>
+        <file>pulpit/13.png</file>
+        <file>pulpit/14.png</file>
+        <file>pulpit/15.png</file>
     </qresource>
 </RCC>

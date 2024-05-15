@@ -130,6 +130,11 @@ void EmuModel::sync_regs(bool force)
 			}
 		}
 	}
+    int bus_w = ectl_bus_w_get();
+    if (force || (bus_w != w))
+    {
+        emit cpu_bus_w_changed(bus_w);
+    }
 }
 
 // -----------------------------------------------------------------------

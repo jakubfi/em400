@@ -59,8 +59,11 @@ MainWindow::MainWindow(QWidget *parent) :
 
 	// connect signals from EmuModel
 	connect(&e, &EmuModel::cpu_state_changed, this, &MainWindow::cpu_state_changed);
+    connect(&e, &EmuModel::cpu_state_changed, ui->cp, &ControlPanel::cpu_state_changed);
 	connect(&e, &EmuModel::cpu_reg_changed, this, &MainWindow::cpu_reg_changed);
-	connect(&e, &EmuModel::cpu_ips_tick, this, &MainWindow::cpu_ips_update);
+    connect(&e, &EmuModel::cpu_reg_changed, ui->cp, &ControlPanel::cpu_reg_changed);
+    connect(&e, &EmuModel::cpu_bus_w_changed, ui->cp, &ControlPanel::cpu_bus_w_changed);
+    connect(&e, &EmuModel::cpu_ips_tick, this, &MainWindow::cpu_ips_update);
 	connect(&e, &EmuModel::cpu_alarm, this, &MainWindow::cpu_alarm_update);
 	connect(&e, &EmuModel::cpu_p, this, &MainWindow::cpu_p_update);
 

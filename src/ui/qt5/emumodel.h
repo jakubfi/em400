@@ -39,6 +39,7 @@ private:
 	QTimer ips_timer;
 	int cpu_state;
 	int r[ECTL_REG_COUNT];
+    int w;
 
 	void sync_state(bool force);
 	void sync_regs(bool force);
@@ -49,6 +50,7 @@ private slots:
 
 signals:
 	void cpu_state_changed(int state);
+    void cpu_bus_w_changed(uint16_t val);
 	void cpu_reg_changed(int reg, uint16_t val);
 	void cpu_ips_tick(unsigned long ips);
 	void cpu_alarm(bool alarm);

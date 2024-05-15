@@ -80,6 +80,15 @@ void ectl_shutdown()
 }
 
 // -----------------------------------------------------------------------
+int ectl_bus_w_get()
+{
+    LOG(L_ECTL, "ECTL reg get");
+    int bus_w = cp_bus_w_get();
+    LOG(L_ECTL, "ECTL bus W get: 0x%04x", bus_w);
+    return bus_w;
+}
+
+// -----------------------------------------------------------------------
 void ectl_regs_get(uint16_t *dest)
 {
 	LOG(L_ECTL, "ECTL regs get");

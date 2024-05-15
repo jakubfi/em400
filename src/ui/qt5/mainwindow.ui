@@ -19,8 +19,8 @@
   </property>
   <widget class="QWidget" name="centralwidget">
    <layout class="QVBoxLayout" name="verticalLayout_4">
-    <item alignment="Qt::AlignHCenter">
-     <widget class="ControlPanel" name="widget" native="true">
+    <item alignment="Qt::AlignmentFlag::AlignHCenter">
+     <widget class="ControlPanel" name="cp" native="true">
       <property name="sizePolicy">
        <sizepolicy hsizetype="Minimum" vsizetype="Fixed">
         <horstretch>0</horstretch>
@@ -37,7 +37,7 @@
       <item>
        <layout class="QVBoxLayout" name="verticalLayout_3">
         <property name="sizeConstraint">
-         <enum>QLayout::SetMaximumSize</enum>
+         <enum>QLayout::SizeConstraint::SetMaximumSize</enum>
         </property>
         <item>
          <widget class="QGroupBox" name="groupBox_2">
@@ -126,7 +126,7 @@
                 <bool>false</bool>
                </property>
                <property name="buttonSymbols">
-                <enum>QAbstractSpinBox::NoButtons</enum>
+                <enum>QAbstractSpinBox::ButtonSymbols::NoButtons</enum>
                </property>
                <property name="maximum">
                 <number>65535</number>
@@ -150,7 +150,7 @@
                 <bool>false</bool>
                </property>
                <property name="buttonSymbols">
-                <enum>QAbstractSpinBox::NoButtons</enum>
+                <enum>QAbstractSpinBox::ButtonSymbols::NoButtons</enum>
                </property>
                <property name="maximum">
                 <number>65535</number>
@@ -174,7 +174,7 @@
                 <bool>false</bool>
                </property>
                <property name="buttonSymbols">
-                <enum>QAbstractSpinBox::NoButtons</enum>
+                <enum>QAbstractSpinBox::ButtonSymbols::NoButtons</enum>
                </property>
                <property name="maximum">
                 <number>65535</number>
@@ -198,7 +198,7 @@
                 <bool>false</bool>
                </property>
                <property name="buttonSymbols">
-                <enum>QAbstractSpinBox::NoButtons</enum>
+                <enum>QAbstractSpinBox::ButtonSymbols::NoButtons</enum>
                </property>
                <property name="maximum">
                 <number>65535</number>
@@ -222,7 +222,7 @@
                 <bool>false</bool>
                </property>
                <property name="buttonSymbols">
-                <enum>QAbstractSpinBox::NoButtons</enum>
+                <enum>QAbstractSpinBox::ButtonSymbols::NoButtons</enum>
                </property>
                <property name="maximum">
                 <number>65535</number>
@@ -259,7 +259,7 @@
                 <bool>false</bool>
                </property>
                <property name="buttonSymbols">
-                <enum>QAbstractSpinBox::NoButtons</enum>
+                <enum>QAbstractSpinBox::ButtonSymbols::NoButtons</enum>
                </property>
                <property name="maximum">
                 <number>65535</number>
@@ -296,7 +296,7 @@
                 <bool>false</bool>
                </property>
                <property name="buttonSymbols">
-                <enum>QAbstractSpinBox::NoButtons</enum>
+                <enum>QAbstractSpinBox::ButtonSymbols::NoButtons</enum>
                </property>
                <property name="maximum">
                 <number>65535</number>
@@ -333,7 +333,7 @@
                 <bool>false</bool>
                </property>
                <property name="buttonSymbols">
-                <enum>QAbstractSpinBox::NoButtons</enum>
+                <enum>QAbstractSpinBox::ButtonSymbols::NoButtons</enum>
                </property>
                <property name="maximum">
                 <number>65535</number>
@@ -377,7 +377,7 @@
            <item>
             <widget class="Line" name="line">
              <property name="orientation">
-              <enum>Qt::Horizontal</enum>
+              <enum>Qt::Orientation::Horizontal</enum>
              </property>
             </widget>
            </item>
@@ -400,7 +400,7 @@
                 <bool>false</bool>
                </property>
                <property name="buttonSymbols">
-                <enum>QAbstractSpinBox::NoButtons</enum>
+                <enum>QAbstractSpinBox::ButtonSymbols::NoButtons</enum>
                </property>
                <property name="prefix">
                 <string/>
@@ -443,10 +443,10 @@
                 <bool>false</bool>
                </property>
                <property name="alignment">
-                <set>Qt::AlignLeading|Qt::AlignLeft|Qt::AlignVCenter</set>
+                <set>Qt::AlignmentFlag::AlignLeading|Qt::AlignmentFlag::AlignLeft|Qt::AlignmentFlag::AlignVCenter</set>
                </property>
                <property name="buttonSymbols">
-                <enum>QAbstractSpinBox::NoButtons</enum>
+                <enum>QAbstractSpinBox::ButtonSymbols::NoButtons</enum>
                </property>
                <property name="showGroupSeparator" stdset="0">
                 <bool>false</bool>
@@ -528,10 +528,10 @@
                 <bool>false</bool>
                </property>
                <property name="alignment">
-                <set>Qt::AlignLeading|Qt::AlignLeft|Qt::AlignVCenter</set>
+                <set>Qt::AlignmentFlag::AlignLeading|Qt::AlignmentFlag::AlignLeft|Qt::AlignmentFlag::AlignVCenter</set>
                </property>
                <property name="buttonSymbols">
-                <enum>QAbstractSpinBox::NoButtons</enum>
+                <enum>QAbstractSpinBox::ButtonSymbols::NoButtons</enum>
                </property>
                <property name="showGroupSeparator" stdset="0">
                 <bool>false</bool>
@@ -574,10 +574,10 @@
                 <bool>false</bool>
                </property>
                <property name="alignment">
-                <set>Qt::AlignLeading|Qt::AlignLeft|Qt::AlignVCenter</set>
+                <set>Qt::AlignmentFlag::AlignLeading|Qt::AlignmentFlag::AlignLeft|Qt::AlignmentFlag::AlignVCenter</set>
                </property>
                <property name="buttonSymbols">
-                <enum>QAbstractSpinBox::NoButtons</enum>
+                <enum>QAbstractSpinBox::ButtonSymbols::NoButtons</enum>
                </property>
                <property name="showGroupSeparator" stdset="0">
                 <bool>false</bool>
@@ -620,10 +620,10 @@
                 <bool>false</bool>
                </property>
                <property name="alignment">
-                <set>Qt::AlignLeading|Qt::AlignLeft|Qt::AlignVCenter</set>
+                <set>Qt::AlignmentFlag::AlignLeading|Qt::AlignmentFlag::AlignLeft|Qt::AlignmentFlag::AlignVCenter</set>
                </property>
                <property name="buttonSymbols">
-                <enum>QAbstractSpinBox::NoButtons</enum>
+                <enum>QAbstractSpinBox::ButtonSymbols::NoButtons</enum>
                </property>
                <property name="showGroupSeparator" stdset="0">
                 <bool>false</bool>
@@ -679,10 +679,10 @@
                 <bool>false</bool>
                </property>
                <property name="alignment">
-                <set>Qt::AlignLeading|Qt::AlignLeft|Qt::AlignVCenter</set>
+                <set>Qt::AlignmentFlag::AlignLeading|Qt::AlignmentFlag::AlignLeft|Qt::AlignmentFlag::AlignVCenter</set>
                </property>
                <property name="buttonSymbols">
-                <enum>QAbstractSpinBox::NoButtons</enum>
+                <enum>QAbstractSpinBox::ButtonSymbols::NoButtons</enum>
                </property>
                <property name="showGroupSeparator" stdset="0">
                 <bool>false</bool>
@@ -777,10 +777,10 @@
                 <bool>false</bool>
                </property>
                <property name="alignment">
-                <set>Qt::AlignLeading|Qt::AlignLeft|Qt::AlignVCenter</set>
+                <set>Qt::AlignmentFlag::AlignLeading|Qt::AlignmentFlag::AlignLeft|Qt::AlignmentFlag::AlignVCenter</set>
                </property>
                <property name="buttonSymbols">
-                <enum>QAbstractSpinBox::NoButtons</enum>
+                <enum>QAbstractSpinBox::ButtonSymbols::NoButtons</enum>
                </property>
                <property name="showGroupSeparator" stdset="0">
                 <bool>false</bool>
@@ -823,10 +823,10 @@
                 <bool>false</bool>
                </property>
                <property name="alignment">
-                <set>Qt::AlignLeading|Qt::AlignLeft|Qt::AlignVCenter</set>
+                <set>Qt::AlignmentFlag::AlignLeading|Qt::AlignmentFlag::AlignLeft|Qt::AlignmentFlag::AlignVCenter</set>
                </property>
                <property name="buttonSymbols">
-                <enum>QAbstractSpinBox::NoButtons</enum>
+                <enum>QAbstractSpinBox::ButtonSymbols::NoButtons</enum>
                </property>
                <property name="showGroupSeparator" stdset="0">
                 <bool>false</bool>
