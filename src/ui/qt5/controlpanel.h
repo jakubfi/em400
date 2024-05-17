@@ -18,7 +18,7 @@ private:
     int width, height;
     uint16_t w;
     int state;
-    bool q, p, mc, irq;
+    bool q, p, alarm, clock, irq;
     bool sw_u_state[16] = {false};
     bool sw_l_state[12] = {false};
     bool *curr_sw = NULL;
@@ -26,6 +26,9 @@ private:
     void paint_bus_w(QPainter &painter);
     void paint_state(QPainter &painter);
     void paint_q(QPainter &painter);
+    void paint_p(QPainter &painter);
+    void paint_alarm(QPainter &painter);
+    void paint_clock(QPainter &painter);
     void paint_sw_u(QPainter &painter);
     void paint_sw_l(QPainter &painter);
 
@@ -41,9 +44,19 @@ public:
     QSizePolicy sizePolicy();
 
 public slots:
-    void cpu_bus_w_changed(uint16_t val);
-    void cpu_state_changed(int state);
-    void cpu_reg_changed(int reg, uint16_t val);
+    void slot_bus_w_changed(uint16_t val);
+    void slot_state_changed(int state);
+    void slot_reg_changed(int reg, uint16_t val);
+    void slot_p_changed(int state);
+    void slot_alarm_changed(int state);
+    void slot_clock_changed(int state);
+
+signals:
+    void signal_start_toggled(bool state);
+    void signal_cycle_clicked();
+    void signal_clear_clicked();
+    void signal_oprq_clicked();
+    void signal_clock_toggled(bool state);
 };
 
 #endif // CONTROLPANEL_H

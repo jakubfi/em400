@@ -42,34 +42,25 @@ MainWindow::MainWindow(QWidget *parent) :
 
 	ui->dasm->connect_emu(&e);
 
-	// create toolbar
-	load = ui->toolBar->addAction(QIcon(":/icons/open.svg"), "Load OS image");
-	ui->toolBar->addSeparator();
-	start = ui->toolBar->addAction(QIcon(":/icons/start.svg"), "Start", this, &MainWindow::start_clicked);
-	stop = ui->toolBar->addAction(QIcon(":/icons/stop.svg"), "Stop", this, &MainWindow::stop_clicked);
-	cycle = ui->toolBar->addAction(QIcon(":/icons/cycle.svg"), "Cycle", this, &MainWindow::cycle_clicked);
-	ui->toolBar->addSeparator();
-	bin = ui->toolBar->addAction(QIcon(":/icons/bin.svg"), "Binary load (BIN)");
-	clock = ui->toolBar->addAction(QIcon(":/icons/clock.svg"), "Clock", this, &MainWindow::clock_clicked);
-	clock->setCheckable(true);
-	clock->setChecked(e.get_clock());
-	ui->toolBar->addAction(QIcon(":/icons/oprq.svg"), "Operator request (OPRQ)", this, &MainWindow::oprq_clicked);
-	ui->toolBar->addSeparator();
-	ui->toolBar->addAction(QIcon(":/icons/clear.svg"), "Clear", this, &MainWindow::clear_clicked);
+    // EmuModel -> MainWindow
+    connect(&e, &EmuModel::signal_reg_changed, this, &MainWindow::cpu_reg_changed);
+    connect(&e, &EmuModel::signal_cpu_ips_tick, this, &MainWindow::cpu_ips_update);
 
-	// connect signals from EmuModel
-	connect(&e, &EmuModel::cpu_state_changed, this, &MainWindow::cpu_state_changed);
-    connect(&e, &EmuModel::cpu_state_changed, ui->cp, &ControlPanel::cpu_state_changed);
-	connect(&e, &EmuModel::cpu_reg_changed, this, &MainWindow::cpu_reg_changed);
-    connect(&e, &EmuModel::cpu_reg_changed, ui->cp, &ControlPanel::cpu_reg_changed);
-    connect(&e, &EmuModel::cpu_bus_w_changed, ui->cp, &ControlPanel::cpu_bus_w_changed);
-    connect(&e, &EmuModel::cpu_ips_tick, this, &MainWindow::cpu_ips_update);
-	connect(&e, &EmuModel::cpu_alarm, this, &MainWindow::cpu_alarm_update);
-	connect(&e, &EmuModel::cpu_p, this, &MainWindow::cpu_p_update);
+    // EmuModel -> ControlPanel
+    connect(&e, &EmuModel::signal_state_changed, ui->cp, &ControlPanel::slot_state_changed);
+    connect(&e, &EmuModel::signal_reg_changed, ui->cp, &ControlPanel::slot_reg_changed);
+    connect(&e, &EmuModel::signal_bus_w_changed, ui->cp, &ControlPanel::slot_bus_w_changed);
+    connect(&e, &EmuModel::signal_alarm_changed, ui->cp, &ControlPanel::slot_alarm_changed);
+    connect(&e, &EmuModel::signal_p_changed, ui->cp, &ControlPanel::slot_p_changed);
+    connect(&e, &EmuModel::signal_clock_changed, ui->cp, &ControlPanel::slot_clock_changed);
 
-	// connect menu actions
-	connect(ui->actionLoad_OS_image, &QAction::triggered, this, &MainWindow::load_os_image);
-	connect(load, &QAction::triggered, this, &MainWindow::load_os_image);
+    // ControlPanel -> EmuModel
+    connect(ui->cp, &ControlPanel::signal_start_toggled, &e, &EmuModel::slot_cpu_state);
+    connect(ui->cp, &ControlPanel::signal_clear_clicked, &e, &EmuModel::slot_clear);
+    connect(ui->cp, &ControlPanel::signal_oprq_clicked, &e, &EmuModel::slot_oprq);
+    connect(ui->cp, &ControlPanel::signal_cycle_clicked, &e, &EmuModel::slot_cycle);
+    connect(ui->cp, &ControlPanel::signal_clock_toggled, &e, &EmuModel::slot_clock_state);
+
 
 	// connect register edits
 	for (int i=ECTL_REG_R0 ; i<ECTL_REG_COUNT ; i++) {
@@ -77,20 +68,8 @@ MainWindow::MainWindow(QWidget *parent) :
 		if ((i <= ECTL_REG_R7) && r2[i]) connect(r2[i], &QSpinBox::editingFinished, [=](){ e.set_reg(i, r2[i]->value()); });
 	}
 
-	// create status bar
-	cpu_state = new QLabel();
-	cpu_state->setStyleSheet("font-weight: bold;");
-	ui->statusbar->addPermanentWidget(cpu_state);
-
-	p = new QLabel("P");
-	p->setStyleSheet("font-weight: bold; color: #d57500;");
-	ui->statusbar->addPermanentWidget(p);
-
-	alarm = new QLabel("ALARM");
-	alarm->setStyleSheet("font-weight: bold; color: red;");
-	ui->statusbar->addPermanentWidget(alarm);
-
-	ips = new QLabel();
+    // status bar contents
+    ips = new QLabel();
 	ui->statusbar->addPermanentWidget(ips);
 
 	QFont font("Monospace");
@@ -99,7 +78,6 @@ MainWindow::MainWindow(QWidget *parent) :
 	flags_label->setFont(font);
 	ui->statusbar->addWidget(flags_label);
 	flags = new QLabel();
-	alarm->setStyleSheet("font-weight: normal;");
 	flags->setFont(font);
 	ui->statusbar->addWidget(flags);
 
@@ -116,7 +94,7 @@ MainWindow::MainWindow(QWidget *parent) :
 	nb->setFont(font);
 	ui->statusbar->addWidget(nb);
 
-	e.enable(60);
+    e.run(60);
 }
 
 // -----------------------------------------------------------------------
@@ -128,82 +106,20 @@ MainWindow::~MainWindow()
 }
 
 // -----------------------------------------------------------------------
-void MainWindow::start_clicked()
-{
-	e.start();
-}
-
-// -----------------------------------------------------------------------
-void MainWindow::stop_clicked()
-{
-	e.stop();
-}
-
-// -----------------------------------------------------------------------
-void MainWindow::cycle_clicked()
-{
-	e.cycle();
-}
-
-// -----------------------------------------------------------------------
-void MainWindow::clear_clicked()
-{
-	e.clear();
-}
-
-// -----------------------------------------------------------------------
-void MainWindow::clock_clicked()
-{
-	e.set_clock(clock->isChecked());
-}
-
-// -----------------------------------------------------------------------
-void MainWindow::oprq_clicked()
-{
-	e.oprq();
-}
-
-// -----------------------------------------------------------------------
 void MainWindow::closeEvent(QCloseEvent* event)
 {
-	e.off();
+    e.stop();
 	event->accept();
 }
 
 // -----------------------------------------------------------------------
 void MainWindow::disable_widgets(bool state)
 {
-	start->setDisabled(state);
-	stop->setDisabled(!state);
-	cycle->setDisabled(state);
-	bin->setDisabled(state);
-
 	for (int i=ECTL_REG_R0 ; i<ECTL_REG_COUNT ; i++) {
 		if (i == ECTL_REG_KB) continue; // keys are always enabled
 		if (r[i]) r[i]->setDisabled(state);
 		if ((i <= ECTL_REG_R7) && r2[i]) r2[i]->setDisabled(state);
 	}
-}
-
-// -----------------------------------------------------------------------
-void MainWindow::cpu_state_changed(int state)
-{
-	QString named_state;
-	unsigned s = e.get_state_simplified();
-	if (s == ECTL_STATE_STOP) {
-		named_state = "STOP";
-		cpu_state->setStyleSheet("font-weight: bold; color: black;");
-	} else if (s == ECTL_STATE_RUN) {
-		named_state = "RUN";
-		cpu_state->setStyleSheet("font-weight: bold; color: green;");
-	} else {
-		named_state = "WAIT";
-		cpu_state->setStyleSheet("font-weight: bold; color: #d57500;");
-	}
-
-	cpu_state->setText(named_state);
-
-	disable_widgets(state==ECTL_STATE_RUN);
 }
 
 // -----------------------------------------------------------------------
@@ -271,18 +187,6 @@ void MainWindow::cpu_ips_update(unsigned long ips)
 {
 	QString mips_t = QString("%1 MIPS").arg(QString::number(ips/1000000.0, 'f', 3));
 	this->ips->setText(mips_t);
-}
-
-// -----------------------------------------------------------------------
-void MainWindow::cpu_alarm_update(bool state)
-{
-	alarm->setHidden(!state);
-}
-
-// -----------------------------------------------------------------------
-void MainWindow::cpu_p_update(bool state)
-{
-	p->setHidden(!state);
 }
 
 // -----------------------------------------------------------------------

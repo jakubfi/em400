@@ -14,48 +14,49 @@ public:
 	EmuModel();
 	~EmuModel();
 
-	void enable(int hz);
-	void disable();
+    void run(int hz);
+    void stop();
+    bool load(QString filename);
 
-	void start();
-	void stop();
-	void clear();
-	void cycle();
-	void set_clock(bool state);
-	void oprq();
 	void set_reg(int i, int v);
-
-	int get_state_simplified();
-	int get_reg(int i) { return r[i]; }
-	int get_state() { return cpu_state; }
+    int get_reg(int i) { return last_reg[i]; }
 	int get_mem(int nb, int addr);
 	int get_mem(int nb, int addr, uint16_t *m, int count);
-	bool get_clock();
-	void off();
-	bool load(QString filename);
 
 private:
 	QTimer timer;
 	QTimer ips_timer;
-	int cpu_state;
-	int r[ECTL_REG_COUNT];
-    int w;
 
-	void sync_state(bool force);
-	void sync_regs(bool force);
+    int last_cpu_state;
+    int last_reg[ECTL_REG_COUNT];
+    int last_bus_w;
+    bool last_clock;
+
+    void sync(bool force=false);
+    void sync_state(bool force=false);
+    void sync_regs(bool force=false);
+    void sync_bus_w(bool force=false);
+    void sync_clock(bool force=false);
 
 private slots:
 	void on_timer_timeout();
 	void on_ips_timer_timeout();
 
-signals:
-	void cpu_state_changed(int state);
-    void cpu_bus_w_changed(uint16_t val);
-	void cpu_reg_changed(int reg, uint16_t val);
-	void cpu_ips_tick(unsigned long ips);
-	void cpu_alarm(bool alarm);
-	void cpu_p(bool p);
+public slots:
+    void slot_cpu_state(bool state);
+    void slot_clear();
+    void slot_cycle();
+    void slot_clock_state(bool state);
+    void slot_oprq();
 
+signals:
+    void signal_state_changed(int state);
+    void signal_bus_w_changed(uint16_t val);
+    void signal_reg_changed(int reg, uint16_t val);
+    void signal_cpu_ips_tick(unsigned long ips);
+    void signal_alarm_changed(bool alarm);
+    void signal_p_changed(bool p);
+    void signal_clock_changed(bool clock);
 };
 
 #endif // EMUMODEL_H

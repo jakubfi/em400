@@ -4,7 +4,7 @@
 #include "controlpanel.h"
 #include "ectl.h"
 
-#define DEBUG_RECTS 1
+#define DEBUG_RECTS 0
 
 static const int led_u_top = 48;
 static const int led_l_top = 179;
@@ -142,6 +142,29 @@ void ControlPanel::paint_q(QPainter &painter)
 }
 
 // -----------------------------------------------------------------------
+void ControlPanel::paint_p(QPainter &painter)
+{
+    if (p) {
+        painter.drawPixmap(led_p_rect.x(), led_p_rect.y(), plane[1].copy(led_p_rect));
+    }
+}
+
+// -----------------------------------------------------------------------
+void ControlPanel::paint_alarm(QPainter &painter)
+{
+    if (alarm) {
+        painter.drawPixmap(led_alarm_rect.x(), led_alarm_rect.y(), plane[1].copy(led_alarm_rect));
+    }
+}
+
+// -----------------------------------------------------------------------
+void ControlPanel::paint_clock(QPainter &painter)
+{
+    if (clock) {
+        painter.drawPixmap(led_clock_rect.x(), led_clock_rect.y(), plane[1].copy(led_clock_rect));
+    }
+}
+// -----------------------------------------------------------------------
 void ControlPanel::paint_sw_u(QPainter &painter)
 {
     for (int i=0 ; i<16 ; i++) {
@@ -171,6 +194,9 @@ void ControlPanel::paintEvent(QPaintEvent *event)
     paint_bus_w(painter);
     paint_state(painter);
     paint_q(painter);
+    paint_p(painter);
+    paint_alarm(painter);
+    paint_clock(painter);
     paint_sw_u(painter);
     paint_sw_l(painter);
 
@@ -257,9 +283,29 @@ void ControlPanel::mousePressEvent(QMouseEvent *event)
                 } else {
                     sw_l_state[sw] = !sw_l_state[sw];
                 }
+                switch (sw) {
+                case SW_START:
+                    emit signal_start_toggled(sw_l_state[sw]);
+                    break;
+                case SW_CLEAR:
+                    emit signal_clear_clicked();
+                    break;
+                case SW_OPRQ:
+                    emit signal_oprq_clicked();
+                    break;
+                case SW_CYCLE:
+                    emit signal_cycle_clicked();
+                    break;
+                case SW_CLOCK:
+                    emit signal_clock_toggled(sw_l_state[sw]);
+                    break;
+                }
+
                 break;
             }
         }
+    } else {
+        QWidget::mousePressEvent(event);
     }
     update();
 }
@@ -270,29 +316,54 @@ void ControlPanel::mouseReleaseEvent(QMouseEvent *event)
     if (curr_sw) {
         *curr_sw = false;
         curr_sw = NULL;
+        update();
+    } else {
+        QWidget::mouseReleaseEvent(event);
     }
-    update();
 }
 
 // -----------------------------------------------------------------------
-void ControlPanel::cpu_bus_w_changed(uint16_t val)
+void ControlPanel::slot_bus_w_changed(uint16_t val)
 {
     w = val;
     update();
 }
 
 // -----------------------------------------------------------------------
-void ControlPanel::cpu_state_changed(int new_state)
+void ControlPanel::slot_state_changed(int new_state)
 {
     state = new_state;
     update();
 }
 
 // -----------------------------------------------------------------------
-void ControlPanel::cpu_reg_changed(int reg, uint16_t val)
+void ControlPanel::slot_reg_changed(int reg, uint16_t val)
 {
-    if (reg == ECTL_REG_SR) {
+    switch(reg) {
+    case ECTL_REG_SR:
         q = val & 0b100000;
+        break;
     }
+    update();
+}
+
+// -----------------------------------------------------------------------
+void ControlPanel::slot_alarm_changed(int state)
+{
+    alarm = state;
+    update();
+}
+
+// -----------------------------------------------------------------------
+void ControlPanel::slot_p_changed(int state)
+{
+    p = state;
+    update();
+}
+
+// -----------------------------------------------------------------------
+void ControlPanel::slot_clock_changed(int state)
+{
+    clock = state;
     update();
 }

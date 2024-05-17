@@ -21,7 +21,7 @@ public:
 	~MainWindow();
 
 private:
-	EmuModel e;
+    EmuModel e;
 	Ui::MainWindow *ui;
 
 	QLabel *cpu_state;
@@ -39,20 +39,10 @@ private:
 	void update_r0_status(uint16_t r0);
 
 private slots:
-	void start_clicked();
-	void stop_clicked();
-	void cycle_clicked();
-	void clear_clicked();
-	void clock_clicked();
-	void oprq_clicked();
-
 	void closeEvent(QCloseEvent* event);
 	void update_dasm_view();
-	void cpu_state_changed(int state);
     void cpu_reg_changed(int reg, uint16_t val);
 	void cpu_ips_update(unsigned long ips);
-	void cpu_alarm_update(bool state);
-	void cpu_p_update(bool state);
 
 	void load_os_image();
 };
