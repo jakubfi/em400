@@ -19,6 +19,8 @@ private:
     uint16_t w;
     int state;
     bool q, p, alarm, clock, irq;
+    int rotary = 8;
+    bool dragging_rotary = false;
     bool sw_u_state[16] = {false};
     bool sw_l_state[12] = {false};
     bool *curr_sw = NULL;
@@ -31,12 +33,21 @@ private:
     void paint_clock(QPainter &painter);
     void paint_sw_u(QPainter &painter);
     void paint_sw_l(QPainter &painter);
+    void paint_rotary(QPainter &painter);
+
+    int calculate_rotary_pos(QPoint &m);
+    bool check_ignition(QPoint &m);
+    bool check_rotary(QPoint &m);
+    bool check_sw_u(QPoint &m);
+    bool check_sw_l(QPoint &m);
 
 protected:
 	void paintEvent(QPaintEvent *event);
     QSize sizeHint() const;
+    void mouseMoveEvent(QMouseEvent *event);
     void mousePressEvent(QMouseEvent *event);
     void mouseReleaseEvent(QMouseEvent *event);
+    void wheelEvent(QWheelEvent *event);
 
 public:
     explicit ControlPanel(QWidget *parent = nullptr);
