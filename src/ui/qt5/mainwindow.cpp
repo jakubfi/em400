@@ -5,6 +5,7 @@
 #include "mainwindow.h"
 #include "ui_mainwindow.h"
 #include "emdas.h"
+#include "switch.h"
 
 // -----------------------------------------------------------------------
 MainWindow::MainWindow(QWidget *parent) :
@@ -48,18 +49,17 @@ MainWindow::MainWindow(QWidget *parent) :
 
     // EmuModel -> ControlPanel
     connect(&e, &EmuModel::signal_state_changed, ui->cp, &ControlPanel::slot_state_changed);
-    connect(&e, &EmuModel::signal_reg_changed, ui->cp, &ControlPanel::slot_reg_changed);
     connect(&e, &EmuModel::signal_bus_w_changed, ui->cp, &ControlPanel::slot_bus_w_changed);
-    connect(&e, &EmuModel::signal_alarm_changed, ui->cp, &ControlPanel::slot_alarm_changed);
-    connect(&e, &EmuModel::signal_p_changed, ui->cp, &ControlPanel::slot_p_changed);
-    connect(&e, &EmuModel::signal_clock_changed, ui->cp, &ControlPanel::slot_clock_changed);
+    connect(&e, &EmuModel::signal_alarm_changed, ui->cp->led[LED_ALARM], &LED::slot_change);
+    connect(&e, &EmuModel::signal_p_changed, ui->cp->led[LED_P], &LED::slot_change);
+    connect(&e, &EmuModel::signal_clock_changed, ui->cp->led[LED_CLOCK], &LED::slot_change);
 
     // ControlPanel -> EmuModel
-    connect(ui->cp, &ControlPanel::signal_start_toggled, &e, &EmuModel::slot_cpu_state);
-    connect(ui->cp, &ControlPanel::signal_clear_clicked, &e, &EmuModel::slot_clear);
-    connect(ui->cp, &ControlPanel::signal_oprq_clicked, &e, &EmuModel::slot_oprq);
-    connect(ui->cp, &ControlPanel::signal_cycle_clicked, &e, &EmuModel::slot_cycle);
-    connect(ui->cp, &ControlPanel::signal_clock_toggled, &e, &EmuModel::slot_clock_state);
+    connect(ui->cp->sw[SW_START], &Switch::signal_toggled, &e, &EmuModel::slot_cpu_state);
+    connect(ui->cp->sw[SW_CLEAR], &Switch::signal_clicked, &e, &EmuModel::slot_clear);
+    connect(ui->cp->sw[SW_OPRQ],  &Switch::signal_clicked, &e, &EmuModel::slot_oprq);
+    connect(ui->cp->sw[SW_CYCLE], &Switch::signal_clicked, &e, &EmuModel::slot_cycle);
+    connect(ui->cp->sw[SW_CLOCK], &Switch::signal_toggled, &e, &EmuModel::slot_clock_state);
 
 
 	// connect register edits

@@ -100,10 +100,8 @@ void EmuModel::sync_regs(bool force)
             last_reg[i] = reg;
 			if (i == ECTL_REG_ALARM) {
                 emit signal_alarm_changed((bool)reg);
-                qDebug() << "ALARM: " << reg;
             } else if (i == ECTL_REG_P) {
                 emit signal_p_changed((bool)reg);
-                qDebug() << "P: " << reg;
 			} else {
                 emit signal_reg_changed(i, reg);
 			}
@@ -118,7 +116,6 @@ void EmuModel::sync_clock(bool force)
     if (force || (clock != last_clock)) {
         emit signal_clock_changed(clock);
         last_clock = clock;
-        qDebug() << "clock get: " << clock;
     }
 }
 
@@ -179,7 +176,6 @@ void EmuModel::slot_cycle()
 void EmuModel::slot_clock_state(bool state)
 {
     ectl_clock_set(state);
-    qDebug() << "clock set: " << state;
 }
 
 // -----------------------------------------------------------------------

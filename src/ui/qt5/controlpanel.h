@@ -3,11 +3,23 @@
 
 #include <QWidget>
 #include <QMouseEvent>
+#include "switch.h"
+#include "led.h"
+#include "rotary.h"
+#include "ignition.h"
 
 struct sw_desc {
     QRect r;
     bool momentary;
+    QString snd_on;
+    QString snd_off;
 };
+
+#define LED_CNT 16+11
+#define SW_CNT 16+12
+
+enum sw_lower_id {SW_STEP=16, SW_MODE, SW_STOPN, SW_CYCLE, SW_LOAD, SW_STORE, SW_FETCH, SW_START, SW_BIN, SW_CLEAR, SW_CLOCK, SW_OPRQ};
+enum sw_led_id {LED_MODE=16, LED_STOPN, LED_CLOCK, LED_Q, LED_P, LED_MC, LED_IRQ, LED_RUN, LED_WAIT, LED_ALARM, LED_ON};
 
 class ControlPanel : public QWidget
 {
@@ -16,51 +28,26 @@ class ControlPanel : public QWidget
 private:
     QPixmap plane[16];
     int width, height;
-    uint16_t w;
-    int state;
-    bool q, p, alarm, clock, irq;
-    int rotary = 8;
-    bool dragging_rotary = false;
-    bool sw_u_state[16] = {false};
-    bool sw_l_state[12] = {false};
-    bool *curr_sw = NULL;
 
-    void paint_bus_w(QPainter &painter);
-    void paint_state(QPainter &painter);
-    void paint_q(QPainter &painter);
-    void paint_p(QPainter &painter);
-    void paint_alarm(QPainter &painter);
-    void paint_clock(QPainter &painter);
-    void paint_sw_u(QPainter &painter);
-    void paint_sw_l(QPainter &painter);
-    void paint_rotary(QPainter &painter);
-
-    int calculate_rotary_pos(QPoint &m);
     bool check_ignition(QPoint &m);
-    bool check_rotary(QPoint &m);
-    bool check_sw_u(QPoint &m);
-    bool check_sw_l(QPoint &m);
 
 protected:
 	void paintEvent(QPaintEvent *event);
     QSize sizeHint() const;
-    void mouseMoveEvent(QMouseEvent *event);
-    void mousePressEvent(QMouseEvent *event);
-    void mouseReleaseEvent(QMouseEvent *event);
-    void wheelEvent(QWheelEvent *event);
 
 public:
     explicit ControlPanel(QWidget *parent = nullptr);
     ~ControlPanel();
     QSizePolicy sizePolicy();
 
+    Switch *sw[SW_CNT];
+    LED *led[LED_CNT];
+    Rotary *rotary;
+    Ignition *ignition;
+
 public slots:
     void slot_bus_w_changed(uint16_t val);
     void slot_state_changed(int state);
-    void slot_reg_changed(int reg, uint16_t val);
-    void slot_p_changed(int state);
-    void slot_alarm_changed(int state);
-    void slot_clock_changed(int state);
 
 signals:
     void signal_start_toggled(bool state);
