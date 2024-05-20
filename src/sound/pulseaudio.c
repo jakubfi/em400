@@ -24,7 +24,8 @@
 #include "sound/sound.h"
 
 static pa_simple *s;
-static int bytes_per_frame = 4;
+static const int channels = 1;
+static const int bytes_per_frame = channels * 2;
 
 // -----------------------------------------------------------------------
 int pulseaudio_init(em400_cfg *cfg)
@@ -35,19 +36,19 @@ int pulseaudio_init(em400_cfg *cfg)
 	const int latency = cfg_getint(cfg, "sound:latency", CFG_DEFAULT_SOUND_LATENCY);
 
 	const pa_sample_spec ss = {
-		.format = PA_SAMPLE_S16LE,
+		.format = PA_SAMPLE_S16NE,
 		.rate = rate,
-		.channels = 2
+		.channels = channels
 	};
 	const pa_buffer_attr ba = {
 		.maxlength = -1,
-		.tlength = 100 * latency,
+		.tlength = latency * (rate/1000),
 		.prebuf = -1,
 		.minreq = -1,
 		.fragsize = -1,
 	};
 
-	s = pa_simple_new(NULL, "EM400", PA_STREAM_PLAYBACK, NULL, "buzzer", &ss, NULL, &ba, &err);
+	s = pa_simple_new(NULL, "EM400", PA_STREAM_PLAYBACK, NULL, "CPU buzzer", &ss, NULL, &ba, &err);
 	if (!s) {
 		return LOGERR("PulseAudio stream open failed: %s", pa_strerror(err));
 	}

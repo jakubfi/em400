@@ -37,7 +37,7 @@ int alsa_init(em400_cfg *cfg)
 
 	const unsigned pcm_format = SND_PCM_FORMAT_S16;
 	const unsigned pcm_access = SND_PCM_ACCESS_RW_INTERLEAVED;
-	const unsigned channels = 2;
+	const unsigned channels = 1;
 	const unsigned rate = cfg_getint(cfg, "sound:rate", CFG_DEFAULT_SOUND_RATE);
 	const unsigned resample = 1;
 	const unsigned latency = cfg_getint(cfg, "sound:latency", CFG_DEFAULT_SOUND_LATENCY);

@@ -49,7 +49,7 @@ long file_play(int16_t *buf, size_t frames)
 {
 	long res;
 
-	res = fwrite(buf, 4, frames, out);
+	res = fwrite(buf, 2, frames, out);
 	if (res < 0) {
 		LOG(L_EM4H, "Sound output file write failed");
 	}

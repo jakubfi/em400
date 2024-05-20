@@ -24,47 +24,45 @@
 #include "log.h"
 
 // Tonsil GD 6/0,5 frequency response, more or less
-#define SPEAKER_HP 400.0f // 350 Hz
-#define SPEAKER_LP 3500.0f // -10dB @ 4500 Hz
+#define SPEAKER_HP 380.0f // 350 Hz
+#define SPEAKER_HP_RES 7.0f
+#define SPEAKER_LP 3200.0f // -10dB @ 4500 Hz
+#define SPEAKER_LP_RES 0.0f
 
 static const struct snd_drv *snd;
 
 static float sample_period;
 static unsigned buffer_len;
-static unsigned volume;
+static float audio_sample;
 
-static float *snd_buf_tmp;
-static float *snd_buf_in;
-static float *snd_buf_in_end;
-static float *snd_buf_in_pos;
+static int16_t *snd_buf_output;
+static float *snd_buf_end;
+static float *snd_buf_pos;
+static float *snd_buf_float;
 
 static int speaker_filter;
 static sf_biquad_state_st bq_lp;
 static sf_biquad_state_st bq_hp;
 
-static int16_t *output_buffer;
 
 // -----------------------------------------------------------------------
 static void buzzer_flush()
 {
 	// apply filter
 	if (speaker_filter) {
-		sf_biquad_process(&bq_hp, buffer_len, snd_buf_in, snd_buf_tmp);
-		sf_biquad_process(&bq_lp, buffer_len, snd_buf_tmp, snd_buf_in);
+		sf_biquad_process(&bq_hp, buffer_len, snd_buf_float, snd_buf_float);
+		sf_biquad_process(&bq_lp, buffer_len, snd_buf_float, snd_buf_float);
 	}
 
 	// prepare final sample output
 	for (int i=0 ; i<buffer_len ; i++) {
-		// stereo 16-bit signed sample output at given volume
-		int v = (snd_buf_in[i]/3.0f) * volume * 32767/100;
-		output_buffer[2*i] = v;
-		output_buffer[2*i+1] = v;
+		snd_buf_output[i] = snd_buf_float[i];
 	}
 
 	// play the buffer
 	int written = 0;
 	while (written != buffer_len) {
-		int res = snd->play(output_buffer+written, buffer_len-written);
+		int res = snd->play(snd_buf_output+written, buffer_len-written);
 		if (res > 0) {
 			written += res;
 		}
@@ -77,29 +75,26 @@ void buzzer_update(int ir, unsigned instruction_time)
 	static int cnt;
 	static int pir;
 	static double time_pool;
-	static float level = 1;
-	static float level_prev = 1;
 
-	// update current level (freq divider)
+
+	// update current level (IR0 div by 16)
 	if ((ir ^ pir) & 0x8000) {
-		if (++cnt >= 16) {
+		if (++cnt >= 16) { // output changes polarity every 16 changes on the input
 			cnt = 0;
-			level *= -1;
+			audio_sample *= -1;
 		}
 	}
 	pir = ir;
 
 	// fill the sound buffer with available samples
 	time_pool += instruction_time;
-	while (time_pool >= sample_period) {
+	while (time_pool > sample_period) {
 		time_pool -= sample_period;
-		// *0.5 for slightly less aliasing
-		*snd_buf_in_pos++ = level_prev + (level - level_prev) * 0.5;
-		level_prev = level;
+		*snd_buf_pos++ = audio_sample;
 
 		// if buffer is full, flush it
-		if (snd_buf_in_pos >= snd_buf_in_end) {
-			snd_buf_in_pos = snd_buf_in;
+		if (snd_buf_pos >= snd_buf_end) {
+			snd_buf_pos = snd_buf_float;
 			buzzer_flush();
 		}
 	}
@@ -120,16 +115,15 @@ void buzzer_stop()
 // -----------------------------------------------------------------------
 void buzzer_shutdown()
 {
-	free(snd_buf_tmp);
-	free(snd_buf_in);
-	free(output_buffer);
+	free(snd_buf_float);
+	free(snd_buf_output);
 	if (snd) snd->shutdown();
 }
 
 // -----------------------------------------------------------------------
 int buzzer_init(em400_cfg *cfg)
 {
-	volume = cfg_getint(cfg, "sound:volume", CFG_DEFAULT_SOUND_VOLUME);
+	int volume = cfg_getint(cfg, "sound:volume", CFG_DEFAULT_SOUND_VOLUME);
 	speaker_filter = cfg_getbool(cfg, "sound:filter", CFG_DEFAULT_SOUND_FILTER);
 	int sample_rate = cfg_getint(cfg, "sound:rate", CFG_DEFAULT_SOUND_RATE);
 	sample_period = 1000000000.0f / sample_rate;
@@ -142,25 +136,22 @@ int buzzer_init(em400_cfg *cfg)
 		LOGERR("Adjusting sound volume from %i to 0 (min allowed).", volume);
 		volume = 0;
 	}
+	audio_sample = (float) volume * (32767/100)/4; // /4 to accomodate post-processing overdrive
 
-	output_buffer = malloc(sizeof(int16_t) * 2 * buffer_len);
-	if (!output_buffer) {
+	snd_buf_output = malloc(sizeof(int16_t) * buffer_len);
+	if (!snd_buf_output) {
 		LOGERR("Cannot allocate memory for output sound buffer.");
 		goto cleanup;
 	}
-	snd_buf_tmp = malloc(sizeof(float) * buffer_len);
-	if (!snd_buf_tmp) {
-		LOGERR("Cannot allocate memory for temporary sound buffer.");
-		goto cleanup;
-	}
-	snd_buf_in = malloc(sizeof(float) * buffer_len);
-	if (!snd_buf_in) {
+
+	snd_buf_float = malloc(sizeof(float) * buffer_len);
+	if (!snd_buf_float) {
 		LOGERR("Cannot allocate memory for input sound buffer.");
 		goto cleanup;
 	}
 
-	snd_buf_in_pos = snd_buf_in;
-	snd_buf_in_end = snd_buf_in + buffer_len;
+	snd_buf_pos = snd_buf_float;
+	snd_buf_end = snd_buf_float + buffer_len;
 
 	snd = snd_init(cfg);
 	if (!snd) {
@@ -168,8 +159,8 @@ int buzzer_init(em400_cfg *cfg)
 		goto cleanup;
 	}
 
-	sf_highpass(&bq_hp, sample_rate, SPEAKER_HP, 2.0f);
-	sf_lowpass(&bq_lp, sample_rate, SPEAKER_LP, 0.0f);
+	sf_highpass(&bq_hp, sample_rate, SPEAKER_HP, SPEAKER_HP_RES);
+	sf_lowpass(&bq_lp, sample_rate, SPEAKER_LP, SPEAKER_LP_RES);
 
 	LOG(L_CPU, "Buzzer enabled. Volume: %i, speaker filter: %s, buffer length: %i frames", volume, speaker_filter ? "enabled" : "disabled", buffer_len);
 
