@@ -4,7 +4,7 @@
 #include <math.h>
 #include "rotary.h"
 
-#define DEBUG_UI 0
+#define DEBUG_UI 1
 
 // -----------------------------------------------------------------------
 Rotary::Rotary(QPixmap gfx[16], const QUrl snd_rs[16], const QUrl snd_ls[16], QWidget *parent)
@@ -24,6 +24,7 @@ Rotary::Rotary(QPixmap gfx[16], const QUrl snd_rs[16], const QUrl snd_ls[16], QW
 	radius_main = radius_outer - 50;
 	radius_inner = radius_main - 40;
 	connect(&anim_timer, &QTimer::timeout, this, &Rotary::anim_step);
+	setMouseTracking(true);
 }
 
 // -----------------------------------------------------------------------
@@ -100,26 +101,20 @@ void Rotary::anim_step()
 void Rotary::mousePressEvent(QMouseEvent *event)
 {
     QPoint m = event->pos();
-	if (sqrt(pow(center.x()-m.x(), 2) + pow(center.y()-m.y(), 2)) <= radius_outer) {
-		if (sqrt(pow(center.x()-m.x(), 2) + pow(center.y()-m.y(), 2)) >= radius_main) {
-			int new_pos = pos_from_point(m);
-			if (new_pos == position) return;
-			anim_delta = new_pos - position;
-			if (anim_delta > 8) {
-				anim_delta = -(16 - anim_delta);
-			}
-			if (anim_delta < -8) {
-				anim_delta = 16 + anim_delta;
-			}
-			anim_timer.setInterval(50);
-			anim_timer.start();
-		} else {
-			if (sqrt(pow(center.x()-m.x(), 2) + pow(center.y()-m.y(), 2)) >= radius_inner) {
-				if (pos_from_point(m) == position) {
-					dragging = true;
-				}
-			}
+	if (can_interact_outer) {
+		int new_pos = pos_from_point(m);
+		if (new_pos == position) return;
+		anim_delta = new_pos - position;
+		if (anim_delta > 8) {
+			anim_delta = -(16 - anim_delta);
 		}
+		if (anim_delta < -8) {
+			anim_delta = 16 + anim_delta;
+		}
+		anim_timer.setInterval(50);
+		anim_timer.start();
+	} else if (can_interact_inner) {
+		dragging = true;
 	}
 }
 
@@ -143,9 +138,32 @@ void Rotary::mouseMoveEvent(QMouseEvent *event)
 				update();
 			}
         }
-    } else {
-        QWidget::mouseMoveEvent(event);
-    }
+	} else {
+		QPoint m = event->pos();
+		bool was_can_interact = can_interact_inner || can_interact_outer;
+		can_interact_outer = false;
+		can_interact_inner = false;
+		if (sqrt(pow(center.x()-m.x(), 2) + pow(center.y()-m.y(), 2)) <= radius_outer) {
+			// within the actual widget area
+			if (sqrt(pow(center.x()-m.x(), 2) + pow(center.y()-m.y(), 2)) >= radius_main) {
+				// outer ring
+				can_interact_outer = true;
+			} else if (sqrt(pow(center.x()-m.x(), 2) + pow(center.y()-m.y(), 2)) >= radius_inner) {
+				// inner ring
+				if (pos_from_point(m) == position) {
+					// just the tip
+					can_interact_inner = true;
+				}
+			}
+		}
+
+		if (was_can_interact && !can_interact_inner && ! can_interact_outer) {
+			QGuiApplication::restoreOverrideCursor();
+		}
+		if (!was_can_interact && (can_interact_inner || can_interact_outer)) {
+			QGuiApplication::setOverrideCursor(QCursor(Qt::PointingHandCursor));
+		}
+	}
 }
 
 // --------------------------------------------------------------------------
@@ -168,11 +186,13 @@ void Rotary::wheelEvent(QWheelEvent *event)
 // -----------------------------------------------------------------------
 void Rotary::enterEvent(QEvent *event)
 {
-	QGuiApplication::setOverrideCursor(QCursor(Qt::PointingHandCursor));
+	//QGuiApplication::setOverrideCursor(QCursor(Qt::PointingHandCursor));
 }
 
 // -----------------------------------------------------------------------
 void Rotary::leaveEvent(QEvent *event)
 {
+	can_interact_inner = false;
+	can_interact_outer = false;
 	QGuiApplication::restoreOverrideCursor();
 }

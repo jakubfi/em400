@@ -19,6 +19,8 @@ private:
     bool dragging;
 	int anim_delta = 0;
 	QTimer anim_timer;
+	bool can_interact_outer = false;
+	bool can_interact_inner = false;
 
     int pos_from_point(QPoint &m);
 	void anim_step();
