@@ -23,7 +23,6 @@ Rotary::Rotary(QPixmap gfx[16], const QUrl snd_rs[16], const QUrl snd_ls[16], QW
 	radius_outer = gfx[0].rect().width() / 2;
 	radius_main = radius_outer - 50;
 	radius_inner = radius_main - 40;
-	anim_timer.setInterval(40);
 	connect(&anim_timer, &QTimer::timeout, this, &Rotary::anim_step);
 }
 
@@ -89,6 +88,7 @@ void Rotary::anim_step()
 		if (position < 0) position += 16;
 		snd_l[position].play();
 	}
+	anim_timer.setInterval(anim_timer.interval()-4);
 	update();
 
 	if (anim_delta == 0) {
@@ -111,6 +111,7 @@ void Rotary::mousePressEvent(QMouseEvent *event)
 			if (anim_delta < -8) {
 				anim_delta = 16 + anim_delta;
 			}
+			anim_timer.setInterval(50);
 			anim_timer.start();
 		} else {
 			if (sqrt(pow(center.x()-m.x(), 2) + pow(center.y()-m.y(), 2)) >= radius_inner) {
