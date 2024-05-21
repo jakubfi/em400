@@ -1,5 +1,5 @@
 #include <QPainter>
-
+#include <QGuiApplication>
 #include "switch.h"
 
 #define DEBUG_UI 0
@@ -49,6 +49,18 @@ void Switch::mousePressEvent(QMouseEvent *event)
     else emit signal_toggled(state);
 
     update();
+}
+
+// -----------------------------------------------------------------------
+void Switch::enterEvent(QEvent *event)
+{
+	QGuiApplication::setOverrideCursor(QCursor(Qt::PointingHandCursor));
+}
+
+// -----------------------------------------------------------------------
+void Switch::leaveEvent(QEvent *event)
+{
+	QGuiApplication::restoreOverrideCursor();
 }
 
 // -----------------------------------------------------------------------

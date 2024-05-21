@@ -142,9 +142,9 @@ static const QUrl ignition_sounds_l[] = {
 ControlPanel::ControlPanel(QWidget *parent):
     QWidget(parent)
 {
-    for (int p=0 ; p<16 ; p++) {
-        QString filename = QString("://pulpit/%1.png").arg(p, 2, 10, QLatin1Char('0'));
-        plane[p].load(filename);
+	for (int p=0 ; p<16 ; p++) {
+		QString filename = QString("://pulpit/%1.png").arg(p, 2, 10, QLatin1Char('0'));
+		plane[p].load(filename);
     }
 
     width = plane[0].width();
@@ -152,15 +152,15 @@ ControlPanel::ControlPanel(QWidget *parent):
 
     int i=0;
     for (auto const& sw_d : sw_data) {
-        sw[i] = new Switch(plane[1].copy(sw_d.r), sw_d.snd_on, sw_d.snd_off, sw_d.momentary, this);
-        sw[i]->move(sw_d.r.topLeft());
+		sw[i] = new Switch(plane[1].copy(sw_d.r), sw_d.snd_on, sw_d.snd_off, sw_d.momentary, this);
+		sw[i]->move(sw_d.r.topLeft());
         i++;
     }
 
     i=0;
     for (auto const& led_d : led_data) {
-        led[i] = new LED(plane[1].copy(led_d), this);
-        led[i]->move(led_d.topLeft());
+		led[i] = new LED(plane[1].copy(led_d), this);
+		led[i]->move(led_d.topLeft());
         i++;
     }
 

@@ -3,6 +3,7 @@
 
 #include <QWidget>
 #include <QMouseEvent>
+#include <QTimer>
 #include <QtMultimedia/QSoundEffect>
 
 class Rotary : public QWidget
@@ -14,10 +15,13 @@ private:
     QPixmap gfx[16];
     QSoundEffect snd_r[16], snd_l[16];
     QPoint center;
-    int radius, radius_inner;
+	int radius_outer, radius_main, radius_inner;
     bool dragging;
+	int anim_delta = 0;
+	QTimer anim_timer;
 
-    int calculate_pos(QPoint &m);
+    int pos_from_point(QPoint &m);
+	void anim_step();
 
 public:
     explicit Rotary(QPixmap gfx[16], const QUrl snd_rs[16], const QUrl snd_ls[16], QWidget *parent);
@@ -28,6 +32,8 @@ protected:
     void mouseReleaseEvent(QMouseEvent *event);
     void mouseMoveEvent(QMouseEvent *event);
     void wheelEvent(QWheelEvent *event);
+	void enterEvent(QEvent *event);
+	void leaveEvent(QEvent *event);
 
 signals:
     void signal_rotated(int position);

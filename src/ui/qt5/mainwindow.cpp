@@ -94,7 +94,7 @@ MainWindow::MainWindow(QWidget *parent) :
 	nb->setFont(font);
 	ui->statusbar->addWidget(nb);
 
-    e.run(60);
+	e.run(60);
 }
 
 // -----------------------------------------------------------------------
