@@ -97,6 +97,7 @@ MainWindow::MainWindow(QWidget *parent) :
 	nb->setFont(font);
 	ui->statusbar->addWidget(nb);
 
+	slot_debugger_enabled_changed(false);
 	e.run(60);
 }
 
@@ -209,7 +210,12 @@ void MainWindow::load_os_image()
 // -----------------------------------------------------------------------
 void MainWindow::slot_debugger_enabled_changed(bool state)
 {
-
+	ui->group_dasm->setVisible(state);
+	ui->group_registers->setVisible(state);
+	ui->group_mem->setVisible(state);
+	ui->statusbar->setVisible(state);
+	for(int i=0;i<10;i++) qApp->processEvents(); // StackOverflow, I don't even...
+	adjustSize();
 }
 
 // -----------------------------------------------------------------------
