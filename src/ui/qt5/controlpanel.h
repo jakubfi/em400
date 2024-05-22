@@ -28,12 +28,15 @@ class ControlPanel : public QWidget
 private:
     QPixmap plane[16];
     int width, height;
+	QRect crop;
 
     bool check_ignition(QPoint &m);
+	void change_dimensions(const QRect &rect);
 
 protected:
 	void paintEvent(QPaintEvent *event);
     QSize sizeHint() const;
+	QSize minimumSizeHint() const;
 
 public:
     explicit ControlPanel(QWidget *parent = nullptr);
@@ -48,6 +51,7 @@ public:
 public slots:
     void slot_bus_w_changed(uint16_t val);
     void slot_state_changed(int state);
+	void slot_small_panel_changed(bool state);
 
 signals:
     void signal_start_toggled(bool state);

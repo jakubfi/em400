@@ -980,6 +980,9 @@
     <addaction name="actionMemory_configuration"/>
     <addaction name="actionBreakpoints"/>
     <addaction name="actionWatches"/>
+    <addaction name="separator"/>
+    <addaction name="actionSmall_Control_Panel"/>
+    <addaction name="actionDebugger"/>
    </widget>
    <widget class="QMenu" name="menuHelp">
     <property name="title">
@@ -1030,6 +1033,22 @@
   <action name="actionAbout">
    <property name="text">
     <string>About EM400</string>
+   </property>
+  </action>
+  <action name="actionSmall_Control_Panel">
+   <property name="checkable">
+    <bool>true</bool>
+   </property>
+   <property name="text">
+    <string>Small Control Panel</string>
+   </property>
+  </action>
+  <action name="actionDebugger">
+   <property name="checkable">
+    <bool>true</bool>
+   </property>
+   <property name="text">
+    <string>Debugger</string>
    </property>
   </action>
  </widget>

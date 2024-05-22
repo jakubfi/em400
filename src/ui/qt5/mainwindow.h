@@ -45,6 +45,10 @@ private slots:
 	void cpu_ips_update(unsigned long ips);
 
 	void load_os_image();
+
+public slots:
+	void slot_debugger_enabled_changed(bool state);
+
 };
 
 #endif // MAINWINDOW_H

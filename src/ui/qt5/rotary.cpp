@@ -4,7 +4,7 @@
 #include <math.h>
 #include "rotary.h"
 
-#define DEBUG_UI 1
+#define DEBUG_UI 0
 
 // -----------------------------------------------------------------------
 Rotary::Rotary(QPixmap gfx[16], const QUrl snd_rs[16], const QUrl snd_ls[16], QWidget *parent)

@@ -43,6 +43,10 @@ MainWindow::MainWindow(QWidget *parent) :
 
 	ui->dasm->connect_emu(&e);
 
+	// MainWindow -> ControlPanel
+	connect(ui->actionSmall_Control_Panel, &QAction::toggled, ui->cp, &ControlPanel::slot_small_panel_changed);
+	connect(ui->actionDebugger, &QAction::toggled, this, &MainWindow::slot_debugger_enabled_changed);
+
     // EmuModel -> MainWindow
     connect(&e, &EmuModel::signal_reg_changed, this, &MainWindow::cpu_reg_changed);
     connect(&e, &EmuModel::signal_cpu_ips_tick, this, &MainWindow::cpu_ips_update);
@@ -60,7 +64,6 @@ MainWindow::MainWindow(QWidget *parent) :
     connect(ui->cp->sw[SW_OPRQ],  &Switch::signal_clicked, &e, &EmuModel::slot_oprq);
     connect(ui->cp->sw[SW_CYCLE], &Switch::signal_clicked, &e, &EmuModel::slot_cycle);
     connect(ui->cp->sw[SW_CLOCK], &Switch::signal_toggled, &e, &EmuModel::slot_clock_state);
-
 
 	// connect register edits
 	for (int i=ECTL_REG_R0 ; i<ECTL_REG_COUNT ; i++) {
@@ -202,3 +205,10 @@ void MainWindow::load_os_image()
 	e.load(filename);
 
 }
+
+// -----------------------------------------------------------------------
+void MainWindow::slot_debugger_enabled_changed(bool state)
+{
+
+}
+
