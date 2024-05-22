@@ -1,7 +1,9 @@
+#include <math.h>
+
 #include <QDebug>
 #include <QPainter>
 #include <QLineF>
-#include <math.h>
+
 #include "controlpanel.h"
 #include "ectl.h"
 
@@ -9,7 +11,6 @@ static const int led_u_top = 122;
 static const int led_l_top = 253;
 static const int led_width = 24;
 static const int led_height = 24;
-
 
 static const QRect led_data[] = {
 	QRect(131, led_u_top, led_width, led_height),
@@ -84,41 +85,41 @@ static const QRect rotary_rect = QRect(746, 114, 232, 232);
 #define SND_R "qrc:/sounds/rotary/"
 
 static const QUrl rotary_sounds_r[] = {
-    QUrl(SND_R "r00.wav"),
-    QUrl(SND_R "r01.wav"),
-    QUrl(SND_R "r02.wav"),
-    QUrl(SND_R "r03.wav"),
-    QUrl(SND_R "r04.wav"),
-    QUrl(SND_R "r05.wav"),
-    QUrl(SND_R "r06.wav"),
-    QUrl(SND_R "r07.wav"),
-    QUrl(SND_R "r08.wav"),
-    QUrl(SND_R "r09.wav"),
-    QUrl(SND_R "r10.wav"),
-    QUrl(SND_R "r11.wav"),
-    QUrl(SND_R "r12.wav"),
-    QUrl(SND_R "r13.wav"),
-    QUrl(SND_R "r14.wav"),
-    QUrl(SND_R "r15.wav"),
+	QUrl(SND_R "r00.wav"),
+	QUrl(SND_R "r01.wav"),
+	QUrl(SND_R "r02.wav"),
+	QUrl(SND_R "r03.wav"),
+	QUrl(SND_R "r04.wav"),
+	QUrl(SND_R "r05.wav"),
+	QUrl(SND_R "r06.wav"),
+	QUrl(SND_R "r07.wav"),
+	QUrl(SND_R "r08.wav"),
+	QUrl(SND_R "r09.wav"),
+	QUrl(SND_R "r10.wav"),
+	QUrl(SND_R "r11.wav"),
+	QUrl(SND_R "r12.wav"),
+	QUrl(SND_R "r13.wav"),
+	QUrl(SND_R "r14.wav"),
+	QUrl(SND_R "r15.wav"),
 };
 
 static const QUrl rotary_sounds_l[] = {
-    QUrl(SND_R "l00.wav"),
-    QUrl(SND_R "l01.wav"),
-    QUrl(SND_R "l02.wav"),
-    QUrl(SND_R "l03.wav"),
-    QUrl(SND_R "l04.wav"),
-    QUrl(SND_R "l05.wav"),
-    QUrl(SND_R "l06.wav"),
-    QUrl(SND_R "l07.wav"),
-    QUrl(SND_R "l08.wav"),
-    QUrl(SND_R "l09.wav"),
-    QUrl(SND_R "l10.wav"),
-    QUrl(SND_R "l11.wav"),
-    QUrl(SND_R "l12.wav"),
-    QUrl(SND_R "l13.wav"),
-    QUrl(SND_R "l14.wav"),
-    QUrl(SND_R "l15.wav"),
+	QUrl(SND_R "l00.wav"),
+	QUrl(SND_R "l01.wav"),
+	QUrl(SND_R "l02.wav"),
+	QUrl(SND_R "l03.wav"),
+	QUrl(SND_R "l04.wav"),
+	QUrl(SND_R "l05.wav"),
+	QUrl(SND_R "l06.wav"),
+	QUrl(SND_R "l07.wav"),
+	QUrl(SND_R "l08.wav"),
+	QUrl(SND_R "l09.wav"),
+	QUrl(SND_R "l10.wav"),
+	QUrl(SND_R "l11.wav"),
+	QUrl(SND_R "l12.wav"),
+	QUrl(SND_R "l13.wav"),
+	QUrl(SND_R "l14.wav"),
+	QUrl(SND_R "l15.wav"),
 };
 
 static const QRect ignition_rect = QRect(1051, 260, 75, 75);
@@ -128,50 +129,50 @@ static const int ignition_radius = 36;
 #define SND_I "qrc:/sounds/ignition/"
 
 static const QUrl ignition_sounds_r[] = {
-    QUrl(SND_I "off-l.wav"), // never happen
-    QUrl(SND_I "on-r.wav"),
-    QUrl(SND_I "lock-r.wav"),
+	QUrl(SND_I "off-l.wav"), // never happen
+	QUrl(SND_I "on-r.wav"),
+	QUrl(SND_I "lock-r.wav"),
 };
 
 static const QUrl ignition_sounds_l[] = {
-    QUrl(SND_I "off-l.wav"),
-    QUrl(SND_I "on-l.wav"),
-    QUrl(SND_I "lock-r.wav"), // never happen
+	QUrl(SND_I "off-l.wav"),
+	QUrl(SND_I "on-l.wav"),
+	QUrl(SND_I "lock-r.wav"), // never happen
 };
 
 // -----------------------------------------------------------------------
 ControlPanel::ControlPanel(QWidget *parent):
-    QWidget(parent)
+	QWidget(parent)
 {
 	for (int p=0 ; p<16 ; p++) {
 		QString filename = QString("://pulpit/%1.png").arg(p, 2, 10, QLatin1Char('0'));
 		plane[p].load(filename);
-    }
+	}
 
-    int i=0;
-    for (auto const& sw_d : sw_data) {
+	int i=0;
+	for (auto const& sw_d : sw_data) {
 		sw[i] = new Switch(plane[1].copy(sw_d.r), sw_d.snd_on, sw_d.snd_off, sw_d.momentary, this);
-        i++;
-    }
+		i++;
+	}
 
-    i=0;
-    for (auto const& led_d : led_data) {
+	i=0;
+	for (auto const& led_d : led_data) {
 		led[i] = new LED(plane[1].copy(led_d), this);
-        i++;
-    }
+		i++;
+	}
 
-    QPixmap gfx[16];
-    for (i=0 ; i<16 ; i++) {
-        gfx[i] = plane[i].copy(rotary_rect);
-    }
-    rotary = new Rotary(gfx, rotary_sounds_r, rotary_sounds_l, this);
+	QPixmap gfx[16];
+	for (i=0 ; i<16 ; i++) {
+		gfx[i] = plane[i].copy(rotary_rect);
+	}
+	rotary = new Rotary(gfx, rotary_sounds_r, rotary_sounds_l, this);
 
-    for (i=0 ; i<3 ; i++) {
-        gfx[i] = plane[i].copy(ignition_rect);
-    }
-    ignition = new Ignition(gfx, ignition_sounds_r, ignition_sounds_l, this);
+	for (i=0 ; i<3 ; i++) {
+		gfx[i] = plane[i].copy(ignition_rect);
+	}
+	ignition = new Ignition(gfx, ignition_sounds_r, ignition_sounds_l, this);
 
-    led[LED_ON]->set(true);
+	led[LED_ON]->set(true);
 
 	change_dimensions(plane[0].rect());
 }
@@ -200,34 +201,27 @@ void ControlPanel::change_dimensions(const QRect &rect)
 // -----------------------------------------------------------------------
 ControlPanel::~ControlPanel()
 {
-    for (int i=0 ; i<SW_CNT ; i++) delete sw[i];
-    for (int i=0 ; i<LED_CNT ; i++) delete led[i];
-    delete rotary;
-    delete ignition;
+	for (int i=0 ; i<SW_CNT ; i++) delete sw[i];
+	for (int i=0 ; i<LED_CNT ; i++) delete led[i];
+	delete rotary;
+	delete ignition;
 }
 
 // -----------------------------------------------------------------------
 void ControlPanel::paintEvent(QPaintEvent *event)
 {
-    QPainter painter;
-    painter.begin(this);
+	QPainter painter;
+	painter.begin(this);
 
 	painter.drawPixmap(0, 0, plane[0].copy(crop));
 
-    if (false) {
-        QPen pen = QPen(Qt::DotLine);
-        pen.setColor(QColor(0, 255, 0));
-        painter.setPen(pen);
-        painter.drawRect(ignition_rect);
-    }
-
-    painter.end();
+	painter.end();
 }
 
 // -----------------------------------------------------------------------
 QSize ControlPanel::sizeHint() const
 {
-    return QSize(width, height);
+	return QSize(width, height);
 }
 
 // -----------------------------------------------------------------------
@@ -245,41 +239,41 @@ QSizePolicy ControlPanel::sizePolicy()
 // --------------------------------------------------------------------------
 bool ControlPanel::check_ignition(QPoint &m)
 {
-    if (m.x() > ignition_rect.x()) {
-        int distance = sqrt(pow(ignition_center.x() - m.x(), 2) + pow(ignition_center.y() - m.y(), 2));
-        if (distance <= ignition_radius) {
-            return true;
-        }
-    }
-    return false;
+	if (m.x() > ignition_rect.x()) {
+		int distance = sqrt(pow(ignition_center.x() - m.x(), 2) + pow(ignition_center.y() - m.y(), 2));
+		if (distance <= ignition_radius) {
+			return true;
+		}
+	}
+	return false;
 }
 
 // -----------------------------------------------------------------------
 void ControlPanel::slot_bus_w_changed(uint16_t val)
 {
-    for (int i=0 ; i<16 ; i++) {
-        bool state = val & (1<<(15-i));
-        led[i]->set(state);
-    }
+	for (int i=0 ; i<16 ; i++) {
+		bool state = val & (1<<(15-i));
+		led[i]->set(state);
+	}
 }
 
 // -----------------------------------------------------------------------
 void ControlPanel::slot_state_changed(int state)
 {
-    switch (state) {
-    case ECTL_STATE_RUN:
-        led[LED_RUN]->set(true);
-        led[LED_WAIT]->set(false);
-        break;
-    case ECTL_STATE_WAIT:
-        led[LED_RUN]->set(false);
-        led[LED_WAIT]->set(true);
-        break;
-    default:
-        led[LED_RUN]->set(false);
-        led[LED_WAIT]->set(false);
-        break;
-    }
+	switch (state) {
+		case ECTL_STATE_RUN:
+			led[LED_RUN]->set(true);
+			led[LED_WAIT]->set(false);
+			break;
+		case ECTL_STATE_WAIT:
+			led[LED_RUN]->set(false);
+			led[LED_WAIT]->set(true);
+			break;
+		default:
+			led[LED_RUN]->set(false);
+			led[LED_WAIT]->set(false);
+			break;
+	}
 }
 
 // -----------------------------------------------------------------------

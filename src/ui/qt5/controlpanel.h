@@ -9,10 +9,10 @@
 #include "ignition.h"
 
 struct sw_desc {
-    QRect r;
-    bool momentary;
-    QString snd_on;
-    QString snd_off;
+	QRect r;
+	bool momentary;
+	QString snd_on;
+	QString snd_off;
 };
 
 #define LED_CNT 16+11
@@ -26,39 +26,39 @@ class ControlPanel : public QWidget
 	Q_OBJECT
 
 private:
-    QPixmap plane[16];
-    int width, height;
+	QPixmap plane[16];
+	int width, height;
 	QRect crop;
 
-    bool check_ignition(QPoint &m);
+	bool check_ignition(QPoint &m);
 	void change_dimensions(const QRect &rect);
 
 protected:
 	void paintEvent(QPaintEvent *event);
-    QSize sizeHint() const;
+	QSize sizeHint() const;
 	QSize minimumSizeHint() const;
 
 public:
-    explicit ControlPanel(QWidget *parent = nullptr);
-    ~ControlPanel();
-    QSizePolicy sizePolicy();
+	explicit ControlPanel(QWidget *parent = nullptr);
+	~ControlPanel();
+	QSizePolicy sizePolicy();
 
-    Switch *sw[SW_CNT];
-    LED *led[LED_CNT];
-    Rotary *rotary;
-    Ignition *ignition;
+	Switch *sw[SW_CNT];
+	LED *led[LED_CNT];
+	Rotary *rotary;
+	Ignition *ignition;
 
 public slots:
-    void slot_bus_w_changed(uint16_t val);
-    void slot_state_changed(int state);
+	void slot_bus_w_changed(uint16_t val);
+	void slot_state_changed(int state);
 	void slot_small_panel_changed(bool state);
 
 signals:
-    void signal_start_toggled(bool state);
-    void signal_cycle_clicked();
-    void signal_clear_clicked();
-    void signal_oprq_clicked();
-    void signal_clock_toggled(bool state);
+	void signal_start_toggled(bool state);
+	void signal_cycle_clicked();
+	void signal_clear_clicked();
+	void signal_oprq_clicked();
+	void signal_clock_toggled(bool state);
 };
 
 #endif // CONTROLPANEL_H

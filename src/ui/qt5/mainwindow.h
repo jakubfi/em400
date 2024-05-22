@@ -24,15 +24,10 @@ private:
     EmuModel e;
 	Ui::MainWindow *ui;
 
-	QLabel *cpu_state;
-	QLabel *cpu_state_label;
-	QLabel *alarm;
 	QLabel *ips;
-	QLabel *q, *bs, *nb, *flags, *p;
+	QLabel *q, *bs, *nb, *flags;
 
-	QAction *load, *start, *stop, *cycle, *bin, *clock;
 	QSpinBox *r[ECTL_REG_COUNT] = { nullptr };
-	QSpinBox *r2[ECTL_REG_R7+1] = { nullptr };
 
 	void disable_widgets(bool disabled);
 	void update_sr_status(uint16_t val);
@@ -40,9 +35,9 @@ private:
 
 private slots:
 	void closeEvent(QCloseEvent* event);
-	void update_dasm_view();
-    void cpu_reg_changed(int reg, uint16_t val);
-	void cpu_ips_update(unsigned long ips);
+	void slot_dasm_update();
+	void slot_cpu_reg_changed(int reg, uint16_t val);
+	void slot_ips_update(unsigned long ips);
 
 	void load_os_image();
 

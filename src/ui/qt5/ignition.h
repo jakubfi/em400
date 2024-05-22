@@ -7,26 +7,26 @@
 
 class Ignition : public QWidget
 {
-    Q_OBJECT
+	Q_OBJECT
 
 private:
-    int position = 0;
-    QPixmap gfx[3];
-    QSoundEffect snd_r[3], snd_l[3];
-    QPoint center;
-    int radius;
-    bool dragging;
+	int position = 0;
+	QPixmap gfx[3];
+	QSoundEffect snd_r[3], snd_l[3];
+	QPoint center;
+	int radius;
+	bool dragging;
 
-    int calculate_pos(QPoint &m);
+	int calculate_pos(QPoint &m);
 
 public:
-    explicit Ignition(QPixmap gfx[3], const QUrl snd_rs[3], const QUrl snd_ls[3], QWidget *parent = nullptr);
+	explicit Ignition(QPixmap gfx[3], const QUrl snd_rs[3], const QUrl snd_ls[3], QWidget *parent = nullptr);
 
 protected:
-    void paintEvent(QPaintEvent *event);
-    void mousePressEvent(QMouseEvent *event);
-    void mouseReleaseEvent(QMouseEvent *event);
-    void mouseMoveEvent(QMouseEvent *event);
+	void paintEvent(QPaintEvent *event);
+	void mousePressEvent(QMouseEvent *event);
+	void mouseReleaseEvent(QMouseEvent *event);
+	void mouseMoveEvent(QMouseEvent *event);
 
 signals:
 

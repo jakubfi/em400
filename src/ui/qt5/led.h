@@ -5,18 +5,18 @@
 
 class LED : public QWidget
 {
-    Q_OBJECT
+	Q_OBJECT
 
 private:
-    QPixmap gfx_on;
-    bool state = false;
+	QPixmap gfx_on;
+	bool state = false;
 
 protected:
-    void paintEvent(QPaintEvent *event);
+	void paintEvent(QPaintEvent *event);
 
 public:
-    explicit LED(QPixmap gfx_on, QWidget *parent = nullptr);
-    void set(bool state);
+	explicit LED(QPixmap gfx_on, QWidget *parent = nullptr);
+	void set(bool state);
 
 public slots:
     void slot_change(bool state);

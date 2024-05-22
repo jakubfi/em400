@@ -8,18 +8,18 @@
 
 // -----------------------------------------------------------------------
 Rotary::Rotary(QPixmap gfx[16], const QUrl snd_rs[16], const QUrl snd_ls[16], QWidget *parent)
-    : QWidget{parent}
+	: QWidget{parent}
 {
-    int i;
-    for (i=0 ; i<16 ; i++) {
-        this->gfx[i] = gfx[i];
-        snd_r[i].setSource(snd_rs[i]);
-        //snd_r[i].setVolume(0.7);
-        snd_l[i].setSource(snd_ls[i]);
-        //snd_l[i].setVolume(0.7);
-    }
-    this->resize(gfx[0].width(), gfx[0].height());
-    center = gfx[0].rect().center();
+	int i;
+	for (i=0 ; i<16 ; i++) {
+		this->gfx[i] = gfx[i];
+		snd_r[i].setSource(snd_rs[i]);
+		//snd_r[i].setVolume(0.7);
+		snd_l[i].setSource(snd_ls[i]);
+		//snd_l[i].setVolume(0.7);
+	}
+	this->resize(gfx[0].width(), gfx[0].height());
+	center = gfx[0].rect().center();
 	radius_outer = gfx[0].rect().width() / 2;
 	radius_main = radius_outer - 50;
 	radius_inner = radius_main - 40;
@@ -30,38 +30,37 @@ Rotary::Rotary(QPixmap gfx[16], const QUrl snd_rs[16], const QUrl snd_ls[16], QW
 // -----------------------------------------------------------------------
 void Rotary::paintEvent(QPaintEvent *event)
 {
-    QPainter painter;
-    painter.begin(this);
+	QPainter painter;
+	painter.begin(this);
 
-    painter.drawPixmap(0, 0, gfx[position]);
+	painter.drawPixmap(0, 0, gfx[position]);
 
-    if (DEBUG_UI) {
-        QPen pen = QPen(Qt::DotLine);
-        pen.setColor(QColor(0, 255, 0));
-        painter.setPen(pen);
-        painter.drawRect(gfx[0].rect());
+	if (DEBUG_UI) {
+		QPen pen = QPen(Qt::DotLine);
+		pen.setColor(QColor(0, 255, 0));
+		painter.setPen(pen);
+		painter.drawRect(gfx[0].rect());
 		painter.drawEllipse(center, radius_outer, radius_outer);
 		painter.drawEllipse(center, radius_main, radius_main);
 		painter.drawEllipse(center, radius_inner, radius_inner);
-        for (int i=0 ; i<16 ; i++) {
-            QLineF angleline;
-            angleline.setP1(center);
-            angleline.setAngle(i*360/16);
+		for (int i=0 ; i<16 ; i++) {
+			QLineF angleline;
+			angleline.setP1(center);
+			angleline.setAngle(i*360/16);
 			angleline.setLength(radius_outer);
-            painter.drawLine(angleline);
-        }
+			painter.drawLine(angleline);
+		}
+	}
 
-    }
-
-    painter.end();
+	painter.end();
 }
 
 // --------------------------------------------------------------------------
 int Rotary::pos_from_point(QPoint &m)
 {
 	// calculate angular "m" position
-    double mdy = (center.y() - m.y());
-    double mdx = (center.x() - m.x());
+	double mdy = (center.y() - m.y());
+	double mdx = (center.x() - m.x());
 	double angle = atan2(mdy, mdx);
 	// make it 0-2pi
 	if (angle < 0) angle += 2*M_PI;
@@ -72,7 +71,7 @@ int Rotary::pos_from_point(QPoint &m)
 	for (position=0 ; position<16 ; position++) {
 		double s = (double) position * slice;
 		if ((angle > s-slice/2) && (angle <= s+slice/2)) break;
-    }
+	}
 	return (position+3) % 16;
 }
 
@@ -100,7 +99,7 @@ void Rotary::anim_step()
 // -----------------------------------------------------------------------
 void Rotary::mousePressEvent(QMouseEvent *event)
 {
-    QPoint m = event->pos();
+	QPoint m = event->pos();
 	if (can_interact_outer) {
 		int new_pos = pos_from_point(m);
 		if (new_pos == position) return;
@@ -121,7 +120,7 @@ void Rotary::mousePressEvent(QMouseEvent *event)
 // -----------------------------------------------------------------------
 void Rotary::mouseReleaseEvent(QMouseEvent *event)
 {
-    dragging = false;
+	dragging = false;
 }
 
 // -----------------------------------------------------------------------
@@ -137,7 +136,7 @@ void Rotary::mouseMoveEvent(QMouseEvent *event)
 				position = new_pos;
 				update();
 			}
-        }
+		}
 	} else {
 		QPoint m = event->pos();
 		bool was_can_interact = can_interact_inner || can_interact_outer;
@@ -169,18 +168,18 @@ void Rotary::mouseMoveEvent(QMouseEvent *event)
 // --------------------------------------------------------------------------
 void Rotary::wheelEvent(QWheelEvent *event)
 {
-    QPointF m = event->position();
+	QPointF m = event->position();
 	if (sqrt(pow(center.x()-m.x(), 2) + pow(center.y()-m.y(), 2)) <= radius_main) {
-        if (event->angleDelta().ry() < 0) {
-            position -= 1;
-            if (position < 0) position = 15;
-            snd_l[position].play();
-        } else {
-            position = (position + 1) % 16;
-            snd_r[position].play();
-        }
-        update();
-    }
+		if (event->angleDelta().ry() < 0) {
+			position -= 1;
+			if (position < 0) position = 15;
+			snd_l[position].play();
+		} else {
+			position = (position + 1) % 16;
+			snd_r[position].play();
+		}
+		update();
+	}
 }
 
 // -----------------------------------------------------------------------

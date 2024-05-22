@@ -139,7 +139,7 @@ void DasmView::internal_update_contents()
 // -----------------------------------------------------------------------
 void DasmView::update_contents(int new_nb, int new_addr)
 {
-//	if ((new_nb == cnb) && (new_addr == caddr)) return;
+	//	if ((new_nb == cnb) && (new_addr == caddr)) return;
 	cnb = new_nb;
 	caddr = new_addr;
 	internal_update_contents();
