@@ -48,6 +48,7 @@ private slots:
 
 public slots:
 	void slot_debugger_enabled_changed(bool state);
+	void slot_smallcp_changed(bool state);
 
 };
 

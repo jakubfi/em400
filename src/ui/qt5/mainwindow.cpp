@@ -44,7 +44,7 @@ MainWindow::MainWindow(QWidget *parent) :
 	ui->dasm->connect_emu(&e);
 
 	// MainWindow -> ControlPanel
-	connect(ui->actionSmall_Control_Panel, &QAction::toggled, ui->cp, &ControlPanel::slot_small_panel_changed);
+	connect(ui->actionSmall_Control_Panel, &QAction::toggled, this, &MainWindow::slot_smallcp_changed);
 	connect(ui->actionDebugger, &QAction::toggled, this, &MainWindow::slot_debugger_enabled_changed);
 
     // EmuModel -> MainWindow
@@ -210,5 +210,13 @@ void MainWindow::load_os_image()
 void MainWindow::slot_debugger_enabled_changed(bool state)
 {
 
+}
+
+// -----------------------------------------------------------------------
+void MainWindow::slot_smallcp_changed(bool state)
+{
+	ui->cp->slot_small_panel_changed(state);
+	for(int i=0;i<10;i++) qApp->processEvents(); // StackOverflow, I don't even...
+	adjustSize();
 }
 
