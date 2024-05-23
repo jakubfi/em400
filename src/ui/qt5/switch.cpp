@@ -32,7 +32,7 @@ void Switch::paintEvent(QPaintEvent *event)
 		painter.drawRect(gfx_on.rect());
 	}
 
-	panter.end();
+	painter.end();
 }
 
 // -----------------------------------------------------------------------
