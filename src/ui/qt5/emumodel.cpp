@@ -7,9 +7,12 @@
 // -----------------------------------------------------------------------
 EmuModel::EmuModel()
 {
-	ips_timer.setInterval(500);
-	connect(&ips_timer, &QTimer::timeout, this, &EmuModel::on_ips_timer_timeout);
-	connect(&timer, &QTimer::timeout, this, &EmuModel::on_timer_timeout);
+	timer_realtime.setInterval(1000.0f / 60);
+	timer_slow.setInterval(1000.0f / 20);
+	timer_ips.setInterval(1000.0f / 2);
+	connect(&timer_realtime, &QTimer::timeout, this, &EmuModel::on_timer_realtime_timeout);
+	connect(&timer_slow, &QTimer::timeout, this, &EmuModel::on_timer_slow_timeout);
+	connect(&timer_ips, &QTimer::timeout, this, &EmuModel::sync_ips);
 }
 
 // -----------------------------------------------------------------------
@@ -19,48 +22,46 @@ EmuModel::~EmuModel()
 }
 
 // -----------------------------------------------------------------------
-void EmuModel::run(int hz)
+void EmuModel::run()
 {
-	sync(true);
-	on_ips_timer_timeout();
-	ips_timer.start();
-	timer.setInterval(1000/hz);
-	timer.start();
+	sync_bus_w(true);
+	sync_state(true);
+	sync_regs(true);
+	sync_clock(true);
+	sync_ips();
+
+	timer_realtime.start();
+	timer_slow.start();
+	timer_ips.start();
 }
 
 // -----------------------------------------------------------------------
 void EmuModel::stop()
 {
-	ips_timer.stop();
-	timer.stop();
+	timer_realtime.stop();
+	timer_slow.stop();
+	timer_ips.stop();
 	ectl_cpu_off();
 }
 
 // -----------------------------------------------------------------------
-void EmuModel::on_timer_timeout()
+void EmuModel::on_timer_realtime_timeout()
 {
-	sync();
+	sync_bus_w();
+	sync_state();
 }
 
 // -----------------------------------------------------------------------
-void EmuModel::on_ips_timer_timeout()
+void EmuModel::on_timer_slow_timeout()
 {
-	emit signal_cpu_ips_tick(ectl_ips_get());
+	sync_regs();
+	sync_clock();
 }
 
 // -----------------------------------------------------------------------
-void EmuModel::set_reg(int i, int v)
+void EmuModel::on_timer_ips_timeout()
 {
-	ectl_reg_set(i, v);
-}
-
-// -----------------------------------------------------------------------
-void EmuModel::sync(bool force)
-{
-	sync_state(force);
-	sync_bus_w(force);
-	sync_regs(force);
-	sync_clock(force);
+	sync_ips();
 }
 
 // -----------------------------------------------------------------------
@@ -120,6 +121,18 @@ void EmuModel::sync_clock(bool force)
 }
 
 // -----------------------------------------------------------------------
+void EmuModel::sync_ips()
+{
+	emit signal_cpu_ips_tick(ectl_ips_get());
+}
+
+// -----------------------------------------------------------------------
+void EmuModel::set_reg(int i, int v)
+{
+	ectl_reg_set(i, v);
+}
+
+// -----------------------------------------------------------------------
 int EmuModel::get_mem(int nb, int addr, uint16_t *m, int count)
 {
 	return ectl_mem_read_n(nb, addr, m, count);
@@ -149,12 +162,11 @@ bool EmuModel::load(QString filename)
 	FILE *f = fdopen(file.handle(), "r");
 	ectl_load(f, "name", 0, 0);
 	fclose(f);
-	sync(true);
 	return true;
 }
 
 // -----------------------------------------------------------------------
-void EmuModel::slot_cpu_state(bool state)
+void EmuModel::slot_cpu_start(bool state)
 {
 	if (state) ectl_cpu_start();
 	else ectl_cpu_stop();
@@ -173,7 +185,7 @@ void EmuModel::slot_cycle()
 }
 
 // -----------------------------------------------------------------------
-void EmuModel::slot_clock_state(bool state)
+void EmuModel::slot_clock_enabled(bool state)
 {
 	ectl_clock_set(state);
 }

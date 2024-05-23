@@ -50,11 +50,11 @@ MainWindow::MainWindow(QWidget *parent) :
 	connect(&e, &EmuModel::signal_clock_changed, ui->cp->led[LED_CLOCK], &LED::slot_change);
 
 	// ControlPanel -> EmuModel
-	connect(ui->cp->sw[SW_START], &Switch::signal_toggled, &e, &EmuModel::slot_cpu_state);
+	connect(ui->cp->sw[SW_START], &Switch::signal_toggled, &e, &EmuModel::slot_cpu_start);
 	connect(ui->cp->sw[SW_CLEAR], &Switch::signal_clicked, &e, &EmuModel::slot_clear);
 	connect(ui->cp->sw[SW_OPRQ],  &Switch::signal_clicked, &e, &EmuModel::slot_oprq);
 	connect(ui->cp->sw[SW_CYCLE], &Switch::signal_clicked, &e, &EmuModel::slot_cycle);
-	connect(ui->cp->sw[SW_CLOCK], &Switch::signal_toggled, &e, &EmuModel::slot_clock_state);
+	connect(ui->cp->sw[SW_CLOCK], &Switch::signal_toggled, &e, &EmuModel::slot_clock_enabled);
 
 	// connect register edits
 	for (int i=ECTL_REG_R0 ; i<ECTL_REG_COUNT ; i++) {
@@ -87,7 +87,7 @@ MainWindow::MainWindow(QWidget *parent) :
 	nb->setFont(font);
 	ui->statusbar->addWidget(nb);
 
-	e.run(60);
+	e.run();
 	slot_debugger_enabled_changed(false);
 }
 

@@ -14,7 +14,7 @@ public:
 	EmuModel();
 	~EmuModel();
 
-	void run(int hz);
+	void run();
 	void stop();
 	bool load(QString filename);
 
@@ -24,29 +24,31 @@ public:
 	int get_mem(int nb, int addr, uint16_t *m, int count);
 
 private:
-	QTimer timer;
-	QTimer ips_timer;
+	QTimer timer_realtime;
+	QTimer timer_slow;
+	QTimer timer_ips;
 
 	int last_cpu_state;
 	int last_reg[ECTL_REG_COUNT];
 	int last_bus_w;
 	bool last_clock;
 
-	void sync(bool force=false);
 	void sync_state(bool force=false);
 	void sync_regs(bool force=false);
 	void sync_bus_w(bool force=false);
 	void sync_clock(bool force=false);
+	void sync_ips();
 
 private slots:
-	void on_timer_timeout();
-	void on_ips_timer_timeout();
+	void on_timer_realtime_timeout();
+	void on_timer_slow_timeout();
+	void on_timer_ips_timeout();
 
 public slots:
-	void slot_cpu_state(bool state);
+	void slot_cpu_start(bool state);
 	void slot_clear();
 	void slot_cycle();
-	void slot_clock_state(bool state);
+	void slot_clock_enabled(bool state);
 	void slot_oprq();
 
 signals:
