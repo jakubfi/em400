@@ -38,6 +38,8 @@ void Switch::paintEvent(QPaintEvent *event)
 // -----------------------------------------------------------------------
 void Switch::mousePressEvent(QMouseEvent *event)
 {
+	if (event->button() != Qt::LeftButton) return;
+
 	state = !state;
 	if (state) {
 		snd_on.play();

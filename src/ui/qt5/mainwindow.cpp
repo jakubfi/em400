@@ -198,7 +198,7 @@ void MainWindow::slot_debugger_enabled_changed(bool state)
 	ui->group_dasm->setVisible(state);
 	ui->group_registers->setVisible(state);
 	ui->group_mem->setVisible(state);
-	ui->statusbar->setVisible(state);
+	//ui->statusbar->setVisible(state);
 	for (int i=0 ; i<10 ; i++) qApp->processEvents(); // StackOverflow, I don't even...
 	adjustSize();
 }

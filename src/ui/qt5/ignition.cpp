@@ -67,6 +67,8 @@ int Ignition::calculate_pos(QPoint &m)
 // -----------------------------------------------------------------------
 void Ignition::mousePressEvent(QMouseEvent *event)
 {
+	if (event->button() != Qt::LeftButton) return;
+
 	QPoint m = event->pos();
 	if (sqrt(pow(center.x()-m.x(), 2) + pow(center.y()-m.y(), 2)) <= radius) {
 		dragging = true;

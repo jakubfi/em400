@@ -16,7 +16,7 @@ private:
 	QSoundEffect snd_r[16], snd_l[16];
 	QPoint center;
 	int radius_outer, radius_main, radius_inner;
-	bool dragging;
+	bool dragging = false;
 	int anim_delta = 0;
 	QTimer anim_timer;
 	bool can_interact_outer = false;

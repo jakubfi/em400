@@ -99,6 +99,8 @@ void Rotary::anim_step()
 // -----------------------------------------------------------------------
 void Rotary::mousePressEvent(QMouseEvent *event)
 {
+	if (event->button() != Qt::LeftButton) return;
+
 	QPoint m = event->pos();
 	if (can_interact_outer) {
 		int new_pos = pos_from_point(m);
