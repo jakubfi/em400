@@ -124,33 +124,7 @@ int cp_reg_set(unsigned id, uint16_t v)
 		iob_cp_set_keys(v);
 		iob_cp_set_fn(IOB_FN_LOAD, 1);
 	} else {
-		switch (id) {
-			case ECTL_REG_R0:
-			case ECTL_REG_R1:
-			case ECTL_REG_R2:
-			case ECTL_REG_R3:
-			case ECTL_REG_R4:
-			case ECTL_REG_R5:
-			case ECTL_REG_R6:
-			case ECTL_REG_R7: r[id] = v; break;
-			case ECTL_REG_IC: ic = v; break;
-			case ECTL_REG_AC: ac = v; break;
-			case ECTL_REG_AR: ar = v ; break;
-			case ECTL_REG_IR: ir = v; break;
-			case ECTL_REG_SR: SR_WRITE(v); break;
-			// n/a case ECTL_REG_RZ:
-			case ECTL_REG_KB:
-			case ECTL_REG_KB2: kb = v; break;
-			case ECTL_REG_MC: mc = v; break;
-			case ECTL_REG_ALARM: rALARM = v; break;
-			case ECTL_REG_RM: rm = v & 0b1111111111; break;
-			case ECTL_REG_Q: q = v; break;
-			case ECTL_REG_BS: bs = v; break;
-			case ECTL_REG_NB: nb = v & 0b1111; break;
-			case ECTL_REG_P: p = v; break;
-			// n/a case ECTL_REG_RZ_IO:
-			default: return -1;
-		}
+		cpu_register_load(id, v);
 	}
 	return 0;
 }

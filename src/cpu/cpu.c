@@ -85,6 +85,35 @@ struct iset_opcode *cpu_op_tab[0x10000];
 pthread_mutex_t cpu_wake_mutex = PTHREAD_MUTEX_INITIALIZER;
 pthread_cond_t cpu_wake_cond = PTHREAD_COND_INITIALIZER;
 
+
+void cpu_register_load(int reg, uint16_t v)
+{
+	pthread_mutex_lock(&cpu_wake_mutex);
+	if (cpu_state == ECTL_STATE_STOP) {
+		switch (reg) {
+			case ECTL_REG_R0:
+			case ECTL_REG_R1:
+			case ECTL_REG_R2:
+			case ECTL_REG_R3:
+			case ECTL_REG_R4:
+			case ECTL_REG_R5:
+			case ECTL_REG_R6:
+			case ECTL_REG_R7: r[reg] = v; break;
+			case ECTL_REG_IC: ic = v; break;
+			case ECTL_REG_AC: ac = v; break;
+			case ECTL_REG_AR: ar = v ; break;
+			case ECTL_REG_IR: ir = v; break;
+			case ECTL_REG_SR: SR_WRITE(v); break;
+			case ECTL_REG_RZ: int_put_nchan(v); break;
+			case ECTL_REG_KB:
+			case ECTL_REG_KB2: kb = v; break;
+			default: return;
+		}
+		cpu_wake_up();
+	}
+	pthread_mutex_unlock(&cpu_wake_mutex);
+}
+
 // -----------------------------------------------------------------------
 static inline void cpu_reg_selected_to_w()
 {

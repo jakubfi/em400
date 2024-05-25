@@ -16,6 +16,7 @@ private:
 
 public:
 	explicit Switch(QPixmap gfx_on, QString snd_on, QString snd_off, bool momentary = false, QWidget *parent = nullptr);
+	bool get() { return state; }
 
 protected:
 	void paintEvent(QPaintEvent *event);

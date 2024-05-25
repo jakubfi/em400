@@ -56,6 +56,9 @@ MainWindow::MainWindow(QWidget *parent) :
 	connect(ui->cp->sw[SW_CYCLE], &Switch::signal_clicked, &e, &EmuModel::slot_cycle);
 	connect(ui->cp->sw[SW_CLOCK], &Switch::signal_toggled, &e, &EmuModel::slot_clock_enabled);
 	connect(ui->cp->rotary, &Rotary::signal_rotated, &e, &EmuModel::slot_reg_select);
+	for (int i=0 ; i<16 ; i++) {
+		connect(ui->cp->sw[i], &Switch::signal_toggled, this, &MainWindow::slot_binary_key_toggled);
+	}
 
 	// connect register edits
 	for (int i=ECTL_REG_R0 ; i<ECTL_REG_COUNT ; i++) {
@@ -213,3 +216,12 @@ void MainWindow::slot_smallcp_changed(bool state)
 	adjustSize();
 }
 
+// -----------------------------------------------------------------------
+void MainWindow::slot_binary_key_toggled(bool state)
+{
+	uint16_t val = 0;
+	for (int i=0 ; i<16 ; i++) {
+		val |= ui->cp->sw[i]->get() << (15-i);
+	}
+	e.set_reg(ECTL_REG_KB, val);
+}
