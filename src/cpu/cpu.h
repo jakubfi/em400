@@ -99,6 +99,7 @@ void cpu_ctx_restore(bool barnb);
 
 void cpu_loop();
 
+void cpu_wake_up();
 int cpu_state_change(int to, int from);
 int cpu_state_get();
 

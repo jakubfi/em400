@@ -112,8 +112,8 @@ static void int_update_rp()
 {
 	// function called under mutex
 	rp = rz & int_mask;
-	if (rp && !p && !mc) {
-		cpu_state_change(ECTL_STATE_RUN, ECTL_STATE_WAIT);
+	if (rp) {
+		cpu_wake_up();
 	}
 }
 

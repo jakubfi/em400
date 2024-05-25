@@ -103,6 +103,12 @@ static int cpu_do_wait()
 }
 
 // -----------------------------------------------------------------------
+void cpu_wake_up()
+{
+	pthread_cond_signal(&cpu_wake_cond);
+}
+
+// -----------------------------------------------------------------------
 int cpu_state_change(int to, int from)
 {
 	int res = 1;
@@ -110,7 +116,7 @@ int cpu_state_change(int to, int from)
 	pthread_mutex_lock(&cpu_wake_mutex);
 	if ((from == ECTL_STATE_ANY) || (cpu_state == from)) {
 		cpu_state = to;
-		pthread_cond_broadcast(&cpu_wake_cond);
+		pthread_cond_signal(&cpu_wake_cond);
 		res = 0;
 	}
 	pthread_mutex_unlock(&cpu_wake_mutex);
@@ -131,7 +137,7 @@ static void cpu_mem_fail(bool barnb)
 	int_set(INT_NO_MEM);
 	if (!barnb) {
 		rALARM = true;
-		if (nomem_stop) cpu_state_change(ECTL_STATE_STOP, ECTL_STATE_ANY);
+		if (nomem_stop) cpu_state_change(ECTL_STATE_STOP, -1);
 	}
 }
 
@@ -506,7 +512,7 @@ void cpu_loop()
 
 		switch (state) {
 			case ECTL_STATE_CYCLE:
-				cpu_state_change(ECTL_STATE_STOP, ECTL_STATE_CYCLE);
+				cpu_state_change(ECTL_STATE_STOP, -1);
 				// fallthrough
 			case ECTL_STATE_RUN:
 				if (atom_load_acquire(&rp) && !p && (mc == 0)) {
@@ -515,7 +521,7 @@ void cpu_loop()
 				} else {
 					cpu_time = cpu_do_cycle();
 					if (ectl_brk_check()) {
-						cpu_state_change(ECTL_STATE_STOP, ECTL_STATE_RUN);
+						cpu_state_change(ECTL_STATE_STOP, -1);
 					}
 				}
 				break;
@@ -524,15 +530,15 @@ void cpu_loop()
 				return;
 			case ECTL_STATE_CLM:
 				cpu_do_clear(ECTL_STATE_CLM);
-				cpu_state_change(ECTL_STATE_RUN, ECTL_STATE_CLM);
+				cpu_state_change(ECTL_STATE_RUN, -1);
 				break;
 			case ECTL_STATE_CLO:
 				if (sound_enabled) buzzer_stop();
 				cpu_do_clear(ECTL_STATE_CLO);
-				cpu_state_change(ECTL_STATE_STOP, ECTL_STATE_CLO);
+				cpu_state_change(ECTL_STATE_STOP, -1);
 				break;
 			case ECTL_STATE_BIN:
-				if (cpu_do_bin(false)) cpu_state_change(ECTL_STATE_STOP, ECTL_STATE_BIN);
+				if (cpu_do_bin(false)) cpu_state_change(ECTL_STATE_STOP, -1);
 				break;
 			case ECTL_STATE_STOP:
 				if (sound_enabled) buzzer_stop();
@@ -548,7 +554,7 @@ void cpu_loop()
 			case ECTL_STATE_WAIT:
 				if (speed_real) {
 					if (atom_load_acquire(&rp) && !p && !mc) {
-						cpu_state_change(ECTL_STATE_RUN, ECTL_STATE_WAIT);
+						cpu_state_change(ECTL_STATE_RUN, -1);
 					} else {
 						cpu_time = throttle_granularity;
 					}
