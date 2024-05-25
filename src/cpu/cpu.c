@@ -103,7 +103,7 @@ static int cpu_do_stop()
 	LOG(L_CPU, "idling in state STOP");
 
 	pthread_mutex_lock(&cpu_wake_mutex);
-	while ((cpu_state & (ECTL_STATE_STOP|ECTL_STATE_OFF|ECTL_STATE_CLO|ECTL_STATE_CLM|ECTL_STATE_CYCLE|ECTL_STATE_BIN)) == ECTL_STATE_STOP) {
+	while (cpu_state == ECTL_STATE_STOP) {
 		pthread_cond_wait(&cpu_wake_cond, &cpu_wake_mutex);
 	}
 	int res = cpu_state;
