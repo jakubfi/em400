@@ -1,5 +1,6 @@
 #include <QPainter>
 #include <QGuiApplication>
+#include <QMouseEvent>
 #include "switch.h"
 
 #define DEBUG_UI 0
