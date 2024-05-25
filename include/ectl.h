@@ -155,6 +155,7 @@ int ectl_brk_del(unsigned id);
 
 int ectl_stopn(uint16_t addr);
 int ectl_stopn_off();
+int ectl_reg_select(int reg);
 
 #ifdef __cplusplus
 }

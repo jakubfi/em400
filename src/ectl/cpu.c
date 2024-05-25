@@ -538,4 +538,12 @@ int ectl_stopn_off()
 	return cp_stopn_off();
 }
 
+// -----------------------------------------------------------------------
+int ectl_reg_select(int reg)
+{
+	LOG(L_ECTL, "ECTL reg select");
+	cp_reg_select(reg);
+	return reg;
+}
+
 // vim: tabstop=4 shiftwidth=4 autoindent

@@ -89,6 +89,7 @@ void Rotary::anim_step()
 		snd_l[position].play();
 	}
 	anim_timer.setInterval(anim_timer.interval()-4);
+	emit signal_rotated(position);
 	update();
 
 	if (anim_delta == 0) {
@@ -136,6 +137,7 @@ void Rotary::mouseMoveEvent(QMouseEvent *event)
 				if (new_pos > position) snd_r[new_pos].play();
 				else snd_l[new_pos].play();
 				position = new_pos;
+				emit signal_rotated(position);
 				update();
 			}
 		}
@@ -180,6 +182,7 @@ void Rotary::wheelEvent(QWheelEvent *event)
 			position = (position + 1) % 16;
 			snd_r[position].play();
 		}
+		emit signal_rotated(position);
 		update();
 	}
 }
@@ -196,4 +199,12 @@ void Rotary::leaveEvent(QEvent *event)
 	can_interact_inner = false;
 	can_interact_outer = false;
 	QGuiApplication::restoreOverrideCursor();
+}
+
+// -----------------------------------------------------------------------
+void Rotary::set_position(int pos)
+{
+	position = pos;
+	emit signal_rotated(position);
+	update();
 }

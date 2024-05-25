@@ -58,6 +58,7 @@ int mc;
 unsigned rm, nb;
 bool p, q, bs;
 uint16_t w;
+int r_selected;
 
 bool zc17;
 
@@ -85,12 +86,44 @@ pthread_mutex_t cpu_wake_mutex = PTHREAD_MUTEX_INITIALIZER;
 pthread_cond_t cpu_wake_cond = PTHREAD_COND_INITIALIZER;
 
 // -----------------------------------------------------------------------
+static inline void cpu_reg_selected_to_w()
+{
+	switch (r_selected) {
+		case ECTL_REG_IC:
+			w = ic;
+			break;
+		case ECTL_REG_AC:
+			w = ac;
+			break;
+		case ECTL_REG_AR:
+			w = ar;
+			break;
+		case ECTL_REG_IR:
+			w = ir;
+			break;
+		case ECTL_REG_SR:
+			w = SR_READ();
+			break;
+		case ECTL_REG_RZ:
+			w = int_get_nchan();
+			break;
+		case ECTL_REG_KB:
+		case ECTL_REG_KB2:
+			w = kb;
+			break;
+		default:
+			w = r[r_selected];
+			break;
+	}
+}
+// -----------------------------------------------------------------------
 static int cpu_do_wait()
 {
-	LOG(L_CPU, "idling in state STOP");
+	LOG(L_CPU, "CPU idling");
 
 	pthread_mutex_lock(&cpu_wake_mutex);
-	while ((cpu_state == ECTL_STATE_STOP) || ((cpu_state == ECTL_STATE_WAIT) && !(atom_load_acquire(&rp) && !p && !mc))){
+	while ((cpu_state == ECTL_STATE_STOP) || ((cpu_state == ECTL_STATE_WAIT) && !(atom_load_acquire(&rp) && !p && !mc))) {
+		cpu_reg_selected_to_w();
 		pthread_cond_wait(&cpu_wake_cond, &cpu_wake_mutex);
 	}
 	if (cpu_state == ECTL_STATE_WAIT) {
@@ -260,7 +293,6 @@ static void cpu_do_clear(int scope)
 
 	r[0] = 0;
 	SR_WRITE(0);
-
 	int_update_mask(rm);
 	int_clear_all();
 
@@ -351,6 +383,15 @@ static bool cpu_do_bin(bool start)
 	}
 
 	return false;
+}
+
+// -----------------------------------------------------------------------
+void cpu_reg_select(int reg)
+{
+	pthread_mutex_lock(&cpu_wake_mutex);
+	r_selected = reg;
+	pthread_cond_signal(&cpu_wake_cond);
+	pthread_mutex_unlock(&cpu_wake_mutex);
 }
 
 // -----------------------------------------------------------------------
@@ -552,7 +593,9 @@ void cpu_loop()
 				}
 				break;
 			case ECTL_STATE_WAIT:
+				// busy wait to not disturb audio, TODO
 				if (speed_real) {
+					cpu_reg_selected_to_w();
 					if (atom_load_acquire(&rp) && !p && !mc) {
 						cpu_state_change(ECTL_STATE_RUN, -1);
 					} else {

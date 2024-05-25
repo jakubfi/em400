@@ -379,4 +379,10 @@ int cp_stopn_off()
 	}
 }
 
+// -----------------------------------------------------------------------
+void cp_reg_select(int reg)
+{
+	cpu_reg_select(reg);
+}
+
 // vim: tabstop=4 shiftwidth=4 autoindent

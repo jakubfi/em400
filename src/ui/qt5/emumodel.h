@@ -50,6 +50,7 @@ public slots:
 	void slot_cycle();
 	void slot_clock_enabled(bool state);
 	void slot_oprq();
+	void slot_reg_select(int r);
 
 signals:
 	void signal_state_changed(int state);

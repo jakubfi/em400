@@ -55,6 +55,7 @@ MainWindow::MainWindow(QWidget *parent) :
 	connect(ui->cp->sw[SW_OPRQ],  &Switch::signal_clicked, &e, &EmuModel::slot_oprq);
 	connect(ui->cp->sw[SW_CYCLE], &Switch::signal_clicked, &e, &EmuModel::slot_cycle);
 	connect(ui->cp->sw[SW_CLOCK], &Switch::signal_toggled, &e, &EmuModel::slot_clock_enabled);
+	connect(ui->cp->rotary, &Rotary::signal_rotated, &e, &EmuModel::slot_reg_select);
 
 	// connect register edits
 	for (int i=ECTL_REG_R0 ; i<ECTL_REG_COUNT ; i++) {
@@ -88,6 +89,7 @@ MainWindow::MainWindow(QWidget *parent) :
 	ui->statusbar->addWidget(nb);
 
 	e.run();
+	ui->cp->rotary->set_position(8);
 	slot_debugger_enabled_changed(false);
 }
 

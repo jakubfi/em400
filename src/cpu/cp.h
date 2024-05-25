@@ -43,6 +43,7 @@ void cp_oprq();
 int cp_state();
 int cp_stopn(uint16_t addr);
 int cp_stopn_off();
+void cp_reg_select(int reg);
 
 #endif
 

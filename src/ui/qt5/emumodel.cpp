@@ -195,3 +195,9 @@ void EmuModel::slot_oprq()
 {
 	ectl_oprq();
 }
+
+// -----------------------------------------------------------------------
+void EmuModel::slot_reg_select(int r)
+{
+	ectl_reg_select(r);
+}

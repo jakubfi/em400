@@ -76,6 +76,7 @@ extern int mc;
 extern unsigned rm, nb;
 extern bool p, q, bs;
 extern uint16_t w;
+extern int r_selected;
 
 extern bool zc17;
 
@@ -102,6 +103,7 @@ void cpu_loop();
 void cpu_wake_up();
 int cpu_state_change(int to, int from);
 int cpu_state_get();
+void cpu_reg_select(int reg);
 
 #endif
 
