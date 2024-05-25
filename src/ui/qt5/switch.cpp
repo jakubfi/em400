@@ -69,6 +69,8 @@ void Switch::leaveEvent(QEvent *event)
 // -----------------------------------------------------------------------
 void Switch::mouseReleaseEvent(QMouseEvent *event)
 {
+	if (event->button() != Qt::LeftButton) return;
+
 	if (momentary) {
 		state = false;
 		snd_off.play();
