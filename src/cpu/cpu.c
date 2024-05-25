@@ -85,26 +85,16 @@ pthread_mutex_t cpu_wake_mutex = PTHREAD_MUTEX_INITIALIZER;
 pthread_cond_t cpu_wake_cond = PTHREAD_COND_INITIALIZER;
 
 // -----------------------------------------------------------------------
-static void cpu_do_wait()
-{
-	LOG(L_CPU, "idling in state WAIT");
-
-	pthread_mutex_lock(&cpu_wake_mutex);
-	while ((cpu_state == ECTL_STATE_WAIT) && !(atom_load_acquire(&rp) && !p && !mc)) {
-			pthread_cond_wait(&cpu_wake_cond, &cpu_wake_mutex);
-	}
-	cpu_state &= ~ECTL_STATE_WAIT;
-	pthread_mutex_unlock(&cpu_wake_mutex);
-}
-
-// -----------------------------------------------------------------------
-static int cpu_do_stop()
+static int cpu_do_wait()
 {
 	LOG(L_CPU, "idling in state STOP");
 
 	pthread_mutex_lock(&cpu_wake_mutex);
-	while (cpu_state == ECTL_STATE_STOP) {
+	while ((cpu_state == ECTL_STATE_STOP) || ((cpu_state == ECTL_STATE_WAIT) && !(atom_load_acquire(&rp) && !p && !mc))){
 		pthread_cond_wait(&cpu_wake_cond, &cpu_wake_mutex);
+	}
+	if (cpu_state == ECTL_STATE_WAIT) {
+		cpu_state = ECTL_STATE_RUN;
 	}
 	int res = cpu_state;
 	pthread_mutex_unlock(&cpu_wake_mutex);
@@ -517,6 +507,7 @@ void cpu_loop()
 		switch (state) {
 			case ECTL_STATE_CYCLE:
 				cpu_state_change(ECTL_STATE_STOP, ECTL_STATE_CYCLE);
+				// fallthrough
 			case ECTL_STATE_RUN:
 				if (atom_load_acquire(&rp) && !p && (mc == 0)) {
 					int_serve();
@@ -545,7 +536,7 @@ void cpu_loop()
 				break;
 			case ECTL_STATE_STOP:
 				if (sound_enabled) buzzer_stop();
-				int res = cpu_do_stop();
+				int res = cpu_do_wait();
 				if (speed_real && (res == ECTL_STATE_RUN)) {
 					if (sound_enabled) buzzer_start();
 					clock_gettime(CLOCK_MONOTONIC, &cpu_timer);
