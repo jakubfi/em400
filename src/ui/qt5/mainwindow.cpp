@@ -30,7 +30,6 @@ MainWindow::MainWindow(QWidget *parent) :
 	r[ECTL_REG_SR] = ui->sr;
 	r[ECTL_REG_RZ] = ui->rz;
 	r[ECTL_REG_KB] = ui->kb;
-	r[ECTL_REG_MC] = ui->mc;
 
 	ui->dasm->connect_emu(&e);
 
@@ -172,7 +171,7 @@ void MainWindow::slot_cpu_reg_changed(int reg, uint16_t val)
 // -----------------------------------------------------------------------
 void MainWindow::slot_dasm_update()
 {
-	int nb = e.get_reg(ECTL_REG_Q) * e.get_reg(ECTL_REG_NB);
+	int nb = e.get_nb();
 	int ic = e.get_reg(ECTL_REG_IC);
 	ui->dasm->update_contents(nb, ic);
 }
@@ -223,5 +222,5 @@ void MainWindow::slot_binary_key_toggled(bool state)
 	for (int i=0 ; i<16 ; i++) {
 		val |= ui->cp->sw[i]->get() << (15-i);
 	}
-	e.set_reg(ECTL_REG_KB, val);
+	e.set_kb(val);
 }

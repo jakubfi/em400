@@ -140,7 +140,7 @@ lval:
 	NAME { $$ = n_var($1); }
 	| IRZ '[' expr ']' { $$ = n_ireg(N_RZ, n_eval($3)); }
 	| REG { $$ = n_reg($1); }
-	| '[' expr ']' { $$ = n_mem(n_val(ectl_reg_get(ECTL_REG_Q) * ectl_reg_get(ECTL_REG_NB)), $2); }
+	| '[' expr ']' { $$ = n_mem(n_val(ectl_qnb_get()), $2); }
 	| '[' expr ':' expr ']' { $$ = n_mem($2, $4); }
 	;
 
@@ -165,8 +165,8 @@ command:
 	| F_DASM				{ dbg_c_dt(W_CMD, ectl_reg_get(ECTL_REG_IC), 1); }
 	| F_DASM VALUE			{ dbg_c_dt(W_CMD, ectl_reg_get(ECTL_REG_IC), $2); }
 	| F_DASM expr VALUE		{ dbg_c_dt(W_CMD, n_eval($2), $3); }
-	| F_MEM expr			{ dbg_c_mem(W_CMD, ectl_reg_get(ECTL_REG_Q) * ectl_reg_get(ECTL_REG_NB), n_eval($2), n_eval($2)+15, 122, 18); }
-	| F_MEM expr VALUE		{ dbg_c_mem(W_CMD, ectl_reg_get(ECTL_REG_Q) * ectl_reg_get(ECTL_REG_NB), n_eval($2), n_eval($2)+$3-1, 122, 18); }
+	| F_MEM expr			{ dbg_c_mem(W_CMD, ectl_qnb_get(), n_eval($2), n_eval($2)+15, 122, 18); }
+	| F_MEM expr VALUE		{ dbg_c_mem(W_CMD, ectl_qnb_get(), n_eval($2), n_eval($2)+$3-1, 122, 18); }
 	| F_MEM VALUE ':' expr	{ dbg_c_mem(W_CMD, $2, n_eval($4), n_eval($4)+15, 122, 18); }
 	| F_MEM VALUE ':' expr VALUE { dbg_c_mem(W_CMD, $2, n_eval($4), n_eval($4)+$5-1, 122, 18); }
 	| F_BIN					{ dbg_c_bin(W_CMD); }

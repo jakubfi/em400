@@ -7,7 +7,7 @@
     <x>0</x>
     <y>0</y>
     <width>1019</width>
-    <height>496</height>
+    <height>448</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -91,8 +91,32 @@
            </property>
            <item>
             <layout class="QGridLayout" name="gridLayout">
-             <item row="1" column="0">
-              <widget class="QLabel" name="label_ac">
+             <item row="1" column="1">
+              <widget class="QSpinBox" name="ac">
+               <property name="font">
+                <font>
+                 <family>Monospace</family>
+                </font>
+               </property>
+               <property name="frame">
+                <bool>false</bool>
+               </property>
+               <property name="buttonSymbols">
+                <enum>QAbstractSpinBox::ButtonSymbols::NoButtons</enum>
+               </property>
+               <property name="maximum">
+                <number>65535</number>
+               </property>
+               <property name="singleStep">
+                <number>0</number>
+               </property>
+               <property name="displayIntegerBase">
+                <number>16</number>
+               </property>
+              </widget>
+             </item>
+             <item row="5" column="0">
+              <widget class="QLabel" name="label_rz">
                <property name="sizePolicy">
                 <sizepolicy hsizetype="Maximum" vsizetype="Preferred">
                  <horstretch>0</horstretch>
@@ -100,7 +124,31 @@
                 </sizepolicy>
                </property>
                <property name="text">
-                <string>AC:</string>
+                <string>RZ:</string>
+               </property>
+              </widget>
+             </item>
+             <item row="2" column="1">
+              <widget class="QSpinBox" name="ar">
+               <property name="font">
+                <font>
+                 <family>Monospace</family>
+                </font>
+               </property>
+               <property name="frame">
+                <bool>false</bool>
+               </property>
+               <property name="buttonSymbols">
+                <enum>QAbstractSpinBox::ButtonSymbols::NoButtons</enum>
+               </property>
+               <property name="maximum">
+                <number>65535</number>
+               </property>
+               <property name="singleStep">
+                <number>0</number>
+               </property>
+               <property name="displayIntegerBase">
+                <number>16</number>
                </property>
               </widget>
              </item>
@@ -130,6 +178,93 @@
                </property>
               </widget>
              </item>
+             <item row="5" column="1">
+              <widget class="QSpinBox" name="rz">
+               <property name="font">
+                <font>
+                 <family>Monospace</family>
+                </font>
+               </property>
+               <property name="frame">
+                <bool>false</bool>
+               </property>
+               <property name="buttonSymbols">
+                <enum>QAbstractSpinBox::ButtonSymbols::NoButtons</enum>
+               </property>
+               <property name="maximum">
+                <number>65535</number>
+               </property>
+               <property name="singleStep">
+                <number>0</number>
+               </property>
+               <property name="displayIntegerBase">
+                <number>16</number>
+               </property>
+              </widget>
+             </item>
+             <item row="0" column="0">
+              <widget class="QLabel" name="label_ic">
+               <property name="sizePolicy">
+                <sizepolicy hsizetype="Maximum" vsizetype="Preferred">
+                 <horstretch>0</horstretch>
+                 <verstretch>0</verstretch>
+                </sizepolicy>
+               </property>
+               <property name="text">
+                <string>IC:</string>
+               </property>
+              </widget>
+             </item>
+             <item row="2" column="0">
+              <widget class="QLabel" name="label_ar">
+               <property name="sizePolicy">
+                <sizepolicy hsizetype="Maximum" vsizetype="Preferred">
+                 <horstretch>0</horstretch>
+                 <verstretch>0</verstretch>
+                </sizepolicy>
+               </property>
+               <property name="text">
+                <string>AR:</string>
+               </property>
+              </widget>
+             </item>
+             <item row="6" column="0">
+              <widget class="QLabel" name="label_kb">
+               <property name="sizePolicy">
+                <sizepolicy hsizetype="Maximum" vsizetype="Preferred">
+                 <horstretch>0</horstretch>
+                 <verstretch>0</verstretch>
+                </sizepolicy>
+               </property>
+               <property name="text">
+                <string>KB:</string>
+               </property>
+              </widget>
+             </item>
+             <item row="6" column="1">
+              <widget class="QSpinBox" name="kb">
+               <property name="font">
+                <font>
+                 <family>Monospace</family>
+                </font>
+               </property>
+               <property name="frame">
+                <bool>false</bool>
+               </property>
+               <property name="buttonSymbols">
+                <enum>QAbstractSpinBox::ButtonSymbols::NoButtons</enum>
+               </property>
+               <property name="maximum">
+                <number>65535</number>
+               </property>
+               <property name="singleStep">
+                <number>0</number>
+               </property>
+               <property name="displayIntegerBase">
+                <number>16</number>
+               </property>
+              </widget>
+             </item>
              <item row="3" column="1">
               <widget class="QSpinBox" name="ir">
                <property name="font">
@@ -151,6 +286,19 @@
                </property>
                <property name="displayIntegerBase">
                 <number>16</number>
+               </property>
+              </widget>
+             </item>
+             <item row="1" column="0">
+              <widget class="QLabel" name="label_ac">
+               <property name="sizePolicy">
+                <sizepolicy hsizetype="Maximum" vsizetype="Preferred">
+                 <horstretch>0</horstretch>
+                 <verstretch>0</verstretch>
+                </sizepolicy>
+               </property>
+               <property name="text">
+                <string>AC:</string>
                </property>
               </widget>
              </item>
@@ -199,191 +347,6 @@
                </property>
                <property name="displayIntegerBase">
                 <number>16</number>
-               </property>
-              </widget>
-             </item>
-             <item row="5" column="1">
-              <widget class="QSpinBox" name="rz">
-               <property name="font">
-                <font>
-                 <family>Monospace</family>
-                </font>
-               </property>
-               <property name="frame">
-                <bool>false</bool>
-               </property>
-               <property name="buttonSymbols">
-                <enum>QAbstractSpinBox::ButtonSymbols::NoButtons</enum>
-               </property>
-               <property name="maximum">
-                <number>65535</number>
-               </property>
-               <property name="singleStep">
-                <number>0</number>
-               </property>
-               <property name="displayIntegerBase">
-                <number>16</number>
-               </property>
-              </widget>
-             </item>
-             <item row="2" column="1">
-              <widget class="QSpinBox" name="ar">
-               <property name="font">
-                <font>
-                 <family>Monospace</family>
-                </font>
-               </property>
-               <property name="frame">
-                <bool>false</bool>
-               </property>
-               <property name="buttonSymbols">
-                <enum>QAbstractSpinBox::ButtonSymbols::NoButtons</enum>
-               </property>
-               <property name="maximum">
-                <number>65535</number>
-               </property>
-               <property name="singleStep">
-                <number>0</number>
-               </property>
-               <property name="displayIntegerBase">
-                <number>16</number>
-               </property>
-              </widget>
-             </item>
-             <item row="5" column="0">
-              <widget class="QLabel" name="label_rz">
-               <property name="sizePolicy">
-                <sizepolicy hsizetype="Maximum" vsizetype="Preferred">
-                 <horstretch>0</horstretch>
-                 <verstretch>0</verstretch>
-                </sizepolicy>
-               </property>
-               <property name="text">
-                <string>RZ:</string>
-               </property>
-              </widget>
-             </item>
-             <item row="6" column="1">
-              <widget class="QSpinBox" name="kb">
-               <property name="font">
-                <font>
-                 <family>Monospace</family>
-                </font>
-               </property>
-               <property name="frame">
-                <bool>false</bool>
-               </property>
-               <property name="buttonSymbols">
-                <enum>QAbstractSpinBox::ButtonSymbols::NoButtons</enum>
-               </property>
-               <property name="maximum">
-                <number>65535</number>
-               </property>
-               <property name="singleStep">
-                <number>0</number>
-               </property>
-               <property name="displayIntegerBase">
-                <number>16</number>
-               </property>
-              </widget>
-             </item>
-             <item row="0" column="0">
-              <widget class="QLabel" name="label_ic">
-               <property name="sizePolicy">
-                <sizepolicy hsizetype="Maximum" vsizetype="Preferred">
-                 <horstretch>0</horstretch>
-                 <verstretch>0</verstretch>
-                </sizepolicy>
-               </property>
-               <property name="text">
-                <string>IC:</string>
-               </property>
-              </widget>
-             </item>
-             <item row="1" column="1">
-              <widget class="QSpinBox" name="ac">
-               <property name="font">
-                <font>
-                 <family>Monospace</family>
-                </font>
-               </property>
-               <property name="frame">
-                <bool>false</bool>
-               </property>
-               <property name="buttonSymbols">
-                <enum>QAbstractSpinBox::ButtonSymbols::NoButtons</enum>
-               </property>
-               <property name="maximum">
-                <number>65535</number>
-               </property>
-               <property name="singleStep">
-                <number>0</number>
-               </property>
-               <property name="displayIntegerBase">
-                <number>16</number>
-               </property>
-              </widget>
-             </item>
-             <item row="7" column="0">
-              <widget class="QLabel" name="label_mc">
-               <property name="sizePolicy">
-                <sizepolicy hsizetype="Maximum" vsizetype="Preferred">
-                 <horstretch>0</horstretch>
-                 <verstretch>0</verstretch>
-                </sizepolicy>
-               </property>
-               <property name="text">
-                <string>MC:</string>
-               </property>
-              </widget>
-             </item>
-             <item row="7" column="1">
-              <widget class="QSpinBox" name="mc">
-               <property name="font">
-                <font>
-                 <family>Monospace</family>
-                </font>
-               </property>
-               <property name="frame">
-                <bool>false</bool>
-               </property>
-               <property name="buttonSymbols">
-                <enum>QAbstractSpinBox::ButtonSymbols::NoButtons</enum>
-               </property>
-               <property name="maximum">
-                <number>65535</number>
-               </property>
-               <property name="singleStep">
-                <number>0</number>
-               </property>
-               <property name="displayIntegerBase">
-                <number>16</number>
-               </property>
-              </widget>
-             </item>
-             <item row="6" column="0">
-              <widget class="QLabel" name="label_kb">
-               <property name="sizePolicy">
-                <sizepolicy hsizetype="Maximum" vsizetype="Preferred">
-                 <horstretch>0</horstretch>
-                 <verstretch>0</verstretch>
-                </sizepolicy>
-               </property>
-               <property name="text">
-                <string>KB:</string>
-               </property>
-              </widget>
-             </item>
-             <item row="2" column="0">
-              <widget class="QLabel" name="label_ar">
-               <property name="sizePolicy">
-                <sizepolicy hsizetype="Maximum" vsizetype="Preferred">
-                 <horstretch>0</horstretch>
-                 <verstretch>0</verstretch>
-                </sizepolicy>
-               </property>
-               <property name="text">
-                <string>AR:</string>
                </property>
               </widget>
              </item>
@@ -1083,7 +1046,6 @@
   <tabstop>ir</tabstop>
   <tabstop>sr</tabstop>
   <tabstop>kb</tabstop>
-  <tabstop>mc</tabstop>
  </tabstops>
  <resources>
   <include location="resources.qrc"/>

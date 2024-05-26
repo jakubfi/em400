@@ -55,13 +55,8 @@ ir			{ ectl_yylval.value = ECTL_REG_IR; return REG; }
 ar			{ ectl_yylval.value = ECTL_REG_AR; return REG; }
 ac			{ ectl_yylval.value = ECTL_REG_AC; return REG; }
 kb			{ ectl_yylval.value = ECTL_REG_KB; return REG; }
-mc			{ ectl_yylval.value = ECTL_REG_MC; return REG; }
-alarm		{ ectl_yylval.value = ECTL_REG_ALARM; return REG; }
-rm			{ ectl_yylval.value = ECTL_REG_RM; return REG; }
-q			{ ectl_yylval.value = ECTL_REG_Q; return REG; }
-bs			{ ectl_yylval.value = ECTL_REG_BS; return REG; }
-nb			{ ectl_yylval.value = ECTL_REG_NB; return REG; }
-p			{ ectl_yylval.value = ECTL_REG_P; return REG; }
+alarm		{ return ALARM; }
+mc			{ return MC; }
 [zmvclegyx]	{ ectl_yylval.value = *yytext ; return FLAG; }
 rz			{ return IRZ; }
 

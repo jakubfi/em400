@@ -28,6 +28,8 @@ enum ectl_est_type {
 	ECTL_AST_N_REG,
 	ECTL_AST_N_MEM,
 	ECTL_AST_N_RZ,
+	ECTL_AST_N_ALARM,
+	ECTL_AST_N_MC,
 	ECTL_AST_N_FLAG,
 };
 
@@ -47,6 +49,8 @@ struct ectl_est * ectl_est_val(int16_t v);
 struct ectl_est * ectl_est_reg(int r);
 struct ectl_est * ectl_est_flag(int f);
 struct ectl_est * ectl_est_rz(int bit);
+struct ectl_est * ectl_est_alarm();
+struct ectl_est * ectl_est_mc();
 struct ectl_est * ectl_est_op(int oper, struct ectl_est *n1, struct ectl_est *n2);
 struct ectl_est * ectl_est_mem(struct ectl_est *n1, struct ectl_est *n2);
 struct ectl_est * ectl_est_err(char *err);
@@ -56,6 +60,8 @@ int ectl_est_eval_val(struct ectl_est *n);
 int ectl_est_eval_reg(struct ectl_est *n);
 int ectl_est_eval_flag(struct ectl_est *n);
 int ectl_est_eval_rz(struct ectl_est * n);
+int ectl_est_eval_alarm(struct ectl_est * n);
+int ectl_est_eval_mc(struct ectl_est * n);
 int ectl_est_eval_op(struct ectl_est *n);
 int ectl_est_eval_mem(struct ectl_est *n);
 int ectl_est_eval(struct ectl_est *n);

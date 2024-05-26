@@ -26,6 +26,7 @@ void EmuModel::run()
 {
 	sync_bus_w(true);
 	sync_state(true);
+	sync_flags(true);
 	sync_regs(true);
 	sync_clock(true);
 	sync_ips();
@@ -48,6 +49,7 @@ void EmuModel::stop()
 void EmuModel::on_timer_realtime_timeout()
 {
 	sync_bus_w();
+	sync_flags();
 	sync_state();
 }
 
@@ -92,20 +94,34 @@ void EmuModel::sync_bus_w(bool force)
 }
 
 // -----------------------------------------------------------------------
+void EmuModel::sync_flags(bool force)
+{
+	bool alarm = ectl_alarm_get();
+	bool p = ectl_p_get();
+	bool mc = ectl_mc_get();
+
+	if (force || (alarm != last_alarm)) {
+		last_alarm = alarm;
+		emit signal_alarm_changed(alarm);
+	}
+	if (force || (p != last_p)) {
+		last_p = p;
+		emit signal_p_changed(p);
+	}
+	if (force || (mc != last_mc)) {
+		last_mc = mc;
+		emit signal_mc_changed(mc);
+	}
+}
+
+// -----------------------------------------------------------------------
 void EmuModel::sync_regs(bool force)
 {
 	for (int i=ECTL_REG_R0 ; i<ECTL_REG_COUNT ; i++) {
 		int reg = ectl_reg_get(i);
-
 		if (force || (reg != last_reg[i])) {
 			last_reg[i] = reg;
-			if (i == ECTL_REG_ALARM) {
-				emit signal_alarm_changed((bool)reg);
-			} else if (i == ECTL_REG_P) {
-				emit signal_p_changed((bool)reg);
-			} else {
-				emit signal_reg_changed(i, reg);
-			}
+			emit signal_reg_changed(i, reg);
 		}
 	}
 }
@@ -168,8 +184,7 @@ bool EmuModel::load(QString filename)
 // -----------------------------------------------------------------------
 void EmuModel::slot_cpu_start(bool state)
 {
-	if (state) ectl_cpu_start();
-	else ectl_cpu_stop();
+	ectl_cpu_start(state);
 }
 
 // -----------------------------------------------------------------------
@@ -200,4 +215,10 @@ void EmuModel::slot_oprq()
 void EmuModel::slot_reg_select(int r)
 {
 	ectl_reg_select(r);
+}
+
+// -----------------------------------------------------------------------
+void EmuModel::set_kb(uint16_t v)
+{
+	ectl_kb_set(v);
 }

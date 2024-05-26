@@ -97,6 +97,22 @@ struct ectl_est * ectl_est_rz(int bit)
 }
 
 // -----------------------------------------------------------------------
+struct ectl_est * ectl_est_alarm()
+{
+	struct ectl_est *n = ectl_est_create();
+	n->type = ECTL_AST_N_ALARM;
+	return n;
+}
+
+// -----------------------------------------------------------------------
+struct ectl_est * ectl_est_mc()
+{
+	struct ectl_est *n = ectl_est_create();
+	n->type = ECTL_AST_N_MC;
+	return n;
+}
+
+// -----------------------------------------------------------------------
 struct ectl_est * ectl_est_op(int oper, struct ectl_est *n1, struct ectl_est *n2)
 {
 	struct ectl_est *n = ectl_est_create();
@@ -191,6 +207,18 @@ int ectl_est_eval_rz(struct ectl_est * n)
 	}
 
 	return (ectl_int_get32() >> (31 - n->val)) & 1;
+}
+
+// -----------------------------------------------------------------------
+int ectl_est_eval_alarm(struct ectl_est * n)
+{
+	return (ectl_alarm_get());
+}
+
+// -----------------------------------------------------------------------
+int ectl_est_eval_mc(struct ectl_est * n)
+{
+	return (ectl_mc_get());
 }
 
 // -----------------------------------------------------------------------
@@ -314,6 +342,8 @@ int ectl_est_eval(struct ectl_est *n)
 		case ECTL_AST_N_MEM: return ectl_est_eval_mem(n);
 		case ECTL_AST_N_RZ: return ectl_est_eval_rz(n);
 		case ECTL_AST_N_OP: return ectl_est_eval_op(n);
+		case ECTL_AST_N_ALARM: return ectl_est_eval_alarm(n);
+		case ECTL_AST_N_MC: return ectl_est_eval_mc(n);
 		case ECTL_AST_N_ERR: return -1;
 		default: return -1;
 	}

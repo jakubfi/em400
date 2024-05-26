@@ -47,6 +47,8 @@ extern int ectl_yycolumn;
 %token <str> TOK_INVALID "error"
 %token ':' '&' '|' '(' ')'
 %token IRZ "RZ"
+%token ALARM "ALARM"
+%token MC "MC"
 %type <n> expr "expression"
 %token OR "||"
 %token AND "&&"
@@ -87,6 +89,8 @@ statement:
 
 expr:
 	VALUE					{ $$ = ectl_est_val($1); }
+	| ALARM					{ $$ = ectl_est_alarm(); }
+	| MC					{ $$ = ectl_est_mc(); }
 	| REG					{ $$ = ectl_est_reg($1); }
 	| FLAG					{ $$ = ectl_est_flag($1); }
 	| '[' expr ']'			{ $$ = ectl_est_mem(ectl_est_val(q*nb), $2); }

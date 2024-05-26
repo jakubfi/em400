@@ -56,31 +56,27 @@ int cp_bus_w_get()
 }
 
 // -----------------------------------------------------------------------
+void cp_kb_set(uint16_t val)
+{
+	if (fpga) {
+		iob_cp_set_keys(val);
+	} else {
+		// NOTE: force=true because this is possible even when CPU is running
+		cpu_register_load(ECTL_REG_KB, val, true);
+	}
+}
+
+// -----------------------------------------------------------------------
 int cp_reg_get(unsigned id)
 {
 	int reg = -1;
 	struct iob_cp_status *stat;
 
 	if (fpga) {
-		if (id <= ECTL_REG_KB2) {
-			iob_cp_set_rotary(id);
-			stat = iob_cp_get_status();
-			reg = stat->data;
-			free(stat);
-		} else {
-			stat = iob_cp_get_status();
-			reg = stat->leds;
-			free(stat);
-			if (id == ECTL_REG_MC) {
-				reg = (reg & IOB_LED_MODE) >> 9;
-			} else if (id == ECTL_REG_ALARM) {
-				reg = reg & IOB_LED_ALARM;
-			} else if (id == ECTL_REG_P) {
-				reg = reg & IOB_LED_P;
-			} else {
-				return -1;
-			}
-		}
+		iob_cp_set_rotary(id);
+		stat = iob_cp_get_status();
+		reg = stat->data;
+		free(stat);
 	} else {
 		switch (id) {
 			case ECTL_REG_R0:
@@ -99,14 +95,6 @@ int cp_reg_get(unsigned id)
 			case ECTL_REG_RZ: reg = int_get_nchan(); break;
 			case ECTL_REG_KB:
 			case ECTL_REG_KB2: reg = kb; break;
-			case ECTL_REG_MC: reg = mc; break;
-			case ECTL_REG_ALARM: reg = rALARM; break;
-			case ECTL_REG_RM: reg = rm; break;
-			case ECTL_REG_Q: reg = q; break;
-			case ECTL_REG_BS: reg = bs; break;
-			case ECTL_REG_NB: reg = nb; break;
-			case ECTL_REG_P: reg = p; break;
-			case ECTL_REG_RZ_IO: reg = int_get_chan(); break;
 			default: reg = -1; break;
 		}
 	}
@@ -117,14 +105,11 @@ int cp_reg_get(unsigned id)
 int cp_reg_set(unsigned id, uint16_t v)
 {
 	if (fpga) {
-		if (id >= ECTL_REG_KB2) {
-			return -1;
-		}
 		iob_cp_set_rotary(id);
 		iob_cp_set_keys(v);
 		iob_cp_set_fn(IOB_FN_LOAD, 1);
 	} else {
-		cpu_register_load(id, v);
+		cpu_register_load(id, v, false);
 	}
 	return 0;
 }
@@ -208,22 +193,13 @@ bool cp_mem_write_n(unsigned nb, uint16_t addr, uint16_t *data, unsigned count)
 }
 
 // -----------------------------------------------------------------------
-void cp_stop()
+void cp_start(bool state)
 {
 	if (fpga) {
-		iob_cp_set_fn(IOB_FN_START, 0);
+		iob_cp_set_fn(IOB_FN_START, state);
 	} else {
-		cpu_state_change(ECTL_STATE_STOP, -1);
-	}
-}
-
-// -----------------------------------------------------------------------
-void cp_start()
-{
-	if (fpga) {
-		iob_cp_set_fn(IOB_FN_START, 1);
-	} else {
-		cpu_state_change(ECTL_STATE_RUN, ECTL_STATE_STOP);
+		if (state) cpu_state_change(ECTL_STATE_RUN, ECTL_STATE_STOP);
+		else cpu_state_change(ECTL_STATE_STOP, -1);
 	}
 }
 
@@ -328,12 +304,10 @@ int cp_state()
 }
 
 // -----------------------------------------------------------------------
-int cp_stopn(uint16_t addr)
+int cp_stopn(bool state)
 {
 	if (fpga) {
-		iob_cp_set_rotary(ECTL_REG_KB);
-		iob_cp_set_keys(addr);
-		iob_cp_set_fn(IOB_FN_STOPN, 1);
+		iob_cp_set_fn(IOB_FN_STOPN, state);
 		return 0;
 	} else {
 		// unsupported
@@ -342,21 +316,115 @@ int cp_stopn(uint16_t addr)
 }
 
 // -----------------------------------------------------------------------
-int cp_stopn_off()
+void cp_reg_select(int id)
 {
 	if (fpga) {
-		iob_cp_set_fn(IOB_FN_STOPN, 0);
-		return 0;
+		iob_cp_set_rotary(id);
 	} else {
-		// unsupported
-		return -1;
+		cpu_reg_select(id);
 	}
 }
 
 // -----------------------------------------------------------------------
-void cp_reg_select(int reg)
+bool cp_alarm_get()
 {
-	cpu_reg_select(reg);
+	if (fpga) {
+		struct iob_cp_status *stat = iob_cp_get_status();
+		bool val = stat->leds & IOB_LED_ALARM;
+		free(stat);
+		return val;
+	} else {
+		return rALARM;
+	}
+}
+
+// -----------------------------------------------------------------------
+bool cp_p_get()
+{
+	if (fpga) {
+		struct iob_cp_status *stat = iob_cp_get_status();
+		bool val = stat->leds & IOB_LED_P;
+		free(stat);
+		return val;
+	} else {
+		return p;
+	}
+}
+
+// -----------------------------------------------------------------------
+int cp_mc_get()
+{
+	if (fpga) {
+		struct iob_cp_status *stat = iob_cp_get_status();
+		bool val = stat->leds & IOB_LED_MC;
+		free(stat);
+		return val;
+	} else {
+		return mc;
+	}
+}
+
+// -----------------------------------------------------------------------
+bool cp_irq_get()
+{
+	if (fpga) {
+		struct iob_cp_status *stat = iob_cp_get_status();
+		bool val = stat->leds & IOB_LED_IRQ;
+		free(stat);
+		return val;
+	} else {
+		return rp != 0;
+	}
+}
+
+// -----------------------------------------------------------------------
+bool cp_run_get()
+{
+	if (fpga) {
+		struct iob_cp_status *stat = iob_cp_get_status();
+		bool val = stat->leds & IOB_LED_RUN;
+		free(stat);
+		return val;
+	} else {
+		return cp_state() == ECTL_STATE_RUN;
+	}
+}
+
+// -----------------------------------------------------------------------
+bool cp_wait_get()
+{
+	if (fpga) {
+		struct iob_cp_status *stat = iob_cp_get_status();
+		bool val = stat->leds & IOB_LED_WAIT;
+		free(stat);
+		return val;
+	} else {
+		return cp_state() == ECTL_STATE_WAIT;
+	}
+}
+
+// -----------------------------------------------------------------------
+uint16_t cp_int_get_chan()
+{
+	return int_get_chan();
+}
+
+// -----------------------------------------------------------------------
+bool cp_q_get()
+{
+	return cp_reg_get(ECTL_REG_SR) & 0b100000;
+}
+
+// -----------------------------------------------------------------------
+int cp_nb_get()
+{
+	return cp_reg_get(ECTL_REG_SR) & 0b1111;
+}
+
+// -----------------------------------------------------------------------
+int cp_qnb_get()
+{
+	return cp_q_get() * cp_nb_get();
 }
 
 // vim: tabstop=4 shiftwidth=4 autoindent

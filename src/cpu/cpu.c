@@ -86,10 +86,10 @@ pthread_mutex_t cpu_wake_mutex = PTHREAD_MUTEX_INITIALIZER;
 pthread_cond_t cpu_wake_cond = PTHREAD_COND_INITIALIZER;
 
 
-void cpu_register_load(int reg, uint16_t v)
+void cpu_register_load(int reg, uint16_t v, bool force)
 {
 	pthread_mutex_lock(&cpu_wake_mutex);
-	if (cpu_state == ECTL_STATE_STOP) {
+	if (force || (cpu_state == ECTL_STATE_STOP)) {
 		switch (reg) {
 			case ECTL_REG_R0:
 			case ECTL_REG_R1:
@@ -145,6 +145,7 @@ static inline void cpu_reg_selected_to_w()
 			break;
 	}
 }
+
 // -----------------------------------------------------------------------
 static int cpu_do_wait()
 {

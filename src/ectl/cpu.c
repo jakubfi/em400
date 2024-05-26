@@ -50,13 +50,8 @@ const char *state_names[] = {
 
 // this must match register order in ectl.h
 static const char *ectl_reg_names[] = {
-	// registers available on rotary switch (real hw)
 	"R0", "R1", "R2", "R3", "R4", "R5", "R6", "R7",
 	"IC", "AC", "AR", "IR", "SR", "RZ", "KB", "KB",
-	// internal CPU registers (real hw)
-	"MC", "ALARM", "RM", "Q", "BS", "NB", "P",
-	// em400 extension of RZ
-	"RZ_IO",
 	"??"
 };
 
@@ -196,17 +191,10 @@ unsigned ectl_cpu_state_get()
 }
 
 // -----------------------------------------------------------------------
-void ectl_cpu_stop()
+void ectl_cpu_start(bool state)
 {
-	LOG(L_ECTL, "ECTL cpu STOP");
-	cp_stop();
-}
-
-// -----------------------------------------------------------------------
-void ectl_cpu_start()
-{
-	LOG(L_ECTL, "ECTL cpu START");
-	cp_start();
+	LOG(L_ECTL, "ECTL cpu START: %i", state);
+	cp_start(state);
 }
 
 // -----------------------------------------------------------------------
@@ -231,9 +219,8 @@ void ectl_clock_set(int state)
 }
 
 // -----------------------------------------------------------------------
-int ectl_clock_get()
+bool ectl_clock_get()
 {
-	LOG(L_ECTL, "ECTL clock get");
 	int state = cp_clock_get();
 	LOG(L_ECTL, "ECTL clock get: %i", state);
 	return state;
@@ -283,11 +270,19 @@ int ectl_int_clear(unsigned interrupt)
 }
 
 // -----------------------------------------------------------------------
+uint16_t ectl_int_get_chan()
+{
+	uint16_t chan_int = cp_int_get_chan();
+	LOG(L_ECTL, "ECTL get channel interrupts: 0x%04x", chan_int);
+	return chan_int;
+}
+
+// -----------------------------------------------------------------------
 uint32_t ectl_int_get32()
 {
 	LOG(L_ECTL, "ECTL interrupts get");
 	uint16_t rz = ectl_reg_get(ECTL_REG_RZ);
-	uint16_t rz_io = ectl_reg_get(ECTL_REG_RZ_IO);
+	uint16_t rz_io = ectl_int_get_chan();
 	uint32_t rz32 = ((rz & 0b1111111111110000) << 16) | (rz_io << 4) | (rz & 0b1111);
 	LOG(L_ECTL, "ECTL interrupts get: 0x%08x", rz32);
 
@@ -525,25 +520,96 @@ int ectl_brk_del(unsigned id)
 }
 
 // -----------------------------------------------------------------------
-int ectl_stopn(uint16_t addr)
+int ectl_stopn(bool state)
 {
-	LOG(L_ECTL, "ECTL stopn (%s) @ 0x%04x", (addr & 0x8000) ? "OS" : "USER", addr & 0x7fff);
-	return cp_stopn(addr);
+	LOG(L_ECTL, "ECTL stopn: %i", state);
+	return cp_stopn(state);
 }
 
 // -----------------------------------------------------------------------
-int ectl_stopn_off()
-{
-	LOG(L_ECTL, "ECTL stopn off");
-	return cp_stopn_off();
-}
-
-// -----------------------------------------------------------------------
-int ectl_reg_select(int reg)
+void ectl_reg_select(int reg)
 {
 	LOG(L_ECTL, "ECTL reg select");
 	cp_reg_select(reg);
-	return reg;
+}
+
+// -----------------------------------------------------------------------
+int ectl_alarm_get()
+{
+	bool state = cp_alarm_get();
+	LOG(L_ECTL, "ECTL ALARM get: %i", state);
+	return state;
+}
+
+// -----------------------------------------------------------------------
+bool ectl_p_get()
+{
+	bool state = cp_p_get();
+	LOG(L_ECTL, "ECTL P get: %i", state);
+	return state;
+}
+
+// -----------------------------------------------------------------------
+bool ectl_mc_get()
+{
+	bool state = cp_mc_get();
+	LOG(L_ECTL, "ECTL MC get: %i", state);
+	return state;
+}
+
+// -----------------------------------------------------------------------
+bool ectl_irq_get()
+{
+	bool state = cp_irq_get();
+	LOG(L_ECTL, "ECTL IRQ get: %i", state);
+	return state;
+}
+
+// -----------------------------------------------------------------------
+bool ectl_run_get()
+{
+	bool state = cp_run_get();
+	LOG(L_ECTL, "ECTL RUN get: %i", state);
+	return state;
+}
+
+// -----------------------------------------------------------------------
+bool ectl_wait_get()
+{
+	bool state = cp_wait_get();
+	LOG(L_ECTL, "ECTL WAIT get: %i", state);
+	return state;
+}
+
+// -----------------------------------------------------------------------
+bool ectl_q_get()
+{
+	bool state = cp_q_get();
+	LOG(L_ECTL, "ECTL Q get: %i", state);
+	return state;
+}
+
+// -----------------------------------------------------------------------
+int ectl_nb_get()
+{
+	int nb = cp_nb_get();
+	LOG(L_ECTL, "ECTL NB get: %i", nb);
+	return nb;
+}
+
+// -----------------------------------------------------------------------
+int ectl_qnb_get()
+{
+	int qnb = cp_qnb_get();
+	LOG(L_ECTL, "ECTL QNB get: %i", qnb);
+	return qnb;
+}
+
+// -----------------------------------------------------------------------
+void ectl_kb_set(uint16_t val)
+{
+	LOG(L_ECTL, "ECTL KB set: 0x%04x", val);
+	cp_kb_set(val);
 }
 
 // vim: tabstop=4 shiftwidth=4 autoindent

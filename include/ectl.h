@@ -47,6 +47,8 @@ enum ectl_cpu_states {
 	ECTL_STATE_UNKNOWN,
 };
 
+#define ECTL_REG_COUNT 16
+
 enum ectl_registers {
 	ECTL_REG_R0 = 0,
 	ECTL_REG_R1,
@@ -63,16 +65,7 @@ enum ectl_registers {
 	ECTL_REG_SR,
 	ECTL_REG_RZ,
 	ECTL_REG_KB,
-	ECTL_REG_KB2,
-	ECTL_REG_MC,
-	ECTL_REG_ALARM,
-	ECTL_REG_RM,
-	ECTL_REG_Q,
-	ECTL_REG_BS,
-	ECTL_REG_NB,
-	ECTL_REG_P,
-	ECTL_REG_RZ_IO,
-	ECTL_REG_COUNT
+	ECTL_REG_KB2
 };
 
 enum ectl_capability_bits {
@@ -94,12 +87,37 @@ enum ectl_log_components {
 	L_COUNT,
 };
 
-// maintenance
 int ectl_init();
 void ectl_shutdown();
 
-// buses
+// Standard control panel interface
 int ectl_bus_w_get();
+void ectl_kb_set(uint16_t val);
+// TODO: step
+// TODO: mode + LED
+int ectl_stopn(bool state);
+// TODO: stopn LED
+void ectl_cpu_cycle();
+// TODO: load
+// TODO: store
+// TODO: fetch
+void ectl_cpu_start(bool state);
+int ectl_bin();
+void ectl_cpu_clear();
+void ectl_clock_set(int state);
+bool ectl_clock_get();
+bool ectl_q_get();
+bool ectl_p_get();
+bool ectl_mc_get();
+bool ectl_irq_get();
+void ectl_oprq();
+void ectl_reg_select(int id);
+bool ectl_run_get();
+bool ectl_wait_get();
+int ectl_alarm_get();
+void ectl_cpu_off(); // TODO: on + led?
+
+// Emulator extensions
 
 // registers
 const char * ectl_reg_name(unsigned id);
@@ -107,6 +125,8 @@ int ectl_reg_get_id(char *name);
 void ectl_regs_get(uint16_t *dest);
 int ectl_reg_get(unsigned id);
 int ectl_reg_set(unsigned id, uint16_t val);
+int ectl_nb_get();
+int ectl_qnb_get();
 
 // memory
 bool ectl_mem_read_n(int seg, uint16_t addr, uint16_t *dest, unsigned count);
@@ -114,22 +134,12 @@ bool ectl_mem_write_n(int seg, uint16_t addr, uint16_t *src, unsigned count);
 int ectl_mem_map(int seg);
 int ectl_mem_cfg(int nb, int ab, int mp, int seg);
 bool ectl_load(FILE *f, const char *name, int seg, uint16_t saddr);
-int ectl_bin();
 
 // CPU state
 const char * ectl_cpu_state_name(unsigned state);
 unsigned ectl_cpu_state_get();
-void ectl_cpu_stop();
-void ectl_cpu_start();
-void ectl_cpu_cycle();
-void ectl_cpu_clear();
-void ectl_cpu_off();
-void ectl_stoponhlt040_set(int state);
 
 // interrupts
-void ectl_clock_set(int state);
-int ectl_clock_get();
-void ectl_oprq();
 int ectl_int_set(unsigned interrupt);
 int ectl_int_clear(unsigned interrupt);
 uint32_t ectl_int_get32();
@@ -152,10 +162,6 @@ int ectl_log_component_id(char *name);
 // breakpoints
 int ectl_brk_add(char *expression, char **err_msg, int *err_beg, int *err_end);
 int ectl_brk_del(unsigned id);
-
-int ectl_stopn(uint16_t addr);
-int ectl_stopn_off();
-int ectl_reg_select(int reg);
 
 #ifdef __cplusplus
 }

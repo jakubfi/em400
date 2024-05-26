@@ -243,14 +243,14 @@ void ui_cmd_clock(FILE *out, char *args)
 // -----------------------------------------------------------------------
 void ui_cmd_stop(FILE *out, char *args)
 {
-	ectl_cpu_stop();
+	ectl_cpu_start(false);
 	ui_cmd_resp(out, RESP_OK, UI_EOL, "STOP");
 }
 
 // -----------------------------------------------------------------------
 void ui_cmd_start(FILE *out, char *args)
 {
-	ectl_cpu_start();
+	ectl_cpu_start(true);
 	ui_cmd_resp(out, RESP_OK, UI_EOL, "START");
 }
 

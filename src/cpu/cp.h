@@ -26,24 +26,44 @@
 int cp_init(em400_cfg *cfg);
 void cp_shutdown();
 
+// Standard control panel interface
 int cp_bus_w_get();
+void cp_kb_set(uint16_t val);
+// TODO: step
+// TODO: mode + LED
+int cp_stopn(bool state);
+// TODO: step LED
+void cp_cycle();
+// TODO: load
+// TODO: store
+// TODO: fetch
+void cp_start(bool state);
+int cp_bin();
+void cp_clear();
+void cp_clock_set(int state);
+int cp_clock_get();
+bool cp_q_get();
+bool cp_p_get();
+int cp_mc_get();
+bool cp_irq_get();
+void cp_oprq();
+void cp_reg_select(int id);
+bool cp_run_get();
+bool cp_wait_get();
+bool cp_alarm_get();
+void cp_off(); // TODO: switch on/off/lock?
+// TODO: ON LED?
+
+
+// Emulator extensions
+int cp_state();
 int cp_reg_get(unsigned id);
 int cp_reg_set(unsigned id, uint16_t v);
 bool cp_mem_read_n(unsigned nb, uint16_t addr, uint16_t *data, unsigned count);
 bool cp_mem_write_n(unsigned nb, uint16_t addr, uint16_t *data, unsigned count);
-void cp_stop();
-void cp_start();
-void cp_cycle();
-void cp_off();
-void cp_clock_set(int state);
-int cp_clock_get();
-void cp_clear();
-int cp_bin();
-void cp_oprq();
-int cp_state();
-int cp_stopn(uint16_t addr);
-int cp_stopn_off();
-void cp_reg_select(int reg);
+uint16_t cp_int_get_chan();
+int cp_nb_get();
+int cp_qnb_get();
 
 #endif
 

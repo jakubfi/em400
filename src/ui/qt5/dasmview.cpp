@@ -179,7 +179,7 @@ void DasmView::paintEvent(QPaintEvent *event)
 		// bar for IC location
 		if (at_ic) {
 			// change bar color if "P" flag is set (instruction won't be executed)
-			if (e->get_reg(ECTL_REG_P)) {
+			if (e->get_p()) {
 				bar_color = QColor(Qt::red).lighter();
 			} else {
 				if (hasFocus()) {

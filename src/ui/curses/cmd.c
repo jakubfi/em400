@@ -113,13 +113,13 @@ void dbg_c_cycle()
 // -----------------------------------------------------------------------
 void dbg_c_start()
 {
-	ectl_cpu_start();
+	ectl_cpu_start(true);
 }
 
 // -----------------------------------------------------------------------
 void dbg_c_stop()
 {
-	ectl_cpu_stop();
+	ectl_cpu_start(false);
 }
 
 // -----------------------------------------------------------------------
@@ -135,11 +135,11 @@ void dbg_c_dt(int wid, uint16_t ic, int count)
 	char *buf = emdas_get_buf(emd);
 
 	while (count > 0) {
-		words = emdas_dasm(emd, ectl_reg_get(ECTL_REG_Q) * ectl_reg_get(ECTL_REG_NB), ic);
+		words = emdas_dasm(emd, ectl_qnb_get(), ic);
 		emdas_get_buf(emd);
 
 		if (ic == ectl_reg_get(ECTL_REG_IC)) {
-			if (ectl_reg_get(ECTL_REG_P)) {
+			if (ectl_p_get()) {
 				awtbprint(wid, C_IRED, "0x%04x", ic);
 				awtbprint(wid, C_IRED, " %-20s", buf);
 			} else {
@@ -237,7 +237,7 @@ void dbg_c_sregs(int wid)
 {
 	awtbprint(wid, C_LABEL, "            OPCODE D A   B   C");
 	awtbprint(wid, C_LABEL, "           P: ");
-	awtbprint(wid, C_DATA, "%i\n", ectl_reg_get(ECTL_REG_P));
+	awtbprint(wid, C_DATA, "%i\n", ectl_p_get());
 
 	awtbprint(wid, C_LABEL, "IR: ");
 	awtbprint(wid, C_DATA, "0x%04x  ", ectl_reg_get(ECTL_REG_IR));
@@ -262,7 +262,7 @@ void dbg_c_sregs(int wid)
 	awtbprint(wid, C_DATA, "0x%04x  ", ectl_reg_get(ECTL_REG_KB));
 	awtbbinprint(wid, C_DATA, "........ ........", ectl_reg_get(ECTL_REG_KB), 16);
 	awtbprint(wid, C_LABEL, "           MC: ");
-	awtbprint(wid, C_DATA, "%i", ectl_reg_get(ECTL_REG_MC));
+	awtbprint(wid, C_DATA, "%i", ectl_mc_get());
 	awtbprint(wid, C_DATA, "\n\n");
 
 	awtbprint(wid, C_LABEL, "                ZPMCZ TIFFFFx 01 23 456789 abcdef OCSS");
@@ -670,7 +670,7 @@ void dbg_c_decode(int wid, char *name, uint16_t addr, int arg)
 		return;
 	}
 
-	buf = d->f_decode(ectl_reg_get(ECTL_REG_NB), addr, arg);
+	buf = d->f_decode(ectl_nb_get(), addr, arg);
 
 	if (!buf) {
 		awtbprint(wid, C_ERROR, "Cannot decode structure\n");

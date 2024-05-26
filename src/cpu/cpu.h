@@ -85,7 +85,7 @@ extern bool cpu_mod_active;
 extern bool cpu_user_io_illegal;
 extern bool awp_enabled;
 
-void cpu_register_load(int reg, uint16_t v);
+void cpu_register_load(int reg, uint16_t v, bool force);
 bool cpu_mem_read_1(bool barnb, uint16_t addr, uint16_t *data);
 bool cpu_mem_write_1(bool barnb, uint16_t addr, uint16_t data);
 
