@@ -423,7 +423,7 @@ void ui_cmd_load(FILE *out, char *args)
 		return;
 	}
 
-	bool res = ectl_load(f, tok_file, seg, addr);
+	bool res = ectl_load_os_image(f, tok_file, seg, addr);
 	if (!res) {
 		ui_cmd_resp(out, RESP_ERR, UI_EOL, "File upload failed: %s", tok_file);
 	} else {

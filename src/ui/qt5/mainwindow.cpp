@@ -53,6 +53,7 @@ MainWindow::MainWindow(QWidget *parent) :
 	connect(ui->cp->sw[SW_CLEAR], &Switch::signal_clicked, &e, &EmuModel::slot_clear);
 	connect(ui->cp->sw[SW_OPRQ],  &Switch::signal_clicked, &e, &EmuModel::slot_oprq);
 	connect(ui->cp->sw[SW_CYCLE], &Switch::signal_clicked, &e, &EmuModel::slot_cycle);
+	connect(ui->cp->sw[SW_LOAD], &Switch::signal_clicked, &e, &EmuModel::slot_load);
 	connect(ui->cp->sw[SW_CLOCK], &Switch::signal_toggled, &e, &EmuModel::slot_clock_enabled);
 	connect(ui->cp->rotary, &Rotary::signal_rotated, &e, &EmuModel::slot_reg_select);
 	for (int i=0 ; i<16 ; i++) {
@@ -171,9 +172,9 @@ void MainWindow::slot_cpu_reg_changed(int reg, uint16_t val)
 // -----------------------------------------------------------------------
 void MainWindow::slot_dasm_update()
 {
-	int nb = e.get_nb();
+	int qnb = e.get_qnb();
 	int ic = e.get_reg(ECTL_REG_IC);
-	ui->dasm->update_contents(nb, ic);
+	ui->dasm->update_contents(qnb, ic);
 }
 
 // -----------------------------------------------------------------------

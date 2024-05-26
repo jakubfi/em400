@@ -98,7 +98,7 @@ void ectl_kb_set(uint16_t val);
 int ectl_stopn(bool state);
 // TODO: stopn LED
 void ectl_cpu_cycle();
-// TODO: load
+void ectl_load();
 // TODO: store
 // TODO: fetch
 void ectl_cpu_start(bool state);
@@ -133,7 +133,7 @@ bool ectl_mem_read_n(int seg, uint16_t addr, uint16_t *dest, unsigned count);
 bool ectl_mem_write_n(int seg, uint16_t addr, uint16_t *src, unsigned count);
 int ectl_mem_map(int seg);
 int ectl_mem_cfg(int nb, int ab, int mp, int seg);
-bool ectl_load(FILE *f, const char *name, int seg, uint16_t saddr);
+bool ectl_load_os_image(FILE *f, const char *name, int seg, uint16_t saddr);
 
 // CPU state
 const char * ectl_cpu_state_name(unsigned state);

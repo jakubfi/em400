@@ -27,6 +27,7 @@ public:
 	bool get_mc() { return last_mc; }
 	bool get_alarm() { return last_alarm; }
 	int get_nb() { return ectl_nb_get(); }
+	int get_qnb() { return ectl_qnb_get(); }
 
 private:
 	QTimer timer_realtime;
@@ -58,6 +59,7 @@ public slots:
 	void slot_clock_enabled(bool state);
 	void slot_oprq();
 	void slot_reg_select(int r);
+	void slot_load();
 
 signals:
 	void signal_state_changed(int state);

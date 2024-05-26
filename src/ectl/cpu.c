@@ -326,7 +326,7 @@ int ectl_capa()
 }
 
 // -----------------------------------------------------------------------
-bool ectl_load(FILE *f, const char *name, int seg, uint16_t saddr)
+bool ectl_load_os_image(FILE *f, const char *name, int seg, uint16_t saddr)
 {
 	LOG(L_ECTL, "ECTL load: %i:0x%04x %s", seg, saddr, name);
 
@@ -610,6 +610,13 @@ void ectl_kb_set(uint16_t val)
 {
 	LOG(L_ECTL, "ECTL KB set: 0x%04x", val);
 	cp_kb_set(val);
+}
+
+// -----------------------------------------------------------------------
+void ectl_load()
+{
+	LOG(L_ECTL, "ECTL LOAD");
+	cp_load();
 }
 
 // vim: tabstop=4 shiftwidth=4 autoindent

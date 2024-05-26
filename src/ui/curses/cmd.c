@@ -69,7 +69,7 @@ void dbg_c_load(int wid, char* image)
 		return;
 	}
 
-	bool res = ectl_load(f, image, 0, 0);
+	bool res = ectl_load_os_image(f, image, 0, 0);
 	if (!res) {
 		awtbprint(wid, C_ERROR, "Error loading image \"%s\"\n", image);
 	}

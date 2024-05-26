@@ -86,6 +86,7 @@ pthread_mutex_t cpu_wake_mutex = PTHREAD_MUTEX_INITIALIZER;
 pthread_cond_t cpu_wake_cond = PTHREAD_COND_INITIALIZER;
 
 
+// -----------------------------------------------------------------------
 void cpu_register_load(int reg, uint16_t v, bool force)
 {
 	pthread_mutex_lock(&cpu_wake_mutex);

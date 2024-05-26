@@ -427,4 +427,10 @@ int cp_qnb_get()
 	return cp_q_get() * cp_nb_get();
 }
 
+// -----------------------------------------------------------------------
+void cp_load()
+{
+	cpu_register_load(r_selected, kb, false);
+}
+
 // vim: tabstop=4 shiftwidth=4 autoindent

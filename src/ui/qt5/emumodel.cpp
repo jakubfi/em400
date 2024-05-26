@@ -176,7 +176,7 @@ bool EmuModel::load(QString filename)
 	}
 
 	FILE *f = fdopen(file.handle(), "r");
-	ectl_load(f, "name", 0, 0);
+	ectl_load_os_image(f, "name", 0, 0);
 	fclose(f);
 	return true;
 }
@@ -221,4 +221,10 @@ void EmuModel::slot_reg_select(int r)
 void EmuModel::set_kb(uint16_t v)
 {
 	ectl_kb_set(v);
+}
+
+// -----------------------------------------------------------------------
+void EmuModel::slot_load()
+{
+	ectl_load();
 }

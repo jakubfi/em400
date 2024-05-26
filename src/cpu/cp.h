@@ -34,7 +34,7 @@ void cp_kb_set(uint16_t val);
 int cp_stopn(bool state);
 // TODO: step LED
 void cp_cycle();
-// TODO: load
+void cp_load();
 // TODO: store
 // TODO: fetch
 void cp_start(bool state);
