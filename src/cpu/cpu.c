@@ -381,39 +381,49 @@ void cpu_ctx_restore(bool barnb)
 }
 
 // -----------------------------------------------------------------------
-static bool cpu_do_bin(bool start)
+static void cpu_do_bin()
 {
-	static int words = 0;
-	static uint16_t data;
-	static uint8_t bdata[3];
-	static int cnt = 0;
+	int lg = 0;
+	uint16_t rb;
 
-	if (start) {
-		LOG(L_CPU, "Binary load initiated @ 0x%04x", ar);
-		words = 0;
-		cnt = 0;
-		return false;
+	LOG(L_CPU, "Binary load initiated @ 0x%04x", ar);
+K1:
+	// allow emulation to break free from failed loads with CLEAR
+	if (cpu_state_get() == ECTL_STATE_CLO) return;
+
+	int res = io_dispatch(IO_IN, ic, &w);
+	if (res != IO_OK) w = 0; // TODO: what should IO_IN write upon failure?
+	// TODO: clear extenral interrupts?
+	switch (lg) {
+		case 0:
+			rb = (w & 0b0000000000001111) << 12;
+			break;
+		case 1:
+			rb |= (w & 0b0000000000111111) << 6;
+			break;
+		case 2:
+			rb |= (w & 0b0000000000111111);
+			break;
 	}
-
-	int res = io_dispatch(IO_IN, ic, &data);
-	if (res == IO_OK) {
-		bdata[cnt] = data & 0xff;
-		if ((cnt == 0) && bin_is_end(bdata[cnt])) {
-			LOG(L_CPU, "Binary load done, %i words loaded", words);
-			return true;
-		} else if (bin_is_valid(bdata[cnt])) {
-			cnt++;
-			if (cnt >= 3) {
-				cnt = 0;
-				if (cpu_mem_write_1(q, ar, bin2word(bdata)) == 1) {
-					words++;
-					ar++;
-				}
-			}
-		}
+	// STEP here
+	if (((w & BIN_ENDBYTE) == BIN_ENDBYTE) && (lg == 0)) {
+		// back to P0
+		cpu_state_change(ECTL_STATE_STOP, ECTL_STATE_ANY);
+		return;
 	}
+	if ((w & 0b0000000001000000)) {
+		lg = lg + 1;
+	}
+	if (lg != 3) goto K1;
+	if (lg == 3) goto K2;
 
-	return false;
+K2:
+	w = rb;
+	cpu_mem_write_1(q, ar, w);
+	ar++;
+	lg = 0;
+	// STEP here
+	goto K1;
 }
 
 // -----------------------------------------------------------------------
@@ -610,7 +620,7 @@ void cpu_loop()
 				cpu_state_change(ECTL_STATE_STOP, ECTL_STATE_ANY);
 				break;
 			case ECTL_STATE_BIN:
-				if (cpu_do_bin(false)) cpu_state_change(ECTL_STATE_STOP, ECTL_STATE_BIN);
+				cpu_do_bin();
 				break;
 			case ECTL_STATE_STOP:
 				if (sound_enabled) buzzer_stop();
@@ -619,8 +629,6 @@ void cpu_loop()
 					if (sound_enabled) buzzer_start();
 					clock_gettime(CLOCK_MONOTONIC, &cpu_timer);
 					cpu_time_cumulative = 0;
-				} else if (res == ECTL_STATE_BIN) {
-					cpu_do_bin(true); // initiate binary load
 				}
 				break;
 			case ECTL_STATE_WAIT:
