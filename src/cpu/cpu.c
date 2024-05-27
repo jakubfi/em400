@@ -391,8 +391,8 @@ K1:
 	// allow emulation to break free from failed loads with CLEAR
 	if (cpu_state_get() == ECTL_STATE_CLO) return;
 
-	int res = io_dispatch(IO_IN, ic, &w);
-	if (res != IO_OK) w = 0; // TODO: what should IO_IN write upon failure?
+	io_dispatch(IO_IN, ic, &w);
+
 	// TODO: clear extenral interrupts?
 	switch (lg) {
 		case 0:
