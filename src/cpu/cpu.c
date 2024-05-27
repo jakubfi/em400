@@ -201,7 +201,7 @@ static void cpu_mem_fail(bool barnb)
 	int_set(INT_NO_MEM);
 	if (!barnb) {
 		rALARM = true;
-		if (nomem_stop) cpu_state_change(ECTL_STATE_STOP, -1);
+		if (nomem_stop) cpu_state_change(ECTL_STATE_STOP, ECTL_STATE_ANY);
 	}
 }
 
@@ -584,7 +584,7 @@ void cpu_loop()
 
 		switch (state) {
 			case ECTL_STATE_CYCLE:
-				cpu_state_change(ECTL_STATE_STOP, -1);
+				cpu_state_change(ECTL_STATE_STOP, ECTL_STATE_ANY);
 				// fallthrough
 			case ECTL_STATE_RUN:
 				if (atom_load_acquire(&rp) && !p && (mc == 0)) {
@@ -593,7 +593,7 @@ void cpu_loop()
 				} else {
 					cpu_time = cpu_do_cycle();
 					if (ectl_brk_check()) {
-						cpu_state_change(ECTL_STATE_STOP, -1);
+						cpu_state_change(ECTL_STATE_STOP, ECTL_STATE_ANY);
 					}
 				}
 				break;
@@ -602,15 +602,15 @@ void cpu_loop()
 				return;
 			case ECTL_STATE_CLM:
 				cpu_do_clear(ECTL_STATE_CLM);
-				cpu_state_change(ECTL_STATE_RUN, -1);
+				cpu_state_change(ECTL_STATE_RUN, ECTL_STATE_CLM);
 				break;
 			case ECTL_STATE_CLO:
 				if (sound_enabled) buzzer_stop();
 				cpu_do_clear(ECTL_STATE_CLO);
-				cpu_state_change(ECTL_STATE_STOP, -1);
+				cpu_state_change(ECTL_STATE_STOP, ECTL_STATE_ANY);
 				break;
 			case ECTL_STATE_BIN:
-				if (cpu_do_bin(false)) cpu_state_change(ECTL_STATE_STOP, -1);
+				if (cpu_do_bin(false)) cpu_state_change(ECTL_STATE_STOP, ECTL_STATE_CLO);
 				break;
 			case ECTL_STATE_STOP:
 				if (sound_enabled) buzzer_stop();
@@ -628,7 +628,7 @@ void cpu_loop()
 				if (speed_real) {
 					cpu_reg_selected_to_w();
 					if (atom_load_acquire(&rp) && !p && !mc) {
-						cpu_state_change(ECTL_STATE_RUN, -1);
+						cpu_state_change(ECTL_STATE_RUN, ECTL_STATE_WAIT);
 					} else {
 						cpu_time = throttle_granularity;
 					}
