@@ -166,7 +166,7 @@ int EmuModel::get_mem(int nb, int addr)
 }
 
 // -----------------------------------------------------------------------
-bool EmuModel::load(QString filename)
+bool EmuModel::load_os_image(QString filename)
 {
 	QFile file;
 	file.setFileName(filename);

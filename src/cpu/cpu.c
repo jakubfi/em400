@@ -610,7 +610,7 @@ void cpu_loop()
 				cpu_state_change(ECTL_STATE_STOP, ECTL_STATE_ANY);
 				break;
 			case ECTL_STATE_BIN:
-				if (cpu_do_bin(false)) cpu_state_change(ECTL_STATE_STOP, ECTL_STATE_CLO);
+				if (cpu_do_bin(false)) cpu_state_change(ECTL_STATE_STOP, ECTL_STATE_BIN);
 				break;
 			case ECTL_STATE_STOP:
 				if (sound_enabled) buzzer_stop();

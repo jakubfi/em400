@@ -16,7 +16,7 @@ public:
 
 	void run();
 	void stop();
-	bool load(QString filename);
+	bool load_os_image(QString filename);
 
 	void set_reg(int i, int v);
 	void set_kb(uint16_t v);
@@ -60,6 +60,8 @@ public slots:
 	void slot_oprq();
 	void slot_reg_select(int r);
 	void slot_load();
+	void slot_bin() { ectl_bin(); }
+
 
 signals:
 	void signal_state_changed(int state);
