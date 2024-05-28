@@ -112,9 +112,7 @@ static void int_update_rp()
 {
 	// function called under mutex
 	rp = rz & int_mask;
-	if (rp) {
-		cpu_wake_up();
-	}
+	cpu_wake_up();
 }
 
 // -----------------------------------------------------------------------

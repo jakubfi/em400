@@ -18,8 +18,8 @@ public:
 	void stop();
 	bool load_os_image(QString filename);
 
-	void set_reg(int i, int v);
-	void set_kb(uint16_t v);
+	void set_reg(int i, int v) { ectl_reg_set(i, v); }
+	void set_kb(uint16_t v) { ectl_kb_set(v); }
 	int get_reg(int i) { return last_reg[i]; }
 	int get_mem(int nb, int addr);
 	int get_mem(int nb, int addr, uint16_t *m, int count);
@@ -28,6 +28,7 @@ public:
 	bool get_alarm() { return last_alarm; }
 	int get_nb() { return ectl_nb_get(); }
 	int get_qnb() { return ectl_qnb_get(); }
+	bool get_clock() { return ectl_clock_get(); }
 
 private:
 	QTimer timer_realtime;
@@ -53,13 +54,13 @@ private slots:
 	void on_timer_ips_timeout();
 
 public slots:
-	void slot_cpu_start(bool state);
-	void slot_clear();
-	void slot_cycle();
-	void slot_clock_enabled(bool state);
-	void slot_oprq();
-	void slot_reg_select(int r);
-	void slot_load();
+	void slot_cpu_start(bool state) { ectl_cpu_start(state); }
+	void slot_clear() { ectl_cpu_clear(); }
+	void slot_cycle() { ectl_cpu_cycle(); }
+	void slot_clock_enabled(bool state) { ectl_clock_set(state); }
+	void slot_oprq() { ectl_oprq(); }
+	void slot_reg_select(int r) { ectl_reg_select(r); }
+	void slot_load() { ectl_load(); }
 	void slot_bin() { ectl_bin(); }
 
 

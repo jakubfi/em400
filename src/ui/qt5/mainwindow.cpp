@@ -29,7 +29,6 @@ MainWindow::MainWindow(QWidget *parent) :
 	r[ECTL_REG_IR] = ui->ir;
 	r[ECTL_REG_SR] = ui->sr;
 	r[ECTL_REG_RZ] = ui->rz;
-	r[ECTL_REG_KB] = ui->kb;
 
 	ui->dasm->connect_emu(&e);
 
@@ -94,6 +93,7 @@ MainWindow::MainWindow(QWidget *parent) :
 
 	e.run();
 	ui->cp->rotary->set_position(8);
+	ui->cp->sw[SW_CLOCK]->set(e.get_clock());
 	slot_debugger_enabled_changed(false);
 }
 

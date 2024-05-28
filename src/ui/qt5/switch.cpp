@@ -77,3 +77,10 @@ void Switch::mouseReleaseEvent(QMouseEvent *event)
 		update();
 	}
 }
+
+// -----------------------------------------------------------------------
+void Switch::set(bool state)
+{
+	this->state = state;
+	update();
+}

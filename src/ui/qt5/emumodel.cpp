@@ -143,12 +143,6 @@ void EmuModel::sync_ips()
 }
 
 // -----------------------------------------------------------------------
-void EmuModel::set_reg(int i, int v)
-{
-	ectl_reg_set(i, v);
-}
-
-// -----------------------------------------------------------------------
 int EmuModel::get_mem(int nb, int addr, uint16_t *m, int count)
 {
 	return ectl_mem_read_n(nb, addr, m, count);
@@ -181,50 +175,9 @@ bool EmuModel::load_os_image(QString filename)
 	return true;
 }
 
-// -----------------------------------------------------------------------
-void EmuModel::slot_cpu_start(bool state)
-{
-	ectl_cpu_start(state);
-}
 
-// -----------------------------------------------------------------------
-void EmuModel::slot_clear()
-{
-	ectl_cpu_clear();
-}
 
-// -----------------------------------------------------------------------
-void EmuModel::slot_cycle()
-{
-	ectl_cpu_cycle();
-}
 
-// -----------------------------------------------------------------------
-void EmuModel::slot_clock_enabled(bool state)
-{
-	ectl_clock_set(state);
-}
 
-// -----------------------------------------------------------------------
-void EmuModel::slot_oprq()
-{
-	ectl_oprq();
-}
 
-// -----------------------------------------------------------------------
-void EmuModel::slot_reg_select(int r)
-{
-	ectl_reg_select(r);
-}
 
-// -----------------------------------------------------------------------
-void EmuModel::set_kb(uint16_t v)
-{
-	ectl_kb_set(v);
-}
-
-// -----------------------------------------------------------------------
-void EmuModel::slot_load()
-{
-	ectl_load();
-}
