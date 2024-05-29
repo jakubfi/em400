@@ -307,7 +307,9 @@ static void * flop8_worker_loop(void *ptr)
 	while (!quit) {
 
 		pthread_mutex_lock(&flop->state_mutex);
-		while (flop->state == F8ST_IDLE) {
+		// last two states are not handled here
+		// TODO: flop FSM... and multithreading...
+		while ((flop->state == F8ST_IDLE) || (flop->state == F8ST_BUF_RD) || (flop->state == F8ST_BUF_WR)) {
 			LOG(L_FLOP, "Worker waiting for state change");
 			pthread_cond_wait(&flop->state_cond, &flop->state_mutex);
 		}
