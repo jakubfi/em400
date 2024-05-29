@@ -53,6 +53,8 @@ MainWindow::MainWindow(QWidget *parent) :
 	connect(ui->cp->sw[SW_OPRQ],  &Switch::signal_clicked, &e, &EmuModel::slot_oprq);
 	connect(ui->cp->sw[SW_CYCLE], &Switch::signal_clicked, &e, &EmuModel::slot_cycle);
 	connect(ui->cp->sw[SW_LOAD], &Switch::signal_clicked, &e, &EmuModel::slot_load);
+	connect(ui->cp->sw[SW_FETCH], &Switch::signal_clicked, &e, &EmuModel::slot_fetch);
+	connect(ui->cp->sw[SW_STORE], &Switch::signal_clicked, &e, &EmuModel::slot_store);
 	connect(ui->cp->sw[SW_BIN], &Switch::signal_clicked, &e, &EmuModel::slot_bin);
 	connect(ui->cp->sw[SW_CLOCK], &Switch::signal_toggled, &e, &EmuModel::slot_clock_enabled);
 	connect(ui->cp->rotary, &Rotary::signal_rotated, &e, &EmuModel::slot_reg_select);

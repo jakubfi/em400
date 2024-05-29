@@ -62,7 +62,8 @@ public slots:
 	void slot_reg_select(int r) { ectl_reg_select(r); }
 	void slot_load() { ectl_load(); }
 	void slot_bin() { ectl_bin(); }
-
+	void slot_fetch() { ectl_fetch(); }
+	void slot_store() { ectl_store(); }
 
 signals:
 	void signal_state_changed(int state);

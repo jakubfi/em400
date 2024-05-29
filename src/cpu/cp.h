@@ -35,8 +35,8 @@ int cp_stopn(bool state);
 // TODO: step LED
 void cp_cycle();
 void cp_load();
-// TODO: store
-// TODO: fetch
+void cp_store();
+void cp_fetch();
 void cp_start(bool state);
 int cp_bin();
 void cp_clear();

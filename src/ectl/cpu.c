@@ -619,4 +619,18 @@ void ectl_load()
 	cp_load();
 }
 
+// -----------------------------------------------------------------------
+void ectl_store()
+{
+	LOG(L_ECTL, "ECTL STORE");
+	cp_store();
+}
+
+// -----------------------------------------------------------------------
+void ectl_fetch()
+{
+	LOG(L_ECTL, "ECTL fetch");
+	cp_fetch();
+}
+
 // vim: tabstop=4 shiftwidth=4 autoindent

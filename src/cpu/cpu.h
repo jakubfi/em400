@@ -105,6 +105,8 @@ void cpu_wake_up();
 int cpu_state_change(int to, int from);
 int cpu_state_get();
 void cpu_reg_select(int reg);
+void cpu_store();
+void cpu_fetch();
 
 #endif
 

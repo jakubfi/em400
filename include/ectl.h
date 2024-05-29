@@ -99,8 +99,8 @@ int ectl_stopn(bool state);
 // TODO: stopn LED
 void ectl_cpu_cycle();
 void ectl_load();
-// TODO: store
-// TODO: fetch
+void ectl_store();
+void ectl_fetch();
 void ectl_cpu_start(bool state);
 int ectl_bin();
 void ectl_cpu_clear();

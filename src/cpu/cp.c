@@ -426,11 +426,24 @@ int cp_qnb_get()
 {
 	return cp_q_get() * cp_nb_get();
 }
-
+// TODO: add new _LOAD, ... states and
+// move load/store/fetch execution to cpu loop, like bin?
 // -----------------------------------------------------------------------
 void cp_load()
 {
 	cpu_register_load(r_selected, kb, false);
+}
+
+// -----------------------------------------------------------------------
+void cp_fetch()
+{
+	cpu_fetch();
+}
+
+// -----------------------------------------------------------------------
+void cp_store()
+{
+	cpu_store();
 }
 
 // vim: tabstop=4 shiftwidth=4 autoindent

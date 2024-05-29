@@ -148,6 +148,24 @@ static inline void cpu_reg_selected_to_w()
 }
 
 // -----------------------------------------------------------------------
+void cpu_fetch()
+{
+	cpu_mem_read_1(nb, ar, &w);
+	cpu_register_load(r_selected, w, false);
+	ar++;
+	cpu_wake_up();
+}
+
+// -----------------------------------------------------------------------
+void cpu_store()
+{
+	cpu_reg_selected_to_w();
+	cpu_mem_write_1(nb, ar, w);
+	ar++;
+	cpu_wake_up();
+}
+
+// -----------------------------------------------------------------------
 static int cpu_do_wait()
 {
 	LOG(L_CPU, "CPU idling");
