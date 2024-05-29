@@ -433,6 +433,10 @@ K1:
 	if (lg == 3) goto K2;
 
 K2:
+	// small visual feedback during binary load
+	// TODO: real I/O devices speeds
+	usleep(1);
+
 	w = rb;
 	cpu_mem_write_1(q, ar, w);
 	ar++;
