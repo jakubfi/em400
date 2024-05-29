@@ -175,9 +175,6 @@ static int cpu_do_wait()
 		cpu_reg_selected_to_w();
 		pthread_cond_wait(&cpu_wake_cond, &cpu_wake_mutex);
 	}
-	if (cpu_state == ECTL_STATE_WAIT) {
-		cpu_state = ECTL_STATE_RUN;
-	}
 	int res = cpu_state;
 	pthread_mutex_unlock(&cpu_wake_mutex);
 
@@ -658,8 +655,10 @@ void cpu_loop()
 					} else {
 						cpu_time = throttle_granularity;
 					}
+				} else {
+					cpu_do_wait();
+					cpu_state_change(ECTL_STATE_RUN, ECTL_STATE_WAIT);
 				}
-				else cpu_do_wait();
 				break;
 		}
 
