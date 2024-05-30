@@ -279,7 +279,11 @@ int16_t n_eval_ass(struct node_t * n)
 			var_set(n->n1->var, v);
 			return v;
 		case N_REG:
-			ectl_reg_set(n->n1->val, v);
+			if (n->n1->val == ECTL_REG_KB) {
+				ectl_kb_set(v);
+			} else {
+				ectl_reg_set(n->n1->val, v);
+			}
 			return v;
 		case N_MEM:
 			nb = n_eval(n->n1->n1);

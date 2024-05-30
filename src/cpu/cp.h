@@ -32,7 +32,7 @@ void cp_kb_set(uint16_t val);
 // TODO: step
 // TODO: mode + LED
 int cp_stopn(bool state);
-// TODO: step LED
+// TODO: stop LED
 void cp_cycle();
 void cp_load();
 void cp_store();

@@ -142,7 +142,12 @@ void ui_cmd_reg(FILE *out, char *args)
 		return;
 	}
 
-	int res = ectl_reg_set(id, value);
+	int res = 0;
+	if (id == ECTL_REG_KB) {
+		ectl_kb_set(value);
+	} else {
+		res = ectl_reg_set(id, value);
+	}
 	if (res) {
 		ui_cmd_resp(out, RESP_ERR, UI_EOL, "Wrong internal register id: %i", id);
 		return;

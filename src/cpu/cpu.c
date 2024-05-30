@@ -87,29 +87,42 @@ pthread_cond_t cpu_wake_cond = PTHREAD_COND_INITIALIZER;
 
 
 // -----------------------------------------------------------------------
-void cpu_register_load(int reg, uint16_t v, bool force)
+void cpu_kb_set(uint16_t val)
 {
 	pthread_mutex_lock(&cpu_wake_mutex);
-	if (force || (cpu_state == ECTL_STATE_STOP)) {
-		switch (reg) {
-			case ECTL_REG_R0:
-			case ECTL_REG_R1:
-			case ECTL_REG_R2:
-			case ECTL_REG_R3:
-			case ECTL_REG_R4:
-			case ECTL_REG_R5:
-			case ECTL_REG_R6:
-			case ECTL_REG_R7: r[reg] = v; break;
-			case ECTL_REG_IC: ic = v; break;
-			case ECTL_REG_AC: ac = v; break;
-			case ECTL_REG_AR: ar = v ; break;
-			case ECTL_REG_IR: ir = v; break;
-			case ECTL_REG_SR: SR_WRITE(v); break;
-			case ECTL_REG_RZ: int_put_nchan(v); break;
-			case ECTL_REG_KB:
-			case ECTL_REG_KB2: kb = v; break;
-			default: return;
-		}
+	kb = val;
+	cpu_wake_up();
+	pthread_mutex_unlock(&cpu_wake_mutex);
+}
+
+// -----------------------------------------------------------------------
+static void cpu_do_load(int reg, uint16_t val)
+{
+	switch (reg) {
+		case ECTL_REG_R0:
+		case ECTL_REG_R1:
+		case ECTL_REG_R2:
+		case ECTL_REG_R3:
+		case ECTL_REG_R4:
+		case ECTL_REG_R5:
+		case ECTL_REG_R6:
+		case ECTL_REG_R7: r[reg] = val; break;
+		case ECTL_REG_IC: ic = val; break;
+		case ECTL_REG_AC: ac = val; break;
+		case ECTL_REG_AR: ar = val ; break;
+		case ECTL_REG_IR: ir = val; break;
+		case ECTL_REG_SR: SR_WRITE(val); break;
+		case ECTL_REG_RZ: int_put_nchan(val); break;
+		default: break;
+	}
+}
+
+// -----------------------------------------------------------------------
+void cpu_register_load(int reg, uint16_t val)
+{
+	pthread_mutex_lock(&cpu_wake_mutex);
+	if (cpu_state == ECTL_STATE_STOP) {
+		cpu_do_load(reg, val);
 		cpu_wake_up();
 	}
 	pthread_mutex_unlock(&cpu_wake_mutex);
@@ -119,50 +132,40 @@ void cpu_register_load(int reg, uint16_t v, bool force)
 static inline void cpu_reg_selected_to_w()
 {
 	switch (r_selected) {
-		case ECTL_REG_IC:
-			w = ic;
-			break;
-		case ECTL_REG_AC:
-			w = ac;
-			break;
-		case ECTL_REG_AR:
-			w = ar;
-			break;
-		case ECTL_REG_IR:
-			w = ir;
-			break;
-		case ECTL_REG_SR:
-			w = SR_READ();
-			break;
-		case ECTL_REG_RZ:
-			w = int_get_nchan();
-			break;
+		case ECTL_REG_R0:
+		case ECTL_REG_R1:
+		case ECTL_REG_R2:
+		case ECTL_REG_R3:
+		case ECTL_REG_R4:
+		case ECTL_REG_R5:
+		case ECTL_REG_R6:
+		case ECTL_REG_R7: w = r[r_selected]; break;
+		case ECTL_REG_IC: w = ic; break;
+		case ECTL_REG_AC: w = ac; break;
+		case ECTL_REG_AR: w = ar; break;
+		case ECTL_REG_IR: w = ir; break;
+		case ECTL_REG_SR: w = SR_READ(); break;
+		case ECTL_REG_RZ: w = int_get_nchan(); break;
 		case ECTL_REG_KB:
-		case ECTL_REG_KB2:
-			w = kb;
-			break;
-		default:
-			w = r[r_selected];
-			break;
+		case ECTL_REG_KB2: w = kb; break;
+		default: break;
 	}
 }
 
 // -----------------------------------------------------------------------
-void cpu_fetch()
+static void cpu_do_fetch()
 {
 	cpu_mem_read_1(nb, ar, &w);
-	cpu_register_load(r_selected, w, false);
+	cpu_do_load(r_selected, w);
 	ar++;
-	cpu_wake_up();
 }
 
 // -----------------------------------------------------------------------
-void cpu_store()
+static void cpu_do_store()
 {
 	cpu_reg_selected_to_w();
 	cpu_mem_write_1(nb, ar, w);
 	ar++;
-	cpu_wake_up();
 }
 
 // -----------------------------------------------------------------------
@@ -422,8 +425,7 @@ K1:
 	}
 	// STEP here
 	if (((w & BIN_ENDBYTE) == BIN_ENDBYTE) && (lg == 0)) {
-		// back to P0
-		cpu_state_change(ECTL_STATE_STOP, ECTL_STATE_ANY);
+		LOG(L_CPU, "Binary load done, AR: 0x%04x", ar);
 		return;
 	}
 	if ((w & 0b0000000001000000)) {
@@ -640,6 +642,20 @@ void cpu_loop()
 				break;
 			case ECTL_STATE_BIN:
 				cpu_do_bin();
+				cpu_state_change(ECTL_STATE_STOP, ECTL_STATE_BIN);
+				break;
+			case ECTL_STATE_LOAD:
+				w = kb;
+				cpu_do_load(r_selected, w);
+				cpu_state_change(ECTL_STATE_STOP, ECTL_STATE_LOAD);
+				break;
+			case ECTL_STATE_STORE:
+				cpu_do_store();
+				cpu_state_change(ECTL_STATE_STOP, ECTL_STATE_STORE);
+				break;
+			case ECTL_STATE_FETCH:
+				cpu_do_fetch();
+				cpu_state_change(ECTL_STATE_STOP, ECTL_STATE_FETCH);
 				break;
 			case ECTL_STATE_STOP:
 				if (sound_enabled) buzzer_stop();

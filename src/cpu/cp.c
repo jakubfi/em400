@@ -61,8 +61,7 @@ void cp_kb_set(uint16_t val)
 	if (fpga) {
 		iob_cp_set_keys(val);
 	} else {
-		// NOTE: force=true because this is possible even when CPU is running
-		cpu_register_load(ECTL_REG_KB, val, true);
+		cpu_kb_set(val);
 	}
 }
 
@@ -109,7 +108,7 @@ int cp_reg_set(unsigned id, uint16_t v)
 		iob_cp_set_keys(v);
 		iob_cp_set_fn(IOB_FN_LOAD, 1);
 	} else {
-		cpu_register_load(id, v, false);
+		cpu_register_load(id, v);
 	}
 	return 0;
 }
@@ -147,11 +146,10 @@ bool cp_mem_read_n(unsigned nb, uint16_t addr, uint16_t *data, unsigned count)
 		}
 		return true;
 	} else {
-		// TODO: can't use cpu_mem_read, as it may fail in "cpu fashion" (with interrupt and all).
-		// cp_mem_read() may be used by the interface to display stuff when cpu is RUN state too,
-		// and it could happen that ui tries to read unconfigured memory as well.
-		// On the other hand, access from control panel is a regular CPU memory access,
-		// thus it should use cpu_mem_get() and fail on unconfigured memory...
+		// can't use cpu_mem_read here, as it may fail in "cpu fashion" (with interrupt and all).
+		// cp_mem_read() is an emulator extension to the original H/W, used by the interface
+		// to display stuff when cpu is in RUN state too, and it could happen that ui tries to
+		// read unconfigured memory as well.
 		return mem_read_n(nb, addr, data, count);
 	}
 }
@@ -431,19 +429,31 @@ int cp_qnb_get()
 // -----------------------------------------------------------------------
 void cp_load()
 {
-	cpu_register_load(r_selected, kb, false);
+	if (fpga) {
+		// TODO
+	} else {
+		cpu_state_change(ECTL_STATE_LOAD, ECTL_STATE_STOP);
+	}
 }
 
 // -----------------------------------------------------------------------
 void cp_fetch()
 {
-	cpu_fetch();
+	if (fpga) {
+		// TODO
+	} else {
+		cpu_state_change(ECTL_STATE_FETCH, ECTL_STATE_STOP);
+	}
 }
 
 // -----------------------------------------------------------------------
 void cp_store()
 {
-	cpu_store();
+	if (fpga) {
+		// TODO
+	} else {
+		cpu_state_change(ECTL_STATE_STORE, ECTL_STATE_STOP);
+	}
 }
 
 // vim: tabstop=4 shiftwidth=4 autoindent

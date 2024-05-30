@@ -43,6 +43,9 @@ enum ectl_cpu_states {
 	ECTL_STATE_OFF,
 	ECTL_STATE_CYCLE,
 	ECTL_STATE_BIN,
+	ECTL_STATE_LOAD,
+	ECTL_STATE_STORE,
+	ECTL_STATE_FETCH,
 // NOTE: update state names in ectl_cpu_state_get() when adding new states
 	ECTL_STATE_UNKNOWN,
 };
