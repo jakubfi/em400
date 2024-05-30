@@ -30,7 +30,7 @@ private:
 
 	const int fuzziness = 5;			// fuzziness when searching for instruction start address
 	const int dasm_line_length = 26;	// length of disassembly line
-	int dasm_total_lines;				// lines of disassembly visible
+	int dasm_total_lines = 0;			// lines of disassembly visible
 	int line_height;					// disassembly line height in pixels, with space between lines
 	const int interline = 4;			// additional interline, in pixels
 	const int addr_len = 4;				// address length, in characters

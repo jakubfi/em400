@@ -19,7 +19,7 @@ public slots:
 
 private:
 	int fuzziness = 5;
-	int total_lines;
+	int total_lines = 0;
 	int bottom, right;
 	int offset;
 	int half_font_width;
