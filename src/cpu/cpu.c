@@ -259,8 +259,13 @@ int cpu_init(em400_cfg *cfg)
 	nomem_stop = cfg_getbool(cfg, "cpu:stop_on_nomem", CFG_DEFAULT_CPU_STOP_ON_NOMEM);
 	speed_real = cfg_getbool(cfg, "cpu:speed_real", CFG_DEFAULT_CPU_SPEED_REAL);
 	throttle_granularity = 1000 * cfg_getint(cfg, "cpu:throttle_granularity", CFG_DEFAULT_CPU_THROTTLE_GRANULARITY);
-	double cpu_speed_factor = cfg_getdouble(cfg, "cpu:speed_factor", CFG_DEFAULT_CPU_SPEED_FACTOR);
-	cpu_delay_factor = 1.0f/cpu_speed_factor;
+
+	if (speed_real) {
+		cpu_delay_factor = 1.4925f; // 1.0/0.67, best we have, so far
+	} else {
+		cpu_delay_factor = 0.0001f;
+	}
+
 
 	res = iset_build(cpu_op_tab, cpu_user_io_illegal);
 	if (res != E_OK) {
@@ -284,17 +289,15 @@ int cpu_init(em400_cfg *cfg)
 		cpu_mod_present ? "present" : "absent",
 		cpu_user_io_illegal ? "illegal" : "legal",
 		nomem_stop ? "true" : "false");
-	LOG(L_CPU, "CPU speed: %s, throttle granularity: %i, speed factor: %.2f",
-		speed_real ? "real" : "max",
-		throttle_granularity/1000,
-		cpu_speed_factor);
+	LOG(L_CPU, "CPU speed: %s, throttle granularity: %i ns",
+		speed_real ? "real" : "unlimited",
+		throttle_granularity);
 
 	sound_enabled = cfg_getbool(cfg, "sound:enabled", CFG_DEFAULT_SOUND_ENABLED);
 
 	if (sound_enabled) {
-		if (!speed_real || (cpu_speed_factor < 0.1f) || (cpu_speed_factor > 2.0f)) {
-			LOGERR("EM400 needs to be configured with speed_real=true and 2.0 >= cpu_speed_factor >= 0.1 for the buzzer emulation to work.");
-			LOGERR("Disabling sound.");
+		if (!speed_real) {
+			LOGERR("EM400 needs to be configured with speed_real=true for the buzzer emulation to work. Disabling sound.");
 			sound_enabled = false;
 		} else {
 			if (buzzer_init(cfg) != E_OK) {
@@ -660,7 +663,7 @@ void cpu_loop()
 			case ECTL_STATE_STOP:
 				if (sound_enabled) buzzer_stop();
 				int res = cpu_do_wait();
-				if (speed_real && (res == ECTL_STATE_RUN)) {
+				if (res == ECTL_STATE_RUN) {
 					if (sound_enabled) buzzer_start();
 					clock_gettime(CLOCK_MONOTONIC, &cpu_timer);
 					cpu_time_cumulative = 0;
@@ -668,21 +671,20 @@ void cpu_loop()
 				break;
 			case ECTL_STATE_WAIT:
 				// busy wait to not disturb audio, TODO
-				if (speed_real) {
-					cpu_reg_selected_to_w();
-					if (atom_load_acquire(&rp) && !p && !mc) {
-						cpu_state_change(ECTL_STATE_RUN, ECTL_STATE_WAIT);
-					} else {
-						cpu_time = throttle_granularity;
-					}
-				} else {
-					cpu_do_wait();
+				cpu_reg_selected_to_w();
+				if (atom_load_acquire(&rp) && !p && !mc) {
 					cpu_state_change(ECTL_STATE_RUN, ECTL_STATE_WAIT);
+				} else {
+					cpu_time = throttle_granularity;
 				}
+				// else = if (!speed_real) {
+				//	cpu_do_wait();
+				//	cpu_state_change(ECTL_STATE_RUN, ECTL_STATE_WAIT);
+				//}
 				break;
 		}
 
-		if (speed_real) cpu_timekeeping(cpu_time);
+		cpu_timekeeping(cpu_time);
 	}
 }
 

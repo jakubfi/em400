@@ -11,15 +11,10 @@ fpga = false
 # "true" - try to emulate real hardware CPU and memory speeds
 speed_real = false
 
-# If speed_real is set to "true", cpu_speed_factor controls how much
-# faster (>1.0) or slower (<1.0) emulated CPU runs compared to
-# the real hardware. Value is a floating point number.
-speed_factor = 1
-
 # Execute instructions for this much time (in us) before sleeping.
 # Use with caution. If "real" emulation speed is slower than
 # it should be, you may need to set granularity to a higher value.
-throttle_granularity = 10
+throttle_granularity = 30
 
 # Internal clock interrupt period (in miliseconds)
 # Allowed values: 2-100
