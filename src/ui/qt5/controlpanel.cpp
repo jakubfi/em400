@@ -122,9 +122,7 @@ static const QUrl rotary_sounds_l[] = {
 	QUrl(SND_R "l15.wav"),
 };
 
-static const QRect ignition_rect = QRect(1051, 260, 75, 75);
-static const QPoint ignition_center = QPoint(1088, 300);
-static const int ignition_radius = 36;
+static const QRect ignition_rect = QRect(1026, 234, 126, 126);
 
 #define SND_I "qrc:/sounds/ignition/"
 
@@ -234,18 +232,6 @@ QSize ControlPanel::minimumSizeHint() const
 QSizePolicy ControlPanel::sizePolicy()
 {
 	return QSizePolicy(QSizePolicy::Maximum, QSizePolicy::Maximum);
-}
-
-// --------------------------------------------------------------------------
-bool ControlPanel::check_ignition(QPoint &m)
-{
-	if (m.x() > ignition_rect.x()) {
-		int distance = sqrt(pow(ignition_center.x() - m.x(), 2) + pow(ignition_center.y() - m.y(), 2));
-		if (distance <= ignition_radius) {
-			return true;
-		}
-	}
-	return false;
 }
 
 // -----------------------------------------------------------------------

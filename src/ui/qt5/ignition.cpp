@@ -1,4 +1,5 @@
 #include <QPainter>
+#include <QGuiApplication>
 #include <QDebug>
 #include <math.h>
 #include "ignition.h"
@@ -19,7 +20,11 @@ Ignition::Ignition(QPixmap gfx[3], const QUrl snd_rs[3], const QUrl snd_ls[3], Q
 	}
 	this->resize(gfx[0].width(), gfx[0].height());
 	center = gfx[0].rect().center();
-	radius = gfx[0].rect().width() / 2;
+	radius_outer = gfx[0].rect().width() / 2;
+	radius_main = radius_outer - 24;
+	radius_inner = radius_outer - 50;
+
+	setMouseTracking(true);
 }
 
 // -----------------------------------------------------------------------
@@ -36,7 +41,9 @@ void Ignition::paintEvent(QPaintEvent *event)
 		painter.setPen(pen);
 
 		painter.drawRect(gfx[0].rect());
-		painter.drawEllipse(center, radius, radius);
+		painter.drawEllipse(center, radius_outer, radius_outer);
+		painter.drawEllipse(center, radius_main, radius_main);
+		painter.drawEllipse(center, radius_inner, radius_inner);
 		painter.drawLine(gfx[0].rect().left(), center.y(), gfx[0].rect().right(), center.y());
 		painter.drawLine(center.x(), gfx[0].rect().top(), center.x(), gfx[0].rect().bottom());
 	}
@@ -45,23 +52,23 @@ void Ignition::paintEvent(QPaintEvent *event)
 }
 
 // --------------------------------------------------------------------------
-int Ignition::calculate_pos(QPoint &m)
+int Ignition::pos_from_point(QPoint &m)
 {
+	// calculate angular "m" position
 	double mdy = (center.y() - m.y());
 	double mdx = (center.x() - m.x());
-	double result = atan2(mdy, mdx);
-	if (result < 0) result += 2*M_PI;
+	double angle = atan2(mdy, mdx);
+	// make it 0-2pi
+	if (angle < 0) angle += 2*M_PI;
+
+	// find which slice "m" is in
 	double slice = (2*M_PI) / 4;
-	double hslice = slice / 2;
-	int i;
-	for (i=0 ; i<4 ; i++) {
-		double s = (double)i * slice;
-		if (s < 0) s += 2*M_PI;
-		if ((result > s-hslice) && (result < s+hslice)) break;
+	int pos;
+	for (pos=0 ; pos<4 ; pos++) {
+		double s = (double) pos * slice;
+		if ((angle > s-slice/2) && (angle <= s+slice/2)) break;
 	}
-	i = (i+1) % 4;
-	if (i > 2) i = position; // last position unavailable
-	return i;
+	return (pos+1) % 4;
 }
 
 // -----------------------------------------------------------------------
@@ -70,15 +77,19 @@ void Ignition::mousePressEvent(QMouseEvent *event)
 	if (event->button() != Qt::LeftButton) return;
 
 	QPoint m = event->pos();
-	if (sqrt(pow(center.x()-m.x(), 2) + pow(center.y()-m.y(), 2)) <= radius) {
-		dragging = true;
-		int new_pos = calculate_pos(m);
-		if (new_pos != position) {
+	if (can_interact_outer) {
+		int new_pos = pos_from_point(m);
+		// only 3 positions for ignition
+		if (new_pos == 3) new_pos = 2;
+		if (abs(new_pos-position) == 1) {
 			if (new_pos > position) snd_r[new_pos].play();
 			else snd_l[new_pos].play();
 			position = new_pos;
+			emit signal_rotated(position);
 			update();
 		}
+	} else if (can_interact_inner) {
+		dragging = true;
 	}
 }
 
@@ -91,15 +102,50 @@ void Ignition::mouseReleaseEvent(QMouseEvent *event)
 // -----------------------------------------------------------------------
 void Ignition::mouseMoveEvent(QMouseEvent *event)
 {
-	QPoint m = event->pos();
-	if (sqrt(pow(center.x()-m.x(), 2) + pow(center.y()-m.y(), 2)) <= radius) {
-		dragging = true;
-		int new_pos = calculate_pos(m);
-		if (new_pos != position) {
-			if (new_pos > position) snd_r[new_pos].play();
-			else snd_l[new_pos].play();
-			position = new_pos;
-			update();
+	if (dragging) {
+		QPoint m = event->pos();
+		if (sqrt(pow(center.x()-m.x(), 2) + pow(center.y()-m.y(), 2)) >= radius_inner) {
+			int new_pos = pos_from_point(m);
+			if (new_pos == 3) new_pos = 2;
+			if (abs(new_pos-position) == 1) {
+				if (new_pos > position) snd_r[new_pos].play();
+				else snd_l[new_pos].play();
+				position = new_pos;
+				emit signal_rotated(position);
+				update();
+			}
+		}
+	} else {
+		QPoint m = event->pos();
+		bool was_can_interact = can_interact_inner || can_interact_outer;
+		can_interact_outer = false;
+		can_interact_inner = false;
+		if (sqrt(pow(center.x()-m.x(), 2) + pow(center.y()-m.y(), 2)) <= radius_outer) {
+			// within the actual widget area
+			if (sqrt(pow(center.x()-m.x(), 2) + pow(center.y()-m.y(), 2)) >= radius_main) {
+				// outer ring
+				can_interact_outer = true;
+			} else if (sqrt(pow(center.x()-m.x(), 2) + pow(center.y()-m.y(), 2)) >= radius_inner) {
+				// inner ring
+				if (pos_from_point(m) == position) {
+					// just the tip
+					can_interact_inner = true;
+				}
+			}
+		}
+
+		if (was_can_interact && !can_interact_inner && ! can_interact_outer) {
+			QGuiApplication::restoreOverrideCursor();
+		}
+		if (!was_can_interact && (can_interact_inner || can_interact_outer)) {
+			QGuiApplication::setOverrideCursor(QCursor(Qt::PointingHandCursor));
 		}
 	}
+}
+// -----------------------------------------------------------------------
+void Ignition::leaveEvent(QEvent *event)
+{
+	can_interact_inner = false;
+	can_interact_outer = false;
+	QGuiApplication::restoreOverrideCursor();
 }

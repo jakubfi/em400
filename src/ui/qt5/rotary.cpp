@@ -67,12 +67,12 @@ int Rotary::pos_from_point(QPoint &m)
 
 	// find which slice "m" is in
 	double slice = (2*M_PI) / 16;
-	int position;
-	for (position=0 ; position<16 ; position++) {
-		double s = (double) position * slice;
+	int pos;
+	for (pos=0 ; pos<16 ; pos++) {
+		double s = (double) pos * slice;
 		if ((angle > s-slice/2) && (angle <= s+slice/2)) break;
 	}
-	return (position+3) % 16;
+	return (pos+3) % 16;
 }
 
 // -----------------------------------------------------------------------
@@ -185,12 +185,6 @@ void Rotary::wheelEvent(QWheelEvent *event)
 		emit signal_rotated(position);
 		update();
 	}
-}
-
-// -----------------------------------------------------------------------
-void Rotary::enterEvent(QEvent *event)
-{
-	//QGuiApplication::setOverrideCursor(QCursor(Qt::PointingHandCursor));
 }
 
 // -----------------------------------------------------------------------
