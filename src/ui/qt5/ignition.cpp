@@ -24,7 +24,17 @@ Ignition::Ignition(QPixmap gfx[3], const QUrl snd_rs[3], const QUrl snd_ls[3], Q
 	radius_main = radius_outer - 24;
 	radius_inner = radius_outer - 50;
 
+	power_on_timer.setInterval(280);
+	power_on_timer.setSingleShot(true);
+	connect(&power_on_timer, &QTimer::timeout, this, &Ignition::power_on);
+
 	setMouseTracking(true);
+}
+
+// -----------------------------------------------------------------------
+void Ignition::power_on()
+{
+	emit signal_power(true);
 }
 
 // -----------------------------------------------------------------------
@@ -84,8 +94,11 @@ void Ignition::mousePressEvent(QMouseEvent *event)
 		if (abs(new_pos-position) == 1) {
 			if (new_pos > position) snd_r[new_pos].play();
 			else snd_l[new_pos].play();
+			if ((position == 0) && (new_pos == 1)) power_on_timer.start();
+			if (new_pos == 0) emit signal_power(false);
+			if (new_pos == 2) emit signal_locked(true);
+			if ((position == 2) && (new_pos == 1)) emit signal_locked(false);
 			position = new_pos;
-			emit signal_rotated(position);
 			update();
 		}
 	} else if (can_interact_inner) {
@@ -110,8 +123,11 @@ void Ignition::mouseMoveEvent(QMouseEvent *event)
 			if (abs(new_pos-position) == 1) {
 				if (new_pos > position) snd_r[new_pos].play();
 				else snd_l[new_pos].play();
+				if ((position == 0) && (new_pos == 1)) power_on_timer.start();
+				if (new_pos == 0) emit signal_power(false);
+				if (new_pos == 2) emit signal_locked(true);
+				if ((position == 2) && (new_pos == 1)) emit signal_locked(false);
 				position = new_pos;
-				emit signal_rotated(position);
 				update();
 			}
 		}

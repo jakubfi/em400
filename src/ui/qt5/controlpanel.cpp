@@ -170,7 +170,7 @@ ControlPanel::ControlPanel(QWidget *parent):
 	}
 	ignition = new Ignition(gfx, ignition_sounds_r, ignition_sounds_l, this);
 
-	led[LED_ON]->set(true);
+	connect(ignition, &Ignition::signal_power, led[LED_ON], &LED::slot_change);
 
 	change_dimensions(plane[0].rect());
 }

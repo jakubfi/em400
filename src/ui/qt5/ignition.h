@@ -2,6 +2,7 @@
 #define IGNITION_H
 
 #include <QWidget>
+#include <QTimer>
 #include <QMouseEvent>
 #include <QtMultimedia/QSoundEffect>
 
@@ -14,6 +15,7 @@ private:
 	QPixmap gfx[3];
 	QSoundEffect snd_r[3], snd_l[3];
 	QPoint center;
+	QTimer power_on_timer;
 	int radius_main, radius_outer, radius_inner;
 	bool dragging = false;
 	bool can_interact_outer = false;
@@ -32,7 +34,11 @@ protected:
 	void leaveEvent(QEvent *event);
 
 signals:
-	void signal_rotated(int position);
+	void signal_power(bool state);
+	void signal_locked(bool state);
+
+private slots:
+	void power_on();
 };
 
 #endif // IGNITION_H
