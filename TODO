@@ -4,17 +4,13 @@ Cleanups:
 
 Code enhancements (possible):
 
-* librarize
-* make em400 C++ friendly
+* librarize?
 
 Features (possible):
 
-* graphical control panel interface
 * snapshot save/restore
-* new debugger interface (qt)
-* integrate local console(-s) into user interface
 * deeptrace
-* conditional logging
+* conditional logging?
 
 CPU:
 
@@ -47,7 +43,7 @@ MERA-400 features that em400 does not emulate:
 * 2-cpu configuration:
   * interrupts
   * gil/giu instructions
-  * bit 11 of SR
+  * HW functionality of bit 11 of SR
   * channel interrupt masks for 2 cpus
   * device allocations per cpu
   * multix 2cpu interrupt queue

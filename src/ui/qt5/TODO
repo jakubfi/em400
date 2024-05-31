@@ -1,20 +1,33 @@
-where to store own configuration?
-shortcuts
-breakpoints
-memory configuration view
-details on mouseover (interrupts, int mask, nb, q, bs, dasm, ...)
-- int/int mask display in the status bar
-+ flags/p/q/bs/nb diplay in the status bar
-setting breakpoints from dasm view
-setting IC from dasm view
-memory view
-editing memory contents
-color schemes (own/system)
-dasm view - minimal syntax highlight
-dasm view - marking position(-s)?
-control panel
-switching between views (cp/debugger/cp+debugger)
-delegating error display to the UI
-translation
-watches?
-stack?
+GENERAL UI:
+	where to store own configuration?
+	configuration
+	shortcuts
+	color schemes (own/system)?
+	power on/off?
+	background sound? configurable?
+CP:
+	STEP/MODE
+	STOPN
+REG VIEW:
+	dec/int/bin on mouseover
+	sr: q/nb/bs/rm on mouseover
+	r0: flags on mouseover
+	rz: ints on mouseover
+DASM VIEW:
+	setting breakpoints from dasm view
+	setting IC from dasm view
+	minimal syntax highlight
+	marking position(-s)?
+MEM VIEW:
+	editing memory contents
+	dec/int/bin on mouseover
+STATUS BAR:
+	int/int mask display in the status bar
+OTHER:
+	breakpoints view
+	memory configuration view
+	watches?
+	stack?
+	delegating error display to the UI?
+	delegating logs to the UI? own logview?
+	translation
