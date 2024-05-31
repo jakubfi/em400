@@ -955,7 +955,7 @@ void op_73_mcl()
 {
 // WM:
 	step_point();
-	cpu_state_change(ECTL_STATE_CLM, -1);
+	cpu_do_clear(false);
 }
 
 // -----------------------------------------------------------------------

@@ -336,7 +336,7 @@ int cpu_mod_off()
 }
 
 // -----------------------------------------------------------------------
-static void cpu_do_clear(int scope)
+void cpu_do_clear(bool clo)
 {
 	// I/O reset should return when we're sure that I/O won't change CPU state (backlogged interrupts, memory writes, ...)
 	io_reset();
@@ -348,7 +348,7 @@ static void cpu_do_clear(int scope)
 	int_update_mask(rm);
 	int_clear_all();
 
-	if (scope == ECTL_STATE_CLO) {
+	if (clo) {
 		rALARM = false;
 		mc = 0;
 	}
@@ -634,13 +634,9 @@ void cpu_loop()
 			case ECTL_STATE_OFF:
 				if (sound_enabled) buzzer_stop();
 				return;
-			case ECTL_STATE_CLM:
-				cpu_do_clear(ECTL_STATE_CLM);
-				cpu_state_change(ECTL_STATE_RUN, ECTL_STATE_CLM);
-				break;
 			case ECTL_STATE_CLO:
 				if (sound_enabled) buzzer_stop();
-				cpu_do_clear(ECTL_STATE_CLO);
+				cpu_do_clear(true);
 				cpu_state_change(ECTL_STATE_STOP, ECTL_STATE_ANY);
 				break;
 			case ECTL_STATE_BIN:

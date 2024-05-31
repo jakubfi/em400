@@ -72,11 +72,7 @@ void EmuModel::sync_state(bool force)
 	int state = ectl_cpu_state_get();
 	if (force || (state != last_cpu_state)) {
 		last_cpu_state = state;
-		if ((state == ECTL_STATE_RUN) || (state == ECTL_STATE_CLM)) {
-			state = ECTL_STATE_RUN;
-		} else if (state == ECTL_STATE_WAIT) {
-			state = ECTL_STATE_WAIT;
-		} else {
+		if ((state != ECTL_STATE_RUN) && (state != ECTL_STATE_WAIT)) {
 			state = ECTL_STATE_STOP;
 		}
 		emit signal_state_changed(state);
