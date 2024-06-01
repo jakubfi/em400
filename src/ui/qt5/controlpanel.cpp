@@ -250,14 +250,17 @@ void ControlPanel::slot_state_changed(int state)
 		case ECTL_STATE_RUN:
 			led[LED_RUN]->set(true);
 			led[LED_WAIT]->set(false);
+			dim(true);
 			break;
 		case ECTL_STATE_WAIT:
 			led[LED_RUN]->set(false);
 			led[LED_WAIT]->set(true);
+			dim(false);
 			break;
 		default:
 			led[LED_RUN]->set(false);
 			led[LED_WAIT]->set(false);
+			dim(false);
 			break;
 	}
 }
@@ -267,4 +270,10 @@ void ControlPanel::slot_small_panel_changed(bool state)
 {
 	if (state) change_dimensions(plane[0].rect().adjusted(75, 72, -77, -66));
 	else change_dimensions(plane[0].rect());
+}
+
+// -----------------------------------------------------------------------
+void ControlPanel::dim(float val)
+{
+	for (int i=0 ; i<16 ; i++) led[i]->dim(val);
 }

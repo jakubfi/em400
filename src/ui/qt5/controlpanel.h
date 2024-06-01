@@ -48,6 +48,8 @@ public:
 	Rotary *rotary;
 	Ignition *ignition;
 
+	void dim(float val);
+
 public slots:
 	void slot_bus_w_changed(uint16_t val);
 	void slot_state_changed(int state);
