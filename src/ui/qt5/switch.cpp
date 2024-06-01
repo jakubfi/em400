@@ -13,8 +13,6 @@ Switch::Switch(QPixmap gfx_on, QString snd_on, QString snd_off, bool momentary, 
 {
 	this->snd_on.setSource(QUrl(snd_on));
 	this->snd_off.setSource(QUrl(snd_off));
-	this->snd_off.setVolume(0.5);
-	this->snd_on.setVolume(0.5);
 	this->resize(gfx_on.width(), gfx_on.height());
 }
 

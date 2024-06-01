@@ -47,7 +47,7 @@ static const int sw_l_top = 294;
 static const int sw_width = 36;
 static const int sw_height = 48;
 
-#define SND_S "qrc:/sounds/switches/n-"
+#define SND_S "qrc:/sounds/switches/"
 
 static const struct sw_desc sw_data[] = {
 	{ QRect(125, sw_u_top, sw_width, sw_height), false, SND_S "00-1.wav", SND_S "00-0.wav" },

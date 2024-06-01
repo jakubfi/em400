@@ -25,62 +25,6 @@
         <file>pulpit/13.png</file>
         <file>pulpit/14.png</file>
         <file>pulpit/15.png</file>
-        <file>sounds/switches/n-00-0.wav</file>
-        <file>sounds/switches/n-00-1.wav</file>
-        <file>sounds/switches/n-01-0.wav</file>
-        <file>sounds/switches/n-01-1.wav</file>
-        <file>sounds/switches/n-02-0.wav</file>
-        <file>sounds/switches/n-02-1.wav</file>
-        <file>sounds/switches/n-03-0.wav</file>
-        <file>sounds/switches/n-03-1.wav</file>
-        <file>sounds/switches/n-04-0.wav</file>
-        <file>sounds/switches/n-04-1.wav</file>
-        <file>sounds/switches/n-05-0.wav</file>
-        <file>sounds/switches/n-05-1.wav</file>
-        <file>sounds/switches/n-06-0.wav</file>
-        <file>sounds/switches/n-06-1.wav</file>
-        <file>sounds/switches/n-07-0.wav</file>
-        <file>sounds/switches/n-07-1.wav</file>
-        <file>sounds/switches/n-08-0.wav</file>
-        <file>sounds/switches/n-08-1.wav</file>
-        <file>sounds/switches/n-09-0.wav</file>
-        <file>sounds/switches/n-09-1.wav</file>
-        <file>sounds/switches/n-10-0.wav</file>
-        <file>sounds/switches/n-10-1.wav</file>
-        <file>sounds/switches/n-11-0.wav</file>
-        <file>sounds/switches/n-11-1.wav</file>
-        <file>sounds/switches/n-12-0.wav</file>
-        <file>sounds/switches/n-12-1.wav</file>
-        <file>sounds/switches/n-13-0.wav</file>
-        <file>sounds/switches/n-13-1.wav</file>
-        <file>sounds/switches/n-14-0.wav</file>
-        <file>sounds/switches/n-14-1.wav</file>
-        <file>sounds/switches/n-15-0.wav</file>
-        <file>sounds/switches/n-15-1.wav</file>
-        <file>sounds/switches/n-bin-0.wav</file>
-        <file>sounds/switches/n-bin-1.wav</file>
-        <file>sounds/switches/n-clear-0.wav</file>
-        <file>sounds/switches/n-clear-1.wav</file>
-        <file>sounds/switches/n-clock-0.wav</file>
-        <file>sounds/switches/n-clock-1.wav</file>
-        <file>sounds/switches/n-cycle-0.wav</file>
-        <file>sounds/switches/n-cycle-1.wav</file>
-        <file>sounds/switches/n-fetch-0.wav</file>
-        <file>sounds/switches/n-fetch-1.wav</file>
-        <file>sounds/switches/n-load-0.wav</file>
-        <file>sounds/switches/n-load-1.wav</file>
-        <file>sounds/switches/n-mode-0.wav</file>
-        <file>sounds/switches/n-mode-1.wav</file>
-        <file>sounds/switches/n-oprq-0.wav</file>
-        <file>sounds/switches/n-oprq-1.wav</file>
-        <file>sounds/switches/n-start-0.wav</file>
-        <file>sounds/switches/n-start-1.wav</file>
-        <file>sounds/switches/n-step-0.wav</file>
-        <file>sounds/switches/n-step-1.wav</file>
-        <file>sounds/switches/n-stopn-0.wav</file>
-        <file>sounds/switches/n-stopn-1.wav</file>
-        <file>sounds/switches/n-store-0.wav</file>
-        <file>sounds/switches/n-store-1.wav</file>
         <file>sounds/rotary/l00.wav</file>
         <file>sounds/rotary/l01.wav</file>
         <file>sounds/rotary/l02.wav</file>
@@ -117,5 +61,61 @@
         <file>sounds/ignition/off-l.wav</file>
         <file>sounds/ignition/on-l.wav</file>
         <file>sounds/ignition/on-r.wav</file>
+        <file>sounds/switches/00-0.wav</file>
+        <file>sounds/switches/00-1.wav</file>
+        <file>sounds/switches/01-0.wav</file>
+        <file>sounds/switches/01-1.wav</file>
+        <file>sounds/switches/02-0.wav</file>
+        <file>sounds/switches/02-1.wav</file>
+        <file>sounds/switches/03-0.wav</file>
+        <file>sounds/switches/03-1.wav</file>
+        <file>sounds/switches/04-0.wav</file>
+        <file>sounds/switches/04-1.wav</file>
+        <file>sounds/switches/05-0.wav</file>
+        <file>sounds/switches/05-1.wav</file>
+        <file>sounds/switches/06-0.wav</file>
+        <file>sounds/switches/06-1.wav</file>
+        <file>sounds/switches/07-0.wav</file>
+        <file>sounds/switches/07-1.wav</file>
+        <file>sounds/switches/08-0.wav</file>
+        <file>sounds/switches/08-1.wav</file>
+        <file>sounds/switches/09-0.wav</file>
+        <file>sounds/switches/09-1.wav</file>
+        <file>sounds/switches/10-0.wav</file>
+        <file>sounds/switches/10-1.wav</file>
+        <file>sounds/switches/11-0.wav</file>
+        <file>sounds/switches/11-1.wav</file>
+        <file>sounds/switches/12-0.wav</file>
+        <file>sounds/switches/12-1.wav</file>
+        <file>sounds/switches/13-0.wav</file>
+        <file>sounds/switches/13-1.wav</file>
+        <file>sounds/switches/14-0.wav</file>
+        <file>sounds/switches/14-1.wav</file>
+        <file>sounds/switches/15-0.wav</file>
+        <file>sounds/switches/15-1.wav</file>
+        <file>sounds/switches/bin-0.wav</file>
+        <file>sounds/switches/bin-1.wav</file>
+        <file>sounds/switches/clear-0.wav</file>
+        <file>sounds/switches/clear-1.wav</file>
+        <file>sounds/switches/clock-0.wav</file>
+        <file>sounds/switches/clock-1.wav</file>
+        <file>sounds/switches/cycle-0.wav</file>
+        <file>sounds/switches/cycle-1.wav</file>
+        <file>sounds/switches/fetch-0.wav</file>
+        <file>sounds/switches/fetch-1.wav</file>
+        <file>sounds/switches/load-0.wav</file>
+        <file>sounds/switches/load-1.wav</file>
+        <file>sounds/switches/mode-0.wav</file>
+        <file>sounds/switches/mode-1.wav</file>
+        <file>sounds/switches/oprq-0.wav</file>
+        <file>sounds/switches/oprq-1.wav</file>
+        <file>sounds/switches/start-0.wav</file>
+        <file>sounds/switches/start-1.wav</file>
+        <file>sounds/switches/step-0.wav</file>
+        <file>sounds/switches/step-1.wav</file>
+        <file>sounds/switches/stopn-0.wav</file>
+        <file>sounds/switches/stopn-1.wav</file>
+        <file>sounds/switches/store-0.wav</file>
+        <file>sounds/switches/store-1.wav</file>
     </qresource>
 </RCC>

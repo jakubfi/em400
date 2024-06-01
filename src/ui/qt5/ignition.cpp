@@ -14,9 +14,7 @@ Ignition::Ignition(QPixmap gfx[3], const QUrl snd_rs[3], const QUrl snd_ls[3], Q
 	for (i=0 ; i<3 ; i++) {
 		this->gfx[i] = gfx[i];
 		snd_r[i].setSource(snd_rs[i]);
-		//snd_r[i].setVolume(0.7);
 		snd_l[i].setSource(snd_ls[i]);
-		//snd_l[i].setVolume(0.7);
 	}
 	this->resize(gfx[0].width(), gfx[0].height());
 	center = gfx[0].rect().center();
