@@ -1,6 +1,6 @@
-// (c) Copyright 2016, Sean Connelly (@voidqk), http://syntheti.cc
+// (c) Copyright 2016, Sean Connelly (@velipso), https://sean.cm
 // MIT License
-// Project Home: https://github.com/voidqk/sndfilter
+// Project Home: https://github.com/velipso/sndfilter
 
 // biquad filtering based on WebAudio specification:
 //   https://webaudio.github.io/web-audio-api/#the-biquadfilternode-interface
@@ -42,6 +42,12 @@ typedef struct {
 // these functions will initialize an sf_biquad_state_st structure based on the desired filter
 void sf_lowpass  (sf_biquad_state_st *state, int rate, float cutoff, float resonance);
 void sf_highpass (sf_biquad_state_st *state, int rate, float cutoff, float resonance);
+void sf_bandpass (sf_biquad_state_st *state, int rate, float freq, float Q);
+void sf_notch    (sf_biquad_state_st *state, int rate, float freq, float Q);
+void sf_peaking  (sf_biquad_state_st *state, int rate, float freq, float Q, float gain);
+void sf_allpass  (sf_biquad_state_st *state, int rate, float freq, float Q);
+void sf_lowshelf (sf_biquad_state_st *state, int rate, float freq, float Q, float gain);
+void sf_highshelf(sf_biquad_state_st *state, int rate, float freq, float Q, float gain);
 
 // this function will process the input sound based on the state passed
 // the input and output buffers should be the same size
