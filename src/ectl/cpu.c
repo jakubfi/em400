@@ -40,11 +40,13 @@ const char *state_names[] = {
 	"RUN",
 	"STOP",
 	"WAIT",
-	"CLM",
 	"CLO",
 	"OFF",
 	"CYCLE",
 	"BIN",
+	"LOAD",
+	"STORE",
+	"FETCH",
 	"???"
 };
 
