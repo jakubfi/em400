@@ -73,8 +73,10 @@ addr_check:
 	; check if sector address is correct
 	lw	r2, [rdbuf]
 	cw	r2, [r7+LOOPS]
-	bb	r0, ?E
+	jes	.cont
+	im	msk_0
 	hlt	045
+.cont:
 	; decrement sector number
 	awt	r2, -1
 	rw	r2, readf+SECT_POS
@@ -86,9 +88,10 @@ mx_proc:
 	md	[STACKP]
 	lw	r1, [-1]
 	cw	r1, [r7+INT]
-	bb	r0, ?E
+	jes	.cont1
+	im	msk_0
 	hlt	044
-
+.cont1:
 	; check test result
 	lw	r1, [r7+PROC]
 	cw	r1, 0
@@ -103,9 +106,10 @@ mx_proc:
 	jn	test_cont
 	awt	r7, TLEN
 	cw	r7, seqe
-	bc	r0, ?E
+	jn	.cont2
+	im	msk_0
 	hlt	077
-
+.cont2:
 	; send next I/O
 test_cont:
 	lw	r1, [r7+CMD]
@@ -117,9 +121,11 @@ c_ou:	ou	r2, r1
 	.word	c_no, c_en, c_ok, c_pe
 c_in:	in	r2, r1
 	.word	c_no, c_en, c_ok, c_pe
-c_no:	hlt	041	; error
+c_no:	im	msk_0
+	hlt	041	; error
 c_en:	ujs	repeat	; repeat if engaged
-c_pe:	hlt	042	; error
+c_pe:	im	msk_0
+	hlt	042	; error
 c_ok:
 	lip
 

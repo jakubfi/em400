@@ -327,11 +327,6 @@ int mx_int_enqueue(struct mx *multix, int intr, int line)
 	uint16_t *i = (uint16_t *) malloc(sizeof(uint16_t));
 	*i = (intr << 8) | line;
 
-	// Workaround for the interrupt comming too early sometimes
-	// for the tests to pass, which may also affect real software
-	// TODO: Real multix processing delays?
-	usleep(1);
-
 	pthread_mutex_lock(&multix->int_mutex);
 	int res = elst_nlock_append(multix->intq, i);
 	pthread_mutex_unlock(&multix->int_mutex);
