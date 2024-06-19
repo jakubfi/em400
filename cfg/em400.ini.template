@@ -80,7 +80,6 @@ preload = program.bin
 [sound]
 # Internal buzzer emulation.
 # For this to work, set speed_real to true
-# and 1.5 >= cpu_speed_factor >= 0.5
 # Note that for sound to work properly logging will most likely
 # have to be disabled.
 enabled = false
