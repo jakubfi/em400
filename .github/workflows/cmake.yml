@@ -16,8 +16,8 @@ jobs:
         compiler: [ gcc-latest, clang-latest ]
     env:
       BUILD_TYPE: Release
-      CC: ${{matrix.compiler.CC}}
-      CXX: ${{matrix.compiler.CXX}}
+      CC: ${{matrix.compiler}}
+      CXX: ${{matrix.compiler}}
 
     steps:
       - uses: actions/checkout@v4
