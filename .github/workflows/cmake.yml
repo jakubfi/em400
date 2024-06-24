@@ -8,7 +8,7 @@ on:
 
 jobs:
   build:
-    name: build on ${{matrix.os}} with ${{matrix.compiler.compiler}}
+    name: build on ${{matrix.os}} with ${{matrix.compiler}}
     runs-on: ${{matrix.os}}
     strategy:
       matrix:
@@ -23,8 +23,6 @@ jobs:
       - uses: actions/checkout@v4
       - name: Update repositories
         run: sudo apt-get update
-      - name: Install packages for ${{matrix.compiler.compiler}}
-        run: sudo apt-get -y install ${{matrix.compiler.packages}}
       - name: Build and install emawp
         run: git clone https://github.com/jakubfi/emawp && cd emawp && mkdir build && cd build && cmake .. && make && sudo make install && sudo ldconfig
       - name: Build and install emcrk
