@@ -13,7 +13,7 @@ jobs:
     strategy:
       matrix:
         os: [ ubuntu-latest ]
-        compiler: [ gcc-latest, clang-latest ]
+        compiler: [ gcc, clang ]
     env:
       BUILD_TYPE: Release
       CC: ${{matrix.compiler}}
