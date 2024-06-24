@@ -8,16 +8,18 @@ on:
 
 jobs:
   build:
-    name: build on ${{matrix.os}} with ${{matrix.compiler}}
+    name: build on ${{matrix.os}} with ${{matrix.compiler.compiler}}
     runs-on: ${{matrix.os}}
     strategy:
       matrix:
         os: [ ubuntu-latest ]
-        compiler: [ gcc, clang ]
+        compiler:
+          - { compiler: GCC, CC: gcc, CXX: g++ }
+          - { compiler: CLANG, CC: clang, CXX: clang++ }
     env:
       BUILD_TYPE: Release
-      CC: ${{matrix.compiler}}
-      CXX: ${{matrix.compiler}}
+      CC: ${{matrix.compiler.CC}}
+      CXX: ${{matrix.compiler.CXX}}
 
     steps:
       - uses: actions/checkout@v4
