@@ -36,7 +36,7 @@ jobs:
       - name: Build and install emas
         run: git clone https://github.com/jakubfi/emas && cd emas && mkdir build && cd build && cmake .. && make && sudo make install
       - name: Install dependencies
-        run: sudo apt install libpulse0 libpulse-dev libasound2 libasound2-dev libncurses5 libncurses5-dev flex libfl-dev bison libbison-dev libreadline5 libreadline-dev
+        run: sudo apt install libpulse0 libpulse-dev libasound2 libasound2-dev libncurses5 libncurses5-dev flex libfl-dev bison libbison-dev readline-common libreadline-dev
       - name: Configure project
         run: cmake -B ${{github.workspace}}/build -DCMAKE_BUILD_TYPE=${{env.BUILD_TYPE}}
       - name: Build
