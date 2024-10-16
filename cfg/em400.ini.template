@@ -41,9 +41,6 @@ awp = true
 #  *  broader interrupt mask for I/O interrupts
 modifications = false
 
-# Initial value to set in KB register
-kb = 0
-
 [memory]
 # Memory is organized into 16 physical modules. Each module can be
 # either elwro or mega. Elwro modules are 32kword big (8 pages),

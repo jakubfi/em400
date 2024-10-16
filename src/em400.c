@@ -133,7 +133,7 @@ void em400_mkconfdir()
 	}
 }
 
-const char em400_cmdline_opts[] = "hc:p:k:l:Lu:FO:";
+const char em400_cmdline_opts[] = "hc:p:l:Lu:FO:";
 
 // -----------------------------------------------------------------------
 int em400_cmdline_1(int argc, char **argv, int *print_help, char **config)
@@ -149,7 +149,6 @@ int em400_cmdline_1(int argc, char **argv, int *print_help, char **config)
 				*config = strdup(optarg);
 				break;
             case 'p':
-            case 'k':
             case 'L':
             case 'l':
             case 'u':
@@ -178,9 +177,6 @@ int em400_cmdline_2(em400_cfg *cfg, int argc, char **argv)
                 break;
             case 'p':
                 cfg_set(cfg, "memory:preload", optarg);
-                break;
-            case 'k':
-                cfg_set(cfg, "cpu:kb", optarg);
                 break;
             case 'L':
 				cfg_set(cfg, "log:enabled", "false");
