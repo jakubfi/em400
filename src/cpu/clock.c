@@ -30,7 +30,7 @@
 #include "cfg.h"
 #include "atomic.h"
 
-int clock_enabled;
+int clock_enabled = false;
 pthread_t clock_th;
 sem_t clock_quit;
 
@@ -69,13 +69,6 @@ int clock_init(em400_cfg *cfg)
 		return LOGERR("Clock period should be between 2 and 100 miliseconds, not %i.", clock_period);
 	}
 
-	const int cfg_clock_start = cfg_getbool(cfg, "cpu:clock_start", CFG_DEFAULT_CPU_CLOCK_START);
-	if (cfg_clock_start) {
-		clock_on();
-	} else {
-		clock_off();
-	}
-
 	sem_init(&clock_quit, 0, 0);
 	if (pthread_create(&clock_th, NULL, clock_thread, NULL)) {
 		return LOGERR("Failed to spawn clock thread.");
@@ -83,7 +76,7 @@ int clock_init(em400_cfg *cfg)
 
 	pthread_setname_np(clock_th, "clock");
 
-	LOG(L_CPU, "Clock initialized (%s). Period: %i ms", cfg_clock_start ? "started" : "stopped", clock_period);
+	LOG(L_CPU, "Clock period: %i ms", clock_period);
 
 	return E_OK;
 }

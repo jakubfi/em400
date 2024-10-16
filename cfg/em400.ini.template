@@ -22,9 +22,6 @@ throttle_granularity = 30
 # 2, 4, 8, 10, 20, 40, 80
 clock_period = 10
 
-# Choose whether to start clock at power on.
-clock_start = true
-
 # MERA-400 cpu stops when operating system tries to access unconfigured
 # memory segment, but this can be changed to work as for user programs
 # (only interrupt is fired in such configuration)
