@@ -21,15 +21,14 @@
 #include <inttypes.h>
 
 // various execution phase time values
-#define TIME_MEM 1050			// memory access
-#define TIME_PREMOD 300			// premodification
-#define TIME_BMOD 300			// B-modification
-#define TIME_DMOD 1050			// D-modification
-#define TIME_SHIFT 100			// single SHC shift
-#define TIME_MEM_ARG 850		// memory argument
-#define TIME_P 1400				// skip (P) time
+#define TIME_PREMOD 720			// premodification
+#define TIME_BMOD 720			// B-modification
+#define TIME_DMOD 1500			// D-modification
+#define TIME_SHIFT 307			// single SHC shift
+#define TIME_MEM_ARG 1580		// memory argument
+#define TIME_P 2208				// skip (P) time
 #define TIME_NOANS_IF 15000		// timeout on the interface
-#define TIME_INT_SERVE 9000		// interrupt serve
+#define TIME_INT_SERVE 9000		// interrupt serve // TODO
 
 enum opcode_flags {
 	OP_FL_NONE			= 0,

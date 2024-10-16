@@ -75,7 +75,6 @@ static int speed_real;
 static struct timespec cpu_timer;
 static int cpu_time_cumulative;
 static int throttle_granularity;
-static float cpu_delay_factor;
 
 static int sound_enabled;
 
@@ -258,13 +257,6 @@ int cpu_init(em400_cfg *cfg)
 	speed_real = cfg_getbool(cfg, "cpu:speed_real", CFG_DEFAULT_CPU_SPEED_REAL);
 	throttle_granularity = 1000 * cfg_getint(cfg, "cpu:throttle_granularity", CFG_DEFAULT_CPU_THROTTLE_GRANULARITY);
 
-	if (speed_real) {
-		cpu_delay_factor = 1.4925f; // 1.0/0.67, best we have, so far
-	} else {
-		cpu_delay_factor = 0.0001f;
-	}
-
-
 	res = iset_build(cpu_op_tab, cpu_user_io_illegal);
 	if (res != E_OK) {
 		return LOGERR("Failed to build CPU instruction table.");
@@ -295,8 +287,7 @@ int cpu_init(em400_cfg *cfg)
 
 	if (sound_enabled) {
 		if (!speed_real) {
-			LOGERR("EM400 needs to be configured with speed_real=true for the buzzer emulation to work. Disabling sound.");
-			sound_enabled = false;
+			LOGERR("WARNING: sound won't work with speed_real=false. Buzzer emulation is disabled.");
 		} else {
 			if (buzzer_init(cfg) != E_OK) {
 				return LOGERR("Failed to initialize buzzer.");
@@ -586,7 +577,6 @@ static void cpu_timekeeping(int cpu_time)
 		skip_sleep = true;
 	}
 
-	cpu_time *= cpu_delay_factor;
 	cpu_time_cumulative += cpu_time;
 
 	if (sound_enabled) {
@@ -599,8 +589,8 @@ static void cpu_timekeeping(int cpu_time)
 			cpu_timer.tv_nsec -= 1000000000;
 			cpu_timer.tv_sec++;
 		}
-		cpu_time_cumulative = 0;
 		while (clock_nanosleep(CLOCK_MONOTONIC, TIMER_ABSTIME, &cpu_timer, NULL) == EINTR);
+		cpu_time_cumulative = 0;
 	}
 }
 
@@ -678,7 +668,7 @@ void cpu_loop()
 				break;
 		}
 
-		cpu_timekeeping(cpu_time);
+		if (speed_real) cpu_timekeeping(cpu_time);
 	}
 }
 

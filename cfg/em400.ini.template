@@ -9,7 +9,7 @@ fpga = false
 # Control CPU emulation speed:
 # "false" - run as fast as possible
 # "true" - try to emulate real hardware CPU and memory speeds
-speed_real = false
+speed_real = true
 
 # Execute instructions for this much time (in us) before sleeping.
 # Use with caution. If "real" emulation speed is slower than
@@ -76,7 +76,7 @@ preload = program.bin
 # For this to work, set speed_real to true
 # Note that for sound to work properly logging will most likely
 # have to be disabled.
-enabled = false
+enabled = true
 
 # Sound driver to use: pulseaudio, alsa or file (raw PCM dump)
 driver = pulseaudio
@@ -86,7 +86,7 @@ driver = pulseaudio
 output = default
 
 # Samplerate.
-rate = 44100
+rate = 48000
 
 # Sound buffer size (in samples, powers of 2).
 buffer_len = 128
@@ -96,7 +96,7 @@ buffer_len = 128
 latency = 20
 
 # Software buzzer volume control (0-100)
-volume = 30
+volume = 8
 
 # Enable or disable speaker frequency response modeling.
 # When enabled, EM400 sounds like the real hardware.
