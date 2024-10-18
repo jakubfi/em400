@@ -167,6 +167,8 @@ set(SOURCES_EM400
 	src/mem/mem.h
 	src/mem/mega.c
 	src/mem/mega.h
+	src/mem/mega_prom.c
+	src/mem/mega_prom.h
 	src/mem/elwro.c
 	src/mem/elwro.h
 

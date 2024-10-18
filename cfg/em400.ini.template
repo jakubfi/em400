@@ -59,14 +59,10 @@ mega_modules = 0
 # allowed values: 1 or 2
 hardwired_segments = 2
 
-# Name of image file containing MEGA PROM memory.
-# File has to be 8KB in size (1 full segment, 4kwords).
+# Name of a MEGA PROM image file to use instead of the default one.
+# Oly the first 8KB of the file is loaded (1 memory egment, 4kwords).
 # Unset by default
 #mega_prom = mega_prom.img
-
-# Enable or disable boot from MEGA PROM memory.
-# Works only when mem_mega_prom is specified.
-mega_boot = false
 
 # Preload a program into OS memory, starting from address 0
 preload = program.bin

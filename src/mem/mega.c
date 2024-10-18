@@ -21,6 +21,7 @@
 
 #include "io/defs.h"
 #include "mem/mega.h"
+#include "mem/mega_prom.h"
 #include "utils/utils.h"
 
 #include "log.h"
@@ -28,7 +29,6 @@
 uint16_t *mem_mega[MEM_MAX_MODULES][MEM_MAX_MEGA_SEGMENTS];	// physical memory segments
 uint16_t *mem_mega_map[MEM_MAX_NB][MEM_MAX_AB];				// internal logical->physical segment mapping
 int mem_mega_mp_start, mem_mega_mp_end;   					// modules allocated for MEGA
-uint16_t *mem_mega_prom;									// PROM contents
 bool mem_mega_prom_hidden;									// is PROM hidden?
 bool mem_mega_init_done;									// is initialization done?
 
@@ -61,29 +61,21 @@ int mem_mega_init(int modc, const char *prom_image)
 		}
 	}
 
-	// allocate memory for MEGA PROM
 	mem_mega_prom_hidden = false;
-	mem_mega_prom = (uint16_t *) malloc(sizeof(uint16_t) * MEM_SEGMENT_SIZE);
-	if (!mem_mega_prom) {
-		return LOGERR("Memory allocation error for MEGA PROM.");
-	}
 
-	// load PROM image
+	// load custom PROM image
 	if (prom_image && *prom_image) {
+		LOG(L_MEM, "Loading custom MEGA PROM (max %i words) from image: %s", MEM_SEGMENT_SIZE, prom_image);
 		f = fopen(prom_image, "rb");
 		if (!f) {
-			return LOGERR("Failed to open PROM image: \"%s\".", prom_image);
+			return LOGERR("Failed to open MEGA PROM image: \"%s\".", prom_image);
 		}
 		res = fread(mem_mega_prom, sizeof(uint16_t), MEM_SEGMENT_SIZE, f);
-		if (res != MEM_SEGMENT_SIZE) {
-			fclose(f);
-			return LOGERR("Read only %i words of MEGA PROM. Expecting %i.", res, MEM_SEGMENT_SIZE);
-		}
 		fclose(f);
 		endianswap(mem_mega_prom, res);
-		LOG(L_MEM, "Loaded MEGA PROM image: %s (%i words)", prom_image, res);
+		LOG(L_MEM, "Loaded %i words into MEGA PROM segmet", res);
 	} else {
-		LOG(L_MEM, "Empty MEGA PROM");
+		LOG(L_MEM, "Using default MEGA PROM");
 	}
 
 	mem_mega_init_done = false;
@@ -101,8 +93,6 @@ void mem_mega_shutdown()
 			free(mem_mega[mp][seg]);
 		}
 	}
-	
-	free(mem_mega_prom);
 }
 
 // -----------------------------------------------------------------------
