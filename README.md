@@ -76,7 +76,7 @@ em400 [option] ...
 Where *options* are:
 
 * **-h** - Display help
-* **-c config** - Config file to use instead of the default one (*~/.em400/em400.cfg*)
+* **-c config** - Config file to use instead of the default one (*~/.em400/em400.ini*)
 * **-p program** - Load program image into OS memory at address 0
 * **-l component,component,...** - Enable logging for specified components. Available components: reg, mem, cpu, op, int, io, mx, px, cchar, cmem, term, wnch, flop, pnch, pnrd, crk5, em4h, all.
 * **-L** -  Disable logging

@@ -109,7 +109,6 @@ void em400_usage()
 		"                      reg, mem, cpu, op, int, io, mx, px, cchar, cmem, term\n"
 		"                      wnch, flop, pnch, pnrd, tape, crk5, em4h, ectl, fpga, all\n"
 		"   -L               : Disable logging\n"
-		"   -k value         : Value to initially set keys to\n"
 		"   -u ui            : User interface to use. Available UIs (first is the default):"
 	);
 	ui_print_uis(stdout);
