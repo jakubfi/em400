@@ -32,7 +32,7 @@ start:	lwt	r7, 0
 	rw	r1, INTV_NOMEM
 
 	; initial read should not fail, PROM is shown by default
-	lw	r6, [0xffff]
+	tw	r6, 0xffff
 	cwt	r6, 0		; sysnum should be != 0
 	je	fail_sysnum
 
@@ -46,7 +46,7 @@ start:	lwt	r7, 0
 .ok1:
 	im	mask
 	; this should fail leaving "1" in r7
-	lw	r1, [0xffff]
+	tw	r1, 0xffff
 	cw	r7, 1
 	jes	.read_prom
 	hlt	042
@@ -61,7 +61,7 @@ start:	lwt	r7, 0
 .err2:	hlt	043
 .ok2:
 	; this sould read fine
-	lw	r1, [0xffff]
+	tw	r1, 0xffff
 	cw	r1, r6		; should be the same as the first read
 	jes	pass
 	hlt	044
