@@ -22,7 +22,7 @@
 
 #include "mem/mem.h"
 
-#define MEM_MAX_MEGA_SEGMENTS 16	// physical segments in mega module
+#define MEM_MEGA_FRAMES MEM_FRAMES	// frames in mega module
 
 enum mem_mega_flags {
 	MEM_MEGA_ALLOC		= 0b0000001,
@@ -32,13 +32,13 @@ enum mem_mega_flags {
 	MEM_MEGA_ALLOC_DONE	= 0b1000000,
 };
 
-extern uint16_t *mem_mega[MEM_MAX_MODULES][MEM_MAX_SEGMENTS];
+extern uint16_t *mem_mega[MEM_MODULES][MEM_MEGA_FRAMES];
 
-int mem_mega_init(int modc, const char *prom_image);
+int mem_mega_init(int module_count, const char *prom_image);
 void mem_mega_shutdown();
 void mem_mega_reset();
-uint16_t * mem_mega_get_seg_ptr(int nb, int ab);
-int mem_mega_cmd(int nb, int ab, int mp, int seg, int flags);
+uint16_t * mem_mega_get_frame_ptr(int segment, int frame);
+int mem_mega_cmd(int segment, int page, int module, int frame, int flags);
 
 #endif
 

@@ -23,13 +23,17 @@
 
 #include "cfg.h"
 
-#define MEM_SEGMENT_SIZE 4 * 1024	// segment size (16-bit words)
-#define MEM_MAX_MODULES 16			// physical memory modules
-#define MEM_MAX_SEGMENTS 16			// max physical segments in a module
-#define MEM_MAX_NB 16				// logical blocks
-#define MEM_MAX_AB 16				// logical segments in a logical block
+// physical dimensions
+#define MEM_MODULES 16					// max memory modules
+#define MEM_FRAMES 16					// max frames in a module
+#define MEM_FRAME_SIZE 4096				// segment size (16-bit words)
 
-extern uint16_t * mem_map[MEM_MAX_NB][MEM_MAX_AB];
+// logical dimensions
+#define MEM_SEGMENTS 16					// max segments
+#define MEM_PAGES 16					// max pages in a segment
+#define MEM_PAGE_SIZE MEM_FRAME_SIZE	// page size
+
+extern uint16_t *mem_map[MEM_SEGMENTS][MEM_PAGES];
 
 int mem_init(em400_cfg *cfg);
 void mem_shutdown();

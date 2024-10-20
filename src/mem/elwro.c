@@ -23,43 +23,43 @@
 
 #include "log.h"
 
-#define RAL(nb, ab) (((nb)<<4) + (ab))
+#define RAL(segment, page) (((segment)<<4) + (page))
 
-uint16_t *mem_elwro[MEM_MAX_MODULES][MEM_MAX_ELWRO_SEGMENTS];	// physical memory segments
-int mem_elwro_ral[MEM_MAX_MODULES][MEM_MAX_ELWRO_SEGMENTS];		// internal physical->logical mapping
-int mem_elwro_os_segments;										// segments hardwired for OS
-int mem_elwro_mp_start, mem_elwro_mp_end;						// modules allocated for Elwro
+uint16_t *mem_elwro[MEM_MODULES][MEM_ELWRO_FRAMES];		// physical memory frames
+int mem_elwro_ral[MEM_MODULES][MEM_ELWRO_FRAMES];		// internal physical->logical mapping
+int mem_elwro_os_frames;								// number of frames hardwired for OS
+int mem_elwro_first_module, mem_elwro_last_module;		// modules allocated for Elwro
 
 // -----------------------------------------------------------------------
 void mem_elwro_os_hardwire()
 {
-	for (int seg=0 ; seg<mem_elwro_os_segments ; seg++) {
-		mem_elwro_ral[0][seg] = RAL(0, seg);
+	for (int frame=0 ; frame<mem_elwro_os_frames ; frame++) {
+		mem_elwro_ral[0][frame] = RAL(0, frame);
 	}
 }
 
 // -----------------------------------------------------------------------
-int mem_elwro_init(int modc, int seg_os)
+int mem_elwro_init(int module_count, int os_pages)
 {
-	int mp, seg;
+	int module, frame;
 
-	if ((modc < 1) || (modc > MEM_MAX_MODULES)) {
-		return LOGERR("Wrong number of Elwro modules: %i. Should be 1-%i.", modc, MEM_MAX_MODULES);
+	if ((module_count < 1) || (module_count > MEM_MODULES)) {
+		return LOGERR("Wrong number of Elwro modules: %i. Should be 1-%i.", module_count, MEM_MODULES);
 	}
-	if ((seg_os < 1) || (seg_os > 2)) {
-		return LOGERR("Wrong number of OS memory segments: %i. Should be 1 or 2.", seg_os);
+	if ((os_pages < 1) || (os_pages > 2)) {
+		return LOGERR("Wrong number of OS segment memory pages: %i. Should be 1 or 2.", os_pages);
 	}
 
-	mem_elwro_os_segments = seg_os;
-	mem_elwro_mp_start = 0;
-	mem_elwro_mp_end = modc - 1;
+	mem_elwro_os_frames = os_pages;
+	mem_elwro_first_module = 0;
+	mem_elwro_last_module = module_count - 1;
 
-	LOG(L_MEM, "Elwro modules: %d-%d, %d segments (%d hardwired OS segments)", mem_elwro_mp_start, mem_elwro_mp_end, MEM_MAX_ELWRO_SEGMENTS, seg_os);
+	LOG(L_MEM, "Elwro modules: %d-%d, %d frames each (%d hardwired OS segments)", mem_elwro_first_module, mem_elwro_last_module, MEM_ELWRO_FRAMES, os_pages);
 
-	for (mp=mem_elwro_mp_start ; mp<=mem_elwro_mp_end ; mp++) {
-		for (seg=0 ; seg<MEM_MAX_ELWRO_SEGMENTS ; seg++) {
-			mem_elwro[mp][seg] = (uint16_t *) calloc(sizeof(uint16_t), MEM_SEGMENT_SIZE);
-			if (!mem_elwro[mp][seg]) {
+	for (module=mem_elwro_first_module ; module<=mem_elwro_last_module ; module++) {
+		for (frame=0 ; frame<MEM_ELWRO_FRAMES ; frame++) {
+			mem_elwro[module][frame] = (uint16_t *) calloc(sizeof(uint16_t), MEM_FRAME_SIZE);
+			if (!mem_elwro[module][frame]) {
 				return LOGERR("Memory allocation failed for Elwro map.");
 			}
 		}
@@ -73,11 +73,11 @@ int mem_elwro_init(int modc, int seg_os)
 // -----------------------------------------------------------------------
 void mem_elwro_shutdown()
 {
-	int mp, seg;
+	int module, frame;
 
-	for (mp=mem_elwro_mp_start ; mp<=mem_elwro_mp_end ; mp++) {
-		for (seg=0 ; seg<MEM_MAX_ELWRO_SEGMENTS ; seg++) {
-			free(mem_elwro[mp][seg]);
+	for (module=mem_elwro_first_module ; module<=mem_elwro_last_module ; module++) {
+		for (frame=0 ; frame<MEM_ELWRO_FRAMES ; frame++) {
+			free(mem_elwro[module][frame]);
 		}
 	}
 }
@@ -85,10 +85,9 @@ void mem_elwro_shutdown()
 // -----------------------------------------------------------------------
 void mem_elwro_reset()
 {
-	int mp, seg;
-	for (mp=mem_elwro_mp_start ; mp<=mem_elwro_mp_end ; mp++) {
-		for (seg=0 ; seg<MEM_MAX_ELWRO_SEGMENTS ; seg++) {
-			mem_elwro_ral[mp][seg] = RAL(0, 0);
+	for (int module=mem_elwro_first_module ; module<=mem_elwro_last_module ; module++) {
+		for (int frame=0 ; frame<MEM_ELWRO_FRAMES ; frame++) {
+			mem_elwro_ral[module][frame] = RAL(0, 0);
 		}
 	}
 
@@ -96,37 +95,36 @@ void mem_elwro_reset()
 }
 
 // -----------------------------------------------------------------------
-uint16_t * mem_elwro_get_seg_ptr(int nb, int ab)
+uint16_t * mem_elwro_get_frame_ptr(int segment, int page)
 {
-	int mp, seg;
-
-	// find lowest segment that has nb:ab in its RAL
-	for (mp=mem_elwro_mp_start ; mp<=mem_elwro_mp_end ; mp++) {
-		for (seg=0 ; seg<MEM_MAX_ELWRO_SEGMENTS ; seg++) {
-			if (mem_elwro_ral[mp][seg] == RAL(nb, ab)) {
-				return mem_elwro[mp][seg];
+	// find lowest frame that has segment:page stored in its RAL
+	for (int module=mem_elwro_first_module ; module<=mem_elwro_last_module ; module++) {
+		for (int frame=0 ; frame<MEM_ELWRO_FRAMES ; frame++) {
+			if (mem_elwro_ral[module][frame] == RAL(segment, page)) {
+				return mem_elwro[module][frame];
 			}
 		}
 	}
+
 	return NULL;
 }
 
 // -----------------------------------------------------------------------
-int mem_elwro_cmd(int nb, int ab, int mp, int seg)
+int mem_elwro_cmd(int segment, int page, int module, int frame)
 {
-	if (!mem_elwro[mp][seg]) {
-		LOG(L_MEM, "Elwro: ignored mapping to a nonexistent physical segment: logical [%d, %d] -> physical [%d, %d]", nb, ab, mp, seg);
+	if (!mem_elwro[module][frame]) {
+		LOG(L_MEM, "Elwro: ignored mapping to a nonexistent frame: logical [%d, %d] -> physical [%d, %d]", segment, page, module, frame);
 		return IO_NO;
 	}
 
-	if ((mp == 0) && (seg < mem_elwro_os_segments)) {
-		LOG(L_MEM, "Elwro: ignored mapping to a hardwired segment: logical [%d, %d] -> physical [%d, %2d]", nb, ab, mp, seg);
+	if ((module == 0) && (frame < mem_elwro_os_frames)) {
+		LOG(L_MEM, "Elwro: ignored mapping to a hardwired frame: logical [%d, %d] -> physical [%d, %2d]", segment, page, module, frame);
 		return IO_NO;
 	}
 
-	LOG(L_MEM, "Elwro: adding map: logical [%d, %d] -> physical [%d, %d]", nb, ab, mp, seg);
+	LOG(L_MEM, "Elwro: adding map: logical [%d, %d] -> physical [%d, %d]", segment, page, module, frame);
 
-	mem_elwro_ral[mp][seg] = RAL(nb, ab);
+	mem_elwro_ral[module][frame] = RAL(segment, page);
 
 	return IO_OK;
 }

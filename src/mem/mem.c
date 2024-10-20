@@ -29,25 +29,25 @@
 
 #include "log.h"
 
-uint16_t * mem_map[MEM_MAX_NB][MEM_MAX_AB]; // final (as seen by emulation) logical->physical segment mapping
+uint16_t * mem_map[MEM_SEGMENTS][MEM_PAGES]; // final (as seen by emulation) logical->physical segment mapping
 
 static int mega_modules = 0;
 
 // -----------------------------------------------------------------------
 static uint16_t *mem_ptr(int nb, uint16_t addr)
 {
-	uint16_t *seg_ptr = mem_map[nb][addr >> 12];
-	return seg_ptr ? seg_ptr + (addr & 0b0000111111111111) : NULL;
+	uint16_t *frame_ptr = mem_map[nb][addr >> 12];
+	return frame_ptr ? frame_ptr + (addr & 0b0000111111111111) : NULL;
 }
 
 // -----------------------------------------------------------------------
-void mem_update_map()
+static void mem_update_map()
 {
-	for (int nb=0 ; nb<MEM_MAX_NB ; nb++) {
-		for (int ab=0 ; ab<MEM_MAX_AB ; ab++) {
-			mem_map[nb][ab] = mem_elwro_get_seg_ptr(nb, ab);
-			if ((mega_modules > 0) && !mem_map[nb][ab]) {
-				mem_map[nb][ab] = mem_mega_get_seg_ptr(nb, ab);
+	for (int segment=0 ; segment<MEM_SEGMENTS ; segment++) {
+		for (int page=0 ; page<MEM_PAGES ; page++) {
+			mem_map[segment][page] = mem_elwro_get_frame_ptr(segment, page);
+			if ((mega_modules > 0) && !mem_map[segment][page]) {
+				mem_map[segment][page] = mem_mega_get_frame_ptr(segment, page);
 			}
 		}
 	}
@@ -58,16 +58,16 @@ int mem_init(em400_cfg *cfg)
 {
 	int res;
 
-	const int cfg_elwro = cfg_getint(cfg, "memory:elwro_modules", CFG_DEFAULT_MEMORY_ELWRO_MODULES);
+	const int elwro_modules = cfg_getint(cfg, "memory:elwro_modules", CFG_DEFAULT_MEMORY_ELWRO_MODULES);
 	mega_modules = cfg_getint(cfg, "memory:mega_modules", CFG_DEFAULT_MEMORY_MEGA_MODULES);
 	const int cfg_os = cfg_getint(cfg, "memory:hardwired_segments", CFG_DEFAULT_MEMORY_HARDWIRED_SEGMENTS);
 	const char *mega_prom_image = cfg_getstr(cfg, "memory:mega_prom", CFG_DEFAULT_MEMORY_MEGA_PROM);
 
-	if (cfg_elwro + mega_modules > MEM_MAX_MODULES+1) {
-		return LOGERR("Sum of Elwro and MEGA memory modules is greater than allowed %i.", MEM_MAX_MODULES+1);
+	if (elwro_modules + mega_modules > MEM_MODULES+1) {
+		return LOGERR("Sum of Elwro and MEGA memory modules is greater than allowed %i.", MEM_MODULES+1);
 	}
 
-	res = mem_elwro_init(cfg_elwro, cfg_os);
+	res = mem_elwro_init(elwro_modules, cfg_os);
 	if (res != E_OK) {
 		return LOGERR("Failed to initialize Elwro memory.");
 	}
@@ -80,7 +80,7 @@ int mem_init(em400_cfg *cfg)
 	mem_update_map();
 
 	LOG(L_MEM, "Memory initialized. Elwro modules: %d, MEGA modules: %d, hardwired OS segments: %d, MEGA prom: %s",
-		cfg_elwro,
+		elwro_modules,
 		mega_modules,
 		cfg_os,
 		mega_prom_image
@@ -102,18 +102,18 @@ void mem_shutdown()
 int mem_cmd(uint16_t n, uint16_t r)
 {
 	int res;
-	int nb		= (r & 0b0000000000001111);
-	int ab		= (r & 0b1111000000000000) >> 12;
-	int mp		= (n & 0b0000000000011110) >> 1;
-	int seg		= (n & 0b0000000111100000) >> 5;
+	int segment	= (r & 0b0000000000001111);
+	int page	= (r & 0b1111000000000000) >> 12;
+	int module	= (n & 0b0000000000011110) >> 1;
+	int frame	= (n & 0b0000000111100000) >> 5;
 	int flags	= (n & 0b1111111000000000) >> 9;
 
 	// if MEGA is present and MEM_MEGA_ALLOC is set => command for MEGA
 	if ((mega_modules > 0) && (flags & MEM_MEGA_ALLOC)) {
-		res = mem_mega_cmd(nb, ab, mp, seg, flags);
-	// Elwro otherwise (but mask segment number to 3 bits)
+		res = mem_mega_cmd(segment, page, module, frame, flags);
+	// Elwro otherwise (but mask frame number to 3 bits)
 	} else {
-		res = mem_elwro_cmd(nb, ab, mp, seg & 0b0111);
+		res = mem_elwro_cmd(segment, page, module, frame & 0b0111);
 	}
 	if (res == IO_OK) {
 		mem_update_map();
@@ -145,6 +145,7 @@ bool mem_read_1(int nb, uint16_t addr, uint16_t *data)
 	if (ptr) {
 		*data = *ptr;
 	} else {
+		// TODO: sems that MEGA should store -1
 		*data = 0;
 		return false;
 	}
@@ -169,13 +170,7 @@ bool mem_write_1(int nb, uint16_t addr, uint16_t data)
 bool mem_read_n(int nb, uint16_t saddr, uint16_t *dest, int count)
 {
 	for ( ; count>0 ; count--, saddr++, dest++) {
-		uint16_t *ptr = mem_ptr(nb, saddr);
-		if (ptr) {
-			*dest = *ptr;
-		} else {
-			*dest = 0;
-			return false;
-		}
+		if (!mem_read_1(nb, saddr, dest)) return false;
 	}
 	return true;
 }
@@ -184,24 +179,17 @@ bool mem_read_n(int nb, uint16_t saddr, uint16_t *dest, int count)
 bool mem_write_n(int nb, uint16_t saddr, uint16_t *src, int count)
 {
 	for ( ; count>0 ; count--, saddr++, src++) {
-		uint16_t *ptr = mem_ptr(nb, saddr);
-		if (ptr) {
-			if (mem_map[nb][saddr>>12] != mem_mega_prom) {
-				*ptr = *src;
-			}
-		} else {
-			return false;
-		}
+		if (!mem_write_1(nb, saddr, *src)) return false;
 	}
 	return true;
 }
 
 // -----------------------------------------------------------------------
-uint16_t mem_get_map(int seg)
+uint16_t mem_get_map(int segment)
 {
 	uint16_t map = 0;
-	for (int page=0 ; page<MEM_MAX_AB ; page++) {
-		if (mem_map[seg][page]) {
+	for (int page=0 ; page<MEM_PAGES ; page++) {
+		if (mem_map[segment][page]) {
 			map |= 1 << page;
 		}
 	}

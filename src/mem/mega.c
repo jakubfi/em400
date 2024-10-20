@@ -26,36 +26,32 @@
 
 #include "log.h"
 
-uint16_t *mem_mega[MEM_MAX_MODULES][MEM_MAX_MEGA_SEGMENTS];	// physical memory segments
-uint16_t *mem_mega_map[MEM_MAX_NB][MEM_MAX_AB];				// internal logical->physical segment mapping
-int mem_mega_mp_start, mem_mega_mp_end;   					// modules allocated for MEGA
-bool mem_mega_prom_hidden;									// is PROM hidden?
-bool mem_mega_init_done;									// is initialization done?
+uint16_t *mem_mega[MEM_MODULES][MEM_MEGA_FRAMES];	// physical memory frames
+uint16_t *mem_mega_map[MEM_SEGMENTS][MEM_PAGES];	// internal logical->physical mapping
+int mem_mega_first_module, mem_mega_last_module;   	// modules allocated for MEGA
+bool mem_mega_prom_hidden;							// is PROM hidden?
+bool mem_mega_alloc_done;							// is initialization done?
 
 // -----------------------------------------------------------------------
-int mem_mega_init(int modc, const char *prom_image)
+int mem_mega_init(int module_count, const char *prom_image)
 {
-	int res;
-	int mp, seg;
-	FILE *f;
-
-	if (modc == 0) {
+	if (module_count == 0) {
 		return E_OK;
 	}
 
-	if ((modc < 0) || (modc > MEM_MAX_MODULES)) {
-		return LOGERR("Wrong number of MEGA modules: %i. Should be 1-%i", modc, MEM_MAX_MODULES);
+	if ((module_count < 0) || (module_count > MEM_MODULES)) {
+		return LOGERR("Wrong number of MEGA modules: %i. Should be 1-%i", module_count, MEM_MODULES);
 	}
 
-	mem_mega_mp_start = MEM_MAX_MODULES - modc;
-	mem_mega_mp_end = MEM_MAX_MODULES - 1;
+	mem_mega_first_module = MEM_MODULES - module_count;
+	mem_mega_last_module = MEM_MODULES - 1;
 
-	LOG(L_MEM, "MEGA modules: %d-%d, %d segments", mem_mega_mp_start, mem_mega_mp_end, MEM_MAX_MEGA_SEGMENTS);
+	LOG(L_MEM, "MEGA modules: %d-%d, %d frames each", mem_mega_first_module, mem_mega_last_module, MEM_MEGA_FRAMES);
 
-	for (mp=mem_mega_mp_start ; mp<=mem_mega_mp_end ; mp++) {
-		for (seg=0 ; seg<MEM_MAX_MEGA_SEGMENTS ; seg++) {
-			mem_mega[mp][seg] = (uint16_t *) calloc(sizeof(uint16_t), MEM_SEGMENT_SIZE);
-			if (!mem_mega[mp][seg]) {
+	for (int module=mem_mega_first_module ; module<=mem_mega_last_module ; module++) {
+		for (int frame=0 ; frame<MEM_MEGA_FRAMES ; frame++) {
+			mem_mega[module][frame] = (uint16_t *) calloc(sizeof(uint16_t), MEM_FRAME_SIZE);
+			if (!mem_mega[module][frame]) {
 				return LOGERR("Memory allocation failed for MEGA map.");
 			}
 		}
@@ -65,12 +61,12 @@ int mem_mega_init(int modc, const char *prom_image)
 
 	// load custom PROM image
 	if (prom_image && *prom_image) {
-		LOG(L_MEM, "Loading custom MEGA PROM (max %i words) from image: %s", MEM_SEGMENT_SIZE, prom_image);
-		f = fopen(prom_image, "rb");
+		LOG(L_MEM, "Loading custom MEGA PROM (max %i words) from image: %s", MEM_PAGE_SIZE, prom_image);
+		FILE *f = fopen(prom_image, "rb");
 		if (!f) {
 			return LOGERR("Failed to open MEGA PROM image: \"%s\".", prom_image);
 		}
-		res = fread(mem_mega_prom, sizeof(uint16_t), MEM_SEGMENT_SIZE, f);
+		int res = fread(mem_mega_prom, sizeof(uint16_t), MEM_FRAME_SIZE, f);
 		fclose(f);
 		endianswap(mem_mega_prom, res);
 		LOG(L_MEM, "Loaded %i words into MEGA PROM segmet", res);
@@ -78,7 +74,7 @@ int mem_mega_init(int modc, const char *prom_image)
 		LOG(L_MEM, "Using default MEGA PROM");
 	}
 
-	mem_mega_init_done = false;
+	mem_mega_alloc_done = false;
 
 	return E_OK;
 }
@@ -86,11 +82,9 @@ int mem_mega_init(int modc, const char *prom_image)
 // -----------------------------------------------------------------------
 void mem_mega_shutdown()
 {
-	int mp, seg;
-
-	for (mp=mem_mega_mp_start ; mp<=mem_mega_mp_end ; mp++) {
-		for (seg=0 ; seg<MEM_MAX_MEGA_SEGMENTS ; seg++) {
-			free(mem_mega[mp][seg]);
+	for (int module=mem_mega_first_module ; module<=mem_mega_last_module ; module++) {
+		for (int frame=0 ; frame<MEM_MEGA_FRAMES ; frame++) {
+			free(mem_mega[module][frame]);
 		}
 	}
 }
@@ -98,35 +92,36 @@ void mem_mega_shutdown()
 // -----------------------------------------------------------------------
 void mem_mega_reset()
 {
-	int nb, ab;
-	for (nb=0 ; nb<MEM_MAX_NB ; nb++) {
-		for (ab=0 ; ab<MEM_MAX_AB ; ab++) {
-			mem_mega_map[nb][ab] = NULL;
+	for (int segment=0 ; segment<MEM_SEGMENTS ; segment++) {
+		for (int page=0 ; page<MEM_PAGES ; page++) {
+			mem_mega_map[segment][page] = NULL;
 		}
 	}
+	// TODO: why doesn't work?
+	// mem_mega_alloc_done = false;
 	mem_mega_prom_hidden = false;
 }
 
 // -----------------------------------------------------------------------
-uint16_t * mem_mega_get_seg_ptr(int nb, int ab)
+uint16_t * mem_mega_get_frame_ptr(int segment, int page)
 {
 	// if PROM is shown, use it, ignore mem_mega_init_done
-	if ((nb == 0) && (ab == 15) && !mem_mega_prom_hidden) {
+	if ((segment == 0) && (page == 15) && !mem_mega_prom_hidden) {
 		return mem_mega_prom;
 	// if MEGA configuration is not done, all memory access fails
-	} else if (!mem_mega_init_done) {
+	} else if (!mem_mega_alloc_done) {
 		return NULL;
 	// otherwise return segment pointer as internal MEGA configuration says
 	} else {
-		return mem_mega_map[nb][ab];
+		return mem_mega_map[segment][page];
 	}
 }
 
 // -----------------------------------------------------------------------
-int mem_mega_cmd(int nb, int ab, int mp, int seg, int flags)
+int mem_mega_cmd(int segment, int page, int module, int frame, int flags)
 {
 	LOG(L_MEM, "MEGA: (%2d, %2d) -> (%2d, %2d)  flags: %s%s%s%s%s",
-		nb, ab, mp, seg,
+		segment, page, module, frame,
 		flags & MEM_MEGA_ALLOC ? "alloc " : "",
 		flags & MEM_MEGA_FREE ? "free " : "",
 		flags & MEM_MEGA_PROM_SHOW ? "pshow " : "",
@@ -134,27 +129,17 @@ int mem_mega_cmd(int nb, int ab, int mp, int seg, int flags)
 		flags & MEM_MEGA_ALLOC_DONE ? "done" : ""
 	);
 
-	// 'free'
 	if ((flags & MEM_MEGA_FREE)) {
-		mem_mega_map[nb][ab] = NULL;
-	// 'alloc'
+		mem_mega_map[segment][page] = NULL;
 	} else {
-		mem_mega_map[nb][ab] = mem_mega[mp][seg];
+		mem_mega_map[segment][page] = mem_mega[module][frame];
 	}
 
-	// 'PROM hide'
-	if ((flags & MEM_MEGA_PROM_HIDE)) {
-		mem_mega_prom_hidden = true;
-	}
+	// MEGA PROM flag is stored in a J-K flip-flop...
+	mem_mega_prom_hidden = (!mem_mega_prom_hidden && (flags & MEM_MEGA_PROM_HIDE)) || (mem_mega_prom_hidden && !(flags & MEM_MEGA_PROM_SHOW));
 
-	// 'PROM show'
-	if ((flags & MEM_MEGA_PROM_SHOW)) {
-		mem_mega_prom_hidden = false;
-	}
-
-	// 'allocation done'
 	if ((flags & MEM_MEGA_ALLOC_DONE)) {
-		mem_mega_init_done = true;
+		mem_mega_alloc_done = true;
 	}
 
 	return IO_OK;
