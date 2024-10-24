@@ -33,12 +33,10 @@
 #define MEM_PAGES 16					// max pages in a segment
 #define MEM_PAGE_SIZE MEM_FRAME_SIZE	// page size
 
-extern uint16_t *mem_map[MEM_SEGMENTS][MEM_PAGES];
-
 int mem_init(em400_cfg *cfg);
 void mem_shutdown();
 int mem_cmd(uint16_t n, uint16_t r);
-void mem_reset();
+void mem_reset(bool long_reset);
 bool mem_mega_boot();
 
 bool mem_read_1(int nb, uint16_t addr, uint16_t *data);

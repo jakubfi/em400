@@ -20,25 +20,19 @@
 
 #include <inttypes.h>
 
-#include "mem/mem.h"
-
-#define MEM_MEGA_FRAMES MEM_FRAMES	// frames in mega module
-
 enum mem_mega_flags {
-	MEM_MEGA_ALLOC		= 0b0000001,
-	MEM_MEGA_FREE		= 0b0000010,
+	MEM_MEGA_LOC		= 0b0000001,
+	MEM_MEGA_DEALLOC	= 0b0000010,
 	MEM_MEGA_PROM_SHOW	= 0b0010000,
 	MEM_MEGA_PROM_HIDE	= 0b0100000,
 	MEM_MEGA_ALLOC_DONE	= 0b1000000,
 };
 
-extern uint16_t *mem_mega[MEM_MODULES][MEM_MEGA_FRAMES];
-
 int mem_mega_init(int module_count, const char *prom_image);
 void mem_mega_shutdown();
-void mem_mega_reset();
-uint16_t * mem_mega_get_frame_ptr(int segment, int frame);
+void mem_mega_reset(bool long_reset);
 int mem_mega_cmd(int segment, int page, int module, int frame, int flags);
+bool mem_mega_get_seg_ptrs(int segment, int page, uint16_t **rd_frame_ptr, uint16_t **wr_frame_ptr);
 
 #endif
 

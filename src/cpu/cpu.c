@@ -154,7 +154,7 @@ static inline void cpu_reg_selected_to_w()
 // -----------------------------------------------------------------------
 static void cpu_do_fetch()
 {
-	cpu_mem_read_1(nb, ar, &w);
+	cpu_mem_read_1(false, ar, &w);
 	cpu_do_load(r_selected, w);
 	ar++;
 }
@@ -163,7 +163,7 @@ static void cpu_do_fetch()
 static void cpu_do_store()
 {
 	cpu_reg_selected_to_w();
-	cpu_mem_write_1(nb, ar, w);
+	cpu_mem_write_1(false, ar, w);
 	ar++;
 }
 
@@ -226,7 +226,7 @@ static void cpu_mem_fail(bool barnb)
 bool cpu_mem_read_1(bool barnb, uint16_t addr, uint16_t *data)
 {
 	if (!mem_read_1(barnb * nb, addr, data)) {
-		log_cpu(L_CPU, "Read segmentation fault @ 0x%04x", addr);
+		log_cpu(L_CPU, "Read segmentation fault @ %i:0x%04x", barnb*nb, addr);
 		cpu_mem_fail(barnb);
 		return false;
 	}
@@ -237,7 +237,7 @@ bool cpu_mem_read_1(bool barnb, uint16_t addr, uint16_t *data)
 bool cpu_mem_write_1(bool barnb, uint16_t addr, uint16_t data)
 {
 	if (!mem_write_1(barnb * nb, addr, data)) {
-		log_cpu(L_CPU, "Write segmentation fault @ 0x%04x (data: 0x%04x)", addr, data);
+		log_cpu(L_CPU, "Write segmentation fault @ %i:0x%04x (data: 0x%04x)", barnb*nb, addr, data);
 		cpu_mem_fail(barnb);
 		return false;
 	}
@@ -329,7 +329,7 @@ void cpu_do_clear(bool clo)
 {
 	// I/O reset should return when we're sure that I/O won't change CPU state (backlogged interrupts, memory writes, ...)
 	io_reset();
-	mem_reset();
+	mem_reset(clo); // MEGA memory handles manual (long) reset differently
 	cpu_mod_off();
 
 	r[0] = 0;

@@ -15,8 +15,6 @@ Features (possible):
 CPU:
 
 * review cpu cycle in context of interrupt handling
-* no-elwro configuration
-* overlaid elwro/mega configuration
 
 I/O:
 

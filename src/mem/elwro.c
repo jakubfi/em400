@@ -19,32 +19,31 @@
 #include <inttypes.h>
 
 #include "io/defs.h"
+#include "mem/mem.h"
 #include "mem/elwro.h"
 
 #include "log.h"
 
+#define MEM_ELWRO_FRAMES 8
+
 #define RAL(segment, page) (((segment)<<4) + (page))
 
-uint16_t *mem_elwro[MEM_MODULES][MEM_ELWRO_FRAMES];		// physical memory frames
-int mem_elwro_ral[MEM_MODULES][MEM_ELWRO_FRAMES];		// internal physical->logical mapping
-int mem_elwro_os_frames;								// number of frames hardwired for OS
-int mem_elwro_first_module, mem_elwro_last_module;		// modules allocated for Elwro
+static uint16_t *mem_elwro[MEM_MODULES][MEM_ELWRO_FRAMES];		// physical memory frames
+static int mem_elwro_ral[MEM_MODULES][MEM_ELWRO_FRAMES];		// internal physical->logical mapping
 
-// -----------------------------------------------------------------------
-void mem_elwro_os_hardwire()
-{
-	for (int frame=0 ; frame<mem_elwro_os_frames ; frame++) {
-		mem_elwro_ral[0][frame] = RAL(0, frame);
-	}
-}
+static int mem_elwro_os_frames;									// number of frames hardwired for OS
+static int mem_elwro_first_module, mem_elwro_last_module;		// modules allocated for Elwro
 
 // -----------------------------------------------------------------------
 int mem_elwro_init(int module_count, int os_pages)
 {
-	int module, frame;
+	if (module_count <= 0) {
+		LOG(L_MEM, "No Elwro modules");
+		return E_OK;
+	}
 
-	if ((module_count < 1) || (module_count > MEM_MODULES)) {
-		return LOGERR("Wrong number of Elwro modules: %i. Should be 1-%i.", module_count, MEM_MODULES);
+	if (module_count > MEM_MODULES) {
+		return LOGERR("Wrong number of Elwro modules: %i. Should be < %i.", module_count, MEM_MODULES);
 	}
 	if ((os_pages < 1) || (os_pages > 2)) {
 		return LOGERR("Wrong number of OS segment memory pages: %i. Should be 1 or 2.", os_pages);
@@ -54,10 +53,10 @@ int mem_elwro_init(int module_count, int os_pages)
 	mem_elwro_first_module = 0;
 	mem_elwro_last_module = module_count - 1;
 
-	LOG(L_MEM, "Elwro modules: %d-%d, %d frames each (%d hardwired OS segments)", mem_elwro_first_module, mem_elwro_last_module, MEM_ELWRO_FRAMES, os_pages);
+	LOG(L_MEM, "Elwro modules: %d-%d, %d frames each, %d hardwired for OS pages", mem_elwro_first_module, mem_elwro_last_module, MEM_ELWRO_FRAMES, os_pages);
 
-	for (module=mem_elwro_first_module ; module<=mem_elwro_last_module ; module++) {
-		for (frame=0 ; frame<MEM_ELWRO_FRAMES ; frame++) {
+	for (int module=mem_elwro_first_module ; module<=mem_elwro_last_module ; module++) {
+		for (int frame=0 ; frame<MEM_ELWRO_FRAMES ; frame++) {
 			mem_elwro[module][frame] = (uint16_t *) calloc(sizeof(uint16_t), MEM_FRAME_SIZE);
 			if (!mem_elwro[module][frame]) {
 				return LOGERR("Memory allocation failed for Elwro map.");
@@ -65,7 +64,7 @@ int mem_elwro_init(int module_count, int os_pages)
 		}
 	}
 
-	mem_elwro_os_hardwire();
+	mem_elwro_reset();
 
 	return E_OK;
 }
@@ -73,10 +72,8 @@ int mem_elwro_init(int module_count, int os_pages)
 // -----------------------------------------------------------------------
 void mem_elwro_shutdown()
 {
-	int module, frame;
-
-	for (module=mem_elwro_first_module ; module<=mem_elwro_last_module ; module++) {
-		for (frame=0 ; frame<MEM_ELWRO_FRAMES ; frame++) {
+	for (int module=mem_elwro_first_module ; module<=mem_elwro_last_module ; module++) {
+		for (int frame=0 ; frame<MEM_ELWRO_FRAMES ; frame++) {
 			free(mem_elwro[module][frame]);
 		}
 	}
@@ -91,27 +88,33 @@ void mem_elwro_reset()
 		}
 	}
 
-	mem_elwro_os_hardwire();
+	for (int frame=0 ; frame<mem_elwro_os_frames ; frame++) {
+		mem_elwro_ral[0][frame] = RAL(0, frame);
+	}
 }
 
 // -----------------------------------------------------------------------
-uint16_t * mem_elwro_get_frame_ptr(int segment, int page)
+bool mem_elwro_get_seg_ptrs(int segment, int page, uint16_t **rd_frame_ptr, uint16_t **wr_frame_ptr)
 {
 	// find lowest frame that has segment:page stored in its RAL
 	for (int module=mem_elwro_first_module ; module<=mem_elwro_last_module ; module++) {
 		for (int frame=0 ; frame<MEM_ELWRO_FRAMES ; frame++) {
 			if (mem_elwro_ral[module][frame] == RAL(segment, page)) {
-				return mem_elwro[module][frame];
+				*rd_frame_ptr = mem_elwro[module][frame];
+				*wr_frame_ptr = mem_elwro[module][frame];
+				return true;
 			}
 		}
 	}
 
-	return NULL;
+	return false;
 }
 
 // -----------------------------------------------------------------------
-int mem_elwro_cmd(int segment, int page, int module, int frame)
+int mem_elwro_cmd(int segment, int page, int module, int frame, int flags)
 {
+	frame &= 0b111; // Elwro uses 3-bit frame address
+
 	if (!mem_elwro[module][frame]) {
 		LOG(L_MEM, "Elwro: ignored mapping to a nonexistent frame: logical [%d, %d] -> physical [%d, %d]", segment, page, module, frame);
 		return IO_NO;
@@ -128,6 +131,5 @@ int mem_elwro_cmd(int segment, int page, int module, int frame)
 
 	return IO_OK;
 }
-
 
 // vim: tabstop=4 shiftwidth=4 autoindent
