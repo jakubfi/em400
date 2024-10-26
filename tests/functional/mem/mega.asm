@@ -1,19 +1,17 @@
 ; OPTS -c configs/mega_max.ini
 
 ; does MEGA allocation work?
-; can we read from/write to allocated segments?
+; can we read from/write to allocated pages?
 
 	.include cpu.inc
 	.include io.inc
 	.include mega.inc
 
-	.const	magic 0x2323
-	.const	nb 0
-	.const	ab_s 1\3
-	.const	ab_last 15\3
-	.const	mp 0
-	.const	seg_s 1\10
-	.const	addr 100
+	.const	SEGMENT 0\MEM_SEGMENT
+	.const	PAGE_S 1\MEM_PAGE
+	.const	PAGE_LAST 15\MEM_PAGE
+	.const	MODULE 0\MEM_MODULE
+	.const	FRAME 1\MEM_FRAME
 
 	uj	start
 
@@ -26,22 +24,25 @@ err:	hlt	040
 	.org	OS_START
 
 start:	lwt	r7, 0
+	; initialize interrupt system
 	lw	r1, stack
 	rw	r1, STACKP
 	lwt	r1, nomem_proc
 	rw	r1, INTV_NOMEM
+	im	mask
 
-	lw	r1, ab_s + nb
-	lw	r2, seg_s + mp
-
-next:	cw	r1, ab_last
+	; allocate all pages
+	lw	r1, PAGE_S + SEGMENT
+	lw	r2, FRAME + MODULE
+next:	cw	r1, PAGE_LAST
 	jes	fin
-	aw	r1, ab_s
-	aw	r2, seg_s
+	aw	r1, PAGE_S
+	aw	r2, FRAME
 	ou	r1, r2 + MEGA_ALLOC | MEGA_EPROM_HIDE | MEGA_ALLOC_DONE | MEM_CFG
 	.word	err, err, next, err
 
-fin:	im	mask
+fin:	; write a word to each allocated page.
+	; this should work with no "nomem" interrupt raised
 	lwt	r1, 0
 loop:	aw	r1, 0x1000
 	rw	r1, r1

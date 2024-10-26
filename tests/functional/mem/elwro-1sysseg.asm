@@ -1,6 +1,6 @@
-; OPTS -c configs/mega_max.ini
+; OPTS -c configs/one-os-seg.ini
 
-; does PROM allocate only last segment of block 0?
+; does Elwro allocate 1 OS segments?
 
 	.include cpu.inc
 
@@ -13,7 +13,6 @@ nomem_proc:
 	lip
 
 	.org	OS_START
-
 start:
 	lwt	r7, 0
 
@@ -23,7 +22,7 @@ start:
 	rw	r1, INTV_NOMEM
 	im	mask
 
-	; only 3 fetches should succeed (2 for elwro OS segments and 1 for mega prom)
+	; only 2 fetches should succeed
 	tw	r1, 0x0000
 	tw	r1, 0x1000
 	tw	r1, 0x2000
@@ -44,5 +43,5 @@ start:
 	hlt	077
 stack:
 
-; XPCT r7 : 13
+; XPCT r7 : 15
 ; XPCT ir : 0xec3f

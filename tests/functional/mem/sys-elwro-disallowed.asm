@@ -21,13 +21,13 @@ start:	lwt	r7, 0
 	rw	r1, INTV_NOMEM
 	im	mask
 
-	lw	r1, 2\3 | 2\15
-	ou	r1, 0\10 | 0\14 | MEM_CFG
+	lw	r1, 2\MEM_PAGE | 2\MEM_SEGMENT
+	ou	r1, 0\MEM_FRAME | 0\MEM_MODULE | MEM_CFG
 	.word	next, err0, err0, err0
 err0:	hlt	042
 
-next:	lw	r1, 2\3 | 2\15
-	ou	r1, 1\10 | 0\14 | MEM_CFG
+next:	lw	r1, 2\MEM_PAGE | 2\MEM_SEGMENT
+	ou	r1, 1\MEM_FRAME | 0\MEM_MODULE | MEM_CFG
 	.word	ok, err1, err1, err1
 
 err1:	hlt	043

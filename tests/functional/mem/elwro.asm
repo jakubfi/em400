@@ -4,10 +4,8 @@
 	.include cpu.inc
 	.include io.inc
 
-	.const	magic 0x2323
-	.const	addr 100
-	.const	ab_s 1\3
-	.const	seg_s 1\10
+	.const	ab_s 1\MEM_PAGE
+	.const	seg_s 1\MEM_FRAME
 
 	uj	start
 
@@ -28,7 +26,7 @@ start:	lwt	r7, 0
 	lw	r1, ab_s
 	lw	r2, seg_s
 
-next:	cw	r1, 7\3
+next:	cw	r1, 7\MEM_PAGE
 	jes	fin
 	aw	r1, ab_s
 	aw	r2, seg_s

@@ -1,4 +1,4 @@
-; Is data in a frame preserved between Elwro allocations?
+; Elwro frame address is 3-bit
 
 	.include cpu.inc
 	.include io.inc
@@ -8,7 +8,8 @@
 	.const	PAGE1 2\MEM_PAGE
 	.const	PAGE2 3\3
 	.const	MODULE 0\MEM_MODULE
-	.const	FRAME 2\MEM_FRAME
+	.const	FRAME3BIT 0b0010\MEM_FRAME
+	.const	FRAME4BIT 0b1010\MEM_FRAME ; both should be the same for Elwro
 	.const	addr 100
 
 	uj	start
@@ -34,7 +35,7 @@ start:
 
 	; configure module:frame as segment:page1
 	lw	r1, SEGMENT | PAGE1
-	ou	r1, MODULE | FRAME | MEM_CFG
+	ou	r1, MODULE | FRAME3BIT | MEM_CFG
 	.word	err, err, ok, err
 
 ok:
@@ -43,9 +44,10 @@ ok:
 	lw	r1, MAGIC
 	pw	r1, PAGE1 + addr
 
-	; configure module:frame as segment:page2 (different location for the same frame)
+	; configure module:frame as segment:page2
+	; but this time frame number is 4-bit, which should be ignored
 	lw	r1, SEGMENT | PAGE2
-	ou	r1, MODULE | FRAME | MEM_CFG
+	ou	r1, MODULE | FRAME4BIT | MEM_CFG
 	.word	err, err, ok2, err
 
 ok2:

@@ -6,12 +6,6 @@
 	.include io.inc
 	.include mega.inc
 
-	.const	magic 0x2323
-	.const	nb 0
-	.const	ab 15\3
-	.const	mp 0\14
-	.const	seg 2\10
-
 	uj	start
 
 mask:	.word   IMASK_NOMEM | IMASK_PARITY
@@ -28,7 +22,7 @@ start:
 	im	mask
 
 test_ro:
-	; write onto MEGA PROM should be discarded
+	; write onto MEGA PROM should work, but get discarded
 	lw	r1, [0xf000]
 	lw	r2, r1+0xa5a5
 	rw	r2, 0xf000

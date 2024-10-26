@@ -1,16 +1,18 @@
 ; OPTS -c configs/mega_max.ini
 
 ; does MEGA deallocation work?
+; does reallocating the same segment preserves the data?
+; does reallocation without MEGA_ALLOC_DONE work?
 
 	.include cpu.inc
 	.include io.inc
 	.include mega.inc
 
-	.const	magic 0x2323
-	.const	nb 1\15
-	.const	ab 2\3
-	.const	mp 0\14
-	.const	seg 2\10
+	.const	MAGIC 0xa5a5
+	.const	SEGMENT 1\MEM_SEGMENT
+	.const	PAGE 2\MEM_PAGE
+	.const	MODULE 0\MEM_MODULE
+	.const	FRAME 2\MEM_FRAME
 
 	uj	start
 
@@ -24,36 +26,47 @@ err:	hlt	040
 
 	.org	OS_START
 
-start:	lwt	r7, 0
+start:
+	; initialize interrupts
+	lwt	r7, 0
 	lw	r1, stack
 	rw	r1, STACKP
 	lw	r1, nomem_proc
 	rw	r1, INTV_NOMEM
+	im	mask
 
-	lw	r1, ab | nb
-	ou	r1, mp | seg | MEGA_ALLOC | MEGA_EPROM_HIDE | MEGA_ALLOC_DONE | MEM_CFG
+	; allocate one page, finish mega allocation
+	lw	r1, PAGE | SEGMENT
+	ou	r1, MODULE | FRAME | MEGA_ALLOC | MEGA_ALLOC_DONE | MEM_CFG
 	.word	err, err, ok, err
 
-ok:	mb	mask
-	im	mask
-	lw	r1, magic
-	pw	r1, ab
+ok:	; store MAGIC in that page
+	mb	mask
+	lw	r1, MAGIC
+	pw	r1, PAGE
 
-	lw	r1, ab | nb
+	; deallocate the page
+	lw	r1, PAGE | SEGMENT
 	ou	r1, MEGA_FREE | MEM_CFG
 	.word	err, err, ok2, err
 
-ok2:	tw	r1, ab
+ok2:	; try reading the page (this should fail with "nomem" interrupt)
+	tw	r1, PAGE
 
-	lw	r1, ab | nb
-	ou	r1, mp | seg | MEGA_ALLOC | MEM_CFG
+	; allocate the page again (no MEGA_ALLOC_DONE this time)
+	lw	r1, PAGE | SEGMENT
+	ou	r1, MODULE | FRAME | MEGA_ALLOC | MEM_CFG
 	.word	err, err, ok3, err
 
-ok3:	tw	r2, ab
-
+ok3:	; read should succeed this time, MAGIC should be read
+	tw	r2, PAGE
+	cw	r2, MAGIC
+	jes	fin
+	hlt	041
+fin:
 	hlt	077
 stack:
 
-; XPCT r2 : 0x2323
+; XPCT r2 : 0xa5a5
 ; XPCT r7 : 1
 ; XPCT ir : 0xec3f

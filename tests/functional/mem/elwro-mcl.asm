@@ -5,17 +5,19 @@
 	.include cpu.inc
 	.include io.inc
 
-	.equ segment 1
-	.equ page 0
-	.equ module 1
-	.equ frame 3
+	.equ SEGMENT 1
+	.equ PAGE 0
+	.equ MODULE 1
+	.equ FRAME 3
 
 	uj	start
 
-ba:	.word	0b0100000000000000 | segment\15
+ba:	.word	0b0100000000000000 | SEGMENT\15
 
 nomem_proc:
 	hlt	045
+nomem_proc2:
+	hlt	077
 
 	.org	OS_START
 
@@ -24,33 +26,28 @@ start:	lw	r1, stack
 	lwt	r1, nomem_proc
 	rw	r1, INTV_NOMEM
 
-	lw	r1, page\3 | segment\15
-	lw	r2, frame\10 | module\14 | MEM_CFG
+	lw	r1, PAGE\MEM_PAGE | SEGMENT\MEM_SEGMENT
+	lw	r2, FRAME\MEM_FRAME | MODULE\MEM_MODULE | MEM_CFG
 	ou	r1, r2
 	.word	err, err, ok, err
 err:	hlt	044
 
 ok:	mb	ba
 	im	ba
-	lwt	r6, 0
-	lwt	r7, 9
-
 	; this should succeed, segment is configured
 	tw	r1, 1
-	lwt	r6, 10
 
 	mcl
+	lwt	r1, nomem_proc2
+	rw	r1, INTV_NOMEM
 	mb	ba
 	im	ba
 
-	; this should fail and stop CPU with an alarm...
+	; this should generate interrupt
 	tw	r1, 1
-	; ...right here
-	lwt	r7, 10
 
 	hlt	046
 
 stack:
 
-; XPCT r6 : 10
-; XPCT r7 : 9
+; XPCT ir : 0xec3f

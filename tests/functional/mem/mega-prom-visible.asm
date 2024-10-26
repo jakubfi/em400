@@ -6,12 +6,6 @@
 	.include io.inc
 	.include mega.inc
 
-	.const	magic 0x2323
-	.const	nb 0
-	.const	ab 15\3
-	.const	mp 0\14
-	.const	seg 2\10
-
 	uj	start
 
 mask:	.word   IMASK_NOMEM | IMASK_PARITY
