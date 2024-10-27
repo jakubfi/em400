@@ -94,6 +94,8 @@ int mem_mega_init(int module_count, const char *prom_image)
 // -----------------------------------------------------------------------
 void mem_mega_shutdown()
 {
+	LOG(L_MEM, "Shutting down MEGA memory");
+
 	for (int module=mem_mega_first_module ; module<=mem_mega_last_module ; module++) {
 		for (int frame=0 ; frame<MEM_MEGA_FRAMES ; frame++) {
 			free(mem_mega[module][frame]);
@@ -113,6 +115,8 @@ void mem_mega_reset(bool long_reset)
 	//    are reset only on sufficiently long (~10ms?) CLM signal. MCL generates only ~15us signal,
 	//    so that means in practice memory allocation and prom flags are only reset with manual CLEAR
 	//    from the control panel (human toggling a switch should generate signal >10ms).
+
+	LOG(L_MEM, "MEGA reset: %s", long_reset ? "honored" : "ignored");
 
 	if (long_reset) {
 		mem_mega_alloc_done = false;

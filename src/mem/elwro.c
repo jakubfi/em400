@@ -72,6 +72,8 @@ int mem_elwro_init(int module_count, int os_pages)
 // -----------------------------------------------------------------------
 void mem_elwro_shutdown()
 {
+	LOG(L_MEM, "Shutting down Elwro memory");
+
 	for (int module=mem_elwro_first_module ; module<=mem_elwro_last_module ; module++) {
 		for (int frame=0 ; frame<MEM_ELWRO_FRAMES ; frame++) {
 			free(mem_elwro[module][frame]);
@@ -82,6 +84,8 @@ void mem_elwro_shutdown()
 // -----------------------------------------------------------------------
 void mem_elwro_reset()
 {
+	LOG(L_MEM, "Elwro memomry modules reset");
+
 	for (int module=mem_elwro_first_module ; module<=mem_elwro_last_module ; module++) {
 		for (int frame=0 ; frame<MEM_ELWRO_FRAMES ; frame++) {
 			mem_elwro_ral[module][frame] = RAL(0, 0);
@@ -116,16 +120,16 @@ int mem_elwro_cmd(int segment, int page, int module, int frame, int flags)
 	frame &= 0b111; // Elwro uses 3-bit frame address
 
 	if (!mem_elwro[module][frame]) {
-		LOG(L_MEM, "Elwro: ignored mapping to a nonexistent frame: logical [%d, %d] -> physical [%d, %d]", segment, page, module, frame);
+		LOG(L_MEM, "Elwro: ignored mapping [%d, %d] to a nonexistent frame [%d, %d]", segment, page, module, frame);
 		return IO_NO;
 	}
 
 	if ((module == 0) && (frame < mem_elwro_os_frames)) {
-		LOG(L_MEM, "Elwro: ignored mapping to a hardwired frame: logical [%d, %d] -> physical [%d, %2d]", segment, page, module, frame);
+		LOG(L_MEM, "Elwro: ignored mapping [%d, %d] to a hardwired frame [%d, %d]", segment, page, module, frame);
 		return IO_NO;
 	}
 
-	LOG(L_MEM, "Elwro: adding map: logical [%d, %d] -> physical [%d, %d]", segment, page, module, frame);
+	LOG(L_MEM, "Elwro: adding mapping: logical [%d, %d] -> physical [%d, %d]", segment, page, module, frame);
 
 	mem_elwro_ral[module][frame] = RAL(segment, page);
 

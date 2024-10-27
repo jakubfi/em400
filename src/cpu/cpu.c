@@ -273,9 +273,8 @@ int cpu_init(em400_cfg *cfg)
 
 	cpu_mod_off();
 
-	LOG(L_CPU, "CPU initialized. AWP: %s, KB=0x%04x, modifications: %s, user I/O: %s, stop on nomem: %s",
+	LOG(L_CPU, "CPU initialized. AWP: %s, modifications: %s, user I/O: %s, stop on nomem: %s",
 		awp_enabled ? "enabled" : "disabled",
-		kb,
 		cpu_mod_present ? "present" : "absent",
 		cpu_user_io_illegal ? "illegal" : "legal",
 		nomem_stop ? "true" : "false");
