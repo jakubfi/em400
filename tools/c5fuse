@@ -169,7 +169,10 @@ if len(sys.argv) < 3:
 
 o = sys.argv[1].split(':')
 image = o[0]
-offset = 26
+if image.endswith(".e4i"):
+    offset = 26
+else:
+    offset = 0
 label_offset = 0
 
 try:
