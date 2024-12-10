@@ -21,13 +21,16 @@ mask_ch:.word	IMASK_ALL_CH
 io_iv:	md	[STACKP]
 	lw	r1, [-1]
 	cw	r1, 0xffff	; is this the reset interrupt?
-	jn	wrongspec
+	jn	.wrongspec
 	awt	r7, 1
+	cwt	r7, 16
+	jes	.done
 	lip
-wrongspec:
+.done:	hlt	077
+.wrongspec:
 	im	mask_0
 	hlt	040
-	ujs	wrongspec
+	ujs	.wrongspec
 
 ; ------------------------------------------------
 ; r7: current interrupt count
@@ -39,24 +42,21 @@ start:
 ; enable reset interrupt on all iotester channels
 
 	lwt	r1, 0
-chloop:
+.chloop:
 	lj	iotester_setchan
 	lj	iotester_eri
 	awt	r1, 1
 	cwt	r1, 16
-	jl	chloop
+	jl	.chloop
 
 	mcl
 	im	mask_ch		; enable all channel interrupts
 
 ; wait for 16 interrupts from all iotester channels
 
-forever:
+.forever:
 	hlt
-	cw	r7, 16
-	jl	forever
-	im	mask_0
-	hlt	077
+	ujs	.forever
 
 stack:
 
