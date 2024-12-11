@@ -87,7 +87,9 @@ detach:
 	; delay next detach
 
 	lw	r1, 0xffff
-.loop:	drb	r1, .loop
+.loop1:	drb	r1, .loop1
+	lw	r1, 0xffff
+.loop2:	drb	r1, .loop2
 
 	; next detach should be in IDLE state and end with OK
 
