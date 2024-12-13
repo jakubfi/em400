@@ -101,8 +101,9 @@ class EM400:
             s = self.state()
             if s == "WAIT":
                 ir = self.reg("ir")
-                if ir & 0b1111110111000000 == 0b1110110000000000 and ir & 0b0000000000111111 >= 0o40:
-                    break
+                if (ir & 0b1111110111000000) == 0b1110110000000000 and (ir & 0b0000000000111111) >= 0o40:
+                    if self.ips() == 0:
+                        break
             elif s == "STOP":
                 break
             if self.polldelay:
@@ -126,6 +127,7 @@ class EM400:
     # --------------------------------------------------------------------
     def start(self):
         self.cmd("START")
+        self.ips()
 
     # --------------------------------------------------------------------
     def stop(self):
