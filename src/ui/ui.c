@@ -45,8 +45,6 @@ struct ui_drv* uis[] = {
 	NULL
 };
 
-pthread_t ui_th;
-
 // -----------------------------------------------------------------------
 void ui_print_uis(FILE *fd)
 {
