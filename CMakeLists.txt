@@ -172,8 +172,8 @@ set(SOURCES_EM400
 	src/mem/elwro.c
 	src/mem/elwro.h
 
-	src/fpga/iobus.c
-	src/fpga/iobus.h
+	#	src/fpga/iobus.c
+	#	src/fpga/iobus.h
 
 	src/io/defs.h
 	src/io/io.c

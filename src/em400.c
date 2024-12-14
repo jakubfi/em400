@@ -31,7 +31,6 @@
 #include "cpu/interrupts.h"
 #include "cpu/clock.h"
 #include "io/io.h"
-#include "fpga/iobus.h"
 
 #include "em400.h"
 #include "cfg.h"
@@ -46,10 +45,8 @@ struct ui *ui;
 int em400_init(em400_cfg *cfg)
 {
 	if (log_init(cfg) != E_OK) return LOGERR("Failed to initialize logging.");
-	if (iob_init(cfg) != E_OK) return LOGERR("Failed to set up FPGA I/O bus.");
 	if (mem_init(cfg) != E_OK) return LOGERR("Failed to initialize memory.");
 	if (cpu_init(cfg) != E_OK) return LOGERR("Failed to initialize CPU.");
-	if (cp_init(cfg) != E_OK) return LOGERR("Failed to initialize control panel.");
 	if (clock_init(cfg) != E_OK) return LOGERR("Failed to initialize clock.");
 	if (io_init(cfg) != E_OK) return LOGERR("Failed to initialize I/O.");
 	if (ectl_init() != E_OK) return LOGERR("Failed to initialize ECTL interface.");
@@ -65,7 +62,6 @@ void em400_shutdown()
 	ectl_shutdown();
 	io_shutdown();
 	clock_shutdown();
-	cp_shutdown();
 	cpu_shutdown();
 	mem_shutdown();
 	log_shutdown();
@@ -107,14 +103,13 @@ void em400_usage()
 		"   -p program       : Load program image into OS memory at address 0\n"
 		"   -l cmp,cmp,...   : Enable logging for specified components. Available components:\n"
 		"                      reg, mem, cpu, op, int, io, mx, px, cchar, cmem, term\n"
-		"                      wnch, flop, pnch, pnrd, tape, crk5, em4h, ectl, fpga, all\n"
+		"                      wnch, flop, pnch, pnrd, tape, crk5, em4h, ectl, all\n"
 		"   -L               : Disable logging\n"
 		"   -u ui            : User interface to use. Available UIs (first is the default):"
 	);
 	ui_print_uis(stdout);
 	fprintf(stdout, "\n");
 	fprintf(stdout,
-		"   -F               : Use FPGA implementation of the CPU and external memory (experimental)\n"
 		"   -O sec:key=value : Override configuration entry \"key\" in section [sec] with a specific value\n"
 	);
 }
@@ -132,7 +127,7 @@ void em400_mkconfdir()
 	}
 }
 
-const char em400_cmdline_opts[] = "hc:p:l:Lu:FO:";
+const char em400_cmdline_opts[] = "hc:p:l:Lu:O:";
 
 // -----------------------------------------------------------------------
 int em400_cmdline_1(int argc, char **argv, int *print_help, char **config)
@@ -151,7 +146,6 @@ int em400_cmdline_1(int argc, char **argv, int *print_help, char **config)
             case 'L':
             case 'l':
             case 'u':
-            case 'F':
 			case 'O':
 				break;
             default:
@@ -186,9 +180,6 @@ int em400_cmdline_2(em400_cfg *cfg, int argc, char **argv)
                 break;
             case 'u':
                 cfg_set(cfg, "ui:interface", optarg);
-                break;
-            case 'F':
-                cfg_set(cfg, "cpu:fpga", "true");
                 break;
 			case 'O':
 				colon = strchr(optarg, ':');
@@ -266,11 +257,7 @@ int main(int argc, char** argv)
 		goto done;
 	}
 
-	if (cfg_getbool(cfg, "cpu:fpga", CFG_DEFAULT_CPU_FPGA)) {
-		iob_loop();
-	} else {
-		cpu_loop();
-	}
+	cpu_loop();
 
 	return_code = 0;
 

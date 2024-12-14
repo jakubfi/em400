@@ -1,11 +1,6 @@
 # Note: values in the template are the default ones
 
 [cpu]
-# Choose CPU and memory backend:
-# "false" - use emulated CPU and memory
-# "true" - use FPGA implementation for CPU and external memory
-fpga = false
-
 # Control CPU emulation speed:
 # "false" - run as fast as possible
 # "true" - try to emulate real hardware CPU and memory speeds
@@ -99,13 +94,6 @@ volume = 8
 # In fact, disabling it is considered a criminal offence.
 filter = true
 
-[fpga]
-# Device to use for communication with the FPGA backend.
-device = /dev/ttyUSB0
-
-# FPGA link speed (baud).
-speed = 1000000
-
 [log]
 # Enable or disable logging.
 enabled = false
@@ -125,7 +113,6 @@ file = em400.log
 #   crk5 - CROOK-5
 #   em4h - emulator, general
 #   ectl - emulator, remote control
-#   fpga - emulation-fpga I/O bridge
 #   all - special "component" to enable or disable all components
 #
 # Note that logging cpu cycle information slows down the emulation considerably (>1000 times)

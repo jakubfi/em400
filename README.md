@@ -81,6 +81,5 @@ Where *options* are:
 * **-l component,component,...** - Enable logging for specified components. Available components: reg, mem, cpu, op, int, io, mx, px, cchar, cmem, term, wnch, flop, pnch, pnrd, crk5, em4h, all.
 * **-L** -  Disable logging
 * **-u ui** - User interface to use. Available UIs: curses (default), cmd (minimal, for remote control)
-* **-F** - Use FPGA implementation of the CPU and external memory (experimental)
 * **-O sec:key=value**  : Override configuration entry "key" in section [sec] with a specific value
 

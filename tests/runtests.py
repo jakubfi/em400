@@ -188,7 +188,7 @@ class TestResult:
 class TestBed:
 
     # --------------------------------------------------------------------
-    def __init__(self, emas, binary, blfile, benchmark_duration=0.5, failcmd=None, log="", fpga=0, options=[]):
+    def __init__(self, emas, binary, blfile, benchmark_duration=0.5, failcmd=None, log="", options=[]):
         self.emas = emas
         self.binary = binary
         self.failcmd = failcmd
@@ -198,7 +198,6 @@ class TestBed:
         self.default_config = "configs/minimal.ini"
         self.bl = self.baseline(blfile)
         self.log = log
-        self.fpga = fpga
         self.options = options
 
     # --------------------------------------------------------------------
@@ -210,8 +209,6 @@ class TestBed:
     def __runemu(self, add_opts):
         if self.log:
             add_opts += ["-l", self.log]
-        if self.fpga:
-            add_opts += ["-F"]
         if self.options:
             for o in self.options:
                 add_opts += ["-O", o]
@@ -390,7 +387,6 @@ parser.add_argument("-b", "--baseline", help="baseline test results")
 parser.add_argument("-e", "--emulator", help="emulator binary to run", default="../build/em400")
 parser.add_argument("-f", "--failcmd", help="command to run when test fails", action='append')
 parser.add_argument("-l", "--log", help="configure em400 logging", default="")
-parser.add_argument("-F", "--fpga", help="use FPGA CPU backend in em400", action="store_const", const=1, default=0)
 parser.add_argument("-O", "--option", help="add the following option when running em400", action='append')
 parser.add_argument("-v", "--verbose", help="be verbose", action="store_const", const=1, default=0)
 parser.add_argument('test', nargs='*', help='Test to run (asm source, directory or test set). Default set is run when no tests are provided.')
@@ -411,7 +407,7 @@ tests.sort()
 # run tests
 total = 0
 failed = 0
-tb = TestBed("emas", args.emulator, args.baseline, benchmark_duration=0.5, failcmd=args.failcmd, log=args.log, fpga=args.fpga, options=args.option)
+tb = TestBed("emas", args.emulator, args.baseline, benchmark_duration=0.5, failcmd=args.failcmd, log=args.log, options=args.option)
 for t in tests:
     if not DEBUG:
         if sys.stdout.isatty():

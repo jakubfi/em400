@@ -22,7 +22,6 @@
 #include "cpu/cpu.h"
 #include "cpu/interrupts.h"
 #include "io/chan.h"
-#include "fpga/iobus.h"
 
 #include "cfg.h"
 #include "utils/utils.h"
@@ -59,13 +58,10 @@
 
 static struct chan *io_chan[IO_MAX_CHAN];
 static const char *io_result_names[] = { "NO DEVICE", "ENGAGED", "OK", "PARITY ERROR" };
-static int fpga;
 
 // -----------------------------------------------------------------------
 int io_init(em400_cfg *cfg)
 {
-	fpga = cfg_getbool(cfg, "cpu:fpga", CFG_DEFAULT_CPU_FPGA);
-
 	for (int i=0 ; i<16 ; i++) {
 		const char *ch_name = cfg_fgetstr(cfg, "io:channel_%i", i);
 		if (ch_name) {
@@ -155,61 +151,37 @@ int io_dispatch(int dir, uint16_t n, uint16_t *r)
 // -----------------------------------------------------------------------
 void io_int_set_pa()
 {
-	if (fpga) {
-		iob_pa_send();
-	} else {
-		int_set(INT_IFACE_POWER);
-	}
+	int_set(INT_IFACE_POWER);
 }
 
 // -----------------------------------------------------------------------
 void io_int_set(int x)
 {
-	if (fpga) {
-		iob_int_send(x & 0b1111);
-	} else {
-		int_set((x & 0b1111) + 12);
-	}
+	int_set((x & 0b1111) + 12);
 }
 
 // -----------------------------------------------------------------------
 bool io_mem_read_1(int nb, uint16_t addr, uint16_t *data)
 {
-	if (fpga) {
-		return iob_mem_read_1(nb, addr, data);
-	} else {
-		return mem_read_1(nb, addr, data);
-	}
+	return mem_read_1(nb, addr, data);
 }
 
 // -----------------------------------------------------------------------
 bool io_mem_write_1(int nb, uint16_t addr, uint16_t data)
 {
-	if (fpga) {
-		return iob_mem_write_1(nb, addr, data);
-	} else {
-		return mem_write_1(nb, addr, data);
-	}
+	return mem_write_1(nb, addr, data);
 }
 
 // -----------------------------------------------------------------------
 bool io_mem_read_n(int nb, uint16_t saddr, uint16_t *dest, int count)
 {
-	if (fpga) {
-		return iob_mem_read_n(nb, saddr, dest, count);
-	} else {
-		return mem_read_n(nb, saddr, dest, count);
-	}
+	return mem_read_n(nb, saddr, dest, count);
 }
 
 // -----------------------------------------------------------------------
 bool io_mem_write_n(int nb, uint16_t saddr, uint16_t *src, int count)
 {
-	if (fpga) {
-		return iob_mem_read_n(nb, saddr, src, count);
-	} else {
-		return mem_write_n(nb, saddr, src, count);
-	}
+	return mem_write_n(nb, saddr, src, count);
 }
 
 // vim: tabstop=4 shiftwidth=4 autoindent

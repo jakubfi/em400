@@ -23,9 +23,6 @@
 
 #include "cfg.h"
 
-int cp_init(em400_cfg *cfg);
-void cp_shutdown();
-
 // Standard control panel interface
 int cp_bus_w_get();
 void cp_kb_set(uint16_t val);
