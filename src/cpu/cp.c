@@ -227,8 +227,6 @@ int cp_qnb_get()
 	return cp_q_get() * cp_nb_get();
 }
 
-// TODO: add new _LOAD, ... states and
-// move load/store/fetch execution to cpu loop, like bin?
 // -----------------------------------------------------------------------
 void cp_load()
 {
