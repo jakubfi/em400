@@ -47,6 +47,7 @@ const char *state_names[] = {
 	"LOAD",
 	"STORE",
 	"FETCH",
+	"ANY",
 	"???"
 };
 
@@ -187,7 +188,6 @@ unsigned ectl_cpu_state_get()
 {
 	LOG(L_ECTL, "ECTL state get");
 	unsigned state = cp_state();
-	if (state > ECTL_STATE_UNKNOWN) state = ECTL_STATE_UNKNOWN;
 	LOG(L_ECTL, "ECTL state get: %s", state_names[state]);
 	return state;
 }

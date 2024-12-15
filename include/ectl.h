@@ -34,7 +34,6 @@ enum ectl_states {
 };
 
 enum ectl_cpu_states {
-	ECTL_STATE_ANY = -1,
 	ECTL_STATE_RUN = 0,
 	ECTL_STATE_STOP,
 	ECTL_STATE_WAIT,
@@ -46,6 +45,7 @@ enum ectl_cpu_states {
 	ECTL_STATE_STORE,
 	ECTL_STATE_FETCH,
 // NOTE: update state names in ectl_cpu_state_get() when adding new states
+	ECTL_STATE_ANY,
 	ECTL_STATE_UNKNOWN,
 };
 

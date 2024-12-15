@@ -98,8 +98,8 @@ void cpu_ctx_restore(bool barnb);
 void cpu_loop();
 
 void cpu_wake_up();
-int cpu_state_change(int to, int from);
-int cpu_state_get();
+int cpu_state_change(unsigned int to, unsigned int from);
+unsigned cpu_state_get();
 
 void cpu_reg_select(int reg);
 void cpu_kb_set(uint16_t val);

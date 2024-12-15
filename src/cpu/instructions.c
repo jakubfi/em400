@@ -947,7 +947,7 @@ void op_73_hlt()
 	log_cpu(L_OP, "HALT 0%02o (alarm: %i)", ac, r[6] & 0xff);
 // WX:
 	step_point();
-	cpu_state_change(ECTL_STATE_WAIT, -1);
+	cpu_state_change(ECTL_STATE_WAIT, ECTL_STATE_ANY);
 }
 
 // -----------------------------------------------------------------------

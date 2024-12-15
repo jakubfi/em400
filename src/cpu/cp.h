@@ -53,7 +53,7 @@ void cp_off(); // TODO: switch on/off/lock?
 
 
 // Emulator extensions
-int cp_state();
+unsigned int cp_state();
 int cp_reg_get(unsigned id);
 int cp_reg_set(unsigned id, uint16_t v);
 bool cp_mem_read_n(unsigned nb, uint16_t addr, uint16_t *data, unsigned count);

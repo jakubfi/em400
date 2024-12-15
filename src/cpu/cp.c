@@ -99,7 +99,7 @@ bool cp_mem_write_n(unsigned nb, uint16_t addr, uint16_t *data, unsigned count)
 void cp_start(bool state)
 {
 	if (state) cpu_state_change(ECTL_STATE_RUN, ECTL_STATE_STOP);
-	else cpu_state_change(ECTL_STATE_STOP, -1);
+	else cpu_state_change(ECTL_STATE_STOP, ECTL_STATE_ANY);
 }
 
 // -----------------------------------------------------------------------
@@ -111,7 +111,7 @@ void cp_cycle()
 // -----------------------------------------------------------------------
 void cp_off()
 {
-	cpu_state_change(ECTL_STATE_OFF, -1);
+	cpu_state_change(ECTL_STATE_OFF, ECTL_STATE_ANY);
 }
 
 // -----------------------------------------------------------------------
@@ -129,7 +129,7 @@ int cp_clock_get()
 // -----------------------------------------------------------------------
 void cp_clear()
 {
-	cpu_state_change(ECTL_STATE_CLO, -1);
+	cpu_state_change(ECTL_STATE_CLO, ECTL_STATE_ANY);
 }
 
 // -----------------------------------------------------------------------
@@ -145,7 +145,7 @@ void cp_oprq()
 }
 
 // -----------------------------------------------------------------------
-int cp_state()
+unsigned cp_state()
 {
 	return cpu_state_get();
 }

@@ -49,7 +49,7 @@
 #include "ectl.h" // for global constants
 #include "cfg.h"
 
-static int cpu_state = ECTL_STATE_OFF;
+static unsigned cpu_state = ECTL_STATE_OFF;
 
 uint16_t r[8];
 uint16_t ic, kb, ir, ac, ar, at;
@@ -177,7 +177,7 @@ static int cpu_do_wait()
 		cpu_reg_selected_to_w();
 		pthread_cond_wait(&cpu_wake_cond, &cpu_wake_mutex);
 	}
-	int res = cpu_state;
+	unsigned res = cpu_state;
 	pthread_mutex_unlock(&cpu_wake_mutex);
 
 	return res;
@@ -190,7 +190,7 @@ void cpu_wake_up()
 }
 
 // -----------------------------------------------------------------------
-int cpu_state_change(int to, int from)
+int cpu_state_change(unsigned to, unsigned from)
 {
 	int res = 1;
 
@@ -206,7 +206,7 @@ int cpu_state_change(int to, int from)
 }
 
 // -----------------------------------------------------------------------
-int cpu_state_get()
+unsigned cpu_state_get()
 {
 	return atom_load_acquire(&cpu_state);
 }
