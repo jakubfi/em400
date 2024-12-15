@@ -211,12 +211,20 @@ int cpu_state_change(unsigned to, unsigned from)
 	int res = 1;
 
 	pthread_mutex_lock(&cpu_wake_mutex);
-	if ((from == ECTL_STATE_ANY) || (cpu_state == from)) {
+	unsigned last_state = cpu_state;
+	if ((from == ECTL_STATE_ANY) || (last_state == from)) {
 		cpu_state = to;
 		pthread_cond_signal(&cpu_wake_cond);
 		res = 0;
 	}
 	pthread_mutex_unlock(&cpu_wake_mutex);
+
+	LOG(L_CPU, "CPU state change (current: %s): %s -> %s%s",
+		state_names[last_state],
+		state_names[from],
+		state_names[to],
+		res ? " (ineffective)" : ""
+	);
 
 	return res;
 }

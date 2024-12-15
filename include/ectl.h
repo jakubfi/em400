@@ -49,6 +49,8 @@ enum ectl_cpu_states {
 	ECTL_STATE_UNKNOWN,
 };
 
+extern const char *state_names[];
+
 #define ECTL_REG_COUNT 16
 
 enum ectl_registers {
