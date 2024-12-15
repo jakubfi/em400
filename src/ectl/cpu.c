@@ -300,34 +300,6 @@ const char * ectl_version()
 }
 
 // -----------------------------------------------------------------------
-const char * ectl_capa_bit_name(unsigned bitpos)
-{
-	static const char *capa_names[] = { "MX16", "CRON", "AWP", "UIO", "MEGABOOT", "NOMEMSTOP", "???" };
-
-	if (bitpos < ECTL_CAPA_COUNT) {
-		return capa_names[bitpos];
-	} else {
-		return capa_names[ECTL_CAPA_COUNT];
-	}
-}
-
-// -----------------------------------------------------------------------
-int ectl_capa()
-{
-	int capa = 0;
-
-	if (cpu_mod_present) capa |= 1 << ECTL_CAPA_MX16;
-	if (cpu_mod_active) capa |= 1 << ECTL_CAPA_CRON;
-	if (awp_enabled) capa |= 1 << ECTL_CAPA_AWP;
-	if (!cpu_user_io_illegal) capa |= 1 << ECTL_CAPA_UIO;
-	if (mem_mega_boot()) capa |= 1 << ECTL_CAPA_MEGABOOT;
-	//TODO: if (nomem_stop) capa |= 1 << ECTL_CAPA_NOMEMSTOP;
-
-	LOG(L_ECTL, "ECTL capabilities: 0x%04x", capa);
-	return capa;
-}
-
-// -----------------------------------------------------------------------
 bool ectl_load_os_image(FILE *f, const char *name, int seg, uint16_t saddr)
 {
 	LOG(L_ECTL, "ECTL load: %i:0x%04x %s", seg, saddr, name);

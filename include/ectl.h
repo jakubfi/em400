@@ -70,16 +70,6 @@ enum ectl_registers {
 	ECTL_REG_KB2
 };
 
-enum ectl_capability_bits {
-	ECTL_CAPA_MX16 = 0,
-	ECTL_CAPA_CRON,
-	ECTL_CAPA_AWP,
-	ECTL_CAPA_UIO,
-	ECTL_CAPA_MEGABOOT,
-	ECTL_CAPA_NOMEMSTOP,
-	ECTL_CAPA_COUNT
-};
-
 enum ectl_log_components {
 	L_ALL = 0,
 	L_EM4H, L_ECTL, L_FDBR, L_CRK5,
@@ -148,8 +138,6 @@ uint32_t ectl_int_get32();
 
 // informational, other
 const char * ectl_version();
-const char * ectl_capa_bit_name(unsigned bitpos);
-int ectl_capa();
 unsigned long ectl_ips_get();
 int ectl_eval(char *expression, char **err_msg, int *err_beg, int *err_end);
 

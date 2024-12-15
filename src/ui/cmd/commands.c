@@ -211,14 +211,7 @@ void ui_cmd_help(FILE *out, char *args)
 // -----------------------------------------------------------------------
 void ui_cmd_info(FILE *out, char *args)
 {
-	int capa = ectl_capa();
-	ui_cmd_resp(out, RESP_OK, UI_NOEOL, " EM400 %s", ectl_version());
-	for (int i=0 ; i<ECTL_CAPA_COUNT ; i++) {
-		if ((capa & (1<<i))) {
-			fprintf(out, " %s", ectl_capa_bit_name(i));
-		}
-	}
-	fprintf(out, "\n");
+	ui_cmd_resp(out, RESP_OK, UI_EOL, " EM400 %s", ectl_version());
 }
 
 // -----------------------------------------------------------------------
