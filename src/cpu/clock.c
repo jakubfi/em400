@@ -93,21 +93,14 @@ void clock_shutdown()
 }
 
 // -----------------------------------------------------------------------
-void clock_on()
+void clock_set(bool state)
 {
-	LOG(L_CPU, "Starting clock");
-	atom_store_release(&clock_enabled, 1);
+	LOG(L_CPU, "Set clock: %s", state ? "ON" : "OFF");
+	atom_store_release(&clock_enabled, state);
 }
 
 // -----------------------------------------------------------------------
-void clock_off()
-{
-	LOG(L_CPU, "Stopping clock");
-	atom_store_release(&clock_enabled, 0);
-}
-
-// -----------------------------------------------------------------------
-int clock_get_state()
+int clock_get()
 {
 	return atom_load_acquire(&clock_enabled);
 }

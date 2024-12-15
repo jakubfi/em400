@@ -18,6 +18,8 @@
 #ifndef CLOCK_H
 #define CLOCK_H
 
+#include <stdbool.h>
+
 #include "cfg.h"
 
 #ifdef __cplusplus
@@ -26,9 +28,8 @@ extern "C" {
 
 int clock_init(em400_cfg *cfg);
 void clock_shutdown();
-void clock_on();
-void clock_off();
-int clock_get_state();
+void clock_set(bool state);
+int clock_get();
 void clock_set_int(int interrupt);
 
 #ifdef __cplusplus
