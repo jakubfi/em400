@@ -122,7 +122,7 @@ int ectl_brk_delete(unsigned id)
 		brkp = atom_load_acquire(&brkp->next);
 	}
 
-	if (cp_state() && ECTL_STATE_STOP) {
+	if (cp_state() == ECTL_STATE_STOP) {
 		ectl_brk_cleanup();
 	}
 
