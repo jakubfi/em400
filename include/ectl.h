@@ -70,6 +70,8 @@ enum ectl_registers {
 	ECTL_REG_KB2
 };
 
+extern const char *ectl_reg_names[];
+
 enum ectl_log_components {
 	L_ALL = 0,
 	L_EM4H, L_ECTL, L_FDBR, L_CRK5,

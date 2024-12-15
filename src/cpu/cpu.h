@@ -101,10 +101,10 @@ void cpu_wake_up();
 int cpu_state_change(unsigned int to, unsigned int from);
 unsigned cpu_state_get();
 
-void cpu_reg_select(int reg);
+void cpu_reg_select(int reg_id);
 void cpu_kb_set(uint16_t val);
 
-void cpu_register_load(int reg, uint16_t val);
+void cpu_register_load(int reg_id, uint16_t val);
 bool cpu_mem_read_1(bool barnb, uint16_t addr, uint16_t *data);
 bool cpu_mem_write_1(bool barnb, uint16_t addr, uint16_t data);
 void cpu_do_clear(bool clo);

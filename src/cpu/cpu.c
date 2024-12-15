@@ -88,6 +88,8 @@ pthread_cond_t cpu_wake_cond = PTHREAD_COND_INITIALIZER;
 // -----------------------------------------------------------------------
 void cpu_kb_set(uint16_t val)
 {
+	LOG(L_CPU, "KB := 0x%04x", val);
+
 	pthread_mutex_lock(&cpu_wake_mutex);
 	kb = val;
 	cpu_wake_up();
@@ -95,9 +97,11 @@ void cpu_kb_set(uint16_t val)
 }
 
 // -----------------------------------------------------------------------
-static void cpu_do_load(int reg, uint16_t val)
+static void cpu_do_load(int reg_id, uint16_t val)
 {
-	switch (reg) {
+	LOG(L_CPU, "%s := 0x%04x", ectl_reg_names[reg_id], val);
+
+	switch (reg_id) {
 		case ECTL_REG_R0:
 		case ECTL_REG_R1:
 		case ECTL_REG_R2:
@@ -105,7 +109,7 @@ static void cpu_do_load(int reg, uint16_t val)
 		case ECTL_REG_R4:
 		case ECTL_REG_R5:
 		case ECTL_REG_R6:
-		case ECTL_REG_R7: r[reg] = val; break;
+		case ECTL_REG_R7: r[reg_id] = val; break;
 		case ECTL_REG_IC: ic = val; break;
 		case ECTL_REG_AC: ac = val; break;
 		case ECTL_REG_AR: ar = val ; break;
@@ -117,19 +121,31 @@ static void cpu_do_load(int reg, uint16_t val)
 }
 
 // -----------------------------------------------------------------------
-void cpu_register_load(int reg, uint16_t val)
+void cpu_register_load(int reg_id, uint16_t val)
 {
 	pthread_mutex_lock(&cpu_wake_mutex);
 	if (cpu_state == ECTL_STATE_STOP) {
-		cpu_do_load(reg, val);
+		cpu_do_load(reg_id, val);
 		cpu_wake_up();
 	}
 	pthread_mutex_unlock(&cpu_wake_mutex);
 }
 
 // -----------------------------------------------------------------------
+void cpu_reg_select(int reg_id)
+{
+	LOG(L_CPU, "Select register: %s", ectl_reg_names[reg_id]);
+	pthread_mutex_lock(&cpu_wake_mutex);
+	r_selected = reg_id;
+	pthread_cond_signal(&cpu_wake_cond);
+	pthread_mutex_unlock(&cpu_wake_mutex);
+}
+
+// -----------------------------------------------------------------------
 static inline void cpu_reg_selected_to_w()
 {
+	LOG(L_CPU, "W := %s", ectl_reg_names[r_selected]);
+
 	switch (r_selected) {
 		case ECTL_REG_R0:
 		case ECTL_REG_R1:
@@ -436,15 +452,6 @@ K2:
 	lg = 0;
 	// STEP here
 	goto K1;
-}
-
-// -----------------------------------------------------------------------
-void cpu_reg_select(int reg)
-{
-	pthread_mutex_lock(&cpu_wake_mutex);
-	r_selected = reg;
-	pthread_cond_signal(&cpu_wake_cond);
-	pthread_mutex_unlock(&cpu_wake_mutex);
 }
 
 // -----------------------------------------------------------------------

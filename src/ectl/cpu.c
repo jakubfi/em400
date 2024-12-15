@@ -52,7 +52,7 @@ const char *state_names[] = {
 };
 
 // this must match register order in ectl.h
-static const char *ectl_reg_names[] = {
+const char *ectl_reg_names[] = {
 	"R0", "R1", "R2", "R3", "R4", "R5", "R6", "R7",
 	"IC", "AC", "AR", "IR", "SR", "RZ", "KB", "KB",
 	"??"
