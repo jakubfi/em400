@@ -21,10 +21,10 @@
 #include <inttypes.h>
 #include <string.h>
 #include <strings.h>
+#include <stdatomic.h>
 
 #include "log.h"
 #include "utils/utils.h"
-#include "atomic.h"
 #include "cpu/cp.h"
 #include "cpu/cpu.h"
 #include "cpu/interrupts.h"

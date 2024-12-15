@@ -23,9 +23,9 @@
 #include <stdio.h>
 #include <unistd.h>
 #include <pthread.h>
+#include <stdatomic.h>
 
 #include "em400.h"
-#include "atomic.h"
 #include "io/defs.h"
 #include "io/cchar.h"
 #include "io/cchar_flop8.h"
@@ -198,7 +198,7 @@ static void flop8_reset_state(flop8 *flop)
 	flop->state = F8ST_IDLE;
 	flop->pending_write = false;
 	flop->force_interrupt = false;
-	atom_store_release(&flop->interrupts, F8_INT_NONE);
+	atomic_store_explicit(&flop->interrupts, F8_INT_NONE, memory_order_release);
 	pthread_mutex_unlock(&flop->state_mutex);
 }
 
@@ -394,7 +394,7 @@ static void * flop8_worker_loop(void *ptr)
 
 		if (interrupt != F8_INT_NONE) {
 			LOG(L_FLOP, "Worker sending interrupt");
-			atom_store_release(&flop->interrupts, interrupt);
+			atomic_store_explicit(&flop->interrupts, interrupt, memory_order_release);
 			cchar_int_trigger(flop->proto.chan);
 			flop->force_interrupt = false;
 		}
@@ -409,7 +409,7 @@ static void * flop8_worker_loop(void *ptr)
 bool cchar_flop8_has_interrupt(struct cchar_unit_proto_t *unit)
 {
 	flop8 *flop = (flop8 *) unit;
-	return atom_load_acquire(&flop->interrupts) ? true : false;
+	return atomic_load_explicit(&flop->interrupts, memory_order_acquire) ? true : false;
 }
 
 // -----------------------------------------------------------------------
@@ -418,12 +418,12 @@ int cchar_flop8_intspec(struct cchar_unit_proto_t *unit)
 	flop8 *flop = (flop8 *) unit;
 
 	int spec = F8_INT_NONE;
-	int ints = atom_load_acquire(&flop->interrupts);
+	int ints = atomic_load_explicit(&flop->interrupts, memory_order_acquire);
 
 	for (int shift=0 ; shift<=5 ; shift++) {
 		if (ints & (1<<shift)) {
 			spec = f8_interrupt_specs[shift];
-			atom_store_release(&flop->interrupts, ints & ~(1<<shift));
+			atomic_store_explicit(&flop->interrupts, ints & ~(1<<shift), memory_order_release);
 			break;
 		}
 	}
@@ -454,7 +454,7 @@ static int f8_cmd_read(struct cchar_unit_proto_t *unit, uint16_t *r_arg)
 				f8_sector_advance(flop);
 				flop->state = F8ST_IDLE;
 			}
-			atom_store_release(&flop->interrupts, F8_INT_NONE);
+			atomic_store_explicit(&flop->interrupts, F8_INT_NONE, memory_order_release);
 			io_ret = IO_OK;
 			break;
 		default:
@@ -489,7 +489,7 @@ static int f8_cmd_write(struct cchar_unit_proto_t *unit, uint16_t *r_arg)
 				flop->state = F8ST_SECT_WR;
 				pthread_cond_signal(&flop->state_cond);
 			}
-			atom_store_release(&flop->interrupts, F8_INT_NONE);
+			atomic_store_explicit(&flop->interrupts, F8_INT_NONE, memory_order_release);
 			io_ret = IO_OK;
 			break;
 		case F8ST_SECT_WR:
@@ -563,7 +563,7 @@ static int f8_cmd_detach(struct cchar_unit_proto_t *unit)
 	switch (flop->state) {
 		case F8ST_IDLE:
 			LOG(L_FLOP, "command: detach (state: idle)");
-			atom_store_release(&flop->interrupts, F8_INT_NONE);
+			atomic_store_explicit(&flop->interrupts, F8_INT_NONE, memory_order_release);
 			io_ret = IO_OK;
 			break;
 		case F8ST_BUF_RD:

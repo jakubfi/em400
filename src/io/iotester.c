@@ -23,9 +23,9 @@
 #include <stdlib.h>
 #include <pthread.h>
 #include <unistd.h>
+#include <stdatomic.h>
 
 #include "log.h"
-#include "atomic.h"
 #include "io/io.h"
 #include "io/chan.h"
 #include "utils/elst.h"
@@ -183,7 +183,7 @@ static void * it_cmdproc(void *ptr)
 					LOG(L_IO, "Reset delay %ius", INIT_DELAY_US);
 					usleep(INIT_DELAY_US);
 					LOG(L_IO, "Reset done, sending interrupt with intspec 0xffff");
-					atom_store_release(&it->intspec, 0xffff);
+					atomic_store_explicit(&it->intspec, 0xffff, memory_order_release);
 					io_int_set(it->chnum);
 				}
 				break;
@@ -193,19 +193,19 @@ static void * it_cmdproc(void *ptr)
 					case CMD_WNB:
 						LOG(L_IO, "NB = %i", r & 0b1111);
 						nb = r & 0b1111;
-						atom_store_release(&it->intspec, 0);
+						atomic_store_explicit(&it->intspec, 0, memory_order_release);
 						io_int_set(it->chnum);
 						break;
 					case CMD_WAM:
 						LOG(L_IO, "AM = 0x%04x", r);
 						am = r;
-						atom_store_release(&it->intspec, 0);
+						atomic_store_explicit(&it->intspec, 0, memory_order_release);
 						io_int_set(it->chnum);
 						break;
 					case CMD_WAB:
 						LOG(L_IO, "AB = 0x%04x", r);
 						ab = r;
-						atom_store_release(&it->intspec, 0);
+						atomic_store_explicit(&it->intspec, 0, memory_order_release);
 						io_int_set(it->chnum);
 						break;
 					case CMD_WM:
@@ -214,7 +214,7 @@ static void * it_cmdproc(void *ptr)
 							res = io_mem_write_1(nb, am+i, buf[ab+i]);
 							if (!res) break;
 						}
-						atom_store_release(&it->intspec, res);
+						atomic_store_explicit(&it->intspec, res, memory_order_release);
 						io_int_set(it->chnum);
 						break;
 					case CMD_RM:
@@ -223,24 +223,24 @@ static void * it_cmdproc(void *ptr)
 							res = io_mem_read_1(nb, am+i, buf+ab+i);
 							if (!res) break;
 						}
-						atom_store_release(&it->intspec, res);
+						atomic_store_explicit(&it->intspec, res, memory_order_release);
 						io_int_set(it->chnum);
 						break;
 					case CMD_WMM:
 						LOG(L_IO, "multi: buf[0x%04x] -> [%i:0x%04x], %i words", ab, nb, am, r);
 						res = io_mem_write_n(nb, am, buf+ab, r);
-						atom_store_release(&it->intspec, res);
+						atomic_store_explicit(&it->intspec, res, memory_order_release);
 						io_int_set(it->chnum);
 						break;
 					case CMD_RMM:
 						LOG(L_IO, "multi: [%i:0x%04x] -> buf[0x%04x], %i words", nb, am, ab, r);
 						res = io_mem_read_n(nb, am, buf+ab, r);
-						atom_store_release(&it->intspec, res);
+						atomic_store_explicit(&it->intspec, res, memory_order_release);
 						io_int_set(it->chnum);
 						break;
 					case CMD_IRQ:
 						LOG(L_IO, "Sending interrupt (intspec set to 0x%04x)", r);
-						atom_store_release(&it->intspec, r);
+						atomic_store_explicit(&it->intspec, r, memory_order_release);
 						io_int_set(it->chnum);
 						break;
 					case CMD_PA:
@@ -253,7 +253,7 @@ static void * it_cmdproc(void *ptr)
 						break;
 					default:
 						LOG(L_IO, "Unknown 'SEND' command: %i", ev->cmd);
-						atom_store_release(&it->intspec, 0);
+						atomic_store_explicit(&it->intspec, 0, memory_order_release);
 						io_int_set(it->chnum);
 						break;
 				}
@@ -288,7 +288,7 @@ int it_cmd(void *ch, int dir, uint16_t n_arg, uint16_t *r_arg)
 					LOG(L_IO, "CPU wants response: %i", rmd & 0b11);
 					return (rmd & 0b11);
 				case CMD_ISP:
-					*r_arg = atom_load_acquire(&it->intspec);
+					*r_arg = atomic_load_explicit(&it->intspec, memory_order_acquire);
 					LOG(L_IO, "Sending intspec to CPU: 0x%04x", *r_arg);
 					break;
 				case CMD_RND:

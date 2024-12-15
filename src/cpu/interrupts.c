@@ -17,6 +17,7 @@
 
 #include <inttypes.h>
 #include <pthread.h>
+#include <stdatomic.h>
 
 #include "cpu/cpu.h"
 #include "mem/mem.h"
@@ -24,7 +25,6 @@
 #include "io/io.h"
 
 #include "log.h"
-#include "atomic.h"
 
 #include "ectl.h" // for global constants
 

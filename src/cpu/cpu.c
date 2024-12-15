@@ -189,7 +189,7 @@ static int cpu_do_wait()
 	LOG(L_CPU, "CPU idling");
 
 	pthread_mutex_lock(&cpu_wake_mutex);
-	while ((cpu_state == ECTL_STATE_STOP) || ((cpu_state == ECTL_STATE_WAIT) && !(atom_load_acquire(&rp) && !p && !mc))) {
+	while ((cpu_state == ECTL_STATE_STOP) || ((cpu_state == ECTL_STATE_WAIT) && !(atomic_load_explicit(&rp, memory_order_acquire) && !p && !mc))) {
 		cpu_reg_selected_to_w();
 		pthread_cond_wait(&cpu_wake_cond, &cpu_wake_mutex);
 	}
@@ -232,7 +232,7 @@ int cpu_state_change(unsigned to, unsigned from)
 // -----------------------------------------------------------------------
 unsigned cpu_state_get()
 {
-	return atom_load_acquire(&cpu_state);
+	return atomic_load_explicit(&cpu_state, memory_order_acquire);
 }
 
 // -----------------------------------------------------------------------
@@ -616,14 +616,14 @@ void cpu_loop()
 
 	while (1) {
 		int cpu_time = 0;
-		int state = atom_load_acquire(&cpu_state);
+		int state = atomic_load_explicit(&cpu_state, memory_order_acquire);
 
 		switch (state) {
 			case ECTL_STATE_CYCLE:
 				cpu_state_change(ECTL_STATE_STOP, ECTL_STATE_ANY);
 				// fallthrough
 			case ECTL_STATE_RUN:
-				if (atom_load_acquire(&rp) && !p && (mc == 0)) {
+				if (atomic_load_explicit(&rp, memory_order_acquire) && !p && (mc == 0)) {
 					int_serve();
 					cpu_time = TIME_INT_SERVE;
 				} else {
@@ -670,7 +670,7 @@ void cpu_loop()
 			case ECTL_STATE_WAIT:
 				// busy wait to not disturb audio, TODO
 				cpu_reg_selected_to_w();
-				if (atom_load_acquire(&rp) && !p && !mc) {
+				if (atomic_load_explicit(&rp, memory_order_acquire) && !p && !mc) {
 					cpu_state_change(ECTL_STATE_RUN, ECTL_STATE_WAIT);
 				} else {
 					cpu_time = throttle_granularity;

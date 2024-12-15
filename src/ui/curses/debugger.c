@@ -20,10 +20,10 @@
 #include <limits.h>
 #include <pthread.h>
 #include <signal.h>
+#include <stdatomic.h>
 #include <emdas.h>
 
 #include "ectl.h"
-#include "atomic.h"
 #include "ui/ui.h"
 
 #include "ui/curses/awin.h"
@@ -110,7 +110,7 @@ void * dbg_init(const char *call_name)
 // -----------------------------------------------------------------------
 void dbg_stop()
 {
-	atom_store_release(&dbg_quit, 1);
+	atomic_store_explicit(&dbg_quit, 1, memory_order_release);
 }
 
 // -----------------------------------------------------------------------
@@ -133,7 +133,7 @@ int dbg_parse(char *c)
 // -----------------------------------------------------------------------
 void dbg_loop(void *data)
 {
-	while (!atom_load_acquire(&dbg_quit)) {
+	while (!atomic_load_explicit(&dbg_quit, memory_order_acquire)) {
 
 		if (aw_layout_changed) {
 			awin_tb_scroll_end(W_CMD);

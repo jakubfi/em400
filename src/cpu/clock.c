@@ -22,13 +22,13 @@
 
 #include <semaphore.h>
 #include <time.h>
+#include <stdatomic.h>
 
 #include "cpu/clock.h"
 #include "cpu/interrupts.h"
 
 #include "log.h"
 #include "cfg.h"
-#include "atomic.h"
 
 int clock_enabled = false;
 pthread_t clock_th;
@@ -52,8 +52,8 @@ void * clock_thread(void *ptr)
 		if (!sem_timedwait(&clock_quit, &ts)) {
 			break;
 		}
-		if (atom_load_acquire(&clock_enabled)) {
-			int_set(atom_load_acquire(&clock_int));
+		if (atomic_load_explicit(&clock_enabled, memory_order_acquire)) {
+			int_set(atomic_load_explicit(&clock_int, memory_order_acquire));
 		}
 	}
 
@@ -96,19 +96,19 @@ void clock_shutdown()
 void clock_set(bool state)
 {
 	LOG(L_CPU, "Set clock: %s", state ? "ON" : "OFF");
-	atom_store_release(&clock_enabled, state);
+	atomic_store_explicit(&clock_enabled, state, memory_order_release);
 }
 
 // -----------------------------------------------------------------------
 int clock_get()
 {
-	return atom_load_acquire(&clock_enabled);
+	return atomic_load_explicit(&clock_enabled, memory_order_acquire);
 }
 
 // -----------------------------------------------------------------------
 void clock_set_int(int interrupt)
 {
-	atom_store_release(&clock_int, interrupt);
+	atomic_store_explicit(&clock_int, interrupt, memory_order_release);
 }
 
 // vim: tabstop=4 shiftwidth=4 autoindent

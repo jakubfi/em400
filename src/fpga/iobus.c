@@ -119,7 +119,7 @@ void iob_close()
 // -----------------------------------------------------------------------
 void iob_quit()
 {
-	atom_store_release(&quit, 1);
+	atomic_store_explicit(&quit, 1, memory_order_release);
 }
 
 // -----------------------------------------------------------------------
@@ -437,7 +437,7 @@ void iob_loop()
 	struct timeval timeout;
 	static struct timeval xt1, xt2;
 
-	while (!atom_load_acquire(&quit)) {
+	while (!atomic_load_explicit(&quit, memory_order_acquire)) {
 		FD_ZERO(&fds);
 		FD_SET(xbus, &fds);
 		FD_SET(ibus[BR], &fds);

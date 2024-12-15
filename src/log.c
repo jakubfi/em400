@@ -30,13 +30,13 @@
 #include <pthread.h>
 #include <inttypes.h>
 #include <stdbool.h>
+#include <stdatomic.h>
 
 #include <emdas.h>
 
 #include "mem/mem.h"
 #include "log.h"
 #include "log_crk.h"
-#include "atomic.h"
 #include "utils/utils.h"
 #include "cfg.h"
 
@@ -188,7 +188,7 @@ void log_disable()
 	if (!log_is_enabled()) return;
 
 	log_log_timestamp(L_EM4H, "EM400 version " EM400_VERSION " closing log file", __func__);
-	atom_store_release(&log_components_enabled, 0);
+	atomic_store_explicit(&log_components_enabled, 0, memory_order_release);
 	log_flusher_exit();
 	if (log_f) {
 		fclose(log_f);
@@ -227,22 +227,22 @@ int log_enable()
 // -----------------------------------------------------------------------
 unsigned log_is_enabled()
 {
-	return atom_load_acquire(&log_components_enabled);
+	return atomic_load_explicit(&log_components_enabled, memory_order_acquire);
 }
 
 // -----------------------------------------------------------------------
 static void log_components_update()
 {
-	atom_store_release(&log_components_enabled, log_components_selected);
+	atomic_store_explicit(&log_components_enabled, log_components_selected, memory_order_release);
 }
 
 // -----------------------------------------------------------------------
 void log_component_enable(unsigned component)
 {
 	if (component == L_ALL) {
-		atom_store_release(&log_components_selected, -1);
+		atomic_store_explicit(&log_components_selected, -1, memory_order_release);
 	} else {
-		atom_or_release(&log_components_selected, 1 << component);
+		atomic_fetch_or_explicit(&log_components_selected, 1 << component, memory_order_release);
 	}
 	if (log_is_enabled()) log_components_update();
 }
@@ -251,9 +251,9 @@ void log_component_enable(unsigned component)
 void log_component_disable(unsigned component)
 {
 	if (component == L_ALL) {
-		atom_store_release(&log_components_selected, 0);
+		atomic_store_explicit(&log_components_selected, 0, memory_order_release);
 	} else {
-		atom_and_release(&log_components_selected, ~(1 << component));
+		atomic_fetch_and_explicit(&log_components_selected, ~(1 << component), memory_order_acquire);
 	}
 	if (log_is_enabled()) log_components_update();
 }
@@ -261,7 +261,7 @@ void log_component_disable(unsigned component)
 // -----------------------------------------------------------------------
 unsigned log_component_get(unsigned component)
 {
-	return atom_load_acquire(&log_components_selected) & (1 << component);
+	return atomic_load_explicit(&log_components_selected, memory_order_acquire) & (1 << component);
 }
 
 // -----------------------------------------------------------------------

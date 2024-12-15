@@ -25,9 +25,9 @@
 #include <inttypes.h>
 #include <stdbool.h>
 #include <stdio.h>
+#include <stdatomic.h>
 
 #include "em400.h"
-#include "atomic.h"
 #include "io/defs.h"
 #include "io/cchar_term.h"
 #include "io/dev/fdbridge.h"
@@ -124,12 +124,12 @@ int fdb_callback(void *ctx, int condition)
 	switch (condition) {
 		case FDB_READY:
 			LOG(L_TERM, "Callback: line data ready");
-			atom_store_release(&term->spec, CCHAR_TERM_INT_READY);
+			atomic_store_explicit(&term->spec, CCHAR_TERM_INT_READY, memory_order_release);
 			cchar_int_trigger(unit->chan);
 			break;
 		case FDB_LOST:
 			LOG(L_TERM, "Callback: data lost, transmission too slow");
-			atom_store_release(&term->spec, CCHAR_TERM_INT_TOO_SLOW);
+			atomic_store_explicit(&term->spec, CCHAR_TERM_INT_TOO_SLOW, memory_order_release);
 			cchar_int_trigger(unit->chan);
 		default:
 			break;
@@ -141,8 +141,8 @@ int fdb_callback(void *ctx, int condition)
 int cchar_term_intspec(struct cchar_unit_proto_t *unit)
 {
 	struct cchar_unit_term_t *term = (struct cchar_unit_term_t*) unit;
-	int spec = atom_load_acquire(&term->spec);
-	atom_store_release(&term->spec, CCHAR_TERM_INT_OUTDATED);
+	int spec = atomic_load_explicit(&term->spec, memory_order_acquire);
+	atomic_store_explicit(&term->spec, CCHAR_TERM_INT_OUTDATED, memory_order_release);
 
 	return spec;
 }
@@ -151,7 +151,7 @@ int cchar_term_intspec(struct cchar_unit_proto_t *unit)
 bool cchar_term_has_interrupt(struct cchar_unit_proto_t *unit)
 {
 	struct cchar_unit_term_t *term = (struct cchar_unit_term_t*) unit;
-	return atom_load_acquire(&term->spec) ? true : false;
+	return atomic_load_explicit(&term->spec, memory_order_acquire) ? true : false;
 }
 
 // -----------------------------------------------------------------------

@@ -2,7 +2,7 @@ Known bugs:
 
 Cleanups:
 
- * C11: update/review atomics (ips_counter too)
+ * review atomics (especially ips_counter, breakpoints, iotester, flop8, ...)
 
 Code enhancements (possible):
 

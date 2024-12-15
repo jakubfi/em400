@@ -21,8 +21,7 @@
 #define _WITH_DPRINTF
 #include <stdio.h>
 #include <inttypes.h>
-
-#include "atomic.h"
+#include <stdatomic.h>
 
 #include "ectl.h" // for global constants
 #include "cfg.h"
@@ -63,7 +62,7 @@ void log_intlevel_inc();
 void log_dasm(int arg, int16_t n, const char *comment);
 void log_cpu(unsigned component, const char *msgfmt, ...);
 
-#define LOG_ENABLED atom_load_acquire(&log_components_enabled)
+#define LOG_ENABLED atomic_load_explicit(&log_components_enabled, memory_order_acquire)
 #define LOG_WANTS(component) (LOG_ENABLED & (1 << (component)))
 
 #define LOG(component, format, ...) log_log(component, __func__, format, ##__VA_ARGS__)

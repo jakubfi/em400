@@ -130,7 +130,6 @@ endif()
 # --- EM400
 
 set(SOURCES_EM400
-	src/atomic.h
 	src/em400.c
 	src/em400.h
 	src/log.c
