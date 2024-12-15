@@ -2,6 +2,8 @@ Known bugs:
 
 Cleanups:
 
+ * C11: update/review atomics (ips_counter too)
+
 Code enhancements (possible):
 
 * librarize?
