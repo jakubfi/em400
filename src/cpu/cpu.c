@@ -311,6 +311,7 @@ int cpu_init(em400_cfg *cfg)
 	if (sound_enabled) {
 		if (!speed_real) {
 			LOGERR("WARNING: sound won't work with speed_real=false. Buzzer emulation is disabled.");
+			sound_enabled = false;
 		} else {
 			if (buzzer_init(cfg) != E_OK) {
 				return LOGERR("Failed to initialize buzzer.");
