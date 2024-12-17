@@ -144,8 +144,6 @@ void cpu_reg_select(int reg_id)
 // -----------------------------------------------------------------------
 static inline void cpu_reg_selected_to_w()
 {
-	LOG(L_CPU, "W := %s", ectl_reg_names[r_selected]);
-
 	switch (r_selected) {
 		case ECTL_REG_R0:
 		case ECTL_REG_R1:
