@@ -67,6 +67,30 @@ struct iotester {
 
 static void * it_cmdproc(void *ptr);
 
+/*
+FETCH requests are handled immediately, in CPU thread.
+Command and argument is sent on address bus, response is sent back on data bus
+
+ECO 1_DDDD_DDDDDD_DDDD_D - respond back with whatever was sent on address bus
+ISP 0_0001_xxxxxx_xxxx_x - send interrupt specification
+ANS 0_0011_xxxxRR_xxxx_x - respond with R to this request (no, en, ok, pe)
+RND 0_0010_xxxxxx_xxxx_x - respond with a random number
+
+SEND requests are handled in separate iotester execution thread.
+Command is sent on address bus, argument is sent on data bus (with register arg.)
+
+WNB 0_0001_xxxxxx_xxxx_x - NB := r & 0b1111, set interrupt, intspec = 0
+WAM 0_0010_xxxxxx_xxxx_x - AM := r, set interrupt, intspec = 0
+WAB 0_0011_xxxxxx_xxxx_x - AB := r, set interrupt, intspec = 0
+WM  0_0100_xxxxxx_xxxx_x - write r words from the buffer: [nb:am] := buf[ab], set interrupt, intspec = num_writes
+RM  0_0101_xxxxxx_xxxx_x - read r words into the buffer: buf[ab] := [nb:am], set int., intspec = num_reads
+WMM 0_0110_xxxxxx_xxxx_x - as WM with multi writes
+RMM 0_0111_xxxxxx_xxxx_x - as RM with multi reads
+IRQ 0_1000_xxxxxx_xxxx_x - set interrupt, intspec = r
+PA  0_1001_xxxxxx_xxxx_x - set Power Alarm interrupt
+ERI 0_1010_xxxxxx_xxxx_x - enable sending interrupt after reset (disabled on startup)
+*/
+
 // -----------------------------------------------------------------------
 void it_event_destructor(void *ptr)
 {
