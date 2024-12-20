@@ -1,4 +1,4 @@
-//  Copyright (c) 2012-2013 Jakub Filipowicz <jakubf@gmail.com>
+//  Copyright (c) 2012-2024 Jakub Filipowicz <jakubf@gmail.com>
 //
 //  This program is free software; you can redistribute it and/or modify
 //  it under the terms of the GNU General Public License as published by
@@ -18,6 +18,7 @@
 #include <inttypes.h>
 #include <pthread.h>
 #include <stdatomic.h>
+#include <stdbool.h>
 
 #include "cpu/cpu.h"
 #include "mem/mem.h"
@@ -25,12 +26,13 @@
 #include "io/io.h"
 
 #include "log.h"
-
 #include "ectl.h" // for global constants
 
 uint32_t rz;
-uint32_t rp;
-uint32_t int_mask;
+// IRQ is atomic because cpu thread needs quick, frequent access
+// order relaxed, cpu sychronizes with IO on rz
+_Atomic bool irq;
+static uint32_t int_xmask;
 
 pthread_mutex_t int_mutex = PTHREAD_MUTEX_INITIALIZER;
 
@@ -77,71 +79,53 @@ static const char *int_names[] = {
 	"memory parity error",
 	"no memory",
 	"2nd CPU high",
-	"ext power loss",
-	"clock (special)",
+	"external power loss",
+	"clock (or special)",
 	"illegal instruction",
 	"AWP div overflow",
 	"AWP underflow",
 	"AWP overflow",
 	"AWP div/0",
-	"special (clock)",
-	"chan 0",
-	"chan 1",
-	"chan 2",
-	"chan 3",
-	"chan 4",
-	"chan 5",
-	"chan 6",
-	"chan 7",
-	"chan 8",
-	"chan 9",
-	"chan 10",
-	"chan 11",
-	"chan 12",
-	"chan 13",
-	"chan 14",
-	"chan 15",
+	"special (or clock)",
+	"CH1", "CH0", "CH2", "CH3", "CH4", "CH5", "CH6", "CH7",
+	"CH8", "CH9", "CH10", "CH11", "CH12", "CH13", "CH14", "CH15",
 	"OPRQ",
 	"2nd CPU low",
 	"software high",
 	"software low"
 };
 
-// -----------------------------------------------------------------------
-static void int_update_rp()
-{
-	// function called under mutex
-	rp = rz & int_mask;
-	cpu_wake_up();
-}
 
 // -----------------------------------------------------------------------
-void int_update_mask(uint16_t mask)
+void int_update_xmask()
 {
-	int i;
-	uint32_t xmask = 1 << 31;
+	uint32_t tmp_xmask = 1 << 31; // non-maskable interrupt is always enabled
 
-	for (i=0 ; i<10 ; i++) {
-		if (mask & (1 << (9 - i))) {
-			xmask |= int_rm2xmask[i];
+	for (int i=0 ; i<10 ; i++) {
+		if (rm & (1 << (9 - i))) {
+			tmp_xmask |= int_rm2xmask[i];
 		}
 	}
 
 	pthread_mutex_lock(&int_mutex);
-	int_mask = xmask;
-	int_update_rp();
+	int_xmask = tmp_xmask;
+	atomic_store_explicit(&irq, rz & int_xmask, memory_order_relaxed);
 	pthread_mutex_unlock(&int_mutex);
+
+	cpu_wake_up();
 }
 
 // -----------------------------------------------------------------------
-void int_set(int x)
+void int_set(int int_num)
 {
-	LOG(L_INT, "Set interrupt: %i (%s)", x, int_names[x]);
+	LOG(L_INT, "Set interrupt: %i (%s)", int_num, int_names[int_num]);
 
 	pthread_mutex_lock(&int_mutex);
-	rz |= INT_BIT(x);
-	int_update_rp();
+	rz |= INT_BIT(int_num);
+	atomic_store_explicit(&irq, rz & int_xmask, memory_order_relaxed);
 	pthread_mutex_unlock(&int_mutex);
+
+	cpu_wake_up();
 }
 
 // -----------------------------------------------------------------------
@@ -149,19 +133,23 @@ void int_clear_all()
 {
 	pthread_mutex_lock(&int_mutex);
 	rz = 0;
-	int_update_rp();
+	atomic_store_explicit(&irq, rz & int_xmask, memory_order_relaxed);
 	pthread_mutex_unlock(&int_mutex);
+
+	cpu_wake_up();
 }
 
 // -----------------------------------------------------------------------
-void int_clear(int x)
+void int_clear(int int_num)
 {
-	LOG(L_INT, "Clear interrupt: %i (%s)", x, int_names[x]);
+	LOG(L_INT, "Clear interrupt: %i (%s)", int_num, int_names[int_num]);
 
 	pthread_mutex_lock(&int_mutex);
-	rz &= ~INT_BIT(x);
-	int_update_rp();
+	rz &= ~INT_BIT(int_num);
+	atomic_store_explicit(&irq, rz & int_xmask, memory_order_relaxed);
 	pthread_mutex_unlock(&int_mutex);
+
+	cpu_wake_up();
 }
 
 // -----------------------------------------------------------------------
@@ -171,40 +159,41 @@ void int_put_nchan(uint16_t r)
 
 	pthread_mutex_lock(&int_mutex);
 	rz = (rz & RZ_CHAN_BITMASK) | ((r & R_NCHAN_HIGH_BITMASK) << 16) | (r & R_NCHAN_LOW_BITMASK);
-	int_update_rp();
+	atomic_store_explicit(&irq, rz & int_xmask, memory_order_relaxed);
 	pthread_mutex_unlock(&int_mutex);
+
+	cpu_wake_up();
 }
 
 // -----------------------------------------------------------------------
 uint16_t int_get_nchan()
 {
-	uint32_t rz_tmp;
 	pthread_mutex_lock(&int_mutex);
-	rz_tmp = rz;
+	uint32_t rz_tmp = rz;
 	pthread_mutex_unlock(&int_mutex);
+
 	return ((rz_tmp & RZ_NCHAN_HIGH_BITMASK) >> 16) | (rz_tmp & RZ_NCHAN_LOW_BITMASK);
 }
 
 // -----------------------------------------------------------------------
 uint16_t int_get_chan()
 {
-	uint32_t rz_tmp;
 	pthread_mutex_lock(&int_mutex);
-	rz_tmp = rz;
+	uint32_t rz_tmp = rz;
 	pthread_mutex_unlock(&int_mutex);
-	return rz_tmp >> 4;
+
+	return (rz_tmp >> 4) & 0xffff;
 }
 
 // -----------------------------------------------------------------------
 void int_serve()
 {
+	pthread_mutex_lock(&int_mutex);
 	// find highest interrupt to serve
 	unsigned interrupt = 31;
-	unsigned i = rp;
-	while (i >>= 1) interrupt--;
-
-	// clear interrupt; rp gets updated int context switch, together with interrupt mask
-	pthread_mutex_lock(&int_mutex);
+	uint32_t rp = rz & int_xmask;
+	while (rp >>= 1) interrupt--;
+	// clear interrupt; irq gets updated int context switch, together with interrupt mask
 	rz &= ~INT_BIT(interrupt);
 	pthread_mutex_unlock(&int_mutex);
 
@@ -215,7 +204,7 @@ void int_serve()
 	LOG(L_INT, "Serve interrupt: %i (%s) -> 0x%04x", interrupt, int_names[interrupt], int_vec);
 
 	// get new interrupt mask for the given interrupt
-	uint16_t int_mask = int_int2mask[interrupt];
+	uint16_t new_rm = int_int2mask[interrupt];
 
 	// get interrupt specification for channel interrupts
 	uint16_t int_spec = 0;
@@ -223,13 +212,52 @@ void int_serve()
 		io_get_intspec(interrupt - 12, &ac);
 		int_spec = ac;
 		// extend interrupt mask if cpu_mod is enabled
-		if (cpu_mod_active) int_mask &= MASK_EX;
+		if (cpu_mod_active) new_rm &= MASK_EX;
 	}
 
 	// switch context
-	cpu_ctx_switch(int_spec, int_vec, int_mask);
+	int_ctx_switch(int_spec, int_vec, new_rm);
 
 	if (LOG_ENABLED) log_intlevel_inc();
+}
+
+// -----------------------------------------------------------------------
+void int_ctx_switch(uint16_t int_spec, uint16_t new_ic, uint16_t new_rm)
+{
+	if (!cpu_mem_read_1(false, STACK_POINTER, &ar)) return;
+
+	LOG(L_CPU,
+		"Store current process context [IC: 0x%04x, R0: 0x%04x, SR: 0x%04x, 0x%04x] @ 0x%04x, set new IC: 0x%04x",
+		ic, r[0], SR_READ(), int_spec, ar, new_ic
+	);
+
+	uint16_t vector[] = { ic, r[0], SR_READ(), int_spec };
+	for (int i=0 ; i<4 ; i++, ar++) {
+		if (!cpu_mem_write_1(false, ar, vector[i])) return;
+	}
+	if (!cpu_mem_write_1(false, STACK_POINTER, ar)) return;
+
+	r[0] = 0;
+	ic = new_ic;
+	q = false;
+	rm &= new_rm;
+	int_update_xmask();
+}
+
+// -----------------------------------------------------------------------
+void int_ctx_restore(bool barnb)
+{
+	uint16_t sr_tmp;
+	uint16_t *vector[] = { &ic, r+0, &sr_tmp };
+	for (int i=0 ; i<3 ; i++, ar++) {
+		if (!cpu_mem_read_1(barnb, ar, vector[i])) return;
+	}
+	SR_WRITE(sr_tmp);
+	int_update_xmask();
+	LOG(L_CPU,
+		"Loaded process context from @ 0x%04x: [IC: 0x%04x, R0: 0x%04x, SR: 0x%04x]",
+		ar-3, vector[0], vector[1], vector[2]
+	);
 }
 
 // vim: tabstop=4 shiftwidth=4 autoindent

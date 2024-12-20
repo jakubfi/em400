@@ -1,4 +1,4 @@
-//  Copyright (c) 2017 Jakub Filipowicz <jakubf@gmail.com>
+//  Copyright (c) 2017-2024 Jakub Filipowicz <jakubf@gmail.com>
 //
 //  This program is free software; you can redistribute it and/or modify
 //  it under the terms of the GNU General Public License as published by
@@ -184,7 +184,7 @@ int cp_mc_get()
 // -----------------------------------------------------------------------
 bool cp_irq_get()
 {
-	return rp != 0;
+	return irq;
 }
 
 // -----------------------------------------------------------------------

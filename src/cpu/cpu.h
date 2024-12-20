@@ -1,4 +1,4 @@
-//  Copyright (c) 2012-2013 Jakub Filipowicz <jakubf@gmail.com>
+//  Copyright (c) 2012-2024 Jakub Filipowicz <jakubf@gmail.com>
 //
 //  This program is free software; you can redistribute it and/or modify
 //  it under the terms of the GNU General Public License as published by
@@ -90,10 +90,6 @@ void cpu_shutdown();
 
 int cpu_mod_on();
 int cpu_mod_off();
-
-void cpu_ctx_switch(uint16_t arg, uint16_t new_ic, uint16_t int_mask);
-void cpu_sp_rewind();
-void cpu_ctx_restore(bool barnb);
 
 void cpu_loop();
 

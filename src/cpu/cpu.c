@@ -1,4 +1,4 @@
-//  Copyright (c) 2012-2021 Jakub Filipowicz <jakubf@gmail.com>
+//  Copyright (c) 2012-2024 Jakub Filipowicz <jakubf@gmail.com>
 //
 //  This program is free software; you can redistribute it and/or modify
 //  it under the terms of the GNU General Public License as published by
@@ -187,7 +187,7 @@ static int cpu_do_wait()
 	LOG(L_CPU, "CPU idling");
 
 	pthread_mutex_lock(&cpu_wake_mutex);
-	while ((cpu_state == ECTL_STATE_STOP) || ((cpu_state == ECTL_STATE_WAIT) && !(atomic_load_explicit(&rp, memory_order_acquire) && !p && !mc))) {
+	while ((cpu_state == ECTL_STATE_STOP) || ((cpu_state == ECTL_STATE_WAIT) && !(atomic_load_explicit(&irq, memory_order_acquire) && !p && !mc))) {
 		cpu_reg_selected_to_w();
 		pthread_cond_wait(&cpu_wake_cond, &cpu_wake_mutex);
 	}
@@ -284,7 +284,7 @@ int cpu_init(em400_cfg *cfg)
 		return LOGERR("Failed to build CPU instruction table.");
 	}
 
-	int_update_mask(0);
+	int_update_xmask();
 
 	// this is checked only at power-on
 	if (mem_mega_boot()) {
@@ -356,7 +356,7 @@ void cpu_do_clear(bool clo)
 
 	r[0] = 0;
 	SR_WRITE(0);
-	int_update_mask(rm);
+	int_update_xmask();
 	int_clear_all();
 
 	if (clo) {
@@ -370,46 +370,6 @@ void cpu_do_clear(bool clo)
 	log_reset_process();
 	log_intlevel_reset();
 	log_syscall_reset();
-}
-
-// -----------------------------------------------------------------------
-void cpu_ctx_switch(uint16_t arg, uint16_t new_ic, uint16_t int_mask)
-{
-	if (!cpu_mem_read_1(false, STACK_POINTER, &ar)) return;
-
-	LOG(L_CPU, "Store current process ctx [IC: 0x%04x, R0: 0x%04x, SR: 0x%04x, 0x%04x] @ 0x%04x, set new IC: 0x%04x", ic, r[0], SR_READ(), arg, ar, new_ic);
-
-	uint16_t vector[] = { ic, r[0], SR_READ(), arg };
-	for (int i=0 ; i<4 ; i++, ar++) {
-		if (!cpu_mem_write_1(false, ar, vector[i])) return;
-	}
-	if (!cpu_mem_write_1(false, STACK_POINTER, ar)) return;
-
-	r[0] = 0;
-	ic = new_ic;
-	q = false;
-	rm &= int_mask;
-	int_update_mask(rm);
-}
-
-// -----------------------------------------------------------------------
-void cpu_sp_rewind()
-{
-	if (!cpu_mem_read_1(false, STACK_POINTER, &ar)) return;
-	ar -= 4;
-	if (!cpu_mem_write_1(false, STACK_POINTER, ar)) return;
-}
-
-// -----------------------------------------------------------------------
-void cpu_ctx_restore(bool barnb)
-{
-	uint16_t sr_tmp;
-	uint16_t *vector[] = { &ic, r+0, &sr_tmp };
-	for (int i=0 ; i<3 ; i++, ar++) {
-		if (!cpu_mem_read_1(barnb, ar, vector[i])) return;
-	}
-	SR_WRITE(sr_tmp);
-	int_update_mask(rm);
 }
 
 // -----------------------------------------------------------------------
@@ -622,7 +582,7 @@ void cpu_loop()
 				cpu_state_change(ECTL_STATE_STOP, ECTL_STATE_ANY);
 				// fallthrough
 			case ECTL_STATE_RUN:
-				if (atomic_load_explicit(&rp, memory_order_acquire) && !p && (mc == 0)) {
+				if (atomic_load_explicit(&irq, memory_order_acquire) && !p && (mc == 0)) {
 					int_serve();
 					cpu_time = TIME_INT_SERVE;
 				} else {
@@ -669,7 +629,7 @@ void cpu_loop()
 			case ECTL_STATE_WAIT:
 				// busy wait to not disturb audio, TODO
 				cpu_reg_selected_to_w();
-				if (atomic_load_explicit(&rp, memory_order_acquire) && !p && !mc) {
+				if (atomic_load_explicit(&irq, memory_order_acquire) && !p && !mc) {
 					cpu_state_change(ECTL_STATE_RUN, ECTL_STATE_WAIT);
 				} else {
 					cpu_time = throttle_granularity;

@@ -1,4 +1,4 @@
-//  Copyright (c) 2012-2013 Jakub Filipowicz <jakubf@gmail.com>
+//  Copyright (c) 2012-2024 Jakub Filipowicz <jakubf@gmail.com>
 //
 //  This program is free software; you can redistribute it and/or modify
 //  it under the terms of the GNU General Public License as published by
@@ -26,7 +26,7 @@
 #define STACK_POINTER 0x61
 
 extern uint32_t rz;
-extern uint32_t rp;
+extern _Atomic bool irq;
 
 enum named_interrupts {
 	INT_2CPU_POWER		= 0,
@@ -77,14 +77,16 @@ enum int_masks {
 	MASK_EX = MASK_4,
 };
 
-void int_update_mask(uint16_t mask);
-void int_set(int x);
-void int_clear(int x);
+void int_update_xmask();
+void int_set(int int_num);
+void int_clear(int int_num);
 void int_clear_all();
 void int_put_nchan(uint16_t r);
 uint16_t int_get_nchan();
 uint16_t int_get_chan();
 void int_serve();
+void int_ctx_switch(uint16_t int_spec, uint16_t new_ic, uint16_t new_rm);
+void int_ctx_restore(bool barnb);
 
 #endif
 

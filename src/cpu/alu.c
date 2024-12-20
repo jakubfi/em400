@@ -1,4 +1,4 @@
-//  Copyright (c) 2012-2013 Jakub Filipowicz <jakubf@gmail.com>
+//  Copyright (c) 2012-2024 Jakub Filipowicz <jakubf@gmail.com>
 //
 //  This program is free software; you can redistribute it and/or modify
 //  it under the terms of the GNU General Public License as published by
@@ -225,7 +225,7 @@ void awp_dispatch(int op, uint16_t arg)
 		}
 	} else {
 		if (!cpu_mem_read_1(false, AWP_DISPATCH_TAB_ADDR+op, &ar)) return;
-		cpu_ctx_switch(arg, ar, MASK_9);
+		int_ctx_switch(arg, ar, MASK_9);
 	}
 }
 

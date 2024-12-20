@@ -1,4 +1,4 @@
-//  Copyright (c) 2012-2022 Jakub Filipowicz <jakubf@gmail.com>
+//  Copyright (c) 2012-2024 Jakub Filipowicz <jakubf@gmail.com>
 //
 //  This program is free software; you can redistribute it and/or modify
 //  it under the terms of the GNU General Public License as published by
@@ -701,7 +701,7 @@ void op_71_exl()
 	}
 
 	if (cpu_mem_read_1(false, EXL_VECTOR, &data)) {
-		cpu_ctx_switch(ac, data, MASK_9);
+		int_ctx_switch(ac, data, MASK_9);
 	}
 }
 
@@ -995,10 +995,11 @@ void op_73_gil()
 // -----------------------------------------------------------------------
 void op_73_lip()
 {
-	cpu_sp_rewind();
-	cpu_ctx_restore(false);
+	if (!cpu_mem_read_1(false, STACK_POINTER, &ar)) return;
+	ar -= 4;
+	if (!cpu_mem_write_1(false, STACK_POINTER, ar)) return;
 
-	LOG(L_CPU, "Loaded process ctx @ 0x%04x: [IC: 0x%04x, R0: 0x%04x, SR: 0x%04x]", ar-2, ic, r[0], SR_READ());
+	int_ctx_restore(false);
 
 	if (LOG_ENABLED) {
 		log_update_process();
@@ -1209,7 +1210,7 @@ void op_77_im()
 	cpu_mem_read_1(q, ar, &w);
 	step_point();
 	rm = (w >> 6) & 0b1111111111;
-	int_update_mask(rm);
+	int_update_xmask();
 }
 
 // -----------------------------------------------------------------------
@@ -1233,12 +1234,12 @@ void op_77_fi()
 // -----------------------------------------------------------------------
 void op_77_sp()
 {
-	cpu_ctx_restore(true);
+	int_ctx_restore(true);
 
 	if (LOG_ENABLED) {
 		log_update_process();
 		log_intlevel_reset();
-		log_cpu(L_OP, "SP: context @ 0x%04x", ac);
+		log_cpu(L_OP, "SP: context @ 0x%04x", ar);
 		if (LOG_WANTS(L_CRK5)) {
 			log_handle_syscall_ret(L_CRK5, ic, SR_READ(), r[4]);
 			log_log_process(L_CRK5);
