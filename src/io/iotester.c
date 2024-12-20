@@ -313,6 +313,7 @@ int it_cmd(void *ch, int dir, uint16_t n_arg, uint16_t *r_arg)
 					return (rmd & 0b11);
 				case CMD_ISP:
 					*r_arg = atomic_load_explicit(&it->intspec, memory_order_acquire);
+					atomic_store_explicit(&it->intspec, 0xdead, memory_order_release);
 					LOG(L_IO, "Sending intspec to CPU: 0x%04x", *r_arg);
 					break;
 				case CMD_RND:
