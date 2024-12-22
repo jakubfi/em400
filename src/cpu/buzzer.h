@@ -18,11 +18,10 @@
 #ifndef SOUND_H
 #define SOUND_H
 
-#include <inttypes.h>
-#include "cfg.h"
+#include "libem400.h"
 
 void buzzer_silence();
-int buzzer_init(em400_cfg *cfg);
+int buzzer_init(struct em400_cfg_buzzer *cfg);
 void buzzer_update(int ir, unsigned instruction_time);
 void buzzer_stop();
 void buzzer_start();

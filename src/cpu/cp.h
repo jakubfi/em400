@@ -21,8 +21,6 @@
 #include <inttypes.h>
 #include <stdbool.h>
 
-#include "cfg.h"
-
 // Standard control panel interface
 int cp_bus_w_get();
 void cp_kb_set(uint16_t val);

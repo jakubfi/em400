@@ -21,7 +21,7 @@
 #include <inttypes.h>
 #include <stdbool.h>
 
-#include "cfg.h"
+#include "libem400.h"
 
 // physical dimensions
 #define MEM_MODULES 16					// max memory modules
@@ -33,7 +33,8 @@
 #define MEM_PAGES 16					// max pages in a segment
 #define MEM_PAGE_SIZE MEM_FRAME_SIZE	// page size
 
-int mem_init(em400_cfg *cfg);
+int mem_configure(struct em400_cfg_mem *c_mem);
+int mem_init();
 void mem_shutdown();
 int mem_cmd(uint16_t n, uint16_t r);
 void mem_reset(bool long_reset);

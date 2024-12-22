@@ -18,6 +18,7 @@
 #include <stdlib.h>
 #include <inttypes.h>
 #include <stdbool.h>
+#include <string.h>
 
 #include "mem/elwro.h"
 #include "mem/mega.h"
@@ -25,7 +26,7 @@
 #include "mem/mem.h"
 #include "io/defs.h"
 
-#include "cfg.h"
+#include "libem400.h"
 
 #include "log.h"
 
@@ -35,7 +36,7 @@ static mem_cmd_f mem_cmd_handlers[MEM_MODULES];
 static uint16_t *mem_map_reads[MEM_SEGMENTS][MEM_PAGES];
 static uint16_t *mem_map_writes[MEM_SEGMENTS][MEM_PAGES];
 
-static int elwro_modules, mega_modules;
+static struct em400_cfg_mem cfg_mem;
 
 // -----------------------------------------------------------------------
 static void mem_update_map()
@@ -43,11 +44,11 @@ static void mem_update_map()
 	for (int segment=0 ; segment<MEM_SEGMENTS ; segment++) {
 		for (int page=0 ; page<MEM_PAGES ; page++) {
 			bool res;
-			if (elwro_modules) {
+			if (cfg_mem.elwro_modules) {
 				res = mem_elwro_get_seg_ptrs(segment, page, &mem_map_reads[segment][page], &mem_map_writes[segment][page]);
 				if (res) continue;
 			}
-			if (mega_modules) {
+			if (cfg_mem.mega_modules) {
 				res = mem_mega_get_seg_ptrs(segment, page, &mem_map_reads[segment][page], &mem_map_writes[segment][page]);
 				if (res) continue;
 			}
@@ -58,24 +59,27 @@ static void mem_update_map()
 }
 
 // -----------------------------------------------------------------------
-int mem_init(em400_cfg *cfg)
+int mem_configure(struct em400_cfg_mem *c_mem)
+{
+	memcpy(&cfg_mem, c_mem, sizeof(struct em400_cfg_mem));
+
+	return E_OK;
+}
+
+// -----------------------------------------------------------------------
+int mem_init()
 {
 	int res;
 
-	elwro_modules = cfg_getint(cfg, "memory:elwro_modules", CFG_DEFAULT_MEMORY_ELWRO_MODULES);
-	mega_modules = cfg_getint(cfg, "memory:mega_modules", CFG_DEFAULT_MEMORY_MEGA_MODULES);
-	const int cfg_os = cfg_getint(cfg, "memory:hardwired_segments", CFG_DEFAULT_MEMORY_HARDWIRED_SEGMENTS);
-	const char *mega_prom_image = cfg_getstr(cfg, "memory:mega_prom", CFG_DEFAULT_MEMORY_MEGA_PROM);
-
-	res = mem_elwro_init(elwro_modules, cfg_os);
+	res = mem_elwro_init(cfg_mem.elwro_modules, cfg_mem.os_segments);
 	if (res != E_OK) {
 		return LOGERR("Failed to initialize Elwro memory.");
 	}
-	for (int module=0 ; module<elwro_modules ; module++) {
+	for (int module=0 ; module<cfg_mem.elwro_modules ; module++) {
 		mem_cmd_handlers[module] = mem_elwro_cmd;
 	}
 
-	res = mem_mega_init(mega_modules, mega_prom_image);
+	res = mem_mega_init(cfg_mem.mega_modules, cfg_mem.mega_prom_image);
 	if (res != E_OK) {
 		return LOGERR("Failed to initialize MEGA memory.");
 	}
@@ -83,10 +87,10 @@ int mem_init(em400_cfg *cfg)
 	// as the decision is made based on the command, not the module number
 
 	LOG(L_MEM, "Memory initialized. Elwro modules: %d, MEGA modules: %d, hardwired OS segments: %d, MEGA prom: %s",
-		elwro_modules,
-		mega_modules,
-		cfg_os,
-		mega_prom_image
+		cfg_mem.elwro_modules,
+		cfg_mem.mega_modules,
+		cfg_mem.os_segments,
+		cfg_mem.mega_prom_image
 	);
 
 	mem_update_map();
@@ -114,7 +118,7 @@ int mem_cmd(uint16_t n, uint16_t r)
 	int flags	= (n & 0b1111111000000000) >> 9;
 
 	// if MEGA is present and MEM_MEGA_LOC is set, command is always handled by MEGA
-	if (mega_modules && (flags & MEM_MEGA_LOC)) {
+	if (cfg_mem.mega_modules && (flags & MEM_MEGA_LOC)) {
 		res = mem_mega_cmd(segment, page, module, frame, flags);
 	} else if (mem_cmd_handlers[module]) {
 		res = mem_cmd_handlers[module](segment, page, module, frame, flags);
@@ -133,8 +137,8 @@ int mem_cmd(uint16_t n, uint16_t r)
 // -----------------------------------------------------------------------
 void mem_reset(bool long_reset)
 {
-	if (elwro_modules) mem_elwro_reset();
-	if (mega_modules) mem_mega_reset(long_reset);
+	if (cfg_mem.elwro_modules) mem_elwro_reset();
+	if (cfg_mem.mega_modules) mem_mega_reset(long_reset);
 
 	mem_update_map();
 }
@@ -143,7 +147,7 @@ void mem_reset(bool long_reset)
 bool mem_mega_boot()
 {
 	// Always boot from MEGA if present
-	return (mega_modules > 0);
+	return (cfg_mem.mega_modules > 0);
 }
 
 // -----------------------------------------------------------------------

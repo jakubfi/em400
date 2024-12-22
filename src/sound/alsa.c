@@ -20,17 +20,17 @@
 #include <alsa/error.h>
 
 #include "log.h"
-#include "cfg.h"
+#include "libem400.h"
 #include "sound/sound.h"
 
 static snd_pcm_t *handle;
 
 // -----------------------------------------------------------------------
-int alsa_init(em400_cfg *cfg)
+int alsa_init(struct em400_cfg_buzzer *cfg)
 {
 	int err;
-	const char *cfg_output = cfg_getstr(cfg, "sound:output", CFG_DEFAULT_SOUND_OUTPUT);
-	err = snd_pcm_open(&handle, cfg_output, SND_PCM_STREAM_PLAYBACK, 0);
+
+	err = snd_pcm_open(&handle, cfg->output, SND_PCM_STREAM_PLAYBACK, 0);
 	if (err < 0) {
 		return LOGERR("ALSA snd_pcm_open() error: %s", snd_strerror(err));
 	}
@@ -38,9 +38,9 @@ int alsa_init(em400_cfg *cfg)
 	const unsigned pcm_format = SND_PCM_FORMAT_S16;
 	const unsigned pcm_access = SND_PCM_ACCESS_RW_INTERLEAVED;
 	const unsigned channels = 1;
-	const unsigned rate = cfg_getint(cfg, "sound:rate", CFG_DEFAULT_SOUND_RATE);
+	const unsigned rate = cfg->sample_rate;
 	const unsigned resample = 1;
-	const unsigned latency = cfg_getint(cfg, "sound:latency", CFG_DEFAULT_SOUND_LATENCY);
+	const unsigned latency = cfg->latency;
 	const unsigned latency_us = 1000 * latency;
 
 	err = snd_pcm_set_params(handle, pcm_format, pcm_access, channels, rate, resample, latency_us);
@@ -48,7 +48,7 @@ int alsa_init(em400_cfg *cfg)
 		return LOGERR("ALSA snd_pcm_set_params() error: %s", snd_strerror(err));
 	}
 
-	LOG(L_EM4H, "ALSA sound output initialized. Output: %s, rate: %i, latency: %i ms", cfg_output, rate, latency);
+	LOG(L_EM4H, "ALSA sound output initialized. Output: %s, rate: %i, latency: %i ms", cfg->output, cfg->sample_rate, cfg->latency);
 
 	return E_OK;
 }

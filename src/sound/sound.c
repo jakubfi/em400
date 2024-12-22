@@ -20,7 +20,7 @@
 
 #include "log.h"
 #include "sound/sound.h"
-#include "cfg.h"
+#include "libem400.h"
 
 #ifdef HAVE_ALSA
 extern const struct snd_drv snd_drv_alsa;
@@ -42,24 +42,22 @@ static const struct snd_drv *snd_drivers[] = {
 };
 
 // -----------------------------------------------------------------------
-const struct snd_drv * snd_init(em400_cfg *cfg)
+const struct snd_drv * snd_init(struct em400_cfg_buzzer *cfg)
 {
-	const char *cfg_driver = cfg_getstr(cfg, "sound:driver", CFG_DEFAULT_SOUND_DRIVER);
-
 	const struct snd_drv **snd_drv = snd_drivers;
 	while (snd_drv && *snd_drv) {
-		if (!strcasecmp(cfg_driver, (*snd_drv)->name)) {
+		if (!strcasecmp(cfg->driver, (*snd_drv)->name)) {
 			if ((*snd_drv)->init(cfg) == E_OK) {
 				return *snd_drv;
 			} else {
-				LOGERR("Error initializing sound driver: %s", cfg_driver);
+				LOGERR("Error initializing sound driver: %s", cfg->driver);
 				return NULL;
 			}
 		}
 		snd_drv++;
 	}
 
-	LOGERR("Could not find sound driver: %s", cfg_driver);
+	LOGERR("Could not find sound driver: %s", cfg->driver);
 	return NULL;
 }
 

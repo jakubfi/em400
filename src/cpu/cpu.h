@@ -21,7 +21,7 @@
 #include <inttypes.h>
 #include <stdbool.h>
 
-#include "cfg.h"
+#include "libem400.h"
 
 // -----------------------------------------------------------------------
 // Flags in R0
@@ -85,7 +85,8 @@ extern bool cpu_mod_active;
 extern bool cpu_user_io_illegal;
 extern bool awp_enabled;
 
-int cpu_init(em400_cfg *cfg);
+int cpu_configure(struct em400_cfg_cpu *c_cpu, struct em400_cfg_buzzer *c_buzzer);
+int cpu_init();
 void cpu_shutdown();
 
 int cpu_mod_on();

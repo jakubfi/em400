@@ -20,9 +20,9 @@
 
 #include <inttypes.h>
 #include <stdlib.h>
-#include "cfg.h"
+#include "libem400.h"
 
-typedef int (*snd_drv_init)(em400_cfg *cfg);
+typedef int (*snd_drv_init)(struct em400_cfg_buzzer *cfg);
 typedef void (*snd_drv_shutdown)(void);
 typedef long (*snd_drv_play)(int16_t *buf, size_t frames);
 typedef void (*snd_drv_stop)(void);
@@ -36,6 +36,6 @@ struct snd_drv {
 	snd_drv_stop stop;
 };
 
-const struct snd_drv * snd_init(em400_cfg *cfg);
+const struct snd_drv * snd_init(struct em400_cfg_buzzer *cfg);
 
 #endif

@@ -252,6 +252,9 @@ set(SOURCES_EM400
 	src/external/iniparser/dictionary.h
 	src/external/iniparser/iniparser.c
 	src/external/iniparser/iniparser.h
+
+	src/libem400.c
+	src/libem400.h
 )
 
 if(ALSA_FOUND)

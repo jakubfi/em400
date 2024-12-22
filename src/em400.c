@@ -44,9 +44,39 @@ struct ui *ui;
 // -----------------------------------------------------------------------
 int em400_init(em400_cfg *cfg)
 {
+	struct em400_cfg_cpu cpu_cfg = {
+		.awp = cfg_getbool(cfg, "cpu:awp", CFG_DEFAULT_CPU_AWP),
+		.mod = cfg_getbool(cfg, "cpu:modifications", CFG_DEFAULT_CPU_MODIFICATIONS),
+		.user_io_illegal = cfg_getbool(cfg, "cpu:user_io_illegal", CFG_DEFAULT_CPU_IO_USER_ILLEGAL),
+		.nomem_stop = cfg_getbool(cfg, "cpu:stop_on_nomem", CFG_DEFAULT_CPU_STOP_ON_NOMEM),
+		.speed_real = cfg_getbool(cfg, "cpu:speed_real", CFG_DEFAULT_CPU_SPEED_REAL),
+		.throttle_granularity = 1000 * cfg_getint(cfg, "cpu:throttle_granularity", CFG_DEFAULT_CPU_THROTTLE_GRANULARITY),
+		.clock_period = cfg_getint(cfg, "cpu:clock_period", CFG_DEFAULT_CPU_CLOCK_PERIOD),
+	};
+
+	struct em400_cfg_buzzer buzzer_cfg = {
+		.enabled = cfg_getbool(cfg, "sound:enabled", CFG_DEFAULT_SOUND_ENABLED),
+		.buffer_len = cfg_getint(cfg, "sound:buffer_len", CFG_DEFAULT_SOUND_BUFFER_LEN),
+		.volume = cfg_getint(cfg, "sound:volume", CFG_DEFAULT_SOUND_VOLUME),
+		.sample_rate = cfg_getint(cfg, "sound:rate", CFG_DEFAULT_SOUND_RATE),
+		.driver = cfg_getstr(cfg, "sound:driver", CFG_DEFAULT_SOUND_DRIVER),
+		.output = cfg_getstr(cfg, "sound:output", CFG_DEFAULT_SOUND_OUTPUT),
+		.latency = cfg_getint(cfg, "sound:latency", CFG_DEFAULT_SOUND_LATENCY),
+	};
+
+	struct em400_cfg_mem mem_cfg = {
+		.elwro_modules = cfg_getint(cfg, "memory:elwro_modules", CFG_DEFAULT_MEMORY_ELWRO_MODULES),
+		.mega_modules = cfg_getint(cfg, "memory:mega_modules", CFG_DEFAULT_MEMORY_MEGA_MODULES),
+		.os_segments = cfg_getint(cfg, "memory:hardwired_segments", CFG_DEFAULT_MEMORY_HARDWIRED_SEGMENTS),
+		.mega_prom_image = cfg_getstr(cfg, "memory:mega_prom", CFG_DEFAULT_MEMORY_MEGA_PROM),
+	};
+
+	if (em400_cpu_configure(&cpu_cfg, &buzzer_cfg) != E_OK) return LOGERR("Failed to configure CPU.");
+	if (em400_mem_configure(&mem_cfg) != E_OK) return LOGERR("Failed to configure memory.");
+
 	if (log_init(cfg) != E_OK) return LOGERR("Failed to initialize logging.");
-	if (mem_init(cfg) != E_OK) return LOGERR("Failed to initialize memory.");
-	if (cpu_init(cfg) != E_OK) return LOGERR("Failed to initialize CPU.");
+	if (mem_init() != E_OK) return LOGERR("Failed to initialize memory.");
+	if (cpu_init() != E_OK) return LOGERR("Failed to initialize CPU.");
 	if (io_init(cfg) != E_OK) return LOGERR("Failed to initialize I/O.");
 	if (ectl_init() != E_OK) return LOGERR("Failed to initialize ECTL interface.");
 	if (!(ui = ui_create(cfg))) return LOGERR("Failed to initialize UI.");

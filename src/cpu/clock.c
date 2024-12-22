@@ -62,10 +62,6 @@ void * clock_thread(void *ptr)
 // -----------------------------------------------------------------------
 int clock_init(int clock_period)
 {
-	if ((clock_period < 2) || (clock_period > 100)) {
-		return LOGERR("Clock period should be between 2 and 100 miliseconds, not %i.", clock_period);
-	}
-
 	sem_init(&clock_quit, 0, 0);
 	if (pthread_create(&clock_th, NULL, clock_thread, NULL)) {
 		return LOGERR("Failed to spawn clock thread.");

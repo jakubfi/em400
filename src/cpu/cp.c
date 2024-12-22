@@ -28,7 +28,6 @@
 #include "cpu/clock.h"
 #include "utils/utils.h"
 
-#include "cfg.h"
 #include "log.h"
 
 #include "ectl.h" // for global constants/enums

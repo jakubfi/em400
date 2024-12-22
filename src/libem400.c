@@ -1,4 +1,4 @@
-//  Copyright (c) 2019 Jakub Filipowicz <jakubf@gmail.com>
+//  Copyright (c) 2024 Jakub Filipowicz <jakubf@gmail.com>
 //
 //  This program is free software; you can redistribute it and/or modify
 //  it under the terms of the GNU General Public License as published by
@@ -15,66 +15,34 @@
 //  Foundation, Inc.,
 //  51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 
-#include <inttypes.h>
-#include <stdio.h>
-
-#include "log.h"
-#include "libem400.h"
-#include "sound/sound.h"
-
-FILE *out;
+#include "mem/mem.h"
+#include "cpu/cpu.h"
 
 // -----------------------------------------------------------------------
-int file_init(struct em400_cfg_buzzer *cfg)
-{
-	out = fopen(cfg->output, "w");
-	if (!out) {
-		return LOGERR("Error opening sound output file: %s", cfg->output);
-	}
+// --- MAINTENANCE -------------------------------------------------------
+// -----------------------------------------------------------------------
 
-	return E_OK;
+// -----------------------------------------------------------------------
+int em400_mem_configure(struct em400_cfg_mem *c_mem)
+{
+	return mem_configure(c_mem);
 }
 
 // -----------------------------------------------------------------------
-void file_shutdown()
+int em400_cpu_configure(struct em400_cfg_cpu *c_cpu, struct em400_cfg_buzzer *c_buzzer)
 {
-	if (out) {
-		fclose(out);
-	}
+	return cpu_configure(c_cpu, c_buzzer);
 }
 
-// -----------------------------------------------------------------------
-long file_play(int16_t *buf, size_t frames)
-{
-	long res;
-
-	res = fwrite(buf, 2, frames, out);
-	if (res < 0) {
-		LOG(L_EM4H, "Sound output file write failed");
-	}
-
-	return res;
-}
 
 // -----------------------------------------------------------------------
-void file_stop()
-{
-}
+// --- CONTROL PANEL -----------------------------------------------------
+// -----------------------------------------------------------------------
+
+
 
 // -----------------------------------------------------------------------
-void file_start()
-{
-}
-
+// --- EM400 EXTENSIONS --------------------------------------------------
 // -----------------------------------------------------------------------
-const struct snd_drv snd_drv_file = {
-	.name = "file",
-	.init = file_init,
-	.shutdown = file_shutdown,
-	.play = file_play,
-	.start = file_start,
-	.stop = file_stop,
-
-};
 
 // vim: tabstop=4 shiftwidth=4 autoindent

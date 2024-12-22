@@ -18,6 +18,7 @@
 
 #include <stdlib.h>
 #include <stdarg.h>
+#include <stdio.h>
 
 #include "cpu/cpu.h"
 #include "mem/mem.h"

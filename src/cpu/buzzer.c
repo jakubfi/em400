@@ -20,7 +20,7 @@
 
 #include "sound/sound.h"
 #include "external/biquad/biquad.h"
-#include "cfg.h"
+#include "libem400.h"
 #include "log.h"
 
 // Tonsil GD 6/0,5 frequency response, more or less
@@ -118,21 +118,19 @@ void buzzer_shutdown()
 }
 
 // -----------------------------------------------------------------------
-int buzzer_init(em400_cfg *cfg)
+int buzzer_init(struct em400_cfg_buzzer *cfg)
 {
-	int volume = cfg_getint(cfg, "sound:volume", CFG_DEFAULT_SOUND_VOLUME);
-	int sample_rate = cfg_getint(cfg, "sound:rate", CFG_DEFAULT_SOUND_RATE);
-	sample_period = 1000000000.0f / sample_rate;
-	buffer_len = cfg_getint(cfg, "sound:buffer_len", CFG_DEFAULT_SOUND_BUFFER_LEN);
+	sample_period = 1000000000.0f / cfg->sample_rate;
+	buffer_len = cfg->buffer_len;
 
-	if (volume > 100) {
-		LOGERR("Adjusting sound volume from %i to 100 (max allowed).", volume);
-		volume = 100;
-	} else if (volume < 0) {
-		LOGERR("Adjusting sound volume from %i to 0 (min allowed).", volume);
-		volume = 0;
+	if (cfg->volume > 100) {
+		LOGERR("Adjusting sound volume from %i to 100 (max allowed).", cfg->volume);
+		cfg->volume = 100;
+	} else if (cfg->volume < 0) {
+		LOGERR("Adjusting sound volume from %i to 0 (min allowed).", cfg->volume);
+		cfg->volume = 0;
 	}
-	audio_sample = (float) volume * (32767/100)/4; // /4 to accomodate post-processing overdrive
+	audio_sample = (float) cfg->volume * (32767/100)/4; // /4 to accomodate post-processing overdrive
 
 	snd_buf_output = malloc(sizeof(int16_t) * buffer_len);
 	if (!snd_buf_output) {
@@ -155,10 +153,10 @@ int buzzer_init(em400_cfg *cfg)
 		goto cleanup;
 	}
 
-	sf_highpass(&bq_hp, sample_rate, SPEAKER_HP, SPEAKER_HP_RES);
-	sf_lowpass(&bq_lp, sample_rate, SPEAKER_LP, SPEAKER_LP_RES);
+	sf_highpass(&bq_hp, cfg->sample_rate, SPEAKER_HP, SPEAKER_HP_RES);
+	sf_lowpass(&bq_lp, cfg->sample_rate, SPEAKER_LP, SPEAKER_LP_RES);
 
-	LOG(L_CPU, "Buzzer enabled. Volume: %i, buffer length: %i frames", volume, buffer_len);
+	LOG(L_CPU, "Buzzer enabled. Volume: %i, buffer length: %i frames", cfg->volume, buffer_len);
 
 	return E_OK;
 

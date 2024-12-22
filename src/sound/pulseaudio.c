@@ -20,7 +20,7 @@
 #include <pulse/error.h>
 
 #include "log.h"
-#include "cfg.h"
+#include "libem400.h"
 #include "sound/sound.h"
 
 static pa_simple *s;
@@ -28,21 +28,18 @@ static const int channels = 1;
 static const int bytes_per_frame = channels * 2;
 
 // -----------------------------------------------------------------------
-int pulseaudio_init(em400_cfg *cfg)
+int pulseaudio_init(struct em400_cfg_buzzer *cfg)
 {
 	int err;
 
-	const int rate = cfg_getint(cfg, "sound:rate", CFG_DEFAULT_SOUND_RATE);
-	const int latency = cfg_getint(cfg, "sound:latency", CFG_DEFAULT_SOUND_LATENCY);
-
 	const pa_sample_spec ss = {
 		.format = PA_SAMPLE_S16NE,
-		.rate = rate,
+		.rate = cfg->sample_rate,
 		.channels = channels
 	};
 	const pa_buffer_attr ba = {
 		.maxlength = -1,
-		.tlength = latency * (rate/1000),
+		.tlength = cfg->latency * (cfg->sample_rate/1000),
 		.prebuf = -1,
 		.minreq = -1,
 		.fragsize = -1,
@@ -53,7 +50,7 @@ int pulseaudio_init(em400_cfg *cfg)
 		return LOGERR("PulseAudio stream open failed: %s", pa_strerror(err));
 	}
 
-	LOG(L_EM4H, "Pulseaudio sound output initialized. Rate: %i, latency: %i ms", rate, latency);
+	LOG(L_EM4H, "Pulseaudio sound output initialized. Rate: %i, latency: %i ms", cfg->sample_rate, cfg->latency);
 
 	return E_OK;
 }
