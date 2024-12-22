@@ -89,11 +89,6 @@ latency = 20
 # Software buzzer volume control (0-100)
 volume = 8
 
-# Enable or disable speaker frequency response modeling.
-# When enabled, EM400 sounds like the real hardware.
-# In fact, disabling it is considered a criminal offence.
-filter = true
-
 [log]
 # Enable or disable logging.
 enabled = false

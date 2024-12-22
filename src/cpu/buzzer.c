@@ -40,7 +40,6 @@ static float *snd_buf_end;
 static float *snd_buf_pos;
 static float *snd_buf_float;
 
-static int speaker_filter;
 static sf_biquad_state_st bq_lp;
 static sf_biquad_state_st bq_hp;
 
@@ -49,10 +48,8 @@ static sf_biquad_state_st bq_hp;
 static void buzzer_flush()
 {
 	// apply filter
-	if (speaker_filter) {
-		sf_biquad_process(&bq_hp, buffer_len, snd_buf_float, snd_buf_float);
-		sf_biquad_process(&bq_lp, buffer_len, snd_buf_float, snd_buf_float);
-	}
+	sf_biquad_process(&bq_hp, buffer_len, snd_buf_float, snd_buf_float);
+	sf_biquad_process(&bq_lp, buffer_len, snd_buf_float, snd_buf_float);
 
 	// prepare final sample output
 	for (int i=0 ; i<buffer_len ; i++) {
@@ -124,7 +121,6 @@ void buzzer_shutdown()
 int buzzer_init(em400_cfg *cfg)
 {
 	int volume = cfg_getint(cfg, "sound:volume", CFG_DEFAULT_SOUND_VOLUME);
-	speaker_filter = cfg_getbool(cfg, "sound:filter", CFG_DEFAULT_SOUND_FILTER);
 	int sample_rate = cfg_getint(cfg, "sound:rate", CFG_DEFAULT_SOUND_RATE);
 	sample_period = 1000000000.0f / sample_rate;
 	buffer_len = cfg_getint(cfg, "sound:buffer_len", CFG_DEFAULT_SOUND_BUFFER_LEN);
@@ -162,7 +158,7 @@ int buzzer_init(em400_cfg *cfg)
 	sf_highpass(&bq_hp, sample_rate, SPEAKER_HP, SPEAKER_HP_RES);
 	sf_lowpass(&bq_lp, sample_rate, SPEAKER_LP, SPEAKER_LP_RES);
 
-	LOG(L_CPU, "Buzzer enabled. Volume: %i, speaker filter: %s, buffer length: %i frames", volume, speaker_filter ? "enabled" : "disabled", buffer_len);
+	LOG(L_CPU, "Buzzer enabled. Volume: %i, buffer length: %i frames", volume, buffer_len);
 
 	return E_OK;
 
