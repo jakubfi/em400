@@ -28,7 +28,6 @@
 #include "cpu/interrupts.h"
 
 #include "log.h"
-#include "cfg.h"
 
 int clock_enabled = false;
 pthread_t clock_th;
@@ -61,10 +60,8 @@ void * clock_thread(void *ptr)
 }
 
 // -----------------------------------------------------------------------
-int clock_init(em400_cfg *cfg)
+int clock_init(int clock_period)
 {
-	clock_period = cfg_getint(cfg, "cpu:clock_period", CFG_DEFAULT_CPU_CLOCK_PERIOD);
-
 	if ((clock_period < 2) || (clock_period > 100)) {
 		return LOGERR("Clock period should be between 2 and 100 miliseconds, not %i.", clock_period);
 	}

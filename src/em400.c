@@ -47,7 +47,6 @@ int em400_init(em400_cfg *cfg)
 	if (log_init(cfg) != E_OK) return LOGERR("Failed to initialize logging.");
 	if (mem_init(cfg) != E_OK) return LOGERR("Failed to initialize memory.");
 	if (cpu_init(cfg) != E_OK) return LOGERR("Failed to initialize CPU.");
-	if (clock_init(cfg) != E_OK) return LOGERR("Failed to initialize clock.");
 	if (io_init(cfg) != E_OK) return LOGERR("Failed to initialize I/O.");
 	if (ectl_init() != E_OK) return LOGERR("Failed to initialize ECTL interface.");
 	if (!(ui = ui_create(cfg))) return LOGERR("Failed to initialize UI.");
@@ -61,7 +60,6 @@ void em400_shutdown()
 	ui_shutdown(ui);
 	ectl_shutdown();
 	io_shutdown();
-	clock_shutdown();
 	cpu_shutdown();
 	mem_shutdown();
 	log_shutdown();

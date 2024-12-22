@@ -20,13 +20,11 @@
 
 #include <stdbool.h>
 
-#include "cfg.h"
-
 #ifdef __cplusplus
 extern "C" {
 #endif
 
-int clock_init(em400_cfg *cfg);
+int clock_init(int clock_period);
 void clock_shutdown();
 void clock_set(bool state);
 int clock_get();

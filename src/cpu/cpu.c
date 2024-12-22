@@ -278,6 +278,8 @@ int cpu_init(em400_cfg *cfg)
 	nomem_stop = cfg_getbool(cfg, "cpu:stop_on_nomem", CFG_DEFAULT_CPU_STOP_ON_NOMEM);
 	speed_real = cfg_getbool(cfg, "cpu:speed_real", CFG_DEFAULT_CPU_SPEED_REAL);
 	throttle_granularity = 1000 * cfg_getint(cfg, "cpu:throttle_granularity", CFG_DEFAULT_CPU_THROTTLE_GRANULARITY);
+	sound_enabled = cfg_getbool(cfg, "sound:enabled", CFG_DEFAULT_SOUND_ENABLED);
+	int clock_period = cfg_getint(cfg, "cpu:clock_period", CFG_DEFAULT_CPU_CLOCK_PERIOD);
 
 	res = iset_build(cpu_op_tab, cpu_user_io_illegal);
 	if (res != E_OK) {
@@ -304,8 +306,6 @@ int cpu_init(em400_cfg *cfg)
 		speed_real ? "real" : "unlimited",
 		throttle_granularity);
 
-	sound_enabled = cfg_getbool(cfg, "sound:enabled", CFG_DEFAULT_SOUND_ENABLED);
-
 	if (sound_enabled) {
 		if (!speed_real) {
 			LOGERR("WARNING: sound won't work with speed_real=false. Buzzer emulation is disabled.");
@@ -317,12 +317,17 @@ int cpu_init(em400_cfg *cfg)
 		}
 	}
 
+	if (clock_init(clock_period) != E_OK) {
+		return LOGERR("Failed to initialize clock (timer)");
+	}
+
 	return E_OK;
 }
 
 // -----------------------------------------------------------------------
 void cpu_shutdown()
 {
+	clock_shutdown();
 	if (sound_enabled) {
 		buzzer_shutdown();
 	}
