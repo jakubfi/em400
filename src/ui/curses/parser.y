@@ -19,6 +19,7 @@
 #include <stdlib.h>
 
 #include "ectl.h"
+#include "libem400.h"
 
 #include "ui/curses/debugger.h"
 #include "ui/curses/ui.h"
@@ -204,8 +205,8 @@ command:
 	| F_DECODE			{ dbg_c_list_decoders(W_CMD); }
 	| F_DECODE NAME expr{ dbg_c_decode(W_CMD, $2, n_eval($3), 0); }
 	| F_FIND VALUE expr	{ dbg_c_find(W_CMD, $2, n_eval($3)); }
-	| F_CLOCK ON 		{ ectl_clock_set(1); }
-	| F_CLOCK OFF		{ ectl_clock_set(0); }
+	| F_CLOCK ON 		{ em400_cp_clock(1); }
+	| F_CLOCK OFF		{ em400_cp_clock(0); }
 	| F_MEMDUMP VALUE NAME { dbg_c_memdump(W_CMD, $2, $3); }
 	;
 

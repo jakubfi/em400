@@ -33,7 +33,7 @@
 #include "ectl.h" // for global constants/enums
 
 // -----------------------------------------------------------------------
-int cp_bus_w_get()
+uint16_t cp_bus_w()
 {
     return w;
 }
@@ -132,9 +132,9 @@ void cp_clear()
 }
 
 // -----------------------------------------------------------------------
-int cp_bin()
+void cp_bin()
 {
-	return cpu_state_change(ECTL_STATE_BIN, ECTL_STATE_STOP);
+	cpu_state_change(ECTL_STATE_BIN, ECTL_STATE_STOP);
 }
 
 // -----------------------------------------------------------------------
@@ -157,9 +157,9 @@ int cp_stopn(bool state)
 }
 
 // -----------------------------------------------------------------------
-void cp_reg_select(int id)
+void cp_reg_select(int reg_id)
 {
-	cpu_reg_select(id);
+	cpu_reg_select(reg_id);
 }
 
 // -----------------------------------------------------------------------

@@ -35,6 +35,7 @@
 #include "ectl/est.h"
 #include "ectl/brk.h"
 #include "ectl_parser.h"
+#include "libem400.h"
 
 const char *state_names[] = {
 	"RUN",
@@ -75,15 +76,6 @@ void ectl_shutdown()
 {
 	LOG(L_ECTL, "ECTL shutdown");
 	ectl_brk_del_all();
-}
-
-// -----------------------------------------------------------------------
-int ectl_bus_w_get()
-{
-    LOG(L_ECTL, "ECTL reg get");
-    int bus_w = cp_bus_w_get();
-    LOG(L_ECTL, "ECTL bus W get: 0x%04x", bus_w);
-    return bus_w;
 }
 
 // -----------------------------------------------------------------------
@@ -193,60 +185,10 @@ unsigned ectl_cpu_state_get()
 }
 
 // -----------------------------------------------------------------------
-void ectl_cpu_start(bool state)
-{
-	LOG(L_ECTL, "ECTL cpu START: %i", state);
-	cp_start(state);
-}
-
-// -----------------------------------------------------------------------
-void ectl_cpu_cycle()
-{
-	LOG(L_ECTL, "ECTL cpu CYCLE");
-	cp_cycle();
-}
-
-// -----------------------------------------------------------------------
 void ectl_cpu_off()
 {
 	LOG(L_ECTL, "ECTL cpu OFF");
 	cp_off();
-}
-
-// -----------------------------------------------------------------------
-void ectl_clock_set(int state)
-{
-	LOG(L_ECTL, "ECTL clock set: %i", state);
-	cp_clock_set(state);
-}
-
-// -----------------------------------------------------------------------
-bool ectl_clock_get()
-{
-	int state = cp_clock_get();
-	LOG(L_ECTL, "ECTL clock get: %i", state);
-	return state;
-}
-
-// -----------------------------------------------------------------------
-void ectl_cpu_clear()
-{
-	LOG(L_ECTL, "ECTL cpu CLEAR");
-	cp_clear();
-}
-
-// -----------------------------------------------------------------------
-int ectl_bin()
-{
-	LOG(L_ECTL, "ECTL binary load");
-	return cp_bin();
-}
-
-// -----------------------------------------------------------------------
-void ectl_oprq()
-{
-	LOG(L_ECTL, "ECTL OPRQ");
-	cp_oprq();
 }
 
 // -----------------------------------------------------------------------
@@ -337,27 +279,23 @@ cleanup:
 }
 
 // -----------------------------------------------------------------------
-int ectl_log_state_get()
+bool ectl_log_state_get()
 {
 	int state = log_is_enabled();
 	LOG(L_ECTL, "ECTL log state get: %i", state);
-	if (state) {
-		return ECTL_ON;
-	} else {
-		return ECTL_OFF;
-	}
+	return state;
 }
 
 // -----------------------------------------------------------------------
-int ectl_log_state_set(int state)
+int ectl_log_state_set(bool state)
 {
 	int res = -1;
 	LOG(L_ECTL, "ECTL log state set: %i", state);
-	if (state == ECTL_OFF) {
+	if (state) {
+		res = log_enable();
+	} else {
 		log_disable();
 		res = 0;
-	} else if (state == ECTL_ON) {
-		res = log_enable();
 	}
 	return res;
 }
@@ -371,13 +309,13 @@ int ectl_log_component_get(unsigned component)
 }
 
 // -----------------------------------------------------------------------
-int ectl_log_component_set(unsigned component, int state)
+int ectl_log_component_set(unsigned component, bool state)
 {
 	LOG(L_ECTL, "ECTL log component %s: %i", ectl_log_component_name(component), state);
-	if (state == ECTL_OFF) {
-		log_component_disable(component);
-	} else {
+	if (state) {
 		log_component_enable(component);
+	} else {
+		log_component_disable(component);
 	}
 	return state;
 }
@@ -494,76 +432,6 @@ int ectl_brk_del(unsigned id)
 }
 
 // -----------------------------------------------------------------------
-int ectl_stopn(bool state)
-{
-	LOG(L_ECTL, "ECTL stopn: %i", state);
-	return cp_stopn(state);
-}
-
-// -----------------------------------------------------------------------
-void ectl_reg_select(int reg)
-{
-	LOG(L_ECTL, "ECTL reg select");
-	cp_reg_select(reg);
-}
-
-// -----------------------------------------------------------------------
-int ectl_alarm_get()
-{
-	bool state = cp_alarm_get();
-	LOG(L_ECTL, "ECTL ALARM get: %i", state);
-	return state;
-}
-
-// -----------------------------------------------------------------------
-bool ectl_p_get()
-{
-	bool state = cp_p_get();
-	LOG(L_ECTL, "ECTL P get: %i", state);
-	return state;
-}
-
-// -----------------------------------------------------------------------
-bool ectl_mc_get()
-{
-	bool state = cp_mc_get();
-	LOG(L_ECTL, "ECTL MC get: %i", state);
-	return state;
-}
-
-// -----------------------------------------------------------------------
-bool ectl_irq_get()
-{
-	bool state = cp_irq_get();
-	LOG(L_ECTL, "ECTL IRQ get: %i", state);
-	return state;
-}
-
-// -----------------------------------------------------------------------
-bool ectl_run_get()
-{
-	bool state = cp_run_get();
-	LOG(L_ECTL, "ECTL RUN get: %i", state);
-	return state;
-}
-
-// -----------------------------------------------------------------------
-bool ectl_wait_get()
-{
-	bool state = cp_wait_get();
-	LOG(L_ECTL, "ECTL WAIT get: %i", state);
-	return state;
-}
-
-// -----------------------------------------------------------------------
-bool ectl_q_get()
-{
-	bool state = cp_q_get();
-	LOG(L_ECTL, "ECTL Q get: %i", state);
-	return state;
-}
-
-// -----------------------------------------------------------------------
 int ectl_nb_get()
 {
 	int nb = cp_nb_get();
@@ -579,32 +447,5 @@ int ectl_qnb_get()
 	return qnb;
 }
 
-// -----------------------------------------------------------------------
-void ectl_kb_set(uint16_t val)
-{
-	LOG(L_ECTL, "ECTL KB set: 0x%04x", val);
-	cp_kb_set(val);
-}
-
-// -----------------------------------------------------------------------
-void ectl_load()
-{
-	LOG(L_ECTL, "ECTL LOAD");
-	cp_load();
-}
-
-// -----------------------------------------------------------------------
-void ectl_store()
-{
-	LOG(L_ECTL, "ECTL STORE");
-	cp_store();
-}
-
-// -----------------------------------------------------------------------
-void ectl_fetch()
-{
-	LOG(L_ECTL, "ECTL fetch");
-	cp_fetch();
-}
 
 // vim: tabstop=4 shiftwidth=4 autoindent

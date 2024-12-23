@@ -2,6 +2,7 @@
 #include <QFile>
 #include "emumodel.h"
 #include "ectl.h"
+#include "libem400.h"
 
 
 // -----------------------------------------------------------------------
@@ -82,7 +83,7 @@ void EmuModel::sync_state(bool force)
 // -----------------------------------------------------------------------
 void EmuModel::sync_bus_w(bool force)
 {
-	int bus_w = ectl_bus_w_get();
+	uint16_t bus_w = em400_cp_w_leds();
 	if (force || (bus_w != last_bus_w)) {
 		last_bus_w = bus_w;
 		emit signal_bus_w_changed(bus_w);
@@ -92,9 +93,9 @@ void EmuModel::sync_bus_w(bool force)
 // -----------------------------------------------------------------------
 void EmuModel::sync_flags(bool force)
 {
-	bool alarm = ectl_alarm_get();
-	bool p = ectl_p_get();
-	bool mc = ectl_mc_get();
+	bool alarm = em400_cp_alarm_led();
+	bool p = em400_cp_p_led();
+	bool mc = em400_cp_mc_led();
 
 	if (force || (alarm != last_alarm)) {
 		last_alarm = alarm;
@@ -125,7 +126,7 @@ void EmuModel::sync_regs(bool force)
 // -----------------------------------------------------------------------
 void EmuModel::sync_clock(bool force)
 {
-	int clock = ectl_clock_get();
+	bool clock = em400_cp_clock_led();
 	if (force || (clock != last_clock)) {
 		emit signal_clock_changed(clock);
 		last_clock = clock;

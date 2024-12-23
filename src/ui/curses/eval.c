@@ -21,6 +21,7 @@
 #include <stdlib.h>
 
 #include "ectl.h"
+#include "libem400.h"
 
 #include "ui/curses/debugger.h"
 #include "ui/curses/keywords.h"
@@ -280,7 +281,7 @@ int16_t n_eval_ass(struct node_t * n)
 			return v;
 		case N_REG:
 			if (n->n1->val == ECTL_REG_KB) {
-				ectl_kb_set(v);
+				em400_cp_kb(v);
 			} else {
 				ectl_reg_set(n->n1->val, v);
 			}

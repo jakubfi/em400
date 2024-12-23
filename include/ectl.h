@@ -28,10 +28,7 @@
 extern "C" {
 #endif
 
-enum ectl_states {
-	ECTL_OFF = 0,
-	ECTL_ON
-};
+
 
 enum ectl_cpu_states {
 	ECTL_STATE_RUN = 0,
@@ -87,30 +84,6 @@ int ectl_init();
 void ectl_shutdown();
 
 // Standard control panel interface
-int ectl_bus_w_get();
-void ectl_kb_set(uint16_t val);
-// TODO: step
-// TODO: mode + LED
-int ectl_stopn(bool state);
-// TODO: stopn LED
-void ectl_cpu_cycle();
-void ectl_load();
-void ectl_store();
-void ectl_fetch();
-void ectl_cpu_start(bool state);
-int ectl_bin();
-void ectl_cpu_clear();
-void ectl_clock_set(int state);
-bool ectl_clock_get();
-bool ectl_q_get();
-bool ectl_p_get();
-bool ectl_mc_get();
-bool ectl_irq_get();
-void ectl_oprq();
-void ectl_reg_select(int id);
-bool ectl_run_get();
-bool ectl_wait_get();
-int ectl_alarm_get();
 void ectl_cpu_off(); // TODO: on + led?
 
 // Emulator extensions
@@ -146,10 +119,10 @@ unsigned long ectl_ips_get();
 int ectl_eval(char *expression, char **err_msg, int *err_beg, int *err_end);
 
 // logging
-int ectl_log_state_get();
-int ectl_log_state_set(int state);
+bool ectl_log_state_get();
+int ectl_log_state_set(bool state);
 int ectl_log_component_get(unsigned component);
-int ectl_log_component_set(unsigned component, int state);
+int ectl_log_component_set(unsigned component, bool state);
 const char * ectl_log_component_name(unsigned component);
 int ectl_log_component_id(char *name);
 

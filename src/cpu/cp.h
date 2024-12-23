@@ -18,11 +18,11 @@
 #ifndef CP_H
 #define CP_H
 
-#include <inttypes.h>
+#include <stdint.h>
 #include <stdbool.h>
 
 // Standard control panel interface
-int cp_bus_w_get();
+uint16_t cp_bus_w();
 void cp_kb_set(uint16_t val);
 // TODO: step
 // TODO: mode + LED
@@ -33,7 +33,7 @@ void cp_load();
 void cp_store();
 void cp_fetch();
 void cp_start(bool state);
-int cp_bin();
+void cp_bin();
 void cp_clear();
 void cp_clock_set(int state);
 int cp_clock_get();

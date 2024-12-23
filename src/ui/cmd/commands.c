@@ -22,6 +22,7 @@
 #include <stdarg.h>
 
 #include "ectl.h"
+#include "libem400.h"
 
 #include "ui/cmd/commands.h"
 #include "ui/cmd/utils.h"
@@ -144,7 +145,7 @@ void ui_cmd_reg(FILE *out, char *args)
 
 	int res = 0;
 	if (id == ECTL_REG_KB) {
-		ectl_kb_set(value);
+		em400_cp_kb(value);
 	} else {
 		res = ectl_reg_set(id, value);
 	}
@@ -223,7 +224,7 @@ void ui_cmd_clock(FILE *out, char *args)
 
 	// show clock state
 	if (!tok_state) {
-		ui_cmd_resp(out, RESP_OK, UI_EOL, "%i", ectl_clock_get());
+		ui_cmd_resp(out, RESP_OK, UI_EOL, "%i", em400_cp_clock_led());
 		return;
 	}
 
@@ -234,35 +235,35 @@ void ui_cmd_clock(FILE *out, char *args)
 	}
 
 	// set clock state
-	ectl_clock_set(state);
+	em400_cp_clock(state);
 	ui_cmd_resp(out, RESP_OK, UI_EOL, "%i", state);
 }
 
 // -----------------------------------------------------------------------
 void ui_cmd_stop(FILE *out, char *args)
 {
-	ectl_cpu_start(false);
+	em400_cp_start(false);
 	ui_cmd_resp(out, RESP_OK, UI_EOL, "STOP");
 }
 
 // -----------------------------------------------------------------------
 void ui_cmd_start(FILE *out, char *args)
 {
-	ectl_cpu_start(true);
+	em400_cp_start(true);
 	ui_cmd_resp(out, RESP_OK, UI_EOL, "START");
 }
 
 // -----------------------------------------------------------------------
 void ui_cmd_cycle(FILE *out, char *args)
 {
-	ectl_cpu_cycle();
+	em400_cp_cycle();
 	ui_cmd_resp(out, RESP_OK, UI_EOL, "CYCLE");
 }
 
 // -----------------------------------------------------------------------
 void ui_cmd_clear(FILE *out, char *args)
 {
-	ectl_cpu_clear();
+	em400_cp_clear();
 	ui_cmd_resp(out, RESP_OK, UI_EOL, "CLEAR");
 }
 
@@ -528,7 +529,7 @@ void ui_cmd_int(FILE *out, char *args)
 // -----------------------------------------------------------------------
 void ui_cmd_oprq(FILE *out, char *args)
 {
-	ectl_oprq();
+	em400_cp_oprq();
 	ui_cmd_resp(out, RESP_OK, UI_EOL, "OPRQ");
 }
 
@@ -681,8 +682,8 @@ void ui_cmd_brkdel(FILE *out, char *args)
 // -----------------------------------------------------------------------
 void ui_cmd_bin(FILE *out, char *args)
 {
-	int res = ectl_bin();
-	ui_cmd_resp(out, RESP_OK, UI_EOL, "Binary load %s", res == 0 ? "initialized" : "ignored due to current CPU state.");
+	em400_cp_bin();
+	ui_cmd_resp(out, RESP_OK, UI_EOL, "Binary load");
 }
 
 // -----------------------------------------------------------------------
@@ -696,11 +697,7 @@ void ui_cmd_stopn(FILE *out, char *args)
 		return;
 	}
 
-	int res = ectl_stopn(addr);
-	if (res) {
-		ui_cmd_resp(out, RESP_ERR, UI_EOL, "Unable to set stop address");
-		return;
-	}
+	em400_cp_stopn(addr);
 	ui_cmd_resp(out, RESP_OK, UI_EOL, "Stop on address: 0x%04x", addr);
 
 }

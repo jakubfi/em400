@@ -4,6 +4,7 @@
 #include <QObject>
 #include <QTimer>
 #include "ectl.h"
+#include "libem400.h"
 #include <emdas.h>
 
 class EmuModel : public QObject
@@ -19,7 +20,7 @@ public:
 	bool load_os_image(QString filename);
 
 	void set_reg(int i, int v) { ectl_reg_set(i, v); }
-	void set_kb(uint16_t v) { ectl_kb_set(v); }
+	void set_kb(uint16_t v) { em400_cp_kb(v); }
 	int get_reg(int i) { return last_reg[i]; }
 	int get_mem(int nb, int addr);
 	int get_mem(int nb, int addr, uint16_t *m, int count);
@@ -28,7 +29,7 @@ public:
 	bool get_alarm() { return last_alarm; }
 	int get_nb() { return ectl_nb_get(); }
 	int get_qnb() { return ectl_qnb_get(); }
-	bool get_clock() { return ectl_clock_get(); }
+	bool get_clock() { return em400_cp_clock_led(); }
 
 private:
 	QTimer timer_realtime;
@@ -37,7 +38,7 @@ private:
 
 	int last_cpu_state;
 	int last_reg[ECTL_REG_COUNT];
-	int last_bus_w;
+	uint16_t last_bus_w;
 	bool last_clock;
 	bool last_alarm, last_p, last_mc;
 
@@ -54,16 +55,16 @@ private slots:
 	void on_timer_ips_timeout();
 
 public slots:
-	void slot_cpu_start(bool state) { ectl_cpu_start(state); }
-	void slot_clear() { ectl_cpu_clear(); }
-	void slot_cycle() { ectl_cpu_cycle(); }
-	void slot_clock_enabled(bool state) { ectl_clock_set(state); }
-	void slot_oprq() { ectl_oprq(); }
-	void slot_reg_select(int r) { ectl_reg_select(r); }
-	void slot_load() { ectl_load(); }
-	void slot_bin() { ectl_bin(); }
-	void slot_fetch() { ectl_fetch(); }
-	void slot_store() { ectl_store(); }
+	void slot_cpu_start(bool state) { em400_cp_start(state); }
+	void slot_clear() { em400_cp_clear(); }
+	void slot_cycle() { em400_cp_cycle(); }
+	void slot_clock_enabled(bool state) { em400_cp_clock(state); }
+	void slot_oprq() { em400_cp_oprq(); }
+	void slot_reg_select(int r) { em400_cp_reg_select(r); }
+	void slot_load() { em400_cp_load(); }
+	void slot_bin() { em400_cp_bin(); }
+	void slot_fetch() { em400_cp_fetch(); }
+	void slot_store() { em400_cp_store(); }
 
 signals:
 	void signal_state_changed(int state);

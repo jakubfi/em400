@@ -23,6 +23,7 @@
 
 #include "utils/utils.h"
 #include "ectl.h"
+#include "libem400.h"
 
 #include "ui/curses/awin.h"
 #include "ui/curses/debugger.h"
@@ -107,25 +108,25 @@ void dbg_c_quit()
 // -----------------------------------------------------------------------
 void dbg_c_cycle()
 {
-	ectl_cpu_cycle();
+	em400_cp_cycle();
 }
 
 // -----------------------------------------------------------------------
 void dbg_c_start()
 {
-	ectl_cpu_start(true);
+	em400_cp_start(true);
 }
 
 // -----------------------------------------------------------------------
 void dbg_c_stop()
 {
-	ectl_cpu_start(false);
+	em400_cp_start(false);
 }
 
 // -----------------------------------------------------------------------
 void dbg_c_clear()
 {
-	ectl_cpu_clear();
+	em400_cp_clear();
 }
 
 // -----------------------------------------------------------------------
@@ -139,7 +140,7 @@ void dbg_c_dt(int wid, uint16_t ic, int count)
 		emdas_get_buf(emd);
 
 		if (ic == ectl_reg_get(ECTL_REG_IC)) {
-			if (ectl_p_get()) {
+			if (em400_cp_p_led()) {
 				awtbprint(wid, C_IRED, "0x%04x", ic);
 				awtbprint(wid, C_IRED, " %-20s", buf);
 			} else {
@@ -166,8 +167,8 @@ void dbg_c_dt(int wid, uint16_t ic, int count)
 // -----------------------------------------------------------------------
 void dbg_c_bin(int wid)
 {
-	int res = ectl_bin();
-	awtbprint(wid, C_LABEL, "Binary load %s\n", res == 0 ? "initialized" : "ignored due to current CPU state");
+	em400_cp_bin();
+	awtbprint(wid, C_LABEL, "Binary load\n");
 }
 
 // -----------------------------------------------------------------------
@@ -237,7 +238,7 @@ void dbg_c_sregs(int wid)
 {
 	awtbprint(wid, C_LABEL, "            OPCODE D A   B   C");
 	awtbprint(wid, C_LABEL, "           P: ");
-	awtbprint(wid, C_DATA, "%i\n", ectl_p_get());
+	awtbprint(wid, C_DATA, "%i\n", em400_cp_p_led());
 
 	awtbprint(wid, C_LABEL, "IR: ");
 	awtbprint(wid, C_DATA, "0x%04x  ", ectl_reg_get(ECTL_REG_IR));
@@ -262,7 +263,7 @@ void dbg_c_sregs(int wid)
 	awtbprint(wid, C_DATA, "0x%04x  ", ectl_reg_get(ECTL_REG_KB));
 	awtbbinprint(wid, C_DATA, "........ ........", ectl_reg_get(ECTL_REG_KB), 16);
 	awtbprint(wid, C_LABEL, "           MC: ");
-	awtbprint(wid, C_DATA, "%i", ectl_mc_get());
+	awtbprint(wid, C_DATA, "%i", em400_cp_mc_led());
 	awtbprint(wid, C_DATA, "\n\n");
 
 	awtbprint(wid, C_LABEL, "                ZPMCZ TIFFFFx 01 23 456789 abcdef OCSS");
@@ -536,14 +537,14 @@ void dbg_c_log_info(int wid)
 // -----------------------------------------------------------------------
 void dbg_c_log_disable(int wid)
 {
-	ectl_log_state_set(ECTL_OFF);
+	ectl_log_state_set(false);
 	awtbprint(wid, C_LABEL, "Logging disabled\n");
 }
 
 // -----------------------------------------------------------------------
 void dbg_c_log_enable(int wid)
 {
-	int res = ectl_log_state_set(ECTL_ON);
+	int res = ectl_log_state_set(true);
 	if (!res) {
 		awtbprint(wid, C_LABEL, "Logging enabled\n");
 	} else {
@@ -562,9 +563,9 @@ void dbg_c_log_set_state(int wid, char *comp_name, int state)
 		awtbprint(wid, C_DATA, "%s", comp_name);
 	} else {
 		if (state) {
-			ectl_log_component_set(c, ECTL_ON);
+			ectl_log_component_set(c, true);
 		} else {
-			ectl_log_component_set(c, ECTL_OFF);
+			ectl_log_component_set(c, false);
 		}
 		awtbprint(wid, C_LABEL, "Component ");
 		awtbprint(wid, C_DATA, "%s ", comp_name);

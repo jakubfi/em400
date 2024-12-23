@@ -24,6 +24,7 @@
 
 #include "cpu/cp.h"
 
+#include "libem400.h"
 #include "ectl.h"
 #include "ectl/est.h"
 #include "ectl_parser.h"
@@ -212,13 +213,13 @@ int ectl_est_eval_rz(struct ectl_est * n)
 // -----------------------------------------------------------------------
 int ectl_est_eval_alarm(struct ectl_est * n)
 {
-	return (ectl_alarm_get());
+	return em400_cp_alarm_led();
 }
 
 // -----------------------------------------------------------------------
 int ectl_est_eval_mc(struct ectl_est * n)
 {
-	return (ectl_mc_get());
+	return em400_cp_mc_led();
 }
 
 // -----------------------------------------------------------------------
