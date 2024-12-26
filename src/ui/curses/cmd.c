@@ -136,10 +136,10 @@ void dbg_c_dt(int wid, uint16_t ic, int count)
 	char *buf = emdas_get_buf(emd);
 
 	while (count > 0) {
-		words = emdas_dasm(emd, ectl_qnb_get(), ic);
+		words = emdas_dasm(emd, em400_qnb(), ic);
 		emdas_get_buf(emd);
 
-		if (ic == ectl_reg_get(ECTL_REG_IC)) {
+		if (ic == em400_reg(EM400_REG_IC)) {
 			if (em400_cp_p_led()) {
 				awtbprint(wid, C_IRED, "0x%04x", ic);
 				awtbprint(wid, C_IRED, " %-20s", buf);
@@ -212,7 +212,7 @@ void dbg_c_mem(int wid, int block, int start, int end, int maxcols, int maxlines
 				chars[w*2+1] = '~';
 			} else {
 				// cell with current instruction
-				if (addr == ectl_reg_get(ECTL_REG_IC)) {
+				if (addr == em400_reg(EM400_REG_IC)) {
 					attr = C_DATAU;
 				} else {
 					attr = C_DATA;
@@ -241,27 +241,27 @@ void dbg_c_sregs(int wid)
 	awtbprint(wid, C_DATA, "%i\n", em400_cp_p_led());
 
 	awtbprint(wid, C_LABEL, "IR: ");
-	awtbprint(wid, C_DATA, "0x%04x  ", ectl_reg_get(ECTL_REG_IR));
-	awtbbinprint(wid, C_DATA, "...... . ... ... ...", ectl_reg_get(ECTL_REG_IR), 16);
+	awtbprint(wid, C_DATA, "0x%04x  ", em400_reg(EM400_REG_IR));
+	awtbbinprint(wid, C_DATA, "...... . ... ... ...", em400_reg(EM400_REG_IR), 16);
 	awtbprint(wid, C_LABEL, "        IC: ");
-	awtbprint(wid, C_DATA, "0x%04x ", ectl_reg_get(ECTL_REG_IC));
+	awtbprint(wid, C_DATA, "0x%04x ", em400_reg(EM400_REG_IC));
 	awtbprint(wid, C_DATA, "\n");
 
 	awtbprint(wid, C_LABEL, "            PMCZs139fS Q s NB");
 	awtbprint(wid, C_LABEL, "           AR: ");
-	awtbprint(wid, C_DATA, "0x%04x", ectl_reg_get(ECTL_REG_AR));
+	awtbprint(wid, C_DATA, "0x%04x", em400_reg(EM400_REG_AR));
 	awtbprint(wid, C_DATA, "\n");
 
 	awtbprint(wid, C_LABEL, "SR: ");
-	awtbprint(wid, C_DATA, "0x%04x  ", ectl_reg_get(ECTL_REG_SR));
-	awtbbinprint(wid, C_DATA, ".......... . . ....", ectl_reg_get(ECTL_REG_SR), 16);
+	awtbprint(wid, C_DATA, "0x%04x  ", em400_reg(EM400_REG_SR));
+	awtbbinprint(wid, C_DATA, ".......... . . ....", em400_reg(EM400_REG_SR), 16);
 	awtbprint(wid, C_LABEL, "         AC: ");
-	awtbprint(wid, C_DATA, "0x%04x", ectl_reg_get(ECTL_REG_AC));
+	awtbprint(wid, C_DATA, "0x%04x", em400_reg(EM400_REG_AC));
 	awtbprint(wid, C_DATA, "\n");
 
 	awtbprint(wid, C_LABEL, "KB: ");
-	awtbprint(wid, C_DATA, "0x%04x  ", ectl_reg_get(ECTL_REG_KB));
-	awtbbinprint(wid, C_DATA, "........ ........", ectl_reg_get(ECTL_REG_KB), 16);
+	awtbprint(wid, C_DATA, "0x%04x  ", em400_reg(EM400_REG_KB));
+	awtbbinprint(wid, C_DATA, "........ ........", em400_reg(EM400_REG_KB), 16);
 	awtbprint(wid, C_LABEL, "           MC: ");
 	awtbprint(wid, C_DATA, "%i", em400_cp_mc_led());
 	awtbprint(wid, C_DATA, "\n\n");
@@ -270,8 +270,8 @@ void dbg_c_sregs(int wid)
 	awtbprint(wid, C_DATA, "\n");
 
 	awtbprint(wid, C_LABEL, "RZ: ");
-	awtbprint(wid, C_DATA, "0x%08x  ", ectl_int_get32());
-	awtbbinprint(wid, C_DATA, "..... ....... .. .. ...... ...... ....", ectl_int_get32(), 32);
+	awtbprint(wid, C_DATA, "0x%08x  ", em400_rz32());
+	awtbbinprint(wid, C_DATA, "..... ....... .. .. ...... ...... ....", em400_rz32(), 32);
 	awtbprint(wid, C_DATA, "\n");
 }
 
@@ -280,7 +280,7 @@ void dbg_c_regs(int wid)
 {
 	awtbprint(wid, C_LABEL, "    hex    oct    dec    ZMVCLEGY X1234567 ch R40\n");
 	for (int i=0 ; i<=7 ; i++) {
-		uint16_t reg = ectl_reg_get(i);
+		uint16_t reg = em400_reg(i);
 		char *r = r40_to_ascii(&reg, 1, NULL);
 		char c[3];
 		int2chars(reg, c);
@@ -671,7 +671,7 @@ void dbg_c_decode(int wid, char *name, uint16_t addr, int arg)
 		return;
 	}
 
-	buf = d->f_decode(ectl_nb_get(), addr, arg);
+	buf = d->f_decode(em400_nb(), addr, arg);
 
 	if (!buf) {
 		awtbprint(wid, C_ERROR, "Cannot decode structure\n");

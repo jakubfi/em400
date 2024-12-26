@@ -52,13 +52,6 @@ const char *state_names[] = {
 	"???"
 };
 
-// this must match register order in ectl.h
-const char *ectl_reg_names[] = {
-	"R0", "R1", "R2", "R3", "R4", "R5", "R6", "R7",
-	"IC", "AC", "AR", "IR", "SR", "RZ", "KB", "KB",
-	"??"
-};
-
 typedef struct ectl_yy_buffer_state *YY_BUFFER_STATE;
 int ectl_yyparse(struct ectl_est **tree);
 YY_BUFFER_STATE ectl_yy_scan_string(char *input);
@@ -78,56 +71,7 @@ void ectl_shutdown()
 	ectl_brk_del_all();
 }
 
-// -----------------------------------------------------------------------
-void ectl_regs_get(uint16_t *dest)
-{
-	LOG(L_ECTL, "ECTL regs get");
-	for (int i=0 ; i<ECTL_REG_COUNT ; i++) {
-		dest[i] = cp_reg_get(i);
-	}
-}
 
-// -----------------------------------------------------------------------
-int ectl_reg_get(unsigned id)
-{
-	LOG(L_ECTL, "ECTL reg get");
-	int reg = cp_reg_get(id);
-	LOG(L_ECTL, "ECTL reg get: %s = 0x%04x", ectl_reg_name(id), reg);
-	return reg;
-}
-
-// -----------------------------------------------------------------------
-int ectl_reg_get_id(char *name)
-{
-	const char **rname = ectl_reg_names;
-	int idx = 0;
-	while (idx < ECTL_REG_COUNT) {
-		if (!strcasecmp(name, *rname)) {
-			return idx;
-		}
-		idx++;
-		rname++;
-	}
-
-	return -1;
-}
-
-// -----------------------------------------------------------------------
-const char * ectl_reg_name(unsigned id)
-{
-	if (id < ECTL_REG_COUNT) {
-		return ectl_reg_names[id];
-	} else {
-		return ectl_reg_names[ECTL_REG_COUNT];
-	}
-}
-
-// -----------------------------------------------------------------------
-int ectl_reg_set(unsigned id, uint16_t val)
-{
-	LOG(L_ECTL, "ECTL reg set: %s = 0x%04x", ectl_reg_name(id), val);
-	return cp_reg_set(id, val);
-}
 
 // -----------------------------------------------------------------------
 bool ectl_mem_read_n(int seg, uint16_t addr, uint16_t *dest, unsigned count)
@@ -189,56 +133,6 @@ void ectl_cpu_off()
 {
 	LOG(L_ECTL, "ECTL cpu OFF");
 	cp_off();
-}
-
-// -----------------------------------------------------------------------
-int ectl_int_set(unsigned interrupt)
-{
-	if (interrupt >= 32) {
-		return -1;
-	}
-	int_set(interrupt);
-	LOG(L_ECTL, "ECTL int set %i", interrupt);
-	return 0;
-}
-
-// -----------------------------------------------------------------------
-int ectl_int_clear(unsigned interrupt)
-{
-	if (interrupt >= 32) {
-		return -1;
-	}
-	int_clear(interrupt);
-	LOG(L_ECTL, "ECTL int clear %i", interrupt);
-	return 0;
-}
-
-// -----------------------------------------------------------------------
-uint16_t ectl_int_get_chan()
-{
-	uint16_t chan_int = cp_int_get_chan();
-	LOG(L_ECTL, "ECTL get channel interrupts: 0x%04x", chan_int);
-	return chan_int;
-}
-
-// -----------------------------------------------------------------------
-uint32_t ectl_int_get32()
-{
-	LOG(L_ECTL, "ECTL interrupts get");
-	uint16_t rz = ectl_reg_get(ECTL_REG_RZ);
-	uint16_t rz_io = ectl_int_get_chan();
-	uint32_t rz32 = ((rz & 0b1111111111110000) << 16) | (rz_io << 4) | (rz & 0b1111);
-	LOG(L_ECTL, "ECTL interrupts get: 0x%08x", rz32);
-
-	return rz32;
-}
-
-// -----------------------------------------------------------------------
-const char * ectl_version()
-{
-	static const char *ver = EM400_VERSION;
-	LOG(L_ECTL, "ECTL version: %s", ver);
-	return ver;
 }
 
 // -----------------------------------------------------------------------
@@ -429,22 +323,6 @@ int ectl_brk_del(unsigned id)
 {
 	LOG(L_ECTL, "ECTL brk del: %i", id);
 	return ectl_brk_delete(id);
-}
-
-// -----------------------------------------------------------------------
-int ectl_nb_get()
-{
-	int nb = cp_nb_get();
-	LOG(L_ECTL, "ECTL NB get: %i", nb);
-	return nb;
-}
-
-// -----------------------------------------------------------------------
-int ectl_qnb_get()
-{
-	int qnb = cp_qnb_get();
-	LOG(L_ECTL, "ECTL QNB get: %i", qnb);
-	return qnb;
 }
 
 

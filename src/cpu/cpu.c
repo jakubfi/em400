@@ -48,8 +48,6 @@
 #include "log_crk.h"
 #include "ectl/brk.h"
 
-#include "ectl.h" // for global constants
-
 static unsigned cpu_state = ECTL_STATE_OFF;
 
 uint16_t r[8];
@@ -102,29 +100,29 @@ void cpu_kb_set(uint16_t val)
 // -----------------------------------------------------------------------
 static void cpu_do_load(int reg_id, uint16_t val)
 {
-	LOG(L_CPU, "%s := 0x%04x", ectl_reg_names[reg_id], val);
+	LOG(L_CPU, "%s := 0x%04x", em400_reg_name(reg_id), val);
 
 	switch (reg_id) {
-		case ECTL_REG_R0:
-		case ECTL_REG_R1:
-		case ECTL_REG_R2:
-		case ECTL_REG_R3:
-		case ECTL_REG_R4:
-		case ECTL_REG_R5:
-		case ECTL_REG_R6:
-		case ECTL_REG_R7: r[reg_id] = val; break;
-		case ECTL_REG_IC: ic = val; break;
-		case ECTL_REG_AC: ac = val; break;
-		case ECTL_REG_AR: ar = val ; break;
-		case ECTL_REG_IR: ir = val; break;
-		case ECTL_REG_SR: SR_WRITE(val); break;
-		case ECTL_REG_RZ: int_put_nchan(val); break;
+		case EM400_REG_R0:
+		case EM400_REG_R1:
+		case EM400_REG_R2:
+		case EM400_REG_R3:
+		case EM400_REG_R4:
+		case EM400_REG_R5:
+		case EM400_REG_R6:
+		case EM400_REG_R7: r[reg_id] = val; break;
+		case EM400_REG_IC: ic = val; break;
+		case EM400_REG_AC: ac = val; break;
+		case EM400_REG_AR: ar = val ; break;
+		case EM400_REG_IR: ir = val; break;
+		case EM400_REG_SR: SR_WRITE(val); break;
+		case EM400_REG_RZ: int_put_nchan(val); break;
 		default: break;
 	}
 }
 
 // -----------------------------------------------------------------------
-void cpu_register_load(int reg_id, uint16_t val)
+void cpu_reg_load(unsigned reg_id, uint16_t val)
 {
 	pthread_mutex_lock(&cpu_wake_mutex);
 	if (cpu_state == ECTL_STATE_STOP) {
@@ -135,9 +133,9 @@ void cpu_register_load(int reg_id, uint16_t val)
 }
 
 // -----------------------------------------------------------------------
-void cpu_reg_select(int reg_id)
+void cpu_reg_select(unsigned reg_id)
 {
-	LOG(L_CPU, "Select register: %s", ectl_reg_names[reg_id]);
+	LOG(L_CPU, "Select register: %s", em400_reg_name(reg_id));
 	pthread_mutex_lock(&cpu_wake_mutex);
 	r_selected = reg_id;
 	pthread_cond_signal(&cpu_wake_cond);
@@ -145,27 +143,33 @@ void cpu_reg_select(int reg_id)
 }
 
 // -----------------------------------------------------------------------
+int cpu_reg_fetch(unsigned reg_id)
+{
+	switch (reg_id) {
+		case EM400_REG_R0:
+		case EM400_REG_R1:
+		case EM400_REG_R2:
+		case EM400_REG_R3:
+		case EM400_REG_R4:
+		case EM400_REG_R5:
+		case EM400_REG_R6:
+		case EM400_REG_R7: return r[reg_id];
+		case EM400_REG_IC: return ic;
+		case EM400_REG_AC: return ac;
+		case EM400_REG_AR: return ar;
+		case EM400_REG_IR: return ir;
+		case EM400_REG_SR: return SR_READ();
+		case EM400_REG_RZ: return int_get_nchan();
+		case EM400_REG_KB:
+		case EM400_REG_KB2: return kb;
+		default: return -1;
+	}
+}
+
+// -----------------------------------------------------------------------
 static inline void cpu_reg_selected_to_w()
 {
-	switch (r_selected) {
-		case ECTL_REG_R0:
-		case ECTL_REG_R1:
-		case ECTL_REG_R2:
-		case ECTL_REG_R3:
-		case ECTL_REG_R4:
-		case ECTL_REG_R5:
-		case ECTL_REG_R6:
-		case ECTL_REG_R7: w = r[r_selected]; break;
-		case ECTL_REG_IC: w = ic; break;
-		case ECTL_REG_AC: w = ac; break;
-		case ECTL_REG_AR: w = ar; break;
-		case ECTL_REG_IR: w = ir; break;
-		case ECTL_REG_SR: w = SR_READ(); break;
-		case ECTL_REG_RZ: w = int_get_nchan(); break;
-		case ECTL_REG_KB:
-		case ECTL_REG_KB2: w = kb; break;
-		default: break;
-	}
+	w = cpu_reg_fetch(r_selected);
 }
 
 // -----------------------------------------------------------------------

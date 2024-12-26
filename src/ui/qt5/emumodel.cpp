@@ -114,8 +114,8 @@ void EmuModel::sync_flags(bool force)
 // -----------------------------------------------------------------------
 void EmuModel::sync_regs(bool force)
 {
-	for (int i=ECTL_REG_R0 ; i<ECTL_REG_COUNT ; i++) {
-		int reg = ectl_reg_get(i);
+	for (int i=EM400_REG_R0 ; i<EM400_REG_COUNT ; i++) {
+		int reg = em400_reg(i);
 		if (force || (reg != last_reg[i])) {
 			last_reg[i] = reg;
 			emit signal_reg_changed(i, reg);

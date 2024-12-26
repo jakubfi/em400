@@ -23,6 +23,7 @@
 #include <ctype.h>
 
 #include "cpu/cp.h"
+#include "cpu/cpu.h"
 
 #include "libem400.h"
 #include "ectl.h"
@@ -172,12 +173,10 @@ int ectl_est_eval_val(struct ectl_est * n)
 // -----------------------------------------------------------------------
 int ectl_est_eval_reg(struct ectl_est * n)
 {
-	int reg = cp_reg_get(n->val);
-	if (reg == -1) {
+	if ((n->val < 0) || (n->val >= EM400_REG_COUNT)) {
 		return __esterr(n, "No such register");
-	} else {
-		return reg;
 	}
+	return cpu_reg_fetch(n->val);
 }
 
 // -----------------------------------------------------------------------
@@ -197,7 +196,7 @@ int ectl_est_eval_flag(struct ectl_est * n)
 		case 'X': pos = 8; break;
 		default: return __esterr(n, "No such flag: %c", n->val);
 	}
-	return (cp_reg_get(0) >> (15-pos)) & 1;
+	return (cpu_reg_fetch(0) >> (15-pos)) & 1;
 }
 
 // -----------------------------------------------------------------------
@@ -207,7 +206,7 @@ int ectl_est_eval_rz(struct ectl_est * n)
 		return __esterr(n, "Wrong interrupt: %i", n->val);
 	}
 
-	return (ectl_int_get32() >> (31 - n->val)) & 1;
+	return (em400_rz32() >> (31 - n->val)) & 1;
 }
 
 // -----------------------------------------------------------------------

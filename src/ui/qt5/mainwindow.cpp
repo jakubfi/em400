@@ -14,21 +14,21 @@ MainWindow::MainWindow(QWidget *parent) :
 {
 	ui->setupUi(this);
 
-	r[ECTL_REG_R0] = ui->r0;
-	r[ECTL_REG_R1] = ui->r1;
-	r[ECTL_REG_R2] = ui->r2;
-	r[ECTL_REG_R3] = ui->r3;
-	r[ECTL_REG_R4] = ui->r4;
-	r[ECTL_REG_R5] = ui->r5;
-	r[ECTL_REG_R6] = ui->r6;
-	r[ECTL_REG_R7] = ui->r7;
+	r[EM400_REG_R0] = ui->r0;
+	r[EM400_REG_R1] = ui->r1;
+	r[EM400_REG_R2] = ui->r2;
+	r[EM400_REG_R3] = ui->r3;
+	r[EM400_REG_R4] = ui->r4;
+	r[EM400_REG_R5] = ui->r5;
+	r[EM400_REG_R6] = ui->r6;
+	r[EM400_REG_R7] = ui->r7;
 
-	r[ECTL_REG_IC] = ui->ic;
-	r[ECTL_REG_AC] = ui->ac;
-	r[ECTL_REG_AR] = ui->ar;
-	r[ECTL_REG_IR] = ui->ir;
-	r[ECTL_REG_SR] = ui->sr;
-	r[ECTL_REG_RZ] = ui->rz;
+	r[EM400_REG_IC] = ui->ic;
+	r[EM400_REG_AC] = ui->ac;
+	r[EM400_REG_AR] = ui->ar;
+	r[EM400_REG_IR] = ui->ir;
+	r[EM400_REG_SR] = ui->sr;
+	r[EM400_REG_RZ] = ui->rz;
 
 	ui->dasm->connect_emu(&e);
 
@@ -63,7 +63,7 @@ MainWindow::MainWindow(QWidget *parent) :
 	}
 
 	// connect register edits
-	for (int i=ECTL_REG_R0 ; i<ECTL_REG_COUNT ; i++) {
+	for (int i=EM400_REG_R0 ; i<EM400_REG_COUNT ; i++) {
 		if (r[i]) connect(r[i], &QSpinBox::editingFinished, [=](){ e.set_reg(i, r[i]->value()); });
 	}
 
@@ -115,8 +115,8 @@ void MainWindow::closeEvent(QCloseEvent* event)
 // -----------------------------------------------------------------------
 void MainWindow::disable_widgets(bool state)
 {
-	for (int i=ECTL_REG_R0 ; i<ECTL_REG_COUNT ; i++) {
-		if (i == ECTL_REG_KB) continue; // keys are always enabled
+	for (int i=EM400_REG_R0 ; i<EM400_REG_COUNT ; i++) {
+		if (i == EM400_REG_KB) continue; // keys are always enabled
 		if (r[i]) r[i]->setDisabled(state);
 	}
 }
@@ -163,11 +163,11 @@ void MainWindow::slot_cpu_reg_changed(int reg, uint16_t val)
 	slot_dasm_update();
 
 	// do register-specific things
-	if (reg <= ECTL_REG_R7) {
-		if (reg == ECTL_REG_R0) update_r0_status(val);
-	} else if (reg == ECTL_REG_IC) {
+	if (reg <= EM400_REG_R7) {
+		if (reg == EM400_REG_R0) update_r0_status(val);
+	} else if (reg == EM400_REG_IC) {
 		slot_dasm_update();
-	} else if (reg == ECTL_REG_SR) {
+	} else if (reg == EM400_REG_SR) {
 		update_sr_status(val);
 	}
 }
@@ -176,7 +176,7 @@ void MainWindow::slot_cpu_reg_changed(int reg, uint16_t val)
 void MainWindow::slot_dasm_update()
 {
 	int qnb = e.get_qnb();
-	int ic = e.get_reg(ECTL_REG_IC);
+	int ic = e.get_reg(EM400_REG_IC);
 	ui->dasm->update_contents(qnb, ic);
 }
 

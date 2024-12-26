@@ -19,7 +19,7 @@ public:
 	void stop();
 	bool load_os_image(QString filename);
 
-	void set_reg(int i, int v) { ectl_reg_set(i, v); }
+	void set_reg(int i, int v) { em400_reg_set(i, v); }
 	void set_kb(uint16_t v) { em400_cp_kb(v); }
 	int get_reg(int i) { return last_reg[i]; }
 	int get_mem(int nb, int addr);
@@ -27,8 +27,8 @@ public:
 	bool get_p() { return last_p; }
 	bool get_mc() { return last_mc; }
 	bool get_alarm() { return last_alarm; }
-	int get_nb() { return ectl_nb_get(); }
-	int get_qnb() { return ectl_qnb_get(); }
+	int get_nb() { return em400_nb(); }
+	int get_qnb() { return em400_qnb(); }
 	bool get_clock() { return em400_cp_clock_led(); }
 
 private:
@@ -37,7 +37,7 @@ private:
 	QTimer timer_ips;
 
 	int last_cpu_state;
-	int last_reg[ECTL_REG_COUNT];
+	int last_reg[EM400_REG_COUNT];
 	uint16_t last_bus_w;
 	bool last_clock;
 	bool last_alarm, last_p, last_mc;

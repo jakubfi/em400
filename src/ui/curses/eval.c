@@ -238,13 +238,13 @@ int16_t n_eval_var(struct node_t * n)
 // -----------------------------------------------------------------------
 int16_t n_eval_reg(struct node_t * n)
 {
-	return ectl_reg_get(n->val);
+	return em400_reg(n->val);
 }
 
 // -----------------------------------------------------------------------
 int16_t n_eval_ireg(struct node_t * n)
 {
-	return (ectl_int_get32() >> (31 - n->val)) & 1;
+	return (em400_rz32() >> (31 - n->val)) & 1;
 }
 
 // -----------------------------------------------------------------------
@@ -280,10 +280,10 @@ int16_t n_eval_ass(struct node_t * n)
 			var_set(n->n1->var, v);
 			return v;
 		case N_REG:
-			if (n->n1->val == ECTL_REG_KB) {
+			if (n->n1->val == EM400_REG_KB) {
 				em400_cp_kb(v);
 			} else {
-				ectl_reg_set(n->n1->val, v);
+				em400_reg_set(n->n1->val, v);
 			}
 			return v;
 		case N_MEM:
@@ -297,9 +297,9 @@ int16_t n_eval_ass(struct node_t * n)
 			}
 		case N_RZ:
 			if (v) {
-				ectl_int_set(n->n1->val);
+				em400_int_set(n->n1->val);
 			} else {
-				ectl_int_clear(n->n1->val);
+				em400_int_clear(n->n1->val);
 			}
 			return v;
 		default:

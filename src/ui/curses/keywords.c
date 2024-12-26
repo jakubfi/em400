@@ -21,14 +21,15 @@
 #include "ui_curses_parser.h"
 #include "ui/curses/keywords.h"
 #include "ectl.h"
+#include "libem400.h"
 
 struct kw_t kw_regs[] = {
-	{ "IC", ECTL_REG_IC },
-	{ "SR", ECTL_REG_SR },
-	{ "IR", ECTL_REG_IR },
-	{ "AR", ECTL_REG_AR },
-	{ "AC", ECTL_REG_AC },
-	{ "KB",	ECTL_REG_KB },
+	{ "IC", EM400_REG_IC },
+	{ "SR", EM400_REG_SR },
+	{ "IR", EM400_REG_IR },
+	{ "AR", EM400_REG_AR },
+	{ "AC", EM400_REG_AC },
+	{ "KB",	EM400_REG_KB },
 	{ NULL, 0 }
 };
 

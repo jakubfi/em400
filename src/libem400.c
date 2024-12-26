@@ -15,10 +15,18 @@
 //  Foundation, Inc.,
 //  51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 
+#include <strings.h>
+
 #include "mem/mem.h"
 #include "cpu/cpu.h"
+#include "cpu/interrupts.h"
 #include "cpu/cp.h"
 
+const char *em400_reg_names[] = {
+	"R0", "R1", "R2", "R3", "R4", "R5", "R6", "R7",
+	"IC", "AC", "AR", "IR", "SR", "RZ", "KB", "KB",
+	"??"
+};
 
 // -----------------------------------------------------------------------
 // --- MAINTENANCE -------------------------------------------------------
@@ -36,6 +44,12 @@ int em400_cpu_configure(struct em400_cfg_cpu *c_cpu, struct em400_cfg_buzzer *c_
 	return cpu_configure(c_cpu, c_buzzer);
 }
 
+// -----------------------------------------------------------------------
+const char * em400_version()
+{
+	static const char *ver = EM400_VERSION;
+	return ver;
+}
 
 // -----------------------------------------------------------------------
 // --- CONTROL PANEL -----------------------------------------------------
@@ -168,7 +182,91 @@ void em400_cp_reg_select(int reg_id)
 }
 
 // -----------------------------------------------------------------------
-// --- EM400 LOW LEVEL EXTENSIONS ----------------------------------------
+// --- EM400 EXTENSIONS --------------------------------------------------
 // -----------------------------------------------------------------------
+
+// -----------------------------------------------------------------------
+int em400_reg(unsigned reg_id)
+{
+	return cpu_reg_fetch(reg_id);
+}
+
+// -----------------------------------------------------------------------
+void em400_regs(uint16_t *dest)
+{
+	for (int i=0 ; i<EM400_REG_COUNT ; i++) {
+		dest[i] = cpu_reg_fetch(i);
+	}
+}
+
+// -----------------------------------------------------------------------
+void em400_reg_set(unsigned reg_id, uint16_t val)
+{
+	cpu_reg_load(reg_id, val);
+}
+
+// -----------------------------------------------------------------------
+unsigned int em400_reg_id(char *name)
+{
+	const char **rname = em400_reg_names;
+	int idx = 0;
+	while (idx < EM400_REG_COUNT) {
+		if (!strcasecmp(name, *rname)) {
+			return idx;
+		}
+		idx++;
+		rname++;
+	}
+
+	return -1;
+}
+
+// -----------------------------------------------------------------------
+const char * em400_reg_name(unsigned reg_id)
+{
+	if (reg_id < EM400_REG_COUNT) {
+		return em400_reg_names[reg_id];
+	} else {
+		return em400_reg_names[EM400_REG_COUNT];
+	}
+}
+
+// -----------------------------------------------------------------------
+unsigned em400_nb()
+{
+	return nb;
+}
+
+// -----------------------------------------------------------------------
+unsigned em400_qnb()
+{
+	return q * nb;
+}
+
+// -----------------------------------------------------------------------
+uint32_t em400_rz32()
+{
+	return rz;
+}
+
+// -----------------------------------------------------------------------
+int em400_int_set(unsigned interrupt)
+{
+	if (interrupt >= 32) {
+		return -1;
+	}
+	int_set(interrupt);
+	return 0;
+}
+
+// -----------------------------------------------------------------------
+int em400_int_clear(unsigned interrupt)
+{
+	if (interrupt >= 32) {
+		return -1;
+	}
+	int_clear(interrupt);
+	return 0;
+}
 
 // vim: tabstop=4 shiftwidth=4 autoindent

@@ -121,8 +121,8 @@ int em400_preload_program(const char *program_name)
 // -----------------------------------------------------------------------
 void em400_usage()
 {
+	fprintf(stdout, "EM400 version %s\n", em400_version());
 	fprintf(stdout,
-		"EM400 version " EM400_VERSION "\n"
 		"Usage: em400 [option] ...\n"
 		"\n"
 		"Options:\n"

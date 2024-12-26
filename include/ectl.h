@@ -48,29 +48,6 @@ enum ectl_cpu_states {
 
 extern const char *state_names[];
 
-#define ECTL_REG_COUNT 16
-
-enum ectl_registers {
-	ECTL_REG_R0 = 0,
-	ECTL_REG_R1,
-	ECTL_REG_R2,
-	ECTL_REG_R3,
-	ECTL_REG_R4,
-	ECTL_REG_R5,
-	ECTL_REG_R6,
-	ECTL_REG_R7,
-	ECTL_REG_IC,
-	ECTL_REG_AC,
-	ECTL_REG_AR,
-	ECTL_REG_IR,
-	ECTL_REG_SR,
-	ECTL_REG_RZ,
-	ECTL_REG_KB,
-	ECTL_REG_KB2
-};
-
-extern const char *ectl_reg_names[];
-
 enum ectl_log_components {
 	L_ALL = 0,
 	L_EM4H, L_ECTL, L_FDBR, L_CRK5,
@@ -86,17 +63,6 @@ void ectl_shutdown();
 // Standard control panel interface
 void ectl_cpu_off(); // TODO: on + led?
 
-// Emulator extensions
-
-// registers
-const char * ectl_reg_name(unsigned id);
-int ectl_reg_get_id(char *name);
-void ectl_regs_get(uint16_t *dest);
-int ectl_reg_get(unsigned id);
-int ectl_reg_set(unsigned id, uint16_t val);
-int ectl_nb_get();
-int ectl_qnb_get();
-
 // memory
 bool ectl_mem_read_n(int seg, uint16_t addr, uint16_t *dest, unsigned count);
 bool ectl_mem_write_n(int seg, uint16_t addr, uint16_t *src, unsigned count);
@@ -108,13 +74,7 @@ bool ectl_load_os_image(FILE *f, const char *name, int seg, uint16_t saddr);
 const char * ectl_cpu_state_name(unsigned state);
 unsigned ectl_cpu_state_get();
 
-// interrupts
-int ectl_int_set(unsigned interrupt);
-int ectl_int_clear(unsigned interrupt);
-uint32_t ectl_int_get32();
-
 // informational, other
-const char * ectl_version();
 unsigned long ectl_ips_get();
 int ectl_eval(char *expression, char **err_msg, int *err_beg, int *err_end);
 

@@ -174,7 +174,7 @@ void DasmView::paintEvent(QPaintEvent *event)
 	QColor bar_color;
 	int y = line_y_start;
 	Q_FOREACH (const AsmLine &l, listing) {
-		const bool at_ic = l.addr == e->get_reg(ECTL_REG_IC);
+		const bool at_ic = l.addr == e->get_reg(EM400_REG_IC);
 
 		// bar for IC location
 		if (at_ic) {

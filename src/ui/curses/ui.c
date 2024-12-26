@@ -19,6 +19,7 @@
 #include <stdlib.h>
 
 #include "ectl.h"
+#include "libem400.h"
 
 #include "ui/curses/awin.h"
 #include "ui/curses/debugger.h"
@@ -100,10 +101,10 @@ void dbg_wu_dasm(int wid)
 	AWIN *w = aw_window_find(wid);
 	int offset = (w->ih) / 3;
 	int start;
-	if (ectl_reg_get(ECTL_REG_IC) < offset) {
+	if (em400_reg(EM400_REG_IC) < offset) {
 		start = 0;
 	} else {
-		start = ectl_reg_get(ECTL_REG_IC) - offset;
+		start = em400_reg(EM400_REG_IC) - offset;
 	}
 	awin_tb_clear(wid);
 	dbg_c_dt(wid, start, w->ih);

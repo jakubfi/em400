@@ -18,6 +18,7 @@
 
 #include <stdlib.h>
 
+#include "libem400.h"
 #include "ectl.h"
 #include "ectl/est.h"
 #include "ectl_parser.h"
@@ -49,12 +50,12 @@ int ectl_yycolumn = 0;
 0[0-7]+		{ ectl_yylval.value = strtoul(yytext, NULL, 8); return VALUE; }
 [0-9]+		{ ectl_yylval.value = atoi(yytext); return VALUE; }
 r[0-7]		{ ectl_yylval.value = atoi(yytext+1); return REG; }
-ic			{ ectl_yylval.value = ECTL_REG_IC; return REG; }
-sr			{ ectl_yylval.value = ECTL_REG_SR; return REG; }
-ir			{ ectl_yylval.value = ECTL_REG_IR; return REG; }
-ar			{ ectl_yylval.value = ECTL_REG_AR; return REG; }
-ac			{ ectl_yylval.value = ECTL_REG_AC; return REG; }
-kb			{ ectl_yylval.value = ECTL_REG_KB; return REG; }
+ic			{ ectl_yylval.value = EM400_REG_IC; return REG; }
+sr			{ ectl_yylval.value = EM400_REG_SR; return REG; }
+ir			{ ectl_yylval.value = EM400_REG_IR; return REG; }
+ar			{ ectl_yylval.value = EM400_REG_AR; return REG; }
+ac			{ ectl_yylval.value = EM400_REG_AC; return REG; }
+kb			{ ectl_yylval.value = EM400_REG_KB; return REG; }
 alarm		{ return ALARM; }
 mc			{ return MC; }
 [zmvclegyx]	{ ectl_yylval.value = *yytext ; return FLAG; }

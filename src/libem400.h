@@ -53,28 +53,37 @@ struct em400_cfg_mem {
 	const char *os_mem_preload; // ?
 };
 
-enum device_types {
-	DEV_TERMINAL_TCP,
-	DEV_TERMINAL_SERIAL,
-	DEV_WINCHESTER,
-	DEV_FLOP8,
+enum em400_reg_ids {
+	EM400_REG_R0 = 0,
+	EM400_REG_R1,
+	EM400_REG_R2,
+	EM400_REG_R3,
+	EM400_REG_R4,
+	EM400_REG_R5,
+	EM400_REG_R6,
+	EM400_REG_R7,
+	EM400_REG_IC,
+	EM400_REG_AC,
+	EM400_REG_AR,
+	EM400_REG_IR,
+	EM400_REG_SR,
+	EM400_REG_RZ,
+	EM400_REG_KB,
+	EM400_REG_KB2
 };
 
-struct em400_config_device {
-	int chnum;
-	int devnum;
-	int type;
-	const char *image;
-	int port;
-	int tansport_type;
-};
+extern const char *em400_reg_names[];
+
+#define EM400_REG_COUNT EM400_REG_KB2
 
 // -----------------------------------------------------------------------
-// --- MAINTENANCE -------------------------------------------------------
+// --- LIBRARY -----------------------------------------------------------
 // -----------------------------------------------------------------------
 
 int em400_mem_configure(struct em400_cfg_mem *c_mem);
 int em400_cpu_configure(struct em400_cfg_cpu *c_cpu, struct em400_cfg_buzzer *c_buzzer);
+const char * em400_version();
+
 
 // -----------------------------------------------------------------------
 // --- CONTROL PANEL -----------------------------------------------------
@@ -108,9 +117,22 @@ void em400_cp_oprq();
 // rotary
 void em400_cp_reg_select(int reg_id);
 
+
 // -----------------------------------------------------------------------
 // --- EM400 EXTENSIONS --------------------------------------------------
 // -----------------------------------------------------------------------
+
+int em400_reg(unsigned reg_id);
+void em400_regs(uint16_t *dest);
+void em400_reg_set(unsigned reg_id, uint16_t val);
+unsigned em400_reg_id(char *name);
+const char * em400_reg_name(unsigned reg_id);
+unsigned em400_nb();
+unsigned em400_qnb();
+uint32_t em400_rz32();
+int em400_int_set(unsigned interrupt);
+int em400_int_clear(unsigned interrupt);
+
 
 #ifdef __cplusplus
 }

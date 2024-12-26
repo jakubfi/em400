@@ -111,19 +111,19 @@ void ui_cmd_reg(FILE *out, char *args)
 
 	// show all registers
 	if (!tok_reg) {
-		uint16_t regs[ECTL_REG_COUNT];
-		ectl_regs_get(regs);
+		uint16_t regs[EM400_REG_COUNT];
+		em400_regs(regs);
 
 		ui_cmd_resp(out, RESP_OK, UI_NOEOL, "");
-		for (int i=0 ; i<ECTL_REG_COUNT ; i++) {
-			fprintf(out, " %s=0x%04x", ectl_reg_name(i), regs[i]);
+		for (int i=0 ; i<EM400_REG_COUNT ; i++) {
+			fprintf(out, " %s=0x%04x", em400_reg_name(i), regs[i]);
 		}
 		fprintf(out, "\n");
 		return;
 	}
 
 	// find register
-	int id = ectl_reg_get_id(tok_reg);
+	int id = em400_reg_id(tok_reg);
 	if (id < 0) {
 		ui_cmd_resp(out, RESP_ERR, UI_EOL, "No such register: %s", tok_reg);
 		return;
@@ -133,7 +133,7 @@ void ui_cmd_reg(FILE *out, char *args)
 
 	// show specific register
 	if (!tok_val) {
-		ui_cmd_resp(out, RESP_OK, UI_EOL, "0x%04x", ectl_reg_get(id));
+		ui_cmd_resp(out, RESP_OK, UI_EOL, "0x%04x", em400_reg(id));
 		return;
 	}
 
@@ -143,15 +143,10 @@ void ui_cmd_reg(FILE *out, char *args)
 		return;
 	}
 
-	int res = 0;
-	if (id == ECTL_REG_KB) {
+	if (id == EM400_REG_KB) {
 		em400_cp_kb(value);
 	} else {
-		res = ectl_reg_set(id, value);
-	}
-	if (res) {
-		ui_cmd_resp(out, RESP_ERR, UI_EOL, "Wrong internal register id: %i", id);
-		return;
+		em400_reg_set(id, value);
 	}
 
 	ui_cmd_resp(out, RESP_OK, UI_EOL, "0x%04x", value);
@@ -212,7 +207,7 @@ void ui_cmd_help(FILE *out, char *args)
 // -----------------------------------------------------------------------
 void ui_cmd_info(FILE *out, char *args)
 {
-	ui_cmd_resp(out, RESP_OK, UI_EOL, " EM400 %s", ectl_version());
+	ui_cmd_resp(out, RESP_OK, UI_EOL, " EM400 %s", em400_version());
 }
 
 // -----------------------------------------------------------------------
@@ -513,16 +508,16 @@ void ui_cmd_int(FILE *out, char *args)
 
 	// show interrupts
 	if (!tok_int) {
-		ui_cmd_resp(out, RESP_OK, UI_EOL, "0x%08x", ectl_int_get32());
+		ui_cmd_resp(out, RESP_OK, UI_EOL, "0x%08x", em400_rz32());
 		return;
 	}
 
 	// set interrupt
-	int res = ectl_int_set(interrupt);
+	int res = em400_int_set(interrupt);
 	if (res) {
 		ui_cmd_resp(out, RESP_ERR, UI_EOL, "Wrong interrupt number: %s", tok_int);
 	} else {
-		ui_cmd_resp(out, RESP_OK, UI_EOL, "0x%08x", ectl_int_get32());
+		ui_cmd_resp(out, RESP_OK, UI_EOL, "0x%08x", em400_rz32());
 	}
 }
 

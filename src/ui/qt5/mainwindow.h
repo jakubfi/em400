@@ -27,7 +27,7 @@ private:
 	QLabel *ips;
 	QLabel *q, *bs, *nb, *flags;
 
-	QSpinBox *r[ECTL_REG_COUNT] = { nullptr };
+	QSpinBox *r[EM400_REG_COUNT] = { nullptr };
 
 	void disable_widgets(bool disabled);
 	void update_sr_status(uint16_t val);

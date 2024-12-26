@@ -23,42 +23,36 @@
 
 // Standard control panel interface
 uint16_t cp_bus_w();
-void cp_kb_set(uint16_t val);
+void cp_kb_set(uint16_t val); // TODO: stored in CP?
 // TODO: step
 // TODO: mode + LED
-int cp_stopn(bool state);
+int cp_stopn(bool state); // TODO: flip-flop
 // TODO: stop LED
 void cp_cycle();
 void cp_load();
 void cp_store();
 void cp_fetch();
-void cp_start(bool state);
+void cp_start(bool state); // TODO: flip-flop
 void cp_bin();
 void cp_clear();
-void cp_clock_set(int state);
+void cp_clock_set(int state); // TODO: flip-flop
 int cp_clock_get();
 bool cp_q_get();
 bool cp_p_get();
 int cp_mc_get();
 bool cp_irq_get();
 void cp_oprq();
-void cp_reg_select(int id);
+void cp_reg_select(int id); // TODO: store position
 bool cp_run_get();
 bool cp_wait_get();
 bool cp_alarm_get();
 void cp_off(); // TODO: switch on/off/lock?
 // TODO: ON LED?
 
-
 // Emulator extensions
 unsigned int cp_state();
-int cp_reg_get(unsigned id);
-int cp_reg_set(unsigned id, uint16_t v);
 bool cp_mem_read_n(unsigned nb, uint16_t addr, uint16_t *data, unsigned count);
 bool cp_mem_write_n(unsigned nb, uint16_t addr, uint16_t *data, unsigned count);
-uint16_t cp_int_get_chan();
-int cp_nb_get();
-int cp_qnb_get();
 
 #endif
 

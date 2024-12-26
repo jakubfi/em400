@@ -45,40 +45,6 @@ void cp_kb_set(uint16_t val)
 }
 
 // -----------------------------------------------------------------------
-int cp_reg_get(unsigned id)
-{
-	int reg = -1;
-
-	switch (id) {
-		case ECTL_REG_R0:
-		case ECTL_REG_R1:
-		case ECTL_REG_R2:
-		case ECTL_REG_R3:
-		case ECTL_REG_R4:
-		case ECTL_REG_R5:
-		case ECTL_REG_R6:
-		case ECTL_REG_R7: reg = r[id]; break;
-		case ECTL_REG_IC: reg = ic; break;
-		case ECTL_REG_AC: reg = ac; break;
-		case ECTL_REG_AR: reg = ar; break;
-		case ECTL_REG_IR: reg = ir; break;
-		case ECTL_REG_SR: reg = SR_READ(); break;
-		case ECTL_REG_RZ: reg = int_get_nchan(); break;
-		case ECTL_REG_KB:
-		case ECTL_REG_KB2: reg = kb; break;
-		default: reg = -1; break;
-	}
-	return reg;
-}
-
-// -----------------------------------------------------------------------
-int cp_reg_set(unsigned id, uint16_t v)
-{
-	cpu_register_load(id, v);
-	return 0;
-}
-
-// -----------------------------------------------------------------------
 bool cp_mem_read_n(unsigned nb, uint16_t addr, uint16_t *data, unsigned count)
 {
 	// can't use cpu_mem_read here, as it may fail in "cpu fashion" (with interrupt and all).
@@ -199,27 +165,9 @@ bool cp_wait_get()
 }
 
 // -----------------------------------------------------------------------
-uint16_t cp_int_get_chan()
-{
-	return int_get_chan();
-}
-
-// -----------------------------------------------------------------------
 bool cp_q_get()
 {
-	return cp_reg_get(ECTL_REG_SR) & 0b100000;
-}
-
-// -----------------------------------------------------------------------
-int cp_nb_get()
-{
-	return cp_reg_get(ECTL_REG_SR) & 0b1111;
-}
-
-// -----------------------------------------------------------------------
-int cp_qnb_get()
-{
-	return cp_q_get() * cp_nb_get();
+	return q;
 }
 
 // -----------------------------------------------------------------------
