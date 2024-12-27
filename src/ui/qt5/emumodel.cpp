@@ -142,14 +142,14 @@ void EmuModel::sync_ips()
 // -----------------------------------------------------------------------
 int EmuModel::get_mem(int nb, int addr, uint16_t *m, int count)
 {
-	return ectl_mem_read_n(nb, addr, m, count);
+	return em400_mem_read(nb, addr, m, count);
 }
 
 // -----------------------------------------------------------------------
 int EmuModel::get_mem(int nb, int addr)
 {
 	uint16_t v;
-	if (ectl_mem_read_n(nb, addr, &v, 1)) {
+	if (em400_mem_read(nb, addr, &v, 1)) {
 		return v;
 	} else {
 		return -1;
@@ -167,7 +167,7 @@ bool EmuModel::load_os_image(QString filename)
 	}
 
 	FILE *f = fdopen(file.handle(), "r");
-	ectl_load_os_image(f, "name", 0, 0);
+	em400_load_os_image(f);
 	fclose(f);
 	return true;
 }

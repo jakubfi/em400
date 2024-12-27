@@ -113,7 +113,7 @@ expr:
 		uint16_t data;
 		switch ($$->type) {
 			case N_MEM:
-				if (!ectl_mem_read_n($$->nb, (uint16_t) $$->val, &data, 1)) {
+			    if (!em400_mem_read($$->nb, (uint16_t) $$->val, &data, 1)) {
 					yyerror("address [%i:0x%04x] not available, memory not configured", $$->nb, (uint16_t) $$->val);
 					YYABORT;
 				}

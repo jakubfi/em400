@@ -107,7 +107,7 @@ int em400_preload_program(const char *program_name)
 		return LOGERR("Failed to open program file: \"%s\".", program_name);
 	}
 
-	bool res = ectl_load_os_image(f, program_name, 0, 0);
+	bool res = em400_load_os_image(f);
 	fclose(f);
 	if (!res) {
 		return LOGERR("Failed to preload program file: \"%s\".", program_name);

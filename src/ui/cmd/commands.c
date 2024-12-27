@@ -302,7 +302,7 @@ void ui_cmd_mem(FILE *out, char *args)
 
 	while (processed < count) {
 		int words = count - processed;
-		if (!ectl_mem_read_n(seg, addr+processed, mbuf, words)) {
+		if (!em400_mem_read(seg, addr+processed, mbuf, words)) {
 			ui_cmd_resp(out, RESP_ERR, UI_EOL, "Memory read failed");
 			return;
 		}
@@ -369,7 +369,7 @@ void ui_cmd_memw(FILE *out, char *args)
 		return;
 	}
 
-	if (!ectl_mem_write_n(seg, addr, mbuf, processed)) {
+	if (!em400_mem_write(seg, addr, mbuf, processed)) {
 		ui_cmd_resp(out, RESP_ERR, UI_EOL, "Memory write failed when writing %i words at address 0x%04x", processed, addr);
 		return;
 	}
@@ -415,7 +415,7 @@ void ui_cmd_load(FILE *out, char *args)
 		return;
 	}
 
-	bool res = ectl_load_os_image(f, tok_file, seg, addr);
+	bool res = em400_load_os_image(f);
 	if (!res) {
 		ui_cmd_resp(out, RESP_ERR, UI_EOL, "File upload failed: %s", tok_file);
 	} else {
@@ -440,7 +440,7 @@ void ui_cmd_memmap(FILE *out, char *args)
 		return;
 	}
 
-	int map = ectl_mem_map(seg);
+	int map = em400_mem_map(seg);
 	ui_cmd_resp(out, RESP_OK, UI_EOL, "0x%04x", map);
 }
 

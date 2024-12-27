@@ -69,29 +69,6 @@ void ectl_shutdown()
 }
 
 // -----------------------------------------------------------------------
-bool ectl_mem_read_n(int seg, uint16_t addr, uint16_t *dest, unsigned count)
-{
-	LOG(L_ECTL, "ECTL mem read: %i:0x%04x, %i words", seg, addr, count);
-	return cpext_mem_read_n(seg, addr, dest, count);
-}
-
-// -----------------------------------------------------------------------
-bool ectl_mem_write_n(int seg, uint16_t addr, uint16_t *src, unsigned count)
-{
-	LOG(L_ECTL, "ECTL mem write: %i:0x%04x, %i words", seg, addr, count);
-	return cpext_mem_write_n(seg, addr, src, count);
-}
-
-// -----------------------------------------------------------------------
-int ectl_mem_map(int seg)
-{
-	LOG(L_ECTL, "ECTL mem map");
-	int map = cpext_mem_get_map(seg);
-	LOG(L_ECTL, "ECTL mem map: %i = 0x%04x", seg, map);
-	return map;
-}
-
-// -----------------------------------------------------------------------
 const char * ectl_cpu_state_name(unsigned state)
 {
 	if (state > ECTL_STATE_UNKNOWN) {
@@ -115,43 +92,6 @@ void ectl_cpu_off()
 {
 	LOG(L_ECTL, "ECTL cpu OFF");
 	cp_off();
-}
-
-// -----------------------------------------------------------------------
-bool ectl_load_os_image(FILE *f, const char *name, int seg, uint16_t saddr)
-{
-	LOG(L_ECTL, "ECTL load: %i:0x%04x %s", seg, saddr, name);
-
-	bool res = false;
-	uint16_t *bufw = (uint16_t *) malloc(sizeof(uint16_t) * 0x10000);
-	uint16_t *bufr = (uint16_t *) malloc(sizeof(uint16_t) * 0x10000);
-
-	int words_read = fread(bufw, sizeof(uint16_t), 0x10000, f);
-	if (words_read <= 0) {
-		LOG(L_ECTL, "ECTL load failed to read from file");
-		goto cleanup;
-	}
-	endianswap(bufw, words_read);
-	if (!ectl_mem_write_n(seg, saddr, bufw, words_read)) {
-		LOG(L_ECTL, "ECTL load failed to write memory");
-		goto cleanup;
-	}
-	LOG(L_ECTL, "ECTL load verify start");
-	if (!ectl_mem_read_n(seg, saddr, bufr, words_read)) {
-		LOG(L_ECTL, "ECTL load failed to readmemory");
-		goto cleanup;
-	}
-	int cmpres = memcmp(bufw, bufr, words_read * sizeof(uint16_t));
-	LOG(L_ECTL, "ECTL load verify (%i words): %s", words_read, cmpres ? "FAILED" : "OK");
-	if (cmpres != 0) {
-		goto cleanup;
-	}
-
-	res = true;
-cleanup:
-	free(bufw);
-	free(bufr);
-	return res;
 }
 
 // -----------------------------------------------------------------------

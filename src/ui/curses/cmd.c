@@ -69,7 +69,7 @@ void dbg_c_load(int wid, char* image)
 		return;
 	}
 
-	bool res = ectl_load_os_image(f, image, 0, 0);
+	bool res = em400_load_os_image(f);
 	if (!res) {
 		awtbprint(wid, C_ERROR, "Error loading image \"%s\"\n", image);
 	}
@@ -204,7 +204,7 @@ void dbg_c_mem(int wid, int block, int start, int end, int maxcols, int maxlines
 		awtbprint(wid, C_LABEL, "0x%04x: ", addr);
 		char *chars = (char *) malloc(words*2+1);
 		for (int w=0 ; w<words ; w++) {
-			res = ectl_mem_read_n(block, addr, &data, 1);
+			res = em400_mem_read(block, addr, &data, 1);
 			if (!res) {
 				awtbprint(wid, C_ERROR, "~~~~ ");
 				chars[w*2] = '~';
@@ -300,7 +300,7 @@ void dbg_c_stack(int wid, int size)
 	uint16_t data;
 	int res;
 
-	res = ectl_mem_read_n(0, 97, &data, 1);
+	res = em400_mem_read(0, 97, &data, 1);
 	if (!res) {
 		awtbprint(wid, C_ERROR, "~~~~");
 		return;
@@ -313,7 +313,7 @@ void dbg_c_stack(int wid, int size)
 	}
 
 	osp = sp;
-	res = ectl_mem_read_n(0, sp, &data, 1);
+	res = em400_mem_read(0, sp, &data, 1);
 
 	while ((sp >= sb) && res) {
 		if (sp == osp) {
@@ -324,7 +324,7 @@ void dbg_c_stack(int wid, int size)
 			awtbprint(wid, C_DATA, "%04x \n", data);
 		}
 		sp--;
-		res = ectl_mem_read_n(0, sp, &data, 1);
+		res = em400_mem_read(0, sp, &data, 1);
 	}
 }
 
@@ -336,7 +336,7 @@ void dbg_c_memcfg(int wid)
 
 	for (int i=0 ; i<16 ; i++) {
 		awtbprint(wid, C_LABEL, "%2i: ", i);
-		uint16_t map = ectl_mem_map(i);
+		uint16_t map = em400_mem_map(i);
 		int cnt = 0;
 		for (int j=0 ; j<16 ; j++) {
 			char c = '.';
@@ -681,7 +681,7 @@ void dbg_c_find(int wid, uint16_t block, uint16_t value)
 
 	for (int seg=0 ; seg<16 ; seg++) {
 		const int words = 4096;
-		ectl_mem_read_n(block, seg*words, data, words);
+		em400_mem_read(block, seg*words, data, words);
 		for (int word=0 ; word<words ; word++) {
 			if (data[word] == value) {
 				found++;
@@ -712,7 +712,7 @@ void dbg_c_memdump(int wid, int block, char *name)
 
 	for (int seg=0 ; seg<16 ; seg++) {
 		const int words = 4096;
-		ectl_mem_read_n(block, seg*words, data, words);
+		em400_mem_read(block, seg*words, data, words);
 		if (words != 4096) break;
 		endianswap(data, 4096);
 		int res = fwrite(data, 1, 2*4096, f);

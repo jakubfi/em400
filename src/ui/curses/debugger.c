@@ -24,6 +24,7 @@
 #include <emdas.h>
 
 #include "ectl.h"
+#include "libem400.h"
 #include "ui/ui.h"
 
 #include "ui/curses/awin.h"
@@ -65,7 +66,7 @@ static void _dbg_sigint_handler(int signum)
 // -----------------------------------------------------------------------
 int dbg_mem_read(int nb, uint16_t addr, uint16_t *data)
 {
-	return ectl_mem_read_n(nb, addr, data, 1);
+	return em400_mem_read(nb, addr, data, 1);
 }
 
 // -----------------------------------------------------------------------

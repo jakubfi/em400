@@ -17,6 +17,7 @@
 
 #include <stdint.h>
 #include <stdbool.h>
+#include <string.h>
 
 #include "cpu/cpu.h"
 #include "cpu/interrupts.h"
@@ -105,6 +106,23 @@ bool cpext_mem_write_n(unsigned nb, uint16_t addr, uint16_t *data, unsigned coun
 int cpext_mem_get_map(unsigned seg)
 {
 	return mem_get_map(seg);
+}
+
+// -----------------------------------------------------------------------
+bool cpext_load_os_image(FILE *f)
+{
+	uint16_t buf[0x2000];
+
+	int words_read = fread(buf, sizeof(uint16_t), 0x2000, f);
+	if (words_read <= 0) {
+		return false;
+	}
+	endianswap(buf, words_read);
+	if (!cpext_mem_write_n(0, 0, buf, words_read)) {
+		return false;
+	}
+
+	return true;
 }
 
 // -----------------------------------------------------------------------

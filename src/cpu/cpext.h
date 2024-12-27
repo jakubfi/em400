@@ -20,6 +20,7 @@
 
 #include <stdint.h>
 #include <stdbool.h>
+#include <stdio.h>
 
 int cpext_reg(unsigned reg_id);
 void cpext_regs(uint16_t *dest);
@@ -34,6 +35,7 @@ unsigned int cpext_state();
 bool cpext_mem_read_n(unsigned nb, uint16_t addr, uint16_t *data, unsigned count);
 bool cpext_mem_write_n(unsigned nb, uint16_t addr, uint16_t *data, unsigned count);
 int cpext_mem_get_map(unsigned seg);
+bool cpext_load_os_image(FILE *f);
 unsigned long cpext_ips_get();
 
 #endif

@@ -20,6 +20,7 @@
 
 #include <stdbool.h>
 #include <stdint.h>
+#include <stdio.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -153,6 +154,10 @@ unsigned em400_qnb();
 uint32_t em400_rz32();
 int em400_int_set(unsigned interrupt);
 int em400_int_clear(unsigned interrupt);
+bool em400_mem_read(int seg, uint16_t addr, uint16_t *dest, unsigned count);
+bool em400_mem_write(int seg, uint16_t addr, uint16_t *src, unsigned count);
+int em400_mem_map(int seg);
+bool em400_load_os_image(FILE *f);
 unsigned long em400_ips_get();
 
 #ifdef __cplusplus

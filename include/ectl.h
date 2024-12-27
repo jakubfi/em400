@@ -52,12 +52,6 @@ void ectl_shutdown();
 // Standard control panel interface
 void ectl_cpu_off(); // TODO: on + led?
 
-// memory
-bool ectl_mem_read_n(int seg, uint16_t addr, uint16_t *dest, unsigned count);
-bool ectl_mem_write_n(int seg, uint16_t addr, uint16_t *src, unsigned count);
-int ectl_mem_map(int seg);
-bool ectl_load_os_image(FILE *f, const char *name, int seg, uint16_t saddr);
-
 // CPU state
 const char * ectl_cpu_state_name(unsigned state);
 unsigned ectl_cpu_state_get();

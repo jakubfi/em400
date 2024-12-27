@@ -323,6 +323,30 @@ int em400_int_clear(unsigned interrupt)
 }
 
 // -----------------------------------------------------------------------
+bool em400_mem_read(int seg, uint16_t addr, uint16_t *dest, unsigned count)
+{
+	return cpext_mem_read_n(seg, addr, dest, count);
+}
+
+// -----------------------------------------------------------------------
+bool em400_mem_write(int seg, uint16_t addr, uint16_t *src, unsigned count)
+{
+	return cpext_mem_write_n(seg, addr, src, count);
+}
+
+// -----------------------------------------------------------------------
+int em400_mem_map(int seg)
+{
+	return cpext_mem_get_map(seg);
+}
+
+// -----------------------------------------------------------------------
+bool em400_load_os_image(FILE *f)
+{
+	return cpext_load_os_image(f);
+}
+
+// -----------------------------------------------------------------------
 unsigned long em400_ips_get()
 {
 	return cpext_ips_get();

@@ -9,7 +9,7 @@
 // -----------------------------------------------------------------------
 static int dbg_mem_get(int nb, uint16_t addr, uint16_t *data)
 {
-	return ectl_mem_read_n(nb, addr, data, 1);
+	return em400_mem_read(nb, addr, data, 1);
 }
 
 // -----------------------------------------------------------------------
