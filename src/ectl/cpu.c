@@ -155,25 +155,6 @@ cleanup:
 }
 
 // -----------------------------------------------------------------------
-extern unsigned long ips_counter;
-unsigned long ectl_ips_get()
-{
-	double ips;
-	static unsigned long oips;
-
-	double elapsed_ns = stopwatch_ns();
-	if (elapsed_ns > 0) {
-		ips = (1000000000.0 * (ips_counter - oips)) / elapsed_ns;
-	} else {
-		ips = 0;
-	}
-	oips = ips_counter;
-
-	LOG(L_ECTL, "ECTL ips: %li", ips);
-	return ips;
-}
-
-// -----------------------------------------------------------------------
 static struct ectl_est * __ectl_parse(char *expression, char **err_msg, int *err_beg, int *err_end)
 {
 	struct ectl_est *tree;

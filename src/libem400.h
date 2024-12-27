@@ -153,7 +153,7 @@ unsigned em400_qnb();
 uint32_t em400_rz32();
 int em400_int_set(unsigned interrupt);
 int em400_int_clear(unsigned interrupt);
-
+unsigned long em400_ips_get();
 
 #ifdef __cplusplus
 }

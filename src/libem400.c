@@ -322,4 +322,9 @@ int em400_int_clear(unsigned interrupt)
 	return cpext_int_clear(interrupt);
 }
 
+// -----------------------------------------------------------------------
+unsigned long em400_ips_get()
+{
+	return cpext_ips_get();
+}
 // vim: tabstop=4 shiftwidth=4 autoindent

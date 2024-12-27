@@ -556,7 +556,7 @@ void ui_cmd_logc(FILE *out, char *args)
 // -----------------------------------------------------------------------
 void ui_cmd_ips(FILE *out, char *args)
 {
-	ui_cmd_resp(out, RESP_OK, UI_EOL, "%li", ectl_ips_get());
+	ui_cmd_resp(out, RESP_OK, UI_EOL, "%li", em400_ips_get());
 }
 
 // -----------------------------------------------------------------------

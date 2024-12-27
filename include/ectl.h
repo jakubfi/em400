@@ -63,7 +63,6 @@ const char * ectl_cpu_state_name(unsigned state);
 unsigned ectl_cpu_state_get();
 
 // informational, other
-unsigned long ectl_ips_get();
 int ectl_eval(char *expression, char **err_msg, int *err_beg, int *err_end);
 
 // breakpoints

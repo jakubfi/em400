@@ -136,7 +136,7 @@ void EmuModel::sync_clock(bool force)
 // -----------------------------------------------------------------------
 void EmuModel::sync_ips()
 {
-	emit signal_cpu_ips_tick(ectl_ips_get());
+	emit signal_cpu_ips_tick(em400_ips_get());
 }
 
 // -----------------------------------------------------------------------

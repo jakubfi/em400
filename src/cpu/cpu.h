@@ -77,7 +77,7 @@ extern unsigned rm, nb;
 extern bool p, q, bs;
 extern uint16_t w;
 extern int r_selected;
-
+extern unsigned long ips_counter;
 extern bool zc17;
 
 extern bool cpu_mod_present;
