@@ -119,14 +119,14 @@ void em400_cp_reg_select(int reg_id);
 
 
 // -----------------------------------------------------------------------
-// --- EM400 EXTENSIONS --------------------------------------------------
+// --- EM400 CONTROL PANEL EXTENSIONS ------------------------------------
 // -----------------------------------------------------------------------
 
+unsigned em400_reg_id(char *name);
+const char * em400_reg_name(unsigned reg_id);
 int em400_reg(unsigned reg_id);
 void em400_regs(uint16_t *dest);
 void em400_reg_set(unsigned reg_id, uint16_t val);
-unsigned em400_reg_id(char *name);
-const char * em400_reg_name(unsigned reg_id);
 unsigned em400_nb();
 unsigned em400_qnb();
 uint32_t em400_rz32();

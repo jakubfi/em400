@@ -21,6 +21,7 @@
 #include "cpu/cpu.h"
 #include "cpu/interrupts.h"
 #include "cpu/cp.h"
+#include "cpu/cpext.h"
 
 const char *em400_reg_names[] = {
 	"R0", "R1", "R2", "R3", "R4", "R5", "R6", "R7",
@@ -186,26 +187,6 @@ void em400_cp_reg_select(int reg_id)
 // -----------------------------------------------------------------------
 
 // -----------------------------------------------------------------------
-int em400_reg(unsigned reg_id)
-{
-	return cpu_reg_fetch(reg_id);
-}
-
-// -----------------------------------------------------------------------
-void em400_regs(uint16_t *dest)
-{
-	for (int i=0 ; i<EM400_REG_COUNT ; i++) {
-		dest[i] = cpu_reg_fetch(i);
-	}
-}
-
-// -----------------------------------------------------------------------
-void em400_reg_set(unsigned reg_id, uint16_t val)
-{
-	cpu_reg_load(reg_id, val);
-}
-
-// -----------------------------------------------------------------------
 unsigned int em400_reg_id(char *name)
 {
 	const char **rname = em400_reg_names;
@@ -232,41 +213,51 @@ const char * em400_reg_name(unsigned reg_id)
 }
 
 // -----------------------------------------------------------------------
+int em400_reg(unsigned reg_id)
+{
+	return cpext_reg(reg_id);
+}
+
+// -----------------------------------------------------------------------
+void em400_regs(uint16_t *dest)
+{
+	cpext_regs(dest);
+}
+
+// -----------------------------------------------------------------------
+void em400_reg_set(unsigned reg_id, uint16_t val)
+{
+	cpext_reg_set(reg_id, val);
+}
+
+// -----------------------------------------------------------------------
 unsigned em400_nb()
 {
-	return nb;
+	return cpext_nb();
 }
 
 // -----------------------------------------------------------------------
 unsigned em400_qnb()
 {
-	return q * nb;
+	return cpext_qnb();
 }
 
 // -----------------------------------------------------------------------
 uint32_t em400_rz32()
 {
-	return rz;
+	return cpext_rz32();
 }
 
 // -----------------------------------------------------------------------
 int em400_int_set(unsigned interrupt)
 {
-	if (interrupt >= 32) {
-		return -1;
-	}
-	int_set(interrupt);
-	return 0;
+	return cpext_int_set(interrupt);
 }
 
 // -----------------------------------------------------------------------
 int em400_int_clear(unsigned interrupt)
 {
-	if (interrupt >= 32) {
-		return -1;
-	}
-	int_clear(interrupt);
-	return 0;
+	return cpext_int_clear(interrupt);
 }
 
 // vim: tabstop=4 shiftwidth=4 autoindent

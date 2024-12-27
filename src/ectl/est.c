@@ -1,4 +1,4 @@
-//  Copyright (c) 2012-2013 Jakub Filipowicz <jakubf@gmail.com>
+//  Copyright (c) 2012-2024 Jakub Filipowicz <jakubf@gmail.com>
 //
 //  This program is free software; you can redistribute it and/or modify
 //  it under the terms of the GNU General Public License as published by
@@ -23,6 +23,7 @@
 #include <ctype.h>
 
 #include "cpu/cp.h"
+#include "cpu/cpext.h"
 #include "cpu/cpu.h"
 
 #include "libem400.h"
@@ -243,7 +244,7 @@ int ectl_est_eval_mem(struct ectl_est *n)
 	}
 
 	uint16_t data;
-	if (!cp_mem_read_n(nb, addr, &data, 1)) {
+	if (!cpext_mem_read_n(nb, addr, &data, 1)) {
 		return __esterr(n, "Memory at %i:%i is not configured", nb, addr);
 	}
 

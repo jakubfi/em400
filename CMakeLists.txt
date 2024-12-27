@@ -301,6 +301,8 @@ add_executable(em400
 	${SOURCES_EM400}
 	${BISON_ectl_parser_OUTPUTS}
 	${FLEX_ectl_scanner_OUTPUTS}
+	src/cpu/cpext.c
+	src/cpu/cpext.h
 )
 
 set_property(TARGET em400 PROPERTY C_STANDARD 11)

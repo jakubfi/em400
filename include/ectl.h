@@ -1,4 +1,4 @@
-//  Copyright (c) 2016-2019 Jakub Filipowicz <jakubf@gmail.com>
+//  Copyright (c) 2016-2024 Jakub Filipowicz <jakubf@gmail.com>
 //
 //  This program is free software; you can redistribute it and/or modify
 //  it under the terms of the GNU General Public License as published by
@@ -27,8 +27,6 @@
 #ifdef __cplusplus
 extern "C" {
 #endif
-
-
 
 enum ectl_cpu_states {
 	ECTL_STATE_RUN = 0,
@@ -67,7 +65,6 @@ void ectl_cpu_off(); // TODO: on + led?
 bool ectl_mem_read_n(int seg, uint16_t addr, uint16_t *dest, unsigned count);
 bool ectl_mem_write_n(int seg, uint16_t addr, uint16_t *src, unsigned count);
 int ectl_mem_map(int seg);
-int ectl_mem_cfg(int nb, int ab, int mp, int seg);
 bool ectl_load_os_image(FILE *f, const char *name, int seg, uint16_t saddr);
 
 // CPU state

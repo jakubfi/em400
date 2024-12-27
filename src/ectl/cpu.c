@@ -1,4 +1,4 @@
-//  Copyright (c) 2016-2022 Jakub Filipowicz <jakubf@gmail.com>
+//  Copyright (c) 2016-2024 Jakub Filipowicz <jakubf@gmail.com>
 //
 //  This program is free software; you can redistribute it and/or modify
 //  it under the terms of the GNU General Public License as published by
@@ -26,10 +26,7 @@
 #include "log.h"
 #include "utils/utils.h"
 #include "cpu/cp.h"
-#include "cpu/cpu.h"
-#include "cpu/interrupts.h"
-#include "mem/mem.h"
-#include "io/defs.h"
+#include "cpu/cpext.h"
 
 #include "ectl.h"
 #include "ectl/est.h"
@@ -71,42 +68,27 @@ void ectl_shutdown()
 	ectl_brk_del_all();
 }
 
-
-
 // -----------------------------------------------------------------------
 bool ectl_mem_read_n(int seg, uint16_t addr, uint16_t *dest, unsigned count)
 {
 	LOG(L_ECTL, "ECTL mem read: %i:0x%04x, %i words", seg, addr, count);
-	return cp_mem_read_n(seg, addr, dest, count);
+	return cpext_mem_read_n(seg, addr, dest, count);
 }
 
 // -----------------------------------------------------------------------
 bool ectl_mem_write_n(int seg, uint16_t addr, uint16_t *src, unsigned count)
 {
 	LOG(L_ECTL, "ECTL mem write: %i:0x%04x, %i words", seg, addr, count);
-	return cp_mem_write_n(seg, addr, src, count);
+	return cpext_mem_write_n(seg, addr, src, count);
 }
 
 // -----------------------------------------------------------------------
 int ectl_mem_map(int seg)
 {
 	LOG(L_ECTL, "ECTL mem map");
-	int map = mem_get_map(seg);
+	int map = cpext_mem_get_map(seg);
 	LOG(L_ECTL, "ECTL mem map: %i = 0x%04x", seg, map);
 	return map;
-}
-
-// -----------------------------------------------------------------------
-int ectl_mem_cfg(int nb, int ab, int mp, int seg)
-{
-	uint16_t r = (nb & 0b1111) | (ab << 12);
-	uint16_t n = ((mp & 0b1111) << 1) | ((seg & 0b1111) << 5);
-	int res = mem_cmd(n, r);
-	if (res == IO_OK) {
-		return 0;
-	} else {
-		return -1;
-	}
 }
 
 // -----------------------------------------------------------------------
@@ -123,7 +105,7 @@ const char * ectl_cpu_state_name(unsigned state)
 unsigned ectl_cpu_state_get()
 {
 	LOG(L_ECTL, "ECTL state get");
-	unsigned state = cp_state();
+	unsigned state = cpext_state();
 	LOG(L_ECTL, "ECTL state get: %s", state_names[state]);
 	return state;
 }

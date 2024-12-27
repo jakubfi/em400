@@ -1,4 +1,4 @@
-//  Copyright (c) 2016 Jakub Filipowicz <jakubf@gmail.com>
+//  Copyright (c) 2016-2024 Jakub Filipowicz <jakubf@gmail.com>
 //
 //  This program is free software; you can redistribute it and/or modify
 //  it under the terms of the GNU General Public License as published by
@@ -23,6 +23,7 @@
 
 #include "ectl.h"
 #include "cpu/cp.h"
+#include "cpu/cpext.h"
 #include "ectl/est.h"
 
 struct ectl_brkpoint {
@@ -122,7 +123,7 @@ int ectl_brk_delete(unsigned id)
 		brkp = atomic_load_explicit(&brkp->next, memory_order_acquire);
 	}
 
-	if (cp_state() == ECTL_STATE_STOP) {
+	if (cpext_state() == ECTL_STATE_STOP) {
 		ectl_brk_cleanup();
 	}
 

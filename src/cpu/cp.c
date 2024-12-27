@@ -21,14 +21,11 @@
 
 #include "io/defs.h"
 #include "io/io.h"
-#include "cpu/cp.h"
 #include "cpu/cpu.h"
 #include "cpu/interrupts.h"
 #include "mem/mem.h"
 #include "cpu/clock.h"
 #include "utils/utils.h"
-
-#include "log.h"
 
 #include "ectl.h" // for global constants/enums
 
@@ -42,22 +39,6 @@ uint16_t cp_bus_w()
 void cp_kb_set(uint16_t val)
 {
 	cpu_kb_set(val);
-}
-
-// -----------------------------------------------------------------------
-bool cp_mem_read_n(unsigned nb, uint16_t addr, uint16_t *data, unsigned count)
-{
-	// can't use cpu_mem_read here, as it may fail in "cpu fashion" (with interrupt and all).
-	// cp_mem_read() is an emulator extension to the original H/W, used by the interface
-	// to display stuff when cpu is in RUN state too, and it could happen that ui tries to
-	// read unconfigured memory as well.
-	return mem_read_n(nb, addr, data, count);
-}
-
-// -----------------------------------------------------------------------
-bool cp_mem_write_n(unsigned nb, uint16_t addr, uint16_t *data, unsigned count)
-{
-	return mem_write_n(nb, addr, data, count);
 }
 
 // -----------------------------------------------------------------------
@@ -110,12 +91,6 @@ void cp_oprq()
 }
 
 // -----------------------------------------------------------------------
-unsigned cp_state()
-{
-	return cpu_state_get();
-}
-
-// -----------------------------------------------------------------------
 int cp_stopn(bool state)
 {
 	// unsupported
@@ -155,13 +130,13 @@ bool cp_irq_get()
 // -----------------------------------------------------------------------
 bool cp_run_get()
 {
-	return cp_state() == ECTL_STATE_RUN;
+	return cpu_state_get() == ECTL_STATE_RUN;
 }
 
 // -----------------------------------------------------------------------
 bool cp_wait_get()
 {
-	return cp_state() == ECTL_STATE_WAIT;
+	return cpu_state_get() == ECTL_STATE_WAIT;
 }
 
 // -----------------------------------------------------------------------

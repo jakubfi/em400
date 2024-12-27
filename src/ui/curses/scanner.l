@@ -79,7 +79,6 @@ regs	{ return F_REGS; }
 sregs	{ return F_SREGS; }
 clear	{ return F_CLEAR; }
 memcfg	{ return F_MEMCFG; }
-memmap	{ return F_MEMMAP; }
 start	{ return F_START; }
 stop	{ return F_STOP; }
 stk		{ return F_STACK; }

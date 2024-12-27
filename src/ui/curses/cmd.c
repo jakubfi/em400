@@ -48,7 +48,6 @@ struct cmd_t dbg_commands[] = {
 	{ "binload",F_BIN,		"Initiate binary load", "bin <io_cmd> <load_addr>" },
 	{ "load",	F_LOAD,		"Load memory image from file", "  load <file>" },
 	{ "memcfg",	F_MEMCFG,	"Show memory configuration", "  memcfg" },
-	{ "memmap",	F_MEMMAP,	"Configure memory", "  memmap <seg> <page> <module> <frame>" },
 	{ "memdump",F_MEMDUMP,	"Dump memory contents into a file", "  memdump <block> <filename>" },
 	{ "brk",	F_BRK,		"Manipulate breakpoints", "  brk add <expression>\n  brk del <brk_number>\n  brk" },
 	{ "start",	F_START,	"Start emulation", "  start" },
@@ -350,17 +349,6 @@ void dbg_c_memcfg(int wid)
 		awtbprint(wid, C_LABEL, " = %3i K\n", cnt*4);
 	}
 	awtbprint(wid, C_DATA, "\n");
-}
-
-// -----------------------------------------------------------------------
-void dbg_c_memmap(int wid, int seg, int page, int module, int frame)
-{
-	int res = ectl_mem_cfg(seg, page, module, frame);
-	if (!res) {
-		awtbprint(wid, C_LABEL, "Mapped logical %i:%i to physical %i:%i\n", seg, page, module, frame);
-	} else {
-		awtbprint(wid, C_ERROR, "Error: could not map logical %i:%i to physical %i:%i\n", seg, page, module, frame);
-	}
 }
 
 // -----------------------------------------------------------------------

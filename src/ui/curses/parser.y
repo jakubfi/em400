@@ -157,7 +157,6 @@ command:
 	| F_SREGS 				{ dbg_c_sregs(W_CMD); }
 	| F_CLEAR 				{ dbg_c_clear(); }
 	| F_MEMCFG			 	{ dbg_c_memcfg(W_CMD); }
-	| F_MEMMAP VALUE VALUE VALUE VALUE { dbg_c_memmap(W_CMD, $2, $3, $4, $5); }
 	| F_START 				{ dbg_c_start(); }
 	| F_STOP 				{ dbg_c_stop(); }
 	| F_STACK 				{ dbg_c_stack(W_CMD, 12); }
