@@ -503,19 +503,19 @@ void dbg_c_log_info(int wid)
 {
 	int i;
 
-	awtbprint(wid, C_DATA, "Logging %s\n", ectl_log_state_get() ? "enabled" : "disabled");
+	awtbprint(wid, C_DATA, "Logging %s\n", em400_log_state() ? "enabled" : "disabled");
 	awtbprint(wid, C_LABEL, "Enabled components: ");
 	for (i=1 ; i < L_COUNT ; i++) {
-		if (ectl_log_component_get(i)) {
-			const char *cname = ectl_log_component_name(i);
+		if (em400_log_component_state(i)) {
+			const char *cname = em400_log_component_name(i);
 			awtbprint(wid, C_DATA, "%s ", cname);
 		}
 	}
 	awtbprint(wid, C_LABEL, "\n");
 	awtbprint(wid, C_LABEL, "Disabled components: ");
 	for (i=1 ; i < L_COUNT ; i++) {
-		if (!ectl_log_component_get(i)) {
-			const char *cname = ectl_log_component_name(i);
+		if (!em400_log_component_state(i)) {
+			const char *cname = em400_log_component_name(i);
 			awtbprint(wid, C_DATA, "%s ", cname);
 		}
 	}
@@ -525,14 +525,14 @@ void dbg_c_log_info(int wid)
 // -----------------------------------------------------------------------
 void dbg_c_log_disable(int wid)
 {
-	ectl_log_state_set(false);
+	em400_log_state(false);
 	awtbprint(wid, C_LABEL, "Logging disabled\n");
 }
 
 // -----------------------------------------------------------------------
 void dbg_c_log_enable(int wid)
 {
-	int res = ectl_log_state_set(true);
+	int res = em400_log_set(true);
 	if (!res) {
 		awtbprint(wid, C_LABEL, "Logging enabled\n");
 	} else {
@@ -545,15 +545,15 @@ void dbg_c_log_set_state(int wid, char *comp_name, int state)
 {
 	int c;
 
-	c = ectl_log_component_id(comp_name);
+	c = em400_log_component_id(comp_name);
 	if (c < 0) {
 		awtbprint(wid, C_ERROR, "Unknown component: ");
 		awtbprint(wid, C_DATA, "%s", comp_name);
 	} else {
 		if (state) {
-			ectl_log_component_set(c, true);
+			em400_log_component_set(c, true);
 		} else {
-			ectl_log_component_set(c, false);
+			em400_log_component_set(c, false);
 		}
 		awtbprint(wid, C_LABEL, "Component ");
 		awtbprint(wid, C_DATA, "%s ", comp_name);

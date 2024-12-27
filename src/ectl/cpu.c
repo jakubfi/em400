@@ -155,60 +155,6 @@ cleanup:
 }
 
 // -----------------------------------------------------------------------
-bool ectl_log_state_get()
-{
-	int state = log_is_enabled();
-	LOG(L_ECTL, "ECTL log state get: %i", state);
-	return state;
-}
-
-// -----------------------------------------------------------------------
-int ectl_log_state_set(bool state)
-{
-	int res = -1;
-	LOG(L_ECTL, "ECTL log state set: %i", state);
-	if (state) {
-		res = log_enable();
-	} else {
-		log_disable();
-		res = 0;
-	}
-	return res;
-}
-
-// -----------------------------------------------------------------------
-int ectl_log_component_get(unsigned component)
-{
-	int state = log_component_get(component) ? 1 : 0;
-	LOG(L_ECTL, "ECTL log component %s: %i", ectl_log_component_name(component), state);
-	return state;
-}
-
-// -----------------------------------------------------------------------
-int ectl_log_component_set(unsigned component, bool state)
-{
-	LOG(L_ECTL, "ECTL log component %s: %i", ectl_log_component_name(component), state);
-	if (state) {
-		log_component_enable(component);
-	} else {
-		log_component_disable(component);
-	}
-	return state;
-}
-
-// -----------------------------------------------------------------------
-const char * ectl_log_component_name(unsigned component)
-{
-	return log_get_component_name(component);
-}
-
-// -----------------------------------------------------------------------
-int ectl_log_component_id(char *name)
-{
-	return log_get_component_id(name);
-}
-
-// -----------------------------------------------------------------------
 extern unsigned long ips_counter;
 unsigned long ectl_ips_get()
 {

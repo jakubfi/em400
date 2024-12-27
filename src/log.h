@@ -24,6 +24,7 @@
 #include <stdatomic.h>
 
 #include "ectl.h" // for global constants
+#include "libem400.h"
 #include "cfg.h"
 
 #define E_OK 0

@@ -46,15 +46,6 @@ enum ectl_cpu_states {
 
 extern const char *state_names[];
 
-enum ectl_log_components {
-	L_ALL = 0,
-	L_EM4H, L_ECTL, L_FDBR, L_CRK5,
-	L_MEM, L_CPU, L_OP, L_INT, L_IO,
-	L_MX, L_CCHR, L_CMEM,
-	L_TERM, L_9425, L_WNCH, L_FLOP, L_PNCH, L_PNRD, L_TAPE,
-	L_COUNT,
-};
-
 int ectl_init();
 void ectl_shutdown();
 
@@ -74,14 +65,6 @@ unsigned ectl_cpu_state_get();
 // informational, other
 unsigned long ectl_ips_get();
 int ectl_eval(char *expression, char **err_msg, int *err_beg, int *err_end);
-
-// logging
-bool ectl_log_state_get();
-int ectl_log_state_set(bool state);
-int ectl_log_component_get(unsigned component);
-int ectl_log_component_set(unsigned component, bool state);
-const char * ectl_log_component_name(unsigned component);
-int ectl_log_component_id(char *name);
 
 // breakpoints
 int ectl_brk_add(char *expression, char **err_msg, int *err_beg, int *err_end);

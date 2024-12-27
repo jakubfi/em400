@@ -76,6 +76,15 @@ extern const char *em400_reg_names[];
 
 #define EM400_REG_COUNT EM400_REG_KB2
 
+enum ectl_log_components {
+	L_ALL = 0,
+	L_EM4H, L_ECTL, L_FDBR, L_CRK5,
+	L_MEM, L_CPU, L_OP, L_INT, L_IO,
+	L_MX, L_CCHR, L_CMEM,
+	L_TERM, L_9425, L_WNCH, L_FLOP, L_PNCH, L_PNRD, L_TAPE,
+	L_COUNT,
+};
+
 // -----------------------------------------------------------------------
 // --- LIBRARY -----------------------------------------------------------
 // -----------------------------------------------------------------------
@@ -83,6 +92,18 @@ extern const char *em400_reg_names[];
 int em400_mem_configure(struct em400_cfg_mem *c_mem);
 int em400_cpu_configure(struct em400_cfg_cpu *c_cpu, struct em400_cfg_buzzer *c_buzzer);
 const char * em400_version();
+
+
+// -----------------------------------------------------------------------
+// --- LOGGING -----------------------------------------------------------
+// -----------------------------------------------------------------------
+
+bool em400_log_state();
+int em400_log_set(bool state);
+int em400_log_component_state(unsigned component);
+int em400_log_component_set(unsigned component, bool state);
+const char * em400_log_component_name(unsigned component);
+int em400_log_component_id(char *name);
 
 
 // -----------------------------------------------------------------------

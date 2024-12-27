@@ -22,6 +22,7 @@
 #include "cpu/interrupts.h"
 #include "cpu/cp.h"
 #include "cpu/cpext.h"
+#include "log.h"
 
 const char *em400_reg_names[] = {
 	"R0", "R1", "R2", "R3", "R4", "R5", "R6", "R7",
@@ -30,7 +31,7 @@ const char *em400_reg_names[] = {
 };
 
 // -----------------------------------------------------------------------
-// --- MAINTENANCE -------------------------------------------------------
+// --- LIBRARY -----------------------------------------------------------
 // -----------------------------------------------------------------------
 
 // -----------------------------------------------------------------------
@@ -51,6 +52,66 @@ const char * em400_version()
 	static const char *ver = EM400_VERSION;
 	return ver;
 }
+
+
+// -----------------------------------------------------------------------
+// --- LOGGING -----------------------------------------------------------
+// -----------------------------------------------------------------------
+
+// -----------------------------------------------------------------------
+bool em400_log_state()
+{
+	int state = log_is_enabled();
+	LOG(L_ECTL, "ECTL log state get: %i", state);
+	return state;
+}
+
+// -----------------------------------------------------------------------
+int em400_log_set(bool state)
+{
+	int res = -1;
+	LOG(L_ECTL, "ECTL log state set: %i", state);
+	if (state) {
+		res = log_enable();
+	} else {
+		log_disable();
+		res = 0;
+	}
+	return res;
+}
+
+// -----------------------------------------------------------------------
+int em400_log_component_state(unsigned component)
+{
+	int state = log_component_get(component) ? 1 : 0;
+	LOG(L_ECTL, "ECTL log component %s: %i", em400_log_component_name(component), state);
+	return state;
+}
+
+// -----------------------------------------------------------------------
+int em400_log_component_set(unsigned component, bool state)
+{
+	LOG(L_ECTL, "ECTL log component %s: %i", em400_log_component_name(component), state);
+	if (state) {
+		log_component_enable(component);
+	} else {
+		log_component_disable(component);
+	}
+	return state;
+}
+
+// -----------------------------------------------------------------------
+const char * em400_log_component_name(unsigned component)
+{
+	return log_get_component_name(component);
+}
+
+// -----------------------------------------------------------------------
+int em400_log_component_id(char *name)
+{
+	return log_get_component_id(name);
+}
+
 
 // -----------------------------------------------------------------------
 // --- CONTROL PANEL -----------------------------------------------------
@@ -181,6 +242,7 @@ void em400_cp_reg_select(int reg_id)
 {
 	cp_reg_select(reg_id);
 }
+
 
 // -----------------------------------------------------------------------
 // --- EM400 EXTENSIONS --------------------------------------------------
