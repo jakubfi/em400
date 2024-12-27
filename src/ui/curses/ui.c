@@ -142,7 +142,7 @@ void dbg_wu_status(int wid)
 	AWIN *w = aw_window_find(wid);
 	awin_tb_clear(wid);
 
-    const char *state = ectl_cpu_state_name(ectl_cpu_state_get());
+	const char *state = em400_cpu_state_name(em400_cpu_state());
 
 	awtbprint(wid, C_ILABEL, "  CPU state: ");
 	awtbprint(wid, C_IDATA, "%-10s", state);

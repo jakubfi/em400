@@ -21,33 +21,16 @@
 #include <inttypes.h>
 #include <string.h>
 #include <strings.h>
-#include <stdatomic.h>
 
 #include "log.h"
 #include "utils/utils.h"
 #include "cpu/cp.h"
-#include "cpu/cpext.h"
 
 #include "ectl.h"
 #include "ectl/est.h"
 #include "ectl/brk.h"
 #include "ectl_parser.h"
 #include "libem400.h"
-
-const char *state_names[] = {
-	"RUN",
-	"STOP",
-	"WAIT",
-	"CLO",
-	"OFF",
-	"CYCLE",
-	"BIN",
-	"LOAD",
-	"STORE",
-	"FETCH",
-	"ANY",
-	"???"
-};
 
 typedef struct ectl_yy_buffer_state *YY_BUFFER_STATE;
 int ectl_yyparse(struct ectl_est **tree);
@@ -66,25 +49,6 @@ void ectl_shutdown()
 {
 	LOG(L_ECTL, "ECTL shutdown");
 	ectl_brk_del_all();
-}
-
-// -----------------------------------------------------------------------
-const char * ectl_cpu_state_name(unsigned state)
-{
-	if (state > ECTL_STATE_UNKNOWN) {
-		return state_names[ECTL_STATE_UNKNOWN];
-	} else {
-		return state_names[state];
-	}
-}
-
-// -----------------------------------------------------------------------
-unsigned ectl_cpu_state_get()
-{
-	LOG(L_ECTL, "ECTL state get");
-	unsigned state = cpext_state();
-	LOG(L_ECTL, "ECTL state get: %s", state_names[state]);
-	return state;
 }
 
 // -----------------------------------------------------------------------

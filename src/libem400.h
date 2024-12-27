@@ -77,13 +77,28 @@ extern const char *em400_reg_names[];
 
 #define EM400_REG_COUNT EM400_REG_KB2
 
-enum ectl_log_components {
+enum em400_log_components {
 	L_ALL = 0,
 	L_EM4H, L_ECTL, L_FDBR, L_CRK5,
 	L_MEM, L_CPU, L_OP, L_INT, L_IO,
 	L_MX, L_CCHR, L_CMEM,
 	L_TERM, L_9425, L_WNCH, L_FLOP, L_PNCH, L_PNRD, L_TAPE,
 	L_COUNT,
+};
+
+enum em400_cpu_states {
+	ECTL_STATE_RUN = 0,
+	ECTL_STATE_STOP,
+	ECTL_STATE_WAIT,
+	ECTL_STATE_CLO,
+	ECTL_STATE_OFF,
+	ECTL_STATE_CYCLE,
+	ECTL_STATE_BIN,
+	ECTL_STATE_LOAD,
+	ECTL_STATE_STORE,
+	ECTL_STATE_FETCH,
+	ECTL_STATE_ANY,
+	ECTL_STATE_UNKNOWN,
 };
 
 // -----------------------------------------------------------------------
@@ -159,6 +174,8 @@ bool em400_mem_write(int seg, uint16_t addr, uint16_t *src, unsigned count);
 int em400_mem_map(int seg);
 bool em400_load_os_image(FILE *f);
 unsigned long em400_ips_get();
+const char * em400_cpu_state_name(unsigned state);
+unsigned em400_cpu_state();
 
 #ifdef __cplusplus
 }

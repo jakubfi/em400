@@ -6,6 +6,7 @@
 
 #include "controlpanel.h"
 #include "ectl.h"
+#include "libem400.h"
 
 static const int led_u_top = 122;
 static const int led_l_top = 253;

@@ -30,6 +30,21 @@ const char *em400_reg_names[] = {
 	"??"
 };
 
+const char *em400_cpu_state_names[] = {
+	"RUN",
+	"STOP",
+	"WAIT",
+	"CLO",
+	"OFF",
+	"CYCLE",
+	"BIN",
+	"LOAD",
+	"STORE",
+	"FETCH",
+	"ANY",
+	"???"
+};
+
 // -----------------------------------------------------------------------
 // --- LIBRARY -----------------------------------------------------------
 // -----------------------------------------------------------------------
@@ -351,4 +366,21 @@ unsigned long em400_ips_get()
 {
 	return cpext_ips_get();
 }
+
+// -----------------------------------------------------------------------
+const char * em400_cpu_state_name(unsigned state)
+{
+	if (state > ECTL_STATE_UNKNOWN) {
+		return em400_cpu_state_names[ECTL_STATE_UNKNOWN];
+	} else {
+		return em400_cpu_state_names[state];
+	}
+}
+
+// -----------------------------------------------------------------------
+unsigned em400_cpu_state()
+{
+	return cpext_state();
+}
+
 // vim: tabstop=4 shiftwidth=4 autoindent

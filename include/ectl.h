@@ -20,41 +20,15 @@
 #ifndef ECTL_H
 #define ECTL_H
 
-#include <inttypes.h>
-#include <stdbool.h>
-#include <stdio.h>
-
 #ifdef __cplusplus
 extern "C" {
 #endif
-
-enum ectl_cpu_states {
-	ECTL_STATE_RUN = 0,
-	ECTL_STATE_STOP,
-	ECTL_STATE_WAIT,
-	ECTL_STATE_CLO,
-	ECTL_STATE_OFF,
-	ECTL_STATE_CYCLE,
-	ECTL_STATE_BIN,
-	ECTL_STATE_LOAD,
-	ECTL_STATE_STORE,
-	ECTL_STATE_FETCH,
-// NOTE: update state names in ectl_cpu_state_get() when adding new states
-	ECTL_STATE_ANY,
-	ECTL_STATE_UNKNOWN,
-};
-
-extern const char *state_names[];
 
 int ectl_init();
 void ectl_shutdown();
 
 // Standard control panel interface
 void ectl_cpu_off(); // TODO: on + led?
-
-// CPU state
-const char * ectl_cpu_state_name(unsigned state);
-unsigned ectl_cpu_state_get();
 
 // informational, other
 int ectl_eval(char *expression, char **err_msg, int *err_beg, int *err_end);

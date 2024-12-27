@@ -225,9 +225,9 @@ int cpu_state_change(unsigned to, unsigned from)
 	pthread_mutex_unlock(&cpu_wake_mutex);
 
 	LOG(L_CPU, "CPU state change (current: %s): %s -> %s%s",
-		state_names[last_state],
-		state_names[from],
-		state_names[to],
+		em400_cpu_state_name(last_state),
+		em400_cpu_state_name(from),
+		em400_cpu_state_name(to),
 		res ? " (ineffective)" : ""
 	);
 

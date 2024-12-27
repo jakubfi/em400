@@ -22,6 +22,7 @@
 #include <stdatomic.h>
 
 #include "ectl.h"
+#include "libem400.h"
 #include "cpu/cp.h"
 #include "cpu/cpext.h"
 #include "ectl/est.h"

@@ -476,7 +476,7 @@ void ui_cmd_oprq(FILE *out, char *args)
 // -----------------------------------------------------------------------
 void ui_cmd_state(FILE *out, char *args)
 {
-	const char *state = ectl_cpu_state_name(ectl_cpu_state_get());
+	const char *state = em400_cpu_state_name(em400_cpu_state());
 	ui_cmd_resp(out, RESP_OK, UI_EOL, "%s", state);
 }
 

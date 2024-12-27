@@ -70,7 +70,7 @@ void EmuModel::on_timer_ips_timeout()
 // -----------------------------------------------------------------------
 void EmuModel::sync_state(bool force)
 {
-	int state = ectl_cpu_state_get();
+	int state = em400_cpu_state();
 	if (force || (state != last_cpu_state)) {
 		last_cpu_state = state;
 		if ((state != ECTL_STATE_RUN) && (state != ECTL_STATE_WAIT)) {
