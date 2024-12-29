@@ -21,11 +21,11 @@
 #include <string.h>
 #include <stdatomic.h>
 
+#include "cpu/cpu.h"
+#include "cp/eval.h"
+
 #include "ectl.h"
 #include "libem400.h"
-#include "cp/cp.h"
-#include "cp/cpext.h"
-#include "cp/eval.h"
 
 struct brk_point {
 	unsigned id;
@@ -124,7 +124,7 @@ int brk_delete(unsigned id)
 		brkp = atomic_load_explicit(&brkp->next, memory_order_acquire);
 	}
 
-	if (cpext_state() == ECTL_STATE_STOP) {
+	if (cpu_state_get() == ECTL_STATE_STOP) {
 		brk_cleanup();
 	}
 

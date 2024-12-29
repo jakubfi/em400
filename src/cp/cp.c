@@ -27,7 +27,6 @@
 #include "io/io.h"
 #include "utils/utils.h"
 
-#include "ectl.h" // for global constants/enums
 
 // -----------------------------------------------------------------------
 uint16_t cp_bus_w()

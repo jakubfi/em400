@@ -24,9 +24,9 @@
 
 #include "log.h"
 #include "utils/utils.h"
-#include "cp/cp.h"
 
 #include "ectl.h"
+#include "cp/cp.h"
 #include "cp/eval.h"
 #include "cp/brk.h"
 #include "eval_parser.h"

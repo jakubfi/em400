@@ -22,12 +22,13 @@
 #include <stdarg.h>
 #include <ctype.h>
 
-#include "cp/cp.h"
-#include "cp/cpext.h"
 #include "cpu/cpu.h"
+#include "cpu/interrupts.h"
+#include "mem/mem.h"
 
 #include "libem400.h"
 #include "ectl.h"
+
 #include "cp/eval.h"
 #include "eval_parser.h"
 
@@ -207,19 +208,19 @@ static int eval_est_eval_rz(struct eval_est * n)
 		return __esterr(n, "Wrong interrupt: %i", n->val);
 	}
 
-	return (em400_rz32() >> (31 - n->val)) & 1;
+	return (rz >> (31 - n->val)) & 1;
 }
 
 // -----------------------------------------------------------------------
 static int eval_est_eval_alarm(struct eval_est * n)
 {
-	return em400_cp_alarm_led();
+	return rALARM;
 }
 
 // -----------------------------------------------------------------------
 static int eval_est_eval_mc(struct eval_est * n)
 {
-	return em400_cp_mc_led();
+	return mc;
 }
 
 // -----------------------------------------------------------------------
@@ -244,7 +245,7 @@ static int eval_est_eval_mem(struct eval_est *n)
 	}
 
 	uint16_t data;
-	if (!cpext_mem_read_n(nb, addr, &data, 1)) {
+	if (!mem_read_n(nb, addr, &data, 1)) {
 		return __esterr(n, "Memory at %i:%i is not configured", nb, addr);
 	}
 
