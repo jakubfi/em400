@@ -22,6 +22,7 @@
 #include "cpu/interrupts.h"
 #include "cpu/cp.h"
 #include "cpu/cpext.h"
+#include "ectl/brk.h"
 #include "log.h"
 
 const char *em400_reg_names[] = {
@@ -258,6 +259,17 @@ void em400_cp_reg_select(int reg_id)
 	cp_reg_select(reg_id);
 }
 
+// -----------------------------------------------------------------------
+void em400_off()
+{
+	cp_off();
+}
+
+// -----------------------------------------------------------------------
+void em400_shutdown()
+{
+	ectl_brk_del_all();
+}
 
 // -----------------------------------------------------------------------
 // --- EM400 EXTENSIONS --------------------------------------------------

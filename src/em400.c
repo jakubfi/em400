@@ -78,17 +78,16 @@ int em400_init(em400_cfg *cfg)
 	if (mem_init() != E_OK) return LOGERR("Failed to initialize memory.");
 	if (cpu_init() != E_OK) return LOGERR("Failed to initialize CPU.");
 	if (io_init(cfg) != E_OK) return LOGERR("Failed to initialize I/O.");
-	if (ectl_init() != E_OK) return LOGERR("Failed to initialize ECTL interface.");
 	if (!(ui = ui_create(cfg))) return LOGERR("Failed to initialize UI.");
 
 	return E_OK;
 }
 
 // -----------------------------------------------------------------------
-void em400_shutdown()
+void em400_top_shutdown()
 {
 	ui_shutdown(ui);
-	ectl_shutdown();
+	em400_shutdown();
 	io_shutdown();
 	cpu_shutdown();
 	mem_shutdown();
@@ -290,7 +289,7 @@ int main(int argc, char** argv)
 	return_code = 0;
 
 done:
-	em400_shutdown();
+	em400_top_shutdown();
 	cfg_free(cfg);
 	free(config);
 	return return_code;

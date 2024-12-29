@@ -43,7 +43,7 @@ void EmuModel::stop()
 	timer_realtime.stop();
 	timer_slow.stop();
 	timer_ips.stop();
-	ectl_cpu_off();
+	em400_off();
 }
 
 // -----------------------------------------------------------------------

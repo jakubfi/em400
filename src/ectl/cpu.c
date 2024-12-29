@@ -38,27 +38,6 @@ YY_BUFFER_STATE ectl_yy_scan_string(char *input);
 void ectl_yy_delete_buffer(YY_BUFFER_STATE b);
 
 // -----------------------------------------------------------------------
-int ectl_init()
-{
-	LOG(L_ECTL, "ECTL init");
-	return 0;
-}
-
-// -----------------------------------------------------------------------
-void ectl_shutdown()
-{
-	LOG(L_ECTL, "ECTL shutdown");
-	ectl_brk_del_all();
-}
-
-// -----------------------------------------------------------------------
-void ectl_cpu_off()
-{
-	LOG(L_ECTL, "ECTL cpu OFF");
-	cp_off();
-}
-
-// -----------------------------------------------------------------------
 static struct ectl_est * __ectl_parse(char *expression, char **err_msg, int *err_beg, int *err_end)
 {
 	struct ectl_est *tree;

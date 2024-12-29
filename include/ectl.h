@@ -24,12 +24,6 @@
 extern "C" {
 #endif
 
-int ectl_init();
-void ectl_shutdown();
-
-// Standard control panel interface
-void ectl_cpu_off(); // TODO: on + led?
-
 // informational, other
 int ectl_eval(char *expression, char **err_msg, int *err_beg, int *err_end);
 

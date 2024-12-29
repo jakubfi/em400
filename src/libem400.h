@@ -108,7 +108,7 @@ enum em400_cpu_states {
 int em400_mem_configure(struct em400_cfg_mem *c_mem);
 int em400_cpu_configure(struct em400_cfg_cpu *c_cpu, struct em400_cfg_buzzer *c_buzzer);
 const char * em400_version();
-
+void em400_shutdown();
 
 // -----------------------------------------------------------------------
 // --- LOGGING -----------------------------------------------------------
@@ -153,7 +153,8 @@ void em400_cp_clock(int state);
 void em400_cp_oprq();
 // rotary
 void em400_cp_reg_select(int reg_id);
-
+// ignition
+void em400_off(); // TODO: on + led?
 
 // -----------------------------------------------------------------------
 // --- EM400 CONTROL PANEL EXTENSIONS ------------------------------------
@@ -166,13 +167,16 @@ void em400_regs(uint16_t *dest);
 void em400_reg_set(unsigned reg_id, uint16_t val);
 unsigned em400_nb();
 unsigned em400_qnb();
+
 uint32_t em400_rz32();
 int em400_int_set(unsigned interrupt);
 int em400_int_clear(unsigned interrupt);
+
 bool em400_mem_read(int seg, uint16_t addr, uint16_t *dest, unsigned count);
 bool em400_mem_write(int seg, uint16_t addr, uint16_t *src, unsigned count);
 int em400_mem_map(int seg);
 bool em400_load_os_image(FILE *f);
+
 unsigned long em400_ips_get();
 const char * em400_cpu_state_name(unsigned state);
 unsigned em400_cpu_state();
