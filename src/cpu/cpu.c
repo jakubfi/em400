@@ -607,7 +607,7 @@ void cpu_loop()
 					cpu_time = TIME_INT_SERVE;
 				} else {
 					cpu_time = cpu_do_cycle();
-					if (ectl_brk_check()) {
+					if (brk_check()) {
 						cpu_state_change(ECTL_STATE_STOP, ECTL_STATE_ANY);
 					}
 				}

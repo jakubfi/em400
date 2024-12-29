@@ -27,42 +27,42 @@
 #include "cpu/cpext.h"
 #include "ectl/eval.h"
 
-struct ectl_brkpoint {
+struct brk_point {
 	unsigned id;
 	char *expr;
 	struct eval_est *tree;
-	struct ectl_brkpoint *next;
+	struct brk_point *next;
 	int deleted;
 };
 
-static struct ectl_brkpoint *ectl_brk_list;
-static int ectl_brk_id = 0;
+static struct brk_point *brk_list;
+static int brk_id = 0;
 
 // -----------------------------------------------------------------------
-int ectl_brk_insert(struct eval_est *tree, char *expr)
+int brk_insert(struct eval_est *tree, char *expr)
 {
-	if (ectl_brk_id < 0) {
+	if (brk_id < 0) {
 		return -1;
 	}
 
-	struct ectl_brkpoint *brkp = (struct ectl_brkpoint *) malloc(sizeof(struct ectl_brkpoint));
+	struct brk_point *brkp = (struct brk_point *) malloc(sizeof(struct brk_point));
 	if (!brkp) {
 		return -1;
 	}
 
-	brkp->id = ectl_brk_id;
+	brkp->id = brk_id;
 	brkp->tree = tree;
 	brkp->expr = strdup(expr);
-	brkp->next = atomic_load_explicit(&ectl_brk_list, memory_order_acquire);
+	brkp->next = atomic_load_explicit(&brk_list, memory_order_acquire);
 	brkp->deleted = 0;
-	atomic_store_explicit(&ectl_brk_list, brkp, memory_order_release);
-	ectl_brk_id++;
+	atomic_store_explicit(&brk_list, brkp, memory_order_release);
+	brk_id++;
 
 	return brkp->id;
 }
 
 // -----------------------------------------------------------------------
-static void ectl_brk_free(struct ectl_brkpoint *brkp)
+static void brk_free(struct brk_point *brkp)
 {
 	if (!brkp) return;
 
@@ -72,36 +72,36 @@ static void ectl_brk_free(struct ectl_brkpoint *brkp)
 }
 
 // -----------------------------------------------------------------------
-void ectl_brk_del_all()
+void brk_del_all()
 {
-	struct ectl_brkpoint *brkp = atomic_load_explicit(&ectl_brk_list, memory_order_acquire);
+	struct brk_point *brkp = atomic_load_explicit(&brk_list, memory_order_acquire);
 	while (brkp) {
-		struct ectl_brkpoint *next = atomic_load_explicit(&brkp->next, memory_order_acquire);
-		ectl_brk_free(brkp);
+		struct brk_point *next = atomic_load_explicit(&brkp->next, memory_order_acquire);
+		brk_free(brkp);
 		brkp = next;
 	}
 
-	ectl_brk_list = NULL;
-	ectl_brk_id = 0;
+	brk_list = NULL;
+	brk_id = 0;
 }
 
 // -----------------------------------------------------------------------
-static void ectl_brk_cleanup()
+static void brk_cleanup()
 {
-	struct ectl_brkpoint *brkp = atomic_load_explicit(&ectl_brk_list, memory_order_acquire);
-	struct ectl_brkpoint *prev = NULL;
+	struct brk_point *brkp = atomic_load_explicit(&brk_list, memory_order_acquire);
+	struct brk_point *prev = NULL;
 
 	while (brkp) {
 		if (brkp->deleted) {
 			if (prev) {
 				atomic_store_explicit(&(prev->next), brkp->next, memory_order_release);
 			} else {
-				atomic_store_explicit(&ectl_brk_list, brkp->next, memory_order_release);
+				atomic_store_explicit(&brk_list, brkp->next, memory_order_release);
 			}
-			if (!ectl_brk_list) {
-				ectl_brk_id = 0;
+			if (!brk_list) {
+				brk_id = 0;
 			}
-			ectl_brk_free(brkp);
+			brk_free(brkp);
 		}
 		prev = brkp;
 		brkp = atomic_load_explicit(&brkp->next, memory_order_acquire);
@@ -109,11 +109,11 @@ static void ectl_brk_cleanup()
 }
 
 // -----------------------------------------------------------------------
-int ectl_brk_delete(unsigned id)
+int brk_delete(unsigned id)
 {
 	int ret = -1;
 
-	struct ectl_brkpoint *brkp = atomic_load_explicit(&ectl_brk_list, memory_order_acquire);
+	struct brk_point *brkp = atomic_load_explicit(&brk_list, memory_order_acquire);
 
 	while (brkp) {
 		if (brkp->id == id) {
@@ -125,7 +125,7 @@ int ectl_brk_delete(unsigned id)
 	}
 
 	if (cpext_state() == ECTL_STATE_STOP) {
-		ectl_brk_cleanup();
+		brk_cleanup();
 	}
 
 	return ret;
@@ -133,9 +133,9 @@ int ectl_brk_delete(unsigned id)
 
 
 // -----------------------------------------------------------------------
-int ectl_brk_check()
+int brk_check()
 {
-	struct ectl_brkpoint *brkp = atomic_load_explicit(&ectl_brk_list, memory_order_acquire);
+	struct brk_point *brkp = atomic_load_explicit(&brk_list, memory_order_acquire);
 
 	while (brkp) {
 		if ((!brkp->deleted) && (eval_est_eval(brkp->tree) > 0)) {

@@ -100,7 +100,7 @@ int ectl_brk_add(char *expression, char **err_msg, int *err_beg, int *err_end)
 		return -1;
 	}
 
-	int id = ectl_brk_insert(tree, expression);
+	int id = brk_insert(tree, expression);
 	if (id < 0) {
 		*err_msg = strdup("Cannot add new breakpoint");
 		eval_est_delete(tree);
@@ -114,7 +114,7 @@ int ectl_brk_add(char *expression, char **err_msg, int *err_beg, int *err_end)
 int ectl_brk_del(unsigned id)
 {
 	LOG(L_ECTL, "ECTL brk del: %i", id);
-	return ectl_brk_delete(id);
+	return brk_delete(id);
 }
 
 

@@ -15,15 +15,15 @@
 //  Foundation, Inc.,
 //  51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 
-#ifndef ECTL_BRK_H
-#define ECTL_BRK_H
+#ifndef __BRK_H_
+#define __BRK_H_
 
 #include "ectl/eval.h"
 
-int ectl_brk_insert(struct eval_est *tree, char *expr);
-void ectl_brk_del_all();
-int ectl_brk_delete(unsigned id);
-int ectl_brk_check();
+int brk_insert(struct eval_est *tree, char *expr);
+void brk_del_all();
+int brk_delete(unsigned id);
+int brk_check();
 
 #endif
 
