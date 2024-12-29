@@ -19,12 +19,12 @@
 #include <unistd.h>
 #include <stdbool.h>
 
-#include "io/defs.h"
-#include "io/io.h"
 #include "cpu/cpu.h"
 #include "cpu/interrupts.h"
-#include "mem/mem.h"
 #include "cpu/clock.h"
+#include "mem/mem.h"
+#include "io/defs.h"
+#include "io/io.h"
 #include "utils/utils.h"
 
 #include "ectl.h" // for global constants/enums

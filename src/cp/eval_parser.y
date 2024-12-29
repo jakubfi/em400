@@ -23,7 +23,7 @@
 #include "cpu/cpu.h"
 #include "mem/mem.h"
 
-#include "ectl/eval.h"
+#include "cp/eval.h"
 
 void eval_yyerror(struct eval_est **tree, const char *s, ...);
 int eval_yylex(void);

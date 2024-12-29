@@ -46,7 +46,7 @@
 #include "utils/utils.h"
 #include "log.h"
 #include "log_crk.h"
-#include "ectl/brk.h"
+#include "cp/brk.h"
 
 static unsigned cpu_state = ECTL_STATE_OFF;
 

@@ -24,11 +24,11 @@
 
 #include "log.h"
 #include "utils/utils.h"
-#include "cpu/cp.h"
+#include "cp/cp.h"
 
 #include "ectl.h"
-#include "ectl/eval.h"
-#include "ectl/brk.h"
+#include "cp/eval.h"
+#include "cp/brk.h"
 #include "eval_parser.h"
 #include "libem400.h"
 

@@ -25,7 +25,7 @@
 #include <sys/types.h>
 
 #include "ui/ui.h"
-#include "cpu/cp.h"
+#include "cp/cp.h"
 #include "cpu/cpu.h"
 #include "mem/mem.h"
 #include "cpu/interrupts.h"

@@ -18,7 +18,7 @@
 #ifndef __BRK_H_
 #define __BRK_H_
 
-#include "ectl/eval.h"
+#include "cp/eval.h"
 
 int brk_insert(struct eval_est *tree, char *expr);
 void brk_del_all();

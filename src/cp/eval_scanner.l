@@ -20,7 +20,7 @@
 
 #include "libem400.h"
 #include "ectl.h"
-#include "ectl/eval.h"
+#include "cp/eval.h"
 #include "eval_parser.h"
 
 void yyerror(char *s, ...);

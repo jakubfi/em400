@@ -159,8 +159,6 @@ set(SOURCES_EM400
 	src/cpu/iset.h
 	src/cpu/alu.c
 	src/cpu/alu.h
-	src/cpu/cp.c
-	src/cpu/cp.h
 
 	src/mem/mem.c
 	src/mem/mem.h
@@ -231,13 +229,17 @@ set(SOURCES_EM400
 	src/ui/cmd/utils.c
 	src/ui/cmd/utils.h
 
-	src/ectl/cpu.c
-	src/ectl/eval.c
-	src/ectl/eval.h
-	src/ectl/eval_parser.y
-	src/ectl/eval_scanner.l
-	src/ectl/brk.c
-	src/ectl/brk.h
+	src/cp/cp.c
+	src/cp/cp.h
+	src/cp/cpext.c
+	src/cp/cpext.h
+	src/cp/cpu.c
+	src/cp/eval.c
+	src/cp/eval.h
+	src/cp/eval_parser.y
+	src/cp/eval_scanner.l
+	src/cp/brk.c
+	src/cp/brk.h
 	include/ectl.h
 
 	src/sound/file.c
@@ -283,13 +285,13 @@ endif()
 # --- internal parser
 
 bison_target(eval_parser
-	src/ectl/eval_parser.y
+	src/cp/eval_parser.y
 	${CMAKE_CURRENT_BINARY_DIR}/eval_parser.c
 	DEFINES_FILE ${CMAKE_CURRENT_BINARY_DIR}/eval_parser.h
 	COMPILE_FLAGS "-p eval_yy"
 )
 flex_target(eval_scanner
-	src/ectl/eval_scanner.l
+	src/cp/eval_scanner.l
 	${CMAKE_CURRENT_BINARY_DIR}/eval_scanner.c
 	COMPILE_FLAGS "-P eval_yy --never-interactive"
 )
@@ -301,8 +303,6 @@ add_executable(em400
 	${SOURCES_EM400}
 	${BISON_eval_parser_OUTPUTS}
 	${FLEX_eval_scanner_OUTPUTS}
-	src/cpu/cpext.c
-	src/cpu/cpext.h
 )
 
 set_property(TARGET em400 PROPERTY C_STANDARD 11)

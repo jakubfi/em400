@@ -22,13 +22,13 @@
 #include <stdarg.h>
 #include <ctype.h>
 
-#include "cpu/cp.h"
-#include "cpu/cpext.h"
+#include "cp/cp.h"
+#include "cp/cpext.h"
 #include "cpu/cpu.h"
 
 #include "libem400.h"
 #include "ectl.h"
-#include "ectl/eval.h"
+#include "cp/eval.h"
 #include "eval_parser.h"
 
 struct eval_est *eval_eval_err;

@@ -23,9 +23,9 @@
 
 #include "ectl.h"
 #include "libem400.h"
-#include "cpu/cp.h"
-#include "cpu/cpext.h"
-#include "ectl/eval.h"
+#include "cp/cp.h"
+#include "cp/cpext.h"
+#include "cp/eval.h"
 
 struct brk_point {
 	unsigned id;

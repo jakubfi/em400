@@ -20,9 +20,9 @@
 #include "mem/mem.h"
 #include "cpu/cpu.h"
 #include "cpu/interrupts.h"
-#include "cpu/cp.h"
-#include "cpu/cpext.h"
-#include "ectl/brk.h"
+#include "cp/cp.h"
+#include "cp/cpext.h"
+#include "cp/brk.h"
 #include "log.h"
 
 const char *em400_reg_names[] = {
