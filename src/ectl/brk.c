@@ -25,12 +25,12 @@
 #include "libem400.h"
 #include "cpu/cp.h"
 #include "cpu/cpext.h"
-#include "ectl/est.h"
+#include "ectl/eval.h"
 
 struct ectl_brkpoint {
 	unsigned id;
 	char *expr;
-	struct ectl_est *tree;
+	struct eval_est *tree;
 	struct ectl_brkpoint *next;
 	int deleted;
 };
@@ -39,7 +39,7 @@ static struct ectl_brkpoint *ectl_brk_list;
 static int ectl_brk_id = 0;
 
 // -----------------------------------------------------------------------
-int ectl_brk_insert(struct ectl_est *tree, char *expr)
+int ectl_brk_insert(struct eval_est *tree, char *expr)
 {
 	if (ectl_brk_id < 0) {
 		return -1;
@@ -66,7 +66,7 @@ static void ectl_brk_free(struct ectl_brkpoint *brkp)
 {
 	if (!brkp) return;
 
-	ectl_est_delete(brkp->tree);
+	eval_est_delete(brkp->tree);
 	free(brkp->expr);
 	free(brkp);
 }
@@ -138,7 +138,7 @@ int ectl_brk_check()
 	struct ectl_brkpoint *brkp = atomic_load_explicit(&ectl_brk_list, memory_order_acquire);
 
 	while (brkp) {
-		if ((!brkp->deleted) && (ectl_est_eval(brkp->tree) > 0)) {
+		if ((!brkp->deleted) && (eval_est_eval(brkp->tree) > 0)) {
 			return 1;
 		}
 		brkp = atomic_load_explicit(&brkp->next, memory_order_acquire);

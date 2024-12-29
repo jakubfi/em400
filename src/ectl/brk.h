@@ -18,9 +18,9 @@
 #ifndef ECTL_BRK_H
 #define ECTL_BRK_H
 
-#include "ectl/est.h"
+#include "ectl/eval.h"
 
-int ectl_brk_insert(struct ectl_est *tree, char *expr);
+int ectl_brk_insert(struct eval_est *tree, char *expr);
 void ectl_brk_del_all();
 int ectl_brk_delete(unsigned id);
 int ectl_brk_check();

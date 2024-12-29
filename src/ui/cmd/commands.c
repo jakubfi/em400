@@ -570,7 +570,7 @@ void ui_cmd_eval(FILE *out, char *args)
 
 	char *error_msg = NULL;
 	int err_beg, err_end;
-	int res = ectl_eval(tok_expr, &error_msg, &err_beg, &err_end);
+	int res = eval_eval(tok_expr, &error_msg, &err_beg, &err_end);
 	if (error_msg) {
 		ui_cmd_resp(out, RESP_ERR, UI_EOL, "%s (at %i-%i)", error_msg, err_beg, err_end);
 		free(error_msg);

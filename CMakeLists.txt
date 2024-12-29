@@ -232,12 +232,12 @@ set(SOURCES_EM400
 	src/ui/cmd/utils.h
 
 	src/ectl/cpu.c
-	src/ectl/est.c
-	src/ectl/est.h
+	src/ectl/eval.c
+	src/ectl/eval.h
+	src/ectl/eval_parser.y
+	src/ectl/eval_scanner.l
 	src/ectl/brk.c
 	src/ectl/brk.h
-	src/ectl/parser.y
-	src/ectl/scanner.l
 	include/ectl.h
 
 	src/sound/file.c
@@ -282,25 +282,25 @@ endif()
 
 # --- internal parser
 
-bison_target(ectl_parser
-	src/ectl/parser.y
-	${CMAKE_CURRENT_BINARY_DIR}/ectl_parser.c
-	DEFINES_FILE ${CMAKE_CURRENT_BINARY_DIR}/ectl_parser.h
-	COMPILE_FLAGS "-p ectl_yy"
+bison_target(eval_parser
+	src/ectl/eval_parser.y
+	${CMAKE_CURRENT_BINARY_DIR}/eval_parser.c
+	DEFINES_FILE ${CMAKE_CURRENT_BINARY_DIR}/eval_parser.h
+	COMPILE_FLAGS "-p eval_yy"
 )
-flex_target(ectl_scanner
-	src/ectl/scanner.l
-	${CMAKE_CURRENT_BINARY_DIR}/ectl_scanner.c
-	COMPILE_FLAGS "-P ectl_yy --never-interactive"
+flex_target(eval_scanner
+	src/ectl/eval_scanner.l
+	${CMAKE_CURRENT_BINARY_DIR}/eval_scanner.c
+	COMPILE_FLAGS "-P eval_yy --never-interactive"
 )
-add_flex_bison_dependency(ectl_scanner ectl_parser)
+add_flex_bison_dependency(eval_scanner eval_parser)
 
 # --- em400 target
 
 add_executable(em400
 	${SOURCES_EM400}
-	${BISON_ectl_parser_OUTPUTS}
-	${FLEX_ectl_scanner_OUTPUTS}
+	${BISON_eval_parser_OUTPUTS}
+	${FLEX_eval_scanner_OUTPUTS}
 	src/cpu/cpext.c
 	src/cpu/cpext.h
 )
@@ -324,9 +324,9 @@ if (UI_QT)
 	set_property(TARGET em400 PROPERTY AUTOMOC ON)
 	set_property(TARGET em400 PROPERTY AUTOUIC ON)
 	set_property(TARGET em400 PROPERTY AUTORCC ON)
-	set_property(SOURCE ${CMAKE_CURRENT_BINARY_DIR}/ectl_parser.c PROPERTY SKIP_AUTOGEN ON)
-	set_property(SOURCE ${CMAKE_CURRENT_BINARY_DIR}/ectl_parser.h PROPERTY SKIP_AUTOGEN ON)
-	set_property(SOURCE ${CMAKE_CURRENT_BINARY_DIR}/ectl_scanner.c PROPERTY SKIP_AUTOGEN ON)
+	set_property(SOURCE ${CMAKE_CURRENT_BINARY_DIR}/eval_parser.c PROPERTY SKIP_AUTOGEN ON)
+	set_property(SOURCE ${CMAKE_CURRENT_BINARY_DIR}/eval_parser.h PROPERTY SKIP_AUTOGEN ON)
+	set_property(SOURCE ${CMAKE_CURRENT_BINARY_DIR}/eval_scanner.c PROPERTY SKIP_AUTOGEN ON)
 	set_property(SOURCE ${CMAKE_CURRENT_BINARY_DIR}/uicurses_parser.c PROPERTY SKIP_AUTOGEN ON)
 	set_property(SOURCE ${CMAKE_CURRENT_BINARY_DIR}/uicurses_parser.h PROPERTY SKIP_AUTOGEN ON)
 	set_property(SOURCE ${CMAKE_CURRENT_BINARY_DIR}/uicurses_scanner.c PROPERTY SKIP_AUTOGEN ON)

@@ -20,18 +20,18 @@
 
 #include "libem400.h"
 #include "ectl.h"
-#include "ectl/est.h"
-#include "ectl_parser.h"
+#include "ectl/eval.h"
+#include "eval_parser.h"
 
 void yyerror(char *s, ...);
 
-int ectl_yycolumn = 0;
+int eval_yycolumn = 0;
 
 #undef YY_USER_ACTION
 #define YY_USER_ACTION \
-	ectl_yylloc.first_column = ectl_yycolumn; \
-	ectl_yylloc.last_column = ectl_yycolumn + ectl_yyleng-1; \
-	ectl_yycolumn += ectl_yyleng;
+    eval_yylloc.first_column = eval_yycolumn; \
+	eval_yylloc.last_column = eval_yycolumn + eval_yyleng-1; \
+	eval_yycolumn += eval_yyleng;
 
 %}
 
@@ -45,20 +45,20 @@ int ectl_yycolumn = 0;
 
 %%
 
-0x[0-9a-f]+	{ ectl_yylval.value = strtoul(yytext, NULL, 16); return VALUE; }
-0b[01]+		{ ectl_yylval.value = strtoul(yytext+2, NULL, 2); return VALUE; }
-0[0-7]+		{ ectl_yylval.value = strtoul(yytext, NULL, 8); return VALUE; }
-[0-9]+		{ ectl_yylval.value = atoi(yytext); return VALUE; }
-r[0-7]		{ ectl_yylval.value = atoi(yytext+1); return REG; }
-ic			{ ectl_yylval.value = EM400_REG_IC; return REG; }
-sr			{ ectl_yylval.value = EM400_REG_SR; return REG; }
-ir			{ ectl_yylval.value = EM400_REG_IR; return REG; }
-ar			{ ectl_yylval.value = EM400_REG_AR; return REG; }
-ac			{ ectl_yylval.value = EM400_REG_AC; return REG; }
-kb			{ ectl_yylval.value = EM400_REG_KB; return REG; }
+0x[0-9a-f]+	{ eval_yylval.value = strtoul(yytext, NULL, 16); return VALUE; }
+0b[01]+		{ eval_yylval.value = strtoul(yytext+2, NULL, 2); return VALUE; }
+0[0-7]+		{ eval_yylval.value = strtoul(yytext, NULL, 8); return VALUE; }
+[0-9]+		{ eval_yylval.value = atoi(yytext); return VALUE; }
+r[0-7]		{ eval_yylval.value = atoi(yytext+1); return REG; }
+ic			{ eval_yylval.value = EM400_REG_IC; return REG; }
+sr			{ eval_yylval.value = EM400_REG_SR; return REG; }
+ir			{ eval_yylval.value = EM400_REG_IR; return REG; }
+ar			{ eval_yylval.value = EM400_REG_AR; return REG; }
+ac			{ eval_yylval.value = EM400_REG_AC; return REG; }
+kb			{ eval_yylval.value = EM400_REG_KB; return REG; }
 alarm		{ return ALARM; }
 mc			{ return MC; }
-[zmvclegyx]	{ ectl_yylval.value = *yytext ; return FLAG; }
+[zmvclegyx]	{ eval_yylval.value = *yytext ; return FLAG; }
 rz			{ return IRZ; }
 
 ">>"	return SHR;
@@ -76,19 +76,19 @@ rz			{ return IRZ; }
 [ \t\n\r\v]+ ;
 
 [a-z0-9A-Z]+ {
-	ectl_yylval.str = strdup(yytext);
+    eval_yylval.str = strdup(yytext);
 	return TOK_INVALID;
 }
 
 . {
-	ectl_yylval.str = strdup(yytext);
+    eval_yylval.str = strdup(yytext);
 	return TOK_INVALID;
 }
 
 %%
 
 // -----------------------------------------------------------------------
-int ectl_yywrap(void) {
+int eval_yywrap(void) {
 	return 1;
 }
 

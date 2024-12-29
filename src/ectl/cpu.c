@@ -27,35 +27,35 @@
 #include "cpu/cp.h"
 
 #include "ectl.h"
-#include "ectl/est.h"
+#include "ectl/eval.h"
 #include "ectl/brk.h"
-#include "ectl_parser.h"
+#include "eval_parser.h"
 #include "libem400.h"
 
-typedef struct ectl_yy_buffer_state *YY_BUFFER_STATE;
-int ectl_yyparse(struct ectl_est **tree);
-YY_BUFFER_STATE ectl_yy_scan_string(char *input);
-void ectl_yy_delete_buffer(YY_BUFFER_STATE b);
+typedef struct eval_yy_buffer_state *YY_BUFFER_STATE;
+int eval_yyparse(struct eval_est **tree);
+YY_BUFFER_STATE eval_yy_scan_string(char *input);
+void eval_yy_delete_buffer(YY_BUFFER_STATE b);
 
 // -----------------------------------------------------------------------
-static struct ectl_est * __ectl_parse(char *expression, char **err_msg, int *err_beg, int *err_end)
+static struct eval_est * __eval_parse(char *expression, char **err_msg, int *err_beg, int *err_end)
 {
-	struct ectl_est *tree;
+	struct eval_est *tree;
 
-	YY_BUFFER_STATE yb = ectl_yy_scan_string(expression);
-	ectl_yyparse(&tree);
-	ectl_yy_delete_buffer(yb);
+	YY_BUFFER_STATE yb = eval_yy_scan_string(expression);
+	eval_yyparse(&tree);
+	eval_yy_delete_buffer(yb);
 
 	if (!tree) {
 		*err_msg = strdup("Fatal error, parser did not return anything");
 		return NULL;
 	}
 
-	if (tree->type == ECTL_AST_N_ERR) {
+	if (tree->type == EVAL_AST_N_ERR) {
 		*err_msg = strdup(tree->err);
 		*err_beg = tree->c_beg;
 		*err_end = tree->c_end;
-		ectl_est_delete(tree);
+		eval_est_delete(tree);
 		return NULL;
 	}
 
@@ -63,18 +63,18 @@ static struct ectl_est * __ectl_parse(char *expression, char **err_msg, int *err
 }
 
 // -----------------------------------------------------------------------
-int ectl_eval(char *expression, char **err_msg, int *err_beg, int *err_end)
+int eval_eval(char *expression, char **err_msg, int *err_beg, int *err_end)
 {
 	LOG(L_ECTL, "ECTL eval: %s", expression);
 	int res = -1;
-	struct ectl_est *tree = __ectl_parse(expression, err_msg, err_beg, err_end);
+	struct eval_est *tree = __eval_parse(expression, err_msg, err_beg, err_end);
 	if (!tree) {
 		goto fin;
 	}
 
-	res = ectl_est_eval(tree);
+	res = eval_est_eval(tree);
 	if (res < 0) {
-		struct ectl_est *err_node = ectl_est_get_eval_err();
+		struct eval_est *err_node = eval_est_get_err();
 		if (err_node) {
 			*err_msg = strdup(err_node->err);
 			*err_beg = err_node->c_beg;
@@ -86,7 +86,7 @@ int ectl_eval(char *expression, char **err_msg, int *err_beg, int *err_end)
 	}
 
 fin:
-	ectl_est_delete(tree);
+	eval_est_delete(tree);
 	LOG(L_ECTL, "ECTL eval: %s = %i %s", expression, res, err_msg);
 	return res;
 }
@@ -95,7 +95,7 @@ fin:
 int ectl_brk_add(char *expression, char **err_msg, int *err_beg, int *err_end)
 {
 	LOG(L_ECTL, "ECTL brk add: %s", expression);
-	struct ectl_est *tree = __ectl_parse(expression, err_msg, err_beg, err_end);
+	struct eval_est *tree = __eval_parse(expression, err_msg, err_beg, err_end);
 	if (!tree) {
 		return -1;
 	}
@@ -103,7 +103,7 @@ int ectl_brk_add(char *expression, char **err_msg, int *err_beg, int *err_end)
 	int id = ectl_brk_insert(tree, expression);
 	if (id < 0) {
 		*err_msg = strdup("Cannot add new breakpoint");
-		ectl_est_delete(tree);
+		eval_est_delete(tree);
 		return -1;
 	}
 

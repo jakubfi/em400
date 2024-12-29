@@ -25,7 +25,7 @@ extern "C" {
 #endif
 
 // informational, other
-int ectl_eval(char *expression, char **err_msg, int *err_beg, int *err_end);
+int eval_eval(char *expression, char **err_msg, int *err_beg, int *err_end);
 
 // breakpoints
 int ectl_brk_add(char *expression, char **err_msg, int *err_beg, int *err_end);

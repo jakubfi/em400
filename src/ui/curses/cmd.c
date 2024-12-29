@@ -456,7 +456,7 @@ void dbg_c_brk_test(int wid, int nr)
 
 	char *error_msg = NULL;
 	int err_beg, err_end;
-	int res = ectl_eval(b->label, &error_msg, &err_beg, &err_end);
+	int res = eval_eval(b->label, &error_msg, &err_beg, &err_end);
 	if (error_msg) {
 		awtbprint(wid, C_ERROR, "%s (at %i-%i)", error_msg, err_beg, err_end);
 		free(error_msg);
