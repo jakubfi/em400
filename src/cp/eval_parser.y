@@ -20,9 +20,6 @@
 #include <stdarg.h>
 #include <stdio.h>
 
-#include "cpu/cpu.h"
-#include "mem/mem.h"
-
 #include "cp/eval.h"
 
 void eval_yyerror(struct eval_est **tree, const char *s, ...);
@@ -94,9 +91,9 @@ expr:
 	| MC					{ $$ = eval_est_mc(); }
 	| REG					{ $$ = eval_est_reg($1); }
 	| FLAG					{ $$ = eval_est_flag($1); }
-	| '[' expr ']'			{ $$ = eval_est_mem(eval_est_val(q*nb), $2); }
-	| '[' expr ':' expr ']'	{ $$ = eval_est_mem($2, $4); }
-	| IRZ '[' expr ']'		{ $$ = eval_est_rz(eval_est_eval($3)); }
+	| '[' expr ']'			{ $$ = eval_est_mem(eval_est_val(-1), $2); }
+	| '[' VALUE ':' expr ']'{ $$ = eval_est_mem(eval_est_val($2), $4); }
+	| IRZ '[' VALUE ']'		{ $$ = eval_est_rz($3); }
 	| '-' expr %prec UMINUS	{ $$ = eval_est_op(UMINUS, $2, NULL); }
 	| expr '+' expr			{ $$ = eval_est_op('+', $1, $3); }
 	| expr '-' expr			{ $$ = eval_est_op('-', $1, $3); }

@@ -230,7 +230,7 @@ static int eval_est_eval_mc(struct eval_est * n)
 // -----------------------------------------------------------------------
 static int eval_est_eval_mem(struct eval_est *n)
 {
-	int nb = eval_est_eval(n->n1);
+	int seg = (int16_t) eval_est_eval(n->n1);
 	int addr = eval_est_eval(n->n2);
 
 	if (!n->n1) {
@@ -241,16 +241,22 @@ static int eval_est_eval_mem(struct eval_est *n)
 		return __esterr(n, "Missing memory address");
 	}
 
-	if ((nb < 0) || (nb > 15)) {
-		return __esterr(n->n1, "Wrong memory segment: %i", nb);
+	if (seg > 15) {
+		return __esterr(n->n1, "Wrong memory segment: %i", seg);
 	}
 	if ((addr < 0) || (addr > 0xffff)) {
 		return __esterr(n->n2, "Wrong memory address: %i", addr);
 	}
 
 	uint16_t data;
-	if (!mem_read_n(nb, addr, &data, 1)) {
-		return __esterr(n, "Memory at %i:%i is not configured", nb, addr);
+	if (seg < 0) {
+		if (!mem_read_n(q*nb, addr, &data, 1)) {
+			return __esterr(n, "Memory at %i:%i is not configured", q*nb, addr);
+		}
+	} else {
+		if (!mem_read_n(seg, addr, &data, 1)) {
+			return __esterr(n, "Memory at %i:%i is not configured", seg, addr);
+		}
 	}
 
 	return data;
