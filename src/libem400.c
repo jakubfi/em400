@@ -78,7 +78,6 @@ const char * em400_version()
 bool em400_log_state()
 {
 	int state = log_is_enabled();
-	LOG(L_ECTL, "ECTL log state get: %i", state);
 	return state;
 }
 
@@ -86,7 +85,6 @@ bool em400_log_state()
 int em400_log_set(bool state)
 {
 	int res = -1;
-	LOG(L_ECTL, "ECTL log state set: %i", state);
 	if (state) {
 		res = log_enable();
 	} else {
@@ -100,14 +98,12 @@ int em400_log_set(bool state)
 int em400_log_component_state(unsigned component)
 {
 	int state = log_component_get(component) ? 1 : 0;
-	LOG(L_ECTL, "ECTL log component %s: %i", em400_log_component_name(component), state);
 	return state;
 }
 
 // -----------------------------------------------------------------------
 int em400_log_component_set(unsigned component, bool state)
 {
-	LOG(L_ECTL, "ECTL log component %s: %i", em400_log_component_name(component), state);
 	if (state) {
 		log_component_enable(component);
 	} else {
@@ -382,8 +378,8 @@ unsigned long em400_ips_get()
 // -----------------------------------------------------------------------
 const char * em400_cpu_state_name(unsigned state)
 {
-	if (state > ECTL_STATE_UNKNOWN) {
-		return em400_cpu_state_names[ECTL_STATE_UNKNOWN];
+	if (state > EM400_STATE_UNKNOWN) {
+		return em400_cpu_state_names[EM400_STATE_UNKNOWN];
 	} else {
 		return em400_cpu_state_names[state];
 	}

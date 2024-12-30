@@ -18,12 +18,14 @@
 #ifndef __BRK_H_
 #define __BRK_H_
 
+#include <stdbool.h>
+
 #include "cp/eval.h"
 
-int brk_insert(struct eval_est *tree, char *expr);
 void brk_del_all();
 int brk_delete(unsigned id);
-int brk_check();
+bool brk_check();
+int brk_add(char *expression, char **err_msg, int *err_beg, int *err_end);
 
 #endif
 

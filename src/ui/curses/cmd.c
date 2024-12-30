@@ -22,7 +22,8 @@
 #include <strings.h>
 
 #include "utils/utils.h"
-#include "ectl.h"
+#include "cp/eval.h"
+#include "cp/brk.h"
 #include "libem400.h"
 
 #include "ui/curses/awin.h"
@@ -356,7 +357,7 @@ void dbg_c_brk_add(int wid, char *label, struct node_t *n)
 {
 	char *error_msg = NULL;
 	int err_beg, err_end;
-	int id = ectl_brk_add(label, &error_msg, &err_beg, &err_end);
+	int id = brk_add(label, &error_msg, &err_beg, &err_end);
 
 	if (error_msg) {
 		awtbprint(wid, C_ERROR, "Error: %s (at %i-%i)", error_msg, err_beg, err_end);
@@ -435,7 +436,7 @@ void dbg_c_brk_del(int wid, int nr)
 			free(b->label);
 			n_free_tree(b->n);
 			free(b);
-			ectl_brk_del(nr);
+			brk_delete(nr);
 			return;
 		}
 		prev = b;
@@ -456,7 +457,7 @@ void dbg_c_brk_test(int wid, int nr)
 
 	char *error_msg = NULL;
 	int err_beg, err_end;
-	int res = eval_eval(b->label, &error_msg, &err_beg, &err_end);
+	int res = eval_str_eval(b->label, &error_msg, &err_beg, &err_end);
 	if (error_msg) {
 		awtbprint(wid, C_ERROR, "%s (at %i-%i)", error_msg, err_beg, err_end);
 		free(error_msg);

@@ -48,7 +48,7 @@
 #include "log_crk.h"
 #include "cp/brk.h"
 
-static unsigned cpu_state = ECTL_STATE_OFF;
+static unsigned cpu_state = EM400_STATE_OFF;
 
 uint16_t r[8];
 uint16_t ic, kb, ir, ac, ar, at;
@@ -125,7 +125,7 @@ static void cpu_do_load(int reg_id, uint16_t val)
 void cpu_reg_load(unsigned reg_id, uint16_t val)
 {
 	pthread_mutex_lock(&cpu_wake_mutex);
-	if (cpu_state == ECTL_STATE_STOP) {
+	if (cpu_state == EM400_STATE_STOP) {
 		cpu_do_load(reg_id, val);
 		cpu_wake_up();
 	}
@@ -194,7 +194,7 @@ static int cpu_do_wait()
 	LOG(L_CPU, "CPU idling");
 
 	pthread_mutex_lock(&cpu_wake_mutex);
-	while ((cpu_state == ECTL_STATE_STOP) || ((cpu_state == ECTL_STATE_WAIT) && !(atomic_load_explicit(&irq, memory_order_acquire) && !p && !mc))) {
+	while ((cpu_state == EM400_STATE_STOP) || ((cpu_state == EM400_STATE_WAIT) && !(atomic_load_explicit(&irq, memory_order_acquire) && !p && !mc))) {
 		cpu_reg_selected_to_w();
 		pthread_cond_wait(&cpu_wake_cond, &cpu_wake_mutex);
 	}
@@ -217,7 +217,7 @@ int cpu_state_change(unsigned to, unsigned from)
 
 	pthread_mutex_lock(&cpu_wake_mutex);
 	unsigned last_state = cpu_state;
-	if ((from == ECTL_STATE_ANY) || (last_state == from)) {
+	if ((from == EM400_STATE_ANY) || (last_state == from)) {
 		cpu_state = to;
 		pthread_cond_signal(&cpu_wake_cond);
 		res = 0;
@@ -247,7 +247,7 @@ static void cpu_mem_fail(bool barnb)
 	int_set(INT_NO_MEM);
 	if (!barnb) {
 		rALARM = true;
-		if (nomem_stop) cpu_state_change(ECTL_STATE_STOP, ECTL_STATE_ANY);
+		if (nomem_stop) cpu_state_change(EM400_STATE_STOP, EM400_STATE_ANY);
 	}
 }
 
@@ -401,7 +401,7 @@ static void cpu_do_bin()
 	LOG(L_CPU, "Binary load initiated @ 0x%04x", ar);
 K1:
 	// allow emulation to break free from failed loads with CLEAR
-	if (cpu_state_get() == ECTL_STATE_CLO) return;
+	if (cpu_state_get() == EM400_STATE_CLO) return;
 
 	io_dispatch(IO_IN, ic, &w);
 
@@ -590,7 +590,7 @@ static void cpu_timekeeping(int cpu_time)
 // -----------------------------------------------------------------------
 void cpu_loop()
 {
-	cpu_state_change(ECTL_STATE_STOP, ECTL_STATE_ANY);
+	cpu_state_change(EM400_STATE_STOP, EM400_STATE_ANY);
 	clock_gettime(CLOCK_MONOTONIC, &cpu_timer);
 
 	while (1) {
@@ -598,65 +598,65 @@ void cpu_loop()
 		int state = atomic_load_explicit(&cpu_state, memory_order_acquire);
 
 		switch (state) {
-			case ECTL_STATE_CYCLE:
-				cpu_state_change(ECTL_STATE_STOP, ECTL_STATE_ANY);
+			case EM400_STATE_CYCLE:
+				cpu_state_change(EM400_STATE_STOP, EM400_STATE_ANY);
 				// fallthrough
-			case ECTL_STATE_RUN:
+			case EM400_STATE_RUN:
 				if (atomic_load_explicit(&irq, memory_order_acquire) && !p && (mc == 0)) {
 					int_serve();
 					cpu_time = TIME_INT_SERVE;
 				} else {
 					cpu_time = cpu_do_cycle();
 					if (brk_check()) {
-						cpu_state_change(ECTL_STATE_STOP, ECTL_STATE_ANY);
+						cpu_state_change(EM400_STATE_STOP, EM400_STATE_ANY);
 					}
 				}
 				break;
-			case ECTL_STATE_OFF:
+			case EM400_STATE_OFF:
 				if (sound_enabled) buzzer_stop();
 				return;
-			case ECTL_STATE_CLO:
+			case EM400_STATE_CLO:
 				if (sound_enabled) buzzer_stop();
 				cpu_do_clear(true);
-				cpu_state_change(ECTL_STATE_STOP, ECTL_STATE_ANY);
+				cpu_state_change(EM400_STATE_STOP, EM400_STATE_ANY);
 				break;
-			case ECTL_STATE_BIN:
+			case EM400_STATE_BIN:
 				cpu_do_bin();
-				cpu_state_change(ECTL_STATE_STOP, ECTL_STATE_BIN);
+				cpu_state_change(EM400_STATE_STOP, EM400_STATE_BIN);
 				break;
-			case ECTL_STATE_LOAD:
+			case EM400_STATE_LOAD:
 				w = kb;
 				cpu_do_load(r_selected, w);
-				cpu_state_change(ECTL_STATE_STOP, ECTL_STATE_LOAD);
+				cpu_state_change(EM400_STATE_STOP, EM400_STATE_LOAD);
 				break;
-			case ECTL_STATE_STORE:
+			case EM400_STATE_STORE:
 				cpu_do_store();
-				cpu_state_change(ECTL_STATE_STOP, ECTL_STATE_STORE);
+				cpu_state_change(EM400_STATE_STOP, EM400_STATE_STORE);
 				break;
-			case ECTL_STATE_FETCH:
+			case EM400_STATE_FETCH:
 				cpu_do_fetch();
-				cpu_state_change(ECTL_STATE_STOP, ECTL_STATE_FETCH);
+				cpu_state_change(EM400_STATE_STOP, EM400_STATE_FETCH);
 				break;
-			case ECTL_STATE_STOP:
+			case EM400_STATE_STOP:
 				if (sound_enabled) buzzer_stop();
 				int res = cpu_do_wait();
-				if (res == ECTL_STATE_RUN) {
+				if (res == EM400_STATE_RUN) {
 					if (sound_enabled) buzzer_start();
 					clock_gettime(CLOCK_MONOTONIC, &cpu_timer);
 					cpu_time_cumulative = 0;
 				}
 				break;
-			case ECTL_STATE_WAIT:
+			case EM400_STATE_WAIT:
 				// busy wait to not disturb audio, TODO
 				cpu_reg_selected_to_w();
 				if (atomic_load_explicit(&irq, memory_order_acquire) && !p && !mc) {
-					cpu_state_change(ECTL_STATE_RUN, ECTL_STATE_WAIT);
+					cpu_state_change(EM400_STATE_RUN, EM400_STATE_WAIT);
 				} else {
 					cpu_time = throttle_granularity;
 				}
 				// else = if (!speed_real) {
 				//	cpu_do_wait();
-				//	cpu_state_change(ECTL_STATE_RUN, ECTL_STATE_WAIT);
+				//	cpu_state_change(EM400_STATE_RUN, EM400_STATE_WAIT);
 				//}
 				break;
 		}

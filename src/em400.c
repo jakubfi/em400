@@ -130,7 +130,7 @@ void em400_usage()
 		"   -p program       : Load program image into OS memory at address 0\n"
 		"   -l cmp,cmp,...   : Enable logging for specified components. Available components:\n"
 		"                      reg, mem, cpu, op, int, io, mx, px, cchar, cmem, term\n"
-		"                      wnch, flop, pnch, pnrd, tape, crk5, em4h, ectl, all\n"
+		"                      wnch, flop, pnch, pnrd, tape, crk5, em4h, all\n"
 		"   -L               : Disable logging\n"
 		"   -u ui            : User interface to use. Available UIs (first is the default):"
 	);

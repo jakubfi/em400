@@ -20,11 +20,11 @@
 #include <stdlib.h>
 #include <string.h>
 #include <stdatomic.h>
+#include <stdbool.h>
 
 #include "cpu/cpu.h"
 #include "cp/eval.h"
 
-#include "ectl.h"
 #include "libem400.h"
 
 struct brk_point {
@@ -39,7 +39,7 @@ static struct brk_point *brk_list;
 static int brk_id = 0;
 
 // -----------------------------------------------------------------------
-int brk_insert(struct eval_est *tree, char *expr)
+static int brk_insert(struct eval_est *tree, char *expr)
 {
 	if (brk_id < 0) {
 		return -1;
@@ -124,27 +124,47 @@ int brk_delete(unsigned id)
 		brkp = atomic_load_explicit(&brkp->next, memory_order_acquire);
 	}
 
-	if (cpu_state_get() == ECTL_STATE_STOP) {
+	if (cpu_state_get() == EM400_STATE_STOP) {
 		brk_cleanup();
 	}
 
 	return ret;
 }
 
-
 // -----------------------------------------------------------------------
-int brk_check()
+bool brk_check()
 {
 	struct brk_point *brkp = atomic_load_explicit(&brk_list, memory_order_acquire);
 
-	while (brkp) {
-		if ((!brkp->deleted) && (eval_est_eval(brkp->tree) > 0)) {
-			return 1;
+	while (brkp && !brkp->deleted) {
+		if (eval_est_eval(brkp->tree) > 0) {
+			return true;
 		}
 		brkp = atomic_load_explicit(&brkp->next, memory_order_acquire);
 	}
 
-	return 0;
+	return false;
 }
+
+// -----------------------------------------------------------------------
+int brk_add(char *expression, char **err_msg, int *err_beg, int *err_end)
+{
+	struct eval_est *tree = eval_str_parse(expression, err_msg, err_beg, err_end);
+	if (!tree) {
+		return -1;
+	}
+
+	int id = brk_insert(tree, expression);
+	if (id < 0) {
+		*err_msg = strdup("Cannot add new breakpoint");
+		*err_beg = 0;
+		*err_end = 0;
+		eval_est_delete(tree);
+		return -1;
+	}
+
+	return id;
+}
+
 
 // vim: tabstop=4 shiftwidth=4 autoindent

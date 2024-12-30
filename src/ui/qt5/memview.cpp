@@ -104,9 +104,9 @@ void MemView::paintEvent(QPaintEvent *event)
 //	int y = mem_y_start;
 //	Q_FOREACH (const AsmLine &l, listing) {
 //		// bar for IC location
-//		if (l.addr == e->get_reg(ECTL_REG_IC)) {
+//		if (l.addr == e->get_reg(EM400_REG_IC)) {
 //			// change bar color if "P" flag is set (instruction won't be executed)
-//			if (e->get_reg(ECTL_REG_P)) bar_color = QColor(Qt::red).lighter();
+//			if (e->get_reg(EM400_REG_P)) bar_color = QColor(Qt::red).lighter();
 //			else bar_color = this->palette().color(QPalette::Mid);
 //			painter.fillRect(QRect(0, y+font_descent+1, right+1, -(font_height+interline)), bar_color);
 //		}

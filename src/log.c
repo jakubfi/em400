@@ -45,7 +45,7 @@
 #define LOG_FLUSH_DELAY_MS 200
 
 static const char * log_component_names[] = {
-	"ALL", "EM4H", "ECTL", "FDBR", "CRK5",
+	"ALL", "EM4H", "FDBR", "CRK5",
 	"MEM", "CPU", "OP", "INT", "IO",
 	"MX", "CCHR", "CMEM",
 	"TERM", "9425", "WNCH", "FLOP", "PNCH", "PNRD","TAPE",

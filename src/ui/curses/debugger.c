@@ -23,7 +23,6 @@
 #include <stdatomic.h>
 #include <emdas.h>
 
-#include "ectl.h"
 #include "libem400.h"
 #include "ui/ui.h"
 

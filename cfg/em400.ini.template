@@ -107,7 +107,6 @@ file = em400.log
 #   term, 9425, wnch, flop, pnch, pnrd, tape - terminal, mera 9425, winchester, floppy, tape puncher and reader, magnetic tape
 #   crk5 - CROOK-5
 #   em4h - emulator, general
-#   ectl - emulator, remote control
 #   all - special "component" to enable or disable all components
 #
 # Note that logging cpu cycle information slows down the emulation considerably (>1000 times)

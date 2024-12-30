@@ -27,10 +27,10 @@ enum eval_est_type {
 	EVAL_AST_N_VAL,
 	EVAL_AST_N_REG,
 	EVAL_AST_N_MEM,
-	Eval_AST_N_RZ,
-	Eval_AST_N_ALARM,
+	EVAL_AST_N_RZ,
+	EVAL_AST_N_ALARM,
 	EVAL_AST_N_MC,
-	Eval_AST_N_FLAG,
+	EVAL_AST_N_FLAG,
 };
 
 struct eval_est {
@@ -57,7 +57,8 @@ struct eval_est * eval_est_err(char *err);
 
 // node evaluation
 int eval_est_eval(struct eval_est *n);
-struct eval_est * eval_est_get_err();
+struct eval_est * eval_str_parse(char *str, char **err_msg, int *err_beg, int *err_end);
+int eval_str_eval(char *str, char **err_msg, int *err_beg, int *err_end);
 
 #endif
 

@@ -27,10 +27,14 @@
 #include "mem/mem.h"
 
 #include "libem400.h"
-#include "ectl.h"
 
 #include "cp/eval.h"
 #include "eval_parser.h"
+
+typedef struct eval_yy_buffer_state *YY_BUFFER_STATE;
+int eval_yyparse(struct eval_est **tree);
+YY_BUFFER_STATE eval_yy_scan_string(char *input);
+void eval_yy_delete_buffer(YY_BUFFER_STATE b);
 
 struct eval_est *eval_eval_err;
 
@@ -86,7 +90,7 @@ struct eval_est * eval_est_reg(int r)
 struct eval_est * eval_est_flag(int f)
 {
 	struct eval_est *n = eval_est_create();
-	n->type = Eval_AST_N_FLAG;
+	n->type = EVAL_AST_N_FLAG;
 	n->val = f;
 	return n;
 }
@@ -95,7 +99,7 @@ struct eval_est * eval_est_flag(int f)
 struct eval_est * eval_est_rz(int bit)
 {
 	struct eval_est *n = eval_est_create();
-	n->type = Eval_AST_N_RZ;
+	n->type = EVAL_AST_N_RZ;
 	n->val = bit;
 	return n;
 }
@@ -104,7 +108,7 @@ struct eval_est * eval_est_rz(int bit)
 struct eval_est * eval_est_alarm()
 {
 	struct eval_est *n = eval_est_create();
-	n->type = Eval_AST_N_ALARM;
+	n->type = EVAL_AST_N_ALARM;
 	return n;
 }
 
@@ -340,11 +344,11 @@ int eval_est_eval(struct eval_est *n)
 	switch (n->type) {
 		case EVAL_AST_N_VAL: return eval_est_eval_val(n);
 		case EVAL_AST_N_REG: return eval_est_eval_reg(n);
-		case Eval_AST_N_FLAG: return eval_est_eval_flag(n);
+		case EVAL_AST_N_FLAG: return eval_est_eval_flag(n);
 		case EVAL_AST_N_MEM: return eval_est_eval_mem(n);
-		case Eval_AST_N_RZ: return eval_est_eval_rz(n);
+		case EVAL_AST_N_RZ: return eval_est_eval_rz(n);
 		case EVAL_AST_N_OP: return eval_est_eval_op(n);
-		case Eval_AST_N_ALARM: return eval_est_eval_alarm(n);
+		case EVAL_AST_N_ALARM: return eval_est_eval_alarm(n);
 		case EVAL_AST_N_MC: return eval_est_eval_mc(n);
 		case EVAL_AST_N_ERR: return -1;
 		default: return -1;
@@ -352,9 +356,58 @@ int eval_est_eval(struct eval_est *n)
 }
 
 // -----------------------------------------------------------------------
-struct eval_est * eval_est_get_err()
+struct eval_est * eval_str_parse(char *str, char **err_msg, int *err_beg, int *err_end)
 {
-	return eval_eval_err;
+	struct eval_est *tree;
+
+	YY_BUFFER_STATE yb = eval_yy_scan_string(str);
+	eval_yyparse(&tree);
+	eval_yy_delete_buffer(yb);
+
+	if (!tree) {
+		*err_msg = strdup("Fatal error, parser did not return anything");
+		*err_beg = 0;
+		*err_end = 0;
+		return NULL;
+	}
+
+	if (tree->type == EVAL_AST_N_ERR) {
+		*err_msg = strdup(tree->err);
+		*err_beg = tree->c_beg;
+		*err_end = tree->c_end;
+		eval_est_delete(tree);
+		return NULL;
+	}
+
+	return tree;
+}
+
+// -----------------------------------------------------------------------
+int eval_str_eval(char *str, char **err_msg, int *err_beg, int *err_end)
+{
+	int res = -1;
+	struct eval_est *tree = eval_str_parse(str, err_msg, err_beg, err_end);
+	if (!tree) {
+		goto fin;
+	}
+
+	res = eval_est_eval(tree);
+	if (res < 0) {
+		if (eval_eval_err) {
+			*err_msg = strdup(eval_eval_err->err);
+			*err_beg = eval_eval_err->c_beg;
+			*err_end = eval_eval_err->c_end;
+		} else {
+			*err_msg = strdup("Evaluation failed");
+			*err_beg = 0;
+			*err_end = 0;
+		}
+		goto fin;
+	}
+
+fin:
+	eval_est_delete(tree);
+	return res;
 }
 
 // vim: tabstop=4 shiftwidth=4 autoindent

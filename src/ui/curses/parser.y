@@ -18,7 +18,6 @@
 
 #include <stdlib.h>
 
-#include "ectl.h"
 #include "libem400.h"
 
 #include "ui/curses/debugger.h"

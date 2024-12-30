@@ -21,8 +21,9 @@
 #include <stdlib.h>
 #include <stdarg.h>
 
-#include "ectl.h"
 #include "libem400.h"
+#include "cp/eval.h"
+#include "cp/brk.h"
 
 #include "ui/cmd/commands.h"
 #include "ui/cmd/utils.h"
@@ -570,7 +571,7 @@ void ui_cmd_eval(FILE *out, char *args)
 
 	char *error_msg = NULL;
 	int err_beg, err_end;
-	int res = eval_eval(tok_expr, &error_msg, &err_beg, &err_end);
+	int res = eval_str_eval(tok_expr, &error_msg, &err_beg, &err_end);
 	if (error_msg) {
 		ui_cmd_resp(out, RESP_ERR, UI_EOL, "%s (at %i-%i)", error_msg, err_beg, err_end);
 		free(error_msg);
@@ -590,7 +591,7 @@ void ui_cmd_brk(FILE *out, char *args)
 
 	char *error_msg = NULL;
 	int err_beg, err_end;
-	int id = ectl_brk_add(tok_expr, &error_msg, &err_beg, &err_end);
+	int id = brk_add(tok_expr, &error_msg, &err_beg, &err_end);
 	if (error_msg) {
 		ui_cmd_resp(out, RESP_ERR, UI_EOL, "%s (at %i-%i)", error_msg, err_beg, err_end);
 		free(error_msg);
@@ -611,7 +612,7 @@ void ui_cmd_brkdel(FILE *out, char *args)
 		return;
 	}
 
-	int res = ectl_brk_del(brk_num);
+	int res = brk_delete(brk_num);
 	if (res) {
 		ui_cmd_resp(out, RESP_ERR, UI_EOL, "No such breakpoint");
 		return;

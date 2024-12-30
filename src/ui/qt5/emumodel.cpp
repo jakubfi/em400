@@ -1,7 +1,6 @@
 #include <QtDebug>
 #include <QFile>
 #include "emumodel.h"
-#include "ectl.h"
 #include "libem400.h"
 
 
@@ -73,8 +72,8 @@ void EmuModel::sync_state(bool force)
 	int state = em400_cpu_state();
 	if (force || (state != last_cpu_state)) {
 		last_cpu_state = state;
-		if ((state != ECTL_STATE_RUN) && (state != ECTL_STATE_WAIT)) {
-			state = ECTL_STATE_STOP;
+		if ((state != EM400_STATE_RUN) && (state != EM400_STATE_WAIT)) {
+			state = EM400_STATE_STOP;
 		}
 		emit signal_state_changed(state);
 	}

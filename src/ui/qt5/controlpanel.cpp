@@ -5,7 +5,6 @@
 #include <QLineF>
 
 #include "controlpanel.h"
-#include "ectl.h"
 #include "libem400.h"
 
 static const int led_u_top = 122;
@@ -248,12 +247,12 @@ void ControlPanel::slot_bus_w_changed(uint16_t val)
 void ControlPanel::slot_state_changed(int state)
 {
 	switch (state) {
-		case ECTL_STATE_RUN:
+		case EM400_STATE_RUN:
 			led[LED_RUN]->set(true);
 			led[LED_WAIT]->set(false);
 			dim(true);
 			break;
-		case ECTL_STATE_WAIT:
+		case EM400_STATE_WAIT:
 			led[LED_RUN]->set(false);
 			led[LED_WAIT]->set(true);
 			dim(false);

@@ -20,7 +20,6 @@
 
 #include "ui_curses_parser.h"
 #include "ui/curses/keywords.h"
-#include "ectl.h"
 #include "libem400.h"
 
 struct kw_t kw_regs[] = {

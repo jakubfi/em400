@@ -3,7 +3,6 @@
 
 #include <QObject>
 #include <QTimer>
-#include "ectl.h"
 #include "libem400.h"
 #include <emdas.h>
 

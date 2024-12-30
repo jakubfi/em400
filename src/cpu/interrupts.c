@@ -26,7 +26,7 @@
 #include "io/io.h"
 
 #include "log.h"
-#include "ectl.h" // for global constants
+
 
 uint32_t rz;
 // IRQ is atomic because cpu thread needs quick, frequent access

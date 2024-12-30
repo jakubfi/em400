@@ -233,14 +233,12 @@ set(SOURCES_EM400
 	src/cp/cp.h
 	src/cp/cpext.c
 	src/cp/cpext.h
-	src/cp/cpu.c
 	src/cp/eval.c
 	src/cp/eval.h
 	src/cp/eval_parser.y
 	src/cp/eval_scanner.l
 	src/cp/brk.c
 	src/cp/brk.h
-	include/ectl.h
 
 	src/sound/file.c
 	src/sound/sound.c

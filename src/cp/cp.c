@@ -43,20 +43,20 @@ void cp_kb_set(uint16_t val)
 // -----------------------------------------------------------------------
 void cp_start(bool state)
 {
-	if (state) cpu_state_change(ECTL_STATE_RUN, ECTL_STATE_STOP);
-	else cpu_state_change(ECTL_STATE_STOP, ECTL_STATE_ANY);
+	if (state) cpu_state_change(EM400_STATE_RUN, EM400_STATE_STOP);
+	else cpu_state_change(EM400_STATE_STOP, EM400_STATE_ANY);
 }
 
 // -----------------------------------------------------------------------
 void cp_cycle()
 {
-	cpu_state_change(ECTL_STATE_CYCLE, ECTL_STATE_STOP);
+	cpu_state_change(EM400_STATE_CYCLE, EM400_STATE_STOP);
 }
 
 // -----------------------------------------------------------------------
 void cp_off()
 {
-	cpu_state_change(ECTL_STATE_OFF, ECTL_STATE_ANY);
+	cpu_state_change(EM400_STATE_OFF, EM400_STATE_ANY);
 }
 
 // -----------------------------------------------------------------------
@@ -74,13 +74,13 @@ int cp_clock_get()
 // -----------------------------------------------------------------------
 void cp_clear()
 {
-	cpu_state_change(ECTL_STATE_CLO, ECTL_STATE_ANY);
+	cpu_state_change(EM400_STATE_CLO, EM400_STATE_ANY);
 }
 
 // -----------------------------------------------------------------------
 void cp_bin()
 {
-	cpu_state_change(ECTL_STATE_BIN, ECTL_STATE_STOP);
+	cpu_state_change(EM400_STATE_BIN, EM400_STATE_STOP);
 }
 
 // -----------------------------------------------------------------------
@@ -129,13 +129,13 @@ bool cp_irq_get()
 // -----------------------------------------------------------------------
 bool cp_run_get()
 {
-	return cpu_state_get() == ECTL_STATE_RUN;
+	return cpu_state_get() == EM400_STATE_RUN;
 }
 
 // -----------------------------------------------------------------------
 bool cp_wait_get()
 {
-	return cpu_state_get() == ECTL_STATE_WAIT;
+	return cpu_state_get() == EM400_STATE_WAIT;
 }
 
 // -----------------------------------------------------------------------
@@ -147,19 +147,19 @@ bool cp_q_get()
 // -----------------------------------------------------------------------
 void cp_load()
 {
-	cpu_state_change(ECTL_STATE_LOAD, ECTL_STATE_STOP);
+	cpu_state_change(EM400_STATE_LOAD, EM400_STATE_STOP);
 }
 
 // -----------------------------------------------------------------------
 void cp_fetch()
 {
-	cpu_state_change(ECTL_STATE_FETCH, ECTL_STATE_STOP);
+	cpu_state_change(EM400_STATE_FETCH, EM400_STATE_STOP);
 }
 
 // -----------------------------------------------------------------------
 void cp_store()
 {
-	cpu_state_change(ECTL_STATE_STORE, ECTL_STATE_STOP);
+	cpu_state_change(EM400_STATE_STORE, EM400_STATE_STOP);
 }
 
 // vim: tabstop=4 shiftwidth=4 autoindent

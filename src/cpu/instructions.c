@@ -24,7 +24,6 @@
 #include "log.h"
 #include "log_crk.h"
 
-#include "ectl.h" // for global constants
 
 // Instructions are implemented to mimic CPU FSM behavior.
 // CPU states are indicated in (usually commented out) labels.
@@ -947,7 +946,7 @@ void op_73_hlt()
 	log_cpu(L_OP, "HALT 0%02o (alarm: %i)", ac, r[6] & 0xff);
 // WX:
 	step_point();
-	cpu_state_change(ECTL_STATE_WAIT, ECTL_STATE_ANY);
+	cpu_state_change(EM400_STATE_WAIT, EM400_STATE_ANY);
 }
 
 // -----------------------------------------------------------------------

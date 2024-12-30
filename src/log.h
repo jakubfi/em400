@@ -23,7 +23,6 @@
 #include <inttypes.h>
 #include <stdatomic.h>
 
-#include "ectl.h" // for global constants
 #include "libem400.h"
 #include "cfg.h"
 
