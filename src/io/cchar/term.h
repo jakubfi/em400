@@ -21,7 +21,7 @@
 #include <stdbool.h>
 
 #include "io/dev/fdbridge.h"
-#include "io/cchar.h"
+#include "io/cchar/cchar.h"
 #include "cfg.h"
 
 #define TERM_BUF_LEN 1024

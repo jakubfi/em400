@@ -177,12 +177,12 @@ set(SOURCES_EM400
 	src/io/io.h
 	src/io/chan.c
 	src/io/chan.h
-	src/io/cchar.c
-	src/io/cchar.h
-	src/io/cchar_term.c
-	src/io/cchar_term.h
-	src/io/cchar_flop8.c
-	src/io/cchar_flop8.h
+	src/io/cchar/cchar.c
+	src/io/cchar/cchar.h
+	src/io/cchar/term.c
+	src/io/cchar/term.h
+	src/io/cchar/flop8.c
+	src/io/cchar/flop8.h
 	src/io/iotester.c
 
 	src/io/dev/dev.c

@@ -29,7 +29,7 @@
 
 #include "em400.h"
 #include "io/defs.h"
-#include "io/cchar_term.h"
+#include "io/cchar/term.h"
 #include "io/dev/fdbridge.h"
 
 #include "log.h"

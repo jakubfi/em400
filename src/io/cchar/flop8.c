@@ -27,8 +27,8 @@
 
 #include "em400.h"
 #include "io/defs.h"
-#include "io/cchar.h"
-#include "io/cchar_flop8.h"
+#include "io/cchar/cchar.h"
+#include "io/cchar/flop8.h"
 #include "cfg.h"
 
 #include "log.h"

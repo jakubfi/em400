@@ -23,9 +23,9 @@
 
 #include "io/io.h"
 #include "io/chan.h"
-#include "io/cchar.h"
-#include "io/cchar_term.h"
-#include "io/cchar_flop8.h"
+#include "io/cchar/cchar.h"
+#include "io/cchar/term.h"
+#include "io/cchar/flop8.h"
 
 #include "log.h"
 #include "cfg.h"

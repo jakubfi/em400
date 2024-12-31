@@ -18,7 +18,7 @@
 #ifndef CCHAR_FLOP8_H
 #define CCHAR_FLOP8_H
 
-#include "io/cchar.h"
+#include "io/cchar/cchar.h"
 #include "cfg.h"
 
 struct cchar_unit_proto_t * cchar_flop8_create(em400_cfg *cfg, int ch_num, int dev_num);
