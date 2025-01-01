@@ -15,8 +15,8 @@
 //  Foundation, Inc.,
 //  51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 
-#ifndef CCHAR_TERM_CONS_H
-#define CCHAR_TERM_CONS_H
+#ifndef __CCHAR_TERM_H__
+#define __CCHAR_TERM_H__
 
 #include <stdbool.h>
 
@@ -24,16 +24,14 @@
 #include "io/cchar/cchar.h"
 #include "cfg.h"
 
-#define TERM_BUF_LEN 1024
 
 struct cchar_unit_term_t {
 	struct cchar_unit_proto_t proto;
-	struct fdb *term;
+	struct fdb *fdbridge;
 	int spec;
 };
 
-// commands
-enum cchar_term_cmd_e {
+enum cchar_term_commands {
 	// OU
 	CCHAR_TERM_CMD_RESET		= 0b100000, // reset
 	CCHAR_TERM_CMD_DISCONNECT	= 0b101000, // disconnect device (soft reset)
@@ -43,18 +41,15 @@ enum cchar_term_cmd_e {
 	CCHAR_TERM_CMD_READ			= 0b101000, // read
 };
 
-// interrupts
-enum char_term_int_e {
+enum char_term_interrupts {
 	CCHAR_TERM_INT_OUTDATED	= 0, // interrupt out of date
 	CCHAR_TERM_INT_READY	= 1, // ready again
-	CCHAR_TERM_INT_OPR_CALL	= 3, // operator call
 	CCHAR_TERM_INT_TOO_SLOW	= 5, // transmission too slow
 };
 
 struct cchar_unit_proto_t * cchar_term_create(em400_cfg *cfg, int ch_num, int dev_num);
 void cchar_term_shutdown(struct cchar_unit_proto_t *unit);
 void cchar_term_reset(struct cchar_unit_proto_t *unit);
-void * cchar_term_worker(void *ptr);
 int cchar_term_cmd(struct cchar_unit_proto_t *unit, int dir, int cmd, uint16_t *r_arg);
 int cchar_term_intspec(struct cchar_unit_proto_t *unit);
 bool cchar_term_has_interrupt(struct cchar_unit_proto_t *unit);

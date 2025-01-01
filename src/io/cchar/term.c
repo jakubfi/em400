@@ -35,13 +35,13 @@
 #include "log.h"
 #include "cfg.h"
 
-int fdb_callback(void *user_ctx, int condition);
+static int fdb_callback(void *user_ctx, int condition);
 
 // -----------------------------------------------------------------------
 struct cchar_unit_proto_t * cchar_term_create(em400_cfg *cfg, int ch_num, int dev_num)
 {
-	struct cchar_unit_term_t *unit = (struct cchar_unit_term_t *) calloc(1, sizeof(struct cchar_unit_term_t));
-	if (!unit) {
+	struct cchar_unit_term_t *term = (struct cchar_unit_term_t *) calloc(1, sizeof(struct cchar_unit_term_t));
+	if (!term) {
 		LOGERR("Failed to allocate memory for terminal: %i.%i", ch_num, dev_num);
 		return NULL;
 	}
@@ -58,16 +58,16 @@ struct cchar_unit_proto_t * cchar_term_create(em400_cfg *cfg, int ch_num, int de
 			LOGERR("TCP terminal needs port to be set.");
 			goto fail;
 		}
-		unit->term = fdb_open_tcp(port);
+		term->fdbridge = fdb_open_tcp(port);
 		if (speed > 0) {
-			fdb_set_speed(unit->term, speed);
+			fdb_set_speed(term->fdbridge, speed);
 		}
 	} else if (!strcasecmp(transport, "serial")) {
 		if (!device || (speed < 0)) {
 			LOGERR("Serial terminal needs both 'device' and 'speed' configuration.");
 			goto fail;
 		}
-		unit->term = fdb_open_serial(device, speed);
+		term->fdbridge = fdb_open_serial(device, speed);
 	} else if (!strcasecmp(transport, "console")) {
 		if (em400_console == CONSOLE_DEBUGGER) {
 			LOGERR("Failed to initialize console terminal; console is being used by the debugger.");
@@ -77,63 +77,68 @@ struct cchar_unit_proto_t * cchar_term_create(em400_cfg *cfg, int ch_num, int de
 			goto fail;
 		}
 		em400_console = CONSOLE_TERMINAL;
-		unit->term = fdb_open_stdin();
+		term->fdbridge = fdb_open_stdin();
 	} else {
 		LOGERR("Unknown terminal transport: %s.", transport);
 		goto fail;
 	}
 
-	if (!unit->term) {
+	if (!term->fdbridge) {
 		LOGERR("Failed to initialize terminal.");
 		goto fail;
 	}
 
-	fdb_set_callback(unit->term, fdb_callback, unit);
+	fdb_set_callback(term->fdbridge, fdb_callback, term);
 
-	return (struct cchar_unit_proto_t *) unit;
+	return (struct cchar_unit_proto_t *) term;
 
 fail:
-	cchar_term_shutdown((struct cchar_unit_proto_t*) unit);
+	cchar_term_shutdown((struct cchar_unit_proto_t*) term);
 	return NULL;
 }
 
 // -----------------------------------------------------------------------
 void cchar_term_shutdown(struct cchar_unit_proto_t *unit)
 {
-	struct cchar_unit_term_t *u = (struct cchar_unit_term_t *) unit;
-	if (!u) return;
+	struct cchar_unit_term_t *term = (struct cchar_unit_term_t *) unit;
+	if (!term) return;
 
-	if (u->term) fdb_close(u->term);
-	free(u);
+	if (term->fdbridge) fdb_close(term->fdbridge);
+	free(term);
 }
 
 // -----------------------------------------------------------------------
 void cchar_term_reset(struct cchar_unit_proto_t *unit)
 {
 	LOG(L_TERM, "Command: reset");
-	struct cchar_unit_term_t *u = (struct cchar_unit_term_t *) unit;
-	fdb_reset(u->term);
+	struct cchar_unit_term_t *term = (struct cchar_unit_term_t *) unit;
+	fdb_reset(term->fdbridge);
 }
 
 // -----------------------------------------------------------------------
-int fdb_callback(void *ctx, int condition)
+static int fdb_callback(void *ctx, int condition)
 {
-	struct cchar_unit_proto_t *unit = (struct cchar_unit_proto_t *) ctx;
 	struct cchar_unit_term_t *term = (struct cchar_unit_term_t*) ctx;
+	int interrupt = CCHAR_TERM_INT_OUTDATED;
 
 	switch (condition) {
 		case FDB_READY:
 			LOG(L_TERM, "Callback: line data ready");
-			atomic_store_explicit(&term->spec, CCHAR_TERM_INT_READY, memory_order_release);
-			cchar_int_trigger(unit->chan);
+			interrupt = CCHAR_TERM_INT_READY;
 			break;
 		case FDB_LOST:
 			LOG(L_TERM, "Callback: data lost, transmission too slow");
-			atomic_store_explicit(&term->spec, CCHAR_TERM_INT_TOO_SLOW, memory_order_release);
-			cchar_int_trigger(unit->chan);
+			interrupt = CCHAR_TERM_INT_TOO_SLOW;
+			break;
 		default:
 			break;
 	}
+
+	if (interrupt != CCHAR_TERM_INT_OUTDATED) {
+		atomic_store_explicit(&term->spec, interrupt, memory_order_release);
+		cchar_int_trigger(term->proto.chan);
+	}
+
 	return 0;
 }
 
@@ -155,9 +160,9 @@ bool cchar_term_has_interrupt(struct cchar_unit_proto_t *unit)
 }
 
 // -----------------------------------------------------------------------
-int cchar_term_read(struct cchar_unit_term_t *unit, uint16_t *r_arg)
+static int cchar_term_read(struct cchar_unit_term_t *term, uint16_t *r_arg)
 {
-	int data = fdb_read(unit->term);
+	int data = fdb_read(term->fdbridge);
 
 	if (data < 0) {
 		LOG(L_TERM, "Receive from terminal: empty read");
@@ -175,12 +180,12 @@ int cchar_term_read(struct cchar_unit_term_t *unit, uint16_t *r_arg)
 }
 
 // -----------------------------------------------------------------------
-int cchar_term_write(struct cchar_unit_term_t *unit, uint16_t *r_arg)
+static int cchar_term_write(struct cchar_unit_term_t *term, uint16_t *r_arg)
 {
 	int res = IO_OK;
 	char data = *r_arg & 0xff;
 
-	if (fdb_write(unit->term, data) < 0) {
+	if (fdb_write(term->fdbridge, data) < 0) {
 		res = IO_EN;
 	}
 
@@ -194,43 +199,43 @@ int cchar_term_write(struct cchar_unit_term_t *unit, uint16_t *r_arg)
 }
 
 // -----------------------------------------------------------------------
-int cchar_term_disconnect(struct cchar_unit_term_t *unit)
+static int cchar_term_disconnect(struct cchar_unit_term_t *term)
 {
 	LOG(L_TERM, "Command: disconnect");
-	fdb_await_read(unit->term);
+	fdb_await_read(term->fdbridge);
 	return IO_OK;
 }
 
 // -----------------------------------------------------------------------
 int cchar_term_cmd(struct cchar_unit_proto_t *unit, int dir, int cmd, uint16_t *r_arg)
 {
-	struct cchar_unit_term_t *u = (struct cchar_unit_term_t *) unit;
+	struct cchar_unit_term_t *term = (struct cchar_unit_term_t *) unit;
+
 	if (dir == IO_IN) {
 		switch (cmd) {
-		case CCHAR_TERM_CMD_SPU:
-			LOG(L_TERM, "Command: SPU");
-			break;
-		case CCHAR_TERM_CMD_READ:
-			return cchar_term_read(u, r_arg);
-		default:
-			LOG(L_TERM, "Unknown IN command: %i", cmd);
-			break;
+			case CCHAR_TERM_CMD_SPU:
+				LOG(L_TERM, "Command: SPU");
+				return IO_OK;
+			case CCHAR_TERM_CMD_READ:
+				return cchar_term_read(term, r_arg);
+			default:
+				LOG(L_TERM, "Unknown IN command: %i", cmd);
+				return IO_EN;
 		}
 	} else {
 		switch (cmd) {
-		case CCHAR_TERM_CMD_RESET:
-			cchar_term_reset(unit);
-			break;
-		case CCHAR_TERM_CMD_DISCONNECT:
-			return cchar_term_disconnect(u);
-		case CCHAR_TERM_CMD_WRITE:
-			return cchar_term_write(u, r_arg);
-		default:
-			LOG(L_TERM, "Unknown OUT command: %i", cmd);
-			break;
+			case CCHAR_TERM_CMD_RESET:
+				cchar_term_reset(unit);
+				return IO_OK;
+			case CCHAR_TERM_CMD_DISCONNECT:
+				return cchar_term_disconnect(term);
+			case CCHAR_TERM_CMD_WRITE:
+				return cchar_term_write(term, r_arg);
+			default:
+				LOG(L_TERM, "Unknown OU command: %i", cmd);
+				return IO_EN;
 		}
 	}
-	return IO_OK;
 }
 
 // vim: tabstop=4 shiftwidth=4 autoindent
