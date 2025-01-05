@@ -13,6 +13,9 @@ find_package(Curses)
 find_package(BISON REQUIRED)
 find_package(FLEX REQUIRED)
 
+find_package(PkgConfig REQUIRED)
+pkg_check_modules(LIBUV REQUIRED IMPORTED_TARGET libuv)
+
 set(UI_CURSES OFF)
 if(CURSES_FOUND)
 	if(WIN32)
@@ -181,6 +184,8 @@ set(SOURCES_EM400
 	src/io/cchar/cchar.h
 	src/io/cchar/term.c
 	src/io/cchar/term.h
+	src/io/cchar/term2.c
+	src/io/cchar/term2.h
 	src/io/cchar/flop8.c
 	src/io/cchar/flop8.h
 	src/io/iotester.c
@@ -308,6 +313,7 @@ target_compile_options(em400 PRIVATE -Wall)
 target_include_directories(em400 PRIVATE ${CMAKE_SOURCE_DIR}/src)
 target_include_directories(em400 PRIVATE ${CMAKE_SOURCE_DIR}/include)
 target_include_directories(em400 PRIVATE ${CMAKE_BINARY_DIR})
+target_include_directories(em400 PRIVATE ${LIBUV_INCLUDE_DIRS})
 target_compile_definitions(em400 PRIVATE EM400_VERSION="${APP_VERSION}")
 if(UI_CURSES)
 	target_compile_definitions(em400 PRIVATE UI_CURSES)
@@ -341,6 +347,7 @@ target_link_libraries(em400
 	${FLEX_LIBRARIES}
 	${BISON_LIBRARIES}
 	${CMAKE_THREAD_LIBS_INIT}
+	PkgConfig::LIBUV
 )
 
 if(NOT WIN32)
