@@ -48,6 +48,7 @@ static const char * log_component_names[] = {
 	"ALL", "EM4H", "FDBR", "CRK5",
 	"MEM", "CPU", "OP", "INT", "IO",
 	"MX", "CCHR", "CMEM",
+	"UZDAT",
 	"TERM", "9425", "WNCH", "FLOP", "PNCH", "PNRD","TAPE",
 };
 
@@ -68,7 +69,7 @@ static bool line_buffered;
 
 // high-level stuff
 
-#define LOG_F_COMP "%4s | %8s | "
+#define LOG_F_COMP "%5s | %8s | "
 #define LOG_F_FUN "%24s() | "
 #define LOG_F_CPU "%x:0x%04x %-6s            | %s"
 

@@ -25,7 +25,7 @@
 #include "io/chan.h"
 #include "io/cchar/cchar.h"
 #include "io/cchar/term.h"
-#include "io/cchar/term2.h"
+#include "io/cchar/uzdat.h"
 #include "io/cchar/flop8.h"
 
 #include "log.h"
@@ -46,12 +46,12 @@ struct cchar_unit_proto_t cchar_unit_proto[] = {
 	},
 	{
 		"terminal2",
-		cchar_term2_create,
-		cchar_term2_shutdown,
-		cchar_term2_reset,
-		cchar_term2_cmd,
-		cchar_term2_intspec,
-		cchar_term2_has_interrupt,
+		uzdat_create,
+		uzdat_shutdown,
+		uzdat_reset,
+		uzdat_cmd,
+		uzdat_intspec,
+		uzdat_has_interrupt,
 	},
 	{
 		"floppy8",

@@ -82,6 +82,7 @@ enum em400_log_components {
 	L_EM4H, L_FDBR, L_CRK5,
 	L_MEM, L_CPU, L_OP, L_INT, L_IO,
 	L_MX, L_CCHR, L_CMEM,
+	L_UZDAT,
 	L_TERM, L_9425, L_WNCH, L_FLOP, L_PNCH, L_PNRD, L_TAPE,
 	L_COUNT,
 };

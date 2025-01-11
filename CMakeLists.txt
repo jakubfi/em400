@@ -184,8 +184,10 @@ set(SOURCES_EM400
 	src/io/cchar/cchar.h
 	src/io/cchar/term.c
 	src/io/cchar/term.h
-	src/io/cchar/term2.c
-	src/io/cchar/term2.h
+	src/io/cchar/uzdat.c
+	src/io/cchar/uzdat.h
+	src/io/cchar/terminal.c
+	src/io/cchar/terminal.h
 	src/io/cchar/flop8.c
 	src/io/cchar/flop8.h
 	src/io/iotester.c
