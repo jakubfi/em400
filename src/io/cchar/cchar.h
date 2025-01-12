@@ -21,6 +21,7 @@
 #include <inttypes.h>
 #include <stdbool.h>
 #include <pthread.h>
+#include <uv.h>
 
 #include "cfg.h"
 
@@ -62,6 +63,9 @@ struct cchar_chan_t {
 	int untransmitted;
 
 	struct cchar_unit_proto_t *unit[CCHAR_MAX_DEVICES];
+
+	pthread_t ioloop_thread;
+	uv_async_t async_quit;
 };
 
 void *cchar_create(int num, em400_cfg *cfg);

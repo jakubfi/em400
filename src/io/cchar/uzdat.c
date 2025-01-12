@@ -29,7 +29,6 @@
 
 #include <stdatomic.h>
 #include <uv.h>
-#include <pthread.h>
 
 #include "em400.h"
 #include "io/defs.h"
@@ -39,10 +38,8 @@
 #include "log.h"
 #include "cfg.h"
 
-uv_loop_t *ioloop;
+extern uv_loop_t *ioloop;
 
-static void * uzdat_evloop(void *ptr);
-static void uzdat_on_async_quit(uv_async_t *handle);
 static void uzdat_on_async_write(uv_async_t *handle);
 static void uzdat_on_async_switch_dir(uv_async_t *handle);
 void uzdat_on_data_received(uzdat_t *uzdat, char data);
@@ -52,10 +49,6 @@ void uzdat_on_data_sent(uzdat_t *uzdat);
 // -----------------------------------------------------------------------
 static int uzdat_ioloop_setup(uzdat_t *uzdat)
 {
-	// loop related, global
-	uv_async_init(ioloop, &uzdat->async_quit, uzdat_on_async_quit);
-	uv_handle_set_data((uv_handle_t*) &uzdat->async_quit, uzdat);
-
 	uv_async_init(ioloop, &uzdat->async_write, uzdat_on_async_write);
 	uv_handle_set_data((uv_handle_t*) &uzdat->async_write, uzdat);
 
@@ -77,17 +70,15 @@ struct cchar_unit_proto_t * uzdat_create(em400_cfg *cfg, int ch_num, int dev_num
 		return NULL;
 	}
 
+	LOG(L_UZDAT, "Creating terminal controller");
+
 	unsigned speed = cfg_fgetint(cfg, "dev%i.%i:speed", ch_num, dev_num);
 	unsigned port = cfg_fgetint(cfg, "dev%i.%i:port", ch_num, dev_num);
-
-	LOG(L_UZDAT, "Creating terminal: speed: %i, port: %i", speed, port);
 
 	if (!port || !speed) {
 		LOGERR("TCP terminal needs port and emulated speed to be set.");
 		goto fail;
 	}
-
-	ioloop = uv_default_loop();
 
 	uzdat_reset((struct cchar_unit_proto_t *) uzdat);
 
@@ -98,12 +89,6 @@ struct cchar_unit_proto_t * uzdat_create(em400_cfg *cfg, int ch_num, int dev_num
 	}
 
 	if (uzdat_ioloop_setup(uzdat)) goto fail;
-
-	if (pthread_create(&uzdat->thread, NULL, uzdat_evloop, uzdat)) {
-		LOGERR("Failed to spawn main I/O tester thread.");
-		goto fail;
-	}
-	pthread_setname_np(uzdat->thread, "termuv");
 
 	return (struct cchar_unit_proto_t *) uzdat;
 
@@ -157,13 +142,6 @@ void uzdat_on_data_sent(uzdat_t *uzdat)
 }
 
 // -----------------------------------------------------------------------
-static void uzdat_on_async_quit(uv_async_t *handle)
-{
-	LOG(L_UZDAT, "QUIT received");
-	uv_stop(ioloop);
-}
-
-// -----------------------------------------------------------------------
 static void uzdat_on_async_write(uv_async_t *handle)
 {
 	uzdat_t *uzdat = (uzdat_t*) handle->data;
@@ -181,17 +159,6 @@ static void uzdat_on_async_write(uv_async_t *handle)
 }
 
 // -----------------------------------------------------------------------
-static void * uzdat_evloop(void *ptr)
-{
-	LOG(L_UZDAT, "Starting UV loop");
-	uv_run(ioloop, UV_RUN_DEFAULT);
-	LOG(L_UZDAT, "Exited UV loop");
-	uv_loop_close(ioloop);
-
-	pthread_exit(NULL);
-}
-
-// -----------------------------------------------------------------------
 void uzdat_shutdown(struct cchar_unit_proto_t *unit)
 {
 	if (!unit) return;
@@ -200,8 +167,6 @@ void uzdat_shutdown(struct cchar_unit_proto_t *unit)
 
 	uzdat_t *uzdat = (uzdat_t*) unit;
 
-	uv_async_send(&uzdat->async_quit);
-	pthread_join(uzdat->thread, NULL);
 	uzdat->terminal->destroy(uzdat->terminal);
 
 	free(uzdat);

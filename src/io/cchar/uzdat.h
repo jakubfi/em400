@@ -29,7 +29,6 @@
 
 typedef struct uzdat_s {
 	struct cchar_unit_proto_t proto;
-	pthread_t thread;
 	pthread_mutex_t mutex;
 	int intspec;
 	int state;
@@ -40,7 +39,6 @@ typedef struct uzdat_s {
 
 	terminal_t *terminal;
 
-	uv_async_t async_quit;
 	uv_async_t async_write;
 	uv_async_t async_disconnect;
 	uv_async_t async_reset;

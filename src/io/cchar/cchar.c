@@ -15,11 +15,17 @@
 //  Foundation, Inc.,
 //  51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 
+#define _XOPEN_SOURCE 500
+#ifndef _GNU_SOURCE
+#define _GNU_SOURCE
+#endif
+
 #include <stdlib.h>
 #include <inttypes.h>
-#include <pthread.h>
 #include <unistd.h>
 #include <strings.h>
+#include <uv.h>
+#include <pthread.h>
 
 #include "io/io.h"
 #include "io/chan.h"
@@ -31,12 +37,14 @@
 #include "log.h"
 #include "cfg.h"
 
+uv_loop_t *ioloop;
+
 #define NO_INTERRUPT_REPORTED -1
 
 // unit prototypes
 struct cchar_unit_proto_t cchar_unit_proto[] = {
 	{
-		"terminal",
+		"terminalold",
 		cchar_term_create,
 		cchar_term_shutdown,
 		cchar_term_reset,
@@ -45,7 +53,7 @@ struct cchar_unit_proto_t cchar_unit_proto[] = {
 		cchar_term_has_interrupt,
 	},
 	{
-		"terminal2",
+		"terminal",
 		uzdat_create,
 		uzdat_shutdown,
 		uzdat_reset,
@@ -78,9 +86,38 @@ static struct cchar_unit_proto_t * cchar_unit_proto_get(struct cchar_unit_proto_
 }
 
 // -----------------------------------------------------------------------
+static void * cchar_evloop(void *ptr)
+{
+	LOG(L_CCHR, "Starting UV loop");
+	uv_run(ioloop, UV_RUN_DEFAULT);
+	LOG(L_CCHR, "Exited UV loop");
+	uv_loop_close(ioloop);
+
+	pthread_exit(NULL);
+}
+
+// -----------------------------------------------------------------------
+static void cchar_on_async_quit(uv_async_t *handle)
+{
+	LOG(L_CCHR, "QUIT received");
+	uv_stop(ioloop);
+}
+
+// -----------------------------------------------------------------------
+static int cchar_ioloop_setup(struct cchar_chan_t *chan)
+{
+	uv_async_init(ioloop, &chan->async_quit, cchar_on_async_quit);
+	uv_handle_set_data((uv_handle_t*) &chan->async_quit, chan);
+
+	return 0;
+}
+
+// -----------------------------------------------------------------------
 void * cchar_create(int ch_num, em400_cfg *cfg)
 {
 	struct cchar_chan_t *chan = (struct cchar_chan_t *) calloc(1, sizeof(struct cchar_chan_t));
+
+	ioloop = uv_default_loop();
 
 	chan->num = ch_num;
 	for (int dev_num=0 ; dev_num<CCHAR_MAX_DEVICES ; dev_num++) {
@@ -125,7 +162,16 @@ void * cchar_create(int ch_num, em400_cfg *cfg)
 	chan->interrupting_device = NO_INTERRUPT_REPORTED;
 	pthread_mutex_unlock(&chan->int_mutex);
 
+	cchar_ioloop_setup(chan);
+	if (pthread_create(&chan->ioloop_thread, NULL, cchar_evloop, chan)) {
+		LOGERR("Failed to spawn main I/O tester thread.");
+		goto fail;
+	}
+	pthread_setname_np(chan->ioloop_thread, "ioloop");
+
 	return (void *) chan;
+fail:
+	return NULL;
 }
 
 // -----------------------------------------------------------------------
@@ -141,6 +187,10 @@ void cchar_shutdown(void *chan)
 			u->shutdown(u);
 		}
 	}
+
+	uv_async_send(&ch->async_quit);
+	pthread_join(ch->ioloop_thread, NULL);
+
 	free(chan);
 }
 
