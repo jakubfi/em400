@@ -22,6 +22,7 @@
 #include <stdio.h>
 #include <inttypes.h>
 #include <stdatomic.h>
+#include <ctype.h>
 
 #include "libem400.h"
 #include "cfg.h"
@@ -68,6 +69,9 @@ void log_cpu(unsigned component, const char *msgfmt, ...);
 #define LOG(component, format, ...) log_log(component, __func__, format, ##__VA_ARGS__)
 #define LOGERR(format, ...) log_err(__func__, format, ##__VA_ARGS__)
 #define LOGBLOB(component, txt) log_splitlog(component, __func__, txt)
+#define LOGCHAR(component, format, str, ch) \
+	if (isprint(ch)) LOG(component, format "'%c'", str, ch); \
+	else LOG(component, format "#%02x", str, ch);
 
 #ifdef __cplusplus
 }

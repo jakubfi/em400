@@ -33,6 +33,8 @@ typedef struct uzdat_s {
 	pthread_mutex_t mutex;
 	int intspec;
 	int state;
+	int dir;
+	bool xfer_busy;
 	char buf_wr;
 	int buf_rd;
 
@@ -42,14 +44,20 @@ typedef struct uzdat_s {
 	uv_async_t async_write;
 	uv_async_t async_disconnect;
 	uv_async_t async_reset;
-	uv_timer_t timer_dir_switch;
+	uv_async_t async_switch_transmit;
+	uv_timer_t timer_switch_transmit;
 } uzdat_t;
 
 enum uzdat_sates {
-	UZDAT_STATE_IDLE,
-	UZDAT_STATE_WRITE_RDY,
-	UZDAT_STATE_WRITING,
-	UZDAT_STATE_READ
+	UZDAT_STATE_OFF,
+	UZDAT_STATE_OK,
+	UZDAT_STATE_EN
+};
+
+enum uzdat_dirs {
+	UZDAT_DIR_NONE,
+	UZDAT_DIR_IN,
+	UZDAT_DIR_OUT
 };
 
 enum uzdat_commands {

@@ -85,7 +85,6 @@ static int term_buf_append(terminal_t *terminal, char *c, int len)
 	return ret;
 }
 
-
 // -----------------------------------------------------------------------
 static void alloc_buffer(uv_handle_t *handle, size_t suggested_size, uv_buf_t *buf)
 {
@@ -106,7 +105,6 @@ static void on_tcp_close(uv_handle_t* handle)
 // -----------------------------------------------------------------------
 static void on_read_delay_timeout(uv_timer_t *handle)
 {
-	LOG(L_TERM, "Terminal read delay complete");
 	terminal_t *terminal = (terminal_t*) handle->data;
 
 	if (terminal->rdbuf_count > 0) {
@@ -184,7 +182,6 @@ static void on_new_tcp_connection(uv_stream_t *handle, int status)
 // -----------------------------------------------------------------------
 static void on_write_delay_timeout(uv_timer_t *handle)
 {
-	LOG(L_TERM, "Terminal WRITE complete");
 	terminal_t *terminal = (terminal_t*) handle->data;
 
 	pthread_mutex_lock(&terminal->buf_mutex);
@@ -207,7 +204,7 @@ int terminal_write(terminal_t *terminal, char c)
 {
 	int ret;
 
-	LOG(L_TERM, "Terminal write: #%02x (%c)", c, c);
+	LOGCHAR(L_TERM, "%s: ", "Terminal write start", c);
 
 	pthread_mutex_lock(&terminal->buf_mutex);
 	if (!terminal->sender_busy) {
@@ -239,6 +236,14 @@ void terminal_reset(terminal_t *terminal)
 }
 
 // -----------------------------------------------------------------------
+void terminal_destroy(terminal_t *terminal)
+{
+	if (!terminal) return;
+
+	free(terminal);
+}
+
+// -----------------------------------------------------------------------
 terminal_t * terminal_create(void *controller, on_data_received_cb cbr, on_data_sent_cb cbs, unsigned port, unsigned speed)
 {
 	terminal_t *terminal = calloc(1, sizeof(terminal_t));
@@ -254,16 +259,16 @@ terminal_t * terminal_create(void *controller, on_data_received_cb cbr, on_data_
 	terminal->controller = controller;
 	terminal->reset = terminal_reset;
 	terminal->write = terminal_write;
+	terminal->destroy = terminal_destroy;
 	pthread_mutex_init(&terminal->buf_mutex, NULL);
 
-	static uv_tcp_t tcp_handle;
-	uv_tcp_init(ioloop, &tcp_handle);
-	uv_handle_set_data((uv_handle_t*) &tcp_handle, (void*) terminal);
+	uv_tcp_init(ioloop, &terminal->tcp_handle);
+	uv_handle_set_data((uv_handle_t*) &terminal->tcp_handle, (void*) terminal);
 	struct sockaddr_in addr;
 
 	uv_ip4_addr("127.0.0.1", terminal->port, &addr);
-	uv_tcp_bind(&tcp_handle, (const struct sockaddr*) &addr, 0);
-	int r = uv_listen((uv_stream_t*) &tcp_handle, 1, on_new_tcp_connection);
+	uv_tcp_bind(&terminal->tcp_handle, (const struct sockaddr*) &addr, 0);
+	int r = uv_listen((uv_stream_t*) &terminal->tcp_handle, 1, on_new_tcp_connection);
 	if (r) {
 		LOG(L_TERM, "Terminal TCP Listen error: %s", uv_strerror(r));
 		return NULL;
@@ -277,5 +282,6 @@ terminal_t * terminal_create(void *controller, on_data_received_cb cbr, on_data_
 
 	return terminal;
 }
+
 
 // vim: tabstop=4 shiftwidth=4 autoindent

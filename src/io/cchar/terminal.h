@@ -19,6 +19,7 @@
 #define __TERMINAL_ACTUAL_H__
 
 #include <pthread.h>
+#include <uv.h>
 
 #define TERMINAL_BUF_SIZE 1024
 
@@ -27,6 +28,7 @@ typedef struct termial_s terminal_t;
 typedef void (*on_data_received_cb)(void *ptr, char data);
 typedef void (*on_data_sent_cb)(void *ptr);
 typedef void (*reset_fn)(terminal_t *terminal);
+typedef void (*destroy_fn)(terminal_t *terminal);
 typedef int (*write_fn)(terminal_t *terminal, char data);
 
 struct termial_s {
@@ -44,12 +46,14 @@ struct termial_s {
 	uv_tcp_t *client;
 	uv_timer_t timer_write;
 	uv_timer_t timer_read;
+	uv_tcp_t tcp_handle;
 
 	on_data_received_cb on_data_received;
 	on_data_sent_cb on_data_sent;
 	void *controller;
 
 	reset_fn reset;
+	destroy_fn destroy;
 	write_fn write;
 };
 
