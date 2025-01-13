@@ -32,6 +32,7 @@ struct cchar_unit_proto_t;
 
 typedef struct cchar_unit_proto_t * (*cchar_unit_f_create)(em400_cfg *cfg, int ch_num, int dev_num);
 typedef void (*cchar_unit_f_shutdown)(struct cchar_unit_proto_t *unit);
+typedef void (*cchar_unit_f_free)(struct cchar_unit_proto_t *unit);
 typedef void (*cchar_unit_f_reset)(struct cchar_unit_proto_t *unit);
 typedef int (*cchar_unit_f_cmd)(struct cchar_unit_proto_t *unit, int dir, int cmd, uint16_t *r_arg);
 typedef int (*cchar_unit_f_intspec)(struct cchar_unit_proto_t *unit);
@@ -44,6 +45,7 @@ struct cchar_unit_proto_t {
 
 	cchar_unit_f_create create;
 	cchar_unit_f_shutdown shutdown;
+	cchar_unit_f_free free;
 	cchar_unit_f_reset reset;
 	cchar_unit_f_cmd cmd;
 	cchar_unit_f_intspec intspec;

@@ -240,6 +240,23 @@ void terminal_destroy(terminal_t *terminal)
 {
 	if (!terminal) return;
 
+	LOG(L_TERM, "Terminal shutting down");
+
+	if (terminal->client) {
+		uv_close((uv_handle_t *) terminal->client, on_tcp_close);
+	}
+	uv_close((uv_handle_t *) &terminal->timer_write, NULL);
+	uv_close((uv_handle_t *) &terminal->timer_read, NULL);
+	uv_close((uv_handle_t *) &terminal->tcp_handle, NULL);
+}
+
+// -----------------------------------------------------------------------
+void terminal_free(terminal_t *terminal)
+{
+	if (!terminal) return;
+
+	LOG(L_TERM, "Terminal freeing resources");
+
 	free(terminal);
 }
 
@@ -248,7 +265,7 @@ terminal_t * terminal_create(void *controller, on_data_received_cb cbr, on_data_
 {
 	terminal_t *terminal = calloc(1, sizeof(terminal_t));
 
-	LOG(L_TERM, "Creating terminal device: speed %i, TCP port %i", speed, port);
+	LOG(L_TERM, "Creating terminal: speed %i, TCP port %i", speed, port);
 
 	term_buf_reset(terminal);
 	terminal->client = NULL;
@@ -260,6 +277,7 @@ terminal_t * terminal_create(void *controller, on_data_received_cb cbr, on_data_
 	terminal->reset = terminal_reset;
 	terminal->write = terminal_write;
 	terminal->destroy = terminal_destroy;
+	terminal->free = terminal_free;
 	pthread_mutex_init(&terminal->buf_mutex, NULL);
 
 	uv_tcp_init(ioloop, &terminal->tcp_handle);

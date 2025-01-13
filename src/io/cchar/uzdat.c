@@ -47,7 +47,7 @@ void uzdat_on_data_sent(uzdat_t *uzdat);
 
 
 // -----------------------------------------------------------------------
-static int uzdat_ioloop_setup(uzdat_t *uzdat)
+static void uzdat_ioloop_setup(uzdat_t *uzdat)
 {
 	uv_async_init(ioloop, &uzdat->async_write, uzdat_on_async_write);
 	uv_handle_set_data((uv_handle_t*) &uzdat->async_write, uzdat);
@@ -57,8 +57,14 @@ static int uzdat_ioloop_setup(uzdat_t *uzdat)
 
 	uv_timer_init(ioloop, &uzdat->timer_switch_transmit);
 	uv_handle_set_data((uv_handle_t*) &uzdat->timer_switch_transmit, uzdat);
+}
 
-	return 0;
+// -----------------------------------------------------------------------
+static void uzdat_ioloop_teardown(uzdat_t *uzdat)
+{
+	uv_close((uv_handle_t *) &uzdat->async_write, NULL);
+	uv_close((uv_handle_t *) &uzdat->async_switch_transmit, NULL);
+	uv_close((uv_handle_t *) &uzdat->timer_switch_transmit, NULL);
 }
 
 // -----------------------------------------------------------------------
@@ -66,11 +72,11 @@ struct cchar_unit_proto_t * uzdat_create(em400_cfg *cfg, int ch_num, int dev_num
 {
 	uzdat_t *uzdat = (uzdat_t*) calloc(1, sizeof(uzdat_t));
 	if (!uzdat) {
-		LOGERR("Failed to allocate memory for terminal: %i.%i", ch_num, dev_num);
+		LOGERR("Failed to allocate memory for UZDAT: %i.%i", ch_num, dev_num);
 		return NULL;
 	}
 
-	LOG(L_UZDAT, "Creating terminal controller");
+	LOG(L_UZDAT, "Creating UZDAT terminal controller");
 
 	unsigned speed = cfg_fgetint(cfg, "dev%i.%i:speed", ch_num, dev_num);
 	unsigned port = cfg_fgetint(cfg, "dev%i.%i:port", ch_num, dev_num);
@@ -88,7 +94,7 @@ struct cchar_unit_proto_t * uzdat_create(em400_cfg *cfg, int ch_num, int dev_num
 		goto fail;
 	}
 
-	if (uzdat_ioloop_setup(uzdat)) goto fail;
+	uzdat_ioloop_setup(uzdat);
 
 	return (struct cchar_unit_proto_t *) uzdat;
 
@@ -163,12 +169,24 @@ void uzdat_shutdown(struct cchar_unit_proto_t *unit)
 {
 	if (!unit) return;
 
-	LOG(L_UZDAT, "UV Terminal shutting down");
+	LOG(L_UZDAT, "UZDAT shutting down");
 
 	uzdat_t *uzdat = (uzdat_t*) unit;
 
+	uzdat_ioloop_teardown(uzdat);
 	uzdat->terminal->destroy(uzdat->terminal);
 
+}
+
+// -----------------------------------------------------------------------
+void uzdat_free(struct cchar_unit_proto_t *unit)
+{
+	if (!unit) return;
+
+	LOG(L_UZDAT, "UZDAT freeing resources");
+
+	uzdat_t *uzdat = (uzdat_t*) unit;
+	uzdat->terminal->free(uzdat->terminal);
 	free(uzdat);
 }
 

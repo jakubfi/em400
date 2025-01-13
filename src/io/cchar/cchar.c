@@ -47,6 +47,7 @@ struct cchar_unit_proto_t cchar_unit_proto[] = {
 		"terminalold",
 		cchar_term_create,
 		cchar_term_shutdown,
+		NULL,
 		cchar_term_reset,
 		cchar_term_cmd,
 		cchar_term_intspec,
@@ -56,6 +57,7 @@ struct cchar_unit_proto_t cchar_unit_proto[] = {
 		"terminal",
 		uzdat_create,
 		uzdat_shutdown,
+		uzdat_free,
 		uzdat_reset,
 		uzdat_cmd,
 		uzdat_intspec,
@@ -65,6 +67,7 @@ struct cchar_unit_proto_t cchar_unit_proto[] = {
 		"floppy8",
 		cchar_flop8_create,
 		cchar_flop8_shutdown,
+		NULL,
 		cchar_flop8_reset,
 		cchar_flop8_cmd,
 		cchar_flop8_intspec,
@@ -86,30 +89,41 @@ static struct cchar_unit_proto_t * cchar_unit_proto_get(struct cchar_unit_proto_
 }
 
 // -----------------------------------------------------------------------
-static void * cchar_evloop(void *ptr)
+static void cchar_ioloop_teardown(struct cchar_chan_t *chan)
 {
-	LOG(L_CCHR, "Starting UV loop");
-	uv_run(ioloop, UV_RUN_DEFAULT);
-	LOG(L_CCHR, "Exited UV loop");
-	uv_loop_close(ioloop);
-
-	pthread_exit(NULL);
+	uv_close((uv_handle_t *) &chan->async_quit, NULL);
 }
 
 // -----------------------------------------------------------------------
 static void cchar_on_async_quit(uv_async_t *handle)
 {
 	LOG(L_CCHR, "QUIT received");
+
+	struct cchar_chan_t *chan = (struct cchar_chan_t *) handle->data;
+
 	uv_stop(ioloop);
 }
 
 // -----------------------------------------------------------------------
-static int cchar_ioloop_setup(struct cchar_chan_t *chan)
+static void cchar_ioloop_setup(struct cchar_chan_t *chan)
 {
+	ioloop = uv_default_loop();
+
 	uv_async_init(ioloop, &chan->async_quit, cchar_on_async_quit);
 	uv_handle_set_data((uv_handle_t*) &chan->async_quit, chan);
+}
 
-	return 0;
+// -----------------------------------------------------------------------
+static void * cchar_ioloop(void *ptr)
+{
+	LOG(L_CCHR, "Starting UV loop");
+
+	struct cchar_chan_t *chan = (struct cchar_chan_t *) ptr;
+
+	uv_run(ioloop, UV_RUN_DEFAULT);
+	LOG(L_CCHR, "Exited UV loop");
+
+	pthread_exit(NULL);
 }
 
 // -----------------------------------------------------------------------
@@ -117,7 +131,7 @@ void * cchar_create(int ch_num, em400_cfg *cfg)
 {
 	struct cchar_chan_t *chan = (struct cchar_chan_t *) calloc(1, sizeof(struct cchar_chan_t));
 
-	ioloop = uv_default_loop();
+	cchar_ioloop_setup(chan);
 
 	chan->num = ch_num;
 	for (int dev_num=0 ; dev_num<CCHAR_MAX_DEVICES ; dev_num++) {
@@ -145,6 +159,7 @@ void * cchar_create(int ch_num, em400_cfg *cfg)
 		unit->name = proto->name;
 		unit->create = proto->create;
 		unit->shutdown = proto->shutdown;
+		unit->free = proto->free;
 		unit->reset = proto->reset;
 		unit->cmd = proto->cmd;
 		unit->intspec = proto->intspec;
@@ -162,8 +177,7 @@ void * cchar_create(int ch_num, em400_cfg *cfg)
 	chan->interrupting_device = NO_INTERRUPT_REPORTED;
 	pthread_mutex_unlock(&chan->int_mutex);
 
-	cchar_ioloop_setup(chan);
-	if (pthread_create(&chan->ioloop_thread, NULL, cchar_evloop, chan)) {
+	if (pthread_create(&chan->ioloop_thread, NULL, cchar_ioloop, chan)) {
 		LOGERR("Failed to spawn main I/O tester thread.");
 		goto fail;
 	}
@@ -181,16 +195,36 @@ void cchar_shutdown(void *chan)
 
 	struct cchar_chan_t *ch = (struct cchar_chan_t *) chan;
 
+	// stop ioloop and its thread
+	uv_async_send(&ch->async_quit);
+	pthread_join(ch->ioloop_thread, NULL);
+
+	// shutdown (stop) all connected controllers
 	for (int i=0 ; i<CCHAR_MAX_DEVICES ; i++) {
 		struct cchar_unit_proto_t *u = ch->unit[i];
-		if (u) {
+		if (u && u->shutdown) {
 			u->shutdown(u);
 		}
 	}
 
-	uv_async_send(&ch->async_quit);
-	pthread_join(ch->ioloop_thread, NULL);
+	// clean ioloop resources
+	cchar_ioloop_teardown(chan);
+	// give libuv chance to cleanup handles
+	uv_run(ioloop, UV_RUN_DEFAULT);
+	int res = uv_loop_close(ioloop);
+	if (res < 0) {
+		LOG(L_CCHR, "I/O loop failed to close nicely: %s", uv_strerror(res));
+	}
 
+	// free all connected controllers' resources
+	for (int i=0 ; i<CCHAR_MAX_DEVICES ; i++) {
+		struct cchar_unit_proto_t *u = ch->unit[i];
+		if (u && u->free) {
+			u->free(u);
+		}
+	}
+
+	// free channel resources
 	free(chan);
 }
 

@@ -29,6 +29,7 @@ typedef void (*on_data_received_cb)(void *ptr, char data);
 typedef void (*on_data_sent_cb)(void *ptr);
 typedef void (*reset_fn)(terminal_t *terminal);
 typedef void (*destroy_fn)(terminal_t *terminal);
+typedef void (*free_fn)(terminal_t *terminal);
 typedef int (*write_fn)(terminal_t *terminal, char data);
 
 struct termial_s {
@@ -54,6 +55,7 @@ struct termial_s {
 
 	reset_fn reset;
 	destroy_fn destroy;
+	free_fn free;
 	write_fn write;
 };
 

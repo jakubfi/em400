@@ -76,6 +76,7 @@ enum cchar_uzdat_interrupts {
 
 struct cchar_unit_proto_t * uzdat_create(em400_cfg *cfg, int ch_num, int dev_num);
 void uzdat_shutdown(struct cchar_unit_proto_t *unit);
+void uzdat_free(struct cchar_unit_proto_t *unit);
 void uzdat_reset(struct cchar_unit_proto_t *unit);
 int uzdat_cmd(struct cchar_unit_proto_t *unit, int dir, int cmd, uint16_t *r_arg);
 int uzdat_intspec(struct cchar_unit_proto_t *unit);
