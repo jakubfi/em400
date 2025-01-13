@@ -73,14 +73,19 @@ cchar_unit_proto_t * uzdat_create(em400_cfg *cfg, int ch_num, int dev_num)
 	uzdat_t *uzdat = (uzdat_t*) calloc(1, sizeof(uzdat_t));
 	if (!uzdat) {
 		LOGERR("Failed to allocate memory for UZDAT: %i.%i", ch_num, dev_num);
-		return NULL;
+		goto fail;
 	}
 
 	LOG(L_UZDAT, "Creating UZDAT terminal controller");
 
+	const char *transport = cfg_fgetstr(cfg, "dev%i.%i:transport", ch_num, dev_num);
 	unsigned speed = cfg_fgetint(cfg, "dev%i.%i:speed", ch_num, dev_num);
 	unsigned port = cfg_fgetint(cfg, "dev%i.%i:port", ch_num, dev_num);
 
+	if (transport && strcasecmp(transport, "tcp")) {
+		LOGERR("Transport '%s' not supported. TCP only.", transport);
+		goto fail;
+	}
 	if (!port || !speed) {
 		LOGERR("TCP terminal needs port and emulated speed to be set.");
 		goto fail;
@@ -99,7 +104,7 @@ cchar_unit_proto_t * uzdat_create(em400_cfg *cfg, int ch_num, int dev_num)
 	return (cchar_unit_proto_t *) uzdat;
 
 fail:
-	uzdat_shutdown((cchar_unit_proto_t *) uzdat);
+	uzdat_free((cchar_unit_proto_t *) uzdat);
 	return NULL;
 }
 
@@ -186,7 +191,7 @@ void uzdat_free(cchar_unit_proto_t *unit)
 	LOG(L_UZDAT, "UZDAT freeing resources");
 
 	uzdat_t *uzdat = (uzdat_t*) unit;
-	uzdat->terminal->free(uzdat->terminal);
+	if (uzdat->terminal) uzdat->terminal->free(uzdat->terminal);
 	free(uzdat);
 }
 

@@ -236,18 +236,24 @@ void terminal_reset(terminal_t *terminal)
 }
 
 // -----------------------------------------------------------------------
-void terminal_destroy(terminal_t *terminal)
+static void terminal_ioloop_teardown(terminal_t *terminal)
 {
-	if (!terminal) return;
-
-	LOG(L_TERM, "Terminal shutting down");
-
 	if (terminal->client) {
 		uv_close((uv_handle_t *) terminal->client, on_tcp_close);
 	}
 	uv_close((uv_handle_t *) &terminal->timer_write, NULL);
 	uv_close((uv_handle_t *) &terminal->timer_read, NULL);
 	uv_close((uv_handle_t *) &terminal->tcp_handle, NULL);
+}
+
+// -----------------------------------------------------------------------
+void terminal_destroy(terminal_t *terminal)
+{
+	if (!terminal) return;
+
+	LOG(L_TERM, "Terminal shutting down");
+
+	terminal_ioloop_teardown(terminal);
 }
 
 // -----------------------------------------------------------------------
@@ -261,9 +267,42 @@ void terminal_free(terminal_t *terminal)
 }
 
 // -----------------------------------------------------------------------
+static int terminal_ioloop_setup(terminal_t *terminal)
+{
+	int res;
+
+	uv_tcp_init(ioloop, &terminal->tcp_handle);
+	uv_handle_set_data((uv_handle_t*) &terminal->tcp_handle, (void*) terminal);
+	struct sockaddr_in addr;
+
+	uv_ip4_addr("127.0.0.1", terminal->port, &addr);
+	res = uv_tcp_bind(&terminal->tcp_handle, (const struct sockaddr*) &addr, 0);
+	if (res) {
+		LOGERR("Terminal TCP bind to port %i error: %s", terminal->port, uv_strerror(res));
+		return -1;
+	}
+	res = uv_listen((uv_stream_t*) &terminal->tcp_handle, 1, on_new_tcp_connection);
+	if (res) {
+		LOGERR("Terminal TCP listen on port %i error: %s", terminal->port, uv_strerror(res));
+		return -1;
+	}
+
+	uv_timer_init(ioloop, &terminal->timer_write);
+	uv_handle_set_data((uv_handle_t*) &terminal->timer_write, terminal);
+
+	uv_timer_init(ioloop, &terminal->timer_read);
+	uv_handle_set_data((uv_handle_t*) &terminal->timer_read, terminal);
+
+	return 0;
+}
+
+// -----------------------------------------------------------------------
 terminal_t * terminal_create(void *controller, on_data_received_cb cbr, on_data_sent_cb cbs, unsigned port, unsigned speed)
 {
 	terminal_t *terminal = calloc(1, sizeof(terminal_t));
+	if (!terminal) {
+		goto fail;
+	}
 
 	LOG(L_TERM, "Creating terminal: speed %i, TCP port %i", speed, port);
 
@@ -278,27 +317,18 @@ terminal_t * terminal_create(void *controller, on_data_received_cb cbr, on_data_
 	terminal->write = terminal_write;
 	terminal->destroy = terminal_destroy;
 	terminal->free = terminal_free;
+
 	pthread_mutex_init(&terminal->buf_mutex, NULL);
 
-	uv_tcp_init(ioloop, &terminal->tcp_handle);
-	uv_handle_set_data((uv_handle_t*) &terminal->tcp_handle, (void*) terminal);
-	struct sockaddr_in addr;
-
-	uv_ip4_addr("127.0.0.1", terminal->port, &addr);
-	uv_tcp_bind(&terminal->tcp_handle, (const struct sockaddr*) &addr, 0);
-	int r = uv_listen((uv_stream_t*) &terminal->tcp_handle, 1, on_new_tcp_connection);
-	if (r) {
-		LOG(L_TERM, "Terminal TCP Listen error: %s", uv_strerror(r));
-		return NULL;
+	if (terminal_ioloop_setup(terminal)) {
+		goto fail;
 	}
 
-	uv_timer_init(ioloop, &terminal->timer_write);
-	uv_handle_set_data((uv_handle_t*) &terminal->timer_write, terminal);
-
-	uv_timer_init(ioloop, &terminal->timer_read);
-	uv_handle_set_data((uv_handle_t*) &terminal->timer_read, terminal);
-
 	return terminal;
+
+fail:
+	terminal_free(terminal);
+	return NULL;
 }
 
 

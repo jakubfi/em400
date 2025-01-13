@@ -105,8 +105,6 @@ static void cchar_on_async_quit(uv_async_t *handle)
 // -----------------------------------------------------------------------
 static void cchar_ioloop_setup(cchar_chan_t *chan)
 {
-	ioloop = uv_default_loop();
-
 	uv_async_init(ioloop, &chan->async_quit, cchar_on_async_quit);
 	uv_handle_set_data((uv_handle_t*) &chan->async_quit, chan);
 }
@@ -126,7 +124,7 @@ void * cchar_create(int ch_num, em400_cfg *cfg)
 {
 	cchar_chan_t *chan = (cchar_chan_t *) calloc(1, sizeof(cchar_chan_t));
 
-	cchar_ioloop_setup(chan);
+	ioloop = uv_default_loop();
 
 	chan->num = ch_num;
 	for (int dev_num=0 ; dev_num<CCHAR_MAX_DEVICES ; dev_num++) {
@@ -167,10 +165,9 @@ void * cchar_create(int ch_num, em400_cfg *cfg)
 		chan->unit[dev_num] = unit;
 	}
 
-	// clear unit interrupts
-	pthread_mutex_lock(&chan->int_mutex);
 	chan->interrupting_device = NO_INTERRUPT_REPORTED;
-	pthread_mutex_unlock(&chan->int_mutex);
+
+	cchar_ioloop_setup(chan);
 
 	if (pthread_create(&chan->ioloop_thread, NULL, cchar_ioloop, chan)) {
 		LOGERR("Failed to spawn main I/O tester thread.");
