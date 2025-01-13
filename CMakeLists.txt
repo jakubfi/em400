@@ -134,7 +134,6 @@ endif()
 
 set(SOURCES_EM400
 	src/em400.c
-	src/em400.h
 	src/log.c
 	src/log.h
 	src/log_io.h
@@ -182,8 +181,6 @@ set(SOURCES_EM400
 	src/io/chan.h
 	src/io/cchar/cchar.c
 	src/io/cchar/cchar.h
-	src/io/cchar/term.c
-	src/io/cchar/term.h
 	src/io/cchar/uzdat.c
 	src/io/cchar/uzdat.h
 	src/io/cchar/terminal.c

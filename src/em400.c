@@ -32,12 +32,9 @@
 #include "cpu/clock.h"
 #include "io/io.h"
 
-#include "em400.h"
 #include "cfg.h"
 
 #include "log.h"
-
-int em400_console = CONSOLE_DEBUGGER;
 
 struct ui *ui;
 

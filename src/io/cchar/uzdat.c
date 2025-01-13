@@ -30,7 +30,6 @@
 #include <stdatomic.h>
 #include <uv.h>
 
-#include "em400.h"
 #include "io/defs.h"
 #include "io/cchar/uzdat.h"
 #include "io/cchar/terminal.h"

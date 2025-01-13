@@ -25,7 +25,6 @@
 #include <pthread.h>
 #include <stdatomic.h>
 
-#include "em400.h"
 #include "io/defs.h"
 #include "io/cchar/cchar.h"
 #include "io/cchar/flop8.h"

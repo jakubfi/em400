@@ -41,7 +41,6 @@
 #include "io/defs.h"
 #include "io/io.h"
 
-#include "em400.h"
 #include "libem400.h"
 #include "utils/utils.h"
 #include "log.h"

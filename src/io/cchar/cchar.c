@@ -30,7 +30,6 @@
 #include "io/io.h"
 #include "io/chan.h"
 #include "io/cchar/cchar.h"
-#include "io/cchar/term.h"
 #include "io/cchar/uzdat.h"
 #include "io/cchar/flop8.h"
 
@@ -43,16 +42,6 @@ uv_loop_t *ioloop;
 
 // unit prototypes
 cchar_unit_proto_t cchar_unit_proto[] = {
-	{
-		"terminalold",
-		cchar_term_create,
-		cchar_term_shutdown,
-		NULL,
-		cchar_term_reset,
-		cchar_term_cmd,
-		cchar_term_intspec,
-		cchar_term_has_interrupt,
-	},
 	{
 		"terminal",
 		uzdat_create,

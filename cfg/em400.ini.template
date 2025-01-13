@@ -137,9 +137,9 @@ channel_15 = char
 #
 # Every device section requires a device type to be specified. Currently supported types are:
 #  * terminal (only for "char" channel type) - serial console terminal
+#  * floppy8 (only for "char" channel type) - 8" floppy drive (uses raw images)
 #  * winchester (only for "multix" channel type) - hard disk drive (uses e4i disk images)
 #  * floppy (in development, only for "multix" channel type) - 5" floppy drive
-#  * floppy8 (in development, only for "char" channel type) - 8" floppy drive (uses raw images)
 #
 # Other options are specific for each device.
 # Below are example device configurations.
@@ -149,13 +149,6 @@ channel_15 = char
 type = terminal
 transport = tcp
 port = 32000
-
-# Terminal connected to /dev/ttyS0 serial port with speed of 9600 baud (8N1)
-[dev1.5]
-type = terminal
-transport = serial
-device = /dev/ttyS0
-speed = 9600
 
 # 5" floppy drive with floppy1.e4i image
 [dev15.20]
