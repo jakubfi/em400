@@ -28,19 +28,19 @@
 #define CCHAR_MAX_DEVICES 8
 #define CCHAR_INT_NONE 9999 // no interrupt (em400 marker)
 
-struct cchar_unit_proto_t;
+typedef struct cchar_unit_proto_s cchar_unit_proto_t;
 
-typedef struct cchar_unit_proto_t * (*cchar_unit_f_create)(em400_cfg *cfg, int ch_num, int dev_num);
-typedef void (*cchar_unit_f_shutdown)(struct cchar_unit_proto_t *unit);
-typedef void (*cchar_unit_f_free)(struct cchar_unit_proto_t *unit);
-typedef void (*cchar_unit_f_reset)(struct cchar_unit_proto_t *unit);
-typedef int (*cchar_unit_f_cmd)(struct cchar_unit_proto_t *unit, int dir, int cmd, uint16_t *r_arg);
-typedef int (*cchar_unit_f_intspec)(struct cchar_unit_proto_t *unit);
-typedef bool (*cchar_unit_f_has_interrupt)(struct cchar_unit_proto_t *unit);
+typedef cchar_unit_proto_t * (*cchar_unit_f_create)(em400_cfg *cfg, int ch_num, int dev_num);
+typedef void (*cchar_unit_f_shutdown)(cchar_unit_proto_t *unit);
+typedef void (*cchar_unit_f_free)(cchar_unit_proto_t *unit);
+typedef void (*cchar_unit_f_reset)(cchar_unit_proto_t *unit);
+typedef int (*cchar_unit_f_cmd)(cchar_unit_proto_t *unit, int dir, int cmd, uint16_t *r_arg);
+typedef int (*cchar_unit_f_intspec)(cchar_unit_proto_t *unit);
+typedef bool (*cchar_unit_f_has_interrupt)(cchar_unit_proto_t *unit);
 
-struct cchar_chan_t;
+typedef struct cchar_chan_s cchar_chan_t;
 
-struct cchar_unit_proto_t {
+struct cchar_unit_proto_s {
 	const char *name;
 
 	cchar_unit_f_create create;
@@ -51,11 +51,11 @@ struct cchar_unit_proto_t {
 	cchar_unit_f_intspec intspec;
 	cchar_unit_f_has_interrupt has_interrupt;
 
-	struct cchar_chan_t *chan;
+	cchar_chan_t *chan;
 	int num;
 };
 
-struct cchar_chan_t {
+struct cchar_chan_s {
 	int num;
 
 	pthread_mutex_t int_mutex;
@@ -64,7 +64,7 @@ struct cchar_chan_t {
 	int was_en;
 	int untransmitted;
 
-	struct cchar_unit_proto_t *unit[CCHAR_MAX_DEVICES];
+	cchar_unit_proto_t *unit[CCHAR_MAX_DEVICES];
 
 	pthread_t ioloop_thread;
 	uv_async_t async_quit;
@@ -73,8 +73,8 @@ struct cchar_chan_t {
 void *cchar_create(int num, em400_cfg *cfg);
 void cchar_shutdown(void *chan);
 void cchar_reset(void *chan);
-void cchar_int_trigger(struct cchar_chan_t *chan);
-void cchar_int_cancel(struct cchar_chan_t *chan, int unit_n);
+void cchar_int_trigger(cchar_chan_t *chan);
+void cchar_int_cancel(cchar_chan_t *chan, int unit_n);
 int cchar_cmd(void *chan, int dir, uint16_t n_arg, uint16_t *r_arg);
 
 extern struct chan_drv cchar_chan_driver;

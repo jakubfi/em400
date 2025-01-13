@@ -102,7 +102,7 @@ enum f8_sides {
 #define INITIAL_ADDRESS (F8_DRV_0 | F8_SIDE_A | F8_ADDR_TRACK(1) | F8_ADDR_SECTOR(1))
 
 typedef struct flop8 {
-	struct cchar_unit_proto_t proto;
+	cchar_unit_proto_t proto;
 	char *image[F8_DRIVE_CNT];
 	FILE *f[F8_DRIVE_CNT];
 	int drive, side, track, sector;
@@ -133,7 +133,7 @@ static void flop8_set_address(flop8 *u, uint16_t addr)
 }
 
 // -----------------------------------------------------------------------
-struct cchar_unit_proto_t * cchar_flop8_create(em400_cfg *cfg, int ch_num, int dev_num)
+cchar_unit_proto_t * cchar_flop8_create(em400_cfg *cfg, int ch_num, int dev_num)
 {
 	flop8 *flop = (flop8 *) calloc(1, sizeof(flop8));
 	if (!flop) {
@@ -183,10 +183,10 @@ struct cchar_unit_proto_t * cchar_flop8_create(em400_cfg *cfg, int ch_num, int d
 
 	flop8_reset_state(flop);
 
-	return (struct cchar_unit_proto_t *) flop;
+	return (cchar_unit_proto_t *) flop;
 
 fail:
-	cchar_flop8_shutdown((struct cchar_unit_proto_t*) flop);
+	cchar_flop8_shutdown((cchar_unit_proto_t *) flop);
 	return NULL;
 }
 
@@ -203,7 +203,7 @@ static void flop8_reset_state(flop8 *flop)
 }
 
 // -----------------------------------------------------------------------
-void cchar_flop8_shutdown(struct cchar_unit_proto_t *unit)
+void cchar_flop8_shutdown(cchar_unit_proto_t *unit)
 {
 	flop8 *flop = (flop8 *) unit;
 	if (!flop) return;
@@ -225,7 +225,7 @@ void cchar_flop8_shutdown(struct cchar_unit_proto_t *unit)
 }
 
 // -----------------------------------------------------------------------
-void cchar_flop8_reset(struct cchar_unit_proto_t *unit)
+void cchar_flop8_reset(cchar_unit_proto_t *unit)
 {
 	flop8 *flop = (flop8 *) unit;
 	LOG(L_FLOP, "reset");
@@ -406,14 +406,14 @@ static void * flop8_worker_loop(void *ptr)
 }
 
 // -----------------------------------------------------------------------
-bool cchar_flop8_has_interrupt(struct cchar_unit_proto_t *unit)
+bool cchar_flop8_has_interrupt(cchar_unit_proto_t *unit)
 {
 	flop8 *flop = (flop8 *) unit;
 	return atomic_load_explicit(&flop->interrupts, memory_order_acquire) ? true : false;
 }
 
 // -----------------------------------------------------------------------
-int cchar_flop8_intspec(struct cchar_unit_proto_t *unit)
+int cchar_flop8_intspec(cchar_unit_proto_t *unit)
 {
 	flop8 *flop = (flop8 *) unit;
 
@@ -432,7 +432,7 @@ int cchar_flop8_intspec(struct cchar_unit_proto_t *unit)
 }
 
 // -----------------------------------------------------------------------
-static int f8_cmd_read(struct cchar_unit_proto_t *unit, uint16_t *r_arg)
+static int f8_cmd_read(cchar_unit_proto_t *unit, uint16_t *r_arg)
 {
 	flop8 *flop = (flop8 *) unit;
 	int io_ret;
@@ -468,7 +468,7 @@ static int f8_cmd_read(struct cchar_unit_proto_t *unit, uint16_t *r_arg)
 }
 
 // -----------------------------------------------------------------------
-static int f8_cmd_write(struct cchar_unit_proto_t *unit, uint16_t *r_arg)
+static int f8_cmd_write(cchar_unit_proto_t *unit, uint16_t *r_arg)
 {
 	flop8 *flop = (flop8 *) unit;
 	int io_ret;
@@ -509,7 +509,7 @@ static int f8_cmd_write(struct cchar_unit_proto_t *unit, uint16_t *r_arg)
 }
 
 // -----------------------------------------------------------------------
-static int f8_cmd_control(struct cchar_unit_proto_t *unit, uint16_t *r_arg, int cmd)
+static int f8_cmd_control(cchar_unit_proto_t *unit, uint16_t *r_arg, int cmd)
 {
 	flop8 *flop = (flop8 *) unit;
 	int io_ret;
@@ -534,7 +534,7 @@ static int f8_cmd_control(struct cchar_unit_proto_t *unit, uint16_t *r_arg, int 
 }
 
 // -----------------------------------------------------------------------
-static int f8_cmd_reset(struct cchar_unit_proto_t *unit)
+static int f8_cmd_reset(cchar_unit_proto_t *unit)
 {
 	LOG(L_FLOP, "command: reset");
 	flop8 *flop = (flop8*) unit;
@@ -553,7 +553,7 @@ static int f8_cmd_spu()
 }
 
 // -----------------------------------------------------------------------
-static int f8_cmd_detach(struct cchar_unit_proto_t *unit)
+static int f8_cmd_detach(cchar_unit_proto_t *unit)
 {
 	LOG(L_FLOP, "command: detach");
 	flop8 *flop = (flop8 *) unit;
@@ -600,7 +600,7 @@ static int f8_cmd_detach(struct cchar_unit_proto_t *unit)
 }
 
 // -----------------------------------------------------------------------
-int cchar_flop8_cmd(struct cchar_unit_proto_t *unit, int dir, int cmd, uint16_t *r_arg)
+int cchar_flop8_cmd(cchar_unit_proto_t *unit, int dir, int cmd, uint16_t *r_arg)
 {
 	if (dir == IO_IN) {
 		switch (cmd) {

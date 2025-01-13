@@ -38,9 +38,9 @@
 static int fdb_callback(void *user_ctx, int condition);
 
 // -----------------------------------------------------------------------
-struct cchar_unit_proto_t * cchar_term_create(em400_cfg *cfg, int ch_num, int dev_num)
+cchar_unit_proto_t * cchar_term_create(em400_cfg *cfg, int ch_num, int dev_num)
 {
-	struct cchar_unit_term_t *term = (struct cchar_unit_term_t *) calloc(1, sizeof(struct cchar_unit_term_t));
+	cchar_unit_term_t *term = (cchar_unit_term_t *) calloc(1, sizeof(cchar_unit_term_t));
 	if (!term) {
 		LOGERR("Failed to allocate memory for terminal: %i.%i", ch_num, dev_num);
 		return NULL;
@@ -90,17 +90,17 @@ struct cchar_unit_proto_t * cchar_term_create(em400_cfg *cfg, int ch_num, int de
 
 	fdb_set_callback(term->fdbridge, fdb_callback, term);
 
-	return (struct cchar_unit_proto_t *) term;
+	return (cchar_unit_proto_t *) term;
 
 fail:
-	cchar_term_shutdown((struct cchar_unit_proto_t*) term);
+	cchar_term_shutdown((cchar_unit_proto_t *) term);
 	return NULL;
 }
 
 // -----------------------------------------------------------------------
-void cchar_term_shutdown(struct cchar_unit_proto_t *unit)
+void cchar_term_shutdown(cchar_unit_proto_t *unit)
 {
-	struct cchar_unit_term_t *term = (struct cchar_unit_term_t *) unit;
+	cchar_unit_term_t *term = (cchar_unit_term_t *) unit;
 	if (!term) return;
 
 	if (term->fdbridge) fdb_close(term->fdbridge);
@@ -108,17 +108,17 @@ void cchar_term_shutdown(struct cchar_unit_proto_t *unit)
 }
 
 // -----------------------------------------------------------------------
-void cchar_term_reset(struct cchar_unit_proto_t *unit)
+void cchar_term_reset(cchar_unit_proto_t *unit)
 {
 	LOG(L_TERM, "Command: reset");
-	struct cchar_unit_term_t *term = (struct cchar_unit_term_t *) unit;
+	cchar_unit_term_t *term = (cchar_unit_term_t *) unit;
 	fdb_reset(term->fdbridge);
 }
 
 // -----------------------------------------------------------------------
 static int fdb_callback(void *ctx, int condition)
 {
-	struct cchar_unit_term_t *term = (struct cchar_unit_term_t*) ctx;
+	cchar_unit_term_t *term = (cchar_unit_term_t*) ctx;
 	int interrupt = CCHAR_TERM_INT_OUTDATED;
 
 	switch (condition) {
@@ -143,9 +143,9 @@ static int fdb_callback(void *ctx, int condition)
 }
 
 // -----------------------------------------------------------------------
-int cchar_term_intspec(struct cchar_unit_proto_t *unit)
+int cchar_term_intspec(cchar_unit_proto_t *unit)
 {
-	struct cchar_unit_term_t *term = (struct cchar_unit_term_t*) unit;
+	cchar_unit_term_t *term = (cchar_unit_term_t*) unit;
 	int spec = atomic_load_explicit(&term->spec, memory_order_acquire);
 	atomic_store_explicit(&term->spec, CCHAR_TERM_INT_OUTDATED, memory_order_release);
 
@@ -153,14 +153,14 @@ int cchar_term_intspec(struct cchar_unit_proto_t *unit)
 }
 
 // -----------------------------------------------------------------------
-bool cchar_term_has_interrupt(struct cchar_unit_proto_t *unit)
+bool cchar_term_has_interrupt(cchar_unit_proto_t *unit)
 {
-	struct cchar_unit_term_t *term = (struct cchar_unit_term_t*) unit;
+	cchar_unit_term_t *term = (cchar_unit_term_t*) unit;
 	return atomic_load_explicit(&term->spec, memory_order_acquire) ? true : false;
 }
 
 // -----------------------------------------------------------------------
-static int cchar_term_read(struct cchar_unit_term_t *term, uint16_t *r_arg)
+static int cchar_term_read(cchar_unit_term_t *term, uint16_t *r_arg)
 {
 	int data = fdb_read(term->fdbridge);
 
@@ -180,7 +180,7 @@ static int cchar_term_read(struct cchar_unit_term_t *term, uint16_t *r_arg)
 }
 
 // -----------------------------------------------------------------------
-static int cchar_term_write(struct cchar_unit_term_t *term, uint16_t *r_arg)
+static int cchar_term_write(cchar_unit_term_t *term, uint16_t *r_arg)
 {
 	int res = IO_OK;
 	char data = *r_arg & 0xff;
@@ -199,7 +199,7 @@ static int cchar_term_write(struct cchar_unit_term_t *term, uint16_t *r_arg)
 }
 
 // -----------------------------------------------------------------------
-static int cchar_term_disconnect(struct cchar_unit_term_t *term)
+static int cchar_term_disconnect(cchar_unit_term_t *term)
 {
 	LOG(L_TERM, "Command: disconnect");
 	fdb_await_read(term->fdbridge);
@@ -207,9 +207,9 @@ static int cchar_term_disconnect(struct cchar_unit_term_t *term)
 }
 
 // -----------------------------------------------------------------------
-int cchar_term_cmd(struct cchar_unit_proto_t *unit, int dir, int cmd, uint16_t *r_arg)
+int cchar_term_cmd(cchar_unit_proto_t *unit, int dir, int cmd, uint16_t *r_arg)
 {
-	struct cchar_unit_term_t *term = (struct cchar_unit_term_t *) unit;
+	cchar_unit_term_t *term = (cchar_unit_term_t *) unit;
 
 	if (dir == IO_IN) {
 		switch (cmd) {

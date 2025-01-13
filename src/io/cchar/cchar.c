@@ -42,7 +42,7 @@ uv_loop_t *ioloop;
 #define NO_INTERRUPT_REPORTED -1
 
 // unit prototypes
-struct cchar_unit_proto_t cchar_unit_proto[] = {
+cchar_unit_proto_t cchar_unit_proto[] = {
 	{
 		"terminalold",
 		cchar_term_create,
@@ -77,7 +77,7 @@ struct cchar_unit_proto_t cchar_unit_proto[] = {
 };
 
 // -----------------------------------------------------------------------
-static struct cchar_unit_proto_t * cchar_unit_proto_get(struct cchar_unit_proto_t *proto, const char *name)
+static cchar_unit_proto_t * cchar_unit_proto_get(cchar_unit_proto_t *proto, const char *name)
 {
 	while (proto && proto->name) {
 		if (strcasecmp(name, proto->name) == 0) {
@@ -89,7 +89,7 @@ static struct cchar_unit_proto_t * cchar_unit_proto_get(struct cchar_unit_proto_
 }
 
 // -----------------------------------------------------------------------
-static void cchar_ioloop_teardown(struct cchar_chan_t *chan)
+static void cchar_ioloop_teardown(cchar_chan_t *chan)
 {
 	uv_close((uv_handle_t *) &chan->async_quit, NULL);
 }
@@ -99,13 +99,11 @@ static void cchar_on_async_quit(uv_async_t *handle)
 {
 	LOG(L_CCHR, "QUIT received");
 
-	struct cchar_chan_t *chan = (struct cchar_chan_t *) handle->data;
-
 	uv_stop(ioloop);
 }
 
 // -----------------------------------------------------------------------
-static void cchar_ioloop_setup(struct cchar_chan_t *chan)
+static void cchar_ioloop_setup(cchar_chan_t *chan)
 {
 	ioloop = uv_default_loop();
 
@@ -117,9 +115,6 @@ static void cchar_ioloop_setup(struct cchar_chan_t *chan)
 static void * cchar_ioloop(void *ptr)
 {
 	LOG(L_CCHR, "Starting UV loop");
-
-	struct cchar_chan_t *chan = (struct cchar_chan_t *) ptr;
-
 	uv_run(ioloop, UV_RUN_DEFAULT);
 	LOG(L_CCHR, "Exited UV loop");
 
@@ -129,7 +124,7 @@ static void * cchar_ioloop(void *ptr)
 // -----------------------------------------------------------------------
 void * cchar_create(int ch_num, em400_cfg *cfg)
 {
-	struct cchar_chan_t *chan = (struct cchar_chan_t *) calloc(1, sizeof(struct cchar_chan_t));
+	cchar_chan_t *chan = (cchar_chan_t *) calloc(1, sizeof(cchar_chan_t));
 
 	cchar_ioloop_setup(chan);
 
@@ -138,7 +133,7 @@ void * cchar_create(int ch_num, em400_cfg *cfg)
 		// find unit prototype
 		const char *unit_name = cfg_fgetstr(cfg, "dev%i.%i:type", ch_num, dev_num);
 		if (!unit_name) continue;
-		struct cchar_unit_proto_t *proto = cchar_unit_proto_get(cchar_unit_proto, unit_name);
+		cchar_unit_proto_t *proto = cchar_unit_proto_get(cchar_unit_proto, unit_name);
 		if (!proto) {
 			LOGERR("Unknown device type or device incompatibile with channel: %s.", unit_name);
 			free(chan);
@@ -146,7 +141,7 @@ void * cchar_create(int ch_num, em400_cfg *cfg)
 		}
 
 		// create unit based on prototype
-		struct cchar_unit_proto_t *unit = proto->create(cfg, ch_num, dev_num);
+		cchar_unit_proto_t *unit = proto->create(cfg, ch_num, dev_num);
 		if (!unit) {
 			LOGERR("Failed to create unit: %s.", unit_name);
 			free(chan);
@@ -193,7 +188,7 @@ void cchar_shutdown(void *chan)
 {
 	if (!chan) return;
 
-	struct cchar_chan_t *ch = (struct cchar_chan_t *) chan;
+	cchar_chan_t *ch = (cchar_chan_t *) chan;
 
 	// stop ioloop and its thread
 	uv_async_send(&ch->async_quit);
@@ -201,7 +196,7 @@ void cchar_shutdown(void *chan)
 
 	// shutdown (stop) all connected controllers
 	for (int i=0 ; i<CCHAR_MAX_DEVICES ; i++) {
-		struct cchar_unit_proto_t *u = ch->unit[i];
+		cchar_unit_proto_t *u = ch->unit[i];
 		if (u && u->shutdown) {
 			u->shutdown(u);
 		}
@@ -218,7 +213,7 @@ void cchar_shutdown(void *chan)
 
 	// free all connected controllers' resources
 	for (int i=0 ; i<CCHAR_MAX_DEVICES ; i++) {
-		struct cchar_unit_proto_t *u = ch->unit[i];
+		cchar_unit_proto_t *u = ch->unit[i];
 		if (u && u->free) {
 			u->free(u);
 		}
@@ -233,10 +228,10 @@ void cchar_reset(void *chan)
 {
 	if (!chan) return;
 
-	struct cchar_chan_t *ch = (struct cchar_chan_t *) chan;
+	cchar_chan_t *ch = (cchar_chan_t *) chan;
 
 	for (int i=0 ; i<CCHAR_MAX_DEVICES ; i++) {
-		struct cchar_unit_proto_t *u = ch->unit[i];
+		cchar_unit_proto_t *u = ch->unit[i];
 		if (u) {
 			u->reset(u);
 		}
@@ -248,7 +243,7 @@ void cchar_reset(void *chan)
 }
 
 // -----------------------------------------------------------------------
-void cchar_int_trigger(struct cchar_chan_t *chan)
+void cchar_int_trigger(cchar_chan_t *chan)
 {
 	pthread_mutex_lock(&chan->int_mutex);
 	if (chan->interrupting_device != NO_INTERRUPT_REPORTED) {
@@ -257,7 +252,7 @@ void cchar_int_trigger(struct cchar_chan_t *chan)
 	} else {
 		// check if any unit reported interrupt
 		for (int unit_n=0 ; unit_n<CCHAR_MAX_DEVICES ; unit_n++) {
-			struct cchar_unit_proto_t *unit = chan->unit[unit_n];
+			cchar_unit_proto_t *unit = chan->unit[unit_n];
 			if (unit && unit->has_interrupt(unit)) {
 				LOG(L_CCHR, "CCHAR (ch:%i) reporting interrupt from unit %i", chan->num, unit_n);
 				chan->interrupting_device = unit_n;
@@ -271,7 +266,7 @@ void cchar_int_trigger(struct cchar_chan_t *chan)
 }
 
 // -----------------------------------------------------------------------
-void cchar_int_cancel(struct cchar_chan_t *chan, int unit_n)
+void cchar_int_cancel(cchar_chan_t *chan, int unit_n)
 {
 	LOG(L_CCHR, "CCHAR (ch:%i) unit: %i cancel interrupt", chan->num, unit_n);
 
@@ -285,11 +280,11 @@ void cchar_int_cancel(struct cchar_chan_t *chan, int unit_n)
 }
 
 // -----------------------------------------------------------------------
-static int cchar_cmd_intspec(struct cchar_chan_t *chan, uint16_t *r_arg)
+static int cchar_cmd_intspec(cchar_chan_t *chan, uint16_t *r_arg)
 {
 	pthread_mutex_lock(&chan->int_mutex);
 	if (chan->interrupting_device != NO_INTERRUPT_REPORTED) {
-		struct cchar_unit_proto_t *unit = chan->unit[chan->interrupting_device];
+		cchar_unit_proto_t *unit = chan->unit[chan->interrupting_device];
 		int intspec = unit->intspec(unit);
 		LOG(L_CCHR, "CCHAR (ch:%i) device %i interrupt specification: %i", chan->num, chan->interrupting_device, intspec);
 		*r_arg = (intspec << 8) | (chan->interrupting_device << 5);
@@ -307,7 +302,7 @@ static int cchar_cmd_intspec(struct cchar_chan_t *chan, uint16_t *r_arg)
 
 
 // -----------------------------------------------------------------------
-static int cchar_chan_cmd(struct cchar_chan_t *chan, int dir, int cmd, int u_num, uint16_t *r_arg)
+static int cchar_chan_cmd(cchar_chan_t *chan, int dir, int cmd, int u_num, uint16_t *r_arg)
 {
 	if (dir == IO_OU) {
 		switch (cmd) {
@@ -359,12 +354,12 @@ int cchar_cmd(void *ch, int dir, uint16_t n_arg, uint16_t *r_arg)
 	const unsigned u_num = (n_arg & 0b0000000011100000) >> 5;
 	const unsigned is_chan_cmd = (cmd & 0b111000) == 0;
 
-	struct cchar_chan_t *chan = (struct cchar_chan_t *) ch;
+	cchar_chan_t *chan = (cchar_chan_t *) ch;
 
 	if (is_chan_cmd) {
 		return cchar_chan_cmd(chan, dir, cmd, u_num, r_arg);
 	} else {
-		struct cchar_unit_proto_t *u = (struct cchar_unit_proto_t *) chan->unit[u_num];
+		cchar_unit_proto_t *u = (cchar_unit_proto_t *) chan->unit[u_num];
 		if (u) {
 			return u->cmd(u, dir, cmd, r_arg);
 		} else {

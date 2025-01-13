@@ -28,7 +28,7 @@
 
 
 typedef struct uzdat_s {
-	struct cchar_unit_proto_t proto;
+	struct cchar_unit_proto_s proto;
 	pthread_mutex_t mutex;
 	int intspec;
 	int state;
@@ -74,13 +74,13 @@ enum cchar_uzdat_interrupts {
 	UZDAT_INT_TOO_SLOW	= 5, // transmission too slow
 };
 
-struct cchar_unit_proto_t * uzdat_create(em400_cfg *cfg, int ch_num, int dev_num);
-void uzdat_shutdown(struct cchar_unit_proto_t *unit);
-void uzdat_free(struct cchar_unit_proto_t *unit);
-void uzdat_reset(struct cchar_unit_proto_t *unit);
-int uzdat_cmd(struct cchar_unit_proto_t *unit, int dir, int cmd, uint16_t *r_arg);
-int uzdat_intspec(struct cchar_unit_proto_t *unit);
-bool uzdat_has_interrupt(struct cchar_unit_proto_t *unit);
+struct cchar_unit_proto_s * uzdat_create(em400_cfg *cfg, int ch_num, int dev_num);
+void uzdat_shutdown(struct cchar_unit_proto_s *unit);
+void uzdat_free(struct cchar_unit_proto_s *unit);
+void uzdat_reset(struct cchar_unit_proto_s *unit);
+int uzdat_cmd(struct cchar_unit_proto_s *unit, int dir, int cmd, uint16_t *r_arg);
+int uzdat_intspec(struct cchar_unit_proto_s *unit);
+bool uzdat_has_interrupt(struct cchar_unit_proto_s *unit);
 
 
 #endif

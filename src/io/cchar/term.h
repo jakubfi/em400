@@ -24,9 +24,10 @@
 #include "io/cchar/cchar.h"
 #include "cfg.h"
 
+typedef struct cchar_unit_term_s cchar_unit_term_t;
 
-struct cchar_unit_term_t {
-	struct cchar_unit_proto_t proto;
+struct cchar_unit_term_s {
+	cchar_unit_proto_t proto;
 	struct fdb *fdbridge;
 	int spec;
 };
@@ -47,12 +48,12 @@ enum char_term_interrupts {
 	CCHAR_TERM_INT_TOO_SLOW	= 5, // transmission too slow
 };
 
-struct cchar_unit_proto_t * cchar_term_create(em400_cfg *cfg, int ch_num, int dev_num);
-void cchar_term_shutdown(struct cchar_unit_proto_t *unit);
-void cchar_term_reset(struct cchar_unit_proto_t *unit);
-int cchar_term_cmd(struct cchar_unit_proto_t *unit, int dir, int cmd, uint16_t *r_arg);
-int cchar_term_intspec(struct cchar_unit_proto_t *unit);
-bool cchar_term_has_interrupt(struct cchar_unit_proto_t *unit);
+cchar_unit_proto_t * cchar_term_create(em400_cfg *cfg, int ch_num, int dev_num);
+void cchar_term_shutdown(cchar_unit_proto_t *unit);
+void cchar_term_reset(cchar_unit_proto_t *unit);
+int cchar_term_cmd(cchar_unit_proto_t *unit, int dir, int cmd, uint16_t *r_arg);
+int cchar_term_intspec(cchar_unit_proto_t *unit);
+bool cchar_term_has_interrupt(cchar_unit_proto_t *unit);
 
 
 #endif

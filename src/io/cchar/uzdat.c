@@ -68,7 +68,7 @@ static void uzdat_ioloop_teardown(uzdat_t *uzdat)
 }
 
 // -----------------------------------------------------------------------
-struct cchar_unit_proto_t * uzdat_create(em400_cfg *cfg, int ch_num, int dev_num)
+cchar_unit_proto_t * uzdat_create(em400_cfg *cfg, int ch_num, int dev_num)
 {
 	uzdat_t *uzdat = (uzdat_t*) calloc(1, sizeof(uzdat_t));
 	if (!uzdat) {
@@ -86,7 +86,7 @@ struct cchar_unit_proto_t * uzdat_create(em400_cfg *cfg, int ch_num, int dev_num
 		goto fail;
 	}
 
-	uzdat_reset((struct cchar_unit_proto_t *) uzdat);
+	uzdat_reset((cchar_unit_proto_t *) uzdat);
 
 	uzdat->terminal = terminal_create(uzdat, (void*) uzdat_on_data_received, (void*) uzdat_on_data_sent, port, speed);
 	if (!uzdat->terminal) {
@@ -96,10 +96,10 @@ struct cchar_unit_proto_t * uzdat_create(em400_cfg *cfg, int ch_num, int dev_num
 
 	uzdat_ioloop_setup(uzdat);
 
-	return (struct cchar_unit_proto_t *) uzdat;
+	return (cchar_unit_proto_t *) uzdat;
 
 fail:
-	uzdat_shutdown((struct cchar_unit_proto_t*) uzdat);
+	uzdat_shutdown((cchar_unit_proto_t *) uzdat);
 	return NULL;
 }
 
@@ -165,7 +165,7 @@ static void uzdat_on_async_write(uv_async_t *handle)
 }
 
 // -----------------------------------------------------------------------
-void uzdat_shutdown(struct cchar_unit_proto_t *unit)
+void uzdat_shutdown(cchar_unit_proto_t *unit)
 {
 	if (!unit) return;
 
@@ -179,7 +179,7 @@ void uzdat_shutdown(struct cchar_unit_proto_t *unit)
 }
 
 // -----------------------------------------------------------------------
-void uzdat_free(struct cchar_unit_proto_t *unit)
+void uzdat_free(cchar_unit_proto_t *unit)
 {
 	if (!unit) return;
 
@@ -191,7 +191,7 @@ void uzdat_free(struct cchar_unit_proto_t *unit)
 }
 
 // -----------------------------------------------------------------------
-int uzdat_intspec(struct cchar_unit_proto_t *unit)
+int uzdat_intspec(cchar_unit_proto_t *unit)
 {
 	LOG(L_UZDAT, "Command: INTSPEC");
 	uzdat_t *uzdat = (uzdat_t*) unit;
@@ -206,7 +206,7 @@ int uzdat_intspec(struct cchar_unit_proto_t *unit)
 }
 
 // -----------------------------------------------------------------------
-bool uzdat_has_interrupt(struct cchar_unit_proto_t *unit)
+bool uzdat_has_interrupt(cchar_unit_proto_t *unit)
 {
 	uzdat_t *uzdat = (uzdat_t*) unit;
 	return atomic_load_explicit(&uzdat->intspec, memory_order_acquire) ? true : false;
@@ -335,7 +335,7 @@ static int uzdat_disconnect(uzdat_t *uzdat)
 }
 
 // -----------------------------------------------------------------------
-void uzdat_reset(struct cchar_unit_proto_t *unit)
+void uzdat_reset(cchar_unit_proto_t *unit)
 {
 	uzdat_t *uzdat = (uzdat_t*) unit;
 
@@ -348,7 +348,7 @@ void uzdat_reset(struct cchar_unit_proto_t *unit)
 }
 
 // -----------------------------------------------------------------------
-int uzdat_cmd(struct cchar_unit_proto_t *unit, int dir, int cmd, uint16_t *r_arg)
+int uzdat_cmd(cchar_unit_proto_t *unit, int dir, int cmd, uint16_t *r_arg)
 {
 	uzdat_t *uzdat = (uzdat_t*) unit;
 

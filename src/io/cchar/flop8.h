@@ -21,12 +21,12 @@
 #include "io/cchar/cchar.h"
 #include "cfg.h"
 
-struct cchar_unit_proto_t * cchar_flop8_create(em400_cfg *cfg, int ch_num, int dev_num);
-void cchar_flop8_shutdown(struct cchar_unit_proto_t *unit);
-void cchar_flop8_reset(struct cchar_unit_proto_t *unit);
-int cchar_flop8_cmd(struct cchar_unit_proto_t *unit, int dir, int cmd, uint16_t *r_arg);
-int cchar_flop8_intspec(struct cchar_unit_proto_t *unit);
-bool cchar_flop8_has_interrupt(struct cchar_unit_proto_t *unit);
+cchar_unit_proto_t * cchar_flop8_create(em400_cfg *cfg, int ch_num, int dev_num);
+void cchar_flop8_shutdown(cchar_unit_proto_t *unit);
+void cchar_flop8_reset(cchar_unit_proto_t *unit);
+int cchar_flop8_cmd(cchar_unit_proto_t *unit, int dir, int cmd, uint16_t *r_arg);
+int cchar_flop8_intspec(cchar_unit_proto_t *unit);
+bool cchar_flop8_has_interrupt(cchar_unit_proto_t *unit);
 
 #endif
 
