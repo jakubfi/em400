@@ -1,4 +1,4 @@
-//  Copyright (c) 2012-2013 Jakub Filipowicz <jakubf@gmail.com>
+//  Copyright (c) 2012-2024 Jakub Filipowicz <jakubf@gmail.com>
 //
 //  This program is free software; you can redistribute it and/or modify
 //  it under the terms of the GNU General Public License as published by
@@ -15,8 +15,8 @@
 //  Foundation, Inc.,
 //  51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 
-#ifndef CLOCK_H
-#define CLOCK_H
+#ifndef __CLOCK_H__
+#define __CLOCK_H__
 
 #include <stdbool.h>
 
@@ -24,11 +24,11 @@
 extern "C" {
 #endif
 
-int clock_init(int clock_period);
+int clock_init(unsigned clock_period, bool enabled);
 void clock_shutdown();
 void clock_set(bool state);
-int clock_get();
-void clock_set_int(int interrupt);
+bool clock_get();
+void clock_set_int(unsigned interrupt);
 
 #ifdef __cplusplus
 }

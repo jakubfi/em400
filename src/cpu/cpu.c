@@ -323,7 +323,7 @@ int cpu_init()
 		}
 	}
 
-	if (clock_init(clock_period) != E_OK) {
+	if (clock_init(clock_period, false) != E_OK) {
 		return LOGERR("Failed to initialize clock");
 	}
 

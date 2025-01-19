@@ -1,4 +1,4 @@
-//  Copyright (c) 2012-2013 Jakub Filipowicz <jakubf@gmail.com>
+//  Copyright (c) 2012-2024 Jakub Filipowicz <jakubf@gmail.com>
 //
 //  This program is free software; you can redistribute it and/or modify
 //  it under the terms of the GNU General Public License as published by
@@ -29,15 +29,15 @@
 
 #include "log.h"
 
-int clock_enabled = false;
-pthread_t clock_th;
-sem_t clock_quit;
+static pthread_t clock_th;
+static sem_t clock_quit;
 
-int clock_period = 10;
-int clock_int = INT_CLOCK;
+static unsigned clock_period;
+static atomic_uint clock_int;
+static atomic_bool clock_enabled;
 
 // -----------------------------------------------------------------------
-void * clock_thread(void *ptr)
+static void * clock_thread(void *ptr)
 {
 	struct timespec ts;
 	unsigned clock_tick_nsec = clock_period * 1000000;
@@ -51,8 +51,8 @@ void * clock_thread(void *ptr)
 		if (!sem_timedwait(&clock_quit, &ts)) {
 			break;
 		}
-		if (atomic_load_explicit(&clock_enabled, memory_order_acquire)) {
-			int_set(atomic_load_explicit(&clock_int, memory_order_acquire));
+		if (atomic_load_explicit(&clock_enabled, memory_order_relaxed)) {
+			int_set(atomic_load_explicit(&clock_int, memory_order_relaxed));
 		}
 	}
 
@@ -60,16 +60,22 @@ void * clock_thread(void *ptr)
 }
 
 // -----------------------------------------------------------------------
-int clock_init(int clock_period)
+int clock_init(unsigned period, bool enabled)
 {
-	sem_init(&clock_quit, 0, 0);
+	LOG(L_CPU, "Clock period: %i ms (%s)", period, enabled ? "enabled" : "disabled");
+
+	clock_period = period;
+	atomic_store_explicit(&clock_enabled, enabled, memory_order_relaxed);
+	atomic_store_explicit(&clock_int, INT_CLOCK, memory_order_relaxed);
+	if (sem_init(&clock_quit, 0, 0)) {
+		return LOGERR("Failed to initialize clock semaphore.");
+	}
 	if (pthread_create(&clock_th, NULL, clock_thread, NULL)) {
 		return LOGERR("Failed to spawn clock thread.");
 	}
-
-	pthread_setname_np(clock_th, "clock");
-
-	LOG(L_CPU, "Clock period: %i ms", clock_period);
+	if (pthread_setname_np(clock_th, "clock")) {
+		return LOGERR("Failed to set clock thread name.");
+	}
 
 	return E_OK;
 }
@@ -81,6 +87,7 @@ void clock_shutdown()
 	if (clock_th) {
 		sem_post(&clock_quit);
 		pthread_join(clock_th, NULL);
+		clock_th = 0;
 	}
 	sem_destroy(&clock_quit);
 }
@@ -88,20 +95,21 @@ void clock_shutdown()
 // -----------------------------------------------------------------------
 void clock_set(bool state)
 {
-	LOG(L_CPU, "Set clock: %s", state ? "ON" : "OFF");
-	atomic_store_explicit(&clock_enabled, state, memory_order_release);
+	LOG(L_CPU, "Set clock state: %s", state ? "ON" : "OFF");
+	atomic_store_explicit(&clock_enabled, state, memory_order_relaxed);
 }
 
 // -----------------------------------------------------------------------
-int clock_get()
+bool clock_get()
 {
-	return atomic_load_explicit(&clock_enabled, memory_order_acquire);
+	return atomic_load_explicit(&clock_enabled, memory_order_relaxed);
 }
 
 // -----------------------------------------------------------------------
-void clock_set_int(int interrupt)
+void clock_set_int(unsigned interrupt)
 {
-	atomic_store_explicit(&clock_int, interrupt, memory_order_release);
+	LOG(L_CPU, "Set clock interrupt: %d", interrupt);
+	atomic_store_explicit(&clock_int, interrupt, memory_order_relaxed);
 }
 
 // vim: tabstop=4 shiftwidth=4 autoindent
