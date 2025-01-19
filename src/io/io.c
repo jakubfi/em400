@@ -57,7 +57,7 @@
 */
 
 static struct chan *io_chan[IO_MAX_CHAN];
-static const char *io_result_names[] = { "NO DEVICE", "ENGAGED", "OK", "PARITY ERROR" };
+static const char *io_result_names[] = { "NO ANSWER", "ENGAGED", "OK", "PARITY ERROR" };
 
 // -----------------------------------------------------------------------
 int io_init(em400_cfg *cfg)

@@ -26,11 +26,11 @@ enum io_dir {
 };
 
 enum io_result {
-	// value matters (IN/OU opcodes use it)
-	IO_NO = 0,  // no channel, no control unit, or no memory block
+	// value matters here, IN/OU opcodes use it to determine jump location
+	IO_NO = 0,  // no answer
 	IO_EN = 1,  // not ready (engaged)
 	IO_OK = 2,  // OK
-	IO_PE = 3,  // data error (parity error)
+	IO_PE = 3,  // parity error
 };
 
 #endif
