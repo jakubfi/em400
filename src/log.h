@@ -33,7 +33,7 @@
 extern "C" {
 #endif
 
-extern unsigned log_components_enabled;
+extern atomic_uint log_components_enabled;
 
 int log_init(em400_cfg *cfg);
 void log_shutdown();
@@ -62,7 +62,7 @@ void log_intlevel_inc();
 void log_dasm(int arg, int16_t n, const char *comment);
 void log_cpu(unsigned component, const char *msgfmt, ...);
 
-#define LOG_ENABLED atomic_load_explicit(&log_components_enabled, memory_order_acquire)
+#define LOG_ENABLED atomic_load_explicit(&log_components_enabled, memory_order_relaxed)
 #define LOG_WANTS(component) (LOG_ENABLED & (1 << (component)))
 
 #define LOG(component, format, ...) log_log(component, __func__, format, ##__VA_ARGS__)
