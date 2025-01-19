@@ -82,13 +82,17 @@ long alsa_play(int16_t *buf, size_t frames)
 // -----------------------------------------------------------------------
 void alsa_start()
 {
-	snd_pcm_prepare(handle);
+	if (handle) {
+		snd_pcm_prepare(handle);
+	}
 }
 
 // -----------------------------------------------------------------------
 void alsa_stop()
 {
-	snd_pcm_drain(handle);
+	if (handle) {
+		snd_pcm_drain(handle);
+	}
 }
 
 // -----------------------------------------------------------------------

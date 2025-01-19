@@ -60,7 +60,9 @@ void pulseaudio_shutdown()
 {
 	int err;
 	if (s) {
-		pa_simple_flush(s, &err);
+		if (pa_simple_flush(s, &err)) {
+			LOG(L_EM4H, "PulseAudio flush failed: %s", pa_strerror(err));
+		}
 		pa_simple_free(s);
 	}
 }
@@ -88,7 +90,12 @@ void pulseaudio_start()
 // -----------------------------------------------------------------------
 void pulseaudio_stop()
 {
-
+	int err;
+	if (s) {
+		if (pa_simple_flush(s, &err)) {
+			LOG(L_EM4H, "PulseAudio flush failed: %s", pa_strerror(err));
+		}
+	}
 }
 
 // -----------------------------------------------------------------------
