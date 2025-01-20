@@ -10,19 +10,30 @@
 Rotary::Rotary(QPixmap gfx[16], const QUrl snd_rs[16], const QUrl snd_ls[16], QWidget *parent)
 	: QWidget{parent}
 {
-	int i;
-	for (i=0 ; i<16 ; i++) {
+	for (int i=0 ; i<16 ; i++) {
 		this->gfx[i] = gfx[i];
 		snd_r[i].setSource(snd_rs[i]);
 		snd_l[i].setSource(snd_ls[i]);
 	}
-	this->resize(gfx[0].width(), gfx[0].height());
+
+	resize(gfx[0].width(), gfx[0].height());
 	center = gfx[0].rect().center();
 	radius_outer = gfx[0].rect().width() / 2;
 	radius_main = radius_outer - 50;
 	radius_inner = radius_main - 40;
+
 	connect(&anim_timer, &QTimer::timeout, this, &Rotary::anim_step);
+
 	setMouseTracking(true);
+}
+
+// -----------------------------------------------------------------------
+void Rotary::set_volume(qreal linear_volume)
+{
+	for (int i=0 ; i<16 ; i++) {
+		snd_r[i].setVolume(linear_volume);
+		snd_l[i].setVolume(linear_volume);
+	}
 }
 
 // -----------------------------------------------------------------------

@@ -10,13 +10,13 @@
 Ignition::Ignition(QPixmap gfx[3], const QUrl snd_rs[3], const QUrl snd_ls[3], QWidget *parent)
 	: QWidget{parent}
 {
-	int i;
-	for (i=0 ; i<3 ; i++) {
+	for (int i=0 ; i<3 ; i++) {
 		this->gfx[i] = gfx[i];
 		snd_r[i].setSource(snd_rs[i]);
 		snd_l[i].setSource(snd_ls[i]);
 	}
-	this->resize(gfx[0].width(), gfx[0].height());
+
+	resize(gfx[0].width(), gfx[0].height());
 	center = gfx[0].rect().center();
 	radius_outer = gfx[0].rect().width() / 2;
 	radius_main = radius_outer - 24;
@@ -27,6 +27,15 @@ Ignition::Ignition(QPixmap gfx[3], const QUrl snd_rs[3], const QUrl snd_ls[3], Q
 	connect(&power_on_timer, &QTimer::timeout, this, &Ignition::power_on);
 
 	setMouseTracking(true);
+}
+
+// -----------------------------------------------------------------------
+void Ignition::set_volume(qreal linear_volume)
+{
+	for (int i=0 ; i<3 ; i++) {
+		snd_r[i].setVolume(linear_volume);
+		snd_l[i].setVolume(linear_volume);
+	}
 }
 
 // -----------------------------------------------------------------------

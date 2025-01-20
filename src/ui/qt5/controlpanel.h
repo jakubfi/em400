@@ -49,6 +49,7 @@ public:
 	Ignition *ignition;
 
 	void dim(float val);
+	void set_volume(int volume_percent);
 
 public slots:
 	void slot_bus_w_changed(uint16_t val);

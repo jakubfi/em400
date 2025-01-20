@@ -28,6 +28,7 @@ private:
 public:
 	explicit Rotary(QPixmap gfx[16], const QUrl snd_rs[16], const QUrl snd_ls[16], QWidget *parent);
 	void set_position(int pos);
+	void set_volume(qreal linear_volume);
 
 protected:
 	void paintEvent(QPaintEvent *event);

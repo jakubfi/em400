@@ -3,6 +3,7 @@
 #include <QDebug>
 #include <QPainter>
 #include <QLineF>
+#include <QAudio>
 
 #include "controlpanel.h"
 #include "libem400.h"
@@ -173,6 +174,19 @@ ControlPanel::ControlPanel(QWidget *parent):
 	connect(ignition, &Ignition::signal_power, led[LED_ON], &LED::slot_change);
 
 	change_dimensions(plane[0].rect());
+	set_volume(70);
+}
+
+// -----------------------------------------------------------------------
+void ControlPanel::set_volume(int volume_percent)
+{
+	qreal log_volume = volume_percent / (qreal) 100.0;
+	qreal linear_volume = QAudio::convertVolume(log_volume, QAudio::LogarithmicVolumeScale, QAudio::LinearVolumeScale);
+	rotary->set_volume(linear_volume);
+	ignition->set_volume(linear_volume);
+	for (int i=0 ; i<16 ; i++) {
+		sw[i]->set_volume(linear_volume);
+	}
 }
 
 // -----------------------------------------------------------------------
