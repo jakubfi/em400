@@ -115,7 +115,13 @@ void uzdat_on_data_received(uzdat_t *uzdat, char data)
 	int trigger_interrupt = false;
 
 	pthread_mutex_lock(&uzdat->mutex);
-	if (uzdat->state != UZDAT_STATE_OFF) {  // if UZDAT has not been reset
+	// Receive data when in "read" mode (i.e. also ignore incomming data after reset)
+	const bool reading = (uzdat->state != UZDAT_STATE_OFF) && (uzdat->dir == UZDAT_DIR_IN);
+	// Also receive backspace (or del) interpreted as "operator request" in "off" state.
+	// Terminals in CROOK seem to work that way, and it seems to be a modification done
+	// to UZ-DAT board, since vanilla UZ-DAT doesn't support operator request.
+	const bool oprq = (uzdat->state == UZDAT_STATE_OFF) && ((data == 8) || (data == 127));
+	if (reading || oprq) {
 		if (uzdat->buf_rd >= 0) {
 			uzdat->intspec = UZDAT_INT_TOO_SLOW;
 		} else {
@@ -158,13 +164,18 @@ static void uzdat_on_async_write(uv_async_t *handle)
 
 	pthread_mutex_lock(&uzdat->mutex);
 	char data = uzdat->buf_wr;
+	int dir = uzdat->dir;
 	pthread_mutex_unlock(&uzdat->mutex);
 
-	int res = uzdat->terminal->write(uzdat->terminal, data);
-	if (res == 0) {
-		LOGCHAR(L_UZDAT, "%s: ", "Written to terminal", data)
+	if (dir == UZDAT_DIR_OUT) {
+		int res = uzdat->terminal->write(uzdat->terminal, data);
+		if (res == 0) {
+			LOGCHAR(L_UZDAT, "%s: ", "Written to terminal", data)
+		} else {
+			LOGCHAR(L_UZDAT, "%s: ", "Failed write to terminal", data)
+		}
 	} else {
-		LOGCHAR(L_UZDAT, "%s: ", "Failed write to terminal", data)
+		LOGCHAR(L_UZDAT, "%s: ", "Not in sending mode, ignored", data)
 	}
 }
 
