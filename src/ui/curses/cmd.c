@@ -526,7 +526,7 @@ void dbg_c_log_info(int wid)
 // -----------------------------------------------------------------------
 void dbg_c_log_disable(int wid)
 {
-	em400_log_state(false);
+	em400_log_set(false);
 	awtbprint(wid, C_LABEL, "Logging disabled\n");
 }
 

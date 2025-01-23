@@ -53,7 +53,7 @@ static const char * log_component_names[] = {
 };
 
 atomic_uint log_components_enabled; // components currently enabled or 0 if logging is disabled
-static atomic_uint log_components_selected; // components selected by user
+static atomic_uint log_components_selected = 1 << L_EM4H; // components selected by user, EM4H always selected
 
 static pthread_t log_flusher_th;
 static pthread_mutex_t log_mutex = PTHREAD_MUTEX_INITIALIZER;
@@ -84,7 +84,6 @@ static struct emdas *emd;
 static char *dasm_buf;
 
 static void log_log_timestamp(unsigned component, const char *msg, const char *func);
-static void log_components_update();
 
 // -----------------------------------------------------------------------
 int log_init(em400_cfg *cfg)
@@ -122,8 +121,8 @@ int log_init(em400_cfg *cfg)
 
 	line_buffered = cfg_getbool(cfg, "log:line_buffered", CFG_DEFAULT_LOG_LINE_BUFFERED);
 
-	int log_enabled = cfg_getbool(cfg, "log:enabled", CFG_DEFAULT_LOG_ENABLED);
-	if (log_enabled) {
+	int cfg_log_enabled = cfg_getbool(cfg, "log:enabled", CFG_DEFAULT_LOG_ENABLED);
+	if (cfg_log_enabled) {
 		ret = log_enable();
 		if (ret != E_OK) {
 			LOGERR("Failed to enable logging.");
@@ -220,7 +219,7 @@ int log_enable()
 		pthread_setname_np(log_flusher_th, "lflush");
 	}
 
-	log_components_update();
+	atomic_store_explicit(&log_components_enabled, log_components_selected, memory_order_relaxed);
 
 	return E_OK;
 }
@@ -232,14 +231,6 @@ unsigned log_is_enabled()
 }
 
 // -----------------------------------------------------------------------
-static void log_components_update()
-{
-	if (log_is_enabled()) {
-		atomic_store_explicit(&log_components_enabled, log_components_selected, memory_order_relaxed);
-	}
-}
-
-// -----------------------------------------------------------------------
 void log_component_enable(unsigned component)
 {
 	if (component == L_ALL) {
@@ -247,18 +238,22 @@ void log_component_enable(unsigned component)
 	} else {
 		atomic_fetch_or_explicit(&log_components_selected, 1 << component, memory_order_relaxed);
 	}
-	log_components_update();
+	if (log_is_enabled()) {
+		atomic_store_explicit(&log_components_enabled, log_components_selected, memory_order_relaxed);
+	}
 }
 
 // -----------------------------------------------------------------------
 void log_component_disable(unsigned component)
 {
 	if (component == L_ALL) {
-		atomic_store_explicit(&log_components_selected, 0, memory_order_relaxed);
+		atomic_store_explicit(&log_components_selected, (1 << L_EM4H), memory_order_relaxed);
 	} else {
-		atomic_fetch_and_explicit(&log_components_selected, ~(1 << component), memory_order_relaxed);
+		atomic_fetch_and_explicit(&log_components_selected, ~((1 << component) | (1 << L_EM4H)), memory_order_relaxed);
 	}
-	log_components_update();
+	if (log_is_enabled()) {
+		atomic_store_explicit(&log_components_enabled, log_components_selected, memory_order_relaxed);
+	}
 }
 
 // -----------------------------------------------------------------------
