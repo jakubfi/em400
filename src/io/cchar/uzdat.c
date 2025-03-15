@@ -27,7 +27,6 @@
 #include <stdio.h>
 #include <pthread.h>
 
-#include <stdatomic.h>
 #include <uv.h>
 
 #include "io/defs.h"
@@ -224,7 +223,12 @@ int uzdat_intspec(cchar_unit_proto_t *unit)
 bool uzdat_has_interrupt(cchar_unit_proto_t *unit)
 {
 	uzdat_t *uzdat = (uzdat_t*) unit;
-	return atomic_load_explicit(&uzdat->intspec, memory_order_acquire) ? true : false;
+
+	pthread_mutex_lock(&uzdat->mutex);
+	int intspec = uzdat->intspec;
+	pthread_mutex_unlock(&uzdat->mutex);
+
+	return intspec ? true : false;
 }
 
 // -----------------------------------------------------------------------
