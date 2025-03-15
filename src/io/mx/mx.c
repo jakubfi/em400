@@ -80,7 +80,7 @@ void * mx_create(int ch_num, em400_cfg *cfg)
 	}
 	// initialize multix structure
 	multix->chnum = ch_num;
-	atomic_store_explicit(&multix->state, MX_UNINITIALIZED, memory_order_release);
+	atomic_store_explicit(&multix->state, MX_UNINITIALIZED, memory_order_relaxed);
 	for (int i=0 ; i<MX_LINE_CNT ; i++) {
 		struct mx_line *pline = multix->plines + i;
 		pline->phy_n = i;
@@ -229,7 +229,7 @@ void mx_shutdown(void *ch)
 
 	// --- make multix uninitialized (further interface commands will be dropped)
 
-	atomic_store_explicit(&multix->state, MX_UNINITIALIZED, memory_order_release);
+	atomic_store_explicit(&multix->state, MX_UNINITIALIZED, memory_order_relaxed);
 
 	// --- destroy event system
 
@@ -266,7 +266,7 @@ void mx_shutdown(void *ch)
 // -----------------------------------------------------------------------
 bool mx_mem_read(struct mx *multix, int nb, uint16_t addr, uint16_t *data, int len)
 {
-	if (atomic_load_explicit(&multix->state, memory_order_acquire) == MX_UNINITIALIZED) {
+	if (atomic_load_explicit(&multix->state, memory_order_relaxed) == MX_UNINITIALIZED) {
 		LOG(L_MX, "LOST memory read due to multix initializing");
 		return true;
 	}
@@ -277,7 +277,7 @@ bool mx_mem_read(struct mx *multix, int nb, uint16_t addr, uint16_t *data, int l
 // -----------------------------------------------------------------------
 bool mx_mem_write(struct mx *multix, int nb, uint16_t addr, uint16_t *data, int len)
 {
-	if (atomic_load_explicit(&multix->state, memory_order_acquire) == MX_UNINITIALIZED) {
+	if (atomic_load_explicit(&multix->state, memory_order_relaxed) == MX_UNINITIALIZED) {
 		LOG(L_MX, "LOST memory write due to multix initializing");
 		return true;
 	}
@@ -288,7 +288,7 @@ bool mx_mem_write(struct mx *multix, int nb, uint16_t addr, uint16_t *data, int 
 // -----------------------------------------------------------------------
 static void mx_int_set(struct mx *multix)
 {
-	if (atomic_load_explicit(&multix->state, memory_order_acquire) == MX_UNINITIALIZED) {
+	if (atomic_load_explicit(&multix->state, memory_order_relaxed) == MX_UNINITIALIZED) {
 		LOG(L_MX, "LOST interrupt due to multix initializing");
 		return;
 	}
@@ -500,7 +500,7 @@ static int mx_cmd_setcfg(struct mx *multix, uint16_t addr)
 	int tape_formatters;
 
 	// check if configuration isn't set already
-	if (atomic_load_explicit(&multix->state, memory_order_acquire) == MX_CONFIGURED) {
+	if (atomic_load_explicit(&multix->state, memory_order_relaxed) == MX_CONFIGURED) {
 		CFGERR(MX_SC_E_CONFSET, 0);
 		goto fail;
 	}
@@ -577,7 +577,7 @@ static int mx_cmd_setcfg(struct mx *multix, uint16_t addr)
 
 	ret_int = MX_IRQ_IUKON;
 
-	atomic_store_explicit(&multix->state, MX_CONFIGURED, memory_order_release);
+	atomic_store_explicit(&multix->state, MX_CONFIGURED, memory_order_relaxed);
 	LOG(L_MX, "Multix configuration is now ready");
 
 fail:
@@ -600,7 +600,7 @@ fail:
 // -----------------------------------------------------------------------
 static int mx_cmd_test(struct mx *multix)
 {
-	if (atomic_load_explicit(&multix->state, memory_order_acquire) == MX_QUIT) {
+	if (atomic_load_explicit(&multix->state, memory_order_relaxed) == MX_QUIT) {
 		LOG(L_MX, "Test request ignored, Multix is shutting down");
 		return 0;
 	}
@@ -760,7 +760,7 @@ bool mx_init_dummy(struct mx *multix)
 	while (!quit) {
 		struct mx_event *ev = (struct mx_event *) elst_wait_pop(multix->eventq, timeout);
 		if (!ev) {
-			atomic_store_explicit(&multix->state, MX_INITIALIZED, memory_order_release);
+			atomic_store_explicit(&multix->state, MX_INITIALIZED, memory_order_relaxed);
 			LOG(L_MX, "Multix is now initialized");
 			mx_int_enqueue(multix, MX_IRQ_IWYZE, 0);
 			break;
@@ -821,7 +821,7 @@ static int mx_event(struct mx *multix, int type, int cmd, int log_n, uint16_t r_
 {
 	static unsigned id;
 
-	int state = atomic_load_explicit(&multix->state, memory_order_acquire);
+	int state = atomic_load_explicit(&multix->state, memory_order_relaxed);
 
 	if (state == MX_QUIT) {
 		LOG(L_MX, "Adding new event ignored: Multix is shutting down");
@@ -857,12 +857,12 @@ void mx_cmd_reset(void *ch)
 {
 	struct mx *multix = (struct mx *) ch;
 
-	if (atomic_load_explicit(&multix->state, memory_order_acquire) == MX_QUIT) {
+	if (atomic_load_explicit(&multix->state, memory_order_relaxed) == MX_QUIT) {
 		LOG(L_MX, "Reset request ignored, Multix is shutting down");
 		return;
 	}
 
-	atomic_store_explicit(&multix->state, MX_UNINITIALIZED, memory_order_release); // as early as possible
+	atomic_store_explicit(&multix->state, MX_UNINITIALIZED, memory_order_relaxed); // as early as possible
 	mx_event(multix, MX_EV_RESET, 0, 0, 0);
 	// actual reset is done in event processor thread
 }

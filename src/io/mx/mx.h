@@ -21,6 +21,7 @@
 #include <inttypes.h>
 #include <stdbool.h>
 #include <pthread.h>
+#include <stdatomic.h>
 
 #include "utils/elst.h"
 #include "io/mx/cmds.h"
@@ -81,7 +82,7 @@ struct mx_line {
 
 struct mx {
 	int chnum;						// Multix' channel number
-	int state;						// multix state (uninitialized, initialized, configured)
+	atomic_int state;				// multix state (uninitialized, initialized, configured)
 
 	ELST eventq;					// event queue
 	pthread_t ev_thread;			// event processor thread

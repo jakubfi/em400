@@ -1,5 +1,7 @@
 Known bugs:
 
+ * multix MX_QUIT is unused really
+
 Cleanups:
 
  * review atomics (especially ips_counter, breakpoints, iotester, flop8, ...)
