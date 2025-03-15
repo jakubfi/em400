@@ -1,0 +1,49 @@
+=== Timer (clock) ==========================================================
+
+Clock thread needs to know whether clock is enabled, and what is the
+clock interrupt (that may change in runtime when CPU modifications
+are enabled or CPU is reset).
+
+UI thread starts/stops the clock (clock_enabled).
+CPU thread changes the interrupt (clock_int).
+
+Memory order is relaxed, as program only cares about the current values.
+
+=== CPU state ============================================================
+
+CPU state can be changed asynchronously, and emulation needs to be able
+to do fast state check in cpu cycle.
+
+=== Logging ==============================================================
+
+Logging functions can be used in any thread. Using LOG() aywhere requires
+checking whether message should be written to log file, based on logging state
+and enabled log components.
+
+UI thread changes logging settings.
+
+Variables describing current logging status are read and written
+with relaxed memory order (only the variable itself needs to be atomic).
+
+Additionally, log_mutex is there to make sure log entries don't get mixed.
+
+=== Multix ===============================================================
+
+Used for multix state. Relaxed only, as there is no barrier required,
+only the state itself has to be written/read atomically.
+Multix can be reset from CPU thread, making in "uninitialized".
+All interface access should be immediately effectively cut off.
+
+=== Interrupts (RP) ======================================================
+
+=== NCurses UI ===========================================================
+
+Flag to quit the debugger loop
+
+=== IOtester =============================================================
+
+interrupt specification (not really necessary)
+
+=== Breakpoints ==========================================================
+
+Mess. Or maybe not. Who knows.

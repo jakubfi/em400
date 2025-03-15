@@ -31,11 +31,11 @@ struct brk_point {
 	unsigned id;
 	char *expr;
 	struct eval_est *tree;
-	struct brk_point *next;
+	_Atomic (struct brk_point *) next;
 	int deleted;
 };
 
-static struct brk_point *brk_list;
+static _Atomic (struct brk_point *) brk_list;
 static int brk_id = 0;
 
 // -----------------------------------------------------------------------
@@ -81,7 +81,7 @@ void brk_del_all()
 		brkp = next;
 	}
 
-	brk_list = NULL;
+	atomic_store_explicit(&brk_list, NULL, memory_order_release);
 	brk_id = 0;
 }
 

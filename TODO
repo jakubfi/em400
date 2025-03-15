@@ -1,14 +1,14 @@
 Known bugs:
 
- * multix MX_QUIT is unused really
 
 Cleanups:
 
- * review atomics (especially ips_counter, breakpoints, iotester, flop8, ...)
+ * multix MX_QUIT is unused really
+ * really review breakpoint atomics usage
 
 Code enhancements (possible):
 
-* librarize?
+* librarize
 
 Features (possible):
 
