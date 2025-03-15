@@ -62,7 +62,7 @@ struct iotester {
 	ELST evq;
 
 	int chnum;
-	uint16_t intspec;
+	atomic_uint intspec;
 };
 
 static void * it_cmdproc(void *ptr);
