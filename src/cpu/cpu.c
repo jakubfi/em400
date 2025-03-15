@@ -47,7 +47,7 @@
 #include "log_crk.h"
 #include "cp/brk.h"
 
-static unsigned cpu_state = EM400_STATE_OFF;
+static atomic_uint cpu_state = EM400_STATE_OFF;
 
 uint16_t r[8];
 uint16_t ic, kb, ir, ac, ar, at;
@@ -124,7 +124,7 @@ static void cpu_do_load(int reg_id, uint16_t val)
 void cpu_reg_load(unsigned reg_id, uint16_t val)
 {
 	pthread_mutex_lock(&cpu_wake_mutex);
-	if (cpu_state == EM400_STATE_STOP) {
+	if (cpu_state_get() == EM400_STATE_STOP) {
 		cpu_do_load(reg_id, val);
 		cpu_wake_up();
 	}
@@ -193,11 +193,11 @@ static int cpu_do_wait()
 	LOG(L_CPU, "CPU idling");
 
 	pthread_mutex_lock(&cpu_wake_mutex);
-	while ((cpu_state == EM400_STATE_STOP) || ((cpu_state == EM400_STATE_WAIT) && !(atomic_load_explicit(&irq, memory_order_acquire) && !p && !mc))) {
+	while ((cpu_state_get() == EM400_STATE_STOP) || ((cpu_state_get() == EM400_STATE_WAIT) && !(atomic_load_explicit(&irq, memory_order_acquire) && !p && !mc))) {
 		cpu_reg_selected_to_w();
 		pthread_cond_wait(&cpu_wake_cond, &cpu_wake_mutex);
 	}
-	unsigned res = cpu_state;
+	unsigned res = cpu_state_get();
 	pthread_mutex_unlock(&cpu_wake_mutex);
 
 	return res;
@@ -215,9 +215,9 @@ int cpu_state_change(unsigned to, unsigned from)
 	int res = 1;
 
 	pthread_mutex_lock(&cpu_wake_mutex);
-	unsigned last_state = cpu_state;
+	unsigned last_state = atomic_load_explicit(&cpu_state, memory_order_acquire);
 	if ((from == EM400_STATE_ANY) || (last_state == from)) {
-		cpu_state = to;
+		atomic_store_explicit(&cpu_state, to, memory_order_release);
 		pthread_cond_signal(&cpu_wake_cond);
 		res = 0;
 	}
@@ -594,9 +594,8 @@ void cpu_loop()
 
 	while (1) {
 		int cpu_time = 0;
-		int state = atomic_load_explicit(&cpu_state, memory_order_acquire);
 
-		switch (state) {
+		switch (atomic_load_explicit(&cpu_state, memory_order_acquire)) {
 			case EM400_STATE_CYCLE:
 				cpu_state_change(EM400_STATE_STOP, EM400_STATE_ANY);
 				// fallthrough
