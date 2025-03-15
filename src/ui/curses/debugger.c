@@ -34,7 +34,7 @@
 
 int ui_mode;
 
-int dbg_quit = 0;
+static atomic_bool dbg_quit = false;
 
 // store user input here
 char input_buf[INPUT_BUF_SIZE];
@@ -110,7 +110,7 @@ void * dbg_init(const char *call_name)
 // -----------------------------------------------------------------------
 void dbg_stop()
 {
-	atomic_store_explicit(&dbg_quit, 1, memory_order_release);
+	atomic_store_explicit(&dbg_quit, true, memory_order_relaxed);
 }
 
 // -----------------------------------------------------------------------
@@ -133,7 +133,7 @@ int dbg_parse(char *c)
 // -----------------------------------------------------------------------
 void dbg_loop(void *data)
 {
-	while (!atomic_load_explicit(&dbg_quit, memory_order_acquire)) {
+	while (!atomic_load_explicit(&dbg_quit, memory_order_relaxed)) {
 
 		if (aw_layout_changed) {
 			awin_tb_scroll_end(W_CMD);
