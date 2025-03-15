@@ -31,7 +31,7 @@
 uint32_t rz;
 // IRQ is atomic because cpu thread needs quick, frequent access
 // order relaxed, cpu sychronizes with IO on rz
-_Atomic bool irq;
+atomic_bool irq;
 static uint32_t int_xmask;
 
 pthread_mutex_t int_mutex = PTHREAD_MUTEX_INITIALIZER;
