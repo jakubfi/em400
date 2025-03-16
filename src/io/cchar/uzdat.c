@@ -163,18 +163,13 @@ static void uzdat_on_async_write(uv_async_t *handle)
 
 	pthread_mutex_lock(&uzdat->mutex);
 	char data = uzdat->buf_wr;
-	int dir = uzdat->dir;
 	pthread_mutex_unlock(&uzdat->mutex);
 
-	if (dir == UZDAT_DIR_OUT) {
-		int res = uzdat->terminal->write(uzdat->terminal, data);
-		if (res == 0) {
-			LOGCHAR(L_UZDAT, "%s: ", "Written to terminal", data)
-		} else {
-			LOGCHAR(L_UZDAT, "%s: ", "Failed write to terminal", data)
-		}
+	int res = uzdat->terminal->write(uzdat->terminal, data);
+	if (res == 0) {
+		LOGCHAR(L_UZDAT, "%s: ", "Written to terminal", data)
 	} else {
-		LOGCHAR(L_UZDAT, "%s: ", "Not in sending mode, ignored", data)
+		LOGCHAR(L_UZDAT, "%s: ", "Failed write to terminal", data)
 	}
 }
 
