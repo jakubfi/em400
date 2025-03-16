@@ -44,7 +44,7 @@
 //     * every memory access initiated by multix will fail
 //     * no interrupt will be sent from multix to the CPU
 // This way threads can continue, but any processing that stated just before the reset will have no effect.
-enum mx_condition { MX_UNINITIALIZED, MX_INITIALIZED, MX_CONFIGURED, MX_QUIT };
+enum mx_states { MX_UNINITIALIZED, MX_INITIALIZED, MX_CONFIGURED };
 
 // Real multix boots up in probably just under a second
 // (~500ms for ROM/RAM check + ~185ms for RAM cleanup).
@@ -600,10 +600,6 @@ fail:
 // -----------------------------------------------------------------------
 static int mx_cmd_test(struct mx *multix)
 {
-	if (atomic_load_explicit(&multix->state, memory_order_relaxed) == MX_QUIT) {
-		LOG(L_MX, "Test request ignored, Multix is shutting down");
-		return 0;
-	}
 	// As we're not able to run any real 8085 code, TEST command
 	// won't work. Best we can do is to pretend that test is done
 	// and let the test wrapper on CPU side worry about the (non-)results.
@@ -823,10 +819,7 @@ static int mx_event(struct mx *multix, int type, int cmd, int log_n, uint16_t r_
 
 	int state = atomic_load_explicit(&multix->state, memory_order_relaxed);
 
-	if (state == MX_QUIT) {
-		LOG(L_MX, "Adding new event ignored: Multix is shutting down");
-		return IO_EN;
-	} else if ((state == MX_UNINITIALIZED) && (type != MX_EV_RESET) && (type != MX_EV_QUIT)) {
+	if ((state == MX_UNINITIALIZED) && (type != MX_EV_RESET) && (type != MX_EV_QUIT)) {
 		LOG(L_MX, "Adding new event ignored: Multix is initializing and event is not RESET nor QUIT.");
 		return IO_EN;
 	}
@@ -856,11 +849,6 @@ static int mx_event(struct mx *multix, int type, int cmd, int log_n, uint16_t r_
 void mx_cmd_reset(void *ch)
 {
 	struct mx *multix = (struct mx *) ch;
-
-	if (atomic_load_explicit(&multix->state, memory_order_relaxed) == MX_QUIT) {
-		LOG(L_MX, "Reset request ignored, Multix is shutting down");
-		return;
-	}
 
 	atomic_store_explicit(&multix->state, MX_UNINITIALIZED, memory_order_relaxed); // as early as possible
 	mx_event(multix, MX_EV_RESET, 0, 0, 0);

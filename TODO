@@ -3,8 +3,7 @@ Known bugs:
 
 Cleanups:
 
- * multix MX_QUIT is unused really
- * really review breakpoint atomics usage
+ * really review breakpoints atomics usage
 
 Code enhancements (possible):
 
