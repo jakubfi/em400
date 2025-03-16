@@ -116,7 +116,7 @@ static void on_read_delay_timeout(uv_timer_t *handle)
 // -----------------------------------------------------------------------
 static void on_tcp_read(uv_stream_t *handle, ssize_t nread, const uv_buf_t *buf)
 {
-	int res;
+	int res = 0;
 	terminal_t *terminal = (terminal_t *) handle->data;
 
 	if (nread < 0) {
