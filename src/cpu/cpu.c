@@ -348,21 +348,17 @@ void cpu_shutdown()
 }
 
 // -----------------------------------------------------------------------
-int cpu_mod_on()
+void cpu_mod_on()
 {
 	cpu_mod_active = true;
 	clock_set_int(INT_EXTRA);
-
-	return E_OK;
 }
 
 // -----------------------------------------------------------------------
-int cpu_mod_off()
+void cpu_mod_off()
 {
 	cpu_mod_active = false;
 	clock_set_int(INT_CLOCK);
-
-	return E_OK;
 }
 
 // -----------------------------------------------------------------------

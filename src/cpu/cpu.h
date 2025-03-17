@@ -89,13 +89,13 @@ int cpu_configure(struct em400_cfg_cpu *c_cpu, struct em400_cfg_buzzer *c_buzzer
 int cpu_init();
 void cpu_shutdown();
 
-int cpu_mod_on();
-int cpu_mod_off();
+void cpu_mod_on();
+void cpu_mod_off();
 
 void cpu_loop();
 
 void cpu_wake_up();
-int cpu_state_change(unsigned int to, unsigned int from);
+int cpu_state_change(unsigned to, unsigned from);
 unsigned cpu_state_get();
 
 void cpu_reg_select(unsigned reg_id);
