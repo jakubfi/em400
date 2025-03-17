@@ -108,13 +108,13 @@ void * dbg_init(const char *call_name)
 }
 
 // -----------------------------------------------------------------------
-void dbg_stop()
+void dbg_stop(void *data)
 {
 	atomic_store_explicit(&dbg_quit, true, memory_order_relaxed);
 }
 
 // -----------------------------------------------------------------------
-void dbg_shutdown()
+void dbg_shutdown(void *data)
 {
 	aw_shutdown();
 	emdas_destroy(emd);
