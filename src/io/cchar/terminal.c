@@ -110,6 +110,8 @@ static void on_read_delay_timeout(uv_timer_t *handle)
 	if (terminal->rdbuf_count > 0) {
 		terminal->on_data_received(terminal->controller, term_buf_get(terminal));
 	}
+	// push next character in buffer
+	uv_timer_start(&terminal->timer_read, on_read_delay_timeout, terminal->delay_ms, 0);
 }
 
 // -----------------------------------------------------------------------
