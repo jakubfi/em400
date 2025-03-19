@@ -17,6 +17,7 @@
 
 #include <uv.h>
 #include <pthread.h>
+#include <math.h>
 
 #include "log.h"
 #include "terminal.h"
@@ -67,7 +68,6 @@ static int term_buf_append(terminal_t *terminal, char *c, int len)
 	while (len > 0) {
 		if (terminal->rdbuf_count >= TERMINAL_BUF_SIZE) {
 			ret = -1;
-			pthread_mutex_unlock(&terminal->buf_mutex);
 			break;
 		} else {
 			*terminal->rdbuf_w = *c;
@@ -109,7 +109,6 @@ static void on_read_delay_timeout(uv_timer_t *handle)
 
 	if (terminal->rdbuf_count > 0) {
 		terminal->on_data_received(terminal->controller, term_buf_get(terminal));
-		uv_timer_start(&terminal->timer_write, on_read_delay_timeout, 1, 0);
 	}
 }
 
@@ -133,7 +132,7 @@ static void on_tcp_read(uv_stream_t *handle, ssize_t nread, const uv_buf_t *buf)
 	free(buf->base);
 
 	if (res >= 0) {
-		uv_timer_start(&terminal->timer_write, on_read_delay_timeout, 1, 0);
+		uv_timer_start(&terminal->timer_read, on_read_delay_timeout, terminal->delay_ms, 0);
 	}
 }
 
@@ -196,7 +195,7 @@ static void on_async_write_complete(uv_write_t *req, int status)
 {
 	terminal_t *terminal = (terminal_t *) req->data;
 	free(req);
-	uv_timer_start(&terminal->timer_write, on_write_delay_timeout, 1, 0);
+	uv_timer_start(&terminal->timer_write, on_write_delay_timeout, terminal->delay_ms, 0);
 }
 
 // -----------------------------------------------------------------------
@@ -221,7 +220,7 @@ int terminal_write(terminal_t *terminal, char c)
 			uv_req_set_data((uv_req_t*) req, terminal->client->data);
 			uv_write((uv_write_t*) req, (uv_stream_t *) terminal->client, &buf, 1, on_async_write_complete);
 		} else {
-			uv_timer_start(&terminal->timer_write, on_write_delay_timeout, 1, 0);
+			uv_timer_start(&terminal->timer_write, on_write_delay_timeout, terminal->delay_ms, 0);
 		}
 	}
 
@@ -306,10 +305,16 @@ terminal_t * terminal_create(void *controller, on_data_received_cb cbr, on_data_
 
 	LOG(L_TERM, "Creating terminal: speed %i, TCP port %i", speed, port);
 
+	if ((speed > 9600) || (speed < 150) || (speed % 150)) {
+		LOGERR("Allowed terminal speeds: 9600, 4800, 2400, 1200, 600, 300, 150");
+		goto fail;
+	}
+
 	term_buf_reset(terminal);
 	terminal->client = NULL;
 	terminal->port = port;
-	terminal->speed = speed;
+	// milisecond accuracy due to libuv limitations, 8 bits + start + stop
+	terminal->delay_ms = roundf((float) ((8+2) * 1000) / speed);
 	terminal->on_data_received = cbr;
 	terminal->on_data_sent = cbs;
 	terminal->controller = controller;

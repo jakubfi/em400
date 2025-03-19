@@ -144,11 +144,13 @@ channel_15 = char
 # Other options are specific for each device.
 # Below are example device configurations.
 
-# Terminal that can be accessed through TCP connection on port 32000 (using e4term from tools/ directory)
+# Terminal that can be accessed through TCP connection on the givenport (using e4term from tools/ directory)
+# Speed is emulated and can be one of: 9600, 4800, 2400, 1200, 600, 300, 150 (defaults to 9600)
 [dev1.4]
 type = terminal
 transport = tcp
 port = 32000
+speed = 9600
 
 # 5" floppy drive with floppy1.e4i image
 [dev15.20]

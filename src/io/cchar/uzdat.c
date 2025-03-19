@@ -70,30 +70,34 @@ cchar_unit_proto_t * uzdat_create(em400_cfg *cfg, int ch_num, int dev_num)
 {
 	uzdat_t *uzdat = (uzdat_t*) calloc(1, sizeof(uzdat_t));
 	if (!uzdat) {
-		LOGERR("Failed to allocate memory for UZDAT: %i.%i", ch_num, dev_num);
+		LOGERR("Device %i.%i: failed to allocate memory for UZDAT", ch_num, dev_num);
 		goto fail;
 	}
 
-	LOG(L_UZDAT, "Creating UZDAT terminal controller");
+	LOG(L_UZDAT, "Device %i.%i: creating UZDAT terminal controller", ch_num, dev_num);
 
 	const char *transport = cfg_fgetstr(cfg, "dev%i.%i:transport", ch_num, dev_num);
-	unsigned speed = cfg_fgetint(cfg, "dev%i.%i:speed", ch_num, dev_num);
-	unsigned port = cfg_fgetint(cfg, "dev%i.%i:port", ch_num, dev_num);
+	int speed = cfg_fgetint(cfg, "dev%i.%i:speed", ch_num, dev_num);
+	int port = cfg_fgetint(cfg, "dev%i.%i:port", ch_num, dev_num);
 
-	if (transport && strcasecmp(transport, "tcp")) {
-		LOGERR("Transport '%s' not supported. TCP only.", transport);
+	if (!transport || strcasecmp(transport, "tcp")) {
+		LOGERR("Device %i.%i: terminal transport '%s' not supported. Only 'tcp' is allowed.", ch_num, dev_num, transport);
 		goto fail;
 	}
-	if (!port || !speed) {
-		LOGERR("TCP terminal needs port and emulated speed to be set.");
+	if (port == -1) {
+		LOGERR("Device %i.%i: TCP terminal needs port to be set.", ch_num, dev_num);
 		goto fail;
+	}
+	if (speed == -1) {
+		LOG(L_UZDAT, "Device %i.%i: terminal speed not set, defaulting to 9600", ch_num, dev_num);
+		speed = 9600;
 	}
 
 	uzdat_reset((cchar_unit_proto_t *) uzdat);
 
 	uzdat->terminal = terminal_create(uzdat, (void*) uzdat_on_data_received, (void*) uzdat_on_data_sent, port, speed);
 	if (!uzdat->terminal) {
-		LOGERR("Failed to create terminal");
+		LOGERR("Device %i.%i: failed to create terminal", ch_num, dev_num);
 		goto fail;
 	}
 
@@ -109,7 +113,7 @@ fail:
 // -----------------------------------------------------------------------
 void uzdat_on_data_received(uzdat_t *uzdat, char data)
 {
-	LOGCHAR(L_UZDAT, "%s: ", "Data received", data)
+	LOGCHAR(L_UZDAT, "%s: ", "Terminal sent data", data)
 
 	int trigger_interrupt = false;
 
@@ -120,6 +124,7 @@ void uzdat_on_data_received(uzdat_t *uzdat, char data)
 	// Terminals in CROOK seem to work that way, and it seems to be a modification done
 	// to UZ-DAT board, since vanilla UZ-DAT doesn't support operator request.
 	const bool oprq = (uzdat->state == UZDAT_STATE_OFF) && ((data == 8) || (data == 127));
+
 	if (reading || oprq) {
 		if (uzdat->buf_rd >= 0) {
 			uzdat->intspec = UZDAT_INT_TOO_SLOW;
@@ -139,7 +144,7 @@ void uzdat_on_data_received(uzdat_t *uzdat, char data)
 // -----------------------------------------------------------------------
 void uzdat_on_data_sent(uzdat_t *uzdat)
 {
-	LOG(L_UZDAT, "Data sent");
+	LOG(L_UZDAT, "Data sent to terminal");
 
 	int trigger_interrupt = false;
 
@@ -229,7 +234,7 @@ bool uzdat_has_interrupt(cchar_unit_proto_t *unit)
 // -----------------------------------------------------------------------
 static int uzdat_read(uzdat_t *uzdat, uint16_t *r_arg)
 {
-	int res;
+	int ret;
 	LOG(L_UZDAT, "Command: READ");
 
 	pthread_mutex_lock(&uzdat->mutex);
@@ -239,20 +244,20 @@ static int uzdat_read(uzdat_t *uzdat, uint16_t *r_arg)
 		*r_arg = (*r_arg & 0xff00) | (data &0xff);
 		uzdat->buf_rd = -1;
 		uzdat->state = UZDAT_STATE_OK;
-		res = IO_OK;
+		ret = IO_OK;
 	} else {
 		uzdat->state = UZDAT_STATE_EN;
-		res = IO_EN;
+		ret = IO_EN;
 	}
 	pthread_mutex_unlock(&uzdat->mutex);
 
-	if (res == IO_OK) {
+	if (ret == IO_OK) {
 		LOGCHAR(L_UZDAT, "%s: ", "READ ready, received: ", data & 0xff)
 	} else {
 		LOG(L_UZDAT, "Buffer empty, nothing to read");
 	}
 
-	return res;
+	return ret;
 }
 
 // -----------------------------------------------------------------------
@@ -265,7 +270,8 @@ static void uzdat_on_transmit_switch_timeout(uv_timer_t *handle)
 	LOG(L_UZDAT, "Switched direction to transmit");
 
 	pthread_mutex_lock(&uzdat->mutex);
-	if (uzdat->state != UZDAT_STATE_OFF) { // if UZDAT has not been reset
+	// only if UZDAT has not been reset
+	if (uzdat->state != UZDAT_STATE_OFF) {
 		uzdat->dir = UZDAT_DIR_OUT;
 		uzdat->intspec = UZDAT_INT_READY;
 		trigger_interrupt = true;
@@ -294,7 +300,7 @@ static int uzdat_write(uzdat_t *uzdat, uint16_t *r_arg)
 	};
 	const char *log_msg = NULL;
 	uv_async_t *trigger = NULL;
-	int res;
+	int ret;
 
 	char data = *r_arg & 0xff;
 
@@ -307,21 +313,21 @@ static int uzdat_write(uzdat_t *uzdat, uint16_t *r_arg)
 		uzdat->xfer_busy = true;
 		trigger = &uzdat->async_write;
 		log_msg = log_msgs[0];
-		res = IO_OK;
+		ret = IO_OK;
 	} else {
 		if (uzdat->dir != UZDAT_DIR_OUT) {
 			trigger = &uzdat->async_switch_transmit;
 		}
 		uzdat->state = UZDAT_STATE_EN;
 		log_msg = log_msgs[1];
-		res = IO_EN;
+		ret = IO_EN;
 	}
 	pthread_mutex_unlock(&uzdat->mutex);
 
 	LOGCHAR(L_UZDAT, "%s: ", log_msg, data);
 	if (trigger) uv_async_send(trigger);
 
-	return res;
+	return ret;
 }
 
 // -----------------------------------------------------------------------
@@ -337,7 +343,6 @@ static int uzdat_disconnect(uzdat_t *uzdat)
 		uzdat->dir = UZDAT_DIR_NONE;
 		uzdat->xfer_busy = false;
 		uzdat->buf_rd = -1;
-		pthread_mutex_unlock(&uzdat->mutex);
 		ret = IO_OK;
 	} else {
 		uzdat->state = UZDAT_STATE_EN;
@@ -351,6 +356,8 @@ static int uzdat_disconnect(uzdat_t *uzdat)
 // -----------------------------------------------------------------------
 void uzdat_reset(cchar_unit_proto_t *unit)
 {
+	LOG(L_UZDAT, "UZDAT reset");
+
 	uzdat_t *uzdat = (uzdat_t*) unit;
 
 	pthread_mutex_lock(&uzdat->mutex);

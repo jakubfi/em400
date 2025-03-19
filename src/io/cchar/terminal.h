@@ -34,7 +34,7 @@ typedef int (*write_fn)(terminal_t *terminal, char data);
 
 struct termial_s {
 	int port;
-	int speed;
+	int delay_ms;
 
 	pthread_mutex_t buf_mutex;
 	char rdbuf[TERMINAL_BUF_SIZE];
