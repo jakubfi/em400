@@ -207,6 +207,7 @@ int terminal_write(terminal_t *terminal, char c)
 
 	pthread_mutex_lock(&terminal->buf_mutex);
 	if (!terminal->sender_busy) {
+		terminal->sender_busy = true;
 		ret = 0;
 	} else {
 		ret = -1;

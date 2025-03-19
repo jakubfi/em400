@@ -172,9 +172,9 @@ static void uzdat_on_async_write(uv_async_t *handle)
 
 	int res = uzdat->terminal->write(uzdat->terminal, data);
 	if (res == 0) {
-		LOGCHAR(L_UZDAT, "%s: ", "Written to terminal", data)
+		LOGCHAR(L_UZDAT, "%s: ", "Written to terminal", data);
 	} else {
-		LOGCHAR(L_UZDAT, "%s: ", "Failed write to terminal", data)
+		LOGCHAR(L_UZDAT, "%s: ", "Failed write to terminal", data);
 	}
 }
 
