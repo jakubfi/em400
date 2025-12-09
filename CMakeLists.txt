@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.9.6)
+cmake_minimum_required(VERSION 3.10)
 project(em400
 	DESCRIPTION "MERA-400 emulator"
 	LANGUAGES C CXX
