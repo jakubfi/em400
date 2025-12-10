@@ -20,10 +20,11 @@
 
 #include <pthread.h>
 #include <uv.h>
+#include <stdbool.h>
 
 #define TERMINAL_BUF_SIZE 1024
 
-typedef struct termial_s terminal_t;
+typedef struct terminal_s terminal_t;
 
 typedef void (*on_data_received_cb)(void *ptr, char data);
 typedef void (*on_data_sent_cb)(void *ptr);
@@ -32,15 +33,16 @@ typedef void (*destroy_fn)(terminal_t *terminal);
 typedef void (*free_fn)(terminal_t *terminal);
 typedef int (*write_fn)(terminal_t *terminal, char data);
 
-struct termial_s {
+struct terminal_s {
 	int port;
 	int delay_ms;
 
-	pthread_mutex_t buf_mutex;
+	pthread_mutex_t mutex; // required due to reset comming from another thread
 	char rdbuf[TERMINAL_BUF_SIZE];
 	char *rdbuf_r;
 	char *rdbuf_w;
 	char *rdbuf_end;
+	char wrbuf;
 	int rdbuf_count;
 	bool sender_busy;
 

@@ -113,7 +113,7 @@ fail:
 // -----------------------------------------------------------------------
 void uzdat_on_data_received(uzdat_t *uzdat, char data)
 {
-	LOGCHAR(L_UZDAT, "%s: ", "Terminal sent data", data)
+	LOGCHAR(L_UZDAT, "%s: ", "Terminal sent data", data);
 
 	int trigger_interrupt = false;
 
@@ -252,7 +252,7 @@ static int uzdat_read(uzdat_t *uzdat, uint16_t *r_arg)
 	pthread_mutex_unlock(&uzdat->mutex);
 
 	if (ret == IO_OK) {
-		LOGCHAR(L_UZDAT, "%s: ", "READ ready, received: ", data & 0xff)
+		LOGCHAR(L_UZDAT, "%s: ", "READ ready, received: ", data & 0xff);
 	} else {
 		LOG(L_UZDAT, "Buffer empty, nothing to read");
 	}

@@ -172,6 +172,7 @@ fail:
 // -----------------------------------------------------------------------
 void cchar_shutdown(void *chan)
 {
+	LOG(L_CCHR, "CCHAR shutdown");
 	if (!chan) return;
 
 	cchar_chan_t *ch = (cchar_chan_t *) chan;
@@ -179,6 +180,7 @@ void cchar_shutdown(void *chan)
 	// stop ioloop and its thread
 	uv_async_send(&ch->async_quit);
 	pthread_join(ch->ioloop_thread, NULL);
+	LOG(L_CCHR, "I/O loop thread joined");
 
 	// shutdown (stop) all connected controllers
 	for (int i=0 ; i<CCHAR_MAX_DEVICES ; i++) {
@@ -187,14 +189,19 @@ void cchar_shutdown(void *chan)
 			u->shutdown(u);
 		}
 	}
+	LOG(L_CCHR, "All units shut down");
 
 	// clean ioloop resources
 	cchar_ioloop_teardown(chan);
+	LOG(L_CCHR, "I/O loop torn down");
 	// give libuv chance to cleanup handles
 	uv_run(ioloop, UV_RUN_DEFAULT);
+	LOG(L_CCHR, "I/O loop cleanup run finished");
 	int res = uv_loop_close(ioloop);
 	if (res < 0) {
 		LOG(L_CCHR, "I/O loop failed to close nicely: %s", uv_strerror(res));
+	} else {
+		LOG(L_CCHR, "I/O loop closed cleanly");
 	}
 
 	// free all connected controllers' resources
