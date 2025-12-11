@@ -36,6 +36,8 @@
 #include "log.h"
 #include "cfg.h"
 
+#define XFER_DIR_SWITCH_DELAY 2 // miliseconds
+
 extern uv_loop_t *ioloop;
 
 static void uzdat_on_async_write(uv_async_t *handle);
@@ -43,19 +45,6 @@ static void uzdat_on_async_switch_dir(uv_async_t *handle);
 void uzdat_on_data_received(uzdat_t *uzdat, char data);
 void uzdat_on_data_sent(uzdat_t *uzdat);
 
-
-// -----------------------------------------------------------------------
-static void uzdat_ioloop_setup(uzdat_t *uzdat)
-{
-	uv_async_init(ioloop, &uzdat->async_write, uzdat_on_async_write);
-	uv_handle_set_data((uv_handle_t*) &uzdat->async_write, uzdat);
-
-	uv_async_init(ioloop, &uzdat->async_switch_transmit, uzdat_on_async_switch_dir);
-	uv_handle_set_data((uv_handle_t*) &uzdat->async_switch_transmit, uzdat);
-
-	uv_timer_init(ioloop, &uzdat->timer_switch_transmit);
-	uv_handle_set_data((uv_handle_t*) &uzdat->timer_switch_transmit, uzdat);
-}
 
 // -----------------------------------------------------------------------
 static void uzdat_ioloop_teardown(uzdat_t *uzdat)
@@ -66,15 +55,53 @@ static void uzdat_ioloop_teardown(uzdat_t *uzdat)
 }
 
 // -----------------------------------------------------------------------
+static int uzdat_ioloop_setup(uzdat_t *uzdat)
+{
+	int res;
+
+	res = uv_async_init(ioloop, &uzdat->async_write, uzdat_on_async_write);
+	if (res) {
+		LOGERR("UZDAT async_write handler init error: %s", uv_strerror(res));
+		goto fail;
+	}
+	uv_handle_set_data((uv_handle_t*) &uzdat->async_write, uzdat);
+
+	res = uv_async_init(ioloop, &uzdat->async_switch_transmit, uzdat_on_async_switch_dir);
+	if (res) {
+		LOGERR("UZDAT async_switch_transmit handler init error: %s", uv_strerror(res));
+		goto fail;
+	}
+	uv_handle_set_data((uv_handle_t*) &uzdat->async_switch_transmit, uzdat);
+
+	res = uv_timer_init(ioloop, &uzdat->timer_switch_transmit);
+	if (res) {
+		LOGERR("UZDAT timer init error: %s", uv_strerror(res));
+		goto fail;
+	}
+	uv_handle_set_data((uv_handle_t*) &uzdat->timer_switch_transmit, uzdat);
+
+	return 0;
+
+fail:
+	uzdat_ioloop_teardown(uzdat);
+	return -1;
+}
+
+// -----------------------------------------------------------------------
 cchar_unit_proto_t * uzdat_create(em400_cfg *cfg, int ch_num, int dev_num)
 {
+	LOG(L_UZDAT, "Device %i.%i: creating UZDAT terminal controller", ch_num, dev_num);
+
 	uzdat_t *uzdat = (uzdat_t*) calloc(1, sizeof(uzdat_t));
 	if (!uzdat) {
 		LOGERR("Device %i.%i: failed to allocate memory for UZDAT", ch_num, dev_num);
 		goto fail;
 	}
 
-	LOG(L_UZDAT, "Device %i.%i: creating UZDAT terminal controller", ch_num, dev_num);
+	if (pthread_mutex_init(&uzdat->mutex, NULL)) {
+		LOGERR("Device %i.%i: failed to initialize mutex", ch_num, dev_num);
+		goto fail;
+	}
 
 	const char *transport = cfg_fgetstr(cfg, "dev%i.%i:transport", ch_num, dev_num);
 	int speed = cfg_fgetint(cfg, "dev%i.%i:speed", ch_num, dev_num);
@@ -101,7 +128,9 @@ cchar_unit_proto_t * uzdat_create(em400_cfg *cfg, int ch_num, int dev_num)
 		goto fail;
 	}
 
-	uzdat_ioloop_setup(uzdat);
+	if (uzdat_ioloop_setup(uzdat)) {
+		goto fail;
+	}
 
 	return (cchar_unit_proto_t *) uzdat;
 
@@ -170,6 +199,11 @@ static void uzdat_on_async_write(uv_async_t *handle)
 	char data = uzdat->buf_wr;
 	pthread_mutex_unlock(&uzdat->mutex);
 
+	if (!uzdat->terminal) {
+		LOGCHAR(L_UZDAT, "%s: ", "Failed write, no terminal connected", data);
+		return;
+	}
+
 	int res = uzdat->terminal->write(uzdat->terminal, data);
 	if (res == 0) {
 		LOGCHAR(L_UZDAT, "%s: ", "Written to terminal", data);
@@ -188,8 +222,9 @@ void uzdat_shutdown(cchar_unit_proto_t *unit)
 	uzdat_t *uzdat = (uzdat_t*) unit;
 
 	uzdat_ioloop_teardown(uzdat);
-	uzdat->terminal->destroy(uzdat->terminal);
-
+	if (uzdat->terminal) {
+		uzdat->terminal->destroy(uzdat->terminal);
+	}
 }
 
 // -----------------------------------------------------------------------
@@ -200,7 +235,10 @@ void uzdat_free(cchar_unit_proto_t *unit)
 	LOG(L_UZDAT, "UZDAT freeing resources");
 
 	uzdat_t *uzdat = (uzdat_t*) unit;
-	if (uzdat->terminal) uzdat->terminal->free(uzdat->terminal);
+	pthread_mutex_destroy(&uzdat->mutex);
+	if (uzdat->terminal) {
+		uzdat->terminal->free(uzdat->terminal);
+	}
 	free(uzdat);
 }
 
@@ -288,7 +326,7 @@ static void uzdat_on_async_switch_dir(uv_async_t *handle)
 {
 	uzdat_t *uzdat = (uzdat_t*) handle->data;
 
-	uv_timer_start(&uzdat->timer_switch_transmit, uzdat_on_transmit_switch_timeout, 2, 0);
+	uv_timer_start(&uzdat->timer_switch_transmit, uzdat_on_transmit_switch_timeout, XFER_DIR_SWITCH_DELAY, 0);
 }
 
 // -----------------------------------------------------------------------
@@ -325,15 +363,18 @@ static int uzdat_write(uzdat_t *uzdat, uint16_t *r_arg)
 	pthread_mutex_unlock(&uzdat->mutex);
 
 	LOGCHAR(L_UZDAT, "%s: ", log_msg, data);
-	if (trigger) uv_async_send(trigger);
-
+	if (trigger) {
+		if (uv_async_send(trigger)) {
+			LOG(L_UZDAT, "uzdat_write async trigger failed");
+		}
+	}
 	return ret;
 }
 
 // -----------------------------------------------------------------------
 static int uzdat_disconnect(uzdat_t *uzdat)
 {
-	LOG(L_UZDAT, "Command: DISCONECT");
+	LOG(L_UZDAT, "Command: DISCONNECT");
 
 	int ret;
 

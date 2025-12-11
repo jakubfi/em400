@@ -15,8 +15,8 @@
 //  Foundation, Inc.,
 //  51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 
-#ifndef __CCHAR_TERM2_H__
-#define __CCHAR_TERM2_H__
+#ifndef __CCHAR_UZDAT_H__
+#define __CCHAR_UZDAT_H__
 
 #include <stdbool.h>
 #include <pthread.h>
@@ -40,13 +40,11 @@ typedef struct uzdat_s {
 	terminal_t *terminal;
 
 	uv_async_t async_write;
-	uv_async_t async_disconnect;
-	uv_async_t async_reset;
 	uv_async_t async_switch_transmit;
 	uv_timer_t timer_switch_transmit;
 } uzdat_t;
 
-enum uzdat_sates {
+enum uzdat_states {
 	UZDAT_STATE_OFF,
 	UZDAT_STATE_OK,
 	UZDAT_STATE_EN
@@ -58,12 +56,13 @@ enum uzdat_dirs {
 	UZDAT_DIR_OUT
 };
 
-enum uzdat_commands {
-	// OU
+enum uzdat_ou_commands {
 	UZDAT_CMD_RESET			= 0b100000, // reset
 	UZDAT_CMD_DISCONNECT	= 0b101000, // disconnect device (soft reset)
 	UZDAT_CMD_WRITE			= 0b110000, // write
-	// IN
+};
+
+enum uzdat_in_commands {
 	UZDAT_CMD_SPU			= 0b100000, // check device presence
 	UZDAT_CMD_READ			= 0b101000, // read
 };

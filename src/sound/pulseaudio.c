@@ -64,6 +64,7 @@ void pulseaudio_shutdown()
 			LOG(L_EM4H, "PulseAudio flush failed: %s", pa_strerror(err));
 		}
 		pa_simple_free(s);
+		s = NULL;
 	}
 }
 
