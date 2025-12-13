@@ -24,13 +24,13 @@
 #include "cfg.h"
 
 // TODO: needs further cleaning (possibly move down, as interpretation is channel-specific)
-enum chan_cmds_e {
-	// channel OU
+enum chan_ou_commands {
 	CHAN_CMD_EXISTS		= 0b000000,
 	CHAN_CMD_MASK_PN	= 0b000010,
 	CHAN_CMD_MASK_NPN	= 0b000100,
 	CHAN_CMD_ASSIGN		= 0b000110,
-	// channel IN
+};
+enum chan_in_commands {
 	CHAN_CMD_INTSPEC	= 0b000010,
 	CHAN_CMD_ALLOC		= 0b000110,
 	CHAN_CMD_STATUS		= 0b000100,
