@@ -39,30 +39,29 @@
 uv_loop_t *ioloop;
 
 #define NO_INTERRUPT_REPORTED -1
+#define CCHAR_MAX_DEVICES 8
+#define CCHAR_INT_NONE 9999 // no interrupt (em400 sentinel)
 
-// unit prototypes
-cchar_unit_proto_t cchar_unit_proto[] = {
-	{
-		"terminal",
-		uzdat_create,
-		uzdat_shutdown,
-		uzdat_free,
-		uzdat_reset,
-		uzdat_cmd,
-		uzdat_intspec,
-		uzdat_has_interrupt,
-	},
-	{
-		"floppy8",
-		cchar_flop8_create,
-		cchar_flop8_shutdown,
-		NULL,
-		cchar_flop8_reset,
-		cchar_flop8_cmd,
-		cchar_flop8_intspec,
-		cchar_flop8_has_interrupt,
-	},
-	{ NULL, NULL, NULL, NULL, NULL, NULL, NULL }
+struct chan_char {
+	chan_t base;
+
+	pthread_mutex_t int_mutex;
+	int int_mask;
+	int interrupting_device;
+	int was_en;
+	int untransmitted;
+
+	cchar_unit_t *unit[CCHAR_MAX_DEVICES];
+
+	pthread_t ioloop_thread;
+	uv_async_t async_quit;
+};
+
+typedef cchar_unit_t * (*cchar_unit_f_create)(em400_cfg *cfg, int ch_num, int dev_num);
+
+cchar_unit_f_create cchar_unit_constructor[] = {
+	[CCHAR_UZDAT] = uzdat_create,
+	[CCHAR_FLOP8] = flop8_create,
 };
 
 void cchar_destroy(chan_t *chan);
@@ -70,19 +69,18 @@ void cchar_reset(chan_t *chan);
 int cchar_cmd(chan_t *ch, int dir, uint16_t n_arg, uint16_t *r_arg);
 
 // -----------------------------------------------------------------------
-static cchar_unit_proto_t * cchar_unit_proto_get(cchar_unit_proto_t *proto, const char *name)
+static cchar_unit_f_create cchar_unit_constructor_get(const char *name)
 {
-	while (proto && proto->name) {
-		if (strcasecmp(name, proto->name) == 0) {
-			return proto;
-		}
-		proto++;
+	if (strcasecmp(name, "terminal") == 0) {
+		return cchar_unit_constructor[CCHAR_UZDAT];
+	} else if (strcasecmp(name, "floppy8") == 0) {
+		return cchar_unit_constructor[CCHAR_FLOP8];
 	}
 	return NULL;
 }
 
 // -----------------------------------------------------------------------
-static void cchar_ioloop_teardown(cchar_chan_t *chan)
+static void cchar_ioloop_teardown(chan_char_t *chan)
 {
 	uv_close((uv_handle_t *) &chan->async_quit, NULL);
 }
@@ -96,7 +94,7 @@ static void cchar_on_async_quit(uv_async_t *handle)
 }
 
 // -----------------------------------------------------------------------
-static void cchar_ioloop_setup(cchar_chan_t *chan)
+static void cchar_ioloop_setup(chan_char_t *chan)
 {
 	uv_async_init(ioloop, &chan->async_quit, cchar_on_async_quit);
 	uv_handle_set_data((uv_handle_t*) &chan->async_quit, chan);
@@ -115,7 +113,7 @@ static void * cchar_ioloop(void *ptr)
 // -----------------------------------------------------------------------
 chan_t * cchar_create(int ch_num, em400_cfg *cfg)
 {
-	cchar_chan_t *chan = calloc(1, sizeof(cchar_chan_t));
+	chan_char_t *chan = calloc(1, sizeof(chan_char_t));
 	if (!chan) {
 		LOGERR("Memory allocation error");
 		return NULL;
@@ -134,37 +132,25 @@ chan_t * cchar_create(int ch_num, em400_cfg *cfg)
 		// find unit prototype
 		const char *unit_name = cfg_fgetstr(cfg, "dev%i.%i:type", ch_num, dev_num);
 		if (!unit_name) continue;
-		cchar_unit_proto_t *proto = cchar_unit_proto_get(cchar_unit_proto, unit_name);
-		if (!proto) {
+
+		cchar_unit_f_create constructor = cchar_unit_constructor_get(unit_name);
+		if (!constructor) {
 			LOGERR("Unknown device type or device incompatibile with channel: %s.", unit_name);
 			free(chan);
 			return NULL;
 		}
 
 		// create unit based on prototype
-		cchar_unit_proto_t *unit = proto->create(cfg, ch_num, dev_num);
+		cchar_unit_t *unit = constructor(cfg, ch_num, dev_num);
 		if (!unit) {
 			LOGERR("Failed to create unit: %s.", unit_name);
 			free(chan);
 			return NULL;
 		} else {
-			LOG(L_CCHR, "Connected device %i: %s", dev_num, proto->name);
+			LOG(L_CCHR, "Connected device %i: %s", dev_num, unit_name);
 		}
 
-		// fill in functions
-		unit->name = proto->name;
-		unit->create = proto->create;
-		unit->shutdown = proto->shutdown;
-		unit->free = proto->free;
-		unit->reset = proto->reset;
-		unit->cmd = proto->cmd;
-		unit->intspec = proto->intspec;
-		unit->has_interrupt = proto->has_interrupt;
-
-		// remember the channel unit is connected to
 		unit->chan = chan;
-		unit->num = dev_num;
-
 		chan->unit[dev_num] = unit;
 	}
 
@@ -187,7 +173,7 @@ fail:
 void cchar_destroy(chan_t *chan)
 {
 	if (!chan) return;
-	cchar_chan_t *ch = (cchar_chan_t *) chan;
+	chan_char_t *ch = (chan_char_t *) chan;
 
 	LOG(L_CCHR, "Destroying CHAR channel %i", ch->base.num);
 
@@ -198,7 +184,7 @@ void cchar_destroy(chan_t *chan)
 
 	// stop all connected controllers
 	for (int i=0 ; i<CCHAR_MAX_DEVICES ; i++) {
-		cchar_unit_proto_t *u = ch->unit[i];
+		cchar_unit_t *u = ch->unit[i];
 		if (u && u->shutdown) {
 			u->shutdown(u);
 		}
@@ -207,7 +193,7 @@ void cchar_destroy(chan_t *chan)
 	LOG(L_CCHR, "All units stopped");
 
 	// clean ioloop resources
-	cchar_ioloop_teardown((cchar_chan_t*)chan);
+	cchar_ioloop_teardown((chan_char_t*)chan);
 	LOG(L_CCHR, "I/O loop torn down");
 
 	// give libuv chance to cleanup handles
@@ -222,7 +208,7 @@ void cchar_destroy(chan_t *chan)
 
 	// free all connected controllers' resources
 	for (int i=0 ; i<CCHAR_MAX_DEVICES ; i++) {
-		cchar_unit_proto_t *u = ch->unit[i];
+		cchar_unit_t *u = ch->unit[i];
 		if (u && u->free) {
 			u->free(u);
 		}
@@ -237,10 +223,10 @@ void cchar_reset(chan_t *chan)
 {
 	if (!chan) return;
 
-	cchar_chan_t *ch = (cchar_chan_t *) chan;
+	chan_char_t *ch = (chan_char_t *) chan;
 
 	for (int i=0 ; i<CCHAR_MAX_DEVICES ; i++) {
-		cchar_unit_proto_t *u = ch->unit[i];
+		cchar_unit_t *u = ch->unit[i];
 		if (u) {
 			u->reset(u);
 		}
@@ -252,7 +238,7 @@ void cchar_reset(chan_t *chan)
 }
 
 // -----------------------------------------------------------------------
-void cchar_int_trigger(cchar_chan_t *chan)
+void cchar_int_trigger(chan_char_t *chan)
 {
 	pthread_mutex_lock(&chan->int_mutex);
 	if (chan->interrupting_device != NO_INTERRUPT_REPORTED) {
@@ -261,7 +247,7 @@ void cchar_int_trigger(cchar_chan_t *chan)
 	} else {
 		// check if any unit reported interrupt
 		for (int unit_n=0 ; unit_n<CCHAR_MAX_DEVICES ; unit_n++) {
-			cchar_unit_proto_t *unit = chan->unit[unit_n];
+			cchar_unit_t *unit = chan->unit[unit_n];
 			if (unit && unit->has_interrupt(unit)) {
 				LOG(L_CCHR, "CCHAR (ch:%i) reporting interrupt from unit %i", chan->base.num, unit_n);
 				chan->interrupting_device = unit_n;
@@ -275,7 +261,7 @@ void cchar_int_trigger(cchar_chan_t *chan)
 }
 
 // -----------------------------------------------------------------------
-void cchar_int_cancel(cchar_chan_t *chan, int unit_n)
+void cchar_int_cancel(chan_char_t *chan, int unit_n)
 {
 	LOG(L_CCHR, "CCHAR (ch:%i) unit: %i cancel interrupt", chan->base.num, unit_n);
 
@@ -289,11 +275,11 @@ void cchar_int_cancel(cchar_chan_t *chan, int unit_n)
 }
 
 // -----------------------------------------------------------------------
-static int cchar_cmd_intspec(cchar_chan_t *chan, uint16_t *r_arg)
+static int cchar_cmd_intspec(chan_char_t *chan, uint16_t *r_arg)
 {
 	pthread_mutex_lock(&chan->int_mutex);
 	if (chan->interrupting_device != NO_INTERRUPT_REPORTED) {
-		cchar_unit_proto_t *unit = chan->unit[chan->interrupting_device];
+		cchar_unit_t *unit = chan->unit[chan->interrupting_device];
 		int intspec = unit->intspec(unit);
 		LOG(L_CCHR, "CCHAR (ch:%i) device %i interrupt specification: %i", chan->base.num, chan->interrupting_device, intspec);
 		*r_arg = (intspec << 8) | (chan->interrupting_device << 5);
@@ -311,7 +297,7 @@ static int cchar_cmd_intspec(cchar_chan_t *chan, uint16_t *r_arg)
 
 
 // -----------------------------------------------------------------------
-static int cchar_chan_cmd(cchar_chan_t *chan, int dir, int cmd, int u_num, uint16_t *r_arg)
+static int cchar_chan_cmd(chan_char_t *chan, int dir, int cmd, int u_num, uint16_t *r_arg)
 {
 	if (dir == IO_OU) {
 		switch (cmd) {
@@ -363,12 +349,12 @@ int cchar_cmd(chan_t *ch, int dir, uint16_t n_arg, uint16_t *r_arg)
 	const unsigned u_num = (n_arg & 0b0000000011100000) >> 5;
 	const unsigned is_chan_cmd = (cmd & 0b111000) == 0;
 
-	cchar_chan_t *chan = (cchar_chan_t *) ch;
+	chan_char_t *chan = (chan_char_t *) ch;
 
 	if (is_chan_cmd) {
 		return cchar_chan_cmd(chan, dir, cmd, u_num, r_arg);
 	} else {
-		cchar_unit_proto_t *u = (cchar_unit_proto_t *) chan->unit[u_num];
+		cchar_unit_t *u = (cchar_unit_t *) chan->unit[u_num];
 		if (u) {
 			return u->cmd(u, dir, cmd, r_arg);
 		} else {

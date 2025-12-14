@@ -100,7 +100,7 @@ enum f8_sides {
 #define INITIAL_ADDRESS (F8_DRV_0 | F8_SIDE_A | F8_ADDR_TRACK(1) | F8_ADDR_SECTOR(1))
 
 typedef struct flop8 {
-	cchar_unit_proto_t proto;
+	cchar_unit_t base;
 	char *image[F8_DRIVE_CNT];
 	FILE *f[F8_DRIVE_CNT];
 	int drive, side, track, sector;
@@ -118,6 +118,12 @@ typedef struct flop8 {
 
 static void * flop8_worker_loop(void *ptr);
 static void flop8_reset_state(flop8 *u);
+void flop8_shutdown(cchar_unit_t *unit);
+void flop8_free(cchar_unit_t *unit);
+void flop8_reset(cchar_unit_t *unit);
+int flop8_cmd(cchar_unit_t *unit, int dir, int cmd, uint16_t *r_arg);
+int flop8_intspec(cchar_unit_t *unit);
+bool flop8_has_interrupt(cchar_unit_t *unit);
 
 // -----------------------------------------------------------------------
 static void flop8_set_address(flop8 *u, uint16_t addr)
@@ -131,13 +137,21 @@ static void flop8_set_address(flop8 *u, uint16_t addr)
 }
 
 // -----------------------------------------------------------------------
-cchar_unit_proto_t * cchar_flop8_create(em400_cfg *cfg, int ch_num, int dev_num)
+cchar_unit_t * flop8_create(em400_cfg *cfg, int ch_num, int dev_num)
 {
 	flop8 *flop = (flop8 *) calloc(1, sizeof(flop8));
 	if (!flop) {
 		LOGERR("Failed to allocate memory for 8-inch floppy: %i.%i", ch_num, dev_num);
 		goto fail;
 	}
+
+	flop->base.num = dev_num;
+	flop->base.shutdown = flop8_shutdown;
+	flop->base.free = flop8_free;
+	flop->base.reset = flop8_reset;
+	flop->base.cmd = flop8_cmd;
+	flop->base.intspec = flop8_intspec;
+	flop->base.has_interrupt = flop8_has_interrupt;
 
 	for (int id=0 ; id<F8_DRIVE_CNT ; id++) {
 		const char *image = cfg_fgetstr(cfg, "dev%i.%i:image_%i", ch_num, dev_num, id);
@@ -181,10 +195,10 @@ cchar_unit_proto_t * cchar_flop8_create(em400_cfg *cfg, int ch_num, int dev_num)
 
 	flop8_reset_state(flop);
 
-	return (cchar_unit_proto_t *) flop;
+	return (cchar_unit_t *) flop;
 
 fail:
-	cchar_flop8_shutdown((cchar_unit_proto_t *) flop);
+	flop8_shutdown((cchar_unit_t *) flop);
 	return NULL;
 }
 
@@ -201,7 +215,7 @@ static void flop8_reset_state(flop8 *flop)
 }
 
 // -----------------------------------------------------------------------
-void cchar_flop8_shutdown(cchar_unit_proto_t *unit)
+void flop8_shutdown(cchar_unit_t *unit)
 {
 	flop8 *flop = (flop8 *) unit;
 	if (!flop) return;
@@ -217,23 +231,33 @@ void cchar_flop8_shutdown(cchar_unit_proto_t *unit)
 
 	for (int i=0 ; i<F8_DRIVE_CNT ; i++) {
 		if (flop->f[i]) fclose(flop->f[i]);
+	}
+}
+
+// -----------------------------------------------------------------------
+void flop8_free(cchar_unit_t *unit)
+{
+	flop8 *flop = (flop8 *) unit;
+	if (!flop) return;
+
+	for (int i=0 ; i<F8_DRIVE_CNT ; i++) {
 		if (flop->image[i]) free(flop->image[i]);
 	}
 	free(flop);
 }
 
 // -----------------------------------------------------------------------
-void cchar_flop8_reset(cchar_unit_proto_t *unit)
+void flop8_reset(cchar_unit_t *unit)
 {
 	flop8 *flop = (flop8 *) unit;
 	LOG(L_FLOP, "reset");
 	flop8_reset_state(flop);
-	cchar_int_cancel(flop->proto.chan, flop->proto.num);
+	cchar_int_cancel(flop->base.chan, flop->base.num);
 	LOG(L_FLOP, "reset done");
 }
 
 // -----------------------------------------------------------------------
-static bool f8_sector_advance(flop8 *flop)
+static bool flop8_sector_advance(flop8 *flop)
 {
 	flop->sector++;
 	flop->buf_pos = 0;
@@ -254,7 +278,7 @@ static bool f8_sector_advance(flop8 *flop)
 }
 
 // -----------------------------------------------------------------------
-static bool f8_img_seek(flop8 *flop)
+static bool flop8_img_seek(flop8 *flop)
 {
 	pthread_mutex_lock(&flop->state_mutex);
 	LOG(L_FLOP, "Seek: track %i, sector %i", flop->track, flop->sector);
@@ -269,7 +293,7 @@ static bool f8_img_seek(flop8 *flop)
 }
 
 // -----------------------------------------------------------------------
-static bool f8_img_read_sector(flop8 *flop)
+static bool flop8_img_read_sector(flop8 *flop)
 {
 	pthread_mutex_lock(&flop->state_mutex);
 	int res = fread(&flop->buf, 1, F8_BYTES_PER_SECTOR, flop->f[flop->drive]);
@@ -283,7 +307,7 @@ static bool f8_img_read_sector(flop8 *flop)
 }
 
 // -----------------------------------------------------------------------
-static bool f8_img_write_sector(flop8 *flop)
+static bool flop8_img_write_sector(flop8 *flop)
 {
 	LOG(L_FLOP, "Write sector (%x %x %x ...)", flop->buf[0], flop->buf[1], flop->buf[2]);
 	int res = fwrite(&flop->buf, 1, F8_BYTES_PER_SECTOR, flop->f[flop->drive]);
@@ -332,8 +356,8 @@ static void * flop8_worker_loop(void *ptr)
 					if ((flop->sector == 26) && (flop->track == 73)) {
 						interrupt |= 1 << F8_INT_DISK_END;
 					}
-					f8_img_seek(flop);
-					f8_img_read_sector(flop);
+					flop8_img_seek(flop);
+					flop8_img_read_sector(flop);
 					interrupt |= 1 << F8_INT_READY;
 					pthread_mutex_lock(&flop->state_mutex);
 					flop->buf_pos = 0;
@@ -343,7 +367,7 @@ static void * flop8_worker_loop(void *ptr)
 				break;
 			case F8ST_SECT_RD_CANCEL:
 				LOG(L_FLOP, "Worker processing state: SECTOR READ CANCEL");
-				f8_sector_advance(flop);
+				flop8_sector_advance(flop);
 				interrupt |= 1 << F8_INT_READY;
 				pthread_mutex_lock(&flop->state_mutex);
 				flop->state = F8ST_IDLE;
@@ -372,9 +396,9 @@ static void * flop8_worker_loop(void *ptr)
 				break;
 			case F8ST_SECT_WR:
 				LOG(L_FLOP, "Worker processing state: SECTOR WRITE");
-				f8_img_seek(flop);
-				f8_img_write_sector(flop);
-				f8_sector_advance(flop);
+				flop8_img_seek(flop);
+				flop8_img_write_sector(flop);
+				flop8_sector_advance(flop);
 				// TODO: jeśli z kontrolą - odczyt
 				pthread_mutex_lock(&flop->state_mutex);
 				if (flop->force_interrupt) {
@@ -395,7 +419,7 @@ static void * flop8_worker_loop(void *ptr)
 			pthread_mutex_lock(&flop->state_mutex);
 			flop->interrupts = interrupt;
 			pthread_mutex_unlock(&flop->state_mutex);
-			cchar_int_trigger(flop->proto.chan);
+			cchar_int_trigger(flop->base.chan);
 			flop->force_interrupt = false;
 		}
 
@@ -406,7 +430,7 @@ static void * flop8_worker_loop(void *ptr)
 }
 
 // -----------------------------------------------------------------------
-bool cchar_flop8_has_interrupt(cchar_unit_proto_t *unit)
+bool flop8_has_interrupt(cchar_unit_t *unit)
 {
 	flop8 *flop = (flop8 *) unit;
 
@@ -418,7 +442,7 @@ bool cchar_flop8_has_interrupt(cchar_unit_proto_t *unit)
 }
 
 // -----------------------------------------------------------------------
-int cchar_flop8_intspec(cchar_unit_proto_t *unit)
+int flop8_intspec(cchar_unit_t *unit)
 {
 	flop8 *flop = (flop8 *) unit;
 
@@ -438,7 +462,7 @@ int cchar_flop8_intspec(cchar_unit_proto_t *unit)
 }
 
 // -----------------------------------------------------------------------
-static int f8_cmd_read(cchar_unit_proto_t *unit, uint16_t *r_arg)
+static int flop8_cmd_read(cchar_unit_t *unit, uint16_t *r_arg)
 {
 	flop8 *flop = (flop8 *) unit;
 	int io_ret;
@@ -457,7 +481,7 @@ static int f8_cmd_read(cchar_unit_proto_t *unit, uint16_t *r_arg)
 			flop->buf_pos++;
 			if (flop->buf_pos >= F8_BYTES_PER_SECTOR) {
 				// last byte, set next sector address
-				f8_sector_advance(flop);
+				flop8_sector_advance(flop);
 				flop->state = F8ST_IDLE;
 			}
 			flop->interrupts = F8_INT_NONE;
@@ -474,7 +498,7 @@ static int f8_cmd_read(cchar_unit_proto_t *unit, uint16_t *r_arg)
 }
 
 // -----------------------------------------------------------------------
-static int f8_cmd_write(cchar_unit_proto_t *unit, uint16_t *r_arg)
+static int flop8_cmd_write(cchar_unit_t *unit, uint16_t *r_arg)
 {
 	flop8 *flop = (flop8 *) unit;
 	int io_ret;
@@ -515,7 +539,7 @@ static int f8_cmd_write(cchar_unit_proto_t *unit, uint16_t *r_arg)
 }
 
 // -----------------------------------------------------------------------
-static int f8_cmd_control(cchar_unit_proto_t *unit, uint16_t *r_arg, int cmd)
+static int flop8_cmd_control(cchar_unit_t *unit, uint16_t *r_arg, int cmd)
 {
 	flop8 *flop = (flop8 *) unit;
 	int io_ret;
@@ -540,18 +564,18 @@ static int f8_cmd_control(cchar_unit_proto_t *unit, uint16_t *r_arg, int cmd)
 }
 
 // -----------------------------------------------------------------------
-static int f8_cmd_reset(cchar_unit_proto_t *unit)
+static int flop8_cmd_reset(cchar_unit_t *unit)
 {
 	LOG(L_FLOP, "command: reset");
 	flop8 *flop = (flop8*) unit;
 	flop8_reset_state(flop);
-	cchar_int_cancel(flop->proto.chan, flop->proto.num);
+	cchar_int_cancel(flop->base.chan, flop->base.num);
 
 	return IO_OK;
 }
 
 // -----------------------------------------------------------------------
-static int f8_cmd_spu()
+static int flop8_cmd_spu()
 {
 	LOG(L_FLOP, "command: SPU");
 
@@ -559,7 +583,7 @@ static int f8_cmd_spu()
 }
 
 // -----------------------------------------------------------------------
-static int f8_cmd_detach(cchar_unit_proto_t *unit)
+static int flop8_cmd_detach(cchar_unit_t *unit)
 {
 	LOG(L_FLOP, "command: detach");
 	flop8 *flop = (flop8 *) unit;
@@ -606,14 +630,14 @@ static int f8_cmd_detach(cchar_unit_proto_t *unit)
 }
 
 // -----------------------------------------------------------------------
-int cchar_flop8_cmd(cchar_unit_proto_t *unit, int dir, int cmd, uint16_t *r_arg)
+int flop8_cmd(cchar_unit_t *unit, int dir, int cmd, uint16_t *r_arg)
 {
 	if (dir == IO_IN) {
 		switch (cmd) {
 			case F8CMD_SPU:
-				return f8_cmd_spu();
+				return flop8_cmd_spu();
 			case F8CMD_READ:
-				return f8_cmd_read(unit, r_arg);
+				return flop8_cmd_read(unit, r_arg);
 			default:
 				LOG(L_FLOP, "unknown IN command: %i", cmd);
 				return IO_OK;
@@ -621,16 +645,16 @@ int cchar_flop8_cmd(cchar_unit_proto_t *unit, int dir, int cmd, uint16_t *r_arg)
 	} else {
 		switch (cmd) {
 			case F8CMD_RESET:
-				return f8_cmd_reset(unit);
+				return flop8_cmd_reset(unit);
 			case F8CMD_DETACH:
-				return f8_cmd_detach(unit);
+				return flop8_cmd_detach(unit);
 			case F8CMD_WRITE:
-				return f8_cmd_write(unit, r_arg);
+				return flop8_cmd_write(unit, r_arg);
 			case F8CMD_CTL_R:
 			case F8CMD_CTL_W:
 			case F8CMD_CTL_WC:
 			case F8CMD_CTL_B:
-				return f8_cmd_control(unit, r_arg, cmd);
+				return flop8_cmd_control(unit, r_arg, cmd);
 			default:
 				LOG(L_FLOP, "unknown OUT command: %i", cmd);
 				return IO_OK;

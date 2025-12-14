@@ -24,7 +24,7 @@
 
 #define TERMINAL_BUF_SIZE 1024
 
-typedef struct terminal_s terminal_t;
+typedef struct terminal terminal_t;
 
 typedef void (*on_data_received_cb)(void *ptr, char data);
 typedef void (*on_data_sent_cb)(void *ptr);
@@ -33,7 +33,7 @@ typedef void (*destroy_fn)(terminal_t *terminal);
 typedef void (*free_fn)(terminal_t *terminal);
 typedef int (*write_fn)(terminal_t *terminal, char data);
 
-struct terminal_s {
+struct terminal {
 	int port;
 	int delay_ms;
 

@@ -1,4 +1,4 @@
-//  Copyright (c) 2012-2013 Jakub Filipowicz <jakubf@gmail.com>
+//  Copyright (c) 2012-2025 Jakub Filipowicz <jakubf@gmail.com>
 //
 //  This program is free software; you can redistribute it and/or modify
 //  it under the terms of the GNU General Public License as published by
@@ -15,18 +15,13 @@
 //  Foundation, Inc.,
 //  51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 
-#ifndef CCHAR_FLOP8_H
-#define CCHAR_FLOP8_H
+#ifndef FLOP8_H
+#define FLOP8_H
 
 #include "io/cchar/cchar.h"
 #include "cfg.h"
 
-cchar_unit_proto_t * cchar_flop8_create(em400_cfg *cfg, int ch_num, int dev_num);
-void cchar_flop8_shutdown(cchar_unit_proto_t *unit);
-void cchar_flop8_reset(cchar_unit_proto_t *unit);
-int cchar_flop8_cmd(cchar_unit_proto_t *unit, int dir, int cmd, uint16_t *r_arg);
-int cchar_flop8_intspec(cchar_unit_proto_t *unit);
-bool cchar_flop8_has_interrupt(cchar_unit_proto_t *unit);
+cchar_unit_t * flop8_create(em400_cfg *cfg, int ch_num, int dev_num);
 
 #endif
 

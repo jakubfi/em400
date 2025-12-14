@@ -1,4 +1,4 @@
-//  Copyright (c) 2013-2024 Jakub Filipowicz <jakubf@gmail.com>
+//  Copyright (c) 2013-2025 Jakub Filipowicz <jakubf@gmail.com>
 //
 //  This program is free software; you can redistribute it and/or modify
 //  it under the terms of the GNU General Public License as published by
@@ -26,7 +26,6 @@
 #include <stdbool.h>
 #include <stdio.h>
 #include <pthread.h>
-
 #include <uv.h>
 
 #include "io/defs.h"
@@ -40,11 +39,65 @@
 
 extern uv_loop_t *ioloop;
 
+typedef struct uzdat_s uzdat_t;
+struct uzdat_s {
+	cchar_unit_t base;
+
+	pthread_mutex_t mutex;
+	int intspec;
+	int state;
+	int dir;
+	bool xfer_busy;
+	char buf_wr;
+	int buf_rd;
+
+	terminal_t *terminal;
+
+	uv_async_t async_write;
+	uv_async_t async_switch_transmit;
+	uv_timer_t timer_switch_transmit;
+};
+
+enum uzdat_states {
+	UZDAT_STATE_OFF,
+	UZDAT_STATE_OK,
+	UZDAT_STATE_EN
+};
+
+enum uzdat_dirs {
+	UZDAT_DIR_NONE,
+	UZDAT_DIR_IN,
+	UZDAT_DIR_OUT
+};
+
+enum uzdat_ou_commands {
+	UZDAT_CMD_RESET			= 0b100000, // reset
+	UZDAT_CMD_DISCONNECT	= 0b101000, // disconnect device (soft reset)
+	UZDAT_CMD_WRITE			= 0b110000, // write
+};
+
+enum uzdat_in_commands {
+	UZDAT_CMD_SPU			= 0b100000, // check device presence
+	UZDAT_CMD_READ			= 0b101000, // read
+};
+
+enum cchar_uzdat_interrupts {
+	UZDAT_INT_OUTDATED	= 0, // interrupt out of date
+	UZDAT_INT_READY		= 1, // ready again
+	UZDAT_INT_TOO_SLOW	= 5, // transmission too slow
+};
+
+void uzdat_shutdown(cchar_unit_t *unit);
+void uzdat_free(cchar_unit_t *unit);
+void uzdat_reset(cchar_unit_t *unit);
+int uzdat_cmd(cchar_unit_t *unit, int dir, int cmd, uint16_t *r_arg);
+int uzdat_intspec(cchar_unit_t *unit);
+bool uzdat_has_interrupt(cchar_unit_t *unit);
+
 static void uzdat_on_async_write(uv_async_t *handle);
 static void uzdat_on_async_switch_dir(uv_async_t *handle);
 void uzdat_on_data_received(uzdat_t *uzdat, char data);
 void uzdat_on_data_sent(uzdat_t *uzdat);
-
 
 // -----------------------------------------------------------------------
 static void uzdat_ioloop_teardown(uzdat_t *uzdat)
@@ -88,7 +141,7 @@ fail:
 }
 
 // -----------------------------------------------------------------------
-cchar_unit_proto_t * uzdat_create(em400_cfg *cfg, int ch_num, int dev_num)
+cchar_unit_t * uzdat_create(em400_cfg *cfg, int ch_num, int dev_num)
 {
 	LOG(L_UZDAT, "Device %i.%i: creating UZDAT terminal controller", ch_num, dev_num);
 
@@ -97,6 +150,14 @@ cchar_unit_proto_t * uzdat_create(em400_cfg *cfg, int ch_num, int dev_num)
 		LOGERR("Device %i.%i: failed to allocate memory for UZDAT", ch_num, dev_num);
 		goto fail;
 	}
+
+	uzdat->base.num = dev_num;
+	uzdat->base.shutdown = uzdat_shutdown;
+	uzdat->base.free = uzdat_free;
+	uzdat->base.reset = uzdat_reset;
+	uzdat->base.cmd = uzdat_cmd;
+	uzdat->base.intspec = uzdat_intspec;
+	uzdat->base.has_interrupt = uzdat_has_interrupt;
 
 	if (pthread_mutex_init(&uzdat->mutex, NULL)) {
 		LOGERR("Device %i.%i: failed to initialize mutex", ch_num, dev_num);
@@ -120,7 +181,7 @@ cchar_unit_proto_t * uzdat_create(em400_cfg *cfg, int ch_num, int dev_num)
 		speed = 9600;
 	}
 
-	uzdat_reset((cchar_unit_proto_t *) uzdat);
+	uzdat_reset((cchar_unit_t *) uzdat);
 
 	uzdat->terminal = terminal_create(uzdat, (void*) uzdat_on_data_received, (void*) uzdat_on_data_sent, port, speed);
 	if (!uzdat->terminal) {
@@ -132,10 +193,10 @@ cchar_unit_proto_t * uzdat_create(em400_cfg *cfg, int ch_num, int dev_num)
 		goto fail;
 	}
 
-	return (cchar_unit_proto_t *) uzdat;
+	return (cchar_unit_t *) uzdat;
 
 fail:
-	uzdat_free((cchar_unit_proto_t *) uzdat);
+	uzdat_free((cchar_unit_t *) uzdat);
 	return NULL;
 }
 
@@ -166,7 +227,7 @@ void uzdat_on_data_received(uzdat_t *uzdat, char data)
 	pthread_mutex_unlock(&uzdat->mutex);
 
 	if (trigger_interrupt) {
-		cchar_int_trigger(uzdat->proto.chan);
+		cchar_int_trigger(uzdat->base.chan);
 	}
 }
 
@@ -186,7 +247,7 @@ void uzdat_on_data_sent(uzdat_t *uzdat)
 	pthread_mutex_unlock(&uzdat->mutex);
 
 	if (trigger_interrupt) {
-		cchar_int_trigger(uzdat->proto.chan);
+		cchar_int_trigger(uzdat->base.chan);
 	}
 }
 
@@ -213,7 +274,7 @@ static void uzdat_on_async_write(uv_async_t *handle)
 }
 
 // -----------------------------------------------------------------------
-void uzdat_shutdown(cchar_unit_proto_t *unit)
+void uzdat_shutdown(cchar_unit_t *unit)
 {
 	if (!unit) return;
 
@@ -228,7 +289,7 @@ void uzdat_shutdown(cchar_unit_proto_t *unit)
 }
 
 // -----------------------------------------------------------------------
-void uzdat_free(cchar_unit_proto_t *unit)
+void uzdat_free(cchar_unit_t *unit)
 {
 	if (!unit) return;
 
@@ -243,7 +304,7 @@ void uzdat_free(cchar_unit_proto_t *unit)
 }
 
 // -----------------------------------------------------------------------
-int uzdat_intspec(cchar_unit_proto_t *unit)
+int uzdat_intspec(cchar_unit_t *unit)
 {
 	LOG(L_UZDAT, "Command: INTSPEC");
 	uzdat_t *uzdat = (uzdat_t*) unit;
@@ -258,7 +319,7 @@ int uzdat_intspec(cchar_unit_proto_t *unit)
 }
 
 // -----------------------------------------------------------------------
-bool uzdat_has_interrupt(cchar_unit_proto_t *unit)
+bool uzdat_has_interrupt(cchar_unit_t *unit)
 {
 	uzdat_t *uzdat = (uzdat_t*) unit;
 
@@ -317,7 +378,7 @@ static void uzdat_on_transmit_switch_timeout(uv_timer_t *handle)
 	pthread_mutex_unlock(&uzdat->mutex);
 
 	if (trigger_interrupt) {
-		cchar_int_trigger(uzdat->proto.chan);
+		cchar_int_trigger(uzdat->base.chan);
 	}
 }
 
@@ -395,7 +456,7 @@ static int uzdat_disconnect(uzdat_t *uzdat)
 }
 
 // -----------------------------------------------------------------------
-void uzdat_reset(cchar_unit_proto_t *unit)
+void uzdat_reset(cchar_unit_t *unit)
 {
 	LOG(L_UZDAT, "UZDAT reset");
 
@@ -410,7 +471,7 @@ void uzdat_reset(cchar_unit_proto_t *unit)
 }
 
 // -----------------------------------------------------------------------
-int uzdat_cmd(cchar_unit_proto_t *unit, int dir, int cmd, uint16_t *r_arg)
+int uzdat_cmd(cchar_unit_t *unit, int dir, int cmd, uint16_t *r_arg)
 {
 	uzdat_t *uzdat = (uzdat_t*) unit;
 

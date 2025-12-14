@@ -52,9 +52,9 @@ typedef int (*chan_f_cmd)(chan_t *chan, int dir, uint16_t n, uint16_t *r);
 struct chan {
 	int num;
 	chan_type_t type;
-	chan_f_cmd cmd;
-	chan_f_reset reset;
-	chan_f_destroy destroy;
+	chan_f_cmd cmd;			// handles I/O command from the CPU
+	chan_f_reset reset;		// resets channel (asynchronously, from any thread)
+	chan_f_destroy destroy;	// destroys channel (shutdown and free resources)
 };
 
 chan_t * chan_create(unsigned num, unsigned type, em400_cfg *cfg);

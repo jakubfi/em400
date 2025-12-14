@@ -26,54 +26,38 @@
 #include "cfg.h"
 #include "io/chan.h"
 
-#define CCHAR_MAX_DEVICES 8
-#define CCHAR_INT_NONE 9999 // no interrupt (em400 marker)
+enum cchar_controller_types {
+	CCHAR_UZDAT,
+	CCHAR_FLOP8,
+	CCHAR_CONTROLLER_COUNT
+};
 
-typedef struct cchar_unit_proto_s cchar_unit_proto_t;
+typedef struct chan_char chan_char_t;
+typedef struct cchar_unit cchar_unit_t;
 
-typedef cchar_unit_proto_t * (*cchar_unit_f_create)(em400_cfg *cfg, int ch_num, int dev_num);
-typedef void (*cchar_unit_f_shutdown)(cchar_unit_proto_t *unit);
-typedef void (*cchar_unit_f_free)(cchar_unit_proto_t *unit);
-typedef void (*cchar_unit_f_reset)(cchar_unit_proto_t *unit);
-typedef int (*cchar_unit_f_cmd)(cchar_unit_proto_t *unit, int dir, int cmd, uint16_t *r_arg);
-typedef int (*cchar_unit_f_intspec)(cchar_unit_proto_t *unit);
-typedef bool (*cchar_unit_f_has_interrupt)(cchar_unit_proto_t *unit);
+typedef void (*cchar_unit_f_shutdown)(cchar_unit_t *unit);
+typedef void (*cchar_unit_f_free)(cchar_unit_t *unit);
+typedef void (*cchar_unit_f_reset)(cchar_unit_t *unit);
+typedef int (*cchar_unit_f_cmd)(cchar_unit_t *unit, int dir, int cmd, uint16_t *r_arg);
+typedef int (*cchar_unit_f_intspec)(cchar_unit_t *unit);
+typedef bool (*cchar_unit_f_has_interrupt)(cchar_unit_t *unit);
 
-typedef struct cchar_chan cchar_chan_t;
+struct cchar_unit {
+	int type;				// controller type
+	int num;				// controller number in char channel
+	chan_char_t *chan;		// channel
 
-struct cchar_unit_proto_s {
-	const char *name;
-
-	cchar_unit_f_create create;
 	cchar_unit_f_shutdown shutdown;
 	cchar_unit_f_free free;
 	cchar_unit_f_reset reset;
 	cchar_unit_f_cmd cmd;
 	cchar_unit_f_intspec intspec;
 	cchar_unit_f_has_interrupt has_interrupt;
-
-	cchar_chan_t *chan;
-	int num;
-};
-
-struct cchar_chan {
-	chan_t base;
-
-	pthread_mutex_t int_mutex;
-	int int_mask;
-	int interrupting_device;
-	int was_en;
-	int untransmitted;
-
-	cchar_unit_proto_t *unit[CCHAR_MAX_DEVICES];
-
-	pthread_t ioloop_thread;
-	uv_async_t async_quit;
 };
 
 chan_t *cchar_create(int num, em400_cfg *cfg);
-void cchar_int_trigger(cchar_chan_t *chan);
-void cchar_int_cancel(cchar_chan_t *chan, int unit_n);
+void cchar_int_trigger(chan_char_t *chan);
+void cchar_int_cancel(chan_char_t *chan, int unit_n);
 
 #endif
 
