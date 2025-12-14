@@ -1,4 +1,4 @@
-//  Copyright (c) 2012-2013 Jakub Filipowicz <jakubf@gmail.com>
+//  Copyright (c) 2012-2025 Jakub Filipowicz <jakubf@gmail.com>
 //
 //  This program is free software; you can redistribute it and/or modify
 //  it under the terms of the GNU General Public License as published by
@@ -24,6 +24,7 @@
 #include <uv.h>
 
 #include "cfg.h"
+#include "io/chan.h"
 
 #define CCHAR_MAX_DEVICES 8
 #define CCHAR_INT_NONE 9999 // no interrupt (em400 marker)
@@ -38,7 +39,7 @@ typedef int (*cchar_unit_f_cmd)(cchar_unit_proto_t *unit, int dir, int cmd, uint
 typedef int (*cchar_unit_f_intspec)(cchar_unit_proto_t *unit);
 typedef bool (*cchar_unit_f_has_interrupt)(cchar_unit_proto_t *unit);
 
-typedef struct cchar_chan_s cchar_chan_t;
+typedef struct cchar_chan cchar_chan_t;
 
 struct cchar_unit_proto_s {
 	const char *name;
@@ -55,8 +56,8 @@ struct cchar_unit_proto_s {
 	int num;
 };
 
-struct cchar_chan_s {
-	int num;
+struct cchar_chan {
+	chan_t base;
 
 	pthread_mutex_t int_mutex;
 	int int_mask;
@@ -70,14 +71,9 @@ struct cchar_chan_s {
 	uv_async_t async_quit;
 };
 
-void *cchar_create(int num, em400_cfg *cfg);
-void cchar_shutdown(void *chan);
-void cchar_reset(void *chan);
+chan_t *cchar_create(int num, em400_cfg *cfg);
 void cchar_int_trigger(cchar_chan_t *chan);
 void cchar_int_cancel(cchar_chan_t *chan, int unit_n);
-int cchar_cmd(void *chan, int dir, uint16_t n_arg, uint16_t *r_arg);
-
-extern struct chan_drv cchar_chan_driver;
 
 #endif
 

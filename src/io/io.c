@@ -1,4 +1,4 @@
-//  Copyright (c) 2012-2013 Jakub Filipowicz <jakubf@gmail.com>
+//  Copyright (c) 2012-2025 Jakub Filipowicz <jakubf@gmail.com>
 //
 //  This program is free software; you can redistribute it and/or modify
 //  it under the terms of the GNU General Public License as published by
@@ -56,20 +56,48 @@
   `------------' `-------------' `------------' `-----------' `---------'   |
 */
 
-static struct chan *io_chan[IO_MAX_CHAN];
+static chan_t *io_chan[IO_MAX_CHAN];
 static const char *io_result_names[] = { "NO ANSWER", "ENGAGED", "OK", "PARITY ERROR" };
+
+struct chan_name_types {
+	const char *name;
+	unsigned type;
+} chan_name_types[] = {
+	{"multix", CHAN_MULTIX},
+	{"char", CHAN_CHAR},
+	{"iotester", CHAN_IOTESTER},
+	{NULL, 0}
+};
+
+// -----------------------------------------------------------------------
+static struct chan_name_types * find_chan_map(const char *name)
+{
+	struct chan_name_types *chmap = chan_name_types;
+	while (chmap && chmap->name) {
+		if (!strcasecmp(name, chmap->name)) {
+			return chmap;
+		}
+		chmap++;
+	}
+	return NULL;
+}
 
 // -----------------------------------------------------------------------
 int io_init(em400_cfg *cfg)
 {
 	for (int i=0 ; i<16 ; i++) {
 		const char *ch_name = cfg_fgetstr(cfg, "io:channel_%i", i);
-		if (ch_name) {
-			LOG(L_IO, "Initializing I/O channel %i: %s", i, ch_name);
-			io_chan[i] = chan_make(i, ch_name, cfg);
-			if (!io_chan[i]) {
-				return LOGERR("Failed to initialize channel %i: %s.", i, ch_name);
-			}
+		if (!ch_name) continue;
+
+		struct chan_name_types *chmap = find_chan_map(ch_name);
+		if (!chmap) {
+			return LOGERR("Unknown channel type: %s", ch_name);
+		}
+
+		LOG(L_IO, "Initializing I/O channel %i: %s", i, ch_name);
+		io_chan[i] = chan_create(i, chmap->type, cfg);
+		if (!io_chan[i]) {
+			return LOGERR("Failed to initialize channel %i: %s", i, ch_name);
 		}
 	}
 
@@ -81,9 +109,9 @@ void io_shutdown()
 {
 	LOG(L_IO, "Shutdown I/O");
 	for (int c_num=0 ; c_num<IO_MAX_CHAN ; c_num++) {
-		struct chan *chan = io_chan[c_num];
+		chan_t *chan = io_chan[c_num];
 		if (chan) {
-			LOG(L_IO, "Channel %i: %s", c_num, chan->drv->name);
+			LOG(L_IO, "Shutdown channel %i", c_num);
 			chan_destroy(chan);
 			io_chan[c_num] = NULL;
 		}
@@ -94,9 +122,9 @@ void io_shutdown()
 void io_reset()
 {
 	for (int c_num=0 ; c_num<IO_MAX_CHAN ; c_num++) {
-		struct chan *chan = io_chan[c_num];
+		chan_t *chan = io_chan[c_num];
 		if (chan) {
-			chan->drv->reset(chan->obj);
+			chan->reset(chan);
 		}
 	}
 }
@@ -105,7 +133,7 @@ void io_reset()
 void io_get_intspec(int ch, uint16_t *int_spec)
 {
 	if (io_chan[ch]) {
-		io_chan[ch]->drv->cmd(io_chan[ch]->obj, IO_IN, CHAN_CMD_INTSPEC<<10, int_spec);
+		io_chan[ch]->cmd(io_chan[ch], IO_IN, CHAN_CMD_INTSPEC<<10, int_spec);
 	}
 }
 
@@ -126,7 +154,7 @@ int io_dispatch(int dir, uint16_t n, uint16_t *r)
 	// channel/unit command
 	} else {
 		int chan_n = (n & 0b0000000000011110) >> 1;
-		struct chan *chan = io_chan[chan_n];
+		chan_t *chan = io_chan[chan_n];
 		int res;
 		if (LOG_WANTS(L_IO)) {
 			int2binf(narg, "cmd: ... .. ...... ch: .... .", n, 16);
@@ -134,7 +162,7 @@ int io_dispatch(int dir, uint16_t n, uint16_t *r)
 		}
 
 		if (chan) {
-			res = chan->drv->cmd(chan->obj, dir, n, r);
+			res = chan->cmd(chan, dir, n, r);
 		} else {
 			res = IO_NO;
 		}

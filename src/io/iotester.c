@@ -1,4 +1,4 @@
-//  Copyright (c) 2018 Jakub Filipowicz <jakubf@gmail.com>
+//  Copyright (c) 2018-2025 Jakub Filipowicz <jakubf@gmail.com>
 //
 //  This program is free software; you can redistribute it and/or modify
 //  it under the terms of the GNU General Public License as published by
@@ -24,6 +24,7 @@
 #include <pthread.h>
 #include <unistd.h>
 #include <stdatomic.h>
+#include <time.h>
 
 #include "log.h"
 #include "io/io.h"
@@ -58,14 +59,17 @@ enum it_commands {
 };
 
 struct iotester {
+	chan_t base;
+
 	pthread_t thread;
 	ELST evq;
-
-	int chnum;
 	atomic_uint intspec;
 };
 
 static void * it_cmdproc(void *ptr);
+void it_destroy(chan_t *ch);
+void it_reset(chan_t *ch);
+int it_cmd(chan_t *ch, int dir, uint16_t n_arg, uint16_t *r_arg);
 
 /*
 FETCH requests are handled immediately, in CPU thread.
@@ -98,7 +102,7 @@ void it_event_destructor(void *ptr)
 }
 
 // -----------------------------------------------------------------------
-void * it_create(int num, em400_cfg *cfg)
+chan_t * it_create(int chnum, em400_cfg *cfg)
 {
 	struct iotester *it = (struct iotester *) calloc(1, sizeof(struct iotester));
 	if (!it) {
@@ -106,14 +110,19 @@ void * it_create(int num, em400_cfg *cfg)
 		return NULL;
 	}
 
-	it->chnum = num;
+	it->base.num = chnum;
+	it->base.type = CHAN_IOTESTER;
+	it->base.cmd = it_cmd;
+	it->base.reset = it_reset;
+	it->base.destroy = it_destroy;
+
 	srand(time(NULL));
 
 	for (int i=0 ; i<16 ; i++) {
 		char section[16];
-		sprintf(section, "dev%i.%i", num, i);
+		snprintf(section, sizeof(section), "dev%i.%i", chnum, i);
 		if (cfg_contains(cfg, section)) {
-			LOG(L_IO, "IOtester can't connect devices. Ignored device: %s", section);
+			LOG(L_IO, "I/O tester can't connect devices. Ignored device: %s", section);
 		}
 	}
 
@@ -132,12 +141,12 @@ void * it_create(int num, em400_cfg *cfg)
 	}
 
 	char name[16];
-	sprintf(name, "iotest%02i", it->chnum);
+	snprintf(name, sizeof(name), "iotest%02i", it->base.num);
 	pthread_setname_np(it->thread, name);
 
 	LOG(L_IO, "I/O tester created");
 
-	return it;
+	return (chan_t *) it;
 }
 
 // -----------------------------------------------------------------------
@@ -152,24 +161,24 @@ struct it_event *it_event_new(int type, int cmd, uint16_t r)
 }
 
 // -----------------------------------------------------------------------
-void it_shutdown(void *ch)
+void it_destroy(chan_t *ch)
 {
 	if (!ch) return;
 
 	struct iotester *it = (struct iotester *) ch;
 
-	LOG(L_IO, "I/O tester shutting down");
+	LOG(L_IO, "Destroying I/O tester");
 
 	elst_insert(it->evq, it_event_new(EV_QUIT, 0, 0), 0);
 	pthread_join(it->thread, NULL);
 	elst_destroy(it->evq);
 	free(ch);
 
-	LOG(L_IO, "Shutdown complete");
+	LOG(L_IO, "I/O tester destroyed");
 }
 
 // -----------------------------------------------------------------------
-void it_reset(void *ch)
+void it_reset(chan_t *ch)
 {
 	struct iotester *it = (struct iotester *) ch;
 	LOG(L_IO, "Received reset request");
@@ -208,7 +217,7 @@ static void * it_cmdproc(void *ptr)
 					usleep(INIT_DELAY_US);
 					LOG(L_IO, "Reset done, sending interrupt with intspec 0xffff");
 					atomic_store_explicit(&it->intspec, 0xffff, memory_order_release);
-					io_int_set(it->chnum);
+					io_int_set(it->base.num);
 				}
 				break;
 			case EV_CMD:
@@ -218,19 +227,19 @@ static void * it_cmdproc(void *ptr)
 						LOG(L_IO, "NB = %i", r & 0b1111);
 						nb = r & 0b1111;
 						atomic_store_explicit(&it->intspec, 0, memory_order_release);
-						io_int_set(it->chnum);
+						io_int_set(it->base.num);
 						break;
 					case CMD_WAM:
 						LOG(L_IO, "AM = 0x%04x", r);
 						am = r;
 						atomic_store_explicit(&it->intspec, 0, memory_order_release);
-						io_int_set(it->chnum);
+						io_int_set(it->base.num);
 						break;
 					case CMD_WAB:
 						LOG(L_IO, "AB = 0x%04x", r);
 						ab = r;
 						atomic_store_explicit(&it->intspec, 0, memory_order_release);
-						io_int_set(it->chnum);
+						io_int_set(it->base.num);
 						break;
 					case CMD_WM:
 						LOG(L_IO, "single: buf[0x%04x] -> [%i:0x%04x], %i words", ab, nb, am, r);
@@ -239,7 +248,7 @@ static void * it_cmdproc(void *ptr)
 							if (!res) break;
 						}
 						atomic_store_explicit(&it->intspec, res, memory_order_release);
-						io_int_set(it->chnum);
+						io_int_set(it->base.num);
 						break;
 					case CMD_RM:
 						LOG(L_IO, "single: [%i:0x%04x] -> buf[0x%04x], %i words", nb, am, ab, r);
@@ -248,24 +257,24 @@ static void * it_cmdproc(void *ptr)
 							if (!res) break;
 						}
 						atomic_store_explicit(&it->intspec, res, memory_order_release);
-						io_int_set(it->chnum);
+						io_int_set(it->base.num);
 						break;
 					case CMD_WMM:
 						LOG(L_IO, "multi: buf[0x%04x] -> [%i:0x%04x], %i words", ab, nb, am, r);
 						res = io_mem_write_n(nb, am, buf+ab, r);
 						atomic_store_explicit(&it->intspec, res, memory_order_release);
-						io_int_set(it->chnum);
+						io_int_set(it->base.num);
 						break;
 					case CMD_RMM:
 						LOG(L_IO, "multi: [%i:0x%04x] -> buf[0x%04x], %i words", nb, am, ab, r);
 						res = io_mem_read_n(nb, am, buf+ab, r);
 						atomic_store_explicit(&it->intspec, res, memory_order_release);
-						io_int_set(it->chnum);
+						io_int_set(it->base.num);
 						break;
 					case CMD_IRQ:
 						LOG(L_IO, "Sending interrupt (intspec set to 0x%04x)", r);
 						atomic_store_explicit(&it->intspec, r, memory_order_release);
-						io_int_set(it->chnum);
+						io_int_set(it->base.num);
 						break;
 					case CMD_PA:
 						LOG(L_IO, "Sending Power Alarm interrupt");
@@ -278,7 +287,7 @@ static void * it_cmdproc(void *ptr)
 					default:
 						LOG(L_IO, "Unknown 'SEND' command: %i", ev->cmd);
 						atomic_store_explicit(&it->intspec, 0, memory_order_release);
-						io_int_set(it->chnum);
+						io_int_set(it->base.num);
 						break;
 				}
 				break;
@@ -293,7 +302,7 @@ static void * it_cmdproc(void *ptr)
 }
 
 // -----------------------------------------------------------------------
-int it_cmd(void *ch, int dir, uint16_t n_arg, uint16_t *r_arg)
+int it_cmd(chan_t *ch, int dir, uint16_t n_arg, uint16_t *r_arg)
 {
 	struct iotester *it = (struct iotester *) ch;
 
@@ -334,13 +343,6 @@ int it_cmd(void *ch, int dir, uint16_t n_arg, uint16_t *r_arg)
 	return IO_OK;
 }
 
-// -----------------------------------------------------------------------
-const struct chan_drv it_chan_driver = {
-	.name = "iotester",
-	.create = it_create,
-	.shutdown = it_shutdown,
-	.reset = it_reset,
-	.cmd = it_cmd
-};
+
 
 // vim: tabstop=4 shiftwidth=4 autoindent

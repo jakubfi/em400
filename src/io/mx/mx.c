@@ -58,7 +58,9 @@ typedef int (*mx_cmd_fun)(struct mx *multix, int log_n, uint16_t arg);
 static void * mx_event_loop(void *ptr);
 static int mx_event(struct mx *multix, int type, int cmd, int log_n, uint16_t r_arg);
 int mx_int_enqueue(struct mx *multix, int intr, int line);
-void mx_cmd_reset(void *ch);
+void mx_cmd_reset(chan_t *ch);
+void mx_destroy(chan_t *ch);
+int mx_cmd(chan_t *ch, int dir, uint16_t n_arg, uint16_t *r_arg);
 
 // -----------------------------------------------------------------------
 void mx_event_destructor(void *ptr)
@@ -67,7 +69,7 @@ void mx_event_destructor(void *ptr)
 }
 
 // -----------------------------------------------------------------------
-void * mx_create(int ch_num, em400_cfg *cfg)
+chan_t * mx_create(int ch_num, em400_cfg *cfg)
 {
 	LOG(L_MX, "Creating new MULTIX");
 
@@ -76,17 +78,31 @@ void * mx_create(int ch_num, em400_cfg *cfg)
 	struct mx *multix = (struct mx *) calloc(1, sizeof(struct mx));
 	if (!multix) {
 		LOGERR("Memory allocation error.");
-		goto cleanup;
+		return NULL;
 	}
+
+	multix->base.num = ch_num;
+	multix->base.type = CHAN_MULTIX;
+	multix->base.cmd = mx_cmd;
+	multix->base.reset = mx_cmd_reset;
+	multix->base.destroy = mx_destroy;
+
 	// initialize multix structure
-	multix->chnum = ch_num;
 	atomic_store_explicit(&multix->state, MX_UNINITIALIZED, memory_order_relaxed);
 	for (int i=0 ; i<MX_LINE_CNT ; i++) {
 		struct mx_line *pline = multix->plines + i;
 		pline->phy_n = i;
 		pline->multix = multix;
 		pline->protoq = elst_create(1024, mx_event_destructor);
+		if (!pline->protoq) {
+			LOGERR("Failed to create protocol event queue.");
+			goto cleanup;
+		}
 		pline->statusq = elst_create(1024, mx_event_destructor);
+		if (!pline->statusq) {
+			LOGERR("Failed to create status event queue.");
+			goto cleanup;
+		}
 		if (pthread_mutex_init(&pline->status_mutex, NULL)) {
 			LOGERR("Failed to initialize line %i status mutex.", i);
 			goto cleanup;
@@ -132,12 +148,12 @@ void * mx_create(int ch_num, em400_cfg *cfg)
 	}
 
 	char name[16];
-	snprintf(name, 15, "mxev%02i", multix->chnum);
+	snprintf(name, 15, "mxev%02i", multix->base.num);
 	pthread_setname_np(multix->ev_thread, name);
 
 	LOG(L_MX, "MULTIX created");
 
-	return multix;
+	return (chan_t *) multix;
 
 cleanup:
 	if (multix) {
@@ -219,13 +235,12 @@ static void mx_lines_deinit(struct mx *multix)
 }
 
 // -----------------------------------------------------------------------
-void mx_shutdown(void *ch)
+void mx_destroy(chan_t *ch)
 {
 	if (!ch) return;
-
-	LOG(L_MX, "Multix shutting down");
-
 	struct mx *multix = (struct mx *) ch;
+
+	LOG(L_MX, "Destroying Multix in channel %i", multix->base.num);
 
 	// --- make multix uninitialized (further interface commands will be dropped)
 
@@ -260,7 +275,7 @@ void mx_shutdown(void *ch)
 		pthread_mutex_destroy(&pline->status_mutex);
 	}
 	free(multix);
-	LOG(L_MX, "Shutdown complete");
+	LOG(L_MX, "Multix destroyed");
 }
 
 // -----------------------------------------------------------------------
@@ -293,7 +308,7 @@ static void mx_int_set(struct mx *multix)
 		return;
 	}
 
-	io_int_set(multix->chnum);
+	io_int_set(multix->base.num);
 }
 
 // -----------------------------------------------------------------------
@@ -467,13 +482,13 @@ static int mx_line_conf_log(struct mx *multix, int phy_n, int log_n, uint16_t *d
 	elst_clear(pline->protoq);
 
 	char thname[16];
-	snprintf(thname, 15, "mxl%02i:%02i", multix->chnum, pline->log_n);
+	snprintf(thname, 15, "mxl%02i:%02i", multix->base.num, pline->log_n);
 	if (pthread_create(&pline->proto_th, NULL, mx_line_thread, pline)) {
 		return MX_SC_E_NOMEM;
 	}
 	pthread_setname_np(pline->proto_th, thname);
 
-	snprintf(thname, 15, "mxs%02i:%02i", multix->chnum, pline->log_n);
+	snprintf(thname, 15, "mxs%02i:%02i", multix->base.num, pline->log_n);
 	if (pthread_create(&pline->status_th, NULL, mx_line_status_thread, pline)) {
 		return MX_SC_E_NOMEM;
 	}
@@ -514,7 +529,7 @@ static int mx_cmd_setcfg(struct mx *multix, uint16_t addr)
 	phy_desc_count = (data[0] & 0b1111111100000000) >> 8;
 	log_count      = (data[0] & 0b0000000011111111);
 
-	LOG(L_MX, "Configuration for MULTIX on channel %i has %i physical line descriptors, %i logical lines", multix->chnum, phy_desc_count, log_count);
+	LOG(L_MX, "Configuration for MULTIX on channel %i has %i physical line descriptors, %i logical lines", multix->base.num, phy_desc_count, log_count);
 
 	// read line descriptions
 	read_size = phy_desc_count + 4*log_count;
@@ -846,7 +861,7 @@ static int mx_event(struct mx *multix, int type, int cmd, int log_n, uint16_t r_
 }
 
 // -----------------------------------------------------------------------
-void mx_cmd_reset(void *ch)
+void mx_cmd_reset(chan_t *ch)
 {
 	struct mx *multix = (struct mx *) ch;
 
@@ -856,7 +871,7 @@ void mx_cmd_reset(void *ch)
 }
 
 // -----------------------------------------------------------------------
-int mx_cmd(void *ch, int dir, uint16_t n_arg, uint16_t *r_arg)
+int mx_cmd(chan_t *ch, int dir, uint16_t n_arg, uint16_t *r_arg)
 {
 	struct mx *multix = (struct mx *) ch;
 
@@ -874,7 +889,7 @@ int mx_cmd(void *ch, int dir, uint16_t n_arg, uint16_t *r_arg)
 			case MX_CHAN_CMD_EXISTS:
 				return IO_OK;
 			case MX_CHAN_CMD_RESET:
-				mx_cmd_reset(multix);
+				mx_cmd_reset((chan_t*) multix);
 				return IO_OK;
 			default: // MX_CHAN_CMD_INVALID
 				// fallthrough to line or general event processing
@@ -886,14 +901,5 @@ int mx_cmd(void *ch, int dir, uint16_t n_arg, uint16_t *r_arg)
 
 	return mx_event(multix, MX_EV_CMD, cmd, log_n, *r_arg);
 }
-
-// -----------------------------------------------------------------------
-const struct chan_drv mx_chan_driver = {
-	.name = "multix",
-	.create = mx_create,
-	.shutdown = mx_shutdown,
-	.reset = mx_cmd_reset,
-	.cmd = mx_cmd
-};
 
 // vim: tabstop=4 shiftwidth=4 autoindent

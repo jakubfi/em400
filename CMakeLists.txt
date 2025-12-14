@@ -188,6 +188,7 @@ set(SOURCES_EM400
 	src/io/cchar/flop8.c
 	src/io/cchar/flop8.h
 	src/io/iotester.c
+	src/io/iotester.h
 
 	src/io/dev/dev.c
 	src/io/dev/dev.h

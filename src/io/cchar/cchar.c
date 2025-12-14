@@ -1,4 +1,4 @@
-//  Copyright (c) 2012-2013 Jakub Filipowicz <jakubf@gmail.com>
+//  Copyright (c) 2012-2025 Jakub Filipowicz <jakubf@gmail.com>
 //
 //  This program is free software; you can redistribute it and/or modify
 //  it under the terms of the GNU General Public License as published by
@@ -65,6 +65,10 @@ cchar_unit_proto_t cchar_unit_proto[] = {
 	{ NULL, NULL, NULL, NULL, NULL, NULL, NULL }
 };
 
+void cchar_destroy(chan_t *chan);
+void cchar_reset(chan_t *chan);
+int cchar_cmd(chan_t *ch, int dir, uint16_t n_arg, uint16_t *r_arg);
+
 // -----------------------------------------------------------------------
 static cchar_unit_proto_t * cchar_unit_proto_get(cchar_unit_proto_t *proto, const char *name)
 {
@@ -109,13 +113,23 @@ static void * cchar_ioloop(void *ptr)
 }
 
 // -----------------------------------------------------------------------
-void * cchar_create(int ch_num, em400_cfg *cfg)
+chan_t * cchar_create(int ch_num, em400_cfg *cfg)
 {
-	cchar_chan_t *chan = (cchar_chan_t *) calloc(1, sizeof(cchar_chan_t));
+	cchar_chan_t *chan = calloc(1, sizeof(cchar_chan_t));
+	if (!chan) {
+		LOGERR("Memory allocation error");
+		return NULL;
+	}
 
+	chan->base.num = ch_num;
+	chan->base.type = CHAN_CHAR;
+	chan->base.cmd = cchar_cmd;
+	chan->base.reset = cchar_reset;
+	chan->base.destroy = cchar_destroy;
+
+	// early, units use this
 	ioloop = uv_default_loop();
 
-	chan->num = ch_num;
 	for (int dev_num=0 ; dev_num<CCHAR_MAX_DEVICES ; dev_num++) {
 		// find unit prototype
 		const char *unit_name = cfg_fgetstr(cfg, "dev%i.%i:type", ch_num, dev_num);
@@ -164,42 +178,44 @@ void * cchar_create(int ch_num, em400_cfg *cfg)
 	}
 	pthread_setname_np(chan->ioloop_thread, "ioloop");
 
-	return (void *) chan;
+	return (chan_t *) chan;
 fail:
 	return NULL;
 }
 
 // -----------------------------------------------------------------------
-void cchar_shutdown(void *chan)
+void cchar_destroy(chan_t *chan)
 {
-	LOG(L_CCHR, "CCHAR shutdown");
 	if (!chan) return;
-
 	cchar_chan_t *ch = (cchar_chan_t *) chan;
+
+	LOG(L_CCHR, "Destroying CHAR channel %i", ch->base.num);
 
 	// stop ioloop and its thread
 	uv_async_send(&ch->async_quit);
 	pthread_join(ch->ioloop_thread, NULL);
 	LOG(L_CCHR, "I/O loop thread joined");
 
-	// shutdown (stop) all connected controllers
+	// stop all connected controllers
 	for (int i=0 ; i<CCHAR_MAX_DEVICES ; i++) {
 		cchar_unit_proto_t *u = ch->unit[i];
 		if (u && u->shutdown) {
 			u->shutdown(u);
 		}
 	}
-	LOG(L_CCHR, "All units shut down");
+
+	LOG(L_CCHR, "All units stopped");
 
 	// clean ioloop resources
-	cchar_ioloop_teardown(chan);
+	cchar_ioloop_teardown((cchar_chan_t*)chan);
 	LOG(L_CCHR, "I/O loop torn down");
+
 	// give libuv chance to cleanup handles
 	uv_run(ioloop, UV_RUN_DEFAULT);
 	LOG(L_CCHR, "I/O loop cleanup run finished");
 	int res = uv_loop_close(ioloop);
 	if (res < 0) {
-		LOG(L_CCHR, "I/O loop failed to close nicely: %s", uv_strerror(res));
+		LOG(L_CCHR, "I/O loop failed to close cleanly: %s", uv_strerror(res));
 	} else {
 		LOG(L_CCHR, "I/O loop closed cleanly");
 	}
@@ -217,7 +233,7 @@ void cchar_shutdown(void *chan)
 }
 
 // -----------------------------------------------------------------------
-void cchar_reset(void *chan)
+void cchar_reset(chan_t *chan)
 {
 	if (!chan) return;
 
@@ -241,19 +257,19 @@ void cchar_int_trigger(cchar_chan_t *chan)
 	pthread_mutex_lock(&chan->int_mutex);
 	if (chan->interrupting_device != NO_INTERRUPT_REPORTED) {
 		// interrupt reported to the CPU but not yet served, nothing more to do
-		LOG(L_CCHR, "CCHAR (ch:%i) not reporting interrupt. Reported by unit: %i has yet to be served", chan->num, chan->interrupting_device);
+		LOG(L_CCHR, "CCHAR (ch:%i) not reporting interrupt. Reported by unit: %i has yet to be served", chan->base.num, chan->interrupting_device);
 	} else {
 		// check if any unit reported interrupt
 		for (int unit_n=0 ; unit_n<CCHAR_MAX_DEVICES ; unit_n++) {
 			cchar_unit_proto_t *unit = chan->unit[unit_n];
 			if (unit && unit->has_interrupt(unit)) {
-				LOG(L_CCHR, "CCHAR (ch:%i) reporting interrupt from unit %i", chan->num, unit_n);
+				LOG(L_CCHR, "CCHAR (ch:%i) reporting interrupt from unit %i", chan->base.num, unit_n);
 				chan->interrupting_device = unit_n;
-				io_int_set(chan->num);
+				io_int_set(chan->base.num);
 				break;
 			}
 		}
-		LOG(L_CCHR, "CCHAR (ch:%i) No more interrupt lines active", chan->num);
+		LOG(L_CCHR, "CCHAR (ch:%i) No more interrupt lines active", chan->base.num);
 	}
 	pthread_mutex_unlock(&chan->int_mutex);
 }
@@ -261,7 +277,7 @@ void cchar_int_trigger(cchar_chan_t *chan)
 // -----------------------------------------------------------------------
 void cchar_int_cancel(cchar_chan_t *chan, int unit_n)
 {
-	LOG(L_CCHR, "CCHAR (ch:%i) unit: %i cancel interrupt", chan->num, unit_n);
+	LOG(L_CCHR, "CCHAR (ch:%i) unit: %i cancel interrupt", chan->base.num, unit_n);
 
 	pthread_mutex_lock(&chan->int_mutex);
 	if (chan->interrupting_device == unit_n) {
@@ -279,7 +295,7 @@ static int cchar_cmd_intspec(cchar_chan_t *chan, uint16_t *r_arg)
 	if (chan->interrupting_device != NO_INTERRUPT_REPORTED) {
 		cchar_unit_proto_t *unit = chan->unit[chan->interrupting_device];
 		int intspec = unit->intspec(unit);
-		LOG(L_CCHR, "CCHAR (ch:%i) device %i interrupt specification: %i", chan->num, chan->interrupting_device, intspec);
+		LOG(L_CCHR, "CCHAR (ch:%i) device %i interrupt specification: %i", chan->base.num, chan->interrupting_device, intspec);
 		*r_arg = (intspec << 8) | (chan->interrupting_device << 5);
 		chan->interrupting_device = NO_INTERRUPT_REPORTED;
 	} else {
@@ -300,20 +316,20 @@ static int cchar_chan_cmd(cchar_chan_t *chan, int dir, int cmd, int u_num, uint1
 	if (dir == IO_OU) {
 		switch (cmd) {
 		case CHAN_CMD_EXISTS:
-			LOG(L_CCHR, "CCHAR %i: command: check chan exists", chan->num);
+			LOG(L_CCHR, "CCHAR %i: command: check chan exists", chan->base.num);
 			break;
 		case CHAN_CMD_MASK_PN:
-			LOG(L_CCHR, "CCHAR %i: command: mask CPU", chan->num);
+			LOG(L_CCHR, "CCHAR %i: command: mask CPU (ignored)", chan->base.num);
 			break;
 		case CHAN_CMD_MASK_NPN:
-			LOG(L_CCHR, "CCHAR %i: command: mask ~CPU (ignored)", chan->num);
+			LOG(L_CCHR, "CCHAR %i: command: mask ~CPU (ignored)", chan->base.num);
 			break;
 		case CHAN_CMD_ASSIGN:
 			// nothing to assign, always assigned to CPU 0
-			LOG(L_CCHR, "CCHAR %i:%i: command: assign CPU (ignored)", chan->num, u_num);
+			LOG(L_CCHR, "CCHAR %i:%i: command: assign CPU (ignored)", chan->base.num, u_num);
 			break;
 		default:
-			LOG(L_CCHR, "CCHAR %i:%i: unknow command", chan->num, u_num);
+			LOG(L_CCHR, "CCHAR %i:%i: unknown command", chan->base.num, u_num);
 			// shouldn't happen, but as channel always reports OK...
 			break;
 		}
@@ -321,17 +337,17 @@ static int cchar_chan_cmd(cchar_chan_t *chan, int dir, int cmd, int u_num, uint1
 		switch (cmd) {
 		case CHAN_CMD_EXISTS:
 		case CHAN_CMD_STATUS:
-			LOG(L_CCHR, "CCHAR %i: command: check chan exists", chan->num);
+			LOG(L_CCHR, "CCHAR %i: command: check chan exists", chan->base.num);
 			break;
 		case CHAN_CMD_INTSPEC:
 			return cchar_cmd_intspec(chan, r_arg);
 		case CHAN_CMD_ALLOC:
 			// all units always working with CPU 0
 			*r_arg = 0;
-			LOG(L_CCHR, "CCHAR %i:%i: command: get allocation -> %i", chan->num, u_num, *r_arg);
+			LOG(L_CCHR, "CCHAR %i:%i: command: get allocation -> %i", chan->base.num, u_num, *r_arg);
 			break;
 		default:
-			LOG(L_CCHR, "CCHAR %i:%i: unknown command", chan->num, u_num);
+			LOG(L_CCHR, "CCHAR %i:%i: unknown command", chan->base.num, u_num);
 			// shouldn't happen, but as channel always reports OK...
 			break;
 		}
@@ -341,7 +357,7 @@ static int cchar_chan_cmd(cchar_chan_t *chan, int dir, int cmd, int u_num, uint1
 }
 
 // -----------------------------------------------------------------------
-int cchar_cmd(void *ch, int dir, uint16_t n_arg, uint16_t *r_arg)
+int cchar_cmd(chan_t *ch, int dir, uint16_t n_arg, uint16_t *r_arg)
 {
 	const unsigned cmd = (n_arg & 0b1111110000000000) >> 10;
 	const unsigned u_num = (n_arg & 0b0000000011100000) >> 5;
@@ -360,14 +376,5 @@ int cchar_cmd(void *ch, int dir, uint16_t n_arg, uint16_t *r_arg)
 		}
 	}
 }
-
-// -----------------------------------------------------------------------
-struct chan_drv cchar_chan_driver = {
-	.name = "char",
-	.create = cchar_create,
-	.shutdown = cchar_shutdown,
-	.reset = cchar_reset,
-	.cmd = cchar_cmd
-};
 
 // vim: tabstop=4 shiftwidth=4 autoindent

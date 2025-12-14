@@ -1,4 +1,4 @@
-//  Copyright (c) 2012-2025 Jakub Filipowicz <jakubf@gmail.com>
+//  Copyright (c) 2025 Jakub Filipowicz <jakubf@gmail.com>
 //
 //  This program is free software; you can redistribute it and/or modify
 //  it under the terms of the GNU General Public License as published by
@@ -15,26 +15,12 @@
 //  Foundation, Inc.,
 //  51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 
-#ifndef IO_H
-#define IO_H
+#ifndef IOTESTER_H
+#define IOTESTER_H
 
-#include <inttypes.h>
-#include <stdbool.h>
+#include "io/chan.h"
 
-#include "cfg.h"
-
-int io_init(em400_cfg *cfg);
-void io_shutdown();
-void io_reset();
-void io_get_intspec(int ch, uint16_t *int_spec);
-int io_dispatch(int dir, uint16_t n, uint16_t *r);
-
-void io_int_set(int x);
-void io_int_set_pa();
-bool io_mem_read_1(int nb, uint16_t addr, uint16_t *data);
-bool io_mem_write_1(int nb, uint16_t addr, uint16_t data);
-bool io_mem_read_n(int nb, uint16_t saddr, uint16_t *dest, int count);
-bool io_mem_write_n(int nb, uint16_t saddr, uint16_t *src, int count);
+chan_t * it_create(int chnum, em400_cfg *cfg);
 
 #endif
 

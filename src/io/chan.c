@@ -1,4 +1,4 @@
-//  Copyright (c) 2012-2014 Jakub Filipowicz <jakubf@gmail.com>
+//  Copyright (c) 2012-2025 Jakub Filipowicz <jakubf@gmail.com>
 //
 //  This program is free software; you can redistribute it and/or modify
 //  it under the terms of the GNU General Public License as published by
@@ -15,55 +15,47 @@
 //  Foundation, Inc.,
 //  51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 
-#include <stdlib.h>
-#include <strings.h>
+#include <assert.h>
 
-#include "io/chan.h"
 #include "log.h"
 #include "cfg.h"
+#include "io/chan.h"
+#include "io/cchar/cchar.h"
+#include "io/iotester.h"
+#include "io/mx/mx.h"
 
-extern struct chan_drv cchar_chan_driver;
-extern struct chan_drv mx_chan_driver;
-extern struct chan_drv it_chan_driver;
+typedef chan_t * (*chan_create_f)(int ch_num, em400_cfg *cfg);
 
-const struct chan_drv *chan_drivers[] = {
-	&cchar_chan_driver,
-	&mx_chan_driver,
-	&it_chan_driver,
-	NULL
+static const chan_create_f chan_constructor[] = {
+	[CHAN_CHAR] = cchar_create,
+	[CHAN_IOTESTER] = it_create,
+	[CHAN_MULTIX] = mx_create,
 };
 
 // -----------------------------------------------------------------------
-struct chan * chan_make(int num, const char *name, em400_cfg *cfg)
+chan_t * chan_create(unsigned num, unsigned type, em400_cfg *cfg)
 {
-	const struct chan_drv **cdriver = chan_drivers;
-
-	while (*cdriver) {
-		if (!strcasecmp(name, (*cdriver)->name)) {
-			struct chan *chan = (struct chan *) malloc(sizeof(struct chan));
-			if (!chan) {
-				return NULL;
-			}
-			chan->drv = *cdriver;
-			chan->obj = chan->drv->create(num, cfg);
-			if (!chan->obj) {
-				free(chan);
-				return NULL;
-			}
-			return chan;
-		}
-		cdriver++;
+	if (type >= CHAN_TYPE_COUNT) {
+		LOGERR("Unknown channel type: %d", type);
+		return NULL;
 	}
 
-	LOGERR("Unknown channel type: %s.", name);
-	return NULL;
+	chan_t *chan = chan_constructor[type](num, cfg);
+	if (chan) {
+		assert(chan->cmd);
+		assert(chan->reset);
+		assert(chan->destroy);
+	}
+	// TODO: should chan->num be filled in here?
+
+	return chan;
 }
 
 // -----------------------------------------------------------------------
-void chan_destroy(struct chan *chan)
+void chan_destroy(chan_t *chan)
 {
-	chan->drv->shutdown(chan->obj);
-	free(chan);
+	if (!chan) return;
+	chan->destroy(chan);
 }
 
 // vim: tabstop=4 shiftwidth=4 autoindent

@@ -1,4 +1,4 @@
-//  Copyright (c) 2012-2013 Jakub Filipowicz <jakubf@gmail.com>
+//  Copyright (c) 2012-2025 Jakub Filipowicz <jakubf@gmail.com>
 //
 //  This program is free software; you can redistribute it and/or modify
 //  it under the terms of the GNU General Public License as published by
@@ -23,6 +23,15 @@
 #include "io/defs.h"
 #include "cfg.h"
 
+typedef enum chan_types {
+	CHAN_CHAR,
+	CHAN_MULTIX,
+	CHAN_IOTESTER,
+	CHAN_TYPE_COUNT
+} chan_type_t;
+
+typedef struct chan chan_t;
+
 // TODO: needs further cleaning (possibly move down, as interpretation is channel-specific)
 enum chan_ou_commands {
 	CHAN_CMD_EXISTS		= 0b000000,
@@ -36,26 +45,20 @@ enum chan_in_commands {
 	CHAN_CMD_STATUS		= 0b000100,
 };
 
-typedef void * (*chan_f_create)(int num, em400_cfg *cfg);
-typedef void (*chan_f_shutdown)(void *ch_obj);
-typedef void (*chan_f_reset)(void *ch_obj);
-typedef int (*chan_f_cmd)(void *ch_obj, int dir, uint16_t n, uint16_t *r);
-
-struct chan_drv {
-	const char *name;
-	const chan_f_create create;
-	const chan_f_shutdown shutdown;
-	const chan_f_reset reset;
-	const chan_f_cmd cmd;
-};
+typedef void (*chan_f_destroy)(chan_t *chan);
+typedef void (*chan_f_reset)(chan_t *chan);
+typedef int (*chan_f_cmd)(chan_t *chan, int dir, uint16_t n, uint16_t *r);
 
 struct chan {
-	const struct chan_drv *drv;
-	void *obj;
+	int num;
+	chan_type_t type;
+	chan_f_cmd cmd;
+	chan_f_reset reset;
+	chan_f_destroy destroy;
 };
 
-struct chan * chan_make(int num, const char *name, em400_cfg *cfg);
-void chan_destroy(struct chan *chan);
+chan_t * chan_create(unsigned num, unsigned type, em400_cfg *cfg);
+void chan_destroy(chan_t *chan);
 
 #endif
 

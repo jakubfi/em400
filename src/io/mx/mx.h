@@ -24,6 +24,7 @@
 #include <stdatomic.h>
 
 #include "utils/elst.h"
+#include "io/chan.h"
 #include "io/mx/cmds.h"
 
 #define MX_LINE_CNT 32
@@ -81,7 +82,8 @@ struct mx_line {
 };
 
 struct mx {
-	int chnum;						// Multix' channel number
+	chan_t base;
+
 	atomic_int state;				// multix state (uninitialized, initialized, configured)
 
 	ELST eventq;					// event queue
@@ -94,6 +96,8 @@ struct mx {
 	struct mx_line plines[MX_LINE_CNT];  // physical lines
 	struct mx_line *llines[MX_LINE_CNT]; // logical lines (mapping to physical lines)
 };
+
+chan_t * mx_create(int ch_num, em400_cfg *cfg);
 
 int mx_int_enqueue(struct mx *multix, int intr, int line);
 bool mx_mem_read(struct mx *multix, int nb, uint16_t addr, uint16_t *data, int len);
