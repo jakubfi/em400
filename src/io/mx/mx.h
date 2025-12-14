@@ -31,7 +31,7 @@
 #define MX_LINE_BUF_SIZE 512
 
 struct mx_line;
-struct mx;
+typedef struct chan_mx chan_mx_t;
 
 typedef int (*mx_proto_init_fun)(struct mx_line *pline, uint16_t *data);
 typedef void (*mx_proto_destroy_fun)(struct mx_line *pline);
@@ -57,7 +57,7 @@ struct mx_proto {
 };
 
 struct mx_line {
-	struct mx *multix;				// multix line is connected to
+	chan_mx_t *multix;				// multix line is connected to
 
 	int used;						// physical line is used
 	int dir;						// physical line direction
@@ -81,27 +81,11 @@ struct mx_line {
 	pthread_t status_th;			// status thread
 };
 
-struct mx {
-	chan_t base;
-
-	atomic_int state;				// multix state (uninitialized, initialized, configured)
-
-	ELST eventq;					// event queue
-	pthread_t ev_thread;			// event processor thread
-
-	ELST intq;						// interrupt queue
-	uint16_t intspec;				// specification of the interrupt reported to the CPU
-	pthread_mutex_t int_mutex;		// mutex guarding interrupt specification
-
-	struct mx_line plines[MX_LINE_CNT];  // physical lines
-	struct mx_line *llines[MX_LINE_CNT]; // logical lines (mapping to physical lines)
-};
-
 chan_t * mx_create(int ch_num, em400_cfg *cfg);
 
-int mx_int_enqueue(struct mx *multix, int intr, int line);
-bool mx_mem_read(struct mx *multix, int nb, uint16_t addr, uint16_t *data, int len);
-bool mx_mem_write(struct mx *multix, int nb, uint16_t addr, uint16_t *data, int len);
+int mx_int_enqueue(chan_mx_t *multix, int intr, int line);
+bool mx_mem_read(chan_mx_t *multix, int nb, uint16_t addr, uint16_t *data, int len);
+bool mx_mem_write(chan_mx_t *multix, int nb, uint16_t addr, uint16_t *data, int len);
 
 #endif
 

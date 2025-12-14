@@ -53,11 +53,27 @@ enum mx_states { MX_UNINITIALIZED, MX_INITIALIZED, MX_CONFIGURED };
 // so we don't finish MULTIX' job before switching back to CPU thread.
 #define MX_INIT_TIME_MSEC 150
 
-typedef int (*mx_cmd_fun)(struct mx *multix, int log_n, uint16_t arg);
+struct chan_mx {
+	chan_t base;
+
+	atomic_int state;				// multix state (uninitialized, initialized, configured)
+
+	ELST eventq;					// event queue
+	pthread_t ev_thread;			// event processor thread
+
+	ELST intq;						// interrupt queue
+	uint16_t intspec;				// specification of the interrupt reported to the CPU
+	pthread_mutex_t int_mutex;		// mutex guarding interrupt specification
+
+	struct mx_line plines[MX_LINE_CNT];  // physical lines
+	struct mx_line *llines[MX_LINE_CNT]; // logical lines (mapping to physical lines)
+};
+
+typedef int (*mx_cmd_fun)(chan_mx_t *multix, int log_n, uint16_t arg);
 
 static void * mx_event_loop(void *ptr);
-static int mx_event(struct mx *multix, int type, int cmd, int log_n, uint16_t r_arg);
-int mx_int_enqueue(struct mx *multix, int intr, int line);
+static int mx_event(chan_mx_t *multix, int type, int cmd, int log_n, uint16_t r_arg);
+int mx_int_enqueue(chan_mx_t *multix, int intr, int line);
 void mx_cmd_reset(chan_t *ch);
 void mx_destroy(chan_t *ch);
 int mx_cmd(chan_t *ch, int dir, uint16_t n_arg, uint16_t *r_arg);
@@ -75,7 +91,7 @@ chan_t * mx_create(int ch_num, em400_cfg *cfg)
 
 	// --- create multix itself (everything needs it)
 
-	struct mx *multix = (struct mx *) calloc(1, sizeof(struct mx));
+	chan_mx_t *multix = (chan_mx_t *) calloc(1, sizeof(chan_mx_t));
 	if (!multix) {
 		LOGERR("Memory allocation error.");
 		return NULL;
@@ -183,7 +199,7 @@ cleanup:
 }
 
 // -----------------------------------------------------------------------
-static void mx_lines_deinit(struct mx *multix)
+static void mx_lines_deinit(chan_mx_t *multix)
 {
 	LOG(L_MX, "Deinitializing logical lines");
 
@@ -238,7 +254,7 @@ static void mx_lines_deinit(struct mx *multix)
 void mx_destroy(chan_t *ch)
 {
 	if (!ch) return;
-	struct mx *multix = (struct mx *) ch;
+	chan_mx_t *multix = (chan_mx_t *) ch;
 
 	LOG(L_MX, "Destroying Multix in channel %i", multix->base.num);
 
@@ -279,7 +295,7 @@ void mx_destroy(chan_t *ch)
 }
 
 // -----------------------------------------------------------------------
-bool mx_mem_read(struct mx *multix, int nb, uint16_t addr, uint16_t *data, int len)
+bool mx_mem_read(chan_mx_t *multix, int nb, uint16_t addr, uint16_t *data, int len)
 {
 	if (atomic_load_explicit(&multix->state, memory_order_relaxed) == MX_UNINITIALIZED) {
 		LOG(L_MX, "LOST memory read due to multix initializing");
@@ -290,7 +306,7 @@ bool mx_mem_read(struct mx *multix, int nb, uint16_t addr, uint16_t *data, int l
 }
 
 // -----------------------------------------------------------------------
-bool mx_mem_write(struct mx *multix, int nb, uint16_t addr, uint16_t *data, int len)
+bool mx_mem_write(chan_mx_t *multix, int nb, uint16_t addr, uint16_t *data, int len)
 {
 	if (atomic_load_explicit(&multix->state, memory_order_relaxed) == MX_UNINITIALIZED) {
 		LOG(L_MX, "LOST memory write due to multix initializing");
@@ -301,7 +317,7 @@ bool mx_mem_write(struct mx *multix, int nb, uint16_t addr, uint16_t *data, int 
 }
 
 // -----------------------------------------------------------------------
-static void mx_int_set(struct mx *multix)
+static void mx_int_set(chan_mx_t *multix)
 {
 	if (atomic_load_explicit(&multix->state, memory_order_relaxed) == MX_UNINITIALIZED) {
 		LOG(L_MX, "LOST interrupt due to multix initializing");
@@ -312,7 +328,7 @@ static void mx_int_set(struct mx *multix)
 }
 
 // -----------------------------------------------------------------------
-static void mx_int_push(struct mx *multix)
+static void mx_int_push(chan_mx_t *multix)
 {
 	int send = 0;
 
@@ -334,7 +350,7 @@ static void mx_int_push(struct mx *multix)
 }
 
 // -----------------------------------------------------------------------
-int mx_int_enqueue(struct mx *multix, int intr, int line)
+int mx_int_enqueue(chan_mx_t *multix, int intr, int line)
 {
 	LOG(L_MX, "Enqueue interrupt %i (%s), line %i", intr, mx_irq_name(intr), line);
 
@@ -352,7 +368,7 @@ int mx_int_enqueue(struct mx *multix, int intr, int line)
 }
 
 // -----------------------------------------------------------------------
-static uint16_t mx_int_get_spec(struct mx *multix)
+static uint16_t mx_int_get_spec(chan_mx_t *multix)
 {
 	uint16_t lintspec;
 
@@ -367,7 +383,7 @@ static uint16_t mx_int_get_spec(struct mx *multix)
 }
 
 // -----------------------------------------------------------------------
-void mx_int_reset(struct mx *multix)
+void mx_int_reset(chan_mx_t *multix)
 {
 	pthread_mutex_lock(&multix->int_mutex);
 	multix->intspec = MX_IRQ_INIEA;
@@ -376,7 +392,7 @@ void mx_int_reset(struct mx *multix)
 }
 
 // -----------------------------------------------------------------------
-static int mx_line_conf_phy(struct mx *multix, int phy_n, uint16_t data)
+static int mx_line_conf_phy(chan_mx_t *multix, int phy_n, uint16_t data)
 {
 	unsigned dir  = (data & 0b1110000000000000) >> 13;
 	unsigned used = (data & 0b0001000000000000) >> 12;
@@ -421,7 +437,7 @@ static int mx_line_conf_phy(struct mx *multix, int phy_n, uint16_t data)
 }
 
 // -----------------------------------------------------------------------
-static int mx_line_conf_log(struct mx *multix, int phy_n, int log_n, uint16_t *data)
+static int mx_line_conf_log(chan_mx_t *multix, int phy_n, int log_n, uint16_t *data)
 {
 	unsigned proto_num	= (data[0] & 0b1111111100000000) >> 8;
 	// formatter number is not really used anywhere in emulation,
@@ -498,7 +514,7 @@ static int mx_line_conf_log(struct mx *multix, int phy_n, int log_n, uint16_t *d
 }
 
 // -----------------------------------------------------------------------
-static int mx_cmd_setcfg(struct mx *multix, uint16_t addr)
+static int mx_cmd_setcfg(chan_mx_t *multix, uint16_t addr)
 {
 #define CFGERR(err, line) ret_int = MX_IRQ_INKON; ret_err = (((err)<<8) | (line))
 
@@ -613,7 +629,7 @@ fail:
 }
 
 // -----------------------------------------------------------------------
-static int mx_cmd_test(struct mx *multix)
+static int mx_cmd_test(chan_mx_t *multix)
 {
 	// As we're not able to run any real 8085 code, TEST command
 	// won't work. Best we can do is to pretend that test is done
@@ -624,7 +640,7 @@ static int mx_cmd_test(struct mx *multix)
 }
 
 // -----------------------------------------------------------------------
-static int mx_cmd_requeue(struct mx *multix)
+static int mx_cmd_requeue(chan_mx_t *multix)
 {
 	pthread_mutex_lock(&multix->int_mutex);
 	if (multix->intspec != MX_IRQ_INIEA) {
@@ -642,7 +658,7 @@ static int mx_cmd_requeue(struct mx *multix)
 }
 
 // -----------------------------------------------------------------------
-static void mx_cmd_dispatch(struct mx *multix, struct mx_line *lline, struct mx_event *ev)
+static void mx_cmd_dispatch(chan_mx_t *multix, struct mx_line *lline, struct mx_event *ev)
 {
 	// is multix and line configured?
 	if (!lline) {
@@ -685,7 +701,7 @@ static void mx_cmd_dispatch(struct mx *multix, struct mx_line *lline, struct mx_
 }
 
 // -----------------------------------------------------------------------
-static void mx_process_cmd_event(struct mx *multix, struct mx_event *ev)
+static void mx_process_cmd_event(chan_mx_t *multix, struct mx_event *ev)
 {
 	struct mx_line *lline;
 
@@ -761,7 +777,7 @@ static void log_event(const char *text, struct mx_event *ev)
 }
 
 // -----------------------------------------------------------------------
-bool mx_init_dummy(struct mx *multix)
+bool mx_init_dummy(chan_mx_t *multix)
 {
 	bool quit = false;
 	int timeout = MX_INIT_TIME_MSEC;
@@ -794,7 +810,7 @@ bool mx_init_dummy(struct mx *multix)
 static void * mx_event_loop(void *ptr)
 {
 	bool quit;
-	struct mx *multix = (struct mx *) ptr;
+	chan_mx_t *multix = (chan_mx_t *) ptr;
 
 	quit = mx_init_dummy(multix);
 
@@ -828,7 +844,7 @@ static void * mx_event_loop(void *ptr)
 }
 
 // -----------------------------------------------------------------------
-static int mx_event(struct mx *multix, int type, int cmd, int log_n, uint16_t r_arg)
+static int mx_event(chan_mx_t *multix, int type, int cmd, int log_n, uint16_t r_arg)
 {
 	static unsigned id;
 
@@ -863,7 +879,7 @@ static int mx_event(struct mx *multix, int type, int cmd, int log_n, uint16_t r_
 // -----------------------------------------------------------------------
 void mx_cmd_reset(chan_t *ch)
 {
-	struct mx *multix = (struct mx *) ch;
+	chan_mx_t *multix = (chan_mx_t *) ch;
 
 	atomic_store_explicit(&multix->state, MX_UNINITIALIZED, memory_order_relaxed); // as early as possible
 	mx_event(multix, MX_EV_RESET, 0, 0, 0);
@@ -873,7 +889,7 @@ void mx_cmd_reset(chan_t *ch)
 // -----------------------------------------------------------------------
 int mx_cmd(chan_t *ch, int dir, uint16_t n_arg, uint16_t *r_arg)
 {
-	struct mx *multix = (struct mx *) ch;
+	chan_mx_t *multix = (chan_mx_t *) ch;
 
 	const unsigned cmd      = ((n_arg & 0b1110000000000000) >> 13) | ((dir&1) << 3);
 	const unsigned chan_cmd =  (n_arg & 0b0001100000000000) >> 11;

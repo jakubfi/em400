@@ -204,7 +204,7 @@ void mx_winch_transmit_encode(uint16_t *data, void *proto_data)
 }
 
 // -----------------------------------------------------------------------
-static int mx_winch_read(struct mx *multix, struct mx_line *line, const struct dev_drv *dev, void *dev_data, struct proto_winchester_data *proto_data)
+static int mx_winch_read(chan_mx_t *multix, struct mx_line *line, const struct dev_drv *dev, void *dev_data, struct proto_winchester_data *proto_data)
 {
 	struct dev_chs chs;
 
@@ -242,7 +242,7 @@ static int mx_winch_read(struct mx *multix, struct mx_line *line, const struct d
 }
 
 // -----------------------------------------------------------------------
-static int mx_winch_write(struct mx *multix, struct mx_line *line, const struct dev_drv *dev, void *dev_data, struct proto_winchester_data *proto_data)
+static int mx_winch_write(chan_mx_t *multix, struct mx_line *line, const struct dev_drv *dev, void *dev_data, struct proto_winchester_data *proto_data)
 {   
 	struct dev_chs chs;
 
@@ -279,7 +279,7 @@ static int mx_winch_write(struct mx *multix, struct mx_line *line, const struct 
 }
 
 // -----------------------------------------------------------------------
-static int mx_winch_format(struct mx *multix, struct mx_line *line, const struct dev_drv *dev, void *dev_data, struct proto_winchester_data *proto_data)
+static int mx_winch_format(chan_mx_t *multix, struct mx_line *line, const struct dev_drv *dev, void *dev_data, struct proto_winchester_data *proto_data)
 {
 	struct dev_chs chs;
 	memset(line->buf, '\0', MX_LINE_BUF_SIZE);
