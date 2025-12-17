@@ -41,6 +41,27 @@ struct ui *ui;
 // -----------------------------------------------------------------------
 int em400_init(em400_cfg *cfg)
 {
+
+	const char *log_file_name = cfg_getstr(cfg, "log:file", CFG_DEFAULT_LOG_FILE);
+	em400_log_buf_type_t log_buf_type =
+		cfg_getbool(cfg, "log:line_buffered", CFG_DEFAULT_LOG_LINE_BUFFERED)
+		? EM400_LOG_LINE_BUFFERED
+		: EM400_LOG_FULL_BUFFERED;
+	const char *log_components = cfg_getstr(cfg, "log:components", CFG_DEFAULT_LOG_COMPONENTS);
+	bool log_enabled = cfg_getbool(cfg, "log:enabled", CFG_DEFAULT_LOG_ENABLED);
+
+	if (log_init(log_file_name, log_buf_type) != E_OK) {
+		return LOGERR("Failed to initialize logging.");
+	}
+	if (log_enabled) {
+		if (log_enable() != E_OK) {
+			return LOGERR("Failed to enable logging.");
+		}
+	}
+	if (log_setup_components(log_components)) {
+		return LOGERR("Failed to set which components to log");
+	}
+
 	struct em400_cfg_cpu cpu_cfg = {
 		.awp = cfg_getbool(cfg, "cpu:awp", CFG_DEFAULT_CPU_AWP),
 		.mod = cfg_getbool(cfg, "cpu:modifications", CFG_DEFAULT_CPU_MODIFICATIONS),
@@ -71,7 +92,6 @@ int em400_init(em400_cfg *cfg)
 	if (em400_cpu_configure(&cpu_cfg, &buzzer_cfg) != E_OK) return LOGERR("Failed to configure CPU.");
 	if (em400_mem_configure(&mem_cfg) != E_OK) return LOGERR("Failed to configure memory.");
 
-	if (log_init(cfg) != E_OK) return LOGERR("Failed to initialize logging.");
 	if (mem_init() != E_OK) return LOGERR("Failed to initialize memory.");
 	if (cpu_init() != E_OK) return LOGERR("Failed to initialize CPU.");
 	if (io_init(cfg) != E_OK) return LOGERR("Failed to initialize I/O.");

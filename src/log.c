@@ -38,11 +38,9 @@
 #include "log.h"
 #include "log_crk.h"
 #include "utils/utils.h"
-#include "cfg.h"
+
 
 // low-level stuff
-
-#define LOG_FLUSH_DELAY_MS 200
 
 static const char * log_component_names[] = {
 	"ALL", "EM4H", "FDBR", "CRK5",
@@ -52,20 +50,12 @@ static const char * log_component_names[] = {
 	"TERM", "9425", "WNCH", "FLOP", "PNCH", "PNRD","TAPE",
 };
 
-atomic_uint log_components_enabled; // components currently enabled or 0 if logging is disabled
+atomic_uint log_components_enabled = 0; // components currently enabled or 0 if logging is disabled
 static atomic_uint log_components_selected = 1 << L_EM4H; // components selected by user, EM4H always selected
-
-static pthread_t log_flusher_th;
 static pthread_mutex_t log_mutex = PTHREAD_MUTEX_INITIALIZER;
-static pthread_cond_t log_cond = PTHREAD_COND_INITIALIZER;
-static bool log_flusher_stop;
-
-static char *log_file;
-static FILE *log_f;
-
-static void * log_flusher(void *ptr);
-
-static bool line_buffered;
+static char *log_file_name;
+static FILE *log_file;
+static bool log_buf_type;
 
 // high-level stuff
 
@@ -86,32 +76,21 @@ static char *dasm_buf;
 static void log_log_timestamp(unsigned component, const char *msg, const char *func);
 
 // -----------------------------------------------------------------------
-int log_init(em400_cfg *cfg)
+int log_init(const char *cfg_log_file_name, em400_log_buf_type_t cfg_log_buf_type)
 {
-	int ret = E_ERR;
-
-	const char *cfg_logfile = cfg_getstr(cfg, "log:file", CFG_DEFAULT_LOG_FILE);
-	log_file = strdup(cfg_logfile);
-	if (!log_file) {
+	log_buf_type = cfg_log_buf_type;
+	log_file_name = strdup(cfg_log_file_name);
+	if (!log_file_name) {
 		LOGERR("Memory allocation error.");
 		goto cleanup;
 	}
 
-	// set up components to log
-	const char *log_components = cfg_getstr(cfg, "log:components", CFG_DEFAULT_LOG_COMPONENTS);
-	if (log_setup_components(log_components) < 0) {
-		LOGERR("Failed to parse log component definition: \"%s\".", log_components);
-		goto cleanup;
-	}
-
 	// initialize deassembler
-	int cpu_mod = cfg_getbool(cfg, "cpu:modifications", CFG_DEFAULT_CPU_MODIFICATIONS);
-	emd = emdas_create(cpu_mod ? EMD_ISET_MX16 : EMD_ISET_MERA400, (emdas_getfun) mem_read_1);
+	emd = emdas_create(EMD_ISET_MX16, (emdas_getfun) mem_read_1);
 	if (!emd) {
 		LOGERR("Log deassembler initialization failed.");
 		goto cleanup;
 	}
-
 	emdas_set_nl(emd, '\0');
 	emdas_set_features(emd, EMD_FEAT_NONE);
 	emdas_set_tabs(emd, 0, 0, 0, 0);
@@ -119,40 +98,16 @@ int log_init(em400_cfg *cfg)
 
 	pthread_mutex_init(&log_mutex, NULL);
 
-	line_buffered = cfg_getbool(cfg, "log:line_buffered", CFG_DEFAULT_LOG_LINE_BUFFERED);
-
-	int cfg_log_enabled = cfg_getbool(cfg, "log:enabled", CFG_DEFAULT_LOG_ENABLED);
-	if (cfg_log_enabled) {
-		ret = log_enable();
-		if (ret != E_OK) {
-			LOGERR("Failed to enable logging.");
-			goto cleanup;
-		} else {
-			LOG(L_EM4H, "Logging enabled. File: %s, components: %s, line buffering: %s", cfg_logfile, log_components, line_buffered ? "true" : "false");
-		}
-	}
-
 	return E_OK;
 
 cleanup:
 	log_shutdown();
-	return ret;
-}
-
-// -----------------------------------------------------------------------
-static void log_flusher_exit()
-{
-	if (line_buffered) return;
-	pthread_mutex_lock(&log_mutex);
-	log_flusher_stop = true;
-	pthread_cond_signal(&log_cond);
-	pthread_mutex_unlock(&log_mutex);
+	return E_ERR;
 }
 
 // -----------------------------------------------------------------------
 void log_shutdown()
 {
-	log_flusher_exit();
 	log_disable();
 	emdas_destroy(emd);
 	emd = NULL;
@@ -162,37 +117,15 @@ void log_shutdown()
 }
 
 // -----------------------------------------------------------------------
-static void * log_flusher(void *ptr)
-{
-	// flush log every LOG_FLUSH_DELAY_MS miliseconds so user
-	// doesn't wait indefinitely for log output when stepping the CPU
-
-	struct timespec abstime;
-
-	while (!log_flusher_stop) {
-		clock_gettime(CLOCK_REALTIME, &abstime);
-		long new_nsec = abstime.tv_nsec + LOG_FLUSH_DELAY_MS * 1000000L;
-		abstime.tv_sec += new_nsec / 1000000000L;
-		abstime.tv_nsec = new_nsec % 1000000000L;
-		pthread_mutex_lock(&log_mutex);
-		pthread_cond_timedwait(&log_cond, &log_mutex, &abstime);
-		pthread_mutex_unlock(&log_mutex);
-		if (log_f) fflush(log_f);
-	}
-	pthread_exit(NULL);
-}
-
-// -----------------------------------------------------------------------
 void log_disable()
 {
 	if (!log_is_enabled()) return;
 
 	log_log_timestamp(L_EM4H, "EM400 version " EM400_VERSION " closing log file", __func__);
 	atomic_store_explicit(&log_components_enabled, 0, memory_order_relaxed);
-	log_flusher_exit();
-	if (log_f) {
-		fclose(log_f);
-		log_f = NULL;
+	if (log_file) {
+		fclose(log_file);
+		log_file = NULL;
 	}
 }
 
@@ -202,24 +135,19 @@ int log_enable()
 	if (log_is_enabled()) return E_OK;
 
 	// Open log file
-	log_f = fopen(log_file, "a");
-	if (!log_f) {
-		return LOGERR("Failed to open log file: \"%s\".", log_file);
+	log_file = fopen(log_file_name, "a");
+	if (!log_file) {
+		return LOGERR("Failed to open log file \"%s\" for appending", log_file);
 	}
-
-	log_log_timestamp(L_EM4H, "EM400 version " EM400_VERSION " opened log file", __func__);
-
-	if (!line_buffered) {
-		// start up flusher thread only when in fully buffered mode
-		log_flusher_stop = 0;
-		if (pthread_create(&log_flusher_th, NULL, log_flusher, NULL) != 0) {
-			fclose(log_f);
-			return LOGERR("Failed to spawn log flusher thread.");
+	if (log_buf_type == EM400_LOG_LINE_BUFFERED) {
+		if (setvbuf(log_file, NULL, _IOLBF, BUFSIZ)) {
+			return LOGERR("cannot set line buffering for log file \"%s\"", log_file);
 		}
-		pthread_setname_np(log_flusher_th, "lflush");
 	}
 
 	atomic_store_explicit(&log_components_enabled, log_components_selected, memory_order_relaxed);
+
+	log_log_timestamp(L_EM4H, "EM400 version " EM400_VERSION " opened log file", __func__);
 
 	return E_OK;
 }
@@ -249,7 +177,7 @@ void log_component_disable(unsigned component)
 	if (component == L_ALL) {
 		atomic_store_explicit(&log_components_selected, (1 << L_EM4H), memory_order_relaxed);
 	} else {
-		atomic_fetch_and_explicit(&log_components_selected, ~((1 << component) | (1 << L_EM4H)), memory_order_relaxed);
+		atomic_fetch_and_explicit(&log_components_selected, ~(1 << component) | (1 << L_EM4H), memory_order_relaxed);
 	}
 	if (log_is_enabled()) {
 		atomic_store_explicit(&log_components_enabled, log_components_selected, memory_order_relaxed);
@@ -289,28 +217,38 @@ int log_get_component_id(const char *name)
 // -----------------------------------------------------------------------
 int log_setup_components(const char *components)
 {
-	bool neg = false;
+	if (!components || !*components) return E_OK;
+
 	char *cmp = strdup(components);
-	char *c = strtok(cmp, ", ");
-	while (c && *c) {
-		while ((*c == ' ') || (*c == ',')) c++;
-		if (*c == '~') {
-			neg = true;
-			c++;
-		} else {
-			neg = false;
-		}
-		if (*c) {
-			char *space = strchr(c, ' ');
-			if (space) *space = '\0';
-			unsigned id = log_get_component_id(c);
-			if (!neg) log_component_enable(id);
-			else log_component_disable(id);
-			c = strtok(NULL, " ,");
-		}
+	if (!cmp) {
+		return LOGERR("Memory allocation error");
 	}
+
+	const char *delims = ", ";
+	char *token = strtok(cmp, delims);
+
+	while (token != NULL) {
+		bool neg = false;
+
+		if (*token == '-') {
+			neg = true;
+			token++;
+		}
+
+		if (*token != '\0') {
+			int id = log_get_component_id(token);
+			if (id < 0) {
+				return LOGERR("Unknown log component: %s", token);
+			}
+			if (neg) log_component_disable(id);
+			else log_component_enable(id);
+		}
+
+		token = strtok(NULL, delims);
+	}
+
 	free(cmp);
-	return 0;
+	return E_OK;
 }
 
 // -----------------------------------------------------------------------
@@ -330,13 +268,12 @@ int log_err(const char *func, const char *msgfmt, ...)
 	if (log_is_enabled()) {
 		va_start(vl, msgfmt);
 		pthread_mutex_lock(&log_mutex);
-		fprintf(log_f, LOG_F_COMP LOG_F_FUN, log_component_names[L_EM4H], thname, func);
-		fprintf(log_f, "ERROR: ");
-		vfprintf(log_f, msgfmt, vl);
-		fprintf(log_f, "\n");
+		fprintf(log_file, LOG_F_COMP LOG_F_FUN, log_component_names[L_EM4H], thname, func);
+		fprintf(log_file, "ERROR: ");
+		vfprintf(log_file, msgfmt, vl);
+		fprintf(log_file, "\n");
 		pthread_mutex_unlock(&log_mutex);
 
-		if (line_buffered) fflush(log_f);
 		va_end(vl);
 	}
 
@@ -347,6 +284,7 @@ int log_err(const char *func, const char *msgfmt, ...)
 void log_log(unsigned component, const char *func, const char *msgfmt, ...)
 {
 	if (!LOG_WANTS(component)) return;
+
 	va_list vl;
 	va_start(vl, msgfmt);
 
@@ -354,12 +292,11 @@ void log_log(unsigned component, const char *func, const char *msgfmt, ...)
 	pthread_getname_np(pthread_self(), thname, 16);
 
 	pthread_mutex_lock(&log_mutex);
-	fprintf(log_f, LOG_F_COMP LOG_F_FUN, log_component_names[component], thname, func);
-	vfprintf(log_f, msgfmt, vl);
-	fprintf(log_f, "\n");
+	fprintf(log_file, LOG_F_COMP LOG_F_FUN, log_component_names[component], thname, func);
+	vfprintf(log_file, msgfmt, vl);
+	fprintf(log_file, "\n");
 	pthread_mutex_unlock(&log_mutex);
 
-	if (line_buffered) fflush(log_f);
 	va_end(vl);
 }
 
@@ -375,7 +312,7 @@ void log_cpu(unsigned component, const char *msgfmt, ...)
 	pthread_getname_np(pthread_self(), thname, 16);
 
 	pthread_mutex_lock(&log_mutex);
-	fprintf(log_f, LOG_F_COMP LOG_F_CPU,
+	fprintf(log_file, LOG_F_COMP LOG_F_CPU,
 		log_component_names[component],
 		thname,
 		(log_cycle_sr & 0b0000000000100000) ? (log_cycle_sr & 0b0000000000001111) : 0,
@@ -383,26 +320,26 @@ void log_cpu(unsigned component, const char *msgfmt, ...)
 		log_get_current_process(),
 		log_int_indent + log_int_level
 	);
-	vfprintf(log_f, msgfmt, vl);
-	fprintf(log_f, "\n");
+	vfprintf(log_file, msgfmt, vl);
+	fprintf(log_file, "\n");
 	pthread_mutex_unlock(&log_mutex);
 
-	if (line_buffered) fflush(log_f);
 	va_end(vl);
 }
 
 // -----------------------------------------------------------------------
 void log_splitlog(unsigned component, const char *func, const char *text)
 {
+	if (!LOG_WANTS(component)) return;
+
 	char *p;
 	const char *start = text;
-
     char thname[16];
+
     pthread_getname_np(pthread_self(), thname, 16);
 
 	pthread_mutex_lock(&log_mutex);
-
-	fprintf(log_f,
+	fprintf(log_file,
 		LOG_F_COMP LOG_F_FUN ".-------------------------------------------------------------------\n",
 		log_component_names[component],
 		thname,
@@ -412,7 +349,7 @@ void log_splitlog(unsigned component, const char *func, const char *text)
 		p = (char *) strchr(start, '\n');
 		if (p) {
 			*p = '\0';
-			fprintf(log_f,
+			fprintf(log_file,
 				LOG_F_COMP LOG_F_FUN "| %s\n",
 				log_component_names[component],
 				thname,
@@ -424,16 +361,13 @@ void log_splitlog(unsigned component, const char *func, const char *text)
 			start = NULL;
 		}
 	}
-	fprintf(log_f,
+	fprintf(log_file,
 		LOG_F_COMP LOG_F_FUN "`-------------------------------------------------------------------\n",
 		log_component_names[component],
 		thname,
 		func
 	);
-
 	pthread_mutex_unlock(&log_mutex);
-
-	if (line_buffered) fflush(log_f);
 }
 
 // -----------------------------------------------------------------------

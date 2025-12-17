@@ -73,6 +73,16 @@ enum em400_reg_ids {
 	EM400_REG_KB2
 };
 
+enum em400_return_codes_e {
+	E_ERR = -1,
+	E_OK = 0,
+};
+
+typedef enum em400_log_buf_type_e {
+	EM400_LOG_FULL_BUFFERED,
+	EM400_LOG_LINE_BUFFERED
+} em400_log_buf_type_t;
+
 extern const char *em400_reg_names[];
 
 #define EM400_REG_COUNT EM400_REG_KB2

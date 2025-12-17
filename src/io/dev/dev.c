@@ -56,7 +56,7 @@ int dev_make(em400_cfg *cfg, int ch_num, int dev_num, const struct dev_drv **dev
 			if (!*dev_obj) {
 				return LOGERR("Failed to initialize device: %s.", type);
 			}
-			LOG(L_EM4H, "Created device: %s", type);
+			LOG(L_MX, "Created device: %s", type);
 			return E_OK;
 		}
 		driver++;

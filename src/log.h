@@ -25,10 +25,6 @@
 #include <ctype.h>
 
 #include "libem400.h"
-#include "cfg.h"
-
-#define E_OK 0
-#define E_ERR -1
 
 #ifdef __cplusplus
 extern "C" {
@@ -36,7 +32,7 @@ extern "C" {
 
 extern atomic_uint log_components_enabled;
 
-int log_init(em400_cfg *cfg);
+int log_init(const char *cfg_log_file_name, em400_log_buf_type_t log_buf_type);
 void log_shutdown();
 
 int log_enable();
