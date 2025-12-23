@@ -15,12 +15,20 @@
 //  Foundation, Inc.,
 //  51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 
-#ifndef IOTESTER_H
-#define IOTESTER_H
+#ifndef WINCHESTER_H
+#define WINCHESTER_H
 
-#include "io/chan.h"
+#include "io/dev2/dev2.h"
 
-chan_t * it_create(int chnum);
+typedef struct winchester winchester_t;
+
+struct winchester {
+	struct em400_dev2 base;
+
+	char *image;
+};
+
+em400_dev_t * winchester_create(const char *image);
 
 #endif
 

@@ -20,27 +20,30 @@
 
 #include "log.h"
 #include "io/dev/dev.h"
+#include "io/dev2/dev2.h"
+#include "io/dev2/winchester.h"
 #include "io/dev/e4image.h"
-#include "cfg.h"
+
 
 struct dev_winch {
 	struct e4i_t *image;
 };
 
 // -----------------------------------------------------------------------
-void * dev_winch_create(em400_cfg *cfg, int ch_num, int dev_num)
+void * dev_winch_create(em400_dev_t *dev2, int ch_num, int dev_num)
 {
+	winchester_t *dev2_winchester = (winchester_t *) dev2;
+
 	struct dev_winch *winch = (struct dev_winch *) malloc(sizeof(struct dev_winch));
 	if (!winch) {
 		LOGERR("Memory allocation error while creating Winchester.");
 		goto cleanup;
 	}
 
-	const char *image = cfg_fgetstr(cfg, "dev%i.%i:image", ch_num, dev_num);
-
-	winch->image = e4i_open(image);
+	LOG(L_WNCH, "Opening image: %s", dev2_winchester->image);
+	winch->image = e4i_open(dev2_winchester->image);
 	if (!winch->image) {
-		LOGERR("Failed to open Winchester image: \"%s\": %s.", image, e4i_get_err(e4i_err));
+		LOGERR("Failed to open Winchester image: \"%s\": %s.", winch->image, e4i_get_err(e4i_err));
 		goto cleanup;
 	}
 

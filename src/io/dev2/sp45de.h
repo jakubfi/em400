@@ -15,12 +15,20 @@
 //  Foundation, Inc.,
 //  51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 
-#ifndef IOTESTER_H
-#define IOTESTER_H
+#ifndef SP45DE_H
+#define SP45DE_H
 
-#include "io/chan.h"
+#include "io/dev2/dev2.h"
 
-chan_t * it_create(int chnum);
+typedef struct sp45de sp45de_t;
+
+struct sp45de {
+	struct em400_dev2 base;
+
+	char *images[4];
+};
+
+em400_dev_t * sp45de_create(const char *images[4]);
 
 #endif
 

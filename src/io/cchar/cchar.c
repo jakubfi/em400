@@ -32,9 +32,9 @@
 #include "io/cchar/cchar.h"
 #include "io/cchar/uzdat.h"
 #include "io/cchar/flop8.h"
+#include "io/dev2/terminal.h"
 
 #include "log.h"
-#include "cfg.h"
 
 uv_loop_t *ioloop;
 
@@ -57,27 +57,9 @@ struct chan_char {
 	uv_async_t async_quit;
 };
 
-typedef cchar_unit_t * (*cchar_unit_f_create)(em400_cfg *cfg, int ch_num, int dev_num);
-
-cchar_unit_f_create cchar_unit_constructor[] = {
-	[CCHAR_UZDAT] = uzdat_create,
-	[CCHAR_FLOP8] = flop8_create,
-};
-
 void cchar_destroy(chan_t *chan);
 void cchar_reset(chan_t *chan);
 int cchar_cmd(chan_t *ch, int dir, uint16_t n_arg, uint16_t *r_arg);
-
-// -----------------------------------------------------------------------
-static cchar_unit_f_create cchar_unit_constructor_get(const char *name)
-{
-	if (strcasecmp(name, "terminal") == 0) {
-		return cchar_unit_constructor[CCHAR_UZDAT];
-	} else if (strcasecmp(name, "floppy8") == 0) {
-		return cchar_unit_constructor[CCHAR_FLOP8];
-	}
-	return NULL;
-}
 
 // -----------------------------------------------------------------------
 static void cchar_ioloop_teardown(chan_char_t *chan)
@@ -111,7 +93,34 @@ static void * cchar_ioloop(void *ptr)
 }
 
 // -----------------------------------------------------------------------
-chan_t * cchar_create(int ch_num, em400_cfg *cfg)
+int cchar_connect_dev(chan_t *chan, int devnum, em400_dev_t *dev)
+{
+	chan_char_t *cchar = (chan_char_t *) chan;
+	cchar_unit_t *unit = NULL;
+
+	switch (dev->type) {
+		case EM400_DEV_TERMINAL:
+			unit = uzdat_create(devnum, dev);
+			break;
+		case EM400_DEV_SP45DE:
+			unit = flop8_create(devnum, dev);
+			break;
+		default:
+			return LOGERR("Device type unknown or incompatibile with character channel");
+	}
+
+	if (!unit) {
+		return LOGERR("Error creating device controller");
+	}
+
+	unit->chan = cchar;
+	cchar->unit[devnum] = unit;
+
+	return E_OK;
+}
+
+// -----------------------------------------------------------------------
+chan_t * cchar_create(int ch_num)
 {
 	chan_char_t *chan = calloc(1, sizeof(chan_char_t));
 	if (!chan) {
@@ -124,35 +133,10 @@ chan_t * cchar_create(int ch_num, em400_cfg *cfg)
 	chan->base.cmd = cchar_cmd;
 	chan->base.reset = cchar_reset;
 	chan->base.destroy = cchar_destroy;
+	chan->base.connect_dev = cchar_connect_dev;
 
 	// early, units use this
 	ioloop = uv_default_loop();
-
-	for (int dev_num=0 ; dev_num<CCHAR_MAX_DEVICES ; dev_num++) {
-		// find unit prototype
-		const char *unit_name = cfg_fgetstr(cfg, "dev%i.%i:type", ch_num, dev_num);
-		if (!unit_name) continue;
-
-		cchar_unit_f_create constructor = cchar_unit_constructor_get(unit_name);
-		if (!constructor) {
-			LOGERR("Unknown device type or device incompatibile with channel: %s.", unit_name);
-			free(chan);
-			return NULL;
-		}
-
-		// create unit based on prototype
-		cchar_unit_t *unit = constructor(cfg, ch_num, dev_num);
-		if (!unit) {
-			LOGERR("Failed to create unit: %s.", unit_name);
-			free(chan);
-			return NULL;
-		} else {
-			LOG(L_CCHR, "Connected device %i: %s", dev_num, unit_name);
-		}
-
-		unit->chan = chan;
-		chan->unit[dev_num] = unit;
-	}
 
 	chan->interrupting_device = NO_INTERRUPT_REPORTED;
 

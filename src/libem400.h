@@ -22,6 +22,7 @@
 #include <stdint.h>
 #include <stdio.h>
 
+
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -116,10 +117,19 @@ enum em400_cpu_states {
 // --- LIBRARY -----------------------------------------------------------
 // -----------------------------------------------------------------------
 
-int em400_mem_configure(struct em400_cfg_mem *c_mem);
-int em400_cpu_configure(struct em400_cfg_cpu *c_cpu, struct em400_cfg_buzzer *c_buzzer);
 const char * em400_version();
+int em400_init(struct em400_cfg_mem *c_mem, struct em400_cfg_cpu *c_cpu, struct em400_cfg_buzzer *c_buzzer);
 void em400_shutdown();
+
+// -----------------------------------------------------------------------
+// --- I/O ---------------------------------------------------------------
+// -----------------------------------------------------------------------
+
+int em400_io_channel_init(unsigned chnum, unsigned channel_type);
+int em400_dev_terminal_init(unsigned chnum, unsigned devnum, int port, int speed);
+int em400_dev_terminal_fake_init(unsigned chnum, unsigned devnum, int port);
+int em400_dev_sp45de_init(unsigned chnum, unsigned devnum, const char *images[4]);
+int em400_dev_winchester_init(unsigned chnum, unsigned devnum, const char *image);
 
 // -----------------------------------------------------------------------
 // --- LOGGING -----------------------------------------------------------

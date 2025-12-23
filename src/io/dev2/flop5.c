@@ -1,4 +1,4 @@
-//  Copyright (c) 2015 Jakub Filipowicz <jakubf@gmail.com>
+//  Copyright (c) 2025 Jakub Filipowicz <jakubf@gmail.com>
 //
 //  This program is free software; you can redistribute it and/or modify
 //  it under the terms of the GNU General Public License as published by
@@ -16,61 +16,56 @@
 //  51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 
 #include <stdlib.h>
-#include <inttypes.h>
+#include <string.h>
 
-#include "io/dev/dev.h"
+#include "log.h"
 
-struct dev_printer {
-};
+#include "io/dev2/flop5.h"
 
 // -----------------------------------------------------------------------
-void * dev_printer_create(em400_cfg *cfg, int ch_num, int dev_num)
+static void flop5_ioloop_teardown(flop5_t * flop5)
 {
-	struct dev_printer *printer = (struct dev_printer *) malloc(sizeof(struct dev_printer));
-	if (!printer) {
-		goto cleanup;
+
+}
+
+// -----------------------------------------------------------------------
+void flop5_destroy(em400_dev_t *dev)
+{
+	if (!dev) return;
+
+	LOG(L_TERM, "Fake flop5 shutting down");
+
+	flop5_ioloop_teardown((flop5_t *) dev);
+}
+
+// -----------------------------------------------------------------------
+void flop5_free(em400_dev_t *dev)
+{
+	if (!dev) return;
+	flop5_t *flop5 = (flop5_t *) dev;
+	LOG(L_TERM, "Fake flop5 freeing resources");
+
+	free(flop5->image);
+	free(flop5);
+}
+
+// -----------------------------------------------------------------------
+em400_dev_t * flop5_create(const char *image)
+{
+	LOG(L_FLOP, "Creating fake flop5");
+
+	flop5_t *flop5 = calloc(1, sizeof(flop5_t));
+	if (!flop5) {
+		goto fail;
 	}
 
-	return printer;
+	flop5->base.type = EM400_DEV_FLOP5;
+	if (image) {
+		flop5->image = strdup(image);
+	}
 
-cleanup:
-	free(printer);
+	return (em400_dev_t *) flop5;
+fail:
 	return NULL;
 }
 
-// -----------------------------------------------------------------------
-void dev_printer_destroy(void *dev)
-{
-	if (!dev) return;
-	struct dev_printer *printer = (struct dev_printer *) dev;
-	free(printer);
-}
-
-// -----------------------------------------------------------------------
-void dev_printer_reset(void *dev)
-{
-
-}
-
-// -----------------------------------------------------------------------
-int dev_printer_read(struct dev_printer *printer)
-{
-
-	return 0;
-}
-
-// -----------------------------------------------------------------------
-int dev_printer_write(struct dev_printer *printer)
-{
-	return 0;
-}
-
-struct dev_drv dev_printer = {
-	.name = "printer",
-	.create = dev_printer_create,
-	.destroy = dev_printer_destroy,
-	.reset = dev_printer_reset
-};
-
-
-// vim: tabstop=4 shiftwidth=4 autoindent

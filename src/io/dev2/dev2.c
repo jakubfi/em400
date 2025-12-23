@@ -14,14 +14,3 @@
 //  along with this program; if not, write to the Free Software
 //  Foundation, Inc.,
 //  51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
-
-#ifndef IOTESTER_H
-#define IOTESTER_H
-
-#include "io/chan.h"
-
-chan_t * it_create(int chnum);
-
-#endif
-
-// vim: tabstop=4 shiftwidth=4 autoindent

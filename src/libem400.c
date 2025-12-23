@@ -16,14 +16,23 @@
 //  51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 
 #include <strings.h>
+#include <stdlib.h>
 
 #include "mem/mem.h"
 #include "cpu/cpu.h"
 #include "cpu/interrupts.h"
+#include "io/io.h"
+#include "io/chan.h"
 #include "cp/cp.h"
 #include "cp/cpext.h"
 #include "cp/brk.h"
 #include "log.h"
+#include "io/dev2/terminal.h"
+#include "io/dev2/terminal_fake.h"
+#include "io/dev2/sp45de.h"
+#include "io/dev2/winchester.h"
+
+static const char ver[] = EM400_VERSION;
 
 const char *em400_reg_names[] = {
 	"R0", "R1", "R2", "R3", "R4", "R5", "R6", "R7",
@@ -46,29 +55,83 @@ const char *em400_cpu_state_names[] = {
 	"???"
 };
 
+
 // -----------------------------------------------------------------------
 // --- LIBRARY -----------------------------------------------------------
 // -----------------------------------------------------------------------
 
 // -----------------------------------------------------------------------
-int em400_mem_configure(struct em400_cfg_mem *c_mem)
-{
-	return mem_configure(c_mem);
-}
-
-// -----------------------------------------------------------------------
-int em400_cpu_configure(struct em400_cfg_cpu *c_cpu, struct em400_cfg_buzzer *c_buzzer)
-{
-	return cpu_configure(c_cpu, c_buzzer);
-}
-
-// -----------------------------------------------------------------------
 const char * em400_version()
 {
-	static const char *ver = EM400_VERSION;
 	return ver;
 }
 
+// -----------------------------------------------------------------------
+int em400_init(struct em400_cfg_mem *c_mem, struct em400_cfg_cpu *c_cpu, struct em400_cfg_buzzer *c_buzzer)
+{
+	if (mem_configure(c_mem) != E_OK) return LOGERR("Failed to configure memory");
+	if (cpu_configure(c_cpu, c_buzzer) != E_OK) return LOGERR("Failed to configure CPU");
+	if (mem_init() != E_OK) return LOGERR("Failed to initialize memory.");
+	if (cpu_init() != E_OK) return LOGERR("Failed to initialize CPU.");
+	if (io_init() != E_OK) return LOGERR("Failed to initialize I/O.");
+
+	return E_OK;
+}
+
+// -----------------------------------------------------------------------
+int em400_io_channel_init(unsigned chnum, unsigned channel_type)
+{
+	return io_channel_init(chnum, channel_type);
+}
+
+// -----------------------------------------------------------------------
+int em400_dev_terminal_init(unsigned chnum, unsigned devnum, int port, int speed)
+{
+	em400_dev_t *dev = terminal_create(port, speed);
+	if (!dev) {
+		return E_OK; // temporarily, because multix creates its own terminals
+	}
+	return io_dev_connect(chnum, devnum, dev);
+}
+
+// -----------------------------------------------------------------------
+int em400_dev_terminal_fake_init(unsigned chnum, unsigned devnum, int port)
+{
+	em400_dev_t *dev = terminal_fake_create(port);
+	if (!dev) {
+		return E_OK; // temporarily, because multix creates its own terminals
+	}
+	return io_dev_connect(chnum, devnum, dev);
+}
+
+// -----------------------------------------------------------------------
+int em400_dev_sp45de_init(unsigned chnum, unsigned devnum, const char *images[4])
+{
+	em400_dev_t *dev = sp45de_create(images);
+	if (!dev) {
+		return E_ERR;
+	}
+	return io_dev_connect(chnum, devnum, dev);
+}
+
+// -----------------------------------------------------------------------
+int em400_dev_winchester_init(unsigned chnum, unsigned devnum, const char *image)
+{
+	em400_dev_t *dev = winchester_create(image);
+	if (!dev) {
+		return E_ERR;
+	}
+	return io_dev_connect(chnum, devnum, dev);
+}
+
+// -----------------------------------------------------------------------
+void em400_shutdown()
+{
+	brk_del_all();
+	io_shutdown();
+	cpu_shutdown();
+	mem_shutdown();
+}
 
 // -----------------------------------------------------------------------
 // --- LOGGING -----------------------------------------------------------
@@ -259,12 +322,6 @@ void em400_cp_reg_select(int reg_id)
 void em400_off()
 {
 	cp_off();
-}
-
-// -----------------------------------------------------------------------
-void em400_shutdown()
-{
-	brk_del_all();
 }
 
 // -----------------------------------------------------------------------

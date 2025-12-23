@@ -15,13 +15,29 @@
 //  Foundation, Inc.,
 //  51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 
-#ifndef IOTESTER_H
-#define IOTESTER_H
+#ifndef DEV2_H
+#define DEV2_H
 
-#include "io/chan.h"
+enum em400_device_types {
+	EM400_DEV_TERMINAL,
+	EM400_DEV_SP45DE,
+	EM400_DEV_WINCHESTER,
+	EM400_DEV_FLOP5,
+};
 
-chan_t * it_create(int chnum);
+typedef struct em400_dev2 em400_dev_t;
+
+typedef void (*dev2_noarg_f)(em400_dev_t *dev);
+typedef int (*dev2_write_f)(em400_dev_t *dev, char c);
+
+struct em400_dev2 {
+	int type;
+	char *name;
+
+	dev2_noarg_f reset;
+	dev2_noarg_f destroy;
+	dev2_noarg_f free;
+	dev2_write_f write;
+};
 
 #endif
-
-// vim: tabstop=4 shiftwidth=4 autoindent

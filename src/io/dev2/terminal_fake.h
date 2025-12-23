@@ -15,12 +15,20 @@
 //  Foundation, Inc.,
 //  51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 
-#ifndef IOTESTER_H
-#define IOTESTER_H
+#ifndef TERMINAL_FAKE_H
+#define TERMINAL_FAKE_H
 
-#include "io/chan.h"
+#include "io/dev2/dev2.h"
 
-chan_t * it_create(int chnum);
+typedef struct terminal_fake terminal_fake_t;
+
+struct terminal_fake {
+	struct em400_dev2 base;
+
+	unsigned port;
+};
+
+em400_dev_t * terminal_fake_create(unsigned port);
 
 #endif
 

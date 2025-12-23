@@ -1,4 +1,4 @@
-//  Copyright (c) 2015 Jakub Filipowicz <jakubf@gmail.com>
+//  Copyright (c) 2025 Jakub Filipowicz <jakubf@gmail.com>
 //
 //  This program is free software; you can redistribute it and/or modify
 //  it under the terms of the GNU General Public License as published by
@@ -16,62 +16,59 @@
 //  51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 
 #include <stdlib.h>
-#include <inttypes.h>
+#include <string.h>
 
-#include "io/dev/dev.h"
-#include "cfg.h"
+#include "log.h"
 
-struct dev_punchrd {
-};
+#include "io/dev2/sp45de.h"
 
 // -----------------------------------------------------------------------
-void * dev_punchrd_create(em400_cfg *cfg, int ch_num, int dev_num)
+static void sp45de_ioloop_teardown(sp45de_t * sp45de)
 {
-	struct dev_punchrd *punchrd = (struct dev_punchrd *) malloc(sizeof(struct dev_punchrd));
-	if (!punchrd) {
-		goto cleanup;
+
+}
+
+// -----------------------------------------------------------------------
+void sp45de_destroy(em400_dev_t *dev)
+{
+	if (!dev) return;
+
+	LOG(L_TERM, "Fake SP45DE shutting down");
+
+	sp45de_ioloop_teardown((sp45de_t *) dev);
+}
+
+// -----------------------------------------------------------------------
+void sp45de_free(em400_dev_t *dev)
+{
+	if (!dev) return;
+	sp45de_t *sp45de = (sp45de_t *) dev;
+	LOG(L_TERM, "Fake SP45DE freeing resources");
+
+	for (int i=0 ; i<4 ; i++) {
+		free(sp45de->images[i]);
+	}
+	free(sp45de);
+}
+
+// -----------------------------------------------------------------------
+em400_dev_t * sp45de_create(const char *images[4])
+{
+	LOG(L_FLOP, "Creating fake SP45DE");
+
+	sp45de_t *sp45de = calloc(1, sizeof(sp45de_t));
+	if (!sp45de) {
+		goto fail;
 	}
 
-	return punchrd;
+	sp45de->base.type = EM400_DEV_SP45DE;
+	for (int i=0 ; i<4 ; i++) {
+		if (!images[i]) continue;
+		sp45de->images[i] = strdup(images[i]);
+	}
 
-cleanup:
-	free(punchrd);
+	return (em400_dev_t *) sp45de;
+fail:
 	return NULL;
 }
 
-// -----------------------------------------------------------------------
-void dev_punchrd_destroy(void *dev)
-{
-	if (!dev) return;
-	struct dev_punchrd *punchrd = (struct dev_punchrd *) dev;
-	free(punchrd);
-}
-
-// -----------------------------------------------------------------------
-void dev_punchrd_reset(void *dev)
-{
-
-}
-
-// -----------------------------------------------------------------------
-int dev_punchrd_read(struct dev_punchrd *punchrd)
-{
-
-	return 0;
-}
-
-// -----------------------------------------------------------------------
-int dev_punchrd_write(struct dev_punchrd *punchrd)
-{
-	return 0;
-}
-
-struct dev_drv dev_punchrd = {
-	.name = "punchreader",
-	.create = dev_punchrd_create,
-	.destroy = dev_punchrd_destroy,
-	.reset = dev_punchrd_reset
-};
-
-
-// vim: tabstop=4 shiftwidth=4 autoindent

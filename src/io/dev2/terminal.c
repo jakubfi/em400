@@ -1,4 +1,4 @@
-//  Copyright (c) 2024 Jakub Filipowicz <jakubf@gmail.com>
+//  Copyright (c) 2024-2025 Jakub Filipowicz <jakubf@gmail.com>
 //
 //  This program is free software; you can redistribute it and/or modify
 //  it under the terms of the GNU General Public License as published by
@@ -26,7 +26,6 @@
 
 extern uv_loop_t *ioloop;
 static char already_connected_message[] = "Terminal already connected. Bye.\n";
-int terminal_write(terminal_t *terminal, char c);
 
 // -----------------------------------------------------------------------
 static void term_buf_reset(terminal_t *terminal)
@@ -114,7 +113,7 @@ static void on_read_delay_timeout(uv_timer_t *handle)
 	terminal_t *terminal = (terminal_t*) handle->data;
 
 	int data = term_buf_get(terminal);
-	if (data > 0) {
+	if ((data > 0) && (terminal->controller) && (terminal->on_data_received)) {
 		terminal->on_data_received(terminal->controller, data);
 	}
 	// push next character in buffer
@@ -194,7 +193,9 @@ static void on_write_delay_timeout(uv_timer_t *handle)
 	terminal->sender_busy = false;
 	pthread_mutex_unlock(&terminal->mutex);
 
-	terminal->on_data_sent(terminal->controller);
+	if ((terminal->controller) && (terminal->on_data_sent)) {
+		terminal->on_data_sent(terminal->controller);
+	}
 }
 
 // -----------------------------------------------------------------------
@@ -206,9 +207,10 @@ static void on_async_write_complete(uv_write_t *req, int status)
 }
 
 // -----------------------------------------------------------------------
-int terminal_write(terminal_t *terminal, char c)
+int terminal_write(em400_dev_t *dev, char c)
 {
 	int ret;
+	terminal_t *terminal = (terminal_t *) dev;
 
 	LOGCHAR(L_TERM, "%s: ", "Terminal write start", c);
 
@@ -237,10 +239,10 @@ int terminal_write(terminal_t *terminal, char c)
 }
 
 // -----------------------------------------------------------------------
-void terminal_reset(terminal_t *terminal)
+void terminal_reset(em400_dev_t *dev)
 {
 	LOG(L_TERM, "Terminal reset");
-	term_buf_reset(terminal);
+	term_buf_reset((terminal_t *) dev);
 }
 
 // -----------------------------------------------------------------------
@@ -255,20 +257,20 @@ static void terminal_ioloop_teardown(terminal_t *terminal)
 }
 
 // -----------------------------------------------------------------------
-void terminal_destroy(terminal_t *terminal)
+void terminal_destroy(em400_dev_t *dev)
 {
-	if (!terminal) return;
+	if (!dev) return;
 
 	LOG(L_TERM, "Terminal shutting down");
 
-	terminal_ioloop_teardown(terminal);
+	terminal_ioloop_teardown((terminal_t *) dev);
 }
 
 // -----------------------------------------------------------------------
-void terminal_free(terminal_t *terminal)
+void terminal_free(em400_dev_t *dev)
 {
-	if (!terminal) return;
-
+	if (!dev) return;
+	terminal_t *terminal = (terminal_t *) dev;
 	LOG(L_TERM, "Terminal freeing resources");
 
 	pthread_mutex_destroy(&terminal->mutex);
@@ -326,7 +328,16 @@ fail:
 }
 
 // -----------------------------------------------------------------------
-terminal_t * terminal_create(void *controller, on_data_received_cb cbr, on_data_sent_cb cbs, unsigned port, unsigned speed)
+// TODO: generic device callback registration?
+void terminal_register_callbacks(terminal_t * terminal, void *controller, on_data_received_cb recv_cb, on_data_sent_cb sent_cb)
+{
+	terminal->on_data_received = recv_cb;
+	terminal->on_data_sent = sent_cb;
+	terminal->controller = controller;
+}
+
+// -----------------------------------------------------------------------
+em400_dev_t * terminal_create(unsigned port, unsigned speed)
 {
 	LOG(L_TERM, "Creating terminal: speed %i, TCP port %i", speed, port);
 
@@ -344,27 +355,26 @@ terminal_t * terminal_create(void *controller, on_data_received_cb cbr, on_data_
 		goto fail;
 	}
 
+	terminal->base.type = EM400_DEV_TERMINAL;
+	terminal->base.reset = terminal_reset;
+	terminal->base.write = terminal_write;
+	terminal->base.destroy = terminal_destroy;
+	terminal->base.free = terminal_free;
+
 	term_buf_reset(terminal);
 	terminal->client = NULL;
 	terminal->port = port;
 	// milisecond accuracy due to libuv limitations, 8 bits + start + stop
 	terminal->delay_ms = roundf((float) ((8+2) * 1000) / speed);
-	terminal->on_data_received = cbr;
-	terminal->on_data_sent = cbs;
-	terminal->controller = controller;
-	terminal->reset = terminal_reset;
-	terminal->write = terminal_write;
-	terminal->destroy = terminal_destroy;
-	terminal->free = terminal_free;
 
 	if (terminal_ioloop_setup(terminal)) {
 		goto fail;
 	}
 
-	return terminal;
+	return (em400_dev_t *) terminal;
 
 fail:
-	terminal_free(terminal);
+	terminal_free((em400_dev_t *) terminal);
 	return NULL;
 }
 

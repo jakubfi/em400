@@ -27,9 +27,9 @@
 #include "io/defs.h"
 #include "io/cchar/cchar.h"
 #include "io/cchar/flop8.h"
-#include "cfg.h"
-
 #include "log.h"
+
+#include "io/dev2/sp45de.h"
 
 #define F8_DRIVE_CNT 4
 #define F8_TRACK_CNT 77
@@ -137,11 +137,13 @@ static void flop8_set_address(flop8 *u, uint16_t addr)
 }
 
 // -----------------------------------------------------------------------
-cchar_unit_t * flop8_create(em400_cfg *cfg, int ch_num, int dev_num)
+cchar_unit_t * flop8_create(int dev_num, em400_dev_t *dev)
 {
+	sp45de_t *sp45de = (sp45de_t *) dev;
+
 	flop8 *flop = (flop8 *) calloc(1, sizeof(flop8));
 	if (!flop) {
-		LOGERR("Failed to allocate memory for 8-inch floppy: %i.%i", ch_num, dev_num);
+		LOGERR("Failed to allocate memory for 8-inch floppy device %i", dev_num);
 		goto fail;
 	}
 
@@ -154,26 +156,25 @@ cchar_unit_t * flop8_create(em400_cfg *cfg, int ch_num, int dev_num)
 	flop->base.has_interrupt = flop8_has_interrupt;
 
 	for (int id=0 ; id<F8_DRIVE_CNT ; id++) {
-		const char *image = cfg_fgetstr(cfg, "dev%i.%i:image_%i", ch_num, dev_num, id);
-		if (!image) continue;
+		if (!sp45de->images[id]) continue;
 
-		flop->image[id] = strdup(image);
+		flop->image[id] = strdup(sp45de->images[id]);
 		if (!flop->image[id]) {
 			LOGERR("8-inch floppy image data memory allocation error.");
 			goto fail;
 		}
-		flop->f[id] = fopen(image, "r+b");
+		flop->f[id] = fopen(flop->image[id], "r+b");
 		if (flop->f[id]) {
-			LOG(L_FLOP, "Drive %i: %s.", id, image);
+			LOG(L_FLOP, "Drive %i: %s.", id, flop->image[id]);
 		} else {
-			LOGERR("Failed to open 8-inch floppy image: %s (drive %i).", image, id);
+			LOGERR("Failed to open 8-inch floppy image: %s (drive %i).", flop->image[id], id);
 			goto fail;
 		}
 
 		fseek(flop->f[id], 0L, SEEK_END);
 		int sz = ftell(flop->f[id]);
 		if (sz != F8_DISK_SIZE_BYTES) {
-			LOGERR("Wrong 8-inch floppy drive %i image '%s' size: %i instead of %i.", id, image, sz, F8_DISK_SIZE_BYTES);
+			LOGERR("Wrong 8-inch floppy drive %i image '%s' size: %i instead of %i.", id, flop->image[id], sz, F8_DISK_SIZE_BYTES);
 			goto fail;
 		}
 	}

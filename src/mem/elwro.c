@@ -84,7 +84,7 @@ void mem_elwro_shutdown()
 // -----------------------------------------------------------------------
 void mem_elwro_reset()
 {
-	LOG(L_MEM, "Elwro memomry modules reset");
+	LOG(L_MEM, "Elwro memory modules reset");
 
 	for (int module=mem_elwro_first_module ; module<=mem_elwro_last_module ; module++) {
 		for (int frame=0 ; frame<MEM_ELWRO_FRAMES ; frame++) {

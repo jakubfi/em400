@@ -23,7 +23,6 @@
 #include <pthread.h>
 #include <uv.h>
 
-#include "cfg.h"
 #include "io/chan.h"
 
 enum cchar_controller_types {
@@ -55,7 +54,7 @@ struct cchar_unit {
 	cchar_unit_f_has_interrupt has_interrupt;
 };
 
-chan_t *cchar_create(int num, em400_cfg *cfg);
+chan_t *cchar_create(int num);
 void cchar_int_trigger(chan_char_t *chan);
 void cchar_int_cancel(chan_char_t *chan, int unit_n);
 

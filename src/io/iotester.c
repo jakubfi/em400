@@ -30,7 +30,6 @@
 #include "io/io.h"
 #include "io/chan.h"
 #include "utils/elst.h"
-#include "cfg.h"
 
 #define INIT_DELAY_US 200000
 
@@ -70,6 +69,7 @@ static void * it_cmdproc(void *ptr);
 void it_destroy(chan_t *ch);
 void it_reset(chan_t *ch);
 int it_cmd(chan_t *ch, int dir, uint16_t n_arg, uint16_t *r_arg);
+int it_connect_dev(chan_t *chan, int devnum, em400_dev_t *dev);
 
 /*
 FETCH requests are handled immediately, in CPU thread.
@@ -102,7 +102,7 @@ void it_event_destructor(void *ptr)
 }
 
 // -----------------------------------------------------------------------
-chan_t * it_create(int chnum, em400_cfg *cfg)
+chan_t * it_create(int chnum)
 {
 	struct iotester *it = (struct iotester *) calloc(1, sizeof(struct iotester));
 	if (!it) {
@@ -115,16 +115,9 @@ chan_t * it_create(int chnum, em400_cfg *cfg)
 	it->base.cmd = it_cmd;
 	it->base.reset = it_reset;
 	it->base.destroy = it_destroy;
+	it->base.connect_dev = it_connect_dev;
 
 	srand(time(NULL));
-
-	for (int i=0 ; i<16 ; i++) {
-		char section[16];
-		snprintf(section, sizeof(section), "dev%i.%i", chnum, i);
-		if (cfg_contains(cfg, section)) {
-			LOG(L_IO, "I/O tester can't connect devices. Ignored device: %s", section);
-		}
-	}
 
 	it->evq = elst_create(1024, it_event_destructor);
 	if (!it->evq) {
@@ -183,6 +176,12 @@ void it_reset(chan_t *ch)
 	struct iotester *it = (struct iotester *) ch;
 	LOG(L_IO, "Received reset request");
 	elst_insert(it->evq, it_event_new(EV_RESET, 0, 0), 0);
+}
+
+// -----------------------------------------------------------------------
+int it_connect_dev(chan_t *chan, int devnum, em400_dev_t *dev)
+{
+	return LOGERR("I/O tester does not allow connecting devices, ignoding device %i", devnum);
 }
 
 // -----------------------------------------------------------------------

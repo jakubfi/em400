@@ -18,13 +18,12 @@
 #include <assert.h>
 
 #include "log.h"
-#include "cfg.h"
 #include "io/chan.h"
 #include "io/cchar/cchar.h"
 #include "io/iotester.h"
 #include "io/mx/mx.h"
 
-typedef chan_t * (*chan_create_f)(int ch_num, em400_cfg *cfg);
+typedef chan_t * (*chan_create_f)(int ch_num);
 
 static const chan_create_f chan_constructor[] = {
 	[CHAN_CHAR] = cchar_create,
@@ -33,18 +32,19 @@ static const chan_create_f chan_constructor[] = {
 };
 
 // -----------------------------------------------------------------------
-chan_t * chan_create(unsigned num, unsigned type, em400_cfg *cfg)
+chan_t * chan_create(unsigned num, unsigned type)
 {
 	if (type >= CHAN_TYPE_COUNT) {
 		LOGERR("Unknown channel type: %d", type);
 		return NULL;
 	}
 
-	chan_t *chan = chan_constructor[type](num, cfg);
+	chan_t *chan = chan_constructor[type](num);
 	if (chan) {
 		assert(chan->cmd);
 		assert(chan->reset);
 		assert(chan->destroy);
+		assert(chan->connect_dev);
 	}
 	// TODO: should chan->num be filled in here?
 

@@ -22,8 +22,8 @@
 #include "cpu/cpu.h"
 #include "cpu/interrupts.h"
 #include "io/chan.h"
+#include "io/dev2/dev2.h"
 
-#include "cfg.h"
 #include "utils/utils.h"
 #include "log.h"
 
@@ -59,55 +59,44 @@
 static chan_t *io_chan[IO_MAX_CHAN];
 static const char *io_result_names[] = { "NO ANSWER", "ENGAGED", "OK", "PARITY ERROR" };
 
-struct chan_name_types {
-	const char *name;
-	unsigned type;
-} chan_name_types[] = {
-	{"multix", CHAN_MULTIX},
-	{"char", CHAN_CHAR},
-	{"iotester", CHAN_IOTESTER},
-	{NULL, 0}
-};
+
 
 // -----------------------------------------------------------------------
-static struct chan_name_types * find_chan_map(const char *name)
+int io_init()
 {
-	struct chan_name_types *chmap = chan_name_types;
-	while (chmap && chmap->name) {
-		if (!strcasecmp(name, chmap->name)) {
-			return chmap;
-		}
-		chmap++;
-	}
-	return NULL;
+	LOG(L_IO, "I/O Init");
+	// initialize io loop
+	return E_OK;
 }
 
 // -----------------------------------------------------------------------
-int io_init(em400_cfg *cfg)
+int io_channel_init(unsigned chnum, unsigned channel_type)
 {
-	for (int i=0 ; i<16 ; i++) {
-		const char *ch_name = cfg_fgetstr(cfg, "io:channel_%i", i);
-		if (!ch_name) continue;
-
-		struct chan_name_types *chmap = find_chan_map(ch_name);
-		if (!chmap) {
-			return LOGERR("Unknown channel type: %s", ch_name);
-		}
-
-		LOG(L_IO, "Initializing I/O channel %i: %s", i, ch_name);
-		io_chan[i] = chan_create(i, chmap->type, cfg);
-		if (!io_chan[i]) {
-			return LOGERR("Failed to initialize channel %i: %s", i, ch_name);
-		}
+	io_chan[chnum] = chan_create(chnum, channel_type);
+	if (!io_chan[chnum]) {
+		return LOGERR("Failed to initialize channel %i", chnum);
 	}
 
 	return E_OK;
 }
 
 // -----------------------------------------------------------------------
+bool io_channel_present(unsigned chnum)
+{
+	return (io_chan[chnum] != NULL);
+}
+
+// -----------------------------------------------------------------------
+int io_dev_connect(int chnum, int devnum, em400_dev_t *dev)
+{
+	return io_chan[chnum]->connect_dev(io_chan[chnum], devnum, dev);
+}
+
+// -----------------------------------------------------------------------
 void io_shutdown()
 {
-	LOG(L_IO, "Shutdown I/O");
+	LOG(L_IO, "I/O shutdown");
+	// stop and deconfigure io loop
 	for (int c_num=0 ; c_num<IO_MAX_CHAN ; c_num++) {
 		chan_t *chan = io_chan[c_num];
 		if (chan) {

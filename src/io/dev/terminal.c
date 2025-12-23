@@ -35,10 +35,11 @@
 
 #include "log.h"
 #include "io/dev/dev.h"
-#include "cfg.h"
+#include "io/dev2/dev2.h"
+#include "io/dev2/terminal_fake.h"
 
 enum dev_terminal_commands { CMD_NONE, CMD_RD, CMD_WR, CMD_QUIT };
-enum dev_terminal_type { TERM_CONSOLE, TERM_TCP };
+enum dev_terminal_type { TERM_TCP };
 
 struct dev_terminal {
 	int type;
@@ -57,18 +58,6 @@ struct dev_terminal {
 
 void dev_terminal_destroy(void *dev);
 void *dev_terminal_controller(void *ptr);
-
-// -----------------------------------------------------------------------
-int dev_terminal_open_console(struct dev_terminal *terminal)
-{
-	terminal->timeout.tv_sec = 0;
-	terminal->timeout.tv_nsec = 100 * 1000 * 1000;
-	terminal->type = TERM_CONSOLE;
-	terminal->fd_in = 0;
-	terminal->fd_out = 1;
-
-	return 0;
-}
 
 // -----------------------------------------------------------------------
 int dev_terminal_open_tcp(struct dev_terminal *terminal, int port, int timeout_ms)
@@ -114,32 +103,17 @@ int dev_terminal_open_tcp(struct dev_terminal *terminal, int port, int timeout_m
 }
 
 // -----------------------------------------------------------------------
-void * dev_terminal_create(em400_cfg *cfg, int ch_num, int dev_num)
+void * dev_terminal_create(em400_dev_t *dev2, int ch_num, int dev_num)
 {
+	terminal_fake_t *dev2_terminal_fake = (terminal_fake_t *) dev2;
+
 	struct dev_terminal *terminal = (struct dev_terminal *) malloc(sizeof(struct dev_terminal));
 	if (!terminal) {
 		goto cleanup;
 	}
 
-	const char *transport = cfg_fgetstr(cfg, "dev%i.%i:transport", ch_num, dev_num);
-	if (!transport) {
-		LOGERR("Terminal %i.%i has no transport set.", ch_num, dev_num);
-		goto cleanup;
-	}
-
-	if (!strcasecmp(transport, "tcp")) {
-		const int port = cfg_fgetint(cfg, "dev%i.%i:port", ch_num, dev_num);
-		if (dev_terminal_open_tcp(terminal, port, 100)) {
-			LOGERR("Failed to open TCP terminal on port: %i.", port);
-			goto cleanup;
-		}
-	} else if (!strcasecmp(transport, "console")) {
-		if (dev_terminal_open_console(terminal)) {
-			LOGERR("Failed to open console terminal.");
-			goto cleanup;
-		}
-	} else {
-		LOGERR("Unknown terminal transport: %s.", transport);
+	if (dev_terminal_open_tcp(terminal, dev2_terminal_fake->port, 100)) {
+		LOGERR("Failed to open TCP terminal on port: %i.", dev2_terminal_fake->port);
 		goto cleanup;
 	}
 

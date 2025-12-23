@@ -1,4 +1,4 @@
-//  Copyright (c) 2024 Jakub Filipowicz <jakubf@gmail.com>
+//  Copyright (c) 2024-2025 Jakub Filipowicz <jakubf@gmail.com>
 //
 //  This program is free software; you can redistribute it and/or modify
 //  it under the terms of the GNU General Public License as published by
@@ -15,12 +15,14 @@
 //  Foundation, Inc.,
 //  51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 
-#ifndef __TERMINAL_ACTUAL_H__
-#define __TERMINAL_ACTUAL_H__
+#ifndef TERMINAL_H
+#define TERMINAL_H
 
 #include <pthread.h>
 #include <uv.h>
 #include <stdbool.h>
+
+#include "io/dev2/dev2.h"
 
 #define TERMINAL_BUF_SIZE 1024
 
@@ -28,12 +30,10 @@ typedef struct terminal terminal_t;
 
 typedef void (*on_data_received_cb)(void *ptr, char data);
 typedef void (*on_data_sent_cb)(void *ptr);
-typedef void (*reset_fn)(terminal_t *terminal);
-typedef void (*destroy_fn)(terminal_t *terminal);
-typedef void (*free_fn)(terminal_t *terminal);
-typedef int (*write_fn)(terminal_t *terminal, char data);
 
 struct terminal {
+	struct em400_dev2 base;
+
 	int port;
 	int delay_ms;
 
@@ -51,17 +51,14 @@ struct terminal {
 	uv_timer_t timer_read;
 	uv_tcp_t tcp_handle;
 
+	// TODO: generic device callback registration?
 	on_data_received_cb on_data_received;
 	on_data_sent_cb on_data_sent;
 	void *controller;
-
-	reset_fn reset;
-	destroy_fn destroy;
-	free_fn free;
-	write_fn write;
 };
 
-terminal_t * terminal_create(void *controller, on_data_received_cb cbr, on_data_sent_cb cbs, unsigned port, unsigned speed);
+em400_dev_t * terminal_create(unsigned port, unsigned speed);
+void terminal_register_callbacks(terminal_t * terminal, void *controller, on_data_received_cb recv_cb, on_data_sent_cb sent_cb);
 
 #endif
 

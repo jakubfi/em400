@@ -19,9 +19,8 @@
 #define FLOP8_H
 
 #include "io/cchar/cchar.h"
-#include "cfg.h"
 
-cchar_unit_t * flop8_create(em400_cfg *cfg, int ch_num, int dev_num);
+cchar_unit_t * flop8_create(int dev_num, em400_dev_t *dev);
 
 #endif
 

@@ -23,6 +23,7 @@
 #include <pthread.h>
 #include <stdbool.h>
 #include <stdatomic.h>
+#include <string.h>
 
 #include "log.h"
 #include "utils/elst.h"
@@ -34,7 +35,6 @@
 #include "io/mx/irq.h"
 #include "io/mx/event.h"
 #include "io/mx/line.h"
-#include "cfg.h"
 
 // Doing asynchronous reset that mimics hardware is hard in multithreaded software.
 // Trick used here is as follows:
@@ -85,7 +85,21 @@ void mx_event_destructor(void *ptr)
 }
 
 // -----------------------------------------------------------------------
-chan_t * mx_create(int ch_num, em400_cfg *cfg)
+int mx_connect_dev(chan_t *chan, int devnum, em400_dev_t *dev)
+{
+	LOG(L_MX, "Multix connecting device %i", devnum);
+	chan_mx_t *multix = (chan_mx_t *) chan;
+
+	struct mx_line *line = multix->plines + devnum;
+	int res = dev_make(dev, multix->base.num, devnum, &line->dev, &line->dev_data);
+	if (res != E_OK) {
+		LOG(L_MX, "Failed to create MULTIX device: %i", devnum);
+	}
+	return E_OK;
+}
+
+// -----------------------------------------------------------------------
+chan_t * mx_create(int ch_num)
 {
 	LOG(L_MX, "Creating new MULTIX");
 
@@ -102,6 +116,7 @@ chan_t * mx_create(int ch_num, em400_cfg *cfg)
 	multix->base.cmd = mx_cmd;
 	multix->base.reset = mx_cmd_reset;
 	multix->base.destroy = mx_destroy;
+	multix->base.connect_dev = mx_connect_dev;
 
 	// initialize multix structure
 	atomic_store_explicit(&multix->state, MX_UNINITIALIZED, memory_order_relaxed);
@@ -135,20 +150,6 @@ chan_t * mx_create(int ch_num, em400_cfg *cfg)
 	if (!multix->intq) {
 		LOGERR("Failed to create interrupt queue.");
 		goto cleanup;
-	}
-
-	// --- create devices (event system needs them)
-
-	LOG(L_MX, "Initializing devices");
-	for (int pline_num=0 ; pline_num<MX_LINE_CNT ; pline_num++) {
-		if (!cfg_fcontains(cfg, "dev%i.%i", ch_num, pline_num)) continue;
-
-		struct mx_line *line = multix->plines + pline_num;
-		int res = dev_make(cfg, ch_num, pline_num, &line->dev, &line->dev_data);
-		if (res != E_OK) {
-			LOGERR("Failed to create MULTIX device: %i.%i", ch_num, pline_num);
-			goto cleanup;
-		}
 	}
 
 	// --- create event system (MERA-400 interface needs it)

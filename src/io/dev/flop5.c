@@ -20,27 +20,27 @@
 
 #include "log.h"
 #include "io/dev/dev.h"
+#include "io/dev2/flop5.h"
 #include "io/dev/e4image.h"
-#include "cfg.h"
 
 struct dev_flop5 {
 	struct e4i_t *image;
 };
 
 // -----------------------------------------------------------------------
-void * dev_flop5_create(em400_cfg *cfg, int ch_num, int dev_num)
+void * dev_flop5_create(em400_dev_t *dev2, int ch_num, int dev_num)
 {
+	flop5_t *dev2_flop5 = (flop5_t *) dev2;
+
 	struct dev_flop5 *flop5 = (struct dev_flop5 *) malloc(sizeof(struct dev_flop5));
 	if (!flop5) {
 		LOGERR("Memory allocation error while creating 5-inch floppy drive.");
 		goto cleanup;
 	}
 
-	const char *image = cfg_fgetstr(cfg, "dev%i.%i:image", ch_num, dev_num);
-
-	flop5->image = e4i_open(image);
+	flop5->image = e4i_open(dev2_flop5->image);
 	if (!flop5->image) {
-		LOGERR("Failed to open 5-inch floppy image: \"%s\": %s.", image, e4i_get_err(e4i_err));
+		LOGERR("Failed to open 5-inch floppy image: \"%s\": %s.", flop5->image, e4i_get_err(e4i_err));
 		goto cleanup;
 	}
 

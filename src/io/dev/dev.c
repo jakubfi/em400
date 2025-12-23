@@ -20,49 +20,35 @@
 
 #include "log.h"
 #include "io/dev/dev.h"
-#include "cfg.h"
+#include "io/dev2/dev2.h"
 
 extern struct dev_drv dev_winch;
 extern struct dev_drv dev_flop5;
-extern struct dev_drv dev_punchrd;
-extern struct dev_drv dev_puncher;
 extern struct dev_drv dev_terminal;
-extern struct dev_drv dev_printer;
 
-const struct dev_drv *dev_drivers[] = {
-	&dev_winch,
-	&dev_flop5,
-	&dev_punchrd,
-	&dev_puncher,
-	&dev_terminal,
-	&dev_printer,
-	NULL
-};
 
 // -----------------------------------------------------------------------
-int dev_make(em400_cfg *cfg, int ch_num, int dev_num, const struct dev_drv **dev_drv, void **dev_obj)
+int dev_make(em400_dev_t *dev, int ch_num, int dev_num, const struct dev_drv **dev_drv, void **dev_obj)
 {
-	const struct dev_drv **driver = dev_drivers;
-
-	const char *type = cfg_fgetstr(cfg, "dev%i.%i:type", ch_num, dev_num);
-	if (!type) {
-		return LOGERR("Device %i.%i is missing 'type' option", ch_num, dev_num);
+	switch (dev->type) {
+		case EM400_DEV_WINCHESTER:
+			*dev_obj = dev_winch.create(dev, ch_num, dev_num);
+			*dev_drv = &dev_winch;
+			break;
+		case EM400_DEV_FLOP5:
+			*dev_obj = dev_flop5.create(dev, ch_num, dev_num);
+			*dev_drv = &dev_flop5;
+			break;
+		case EM400_DEV_TERMINAL:
+			*dev_obj = dev_terminal.create(dev, ch_num, dev_num);
+			*dev_drv = &dev_terminal;
+			break;
+		default:
+			LOG(L_MX, "Unknown device type: %i", dev->type);
+			break;
 	}
 
-	while (*driver) {
-		if (!strcasecmp(type, (*driver)->name)) {
-			*dev_drv = *driver;
-			*dev_obj = (*driver)->create(cfg, ch_num, dev_num);
-			if (!*dev_obj) {
-				return LOGERR("Failed to initialize device: %s.", type);
-			}
-			LOG(L_MX, "Created device: %s", type);
-			return E_OK;
-		}
-		driver++;
-	}
-
-	return LOGERR("Unknown device type: %s.", type);
+	return E_OK;
 }
 
 // -----------------------------------------------------------------------

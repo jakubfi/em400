@@ -183,8 +183,6 @@ set(SOURCES_EM400
 	src/io/cchar/cchar.h
 	src/io/cchar/uzdat.c
 	src/io/cchar/uzdat.h
-	src/io/cchar/terminal.c
-	src/io/cchar/terminal.h
 	src/io/cchar/flop8.c
 	src/io/cchar/flop8.h
 	src/io/iotester.c
@@ -196,12 +194,18 @@ set(SOURCES_EM400
 	src/io/dev/e4image.h
 	src/io/dev/winchester.c
 	src/io/dev/flop5.c
-	src/io/dev/punchrd.c
-	src/io/dev/puncher.c
 	src/io/dev/terminal.c
-	src/io/dev/printer.c
-	src/io/dev/fdbridge.c
-	src/io/dev/fdbridge.h
+
+	src/io/dev2/terminal.c
+	src/io/dev2/terminal.h
+	src/io/dev2/sp45de.c
+	src/io/dev2/sp45de.h
+	src/io/dev2/winchester.c
+	src/io/dev2/winchester.h
+	src/io/dev2/flop5.c
+	src/io/dev2/flop5.h
+	src/io/dev2/terminal_fake.c
+	src/io/dev2/terminal_fake.h
 
 	src/io/mx/mx.c
 	src/io/mx/mx.h
@@ -306,6 +310,10 @@ add_executable(em400
 	${SOURCES_EM400}
 	${BISON_eval_parser_OUTPUTS}
 	${FLEX_eval_scanner_OUTPUTS}
+	src/io/dev2/dev2.h
+	src/io/dev2/dev2.c
+	src/io/dev2/sp45de.h
+	src/io/dev2/sp45de.c
 )
 
 set_property(TARGET em400 PROPERTY C_STANDARD 11)

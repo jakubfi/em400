@@ -30,33 +30,13 @@
 
 #include "io/defs.h"
 #include "io/cchar/uzdat.h"
-#include "io/cchar/terminal.h"
+#include "io/dev2/terminal.h"
 
 #include "log.h"
-#include "cfg.h"
 
 #define XFER_DIR_SWITCH_DELAY 2 // miliseconds
 
 extern uv_loop_t *ioloop;
-
-typedef struct uzdat_s uzdat_t;
-struct uzdat_s {
-	cchar_unit_t base;
-
-	pthread_mutex_t mutex;
-	int intspec;
-	int state;
-	int dir;
-	bool xfer_busy;
-	char buf_wr;
-	int buf_rd;
-
-	terminal_t *terminal;
-
-	uv_async_t async_write;
-	uv_async_t async_switch_transmit;
-	uv_timer_t timer_switch_transmit;
-};
 
 enum uzdat_states {
 	UZDAT_STATE_OFF,
@@ -96,8 +76,6 @@ bool uzdat_has_interrupt(cchar_unit_t *unit);
 
 static void uzdat_on_async_write(uv_async_t *handle);
 static void uzdat_on_async_switch_dir(uv_async_t *handle);
-void uzdat_on_data_received(uzdat_t *uzdat, char data);
-void uzdat_on_data_sent(uzdat_t *uzdat);
 
 // -----------------------------------------------------------------------
 static void uzdat_ioloop_teardown(uzdat_t *uzdat)
@@ -141,13 +119,13 @@ fail:
 }
 
 // -----------------------------------------------------------------------
-cchar_unit_t * uzdat_create(em400_cfg *cfg, int ch_num, int dev_num)
+cchar_unit_t * uzdat_create(int dev_num, em400_dev_t *dev)
 {
-	LOG(L_UZDAT, "Device %i.%i: creating UZDAT terminal controller", ch_num, dev_num);
+	LOG(L_UZDAT, "Device %i: creating UZDAT terminal controller", dev_num);
 
 	uzdat_t *uzdat = (uzdat_t*) calloc(1, sizeof(uzdat_t));
 	if (!uzdat) {
-		LOGERR("Device %i.%i: failed to allocate memory for UZDAT", ch_num, dev_num);
+		LOGERR("Device %i: failed to allocate memory for UZDAT", dev_num);
 		goto fail;
 	}
 
@@ -160,38 +138,19 @@ cchar_unit_t * uzdat_create(em400_cfg *cfg, int ch_num, int dev_num)
 	uzdat->base.has_interrupt = uzdat_has_interrupt;
 
 	if (pthread_mutex_init(&uzdat->mutex, NULL)) {
-		LOGERR("Device %i.%i: failed to initialize mutex", ch_num, dev_num);
+		LOGERR("Device %i: failed to initialize UZDAT mutex", dev_num);
 		goto fail;
-	}
-
-	const char *transport = cfg_fgetstr(cfg, "dev%i.%i:transport", ch_num, dev_num);
-	int speed = cfg_fgetint(cfg, "dev%i.%i:speed", ch_num, dev_num);
-	int port = cfg_fgetint(cfg, "dev%i.%i:port", ch_num, dev_num);
-
-	if (!transport || strcasecmp(transport, "tcp")) {
-		LOGERR("Device %i.%i: terminal transport '%s' not supported. Only 'tcp' is allowed.", ch_num, dev_num, transport);
-		goto fail;
-	}
-	if (port == -1) {
-		LOGERR("Device %i.%i: TCP terminal needs port to be set.", ch_num, dev_num);
-		goto fail;
-	}
-	if (speed == -1) {
-		LOG(L_UZDAT, "Device %i.%i: terminal speed not set, defaulting to 9600", ch_num, dev_num);
-		speed = 9600;
 	}
 
 	uzdat_reset((cchar_unit_t *) uzdat);
 
-	uzdat->terminal = terminal_create(uzdat, (void*) uzdat_on_data_received, (void*) uzdat_on_data_sent, port, speed);
-	if (!uzdat->terminal) {
-		LOGERR("Device %i.%i: failed to create terminal", ch_num, dev_num);
-		goto fail;
-	}
-
 	if (uzdat_ioloop_setup(uzdat)) {
 		goto fail;
 	}
+
+	uzdat->dev = dev;
+	// TODO: generic device callback registration?
+	terminal_register_callbacks((terminal_t *) uzdat->dev, uzdat, (void*) uzdat_on_data_received, (void*) uzdat_on_data_sent);
 
 	return (cchar_unit_t *) uzdat;
 
@@ -260,12 +219,12 @@ static void uzdat_on_async_write(uv_async_t *handle)
 	char data = uzdat->buf_wr;
 	pthread_mutex_unlock(&uzdat->mutex);
 
-	if (!uzdat->terminal) {
+	if (!uzdat->dev) {
 		LOGCHAR(L_UZDAT, "%s: ", "Failed write, no terminal connected", data);
 		return;
 	}
 
-	int res = uzdat->terminal->write(uzdat->terminal, data);
+	int res = uzdat->dev->write(uzdat->dev, data);
 	if (res == 0) {
 		LOGCHAR(L_UZDAT, "%s: ", "Written to terminal", data);
 	} else {
@@ -283,8 +242,8 @@ void uzdat_shutdown(cchar_unit_t *unit)
 	uzdat_t *uzdat = (uzdat_t*) unit;
 
 	uzdat_ioloop_teardown(uzdat);
-	if (uzdat->terminal) {
-		uzdat->terminal->destroy(uzdat->terminal);
+	if (uzdat->dev) {
+		uzdat->dev->destroy((em400_dev_t *) uzdat->dev);
 	}
 }
 
@@ -297,8 +256,8 @@ void uzdat_free(cchar_unit_t *unit)
 
 	uzdat_t *uzdat = (uzdat_t*) unit;
 	pthread_mutex_destroy(&uzdat->mutex);
-	if (uzdat->terminal) {
-		uzdat->terminal->free(uzdat->terminal);
+	if (uzdat->dev) {
+		uzdat->dev->free((em400_dev_t *) uzdat->dev);
 	}
 	free(uzdat);
 }

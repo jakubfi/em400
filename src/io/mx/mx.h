@@ -81,7 +81,7 @@ struct mx_line {
 	pthread_t status_th;			// status thread
 };
 
-chan_t * mx_create(int ch_num, em400_cfg *cfg);
+chan_t * mx_create(int ch_num);
 
 int mx_int_enqueue(chan_mx_t *multix, int intr, int line);
 bool mx_mem_read(chan_mx_t *multix, int nb, uint16_t addr, uint16_t *data, int len);
