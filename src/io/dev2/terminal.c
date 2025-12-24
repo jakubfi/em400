@@ -241,6 +241,8 @@ int terminal_write(em400_dev_t *dev, char c)
 // -----------------------------------------------------------------------
 void terminal_reset(em400_dev_t *dev)
 {
+	if (!dev) return;
+
 	LOG(L_TERM, "Terminal reset");
 	term_buf_reset((terminal_t *) dev);
 }
@@ -270,6 +272,7 @@ void terminal_shutdown(em400_dev_t *dev)
 void terminal_free(em400_dev_t *dev)
 {
 	if (!dev) return;
+
 	terminal_t *terminal = (terminal_t *) dev;
 	LOG(L_TERM, "Terminal freeing resources");
 

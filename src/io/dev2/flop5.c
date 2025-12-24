@@ -29,7 +29,7 @@ static void flop5_ioloop_teardown(flop5_t * flop5)
 }
 
 // -----------------------------------------------------------------------
-void flop5_destroy(em400_dev_t *dev)
+void flop5_shutdown(em400_dev_t *dev)
 {
 	if (!dev) return;
 
@@ -50,6 +50,15 @@ void flop5_free(em400_dev_t *dev)
 }
 
 // -----------------------------------------------------------------------
+void flop5_reset(em400_dev_t *dev)
+{
+	if (!dev) return;
+
+	LOG(L_TERM, "Fake flop5 reset");
+
+}
+
+// -----------------------------------------------------------------------
 em400_dev_t * flop5_create(const char *image)
 {
 	LOG(L_FLOP, "Creating fake flop5");
@@ -60,6 +69,11 @@ em400_dev_t * flop5_create(const char *image)
 	}
 
 	flop5->base.type = EM400_DEV_FLOP5;
+	flop5->base.reset = flop5_reset;
+	flop5->base.write = NULL;
+	flop5->base.shutdown = flop5_shutdown;
+	flop5->base.free = flop5_free;
+
 	if (image) {
 		flop5->image = strdup(image);
 	}
