@@ -256,9 +256,6 @@ void uzdat_free(cchar_unit_t *unit)
 
 	uzdat_t *uzdat = (uzdat_t*) unit;
 	pthread_mutex_destroy(&uzdat->mutex);
-	if (uzdat->dev) {
-		uzdat->dev->free((em400_dev_t *) uzdat->dev);
-	}
 	free(uzdat);
 }
 

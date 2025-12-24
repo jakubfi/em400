@@ -27,6 +27,8 @@
 extern uv_loop_t *ioloop;
 static char already_connected_message[] = "Terminal already connected. Bye.\n";
 
+void terminal_try_free(terminal_t *terminal);
+
 // -----------------------------------------------------------------------
 static void term_buf_reset(terminal_t *terminal)
 {
@@ -100,11 +102,12 @@ static void alloc_buffer(uv_handle_t *handle, size_t suggested_size, uv_buf_t *b
 // -----------------------------------------------------------------------
 static void on_tcp_close(uv_handle_t* handle)
 {
-	terminal_t *terminal = (terminal_t *) handle->data;
+	terminal_t *terminal = (terminal_t *) uv_handle_get_data(handle);
 
 	LOG(L_TERM, "Terminal TCP connection closed");
-	free(handle);
 	terminal->client = NULL;
+	terminal_try_free(terminal);
+	free(handle);
 }
 
 // -----------------------------------------------------------------------
@@ -127,11 +130,8 @@ static void on_tcp_read(uv_stream_t *handle, ssize_t nread, const uv_buf_t *buf)
 	terminal_t *terminal = (terminal_t *) handle->data;
 
 	if (nread < 0) {
-		if (nread != UV_EOF) {
-			LOG(L_TERM, "Terminal TCP Read error: %s", uv_err_name(nread));
-		} else {
-			uv_close((uv_handle_t*) handle, on_tcp_close);
-		}
+		LOG(L_TERM, "Terminal TCP Read error: %s", uv_err_name(nread));
+		uv_close((uv_handle_t*) handle, on_tcp_close);
 	} else {
 		LOG(L_TERM, "Terminal read TCP data (%d bytes)", (int) nread);
 		res = term_buf_append(terminal, buf->base, nread);
@@ -154,22 +154,31 @@ static void on_tcp_reject_user(uv_write_t *req, int status)
 // -----------------------------------------------------------------------
 static void on_new_tcp_connection(uv_stream_t *handle, int status)
 {
+	terminal_t *terminal = (terminal_t *) uv_handle_get_data((uv_handle_t *) handle);
+
 	if (status < 0) {
 		LOG(L_TERM, "Terminal new TCP connection error: %s", uv_strerror(status));
 		return;
 	}
 	uv_tcp_t *client = (uv_tcp_t *) malloc(sizeof(uv_tcp_t));
-
-	uv_tcp_init(ioloop, client);
-	uv_handle_set_data((uv_handle_t*) client, handle->data);
+	if (!client) {
+		LOG(L_TERM, "Failed to allocate memory for TCP client handler");
+		return;
+	}
+	int res = uv_tcp_init(ioloop, client);
+	if (res) {
+		free(client);
+		LOGERR("Client connection initialization failed:", uv_strerror(res));
+		return;
+	}
+	uv_handle_set_data((uv_handle_t*) client, terminal);
+	terminal->open_handles++;
 
 	if (uv_accept(handle, (uv_stream_t*) client)) {
 		LOG(L_TERM, "Terminal failed to accept new TCP connection");
 		uv_close((uv_handle_t*) client, on_tcp_close);
 		return;
 	}
-
-	terminal_t *terminal = (terminal_t *) handle->data;
 
 	if (terminal->client) {
 		LOG(L_TERM, "Terminal already connected, rejecting new connection");
@@ -229,7 +238,11 @@ int terminal_write(em400_dev_t *dev, char c)
 			uv_write_t *req = (uv_write_t*) malloc(sizeof(uv_write_t));
 			uv_buf_t buf = uv_buf_init(&terminal->wrbuf, 1);
 			uv_req_set_data((uv_req_t*) req, terminal);
-			uv_write((uv_write_t*) req, (uv_stream_t *) terminal->client, &buf, 1, on_async_write_complete);
+			int write_res = uv_write((uv_write_t*) req, (uv_stream_t *) terminal->client, &buf, 1, on_async_write_complete);
+			if (write_res < 0) {
+				free(req);
+				uv_timer_start(&terminal->timer_write, on_write_delay_timeout, terminal->delay_ms, 0);
+			}
 		} else {
 			uv_timer_start(&terminal->timer_write, on_write_delay_timeout, terminal->delay_ms, 0);
 		}
@@ -248,14 +261,44 @@ void terminal_reset(em400_dev_t *dev)
 }
 
 // -----------------------------------------------------------------------
+void terminal_free(em400_dev_t *dev)
+{
+	// TODO: method not required anymore, to be removed
+}
+
+// -----------------------------------------------------------------------
+void terminal_try_free(terminal_t *terminal)
+{
+	if (terminal->open_handles <= 0) {
+		LOG(L_TERM, "No more open handles, terminal freeing resources");
+		pthread_mutex_destroy(&terminal->mutex);
+		free(terminal);
+	}
+}
+
+// -----------------------------------------------------------------------
+static void on_handle_close(uv_handle_t* handle)
+{
+	terminal_t *terminal = (terminal_t *) uv_handle_get_data(handle);
+	terminal->open_handles--;
+	terminal_try_free(terminal);
+}
+
+// -----------------------------------------------------------------------
 static void terminal_ioloop_teardown(terminal_t *terminal)
 {
 	if (terminal->client) {
 		uv_close((uv_handle_t *) terminal->client, on_tcp_close);
 	}
-	uv_close((uv_handle_t *) &terminal->timer_write, NULL);
-	uv_close((uv_handle_t *) &terminal->timer_read, NULL);
-	uv_close((uv_handle_t *) &terminal->tcp_handle, NULL);
+	if (!uv_is_closing((uv_handle_t *) &terminal->timer_write)) {
+		uv_close((uv_handle_t *) &terminal->timer_write, on_handle_close);
+	}
+	if (!uv_is_closing((uv_handle_t *) &terminal->timer_read)) {
+		uv_close((uv_handle_t *) &terminal->timer_read, on_handle_close);
+	}
+	if (!uv_is_closing((uv_handle_t *) &terminal->tcp_handle)) {
+		uv_close((uv_handle_t *) &terminal->tcp_handle, on_handle_close);
+	}
 }
 
 // -----------------------------------------------------------------------
@@ -265,19 +308,9 @@ void terminal_shutdown(em400_dev_t *dev)
 
 	LOG(L_TERM, "Terminal shutting down");
 
-	terminal_ioloop_teardown((terminal_t *) dev);
-}
-
-// -----------------------------------------------------------------------
-void terminal_free(em400_dev_t *dev)
-{
-	if (!dev) return;
-
 	terminal_t *terminal = (terminal_t *) dev;
-	LOG(L_TERM, "Terminal freeing resources");
 
-	pthread_mutex_destroy(&terminal->mutex);
-	free(terminal);
+	terminal_ioloop_teardown(terminal);
 }
 
 // -----------------------------------------------------------------------
@@ -287,56 +320,55 @@ static int terminal_ioloop_setup(terminal_t *terminal)
 
 	res = uv_tcp_init(ioloop, &terminal->tcp_handle);
 	if (res) {
-		LOGERR("Terminal TCP init error: %s", uv_strerror(res));
-		goto fail;
+		return LOGERR("Terminal TCP init error: %s", uv_strerror(res));
 	}
 	uv_handle_set_data((uv_handle_t*) &terminal->tcp_handle, (void*) terminal);
+	terminal->open_handles++;
 
 	struct sockaddr_in addr;
 	res = uv_ip4_addr("127.0.0.1", terminal->port, &addr);
 	if (res) {
-		LOGERR("Terminal IPv4 address set error: %s", uv_strerror(res));
-		goto fail;
+		uv_close((uv_handle_t *) &terminal->tcp_handle, on_handle_close);
+		return LOGERR("Terminal IPv4 address set error: %s", uv_strerror(res));
 	}
 	res = uv_tcp_bind(&terminal->tcp_handle, (const struct sockaddr*) &addr, 0);
 	if (res) {
-		LOGERR("Terminal TCP bind to port %i error: %s", terminal->port, uv_strerror(res));
-		goto fail;
+		uv_close((uv_handle_t *) &terminal->tcp_handle, on_handle_close);
+		return LOGERR("Terminal TCP bind to port %i error: %s", terminal->port, uv_strerror(res));
 	}
 	res = uv_listen((uv_stream_t*) &terminal->tcp_handle, 1, on_new_tcp_connection);
 	if (res) {
-		LOGERR("Terminal TCP listen on port %i error: %s", terminal->port, uv_strerror(res));
-		goto fail;
+		uv_close((uv_handle_t *) &terminal->tcp_handle, on_handle_close);
+		return LOGERR("Terminal TCP listen on port %i error: %s", terminal->port, uv_strerror(res));
 	}
 
 	res = uv_timer_init(ioloop, &terminal->timer_write);
 	if (res) {
-		LOGERR("Write timer setup error: %s", uv_strerror(res));
-		goto fail;
+		uv_close((uv_handle_t *) &terminal->tcp_handle, on_handle_close);
+		return LOGERR("Write timer setup error: %s", uv_strerror(res));
 	}
 	uv_handle_set_data((uv_handle_t*) &terminal->timer_write, terminal);
+	terminal->open_handles++;
 
 	res = uv_timer_init(ioloop, &terminal->timer_read);
 	if (res) {
-		LOGERR("Read timer setup error: %s", uv_strerror(res));
-		goto fail;
+		uv_close((uv_handle_t *) &terminal->tcp_handle, on_handle_close);
+		uv_close((uv_handle_t *) &terminal->timer_write, on_handle_close);
+		return LOGERR("Read timer setup error: %s", uv_strerror(res));
 	}
 	uv_handle_set_data((uv_handle_t*) &terminal->timer_read, terminal);
+	terminal->open_handles++;
 
-	return 0;
-
-fail:
-	terminal_ioloop_teardown(terminal);
-	return -1;
+	return E_OK;
 }
 
 // -----------------------------------------------------------------------
 // TODO: generic device callback registration?
 void terminal_register_callbacks(terminal_t * terminal, void *controller, on_data_received_cb recv_cb, on_data_sent_cb sent_cb)
 {
+	terminal->controller = controller;
 	terminal->on_data_received = recv_cb;
 	terminal->on_data_sent = sent_cb;
-	terminal->controller = controller;
 }
 
 // -----------------------------------------------------------------------
@@ -345,17 +377,18 @@ em400_dev_t * terminal_create(unsigned port, unsigned speed)
 	LOG(L_TERM, "Creating terminal: speed %i, TCP port %i", speed, port);
 
 	if ((speed > 9600) || (speed < 150) || (speed % 150)) {
-		LOGERR("Allowed terminal speeds: 9600, 4800, 2400, 1200, 600, 300, 150");
-		goto fail;
+		LOGERR("Wrong terminal speed. Allowed values: 9600, 4800, 2400, 1200, 600, 300, 150");
+		return NULL;
 	}
 
 	terminal_t *terminal = calloc(1, sizeof(terminal_t));
 	if (!terminal) {
-		goto fail;
+		return NULL;
 	}
 
 	if (pthread_mutex_init(&terminal->mutex, NULL)) {
-		goto fail;
+		free(terminal);
+		return NULL;
 	}
 
 	terminal->base.type = EM400_DEV_TERMINAL;
@@ -370,15 +403,14 @@ em400_dev_t * terminal_create(unsigned port, unsigned speed)
 	// milisecond accuracy due to libuv limitations, 8 bits + start + stop
 	terminal->delay_ms = roundf((float) ((8+2) * 1000) / speed);
 
-	if (terminal_ioloop_setup(terminal)) {
-		goto fail;
+	if (terminal_ioloop_setup(terminal) == E_ERR) {
+		// may happen that setup did not initialize any handler
+		// thus no callbacks would fire on handler close
+		terminal_try_free(terminal);
+		return NULL;
 	}
 
 	return (em400_dev_t *) terminal;
-
-fail:
-	terminal_free((em400_dev_t *) terminal);
-	return NULL;
 }
 
 

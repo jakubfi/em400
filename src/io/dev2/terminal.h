@@ -50,6 +50,7 @@ struct terminal {
 	uv_timer_t timer_write;
 	uv_timer_t timer_read;
 	uv_tcp_t tcp_handle;
+	int open_handles;
 
 	// TODO: generic device callback registration?
 	on_data_received_cb on_data_received;
