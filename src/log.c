@@ -112,8 +112,8 @@ void log_shutdown()
 	emdas_destroy(emd);
 	emd = NULL;
 	log_crk_shutdown();
-	free(log_file);
-	log_file = NULL;
+	free(log_file_name);
+	log_file_name = NULL;
 }
 
 // -----------------------------------------------------------------------
