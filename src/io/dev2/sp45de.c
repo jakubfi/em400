@@ -32,19 +32,12 @@ static void sp45de_ioloop_teardown(sp45de_t * sp45de)
 void sp45de_shutdown(em400_dev_t *dev)
 {
 	if (!dev) return;
+	sp45de_t *sp45de = (sp45de_t *) dev;
 
 	LOG(L_TERM, "Fake SP45DE shutting down");
 
+	// TODO: proper async free with libuv
 	sp45de_ioloop_teardown((sp45de_t *) dev);
-}
-
-// -----------------------------------------------------------------------
-void sp45de_free(em400_dev_t *dev)
-{
-	if (!dev) return;
-	sp45de_t *sp45de = (sp45de_t *) dev;
-	LOG(L_TERM, "Fake SP45DE freeing resources");
-
 	for (int i=0 ; i<4 ; i++) {
 		free(sp45de->images[i]);
 	}
@@ -73,7 +66,6 @@ em400_dev_t * sp45de_create(const char *images[4])
 	sp45de->base.reset = sp45de_reset;
 	sp45de->base.write = NULL;
 	sp45de->base.shutdown = sp45de_shutdown;
-	sp45de->base.free = sp45de_free;
 
 	for (int i=0 ; i<4 ; i++) {
 		if (!images[i]) continue;

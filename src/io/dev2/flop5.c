@@ -32,19 +32,12 @@ static void flop5_ioloop_teardown(flop5_t * flop5)
 void flop5_shutdown(em400_dev_t *dev)
 {
 	if (!dev) return;
+	flop5_t *flop5 = (flop5_t *) dev;
 
 	LOG(L_TERM, "Fake flop5 shutting down");
 
-	flop5_ioloop_teardown((flop5_t *) dev);
-}
-
-// -----------------------------------------------------------------------
-void flop5_free(em400_dev_t *dev)
-{
-	if (!dev) return;
-	flop5_t *flop5 = (flop5_t *) dev;
-	LOG(L_TERM, "Fake flop5 freeing resources");
-
+	// TODO: proper async free with libuv
+	flop5_ioloop_teardown(flop5);
 	free(flop5->image);
 	free(flop5);
 }
@@ -72,7 +65,6 @@ em400_dev_t * flop5_create(const char *image)
 	flop5->base.reset = flop5_reset;
 	flop5->base.write = NULL;
 	flop5->base.shutdown = flop5_shutdown;
-	flop5->base.free = flop5_free;
 
 	if (image) {
 		flop5->image = strdup(image);

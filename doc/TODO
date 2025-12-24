@@ -1,5 +1,7 @@
 Known issues:
 
+* libem400 spawns all threads (cpu, ioloop) with em400_run() and returns control
+* make libuv devices release resources asynchronously
 * destroy()/shutdown()/free() unify naming
 * destroy()/shutdown()/free() can be always called
 * handling errors during initialization
@@ -12,7 +14,6 @@ Known issues:
 * make sure no UI strings are left in the library, use types
 * generalize constructors?
 * separate cpu thread
-* libem400 spawns all threads and returns control
 * cchar controllers don't use parameters - generic initialization?
 * drop all io/dev/
 * design/add device public interfaces

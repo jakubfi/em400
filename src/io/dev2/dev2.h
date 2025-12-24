@@ -36,7 +36,6 @@ struct em400_dev2 {
 
 	dev2_noarg_f reset;
 	dev2_noarg_f shutdown;
-	dev2_noarg_f free;
 	dev2_write_f write;
 };
 

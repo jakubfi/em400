@@ -287,7 +287,7 @@ static void on_handle_close(uv_handle_t* handle)
 // -----------------------------------------------------------------------
 static void terminal_ioloop_teardown(terminal_t *terminal)
 {
-	if (terminal->client) {
+	if ((terminal->client) && !uv_is_closing((uv_handle_t *) &terminal->client)){
 		uv_close((uv_handle_t *) terminal->client, on_tcp_close);
 	}
 	if (!uv_is_closing((uv_handle_t *) &terminal->timer_write)) {
@@ -395,7 +395,6 @@ em400_dev_t * terminal_create(unsigned port, unsigned speed)
 	terminal->base.reset = terminal_reset;
 	terminal->base.write = terminal_write;
 	terminal->base.shutdown = terminal_shutdown;
-	terminal->base.free = terminal_free;
 
 	term_buf_reset(terminal);
 	terminal->client = NULL;

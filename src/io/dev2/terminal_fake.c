@@ -31,20 +31,21 @@ static void terminal_fake_ioloop_teardown(terminal_fake_t * terminal_fake)
 void terminal_fake_shutdown(em400_dev_t *dev)
 {
 	if (!dev) return;
+	terminal_fake_t *terminal_fake = (terminal_fake_t *) dev;
 
 	LOG(L_TERM, "Fake terminal shutting down");
 
-	terminal_fake_ioloop_teardown((terminal_fake_t *) dev);
+	// TODO: proper async free with libuv
+	terminal_fake_ioloop_teardown(terminal_fake);
+	free(terminal_fake);
 }
 
 // -----------------------------------------------------------------------
 void terminal_fake_free(em400_dev_t *dev)
 {
 	if (!dev) return;
-	terminal_fake_t *terminal_fake = (terminal_fake_t *) dev;
 	LOG(L_TERM, "Fake terminal freeing resources");
 
-	free(terminal_fake);
 }
 
 // -----------------------------------------------------------------------
@@ -68,11 +69,8 @@ em400_dev_t * terminal_fake_create(unsigned port)
 	terminal_fake->base.reset = terminal_fake_reset;
 	terminal_fake->base.write = NULL;
 	terminal_fake->base.shutdown = terminal_fake_shutdown;
-	terminal_fake->base.free = terminal_fake_free;
 
 	terminal_fake->port = port;
-
-
 
 	return (em400_dev_t *) terminal_fake;
 fail:
