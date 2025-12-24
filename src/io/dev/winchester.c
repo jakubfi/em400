@@ -47,6 +47,10 @@ void * dev_winch_create(em400_dev_t *dev2, int ch_num, int dev_num)
 		goto cleanup;
 	}
 
+	// TODO: not needed anymore, used only to pass configuration
+	dev2->shutdown(dev2);
+	dev2->free(dev2);
+
 	return winch;
 
 cleanup:

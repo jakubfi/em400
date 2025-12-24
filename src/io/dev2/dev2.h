@@ -35,7 +35,7 @@ struct em400_dev2 {
 	char *name;
 
 	dev2_noarg_f reset;
-	dev2_noarg_f destroy;
+	dev2_noarg_f shutdown;
 	dev2_noarg_f free;
 	dev2_write_f write;
 };

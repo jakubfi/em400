@@ -20,8 +20,6 @@
 
 #include <inttypes.h>
 #include <stdbool.h>
-#include <pthread.h>
-#include <uv.h>
 
 #include "io/chan.h"
 

@@ -125,10 +125,11 @@ int em400_dev_winchester_init(unsigned chnum, unsigned devnum, const char *image
 }
 
 // -----------------------------------------------------------------------
-void em400_shutdown()
+void em400_destroy()
 {
+	LOG(L_EM4H, "Destroying EM400 instance");
 	brk_del_all();
-	io_shutdown();
+	io_destroy();
 	cpu_shutdown();
 	mem_shutdown();
 }

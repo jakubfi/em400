@@ -15,17 +15,10 @@
 //  Foundation, Inc.,
 //  51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 
-#define _XOPEN_SOURCE 500
-#ifndef _GNU_SOURCE
-#define _GNU_SOURCE
-#endif
-
 #include <stdlib.h>
 #include <inttypes.h>
 #include <unistd.h>
 #include <strings.h>
-#include <uv.h>
-#include <pthread.h>
 
 #include "io/io.h"
 #include "io/chan.h"
@@ -35,8 +28,6 @@
 #include "io/dev2/terminal.h"
 
 #include "log.h"
-
-uv_loop_t *ioloop;
 
 #define NO_INTERRUPT_REPORTED -1
 #define CCHAR_MAX_DEVICES 8
@@ -52,45 +43,13 @@ struct chan_char {
 	int untransmitted;
 
 	cchar_unit_t *unit[CCHAR_MAX_DEVICES];
-
-	pthread_t ioloop_thread;
-	uv_async_t async_quit;
 };
 
-void cchar_destroy(chan_t *chan);
+void cchar_shutdown(chan_t *chan);
+void cchar_free(chan_t *chan);
 void cchar_reset(chan_t *chan);
 int cchar_cmd(chan_t *ch, int dir, uint16_t n_arg, uint16_t *r_arg);
 
-// -----------------------------------------------------------------------
-static void cchar_ioloop_teardown(chan_char_t *chan)
-{
-	uv_close((uv_handle_t *) &chan->async_quit, NULL);
-}
-
-// -----------------------------------------------------------------------
-static void cchar_on_async_quit(uv_async_t *handle)
-{
-	LOG(L_CCHR, "QUIT received");
-
-	uv_stop(ioloop);
-}
-
-// -----------------------------------------------------------------------
-static void cchar_ioloop_setup(chan_char_t *chan)
-{
-	uv_async_init(ioloop, &chan->async_quit, cchar_on_async_quit);
-	uv_handle_set_data((uv_handle_t*) &chan->async_quit, chan);
-}
-
-// -----------------------------------------------------------------------
-static void * cchar_ioloop(void *ptr)
-{
-	LOG(L_CCHR, "Starting UV loop");
-	uv_run(ioloop, UV_RUN_DEFAULT);
-	LOG(L_CCHR, "Exited UV loop");
-
-	pthread_exit(NULL);
-}
 
 // -----------------------------------------------------------------------
 int cchar_connect_dev(chan_t *chan, int devnum, em400_dev_t *dev)
@@ -132,39 +91,22 @@ chan_t * cchar_create(int ch_num)
 	chan->base.type = CHAN_CHAR;
 	chan->base.cmd = cchar_cmd;
 	chan->base.reset = cchar_reset;
-	chan->base.destroy = cchar_destroy;
+	chan->base.shutdown = cchar_shutdown;
+	chan->base.free = cchar_free;
 	chan->base.connect_dev = cchar_connect_dev;
-
-	// early, units use this
-	ioloop = uv_default_loop();
 
 	chan->interrupting_device = NO_INTERRUPT_REPORTED;
 
-	cchar_ioloop_setup(chan);
-
-	if (pthread_create(&chan->ioloop_thread, NULL, cchar_ioloop, chan)) {
-		LOGERR("Failed to spawn main I/O tester thread.");
-		goto fail;
-	}
-	pthread_setname_np(chan->ioloop_thread, "ioloop");
-
 	return (chan_t *) chan;
-fail:
-	return NULL;
 }
 
 // -----------------------------------------------------------------------
-void cchar_destroy(chan_t *chan)
+void cchar_shutdown(chan_t *chan)
 {
 	if (!chan) return;
 	chan_char_t *ch = (chan_char_t *) chan;
 
-	LOG(L_CCHR, "Destroying CHAR channel %i", ch->base.num);
-
-	// stop ioloop and its thread
-	uv_async_send(&ch->async_quit);
-	pthread_join(ch->ioloop_thread, NULL);
-	LOG(L_CCHR, "I/O loop thread joined");
+	LOG(L_CCHR, "Shutting down CHAR channel %i", ch->base.num);
 
 	// stop all connected controllers
 	for (int i=0 ; i<CCHAR_MAX_DEVICES ; i++) {
@@ -175,20 +117,15 @@ void cchar_destroy(chan_t *chan)
 	}
 
 	LOG(L_CCHR, "All units stopped");
+}
 
-	// clean ioloop resources
-	cchar_ioloop_teardown((chan_char_t*)chan);
-	LOG(L_CCHR, "I/O loop torn down");
+// -----------------------------------------------------------------------
+void cchar_free(chan_t *chan)
+{
+	if (!chan) return;
+	chan_char_t *ch = (chan_char_t *) chan;
 
-	// give libuv chance to cleanup handles
-	uv_run(ioloop, UV_RUN_DEFAULT);
-	LOG(L_CCHR, "I/O loop cleanup run finished");
-	int res = uv_loop_close(ioloop);
-	if (res < 0) {
-		LOG(L_CCHR, "I/O loop failed to close cleanly: %s", uv_strerror(res));
-	} else {
-		LOG(L_CCHR, "I/O loop closed cleanly");
-	}
+	LOG(L_CCHR, "Freeing CHAR channel %i resources", ch->base.num);
 
 	// free all connected controllers' resources
 	for (int i=0 ; i<CCHAR_MAX_DEVICES ; i++) {

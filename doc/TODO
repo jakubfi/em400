@@ -1,9 +1,7 @@
 Known issues:
 
-* libuv initialization on I/O level
-* libuv closes all handles on shutdown
-* merge destroy/free
-* shutdown can be always called
+* destroy()/shutdown()/free() unify naming
+* destroy()/shutdown()/free() can be always called
 * handling errors during initialization
 * split flop8 into uzfx/sp45de, make it async
 * make winchester async
@@ -20,7 +18,7 @@ Known issues:
 * design/add device public interfaces
 * drop e4image?
 * generic callback registration for cchar controllers?
-* reserve L_EM4H for UIs
+* reserve L_EM4H for UIs?
 * make sure terminal is TCP only
 * ensure consistent device naming
 * check for unconnected devices, unset callbacks

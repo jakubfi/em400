@@ -29,7 +29,7 @@ static void sp45de_ioloop_teardown(sp45de_t * sp45de)
 }
 
 // -----------------------------------------------------------------------
-void sp45de_destroy(em400_dev_t *dev)
+void sp45de_shutdown(em400_dev_t *dev)
 {
 	if (!dev) return;
 
@@ -52,6 +52,14 @@ void sp45de_free(em400_dev_t *dev)
 }
 
 // -----------------------------------------------------------------------
+void sp45de_reset(em400_dev_t *dev)
+{
+	if (!dev) return;
+
+	LOG(L_TERM, "Fake SP45DE reset");
+}
+
+// -----------------------------------------------------------------------
 em400_dev_t * sp45de_create(const char *images[4])
 {
 	LOG(L_FLOP, "Creating fake SP45DE");
@@ -62,12 +70,18 @@ em400_dev_t * sp45de_create(const char *images[4])
 	}
 
 	sp45de->base.type = EM400_DEV_SP45DE;
+	sp45de->base.reset = sp45de_reset;
+	sp45de->base.write = NULL;
+	sp45de->base.shutdown = sp45de_shutdown;
+	sp45de->base.free = sp45de_free;
+
 	for (int i=0 ; i<4 ; i++) {
 		if (!images[i]) continue;
 		sp45de->images[i] = strdup(images[i]);
 	}
 
 	return (em400_dev_t *) sp45de;
+
 fail:
 	return NULL;
 }

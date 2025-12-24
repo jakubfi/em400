@@ -18,6 +18,8 @@
 #ifndef UZDAT_H
 #define UZDAT_H
 
+#include <uv.h>
+
 #include "io/cchar/cchar.h"
 
 typedef struct uzdat_s uzdat_t;

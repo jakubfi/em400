@@ -66,7 +66,8 @@ struct iotester {
 };
 
 static void * it_cmdproc(void *ptr);
-void it_destroy(chan_t *ch);
+void it_shutdown(chan_t *ch);
+void it_free(chan_t *ch);
 void it_reset(chan_t *ch);
 int it_cmd(chan_t *ch, int dir, uint16_t n_arg, uint16_t *r_arg);
 int it_connect_dev(chan_t *chan, int devnum, em400_dev_t *dev);
@@ -114,7 +115,8 @@ chan_t * it_create(int chnum)
 	it->base.type = CHAN_IOTESTER;
 	it->base.cmd = it_cmd;
 	it->base.reset = it_reset;
-	it->base.destroy = it_destroy;
+	it->base.shutdown = it_shutdown;
+	it->base.free = it_free;
 	it->base.connect_dev = it_connect_dev;
 
 	srand(time(NULL));
@@ -154,20 +156,33 @@ struct it_event *it_event_new(int type, int cmd, uint16_t r)
 }
 
 // -----------------------------------------------------------------------
-void it_destroy(chan_t *ch)
+void it_shutdown(chan_t *ch)
 {
 	if (!ch) return;
 
 	struct iotester *it = (struct iotester *) ch;
 
-	LOG(L_IO, "Destroying I/O tester");
+	LOG(L_IO, "Shutting down I/O tester");
 
 	elst_insert(it->evq, it_event_new(EV_QUIT, 0, 0), 0);
 	pthread_join(it->thread, NULL);
+
+	LOG(L_IO, "I/O tester shut down");
+}
+
+// -----------------------------------------------------------------------
+void it_free(chan_t *ch)
+{
+	if (!ch) return;
+
+	struct iotester *it = (struct iotester *) ch;
+
+	LOG(L_IO, "Freeing I/O tester resources");
+
 	elst_destroy(it->evq);
 	free(ch);
 
-	LOG(L_IO, "I/O tester destroyed");
+	LOG(L_IO, "I/O tester resources freed");
 }
 
 // -----------------------------------------------------------------------

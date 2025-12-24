@@ -29,7 +29,7 @@ static void winchester_ioloop_teardown(winchester_t * winchester)
 }
 
 // -----------------------------------------------------------------------
-void winchester_destroy(em400_dev_t *dev)
+void winchester_shutdown(em400_dev_t *dev)
 {
 	if (!dev) return;
 
@@ -50,6 +50,13 @@ void winchester_free(em400_dev_t *dev)
 }
 
 // -----------------------------------------------------------------------
+void winchester_reset(em400_dev_t *dev)
+{
+	if (!dev) return;
+	LOG(L_TERM, "Fake winchester reset");
+}
+
+// -----------------------------------------------------------------------
 em400_dev_t * winchester_create(const char *image)
 {
 	LOG(L_FLOP, "Creating fake winchester");
@@ -60,6 +67,11 @@ em400_dev_t * winchester_create(const char *image)
 	}
 
 	winchester->base.type = EM400_DEV_WINCHESTER;
+	winchester->base.reset = winchester_reset;
+	winchester->base.write = NULL;
+	winchester->base.shutdown = winchester_shutdown;
+	winchester->base.free = winchester_free;
+
 	if (image) {
 		winchester->image = strdup(image);
 	}

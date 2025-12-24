@@ -43,19 +43,13 @@ chan_t * chan_create(unsigned num, unsigned type)
 	if (chan) {
 		assert(chan->cmd);
 		assert(chan->reset);
-		assert(chan->destroy);
+		assert(chan->shutdown);
+		assert(chan->free);
 		assert(chan->connect_dev);
 	}
 	// TODO: should chan->num be filled in here?
 
 	return chan;
-}
-
-// -----------------------------------------------------------------------
-void chan_destroy(chan_t *chan)
-{
-	if (!chan) return;
-	chan->destroy(chan);
 }
 
 // vim: tabstop=4 shiftwidth=4 autoindent

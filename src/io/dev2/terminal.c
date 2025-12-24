@@ -257,7 +257,7 @@ static void terminal_ioloop_teardown(terminal_t *terminal)
 }
 
 // -----------------------------------------------------------------------
-void terminal_destroy(em400_dev_t *dev)
+void terminal_shutdown(em400_dev_t *dev)
 {
 	if (!dev) return;
 
@@ -358,7 +358,7 @@ em400_dev_t * terminal_create(unsigned port, unsigned speed)
 	terminal->base.type = EM400_DEV_TERMINAL;
 	terminal->base.reset = terminal_reset;
 	terminal->base.write = terminal_write;
-	terminal->base.destroy = terminal_destroy;
+	terminal->base.shutdown = terminal_shutdown;
 	terminal->base.free = terminal_free;
 
 	term_buf_reset(terminal);

@@ -243,7 +243,7 @@ void uzdat_shutdown(cchar_unit_t *unit)
 
 	uzdat_ioloop_teardown(uzdat);
 	if (uzdat->dev) {
-		uzdat->dev->destroy((em400_dev_t *) uzdat->dev);
+		uzdat->dev->shutdown((em400_dev_t *) uzdat->dev);
 	}
 }
 

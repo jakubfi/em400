@@ -27,7 +27,7 @@ int io_init();
 int io_channel_init(unsigned chnum, unsigned channel_type);
 int io_dev_connect(int chnum, int devnum, em400_dev_t *dev);
 bool io_channel_present(unsigned chnum);
-void io_shutdown();
+void io_destroy();
 void io_reset();
 void io_get_intspec(int ch, uint16_t *int_spec);
 int io_dispatch(int dir, uint16_t n, uint16_t *r);

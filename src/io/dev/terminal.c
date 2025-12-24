@@ -136,6 +136,10 @@ void * dev_terminal_create(em400_dev_t *dev2, int ch_num, int dev_num)
 
 	pthread_setname_np(terminal->th, "term");
 
+	// TODO: not needed anymore, used only to pass configuration
+	dev2->shutdown(dev2);
+	dev2->free(dev2);
+
 	return terminal;
 
 cleanup:

@@ -97,7 +97,6 @@ int em400_devices_init(em400_cfg *cfg)
 			if (!dev_type_name) continue;
 			LOG(L_EM4H, "Initializing device %i:%i (%s)", chnum, devnum, dev_type_name);
 			if (!strcasecmp(dev_type_name, "terminal")) {
-				LOG(L_EM4H, "This is fake terminal");
 				const char *transport = cfg_fgetstr(cfg, "dev%i.%i:transport", chnum, devnum);
 				if (transport && strcasecmp(transport, "tcp")) {
 					return LOGERR("Fake terminal only supports TCP transport type");
@@ -108,7 +107,6 @@ int em400_devices_init(em400_cfg *cfg)
 				}
 				em400_dev_terminal_fake_init(chnum, devnum, port);
 			} else if (!strcasecmp(dev_type_name, "terminal2")) {
-				LOG(L_EM4H, "This is terminal2");
 				const char *transport = cfg_fgetstr(cfg, "dev%i.%i:transport", chnum, devnum);
 				if (transport && strcasecmp(transport, "tcp")) {
 					return LOGERR("Terminal only supports TCP transport type");
@@ -208,10 +206,7 @@ int em400_top_init(em400_cfg *cfg)
 void em400_top_shutdown()
 {
 	ui_shutdown(ui);
-	em400_shutdown();
-	io_shutdown();
-	cpu_shutdown();
-	mem_shutdown();
+	em400_destroy();
 	log_shutdown();
 }
 

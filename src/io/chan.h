@@ -45,8 +45,8 @@ enum chan_in_commands {
 	CHAN_CMD_STATUS		= 0b000100,
 };
 
-typedef void (*chan_f_destroy)(chan_t *chan);
-typedef void (*chan_f_reset)(chan_t *chan);
+typedef void (*chan_f_noarg)(chan_t *chan);
+typedef void (*chan_f_noarg)(chan_t *chan);
 typedef int (*chan_f_cmd)(chan_t *chan, int dir, uint16_t n, uint16_t *r);
 typedef int (*chan_f_connect_dev)(chan_t *chan, int devnum, em400_dev_t *dev);
 
@@ -56,12 +56,12 @@ struct chan {
 	em400_dev_t *device[32];
 	chan_f_connect_dev connect_dev;	// connects the device to a channel
 	chan_f_cmd cmd;					// handles I/O command from the CPU
-	chan_f_reset reset;				// resets channel (asynchronously, from any thread)
-	chan_f_destroy destroy;			// destroys channel (shutdown and free resources)
+	chan_f_noarg reset;				// resets channel (asynchronously, from any thread)
+	chan_f_noarg shutdown;			// shuts down channel
+	chan_f_noarg free;				// frees channel resources
 };
 
 chan_t * chan_create(unsigned num, unsigned type);
-void chan_destroy(chan_t *chan);
 
 #endif
 
