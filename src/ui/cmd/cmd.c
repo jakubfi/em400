@@ -54,7 +54,10 @@ static int __setup_stdio(struct ui_cmd_data *ui)
 {
 	ui->type = UI_CMD_STDIO;
 	ui->fd_in = 0;
-   	ui->fd_out = 1;
+	ui->fd_out = dup(1);
+	if (ui->fd_out < 0) {
+		return -1;
+	}
 	ui->out = fdopen(ui->fd_out, "w");
 	if (!ui->out) {
 		return -1;
@@ -230,7 +233,7 @@ void ui_cmd_destroy(void *data)
 	if (ui->listenfd > 0) {
 		close(ui->listenfd);
 	}
-	if (ui->out && (ui->fd_out > 2)) {
+	if (ui->out) {
 		fclose(ui->out);
 	}
 
