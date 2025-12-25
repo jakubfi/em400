@@ -140,16 +140,15 @@ int io_dev_connect(int chnum, int devnum, em400_dev_t *dev)
 }
 
 // -----------------------------------------------------------------------
-void io_destroy()
+void io_shutdown()
 {
-	LOG(L_IO, "I/O system destroy");
+	LOG(L_IO, "I/O system shutdown");
 
 	// stop ioloop and its thread
 	uv_async_send(&ioloop_async_quit);
 	pthread_join(ioloop_thread, NULL);
 	LOG(L_IO, "I/O loop thread joined");
 
-	// close all handles
 	for (int c_num=0 ; c_num<IO_MAX_CHAN ; c_num++) {
 		chan_t *chan = io_chan[c_num];
 		if (chan) {
@@ -159,13 +158,13 @@ void io_destroy()
 	}
 	LOG(L_IO, "All I/O channels shut down");
 
-	// clean ioloop resources
 	io_ioloop_teardown();
 	LOG(L_IO, "I/O loop torn down");
 
-	// give libuv chance to cleanup handles
+	// give libuv chance to cleanup handles and asynchronously free resources
 	uv_run(ioloop, UV_RUN_DEFAULT);
 	LOG(L_IO, "I/O loop cleanup run finished");
+
 	int res = uv_loop_close(ioloop);
 	if (res < 0) {
 		LOG(L_IO, "I/O loop failed to close cleanly: %s", uv_strerror(res));
@@ -173,15 +172,7 @@ void io_destroy()
 		LOG(L_IO, "I/O loop closed cleanly");
 	}
 
-	for (int c_num=0 ; c_num<IO_MAX_CHAN ; c_num++) {
-		chan_t *chan = io_chan[c_num];
-		if (chan) {
-			chan->free(chan);
-			io_chan[c_num] = NULL;
-		}
-	}
-
-	LOG(L_IO, "I/O system destroyed");
+	LOG(L_IO, "I/O system shut down");
 }
 
 // -----------------------------------------------------------------------

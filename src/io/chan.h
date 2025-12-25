@@ -57,8 +57,7 @@ struct chan {
 	chan_f_connect_dev connect_dev;	// connects the device to a channel
 	chan_f_cmd cmd;					// handles I/O command from the CPU
 	chan_f_noarg reset;				// resets channel (asynchronously, from any thread)
-	chan_f_noarg shutdown;			// shuts down channel
-	chan_f_noarg free;				// frees channel resources
+	chan_f_noarg shutdown;			// shuts down channel and frees its resources
 };
 
 chan_t * chan_create(unsigned num, unsigned type);

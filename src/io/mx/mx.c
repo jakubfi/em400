@@ -76,7 +76,6 @@ static int mx_event(chan_mx_t *multix, int type, int cmd, int log_n, uint16_t r_
 int mx_int_enqueue(chan_mx_t *multix, int intr, int line);
 void mx_cmd_reset(chan_t *ch);
 void mx_shutdown(chan_t *ch);
-void mx_free(chan_t *ch);
 int mx_cmd(chan_t *ch, int dir, uint16_t n_arg, uint16_t *r_arg);
 
 // -----------------------------------------------------------------------
@@ -117,7 +116,6 @@ chan_t * mx_create(int ch_num)
 	multix->base.cmd = mx_cmd;
 	multix->base.reset = mx_cmd_reset;
 	multix->base.shutdown = mx_shutdown;
-	multix->base.free = mx_free;
 	multix->base.connect_dev = mx_connect_dev;
 
 	// initialize multix structure
@@ -269,25 +267,14 @@ void mx_shutdown(chan_t *ch)
 
 	mx_event(multix, MX_EV_QUIT, 0, 0, 0);
 	pthread_join(multix->ev_thread, NULL);
+	elst_destroy(multix->eventq);
 
 	// --- deinit lines, destroy devices
 
 	mx_lines_deinit(multix);
 
-	LOG(L_MX, "Multix shut down");
-}
-
-// -----------------------------------------------------------------------
-void mx_free(chan_t *ch)
-{
-	if (!ch) return;
-	chan_mx_t *multix = (chan_mx_t *) ch;
-
-	LOG(L_MX, "Freeing down Multix resources in channel %i", multix->base.num);
-
-	elst_destroy(multix->eventq);
-
 	// --- destroy interrupt system
+
 	elst_destroy(multix->intq);
 	pthread_mutex_destroy(&multix->int_mutex);
 
@@ -305,7 +292,7 @@ void mx_free(chan_t *ch)
 		pthread_mutex_destroy(&pline->status_mutex);
 	}
 	free(multix);
-	LOG(L_MX, "Multix resources freed");
+	LOG(L_MX, "Multix shut down");
 }
 
 // -----------------------------------------------------------------------

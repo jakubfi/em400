@@ -1,9 +1,7 @@
 Known issues:
 
 * libem400 spawns all threads (cpu, ioloop) with em400_run() and returns control
-* make libuv devices release resources asynchronously
-* destroy()/shutdown()/free() unify naming
-* destroy()/shutdown()/free() can be always called
+* shutdown() can be always called?
 * handling errors during initialization
 * split flop8 into uzfx/sp45de, make it async
 * make winchester async
@@ -13,7 +11,6 @@ Known issues:
 * make iotester async?
 * make sure no UI strings are left in the library, use types
 * generalize constructors?
-* separate cpu thread
 * cchar controllers don't use parameters - generic initialization?
 * drop all io/dev/
 * design/add device public interfaces
@@ -23,6 +20,8 @@ Known issues:
 * make sure terminal is TCP only
 * ensure consistent device naming
 * check for unconnected devices, unset callbacks
+* review UZDAT modification
+* expose UZDAT modification for terminals (in config)
 
 Cleanups:
 

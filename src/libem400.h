@@ -119,7 +119,7 @@ enum em400_cpu_states {
 
 const char * em400_version();
 int em400_init(struct em400_cfg_mem *c_mem, struct em400_cfg_cpu *c_cpu, struct em400_cfg_buzzer *c_buzzer);
-void em400_destroy();
+void em400_shutdown();
 
 // -----------------------------------------------------------------------
 // --- I/O ---------------------------------------------------------------

@@ -213,7 +213,7 @@ int em400_top_init(em400_cfg *cfg)
 void em400_top_shutdown()
 {
 	ui_shutdown(ui);
-	em400_destroy();
+	em400_shutdown();
 	log_shutdown();
 }
 

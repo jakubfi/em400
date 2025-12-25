@@ -46,10 +46,8 @@ struct chan_char {
 };
 
 void cchar_shutdown(chan_t *chan);
-void cchar_free(chan_t *chan);
 void cchar_reset(chan_t *chan);
 int cchar_cmd(chan_t *ch, int dir, uint16_t n_arg, uint16_t *r_arg);
-
 
 // -----------------------------------------------------------------------
 int cchar_connect_dev(chan_t *chan, int devnum, em400_dev_t *dev)
@@ -92,7 +90,6 @@ chan_t * cchar_create(int ch_num)
 	chan->base.cmd = cchar_cmd;
 	chan->base.reset = cchar_reset;
 	chan->base.shutdown = cchar_shutdown;
-	chan->base.free = cchar_free;
 	chan->base.connect_dev = cchar_connect_dev;
 
 	chan->interrupting_device = NO_INTERRUPT_REPORTED;
@@ -116,18 +113,7 @@ void cchar_shutdown(chan_t *chan)
 		}
 	}
 
-	LOG(L_CCHR, "All units stopped");
-}
-
-// -----------------------------------------------------------------------
-void cchar_free(chan_t *chan)
-{
-	if (!chan) return;
-	chan_char_t *ch = (chan_char_t *) chan;
-
-	LOG(L_CCHR, "Freeing CHAR channel %i resources", ch->base.num);
-
-	// free channel resources
+	LOG(L_CCHR, "All units shut down");
 	free(chan);
 }
 

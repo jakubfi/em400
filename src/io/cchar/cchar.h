@@ -33,7 +33,6 @@ typedef struct chan_char chan_char_t;
 typedef struct cchar_unit cchar_unit_t;
 
 typedef void (*cchar_unit_f_shutdown)(cchar_unit_t *unit);
-typedef void (*cchar_unit_f_free)(cchar_unit_t *unit);
 typedef void (*cchar_unit_f_reset)(cchar_unit_t *unit);
 typedef int (*cchar_unit_f_cmd)(cchar_unit_t *unit, int dir, int cmd, uint16_t *r_arg);
 typedef int (*cchar_unit_f_intspec)(cchar_unit_t *unit);

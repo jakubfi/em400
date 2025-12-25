@@ -44,7 +44,6 @@ chan_t * chan_create(unsigned num, unsigned type)
 		assert(chan->cmd);
 		assert(chan->reset);
 		assert(chan->shutdown);
-		assert(chan->free);
 		assert(chan->connect_dev);
 	}
 	// TODO: should chan->num be filled in here?
