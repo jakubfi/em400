@@ -18,9 +18,7 @@
 #ifndef UZDAT_H
 #define UZDAT_H
 
-#include <uv.h>
-
-#include "io/cchar/cchar.h"
+#include "io/dev2/dev2.h"
 
 cchar_unit_t * uzdat_create(int dev_num, em400_dev_t *dev);
 

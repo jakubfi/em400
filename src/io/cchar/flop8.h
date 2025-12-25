@@ -18,7 +18,7 @@
 #ifndef FLOP8_H
 #define FLOP8_H
 
-#include "io/cchar/cchar.h"
+#include "io/dev2/dev2.h"
 
 cchar_unit_t * flop8_create(int dev_num, em400_dev_t *dev);
 

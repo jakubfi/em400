@@ -29,6 +29,7 @@
 #include <uv.h>
 
 #include "io/defs.h"
+#include "io/cchar/cchar.h"
 #include "io/cchar/uzdat.h"
 #include "io/dev2/terminal.h"
 
