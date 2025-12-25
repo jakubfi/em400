@@ -269,10 +269,12 @@ void terminal_free(em400_dev_t *dev)
 // -----------------------------------------------------------------------
 static void terminal_try_free(terminal_t *terminal)
 {
-	if (terminal->open_handles <= 0) {
+	if (terminal->open_handles == 0) {
 		LOG(L_TERM, "No more open handles, terminal freeing resources");
 		pthread_mutex_destroy(&terminal->mutex);
 		free(terminal);
+	} else if (terminal->open_handles < 0) {
+		LOG(L_TERM, "terminal_try_free() with open_handles = %i, double-free attempt?", terminal->open_handles);
 	}
 }
 

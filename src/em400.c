@@ -54,6 +54,56 @@ struct io_chan_types {
 };
 
 // -----------------------------------------------------------------------
+int em400_device_init(em400_cfg *cfg, const char *dev_type_name, int chnum, int devnum)
+{
+	int res = E_ERR;
+
+	LOG(L_EM4H, "Initializing device %i:%i (%s)", chnum, devnum, dev_type_name);
+	if (!strcasecmp(dev_type_name, "terminal")) {
+		const char *transport = cfg_fgetstr(cfg, "dev%i.%i:transport", chnum, devnum);
+		if (transport && strcasecmp(transport, "tcp")) {
+			return LOGERR("Fake terminal only supports TCP transport type");
+		}
+		const int port = cfg_fgetint(cfg, "dev%i.%i:port", chnum, devnum);
+		if (port == -1) {
+			return LOGERR("Device %i.%i: Fake TCP terminal needs port to be set.", chnum, devnum);
+		}
+		res = em400_dev_terminal_fake_init(chnum, devnum, port);
+	} else if (!strcasecmp(dev_type_name, "terminal2")) {
+		const char *transport = cfg_fgetstr(cfg, "dev%i.%i:transport", chnum, devnum);
+		if (transport && strcasecmp(transport, "tcp")) {
+			return LOGERR("Terminal only supports TCP transport type");
+		}
+		const int port = cfg_fgetint(cfg, "dev%i.%i:port", chnum, devnum);
+		if (port == -1) {
+			return LOGERR("Device %i.%i: TCP terminal needs port to be set.", chnum, devnum);
+		}
+		int speed = cfg_fgetint(cfg, "dev%i.%i:speed", chnum, devnum);
+		if (speed == -1) {
+			LOG(L_EM4H, "Device %i.%i: terminal speed not set, defaulting to 9600", chnum, devnum);
+			speed = 9600;
+		}
+		res = em400_dev_terminal_init(chnum, devnum, port, speed);
+	} else if (!strcasecmp(dev_type_name, "winchester")) {
+		const char *image = cfg_fgetstr(cfg, "dev%i.%i:image", chnum, devnum);
+		res = em400_dev_winchester_init(chnum, devnum, image);
+	} else if (!strcasecmp(dev_type_name, "floppy")) {
+		res = E_OK;
+	} else if (!strcasecmp(dev_type_name, "floppy8")) {
+		const char *images[4];
+		images[0] = cfg_fgetstr(cfg, "dev%i.%i:image_0", chnum, devnum);
+		images[1] = cfg_fgetstr(cfg, "dev%i.%i:image_1", chnum, devnum);
+		images[2] = cfg_fgetstr(cfg, "dev%i.%i:image_2", chnum, devnum);
+		images[3] = cfg_fgetstr(cfg, "dev%i.%i:image_3", chnum, devnum);
+		res = em400_dev_sp45de_init(chnum, devnum, images);
+	} else {
+		res = LOGERR("Unknown device type: %s", dev_type_name);
+	}
+
+	return res;
+}
+
+// -----------------------------------------------------------------------
 static struct io_chan_types * find_chan_type(const char *name)
 {
 	struct io_chan_types *chmap = io_chan_types;
@@ -69,72 +119,26 @@ static struct io_chan_types * find_chan_type(const char *name)
 // -----------------------------------------------------------------------
 int em400_channels_init(em400_cfg *cfg)
 {
-	for (int i=0 ; i<16 ; i++) {
-		const char *ch_name = cfg_fgetstr(cfg, "io:channel_%i", i);
+	for (int chnum=0 ; chnum<16 ; chnum++) {
+		const char *ch_name = cfg_fgetstr(cfg, "io:channel_%i", chnum);
 		if (!ch_name) continue;
 
-		LOG(L_EM4H, "Initializing I/O channel %i: %s", i, ch_name);
-
-		struct io_chan_types *chmap = find_chan_type(ch_name);
+		LOG(L_EM4H, "Initializing I/O channel %i: %s", chnum, ch_name);
+		const struct io_chan_types *chmap = find_chan_type(ch_name);
 		if (!chmap) {
-			return LOGERR("Unknown channel type: %s", ch_name);
+			return LOGERR("Unknown channel %i type: %s", chnum, ch_name);
+		}
+		if (em400_io_channel_init(chnum, chmap->type) != E_OK) {
+			return LOGERR("Channel %i (%s) initialization error", chnum, ch_name);
 		}
 
-		em400_io_channel_init(i, chmap->type);
-	}
+		LOG(L_EM4H, "Processing devices in channel %i (%s)", chnum, ch_name);
 
-	return E_OK;
-}
-
-// -----------------------------------------------------------------------
-int em400_devices_init(em400_cfg *cfg)
-{
-	for (int chnum=0 ; chnum<16 ; chnum++) {
-		if (!io_channel_present(chnum)) continue;
-		LOG(L_EM4H, "Processing devices in channel %i", chnum);
 		for (int devnum=0 ; devnum<32 ; devnum++) {
 			const char *dev_type_name = cfg_fgetstr(cfg, "dev%i.%i:type", chnum, devnum);
 			if (!dev_type_name) continue;
-			LOG(L_EM4H, "Initializing device %i:%i (%s)", chnum, devnum, dev_type_name);
-			if (!strcasecmp(dev_type_name, "terminal")) {
-				const char *transport = cfg_fgetstr(cfg, "dev%i.%i:transport", chnum, devnum);
-				if (transport && strcasecmp(transport, "tcp")) {
-					return LOGERR("Fake terminal only supports TCP transport type");
-				}
-				const int port = cfg_fgetint(cfg, "dev%i.%i:port", chnum, devnum);
-				if (port == -1) {
-					return LOGERR("Device %i.%i: Fake TCP terminal needs port to be set.", chnum, devnum);
-				}
-				em400_dev_terminal_fake_init(chnum, devnum, port);
-			} else if (!strcasecmp(dev_type_name, "terminal2")) {
-				const char *transport = cfg_fgetstr(cfg, "dev%i.%i:transport", chnum, devnum);
-				if (transport && strcasecmp(transport, "tcp")) {
-					return LOGERR("Terminal only supports TCP transport type");
-				}
-				const int port = cfg_fgetint(cfg, "dev%i.%i:port", chnum, devnum);
-				if (port == -1) {
-					return LOGERR("Device %i.%i: TCP terminal needs port to be set.", chnum, devnum);
-				}
-				int speed = cfg_fgetint(cfg, "dev%i.%i:speed", chnum, devnum);
-				if (speed == -1) {
-					LOG(L_EM4H, "Device %i.%i: terminal speed not set, defaulting to 9600", chnum, devnum);
-					speed = 9600;
-				}
-				em400_dev_terminal_init(chnum, devnum, port, speed);
-			} else if (!strcasecmp(dev_type_name, "winchester")) {
-				const char *image = cfg_fgetstr(cfg, "dev%i.%i:image", chnum, devnum);
-				em400_dev_winchester_init(chnum, devnum, image);
-			} else if (!strcasecmp(dev_type_name, "floppy")) {
-
-			} else if (!strcasecmp(dev_type_name, "floppy8")) {
-				const char *images[4];
-				images[0] = cfg_fgetstr(cfg, "dev%i.%i:image_0", chnum, devnum);
-				images[1] = cfg_fgetstr(cfg, "dev%i.%i:image_1", chnum, devnum);
-				images[2] = cfg_fgetstr(cfg, "dev%i.%i:image_2", chnum, devnum);
-				images[3] = cfg_fgetstr(cfg, "dev%i.%i:image_3", chnum, devnum);
-				em400_dev_sp45de_init(chnum, devnum, images);
-			} else {
-				LOGERR("Unknown device type: %s", dev_type_name);
+			if (em400_device_init(cfg, dev_type_name, chnum, devnum) != E_OK) {
+				return LOGERR("Device %i:%i (%s) initialization error", chnum, devnum, dev_type_name);
 			}
 		}
 	}
@@ -193,9 +197,12 @@ int em400_top_init(em400_cfg *cfg)
 		.mega_prom_image = cfg_getstr(cfg, "memory:mega_prom", CFG_DEFAULT_MEMORY_MEGA_PROM),
 	};
 
-	if (em400_init(&mem_cfg, &cpu_cfg, &buzzer_cfg) != E_OK) return LOGERR("Failed to initialize EM400 library.");
-	em400_channels_init(cfg);
-	em400_devices_init(cfg);
+	if (em400_init(&mem_cfg, &cpu_cfg, &buzzer_cfg) != E_OK) {
+		return LOGERR("Failed to initialize EM400.");
+	}
+	if (em400_channels_init(cfg) != E_OK) {
+		return LOGERR("Failed to initialize EM400 I/O channels.");
+	}
 
 	if (!(ui = ui_create(cfg))) return LOGERR("Failed to initialize UI.");
 

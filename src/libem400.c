@@ -89,7 +89,7 @@ int em400_dev_terminal_init(unsigned chnum, unsigned devnum, int port, int speed
 {
 	em400_dev_t *dev = terminal_create(port, speed);
 	if (!dev) {
-		return E_OK; // temporarily, because multix creates its own terminals
+		return E_ERR;
 	}
 	return io_dev_connect(chnum, devnum, dev);
 }
@@ -99,7 +99,7 @@ int em400_dev_terminal_fake_init(unsigned chnum, unsigned devnum, int port)
 {
 	em400_dev_t *dev = terminal_fake_create(port);
 	if (!dev) {
-		return E_OK; // temporarily, because multix creates its own terminals
+		return E_ERR;
 	}
 	return io_dev_connect(chnum, devnum, dev);
 }
