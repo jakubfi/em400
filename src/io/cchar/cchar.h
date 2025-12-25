@@ -45,7 +45,6 @@ struct cchar_unit {
 	chan_char_t *chan;		// channel
 
 	cchar_unit_f_shutdown shutdown;
-	cchar_unit_f_free free;
 	cchar_unit_f_reset reset;
 	cchar_unit_f_cmd cmd;
 	cchar_unit_f_intspec intspec;

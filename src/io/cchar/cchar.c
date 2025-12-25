@@ -127,14 +127,6 @@ void cchar_free(chan_t *chan)
 
 	LOG(L_CCHR, "Freeing CHAR channel %i resources", ch->base.num);
 
-	// free all connected controllers' resources
-	for (int i=0 ; i<CCHAR_MAX_DEVICES ; i++) {
-		cchar_unit_t *u = ch->unit[i];
-		if (u && u->free) {
-			u->free(u);
-		}
-	}
-
 	// free channel resources
 	free(chan);
 }

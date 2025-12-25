@@ -119,7 +119,6 @@ typedef struct flop8 {
 static void * flop8_worker_loop(void *ptr);
 static void flop8_reset_state(flop8 *u);
 void flop8_shutdown(cchar_unit_t *unit);
-void flop8_free(cchar_unit_t *unit);
 void flop8_reset(cchar_unit_t *unit);
 int flop8_cmd(cchar_unit_t *unit, int dir, int cmd, uint16_t *r_arg);
 int flop8_intspec(cchar_unit_t *unit);
@@ -149,7 +148,6 @@ cchar_unit_t * flop8_create(int dev_num, em400_dev_t *dev)
 
 	flop->base.num = dev_num;
 	flop->base.shutdown = flop8_shutdown;
-	flop->base.free = flop8_free;
 	flop->base.reset = flop8_reset;
 	flop->base.cmd = flop8_cmd;
 	flop->base.intspec = flop8_intspec;
@@ -232,16 +230,6 @@ void flop8_shutdown(cchar_unit_t *unit)
 
 	for (int i=0 ; i<F8_DRIVE_CNT ; i++) {
 		if (flop->f[i]) fclose(flop->f[i]);
-	}
-}
-
-// -----------------------------------------------------------------------
-void flop8_free(cchar_unit_t *unit)
-{
-	flop8 *flop = (flop8 *) unit;
-	if (!flop) return;
-
-	for (int i=0 ; i<F8_DRIVE_CNT ; i++) {
 		if (flop->image[i]) free(flop->image[i]);
 	}
 	free(flop);

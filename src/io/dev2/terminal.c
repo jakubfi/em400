@@ -27,7 +27,7 @@
 extern uv_loop_t *ioloop;
 static char already_connected_message[] = "Terminal already connected. Bye.\n";
 
-void terminal_try_free(terminal_t *terminal);
+static void terminal_try_free(terminal_t *terminal);
 
 // -----------------------------------------------------------------------
 static void term_buf_reset(terminal_t *terminal)
@@ -267,7 +267,7 @@ void terminal_free(em400_dev_t *dev)
 }
 
 // -----------------------------------------------------------------------
-void terminal_try_free(terminal_t *terminal)
+static void terminal_try_free(terminal_t *terminal)
 {
 	if (terminal->open_handles <= 0) {
 		LOG(L_TERM, "No more open handles, terminal freeing resources");

@@ -55,6 +55,7 @@ struct uzdat_s {
 	uv_async_t async_write;
 	uv_async_t async_switch_transmit;
 	uv_timer_t timer_switch_transmit;
+	int open_handles;
 };
 
 enum uzdat_states {
@@ -87,7 +88,6 @@ enum cchar_uzdat_interrupts {
 };
 
 void uzdat_shutdown(cchar_unit_t *unit);
-void uzdat_free(cchar_unit_t *unit);
 void uzdat_reset(cchar_unit_t *unit);
 int uzdat_cmd(cchar_unit_t *unit, int dir, int cmd, uint16_t *r_arg);
 int uzdat_intspec(cchar_unit_t *unit);
@@ -100,11 +100,35 @@ void uzdat_on_data_received(uzdat_t *uzdat, char data);
 void uzdat_on_data_sent(uzdat_t *uzdat);
 
 // -----------------------------------------------------------------------
+static void uzdat_try_free(uzdat_t *uzdat)
+{
+	if (uzdat->open_handles <= 0) {
+		LOG(L_UZDAT, "No more open handles, UZDAT freeing resources");
+		pthread_mutex_destroy(&uzdat->mutex);
+		free(uzdat);
+	}
+}
+
+// -----------------------------------------------------------------------
+static void on_handle_close(uv_handle_t* handle)
+{
+	uzdat_t *uzdat = (uzdat_t *) uv_handle_get_data(handle);
+	uzdat->open_handles--;
+	uzdat_try_free(uzdat);
+}
+
+// -----------------------------------------------------------------------
 static void uzdat_ioloop_teardown(uzdat_t *uzdat)
 {
-	uv_close((uv_handle_t *) &uzdat->async_write, NULL);
-	uv_close((uv_handle_t *) &uzdat->async_switch_transmit, NULL);
-	uv_close((uv_handle_t *) &uzdat->timer_switch_transmit, NULL);
+	if (!uv_is_closing((uv_handle_t *) &uzdat->async_write)) {
+		uv_close((uv_handle_t *) &uzdat->async_write, on_handle_close);
+	}
+	if (!uv_is_closing((uv_handle_t *) &uzdat->async_switch_transmit)) {
+		uv_close((uv_handle_t *) &uzdat->async_switch_transmit, on_handle_close);
+	}
+	if (!uv_is_closing((uv_handle_t *) &uzdat->timer_switch_transmit)) {
+		uv_close((uv_handle_t *) &uzdat->timer_switch_transmit, on_handle_close);
+	}
 }
 
 // -----------------------------------------------------------------------
@@ -114,30 +138,29 @@ static int uzdat_ioloop_setup(uzdat_t *uzdat)
 
 	res = uv_async_init(ioloop, &uzdat->async_write, uzdat_on_async_write);
 	if (res) {
-		LOGERR("UZDAT async_write handler init error: %s", uv_strerror(res));
-		goto fail;
+		return LOGERR("UZDAT async_write handler init error: %s", uv_strerror(res));
 	}
 	uv_handle_set_data((uv_handle_t*) &uzdat->async_write, uzdat);
+	uzdat->open_handles++;
 
 	res = uv_async_init(ioloop, &uzdat->async_switch_transmit, uzdat_on_async_switch_dir);
 	if (res) {
-		LOGERR("UZDAT async_switch_transmit handler init error: %s", uv_strerror(res));
-		goto fail;
+		uv_close((uv_handle_t *) &uzdat->async_write, on_handle_close);
+		return LOGERR("UZDAT async_switch_transmit handler init error: %s", uv_strerror(res));
 	}
 	uv_handle_set_data((uv_handle_t*) &uzdat->async_switch_transmit, uzdat);
+	uzdat->open_handles++;
 
 	res = uv_timer_init(ioloop, &uzdat->timer_switch_transmit);
 	if (res) {
-		LOGERR("UZDAT timer init error: %s", uv_strerror(res));
-		goto fail;
+		uv_close((uv_handle_t *) &uzdat->async_write, on_handle_close);
+		uv_close((uv_handle_t *) &uzdat->async_switch_transmit, on_handle_close);
+		return LOGERR("UZDAT timer init error: %s", uv_strerror(res));
 	}
 	uv_handle_set_data((uv_handle_t*) &uzdat->timer_switch_transmit, uzdat);
+	uzdat->open_handles++;
 
-	return 0;
-
-fail:
-	uzdat_ioloop_teardown(uzdat);
-	return -1;
+	return E_OK;
 }
 
 // -----------------------------------------------------------------------
@@ -148,37 +171,34 @@ cchar_unit_t * uzdat_create(int dev_num, em400_dev_t *dev)
 	uzdat_t *uzdat = (uzdat_t*) calloc(1, sizeof(uzdat_t));
 	if (!uzdat) {
 		LOGERR("Device %i: failed to allocate memory for UZDAT", dev_num);
-		goto fail;
+		return NULL;
+	}
+
+	if (pthread_mutex_init(&uzdat->mutex, NULL)) {
+		LOGERR("Device %i: failed to initialize UZDAT mutex", dev_num);
+		free(uzdat);
+		return NULL;
 	}
 
 	uzdat->base.num = dev_num;
 	uzdat->base.shutdown = uzdat_shutdown;
-	uzdat->base.free = uzdat_free;
 	uzdat->base.reset = uzdat_reset;
 	uzdat->base.cmd = uzdat_cmd;
 	uzdat->base.intspec = uzdat_intspec;
 	uzdat->base.has_interrupt = uzdat_has_interrupt;
 
-	if (pthread_mutex_init(&uzdat->mutex, NULL)) {
-		LOGERR("Device %i: failed to initialize UZDAT mutex", dev_num);
-		goto fail;
-	}
-
 	uzdat_reset((cchar_unit_t *) uzdat);
-
-	if (uzdat_ioloop_setup(uzdat)) {
-		goto fail;
-	}
 
 	uzdat->dev = dev;
 	// TODO: generic device callback registration?
 	terminal_register_callbacks((terminal_t *) uzdat->dev, uzdat, (void*) uzdat_on_data_received, (void*) uzdat_on_data_sent);
 
-	return (cchar_unit_t *) uzdat;
+	if (uzdat_ioloop_setup(uzdat) == E_ERR) {
+		uzdat_try_free(uzdat);
+		return NULL;
+	}
 
-fail:
-	uzdat_free((cchar_unit_t *) uzdat);
-	return NULL;
+	return (cchar_unit_t *) uzdat;
 }
 
 // -----------------------------------------------------------------------
@@ -265,21 +285,9 @@ void uzdat_shutdown(cchar_unit_t *unit)
 	uzdat_t *uzdat = (uzdat_t*) unit;
 
 	uzdat_ioloop_teardown(uzdat);
-	if (uzdat->dev) {
+	if ((uzdat->dev) && (uzdat->dev->shutdown)) {
 		uzdat->dev->shutdown((em400_dev_t *) uzdat->dev);
 	}
-}
-
-// -----------------------------------------------------------------------
-void uzdat_free(cchar_unit_t *unit)
-{
-	if (!unit) return;
-
-	LOG(L_UZDAT, "UZDAT freeing resources");
-
-	uzdat_t *uzdat = (uzdat_t*) unit;
-	pthread_mutex_destroy(&uzdat->mutex);
-	free(uzdat);
 }
 
 // -----------------------------------------------------------------------
