@@ -22,29 +22,7 @@
 
 #include "io/cchar/cchar.h"
 
-typedef struct uzdat_s uzdat_t;
-
-struct uzdat_s {
-	cchar_unit_t base;
-
-	pthread_mutex_t mutex;
-	int intspec;
-	int state;
-	int dir;
-	bool xfer_busy;
-	char buf_wr;
-	int buf_rd;
-
-	em400_dev_t *dev;
-
-	uv_async_t async_write;
-	uv_async_t async_switch_transmit;
-	uv_timer_t timer_switch_transmit;
-};
-
 cchar_unit_t * uzdat_create(int dev_num, em400_dev_t *dev);
-void uzdat_on_data_received(uzdat_t *uzdat, char data);
-void uzdat_on_data_sent(uzdat_t *uzdat);
 
 #endif
 

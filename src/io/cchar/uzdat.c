@@ -38,6 +38,25 @@
 
 extern uv_loop_t *ioloop;
 
+typedef struct uzdat_s uzdat_t;
+struct uzdat_s {
+	cchar_unit_t base;
+
+	pthread_mutex_t mutex;
+	int intspec;
+	int state;
+	int dir;
+	bool xfer_busy;
+	char buf_wr;
+	int buf_rd;
+
+	em400_dev_t *dev;
+
+	uv_async_t async_write;
+	uv_async_t async_switch_transmit;
+	uv_timer_t timer_switch_transmit;
+};
+
 enum uzdat_states {
 	UZDAT_STATE_OFF,
 	UZDAT_STATE_OK,
@@ -76,6 +95,9 @@ bool uzdat_has_interrupt(cchar_unit_t *unit);
 
 static void uzdat_on_async_write(uv_async_t *handle);
 static void uzdat_on_async_switch_dir(uv_async_t *handle);
+
+void uzdat_on_data_received(uzdat_t *uzdat, char data);
+void uzdat_on_data_sent(uzdat_t *uzdat);
 
 // -----------------------------------------------------------------------
 static void uzdat_ioloop_teardown(uzdat_t *uzdat)
@@ -172,6 +194,7 @@ void uzdat_on_data_received(uzdat_t *uzdat, char data)
 	// Also receive backspace (or del) interpreted as "operator request" in "off" state.
 	// Terminals in CROOK seem to work that way, and it seems to be a modification done
 	// to UZ-DAT board, since vanilla UZ-DAT doesn't support operator request.
+	// TODO: analyze actual UZDAT modification (it sends real OPRQ) and modify the behavior
 	const bool oprq = (uzdat->state == UZDAT_STATE_OFF) && ((data == 8) || (data == 127));
 
 	if (reading || oprq) {
@@ -347,7 +370,7 @@ static void uzdat_on_async_switch_dir(uv_async_t *handle)
 }
 
 // -----------------------------------------------------------------------
-static int uzdat_write(uzdat_t *uzdat, uint16_t *r_arg)
+static int uzdat_write(uzdat_t *uzdat, const uint16_t *r_arg)
 {
 	static const char *log_msgs[] = {
 		"transceiver ready, sending",
