@@ -93,6 +93,8 @@ detach:
 	lw	r1, FLOP_DEV\KZ_INT_DEV + INT_READY\KZ_INT_NUM
 	rw	r1, expected_int
 	lj	waitint
+	; we need detach to finish with OK to continue with CTL commands
+	ujs	detach
 
 reposition:
 	lw	r1, KZ_FLOPPY_DRIVE_0 | KZ_FLOPPY_SIDE_A | 1\KZ_FLOPPY_TRACK | 1\KZ_FLOPPY_SECTOR
@@ -136,6 +138,8 @@ detach2:
 	lw	r1, FLOP_DEV\KZ_INT_DEV + INT_READY\KZ_INT_NUM
 	rw	r1, expected_int
 	lj	waitint
+	; we need detach to finish with OK to continue with CTL commands
+	ujs	detach2
 
 	; reposition
 

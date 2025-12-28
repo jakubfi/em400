@@ -75,7 +75,7 @@ next_byte:
 	awt	r2, -1
 	cwt	r2, 0
 	jes	sector_done
-	; 128 consecutive reads end with OK
+	; 128 consecutive writes end with OK
 	ou	r1, FLOP | KZ_CMD_DEV_WRITE
 	.word	.no2, .en2, .ok2, .pe2
 .no2:	hlt	050

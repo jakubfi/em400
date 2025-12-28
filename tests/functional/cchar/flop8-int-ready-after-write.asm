@@ -1,6 +1,7 @@
 ; OPTS -c configs/flop8-no-floppy.ini
 
-; writing a byte when no floppy is inserted should result in HW error
+; writing a byte when no floppy is inserted should not result in a HW error
+; "ready" interrupt is sent as usual
 
 	.cpu	mera400
 
@@ -22,7 +23,7 @@ mask:	.word	IMASK_CH4_9
 int_flop:
 	md	[STACKP]
 	lw	r1, [-SP_SPEC]
-	cw	r1, FLOP_DEV\KZ_INT_DEV + KZ_INT_FAILURE\KZ_INT_NUM
+	cw	r1, FLOP_DEV\KZ_INT_DEV + INT_READY\KZ_INT_NUM
 	jes	.ok
 	hlt	076
 .ok:

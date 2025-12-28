@@ -31,22 +31,15 @@
 
 #include "io/dev2/sp45de.h"
 
-#define F8_DRIVE_CNT 4
-#define F8_TRACK_CNT 77
-#define F8_TRACK_LAST 73
-#define F8_SECTOR_PER_TRACK 26
-#define F8_BYTES_PER_SECTOR 128
-#define F8_DISK_SIZE_BYTES (F8_TRACK_CNT * F8_SECTOR_PER_TRACK * F8_BYTES_PER_SECTOR)
-
 enum f8_states {
-	F8ST_IDLE,					// St.0 idle state
-	F8ST_SECT_RD,				// St.1 disk to buffer read
-	F8ST_SECT_RD_CANCEL,		// cancel reading current sector
-	F8ST_BUF_RD,				// St.2 buffer to cpu read
-	F8ST_BUF_WR_INIT,			// first state after buffer write (prepare for write)
-	F8ST_BUF_WR,				// cpu to buffer write St.3 (bad sector mark, F8) St.5 (regular data FB)
-	F8ST_SECT_WR,				// buffer to disk write St.6 (with check), St.7 (no check)
-	F8ST_QUIT,
+	F8_ST0_IDLE,				// St.0 idle state
+	F8_ST1_SECT_RD,				// St.1 disk to buffer read
+	F8_ST2_BUF_RD,				// St.2 buffer to cpu read
+	F8_ST2_BUF_RD_CANCEL,		// St.2 cancel current buffer read
+	F8_ST3_BUF_WR_START,		// St.3 start buffer write
+	F8_ST5_BUF_WR,				// cpu to buffer write St.3 (bad sector mark, F8) St.5 (regular data FB)
+	F8_ST7_SECT_WR,				// buffer to disk write St.6 (with check), St.7 (no check)
+	F8_STX_QUIT,
 };
 
 enum f8_commands {
@@ -101,11 +94,8 @@ enum f8_sides {
 
 typedef struct flop8 {
 	cchar_unit_t base;
-	char *image[F8_DRIVE_CNT];
-	FILE *f[F8_DRIVE_CNT];
 	int drive, side, track, sector;
 	int buf_pos;
-	uint8_t buf[F8_BYTES_PER_SECTOR];
 	pthread_t worker;
 	pthread_mutex_t state_mutex;
 	pthread_cond_t state_cond;
@@ -114,6 +104,7 @@ typedef struct flop8 {
 	bool pending_write;
 	bool force_interrupt;
 	int interrupts;
+	sp45de_t *sp45de;
 } flop8;
 
 static void * flop8_worker_loop(void *ptr);
@@ -133,12 +124,17 @@ static void flop8_set_address(flop8 *u, uint16_t addr)
 	u->track = (addr >> 5) & 0b1111111;
 	u->sector = addr & 0b11111;
 	u->buf_pos = 0;
+
+	LOG(L_FLOP, "Setting new address: drive: %i, side: %i, track: %i, sector: %i", u->drive, u->side, u->track, u->sector);
 }
 
 // -----------------------------------------------------------------------
 cchar_unit_t * flop8_create(int dev_num, em400_dev_t *dev)
 {
-	sp45de_t *sp45de = (sp45de_t *) dev;
+	if (dev->type != EM400_DEV_SP45DE) {
+		LOGERR("UZFX trying to connect something else than SP45DE");
+		return NULL;
+	}
 
 	flop8 *flop = (flop8 *) calloc(1, sizeof(flop8));
 	if (!flop) {
@@ -146,36 +142,14 @@ cchar_unit_t * flop8_create(int dev_num, em400_dev_t *dev)
 		goto fail;
 	}
 
+	flop->sp45de = (sp45de_t *) dev;
+
 	flop->base.num = dev_num;
 	flop->base.shutdown = flop8_shutdown;
 	flop->base.reset = flop8_reset;
 	flop->base.cmd = flop8_cmd;
 	flop->base.intspec = flop8_intspec;
 	flop->base.has_interrupt = flop8_has_interrupt;
-
-	for (int id=0 ; id<F8_DRIVE_CNT ; id++) {
-		if (!sp45de->images[id]) continue;
-
-		flop->image[id] = strdup(sp45de->images[id]);
-		if (!flop->image[id]) {
-			LOGERR("8-inch floppy image data memory allocation error.");
-			goto fail;
-		}
-		flop->f[id] = fopen(flop->image[id], "r+b");
-		if (flop->f[id]) {
-			LOG(L_FLOP, "Drive %i: %s.", id, flop->image[id]);
-		} else {
-			LOGERR("Failed to open 8-inch floppy image: %s (drive %i).", flop->image[id], id);
-			goto fail;
-		}
-
-		fseek(flop->f[id], 0L, SEEK_END);
-		int sz = ftell(flop->f[id]);
-		if (sz != F8_DISK_SIZE_BYTES) {
-			LOGERR("Wrong 8-inch floppy drive %i image '%s' size: %i instead of %i.", id, flop->image[id], sz, F8_DISK_SIZE_BYTES);
-			goto fail;
-		}
-	}
 
 	if (pthread_mutex_init(&flop->state_mutex, NULL)) {
 		LOGERR("Failed to initialize 8-inch floppy status mutex.");
@@ -206,7 +180,7 @@ static void flop8_reset_state(flop8 *flop)
 {
 	pthread_mutex_lock(&flop->state_mutex);
 	flop8_set_address(flop, INITIAL_ADDRESS);
-	flop->state = F8ST_IDLE;
+	flop->state = F8_ST0_IDLE;
 	flop->pending_write = false;
 	flop->force_interrupt = false;
 	flop->interrupts = F8_INT_NONE;
@@ -220,7 +194,7 @@ void flop8_shutdown(cchar_unit_t *unit)
 	if (!flop) return;
 
 	pthread_mutex_lock(&flop->state_mutex);
-	flop->state = F8ST_QUIT;
+	flop->state = F8_STX_QUIT;
 	pthread_cond_signal(&flop->state_cond);
 	pthread_mutex_unlock(&flop->state_mutex);
 
@@ -228,10 +202,6 @@ void flop8_shutdown(cchar_unit_t *unit)
 	pthread_mutex_destroy(&flop->state_mutex);
 	pthread_cond_destroy(&flop->state_cond);
 
-	for (int i=0 ; i<F8_DRIVE_CNT ; i++) {
-		if (flop->f[i]) fclose(flop->f[i]);
-		if (flop->image[i]) free(flop->image[i]);
-	}
 	free(flop);
 }
 
@@ -253,11 +223,11 @@ static bool flop8_sector_advance(flop8 *flop)
 
 	LOG(L_FLOP, "next sector: %i", flop->sector);
 
-	if (flop->sector > F8_SECTOR_PER_TRACK) {
+	if (flop->sector > SP45DE_SECTOR_PER_TRACK) {
 		flop->sector = 1;
 		flop->track++;
 		LOG(L_FLOP, "track end, next track: %i", flop->track);
-		if (flop->track > F8_TRACK_LAST) {
+		if (flop->track > SP45DE_TRACK_LAST) {
 			flop->track = 1;
 			LOG(L_FLOP, "disk end");
 			return true;
@@ -267,149 +237,97 @@ static bool flop8_sector_advance(flop8 *flop)
 }
 
 // -----------------------------------------------------------------------
-static bool flop8_img_seek(flop8 *flop)
-{
-	pthread_mutex_lock(&flop->state_mutex);
-	LOG(L_FLOP, "Seek: track %i, sector %i", flop->track, flop->sector);
-	int offset = (flop->track * F8_SECTOR_PER_TRACK + (flop->sector-1)) * F8_BYTES_PER_SECTOR;
-	pthread_mutex_unlock(&flop->state_mutex);
-	int res = fseek(flop->f[flop->drive], offset, SEEK_SET);
-	if (res != 0) {
-		LOG(L_FLOP, "Image file seek failed");
-		return true;
-	}
-	return false;
-}
-
-// -----------------------------------------------------------------------
-static bool flop8_img_read_sector(flop8 *flop)
-{
-	pthread_mutex_lock(&flop->state_mutex);
-	int res = fread(&flop->buf, 1, F8_BYTES_PER_SECTOR, flop->f[flop->drive]);
-	if (res != F8_BYTES_PER_SECTOR) {
-		LOG(L_FLOP, "Failed floppy read");
-		return true;
-	}
-	pthread_mutex_unlock(&flop->state_mutex);
-	LOG(L_FLOP, "Read sector (%x %x %x ...)", flop->buf[0], flop->buf[1], flop->buf[2]);
-	return false;
-}
-
-// -----------------------------------------------------------------------
-static bool flop8_img_write_sector(flop8 *flop)
-{
-	LOG(L_FLOP, "Write sector (%x %x %x ...)", flop->buf[0], flop->buf[1], flop->buf[2]);
-	int res = fwrite(&flop->buf, 1, F8_BYTES_PER_SECTOR, flop->f[flop->drive]);
-	if (res != F8_BYTES_PER_SECTOR) {
-		LOG(L_FLOP, "Failed floppy write");
-		return true;
-	}
-	return false;
-}
-
-// -----------------------------------------------------------------------
 static void * flop8_worker_loop(void *ptr)
 {
 	flop8 *flop = (flop8 *) ptr;
-	int interrupt;
-	int state;
 	bool quit = false;
 
 	while (!quit) {
-
 		pthread_mutex_lock(&flop->state_mutex);
 		// last two states are not handled here
 		// TODO: flop FSM... and multithreading...
-		while ((flop->state == F8ST_IDLE) || (flop->state == F8ST_BUF_RD) || (flop->state == F8ST_BUF_WR)) {
+		while ((flop->state == F8_ST0_IDLE) || (flop->state == F8_ST2_BUF_RD) || (flop->state == F8_ST5_BUF_WR)) {
 			LOG(L_FLOP, "Worker waiting for state change");
 			pthread_cond_wait(&flop->state_cond, &flop->state_mutex);
 		}
-		interrupt = F8_INT_NONE;
-		state = flop->state;
-		pthread_mutex_unlock(&flop->state_mutex);
+		int interrupt = F8_INT_NONE;
+		int state = flop->state;
 
 		switch (state) {
-			case F8ST_QUIT:
+			case F8_STX_QUIT:
 				LOG(L_FLOP, "Worker processing state: QUIT");
 				quit = true;
 				break;
-			case F8ST_SECT_RD:
+			case F8_ST1_SECT_RD:
 				LOG(L_FLOP, "Worker processing state: SECTOR READ");
-				if (!flop->f[flop->drive]) {
-					LOG(L_FLOP, "No image attached to drive %i", flop->drive);
+				if ((flop->sector == 26) && (flop->track == 73)) {
+					interrupt |= 1 << F8_INT_DISK_END;
+				}
+				if (sp45de_blk_read(flop->sp45de, flop->drive, flop->track, flop->sector) != E_OK) {
+					LOG(L_FLOP, "Drive %i block read error %i", flop->drive);
 					interrupt |= 1 << F8_INT_HW_ERR;
-					pthread_mutex_lock(&flop->state_mutex);
-					flop->state = F8ST_IDLE;
-					pthread_mutex_unlock(&flop->state_mutex);
-				} else {
-					if ((flop->sector == 26) && (flop->track == 73)) {
-						interrupt |= 1 << F8_INT_DISK_END;
-					}
-					flop8_img_seek(flop);
-					flop8_img_read_sector(flop);
-					interrupt |= 1 << F8_INT_READY;
-					pthread_mutex_lock(&flop->state_mutex);
 					flop->buf_pos = 0;
-					flop->state = F8ST_BUF_RD;
-					pthread_mutex_unlock(&flop->state_mutex);
+					flop->state = F8_ST0_IDLE;
+				} else {
+					interrupt |= 1 << F8_INT_READY;
+					flop->buf_pos = 0;
+					flop->state = F8_ST2_BUF_RD;
 				}
 				break;
-			case F8ST_SECT_RD_CANCEL:
+			case F8_ST2_BUF_RD_CANCEL:
 				LOG(L_FLOP, "Worker processing state: SECTOR READ CANCEL");
-				flop8_sector_advance(flop);
 				interrupt |= 1 << F8_INT_READY;
-				pthread_mutex_lock(&flop->state_mutex);
-				flop->state = F8ST_IDLE;
-				pthread_mutex_unlock(&flop->state_mutex);
-				break;
-			case F8ST_BUF_WR_INIT:
-				LOG(L_FLOP, "Worker processing state: WRITE INIT");
-				if (!flop->f[flop->drive]) {
-					LOG(L_FLOP, "No image attached to drive %i", flop->drive);
-					interrupt |= 1 << F8_INT_HW_ERR;
-					pthread_mutex_lock(&flop->state_mutex);
-					flop->state = F8ST_IDLE;
-					pthread_mutex_unlock(&flop->state_mutex);
-				} else {
-					// TODO: start the engine
-					// TODO: ustalenie sposobu/rodzaju zapisu
-					if ((flop->sector == 26) && (flop->track == 73)) {
-						interrupt |= 1 << F8_INT_DISK_END;
-					}
-					interrupt |= 1 << F8_INT_READY;
-					pthread_mutex_lock(&flop->state_mutex);
-					flop->state = F8ST_BUF_WR;
-					flop->buf_pos = 0;
-					pthread_mutex_unlock(&flop->state_mutex);
+				while (flop->buf_pos < SP45DE_BLK_SIZE) {
+					sp45de_read(flop->sp45de);
+					flop->buf_pos++;
 				}
+				flop->buf_pos = 0;
+				flop->state = F8_ST0_IDLE;
+				flop8_sector_advance(flop);
 				break;
-			case F8ST_SECT_WR:
+			case F8_ST3_BUF_WR_START:
+				LOG(L_FLOP, "Worker processing state: WRITE INIT");
+				// TODO: start the engine
+				// TODO: ustalenie sposobu/rodzaju zapisu
+				if ((flop->sector == 26) && (flop->track == 73)) {
+					interrupt |= 1 << F8_INT_DISK_END;
+				}
+				interrupt |= 1 << F8_INT_READY;
+				flop->state = F8_ST5_BUF_WR;
+				flop->buf_pos = 0;
+				break;
+			case F8_ST7_SECT_WR:
 				LOG(L_FLOP, "Worker processing state: SECTOR WRITE");
-				flop8_img_seek(flop);
-				flop8_img_write_sector(flop);
+				while (flop->buf_pos < SP45DE_BLK_SIZE) {
+					sp45de_write(flop->sp45de, 0);
+					flop->buf_pos++;
+				}
+				flop->buf_pos = 0;
+
+				sp45de_blk_write(flop->sp45de, flop->drive, flop->track, flop->sector);
 				flop8_sector_advance(flop);
 				// TODO: jeśli z kontrolą - odczyt
-				pthread_mutex_lock(&flop->state_mutex);
 				if (flop->force_interrupt) {
 					interrupt |= 1 << F8_INT_READY;
 				}
 				if (flop->pending_write) {
-					flop->state = F8ST_BUF_WR_INIT;
+					flop->state = F8_ST3_BUF_WR_START;
 					flop->pending_write = false;
 				} else {
-					flop->state = F8ST_IDLE;
+					flop->state = F8_ST0_IDLE;
 				}
-				pthread_mutex_unlock(&flop->state_mutex);
 				break;
 		}
 
 		if (interrupt != F8_INT_NONE) {
-			LOG(L_FLOP, "Worker sending interrupt");
-			pthread_mutex_lock(&flop->state_mutex);
 			flop->interrupts = interrupt;
-			pthread_mutex_unlock(&flop->state_mutex);
-			cchar_int_trigger(flop->base.chan);
 			flop->force_interrupt = false;
+		}
+		pthread_mutex_unlock(&flop->state_mutex);
+
+		if (interrupt != F8_INT_NONE) {
+			LOG(L_FLOP, "Worker sending interrupt");
+			cchar_int_trigger(flop->base.chan);
 		}
 
 	}
@@ -458,20 +376,20 @@ static int flop8_cmd_read(cchar_unit_t *unit, uint16_t *r_arg)
 
 	pthread_mutex_lock(&flop->state_mutex);
 	switch (flop->state) {
-		case F8ST_IDLE:
+		case F8_ST0_IDLE:
 			LOG(L_FLOP, "command: read (state: idle)");
-			flop->state = F8ST_SECT_RD;
+			flop->state = F8_ST1_SECT_RD;
 			pthread_cond_signal(&flop->state_cond);
 			io_ret = IO_EN;
 			break;
-		case F8ST_BUF_RD:
-			*r_arg = flop->buf[flop->buf_pos];
+		case F8_ST2_BUF_RD:
+			*r_arg = sp45de_read(flop->sp45de);
 			LOG(L_FLOP, "command: read byte 0x%02x (state: buffer read)", *r_arg);
 			flop->buf_pos++;
-			if (flop->buf_pos >= F8_BYTES_PER_SECTOR) {
+			if (flop->buf_pos >= SP45DE_BLK_SIZE) {
 				// last byte, set next sector address
 				flop8_sector_advance(flop);
-				flop->state = F8ST_IDLE;
+				flop->state = F8_ST0_IDLE;
 			}
 			flop->interrupts = F8_INT_NONE;
 			io_ret = IO_OK;
@@ -487,31 +405,32 @@ static int flop8_cmd_read(cchar_unit_t *unit, uint16_t *r_arg)
 }
 
 // -----------------------------------------------------------------------
-static int flop8_cmd_write(cchar_unit_t *unit, uint16_t *r_arg)
+static int flop8_cmd_write(cchar_unit_t *unit, const uint16_t *r_arg)
 {
 	flop8 *flop = (flop8 *) unit;
 	int io_ret;
 
 	pthread_mutex_lock(&flop->state_mutex);
 	switch (flop->state) {
-		case F8ST_IDLE:
+		case F8_ST0_IDLE:
 			LOG(L_FLOP, "command: write (state: idle)");
-			flop->state = F8ST_BUF_WR_INIT;
+			flop->state = F8_ST3_BUF_WR_START;
 			pthread_cond_signal(&flop->state_cond);
 			io_ret = IO_EN;
 			break;
-		case F8ST_BUF_WR:
-			flop->buf[flop->buf_pos] = *r_arg;
-			LOG(L_FLOP, "command: write byte 0x%02x (state: buffer write)", flop->buf[flop->buf_pos]);
+		case F8_ST5_BUF_WR:
+			LOG(L_FLOP, "command: write byte 0x%02x (state: buffer write)", *r_arg);
+			sp45de_write(flop->sp45de, *r_arg);
 			flop->buf_pos++;
-			if (flop->buf_pos >= F8_BYTES_PER_SECTOR) {
-				flop->state = F8ST_SECT_WR;
+			if (flop->buf_pos >= SP45DE_BLK_SIZE) {
+				flop->state = F8_ST7_SECT_WR;
+				flop->buf_pos = 0;
 				pthread_cond_signal(&flop->state_cond);
 			}
 			flop->interrupts = F8_INT_NONE;
 			io_ret = IO_OK;
 			break;
-		case F8ST_SECT_WR:
+		case F8_ST7_SECT_WR:
 			LOG(L_FLOP, "command: write (state: sector write)");
 			flop->pending_write = true;
 			pthread_cond_signal(&flop->state_cond);
@@ -528,14 +447,14 @@ static int flop8_cmd_write(cchar_unit_t *unit, uint16_t *r_arg)
 }
 
 // -----------------------------------------------------------------------
-static int flop8_cmd_control(cchar_unit_t *unit, uint16_t *r_arg, int cmd)
+static int flop8_cmd_control(cchar_unit_t *unit, const uint16_t *r_arg, int cmd)
 {
 	flop8 *flop = (flop8 *) unit;
 	int io_ret;
 
 	pthread_mutex_lock(&flop->state_mutex);
 	switch (flop->state) {
-		case F8ST_IDLE:
+		case F8_ST0_IDLE:
 			LOG(L_FLOP, "command: control (state: idle)");
 			flop->operation = cmd;
 			flop8_set_address(flop, *r_arg);
@@ -578,31 +497,30 @@ static int flop8_cmd_detach(cchar_unit_t *unit)
 	flop8 *flop = (flop8 *) unit;
 	int io_ret;
 
+	// TODO: detach zakończony EN nie jest wykonanym detachem w rozumieniu następnych komend
+	// (i.e. następujące "STERUJ" zakończy się EN i nie będzie się dało z tego wyjść)
+	// TODO: test
 	pthread_mutex_lock(&flop->state_mutex);
 	switch (flop->state) {
-		case F8ST_IDLE:
+		case F8_ST0_IDLE:
 			LOG(L_FLOP, "command: detach (state: idle)");
 			flop->interrupts = F8_INT_NONE;
 			io_ret = IO_OK;
 			break;
-		case F8ST_BUF_RD:
+		case F8_ST2_BUF_RD:
 			LOG(L_FLOP, "command: detach (state: buffer read)");
-			flop->state = F8ST_SECT_RD_CANCEL;
+			flop->state = F8_ST2_BUF_RD_CANCEL;
 			pthread_cond_signal(&flop->state_cond);
 			io_ret = IO_EN;
 			break;
-		case F8ST_BUF_WR:
+		case F8_ST5_BUF_WR:
 			LOG(L_FLOP, "command: detach (state: buffer write)");
-			while (flop->buf_pos < F8_BYTES_PER_SECTOR) {
-				flop->buf[flop->buf_pos] = 0;
-				flop->buf_pos++;
-			}
-			flop->state = F8ST_SECT_WR;
+			flop->state = F8_ST7_SECT_WR;
 			flop->force_interrupt = true;
 			pthread_cond_signal(&flop->state_cond);
 			io_ret = IO_EN;
 			break;
-		case F8ST_SECT_WR:
+		case F8_ST7_SECT_WR:
 			LOG(L_FLOP, "command: detach (state: sector write)");
 			flop->force_interrupt = true;
 			flop->pending_write = false;

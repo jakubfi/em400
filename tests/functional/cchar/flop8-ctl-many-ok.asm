@@ -49,8 +49,7 @@ start:
 	cwt	r3, 0
 	jes	.fin
 
-	md	r3
-	ou	r7, FLOP
+	ou	r3, FLOP
 	.word	.no1, .en1, .ok1, .pe1
 .no1:	hlt	040
 .en1:	ujs	041
