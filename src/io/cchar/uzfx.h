@@ -15,12 +15,12 @@
 //  Foundation, Inc.,
 //  51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 
-#ifndef FLOP8_H
-#define FLOP8_H
+#ifndef UZFX_H
+#define UZFX_H
 
 #include "io/dev2/dev2.h"
 
-cchar_unit_t * flop8_create(int dev_num, em400_dev_t *dev);
+cchar_unit_t * uzfx_create(int dev_num, em400_dev_t *dev);
 
 #endif
 

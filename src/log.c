@@ -46,7 +46,7 @@ static const char * log_component_names[] = {
 	"ALL", "EM4H", "FDBR", "CRK5",
 	"MEM", "CPU", "OP", "INT", "IO",
 	"MX", "CCHR", "CMEM",
-	"UZDAT",
+	"UZDAT", "UZFX",
 	"TERM", "9425", "WNCH", "FLOP", "PNCH", "PNRD","TAPE",
 };
 
