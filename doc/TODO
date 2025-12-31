@@ -1,9 +1,9 @@
 Known issues:
 
+* make uzfx/sp45de async
 * libem400 spawns all threads (cpu, ioloop) with em400_run() and returns control
 * shutdown() can be always called?
 * handling errors during initialization
-* split flop8 into uzfx/sp45de, make it async
 * make winchester async
 * make MX use async terminal, drop terminal_fake
 * make MX async
@@ -14,7 +14,6 @@ Known issues:
 * cchar controllers don't use parameters - generic initialization?
 * drop all io/dev/
 * design/add device public interfaces
-* drop e4image?
 * generic callback registration for cchar controllers?
 * reserve L_EM4H for UIs?
 * make sure terminal is TCP only

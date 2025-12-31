@@ -37,6 +37,7 @@ enum uzfx_states {
 	UZFX_ST2_BUF_RD,			// St.2 buffer to cpu read
 	UZFX_ST2_BUF_RD_CANCEL,		// St.2 cancel current buffer read
 	UZFX_ST3_BUF_WR_START,		// St.3 start buffer write
+	UZFX_ST3_BUF_WR_CANCEL,		// St.3 start buffer cancel
 	UZFX_ST5_BUF_WR,			// cpu to buffer write St.3 (bad sector mark, F8) St.5 (regular data FB)
 	UZFX_ST7_SECT_WR,			// buffer to disk write St.6 (with check), St.7 (no check)
 	UZFX_STX_QUIT,
@@ -97,14 +98,13 @@ typedef struct uzfx uzfx_t;
 struct uzfx {
 	cchar_unit_t base;
 	int drive, side, track, sector;
-	int buf_pos;
 	pthread_t worker;
 	pthread_mutex_t state_mutex;
 	pthread_cond_t state_cond;
 	int state;
 	int operation;
-	bool pending_write;
-	bool force_interrupt;
+	bool pending_buf_write;
+	bool interrupt_required;
 	int interrupts;
 	sp45de_t *sp45de;
 };
@@ -125,7 +125,6 @@ static void uzfx_set_address(uzfx_t *uzfx, uint16_t addr)
 	uzfx->side = (addr >> 12) & 1;
 	uzfx->track = (addr >> 5) & 0b1111111;
 	uzfx->sector = addr & 0b11111;
-	uzfx->buf_pos = 0;
 
 	LOG(L_UZFX, "Setting new address: drive: %i, side: %i, track: %i, sector: %i", uzfx->drive, uzfx->side, uzfx->track, uzfx->sector);
 }
@@ -183,8 +182,8 @@ static void uzfx_reset_state(uzfx_t *uzfx)
 	pthread_mutex_lock(&uzfx->state_mutex);
 	uzfx_set_address(uzfx, INITIAL_ADDRESS);
 	uzfx->state = UZFX_ST0_IDLE;
-	uzfx->pending_write = false;
-	uzfx->force_interrupt = false;
+	uzfx->pending_buf_write = false;
+	uzfx->interrupt_required = false;
 	uzfx->interrupts = UZFX_INT_NONE;
 	pthread_mutex_unlock(&uzfx->state_mutex);
 }
@@ -217,11 +216,10 @@ void uzfx_reset(cchar_unit_t *unit)
 }
 
 // -----------------------------------------------------------------------
-static bool uzfx_sector_advance(uzfx_t *uzfx)
+static bool uzfx_address_advance(uzfx_t *uzfx)
 {
 	// TODO: where to advance? where to check for last track? where to set interrupt?
 	uzfx->sector++;
-	uzfx->buf_pos = 0;
 
 	if (uzfx->sector > SP45DE_SECTOR_PER_TRACK) {
 		uzfx->sector = 1;
@@ -268,24 +266,19 @@ static void * uzfx_worker_loop(void *ptr)
 				if (sp45de_blk_read(uzfx->sp45de, uzfx->drive, uzfx->track, uzfx->sector) != E_OK) {
 					LOG(L_UZFX, "Drive %i block read error %i", uzfx->drive);
 					interrupt |= 1 << UZFX_INT_HW_ERR;
-					uzfx->buf_pos = 0;
 					uzfx->state = UZFX_ST0_IDLE;
 				} else {
 					interrupt |= 1 << UZFX_INT_READY;
-					uzfx->buf_pos = 0;
 					uzfx->state = UZFX_ST2_BUF_RD;
 				}
 				break;
 			case UZFX_ST2_BUF_RD_CANCEL:
 				LOG(L_UZFX, "Worker processing state: SECTOR READ CANCEL");
+				uint8_t c;
+				while (sp45de_read(uzfx->sp45de, &c) == SP45DE_BUF_OK);
 				interrupt |= 1 << UZFX_INT_READY;
-				while (uzfx->buf_pos < SP45DE_BLK_SIZE) {
-					sp45de_read(uzfx->sp45de);
-					uzfx->buf_pos++;
-				}
-				uzfx->buf_pos = 0;
 				uzfx->state = UZFX_ST0_IDLE;
-				uzfx_sector_advance(uzfx); // TODO: error checking?
+				uzfx_address_advance(uzfx); // TODO: error checking?
 				break;
 			case UZFX_ST3_BUF_WR_START:
 				LOG(L_UZFX, "Worker processing state: BUFFER WRITE INIT");
@@ -296,25 +289,24 @@ static void * uzfx_worker_loop(void *ptr)
 				}
 				interrupt |= 1 << UZFX_INT_READY;
 				uzfx->state = UZFX_ST5_BUF_WR;
-				uzfx->buf_pos = 0;
 				break;
+			case UZFX_ST3_BUF_WR_CANCEL:
+				LOG(L_UZFX, "Worker flushing write buffer");
+				while (sp45de_write(uzfx->sp45de, 0) == SP45DE_BUF_OK);
+				interrupt |= 1 << UZFX_INT_READY;
+				// fallthrough
 			case UZFX_ST7_SECT_WR:
 				LOG(L_UZFX, "Worker processing state: SECTOR WRITE");
-				while (uzfx->buf_pos < SP45DE_BLK_SIZE) {
-					sp45de_write(uzfx->sp45de, 0);
-					uzfx->buf_pos++;
-				}
-				uzfx->buf_pos = 0;
-
 				sp45de_blk_write(uzfx->sp45de, uzfx->drive, uzfx->track, uzfx->sector);
-				uzfx_sector_advance(uzfx); // TODO: error checking?
+				uzfx_address_advance(uzfx); // TODO: error checking?
 				// TODO: jeśli z kontrolą - odczyt
-				if (uzfx->force_interrupt) {
+				if (uzfx->interrupt_required) {
 					interrupt |= 1 << UZFX_INT_READY;
 				}
-				if (uzfx->pending_write) {
+				// during sector write, another buffer write came. honor it.
+				if (uzfx->pending_buf_write) {
 					uzfx->state = UZFX_ST3_BUF_WR_START;
-					uzfx->pending_write = false;
+					uzfx->pending_buf_write = false;
 				} else {
 					uzfx->state = UZFX_ST0_IDLE;
 				}
@@ -323,7 +315,7 @@ static void * uzfx_worker_loop(void *ptr)
 
 		if (interrupt != UZFX_INT_NONE) {
 			uzfx->interrupts = interrupt;
-			uzfx->force_interrupt = false;
+			uzfx->interrupt_required = false;
 		}
 		pthread_mutex_unlock(&uzfx->state_mutex);
 
@@ -385,15 +377,15 @@ static int uzfx_cmd_read(cchar_unit_t *unit, uint16_t *r_arg)
 			io_ret = IO_EN;
 			break;
 		case UZFX_ST2_BUF_RD:
-			*r_arg = sp45de_read(uzfx->sp45de);
-			LOG(L_UZFX, "command: read byte 0x%02x (state: buffer read)", *r_arg);
-			uzfx->buf_pos++;
-			if (uzfx->buf_pos >= SP45DE_BLK_SIZE) {
+			uint8_t c;
+			if (sp45de_read(uzfx->sp45de, &c) == SP45DE_BUF_END) {
 				// last byte, set next sector address
-				uzfx_sector_advance(uzfx);
+				uzfx_address_advance(uzfx);
 				uzfx->state = UZFX_ST0_IDLE;
 			}
+			*r_arg = c;
 			uzfx->interrupts = UZFX_INT_NONE;
+			LOG(L_UZFX, "command: read byte 0x%02x (state: buffer read)", *r_arg);
 			io_ret = IO_OK;
 			break;
 		default:
@@ -422,20 +414,15 @@ static int uzfx_cmd_write(cchar_unit_t *unit, const uint16_t *r_arg)
 			break;
 		case UZFX_ST5_BUF_WR:
 			LOG(L_UZFX, "command: write byte 0x%02x (state: buffer write)", *r_arg);
-			sp45de_write(uzfx->sp45de, *r_arg);
-			uzfx->buf_pos++;
-			if (uzfx->buf_pos >= SP45DE_BLK_SIZE) {
+			if (sp45de_write(uzfx->sp45de, (uint8_t) *r_arg) == SP45DE_BUF_END) {
 				uzfx->state = UZFX_ST7_SECT_WR;
-				uzfx->buf_pos = 0;
 				pthread_cond_signal(&uzfx->state_cond);
 			}
-			uzfx->interrupts = UZFX_INT_NONE;
 			io_ret = IO_OK;
 			break;
 		case UZFX_ST7_SECT_WR:
 			LOG(L_UZFX, "command: write (state: sector write)");
-			uzfx->pending_write = true;
-			pthread_cond_signal(&uzfx->state_cond);
+			uzfx->pending_buf_write = true;
 			io_ret = IO_EN;
 			break;
 		default:
@@ -465,6 +452,7 @@ static int uzfx_cmd_control(cchar_unit_t *unit, const uint16_t *r_arg, int cmd)
 			break;
 		default:
 			LOG(L_UZFX, "command: control (state: other)");
+			// this is illegal and puts the controllen in a state that won't send an interrupt
 			io_ret = IO_EN;
 			break;
 	}
@@ -495,7 +483,6 @@ static int uzfx_cmd_spu()
 // -----------------------------------------------------------------------
 static int uzfx_cmd_detach(cchar_unit_t *unit)
 {
-	LOG(L_UZFX, "command: detach");
 	uzfx_t *uzfx = (uzfx_t *) unit;
 	int io_ret;
 
@@ -517,19 +504,22 @@ static int uzfx_cmd_detach(cchar_unit_t *unit)
 			break;
 		case UZFX_ST5_BUF_WR:
 			LOG(L_UZFX, "command: detach (state: buffer write)");
-			uzfx->state = UZFX_ST7_SECT_WR;
-			uzfx->force_interrupt = true;
+			uzfx->state = UZFX_ST3_BUF_WR_CANCEL;
 			pthread_cond_signal(&uzfx->state_cond);
 			io_ret = IO_EN;
 			break;
 		case UZFX_ST7_SECT_WR:
 			LOG(L_UZFX, "command: detach (state: sector write)");
-			uzfx->force_interrupt = true;
-			uzfx->pending_write = false;
+			// force a buffer write after current sector write finishes
+			uzfx->pending_buf_write = false;
+			// in normal flow, finished sector write does not send an interrupt,
+			// but since now, after failed detach CPU waits for an interrupt,
+			// make sure we send it
+			uzfx->interrupt_required = true;
 			io_ret = IO_EN;
 			break;
 		default:
-			LOG(L_UZFX, "command: detach (state: other)");
+			LOG(L_UZFX, "command: detach (other state: %i)", uzfx->state);
 			io_ret = IO_EN;
 			break;
 	}

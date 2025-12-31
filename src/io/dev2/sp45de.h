@@ -29,6 +29,10 @@
 #define SP45DE_SECTOR_PER_TRACK 26
 #define SP45DE_BLK_SIZE 128
 
+enum sp45de_buf_state {
+	SP45DE_BUF_OK, SP45DE_BUF_END
+};
+
 typedef struct sp45de sp45de_t;
 
 struct sp45de {
@@ -44,8 +48,8 @@ struct sp45de {
 em400_dev_t * sp45de_create(const char *image_name[4]);
 int sp45de_blk_read(sp45de_t *sp45de, unsigned slot, unsigned track, unsigned sector);
 int sp45de_blk_write(sp45de_t *sp45de, unsigned slot, unsigned track, unsigned sector);
-int sp45de_read(sp45de_t *sp45de);
-int sp45de_write(sp45de_t *sp45de, char c);
+int sp45de_read(sp45de_t *sp45de, uint8_t *c);
+int sp45de_write(sp45de_t *sp45de, uint8_t c);
 
 #endif
 

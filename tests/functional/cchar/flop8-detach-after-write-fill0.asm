@@ -54,8 +54,6 @@ no:	hlt	076
 ; ------------------------------------------------------------------------
 ; ------------------------------------------------------------------------
 start:
-	mcl
-
 	lw	r1, stack
 	rw	r1, STACKP
 	lw	r1, int_flop
@@ -73,11 +71,11 @@ start:
 
 	; write 128 bytes MAGIC1
 
-	lw	r2, 128 + 1
+	lw	r2, 128
 next_byte:
-	awt	r2, -1
 	cwt	r2, 0
 	jes	detach
+	awt	r2, -1
 	lw	r1, MAGIC1
 	ou	r1, FLOP | KZ_CMD_DEV_WRITE
 	.word	no, .en, .ok, pe
@@ -117,11 +115,11 @@ write:
 
 	; write 7 bytes 0x3a
 
-	lw	r2, MAGIC2_CNT + 1
+	lw	r2, MAGIC2_CNT
 next_byte_0x3a:
-	awt	r2, -1
 	cwt	r2, 0
 	jes	check
+	awt	r2, -1
 	lw	r1, MAGIC2
 	ou	r1, FLOP | KZ_CMD_DEV_WRITE
 	.word	no, .en, .ok, pe
@@ -165,12 +163,12 @@ read:
 
 read128:
 
-	lw	r2, 128 + 1
+	lw	r2, 128
 	lw	r3, buf<<1
 .next_byte:
-	awt	r2, -1
 	cwt	r2, 0
 	jes	check_magic2
+	awt	r2, -1
 	in	r1, FLOP | KZ_CMD_DEV_READ
 	.word	no, .en, .ok, pe
 .ok:	rb	r1, r3

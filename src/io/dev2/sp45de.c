@@ -114,32 +114,32 @@ int sp45de_blk_write(sp45de_t *sp45de, unsigned slot, unsigned track, unsigned s
 }
 
 // -----------------------------------------------------------------------
-int sp45de_read(sp45de_t *sp45de)
+static int sp45de_buf_advance(sp45de_t *sp45de)
 {
+	sp45de->buf_pos++;
 	if (sp45de->buf_pos >= SP45DE_BLK_SIZE) {
-		LOG(L_FLOP, "Trying to read past the buffer: @ %i", sp45de->buf_pos);
-		return -1;
+		sp45de->buf_pos = 0;
+		return SP45DE_BUF_END;
 	}
-
-	int ret = (int) sp45de->buf[sp45de->buf_pos];
-	LOG(L_FLOP, "buf read: %02x", (uint8_t) ret);
-	sp45de->buf_pos = (sp45de->buf_pos+1) & 0x7f;
-	return ret;
+	return SP45DE_BUF_OK;
 }
 
 // -----------------------------------------------------------------------
-int sp45de_write(sp45de_t *sp45de, char c)
+int sp45de_read(sp45de_t *sp45de, uint8_t *c)
 {
-	LOG(L_FLOP, "buf write: %02x", (uint8_t) c);
-	if (sp45de->buf_pos >= SP45DE_BLK_SIZE) {
-		LOG(L_FLOP, "Trying to write past the buffer: @ %i", sp45de->buf_pos);
-		return E_ERR;
-	}
+	*c = sp45de->buf[sp45de->buf_pos];
+	LOG(L_FLOP, "buf read: %02x @ %i", (uint8_t) *c, sp45de->buf_pos);
 
+	return sp45de_buf_advance(sp45de);
+}
+
+// -----------------------------------------------------------------------
+int sp45de_write(sp45de_t *sp45de, uint8_t c)
+{
+	LOG(L_FLOP, "buf write: %02x @ %i", (uint8_t) c, sp45de->buf_pos);
 	sp45de->buf[sp45de->buf_pos] = c;
-	sp45de->buf_pos = (sp45de->buf_pos+1) & 0x7f;
 
-	return E_OK;
+	return sp45de_buf_advance(sp45de);
 }
 
 // -----------------------------------------------------------------------

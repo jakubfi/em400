@@ -47,17 +47,16 @@ waitint:
 ; ------------------------------------------------------------------------
 ; ------------------------------------------------------------------------
 start:
-	mcl
 	lw	r1, stack
 	rw	r1, STACKP
 	lw	r1, int_flop
 	rw	r1, INTV_CH0 + FLOP_CHAN
 
-	lw	r3, 2 + 1	; read two sectors
+	lw	r3, 2	; read two sectors
 next_sector:
-	awt	r3, -1
 	cwt	r3, 0
 	jes	test_done
+	awt	r3, -1
 	; first byte of the sector ends with EN
 	in	r1, FLOP | KZ_CMD_DEV_READ
 	.word	.no1, .en1, .ok1, .pe1
@@ -69,11 +68,11 @@ next_sector:
 	rw	r1, expected_int
 	lj	waitint
 
-	lw	r2, 128 + 1
+	lw	r2, 128
 next_byte:
-	awt	r2, -1
 	cwt	r2, 0
 	jes	sector_done
+	awt	r2, -1
 	; 128 consecutive reads end with OK
 	in	r1, FLOP | KZ_CMD_DEV_READ
 	.word	.no2, .en2, .ok2, .pe2
