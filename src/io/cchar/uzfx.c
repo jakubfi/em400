@@ -435,6 +435,7 @@ static int uzfx_cmd_write(cchar_unit_t *unit, const uint16_t *r_arg)
 			io_ret = IO_OK;
 			break;
 		case UZFX_ST7_SECT_WR:
+			// force a buffer write after current sector write finishes
 			uzfx->pending_buf_write = true;
 			io_ret = IO_EN;
 			break;
@@ -522,8 +523,6 @@ static int uzfx_cmd_detach(cchar_unit_t *unit)
 			io_ret = IO_EN;
 			break;
 		case UZFX_ST7_SECT_WR:
-			// force a buffer write after current sector write finishes
-			uzfx->pending_buf_write = false;
 			// in normal flow, finished sector write does not send an interrupt,
 			// but since now, after failed detach CPU waits for an interrupt,
 			// make sure we send it
