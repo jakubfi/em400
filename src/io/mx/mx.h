@@ -26,6 +26,7 @@
 #include "utils/elst.h"
 #include "io/chan.h"
 #include "io/mx/cmds.h"
+#include "io/dev/dev.h"
 
 #define MX_LINE_CNT 32
 #define MX_LINE_BUF_SIZE 512
@@ -68,8 +69,7 @@ struct mx_line {
 	int phy_n;						// physical line number
 	int log_n;						// logical line number
 
-	const struct dev_drv *dev;		// device driver
-	void *dev_data;					// device data
+	em400_dev_t *dev;				// device
 
 	ELST protoq;					// protocol event queue
 	const struct mx_proto *proto;	// protocol driver

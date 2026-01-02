@@ -27,10 +27,9 @@
 #include "cp/cpext.h"
 #include "cp/brk.h"
 #include "log.h"
-#include "io/dev2/terminal.h"
-#include "io/dev2/terminal_fake.h"
-#include "io/dev2/sp45de.h"
-#include "io/dev2/winchester.h"
+#include "io/dev/terminal.h"
+#include "io/dev/sp45de.h"
+#include "io/dev/winchester.h"
 
 static const char ver[] = EM400_VERSION;
 
@@ -88,16 +87,6 @@ int em400_io_channel_init(unsigned chnum, unsigned channel_type)
 int em400_dev_terminal_init(unsigned chnum, unsigned devnum, int port, int speed)
 {
 	em400_dev_t *dev = terminal_create(port, speed);
-	if (!dev) {
-		return E_ERR;
-	}
-	return io_dev_connect(chnum, devnum, dev);
-}
-
-// -----------------------------------------------------------------------
-int em400_dev_terminal_fake_init(unsigned chnum, unsigned devnum, int port)
-{
-	em400_dev_t *dev = terminal_fake_create(port);
 	if (!dev) {
 		return E_ERR;
 	}

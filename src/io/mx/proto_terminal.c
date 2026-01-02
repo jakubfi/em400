@@ -195,7 +195,7 @@ int mx_terminal_transmit(struct mx_line *line, uint16_t *cmd_data)
 	int irq;
 
 	// check if there is a device connected
-	if (!line->dev || !line->dev_data) {
+	if (!line->dev) {
 		irq = MX_IRQ_INTRA;
 		goto fin;
 	}

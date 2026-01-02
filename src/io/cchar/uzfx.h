@@ -18,7 +18,7 @@
 #ifndef UZFX_H
 #define UZFX_H
 
-#include "io/dev2/dev2.h"
+#include "io/dev/dev.h"
 
 cchar_unit_t * uzfx_create(int dev_num, em400_dev_t *dev);
 

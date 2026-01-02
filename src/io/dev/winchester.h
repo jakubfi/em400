@@ -1,4 +1,4 @@
-//  Copyright (c) 2018,2022 Jakub Filipowicz <jakubf@gmail.com>
+//  Copyright (c) 2025 Jakub Filipowicz <jakubf@gmail.com>
 //
 //  This program is free software; you can redistribute it and/or modify
 //  it under the terms of the GNU General Public License as published by
@@ -15,33 +15,24 @@
 //  Foundation, Inc.,
 //  51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 
-#ifndef FDBRIDGE_H
-#define FDBRIDGE_H
+#ifndef WINCHESTER_H
+#define WINCHESTER_H
 
-#include <inttypes.h>
+#include "io/dev/dev.h"
+#include "io/dev/e4image.h"
 
-#ifdef __cplusplus
-extern "C" {
-#endif
+typedef struct winchester winchester_t;
 
-struct fdb;
-enum fdb_conditions { FDB_READY, FDB_LOST };
-typedef int (*fdb_cb)(void *user_ctx, int condition);
+struct winchester {
+	struct em400_dev base;
 
-struct fdb * fdb_open_stdin();
-struct fdb * fdb_open_tcp(uint16_t port);
-struct fdb * fdb_open_serial(const char *device, int speed);
-int fdb_set_callback(struct fdb *fdb, fdb_cb cb, void *user_ctx);
-void fdb_set_speed(struct fdb *fdb, int speed);
-void fdb_reset(struct fdb *fdb);
-void fdb_await_read(struct fdb *fdb);
-void fdb_close(struct fdb *fdb);
-int fdb_read(struct fdb *fdb);
-int fdb_write(struct fdb *fdb, unsigned char c);
+	char *image_name;
+	struct e4i_t *e4image;
+};
 
-#ifdef __cplusplus
-}
-#endif
+em400_dev_t * winchester_create(const char *image);
+int winchester_sector_rd(winchester_t *winchester, uint8_t *buf, unsigned c, unsigned h, unsigned s);
+int winchester_sector_wr(winchester_t *winchester, uint8_t *buf, unsigned c, unsigned h, unsigned s);
 
 #endif
 

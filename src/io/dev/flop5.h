@@ -15,20 +15,20 @@
 //  Foundation, Inc.,
 //  51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 
-#ifndef WINCHESTER_H
-#define WINCHESTER_H
+#ifndef FLOP5_H
+#define FLOP5_H
 
-#include "io/dev2/dev2.h"
+#include "io/dev/dev.h"
 
-typedef struct winchester winchester_t;
+typedef struct flop5 flop5_t;
 
-struct winchester {
-	struct em400_dev2 base;
+struct flop5 {
+	struct em400_dev base;
 
 	char *image;
 };
 
-em400_dev_t * winchester_create(const char *image);
+em400_dev_t * flop5_create(const char *image);
 
 #endif
 

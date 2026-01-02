@@ -31,7 +31,7 @@
 #include "io/defs.h"
 #include "io/cchar/cchar.h"
 #include "io/cchar/uzdat.h"
-#include "io/dev2/terminal.h"
+#include "io/dev/terminal.h"
 
 #include "log.h"
 

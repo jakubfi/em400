@@ -188,24 +188,16 @@ set(SOURCES_EM400
 	src/io/iotester.c
 	src/io/iotester.h
 
-	src/io/dev/dev.c
-	src/io/dev/dev.h
 	src/io/dev/e4image.c
 	src/io/dev/e4image.h
-	src/io/dev/winchester.c
-	src/io/dev/flop5.c
 	src/io/dev/terminal.c
-
-	src/io/dev2/terminal.c
-	src/io/dev2/terminal.h
-	src/io/dev2/sp45de.c
-	src/io/dev2/sp45de.h
-	src/io/dev2/winchester.c
-	src/io/dev2/winchester.h
-	src/io/dev2/flop5.c
-	src/io/dev2/flop5.h
-	src/io/dev2/terminal_fake.c
-	src/io/dev2/terminal_fake.h
+	src/io/dev/terminal.h
+	src/io/dev/sp45de.c
+	src/io/dev/sp45de.h
+	src/io/dev/winchester.c
+	src/io/dev/winchester.h
+	src/io/dev/flop5.c
+	src/io/dev/flop5.h
 
 	src/io/mx/mx.c
 	src/io/mx/mx.h
@@ -310,10 +302,6 @@ add_executable(em400
 	${SOURCES_EM400}
 	${BISON_eval_parser_OUTPUTS}
 	${FLEX_eval_scanner_OUTPUTS}
-	src/io/dev2/dev2.h
-	src/io/dev2/dev2.c
-	src/io/dev2/sp45de.h
-	src/io/dev2/sp45de.c
 )
 
 set_property(TARGET em400 PROPERTY C_STANDARD 11)

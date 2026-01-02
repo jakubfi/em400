@@ -230,7 +230,7 @@ int mx_floppy_transmit(struct mx_line *lline, uint16_t *cmd_data)
 	struct proto_floppy_data *proto_data = (struct proto_floppy_data *) lline->proto_data;
 
 	// check if there is a device connected
-	if (!lline->dev || !lline->dev_data) {
+	if (!lline->dev) {
 		proto_data->ret_len = 0;
 		proto_data->ret_status = MX_FS_NO_DISC;
 		irq = MX_IRQ_ITRER;

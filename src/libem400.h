@@ -127,7 +127,6 @@ void em400_shutdown();
 
 int em400_io_channel_init(unsigned chnum, unsigned channel_type);
 int em400_dev_terminal_init(unsigned chnum, unsigned devnum, int port, int speed);
-int em400_dev_terminal_fake_init(unsigned chnum, unsigned devnum, int port);
 int em400_dev_sp45de_init(unsigned chnum, unsigned devnum, const char *images[4]);
 int em400_dev_winchester_init(unsigned chnum, unsigned devnum, const char *image);
 

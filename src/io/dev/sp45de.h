@@ -21,7 +21,7 @@
 #include <inttypes.h>
 #include <stdio.h>
 
-#include "io/dev2/dev2.h"
+#include "io/dev/dev.h"
 
 #define SP45DE_SLOT_COUNT 4
 #define SP45DE_TRACK_CNT 77
@@ -36,7 +36,7 @@ enum sp45de_buf_state {
 typedef struct sp45de sp45de_t;
 
 struct sp45de {
-	struct em400_dev2 base;
+	struct em400_dev base;
 
 	char *image_name[4];
 	uint8_t buf[SP45DE_BLK_SIZE];

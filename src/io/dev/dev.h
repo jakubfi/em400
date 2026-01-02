@@ -1,4 +1,4 @@
-//  Copyright (c) 2015 Jakub Filipowicz <jakubf@gmail.com>
+//  Copyright (c) 2025 Jakub Filipowicz <jakubf@gmail.com>
 //
 //  This program is free software; you can redistribute it and/or modify
 //  it under the terms of the GNU General Public License as published by
@@ -15,55 +15,56 @@
 //  Foundation, Inc.,
 //  51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 
-#ifndef DEV_H
-#define DEV_H
+#ifndef DEV2_H
+#define DEV2_H
 
-#include <inttypes.h>
+#include <stdbool.h>
 
-#include "io/dev2/dev2.h"
+enum em400_device_types {
+	EM400_DEV_TERMINAL,
+	EM400_DEV_SP45DE,
+	EM400_DEV_WINCHESTER,
+	EM400_DEV_FLOP5,
+};
 
 enum dev_cmd_status {
-	DEV_CMD_OK = 0,
-	DEV_CMD_BUSY,
-	DEV_CMD_INVALID,
-	DEV_CMD_NOMEDIUM,
-	DEV_CMD_SEEKERR,
-	DEV_CMD_WRPROTECT,
-	DEV_CMD_WRERR,
-	DEV_CMD_RDERR,
-	DEV_CMD_ERR,
+	DEV_STATUS_OK = 0,
+	DEV_STATUS_ERR,
+	DEV_STATUS_BUSY,
+	DEV_STATUS_INVALID,
+	DEV_STATUS_NOMEDIUM,
+	DEV_STATUS_SEEKERR,
+	DEV_STATUS_WRPROTECT,
+	DEV_STATUS_WRERR,
+	DEV_STATUS_RDERR,
 };
 
-struct dev_chs {
-	unsigned c;
-	unsigned h;
-	unsigned s;
+typedef struct em400_dev em400_dev_t;
+
+typedef void (*dev_noarg_f)(em400_dev_t *dev);
+typedef int (*dev_write_f)(em400_dev_t *dev, char c);
+
+typedef unsigned (*dev_slot_cnt_f)(em400_dev_t *dev);
+typedef bool (*dev_is_ejectable_f)(em400_dev_t *dev, unsigned slot);
+typedef int (*dev_load_f)(em400_dev_t *dev, unsigned slot, const char *image_name);
+typedef int (*dev_eject_f)(em400_dev_t *dev, unsigned slot);
+typedef const char * (*dev_image_f)(em400_dev_t *dev, unsigned slot);
+
+
+struct em400_dev {
+	int type;
+	char *name;
+
+	dev_noarg_f reset;
+	dev_noarg_f shutdown;
+	dev_write_f write;
+
+	dev_slot_cnt_f slot_cnt;			// number of image slots in the device
+	dev_is_ejectable_f is_ejectable;	// can the image be ejected now
+	dev_load_f load;					// load new image into a slot
+	dev_eject_f eject;					// eject image from the slot
+	dev_image_f image;					// get the name of image loaded into a slot
+
 };
-
-typedef void * (*dev_create_f)(em400_dev_t *dev2, int ch_num, int dev_num);
-typedef void (*dev_reset_f)(void *dev);
-typedef void (*dev_destroy_f)(void *dev);
-
-typedef int (*dev_sector_rd_f)(void *dev, uint8_t *buf, struct dev_chs *chs);
-typedef int (*dev_sector_wr_f)(void *dev, uint8_t *buf, struct dev_chs *chs);
-typedef int (*dev_char_rd_f)(void *dev, uint8_t *c);
-typedef int (*dev_char_wr_f)(void *dev, uint8_t *c);
-
-struct dev_drv {
-	const char *name;
-	dev_create_f create;
-	dev_destroy_f destroy;
-	dev_reset_f reset;
-	dev_sector_rd_f sector_rd;
-	dev_sector_wr_f sector_wr;
-	dev_char_rd_f char_rd;
-	dev_char_wr_f char_wr;
-};
-
-int dev_make(em400_dev_t *dev, int ch_num, int dev_num, const struct dev_drv **dev_drv, void **dev_obj);
-void dev_chs_next(struct dev_chs *chs, unsigned heads, unsigned spt);
-void dev_lba2chs(unsigned lba, struct dev_chs *chs, unsigned heads, unsigned spt);
 
 #endif
-
-// vim: tabstop=4 shiftwidth=4 autoindent

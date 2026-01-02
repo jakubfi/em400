@@ -25,7 +25,7 @@
 
 #include "io/dev/e4image.h"
 
-enum actions_e{
+enum actions_e {
 	A_UNKNOWN = -1,
 	A_FLAGS = 1,
 	A_GET,

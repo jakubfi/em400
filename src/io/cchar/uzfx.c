@@ -29,7 +29,7 @@
 #include "io/cchar/uzfx.h"
 #include "log.h"
 
-#include "io/dev2/sp45de.h"
+#include "io/dev/sp45de.h"
 
 enum uzfx_states {
 	UZFX_ST0_IDLE,				// St.0 idle state

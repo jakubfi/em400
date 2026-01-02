@@ -22,7 +22,7 @@
 
 #include "log.h"
 
-#include "io/dev2/sp45de.h"
+#include "io/dev/sp45de.h"
 
 // -----------------------------------------------------------------------
 static void sp45de_ioloop_teardown(sp45de_t * sp45de)
@@ -36,7 +36,7 @@ void sp45de_shutdown(em400_dev_t *dev)
 	if (!dev) return;
 	sp45de_t *sp45de = (sp45de_t *) dev;
 
-	LOG(L_TERM, "SP45DE shutting down");
+	LOG(L_FLOP, "SP45DE shutting down");
 
 	// TODO: proper async free with libuv
 	sp45de_ioloop_teardown((sp45de_t *) dev);
@@ -54,7 +54,7 @@ void sp45de_reset(em400_dev_t *dev)
 {
 	if (!dev) return;
 
-	LOG(L_TERM, "SP45DE reset");
+	LOG(L_FLOP, "SP45DE reset");
 }
 
 

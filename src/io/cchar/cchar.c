@@ -25,7 +25,7 @@
 #include "io/cchar/cchar.h"
 #include "io/cchar/uzdat.h"
 #include "io/cchar/uzfx.h"
-#include "io/dev2/terminal.h"
+#include "io/dev/terminal.h"
 
 #include "log.h"
 

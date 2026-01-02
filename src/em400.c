@@ -33,9 +33,9 @@
 #include "cpu/clock.h"
 #include "io/io.h"
 #include "io/chan.h"
-#include "io/dev2/dev2.h"
-#include "io/dev2/terminal.h"
-#include "io/dev2/sp45de.h"
+#include "io/dev/dev.h"
+#include "io/dev/terminal.h"
+#include "io/dev/sp45de.h"
 
 #include "cfg.h"
 
@@ -60,16 +60,6 @@ int em400_device_init(em400_cfg *cfg, const char *dev_type_name, int chnum, int 
 
 	LOG(L_EM4H, "Initializing device %i:%i (%s)", chnum, devnum, dev_type_name);
 	if (!strcasecmp(dev_type_name, "terminal")) {
-		const char *transport = cfg_fgetstr(cfg, "dev%i.%i:transport", chnum, devnum);
-		if (transport && strcasecmp(transport, "tcp")) {
-			return LOGERR("Fake terminal only supports TCP transport type");
-		}
-		const int port = cfg_fgetint(cfg, "dev%i.%i:port", chnum, devnum);
-		if (port == -1) {
-			return LOGERR("Device %i.%i: Fake TCP terminal needs port to be set.", chnum, devnum);
-		}
-		res = em400_dev_terminal_fake_init(chnum, devnum, port);
-	} else if (!strcasecmp(dev_type_name, "terminal2")) {
 		const char *transport = cfg_fgetstr(cfg, "dev%i.%i:transport", chnum, devnum);
 		if (transport && strcasecmp(transport, "tcp")) {
 			return LOGERR("Terminal only supports TCP transport type");

@@ -1,4 +1,4 @@
-//  Copyright (c) 2015 Jakub Filipowicz <jakubf@gmail.com>
+//  Copyright (c) 2025 Jakub Filipowicz <jakubf@gmail.com>
 //
 //  This program is free software; you can redistribute it and/or modify
 //  it under the terms of the GNU General Public License as published by
@@ -16,113 +16,101 @@
 //  51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 
 #include <stdlib.h>
-#include <inttypes.h>
+#include <string.h>
 
 #include "log.h"
-#include "io/dev/dev.h"
-#include "io/dev2/dev2.h"
-#include "io/dev2/winchester.h"
+
+#include "io/dev/winchester.h"
 #include "io/dev/e4image.h"
 
-
-struct dev_winch {
-	struct e4i_t *image;
-};
-
 // -----------------------------------------------------------------------
-void * dev_winch_create(em400_dev_t *dev2, int ch_num, int dev_num)
-{
-	winchester_t *dev2_winchester = (winchester_t *) dev2;
-
-	struct dev_winch *winch = (struct dev_winch *) malloc(sizeof(struct dev_winch));
-	if (!winch) {
-		LOGERR("Memory allocation error while creating Winchester.");
-		goto cleanup;
-	}
-
-	LOG(L_WNCH, "Opening image: %s", dev2_winchester->image);
-	winch->image = e4i_open(dev2_winchester->image);
-	if (!winch->image) {
-		LOGERR("Failed to open Winchester image: \"%s\": %s.", winch->image, e4i_get_err(e4i_err));
-		goto cleanup;
-	}
-
-	// TODO: not needed anymore, used only to pass configuration
-	dev2->shutdown(dev2);
-
-	return winch;
-
-cleanup:
-	free(winch);
-	return NULL;
-}
-
-// -----------------------------------------------------------------------
-void dev_winch_destroy(void *dev)
-{
-	if (!dev) return;
-	struct dev_winch *winch = (struct dev_winch *) dev;
-	e4i_close(winch->image);
-	free(dev);
-}
-
-// -----------------------------------------------------------------------
-void dev_winch_reset(void *dev)
-{
-
-}
-
-// -----------------------------------------------------------------------
-static int _e4i_res(int res)
+static int e4i_res(int res)
 {
 	switch (res) {
 		case E4I_E_OK:
-			return DEV_CMD_OK;
+			return DEV_STATUS_OK;
 		case E4I_E_UNFORMATTED:
 		case E4I_E_NO_SECTOR:
-			return DEV_CMD_SEEKERR;
+			return DEV_STATUS_SEEKERR;
 		case E4I_E_WRPROTECT:
-			return DEV_CMD_WRPROTECT;
+			return DEV_STATUS_WRPROTECT;
 		case E4I_E_WRITE:
-			return DEV_CMD_WRERR;
+			return DEV_STATUS_WRERR;
 		case E4I_E_READ:
-			return DEV_CMD_RDERR;
+			return DEV_STATUS_RDERR;
 		default:
-			return DEV_CMD_ERR;
+			return DEV_STATUS_ERR;
 	}
 }
 
 // -----------------------------------------------------------------------
-int dev_winch_sector_rd(void *dev, uint8_t *buf, struct dev_chs *chs)
+int winchester_sector_rd(winchester_t *winchester, uint8_t *buf, unsigned c, unsigned h, unsigned s)
 {
-	int res;
-	struct dev_winch *winch = (struct dev_winch *) dev;
-
-	res = e4i_sread(winch->image, buf, chs->c, chs->h, chs->s);
-
-	return _e4i_res(res);
+	return e4i_res(e4i_sread(winchester->e4image, buf, c, h, s));
 }
 
 // -----------------------------------------------------------------------
-int dev_winch_sector_wr(void *dev, uint8_t *buf, struct dev_chs *chs)
+int winchester_sector_wr(winchester_t *winchester, uint8_t *buf, unsigned c, unsigned h, unsigned s)
 {
-	int res;
-	struct dev_winch *winch = (struct dev_winch *) dev;
-
-	res = e4i_swrite(winch->image, buf, chs->c, chs->h, chs->s, 512);
-
-	return _e4i_res(res);
+	return e4i_res(e4i_swrite(winchester->e4image, buf, c, h, s, 512));
 }
 
 // -----------------------------------------------------------------------
-struct dev_drv dev_winch = {
-	.name = "winchester",
-	.create = dev_winch_create,
-	.destroy = dev_winch_destroy,
-	.reset = dev_winch_reset,
-	.sector_rd = dev_winch_sector_rd,
-	.sector_wr = dev_winch_sector_wr,
-};
+static void winchester_ioloop_teardown(winchester_t * winchester)
+{
 
+}
 
-// vim: tabstop=4 shiftwidth=4 autoindent
+// -----------------------------------------------------------------------
+void winchester_shutdown(em400_dev_t *dev)
+{
+	if (!dev) return;
+	winchester_t *winchester = (winchester_t *) dev;
+
+	LOG(L_WNCH, "Winchester shutting down");
+
+	winchester_ioloop_teardown(winchester);
+	e4i_close(winchester->e4image);
+	free(winchester->image_name);
+	free(winchester);
+}
+
+// -----------------------------------------------------------------------
+void winchester_reset(em400_dev_t *dev)
+{
+	if (!dev) return;
+	LOG(L_WNCH, "Winchester reset");
+}
+
+// -----------------------------------------------------------------------
+em400_dev_t * winchester_create(const char *image_name)
+{
+	LOG(L_WNCH, "Creating winchester");
+
+	winchester_t *winchester = calloc(1, sizeof(winchester_t));
+	if (!winchester) {
+		goto fail;
+	}
+
+	winchester->base.type = EM400_DEV_WINCHESTER;
+	winchester->base.reset = winchester_reset;
+	winchester->base.write = NULL;
+	winchester->base.shutdown = winchester_shutdown;
+
+	if (image_name) {
+		winchester->image_name = strdup(image_name);
+	}
+
+	LOG(L_WNCH, "Opening image: %s", winchester->image_name);
+	winchester->e4image = e4i_open(winchester->image_name);
+	if (!winchester->e4image) {
+		LOGERR("Failed to open Winchester image: \"%s\": %s.", winchester->image_name, e4i_get_err(e4i_err));
+		free(winchester->image_name);
+		return NULL;
+	}
+
+	return (em400_dev_t *) winchester;
+fail:
+	return NULL;
+}
+

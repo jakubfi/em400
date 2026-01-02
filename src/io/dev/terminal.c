@@ -1,4 +1,4 @@
-//  Copyright (c) 2015 Jakub Filipowicz <jakubf@gmail.com>
+//  Copyright (c) 2024-2025 Jakub Filipowicz <jakubf@gmail.com>
 //
 //  This program is free software; you can redistribute it and/or modify
 //  it under the terms of the GNU General Public License as published by
@@ -15,263 +15,404 @@
 //  Foundation, Inc.,
 //  51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 
-#define _XOPEN_SOURCE 600
-#ifndef _GNU_SOURCE
-#define _GNU_SOURCE
-#endif
-
-#include <stdio.h>
-#include <stdlib.h>
-#include <inttypes.h>
-#include <unistd.h>
+#include <uv.h>
 #include <pthread.h>
-#include <strings.h>
-#include <sys/socket.h>
-#include <netinet/in.h>
-#include <arpa/inet.h>
-#include <sys/select.h>
-#include <fcntl.h>
-#include <errno.h>
+#include <math.h>
+#include <stdlib.h>
+#include <string.h>
 
 #include "log.h"
-#include "io/dev/dev.h"
-#include "io/dev2/dev2.h"
-#include "io/dev2/terminal_fake.h"
+#include "terminal.h"
 
-enum dev_terminal_commands { CMD_NONE, CMD_RD, CMD_WR, CMD_QUIT };
-enum dev_terminal_type { TERM_TCP };
+extern uv_loop_t *ioloop;
+static char already_connected_message[] = "Terminal already connected. Bye.\n";
 
-struct dev_terminal {
-	int type;
-	int fd_in;
-	int fd_out;
-	struct timespec timeout;
-
-	int listenfd;
-	struct sockaddr cliaddr;
-
-	pthread_t th;
-	pthread_cond_t cmd_cond;
-	pthread_mutex_t cmd_mutex;
-	int cmd;
-};
-
-void dev_terminal_destroy(void *dev);
-void *dev_terminal_controller(void *ptr);
+static void terminal_try_free(terminal_t *terminal);
 
 // -----------------------------------------------------------------------
-int dev_terminal_open_tcp(struct dev_terminal *terminal, int port, int timeout_ms)
+static void term_buf_reset(terminal_t *terminal)
 {
-	int res;
-
-	terminal->timeout.tv_sec = 0;
-	terminal->timeout.tv_nsec = timeout_ms * 1000 * 1000;
-	terminal->type = TERM_TCP;
-	terminal->fd_in = -1;
-	terminal->fd_out = -1;
-
-	terminal->listenfd = socket(AF_INET, SOCK_STREAM, 0);
-	if (!terminal->listenfd) {
-		return 1;
-	}
-
-	int flags = fcntl(terminal->listenfd, F_GETFL, 0);
-	fcntl(terminal->listenfd, F_SETFL, flags | O_NONBLOCK);
-
-	int on = 1;
-	res = setsockopt(terminal->listenfd, SOL_SOCKET, SO_REUSEADDR, &on, sizeof(on));
-	if (res < 0) {
-		return 1;
-	}
-
-	struct sockaddr_in servaddr;
-	servaddr.sin_family = AF_INET;
-	servaddr.sin_addr.s_addr = htonl(INADDR_ANY);
-	servaddr.sin_port = htons(port);
-
-	res = bind(terminal->listenfd, (struct sockaddr*) &servaddr, sizeof(servaddr));
-	if (res < 0) {
-		return 1;
-	}
-
-	res = listen(terminal->listenfd, 16);
-	if (res < 0) {
-		return 1;
-	}
-
-	return 0;
+	pthread_mutex_lock(&terminal->mutex);
+	terminal->rdbuf_end = terminal->rdbuf + TERMINAL_BUF_SIZE-1;
+	terminal->rdbuf_r = terminal->rdbuf;
+	terminal->rdbuf_w = terminal->rdbuf;
+	terminal->rdbuf_count = 0;
+	terminal->sender_busy = false;
+	pthread_mutex_unlock(&terminal->mutex);
 }
 
 // -----------------------------------------------------------------------
-void * dev_terminal_create(em400_dev_t *dev2, int ch_num, int dev_num)
+static int term_buf_get(terminal_t *terminal)
 {
-	terminal_fake_t *dev2_terminal_fake = (terminal_fake_t *) dev2;
+	int data;
 
-	struct dev_terminal *terminal = (struct dev_terminal *) malloc(sizeof(struct dev_terminal));
-	if (!terminal) {
-		goto cleanup;
+	pthread_mutex_lock(&terminal->mutex);
+	if (terminal->rdbuf_count <= 0) {
+		data = -1;
+	} else {
+		data = (unsigned char) *terminal->rdbuf_r;
+		terminal->rdbuf_r++;
+		terminal->rdbuf_count--;
+		if (terminal->rdbuf_r > terminal->rdbuf_end) {
+			terminal->rdbuf_r = terminal->rdbuf;
+		}
 	}
+	pthread_mutex_unlock(&terminal->mutex);
 
-	if (dev_terminal_open_tcp(terminal, dev2_terminal_fake->port, 100)) {
-		LOGERR("Failed to open TCP terminal on port: %i.", dev2_terminal_fake->port);
-		goto cleanup;
-	}
-
-	terminal->cmd = CMD_NONE;
-
-	if (pthread_mutex_init(&terminal->cmd_mutex, NULL)) {
-		LOGERR("Failed to initialize terminal mutex.");
-		goto cleanup;
-	}
-
-	if (pthread_cond_init(&terminal->cmd_cond, NULL)) {
-		LOGERR("Failed to initialize terminal cmd conditional.");
-		goto cleanup;
-	}
-
-	if (pthread_create(&terminal->th, NULL, dev_terminal_controller, terminal)) {
-		LOGERR("Failed to spawn terminal thread.");
-		goto cleanup;
-	}
-
-	pthread_setname_np(terminal->th, "term");
-
-	// TODO: not needed anymore, used only to pass configuration
-	dev2->shutdown(dev2);
-
-	return terminal;
-
-cleanup:
-	dev_terminal_destroy(terminal);
-	return NULL;
+	return data;
 }
 
 // -----------------------------------------------------------------------
-void dev_terminal_destroy(void *dev)
+static int term_buf_append(terminal_t *terminal, char *c, int len)
+{
+	int ret = 0;
+
+	pthread_mutex_lock(&terminal->mutex);
+	while (len > 0) {
+		if (terminal->rdbuf_count >= TERMINAL_BUF_SIZE) {
+			ret = -1;
+			break;
+		} else {
+			*terminal->rdbuf_w = *c;
+			terminal->rdbuf_w++;
+			terminal->rdbuf_count++;
+			if (terminal->rdbuf_w > terminal->rdbuf_end) {
+				terminal->rdbuf_w = terminal->rdbuf;
+			}
+		}
+		c++;
+		len--;
+	}
+	pthread_mutex_unlock(&terminal->mutex);
+
+	return ret;
+}
+
+// -----------------------------------------------------------------------
+static void alloc_buffer(uv_handle_t *handle, size_t suggested_size, uv_buf_t *buf)
+{
+	buf->base = (char*) malloc(suggested_size);
+	if (!buf->base) {
+		buf->len = 0;
+	} else {
+		buf->len = suggested_size;
+	}
+}
+
+// -----------------------------------------------------------------------
+static void on_tcp_close(uv_handle_t* handle)
+{
+	terminal_t *terminal = (terminal_t *) uv_handle_get_data(handle);
+
+	LOG(L_TERM, "Terminal TCP connection closed");
+	terminal->client = NULL;
+	terminal_try_free(terminal);
+	free(handle);
+}
+
+// -----------------------------------------------------------------------
+static void on_read_delay_timeout(uv_timer_t *handle)
+{
+	terminal_t *terminal = (terminal_t*) handle->data;
+
+	int data = term_buf_get(terminal);
+	if ((data > 0) && (terminal->controller) && (terminal->on_data_received)) {
+		terminal->on_data_received(terminal->controller, data);
+	}
+	// push next character in buffer
+	uv_timer_start(&terminal->timer_read, on_read_delay_timeout, terminal->delay_ms, 0);
+}
+
+// -----------------------------------------------------------------------
+static void on_tcp_read(uv_stream_t *handle, ssize_t nread, const uv_buf_t *buf)
+{
+	int res = 0;
+	terminal_t *terminal = (terminal_t *) handle->data;
+
+	if (nread < 0) {
+		LOG(L_TERM, "Terminal TCP Read error: %s", uv_err_name(nread));
+		uv_close((uv_handle_t*) handle, on_tcp_close);
+	} else {
+		LOG(L_TERM, "Terminal read TCP data (%d bytes)", (int) nread);
+		res = term_buf_append(terminal, buf->base, nread);
+	}
+
+	free(buf->base);
+
+	if (res >= 0) {
+		uv_timer_start(&terminal->timer_read, on_read_delay_timeout, terminal->delay_ms, 0);
+	}
+}
+
+// -----------------------------------------------------------------------
+static void on_tcp_reject_user(uv_write_t *req, int status)
+{
+	uv_close((uv_handle_t*) req->handle, on_tcp_close);
+	free(req);
+}
+
+// -----------------------------------------------------------------------
+static void on_new_tcp_connection(uv_stream_t *handle, int status)
+{
+	terminal_t *terminal = (terminal_t *) uv_handle_get_data((uv_handle_t *) handle);
+
+	if (status < 0) {
+		LOG(L_TERM, "Terminal new TCP connection error: %s", uv_strerror(status));
+		return;
+	}
+	uv_tcp_t *client = (uv_tcp_t *) malloc(sizeof(uv_tcp_t));
+	if (!client) {
+		LOG(L_TERM, "Failed to allocate memory for TCP client handler");
+		return;
+	}
+	int res = uv_tcp_init(ioloop, client);
+	if (res) {
+		free(client);
+		LOGERR("Client connection initialization failed:", uv_strerror(res));
+		return;
+	}
+	uv_handle_set_data((uv_handle_t*) client, terminal);
+	terminal->open_handles++;
+
+	if (uv_accept(handle, (uv_stream_t*) client)) {
+		LOG(L_TERM, "Terminal failed to accept new TCP connection");
+		uv_close((uv_handle_t*) client, on_tcp_close);
+		return;
+	}
+
+	if (terminal->client) {
+		LOG(L_TERM, "Terminal already connected, rejecting new connection");
+		uv_write_t *req = (uv_write_t*) malloc(sizeof(uv_write_t));
+		uv_buf_t buf = uv_buf_init(already_connected_message, strlen(already_connected_message));
+		uv_write((uv_write_t*) req, (uv_stream_t *) client, &buf, 1, on_tcp_reject_user);
+		return;
+	}
+
+	LOG(L_TERM, "Terminal accepted new TCP connection");
+	terminal->client = client;
+	uv_read_start((uv_stream_t*) client, alloc_buffer, on_tcp_read);
+}
+
+// -----------------------------------------------------------------------
+static void on_write_delay_timeout(uv_timer_t *handle)
+{
+	terminal_t *terminal = (terminal_t*) handle->data;
+
+	pthread_mutex_lock(&terminal->mutex);
+	terminal->sender_busy = false;
+	pthread_mutex_unlock(&terminal->mutex);
+
+	if ((terminal->controller) && (terminal->on_data_sent)) {
+		terminal->on_data_sent(terminal->controller);
+	}
+}
+
+// -----------------------------------------------------------------------
+static void on_async_write_complete(uv_write_t *req, int status)
+{
+	terminal_t *terminal = (terminal_t *) uv_req_get_data((uv_req_t*) req);
+	free(req);
+	uv_timer_start(&terminal->timer_write, on_write_delay_timeout, terminal->delay_ms, 0);
+}
+
+// -----------------------------------------------------------------------
+int terminal_write(em400_dev_t *dev, char c)
+{
+	int ret;
+	terminal_t *terminal = (terminal_t *) dev;
+
+	LOGCHAR(L_TERM, "%s: ", "Terminal write start", c);
+
+	pthread_mutex_lock(&terminal->mutex);
+	if (!terminal->sender_busy) {
+		terminal->sender_busy = true;
+		terminal->wrbuf = c;
+		ret = 0;
+	} else {
+		ret = -1;
+	}
+	pthread_mutex_unlock(&terminal->mutex);
+
+	if (ret == 0) {
+		if (terminal->client) {
+			uv_write_t *req = (uv_write_t*) malloc(sizeof(uv_write_t));
+			uv_buf_t buf = uv_buf_init(&terminal->wrbuf, 1);
+			uv_req_set_data((uv_req_t*) req, terminal);
+			int write_res = uv_write((uv_write_t*) req, (uv_stream_t *) terminal->client, &buf, 1, on_async_write_complete);
+			if (write_res < 0) {
+				free(req);
+				uv_timer_start(&terminal->timer_write, on_write_delay_timeout, terminal->delay_ms, 0);
+			}
+		} else {
+			uv_timer_start(&terminal->timer_write, on_write_delay_timeout, terminal->delay_ms, 0);
+		}
+	}
+
+	return ret;
+}
+
+// -----------------------------------------------------------------------
+void terminal_reset(em400_dev_t *dev)
 {
 	if (!dev) return;
 
-	struct dev_terminal *terminal = (struct dev_terminal *) dev;
-	if (terminal->th) {
-		pthread_mutex_lock(&terminal->cmd_mutex);
-		terminal->cmd = CMD_QUIT;
-		pthread_cond_signal(&terminal->cmd_cond);
-		pthread_mutex_unlock(&terminal->cmd_mutex);
-		pthread_join(terminal->th, NULL);
-	}
-
-	if (terminal->listenfd > 0) {
-		close(terminal->listenfd);
-	}
-	if (terminal->fd_in > 0) {
-		close(terminal->fd_in);
-	}
-	if (terminal->fd_out > 0) {
-		close(terminal->fd_out);
-	}
-
-	free(terminal);
+	LOG(L_TERM, "Terminal reset");
+	term_buf_reset((terminal_t *) dev);
 }
 
 // -----------------------------------------------------------------------
-void dev_terminal_reset(void *dev)
+void terminal_free(em400_dev_t *dev)
 {
-
+	// TODO: method not required anymore, to be removed
 }
-// -----------------------------------------------------------------------
-static void dev_terminal_try_accept(struct dev_terminal *terminal)
-{
-	if ((terminal->type == TERM_TCP) && (terminal->fd_in < 0)) {
 
-		socklen_t clilen = sizeof(terminal->cliaddr);
-		terminal->fd_in = terminal->fd_out = accept(terminal->listenfd, &terminal->cliaddr, &clilen);
+// -----------------------------------------------------------------------
+static void terminal_try_free(terminal_t *terminal)
+{
+	if (terminal->open_handles == 0) {
+		LOG(L_TERM, "No more open handles, terminal freeing resources");
+		pthread_mutex_destroy(&terminal->mutex);
+		free(terminal);
+	} else if (terminal->open_handles < 0) {
+		LOG(L_TERM, "terminal_try_free() with open_handles = %i, double-free attempt?", terminal->open_handles);
 	}
 }
 
 // -----------------------------------------------------------------------
-void *dev_terminal_controller(void *ptr)
+static void on_handle_close(uv_handle_t* handle)
 {
-	struct dev_terminal *terminal = (struct dev_terminal *) ptr;
-	struct timespec abstime;
+	terminal_t *terminal = (terminal_t *) uv_handle_get_data(handle);
+	terminal->open_handles--;
+	terminal_try_free(terminal);
+}
+
+// -----------------------------------------------------------------------
+static void terminal_ioloop_teardown(terminal_t *terminal)
+{
+	if ((terminal->client) && !uv_is_closing((uv_handle_t *) &terminal->client)){
+		uv_close((uv_handle_t *) terminal->client, on_tcp_close);
+	}
+	if (!uv_is_closing((uv_handle_t *) &terminal->timer_write)) {
+		uv_close((uv_handle_t *) &terminal->timer_write, on_handle_close);
+	}
+	if (!uv_is_closing((uv_handle_t *) &terminal->timer_read)) {
+		uv_close((uv_handle_t *) &terminal->timer_read, on_handle_close);
+	}
+	if (!uv_is_closing((uv_handle_t *) &terminal->tcp_handle)) {
+		uv_close((uv_handle_t *) &terminal->tcp_handle, on_handle_close);
+	}
+}
+
+// -----------------------------------------------------------------------
+void terminal_shutdown(em400_dev_t *dev)
+{
+	if (!dev) return;
+
+	LOG(L_TERM, "Terminal shutting down");
+
+	terminal_t *terminal = (terminal_t *) dev;
+
+	terminal_ioloop_teardown(terminal);
+}
+
+// -----------------------------------------------------------------------
+static int terminal_ioloop_setup(terminal_t *terminal)
+{
 	int res;
 
-	pthread_mutex_lock(&terminal->cmd_mutex);
+	res = uv_tcp_init(ioloop, &terminal->tcp_handle);
+	if (res) {
+		return LOGERR("Terminal TCP init error: %s", uv_strerror(res));
+	}
+	uv_handle_set_data((uv_handle_t*) &terminal->tcp_handle, (void*) terminal);
+	terminal->open_handles++;
 
-	while (terminal->cmd != CMD_QUIT) {
-
-		clock_gettime(CLOCK_REALTIME, &abstime);
-		long new_nsec = abstime.tv_nsec + 100 * 1000000L;
-		abstime.tv_sec += new_nsec / 1000000000L;
-		abstime.tv_nsec = new_nsec % 1000000000L;
-
-		res = 0;
-
-		while ((terminal->cmd == CMD_NONE) && (res != ETIMEDOUT)) {
-			res = pthread_cond_timedwait(&terminal->cmd_cond, &terminal->cmd_mutex, &abstime);
-		}
-
-		dev_terminal_try_accept(terminal);
-
-		switch (terminal->cmd) {
-			case CMD_RD:
-				terminal->cmd = CMD_NONE;
-				break;
-			case CMD_WR:
-				terminal->cmd = CMD_NONE;
-				break;
-			default:
-				break;
-		}
+	struct sockaddr_in addr;
+	res = uv_ip4_addr("127.0.0.1", terminal->port, &addr);
+	if (res) {
+		uv_close((uv_handle_t *) &terminal->tcp_handle, on_handle_close);
+		return LOGERR("Terminal IPv4 address set error: %s", uv_strerror(res));
+	}
+	res = uv_tcp_bind(&terminal->tcp_handle, (const struct sockaddr*) &addr, 0);
+	if (res) {
+		uv_close((uv_handle_t *) &terminal->tcp_handle, on_handle_close);
+		return LOGERR("Terminal TCP bind to port %i error: %s", terminal->port, uv_strerror(res));
+	}
+	res = uv_listen((uv_stream_t*) &terminal->tcp_handle, 1, on_new_tcp_connection);
+	if (res) {
+		uv_close((uv_handle_t *) &terminal->tcp_handle, on_handle_close);
+		return LOGERR("Terminal TCP listen on port %i error: %s", terminal->port, uv_strerror(res));
 	}
 
-	pthread_mutex_unlock(&terminal->cmd_mutex);
+	res = uv_timer_init(ioloop, &terminal->timer_write);
+	if (res) {
+		uv_close((uv_handle_t *) &terminal->tcp_handle, on_handle_close);
+		return LOGERR("Write timer setup error: %s", uv_strerror(res));
+	}
+	uv_handle_set_data((uv_handle_t*) &terminal->timer_write, terminal);
+	terminal->open_handles++;
 
-	pthread_exit(NULL);
+	res = uv_timer_init(ioloop, &terminal->timer_read);
+	if (res) {
+		uv_close((uv_handle_t *) &terminal->tcp_handle, on_handle_close);
+		uv_close((uv_handle_t *) &terminal->timer_write, on_handle_close);
+		return LOGERR("Read timer setup error: %s", uv_strerror(res));
+	}
+	uv_handle_set_data((uv_handle_t*) &terminal->timer_read, terminal);
+	terminal->open_handles++;
+
+	return E_OK;
 }
 
 // -----------------------------------------------------------------------
-static int dev_terminal_cmd(struct dev_terminal *terminal, int cmd)
+// TODO: generic device callback registration?
+void terminal_register_callbacks(terminal_t * terminal, void *controller, on_data_received_cb recv_cb, on_data_sent_cb sent_cb)
 {
-	if (pthread_mutex_trylock(&terminal->cmd_mutex)) {
-		return DEV_CMD_BUSY;
-	}
-
-	if (terminal->cmd != CMD_NONE) {
-		pthread_mutex_unlock(&terminal->cmd_mutex);
-		return DEV_CMD_BUSY;
-	}
-
-	terminal->cmd = cmd;
-	pthread_cond_signal(&terminal->cmd_cond);
-	pthread_mutex_unlock(&terminal->cmd_mutex);
-
-	return DEV_CMD_OK;
+	terminal->controller = controller;
+	terminal->on_data_received = recv_cb;
+	terminal->on_data_sent = sent_cb;
 }
 
 // -----------------------------------------------------------------------
-int dev_terminal_read(void *dev, uint8_t *c)
+em400_dev_t * terminal_create(unsigned port, unsigned speed)
 {
-	struct dev_terminal *terminal = (struct dev_terminal *) dev;
-	return dev_terminal_cmd(terminal, CMD_RD);
-}
+	LOG(L_TERM, "Creating terminal: speed %i, TCP port %i", speed, port);
 
-// -----------------------------------------------------------------------
-int dev_terminal_write(void *dev, uint8_t *c)
-{
-	struct dev_terminal *terminal = (struct dev_terminal *) dev;
-	return dev_terminal_cmd(terminal, CMD_WR);
-}
+	if ((speed > 9600) || (speed < 150) || (speed % 150)) {
+		LOGERR("Wrong terminal speed. Allowed values: 9600, 4800, 2400, 1200, 600, 300, 150");
+		return NULL;
+	}
 
-struct dev_drv dev_terminal = {
-	.name = "terminal",
-	.create = dev_terminal_create,
-	.destroy = dev_terminal_destroy,
-	.reset = dev_terminal_reset,
-	.sector_rd = NULL,
-	.sector_wr = NULL,
-	.char_rd = dev_terminal_read,
-	.char_wr = dev_terminal_write,
-};
+	terminal_t *terminal = calloc(1, sizeof(terminal_t));
+	if (!terminal) {
+		return NULL;
+	}
+
+	if (pthread_mutex_init(&terminal->mutex, NULL)) {
+		free(terminal);
+		return NULL;
+	}
+
+	terminal->base.type = EM400_DEV_TERMINAL;
+	terminal->base.reset = terminal_reset;
+	terminal->base.write = terminal_write;
+	terminal->base.shutdown = terminal_shutdown;
+
+	term_buf_reset(terminal);
+	terminal->client = NULL;
+	terminal->port = port;
+	// milisecond accuracy due to libuv limitations, 8 bits + start + stop
+	terminal->delay_ms = roundf((float) ((8+2) * 1000) / speed);
+
+	if (terminal_ioloop_setup(terminal) == E_ERR) {
+		// may happen that setup did not initialize any handler
+		// thus no callbacks would fire on handler close
+		terminal_try_free(terminal);
+		return NULL;
+	}
+
+	return (em400_dev_t *) terminal;
+}
 
 
 // vim: tabstop=4 shiftwidth=4 autoindent

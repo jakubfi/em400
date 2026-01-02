@@ -29,7 +29,7 @@
 #include "cpu/cpu.h"
 #include "cpu/interrupts.h"
 #include "io/chan.h"
-#include "io/dev2/dev2.h"
+#include "io/dev/dev.h"
 
 #include "utils/utils.h"
 #include "log.h"

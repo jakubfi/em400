@@ -28,7 +28,6 @@
 #include "log.h"
 #include "utils/elst.h"
 #include "io/io.h"
-#include "io/dev/dev.h"
 #include "io/chan.h"
 #include "io/mx/mx.h"
 #include "io/mx/cmds.h"
@@ -89,12 +88,19 @@ int mx_connect_dev(chan_t *chan, int devnum, em400_dev_t *dev)
 {
 	LOG(L_MX, "Multix connecting device %i", devnum);
 	chan_mx_t *multix = (chan_mx_t *) chan;
-
 	struct mx_line *line = multix->plines + devnum;
-	int res = dev_make(dev, multix->base.num, devnum, &line->dev, &line->dev_data);
-	if (res != E_OK) {
-		LOG(L_MX, "Failed to create MULTIX device: %i", devnum);
+
+	switch (dev->type) {
+		case EM400_DEV_WINCHESTER:
+		case EM400_DEV_FLOP5:
+		case EM400_DEV_TERMINAL:
+			line->dev = dev;
+			break;
+		default:
+			LOG(L_MX, "Device type incompatibile with multix: %i", dev->type);
+			break;
 	}
+
 	return E_OK;
 }
 
@@ -180,7 +186,7 @@ cleanup:
 		for (int i=0 ; i<MX_LINE_CNT ; i++) {
 			struct mx_line *pline = multix->plines + i;
 			if (pline->dev) {
-				pline->dev->destroy(pline->dev_data);
+				pline->dev->shutdown(pline->dev);
 			}
 		}
 		// --- destroy interrupt system
@@ -283,9 +289,8 @@ void mx_shutdown(chan_t *ch)
 	for (int i=0 ; i<MX_LINE_CNT ; i++) {
 		struct mx_line *pline = multix->plines + i;
 		if (pline->dev) {
-			pline->dev->destroy(pline->dev_data);
+			pline->dev->shutdown(pline->dev);
 			pline->dev = NULL;
-			pline->dev_data = NULL;
 		}
 		elst_destroy(pline->protoq);
 		elst_destroy(pline->statusq);

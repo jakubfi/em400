@@ -21,7 +21,7 @@
 #include <inttypes.h>
 
 #include "io/defs.h"
-#include "io/dev2/dev2.h"
+#include "io/dev/dev.h"
 
 typedef enum chan_types {
 	CHAN_CHAR,

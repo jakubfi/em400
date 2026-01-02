@@ -21,7 +21,7 @@
 #include <inttypes.h>
 #include <stdbool.h>
 
-#include "io/dev2/dev2.h"
+#include "io/dev/dev.h"
 
 int io_init();
 int io_channel_init(unsigned chnum, unsigned channel_type);

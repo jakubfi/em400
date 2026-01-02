@@ -22,7 +22,7 @@
 #include <uv.h>
 #include <stdbool.h>
 
-#include "io/dev2/dev2.h"
+#include "io/dev/dev.h"
 
 #define TERMINAL_BUF_SIZE 1024
 
@@ -32,7 +32,7 @@ typedef void (*on_data_received_cb)(void *ptr, char data);
 typedef void (*on_data_sent_cb)(void *ptr);
 
 struct terminal {
-	struct em400_dev2 base;
+	struct em400_dev base;
 
 	int port;
 	int delay_ms;
