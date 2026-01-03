@@ -93,6 +93,7 @@ em400_dev_t * winchester_create(const char *image_name)
 	}
 
 	winchester->base.type = EM400_DEV_WINCHESTER;
+	winchester->base.slot_count = 1;
 	winchester->base.reset = winchester_reset;
 	winchester->base.write = NULL;
 	winchester->base.shutdown = winchester_shutdown;

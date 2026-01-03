@@ -21,6 +21,7 @@
 #include <stdbool.h>
 
 enum em400_device_types {
+	EM400_DEV_NONE = -1,
 	EM400_DEV_TERMINAL,
 	EM400_DEV_SP45DE,
 	EM400_DEV_WINCHESTER,
@@ -45,26 +46,23 @@ typedef void (*dev_noarg_f)(em400_dev_t *dev);
 typedef int (*dev_write_f)(em400_dev_t *dev, char c);
 
 typedef unsigned (*dev_slot_cnt_f)(em400_dev_t *dev);
-typedef bool (*dev_is_ejectable_f)(em400_dev_t *dev, unsigned slot);
+typedef bool (*dev_can_eject_f)(em400_dev_t *dev, unsigned slot);
 typedef int (*dev_load_f)(em400_dev_t *dev, unsigned slot, const char *image_name);
 typedef int (*dev_eject_f)(em400_dev_t *dev, unsigned slot);
 typedef const char * (*dev_image_f)(em400_dev_t *dev, unsigned slot);
 
-
 struct em400_dev {
-	int type;
-	char *name;
+	unsigned type;						// device type
+	unsigned slot_count;				// media image slot count
 
 	dev_noarg_f reset;
 	dev_noarg_f shutdown;
 	dev_write_f write;
 
-	dev_slot_cnt_f slot_cnt;			// number of image slots in the device
-	dev_is_ejectable_f is_ejectable;	// can the image be ejected now
+	dev_can_eject_f can_eject;			// can the image be ejected now
 	dev_load_f load;					// load new image into a slot
 	dev_eject_f eject;					// eject image from the slot
 	dev_image_f image;					// get the name of image loaded into a slot
-
 };
 
 #endif

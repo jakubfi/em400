@@ -216,6 +216,8 @@ void uzfx_shutdown(cchar_unit_t *unit)
 	pthread_mutex_destroy(&uzfx->state_mutex);
 	pthread_cond_destroy(&uzfx->state_cond);
 
+	uzfx->sp45de->base.shutdown((em400_dev_t *) uzfx->sp45de);
+
 	free(uzfx);
 }
 
@@ -225,6 +227,7 @@ void uzfx_reset(cchar_unit_t *unit)
 	uzfx_t *uzfx = (uzfx_t *) unit;
 	LOG(L_UZFX, "Reset");
 	uzfx_reset_state(uzfx);
+	sp45de_motor_stop(uzfx->sp45de);
 	cchar_int_cancel(uzfx->base.chan, uzfx->base.num);
 }
 
@@ -386,6 +389,7 @@ static int uzfx_cmd_read(cchar_unit_t *unit, uint16_t *r_arg)
 	switch (uzfx->state) {
 		case UZFX_ST0_IDLE:
 			uzfx->state = UZFX_ST1_SECT_RD;
+			sp45de_motor_start(uzfx->sp45de);
 			pthread_cond_signal(&uzfx->state_cond);
 			io_ret = IO_EN;
 			break;
@@ -424,6 +428,7 @@ static int uzfx_cmd_write(cchar_unit_t *unit, const uint16_t *r_arg)
 	switch (uzfx->state) {
 		case UZFX_ST0_IDLE:
 			uzfx->state = UZFX_ST3_BUF_WR_START;
+			sp45de_motor_start(uzfx->sp45de);
 			pthread_cond_signal(&uzfx->state_cond);
 			io_ret = IO_EN;
 			break;
@@ -464,6 +469,7 @@ static int uzfx_cmd_control(cchar_unit_t *unit, const uint16_t *r_arg, int cmd)
 			uzfx->operation = cmd;
 			uzfx_set_address(uzfx, *r_arg);
 			LOG(L_UZFX, "Set new address: drive %i, side: %i, track %i, sector %i", uzfx->drive, uzfx->side, uzfx->track, uzfx->sector);
+			sp45de_motor_start(uzfx->sp45de);
 			io_ret = IO_OK;
 			break;
 		default:
@@ -509,6 +515,7 @@ static int uzfx_cmd_detach(cchar_unit_t *unit)
 	LOG(L_UZFX, "command: detach (state: %s -> %s)", uzfx_state_names[old_state], uzfx_state_names[uzfx->state]);
 	switch (uzfx->state) {
 		case UZFX_ST0_IDLE:
+			sp45de_motor_stop(uzfx->sp45de);
 			uzfx->interrupts = UZFX_INT_NONE;
 			io_ret = IO_OK;
 			break;

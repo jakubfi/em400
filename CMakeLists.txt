@@ -188,6 +188,7 @@ set(SOURCES_EM400
 	src/io/iotester.c
 	src/io/iotester.h
 
+	src/io/dev/dev.h
 	src/io/dev/e4image.c
 	src/io/dev/e4image.h
 	src/io/dev/terminal.c

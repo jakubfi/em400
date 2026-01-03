@@ -24,11 +24,18 @@
 #include "io/dev/dev.h"
 
 int io_init();
-int io_channel_init(unsigned chnum, unsigned channel_type);
-int io_dev_connect(int chnum, int devnum, em400_dev_t *dev);
-bool io_channel_present(unsigned chnum);
 void io_shutdown();
 void io_reset();
+
+int io_channel_init(unsigned chnum, unsigned channel_type);
+int io_dev_connect(int chnum, int devnum, em400_dev_t *dev);
+int io_dev_type(unsigned chnum, unsigned devnum);
+unsigned io_dev_slot_count(unsigned chnum, unsigned devnum);
+bool io_dev_can_eject(unsigned chnum, unsigned devnum, unsigned slot);
+int io_dev_eject(unsigned chnum, unsigned devnum, unsigned slot);
+int io_dev_load_image(unsigned chnum, unsigned devnum, unsigned slot, const char *image);
+const char * io_dev_get_image(unsigned chnum, unsigned devnum, unsigned slot);
+
 void io_get_intspec(int ch, uint16_t *int_spec);
 int io_dispatch(int dir, uint16_t n, uint16_t *r);
 

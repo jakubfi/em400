@@ -394,6 +394,7 @@ em400_dev_t * terminal_create(unsigned port, unsigned speed)
 	}
 
 	terminal->base.type = EM400_DEV_TERMINAL;
+	terminal->base.slot_count = 0;
 	terminal->base.reset = terminal_reset;
 	terminal->base.write = terminal_write;
 	terminal->base.shutdown = terminal_shutdown;

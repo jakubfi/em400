@@ -20,6 +20,7 @@
 
 #include <inttypes.h>
 #include <stdio.h>
+#include <pthread.h>
 
 #include "io/dev/dev.h"
 
@@ -38,18 +39,22 @@ typedef struct sp45de sp45de_t;
 struct sp45de {
 	struct em400_dev base;
 
-	char *image_name[4];
+	pthread_mutex_t media_mutex;
+	char *image_name[SP45DE_SLOT_COUNT];
+	FILE *image[SP45DE_SLOT_COUNT];
+	bool doors_locked;
 	uint8_t buf[SP45DE_BLK_SIZE];
-	bool locked[SP45DE_BLK_SIZE];
-	FILE *image[SP45DE_BLK_SIZE];
 	unsigned buf_pos;
 };
 
-em400_dev_t * sp45de_create(const char *image_name[4]);
+em400_dev_t * sp45de_create();
 int sp45de_blk_read(sp45de_t *sp45de, unsigned slot, unsigned track, unsigned sector);
 int sp45de_blk_write(sp45de_t *sp45de, unsigned slot, unsigned track, unsigned sector);
 int sp45de_read(sp45de_t *sp45de, uint8_t *c);
 int sp45de_write(sp45de_t *sp45de, uint8_t c);
+int sp45de_motor_start(sp45de_t *sp45de);
+int sp45de_motor_stop(sp45de_t *sp45de);
+
 
 #endif
 

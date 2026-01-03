@@ -80,12 +80,16 @@ int em400_device_init(em400_cfg *cfg, const char *dev_type_name, int chnum, int 
 	} else if (!strcasecmp(dev_type_name, "floppy")) {
 		res = E_OK;
 	} else if (!strcasecmp(dev_type_name, "floppy8")) {
-		const char *images[4];
-		images[0] = cfg_fgetstr(cfg, "dev%i.%i:image_0", chnum, devnum);
-		images[1] = cfg_fgetstr(cfg, "dev%i.%i:image_1", chnum, devnum);
-		images[2] = cfg_fgetstr(cfg, "dev%i.%i:image_2", chnum, devnum);
-		images[3] = cfg_fgetstr(cfg, "dev%i.%i:image_3", chnum, devnum);
-		res = em400_dev_sp45de_init(chnum, devnum, images);
+		res = em400_dev_sp45de_init(chnum, devnum);
+		if (res != E_ERR) {
+			int slotcnt = em400_dev_slot_count(chnum, devnum);
+			for (int i=0 ; i<slotcnt ; i++) {
+				const char *image = cfg_fgetstr(cfg, "dev%i.%i:image_%i", chnum, devnum, i);
+				if (image) {
+					em400_dev_load_image(chnum, devnum, i, image);
+				}
+			}
+		}
 	} else {
 		res = LOGERR("Unknown device type: %s", dev_type_name);
 	}

@@ -22,6 +22,7 @@
 
 #include <inttypes.h>
 #include <stdlib.h>
+#include <stdbool.h>
 #include <pthread.h>
 #include <uv.h>
 
@@ -34,39 +35,10 @@
 #include "utils/utils.h"
 #include "log.h"
 
-/*
-
-  I/O stack looks something like this:
-
-  .---------------------------------------------------------------------.
-  |                                 CPU                                 |---+
-  `---------------------------------------------------------------------'   |
-  .---------------------------------------------------------------------.   |
-  |                                 I/O                                 |   |
-  `---------------------------------------------------------------------'    > CPU thread
-  .---------------------------------------------------------------------.   |
-  |                                 CHAN                                |   |
-  `---------------------------------------------------------------------'   |
-  .---------------------------------. .-------------------------. .-----.   |
-  |             MULTIX              | |           CCHAR         | | ... |---+ chan_cmd()
-  +- - - - - - - - - - - - - - - - -+ +- - - - - - - - - - - - -+ +- - -+   |
-  |        device protocols         | |     device protocols    | | ... |   |
-  `---------------------------------' `-------------------------' `-----'   |
-  .---------------------------------------------------------------------.    > possible channel thread(s)
-  |                                 DEV                                 |   |
-  `---------------------------------------------------------------------'   |
-  .------------. .-------------. .------------. .-----------. .---------.   |
-  |  dev_term  | |  dev_winch  | |  dev_9425  | | dev_flop  | | dev_... |---+ dev_read(), dev_write(), dev_ctl()
-  `------------' `-------------' `------------' `-----------' `---------'   |
-  .------------. .-------------. .------------. .-----------. .---------.    > optional device thread(s)
-  |  terminal  | |  e4image    | |  e4image   | |  e4image  | |   ...   |   |
-  `------------' `-------------' `------------' `-----------' `---------'   |
-*/
 
 uv_loop_t *ioloop;
 pthread_t ioloop_thread;
 uv_async_t ioloop_async_quit;
-
 
 static chan_t *io_chan[IO_MAX_CHAN];
 static const char *io_result_names[] = { "NO ANSWER", "ENGAGED", "OK", "PARITY ERROR" };
@@ -128,15 +100,83 @@ int io_channel_init(unsigned chnum, unsigned channel_type)
 }
 
 // -----------------------------------------------------------------------
-bool io_channel_present(unsigned chnum)
+int io_dev_connect(int chnum, int devnum, em400_dev_t *dev)
 {
-	return (io_chan[chnum] != NULL);
+	if (io_chan[chnum]->connect_dev(io_chan[chnum], devnum, dev) != E_OK) {
+		return E_ERR;
+	}
+
+	io_chan[chnum]->device[devnum] = dev;
+	return E_OK;
 }
 
 // -----------------------------------------------------------------------
-int io_dev_connect(int chnum, int devnum, em400_dev_t *dev)
+static em400_dev_t * dev_get(unsigned chnum, unsigned devnum)
 {
-	return io_chan[chnum]->connect_dev(io_chan[chnum], devnum, dev);
+	if (!io_chan[chnum]) {
+		return NULL;
+	}
+	return io_chan[chnum]->device[devnum];
+}
+
+// -----------------------------------------------------------------------
+unsigned io_dev_slot_count(unsigned chnum, unsigned devnum)
+{
+	em400_dev_t *dev = dev_get(chnum, devnum);
+	if (!dev) {
+		return 0;
+	}
+	return dev->slot_count;
+}
+
+// -----------------------------------------------------------------------
+int io_dev_type(unsigned chnum, unsigned devnum)
+{
+	em400_dev_t *dev = dev_get(chnum, devnum);
+	if (!dev) {
+		return EM400_DEV_NONE;
+	}
+	return dev->type;
+}
+
+// -----------------------------------------------------------------------
+bool io_dev_can_eject(unsigned chnum, unsigned devnum, unsigned slot)
+{
+	em400_dev_t *dev = dev_get(chnum, devnum);
+	if (!dev || !dev->can_eject) {
+		return false;
+	}
+	return dev->can_eject(dev, slot);
+}
+
+// -----------------------------------------------------------------------
+int io_dev_eject(unsigned chnum, unsigned devnum, unsigned slot)
+{
+	em400_dev_t *dev = dev_get(chnum, devnum);
+	if (!dev || !dev->eject) {
+		return E_ERR;
+	}
+	return dev->eject(dev, slot);
+}
+
+// -----------------------------------------------------------------------
+int io_dev_load_image(unsigned chnum, unsigned devnum, unsigned slot, const char *image)
+{
+	em400_dev_t *dev = dev_get(chnum, devnum);
+	if (!dev || !dev->load) {
+		return E_ERR;
+	}
+	return dev->load(dev, slot, image);
+}
+
+// -----------------------------------------------------------------------
+const char * io_dev_get_image(unsigned chnum, unsigned devnum, unsigned slot)
+{
+	em400_dev_t *dev = dev_get(chnum, devnum);
+	if (!dev || !dev->image) {
+		return NULL;
+	}
+	return dev->image(dev, slot);
 }
 
 // -----------------------------------------------------------------------

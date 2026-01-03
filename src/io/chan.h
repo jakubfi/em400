@@ -54,7 +54,7 @@ struct chan {
 	int num;
 	chan_type_t type;
 	em400_dev_t *device[32];
-	chan_f_connect_dev connect_dev;	// connects the device to a channel
+	chan_f_connect_dev connect_dev;	// connects a device to the channel
 	chan_f_cmd cmd;					// handles I/O command from the CPU
 	chan_f_noarg reset;				// resets channel (asynchronously, from any thread)
 	chan_f_noarg shutdown;			// shuts down channel and frees its resources

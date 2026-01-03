@@ -127,8 +127,15 @@ void em400_shutdown();
 
 int em400_io_channel_init(unsigned chnum, unsigned channel_type);
 int em400_dev_terminal_init(unsigned chnum, unsigned devnum, int port, int speed);
-int em400_dev_sp45de_init(unsigned chnum, unsigned devnum, const char *images[4]);
+int em400_dev_sp45de_init(unsigned chnum, unsigned devnum);
 int em400_dev_winchester_init(unsigned chnum, unsigned devnum, const char *image);
+
+int em400_dev_type(unsigned chnum, unsigned devnum);
+int em400_dev_slot_count(unsigned chnum, unsigned devnum);
+bool em400_dev_can_eject(unsigned chnum, unsigned devnum, unsigned slot);
+int em400_dev_eject(unsigned chnum, unsigned devnum, unsigned slot);
+int em400_dev_load_image(unsigned chnum, unsigned devnum, unsigned slot, const char *image);
+const char * em400_dev_get_image(unsigned chnum, unsigned devnum, unsigned slot);
 
 // -----------------------------------------------------------------------
 // --- LOGGING -----------------------------------------------------------

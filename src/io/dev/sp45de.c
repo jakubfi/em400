@@ -19,6 +19,7 @@
 #include <string.h>
 #include <stdio.h>
 #include <stdbool.h>
+#include <pthread.h>
 
 #include "log.h"
 
@@ -40,12 +41,15 @@ void sp45de_shutdown(em400_dev_t *dev)
 
 	// TODO: proper async free with libuv
 	sp45de_ioloop_teardown((sp45de_t *) dev);
+	pthread_mutex_lock(&sp45de->media_mutex);
 	for (int slot=0 ; slot<SP45DE_SLOT_COUNT ; slot++) {
 		if (sp45de->image[slot]) {
 			fclose(sp45de->image[slot]);
 		}
 		free(sp45de->image_name[slot]);
 	}
+	pthread_mutex_unlock(&sp45de->media_mutex);
+	pthread_mutex_destroy(&sp45de->media_mutex);
 	free(sp45de);
 }
 
@@ -54,6 +58,8 @@ void sp45de_reset(em400_dev_t *dev)
 {
 	if (!dev) return;
 
+	sp45de_t *sp45de = (sp45de_t *) dev;
+	sp45de_motor_stop(sp45de);
 	LOG(L_FLOP, "SP45DE reset");
 }
 
@@ -77,40 +83,65 @@ static int sp45de_image_seek(FILE *img_file, unsigned track, unsigned sector)
 // -----------------------------------------------------------------------
 int sp45de_blk_read(sp45de_t *sp45de, unsigned slot, unsigned track, unsigned sector)
 {
+	int ret = E_ERR;
 	sp45de->buf_pos = 0;
+
+	pthread_mutex_lock(&sp45de->media_mutex);
+	if (!sp45de->image[slot]) {
+		LOG(L_FLOP, "Read with no image in slot %i", slot);
+		goto fin;
+	}
+
 	if (sp45de_image_seek(sp45de->image[slot], track, sector) != E_OK) {
 		LOG(L_FLOP, "Image file %s slot %i seek failed", sp45de->image_name[slot], slot);
-		return E_ERR;
+		goto fin;
 	}
 
 	int res = fread(sp45de->buf, 1, SP45DE_BLK_SIZE, sp45de->image[slot]);
 	if (res != SP45DE_BLK_SIZE) {
 		LOG(L_FLOP, "Failed to read %i bytes from disk in slot %i: %s", SP45DE_BLK_SIZE, slot, sp45de->image_name[slot]);
-		return E_ERR;
+		goto fin;
 	}
-	LOG(L_FLOP, "Read sector (%2x %2x %2x %2x ...)", sp45de->buf[0], sp45de->buf[1], sp45de->buf[2], sp45de->buf[3]);
 
-	return E_OK;
+	LOG(L_FLOP, "Read sector (%2x %2x %2x %2x ...)", sp45de->buf[0], sp45de->buf[1], sp45de->buf[2], sp45de->buf[3]);
+	ret = E_OK;
+
+fin:
+	pthread_mutex_unlock(&sp45de->media_mutex);
+
+	return ret;
 }
 
 // -----------------------------------------------------------------------
 int sp45de_blk_write(sp45de_t *sp45de, unsigned slot, unsigned track, unsigned sector)
 {
+	int ret = E_ERR;
 	sp45de->buf_pos = 0;
-	if (sp45de_image_seek(sp45de->image[slot], track, sector) != E_OK) {
-		LOG(L_FLOP, "Image file %s slot %i seek failed", sp45de->image_name[slot], slot);
-		return E_ERR;
+
+	pthread_mutex_lock(&sp45de->media_mutex);
+	if (!sp45de->image[slot]) {
+		LOG(L_FLOP, "Write with no image in slot %i", slot);
+		goto fin;
 	}
 
-	LOG(L_FLOP, "Write sector (%2x %2x %2x %2x ...)", sp45de->buf[0], sp45de->buf[1], sp45de->buf[2], sp45de->buf[3]);
+	if (sp45de_image_seek(sp45de->image[slot], track, sector) != E_OK) {
+		LOG(L_FLOP, "Image file %s slot %i seek failed", sp45de->image_name[slot], slot);
+		goto fin;
+	}
 
 	int res = fwrite(sp45de->buf, 1, SP45DE_BLK_SIZE, sp45de->image[slot]);
 	if (res != SP45DE_BLK_SIZE) {
 		LOG(L_FLOP, "Failed floppy write");
-		return E_ERR;
+		goto fin;
 	}
 
-	return E_OK;
+	LOG(L_FLOP, "Write sector (%2x %2x %2x %2x ...)", sp45de->buf[0], sp45de->buf[1], sp45de->buf[2], sp45de->buf[3]);
+	ret = E_OK;
+
+fin:
+	pthread_mutex_unlock(&sp45de->media_mutex);
+
+	return ret;
 }
 
 // -----------------------------------------------------------------------
@@ -143,115 +174,142 @@ int sp45de_write(sp45de_t *sp45de, uint8_t c)
 }
 
 // -----------------------------------------------------------------------
-int sp45de_park(sp45de_t *sp45de, unsigned slot)
+int sp45de_motor_start(sp45de_t *sp45de)
 {
+	// starting drives and getting heads off the parking position
+	// locks doors for all floppy slots
+	pthread_mutex_lock(&sp45de->media_mutex);
+	sp45de->doors_locked = true;
+	pthread_mutex_unlock(&sp45de->media_mutex);
+
 	return E_OK;
 }
 
 // -----------------------------------------------------------------------
-unsigned sp45de_slot_cnt()
+int sp45de_motor_stop(sp45de_t *sp45de)
 {
-	return SP45DE_SLOT_COUNT;
+	pthread_mutex_lock(&sp45de->media_mutex);
+	sp45de->doors_locked = false;
+	pthread_mutex_unlock(&sp45de->media_mutex);
+
+	return E_OK;
 }
 
 // -----------------------------------------------------------------------
-bool sp45de_is_ejectable(em400_dev_t *dev, unsigned slot)
+bool sp45de_can_eject(em400_dev_t *dev, unsigned slot)
 {
 	sp45de_t *sp45de = (sp45de_t *) dev;
-	return !sp45de->locked[slot];
+
+	pthread_mutex_lock(&sp45de->media_mutex);
+	int can_eject = !sp45de->doors_locked;
+	pthread_mutex_unlock(&sp45de->media_mutex);
+
+	return can_eject;
+}
+
+// -----------------------------------------------------------------------
+static int sp45de_image_replace(em400_dev_t *dev, unsigned slot, const char *image_name)
+{
+	sp45de_t *sp45de = (sp45de_t *) dev;
+
+	if ((!dev) || (slot >= SP45DE_SLOT_COUNT)) {
+		LOG(L_FLOP, "Wrong SP45DE slot or nonexistent device");
+		return E_ERR;
+	}
+
+	int ret = E_ERR;
+
+	pthread_mutex_lock(&sp45de->media_mutex);
+	if (sp45de->doors_locked) {
+		LOG(L_FLOP, "SP45DE doors locked, cannot replace image in slot %i with %s", slot, image_name);
+		goto fin;
+	}
+
+	// eject current image if present
+	if (sp45de->image[slot]) {
+		fclose(sp45de->image[slot]);
+		sp45de->image[slot] = NULL;
+		free(sp45de->image_name[slot]);
+		sp45de->image_name[slot] = NULL;
+	}
+
+	// no new image, nothing to insert
+	if (!image_name) {
+		ret = E_OK;
+		goto fin;
+	}
+
+	sp45de->image_name[slot] = strdup(image_name);
+	if (!sp45de->image_name[slot]) {
+		LOG(L_FLOP, "Memory allocation error when replacing image in slot %i with %s", slot, image_name);
+		goto fin;
+	}
+
+	sp45de->image[slot] = fopen(sp45de->image_name[slot], "r+b");
+	if (!sp45de->image[slot]) {
+		LOG(L_FLOP, "Cannot open image file: %s for slot %i", image_name, slot);
+		free(sp45de->image_name[slot]);
+		sp45de->image_name[slot] = NULL;
+		goto fin;
+	}
+
+	LOG(L_FLOP, "SP45DE floppy image in slot %i: %s", slot, image_name);
+	ret = E_OK;
+
+fin:
+	pthread_mutex_unlock(&sp45de->media_mutex);
+	return ret;
 }
 
 // -----------------------------------------------------------------------
 int sp45de_eject(em400_dev_t *dev, unsigned slot)
 {
-	sp45de_t *sp45de = (sp45de_t *) dev;
-
-	if (!sp45de_is_ejectable(dev, slot)) {
-		LOG(L_FLOP, "SP45DE 8 inch floppy in slot %i cannot be ejected", slot);
-		return E_ERR;
-	}
-
-	fclose(sp45de->image[slot]);
-	sp45de->image[slot] = NULL;
-	free(sp45de->image_name[slot]);
-	sp45de->image_name[slot] = NULL;
-
-	return E_OK;
+	return sp45de_image_replace(dev, slot, NULL);
 }
 
 // -----------------------------------------------------------------------
 const char * sp45de_image(em400_dev_t *dev, unsigned slot)
 {
 	sp45de_t *sp45de = (sp45de_t *) dev;
+	pthread_mutex_lock(&sp45de->media_mutex);
+	const char *image = sp45de->image_name[slot];
+	pthread_mutex_unlock(&sp45de->media_mutex);
 
-	return sp45de->image_name[slot];
+	return image;
 }
 
 // -----------------------------------------------------------------------
 int sp45de_load(em400_dev_t *dev, unsigned slot, const char *image_name)
 {
-	sp45de_t *sp45de = (sp45de_t *) dev;
-
-	if ((!dev) || (slot >= SP45DE_SLOT_COUNT) || (!image_name)) {
-		LOG(L_FLOP, "Wrong SP45DE slot, empty image name or nonexistent device");
-		return E_ERR;
-	}
-
-	if (sp45de_image(dev, slot)) {
-		if (sp45de_eject(dev, slot) != E_OK) {
-			return E_ERR;
-		}
-	}
-
-	sp45de->image_name[slot] = strdup(image_name);
-	if (!sp45de->image_name[slot]) {
-		LOG(L_FLOP, "Memory allocation error for image name: %s (drive %i).", sp45de->image[slot], slot);
-		return E_ERR;
-	}
-
-	sp45de->image[slot] = fopen(sp45de->image_name[slot], "r+b");
-	if (!sp45de->image[slot]) {
-		LOG(L_FLOP, "Failed to open 8-inch floppy image: %s (drive %i).", sp45de->image[slot], slot);
-		free(sp45de->image_name[slot]);
-		sp45de->image_name[slot] = NULL;
-		return E_ERR;
-	}
-
-	LOG(L_FLOP, "SP45DE opened disk image %s in drive %i", sp45de->image_name[slot], slot);
-
-	return E_OK;
+	return sp45de_image_replace(dev, slot, image_name);
 }
 
 // -----------------------------------------------------------------------
-em400_dev_t * sp45de_create(const char *image_name[4])
+em400_dev_t * sp45de_create()
 {
 	LOG(L_FLOP, "Creating SP45DE");
 
 	sp45de_t *sp45de = calloc(1, sizeof(sp45de_t));
 	if (!sp45de) {
-		goto fail;
+		return NULL;
+	}
+
+	if (pthread_mutex_init(&sp45de->media_mutex, NULL)) {
+		free(sp45de);
+		return NULL;
 	}
 
 	sp45de->base.type = EM400_DEV_SP45DE;
+	sp45de->base.slot_count = 4;
 	sp45de->base.reset = NULL;
 	sp45de->base.write = NULL;
 	sp45de->base.shutdown = sp45de_shutdown;
 
-	sp45de->base.slot_cnt = sp45de_slot_cnt;
-	sp45de->base.is_ejectable = sp45de_is_ejectable;
+	sp45de->base.can_eject = sp45de_can_eject;
 	sp45de->base.load = sp45de_load;
 	sp45de->base.eject = sp45de_eject;
 	sp45de->base.image = sp45de_image;
 
-	// TODO: drop image preloading, handle top-level with load()
-	for (int slot=0 ; slot<SP45DE_SLOT_COUNT ; slot++) {
-		if (!image_name[slot]) continue;
-		sp45de_load((em400_dev_t *) sp45de, slot, image_name[slot]);
-	}
-
 	return (em400_dev_t *) sp45de;
-
-fail:
-	return NULL;
 }
 

@@ -94,9 +94,9 @@ int em400_dev_terminal_init(unsigned chnum, unsigned devnum, int port, int speed
 }
 
 // -----------------------------------------------------------------------
-int em400_dev_sp45de_init(unsigned chnum, unsigned devnum, const char *images[4])
+int em400_dev_sp45de_init(unsigned chnum, unsigned devnum)
 {
-	em400_dev_t *dev = sp45de_create(images);
+	em400_dev_t *dev = sp45de_create();
 	if (!dev) {
 		return E_ERR;
 	}
@@ -111,6 +111,42 @@ int em400_dev_winchester_init(unsigned chnum, unsigned devnum, const char *image
 		return E_ERR;
 	}
 	return io_dev_connect(chnum, devnum, dev);
+}
+
+// -----------------------------------------------------------------------
+int em400_dev_type(unsigned chnum, unsigned devnum)
+{
+	return io_dev_type(chnum, devnum);
+}
+
+// -----------------------------------------------------------------------
+int em400_dev_slot_count(unsigned chnum, unsigned devnum)
+{
+	return io_dev_slot_count(chnum, devnum);
+}
+
+// -----------------------------------------------------------------------
+bool em400_dev_can_eject(unsigned chnum, unsigned devnum, unsigned slot)
+{
+	return io_dev_can_eject(chnum, devnum, slot);
+}
+
+// -----------------------------------------------------------------------
+int em400_dev_eject(unsigned chnum, unsigned devnum, unsigned slot)
+{
+	return io_dev_eject( chnum, devnum, slot);
+}
+
+// -----------------------------------------------------------------------
+int em400_dev_load_image(unsigned chnum, unsigned devnum, unsigned slot, const char *image)
+{
+	return io_dev_load_image(chnum, devnum, slot, image);
+}
+
+// -----------------------------------------------------------------------
+const char * em400_dev_get_image(unsigned chnum, unsigned devnum, unsigned slot)
+{
+	return io_dev_get_image(chnum, devnum, slot);
 }
 
 // -----------------------------------------------------------------------
