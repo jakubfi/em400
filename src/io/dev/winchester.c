@@ -83,6 +83,20 @@ void winchester_reset(em400_dev_t *dev)
 }
 
 // -----------------------------------------------------------------------
+bool winchester_can_eject(em400_dev_t *dev, unsigned slot)
+{
+	// non-removable media, set during initialization only
+	return false;
+}
+
+// -----------------------------------------------------------------------
+const char * winchester_image(em400_dev_t *dev, unsigned slot)
+{
+	winchester_t *winchester = (winchester_t *) dev;
+	return winchester->image_name;
+}
+
+// -----------------------------------------------------------------------
 em400_dev_t * winchester_create(const char *image_name)
 {
 	LOG(L_WNCH, "Creating winchester");
@@ -97,6 +111,11 @@ em400_dev_t * winchester_create(const char *image_name)
 	winchester->base.reset = winchester_reset;
 	winchester->base.write = NULL;
 	winchester->base.shutdown = winchester_shutdown;
+
+	winchester->base.can_eject = winchester_can_eject;
+	winchester->base.load = NULL;
+	winchester->base.eject = NULL;
+	winchester->base.image = winchester_image;
 
 	if (image_name) {
 		winchester->image_name = strdup(image_name);
