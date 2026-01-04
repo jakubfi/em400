@@ -41,7 +41,6 @@
 
 #include "log.h"
 
-struct ui *ui;
 
 struct io_chan_types {
 	const char *name;
@@ -198,15 +197,12 @@ int em400_top_init(em400_cfg *cfg)
 		return LOGERR("Failed to initialize EM400 I/O channels.");
 	}
 
-	if (!(ui = ui_create(cfg))) return LOGERR("Failed to initialize UI.");
-
 	return E_OK;
 }
 
 // -----------------------------------------------------------------------
 void em400_top_shutdown()
 {
-	ui_shutdown(ui);
 	em400_shutdown();
 	log_shutdown();
 }
@@ -352,6 +348,7 @@ int main(int argc, char** argv)
 	int print_help = 0;
 	char *config = NULL;
 	em400_cfg *cfg = NULL;
+	struct ui *ui = NULL;
 
 	em400_mkconfdir();
 
@@ -396,16 +393,20 @@ int main(int argc, char** argv)
 
 	em400_preload_program(cfg_getstr(cfg, "memory:preload", CFG_DEFAULT_MEMORY_PRELOAD));
 
+	if (!(ui = ui_create(cfg))) {
+		LOGERR("Failed to initialize UI.");
+		goto done;
+	}
+
 	if (ui_run(ui) != E_OK) {
 		LOGERR("Failed to start the UI: %s.", ui->drv->name);
 		goto done;
 	}
 
-	cpu_loop();
-
 	return_code = 0;
 
 done:
+	ui_shutdown(ui);
 	em400_top_shutdown();
 	cfg_free(cfg);
 	free(config);

@@ -150,7 +150,7 @@ bitfield:
 	;
 
 command:
-	  F_QUIT 				{ dbg_c_quit(); }
+      F_QUIT 				{ dbg_stop(); }
 	| F_CYCLE 				{ dbg_c_cycle(); }
 	| F_REGS 				{ dbg_c_regs(W_CMD); }
 	| F_SREGS 				{ dbg_c_sregs(W_CMD); }

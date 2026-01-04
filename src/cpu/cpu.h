@@ -85,14 +85,11 @@ extern bool cpu_mod_active;
 extern bool cpu_user_io_illegal;
 extern bool awp_enabled;
 
-int cpu_configure(struct em400_cfg_cpu *c_cpu, struct em400_cfg_buzzer *c_buzzer);
-int cpu_init();
+int cpu_init(struct em400_cfg_cpu *c_cpu, struct em400_cfg_buzzer *c_buzzer);
 void cpu_shutdown();
 
 void cpu_mod_on();
 void cpu_mod_off();
-
-void cpu_loop();
 
 void cpu_wake_up();
 int cpu_state_change(unsigned to, unsigned from);

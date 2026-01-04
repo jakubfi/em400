@@ -49,6 +49,8 @@ extern struct emdas *emd;
 
 struct evlb_t * dbg_brk_check();
 
+void dbg_stop();
+
 #endif
 
 // vim: tabstop=4 shiftwidth=4 autoindent

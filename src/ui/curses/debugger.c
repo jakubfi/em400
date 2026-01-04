@@ -18,9 +18,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <limits.h>
-#include <pthread.h>
 #include <signal.h>
-#include <stdatomic.h>
 #include <emdas.h>
 
 #include "libem400.h"
@@ -34,7 +32,7 @@
 
 int ui_mode;
 
-static atomic_bool dbg_quit = false;
+bool dbg_quit = false;
 
 // store user input here
 char input_buf[INPUT_BUF_SIZE];
@@ -108,9 +106,9 @@ void * dbg_init(const char *call_name)
 }
 
 // -----------------------------------------------------------------------
-void dbg_stop(void *data)
+void dbg_stop()
 {
-	atomic_store_explicit(&dbg_quit, true, memory_order_relaxed);
+	dbg_quit = true;
 }
 
 // -----------------------------------------------------------------------
@@ -133,7 +131,7 @@ int dbg_parse(char *c)
 // -----------------------------------------------------------------------
 void dbg_loop(void *data)
 {
-	while (!atomic_load_explicit(&dbg_quit, memory_order_relaxed)) {
+	while (!dbg_quit) {
 
 		if (aw_layout_changed) {
 			awin_tb_scroll_end(W_CMD);
@@ -167,7 +165,6 @@ struct ui_drv ui_curses = {
 	.name = "curses",
 	.setup = dbg_init,
 	.loop = dbg_loop,
-	.stop = dbg_stop,
 	.destroy = dbg_shutdown
 };
 

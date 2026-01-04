@@ -245,7 +245,6 @@ struct ui_drv ui_cmd = {
 	.name = "cmd",
 	.setup = ui_cmd_setup,
 	.loop = ui_cmd_loop,
-	.stop = ui_cmd_ui_stop,
 	.destroy = ui_cmd_destroy
 };
 

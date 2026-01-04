@@ -54,12 +54,6 @@ void cp_cycle()
 }
 
 // -----------------------------------------------------------------------
-void cp_off()
-{
-	cpu_state_change(EM400_STATE_OFF, EM400_STATE_ANY);
-}
-
-// -----------------------------------------------------------------------
 void cp_clock_set(int state)
 {
 	clock_set(state);

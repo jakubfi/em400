@@ -62,6 +62,10 @@ static void * clock_thread(void *ptr)
 // -----------------------------------------------------------------------
 int clock_init(unsigned period, bool enabled)
 {
+	if ((period != 2) && (period != 4) && (period != 8) && (period != 10) && (period != 20)) {
+		return LOGERR("Valid clock periods are: 2, 4, 8, 10, 20, not %i", period);
+	}
+
 	LOG(L_CPU, "Clock period: %i ms (%s)", period, enabled ? "enabled" : "disabled");
 
 	clock_period = period;

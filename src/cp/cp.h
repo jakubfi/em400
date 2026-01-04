@@ -45,7 +45,7 @@ void cp_reg_select(int id); // TODO: store position
 bool cp_run_get();
 bool cp_wait_get();
 bool cp_alarm_get();
-void cp_off(); // TODO: switch on/off/lock?
+// off?
 // TODO: ON LED?
 
 #endif

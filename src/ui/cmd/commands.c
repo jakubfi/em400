@@ -484,7 +484,6 @@ void ui_cmd_state(FILE *out, char *args)
 // -----------------------------------------------------------------------
 void ui_cmd_quit(FILE *out, char *args)
 {
-	em400_off();
 	ui_cmd_resp(out, RESP_OK, UI_EOL, "QUIT");
 }
 

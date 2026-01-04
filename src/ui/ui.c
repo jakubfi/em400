@@ -21,7 +21,6 @@
 #endif
 
 #include <stdlib.h>
-#include <pthread.h>
 #include <string.h>
 #include <strings.h>
 
@@ -89,24 +88,9 @@ struct ui * ui_create(em400_cfg *cfg)
 }
 
 // -----------------------------------------------------------------------
-static void * ui_loop(void *ptr)
-{
-	struct ui *ui = (struct ui *) ptr;
-
-	ui->drv->loop(ui->data);
-
-	return NULL;
-}
-
-// -----------------------------------------------------------------------
 int ui_run(struct ui *ui)
 {
-	// initialize the UI loop
-	if (pthread_create(&ui->th, NULL, ui_loop, ui)) {
-		return LOGERR("Failed to spawn UI thread.");
-	}
-
-	pthread_setname_np(ui->th, "ui");
+	ui->drv->loop(ui->data);
 
 	return E_OK;
 }
@@ -118,10 +102,6 @@ void ui_shutdown(struct ui *ui)
 		return;
 	}
 
-	ui->drv->stop(ui->data);
-	if (ui->th) {
-		pthread_join(ui->th, NULL);
-	}
 	ui->drv->destroy(ui->data);
 	free(ui);
 }

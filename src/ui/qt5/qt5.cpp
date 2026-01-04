@@ -48,12 +48,6 @@ void ui_qt5_loop(void *data)
 }
 
 // -----------------------------------------------------------------------
-void ui_qt5_stop(void *data)
-{
-
-}
-
-// -----------------------------------------------------------------------
 void ui_qt5_destroy(void *data)
 {
 	struct ui_qt5_data *ui = (struct ui_qt5_data *) data;
@@ -65,7 +59,6 @@ struct ui_drv ui_qt5 = {
 	.name = "qt5",
 	.setup = ui_qt5_setup,
 	.loop = ui_qt5_loop,
-	.stop = ui_qt5_stop,
 	.destroy = ui_qt5_destroy
 };
 

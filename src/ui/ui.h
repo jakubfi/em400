@@ -18,25 +18,21 @@
 #ifndef UI_H
 #define UI_H
 
-#include <pthread.h>
 #include "cfg.h"
 
 typedef void * (*ui_f_setup)(const char *);
 typedef void (*ui_f_loop)(void*);
-typedef void (*ui_f_stop)(void*);
 typedef void (*ui_f_destroy)(void*);
 
 struct ui_drv {
 	const char *name;
 	ui_f_setup setup;
 	ui_f_loop loop;
-	ui_f_stop stop;
 	ui_f_destroy destroy;
 };
 
 struct ui {
 	struct ui_drv *drv;
-	pthread_t th;
 	void *data;
 };
 

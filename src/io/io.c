@@ -81,7 +81,7 @@ int io_init()
 	io_ioloop_setup();
 
 	if (pthread_create(&ioloop_thread, NULL, io_ioloop, NULL)) {
-		return LOGERR("Failed to spawn main I/O tester thread.");
+		return LOGERR("Failed to spawn main I/O loop thread.");
 	}
 	pthread_setname_np(ioloop_thread, "ioloop");
 

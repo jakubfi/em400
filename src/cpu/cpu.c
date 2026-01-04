@@ -28,6 +28,7 @@
 #include <errno.h>
 #include <stdbool.h>
 #include <string.h>
+#include <pthread.h>
 #include <emawp.h>
 
 #include "cpu/cpu.h"
@@ -47,7 +48,7 @@
 #include "log_crk.h"
 #include "cp/brk.h"
 
-static atomic_uint cpu_state = EM400_STATE_OFF;
+static atomic_uint cpu_state = EM400_STATE_STOP;
 
 uint16_t r[8];
 uint16_t ic, kb, ir, ac, ar, at;
@@ -65,7 +66,6 @@ bool cpu_mod_active;
 bool cpu_user_io_illegal;
 bool awp_enabled;
 static bool nomem_stop;
-static int clock_period;
 
 unsigned long ips_counter;
 static unsigned instruction_time;
@@ -76,14 +76,15 @@ static int cpu_time_cumulative;
 static int throttle_granularity;
 
 static int sound_enabled;
-static struct em400_cfg_buzzer cfg_buzzer;
 
 // opcode table (instruction decoder decision table)
 struct iset_opcode *cpu_op_tab[0x10000];
 
+pthread_t cpu_thread;
 pthread_mutex_t cpu_wake_mutex = PTHREAD_MUTEX_INITIALIZER;
 pthread_cond_t cpu_wake_cond = PTHREAD_COND_INITIALIZER;
 
+static void * cpu_loop(void *ptr);
 
 // -----------------------------------------------------------------------
 void cpu_kb_set(uint16_t val)
@@ -273,30 +274,18 @@ bool cpu_mem_write_1(bool barnb, uint16_t addr, uint16_t data)
 }
 
 // -----------------------------------------------------------------------
-int cpu_configure(struct em400_cfg_cpu *c_cpu, struct em400_cfg_buzzer *c_buzzer)
+int cpu_init(struct em400_cfg_cpu *c_cpu, struct em400_cfg_buzzer *c_buzzer)
 {
+	int res;
+
 	awp_enabled = c_cpu->awp;
 	cpu_mod_present = c_cpu->mod;
 	cpu_user_io_illegal = c_cpu->user_io_illegal;
 	nomem_stop = c_cpu->nomem_stop;
 	speed_real = c_cpu->speed_real;
 	throttle_granularity = c_cpu->throttle_granularity;
-	clock_period = c_cpu->clock_period;
 
 	sound_enabled = c_buzzer->enabled;
-	memcpy(&cfg_buzzer, c_buzzer, sizeof(struct em400_cfg_buzzer));
-
-	if ((clock_period < 2) || (clock_period > 100)) {
-		return LOGERR("Clock period should be between 2 and 100 miliseconds, not %i.", clock_period);
-	}
-
-	return E_OK;
-}
-
-// -----------------------------------------------------------------------
-int cpu_init()
-{
-	int res;
 
 	res = iset_build(cpu_op_tab, cpu_user_io_illegal);
 	if (res != E_OK) {
@@ -316,15 +305,20 @@ int cpu_init()
 			LOGERR("WARNING: sound won't work with speed_real=false. Buzzer emulation is disabled.");
 			sound_enabled = false;
 		} else {
-			if (buzzer_init(&cfg_buzzer) != E_OK) {
+			if (buzzer_init(c_buzzer) != E_OK) {
 				return LOGERR("Failed to initialize buzzer.");
 			}
 		}
 	}
 
-	if (clock_init(clock_period, false) != E_OK) {
+	if (clock_init(c_cpu->clock_period, false) != E_OK) {
 		return LOGERR("Failed to initialize clock");
 	}
+
+	if (pthread_create(&cpu_thread, NULL, cpu_loop, NULL)) {
+		return LOGERR("Failed to spawn cpu thread.");
+	}
+	pthread_setname_np(cpu_thread, "cpu");
 
 	LOG(L_CPU, "CPU initialized. AWP: %s, modifications: %s, user I/O: %s, stop on nomem: %s",
 		awp_enabled ? "enabled" : "disabled",
@@ -341,6 +335,8 @@ int cpu_init()
 // -----------------------------------------------------------------------
 void cpu_shutdown()
 {
+	cpu_state_change(EM400_STATE_OFF, EM400_STATE_ANY);
+	pthread_join(cpu_thread, NULL);
 	clock_shutdown();
 	if (sound_enabled) {
 		buzzer_shutdown();
@@ -583,12 +579,13 @@ static void cpu_timekeeping(int cpu_time)
 }
 
 // -----------------------------------------------------------------------
-void cpu_loop()
+static void * cpu_loop(void *ptr)
 {
-	cpu_state_change(EM400_STATE_STOP, EM400_STATE_ANY);
+	LOG(L_CPU, "Starting CPU loop");
+	bool quit = false;
 	clock_gettime(CLOCK_MONOTONIC, &cpu_timer);
 
-	while (1) {
+	while (!quit) {
 		int cpu_time = 0;
 
 		switch (atomic_load_explicit(&cpu_state, memory_order_acquire)) {
@@ -608,7 +605,8 @@ void cpu_loop()
 				break;
 			case EM400_STATE_OFF:
 				if (sound_enabled) buzzer_stop();
-				return;
+				quit = true;
+				break;
 			case EM400_STATE_CLO:
 				if (sound_enabled) buzzer_stop();
 				cpu_do_clear(true);
@@ -657,6 +655,9 @@ void cpu_loop()
 
 		if (speed_real) cpu_timekeeping(cpu_time);
 	}
+
+	LOG(L_CPU, "Exiting CPU loop");
+	pthread_exit(NULL);
 }
 
 // vim: tabstop=4 shiftwidth=4 autoindent

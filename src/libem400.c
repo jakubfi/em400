@@ -68,10 +68,8 @@ const char * em400_version()
 // -----------------------------------------------------------------------
 int em400_init(struct em400_cfg_mem *c_mem, struct em400_cfg_cpu *c_cpu, struct em400_cfg_buzzer *c_buzzer)
 {
-	if (mem_configure(c_mem) != E_OK) return LOGERR("Failed to configure memory");
-	if (cpu_configure(c_cpu, c_buzzer) != E_OK) return LOGERR("Failed to configure CPU");
-	if (mem_init() != E_OK) return LOGERR("Failed to initialize memory.");
-	if (cpu_init() != E_OK) return LOGERR("Failed to initialize CPU.");
+	if (mem_init(c_mem) != E_OK) return LOGERR("Failed to initialize memory.");
+	if (cpu_init(c_cpu, c_buzzer) != E_OK) return LOGERR("Failed to initialize CPU.");
 	if (io_init() != E_OK) return LOGERR("Failed to initialize I/O.");
 
 	return E_OK;
@@ -342,12 +340,6 @@ void em400_cp_oprq()
 void em400_cp_reg_select(int reg_id)
 {
 	cp_reg_select(reg_id);
-}
-
-// -----------------------------------------------------------------------
-void em400_off()
-{
-	cp_off();
 }
 
 // -----------------------------------------------------------------------

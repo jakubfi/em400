@@ -181,7 +181,7 @@ void em400_cp_oprq();
 // rotary
 void em400_cp_reg_select(int reg_id);
 // ignition
-void em400_off(); // TODO: on + led?
+// off?
 
 // -----------------------------------------------------------------------
 // --- EM400 CONTROL PANEL EXTENSIONS ------------------------------------
