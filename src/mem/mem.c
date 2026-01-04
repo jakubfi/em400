@@ -32,6 +32,8 @@
 
 typedef int (*mem_cmd_f)(int segment, int page, int module, int frame, int flags);
 
+bool mem_initialized;
+
 static mem_cmd_f mem_cmd_handlers[MEM_MODULES];
 static uint16_t *mem_map_reads[MEM_SEGMENTS][MEM_PAGES];
 static uint16_t *mem_map_writes[MEM_SEGMENTS][MEM_PAGES];
@@ -64,6 +66,10 @@ int mem_init(struct em400_cfg_mem *c_mem)
 {
 	int res;
 
+	if (mem_initialized) {
+		return LOGERR("Memory already initialized");
+	}
+
 	elwro_modules = c_mem->elwro_modules;
 	mega_modules = c_mem->mega_modules;
 
@@ -90,7 +96,7 @@ int mem_init(struct em400_cfg_mem *c_mem)
 	);
 
 	mem_update_map();
-
+	mem_initialized = true;
 	return E_OK;
 }
 
@@ -99,8 +105,13 @@ void mem_shutdown()
 {
 	LOG(L_MEM, "Shutdown memory");
 
+	if (!mem_initialized) {
+		return;
+	}
+
 	mem_mega_shutdown();
 	mem_elwro_shutdown();
+	mem_initialized = false;
 }
 
 // -----------------------------------------------------------------------

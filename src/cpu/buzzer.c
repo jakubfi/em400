@@ -113,13 +113,24 @@ void buzzer_stop()
 void buzzer_shutdown()
 {
 	free(snd_buf_float);
+	snd_buf_float = NULL;
+
 	free(snd_buf_output);
-	if (snd) snd->shutdown();
+	snd_buf_output = NULL;
+
+	if (snd) {
+		snd->shutdown();
+		snd = NULL;
+	}
 }
 
 // -----------------------------------------------------------------------
 int buzzer_init(struct em400_cfg_buzzer *cfg)
 {
+	if (snd) {
+		return LOGERR("Buzzer aldeary initialized");
+	}
+
 	sample_period = 1000000000.0f / cfg->sample_rate;
 	buffer_len = cfg->buffer_len;
 

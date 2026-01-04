@@ -24,6 +24,8 @@
 
 #include "log.h"
 
+bool mem_elwro_initialized;
+
 #define MEM_ELWRO_FRAMES 8
 
 #define RAL(segment, page) (((segment)<<4) + (page))
@@ -35,8 +37,22 @@ static int mem_elwro_os_frames;									// number of frames hardwired for OS
 static int mem_elwro_first_module, mem_elwro_last_module;		// modules allocated for Elwro
 
 // -----------------------------------------------------------------------
+static void mem_elwro_free()
+{
+	for (int module=mem_elwro_first_module ; module<=mem_elwro_last_module ; module++) {
+		for (int frame=0 ; frame<MEM_ELWRO_FRAMES ; frame++) {
+			free(mem_elwro[module][frame]);
+			mem_elwro[module][frame] = NULL;
+		}
+	}
+}
+
+// -----------------------------------------------------------------------
 int mem_elwro_init(int module_count, int os_pages)
 {
+	if (mem_elwro_initialized) {
+		return LOGERR("Elwro memory already initialized");
+	}
 	if (module_count <= 0) {
 		LOG(L_MEM, "No Elwro modules");
 		return E_OK;
@@ -59,13 +75,16 @@ int mem_elwro_init(int module_count, int os_pages)
 		for (int frame=0 ; frame<MEM_ELWRO_FRAMES ; frame++) {
 			mem_elwro[module][frame] = (uint16_t *) calloc(sizeof(uint16_t), MEM_FRAME_SIZE);
 			if (!mem_elwro[module][frame]) {
-				return LOGERR("Memory allocation failed for Elwro map.");
+				LOGERR("Memory allocation failed for Elwro map.");
+				mem_elwro_free();
+				return E_ERR;
 			}
 		}
 	}
 
 	mem_elwro_reset();
 
+	mem_elwro_initialized = true;
 	return E_OK;
 }
 
@@ -74,11 +93,11 @@ void mem_elwro_shutdown()
 {
 	LOG(L_MEM, "Shutting down Elwro memory");
 
-	for (int module=mem_elwro_first_module ; module<=mem_elwro_last_module ; module++) {
-		for (int frame=0 ; frame<MEM_ELWRO_FRAMES ; frame++) {
-			free(mem_elwro[module][frame]);
-		}
+	if (!mem_elwro_initialized) {
+		return;
 	}
+	mem_elwro_free();
+	mem_elwro_initialized = false;
 }
 
 // -----------------------------------------------------------------------
@@ -101,6 +120,8 @@ void mem_elwro_reset()
 bool mem_elwro_get_seg_ptrs(int segment, int page, uint16_t **rd_frame_ptr, uint16_t **wr_frame_ptr)
 {
 	// find lowest frame that has segment:page stored in its RAL
+	// NOTE: this is not how Elwro memory works, but let's not emulate
+	// unsupported module configurations with >1 modules driving the bus
 	for (int module=mem_elwro_first_module ; module<=mem_elwro_last_module ; module++) {
 		for (int frame=0 ; frame<MEM_ELWRO_FRAMES ; frame++) {
 			if (mem_elwro_ral[module][frame] == RAL(segment, page)) {

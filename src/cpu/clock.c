@@ -31,6 +31,7 @@
 
 static pthread_t clock_th;
 static sem_t clock_quit;
+static bool clock_initialized;
 
 static unsigned clock_period;
 static atomic_uint clock_int;
@@ -60,26 +61,34 @@ static void * clock_thread(void *ptr)
 }
 
 // -----------------------------------------------------------------------
-int clock_init(unsigned period, bool enabled)
+int clock_init(unsigned period)
 {
+	if (clock_initialized) {
+		return LOGERR("Clock already initialized");
+	}
+
 	if ((period != 2) && (period != 4) && (period != 8) && (period != 10) && (period != 20)) {
 		return LOGERR("Valid clock periods are: 2, 4, 8, 10, 20, not %i", period);
 	}
 
-	LOG(L_CPU, "Clock period: %i ms (%s)", period, enabled ? "enabled" : "disabled");
-
 	clock_period = period;
-	atomic_store_explicit(&clock_enabled, enabled, memory_order_relaxed);
+	atomic_store_explicit(&clock_enabled, false, memory_order_relaxed);
 	atomic_store_explicit(&clock_int, INT_CLOCK, memory_order_relaxed);
+
 	if (sem_init(&clock_quit, 0, 0)) {
 		return LOGERR("Failed to initialize clock semaphore.");
 	}
 	if (pthread_create(&clock_th, NULL, clock_thread, NULL)) {
-		return LOGERR("Failed to spawn clock thread.");
+		LOGERR("Failed to spawn clock thread.");
+		sem_destroy(&clock_quit);
+		return E_ERR;
 	}
 	if (pthread_setname_np(clock_th, "clock")) {
-		return LOGERR("Failed to set clock thread name.");
+		LOG(L_CPU, "Failed to set clock thread name.");
 	}
+
+	clock_initialized = true;
+	LOG(L_CPU, "Clock period: %i ms", period);
 
 	return E_OK;
 }
@@ -88,12 +97,15 @@ int clock_init(unsigned period, bool enabled)
 void clock_shutdown()
 {
 	LOG(L_CPU, "Shutting down clock");
-	if (clock_th) {
-		sem_post(&clock_quit);
-		pthread_join(clock_th, NULL);
-		clock_th = 0;
+
+	if (!clock_initialized) {
+		return;
 	}
+
+	sem_post(&clock_quit);
+	pthread_join(clock_th, NULL);
 	sem_destroy(&clock_quit);
+	clock_initialized = false;
 }
 
 // -----------------------------------------------------------------------

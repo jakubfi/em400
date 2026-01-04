@@ -45,6 +45,7 @@ int alsa_init(struct em400_cfg_buzzer *cfg)
 
 	err = snd_pcm_set_params(handle, pcm_format, pcm_access, channels, rate, resample, latency_us);
 	if (err < 0) {
+		snd_pcm_close(handle);
 		return LOGERR("ALSA snd_pcm_set_params() error: %s", snd_strerror(err));
 	}
 

@@ -76,6 +76,16 @@ int em400_init(struct em400_cfg_mem *c_mem, struct em400_cfg_cpu *c_cpu, struct 
 }
 
 // -----------------------------------------------------------------------
+void em400_shutdown()
+{
+	LOG(L_EM4H, "Shutting down EM400 instance");
+	brk_del_all();
+	io_shutdown();
+	cpu_shutdown();
+	mem_shutdown();
+}
+
+// -----------------------------------------------------------------------
 int em400_io_channel_init(unsigned chnum, unsigned channel_type)
 {
 	return io_channel_init(chnum, channel_type);
@@ -145,16 +155,6 @@ int em400_dev_load_image(unsigned chnum, unsigned devnum, unsigned slot, const c
 const char * em400_dev_get_image(unsigned chnum, unsigned devnum, unsigned slot)
 {
 	return io_dev_get_image(chnum, devnum, slot);
-}
-
-// -----------------------------------------------------------------------
-void em400_shutdown()
-{
-	LOG(L_EM4H, "Shutting down EM400 instance");
-	brk_del_all();
-	io_shutdown();
-	cpu_shutdown();
-	mem_shutdown();
 }
 
 // -----------------------------------------------------------------------

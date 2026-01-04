@@ -30,18 +30,37 @@
 
 #define MEM_MEGA_FRAMES MEM_FRAMES	// frames in mega module
 
+bool mem_mega_initialized;
+
 uint16_t mem_mega_frame_devnull[MEM_FRAME_SIZE];			// writes to nonexistent frames land here
 uint16_t mem_mega_frame_ffff[MEM_FRAME_SIZE];				// reads from nonexistent frames return 0xffff
 uint16_t *mem_mega[MEM_MODULES][MEM_MEGA_FRAMES];			// physical memory frames
 uint16_t *mem_mega_map[MEM_SEGMENTS][MEM_PAGES];			// internal logical->physical mapping
 
-static int mem_mega_first_module, mem_mega_last_module;   	// modules allocated for MEGA
+static int mem_mega_first_module;						   	// first module allocated for MEGA
 static bool mem_mega_prom_hidden;							// is PROM hidden?
 static bool mem_mega_alloc_done;							// is initialization done?
 
 // -----------------------------------------------------------------------
+static void mem_mega_free()
+{
+	for (int module=mem_mega_first_module ; module<MEM_MODULES ; module++) {
+		for (int frame=0 ; frame<MEM_MEGA_FRAMES ; frame++) {
+			if (mem_mega[module][frame] != mem_mega_frame_ffff) {
+				free(mem_mega[module][frame]);
+			}
+			mem_mega[module][frame] = NULL;
+		}
+	}
+}
+
+// -----------------------------------------------------------------------
 int mem_mega_init(int module_count, const char *prom_image)
 {
+	if (mem_mega_initialized) {
+		return LOGERR("MEGA memory already initialized");
+	}
+
 	if (module_count <= 0) {
 		LOG(L_MEM, "No MEGA modules");
 		return E_OK;
@@ -54,22 +73,6 @@ int mem_mega_init(int module_count, const char *prom_image)
 	memset(mem_mega_frame_ffff, 0xff, 2*MEM_FRAME_SIZE);
 
 	mem_mega_first_module = MEM_MODULES - module_count;
-	mem_mega_last_module = MEM_MODULES - 1;
-
-	LOG(L_MEM, "MEGA modules: %d-%d, %d frames each", mem_mega_first_module, mem_mega_last_module, MEM_MEGA_FRAMES);
-
-	for (int module=0 ; module<MEM_MODULES ; module++) {
-		for (int frame=0 ; frame<MEM_MEGA_FRAMES ; frame++) {
-			if (module < mem_mega_first_module) {
-				mem_mega[module][frame] = mem_mega_frame_ffff;
-			} else {
-				mem_mega[module][frame] = (uint16_t *) calloc(sizeof(uint16_t), MEM_FRAME_SIZE);
-				if (!mem_mega[module][frame]) {
-					return LOGERR("Memory allocation failed for MEGA map.");
-				}
-			}
-		}
-	}
 
 	// load custom PROM image
 	if (prom_image && *prom_image) {
@@ -80,14 +83,34 @@ int mem_mega_init(int module_count, const char *prom_image)
 		}
 		int res = fread(mem_mega_prom, sizeof(uint16_t), MEM_FRAME_SIZE, f);
 		fclose(f);
+		if (res <= 0) {
+			return LOGERR("Failed to read MEGA PROM image: \"%s\".", prom_image);
+		}
 		endianswap(mem_mega_prom, res);
 		LOG(L_MEM, "Loaded %i words into MEGA PROM segmet", res);
 	} else {
 		LOG(L_MEM, "Using default MEGA PROM");
 	}
 
-	mem_mega_reset(true);
+	LOG(L_MEM, "MEGA modules: %d-%d, %d frames each", mem_mega_first_module, MEM_MODULES-1, MEM_MEGA_FRAMES);
 
+	for (int module=0 ; module<MEM_MODULES ; module++) {
+		for (int frame=0 ; frame<MEM_MEGA_FRAMES ; frame++) {
+			if (module < mem_mega_first_module) {
+				mem_mega[module][frame] = mem_mega_frame_ffff;
+			} else {
+				mem_mega[module][frame] = (uint16_t *) calloc(sizeof(uint16_t), MEM_FRAME_SIZE);
+				if (!mem_mega[module][frame]) {
+					LOGERR("MEGA memory allocation failed");
+					mem_mega_free();
+					return E_ERR;
+				}
+			}
+		}
+	}
+
+	mem_mega_reset(true);
+	mem_mega_initialized = true;
 	return E_OK;
 }
 
@@ -96,11 +119,11 @@ void mem_mega_shutdown()
 {
 	LOG(L_MEM, "Shutting down MEGA memory");
 
-	for (int module=mem_mega_first_module ; module<=mem_mega_last_module ; module++) {
-		for (int frame=0 ; frame<MEM_MEGA_FRAMES ; frame++) {
-			free(mem_mega[module][frame]);
-		}
+	if (!mem_mega_initialized) {
+		return;
 	}
+	mem_mega_free();
+	mem_mega_initialized = false;
 }
 
 // -----------------------------------------------------------------------

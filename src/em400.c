@@ -152,11 +152,11 @@ int em400_top_init(em400_cfg *cfg)
 	bool log_enabled = cfg_getbool(cfg, "log:enabled", CFG_DEFAULT_LOG_ENABLED);
 
 	if (log_init(log_file_name, log_buf_type) != E_OK) {
-		return LOGERR("Failed to initialize logging.");
+		return LOGERR("Failed to initialize logging");
 	}
 	if (log_enabled) {
 		if (log_enable() != E_OK) {
-			return LOGERR("Failed to enable logging.");
+			return LOGERR("Failed to enable logging");
 		}
 	}
 	if (log_setup_components(log_components)) {
@@ -191,10 +191,10 @@ int em400_top_init(em400_cfg *cfg)
 	};
 
 	if (em400_init(&mem_cfg, &cpu_cfg, &buzzer_cfg) != E_OK) {
-		return LOGERR("Failed to initialize EM400.");
+		return LOGERR("Failed to initialize EM400 core");
 	}
 	if (em400_channels_init(cfg) != E_OK) {
-		return LOGERR("Failed to initialize EM400 I/O channels.");
+		return LOGERR("Failed to initialize EM400 I/O channels");
 	}
 
 	return E_OK;
@@ -216,15 +216,15 @@ int em400_preload_program(const char *program_name)
 
 	FILE *f = fopen(program_name, "rb");
 	if (!f) {
-		return LOGERR("Failed to open program file: \"%s\".", program_name);
+		return LOGERR("Failed to open program file: %s", program_name);
 	}
 
 	bool res = em400_load_os_image(f);
 	fclose(f);
 	if (!res) {
-		return LOGERR("Failed to preload program file: \"%s\".", program_name);
+		return LOGERR("Failed to preload program file: %s", program_name);
 	} else {
-		LOG(L_EM4H, "OS memory block preloaded with \"%s\", %i words", program_name, res);
+		LOG(L_EM4H, "OS memory block preloaded with: %s (%i words)", program_name, res);
 	}
 
 	return E_OK;
@@ -353,7 +353,7 @@ int main(int argc, char** argv)
 	em400_mkconfdir();
 
 	if (em400_cmdline_1(argc, argv, &print_help, &config) != E_OK) {
-		LOGERR("Failed to parse commandline arguments.");
+		LOGERR("Failed to parse commandline arguments (pass 1)");
 		goto done;
 	}
 
@@ -368,7 +368,7 @@ int main(int argc, char** argv)
 		const char *cfile = "/.em400/em400.ini";
 		config = (char *) malloc(strlen(home) + strlen(cfile) + 1);
 		if (!config) {
-			LOGERR("Memory allocation error.");
+			LOGERR("Config filename memory allocation error");
 			goto done;
 		}
 		sprintf(config, "%s%s", home, cfile);
@@ -376,30 +376,34 @@ int main(int argc, char** argv)
 
 	cfg = cfg_load(config);
 	if (!cfg) {
-		LOGERR("Failed to load config file: \"%s\".", config);
+		LOGERR("Failed to load config file: %s", config);
 		goto done;
 	}
 
 	// read the commandline again to build final configuration
 	if (em400_cmdline_2(cfg, argc, argv) != E_OK) {
-		LOGERR("Failed to parse commandline arguments.");
+		LOGERR("Failed to parse commandline arguments (pass 2)");
 		goto done;
 	}
 
 	if (em400_top_init(cfg) != E_OK) {
-		LOGERR("Failed to initialize EM400.");
+		LOGERR("Failed to initialize EM400");
 		goto done;
 	}
 
-	em400_preload_program(cfg_getstr(cfg, "memory:preload", CFG_DEFAULT_MEMORY_PRELOAD));
+	const char *program = cfg_getstr(cfg, "memory:preload", CFG_DEFAULT_MEMORY_PRELOAD);
+	if (program && (em400_preload_program(program) != E_OK)) {
+		LOGERR("Preloading OS memory failed: %s", program);
+		goto done;
+	}
 
 	if (!(ui = ui_create(cfg))) {
-		LOGERR("Failed to initialize UI.");
+		LOGERR("Failed to initialize UI");
 		goto done;
 	}
 
 	if (ui_run(ui) != E_OK) {
-		LOGERR("Failed to start the UI: %s.", ui->drv->name);
+		LOGERR("Failed to start the UI: %s", ui->drv->name);
 		goto done;
 	}
 

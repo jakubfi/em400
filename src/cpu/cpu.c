@@ -48,7 +48,9 @@
 #include "log_crk.h"
 #include "cp/brk.h"
 
-static atomic_uint cpu_state = EM400_STATE_STOP;
+bool cpu_initialized;
+
+static atomic_uint cpu_state;
 
 uint16_t r[8];
 uint16_t ic, kb, ir, ac, ar, at;
@@ -278,6 +280,10 @@ int cpu_init(struct em400_cfg_cpu *c_cpu, struct em400_cfg_buzzer *c_buzzer)
 {
 	int res;
 
+	if (cpu_initialized) {
+		return LOGERR("CPU already initialized");
+	}
+
 	awp_enabled = c_cpu->awp;
 	cpu_mod_present = c_cpu->mod;
 	cpu_user_io_illegal = c_cpu->user_io_illegal;
@@ -295,10 +301,22 @@ int cpu_init(struct em400_cfg_cpu *c_cpu, struct em400_cfg_buzzer *c_buzzer)
 	// this is checked only at power-on
 	if (mem_mega_boot()) {
 		ic = 0xf000;
+	} else {
+		ic = 0;
 	}
-
-	cpu_mod_off();
+	r[0] = 0;
+	SR_WRITE(0);
 	int_update_xmask();
+	int_clear_all();
+	rALARM = false;
+	mc = 0;
+	cpu_mod_off();
+	cpu_state = EM400_STATE_STOP;
+
+	if (clock_init(c_cpu->clock_period) != E_OK) {
+		LOGERR("Failed to initialize clock");
+		goto fail;
+	}
 
 	if (sound_enabled) {
 		if (!speed_real) {
@@ -306,20 +324,21 @@ int cpu_init(struct em400_cfg_cpu *c_cpu, struct em400_cfg_buzzer *c_buzzer)
 			sound_enabled = false;
 		} else {
 			if (buzzer_init(c_buzzer) != E_OK) {
-				return LOGERR("Failed to initialize buzzer.");
+				LOGERR("Failed to initialize buzzer.");
+				goto fail;
 			}
 		}
 	}
 
-	if (clock_init(c_cpu->clock_period, false) != E_OK) {
-		return LOGERR("Failed to initialize clock");
-	}
-
 	if (pthread_create(&cpu_thread, NULL, cpu_loop, NULL)) {
-		return LOGERR("Failed to spawn cpu thread.");
+		LOGERR("Failed to spawn cpu thread.");
+		goto fail;
 	}
-	pthread_setname_np(cpu_thread, "cpu");
+	if (pthread_setname_np(cpu_thread, "cpu")) {
+		LOG(L_CPU, "Could not set CPU thread name");
+	}
 
+	cpu_initialized = true;
 	LOG(L_CPU, "CPU initialized. AWP: %s, modifications: %s, user I/O: %s, stop on nomem: %s",
 		awp_enabled ? "enabled" : "disabled",
 		cpu_mod_present ? "present" : "absent",
@@ -330,17 +349,26 @@ int cpu_init(struct em400_cfg_cpu *c_cpu, struct em400_cfg_buzzer *c_buzzer)
 		throttle_granularity);
 
 	return E_OK;
+fail:
+	clock_shutdown();
+	if (sound_enabled) buzzer_shutdown();
+	return E_ERR;
 }
 
 // -----------------------------------------------------------------------
 void cpu_shutdown()
 {
+	if (!cpu_initialized) {
+		return;
+	}
+
 	cpu_state_change(EM400_STATE_OFF, EM400_STATE_ANY);
 	pthread_join(cpu_thread, NULL);
 	clock_shutdown();
 	if (sound_enabled) {
 		buzzer_shutdown();
 	}
+	cpu_initialized = false;
 }
 
 // -----------------------------------------------------------------------

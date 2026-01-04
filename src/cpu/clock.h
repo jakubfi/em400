@@ -24,7 +24,7 @@
 extern "C" {
 #endif
 
-int clock_init(unsigned clock_period, bool enabled);
+int clock_init(unsigned clock_period);
 void clock_shutdown();
 void clock_set(bool state);
 bool clock_get();
