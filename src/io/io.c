@@ -35,7 +35,7 @@
 #include "utils/utils.h"
 #include "log.h"
 
-
+bool io_initialized;
 uv_loop_t *ioloop;
 pthread_t ioloop_thread;
 uv_async_t ioloop_async_quit;
@@ -58,12 +58,6 @@ static void io_ioloop_on_async_quit(uv_async_t *handle)
 }
 
 // -----------------------------------------------------------------------
-static void io_ioloop_setup()
-{
-	uv_async_init(ioloop, &ioloop_async_quit, &io_ioloop_on_async_quit);
-}
-
-// -----------------------------------------------------------------------
 static void * io_ioloop(void *ptr)
 {
 	LOG(L_IO, "Starting UV loop");
@@ -77,15 +71,75 @@ static void * io_ioloop(void *ptr)
 int io_init()
 {
 	LOG(L_IO, "I/O Init");
+
+	if (io_initialized) {
+		return LOGERR("I/O already initialized");
+	}
+
 	ioloop = uv_default_loop();
-	io_ioloop_setup();
+	if (!ioloop) {
+		return LOGERR("Failed to create I/O loop");
+	}
+	if (uv_async_init(ioloop, &ioloop_async_quit, &io_ioloop_on_async_quit)) {
+		uv_loop_close(ioloop);
+		ioloop = NULL;
+		return LOGERR("Failed to initialize async quit handler");
+	}
 
 	if (pthread_create(&ioloop_thread, NULL, io_ioloop, NULL)) {
+		io_ioloop_teardown();
+		uv_run(ioloop, UV_RUN_DEFAULT);
+		uv_loop_close(ioloop);
+		ioloop = NULL;
 		return LOGERR("Failed to spawn main I/O loop thread.");
 	}
-	pthread_setname_np(ioloop_thread, "ioloop");
+	if (pthread_setname_np(ioloop_thread, "ioloop")) {
+		LOG(L_IO, "Failed to set I/O thread name");
+	}
 
+	io_initialized = true;
 	return E_OK;
+}
+
+// -----------------------------------------------------------------------
+void io_shutdown()
+{
+	LOG(L_IO, "I/O system shutdown");
+
+	if (!io_initialized) {
+		return;
+	}
+
+	// stop ioloop and its thread
+	uv_async_send(&ioloop_async_quit);
+	pthread_join(ioloop_thread, NULL);
+	LOG(L_IO, "I/O loop thread joined");
+
+	for (int c_num=0 ; c_num<IO_MAX_CHAN ; c_num++) {
+		chan_t *chan = io_chan[c_num];
+		if (chan && chan->shutdown) {
+			LOG(L_IO, "Shutdown channel %i", c_num);
+			chan->shutdown(chan);
+		}
+	}
+	LOG(L_IO, "All I/O channels shut down");
+
+	io_ioloop_teardown();
+
+	// give libuv chance to cleanup handles and asynchronously free resources
+	uv_run(ioloop, UV_RUN_DEFAULT);
+	LOG(L_IO, "I/O loop cleanup run finished");
+
+	int res = uv_loop_close(ioloop);
+	if (res < 0) {
+		LOG(L_IO, "I/O loop failed to close cleanly: %s", uv_strerror(res));
+	} else {
+		LOG(L_IO, "I/O loop closed cleanly");
+	}
+
+	ioloop = NULL;
+	io_initialized = false;
+	LOG(L_IO, "I/O system shut down");
 }
 
 // -----------------------------------------------------------------------
@@ -177,42 +231,6 @@ const char * io_dev_get_image(unsigned chnum, unsigned devnum, unsigned slot)
 		return NULL;
 	}
 	return dev->image(dev, slot);
-}
-
-// -----------------------------------------------------------------------
-void io_shutdown()
-{
-	LOG(L_IO, "I/O system shutdown");
-
-	// stop ioloop and its thread
-	uv_async_send(&ioloop_async_quit);
-	pthread_join(ioloop_thread, NULL);
-	LOG(L_IO, "I/O loop thread joined");
-
-	for (int c_num=0 ; c_num<IO_MAX_CHAN ; c_num++) {
-		chan_t *chan = io_chan[c_num];
-		if (chan) {
-			LOG(L_IO, "Shutdown channel %i", c_num);
-			chan->shutdown(chan);
-		}
-	}
-	LOG(L_IO, "All I/O channels shut down");
-
-	io_ioloop_teardown();
-	LOG(L_IO, "I/O loop torn down");
-
-	// give libuv chance to cleanup handles and asynchronously free resources
-	uv_run(ioloop, UV_RUN_DEFAULT);
-	LOG(L_IO, "I/O loop cleanup run finished");
-
-	int res = uv_loop_close(ioloop);
-	if (res < 0) {
-		LOG(L_IO, "I/O loop failed to close cleanly: %s", uv_strerror(res));
-	} else {
-		LOG(L_IO, "I/O loop closed cleanly");
-	}
-
-	LOG(L_IO, "I/O system shut down");
 }
 
 // -----------------------------------------------------------------------
