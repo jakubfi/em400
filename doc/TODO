@@ -1,6 +1,5 @@
-Known issues:
+Notes:
 
-* run/shutdown vs stop/start poweron/poweroff? is it required?
 * make uzfx/sp45de async?
 * shutdown() can be always called?
 * handling errors during initialization
@@ -18,6 +17,9 @@ Known issues:
 * make sure terminal is TCP only
 * ensure consistent device naming
 * check for unconnected devices, unset callbacks
+
+Known issues:
+
 * review UZDAT H/W modification
 * expose UZDAT H/W modification for terminals (in config)
 
@@ -46,8 +48,8 @@ I/O:
 * cmem
 * cchar
 * plix
-* terminal (console, tcp, serial)
 * MULTIX:
+  * terminal
   * winchester:
     * one controller for all drives (?)
     * spare sectors area (requires h/w marking sectors as bad and sector addresses)
