@@ -257,7 +257,7 @@ static void cpu_mem_fail(bool barnb)
 bool cpu_mem_read_1(bool barnb, uint16_t addr, uint16_t *data)
 {
 	if (!mem_read_1(barnb * nb, addr, data)) {
-		log_cpu(L_CPU, "Read segmentation fault @ %i:0x%04x", barnb*nb, addr);
+		LOGCPU(L_CPU, "Read segmentation fault @ %i:0x%04x", barnb*nb, addr);
 		cpu_mem_fail(barnb);
 		return false;
 	}
@@ -268,7 +268,7 @@ bool cpu_mem_read_1(bool barnb, uint16_t addr, uint16_t *data)
 bool cpu_mem_write_1(bool barnb, uint16_t addr, uint16_t data)
 {
 	if (!mem_write_1(barnb * nb, addr, data)) {
-		log_cpu(L_CPU, "Write segmentation fault @ %i:0x%04x (data: 0x%04x)", barnb*nb, addr, data);
+		LOGCPU(L_CPU, "Write segmentation fault @ %i:0x%04x (data: 0x%04x)", barnb*nb, addr, data);
 		cpu_mem_fail(barnb);
 		return false;
 	}
@@ -544,8 +544,8 @@ P3_P4_P5:
 
 	if (op->fun != op_77_md) mc = 0;
 
+	LOGDASM((op->flags & (OP_FL_ARG_NORM | OP_FL_ARG_SHORT)), ac, "");
 	// execute instruction
-	log_dasm((op->flags & (OP_FL_ARG_NORM | OP_FL_ARG_SHORT)), ac, "");
 	op->fun();
 	instruction_time += op->time;
 
@@ -566,11 +566,11 @@ P2: // ineffective and illegal instructions handler
 	xi = (flags & OP_FL_ILLEGAL) || (q && (flags & OP_FL_USR_ILLEGAL)) || ((op->fun == op_77_md) && (mc == 3));
 	if (xi && !p) {
 		// instruction is illegal and skip flag is not set
-		log_dasm(0, 0, "ILL: ");
+		LOGDASM(0, 0, "ILL: ");
 		int_set(INT_ILLEGAL_INSTRUCTION);
 	} else {
 		// instruction is ineffective, immediate word argument is skipped
-		log_dasm(0, 0, "NEF: ");
+		LOGDASM(0, 0, "NEF: ");
 		if ((flags & OP_FL_ARG_NORM) && !IR_C) ic++;
 	}
 	instruction_time += TIME_P;

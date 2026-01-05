@@ -62,12 +62,18 @@ void log_cpu(unsigned component, const char *msgfmt, ...);
 #define LOG_ENABLED atomic_load_explicit(&log_components_enabled, memory_order_relaxed)
 #define LOG_WANTS(component) (LOG_ENABLED & (1 << (component)))
 
-#define LOG(component, format, ...) log_log(component, __func__, format, ##__VA_ARGS__)
+#define LOG(component, format, ...) \
+	if (LOG_WANTS(component)) log_log(component, __func__, format, ##__VA_ARGS__)
+#define LOGCPU(component, format, ...) \
+	if (LOG_WANTS(component)) log_cpu(component, format, ##__VA_ARGS__)
 #define LOGERR(format, ...) log_err(__func__, format, ##__VA_ARGS__)
-#define LOGBLOB(component, txt) log_splitlog(component, __func__, txt)
+#define LOGBLOB(component, txt) \
+	if (LOG_WANTS(component)) log_splitlog(component, __func__, txt)
 #define LOGCHAR(component, format, str, ch) \
-	if (isprint(ch)) LOG(component, format "'%c'", str, ch); \
-	else LOG(component, format "#%02x", str, ch);
+	if (isprint(ch)) { LOG(component, format "'%c'", str, ch); } \
+	else { LOG(component, format "#%02x", str, ch); }
+#define LOGDASM(arg, ac, comment) \
+	if (LOG_WANTS(L_CPU)) log_dasm(arg, ac, comment);
 
 #ifdef __cplusplus
 }
