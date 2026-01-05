@@ -17,6 +17,7 @@
 
 #include <stdlib.h>
 #include <inttypes.h>
+#include <assert.h>
 
 #include "log.h"
 
@@ -185,39 +186,19 @@ struct iset_instruction em400_ilist[] = {
 };
 
 // -----------------------------------------------------------------------
-static int iset_register_op(struct iset_opcode **op_tab, struct iset_instruction *instr)
+static inline void iset_register_op(struct iset_opcode **op_tab, const struct iset_instruction *instr)
 {
-	int offsets[16];
+	uint16_t result = 0;
+	uint16_t mask = instr->var_mask;
 
-	// store 1's positions in mask, count 1's
-	int one_count = 0;
-	for (int i=0 ; i<16 ; i++) {
-		if (instr->var_mask & (1 << i)) {
-			offsets[one_count] = i;
-			one_count++;
-		}
-	}
-
-	int max = (1 << one_count) - 1;
-
-	// iterate over all variants (as indicated by the mask)
-	for (int i=0 ; i<=max ; i++) {
-		uint16_t result = 0;
-		// shift 1's into positions
-		for (int pos=one_count-1 ; pos>=0 ; pos--) {
-			result |= ((i >> pos) & 1) << offsets[pos];
-		}
-
-		struct iset_opcode *op = op_tab[instr->opcode | result];
-
+	do {
+		struct iset_opcode **op = &op_tab[instr->opcode | result];
 		// sanity check: we don't want to overwrite non-illegal registered ops
-		if ((op) && (op->fun != NULL)) {
-			return LOGERR("Trying to overwrite non-illegal registered op 0x%04x.", (instr->opcode | result));
-		}
-		// register the op
-		op_tab[instr->opcode | result] = &instr->op;
-	}
-	return E_OK;
+		assert((*op == NULL) || ((*op)->fun == NULL));
+		*op = (struct iset_opcode *) &instr->op;
+		// Gosper's hack
+		result = (result - mask) & mask;
+	} while (result != 0);
 }
 
 // -----------------------------------------------------------------------
@@ -233,9 +214,7 @@ int iset_build(struct iset_opcode **op_tab, int cpu_user_io_illegal)
 				instr->op.flags &= ~OP_FL_USR_ILLEGAL;
 			}
 		}
-		if (iset_register_op(op_tab, instr) != E_OK) {
-			return LOGERR("Failed to register op 0x%04x.", instr->opcode);
-		}
+		iset_register_op(op_tab, instr);
 		instr++;
 	}
 	return E_OK;
