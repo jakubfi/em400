@@ -135,7 +135,9 @@ chan_t * it_create(int chnum)
 
 	char name[16];
 	snprintf(name, sizeof(name), "iotest%02i", it->base.num);
-	pthread_setname_np(it->thread, name);
+	if (pthread_setname_np(it->thread, name)) {
+		LOG(L_IO, "Failed to set iotester thread name");
+	}
 
 	LOG(L_IO, "I/O tester created");
 
@@ -146,6 +148,11 @@ chan_t * it_create(int chnum)
 struct it_event *it_event_new(int type, int cmd, uint16_t r)
 {
 	struct it_event *ev = (struct it_event *) calloc(1, sizeof(struct it_event));
+	if (!ev) {
+		LOG(L_IO, "Failed to allocate memory for iotester event");
+		return NULL;
+	}
+
 	ev->type = type;
 	ev->cmd = cmd;
 	ev->r = r;
@@ -203,6 +210,10 @@ static void * it_cmdproc(void *ptr)
 
 	while (!quit) {
 		struct it_event *ev = (struct it_event *) elst_wait_pop(it->evq, 0);
+		if (!ev) {
+			LOG(L_IO, "iotester worker got a NULL event, skipping");
+			continue;
+		}
 		switch (ev->type) {
 			case EV_QUIT:
 				LOG(L_IO, "Quit");
