@@ -111,7 +111,7 @@ chan_t * it_create(int chnum)
 	}
 
 	it->base.num = chnum;
-	it->base.type = CHAN_IOTESTER;
+	it->base.type = EM400_CHANNEL_IOTESTER;
 	it->base.cmd = it_cmd;
 	it->base.reset = it_reset;
 	it->base.shutdown = it_shutdown;

@@ -23,13 +23,6 @@
 #include "io/defs.h"
 #include "io/dev/dev.h"
 
-typedef enum chan_types {
-	CHAN_CHAR,
-	CHAN_MULTIX,
-	CHAN_IOTESTER,
-	CHAN_TYPE_COUNT
-} chan_type_t;
-
 typedef struct chan chan_t;
 
 // TODO: needs further cleaning (possibly move down, as interpretation is channel-specific)
@@ -52,7 +45,7 @@ typedef int (*chan_f_connect_dev)(chan_t *chan, int devnum, em400_dev_t *dev);
 
 struct chan {
 	int num;
-	chan_type_t type;
+	int type;
 	em400_dev_t *device[32];
 	chan_f_connect_dev connect_dev;	// connects a device to the channel
 	chan_f_cmd cmd;					// handles I/O command from the CPU

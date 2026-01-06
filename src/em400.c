@@ -1,4 +1,4 @@
-//  Copyright (c) 2012-2013 Jakub Filipowicz <jakubf@gmail.com>
+//  Copyright (c) 2012-2026 Jakub Filipowicz <jakubf@gmail.com>
 //
 //  This program is free software; you can redistribute it and/or modify
 //  it under the terms of the GNU General Public License as published by
@@ -17,40 +17,17 @@
 
 #include <stdlib.h>
 #include <stdio.h>
-#include <string.h>
 #include <strings.h>
 #include <unistd.h>
 #include <stdarg.h>
-#include <sys/time.h>
 #include <sys/stat.h>
 #include <sys/types.h>
 
+#include "libem400.h"
 #include "ui/ui.h"
-#include "cp/cp.h"
-#include "cpu/cpu.h"
-#include "mem/mem.h"
-#include "cpu/interrupts.h"
-#include "cpu/clock.h"
-#include "io/io.h"
-#include "io/chan.h"
-#include "io/dev/dev.h"
-#include "io/dev/terminal.h"
-#include "io/dev/sp45de.h"
-
 #include "cfg.h"
-
 #include "log.h"
 
-
-struct io_chan_types {
-	const char *name;
-	unsigned type;
-} io_chan_types[] = {
-	{"multix", CHAN_MULTIX},
-	{"char", CHAN_CHAR},
-	{"iotester", CHAN_IOTESTER},
-	{NULL, 0}
-};
 
 // -----------------------------------------------------------------------
 int em400_device_init(em400_cfg *cfg, const char *dev_type_name, int chnum, int devnum)
@@ -65,7 +42,7 @@ int em400_device_init(em400_cfg *cfg, const char *dev_type_name, int chnum, int 
 		}
 		const int port = cfg_fgetint(cfg, "dev%i.%i:port", chnum, devnum);
 		if (port == -1) {
-			return LOGERR("Device %i.%i: TCP terminal needs port to be set.", chnum, devnum);
+			return LOGERR("Device %i.%i: terminal needs TCP port to be set.", chnum, devnum);
 		}
 		int speed = cfg_fgetint(cfg, "dev%i.%i:speed", chnum, devnum);
 		if (speed == -1) {
@@ -97,31 +74,27 @@ int em400_device_init(em400_cfg *cfg, const char *dev_type_name, int chnum, int 
 }
 
 // -----------------------------------------------------------------------
-static struct io_chan_types * find_chan_type(const char *name)
-{
-	struct io_chan_types *chmap = io_chan_types;
-	while (chmap && chmap->name) {
-		if (!strcasecmp(name, chmap->name)) {
-			return chmap;
-		}
-		chmap++;
-	}
-	return NULL;
-}
-
-// -----------------------------------------------------------------------
 int em400_channels_init(em400_cfg *cfg)
 {
+	int res;
+
 	for (int chnum=0 ; chnum<16 ; chnum++) {
 		const char *ch_name = cfg_fgetstr(cfg, "io:channel_%i", chnum);
 		if (!ch_name) continue;
 
 		LOG(L_EM4H, "Initializing I/O channel %i: %s", chnum, ch_name);
-		const struct io_chan_types *chmap = find_chan_type(ch_name);
-		if (!chmap) {
+
+		if (!strcasecmp(ch_name, "char")) {
+			res = em400_io_channel_init(chnum, EM400_CHANNEL_CHAR);
+		} else if (!strcasecmp(ch_name, "multix")) {
+			res = em400_io_channel_init(chnum, EM400_CHANNEL_MULTIX);
+		} else if (!strcasecmp(ch_name, "iotester")) {
+			res = em400_io_channel_init(chnum, EM400_CHANNEL_IOTESTER);
+		} else {
 			return LOGERR("Unknown channel %i type: %s", chnum, ch_name);
 		}
-		if (em400_io_channel_init(chnum, chmap->type) != E_OK) {
+
+		if (res != E_OK) {
 			return LOGERR("Channel %i (%s) initialization error", chnum, ch_name);
 		}
 
@@ -142,7 +115,6 @@ int em400_channels_init(em400_cfg *cfg)
 // -----------------------------------------------------------------------
 int em400_top_init(em400_cfg *cfg)
 {
-
 	const char *log_file_name = cfg_getstr(cfg, "log:file", CFG_DEFAULT_LOG_FILE);
 	em400_log_buf_type_t log_buf_type =
 		cfg_getbool(cfg, "log:line_buffered", CFG_DEFAULT_LOG_LINE_BUFFERED)
@@ -301,7 +273,6 @@ int em400_cmdline_2(em400_cfg *cfg, int argc, char **argv)
 {
     int option;
     optind = 1; // reset to 1 so consecutive calls work
-	char *key, *val, *colon;
 
     while ((option = getopt(argc, argv, em400_cmdline_opts)) != -1) {
         switch (option) {
@@ -322,9 +293,9 @@ int em400_cmdline_2(em400_cfg *cfg, int argc, char **argv)
                 cfg_set(cfg, "ui:interface", optarg);
                 break;
 			case 'O':
-				colon = strchr(optarg, ':');
-				key = strtok(optarg, "=");
-				val = strtok(NULL, "=");
+				const char *colon = strchr(optarg, ':');
+				const char *key = strtok(optarg, "=");
+				const char *val = strtok(NULL, "=");
 				if (!colon || !key || !val) {
 					return LOGERR("Syntax error for -O switch. Should be: -O section:key=value");
 				}

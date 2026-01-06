@@ -26,15 +26,15 @@
 typedef chan_t * (*chan_create_f)(int ch_num);
 
 static const chan_create_f chan_constructor[] = {
-	[CHAN_CHAR] = cchar_create,
-	[CHAN_IOTESTER] = it_create,
-	[CHAN_MULTIX] = mx_create,
+	[EM400_CHANNEL_CHAR] = cchar_create,
+	[EM400_CHANNEL_IOTESTER] = it_create,
+	[EM400_CHANNEL_MULTIX] = mx_create,
 };
 
 // -----------------------------------------------------------------------
 chan_t * chan_create(unsigned num, unsigned type)
 {
-	if (type >= CHAN_TYPE_COUNT) {
+	if (type >= EM400_CHANNEL_TYPE_COUNT) {
 		LOGERR("Unknown channel type: %d", type);
 		return NULL;
 	}

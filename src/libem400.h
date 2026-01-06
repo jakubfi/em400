@@ -113,6 +113,21 @@ enum em400_cpu_states {
 	EM400_STATE_UNKNOWN,
 };
 
+enum em400_device_types {
+	EM400_DEV_NONE = -1,
+	EM400_DEV_TERMINAL,
+	EM400_DEV_SP45DE,
+	EM400_DEV_WINCHESTER,
+	EM400_DEV_FLOP5,
+};
+
+enum em400_channel_types {
+	EM400_CHANNEL_CHAR,
+	EM400_CHANNEL_MULTIX,
+	EM400_CHANNEL_IOTESTER,
+	EM400_CHANNEL_TYPE_COUNT
+};
+
 // -----------------------------------------------------------------------
 // --- LIBRARY -----------------------------------------------------------
 // -----------------------------------------------------------------------

@@ -86,7 +86,7 @@ chan_t * cchar_create(int ch_num)
 	}
 
 	chan->base.num = ch_num;
-	chan->base.type = CHAN_CHAR;
+	chan->base.type = EM400_CHANNEL_CHAR;
 	chan->base.cmd = cchar_cmd;
 	chan->base.reset = cchar_reset;
 	chan->base.shutdown = cchar_shutdown;

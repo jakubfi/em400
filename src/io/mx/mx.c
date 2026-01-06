@@ -118,7 +118,7 @@ chan_t * mx_create(int ch_num)
 	}
 
 	multix->base.num = ch_num;
-	multix->base.type = CHAN_MULTIX;
+	multix->base.type = EM400_CHANNEL_MULTIX;
 	multix->base.cmd = mx_cmd;
 	multix->base.reset = mx_cmd_reset;
 	multix->base.shutdown = mx_shutdown;

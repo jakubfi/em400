@@ -1,4 +1,4 @@
-Notes:
+Work notes:
 
 * make uzfx/sp45de async?
 * shutdown() can be always called?
@@ -11,10 +11,8 @@ Notes:
 * make sure no UI strings are left in the library, use types
 * generalize constructors?
 * cchar controllers don't use parameters - generic initialization?
-* design/add device public interfaces
 * generic callback registration for cchar controllers?
 * reserve L_EM4H for UIs?
-* make sure terminal is TCP only
 * ensure consistent device naming
 * check for unconnected devices, unset callbacks
 
@@ -29,7 +27,7 @@ Cleanups:
 
 Code enhancements (possible):
 
-* librarize
+* make libem400 an actual library?
 
 Features (possible):
 

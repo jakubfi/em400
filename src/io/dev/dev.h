@@ -20,14 +20,6 @@
 
 #include <stdbool.h>
 
-enum em400_device_types {
-	EM400_DEV_NONE = -1,
-	EM400_DEV_TERMINAL,
-	EM400_DEV_SP45DE,
-	EM400_DEV_WINCHESTER,
-	EM400_DEV_FLOP5,
-};
-
 enum dev_cmd_status {
 	DEV_STATUS_OK = 0,
 	DEV_STATUS_ERR,
