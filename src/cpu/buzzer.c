@@ -23,7 +23,7 @@
 #include "libem400.h"
 #include "log.h"
 
-// Tonsil GD 6/0,5 frequency response, more or less
+// Tonsil GD 6/0,5 frequency response, more or less, mostly by ear
 #define SPEAKER_HP 380.0f // 350 Hz
 #define SPEAKER_HP_RES 7.0f
 #define SPEAKER_LP 3200.0f // -10dB @ 4500 Hz
@@ -31,7 +31,7 @@
 
 static const struct snd_drv *snd;
 
-static float sample_period;
+static float sample_period_ns;
 static unsigned buffer_len;
 static float audio_sample;
 
@@ -47,7 +47,7 @@ static sf_biquad_state_st bq_hp;
 // -----------------------------------------------------------------------
 static void buzzer_flush()
 {
-	// apply filter
+	// apply filters
 	sf_biquad_process(&bq_hp, buffer_len, snd_buf_float, snd_buf_float);
 	sf_biquad_process(&bq_lp, buffer_len, snd_buf_float, snd_buf_float);
 
@@ -67,26 +67,25 @@ static void buzzer_flush()
 }
 
 // -----------------------------------------------------------------------
-void buzzer_update(int ir, unsigned instruction_time)
+void buzzer_update(int ir, unsigned instruction_time_ns)
 {
 	static int cnt;
-	static int pir;
-	static double time_pool;
-
+	static int prev_ir;
+	static double time_elapsed_ns;
 
 	// update current level (IR0 div by 16)
-	if ((ir ^ pir) & 0x8000) {
+	if ((ir ^ prev_ir) & 0x8000) {
 		if (++cnt >= 16) { // output changes polarity every 16 changes on the input
 			cnt = 0;
 			audio_sample *= -1;
 		}
 	}
-	pir = ir;
+	prev_ir = ir;
 
 	// fill the sound buffer with available samples
-	time_pool += instruction_time;
-	while (time_pool > sample_period) {
-		time_pool -= sample_period;
+	time_elapsed_ns += instruction_time_ns;
+	while (time_elapsed_ns > sample_period_ns) {
+		time_elapsed_ns -= sample_period_ns;
 		*snd_buf_pos++ = audio_sample;
 
 		// if buffer is full, flush it
@@ -131,7 +130,7 @@ int buzzer_init(struct em400_cfg_buzzer *cfg)
 		return LOGERR("Buzzer aldeary initialized");
 	}
 
-	sample_period = 1000000000.0f / cfg->sample_rate;
+	sample_period_ns = 1000000000.0f / cfg->sample_rate;
 	buffer_len = cfg->buffer_len;
 
 	if (cfg->volume > 100) {
@@ -141,7 +140,7 @@ int buzzer_init(struct em400_cfg_buzzer *cfg)
 		LOGERR("Adjusting sound volume from %i to 0 (min allowed).", cfg->volume);
 		cfg->volume = 0;
 	}
-	audio_sample = (float) cfg->volume * (32767/100)/4; // /4 to accomodate post-processing overdrive
+	audio_sample = (float) cfg->volume * (32767.0f/100.0f) / 4.0f; // /4 to accomodate post-processing overdrive
 
 	snd_buf_output = malloc(sizeof(int16_t) * buffer_len);
 	if (!snd_buf_output) {
