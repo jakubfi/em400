@@ -71,23 +71,6 @@ enum uzdat_dirs {
 	UZDAT_DIR_OUT
 };
 
-enum uzdat_ou_commands {
-	UZDAT_CMD_RESET			= 0b100000, // reset
-	UZDAT_CMD_DISCONNECT	= 0b101000, // disconnect device (soft reset)
-	UZDAT_CMD_WRITE			= 0b110000, // write
-};
-
-enum uzdat_in_commands {
-	UZDAT_CMD_SPU			= 0b100000, // check device presence
-	UZDAT_CMD_READ			= 0b101000, // read
-};
-
-enum cchar_uzdat_interrupts {
-	UZDAT_INT_OUTDATED	= 0, // interrupt out of date
-	UZDAT_INT_READY		= 1, // ready again
-	UZDAT_INT_TOO_SLOW	= 5, // transmission too slow
-};
-
 void uzdat_shutdown(cchar_unit_t *unit);
 void uzdat_reset(cchar_unit_t *unit);
 int uzdat_cmd(cchar_unit_t *unit, int dir, int cmd, uint16_t *r_arg);
@@ -210,19 +193,11 @@ void uzdat_on_data_received(uzdat_t *uzdat, char data)
 	int trigger_interrupt = false;
 
 	pthread_mutex_lock(&uzdat->mutex);
-	// Receive data when in "read" mode (i.e. also ignore incomming data after reset)
-	const bool reading = (uzdat->state != UZDAT_STATE_OFF) && (uzdat->dir == UZDAT_DIR_IN);
-	// Also receive backspace (or del) interpreted as "operator request" in "off" state.
-	// Terminals in CROOK seem to work that way, and it seems to be a modification done
-	// to UZ-DAT board, since vanilla UZ-DAT doesn't support operator request.
-	// TODO: analyze actual UZDAT modification (it sends real OPRQ) and modify the behavior
-	const bool oprq = (uzdat->state == UZDAT_STATE_OFF) && ((data == 8) || (data == 127));
-
-	if (reading || oprq) {
+	if ((uzdat->state == UZDAT_STATE_EN) && (uzdat->dir == UZDAT_DIR_IN)) {
 		if (uzdat->buf_rd >= 0) {
-			uzdat->intspec = UZDAT_INT_TOO_SLOW;
+			uzdat->intspec = CCHAR_INT_TOO_SLOW;
 		} else {
-			uzdat->intspec = UZDAT_INT_READY;
+			uzdat->intspec = CCHAR_INT_READY;
 		}
 		uzdat->buf_rd = data;
 		trigger_interrupt = true;
@@ -243,7 +218,7 @@ void uzdat_on_data_sent(uzdat_t *uzdat)
 
 	pthread_mutex_lock(&uzdat->mutex);
 	if (uzdat->state != UZDAT_STATE_OFF) { // if UZDAT has not been reset
-		uzdat->intspec = UZDAT_INT_READY;
+		uzdat->intspec = CCHAR_INT_READY;
 		uzdat->xfer_busy = false;
 		trigger_interrupt = true;
 	}
@@ -299,7 +274,7 @@ int uzdat_intspec(cchar_unit_t *unit)
 
 	pthread_mutex_lock(&uzdat->mutex);
 	int spec = uzdat->intspec;
-	uzdat->intspec = UZDAT_INT_OUTDATED;
+	uzdat->intspec = CCHAR_INT_OUTDATED;
 	uzdat->state = UZDAT_STATE_OK;
 	pthread_mutex_unlock(&uzdat->mutex);
 
@@ -360,7 +335,7 @@ static void uzdat_on_transmit_switch_timeout(uv_timer_t *handle)
 	// only if UZDAT has not been reset
 	if (uzdat->state != UZDAT_STATE_OFF) {
 		uzdat->dir = UZDAT_DIR_OUT;
-		uzdat->intspec = UZDAT_INT_READY;
+		uzdat->intspec = CCHAR_INT_READY;
 		trigger_interrupt = true;
 	}
 	pthread_mutex_unlock(&uzdat->mutex);
@@ -465,10 +440,10 @@ int uzdat_cmd(cchar_unit_t *unit, int dir, int cmd, uint16_t *r_arg)
 
 	if (dir == IO_IN) {
 		switch (cmd) {
-			case UZDAT_CMD_SPU:
+			case CCHAR_CMD_SPU:
 				LOG(L_UZDAT, "Command: SPU");
 				return IO_OK;
-			case UZDAT_CMD_READ:
+			case CCHAR_CMD_READ:
 				return uzdat_read(uzdat, r_arg);
 			default:
 				LOG(L_UZDAT, "Unknown IN command: %i", cmd);
@@ -476,13 +451,13 @@ int uzdat_cmd(cchar_unit_t *unit, int dir, int cmd, uint16_t *r_arg)
 		}
 	} else {
 		switch (cmd) {
-			case UZDAT_CMD_RESET:
+			case CCHAR_CMD_RESET:
 				LOG(L_UZDAT, "Command: RESET");
 				uzdat_reset(unit);
 				return IO_OK;
-			case UZDAT_CMD_DISCONNECT:
+			case CCHAR_CMD_DETACH:
 				return uzdat_disconnect(uzdat);
-			case UZDAT_CMD_WRITE:
+			case CCHAR_CMD_WRITE:
 				return uzdat_write(uzdat, r_arg);
 			default:
 				LOG(L_UZDAT, "Unknown OU command: %i", cmd);

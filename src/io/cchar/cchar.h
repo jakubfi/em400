@@ -23,6 +23,26 @@
 
 #include "io/chan.h"
 
+enum cchar_ou_commands {
+	CCHAR_CMD_RESET			= 0b100000, // reset
+	CCHAR_CMD_DETACH		= 0b101000, // disconnect device (soft reset)
+	CCHAR_CMD_WRITE			= 0b110000, // write
+};
+
+enum cchar_in_commands {
+	CCHAR_CMD_SPU			= 0b100000, // check device presence
+	CCHAR_CMD_READ			= 0b101000, // read
+};
+
+enum cchar_interrupts {
+	CCHAR_INT_OUTDATED	= 0, // interrupt out of date
+	CCHAR_INT_READY		= 1, // ready again
+	CCHAR_INT_FAILURE	= 2, // failure
+	CCHAR_INT_OPRQ		= 3, // operator request
+	CCHAR_INT_WARNING	= 4, // warning
+	CCHAR_INT_TOO_SLOW	= 5, // transmission too slow
+};
+
 enum cchar_controller_types {
 	CCHAR_UZDAT,
 	CCHAR_FLOP8,

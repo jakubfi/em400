@@ -18,9 +18,6 @@ Work notes:
 
 Known issues:
 
-* review UZDAT H/W modification
-* expose UZDAT H/W modification for terminals (in config)
-
 Cleanups:
 
  * really review breakpoints atomics usage
@@ -41,6 +38,7 @@ CPU:
 
 I/O:
 
+* what is the purpose of UZDAT modification? (older crooks?)
 * speed_real (disk latencies, serial lines, ...)
 * handling no memory for io devices
 * cmem

@@ -26,6 +26,7 @@
 
 #include "io/defs.h"
 #include "io/cchar/cchar.h"
+#include "io/cchar/cchar.h"
 #include "io/cchar/uzfx.h"
 #include "log.h"
 
@@ -57,19 +58,12 @@ static const char *uzfx_state_names[] = {
 
 
 enum uzfx_ou_commands {
-	UZCF_CMD_RESET	= 0b100000, // reset
-	UZFX_CMD_DETACH	= 0b101000, // detach (soft reset)
-	UZFX_CMD_WRITE	= 0b110000, // write
 	UZFX_CMD_CTL_W	= 0b111000, // control for write
 	UZFX_CMD_CTL_WC	= 0b111100, // control for write+check
 	UZFX_CMD_CTL_B	= 0b111110, // control for bad sector
 	UZFX_CMD_CTL_R	= 0b111010, // control for read
 };
 
-enum uzfx_in_commands {
-	UZFX_CMD_SPU	= 0b100000, // check device
-	UZFX_CMD_READ	= 0b101000, // read
-};
 #define UZFX_CMD_QUIT -1
 
 #define UZFX_INT_NONE 0
@@ -553,9 +547,9 @@ int uzfx_cmd(cchar_unit_t *unit, int dir, int cmd, uint16_t *r_arg)
 {
 	if (dir == IO_IN) {
 		switch (cmd) {
-			case UZFX_CMD_SPU:
+			case CCHAR_CMD_SPU:
 				return uzfx_cmd_spu();
-			case UZFX_CMD_READ:
+			case CCHAR_CMD_READ:
 				return uzfx_cmd_read(unit, r_arg);
 			default:
 				LOG(L_UZFX, "unknown IN command: %i", cmd);
@@ -563,11 +557,11 @@ int uzfx_cmd(cchar_unit_t *unit, int dir, int cmd, uint16_t *r_arg)
 		}
 	} else {
 		switch (cmd) {
-			case UZCF_CMD_RESET:
+			case CCHAR_CMD_RESET:
 				return uzfx_cmd_reset(unit);
-			case UZFX_CMD_DETACH:
+			case CCHAR_CMD_DETACH:
 				return uzfx_cmd_detach(unit);
-			case UZFX_CMD_WRITE:
+			case CCHAR_CMD_WRITE:
 				return uzfx_cmd_write(unit, r_arg);
 			case UZFX_CMD_CTL_R:
 			case UZFX_CMD_CTL_W:
