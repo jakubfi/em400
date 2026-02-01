@@ -35,7 +35,7 @@
 
 #include "log.h"
 
-#define XFER_DIR_SWITCH_DELAY 2 // miliseconds
+#define XFER_DIR_SWITCH_DELAY_MS 2
 
 extern uv_loop_t *ioloop;
 
@@ -48,8 +48,9 @@ struct uzdat_s {
 	int state;
 	int dir;
 	bool xfer_busy;
-	char buf_wr;
-	int buf_rd;
+	bool buf_rd_ready;
+	uint8_t buf_wr;
+	uint8_t buf_rd;
 
 	em400_dev_t *dev;
 
@@ -188,18 +189,19 @@ cchar_unit_t * uzdat_create(int dev_num, em400_dev_t *dev)
 // -----------------------------------------------------------------------
 void uzdat_on_data_received(uzdat_t *uzdat, char data)
 {
-	LOGCHAR(L_UZDAT, "%s: ", "Terminal sent data", data);
+	LOGCHAR(L_UZDAT, "%s: ", "Data received from terminal", data);
 
 	int trigger_interrupt = false;
 
 	pthread_mutex_lock(&uzdat->mutex);
-	if ((uzdat->state == UZDAT_STATE_EN) && (uzdat->dir == UZDAT_DIR_IN)) {
-		if (uzdat->buf_rd >= 0) {
+	if ((uzdat->dir == UZDAT_DIR_IN) && (uzdat->state != UZDAT_STATE_OFF)) {
+		if (uzdat->buf_rd_ready) {
 			uzdat->intspec = CCHAR_INT_TOO_SLOW;
-		} else {
+		} else if (uzdat->state == UZDAT_STATE_EN) {
 			uzdat->intspec = CCHAR_INT_READY;
 		}
 		uzdat->buf_rd = data;
+		uzdat->buf_rd_ready = true;
 		trigger_interrupt = true;
 	}
 	pthread_mutex_unlock(&uzdat->mutex);
@@ -235,7 +237,7 @@ static void uzdat_on_async_write(uv_async_t *handle)
 	uzdat_t *uzdat = (uzdat_t*) handle->data;
 
 	pthread_mutex_lock(&uzdat->mutex);
-	char data = uzdat->buf_wr;
+	uint8_t data = uzdat->buf_wr;
 	pthread_mutex_unlock(&uzdat->mutex);
 
 	if (!uzdat->dev) {
@@ -301,10 +303,9 @@ static int uzdat_read(uzdat_t *uzdat, uint16_t *r_arg)
 
 	pthread_mutex_lock(&uzdat->mutex);
 	uzdat->dir = UZDAT_DIR_IN;
-	int data = uzdat->buf_rd & 0xff;
-	if (uzdat->buf_rd >= 0) {
-		*r_arg = (*r_arg & 0xff00) | (data &0xff);
-		uzdat->buf_rd = -1;
+	if (uzdat->buf_rd_ready) {
+		*r_arg = uzdat->buf_rd;
+		uzdat->buf_rd_ready = false;
 		uzdat->state = UZDAT_STATE_OK;
 		ret = IO_OK;
 	} else {
@@ -314,7 +315,7 @@ static int uzdat_read(uzdat_t *uzdat, uint16_t *r_arg)
 	pthread_mutex_unlock(&uzdat->mutex);
 
 	if (ret == IO_OK) {
-		LOGCHAR(L_UZDAT, "%s: ", "READ ready, received: ", data & 0xff);
+		LOGCHAR(L_UZDAT, "%s: ", "READ ready, received: ", (uint8_t) uzdat->buf_rd);
 	} else {
 		LOG(L_UZDAT, "Buffer empty, nothing to read");
 	}
@@ -350,7 +351,7 @@ static void uzdat_on_async_switch_dir(uv_async_t *handle)
 {
 	uzdat_t *uzdat = (uzdat_t*) handle->data;
 
-	uv_timer_start(&uzdat->timer_switch_transmit, uzdat_on_transmit_switch_timeout, XFER_DIR_SWITCH_DELAY, 0);
+	uv_timer_start(&uzdat->timer_switch_transmit, uzdat_on_transmit_switch_timeout, XFER_DIR_SWITCH_DELAY_MS, 0);
 }
 
 // -----------------------------------------------------------------------
@@ -364,14 +365,12 @@ static int uzdat_write(uzdat_t *uzdat, const uint16_t *r_arg)
 	uv_async_t *trigger = NULL;
 	int ret;
 
-	char data = *r_arg & 0xff;
-
 	LOG(L_UZDAT, "Command: WRITE");
 
 	pthread_mutex_lock(&uzdat->mutex);
 	if ((!uzdat->xfer_busy) && (uzdat->dir == UZDAT_DIR_OUT)) {
 		uzdat->state = UZDAT_STATE_OK;
-		uzdat->buf_wr = data;
+		uzdat->buf_wr = *r_arg;
 		uzdat->xfer_busy = true;
 		trigger = &uzdat->async_write;
 		log_msg = log_msgs[0];
@@ -386,7 +385,7 @@ static int uzdat_write(uzdat_t *uzdat, const uint16_t *r_arg)
 	}
 	pthread_mutex_unlock(&uzdat->mutex);
 
-	LOGCHAR(L_UZDAT, "%s: ", log_msg, data);
+	LOGCHAR(L_UZDAT, "%s: ", log_msg, (uint8_t) *r_arg);
 	if (trigger) {
 		if (uv_async_send(trigger)) {
 			LOG(L_UZDAT, "uzdat_write async trigger failed");
@@ -406,8 +405,7 @@ static int uzdat_disconnect(uzdat_t *uzdat)
 	if (!uzdat->xfer_busy) {
 		uzdat->state = UZDAT_STATE_OFF;
 		uzdat->dir = UZDAT_DIR_NONE;
-		uzdat->xfer_busy = false;
-		uzdat->buf_rd = -1;
+		uzdat->buf_rd_ready = false;
 		ret = IO_OK;
 	} else {
 		uzdat->state = UZDAT_STATE_EN;
@@ -429,7 +427,7 @@ void uzdat_reset(cchar_unit_t *unit)
 	uzdat->state = UZDAT_STATE_OFF;
 	uzdat->dir = UZDAT_DIR_NONE;
 	uzdat->xfer_busy = false;
-	uzdat->buf_rd = -1;
+	uzdat->buf_rd_ready = false;
 	pthread_mutex_unlock(&uzdat->mutex);
 }
 
