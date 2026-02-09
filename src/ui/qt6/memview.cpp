@@ -96,7 +96,7 @@ void MemView::paintEvent(QPaintEvent *event)
 	}
 
 	// divider line
-	painter.setPen(this->palette().color(QPalette::Background));
+	painter.setPen(this->palette().color(QPalette::Base));
 	painter.drawLine(divider_x_pos, 0, divider_x_pos, bottom);
 
 //	// disassembly

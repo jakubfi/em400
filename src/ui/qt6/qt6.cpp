@@ -21,13 +21,13 @@
 
 #include "ui/ui.h"
 
-struct ui_qt5_data {
+struct ui_qt6_data {
 };
 
 // -----------------------------------------------------------------------
-void * ui_qt5_setup(const char *call_name)
+void * ui_qt6_setup(const char *call_name)
 {
-	struct ui_qt5_data *ui = (struct ui_qt5_data *) calloc(1, sizeof(struct ui_qt5_data));
+	struct ui_qt6_data *ui = (struct ui_qt6_data *) calloc(1, sizeof(struct ui_qt6_data));
 	if (!ui) {
 		return NULL;
 	}
@@ -36,7 +36,7 @@ void * ui_qt5_setup(const char *call_name)
 }
 
 // -----------------------------------------------------------------------
-void ui_qt5_loop(void *data)
+void ui_qt6_loop(void *data)
 {
 	int argv = 1;
 	char *argc[] = { (char*)"em400" };
@@ -48,18 +48,18 @@ void ui_qt5_loop(void *data)
 }
 
 // -----------------------------------------------------------------------
-void ui_qt5_destroy(void *data)
+void ui_qt6_destroy(void *data)
 {
-	struct ui_qt5_data *ui = (struct ui_qt5_data *) data;
+	struct ui_qt6_data *ui = (struct ui_qt6_data *) data;
 	free(ui);
 }
 
 // -----------------------------------------------------------------------
-struct ui_drv ui_qt5 = {
-	.name = "qt5",
-	.setup = ui_qt5_setup,
-	.loop = ui_qt5_loop,
-	.destroy = ui_qt5_destroy
+struct ui_drv ui_qt6 = {
+	.name = "qt6",
+	.setup = ui_qt6_setup,
+	.loop = ui_qt6_loop,
+	.destroy = ui_qt6_destroy
 };
 
 // vim: tabstop=4 shiftwidth=4 autoindent

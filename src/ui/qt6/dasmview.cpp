@@ -167,7 +167,7 @@ void DasmView::paintEvent(QPaintEvent *event)
 	painter.fillRect(event->rect(), palette().color(QPalette::Base));
 
 	// addr-code divider line
-	painter.setPen(palette().color(QPalette::Background));
+	painter.setPen(palette().color(QPalette::Base));
 	painter.drawLine(divider_x_pos, 0, divider_x_pos, height());
 
 	// disassembly

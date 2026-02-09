@@ -988,19 +988,19 @@
   <customwidget>
    <class>DasmView</class>
    <extends>QWidget</extends>
-   <header>ui/qt5/dasmview.h</header>
+   <header>ui/qt6/dasmview.h</header>
    <container>1</container>
   </customwidget>
   <customwidget>
    <class>MemView</class>
    <extends>QWidget</extends>
-   <header>ui/qt5/memview.h</header>
+   <header>ui/qt6/memview.h</header>
    <container>1</container>
   </customwidget>
   <customwidget>
    <class>ControlPanel</class>
    <extends>QWidget</extends>
-   <header>ui/qt5/controlpanel.h</header>
+   <header>ui/qt6/controlpanel.h</header>
    <container>1</container>
   </customwidget>
  </customwidgets>

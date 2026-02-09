@@ -30,7 +30,7 @@
 
 extern struct ui_drv ui_cmd;
 extern struct ui_drv ui_curses;
-extern struct ui_drv ui_qt5;
+extern struct ui_drv ui_qt6;
 
 // in order of preference
 struct ui_drv* uis[] = {
@@ -38,7 +38,7 @@ struct ui_drv* uis[] = {
 	&ui_curses,
 #endif
 #ifdef UI_QT
-	&ui_qt5,
+	&ui_qt6,
 #endif
 	&ui_cmd,
 	NULL
