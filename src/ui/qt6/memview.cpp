@@ -96,26 +96,8 @@ void MemView::paintEvent(QPaintEvent *event)
 	}
 
 	// divider line
-	painter.setPen(this->palette().color(QPalette::Base));
+	painter.setPen(this->palette().color(QPalette::Accent));
 	painter.drawLine(divider_x_pos, 0, divider_x_pos, bottom);
-
-//	// disassembly
-//	QColor bar_color;
-//	int y = mem_y_start;
-//	Q_FOREACH (const AsmLine &l, listing) {
-//		// bar for IC location
-//		if (l.addr == e->get_reg(EM400_REG_IC)) {
-//			// change bar color if "P" flag is set (instruction won't be executed)
-//			if (e->get_reg(EM400_REG_P)) bar_color = QColor(Qt::red).lighter();
-//			else bar_color = this->palette().color(QPalette::Mid);
-//			painter.fillRect(QRect(0, y+font_descent+1, right+1, -(font_height+interline)), bar_color);
-//		}
-
-
-//		// program line
-
-//		y += line_height;
-//	}
 
 	// frame around the widget
 	painter.setPen(this->palette().color(QPalette::Mid));
@@ -131,38 +113,12 @@ void MemView::resizeEvent(QResizeEvent *event)
 	right = this->rect().right(); // view width, in pixels
 	total_lines = bottom / line_height + 1; // +1 for the line at the bottom edge of the window
 
-//	if (caddr >= 0) {
-//		int rows_delta = dasm_total_lines - old_dasm_total_lines;
-//		if (rows_delta > 0) { // more rows visible
-//			int i = append(rows_delta, listing);
-//			prepend(rows_delta - i, listing);
-//		} else { // less rows visible
-//			while (rows_delta++ < 0) listing.removeLast();
-//		}
-//	}
 	QWidget::resizeEvent(event);
 }
 
 // -----------------------------------------------------------------------
 void MemView::wheelEvent(QWheelEvent *event)
 {
-//	int wheel_step = 1;
-
-//	if (listing.empty()) return;
-
-//	int delta = wheel_step * (event->angleDelta().y() / 120);
-//	if (delta > 0) { // backwards
-//		if (listing.first().addr > 0) {
-//			int items = prepend(delta, listing);
-//			while (items-- > 0) listing.removeLast();
-//		}
-//	} else { // forward
-//		if (listing.last().addr < 0xffff) {
-//			int items = append(-delta, listing);
-//			while (items-- > 0) listing.removeFirst();
-//		}
-//	}
-
-//	QWidget::wheelEvent(event);
-//	update();
+	event->accept();
+	update();
 }
