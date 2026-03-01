@@ -28,8 +28,8 @@ DasmView::DasmView(QWidget *parent) :
 	setFocusPolicy(Qt::WheelFocus);
 
 	scroll = new QScrollBar(Qt::Vertical, this);
-	scroll->setMinimum(0);
-	scroll->setMaximum(65535);
+	scroll->setMinimum(0x0000);
+	scroll->setMaximum(0xffff);
 	scroll->setVisible(false);
 
 	connect(scroll, &QScrollBar::valueChanged, this, &DasmView::update_contents_no_nb);
@@ -39,7 +39,6 @@ DasmView::DasmView(QWidget *parent) :
 DasmView::~DasmView()
 {
 	emdas_destroy(emd);
-	delete scroll;
 }
 
 // -----------------------------------------------------------------------
@@ -167,7 +166,7 @@ void DasmView::paintEvent(QPaintEvent *event)
 	painter.fillRect(event->rect(), palette().color(QPalette::Base));
 
 	// addr-code divider line
-	painter.setPen(palette().color(QPalette::Base));
+	painter.setPen(palette().color(QPalette::Accent));
 	painter.drawLine(divider_x_pos, 0, divider_x_pos, height());
 
 	// disassembly
@@ -233,39 +232,44 @@ void DasmView::resizeEvent(QResizeEvent *event)
 }
 
 // -----------------------------------------------------------------------
+int DasmView::calculate_scroll_lines(int angleDelta) {
+    const int native_wheel_step = 120; // standard OS notch size
+	const int lines_per_click = 3;
+	const int one_line_advance = native_wheel_step / lines_per_click;
+
+    wheel_tick_accumulator += angleDelta;
+    int lines = wheel_tick_accumulator / one_line_advance;
+    wheel_tick_accumulator %= one_line_advance;
+
+    return lines;
+}
+
+// -----------------------------------------------------------------------
 void DasmView::wheelEvent(QWheelEvent *event)
 {
-	if (listing.empty()) return;
+	const int delta_lines = calculate_scroll_lines(event->angleDelta().y());
 
-	static int tickcount;
-	const int wheel_step = 3;
-	const int one_line_advance = 120 / wheel_step;
-
-	tickcount += event->angleDelta().y();
-	const int delta = tickcount / one_line_advance;
-	tickcount -= delta * one_line_advance;
-
-	if (delta > 0) { // backwards
+	if (delta_lines > 0) { // backwards
 		if (listing.first().addr > 0) {
-			int items = prepend(delta, listing);
+			int items = prepend(delta_lines, listing);
 			while (items-- > 0) listing.removeLast();
 		}
 	} else { // forward
 		if (listing.last().addr < 0xffff) {
-			int items = append(-delta, listing);
+			int items = append(-delta_lines, listing);
 			while (items-- > 0) listing.removeFirst();
 		}
 	}
 	scroll->setValue(listing.first().addr); // TODO: this should all be in one place...
-	QWidget::wheelEvent(event);
-	update();
 
+	event->accept();
+	update();
 }
 
 // -----------------------------------------------------------------------
 QSize DasmView::minimumSizeHint() const
 {
-	return QSize(dasm_line_length * font_width, -1);
+	return QSize(dasm_line_length * font_width, 1);
 }
 
 // -----------------------------------------------------------------------
@@ -275,13 +279,15 @@ QSize DasmView::sizeHint() const
 }
 
 // -----------------------------------------------------------------------
-void DasmView::enterEvent(QEvent *event)
+void DasmView::enterEvent(QEnterEvent *event)
 {
 	scroll->setVisible(true);
+	QWidget::enterEvent(event);
 }
 
 // -----------------------------------------------------------------------
 void DasmView::leaveEvent(QEvent *event)
 {
 	scroll->setVisible(false);
+	QWidget::leaveEvent(event);
 }

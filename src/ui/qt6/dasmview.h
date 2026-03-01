@@ -35,6 +35,7 @@ private:
 	const int interline = 4;			// additional interline, in pixels
 	const int addr_len = 4;				// address length, in characters
 
+	int wheel_tick_accumulator = 0;
 	QScrollBar *scroll;
 
 	struct emdas *emd;
@@ -50,13 +51,15 @@ private:
 	int delete_last(int i);
 	int delete_first(int i);
 
+	int calculate_scroll_lines(int angleDelta);
+
 protected:
 	void paintEvent(QPaintEvent *event);
 	void resizeEvent(QResizeEvent *event);
 	void wheelEvent(QWheelEvent *event);
 	QSize minimumSizeHint() const;
 	QSize sizeHint() const;
-	void enterEvent(QEvent *event);
+	void enterEvent(QEnterEvent *event);
 	void leaveEvent(QEvent *event);
 
 };
