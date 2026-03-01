@@ -305,7 +305,7 @@ add_executable(em400
 	${FLEX_eval_scanner_OUTPUTS}
 )
 
-set_property(TARGET em400 PROPERTY C_STANDARD 11)
+set_property(TARGET em400 PROPERTY C_STANDARD 23)
 target_compile_options(em400 PRIVATE -Wall)
 target_include_directories(em400 PRIVATE ${CMAKE_SOURCE_DIR}/src)
 target_include_directories(em400 PRIVATE ${CMAKE_SOURCE_DIR}/include)
@@ -322,6 +322,7 @@ if(IPO_SUPPORTED)
 endif()
 
 if (UI_QT)
+	add_compile_definitions($<$<CONFIG:Release>:QT_NO_DEBUG_OUTPUT>)
 	set_property(TARGET em400 PROPERTY AUTOMOC ON)
 	set_property(TARGET em400 PROPERTY AUTOUIC ON)
 	set_property(TARGET em400 PROPERTY AUTORCC ON)
@@ -386,7 +387,7 @@ add_executable(emitool
 if(WIN32)
 	target_link_libraries(emitool ws2_32)
 endif()
-set_property(TARGET emitool PROPERTY C_STANDARD 11)
+set_property(TARGET emitool PROPERTY C_STANDARD 23)
 target_include_directories(emitool PRIVATE ${CMAKE_SOURCE_DIR}/src)
 target_compile_options(emitool PUBLIC -Wall)
 
@@ -405,7 +406,7 @@ if(NOT WIN32)
 else()
 	target_link_libraries(embin ws2_32)
 endif()
-set_property(TARGET embin PROPERTY C_STANDARD 11)
+set_property(TARGET embin PROPERTY C_STANDARD 23)
 target_include_directories(embin PRIVATE ${CMAKE_SOURCE_DIR}/src)
 target_compile_options(embin PUBLIC -Wall)
 
