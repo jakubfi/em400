@@ -24,7 +24,7 @@ protected:
 	void paintEvent(QPaintEvent *event);
 	void mousePressEvent(QMouseEvent *event);
 	void mouseReleaseEvent(QMouseEvent *event);
-	void enterEvent(QEvent *event);
+	void enterEvent(QEnterEvent *event);
 	void leaveEvent(QEvent *event);
 
 signals:

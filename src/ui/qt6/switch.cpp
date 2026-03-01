@@ -61,7 +61,7 @@ void Switch::mousePressEvent(QMouseEvent *event)
 }
 
 // -----------------------------------------------------------------------
-void Switch::enterEvent(QEvent *event)
+void Switch::enterEvent(QEnterEvent *event)
 {
 	QGuiApplication::setOverrideCursor(QCursor(Qt::PointingHandCursor));
 }
