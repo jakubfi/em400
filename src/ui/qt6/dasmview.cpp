@@ -165,10 +165,6 @@ void DasmView::paintEvent(QPaintEvent *event)
 	// background
 	painter.fillRect(event->rect(), palette().color(QPalette::Base));
 
-	// addr-code divider line
-	painter.setPen(palette().color(QPalette::Accent));
-	painter.drawLine(divider_x_pos, 0, divider_x_pos, height());
-
 	// disassembly
 	QColor bar_color;
 	int y = line_y_start;
@@ -181,29 +177,32 @@ void DasmView::paintEvent(QPaintEvent *event)
 			if (e->get_p()) {
 				bar_color = QColor(Qt::red).lighter();
 			} else {
-				if (hasFocus()) {
-					bar_color = palette().color(QPalette::Highlight);
-				} else {
-					bar_color = palette().color(QPalette::Inactive, QPalette::Highlight);
-				}
+				bar_color = palette().color(QPalette::Highlight);
 			}
-			painter.fillRect(QRect(0, y+font_descent+1, width()+1, -(font_height+interline)), bar_color);
+			painter.fillRect(QRect(0, y+font_descent+1, width()+1, -line_height), bar_color);
 		}
 
 		// address
-		font.setBold(true);
 		if (at_ic) painter.setPen(palette().color(QPalette::HighlightedText));
-		else painter.setPen(palette().color(QPalette::PlaceholderText));
-		painter.drawText(addr_x_start, y, QString("%1").arg((uint16_t)l.addr, 4, 16, QLatin1Char('0')));
+		else painter.setPen(palette().color(QPalette::Text));
+		QString addr_str = QString("%1").arg((uint16_t)l.addr, 4, 16, QLatin1Char('0'));
+		font.setBold(true);
+		painter.setFont(font);
+		painter.drawText(addr_x_start, y, addr_str);
 
 		// code
 		font.setBold(false);
+		painter.setFont(font);
 		if (at_ic) painter.setPen(palette().color(QPalette::HighlightedText));
 		else painter.setPen(palette().color(QPalette::Text));
 		painter.drawText(dasm_x_start, y, l.text);
 
 		y += line_height;
 	}
+
+	// addr-code divider line
+	painter.setPen(palette().color(QPalette::Accent));
+	painter.drawLine(divider_x_pos, 0, divider_x_pos, height());
 
 	// frame around the widget
 	painter.setPen(palette().color(QPalette::Mid));

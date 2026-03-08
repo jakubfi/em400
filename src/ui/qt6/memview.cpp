@@ -76,22 +76,29 @@ void MemView::paintEvent(QPaintEvent *event)
 
 	// backgroud
 	painter.fillRect(event->rect(), this->palette().color(QPalette::Base));
-	painter.setFont(font);
 
 	int x, y;
 	for (y=0 ; y<total_lines ; y++) {
 		// address
 		int addr = caddr + y * words_per_line;
+		QString addr_str = QString("%1").arg((uint16_t)addr, 4, 16, QLatin1Char('0'));
 		font.setBold(true);
 		painter.setFont(font);
-		painter.setPen(this->palette().color(QPalette::PlaceholderText));
-		painter.drawText(addr_x_start, y * line_height, QString("%1").arg((uint16_t)addr, 4, 16, QLatin1Char('0')));
+		painter.drawText(addr_x_start, (1+y) * line_height, addr_str);
 
+		// values
 		for (x=0 ; x<words_per_line ; x++) {
+			int val = e->get_mem(cnb, caddr + y * words_per_line + x);
+			QString val_str;
+			if (val >= 0) {
+				val_str = QString("%1").arg(val, 4, 16);
+			} else {
+				val_str = QString("----");
+			}
 			font.setBold(false);
 			painter.setFont(font);
 			painter.setPen(this->palette().color(QPalette::Text));
-			painter.drawText(mem_x_start + x * 5 * font_width, y * line_height, QString("%1").arg(e->get_mem(cnb, caddr + y * words_per_line + x), 4, 16));
+			painter.drawText(mem_x_start + x * 5 * font_width, (1+y) * line_height, val_str);
 		}
 	}
 
