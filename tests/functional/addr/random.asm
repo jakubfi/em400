@@ -91,7 +91,7 @@ dfill:
 	lw	r5, 0xf000
 floop:
 	rd	r5+r3
-	lj	rand
+	lj	urand
 	awt	r3, 2
 	cw	r3, 0x1000
 	jl	floop
@@ -190,7 +190,7 @@ loop:
 
 ; next address
 	awt	r3, 1
-	lj	rand
+	lj	urand
 	awt	r3, 1
 	cw	r3, 0x1000
 	jls	loop

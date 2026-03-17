@@ -30,7 +30,7 @@ mask_ch:.word	IMASK_ALL_CH
 reconfigure_mem:
 	.res	1
 
-	lj	rand ; [r1, r2] = random
+	lj	urand ; [r1, r2] = random
 
 .page14:
 	lw	r3, 14\MEM_PAGE | 0\MEM_SEGMENT ; logical address specification
@@ -57,7 +57,7 @@ reconfigure_mem:
 randomize:
 	.res	1
 
-	lj	rand
+	lj	urand
 
 	nr	r1, 0x0fff ; r1 = random offset
 	rw	r1, offset
@@ -83,7 +83,7 @@ randomize:
 rnd_fill:
 	.res	1
 
-	lj	rand ; r1 = initial random
+	lj	urand ; r1 = initial random
 
 	lw	r5, 0xe000 - 1
 	aw	r5, [offset]

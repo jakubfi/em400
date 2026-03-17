@@ -180,7 +180,7 @@ fill:	; fill write buffer with random data
 	lw	r4, wrbuf
 	lw	r3, SSIZE/2
 fill_loop:
-	lj	rand
+	lj	urand
 	rd	r4
 	awt	r4, 2
 	drb	r3, fill_loop

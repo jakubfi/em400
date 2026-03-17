@@ -195,7 +195,7 @@ gen_randoms:
 	lw	r6, write_positions
 .loop:
 
-	lj	rand
+	lj	urand
 	rw	r1, r6+1
 
 	awt	r6, 2
