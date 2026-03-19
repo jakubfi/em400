@@ -11,11 +11,11 @@
 start:
 	lw	r1, 666
 	lw	r2, 99
-	rd	seed
+	lj	seed
 
 	lw	r7, -10_000
 loop:
-	lj	rand
+	lj	urand
 	irb	r7, loop
 	ujs	loop
 	hlt	077
