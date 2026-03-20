@@ -242,7 +242,6 @@ set(SOURCES_EM400
 	src/cp/brk.c
 	src/cp/brk.h
 
-	src/sound/file.c
 	src/sound/sound.c
 	src/sound/sound.h
 	src/external/biquad/biquad.c

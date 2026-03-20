@@ -67,11 +67,10 @@ preload = program.bin
 # have to be disabled.
 enabled = true
 
-# Sound driver to use: pulseaudio, alsa or file (raw PCM dump)
+# Sound driver to use: pulseaudio or alsa
 driver = pulseaudio
 
-# For alsa, this is the output device to use.
-# For file output, it's the file name. Unused for pulseaudio.
+# For alsa, this is the output device to use. Unused for pulseaudio.
 output = default
 
 # Samplerate.

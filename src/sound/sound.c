@@ -28,7 +28,6 @@ extern const struct snd_drv snd_drv_alsa;
 #ifdef HAVE_PULSEAUDIO
 extern const struct snd_drv snd_drv_pulseaudio;
 #endif
-extern const struct snd_drv snd_drv_file;
 
 static const struct snd_drv *snd_drivers[] = {
 #ifdef HAVE_ALSA
@@ -37,7 +36,6 @@ static const struct snd_drv *snd_drivers[] = {
 #ifdef HAVE_PULSEAUDIO
 	&snd_drv_pulseaudio,
 #endif
-	&snd_drv_file,
 	NULL
 };
 
