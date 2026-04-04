@@ -196,7 +196,6 @@ static inline void iset_register_op(struct iset_opcode **op_tab, const struct is
 		// sanity check: we don't want to overwrite non-illegal registered ops
 		assert((*op == NULL) || ((*op)->fun == NULL));
 		*op = (struct iset_opcode *) &instr->op;
-		// Gosper's hack
 		result = (result - mask) & mask;
 	} while (result != 0);
 }
