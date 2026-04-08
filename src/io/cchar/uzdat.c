@@ -351,7 +351,9 @@ static void uzdat_on_async_switch_dir(uv_async_t *handle)
 {
 	uzdat_t *uzdat = (uzdat_t*) handle->data;
 
-	uv_timer_start(&uzdat->timer_switch_transmit, uzdat_on_transmit_switch_timeout, XFER_DIR_SWITCH_DELAY_MS, 0);
+	if (!uv_is_active((uv_handle_t*) &uzdat->timer_switch_transmit)) {
+		uv_timer_start(&uzdat->timer_switch_transmit, uzdat_on_transmit_switch_timeout, XFER_DIR_SWITCH_DELAY_MS, 0);
+	}
 }
 
 // -----------------------------------------------------------------------
