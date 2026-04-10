@@ -1,7 +1,8 @@
 ; OPTS -c configs/uzdat.ini
 ; PRECMD CLOCK ON
 
-; first read from UZDAT should switch transmission to OUT after a while
+; First, single write to UZDAT should switch transmission to OUT
+; after max 2 ms. UZDAT then reports interrupt.
 
 	.cpu	mera400
 
@@ -16,22 +17,38 @@
 	.const	UZDAT CHAR_CHAN\IO_CHAN | UZDAT_DEV\IO_DEV
 	.org	OS_START
 
-; ------------------------------------------------------------------------
 mask:	.word	IMASK_GROUP_H | IMASK_CH4_9
 
+; ------------------------------------------------------------------------
 int_uzdat:
-	lwt	r6, 1	; uzdat interrupt marker
+	md	[STACKP]
+	lw	r1, [-SP_SPEC]
+	cl	r1, 1\7
+	jn	.bad_spec
+	lwt	r6, 1		; uzdat sent good interrupt
 	lip
+.bad_spec:
+	lwt	r6, -1
+	lip
+
+; ------------------------------------------------------------------------
 int_timer:
-	cwt	r6, 1	; uzdat sent interrupt?
-	jes	.fin	; yes
-	awt	r7, 1	; wait more
-	cwt	r7, 2	; done waiting?
-	jes	.fail	; yes
-	lip		; no
-.fail:	hlt	060
+	cwt	r6, -1		; wrong intspec?
+	jes	.fail_spec	; yes
+	cwt	r6, 1		; uzdat sent interrupt?
+	jes	.fin		; yes
+	awt	r7, 1		; wait more
+	cwt	r7, 2		; done waiting?
+	jes	.fail		; yes
+	lip			; no
+.fail:
+	hlt	060		; no interrupt received
 	ujs	.fail
-.fin:	hlt	077
+.fail_spec:
+	hlt	061		; wront interrupt spec
+	ujs	.fail_spec
+.fin:
+	hlt	077
 	ujs	.fin
 
 ; ------------------------------------------------------------------------
@@ -50,7 +67,7 @@ start:
 	lwt	r6, 0
 
 	im	mask
-.loop:
+
 	ou	r3, KZ_CMD_DEV_WRITE | UZDAT
 	.word	.no1, .en1, .ok1, .pe1
 .no1:	hlt	040
