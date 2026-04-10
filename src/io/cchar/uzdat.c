@@ -219,9 +219,9 @@ void uzdat_on_data_sent(uzdat_t *uzdat)
 	int trigger_interrupt = false;
 
 	pthread_mutex_lock(&uzdat->mutex);
-	if (uzdat->state != UZDAT_STATE_OFF) { // if UZDAT has not been reset
+	uzdat->xfer_busy = false;
+	if (uzdat->state == UZDAT_STATE_EN) {
 		uzdat->intspec = CCHAR_INT_READY;
-		uzdat->xfer_busy = false;
 		trigger_interrupt = true;
 	}
 	pthread_mutex_unlock(&uzdat->mutex);
@@ -336,8 +336,10 @@ static void uzdat_on_transmit_switch_timeout(uv_timer_t *handle)
 	// only if UZDAT has not been reset
 	if (uzdat->state != UZDAT_STATE_OFF) {
 		uzdat->dir = UZDAT_DIR_OUT;
-		uzdat->intspec = CCHAR_INT_READY;
-		trigger_interrupt = true;
+		if (uzdat->state == UZDAT_STATE_EN) {
+			uzdat->intspec = CCHAR_INT_READY;
+			trigger_interrupt = true;
+		}
 	}
 	pthread_mutex_unlock(&uzdat->mutex);
 

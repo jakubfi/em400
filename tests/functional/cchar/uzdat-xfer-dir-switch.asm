@@ -2,7 +2,7 @@
 ; PRECMD CLOCK ON
 
 ; First, single write to UZDAT should switch transmission to OUT
-; after max 2 ms. UZDAT then reports interrupt.
+; after 2 ms. UZDAT then reports a "READY" interrupt.
 
 	.cpu	mera400
 
@@ -15,6 +15,7 @@
 	.const	CHAR_CHAN 7
 	.const	UZDAT_DEV 0
 	.const	UZDAT CHAR_CHAN\IO_CHAN | UZDAT_DEV\IO_DEV
+	.const	INTSPEC_READY 1\7
 	.org	OS_START
 
 mask:	.word	IMASK_GROUP_H | IMASK_CH4_9
@@ -23,33 +24,22 @@ mask:	.word	IMASK_GROUP_H | IMASK_CH4_9
 int_uzdat:
 	md	[STACKP]
 	lw	r1, [-SP_SPEC]
-	cl	r1, 1\7
+	cl	r1, INTSPEC_READY
 	jn	.bad_spec
-	lwt	r6, 1		; uzdat sent good interrupt
+	awt	r6, 1		; UZDAT sent good interrupt
 	lip
 .bad_spec:
-	lwt	r6, -1
+	lwt	r5, 1		; UZDAT sent wrong intspec
 	lip
 
 ; ------------------------------------------------------------------------
 int_timer:
-	cwt	r6, -1		; wrong intspec?
-	jes	.fail_spec	; yes
-	cwt	r6, 1		; uzdat sent interrupt?
-	jes	.fin		; yes
-	awt	r7, 1		; wait more
-	cwt	r7, 2		; done waiting?
-	jes	.fail		; yes
-	lip			; no
-.fail:
-	hlt	060		; no interrupt received
-	ujs	.fail
-.fail_spec:
-	hlt	061		; wront interrupt spec
-	ujs	.fail_spec
-.fin:
+	awt	r7, -1		; one timer interrupt waited
+	jz	.done		; done waiting
+	lip			; wait more
+.done:
 	hlt	077
-	ujs	.fin
+	ujs	.done
 
 ; ------------------------------------------------------------------------
 ; ------------------------------------------------------------------------
@@ -63,8 +53,9 @@ start:
 	lw	r1, int_timer
 	rw	r1, INTV_TIMER
 
-	lwt	r7, 0
-	lwt	r6, 0
+	lwt	r7, 5		; wait this many timer interrupts for the UZDAT interrupt
+	lwt	r6, 0		; number of interrupts reported by UZDAT
+	lwt	r5, 0		; bad interrupt spec flag
 
 	im	mask
 
@@ -83,4 +74,6 @@ stack:
 
 ; XPCT ir : 0xec3f
 ; XPCT r6 : 1
+; XPCT r5 : 0
+; XPCT r7 : 0
 ; XPCT alarm : 0
