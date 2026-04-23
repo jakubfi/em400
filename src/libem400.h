@@ -134,6 +134,7 @@ enum em400_channel_types {
 
 const char * em400_version();
 int em400_init(struct em400_cfg_mem *c_mem, struct em400_cfg_cpu *c_cpu, struct em400_cfg_buzzer *c_buzzer);
+int em400_io_run();
 void em400_shutdown();
 
 // -----------------------------------------------------------------------

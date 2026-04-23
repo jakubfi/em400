@@ -76,6 +76,12 @@ int em400_init(struct em400_cfg_mem *c_mem, struct em400_cfg_cpu *c_cpu, struct 
 }
 
 // -----------------------------------------------------------------------
+int em400_io_run()
+{
+	return io_run();
+}
+
+// -----------------------------------------------------------------------
 void em400_shutdown()
 {
 	LOG(L_EM4H, "Shutting down EM400 instance");

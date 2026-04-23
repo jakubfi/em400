@@ -35,7 +35,7 @@
 #include "utils/utils.h"
 #include "log.h"
 
-bool io_initialized;
+bool io_started;
 uv_loop_t *ioloop;
 pthread_t ioloop_thread;
 uv_async_t ioloop_async_quit;
@@ -72,7 +72,7 @@ int io_init()
 {
 	LOG(L_IO, "I/O Init");
 
-	if (io_initialized) {
+	if (ioloop) {
 		return LOGERR("I/O already initialized");
 	}
 
@@ -86,18 +86,28 @@ int io_init()
 		return LOGERR("Failed to initialize async quit handler");
 	}
 
+	return E_OK;
+}
+
+// -----------------------------------------------------------------------
+int io_run()
+{
+	if (!ioloop) {
+		return LOGERR("Cannot start I/O loop until I/O is initialized");
+	}
+
+	if (io_started) {
+		return LOGERR("I/O loop already started");
+	}
+
 	if (pthread_create(&ioloop_thread, NULL, io_ioloop, NULL)) {
-		io_ioloop_teardown();
-		uv_run(ioloop, UV_RUN_DEFAULT);
-		uv_loop_close(ioloop);
-		ioloop = NULL;
 		return LOGERR("Failed to spawn main I/O loop thread.");
 	}
 	if (pthread_setname_np(ioloop_thread, "ioloop")) {
 		LOG(L_IO, "Failed to set I/O thread name");
 	}
 
-	io_initialized = true;
+	io_started = true;
 	return E_OK;
 }
 
@@ -106,14 +116,16 @@ void io_shutdown()
 {
 	LOG(L_IO, "I/O system shutdown");
 
-	if (!io_initialized) {
+	if (!ioloop) {
 		return;
 	}
 
-	// stop ioloop and its thread
-	uv_async_send(&ioloop_async_quit);
-	pthread_join(ioloop_thread, NULL);
-	LOG(L_IO, "I/O loop thread joined");
+	if (io_started) {
+		// stop ioloop and its thread
+		uv_async_send(&ioloop_async_quit);
+		pthread_join(ioloop_thread, NULL);
+		LOG(L_IO, "I/O loop thread joined");
+	}
 
 	for (int c_num=0 ; c_num<IO_MAX_CHAN ; c_num++) {
 		chan_t *chan = io_chan[c_num];
@@ -138,7 +150,7 @@ void io_shutdown()
 	}
 
 	ioloop = NULL;
-	io_initialized = false;
+	io_started = false;
 	LOG(L_IO, "I/O system shut down");
 }
 

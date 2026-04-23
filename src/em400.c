@@ -169,6 +169,10 @@ int em400_top_init(em400_cfg *cfg)
 		return LOGERR("Failed to initialize EM400 I/O channels");
 	}
 
+	if (em400_io_run() != E_OK) {
+		return LOGERR("Failed to run I/O loop");
+	}
+
 	return E_OK;
 }
 

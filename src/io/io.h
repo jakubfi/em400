@@ -24,6 +24,7 @@
 #include "io/dev/dev.h"
 
 int io_init();
+int io_run();
 void io_shutdown();
 void io_reset();
 
