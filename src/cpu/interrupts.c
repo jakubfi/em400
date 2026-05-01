@@ -251,7 +251,7 @@ void int_ctx_restore(bool barnb)
 	int_update_xmask();
 	LOG(L_CPU,
 		"Loaded process context from @ 0x%04x: [IC: 0x%04x, R0: 0x%04x, SR: 0x%04x]",
-		ar-3, vector[0], vector[1], vector[2]
+		ar-3, *vector[0], *vector[1], *vector[2]
 	);
 }
 
