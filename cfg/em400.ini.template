@@ -133,6 +133,7 @@ channel_15 = char
 #  * Y is the device number
 #
 # Every device section requires a device type to be specified. Currently supported types are:
+#  * rtclock (only for "char" channel type) - Amepol's real-time clock
 #  * terminal (only for "char" channel type) - serial console terminal
 #  * floppy8 (only for "char" channel type) - 8" floppy drive (uses raw images)
 #  * winchester (only for "multix" channel type) - hard disk drive (uses e4i disk images)
@@ -141,27 +142,37 @@ channel_15 = char
 # Other options are specific for each device.
 # Below are example device configurations.
 
+# Amepol's real-time clock
+[dev15.0]
+type = rtclock
+# "prom" allows replacing the default rtclock's PROM contents
+# 256 bytes of data max, must be encoded for binary load
+prom = rtclock_prom_file.bin
+
+# 8" floppy drive with all four images attached (for all four bays)
+[dev15.2]
+type = floppy8
+image_0 = flop8_0.img
+image_1 = flop8_1.img
+image_2 = flop8_2.img
+image_3 = flop8_3.img
+
 # Terminal that can be accessed through TCP connection on the givenport (using e4term from tools/ directory)
 # Speed is emulated and can be one of: 9600 (default), 4800, 2400, 1200, 600, 300, 150
-[dev1.4]
+[dev15.4]
 type = terminal
 transport = tcp
 port = 32000
 speed = 9600
 
-# 5" floppy drive with floppy1.e4i image
-[dev15.20]
+# MULTIX 5" floppy drive with floppy1.e4i image
+[dev1.20]
 type = floppy
 image = floppy1.e4i
 
-# Winchester hard disk drive with winchester.e4i image
-[dev15.28]
+# MULTIX Winchester hard disk drive with winchester.e4i image
+[dev1.28]
 type = winchester
 image = winchester.e4i
 
-# 8" floppy drive with two images attached in bays 0 and 1
-[dev15.2]
-type = floppy8
-image_0 = flop8_0.img
-image_1 = flop8_1.img
 

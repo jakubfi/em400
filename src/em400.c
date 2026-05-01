@@ -66,6 +66,9 @@ int em400_device_init(em400_cfg *cfg, const char *dev_type_name, int chnum, int 
 				}
 			}
 		}
+	} else if (!strcasecmp(dev_type_name, "rtclock")) {
+		const char *prom_filename = cfg_fgetstr(cfg, "dev%i.%i:prom", chnum, devnum);
+		res = em400_dev_rtclock_init(chnum, devnum, prom_filename);
 	} else {
 		res = LOGERR("Unknown device type: %s", dev_type_name);
 	}

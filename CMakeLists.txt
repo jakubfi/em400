@@ -185,6 +185,10 @@ set(SOURCES_EM400
 	src/io/cchar/uzdat.h
 	src/io/cchar/uzfx.c
 	src/io/cchar/uzfx.h
+	src/io/cchar/meclo.c
+	src/io/cchar/meclo.h
+	src/io/cchar/meclo_prom.c
+	src/io/cchar/meclo_prom.h
 	src/io/iotester.c
 	src/io/iotester.h
 
@@ -199,6 +203,8 @@ set(SOURCES_EM400
 	src/io/dev/winchester.h
 	src/io/dev/flop5.c
 	src/io/dev/flop5.h
+	src/io/dev/rtclock.h
+	src/io/dev/rtclock.c
 
 	src/io/mx/mx.c
 	src/io/mx/mx.h

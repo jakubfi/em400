@@ -20,6 +20,7 @@ Known issues:
 
 Cleanups:
 
+ * improve constructor goto fail_* usage
  * really review breakpoints atomics usage
 
 Code enhancements (possible):

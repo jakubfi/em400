@@ -93,7 +93,7 @@ enum em400_log_components {
 	L_EM4H, L_FDBR, L_CRK5,
 	L_MEM, L_CPU, L_OP, L_INT, L_IO,
 	L_MX, L_CCHR, L_CMEM,
-	L_UZDAT, L_UZFX,
+	L_UZDAT, L_UZFX, L_MECLO,
 	L_TERM, L_9425, L_WNCH, L_FLOP, L_PNCH, L_PNRD, L_TAPE,
 	L_COUNT,
 };
@@ -119,6 +119,7 @@ enum em400_device_types {
 	EM400_DEV_SP45DE,
 	EM400_DEV_WINCHESTER,
 	EM400_DEV_FLOP5,
+	EM400_DEV_RTCLOCK,
 };
 
 enum em400_channel_types {
@@ -145,6 +146,7 @@ int em400_io_channel_init(unsigned chnum, unsigned channel_type);
 int em400_dev_terminal_init(unsigned chnum, unsigned devnum, int port, int speed);
 int em400_dev_sp45de_init(unsigned chnum, unsigned devnum);
 int em400_dev_winchester_init(unsigned chnum, unsigned devnum, const char *image);
+int em400_dev_rtclock_init(unsigned chnum, unsigned devnum, const char *prom_filename);
 
 int em400_dev_type(unsigned chnum, unsigned devnum);
 int em400_dev_slot_count(unsigned chnum, unsigned devnum);

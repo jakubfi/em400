@@ -30,6 +30,7 @@
 #include "io/dev/terminal.h"
 #include "io/dev/sp45de.h"
 #include "io/dev/winchester.h"
+#include "io/dev/rtclock.h"
 
 static const char ver[] = EM400_VERSION;
 
@@ -121,6 +122,16 @@ int em400_dev_sp45de_init(unsigned chnum, unsigned devnum)
 int em400_dev_winchester_init(unsigned chnum, unsigned devnum, const char *image)
 {
 	em400_dev_t *dev = winchester_create(image);
+	if (!dev) {
+		return E_ERR;
+	}
+	return io_dev_connect(chnum, devnum, dev);
+}
+
+// -----------------------------------------------------------------------
+int em400_dev_rtclock_init(unsigned chnum, unsigned devnum, const char *prom_filename)
+{
+	em400_dev_t *dev = rtclock_create(prom_filename);
 	if (!dev) {
 		return E_ERR;
 	}

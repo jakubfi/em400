@@ -25,6 +25,7 @@
 #include "io/cchar/cchar.h"
 #include "io/cchar/uzdat.h"
 #include "io/cchar/uzfx.h"
+#include "io/cchar/meclo.h"
 #include "io/dev/terminal.h"
 
 #include "log.h"
@@ -61,6 +62,9 @@ int cchar_connect_dev(chan_t *chan, int devnum, em400_dev_t *dev)
 			break;
 		case EM400_DEV_SP45DE:
 			unit = uzfx_create(devnum, dev);
+			break;
+		case EM400_DEV_RTCLOCK:
+			unit = meclo_create(devnum, dev);
 			break;
 		default:
 			return LOGERR("Device type unknown or incompatibile with character channel");
