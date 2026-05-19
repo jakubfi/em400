@@ -72,6 +72,7 @@ bool awp_enabled;
 static bool nomem_stop;
 
 unsigned long ips_counter;
+// negative instruction_time_ns = skip next cpu sleep
 static int instruction_time_ns;
 
 static int speed_real;
@@ -556,12 +557,31 @@ P3_P4_P5:
 	if (op->fun == op_72_shc) {
 		instruction_time_ns += IR_t * TIME_SHIFT;
 	} else if (op->fun == op_ou) {
-		// Negative instruction time means "skip time keeping for this cycle".
-		// Do this after each OU instruction.
-		// This is required for minimalistic I/O routines using OU+HLT to work.
-		// Without it, it may happen that interrupt HLT was supposed to wait for
-		// is served just after OU, causing HLT to sleep indefinitely.
-		instruction_time_ns *= -1;
+		/*
+		 * Minimalistic MULTIX I/O routines (MEGA bootloader specifically)
+		 * use an OU immediately followed by HLT to send an I/O command and
+		 * immediately start waiting for the interrupt.
+		 *
+		 * If cpu work scheduler decides to sleep right after the OU
+		 * instruction, it may receive the interrupt before
+		 * program starts waiting for it with HLT.
+		 * Interrupt is then served and HLT waits indefinitely. Program hangs.
+		 *
+		 * Work around this by recognizing OU+HLT tandems
+		 * and skipping scheduler sleep in such condition.
+		 * Negative instruction time indicates just that.
+		 *
+		 * With 100us scheduling granularity it shouldn't be a problem really,
+		 * but the cpu work scheduler can sometimes experience latencies
+		 * as high as >100ms in virtualized environments.
+		 * NOTE: I/O devices have to delay the interrupt anyway,
+		 * according to their processing delays.
+		*/
+		uint16_t tmp;
+		cpu_mem_read_1(q, ic, &tmp);
+		if (cpu_op_tab[tmp]->fun == op_73_hlt) {
+			return -instruction_time_ns;
+		}
 	}
 
 	return instruction_time_ns;
@@ -635,7 +655,7 @@ static void cpu_timekeeping(int cpu_time_ns)
 	bool skip_sleep = false;
 
 	if (cpu_time_ns < 0) {
-		cpu_time_ns *= -1;
+		cpu_time_ns = -cpu_time_ns;
 		skip_sleep = true;
 	}
 
