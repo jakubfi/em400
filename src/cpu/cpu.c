@@ -29,6 +29,8 @@
 #include <stdbool.h>
 #include <string.h>
 #include <pthread.h>
+#include <limits.h>
+
 #include <emawp.h>
 
 #include "cpu/cpu.h"
@@ -70,12 +72,13 @@ bool awp_enabled;
 static bool nomem_stop;
 
 unsigned long ips_counter;
-static unsigned instruction_time;
+static int instruction_time_ns;
 
 static int speed_real;
 static struct timespec cpu_timer;
-static int cpu_time_cumulative;
-static int throttle_granularity;
+static int cpu_time_cumulative_ns;
+static int throttle_granularity_ns;
+static int ticks_per_2s;
 
 static int sound_enabled;
 
@@ -245,7 +248,7 @@ unsigned cpu_state_get()
 // -----------------------------------------------------------------------
 static void cpu_mem_fail(bool barnb)
 {
-	instruction_time += TIME_NOANS_IF;
+	instruction_time_ns += TIME_NOANS_IF;
 	int_set(INT_NO_MEM);
 	if (!barnb) {
 		rALARM = true;
@@ -289,7 +292,8 @@ int cpu_init(struct em400_cfg_cpu *c_cpu, struct em400_cfg_buzzer *c_buzzer)
 	cpu_user_io_illegal = c_cpu->user_io_illegal;
 	nomem_stop = c_cpu->nomem_stop;
 	speed_real = c_cpu->speed_real;
-	throttle_granularity = c_cpu->throttle_granularity;
+	throttle_granularity_ns = c_cpu->throttle_granularity_ns;
+	ticks_per_2s = 2000000000L / throttle_granularity_ns;
 
 	sound_enabled = c_buzzer->enabled;
 
@@ -313,7 +317,7 @@ int cpu_init(struct em400_cfg_cpu *c_cpu, struct em400_cfg_buzzer *c_buzzer)
 	cpu_mod_off();
 	cpu_state = EM400_STATE_STOP;
 
-	if (clock_init(c_cpu->clock_period) != E_OK) {
+	if (clock_init(c_cpu->clock_period_ms) != E_OK) {
 		LOGERR("Failed to initialize clock");
 		goto fail;
 	}
@@ -346,7 +350,7 @@ int cpu_init(struct em400_cfg_cpu *c_cpu, struct em400_cfg_buzzer *c_buzzer)
 		nomem_stop ? "true" : "false");
 	LOG(L_CPU, "CPU speed: %s, throttle granularity: %i ns",
 		speed_real ? "real" : "unlimited",
-		throttle_granularity);
+		throttle_granularity_ns);
 
 	return E_OK;
 fail:
@@ -471,7 +475,7 @@ static int cpu_do_cycle()
 	if (LOG_WANTS(L_CPU)) log_store_cycle_state(SR_READ(), ic);
 
 	ips_counter++;
-	instruction_time = 0;
+	instruction_time_ns = 0;
 
 P1:
 	cpu_mem_read_1(q, ic, &w);
@@ -482,7 +486,7 @@ P1:
 	} else {
 		ac = w;
 		if (!mc) ar = w;
-		instruction_time += TIME_MEM_ARG;
+		instruction_time_ns += TIME_MEM_ARG;
 		goto P3_P4_P5;
 	}
 
@@ -521,7 +525,7 @@ P3_P4_P5:
 		zc17 = (ac + ar) > 0xffff;
 		w = ac + ar;
 		ar = ac = w;
-		instruction_time += TIME_PREMOD;
+		instruction_time_ns += TIME_PREMOD;
 	} else {
 		mc = 0;
 		zc17 = false;
@@ -532,14 +536,14 @@ P3_P4_P5:
 		zc17 = (ac + r[IR_B]) > 0xffff;
 		w = ac + r[IR_B];
 		ar = ac = w;
-		instruction_time += TIME_BMOD;
+		instruction_time_ns += TIME_BMOD;
 	}
 
 // P5 D-mod
 	if ((flags & OP_FL_ARG_NORM) && IR_D) {
 		cpu_mem_read_1(q, ar, &w);
 		ar = ac = w;
-		instruction_time += TIME_DMOD;
+		instruction_time_ns += TIME_DMOD;
 	}
 
 	if (op->fun != op_77_md) mc = 0;
@@ -547,20 +551,20 @@ P3_P4_P5:
 	LOGDASM((op->flags & (OP_FL_ARG_NORM | OP_FL_ARG_SHORT)), ac, "");
 	// execute instruction
 	op->fun();
-	instruction_time += op->time;
+	instruction_time_ns += op->time;
 
 	if (op->fun == op_72_shc) {
-		instruction_time += IR_t * TIME_SHIFT;
+		instruction_time_ns += IR_t * TIME_SHIFT;
 	} else if (op->fun == op_ou) {
 		// Negative instruction time means "skip time keeping for this cycle".
 		// Do this after each OU instruction.
 		// This is required for minimalistic I/O routines using OU+HLT to work.
 		// Without it, it may happen that interrupt HLT was supposed to wait for
 		// is served just after OU, causing HLT to sleep indefinitely.
-		instruction_time *= -1;
+		instruction_time_ns *= -1;
 	}
 
-	return instruction_time;
+	return instruction_time_ns;
 
 P2: // ineffective and illegal instructions handler
 	xi = (flags & OP_FL_ILLEGAL) || (q && (flags & OP_FL_USR_ILLEGAL)) || ((op->fun == op_77_md) && (mc == 3));
@@ -573,36 +577,88 @@ P2: // ineffective and illegal instructions handler
 		LOGDASM(0, 0, "NEF: ");
 		if ((flags & OP_FL_ARG_NORM) && !IR_C) ic++;
 	}
-	instruction_time += TIME_P;
+	instruction_time_ns += TIME_P;
 	p = false;
 	mc = 0;
-	return instruction_time;
+	return instruction_time_ns;
 }
 
 // -----------------------------------------------------------------------
-static void cpu_timekeeping(int cpu_time)
+static inline void cpu_latency_stats(long late_ns)
+{
+	enum bucket {
+		LATE_LT_1US, LATE_LT_10US, LATE_LT_100US,
+		LATE_LT_1MS, LATE_LT_10MS, LATE_LT_100MS,
+		LATE_GT_100MS,
+		BUCKET_COUNT
+	};
+	static const long thresholds[BUCKET_COUNT] = {
+		[LATE_LT_1US]	= 1000L,
+		[LATE_LT_10US]	= 10000L,
+		[LATE_LT_100US]	= 100000L,
+		[LATE_LT_1MS]	= 1000000L,
+		[LATE_LT_10MS]	= 10000000L,
+		[LATE_LT_100MS]	= 100000000L,
+		[LATE_GT_100MS]	= LONG_MAX,
+	};
+
+	struct stats {
+		unsigned bucket[BUCKET_COUNT];
+		unsigned samples;
+	} static stats;
+
+	for (enum bucket i=LATE_LT_1US; i<BUCKET_COUNT ; i++) {
+		if (late_ns < thresholds[i]) {
+			stats.bucket[i]++;
+			break;
+		}
+	}
+	stats.samples++;
+
+	if (stats.samples >= ticks_per_2s) {
+		LOG(L_EM4H,
+			"wakeup latency stats:"
+			" <1us: %-6u <10us: %-6u <100us: %-6u"
+			" <1ms: %-6u <10ms: %-6u <100ms: %-6u"
+			" >=100ms: %-6u",
+			stats.bucket[LATE_LT_1US], stats.bucket[LATE_LT_10US], stats.bucket[LATE_LT_100US],
+			stats.bucket[LATE_LT_1MS], stats.bucket[LATE_LT_10MS], stats.bucket[LATE_LT_100MS],
+			stats.bucket[LATE_GT_100MS]
+		);
+		stats = (struct stats){0};
+	}
+}
+
+// -----------------------------------------------------------------------
+static void cpu_timekeeping(int cpu_time_ns)
 {
 	bool skip_sleep = false;
 
-	if (cpu_time < 0) {
-		cpu_time *= -1;
+	if (cpu_time_ns < 0) {
+		cpu_time_ns *= -1;
 		skip_sleep = true;
 	}
 
-	cpu_time_cumulative += cpu_time;
+	cpu_time_cumulative_ns += cpu_time_ns;
 
 	if (sound_enabled) {
-		buzzer_update(ir, cpu_time);
+		buzzer_update(ir, cpu_time_ns);
 	}
 
-	if (!skip_sleep && (cpu_time_cumulative >= throttle_granularity)) {
-		cpu_timer.tv_nsec += cpu_time_cumulative;
+	if (!skip_sleep && (cpu_time_cumulative_ns >= throttle_granularity_ns)) {
+		cpu_timer.tv_nsec += cpu_time_cumulative_ns;
 		while (cpu_timer.tv_nsec >= 1000000000) {
 			cpu_timer.tv_nsec -= 1000000000;
 			cpu_timer.tv_sec++;
 		}
 		while (clock_nanosleep(CLOCK_MONOTONIC, TIMER_ABSTIME, &cpu_timer, NULL) == EINTR);
-		cpu_time_cumulative = 0;
+		cpu_time_cumulative_ns = 0;
+
+		struct timespec now;
+		clock_gettime(CLOCK_MONOTONIC, &now);
+		long late_ns = (now.tv_sec - cpu_timer.tv_sec) * 1000000000L + (now.tv_nsec - cpu_timer.tv_nsec);
+
+		cpu_latency_stats(late_ns);
 	}
 }
 
@@ -614,7 +670,7 @@ static void * cpu_loop(void *ptr)
 	clock_gettime(CLOCK_MONOTONIC, &cpu_timer);
 
 	while (!quit) {
-		int cpu_time = 0;
+		int cpu_time_ns = 0;
 
 		switch (atomic_load_explicit(&cpu_state, memory_order_acquire)) {
 			case EM400_STATE_CYCLE:
@@ -623,9 +679,9 @@ static void * cpu_loop(void *ptr)
 			case EM400_STATE_RUN:
 				if (atomic_load_explicit(&irq, memory_order_acquire) && !p && (mc == 0)) {
 					int_serve();
-					cpu_time = TIME_INT_SERVE;
+					cpu_time_ns = TIME_INT_SERVE;
 				} else {
-					cpu_time = cpu_do_cycle();
+					cpu_time_ns = cpu_do_cycle();
 					if (brk_check()) {
 						cpu_state_change(EM400_STATE_STOP, EM400_STATE_ANY);
 					}
@@ -663,7 +719,7 @@ static void * cpu_loop(void *ptr)
 				if (res == EM400_STATE_RUN) {
 					if (sound_enabled) buzzer_start();
 					clock_gettime(CLOCK_MONOTONIC, &cpu_timer);
-					cpu_time_cumulative = 0;
+					cpu_time_cumulative_ns = 0;
 				}
 				break;
 			case EM400_STATE_WAIT:
@@ -672,7 +728,7 @@ static void * cpu_loop(void *ptr)
 				if (atomic_load_explicit(&irq, memory_order_acquire) && !p && !mc) {
 					cpu_state_change(EM400_STATE_RUN, EM400_STATE_WAIT);
 				} else {
-					cpu_time = throttle_granularity;
+					cpu_time_ns = throttle_granularity_ns;
 				}
 				// else = if (!speed_real) {
 				//	cpu_do_wait();
@@ -681,7 +737,7 @@ static void * cpu_loop(void *ptr)
 				break;
 		}
 
-		if (speed_real) cpu_timekeeping(cpu_time);
+		if (speed_real) cpu_timekeeping(cpu_time_ns);
 	}
 
 	LOG(L_CPU, "Exiting CPU loop");

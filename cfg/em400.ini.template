@@ -9,7 +9,7 @@ speed_real = true
 # Execute instructions for this much time (in us) before sleeping.
 # Use with caution. If "real" emulation speed is slower than
 # it should be, you may need to set granularity to a higher value.
-throttle_granularity = 30
+throttle_granularity = 100
 
 # Internal clock interrupt period (in miliseconds)
 # Allowed values: 2, 4, 8, 10 (default), 20

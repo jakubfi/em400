@@ -61,17 +61,17 @@ static void * clock_thread(void *ptr)
 }
 
 // -----------------------------------------------------------------------
-int clock_init(unsigned period)
+int clock_init(unsigned period_ms)
 {
 	if (clock_initialized) {
 		return LOGERR("Clock already initialized");
 	}
 
-	if ((period != 2) && (period != 4) && (period != 8) && (period != 10) && (period != 20)) {
-		return LOGERR("Valid clock periods are: 2, 4, 8, 10, 20, not %i", period);
+	if ((period_ms != 2) && (period_ms != 4) && (period_ms != 8) && (period_ms != 10) && (period_ms != 20)) {
+		return LOGERR("Valid clock periods are: 2, 4, 8, 10, 20 ms, not %i", period_ms);
 	}
 
-	clock_period = period;
+	clock_period = period_ms;
 	atomic_store_explicit(&clock_enabled, false, memory_order_relaxed);
 	atomic_store_explicit(&clock_int, INT_CLOCK, memory_order_relaxed);
 
@@ -88,7 +88,7 @@ int clock_init(unsigned period)
 	}
 
 	clock_initialized = true;
-	LOG(L_CPU, "Clock period: %i ms", period);
+	LOG(L_CPU, "Clock period: %i ms", period_ms);
 
 	return E_OK;
 }

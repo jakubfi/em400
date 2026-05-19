@@ -33,8 +33,8 @@ struct em400_cfg_cpu {
 	bool user_io_illegal;
 	bool nomem_stop;
 	bool speed_real;
-	int throttle_granularity;
-	int clock_period;
+	int throttle_granularity_ns;
+	int clock_period_ms;
 };
 
 struct em400_cfg_buzzer {
