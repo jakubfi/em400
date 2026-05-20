@@ -201,7 +201,7 @@ void DasmView::paintEvent(QPaintEvent *event)
 	}
 
 	// addr-code divider line
-	painter.setPen(palette().color(QPalette::Accent));
+	painter.setPen(palette().color(QPalette::Highlight));
 	painter.drawLine(divider_x_pos, 0, divider_x_pos, height());
 
 	// frame around the widget

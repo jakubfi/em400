@@ -103,7 +103,7 @@ void MemView::paintEvent(QPaintEvent *event)
 	}
 
 	// divider line
-	painter.setPen(this->palette().color(QPalette::Accent));
+	painter.setPen(this->palette().color(QPalette::Highlight));
 	painter.drawLine(divider_x_pos, 0, divider_x_pos, bottom);
 
 	// frame around the widget
