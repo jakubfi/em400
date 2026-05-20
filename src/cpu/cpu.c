@@ -33,6 +33,7 @@
 
 #include <emawp.h>
 
+#include "utils/utils.h"
 #include "cpu/cpu.h"
 #include "cpu/interrupts.h"
 #include "mem/mem.h"
@@ -80,6 +81,13 @@ static struct timespec cpu_timer;
 static int cpu_time_cumulative_ns;
 static int throttle_granularity_ns;
 static int ticks_per_2s;
+
+#define TIMING_PROBE_DELAY			10
+#define TIMING_PROBE_PASSES			10
+#define TIMING_BUSY_THRESHOLD_NS	100000L		// 100 us: BUSY->PROBE gate
+#define TIMING_PROBE_THRESHOLD_NS	500000L		// 500 us: PROBE->BUSY pass gate
+#define TIMING_SLEEP_THRESHOLD_NS	1000000L	// 1 ms:   SLEEP->BUSY fallback
+enum timing_policy_e { TIMING_POLICY_BUSY, TIMING_POLICY_PROBE, TIMING_POLICY_SLEEP, TIMING_POLICY_COUNT };
 
 static int sound_enabled;
 
@@ -604,7 +612,7 @@ P2: // ineffective and illegal instructions handler
 }
 
 // -----------------------------------------------------------------------
-static inline void cpu_latency_stats(long late_ns)
+static inline void cpu_latency_stats(int policy, long late_ns)
 {
 	enum bucket {
 		LATE_LT_1US, LATE_LT_10US, LATE_LT_100US,
@@ -623,6 +631,7 @@ static inline void cpu_latency_stats(long late_ns)
 	};
 
 	struct stats {
+		unsigned timing_policy[TIMING_POLICY_COUNT];
 		unsigned bucket[BUCKET_COUNT];
 		unsigned samples;
 	} static stats;
@@ -635,24 +644,58 @@ static inline void cpu_latency_stats(long late_ns)
 	}
 	stats.samples++;
 
+	stats.timing_policy[policy]++;
+
 	if (stats.samples >= ticks_per_2s) {
 		LOG(L_EM4H,
-			"wakeup latency stats:"
-			" <1us: %-6u <10us: %-6u <100us: %-6u"
+			"<1us: %-6u <10us: %-6u <100us: %-6u"
 			" <1ms: %-6u <10ms: %-6u <100ms: %-6u"
-			" >=100ms: %-6u",
+			" >=100ms: %-6u"
+			" (busy: %u, sleep: %u)",
 			stats.bucket[LATE_LT_1US], stats.bucket[LATE_LT_10US], stats.bucket[LATE_LT_100US],
 			stats.bucket[LATE_LT_1MS], stats.bucket[LATE_LT_10MS], stats.bucket[LATE_LT_100MS],
-			stats.bucket[LATE_GT_100MS]
+			stats.bucket[LATE_GT_100MS],
+			stats.timing_policy[0], stats.timing_policy[1] + stats.timing_policy[2]
 		);
 		stats = (struct stats){0};
 	}
 }
 
 // -----------------------------------------------------------------------
+static inline long cpu_timing_latency(const struct timespec *now, const struct timespec *cpu_timer)
+{
+	return (now->tv_sec - cpu_timer->tv_sec) * 1000000000L + (now->tv_nsec - cpu_timer->tv_nsec);
+}
+
+// -----------------------------------------------------------------------
+static inline long cpu_timing_busy_wait(struct timespec *now, const struct timespec *cpu_timer)
+{
+	long late_ns;
+	do {
+		CPU_RELAX();
+		clock_gettime(CLOCK_MONOTONIC, now);
+	} while ((late_ns = cpu_timing_latency(now, cpu_timer)) < 0);
+	return late_ns;
+}
+
+// -----------------------------------------------------------------------
+static inline long cpu_timing_sleep_wait(struct timespec *now, struct timespec *cpu_timer)
+{
+	while (clock_nanosleep(CLOCK_MONOTONIC, TIMER_ABSTIME, cpu_timer, NULL) == EINTR);
+	clock_gettime(CLOCK_MONOTONIC, now);
+	return cpu_timing_latency(now, cpu_timer);
+}
+
+// -----------------------------------------------------------------------
 static void cpu_timekeeping(int cpu_time_ns)
 {
 	bool skip_sleep = false;
+
+	static enum timing_policy_e timing_policy = TIMING_POLICY_BUSY;
+	static int busy_probe_delay = TIMING_PROBE_DELAY;
+	static int busy_probes_ok = 0;
+	struct timespec now;
+	long late_ns;
 
 	if (cpu_time_ns < 0) {
 		cpu_time_ns = -cpu_time_ns;
@@ -665,20 +708,64 @@ static void cpu_timekeeping(int cpu_time_ns)
 		buzzer_update(ir, cpu_time_ns);
 	}
 
-	if (!skip_sleep && (cpu_time_cumulative_ns >= throttle_granularity_ns)) {
-		cpu_timer.tv_nsec += cpu_time_cumulative_ns;
-		while (cpu_timer.tv_nsec >= 1000000000) {
-			cpu_timer.tv_nsec -= 1000000000;
-			cpu_timer.tv_sec++;
-		}
-		while (clock_nanosleep(CLOCK_MONOTONIC, TIMER_ABSTIME, &cpu_timer, NULL) == EINTR);
-		cpu_time_cumulative_ns = 0;
+	if (skip_sleep || (cpu_time_cumulative_ns < throttle_granularity_ns)) {
+		return;
+	}
 
-		struct timespec now;
-		clock_gettime(CLOCK_MONOTONIC, &now);
-		long late_ns = (now.tv_sec - cpu_timer.tv_sec) * 1000000000L + (now.tv_nsec - cpu_timer.tv_nsec);
+	cpu_timer.tv_nsec += cpu_time_cumulative_ns;
+	while (cpu_timer.tv_nsec >= 1000000000) {
+		cpu_timer.tv_nsec -= 1000000000;
+		cpu_timer.tv_sec++;
+	}
+	cpu_time_cumulative_ns = 0;
 
-		cpu_latency_stats(late_ns);
+	// wait
+	if (timing_policy == TIMING_POLICY_BUSY) {
+		late_ns = cpu_timing_busy_wait(&now, &cpu_timer);
+	} else {
+		late_ns = cpu_timing_sleep_wait(&now, &cpu_timer);
+	}
+
+	cpu_latency_stats(timing_policy, late_ns);
+
+	// decide on the next step
+	switch (timing_policy) {
+		case TIMING_POLICY_BUSY:
+			// count down to the next PROBE
+			if (busy_probe_delay > 0) busy_probe_delay--;
+			// transition to probe only when both are true:
+			//  * no more processing delay (latency < 100us)
+			//  * not earlier than 10 BUSY waits
+			if ((late_ns < TIMING_BUSY_THRESHOLD_NS) && (busy_probe_delay <= 0)) {
+				timing_policy = TIMING_POLICY_PROBE;
+			}
+			break;
+		case TIMING_POLICY_PROBE:
+			// probing is successfull if latency is < 500us for 10 consecutive probes
+			if (late_ns < TIMING_PROBE_THRESHOLD_NS) {
+				busy_probes_ok++;
+			} else {
+				busy_probes_ok = 0;
+			}
+			if (busy_probes_ok > TIMING_PROBE_PASSES) {
+				// lookin' good, switch to SLEEP
+				timing_policy = TIMING_POLICY_SLEEP;
+			} else {
+				// back to BUSY, count down to the next probe
+				timing_policy = TIMING_POLICY_BUSY;
+				busy_probe_delay = TIMING_PROBE_DELAY;
+			}
+			break;
+		case TIMING_POLICY_SLEEP:
+			// fall back to BUSY immediately if latency spikes (or accumulates) above 1ms
+			if (late_ns > TIMING_SLEEP_THRESHOLD_NS) {
+				timing_policy = TIMING_POLICY_BUSY;
+				busy_probe_delay = TIMING_PROBE_DELAY;
+				busy_probes_ok = 0;
+			}
+			break;
+		default:
+			break;
 	}
 }
 

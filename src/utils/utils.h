@@ -20,6 +20,19 @@
 
 #include <inttypes.h>
 
+#if defined(__x86_64__) || defined(__i386__)
+	#define CPU_RELAX() __builtin_ia32_pause()
+#elif defined(_M_X64) || defined(_M_IX86)
+	#include <immintrin.h>
+	#define CPU_RELAX() _mm_pause()
+#elif defined(__aarch64__)
+	#define CPU_RELAX() __asm__ __volatile__("yield")
+#elif defined(__arm__) && (__ARM_ARCH >= 6)
+	#define CPU_RELAX() __asm__ __volatile__("yield")
+#else
+	#define CPU_RELAX() ((void)0)
+#endif
+
 #define BIN_ENDBYTE 0b01010000
 
 char * int2binf(char *buf, const char *format, uint64_t value, int size);
