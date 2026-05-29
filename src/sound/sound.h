@@ -22,20 +22,10 @@
 #include <stdlib.h>
 #include "libem400.h"
 
-typedef int (*snd_drv_init)(struct em400_cfg_buzzer *cfg);
-typedef void (*snd_drv_shutdown)(void);
-typedef long (*snd_drv_play)(int16_t *buf, size_t frames);
-typedef void (*snd_drv_stop)(void);
-
-struct snd_drv {
-	char *name;
-	snd_drv_init init;
-	snd_drv_shutdown shutdown;
-	snd_drv_play play;
-	snd_drv_stop start;
-	snd_drv_stop stop;
-};
-
-const struct snd_drv * snd_init(struct em400_cfg_buzzer *cfg);
+int sound_init(struct em400_cfg_buzzer *cfg);
+void sound_shutdown(void);
+long sound_play(int16_t *buf, size_t frames);
+void sound_start(void);
+void sound_stop(void);
 
 #endif

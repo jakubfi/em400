@@ -1,4 +1,4 @@
-//  Copyright (c) 2020 Jakub Filipowicz <jakubf@gmail.com>
+//  Copyright (c) 2026 Jakub Filipowicz <jakubf@gmail.com>
 //
 //  This program is free software; you can redistribute it and/or modify
 //  it under the terms of the GNU General Public License as published by
@@ -15,48 +15,271 @@
 //  Foundation, Inc.,
 //  51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 
+#include <inttypes.h>
+#include <pthread.h>
+#include <stdbool.h>
 #include <stdlib.h>
+#include <string.h>
 #include <strings.h>
 
+#include "external/miniaudio/miniaudio.h"
+#include "libem400.h"
 #include "log.h"
 #include "sound/sound.h"
-#include "libem400.h"
 
-#ifdef HAVE_ALSA
-extern const struct snd_drv snd_drv_alsa;
-#endif
-#ifdef HAVE_PULSEAUDIO
-extern const struct snd_drv snd_drv_pulseaudio;
-#endif
+// Internal ring sized generously vs. miniaudio's host buffer so the producer
+// almost never finds it full in steady state. Underrun-on-empty (callback)
+// and block-on-full (play) handle the off-nominal cases.
+#define RING_FRAMES 8192
 
-static const struct snd_drv *snd_drivers[] = {
-#ifdef HAVE_ALSA
-	&snd_drv_alsa,
-#endif
-#ifdef HAVE_PULSEAUDIO
-	&snd_drv_pulseaudio,
-#endif
-	NULL
-};
+static const ma_uint32 channels = 1;
+
+static ma_context context;
+static ma_device device;
+static ma_pcm_rb rb;
+static ma_device_id matched_device_id;
+static bool initialized;
+
+static pthread_mutex_t mu = PTHREAD_MUTEX_INITIALIZER;
+static pthread_cond_t cv = PTHREAD_COND_INITIALIZER;
 
 // -----------------------------------------------------------------------
-const struct snd_drv * snd_init(struct em400_cfg_buzzer *cfg)
+static void data_callback(ma_device *dev, void *out, const void *in, ma_uint32 frame_count)
 {
-	const struct snd_drv **snd_drv = snd_drivers;
-	while (snd_drv && *snd_drv) {
-		if (!strcasecmp(cfg->driver, (*snd_drv)->name)) {
-			if ((*snd_drv)->init(cfg) == E_OK) {
-				return *snd_drv;
-			} else {
-				LOGERR("Error initializing sound driver: %s", cfg->driver);
-				return NULL;
-			}
+	(void)dev;
+	(void)in;
+
+	int16_t *dst = (int16_t *)out;
+	ma_uint32 remaining = frame_count;
+
+	while (remaining > 0) {
+		ma_uint32 to_read = remaining;
+		void *src;
+		if (ma_pcm_rb_acquire_read(&rb, &to_read, &src) != MA_SUCCESS || to_read == 0) {
+			break;
 		}
-		snd_drv++;
+		memcpy(dst, src, to_read * sizeof(int16_t));
+		ma_pcm_rb_commit_read(&rb, to_read);
+		dst += to_read;
+		remaining -= to_read;
 	}
 
-	LOGERR("Could not find sound driver: %s", cfg->driver);
+	// underrun: hold silence
+	// audible glitch = sign that the CPU thread fell behind
+	if (remaining > 0) {
+		memset(dst, 0, remaining * sizeof(int16_t));
+	}
+
+	pthread_mutex_lock(&mu);
+	pthread_cond_signal(&cv);
+	pthread_mutex_unlock(&mu);
+}
+
+// -----------------------------------------------------------------------
+// Returns 1 if name maps to a backend (sets *out), 0 if name means "auto"
+// (empty or "auto"), -1 if name is unrecognized.
+static int parse_backend(const char *name, ma_backend *out)
+{
+	if (!name || !*name || !strcasecmp(name, "auto")) return 0;
+
+	static const struct { const char *name; ma_backend be; } map[] = {
+		{ "wasapi",     ma_backend_wasapi     },
+		{ "dsound",     ma_backend_dsound     },
+		{ "winmm",      ma_backend_winmm      },
+		{ "coreaudio",  ma_backend_coreaudio  },
+		{ "sndio",      ma_backend_sndio      },
+		{ "audio4",     ma_backend_audio4     },
+		{ "oss",        ma_backend_oss        },
+		{ "pulseaudio", ma_backend_pulseaudio },
+		{ "pulse",      ma_backend_pulseaudio },
+		{ "alsa",       ma_backend_alsa       },
+		{ "jack",       ma_backend_jack       },
+		{ "aaudio",     ma_backend_aaudio     },
+		{ "opensl",     ma_backend_opensl     },
+		{ "webaudio",   ma_backend_webaudio   },
+		{ "null",       ma_backend_null       },
+	};
+	for (size_t i=0 ; i<sizeof(map)/sizeof(*map) ; i++) {
+		if (!strcasecmp(name, map[i].name)) {
+			*out = map[i].be;
+			return 1;
+		}
+	}
+	return -1;
+}
+
+// -----------------------------------------------------------------------
+static bool name_matches(const char *haystack, const char *needle)
+{
+	size_t nlen = strlen(needle);
+	if (nlen == 0) return false;
+	for (const char *p=haystack ; *p ; p++) {
+		if (strncasecmp(p, needle, nlen) == 0) return true;
+	}
+	return false;
+}
+
+// -----------------------------------------------------------------------
+// matched_device_id outlives this call so the returned pointer stays valid
+// across ma_device_init (which copies the id internally).
+static ma_device_id *resolve_device(const char *needle)
+{
+	if (!needle || !*needle) return NULL;
+
+	ma_device_info *infos = NULL;
+	ma_uint32 count = 0;
+	if (ma_context_get_devices(&context, &infos, &count, NULL, NULL) != MA_SUCCESS) {
+		LOG(L_EM4H, "Sound device enumeration failed; using default");
+		return NULL;
+	}
+
+	for (ma_uint32 i=0 ; i<count ; i++) {
+		if (name_matches(infos[i].name, needle)) {
+			matched_device_id = infos[i].id;
+			LOG(L_EM4H, "Sound device matched: %s", infos[i].name);
+			return &matched_device_id;
+		}
+	}
+
+	LOG(L_EM4H, "Sound device '%s' not found on backend %s; using default. Available device names:",
+		needle, ma_get_backend_name(context.backend));
+	for (ma_uint32 i=0 ; i<count ; i++) {
+		LOG(L_EM4H, "  - \"%s\"", infos[i].name);
+	}
 	return NULL;
+}
+
+// -----------------------------------------------------------------------
+int sound_init(struct em400_cfg_buzzer *cfg)
+{
+	if (initialized) return E_OK;
+
+	ma_backend forced;
+	int bres = parse_backend(cfg->backend, &forced);
+	if (bres < 0) {
+		LOG(L_EM4H, "Unknown sound backend '%s'; falling back to auto", cfg->backend);
+	}
+
+	ma_result mr;
+	if (bres == 1) {
+		ma_backend backends[1] = { forced };
+		mr = ma_context_init(backends, 1, NULL, &context);
+	} else {
+		mr = ma_context_init(NULL, 0, NULL, &context);
+	}
+	if (mr != MA_SUCCESS) {
+		if (bres == 1) LOGERR("Failed to initialize sound context for backend %s", ma_get_backend_name(forced));
+		else LOGERR("Failed to initialize sound context");
+		goto fail_context;
+	}
+
+	if (ma_pcm_rb_init(ma_format_s16, channels, RING_FRAMES, NULL, NULL, &rb) != MA_SUCCESS) {
+		LOGERR("Failed to initialize sound ring buffer");
+		goto fail_rb;
+	}
+
+	ma_device_config dc = ma_device_config_init(ma_device_type_playback);
+	dc.playback.format = ma_format_s16;
+	dc.playback.channels = channels;
+	dc.playback.pDeviceID = resolve_device(cfg->device);
+	dc.sampleRate = cfg->sample_rate;
+	dc.periodSizeInMilliseconds = cfg->latency > 0 ? (ma_uint32)cfg->latency : 20;
+	dc.periods = 2;
+	dc.dataCallback = data_callback;
+
+	if (ma_device_init(&context, &dc, &device) != MA_SUCCESS) {
+		LOGERR("Failed to initialize sound playback device");
+		goto fail_device;
+	}
+
+	if (ma_device_start(&device) != MA_SUCCESS) {
+		LOGERR("Failed to start sound playback device");
+		goto fail_start;
+	}
+
+	initialized = true;
+	LOG(L_EM4H, "Sound initialized (%s). Rate: %i Hz, period: %u ms x %u",
+		ma_get_backend_name(context.backend),
+		cfg->sample_rate, dc.periodSizeInMilliseconds, dc.periods);
+	return E_OK;
+
+fail_start:
+	ma_device_uninit(&device);
+fail_device:
+	ma_pcm_rb_uninit(&rb);
+fail_rb:
+	ma_context_uninit(&context);
+fail_context:
+	return E_ERR;
+}
+
+// -----------------------------------------------------------------------
+void sound_shutdown(void)
+{
+	if (!initialized) return;
+
+	initialized = false;
+
+	// Unblock any producer that's parked in sound_play().
+	pthread_mutex_lock(&mu);
+	pthread_cond_broadcast(&cv);
+	pthread_mutex_unlock(&mu);
+
+	ma_device_uninit(&device);
+	ma_pcm_rb_uninit(&rb);
+	ma_context_uninit(&context);
+}
+
+// -----------------------------------------------------------------------
+long sound_play(int16_t *buf, size_t frames)
+{
+	if (!initialized) return -1;
+
+	size_t written = 0;
+	while (written < frames) {
+		ma_uint32 to_write = (ma_uint32)(frames - written);
+		void *dst;
+		if (ma_pcm_rb_acquire_write(&rb, &to_write, &dst) != MA_SUCCESS) {
+			return (long)written;
+		}
+		if (to_write == 0) {
+			// Ring full. Wait for the audio callback to drain some.
+			pthread_mutex_lock(&mu);
+			// Re-check under the lock to avoid lost-wakeup races
+			// against the callback's signal.
+			ma_uint32 recheck = (ma_uint32)(frames - written);
+			// potential failure is handled by the top-of-loop acquire on continue.
+			ma_pcm_rb_acquire_write(&rb, &recheck, &dst);
+			if (recheck == 0 && initialized) {
+				pthread_cond_wait(&cv, &mu);
+			}
+			pthread_mutex_unlock(&mu);
+			if (!initialized) return (long)written;
+			continue;
+		}
+		memcpy(dst, buf + written, to_write * sizeof(int16_t));
+		ma_pcm_rb_commit_write(&rb, to_write);
+		written += to_write;
+	}
+	return (long)written;
+}
+
+// -----------------------------------------------------------------------
+void sound_start(void)
+{
+	if (!initialized) return;
+	if (ma_device_get_state(&device) == ma_device_state_stopped) {
+		ma_device_start(&device);
+	}
+}
+
+// -----------------------------------------------------------------------
+void sound_stop(void)
+{
+	if (!initialized) return;
+	if (ma_device_get_state(&device) == ma_device_state_started) {
+		ma_device_stop(&device);
+	}
 }
 
 // vim: tabstop=4 shiftwidth=4 autoindent

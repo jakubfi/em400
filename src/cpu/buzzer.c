@@ -16,6 +16,8 @@
 //  51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 
 #include <inttypes.h>
+#include <stdbool.h>
+#include <stdlib.h>
 #include <string.h>
 
 #include "sound/sound.h"
@@ -29,7 +31,7 @@
 #define SPEAKER_LP 3200.0f // -10dB @ 4500 Hz
 #define SPEAKER_LP_RES 0.0f
 
-static const struct snd_drv *snd;
+static bool sound_ready;
 
 static float sample_period_ns;
 static unsigned buffer_len;
@@ -59,9 +61,13 @@ static void buzzer_flush()
 	// play the buffer
 	int written = 0;
 	while (written != buffer_len) {
-		int res = snd->play(snd_buf_output+written, buffer_len-written);
+		long res = sound_play(snd_buf_output+written, buffer_len-written);
 		if (res > 0) {
 			written += res;
+		} else {
+			// res <= 0: sound_play made no progress (shutdown or a
+			// ring error); retrying with the same args can't help.
+			break;
 		}
 	}
 }
@@ -99,13 +105,13 @@ void buzzer_update(int ir, unsigned instruction_time_ns)
 // -----------------------------------------------------------------------
 void buzzer_start()
 {
-	snd->start();
+	sound_start();
 }
 
 // -----------------------------------------------------------------------
 void buzzer_stop()
 {
-	snd->stop();
+	sound_stop();
 }
 
 // -----------------------------------------------------------------------
@@ -117,17 +123,17 @@ void buzzer_shutdown()
 	free(snd_buf_output);
 	snd_buf_output = NULL;
 
-	if (snd) {
-		snd->shutdown();
-		snd = NULL;
+	if (sound_ready) {
+		sound_shutdown();
+		sound_ready = false;
 	}
 }
 
 // -----------------------------------------------------------------------
 int buzzer_init(struct em400_cfg_buzzer *cfg)
 {
-	if (snd) {
-		return LOGERR("Buzzer aldeary initialized");
+	if (sound_ready) {
+		return LOGERR("Buzzer already initialized");
 	}
 
 	sample_period_ns = 1000000000.0f / cfg->sample_rate;
@@ -157,11 +163,11 @@ int buzzer_init(struct em400_cfg_buzzer *cfg)
 	snd_buf_pos = snd_buf_float;
 	snd_buf_end = snd_buf_float + buffer_len;
 
-	snd = snd_init(cfg);
-	if (!snd) {
+	if (sound_init(cfg) != E_OK) {
 		LOGERR("Could not initialize sound subsystem.");
 		goto cleanup;
 	}
+	sound_ready = true;
 
 	sf_highpass(&bq_hp, cfg->sample_rate, SPEAKER_HP, SPEAKER_HP_RES);
 	sf_lowpass(&bq_lp, cfg->sample_rate, SPEAKER_LP, SPEAKER_LP_RES);

@@ -63,15 +63,22 @@ preload = program.bin
 [sound]
 # Internal buzzer emulation.
 # For this to work, set speed_real to true
-# Note that for sound to work properly logging will most likely
-# have to be disabled.
+# Note that for sound to work properly CPU instruction logging
+# should be disabled.
 enabled = true
 
-# Sound driver to use: pulseaudio or alsa
-driver = pulseaudio
+# Sound is routed through the vendored miniaudio library.
+# Backend selection: "auto" lets miniaudio pick.
+# Force a specific one with e.g.
+# pulseaudio, alsa, jack, coreaudio, wasapi, dsound, sndio, oss, null.
+backend = auto
 
-# For alsa, this is the output device to use. Unused for pulseaudio.
-output = default
+# Output device. Empty string = system default. Otherwise a
+# case-insensitive substring match against the device name as the chosen
+# backend reports it (e.g. "Built-in Audio Analog Stereo" for PulseAudio,
+# "HDA Intel" for ALSA). If no device matches, the available names are
+# listed in the log and the default is used.
+device =
 
 # Samplerate.
 rate = 48000

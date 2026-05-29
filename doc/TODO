@@ -1,5 +1,6 @@
 Work notes:
 
+* reconsider terminal input buffering
 * make uzfx/sp45de async?
 * shutdown() can be always called?
 * handling errors during initialization

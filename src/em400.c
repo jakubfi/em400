@@ -153,9 +153,9 @@ int em400_top_init(em400_cfg *cfg)
 		.buffer_len = cfg_getint(cfg, "sound:buffer_len", CFG_DEFAULT_SOUND_BUFFER_LEN),
 		.volume = cfg_getint(cfg, "sound:volume", CFG_DEFAULT_SOUND_VOLUME),
 		.sample_rate = cfg_getint(cfg, "sound:rate", CFG_DEFAULT_SOUND_RATE),
-		.driver = cfg_getstr(cfg, "sound:driver", CFG_DEFAULT_SOUND_DRIVER),
-		.output = cfg_getstr(cfg, "sound:output", CFG_DEFAULT_SOUND_OUTPUT),
 		.latency = cfg_getint(cfg, "sound:latency", CFG_DEFAULT_SOUND_LATENCY),
+		.backend = cfg_getstr(cfg, "sound:backend", CFG_DEFAULT_SOUND_BACKEND),
+		.device = cfg_getstr(cfg, "sound:device", CFG_DEFAULT_SOUND_DEVICE),
 	};
 
 	struct em400_cfg_mem mem_cfg = {

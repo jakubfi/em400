@@ -103,16 +103,10 @@ else()
 	message(STATUS "LTO disabled: ${IPO_ERROR}")
 endif()
 
-# --- Sound
+# --- Sound (miniaudio, vendored)
 
-include(FindALSA)
-include(cmake/FindPulseAudio.cmake)
-find_library(PULSEAUDIO_SIMPLE_LIBRARY pulse-simple)
-
-if(PULSEAUDIO_FOUND OR ALSA_FOUND)
-	message(STATUS "Sound enabled: ALSA: ${ALSA_FOUND}, PulseAudio: ${PULSEAUDIO_FOUND}")
-else()
-	message(STATUS "No supported sound libraries found, disabling sound")
+if(NOT WIN32)
+	find_library(DL_LIBRARY dl)
 endif()
 
 # --- QT
@@ -252,6 +246,8 @@ set(SOURCES_EM400
 	src/sound/sound.h
 	src/external/biquad/biquad.c
 	src/external/biquad/biquad.h
+	src/external/miniaudio/miniaudio.c
+	src/external/miniaudio/miniaudio.h
 	src/cpu/buzzer.c
 	src/cpu/buzzer.h
 
@@ -263,13 +259,6 @@ set(SOURCES_EM400
 	src/libem400.c
 	src/libem400.h
 )
-
-if(ALSA_FOUND)
-	list(APPEND SOURCES_EM400 src/sound/alsa.c)
-endif()
-if(PULSEAUDIO_FOUND)
-	list(APPEND SOURCES_EM400 src/sound/pulseaudio.c)
-endif()
 
 if (UI_QT)
 	list(APPEND SOURCES_EM400 src/ui/qt6/qt6.cpp)
@@ -360,15 +349,12 @@ if(NOT WIN32)
 	)
 endif()
 
-if(ALSA_FOUND)
-	target_include_directories(em400 PUBLIC SYSTEM ${ALSA_INCLUDE_DIRS})
-	target_link_libraries(em400 ${ALSA_LIBRARIES})
-	target_compile_definitions(em400 PRIVATE HAVE_ALSA)
-endif()
-if(PULSEAUDIO_FOUND)
-	target_include_directories(em400 PUBLIC SYSTEM ${PULSEAUDIO_INCLUDE_DIRS})
-	target_link_libraries(em400 ${PULSEAUDIO_LIBRARIES} ${PULSEAUDIO_SIMPLE_LIBRARY})
-	target_compile_definitions(em400 PRIVATE HAVE_PULSEAUDIO)
+# miniaudio: silence -Wall noise in the vendored implementation TU, and link
+# libdl on Linux so its runtime loader for ALSA/PulseAudio/JACK works.
+set_source_files_properties(src/external/miniaudio/miniaudio.c
+	PROPERTIES COMPILE_FLAGS "-w")
+if(NOT WIN32 AND DL_LIBRARY)
+	target_link_libraries(em400 ${DL_LIBRARY})
 endif()
 
 install(TARGETS em400

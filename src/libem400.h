@@ -39,12 +39,12 @@ struct em400_cfg_cpu {
 
 struct em400_cfg_buzzer {
 	bool enabled;
-	const char *driver;
-	const char *output;
 	int volume;
 	int sample_rate;
 	int buffer_len;
 	int latency;
+	const char *backend;
+	const char *device;
 };
 
 struct em400_cfg_mem {
