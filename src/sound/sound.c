@@ -15,6 +15,7 @@
 //  Foundation, Inc.,
 //  51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 
+#include <errno.h>
 #include <inttypes.h>
 #include <pthread.h>
 #include <stdbool.h>
@@ -22,6 +23,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <strings.h>
+#include <time.h>
 
 #include "external/miniaudio/miniaudio.h"
 #include "libem400.h"
@@ -32,6 +34,14 @@
 // almost never finds it full in steady state. Underrun-on-empty (callback)
 // and block-on-full (play) handle the off-nominal cases.
 #define RING_FRAMES 8192
+
+// Upper bound on how long sound_play parks waiting for the audio callback to
+// drain the ring. In steady state the callback frees a period (~tens of ms)
+// long before this; tripping it means the backend has stalled. We then give up
+// on the pending frames rather than block the CPU thread forever - the
+// alternative is an unrecoverable hang, because cpu_shutdown joins the CPU
+// thread *before* sound_shutdown gets to broadcast the wakeup.
+#define PLAY_WAIT_TIMEOUT_NS (250 * 1000 * 1000L)
 
 // MERA-400 Tonsil GD 6/0,5 speaker + steel-chassis "boxiness" model.
 // Tuned by ear against the real machine (a H/W-vs-emulator freq sweep helped
@@ -301,7 +311,19 @@ long sound_play(float *buf, size_t frames)
 			// potential failure is handled by the top-of-loop acquire on continue.
 			ma_pcm_rb_acquire_write(&rb, &recheck, &dst);
 			if (recheck == 0 && initialized) {
-				pthread_cond_wait(&cv, &mu);
+				// Bounded wait: a stalled backend must not park the CPU
+				// thread indefinitely (would deadlock shutdown's join).
+				struct timespec ts;
+				clock_gettime(CLOCK_REALTIME, &ts);
+				ts.tv_nsec += PLAY_WAIT_TIMEOUT_NS;
+				ts.tv_sec += ts.tv_nsec / 1000000000L;
+				ts.tv_nsec %= 1000000000L;
+				if (pthread_cond_timedwait(&cv, &mu, &ts) == ETIMEDOUT) {
+					// Backend stalled: drop the pending frames (audible
+					// glitch) instead of hanging.
+					pthread_mutex_unlock(&mu);
+					return (long)written;
+				}
 			}
 			pthread_mutex_unlock(&mu);
 			if (!initialized) return (long)written;
