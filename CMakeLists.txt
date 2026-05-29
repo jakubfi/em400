@@ -244,8 +244,6 @@ set(SOURCES_EM400
 
 	src/sound/sound.c
 	src/sound/sound.h
-	src/external/biquad/biquad.c
-	src/external/biquad/biquad.h
 	src/external/miniaudio/miniaudio.c
 	src/external/miniaudio/miniaudio.h
 	src/cpu/buzzer.c

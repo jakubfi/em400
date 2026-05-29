@@ -18,6 +18,7 @@
 #include <inttypes.h>
 #include <pthread.h>
 #include <stdbool.h>
+#include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <strings.h>
@@ -32,6 +33,22 @@
 // and block-on-full (play) handle the off-nominal cases.
 #define RING_FRAMES 8192
 
+// MERA-400 Tonsil GD 6/0,5 speaker + steel-chassis "boxiness" model.
+// Tuned by ear against the real machine (a H/W-vs-emulator freq sweep helped
+// place things). HP = speaker resonance, LP = top-end rolloff, BOX = peaking
+// filter for the enclosure's air-cavity resonance (what HP/LP alone can't do).
+// HP/LP corners are intentionally high: they're the original by-ear values
+// corrected for an old biquad's 2x-frequency bug (the real corners were always
+// ~760/6400, never the nominal 380/3200) - don't "fix" them downward. HP_Q
+// derives from that biquad's 7 dB resonance.
+#define SPEAKER_HP_FREQ	760.0
+#define SPEAKER_HP_Q	1.50
+#define SPEAKER_LP_FREQ	6400.0
+#define SPEAKER_LP_Q	1.0
+#define BOX_FREQ		760.0	// air-cavity mode; lower = woodier, higher = honkier
+#define BOX_GAIN		10.0	// dB of boost; more = boxier
+#define BOX_Q			3.5		// width; higher = more resonant ring
+
 static const ma_uint32 channels = 1;
 
 static ma_context context;
@@ -39,6 +56,14 @@ static ma_device device;
 static ma_pcm_rb rb;
 static ma_device_id matched_device_id;
 static bool initialized;
+
+// Speaker-model and chassis coloration filters.
+// Touched only on the audio thread (data_callback),
+// so no synchronization is needed.
+// State carries continuously across callbacks and across device stop/start.
+static ma_hpf2 speaker_hp;
+static ma_lpf2 speaker_lp;
+static ma_peak2 speaker_box;
 
 static pthread_mutex_t mu = PTHREAD_MUTEX_INITIALIZER;
 static pthread_cond_t cv = PTHREAD_COND_INITIALIZER;
@@ -49,7 +74,7 @@ static void data_callback(ma_device *dev, void *out, const void *in, ma_uint32 f
 	(void)dev;
 	(void)in;
 
-	int16_t *dst = (int16_t *)out;
+	float *dst = (float *)out;
 	ma_uint32 remaining = frame_count;
 
 	while (remaining > 0) {
@@ -58,7 +83,7 @@ static void data_callback(ma_device *dev, void *out, const void *in, ma_uint32 f
 		if (ma_pcm_rb_acquire_read(&rb, &to_read, &src) != MA_SUCCESS || to_read == 0) {
 			break;
 		}
-		memcpy(dst, src, to_read * sizeof(int16_t));
+		memcpy(dst, src, to_read * sizeof(float));
 		ma_pcm_rb_commit_read(&rb, to_read);
 		dst += to_read;
 		remaining -= to_read;
@@ -67,8 +92,15 @@ static void data_callback(ma_device *dev, void *out, const void *in, ma_uint32 f
 	// underrun: hold silence
 	// audible glitch = sign that the CPU thread fell behind
 	if (remaining > 0) {
-		memset(dst, 0, remaining * sizeof(int16_t));
+		memset(dst, 0, remaining * sizeof(float));
 	}
+
+	// Apply the speaker model over the whole buffer (real samples + any
+	// zero-fill) so the filter state advances continuously; the zero-fill
+	// just decays through the high-pass. In-place is supported.
+	ma_hpf2_process_pcm_frames(&speaker_hp, out, out, frame_count);
+	ma_lpf2_process_pcm_frames(&speaker_lp, out, out, frame_count);
+	ma_peak2_process_pcm_frames(&speaker_box, out, out, frame_count);
 
 	pthread_mutex_lock(&mu);
 	pthread_cond_signal(&cv);
@@ -173,13 +205,13 @@ int sound_init(struct em400_cfg_buzzer *cfg)
 		goto fail_context;
 	}
 
-	if (ma_pcm_rb_init(ma_format_s16, channels, RING_FRAMES, NULL, NULL, &rb) != MA_SUCCESS) {
+	if (ma_pcm_rb_init(ma_format_f32, channels, RING_FRAMES, NULL, NULL, &rb) != MA_SUCCESS) {
 		LOGERR("Failed to initialize sound ring buffer");
 		goto fail_rb;
 	}
 
 	ma_device_config dc = ma_device_config_init(ma_device_type_playback);
-	dc.playback.format = ma_format_s16;
+	dc.playback.format = ma_format_f32;
 	dc.playback.channels = channels;
 	dc.playback.pDeviceID = resolve_device(cfg->device);
 	dc.sampleRate = cfg->sample_rate;
@@ -190,6 +222,19 @@ int sound_init(struct em400_cfg_buzzer *cfg)
 	if (ma_device_init(&context, &dc, &device) != MA_SUCCESS) {
 		LOGERR("Failed to initialize sound playback device");
 		goto fail_device;
+	}
+
+	// Init before starting the device - the callback may fire immediately.
+	ma_hpf2_config hpc = ma_hpf2_config_init(ma_format_f32, channels, cfg->sample_rate, SPEAKER_HP_FREQ, SPEAKER_HP_Q);
+	ma_lpf2_config lpc = ma_lpf2_config_init(ma_format_f32, channels, cfg->sample_rate, SPEAKER_LP_FREQ, SPEAKER_LP_Q);
+	if (ma_hpf2_init(&hpc, NULL, &speaker_hp) != MA_SUCCESS || ma_lpf2_init(&lpc, NULL, &speaker_lp) != MA_SUCCESS) {
+		LOGERR("Failed to initialize speaker model filters");
+		goto fail_start;
+	}
+	ma_peak2_config bc = ma_peak2_config_init(ma_format_f32, channels, cfg->sample_rate, BOX_GAIN, BOX_Q, BOX_FREQ);
+	if (ma_peak2_init(&bc, NULL, &speaker_box) != MA_SUCCESS) {
+		LOGERR("Failed to initialize chassis box filter");
+		goto fail_start;
 	}
 
 	if (ma_device_start(&device) != MA_SUCCESS) {
@@ -225,13 +270,18 @@ void sound_shutdown(void)
 	pthread_cond_broadcast(&cv);
 	pthread_mutex_unlock(&mu);
 
+	// Device is stopped; the callback won't touch the filters anymore.
 	ma_device_uninit(&device);
+	ma_hpf2_uninit(&speaker_hp, NULL);
+	ma_lpf2_uninit(&speaker_lp, NULL);
+	ma_peak2_uninit(&speaker_box, NULL);
+
 	ma_pcm_rb_uninit(&rb);
 	ma_context_uninit(&context);
 }
 
 // -----------------------------------------------------------------------
-long sound_play(int16_t *buf, size_t frames)
+long sound_play(float *buf, size_t frames)
 {
 	if (!initialized) return -1;
 
@@ -257,7 +307,7 @@ long sound_play(int16_t *buf, size_t frames)
 			if (!initialized) return (long)written;
 			continue;
 		}
-		memcpy(dst, buf + written, to_write * sizeof(int16_t));
+		memcpy(dst, buf + written, to_write * sizeof(float));
 		ma_pcm_rb_commit_write(&rb, to_write);
 		written += to_write;
 	}

@@ -21,15 +21,8 @@
 #include <string.h>
 
 #include "sound/sound.h"
-#include "external/biquad/biquad.h"
 #include "libem400.h"
 #include "log.h"
-
-// Tonsil GD 6/0,5 frequency response, more or less, mostly by ear
-#define SPEAKER_HP 380.0f // 350 Hz
-#define SPEAKER_HP_RES 7.0f
-#define SPEAKER_LP 3200.0f // -10dB @ 4500 Hz
-#define SPEAKER_LP_RES 0.0f
 
 static bool sound_ready;
 
@@ -37,31 +30,19 @@ static float sample_period_ns;
 static unsigned buffer_len;
 static float audio_sample;
 
-static int16_t *snd_buf_output;
 static float *snd_buf_end;
 static float *snd_buf_pos;
 static float *snd_buf_float;
-
-static sf_biquad_state_st bq_lp;
-static sf_biquad_state_st bq_hp;
 
 
 // -----------------------------------------------------------------------
 static void buzzer_flush()
 {
-	// apply filters
-	sf_biquad_process(&bq_hp, buffer_len, snd_buf_float, snd_buf_float);
-	sf_biquad_process(&bq_lp, buffer_len, snd_buf_float, snd_buf_float);
-
-	// prepare final sample output
-	for (int i=0 ; i<buffer_len ; i++) {
-		snd_buf_output[i] = snd_buf_float[i];
-	}
-
-	// play the buffer
+	// Push the raw /16 square wave to the sound layer. The speaker-model
+	// filtering runs on the audio thread (see src/sound/sound.c).
 	int written = 0;
 	while (written != buffer_len) {
-		long res = sound_play(snd_buf_output+written, buffer_len-written);
+		long res = sound_play(snd_buf_float+written, buffer_len-written);
 		if (res > 0) {
 			written += res;
 		} else {
@@ -120,9 +101,6 @@ void buzzer_shutdown()
 	free(snd_buf_float);
 	snd_buf_float = NULL;
 
-	free(snd_buf_output);
-	snd_buf_output = NULL;
-
 	if (sound_ready) {
 		sound_shutdown();
 		sound_ready = false;
@@ -146,13 +124,9 @@ int buzzer_init(struct em400_cfg_buzzer *cfg)
 		LOGERR("Adjusting sound volume from %i to 0 (min allowed).", cfg->volume);
 		cfg->volume = 0;
 	}
-	audio_sample = (float) cfg->volume * (32767.0f/100.0f) / 4.0f; // /4 to accomodate post-processing overdrive
-
-	snd_buf_output = malloc(sizeof(int16_t) * buffer_len);
-	if (!snd_buf_output) {
-		LOGERR("Cannot allocate memory for output sound buffer.");
-		goto cleanup;
-	}
+	// f32 full-scale is +/-1.0; /4 headroom to accommodate the resonant
+	// high-pass overshooting in the speaker-model filter on the audio thread.
+	audio_sample = (float) cfg->volume / 100.0f / 4.0f;
 
 	snd_buf_float = malloc(sizeof(float) * buffer_len);
 	if (!snd_buf_float) {
@@ -168,9 +142,6 @@ int buzzer_init(struct em400_cfg_buzzer *cfg)
 		goto cleanup;
 	}
 	sound_ready = true;
-
-	sf_highpass(&bq_hp, cfg->sample_rate, SPEAKER_HP, SPEAKER_HP_RES);
-	sf_lowpass(&bq_lp, cfg->sample_rate, SPEAKER_LP, SPEAKER_LP_RES);
 
 	LOG(L_CPU, "Buzzer enabled. Volume: %i, buffer length: %i frames", cfg->volume, buffer_len);
 
