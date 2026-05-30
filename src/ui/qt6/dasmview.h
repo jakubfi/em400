@@ -23,7 +23,7 @@ public slots:
 private:
 	EmuModel *e;
 
-	int cnb, caddr;
+	int cnb, caddr, ic_addr;
 
 	QFont font;
 	int font_height, font_width, font_descent; // calculated
@@ -43,6 +43,7 @@ private:
 
 	void set_font(QString name, int size=0);
 	void internal_update_contents();
+	void recenter_on_ic();
 	int max_first_addr();
 
 	AsmLine dasm_exact(int nb, int addr);

@@ -21,7 +21,7 @@ DasmView::DasmView(QWidget *parent) :
 	emdas_set_features(emd, EMD_FEAT_UMNEMO);
 	emdas_set_tabs(emd, 0, 0, 5, 4);
 
-	cnb = caddr = -1;
+	cnb = caddr = ic_addr = -1;
 
 	set_font("Monospace");
 
@@ -90,9 +90,9 @@ int DasmView::prepend(int i, QList<AsmLine>& l)
 
 	QList<AsmLine> tmp_l;
 
-	tmp_l.append(dasm_fuzzy(cnb, search_addr++));
+	tmp_l.append(dasm_fuzzy(cnb, search_addr));
 	while (tmp_l.last().addr + tmp_l.last().length < l.first().addr) {
-		tmp_l.append(dasm_exact(cnb, search_addr++));
+		tmp_l.append(dasm_exact(cnb, tmp_l.last().addr + tmp_l.last().length));
 	}
 
 	// remove extra items at the begining
@@ -159,11 +159,26 @@ void DasmView::internal_update_contents()
 }
 
 // -----------------------------------------------------------------------
+void DasmView::recenter_on_ic()
+{
+	if (ic_addr < 0) return;
+	int target_offset = dasm_total_lines / 3;
+	if (target_offset > 0 && ic_addr > 0) {
+		QList<AsmLine> tmp;
+		tmp.append(dasm_fuzzy(cnb, ic_addr));
+		prepend(target_offset, tmp);
+		caddr = tmp.first().addr;
+	} else {
+		caddr = ic_addr;
+	}
+}
+
+// -----------------------------------------------------------------------
 void DasmView::update_contents(int new_nb, int new_addr)
 {
-	//	if ((new_nb == cnb) && (new_addr == caddr)) return;
+	ic_addr = new_addr;
 	cnb = new_nb;
-	caddr = new_addr;
+	recenter_on_ic();
 	internal_update_contents();
 }
 
@@ -237,7 +252,9 @@ void DasmView::resizeEvent(QResizeEvent *event)
 {
 	dasm_total_lines = (height() / line_height) + 1; // +1 for the line at the bottom edge of the window
 
-	if (caddr >= 0) internal_update_contents(); // rebuilds, clamped to the end cap
+	// Recenter on IC so startup timing (update_contents before first resize) doesn't matter.
+	if (ic_addr >= 0) recenter_on_ic();
+	if (caddr >= 0) internal_update_contents();
 
 	scroll->setGeometry(width() - scroll->sizeHint().width(), 0, scroll->sizeHint().width(), height());
 
