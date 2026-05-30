@@ -5,6 +5,7 @@
 #include <QTimer>
 #include <QLabel>
 #include <QSpinBox>
+#include <QDockWidget>
 #include <emdas.h>
 #include "emumodel.h"
 
@@ -27,11 +28,16 @@ private:
 	QLabel *ips;
 	QLabel *q, *bs, *nb, *flags;
 
+	QDockWidget *dock_regs, *dock_dasm, *dock_mem;
+
 	QSpinBox *r[EM400_REG_COUNT] = { nullptr };
 
 	void disable_widgets(bool disabled);
 	void update_sr_status(uint16_t val);
 	void update_r0_status(uint16_t r0);
+
+	void apply_default_layout();
+	void sync_debugger_action();
 
 private slots:
 	void closeEvent(QCloseEvent* event);

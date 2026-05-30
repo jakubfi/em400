@@ -160,12 +160,29 @@ int MemView::compute_words_per_line() const
 	int scroll_w = scroll ? scroll->sizeHint().width() : 15;
 	int avail = right - mem_x_start - scroll_w;
 	if (panel != PANEL_OFF) avail -= font_width; // gap before side panel divider
-	int per_word = val_chars() + panel_chars();
-	int max_wpl = avail / (per_word * font_width);
+	int chars_per_word = val_chars() + panel_chars();
+	int max_wpl = avail / (chars_per_word * font_width);
 	if (max_wpl < 1) return 1;
 	int wpl = 1;
 	while (wpl * 2 <= max_wpl) wpl *= 2;
 	return wpl;
+}
+
+// -----------------------------------------------------------------------
+QSize MemView::sizeHint() const
+{
+	// Express a real preference so adjustSize() gives the view a usable size
+	// instead of collapsing it: a comfortable words-per-line and a screenful of
+	// rows. Without this the default QWidget hint is tiny and the whole window
+	// shrinks to a sliver when the debugger is shown.
+	const int pref_wpl = 16;
+	const int pref_lines = 16;
+	int scroll_w = scroll ? scroll->sizeHint().width() : 15;
+	int pixels_per_word = (val_chars() + panel_chars()) * font_width;
+	int w = mem_x_start + pref_wpl * pixels_per_word + scroll_w;
+	if (panel != PANEL_OFF) w += font_width; // gap before side panel divider
+	int h = content_top + col_hdr_h + pref_lines * line_height;
+	return QSize(w, h);
 }
 
 // -----------------------------------------------------------------------

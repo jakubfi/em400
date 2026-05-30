@@ -21,6 +21,8 @@ public:
 	~MemView();
 	void connect_emu(EmuModel *emu);
 
+	QSize sizeHint() const override;
+
 public slots:
 	void update_contents(int nb, int addr);
 	void update_contents_no_nb(int new_line);

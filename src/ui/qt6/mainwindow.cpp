@@ -2,6 +2,10 @@
 #include <QTimer>
 #include <QDebug>
 #include <QFileDialog>
+#include <QSettings>
+#include <QAction>
+#include <QSignalBlocker>
+#include <QGridLayout>
 #include "mainwindow.h"
 #include "ui_mainwindow.h"
 #include "emdas.h"
@@ -32,6 +36,76 @@ MainWindow::MainWindow(QWidget *parent) :
 
 	ui->dasm->connect_emu(&e);
 	ui->mem->connect_emu(&e);
+
+	// Re-home the debugger panels into dock widgets arranged around the
+	// control panel. The control panel is the permanent center - it IS the
+	// machine - while the debugger modules dock around it and can be moved,
+	// floated, tabbed or hidden. Reparenting the existing group boxes via
+	// setWidget() keeps all their child pointers (ui->dasm, ui->r0, ...) and
+	// signal wiring intact; only their host changes.
+	dock_regs = new QDockWidget(tr("Registers"), this);
+	dock_dasm = new QDockWidget(tr("Disassembly"), this);
+	dock_mem  = new QDockWidget(tr("Memory"), this);
+
+	dock_regs->setObjectName("dock_regs");
+	dock_dasm->setObjectName("dock_dasm");
+	dock_mem->setObjectName("dock_mem");
+
+	// dock title bars now carry the names; drop the redundant group titles
+	ui->group_registers->setTitle("");
+	ui->group_dasm->setTitle("");
+	ui->group_mem->setTitle("");
+
+	dock_regs->setWidget(ui->group_registers);
+	dock_dasm->setWidget(ui->group_dasm);
+	dock_mem->setWidget(ui->group_mem);
+
+	// Space preferences drive the default arrangement:
+	//   disassembly is the priority - narrow but wants all the vertical it can
+	//     get, so it owns the full-height left column.
+	//   memory is lower priority and likes to be wide and tall, so it docks below
+	//     the fixed panel in the center column (inherits the panel width, takes the
+	//     height left under the panel).
+	//   registers (and future watches/breakpoints) are small -> full-height right
+	//     column, stacked.
+	// Hand each side area its corners so the left (dasm) and right (regs) columns
+	// run the full window height; that confines the bottom area to the center
+	// column, which is exactly where memory belongs (under the panel).
+	setCorner(Qt::TopLeftCorner, Qt::LeftDockWidgetArea);
+	setCorner(Qt::BottomLeftCorner, Qt::LeftDockWidgetArea);
+	setCorner(Qt::TopRightCorner, Qt::RightDockWidgetArea);
+	setCorner(Qt::BottomRightCorner, Qt::RightDockWidgetArea);
+
+	apply_default_layout();
+
+	// Center the fixed-size control panel in whatever central space remains, so it
+	// sits in the middle of its column instead of pinned top-left (the panel does
+	// not stretch - it blits its art at 0,0 - so without this the extra space shows
+	// as blank below/right). The Qt::AlignCenter cell also stops the layout from
+	// stretching the panel.
+	// The panel must be reparented out of the .ui central widget before
+	// setCentralWidget() deletes that old central widget; addWidget() does that.
+	QWidget *cp_host = new QWidget(this);
+	// Cap the host at the panel's height (Maximum) so the memory dock below claims
+	// the rest of the center column; center the panel horizontally but pin it to
+	// the top - vertical centering would push memory down and leave a gap.
+	cp_host->setSizePolicy(QSizePolicy::Preferred, QSizePolicy::Maximum);
+	QGridLayout *cp_layout = new QGridLayout(cp_host);
+	cp_layout->setContentsMargins(0, 0, 0, 0);
+	cp_layout->addWidget(ui->cp, 0, 0, Qt::AlignHCenter | Qt::AlignTop);
+	setCentralWidget(cp_host);
+
+	// per-module show/hide entries in the View menu (re-open a closed dock),
+	// plus an escape hatch back to the curated arrangement for anyone who drags
+	// the docks into a corner and can't find their way out.
+	ui->menuView->addSeparator();
+	ui->menuView->addAction(dock_dasm->toggleViewAction());
+	ui->menuView->addAction(dock_mem->toggleViewAction());
+	ui->menuView->addAction(dock_regs->toggleViewAction());
+	ui->menuView->addSeparator();
+	QAction *act_reset = new QAction(tr("Reset Layout"), this);
+	ui->menuView->addAction(act_reset);
+	connect(act_reset, &QAction::triggered, this, &MainWindow::apply_default_layout);
 
 	// MainWindow -> ControlPanel
 	connect(ui->actionSmall_Control_Panel, &QAction::toggled, this, &MainWindow::slot_smallcp_changed);
@@ -97,7 +171,38 @@ MainWindow::MainWindow(QWidget *parent) :
 	e.run();
 	ui->cp->rotary->set_position(8);
 	ui->cp->sw[SW_CLOCK]->set(e.get_clock());
-	slot_debugger_enabled_changed(false);
+
+	// Restore the user's last layout. On the very first run there is no saved
+	// state, so we start with the control panel only (debugger off) - that is the
+	// default. After that the user's arrangement is restored verbatim: dock
+	// positions, sizes, visibility and float state all come back as left.
+	QSettings settings;
+	// restore the small/large panel choice first; setChecked() fires the toggled
+	// signal which applies the crop (only when it actually differs from default)
+	ui->actionSmall_Control_Panel->setChecked(settings.value("layout/smallPanel", false).toBool());
+	if (settings.contains("layout/windowState")) {
+		// Documented order: geometry before state.
+		QByteArray geo = settings.value("layout/geometry").toByteArray();
+		restoreGeometry(geo);
+		restoreState(settings.value("layout/windowState").toByteArray());
+		sync_debugger_action();
+		// Re-settle the size once the event loop has run (inline races the dock
+		// layout). With the debugger visible, re-apply the saved geometry verbatim:
+		// adjustSize() would hug the content height, and memory's height hint is
+		// tiny, so the window would collapse to a sliver showing only its top row.
+		// Honoring the saved size keeps memory tall (and preserves hand-sized
+		// docks). With only the panel shown the size is derived from the panel, so
+		// shrink-wrap to it.
+		bool dbg = ui->actionDebugger->isChecked();
+		QTimer::singleShot(0, this, [this, dbg, geo]() {
+			if (isMaximized() || isFullScreen()) return;
+			if (dbg) restoreGeometry(geo);
+			else adjustSize();
+		});
+	} else {
+		slot_debugger_enabled_changed(false);
+		sync_debugger_action();
+	}
 }
 
 // -----------------------------------------------------------------------
@@ -109,8 +214,41 @@ MainWindow::~MainWindow()
 // -----------------------------------------------------------------------
 void MainWindow::closeEvent(QCloseEvent* event)
 {
+	// persist whatever arrangement the user settled on
+	QSettings settings;
+	settings.setValue("layout/geometry", saveGeometry());
+	settings.setValue("layout/windowState", saveState());
+	settings.setValue("layout/smallPanel", ui->actionSmall_Control_Panel->isChecked());
+
 	e.stop();
 	event->accept();
+}
+
+// -----------------------------------------------------------------------
+// Place the debugger docks in the curated default arrangement (dasm left,
+// memory under the panel, registers right) and show them. Used at startup to
+// establish a home for each dock, and by the View > Reset Layout action.
+void MainWindow::apply_default_layout()
+{
+	addDockWidget(Qt::LeftDockWidgetArea, dock_dasm);   // narrow, full height
+	addDockWidget(Qt::BottomDockWidgetArea, dock_mem);  // panel width, under panel
+	addDockWidget(Qt::RightDockWidgetArea, dock_regs);  // small modules, stacked
+
+	for (QDockWidget *d : {dock_dasm, dock_mem, dock_regs}) {
+		d->setFloating(false);
+		d->show();
+	}
+	sync_debugger_action();
+}
+
+// -----------------------------------------------------------------------
+// Keep the master "Debugger" menu check in sync with the docks without letting
+// it re-fire slot_debugger_enabled_changed (which would clobber the layout).
+void MainWindow::sync_debugger_action()
+{
+	bool any = !dock_dasm->isHidden() || !dock_mem->isHidden() || !dock_regs->isHidden();
+	QSignalBlocker block(ui->actionDebugger);
+	ui->actionDebugger->setChecked(any);
 }
 
 // -----------------------------------------------------------------------
@@ -201,9 +339,9 @@ void MainWindow::load_os_image()
 // -----------------------------------------------------------------------
 void MainWindow::slot_debugger_enabled_changed(bool state)
 {
-	ui->group_dasm->setVisible(state);
-	ui->group_registers->setVisible(state);
-	ui->group_mem->setVisible(state);
+	dock_regs->setVisible(state);
+	dock_dasm->setVisible(state);
+	dock_mem->setVisible(state);
 	//ui->statusbar->setVisible(state);
 	for (int i=0 ; i<10 ; i++) qApp->processEvents(); // StackOverflow, I don't even...
 	adjustSize();
@@ -213,8 +351,13 @@ void MainWindow::slot_debugger_enabled_changed(bool state)
 void MainWindow::slot_smallcp_changed(bool state)
 {
 	ui->cp->slot_small_panel_changed(state);
+	int h = height();
 	for (int i=0 ; i<10 ; i++) qApp->processEvents(); // StackOverflow, I don't even...
 	adjustSize();
+	// adjustSize re-fits the width to the resized panel, but it also hugs the
+	// content height - which collapses the window onto memory's tiny height hint.
+	// Keep the debugger height; panel-only has no such content so let it shrink.
+	if (ui->actionDebugger->isChecked()) resize(width(), h);
 }
 
 // -----------------------------------------------------------------------

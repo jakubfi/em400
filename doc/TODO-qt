@@ -1,0 +1,85 @@
+Features present in the old, curses ui and their state in qt ui:
+
+View:
+
+* (PORTED) memory view
+  * (PORTED) hex+ascii fixed
+  * (ADDED) no switching hex/dec/oct
+  * (ADDED) non-scrollable
+* (PORTED) user registers
+  * (TODO - how to switch? edit?) hex/oct/dec/bin
+  * (PORTED - status bar) flags bits (for R0)
+* (PORTED) system registers
+  * (PORTED hex - split not needed) IR hex/bin opcode split
+  * (PORTED hex - decoded in status bar) SR hex/bin contents "decoded"
+  * (TODO - status bar?) RZ hex/bin contents "decoded"
+  * P, IC, AC, AR, MC (internal, but add)
+* (PORTED) dasm view
+  * (PORTED) address + disassembly
+  * (PORTED) IC location
+  * (PORTED) skip flag indicated
+  * (PORTED) IC somewhere in the middle of the view for better code context
+* stack view
+* watches view
+* commandline
+* (PORTED) bottom bar:
+  * (PORTED) cpu state
+  * (PORTED) speed IPS
+
+Commands:
+
+* (PORTED, UI, add menu entry) quit: Quit the emulator
+* (PORTED, PANEL, add shortuct key?) cycle: Execute one instruction at IC
+* help: Print help
+* (PORTED, UI) regs: Show user registers
+* (PORTED, UI) sregs: Show system registers
+* (PORTED, PANEL) clear: CPU clear (reset)
+* (PORTED, UI) dasm: Disassembler
+* (PORTED, UI) mem: Show memory contents
+* (PORTED, PANEL) binload: Initiate binary load
+* load: Load memory image from file
+* memcfg: Show memory configuration
+* memdump: Dump memory contents into a file
+* brk: Manipulate breakpoints
+* (PORTED, PANEL) start: Start emulation
+* (PORTED, PANEL) stop: Stop emulation
+* stk: Show stack
+* log: Manipulate logging
+* watch: Manipulate expression watches
+* decode: Decode memory structures
+* find: Search memory for a value
+
+
+GENERAL UI:
+	where to store own configuration?
+	configuration
+	shortcuts
+	color schemes (own/system)?
+	power on/off?
+	background sound? configurable?
+CP:
+	STEP/MODE
+	STOPN
+REG VIEW:
+	dec/int/bin on mouseover
+	sr: q/nb/bs/rm on mouseover
+	r0: flags on mouseover
+	rz: ints on mouseover
+DASM VIEW:
+	setting breakpoints from dasm view
+	setting IC from dasm view
+	minimal syntax highlight
+	marking position(-s)?
+MEM VIEW:
+	editing memory contents
+	dec/int/bin on mouseover
+STATUS BAR:
+	int/int mask display in the status bar
+OTHER:
+	breakpoints view
+	memory configuration view
+	watches?
+	stack?
+	delegating error display to the UI?
+	delegating logs to the UI? own logview?
+	translation

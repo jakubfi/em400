@@ -41,6 +41,9 @@ void ui_qt6_loop(void *data)
 	int argv = 1;
 	char *argc[] = { (char*)"em400" };
 	QApplication a(argv, argc);
+	// identity for QSettings (window/dock layout persistence)
+	QApplication::setOrganizationName("em400");
+	QApplication::setApplicationName("em400");
 	MainWindow w;
 
 	w.show();
