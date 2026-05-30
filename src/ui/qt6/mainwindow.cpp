@@ -31,6 +31,7 @@ MainWindow::MainWindow(QWidget *parent) :
 	r[EM400_REG_RZ] = ui->rz;
 
 	ui->dasm->connect_emu(&e);
+	ui->mem->connect_emu(&e);
 
 	// MainWindow -> ControlPanel
 	connect(ui->actionSmall_Control_Panel, &QAction::toggled, this, &MainWindow::slot_smallcp_changed);
@@ -157,9 +158,6 @@ void MainWindow::slot_cpu_reg_changed(int reg, uint16_t val)
 	// update all register values
 	r[reg]->setValue(val);
 
-	// TODO: where to update memory view?
-	ui->mem->update_contents(0, 0);
-	// TODO: where/how to force-update everything?
 	slot_dasm_update();
 
 	// do register-specific things
