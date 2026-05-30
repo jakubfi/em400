@@ -43,6 +43,7 @@ private:
 
 	void set_font(QString name, int size=0);
 	void internal_update_contents();
+	int max_first_addr();
 
 	AsmLine dasm_exact(int nb, int addr);
 	AsmLine dasm_fuzzy(int nb, int addr);

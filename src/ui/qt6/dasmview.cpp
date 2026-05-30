@@ -125,12 +125,35 @@ int DasmView::append(int i, QList<AsmLine>& l)
 }
 
 // -----------------------------------------------------------------------
+// Top address when scrolled all the way down, so the instruction containing
+// 0xffff lands on the last fully visible line (not the partial bottom-edge
+// line). Walks back full-1 instructions from the final instruction.
+int DasmView::max_first_addr()
+{
+	if (cnb < 0) return 0;
+	const int full = dasm_total_lines - 1; // fully visible lines
+	QList<AsmLine> tmp;
+	tmp.append(dasm_fuzzy(cnb, 0xffff));
+	if (full > 1) prepend(full - 1, tmp);
+	return tmp.first().addr;
+}
+
+// -----------------------------------------------------------------------
 void DasmView::internal_update_contents()
 {
+	if (cnb < 0) return;
+
+	// cap so we don't scroll past the end of memory (wrap / hide 0xffff)
+	const int max_top = max_first_addr();
+	if (caddr > max_top) caddr = max_top;
+	if (caddr < 0) caddr = 0;
+
 	listing.clear();
-	const int i = append(dasm_total_lines, listing);
-	// if the list does not fill all the space, prepend the difference
-	prepend(dasm_total_lines - i, listing);
+	// at the cap, append yields fewer than dasm_total_lines lines (it stops at
+	// 0xffff), leaving the partial bottom-edge line empty - exactly what we want
+	append(dasm_total_lines, listing);
+
+	scroll->setMaximum(max_top);
 	scroll->setValue(caddr);
 	update();
 }
@@ -212,19 +235,10 @@ void DasmView::paintEvent(QPaintEvent *event)
 // -----------------------------------------------------------------------
 void DasmView::resizeEvent(QResizeEvent *event)
 {
-	const int old_dasm_total_lines = dasm_total_lines;
-
 	dasm_total_lines = (height() / line_height) + 1; // +1 for the line at the bottom edge of the window
 
-	if (caddr >= 0) {
-		int rows_delta = dasm_total_lines - old_dasm_total_lines;
-		if (rows_delta > 0) { // more rows visible
-			const int i = append(rows_delta, listing);
-			prepend(rows_delta - i, listing);
-		} else { // less rows visible
-			while (rows_delta++ < 0) listing.removeLast();
-		}
-	}
+	if (caddr >= 0) internal_update_contents(); // rebuilds, clamped to the end cap
+
 	scroll->setGeometry(width() - scroll->sizeHint().width(), 0, scroll->sizeHint().width(), height());
 
 	QWidget::resizeEvent(event);
@@ -248,21 +262,25 @@ void DasmView::wheelEvent(QWheelEvent *event)
 {
 	const int delta_lines = calculate_scroll_lines(event->angleDelta().y());
 
-	if (delta_lines > 0) { // backwards
-		if (listing.first().addr > 0) {
-			int items = prepend(delta_lines, listing);
-			while (items-- > 0) listing.removeLast();
-		}
-	} else { // forward
-		if (listing.last().addr < 0xffff) {
-			int items = append(-delta_lines, listing);
-			while (items-- > 0) listing.removeFirst();
-		}
+	if ((delta_lines == 0) || listing.isEmpty()) {
+		event->accept();
+		return;
 	}
-	scroll->setValue(listing.first().addr); // TODO: this should all be in one place...
+
+	if (delta_lines > 0) { // backwards (towards lower addresses)
+		// find the new top address, delta_lines instructions above the current one
+		QList<AsmLine> tmp;
+		tmp.append(listing.first());
+		prepend(delta_lines, tmp);
+		caddr = tmp.first().addr;
+	} else { // forward (towards higher addresses)
+		int n = -delta_lines;
+		if (n >= listing.size()) n = listing.size() - 1;
+		caddr = listing.at(n).addr;
+	}
+	internal_update_contents(); // clamps to the end cap, rebuilds, syncs scrollbar
 
 	event->accept();
-	update();
 }
 
 // -----------------------------------------------------------------------

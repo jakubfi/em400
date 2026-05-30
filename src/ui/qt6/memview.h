@@ -2,6 +2,7 @@
 #define MEMVIEW_H
 
 #include <QWidget>
+#include <QScrollBar>
 #include "emumodel.h"
 
 // -----------------------------------------------------------------------
@@ -16,6 +17,7 @@ public:
 
 public slots:
 	void update_contents(int nb, int addr);
+	void update_contents_no_nb(int new_line);
 
 private:
 	int fuzziness = 5;
@@ -34,6 +36,9 @@ private:
 
 	int cnb, caddr;
 
+	int wheel_tick_accumulator = 0;
+	QScrollBar *scroll;
+
 	EmuModel *e;
 	QFont font;
 	int font_height, font_width, font_descent;
@@ -41,11 +46,16 @@ private:
 	void set_font(QString name, int size=0);
 	void update_font_related_dimensions();
 	void internal_update_contents();
+	void update_scroll_range();
+
+	int calculate_scroll_lines(int angleDelta);
 
 protected:
 	void paintEvent(QPaintEvent *event);
 	void resizeEvent(QResizeEvent *event);
 	void wheelEvent(QWheelEvent *event);
+	void enterEvent(QEnterEvent *event);
+	void leaveEvent(QEvent *event);
 
 };
 
