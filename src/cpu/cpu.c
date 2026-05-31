@@ -586,7 +586,7 @@ P3_P4_P5:
 		 * according to their processing delays.
 		*/
 		uint16_t tmp;
-		cpu_mem_read_1(q, ic, &tmp);
+		mem_read_1(q*nb, ic, &tmp);
 		if (cpu_op_tab[tmp]->fun == op_73_hlt) {
 			return -instruction_time_ns;
 		}
