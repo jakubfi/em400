@@ -87,7 +87,7 @@ static const char *int_names[] = {
 	"AWP overflow",
 	"AWP div/0",
 	"special (or clock)",
-	"CH1", "CH0", "CH2", "CH3", "CH4", "CH5", "CH6", "CH7",
+	"CH0", "CH1", "CH2", "CH3", "CH4", "CH5", "CH6", "CH7",
 	"CH8", "CH9", "CH10", "CH11", "CH12", "CH13", "CH14", "CH15",
 	"OPRQ",
 	"2nd CPU low",
