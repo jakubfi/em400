@@ -18,45 +18,38 @@ MainWindow::MainWindow(QWidget *parent) :
 {
 	ui->setupUi(this);
 
-	r[EM400_REG_R0] = ui->r0;
-	r[EM400_REG_R1] = ui->r1;
-	r[EM400_REG_R2] = ui->r2;
-	r[EM400_REG_R3] = ui->r3;
-	r[EM400_REG_R4] = ui->r4;
-	r[EM400_REG_R5] = ui->r5;
-	r[EM400_REG_R6] = ui->r6;
-	r[EM400_REG_R7] = ui->r7;
-
-	r[EM400_REG_IC] = ui->ic;
-	r[EM400_REG_AC] = ui->ac;
-	r[EM400_REG_AR] = ui->ar;
-	r[EM400_REG_IR] = ui->ir;
-	r[EM400_REG_SR] = ui->sr;
-	r[EM400_REG_RZ] = ui->rz;
-
 	ui->dasm->connect_emu(&e);
 	ui->mem->connect_emu(&e);
+
+	// Dense register tables: user registers (R0-R7, all four bases) and system
+	// registers (IC/AR/AC/IR/KB/SR/RZ, sparse). These replace the old
+	// one-spinbox-per-register layout; the .ui group_registers box is no longer
+	// used (it is dropped with the old central widget on setCentralWidget).
+	uregs = new RegCompact(&e, RegCompact::USER);
+	sregs = new RegCompact(&e, RegCompact::SYSTEM);
 
 	// Re-home the debugger panels into dock widgets arranged around the
 	// control panel. The control panel is the permanent center - it IS the
 	// machine - while the debugger modules dock around it and can be moved,
 	// floated, tabbed or hidden. Reparenting the existing group boxes via
-	// setWidget() keeps all their child pointers (ui->dasm, ui->r0, ...) and
+	// setWidget() keeps all their child pointers (ui->dasm, ui->mem) and
 	// signal wiring intact; only their host changes.
-	dock_regs = new QDockWidget(tr("Registers"), this);
+	dock_uregs = new QDockWidget(tr("User registers"), this);
+	dock_sregs = new QDockWidget(tr("System registers"), this);
 	dock_dasm = new QDockWidget(tr("Disassembly"), this);
 	dock_mem  = new QDockWidget(tr("Memory"), this);
 
-	dock_regs->setObjectName("dock_regs");
+	dock_uregs->setObjectName("dock_uregs");
+	dock_sregs->setObjectName("dock_sregs");
 	dock_dasm->setObjectName("dock_dasm");
 	dock_mem->setObjectName("dock_mem");
 
 	// dock title bars now carry the names; drop the redundant group titles
-	ui->group_registers->setTitle("");
 	ui->group_dasm->setTitle("");
 	ui->group_mem->setTitle("");
 
-	dock_regs->setWidget(ui->group_registers);
+	dock_uregs->setWidget(uregs);
+	dock_sregs->setWidget(sregs);
 	dock_dasm->setWidget(ui->group_dasm);
 	dock_mem->setWidget(ui->group_mem);
 
@@ -101,7 +94,8 @@ MainWindow::MainWindow(QWidget *parent) :
 	ui->menuView->addSeparator();
 	ui->menuView->addAction(dock_dasm->toggleViewAction());
 	ui->menuView->addAction(dock_mem->toggleViewAction());
-	ui->menuView->addAction(dock_regs->toggleViewAction());
+	ui->menuView->addAction(dock_uregs->toggleViewAction());
+	ui->menuView->addAction(dock_sregs->toggleViewAction());
 	ui->menuView->addSeparator();
 	QAction *act_reset = new QAction(tr("Reset Layout"), this);
 	ui->menuView->addAction(act_reset);
@@ -114,6 +108,7 @@ MainWindow::MainWindow(QWidget *parent) :
 	// EmuModel -> MainWindow
 	connect(&e, &EmuModel::signal_reg_changed, this, &MainWindow::slot_cpu_reg_changed);
 	connect(&e, &EmuModel::signal_cpu_ips_tick, this, &MainWindow::slot_ips_update);
+	connect(&e, &EmuModel::signal_mc_changed, this, &MainWindow::update_mc_status);
 
 	// EmuModel -> ControlPanel
 	connect(&e, &EmuModel::signal_state_changed, ui->cp, &ControlPanel::slot_state_changed);
@@ -137,10 +132,7 @@ MainWindow::MainWindow(QWidget *parent) :
 		connect(ui->cp->sw[i], &Switch::signal_toggled, this, &MainWindow::slot_binary_key_toggled);
 	}
 
-	// connect register edits
-	for (int i=EM400_REG_R0 ; i<EM400_REG_COUNT ; i++) {
-		if (r[i]) connect(r[i], &QSpinBox::editingFinished, [=](){ e.set_reg(i, r[i]->value()); });
-	}
+	// register edits are handled inside the RegView models (setData -> set_reg)
 
 	// status bar contents
 	ips = new QLabel();
@@ -167,6 +159,12 @@ MainWindow::MainWindow(QWidget *parent) :
 	nb = new QLabel("<span>NB=0</span>");
 	nb->setFont(font);
 	ui->statusbar->addWidget(nb);
+	// MC (modification counter) is internal and not editable, so it lives here
+	// rather than in the register tables. Only the MC LED (on/off) is exposed
+	// by libem400, not the 0-3 count.
+	mc = new QLabel("<span>MC</span>");
+	mc->setFont(font);
+	ui->statusbar->addWidget(mc);
 
 	e.run();
 	ui->cp->rotary->set_position(8);
@@ -232,9 +230,10 @@ void MainWindow::apply_default_layout()
 {
 	addDockWidget(Qt::LeftDockWidgetArea, dock_dasm);   // narrow, full height
 	addDockWidget(Qt::BottomDockWidgetArea, dock_mem);  // panel width, under panel
-	addDockWidget(Qt::RightDockWidgetArea, dock_regs);  // small modules, stacked
+	addDockWidget(Qt::RightDockWidgetArea, dock_uregs); // small modules, stacked
+	addDockWidget(Qt::RightDockWidgetArea, dock_sregs);
 
-	for (QDockWidget *d : {dock_dasm, dock_mem, dock_regs}) {
+	for (QDockWidget *d : {dock_dasm, dock_mem, dock_uregs, dock_sregs}) {
 		d->setFloating(false);
 		d->show();
 	}
@@ -246,18 +245,17 @@ void MainWindow::apply_default_layout()
 // it re-fire slot_debugger_enabled_changed (which would clobber the layout).
 void MainWindow::sync_debugger_action()
 {
-	bool any = !dock_dasm->isHidden() || !dock_mem->isHidden() || !dock_regs->isHidden();
+	bool any = !dock_dasm->isHidden() || !dock_mem->isHidden()
+		|| !dock_uregs->isHidden() || !dock_sregs->isHidden();
 	QSignalBlocker block(ui->actionDebugger);
 	ui->actionDebugger->setChecked(any);
 }
 
 // -----------------------------------------------------------------------
-void MainWindow::disable_widgets(bool state)
+void MainWindow::update_mc_status(bool on)
 {
-	for (int i=EM400_REG_R0 ; i<EM400_REG_COUNT ; i++) {
-		if (i == EM400_REG_KB) continue; // keys are always enabled
-		if (r[i]) r[i]->setDisabled(state);
-	}
+	if (on) mc->setStyleSheet("font-weight: bold; color: black;");
+	else mc->setStyleSheet("font-weight: normal; color: gray;");
 }
 
 // -----------------------------------------------------------------------
@@ -291,18 +289,12 @@ void MainWindow::update_r0_status(uint16_t r0)
 // -----------------------------------------------------------------------
 void MainWindow::slot_cpu_reg_changed(int reg, uint16_t val)
 {
-	if (!r[reg]) return;
-
-	// update all register values
-	r[reg]->setValue(val);
-
+	// The RegViews render the values themselves; here we only drive the
+	// derived status-bar decode (R0 flags, SR) and refresh the disassembly.
 	slot_dasm_update();
 
-	// do register-specific things
-	if (reg <= EM400_REG_R7) {
-		if (reg == EM400_REG_R0) update_r0_status(val);
-	} else if (reg == EM400_REG_IC) {
-		slot_dasm_update();
+	if (reg == EM400_REG_R0) {
+		update_r0_status(val);
 	} else if (reg == EM400_REG_SR) {
 		update_sr_status(val);
 	}
@@ -339,7 +331,8 @@ void MainWindow::load_os_image()
 // -----------------------------------------------------------------------
 void MainWindow::slot_debugger_enabled_changed(bool state)
 {
-	dock_regs->setVisible(state);
+	dock_uregs->setVisible(state);
+	dock_sregs->setVisible(state);
 	dock_dasm->setVisible(state);
 	dock_mem->setVisible(state);
 	//ui->statusbar->setVisible(state);

@@ -36,7 +36,7 @@ private:
 	QTimer timer_ips;
 
 	int last_cpu_state;
-	int last_reg[EM400_REG_COUNT];
+	int last_reg[EM400_REG_COUNT] = {0};
 	uint16_t last_bus_w;
 	bool last_clock;
 	bool last_alarm, last_p, last_mc;

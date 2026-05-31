@@ -8,6 +8,7 @@
 #include <QDockWidget>
 #include <emdas.h>
 #include "emumodel.h"
+#include "regview.h"
 
 namespace Ui {
 class MainWindow;
@@ -26,13 +27,13 @@ private:
 	Ui::MainWindow *ui;
 
 	QLabel *ips;
-	QLabel *q, *bs, *nb, *flags;
+	QLabel *q, *bs, *nb, *flags, *mc;
 
-	QDockWidget *dock_regs, *dock_dasm, *dock_mem;
+	QDockWidget *dock_uregs, *dock_sregs, *dock_dasm, *dock_mem;
 
-	QSpinBox *r[EM400_REG_COUNT] = { nullptr };
+	RegCompact *uregs, *sregs;
 
-	void disable_widgets(bool disabled);
+	void update_mc_status(bool mc);
 	void update_sr_status(uint16_t val);
 	void update_r0_status(uint16_t r0);
 
