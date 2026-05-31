@@ -9,6 +9,7 @@
 #include <emdas.h>
 #include "emumodel.h"
 #include "regview.h"
+#include "intview.h"
 
 namespace Ui {
 class MainWindow;
@@ -29,9 +30,10 @@ private:
 	QLabel *ips;
 	QLabel *q, *bs, *nb, *flags, *mc;
 
-	QDockWidget *dock_uregs, *dock_sregs, *dock_dasm, *dock_mem;
+	QDockWidget *dock_uregs, *dock_sregs, *dock_dasm, *dock_mem, *dock_ints;
 
 	RegCompact *uregs, *sregs;
+	IntView *ints;
 
 	void update_mc_status(bool mc);
 	void update_sr_status(uint16_t val);

@@ -30,6 +30,7 @@ unsigned cpext_qnb();
 uint32_t cpext_rz32();
 int cpext_int_set(unsigned interrupt);
 int cpext_int_clear(unsigned interrupt);
+int cpext_int_mask_bit(unsigned interrupt);
 
 unsigned int cpext_state();
 bool cpext_mem_read_n(unsigned nb, uint16_t addr, uint16_t *data, unsigned count);

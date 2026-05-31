@@ -14,16 +14,19 @@ RegCompact::RegCompact(EmuModel *emu, Kind kind, QWidget *parent) :
 			rows.append({EM400_REG_R0 + i, QString("R%1").arg(i), true});
 		}
 	} else {
-		// order matches the control-panel rotary (the EM400_REG enum order).
-		// decimal is shown only where the value is numeric data (AC, KB); for
-		// addresses/opaque regs (IC, AR, IR, SR) a signed/decimal reading is
-		// meaningless so the row is hex/oct only. RZ is omitted (bitfield ->
-		// its own decode view).
+		// order matches the control-panel rotary (the EM400_REG enum order), so the
+		// table shows exactly what the rotary register-select exposes. decimal is
+		// shown only where the value is numeric data (AC, KB); for addresses/opaque
+		// regs (IC, AR, IR, SR, RZ) a signed/decimal reading is meaningless so the
+		// row is hex/oct only. RZ here is the 16-bit value the rotary shows
+		// (int_get_nchan, the non-channel bits); the full 32-bit interrupt decode
+		// lives in the dedicated IntView widget.
 		rows.append({EM400_REG_IC, "IC", false});
 		rows.append({EM400_REG_AC, "AC", true});
 		rows.append({EM400_REG_AR, "AR", false});
 		rows.append({EM400_REG_IR, "IR", false});
 		rows.append({EM400_REG_SR, "SR", false});
+		rows.append({EM400_REG_RZ, "RZ", false});
 		rows.append({EM400_REG_KB, "KB", true});
 	}
 

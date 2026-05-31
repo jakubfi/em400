@@ -438,6 +438,12 @@ int em400_int_clear(unsigned interrupt)
 }
 
 // -----------------------------------------------------------------------
+int em400_int_mask_bit(unsigned interrupt)
+{
+	return cpext_int_mask_bit(interrupt);
+}
+
+// -----------------------------------------------------------------------
 bool em400_mem_read(int seg, uint16_t addr, uint16_t *dest, unsigned count)
 {
 	return cpext_mem_read_n(seg, addr, dest, count);

@@ -28,6 +28,7 @@ void EmuModel::run()
 	sync_state(true);
 	sync_flags(true);
 	sync_regs(true);
+	sync_rz(true);
 	sync_clock(true);
 	sync_ips();
 
@@ -56,6 +57,7 @@ void EmuModel::on_timer_realtime_timeout()
 void EmuModel::on_timer_slow_timeout()
 {
 	sync_regs();
+	sync_rz();
 	sync_clock();
 }
 
@@ -118,6 +120,16 @@ void EmuModel::sync_regs(bool force)
 			last_reg[i] = reg;
 			emit signal_reg_changed(i, reg);
 		}
+	}
+}
+
+// -----------------------------------------------------------------------
+void EmuModel::sync_rz(bool force)
+{
+	uint32_t rz = em400_rz32();
+	if (force || (rz != last_rz)) {
+		last_rz = rz;
+		emit signal_rz_changed(rz);
 	}
 }
 

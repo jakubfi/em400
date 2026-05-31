@@ -84,6 +84,7 @@ void int_clear(int int_num);
 void int_clear_all();
 void int_put_nchan(uint16_t r);
 uint16_t int_get_nchan();
+int int_get_mask_bit(unsigned int_num);
 uint16_t int_get_chan();
 void int_serve();
 void int_ctx_switch(uint16_t int_spec, uint16_t new_ic, uint16_t new_rm);

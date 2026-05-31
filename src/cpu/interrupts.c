@@ -149,6 +149,24 @@ void int_clear(int int_num)
 }
 
 // -----------------------------------------------------------------------
+// Return the SR bit position (6-15) of the RM mask bit that gates the given
+// interrupt, or -1 if the interrupt is non-maskable (interrupt 0). RM group g
+// is held in rm bit (9-g), which sits at SR bit 15-g (SR = rm<<6 | ...).
+int int_get_mask_bit(unsigned int_num)
+{
+	if (int_num >= 32) {
+		return -1;
+	}
+	uint32_t bit = INT_BIT(int_num);
+	for (int g=0 ; g<10 ; g++) {
+		if (int_rm2xmask[g] & bit) {
+			return 15 - g;
+		}
+	}
+	return -1; // non-maskable (interrupt 0)
+}
+
+// -----------------------------------------------------------------------
 void int_put_nchan(uint16_t r)
 {
 	LOG(L_INT, "Set non-channel interrupts to: %d", r);

@@ -216,6 +216,7 @@ unsigned em400_qnb();
 uint32_t em400_rz32();
 int em400_int_set(unsigned interrupt);
 int em400_int_clear(unsigned interrupt);
+int em400_int_mask_bit(unsigned interrupt);
 
 bool em400_mem_read(int seg, uint16_t addr, uint16_t *dest, unsigned count);
 bool em400_mem_write(int seg, uint16_t addr, uint16_t *src, unsigned count);

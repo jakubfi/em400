@@ -21,12 +21,9 @@ MainWindow::MainWindow(QWidget *parent) :
 	ui->dasm->connect_emu(&e);
 	ui->mem->connect_emu(&e);
 
-	// Dense register tables: user registers (R0-R7, all four bases) and system
-	// registers (IC/AR/AC/IR/KB/SR/RZ, sparse). These replace the old
-	// one-spinbox-per-register layout; the .ui group_registers box is no longer
-	// used (it is dropped with the old central widget on setCentralWidget).
 	uregs = new RegCompact(&e, RegCompact::USER);
 	sregs = new RegCompact(&e, RegCompact::SYSTEM);
+	ints = new IntView(&e);
 
 	// Re-home the debugger panels into dock widgets arranged around the
 	// control panel. The control panel is the permanent center - it IS the
@@ -38,11 +35,13 @@ MainWindow::MainWindow(QWidget *parent) :
 	dock_sregs = new QDockWidget(tr("System registers"), this);
 	dock_dasm = new QDockWidget(tr("Disassembly"), this);
 	dock_mem  = new QDockWidget(tr("Memory"), this);
+	dock_ints = new QDockWidget(tr("Interrupts"), this);
 
 	dock_uregs->setObjectName("dock_uregs");
 	dock_sregs->setObjectName("dock_sregs");
 	dock_dasm->setObjectName("dock_dasm");
 	dock_mem->setObjectName("dock_mem");
+	dock_ints->setObjectName("dock_ints");
 
 	// dock title bars now carry the names; drop the redundant group titles
 	ui->group_dasm->setTitle("");
@@ -50,6 +49,7 @@ MainWindow::MainWindow(QWidget *parent) :
 
 	dock_uregs->setWidget(uregs);
 	dock_sregs->setWidget(sregs);
+	dock_ints->setWidget(ints);
 	dock_dasm->setWidget(ui->group_dasm);
 	dock_mem->setWidget(ui->group_mem);
 
@@ -96,6 +96,7 @@ MainWindow::MainWindow(QWidget *parent) :
 	ui->menuView->addAction(dock_mem->toggleViewAction());
 	ui->menuView->addAction(dock_uregs->toggleViewAction());
 	ui->menuView->addAction(dock_sregs->toggleViewAction());
+	ui->menuView->addAction(dock_ints->toggleViewAction());
 	ui->menuView->addSeparator();
 	QAction *act_reset = new QAction(tr("Reset Layout"), this);
 	ui->menuView->addAction(act_reset);
@@ -232,8 +233,9 @@ void MainWindow::apply_default_layout()
 	addDockWidget(Qt::BottomDockWidgetArea, dock_mem);  // panel width, under panel
 	addDockWidget(Qt::RightDockWidgetArea, dock_uregs); // small modules, stacked
 	addDockWidget(Qt::RightDockWidgetArea, dock_sregs);
+	addDockWidget(Qt::RightDockWidgetArea, dock_ints);
 
-	for (QDockWidget *d : {dock_dasm, dock_mem, dock_uregs, dock_sregs}) {
+	for (QDockWidget *d : {dock_dasm, dock_mem, dock_uregs, dock_sregs, dock_ints}) {
 		d->setFloating(false);
 		d->show();
 	}
@@ -246,7 +248,8 @@ void MainWindow::apply_default_layout()
 void MainWindow::sync_debugger_action()
 {
 	bool any = !dock_dasm->isHidden() || !dock_mem->isHidden()
-		|| !dock_uregs->isHidden() || !dock_sregs->isHidden();
+		|| !dock_uregs->isHidden() || !dock_sregs->isHidden()
+		|| !dock_ints->isHidden();
 	QSignalBlocker block(ui->actionDebugger);
 	ui->actionDebugger->setChecked(any);
 }
@@ -335,6 +338,7 @@ void MainWindow::slot_debugger_enabled_changed(bool state)
 	dock_sregs->setVisible(state);
 	dock_dasm->setVisible(state);
 	dock_mem->setVisible(state);
+	dock_ints->setVisible(state);
 	//ui->statusbar->setVisible(state);
 	for (int i=0 ; i<10 ; i++) qApp->processEvents(); // StackOverflow, I don't even...
 	adjustSize();

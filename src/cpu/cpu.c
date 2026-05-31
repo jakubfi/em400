@@ -129,7 +129,7 @@ static void cpu_do_load(int reg_id, uint16_t val)
 		case EM400_REG_AC: ac = val; break;
 		case EM400_REG_AR: ar = val ; break;
 		case EM400_REG_IR: ir = val; break;
-		case EM400_REG_SR: SR_WRITE(val); break;
+		case EM400_REG_SR: SR_WRITE(val); int_update_xmask(); break;
 		case EM400_REG_RZ: int_put_nchan(val); break;
 		default: break;
 	}

@@ -85,6 +85,12 @@ int cpext_int_clear(unsigned interrupt)
 }
 
 // -----------------------------------------------------------------------
+int cpext_int_mask_bit(unsigned interrupt)
+{
+	return int_get_mask_bit(interrupt);
+}
+
+// -----------------------------------------------------------------------
 unsigned cpext_state()
 {
 	return cpu_state_get();
