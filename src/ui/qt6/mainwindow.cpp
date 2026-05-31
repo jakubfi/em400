@@ -6,10 +6,21 @@
 #include <QAction>
 #include <QSignalBlocker>
 #include <QGridLayout>
+#include <QHBoxLayout>
+#include <QFrame>
 #include "mainwindow.h"
 #include "ui_mainwindow.h"
 #include "emdas.h"
 #include "switch.h"
+
+// -----------------------------------------------------------------------
+static QFrame *make_vsep()
+{
+	QFrame *sep = new QFrame();
+	sep->setFrameShape(QFrame::VLine);
+	sep->setFrameShadow(QFrame::Sunken);
+	return sep;
+}
 
 // -----------------------------------------------------------------------
 MainWindow::MainWindow(QWidget *parent) :
@@ -135,11 +146,14 @@ MainWindow::MainWindow(QWidget *parent) :
 
 	// register edits are handled inside the RegView models (setData -> set_reg)
 
-	// status bar contents
-	ips = new QLabel();
-	ui->statusbar->addPermanentWidget(ips);
-
+	// status bar: emulation state on the left (MIPS, flags, status, MC),
+	// grouped with vertical separators; non-emulation indicators (memory
+	// editor mode) pushed to the right.
 	QFont font("Monospace");
+
+	ips = new QLabel();
+	ui->statusbar->addWidget(ips);
+	ui->statusbar->addWidget(make_vsep());
 
 	QLabel *flags_label = new QLabel("<span>Flags:</span>");
 	flags_label->setFont(font);
@@ -147,8 +161,9 @@ MainWindow::MainWindow(QWidget *parent) :
 	flags = new QLabel();
 	flags->setFont(font);
 	ui->statusbar->addWidget(flags);
+	ui->statusbar->addWidget(make_vsep());
 
-	QLabel *status_label = new QLabel(" <span>Status:</span>");
+	QLabel *status_label = new QLabel("<span>Status:</span>");
 	status_label->setFont(font);
 	ui->statusbar->addWidget(status_label);
 	q = new QLabel("<span>Q</span>");
@@ -160,12 +175,29 @@ MainWindow::MainWindow(QWidget *parent) :
 	nb = new QLabel("<span>NB=0</span>");
 	nb->setFont(font);
 	ui->statusbar->addWidget(nb);
+	ui->statusbar->addWidget(make_vsep());
+
 	// MC (modification counter) is internal and not editable, so it lives here
 	// rather than in the register tables. Only the MC LED (on/off) is exposed
 	// by libem400, not the 0-3 count.
 	mc = new QLabel("<span>MC</span>");
 	mc->setFont(font);
 	ui->statusbar->addWidget(mc);
+	ui->statusbar->addWidget(make_vsep());
+
+	// Memory editor mode indicator, right-aligned in the default proportional
+	// font. Its leading separator and label are hidden together when no cell
+	// is being edited.
+	edit_box = new QWidget();
+	QHBoxLayout *edit_lay = new QHBoxLayout(edit_box);
+	edit_lay->setContentsMargins(0, 0, 0, 0);
+	edit_lay->setSpacing(6);
+	edit_lay->addWidget(make_vsep());
+	edit_mode = new QLabel();
+	edit_lay->addWidget(edit_mode);
+	ui->statusbar->addPermanentWidget(edit_box);
+	edit_box->setVisible(false);
+	connect(ui->mem, &MemView::signal_edit_mode_changed, this, &MainWindow::slot_edit_mode_changed);
 
 	e.run();
 	ui->cp->rotary->set_position(8);
@@ -316,6 +348,13 @@ void MainWindow::slot_ips_update(unsigned long ips)
 {
 	QString mips_t = QString("%1 MIPS").arg(QString::number(ips/1000000.0, 'f', 3));
 	this->ips->setText(mips_t);
+}
+
+// -----------------------------------------------------------------------
+void MainWindow::slot_edit_mode_changed(bool editing, bool insert)
+{
+	edit_box->setVisible(editing);
+	edit_mode->setText(insert ? "Edit: insert" : "Edit: overwrite");
 }
 
 // -----------------------------------------------------------------------

@@ -23,6 +23,7 @@ public:
 	int get_reg(int i) { return last_reg[i]; }
 	int get_mem(int nb, int addr);
 	int get_mem(int nb, int addr, uint16_t *m, int count);
+	bool set_mem(int nb, int addr, uint16_t v) { return em400_mem_write(nb, addr, &v, 1); }
 	bool get_p() { return last_p; }
 	bool get_mc() { return last_mc; }
 	bool get_alarm() { return last_alarm; }

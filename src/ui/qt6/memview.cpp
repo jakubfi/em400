@@ -75,6 +75,7 @@ MemView::MemView(QWidget *parent) : QWidget(parent)
 
 	connect(nb_spin, QOverload<int>::of(&QSpinBox::valueChanged), this, [this](int nb) {
 		if (!cpu_running) {
+			cancel_edit();
 			cnb = nb;
 			update();
 		}
@@ -104,6 +105,7 @@ void MemView::slot_state_changed(int state)
 {
 	cpu_running = (state == EM400_STATE_RUN);
 	if (cpu_running) {
+		cancel_edit();
 		int qnb = e->get_qnb();
 		if (qnb != cnb) {
 			cnb = qnb;
@@ -202,6 +204,7 @@ void MemView::apply_wpl_change()
 void MemView::set_format(DisplayFormat f)
 {
 	if (fmt == f) return;
+	cancel_edit();
 	fmt = f;
 	btn_hex->setChecked(fmt == FMT_HEX);
 	btn_udec->setChecked(fmt == FMT_UDEC);
@@ -213,6 +216,7 @@ void MemView::set_format(DisplayFormat f)
 // -----------------------------------------------------------------------
 void MemView::toggle_panel(SidePanel p)
 {
+	cancel_edit();
 	panel = (panel == p) ? PANEL_OFF : p;
 	btn_ascii->setChecked(panel == PANEL_ASCII);
 	btn_r40->setChecked(panel == PANEL_R40);
@@ -277,16 +281,312 @@ void MemView::update_contents_no_nb(int new_line)
 {
 	int new_addr = new_line * words_per_line;
 	if (new_addr == caddr) return;
+	cancel_edit();
 	caddr = new_addr;
 	update();
 }
 
 // -----------------------------------------------------------------------
+// Map a widget-space point to an absolute address in the value column.
+// Returns false for clicks on the header, address gutter, side panel or
+// outside the populated cells.
+bool MemView::hit_test_cell(const QPoint &pos, int &addr) const
+{
+	int cell_w = val_chars() * font_width;
+
+	int cy = pos.y() - content_top - col_hdr_h;
+	if (cy < 0) return false;
+	int row = cy / line_height;
+	if (row >= total_lines) return false;
+
+	int cx = pos.x() - mem_x_start;
+	if (cx < 0) return false;
+	int col = cx / cell_w;
+	if (col >= words_per_line) return false;
+
+	int a = caddr + row * words_per_line + col;
+	if (a > 0xffff) return false;
+
+	addr = a;
+	return true;
+}
+
+// -----------------------------------------------------------------------
+void MemView::start_edit(int addr)
+{
+	if (cpu_running || !e) return;
+
+	// unmapped words read back as -1 and can't be written, so there is
+	// nothing to edit there
+	int val = e->get_mem(cnb, addr);
+	if (val < 0) return;
+
+	edit_buf.clear();
+	switch (fmt) {
+		case FMT_HEX:
+			edit_buf = QString("%1").arg((uint16_t)val, 4, 16, QLatin1Char('0'));
+			break;
+		case FMT_UDEC:
+			edit_buf = QString::number((uint16_t)val);
+			break;
+		case FMT_SDEC:
+			edit_buf = QString::number((int16_t)val);
+			break;
+	}
+
+	editing = true;
+	edit_nb = cnb;
+	edit_addr = addr;
+	edit_cursor = 0;
+	setFocus();
+	emit signal_edit_mode_changed(true, edit_insert);
+	update();
+}
+
+// -----------------------------------------------------------------------
+void MemView::cancel_edit()
+{
+	if (!editing) return;
+	editing = false;
+	edit_buf.clear();
+	emit signal_edit_mode_changed(false, edit_insert);
+	update();
+}
+
+// -----------------------------------------------------------------------
+void MemView::commit_edit()
+{
+	if (!editing) return;
+
+	bool empty = edit_buf.isEmpty() || edit_buf == "-";
+	if (!empty && e) {
+		bool ok = false;
+		uint16_t v = 0;
+		switch (fmt) {
+			case FMT_HEX:
+				v = (uint16_t)edit_buf.toUInt(&ok, 16);
+				break;
+			case FMT_UDEC:
+				// a leading '-' means a signed value stored as U2
+				if (edit_buf.startsWith('-')) {
+					v = (uint16_t)(int16_t)edit_buf.toInt(&ok, 10);
+				} else {
+					v = (uint16_t)edit_buf.toUInt(&ok, 10);
+				}
+				break;
+			case FMT_SDEC:
+				v = (uint16_t)(int16_t)edit_buf.toInt(&ok, 10);
+				break;
+		}
+		if (ok) e->set_mem(edit_nb, edit_addr, v);
+	}
+
+	editing = false;
+	edit_buf.clear();
+	emit signal_edit_mode_changed(false, edit_insert);
+	update();
+}
+
+// -----------------------------------------------------------------------
+// Validate a candidate edit buffer against the current format's character
+// set and value range. An empty string (or a lone '-') is a valid partial
+// edit; it just won't be written on commit.
+bool MemView::valid_buf(const QString &s) const
+{
+	if (s.isEmpty()) return true;
+
+	switch (fmt) {
+		case FMT_HEX:
+			// no sign in hex: a lone '-' is not a valid partial edit here
+			if (s.length() > 4) return false;
+			for (QChar c : s) if (!isxdigit((unsigned char)c.toLatin1())) return false;
+			return true;
+		case FMT_UDEC: {
+			if (s == "-") return true;
+			// unsigned view, but a leading '-' lets the user enter a
+			// signed value that gets stored as its U2 representation
+			QString digits = s.startsWith('-') ? s.mid(1) : s;
+			for (QChar c : digits) if (!c.isDigit()) return false;
+			bool ok = false;
+			if (s.startsWith('-')) {
+				return s.toInt(&ok) >= -32768 && ok;
+			} else {
+				return s.length() <= 5 && s.toUInt(&ok) <= 65535 && ok;
+			}
+		}
+		case FMT_SDEC: {
+			if (s == "-") return true;
+			QString digits = s.startsWith('-') ? s.mid(1) : s;
+			for (QChar c : digits) if (!c.isDigit()) return false;
+			bool ok = false;
+			int v = s.toInt(&ok);
+			return ok && v >= -32768 && v <= 32767;
+		}
+	}
+	return false;
+}
+
+// -----------------------------------------------------------------------
+void MemView::mouseDoubleClickEvent(QMouseEvent *event)
+{
+	int addr;
+	if (event->button() == Qt::LeftButton && hit_test_cell(event->pos(), addr)) {
+		start_edit(addr);
+		event->accept();
+		return;
+	}
+	QWidget::mouseDoubleClickEvent(event);
+}
+
+// -----------------------------------------------------------------------
+// Losing keyboard focus while a cell is being edited abandons the edit
+// (consistent with Escape); otherwise the overlay and the status-bar
+// indicator would stay stuck with no widget receiving keystrokes.
+void MemView::focusOutEvent(QFocusEvent *event)
+{
+	cancel_edit();
+	QWidget::focusOutEvent(event);
+}
+
+// -----------------------------------------------------------------------
+// Format the value column text for one word. val < 0 means the word is
+// unreadable (no memory mapped), shown as dashes.
+QString MemView::value_text(int val) const
+{
+	if (val < 0) {
+		switch (fmt) {
+			case FMT_HEX:  return "----";
+			case FMT_UDEC: return "-----";
+			case FMT_SDEC: return "------";
+		}
+		return "----";
+	}
+	switch (fmt) {
+		case FMT_HEX:  return QString("%1").arg((uint16_t)val, 4, 16, QLatin1Char('0'));
+		case FMT_UDEC: return QString("%1").arg((uint16_t)val, 5, 10, QLatin1Char(' '));
+		case FMT_SDEC: return QString("%1").arg((int16_t)val, 6, 10, QLatin1Char(' '));
+	}
+	return QString();
+}
+
+// -----------------------------------------------------------------------
+// Format the side panel text (ASCII pair or R40 triplet) for one word.
+QString MemView::panel_text(int val) const
+{
+	if (panel == PANEL_ASCII) {
+		if (val < 0) return "..";
+		unsigned char hi = (val >> 8) & 0xff;
+		unsigned char lo = val & 0xff;
+		return QString(QChar(isprint(hi) ? hi : '.'))
+		     + QString(QChar(isprint(lo) ? lo : '.'));
+	}
+	// R40
+	if (val < 0) return "???";
+	uint16_t word = (uint16_t)val;
+	char buf[4];
+	return r40_to_ascii(&word, 1, buf) ? QString::fromLatin1(buf, 3) : "???";
+}
+
+// -----------------------------------------------------------------------
+// The non-scrolling row of column offsets above the memory dump.
+void MemView::draw_offset_row(QPainter &painter, int cell_w)
+{
+	font.setBold(true);
+	painter.setFont(font);
+	painter.setPen(palette().color(QPalette::Text));
+	for (int x = 0; x < words_per_line; x++) {
+		QString off_str = QString("%1").arg(x, val_chars() - 1, 16, QLatin1Char(' '));
+		painter.drawText(mem_x_start + x * cell_w, font_height, off_str);
+	}
+	painter.setPen(palette().color(QPalette::Highlight));
+	painter.drawLine(divider_x_pos, col_hdr_h, right - 1, col_hdr_h);
+}
+
+// -----------------------------------------------------------------------
+// One memory line: the address gutter plus every word cell (and its side
+// panel companion) on that line.
+void MemView::draw_line(QPainter &painter, int y, int base_addr, int cell_w, int pcell_w, int side_x)
+{
+	QString addr_str = QString("%1").arg((uint16_t)base_addr, 4, 16, QLatin1Char('0'));
+	font.setBold(true);
+	painter.setFont(font);
+	painter.setPen(palette().color(QPalette::Text));
+	painter.drawText(addr_x_start, addr_y_start + y * line_height, addr_str);
+
+	font.setBold(false);
+	painter.setFont(font);
+
+	for (int x = 0; x < words_per_line; x++) {
+		int addr = base_addr + x;
+		if (addr > 0xffff) break;
+		int val = e->get_mem(cnb, addr);
+
+		// the cell under edit gets its own overlay and no side panel
+		if (editing && cnb == edit_nb && addr == edit_addr) {
+			draw_edit_cell(painter, x, y, cell_w);
+			continue;
+		}
+
+		draw_value_cell(painter, x, y, val, cell_w);
+		if (panel != PANEL_OFF) {
+			draw_panel_cell(painter, x, y, val, pcell_w, side_x);
+		}
+	}
+}
+
+// -----------------------------------------------------------------------
+void MemView::draw_value_cell(QPainter &painter, int x, int y, int val, int cell_w)
+{
+	painter.setPen(palette().color(QPalette::Text));
+	painter.drawText(mem_x_start + x * cell_w, mem_y_start + y * line_height, value_text(val));
+}
+
+// -----------------------------------------------------------------------
+void MemView::draw_panel_cell(QPainter &painter, int x, int y, int val, int pcell_w, int side_x)
+{
+	painter.setPen(palette().color(QPalette::PlaceholderText));
+	painter.drawText(side_x + x * pcell_w, mem_y_start + y * line_height, panel_text(val));
+}
+
+// -----------------------------------------------------------------------
+// The cell currently being edited: the edit buffer with a caret over a
+// highlighted background, drawn in place of the stored value.
+void MemView::draw_edit_cell(QPainter &painter, int x, int y, int cell_w)
+{
+	int ex = mem_x_start + x * cell_w;
+	int ey = col_hdr_h + y * line_height;
+	int baseline = mem_y_start + y * line_height;
+
+	// highlight hugs the value digits with half a char of padding on each
+	// side, instead of spanning the full cell (whose width includes the
+	// trailing inter-column gap)
+	int val_w = (val_chars() - 1) * font_width;
+	painter.fillRect(ex - half_font_width, ey, val_w + font_width, line_height,
+		palette().color(QPalette::Highlight));
+	painter.setPen(palette().color(QPalette::HighlightedText));
+	painter.drawText(ex, baseline, edit_buf);
+
+	int cur_x = ex + edit_cursor * font_width;
+	if (edit_insert) {
+		// insert caret: thin vertical bar between chars
+		painter.fillRect(cur_x, ey + 1, 2, line_height - 2,
+			palette().color(QPalette::HighlightedText));
+	} else {
+		// overwrite caret: solid block over the char, redrawn inverted.
+		// Inset top/bottom by 1px so its edge stays visible against the
+		// highlighted cell background.
+		painter.fillRect(cur_x, ey + 1, font_width, line_height - 2,
+			palette().color(QPalette::HighlightedText));
+		if (edit_cursor < edit_buf.length()) {
+			painter.setPen(palette().color(QPalette::Highlight));
+			painter.drawText(cur_x, baseline, QString(edit_buf.at(edit_cursor)));
+		}
+	}
+}
+
+// -----------------------------------------------------------------------
 void MemView::paintEvent(QPaintEvent *event)
 {
-	// NOTE: when cell selection/editing is added, split into
-	// draw_offset_row(), draw_line(), draw_cell() helpers.
-
 	QPainter painter(this);
 	painter.translate(0, content_top);
 	painter.setClipRect(0, 0, right + 1, bottom + 1);
@@ -295,92 +595,17 @@ void MemView::paintEvent(QPaintEvent *event)
 
 	if (e) {
 		int cell_w = val_chars() * font_width;
-
-		// column offset header row
-		font.setBold(true);
-		painter.setFont(font);
-		painter.setPen(palette().color(QPalette::Text));
-		for (int x = 0; x < words_per_line; x++) {
-			QString off_str = QString("%1").arg(x, val_chars() - 1, 16, QLatin1Char(' '));
-			painter.drawText(mem_x_start + x * cell_w, font_height, off_str);
-		}
-		painter.setPen(palette().color(QPalette::Highlight));
-		painter.drawLine(divider_x_pos, col_hdr_h, right - 1, col_hdr_h);
 		int pcell_w = panel_chars() * font_width;
 		int side_x = (panel != PANEL_OFF)
 			? mem_x_start + words_per_line * cell_w + font_width
 			: 0;
 
+		draw_offset_row(painter, cell_w);
+
 		for (int y = 0; y < total_lines; y++) {
 			int base_addr = caddr + y * words_per_line;
 			if (base_addr > 0xffff) break;
-
-			// address
-			QString addr_str = QString("%1").arg((uint16_t)base_addr, 4, 16, QLatin1Char('0'));
-			font.setBold(true);
-			painter.setFont(font);
-			painter.setPen(palette().color(QPalette::Text));
-			painter.drawText(addr_x_start, addr_y_start + y * line_height, addr_str);
-
-			font.setBold(false);
-			painter.setFont(font);
-
-			for (int x = 0; x < words_per_line; x++) {
-				int addr = base_addr + x;
-				if (addr > 0xffff) break;
-				int val = e->get_mem(cnb, addr);
-
-				// value
-				QString val_str;
-				if (val >= 0) {
-					switch (fmt) {
-						case FMT_HEX:
-							val_str = QString("%1").arg((uint16_t)val, 4, 16, QLatin1Char('0'));
-							break;
-						case FMT_UDEC:
-							val_str = QString("%1").arg((uint16_t)val, 5, 10, QLatin1Char(' '));
-							break;
-						case FMT_SDEC:
-							val_str = QString("%1").arg((int16_t)val, 6, 10, QLatin1Char(' '));
-							break;
-					}
-				} else {
-					switch (fmt) {
-						case FMT_HEX:  val_str = "----";   break;
-						case FMT_UDEC: val_str = "-----";  break;
-						case FMT_SDEC: val_str = "------"; break;
-					}
-				}
-				painter.setPen(palette().color(QPalette::Text));
-				painter.drawText(mem_x_start + x * cell_w, mem_y_start + y * line_height, val_str);
-
-				// side panel
-				if (panel != PANEL_OFF) {
-					QString pstr;
-					if (panel == PANEL_ASCII) {
-						if (val >= 0) {
-							unsigned char hi = (val >> 8) & 0xff;
-							unsigned char lo = val & 0xff;
-							pstr = QString(QChar(isprint(hi) ? hi : '.'))
-							     + QString(QChar(isprint(lo) ? lo : '.'));
-						} else {
-							pstr = "..";
-						}
-					} else { // R40
-						if (val >= 0) {
-							uint16_t word = (uint16_t)val;
-							char buf[4];
-							pstr = r40_to_ascii(&word, 1, buf)
-								? QString::fromLatin1(buf, 3)
-								: "???";
-						} else {
-							pstr = "???";
-						}
-					}
-					painter.setPen(palette().color(QPalette::PlaceholderText));
-					painter.drawText(side_x + x * pcell_w, mem_y_start + y * line_height, pstr);
-				}
-			}
+			draw_line(painter, y, base_addr, cell_w, pcell_w, side_x);
 		}
 
 		// divider between values and side panel
@@ -441,6 +666,81 @@ void MemView::wheelEvent(QWheelEvent *event)
 // -----------------------------------------------------------------------
 void MemView::keyPressEvent(QKeyEvent *event)
 {
+	if (editing) {
+		switch (event->key()) {
+			case Qt::Key_Return:
+			case Qt::Key_Enter:
+				commit_edit();
+				break;
+			case Qt::Key_Escape:
+				cancel_edit();
+				break;
+			case Qt::Key_Left:
+				if (edit_cursor > 0) { edit_cursor--; update(); }
+				break;
+			case Qt::Key_Right:
+				if (edit_cursor < edit_buf.length()) { edit_cursor++; update(); }
+				break;
+			case Qt::Key_Insert:
+				edit_insert = !edit_insert;
+				emit signal_edit_mode_changed(true, edit_insert);
+				update();
+				break;
+			case Qt::Key_Home:
+				edit_cursor = 0;
+				update();
+				break;
+			case Qt::Key_End:
+				edit_cursor = edit_buf.length();
+				update();
+				break;
+			case Qt::Key_Backspace:
+				if (edit_cursor > 0) {
+					edit_buf.remove(edit_cursor - 1, 1);
+					edit_cursor--;
+					update();
+				}
+				break;
+			case Qt::Key_Delete:
+				if (edit_cursor < edit_buf.length()) {
+					edit_buf.remove(edit_cursor, 1);
+					update();
+				}
+				break;
+			default: {
+				QString t = event->text();
+				if (!t.isEmpty()) {
+					QChar c = t.at(0);
+					if (fmt == FMT_HEX) c = c.toLower();
+					QString cand = edit_buf;
+					if (edit_insert) {
+						cand.insert(edit_cursor, c);
+					} else if (edit_cursor < cand.length()) {
+						cand[edit_cursor] = c;
+					} else {
+						cand.append(c);
+					}
+					if (valid_buf(cand)) {
+						edit_buf = cand;
+						edit_cursor++;
+						// overwrite: once the field can hold no more digits,
+						// keep the caret on the last digit (overwriting it on
+						// further input) instead of parking it on the empty
+						// slot past the value
+						if (!edit_insert && edit_cursor >= edit_buf.length()
+								&& !valid_buf(edit_buf + "0")) {
+							edit_cursor = edit_buf.length() - 1;
+						}
+						update();
+					}
+				}
+				break;
+			}
+		}
+		event->accept();
+		return;
+	}
+
 	switch (event->key()) {
 		case Qt::Key_H:        set_format(FMT_HEX);          break;
 		case Qt::Key_U:        set_format(FMT_UDEC);         break;

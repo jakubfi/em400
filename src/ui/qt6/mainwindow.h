@@ -29,6 +29,8 @@ private:
 
 	QLabel *ips;
 	QLabel *q, *bs, *nb, *flags, *mc;
+	QLabel *edit_mode;
+	QWidget *edit_box;
 
 	QDockWidget *dock_uregs, *dock_sregs, *dock_dasm, *dock_mem, *dock_ints;
 
@@ -47,6 +49,7 @@ private slots:
 	void slot_dasm_update();
 	void slot_cpu_reg_changed(int reg, uint16_t val);
 	void slot_ips_update(unsigned long ips);
+	void slot_edit_mode_changed(bool editing, bool insert);
 
 	void load_os_image();
 

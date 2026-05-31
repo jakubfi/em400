@@ -6,6 +6,7 @@ View:
   * (DONE) hex+ascii contents (fixed in curses UI)
   * (ADDED) no switching hex/dec/oct
   * (ADDED) non-scrollable
+  * (ADDED for numbers) no editing
 * (PORTED) user registers
   * (DONE) hex/oct/dec/bin
   * (DONE - status bar) flags bits (for R0)
@@ -74,7 +75,7 @@ DASM VIEW:
 	minimal syntax highlight
 	marking position(-s)?
 MEM VIEW:
-	editing memory contents
+	(DONE) editing memory contents
 	dec/int/bin on mouseover
 STATUS BAR:
 	(DONE, own widget) int/int mask display in the status bar

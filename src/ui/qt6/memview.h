@@ -6,7 +6,11 @@
 #include <QSpinBox>
 #include <QPushButton>
 #include <QKeyEvent>
+#include <QMouseEvent>
+#include <QFocusEvent>
 #include "emumodel.h"
+
+class QPainter;
 
 // -----------------------------------------------------------------------
 class MemView : public QWidget {
@@ -31,6 +35,11 @@ private slots:
 	void slot_state_changed(int state);
 	void slot_reg_changed(int reg, uint16_t val);
 
+signals:
+	// editing==false means no cell is being edited; insert reflects the
+	// current insert/overwrite mode while editing
+	void signal_edit_mode_changed(bool editing, bool insert);
+
 private:
 	// geometry
 	int content_top = 0;
@@ -50,6 +59,22 @@ private:
 	DisplayFormat fmt = FMT_HEX;
 	SidePanel panel = PANEL_ASCII;
 	bool cpu_running = false;
+
+	// in-place cell editing (hex/dec/octal value column).
+	// Overwrite-style line editor: edit_buf holds the digits, edit_cursor
+	// is the caret column (0..edit_buf.length()).
+	bool editing = false;
+	int edit_nb = 0;
+	int edit_addr = 0;
+	QString edit_buf;
+	int edit_cursor = 0;
+	bool edit_insert = false; // false = overwrite, toggled with Insert
+
+	bool hit_test_cell(const QPoint &pos, int &addr) const;
+	void start_edit(int addr);
+	void commit_edit();
+	void cancel_edit();
+	bool valid_buf(const QString &s) const;
 
 	int wheel_tick_accumulator = 0;
 
@@ -71,6 +96,15 @@ private:
 	void set_format(DisplayFormat f);
 	void toggle_panel(SidePanel p);
 
+	// paintEvent helpers
+	void draw_offset_row(QPainter &painter, int cell_w);
+	void draw_line(QPainter &painter, int y, int base_addr, int cell_w, int pcell_w, int side_x);
+	void draw_value_cell(QPainter &painter, int x, int y, int val, int cell_w);
+	void draw_edit_cell(QPainter &painter, int x, int y, int cell_w);
+	void draw_panel_cell(QPainter &painter, int x, int y, int val, int pcell_w, int side_x);
+	QString value_text(int val) const;
+	QString panel_text(int val) const;
+
 	void set_font(QString name, int size = 0);
 	void update_font_related_dimensions();
 	void update_scroll_range();
@@ -79,6 +113,8 @@ private:
 protected:
 	void paintEvent(QPaintEvent *event) override;
 	void resizeEvent(QResizeEvent *event) override;
+	void mouseDoubleClickEvent(QMouseEvent *event) override;
+	void focusOutEvent(QFocusEvent *event) override;
 	void wheelEvent(QWheelEvent *event) override;
 	void enterEvent(QEnterEvent *event) override;
 	void leaveEvent(QEvent *event) override;
