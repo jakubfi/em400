@@ -59,7 +59,7 @@ void ui_qt6_destroy(void *data)
 
 // -----------------------------------------------------------------------
 struct ui_drv ui_qt6 = {
-	.name = "qt6",
+	.name = "qt",
 	.setup = ui_qt6_setup,
 	.loop = ui_qt6_loop,
 	.destroy = ui_qt6_destroy
