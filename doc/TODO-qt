@@ -32,7 +32,7 @@ View:
 
 Commands:
 
-* (TODO, UI, add menu entry) quit: Quit the emulator
+* (DONE: window, menu) quit: Quit the emulator
 * (DONE, CYCLE on the panel, add shortuct key?) cycle: Execute one instruction at IC
 * help: Print help
 * (PORTED, UI) regs: Show user registers

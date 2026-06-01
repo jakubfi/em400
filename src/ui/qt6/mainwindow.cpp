@@ -119,6 +119,7 @@ MainWindow::MainWindow(QWidget *parent) :
 	connect(act_reset, &QAction::triggered, this, &MainWindow::apply_default_layout);
 
 	// MainWindow -> ControlPanel
+	connect(ui->actionQuit, &QAction::triggered, this, &MainWindow::close);
 	connect(ui->actionSmall_Control_Panel, &QAction::toggled, this, &MainWindow::slot_smallcp_changed);
 	connect(ui->actionDebugger, &QAction::toggled, this, &MainWindow::slot_debugger_enabled_changed);
 
