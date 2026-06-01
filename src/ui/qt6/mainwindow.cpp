@@ -182,10 +182,7 @@ MainWindow::MainWindow(QWidget *parent) :
 	ui->statusbar->addWidget(nb);
 	ui->statusbar->addWidget(make_vsep());
 
-	// MC (modification counter) is internal and not editable, so it lives here
-	// rather than in the register tables. Only the MC LED (on/off) is exposed
-	// by libem400, not the 0-3 count.
-	mc = new QLabel("<span>MC</span>");
+	mc = new QLabel("<span>MC=0</span>");
 	mc->setFont(font);
 	ui->statusbar->addWidget(mc);
 	ui->statusbar->addWidget(make_vsep());
@@ -297,10 +294,9 @@ void MainWindow::sync_debugger_action()
 }
 
 // -----------------------------------------------------------------------
-void MainWindow::update_mc_status(bool on)
+void MainWindow::update_mc_status(int value)
 {
-	if (on) mc->setStyleSheet("font-weight: bold; color: black;");
-	else mc->setStyleSheet("font-weight: normal; color: gray;");
+	mc->setText(QString("<span>MC=%1</span>").arg(value));
 }
 
 // -----------------------------------------------------------------------

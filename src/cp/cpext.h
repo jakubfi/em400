@@ -27,6 +27,7 @@ void cpext_regs(uint16_t *dest);
 void cpext_reg_set(unsigned reg_id, uint16_t val);
 unsigned cpext_nb();
 unsigned cpext_qnb();
+unsigned cpext_mc();
 uint32_t cpext_rz32();
 int cpext_int_set(unsigned interrupt);
 int cpext_int_clear(unsigned interrupt);

@@ -25,7 +25,7 @@ public:
 	int get_mem(int nb, int addr, uint16_t *m, int count);
 	bool set_mem(int nb, int addr, uint16_t v) { return em400_mem_write(nb, addr, &v, 1); }
 	bool get_p() { return last_p; }
-	bool get_mc() { return last_mc; }
+	int get_mc() { return last_mc; }
 	bool get_alarm() { return last_alarm; }
 	int get_nb() { return em400_nb(); }
 	int get_qnb() { return em400_qnb(); }
@@ -48,7 +48,8 @@ private:
 	uint32_t last_rz = 0;
 	int last_map[16] = {0};
 	bool last_clock;
-	bool last_alarm, last_p, last_mc;
+	bool last_alarm, last_p;
+	int last_mc;
 
 	void sync_state(bool force=false);
 	void sync_regs(bool force=false);
@@ -85,7 +86,7 @@ signals:
 	void signal_cpu_ips_tick(unsigned long ips);
 	void signal_alarm_changed(bool alarm);
 	void signal_p_changed(bool p);
-	void signal_mc_changed(bool mc);
+	void signal_mc_changed(int mc);
 	void signal_clock_changed(bool clock);
 };
 

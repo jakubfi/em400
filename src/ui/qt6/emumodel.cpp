@@ -97,7 +97,7 @@ void EmuModel::sync_flags(bool force)
 {
 	bool alarm = em400_cp_alarm_led();
 	bool p = em400_cp_p_led();
-	bool mc = em400_cp_mc_led();
+	int mc = em400_mc();
 
 	if (force || (alarm != last_alarm)) {
 		last_alarm = alarm;

@@ -212,6 +212,7 @@ void em400_regs(uint16_t *dest);
 void em400_reg_set(unsigned reg_id, uint16_t val);
 unsigned em400_nb();
 unsigned em400_qnb();
+unsigned em400_mc();
 
 uint32_t em400_rz32();
 int em400_int_set(unsigned interrupt);

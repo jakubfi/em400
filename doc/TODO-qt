@@ -17,7 +17,7 @@ View:
   * (DONE - dasm bar) P
   * (DONE) IC, AC, AR
   * (DONE - flag in statusbar MC flag
-  * (TODO - bar?) MC counter
+  * (DONE - bar) MC counter
 * (PORTED) dasm view
   * (DONE) address + disassembly
   * (DONE) IC location

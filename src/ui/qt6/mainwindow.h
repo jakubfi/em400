@@ -39,7 +39,7 @@ private:
 	IntView *ints;
 	MapView *map;
 
-	void update_mc_status(bool mc);
+	void update_mc_status(int mc);
 	void update_sr_status(uint16_t val);
 	void update_r0_status(uint16_t r0);
 
