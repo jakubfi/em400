@@ -42,7 +42,7 @@ Commands:
 * (PORTED, UI) mem: Show memory contents
 * (PORTED, PANEL) binload: Initiate binary load
 * (TODO: menu) load: Load memory image from file
-* (TODO: menu? widget?) memcfg: Show memory configuration
+* (DONE: widget) memcfg: Show memory configuration
 * (TODO: memory widget 'save'? menu?) memdump: Dump memory contents into a file
 * (TODO) brk: Manipulate breakpoints
 * (PORTED, PANEL, shortcut?) start: Start emulation

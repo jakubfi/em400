@@ -31,6 +31,7 @@ public:
 	int get_qnb() { return em400_qnb(); }
 	bool get_clock() { return em400_cp_clock_led(); }
 	uint32_t get_rz() { return last_rz; }
+	int get_mem_map(int seg) { return em400_mem_map(seg); }
 
 	// interrupt view helpers (structural, language-free)
 	int int_mask_bit(int n) { return em400_int_mask_bit(n); }
@@ -45,12 +46,14 @@ private:
 	int last_reg[EM400_REG_COUNT] = {0};
 	uint16_t last_bus_w;
 	uint32_t last_rz = 0;
+	int last_map[16] = {0};
 	bool last_clock;
 	bool last_alarm, last_p, last_mc;
 
 	void sync_state(bool force=false);
 	void sync_regs(bool force=false);
 	void sync_rz(bool force=false);
+	void sync_map(bool force=false);
 	void sync_bus_w(bool force=false);
 	void sync_clock(bool force=false);
 	void sync_flags(bool force=false);
@@ -78,6 +81,7 @@ signals:
 	void signal_bus_w_changed(uint16_t val);
 	void signal_reg_changed(int reg, uint16_t val);
 	void signal_rz_changed(uint32_t val);
+	void signal_mem_map_changed(int seg, uint16_t map);
 	void signal_cpu_ips_tick(unsigned long ips);
 	void signal_alarm_changed(bool alarm);
 	void signal_p_changed(bool p);

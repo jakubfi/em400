@@ -10,6 +10,7 @@
 #include "emumodel.h"
 #include "regview.h"
 #include "intview.h"
+#include "mapview.h"
 
 namespace Ui {
 class MainWindow;
@@ -32,10 +33,11 @@ private:
 	QLabel *edit_mode;
 	QWidget *edit_box;
 
-	QDockWidget *dock_uregs, *dock_sregs, *dock_dasm, *dock_mem, *dock_ints;
+	QDockWidget *dock_uregs, *dock_sregs, *dock_dasm, *dock_mem, *dock_ints, *dock_map;
 
 	RegCompact *uregs, *sregs;
 	IntView *ints;
+	MapView *map;
 
 	void update_mc_status(bool mc);
 	void update_sr_status(uint16_t val);

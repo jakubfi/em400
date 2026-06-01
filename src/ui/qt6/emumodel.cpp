@@ -29,6 +29,7 @@ void EmuModel::run()
 	sync_flags(true);
 	sync_regs(true);
 	sync_rz(true);
+	sync_map(true);
 	sync_clock(true);
 	sync_ips();
 
@@ -58,6 +59,7 @@ void EmuModel::on_timer_slow_timeout()
 {
 	sync_regs();
 	sync_rz();
+	sync_map();
 	sync_clock();
 }
 
@@ -130,6 +132,18 @@ void EmuModel::sync_rz(bool force)
 	if (force || (rz != last_rz)) {
 		last_rz = rz;
 		emit signal_rz_changed(rz);
+	}
+}
+
+// -----------------------------------------------------------------------
+void EmuModel::sync_map(bool force)
+{
+	for (int seg=0 ; seg<16 ; seg++) {
+		int map = em400_mem_map(seg);
+		if (force || (map != last_map[seg])) {
+			last_map[seg] = map;
+			emit signal_mem_map_changed(seg, map);
+		}
 	}
 }
 
