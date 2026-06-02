@@ -1,7 +1,9 @@
 #include <QFont>
 #include <QLabel>
 #include <QGridLayout>
+#include <QEvent>
 #include "regview.h"
+#include "theme.h"
 #include "libem400.h"
 
 // -----------------------------------------------------------------------
@@ -98,7 +100,6 @@ RegCompact::RegCompact(EmuModel *emu, Kind kind, QWidget *parent) :
 
 			ghost[row] = new QLabel(this);
 			ghost[row]->setFont(mono);
-			ghost[row]->setStyleSheet("color: palette(mid);");
 			// reserve the ghost column width permanently so the module doesn't
 			// narrow when no value is negative and then jump wider when one is.
 			ghost[row]->setFixedWidth(ghost_w);
@@ -112,12 +113,42 @@ RegCompact::RegCompact(EmuModel *emu, Kind kind, QWidget *parent) :
 	grid->setColumnStretch(4, 1);
 	grid->setRowStretch(n + 1, 1);
 
+	apply_ghost_color();
+
 	for (int row=0 ; row<n ; row++) {
 		cur[row] = e->get_reg(rows[row].reg_id);
 		render_row(row);
 	}
 
 	connect(e, &EmuModel::signal_reg_changed, this, &RegCompact::slot_reg_changed);
+}
+
+// -----------------------------------------------------------------------
+// Paint the ghost labels with the theme's dimmed-but-readable text color.
+// Resolving this from the live palette (rather than a "color: palette(mid)"
+// stylesheet) avoids the stylesheet's one-shot polish-time resolution, which
+// latched onto the startup palette and left the ghost faint until the first
+// theme switch forced a re-polish.
+void RegCompact::apply_ghost_color()
+{
+	QColor c = em400_dim_text_color(palette());
+	for (QLabel *g : ghost) {
+		if (!g) continue;
+		QPalette pal = g->palette();
+		pal.setColor(QPalette::WindowText, c);
+		g->setPalette(pal);
+	}
+}
+
+// -----------------------------------------------------------------------
+// Re-derive the ghost color whenever the application palette/style changes
+// (theme toggle), since it is computed from the live palette.
+void RegCompact::changeEvent(QEvent *ev)
+{
+	QWidget::changeEvent(ev);
+	if (ev->type() == QEvent::PaletteChange || ev->type() == QEvent::StyleChange) {
+		apply_ghost_color();
+	}
 }
 
 // -----------------------------------------------------------------------

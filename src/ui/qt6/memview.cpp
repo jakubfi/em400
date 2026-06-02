@@ -545,7 +545,7 @@ void MemView::draw_value_cell(QPainter &painter, int x, int y, int val, int cell
 // -----------------------------------------------------------------------
 void MemView::draw_panel_cell(QPainter &painter, int x, int y, int val, int pcell_w, int side_x)
 {
-	painter.setPen(palette().color(QPalette::PlaceholderText));
+	painter.setPen(em400_dim_text_color(palette()));
 	painter.drawText(side_x + x * pcell_w, mem_y_start + y * line_height, panel_text(val));
 }
 

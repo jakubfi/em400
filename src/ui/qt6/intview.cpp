@@ -80,11 +80,11 @@ IntView::IntView(EmuModel *emu, QWidget *parent) :
 	outer->setSpacing(3);
 
 	// small help badge: hover shows how to use the widget + the colour legend
-	QLabel *help = new QLabel("?", this);
+	help = new QLabel("?", this);
 	help->setFont(fnt);
 	help->setAlignment(Qt::AlignCenter);
 	help->setCursor(Qt::PointingHandCursor);
-	help->setStyleSheet("border:1px solid palette(mid); border-radius:7px; padding:0 4px;");
+	render_help();
 	// keep the default hover-with-delay tooltip, but also pop it immediately on a
 	// click - users treat a "?" as clickable and a click that does nothing reads as
 	// broken (the tooltip otherwise waits ~700ms for a hover that the click cut short)
@@ -214,7 +214,7 @@ void IntView::render_cell(int n)
 	// same yellow when the gate is open, so a fully-yellow cell = will fire.
 	QString yellow = em400_mask_color(palette()).name();
 	QString yellow_text = palette().color(QPalette::HighlightedText).name();
-	QString dim = palette().color(QPalette::Disabled, QPalette::WindowText).name();
+	QString dim = em400_dim_text_color(palette()).name();
 
 	QString ss;
 	if (pending && unmasked) {
@@ -243,10 +243,26 @@ void IntView::render_box(MaskBox *b)
 }
 
 // -----------------------------------------------------------------------
+// The "?" badge: a rounded border with the glyph in the same dimmed-but-
+// readable secondary colour (em400_dim_text_color, brighter than the palette's
+// Disabled/Mid roles which read too faint here).
+// The text colour must be set explicitly - once a QLabel carries a stylesheet
+// border it no longer inherits the palette foreground, so without this the
+// glyph renders with no usable colour (invisible in both themes). Both colours
+// come from the live palette so the badge tracks a runtime theme switch.
+void IntView::render_help()
+{
+	QString c = em400_dim_text_color(palette()).name();
+	help->setStyleSheet(QString(
+		"QLabel{color:%1; border:1px solid %1; border-radius:3px; padding:0 4px;}").arg(c));
+}
+
+// -----------------------------------------------------------------------
 void IntView::render_all()
 {
 	for (int n=0 ; n<32 ; n++) render_cell(n);
 	for (MaskBox *b : boxes) render_box(b);
+	render_help();
 }
 
 // -----------------------------------------------------------------------

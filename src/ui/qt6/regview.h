@@ -8,6 +8,8 @@
 #include <QPushButton>
 #include "emumodel.h"
 
+class QEvent;
+
 // -----------------------------------------------------------------------
 // Compact register table, built from a row descriptor so the same widget
 // serves both user and system registers.
@@ -58,6 +60,10 @@ private:
 	void commit_num(int row);
 	void commit_dec(int row);
 	void render_row(int row, bool force = false);
+	void apply_ghost_color();
+
+protected:
+	void changeEvent(QEvent *ev) override;
 };
 
 #endif // REGVIEW_H

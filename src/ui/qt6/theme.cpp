@@ -42,7 +42,7 @@ QPalette em400_panel_palette()
 {
 	// The two structural colors: the gunmetal background (from which all the
 	// Fusion shade roles are derived by lightness) and the off-white lettering.
-	const QColor bg   = c_background;
+	const QColor bg = c_background;
 	const QColor text = c_lettering;
 	const QColor green = c_green;
 
@@ -89,7 +89,7 @@ QPalette em400_panel_palette()
 	// Dim/ghost text used by IntView/MapView/RegCompact comes from the
 	// Disabled group's WindowText/Text role.
 	p.setColor(QPalette::Disabled, QPalette::WindowText, c_disabled);
-	p.setColor(QPalette::Disabled, QPalette::Text,       c_disabled);
+	p.setColor(QPalette::Disabled, QPalette::Text, c_disabled);
 	p.setColor(QPalette::Disabled, QPalette::ButtonText, c_disabled);
 
 	return p;
@@ -135,6 +135,25 @@ bool em400_theme_is_panel()
 QColor em400_sep_color(const QPalette &pal)
 {
 	return g_panel_active ? c_separator : pal.color(QPalette::Mid);
+}
+
+// -----------------------------------------------------------------------
+// Secondary text that must stay clearly readable while still reading as
+// "less primary" than the main Text (used for the memory view ascii/r40
+// panel next to the full-contrast hex/dec values). PlaceholderText/Disabled
+// are deliberately too dim for this, so instead blend the theme's real Text
+// toward Base by a fixed fraction. Because it interpolates between the actual
+// foreground and background of whichever theme is active, it lands at a
+// consistent mid-high contrast in both dark and light modes.
+QColor em400_dim_text_color(const QPalette &pal)
+{
+	const QColor text = pal.color(QPalette::Text);
+	const QColor base = pal.color(QPalette::Base);
+	const qreal t = 0.30; // 0 = full Text contrast, 1 = invisible
+	return QColor(
+		qRound(text.red() * (1.0 - t) + base.red() * t),
+		qRound(text.green() * (1.0 - t) + base.green() * t),
+		qRound(text.blue() * (1.0 - t) + base.blue() * t));
 }
 
 // -----------------------------------------------------------------------

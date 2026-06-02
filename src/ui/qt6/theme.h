@@ -39,8 +39,9 @@ bool em400_theme_is_panel();
 // palette role that carries the same meaning there, so nothing is hardcoded
 // against a single theme. Pass the consuming widget's palette() for the
 // system fallback.
-QColor em400_sep_color(const QPalette &pal);   // divider / separator rules
-QColor em400_mask_color(const QPalette &pal);  // mask boxes + allocation map (amber)
+QColor em400_sep_color(const QPalette &pal); // divider / separator rules
+QColor em400_dim_text_color(const QPalette &pal); // secondary-but-readable text (ascii/r40 panel)
+QColor em400_mask_color(const QPalette &pal); // mask boxes + allocation map (amber)
 QColor em400_pflag_color(const QPalette &pal); // P-flag "won't execute" IC bar (red)
 
 #endif // EM400_QT6_THEME_H

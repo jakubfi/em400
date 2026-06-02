@@ -68,11 +68,13 @@ private:
 	int mask_bit[32];           // SR bit gating each interrupt, -1 if non-maskable
 	QPushButton *cell[32] = {0};
 	QVector<MaskBox*> boxes;
+	QLabel *help = nullptr; // "?" badge (top-right)
 
 	QPushButton * make_cell(int n);
 	void toggle_mask(int sr_bit);
 	void render_cell(int n);
 	void render_box(MaskBox *b);
+	void render_help();
 	void render_all();
 };
 
