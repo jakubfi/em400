@@ -12,14 +12,44 @@
 #include "ui_mainwindow.h"
 #include "emdas.h"
 #include "switch.h"
+#include "theme.h"
 
 // -----------------------------------------------------------------------
+// A flat vertical separator that tracks the theme. A plain (non-bevelled)
+// VLine draws using QPalette::WindowText, which we set to em400_sep_color()
+// (muted red in the panel theme, palette Mid grey under the system theme).
+// Because that color differs between themes, we re-pull it on every palette
+// change so a live View > Panel Theme toggle updates the separators too.
+namespace {
+class SepLine : public QFrame {
+public:
+	SepLine()
+	{
+		setFrameShape(QFrame::VLine);
+		setFrameShadow(QFrame::Plain);
+		apply_color();
+	}
+protected:
+	void changeEvent(QEvent *ev) override
+	{
+		QFrame::changeEvent(ev);
+		if (ev->type() == QEvent::PaletteChange || ev->type() == QEvent::StyleChange) {
+			apply_color();
+		}
+	}
+private:
+	void apply_color()
+	{
+		QPalette pal = palette();
+		pal.setColor(QPalette::WindowText, em400_sep_color(pal));
+		setPalette(pal);
+	}
+};
+}
+
 static QFrame *make_vsep()
 {
-	QFrame *sep = new QFrame();
-	sep->setFrameShape(QFrame::VLine);
-	sep->setFrameShadow(QFrame::Sunken);
-	return sep;
+	return new SepLine();
 }
 
 // -----------------------------------------------------------------------
@@ -122,6 +152,7 @@ MainWindow::MainWindow(QWidget *parent) :
 	connect(ui->actionQuit, &QAction::triggered, this, &MainWindow::close);
 	connect(ui->actionSmall_Control_Panel, &QAction::toggled, this, &MainWindow::slot_smallcp_changed);
 	connect(ui->actionDebugger, &QAction::toggled, this, &MainWindow::slot_debugger_enabled_changed);
+	connect(ui->actionPanel_Theme, &QAction::toggled, this, &MainWindow::slot_panel_theme_changed);
 
 	// EmuModel -> MainWindow
 	connect(&e, &EmuModel::signal_reg_changed, this, &MainWindow::slot_cpu_reg_changed);
@@ -211,6 +242,13 @@ MainWindow::MainWindow(QWidget *parent) :
 	// default. After that the user's arrangement is restored verbatim: dock
 	// positions, sizes, visibility and float state all come back as left.
 	QSettings settings;
+	// reflect the panel-theme choice in the menu without re-applying it: the
+	// theme was already set on the QApplication in ui_qt6_loop() before this
+	// window was constructed, so just sync the checkbox state.
+	{
+		QSignalBlocker block(ui->actionPanel_Theme);
+		ui->actionPanel_Theme->setChecked(settings.value("ui/panelTheme", true).toBool());
+	}
 	// restore the small/large panel choice first; setChecked() fires the toggled
 	// signal which applies the crop (only when it actually differs from default)
 	ui->actionSmall_Control_Panel->setChecked(settings.value("layout/smallPanel", false).toBool());
@@ -307,11 +345,11 @@ void MainWindow::update_sr_status(uint16_t sr)
 	int vbs = sr & 0b10000;
 	int vq = sr & 0b100000;
 
-	if (vq) q->setStyleSheet("font-weight: bold; color: black;");
-	else q->setStyleSheet("font-weight: normal; color: gray;");
+	if (vq) q->setStyleSheet("font-weight: bold; color: palette(text);");
+	else q->setStyleSheet("font-weight: normal; color: palette(mid);");
 
-	if (vbs) bs->setStyleSheet("font-weight: bold; color: black;");
-	else bs->setStyleSheet("font-weight: normal; color: gray;");
+	if (vbs) bs->setStyleSheet("font-weight: bold; color: palette(text);");
+	else bs->setStyleSheet("font-weight: normal; color: palette(mid);");
 
 	nb->setText(QString("<span>NB=%1</span>").arg(vnb));
 }
@@ -402,6 +440,14 @@ void MainWindow::slot_smallcp_changed(bool state)
 	// content height - which collapses the window onto memory's tiny height hint.
 	// Keep the debugger height; panel-only has no such content so let it shrink.
 	if (ui->actionDebugger->isChecked()) resize(width(), h);
+}
+
+// -----------------------------------------------------------------------
+void MainWindow::slot_panel_theme_changed(bool state)
+{
+	em400_apply_theme(state);
+	QSettings settings;
+	settings.setValue("ui/panelTheme", state);
 }
 
 // -----------------------------------------------------------------------

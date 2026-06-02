@@ -7,6 +7,7 @@
 #include <emcrk/r40.h>
 #include "memview.h"
 #include "libem400.h"
+#include "theme.h"
 
 // -----------------------------------------------------------------------
 static QPushButton *make_toggle_btn(const QString &text, bool checked = false)
@@ -498,7 +499,7 @@ void MemView::draw_offset_row(QPainter &painter, int cell_w)
 		QString off_str = QString("%1").arg(x, val_chars() - 1, 16, QLatin1Char(' '));
 		painter.drawText(mem_x_start + x * cell_w, font_height, off_str);
 	}
-	painter.setPen(palette().color(QPalette::Highlight));
+	painter.setPen(QPen(em400_sep_color(palette()), 2));
 	painter.drawLine(divider_x_pos, col_hdr_h, right - 1, col_hdr_h);
 }
 
@@ -611,18 +612,14 @@ void MemView::paintEvent(QPaintEvent *event)
 		// divider between values and side panel
 		if (panel != PANEL_OFF) {
 			int sdiv_x = mem_x_start + words_per_line * cell_w + half_font_width;
-			painter.setPen(palette().color(QPalette::Highlight));
+			painter.setPen(QPen(em400_sep_color(palette()), 2));
 			painter.drawLine(sdiv_x, 0, sdiv_x, bottom);
 		}
 	}
 
 	// divider between addr and values
-	painter.setPen(palette().color(QPalette::Highlight));
+	painter.setPen(QPen(em400_sep_color(palette()), 2));
 	painter.drawLine(divider_x_pos, 0, divider_x_pos, bottom);
-
-	// frame around content area
-	painter.setPen(palette().color(QPalette::Mid));
-	painter.drawRect(0, 0, right - 1, bottom - 1);
 }
 
 // -----------------------------------------------------------------------

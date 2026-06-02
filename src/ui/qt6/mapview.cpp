@@ -4,6 +4,7 @@
 #include <QPalette>
 #include "mapview.h"
 #include "libem400.h"
+#include "theme.h"
 
 // -----------------------------------------------------------------------
 MapView::MapView(EmuModel *emu, QWidget *parent) :
@@ -59,7 +60,8 @@ void MapView::paintEvent(QPaintEvent *)
 	QPainter p(this);
 	p.setFont(fnt);
 
-	QColor on   = palette().color(QPalette::Highlight);
+	// allocated pages use the amber accent (shared with the interrupt mask boxes)
+	QColor on   = em400_mask_color(palette());
 	QColor off  = palette().color(QPalette::Mid);
 	QColor text = palette().color(QPalette::WindowText);
 	QColor dim  = palette().color(QPalette::Disabled, QPalette::WindowText);

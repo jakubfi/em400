@@ -4,6 +4,7 @@
 #include <QScrollBar>
 #include <emdas.h>
 #include "dasmview.h"
+#include "theme.h"
 
 
 // -----------------------------------------------------------------------
@@ -203,6 +204,11 @@ void DasmView::paintEvent(QPaintEvent *event)
 	// background
 	painter.fillRect(event->rect(), palette().color(QPalette::Base));
 
+	// addr-code divider line, drawn BEFORE the listing so the IC bar paints over
+	// it (the "you are here" bar is the focal element and crosses the divider).
+	painter.setPen(QPen(em400_sep_color(palette()), 2));
+	painter.drawLine(divider_x_pos, 0, divider_x_pos, height());
+
 	// disassembly
 	QColor bar_color;
 	int y = line_y_start;
@@ -211,9 +217,10 @@ void DasmView::paintEvent(QPaintEvent *event)
 
 		// bar for IC location
 		if (at_ic) {
-			// change bar color if "P" flag is set (instruction won't be executed)
+			// "you are here" is green (Highlight); but if the "P" flag is set the
+			// instruction at IC will NOT execute - flag that with the red accent.
 			if (e->get_p()) {
-				bar_color = QColor(Qt::red).lighter();
+				bar_color = em400_pflag_color(palette());
 			} else {
 				bar_color = palette().color(QPalette::Highlight);
 			}
@@ -237,14 +244,6 @@ void DasmView::paintEvent(QPaintEvent *event)
 
 		y += line_height;
 	}
-
-	// addr-code divider line
-	painter.setPen(palette().color(QPalette::Highlight));
-	painter.drawLine(divider_x_pos, 0, divider_x_pos, height());
-
-	// frame around the widget
-	painter.setPen(palette().color(QPalette::Mid));
-	painter.drawRect(0, 0, width()-1, height()-1);
 }
 
 // -----------------------------------------------------------------------

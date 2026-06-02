@@ -16,8 +16,10 @@
 //  51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 
 #include <QApplication>
+#include <QSettings>
 
 #include "mainwindow.h"
+#include "theme.h"
 
 #include "ui/ui.h"
 
@@ -44,6 +46,12 @@ void ui_qt6_loop(void *data)
 	// identity for QSettings (window/dock layout persistence)
 	QApplication::setOrganizationName("em400");
 	QApplication::setApplicationName("em400");
+
+	// Force the dark control-panel theme by default; honor a persisted choice
+	// if the user has previously turned it off via View > Panel Theme.
+	QSettings settings;
+	em400_apply_theme(settings.value("ui/panelTheme", true).toBool());
+
 	MainWindow w;
 
 	w.show();

@@ -10,6 +10,7 @@
 #include <QToolTip>
 #include "intview.h"
 #include "libem400.h"
+#include "theme.h"
 
 // -----------------------------------------------------------------------
 MaskBox::MaskBox(int bit, QWidget *parent) :
@@ -92,8 +93,8 @@ IntView::IntView(EmuModel *emu, QWidget *parent) :
 		"Left-click: set/clear an interrupt (RZ)\n"
 		"Right-click: toggle the mask for its group (SR)\n"
 		"\n"
-		"Red fill: active, will fire\n"
-		"Bold red: active but masked off\n"
+		"Yellow fill: active, will fire\n"
+		"Bold yellow: active but masked off\n"
 		"Box border: accent = unmasked, grey = masked\n"
 		"No box: non-maskable interrupt"));
 
@@ -207,20 +208,21 @@ void IntView::render_cell(int n)
 	int bit = mask_bit[n];
 	bool unmasked = (bit < 0) || ((sr >> bit) & 1);
 
-	// fill red is fixed (white text rides on it either way); the bold-text red
-	// is lightened on dark themes, where the darker red is hard to read
-	bool dark = palette().color(QPalette::Window).lightness() < 128;
-	const QString red_fill = "#c0392b";
-	const QString red_text = dark ? "#ff6b6b" : "#c0392b";
+	// "this is on": the yellow accent marks pending interrupts (matching the
+	// allocation map); dark text rides on the solid fill, the accent itself is
+	// the bold text when masked-but-pending. The mask border (render_box) is the
+	// same yellow when the gate is open, so a fully-yellow cell = will fire.
+	QString yellow = em400_mask_color(palette()).name();
+	QString yellow_text = palette().color(QPalette::HighlightedText).name();
 	QString dim = palette().color(QPalette::Disabled, QPalette::WindowText).name();
 
 	QString ss;
 	if (pending && unmasked) {
-		// set and will fire - solid red fill
-		ss = QString("QPushButton{background:%1; color:white; border:none; border-radius:2px;}").arg(red_fill);
+		// set and will fire - solid yellow fill
+		ss = QString("QPushButton{background:%1; color:%2; border:none; border-radius:2px;}").arg(yellow, yellow_text);
 	} else if (pending) {
-		// set in RZ but masked off - bold red text, no fill (pending yet suppressed)
-		ss = QString("QPushButton{background:transparent; color:%1; border:none; font-weight:bold;}").arg(red_text);
+		// set in RZ but masked off - bold yellow text, no fill (pending yet suppressed)
+		ss = QString("QPushButton{background:transparent; color:%1; border:none; font-weight:bold;}").arg(yellow);
 	} else {
 		ss = QString("QPushButton{background:transparent; color:%1; border:none;}").arg(dim);
 	}
@@ -228,16 +230,16 @@ void IntView::render_cell(int n)
 }
 
 // -----------------------------------------------------------------------
-// Solid 2px border either way (constant width avoids a 1px reflow when the
-// mask toggles; dashed looked broken at the corners). The contrast is in the
-// colour: the saturated theme accent when unmasked, a quiet palette Mid grey
-// when masked so the box recedes.
+// Solid 1px border either way (constant width avoids a reflow when the mask
+// toggles; dashed looked broken at the corners). The contrast is in the
+// colour: the amber accent when unmasked, a quiet palette Mid grey when masked
+// so the box recedes.
 void IntView::render_box(MaskBox *b)
 {
 	bool unmasked = (sr >> b->sr_bit) & 1;
-	QColor c = unmasked ? palette().color(QPalette::Highlight)
+	QColor c = unmasked ? em400_mask_color(palette())
 	                    : palette().color(QPalette::Mid);
-	b->setStyleSheet(QString("MaskBox{border:2px solid %1; border-radius:3px;}").arg(c.name()));
+	b->setStyleSheet(QString("MaskBox{border:1px solid %1; border-radius:3px;}").arg(c.name()));
 }
 
 // -----------------------------------------------------------------------

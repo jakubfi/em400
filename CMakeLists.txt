@@ -260,6 +260,7 @@ set(SOURCES_EM400
 
 if (UI_QT)
 	list(APPEND SOURCES_EM400 src/ui/qt6/qt6.cpp)
+	list(APPEND SOURCES_EM400 src/ui/qt6/theme.h src/ui/qt6/theme.cpp)
 	list(APPEND SOURCES_EM400 src/ui/qt6/mainwindow.ui)
 	list(APPEND SOURCES_EM400 src/ui/qt6/resources.qrc)
 	list(APPEND SOURCES_EM400 src/ui/qt6/mainwindow.h src/ui/qt6/mainwindow.cpp)

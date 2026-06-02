@@ -168,6 +168,8 @@
     <addaction name="separator"/>
     <addaction name="actionSmall_Control_Panel"/>
     <addaction name="actionDebugger"/>
+    <addaction name="separator"/>
+    <addaction name="actionPanel_Theme"/>
    </widget>
    <widget class="QMenu" name="menuHelp">
     <property name="title">
@@ -240,6 +242,14 @@
    </property>
    <property name="shortcut">
     <string>Ctrl+D</string>
+   </property>
+  </action>
+  <action name="actionPanel_Theme">
+   <property name="checkable">
+    <bool>true</bool>
+   </property>
+   <property name="text">
+    <string>Panel Theme</string>
    </property>
   </action>
  </widget>

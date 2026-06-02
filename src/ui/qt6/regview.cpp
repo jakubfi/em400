@@ -98,7 +98,7 @@ RegCompact::RegCompact(EmuModel *emu, Kind kind, QWidget *parent) :
 
 			ghost[row] = new QLabel(this);
 			ghost[row]->setFont(mono);
-			ghost[row]->setStyleSheet("color: gray;");
+			ghost[row]->setStyleSheet("color: palette(mid);");
 			// reserve the ghost column width permanently so the module doesn't
 			// narrow when no value is negative and then jump wider when one is.
 			ghost[row]->setFixedWidth(ghost_w);

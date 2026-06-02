@@ -19,6 +19,8 @@ Work notes:
 
 Known issues:
 
+* clear does not reset P
+
 Cleanups:
 
  * improve constructor goto fail_* usage
