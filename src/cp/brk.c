@@ -27,15 +27,17 @@
 
 #include "libem400.h"
 
+
 struct brk_point {
 	unsigned id;
 	char *expr;
 	struct eval_est *tree;
 	_Atomic (struct brk_point *) next;
-	int deleted;
+	_Atomic int deleted;
 };
 
 static _Atomic (struct brk_point *) brk_list;
+// UI-thread-only (insert/cleanup/del_all all UI) so no atomic needed
 static int brk_id = 0;
 
 // -----------------------------------------------------------------------
@@ -53,8 +55,10 @@ static int brk_insert(struct eval_est *tree, char *expr)
 	brkp->id = brk_id;
 	brkp->tree = tree;
 	brkp->expr = strdup(expr);
-	brkp->next = atomic_load_explicit(&brk_list, memory_order_acquire);
-	brkp->deleted = 0;
+	// node not published yet, so relaxed stores are enough; the release on
+	// brk_list below is what publishes a fully-built node to the reader
+	atomic_store_explicit(&brkp->next, atomic_load_explicit(&brk_list, memory_order_acquire), memory_order_relaxed);
+	atomic_store_explicit(&brkp->deleted, 0, memory_order_relaxed);
 	atomic_store_explicit(&brk_list, brkp, memory_order_release);
 	brk_id++;
 
@@ -72,6 +76,8 @@ static void brk_free(struct brk_point *brkp)
 }
 
 // -----------------------------------------------------------------------
+// Precondition: the CPU thread must be stopped (or joined). This frees nodes
+// unconditionally and must not race with brk_check() on the CPU thread.
 void brk_del_all()
 {
 	struct brk_point *brkp = atomic_load_explicit(&brk_list, memory_order_acquire);
@@ -92,19 +98,24 @@ static void brk_cleanup()
 	struct brk_point *prev = NULL;
 
 	while (brkp) {
-		if (brkp->deleted) {
+		// grab next before any free, brkp may be gone afterwards
+		struct brk_point *next = atomic_load_explicit(&brkp->next, memory_order_acquire);
+		if (atomic_load_explicit(&brkp->deleted, memory_order_relaxed)) {
 			if (prev) {
-				atomic_store_explicit(&(prev->next), brkp->next, memory_order_release);
+				atomic_store_explicit(&prev->next, next, memory_order_release);
 			} else {
-				atomic_store_explicit(&brk_list, brkp->next, memory_order_release);
-			}
-			if (!brk_list) {
-				brk_id = 0;
+				atomic_store_explicit(&brk_list, next, memory_order_release);
 			}
 			brk_free(brkp);
+			// prev unchanged, brkp was unlinked
+		} else {
+			prev = brkp;
 		}
-		prev = brkp;
-		brkp = atomic_load_explicit(&brkp->next, memory_order_acquire);
+		brkp = next;
+	}
+
+	if (!atomic_load_explicit(&brk_list, memory_order_acquire)) {
+		brk_id = 0;
 	}
 }
 
@@ -117,7 +128,7 @@ int brk_delete(unsigned id)
 
 	while (brkp) {
 		if (brkp->id == id) {
-			brkp->deleted = 1;
+			atomic_store_explicit(&brkp->deleted, 1, memory_order_relaxed);
 			ret = 0;
 			break;
 		}
@@ -136,8 +147,9 @@ bool brk_check()
 {
 	struct brk_point *brkp = atomic_load_explicit(&brk_list, memory_order_acquire);
 
-	while (brkp && !brkp->deleted) {
-		if (eval_est_eval(brkp->tree) > 0) {
+	while (brkp) {
+		// skip deleted nodes, they may sit anywhere in the list
+		if (!atomic_load_explicit(&brkp->deleted, memory_order_relaxed) && eval_est_eval(brkp->tree) > 0) {
 			return true;
 		}
 		brkp = atomic_load_explicit(&brkp->next, memory_order_acquire);

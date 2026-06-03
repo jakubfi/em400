@@ -46,4 +46,18 @@ interrupt specification (not really necessary)
 
 === Breakpoints ==========================================================
 
-Mess. Or maybe not. Who knows.
+Breakpoints are a singly-linked list with a single writer (the UI thread:
+brk_add/brk_delete/brk_del_all) and a single lock-free reader (the CPU thread:
+brk_check, on the fetch-decode-execute hot path). No mutex on purpose, it
+would tax the CPU thread on every cycle.
+
+Publishing: new nodes are inserted at the head. The node is built first, then
+made visible with a single release store to brk_list; the reader's acquire
+load of brk_list (and of ->next) sees a fully-initialized node.
+
+Deletion is two-phase so the reader never trips over freed memory:
+  1. brk_delete() only flags the node (deleted = 1); the reader skips flagged
+     nodes but the node stays linked and allocated.
+  2. brk_cleanup() physically unlinks and frees flagged nodes, and only runs
+     while the CPU is stopped (i.e. not inside brk_check). brk_del_all() frees
+     unconditionally and carries the same "CPU stopped/joined" precondition.

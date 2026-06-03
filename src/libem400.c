@@ -86,9 +86,11 @@ int em400_io_run()
 void em400_shutdown()
 {
 	LOG(L_EM4H, "Shutting down EM400 instance");
-	brk_del_all();
 	io_shutdown();
+	// cpu_shutdown() joins the CPU thread; brk_del_all() must run after it so
+	// it cannot free breakpoints while brk_check() is still traversing them
 	cpu_shutdown();
+	brk_del_all();
 	mem_shutdown();
 }
 
