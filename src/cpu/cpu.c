@@ -399,6 +399,8 @@ void cpu_mod_off()
 }
 
 // -----------------------------------------------------------------------
+// clo=false -> MCL instruction executed
+// clo=true -> CLEAR key toggled
 void cpu_do_clear(bool clo)
 {
 	// I/O reset should return when we're sure that I/O won't change CPU state (backlogged interrupts, memory writes, ...)
@@ -408,12 +410,13 @@ void cpu_do_clear(bool clo)
 
 	r[0] = 0;
 	SR_WRITE(0);
+	mc = 0;
+	p = false;
 	int_update_xmask();
 	int_clear_all();
 
 	if (clo) {
 		rALARM = false;
-		mc = 0;
 	}
 
 	// call even if logging is disabled - user may enable it later
