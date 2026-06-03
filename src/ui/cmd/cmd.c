@@ -206,9 +206,16 @@ void ui_cmd_loop(void *data)
 				// EOF
 				} else {
 					recvd = 0;
-					fclose(ui->out);
-					ui->out = NULL;
+					if (ui->out) {
+						fclose(ui->out);
+						ui->out = NULL;
+					}
 					ui->fd_in = -1;
+					// stdin can't be reopened, so end the UI loop; for TCP the
+					// outer loop goes back to accept() the next connection
+					if (ui->type == UI_CMD_STDIO) {
+						ui->quit = 1;
+					}
 					break;
 				}
 			}
