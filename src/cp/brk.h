@@ -22,8 +22,13 @@
 
 #include "cp/eval.h"
 
+typedef void (*brk_iter_f)(unsigned id, const char *expr, bool enabled, void *ctx);
+
 void brk_del_all();
 int brk_delete(unsigned id);
+int brk_enable(unsigned id, bool enabled);
+int brk_eval(unsigned id, int *result, char **err_msg, int *err_beg, int *err_end);
+void brk_foreach(brk_iter_f cb, void *ctx);
 bool brk_check();
 int brk_add(char *expression, char **err_msg, int *err_beg, int *err_end);
 

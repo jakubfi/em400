@@ -37,10 +37,6 @@ bool dbg_quit = false;
 // store user input here
 char input_buf[INPUT_BUF_SIZE];
 
-// breakpoints
-struct evlb_t *brk_stack = NULL;
-struct evlb_t *brk_top = NULL;
-
 // watches
 struct evlb_t *watch_stack = NULL;
 struct evlb_t *watch_top = NULL;

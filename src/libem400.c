@@ -497,4 +497,38 @@ unsigned em400_cpu_state()
 	return cpext_state();
 }
 
+// -----------------------------------------------------------------------
+// --- BREAKPOINTS -------------------------------------------------------
+// -----------------------------------------------------------------------
+
+// -----------------------------------------------------------------------
+int em400_brk_add(char *expr, char **err_msg, int *err_beg, int *err_end)
+{
+	return brk_add(expr, err_msg, err_beg, err_end);
+}
+
+// -----------------------------------------------------------------------
+int em400_brk_delete(unsigned id)
+{
+	return brk_delete(id);
+}
+
+// -----------------------------------------------------------------------
+int em400_brk_enable(unsigned id, bool enabled)
+{
+	return brk_enable(id, enabled);
+}
+
+// -----------------------------------------------------------------------
+int em400_brk_eval(unsigned id, int *result, char **err_msg, int *err_beg, int *err_end)
+{
+	return brk_eval(id, result, err_msg, err_beg, err_end);
+}
+
+// -----------------------------------------------------------------------
+void em400_brk_foreach(em400_brk_cb cb, void *ctx)
+{
+	brk_foreach(cb, ctx);
+}
+
 // vim: tabstop=4 shiftwidth=4 autoindent

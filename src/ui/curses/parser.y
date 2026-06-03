@@ -171,13 +171,7 @@ command:
 	| F_BIN					{ dbg_c_bin(W_CMD); }
 	| F_LOAD TEXT			{ dbg_c_load(W_CMD, $2); }
 	| F_BRK					{ dbg_c_brk_list(W_CMD); }
-	| F_BRK ADD expr	{
-		char expr[128];
-		sscanf(input_buf, " brk add %[^\n]", expr);
-		dbg_c_brk_add(W_CMD, expr, $3);
-		// we need those expressions when evaluating breakpoints later
-		n_reset_stack();
-	}
+	| F_BRK ADD TEXT	{ dbg_c_brk_add(W_CMD, $3); free($3); }
 	| F_BRK DEL VALUE	{ dbg_c_brk_del(W_CMD, $3); }
 	| F_BRK TEST VALUE	{ dbg_c_brk_test(W_CMD, $3); }
 	| F_BRK OFF VALUE	{ dbg_c_brk_disable(W_CMD, $3, 1); }

@@ -22,8 +22,6 @@
 #include <strings.h>
 
 #include "utils/utils.h"
-#include "cp/eval.h"
-#include "cp/brk.h"
 #include "libem400.h"
 
 #include "ui/curses/awin.h"
@@ -35,6 +33,11 @@
 #include "ui_curses_parser.h"
 
 #include <emcrk/r40.h>
+
+struct brk_list_ctx {
+	int wid;
+	int count;
+};
 
 // -----------------------------------------------------------------------
 struct cmd_t dbg_commands[] = {
@@ -353,11 +356,11 @@ void dbg_c_memcfg(int wid)
 }
 
 // -----------------------------------------------------------------------
-void dbg_c_brk_add(int wid, char *label, struct node_t *n)
+void dbg_c_brk_add(int wid, char *label)
 {
 	char *error_msg = NULL;
 	int err_beg, err_end;
-	int id = brk_add(label, &error_msg, &err_beg, &err_end);
+	int id = em400_brk_add(label, &error_msg, &err_beg, &err_end);
 
 	if (error_msg) {
 		awtbprint(wid, C_ERROR, "Error: %s (at %i-%i)", error_msg, err_beg, err_end);
@@ -365,105 +368,63 @@ void dbg_c_brk_add(int wid, char *label, struct node_t *n)
 		return;
 	}
 
-	struct evlb_t *b = (struct evlb_t *) malloc(sizeof(struct evlb_t));
-	b->nr = id;
-	b->value = 0;
-	b->disabled = 0;
-	b->label = strdup(label);
-	b->n = n;
-	b->next = NULL;
-
-	if (brk_top) {
-		brk_top->next = b;
-		brk_top = b;
-	} else {
-		brk_top = brk_stack = b;
-	}
-
 	awtbprint(wid, C_LABEL, "Breakpoint ");
-	awtbprint(wid, C_DATA, "%i", b->nr);
+	awtbprint(wid, C_DATA, "%i", id);
 	awtbprint(wid, C_LABEL, " added: \"");
-	awtbprint(wid, C_DATA, "%s", b->label);
+	awtbprint(wid, C_DATA, "%s", label);
 	awtbprint(wid, C_LABEL, "\"\n");
+}
+
+// -----------------------------------------------------------------------
+static void dbg_c_brk_list_cb(unsigned id, const char *expr, bool enabled, void *ctx)
+{
+	struct brk_list_ctx *c = (struct brk_list_ctx *) ctx;
+	c->count++;
+	if (enabled) {
+		awtbprint(c->wid, C_DATA, "%i: %s\n", id, expr);
+	} else {
+		awtbprint(c->wid, C_LABEL, "%i: %s (disabled)\n", id, expr);
+	}
 }
 
 // -----------------------------------------------------------------------
 void dbg_c_brk_list(int wid)
 {
-	struct evlb_t *b = brk_stack;
-	if (!b) {
+	struct brk_list_ctx ctx = { .wid = wid, .count = 0 };
+	em400_brk_foreach(dbg_c_brk_list_cb, &ctx);
+	if (!ctx.count) {
 		awtbprint(wid, C_LABEL, "No breakpoints\n");
 	}
-	while (b) {
-		if (b->disabled) {
-			awtbprint(wid, C_LABEL, "%i: %s (disabled)\n", b->nr, b->label);
-		} else {
-			awtbprint(wid, C_DATA, "%i: %s\n", b->nr, b->label);
-		}
-		b = b->next;
-	}
-}
-
-// -----------------------------------------------------------------------
-struct evlb_t * dbg_c_brk_get(int nr)
-{
-	struct evlb_t *b = brk_stack;
-	while (b) {
-		if (b->nr == nr) {
-			return b;
-		}
-		b = b->next;
-	}
-	return NULL;
 }
 
 // -----------------------------------------------------------------------
 void dbg_c_brk_del(int wid, int nr)
 {
-	struct evlb_t *b = brk_stack;
-	struct evlb_t *prev = NULL;
-	while (b) {
-		if (b->nr == nr) {
-			if (prev) {
-				prev->next = b->next;
-			} else {
-				brk_stack = brk_top = b->next;
-			}
-			awtbprint(wid, C_LABEL, "Removing breakpoint ");
-			awtbprint(wid, C_DATA, "%i", b->nr);
-			awtbprint(wid, C_LABEL, ":");
-			awtbprint(wid, C_DATA, " %s\n", b->label);
-			free(b->label);
-			n_free_tree(b->n);
-			free(b);
-			brk_delete(nr);
-			return;
-		}
-		prev = b;
-		b = b->next;
+	if (em400_brk_delete(nr) == 0) {
+		awtbprint(wid, C_LABEL, "Removing breakpoint ");
+		awtbprint(wid, C_DATA, "%i\n", nr);
+	} else {
+		awtbprint(wid, C_ERROR, "No such breakpoint: %i\n", nr);
 	}
-
-	awtbprint(wid, C_ERROR, "No such breakpoint: %i\n", nr);
 }
 
 // -----------------------------------------------------------------------
 void dbg_c_brk_test(int wid, int nr)
 {
-	struct evlb_t *b = dbg_c_brk_get(nr);
-	if (!b) {
+	int res;
+	char *error_msg = NULL;
+	int err_beg, err_end;
+	if (em400_brk_eval(nr, &res, &error_msg, &err_beg, &err_end) != 0) {
 		awtbprint(wid, C_ERROR, "No such breakpoint: %i\n", nr);
 		return;
 	}
 
-	char *error_msg = NULL;
-	int err_beg, err_end;
-	int res = eval_str_eval(b->label, &error_msg, &err_beg, &err_end);
 	if (error_msg) {
 		awtbprint(wid, C_ERROR, "%s (at %i-%i)", error_msg, err_beg, err_end);
 		free(error_msg);
 	} else {
 		awtbprint(wid, C_LABEL, "Breakpoint ");
-		awtbprint(wid, C_DATA, "%i", b->nr);
+		awtbprint(wid, C_DATA, "%i", nr);
 		awtbprint(wid, C_LABEL, " evaluates to: ");
 		awtbprint(wid, C_DATA, "%i\n", res);
 	}
@@ -472,31 +433,29 @@ void dbg_c_brk_test(int wid, int nr)
 // -----------------------------------------------------------------------
 void dbg_c_brk_disable(int wid, int nr, int disable)
 {
-	struct evlb_t *b = dbg_c_brk_get(nr);
-	if (b) {
-		b->disabled = disable;
-		if (disable) {
-			awtbprint(wid, C_LABEL, "Breakpoint ");
-			awtbprint(wid, C_DATA, "%i", nr);
-			awtbprint(wid, C_LABEL, " disabled.\n");
-		} else {
-			awtbprint(wid, C_LABEL, "Breakpoint ");
-			awtbprint(wid, C_DATA, "%i", nr);
-			awtbprint(wid, C_LABEL, " enabled.\n");
-		}
+	if (em400_brk_enable(nr, !disable) == 0) {
+		awtbprint(wid, C_LABEL, "Breakpoint ");
+		awtbprint(wid, C_DATA, "%i", nr);
+		awtbprint(wid, C_LABEL, disable ? " disabled.\n" : " enabled.\n");
 	} else {
 		awtbprint(wid, C_ERROR, "No such breakpoint: %i\n", nr);
 	}
 }
 
 // -----------------------------------------------------------------------
+static void dbg_c_brk_enable_cb(unsigned id, const char *expr, bool enabled, void *ctx)
+{
+	(void)expr;
+	(void)enabled;
+	em400_brk_enable(id, *(bool *)ctx);
+}
+
+// -----------------------------------------------------------------------
 void dbg_c_brk_disable_all(int wid, int disable)
 {
-	struct evlb_t *b = brk_stack;
-	while (b) {
-		dbg_c_brk_disable(wid, b->nr, disable);
-		b = b->next;
-	}
+	bool enable = !disable;
+	em400_brk_foreach(dbg_c_brk_enable_cb, &enable);
+	awtbprint(wid, C_LABEL, disable ? "All breakpoints disabled.\n" : "All breakpoints enabled.\n");
 }
 
 // -----------------------------------------------------------------------
@@ -709,6 +668,7 @@ void dbg_c_memdump(int wid, int block, char *name)
 	FILE *f = fopen(name, "w");
 	if (!f) {
 		awtbprint(wid, C_ERROR, "Cannot open file \"%s\" for writing\n", name);
+		return;
 	}
 
 	for (int seg=0 ; seg<16 ; seg++) {

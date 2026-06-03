@@ -24,6 +24,7 @@
 
 #include "cpu/cpu.h"
 #include "cp/eval.h"
+#include "cp/brk.h"
 
 #include "libem400.h"
 
@@ -34,6 +35,7 @@ struct brk_point {
 	struct eval_est *tree;
 	_Atomic (struct brk_point *) next;
 	_Atomic int deleted;
+	_Atomic int enabled;
 };
 
 static _Atomic (struct brk_point *) brk_list;
@@ -59,6 +61,7 @@ static int brk_insert(struct eval_est *tree, char *expr)
 	// brk_list below is what publishes a fully-built node to the reader
 	atomic_store_explicit(&brkp->next, atomic_load_explicit(&brk_list, memory_order_acquire), memory_order_relaxed);
 	atomic_store_explicit(&brkp->deleted, 0, memory_order_relaxed);
+	atomic_store_explicit(&brkp->enabled, 1, memory_order_relaxed);
 	atomic_store_explicit(&brk_list, brkp, memory_order_release);
 	brk_id++;
 
@@ -143,13 +146,69 @@ int brk_delete(unsigned id)
 }
 
 // -----------------------------------------------------------------------
+int brk_enable(unsigned id, bool enabled)
+{
+	struct brk_point *brkp = atomic_load_explicit(&brk_list, memory_order_acquire);
+
+	while (brkp) {
+		if (brkp->id == id) {
+			if (atomic_load_explicit(&brkp->deleted, memory_order_relaxed)) {
+				return -1;
+			}
+			atomic_store_explicit(&brkp->enabled, enabled ? 1 : 0, memory_order_relaxed);
+			return 0;
+		}
+		brkp = atomic_load_explicit(&brkp->next, memory_order_acquire);
+	}
+
+	return -1;
+}
+
+// -----------------------------------------------------------------------
+// Runs on the UI thread. Evaluates a fresh parse of the stored expression
+// rather than the live tree that brk_check() walks on the CPU thread, so the
+// two threads never mutate the same eval_est node on a runtime eval error.
+int brk_eval(unsigned id, int *result, char **err_msg, int *err_beg, int *err_end)
+{
+	struct brk_point *brkp = atomic_load_explicit(&brk_list, memory_order_acquire);
+
+	while (brkp) {
+		if (brkp->id == id && !atomic_load_explicit(&brkp->deleted, memory_order_relaxed)) {
+			*result = eval_str_eval(brkp->expr, err_msg, err_beg, err_end);
+			return 0;
+		}
+		brkp = atomic_load_explicit(&brkp->next, memory_order_acquire);
+	}
+
+	return -1;
+}
+
+// -----------------------------------------------------------------------
+// UI-thread iterator: expr is immutable after insert and list mutation is
+// UI-thread-only, so traversal here only races with the CPU thread's
+// read-only brk_check().
+void brk_foreach(brk_iter_f cb, void *ctx)
+{
+	struct brk_point *brkp = atomic_load_explicit(&brk_list, memory_order_acquire);
+
+	while (brkp) {
+		if (!atomic_load_explicit(&brkp->deleted, memory_order_relaxed)) {
+			cb(brkp->id, brkp->expr, atomic_load_explicit(&brkp->enabled, memory_order_relaxed), ctx);
+		}
+		brkp = atomic_load_explicit(&brkp->next, memory_order_acquire);
+	}
+}
+
+// -----------------------------------------------------------------------
 bool brk_check()
 {
 	struct brk_point *brkp = atomic_load_explicit(&brk_list, memory_order_acquire);
 
 	while (brkp) {
-		// skip deleted nodes, they may sit anywhere in the list
-		if (!atomic_load_explicit(&brkp->deleted, memory_order_relaxed) && eval_est_eval(brkp->tree) > 0) {
+		// skip deleted and disabled nodes, they may sit anywhere in the list
+		if (!atomic_load_explicit(&brkp->deleted, memory_order_relaxed)
+			&& atomic_load_explicit(&brkp->enabled, memory_order_relaxed)
+			&& eval_est_eval(brkp->tree) > 0) {
 			return true;
 		}
 		brkp = atomic_load_explicit(&brkp->next, memory_order_acquire);

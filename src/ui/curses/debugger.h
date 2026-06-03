@@ -35,9 +35,6 @@ struct evlb_t {
 extern int dbg_loop_fin;
 extern char input_buf[];
 
-extern struct evlb_t *brk_stack;
-extern struct evlb_t *brk_top;
-
 extern struct evlb_t *watch_stack;
 extern struct evlb_t *watch_top;
 
@@ -46,8 +43,6 @@ extern int int_serve_stack[32];
 extern int int_serve_top;
 
 extern struct emdas *emd;
-
-struct evlb_t * dbg_brk_check();
 
 void dbg_stop();
 

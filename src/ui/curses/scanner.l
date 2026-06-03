@@ -35,7 +35,7 @@ void yyerror(char *s, ...);
 %option noinput
 %option case-insensitive
 
-%s args texts opts
+%s args texts opts brkopts brkexpr
 
 oct		0[0-7]+
 hex		0x[0-9a-f]+
@@ -51,6 +51,8 @@ chars	[-,=+*&|^><:()\]\[~!]
 %%
 
 <texts>{text}	{ yylval.text = strdup(yytext); return TEXT; }
+
+<brkexpr>[^\n]+	{ char *s = yytext; while (*s == ' ' || *s == '\t') s++; yylval.text = strdup(s); return TEXT; }
 
 {oct}	{ yylval.value = strtoul(yytext+1, NULL, 8); return VALUE; }
 {hex}	{ yylval.value = strtoul(yytext+2, NULL, 16); return VALUE; }
@@ -73,6 +75,14 @@ chars	[-,=+*&|^><:()\]\[~!]
 <opts>disable { BEGIN(INITIAL); return OFF; }
 <opts>mem   { BEGIN(INITIAL); yylval.text = strdup(yytext); return NAME; }
 
+<brkopts>add	{ BEGIN(brkexpr); return ADD; }
+<brkopts>del	{ BEGIN(INITIAL); return DEL; }
+<brkopts>test	{ BEGIN(INITIAL); return TEST; }
+<brkopts>on		{ BEGIN(INITIAL); return ON; }
+<brkopts>off	{ BEGIN(INITIAL); return OFF; }
+<brkopts>enable { BEGIN(INITIAL); return ON; }
+<brkopts>disable { BEGIN(INITIAL); return OFF; }
+
 quit	{ return F_QUIT; }
 cycle	{ return F_CYCLE; }
 regs	{ return F_REGS; }
@@ -87,7 +97,7 @@ dasm	{ BEGIN(args); return F_DASM; }
 mem		{ BEGIN(args); return F_MEM; }
 binload	{ BEGIN(args); return F_BIN; }
 load	{ BEGIN(texts); return F_LOAD; }
-brk		{ BEGIN(opts); return F_BRK; }
+brk		{ BEGIN(brkopts); return F_BRK; }
 log		{ BEGIN(opts); return F_LOG; }
 watch	{ BEGIN(opts); return F_WATCH; }
 decode	{ BEGIN(opts); return F_DECODE; }
