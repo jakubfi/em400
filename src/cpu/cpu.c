@@ -790,7 +790,7 @@ static void cpu_timekeeping(int cpu_time_ns)
 }
 
 // -----------------------------------------------------------------------
-static void * cpu_loop(void *ptr)
+__attribute__((hot)) static void * cpu_loop(void *ptr)
 {
 	LOG(L_CPU, "Starting CPU loop");
 	bool quit = false;
