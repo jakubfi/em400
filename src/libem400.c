@@ -17,6 +17,7 @@
 
 #include <strings.h>
 #include <stdlib.h>
+#include <stdatomic.h>
 
 #include "mem/mem.h"
 #include "cpu/cpu.h"
@@ -502,13 +503,14 @@ unsigned long em400_ips_get()
 	double ips;
 	static unsigned long oips;
 
+	unsigned long ips_now = atomic_load_explicit(&ips_counter, memory_order_relaxed);
 	double elapsed_ns = stopwatch_ns();
 	if (elapsed_ns > 0) {
-		ips = (1000000000.0 * (ips_counter - oips)) / elapsed_ns;
+		ips = (1000000000.0 * (ips_now - oips)) / elapsed_ns;
 	} else {
 		ips = 0;
 	}
-	oips = ips_counter;
+	oips = ips_now;
 
 	return ips;
 }

@@ -72,7 +72,10 @@ bool cpu_user_io_illegal;
 bool awp_enabled;
 static bool nomem_stop;
 
-unsigned long ips_counter;
+// _Atomic so the cmd/UI reader (em400_ips_get) and this cpu-thread writer race
+// is defined, not UB. relaxed only - the value is intentionally don't-care while
+// the CPU runs
+_Atomic unsigned long ips_counter;
 // negative instruction_time_ns = skip next cpu sleep
 static int instruction_time_ns;
 
@@ -499,7 +502,8 @@ static int cpu_do_cycle()
 
 	if (LOG_WANTS(L_CPU)) log_store_cycle_state(SR_READ(), ic);
 
-	ips_counter++;
+	// single writer: load+1+store, not atomic_fetch_add, to avoid a locked RMW every instruction
+	atomic_store_explicit(&ips_counter, atomic_load_explicit(&ips_counter, memory_order_relaxed) + 1, memory_order_relaxed);
 	instruction_time_ns = 0;
 
 P1:
