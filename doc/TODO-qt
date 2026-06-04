@@ -25,7 +25,8 @@ View:
   * (DONE) IC somewhere in the middle of the view for better code context
 * stack view
 * watches view
-* commandline?
+* (DROP for now, resurrect only if something genuinely can't be easily done
+  with the current UI) commandline?
 * (PORTED) bottom bar:
   * (DONE) cpu state
   * (DONE) speed IPS
@@ -34,7 +35,7 @@ Commands:
 
 * (DONE: window, menu) quit: Quit the emulator
 * (DONE, CYCLE on the panel, add shortuct key?) cycle: Execute one instruction at IC
-* help: Print help
+* (TODO: [?] for non-obvious widgets?) help: Print help
 * (PORTED, UI) regs: Show user registers
 * (PORTED, UI) sregs: Show system registers
 * (PORTED, PANEL) clear: CPU clear (reset)
@@ -45,20 +46,20 @@ Commands:
 * (DONE: widget) memcfg: Show memory configuration
 * (TODO: memory widget 'save'? menu?) memdump: Dump memory contents into a file
 * (TODO) brk: Manipulate breakpoints
-* (PORTED, PANEL, shortcut?) start: Start emulation
-* (PORTED, PANEL, shortcut?) stop: Stop emulation
+* (PORTED, PANEL) start: Start emulation
+* (PORTED, PANEL) stop: Stop emulation
 * (TODO) stk: Show stack
-* (TODO: configuration) log: Manipulate logging
+* (TODO: configuration, bar at the bottom? widget?) log: Manipulate logging
 * (TODO) watch: Manipulate expression watches
 * (DROPPED) decode: Decode memory structures
 * (TODO: memory view) find: Search memory for a value
 
 
 GENERAL UI:
-	where to store own configuration?
+	(DONE: QSettings) where to store own configuration?
 	configuration
 	shortcuts
-	(DONE) color schemes (own/system)?
+	(DONE) color schemes (own/system)
 	power on/off?
 	background sound? configurable?
 CP:

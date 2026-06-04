@@ -1,0 +1,50 @@
+Reset signals in the hardware (active-low in the H/W,
+here described active-high for clarity):
+
+OFF: from PSU - active until voltages OK
+DMCL: from CPU - triggered by "MCL" instruction
+CL: signal on the external interface (between modules)
+DCL: from CPU control panel - triggered by the CLEAR key
+RCL: local DCL or CL from the interface (CL sent by other modules in the system)
+CLO: from PSU to the CPU (or other module connected to this PSU)
+CLM: from PSU to the CPU (or other module connected to this PSU)
+
+RCL = DCL | DMCL | CL
+CLO = DCL | OFF
+CLM = DCL | OFF | RCL
+
+Thus, sources of CLM/CLO signals are:
+
+MCL		-> CLM
+CLEAR		-> CLO, CLM
+PSU not yet up	-> CLO, CLM
+CL on the bus	-> CLM
+
+CLM resets:
+
+* SR (Q, BS, NB, RM)
+* PR
+* RZ and effectively RP
+* PRZERW - interrupt active register
+* STORE/FETCH/LOAD/BIN/CYCLE function registers?
+* P
+* WBI b-mod indicator
+* WPI pre-mod indicator
+* LG
+* LK
+* MC
+* R0
+
+CLO resets:
+
+* START/WAIT
+* ALARM
+* CPU states (-> P0)
+* ZGI (frees the I/F)
+* KC?
+* I/F hold for read-modify-write register
+* software FP reg
+
+OFF directly resets:
+
+* IC
