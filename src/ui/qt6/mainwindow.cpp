@@ -156,6 +156,10 @@ MainWindow::MainWindow(QWidget *parent) :
 
 	// EmuModel -> MainWindow
 	connect(&e, &EmuModel::signal_reg_changed, this, &MainWindow::slot_cpu_reg_changed);
+	// The dasm "skip" bar reads P live at paint time, so it only needs to repaint
+	// when IC moves (slot_cpu_reg_changed gates on IC). Do NOT also repaint on
+	// signal_p_changed: P is sampled by the faster realtime timer, so it would
+	// repaint with a stale (not-yet-advanced) IC and flash the bar at the wrong row.
 	connect(&e, &EmuModel::signal_cpu_ips_tick, this, &MainWindow::slot_ips_update);
 	connect(&e, &EmuModel::signal_mc_changed, this, &MainWindow::update_mc_status);
 
@@ -371,7 +375,11 @@ void MainWindow::slot_cpu_reg_changed(int reg, uint16_t val)
 {
 	// The RegViews render the values themselves; here we only drive the
 	// derived status-bar decode (R0 flags, SR) and refresh the disassembly.
-	slot_dasm_update();
+	// Only IC moves the dasm bar - repainting on every register (which fire
+	// before IC in the sync loop) would briefly paint the bar at the stale IC.
+	if (reg == EM400_REG_IC) {
+		slot_dasm_update();
+	}
 
 	if (reg == EM400_REG_R0) {
 		update_r0_status(val);

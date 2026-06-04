@@ -24,7 +24,10 @@ public:
 	int get_mem(int nb, int addr);
 	int get_mem(int nb, int addr, uint16_t *m, int count);
 	bool set_mem(int nb, int addr, uint16_t v) { return em400_mem_write(nb, addr, &v, 1); }
-	bool get_p() { return last_p; }
+	// Read P live (like get_clock), not from last_p: last_p is sampled by the
+	// realtime timer, independently of the registers, so using it for the dasm
+	// "skip" bar can paint a stale-red frame before sync_flags catches up.
+	bool get_p() { return em400_cp_p_led(); }
 	int get_mc() { return last_mc; }
 	bool get_alarm() { return last_alarm; }
 	int get_nb() { return em400_nb(); }
