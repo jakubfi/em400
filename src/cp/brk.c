@@ -42,6 +42,12 @@ static _Atomic (struct brk_point *) brk_list;
 // UI-thread-only (insert/cleanup/del_all all UI) so no atomic needed
 static int brk_id = 0;
 
+// id of the breakpoint that caused the current stop, or -1. Set on the CPU
+// thread by brk_check(), cleared on the UI thread when the front panel resumes
+// or advances the machine (see cp.c). Relaxed access is enough: the cpu_state
+// release/acquire handshake between the two threads carries this value across.
+static _Atomic int brk_hit = -1;
+
 // -----------------------------------------------------------------------
 static int brk_insert(struct eval_est *tree, char *expr)
 {
@@ -92,6 +98,7 @@ void brk_del_all()
 
 	atomic_store_explicit(&brk_list, NULL, memory_order_release);
 	brk_id = 0;
+	atomic_store_explicit(&brk_hit, -1, memory_order_relaxed);
 }
 
 // -----------------------------------------------------------------------
@@ -209,12 +216,41 @@ bool brk_check()
 		if (!atomic_load_explicit(&brkp->deleted, memory_order_relaxed)
 			&& atomic_load_explicit(&brkp->enabled, memory_order_relaxed)
 			&& eval_est_eval(brkp->tree) > 0) {
+			atomic_store_explicit(&brk_hit, (int) brkp->id, memory_order_relaxed);
 			return true;
 		}
 		brkp = atomic_load_explicit(&brkp->next, memory_order_acquire);
 	}
 
 	return false;
+}
+
+// -----------------------------------------------------------------------
+// Returns the id of the breakpoint that caused the current stop, or -1 if the
+// machine was not stopped by a breakpoint. Read on the UI thread after it sees
+// the CPU stopped.
+int brk_hit_get()
+{
+	return atomic_load_explicit(&brk_hit, memory_order_relaxed);
+}
+
+// -----------------------------------------------------------------------
+// Drops the recorded hit. Called from the front panel (cp.c) on the actions
+// that resume or advance instruction execution (start/cycle/clear), so a stale
+// hit is never reported for a stop that some later, non-breakpoint action (HLT,
+// manual stop, ...) caused.
+//
+// This deliberately lives in cp.c rather than in the UIs: cp_start/cycle/clear
+// are the single chokepoint all three UIs (qt, curses, cmd) funnel through, and
+// the clear there is ordered against the CPU thread's brk_check() store for free
+// by the cpu_state release/acquire handshake. Pushing the clear into the UIs
+// would make it a per-UI convention (easy to miss on one resume path in one
+// frontend) and, if a UI cleared while the CPU was running, would race
+// brk_check() and could drop a fresh hit. Keep brk_hit a pure "current stop
+// reason" that UIs only read; do not move this clear out of cp.c.
+void brk_hit_clear()
+{
+	atomic_store_explicit(&brk_hit, -1, memory_order_relaxed);
 }
 
 // -----------------------------------------------------------------------

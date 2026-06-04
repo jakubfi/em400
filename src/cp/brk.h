@@ -30,6 +30,8 @@ int brk_enable(unsigned id, bool enabled);
 int brk_eval(unsigned id, int *result, char **err_msg, int *err_beg, int *err_end);
 void brk_foreach(brk_iter_f cb, void *ctx);
 bool brk_check();
+int brk_hit_get();
+void brk_hit_clear();
 int brk_add(char *expression, char **err_msg, int *err_beg, int *err_end);
 
 #endif

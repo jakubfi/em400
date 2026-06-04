@@ -26,6 +26,7 @@
 #include "io/defs.h"
 #include "io/io.h"
 #include "utils/utils.h"
+#include "cp/brk.h"
 
 
 // -----------------------------------------------------------------------
@@ -43,13 +44,20 @@ void cp_kb_set(uint16_t val)
 // -----------------------------------------------------------------------
 void cp_start(bool state)
 {
-	if (state) cpu_state_change(EM400_STATE_RUN, EM400_STATE_STOP);
-	else cpu_state_change(EM400_STATE_STOP, EM400_STATE_ANY);
+	if (state) {
+		// resuming execution invalidates the last breakpoint hit; see brk.c
+		brk_hit_clear();
+		cpu_state_change(EM400_STATE_RUN, EM400_STATE_STOP);
+	} else {
+		cpu_state_change(EM400_STATE_STOP, EM400_STATE_ANY);
+	}
 }
 
 // -----------------------------------------------------------------------
 void cp_cycle()
 {
+	// advancing one cycle invalidates the last breakpoint hit; see brk.c
+	brk_hit_clear();
 	cpu_state_change(EM400_STATE_CYCLE, EM400_STATE_STOP);
 }
 
@@ -68,6 +76,8 @@ int cp_clock_get()
 // -----------------------------------------------------------------------
 void cp_clear()
 {
+	// reset wipes machine state, the last breakpoint hit included; see brk.c
+	brk_hit_clear();
 	cpu_state_change(EM400_STATE_CLO, EM400_STATE_ANY);
 }
 

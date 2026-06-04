@@ -531,4 +531,10 @@ void em400_brk_foreach(em400_brk_cb cb, void *ctx)
 	brk_foreach(cb, ctx);
 }
 
+// -----------------------------------------------------------------------
+int em400_brk_hit()
+{
+	return brk_hit_get();
+}
+
 // vim: tabstop=4 shiftwidth=4 autoindent

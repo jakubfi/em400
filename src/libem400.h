@@ -239,6 +239,7 @@ int em400_brk_delete(unsigned id);
 int em400_brk_enable(unsigned id, bool enabled);
 int em400_brk_eval(unsigned id, int *result, char **err_msg, int *err_beg, int *err_end);
 void em400_brk_foreach(em400_brk_cb cb, void *ctx);
+int em400_brk_hit();
 
 #ifdef __cplusplus
 }
