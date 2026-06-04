@@ -291,6 +291,15 @@ flex_target(eval_scanner
 )
 add_flex_bison_dependency(eval_scanner eval_parser)
 
+# "%define parse.error custom" makes bison emit a yypcontext_expected_tokens()
+# helper for building "expecting ..." lists; our custom handler reports by token
+# kind only and leaves it unused. Silence the resulting -Wunused-function for
+# this generated file alone (we do not control its contents).
+set_source_files_properties(
+	${CMAKE_CURRENT_BINARY_DIR}/eval_parser.c
+	PROPERTIES COMPILE_OPTIONS "-Wno-unused-function"
+)
+
 # --- em400 target
 
 add_executable(em400

@@ -28,7 +28,7 @@ extern int eval_yycolumn;
 
 %}
 
-%define parse.error verbose
+%define parse.error custom
 %locations
 
 %parse-param {struct eval_est **tree}
@@ -121,12 +121,32 @@ expr:
 %%
 
 // -----------------------------------------------------------------------
+// Custom syntax-error reporting (%define parse.error custom). Classify by the
+// actual lookahead token kind instead of bison's rendered English: an
+// end-of-input lookahead means the expression was simply cut short ("ic==",
+// "2+", "[") and is reported as one domain message; anything else falls back to
+// naming the offending token. Routes through eval_yyerror so the error lands in
+// the AST the same way the explicit TOK_INVALID rules do.
+int yyreport_syntax_error(const yypcontext_t *ctx, struct eval_est **tree)
+{
+	yysymbol_kind_t tok = yypcontext_token(ctx);
+	if (tok == YYSYMBOL_YYEOF) {
+		eval_yyerror(tree, "incomplete expression");
+	} else if (tok != YYSYMBOL_YYEMPTY) {
+		eval_yyerror(tree, "unexpected %s", yysymbol_name(tok));
+	} else {
+		eval_yyerror(tree, "syntax error");
+	}
+	return 0;
+}
+
+// -----------------------------------------------------------------------
 void eval_yyerror(struct eval_est **tree, const char *format, ...)
 {
 	char buf[1024];
 	va_list ap;
 	va_start(ap, format);
-	vsprintf(buf, format, ap);
+	vsnprintf(buf, sizeof(buf), format, ap); // bounded: TOK_INVALID text can be long
 	va_end(ap);
 	*tree = eval_est_err(buf);
 	eval_yycolumn = 0;
