@@ -232,6 +232,19 @@ int cpu_state_change(unsigned to, unsigned from)
 	pthread_mutex_lock(&cpu_wake_mutex);
 	unsigned last_state = atomic_load_explicit(&cpu_state, memory_order_acquire);
 	if ((from == EM400_STATE_ANY) || (last_state == from)) {
+		// the last breakpoint hit is valid only while stopped on it; any
+		// forward motion (RUN/CYCLE) or reset (CLO) invalidates it. brk_check()
+		// sets the hit from the CPU loop, so clearing it belongs here too -
+		// the control panel is faithful hardware and knows nothing of breakpoints
+		switch (to) {
+			case EM400_STATE_RUN:
+			case EM400_STATE_CYCLE:
+			case EM400_STATE_CLO:
+				brk_hit_clear();
+				break;
+			default:
+				break;
+		}
 		atomic_store_explicit(&cpu_state, to, memory_order_release);
 		pthread_cond_signal(&cpu_wake_cond);
 		res = 0;
