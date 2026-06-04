@@ -24,8 +24,8 @@
 #include "io/io.h"
 #include "io/chan.h"
 #include "cp/cp.h"
-#include "cp/cpext.h"
 #include "cp/brk.h"
+#include "utils/utils.h"
 #include "log.h"
 #include "io/dev/terminal.h"
 #include "io/dev/sp45de.h"
@@ -394,91 +394,123 @@ const char * em400_reg_name(unsigned reg_id)
 // -----------------------------------------------------------------------
 int em400_reg(unsigned reg_id)
 {
-	return cpext_reg(reg_id);
+	return cpu_reg_fetch(reg_id);
 }
 
 // -----------------------------------------------------------------------
 void em400_regs(uint16_t *dest)
 {
-	cpext_regs(dest);
+	for (int i=0 ; i<EM400_REG_COUNT ; i++) {
+		dest[i] = cpu_reg_fetch(i);
+	}
 }
 
 // -----------------------------------------------------------------------
 void em400_reg_set(unsigned reg_id, uint16_t val)
 {
-	cpext_reg_set(reg_id, val);
+	cpu_reg_load(reg_id, val);
 }
 
 // -----------------------------------------------------------------------
 unsigned em400_nb()
 {
-	return cpext_nb();
+	return nb;
 }
 
 // -----------------------------------------------------------------------
 unsigned em400_mc()
 {
-	return cpext_mc();
+	return mc;
 }
 
 // -----------------------------------------------------------------------
 unsigned em400_qnb()
 {
-	return cpext_qnb();
+	return q * nb;
 }
 
 // -----------------------------------------------------------------------
 uint32_t em400_rz32()
 {
-	return cpext_rz32();
+	return rz;
 }
 
 // -----------------------------------------------------------------------
 int em400_int_set(unsigned interrupt)
 {
-	return cpext_int_set(interrupt);
+	if (interrupt >= 32) {
+		return -1;
+	}
+	int_set(interrupt);
+	return 0;
 }
 
 // -----------------------------------------------------------------------
 int em400_int_clear(unsigned interrupt)
 {
-	return cpext_int_clear(interrupt);
+	if (interrupt >= 32) {
+		return -1;
+	}
+	int_clear(interrupt);
+	return 0;
 }
 
 // -----------------------------------------------------------------------
 int em400_int_mask_bit(unsigned interrupt)
 {
-	return cpext_int_mask_bit(interrupt);
+	return int_get_mask_bit(interrupt);
 }
 
 // -----------------------------------------------------------------------
 bool em400_mem_read(int seg, uint16_t addr, uint16_t *dest, unsigned count)
 {
-	return cpext_mem_read_n(seg, addr, dest, count);
+	return mem_read_n(seg, addr, dest, count);
 }
 
 // -----------------------------------------------------------------------
 bool em400_mem_write(int seg, uint16_t addr, uint16_t *src, unsigned count)
 {
-	return cpext_mem_write_n(seg, addr, src, count);
+	return mem_write_n(seg, addr, src, count);
 }
 
 // -----------------------------------------------------------------------
 int em400_mem_map(int seg)
 {
-	return cpext_mem_get_map(seg);
+	return mem_get_map(seg);
 }
 
 // -----------------------------------------------------------------------
 bool em400_load_os_image(FILE *f)
 {
-	return cpext_load_os_image(f);
+	uint16_t buf[0x2000];
+
+	int words_read = fread(buf, sizeof(uint16_t), 0x2000, f);
+	if (words_read <= 0) {
+		return false;
+	}
+	endianswap(buf, words_read);
+	if (!mem_write_n(0, 0, buf, words_read)) {
+		return false;
+	}
+
+	return true;
 }
 
 // -----------------------------------------------------------------------
 unsigned long em400_ips_get()
 {
-	return cpext_ips_get();
+	double ips;
+	static unsigned long oips;
+
+	double elapsed_ns = stopwatch_ns();
+	if (elapsed_ns > 0) {
+		ips = (1000000000.0 * (ips_counter - oips)) / elapsed_ns;
+	} else {
+		ips = 0;
+	}
+	oips = ips_counter;
+
+	return ips;
 }
 
 // -----------------------------------------------------------------------
@@ -494,7 +526,7 @@ const char * em400_cpu_state_name(unsigned state)
 // -----------------------------------------------------------------------
 unsigned em400_cpu_state()
 {
-	return cpext_state();
+	return cpu_state_get();
 }
 
 // -----------------------------------------------------------------------

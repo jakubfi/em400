@@ -233,8 +233,6 @@ set(SOURCES_EM400
 
 	src/cp/cp.c
 	src/cp/cp.h
-	src/cp/cpext.c
-	src/cp/cpext.h
 	src/cp/eval.c
 	src/cp/eval.h
 	src/cp/eval_parser.y
