@@ -66,6 +66,7 @@ MainWindow::MainWindow(QWidget *parent) :
 	sregs = new RegCompact(&e, RegCompact::SYSTEM);
 	ints = new IntView(&e);
 	map = new MapView(&e);
+	brk = new BrkView(&e);
 
 	// Re-home the debugger panels into dock widgets arranged around the
 	// control panel. The control panel is the permanent center - it IS the
@@ -79,6 +80,7 @@ MainWindow::MainWindow(QWidget *parent) :
 	dock_mem  = new QDockWidget(tr("Memory"), this);
 	dock_ints = new QDockWidget(tr("Interrupts"), this);
 	dock_map  = new QDockWidget(tr("Allocation map"), this);
+	dock_brk  = new QDockWidget(tr("Breakpoints"), this);
 
 	dock_uregs->setObjectName("dock_uregs");
 	dock_sregs->setObjectName("dock_sregs");
@@ -86,6 +88,7 @@ MainWindow::MainWindow(QWidget *parent) :
 	dock_mem->setObjectName("dock_mem");
 	dock_ints->setObjectName("dock_ints");
 	dock_map->setObjectName("dock_map");
+	dock_brk->setObjectName("dock_brk");
 
 	// dock title bars now carry the names; drop the redundant group titles
 	ui->group_dasm->setTitle("");
@@ -95,6 +98,7 @@ MainWindow::MainWindow(QWidget *parent) :
 	dock_sregs->setWidget(sregs);
 	dock_ints->setWidget(ints);
 	dock_map->setWidget(map);
+	dock_brk->setWidget(brk);
 	dock_dasm->setWidget(ui->group_dasm);
 	dock_mem->setWidget(ui->group_mem);
 
@@ -143,6 +147,7 @@ MainWindow::MainWindow(QWidget *parent) :
 	ui->menuView->addAction(dock_sregs->toggleViewAction());
 	ui->menuView->addAction(dock_ints->toggleViewAction());
 	ui->menuView->addAction(dock_map->toggleViewAction());
+	ui->menuView->addAction(dock_brk->toggleViewAction());
 	ui->menuView->addSeparator();
 	QAction *act_reset = new QAction(tr("Reset Layout"), this);
 	ui->menuView->addAction(act_reset);
@@ -312,12 +317,15 @@ void MainWindow::apply_default_layout()
 	addDockWidget(Qt::RightDockWidgetArea, dock_sregs);
 	addDockWidget(Qt::RightDockWidgetArea, dock_ints);
 	addDockWidget(Qt::RightDockWidgetArea, dock_map);
-	// the map and the interrupt decode are both occasional-glance views; tab them
-	// together so the right column is not dominated by two tall always-on panels
+	addDockWidget(Qt::RightDockWidgetArea, dock_brk);
+	// the map, the interrupt decode and the breakpoint list are all occasional-
+	// glance / on-demand views; tab them together so the right column is not
+	// dominated by several tall always-on panels
 	tabifyDockWidget(dock_ints, dock_map);
+	tabifyDockWidget(dock_map, dock_brk);
 	dock_ints->raise();
 
-	for (QDockWidget *d : {dock_dasm, dock_mem, dock_uregs, dock_sregs, dock_ints, dock_map}) {
+	for (QDockWidget *d : {dock_dasm, dock_mem, dock_uregs, dock_sregs, dock_ints, dock_map, dock_brk}) {
 		d->setFloating(false);
 		d->show();
 	}
@@ -331,7 +339,8 @@ void MainWindow::sync_debugger_action()
 {
 	bool any = !dock_dasm->isHidden() || !dock_mem->isHidden()
 		|| !dock_uregs->isHidden() || !dock_sregs->isHidden()
-		|| !dock_ints->isHidden() || !dock_map->isHidden();
+		|| !dock_ints->isHidden() || !dock_map->isHidden()
+		|| !dock_brk->isHidden();
 	QSignalBlocker block(ui->actionDebugger);
 	ui->actionDebugger->setChecked(any);
 }
@@ -432,6 +441,7 @@ void MainWindow::slot_debugger_enabled_changed(bool state)
 	dock_mem->setVisible(state);
 	dock_ints->setVisible(state);
 	dock_map->setVisible(state);
+	dock_brk->setVisible(state);
 	//ui->statusbar->setVisible(state);
 	for (int i=0 ; i<10 ; i++) qApp->processEvents(); // StackOverflow, I don't even...
 	adjustSize();
@@ -467,3 +477,5 @@ void MainWindow::slot_binary_key_toggled(bool state)
 	}
 	e.set_kb(val);
 }
+
+// vim: tabstop=4 shiftwidth=4 autoindent

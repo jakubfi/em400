@@ -23,6 +23,7 @@ View:
   * (DONE) IC location
   * (DONE) skip flag indicated
   * (DONE) IC somewhere in the middle of the view for better code context
+* (ADDED) breakpoint view
 * stack view
 * watches view
 * (DROP for now, resurrect only if something genuinely can't be easily done
@@ -45,7 +46,7 @@ Commands:
 * (TODO: menu) load: Load memory image from file
 * (DONE: widget) memcfg: Show memory configuration
 * (TODO: memory widget 'save'? menu?) memdump: Dump memory contents into a file
-* (TODO) brk: Manipulate breakpoints
+* (DONE) brk: Manipulate breakpoints
 * (PORTED, PANEL) start: Start emulation
 * (PORTED, PANEL) stop: Stop emulation
 * (TODO) stk: Show stack
@@ -81,7 +82,7 @@ MEM VIEW:
 STATUS BAR:
 	(DONE, own widget) int/int mask display in the status bar
 OTHER:
-	breakpoints view
+	(DONE) breakpoints view
 	memory configuration view
 	watches?
 	stack?

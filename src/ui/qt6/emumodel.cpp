@@ -1,5 +1,6 @@
 #include <QtDebug>
 #include <QFile>
+#include <cstdlib>
 #include "emumodel.h"
 #include "libem400.h"
 
@@ -31,6 +32,7 @@ void EmuModel::run()
 	sync_rz(true);
 	sync_map(true);
 	sync_clock(true);
+	sync_brk_hit(true);
 	sync_ips();
 
 	timer_realtime.start();
@@ -61,6 +63,7 @@ void EmuModel::on_timer_slow_timeout()
 	sync_rz();
 	sync_map();
 	sync_clock();
+	sync_brk_hit();
 }
 
 // -----------------------------------------------------------------------
@@ -158,9 +161,47 @@ void EmuModel::sync_clock(bool force)
 }
 
 // -----------------------------------------------------------------------
+// em400_brk_hit() is a cheap atomic read; the value only changes when the
+// machine stops on a breakpoint or resumes (cp.c clears it on start/cycle/
+// clear), so polling it on the slow timer is enough to drive the hit LED.
+void EmuModel::sync_brk_hit(bool force)
+{
+	int hit = em400_brk_hit();
+	if (force || (hit != last_brk_hit)) {
+		emit signal_brk_hit_changed(hit);
+		last_brk_hit = hit;
+	}
+}
+
+// -----------------------------------------------------------------------
 void EmuModel::sync_ips()
 {
 	emit signal_cpu_ips_tick(em400_ips_get());
+}
+
+// -----------------------------------------------------------------------
+QVector<BrkInfo> EmuModel::brk_list()
+{
+	QVector<BrkInfo> out;
+	em400_brk_foreach([](unsigned id, const char *expr, bool enabled, void *ctx) {
+		static_cast<QVector<BrkInfo>*>(ctx)->append(
+			BrkInfo{id, QString::fromUtf8(expr), enabled});
+	}, &out);
+	return out;
+}
+
+// -----------------------------------------------------------------------
+int EmuModel::brk_add(const QString &expr, QString &err)
+{
+	QByteArray ba = expr.toUtf8();
+	char *err_msg = nullptr;
+	int err_beg = 0, err_end = 0;
+	int id = em400_brk_add(ba.data(), &err_msg, &err_beg, &err_end);
+	if (id < 0 && err_msg) {
+		err = QString::fromUtf8(err_msg);
+	}
+	free(err_msg); // strdup'd by the evaluator; NULL-safe
+	return id;
 }
 
 // -----------------------------------------------------------------------
@@ -196,9 +237,4 @@ bool EmuModel::load_os_image(QString filename)
 	return true;
 }
 
-
-
-
-
-
-
+// vim: tabstop=4 shiftwidth=4 autoindent

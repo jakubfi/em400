@@ -166,11 +166,16 @@ QColor em400_mask_color(const QPalette &pal)
 }
 
 // -----------------------------------------------------------------------
-// P-flag IC-bar accent: the instruction at IC will NOT execute (P set). The red
-// slot in the panel theme; under the system theme keep the previous look (a
-// lightened Qt red) since there is no red palette role.
-QColor em400_pflag_color(const QPalette &pal)
+// Red accent - "will not take effect": something is present but inert/rejected.
+// Two uses, treated as one signal to the user: the emulation state (the IC-bar
+// instruction will NOT execute when P is set) and UI feedback (a rejected
+// breakpoint expression that won't run). The red slot in the panel theme; under
+// the system theme keep the previous look (a lightened Qt red) since there is no
+// red palette role.
+QColor em400_red_color(const QPalette &pal)
 {
 	(void) pal;
 	return g_panel_active ? c_red : QColor(Qt::red).lighter();
 }
+
+// vim: tabstop=4 shiftwidth=4 autoindent

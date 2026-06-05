@@ -11,6 +11,7 @@
 #include "regview.h"
 #include "intview.h"
 #include "mapview.h"
+#include "brkview.h"
 
 namespace Ui {
 class MainWindow;
@@ -33,11 +34,12 @@ private:
 	QLabel *edit_mode;
 	QWidget *edit_box;
 
-	QDockWidget *dock_uregs, *dock_sregs, *dock_dasm, *dock_mem, *dock_ints, *dock_map;
+	QDockWidget *dock_uregs, *dock_sregs, *dock_dasm, *dock_mem, *dock_ints, *dock_map, *dock_brk;
 
 	RegCompact *uregs, *sregs;
 	IntView *ints;
 	MapView *map;
+	BrkView *brk;
 
 	void update_mc_status(int mc);
 	void update_sr_status(uint16_t val);
@@ -64,3 +66,5 @@ public slots:
 };
 
 #endif // MAINWINDOW_H
+
+// vim: tabstop=4 shiftwidth=4 autoindent

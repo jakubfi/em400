@@ -220,7 +220,7 @@ void DasmView::paintEvent(QPaintEvent *event)
 			// "you are here" is green (Highlight); but if the "P" flag is set the
 			// instruction at IC will NOT execute - flag that with the red accent.
 			if (e->get_p()) {
-				bar_color = em400_pflag_color(palette());
+				bar_color = em400_red_color(palette());
 			} else {
 				bar_color = palette().color(QPalette::Highlight);
 			}

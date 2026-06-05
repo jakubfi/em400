@@ -3,8 +3,21 @@
 
 #include <QObject>
 #include <QTimer>
+#include <QVector>
+#include <QString>
 #include "libem400.h"
 #include <emdas.h>
+
+// One breakpoint as the UI needs it: stable id, its expression, enabled flag.
+// Built by brk_list() from em400_brk_foreach (cheap and safe to call any time);
+// the live value is deliberately NOT included - evaluating every breakpoint on
+// a refresh re-parses each expression and races the CPU thread, so it is done
+// only on demand. See the auto-memory qt-brk-ui-eval-guidance.
+struct BrkInfo {
+	unsigned id;
+	QString expr;
+	bool enabled;
+};
 
 class EmuModel : public QObject
 {
@@ -40,6 +53,15 @@ public:
 	int int_mask_bit(int n) { return em400_int_mask_bit(n); }
 	void set_int(int n, bool on) { if (on) em400_int_set(n); else em400_int_clear(n); }
 
+	// breakpoint editing/listing API. The list only ever changes through these
+	// UI-thread calls, so the view rebuilds from brk_list() right after each
+	// edit instead of polling. brk_add returns the new id (>=0) or -1 and fills
+	// `err` with the parser message on failure.
+	QVector<BrkInfo> brk_list();
+	int brk_add(const QString &expr, QString &err);
+	void brk_del(unsigned id) { em400_brk_delete(id); }
+	void brk_set_enabled(unsigned id, bool en) { em400_brk_enable(id, en); }
+
 private:
 	QTimer timer_realtime;
 	QTimer timer_slow;
@@ -53,6 +75,7 @@ private:
 	bool last_clock;
 	bool last_alarm, last_p;
 	int last_mc;
+	int last_brk_hit = -1;
 
 	void sync_state(bool force=false);
 	void sync_regs(bool force=false);
@@ -61,6 +84,7 @@ private:
 	void sync_bus_w(bool force=false);
 	void sync_clock(bool force=false);
 	void sync_flags(bool force=false);
+	void sync_brk_hit(bool force=false);
 	void sync_ips();
 
 private slots:
@@ -91,6 +115,11 @@ signals:
 	void signal_p_changed(bool p);
 	void signal_mc_changed(int mc);
 	void signal_clock_changed(bool clock);
+	// id of the breakpoint that stopped the machine, or -1 when none (running,
+	// or stopped by something other than a breakpoint).
+	void signal_brk_hit_changed(int id);
 };
 
 #endif // EMUMODEL_H
+
+// vim: tabstop=4 shiftwidth=4 autoindent

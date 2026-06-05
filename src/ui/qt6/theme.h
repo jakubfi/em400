@@ -42,6 +42,8 @@ bool em400_theme_is_panel();
 QColor em400_sep_color(const QPalette &pal); // divider / separator rules
 QColor em400_dim_text_color(const QPalette &pal); // secondary-but-readable text (ascii/r40 panel)
 QColor em400_mask_color(const QPalette &pal); // mask boxes + allocation map (amber)
-QColor em400_pflag_color(const QPalette &pal); // P-flag "won't execute" IC bar (red)
+QColor em400_red_color(const QPalette &pal); // "will not take effect": P-flag IC bar + rejected input (red)
 
 #endif // EM400_QT6_THEME_H
+
+// vim: tabstop=4 shiftwidth=4 autoindent
