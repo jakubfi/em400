@@ -19,6 +19,14 @@ struct BrkInfo {
 	bool enabled;
 };
 
+// One watch as the UI needs it: stable id and its expression. Like BrkInfo the
+// value is not carried here - the watch view fills its value column on demand
+// via watch_eval(), only while the machine is stopped.
+struct WatchInfo {
+	unsigned id;
+	QString expr;
+};
+
 class EmuModel : public QObject
 {
 	Q_OBJECT
@@ -61,6 +69,17 @@ public:
 	int brk_add(const QString &expr, QString &err);
 	void brk_del(unsigned id) { em400_brk_delete(id); }
 	void brk_set_enabled(unsigned id, bool en) { em400_brk_enable(id, en); }
+
+	// watch listing/editing API, same UI-thread-only contract as the breakpoint
+	// API above: the list changes only through these calls, so the view rebuilds
+	// from watch_list() after each structural edit. watch_edit keeps the id (the
+	// core has a real edit op), and watch_eval evaluates one watch on demand to
+	// fill the value column. watch_add/watch_edit return 0/-1 and fill `err`.
+	QVector<WatchInfo> watch_list();
+	int watch_add(const QString &expr, QString &err);
+	int watch_edit(unsigned id, const QString &expr, QString &err);
+	void watch_del(unsigned id) { em400_watch_delete(id); }
+	bool watch_eval(unsigned id, int &value, QString &err);
 
 private:
 	QTimer timer_realtime;

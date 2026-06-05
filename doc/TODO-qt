@@ -25,7 +25,7 @@ View:
   * (DONE) IC somewhere in the middle of the view for better code context
 * (ADDED) breakpoint view
 * stack view
-* watches view
+* (DONE) watches view
 * (DROP for now, resurrect only if something genuinely can't be easily done
   with the current UI) commandline?
 * (PORTED) bottom bar:
@@ -51,7 +51,7 @@ Commands:
 * (PORTED, PANEL) stop: Stop emulation
 * (TODO) stk: Show stack
 * (TODO: configuration, bar at the bottom? widget?) log: Manipulate logging
-* (TODO) watch: Manipulate expression watches
+* (DONE) watch: Manipulate expression watches
 * (DROPPED) decode: Decode memory structures
 * (TODO: memory view) find: Search memory for a value
 
@@ -83,8 +83,8 @@ STATUS BAR:
 	(DONE, own widget) int/int mask display in the status bar
 OTHER:
 	(DONE) breakpoints view
-	memory configuration view
-	watches?
+	(DONE) memory configuration view
+	(DONE) watches?
 	stack?
 	delegating error display to the UI?
 	delegating logs to the UI? own logview?

@@ -12,6 +12,7 @@
 #include "intview.h"
 #include "mapview.h"
 #include "brkview.h"
+#include "watchview.h"
 
 namespace Ui {
 class MainWindow;
@@ -34,12 +35,13 @@ private:
 	QLabel *edit_mode;
 	QWidget *edit_box;
 
-	QDockWidget *dock_uregs, *dock_sregs, *dock_dasm, *dock_mem, *dock_ints, *dock_map, *dock_brk;
+	QDockWidget *dock_uregs, *dock_sregs, *dock_dasm, *dock_mem, *dock_ints, *dock_map, *dock_brk, *dock_watch;
 
 	RegCompact *uregs, *sregs;
 	IntView *ints;
 	MapView *map;
 	BrkView *brk;
+	WatchView *watch;
 
 	void update_mc_status(int mc);
 	void update_sr_status(uint16_t val);

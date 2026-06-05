@@ -205,6 +205,68 @@ int EmuModel::brk_add(const QString &expr, QString &err)
 }
 
 // -----------------------------------------------------------------------
+QVector<WatchInfo> EmuModel::watch_list()
+{
+	QVector<WatchInfo> out;
+	em400_watch_foreach([](unsigned id, const char *expr, void *ctx) {
+		static_cast<QVector<WatchInfo>*>(ctx)->append(
+			WatchInfo{id, QString::fromUtf8(expr)});
+	}, &out);
+	return out;
+}
+
+// -----------------------------------------------------------------------
+int EmuModel::watch_add(const QString &expr, QString &err)
+{
+	QByteArray ba = expr.toUtf8();
+	char *err_msg = nullptr;
+	int err_beg = 0, err_end = 0;
+	int id = em400_watch_add(ba.data(), &err_msg, &err_beg, &err_end);
+	if (id < 0 && err_msg) {
+		err = QString::fromUtf8(err_msg);
+	}
+	free(err_msg); // NULL-safe
+	return id;
+}
+
+// -----------------------------------------------------------------------
+int EmuModel::watch_edit(unsigned id, const QString &expr, QString &err)
+{
+	QByteArray ba = expr.toUtf8();
+	char *err_msg = nullptr;
+	int err_beg = 0, err_end = 0;
+	int ret = em400_watch_edit(id, ba.data(), &err_msg, &err_beg, &err_end);
+	if (ret < 0 && err_msg) {
+		err = QString::fromUtf8(err_msg);
+	}
+	free(err_msg); // NULL-safe
+	return ret;
+}
+
+// -----------------------------------------------------------------------
+// Evaluate one watch for display. Returns true and sets `value` on success; on
+// a runtime eval error (or unknown id) returns false and sets `err`. Like
+// brk_eval, this re-parses on the UI thread and reads live machine state, so it
+// is meant to be called while the machine is stopped.
+bool EmuModel::watch_eval(unsigned id, int &value, QString &err)
+{
+	char *err_msg = nullptr;
+	int err_beg = 0, err_end = 0, res = 0;
+	if (em400_watch_eval(id, &res, &err_msg, &err_beg, &err_end) < 0) {
+		err = QStringLiteral("?");
+		return false; // no such watch; err_msg untouched (NULL)
+	}
+	if (res < 0) {
+		err = err_msg ? QString::fromUtf8(err_msg) : QStringLiteral("error");
+		free(err_msg);
+		return false;
+	}
+	free(err_msg); // NULL-safe
+	value = res;
+	return true;
+}
+
+// -----------------------------------------------------------------------
 int EmuModel::get_mem(int nb, int addr, uint16_t *m, int count)
 {
 	return em400_mem_read(nb, addr, m, count);

@@ -207,7 +207,7 @@ void BrkView::add_row(const BrkInfo &info)
 	it->setData(ExprRole, info.expr);   // last committed text, for the edit diff
 	it->setData(EnabledRole, info.enabled);
 	it->setFlags(Qt::ItemIsEnabled | Qt::ItemIsEditable);
-	it->setToolTip(tr("breakpoint #%1 - double-click to edit").arg(info.id));
+	it->setToolTip(tr("double-click to edit"));
 	table->setItem(r, COL_EXPR, it);
 	style_expr_item(it, info.enabled);
 

@@ -67,6 +67,7 @@ MainWindow::MainWindow(QWidget *parent) :
 	ints = new IntView(&e);
 	map = new MapView(&e);
 	brk = new BrkView(&e);
+	watch = new WatchView(&e);
 
 	// Re-home the debugger panels into dock widgets arranged around the
 	// control panel. The control panel is the permanent center - it IS the
@@ -81,6 +82,7 @@ MainWindow::MainWindow(QWidget *parent) :
 	dock_ints = new QDockWidget(tr("Interrupts"), this);
 	dock_map  = new QDockWidget(tr("Allocation map"), this);
 	dock_brk  = new QDockWidget(tr("Breakpoints"), this);
+	dock_watch = new QDockWidget(tr("Watches"), this);
 
 	dock_uregs->setObjectName("dock_uregs");
 	dock_sregs->setObjectName("dock_sregs");
@@ -89,6 +91,7 @@ MainWindow::MainWindow(QWidget *parent) :
 	dock_ints->setObjectName("dock_ints");
 	dock_map->setObjectName("dock_map");
 	dock_brk->setObjectName("dock_brk");
+	dock_watch->setObjectName("dock_watch");
 
 	// dock title bars now carry the names; drop the redundant group titles
 	ui->group_dasm->setTitle("");
@@ -99,6 +102,7 @@ MainWindow::MainWindow(QWidget *parent) :
 	dock_ints->setWidget(ints);
 	dock_map->setWidget(map);
 	dock_brk->setWidget(brk);
+	dock_watch->setWidget(watch);
 	dock_dasm->setWidget(ui->group_dasm);
 	dock_mem->setWidget(ui->group_mem);
 
@@ -117,6 +121,12 @@ MainWindow::MainWindow(QWidget *parent) :
 	setCorner(Qt::BottomLeftCorner, Qt::LeftDockWidgetArea);
 	setCorner(Qt::TopRightCorner, Qt::RightDockWidgetArea);
 	setCorner(Qt::BottomRightCorner, Qt::RightDockWidgetArea);
+
+	// Allow nested splits so docks can be arranged into sub-columns/rows inside a
+	// single area - e.g. breakpoints stacked directly under watches beside the
+	// memory view. Without this a dock can only stack along an edge area, not
+	// split a region that is itself a split.
+	setDockNestingEnabled(true);
 
 	apply_default_layout();
 
@@ -148,6 +158,7 @@ MainWindow::MainWindow(QWidget *parent) :
 	ui->menuView->addAction(dock_ints->toggleViewAction());
 	ui->menuView->addAction(dock_map->toggleViewAction());
 	ui->menuView->addAction(dock_brk->toggleViewAction());
+	ui->menuView->addAction(dock_watch->toggleViewAction());
 	ui->menuView->addSeparator();
 	QAction *act_reset = new QAction(tr("Reset Layout"), this);
 	ui->menuView->addAction(act_reset);
@@ -306,29 +317,39 @@ void MainWindow::closeEvent(QCloseEvent* event)
 }
 
 // -----------------------------------------------------------------------
-// Place the debugger docks in the curated default arrangement (dasm left,
-// memory under the panel, registers right) and show them. Used at startup to
-// establish a home for each dock, and by the View > Reset Layout action.
+// Place the debugger docks in the curated default arrangement and show them.
+// Used at startup to establish a home for each dock, and by View > Reset Layout.
+// Left column: disassembly (full height) with a short breakpoint list under it
+// (semantically tied to the code, and usually only 1-3 entries). Center bottom:
+// memory with the watch list beside it. Right column: the register / interrupt
+// / map modules, stacked. Users can still drag any of this around (nested docks
+// are enabled), this is just the starting point.
 void MainWindow::apply_default_layout()
 {
-	addDockWidget(Qt::LeftDockWidgetArea, dock_dasm);   // narrow, full height
-	addDockWidget(Qt::BottomDockWidgetArea, dock_mem);  // panel width, under panel
-	addDockWidget(Qt::RightDockWidgetArea, dock_uregs); // small modules, stacked
+	addDockWidget(Qt::LeftDockWidgetArea, dock_dasm);      // narrow, full height
+	splitDockWidget(dock_dasm, dock_brk, Qt::Vertical);    // breakpoints under dasm
+
+	addDockWidget(Qt::BottomDockWidgetArea, dock_mem);     // panel width, under panel
+	splitDockWidget(dock_mem, dock_watch, Qt::Horizontal); // watches beside memory
+
+	addDockWidget(Qt::RightDockWidgetArea, dock_uregs);    // small modules, stacked
 	addDockWidget(Qt::RightDockWidgetArea, dock_sregs);
 	addDockWidget(Qt::RightDockWidgetArea, dock_ints);
 	addDockWidget(Qt::RightDockWidgetArea, dock_map);
-	addDockWidget(Qt::RightDockWidgetArea, dock_brk);
-	// the map, the interrupt decode and the breakpoint list are all occasional-
-	// glance / on-demand views; tab them together so the right column is not
-	// dominated by several tall always-on panels
-	tabifyDockWidget(dock_ints, dock_map);
-	tabifyDockWidget(dock_map, dock_brk);
-	dock_ints->raise();
+	// registers / interrupts / map stack vertically down the right column (no
+	// tabbing); they all fit one below the other given a little window height
 
-	for (QDockWidget *d : {dock_dasm, dock_mem, dock_uregs, dock_sregs, dock_ints, dock_map, dock_brk}) {
+	for (QDockWidget *d : {dock_dasm, dock_mem, dock_uregs, dock_sregs, dock_ints, dock_map, dock_brk, dock_watch}) {
 		d->setFloating(false);
 		d->show();
 	}
+
+	// breakpoints sit under dasm but the list is usually 1-3 rows: shrink it to
+	// as little height as it will take so dasm keeps the rest of the left column
+	resizeDocks({dock_brk}, {1}, Qt::Vertical);
+	// memory is the focus of the bottom row; give watches a moderate slice beside it
+	resizeDocks({dock_mem, dock_watch}, {2, 1}, Qt::Horizontal);
+
 	sync_debugger_action();
 }
 
@@ -340,7 +361,7 @@ void MainWindow::sync_debugger_action()
 	bool any = !dock_dasm->isHidden() || !dock_mem->isHidden()
 		|| !dock_uregs->isHidden() || !dock_sregs->isHidden()
 		|| !dock_ints->isHidden() || !dock_map->isHidden()
-		|| !dock_brk->isHidden();
+		|| !dock_brk->isHidden() || !dock_watch->isHidden();
 	QSignalBlocker block(ui->actionDebugger);
 	ui->actionDebugger->setChecked(any);
 }
@@ -442,6 +463,7 @@ void MainWindow::slot_debugger_enabled_changed(bool state)
 	dock_ints->setVisible(state);
 	dock_map->setVisible(state);
 	dock_brk->setVisible(state);
+	dock_watch->setVisible(state);
 	//ui->statusbar->setVisible(state);
 	for (int i=0 ; i<10 ; i++) qApp->processEvents(); // StackOverflow, I don't even...
 	adjustSize();
