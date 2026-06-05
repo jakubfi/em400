@@ -49,7 +49,7 @@ Commands:
 * (DONE) brk: Manipulate breakpoints
 * (PORTED, PANEL) start: Start emulation
 * (PORTED, PANEL) stop: Stop emulation
-* (TODO) stk: Show stack
+* (DONE) stk: Show stack
 * (TODO: configuration, bar at the bottom? widget?) log: Manipulate logging
 * (DONE) watch: Manipulate expression watches
 * (DROPPED) decode: Decode memory structures
@@ -85,7 +85,8 @@ OTHER:
 	(DONE) breakpoints view
 	(DONE) memory configuration view
 	(DONE) watches?
-	stack?
+	(DONE) stack?
 	delegating error display to the UI?
 	delegating logs to the UI? own logview?
 	translation
+	micro-panel?

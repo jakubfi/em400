@@ -68,6 +68,7 @@ MainWindow::MainWindow(QWidget *parent) :
 	map = new MapView(&e);
 	brk = new BrkView(&e);
 	watch = new WatchView(&e);
+	stack = new StackView(&e);
 
 	// Re-home the debugger panels into dock widgets arranged around the
 	// control panel. The control panel is the permanent center - it IS the
@@ -83,6 +84,7 @@ MainWindow::MainWindow(QWidget *parent) :
 	dock_map  = new QDockWidget(tr("Allocation map"), this);
 	dock_brk  = new QDockWidget(tr("Breakpoints"), this);
 	dock_watch = new QDockWidget(tr("Watches"), this);
+	dock_stack = new QDockWidget(tr("Stack"), this);
 
 	dock_uregs->setObjectName("dock_uregs");
 	dock_sregs->setObjectName("dock_sregs");
@@ -92,6 +94,7 @@ MainWindow::MainWindow(QWidget *parent) :
 	dock_map->setObjectName("dock_map");
 	dock_brk->setObjectName("dock_brk");
 	dock_watch->setObjectName("dock_watch");
+	dock_stack->setObjectName("dock_stack");
 
 	// dock title bars now carry the names; drop the redundant group titles
 	ui->group_dasm->setTitle("");
@@ -103,6 +106,7 @@ MainWindow::MainWindow(QWidget *parent) :
 	dock_map->setWidget(map);
 	dock_brk->setWidget(brk);
 	dock_watch->setWidget(watch);
+	dock_stack->setWidget(stack);
 	dock_dasm->setWidget(ui->group_dasm);
 	dock_mem->setWidget(ui->group_mem);
 
@@ -159,6 +163,7 @@ MainWindow::MainWindow(QWidget *parent) :
 	ui->menuView->addAction(dock_map->toggleViewAction());
 	ui->menuView->addAction(dock_brk->toggleViewAction());
 	ui->menuView->addAction(dock_watch->toggleViewAction());
+	ui->menuView->addAction(dock_stack->toggleViewAction());
 	ui->menuView->addSeparator();
 	QAction *act_reset = new QAction(tr("Reset Layout"), this);
 	ui->menuView->addAction(act_reset);
@@ -336,10 +341,13 @@ void MainWindow::apply_default_layout()
 	addDockWidget(Qt::RightDockWidgetArea, dock_sregs);
 	addDockWidget(Qt::RightDockWidgetArea, dock_ints);
 	addDockWidget(Qt::RightDockWidgetArea, dock_map);
+	// tab the stack behind the interrupts view (both are occasional, event-driven
+	// views) to keep the right column from running too tall.
+	tabifyDockWidget(dock_ints, dock_stack);
 	// registers / interrupts / map stack vertically down the right column (no
 	// tabbing); they all fit one below the other given a little window height
 
-	for (QDockWidget *d : {dock_dasm, dock_mem, dock_uregs, dock_sregs, dock_ints, dock_map, dock_brk, dock_watch}) {
+	for (QDockWidget *d : {dock_dasm, dock_mem, dock_uregs, dock_sregs, dock_ints, dock_map, dock_brk, dock_watch, dock_stack}) {
 		d->setFloating(false);
 		d->show();
 	}
@@ -349,6 +357,9 @@ void MainWindow::apply_default_layout()
 	resizeDocks({dock_brk}, {1}, Qt::Vertical);
 	// memory is the focus of the bottom row; give watches a moderate slice beside it
 	resizeDocks({dock_mem, dock_watch}, {2, 1}, Qt::Horizontal);
+
+	// show interrupts as the front tab of the interrupts/stack pair
+	dock_ints->raise();
 
 	sync_debugger_action();
 }
@@ -361,7 +372,8 @@ void MainWindow::sync_debugger_action()
 	bool any = !dock_dasm->isHidden() || !dock_mem->isHidden()
 		|| !dock_uregs->isHidden() || !dock_sregs->isHidden()
 		|| !dock_ints->isHidden() || !dock_map->isHidden()
-		|| !dock_brk->isHidden() || !dock_watch->isHidden();
+		|| !dock_brk->isHidden() || !dock_watch->isHidden()
+		|| !dock_stack->isHidden();
 	QSignalBlocker block(ui->actionDebugger);
 	ui->actionDebugger->setChecked(any);
 }
@@ -464,6 +476,7 @@ void MainWindow::slot_debugger_enabled_changed(bool state)
 	dock_map->setVisible(state);
 	dock_brk->setVisible(state);
 	dock_watch->setVisible(state);
+	dock_stack->setVisible(state);
 	//ui->statusbar->setVisible(state);
 	for (int i=0 ; i<10 ; i++) qApp->processEvents(); // StackOverflow, I don't even...
 	adjustSize();

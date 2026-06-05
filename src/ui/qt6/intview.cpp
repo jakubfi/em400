@@ -44,7 +44,7 @@ const RowDesc row_desc[] = {
 
 const char *abbr[32] = {
 	"POW", "PAR", "SEG", "CPUH", "POWIF",
-	"TM", "ILL", "DO", "FPUF", "FPOF", "FPE", "SPEC",
+	"CLK", "ILL", "DO", "FPUF", "FPOF", "FPE", "SPCL",
 	"0", "1", "2", "3", "4", "5", "6", "7",
 	"8", "9", "A", "B", "C", "D", "E", "F",
 	"OPRQ", "CPUL", "SH", "SL",
@@ -52,9 +52,9 @@ const char *abbr[32] = {
 
 const char *full[32] = {
 	"CPU power loss", "memory parity error", "no memory", "other CPU (high)",
-	"interface power loss", "timer or special", "illegal instruction",
+	"interface power loss", "clock / special (MX-16)", "illegal instruction",
 	"division overflow", "FP underflow", "FP overflow", "FP error / div by zero",
-	"special or timer",
+	"special / clock (MX-16)",
 	"", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "",
 	"operator request", "other CPU (low)", "software (high)", "software (low)",
 };
