@@ -353,8 +353,8 @@ int cpu_init(struct em400_cfg_cpu *c_cpu, struct em400_cfg_buzzer *c_buzzer)
 			sound_enabled = false;
 		} else {
 			if (buzzer_init(c_buzzer) != E_OK) {
-				LOGERR("Failed to initialize buzzer.");
-				goto fail;
+				LOGERR("WARNING: could not initialize buzzer; continuing without sound.");
+				sound_enabled = false;
 			}
 		}
 	}
