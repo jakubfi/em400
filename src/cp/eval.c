@@ -331,7 +331,14 @@ static int eval_est_eval_op(struct eval_est * n)
 		case '-': return (uint16_t) (v1 - v2);
 		case '+': return (uint16_t) (v1 + v2);
 		case '*': return (uint16_t) (v1 * v2);
-		case '/': return (uint16_t) (v1 / v2);
+		case '/':
+			// guard the divide: v1/v2 with v2==0 raises SIGFPE and would take
+			// the whole emulator down (this runs on the CPU thread for every
+			// breakpoint eval, and on the UI thread for eval/watches)
+			if (v2 == 0) {
+				return __esterr(n, "Division by zero");
+			}
+			return (uint16_t) (v1 / v2);
 		case '|': return (uint16_t) (v1 | v2);
 		case '&': return (uint16_t) (v1 & v2);
 		case '^': return (uint16_t) (v1 ^ v2);
