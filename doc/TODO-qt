@@ -1,92 +1,35 @@
-Features present in the old, curses ui and their state in qt ui:
+Awaiting implementation:
 
-View:
+ * memview: search
+ * translations
+ * keyboard shortcuts
+ * setting IC from dasm view
+ * adding breakpoint from dasm view
+ * configuration
+ * hardware profiles
 
-* (PORTED) memory view
-  * (DONE) hex+ascii contents (fixed in curses UI)
-  * (ADDED) no switching hex/dec/oct
-  * (ADDED) non-scrollable
-  * (ADDED for numbers) no editing
-* (PORTED) user registers
-  * (DONE) hex/oct/dec/bin
-  * (DONE - status bar) flags bits (for R0)
-* (PORTED) system registers
-  * (DONE - bin split not needed) IR hex/bin opcode split
-  * (DONE - Q/BS/NB decoded in status bar, mask in interrupts view) SR hex/bin contents "decoded"
-  * (DONE - interrupts/mask view) RZ hex/bin contents "decoded"
-  * (DONE - dasm bar) P
-  * (DONE) IC, AC, AR
-  * (DONE - flag in statusbar MC flag
-  * (DONE - bar) MC counter
-* (PORTED) dasm view
-  * (DONE) address + disassembly
-  * (DONE) IC location
-  * (DONE) skip flag indicated
-  * (DONE) IC somewhere in the middle of the view for better code context
-* (ADDED) breakpoint view
-* stack view
-* (DONE) watches view
-* (DROP for now, resurrect only if something genuinely can't be easily done
-  with the current UI) commandline?
-* (PORTED) bottom bar:
-  * (DONE) cpu state
-  * (DONE) speed IPS
+Requires more emu work:
 
-Commands:
+ * MODE/STEP
+ * STOP*N
+ * LEDs PWM
 
-* (DONE: window, menu) quit: Quit the emulator
-* (DONE, CYCLE on the panel, add shortuct key?) cycle: Execute one instruction at IC
-* (TODO: [?] for non-obvious widgets?) help: Print help
-* (PORTED, UI) regs: Show user registers
-* (PORTED, UI) sregs: Show system registers
-* (PORTED, PANEL) clear: CPU clear (reset)
-* (PORTED, UI) dasm: Disassembler
-* (PORTED, UI) mem: Show memory contents
-* (PORTED, PANEL) binload: Initiate binary load
-* (TODO: menu) load: Load memory image from file
-* (DONE: widget) memcfg: Show memory configuration
-* (TODO: memory widget 'save'? menu?) memdump: Dump memory contents into a file
-* (DONE) brk: Manipulate breakpoints
-* (PORTED, PANEL) start: Start emulation
-* (PORTED, PANEL) stop: Stop emulation
-* (DONE) stk: Show stack
-* (TODO: configuration, bar at the bottom? widget?) log: Manipulate logging
-* (DONE) watch: Manipulate expression watches
-* (DROPPED) decode: Decode memory structures
-* (TODO: memory view) find: Search memory for a value
+To investigate, open questions:
 
+ * symbols (loading, saving, in-dasm usage)
+ * log manipulation (where? config? widget? additional bottom bar?)
+ * save memory: menu? memview?
+ * load OS block?
+ * power on/off - behavior? configuration?
+ * background sound
+ * help? (?) on more widgets?
+ * details on mouseover? (dec/hex/oct/bin/field decodes) - sr, r0, rz, memview
+ * delegating error display to the UI? only startup errors?
+ * delegating logs to the UI? own logview?
 
-GENERAL UI:
-	(DONE: QSettings) where to store own configuration?
-	configuration
-	shortcuts
-	(DONE) color schemes (own/system)
-	power on/off?
-	background sound? configurable?
-CP:
-	STEP/MODE
-	STOPN
-REG VIEW:
-	dec/int/bin on mouseover
-	sr: q/nb/bs/rm on mouseover
-	r0: flags on mouseover
-	rz: ints on mouseover
-DASM VIEW:
-	setting breakpoints from dasm view
-	setting IC from dasm view
-	minimal syntax highlight
-	marking position(-s)?
-MEM VIEW:
-	(DONE) editing memory contents
-	dec/int/bin on mouseover
-STATUS BAR:
-	(DONE, own widget) int/int mask display in the status bar
-OTHER:
-	(DONE) breakpoints view
-	(DONE) memory configuration view
-	(DONE) watches?
-	(DONE) stack?
-	delegating error display to the UI?
-	delegating logs to the UI? own logview?
-	translation
-	micro-panel?
+Potential, for the future:
+
+ * commandline - only if it proves genuinely superior to using existing UI elements
+ * micro-panel
+ * dasm syntax highlight
+
