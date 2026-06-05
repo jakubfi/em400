@@ -47,6 +47,13 @@ struct ui_cmd_data {
 
 enum ui_cmd_type { UI_CMD_STDIO, UI_CMD_TCP };
 
+// accumulates raw input and splits it into newline-terminated command lines
+struct line_buf {
+	char buf[BUF_MAX+2]; // +1 for '\0' and +1 for flex' '\0'
+	int len;             // bytes of a not-yet-terminated line held in buf
+	int overflow;        // current line overran buf; discard until next '\n'
+};
+
 void ui_cmd_destroy(void *data);
 
 // -----------------------------------------------------------------------
@@ -153,72 +160,98 @@ static bool ui_cmd_process(char *user_input, FILE *out)
 }
 
 // -----------------------------------------------------------------------
+// Split a freshly-read chunk of `chunk_len` bytes (already stored at
+// lb->buf + lb->len) into newline-terminated command lines and dispatch each.
+// Any trailing bytes without a '\n' are kept for the next call. Returns true
+// if a command asked the UI to quit.
+static bool ui_cmd_feed(struct line_buf *lb, int chunk_len, FILE *out)
+{
+	int end = lb->len + chunk_len;
+	int line_start = 0;
+	bool quit = false;
+
+	for (int i = lb->len; i < end; i++) {
+		if (lb->buf[i] != '\n') continue;
+		lb->buf[i] = '\0';
+		// the line that just ended had overrun the buffer earlier
+		if (lb->overflow) {
+			ui_cmd_resp(out, RESP_ERR, UI_EOL, "Input too long (>%i bytes), command ignored", BUF_MAX);
+			lb->overflow = 0;
+		} else {
+			quit = ui_cmd_process(lb->buf + line_start, out);
+		}
+		fflush(out);
+		line_start = i + 1;
+		if (quit) break;
+	}
+
+	// keep any trailing partial line for the next read()
+	lb->len = end - line_start;
+	if (lb->len > 0 && line_start > 0) {
+		memmove(lb->buf, lb->buf + line_start, lb->len);
+	}
+
+	// a partial line filled the whole buffer with no '\n': drop it and flag,
+	// so the remainder of the line is ignored up to the next '\n'
+	if (lb->len >= BUF_MAX) {
+		lb->len = 0;
+		lb->overflow = 1;
+	}
+
+	return quit;
+}
+
+// -----------------------------------------------------------------------
+// Accept one TCP connection and set up fd_in / out. Returns false on failure.
+static bool ui_cmd_accept(struct ui_cmd_data *ui)
+{
+	socklen_t clilen = sizeof(ui->cliaddr);
+	ui->fd_in = accept(ui->listenfd, &ui->cliaddr, &clilen);
+	if (ui->fd_in < 0) return false;
+	ui->out = fdopen(ui->fd_in, "w");
+	if (!ui->out) {
+		close(ui->fd_in);
+		ui->fd_in = -1;
+		return false;
+	}
+	return true;
+}
+
+// -----------------------------------------------------------------------
+// Run the command loop on a single connected fd until EOF, error, or quit.
+static void ui_cmd_session(struct ui_cmd_data *ui)
+{
+	struct line_buf lb = {0};
+
+	while (!ui->quit) {
+		int read_res = read(ui->fd_in, lb.buf + lb.len, BUF_MAX - lb.len);
+		if (read_res <= 0) break; // EOF or error
+		ui->quit = ui_cmd_feed(&lb, read_res, ui->out);
+	}
+}
+
+// -----------------------------------------------------------------------
 void ui_cmd_loop(void *data)
 {
 	struct ui_cmd_data *ui = (struct ui_cmd_data *) data;
 
-	char buf[BUF_MAX+2]; // +1 for '\0' and +1 for flex' '\0'
-	int recvd = 0;
-	int input_invalid = 0;
-
 	while (!ui->quit) {
-
-		if (ui->type == UI_CMD_TCP) {
-			// accept connection
-			socklen_t clilen = sizeof(ui->cliaddr);
-			ui->fd_in = accept(ui->listenfd, &ui->cliaddr, &clilen);
-			if (ui->fd_in < 0) continue;
-			ui->out = fdopen(ui->fd_in, "w");
-			if (!ui->out) {
-				close(ui->fd_in);
-				continue;
-			}
+		if (ui->type == UI_CMD_TCP && !ui_cmd_accept(ui)) {
+			continue;
 		}
 
-		while (!ui->quit) {
+		ui_cmd_session(ui);
 
-			// buffer overflow
-			if (recvd >= BUF_MAX) {
-				recvd = 0;
-				input_invalid = 1;
-			// collect input
-			} else {
-				int read_res = read(ui->fd_in, buf+recvd, BUF_MAX-recvd);
-				if (read_res > 0) {
-					// input not done yet
-					if (*(buf+recvd+read_res-1) != '\n') {
-						recvd += read_res;
-					// input done
-					} else {
-						// there was a buffer overflow in the meantime
-						if (input_invalid) {
-							ui_cmd_resp(ui->out, RESP_ERR, UI_EOL, "Input too long (>%i bytes), command ignored", BUF_MAX);
-							fflush(ui->out);
-							input_invalid = 0;
-						// valid input
-						} else {
-							*(buf+recvd+read_res-1) = '\0';
-							recvd = 0;
-							ui->quit = ui_cmd_process(buf, ui->out);
-							fflush(ui->out);
-						}
-					}
-				// EOF
-				} else {
-					recvd = 0;
-					if (ui->out) {
-						fclose(ui->out);
-						ui->out = NULL;
-					}
-					ui->fd_in = -1;
-					// stdin can't be reopened, so end the UI loop; for TCP the
-					// outer loop goes back to accept() the next connection
-					if (ui->type == UI_CMD_STDIO) {
-						ui->quit = 1;
-					}
-					break;
-				}
-			}
+		// connection ended: tear it down
+		if (ui->out) {
+			fclose(ui->out);
+			ui->out = NULL;
+		}
+		ui->fd_in = -1;
+		// stdin can't be reopened, so end the UI loop; for TCP the outer
+		// loop goes back to accept() the next connection
+		if (ui->type == UI_CMD_STDIO) {
+			ui->quit = 1;
 		}
 	}
 }
