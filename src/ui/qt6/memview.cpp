@@ -75,11 +75,9 @@ MemView::MemView(QWidget *parent) : QWidget(parent)
 	connect(scroll, &QScrollBar::valueChanged, this, &MemView::update_contents_no_nb);
 
 	connect(nb_spin, QOverload<int>::of(&QSpinBox::valueChanged), this, [this](int nb) {
-		if (!cpu_running) {
-			cancel_edit();
-			cnb = nb;
-			update();
-		}
+		cancel_edit();
+		cnb = nb;
+		update();
 	});
 
 	connect(btn_hex,  &QPushButton::clicked, this, [this]() { set_format(FMT_HEX); });
@@ -104,34 +102,20 @@ void MemView::connect_emu(EmuModel *emu)
 // -----------------------------------------------------------------------
 void MemView::slot_state_changed(int state)
 {
+	// The displayed block is the user's choice; we don't auto-follow the CPU's
+	// current NB. Editing live memory while the CPU runs would be racy, so we
+	// only abandon an in-progress edit on entering RUN.
 	cpu_running = (state == EM400_STATE_RUN);
 	if (cpu_running) {
 		cancel_edit();
-		int qnb = e->get_qnb();
-		if (qnb != cnb) {
-			cnb = qnb;
-			QSignalBlocker blk(nb_spin);
-			nb_spin->setValue(cnb);
-		}
 	}
-	nb_spin->setReadOnly(cpu_running);
-	nb_spin->setButtonSymbols(cpu_running
-		? QAbstractSpinBox::NoButtons
-		: QAbstractSpinBox::UpDownArrows);
 	update();
 }
 
 // -----------------------------------------------------------------------
-void MemView::slot_reg_changed(int reg, uint16_t)
+void MemView::slot_reg_changed(int, uint16_t)
 {
-	if (cpu_running && reg == EM400_REG_SR) {
-		int qnb = e->get_qnb();
-		if (qnb != cnb) {
-			cnb = qnb;
-			QSignalBlocker blk(nb_spin);
-			nb_spin->setValue(cnb);
-		}
-	}
+	// Repaint so the selected block shows live values as memory changes.
 	update();
 }
 
