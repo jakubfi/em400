@@ -81,8 +81,8 @@ static int __setup_tcp(struct ui_cmd_data *ui)
 	ui->type = UI_CMD_TCP;
 
 	ui->listenfd = socket(AF_INET, SOCK_STREAM, 0);
-   	if (!ui->listenfd) {
-	   	return 1;
+	if (ui->listenfd < 0) {
+		return 1;
 	}
 
 #ifdef _WIN32
@@ -90,24 +90,24 @@ static int __setup_tcp(struct ui_cmd_data *ui)
 #else
 	int on = 1;
 #endif
-   	res = setsockopt(ui->listenfd, SOL_SOCKET, SO_REUSEADDR, &on, sizeof(on));
+	res = setsockopt(ui->listenfd, SOL_SOCKET, SO_REUSEADDR, &on, sizeof(on));
 	if (res < 0) {
-   		return 1;
+		return 1;
 	}
 
 	struct sockaddr_in servaddr;
-   	servaddr.sin_family = AF_INET;
+	servaddr.sin_family = AF_INET;
 	servaddr.sin_addr.s_addr = htonl(INADDR_LOOPBACK);
-   	servaddr.sin_port = htons(ui->tcp_port);
+	servaddr.sin_port = htons(ui->tcp_port);
 
 	res = bind(ui->listenfd, (struct sockaddr*) &servaddr, sizeof(servaddr));
-   	if (res < 0) {
-	   	return 1;
+	if (res < 0) {
+		return 1;
 	}
 
 	res = listen(ui->listenfd, 16);
-		if (res < 0) {
-   		return 1;
+	if (res < 0) {
+		return 1;
 	}
 
 	return 0;
@@ -270,7 +270,7 @@ void ui_cmd_destroy(void *data)
 
 	if (!ui) return;
 
-	if (ui->listenfd > 0) {
+	if (ui->listenfd >= 0) {
 		close(ui->listenfd);
 	}
 	if (ui->out) {

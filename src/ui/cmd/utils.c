@@ -25,7 +25,7 @@
 // -----------------------------------------------------------------------
 char * ui_cmd_skip_ws(char *input)
 {
-	while (input && isspace(*input)) {
+	while (input && isspace((unsigned char) *input)) {
 		input++;
 	}
 
@@ -35,7 +35,7 @@ char * ui_cmd_skip_ws(char *input)
 // -----------------------------------------------------------------------
 char * ui_cmd_find_ws(char *input)
 {
-	while (input && *input && !isspace(*input)) {
+	while (input && *input && !isspace((unsigned char) *input)) {
 		input++;
 	}
 	if (!*input) {
@@ -48,10 +48,10 @@ char * ui_cmd_find_ws(char *input)
 // -----------------------------------------------------------------------
 char * ui_cmd_remove_trailing_ws(char *input)
 {
-	if (!input) return NULL;
+	if (!input || !*input) return input;
 
 	char *input_end = input + strlen(input)-1;
-	while (input_end && isspace(*input_end)) {
+	while ((input_end >= input) && isspace((unsigned char) *input_end)) {
 		*input_end = '\0';
 		input_end--;
 	}

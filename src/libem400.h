@@ -222,7 +222,8 @@ int em400_int_mask_bit(unsigned interrupt);
 bool em400_mem_read(int seg, uint16_t addr, uint16_t *dest, unsigned count);
 bool em400_mem_write(int seg, uint16_t addr, uint16_t *src, unsigned count);
 int em400_mem_map(int seg);
-bool em400_load_os_image(FILE *f);
+// returns the number of words loaded, or 0 on failure
+int em400_load_os_image(FILE *f);
 
 unsigned long em400_ips_get();
 const char * em400_cpu_state_name(unsigned state);

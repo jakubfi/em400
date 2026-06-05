@@ -295,27 +295,34 @@ void ui_cmd_mem(FILE *out, char *args)
 	}
 
 	uint16_t *mbuf = (uint16_t *) malloc(count * sizeof(uint16_t));
+	if (!mbuf) {
+		ui_cmd_resp(out, RESP_ERR, UI_EOL, "Out of memory");
+		return;
+	}
 	int processed = 0;
 
 	ui_cmd_resp(out, RESP_OK, UI_NOEOL, "");
 
 	while (processed < count) {
-		int words = count - processed;
-		if (!em400_mem_read(seg, addr+processed, mbuf, words)) {
-			ui_cmd_resp(out, RESP_ERR, UI_EOL, "Memory read failed");
-			return;
+		int cur_addr = (addr + processed) & 0xffff;
+		// cap each read at the end of the current 4K page, so an unmapped
+		// page produces a "?" gap instead of aborting the whole read
+		int words = 0x1000 - (cur_addr & 0x0fff);
+		if (words > count - processed) {
+			words = count - processed;
 		}
-		for (int i=0 ; i<words ; i++) {
-			fprintf(out, " 0x%04x", mbuf[i]);
+		if (em400_mem_read(seg, cur_addr, mbuf, words)) {
+			for (int i=0 ; i<words ; i++) {
+				fprintf(out, " 0x%04x", mbuf[i]);
+			}
+		} else {
+			fprintf(out, " ?");
 		}
 		processed += words;
-		if (processed != count) {
-			fprintf(out, " ?");
-			processed += 0b0001000000000000 - ((addr+processed) & 0b0000111111111111);
-		}
 	}
 
 	fprintf(out, "\n");
+	free(mbuf);
 }
 
 // -----------------------------------------------------------------------
@@ -353,6 +360,10 @@ void ui_cmd_memw(FILE *out, char *args)
 				ui_cmd_resp(out, RESP_ERR, UI_EOL, "Value on position %i is not a valid 16-bit integer: %i", processed, val);
 				return;
 			}
+			if (processed >= 0x10000) {
+				ui_cmd_resp(out, RESP_ERR, UI_EOL, "Value count exceeds segment size (65536 words)");
+				return;
+			}
 			mbuf[processed] = val;
 			processed++;
 		}
@@ -360,11 +371,6 @@ void ui_cmd_memw(FILE *out, char *args)
 
 	if (processed < 1) {
 		ui_cmd_resp(out, RESP_ERR, UI_EOL, "Missing argument (value)");
-		return;
-	}
-
-	if (processed > 65536) {
-		ui_cmd_resp(out, RESP_ERR, UI_EOL, "Value count exceeds segment size (65536 words)");
 		return;
 	}
 
@@ -414,11 +420,11 @@ void ui_cmd_load(FILE *out, char *args)
 		return;
 	}
 
-	bool res = em400_load_os_image(f);
-	if (!res) {
+	int words = em400_load_os_image(f);
+	if (!words) {
 		ui_cmd_resp(out, RESP_ERR, UI_EOL, "File upload failed: %s", tok_file);
 	} else {
-		ui_cmd_resp(out, RESP_OK, UI_EOL, "%i words loaded from file %s", res, tok_file);
+		ui_cmd_resp(out, RESP_OK, UI_EOL, "%i words loaded from file %s", words, tok_file);
 	}
 
 	fclose(f);

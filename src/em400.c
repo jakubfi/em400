@@ -198,12 +198,12 @@ int em400_preload_program(const char *program_name)
 		return LOGERR("Failed to open program file: %s", program_name);
 	}
 
-	bool res = em400_load_os_image(f);
+	int words = em400_load_os_image(f);
 	fclose(f);
-	if (!res) {
+	if (!words) {
 		return LOGERR("Failed to preload program file: %s", program_name);
 	} else {
-		LOG(L_EM4H, "OS memory block preloaded with: %s (%i words)", program_name, res);
+		LOG(L_EM4H, "OS memory block preloaded with: %s (%i words)", program_name, words);
 	}
 
 	return E_OK;

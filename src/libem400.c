@@ -484,20 +484,20 @@ int em400_mem_map(int seg)
 }
 
 // -----------------------------------------------------------------------
-bool em400_load_os_image(FILE *f)
+int em400_load_os_image(FILE *f)
 {
 	uint16_t buf[0x2000];
 
 	int words_read = fread(buf, sizeof(uint16_t), 0x2000, f);
 	if (words_read <= 0) {
-		return false;
+		return 0;
 	}
 	endianswap(buf, words_read);
 	if (!mem_write_n(0, 0, buf, words_read)) {
-		return false;
+		return 0;
 	}
 
-	return true;
+	return words_read;
 }
 
 // -----------------------------------------------------------------------
