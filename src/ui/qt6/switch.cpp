@@ -90,3 +90,5 @@ void Switch::set(bool state)
 	this->state = state;
 	update();
 }
+
+// vim: tabstop=4 shiftwidth=4 autoindent

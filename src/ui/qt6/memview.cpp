@@ -765,3 +765,5 @@ void MemView::leaveEvent(QEvent *event)
 	scroll->setVisible(false);
 	QWidget::leaveEvent(event);
 }
+
+// vim: tabstop=4 shiftwidth=4 autoindent

@@ -240,3 +240,5 @@ void RegCompact::slot_reg_changed(int reg, uint16_t val)
 		return;
 	}
 }
+
+// vim: tabstop=4 shiftwidth=4 autoindent

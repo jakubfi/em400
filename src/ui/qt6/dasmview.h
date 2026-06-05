@@ -67,3 +67,5 @@ protected:
 };
 
 #endif // DASMVIEW_H
+
+// vim: tabstop=4 shiftwidth=4 autoindent

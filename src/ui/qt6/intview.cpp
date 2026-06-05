@@ -307,3 +307,5 @@ void IntView::slot_reg_changed(int reg, uint16_t val)
 	for (int n=0 ; n<32 ; n++) render_cell(n);
 	for (MaskBox *b : boxes) render_box(b);
 }
+
+// vim: tabstop=4 shiftwidth=4 autoindent

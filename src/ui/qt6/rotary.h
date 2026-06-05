@@ -44,3 +44,5 @@ signals:
 };
 
 #endif // ROTARY_H
+
+// vim: tabstop=4 shiftwidth=4 autoindent

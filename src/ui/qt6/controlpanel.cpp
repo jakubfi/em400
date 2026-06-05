@@ -291,3 +291,5 @@ void ControlPanel::dim(float val)
 {
 	for (int i=0 ; i<16 ; i++) led[i]->dim(val);
 }
+
+// vim: tabstop=4 shiftwidth=4 autoindent

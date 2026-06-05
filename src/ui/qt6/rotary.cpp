@@ -211,3 +211,5 @@ void Rotary::set_position(int pos)
 	emit signal_rotated(position);
 	update();
 }
+
+// vim: tabstop=4 shiftwidth=4 autoindent

@@ -64,3 +64,5 @@ void LED::dim(bool state)
 		dim_off = 0.0f;
 	}
 }
+
+// vim: tabstop=4 shiftwidth=4 autoindent

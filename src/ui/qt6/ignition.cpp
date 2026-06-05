@@ -172,3 +172,5 @@ void Ignition::leaveEvent(QEvent *event)
 	can_interact_outer = false;
 	QGuiApplication::restoreOverrideCursor();
 }
+
+// vim: tabstop=4 shiftwidth=4 autoindent
