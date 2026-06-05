@@ -26,6 +26,7 @@
 #include "io/chan.h"
 #include "cp/cp.h"
 #include "cp/brk.h"
+#include "cp/eval.h"
 #include "utils/utils.h"
 #include "log.h"
 #include "io/dev/terminal.h"
@@ -569,6 +570,21 @@ void em400_brk_foreach(em400_brk_cb cb, void *ctx)
 int em400_brk_hit()
 {
 	return brk_hit_get();
+}
+
+// -----------------------------------------------------------------------
+// --- EXPRESSION EVALUATION ---------------------------------------------
+// -----------------------------------------------------------------------
+
+// -----------------------------------------------------------------------
+int em400_eval(char *expr, int *result, char **err_msg, int *err_beg, int *err_end)
+{
+	int res = eval_str_eval(expr, err_msg, err_beg, err_end);
+	if (res < 0) {
+		return -1;
+	}
+	*result = res;
+	return 0;
 }
 
 // vim: tabstop=4 shiftwidth=4 autoindent

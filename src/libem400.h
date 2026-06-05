@@ -241,6 +241,15 @@ int em400_brk_eval(unsigned id, int *result, char **err_msg, int *err_beg, int *
 void em400_brk_foreach(em400_brk_cb cb, void *ctx);
 int em400_brk_hit();
 
+// -----------------------------------------------------------------------
+// --- EXPRESSION EVALUATION ---------------------------------------------
+// -----------------------------------------------------------------------
+
+// Evaluate a one-shot expression (same syntax as breakpoints/watches). On
+// success returns 0 and stores the value in *result; on a parse or eval error
+// returns -1 and sets *err_msg (caller frees) plus the *err_beg/*err_end span.
+int em400_eval(char *expr, int *result, char **err_msg, int *err_beg, int *err_end);
+
 #ifdef __cplusplus
 }
 #endif

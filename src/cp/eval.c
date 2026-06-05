@@ -36,7 +36,12 @@ int eval_yyparse(struct eval_est **tree);
 YY_BUFFER_STATE eval_yy_scan_string(char *input);
 void eval_yy_delete_buffer(YY_BUFFER_STATE b);
 
-struct eval_est *eval_eval_err;
+// Last node that failed during eval_est_eval(), used by eval_str_eval() to
+// report the message. Thread-local: the evaluator runs on both the CPU thread
+// (brk_check on the live breakpoint tree) and the UI thread (brk/watch/eval on
+// fresh-parsed trees), and no tree is shared between threads, so a per-thread
+// slot keeps the two from clobbering each other's error.
+static thread_local struct eval_est *eval_eval_err;
 
 // -----------------------------------------------------------------------
 // --- NODES, CREATION ---------------------------------------------------
@@ -397,6 +402,10 @@ int eval_str_eval(char *str, char **err_msg, int *err_beg, int *err_end)
 		goto fin;
 	}
 
+	// clear any stale pointer from a previous eval on this thread: that node
+	// belongs to an already-freed tree, so it must not be read if this eval
+	// returns -1 without setting it
+	eval_eval_err = NULL;
 	res = eval_est_eval(tree);
 	if (res < 0) {
 		if (eval_eval_err) {
