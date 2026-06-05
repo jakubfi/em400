@@ -250,6 +250,22 @@ int em400_brk_hit();
 // returns -1 and sets *err_msg (caller frees) plus the *err_beg/*err_end span.
 int em400_eval(char *expr, int *result, char **err_msg, int *err_beg, int *err_end);
 
+// -----------------------------------------------------------------------
+// --- WATCHES -----------------------------------------------------------
+// -----------------------------------------------------------------------
+
+// Watches are stored expressions inspected while the machine is stopped. They
+// are a UI-thread-only facility (never evaluated on the CPU thread), so all of
+// these must be called from the UI thread.
+
+typedef void (*em400_watch_cb)(unsigned id, const char *expr, void *ctx);
+
+int em400_watch_add(char *expr, char **err_msg, int *err_beg, int *err_end);
+int em400_watch_delete(unsigned id);
+int em400_watch_edit(unsigned id, char *expr, char **err_msg, int *err_beg, int *err_end);
+int em400_watch_eval(unsigned id, int *result, char **err_msg, int *err_beg, int *err_end);
+void em400_watch_foreach(em400_watch_cb cb, void *ctx);
+
 #ifdef __cplusplus
 }
 #endif

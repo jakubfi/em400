@@ -27,6 +27,7 @@
 #include "cp/cp.h"
 #include "cp/brk.h"
 #include "cp/eval.h"
+#include "cp/watch.h"
 #include "utils/utils.h"
 #include "log.h"
 #include "io/dev/terminal.h"
@@ -93,6 +94,7 @@ void em400_shutdown()
 	// it cannot free breakpoints while brk_check() is still traversing them
 	cpu_shutdown();
 	brk_del_all();
+	watch_del_all();
 	mem_shutdown();
 }
 
@@ -585,6 +587,40 @@ int em400_eval(char *expr, int *result, char **err_msg, int *err_beg, int *err_e
 	}
 	*result = res;
 	return 0;
+}
+
+// -----------------------------------------------------------------------
+// --- WATCHES -----------------------------------------------------------
+// -----------------------------------------------------------------------
+
+// -----------------------------------------------------------------------
+int em400_watch_add(char *expr, char **err_msg, int *err_beg, int *err_end)
+{
+	return watch_add(expr, err_msg, err_beg, err_end);
+}
+
+// -----------------------------------------------------------------------
+int em400_watch_delete(unsigned id)
+{
+	return watch_delete(id);
+}
+
+// -----------------------------------------------------------------------
+int em400_watch_edit(unsigned id, char *expr, char **err_msg, int *err_beg, int *err_end)
+{
+	return watch_edit(id, expr, err_msg, err_beg, err_end);
+}
+
+// -----------------------------------------------------------------------
+int em400_watch_eval(unsigned id, int *result, char **err_msg, int *err_beg, int *err_end)
+{
+	return watch_eval(id, result, err_msg, err_beg, err_end);
+}
+
+// -----------------------------------------------------------------------
+void em400_watch_foreach(em400_watch_cb cb, void *ctx)
+{
+	watch_foreach(cb, ctx);
 }
 
 // vim: tabstop=4 shiftwidth=4 autoindent
