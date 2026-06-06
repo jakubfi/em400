@@ -11,7 +11,6 @@
 #include "mainwindow.h"
 #include "ui_mainwindow.h"
 #include "emdas.h"
-#include "switch.h"
 #include "theme.h"
 
 // -----------------------------------------------------------------------
@@ -187,20 +186,20 @@ MainWindow::MainWindow(QWidget *parent) :
 	// EmuModel -> ControlPanel
 	connect(&e, &EmuModel::signal_state_changed, ui->cp, &ControlPanel::slot_state_changed);
 	connect(&e, &EmuModel::signal_bus_w_changed, ui->cp->wleds, &BusWLeds::slot_set_value);
-	connect(&e, &EmuModel::signal_alarm_changed, ui->cp->led[LED_ALARM], &LED::slot_change);
-	connect(&e, &EmuModel::signal_p_changed, ui->cp->led[LED_P], &LED::slot_change);
-	connect(&e, &EmuModel::signal_clock_changed, ui->cp->led[LED_CLOCK], &LED::slot_change);
+	connect(&e, &EmuModel::signal_alarm_changed, ui->cp, &ControlPanel::slot_set_alarm);
+	connect(&e, &EmuModel::signal_p_changed, ui->cp, &ControlPanel::slot_set_p);
+	connect(&e, &EmuModel::signal_clock_changed, ui->cp, &ControlPanel::slot_set_clock);
 
 	// ControlPanel -> EmuModel
-	connect(ui->cp->sw[SW_START], &Switch::signal_toggled, &e, &EmuModel::slot_cpu_start);
-	connect(ui->cp->sw[SW_CLEAR], &Switch::signal_clicked, &e, &EmuModel::slot_clear);
-	connect(ui->cp->sw[SW_OPRQ],  &Switch::signal_clicked, &e, &EmuModel::slot_oprq);
-	connect(ui->cp->sw[SW_CYCLE], &Switch::signal_clicked, &e, &EmuModel::slot_cycle);
-	connect(ui->cp->sw[SW_LOAD], &Switch::signal_clicked, &e, &EmuModel::slot_load);
-	connect(ui->cp->sw[SW_FETCH], &Switch::signal_clicked, &e, &EmuModel::slot_fetch);
-	connect(ui->cp->sw[SW_STORE], &Switch::signal_clicked, &e, &EmuModel::slot_store);
-	connect(ui->cp->sw[SW_BIN], &Switch::signal_clicked, &e, &EmuModel::slot_bin);
-	connect(ui->cp->sw[SW_CLOCK], &Switch::signal_toggled, &e, &EmuModel::slot_clock_enabled);
+	connect(ui->cp, &ControlPanel::signal_start_toggled, &e, &EmuModel::slot_cpu_start);
+	connect(ui->cp, &ControlPanel::signal_clear_clicked, &e, &EmuModel::slot_clear);
+	connect(ui->cp, &ControlPanel::signal_oprq_clicked,  &e, &EmuModel::slot_oprq);
+	connect(ui->cp, &ControlPanel::signal_cycle_clicked, &e, &EmuModel::slot_cycle);
+	connect(ui->cp, &ControlPanel::signal_load_clicked, &e, &EmuModel::slot_load);
+	connect(ui->cp, &ControlPanel::signal_fetch_clicked, &e, &EmuModel::slot_fetch);
+	connect(ui->cp, &ControlPanel::signal_store_clicked, &e, &EmuModel::slot_store);
+	connect(ui->cp, &ControlPanel::signal_bin_clicked, &e, &EmuModel::slot_bin);
+	connect(ui->cp, &ControlPanel::signal_clock_toggled, &e, &EmuModel::slot_clock_enabled);
 	connect(ui->cp->rotary, &Rotary::signal_rotated, &e, &EmuModel::slot_reg_select);
 	connect(ui->cp->keys, &BinaryKeys::signal_value_changed, &e, &EmuModel::set_kb);
 
@@ -258,7 +257,6 @@ MainWindow::MainWindow(QWidget *parent) :
 
 	e.run();
 	ui->cp->rotary->set_position(8);
-	ui->cp->sw[SW_CLOCK]->set(e.get_clock());
 
 	// Restore the user's last layout. On the very first run there is no saved
 	// state, so we start with the control panel only (debugger off) - that is the

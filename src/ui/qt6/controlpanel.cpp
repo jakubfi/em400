@@ -8,6 +8,11 @@
 #include "controlpanel.h"
 #include "libem400.h"
 
+// Internal element indices into sw[] / led[]. Order matches sw_data / led_data
+// below; kept here (not in the header) now that the arrays are private.
+enum sw_lower_id {SW_STEP=0, SW_MODE, SW_STOPN, SW_CYCLE, SW_LOAD, SW_STORE, SW_FETCH, SW_START, SW_BIN, SW_CLEAR, SW_CLOCK, SW_OPRQ};
+enum sw_led_id {LED_MODE=0, LED_STOPN, LED_CLOCK, LED_Q, LED_P, LED_MC, LED_IRQ, LED_RUN, LED_WAIT, LED_ALARM, LED_ON};
+
 static const int led_l_top = 253;
 static const int led_width = 24;
 static const int led_height = 24;
@@ -146,6 +151,23 @@ ControlPanel::ControlPanel(QWidget *parent):
 
 	connect(ignition, &Ignition::signal_power, led[LED_ON], &LED::slot_change);
 
+	// Route the control switches out through the panel's own named signals so
+	// callers talk to the panel's vocabulary instead of reaching into sw[].
+	connect(sw[SW_START], &Switch::signal_toggled, this, &ControlPanel::signal_start_toggled);
+	connect(sw[SW_CLOCK], &Switch::signal_toggled, this, &ControlPanel::signal_clock_toggled);
+	connect(sw[SW_CYCLE], &Switch::signal_clicked, this, &ControlPanel::signal_cycle_clicked);
+	connect(sw[SW_CLEAR], &Switch::signal_clicked, this, &ControlPanel::signal_clear_clicked);
+	connect(sw[SW_OPRQ],  &Switch::signal_clicked, this, &ControlPanel::signal_oprq_clicked);
+	connect(sw[SW_LOAD],  &Switch::signal_clicked, this, &ControlPanel::signal_load_clicked);
+	connect(sw[SW_FETCH], &Switch::signal_clicked, this, &ControlPanel::signal_fetch_clicked);
+	connect(sw[SW_STORE], &Switch::signal_clicked, this, &ControlPanel::signal_store_clicked);
+	connect(sw[SW_BIN],   &Switch::signal_clicked, this, &ControlPanel::signal_bin_clicked);
+	// STEP / STOPN are momentary, MODE latches; not consumed yet but exposed so
+	// they are ready to connect once that machine functionality lands.
+	connect(sw[SW_STEP],  &Switch::signal_clicked, this, &ControlPanel::signal_step_clicked);
+	connect(sw[SW_STOPN], &Switch::signal_clicked, this, &ControlPanel::signal_stopn_clicked);
+	connect(sw[SW_MODE],  &Switch::signal_toggled, this, &ControlPanel::signal_mode_toggled);
+
 	change_dimensions(plane[0].rect());
 	set_volume(100);
 }
@@ -235,6 +257,36 @@ void ControlPanel::slot_state_changed(int state)
 			dim(false);
 			break;
 	}
+}
+
+// -----------------------------------------------------------------------
+void ControlPanel::slot_set_alarm(bool state)
+{
+	led[LED_ALARM]->set(state);
+}
+
+// -----------------------------------------------------------------------
+void ControlPanel::slot_set_p(bool state)
+{
+	led[LED_P]->set(state);
+}
+
+// -----------------------------------------------------------------------
+void ControlPanel::slot_set_clock(bool state)
+{
+	led[LED_CLOCK]->set(state);
+}
+
+// -----------------------------------------------------------------------
+void ControlPanel::slot_set_mode(bool state)
+{
+	led[LED_MODE]->set(state);
+}
+
+// -----------------------------------------------------------------------
+void ControlPanel::slot_set_stopn(bool state)
+{
+	led[LED_STOPN]->set(state);
 }
 
 // -----------------------------------------------------------------------
