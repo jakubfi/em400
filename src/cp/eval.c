@@ -74,54 +74,11 @@ void eval_est_delete(struct eval_est *n)
 }
 
 // -----------------------------------------------------------------------
-struct eval_est * eval_est_val(int16_t v)
+struct eval_est * eval_est_leaf(int type, int16_t val)
 {
 	struct eval_est *n = eval_est_create();
-	n->type = EVAL_AST_N_VAL;
-	n->val = v;
-	return n;
-}
-
-// -----------------------------------------------------------------------
-struct eval_est * eval_est_reg(int r)
-{
-	struct eval_est *n = eval_est_create();
-	n->type = EVAL_AST_N_REG;
-	n->val = r;
-	return n;
-}
-
-// -----------------------------------------------------------------------
-struct eval_est * eval_est_flag(int f)
-{
-	struct eval_est *n = eval_est_create();
-	n->type = EVAL_AST_N_FLAG;
-	n->val = f;
-	return n;
-}
-
-// -----------------------------------------------------------------------
-struct eval_est * eval_est_rz(int bit)
-{
-	struct eval_est *n = eval_est_create();
-	n->type = EVAL_AST_N_RZ;
-	n->val = bit;
-	return n;
-}
-
-// -----------------------------------------------------------------------
-struct eval_est * eval_est_alarm()
-{
-	struct eval_est *n = eval_est_create();
-	n->type = EVAL_AST_N_ALARM;
-	return n;
-}
-
-// -----------------------------------------------------------------------
-struct eval_est * eval_est_mc()
-{
-	struct eval_est *n = eval_est_create();
-	n->type = EVAL_AST_N_MC;
+	n->type = type;
+	n->val = val;
 	return n;
 }
 
@@ -213,6 +170,12 @@ static int eval_est_eval_flag(struct eval_est * n)
 // -----------------------------------------------------------------------
 static int eval_est_eval_rz(struct eval_est * n)
 {
+	return int_get_nchan();
+}
+
+// -----------------------------------------------------------------------
+static int eval_est_eval_rz_bit(struct eval_est * n)
+{
 	if ((n->val < 0) || (n->val > 31)) {
 		return __esterr(n, "Wrong interrupt: %i", n->val);
 	}
@@ -230,6 +193,30 @@ static int eval_est_eval_alarm(struct eval_est * n)
 static int eval_est_eval_mc(struct eval_est * n)
 {
 	return mc;
+}
+
+// -----------------------------------------------------------------------
+static int eval_est_eval_nb(struct eval_est * n)
+{
+	return nb;
+}
+
+// -----------------------------------------------------------------------
+static int eval_est_eval_q(struct eval_est * n)
+{
+	return q;
+}
+
+// -----------------------------------------------------------------------
+static int eval_est_eval_bs(struct eval_est * n)
+{
+	return bs;
+}
+
+// -----------------------------------------------------------------------
+static int eval_est_eval_rm(struct eval_est * n)
+{
+	return rm;
 }
 
 // -----------------------------------------------------------------------
@@ -365,9 +352,14 @@ int eval_est_eval(struct eval_est *n)
 		case EVAL_AST_N_FLAG: return eval_est_eval_flag(n);
 		case EVAL_AST_N_MEM: return eval_est_eval_mem(n);
 		case EVAL_AST_N_RZ: return eval_est_eval_rz(n);
+		case EVAL_AST_N_RZ_BIT: return eval_est_eval_rz_bit(n);
 		case EVAL_AST_N_OP: return eval_est_eval_op(n);
 		case EVAL_AST_N_ALARM: return eval_est_eval_alarm(n);
 		case EVAL_AST_N_MC: return eval_est_eval_mc(n);
+		case EVAL_AST_N_NB: return eval_est_eval_nb(n);
+		case EVAL_AST_N_Q: return eval_est_eval_q(n);
+		case EVAL_AST_N_BS: return eval_est_eval_bs(n);
+		case EVAL_AST_N_RM: return eval_est_eval_rm(n);
 		case EVAL_AST_N_ERR: return -1;
 		default: return -1;
 	}

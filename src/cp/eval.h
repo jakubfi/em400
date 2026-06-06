@@ -28,9 +28,14 @@ enum eval_est_type {
 	EVAL_AST_N_REG,
 	EVAL_AST_N_MEM,
 	EVAL_AST_N_RZ,
+	EVAL_AST_N_RZ_BIT,
 	EVAL_AST_N_ALARM,
 	EVAL_AST_N_MC,
 	EVAL_AST_N_FLAG,
+	EVAL_AST_N_NB,
+	EVAL_AST_N_Q,
+	EVAL_AST_N_BS,
+	EVAL_AST_N_RM,
 };
 
 struct eval_est {
@@ -45,12 +50,7 @@ struct eval_est {
 
 // node creation
 void eval_est_delete(struct eval_est *n);
-struct eval_est * eval_est_val(int16_t v);
-struct eval_est * eval_est_reg(int r);
-struct eval_est * eval_est_flag(int f);
-struct eval_est * eval_est_rz(int bit);
-struct eval_est * eval_est_alarm();
-struct eval_est * eval_est_mc();
+struct eval_est * eval_est_leaf(int type, int16_t val);
 struct eval_est * eval_est_op(int oper, struct eval_est *n1, struct eval_est *n2);
 struct eval_est * eval_est_mem(struct eval_est *n1, struct eval_est *n2);
 struct eval_est * eval_est_err(char *err);

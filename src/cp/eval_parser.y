@@ -47,6 +47,10 @@ extern int eval_yycolumn;
 %token IRZ "RZ"
 %token ALARM "ALARM"
 %token MC "MC"
+%token NB "NB"
+%token Q "Q"
+%token BS "BS"
+%token RM "RM"
 %type <n> expr "expression"
 %token OR "||"
 %token AND "&&"
@@ -86,14 +90,19 @@ statement:
 	;
 
 expr:
-    VALUE					{ $$ = eval_est_val($1); }
-	| ALARM					{ $$ = eval_est_alarm(); }
-	| MC					{ $$ = eval_est_mc(); }
-	| REG					{ $$ = eval_est_reg($1); }
-	| FLAG					{ $$ = eval_est_flag($1); }
-	| '[' expr ']'			{ $$ = eval_est_mem(eval_est_val(-1), $2); }
-	| '[' VALUE ':' expr ']'{ $$ = eval_est_mem(eval_est_val($2), $4); }
-	| IRZ '[' VALUE ']'		{ $$ = eval_est_rz($3); }
+    VALUE					{ $$ = eval_est_leaf(EVAL_AST_N_VAL, $1); }
+	| ALARM					{ $$ = eval_est_leaf(EVAL_AST_N_ALARM, 0); }
+	| MC					{ $$ = eval_est_leaf(EVAL_AST_N_MC, 0); }
+	| NB					{ $$ = eval_est_leaf(EVAL_AST_N_NB, 0); }
+	| Q						{ $$ = eval_est_leaf(EVAL_AST_N_Q, 0); }
+	| BS					{ $$ = eval_est_leaf(EVAL_AST_N_BS, 0); }
+	| RM					{ $$ = eval_est_leaf(EVAL_AST_N_RM, 0); }
+	| REG					{ $$ = eval_est_leaf(EVAL_AST_N_REG, $1); }
+	| FLAG					{ $$ = eval_est_leaf(EVAL_AST_N_FLAG, $1); }
+	| '[' expr ']'			{ $$ = eval_est_mem(eval_est_leaf(EVAL_AST_N_VAL, -1), $2); }
+	| '[' VALUE ':' expr ']'{ $$ = eval_est_mem(eval_est_leaf(EVAL_AST_N_VAL, $2), $4); }
+	| IRZ					{ $$ = eval_est_leaf(EVAL_AST_N_RZ, 0); }
+	| IRZ '[' VALUE ']'		{ $$ = eval_est_leaf(EVAL_AST_N_RZ_BIT, $3); }
 	| '-' expr %prec UMINUS	{ $$ = eval_est_op(UMINUS, $2, NULL); }
 	| expr '+' expr			{ $$ = eval_est_op('+', $1, $3); }
 	| expr '-' expr			{ $$ = eval_est_op('-', $1, $3); }

@@ -56,6 +56,10 @@ ac			{ eval_yylval.value = EM400_REG_AC; return REG; }
 kb			{ eval_yylval.value = EM400_REG_KB; return REG; }
 alarm		{ return ALARM; }
 mc			{ return MC; }
+nb			{ return NB; }
+q			{ return Q; }
+bs			{ return BS; }
+rm			{ return RM; }
 [zmvclegyx]	{ eval_yylval.value = *yytext ; return FLAG; }
 rz			{ return IRZ; }
 
