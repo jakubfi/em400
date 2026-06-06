@@ -46,7 +46,7 @@ MemView::MemView(QWidget *parent) : QWidget(parent)
 	hlay->addSpacing(8);
 
 	btn_hex  = make_toggle_btn("HEX",  true);
-	btn_udec = make_toggle_btn("+DEC", false);
+	btn_udec = make_toggle_btn("DEC", false);
 	btn_sdec = make_toggle_btn("-DEC", false);
 	hlay->addWidget(btn_hex);
 	hlay->addWidget(btn_udec);
@@ -80,12 +80,12 @@ MemView::MemView(QWidget *parent) : QWidget(parent)
 		update();
 	});
 
-	connect(btn_hex,  &QPushButton::clicked, this, [this]() { set_format(FMT_HEX); });
+	connect(btn_hex, &QPushButton::clicked, this, [this]() { set_format(FMT_HEX); });
 	connect(btn_udec, &QPushButton::clicked, this, [this]() { set_format(FMT_UDEC); });
 	connect(btn_sdec, &QPushButton::clicked, this, [this]() { set_format(FMT_SDEC); });
 
 	connect(btn_ascii, &QPushButton::clicked, this, [this]() { toggle_panel(PANEL_ASCII); });
-	connect(btn_r40,   &QPushButton::clicked, this, [this]() { toggle_panel(PANEL_R40); });
+	connect(btn_r40, &QPushButton::clicked, this, [this]() { toggle_panel(PANEL_R40); });
 }
 
 // -----------------------------------------------------------------------
@@ -96,7 +96,7 @@ void MemView::connect_emu(EmuModel *emu)
 {
 	e = emu;
 	connect(e, &EmuModel::signal_state_changed, this, &MemView::slot_state_changed);
-	connect(e, &EmuModel::signal_reg_changed,   this, &MemView::slot_reg_changed);
+	connect(e, &EmuModel::signal_reg_changed, this, &MemView::slot_reg_changed);
 }
 
 // -----------------------------------------------------------------------
@@ -123,9 +123,10 @@ void MemView::slot_reg_changed(int, uint16_t)
 int MemView::val_chars() const
 {
 	switch (fmt) {
-		case FMT_HEX:  return 5; // "xxxx "
+		case FMT_HEX: return 5; // "xxxx "
 		case FMT_UDEC: return 6; // "ddddd "
 		case FMT_SDEC: return 7; // "-ddddd "
+		case FMT_OFF: return 0;
 	}
 	return 5;
 }
@@ -134,9 +135,9 @@ int MemView::val_chars() const
 int MemView::panel_chars() const
 {
 	switch (panel) {
-		case PANEL_OFF:   return 0;
+		case PANEL_OFF: return 0;
 		case PANEL_ASCII: return 2;
-		case PANEL_R40:   return 3;
+		case PANEL_R40: return 3;
 	}
 	return 0;
 }
@@ -148,8 +149,13 @@ int MemView::compute_words_per_line() const
 	int avail = right - mem_x_start - scroll_w;
 	if (panel != PANEL_OFF) avail -= font_width; // gap before side panel divider
 	int chars_per_word = val_chars() + panel_chars();
+	if (chars_per_word < 1) return 1;
 	int max_wpl = avail / (chars_per_word * font_width);
 	if (max_wpl < 1) return 1;
+	// Align the line stride to a round hex boundary so addresses stay legible:
+	// a multiple of 0x10 once that many words fit, otherwise the largest power
+	// of two that does (degrading down to 1 on a view too narrow for 16).
+	if (max_wpl >= 16) return (max_wpl / 16) * 16;
 	int wpl = 1;
 	while (wpl * 2 <= max_wpl) wpl *= 2;
 	return wpl;
@@ -188,9 +194,20 @@ void MemView::apply_wpl_change()
 // -----------------------------------------------------------------------
 void MemView::set_format(DisplayFormat f)
 {
-	if (fmt == f) return;
+	// clicking the active format toggles the numeric column off; refuse if that
+	// would leave nothing visible (never let the view go fully blank)
+	DisplayFormat nf = (fmt == f) ? FMT_OFF : f;
+	if (nf == FMT_OFF && panel == PANEL_OFF) {
+		// a checkable button already flipped its own checked state on the click;
+		// restore it so the refused toggle leaves no visible trace
+		btn_hex->setChecked(fmt == FMT_HEX);
+		btn_udec->setChecked(fmt == FMT_UDEC);
+		btn_sdec->setChecked(fmt == FMT_SDEC);
+		return;
+	}
+	if (fmt == nf) return;
 	cancel_edit();
-	fmt = f;
+	fmt = nf;
 	btn_hex->setChecked(fmt == FMT_HEX);
 	btn_udec->setChecked(fmt == FMT_UDEC);
 	btn_sdec->setChecked(fmt == FMT_SDEC);
@@ -201,8 +218,16 @@ void MemView::set_format(DisplayFormat f)
 // -----------------------------------------------------------------------
 void MemView::toggle_panel(SidePanel p)
 {
+	// same invariant as set_format: refuse to turn off the last visible column
+	SidePanel np = (panel == p) ? PANEL_OFF : p;
+	if (np == PANEL_OFF && fmt == FMT_OFF) {
+		// restore the button's checked state, flipped by the click itself
+		btn_ascii->setChecked(panel == PANEL_ASCII);
+		btn_r40->setChecked(panel == PANEL_R40);
+		return;
+	}
 	cancel_edit();
-	panel = (panel == p) ? PANEL_OFF : p;
+	panel = np;
 	btn_ascii->setChecked(panel == PANEL_ASCII);
 	btn_r40->setChecked(panel == PANEL_R40);
 	apply_wpl_change();
@@ -242,7 +267,10 @@ void MemView::update_font_related_dimensions()
 // -----------------------------------------------------------------------
 void MemView::update_scroll_range()
 {
-	const int mem_lines = 0x10000 / words_per_line;
+	// ceil: a words_per_line that doesn't divide 0x10000 (e.g. 48) leaves a
+	// partial final line whose valid words would otherwise only ever render in
+	// the clipped bottom strip, unreachable at max scroll
+	const int mem_lines = (0x10000 + words_per_line - 1) / words_per_line;
 	const int visible_lines = (bottom - col_hdr_h) / line_height;
 	int max_top_line = mem_lines - visible_lines;
 	if (max_top_line < 0) max_top_line = 0;
@@ -277,6 +305,7 @@ void MemView::update_contents_no_nb(int new_line)
 // outside the populated cells.
 bool MemView::hit_test_cell(const QPoint &pos, int &addr) const
 {
+	if (fmt == FMT_OFF) return false;
 	int cell_w = val_chars() * font_width;
 
 	int cy = pos.y() - content_top - col_hdr_h;
@@ -349,6 +378,8 @@ void MemView::start_edit(int addr)
 		case FMT_SDEC:
 			edit_buf = QString::number((int16_t)val);
 			break;
+		case FMT_OFF:
+			return;
 	}
 
 	editing = true;
@@ -526,6 +557,8 @@ void MemView::commit_edit()
 			case FMT_SDEC:
 				v = (uint16_t)(int16_t)edit_buf.toInt(&ok, 10);
 				break;
+			case FMT_OFF:
+				break;
 		}
 		if (ok) e->set_mem(edit_nb, edit_addr, v);
 	}
@@ -571,6 +604,8 @@ bool MemView::valid_buf(const QString &s) const
 			int v = s.toInt(&ok);
 			return ok && v >= -32768 && v <= 32767;
 		}
+		case FMT_OFF:
+			return false;
 	}
 	return false;
 }
@@ -611,16 +646,18 @@ QString MemView::value_text(int val) const
 {
 	if (val < 0) {
 		switch (fmt) {
-			case FMT_HEX:  return "----";
+			case FMT_HEX: return "----";
 			case FMT_UDEC: return "-----";
 			case FMT_SDEC: return "------";
+			case FMT_OFF: return QString();
 		}
 		return "----";
 	}
 	switch (fmt) {
-		case FMT_HEX:  return QString("%1").arg((uint16_t)val, 4, 16, QLatin1Char('0'));
+		case FMT_HEX: return QString("%1").arg((uint16_t)val, 4, 16, QLatin1Char('0'));
 		case FMT_UDEC: return QString("%1").arg((uint16_t)val, 5, 10, QLatin1Char(' '));
 		case FMT_SDEC: return QString("%1").arg((int16_t)val, 6, 10, QLatin1Char(' '));
+		case FMT_OFF: return QString();
 	}
 	return QString();
 }
@@ -652,14 +689,28 @@ QString MemView::panel_text(int val) const
 
 // -----------------------------------------------------------------------
 // The non-scrolling row of column offsets above the memory dump.
-void MemView::draw_offset_row(QPainter &painter, int cell_w)
+void MemView::draw_offset_row(QPainter &painter, int cell_w, int pcell_w, int side_x)
 {
 	font.setBold(true);
 	painter.setFont(font);
 	painter.setPen(palette().color(QPalette::Text));
-	for (int x = 0; x < words_per_line; x++) {
-		QString off_str = QString("%1").arg(x, val_chars() - 1, 16, QLatin1Char(' '));
-		painter.drawText(mem_x_start + x * cell_w, font_height, off_str);
+	// value column offsets
+	if (fmt != FMT_OFF) {
+		for (int x=0 ; x<words_per_line ; x++) {
+			QString off_str = QString("%1").arg(x, val_chars() - 1, 16, QLatin1Char(' '));
+			painter.drawText(mem_x_start + x * cell_w, font_height, off_str);
+		}
+	}
+	// side panel offsets: the value and panel cells have different widths, so
+	// the value offsets above don't line up over the panel - it gets its own
+	// ticks. A 2-char ASCII cell can't caption every column without the offsets
+	// running together, so label every other one; the wider 3-char R40 cell has
+	// room for all.
+	if (panel != PANEL_OFF) {
+		int step = (panel == PANEL_R40) ? 1 : 2;
+		for (int x=0 ; x<words_per_line ; x+=step) {
+			painter.drawText(side_x + x * pcell_w, font_height, QString::number(x, 16));
+		}
 	}
 	painter.setPen(QPen(em400_sep_color(palette()), 2));
 	painter.drawLine(divider_x_pos, col_hdr_h, right - 1, col_hdr_h);
@@ -684,28 +735,30 @@ void MemView::draw_line(QPainter &painter, int y, int base_addr, int cell_w, int
 		if (addr > 0xffff) break;
 		int val = e->get_mem(cnb, addr);
 
-		// a value-column edit overlays its cell and suppresses the side panel
-		if (editing && edit_kind == EDIT_VALUE && cnb == edit_nb && addr == edit_addr) {
-			draw_edit_cell(painter, x, y, cell_w);
-			continue;
-		}
+		if (fmt != FMT_OFF) {
+			// a value-column edit overlays its cell and suppresses the side panel
+			if (editing && edit_kind == EDIT_VALUE && cnb == edit_nb && addr == edit_addr) {
+				draw_edit_cell(painter, x, y, cell_w);
+				continue;
+			}
 
-		draw_value_cell(painter, x, y, val, cell_w);
+			draw_value_cell(painter, x, y, val, cell_w);
 
-		// companion outline: while text-editing, frame the same word in the
-		// value column (green = same locus, mirrored; outline not fill so it
-		// reads as passive next to the active edit cell)
-		if (editing && edit_kind == EDIT_TEXT && cnb == edit_nb && addr == edit_addr) {
-			int ex = mem_x_start + x * cell_w;
-			int ey = col_hdr_h + y * line_height;
-			int val_w = (val_chars() - 1) * font_width;
-			painter.setPen(QPen(palette().color(QPalette::Highlight), 1));
-			painter.setRenderHint(QPainter::Antialiasing, true);
-			// half-pixel offset so the 1px stroke sits on pixel centers: keeps
-			// the straight edges crisp, antialiasing only the rounded corners
-			QRectF r(ex - half_font_width + 0.5, ey + 0.5, val_w + font_width - 1, line_height - 1);
-			painter.drawRoundedRect(r, 2, 2);
-			painter.setRenderHint(QPainter::Antialiasing, false);
+			// companion outline: while text-editing, frame the same word in the
+			// value column (green = same locus, mirrored; outline not fill so it
+			// reads as passive next to the active edit cell)
+			if (editing && edit_kind == EDIT_TEXT && cnb == edit_nb && addr == edit_addr) {
+				int ex = mem_x_start + x * cell_w;
+				int ey = col_hdr_h + y * line_height;
+				int val_w = (val_chars() - 1) * font_width;
+				painter.setPen(QPen(palette().color(QPalette::Highlight), 1));
+				painter.setRenderHint(QPainter::Antialiasing, true);
+				// half-pixel offset so the 1px stroke sits on pixel centers: keeps
+				// the straight edges crisp, antialiasing only the rounded corners
+				QRectF r(ex - half_font_width + 0.5, ey + 0.5, val_w + font_width - 1, line_height - 1);
+				painter.drawRoundedRect(r, 2, 2);
+				painter.setRenderHint(QPainter::Antialiasing, false);
+			}
 		}
 
 		if (panel != PANEL_OFF) {
@@ -833,7 +886,7 @@ void MemView::paintEvent(QPaintEvent *event)
 			? mem_x_start + words_per_line * cell_w + font_width
 			: 0;
 
-		draw_offset_row(painter, cell_w);
+		draw_offset_row(painter, cell_w, pcell_w, side_x);
 
 		for (int y = 0; y < total_lines; y++) {
 			int base_addr = caddr + y * words_per_line;
@@ -841,8 +894,8 @@ void MemView::paintEvent(QPaintEvent *event)
 			draw_line(painter, y, base_addr, cell_w, pcell_w, side_x);
 		}
 
-		// divider between values and side panel
-		if (panel != PANEL_OFF) {
+		// divider between values and side panel (only when both are present)
+		if (panel != PANEL_OFF && fmt != FMT_OFF) {
 			int sdiv_x = mem_x_start + words_per_line * cell_w + half_font_width;
 			painter.setPen(QPen(em400_sep_color(palette()), 2));
 			painter.drawLine(sdiv_x, 0, sdiv_x, bottom);
@@ -896,144 +949,164 @@ void MemView::wheelEvent(QWheelEvent *event)
 void MemView::keyPressEvent(QKeyEvent *event)
 {
 	if (editing && edit_kind == EDIT_TEXT) {
-		switch (event->key()) {
-			case Qt::Key_Return:
-			case Qt::Key_Enter:
-				commit_edit();
-				break;
-			case Qt::Key_Escape:
-				cancel_edit();
-				break;
-			case Qt::Key_Left:
-			case Qt::Key_Backspace:
-				// non-destructive: backspace just walks the caret back
-				text_move(-1);
-				break;
-			case Qt::Key_Right:
-				text_move(1);
-				break;
-			case Qt::Key_Up:
-				text_move(-words_per_line * panel_chars());
-				break;
-			case Qt::Key_Down:
-				text_move(words_per_line * panel_chars());
-				break;
-			default: {
-				QString t = event->text();
-				if (!t.isEmpty()) {
-					QChar c = t.at(0);
-					if (panel == PANEL_ASCII) {
-						char ch = c.toLatin1();
-						if (ch >= 0x20 && ch < 0x7f) {
-							text_write_char(c);
-						}
-					} else {
-						// R40 stores uppercase only; map then validate. Only
-						// genuine R40 characters are accepted (space and code 0
-						// are not R40 characters, so they cannot be entered).
-						// Non-Latin1 keys (e.g. Polish diacritics) map to 0 via
-						// toLatin1(), and r40_valid_char(0) is true (code 0), so
-						// reject the 0 byte explicitly to keep them out.
-						QChar uc = c.toUpper();
-						char l = uc.toLatin1();
-						if (l != 0 && r40_valid_char(l)) {
-							text_write_char(uc);
-						}
-					}
-				}
-				break;
-			}
-		}
-		event->accept();
+		key_text_edit(event);
 		return;
 	}
-
 	if (editing) {
-		switch (event->key()) {
-			case Qt::Key_Return:
-			case Qt::Key_Enter:
-				commit_edit();
-				break;
-			case Qt::Key_Escape:
-				cancel_edit();
-				break;
-			case Qt::Key_Left:
-				if (edit_cursor > 0) { edit_cursor--; update(); }
-				break;
-			case Qt::Key_Right:
-				if (edit_cursor < edit_buf.length()) { edit_cursor++; update(); }
-				break;
-			case Qt::Key_Insert:
-				edit_insert = !edit_insert;
-				emit signal_edit_mode_changed(true, edit_insert);
-				update();
-				break;
-			case Qt::Key_Home:
-				edit_cursor = 0;
-				update();
-				break;
-			case Qt::Key_End:
-				edit_cursor = edit_buf.length();
-				update();
-				break;
-			case Qt::Key_Backspace:
-				if (edit_cursor > 0) {
-					edit_buf.remove(edit_cursor - 1, 1);
-					edit_cursor--;
-					update();
-				}
-				break;
-			case Qt::Key_Delete:
-				if (edit_cursor < edit_buf.length()) {
-					edit_buf.remove(edit_cursor, 1);
-					update();
-				}
-				break;
-			default: {
-				QString t = event->text();
-				if (!t.isEmpty()) {
-					QChar c = t.at(0);
-					if (fmt == FMT_HEX) c = c.toLower();
-					QString cand = edit_buf;
-					if (edit_insert) {
-						cand.insert(edit_cursor, c);
-					} else if (edit_cursor < cand.length()) {
-						cand[edit_cursor] = c;
-					} else {
-						cand.append(c);
-					}
-					if (valid_buf(cand)) {
-						edit_buf = cand;
-						edit_cursor++;
-						// overwrite: once the field can hold no more digits,
-						// keep the caret on the last digit (overwriting it on
-						// further input) instead of parking it on the empty
-						// slot past the value
-						if (!edit_insert && edit_cursor >= edit_buf.length()
-								&& !valid_buf(edit_buf + "0")) {
-							edit_cursor = edit_buf.length() - 1;
-						}
-						update();
-					}
-				}
-				break;
-			}
-		}
-		event->accept();
+		key_value_edit(event);
 		return;
 	}
+	key_navigate(event);
+}
 
+// -----------------------------------------------------------------------
+// Side panel character-stream editing: caret movement and write-through of
+// printable ASCII / valid R40 characters.
+void MemView::key_text_edit(QKeyEvent *event)
+{
 	switch (event->key()) {
-		case Qt::Key_H:        set_format(FMT_HEX);          break;
-		case Qt::Key_U:        set_format(FMT_UDEC);         break;
-		case Qt::Key_D:        set_format(FMT_SDEC);         break;
-		case Qt::Key_A:        toggle_panel(PANEL_ASCII);    break;
-		case Qt::Key_R:        toggle_panel(PANEL_R40);      break;
-		case Qt::Key_PageUp:   scroll->setValue(scroll->value() - total_lines); break;
+		case Qt::Key_Return:
+		case Qt::Key_Enter:
+			commit_edit();
+			break;
+		case Qt::Key_Escape:
+			cancel_edit();
+			break;
+		case Qt::Key_Left:
+		case Qt::Key_Backspace:
+			// non-destructive: backspace just walks the caret back
+			text_move(-1);
+			break;
+		case Qt::Key_Right:
+			text_move(1);
+			break;
+		case Qt::Key_Up:
+			text_move(-words_per_line * panel_chars());
+			break;
+		case Qt::Key_Down:
+			text_move(words_per_line * panel_chars());
+			break;
+		default: {
+			QString t = event->text();
+			if (!t.isEmpty()) {
+				QChar c = t.at(0);
+				if (panel == PANEL_ASCII) {
+					char ch = c.toLatin1();
+					if (ch >= 0x20 && ch < 0x7f) {
+						text_write_char(c);
+					}
+				} else {
+					// R40 stores uppercase only; map then validate. Only
+					// genuine R40 characters are accepted (space and code 0
+					// are not R40 characters, so they cannot be entered).
+					// Non-Latin1 keys (e.g. Polish diacritics) map to 0 via
+					// toLatin1(), and r40_valid_char(0) is true (code 0), so
+					// reject the 0 byte explicitly to keep them out.
+					QChar uc = c.toUpper();
+					char l = uc.toLatin1();
+					if (l != 0 && r40_valid_char(l)) {
+						text_write_char(uc);
+					}
+				}
+			}
+			break;
+		}
+	}
+	event->accept();
+}
+
+// -----------------------------------------------------------------------
+// Numeric value-column editing: a one-word overwrite/insert line editor.
+void MemView::key_value_edit(QKeyEvent *event)
+{
+	switch (event->key()) {
+		case Qt::Key_Return:
+		case Qt::Key_Enter:
+			commit_edit();
+			break;
+		case Qt::Key_Escape:
+			cancel_edit();
+			break;
+		case Qt::Key_Left:
+			if (edit_cursor > 0) { edit_cursor--; update(); }
+			break;
+		case Qt::Key_Right:
+			if (edit_cursor < edit_buf.length()) { edit_cursor++; update(); }
+			break;
+		case Qt::Key_Insert:
+			edit_insert = !edit_insert;
+			emit signal_edit_mode_changed(true, edit_insert);
+			update();
+			break;
+		case Qt::Key_Home:
+			edit_cursor = 0;
+			update();
+			break;
+		case Qt::Key_End:
+			edit_cursor = edit_buf.length();
+			update();
+			break;
+		case Qt::Key_Backspace:
+			if (edit_cursor > 0) {
+				edit_buf.remove(edit_cursor - 1, 1);
+				edit_cursor--;
+				update();
+			}
+			break;
+		case Qt::Key_Delete:
+			if (edit_cursor < edit_buf.length()) {
+				edit_buf.remove(edit_cursor, 1);
+				update();
+			}
+			break;
+		default: {
+			QString t = event->text();
+			if (!t.isEmpty()) {
+				QChar c = t.at(0);
+				if (fmt == FMT_HEX) c = c.toLower();
+				QString cand = edit_buf;
+				if (edit_insert) {
+					cand.insert(edit_cursor, c);
+				} else if (edit_cursor < cand.length()) {
+					cand[edit_cursor] = c;
+				} else {
+					cand.append(c);
+				}
+				if (valid_buf(cand)) {
+					edit_buf = cand;
+					edit_cursor++;
+					// overwrite: once the field can hold no more digits,
+					// keep the caret on the last digit (overwriting it on
+					// further input) instead of parking it on the empty
+					// slot past the value
+					if (!edit_insert && edit_cursor >= edit_buf.length()
+							&& !valid_buf(edit_buf + "0")) {
+						edit_cursor = edit_buf.length() - 1;
+					}
+					update();
+				}
+			}
+			break;
+		}
+	}
+	event->accept();
+}
+
+// -----------------------------------------------------------------------
+// Not editing: format/panel toggles and scroll navigation.
+void MemView::key_navigate(QKeyEvent *event)
+{
+	switch (event->key()) {
+		case Qt::Key_H: set_format(FMT_HEX); break;
+		case Qt::Key_U: set_format(FMT_UDEC); break;
+		case Qt::Key_D: set_format(FMT_SDEC); break;
+		case Qt::Key_A: toggle_panel(PANEL_ASCII); break;
+		case Qt::Key_R: toggle_panel(PANEL_R40); break;
+		case Qt::Key_PageUp: scroll->setValue(scroll->value() - total_lines); break;
 		case Qt::Key_PageDown: scroll->setValue(scroll->value() + total_lines); break;
-		case Qt::Key_Home:     scroll->setValue(0);           break;
-		case Qt::Key_End:      scroll->setValue(scroll->maximum()); break;
-		default:               QWidget::keyPressEvent(event); break;
+		case Qt::Key_Home: scroll->setValue(0); break;
+		case Qt::Key_End: scroll->setValue(scroll->maximum()); break;
+		default: QWidget::keyPressEvent(event); break;
 	}
 }
 

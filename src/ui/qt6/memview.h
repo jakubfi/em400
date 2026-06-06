@@ -19,7 +19,7 @@ class MemView : public QWidget {
 	Q_OBJECT
 
 public:
-	enum DisplayFormat { FMT_HEX, FMT_UDEC, FMT_SDEC };
+	enum DisplayFormat { FMT_HEX, FMT_UDEC, FMT_SDEC, FMT_OFF };
 	enum SidePanel { PANEL_OFF, PANEL_ASCII, PANEL_R40 };
 	enum EditKind { EDIT_VALUE, EDIT_TEXT };
 
@@ -92,6 +92,11 @@ private:
 	void text_move(int delta);
 	void ensure_caret_visible();
 
+	// keyPressEvent dispatches to one of these by current edit mode
+	void key_text_edit(QKeyEvent *event);
+	void key_value_edit(QKeyEvent *event);
+	void key_navigate(QKeyEvent *event);
+
 	int wheel_tick_accumulator = 0;
 
 	// child widgets
@@ -113,7 +118,7 @@ private:
 	void toggle_panel(SidePanel p);
 
 	// paintEvent helpers
-	void draw_offset_row(QPainter &painter, int cell_w);
+	void draw_offset_row(QPainter &painter, int cell_w, int pcell_w, int side_x);
 	void draw_line(QPainter &painter, int y, int base_addr, int cell_w, int pcell_w, int side_x);
 	void draw_value_cell(QPainter &painter, int x, int y, int val, int cell_w);
 	void draw_edit_cell(QPainter &painter, int x, int y, int cell_w);
