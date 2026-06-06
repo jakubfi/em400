@@ -297,6 +297,38 @@ bool MemView::hit_test_cell(const QPoint &pos, int &addr) const
 }
 
 // -----------------------------------------------------------------------
+// Map a widget-space point to an absolute address plus sub-char index in
+// the side panel. Returns false outside the populated panel cells.
+bool MemView::hit_test_panel(const QPoint &pos, int &addr, int &sub) const
+{
+	if (panel == PANEL_OFF) return false;
+
+	int cell_w = val_chars() * font_width;
+	int pcell_w = panel_chars() * font_width;
+	int side_x = mem_x_start + words_per_line * cell_w + font_width;
+
+	int cy = pos.y() - content_top - col_hdr_h;
+	if (cy < 0) return false;
+	int row = cy / line_height;
+	if (row >= total_lines) return false;
+
+	int cx = pos.x() - side_x;
+	if (cx < 0) return false;
+	int col = cx / pcell_w;
+	if (col >= words_per_line) return false;
+
+	int s = (cx - col * pcell_w) / font_width;
+	if (s >= panel_chars()) s = panel_chars() - 1;
+
+	int a = caddr + row * words_per_line + col;
+	if (a > 0xffff) return false;
+
+	addr = a;
+	sub = s;
+	return true;
+}
+
+// -----------------------------------------------------------------------
 void MemView::start_edit(int addr)
 {
 	if (cpu_running || !e) return;
@@ -320,6 +352,7 @@ void MemView::start_edit(int addr)
 	}
 
 	editing = true;
+	edit_kind = EDIT_VALUE;
 	edit_nb = cnb;
 	edit_addr = addr;
 	edit_cursor = 0;
@@ -329,9 +362,131 @@ void MemView::start_edit(int addr)
 }
 
 // -----------------------------------------------------------------------
+// Begin editing the side panel as a character stream. sub is the initial
+// sub-char caret within the word (0..panel_chars()-1).
+void MemView::start_text_edit(int addr, int sub)
+{
+	if (cpu_running || !e || panel == PANEL_OFF) return;
+
+	// nothing to edit where no memory is mapped (reads back as -1)
+	if (e->get_mem(cnb, addr) < 0) return;
+
+	editing = true;
+	edit_kind = EDIT_TEXT;
+	edit_nb = cnb;
+	edit_addr = addr;
+	edit_char = sub;
+	edit_orig.clear();
+	setFocus();
+	// text editing is always overwrite; report it as such
+	emit signal_edit_mode_changed(true, false);
+	update();
+}
+
+// -----------------------------------------------------------------------
+// Overwrite the active sub-char of the word under edit and advance. For
+// ASCII the byte is spliced directly; for R40 the word is decoded, the one
+// char replaced, and re-encoded (the untouched chars round-trip losslessly).
+void MemView::text_write_char(QChar c)
+{
+	if (!e) return;
+	int val = e->get_mem(edit_nb, edit_addr);
+	if (val < 0) return;
+	uint16_t word = (uint16_t)val;
+
+	if (panel == PANEL_ASCII) {
+		unsigned char ch = (unsigned char)c.toLatin1();
+		if (edit_char == 0) {
+			word = (word & 0x00ff) | (ch << 8);
+		} else {
+			word = (word & 0xff00) | ch;
+		}
+	} else {
+		// Replace only the one base-40 digit. Decoding the whole word to
+		// ASCII and re-encoding would truncate at an embedded code-0 char
+		// (which decodes to a NUL string terminator), corrupting the rest.
+		// Get the typed char's code via a single-char encode, then splice.
+		char tmp[2] = { (char)c.toLatin1(), 0 };
+		unsigned len = 0;
+		uint16_t enc = 0;
+		if (!ascii_to_r40(tmp, &len, &enc)) return;
+		static const int place[3] = { 1600, 40, 1 };
+		int p = place[edit_char];
+		int code = enc / 1600;
+		int old = (word / p) % 40;
+		word = word - old * p + code * p;
+	}
+
+	// snapshot the word's pre-edit value once, so the whole session can be
+	// rolled back on cancel
+	if (!edit_orig.contains(edit_addr)) {
+		edit_orig.insert(edit_addr, (uint16_t)val);
+	}
+	e->set_mem(edit_nb, edit_addr, word);
+	text_move(1);
+}
+
+// -----------------------------------------------------------------------
+// Move the text caret by delta sub-chars, rolling across word boundaries
+// and clamping to the address space, then scroll to keep it on screen.
+void MemView::text_move(int delta)
+{
+	int cols = panel_chars();
+	long pos = (long)edit_addr * cols + edit_char + delta;
+	if (pos < 0) pos = 0;
+	long maxpos = (long)0xffff * cols + (cols - 1);
+	if (pos > maxpos) pos = maxpos;
+	edit_addr = pos / cols;
+	edit_char = pos % cols;
+	ensure_caret_visible();
+	update();
+}
+
+// -----------------------------------------------------------------------
+// Scroll the view so the line holding the text caret is visible. Bypasses
+// the scrollbar's valueChanged slot (which would cancel the edit) and moves
+// caddr directly.
+void MemView::ensure_caret_visible()
+{
+	// total_lines counts a partially-clipped bottom row; scroll against the
+	// fully-visible count so the caret never lands in the clipped strip
+	int visible = (bottom - col_hdr_h) / line_height;
+	if (visible < 1) visible = 1;
+
+	int line = edit_addr / words_per_line;
+	int top_line = caddr / words_per_line;
+	int target = top_line;
+	if (line < top_line) {
+		target = line;
+	} else if (line >= top_line + visible) {
+		target = line - visible + 1;
+	}
+	if (target == top_line) return;
+
+	QSignalBlocker blk(scroll);
+	scroll->setValue(target);
+	caddr = scroll->value() * words_per_line;
+}
+
+// -----------------------------------------------------------------------
 void MemView::cancel_edit()
 {
 	if (!editing) return;
+
+	// text edits are write-through; "cancel" rolls every touched word back to
+	// its pre-edit value, matching the value editor's ESC=discard semantics.
+	// FIXME: these rollback writes also fire on the RUN transition (via
+	// slot_state_changed -> cancel_edit), racing the CPU thread. Currently
+	// mitigated because clicking away to start the CPU triggers focusOut ->
+	// cancel_edit while still stopped, but that ordering is fragile; consider
+	// suppressing the rollback (or only snapshotting) while cpu_running.
+	if (edit_kind == EDIT_TEXT && e) {
+		for (auto it = edit_orig.constBegin() ; it != edit_orig.constEnd() ; ++it) {
+			e->set_mem(edit_nb, it.key(), it.value());
+		}
+	}
+	edit_orig.clear();
+
 	editing = false;
 	edit_buf.clear();
 	emit signal_edit_mode_changed(false, edit_insert);
@@ -342,6 +497,15 @@ void MemView::cancel_edit()
 void MemView::commit_edit()
 {
 	if (!editing) return;
+
+	// text edits are already written through; commit just keeps them and ends
+	if (edit_kind == EDIT_TEXT) {
+		edit_orig.clear();
+		editing = false;
+		emit signal_edit_mode_changed(false, edit_insert);
+		update();
+		return;
+	}
 
 	bool empty = edit_buf.isEmpty() || edit_buf == "-";
 	if (!empty && e) {
@@ -414,11 +578,18 @@ bool MemView::valid_buf(const QString &s) const
 // -----------------------------------------------------------------------
 void MemView::mouseDoubleClickEvent(QMouseEvent *event)
 {
-	int addr;
-	if (event->button() == Qt::LeftButton && hit_test_cell(event->pos(), addr)) {
-		start_edit(addr);
-		event->accept();
-		return;
+	int addr, sub;
+	if (event->button() == Qt::LeftButton) {
+		if (hit_test_cell(event->pos(), addr)) {
+			start_edit(addr);
+			event->accept();
+			return;
+		}
+		if (hit_test_panel(event->pos(), addr, sub)) {
+			start_text_edit(addr, sub);
+			event->accept();
+			return;
+		}
 	}
 	QWidget::mouseDoubleClickEvent(event);
 }
@@ -469,7 +640,14 @@ QString MemView::panel_text(int val) const
 	if (val < 0) return "???";
 	uint16_t word = (uint16_t)val;
 	char buf[4];
-	return r40_to_ascii(&word, 1, buf) ? QString::fromLatin1(buf, 3) : "???";
+	if (!r40_to_ascii(&word, 1, buf)) return "???";
+	// code 0 decodes to a NUL byte, which has no glyph and would collapse the
+	// monospace cell, mis-aligning the caret and click hit-testing. It is R40's
+	// blank slot, so render it as a space.
+	for (int i = 0 ; i < 3 ; i++) {
+		if (buf[i] == '\0') buf[i] = ' ';
+	}
+	return QString::fromLatin1(buf, 3);
 }
 
 // -----------------------------------------------------------------------
@@ -506,15 +684,38 @@ void MemView::draw_line(QPainter &painter, int y, int base_addr, int cell_w, int
 		if (addr > 0xffff) break;
 		int val = e->get_mem(cnb, addr);
 
-		// the cell under edit gets its own overlay and no side panel
-		if (editing && cnb == edit_nb && addr == edit_addr) {
+		// a value-column edit overlays its cell and suppresses the side panel
+		if (editing && edit_kind == EDIT_VALUE && cnb == edit_nb && addr == edit_addr) {
 			draw_edit_cell(painter, x, y, cell_w);
 			continue;
 		}
 
 		draw_value_cell(painter, x, y, val, cell_w);
+
+		// companion outline: while text-editing, frame the same word in the
+		// value column (green = same locus, mirrored; outline not fill so it
+		// reads as passive next to the active edit cell)
+		if (editing && edit_kind == EDIT_TEXT && cnb == edit_nb && addr == edit_addr) {
+			int ex = mem_x_start + x * cell_w;
+			int ey = col_hdr_h + y * line_height;
+			int val_w = (val_chars() - 1) * font_width;
+			painter.setPen(QPen(palette().color(QPalette::Highlight), 1));
+			painter.setRenderHint(QPainter::Antialiasing, true);
+			// half-pixel offset so the 1px stroke sits on pixel centers: keeps
+			// the straight edges crisp, antialiasing only the rounded corners
+			QRectF r(ex - half_font_width + 0.5, ey + 0.5, val_w + font_width - 1, line_height - 1);
+			painter.drawRoundedRect(r, 2, 2);
+			painter.setRenderHint(QPainter::Antialiasing, false);
+		}
+
 		if (panel != PANEL_OFF) {
-			draw_panel_cell(painter, x, y, val, pcell_w, side_x);
+			if (editing && edit_kind == EDIT_TEXT && cnb == edit_nb && addr == edit_addr) {
+				draw_panel_edit_cell(painter, x, y, val, pcell_w, side_x);
+			} else if (editing && edit_kind == EDIT_TEXT && cnb == edit_nb && edit_orig.contains(addr)) {
+				draw_panel_cell_edited(painter, x, y, addr, val, pcell_w, side_x);
+			} else {
+				draw_panel_cell(painter, x, y, val, pcell_w, side_x);
+			}
 		}
 	}
 }
@@ -531,6 +732,53 @@ void MemView::draw_panel_cell(QPainter &painter, int x, int y, int val, int pcel
 {
 	painter.setPen(em400_dim_text_color(palette()));
 	painter.drawText(side_x + x * pcell_w, mem_y_start + y * line_height, panel_text(val));
+}
+
+// -----------------------------------------------------------------------
+// A side panel cell for a word edited earlier this session: sub-chars that
+// differ from the pre-edit value "pop" in normal Text colour while the rest
+// stay dim, so the user's changes stay visible after the caret moves on.
+void MemView::draw_panel_cell_edited(QPainter &painter, int x, int y, int addr, int val, int pcell_w, int side_x)
+{
+	QString cur = panel_text(val);
+	QString orig = panel_text((int)edit_orig.value(addr));
+	// changed sub-chars pop in the green accent ("you are here" = the edit);
+	// untouched ones stay dim
+	QColor dim = em400_dim_text_color(palette());
+	QColor accent = palette().color(QPalette::Highlight);
+	int bx = side_x + x * pcell_w;
+	int by = mem_y_start + y * line_height;
+
+	for (int i = 0 ; i < cur.length() ; i++) {
+		bool changed = (i >= orig.length()) || (cur.at(i) != orig.at(i));
+		painter.setPen(changed ? accent : dim);
+		painter.drawText(bx + i * font_width, by, QString(cur.at(i)));
+	}
+}
+
+// -----------------------------------------------------------------------
+// The side panel cell under text edit: the live ASCII/R40 rendering with
+// the whole field highlighted and a caret block over the active sub-char.
+void MemView::draw_panel_edit_cell(QPainter &painter, int x, int y, int val, int pcell_w, int side_x)
+{
+	QString text = panel_text(val);
+	int ex = side_x + x * pcell_w;
+	int ey = col_hdr_h + y * line_height;
+	int baseline = mem_y_start + y * line_height;
+
+	// 1px of slack each side so the caret block never ends flush on the edge
+	painter.fillRect(ex - 1, ey, pcell_w + 2, line_height, palette().color(QPalette::Highlight));
+	painter.setPen(palette().color(QPalette::HighlightedText));
+	painter.drawText(ex, baseline, text);
+
+	// overwrite caret: solid block over the active char, redrawn inverted
+	int cur_x = ex + edit_char * font_width;
+	painter.fillRect(cur_x, ey + 1, font_width, line_height - 2,
+		palette().color(QPalette::HighlightedText));
+	if (edit_char < text.length()) {
+		painter.setPen(palette().color(QPalette::Highlight));
+		painter.drawText(cur_x, baseline, QString(text.at(edit_char)));
+	}
 }
 
 // -----------------------------------------------------------------------
@@ -647,6 +895,59 @@ void MemView::wheelEvent(QWheelEvent *event)
 // -----------------------------------------------------------------------
 void MemView::keyPressEvent(QKeyEvent *event)
 {
+	if (editing && edit_kind == EDIT_TEXT) {
+		switch (event->key()) {
+			case Qt::Key_Return:
+			case Qt::Key_Enter:
+				commit_edit();
+				break;
+			case Qt::Key_Escape:
+				cancel_edit();
+				break;
+			case Qt::Key_Left:
+			case Qt::Key_Backspace:
+				// non-destructive: backspace just walks the caret back
+				text_move(-1);
+				break;
+			case Qt::Key_Right:
+				text_move(1);
+				break;
+			case Qt::Key_Up:
+				text_move(-words_per_line * panel_chars());
+				break;
+			case Qt::Key_Down:
+				text_move(words_per_line * panel_chars());
+				break;
+			default: {
+				QString t = event->text();
+				if (!t.isEmpty()) {
+					QChar c = t.at(0);
+					if (panel == PANEL_ASCII) {
+						char ch = c.toLatin1();
+						if (ch >= 0x20 && ch < 0x7f) {
+							text_write_char(c);
+						}
+					} else {
+						// R40 stores uppercase only; map then validate. Only
+						// genuine R40 characters are accepted (space and code 0
+						// are not R40 characters, so they cannot be entered).
+						// Non-Latin1 keys (e.g. Polish diacritics) map to 0 via
+						// toLatin1(), and r40_valid_char(0) is true (code 0), so
+						// reject the 0 byte explicitly to keep them out.
+						QChar uc = c.toUpper();
+						char l = uc.toLatin1();
+						if (l != 0 && r40_valid_char(l)) {
+							text_write_char(uc);
+						}
+					}
+				}
+				break;
+			}
+		}
+		event->accept();
+		return;
+	}
+
 	if (editing) {
 		switch (event->key()) {
 			case Qt::Key_Return:

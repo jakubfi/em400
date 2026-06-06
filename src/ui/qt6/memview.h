@@ -8,6 +8,7 @@
 #include <QKeyEvent>
 #include <QMouseEvent>
 #include <QFocusEvent>
+#include <QHash>
 #include "emumodel.h"
 
 class QPainter;
@@ -20,6 +21,7 @@ class MemView : public QWidget {
 public:
 	enum DisplayFormat { FMT_HEX, FMT_UDEC, FMT_SDEC };
 	enum SidePanel { PANEL_OFF, PANEL_ASCII, PANEL_R40 };
+	enum EditKind { EDIT_VALUE, EDIT_TEXT };
 
 	explicit MemView(QWidget *parent = nullptr);
 	~MemView();
@@ -60,21 +62,35 @@ private:
 	SidePanel panel = PANEL_ASCII;
 	bool cpu_running = false;
 
-	// in-place cell editing (hex/dec/octal value column).
-	// Overwrite-style line editor: edit_buf holds the digits, edit_cursor
-	// is the caret column (0..edit_buf.length()).
+	// in-place cell editing. EDIT_VALUE edits the numeric value column:
+	// an overwrite-style line editor where edit_buf holds the digits and
+	// edit_cursor is the caret column (0..edit_buf.length()), committed as
+	// one word. EDIT_TEXT edits the ASCII/R40 side panel as a write-through
+	// character stream: every keystroke overwrites one sub-char of the word
+	// at edit_addr (edit_char selects which) and advances, rolling onto the
+	// next word at the boundary so strings can be typed straight through.
 	bool editing = false;
+	EditKind edit_kind = EDIT_VALUE;
 	int edit_nb = 0;
 	int edit_addr = 0;
 	QString edit_buf;
 	int edit_cursor = 0;
 	bool edit_insert = false; // false = overwrite, toggled with Insert
+	int edit_char = 0; // EDIT_TEXT: sub-char caret within the word
+	// EDIT_TEXT: original value of each word touched this session, so ESC /
+	// focus-loss can roll the write-through edits back (addr -> pre-edit word)
+	QHash<int, uint16_t> edit_orig;
 
 	bool hit_test_cell(const QPoint &pos, int &addr) const;
+	bool hit_test_panel(const QPoint &pos, int &addr, int &sub) const;
 	void start_edit(int addr);
+	void start_text_edit(int addr, int sub);
 	void commit_edit();
 	void cancel_edit();
 	bool valid_buf(const QString &s) const;
+	void text_write_char(QChar c);
+	void text_move(int delta);
+	void ensure_caret_visible();
 
 	int wheel_tick_accumulator = 0;
 
@@ -102,6 +118,8 @@ private:
 	void draw_value_cell(QPainter &painter, int x, int y, int val, int cell_w);
 	void draw_edit_cell(QPainter &painter, int x, int y, int cell_w);
 	void draw_panel_cell(QPainter &painter, int x, int y, int val, int pcell_w, int side_x);
+	void draw_panel_cell_edited(QPainter &painter, int x, int y, int addr, int val, int pcell_w, int side_x);
+	void draw_panel_edit_cell(QPainter &painter, int x, int y, int val, int pcell_w, int side_x);
 	QString value_text(int val) const;
 	QString panel_text(int val) const;
 
