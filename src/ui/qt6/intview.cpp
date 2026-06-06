@@ -219,7 +219,7 @@ void IntView::render_cell(int n)
 	QString ss;
 	if (pending && unmasked) {
 		// set and will fire - solid yellow fill
-		ss = QString("QPushButton{background:%1; color:%2; border:none; border-radius:2px;}").arg(yellow, yellow_text);
+		ss = QString("QPushButton{background:%1; color:%2; border:none; border-radius:1px;}").arg(yellow, yellow_text);
 	} else if (pending) {
 		// set in RZ but masked off - bold yellow text, no fill (pending yet suppressed)
 		ss = QString("QPushButton{background:transparent; color:%1; border:none; font-weight:bold;}").arg(yellow);
@@ -239,7 +239,7 @@ void IntView::render_box(MaskBox *b)
 	bool unmasked = (sr >> b->sr_bit) & 1;
 	QColor c = unmasked ? em400_mask_color(palette())
 	                    : palette().color(QPalette::Mid);
-	b->setStyleSheet(QString("MaskBox{border:1px solid %1; border-radius:3px;}").arg(c.name()));
+	b->setStyleSheet(QString("MaskBox{border:1px solid %1; border-radius:2px;}").arg(c.name()));
 }
 
 // -----------------------------------------------------------------------
@@ -254,7 +254,7 @@ void IntView::render_help()
 {
 	QString c = em400_dim_text_color(palette()).name();
 	help->setStyleSheet(QString(
-		"QLabel{color:%1; border:1px solid %1; border-radius:3px; padding:0 4px;}").arg(c));
+		"QLabel{color:%1; border:1px solid %1; border-radius:4px; padding:0 4px;}").arg(c));
 }
 
 // -----------------------------------------------------------------------
