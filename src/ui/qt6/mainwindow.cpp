@@ -186,7 +186,7 @@ MainWindow::MainWindow(QWidget *parent) :
 
 	// EmuModel -> ControlPanel
 	connect(&e, &EmuModel::signal_state_changed, ui->cp, &ControlPanel::slot_state_changed);
-	connect(&e, &EmuModel::signal_bus_w_changed, ui->cp, &ControlPanel::slot_bus_w_changed);
+	connect(&e, &EmuModel::signal_bus_w_changed, ui->cp->wleds, &BusWLeds::slot_set_value);
 	connect(&e, &EmuModel::signal_alarm_changed, ui->cp->led[LED_ALARM], &LED::slot_change);
 	connect(&e, &EmuModel::signal_p_changed, ui->cp->led[LED_P], &LED::slot_change);
 	connect(&e, &EmuModel::signal_clock_changed, ui->cp->led[LED_CLOCK], &LED::slot_change);
@@ -202,9 +202,7 @@ MainWindow::MainWindow(QWidget *parent) :
 	connect(ui->cp->sw[SW_BIN], &Switch::signal_clicked, &e, &EmuModel::slot_bin);
 	connect(ui->cp->sw[SW_CLOCK], &Switch::signal_toggled, &e, &EmuModel::slot_clock_enabled);
 	connect(ui->cp->rotary, &Rotary::signal_rotated, &e, &EmuModel::slot_reg_select);
-	for (int i=0 ; i<16 ; i++) {
-		connect(ui->cp->sw[i], &Switch::signal_toggled, this, &MainWindow::slot_binary_key_toggled);
-	}
+	connect(ui->cp->keys, &BinaryKeys::signal_value_changed, &e, &EmuModel::set_kb);
 
 	// register edits are handled inside the RegView models (setData -> set_reg)
 
@@ -501,16 +499,6 @@ void MainWindow::slot_panel_theme_changed(bool state)
 	em400_apply_theme(state);
 	QSettings settings;
 	settings.setValue("ui/panelTheme", state);
-}
-
-// -----------------------------------------------------------------------
-void MainWindow::slot_binary_key_toggled(bool state)
-{
-	uint16_t val = 0;
-	for (int i=0 ; i<16 ; i++) {
-		val |= ui->cp->sw[i]->get() << (15-i);
-	}
-	e.set_kb(val);
 }
 
 // vim: tabstop=4 shiftwidth=4 autoindent

@@ -8,65 +8,35 @@
 #include "controlpanel.h"
 #include "libem400.h"
 
-static const int led_u_top = 122;
 static const int led_l_top = 253;
 static const int led_width = 24;
 static const int led_height = 24;
 
+// Status LEDs only; the 16 W-bus LEDs of the upper row live in BusWLeds.
+// Order matches enum sw_led_id (LED_MODE .. LED_ON).
 static const QRect led_data[] = {
-	QRect(131, led_u_top, led_width, led_height),
-	QRect(167, led_u_top, led_width, led_height),
-	QRect(203, led_u_top, led_width, led_height),
-	QRect(239, led_u_top, led_width, led_height),
-	QRect(275, led_u_top, led_width, led_height),
-	QRect(311, led_u_top, led_width, led_height),
-	QRect(347, led_u_top, led_width, led_height),
-	QRect(383, led_u_top, led_width, led_height),
-	QRect(419, led_u_top, led_width, led_height),
-	QRect(455, led_u_top, led_width, led_height),
-	QRect(491, led_u_top, led_width, led_height),
-	QRect(527, led_u_top, led_width, led_height),
-	QRect(562, led_u_top, led_width, led_height),
-	QRect(598, led_u_top, led_width, led_height),
-	QRect(634, led_u_top, led_width, led_height),
-	QRect(670, led_u_top, led_width, led_height),
-	QRect(167, led_l_top, led_width, led_height),
-	QRect(203, led_l_top, led_width, led_height),
-	QRect(490, led_l_top, led_width, led_height),
-	QRect(526, led_l_top, led_width, led_height),
-	QRect(561, led_l_top, led_width, led_height),
-	QRect(597, led_l_top, led_width, led_height),
-	QRect(633, led_l_top, led_width, led_height),
-	QRect(1030, 123, led_width, led_height),
-	QRect(1066, 123, led_width, led_height),
-	QRect(1102, 123, led_width, led_height),
-	QRect(1075, 195, led_width, led_height),
+	QRect(167, led_l_top, led_width, led_height),  // LED_MODE
+	QRect(203, led_l_top, led_width, led_height),  // LED_STOPN
+	QRect(490, led_l_top, led_width, led_height),  // LED_CLOCK
+	QRect(526, led_l_top, led_width, led_height),  // LED_Q
+	QRect(561, led_l_top, led_width, led_height),  // LED_P
+	QRect(597, led_l_top, led_width, led_height),  // LED_MC
+	QRect(633, led_l_top, led_width, led_height),  // LED_IRQ
+	QRect(1030, 123, led_width, led_height),        // LED_RUN
+	QRect(1066, 123, led_width, led_height),        // LED_WAIT
+	QRect(1102, 123, led_width, led_height),        // LED_ALARM
+	QRect(1075, 195, led_width, led_height),        // LED_ON
 };
 
-static const int sw_u_top = 163;
 static const int sw_l_top = 294;
 static const int sw_width = 36;
 static const int sw_height = 48;
 
 #define SND_S "qrc:/sounds/switches/"
 
+// Control switches only; the 16 binary data keys of the upper row live in
+// BinaryKeys. Order matches enum sw_lower_id (SW_STEP .. SW_OPRQ).
 static const struct sw_desc sw_data[] = {
-	{ QRect(125, sw_u_top, sw_width, sw_height), false, SND_S "00-1.wav", SND_S "00-0.wav" },
-	{ QRect(161, sw_u_top, sw_width, sw_height), false, SND_S "01-1.wav", SND_S "01-0.wav" },
-	{ QRect(196, sw_u_top, sw_width, sw_height), false, SND_S "02-1.wav", SND_S "02-0.wav" },
-	{ QRect(232, sw_u_top, sw_width, sw_height), false, SND_S "03-1.wav", SND_S "03-0.wav" },
-	{ QRect(268, sw_u_top, sw_width, sw_height), false, SND_S "04-1.wav", SND_S "04-0.wav" },
-	{ QRect(304, sw_u_top, sw_width, sw_height), false, SND_S "05-1.wav", SND_S "05-0.wav" },
-	{ QRect(340, sw_u_top, sw_width, sw_height), false, SND_S "06-1.wav", SND_S "06-0.wav" },
-	{ QRect(376, sw_u_top, sw_width, sw_height), false, SND_S "07-1.wav", SND_S "07-0.wav" },
-	{ QRect(412, sw_u_top, sw_width, sw_height), false, SND_S "08-1.wav", SND_S "08-0.wav" },
-	{ QRect(447, sw_u_top, sw_width, sw_height), false, SND_S "09-1.wav", SND_S "09-0.wav" },
-	{ QRect(483, sw_u_top, sw_width, sw_height), false, SND_S "10-1.wav", SND_S "10-0.wav" },
-	{ QRect(519, sw_u_top, sw_width, sw_height), false, SND_S "11-1.wav", SND_S "11-0.wav" },
-	{ QRect(555, sw_u_top, sw_width, sw_height), false, SND_S "12-1.wav", SND_S "12-0.wav" },
-	{ QRect(591, sw_u_top, sw_width, sw_height), false, SND_S "13-1.wav", SND_S "13-0.wav" },
-	{ QRect(627, sw_u_top, sw_width, sw_height), false, SND_S "14-1.wav", SND_S "14-0.wav" },
-	{ QRect(663, sw_u_top, sw_width, sw_height), false, SND_S "15-1.wav", SND_S "15-0.wav" },
 	{ QRect(124, sw_l_top, sw_width, sw_height), true,  SND_S "step-1.wav",  SND_S "step-0.wav" },
 	{ QRect(160, sw_l_top, sw_width, sw_height), false, SND_S "mode-1.wav",  SND_S "mode-0.wav" },
 	{ QRect(196, sw_l_top, sw_width, sw_height), true,  SND_S "stopn-1.wav", SND_S "stopn-0.wav" },
@@ -160,6 +130,9 @@ ControlPanel::ControlPanel(QWidget *parent):
 		i++;
 	}
 
+	keys = new BinaryKeys(plane[1], this);
+	wleds = new BusWLeds(plane[1], this);
+
 	QPixmap gfx[16];
 	for (i=0 ; i<16 ; i++) {
 		gfx[i] = plane[i].copy(rotary_rect);
@@ -174,7 +147,7 @@ ControlPanel::ControlPanel(QWidget *parent):
 	connect(ignition, &Ignition::signal_power, led[LED_ON], &LED::slot_change);
 
 	change_dimensions(plane[0].rect());
-	set_volume(70);
+	set_volume(100);
 }
 
 // -----------------------------------------------------------------------
@@ -184,7 +157,8 @@ void ControlPanel::set_volume(int volume_percent)
 	qreal linear_volume = QAudio::convertVolume(log_volume, QAudio::LogarithmicVolumeScale, QAudio::LinearVolumeScale);
 	rotary->set_volume(linear_volume);
 	ignition->set_volume(linear_volume);
-	for (int i=0 ; i<16 ; i++) {
+	keys->set_volume(linear_volume);
+	for (int i=0 ; i<SW_CNT ; i++) {
 		sw[i]->set_volume(linear_volume);
 	}
 }
@@ -206,17 +180,10 @@ void ControlPanel::change_dimensions(const QRect &rect)
 	for (int i=0 ; i<SW_CNT ; i++) {
 		sw[i]->move(sw_data[i].r.topLeft() - crop.topLeft());
 	}
+	keys->move(keys->origin() - crop.topLeft());
+	wleds->move(wleds->origin() - crop.topLeft());
 	rotary->move(rotary_rect.topLeft() - crop.topLeft());
 	ignition->move(ignition_rect.topLeft() - crop.topLeft());
-}
-
-// -----------------------------------------------------------------------
-ControlPanel::~ControlPanel()
-{
-	for (int i=0 ; i<SW_CNT ; i++) delete sw[i];
-	for (int i=0 ; i<LED_CNT ; i++) delete led[i];
-	delete rotary;
-	delete ignition;
 }
 
 // -----------------------------------------------------------------------
@@ -249,15 +216,6 @@ QSizePolicy ControlPanel::sizePolicy()
 }
 
 // -----------------------------------------------------------------------
-void ControlPanel::slot_bus_w_changed(uint16_t val)
-{
-	for (int i=0 ; i<16 ; i++) {
-		bool state = val & (1<<(15-i));
-		led[i]->set(state);
-	}
-}
-
-// -----------------------------------------------------------------------
 void ControlPanel::slot_state_changed(int state)
 {
 	switch (state) {
@@ -287,9 +245,9 @@ void ControlPanel::slot_small_panel_changed(bool state)
 }
 
 // -----------------------------------------------------------------------
-void ControlPanel::dim(float val)
+void ControlPanel::dim(bool state)
 {
-	for (int i=0 ; i<16 ; i++) led[i]->dim(val);
+	wleds->dim(state);
 }
 
 // vim: tabstop=4 shiftwidth=4 autoindent

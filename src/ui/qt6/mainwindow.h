@@ -65,7 +65,6 @@ public slots:
 	void slot_debugger_enabled_changed(bool state);
 	void slot_smallcp_changed(bool state);
 	void slot_panel_theme_changed(bool state);
-	void slot_binary_key_toggled(bool state);
 
 };
 
