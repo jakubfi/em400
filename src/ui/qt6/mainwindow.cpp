@@ -255,6 +255,9 @@ MainWindow::MainWindow(QWidget *parent) :
 	edit_box->setVisible(false);
 	connect(ui->mem, &MemView::signal_edit_mode_changed, this, &MainWindow::slot_edit_mode_changed);
 
+	// clicking a page in the allocation map jumps the memory view to its start
+	connect(map, &MapView::signal_page_clicked, ui->mem, &MemView::update_contents);
+
 	e.run();
 	ui->cp->rotary->set_position(8);
 

@@ -17,6 +17,9 @@ MapView::MapView(EmuModel *emu, QWidget *parent) :
 
 	compute_geometry();
 
+	// hover-cursor feedback needs move events without a button held
+	setMouseTracking(true);
+
 	for (int seg=0 ; seg<SEGS ; seg++) map[seg] = e->get_mem_map(seg);
 
 	connect(e, &EmuModel::signal_mem_map_changed, this, &MapView::slot_map_changed);
@@ -52,6 +55,58 @@ void MapView::slot_map_changed(int seg, uint16_t m)
 	if (seg < 0 || seg >= SEGS) return;
 	map[seg] = m;
 	update();
+}
+
+// -----------------------------------------------------------------------
+// Map a widget-space point to a page cell. Returns false for the headers,
+// gutter and inter-cell gaps so only the cell squares are hot.
+bool MapView::hit_cell(const QPoint &pos, int &seg, int &page) const
+{
+	int cx = pos.x() - grid_x();
+	int cy = pos.y() - grid_y();
+	if (cx < 0 || cy < 0) return false;
+
+	int col = cx / (cell + gap);
+	int row = cy / (cell + gap);
+	if (col >= PAGES || row >= SEGS) return false;
+
+	if (cx - col * (cell + gap) >= cell) return false;
+	if (cy - row * (cell + gap) >= cell) return false;
+
+	seg = row;
+	page = col;
+	return true;
+}
+
+// -----------------------------------------------------------------------
+// A click on a page cell jumps the memory view to that page's start address
+// in the clicked segment.
+void MapView::mousePressEvent(QMouseEvent *ev)
+{
+	int seg, page;
+	if (ev->button() == Qt::LeftButton && hit_cell(ev->pos(), seg, page)) {
+		emit signal_page_clicked(seg, page * PAGE_WORDS);
+		return;
+	}
+	QWidget::mousePressEvent(ev);
+}
+
+// -----------------------------------------------------------------------
+// Over a clickable page cell: show a pointing-hand cursor and a tooltip
+// hinting where a click will take the memory view (seg:page-start-address).
+void MapView::mouseMoveEvent(QMouseEvent *ev)
+{
+	int seg, page;
+	if (hit_cell(ev->pos(), seg, page)) {
+		setCursor(Qt::PointingHandCursor);
+		setToolTip(tr("click to set memory view to %1:%2")
+			.arg(seg, 0, 16)
+			.arg(page * PAGE_WORDS, 4, 16, QLatin1Char('0')));
+	} else {
+		setCursor(Qt::ArrowCursor);
+		setToolTip(QString());
+	}
+	QWidget::mouseMoveEvent(ev);
 }
 
 // -----------------------------------------------------------------------
