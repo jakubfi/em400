@@ -58,6 +58,30 @@ MainWindow::MainWindow(QWidget *parent) :
 {
 	ui->setupUi(this);
 
+	build_docks();
+	init_layout();
+	wire_connections();
+	build_statusbar();
+
+	e.run();
+	ui->cp->rotary->set_position(8);
+
+	restore_layout();
+}
+
+// -----------------------------------------------------------------------
+// Build every debugger view and home it into a dock widget arranged around the
+// control panel. The control panel is the permanent center - it IS the machine -
+// while the debugger modules dock around it and can be moved, floated, tabbed or
+// hidden. register_dock() builds the dock around a view, gives it a View-menu
+// show/hide entry, and collects it into `docks` - so a dock and its menu entry
+// are born together, and every place that walks all docks (default layout,
+// debugger show/hide, sync) just iterates `docks`. Adding a new module is then:
+// build the view, register_dock() it. The order of these calls is the order of
+// the entries in the View menu. The named handles are kept only for the bespoke
+// default arrangement in apply_default_layout().
+void MainWindow::build_docks()
+{
 	dasm = new DasmView();
 	mem = new MemView();
 	dasm->connect_emu(&e);
@@ -71,16 +95,6 @@ MainWindow::MainWindow(QWidget *parent) :
 	watch = new WatchView(&e);
 	stack = new StackView(&e);
 
-	// Home every debugger panel into a dock widget arranged around the control
-	// panel. The control panel is the permanent center - it IS the machine -
-	// while the debugger modules dock around it and can be moved, floated,
-	// tabbed or hidden. register_dock() builds the dock around a view, gives it
-	// a View-menu show/hide entry, and collects it into `docks` - so a dock and
-	// its menu entry are born together, and every place that walks all docks
-	// (default layout, debugger show/hide, sync) just iterates `docks`. Adding a
-	// new module is then: build the view, register_dock() it. The order of these
-	// calls is the order of the entries in the View menu. The named handles are
-	// kept only for the bespoke default arrangement in apply_default_layout().
 	ui->menuView->addSeparator();
 	dock_dasm  = register_dock(dasm,  tr("Disassembly"),      "dock_dasm");
 	dock_mem   = register_dock(mem,   tr("Memory"),           "dock_mem");
@@ -91,7 +105,14 @@ MainWindow::MainWindow(QWidget *parent) :
 	dock_brk   = register_dock(brk,   tr("Breakpoints"),      "dock_brk");
 	dock_watch = register_dock(watch, tr("Watches"),          "dock_watch");
 	dock_stack = register_dock(stack, tr("Stack"),            "dock_stack");
+}
 
+// -----------------------------------------------------------------------
+// Establish the window's dock geometry, lay the docks out in their default
+// arrangement, host the control panel in the center, and add the Reset Layout
+// escape hatch.
+void MainWindow::init_layout()
+{
 	// Space preferences drive the default arrangement:
 	//   disassembly is the priority - narrow but wants all the vertical it can
 	//     get, so it owns the full-height left column.
@@ -140,7 +161,13 @@ MainWindow::MainWindow(QWidget *parent) :
 	QAction *act_reset = new QAction(tr("Reset Layout"), this);
 	ui->menuView->addAction(act_reset);
 	connect(act_reset, &QAction::triggered, this, &MainWindow::apply_default_layout);
+}
 
+// -----------------------------------------------------------------------
+// Wire the signal/slot graph between the menu actions, the EmuModel and the
+// control panel.
+void MainWindow::wire_connections()
+{
 	// MainWindow -> ControlPanel
 	connect(ui->actionLoad_OS_image, &QAction::triggered, this, &MainWindow::load_os_image);
 	connect(ui->actionQuit, &QAction::triggered, this, &MainWindow::close);
@@ -179,9 +206,16 @@ MainWindow::MainWindow(QWidget *parent) :
 
 	// register edits are handled inside the RegView models (setData -> set_reg)
 
-	// status bar: emulation state on the left (MIPS, flags, status, MC),
-	// grouped with vertical separators; non-emulation indicators (memory
-	// editor mode) pushed to the right.
+	// clicking a page in the allocation map jumps the memory view to its start
+	connect(map, &MapView::signal_page_clicked, mem, &MemView::update_contents);
+}
+
+// -----------------------------------------------------------------------
+// Build the status bar: emulation state on the left (MIPS, flags, status, MC),
+// grouped with vertical separators; non-emulation indicators (memory editor
+// mode) pushed to the right.
+void MainWindow::build_statusbar()
+{
 	QFont font("Monospace");
 
 	ips = new QLabel();
@@ -228,17 +262,15 @@ MainWindow::MainWindow(QWidget *parent) :
 	ui->statusbar->addPermanentWidget(edit_box);
 	edit_box->setVisible(false);
 	connect(mem, &MemView::signal_edit_mode_changed, this, &MainWindow::slot_edit_mode_changed);
+}
 
-	// clicking a page in the allocation map jumps the memory view to its start
-	connect(map, &MapView::signal_page_clicked, mem, &MemView::update_contents);
-
-	e.run();
-	ui->cp->rotary->set_position(8);
-
-	// Restore the user's last layout. On the very first run there is no saved
-	// state, so we start with the control panel only (debugger off) - that is the
-	// default. After that the user's arrangement is restored verbatim: dock
-	// positions, sizes, visibility and float state all come back as left.
+// -----------------------------------------------------------------------
+// Restore the user's last layout. On the very first run there is no saved
+// state, so we start with the control panel only (debugger off) - that is the
+// default. After that the user's arrangement is restored verbatim: dock
+// positions, sizes, visibility and float state all come back as left.
+void MainWindow::restore_layout()
+{
 	QSettings settings;
 	// reflect the panel-theme choice in the menu without re-applying it: the
 	// theme was already set on the QApplication in ui_qt6_loop() before this

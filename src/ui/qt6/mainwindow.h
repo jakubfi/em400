@@ -58,6 +58,12 @@ private:
 	void update_sr_status(uint16_t val);
 	void update_r0_status(uint16_t r0);
 
+	void build_docks();
+	void init_layout();
+	void wire_connections();
+	void build_statusbar();
+	void restore_layout();
+
 	QDockWidget *register_dock(QWidget *view, const QString &title, const QString &objname);
 	void apply_default_layout();
 	void sync_debugger_action();
