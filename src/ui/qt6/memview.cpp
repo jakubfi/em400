@@ -4,6 +4,7 @@
 #include <QScrollBar>
 #include <QHBoxLayout>
 #include <QLabel>
+#include <QApplication>
 #include <emcrk/r40.h>
 #include "memview.h"
 #include "libem400.h"
@@ -31,13 +32,15 @@ MemView::MemView(QWidget *parent) : QWidget(parent)
 
 	setFocusPolicy(Qt::WheelFocus);
 
-	// header bar
+	// header bar. The widget font is Monospace (set above) and would propagate
+	// to these controls; pin the header to the standard UI font instead.
 	header = new QWidget(this);
+	header->setFont(QApplication::font());
 	QHBoxLayout *hlay = new QHBoxLayout(header);
 	hlay->setContentsMargins(4, 2, 4, 2);
 	hlay->setSpacing(4);
 
-	hlay->addWidget(new QLabel("Block:"));
+	hlay->addWidget(new QLabel("NB:"));
 	nb_spin = new QSpinBox();
 	nb_spin->setRange(0, 15);
 	nb_spin->setValue(0);
