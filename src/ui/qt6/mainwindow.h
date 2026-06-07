@@ -8,6 +8,8 @@
 #include <QDockWidget>
 #include <emdas.h>
 #include "emumodel.h"
+#include "dasmview.h"
+#include "memview.h"
 #include "regview.h"
 #include "intview.h"
 #include "mapview.h"
@@ -38,6 +40,8 @@ private:
 
 	QDockWidget *dock_uregs, *dock_sregs, *dock_dasm, *dock_mem, *dock_ints, *dock_map, *dock_brk, *dock_watch, *dock_stack;
 
+	DasmView *dasm;
+	MemView *mem;
 	RegCompact *uregs, *sregs;
 	IntView *ints;
 	MapView *map;

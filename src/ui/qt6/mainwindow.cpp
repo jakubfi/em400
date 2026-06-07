@@ -58,8 +58,10 @@ MainWindow::MainWindow(QWidget *parent) :
 {
 	ui->setupUi(this);
 
-	ui->dasm->connect_emu(&e);
-	ui->mem->connect_emu(&e);
+	dasm = new DasmView();
+	mem = new MemView();
+	dasm->connect_emu(&e);
+	mem->connect_emu(&e);
 
 	uregs = new RegCompact(&e, RegCompact::USER);
 	sregs = new RegCompact(&e, RegCompact::SYSTEM);
@@ -69,12 +71,11 @@ MainWindow::MainWindow(QWidget *parent) :
 	watch = new WatchView(&e);
 	stack = new StackView(&e);
 
-	// Re-home the debugger panels into dock widgets arranged around the
-	// control panel. The control panel is the permanent center - it IS the
-	// machine - while the debugger modules dock around it and can be moved,
-	// floated, tabbed or hidden. Reparenting the existing group boxes via
-	// setWidget() keeps all their child pointers (ui->dasm, ui->mem) and
-	// signal wiring intact; only their host changes.
+	// Home every debugger panel into a dock widget arranged around the control
+	// panel. The control panel is the permanent center - it IS the machine -
+	// while the debugger modules dock around it and can be moved, floated,
+	// tabbed or hidden. The views themselves are plain widgets built in code;
+	// setWidget() just hands each one to its dock.
 	dock_uregs = new QDockWidget(tr("User registers"), this);
 	dock_sregs = new QDockWidget(tr("System registers"), this);
 	dock_dasm = new QDockWidget(tr("Disassembly"), this);
@@ -95,10 +96,6 @@ MainWindow::MainWindow(QWidget *parent) :
 	dock_watch->setObjectName("dock_watch");
 	dock_stack->setObjectName("dock_stack");
 
-	// dock title bars now carry the names; drop the redundant group titles
-	ui->group_dasm->setTitle("");
-	ui->group_mem->setTitle("");
-
 	dock_uregs->setWidget(uregs);
 	dock_sregs->setWidget(sregs);
 	dock_ints->setWidget(ints);
@@ -106,8 +103,8 @@ MainWindow::MainWindow(QWidget *parent) :
 	dock_brk->setWidget(brk);
 	dock_watch->setWidget(watch);
 	dock_stack->setWidget(stack);
-	dock_dasm->setWidget(ui->group_dasm);
-	dock_mem->setWidget(ui->group_mem);
+	dock_dasm->setWidget(dasm);
+	dock_mem->setWidget(mem);
 
 	// Space preferences drive the default arrangement:
 	//   disassembly is the priority - narrow but wants all the vertical it can
@@ -169,6 +166,7 @@ MainWindow::MainWindow(QWidget *parent) :
 	connect(act_reset, &QAction::triggered, this, &MainWindow::apply_default_layout);
 
 	// MainWindow -> ControlPanel
+	connect(ui->actionLoad_OS_image, &QAction::triggered, this, &MainWindow::load_os_image);
 	connect(ui->actionQuit, &QAction::triggered, this, &MainWindow::close);
 	connect(ui->actionSmall_Control_Panel, &QAction::toggled, this, &MainWindow::slot_smallcp_changed);
 	connect(ui->actionDebugger, &QAction::toggled, this, &MainWindow::slot_debugger_enabled_changed);
@@ -253,10 +251,10 @@ MainWindow::MainWindow(QWidget *parent) :
 	edit_lay->addWidget(edit_mode);
 	ui->statusbar->addPermanentWidget(edit_box);
 	edit_box->setVisible(false);
-	connect(ui->mem, &MemView::signal_edit_mode_changed, this, &MainWindow::slot_edit_mode_changed);
+	connect(mem, &MemView::signal_edit_mode_changed, this, &MainWindow::slot_edit_mode_changed);
 
 	// clicking a page in the allocation map jumps the memory view to its start
-	connect(map, &MapView::signal_page_clicked, ui->mem, &MemView::update_contents);
+	connect(map, &MapView::signal_page_clicked, mem, &MemView::update_contents);
 
 	e.run();
 	ui->cp->rotary->set_position(8);
@@ -434,7 +432,7 @@ void MainWindow::slot_dasm_update()
 {
 	int qnb = e.get_qnb();
 	int ic = e.get_reg(EM400_REG_IC);
-	ui->dasm->update_contents(qnb, ic);
+	dasm->update_contents(qnb, ic);
 }
 
 // -----------------------------------------------------------------------
