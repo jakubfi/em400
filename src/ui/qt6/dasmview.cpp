@@ -5,6 +5,8 @@
 #include <QHBoxLayout>
 #include <QLabel>
 #include <QApplication>
+#include <QMenu>
+#include <QContextMenuEvent>
 #include <emdas.h>
 #include "dasmview.h"
 #include "theme.h"
@@ -369,6 +371,38 @@ void DasmView::wheelEvent(QWheelEvent *event)
 	internal_update_contents(); // clamps to the end cap, rebuilds, syncs scrollbar
 
 	event->accept();
+}
+
+// -----------------------------------------------------------------------
+// Map a widget-space point to the disassembly line under it. The listing is
+// painted below the header (translated by content_top), one line per
+// line_height. Returns false on the header or below the last listed line.
+bool DasmView::hit_test_line(const QPoint &pos, int &addr) const
+{
+	int rel_y = pos.y() - content_top;
+	if (rel_y < 0) return false;
+	int row = rel_y / line_height;
+	if (row < 0 || row >= listing.size()) return false;
+	addr = listing.at(row).addr;
+	return true;
+}
+
+// -----------------------------------------------------------------------
+void DasmView::contextMenuEvent(QContextMenuEvent *event)
+{
+	int addr;
+	if (!hit_test_line(event->pos(), addr)) return;
+
+	QMenu menu(this);
+	QAction *set_ic = menu.addAction(tr("Set IC here"));
+	QAction *locate = menu.addAction(tr("Locate in Memory View"));
+
+	QAction *chosen = menu.exec(event->globalPos());
+	if (chosen == set_ic) {
+		if (e) e->set_reg(EM400_REG_IC, addr);
+	} else if (chosen == locate) {
+		emit signal_locate_in_memory(cnb, addr);
+	}
 }
 
 // -----------------------------------------------------------------------

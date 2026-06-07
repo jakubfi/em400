@@ -32,6 +32,10 @@ public:
 public slots:
 	void update_contents(int nb, int addr);
 	void update_contents_no_nb(int new_line);
+	// jump to a block+address and frame that cell with a green accent box (same
+	// accent the editor uses); the box stays until the cell is clicked again,
+	// another cell is selected, or an edit begins
+	void locate_cell(int nb, int addr);
 
 private slots:
 	void slot_state_changed(int state);
@@ -58,6 +62,11 @@ private:
 
 	// view state
 	int cnb = 0, caddr = 0;
+	// "Locate in Memory View" / click-to-select target: the cell framed with a
+	// green accent box, or -1 when none. Persists across scrolling; cleared when
+	// the cell is clicked again, another cell is selected, or an edit begins. The
+	// box only paints while its block (locate_nb) is the one on screen.
+	int locate_nb = -1, locate_addr = -1;
 	DisplayFormat fmt = FMT_HEX;
 	SidePanel panel = PANEL_ASCII;
 	bool cpu_running = false;
@@ -125,6 +134,7 @@ private:
 	void draw_panel_cell(QPainter &painter, int x, int y, int val, int pcell_w, int side_x);
 	void draw_panel_cell_edited(QPainter &painter, int x, int y, int addr, int val, int pcell_w, int side_x);
 	void draw_panel_edit_cell(QPainter &painter, int x, int y, int val, int pcell_w, int side_x);
+	void draw_locate_box(QPainter &painter, int x, int y, int cell_w, int pcell_w, int side_x);
 	QString value_text(int val) const;
 	QString panel_text(int val) const;
 
@@ -136,6 +146,7 @@ private:
 protected:
 	void paintEvent(QPaintEvent *event) override;
 	void resizeEvent(QResizeEvent *event) override;
+	void mousePressEvent(QMouseEvent *event) override;
 	void mouseDoubleClickEvent(QMouseEvent *event) override;
 	void focusOutEvent(QFocusEvent *event) override;
 	void wheelEvent(QWheelEvent *event) override;

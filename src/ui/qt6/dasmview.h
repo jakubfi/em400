@@ -22,6 +22,11 @@ public slots:
 	void update_contents(int nb, int addr);
 	void update_contents_no_nb(int new_addr);
 
+signals:
+	// right-click "Locate in Memory View": jump the memory view to this block
+	// and address and highlight the cell there
+	void signal_locate_in_memory(int nb, int addr);
+
 private:
 	EmuModel *e;
 
@@ -65,10 +70,14 @@ private:
 
 	int calculate_scroll_lines(int angleDelta);
 
+	// map a widget-space point to the address of the disassembly line under it
+	bool hit_test_line(const QPoint &pos, int &addr) const;
+
 protected:
 	void paintEvent(QPaintEvent *event);
 	void resizeEvent(QResizeEvent *event);
 	void wheelEvent(QWheelEvent *event);
+	void contextMenuEvent(QContextMenuEvent *event);
 	QSize minimumSizeHint() const;
 	QSize sizeHint() const;
 	void enterEvent(QEnterEvent *event);

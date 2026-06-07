@@ -303,6 +303,35 @@ void MemView::update_contents_no_nb(int new_line)
 }
 
 // -----------------------------------------------------------------------
+// Jump to a block+address (placing its line at the top) and frame that cell
+// with a green accent box. Driven by the disassembly view's "Locate in Memory
+// View" context action.
+void MemView::locate_cell(int nb, int addr)
+{
+	cancel_edit();
+	cnb = nb;
+
+	// only scroll when the target line isn't already on screen; if it is, leave
+	// the view put so the accent box just appears where it already sits. Use the
+	// fully-visible line count (total_lines counts a clipped bottom row).
+	int visible = (bottom - col_hdr_h) / line_height;
+	if (visible < 1) visible = 1;
+	int line = addr / words_per_line;
+	int top_line = caddr / words_per_line;
+	if (line < top_line || line >= top_line + visible) {
+		caddr = line * words_per_line;
+	}
+
+	locate_nb = nb;
+	locate_addr = addr;
+	QSignalBlocker blk(nb_spin);
+	nb_spin->setValue(cnb);
+	QSignalBlocker blk2(scroll);
+	scroll->setValue(caddr / words_per_line);
+	update();
+}
+
+// -----------------------------------------------------------------------
 // Map a widget-space point to an absolute address in the value column.
 // Returns false for clicks on the header, address gutter, side panel or
 // outside the populated cells.
@@ -390,6 +419,7 @@ void MemView::start_edit(int addr)
 	edit_nb = cnb;
 	edit_addr = addr;
 	edit_cursor = 0;
+	locate_addr = -1;
 	setFocus();
 	emit signal_edit_mode_changed(true, edit_insert);
 	update();
@@ -411,6 +441,7 @@ void MemView::start_text_edit(int addr, int sub)
 	edit_addr = addr;
 	edit_char = sub;
 	edit_orig.clear();
+	locate_addr = -1;
 	setFocus();
 	// text editing is always overwrite; report it as such
 	emit signal_edit_mode_changed(true, false);
@@ -614,6 +645,29 @@ bool MemView::valid_buf(const QString &s) const
 }
 
 // -----------------------------------------------------------------------
+// Single left click selects (locates) the clicked cell with the green accent
+// box; clicking the already-located cell de-selects it. Works in both the
+// value column and the side panel.
+void MemView::mousePressEvent(QMouseEvent *event)
+{
+	// don't hijack clicks while a cell is being edited - let the edit run
+	int addr, sub;
+	if (!editing && event->button() == Qt::LeftButton
+			&& (hit_test_cell(event->pos(), addr) || hit_test_panel(event->pos(), addr, sub))) {
+		if (locate_addr == addr && locate_nb == cnb) {
+			locate_addr = -1; // toggle off
+		} else {
+			locate_nb = cnb;
+			locate_addr = addr;
+		}
+		update();
+		event->accept();
+		return;
+	}
+	QWidget::mousePressEvent(event);
+}
+
+// -----------------------------------------------------------------------
 void MemView::mouseDoubleClickEvent(QMouseEvent *event)
 {
 	int addr, sub;
@@ -773,7 +827,43 @@ void MemView::draw_line(QPainter &painter, int y, int base_addr, int cell_w, int
 				draw_panel_cell(painter, x, y, val, pcell_w, side_x);
 			}
 		}
+
 	}
+
+	// drawn in a second pass, after every cell on the line: the box bleeds a bit
+	// past its cell and would otherwise be painted over by the next cell's chars
+	if (locate_nb == cnb && locate_addr >= base_addr && locate_addr < base_addr + words_per_line && locate_addr <= 0xffff) {
+		draw_locate_box(painter, locate_addr - base_addr, y, cell_w, pcell_w, side_x);
+	}
+}
+
+// -----------------------------------------------------------------------
+// Frame the located cell with the green accent box used by "Locate in Memory
+// View" - same look as the editor's companion outline. The numeric and the
+// side-panel cell are each boxed when their column is shown, so the cell stays
+// framed in both halves of the view at once.
+void MemView::draw_locate_box(QPainter &painter, int x, int y, int cell_w, int pcell_w, int side_x)
+{
+	int ey = col_hdr_h + y * line_height;
+
+	painter.setPen(QPen(palette().color(QPalette::Highlight), 1));
+	painter.setRenderHint(QPainter::Antialiasing, true);
+
+	// half-pixel offset so the 1px stroke sits on pixel centers (crisp edges)
+	if (fmt != FMT_OFF) {
+		int bx = mem_x_start + x * cell_w - half_font_width;
+		QRectF r(bx + 0.5, ey + 0.5, cell_w - 1, line_height - 1);
+		painter.drawRoundedRect(r, 2, 2);
+	}
+	if (panel != PANEL_OFF) {
+		// pull the panel box in by 2px each side: panel cells are packed with no
+		// trailing pad, so the full half-font margin would bleed into neighbours
+		int bx = side_x + x * pcell_w - half_font_width + 2;
+		QRectF r(bx + 0.5, ey + 0.5, pcell_w + font_width - 5, line_height - 1);
+		painter.drawRoundedRect(r, 2, 2);
+	}
+
+	painter.setRenderHint(QPainter::Antialiasing, false);
 }
 
 // -----------------------------------------------------------------------

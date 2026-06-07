@@ -208,6 +208,14 @@ void MainWindow::wire_connections()
 
 	// clicking a page in the allocation map jumps the memory view to its start
 	connect(map, &MapView::signal_page_clicked, mem, &MemView::update_contents);
+
+	// "Locate in Memory View" from the disassembly context menu: jump the memory
+	// view there, highlight the cell, and surface the (possibly hidden) dock
+	connect(dasm, &DasmView::signal_locate_in_memory, this, [this](int nb, int addr) {
+		mem->locate_cell(nb, addr);
+		dock_mem->show();
+		dock_mem->raise();
+	});
 }
 
 // -----------------------------------------------------------------------
