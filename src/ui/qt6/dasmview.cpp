@@ -2,6 +2,9 @@
 #include <QPaintEvent>
 #include <QDebug>
 #include <QScrollBar>
+#include <QHBoxLayout>
+#include <QLabel>
+#include <QApplication>
 #include <emdas.h>
 #include "dasmview.h"
 #include "theme.h"
@@ -22,11 +25,40 @@ DasmView::DasmView(QWidget *parent) :
 	emdas_set_features(emd, EMD_FEAT_UMNEMO);
 	emdas_set_tabs(emd, 0, 0, 5, 4);
 
-	cnb = caddr = ic_addr = -1;
+	cnb = caddr = ic_addr = ic_nb = -1;
 
 	set_font("Monospace");
 
 	setFocusPolicy(Qt::WheelFocus);
+
+	// header bar. The widget font is Monospace (set above) and would propagate
+	// to these controls; pin the header to the standard UI font instead.
+	header = new QWidget(this);
+	header->setFont(QApplication::font());
+	// the parent paintEvent only fills the content area below the header, so the
+	// header must paint its own background or its gaps show stale pixels.
+	header->setAutoFillBackground(true);
+	QHBoxLayout *hlay = new QHBoxLayout(header);
+	hlay->setContentsMargins(4, 2, 4, 2);
+	hlay->setSpacing(4);
+
+	hlay->addWidget(new QLabel("NB:"));
+	nb_spin = new QSpinBox();
+	nb_spin->setRange(0, 15);
+	nb_spin->setValue(0);
+	nb_spin->setFixedWidth(48);
+	hlay->addWidget(nb_spin);
+	hlay->addSpacing(8);
+
+	follow_chk = new QCheckBox("follow IC");
+	follow_chk->setChecked(follow_ic);
+	hlay->addWidget(follow_chk);
+	hlay->addStretch();
+
+	content_top = header->sizeHint().height();
+	if (content_top <= 0) content_top = 28;
+	header->setFixedHeight(content_top);
+	header->setGeometry(0, 0, width(), content_top);
 
 	scroll = new QScrollBar(Qt::Vertical, this);
 	scroll->setMinimum(0x0000);
@@ -34,6 +66,19 @@ DasmView::DasmView(QWidget *parent) :
 	scroll->setVisible(false);
 
 	connect(scroll, &QScrollBar::valueChanged, this, &DasmView::update_contents_no_nb);
+
+	// Manually picking a block only makes sense when not chained to the IC;
+	// flip follow off so the chosen block sticks instead of snapping back.
+	connect(nb_spin, QOverload<int>::of(&QSpinBox::valueChanged), this, [this](int nb) {
+		if (follow_ic) follow_chk->setChecked(false); // triggers the toggle below
+		cnb = nb;
+		internal_update_contents();
+	});
+
+	connect(follow_chk, &QCheckBox::toggled, this, [this](bool on) {
+		follow_ic = on;
+		if (follow_ic) snap_to_ic();
+	});
 }
 
 // -----------------------------------------------------------------------
@@ -175,12 +220,30 @@ void DasmView::recenter_on_ic()
 }
 
 // -----------------------------------------------------------------------
+// Snap the view to the last known IC location and sync the NB spinner to it.
+void DasmView::snap_to_ic()
+{
+	cnb = ic_nb;
+	QSignalBlocker blk(nb_spin);
+	nb_spin->setValue(cnb);
+	recenter_on_ic();
+	internal_update_contents();
+}
+
+// -----------------------------------------------------------------------
 void DasmView::update_contents(int new_nb, int new_addr)
 {
 	ic_addr = new_addr;
-	cnb = new_nb;
-	recenter_on_ic();
-	internal_update_contents();
+	ic_nb = new_nb;
+	// When not following the IC the user is browsing a block of their choice;
+	// don't yank the view and don't rebuild the (unchanged) listing - just
+	// repaint so the IC bar tracks (it only shows when the displayed block
+	// actually holds the IC).
+	if (follow_ic) {
+		snap_to_ic();
+	} else {
+		update();
+	}
 }
 
 // -----------------------------------------------------------------------
@@ -195,25 +258,30 @@ void DasmView::update_contents_no_nb(int new_addr)
 void DasmView::paintEvent(QPaintEvent *event)
 {
 	QPainter painter(this);
+	painter.translate(0, content_top);
 
 	const int line_y_start = font_height;
 	const int addr_x_start = font_width / 2;
 	const int divider_x_pos = addr_x_start + font_width * (addr_len + 1);
 	const int dasm_x_start = divider_x_pos + font_width;
 
+	// content area below the header (painter is translated down by content_top)
+	const int content_h = height() - content_top;
+
 	// background
-	painter.fillRect(event->rect(), palette().color(QPalette::Base));
+	painter.fillRect(0, 0, width(), content_h, palette().color(QPalette::Base));
 
 	// addr-code divider line, drawn BEFORE the listing so the IC bar paints over
 	// it (the "you are here" bar is the focal element and crosses the divider).
 	painter.setPen(QPen(em400_sep_color(palette()), 2));
-	painter.drawLine(divider_x_pos, 0, divider_x_pos, height());
+	painter.drawLine(divider_x_pos, 0, divider_x_pos, content_h);
 
-	// disassembly
+	// disassembly. The IC bar only shows when the displayed block actually holds
+	// the IC - when browsing another block (follow off) there is no "here".
 	QColor bar_color;
 	int y = line_y_start;
 	Q_FOREACH (const AsmLine &l, listing) {
-		const bool at_ic = l.addr == e->get_reg(EM400_REG_IC);
+		const bool at_ic = (cnb == ic_nb) && (l.addr == e->get_reg(EM400_REG_IC));
 
 		// bar for IC location
 		if (at_ic) {
@@ -249,13 +317,17 @@ void DasmView::paintEvent(QPaintEvent *event)
 // -----------------------------------------------------------------------
 void DasmView::resizeEvent(QResizeEvent *event)
 {
-	dasm_total_lines = (height() / line_height) + 1; // +1 for the line at the bottom edge of the window
+	header->setGeometry(0, 0, width(), content_top);
+
+	const int content_h = height() - content_top;
+	dasm_total_lines = (content_h / line_height) + 1; // +1 for the line at the bottom edge of the window
 
 	// Recenter on IC so startup timing (update_contents before first resize) doesn't matter.
-	if (ic_addr >= 0) recenter_on_ic();
+	if (follow_ic && ic_addr >= 0) recenter_on_ic();
 	if (caddr >= 0) internal_update_contents();
 
-	scroll->setGeometry(width() - scroll->sizeHint().width(), 0, scroll->sizeHint().width(), height());
+	scroll->setGeometry(width() - scroll->sizeHint().width(), content_top,
+		scroll->sizeHint().width(), content_h);
 
 	QWidget::resizeEvent(event);
 }

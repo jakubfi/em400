@@ -3,6 +3,8 @@
 
 #include <QWidget>
 #include <QScrollBar>
+#include <QSpinBox>
+#include <QCheckBox>
 #include "emumodel.h"
 #include "asmline.h"
 
@@ -23,7 +25,14 @@ public slots:
 private:
 	EmuModel *e;
 
-	int cnb, caddr, ic_addr;
+	int cnb, caddr, ic_addr, ic_nb;
+	bool follow_ic = true;
+
+	// header bar
+	QWidget *header;
+	QSpinBox *nb_spin;
+	QCheckBox *follow_chk;
+	int content_top = 0;
 
 	QFont font;
 	int font_height, font_width, font_descent; // calculated
@@ -44,6 +53,7 @@ private:
 	void set_font(QString name, int size=0);
 	void internal_update_contents();
 	void recenter_on_ic();
+	void snap_to_ic();
 	int max_first_addr();
 
 	AsmLine dasm_exact(int nb, int addr);
