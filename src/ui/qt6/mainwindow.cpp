@@ -74,37 +74,23 @@ MainWindow::MainWindow(QWidget *parent) :
 	// Home every debugger panel into a dock widget arranged around the control
 	// panel. The control panel is the permanent center - it IS the machine -
 	// while the debugger modules dock around it and can be moved, floated,
-	// tabbed or hidden. The views themselves are plain widgets built in code;
-	// setWidget() just hands each one to its dock.
-	dock_uregs = new QDockWidget(tr("User registers"), this);
-	dock_sregs = new QDockWidget(tr("System registers"), this);
-	dock_dasm = new QDockWidget(tr("Disassembly"), this);
-	dock_mem  = new QDockWidget(tr("Memory"), this);
-	dock_ints = new QDockWidget(tr("Interrupts"), this);
-	dock_map  = new QDockWidget(tr("Allocation map"), this);
-	dock_brk  = new QDockWidget(tr("Breakpoints"), this);
-	dock_watch = new QDockWidget(tr("Watches"), this);
-	dock_stack = new QDockWidget(tr("Stack"), this);
-
-	dock_uregs->setObjectName("dock_uregs");
-	dock_sregs->setObjectName("dock_sregs");
-	dock_dasm->setObjectName("dock_dasm");
-	dock_mem->setObjectName("dock_mem");
-	dock_ints->setObjectName("dock_ints");
-	dock_map->setObjectName("dock_map");
-	dock_brk->setObjectName("dock_brk");
-	dock_watch->setObjectName("dock_watch");
-	dock_stack->setObjectName("dock_stack");
-
-	dock_uregs->setWidget(uregs);
-	dock_sregs->setWidget(sregs);
-	dock_ints->setWidget(ints);
-	dock_map->setWidget(map);
-	dock_brk->setWidget(brk);
-	dock_watch->setWidget(watch);
-	dock_stack->setWidget(stack);
-	dock_dasm->setWidget(dasm);
-	dock_mem->setWidget(mem);
+	// tabbed or hidden. register_dock() builds the dock around a view, gives it
+	// a View-menu show/hide entry, and collects it into `docks` - so a dock and
+	// its menu entry are born together, and every place that walks all docks
+	// (default layout, debugger show/hide, sync) just iterates `docks`. Adding a
+	// new module is then: build the view, register_dock() it. The order of these
+	// calls is the order of the entries in the View menu. The named handles are
+	// kept only for the bespoke default arrangement in apply_default_layout().
+	ui->menuView->addSeparator();
+	dock_dasm  = register_dock(dasm,  tr("Disassembly"),      "dock_dasm");
+	dock_mem   = register_dock(mem,   tr("Memory"),           "dock_mem");
+	dock_uregs = register_dock(uregs, tr("User registers"),   "dock_uregs");
+	dock_sregs = register_dock(sregs, tr("System registers"), "dock_sregs");
+	dock_ints  = register_dock(ints,  tr("Interrupts"),       "dock_ints");
+	dock_map   = register_dock(map,   tr("Allocation map"),   "dock_map");
+	dock_brk   = register_dock(brk,   tr("Breakpoints"),      "dock_brk");
+	dock_watch = register_dock(watch, tr("Watches"),          "dock_watch");
+	dock_stack = register_dock(stack, tr("Stack"),            "dock_stack");
 
 	// Space preferences drive the default arrangement:
 	//   disassembly is the priority - narrow but wants all the vertical it can
@@ -147,19 +133,9 @@ MainWindow::MainWindow(QWidget *parent) :
 	cp_layout->addWidget(ui->cp, 0, 0, Qt::AlignHCenter | Qt::AlignTop);
 	setCentralWidget(cp_host);
 
-	// per-module show/hide entries in the View menu (re-open a closed dock),
-	// plus an escape hatch back to the curated arrangement for anyone who drags
-	// the docks into a corner and can't find their way out.
-	ui->menuView->addSeparator();
-	ui->menuView->addAction(dock_dasm->toggleViewAction());
-	ui->menuView->addAction(dock_mem->toggleViewAction());
-	ui->menuView->addAction(dock_uregs->toggleViewAction());
-	ui->menuView->addAction(dock_sregs->toggleViewAction());
-	ui->menuView->addAction(dock_ints->toggleViewAction());
-	ui->menuView->addAction(dock_map->toggleViewAction());
-	ui->menuView->addAction(dock_brk->toggleViewAction());
-	ui->menuView->addAction(dock_watch->toggleViewAction());
-	ui->menuView->addAction(dock_stack->toggleViewAction());
+	// An escape hatch back to the curated arrangement, for anyone who drags the
+	// docks into a corner and can't find their way out. (The per-dock show/hide
+	// entries above it were added by register_dock().)
 	ui->menuView->addSeparator();
 	QAction *act_reset = new QAction(tr("Reset Layout"), this);
 	ui->menuView->addAction(act_reset);
@@ -319,6 +295,21 @@ void MainWindow::closeEvent(QCloseEvent* event)
 }
 
 // -----------------------------------------------------------------------
+// Wrap a debugger view in a QDockWidget: set the title and object name (the
+// latter is what saveState()/restoreState() key the layout on), hand the view
+// to the dock, add a show/hide entry for it to the View menu, and remember the
+// dock in `docks` so the rest of MainWindow can treat all docks uniformly.
+QDockWidget *MainWindow::register_dock(QWidget *view, const QString &title, const QString &objname)
+{
+	QDockWidget *dock = new QDockWidget(title, this);
+	dock->setObjectName(objname);
+	dock->setWidget(view);
+	ui->menuView->addAction(dock->toggleViewAction());
+	docks.append(dock);
+	return dock;
+}
+
+// -----------------------------------------------------------------------
 // Place the debugger docks in the curated default arrangement and show them.
 // Used at startup to establish a home for each dock, and by View > Reset Layout.
 // Left column: disassembly (full height) with a short breakpoint list under it
@@ -344,7 +335,7 @@ void MainWindow::apply_default_layout()
 	// registers / interrupts / map stack vertically down the right column (no
 	// tabbing); they all fit one below the other given a little window height
 
-	for (QDockWidget *d : {dock_dasm, dock_mem, dock_uregs, dock_sregs, dock_ints, dock_map, dock_brk, dock_watch, dock_stack}) {
+	for (QDockWidget *d : docks) {
 		d->setFloating(false);
 		d->show();
 	}
@@ -366,11 +357,13 @@ void MainWindow::apply_default_layout()
 // it re-fire slot_debugger_enabled_changed (which would clobber the layout).
 void MainWindow::sync_debugger_action()
 {
-	bool any = !dock_dasm->isHidden() || !dock_mem->isHidden()
-		|| !dock_uregs->isHidden() || !dock_sregs->isHidden()
-		|| !dock_ints->isHidden() || !dock_map->isHidden()
-		|| !dock_brk->isHidden() || !dock_watch->isHidden()
-		|| !dock_stack->isHidden();
+	bool any = false;
+	for (QDockWidget *d : docks) {
+		if (!d->isHidden()) {
+			any = true;
+			break;
+		}
+	}
 	QSignalBlocker block(ui->actionDebugger);
 	ui->actionDebugger->setChecked(any);
 }
@@ -465,15 +458,9 @@ void MainWindow::load_os_image()
 // -----------------------------------------------------------------------
 void MainWindow::slot_debugger_enabled_changed(bool state)
 {
-	dock_uregs->setVisible(state);
-	dock_sregs->setVisible(state);
-	dock_dasm->setVisible(state);
-	dock_mem->setVisible(state);
-	dock_ints->setVisible(state);
-	dock_map->setVisible(state);
-	dock_brk->setVisible(state);
-	dock_watch->setVisible(state);
-	dock_stack->setVisible(state);
+	for (QDockWidget *d : docks) {
+		d->setVisible(state);
+	}
 	//ui->statusbar->setVisible(state);
 	for (int i=0 ; i<10 ; i++) qApp->processEvents(); // StackOverflow, I don't even...
 	adjustSize();

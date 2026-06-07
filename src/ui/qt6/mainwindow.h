@@ -6,6 +6,7 @@
 #include <QLabel>
 #include <QSpinBox>
 #include <QDockWidget>
+#include <QList>
 #include <emdas.h>
 #include "emumodel.h"
 #include "dasmview.h"
@@ -38,6 +39,10 @@ private:
 	QLabel *edit_mode;
 	QWidget *edit_box;
 
+	// All debugger docks, in View-menu order. Built by register_dock(); the
+	// named handles below alias entries here and exist only for the bespoke
+	// default arrangement in apply_default_layout().
+	QList<QDockWidget *> docks;
 	QDockWidget *dock_uregs, *dock_sregs, *dock_dasm, *dock_mem, *dock_ints, *dock_map, *dock_brk, *dock_watch, *dock_stack;
 
 	DasmView *dasm;
@@ -53,6 +58,7 @@ private:
 	void update_sr_status(uint16_t val);
 	void update_r0_status(uint16_t r0);
 
+	QDockWidget *register_dock(QWidget *view, const QString &title, const QString &objname);
 	void apply_default_layout();
 	void sync_debugger_action();
 
