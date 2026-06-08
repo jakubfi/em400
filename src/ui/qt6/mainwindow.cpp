@@ -243,17 +243,20 @@ void MainWindow::build_statusbar()
 	ui->statusbar->addWidget(status_label);
 	q = new QLabel("<span>Q</span>");
 	q->setFont(font);
+	q->setToolTip("User-mode flag");
 	ui->statusbar->addWidget(q);
 	bs = new QLabel("<span>BS</span>");
 	bs->setFont(font);
 	ui->statusbar->addWidget(bs);
 	nb = new QLabel("<span>NB=0</span>");
 	nb->setFont(font);
+	nb->setToolTip("Current memory segment");
 	ui->statusbar->addWidget(nb);
 	ui->statusbar->addWidget(make_vsep());
 
 	mc = new QLabel("<span>MC=0</span>");
 	mc->setFont(font);
+	mc->setToolTip("Modification Counter");
 	ui->statusbar->addWidget(mc);
 	ui->statusbar->addWidget(make_vsep());
 

@@ -23,7 +23,7 @@ public slots:
 	void update_contents_no_nb(int new_addr);
 
 signals:
-	// right-click "Locate in Memory View": jump the memory view to this block
+	// right-click "Locate in Memory View": jump the memory view to this segment
 	// and address and highlight the cell there
 	void signal_locate_in_memory(int nb, int addr);
 

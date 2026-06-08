@@ -49,6 +49,7 @@ DasmView::DasmView(QWidget *parent) :
 	nb_spin->setRange(0, 15);
 	nb_spin->setValue(0);
 	nb_spin->setFixedWidth(48);
+	nb_spin->setToolTip("Memory segment");
 	hlay->addWidget(nb_spin);
 	hlay->addSpacing(8);
 
@@ -69,8 +70,8 @@ DasmView::DasmView(QWidget *parent) :
 
 	connect(scroll, &QScrollBar::valueChanged, this, &DasmView::update_contents_no_nb);
 
-	// Manually picking a block only makes sense when not chained to the IC;
-	// flip follow off so the chosen block sticks instead of snapping back.
+	// Manually picking a segment only makes sense when not chained to the IC;
+	// flip follow off so the chosen segment sticks instead of snapping back.
 	connect(nb_spin, QOverload<int>::of(&QSpinBox::valueChanged), this, [this](int nb) {
 		if (follow_ic) follow_chk->setChecked(false); // triggers the toggle below
 		cnb = nb;
@@ -237,9 +238,9 @@ void DasmView::update_contents(int new_nb, int new_addr)
 {
 	ic_addr = new_addr;
 	ic_nb = new_nb;
-	// When not following the IC the user is browsing a block of their choice;
+	// When not following the IC the user is browsing a segment of their choice;
 	// don't yank the view and don't rebuild the (unchanged) listing - just
-	// repaint so the IC bar tracks (it only shows when the displayed block
+	// repaint so the IC bar tracks (it only shows when the displayed segment
 	// actually holds the IC).
 	if (follow_ic) {
 		snap_to_ic();
@@ -278,8 +279,8 @@ void DasmView::paintEvent(QPaintEvent *event)
 	painter.setPen(QPen(em400_sep_color(palette()), 2));
 	painter.drawLine(divider_x_pos, 0, divider_x_pos, content_h);
 
-	// disassembly. The IC bar only shows when the displayed block actually holds
-	// the IC - when browsing another block (follow off) there is no "here".
+	// disassembly. The IC bar only shows when the displayed segment actually holds
+	// the IC - when browsing another segment (follow off) there is no "here".
 	QColor bar_color;
 	int y = line_y_start;
 	Q_FOREACH (const AsmLine &l, listing) {

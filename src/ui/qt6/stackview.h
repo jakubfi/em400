@@ -9,7 +9,7 @@ class QContextMenuEvent;
 
 // -----------------------------------------------------------------------
 // Top-of-stack view. The MERA-400 has no call stack; the only software stack
-// is the interrupt/EXL frame stack, whose pointer lives at 0x61 in block 0.
+// is the interrupt/EXL frame stack, whose pointer lives at 0x61 in segment 0.
 // Each frame is exactly four words pushed on entry to a handler:
 //
 //     S/SP+0/ = IC      (interrupted program counter)
@@ -45,7 +45,7 @@ private slots:
 
 private:
 	static const int FRAME = 4;     // words shown (one interrupt frame)
-	static const int SP_ADDR = 0x61; // stack pointer location, block 0
+	static const int SP_ADDR = 0x61; // stack pointer location, segment 0
 
 	enum State { OK, NO_SP, UNALLOC };
 

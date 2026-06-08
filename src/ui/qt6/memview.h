@@ -32,7 +32,7 @@ public:
 public slots:
 	void update_contents(int nb, int addr);
 	void update_contents_no_nb(int new_line);
-	// jump to a block+address and frame that cell with a green accent box (same
+	// jump to a segment+address and frame that cell with a green accent box (same
 	// accent the editor uses); the box stays until the cell is clicked again,
 	// another cell is selected, or an edit begins
 	void locate_cell(int nb, int addr);
@@ -63,13 +63,13 @@ private:
 	// view state
 	int cnb = 0, caddr = 0;
 	// Cell selection framed with the green accent box: a contiguous address
-	// range [sel_anchor .. sel_caret] within block sel_nb (either end may be the
+	// range [sel_anchor .. sel_caret] within segment sel_nb (either end may be the
 	// larger; sel_lo()/sel_hi() order them). sel_anchor is the fixed origin a
 	// shift-click or drag extends from; sel_caret is the moving end. Empty when
 	// sel_anchor < 0. Drives "Locate in Memory View" (a single cell) and
 	// click/shift-click/drag selection. Persists across scrolling; cleared when
 	// a single-cell selection is clicked again, or when an edit begins. The box
-	// only paints while its block (sel_nb) is the one on screen.
+	// only paints while its segment (sel_nb) is the one on screen.
 	int sel_nb = -1, sel_anchor = -1, sel_caret = -1;
 	bool has_selection() const { return sel_anchor >= 0; }
 	void clear_selection() { sel_nb = -1; sel_anchor = sel_caret = -1; }

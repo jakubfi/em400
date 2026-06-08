@@ -45,6 +45,7 @@ MemView::MemView(QWidget *parent) : QWidget(parent)
 	nb_spin->setRange(0, 15);
 	nb_spin->setValue(0);
 	nb_spin->setFixedWidth(48);
+	nb_spin->setToolTip("Memory segment");
 	hlay->addWidget(nb_spin);
 	hlay->addSpacing(8);
 
@@ -105,7 +106,7 @@ void MemView::connect_emu(EmuModel *emu)
 // -----------------------------------------------------------------------
 void MemView::slot_state_changed(int state)
 {
-	// The displayed block is the user's choice; we don't auto-follow the CPU's
+	// The displayed segment is the user's choice; we don't auto-follow the CPU's
 	// current NB. Editing live memory while the CPU runs would be racy, so we
 	// only abandon an in-progress edit on entering RUN.
 	cpu_running = (state == EM400_STATE_RUN);
@@ -118,7 +119,7 @@ void MemView::slot_state_changed(int state)
 // -----------------------------------------------------------------------
 void MemView::slot_reg_changed(int, uint16_t)
 {
-	// Repaint so the selected block shows live values as memory changes.
+	// Repaint so the selected segment shows live values as memory changes.
 	update();
 }
 
@@ -303,7 +304,7 @@ void MemView::update_contents_no_nb(int new_line)
 }
 
 // -----------------------------------------------------------------------
-// Jump to a block+address (placing its line at the top) and frame that cell
+// Jump to a segment+address (placing its line at the top) and frame that cell
 // with a green accent box. Driven by the disassembly view's "Locate in Memory
 // View" context action.
 void MemView::locate_cell(int nb, int addr)

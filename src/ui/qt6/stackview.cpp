@@ -71,7 +71,7 @@ QSize StackView::content_size() const
 }
 
 // -----------------------------------------------------------------------
-// Re-read SP and the topmost frame from block 0. get_mem() returns -1 when the
+// Re-read SP and the topmost frame from segment 0. get_mem() returns -1 when the
 // address is unallocated, which is how we detect both "no stack" cases.
 void StackView::refresh()
 {
