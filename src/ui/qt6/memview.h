@@ -62,11 +62,19 @@ private:
 
 	// view state
 	int cnb = 0, caddr = 0;
-	// "Locate in Memory View" / click-to-select target: the cell framed with a
-	// green accent box, or -1 when none. Persists across scrolling; cleared when
-	// the cell is clicked again, another cell is selected, or an edit begins. The
-	// box only paints while its block (locate_nb) is the one on screen.
-	int locate_nb = -1, locate_addr = -1;
+	// Cell selection framed with the green accent box: a contiguous address
+	// range [sel_anchor .. sel_caret] within block sel_nb (either end may be the
+	// larger; sel_lo()/sel_hi() order them). sel_anchor is the fixed origin a
+	// shift-click or drag extends from; sel_caret is the moving end. Empty when
+	// sel_anchor < 0. Drives "Locate in Memory View" (a single cell) and
+	// click/shift-click/drag selection. Persists across scrolling; cleared when
+	// a single-cell selection is clicked again, or when an edit begins. The box
+	// only paints while its block (sel_nb) is the one on screen.
+	int sel_nb = -1, sel_anchor = -1, sel_caret = -1;
+	bool has_selection() const { return sel_anchor >= 0; }
+	void clear_selection() { sel_nb = -1; sel_anchor = sel_caret = -1; }
+	int sel_lo() const { return sel_anchor < sel_caret ? sel_anchor : sel_caret; }
+	int sel_hi() const { return sel_anchor > sel_caret ? sel_anchor : sel_caret; }
 	DisplayFormat fmt = FMT_HEX;
 	SidePanel panel = PANEL_ASCII;
 	bool cpu_running = false;
@@ -134,7 +142,7 @@ private:
 	void draw_panel_cell(QPainter &painter, int x, int y, int val, int pcell_w, int side_x);
 	void draw_panel_cell_edited(QPainter &painter, int x, int y, int addr, int val, int pcell_w, int side_x);
 	void draw_panel_edit_cell(QPainter &painter, int x, int y, int val, int pcell_w, int side_x);
-	void draw_locate_box(QPainter &painter, int x, int y, int cell_w, int pcell_w, int side_x);
+	void draw_locate_box(QPainter &painter, int col0, int col1, int y, int cell_w, int pcell_w, int side_x);
 	QString value_text(int val) const;
 	QString panel_text(int val) const;
 
@@ -147,6 +155,7 @@ protected:
 	void paintEvent(QPaintEvent *event) override;
 	void resizeEvent(QResizeEvent *event) override;
 	void mousePressEvent(QMouseEvent *event) override;
+	void mouseMoveEvent(QMouseEvent *event) override;
 	void mouseDoubleClickEvent(QMouseEvent *event) override;
 	void focusOutEvent(QFocusEvent *event) override;
 	void wheelEvent(QWheelEvent *event) override;

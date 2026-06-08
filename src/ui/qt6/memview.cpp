@@ -322,8 +322,8 @@ void MemView::locate_cell(int nb, int addr)
 		caddr = line * words_per_line;
 	}
 
-	locate_nb = nb;
-	locate_addr = addr;
+	sel_nb = nb;
+	sel_anchor = sel_caret = addr;
 	QSignalBlocker blk(nb_spin);
 	nb_spin->setValue(cnb);
 	QSignalBlocker blk2(scroll);
@@ -419,7 +419,7 @@ void MemView::start_edit(int addr)
 	edit_nb = cnb;
 	edit_addr = addr;
 	edit_cursor = 0;
-	locate_addr = -1;
+	clear_selection();
 	setFocus();
 	emit signal_edit_mode_changed(true, edit_insert);
 	update();
@@ -441,7 +441,7 @@ void MemView::start_text_edit(int addr, int sub)
 	edit_addr = addr;
 	edit_char = sub;
 	edit_orig.clear();
-	locate_addr = -1;
+	clear_selection();
 	setFocus();
 	// text editing is always overwrite; report it as such
 	emit signal_edit_mode_changed(true, false);
@@ -645,26 +645,51 @@ bool MemView::valid_buf(const QString &s) const
 }
 
 // -----------------------------------------------------------------------
-// Single left click selects (locates) the clicked cell with the green accent
-// box; clicking the already-located cell de-selects it. Works in both the
-// value column and the side panel.
+// Left click selects the clicked cell with the green accent box; clicking the
+// already-selected single cell de-selects it. Shift+click extends the existing
+// selection from its anchor to the clicked cell. A press then begins a drag
+// (see mouseMoveEvent) that grows the range. Works in the value column and the
+// side panel.
 void MemView::mousePressEvent(QMouseEvent *event)
 {
 	// don't hijack clicks while a cell is being edited - let the edit run
 	int addr, sub;
 	if (!editing && event->button() == Qt::LeftButton
 			&& (hit_test_cell(event->pos(), addr) || hit_test_panel(event->pos(), addr, sub))) {
-		if (locate_addr == addr && locate_nb == cnb) {
-			locate_addr = -1; // toggle off
+		bool shift = event->modifiers() & Qt::ShiftModifier;
+		if (shift && has_selection() && sel_nb == cnb) {
+			sel_caret = addr; // extend from the fixed anchor
+		} else if (!shift && has_selection() && sel_nb == cnb
+				&& sel_anchor == addr && sel_caret == addr) {
+			clear_selection(); // toggle off a single-cell selection
 		} else {
-			locate_nb = cnb;
-			locate_addr = addr;
+			sel_nb = cnb;
+			sel_anchor = sel_caret = addr;
 		}
 		update();
 		event->accept();
 		return;
 	}
 	QWidget::mousePressEvent(event);
+}
+
+// -----------------------------------------------------------------------
+// Dragging with the left button held grows the selection: the anchor stays
+// put and the cell under the cursor becomes the moving end of the range.
+void MemView::mouseMoveEvent(QMouseEvent *event)
+{
+	int addr, sub;
+	if (!editing && (event->buttons() & Qt::LeftButton)
+			&& has_selection() && sel_nb == cnb
+			&& (hit_test_cell(event->pos(), addr) || hit_test_panel(event->pos(), addr, sub))) {
+		if (addr != sel_caret) {
+			sel_caret = addr;
+			update();
+		}
+		event->accept();
+		return;
+	}
+	QWidget::mouseMoveEvent(event);
 }
 
 // -----------------------------------------------------------------------
@@ -831,35 +856,47 @@ void MemView::draw_line(QPainter &painter, int y, int base_addr, int cell_w, int
 	}
 
 	// drawn in a second pass, after every cell on the line: the box bleeds a bit
-	// past its cell and would otherwise be painted over by the next cell's chars
-	if (locate_nb == cnb && locate_addr >= base_addr && locate_addr < base_addr + words_per_line && locate_addr <= 0xffff) {
-		draw_locate_box(painter, locate_addr - base_addr, y, cell_w, pcell_w, side_x);
+	// past its cell and would otherwise be painted over by the next cell's chars.
+	// A selection spanning several lines yields one box per line, each covering
+	// the contiguous run of selected columns that falls on that line.
+	if (sel_nb == cnb && has_selection()) {
+		int line_hi = base_addr + words_per_line - 1;
+		if (line_hi > 0xffff) line_hi = 0xffff;
+		int a = qMax(sel_lo(), base_addr);
+		int b = qMin(sel_hi(), line_hi);
+		if (a <= b) {
+			draw_locate_box(painter, a - base_addr, b - base_addr, y, cell_w, pcell_w, side_x);
+		}
 	}
 }
 
 // -----------------------------------------------------------------------
-// Frame the located cell with the green accent box used by "Locate in Memory
-// View" - same look as the editor's companion outline. The numeric and the
-// side-panel cell are each boxed when their column is shown, so the cell stays
-// framed in both halves of the view at once.
-void MemView::draw_locate_box(QPainter &painter, int x, int y, int cell_w, int pcell_w, int side_x)
+// Frame the selected cells (columns col0..col1 inclusive on this line) with the
+// green accent box used by "Locate in Memory View" - same look as the editor's
+// companion outline. The numeric and the side-panel run are each boxed when
+// their column is shown, so the selection stays framed in both halves at once.
+void MemView::draw_locate_box(QPainter &painter, int col0, int col1, int y, int cell_w, int pcell_w, int side_x)
 {
 	int ey = col_hdr_h + y * line_height;
+	int ncells = col1 - col0 + 1;
 
 	painter.setPen(QPen(palette().color(QPalette::Highlight), 1));
 	painter.setRenderHint(QPainter::Antialiasing, true);
 
-	// half-pixel offset so the 1px stroke sits on pixel centers (crisp edges)
+	// half-pixel offset so the 1px stroke sits on pixel centers (crisp edges).
+	// Height is line_height (not -1) so the bottom edge of one row's box lands on
+	// the top edge of the next: a multi-row selection reads as one continuous
+	// box instead of two stacked 1px lines where rows touch.
 	if (fmt != FMT_OFF) {
-		int bx = mem_x_start + x * cell_w - half_font_width;
-		QRectF r(bx + 0.5, ey + 0.5, cell_w - 1, line_height - 1);
+		int bx = mem_x_start + col0 * cell_w - half_font_width;
+		QRectF r(bx + 0.5, ey + 0.5, ncells * cell_w - 1, line_height);
 		painter.drawRoundedRect(r, 2, 2);
 	}
 	if (panel != PANEL_OFF) {
 		// pull the panel box in by 2px each side: panel cells are packed with no
 		// trailing pad, so the full half-font margin would bleed into neighbours
-		int bx = side_x + x * pcell_w - half_font_width + 2;
-		QRectF r(bx + 0.5, ey + 0.5, pcell_w + font_width - 5, line_height - 1);
+		int bx = side_x + col0 * pcell_w - half_font_width + 2;
+		QRectF r(bx + 0.5, ey + 0.5, ncells * pcell_w + font_width - 5, line_height);
 		painter.drawRoundedRect(r, 2, 2);
 	}
 
