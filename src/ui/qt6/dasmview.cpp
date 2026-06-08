@@ -394,12 +394,21 @@ void DasmView::contextMenuEvent(QContextMenuEvent *event)
 	if (!hit_test_line(event->pos(), addr)) return;
 
 	QMenu menu(this);
+	QAction *add_brk = menu.addAction(tr("Add breakpoint here"));
 	QAction *set_ic = menu.addAction(tr("Set IC here"));
 	QAction *locate = menu.addAction(tr("Locate in Memory View"));
 
 	QAction *chosen = menu.exec(event->globalPos());
 	if (chosen == set_ic) {
 		if (e) e->set_reg(EM400_REG_IC, addr);
+	} else if (chosen == add_brk) {
+		if (e) {
+			QString expr = QString("@%1:0x%2").arg(cnb).arg(addr, 0, 16);
+			QString err;
+			if (e->brk_add(expr, err) < 0) {
+				qWarning() << "failed to add breakpoint:" << expr << "-" << err;
+			}
+		}
 	} else if (chosen == locate) {
 		emit signal_locate_in_memory(cnb, addr);
 	}

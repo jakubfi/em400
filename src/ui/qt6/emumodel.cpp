@@ -201,6 +201,7 @@ int EmuModel::brk_add(const QString &expr, QString &err)
 		err = QString::fromUtf8(err_msg);
 	}
 	free(err_msg); // strdup'd by the evaluator; NULL-safe
+	if (id >= 0) emit signal_brk_list_changed();
 	return id;
 }
 

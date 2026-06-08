@@ -73,7 +73,7 @@ rz			{ return IRZ; }
 "||"	return OR;
 "&&"	return AND;
 
-[-+*/&|^><:()\]\[~!] return *yytext;
+[-+*/&|^><:()\]\[~!@] return *yytext;
 
 [ \t\n\r\v]+ ;
 

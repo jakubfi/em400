@@ -94,6 +94,17 @@ struct eval_est * eval_est_op(int oper, struct eval_est *n1, struct eval_est *n2
 }
 
 // -----------------------------------------------------------------------
+// Location-match leaf behind the "@nb:addr" breakpoint shorthand: equivalent to
+// "q*nb==<nb> && ic==<addr>". A dedicated leaf (addr in ->val, nb in ->nb)
+// instead of a synthetic subtree keeps the per-instruction breakpoint eval cheap.
+struct eval_est * eval_est_loc(int nb, int addr)
+{
+	struct eval_est *n = eval_est_leaf(EVAL_AST_N_LOC, addr);
+	n->nb = nb;
+	return n;
+}
+
+// -----------------------------------------------------------------------
 struct eval_est * eval_est_mem(struct eval_est *n1, struct eval_est *n2)
 {
 	struct eval_est *n = eval_est_create();
@@ -205,6 +216,10 @@ static int eval_est_eval_nb(struct eval_est * n)
 static int eval_est_eval_q(struct eval_est * n)
 {
 	return q;
+}
+static int eval_est_eval_loc(struct eval_est * n)
+{
+	return (q*nb == n->nb) && (cpu_reg_fetch(EM400_REG_IC) == (uint16_t) n->val);
 }
 
 // -----------------------------------------------------------------------
@@ -358,6 +373,7 @@ int eval_est_eval(struct eval_est *n)
 		case EVAL_AST_N_MC: return eval_est_eval_mc(n);
 		case EVAL_AST_N_NB: return eval_est_eval_nb(n);
 		case EVAL_AST_N_Q: return eval_est_eval_q(n);
+		case EVAL_AST_N_LOC: return eval_est_eval_loc(n);
 		case EVAL_AST_N_BS: return eval_est_eval_bs(n);
 		case EVAL_AST_N_RM: return eval_est_eval_rm(n);
 		case EVAL_AST_N_ERR: return -1;

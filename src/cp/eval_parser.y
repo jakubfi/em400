@@ -43,7 +43,7 @@ extern int eval_yycolumn;
 %token <value> FLAG "CPU flag"
 %token <value> VALUE "value"
 %token <str> TOK_INVALID "error"
-%token ':' '&' '|' '(' ')'
+%token ':' '&' '|' '(' ')' '@'
 %token IRZ "RZ"
 %token ALARM "ALARM"
 %token MC "MC"
@@ -101,6 +101,7 @@ expr:
 	| FLAG					{ $$ = eval_est_leaf(EVAL_AST_N_FLAG, $1); }
 	| '[' expr ']'			{ $$ = eval_est_mem(eval_est_leaf(EVAL_AST_N_VAL, -1), $2); }
 	| '[' VALUE ':' expr ']'{ $$ = eval_est_mem(eval_est_leaf(EVAL_AST_N_VAL, $2), $4); }
+	| '@' VALUE ':' VALUE	{ $$ = eval_est_loc($2, $4); }
 	| IRZ					{ $$ = eval_est_leaf(EVAL_AST_N_RZ, 0); }
 	| IRZ '[' VALUE ']'		{ $$ = eval_est_leaf(EVAL_AST_N_RZ_BIT, $3); }
 	| '-' expr %prec UMINUS	{ $$ = eval_est_op(UMINUS, $2, NULL); }

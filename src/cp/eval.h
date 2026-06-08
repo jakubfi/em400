@@ -36,6 +36,7 @@ enum eval_est_type {
 	EVAL_AST_N_Q,
 	EVAL_AST_N_BS,
 	EVAL_AST_N_RM,
+	EVAL_AST_N_LOC,
 };
 
 struct eval_est {
@@ -53,6 +54,7 @@ void eval_est_delete(struct eval_est *n);
 struct eval_est * eval_est_leaf(int type, int16_t val);
 struct eval_est * eval_est_op(int oper, struct eval_est *n1, struct eval_est *n2);
 struct eval_est * eval_est_mem(struct eval_est *n1, struct eval_est *n2);
+struct eval_est * eval_est_loc(int nb, int addr);
 struct eval_est * eval_est_err(char *err);
 
 // node evaluation

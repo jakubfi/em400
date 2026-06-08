@@ -136,6 +136,9 @@ signals:
 	// id of the breakpoint that stopped the machine, or -1 when none (running,
 	// or stopped by something other than a breakpoint).
 	void signal_brk_hit_changed(int id);
+	// the breakpoint list changed structurally through an edit call (e.g. an add
+	// from the dasm view); listeners rebuild from brk_list().
+	void signal_brk_list_changed();
 };
 
 #endif // EMUMODEL_H

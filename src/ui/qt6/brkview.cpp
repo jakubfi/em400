@@ -162,6 +162,8 @@ BrkView::BrkView(EmuModel *emu, QWidget *parent) :
 	connect(table, &QTableWidget::itemChanged, this, &BrkView::slot_item_changed);
 	connect(table, &QTableWidget::customContextMenuRequested, this, &BrkView::slot_context_menu);
 	connect(e, &EmuModel::signal_brk_hit_changed, this, &BrkView::slot_brk_hit_changed);
+	// pick up adds made elsewhere (e.g. the dasm view context menu)
+	connect(e, &EmuModel::signal_brk_list_changed, this, &BrkView::refresh);
 
 	refresh();
 }
