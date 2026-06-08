@@ -43,9 +43,10 @@ static _Atomic (struct brk_point *) brk_list;
 static int brk_id = 0;
 
 // id of the breakpoint that caused the current stop, or -1. Set on the CPU
-// thread by brk_check(), cleared on the UI thread when the front panel resumes
-// or advances the machine (see cp.c). Relaxed access is enough: the cpu_state
-// release/acquire handshake between the two threads carries this value across.
+// thread by brk_check(), cleared on the UI thread whenever the front panel
+// resumes, advances or resets the machine. Relaxed access is enough: the
+// cpu_state release/acquire handshake between the two threads carries this
+// value across.
 static _Atomic int brk_hit = -1;
 
 // -----------------------------------------------------------------------
@@ -235,19 +236,19 @@ int brk_hit_get()
 }
 
 // -----------------------------------------------------------------------
-// Drops the recorded hit. Called from the front panel (cp.c) on the actions
-// that resume or advance instruction execution (start/cycle/clear), so a stale
-// hit is never reported for a stop that some later, non-breakpoint action (HLT,
-// manual stop, ...) caused.
+// Drops the recorded hit. Invoked from the front-panel state transition that
+// resumes, advances or resets instruction execution (run/cycle/clear), so a
+// stale hit is never reported for a stop that some later, non-breakpoint action
+// (HLT, manual stop, ...) caused.
 //
-// This deliberately lives in cp.c rather than in the UIs: cp_start/cycle/clear
-// are the single chokepoint all three UIs (qt, curses, cmd) funnel through, and
-// the clear there is ordered against the CPU thread's brk_check() store for free
-// by the cpu_state release/acquire handshake. Pushing the clear into the UIs
-// would make it a per-UI convention (easy to miss on one resume path in one
-// frontend) and, if a UI cleared while the CPU was running, would race
-// brk_check() and could drop a fresh hit. Keep brk_hit a pure "current stop
-// reason" that UIs only read; do not move this clear out of cp.c.
+// This deliberately hangs off the central state-transition path rather than
+// each UI: that transition is the single chokepoint all three UIs (qt, curses,
+// cmd) funnel through, and the clear there is ordered against the CPU thread's
+// brk_check() store for free by the cpu_state release/acquire handshake. Pushing
+// the clear into the UIs would make it a per-UI convention (easy to miss on one
+// resume path in one frontend) and, if a UI cleared while the CPU was running,
+// would race brk_check() and could drop a fresh hit. Keep brk_hit a pure
+// "current stop reason" that UIs only read; do not move this clear into the UIs.
 void brk_hit_clear()
 {
 	atomic_store_explicit(&brk_hit, -1, memory_order_relaxed);
