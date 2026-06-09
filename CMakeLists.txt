@@ -260,28 +260,34 @@ set(SOURCES_EM400
 
 if (UI_QT)
 	list(APPEND SOURCES_EM400 src/ui/qt6/qt6.cpp)
-	list(APPEND SOURCES_EM400 src/ui/qt6/theme.h src/ui/qt6/theme.cpp)
-	list(APPEND SOURCES_EM400 src/ui/qt6/mainwindow.ui)
 	list(APPEND SOURCES_EM400 src/ui/qt6/resources.qrc)
-	list(APPEND SOURCES_EM400 src/ui/qt6/mainwindow.h src/ui/qt6/mainwindow.cpp)
-	list(APPEND SOURCES_EM400 src/ui/qt6/emumodel.h src/ui/qt6/emumodel.cpp)
-	list(APPEND SOURCES_EM400 src/ui/qt6/dasmview.h src/ui/qt6/dasmview.cpp)
-	list(APPEND SOURCES_EM400 src/ui/qt6/memview.h src/ui/qt6/memview.cpp)
-	list(APPEND SOURCES_EM400 src/ui/qt6/memsearch.h src/ui/qt6/memsearch.cpp)
-	list(APPEND SOURCES_EM400 src/ui/qt6/regview.h src/ui/qt6/regview.cpp)
-	list(APPEND SOURCES_EM400 src/ui/qt6/intview.h src/ui/qt6/intview.cpp)
-	list(APPEND SOURCES_EM400 src/ui/qt6/mapview.h src/ui/qt6/mapview.cpp)
-	list(APPEND SOURCES_EM400 src/ui/qt6/brkview.h src/ui/qt6/brkview.cpp)
-	list(APPEND SOURCES_EM400 src/ui/qt6/watchview.h src/ui/qt6/watchview.cpp)
-	list(APPEND SOURCES_EM400 src/ui/qt6/stackview.h src/ui/qt6/stackview.cpp)
-	list(APPEND SOURCES_EM400 src/ui/qt6/asmline.h src/ui/qt6/asmline.cpp)
-	list(APPEND SOURCES_EM400 src/ui/qt6/controlpanel.h src/ui/qt6/controlpanel.cpp)
-	list(APPEND SOURCES_EM400 src/ui/qt6/switch.h src/ui/qt6/switch.cpp)
-	list(APPEND SOURCES_EM400 src/ui/qt6/led.h src/ui/qt6/led.cpp)
-	list(APPEND SOURCES_EM400 src/ui/qt6/buswleds.h src/ui/qt6/buswleds.cpp)
-	list(APPEND SOURCES_EM400 src/ui/qt6/binarykeys.h src/ui/qt6/binarykeys.cpp)
-	list(APPEND SOURCES_EM400 src/ui/qt6/rotary.h src/ui/qt6/rotary.cpp)
-	list(APPEND SOURCES_EM400 src/ui/qt6/ignition.h src/ui/qt6/ignition.cpp)
+
+	# application shell + shared infrastructure
+	list(APPEND SOURCES_EM400 src/ui/qt6/app/mainwindow.ui)
+	list(APPEND SOURCES_EM400 src/ui/qt6/app/mainwindow.h src/ui/qt6/app/mainwindow.cpp)
+	list(APPEND SOURCES_EM400 src/ui/qt6/app/emumodel.h src/ui/qt6/app/emumodel.cpp)
+	list(APPEND SOURCES_EM400 src/ui/qt6/app/theme.h src/ui/qt6/app/theme.cpp)
+
+	# dockable debugger views
+	list(APPEND SOURCES_EM400 src/ui/qt6/views/dasmview.h src/ui/qt6/views/dasmview.cpp)
+	list(APPEND SOURCES_EM400 src/ui/qt6/views/asmline.h src/ui/qt6/views/asmline.cpp)
+	list(APPEND SOURCES_EM400 src/ui/qt6/views/memview.h src/ui/qt6/views/memview.cpp)
+	list(APPEND SOURCES_EM400 src/ui/qt6/views/memsearch.h src/ui/qt6/views/memsearch.cpp)
+	list(APPEND SOURCES_EM400 src/ui/qt6/views/regview.h src/ui/qt6/views/regview.cpp)
+	list(APPEND SOURCES_EM400 src/ui/qt6/views/intview.h src/ui/qt6/views/intview.cpp)
+	list(APPEND SOURCES_EM400 src/ui/qt6/views/mapview.h src/ui/qt6/views/mapview.cpp)
+	list(APPEND SOURCES_EM400 src/ui/qt6/views/brkview.h src/ui/qt6/views/brkview.cpp)
+	list(APPEND SOURCES_EM400 src/ui/qt6/views/watchview.h src/ui/qt6/views/watchview.cpp)
+	list(APPEND SOURCES_EM400 src/ui/qt6/views/stackview.h src/ui/qt6/views/stackview.cpp)
+
+	# physical control panel (pulpit) replica
+	list(APPEND SOURCES_EM400 src/ui/qt6/panel/controlpanel.h src/ui/qt6/panel/controlpanel.cpp)
+	list(APPEND SOURCES_EM400 src/ui/qt6/panel/switch.h src/ui/qt6/panel/switch.cpp)
+	list(APPEND SOURCES_EM400 src/ui/qt6/panel/led.h src/ui/qt6/panel/led.cpp)
+	list(APPEND SOURCES_EM400 src/ui/qt6/panel/buswleds.h src/ui/qt6/panel/buswleds.cpp)
+	list(APPEND SOURCES_EM400 src/ui/qt6/panel/binarykeys.h src/ui/qt6/panel/binarykeys.cpp)
+	list(APPEND SOURCES_EM400 src/ui/qt6/panel/rotary.h src/ui/qt6/panel/rotary.cpp)
+	list(APPEND SOURCES_EM400 src/ui/qt6/panel/ignition.h src/ui/qt6/panel/ignition.cpp)
 endif()
 
 # --- internal parser
@@ -344,6 +350,13 @@ if (UI_QT)
 	set_property(SOURCE ${CMAKE_CURRENT_BINARY_DIR}/uicurses_parser.h PROPERTY SKIP_AUTOGEN ON)
 	set_property(SOURCE ${CMAKE_CURRENT_BINARY_DIR}/uicurses_scanner.c PROPERTY SKIP_AUTOGEN ON)
 	target_include_directories(em400 PRIVATE ${Qt6Widgets_INCLUDE_DIRS})
+	# qt6 sources live in subdirs (app/, panel/, views/) but include each
+	# other with bare "foo.h" includes; expose the subdirs on the search path
+	target_include_directories(em400 PRIVATE
+		${CMAKE_SOURCE_DIR}/src/ui/qt6
+		${CMAKE_SOURCE_DIR}/src/ui/qt6/app
+		${CMAKE_SOURCE_DIR}/src/ui/qt6/panel
+		${CMAKE_SOURCE_DIR}/src/ui/qt6/views)
 	target_compile_definitions(em400 PRIVATE UI_QT)
 	target_link_libraries(em400 ${Qt6Widgets_LIBRARIES})
 	target_link_libraries(em400 ${Qt6Multimedia_LIBRARIES})
