@@ -185,8 +185,22 @@ bool mem_write_1(int nb, uint16_t addr, uint16_t data)
 // -----------------------------------------------------------------------
 bool mem_read_n(int nb, uint16_t saddr, uint16_t *dest, int count)
 {
-	for ( ; count>0 ; count--, saddr++, dest++) {
-		if (!mem_read_1(nb, saddr, dest)) return false;
+	// keep the 1-word reads (and writes below) off the memcpy path
+	if (count == 1) return mem_read_1(nb, saddr, dest);
+
+	// memcpy is ~30x faster for full-page ops, and around 1x for 16-word ops
+	// good for UI bulk reads, don't care for small UI reads, don't care on I/O path
+	// bulk memory access is never used on the hot CPU path
+	while (count > 0) {
+		uint16_t *ptr = mem_map_reads[nb][saddr >> 12];
+		if (!ptr) return false;
+		int off = saddr & 0xfff;
+		int run = MEM_PAGE_SIZE - off;
+		if (run > count) run = count;
+		memcpy(dest, ptr + off, run * sizeof(uint16_t));
+		dest += run;
+		saddr += run;
+		count -= run;
 	}
 	return true;
 }
@@ -194,8 +208,18 @@ bool mem_read_n(int nb, uint16_t saddr, uint16_t *dest, int count)
 // -----------------------------------------------------------------------
 bool mem_write_n(int nb, uint16_t saddr, uint16_t *src, int count)
 {
-	for ( ; count>0 ; count--, saddr++, src++) {
-		if (!mem_write_1(nb, saddr, *src)) return false;
+	if (count == 1) return mem_write_1(nb, saddr, *src);
+
+	while (count > 0) {
+		uint16_t *ptr = mem_map_writes[nb][saddr >> 12];
+		if (!ptr) return false;
+		int off = saddr & 0xfff;
+		int run = MEM_PAGE_SIZE - off;
+		if (run > count) run = count;
+		memcpy(ptr + off, src, run * sizeof(uint16_t));
+		src += run;
+		saddr += run;
+		count -= run;
 	}
 	return true;
 }
