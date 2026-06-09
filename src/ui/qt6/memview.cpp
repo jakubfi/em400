@@ -2,11 +2,21 @@
 #include <QPainter>
 #include <QPaintEvent>
 #include <QScrollBar>
+#include <QSpinBox>
+#include <QPushButton>
+#include <QComboBox>
+#include <QLineEdit>
+#include <QCheckBox>
+#include <QKeyEvent>
+#include <QMouseEvent>
+#include <QFocusEvent>
+#include <QWheelEvent>
 #include <QHBoxLayout>
 #include <QLabel>
 #include <QApplication>
 #include <emcrk/r40.h>
 #include "memview.h"
+#include "memsearch.h"
 #include "libem400.h"
 #include "theme.h"
 
@@ -24,10 +34,6 @@ static QPushButton *make_toggle_btn(const QString &text, bool checked = false)
 // -----------------------------------------------------------------------
 MemView::MemView(QWidget *parent) : QWidget(parent)
 {
-	bottom = 100;
-	right = 100;
-	words_per_line = 16;
-
 	set_font("Monospace", 12);
 
 	setFocusPolicy(Qt::WheelFocus);
@@ -81,6 +87,9 @@ MemView::MemView(QWidget *parent) : QWidget(parent)
 	connect(nb_spin, QOverload<int>::of(&QSpinBox::valueChanged), this, [this](int nb) {
 		cancel_edit();
 		cnb = nb;
+		// the search cursor was scoped to the old segment; restart from the top
+		search_origin = -1;
+		set_search_status(QString(), false);
 		update();
 	});
 
@@ -90,10 +99,86 @@ MemView::MemView(QWidget *parent) : QWidget(parent)
 
 	connect(btn_ascii, &QPushButton::clicked, this, [this]() { toggle_panel(PANEL_ASCII); });
 	connect(btn_r40, &QPushButton::clicked, this, [this]() { toggle_panel(PANEL_R40); });
+
+	build_search_bar();
 }
 
 // -----------------------------------------------------------------------
 MemView::~MemView() {}
+
+// -----------------------------------------------------------------------
+// The Ctrl-F search strip, hidden until first opened. It lives directly under
+// the header (a control among controls) and pushes the grid down when shown.
+void MemView::build_search_bar()
+{
+	search_bar = new QWidget(this);
+	search_bar->setFont(QApplication::font()); // pin to the UI font, not Monospace
+	QHBoxLayout *slay = new QHBoxLayout(search_bar);
+	slay->setContentsMargins(4, 2, 4, 2);
+	slay->setSpacing(4);
+
+	slay->addWidget(new QLabel("Find:"));
+	search_mode = new QComboBox();
+	search_mode->addItems({"Numeric", "ASCII", "R40"});
+	slay->addWidget(search_mode);
+
+	search_entry = new QLineEdit();
+	slay->addWidget(search_entry, 1);
+
+	search_prev = new QPushButton("Prev");
+	search_next = new QPushButton("Next");
+	slay->addWidget(search_prev);
+	slay->addWidget(search_next);
+	slay->addSpacing(8);
+
+	search_all = new QCheckBox("all segments");
+	slay->addWidget(search_all);
+
+	// The transient cue ("not found" / "wrapped") sits at the far right. Reserve
+	// a fixed width sized to the longest message and right-align the text, so the
+	// cue appearing or clearing never reflows the Prev/Next buttons or the
+	// checkbox to its left (the entry, the sole stretch item, absorbs all width
+	// changes instead).
+	search_status = new QLabel();
+	search_status->setAlignment(Qt::AlignRight | Qt::AlignVCenter);
+	QFontMetrics sfm(search_status->fontMetrics());
+	search_status->setFixedWidth(qMax(sfm.horizontalAdvance("not found"),
+	                                  sfm.horizontalAdvance("wrapped")) + 4);
+	slay->addSpacing(8);
+	slay->addWidget(search_status);
+
+	search_bar_h = search_bar->sizeHint().height();
+	if (search_bar_h <= 0) search_bar_h = content_top;
+	search_bar->hide();
+
+	// re-validate (red border) on text or mode change; keep the literal text on
+	// a mode switch rather than clearing or auto-converting it. Editing the query
+	// or switching mode also resets the search cursor (search from the top again)
+	// and clears any stale "wrapped" / "not found" cue.
+	connect(search_entry, &QLineEdit::textChanged, this, [this](const QString &) {
+		validate_search();
+		search_origin = -1;
+		set_search_status(QString(), false);
+	});
+	connect(search_mode, &QComboBox::currentIndexChanged, this, [this](int) {
+		validate_search();
+		search_origin = -1;
+		set_search_status(QString(), false);
+	});
+	// Changing the scope doesn't edit the query (so the search cursor stays a
+	// valid linear position to resume from), but a stale "not found" / "wrapped"
+	// cue from the old scope would mislead - drop it so the next search speaks
+	// for the new scope.
+	connect(search_all, &QCheckBox::toggled, this, [this](bool) {
+		set_search_status(QString(), false);
+	});
+	connect(search_prev, &QPushButton::clicked, this, [this]() { search_prev_match(); });
+	connect(search_next, &QPushButton::clicked, this, [this]() { search_next_match(); });
+
+	// Esc / Enter / Shift+Enter are handled in eventFilter so the entry can
+	// drive close + next/prev while it holds keyboard focus
+	search_entry->installEventFilter(this);
+}
 
 // -----------------------------------------------------------------------
 void MemView::connect_emu(EmuModel *emu)
@@ -178,7 +263,7 @@ QSize MemView::sizeHint() const
 	int pixels_per_word = (val_chars() + panel_chars()) * font_width;
 	int w = mem_x_start + pref_wpl * pixels_per_word + scroll_w;
 	if (panel != PANEL_OFF) w += font_width; // gap before side panel divider
-	int h = content_top + col_hdr_h + pref_lines * line_height;
+	int h = grid_top() + col_hdr_h + pref_lines * line_height;
 	return QSize(w, h);
 }
 
@@ -196,6 +281,21 @@ void MemView::apply_wpl_change()
 }
 
 // -----------------------------------------------------------------------
+void MemView::sync_format_buttons()
+{
+	btn_hex->setChecked(fmt == FMT_HEX);
+	btn_udec->setChecked(fmt == FMT_UDEC);
+	btn_sdec->setChecked(fmt == FMT_SDEC);
+}
+
+// -----------------------------------------------------------------------
+void MemView::sync_panel_buttons()
+{
+	btn_ascii->setChecked(panel == PANEL_ASCII);
+	btn_r40->setChecked(panel == PANEL_R40);
+}
+
+// -----------------------------------------------------------------------
 void MemView::set_format(DisplayFormat f)
 {
 	// clicking the active format toggles the numeric column off; refuse if that
@@ -204,17 +304,13 @@ void MemView::set_format(DisplayFormat f)
 	if (nf == FMT_OFF && panel == PANEL_OFF) {
 		// a checkable button already flipped its own checked state on the click;
 		// restore it so the refused toggle leaves no visible trace
-		btn_hex->setChecked(fmt == FMT_HEX);
-		btn_udec->setChecked(fmt == FMT_UDEC);
-		btn_sdec->setChecked(fmt == FMT_SDEC);
+		sync_format_buttons();
 		return;
 	}
 	if (fmt == nf) return;
 	cancel_edit();
 	fmt = nf;
-	btn_hex->setChecked(fmt == FMT_HEX);
-	btn_udec->setChecked(fmt == FMT_UDEC);
-	btn_sdec->setChecked(fmt == FMT_SDEC);
+	sync_format_buttons();
 	apply_wpl_change();
 	update();
 }
@@ -226,14 +322,12 @@ void MemView::toggle_panel(SidePanel p)
 	SidePanel np = (panel == p) ? PANEL_OFF : p;
 	if (np == PANEL_OFF && fmt == FMT_OFF) {
 		// restore the button's checked state, flipped by the click itself
-		btn_ascii->setChecked(panel == PANEL_ASCII);
-		btn_r40->setChecked(panel == PANEL_R40);
+		sync_panel_buttons();
 		return;
 	}
 	cancel_edit();
 	panel = np;
-	btn_ascii->setChecked(panel == PANEL_ASCII);
-	btn_r40->setChecked(panel == PANEL_R40);
+	sync_panel_buttons();
 	apply_wpl_change();
 	update();
 }
@@ -244,6 +338,8 @@ void MemView::set_font(QString name, int size)
 	font.setFamily(name);
 	if (size > 0) font.setPixelSize(size);
 	setFont(font);
+	font_bold = font;
+	font_bold.setBold(true);
 	QFontMetrics fm(font);
 	font_height = fm.lineSpacing();
 	font_width = fm.horizontalAdvance('9');
@@ -341,7 +437,7 @@ bool MemView::hit_test_cell(const QPoint &pos, int &addr) const
 	if (fmt == FMT_OFF) return false;
 	int cell_w = val_chars() * font_width;
 
-	int cy = pos.y() - content_top - col_hdr_h;
+	int cy = pos.y() - grid_top() - col_hdr_h;
 	if (cy < 0) return false;
 	int row = cy / line_height;
 	if (row >= total_lines) return false;
@@ -369,7 +465,7 @@ bool MemView::hit_test_panel(const QPoint &pos, int &addr, int &sub) const
 	int pcell_w = panel_chars() * font_width;
 	int side_x = mem_x_start + words_per_line * cell_w + font_width;
 
-	int cy = pos.y() - content_top - col_hdr_h;
+	int cy = pos.y() - grid_top() - col_hdr_h;
 	if (cy < 0) return false;
 	int row = cy / line_height;
 	if (row >= total_lines) return false;
@@ -509,17 +605,17 @@ void MemView::text_move(int delta)
 }
 
 // -----------------------------------------------------------------------
-// Scroll the view so the line holding the text caret is visible. Bypasses
-// the scrollbar's valueChanged slot (which would cancel the edit) and moves
-// caddr directly.
-void MemView::ensure_caret_visible()
+// Scroll the view so the line holding addr is visible. Bypasses the
+// scrollbar's valueChanged slot (which would cancel an edit) and moves caddr
+// directly.
+void MemView::ensure_addr_visible(int addr)
 {
 	// total_lines counts a partially-clipped bottom row; scroll against the
-	// fully-visible count so the caret never lands in the clipped strip
+	// fully-visible count so the line never lands in the clipped strip
 	int visible = (bottom - col_hdr_h) / line_height;
 	if (visible < 1) visible = 1;
 
-	int line = edit_addr / words_per_line;
+	int line = addr / words_per_line;
 	int top_line = caddr / words_per_line;
 	int target = top_line;
 	if (line < top_line) {
@@ -532,6 +628,12 @@ void MemView::ensure_caret_visible()
 	QSignalBlocker blk(scroll);
 	scroll->setValue(target);
 	caddr = scroll->value() * words_per_line;
+}
+
+// -----------------------------------------------------------------------
+void MemView::ensure_caret_visible()
+{
+	ensure_addr_visible(edit_addr);
 }
 
 // -----------------------------------------------------------------------
@@ -723,6 +825,140 @@ void MemView::focusOutEvent(QFocusEvent *event)
 }
 
 // -----------------------------------------------------------------------
+// Open the search strip if hidden, then focus and select the entry. The
+// window-wide Ctrl-F routes here; pressing it again re-focuses for a fresh
+// query rather than toggling off (Esc is the only way to close). The query
+// text persists across hide/show.
+void MemView::open_search()
+{
+	if (search_h == 0) {
+		search_h = search_bar_h;
+		relayout_grid();
+		update();
+	}
+	search_entry->setFocus();
+	search_entry->selectAll();
+}
+
+// -----------------------------------------------------------------------
+void MemView::close_search()
+{
+	if (search_h == 0) return;
+	search_h = 0;
+	relayout_grid();
+	setFocus(); // hand keyboard focus back to the grid
+	update();
+}
+
+// -----------------------------------------------------------------------
+void MemView::validate_search()
+{
+	// Red outline on invalid input. The QSS border replaces the native frame
+	// (and its green focus ring); round the corners so it reads as a deliberate
+	// frame, and pad the text back in by 1px so it doesn't shift versus the
+	// native frame's content inset.
+	MemSearch::Mode mode = (MemSearch::Mode)search_mode->currentIndex();
+	bool ok = MemSearch::query_valid(search_entry->text(), mode);
+	search_entry->setStyleSheet(ok ? QString()
+		: QString("QLineEdit { border: 1px solid %1; border-radius: 3px; padding: 1px; }")
+			.arg(em400_red_color(palette()).name()));
+}
+
+// -----------------------------------------------------------------------
+// Show a transient search cue ("wrapped" / "not found") next to the entry.
+// error picks the red accent; otherwise the dim text colour. An empty msg
+// clears it.
+void MemView::set_search_status(const QString &msg, bool error)
+{
+	if (!search_status) return;
+	search_status->setText(msg);
+	QColor c = error ? em400_red_color(palette()) : em400_dim_text_color(palette());
+	search_status->setStyleSheet(QString("color: %1;").arg(c.name()));
+}
+
+// -----------------------------------------------------------------------
+// Run the search from the cursor in the given direction (via MemSearch) and, on
+// a hit, follow the view to it: switch to the hit's segment, reveal the matching
+// side pane, frame the matched word run with the green selection box (the hit IS
+// the current locus) and remember it as the cursor NEXT / PREV resumes from. A
+// miss shows the "not found" cue; a wrapped hit shows "wrapped".
+void MemView::do_search(bool forward)
+{
+	if (!e) return;
+	const QString q = search_entry->text();
+	const MemSearch::Mode mode = (MemSearch::Mode)search_mode->currentIndex();
+	if (q.trimmed().isEmpty() || !MemSearch::query_valid(q, mode)) return;
+
+	MemSearch search(e);
+	MemSearch::Result r;
+	if (!search.find(q, mode, search_all->isChecked(), cnb, search_origin, forward, r)) {
+		set_search_status("not found", true);
+		return;
+	}
+
+	// the view follows the match: switch to its segment if it landed elsewhere
+	if (r.nb != cnb) {
+		cancel_edit();
+		cnb = r.nb;
+		QSignalBlocker blk(nb_spin);
+		nb_spin->setValue(cnb);
+	}
+	// a stream search matched characters, so reveal the matching side pane (the
+	// hit boxes whole cells, but the chars that matched only read in that pane).
+	// toggle_panel toggles, so only call it when the pane isn't already showing.
+	SidePanel want = (mode == MemSearch::ASCII) ? PANEL_ASCII
+	               : (mode == MemSearch::R40)   ? PANEL_R40 : panel;
+	if (want != panel) toggle_panel(want);
+	search_origin = r.found;
+	sel_nb = cnb;
+	sel_anchor = r.found;
+	sel_caret = r.last;
+	ensure_addr_visible(r.found);
+	set_search_status(r.wrapped ? "wrapped" : QString(), false);
+	update();
+}
+
+// -----------------------------------------------------------------------
+void MemView::search_next_match()
+{
+	do_search(true);
+}
+
+// -----------------------------------------------------------------------
+void MemView::search_prev_match()
+{
+	do_search(false);
+}
+
+// -----------------------------------------------------------------------
+// The entry has keyboard focus while the strip is open, so route its Esc /
+// Enter / Shift+Enter here. Ctrl-F is a window shortcut (handled in MainWindow),
+// so it never reaches this filter. Everything else falls through to the
+// QLineEdit (normal text editing).
+bool MemView::eventFilter(QObject *obj, QEvent *event)
+{
+	if (obj == search_entry && event->type() == QEvent::KeyPress) {
+		QKeyEvent *ke = static_cast<QKeyEvent *>(event);
+		switch (ke->key()) {
+			case Qt::Key_Escape:
+				close_search();
+				return true;
+			case Qt::Key_Return:
+			case Qt::Key_Enter:
+				if (ke->modifiers() & Qt::ShiftModifier) {
+					search_prev_match();
+				} else {
+					search_next_match();
+				}
+				return true;
+			default:
+				break;
+		}
+	}
+	return QWidget::eventFilter(obj, event);
+}
+
+// -----------------------------------------------------------------------
 // Format the value column text for one word. val < 0 means the word is
 // unreadable (no memory mapped), shown as dashes.
 QString MemView::value_text(int val) const
@@ -774,8 +1010,7 @@ QString MemView::panel_text(int val) const
 // The non-scrolling row of column offsets above the memory dump.
 void MemView::draw_offset_row(QPainter &painter, int cell_w, int pcell_w, int side_x)
 {
-	font.setBold(true);
-	painter.setFont(font);
+	painter.setFont(font_bold);
 	painter.setPen(palette().color(QPalette::Text));
 	// value column offsets
 	if (fmt != FMT_OFF) {
@@ -805,12 +1040,10 @@ void MemView::draw_offset_row(QPainter &painter, int cell_w, int pcell_w, int si
 void MemView::draw_line(QPainter &painter, int y, int base_addr, int cell_w, int pcell_w, int side_x)
 {
 	QString addr_str = QString("%1").arg((uint16_t)base_addr, 4, 16, QLatin1Char('0'));
-	font.setBold(true);
-	painter.setFont(font);
+	painter.setFont(font_bold);
 	painter.setPen(palette().color(QPalette::Text));
 	painter.drawText(addr_x_start, addr_y_start + y * line_height, addr_str);
 
-	font.setBold(false);
 	painter.setFont(font);
 
 	for (int x = 0; x < words_per_line; x++) {
@@ -1005,7 +1238,7 @@ void MemView::draw_edit_cell(QPainter &painter, int x, int y, int cell_w)
 void MemView::paintEvent(QPaintEvent *event)
 {
 	QPainter painter(this);
-	painter.translate(0, content_top);
+	painter.translate(0, grid_top());
 	painter.setClipRect(0, 0, right + 1, bottom + 1);
 
 	painter.fillRect(0, 0, right, bottom, palette().color(QPalette::Base));
@@ -1039,29 +1272,41 @@ void MemView::paintEvent(QPaintEvent *event)
 }
 
 // -----------------------------------------------------------------------
-void MemView::resizeEvent(QResizeEvent *event)
+// Lay out the header, the (optional) search strip and the scrolling grid for
+// the current width/height and search_h. Called on resize and whenever the
+// search strip is shown or hidden (which changes grid_top()).
+void MemView::relayout_grid()
 {
 	header->setGeometry(0, 0, width(), content_top);
-	bottom = height() - content_top;
+	if (search_bar) {
+		search_bar->setGeometry(0, content_top, width(), search_h);
+		search_bar->setVisible(search_h > 0);
+	}
+	bottom = height() - grid_top();
 	right = width();
 	total_lines = (bottom - col_hdr_h) / line_height + 1;
 
 	apply_wpl_change();
 	scroll->setPageStep(total_lines);
-	scroll->setGeometry(width() - scroll->sizeHint().width(), content_top + col_hdr_h,
+	scroll->setGeometry(width() - scroll->sizeHint().width(), grid_top() + col_hdr_h,
 		scroll->sizeHint().width(), bottom - col_hdr_h);
+}
 
+// -----------------------------------------------------------------------
+void MemView::resizeEvent(QResizeEvent *event)
+{
+	relayout_grid();
 	QWidget::resizeEvent(event);
 }
 
 // -----------------------------------------------------------------------
-int MemView::calculate_scroll_lines(int angleDelta)
+int MemView::calculate_scroll_lines(int angle_delta)
 {
 	const int native_wheel_step = 120;
 	const int lines_per_click = 3;
 	const int one_line_advance = native_wheel_step / lines_per_click;
 
-	wheel_tick_accumulator += angleDelta;
+	wheel_tick_accumulator += angle_delta;
 	int lines = wheel_tick_accumulator / one_line_advance;
 	wheel_tick_accumulator %= one_line_advance;
 

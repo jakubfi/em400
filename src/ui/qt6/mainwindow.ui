@@ -93,9 +93,6 @@
    <property name="text">
     <string>Small Control Panel</string>
    </property>
-   <property name="shortcut">
-    <string>Ctrl+F</string>
-   </property>
   </action>
   <action name="actionDebugger">
    <property name="checkable">

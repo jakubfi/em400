@@ -8,6 +8,7 @@
 #include <QGridLayout>
 #include <QHBoxLayout>
 #include <QFrame>
+#include <QShortcut>
 #include "mainwindow.h"
 #include "ui_mainwindow.h"
 #include "emdas.h"
@@ -105,6 +106,16 @@ void MainWindow::build_docks()
 	dock_brk   = register_dock(brk,   tr("Breakpoints"),      "dock_brk");
 	dock_watch = register_dock(watch, tr("Watches"),          "dock_watch");
 	dock_stack = register_dock(stack, tr("Stack"),            "dock_stack");
+
+	// Ctrl-F (window-wide) opens the memory view's search strip, revealing the
+	// dock if hidden. Window-scoped so it works without first focusing the view;
+	// for now it always targets the memory view (dasm search is a future addition).
+	QShortcut *search_sc = new QShortcut(QKeySequence::Find, this);
+	connect(search_sc, &QShortcut::activated, this, [this]() {
+		dock_mem->show();
+		dock_mem->raise();
+		mem->open_search();
+	});
 }
 
 // -----------------------------------------------------------------------
