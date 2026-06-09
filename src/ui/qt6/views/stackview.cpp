@@ -116,7 +116,7 @@ void StackView::paintEvent(QPaintEvent *)
 	// the "no meaningful stack" cases: a single centred dim line
 	if (state != OK) {
 		p.setPen(dim);
-		const char *msg = (state == NO_SP) ? "no stack (SP=0)" : "stack unallocated";
+		QString msg = (state == NO_SP) ? tr("no stack (SP=0)") : tr("stack unallocated");
 		p.drawText(rect(), Qt::AlignCenter, msg);
 		return;
 	}
@@ -201,7 +201,7 @@ void StackView::contextMenuEvent(QContextMenuEvent *ev)
 	if (txt.isNull()) return;
 
 	QMenu menu(this);
-	QAction *copy = menu.addAction(tr("Copy  %1").arg(txt));
+	QAction *copy = menu.addAction(tr("Copy %1").arg(txt));
 	connect(copy, &QAction::triggered, this, [txt]{
 		QApplication::clipboard()->setText(txt);
 	});

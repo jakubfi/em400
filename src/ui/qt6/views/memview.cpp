@@ -46,25 +46,25 @@ MemView::MemView(QWidget *parent) : QWidget(parent)
 	hlay->setContentsMargins(4, 2, 4, 2);
 	hlay->setSpacing(4);
 
-	hlay->addWidget(new QLabel("NB:"));
+	hlay->addWidget(new QLabel(tr("NB:")));
 	nb_spin = new QSpinBox();
 	nb_spin->setRange(0, 15);
 	nb_spin->setValue(0);
 	nb_spin->setFixedWidth(48);
-	nb_spin->setToolTip("Memory segment");
+	nb_spin->setToolTip(tr("Memory segment"));
 	hlay->addWidget(nb_spin);
 	hlay->addSpacing(8);
 
-	btn_hex  = make_toggle_btn("HEX",  true);
-	btn_udec = make_toggle_btn("DEC", false);
-	btn_sdec = make_toggle_btn("-DEC", false);
+	btn_hex  = make_toggle_btn(tr("HEX"),  true);
+	btn_udec = make_toggle_btn(tr("DEC"), false);
+	btn_sdec = make_toggle_btn(tr("-DEC"), false);
 	hlay->addWidget(btn_hex);
 	hlay->addWidget(btn_udec);
 	hlay->addWidget(btn_sdec);
 	hlay->addSpacing(8);
 
-	btn_ascii = make_toggle_btn("ASCII", true);
-	btn_r40   = make_toggle_btn("R40",   false);
+	btn_ascii = make_toggle_btn(tr("ASCII"), true);
+	btn_r40   = make_toggle_btn(tr("R40"),   false);
 	hlay->addWidget(btn_ascii);
 	hlay->addWidget(btn_r40);
 	hlay->addStretch();
@@ -117,21 +117,21 @@ void MemView::build_search_bar()
 	slay->setContentsMargins(4, 2, 4, 2);
 	slay->setSpacing(4);
 
-	slay->addWidget(new QLabel("Find:"));
+	slay->addWidget(new QLabel(tr("Find:")));
 	search_mode = new QComboBox();
-	search_mode->addItems({"Numeric", "ASCII", "R40"});
+	search_mode->addItems({tr("Numeric"), tr("ASCII"), tr("R40")});
 	slay->addWidget(search_mode);
 
 	search_entry = new QLineEdit();
 	slay->addWidget(search_entry, 1);
 
-	search_prev = new QPushButton("Prev");
-	search_next = new QPushButton("Next");
+	search_prev = new QPushButton(tr("Prev"));
+	search_next = new QPushButton(tr("Next"));
 	slay->addWidget(search_prev);
 	slay->addWidget(search_next);
 	slay->addSpacing(8);
 
-	search_all = new QCheckBox("all segments");
+	search_all = new QCheckBox(tr("all segments"));
 	slay->addWidget(search_all);
 
 	// The transient cue ("not found" / "wrapped") sits at the far right. Reserve
@@ -142,8 +142,8 @@ void MemView::build_search_bar()
 	search_status = new QLabel();
 	search_status->setAlignment(Qt::AlignRight | Qt::AlignVCenter);
 	QFontMetrics sfm(search_status->fontMetrics());
-	search_status->setFixedWidth(qMax(sfm.horizontalAdvance("not found"),
-	                                  sfm.horizontalAdvance("wrapped")) + 4);
+	search_status->setFixedWidth(qMax(sfm.horizontalAdvance(tr("not found")),
+	                                  sfm.horizontalAdvance(tr("wrapped"))) + 4);
 	slay->addSpacing(8);
 	slay->addWidget(search_status);
 
@@ -892,7 +892,7 @@ void MemView::do_search(bool forward)
 	MemSearch search(e);
 	MemSearch::Result r;
 	if (!search.find(q, mode, search_all->isChecked(), cnb, search_origin, forward, r)) {
-		set_search_status("not found", true);
+		set_search_status(tr("not found"), true);
 		return;
 	}
 
@@ -914,7 +914,7 @@ void MemView::do_search(bool forward)
 	sel_anchor = r.found;
 	sel_caret = r.last;
 	ensure_addr_visible(r.found);
-	set_search_status(r.wrapped ? "wrapped" : QString(), false);
+	set_search_status(r.wrapped ? tr("wrapped") : QString(), false);
 	update();
 }
 

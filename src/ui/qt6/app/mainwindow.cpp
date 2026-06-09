@@ -241,7 +241,7 @@ void MainWindow::build_statusbar()
 	ui->statusbar->addWidget(ips);
 	ui->statusbar->addWidget(make_vsep());
 
-	QLabel *flags_label = new QLabel("<span>Flags:</span>");
+	QLabel *flags_label = new QLabel(QString("<span>%1</span>").arg(tr("Flags:")));
 	flags_label->setFont(font);
 	ui->statusbar->addWidget(flags_label);
 	flags = new QLabel();
@@ -249,25 +249,25 @@ void MainWindow::build_statusbar()
 	ui->statusbar->addWidget(flags);
 	ui->statusbar->addWidget(make_vsep());
 
-	QLabel *status_label = new QLabel("<span>Status:</span>");
+	QLabel *status_label = new QLabel(QString("<span>%1</span>").arg(tr("Status:")));
 	status_label->setFont(font);
 	ui->statusbar->addWidget(status_label);
 	q = new QLabel("<span>Q</span>");
 	q->setFont(font);
-	q->setToolTip("User-mode flag");
+	q->setToolTip(tr("User-mode flag"));
 	ui->statusbar->addWidget(q);
 	bs = new QLabel("<span>BS</span>");
 	bs->setFont(font);
 	ui->statusbar->addWidget(bs);
 	nb = new QLabel("<span>NB=0</span>");
 	nb->setFont(font);
-	nb->setToolTip("Current memory segment");
+	nb->setToolTip(tr("Current memory segment"));
 	ui->statusbar->addWidget(nb);
 	ui->statusbar->addWidget(make_vsep());
 
 	mc = new QLabel("<span>MC=0</span>");
 	mc->setFont(font);
-	mc->setToolTip("Modification Counter");
+	mc->setToolTip(tr("Modification Counter"));
 	ui->statusbar->addWidget(mc);
 	ui->statusbar->addWidget(make_vsep());
 
@@ -493,7 +493,7 @@ void MainWindow::slot_ips_update(unsigned long ips)
 void MainWindow::slot_edit_mode_changed(bool editing, bool insert)
 {
 	edit_box->setVisible(editing);
-	edit_mode->setText(insert ? "Edit: insert" : "Edit: overwrite");
+	edit_mode->setText(insert ? tr("Edit: insert") : tr("Edit: overwrite"));
 }
 
 // -----------------------------------------------------------------------

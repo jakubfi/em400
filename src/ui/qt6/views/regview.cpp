@@ -49,7 +49,7 @@ RegCompact::RegCompact(EmuModel *emu, Kind kind, QWidget *parent) :
 	grid->setVerticalSpacing(2);
 
 	// column 1 header is the hex/oct toggle button; all rows switch together
-	btn_radix = new QPushButton("hex", this);
+	btn_radix = new QPushButton(tr("hex"), this);
 	btn_radix->setFont(mono);
 	btn_radix->setFlat(true);
 	btn_radix->setMaximumHeight(QFontMetrics(mono).height() + 6);
@@ -57,7 +57,7 @@ RegCompact::RegCompact(EmuModel *emu, Kind kind, QWidget *parent) :
 	grid->addWidget(btn_radix, 0, 1);
 
 	if (any_dec) {
-		QLabel *dec_hdr = new QLabel("dec", this);
+		QLabel *dec_hdr = new QLabel(tr("dec"), this);
 		dec_hdr->setFont(mono);
 		dec_hdr->setAlignment(Qt::AlignRight | Qt::AlignVCenter);
 		grid->addWidget(dec_hdr, 0, 2);
@@ -225,7 +225,7 @@ void RegCompact::commit_dec(int row)
 void RegCompact::toggle_radix()
 {
 	radix = (radix == 16) ? 8 : 16;
-	btn_radix->setText(radix == 16 ? "hex" : "oct");
+	btn_radix->setText(radix == 16 ? tr("hex") : tr("oct"));
 	for (int row=0 ; row<rows.size() ; row++) render_row(row);
 }
 

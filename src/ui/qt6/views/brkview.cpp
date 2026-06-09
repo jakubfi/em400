@@ -327,7 +327,7 @@ void BrkView::slot_item_changed(QTableWidgetItem *item)
 	item->setData(IdRole, newid);
 	item->setData(ExprRole, new_expr);
 	item->setText(new_expr); // normalised (trimmed) text
-	item->setToolTip(tr("breakpoint #%1 - double-click to edit").arg(newid));
+	item->setToolTip(tr("double-click to edit"));
 	building = false;
 
 	if (BrkLed *led = qobject_cast<BrkLed*>(table->cellWidget(r, COL_LED))) led->id = newid;

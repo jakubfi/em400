@@ -44,16 +44,16 @@ DasmView::DasmView(QWidget *parent) :
 	hlay->setContentsMargins(4, 2, 4, 2);
 	hlay->setSpacing(4);
 
-	hlay->addWidget(new QLabel("NB:"));
+	hlay->addWidget(new QLabel(tr("NB:")));
 	nb_spin = new QSpinBox();
 	nb_spin->setRange(0, 15);
 	nb_spin->setValue(0);
 	nb_spin->setFixedWidth(48);
-	nb_spin->setToolTip("Memory segment");
+	nb_spin->setToolTip(tr("Memory segment"));
 	hlay->addWidget(nb_spin);
 	hlay->addSpacing(8);
 
-	follow_chk = new QCheckBox("follow IC");
+	follow_chk = new QCheckBox(tr("follow IC"));
 	follow_chk->setChecked(follow_ic);
 	hlay->addWidget(follow_chk);
 	hlay->addStretch();

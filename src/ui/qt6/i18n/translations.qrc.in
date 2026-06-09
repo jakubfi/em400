@@ -1,0 +1,9 @@
+<!-- Generated into the build dir by CMake (configure_file): embeds the compiled
+     .qm translation, built from the .ts by qt6_add_translation, into the binary.
+     @QM_PL_PATH@ is an absolute build-dir path; the alias is what QTranslator
+     loads (load(locale, "em400-qt", "_", ":/i18n")). -->
+<RCC>
+    <qresource prefix="/i18n">
+        <file alias="em400-qt_pl.qm">@QM_PL_PATH@</file>
+    </qresource>
+</RCC>

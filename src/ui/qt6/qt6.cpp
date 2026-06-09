@@ -17,6 +17,8 @@
 
 #include <QApplication>
 #include <QSettings>
+#include <QTranslator>
+#include <QLocale>
 
 #include "mainwindow.h"
 #include "theme.h"
@@ -43,9 +45,19 @@ void ui_qt6_loop(void *data)
 	int argv = 1;
 	char *argc[] = { (char*)"em400" };
 	QApplication a(argv, argc);
-	// identity for QSettings (window/dock layout persistence)
+	// identity for QSettings (window/dock layout persistence). "em400-qt" keeps the
+	// UI's settings namespace distinct from the future em400 core library config.
 	QApplication::setOrganizationName("em400");
-	QApplication::setApplicationName("em400");
+	QApplication::setApplicationName("em400-qt");
+
+	// Localize the UI to the system locale. English is the built-in source
+	// language: for a C/English locale load() finds no catalog and returns false,
+	// leaving the original strings in place. A pl_* locale loads em400-qt_pl.qm
+	// embedded under :/i18n.
+	QTranslator *translator = new QTranslator(&a);
+	if (translator->load(QLocale::system(), "em400-qt", "_", ":/i18n")) {
+		a.installTranslator(translator);
+	}
 
 	// Force the dark control-panel theme by default; honor a persisted choice
 	// if the user has previously turned it off via View > Panel Theme.

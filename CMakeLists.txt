@@ -114,6 +114,7 @@ endif()
 set(UI_QT OFF)
 find_package(Qt6 COMPONENTS Widgets)
 find_package(Qt6 COMPONENTS Multimedia)
+find_package(Qt6 COMPONENTS LinguistTools)
 
 if (Qt6Widgets_FOUND)
 	message(STATUS "Found QT: ${Qt6Widgets_VERSION_STRING}")
@@ -262,6 +263,30 @@ if (UI_QT)
 	list(APPEND SOURCES_EM400 src/ui/qt6/qt6.cpp)
 	list(APPEND SOURCES_EM400 src/ui/qt6/resources.qrc)
 
+	# Translations: compile each .ts to a .qm and embed it via a build-dir qrc
+	# (configured from translations.qrc.in). English is the source language and
+	# needs no .ts. The .qm is built before the target's AUTORCC runs - enforced
+	# by the `translations` target dependency added with the em400 target below.
+	set(EM400_TS_FILES src/ui/qt6/i18n/em400-qt_pl.ts)
+	qt6_add_translation(EM400_QM_FILES ${EM400_TS_FILES})
+	set(QM_PL_PATH "${CMAKE_BINARY_DIR}/em400-qt_pl.qm")
+	configure_file(
+		${CMAKE_SOURCE_DIR}/src/ui/qt6/i18n/translations.qrc.in
+		${CMAKE_BINARY_DIR}/translations.qrc @ONLY)
+	list(APPEND SOURCES_EM400 ${CMAKE_BINARY_DIR}/translations.qrc)
+
+	# Convenience target to refresh the .ts catalogs from the current sources:
+	# `make lupdate`. Deliberately NOT part of the default build - it rewrites
+	# source-tree .ts files, which should be an explicit, reviewed step. After
+	# running it, fill in the new <translation> entries in the .ts.
+	add_custom_target(lupdate
+		COMMAND Qt6::lupdate -target-language pl -locations none
+			${CMAKE_SOURCE_DIR}/src/ui/qt6
+			-ts ${CMAKE_SOURCE_DIR}/${EM400_TS_FILES}
+		WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}
+		COMMENT "Refreshing translation catalogs (.ts) from sources"
+		VERBATIM)
+
 	# application shell + shared infrastructure
 	list(APPEND SOURCES_EM400 src/ui/qt6/app/mainwindow.ui)
 	list(APPEND SOURCES_EM400 src/ui/qt6/app/mainwindow.h src/ui/qt6/app/mainwindow.cpp)
@@ -360,6 +385,10 @@ if (UI_QT)
 	target_compile_definitions(em400 PRIVATE UI_QT)
 	target_link_libraries(em400 ${Qt6Widgets_LIBRARIES})
 	target_link_libraries(em400 ${Qt6Multimedia_LIBRARIES})
+
+	# Build the .qm files before em400's AUTORCC embeds them via translations.qrc.
+	add_custom_target(em400_translations DEPENDS ${EM400_QM_FILES})
+	add_dependencies(em400 em400_translations)
 endif()
 
 target_link_libraries(em400

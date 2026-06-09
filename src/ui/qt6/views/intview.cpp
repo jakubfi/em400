@@ -50,13 +50,27 @@ const char *abbr[32] = {
 	"OPRQ", "CPUL", "SH", "SL",
 };
 
+// Marked with QT_TRANSLATE_NOOP (context "IntView") so lupdate extracts them;
+// the runtime lookup is tr(full[n]) in make_cell(), which resolves under the
+// same IntView context.
 const char *full[32] = {
-	"CPU power loss", "memory parity error", "no memory", "other CPU (high)",
-	"interface power loss", "clock / special (MX-16)", "illegal instruction",
-	"division overflow", "FP underflow", "FP overflow", "FP error / div by zero",
-	"special / clock (MX-16)",
+	QT_TRANSLATE_NOOP("IntView", "CPU power loss"),
+	QT_TRANSLATE_NOOP("IntView", "memory parity error"),
+	QT_TRANSLATE_NOOP("IntView", "no memory"),
+	QT_TRANSLATE_NOOP("IntView", "other CPU (high)"),
+	QT_TRANSLATE_NOOP("IntView", "interface power loss"),
+	QT_TRANSLATE_NOOP("IntView", "clock / special (MX-16)"),
+	QT_TRANSLATE_NOOP("IntView", "illegal instruction"),
+	QT_TRANSLATE_NOOP("IntView", "division overflow"),
+	QT_TRANSLATE_NOOP("IntView", "FP underflow"),
+	QT_TRANSLATE_NOOP("IntView", "FP overflow"),
+	QT_TRANSLATE_NOOP("IntView", "FP error / div by zero"),
+	QT_TRANSLATE_NOOP("IntView", "special / clock (MX-16)"),
 	"", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "",
-	"operator request", "other CPU (low)", "software (high)", "software (low)",
+	QT_TRANSLATE_NOOP("IntView", "operator request"),
+	QT_TRANSLATE_NOOP("IntView", "other CPU (low)"),
+	QT_TRANSLATE_NOOP("IntView", "software (high)"),
+	QT_TRANSLATE_NOOP("IntView", "software (low)"),
 };
 
 } // namespace
