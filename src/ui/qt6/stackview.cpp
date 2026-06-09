@@ -77,24 +77,29 @@ void StackView::refresh()
 {
 	int s = e->get_mem(0, SP_ADDR);
 	if (s <= 0) {            // -1 = SP slot unreadable, 0 = never set
-		if (state != NO_SP) { state = NO_SP; update(); }
+		if (state != NO_SP) {
+			state = NO_SP;
+			update();
+		}
 		return;
 	}
 
 	sp = (uint16_t)s;
 	base = (uint16_t)(sp - FRAME);
 
-	uint16_t w[FRAME];
-	for (int i=0 ; i<FRAME ; i++) {
-		int v = e->get_mem(0, (uint16_t)(base + i));
-		if (v < 0) {         // frame runs into unallocated memory
-			if (state != UNALLOC) { state = UNALLOC; update(); }
-			return;
+	// One block read for the whole frame: get_mem returns false if any word is
+	// unallocated, which is exactly the UNALLOC condition we want (the frame is
+	// contiguous; the read spans page runs internally). A failed read may leave
+	// word[] torn, but paint ignores it unless state == OK, and the next good
+	// refresh rewrites it whole.
+	if (!e->get_mem(0, base, word, FRAME)) {
+		if (state != UNALLOC) {
+			state = UNALLOC;
+			update();
 		}
-		w[i] = (uint16_t)v;
+		return;
 	}
 
-	for (int i=0 ; i<FRAME ; i++) word[i] = w[i];
 	state = OK;
 	update();
 }
