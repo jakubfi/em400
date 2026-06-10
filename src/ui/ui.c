@@ -26,7 +26,6 @@
 
 #include "log.h"
 #include "ui/ui.h"
-#include "cfg.h"
 
 extern struct ui_drv ui_cmd;
 extern struct ui_drv ui_curses;
@@ -56,9 +55,11 @@ void ui_print_uis(FILE *fd)
 }
 
 // -----------------------------------------------------------------------
-struct ui * ui_create(em400_cfg *cfg)
+struct ui * ui_create(const char *name)
 {
-	const char *name = cfg_getstr(cfg, "ui:interface", uis[0]->name);
+	if (!name) {
+		name = uis[0]->name;
+	}
 
 	struct ui_drv **drv = uis;
 	while (drv && *drv) {

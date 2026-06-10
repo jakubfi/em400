@@ -29,6 +29,7 @@ typedef int socklen_t;
 #include <arpa/inet.h>
 #endif
 #include <string.h>
+#include <unistd.h>
 
 #include "ui/ui.h"
 #include "ui/cmd/commands.h"

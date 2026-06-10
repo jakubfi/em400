@@ -17,6 +17,7 @@
 
 #include <stdlib.h>
 #include <stdio.h>
+#include <string.h>
 #include <strings.h>
 #include <unistd.h>
 #include <stdarg.h>
@@ -325,6 +326,7 @@ int main(int argc, char** argv)
 
 	int print_help = 0;
 	char *config = NULL;
+	char *ui_name = NULL;
 	em400_cfg *cfg = NULL;
 	struct ui *ui = NULL;
 
@@ -375,7 +377,16 @@ int main(int argc, char** argv)
 		goto done;
 	}
 
-	if (!(ui = ui_create(cfg))) {
+	const char *ui_iface = cfg_getstr(cfg, "ui:interface", NULL);
+	if (ui_iface) {
+		ui_name = strdup(ui_iface);
+	}
+
+	// nothing needs cfg anymore
+	cfg_free(cfg);
+	cfg = NULL;
+
+	if (!(ui = ui_create(ui_name))) {
 		LOGERR("Failed to initialize UI");
 		goto done;
 	}
@@ -391,6 +402,7 @@ done:
 	ui_shutdown(ui);
 	em400_top_shutdown();
 	cfg_free(cfg);
+	free(ui_name);
 	free(config);
 	return return_code;
 }

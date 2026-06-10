@@ -18,7 +18,7 @@
 #ifndef UI_H
 #define UI_H
 
-#include "cfg.h"
+#include <stdio.h>
 
 typedef void * (*ui_f_setup)(const char *);
 typedef void (*ui_f_loop)(void*);
@@ -37,7 +37,7 @@ struct ui {
 };
 
 void ui_print_uis(FILE *fd);
-struct ui * ui_create(em400_cfg *cfg);
+struct ui * ui_create(const char *name);
 int ui_run(struct ui *ui);
 void ui_shutdown(struct ui *ui);
 
