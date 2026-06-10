@@ -304,7 +304,7 @@ bool cpu_mem_write_1(bool barnb, uint16_t addr, uint16_t data)
 }
 
 // -----------------------------------------------------------------------
-int cpu_init(struct em400_cfg_cpu *c_cpu, struct em400_cfg_buzzer *c_buzzer)
+int cpu_init(const struct em400_host_cfg *host, const struct em400_machine_cfg *machine)
 {
 	int res;
 
@@ -312,15 +312,15 @@ int cpu_init(struct em400_cfg_cpu *c_cpu, struct em400_cfg_buzzer *c_buzzer)
 		return LOGERR("CPU already initialized");
 	}
 
-	awp_enabled = c_cpu->awp;
-	cpu_mod_present = c_cpu->mod;
-	cpu_user_io_illegal = c_cpu->user_io_illegal;
-	nomem_stop = c_cpu->nomem_stop;
-	speed_real = c_cpu->speed_real;
-	throttle_granularity_ns = c_cpu->throttle_granularity_ns;
+	awp_enabled = machine->cpu.awp;
+	cpu_mod_present = machine->cpu.mod;
+	cpu_user_io_illegal = machine->cpu.user_io_illegal;
+	nomem_stop = machine->cpu.nomem_stop;
+	speed_real = host->emu.speed_real;
+	throttle_granularity_ns = host->emu.throttle_granularity_ns;
 	ticks_per_2s = 2000000000L / throttle_granularity_ns;
 
-	sound_enabled = c_buzzer->enabled;
+	sound_enabled = host->sound.enabled;
 
 	res = iset_build(cpu_op_tab, cpu_user_io_illegal);
 	if (res != E_OK) {
@@ -342,7 +342,7 @@ int cpu_init(struct em400_cfg_cpu *c_cpu, struct em400_cfg_buzzer *c_buzzer)
 	cpu_mod_off();
 	cpu_state = EM400_STATE_STOP;
 
-	if (clock_init(c_cpu->clock_period_ms) != E_OK) {
+	if (clock_init(machine->cpu.clock_period_ms) != E_OK) {
 		LOGERR("Failed to initialize clock");
 		goto fail;
 	}
@@ -352,7 +352,7 @@ int cpu_init(struct em400_cfg_cpu *c_cpu, struct em400_cfg_buzzer *c_buzzer)
 			LOGERR("WARNING: sound won't work with speed_real=false. Buzzer emulation is disabled.");
 			sound_enabled = false;
 		} else {
-			if (buzzer_init(c_buzzer) != E_OK) {
+			if (buzzer_init(&host->sound) != E_OK) {
 				LOGERR("WARNING: could not initialize buzzer; continuing without sound.");
 				sound_enabled = false;
 			}

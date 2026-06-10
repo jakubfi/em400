@@ -18,8 +18,6 @@
 #ifndef IO_DEFS_H
 #define IO_DEFS_H
 
-#define IO_MAX_CHAN	16
-
 enum io_dir {
 	IO_OU = 0,
 	IO_IN = 1,

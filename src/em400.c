@@ -30,12 +30,18 @@
 
 
 // -----------------------------------------------------------------------
-int em400_device_init(em400_cfg *cfg, const char *dev_type_name, int chnum, int devnum)
+static int cfg_build_device(em400_cfg *cfg, int chnum, int devnum, struct em400_device_cfg *dev)
 {
-	int res = E_ERR;
+	const char *dev_type_name = cfg_fgetstr(cfg, "dev%i.%i:type", chnum, devnum);
+	if (!dev_type_name) {
+		dev->type = EM400_DEV_NONE;
+		return E_OK;
+	}
 
-	LOG(L_EM4H, "Initializing device %i:%i (%s)", chnum, devnum, dev_type_name);
+	LOG(L_EM4H, "Configuring device %i.%i (%s)", chnum, devnum, dev_type_name);
+
 	if (!strcasecmp(dev_type_name, "terminal")) {
+		// TODO: remove dead "transport"
 		const char *transport = cfg_fgetstr(cfg, "dev%i.%i:transport", chnum, devnum);
 		if (transport && strcasecmp(transport, "tcp")) {
 			return LOGERR("Terminal only supports TCP transport type");
@@ -49,65 +55,57 @@ int em400_device_init(em400_cfg *cfg, const char *dev_type_name, int chnum, int 
 			LOG(L_EM4H, "Device %i.%i: terminal speed not set, defaulting to 9600", chnum, devnum);
 			speed = 9600;
 		}
-		res = em400_dev_terminal_init(chnum, devnum, port, speed);
+		dev->type = EM400_DEV_TERMINAL;
+		dev->terminal.port = port;
+		dev->terminal.speed = speed;
 	} else if (!strcasecmp(dev_type_name, "winchester")) {
-		const char *image = cfg_fgetstr(cfg, "dev%i.%i:image", chnum, devnum);
-		res = em400_dev_winchester_init(chnum, devnum, image);
+		dev->type = EM400_DEV_WINCHESTER;
+		dev->winchester.image = cfg_fgetstr(cfg, "dev%i.%i:image", chnum, devnum);
 	} else if (!strcasecmp(dev_type_name, "floppy")) {
-		res = E_OK;
+		dev->type = EM400_DEV_FLOP5;
 	} else if (!strcasecmp(dev_type_name, "floppy8")) {
-		res = em400_dev_sp45de_init(chnum, devnum);
-		if (res != E_ERR) {
-			int slotcnt = em400_dev_slot_count(chnum, devnum);
-			for (int i=0 ; i<slotcnt ; i++) {
-				const char *image = cfg_fgetstr(cfg, "dev%i.%i:image_%i", chnum, devnum, i);
-				if (image) {
-					em400_dev_load_image(chnum, devnum, i, image);
-				}
-			}
+		dev->type = EM400_DEV_SP45DE;
+		for (int slot=0 ; slot<EM400_SP45DE_SLOT_COUNT ; slot++) {
+			dev->sp45de.images[slot] = cfg_fgetstr(cfg, "dev%i.%i:image_%i", chnum, devnum, slot);
 		}
 	} else if (!strcasecmp(dev_type_name, "rtclock")) {
-		const char *prom_filename = cfg_fgetstr(cfg, "dev%i.%i:prom", chnum, devnum);
-		res = em400_dev_rtclock_init(chnum, devnum, prom_filename);
+		dev->type = EM400_DEV_RTCLOCK;
+		dev->rtclock.prom = cfg_fgetstr(cfg, "dev%i.%i:prom", chnum, devnum);
 	} else {
-		res = LOGERR("Unknown device type: %s", dev_type_name);
+		return LOGERR("Unknown device type: %s", dev_type_name);
 	}
 
-	return res;
+	return E_OK;
 }
 
 // -----------------------------------------------------------------------
-int em400_channels_init(em400_cfg *cfg)
+static int cfg_build_io(em400_cfg *cfg, struct em400_machine_cfg *machine)
 {
-	int res;
+	for (int chnum=0 ; chnum<EM400_IO_MAX_CHAN ; chnum++) {
+		struct em400_channel_cfg *chan = &machine->channel[chnum];
+		chan->type = EM400_CHANNEL_NONE;
+		for (int devnum=0 ; devnum<EM400_CHAN_MAX_DEV ; devnum++) {
+			chan->device[devnum].type = EM400_DEV_NONE;
+		}
 
-	for (int chnum=0 ; chnum<16 ; chnum++) {
 		const char *ch_name = cfg_fgetstr(cfg, "io:channel_%i", chnum);
 		if (!ch_name) continue;
 
-		LOG(L_EM4H, "Initializing I/O channel %i: %s", chnum, ch_name);
+		LOG(L_EM4H, "Configuring I/O channel %i: %s", chnum, ch_name);
 
 		if (!strcasecmp(ch_name, "char")) {
-			res = em400_io_channel_init(chnum, EM400_CHANNEL_CHAR);
+			chan->type = EM400_CHANNEL_CHAR;
 		} else if (!strcasecmp(ch_name, "multix")) {
-			res = em400_io_channel_init(chnum, EM400_CHANNEL_MULTIX);
+			chan->type = EM400_CHANNEL_MULTIX;
 		} else if (!strcasecmp(ch_name, "iotester")) {
-			res = em400_io_channel_init(chnum, EM400_CHANNEL_IOTESTER);
+			chan->type = EM400_CHANNEL_IOTESTER;
 		} else {
 			return LOGERR("Unknown channel %i type: %s", chnum, ch_name);
 		}
 
-		if (res != E_OK) {
-			return LOGERR("Channel %i (%s) initialization error", chnum, ch_name);
-		}
-
-		LOG(L_EM4H, "Processing devices in channel %i (%s)", chnum, ch_name);
-
-		for (int devnum=0 ; devnum<32 ; devnum++) {
-			const char *dev_type_name = cfg_fgetstr(cfg, "dev%i.%i:type", chnum, devnum);
-			if (!dev_type_name) continue;
-			if (em400_device_init(cfg, dev_type_name, chnum, devnum) != E_OK) {
-				return LOGERR("Device %i:%i (%s) initialization error", chnum, devnum, dev_type_name);
+		for (int devnum=0 ; devnum<EM400_CHAN_MAX_DEV ; devnum++) {
+			if (cfg_build_device(cfg, chnum, devnum, &chan->device[devnum]) != E_OK) {
+				return LOGERR("Device %i:%i configuration error", chnum, devnum);
 			}
 		}
 	}
@@ -138,42 +136,44 @@ int em400_top_init(em400_cfg *cfg)
 		return LOGERR("Failed to set which components to log");
 	}
 
-	struct em400_cfg_cpu cpu_cfg = {
-		.awp = cfg_getbool(cfg, "cpu:awp", CFG_DEFAULT_CPU_AWP),
-		.mod = cfg_getbool(cfg, "cpu:modifications", CFG_DEFAULT_CPU_MODIFICATIONS),
-		.user_io_illegal = cfg_getbool(cfg, "cpu:user_io_illegal", CFG_DEFAULT_CPU_IO_USER_ILLEGAL),
-		.nomem_stop = cfg_getbool(cfg, "cpu:stop_on_nomem", CFG_DEFAULT_CPU_STOP_ON_NOMEM),
-		.speed_real = cfg_getbool(cfg, "cpu:speed_real", CFG_DEFAULT_CPU_SPEED_REAL),
-		.throttle_granularity_ns = 1000 * cfg_getint(cfg, "cpu:throttle_granularity", CFG_DEFAULT_CPU_THROTTLE_GRANULARITY_US),
-		.clock_period_ms = cfg_getint(cfg, "cpu:clock_period", CFG_DEFAULT_CPU_CLOCK_PERIOD_MS),
+	struct em400_host_cfg host = {
+		.emu = {
+			.speed_real = cfg_getbool(cfg, "cpu:speed_real", CFG_DEFAULT_CPU_SPEED_REAL),
+			.throttle_granularity_ns = 1000 * cfg_getint(cfg, "cpu:throttle_granularity", CFG_DEFAULT_CPU_THROTTLE_GRANULARITY_US),
+		},
+		.sound = {
+			.enabled = cfg_getbool(cfg, "sound:enabled", CFG_DEFAULT_SOUND_ENABLED),
+			.buffer_len = cfg_getint(cfg, "sound:buffer_len", CFG_DEFAULT_SOUND_BUFFER_LEN),
+			.volume = cfg_getint(cfg, "sound:volume", CFG_DEFAULT_SOUND_VOLUME),
+			.sample_rate = cfg_getint(cfg, "sound:rate", CFG_DEFAULT_SOUND_RATE),
+			.latency = cfg_getint(cfg, "sound:latency", CFG_DEFAULT_SOUND_LATENCY),
+			.backend = cfg_getstr(cfg, "sound:backend", CFG_DEFAULT_SOUND_BACKEND),
+			.device = cfg_getstr(cfg, "sound:device", CFG_DEFAULT_SOUND_DEVICE),
+		},
 	};
 
-	struct em400_cfg_buzzer buzzer_cfg = {
-		.enabled = cfg_getbool(cfg, "sound:enabled", CFG_DEFAULT_SOUND_ENABLED),
-		.buffer_len = cfg_getint(cfg, "sound:buffer_len", CFG_DEFAULT_SOUND_BUFFER_LEN),
-		.volume = cfg_getint(cfg, "sound:volume", CFG_DEFAULT_SOUND_VOLUME),
-		.sample_rate = cfg_getint(cfg, "sound:rate", CFG_DEFAULT_SOUND_RATE),
-		.latency = cfg_getint(cfg, "sound:latency", CFG_DEFAULT_SOUND_LATENCY),
-		.backend = cfg_getstr(cfg, "sound:backend", CFG_DEFAULT_SOUND_BACKEND),
-		.device = cfg_getstr(cfg, "sound:device", CFG_DEFAULT_SOUND_DEVICE),
+	struct em400_machine_cfg machine = {
+		.cpu = {
+			.awp = cfg_getbool(cfg, "cpu:awp", CFG_DEFAULT_CPU_AWP),
+			.mod = cfg_getbool(cfg, "cpu:modifications", CFG_DEFAULT_CPU_MODIFICATIONS),
+			.user_io_illegal = cfg_getbool(cfg, "cpu:user_io_illegal", CFG_DEFAULT_CPU_IO_USER_ILLEGAL),
+			.nomem_stop = cfg_getbool(cfg, "cpu:stop_on_nomem", CFG_DEFAULT_CPU_STOP_ON_NOMEM),
+			.clock_period_ms = cfg_getint(cfg, "cpu:clock_period", CFG_DEFAULT_CPU_CLOCK_PERIOD_MS),
+		},
+		.mem = {
+			.elwro_modules = cfg_getint(cfg, "memory:elwro_modules", CFG_DEFAULT_MEMORY_ELWRO_MODULES),
+			.mega_modules = cfg_getint(cfg, "memory:mega_modules", CFG_DEFAULT_MEMORY_MEGA_MODULES),
+			.os_segments = cfg_getint(cfg, "memory:hardwired_segments", CFG_DEFAULT_MEMORY_HARDWIRED_SEGMENTS),
+			.mega_prom_image = cfg_getstr(cfg, "memory:mega_prom", CFG_DEFAULT_MEMORY_MEGA_PROM),
+		},
 	};
 
-	struct em400_cfg_mem mem_cfg = {
-		.elwro_modules = cfg_getint(cfg, "memory:elwro_modules", CFG_DEFAULT_MEMORY_ELWRO_MODULES),
-		.mega_modules = cfg_getint(cfg, "memory:mega_modules", CFG_DEFAULT_MEMORY_MEGA_MODULES),
-		.os_segments = cfg_getint(cfg, "memory:hardwired_segments", CFG_DEFAULT_MEMORY_HARDWIRED_SEGMENTS),
-		.mega_prom_image = cfg_getstr(cfg, "memory:mega_prom", CFG_DEFAULT_MEMORY_MEGA_PROM),
-	};
+	if (cfg_build_io(cfg, &machine) != E_OK) {
+		return LOGERR("Failed to build EM400 I/O configuration");
+	}
 
-	if (em400_init(&mem_cfg, &cpu_cfg, &buzzer_cfg) != E_OK) {
+	if (em400_init(&machine, &host) != E_OK) {
 		return LOGERR("Failed to initialize EM400 core");
-	}
-	if (em400_channels_init(cfg) != E_OK) {
-		return LOGERR("Failed to initialize EM400 I/O channels");
-	}
-
-	if (em400_io_run() != E_OK) {
-		return LOGERR("Failed to run I/O loop");
 	}
 
 	return E_OK;

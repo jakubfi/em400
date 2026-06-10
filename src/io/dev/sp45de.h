@@ -23,8 +23,8 @@
 #include <pthread.h>
 
 #include "io/dev/dev.h"
+#include "libem400.h"
 
-#define SP45DE_SLOT_COUNT 4
 #define SP45DE_TRACK_CNT 77
 #define SP45DE_TRACK_LAST 73
 #define SP45DE_SECTOR_PER_TRACK 26
@@ -40,8 +40,8 @@ struct sp45de {
 	struct em400_dev base;
 
 	pthread_mutex_t media_mutex;
-	char *image_name[SP45DE_SLOT_COUNT];
-	FILE *image[SP45DE_SLOT_COUNT];
+	char *image_name[EM400_SP45DE_SLOT_COUNT];
+	FILE *image[EM400_SP45DE_SLOT_COUNT];
 	bool doors_locked;
 	uint8_t buf[SP45DE_BLK_SIZE];
 	unsigned buf_pos;

@@ -32,6 +32,7 @@
 #include "io/chan.h"
 #include "io/dev/dev.h"
 
+#include "libem400.h"
 #include "utils/utils.h"
 #include "log.h"
 
@@ -40,7 +41,7 @@ uv_loop_t *ioloop;
 pthread_t ioloop_thread;
 uv_async_t ioloop_async_quit;
 
-static chan_t *io_chan[IO_MAX_CHAN];
+static chan_t *io_chan[EM400_IO_MAX_CHAN];
 static const char *io_result_names[] = { "NO ANSWER", "ENGAGED", "OK", "PARITY ERROR" };
 
 
@@ -127,7 +128,7 @@ void io_shutdown()
 		LOG(L_IO, "I/O loop thread joined");
 	}
 
-	for (int c_num=0 ; c_num<IO_MAX_CHAN ; c_num++) {
+	for (int c_num=0 ; c_num<EM400_IO_MAX_CHAN ; c_num++) {
 		chan_t *chan = io_chan[c_num];
 		if (chan && chan->shutdown) {
 			LOG(L_IO, "Shutdown channel %i", c_num);
@@ -248,7 +249,7 @@ const char * io_dev_get_image(unsigned chnum, unsigned devnum, unsigned slot)
 // -----------------------------------------------------------------------
 void io_reset()
 {
-	for (int c_num=0 ; c_num<IO_MAX_CHAN ; c_num++) {
+	for (int c_num=0 ; c_num<EM400_IO_MAX_CHAN ; c_num++) {
 		chan_t *chan = io_chan[c_num];
 		if (chan) {
 			chan->reset(chan);

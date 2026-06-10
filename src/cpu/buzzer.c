@@ -108,7 +108,7 @@ void buzzer_shutdown()
 }
 
 // -----------------------------------------------------------------------
-int buzzer_init(struct em400_cfg_buzzer *cfg)
+int buzzer_init(const struct em400_sound_cfg *cfg)
 {
 	if (sound_ready) {
 		return LOGERR("Buzzer already initialized");
@@ -117,16 +117,17 @@ int buzzer_init(struct em400_cfg_buzzer *cfg)
 	sample_period_ns = 1000000000.0f / cfg->sample_rate;
 	buffer_len = cfg->buffer_len;
 
-	if (cfg->volume > 100) {
-		LOGERR("Adjusting sound volume from %i to 100 (max allowed).", cfg->volume);
-		cfg->volume = 100;
-	} else if (cfg->volume < 0) {
-		LOGERR("Adjusting sound volume from %i to 0 (min allowed).", cfg->volume);
-		cfg->volume = 0;
+	int volume = cfg->volume;
+	if (volume > 100) {
+		LOGERR("Adjusting sound volume from %i to 100 (max allowed).", volume);
+		volume = 100;
+	} else if (volume < 0) {
+		LOGERR("Adjusting sound volume from %i to 0 (min allowed).", volume);
+		volume = 0;
 	}
 	// f32 full-scale is +/-1.0; /4 headroom to accommodate the resonant
 	// high-pass overshooting in the speaker-model filter on the audio thread.
-	audio_sample = (float) cfg->volume / 100.0f / 4.0f;
+	audio_sample = (float) volume / 100.0f / 4.0f;
 
 	snd_buf_float = malloc(sizeof(float) * buffer_len);
 	if (!snd_buf_float) {
@@ -143,7 +144,7 @@ int buzzer_init(struct em400_cfg_buzzer *cfg)
 	}
 	sound_ready = true;
 
-	LOG(L_CPU, "Buzzer enabled. Volume: %i, buffer length: %i frames", cfg->volume, buffer_len);
+	LOG(L_CPU, "Buzzer enabled. Volume: %i, buffer length: %i frames", volume, buffer_len);
 
 	return E_OK;
 

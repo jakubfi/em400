@@ -17,6 +17,7 @@
 
 #include <assert.h>
 
+#include "libem400.h"
 #include "log.h"
 #include "io/chan.h"
 #include "io/cchar/cchar.h"
@@ -34,7 +35,7 @@ static const chan_create_f chan_constructor[] = {
 // -----------------------------------------------------------------------
 chan_t * chan_create(unsigned num, unsigned type)
 {
-	if (type >= EM400_CHANNEL_TYPE_COUNT) {
+	if ((type >= EM400_CHANNEL_TYPE_COUNT) || !chan_constructor[type]) {
 		LOGERR("Unknown channel type: %d", type);
 		return NULL;
 	}

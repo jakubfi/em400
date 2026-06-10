@@ -21,7 +21,7 @@
 #include "libem400.h"
 
 void buzzer_silence();
-int buzzer_init(struct em400_cfg_buzzer *cfg);
+int buzzer_init(const struct em400_sound_cfg *cfg);
 void buzzer_update(int ir, unsigned instruction_time);
 void buzzer_stop();
 void buzzer_start();

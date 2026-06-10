@@ -21,6 +21,7 @@
 #include <stdbool.h>
 #include <pthread.h>
 
+#include "libem400.h"
 #include "log.h"
 
 #include "io/dev/sp45de.h"
@@ -42,7 +43,7 @@ void sp45de_shutdown(em400_dev_t *dev)
 	// TODO: proper async free with libuv
 	sp45de_ioloop_teardown((sp45de_t *) dev);
 	pthread_mutex_lock(&sp45de->media_mutex);
-	for (int slot=0 ; slot<SP45DE_SLOT_COUNT ; slot++) {
+	for (int slot=0 ; slot<EM400_SP45DE_SLOT_COUNT ; slot++) {
 		if (sp45de->image[slot]) {
 			fclose(sp45de->image[slot]);
 		}
@@ -212,7 +213,7 @@ static int sp45de_image_replace(em400_dev_t *dev, unsigned slot, const char *ima
 {
 	sp45de_t *sp45de = (sp45de_t *) dev;
 
-	if ((!dev) || (slot >= SP45DE_SLOT_COUNT)) {
+	if ((!dev) || (slot >= EM400_SP45DE_SLOT_COUNT)) {
 		LOG(L_FLOP, "Wrong SP45DE slot or nonexistent device");
 		return E_ERR;
 	}

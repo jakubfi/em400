@@ -20,6 +20,7 @@
 
 #include <inttypes.h>
 
+#include "libem400.h"
 #include "io/defs.h"
 #include "io/dev/dev.h"
 
@@ -46,7 +47,7 @@ typedef int (*chan_f_connect_dev)(chan_t *chan, int devnum, em400_dev_t *dev);
 struct chan {
 	int num;
 	int type;
-	em400_dev_t *device[32];
+	em400_dev_t *device[EM400_CHAN_MAX_DEV];
 	chan_f_connect_dev connect_dev;	// connects a device to the channel
 	chan_f_cmd cmd;					// handles I/O command from the CPU
 	chan_f_noarg reset;				// resets channel (asynchronously, from any thread)

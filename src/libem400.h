@@ -27,17 +27,42 @@
 extern "C" {
 #endif
 
-struct em400_cfg_cpu {
-	bool awp;
-	bool mod;
-	bool user_io_illegal;
-	bool nomem_stop;
-	bool speed_real;
-	int throttle_granularity_ns;
-	int clock_period_ms;
+
+
+// -----------------------------------------------------------------------
+// --- LIMITS ------------------------------------------------------------
+// -----------------------------------------------------------------------
+
+#define EM400_IO_MAX_CHAN 16
+#define EM400_CHAN_MAX_DEV 32
+#define EM400_SP45DE_SLOT_COUNT 4
+
+// -----------------------------------------------------------------------
+// --- DEVICE/CHANNEL TYPES ----------------------------------------------
+// -----------------------------------------------------------------------
+
+enum em400_device_types {
+	EM400_DEV_NONE = 0,
+	EM400_DEV_TERMINAL,
+	EM400_DEV_SP45DE,
+	EM400_DEV_WINCHESTER,
+	EM400_DEV_FLOP5,
+	EM400_DEV_RTCLOCK,
 };
 
-struct em400_cfg_buzzer {
+enum em400_channel_types {
+	EM400_CHANNEL_NONE = 0,
+	EM400_CHANNEL_CHAR,
+	EM400_CHANNEL_MULTIX,
+	EM400_CHANNEL_IOTESTER,
+	EM400_CHANNEL_TYPE_COUNT
+};
+
+// -----------------------------------------------------------------------
+// --- HOST CONFIGURATION ------------------------------------------------
+// -----------------------------------------------------------------------
+
+struct em400_sound_cfg {
 	bool enabled;
 	int volume;
 	int sample_rate;
@@ -47,13 +72,60 @@ struct em400_cfg_buzzer {
 	const char *device;
 };
 
-struct em400_cfg_mem {
+struct em400_emulation_cfg {
+	bool speed_real;
+	int throttle_granularity_ns;
+};
+
+struct em400_host_cfg {
+	struct em400_emulation_cfg emu;
+	struct em400_sound_cfg sound;
+};
+
+// -----------------------------------------------------------------------
+// --- MACHINE CONFIGURATION ---------------------------------------------
+// -----------------------------------------------------------------------
+
+struct em400_cpu_cfg {
+	bool awp;
+	bool mod;
+	bool user_io_illegal;
+	bool nomem_stop;
+	int clock_period_ms;
+};
+
+struct em400_mem_cfg {
 	int elwro_modules;
 	int mega_modules;
 	int os_segments;
 	const char *mega_prom_image;
-	const char *os_mem_preload; // ?
 };
+
+struct em400_device_cfg {
+	enum em400_device_types type;
+	union {
+		struct { int port; int speed; } terminal;
+		struct { const char *image; } winchester;
+		struct { const char *prom; } rtclock;
+		struct { const char *images[EM400_SP45DE_SLOT_COUNT]; } sp45de;
+		struct { } floppy5;
+	};
+};
+
+struct em400_channel_cfg {
+	enum em400_channel_types type;
+	struct em400_device_cfg device[EM400_CHAN_MAX_DEV];
+};
+
+struct em400_machine_cfg {
+	struct em400_cpu_cfg cpu;
+	struct em400_mem_cfg mem;
+	struct em400_channel_cfg channel[EM400_IO_MAX_CHAN];
+};
+
+// -----------------------------------------------------------------------
+// --- ENUMS -------------------------------------------------------------
+// -----------------------------------------------------------------------
 
 enum em400_reg_ids {
 	EM400_REG_R0 = 0,
@@ -113,40 +185,17 @@ enum em400_cpu_states {
 	EM400_STATE_UNKNOWN,
 };
 
-enum em400_device_types {
-	EM400_DEV_NONE = -1,
-	EM400_DEV_TERMINAL,
-	EM400_DEV_SP45DE,
-	EM400_DEV_WINCHESTER,
-	EM400_DEV_FLOP5,
-	EM400_DEV_RTCLOCK,
-};
-
-enum em400_channel_types {
-	EM400_CHANNEL_CHAR,
-	EM400_CHANNEL_MULTIX,
-	EM400_CHANNEL_IOTESTER,
-	EM400_CHANNEL_TYPE_COUNT
-};
-
 // -----------------------------------------------------------------------
 // --- LIBRARY -----------------------------------------------------------
 // -----------------------------------------------------------------------
 
 const char * em400_version();
-int em400_init(struct em400_cfg_mem *c_mem, struct em400_cfg_cpu *c_cpu, struct em400_cfg_buzzer *c_buzzer);
-int em400_io_run();
+int em400_init(const struct em400_machine_cfg *machine, const struct em400_host_cfg *host);
 void em400_shutdown();
 
 // -----------------------------------------------------------------------
 // --- I/O ---------------------------------------------------------------
 // -----------------------------------------------------------------------
-
-int em400_io_channel_init(unsigned chnum, unsigned channel_type);
-int em400_dev_terminal_init(unsigned chnum, unsigned devnum, int port, int speed);
-int em400_dev_sp45de_init(unsigned chnum, unsigned devnum);
-int em400_dev_winchester_init(unsigned chnum, unsigned devnum, const char *image);
-int em400_dev_rtclock_init(unsigned chnum, unsigned devnum, const char *prom_filename);
 
 int em400_dev_type(unsigned chnum, unsigned devnum);
 int em400_dev_slot_count(unsigned chnum, unsigned devnum);

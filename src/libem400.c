@@ -19,6 +19,7 @@
 #include <stdlib.h>
 #include <stdatomic.h>
 
+#include "libem400.h"
 #include "mem/mem.h"
 #include "cpu/cpu.h"
 #include "cpu/interrupts.h"
@@ -70,19 +71,85 @@ const char * em400_version()
 }
 
 // -----------------------------------------------------------------------
-int em400_init(struct em400_cfg_mem *c_mem, struct em400_cfg_cpu *c_cpu, struct em400_cfg_buzzer *c_buzzer)
+static int device_build(unsigned chnum, unsigned devnum, const struct em400_device_cfg *dcfg)
 {
-	if (mem_init(c_mem) != E_OK) return LOGERR("Failed to initialize memory.");
-	if (cpu_init(c_cpu, c_buzzer) != E_OK) return LOGERR("Failed to initialize CPU.");
-	if (io_init() != E_OK) return LOGERR("Failed to initialize I/O.");
+	em400_dev_t *dev = NULL;
+
+	switch (dcfg->type) {
+		case EM400_DEV_NONE:
+			return E_OK;
+		case EM400_DEV_TERMINAL:
+			dev = terminal_create(dcfg->terminal.port, dcfg->terminal.speed);
+			break;
+		case EM400_DEV_WINCHESTER:
+			dev = winchester_create(dcfg->winchester.image);
+			break;
+		case EM400_DEV_SP45DE:
+			dev = sp45de_create();
+			if (dev) {
+				for (int slot=0 ; slot<EM400_SP45DE_SLOT_COUNT ; slot++) {
+					if (dcfg->sp45de.images[slot]) {
+						dev->load(dev, slot, dcfg->sp45de.images[slot]);
+					}
+				}
+			}
+			break;
+		case EM400_DEV_RTCLOCK:
+			dev = rtclock_create(dcfg->rtclock.prom);
+			break;
+		case EM400_DEV_FLOP5:
+			return E_OK;
+		default:
+			return LOGERR("Device %i.%i: unknown device type: %i", chnum, devnum, dcfg->type);
+	}
+
+	if (!dev) {
+		return LOGERR("Device %i.%i: creation failed", chnum, devnum);
+	}
+	if (io_dev_connect(chnum, devnum, dev) != E_OK) {
+		return LOGERR("Device %i.%i: failed to connect to channel", chnum, devnum);
+	}
 
 	return E_OK;
 }
 
 // -----------------------------------------------------------------------
-int em400_io_run()
+static int channel_build(unsigned chnum, const struct em400_channel_cfg *ccfg)
 {
-	return io_run();
+	if (ccfg->type == EM400_CHANNEL_NONE) {
+		return E_OK;
+	}
+
+	LOG(L_EM4H, "Initializing I/O channel %i (type %i)", chnum, ccfg->type);
+	if (io_channel_init(chnum, ccfg->type) != E_OK) {
+		return LOGERR("Channel %i initialization error", chnum);
+	}
+
+	for (unsigned devnum=0 ; devnum<EM400_CHAN_MAX_DEV ; devnum++) {
+		if (device_build(chnum, devnum, &ccfg->device[devnum]) != E_OK) {
+			return LOGERR("Channel %i: device %i initialization error", chnum, devnum);
+		}
+	}
+
+	return E_OK;
+}
+
+// -----------------------------------------------------------------------
+int em400_init(const struct em400_machine_cfg *machine, const struct em400_host_cfg *host)
+{
+	if (mem_init(&machine->mem) != E_OK) return LOGERR("Failed to initialize memory.");
+	if (cpu_init(host, machine) != E_OK) return LOGERR("Failed to initialize CPU.");
+	if (io_init() != E_OK) return LOGERR("Failed to initialize I/O.");
+
+	for (unsigned chnum=0 ; chnum<EM400_IO_MAX_CHAN ; chnum++) {
+		if (channel_build(chnum, &machine->channel[chnum]) != E_OK) {
+			return LOGERR("Failed to initialize I/O channels.");
+		}
+	}
+
+	if (io_run() != E_OK) return LOGERR("Failed to start the I/O loop.");
+
+	return E_OK;
 }
 
 // -----------------------------------------------------------------------
@@ -96,52 +163,6 @@ void em400_shutdown()
 	brk_del_all();
 	watch_del_all();
 	mem_shutdown();
-}
-
-// -----------------------------------------------------------------------
-int em400_io_channel_init(unsigned chnum, unsigned channel_type)
-{
-	return io_channel_init(chnum, channel_type);
-}
-
-// -----------------------------------------------------------------------
-int em400_dev_terminal_init(unsigned chnum, unsigned devnum, int port, int speed)
-{
-	em400_dev_t *dev = terminal_create(port, speed);
-	if (!dev) {
-		return E_ERR;
-	}
-	return io_dev_connect(chnum, devnum, dev);
-}
-
-// -----------------------------------------------------------------------
-int em400_dev_sp45de_init(unsigned chnum, unsigned devnum)
-{
-	em400_dev_t *dev = sp45de_create();
-	if (!dev) {
-		return E_ERR;
-	}
-	return io_dev_connect(chnum, devnum, dev);
-}
-
-// -----------------------------------------------------------------------
-int em400_dev_winchester_init(unsigned chnum, unsigned devnum, const char *image)
-{
-	em400_dev_t *dev = winchester_create(image);
-	if (!dev) {
-		return E_ERR;
-	}
-	return io_dev_connect(chnum, devnum, dev);
-}
-
-// -----------------------------------------------------------------------
-int em400_dev_rtclock_init(unsigned chnum, unsigned devnum, const char *prom_filename)
-{
-	em400_dev_t *dev = rtclock_create(prom_filename);
-	if (!dev) {
-		return E_ERR;
-	}
-	return io_dev_connect(chnum, devnum, dev);
 }
 
 // -----------------------------------------------------------------------

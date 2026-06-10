@@ -192,7 +192,7 @@ static ma_device_id *resolve_device(const char *needle)
 }
 
 // -----------------------------------------------------------------------
-int sound_init(struct em400_cfg_buzzer *cfg)
+int sound_init(const struct em400_sound_cfg *cfg)
 {
 	if (initialized) return E_OK;
 
