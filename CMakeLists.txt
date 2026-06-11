@@ -129,6 +129,8 @@ endif()
 
 set(SOURCES_EM400
 	src/em400.c
+	src/appcfg.c
+	src/appcfg.h
 	src/log.c
 	src/log.h
 	src/log_io.h
