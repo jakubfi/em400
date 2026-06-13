@@ -1,4 +1,5 @@
-; in user mode, some instructions are illegal
+; OPTS -c configs/minimal-user-io-illegal.ini
+; in user mode, I/O instructions are illegal if "user_io_illegal = true"
 
 	.include cpu.inc
 	.include io.inc
@@ -18,6 +19,7 @@ illegal_handler:
 
 nomem_handler:
 	hlt	040
+ok:	hlt	041
 
 sys_mb:
 zerod:	.word	0
@@ -63,50 +65,26 @@ run_user_prog:
 user_vec:
 	.word	USER_PROG_DEST, USER_R0_INIT, USER_IMASK | 1\SR_Q | 0\SR_BS | USER_BLOCK\SR_NB
 user_prog:
-	; one-word user-illegal instructions
-	hlt	044		; 1
-	cit			; 2
-	sit			; 3
-	siu			; 4
-	sil			; 5
-	gil			; 6
-	giu			; 7
-	mcl			; 8
-	lip			; 9
-
-	; one-word variants of norm-arg user-illegal instructions
-	lw	r1, user_sr
-	mb	r1		; 10
-	lw	r1, user_sr
-	im	r1		; 11
-	lw	r1, zerod
-	ki	r1		; 12
-	lw	r1, zerod
-	fi	r1		; 13
-	lw	r1, zerod
-	sp	r1		; 14
-
-	; two-word variants of norm-arg user-illegal instructions
+	; one-word variants of I/O instructions illegal in userspace
 	; for each one of these, additional 'illegal instruction'
-	; interrupt is fired also for the argument
-	mb	user_sr		; 15-16
-	im	user_sr		; 17-18
-	ki	zerod		; 19-20
-	fi	zerod		; 21-22
-	sp	zerod		; 23-24
+	; interrupt is fired for each I/O return address
+	lwt	r1, 0
+	in	r6, r1		; 1
+	.word	ok, ok, ok, ok	; 2-5
+	lwt	r1, 0
+	ou	r6, r1		; 6
+	.word	ok, ok, ok, ok	; 7-10
 
-	; by default, I/O instructions are legal in user mode
-	in	r6, 0
-	.word	.-user_prog+4
-	.word	.-user_prog+3
-	.word	.-user_prog+2
-	.word	.-user_prog+1
-	ou	r6, 0
-	.word	.-user_prog+4
-	.word	.-user_prog+3
-	.word	.-user_prog+2
-	.word	.-user_prog+1
+	; two-word variants of I/O instructions illegal in userspace
+	; for each one of these, additional 'illegal instruction'
+	; interrupt is fired for the argument, and 4 additional
+	; interrupts should be fired for the 'return addresses'
+	in	r6, 0		; 11-12
+	.word	ok, ok, ok, ok	; 13-16
+	ou	r6, 0		; 17-18
+	.word	ok, ok, ok, ok	; 19-22
 
+	; leave to os
 	exl	0
 user_prog_end:
 stack:	.res	32*4
@@ -114,5 +92,5 @@ stack:	.res	32*4
 ; XPCT rz[6] : 0
 ; XPCT SR : 0b1111100000000001
 
-; XPCT r7 : 24
+; XPCT r7 : 22
 ; XPCT ir : 0xec3f

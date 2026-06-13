@@ -19,7 +19,6 @@ Work notes:
 
 Known issues:
 
-* illegal instruction handling and tests (+I/O user-illegal)
 
 Cleanups:
 
