@@ -16,6 +16,7 @@
 //  51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 
 #include <stdlib.h>
+#include <string.h>
 #include <inttypes.h>
 #include <assert.h>
 
@@ -203,6 +204,9 @@ static inline void iset_register_op(struct iset_opcode **op_tab, const struct is
 // -----------------------------------------------------------------------
 int iset_build(struct iset_opcode **op_tab, int cpu_user_io_illegal)
 {
+	// library re-entrancy
+	memset(op_tab, 0, 0x10000 * sizeof(*op_tab));
+
 	struct iset_instruction *instr = em400_ilist;
 	while (instr->var_mask) {
 		// set IN/OU legalness in user mode

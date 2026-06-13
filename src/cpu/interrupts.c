@@ -99,7 +99,7 @@ static const char *int_names[] = {
 // -----------------------------------------------------------------------
 void int_update_xmask()
 {
-	uint32_t tmp_xmask = 1 << 31; // non-maskable interrupt is always enabled
+	uint32_t tmp_xmask = 1u << 31; // non-maskable interrupt is always enabled
 
 	for (int i=0 ; i<10 ; i++) {
 		if (rm & (1 << (9 - i))) {
