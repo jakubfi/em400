@@ -134,6 +134,7 @@ void io_shutdown()
 			LOG(L_IO, "Shutdown channel %i", c_num);
 			chan->shutdown(chan);
 		}
+		io_chan[c_num] = NULL;
 	}
 	LOG(L_IO, "All I/O channels shut down");
 
