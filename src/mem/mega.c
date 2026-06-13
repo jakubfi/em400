@@ -87,7 +87,7 @@ int mem_mega_init(int module_count, const char *prom_image)
 			return LOGERR("Failed to read MEGA PROM image: \"%s\".", prom_image);
 		}
 		endianswap(mem_mega_prom, res);
-		LOG(L_MEM, "Loaded %i words into MEGA PROM segmet", res);
+		LOG(L_MEM, "Loaded %i words into MEGA PROM segment", res);
 	} else {
 		LOG(L_MEM, "Using default MEGA PROM");
 	}

@@ -73,6 +73,9 @@ int mem_init(const struct em400_mem_cfg *c_mem)
 	elwro_modules = c_mem->elwro_modules;
 	mega_modules = c_mem->mega_modules;
 
+	// library re-entrancy
+	memset(mem_cmd_handlers, 0, sizeof(mem_cmd_handlers));
+
 	res = mem_elwro_init(elwro_modules, c_mem->os_segments);
 	if (res != E_OK) {
 		return LOGERR("Failed to initialize Elwro memory.");
