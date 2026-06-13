@@ -67,14 +67,7 @@ struct cmd_t dbg_commands[] = {
 // -----------------------------------------------------------------------
 void dbg_c_load(int wid, char* image)
 {
-	FILE *f = fopen(image, "rb");
-	if (!f) {
-		awtbprint(wid, C_ERROR, "Error opening image \"%s\"\n", image);
-		return;
-	}
-
-	bool res = em400_load_os_image(f);
-	if (!res) {
+	if (!em400_load_os_image_path(image)) {
 		awtbprint(wid, C_ERROR, "Error loading image \"%s\"\n", image);
 	}
 }

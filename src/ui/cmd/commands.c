@@ -414,20 +414,12 @@ void ui_cmd_load(FILE *out, char *args)
 	}
 	tok_file = ui_cmd_remove_trailing_ws(tok_file);
 
-	FILE *f = fopen(tok_file, "rb");
-	if (!f) {
-		ui_cmd_resp(out, RESP_ERR, UI_EOL, "Error opening file: %s", tok_file);
-		return;
-	}
-
-	int words = em400_load_os_image(f);
+	int words = em400_load_os_image_path(tok_file);
 	if (!words) {
 		ui_cmd_resp(out, RESP_ERR, UI_EOL, "File upload failed: %s", tok_file);
 	} else {
 		ui_cmd_resp(out, RESP_OK, UI_EOL, "%i words loaded from file %s", words, tok_file);
 	}
-
-	fclose(f);
 }
 
 // -----------------------------------------------------------------------

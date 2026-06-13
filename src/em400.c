@@ -74,29 +74,6 @@ void em400_top_shutdown()
 }
 
 // -----------------------------------------------------------------------
-int em400_preload_program(const char *program_name)
-{
-	if (!program_name) {
-		return E_OK;
-	}
-
-	FILE *f = fopen(program_name, "rb");
-	if (!f) {
-		return LOGERR("Failed to open program file: %s", program_name);
-	}
-
-	int words = em400_load_os_image(f);
-	fclose(f);
-	if (!words) {
-		return LOGERR("Failed to preload program file: %s", program_name);
-	} else {
-		LOG(L_EM4H, "OS memory block preloaded with: %s (%i words)", program_name, words);
-	}
-
-	return E_OK;
-}
-
-// -----------------------------------------------------------------------
 void em400_usage()
 {
 	fprintf(stdout, "EM400 version %s\n", em400_version());
@@ -163,7 +140,7 @@ int em400_cmdline_1(int argc, char **argv, int *print_help, char **config)
 }
 
 // -----------------------------------------------------------------------
-int em400_cmdline_2(em400_cfg *cfg, int argc, char **argv)
+int em400_cmdline_2(em400_cfg *cfg, int argc, char **argv, const char **program)
 {
     int option;
     optind = 1; // reset to 1 so consecutive calls work
@@ -174,7 +151,7 @@ int em400_cmdline_2(em400_cfg *cfg, int argc, char **argv)
             case 'c':
                 break;
             case 'p':
-                cfg_set(cfg, "memory:preload", optarg);
+                *program = optarg;
                 break;
             case 'L':
 				cfg_set(cfg, "log:enabled", "false");
@@ -212,6 +189,7 @@ int main(int argc, char** argv)
 
 	int print_help = 0;
 	char *config = NULL;
+	const char *program = NULL;
 	char *ui_name = NULL;
 	em400_cfg *cfg = NULL;
 	struct ui *ui = NULL;
@@ -247,7 +225,7 @@ int main(int argc, char** argv)
 	}
 
 	// read the commandline again to build final configuration
-	if (em400_cmdline_2(cfg, argc, argv) != E_OK) {
+	if (em400_cmdline_2(cfg, argc, argv, &program) != E_OK) {
 		LOGERR("Failed to parse commandline arguments (pass 2)");
 		goto done;
 	}
@@ -257,8 +235,8 @@ int main(int argc, char** argv)
 		goto done;
 	}
 
-	const char *program = cfg_getstr(cfg, "memory:preload", CFG_DEFAULT_MEMORY_PRELOAD);
-	if (program && (em400_preload_program(program) != E_OK)) {
+	// -p is session-only load, kept out of cfg so it can't be persisted
+	if (program && !em400_load_os_image_path(program)) {
 		LOGERR("Preloading OS memory failed: %s", program);
 		goto done;
 	}

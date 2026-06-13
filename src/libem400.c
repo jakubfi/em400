@@ -149,6 +149,10 @@ int em400_init(const struct em400_machine_cfg *machine, const struct em400_host_
 
 	if (io_run() != E_OK) return LOGERR("Failed to start the I/O loop.");
 
+	if (machine->mem.preload_image && !em400_load_os_image_path(machine->mem.preload_image)) {
+		return LOGERR("Failed to preload OS memory.");
+	}
+
 	return E_OK;
 }
 
@@ -519,6 +523,22 @@ int em400_load_os_image(FILE *f)
 	}
 
 	return words_read;
+}
+
+// -----------------------------------------------------------------------
+int em400_load_os_image_path(const char *path)
+{
+	FILE *f = fopen(path, "rb");
+	if (!f) {
+		LOGERR("Failed to open OS image file: %s", path);
+		return 0;
+	}
+	int words = em400_load_os_image(f);
+	fclose(f);
+	if (!words) {
+		LOGERR("Failed to load OS image file: %s", path);
+	}
+	return words;
 }
 
 // -----------------------------------------------------------------------

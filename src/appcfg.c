@@ -146,6 +146,7 @@ int appcfg_build_from_ini(em400_cfg *cfg)
 			.mega_modules = cfg_getint(cfg, "memory:mega_modules", CFG_DEFAULT_MEMORY_MEGA_MODULES),
 			.os_segments = cfg_getint(cfg, "memory:hardwired_segments", CFG_DEFAULT_MEMORY_HARDWIRED_SEGMENTS),
 			.mega_prom_image = dup_str(cfg_getstr(cfg, "memory:mega_prom", CFG_DEFAULT_MEMORY_MEGA_PROM)),
+			.preload_image = dup_str(cfg_getstr(cfg, "memory:preload", CFG_DEFAULT_MEMORY_PRELOAD)),
 		},
 	};
 
@@ -160,6 +161,7 @@ int appcfg_build_from_ini(em400_cfg *cfg)
 void appcfg_free()
 {
 	free((void *) appcfg.machine.mem.mega_prom_image);
+	free((void *) appcfg.machine.mem.preload_image);
 
 	for (int chnum=0 ; chnum<EM400_IO_MAX_CHAN ; chnum++) {
 		struct em400_channel_cfg *chan = &appcfg.machine.channel[chnum];

@@ -290,6 +290,8 @@ bool EmuModel::load_os_image(QString filename)
 	QFile file;
 	file.setFileName(filename);
 
+	// open via QFile (handles Unicode paths on Windows), then hand the stream
+	// to the lib - hence the FILE* entry rather than em400_load_os_image_path
 	if (!file.open(QIODevice::ReadOnly|QIODevice::ExistingOnly)) {
 		return false;
 	}
