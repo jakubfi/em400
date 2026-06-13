@@ -74,7 +74,7 @@ struct em400_sound_cfg {
 
 struct em400_emulation_cfg {
 	bool speed_real;
-	int throttle_granularity_ns;
+	int emulation_quantum_us;
 };
 
 struct em400_host_cfg {
@@ -99,6 +99,7 @@ struct em400_mem_cfg {
 	int mega_modules;
 	int os_segments;
 	const char *mega_prom_image;
+	const char *preload_image;
 };
 
 struct em400_device_cfg {

@@ -8,8 +8,10 @@ speed_real = true
 
 # Execute instructions for this much time (in us) before sleeping.
 # Use with caution. If "real" emulation speed is slower than
-# it should be, you may need to set granularity to a higher value.
-throttle_granularity = 100
+# it should be, you may need to set quantum to a higher value.
+# Exceeding ~900us _may_ cause programs to misbehave when handling
+# external data input (eg. terminals)
+emulation_quantum_us = 100
 
 # Internal clock interrupt period (in miliseconds)
 # Allowed values: 2, 4, 8, 10 (default), 20

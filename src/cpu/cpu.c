@@ -82,7 +82,7 @@ static int instruction_time_ns;
 static int speed_real;
 static struct timespec cpu_timer;
 static int cpu_time_cumulative_ns;
-static int throttle_granularity_ns;
+static int emulation_quantum_ns;
 static int ticks_per_2s;
 
 #define TIMING_PROBE_DELAY			10
@@ -317,8 +317,8 @@ int cpu_init(const struct em400_host_cfg *host, const struct em400_machine_cfg *
 	cpu_user_io_illegal = machine->cpu.user_io_illegal;
 	nomem_stop = machine->cpu.nomem_stop;
 	speed_real = host->emu.speed_real;
-	throttle_granularity_ns = host->emu.throttle_granularity_ns;
-	ticks_per_2s = 2000000000L / throttle_granularity_ns;
+	emulation_quantum_ns = 1000 * host->emu.emulation_quantum_us;
+	ticks_per_2s = 2000000000L / emulation_quantum_ns;
 
 	sound_enabled = host->sound.enabled;
 
@@ -373,9 +373,9 @@ int cpu_init(const struct em400_host_cfg *host, const struct em400_machine_cfg *
 		cpu_mod_present ? "present" : "absent",
 		cpu_user_io_illegal ? "illegal" : "legal",
 		nomem_stop ? "true" : "false");
-	LOG(L_CPU, "CPU speed: %s, throttle granularity: %i ns",
+	LOG(L_CPU, "CPU speed: %s, emulation quantum: %i ns",
 		speed_real ? "real" : "unlimited",
-		throttle_granularity_ns);
+		emulation_quantum_ns);
 
 	return E_OK;
 fail:
@@ -728,7 +728,7 @@ static void cpu_timekeeping(int cpu_time_ns)
 		buzzer_update(ir, cpu_time_ns);
 	}
 
-	if (skip_sleep || (cpu_time_cumulative_ns < throttle_granularity_ns)) {
+	if (skip_sleep || (cpu_time_cumulative_ns < emulation_quantum_ns)) {
 		return;
 	}
 
@@ -855,7 +855,7 @@ __attribute__((hot)) static void * cpu_loop(void *ptr)
 				if (atomic_load_explicit(&irq, memory_order_acquire) && !p && !mc) {
 					cpu_state_change(EM400_STATE_RUN, EM400_STATE_WAIT);
 				} else {
-					cpu_time_ns = throttle_granularity_ns;
+					cpu_time_ns = emulation_quantum_ns;
 				}
 				// else = if (!speed_real) {
 				//	cpu_do_wait();

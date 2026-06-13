@@ -120,7 +120,7 @@ int appcfg_build_from_ini(em400_cfg *cfg)
 	appcfg.host = (struct em400_host_cfg) {
 		.emu = {
 			.speed_real = cfg_getbool(cfg, "cpu:speed_real", CFG_DEFAULT_CPU_SPEED_REAL),
-			.throttle_granularity_ns = 1000 * cfg_getint(cfg, "cpu:throttle_granularity", CFG_DEFAULT_CPU_THROTTLE_GRANULARITY_US),
+			.emulation_quantum_us = cfg_getint(cfg, "cpu:emulation_quantum_us", CFG_DEFAULT_CPU_EMULATION_QUANTUM_US),
 		},
 		.sound = {
 			.enabled = cfg_getbool(cfg, "sound:enabled", CFG_DEFAULT_SOUND_ENABLED),
