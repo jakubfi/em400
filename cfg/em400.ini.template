@@ -16,17 +16,18 @@ throttle_granularity = 100
 clock_period = 10
 
 # MERA-400 cpu stops when operating system tries to access unconfigured
-# memory segment, but this can be changed to work as for user programs
+# memory segment (default), but this can be changed to work as for user programs
 # (only interrupt is fired in such configuration)
 stop_on_nomem = true
 
-# 'IN' and 'OU' instructions can be either illegal or legal in user programs
-user_io_illegal = true
+# 'IN' and 'OU' instructions can be either illegal or legal (default) in user programs
+user_io_illegal = false
 
 # AWP (hardware 48-bit floating point and 32-bit fixed point arithmetic) is optional
+# but most likely all machines came with it fitted (default true).
 awp = true
 
-# Enable or disable CPU modifications found in MX-16 CPU:
+# Enable or disable (default) CPU modifications found in MX-16 CPU:
 #  * 17-bit byte addressing,
 #  *  additional instructions,
 #  *  additional software interrupt,
@@ -42,14 +43,14 @@ modifications = false
 # Elwro modules are populated starting from 0 up, mega modules
 # from 15 down. Module 0 may overlap with mega module
 
-# allowed values: 1-16
-elwro_modules = 4
+# allowed values: 1-16 (default: 1)
+elwro_modules = 1
 
-# allowed values: 0-16
+# allowed values: 0-16 (default 0)
 mega_modules = 0
 
 # 4kword segments hardwired for OS memory block (taken from module 0)
-# allowed values: 1 or 2
+# allowed values: 1 or 2 (default)
 hardwired_segments = 2
 
 # Name of a MEGA PROM image file to use instead of the default one.
@@ -61,14 +62,14 @@ hardwired_segments = 2
 preload = program.bin
 
 [sound]
-# Internal buzzer emulation.
+# Internal buzzer emulation, enabled by default.
 # For this to work, set speed_real to true
 # Note that for sound to work properly CPU instruction logging
 # should be disabled.
 enabled = true
 
 # Sound is routed through the vendored miniaudio library.
-# Backend selection: "auto" lets miniaudio pick.
+# Backend selection: "auto" (default) lets miniaudio pick.
 # Force a specific one with e.g.
 # pulseaudio, alsa, jack, coreaudio, wasapi, dsound, sndio, oss, null.
 backend = auto
@@ -91,7 +92,7 @@ buffer_len = 128
 latency = 20
 
 # Software buzzer volume control (0-100)
-volume = 8
+volume = 10
 
 [log]
 # Enable or disable logging.
