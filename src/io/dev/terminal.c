@@ -105,7 +105,11 @@ static void on_tcp_close(uv_handle_t* handle)
 	terminal_t *terminal = (terminal_t *) uv_handle_get_data(handle);
 
 	LOG(L_TERM, "Terminal TCP connection closed");
-	terminal->client = NULL;
+	// only the disconnecting active client clears the slot
+	// rejected connection does not
+	if ((uv_handle_t *) terminal->client == handle) {
+		terminal->client = NULL;
+	}
 	terminal->open_handles--;
 	terminal_try_free(terminal);
 	free(handle);
