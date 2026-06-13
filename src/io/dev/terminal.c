@@ -106,6 +106,7 @@ static void on_tcp_close(uv_handle_t* handle)
 
 	LOG(L_TERM, "Terminal TCP connection closed");
 	terminal->client = NULL;
+	terminal->open_handles--;
 	terminal_try_free(terminal);
 	free(handle);
 }
