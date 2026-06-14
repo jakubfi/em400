@@ -21,17 +21,32 @@
 #include "libem400.h"
 #include "cfg.h"
 
-// machine and host persist to different places (portable profile vs local host
-// settings) - grouped for namespacing, not one serializable blob.
+// for the old (one-machine) INI format
+#define APPCFG_DEFAULT_MACHINE_ID "default"
+
+struct appcfg_machine {
+	char *id;
+	char *name;
+	struct em400_machine_cfg cfg;
+};
+
 struct appcfg {
-	struct em400_machine_cfg machine;
+	struct appcfg_machine *machines;
+	int n_machines;
+	int cap_machines;
+	char *active_id;
 	struct em400_host_cfg host;
 };
 
 extern struct appcfg appcfg;
 
 int appcfg_build_from_ini(em400_cfg *cfg);
-void appcfg_free();
+void appcfg_free(void);
+
+struct appcfg_machine *appcfg_machine_add(struct appcfg *c, const char *id, const char *name);
+void appcfg_machine_delete(struct appcfg *c, const char *id);
+struct appcfg_machine *appcfg_machine_find(struct appcfg *c, const char *id);
+struct em400_machine_cfg *appcfg_active_machine(struct appcfg *c);
 
 #endif
 

@@ -58,7 +58,7 @@ int em400_top_init(em400_cfg *cfg)
 		return LOGERR("Failed to build EM400 configuration");
 	}
 
-	if (em400_init(&appcfg.machine, &appcfg.host) != E_OK) {
+	if (em400_init(appcfg_active_machine(&appcfg), &appcfg.host) != E_OK) {
 		return LOGERR("Failed to initialize EM400 core");
 	}
 

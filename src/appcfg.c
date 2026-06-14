@@ -31,6 +31,95 @@ static char * dup_str(const char *s)
 }
 
 // -----------------------------------------------------------------------
+static void machine_free(struct em400_machine_cfg *machine)
+{
+	free((void *) machine->mem.mega_prom_image);
+	free((void *) machine->mem.preload_image);
+
+	for (int chnum=0 ; chnum<EM400_IO_MAX_CHAN ; chnum++) {
+		struct em400_channel_cfg *chan = &machine->channel[chnum];
+		for (int devnum=0 ; devnum<EM400_CHAN_MAX_DEV ; devnum++) {
+			struct em400_device_cfg *dev = &chan->device[devnum];
+			switch (dev->type) {
+				case EM400_DEV_WINCHESTER:
+					free((void *) dev->winchester.image);
+					break;
+				case EM400_DEV_RTCLOCK:
+					free((void *) dev->rtclock.prom);
+					break;
+				case EM400_DEV_SP45DE:
+					for (int slot=0 ; slot<EM400_SP45DE_SLOT_COUNT ; slot++) {
+						free((void *) dev->sp45de.images[slot]);
+					}
+					break;
+				default:
+					break;
+			}
+		}
+	}
+}
+
+// -----------------------------------------------------------------------
+struct appcfg_machine * appcfg_machine_find(struct appcfg *c, const char *id)
+{
+	if (!id) return NULL;
+	for (int i=0 ; i<c->n_machines ; i++) {
+		if (!strcmp(c->machines[i].id, id)) {
+			return &c->machines[i];
+		}
+	}
+	return NULL;
+}
+
+// -----------------------------------------------------------------------
+struct appcfg_machine * appcfg_machine_add(struct appcfg *c, const char *id, const char *name)
+{
+	if (c->n_machines == c->cap_machines) {
+		int newcap = c->cap_machines ? c->cap_machines * 2 : 4;
+		struct appcfg_machine *p = realloc(c->machines, newcap * sizeof(*p));
+		if (!p) return NULL;
+		c->machines = p;
+		c->cap_machines = newcap;
+	}
+
+	struct appcfg_machine *m = &c->machines[c->n_machines];
+	*m = (struct appcfg_machine) { .id = dup_str(id), .name = dup_str(name) };
+	c->n_machines++;
+	return m;
+}
+
+// -----------------------------------------------------------------------
+void appcfg_machine_delete(struct appcfg *c, const char *id)
+{
+	struct appcfg_machine *m = appcfg_machine_find(c, id);
+	if (!m) return;
+	int i = m - c->machines;
+	bool was_active = c->active_id && !strcmp(c->active_id, m->id);
+
+	machine_free(&m->cfg);
+	free(m->id);
+	free(m->name);
+
+	memmove(&c->machines[i], &c->machines[i+1], (c->n_machines - i - 1) * sizeof(*c->machines));
+	c->n_machines--;
+
+	if (was_active) {
+		free(c->active_id);
+		c->active_id = c->n_machines ? dup_str(c->machines[0].id) : NULL;
+	}
+}
+
+// -----------------------------------------------------------------------
+struct em400_machine_cfg * appcfg_active_machine(struct appcfg *c)
+{
+	struct appcfg_machine *m = appcfg_machine_find(c, c->active_id);
+	if (!m) {
+		m = c->n_machines ? &c->machines[0] : NULL;
+	}
+	return m ? &m->cfg : NULL;
+}
+
+// -----------------------------------------------------------------------
 static int build_device(em400_cfg *cfg, int chnum, int devnum, struct em400_device_cfg *dev)
 {
 	const char *dev_type_name = cfg_fgetstr(cfg, "dev%i.%i:type", chnum, devnum);
@@ -115,6 +204,29 @@ static int build_io(em400_cfg *cfg, struct em400_machine_cfg *machine)
 }
 
 // -----------------------------------------------------------------------
+static int build_machine(em400_cfg *cfg, struct em400_machine_cfg *machine)
+{
+	*machine = (struct em400_machine_cfg) {
+		.cpu = {
+			.awp = cfg_getbool(cfg, "cpu:awp", CFG_DEFAULT_CPU_AWP),
+			.mod = cfg_getbool(cfg, "cpu:modifications", CFG_DEFAULT_CPU_MODIFICATIONS),
+			.user_io_illegal = cfg_getbool(cfg, "cpu:user_io_illegal", CFG_DEFAULT_CPU_IO_USER_ILLEGAL),
+			.nomem_stop = cfg_getbool(cfg, "cpu:stop_on_nomem", CFG_DEFAULT_CPU_STOP_ON_NOMEM),
+			.clock_period_ms = cfg_getint(cfg, "cpu:clock_period", CFG_DEFAULT_CPU_CLOCK_PERIOD_MS),
+		},
+		.mem = {
+			.elwro_modules = cfg_getint(cfg, "memory:elwro_modules", CFG_DEFAULT_MEMORY_ELWRO_MODULES),
+			.mega_modules = cfg_getint(cfg, "memory:mega_modules", CFG_DEFAULT_MEMORY_MEGA_MODULES),
+			.os_segments = cfg_getint(cfg, "memory:hardwired_segments", CFG_DEFAULT_MEMORY_HARDWIRED_SEGMENTS),
+			.mega_prom_image = dup_str(cfg_getstr(cfg, "memory:mega_prom", CFG_DEFAULT_MEMORY_MEGA_PROM)),
+			.preload_image = dup_str(cfg_getstr(cfg, "memory:preload", CFG_DEFAULT_MEMORY_PRELOAD)),
+		},
+	};
+
+	return build_io(cfg, machine);
+}
+
+// -----------------------------------------------------------------------
 int appcfg_build_from_ini(em400_cfg *cfg)
 {
 	appcfg.host = (struct em400_host_cfg) {
@@ -133,57 +245,29 @@ int appcfg_build_from_ini(em400_cfg *cfg)
 		},
 	};
 
-	appcfg.machine = (struct em400_machine_cfg) {
-		.cpu = {
-			.awp = cfg_getbool(cfg, "cpu:awp", CFG_DEFAULT_CPU_AWP),
-			.mod = cfg_getbool(cfg, "cpu:modifications", CFG_DEFAULT_CPU_MODIFICATIONS),
-			.user_io_illegal = cfg_getbool(cfg, "cpu:user_io_illegal", CFG_DEFAULT_CPU_IO_USER_ILLEGAL),
-			.nomem_stop = cfg_getbool(cfg, "cpu:stop_on_nomem", CFG_DEFAULT_CPU_STOP_ON_NOMEM),
-			.clock_period_ms = cfg_getint(cfg, "cpu:clock_period", CFG_DEFAULT_CPU_CLOCK_PERIOD_MS),
-		},
-		.mem = {
-			.elwro_modules = cfg_getint(cfg, "memory:elwro_modules", CFG_DEFAULT_MEMORY_ELWRO_MODULES),
-			.mega_modules = cfg_getint(cfg, "memory:mega_modules", CFG_DEFAULT_MEMORY_MEGA_MODULES),
-			.os_segments = cfg_getint(cfg, "memory:hardwired_segments", CFG_DEFAULT_MEMORY_HARDWIRED_SEGMENTS),
-			.mega_prom_image = dup_str(cfg_getstr(cfg, "memory:mega_prom", CFG_DEFAULT_MEMORY_MEGA_PROM)),
-			.preload_image = dup_str(cfg_getstr(cfg, "memory:preload", CFG_DEFAULT_MEMORY_PRELOAD)),
-		},
-	};
-
-	if (build_io(cfg, &appcfg.machine) != E_OK) {
+	// old INI format describes exactly one machine, with no human-readable name
+	struct appcfg_machine *m = appcfg_machine_add(&appcfg, APPCFG_DEFAULT_MACHINE_ID, NULL);
+	if (!m) {
+		return LOGERR("Failed to allocate machine configuration");
+	}
+	if (build_machine(cfg, &m->cfg) != E_OK) {
 		return LOGERR("Failed to build EM400 I/O configuration");
 	}
+	appcfg.active_id = dup_str(APPCFG_DEFAULT_MACHINE_ID);
 
 	return E_OK;
 }
 
 // -----------------------------------------------------------------------
-void appcfg_free()
+void appcfg_free(void)
 {
-	free((void *) appcfg.machine.mem.mega_prom_image);
-	free((void *) appcfg.machine.mem.preload_image);
-
-	for (int chnum=0 ; chnum<EM400_IO_MAX_CHAN ; chnum++) {
-		struct em400_channel_cfg *chan = &appcfg.machine.channel[chnum];
-		for (int devnum=0 ; devnum<EM400_CHAN_MAX_DEV ; devnum++) {
-			struct em400_device_cfg *dev = &chan->device[devnum];
-			switch (dev->type) {
-				case EM400_DEV_WINCHESTER:
-					free((void *) dev->winchester.image);
-					break;
-				case EM400_DEV_RTCLOCK:
-					free((void *) dev->rtclock.prom);
-					break;
-				case EM400_DEV_SP45DE:
-					for (int slot=0 ; slot<EM400_SP45DE_SLOT_COUNT ; slot++) {
-						free((void *) dev->sp45de.images[slot]);
-					}
-					break;
-				default:
-					break;
-			}
-		}
+	for (int i=0 ; i<appcfg.n_machines ; i++) {
+		machine_free(&appcfg.machines[i].cfg);
+		free(appcfg.machines[i].id);
+		free(appcfg.machines[i].name);
 	}
+	free(appcfg.machines);
+	free(appcfg.active_id);
 
 	free((void *) appcfg.host.sound.backend);
 	free((void *) appcfg.host.sound.device);
