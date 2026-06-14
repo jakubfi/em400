@@ -32,7 +32,7 @@
 
 
 // -----------------------------------------------------------------------
-int em400_top_init(em400_cfg *cfg)
+int em400_top_init(em400_cfg *cfg, const char *machine_id)
 {
 	const char *log_file_name = cfg_getstr(cfg, "log:file", CFG_DEFAULT_LOG_FILE);
 	em400_log_buf_type_t log_buf_type =
@@ -56,6 +56,15 @@ int em400_top_init(em400_cfg *cfg)
 
 	if (appcfg_build_from_ini(cfg) != E_OK) {
 		return LOGERR("Failed to build EM400 configuration");
+	}
+
+	if (machine_id) {
+		if (!appcfg_machine_find(&appcfg, machine_id)) {
+			return LOGERR("No such machine in configuration: %s", machine_id);
+		}
+		LOG(L_EM4H, "Active machine overridden from commandline: %s", machine_id);
+		free(appcfg.active_id);
+		appcfg.active_id = strdup(machine_id);
 	}
 
 	if (em400_init(appcfg_active_machine(&appcfg), &appcfg.host) != E_OK) {
@@ -82,7 +91,8 @@ void em400_usage()
 		"\n"
 		"Options:\n"
 		"   -h               : Display help\n"
-		"   -c config        : Config file to use instead of the default one (~/.em400/em400.cfg)\n"
+		"   -c config        : Config file to use instead of the default one ($XDG_CONFIG_HOME/em400/em400.ini)\n"
+		"   -m machine       : Select which configured machine to start (overrides machine set in [general] section)\n"
 		"   -p program       : Load program image into OS memory at address 0\n"
 		"   -l cmp,cmp,...   : Enable logging for specified components. Available components:\n"
 		"                      reg, mem, cpu, op, int, io, mx, px, cchar, cmem, term\n"
@@ -98,23 +108,67 @@ void em400_usage()
 }
 
 // -----------------------------------------------------------------------
-void em400_mkconfdir()
+static char * str_concat(const char *a, const char *b)
 {
-	const char *home = getenv("HOME");
-	const char *cdir = "/.em400";
-	char *conf_dirname = (char *) malloc(strlen(home) + strlen(cdir) + 1);
-	if (conf_dirname) {
-		sprintf(conf_dirname, "%s%s", home, cdir);
-#ifdef _WIN32
-		mkdir(conf_dirname);
-#else
-		mkdir(conf_dirname, 0700);
-#endif
-		free(conf_dirname);
+	if (!a || !b) return NULL;
+	size_t len = strlen(a) + strlen(b) + 1;
+	char *p = (char *) malloc(len);
+	if (p) {
+		snprintf(p, len, "%s%s", a, b);
 	}
+	return p;
 }
 
-const char em400_cmdline_opts[] = "hc:p:l:Lu:O:";
+// -----------------------------------------------------------------------
+// XDG config base: $XDG_CONFIG_HOME, or ~/.config when unset/empty
+static char * xdg_config_base()
+{
+	const char *xdg = getenv("XDG_CONFIG_HOME");
+	if (xdg && *xdg) {
+		return strdup(xdg);
+	}
+	return str_concat(getenv("HOME"), "/.config");
+}
+
+// -----------------------------------------------------------------------
+static char * xdg_config_path()
+{
+	char *base = xdg_config_base();
+	char *path = str_concat(base, "/em400/em400.ini");
+	free(base);
+	return path;
+}
+
+// -----------------------------------------------------------------------
+static char * legacy_config_path()
+{
+	return str_concat(getenv("HOME"), "/.em400/em400.ini");
+}
+
+// -----------------------------------------------------------------------
+void em400_mkconfdir()
+{
+	char *base = xdg_config_base();
+	if (!base) return;
+#ifdef _WIN32
+	mkdir(base);
+#else
+	mkdir(base, 0700); // ensure the XDG base (e.g. ~/.config) exists first
+Eendif
+
+	char *dir = str_concat(base, "/em400");
+	if (dir) {
+#ifdef _WIN32
+		mkdir(dir);
+#else
+		mkdir(dir, 0700);
+#endif
+		free(dir);
+	}
+	free(base);
+}
+
+const char em400_cmdline_opts[] = "hc:m:p:l:Lu:O:";
 
 // -----------------------------------------------------------------------
 int em400_cmdline_1(int argc, char **argv, int *print_help, char **config)
@@ -129,14 +183,15 @@ int em400_cmdline_1(int argc, char **argv, int *print_help, char **config)
 			case 'c':
 				*config = strdup(optarg);
 				break;
-            case 'p':
-            case 'L':
-            case 'l':
-            case 'u':
+			case 'm':
+			case 'p':
+			case 'L':
+			case 'l':
+			case 'u':
 			case 'O':
 				break;
-            default:
-                return E_ERR;
+			default:
+				return E_ERR;
 		}
 	}
 
@@ -144,29 +199,32 @@ int em400_cmdline_1(int argc, char **argv, int *print_help, char **config)
 }
 
 // -----------------------------------------------------------------------
-int em400_cmdline_2(em400_cfg *cfg, int argc, char **argv, const char **program)
+int em400_cmdline_2(em400_cfg *cfg, int argc, char **argv, const char **program, const char **machine)
 {
-    int option;
-    optind = 1; // reset to 1 so consecutive calls work
+	int option;
+	optind = 1; // reset to 1 so consecutive calls work
 
-    while ((option = getopt(argc, argv, em400_cmdline_opts)) != -1) {
-        switch (option) {
-            case 'h':
-            case 'c':
-                break;
-            case 'p':
-                *program = optarg;
-                break;
-            case 'L':
+	while ((option = getopt(argc, argv, em400_cmdline_opts)) != -1) {
+		switch (option) {
+			case 'h':
+			case 'c':
+				break;
+			case 'm':
+				*machine = optarg;
+				break;
+			case 'p':
+				*program = optarg;
+				break;
+			case 'L':
 				cfg_set(cfg, "log:enabled", "false");
-                break;
-            case 'l':
+				break;
+			case 'l':
 				cfg_set(cfg, "log:enabled", "true");
 				cfg_set(cfg, "log:components", optarg);
-                break;
-            case 'u':
-                cfg_set(cfg, "ui:interface", optarg);
-                break;
+				break;
+			case 'u':
+				cfg_set(cfg, "general:ui", optarg);
+				break;
 			case 'O':
 				const char *colon = strchr(optarg, ':');
 				const char *key = strtok(optarg, "=");
@@ -176,12 +234,12 @@ int em400_cmdline_2(em400_cfg *cfg, int argc, char **argv, const char **program)
 				}
 				cfg_set(cfg, key, val);
 				break;
-            default:
-                return E_ERR;
-        }
-    }
+			default:
+				return E_ERR;
+		}
+	}
 
-    return E_OK;
+	return E_OK;
 }
 
 // -----------------------------------------------------------------------
@@ -193,7 +251,9 @@ int main(int argc, char** argv)
 
 	int print_help = 0;
 	char *config = NULL;
+	char *migrate_to = NULL;
 	const char *program = NULL;
+	const char *machine_id = NULL;
 	char *ui_name = NULL;
 	em400_cfg *cfg = NULL;
 	struct ui *ui = NULL;
@@ -212,14 +272,28 @@ int main(int argc, char** argv)
 	}
 
 	if (!config) {
-		const char *home = getenv("HOME");
-		const char *cfile = "/.em400/em400.ini";
-		config = (char *) malloc(strlen(home) + strlen(cfile) + 1);
+		config = xdg_config_path();
 		if (!config) {
 			LOGERR("Config filename memory allocation error");
 			goto done;
 		}
-		sprintf(config, "%s%s", home, cfile);
+		// first-run migration: no XDG config yet but a legacy one exists.
+		// Load the legacy file now; convert+write the new format to the XDG
+		// path after init (see below). Never touch the legacy file itself.
+		if (access(config, F_OK) != 0) {
+			char *legacy = legacy_config_path();
+			if (legacy && (access(legacy, F_OK) == 0)) {
+				fprintf(stderr,
+					"em400: migrating your configuration to the new location:\n"
+					"  from: %s (now obsolete)\n"
+					"  to: %s\n",
+					legacy, config);
+				migrate_to = config;
+				config = legacy;
+			} else {
+				free(legacy);
+			}
+		}
 	}
 
 	cfg = cfg_load(config);
@@ -229,14 +303,25 @@ int main(int argc, char** argv)
 	}
 
 	// read the commandline again to build final configuration
-	if (em400_cmdline_2(cfg, argc, argv, &program) != E_OK) {
+	if (em400_cmdline_2(cfg, argc, argv, &program, &machine_id) != E_OK) {
 		LOGERR("Failed to parse commandline arguments (pass 2)");
 		goto done;
 	}
 
-	if (em400_top_init(cfg) != E_OK) {
+	if (em400_top_init(cfg, machine_id) != E_OK) {
 		LOGERR("Failed to initialize EM400");
 		goto done;
+	}
+	LOG(L_EM4H, "Configuration loaded from: %s", config);
+
+	// persist the converted new-format config; a failed migration is fatal
+	// so the user is not left booting on a config that did not get saved
+	if (migrate_to) {
+		LOG(L_EM4H, "First-run migration: converting legacy config to new format");
+		if (appcfg_write(&appcfg, migrate_to) != E_OK) {
+			LOGERR("Failed to write migrated configuration to %s", migrate_to);
+			goto done;
+		}
 	}
 
 	// -p is session-only load, kept out of cfg so it can't be persisted
@@ -245,9 +330,8 @@ int main(int argc, char** argv)
 		goto done;
 	}
 
-	const char *ui_iface = cfg_getstr(cfg, "ui:interface", NULL);
-	if (ui_iface) {
-		ui_name = strdup(ui_iface);
+	if (appcfg.ui) {
+		ui_name = strdup(appcfg.ui);
 	}
 
 	// nothing needs cfg anymore
@@ -272,6 +356,7 @@ done:
 	cfg_free(cfg);
 	free(ui_name);
 	free(config);
+	free(migrate_to);
 	return return_code;
 }
 

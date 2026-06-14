@@ -49,7 +49,7 @@ jobs:
         run: ./runtests.py
       - name: Run tests (speed real)
         working-directory: ${{github.workspace}}/tests
-        run: ./runtests.py -O cpu:speed_real=true
+        run: ./runtests.py -O general:speed_real=true
 
   Win64-build:
     name: Win64 build

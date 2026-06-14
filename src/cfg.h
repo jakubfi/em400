@@ -65,4 +65,9 @@ double cfg_fgetdouble(em400_cfg *cfg, const char *key_format, ...);
 int cfg_fgetbool(em400_cfg *cfg, const char *key_format, ...);
 int cfg_fcontains(em400_cfg *cfg, const char *key_format, ...);
 
+// like cfg_fgetint/cfg_fgetbool but return the caller's default when absent,
+// instead of the -1 not-found sentinel
+int cfg_fgetint_def(em400_cfg *cfg, int def, const char *key_format, ...);
+int cfg_fgetbool_def(em400_cfg *cfg, int def, const char *key_format, ...);
+
 #endif
