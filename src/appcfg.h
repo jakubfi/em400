@@ -21,8 +21,8 @@
 #include "libem400.h"
 #include "cfg.h"
 
-// for the old (one-machine) INI format
-#define APPCFG_DEFAULT_MACHINE_ID "default"
+// id given to the single machine imported from the old (one-machine) INI format
+#define APPCFG_IMPORTED_MACHINE_ID "imported"
 
 struct appcfg_machine {
 	char *id;
@@ -30,11 +30,22 @@ struct appcfg_machine {
 	struct em400_machine_cfg cfg;
 };
 
+// app-owned logging mirror: persisted for round-trip Save, never handed to the
+// library (logging keeps its own lifecycle/live API, see config-design.md)
+struct appcfg_log {
+	bool enabled;
+	char *components;
+	char *file;
+	bool line_buffered;
+};
+
 struct appcfg {
 	struct appcfg_machine *machines;
 	int n_machines;
 	int cap_machines;
 	char *active_id;
+	char *ui;
+	struct appcfg_log log;
 	struct em400_host_cfg host;
 };
 

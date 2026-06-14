@@ -1,9 +1,21 @@
-# Note: values in the template are the default ones
+# em400 configuration file.
+# Note: values shown are the defaults unless stated otherwise.
+#
+# The file has a few host-wide sections ([general], [log], [sound]) and one
+# [machine.<id>] section per configured machine. [general] machine selects which
+# machine boots; you can keep several and switch between them.
 
-[cpu]
+[general]
+# Default user interface to use: qt, curses (obsolete) or cmd
+ui = qt
+
+# Which configured machine to start - the [machine.<id>].
+# Can be overridden on the commandline with: -m <id>
+machine = example
+
 # Control CPU emulation speed:
 # "false" - run as fast as possible
-# "true" - try to emulate real hardware CPU and memory speeds (default)
+# "true" - try to emulate real hardware CPU and memory speeds
 speed_real = true
 
 # Execute instructions for this much time (in us) before sleeping.
@@ -12,89 +24,6 @@ speed_real = true
 # Exceeding ~900us _may_ cause programs to misbehave when handling
 # external data input (eg. terminals)
 emulation_quantum_us = 100
-
-# Internal clock interrupt period (in miliseconds)
-# Allowed values: 2, 4, 8, 10 (default), 20
-clock_period = 10
-
-# MERA-400 cpu stops when operating system tries to access unconfigured
-# memory segment (default), but this can be changed to work as for user programs
-# (only interrupt is fired in such configuration)
-stop_on_nomem = true
-
-# 'IN' and 'OU' instructions can be either illegal or legal (default) in user programs
-user_io_illegal = false
-
-# AWP (hardware 48-bit floating point and 32-bit fixed point arithmetic) is optional
-# but most likely all machines came with it fitted (default true).
-awp = true
-
-# Enable or disable (default) CPU modifications found in MX-16 CPU:
-#  * 17-bit byte addressing,
-#  *  additional instructions,
-#  *  additional software interrupt,
-#  *  interrupts 5 and 11 swapped,
-#  *  broader interrupt mask for I/O interrupts
-modifications = false
-
-[memory]
-# Memory is organized into 16 physical modules. Each module can be
-# either elwro or mega. Elwro modules are 32kword big (8 pages),
-# mega modules are 64kword in size (16 pages).
-# Module 0 always has to be populated with elwro memory.
-# Elwro modules are populated starting from 0 up, mega modules
-# from 15 down. Module 0 may overlap with mega module
-
-# allowed values: 1-16 (default: 1)
-elwro_modules = 1
-
-# allowed values: 0-16 (default 0)
-mega_modules = 0
-
-# 4kword segments hardwired for OS memory block (taken from module 0)
-# allowed values: 1 or 2 (default)
-hardwired_segments = 2
-
-# Name of a MEGA PROM image file to use instead of the default one.
-# Oly the first 8KB of the file is loaded (1 memory egment, 4kwords).
-# Unset by default
-#mega_prom = mega_prom.img
-
-# Preload a program into OS memory, starting from address 0
-preload = program.bin
-
-[sound]
-# Internal buzzer emulation, enabled by default.
-# For this to work, set speed_real to true
-# Note that for sound to work properly CPU instruction logging
-# should be disabled.
-enabled = true
-
-# Sound is routed through the vendored miniaudio library.
-# Backend selection: "auto" (default) lets miniaudio pick.
-# Force a specific one with e.g.
-# pulseaudio, alsa, jack, coreaudio, wasapi, dsound, sndio, oss, null.
-backend = auto
-
-# Output device. Empty string = system default. Otherwise a
-# case-insensitive substring match against the device name as the chosen
-# backend reports it (e.g. "Built-in Audio Analog Stereo" for PulseAudio,
-# "HDA Intel" for ALSA). If no device matches, the available names are
-# listed in the log and the default is used.
-device =
-
-# Samplerate.
-rate = 48000
-
-# Sound buffer size (in samples, powers of 2).
-buffer_len = 128
-
-# Sound output latency (in miliseconds).
-# Increase if sound is choppy.
-latency = 20
-
-# Software buzzer volume control (0-100)
-volume = 10
 
 [log]
 # Enable or disable logging.
@@ -122,67 +51,147 @@ components = em4h
 # Use line buffered or fully buffered log output.
 line_buffered = true
 
-[ui]
-# Default user interface to use
-interface = curses
+[sound]
+# Internal buzzer emulation.
+# For this to work, set speed_real to true
+# Note that for sound to work properly CPU instruction logging
+# should be disabled.
+enabled = true
 
-# I/O channels configuration.
-#
-# There are 16 available channels: channel_0 to channel_15.
-# Channel is configured by assigning a channel type to the channel.
-# Currently available channel types are: multix and char
+# Backend selection: "auto" lets miniaudio pick.
+# Force a specific one with e.g.
+# pulseaudio, alsa, jack, coreaudio, wasapi, dsound, sndio, oss, null.
+backend = auto
 
-[io]
-channel_1 = multix
-channel_15 = char
+# Output device. Empty string = system default. Otherwise a
+# case-insensitive substring match against the device name as the chosen
+# backend reports it (e.g. "Built-in Audio Analog Stereo" for PulseAudio,
+# "HDA Intel" for ALSA). If no device matches, the available names are
+# listed in the log and the default is used.
+device =
 
-# I/O devices configuration.
-#
-# Each device has its own section named devX.Y, where:
+# Samplerate.
+rate = 48000
+
+# Sound buffer size (in samples, powers of 2).
+buffer_len = 128
+
+# Sound output latency (in miliseconds).
+# Increase if sound is choppy.
+latency = 20
+
+# Software buzzer volume control (0-100)
+volume = 10
+
+# A machine is defined in a [machine.<id>] section. <id> is used
+# to select the machine - see [general] and the -m commandline switch.
+[machine.example]
+# Human-readable machine name
+name = Example machine
+
+# --- CPU ---
+
+# Internal clock interrupt period (in miliseconds)
+# Allowed values: 2, 4, 8, 10, 20
+cpu.clock_period = 10
+
+# MERA-400 cpu stops when operating system tries to access unconfigured
+# memory segment, but this can be changed to work as for user programs
+# (only interrupt is fired in such configuration)
+cpu.stop_on_nomem = true
+
+# 'IN' and 'OU' instructions can be configured as either
+# legal or illegal in user programs
+cpu.user_io_illegal = false
+
+# AWP (hardware 48-bit floating point and 32-bit fixed point arithmetic) is optional
+# but most likely all machines came with it fitted.
+cpu.awp = true
+
+# Enable or disable CPU modifications found in MX-16 CPU:
+#  * 17-bit byte addressing,
+#  *  additional instructions,
+#  *  additional software interrupt,
+#  *  interrupts 5 and 11 swapped,
+#  *  broader interrupt mask for I/O interrupts
+cpu.modifications = false
+
+# --- Memory ---
+
+# Memory is organized into 16 physical modules. Each module can be
+# either elwro or mega. Elwro modules are 32kword big (8 pages),
+# mega modules are 64kword in size (16 pages).
+# Module 0 always has to be populated with elwro memory.
+# Elwro modules are populated starting from 0 up, mega modules
+# from 15 down. Module 0 may overlap with mega module
+
+# allowed values: 1-16
+memory.elwro_modules = 1
+
+# allowed values: 0-16
+memory.mega_modules = 0
+
+# 4kword segments hardwired for OS memory block (taken from module 0)
+# allowed values: 1 or 2
+memory.hardwired_segments = 2
+
+# Name of a MEGA PROM image file to use instead of the default one.
+# Only the first 8KB of the file is loaded (1 memory segment, 4kwords).
+# Unset by default
+memory.mega_prom = mega_prom.img
+
+# Preload a program into OS memory, starting from address 0. Unset by default.
+# (This is the persistent equivalent of the -p commandline switch.)
+memory.preload = program.bin
+
+# --- I/O channels ---
+
+# There are 16 available channels: channel.0 to channel.15.
+# A channel is configured by assigning it a type. Currently available
+# channel types are: multix and char
+channel.1 = multix
+channel.15 = char
+
+# --- I/O devices ---
+
+# Each device is configured with keys of the form dev.X.Y.<option>, where:
 #  * X is the channel number which the device connects to
-#  * Y is the device number
+#  * Y is the device number on that channel
 #
-# Every device section requires a device type to be specified. Currently supported types are:
+# Every device needs dev.X.Y.type set. Currently supported types are:
 #  * rtclock (only for "char" channel type) - Amepol's real-time clock
 #  * terminal (only for "char" channel type) - serial console terminal
-#  * floppy8 (only for "char" channel type) - 8" floppy drive (uses raw images)
+#  * sp45de (only for "char" channel type) - 8" floppy drive (uses raw images)
 #  * winchester (only for "multix" channel type) - hard disk drive (uses e4i disk images)
 #  * floppy (in development, only for "multix" channel type) - 5" floppy drive
 #
-# Other options are specific for each device.
-# Below are example device configurations.
+# Other options are specific to each device. Examples follow.
 
 # Amepol's real-time clock
-[dev15.0]
-type = rtclock
+dev.15.0.type = rtclock
 # "prom" allows replacing the default rtclock's PROM contents
-# 256 bytes of data max, must be encoded for binary load
-prom = rtclock_prom_file.bin
+# 256 bytes of data max, must be encoded for binary load.
+# Unset by default.
+dev.15.0.prom = rtclock_prom_file.bin
 
-# 8" floppy drive with all four images attached (for all four bays)
-[dev15.2]
-type = floppy8
-image_0 = flop8_0.img
-image_1 = flop8_1.img
-image_2 = flop8_2.img
-image_3 = flop8_3.img
+# 8" floppy drive (SP45DE) with all four slots occupied by an image
+dev.15.2.type = sp45de
+dev.15.2.slot.0 = flop8_0.img
+dev.15.2.slot.1 = flop8_1.img
+dev.15.2.slot.2 = flop8_2.img
+dev.15.2.slot.3 = flop8_3.img
 
-# Terminal that can be accessed through TCP connection on the givenport (using e4term from tools/ directory)
-# Speed is emulated and can be one of: 9600 (default), 4800, 2400, 1200, 600, 300, 150
-[dev15.4]
-type = terminal
-transport = tcp
-port = 32000
-speed = 9600
+# Terminal accessible through a TCP connection on the given port (use e4term
+# from the tools/ directory). Speed is emulated and can be one of:
+# 9600, 4800, 2400, 1200, 600, 300, 150
+dev.15.4.type = terminal
+dev.15.4.port = 32000
+dev.15.4.speed = 9600
 
-# MULTIX 5" floppy drive with floppy1.e4i image
-[dev1.20]
-type = floppy
-image = floppy1.e4i
+# MULTIX 5" floppy drive with a floppy1.e4i image
+dev.1.20.type = floppy
+dev.1.20.image = floppy1.e4i
 
-# MULTIX Winchester hard disk drive with winchester.e4i image
-[dev1.28]
-type = winchester
-image = winchester.e4i
-
-
+# MULTIX Winchester hard disk drive with a winchester.e4i image
+dev.1.28.type = winchester
+dev.1.28.image = winchester.e4i

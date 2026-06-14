@@ -66,6 +66,28 @@ int cfg_fgetbool(em400_cfg *cfg, const char *key_format, ...)
 }
 
 // -----------------------------------------------------------------------
+int cfg_fgetint_def(em400_cfg *cfg, int def, const char *key_format, ...)
+{
+	char key[MAX_KEY_LEN];
+	va_list vl;
+	va_start(vl, key_format);
+	vsnprintf(key, MAX_KEY_LEN, key_format, vl);
+	va_end(vl);
+	return cfg_getint(cfg, key, def);
+}
+
+// -----------------------------------------------------------------------
+int cfg_fgetbool_def(em400_cfg *cfg, int def, const char *key_format, ...)
+{
+	char key[MAX_KEY_LEN];
+	va_list vl;
+	va_start(vl, key_format);
+	vsnprintf(key, MAX_KEY_LEN, key_format, vl);
+	va_end(vl);
+	return cfg_getbool(cfg, key, def);
+}
+
+// -----------------------------------------------------------------------
 int cfg_fcontains(em400_cfg *cfg, const char *key_format, ...)
 {
 	char key[MAX_KEY_LEN];
