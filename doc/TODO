@@ -1,5 +1,11 @@
 Work notes:
 
+* drop terminal "transport"
+* drop old-style config handlers
+* -O machine.mera400:memory.elwro_modules ?
+* drop e4i (auto-migrate?)
+* config migration - UI popup?
+
 * reconsider terminal input buffering
 * make uzfx/sp45de async?
 * shutdown() can be always called?
