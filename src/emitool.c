@@ -153,18 +153,18 @@ void print_help()
 		"\n"
 		"Usage scenarios:\n"
 		"  * Show media header:\n"
-		"      e4itool --image <filename> --get\n"
+		"      emitool --image <filename> --get\n"
 		"  * Create empty media:\n"
-		"      e4itool --image <filename> --blocks <blocks> --sector <bytes> [--id <bytes>]\n"
-		"      e4itool --image <filename> --cyls <c> --heads <h> --spt <sectors> --sector <bytes> [--id <bytes>]\n"
-		"      e4itool --image <filename> --append --sector <bytes> [--id <bytes>]\n"
+		"      emitool --image <filename> --blocks <blocks> --sector <bytes> [--id <bytes>]\n"
+		"      emitool --image <filename> --cyls <c> --heads <h> --spt <sectors> --sector <bytes> [--id <bytes>]\n"
+		"      emitool --image <filename> --append --sector <bytes> [--id <bytes>]\n"
 		"  * Create empty media using a preset:\n"
-		"      e4itool --image <filename> --preset <name> [--cyls <c>] [--heads <h>] [--spt <sectors>] [--sector <bytes>] [--id <bytes>]\n"
+		"      emitool --image <filename> --preset <name> [--cyls <c>] [--heads <h>] [--spt <sectors>] [--sector <bytes>] [--id <bytes>]\n"
 		"  * Create media from raw data:\n"
-		"      e4itool --image <filename> --src <source> --sector <bytes> --id <bytes>\n"
-		"      e4itool --image <filename> --src <source> --cyls <c> --heads <h> --spt <sectors> --sector <bytes> --id <bytes>\n"
+		"      emitool --image <filename> --src <source> --sector <bytes> --id <bytes>\n"
+		"      emitool --image <filename> --src <source> --cyls <c> --heads <h> --spt <sectors> --sector <bytes> --id <bytes>\n"
 		"  * Change flags:\n"
-		"      e4itool --image <filename> --flag <name>|<^name> --flag <name>|<^name> ...\n"
+		"      emitool --image <filename> --flag <name>|<^name> --flag <name>|<^name> ...\n"
 		"\n"
 		"Known image presets (--preset) (C/H/S, id size, sector size):\n"
 	);
@@ -386,7 +386,7 @@ int main(int argc, char **argv)
 {
 	struct e4i_t *e = NULL;
 	int res;
-	printf("e4itool v0.1: e4image management tool\n");
+	printf("emitool v0.1: e4image management tool\n");
 	parse_opts(argc, argv);
 	int action = get_action();
 
