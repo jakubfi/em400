@@ -259,6 +259,163 @@ int appcfg_build_from_ini(em400_cfg *cfg)
 }
 
 // -----------------------------------------------------------------------
+static const char * bstr(bool b)
+{
+	return b ? "true" : "false";
+}
+
+// -----------------------------------------------------------------------
+static const char * channel_type_name(enum em400_channel_types type)
+{
+	switch (type) {
+		case EM400_CHANNEL_CHAR: return "char";
+		case EM400_CHANNEL_MULTIX: return "multix";
+		case EM400_CHANNEL_IOTESTER: return "iotester";
+		default: return NULL;
+	}
+}
+
+// -----------------------------------------------------------------------
+static const char * device_type_name(enum em400_device_types type)
+{
+	switch (type) {
+		case EM400_DEV_TERMINAL: return "terminal";
+		case EM400_DEV_WINCHESTER: return "winchester";
+		case EM400_DEV_FLOP5: return "floppy";
+		case EM400_DEV_SP45DE: return "sp45de";
+		case EM400_DEV_RTCLOCK: return "rtclock";
+		default: return NULL;
+	}
+}
+
+// -----------------------------------------------------------------------
+static void write_device(FILE *f, int chnum, int devnum, const struct em400_device_cfg *dev)
+{
+	const char *type = device_type_name(dev->type);
+	if (!type) return;
+
+	fprintf(f, "dev.%i.%i.type = %s\n", chnum, devnum, type);
+
+	switch (dev->type) {
+		case EM400_DEV_TERMINAL:
+			fprintf(f, "dev.%i.%i.port = %i\n", chnum, devnum, dev->terminal.port);
+			if (dev->terminal.speed != 9600) {
+				fprintf(f, "dev.%i.%i.speed = %i\n", chnum, devnum, dev->terminal.speed);
+			}
+			break;
+		case EM400_DEV_WINCHESTER:
+			if (dev->winchester.image) {
+				fprintf(f, "dev.%i.%i.image = %s\n", chnum, devnum, dev->winchester.image);
+			}
+			break;
+		case EM400_DEV_SP45DE:
+			for (int slot=0 ; slot<EM400_SP45DE_SLOT_COUNT ; slot++) {
+				fprintf(f, "dev.%i.%i.slot.%i = %s\n", chnum, devnum, slot,
+					dev->sp45de.images[slot] ? dev->sp45de.images[slot] : "");
+			}
+			break;
+		case EM400_DEV_RTCLOCK:
+			if (dev->rtclock.prom) {
+				fprintf(f, "dev.%i.%i.prom = %s\n", chnum, devnum, dev->rtclock.prom);
+			}
+			break;
+		default:
+			break;
+	}
+}
+
+// -----------------------------------------------------------------------
+static void write_machine(FILE *f, const struct appcfg_machine *m)
+{
+	const struct em400_machine_cfg *cfg = &m->cfg;
+
+	fprintf(f, "\n[machine.%s]\n", m->id);
+	if (m->name) {
+		fprintf(f, "name = %s\n", m->name);
+	}
+
+	if (cfg->cpu.clock_period_ms != CFG_DEFAULT_CPU_CLOCK_PERIOD_MS) {
+		fprintf(f, "cpu.clock_period = %i\n", cfg->cpu.clock_period_ms);
+	}
+	if (cfg->cpu.nomem_stop != CFG_DEFAULT_CPU_STOP_ON_NOMEM) {
+		fprintf(f, "cpu.stop_on_nomem = %s\n", bstr(cfg->cpu.nomem_stop));
+	}
+	if (cfg->cpu.user_io_illegal != CFG_DEFAULT_CPU_IO_USER_ILLEGAL) {
+		fprintf(f, "cpu.user_io_illegal = %s\n", bstr(cfg->cpu.user_io_illegal));
+	}
+	if (cfg->cpu.awp != CFG_DEFAULT_CPU_AWP) {
+		fprintf(f, "cpu.awp = %s\n", bstr(cfg->cpu.awp));
+	}
+	if (cfg->cpu.mod != CFG_DEFAULT_CPU_MODIFICATIONS) {
+		fprintf(f, "cpu.modifications = %s\n", bstr(cfg->cpu.mod));
+	}
+
+	if (cfg->mem.elwro_modules != CFG_DEFAULT_MEMORY_ELWRO_MODULES) {
+		fprintf(f, "memory.elwro_modules = %i\n", cfg->mem.elwro_modules);
+	}
+	if (cfg->mem.mega_modules != CFG_DEFAULT_MEMORY_MEGA_MODULES) {
+		fprintf(f, "memory.mega_modules = %i\n", cfg->mem.mega_modules);
+	}
+	if (cfg->mem.os_segments != CFG_DEFAULT_MEMORY_HARDWIRED_SEGMENTS) {
+		fprintf(f, "memory.hardwired_segments = %i\n", cfg->mem.os_segments);
+	}
+	if (cfg->mem.mega_prom_image) {
+		fprintf(f, "memory.mega_prom = %s\n", cfg->mem.mega_prom_image);
+	}
+	if (cfg->mem.preload_image) {
+		fprintf(f, "memory.preload = %s\n", cfg->mem.preload_image);
+	}
+
+	for (int chnum=0 ; chnum<EM400_IO_MAX_CHAN ; chnum++) {
+		const struct em400_channel_cfg *chan = &cfg->channel[chnum];
+		const char *ch_type = channel_type_name(chan->type);
+		if (!ch_type) continue;
+
+		fprintf(f, "channel.%i = %s\n", chnum, ch_type);
+		for (int devnum=0 ; devnum<EM400_CHAN_MAX_DEV ; devnum++) {
+			write_device(f, chnum, devnum, &chan->device[devnum]);
+		}
+	}
+}
+
+// -----------------------------------------------------------------------
+int appcfg_write(const struct appcfg *c, const char *path)
+{
+	FILE *f = fopen(path, "w");
+	if (!f) {
+		return LOGERR("Cannot open config file for writing: %s", path);
+	}
+
+	fprintf(f, "[general]\n");
+	if (c->active_id) {
+		fprintf(f, "machine = %s\n", c->active_id);
+	}
+	fprintf(f, "speed_real = %s\n", bstr(c->host.emu.speed_real));
+	fprintf(f, "emulation_quantum_us = %i\n", c->host.emu.emulation_quantum_us);
+
+	const struct em400_sound_cfg *snd = &c->host.sound;
+	fprintf(f, "\n[sound]\n");
+	fprintf(f, "enabled = %s\n", bstr(snd->enabled));
+	fprintf(f, "rate = %i\n", snd->sample_rate);
+	fprintf(f, "buffer_len = %i\n", snd->buffer_len);
+	fprintf(f, "latency = %i\n", snd->latency);
+	fprintf(f, "volume = %i\n", snd->volume);
+	if (snd->backend && strcmp(snd->backend, CFG_DEFAULT_SOUND_BACKEND)) {
+		fprintf(f, "backend = %s\n", snd->backend);
+	}
+	if (snd->device) {
+		fprintf(f, "device = %s\n", snd->device);
+	}
+
+	for (int i=0 ; i<c->n_machines ; i++) {
+		write_machine(f, &c->machines[i]);
+	}
+
+	fclose(f);
+	return E_OK;
+}
+
+// -----------------------------------------------------------------------
 void appcfg_free(void)
 {
 	for (int i=0 ; i<appcfg.n_machines ; i++) {

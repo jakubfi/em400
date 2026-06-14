@@ -41,6 +41,7 @@ struct appcfg {
 extern struct appcfg appcfg;
 
 int appcfg_build_from_ini(em400_cfg *cfg);
+int appcfg_write(const struct appcfg *c, const char *path);
 void appcfg_free(void);
 
 struct appcfg_machine *appcfg_machine_add(struct appcfg *c, const char *id, const char *name);
