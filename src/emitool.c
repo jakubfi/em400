@@ -29,6 +29,7 @@ enum actions_e {
 	A_UNKNOWN = -1,
 	A_FLAGS = 1,
 	A_GET,
+	A_EXTRACT,
 	A_CREATE_CHS = 100,
 	A_CREATE_LBA,
 	A_CREATE_SEQ,
@@ -90,7 +91,7 @@ struct kv_t known_types[] = {
 	{ NULL, 0 }
 };
 
-char *image, *preset, *src;
+char *image, *preset, *src, *extract;
 int get, append, blocks, cyls, heads, spt, sector, id, flags_set, flags_clear, got_flags, type, utype;
 e4i_id_gen_f *genf = NULL;
 
@@ -138,6 +139,7 @@ void print_help()
 		"  --help                    : print help\n"
 		"  --image, -i <filename>    : e4i working media file name\n"
 		"  --get, -g                 : show media header\n"
+		"  --extract, -e <filename>  : extract raw image data to file <filename>\n"
 		"  --preset, -p <name>       : select media preset\n"
 		"  --src, -r <filename>      : read raw input data from file <filename>\n"
 		"  --blocks, -b <blocks>     : total blocks on media (LBA adressing)\n"
@@ -154,6 +156,8 @@ void print_help()
 		"Usage scenarios:\n"
 		"  * Show media header:\n"
 		"      emitool --image <filename> --get\n"
+		"  * Extract raw image data:\n"
+		"      emitool --image <filename> --extract <filename>\n"
 		"  * Create empty media:\n"
 		"      emitool --image <filename> --blocks <blocks> --sector <bytes> [--id <bytes>]\n"
 		"      emitool --image <filename> --cyls <c> --heads <h> --spt <sectors> --sector <bytes> [--id <bytes>]\n"
@@ -222,6 +226,7 @@ void parse_opts(int argc, char **argv)
 	static struct option opts[] = {
 		{ "image",		required_argument,	0, 'i' },
 		{ "get",		no_argument,		0, 'g' },
+		{ "extract",	required_argument,	0, 'e' },
 		{ "preset",		required_argument,	0, 'p' },
 		{ "src",		required_argument,	0, 'r' },
 		{ "blocks",		required_argument,	0, 'b' },
@@ -239,7 +244,7 @@ void parse_opts(int argc, char **argv)
 	};
 
 	while (1) {
-		opt = getopt_long(argc, argv,"i:gp:r:b:c:h:s:l:x:f:at:u:", opts, &idx);
+		opt = getopt_long(argc, argv,"i:ge:p:r:b:c:h:s:l:x:f:at:u:", opts, &idx);
 		if (opt == -1) {
 			break;
 		}
@@ -254,6 +259,9 @@ void parse_opts(int argc, char **argv)
 				break;
 			case 'g':
 				get = 1;
+				break;
+			case 'e':
+				extract = optarg;
 				break;
 			case 'p':
 				p = get_preset(optarg);
@@ -348,6 +356,11 @@ int get_action()
 		return A_GET;
 	}
 
+	// Extract raw data
+	if (extract) {
+		return A_EXTRACT;
+	}
+
 	// create LBA media
 	if (blocks && sector) {
 		if (cyls || heads || spt) {
@@ -430,6 +443,19 @@ int main(int argc, char **argv)
 		e = e4i_open(image);
 		if (!e) {
 			error("Could not open imege: %s", e4i_get_err(e4i_err));
+		}
+
+	// extract raw data
+	} else if (action == A_EXTRACT) {
+		e = e4i_open(image);
+		if (!e) {
+			error("Could not open imege: %s", e4i_get_err(e4i_err));
+		}
+		res = e4i_export(e, extract);
+		if (res == E4I_E_OK) {
+			printf("Raw image data extracted to '%s'\n", extract);
+		} else {
+			error("Could not extract image data: %s", e4i_get_err(res));
 		}
 
 	// set flags only

@@ -423,6 +423,44 @@ int e4i_import(struct e4i_t *e, char *src_name, uint16_t img_type, uint16_t img_
 }
 
 // -----------------------------------------------------------------------
+int e4i_export(struct e4i_t *e, char *dst_name)
+{
+	FILE *dst = fopen(dst_name, "wb");
+	if (!dst) {
+		return E4I_E_SOURCE_OPEN;
+	}
+
+	// skip the header, dump the raw data section verbatim
+	if (fseek(e->image, E4I_HEADER_SIZE, SEEK_SET)) {
+		fclose(dst);
+		return E4I_E_READ;
+	}
+
+	int ret = E4I_E_OK;
+	unsigned bufsize = e->id_size + e->block_size;
+	uint8_t *buf = (uint8_t *) calloc(bufsize, 1);
+	if (!buf) {
+		fclose(dst);
+		return E4I_E_ALLOC;
+	}
+
+	size_t r;
+	while ((r = fread(buf, 1, bufsize, e->image)) > 0) {
+		if (fwrite(buf, 1, r, dst) != r) {
+			ret = E4I_E_WRITE;
+			break;
+		}
+	}
+	if ((ret == E4I_E_OK) && ferror(e->image)) {
+		ret = E4I_E_READ;
+	}
+
+	free(buf);
+	fclose(dst);
+	return ret;
+}
+
+// -----------------------------------------------------------------------
 static int __e4i_init_disk(struct e4i_t *e, e4i_id_gen_f *genf, uint16_t img_type, uint16_t img_utype)
 {
 	if ((e->id_size > 0) && !genf) {
