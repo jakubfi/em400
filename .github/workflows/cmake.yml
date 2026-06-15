@@ -84,8 +84,8 @@ jobs:
       - name: Build and install emdas
         run: git clone https://github.com/jakubfi/emdas && cmake -S emdas -B emdas/build -G "Unix Makefiles" -DCMAKE_BUILD_TYPE=${{env.BUILD_TYPE}} -DCMAKE_INSTALL_PREFIX=${{env.INSTALL_PREFIX}} && cmake --build emdas/build && cmake --install emdas/build
       - name: Configure project
-        run: cmake -S ${{github.workspace}} -B ${{github.workspace}}/build -G "Unix Makefiles" -DCMAKE_BUILD_TYPE=${{env.BUILD_TYPE}} -DCMAKE_INSTALL_PREFIX=${{env.INSTALL_PREFIX}}
+        run: cmake -S . -B build -G "Unix Makefiles" -DCMAKE_BUILD_TYPE=${{env.BUILD_TYPE}} -DCMAKE_INSTALL_PREFIX=${{env.INSTALL_PREFIX}}
       - name: Build
-        run: cmake --build ${{github.workspace}}/build
+        run: cmake --build build
       - name: Install
-        run: cmake --install ${{github.workspace}}/build
+        run: cmake --install build
