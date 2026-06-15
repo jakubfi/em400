@@ -105,7 +105,11 @@ void em400_mkconfdir()
 	char *conf_dirname = (char *) malloc(strlen(home) + strlen(cdir) + 1);
 	if (conf_dirname) {
 		sprintf(conf_dirname, "%s%s", home, cdir);
+#ifdef _WIN32
+		mkdir(conf_dirname);
+#else
 		mkdir(conf_dirname, 0700);
+#endif
 		free(conf_dirname);
 	}
 }

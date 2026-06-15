@@ -372,7 +372,12 @@ static void log_log_timestamp(unsigned component, const char *msg, const char *f
 	struct timeval ct;
 	char date[32];
 	gettimeofday(&ct, NULL);
+#ifdef _WIN32
+	time_t tv_sec = ct.tv_sec;
+	strftime(date, 31, "%Y-%m-%d %H:%M:%S", localtime(&tv_sec));
+#else
 	strftime(date, 31, "%Y-%m-%d %H:%M:%S", localtime(&ct.tv_sec));
+#endif
 	log_log(component, func, "%s %s", date, msg);
 }
 

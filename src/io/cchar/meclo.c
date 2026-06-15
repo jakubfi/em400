@@ -346,7 +346,11 @@ static void meclo_set_current_time(meclo_t *meclo)
 	struct tm t;
 
 	time(&cur_time);
+#ifdef _WIN32
+	if (localtime_s(&t, &cur_time) == 0) {
+#else
 	if (localtime_r(&cur_time, &t)) {
+#endif
 		meclo->month = t.tm_mon+1;
 		meclo->day = t.tm_mday;
 		meclo->hour = t.tm_hour;

@@ -144,8 +144,8 @@ set(SOURCES_EM400
 	src/utils/utils.h
 	src/utils/elst.c
 	src/utils/elst.h
-	src/utils/serial.c
-	src/utils/serial.h
+	#src/utils/serial.c
+	#src/utils/serial.h
 
 	src/cpu/instructions.c
 	src/cpu/instructions.h
@@ -404,7 +404,9 @@ target_link_libraries(em400
 	PkgConfig::LIBUV
 )
 
-if(NOT WIN32)
+if(WIN32)
+	target_link_libraries(em400 ws2_32)
+else()
 	target_link_libraries(em400
 		${RT_LIBRARY}
 		${MATH_LIBRARY}

@@ -337,7 +337,7 @@ int it_cmd(chan_t *ch, int dir, uint16_t n_arg, uint16_t *r_arg)
 					LOG(L_IO, "Sending intspec to CPU: 0x%04x", *r_arg);
 					break;
 				case CMD_RND:
-					*r_arg = random();
+					*r_arg = rand();
 					LOG(L_IO, "Generated random: 0x%04x", *r_arg);
 					break;
 				default:
