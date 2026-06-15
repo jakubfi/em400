@@ -7,7 +7,7 @@ on:
     branches: [master]
 
 jobs:
-  build:
+  Linux-build:
     name: build on ${{matrix.os}} with ${{matrix.compiler.compiler}}
     runs-on: ${{matrix.os}}
     strategy:
@@ -50,3 +50,42 @@ jobs:
       - name: Run tests (speed real)
         working-directory: ${{github.workspace}}/tests
         run: ./runtests.py -O cpu:speed_real=true
+
+  Win64-build:
+    name: Win64 build
+    runs-on: windows-latest
+    defaults:
+      run:
+        shell: msys2 {0}
+    env:
+      BUILD_TYPE: Release
+      CC: gcc
+      CXX: g++
+      INSTALL_PREFIX: /mingw64
+    steps:
+      - uses: msys2/setup-msys2@v2
+        with:
+          msystem: MINGW64
+          update: true
+          install: >-
+            base-devel
+            git
+            mingw-w64-x86_64-toolchain
+            mingw-w64-x86_64-cmake
+            mingw-w64-x86_64-libuv
+            mingw-w64-x86_64-qt6-base
+            mingw-w64-x86_64-qt6-multimedia
+            mingw-w64-x86_64-qt6-tools
+      - uses: actions/checkout@v4
+      - name: Build and install emawp
+        run: git clone https://github.com/jakubfi/emawp && cmake -S emawp -B emawp/build -G "Unix Makefiles" -DCMAKE_BUILD_TYPE=${{env.BUILD_TYPE}} -DCMAKE_INSTALL_PREFIX=${{env.INSTALL_PREFIX}} && cmake --build emawp/build && cmake --install emawp/build
+      - name: Build and install emcrk
+        run: git clone https://github.com/jakubfi/emcrk && cmake -S emcrk -B emcrk/build -G "Unix Makefiles" -DCMAKE_BUILD_TYPE=${{env.BUILD_TYPE}} -DCMAKE_INSTALL_PREFIX=${{env.INSTALL_PREFIX}} && cmake --build emcrk/build && cmake --install emcrk/build
+      - name: Build and install emdas
+        run: git clone https://github.com/jakubfi/emdas && cmake -S emdas -B emdas/build -G "Unix Makefiles" -DCMAKE_BUILD_TYPE=${{env.BUILD_TYPE}} -DCMAKE_INSTALL_PREFIX=${{env.INSTALL_PREFIX}} && cmake --build emdas/build && cmake --install emdas/build
+      - name: Configure project
+        run: cmake -S . -B build -G "Unix Makefiles" -DCMAKE_BUILD_TYPE=${{env.BUILD_TYPE}} -DCMAKE_INSTALL_PREFIX=${{env.INSTALL_PREFIX}}
+      - name: Build
+        run: cmake --build build
+      - name: Install
+        run: cmake --install build
