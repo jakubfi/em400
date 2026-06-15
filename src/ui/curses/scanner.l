@@ -33,6 +33,7 @@ void yyerror(char *s, ...);
 
 %option nounput
 %option noinput
+%option noyywrap
 %option case-insensitive
 
 %s args texts opts brkopts brkexpr
@@ -138,11 +139,6 @@ void reset_scanner()
 {
 	BEGIN(INITIAL);
 
-}
-
-// -----------------------------------------------------------------------
-int yywrap(void) {
-	return 1;
 }
 
 // vim: tabstop=4 shiftwidth=4 autoindent

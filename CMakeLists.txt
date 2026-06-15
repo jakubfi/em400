@@ -72,7 +72,6 @@ if(UI_CURSES)
 		${CURSES_LIBRARIES}
 		${TINFO_LIBRARY}
 		${READLINE_LIBRARY}
-		${FLEX_LIBRARIES}
 		${BISON_LIBRARIES}
 	)
 
@@ -398,7 +397,6 @@ target_link_libraries(em400
 	emdas
 	emcrk
 	emawp
-	${FLEX_LIBRARIES}
 	${BISON_LIBRARIES}
 	${CMAKE_THREAD_LIBS_INIT}
 	PkgConfig::LIBUV

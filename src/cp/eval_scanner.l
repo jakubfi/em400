@@ -39,6 +39,7 @@ int eval_yycolumn = 0;
 
 %option nounput
 %option noinput
+%option noyywrap
 %option case-insensitive
 
 %%
@@ -88,10 +89,5 @@ rz			{ return IRZ; }
 }
 
 %%
-
-// -----------------------------------------------------------------------
-int eval_yywrap(void) {
-	return 1;
-}
 
 // vim: tabstop=4 shiftwidth=4 autoindent
