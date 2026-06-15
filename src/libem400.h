@@ -109,7 +109,7 @@ struct em400_device_cfg {
 		struct { const char *image; } winchester;
 		struct { const char *prom; } rtclock;
 		struct { const char *images[EM400_SP45DE_SLOT_COUNT]; } sp45de;
-		struct { } floppy5;
+		// floppy5: no config, selected by type alone
 	};
 };
 
