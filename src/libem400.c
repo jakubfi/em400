@@ -19,6 +19,7 @@
 #include <stdlib.h>
 #include <stdatomic.h>
 #ifdef _WIN32
+#include <winsock2.h> // must precede windows.h, else libuv's uv.h warns
 #include <windows.h>
 #include <mmsystem.h>
 #endif
