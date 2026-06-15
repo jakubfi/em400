@@ -68,6 +68,7 @@ if(UI_CURSES)
 	)
 
 	target_link_libraries(ui-curses
+		emdas
 		${CURSES_LIBRARIES}
 		${TINFO_LIBRARY}
 		${READLINE_LIBRARY}
