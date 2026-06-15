@@ -18,6 +18,10 @@
 #include <strings.h>
 #include <stdlib.h>
 #include <stdatomic.h>
+#ifdef _WIN32
+#include <windows.h>
+#include <mmsystem.h>
+#endif
 
 #include "libem400.h"
 #include "mem/mem.h"
@@ -137,6 +141,9 @@ static int channel_build(unsigned chnum, const struct em400_channel_cfg *ccfg)
 // -----------------------------------------------------------------------
 int em400_init(const struct em400_machine_cfg *machine, const struct em400_host_cfg *host)
 {
+#ifdef _WIN32
+	timeBeginPeriod(1);
+#endif
 	if (mem_init(&machine->mem) != E_OK) return LOGERR("Failed to initialize memory.");
 	if (cpu_init(host, machine) != E_OK) return LOGERR("Failed to initialize CPU.");
 	if (io_init() != E_OK) return LOGERR("Failed to initialize I/O.");
@@ -160,6 +167,9 @@ int em400_init(const struct em400_machine_cfg *machine, const struct em400_host_
 void em400_shutdown()
 {
 	LOG(L_EM4H, "Shutting down EM400 instance");
+#ifdef _WIN32
+	timeEndPeriod(1);
+#endif
 	io_shutdown();
 	// cpu_shutdown() joins the CPU thread; brk_del_all() must run after it so
 	// it cannot free breakpoints while brk_check() is still traversing them

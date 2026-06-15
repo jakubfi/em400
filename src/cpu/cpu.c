@@ -34,6 +34,7 @@
 #include <emawp.h>
 
 #include "utils/utils.h"
+#include "utils/compat_time.h"
 #include "cpu/cpu.h"
 #include "cpu/interrupts.h"
 #include "mem/mem.h"
@@ -701,7 +702,13 @@ static inline long cpu_timing_busy_wait(struct timespec *now, const struct times
 // -----------------------------------------------------------------------
 static inline long cpu_timing_sleep_wait(struct timespec *now, struct timespec *cpu_timer)
 {
+#ifdef _WIN32
+	// winpthreads clock_nanosleep rejects CLOCK_MONOTONIC; use a high-res
+	// waitable timer instead (see compat_time.h).
+	compat_sleep_until(cpu_timer);
+#else
 	while (clock_nanosleep(CLOCK_MONOTONIC, TIMER_ABSTIME, cpu_timer, NULL) == EINTR);
+#endif
 	clock_gettime(CLOCK_MONOTONIC, now);
 	return cpu_timing_latency(now, cpu_timer);
 }

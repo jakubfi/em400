@@ -261,6 +261,11 @@ set(SOURCES_EM400
 	src/libem400.h
 )
 
+if(WIN32)
+	list(APPEND SOURCES_EM400 src/utils/compat_time.h)
+	list(APPEND SOURCES_EM400 src/utils/compat_time.c)
+endif()
+
 if (UI_QT)
 	list(APPEND SOURCES_EM400 src/ui/qt6/qt6.cpp)
 	list(APPEND SOURCES_EM400 src/ui/qt6/resources.qrc)
@@ -403,7 +408,7 @@ target_link_libraries(em400
 )
 
 if(WIN32)
-	target_link_libraries(em400 ws2_32)
+	target_link_libraries(em400 ws2_32 winmm)
 else()
 	target_link_libraries(em400
 		${RT_LIBRARY}
