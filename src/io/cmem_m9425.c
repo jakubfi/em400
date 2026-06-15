@@ -125,7 +125,7 @@ void * cmem_m9425_worker(void *th_id)
 		}
 	}
 
-	pthread_exit(NULL);
+	return NULL;
 }
 
 // -----------------------------------------------------------------------

@@ -846,7 +846,7 @@ static void * mx_event_loop(void *ptr)
 	}
 
 	LOG(L_MX, "Leaving event loop");
-	pthread_exit(NULL);
+	return NULL;
 }
 
 // -----------------------------------------------------------------------

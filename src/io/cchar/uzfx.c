@@ -336,7 +336,7 @@ static void * uzfx_worker_loop(void *ptr)
 	}
 
 	LOG(L_UZFX, "Leaving worker loop");
-	pthread_exit(NULL);
+	return NULL;
 }
 
 // -----------------------------------------------------------------------

@@ -309,7 +309,7 @@ static void * it_cmdproc(void *ptr)
 		free(ev);
 	}
 
-	pthread_exit(NULL);
+	return NULL;
 }
 
 // -----------------------------------------------------------------------

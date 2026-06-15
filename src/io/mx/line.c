@@ -298,7 +298,7 @@ void * mx_line_thread(void *ptr)
 
 	LOG(L_MX, "Left line %i loop, device: %s", line->log_n, line->proto->name);
 
-	pthread_exit(NULL);
+	return NULL;
 }
 
 // -----------------------------------------------------------------------
@@ -360,7 +360,7 @@ void * mx_line_status_thread(void *ptr)
 
 	LOG(L_MX, "Left line %i status loop", line->log_n);
 
-	pthread_exit(NULL);
+	return NULL;
 }
 
 // vim: tabstop=4 shiftwidth=4 autoindent

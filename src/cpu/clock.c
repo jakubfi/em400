@@ -57,7 +57,7 @@ static void * clock_thread(void *ptr)
 		}
 	}
 
-	pthread_exit(NULL);
+	return NULL;
 }
 
 // -----------------------------------------------------------------------

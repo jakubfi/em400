@@ -868,7 +868,7 @@ __attribute__((hot)) static void * cpu_loop(void *ptr)
 	}
 
 	LOG(L_CPU, "Exiting CPU loop");
-	pthread_exit(NULL);
+	return NULL;
 }
 
 // vim: tabstop=4 shiftwidth=4 autoindent

@@ -65,7 +65,7 @@ static void * io_ioloop(void *ptr)
 	uv_run(ioloop, UV_RUN_DEFAULT);
 	LOG(L_IO, "Exited UV loop");
 
-	pthread_exit(NULL);
+	return NULL;
 }
 
 // -----------------------------------------------------------------------
