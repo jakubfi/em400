@@ -284,7 +284,7 @@ void dbg_c_regs(int wid)
 		awtbprint(wid, C_LABEL, "R%i: ", i);
 		awtbprint(wid, C_DATA, "0x%04x %6o %6i ", reg, reg, (int16_t) reg);
 		awtbbinprint(wid, C_DATA, "........ ........", reg, 16);
-		awtbprint(wid, C_DATA, " %-3s %-3s\n", c, r);
+		awtbprint(wid, C_DATA, " %-3s %-3s\n", c, r ? r : "");
 		free(r);
 	}
 }

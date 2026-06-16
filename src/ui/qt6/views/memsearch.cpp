@@ -1,4 +1,5 @@
 #include <cctype>
+#include <cstring>
 #include <QHash>
 #include <QStringList>
 #include <QRegularExpression>
@@ -104,13 +105,6 @@ QString MemSearch::build_search_stream(int nb, Mode mode) const
 	QString s;
 	s.reserve(0x10000 * cpw);
 
-	// Read a page at a time (16 pages of 4096 words) instead of 64K single-word
-	// calls. The block read's own bool is authoritative for "is this page mapped
-	// right now" - we never gate on a separate get_mem_map() snapshot (that plus
-	// a read is a TOCTOU race with the CPU thread's mem_update_map). On false we
-	// never touch the buffer, so both race directions stay benign: a page that
-	// went unmapped reads as a sentinel gap, one that just got mapped is a
-	// stale-view miss (same accepted class as memory changing mid-search).
 	uint16_t buf[0x1000];
 	for (int p = 0 ; p < 16 ; p++) {
 		if (!e->get_mem(nb, p << 12, buf, 0x1000)) {
@@ -127,14 +121,14 @@ QString MemSearch::build_search_stream(int nb, Mode mode) const
 		} else {
 			for (int i = 0 ; i < 0x1000 ; i++) {
 				char dec[4];
+				// not a valid R40 string
 				if (!r40_to_ascii(&buf[i], 1, dec)) {
-					s += QString(3, QChar(0));
+					s += QStringLiteral("   ");
 					continue;
 				}
-				// code 0 decodes to NUL (the blank slot); render it as a space so
-				// it stays a real, matchable char and keeps the fixed cell width
-				for (int j = 0 ; j < 3 ; j++) {
-					if (dec[j] == '\0') dec[j] = ' ';
+				// right-pad to a fixed 3-char. space is invalid R40
+				for (size_t j = strlen(dec) ; j < 3 ; j++) {
+					dec[j] = ' ';
 				}
 				s += QString::fromLatin1(dec, 3);
 			}
@@ -191,7 +185,7 @@ bool MemSearch::find(const QString &q, Mode mode, bool all,
 		}
 		if (words.isEmpty()) return false;
 	} else {
-		// r40 has no lowercase and decodes to uppercase, so fold the query to match
+		// r40 has no lowercase and decodes to uppercase, allow lowercase
 		query = (mode == R40) ? q.toUpper() : q;
 		if (query.isEmpty()) return false;
 	}

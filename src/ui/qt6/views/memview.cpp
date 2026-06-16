@@ -1,4 +1,5 @@
 #include <cctype>
+#include <cstring>
 #include <QPainter>
 #include <QPaintEvent>
 #include <QScrollBar>
@@ -38,8 +39,7 @@ MemView::MemView(QWidget *parent) : QWidget(parent)
 
 	setFocusPolicy(Qt::WheelFocus);
 
-	// header bar. The widget font is Monospace (set above) and would propagate
-	// to these controls; pin the header to the standard UI font instead.
+	// header bar
 	header = new QWidget(this);
 	header->setFont(QApplication::font());
 	QHBoxLayout *hlay = new QHBoxLayout(header);
@@ -530,7 +530,17 @@ void MemView::start_text_edit(int addr, int sub)
 	if (cpu_running || !e || panel == PANEL_OFF) return;
 
 	// nothing to edit where no memory is mapped (reads back as -1)
-	if (e->get_mem(cnb, addr) < 0) return;
+	int val = e->get_mem(cnb, addr);
+	if (val < 0) return;
+
+	// R40 fills left-to-right, so the caret can't sit past the first blank
+	// slot - snap it there so it matches where typing actually lands.
+	if (panel == PANEL_R40) {
+		static const int place[3] = { 1600, 40, 1 };
+		int glyphs = 0;
+		while (glyphs < 3 && ((uint16_t)val / place[glyphs]) % 40 != 0) glyphs++;
+		if (sub > glyphs) sub = glyphs;
+	}
 
 	editing = true;
 	edit_kind = EDIT_TEXT;
@@ -573,6 +583,12 @@ void MemView::text_write_char(QChar c)
 		uint16_t enc = 0;
 		if (!ascii_to_r40(tmp, &len, &enc)) return;
 		static const int place[3] = { 1600, 40, 1 };
+		// R40 strings fill left-to-right; a glyph after a blank slot is not a
+		// valid string. Clamp the write to the first blank slot so typing into
+		// an empty/short word lands contiguously instead of leaving a hole.
+		int glyphs = 0;
+		while (glyphs < 3 && (word / place[glyphs]) % 40 != 0) glyphs++;
+		if (edit_char > glyphs) edit_char = glyphs;
 		int p = place[edit_char];
 		int code = enc / 1600;
 		int old = (word / p) % 40;
@@ -996,12 +1012,15 @@ QString MemView::panel_text(int val) const
 	if (val < 0) return "???";
 	uint16_t word = (uint16_t)val;
 	char buf[4];
-	if (!r40_to_ascii(&word, 1, buf)) return "???";
-	// code 0 decodes to a NUL byte, which has no glyph and would collapse the
-	// monospace cell, mis-aligning the caret and click hit-testing. It is R40's
-	// blank slot, so render it as a space.
-	for (int i = 0 ; i < 3 ; i++) {
-		if (buf[i] == '\0') buf[i] = ' ';
+	// A word that isn't a valid R40 string (e.g. a glyph after a blank slot)
+	// is no more a string than an all-blank word, so render both as blanks
+	// rather than cluttering the column with "???".
+	if (!r40_to_ascii(&word, 1, buf)) return "   ";
+	// r40_to_ascii now stops at the first blank slot (code 0) and terminates,
+	// so the result is 0..3 chars. Right-pad with spaces to keep the monospace
+	// cell width fixed for caret placement and click hit-testing.
+	for (size_t i = strlen(buf) ; i < 3 ; i++) {
+		buf[i] = ' ';
 	}
 	return QString::fromLatin1(buf, 3);
 }
