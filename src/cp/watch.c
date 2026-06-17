@@ -23,21 +23,6 @@
 #include "cp/eval.h"
 #include "cp/watch.h"
 
-// Watches are a UI-thread-only facility. Unlike breakpoints (cp/brk.c), nothing
-// on the CPU thread ever reads this list: brk_check() walks the live breakpoint
-// trees every cycle, which is why brk.c is all atomics and deferred frees. A
-// watch is only ever parsed and evaluated on demand, from the UI thread, so this
-// module is a plain singly linked list with no synchronisation. All entry points
-// must be called from that one thread.
-//
-// We store only the source text, not a parsed tree: watch_eval() re-parses on
-// each call (like brk_eval does for its on-demand path). Evaluation happens at
-// human pace - when the machine is stopped - so re-parsing is free, and keeping
-// no tree means there is no node for a runtime eval error to scribble into and
-// no tree lifetime to manage. watch_eval() does read live machine state, so if
-// called while the CPU runs it can tear, exactly like brk_eval and the register
-// views; in practice watches are read while stopped.
-
 struct watch {
 	unsigned id;
 	char *expr;
@@ -45,9 +30,7 @@ struct watch {
 };
 
 static struct watch *watch_list;
-static struct watch *watch_tail;   // append target, so the list stays in insertion order
-// signed, like brk_id: lets watch_add() spot the counter overflowing (going
-// negative) and refuse rather than wrap around and hand out a colliding id
+static struct watch *watch_tail;
 static int watch_id;
 
 // -----------------------------------------------------------------------
@@ -62,9 +45,6 @@ static struct watch * watch_find(unsigned id)
 }
 
 // -----------------------------------------------------------------------
-// Validate an expression by parsing it (and discarding the tree). Returns 0 on
-// success; on a parse error returns -1 and fills *err_msg (caller frees) plus
-// the *err_beg/*err_end column span.
 static int watch_validate(char *expression, char **err_msg, int *err_beg, int *err_end)
 {
 	struct eval_est *tree = eval_str_parse(expression, err_msg, err_beg, err_end);
@@ -154,10 +134,6 @@ void watch_del_all()
 }
 
 // -----------------------------------------------------------------------
-// Replace a watch's expression in place, keeping its id (so a UI editing a row
-// need not delete-and-readd). On a parse error the old expression is left
-// untouched and -1 is returned with *err_msg/span filled. Returns -1 (without
-// touching *err_msg) if there is no such watch.
 int watch_edit(unsigned id, char *expression, char **err_msg, int *err_beg, int *err_end)
 {
 	struct watch *w = watch_find(id);
@@ -176,10 +152,6 @@ int watch_edit(unsigned id, char *expression, char **err_msg, int *err_beg, int 
 }
 
 // -----------------------------------------------------------------------
-// Evaluate a watch by id. Returns -1 if there is no such watch; otherwise
-// returns 0 and stores the evaluation outcome in *result (the value, or -1 on a
-// runtime eval error, with *err_msg/span filled by the evaluator) - same shape
-// as brk_eval.
 int watch_eval(unsigned id, int *result, char **err_msg, int *err_beg, int *err_end)
 {
 	struct watch *w = watch_find(id);
@@ -192,8 +164,6 @@ int watch_eval(unsigned id, int *result, char **err_msg, int *err_beg, int *err_
 }
 
 // -----------------------------------------------------------------------
-// Iterate watches in insertion order. expr is owned by the list; the callback
-// must not free or retain it past the call.
 void watch_foreach(watch_iter_f cb, void *ctx)
 {
 	for (struct watch *w = watch_list; w; w = w->next) {

@@ -109,7 +109,6 @@ struct em400_device_cfg {
 		struct { const char *image; } winchester;
 		struct { const char *prom; } rtclock;
 		struct { const char *images[EM400_SP45DE_SLOT_COUNT]; } sp45de;
-		// floppy5: no config, selected by type alone
 	};
 };
 
@@ -211,10 +210,10 @@ const char * em400_dev_get_image(unsigned chnum, unsigned devnum, unsigned slot)
 
 bool em400_log_state();
 int em400_log_set(bool state);
-int em400_log_component_state(unsigned component);
+bool em400_log_component_state(unsigned component);
 int em400_log_component_set(unsigned component, bool state);
 const char * em400_log_component_name(unsigned component);
-int em400_log_component_id(char *name);
+int em400_log_component_id(const char *name);
 
 
 // -----------------------------------------------------------------------
@@ -222,6 +221,7 @@ int em400_log_component_id(char *name);
 // -----------------------------------------------------------------------
 
 // LEDs
+
 uint16_t em400_cp_w_leds();
 bool em400_cp_run_led();
 bool em400_cp_wait_led();
@@ -233,6 +233,9 @@ bool em400_cp_q_led();
 bool em400_cp_p_led();
 bool em400_cp_mc_led();
 bool em400_cp_irq_led();
+
+// keys
+
 void em400_cp_kb(uint16_t val);
 // STEP
 // MODE
@@ -246,7 +249,9 @@ void em400_cp_bin();
 void em400_cp_clear();
 void em400_cp_clock(int state);
 void em400_cp_oprq();
+
 // rotary
+
 void em400_cp_reg_select(int reg_id);
 // ignition
 // off?
@@ -296,18 +301,11 @@ int em400_brk_hit();
 // --- EXPRESSION EVALUATION ---------------------------------------------
 // -----------------------------------------------------------------------
 
-// Evaluate a one-shot expression (same syntax as breakpoints/watches). On
-// success returns 0 and stores the value in *result; on a parse or eval error
-// returns -1 and sets *err_msg (caller frees) plus the *err_beg/*err_end span.
 int em400_eval(char *expr, int *result, char **err_msg, int *err_beg, int *err_end);
 
 // -----------------------------------------------------------------------
 // --- WATCHES -----------------------------------------------------------
 // -----------------------------------------------------------------------
-
-// Watches are stored expressions inspected while the machine is stopped. They
-// are a UI-thread-only facility (never evaluated on the CPU thread), so all of
-// these must be called from the UI thread.
 
 typedef void (*em400_watch_cb)(unsigned id, const char *expr, void *ctx);
 

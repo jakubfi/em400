@@ -1,4 +1,4 @@
-//  Copyright (c) 2012-2024 Jakub Filipowicz <jakubf@gmail.com>
+//  Copyright (c) 2012-2026 Jakub Filipowicz <jakubf@gmail.com>
 //
 //  This program is free software; you can redistribute it and/or modify
 //  it under the terms of the GNU General Public License as published by
@@ -31,16 +31,22 @@
 #include "cp/eval.h"
 #include "eval_parser.h"
 
+struct eval_est {
+	int type;
+	int val;
+	int nb;
+	char *err;
+	int c_beg, c_end;
+	struct eval_est *n1;
+	struct eval_est *n2;
+};
+
 typedef struct eval_yy_buffer_state *YY_BUFFER_STATE;
 int eval_yyparse(struct eval_est **tree);
 YY_BUFFER_STATE eval_yy_scan_string(char *input);
 void eval_yy_delete_buffer(YY_BUFFER_STATE b);
 
-// Last node that failed during eval_est_eval(), used by eval_str_eval() to
-// report the message. Thread-local: the evaluator runs on both the CPU thread
-// (brk_check on the live breakpoint tree) and the UI thread (brk/watch/eval on
-// fresh-parsed trees), and no tree is shared between threads, so a per-thread
-// slot keeps the two from clobbering each other's error.
+// thread-local: the evaluator runs on both the CPU thread and UI thread
 static thread_local struct eval_est *eval_eval_err;
 
 // -----------------------------------------------------------------------
@@ -51,6 +57,8 @@ static thread_local struct eval_est *eval_eval_err;
 static struct eval_est * eval_est_create()
 {
 	struct eval_est *n = (struct eval_est *) malloc(sizeof(struct eval_est));
+	if (!n) return NULL;
+
 	n->type = EVAL_AST_N_NONE;
 	n->val = 0;
 	n->nb = 0;
@@ -67,6 +75,7 @@ static struct eval_est * eval_est_create()
 void eval_est_delete(struct eval_est *n)
 {
 	if (!n) return;
+
 	eval_est_delete(n->n1);
 	eval_est_delete(n->n2);
 	free(n->err);
@@ -77,6 +86,8 @@ void eval_est_delete(struct eval_est *n)
 struct eval_est * eval_est_leaf(int type, int16_t val)
 {
 	struct eval_est *n = eval_est_create();
+	if (!n) return NULL;
+
 	n->type = type;
 	n->val = val;
 	return n;
@@ -86,6 +97,12 @@ struct eval_est * eval_est_leaf(int type, int16_t val)
 struct eval_est * eval_est_op(int oper, struct eval_est *n1, struct eval_est *n2)
 {
 	struct eval_est *n = eval_est_create();
+	if (!n) {
+		eval_est_delete(n1);
+		eval_est_delete(n2);
+		return NULL;
+	}
+
 	n->type = EVAL_AST_N_OP;
 	n->val = oper;
 	n->n1 = n1;
@@ -94,12 +111,11 @@ struct eval_est * eval_est_op(int oper, struct eval_est *n1, struct eval_est *n2
 }
 
 // -----------------------------------------------------------------------
-// Location-match leaf behind the "@nb:addr" breakpoint shorthand: equivalent to
-// "q*nb==<nb> && ic==<addr>". A dedicated leaf (addr in ->val, nb in ->nb)
-// instead of a synthetic subtree keeps the per-instruction breakpoint eval cheap.
 struct eval_est * eval_est_loc(int nb, int addr)
 {
 	struct eval_est *n = eval_est_leaf(EVAL_AST_N_LOC, addr);
+	if (!n) return NULL;
+
 	n->nb = nb;
 	return n;
 }
@@ -108,6 +124,12 @@ struct eval_est * eval_est_loc(int nb, int addr)
 struct eval_est * eval_est_mem(struct eval_est *n1, struct eval_est *n2)
 {
 	struct eval_est *n = eval_est_create();
+	if (!n) {
+		eval_est_delete(n1);
+		eval_est_delete(n2);
+		return NULL;
+	}
+
 	n->type = EVAL_AST_N_MEM;
 	n->n1 = n1;
 	n->n2 = n2;
@@ -115,9 +137,11 @@ struct eval_est * eval_est_mem(struct eval_est *n1, struct eval_est *n2)
 }
 
 // -----------------------------------------------------------------------
-struct eval_est * eval_est_err(char *err)
+struct eval_est * eval_est_err(const char *err)
 {
 	struct eval_est *n = eval_est_create();
+	if (!n) return NULL;
+
 	n->type = EVAL_AST_N_ERR;
 	n->err = strdup(err);
 	eval_eval_err = n;
@@ -144,7 +168,7 @@ static int __esterr(struct eval_est * n, const char *format, ...)
 // -----------------------------------------------------------------------
 
 // -----------------------------------------------------------------------
-static int eval_est_eval_val(struct eval_est * n)
+static int eval_est_eval_val(const struct eval_est * n)
 {
 	return (uint16_t) n->val;
 }
@@ -179,7 +203,7 @@ static int eval_est_eval_flag(struct eval_est * n)
 }
 
 // -----------------------------------------------------------------------
-static int eval_est_eval_rz(struct eval_est * n)
+static int eval_est_eval_rz(const struct eval_est * n)
 {
 	return int_get_nchan();
 }
@@ -195,41 +219,43 @@ static int eval_est_eval_rz_bit(struct eval_est * n)
 }
 
 // -----------------------------------------------------------------------
-static int eval_est_eval_alarm(struct eval_est * n)
+static int eval_est_eval_alarm(const struct eval_est * n)
 {
 	return rALARM;
 }
 
 // -----------------------------------------------------------------------
-static int eval_est_eval_mc(struct eval_est * n)
+static int eval_est_eval_mc(const struct eval_est * n)
 {
 	return mc;
 }
 
 // -----------------------------------------------------------------------
-static int eval_est_eval_nb(struct eval_est * n)
+static int eval_est_eval_nb(const struct eval_est * n)
 {
 	return nb;
 }
 
 // -----------------------------------------------------------------------
-static int eval_est_eval_q(struct eval_est * n)
+static int eval_est_eval_q(const struct eval_est * n)
 {
 	return q;
 }
-static int eval_est_eval_loc(struct eval_est * n)
+
+// -----------------------------------------------------------------------
+static int eval_est_eval_loc(const struct eval_est * n)
 {
 	return (q*nb == n->nb) && (cpu_reg_fetch(EM400_REG_IC) == (uint16_t) n->val);
 }
 
 // -----------------------------------------------------------------------
-static int eval_est_eval_bs(struct eval_est * n)
+static int eval_est_eval_bs(const struct eval_est * n)
 {
 	return bs;
 }
 
 // -----------------------------------------------------------------------
-static int eval_est_eval_rm(struct eval_est * n)
+static int eval_est_eval_rm(const struct eval_est * n)
 {
 	return rm;
 }
@@ -273,6 +299,7 @@ static int eval_est_eval_mem(struct eval_est *n)
 static int eval_est_eval_logical(int op, struct eval_est * n)
 {
 	int v1, v2;
+	// if v1 already decides the result, n2 is left unevaluated
 	v1 = eval_est_eval(n->n1);
 	if (v1 < 0) {
 		return -1;
@@ -282,26 +309,27 @@ static int eval_est_eval_logical(int op, struct eval_est * n)
 		case AND:
 			if (!v1) {
 				return 0;
+			}
+
+			v2 = eval_est_eval(n->n2);
+			if (v2 < 0) {
+				return -1;
 			} else {
-				v2 = eval_est_eval(n->n2);
-				if (v2 < 0) {
-					return -1;
-				} else {
-					return (v1 && v2);
-				}
+				return (v2 != 0);
 			}
 		case OR:
 			if (v1) {
 				return 1;
-			} else {
-				v2 = eval_est_eval(n->n2);
-				if (v2 < 0) {
-					return -1;
-				} else {
-					return (v1 || v2);
-				}
 			}
-		default: return __esterr(n, "Unknown operator");
+
+			v2 = eval_est_eval(n->n2);
+			if (v2 < 0) {
+				return -1;
+			} else {
+				return (v2 != 0);
+			}
+		default:
+			return __esterr(n, "Unknown operator");
 	}
 }
 
@@ -334,9 +362,6 @@ static int eval_est_eval_op(struct eval_est * n)
 		case '+': return (uint16_t) (v1 + v2);
 		case '*': return (uint16_t) (v1 * v2);
 		case '/':
-			// guard the divide: v1/v2 with v2==0 raises SIGFPE and would take
-			// the whole emulator down (this runs on the CPU thread for every
-			// breakpoint eval, and on the UI thread for eval/watches)
 			if (v2 == 0) {
 				return __esterr(n, "Division by zero");
 			}
@@ -417,9 +442,7 @@ int eval_str_eval(char *str, char **err_msg, int *err_beg, int *err_end)
 		goto fin;
 	}
 
-	// clear any stale pointer from a previous eval on this thread: that node
-	// belongs to an already-freed tree, so it must not be read if this eval
-	// returns -1 without setting it
+	// clear any stale pointer from a previous eval
 	eval_eval_err = NULL;
 	res = eval_est_eval(tree);
 	if (res < 0) {

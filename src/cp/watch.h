@@ -20,13 +20,6 @@
 
 #include "cp/eval.h"
 
-// A "watch" is a stored expression the user inspects while the machine is
-// stopped (on a breakpoint or single-stepped). Unlike a breakpoint it is never
-// evaluated on the CPU thread: it holds only the source text and is parsed and
-// evaluated on demand, on the UI thread, by watch_eval(). The whole module is
-// therefore plain (no atomics) and MUST be driven from a single thread (the UI
-// thread) - see watch.c.
-
 typedef void (*watch_iter_f)(unsigned id, const char *expr, void *ctx);
 
 void watch_del_all();

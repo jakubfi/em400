@@ -172,8 +172,6 @@ void em400_shutdown()
 	timeEndPeriod(1);
 #endif
 	io_shutdown();
-	// cpu_shutdown() joins the CPU thread; brk_del_all() must run after it so
-	// it cannot free breakpoints while brk_check() is still traversing them
 	cpu_shutdown();
 	brk_del_all();
 	watch_del_all();
@@ -223,28 +221,24 @@ const char * em400_dev_get_image(unsigned chnum, unsigned devnum, unsigned slot)
 // -----------------------------------------------------------------------
 bool em400_log_state()
 {
-	int state = log_is_enabled();
-	return state;
+	return log_is_enabled() ? true : false;
 }
 
 // -----------------------------------------------------------------------
 int em400_log_set(bool state)
 {
-	int res = -1;
 	if (state) {
-		res = log_enable();
+		return log_enable();
 	} else {
 		log_disable();
-		res = 0;
+		return E_OK;
 	}
-	return res;
 }
 
 // -----------------------------------------------------------------------
-int em400_log_component_state(unsigned component)
+bool em400_log_component_state(unsigned component)
 {
-	int state = log_component_get(component) ? 1 : 0;
-	return state;
+	return log_component_get(component) ? true : false;
 }
 
 // -----------------------------------------------------------------------
@@ -265,7 +259,7 @@ const char * em400_log_component_name(unsigned component)
 }
 
 // -----------------------------------------------------------------------
-int em400_log_component_id(char *name)
+int em400_log_component_id(const char *name)
 {
 	return log_get_component_id(name);
 }
@@ -479,20 +473,20 @@ uint32_t em400_rz32()
 int em400_int_set(unsigned interrupt)
 {
 	if (interrupt >= 32) {
-		return -1;
+		return E_ERR;
 	}
 	int_set(interrupt);
-	return 0;
+	return E_OK;
 }
 
 // -----------------------------------------------------------------------
 int em400_int_clear(unsigned interrupt)
 {
 	if (interrupt >= 32) {
-		return -1;
+		return E_ERR;
 	}
 	int_clear(interrupt);
-	return 0;
+	return E_OK;
 }
 
 // -----------------------------------------------------------------------
@@ -635,10 +629,10 @@ int em400_eval(char *expr, int *result, char **err_msg, int *err_beg, int *err_e
 {
 	int res = eval_str_eval(expr, err_msg, err_beg, err_end);
 	if (res < 0) {
-		return -1;
+		return E_ERR;
 	}
 	*result = res;
-	return 0;
+	return E_OK;
 }
 
 // -----------------------------------------------------------------------

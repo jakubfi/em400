@@ -27,6 +27,7 @@
 #include <signal.h>
 #include <errno.h>
 #include <stdbool.h>
+#include <stdatomic.h>
 #include <string.h>
 #include <pthread.h>
 #include <limits.h>
@@ -73,10 +74,7 @@ bool cpu_user_io_illegal;
 bool awp_enabled;
 static bool nomem_stop;
 
-// _Atomic so the cmd/UI reader (em400_ips_get) and this cpu-thread writer race
-// is defined, not UB. relaxed only - the value is intentionally don't-care while
-// the CPU runs
-_Atomic unsigned long ips_counter;
+atomic_ulong ips_counter;
 // negative instruction_time_ns = skip next cpu sleep
 static int instruction_time_ns;
 
@@ -236,10 +234,8 @@ int cpu_state_change(unsigned to, unsigned from)
 	pthread_mutex_lock(&cpu_wake_mutex);
 	unsigned last_state = atomic_load_explicit(&cpu_state, memory_order_acquire);
 	if ((from == EM400_STATE_ANY) || (last_state == from)) {
-		// the last breakpoint hit is valid only while stopped on it; any
-		// forward motion (RUN/CYCLE) or reset (CLO) invalidates it. brk_check()
-		// sets the hit from the CPU loop, so clearing it belongs here too -
-		// the control panel is faithful hardware and knows nothing of breakpoints
+		// the last breakpoint hit is valid only while stopped on it
+		// RUN/CYCLE/CLO invalidates it
 		switch (to) {
 			case EM400_STATE_RUN:
 			case EM400_STATE_CYCLE:
@@ -703,8 +699,8 @@ static inline long cpu_timing_busy_wait(struct timespec *now, const struct times
 static inline long cpu_timing_sleep_wait(struct timespec *now, struct timespec *cpu_timer)
 {
 #ifdef _WIN32
-	// winpthreads clock_nanosleep rejects CLOCK_MONOTONIC; use a high-res
-	// waitable timer instead (see compat_time.h).
+	// winpthreads clock_nanosleep rejects CLOCK_MONOTONIC
+	// use a high-res waitable timer instead
 	compat_sleep_until(cpu_timer);
 #else
 	while (clock_nanosleep(CLOCK_MONOTONIC, TIMER_ABSTIME, cpu_timer, NULL) == EINTR);

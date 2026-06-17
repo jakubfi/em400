@@ -39,15 +39,7 @@ enum eval_est_type {
 	EVAL_AST_N_LOC,
 };
 
-struct eval_est {
-	int type;
-	int val;
-	int nb;
-	char *err;
-	int c_beg, c_end;
-	struct eval_est *n1;
-	struct eval_est *n2;
-};
+struct eval_est;
 
 // node creation
 void eval_est_delete(struct eval_est *n);
@@ -55,7 +47,7 @@ struct eval_est * eval_est_leaf(int type, int16_t val);
 struct eval_est * eval_est_op(int oper, struct eval_est *n1, struct eval_est *n2);
 struct eval_est * eval_est_mem(struct eval_est *n1, struct eval_est *n2);
 struct eval_est * eval_est_loc(int nb, int addr);
-struct eval_est * eval_est_err(char *err);
+struct eval_est * eval_est_err(const char *err);
 
 // node evaluation
 int eval_est_eval(struct eval_est *n);

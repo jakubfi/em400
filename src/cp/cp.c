@@ -1,4 +1,4 @@
-//  Copyright (c) 2017-2024 Jakub Filipowicz <jakubf@gmail.com>
+//  Copyright (c) 2017-2026 Jakub Filipowicz <jakubf@gmail.com>
 //
 //  This program is free software; you can redistribute it and/or modify
 //  it under the terms of the GNU General Public License as published by

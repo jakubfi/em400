@@ -1,4 +1,4 @@
-//  Copyright (c) 2016-2024 Jakub Filipowicz <jakubf@gmail.com>
+//  Copyright (c) 2016-2026 Jakub Filipowicz <jakubf@gmail.com>
 //
 //  This program is free software; you can redistribute it and/or modify
 //  it under the terms of the GNU General Public License as published by
@@ -28,29 +28,23 @@
 
 #include "libem400.h"
 
+typedef _Atomic(struct brk_point *) atomic_brk_ptr;
 
 struct brk_point {
 	unsigned id;
 	char *expr;
 	struct eval_est *tree;
-	_Atomic (struct brk_point *) next;
-	_Atomic int deleted;
-	_Atomic int enabled;
+	atomic_brk_ptr next;
+	atomic_int deleted;
+	atomic_int enabled;
 };
 
-static _Atomic (struct brk_point *) brk_list;
-// UI-thread-only (insert/cleanup/del_all all UI) so no atomic needed
-static int brk_id = 0;
-
-// id of the breakpoint that caused the current stop, or -1. Set on the CPU
-// thread by brk_check(), cleared on the UI thread whenever the front panel
-// resumes, advances or resets the machine. Relaxed access is enough: the
-// cpu_state release/acquire handshake between the two threads carries this
-// value across.
-static _Atomic int brk_hit = -1;
+static atomic_brk_ptr brk_list;
+static int brk_id = 0; // UI thread only, so no atomic needed
+static atomic_int brk_hit = -1;
 
 // -----------------------------------------------------------------------
-static int brk_insert(struct eval_est *tree, char *expr)
+static int brk_insert(struct eval_est *tree, const char *expr)
 {
 	if (brk_id < 0) {
 		return -1;
@@ -64,11 +58,11 @@ static int brk_insert(struct eval_est *tree, char *expr)
 	brkp->id = brk_id;
 	brkp->tree = tree;
 	brkp->expr = strdup(expr);
-	// node not published yet, so relaxed stores are enough; the release on
-	// brk_list below is what publishes a fully-built node to the reader
+	// node not published yet, so relaxed stores are enough
 	atomic_store_explicit(&brkp->next, atomic_load_explicit(&brk_list, memory_order_acquire), memory_order_relaxed);
 	atomic_store_explicit(&brkp->deleted, 0, memory_order_relaxed);
 	atomic_store_explicit(&brkp->enabled, 1, memory_order_relaxed);
+	// release: publishes a fully-built node to the reader
 	atomic_store_explicit(&brk_list, brkp, memory_order_release);
 	brk_id++;
 
@@ -109,7 +103,6 @@ static void brk_cleanup()
 	struct brk_point *prev = NULL;
 
 	while (brkp) {
-		// grab next before any free, brkp may be gone afterwards
 		struct brk_point *next = atomic_load_explicit(&brkp->next, memory_order_acquire);
 		if (atomic_load_explicit(&brkp->deleted, memory_order_relaxed)) {
 			if (prev) {
@@ -118,7 +111,6 @@ static void brk_cleanup()
 				atomic_store_explicit(&brk_list, next, memory_order_release);
 			}
 			brk_free(brkp);
-			// prev unchanged, brkp was unlinked
 		} else {
 			prev = brkp;
 		}
@@ -192,9 +184,6 @@ int brk_eval(unsigned id, int *result, char **err_msg, int *err_beg, int *err_en
 }
 
 // -----------------------------------------------------------------------
-// UI-thread iterator: expr is immutable after insert and list mutation is
-// UI-thread-only, so traversal here only races with the CPU thread's
-// read-only brk_check().
 void brk_foreach(brk_iter_f cb, void *ctx)
 {
 	struct brk_point *brkp = atomic_load_explicit(&brk_list, memory_order_acquire);
@@ -227,28 +216,12 @@ bool brk_check()
 }
 
 // -----------------------------------------------------------------------
-// Returns the id of the breakpoint that caused the current stop, or -1 if the
-// machine was not stopped by a breakpoint. Read on the UI thread after it sees
-// the CPU stopped.
 int brk_hit_get()
 {
 	return atomic_load_explicit(&brk_hit, memory_order_relaxed);
 }
 
 // -----------------------------------------------------------------------
-// Drops the recorded hit. Invoked from the front-panel state transition that
-// resumes, advances or resets instruction execution (run/cycle/clear), so a
-// stale hit is never reported for a stop that some later, non-breakpoint action
-// (HLT, manual stop, ...) caused.
-//
-// This deliberately hangs off the central state-transition path rather than
-// each UI: that transition is the single chokepoint all three UIs (qt, curses,
-// cmd) funnel through, and the clear there is ordered against the CPU thread's
-// brk_check() store for free by the cpu_state release/acquire handshake. Pushing
-// the clear into the UIs would make it a per-UI convention (easy to miss on one
-// resume path in one frontend) and, if a UI cleared while the CPU was running,
-// would race brk_check() and could drop a fresh hit. Keep brk_hit a pure
-// "current stop reason" that UIs only read; do not move this clear into the UIs.
 void brk_hit_clear()
 {
 	atomic_store_explicit(&brk_hit, -1, memory_order_relaxed);
@@ -273,6 +246,5 @@ int brk_add(char *expression, char **err_msg, int *err_beg, int *err_end)
 
 	return id;
 }
-
 
 // vim: tabstop=4 shiftwidth=4 autoindent

@@ -284,9 +284,9 @@ int do_decode(int fi, int fo)
 int main(int argc, char **argv)
 {
 	int fi, fo;
-	int using_serial = 0;
 
 #ifndef _WIN32
+	int using_serial = 0;
 	struct stat sb;
 	speed = serial_int2speed(9600);
 #endif
