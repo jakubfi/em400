@@ -1,0 +1,66 @@
+name: AppImage
+
+on:
+  push:
+    tags: ['release-*']      # tagged release -> build + attach to the GitHub Release
+    branches: ['appimage']   # TEMPORARY: exercise the workflow on the dev branch (remove before merge)
+  workflow_dispatch: {}      # manual ad-hoc test build (artifact only)
+
+jobs:
+  appimage:
+    name: Build AppImage
+    runs-on: ubuntu-22.04    # old glibc (2.35) baseline -> portable AppImage
+    env:
+      BUILD_TYPE: Release
+      # linuxdeploy-plugin-qt needs to locate the Qt6 qmake.
+      QMAKE: /usr/lib/qt6/bin/qmake6
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0     # so `git describe --tags` resolves the version
+
+      - name: Update apt
+        run: sudo apt-get update
+
+      - name: Install dependencies
+        run: >
+          sudo apt-get install -y
+          qt6-base-dev qt6-multimedia-dev
+          libgl1-mesa-dev libegl1-mesa-dev
+          libuv1-dev libncurses-dev libreadline-dev
+          libpulse-dev libasound2-dev
+          flex libfl-dev bison
+          file desktop-file-utils
+
+      - name: Build and install emawp
+        run: git clone https://github.com/jakubfi/emawp && cd emawp && cmake -B build && cmake --build build && sudo cmake --install build && sudo ldconfig
+
+      - name: Build and install emcrk
+        run: git clone https://github.com/jakubfi/emcrk && cd emcrk && cmake -B build && cmake --build build && sudo cmake --install build && sudo ldconfig
+
+      - name: Build and install emdas
+        run: git clone https://github.com/jakubfi/emdas && cd emdas && cmake -B build && cmake --build build && sudo cmake --install build && sudo ldconfig
+
+      - name: Configure
+        run: cmake -B build -DCMAKE_BUILD_TYPE=${{env.BUILD_TYPE}}
+
+      - name: Build
+        run: cmake --build build --config ${{env.BUILD_TYPE}}
+
+      - name: Build AppImage
+        run: bash packaging/build-appimage.sh
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: em400-appimage
+          path: dist/em400-*.AppImage
+          if-no-files-found: error
+
+      - name: Attach to release
+        if: startsWith(github.ref, 'refs/tags/release-')
+        uses: softprops/action-gh-release@v2
+        with:
+          files: dist/em400-*.AppImage
