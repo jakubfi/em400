@@ -76,6 +76,7 @@ private slots:
 	void slot_edit_mode_changed(bool editing, bool insert);
 
 	void load_os_image();
+	void open_config();
 
 public slots:
 	void slot_debugger_enabled_changed(bool state);

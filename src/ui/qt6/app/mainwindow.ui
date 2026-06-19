@@ -61,6 +61,8 @@
     </property>
     <addaction name="actionLoad_OS_image"/>
     <addaction name="separator"/>
+    <addaction name="actionPreferences"/>
+    <addaction name="separator"/>
     <addaction name="actionQuit"/>
    </widget>
    <widget class="QMenu" name="menuView">
@@ -79,6 +81,11 @@
   <action name="actionLoad_OS_image">
    <property name="text">
     <string>Load OS image...</string>
+   </property>
+  </action>
+  <action name="actionPreferences">
+   <property name="text">
+    <string>Preferences...</string>
    </property>
   </action>
   <action name="actionQuit">

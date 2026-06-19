@@ -102,6 +102,13 @@ struct appcfg_machine * appcfg_machine_find(struct appcfg *c, const char *id)
 }
 
 // -----------------------------------------------------------------------
+void appcfg_machine_set_name(struct appcfg_machine *m, const char *name)
+{
+	free(m->name);
+	m->name = (name && *name) ? dup_str(name) : NULL; // empty name == none, UI falls back to id
+}
+
+// -----------------------------------------------------------------------
 struct appcfg_machine * appcfg_machine_add(struct appcfg *c, const char *id, const char *name)
 {
 	if (c->n_machines == c->cap_machines) {

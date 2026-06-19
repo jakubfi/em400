@@ -51,6 +51,10 @@ struct appcfg {
 
 extern struct appcfg appcfg;
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 int appcfg_build_from_ini(em400_cfg *cfg);
 int appcfg_write(const struct appcfg *c, const char *path);
 void appcfg_free(void);
@@ -59,6 +63,11 @@ struct appcfg_machine *appcfg_machine_add(struct appcfg *c, const char *id, cons
 void appcfg_machine_delete(struct appcfg *c, const char *id);
 struct appcfg_machine *appcfg_machine_find(struct appcfg *c, const char *id);
 struct em400_machine_cfg *appcfg_active_machine(struct appcfg *c);
+void appcfg_machine_set_name(struct appcfg_machine *m, const char *name);
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif
 

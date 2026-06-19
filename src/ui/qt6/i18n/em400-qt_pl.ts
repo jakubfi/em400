@@ -56,6 +56,201 @@
     </message>
 </context>
 <context>
+    <name>ConfigDialog</name>
+    <message>
+        <source>Configuration</source>
+        <translation>Konfiguracja</translation>
+    </message>
+    <message>
+        <source>General</source>
+        <translation>Ogólne</translation>
+    </message>
+    <message>
+        <source>Sound</source>
+        <translation>Dźwięk</translation>
+    </message>
+    <message>
+        <source>Machine</source>
+        <translation>Maszyna</translation>
+    </message>
+    <message>
+        <source>Logging</source>
+        <translation>Logowanie</translation>
+    </message>
+    <message>
+        <source>Curses (text debugger)</source>
+        <translation>Curses (debugger tekstowy)</translation>
+    </message>
+    <message>
+        <source>Qt (graphical)</source>
+        <translation>Qt (graficzny)</translation>
+    </message>
+    <message>
+        <source>Command line</source>
+        <translation>Wiersz poleceń</translation>
+    </message>
+    <message>
+        <source>User interface:</source>
+        <translation>Interfejs użytkownika:</translation>
+    </message>
+    <message>
+        <source>%1 Hz</source>
+        <translation>%1 Hz</translation>
+    </message>
+    <message>
+        <source>Active machine:</source>
+        <translation>Aktywna maszyna:</translation>
+    </message>
+    <message>
+        <source>Emulate real CPU speed</source>
+        <translation>Emuluj rzeczywistą prędkość procesora</translation>
+    </message>
+    <message>
+        <source> us</source>
+        <translation> us</translation>
+    </message>
+    <message>
+        <source>Emulation quantum:</source>
+        <translation>Kwant emulacji:</translation>
+    </message>
+    <message>
+        <source>Sound output enabled</source>
+        <translation>Wyjście dźwięku włączone</translation>
+    </message>
+    <message>
+        <source>Volume:</source>
+        <translation>Głośność:</translation>
+    </message>
+    <message>
+        <source> Hz</source>
+        <translation type="vanished"> Hz</translation>
+    </message>
+    <message>
+        <source>Sample rate:</source>
+        <translation>Częstotliwość próbkowania:</translation>
+    </message>
+    <message>
+        <source>Buffer length (frames):</source>
+        <translation>Długość bufora (ramki):</translation>
+    </message>
+    <message>
+        <source> ms</source>
+        <translation> ms</translation>
+    </message>
+    <message>
+        <source>Latency:</source>
+        <translation>Opóźnienie:</translation>
+    </message>
+    <message>
+        <source>Backend:</source>
+        <translation>Backend:</translation>
+    </message>
+    <message>
+        <source>Device:</source>
+        <translation>Urządzenie:</translation>
+    </message>
+    <message>
+        <source>Name:</source>
+        <translation>Nazwa:</translation>
+    </message>
+    <message>
+        <source>CPU</source>
+        <translation>CPU</translation>
+    </message>
+    <message>
+        <source>Floating point unit (AWP)</source>
+        <translation>Jednostka zmiennoprzecinkowa (AWP)</translation>
+    </message>
+    <message>
+        <source>CPU modifications</source>
+        <translation>Modyfikacje procesora</translation>
+    </message>
+    <message>
+        <source>I/O illegal in user mode</source>
+        <translation>We/Wy niedozwolone w trybie użytkownika</translation>
+    </message>
+    <message>
+        <source>Stop on missing memory</source>
+        <translation>Zatrzymaj przy braku pamięci</translation>
+    </message>
+    <message>
+        <source>%1 ms</source>
+        <translation>%1 ms</translation>
+    </message>
+    <message>
+        <source>Clock period:</source>
+        <translation>Okres zegara:</translation>
+    </message>
+    <message>
+        <source>Memory</source>
+        <translation>Pamięć</translation>
+    </message>
+    <message>
+        <source>Elwro modules:</source>
+        <translation>Moduły Elwro:</translation>
+    </message>
+    <message>
+        <source>MEGA modules:</source>
+        <translation>Moduły MEGA:</translation>
+    </message>
+    <message>
+        <source>Hardwired OS segments:</source>
+        <translation>Segmenty systemowe (sprzętowe):</translation>
+    </message>
+    <message>
+        <source>Browse...</source>
+        <translation>Przeglądaj...</translation>
+    </message>
+    <message>
+        <source>MEGA PROM image</source>
+        <translation>Obraz PROM MEGA</translation>
+    </message>
+    <message>
+        <source>MEGA PROM image:</source>
+        <translation>Obraz PROM MEGA:</translation>
+    </message>
+    <message>
+        <source>Preload image</source>
+        <translation>Obraz wstępnie ładowany</translation>
+    </message>
+    <message>
+        <source>Preload image:</source>
+        <translation>Obraz wstępnie ładowany:</translation>
+    </message>
+    <message>
+        <source>I/O</source>
+        <translation>We/Wy</translation>
+    </message>
+    <message>
+        <source>Logging enabled</source>
+        <translation>Logowanie włączone</translation>
+    </message>
+    <message>
+        <source>Components</source>
+        <translation>Komponenty</translation>
+    </message>
+    <message>
+        <source>Select all</source>
+        <translation>Zaznacz wszystkie</translation>
+    </message>
+    <message>
+        <source>Select none</source>
+        <translation>Odznacz wszystkie</translation>
+    </message>
+    <message>
+        <source>Log file</source>
+        <translation>Plik logu</translation>
+    </message>
+    <message>
+        <source>Log file:</source>
+        <translation>Plik logu:</translation>
+    </message>
+    <message>
+        <source>Line buffered</source>
+        <translation>Buforowanie liniowe</translation>
+    </message>
+</context>
+<context>
     <name>DasmView</name>
     <message>
         <source>NB:</source>
@@ -190,6 +385,10 @@ Brak ramki: przerwanie niemaskowalne</translation>
     <message>
         <source>Load OS image...</source>
         <translation>Wczytaj obraz OS...</translation>
+    </message>
+    <message>
+        <source>Preferences...</source>
+        <translation>Preferencje...</translation>
     </message>
     <message>
         <source>Quit</source>

@@ -13,6 +13,7 @@
 #include "ui_mainwindow.h"
 #include "emdas.h"
 #include "theme.h"
+#include "configdialog.h"
 
 // -----------------------------------------------------------------------
 // A flat vertical separator that tracks the theme. A plain (non-bevelled)
@@ -181,6 +182,7 @@ void MainWindow::wire_connections()
 {
 	// MainWindow -> ControlPanel
 	connect(ui->actionLoad_OS_image, &QAction::triggered, this, &MainWindow::load_os_image);
+	connect(ui->actionPreferences, &QAction::triggered, this, &MainWindow::open_config);
 	connect(ui->actionQuit, &QAction::triggered, this, &MainWindow::close);
 	connect(ui->actionSmall_Control_Panel, &QAction::toggled, this, &MainWindow::slot_smallcp_changed);
 	connect(ui->actionDebugger, &QAction::toggled, this, &MainWindow::slot_debugger_enabled_changed);
@@ -494,6 +496,13 @@ void MainWindow::slot_edit_mode_changed(bool editing, bool insert)
 {
 	edit_box->setVisible(editing);
 	edit_mode->setText(insert ? tr("Edit: insert") : tr("Edit: overwrite"));
+}
+
+// -----------------------------------------------------------------------
+void MainWindow::open_config()
+{
+	ConfigDialog dialog(this);
+	dialog.exec();
 }
 
 // -----------------------------------------------------------------------

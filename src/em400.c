@@ -154,7 +154,7 @@ void em400_mkconfdir()
 	mkdir(base);
 #else
 	mkdir(base, 0700); // ensure the XDG base (e.g. ~/.config) exists first
-Eendif
+#endif
 
 	char *dir = str_concat(base, "/em400");
 	if (dir) {

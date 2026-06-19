@@ -299,6 +299,7 @@ if (UI_QT)
 	list(APPEND SOURCES_EM400 src/ui/qt6/app/mainwindow.h src/ui/qt6/app/mainwindow.cpp)
 	list(APPEND SOURCES_EM400 src/ui/qt6/app/emumodel.h src/ui/qt6/app/emumodel.cpp)
 	list(APPEND SOURCES_EM400 src/ui/qt6/app/theme.h src/ui/qt6/app/theme.cpp)
+	list(APPEND SOURCES_EM400 src/ui/qt6/app/configdialog.h src/ui/qt6/app/configdialog.cpp)
 
 	# dockable debugger views
 	list(APPEND SOURCES_EM400 src/ui/qt6/views/dasmview.h src/ui/qt6/views/dasmview.cpp)
