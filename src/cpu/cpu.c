@@ -52,6 +52,7 @@
 #include "log.h"
 #include "log_crk.h"
 #include "cp/brk.h"
+#include "cp/cp.h"
 
 bool cpu_initialized;
 
@@ -337,7 +338,7 @@ int cpu_init(const struct em400_host_cfg *host, const struct em400_machine_cfg *
 	rALARM = false;
 	mc = 0;
 	cpu_mod_off();
-	cpu_state = EM400_STATE_STOP;
+	cpu_state = cp_start_get() ? EM400_STATE_RUN : EM400_STATE_STOP;
 
 	if (clock_init(machine->cpu.clock_period_ms) != E_OK) {
 		LOGERR("Failed to initialize clock");

@@ -18,6 +18,7 @@
 #include <stdlib.h>
 #include <unistd.h>
 #include <stdbool.h>
+#include <stdatomic.h>
 
 #include "cpu/cpu.h"
 #include "cpu/interrupts.h"
@@ -27,6 +28,7 @@
 #include "io/io.h"
 #include "utils/utils.h"
 
+static atomic_bool start_switch;
 
 // -----------------------------------------------------------------------
 uint16_t cp_bus_w()
@@ -43,11 +45,19 @@ void cp_kb_set(uint16_t val)
 // -----------------------------------------------------------------------
 void cp_start(bool state)
 {
+	atomic_store_explicit(&start_switch, state, memory_order_release);
+	if (cpu_state_get() == EM400_STATE_OFF) return;
 	if (state) {
 		cpu_state_change(EM400_STATE_RUN, EM400_STATE_STOP);
 	} else {
 		cpu_state_change(EM400_STATE_STOP, EM400_STATE_ANY);
 	}
+}
+
+// -----------------------------------------------------------------------
+bool cp_start_get()
+{
+	return atomic_load_explicit(&start_switch, memory_order_acquire);
 }
 
 // -----------------------------------------------------------------------
