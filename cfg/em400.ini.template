@@ -6,7 +6,7 @@
 # machine boots; you can keep several and switch between them.
 
 [general]
-# Default user interface to use: qt, curses (obsolete) or cmd
+# Default user interface to use: qt, cmd
 ui = qt
 
 # Which configured machine to start - the [machine.<id>].

@@ -36,10 +36,6 @@ All interface access should be immediately effectively cut off.
 
 === Interrupts (RP) ======================================================
 
-=== NCurses UI ===========================================================
-
-Flag to quit the debugger loop
-
 === IOtester =============================================================
 
 interrupt specification (not really necessary)

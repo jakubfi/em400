@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.10)
+cmake_minimum_required(VERSION 3.21)
 project(em400
 	DESCRIPTION "MERA-400 emulator"
 	LANGUAGES C CXX
@@ -7,81 +7,10 @@ project(em400
 include(GNUInstallDirs)
 include(cmake/appversion.cmake)
 
-# ---- UI curses ---------------------------------------------------------
-
-find_package(Curses)
-find_package(BISON REQUIRED)
-find_package(FLEX REQUIRED)
+# ---- Target: em400 -----------------------------------------------------
 
 find_package(PkgConfig REQUIRED)
 pkg_check_modules(LIBUV REQUIRED IMPORTED_TARGET libuv)
-
-set(UI_CURSES OFF)
-if(CURSES_FOUND)
-	if(WIN32)
-		message(STATUS "Curses library found, but curses UI is disabled on Windows")
-	else()
-		set(UI_CURSES ON)
-		message(STATUS "Curses library found. Curses UI enabled.")
-	endif()
-else()
-	message(STATUS "Curses library not found. Curses UI disabled.")
-endif()
-
-if(UI_CURSES)
-	set(CURSES_NEED_NCURSES TRUE)
-	find_path(READLINE_INCLUDE_DIR readline/readline.h)
-	find_library(READLINE_LIBRARY readline)
-	find_library(TINFO_LIBRARY tinfo)
-
-	bison_target(ui_curses_parser
-		src/ui/curses/parser.y
-		${CMAKE_CURRENT_BINARY_DIR}/ui_curses_parser.c
-	)
-	flex_target(ui_curses_scanner
-		src/ui/curses/scanner.l
-		${CMAKE_CURRENT_BINARY_DIR}/ui_curses_scanner.c
-		COMPILE_FLAGS "--never-interactive"
-	)
-	add_flex_bison_dependency(ui_curses_scanner ui_curses_parser)
-
-	add_library(ui-curses STATIC
-		src/ui/curses/awin.c
-		src/ui/curses/awin.h
-		src/ui/curses/awinch.c
-		src/ui/curses/debugger.c
-		src/ui/curses/debugger.h
-		src/ui/curses/eval.c
-		src/ui/curses/eval.h
-		src/ui/curses/cmd.c
-		src/ui/curses/cmd.h
-		src/ui/curses/ui.c
-		src/ui/curses/ui.h
-		src/ui/curses/keywords.c
-		src/ui/curses/keywords.h
-		src/ui/curses/decode.c
-		src/ui/curses/decode.h
-		src/ui/curses/parser.y
-		src/ui/curses/scanner.l
-		${BISON_ui_curses_parser_OUTPUTS}
-		${FLEX_ui_curses_scanner_OUTPUTS}
-	)
-
-	target_link_libraries(ui-curses
-		emdas
-		${CURSES_LIBRARIES}
-		${TINFO_LIBRARY}
-		${READLINE_LIBRARY}
-		${BISON_LIBRARIES}
-	)
-
-	target_include_directories(ui-curses PRIVATE ${CMAKE_SOURCE_DIR}/src)
-	target_include_directories(ui-curses PRIVATE ${CMAKE_SOURCE_DIR}/include)
-	target_include_directories(ui-curses PRIVATE ${CMAKE_BINARY_DIR})
-endif(UI_CURSES)
-
-# ---- Target: em400 -----------------------------------------------------
-
 find_package(BISON REQUIRED)
 find_package(FLEX REQUIRED)
 find_package(Threads REQUIRED)
@@ -360,28 +289,20 @@ target_compile_options(em400 PRIVATE -Wall)
 target_include_directories(em400 PRIVATE ${CMAKE_SOURCE_DIR}/src)
 target_include_directories(em400 PRIVATE ${CMAKE_SOURCE_DIR}/include)
 target_include_directories(em400 PRIVATE ${CMAKE_BINARY_DIR})
-target_include_directories(em400 PRIVATE ${LIBUV_INCLUDE_DIRS})
 target_compile_definitions(em400 PRIVATE EM400_VERSION="${APP_VERSION}")
-if(UI_CURSES)
-	target_compile_definitions(em400 PRIVATE UI_CURSES)
-	target_link_libraries(em400 ui-curses)
-endif(UI_CURSES)
 
 if(IPO_SUPPORTED)
 	set_property(TARGET em400 PROPERTY INTERPROCEDURAL_OPTIMIZATION TRUE)
 endif()
 
 if (UI_QT)
-	add_compile_definitions($<$<CONFIG:Release>:QT_NO_DEBUG_OUTPUT>)
+	target_compile_definitions(em400 PRIVATE $<$<CONFIG:Release>:QT_NO_DEBUG_OUTPUT>)
 	set_property(TARGET em400 PROPERTY AUTOMOC ON)
 	set_property(TARGET em400 PROPERTY AUTOUIC ON)
 	set_property(TARGET em400 PROPERTY AUTORCC ON)
 	set_property(SOURCE ${CMAKE_CURRENT_BINARY_DIR}/eval_parser.c PROPERTY SKIP_AUTOGEN ON)
 	set_property(SOURCE ${CMAKE_CURRENT_BINARY_DIR}/eval_parser.h PROPERTY SKIP_AUTOGEN ON)
 	set_property(SOURCE ${CMAKE_CURRENT_BINARY_DIR}/eval_scanner.c PROPERTY SKIP_AUTOGEN ON)
-	set_property(SOURCE ${CMAKE_CURRENT_BINARY_DIR}/uicurses_parser.c PROPERTY SKIP_AUTOGEN ON)
-	set_property(SOURCE ${CMAKE_CURRENT_BINARY_DIR}/uicurses_parser.h PROPERTY SKIP_AUTOGEN ON)
-	set_property(SOURCE ${CMAKE_CURRENT_BINARY_DIR}/uicurses_scanner.c PROPERTY SKIP_AUTOGEN ON)
 	target_include_directories(em400 PRIVATE ${Qt6Widgets_INCLUDE_DIRS})
 	# qt6 sources live in subdirs (app/, panel/, views/) but include each
 	# other with bare "foo.h" includes; expose the subdirs on the search path
@@ -404,7 +325,7 @@ target_link_libraries(em400
 	emcrk
 	emawp
 	${BISON_LIBRARIES}
-	${CMAKE_THREAD_LIBS_INIT}
+	Threads::Threads
 	PkgConfig::LIBUV
 )
 

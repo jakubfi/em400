@@ -131,7 +131,6 @@ QWidget *ConfigDialog::build_general_page()
 	form->setFieldGrowthPolicy(QFormLayout::FieldsStayAtSizeHint);
 
 	QComboBox *ui = new QComboBox();
-	ui->addItem(tr("Curses (text debugger)"), "curses");
 	ui->addItem(tr("Qt (graphical)"), "qt");
 	ui->addItem(tr("Command line"), "cmd");
 	int ui_idx = ui->findData(appcfg.ui ? QString(appcfg.ui) : QString());

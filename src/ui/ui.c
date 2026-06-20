@@ -28,14 +28,10 @@
 #include "ui/ui.h"
 
 extern struct ui_drv ui_cmd;
-extern struct ui_drv ui_curses;
 extern struct ui_drv ui_qt6;
 
 // in order of preference
 struct ui_drv* uis[] = {
-#ifdef UI_CURSES
-	&ui_curses,
-#endif
 #ifdef UI_QT
 	&ui_qt6,
 #endif

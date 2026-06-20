@@ -78,10 +78,6 @@
         <translation>Logowanie</translation>
     </message>
     <message>
-        <source>Curses (text debugger)</source>
-        <translation>Curses (debugger tekstowy)</translation>
-    </message>
-    <message>
         <source>Qt (graphical)</source>
         <translation>Qt (graficzny)</translation>
     </message>

@@ -11,21 +11,20 @@ Emulation features:
 * MX-16 CPU (original CPU with modifications)
 * real CPU speed
 * floating point arithmetic
-* Elwro memory (32kword modules, ferromagnetic)
-* Amepol MEGA memory (64kword modules, semiconductor)
+* Elwro memory (32kword modules, magnetic-core)
 * character channel (character-oriented I/O interface)
+* SP45DE 8" floppy disk drive
+* Amepol MEGA memory (64kword modules, DRAM)
 * Amepol MULTIX peripherial processor
+* Amepol real time clock
 * Winchester disk drive
 * terminal connection over TCP or serial line
-* built-in debugger
 
 Things that are still waiting for implementation:
 
-* 8" floppy disk drive (partially implemented)
 * memory channel and MERA 9425 disk drive
 * Terminals connected to MULTIX peripherial processor
 * 5.25" floppy disk drive
-* Amepol real time clock
 
 Things that may or may not be implemented:
 
@@ -40,13 +39,13 @@ Requirements
 To build and run em400 you'll need:
 
 * cmake
-* GNU make
+* a build tool (GNU make or ninja)
 * bison and flex
+* readline (used by cmd ui)
+* Qt6 (used by qt ui)
 * libemdas (deassembler library)
 * libemcrk (CROOK memory structures)
 * libemawp (floating point arithmetic)
-* ncurses (used by debugger)
-* readline (used by debugger)
 
 
 Build instructions
@@ -56,11 +55,11 @@ Do the following in the source directory:
 
 ```
 mkdir build
-cd build
-cmake ..
-make
-make install
+cmake -B build
+cmake --build build
+cmake --install build
 ```
+
 
 Running
 ==========================================================================
@@ -80,6 +79,6 @@ Where *options* are:
 * **-p program** - Load program image into OS memory at address 0
 * **-l component,component,...** - Enable logging for specified components. Available components: reg, mem, cpu, op, int, io, mx, px, cchar, cmem, term, wnch, flop, pnch, pnrd, crk5, em4h, all.
 * **-L** -  Disable logging
-* **-u ui** - User interface to use. Available UIs: curses (default), cmd (minimal, for remote control)
+* **-u ui** - User interface to use. Available UIs: qt (default), cmd (minimal, for remote control)
 * **-O sec:key=value**  : Override configuration entry "key" in section [sec] with a specific value
 
