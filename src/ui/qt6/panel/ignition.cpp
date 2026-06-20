@@ -45,6 +45,15 @@ void Ignition::power_on()
 }
 
 // -----------------------------------------------------------------------
+// Set the key graphic without sound or signal - used at startup to match the
+// initial machine power state (e.g. booted powered-on via start_powered_on).
+void Ignition::set_position(int pos)
+{
+	position = pos;
+	update();
+}
+
+// -----------------------------------------------------------------------
 void Ignition::paintEvent(QPaintEvent *event)
 {
 	QPainter painter;
@@ -102,7 +111,10 @@ void Ignition::mousePressEvent(QMouseEvent *event)
 			if (new_pos > position) snd_r[new_pos].play();
 			else snd_l[new_pos].play();
 			if ((position == 0) && (new_pos == 1)) power_on_timer.start();
-			if (new_pos == 0) emit signal_power(false);
+			if (new_pos == 0) {
+				power_on_timer.stop();
+				emit signal_power(false);
+			}
 			if (new_pos == 2) emit signal_locked(true);
 			if ((position == 2) && (new_pos == 1)) emit signal_locked(false);
 			position = new_pos;
@@ -131,7 +143,10 @@ void Ignition::mouseMoveEvent(QMouseEvent *event)
 				if (new_pos > position) snd_r[new_pos].play();
 				else snd_l[new_pos].play();
 				if ((position == 0) && (new_pos == 1)) power_on_timer.start();
-				if (new_pos == 0) emit signal_power(false);
+				if (new_pos == 0) {
+					power_on_timer.stop();
+					emit signal_power(false);
+				}
 				if (new_pos == 2) emit signal_locked(true);
 				if ((position == 2) && (new_pos == 1)) emit signal_locked(false);
 				position = new_pos;

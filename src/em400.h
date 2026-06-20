@@ -1,4 +1,4 @@
-//  Copyright (c) 2016 Jakub Filipowicz <jakubf@gmail.com>
+//  Copyright (c) 2026 Jakub Filipowicz <jakubf@gmail.com>
 //
 //  This program is free software; you can redistribute it and/or modify
 //  it under the terms of the GNU General Public License as published by
@@ -15,32 +15,25 @@
 //  Foundation, Inc.,
 //  51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 
-#ifndef UI_H
-#define UI_H
+#ifndef EM400_H
+#define EM400_H
 
-#include <stdio.h>
+#include <stdbool.h>
 
-typedef void * (*ui_f_setup)(const char *);
-typedef void (*ui_f_loop)(void*);
-typedef void (*ui_f_destroy)(void*);
+#ifdef __cplusplus
+extern "C" {
+#endif
 
-struct ui_drv {
-	const char *name;
-	ui_f_setup setup;
-	ui_f_loop loop;
-	ui_f_destroy destroy;
-	bool deferred_power;
-};
+// App-level machine power, distinct from the library's em400_init/shutdown:
+// these build the active machine from appcfg and are idempotent, so the UI can
+// drive the ignition (and a reconfigure restart) without double init/shutdown.
+int em400_power_on(void);
+void em400_power_off(void);
+bool em400_is_powered(void);
 
-struct ui {
-	struct ui_drv *drv;
-	void *data;
-};
-
-void ui_print_uis(FILE *fd);
-struct ui * ui_create(const char *name);
-int ui_run(struct ui *ui);
-void ui_shutdown(struct ui *ui);
+#ifdef __cplusplus
+}
+#endif
 
 #endif
 

@@ -10,11 +10,21 @@
 #include <emdas.h>
 #include "dasmview.h"
 #include "theme.h"
+#include "em400.h"
 
 
 // -----------------------------------------------------------------------
+// emdas reads memory through this. It bypasses EmuModel, so it must enforce the
+// power gate itself: after a power-off the library is torn down and em400_mem_read
+// would dereference freed page pointers (returning garbage that disassembles into
+// noise). Report a read failure when off, which emdas renders as unreadable -
+// exactly like an unmapped segment.
 static int dbg_mem_get(int nb, uint16_t addr, uint16_t *data)
 {
+	if (!em400_is_powered()) {
+		*data = 0;
+		return 0;
+	}
 	return em400_mem_read(nb, addr, data, 1);
 }
 
@@ -33,12 +43,9 @@ DasmView::DasmView(QWidget *parent) :
 
 	setFocusPolicy(Qt::WheelFocus);
 
-	// header bar. The widget font is Monospace (set above) and would propagate
-	// to these controls; pin the header to the standard UI font instead.
 	header = new QWidget(this);
 	header->setFont(QApplication::font());
-	// the parent paintEvent only fills the content area below the header, so the
-	// header must paint its own background or its gaps show stale pixels.
+
 	header->setAutoFillBackground(true);
 	QHBoxLayout *hlay = new QHBoxLayout(header);
 	hlay->setContentsMargins(4, 2, 4, 2);
@@ -70,10 +77,9 @@ DasmView::DasmView(QWidget *parent) :
 
 	connect(scroll, &QScrollBar::valueChanged, this, &DasmView::update_contents_no_nb);
 
-	// Manually picking a segment only makes sense when not chained to the IC;
-	// flip follow off so the chosen segment sticks instead of snapping back.
+	// Manually picking a segment only makes sense when not chained to the IC
 	connect(nb_spin, QOverload<int>::of(&QSpinBox::valueChanged), this, [this](int nb) {
-		if (follow_ic) follow_chk->setChecked(false); // triggers the toggle below
+		if (follow_ic) follow_chk->setChecked(false);
 		cnb = nb;
 		internal_update_contents();
 	});
@@ -191,6 +197,13 @@ int DasmView::max_first_addr()
 void DasmView::internal_update_contents()
 {
 	if (cnb < 0) return;
+
+	// no display if powered off
+	if (e && !e->is_powered()) {
+		listing.clear();
+		update();
+		return;
+	}
 
 	// cap so we don't scroll past the end of memory (wrap / hide 0xffff)
 	const int max_top = max_first_addr();

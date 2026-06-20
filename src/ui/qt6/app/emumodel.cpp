@@ -49,6 +49,53 @@ void EmuModel::stop()
 }
 
 // -----------------------------------------------------------------------
+void EmuModel::slot_power(bool on)
+{
+	if (on) {
+		if (em400_power_on() == E_OK) {
+			run();
+		}
+	} else {
+		stop();
+		em400_power_off();
+		emit_off_state();
+	}
+}
+
+// -----------------------------------------------------------------------
+// Push a dead-machine snapshot so the panel and views read as off after a
+// power-down: the polling timers are stopped, so nothing would otherwise
+// overwrite the last live values. Cached last_* are zeroed too, so on-demand
+// getters (e.g. get_reg) return blanks until the next power-on re-syncs.
+void EmuModel::emit_off_state()
+{
+	for (int i=EM400_REG_R0 ; i<EM400_REG_COUNT ; i++) {
+		last_reg[i] = 0;
+		emit signal_reg_changed(i, 0);
+	}
+	last_bus_w = 0;
+	last_rz = 0;
+	last_mc = 0;
+	last_alarm = last_p = last_clock = false;
+	last_cpu_state = EM400_STATE_OFF;
+	last_brk_hit = -1;
+
+	emit signal_bus_w_changed(0);
+	emit signal_rz_changed(0);
+	emit signal_mc_changed(0);
+	emit signal_alarm_changed(false);
+	emit signal_p_changed(false);
+	emit signal_clock_changed(false);
+	emit signal_state_changed(EM400_STATE_STOP);
+	emit signal_brk_hit_changed(-1);
+	emit signal_cpu_ips_tick(0);
+	for (int seg=0 ; seg<16 ; seg++) {
+		last_map[seg] = 0;
+		emit signal_mem_map_changed(seg, 0);
+	}
+}
+
+// -----------------------------------------------------------------------
 void EmuModel::on_timer_realtime_timeout()
 {
 	sync_bus_w();
@@ -251,6 +298,7 @@ int EmuModel::watch_edit(unsigned id, const QString &expr, QString &err)
 // is meant to be called while the machine is stopped.
 bool EmuModel::watch_eval(unsigned id, int &value, QString &err)
 {
+	if (!is_powered()) { err = QStringLiteral("?"); return false; }
 	char *err_msg = nullptr;
 	int err_beg = 0, err_end = 0, res = 0;
 	if (em400_watch_eval(id, &res, &err_msg, &err_beg, &err_end) < 0) {
@@ -270,12 +318,14 @@ bool EmuModel::watch_eval(unsigned id, int &value, QString &err)
 // -----------------------------------------------------------------------
 int EmuModel::get_mem(int nb, int addr, uint16_t *m, int count)
 {
+	if (!is_powered()) return 0;
 	return em400_mem_read(nb, addr, m, count);
 }
 
 // -----------------------------------------------------------------------
 int EmuModel::get_mem(int nb, int addr)
 {
+	if (!is_powered()) return -1;
 	uint16_t v;
 	if (em400_mem_read(nb, addr, &v, 1)) {
 		return v;
@@ -287,6 +337,7 @@ int EmuModel::get_mem(int nb, int addr)
 // -----------------------------------------------------------------------
 bool EmuModel::load_os_image(QString filename)
 {
+	if (!is_powered()) return false;
 	QFile file;
 	file.setFileName(filename);
 

@@ -25,11 +25,13 @@
 #include <sys/types.h>
 
 #include "libem400.h"
+#include "em400.h"
 #include "ui/ui.h"
 #include "appcfg.h"
 #include "cfg.h"
 #include "log.h"
 
+static bool machine_powered;
 
 // -----------------------------------------------------------------------
 int em400_top_init(em400_cfg *cfg, const char *machine_id)
@@ -67,19 +69,43 @@ int em400_top_init(em400_cfg *cfg, const char *machine_id)
 		appcfg.active_id = strdup(machine_id);
 	}
 
-	if (em400_init(appcfg_active_machine(&appcfg), &appcfg.host) != E_OK) {
-		return LOGERR("Failed to initialize EM400 core");
-	}
-
 	return E_OK;
 }
 
 // -----------------------------------------------------------------------
 void em400_top_shutdown()
 {
-	em400_shutdown();
 	appcfg_free();
 	log_shutdown();
+}
+
+// -----------------------------------------------------------------------
+int em400_power_on()
+{
+	if (machine_powered) {
+		return E_OK;
+	}
+	if (em400_init(appcfg_active_machine(&appcfg), &appcfg.host) != E_OK) {
+		return LOGERR("Failed to initialize EM400 core");
+	}
+	machine_powered = true;
+	return E_OK;
+}
+
+// -----------------------------------------------------------------------
+void em400_power_off()
+{
+	if (!machine_powered) {
+		return;
+	}
+	em400_shutdown();
+	machine_powered = false;
+}
+
+// -----------------------------------------------------------------------
+bool em400_is_powered()
+{
+	return machine_powered;
 }
 
 // -----------------------------------------------------------------------
@@ -324,12 +350,6 @@ int main(int argc, char** argv)
 		}
 	}
 
-	// -p is session-only load, kept out of cfg so it can't be persisted
-	if (program && !em400_load_os_image_path(program)) {
-		LOGERR("Preloading OS memory failed: %s", program);
-		goto done;
-	}
-
 	if (appcfg.ui) {
 		ui_name = strdup(appcfg.ui);
 	}
@@ -343,6 +363,22 @@ int main(int argc, char** argv)
 		goto done;
 	}
 
+	// Boot powered-on unless the UI defers power to its own ignition switch. A -p
+	// preload forces power on regardless; a deferred-power UI owns any other policy
+	// (e.g. its own "start powered on" preference).
+	if (!ui->drv->deferred_power || program) {
+		if (em400_power_on() != E_OK) {
+			LOGERR("Failed to power on EM400");
+			goto done;
+		}
+	}
+
+	// -p is session-only load, kept out of cfg so it can't be persisted
+	if (program && !em400_load_os_image_path(program)) {
+		LOGERR("Preloading OS memory failed: %s", program);
+		goto done;
+	}
+
 	if (ui_run(ui) != E_OK) {
 		LOGERR("Failed to start the UI: %s", ui->drv->name);
 		goto done;
@@ -352,6 +388,7 @@ int main(int argc, char** argv)
 
 done:
 	ui_shutdown(ui);
+	em400_power_off();
 	em400_top_shutdown();
 	cfg_free(cfg);
 	free(ui_name);

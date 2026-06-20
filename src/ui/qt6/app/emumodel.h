@@ -6,22 +6,15 @@
 #include <QVector>
 #include <QString>
 #include "libem400.h"
+#include "em400.h"
 #include <emdas.h>
 
-// One breakpoint as the UI needs it: stable id, its expression, enabled flag.
-// Built by brk_list() from em400_brk_foreach (cheap and safe to call any time);
-// the live value is deliberately NOT included - evaluating every breakpoint on
-// a refresh re-parses each expression and races the CPU thread, so it is done
-// only on demand. See the auto-memory qt-brk-ui-eval-guidance.
 struct BrkInfo {
 	unsigned id;
 	QString expr;
 	bool enabled;
 };
 
-// One watch as the UI needs it: stable id and its expression. Like BrkInfo the
-// value is not carried here - the watch view fills its value column on demand
-// via watch_eval(), only while the machine is stopped.
 struct WatchInfo {
 	unsigned id;
 	QString expr;
@@ -39,26 +32,29 @@ public:
 	void stop();
 	bool load_os_image(QString filename);
 
-	void set_reg(int i, int v) { em400_reg_set(i, v); }
-	void set_kb(uint16_t v) { em400_cp_kb(v); }
+	// power gating: here or libem400?
+	bool is_powered() { return em400_is_powered(); }
+
+	void set_reg(int i, int v) { if (is_powered()) em400_reg_set(i, v); }
+	void set_kb(uint16_t v) { if (is_powered()) em400_cp_kb(v); }
 	int get_reg(int i) { return last_reg[i]; }
 	int get_mem(int nb, int addr);
 	int get_mem(int nb, int addr, uint16_t *m, int count);
-	bool set_mem(int nb, int addr, uint16_t v) { return em400_mem_write(nb, addr, &v, 1); }
+	bool set_mem(int nb, int addr, uint16_t v) { return is_powered() && em400_mem_write(nb, addr, &v, 1); }
 	// Read P live, not from last_p: last_p is sampled by the realtime timer,
 	// independently of the registers, so using it for the dasm "skip" bar can
 	// paint a stale-red frame before sync_flags catches up.
-	bool get_p() { return em400_cp_p_led(); }
+	bool get_p() { return is_powered() && em400_cp_p_led(); }
 	int get_mc() { return last_mc; }
 	bool get_alarm() { return last_alarm; }
-	int get_nb() { return em400_nb(); }
-	int get_qnb() { return em400_qnb(); }
+	int get_nb() { return is_powered() ? em400_nb() : 0; }
+	int get_qnb() { return is_powered() ? em400_qnb() : 0; }
 	uint32_t get_rz() { return last_rz; }
-	int get_mem_map(int seg) { return em400_mem_map(seg); }
+	int get_mem_map(int seg) { return is_powered() ? em400_mem_map(seg) : 0; }
 
 	// interrupt view helpers (structural, language-free)
-	int int_mask_bit(int n) { return em400_int_mask_bit(n); }
-	void set_int(int n, bool on) { if (on) em400_int_set(n); else em400_int_clear(n); }
+	int int_mask_bit(int n) { return is_powered() ? em400_int_mask_bit(n) : 0; }
+	void set_int(int n, bool on) { if (!is_powered()) return; if (on) em400_int_set(n); else em400_int_clear(n); }
 
 	// breakpoint editing/listing API. The list only ever changes through these
 	// UI-thread calls, so the view rebuilds from brk_list() right after each
@@ -66,8 +62,8 @@ public:
 	// `err` with the parser message on failure.
 	QVector<BrkInfo> brk_list();
 	int brk_add(const QString &expr, QString &err);
-	void brk_del(unsigned id) { em400_brk_delete(id); }
-	void brk_set_enabled(unsigned id, bool en) { em400_brk_enable(id, en); }
+	void brk_del(unsigned id) { if (is_powered()) em400_brk_delete(id); }
+	void brk_set_enabled(unsigned id, bool en) { if (is_powered()) em400_brk_enable(id, en); }
 
 	// watch listing/editing API, same UI-thread-only contract as the breakpoint
 	// API above: the list changes only through these calls, so the view rebuilds
@@ -77,7 +73,7 @@ public:
 	QVector<WatchInfo> watch_list();
 	int watch_add(const QString &expr, QString &err);
 	int watch_edit(unsigned id, const QString &expr, QString &err);
-	void watch_del(unsigned id) { em400_watch_delete(id); }
+	void watch_del(unsigned id) { if (is_powered()) em400_watch_delete(id); }
 	bool watch_eval(unsigned id, int &value, QString &err);
 
 private:
@@ -104,6 +100,7 @@ private:
 	void sync_flags(bool force=false);
 	void sync_brk_hit(bool force=false);
 	void sync_ips();
+	void emit_off_state();
 
 private slots:
 	void on_timer_realtime_timeout();
@@ -111,16 +108,22 @@ private slots:
 	void on_timer_ips_timeout();
 
 public slots:
+	// the ignition switch drives this; on->em400_power_on()+run(), off->stop()+
+	// em400_power_off(), then blank the views so the panel reads as dead
+	void slot_power(bool on);
+
+	// not power-gated like its siblings: cp_start records the switch position in
+	// the core even when off (cpu_init reads it on power-on) and self-guards on OFF
 	void slot_cpu_start(bool state) { em400_cp_start(state); }
-	void slot_clear() { em400_cp_clear(); }
-	void slot_cycle() { em400_cp_cycle(); }
-	void slot_clock_enabled(bool state) { em400_cp_clock(state); }
-	void slot_oprq() { em400_cp_oprq(); }
-	void slot_reg_select(int r) { em400_cp_reg_select(r); }
-	void slot_load() { em400_cp_load(); }
-	void slot_bin() { em400_cp_bin(); }
-	void slot_fetch() { em400_cp_fetch(); }
-	void slot_store() { em400_cp_store(); }
+	void slot_clear() { if (is_powered()) em400_cp_clear(); }
+	void slot_cycle() { if (is_powered()) em400_cp_cycle(); }
+	void slot_clock_enabled(bool state) { if (is_powered()) em400_cp_clock(state); }
+	void slot_oprq() { if (is_powered()) em400_cp_oprq(); }
+	void slot_reg_select(int r) { if (is_powered()) em400_cp_reg_select(r); }
+	void slot_load() { if (is_powered()) em400_cp_load(); }
+	void slot_bin() { if (is_powered()) em400_cp_bin(); }
+	void slot_fetch() { if (is_powered()) em400_cp_fetch(); }
+	void slot_store() { if (is_powered()) em400_cp_store(); }
 
 signals:
 	void signal_state_changed(int state);

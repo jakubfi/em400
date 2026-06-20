@@ -38,6 +38,7 @@
 #include <QSignalBlocker>
 #include <QStringList>
 #include <QSet>
+#include <QSettings>
 
 #include "configdialog.h"
 
@@ -116,6 +117,14 @@ QWidget *ConfigDialog::build_general_page()
 		set_cstr((const char **) &appcfg.ui, ui->currentData().toString());
 	});
 	form->addRow(tr("User interface:"), ui);
+
+	QCheckBox *powered = new QCheckBox(tr("Start with the machine powered on"));
+	powered->setToolTip(tr("When off, the graphical UI starts with the machine powered down - turn the ignition key to power it on."));
+	powered->setChecked(QSettings().value("ui/startPoweredOn", false).toBool());
+	connect(powered, &QCheckBox::toggled, this, [](bool on) {
+		QSettings().setValue("ui/startPoweredOn", on);
+	});
+	form->addRow(QString(), powered);
 
 	QCheckBox *speed_real = new QCheckBox(tr("Emulate real CPU speed"));
 	speed_real->setChecked(appcfg.host.emu.speed_real);

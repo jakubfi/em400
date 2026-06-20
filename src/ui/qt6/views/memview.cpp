@@ -107,8 +107,6 @@ MemView::MemView(QWidget *parent) : QWidget(parent)
 MemView::~MemView() {}
 
 // -----------------------------------------------------------------------
-// The Ctrl-F search strip, hidden until first opened. It lives directly under
-// the header (a control among controls) and pushes the grid down when shown.
 void MemView::build_search_bar()
 {
 	search_bar = new QWidget(this);
@@ -1026,11 +1024,19 @@ QString MemView::panel_text(int val) const
 }
 
 // -----------------------------------------------------------------------
-// The non-scrolling row of column offsets above the memory dump.
 void MemView::draw_offset_row(QPainter &painter, int cell_w, int pcell_w, int side_x)
 {
+	painter.setPen(QPen(em400_sep_color(palette()), 2));
+	painter.drawLine(divider_x_pos, col_hdr_h, right - 1, col_hdr_h);
+
+	// no contents if not powered on
+	if (!e || !e->is_powered()) {
+		return;
+	}
+
 	painter.setFont(font_bold);
 	painter.setPen(palette().color(QPalette::Text));
+
 	// value column offsets
 	if (fmt != FMT_OFF) {
 		for (int x=0 ; x<words_per_line ; x++) {
@@ -1038,24 +1044,17 @@ void MemView::draw_offset_row(QPainter &painter, int cell_w, int pcell_w, int si
 			painter.drawText(mem_x_start + x * cell_w, font_height, off_str);
 		}
 	}
-	// side panel offsets: the value and panel cells have different widths, so
-	// the value offsets above don't line up over the panel - it gets its own
-	// ticks. A 2-char ASCII cell can't caption every column without the offsets
-	// running together, so label every other one; the wider 3-char R40 cell has
-	// room for all.
+
+	// side panel offsets
 	if (panel != PANEL_OFF) {
 		int step = (panel == PANEL_R40) ? 1 : 2;
 		for (int x=0 ; x<words_per_line ; x+=step) {
 			painter.drawText(side_x + x * pcell_w, font_height, QString::number(x, 16));
 		}
 	}
-	painter.setPen(QPen(em400_sep_color(palette()), 2));
-	painter.drawLine(divider_x_pos, col_hdr_h, right - 1, col_hdr_h);
 }
 
 // -----------------------------------------------------------------------
-// One memory line: the address gutter plus every word cell (and its side
-// panel companion) on that line.
 void MemView::draw_line(QPainter &painter, int y, int base_addr, int cell_w, int pcell_w, int side_x)
 {
 	QString addr_str = QString("%1").arg((uint16_t)base_addr, 4, 16, QLatin1Char('0'));
@@ -1262,38 +1261,38 @@ void MemView::paintEvent(QPaintEvent *event)
 
 	painter.fillRect(0, 0, right, bottom, palette().color(QPalette::Base));
 
-	if (e) {
-		int cell_w = val_chars() * font_width;
-		int pcell_w = panel_chars() * font_width;
-		int side_x = (panel != PANEL_OFF)
-			? mem_x_start + words_per_line * cell_w + font_width
-			: 0;
-
-		draw_offset_row(painter, cell_w, pcell_w, side_x);
-
-		for (int y = 0; y < total_lines; y++) {
-			int base_addr = caddr + y * words_per_line;
-			if (base_addr > 0xffff) break;
-			draw_line(painter, y, base_addr, cell_w, pcell_w, side_x);
-		}
-
-		// divider between values and side panel (only when both are present)
-		if (panel != PANEL_OFF && fmt != FMT_OFF) {
-			int sdiv_x = mem_x_start + words_per_line * cell_w + half_font_width;
-			painter.setPen(QPen(em400_sep_color(palette()), 2));
-			painter.drawLine(sdiv_x, 0, sdiv_x, bottom);
-		}
-	}
-
 	// divider between addr and values
 	painter.setPen(QPen(em400_sep_color(palette()), 2));
 	painter.drawLine(divider_x_pos, 0, divider_x_pos, bottom);
+
+	int cell_w = val_chars() * font_width;
+	int pcell_w = panel_chars() * font_width;
+	int side_x = (panel != PANEL_OFF)
+		? mem_x_start + words_per_line * cell_w + font_width
+		: 0;
+
+	// divider between values and side panel (only when both are present)
+	if (panel != PANEL_OFF && fmt != FMT_OFF) {
+		int sdiv_x = mem_x_start + words_per_line * cell_w + half_font_width;
+		painter.setPen(QPen(em400_sep_color(palette()), 2));
+		painter.drawLine(sdiv_x, 0, sdiv_x, bottom);
+	}
+
+	draw_offset_row(painter, cell_w, pcell_w, side_x);
+
+	// no contents if not powered on
+	if (!e || !e->is_powered()) {
+		return;
+	}
+
+	for (int y = 0; y < total_lines; y++) {
+		int base_addr = caddr + y * words_per_line;
+		if (base_addr > 0xffff) break;
+		draw_line(painter, y, base_addr, cell_w, pcell_w, side_x);
+	}
 }
 
 // -----------------------------------------------------------------------
-// Lay out the header, the (optional) search strip and the scrolling grid for
-// the current width/height and search_h. Called on resize and whenever the
-// search strip is shown or hidden (which changes grid_top()).
 void MemView::relayout_grid()
 {
 	header->setGeometry(0, 0, width(), content_top);

@@ -16,11 +16,6 @@
 #include "configdialog.h"
 
 // -----------------------------------------------------------------------
-// A flat vertical separator that tracks the theme. A plain (non-bevelled)
-// VLine draws using QPalette::WindowText, which we set to em400_sep_color()
-// (muted red in the panel theme, palette Mid grey under the system theme).
-// Because that color differs between themes, we re-pull it on every palette
-// change so a live View > Panel Theme toggle updates the separators too.
 namespace {
 class SepLine : public QFrame {
 public:
@@ -48,6 +43,7 @@ private:
 };
 }
 
+// -----------------------------------------------------------------------
 static QFrame *make_vsep()
 {
 	return new SepLine();
@@ -65,23 +61,19 @@ MainWindow::MainWindow(QWidget *parent) :
 	wire_connections();
 	build_statusbar();
 
-	e.run();
+	// rotary on IC by default
 	ui->cp->rotary->set_position(8);
+
+	// do the power-on if started with power on
+	if (e.is_powered()) {
+		ui->cp->ignition->set_position(1);
+		emit ui->cp->ignition->signal_power(true);
+	}
 
 	restore_layout();
 }
 
 // -----------------------------------------------------------------------
-// Build every debugger view and home it into a dock widget arranged around the
-// control panel. The control panel is the permanent center - it IS the machine -
-// while the debugger modules dock around it and can be moved, floated, tabbed or
-// hidden. register_dock() builds the dock around a view, gives it a View-menu
-// show/hide entry, and collects it into `docks` - so a dock and its menu entry
-// are born together, and every place that walks all docks (default layout,
-// debugger show/hide, sync) just iterates `docks`. Adding a new module is then:
-// build the view, register_dock() it. The order of these calls is the order of
-// the entries in the View menu. The named handles are kept only for the bespoke
-// default arrangement in apply_default_layout().
 void MainWindow::build_docks()
 {
 	dasm = new DasmView();
@@ -108,9 +100,6 @@ void MainWindow::build_docks()
 	dock_watch = register_dock(watch, tr("Watches"),          "dock_watch");
 	dock_stack = register_dock(stack, tr("Stack"),            "dock_stack");
 
-	// Ctrl-F (window-wide) opens the memory view's search strip, revealing the
-	// dock if hidden. Window-scoped so it works without first focusing the view;
-	// for now it always targets the memory view (dasm search is a future addition).
 	QShortcut *search_sc = new QShortcut(QKeySequence::Find, this);
 	connect(search_sc, &QShortcut::activated, this, [this]() {
 		dock_mem->show();
@@ -120,31 +109,14 @@ void MainWindow::build_docks()
 }
 
 // -----------------------------------------------------------------------
-// Establish the window's dock geometry, lay the docks out in their default
-// arrangement, host the control panel in the center, and add the Reset Layout
-// escape hatch.
 void MainWindow::init_layout()
 {
-	// Space preferences drive the default arrangement:
-	//   disassembly is the priority - narrow but wants all the vertical it can
-	//     get, so it owns the full-height left column.
-	//   memory is lower priority and likes to be wide and tall, so it docks below
-	//     the fixed panel in the center column (inherits the panel width, takes the
-	//     height left under the panel).
-	//   registers (and future watches/breakpoints) are small -> full-height right
-	//     column, stacked.
-	// Hand each side area its corners so the left (dasm) and right (regs) columns
-	// run the full window height; that confines the bottom area to the center
-	// column, which is exactly where memory belongs (under the panel).
 	setCorner(Qt::TopLeftCorner, Qt::LeftDockWidgetArea);
 	setCorner(Qt::BottomLeftCorner, Qt::LeftDockWidgetArea);
 	setCorner(Qt::TopRightCorner, Qt::RightDockWidgetArea);
 	setCorner(Qt::BottomRightCorner, Qt::RightDockWidgetArea);
 
-	// Allow nested splits so docks can be arranged into sub-columns/rows inside a
-	// single area - e.g. breakpoints stacked directly under watches beside the
-	// memory view. Without this a dock can only stack along an edge area, not
-	// split a region that is itself a split.
+	// Allow nested splits so docks can be arranged into sub-columns/rows
 	setDockNestingEnabled(true);
 
 	apply_default_layout();
@@ -166,9 +138,6 @@ void MainWindow::init_layout()
 	cp_layout->addWidget(ui->cp, 0, 0, Qt::AlignHCenter | Qt::AlignTop);
 	setCentralWidget(cp_host);
 
-	// An escape hatch back to the curated arrangement, for anyone who drags the
-	// docks into a corner and can't find their way out. (The per-dock show/hide
-	// entries above it were added by register_dock().)
 	ui->menuView->addSeparator();
 	QAction *act_reset = new QAction(tr("Reset Layout"), this);
 	ui->menuView->addAction(act_reset);
@@ -176,8 +145,6 @@ void MainWindow::init_layout()
 }
 
 // -----------------------------------------------------------------------
-// Wire the signal/slot graph between the menu actions, the EmuModel and the
-// control panel.
 void MainWindow::wire_connections()
 {
 	// MainWindow -> ControlPanel
@@ -205,6 +172,14 @@ void MainWindow::wire_connections()
 	connect(&e, &EmuModel::signal_clock_changed, ui->cp, &ControlPanel::slot_set_clock);
 
 	// ControlPanel -> EmuModel
+	// the ignition's power signal drives the machine lifecycle (the lock signal
+	// is panel-internal, handled in ControlPanel itself)
+	connect(ui->cp->ignition, &Ignition::signal_power, &e, &EmuModel::slot_power);
+	// power-on resets the core's selected display register, so re-push the rotary
+	// position; connected after slot_power so it runs once the machine is powered.
+	connect(ui->cp->ignition, &Ignition::signal_power, this, [this](bool on) {
+		if (on) e.slot_reg_select(ui->cp->rotary->get_position());
+	});
 	connect(ui->cp, &ControlPanel::signal_start_toggled, &e, &EmuModel::slot_cpu_start);
 	connect(ui->cp, &ControlPanel::signal_clear_clicked, &e, &EmuModel::slot_clear);
 	connect(ui->cp, &ControlPanel::signal_oprq_clicked,  &e, &EmuModel::slot_oprq);
@@ -232,9 +207,6 @@ void MainWindow::wire_connections()
 }
 
 // -----------------------------------------------------------------------
-// Build the status bar: emulation state on the left (MIPS, flags, status, MC),
-// grouped with vertical separators; non-emulation indicators (memory editor
-// mode) pushed to the right.
 void MainWindow::build_statusbar()
 {
 	QFont font("Monospace");
@@ -273,9 +245,7 @@ void MainWindow::build_statusbar()
 	ui->statusbar->addWidget(mc);
 	ui->statusbar->addWidget(make_vsep());
 
-	// Memory editor mode indicator, right-aligned in the default proportional
-	// font. Its leading separator and label are hidden together when no cell
-	// is being edited.
+	// Memory editor mode indicator
 	edit_box = new QWidget();
 	QHBoxLayout *edit_lay = new QHBoxLayout(edit_box);
 	edit_lay->setContentsMargins(0, 0, 0, 0);
@@ -351,10 +321,7 @@ void MainWindow::closeEvent(QCloseEvent* event)
 }
 
 // -----------------------------------------------------------------------
-// Wrap a debugger view in a QDockWidget: set the title and object name (the
-// latter is what saveState()/restoreState() key the layout on), hand the view
-// to the dock, add a show/hide entry for it to the View menu, and remember the
-// dock in `docks` so the rest of MainWindow can treat all docks uniformly.
+// Wrap a debugger widget in a QDockWidget
 QDockWidget *MainWindow::register_dock(QWidget *view, const QString &title, const QString &objname)
 {
 	QDockWidget *dock = new QDockWidget(title, this);
@@ -366,30 +333,21 @@ QDockWidget *MainWindow::register_dock(QWidget *view, const QString &title, cons
 }
 
 // -----------------------------------------------------------------------
-// Place the debugger docks in the curated default arrangement and show them.
-// Used at startup to establish a home for each dock, and by View > Reset Layout.
-// Left column: disassembly (full height) with a short breakpoint list under it
-// (semantically tied to the code, and usually only 1-3 entries). Center bottom:
-// memory with the watch list beside it. Right column: the register / interrupt
-// / map modules, stacked. Users can still drag any of this around (nested docks
-// are enabled), this is just the starting point.
 void MainWindow::apply_default_layout()
 {
-	addDockWidget(Qt::LeftDockWidgetArea, dock_dasm);      // narrow, full height
-	splitDockWidget(dock_dasm, dock_brk, Qt::Vertical);    // breakpoints under dasm
+	addDockWidget(Qt::LeftDockWidgetArea, dock_dasm); // narrow, full height
+	splitDockWidget(dock_dasm, dock_brk, Qt::Vertical); // breakpoints under dasm
 
-	addDockWidget(Qt::BottomDockWidgetArea, dock_mem);     // panel width, under panel
+	addDockWidget(Qt::BottomDockWidgetArea, dock_mem); // panel width, under panel
 	splitDockWidget(dock_mem, dock_watch, Qt::Horizontal); // watches beside memory
 
-	addDockWidget(Qt::RightDockWidgetArea, dock_uregs);    // small modules, stacked
+	addDockWidget(Qt::RightDockWidgetArea, dock_uregs); // small modules, stacked
 	addDockWidget(Qt::RightDockWidgetArea, dock_sregs);
 	addDockWidget(Qt::RightDockWidgetArea, dock_ints);
 	addDockWidget(Qt::RightDockWidgetArea, dock_map);
-	// tab the stack behind the interrupts view (both are occasional, event-driven
-	// views) to keep the right column from running too tall.
+	// tab the stack behind the interrupts view
+	// to keep the right column from running too tall.
 	tabifyDockWidget(dock_ints, dock_stack);
-	// registers / interrupts / map stack vertically down the right column (no
-	// tabbing); they all fit one below the other given a little window height
 
 	for (QDockWidget *d : docks) {
 		d->setFloating(false);

@@ -56,7 +56,7 @@
 
 bool cpu_initialized;
 
-static atomic_uint cpu_state;
+static atomic_uint cpu_state = EM400_STATE_OFF;
 
 uint16_t r[8];
 uint16_t ic, kb, ir, ac, ar, at;

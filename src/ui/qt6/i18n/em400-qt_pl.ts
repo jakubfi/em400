@@ -190,6 +190,14 @@
         <translation>Moduły Elwro:</translation>
     </message>
     <message>
+        <source>Start with the machine powered on</source>
+        <translation>Uruchom z włączoną maszyną</translation>
+    </message>
+    <message>
+        <source>When off, the graphical UI starts with the machine powered down - turn the ignition key to power it on.</source>
+        <translation>Gdy wyłączone, interfejs graficzny startuje z wyłączoną maszyną - przekręć kluczyk, aby ją włączyć.</translation>
+    </message>
+    <message>
         <source>MEGA modules:</source>
         <translation>Moduły MEGA:</translation>
     </message>
