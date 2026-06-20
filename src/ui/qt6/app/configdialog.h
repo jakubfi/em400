@@ -29,6 +29,8 @@ class QStackedWidget;
 class QListWidget;
 class QCheckBox;
 class QSpinBox;
+class QTreeWidget;
+class QPushButton;
 
 // Edits `appcfg` in place; no apply/restart and no file write yet (later steps).
 class ConfigDialog : public QDialog
@@ -53,14 +55,36 @@ private:
 
 	QVector<QCheckBox *> m_log_components;
 
+	QTreeWidget *io_tree = nullptr;
+	QStackedWidget *io_editor = nullptr;
+	QComboBox *io_chan_num = nullptr, *io_chan_type = nullptr;
+	QComboBox *io_dev_num = nullptr, *io_dev_type = nullptr;
+	QWidget *io_dev_params = nullptr;
+	QPushButton *io_add_dev_btn = nullptr, *io_remove_btn = nullptr, *io_add_chan_btn = nullptr;
+	int io_sel_chan = -1;
+	int io_sel_dev = -1;
+
 	QWidget *build_general_page();
 	QWidget *build_sound_page();
 	QWidget *build_machine_page();
+	QWidget *build_io_page();
 	QWidget *build_log_page();
 
 	void add_section(const QString &title, const QString &icon_name, QWidget *page);
 	void reload_machine_page();
 	void rebuild_log_components();
+
+	QString chan_type_label(int type);
+	QString dev_type_label(int type);
+	void io_build_tree();
+	void io_selection_changed();
+	void io_rebuild_dev_params();
+	void io_update_buttons();
+	void io_add_channel();
+	void io_add_device();
+	void io_remove_selected();
+	void io_set_channel_number(int num);
+	void io_set_device_number(int num);
 
 private slots:
 	void slot_active_machine_changed(int index);

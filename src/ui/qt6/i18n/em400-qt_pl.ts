@@ -122,10 +122,6 @@
         <translation>Głośność:</translation>
     </message>
     <message>
-        <source> Hz</source>
-        <translation type="vanished"> Hz</translation>
-    </message>
-    <message>
         <source>Sample rate:</source>
         <translation>Częstotliwość próbkowania:</translation>
     </message>
@@ -218,16 +214,128 @@
         <translation>Obraz PROM MEGA:</translation>
     </message>
     <message>
-        <source>Preload image</source>
-        <translation>Obraz wstępnie ładowany</translation>
+        <source>Preload OS image</source>
+        <translation>Wstępnie ładowany obraz OS</translation>
     </message>
     <message>
-        <source>Preload image:</source>
-        <translation>Obraz wstępnie ładowany:</translation>
+        <source>Preload OS image:</source>
+        <translation>Wstępnie ładowany obraz OS:</translation>
     </message>
     <message>
         <source>I/O</source>
         <translation>We/Wy</translation>
+    </message>
+    <message>
+        <source>Character</source>
+        <translation>Znakowy</translation>
+    </message>
+    <message>
+        <source>MULTIX</source>
+        <translation>MULTIX</translation>
+    </message>
+    <message>
+        <source>I/O tester</source>
+        <translation>Tester We/Wy</translation>
+    </message>
+    <message>
+        <source>(empty)</source>
+        <translation>(pusty)</translation>
+    </message>
+    <message>
+        <source>Terminal</source>
+        <translation>Terminal</translation>
+    </message>
+    <message>
+        <source>SP45DE (8&quot; floppy)</source>
+        <translation>SP45DE (dyskietki 8&quot;)</translation>
+    </message>
+    <message>
+        <source>Winchester</source>
+        <translation>Winchester</translation>
+    </message>
+    <message>
+        <source>Floppy (5.25&quot;)</source>
+        <translation>Dyskietka (5.25&quot;)</translation>
+    </message>
+    <message>
+        <source>Real-time clock</source>
+        <translation>Zegar czasu rzeczywistego</translation>
+    </message>
+    <message>
+        <source>(none)</source>
+        <translation>(brak)</translation>
+    </message>
+    <message>
+        <source>Add channel</source>
+        <translation>Dodaj kanał</translation>
+    </message>
+    <message>
+        <source>Add device</source>
+        <translation>Dodaj urządzenie</translation>
+    </message>
+    <message>
+        <source>Remove</source>
+        <translation>Usuń</translation>
+    </message>
+    <message>
+        <source>Channels and devices:</source>
+        <translation>Kanały i urządzenia:</translation>
+    </message>
+    <message>
+        <source>Add a channel, then add devices to it.</source>
+        <translation>Dodaj kanał, a następnie dodaj do niego urządzenia.</translation>
+    </message>
+    <message>
+        <source>Channel number:</source>
+        <translation>Numer kanału:</translation>
+    </message>
+    <message>
+        <source>%1: %2</source>
+        <translation>%1: %2</translation>
+    </message>
+    <message>
+        <source>Channel type:</source>
+        <translation>Typ kanału:</translation>
+    </message>
+    <message>
+        <source>Device number:</source>
+        <translation>Numer urządzenia:</translation>
+    </message>
+    <message>
+        <source>Device type:</source>
+        <translation>Typ urządzenia:</translation>
+    </message>
+    <message>
+        <source>TCP port:</source>
+        <translation>Port TCP:</translation>
+    </message>
+    <message>
+        <source>Speed (baud):</source>
+        <translation>Prędkość (bod):</translation>
+    </message>
+    <message>
+        <source>Disk image:</source>
+        <translation>Obraz dysku:</translation>
+    </message>
+    <message>
+        <source>Winchester disk image</source>
+        <translation>Obraz dysku Winchester</translation>
+    </message>
+    <message>
+        <source>PROM image:</source>
+        <translation>Obraz PROM:</translation>
+    </message>
+    <message>
+        <source>RTC PROM image</source>
+        <translation>Obraz PROM zegara</translation>
+    </message>
+    <message>
+        <source>Slot %1 image:</source>
+        <translation>Obraz slotu %1:</translation>
+    </message>
+    <message>
+        <source>Floppy image</source>
+        <translation>Obraz dyskietki</translation>
     </message>
     <message>
         <source>Logging enabled</source>

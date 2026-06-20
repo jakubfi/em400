@@ -39,6 +39,8 @@
 #include <QStringList>
 #include <QSet>
 #include <QSettings>
+#include <QTreeWidget>
+#include <QTreeWidgetItem>
 
 #include "configdialog.h"
 
@@ -49,6 +51,26 @@ void set_cstr(const char **field, const QString &s)
 {
 	free((void *) *field);
 	*field = s.isEmpty() ? nullptr : strdup(s.toUtf8().constData());
+}
+
+// free a device's owned union strings before its `type` is overwritten
+void free_device_strings(struct em400_device_cfg *dev)
+{
+	switch (dev->type) {
+	case EM400_DEV_WINCHESTER:
+		free((void *) dev->winchester.image);
+		break;
+	case EM400_DEV_RTCLOCK:
+		free((void *) dev->rtclock.prom);
+		break;
+	case EM400_DEV_SP45DE:
+		for (int s=0 ; s<EM400_SP45DE_SLOT_COUNT ; s++) {
+			free((void *) dev->sp45de.images[s]);
+		}
+		break;
+	default:
+		break;
+	}
 }
 }
 
@@ -64,7 +86,7 @@ ConfigDialog::ConfigDialog(QWidget *parent) :
 	}
 
 	sections = new QListWidget();
-	sections->setMaximumWidth(170);
+	sections->setMaximumWidth(130);
 	sections->setIconSize(QSize(24, 24));
 	stack = new QStackedWidget();
 
@@ -89,14 +111,14 @@ ConfigDialog::ConfigDialog(QWidget *parent) :
 	outer->addLayout(body);
 	outer->addWidget(buttons);
 
-	setMinimumSize(460, 460);
+	setMinimumSize(720, 520);
 }
 
 // -----------------------------------------------------------------------
 void ConfigDialog::add_section(const QString &title, const QString &icon_name, QWidget *page)
 {
 	QListWidgetItem *item = new QListWidgetItem(QIcon::fromTheme(icon_name), title, sections);
-	item->setSizeHint(QSize(150, 38));
+	item->setSizeHint(QSize(110, 38));
 	stack->addWidget(page);
 }
 
@@ -106,6 +128,7 @@ QWidget *ConfigDialog::build_general_page()
 	QWidget *page = new QWidget();
 	QFormLayout *form = new QFormLayout(page);
 	form->setVerticalSpacing(10);
+	form->setFieldGrowthPolicy(QFormLayout::FieldsStayAtSizeHint);
 
 	QComboBox *ui = new QComboBox();
 	ui->addItem(tr("Curses (text debugger)"), "curses");
@@ -150,18 +173,28 @@ QWidget *ConfigDialog::build_general_page()
 QWidget *ConfigDialog::build_sound_page()
 {
 	QWidget *page = new QWidget();
-	QFormLayout *form = new QFormLayout(page);
-	form->setVerticalSpacing(10);
+	QVBoxLayout *outer = new QVBoxLayout(page);
 
 	QCheckBox *enabled = new QCheckBox(tr("Sound output enabled"));
 	enabled->setChecked(appcfg.host.sound.enabled);
-	connect(enabled, &QCheckBox::toggled, this, [](bool on) {
+	outer->addWidget(enabled);
+
+	QWidget *config_box = new QWidget();
+	config_box->setEnabled(appcfg.host.sound.enabled);
+	connect(enabled, &QCheckBox::toggled, this, [config_box](bool on) {
 		appcfg.host.sound.enabled = on;
+		config_box->setEnabled(on);
 	});
-	form->addRow(QString(), enabled);
+	outer->addWidget(config_box);
+
+	QFormLayout *form = new QFormLayout(config_box);
+	form->setContentsMargins(0, 0, 0, 0);
+	form->setVerticalSpacing(10);
+	form->setFieldGrowthPolicy(QFormLayout::FieldsStayAtSizeHint);
 
 	QSlider *volume = new QSlider(Qt::Horizontal);
 	volume->setRange(0, 100);
+	volume->setMinimumWidth(200);
 	volume->setValue(appcfg.host.sound.volume);
 	QLabel *volume_val = new QLabel(QString::number(appcfg.host.sound.volume));
 	volume_val->setMinimumWidth(volume_val->fontMetrics().horizontalAdvance("100"));
@@ -210,6 +243,7 @@ QWidget *ConfigDialog::build_sound_page()
 	form->addRow(tr("Latency:"), latency);
 
 	QLineEdit *backend = new QLineEdit();
+	backend->setMinimumWidth(180);
 	backend->setText(appcfg.host.sound.backend ? QString(appcfg.host.sound.backend) : QString());
 	connect(backend, &QLineEdit::editingFinished, this, [backend]() {
 		set_cstr(&appcfg.host.sound.backend, backend->text());
@@ -217,6 +251,7 @@ QWidget *ConfigDialog::build_sound_page()
 	form->addRow(tr("Backend:"), backend);
 
 	QLineEdit *device = new QLineEdit();
+	device->setMinimumWidth(180);
 	device->setText(appcfg.host.sound.device ? QString(appcfg.host.sound.device) : QString());
 	connect(device, &QLineEdit::editingFinished, this, [device]() {
 		set_cstr(&appcfg.host.sound.device, device->text());
@@ -260,6 +295,7 @@ QWidget *ConfigDialog::build_machine_page()
 	QWidget *cpu_box = new QWidget();
 	QFormLayout *cpu = new QFormLayout(cpu_box);
 	cpu->setVerticalSpacing(10);
+	cpu->setFieldGrowthPolicy(QFormLayout::FieldsStayAtSizeHint);
 	m_awp = new QCheckBox(tr("Floating point unit (AWP)"));
 	connect(m_awp, &QCheckBox::toggled, this, [this](bool on) {
 		if (machine) machine->cfg.cpu.awp = on;
@@ -293,6 +329,7 @@ QWidget *ConfigDialog::build_machine_page()
 	QWidget *mem_box = new QWidget();
 	QFormLayout *mem = new QFormLayout(mem_box);
 	mem->setVerticalSpacing(10);
+	mem->setFieldGrowthPolicy(QFormLayout::FieldsStayAtSizeHint);
 	m_elwro = new QSpinBox();
 	m_elwro->setRange(0, 16);
 	connect(m_elwro, &QSpinBox::valueChanged, this, [this](int v) {
@@ -313,6 +350,7 @@ QWidget *ConfigDialog::build_machine_page()
 	mem->addRow(tr("Hardwired OS segments:"), m_os_segments);
 
 	m_mega_prom = new QLineEdit();
+	m_mega_prom->setMinimumWidth(280);
 	connect(m_mega_prom, &QLineEdit::editingFinished, this, [this]() {
 		if (machine) set_cstr(&machine->cfg.mem.mega_prom_image, m_mega_prom->text());
 	});
@@ -327,24 +365,434 @@ QWidget *ConfigDialog::build_machine_page()
 	mem->addRow(tr("MEGA PROM image:"), prom_row);
 
 	m_preload = new QLineEdit();
+	m_preload->setMinimumWidth(280);
 	connect(m_preload, &QLineEdit::editingFinished, this, [this]() {
 		if (machine) set_cstr(&machine->cfg.mem.preload_image, m_preload->text());
 	});
 	QPushButton *preload_browse = new QPushButton(tr("Browse..."));
 	connect(preload_browse, &QPushButton::clicked, this, [this]() {
-		QString f = QFileDialog::getOpenFileName(this, tr("Preload image"));
+		QString f = QFileDialog::getOpenFileName(this, tr("Preload OS image"));
 		if (!f.isNull()) m_preload->setText(f);
 	});
 	QHBoxLayout *preload_row = new QHBoxLayout();
 	preload_row->addWidget(m_preload, 1);
 	preload_row->addWidget(preload_browse);
-	mem->addRow(tr("Preload image:"), preload_row);
+	mem->addRow(tr("Preload OS image:"), preload_row);
 	tabs->addTab(mem_box, tr("Memory"));
 
-	tabs->addTab(new QWidget(), tr("I/O"));
+	tabs->addTab(build_io_page(), tr("I/O"));
 
 	layout->addWidget(tabs);
 	return page;
+}
+
+// -----------------------------------------------------------------------
+QString ConfigDialog::chan_type_label(int type)
+{
+	switch (type) {
+	case EM400_CHANNEL_CHAR:
+		return tr("Character");
+	case EM400_CHANNEL_MULTIX:
+		return tr("MULTIX");
+	case EM400_CHANNEL_IOTESTER:
+		return tr("I/O tester");
+	default:
+		return tr("(empty)");
+	}
+}
+
+// -----------------------------------------------------------------------
+QString ConfigDialog::dev_type_label(int type)
+{
+	switch (type) {
+	case EM400_DEV_TERMINAL:
+		return tr("Terminal");
+	case EM400_DEV_SP45DE:
+		return tr("SP45DE (8\" floppy)");
+	case EM400_DEV_WINCHESTER:
+		return tr("Winchester");
+	case EM400_DEV_FLOP5:
+		return tr("Floppy (5.25\")");
+	case EM400_DEV_RTCLOCK:
+		return tr("Real-time clock");
+	default:
+		return tr("(none)");
+	}
+}
+
+// -----------------------------------------------------------------------
+QWidget *ConfigDialog::build_io_page()
+{
+	QWidget *page = new QWidget();
+	QHBoxLayout *layout = new QHBoxLayout(page);
+
+	io_tree = new QTreeWidget();
+	io_tree->setHeaderHidden(true);
+	io_tree->setMinimumWidth(140);
+	io_tree->setMaximumWidth(220);
+	connect(io_tree, &QTreeWidget::currentItemChanged, this, [this]() {
+		io_selection_changed();
+	});
+
+	io_add_chan_btn = new QPushButton(tr("Add channel"));
+	connect(io_add_chan_btn, &QPushButton::clicked, this, [this]() { io_add_channel(); });
+	io_add_dev_btn = new QPushButton(tr("Add device"));
+	connect(io_add_dev_btn, &QPushButton::clicked, this, [this]() { io_add_device(); });
+	io_remove_btn = new QPushButton(tr("Remove"));
+	connect(io_remove_btn, &QPushButton::clicked, this, [this]() { io_remove_selected(); });
+
+	QHBoxLayout *add_row = new QHBoxLayout();
+	add_row->setContentsMargins(0, 0, 0, 0);
+	add_row->addWidget(io_add_chan_btn);
+	add_row->addWidget(io_add_dev_btn);
+
+	QVBoxLayout *btn_col = new QVBoxLayout();
+	btn_col->setContentsMargins(0, 0, 0, 0);
+	btn_col->addLayout(add_row);
+	btn_col->addWidget(io_remove_btn);
+
+	QVBoxLayout *left = new QVBoxLayout();
+	left->setContentsMargins(0, 0, 0, 0);
+	left->addWidget(new QLabel(tr("Channels and devices:")));
+	left->addWidget(io_tree, 1);
+	left->addLayout(btn_col);
+
+	io_editor = new QStackedWidget();
+
+	QLabel *placeholder = new QLabel(tr("Add a channel, then add devices to it."));
+	placeholder->setAlignment(Qt::AlignCenter);
+	placeholder->setWordWrap(true);
+	io_editor->addWidget(placeholder);
+
+	QWidget *chan_page = new QWidget();
+	QFormLayout *chan_form = new QFormLayout(chan_page);
+	chan_form->setVerticalSpacing(10);
+	chan_form->setFieldGrowthPolicy(QFormLayout::FieldsStayAtSizeHint);
+	io_chan_num = new QComboBox();
+	connect(io_chan_num, &QComboBox::currentIndexChanged, this, [this]() {
+		io_set_channel_number(io_chan_num->currentData().toInt());
+	});
+	chan_form->addRow(tr("Channel number:"), io_chan_num);
+	io_chan_type = new QComboBox();
+	io_chan_type->addItem(chan_type_label(EM400_CHANNEL_CHAR), EM400_CHANNEL_CHAR);
+	io_chan_type->addItem(chan_type_label(EM400_CHANNEL_MULTIX), EM400_CHANNEL_MULTIX);
+	io_chan_type->addItem(chan_type_label(EM400_CHANNEL_IOTESTER), EM400_CHANNEL_IOTESTER);
+	connect(io_chan_type, &QComboBox::currentIndexChanged, this, [this]() {
+		if (io_sel_chan < 0 || !machine) return;
+		machine->cfg.channel[io_sel_chan].type =
+			(enum em400_channel_types) io_chan_type->currentData().toInt();
+		io_build_tree();
+	});
+	chan_form->addRow(tr("Channel type:"), io_chan_type);
+	io_editor->addWidget(chan_page);
+
+	QWidget *dev_page = new QWidget();
+	QVBoxLayout *dev_layout = new QVBoxLayout(dev_page);
+	QFormLayout *dev_form = new QFormLayout();
+	dev_form->setContentsMargins(0, 0, 0, 0);
+	dev_form->setVerticalSpacing(10);
+	dev_form->setFieldGrowthPolicy(QFormLayout::FieldsStayAtSizeHint);
+	io_dev_num = new QComboBox();
+	connect(io_dev_num, &QComboBox::currentIndexChanged, this, [this]() {
+		io_set_device_number(io_dev_num->currentData().toInt());
+	});
+	dev_form->addRow(tr("Device number:"), io_dev_num);
+	io_dev_type = new QComboBox();
+	io_dev_type->addItem(dev_type_label(EM400_DEV_TERMINAL), EM400_DEV_TERMINAL);
+	io_dev_type->addItem(dev_type_label(EM400_DEV_WINCHESTER), EM400_DEV_WINCHESTER);
+	io_dev_type->addItem(dev_type_label(EM400_DEV_SP45DE), EM400_DEV_SP45DE);
+	io_dev_type->addItem(dev_type_label(EM400_DEV_FLOP5), EM400_DEV_FLOP5);
+	io_dev_type->addItem(dev_type_label(EM400_DEV_RTCLOCK), EM400_DEV_RTCLOCK);
+	connect(io_dev_type, &QComboBox::currentIndexChanged, this, [this]() {
+		if (io_sel_chan < 0 || io_sel_dev < 0 || !machine) return;
+		struct em400_device_cfg *dev = &machine->cfg.channel[io_sel_chan].device[io_sel_dev];
+		enum em400_device_types want = (enum em400_device_types) io_dev_type->currentData().toInt();
+		if (dev->type == want) return;
+		free_device_strings(dev);
+		*dev = (struct em400_device_cfg){};
+		dev->type = want;
+		io_rebuild_dev_params();
+		io_build_tree();
+	});
+	dev_form->addRow(tr("Device type:"), io_dev_type);
+	dev_layout->addLayout(dev_form);
+
+	io_dev_params = new QWidget();
+	new QFormLayout(io_dev_params);
+	dev_layout->addWidget(io_dev_params);
+	dev_layout->addStretch(1);
+	io_editor->addWidget(dev_page);
+
+	layout->addLayout(left);
+	layout->addWidget(io_editor, 1);
+
+	io_build_tree();
+	io_update_buttons();
+	return page;
+}
+
+// -----------------------------------------------------------------------
+// Tree lists only configured channels/devices; empty slots are reached via
+// the Add buttons, not shown as noise.
+void ConfigDialog::io_build_tree()
+{
+	QSignalBlocker b(io_tree);
+	io_tree->clear();
+	if (!machine) return;
+
+	QTreeWidgetItem *restore = nullptr;
+
+	for (int ch=0 ; ch<EM400_IO_MAX_CHAN ; ch++) {
+		struct em400_channel_cfg *chan = &machine->cfg.channel[ch];
+		if (chan->type == EM400_CHANNEL_NONE) continue;
+
+		QTreeWidgetItem *ci = new QTreeWidgetItem(io_tree);
+		ci->setText(0, tr("%1: %2").arg(ch).arg(chan_type_label(chan->type)));
+		ci->setData(0, Qt::UserRole, ch);
+		ci->setData(0, Qt::UserRole + 1, -1);
+		if (ch == io_sel_chan && io_sel_dev < 0) {
+			restore = ci;
+		}
+
+		for (int d=0 ; d<EM400_CHAN_MAX_DEV ; d++) {
+			struct em400_device_cfg *dev = &chan->device[d];
+			if (dev->type == EM400_DEV_NONE) continue;
+
+			QTreeWidgetItem *di = new QTreeWidgetItem(ci);
+			di->setText(0, tr("%1: %2").arg(d).arg(dev_type_label(dev->type)));
+			di->setData(0, Qt::UserRole, ch);
+			di->setData(0, Qt::UserRole + 1, d);
+			if (ch == io_sel_chan && d == io_sel_dev) {
+				restore = di;
+			}
+		}
+		ci->setExpanded(true);
+	}
+
+	if (restore) {
+		io_tree->setCurrentItem(restore);
+	}
+}
+
+// -----------------------------------------------------------------------
+void ConfigDialog::io_selection_changed()
+{
+	QTreeWidgetItem *item = io_tree->currentItem();
+	if (!item) {
+		io_sel_chan = io_sel_dev = -1;
+		io_editor->setCurrentIndex(0);
+		io_update_buttons();
+		return;
+	}
+
+	io_sel_chan = item->data(0, Qt::UserRole).toInt();
+	io_sel_dev = item->data(0, Qt::UserRole + 1).toInt();
+
+	if (io_sel_dev < 0) {
+		QSignalBlocker bn(io_chan_num);
+		io_chan_num->clear();
+		for (int i=0 ; i<EM400_IO_MAX_CHAN ; i++) {
+			if (i == io_sel_chan || machine->cfg.channel[i].type == EM400_CHANNEL_NONE) {
+				io_chan_num->addItem(QString::number(i), i);
+			}
+		}
+		io_chan_num->setCurrentIndex(io_chan_num->findData(io_sel_chan));
+
+		QSignalBlocker bt(io_chan_type);
+		int idx = io_chan_type->findData(machine->cfg.channel[io_sel_chan].type);
+		io_chan_type->setCurrentIndex(idx >= 0 ? idx : 0);
+		io_editor->setCurrentIndex(1);
+	} else {
+		const struct em400_channel_cfg *chan = &machine->cfg.channel[io_sel_chan];
+
+		QSignalBlocker bn(io_dev_num);
+		io_dev_num->clear();
+		for (int i=0 ; i<EM400_CHAN_MAX_DEV ; i++) {
+			if (i == io_sel_dev || chan->device[i].type == EM400_DEV_NONE) {
+				io_dev_num->addItem(QString::number(i), i);
+			}
+		}
+		io_dev_num->setCurrentIndex(io_dev_num->findData(io_sel_dev));
+
+		QSignalBlocker bt(io_dev_type);
+		int idx = io_dev_type->findData(chan->device[io_sel_dev].type);
+		io_dev_type->setCurrentIndex(idx >= 0 ? idx : 0);
+		io_rebuild_dev_params();
+		io_editor->setCurrentIndex(2);
+	}
+
+	io_update_buttons();
+}
+
+// -----------------------------------------------------------------------
+void ConfigDialog::io_update_buttons()
+{
+	bool have_machine = machine != nullptr;
+	bool chan_full = true;
+	if (have_machine) {
+		for (int i=0 ; i<EM400_IO_MAX_CHAN ; i++) {
+			if (machine->cfg.channel[i].type == EM400_CHANNEL_NONE) {
+				chan_full = false;
+				break;
+			}
+		}
+	}
+	io_add_chan_btn->setEnabled(have_machine && !chan_full);
+	io_add_dev_btn->setEnabled(io_sel_chan >= 0);
+	io_remove_btn->setEnabled(io_sel_chan >= 0);
+}
+
+// -----------------------------------------------------------------------
+void ConfigDialog::io_add_channel()
+{
+	if (!machine) return;
+	for (int i=0 ; i<EM400_IO_MAX_CHAN ; i++) {
+		if (machine->cfg.channel[i].type == EM400_CHANNEL_NONE) {
+			machine->cfg.channel[i].type = EM400_CHANNEL_CHAR;
+			io_sel_chan = i;
+			io_sel_dev = -1;
+			io_build_tree();
+			io_selection_changed();
+			return;
+		}
+	}
+}
+
+// -----------------------------------------------------------------------
+void ConfigDialog::io_add_device()
+{
+	if (!machine || io_sel_chan < 0) return;
+	struct em400_channel_cfg *chan = &machine->cfg.channel[io_sel_chan];
+	for (int d=0 ; d<EM400_CHAN_MAX_DEV ; d++) {
+		if (chan->device[d].type == EM400_DEV_NONE) {
+			chan->device[d].type = EM400_DEV_TERMINAL;
+			chan->device[d].terminal.speed = 9600;
+			io_sel_dev = d;
+			io_build_tree();
+			io_selection_changed();
+			return;
+		}
+	}
+}
+
+// -----------------------------------------------------------------------
+void ConfigDialog::io_remove_selected()
+{
+	if (!machine || io_sel_chan < 0) return;
+	struct em400_channel_cfg *chan = &machine->cfg.channel[io_sel_chan];
+
+	if (io_sel_dev >= 0) {
+		struct em400_device_cfg *dev = &chan->device[io_sel_dev];
+		free_device_strings(dev);
+		*dev = (struct em400_device_cfg){};
+		io_sel_dev = -1;
+	} else {
+		for (int d=0 ; d<EM400_CHAN_MAX_DEV ; d++) {
+			free_device_strings(&chan->device[d]);
+		}
+		*chan = (struct em400_channel_cfg){};
+		io_sel_chan = -1;
+	}
+
+	io_build_tree();
+	io_selection_changed();
+}
+
+// -----------------------------------------------------------------------
+// The target number is guaranteed free (the combo offers only free slots +
+// the current one), so ownership of any union strings just moves with the copy.
+void ConfigDialog::io_set_channel_number(int num)
+{
+	if (!machine || io_sel_chan < 0 || num == io_sel_chan) return;
+	machine->cfg.channel[num] = machine->cfg.channel[io_sel_chan];
+	machine->cfg.channel[io_sel_chan] = (struct em400_channel_cfg){};
+	io_sel_chan = num;
+	io_build_tree();
+	io_selection_changed();
+}
+
+// -----------------------------------------------------------------------
+void ConfigDialog::io_set_device_number(int num)
+{
+	if (!machine || io_sel_chan < 0 || io_sel_dev < 0 || num == io_sel_dev) return;
+	struct em400_channel_cfg *chan = &machine->cfg.channel[io_sel_chan];
+	chan->device[num] = chan->device[io_sel_dev];
+	chan->device[io_sel_dev] = (struct em400_device_cfg){};
+	io_sel_dev = num;
+	io_build_tree();
+	io_selection_changed();
+}
+
+// -----------------------------------------------------------------------
+void ConfigDialog::io_rebuild_dev_params()
+{
+	delete io_dev_params->layout();
+	qDeleteAll(io_dev_params->findChildren<QWidget *>("", Qt::FindDirectChildrenOnly));
+
+	QFormLayout *form = new QFormLayout(io_dev_params);
+	form->setContentsMargins(0, 0, 0, 0);
+	form->setVerticalSpacing(10);
+
+	if (io_sel_chan < 0 || io_sel_dev < 0 || !machine) return;
+
+	const int ch = io_sel_chan, d = io_sel_dev;
+	struct em400_device_cfg *dev = &machine->cfg.channel[ch].device[d];
+
+	auto image_row = [this, form](const QString &label, const char **field, const QString &caption) {
+		QLineEdit *edit = new QLineEdit();
+		edit->setText(*field ? QString(*field) : QString());
+		connect(edit, &QLineEdit::editingFinished, this, [field, edit]() {
+			set_cstr(field, edit->text());
+		});
+		QPushButton *browse = new QPushButton(tr("Browse..."));
+		connect(browse, &QPushButton::clicked, this, [this, edit, caption]() {
+			QString f = QFileDialog::getOpenFileName(this, caption);
+			if (!f.isNull()) edit->setText(f);
+		});
+		QHBoxLayout *row = new QHBoxLayout();
+		row->addWidget(edit, 1);
+		row->addWidget(browse);
+		form->addRow(label, row);
+	};
+
+	switch (dev->type) {
+	case EM400_DEV_TERMINAL: {
+		QSpinBox *port = new QSpinBox();
+		port->setRange(0, 65535);
+		port->setMaximumWidth(140);
+		port->setValue(dev->terminal.port);
+		connect(port, &QSpinBox::valueChanged, this, [this, ch, d](int v) {
+			machine->cfg.channel[ch].device[d].terminal.port = v;
+		});
+		form->addRow(tr("TCP port:"), port);
+
+		QComboBox *speed = new QComboBox();
+		speed->setMaximumWidth(140);
+		for (int baud : {150, 300, 600, 1200, 2400, 4800, 9600}) {
+			speed->addItem(QString::number(baud), baud);
+		}
+		int sidx = speed->findData(dev->terminal.speed ? dev->terminal.speed : 9600);
+		speed->setCurrentIndex(sidx >= 0 ? sidx : speed->findData(9600));
+		connect(speed, &QComboBox::currentIndexChanged, this, [this, ch, d, speed]() {
+			machine->cfg.channel[ch].device[d].terminal.speed = speed->currentData().toInt();
+		});
+		form->addRow(tr("Speed (baud):"), speed);
+		break;
+	}
+	case EM400_DEV_WINCHESTER:
+		image_row(tr("Disk image:"), &dev->winchester.image, tr("Winchester disk image"));
+		break;
+	case EM400_DEV_RTCLOCK:
+		image_row(tr("PROM image:"), &dev->rtclock.prom, tr("RTC PROM image"));
+		break;
+	case EM400_DEV_SP45DE:
+		for (int s=0 ; s<EM400_SP45DE_SLOT_COUNT ; s++) {
+			image_row(tr("Slot %1 image:").arg(s), &dev->sp45de.images[s], tr("Floppy image"));
+		}
+		break;
+	default:
+		break;
+	}
 }
 
 // -----------------------------------------------------------------------
@@ -480,6 +928,13 @@ void ConfigDialog::reload_machine_page()
 	};
 	for (QObject *o : edit_widgets) {
 		static_cast<QWidget *>(o)->setEnabled(have);
+	}
+
+	io_sel_chan = io_sel_dev = -1;
+	if (io_tree) {
+		io_build_tree();
+		io_editor->setCurrentIndex(0);
+		io_update_buttons();
 	}
 
 	if (!have) return;
