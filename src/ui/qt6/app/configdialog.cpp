@@ -169,10 +169,8 @@ QWidget *ConfigDialog::build_sound_page()
 	outer->addWidget(enabled);
 
 	QWidget *config_box = new QWidget();
-	config_box->setEnabled(appcfg.host.sound.enabled);
-	connect(enabled, &QCheckBox::toggled, this, [config_box](bool on) {
+	connect(enabled, &QCheckBox::toggled, this, [](bool on) {
 		appcfg.host.sound.enabled = on;
-		config_box->setEnabled(on);
 	});
 	outer->addWidget(config_box);
 
@@ -799,10 +797,8 @@ QWidget *ConfigDialog::build_log_page()
 	QFormLayout *config_form = new QFormLayout(config_box);
 	config_form->setVerticalSpacing(10);
 	config_form->setContentsMargins(0, 0, 0, 0);
-	config_box->setEnabled(appcfg.log.enabled);
-	connect(enabled, &QCheckBox::toggled, this, [config_box](bool on) {
+	connect(enabled, &QCheckBox::toggled, this, [](bool on) {
 		appcfg.log.enabled = on;
-		config_box->setEnabled(on);
 	});
 
 	QSet<int> on;
