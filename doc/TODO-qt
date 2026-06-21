@@ -2,7 +2,6 @@ Awaiting implementation:
 
  * keyboard shortcuts
  * configuration
- * hardware profiles
 
 Requires more emu work:
 
@@ -15,8 +14,6 @@ To investigate, open questions:
  * symbols (loading, saving, in-dasm usage)
  * log manipulation (where? config? widget? additional bottom bar?)
  * save memory: menu? memview?
- * load OS block?
- * power on/off - behavior? configuration?
  * background sound
  * help? (?) on more widgets?
  * details on mouseover? (dec/hex/oct/bin/field decodes) - sr, r0, rz, memview

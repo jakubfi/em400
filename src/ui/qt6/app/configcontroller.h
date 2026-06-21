@@ -32,6 +32,7 @@ public:
 	ConfigController(struct appcfg *cfg, EmuModel *emu) : cfg(cfg), emu(emu) {}
 
 	void set_disk_image(struct appcfg_machine *m, unsigned chan, unsigned dev, unsigned slot, const char *path);
+	bool is_powered() const;
 
 private:
 	struct appcfg *cfg;

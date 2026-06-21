@@ -54,6 +54,15 @@ void set_cstr(const char **field, const QString &s)
 	*field = s.isEmpty() ? nullptr : strdup(s.toUtf8().constData());
 }
 
+// Tag a control with its editability lifecycle, read back by
+// update_enabled_states(): "live" = always editable, "cold" = only while
+// powered off, "media:c:d:s" = off or em400_dev_can_eject(c,d,s). Untagged
+// widgets (labels, containers, navigation) are left alone.
+void gate(QWidget *w, const QString &kind)
+{
+	w->setProperty("gate", kind);
+}
+
 // free a device's owned union strings before its `type` is overwritten
 void free_device_strings(struct em400_device_cfg *dev)
 {
@@ -92,7 +101,8 @@ ConfigDialog::ConfigDialog(ConfigController *ctl, QWidget *parent) :
 	sections->setIconSize(QSize(24, 24));
 	stack = new QStackedWidget();
 
-	add_section(tr("Machine"), "computer", build_machine_page());
+	machine_page = build_machine_page();
+	add_section(tr("Machine"), "computer", machine_page);
 	add_section(tr("General"), "preferences-system", build_general_page());
 	add_section(tr("Sound"), "audio-volume-high", build_sound_page());
 	add_section(tr("Logging"), "text-x-generic", build_log_page());
@@ -114,6 +124,10 @@ ConfigDialog::ConfigDialog(ConfigController *ctl, QWidget *parent) :
 	outer->addWidget(buttons);
 
 	setMinimumSize(720, 520);
+
+	// pages are children of `this` only now that the layout is built, so the
+	// reload_machine_page() pass above could not reach them via findChildren
+	update_enabled_states();
 }
 
 // -----------------------------------------------------------------------
@@ -138,6 +152,7 @@ QWidget *ConfigDialog::build_general_page()
 	connect(powered, &QCheckBox::toggled, this, [](bool on) {
 		QSettings().setValue("ui/startPoweredOn", on);
 	});
+	gate(powered, "live");
 	form->addRow(QString(), powered);
 
 	QCheckBox *speed_real = new QCheckBox(tr("Emulate real CPU speed"));
@@ -145,6 +160,7 @@ QWidget *ConfigDialog::build_general_page()
 	connect(speed_real, &QCheckBox::toggled, this, [](bool on) {
 		appcfg.host.emu.speed_real = on;
 	});
+	gate(speed_real, "cold");
 	form->addRow(QString(), speed_real);
 
 	QSpinBox *quantum = new QSpinBox();
@@ -155,6 +171,7 @@ QWidget *ConfigDialog::build_general_page()
 	connect(quantum, &QSpinBox::valueChanged, this, [](int v) {
 		appcfg.host.emu.emulation_quantum_us = v;
 	});
+	gate(quantum, "cold");
 	form->addRow(tr("Emulation quantum:"), quantum);
 
 	return page;
@@ -168,6 +185,7 @@ QWidget *ConfigDialog::build_sound_page()
 
 	QCheckBox *enabled = new QCheckBox(tr("Sound output enabled"));
 	enabled->setChecked(appcfg.host.sound.enabled);
+	gate(enabled, "cold");
 	outer->addWidget(enabled);
 
 	QWidget *config_box = new QWidget();
@@ -191,6 +209,7 @@ QWidget *ConfigDialog::build_sound_page()
 		appcfg.host.sound.volume = v;
 		volume_val->setText(QString::number(v));
 	});
+	gate(volume, "live");
 	QHBoxLayout *volume_row = new QHBoxLayout();
 	volume_row->addWidget(volume, 1);
 	volume_row->addWidget(volume_val);
@@ -207,6 +226,7 @@ QWidget *ConfigDialog::build_sound_page()
 	connect(rate, &QComboBox::currentIndexChanged, this, [rate]() {
 		appcfg.host.sound.sample_rate = rate->currentData().toInt();
 	});
+	gate(rate, "cold");
 	form->addRow(tr("Sample rate:"), rate);
 
 	QComboBox *buffer = new QComboBox();
@@ -220,6 +240,7 @@ QWidget *ConfigDialog::build_sound_page()
 	connect(buffer, &QComboBox::currentIndexChanged, this, [buffer]() {
 		appcfg.host.sound.buffer_len = buffer->currentData().toInt();
 	});
+	gate(buffer, "cold");
 	form->addRow(tr("Buffer length (frames):"), buffer);
 
 	QSpinBox *latency = new QSpinBox();
@@ -229,6 +250,7 @@ QWidget *ConfigDialog::build_sound_page()
 	connect(latency, &QSpinBox::valueChanged, this, [](int v) {
 		appcfg.host.sound.latency = v;
 	});
+	gate(latency, "cold");
 	form->addRow(tr("Latency:"), latency);
 
 	QLineEdit *backend = new QLineEdit();
@@ -237,6 +259,7 @@ QWidget *ConfigDialog::build_sound_page()
 	connect(backend, &QLineEdit::editingFinished, this, [backend]() {
 		set_cstr(&appcfg.host.sound.backend, backend->text());
 	});
+	gate(backend, "cold");
 	form->addRow(tr("Backend:"), backend);
 
 	QLineEdit *device = new QLineEdit();
@@ -245,6 +268,7 @@ QWidget *ConfigDialog::build_sound_page()
 	connect(device, &QLineEdit::editingFinished, this, [device]() {
 		set_cstr(&appcfg.host.sound.device, device->text());
 	});
+	gate(device, "cold");
 	form->addRow(tr("Device:"), device);
 
 	return page;
@@ -267,6 +291,7 @@ QWidget *ConfigDialog::build_machine_page()
 	int act_idx = m_active->findData(appcfg.active_id ? QString(appcfg.active_id) : QString());
 	if (act_idx >= 0) m_active->setCurrentIndex(act_idx);
 	connect(m_active, &QComboBox::currentIndexChanged, this, &ConfigDialog::slot_active_machine_changed);
+	gate(m_active, "cold");
 	id_form->addRow(tr("Active machine:"), m_active);
 
 	m_name = new QLineEdit();
@@ -276,6 +301,7 @@ QWidget *ConfigDialog::build_machine_page()
 		m_active->setItemText(m_active->currentIndex(),
 			machine->name ? QString(machine->name) : QString(machine->id));
 	});
+	gate(m_name, "live");
 	id_form->addRow(tr("Name:"), m_name);
 	layout->addLayout(id_form);
 
@@ -313,6 +339,9 @@ QWidget *ConfigDialog::build_machine_page()
 		if (machine) machine->cfg.cpu.clock_period_ms = m_clock_period->currentData().toInt();
 	});
 	cpu->addRow(tr("Clock period:"), m_clock_period);
+	for (QWidget *w : std::initializer_list<QWidget *>{m_awp, m_mod, m_user_io_illegal, m_nomem_stop, m_clock_period}) {
+		gate(w, "cold");
+	}
 	tabs->addTab(cpu_box, tr("CPU"));
 
 	QWidget *mem_box = new QWidget();
@@ -367,6 +396,10 @@ QWidget *ConfigDialog::build_machine_page()
 	preload_row->addWidget(m_preload, 1);
 	preload_row->addWidget(preload_browse);
 	mem->addRow(tr("Preload OS image:"), preload_row);
+	for (QWidget *w : std::initializer_list<QWidget *>{m_elwro, m_mega, m_os_segments, m_mega_prom,
+			prom_browse, m_preload, preload_browse}) {
+		gate(w, "cold");
+	}
 	tabs->addTab(mem_box, tr("Memory"));
 
 	tabs->addTab(build_io_page(), tr("I/O"));
@@ -461,6 +494,7 @@ QWidget *ConfigDialog::build_io_page()
 	connect(io_chan_num, &QComboBox::currentIndexChanged, this, [this]() {
 		io_set_channel_number(io_chan_num->currentData().toInt());
 	});
+	gate(io_chan_num, "cold");
 	chan_form->addRow(tr("Channel number:"), io_chan_num);
 	io_chan_type = new QComboBox();
 	io_chan_type->addItem(chan_type_label(EM400_CHANNEL_CHAR), EM400_CHANNEL_CHAR);
@@ -472,6 +506,7 @@ QWidget *ConfigDialog::build_io_page()
 			(enum em400_channel_types) io_chan_type->currentData().toInt();
 		io_build_tree();
 	});
+	gate(io_chan_type, "cold");
 	chan_form->addRow(tr("Channel type:"), io_chan_type);
 	io_editor->addWidget(chan_page);
 
@@ -485,6 +520,7 @@ QWidget *ConfigDialog::build_io_page()
 	connect(io_dev_num, &QComboBox::currentIndexChanged, this, [this]() {
 		io_set_device_number(io_dev_num->currentData().toInt());
 	});
+	gate(io_dev_num, "cold");
 	dev_form->addRow(tr("Device number:"), io_dev_num);
 	io_dev_type = new QComboBox();
 	io_dev_type->addItem(dev_type_label(EM400_DEV_TERMINAL), EM400_DEV_TERMINAL);
@@ -503,6 +539,7 @@ QWidget *ConfigDialog::build_io_page()
 		io_rebuild_dev_params();
 		io_build_tree();
 	});
+	gate(io_dev_type, "cold");
 	dev_form->addRow(tr("Device type:"), io_dev_type);
 	dev_layout->addLayout(dev_form);
 
@@ -626,9 +663,10 @@ void ConfigDialog::io_update_buttons()
 			}
 		}
 	}
-	io_add_chan_btn->setEnabled(have_machine && !chan_full);
-	io_add_dev_btn->setEnabled(io_sel_chan >= 0);
-	io_remove_btn->setEnabled(io_sel_chan >= 0);
+	bool off = !ctl->is_powered();
+	io_add_chan_btn->setEnabled(off && have_machine && !chan_full);
+	io_add_dev_btn->setEnabled(off && io_sel_chan >= 0);
+	io_remove_btn->setEnabled(off && io_sel_chan >= 0);
 }
 
 // -----------------------------------------------------------------------
@@ -738,6 +776,8 @@ void ConfigDialog::io_rebuild_dev_params()
 			QString f = QFileDialog::getOpenFileName(this, caption);
 			if (!f.isNull()) edit->setText(f);
 		});
+		gate(edit, "cold");
+		gate(browse, "cold");
 		QHBoxLayout *row = new QHBoxLayout();
 		row->addWidget(edit, 1);
 		row->addWidget(browse);
@@ -759,6 +799,9 @@ void ConfigDialog::io_rebuild_dev_params()
 				commit();
 			}
 		});
+		QString g = QStringLiteral("media:%1:%2:%3").arg(ch).arg(d).arg(slot);
+		gate(edit, g);
+		gate(browse, g);
 		QHBoxLayout *row = new QHBoxLayout();
 		row->addWidget(edit, 1);
 		row->addWidget(browse);
@@ -774,6 +817,7 @@ void ConfigDialog::io_rebuild_dev_params()
 		connect(port, &QSpinBox::valueChanged, this, [this, ch, d](int v) {
 			machine->cfg.channel[ch].device[d].terminal.port = v;
 		});
+		gate(port, "cold");
 		form->addRow(tr("TCP port:"), port);
 
 		QComboBox *speed = new QComboBox();
@@ -786,6 +830,7 @@ void ConfigDialog::io_rebuild_dev_params()
 		connect(speed, &QComboBox::currentIndexChanged, this, [this, ch, d, speed]() {
 			machine->cfg.channel[ch].device[d].terminal.speed = speed->currentData().toInt();
 		});
+		gate(speed, "cold");
 		form->addRow(tr("Speed (baud):"), speed);
 		break;
 	}
@@ -803,6 +848,8 @@ void ConfigDialog::io_rebuild_dev_params()
 	default:
 		break;
 	}
+
+	update_enabled_states();
 }
 
 // -----------------------------------------------------------------------
@@ -814,6 +861,7 @@ QWidget *ConfigDialog::build_log_page()
 
 	QCheckBox *enabled = new QCheckBox(tr("Logging enabled"));
 	enabled->setChecked(appcfg.log.enabled);
+	gate(enabled, "live");
 	form->addRow(QString(), enabled);
 
 	QWidget *config_box = new QWidget();
@@ -852,6 +900,7 @@ QWidget *ConfigDialog::build_log_page()
 		cb->setProperty("compid", i);
 		cb->setChecked(on.contains(i));
 		if (i == L_EM4H) cb->setEnabled(false);
+		else gate(cb, "live");
 		connect(cb, &QCheckBox::toggled, this, [this]() { rebuild_log_components(); });
 		comp_grid->addWidget(cb, (i - 1) / 3, (i - 1) % 3);
 		m_log_components.append(cb);
@@ -861,6 +910,8 @@ QWidget *ConfigDialog::build_log_page()
 	QHBoxLayout *sel_row = new QHBoxLayout();
 	QPushButton *sel_all = new QPushButton(tr("Select all"));
 	QPushButton *sel_none = new QPushButton(tr("Select none"));
+	gate(sel_all, "live");
+	gate(sel_none, "live");
 	connect(sel_all, &QPushButton::clicked, this, [this]() {
 		for (QCheckBox *cb : m_log_components) {
 			if (cb->isEnabled()) {
@@ -895,6 +946,8 @@ QWidget *ConfigDialog::build_log_page()
 		QString f = QFileDialog::getSaveFileName(this, tr("Log file"));
 		if (!f.isNull()) file->setText(f);
 	});
+	gate(file, "cold");
+	gate(file_browse, "cold");
 	QHBoxLayout *file_row = new QHBoxLayout();
 	file_row->addWidget(file, 1);
 	file_row->addWidget(file_browse);
@@ -905,6 +958,7 @@ QWidget *ConfigDialog::build_log_page()
 	connect(line_buffered, &QCheckBox::toggled, this, [](bool on) {
 		appcfg.log.line_buffered = on;
 	});
+	gate(line_buffered, "cold");
 	config_form->addRow(QString(), line_buffered);
 
 	form->addRow(config_box);
@@ -926,17 +980,40 @@ void ConfigDialog::rebuild_log_components()
 }
 
 // -----------------------------------------------------------------------
+// One pass over every gated control: enabled iff the change can take effect
+// now. Powered off -> everything cold materializes at power-on; powered on ->
+// only live fields and ejectable media stay editable. Machine-block controls
+// also require an active machine to edit. See gate().
+void ConfigDialog::update_enabled_states()
+{
+	bool off = !ctl->is_powered();
+	bool have = machine != nullptr;
+
+	for (QWidget *w : findChildren<QWidget *>()) {
+		QString g = w->property("gate").toString();
+		if (g.isEmpty()) continue;
+
+		bool enable;
+		if (g == "live") {
+			enable = true;
+		} else if (g == "cold") {
+			enable = off;
+		} else if (g.startsWith("media:")) {
+			const QStringList p = g.mid(6).split(':');
+			enable = off || em400_dev_can_eject(p[0].toInt(), p[1].toInt(), p[2].toInt());
+		} else {
+			continue;
+		}
+
+		if (!have && machine_page->isAncestorOf(w)) enable = false;
+		w->setEnabled(enable);
+	}
+}
+
+// -----------------------------------------------------------------------
 void ConfigDialog::reload_machine_page()
 {
 	bool have = machine != nullptr;
-
-	const QObjectList edit_widgets = {
-		m_name, m_awp, m_mod, m_user_io_illegal, m_nomem_stop, m_clock_period,
-		m_elwro, m_mega, m_os_segments, m_mega_prom, m_preload
-	};
-	for (QObject *o : edit_widgets) {
-		static_cast<QWidget *>(o)->setEnabled(have);
-	}
 
 	io_sel_chan = io_sel_dev = -1;
 	if (io_tree) {
@@ -944,6 +1021,8 @@ void ConfigDialog::reload_machine_page()
 		io_editor->setCurrentIndex(0);
 		io_update_buttons();
 	}
+
+	update_enabled_states();
 
 	if (!have) return;
 

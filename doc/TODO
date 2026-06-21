@@ -3,7 +3,7 @@ Work notes:
 * drop terminal "transport"
 * drop old-style config handlers
 * -O machine.mera400:memory.elwro_modules ?
-* drop e4i (auto-migrate?)
+* drop e4i (auto-migrate? ui popup?)
 * config migration - UI popup?
 
 * reconsider terminal input buffering

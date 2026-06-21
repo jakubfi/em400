@@ -47,6 +47,7 @@ private:
 	QStackedWidget *stack;
 
 	struct appcfg_machine *machine = nullptr;
+	QWidget *machine_page = nullptr;
 
 	QComboBox *m_active = nullptr;
 	QLineEdit *m_name = nullptr;
@@ -73,6 +74,7 @@ private:
 	QWidget *build_log_page();
 
 	void add_section(const QString &title, const QString &icon_name, QWidget *page);
+	void update_enabled_states();
 	void reload_machine_page();
 	void rebuild_log_components();
 

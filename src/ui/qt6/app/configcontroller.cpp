@@ -28,4 +28,10 @@ void ConfigController::set_disk_image(struct appcfg_machine *m, unsigned chan, u
 	}
 }
 
+// -----------------------------------------------------------------------
+bool ConfigController::is_powered() const
+{
+	return emu->is_powered();
+}
+
 // vim: tabstop=4 shiftwidth=4 autoindent
