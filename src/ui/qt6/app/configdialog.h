@@ -31,6 +31,7 @@ class QCheckBox;
 class QSpinBox;
 class QTreeWidget;
 class QPushButton;
+class ConfigController;
 
 // Edits `appcfg` in place; no apply/restart and no file write yet (later steps).
 class ConfigDialog : public QDialog
@@ -38,9 +39,10 @@ class ConfigDialog : public QDialog
 	Q_OBJECT
 
 public:
-	explicit ConfigDialog(QWidget *parent = nullptr);
+	explicit ConfigDialog(ConfigController *ctl, QWidget *parent = nullptr);
 
 private:
+	ConfigController *ctl;
 	QListWidget *sections;
 	QStackedWidget *stack;
 

@@ -9,6 +9,7 @@
 #include <QList>
 #include <emdas.h>
 #include "emumodel.h"
+#include "configcontroller.h"
 #include "dasmview.h"
 #include "memview.h"
 #include "regview.h"
@@ -32,6 +33,7 @@ public:
 
 private:
     EmuModel e;
+	ConfigController cfg_ctl;
 	Ui::MainWindow *ui;
 
 	QLabel *ips;

@@ -63,6 +63,7 @@ void appcfg_machine_delete(struct appcfg *c, const char *id);
 struct appcfg_machine *appcfg_machine_find(struct appcfg *c, const char *id);
 struct em400_machine_cfg *appcfg_active_machine(struct appcfg *c);
 void appcfg_machine_set_name(struct appcfg_machine *m, const char *name);
+bool appcfg_set_image(struct appcfg_machine *m, unsigned chan, unsigned dev, unsigned slot, const char *path);
 
 #ifdef __cplusplus
 }

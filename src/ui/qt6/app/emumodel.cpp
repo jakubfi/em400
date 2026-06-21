@@ -63,6 +63,15 @@ void EmuModel::slot_power(bool on)
 }
 
 // -----------------------------------------------------------------------
+void EmuModel::reload_media(unsigned chan, unsigned dev, unsigned slot, const char *path)
+{
+	if (!is_powered() || !em400_dev_can_eject(chan, dev, slot)) return;
+
+	if (path && *path) em400_dev_load_image(chan, dev, slot, path);
+	else em400_dev_eject(chan, dev, slot);
+}
+
+// -----------------------------------------------------------------------
 // Push a dead-machine snapshot so the panel and views read as off after a
 // power-down: the polling timers are stopped, so nothing would otherwise
 // overwrite the last live values. Cached last_* are zeroed too, so on-demand

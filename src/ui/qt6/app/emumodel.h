@@ -52,6 +52,10 @@ public:
 	uint32_t get_rz() { return last_rz; }
 	int get_mem_map(int seg) { return is_powered() ? em400_mem_map(seg) : 0; }
 
+	// live-swap a removable drive: (re)load or eject the device at this address,
+	// no-op unless powered and the device permits it. Config side is ConfigController's.
+	void reload_media(unsigned chan, unsigned dev, unsigned slot, const char *path);
+
 	// interrupt view helpers (structural, language-free)
 	int int_mask_bit(int n) { return is_powered() ? em400_int_mask_bit(n) : 0; }
 	void set_int(int n, bool on) { if (!is_powered()) return; if (on) em400_int_set(n); else em400_int_clear(n); }

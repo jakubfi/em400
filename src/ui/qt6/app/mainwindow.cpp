@@ -11,6 +11,7 @@
 #include <QShortcut>
 #include "mainwindow.h"
 #include "ui_mainwindow.h"
+#include "appcfg.h"
 #include "emdas.h"
 #include "theme.h"
 #include "configdialog.h"
@@ -52,6 +53,7 @@ static QFrame *make_vsep()
 // -----------------------------------------------------------------------
 MainWindow::MainWindow(QWidget *parent) :
 	QMainWindow(parent),
+	cfg_ctl(&appcfg, &e),
 	ui(new Ui::MainWindow)
 {
 	ui->setupUi(this);
@@ -459,7 +461,7 @@ void MainWindow::slot_edit_mode_changed(bool editing, bool insert)
 // -----------------------------------------------------------------------
 void MainWindow::open_config()
 {
-	ConfigDialog dialog(this);
+	ConfigDialog dialog(&cfg_ctl, this);
 	dialog.exec();
 }
 

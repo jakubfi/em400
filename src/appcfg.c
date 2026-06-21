@@ -157,6 +157,33 @@ struct em400_machine_cfg * appcfg_active_machine(struct appcfg *c)
 }
 
 // -----------------------------------------------------------------------
+bool appcfg_set_image(struct appcfg_machine *m, unsigned chan, unsigned dev, unsigned slot, const char *path)
+{
+	if (!m || chan >= EM400_IO_MAX_CHAN || dev >= EM400_CHAN_MAX_DEV) return false;
+
+	struct em400_device_cfg *d = &m->cfg.channel[chan].device[dev];
+	const char **field;
+	switch (d->type) {
+		case EM400_DEV_WINCHESTER:
+			field = &d->winchester.image;
+			break;
+		case EM400_DEV_SP45DE:
+			if (slot >= EM400_SP45DE_SLOT_COUNT) return false;
+			field = &d->sp45de.images[slot];
+			break;
+		default:
+			return false;
+	}
+
+	const char *want = (path && *path) ? path : NULL;
+	if ((!want && !*field) || (want && *field && !strcmp(want, *field))) return false;
+
+	free((void *) *field);
+	*field = want ? strdup(want) : NULL;
+	return true;
+}
+
+// -----------------------------------------------------------------------
 static int build_device(em400_cfg *cfg, int chnum, int devnum, struct em400_device_cfg *dev)
 {
 	const char *dev_type_name = cfg_fgetstr(cfg, "dev%i.%i:type", chnum, devnum);

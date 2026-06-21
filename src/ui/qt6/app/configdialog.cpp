@@ -43,6 +43,7 @@
 #include <QTreeWidgetItem>
 
 #include "configdialog.h"
+#include "configcontroller.h"
 
 // -----------------------------------------------------------------------
 // strdup/free, not new/delete: appcfg_free() releases these with free().
@@ -75,8 +76,9 @@ void free_device_strings(struct em400_device_cfg *dev)
 }
 
 // -----------------------------------------------------------------------
-ConfigDialog::ConfigDialog(QWidget *parent) :
-	QDialog(parent)
+ConfigDialog::ConfigDialog(ConfigController *ctl, QWidget *parent) :
+	QDialog(parent),
+	ctl(ctl)
 {
 	setWindowTitle(tr("Configuration"));
 
@@ -742,6 +744,27 @@ void ConfigDialog::io_rebuild_dev_params()
 		form->addRow(label, row);
 	};
 
+	auto disk_image_row = [this, form, ch, d](const QString &label, int slot, const char *cur, const QString &caption) {
+		QLineEdit *edit = new QLineEdit();
+		edit->setText(cur ? QString(cur) : QString());
+		auto commit = [this, ch, d, slot, edit]() {
+			ctl->set_disk_image(machine, ch, d, slot, edit->text().toUtf8().constData());
+		};
+		connect(edit, &QLineEdit::editingFinished, this, commit);
+		QPushButton *browse = new QPushButton(tr("Browse..."));
+		connect(browse, &QPushButton::clicked, this, [this, edit, caption, commit]() {
+			QString f = QFileDialog::getOpenFileName(this, caption);
+			if (!f.isNull()) {
+				edit->setText(f);
+				commit();
+			}
+		});
+		QHBoxLayout *row = new QHBoxLayout();
+		row->addWidget(edit, 1);
+		row->addWidget(browse);
+		form->addRow(label, row);
+	};
+
 	switch (dev->type) {
 	case EM400_DEV_TERMINAL: {
 		QSpinBox *port = new QSpinBox();
@@ -767,14 +790,14 @@ void ConfigDialog::io_rebuild_dev_params()
 		break;
 	}
 	case EM400_DEV_WINCHESTER:
-		image_row(tr("Disk image:"), &dev->winchester.image, tr("Winchester disk image"));
+		disk_image_row(tr("Disk image:"), 0, dev->winchester.image, tr("Winchester disk image"));
 		break;
 	case EM400_DEV_RTCLOCK:
 		image_row(tr("PROM image:"), &dev->rtclock.prom, tr("RTC PROM image"));
 		break;
 	case EM400_DEV_SP45DE:
 		for (int s=0 ; s<EM400_SP45DE_SLOT_COUNT ; s++) {
-			image_row(tr("Slot %1 image:").arg(s), &dev->sp45de.images[s], tr("Floppy image"));
+			disk_image_row(tr("Slot %1 image:").arg(s), s, dev->sp45de.images[s], tr("Floppy image"));
 		}
 		break;
 	default:
