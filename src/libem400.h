@@ -197,6 +197,7 @@ void em400_shutdown();
 // --- I/O ---------------------------------------------------------------
 // -----------------------------------------------------------------------
 
+int em400_channel_max_devices(enum em400_channel_types type);
 int em400_dev_type(unsigned chnum, unsigned devnum);
 int em400_dev_slot_count(unsigned chnum, unsigned devnum);
 bool em400_dev_can_eject(unsigned chnum, unsigned devnum, unsigned slot);

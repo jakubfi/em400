@@ -179,6 +179,12 @@ void em400_shutdown()
 }
 
 // -----------------------------------------------------------------------
+int em400_channel_max_devices(enum em400_channel_types type)
+{
+	return chan_max_devices(type);
+}
+
+// -----------------------------------------------------------------------
 int em400_dev_type(unsigned chnum, unsigned devnum)
 {
 	return io_dev_type(chnum, devnum);

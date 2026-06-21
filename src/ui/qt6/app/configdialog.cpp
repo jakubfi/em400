@@ -502,9 +502,15 @@ QWidget *ConfigDialog::build_io_page()
 	io_chan_type->addItem(chan_type_label(EM400_CHANNEL_IOTESTER), EM400_CHANNEL_IOTESTER);
 	connect(io_chan_type, &QComboBox::currentIndexChanged, this, [this]() {
 		if (io_sel_chan < 0 || !machine) return;
-		machine->cfg.channel[io_sel_chan].type =
-			(enum em400_channel_types) io_chan_type->currentData().toInt();
+		struct em400_channel_cfg *chan = &machine->cfg.channel[io_sel_chan];
+		chan->type = (enum em400_channel_types) io_chan_type->currentData().toInt();
+		// a smaller channel type can no longer hold devices in its high slots
+		for (int d = em400_channel_max_devices(chan->type) ; d < EM400_CHAN_MAX_DEV ; d++) {
+			free_device_strings(&chan->device[d]);
+			chan->device[d] = (struct em400_device_cfg){};
+		}
 		io_build_tree();
+		io_update_buttons();
 	});
 	gate(io_chan_type, "cold");
 	chan_form->addRow(tr("Channel type:"), io_chan_type);
@@ -633,7 +639,8 @@ void ConfigDialog::io_selection_changed()
 
 		QSignalBlocker bn(io_dev_num);
 		io_dev_num->clear();
-		for (int i=0 ; i<EM400_CHAN_MAX_DEV ; i++) {
+		int max = em400_channel_max_devices(chan->type);
+		for (int i=0 ; i<max ; i++) {
 			if (i == io_sel_dev || chan->device[i].type == EM400_DEV_NONE) {
 				io_dev_num->addItem(QString::number(i), i);
 			}
@@ -663,9 +670,21 @@ void ConfigDialog::io_update_buttons()
 			}
 		}
 	}
+	bool dev_room = false;
+	if (have_machine && io_sel_chan >= 0) {
+		const struct em400_channel_cfg *chan = &machine->cfg.channel[io_sel_chan];
+		int max = em400_channel_max_devices(chan->type);
+		for (int d=0 ; d<max ; d++) {
+			if (chan->device[d].type == EM400_DEV_NONE) {
+				dev_room = true;
+				break;
+			}
+		}
+	}
+
 	bool off = !ctl->is_powered();
 	io_add_chan_btn->setEnabled(off && have_machine && !chan_full);
-	io_add_dev_btn->setEnabled(off && io_sel_chan >= 0);
+	io_add_dev_btn->setEnabled(off && io_sel_chan >= 0 && dev_room);
 	io_remove_btn->setEnabled(off && io_sel_chan >= 0);
 }
 
@@ -690,7 +709,8 @@ void ConfigDialog::io_add_device()
 {
 	if (!machine || io_sel_chan < 0) return;
 	struct em400_channel_cfg *chan = &machine->cfg.channel[io_sel_chan];
-	for (int d=0 ; d<EM400_CHAN_MAX_DEV ; d++) {
+	int max = em400_channel_max_devices(chan->type);
+	for (int d=0 ; d<max ; d++) {
 		if (chan->device[d].type == EM400_DEV_NONE) {
 			chan->device[d].type = EM400_DEV_TERMINAL;
 			chan->device[d].terminal.speed = 9600;

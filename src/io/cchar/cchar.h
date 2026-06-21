@@ -23,6 +23,8 @@
 
 #include "io/chan.h"
 
+#define CCHAR_MAX_DEVICES 8
+
 enum cchar_ou_commands {
 	CCHAR_CMD_RESET			= 0b100000, // reset
 	CCHAR_CMD_DETACH		= 0b101000, // disconnect device (soft reset)

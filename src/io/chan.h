@@ -55,6 +55,7 @@ struct chan {
 };
 
 chan_t * chan_create(unsigned num, unsigned type);
+int chan_max_devices(unsigned type);
 
 #endif
 

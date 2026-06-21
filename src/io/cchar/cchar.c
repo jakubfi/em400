@@ -31,7 +31,6 @@
 #include "log.h"
 
 #define NO_INTERRUPT_REPORTED -1
-#define CCHAR_MAX_DEVICES 8
 #define CCHAR_INT_NONE 9999 // no interrupt (em400 sentinel)
 
 struct chan_char {

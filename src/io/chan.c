@@ -26,21 +26,35 @@
 
 typedef chan_t * (*chan_create_f)(int ch_num);
 
-static const chan_create_f chan_constructor[] = {
-	[EM400_CHANNEL_CHAR] = cchar_create,
-	[EM400_CHANNEL_IOTESTER] = it_create,
-	[EM400_CHANNEL_MULTIX] = mx_create,
+struct chan_kind {
+	chan_create_f create;
+	int max_devices;
 };
+
+static const struct chan_kind chan_kinds[] = {
+	[EM400_CHANNEL_CHAR]		= { cchar_create, CCHAR_MAX_DEVICES },
+	[EM400_CHANNEL_IOTESTER]	= { it_create, 0 },
+	[EM400_CHANNEL_MULTIX]		= { mx_create, MX_LINE_CNT },
+};
+
+// -----------------------------------------------------------------------
+int chan_max_devices(unsigned type)
+{
+	if (type >= EM400_CHANNEL_TYPE_COUNT) {
+		return 0;
+	}
+	return chan_kinds[type].max_devices;
+}
 
 // -----------------------------------------------------------------------
 chan_t * chan_create(unsigned num, unsigned type)
 {
-	if ((type >= EM400_CHANNEL_TYPE_COUNT) || !chan_constructor[type]) {
+	if ((type >= EM400_CHANNEL_TYPE_COUNT) || !chan_kinds[type].create) {
 		LOGERR("Unknown channel type: %d", type);
 		return NULL;
 	}
 
-	chan_t *chan = chan_constructor[type](num);
+	chan_t *chan = chan_kinds[type].create(num);
 	if (chan) {
 		assert(chan->cmd);
 		assert(chan->reset);
