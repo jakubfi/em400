@@ -44,7 +44,6 @@ struct appcfg {
 	int n_machines;
 	int cap_machines;
 	char *active_id;
-	char *ui;
 	struct appcfg_log log;
 	struct em400_host_cfg host;
 };

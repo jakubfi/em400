@@ -130,16 +130,6 @@ QWidget *ConfigDialog::build_general_page()
 	form->setVerticalSpacing(10);
 	form->setFieldGrowthPolicy(QFormLayout::FieldsStayAtSizeHint);
 
-	QComboBox *ui = new QComboBox();
-	ui->addItem(tr("Qt (graphical)"), "qt");
-	ui->addItem(tr("Command line"), "cmd");
-	int ui_idx = ui->findData(appcfg.ui ? QString(appcfg.ui) : QString());
-	if (ui_idx >= 0) ui->setCurrentIndex(ui_idx);
-	connect(ui, &QComboBox::currentIndexChanged, this, [ui]() {
-		set_cstr((const char **) &appcfg.ui, ui->currentData().toString());
-	});
-	form->addRow(tr("User interface:"), ui);
-
 	QCheckBox *powered = new QCheckBox(tr("Start with the machine powered on"));
 	powered->setToolTip(tr("When off, the graphical UI starts with the machine powered down - turn the ignition key to power it on."));
 	powered->setChecked(QSettings().value("ui/startPoweredOn", false).toBool());

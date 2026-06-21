@@ -438,8 +438,6 @@ static void build_host(em400_cfg *cfg)
 		},
 	};
 
-	appcfg.ui = dup_str(getstr_any(cfg, NULL, (const char *[]){"general:ui", "ui:interface", NULL}));
-
 	appcfg.log = (struct appcfg_log) {
 		.enabled = cfg_getbool(cfg, "log:enabled", CFG_DEFAULT_LOG_ENABLED),
 		.components = dup_str(cfg_getstr(cfg, "log:components", CFG_DEFAULT_LOG_COMPONENTS)),
@@ -447,8 +445,7 @@ static void build_host(em400_cfg *cfg)
 		.line_buffered = cfg_getbool(cfg, "log:line_buffered", CFG_DEFAULT_LOG_LINE_BUFFERED),
 	};
 
-	LOG(L_EM4H, "Host config: ui=%s, speed_real=%s, emulation_quantum=%ius, sound=%s",
-		appcfg.ui ? appcfg.ui : "(default)",
+	LOG(L_EM4H, "Host config: speed_real=%s, emulation_quantum=%ius, sound=%s",
 		appcfg.host.emu.speed_real ? "true" : "false",
 		appcfg.host.emu.emulation_quantum_us,
 		appcfg.host.sound.enabled ? "enabled" : "disabled");
@@ -609,9 +606,6 @@ int appcfg_write(const struct appcfg *c, const char *path)
 	}
 
 	fprintf(f, "[general]\n");
-	if (c->ui) {
-		fprintf(f, "ui = %s\n", c->ui);
-	}
 	if (c->active_id) {
 		fprintf(f, "machine = %s\n", c->active_id);
 	}
@@ -660,7 +654,6 @@ void appcfg_free(void)
 	}
 	free(appcfg.machines);
 	free(appcfg.active_id);
-	free(appcfg.ui);
 	free(appcfg.log.components);
 	free(appcfg.log.file);
 

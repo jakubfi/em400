@@ -225,7 +225,7 @@ int em400_cmdline_1(int argc, char **argv, int *print_help, char **config)
 }
 
 // -----------------------------------------------------------------------
-int em400_cmdline_2(em400_cfg *cfg, int argc, char **argv, const char **program, const char **machine)
+int em400_cmdline_2(em400_cfg *cfg, int argc, char **argv, const char **program, const char **machine, const char **ui)
 {
 	int option;
 	optind = 1; // reset to 1 so consecutive calls work
@@ -249,7 +249,7 @@ int em400_cmdline_2(em400_cfg *cfg, int argc, char **argv, const char **program,
 				cfg_set(cfg, "log:components", optarg);
 				break;
 			case 'u':
-				cfg_set(cfg, "general:ui", optarg);
+				*ui = optarg;
 				break;
 			case 'O':
 				const char *colon = strchr(optarg, ':');
@@ -280,7 +280,7 @@ int main(int argc, char** argv)
 	char *migrate_to = NULL;
 	const char *program = NULL;
 	const char *machine_id = NULL;
-	char *ui_name = NULL;
+	const char *ui_name = NULL;
 	em400_cfg *cfg = NULL;
 	struct ui *ui = NULL;
 
@@ -329,7 +329,7 @@ int main(int argc, char** argv)
 	}
 
 	// read the commandline again to build final configuration
-	if (em400_cmdline_2(cfg, argc, argv, &program, &machine_id) != E_OK) {
+	if (em400_cmdline_2(cfg, argc, argv, &program, &machine_id, &ui_name) != E_OK) {
 		LOGERR("Failed to parse commandline arguments (pass 2)");
 		goto done;
 	}
@@ -348,10 +348,6 @@ int main(int argc, char** argv)
 			LOGERR("Failed to write migrated configuration to %s", migrate_to);
 			goto done;
 		}
-	}
-
-	if (appcfg.ui) {
-		ui_name = strdup(appcfg.ui);
 	}
 
 	// nothing needs cfg anymore
@@ -391,7 +387,6 @@ done:
 	em400_power_off();
 	em400_top_shutdown();
 	cfg_free(cfg);
-	free(ui_name);
 	free(config);
 	free(migrate_to);
 	return return_code;
