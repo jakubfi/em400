@@ -60,6 +60,7 @@ private:
 	WatchView *watch;
 	StackView *stack;
 
+	void update_window_title();
 	void update_mc_status(int mc);
 	void update_sr_status(uint16_t val);
 	void update_r0_status(uint16_t r0);

@@ -71,6 +71,7 @@ MainWindow::MainWindow(QWidget *parent) :
 		ui->cp->ignition->set_position(1);
 		emit ui->cp->ignition->signal_power(true);
 	}
+	update_window_title();
 
 	restore_layout();
 }
@@ -182,6 +183,7 @@ void MainWindow::wire_connections()
 	connect(ui->cp->ignition, &Ignition::signal_power, this, [this](bool on) {
 		if (on) e.slot_reg_select(ui->cp->rotary->get_position());
 	});
+	connect(&e, &EmuModel::signal_power_changed, this, &MainWindow::update_window_title);
 	connect(ui->cp, &ControlPanel::signal_start_toggled, &e, &EmuModel::slot_cpu_start);
 	connect(ui->cp, &ControlPanel::signal_clear_clicked, &e, &EmuModel::slot_clear);
 	connect(ui->cp, &ControlPanel::signal_oprq_clicked,  &e, &EmuModel::slot_oprq);
@@ -459,11 +461,29 @@ void MainWindow::slot_edit_mode_changed(bool editing, bool insert)
 }
 
 // -----------------------------------------------------------------------
+void MainWindow::update_window_title()
+{
+	if (!e.is_powered()) {
+		setWindowTitle(tr("EM400 — (powered off)"));
+		return;
+	}
+
+	struct appcfg_machine *m = appcfg_machine_find(&appcfg, appcfg.active_id);
+	const char *label = m ? (m->name ? m->name : m->id) : nullptr;
+	if (label && *label) {
+		setWindowTitle(QString("EM400 — %1").arg(QString::fromUtf8(label)));
+	} else {
+		setWindowTitle(QStringLiteral("EM400"));
+	}
+}
+
+// -----------------------------------------------------------------------
 void MainWindow::open_config()
 {
 	if (!config_dialog) {
 		config_dialog = new ConfigDialog(&cfg_ctl, this);
 		connect(&e, &EmuModel::signal_power_changed, config_dialog, &ConfigDialog::update_enabled_states);
+		connect(config_dialog, &ConfigDialog::signal_machine_renamed, this, &MainWindow::update_window_title);
 	}
 	config_dialog->show();
 	config_dialog->raise();

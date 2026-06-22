@@ -78,18 +78,6 @@
         <translation>Logowanie</translation>
     </message>
     <message>
-        <source>Qt (graphical)</source>
-        <translation>Qt (graficzny)</translation>
-    </message>
-    <message>
-        <source>Command line</source>
-        <translation>Wiersz poleceń</translation>
-    </message>
-    <message>
-        <source>User interface:</source>
-        <translation>Interfejs użytkownika:</translation>
-    </message>
-    <message>
         <source>%1 Hz</source>
         <translation>%1 Hz</translation>
     </message>
@@ -589,6 +577,10 @@ Brak ramki: przerwanie niemaskowalne</translation>
     <message>
         <source>Edit: overwrite</source>
         <translation>Edycja: nadpisywanie</translation>
+    </message>
+    <message>
+        <source>EM400 — (powered off)</source>
+        <translation>EM400 — (wyłączony)</translation>
     </message>
     <message>
         <source>Open OS image...</source>

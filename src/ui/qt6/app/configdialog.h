@@ -94,6 +94,11 @@ public slots:
 	// ignition while the (non-modal) dialog is open updates cold-field enabledness
 	void update_enabled_states();
 
+signals:
+	// active machine's display name changed (live-editable while running); the
+	// window title tracks it
+	void signal_machine_renamed();
+
 private slots:
 	void slot_active_machine_changed(int index);
 };

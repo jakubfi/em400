@@ -300,6 +300,7 @@ QWidget *ConfigDialog::build_machine_page()
 		appcfg_machine_set_name(machine, m_name->text().toUtf8().constData());
 		m_active->setItemText(m_active->currentIndex(),
 			machine->name ? QString(machine->name) : QString(machine->id));
+		if (machine == appcfg_machine_find(&appcfg, appcfg.active_id)) emit signal_machine_renamed();
 	});
 	gate(m_name, "live");
 	id_form->addRow(tr("Name:"), m_name);
