@@ -461,8 +461,13 @@ void MainWindow::slot_edit_mode_changed(bool editing, bool insert)
 // -----------------------------------------------------------------------
 void MainWindow::open_config()
 {
-	ConfigDialog dialog(&cfg_ctl, this);
-	dialog.exec();
+	if (!config_dialog) {
+		config_dialog = new ConfigDialog(&cfg_ctl, this);
+		connect(&e, &EmuModel::signal_power_changed, config_dialog, &ConfigDialog::update_enabled_states);
+	}
+	config_dialog->show();
+	config_dialog->raise();
+	config_dialog->activateWindow();
 }
 
 // -----------------------------------------------------------------------

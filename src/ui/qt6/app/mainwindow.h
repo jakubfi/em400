@@ -23,6 +23,8 @@ namespace Ui {
 class MainWindow;
 }
 
+class ConfigDialog;
+
 class MainWindow : public QMainWindow
 {
 	Q_OBJECT
@@ -35,6 +37,8 @@ private:
     EmuModel e;
 	ConfigController cfg_ctl;
 	Ui::MainWindow *ui;
+
+	ConfigDialog *config_dialog = nullptr;
 
 	QLabel *ips;
 	QLabel *q, *bs, *nb, *flags, *mc;

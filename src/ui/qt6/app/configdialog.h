@@ -74,7 +74,6 @@ private:
 	QWidget *build_log_page();
 
 	void add_section(const QString &title, const QString &icon_name, QWidget *page);
-	void update_enabled_states();
 	void reload_machine_page();
 	void rebuild_log_components();
 
@@ -89,6 +88,11 @@ private:
 	void io_remove_selected();
 	void io_set_channel_number(int num);
 	void io_set_device_number(int num);
+
+public slots:
+	// re-eval gating; connected to EmuModel::signal_power_changed so flipping the
+	// ignition while the (non-modal) dialog is open updates cold-field enabledness
+	void update_enabled_states();
 
 private slots:
 	void slot_active_machine_changed(int index);

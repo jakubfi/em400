@@ -60,6 +60,7 @@ void EmuModel::slot_power(bool on)
 		em400_power_off();
 		emit_off_state();
 	}
+	emit signal_power_changed(is_powered());
 }
 
 // -----------------------------------------------------------------------
