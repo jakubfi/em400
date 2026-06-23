@@ -72,6 +72,15 @@ install -Dm644 "$REPO_ROOT/src/ui/qt6/icons/em400/em400_256.png" "$APPDIR/usr/sh
 # config template for reference (not required at runtime)
 install -Dm644 "$REPO_ROOT/cfg/em400.ini.template" "$APPDIR/usr/share/doc/em400/em400.ini.template"
 
+# QtMultimedia (panel QSoundEffect clicks) loads its backend as a plugin that
+# linuxdeploy-plugin-qt does not pull from the linked lib. Stage it into the
+# AppDir so linuxdeploy resolves the backend's libraries (FFmpeg) as deps.
+QT_PLUGIN_DIR="$(${QMAKE:-qmake} -query QT_INSTALL_PLUGINS)"
+if [ -d "$QT_PLUGIN_DIR/multimedia" ]; then
+	mkdir -p "$APPDIR/usr/plugins/multimedia"
+	cp -a "$QT_PLUGIN_DIR/multimedia/." "$APPDIR/usr/plugins/multimedia/"
+fi
+
 # --- fetch tooling ----------------------------------------------------------
 
 mkdir -p "$TOOLS_DIR"

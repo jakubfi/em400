@@ -3,7 +3,7 @@ name: AppImage
 on:
   push:
     tags: ['release-*']      # tagged release -> build + attach to the GitHub Release
-    branches: ['appimage']   # TEMPORARY: exercise the workflow on the dev branch (remove before merge)
+    branches: ['em400-next'] # TEMPORARY: exercise the workflow on the dev branch (remove before merge)
   workflow_dispatch: {}      # manual ad-hoc test build (artifact only)
 
 jobs:
@@ -12,8 +12,10 @@ jobs:
     runs-on: ubuntu-22.04    # old glibc (2.35) baseline -> portable AppImage
     env:
       BUILD_TYPE: Release
-      # linuxdeploy-plugin-qt needs to locate the Qt6 qmake.
-      QMAKE: /usr/lib/qt6/bin/qmake6
+      # ubuntu-22.04 ships GCC 11, too old for the C23 the sources use; the
+      # 22.04 pin is only for the old glibc baseline, so use a newer compiler.
+      CC: gcc-13
+      CXX: g++-13
 
     steps:
       - name: Checkout
@@ -21,18 +23,30 @@ jobs:
         with:
           fetch-depth: 0     # so `git describe --tags` resolves the version
 
-      - name: Update apt
-        run: sudo apt-get update
+      - name: Install GCC 13 and system dependencies
+        run: |
+          sudo add-apt-repository -y ppa:ubuntu-toolchain-r/test
+          sudo apt-get update
+          sudo apt-get install -y \
+            gcc-13 g++-13 \
+            libgl1-mesa-dev libegl1-mesa-dev \
+            libuv1-dev libncurses-dev libreadline-dev \
+            libpulse-dev libasound2-dev \
+            flex libfl-dev bison \
+            file desktop-file-utils \
+            libxcb-cursor0 libxcb-xinerama0 libxkbcommon-x11-0 \
+            libxcb-icccm4 libxcb-image0 libxcb-keysyms1 libxcb-randr0 \
+            libxcb-render-util0 libxcb-shape0
 
-      - name: Install dependencies
-        run: >
-          sudo apt-get install -y
-          qt6-base-dev qt6-multimedia-dev
-          libgl1-mesa-dev libegl1-mesa-dev
-          libuv1-dev libncurses-dev libreadline-dev
-          libpulse-dev libasound2-dev
-          flex libfl-dev bison
-          file desktop-file-utils
+      # jammy's Qt is 6.2, whose QSoundEffect rebuilds its GStreamer pipeline per
+      # play and clips the attack. A newer Qt uses the self-contained FFmpeg
+      # backend (no GStreamer element bundling) and a persistent audio sink.
+      - name: Install Qt
+        uses: jurplel/install-qt-action@v4
+        with:
+          version: '6.7.3'
+          modules: 'qtmultimedia'
+          cache: true
 
       - name: Build and install emawp
         run: git clone https://github.com/jakubfi/emawp && cd emawp && cmake -B build && cmake --build build && sudo cmake --install build && sudo ldconfig
@@ -50,6 +64,8 @@ jobs:
         run: cmake --build build --config ${{env.BUILD_TYPE}}
 
       - name: Build AppImage
+        env:
+          QMAKE: ${{env.QT_ROOT_DIR}}/bin/qmake
         run: bash packaging/build-appimage.sh
 
       - name: Upload artifact
