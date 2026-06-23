@@ -351,6 +351,21 @@
     </message>
 </context>
 <context>
+    <name>DasmListing</name>
+    <message>
+        <source>Add breakpoint here</source>
+        <translation>Dodaj tutaj pułapkę</translation>
+    </message>
+    <message>
+        <source>Set IC here</source>
+        <translation>Ustaw IC tutaj</translation>
+    </message>
+    <message>
+        <source>Locate in Memory View</source>
+        <translation>Pokaż w podglądzie pamięci</translation>
+    </message>
+</context>
+<context>
     <name>DasmView</name>
     <message>
         <source>NB:</source>
@@ -363,18 +378,6 @@
     <message>
         <source>follow IC</source>
         <translation>śledź IC</translation>
-    </message>
-    <message>
-        <source>Add breakpoint here</source>
-        <translation>Dodaj tutaj pułapkę</translation>
-    </message>
-    <message>
-        <source>Set IC here</source>
-        <translation>Ustaw IC tutaj</translation>
-    </message>
-    <message>
-        <source>Locate in Memory View</source>
-        <translation>Pokaż w podglądzie pamięci</translation>
     </message>
 </context>
 <context>

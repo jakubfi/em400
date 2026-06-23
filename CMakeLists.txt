@@ -233,6 +233,7 @@ if (UI_QT)
 
 	# dockable debugger views
 	list(APPEND SOURCES_EM400 src/ui/qt6/views/dasmview.h src/ui/qt6/views/dasmview.cpp)
+	list(APPEND SOURCES_EM400 src/ui/qt6/views/dasmlisting.h src/ui/qt6/views/dasmlisting.cpp)
 	list(APPEND SOURCES_EM400 src/ui/qt6/views/asmline.h src/ui/qt6/views/asmline.cpp)
 	list(APPEND SOURCES_EM400 src/ui/qt6/views/memview.h src/ui/qt6/views/memview.cpp)
 	list(APPEND SOURCES_EM400 src/ui/qt6/views/memsearch.h src/ui/qt6/views/memsearch.cpp)
