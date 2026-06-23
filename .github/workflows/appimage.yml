@@ -3,7 +3,7 @@ name: AppImage
 on:
   push:
     tags: ['release-*']      # tagged release -> build + attach to the GitHub Release
-    branches: ['appimage']   # TEMPORARY: exercise the workflow on the dev branch (remove before merge)
+    branches: ['em400-next'] # TEMPORARY: exercise the workflow on the dev branch (remove before merge)
   workflow_dispatch: {}      # manual ad-hoc test build (artifact only)
 
 jobs:
@@ -27,7 +27,7 @@ jobs:
       - name: Install dependencies
         run: >
           sudo apt-get install -y
-          qt6-base-dev qt6-multimedia-dev qt6-tools-dev qt6-l10n-tools
+          qt6-base-dev qt6-multimedia-dev qt6-tools-dev qt6-tools-dev-tools qt6-l10n-tools
           libgl1-mesa-dev libegl1-mesa-dev
           libuv1-dev libncurses-dev libreadline-dev
           libpulse-dev libasound2-dev
