@@ -1,209 +1,49 @@
+//  Copyright (c) 2026 Jakub Filipowicz <jakubf@gmail.com>
+//
+//  This program is free software; you can redistribute it and/or modify
+//  it under the terms of the GNU General Public License as published by
+//  the Free Software Foundation; either version 2 of the License, or
+//  (at your option) any later version.
+//
+//  This program is distributed in the hope that it will be useful,
+//  but WITHOUT ANY WARRANTY; without even the implied warranty of
+//  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+//  GNU General Public License for more details.
+//
+//  You should have received a copy of the GNU General Public License
+//  along with this program; if not, write to the Free Software
+//  Foundation, Inc.,
+//  51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
+
 #ifndef MEMVIEW_H
 #define MEMVIEW_H
 
 #include <QWidget>
-#include <QFont>
-#include <QHash>
 #include "emumodel.h"
-
-// only used as pointers / by-pointer override params below; full definitions
-// are pulled into the .cpp
-class QPainter;
-class QLabel;
-class QScrollBar;
-class QSpinBox;
-class QPushButton;
-class QComboBox;
-class QLineEdit;
-class QCheckBox;
-class QKeyEvent;
-class QMouseEvent;
-class QFocusEvent;
+#include "memlisting.h"
 
 // -----------------------------------------------------------------------
+// The Memory dock: a header (segment / format / panel) and a search strip above
+// the margined grid, composed like the other docks' views.
 class MemView : public QWidget {
 
 	Q_OBJECT
 
 public:
-	enum DisplayFormat { FMT_HEX, FMT_UDEC, FMT_SDEC, FMT_OFF };
-	enum SidePanel { PANEL_OFF, PANEL_ASCII, PANEL_R40 };
-	enum EditKind { EDIT_VALUE, EDIT_TEXT };
-
 	explicit MemView(QWidget *parent = nullptr);
-	~MemView();
-	void connect_emu(EmuModel *emu);
-
-	QSize sizeHint() const override;
+	void connect_emu(EmuModel *emu) { listing->connect_emu(emu); }
 
 public slots:
-	void update_contents(int nb, int addr);
-	void update_contents_no_nb(int new_line);
-	// jump to a segment+address and frame that cell with a green accent box (same
-	// accent the editor uses); the box stays until the cell is clicked again,
-	// another cell is selected, or an edit begins
-	void locate_cell(int nb, int addr);
-	// open the search strip and focus its entry (the window-wide Ctrl-F entry point)
-	void open_search();
-
-private slots:
-	void slot_state_changed(int state);
-	void slot_reg_changed(int reg, uint16_t val);
+	void update_contents(int nb, int addr) { listing->update_contents(nb, addr); }
+	void locate_cell(int nb, int addr) { listing->locate_cell(nb, addr); }
+	void open_search() { listing->open_search(); }
 
 signals:
-	// editing==false means no cell is being edited; insert reflects the
-	// current insert/overwrite mode while editing
 	void signal_edit_mode_changed(bool editing, bool insert);
 
 private:
-	// geometry
-	int content_top = 0;   // height of the header bar; the grid starts below it
-	int search_h = 0;      // height of the search strip when shown, 0 when hidden
-	int search_bar_h = 0;  // the strip's natural (shown) height, computed once
-	// top of the scrolling grid: header plus the search strip when it is open
-	int grid_top() const { return content_top + search_h; }
-	int total_lines = 0;
-	// grid extents in paint coords (translated down by grid_top): bottom is the
-	// scrolling area's height, right is the full widget width
-	int bottom = 100, right = 100;
-	int half_font_width;
-	int line_height;
-	int col_hdr_h;   // height of the non-scrolling column offset row (= line_height)
-	int addr_x_start, addr_y_start;
-	int addr_len;
-	int mem_x_start, mem_y_start;
-	int divider_x_pos;
-	int words_per_line = 16;
+	MemListing *listing;
 
-	// view state
-	int cnb = 0, caddr = 0;
-	// Cell selection framed with the green accent box: a contiguous address
-	// range [sel_anchor .. sel_caret] within segment sel_nb (either end may be the
-	// larger; sel_lo()/sel_hi() order them). sel_anchor is the fixed origin a
-	// shift-click or drag extends from; sel_caret is the moving end. Empty when
-	// sel_anchor < 0. Drives "Locate in Memory View" (a single cell) and
-	// click/shift-click/drag selection. Persists across scrolling; cleared when
-	// a single-cell selection is clicked again, or when an edit begins. The box
-	// only paints while its segment (sel_nb) is the one on screen.
-	int sel_nb = -1, sel_anchor = -1, sel_caret = -1;
-	bool has_selection() const { return sel_anchor >= 0; }
-	void clear_selection() { sel_nb = -1; sel_anchor = sel_caret = -1; }
-	int sel_lo() const { return sel_anchor < sel_caret ? sel_anchor : sel_caret; }
-	int sel_hi() const { return sel_anchor > sel_caret ? sel_anchor : sel_caret; }
-	DisplayFormat fmt = FMT_HEX;
-	SidePanel panel = PANEL_ASCII;
-	bool cpu_running = false;
-
-	// in-place cell editing. EDIT_VALUE edits the numeric value column:
-	// an overwrite-style line editor where edit_buf holds the digits and
-	// edit_cursor is the caret column (0..edit_buf.length()), committed as
-	// one word. EDIT_TEXT edits the ASCII/R40 side panel as a write-through
-	// character stream: every keystroke overwrites one sub-char of the word
-	// at edit_addr (edit_char selects which) and advances, rolling onto the
-	// next word at the boundary so strings can be typed straight through.
-	bool editing = false;
-	EditKind edit_kind = EDIT_VALUE;
-	int edit_nb = 0;
-	int edit_addr = 0;
-	QString edit_buf;
-	int edit_cursor = 0;
-	bool edit_insert = false; // false = overwrite, toggled with Insert
-	int edit_char = 0; // EDIT_TEXT: sub-char caret within the word
-	// EDIT_TEXT: original value of each word touched this session, so ESC /
-	// focus-loss can roll the write-through edits back (addr -> pre-edit word)
-	QHash<int, uint16_t> edit_orig;
-
-	bool hit_test_cell(const QPoint &pos, int &addr) const;
-	bool hit_test_panel(const QPoint &pos, int &addr, int &sub) const;
-	void start_edit(int addr);
-	void start_text_edit(int addr, int sub);
-	void commit_edit();
-	void cancel_edit();
-	bool valid_buf(const QString &s) const;
-	void text_write_char(QChar c);
-	void text_move(int delta);
-	void ensure_caret_visible();
-	void ensure_addr_visible(int addr); // scroll so the line holding addr is on screen
-
-	// keyPressEvent dispatches to one of these by current edit mode
-	void key_text_edit(QKeyEvent *event);
-	void key_value_edit(QKeyEvent *event);
-	void key_navigate(QKeyEvent *event);
-
-	int wheel_tick_accumulator = 0;
-
-	// child widgets
-	QWidget *header = nullptr;
-	QSpinBox *nb_spin = nullptr;
-	QPushButton *btn_hex = nullptr, *btn_udec = nullptr, *btn_sdec = nullptr;
-	QPushButton *btn_ascii = nullptr, *btn_r40 = nullptr;
-	QScrollBar *scroll = nullptr;
-	void sync_format_buttons();   // reflect fmt onto the HEX/DEC/-DEC buttons
-	void sync_panel_buttons();    // reflect panel onto the ASCII/R40 buttons
-
-	// search strip (Ctrl-F), sits between the header and the grid. The scan logic
-	// lives in MemSearch (memsearch.h); this is the strip UI plus the glue that
-	// follows the view to a hit.
-	QWidget *search_bar = nullptr;
-	QComboBox *search_mode;
-	QLineEdit *search_entry;
-	QPushButton *search_prev, *search_next;
-	QCheckBox *search_all;
-	QLabel *search_status = nullptr;  // transient "wrapped" / "not found" cue
-	void build_search_bar();
-	void close_search();   // hide the strip and return focus to the grid
-	void relayout_grid();  // recompute grid geometry after a height change
-	void validate_search();   // red-border the entry when the query is invalid
-	void set_search_status(const QString &msg, bool error);
-	void search_next_match();
-	void search_prev_match();
-	// Start word of the last match (the search cursor): NEXT resumes one word
-	// past it, PREV one word before. -1 means search from the top (NEXT) /
-	// bottom (PREV); reset whenever the query, mode or segment changes.
-	int search_origin = -1;
-	void do_search(bool forward);
-
-	EmuModel *e = nullptr;
-	QFont font;        // the regular grid font
-	QFont font_bold;   // bold variant for the address gutter and offset headers
-	int font_height, font_width;
-
-	int val_chars() const;
-	int panel_chars() const;
-	int compute_words_per_line() const;
-	void apply_wpl_change();
-	void set_format(DisplayFormat f);
-	void toggle_panel(SidePanel p);
-
-	// paintEvent helpers
-	void draw_offset_row(QPainter &painter, int cell_w, int pcell_w, int side_x);
-	void draw_line(QPainter &painter, int y, int base_addr, int cell_w, int pcell_w, int side_x);
-	void draw_value_cell(QPainter &painter, int x, int y, int val, int cell_w);
-	void draw_edit_cell(QPainter &painter, int x, int y, int cell_w);
-	void draw_panel_cell(QPainter &painter, int x, int y, int val, int pcell_w, int side_x);
-	void draw_panel_cell_edited(QPainter &painter, int x, int y, int addr, int val, int pcell_w, int side_x);
-	void draw_panel_edit_cell(QPainter &painter, int x, int y, int val, int pcell_w, int side_x);
-	void draw_locate_box(QPainter &painter, int col0, int col1, int y, int cell_w, int pcell_w, int side_x);
-	QString value_text(int val) const;
-	QString panel_text(int val) const;
-
-	void set_font(QString name, int size = 0);
-	void update_font_related_dimensions();
-	void update_scroll_range();
-	int calculate_scroll_lines(int angle_delta);
-
-protected:
-	void paintEvent(QPaintEvent *event) override;
-	void resizeEvent(QResizeEvent *event) override;
-	void mousePressEvent(QMouseEvent *event) override;
-	void mouseMoveEvent(QMouseEvent *event) override;
-	void mouseDoubleClickEvent(QMouseEvent *event) override;
-	void focusOutEvent(QFocusEvent *event) override;
-	bool eventFilter(QObject *obj, QEvent *event) override;
-	void wheelEvent(QWheelEvent *event) override;
-	void enterEvent(QEnterEvent *event) override;
-	void leaveEvent(QEvent *event) override;
-	void keyPressEvent(QKeyEvent *event) override;
 };
 
 #endif // MEMVIEW_H
