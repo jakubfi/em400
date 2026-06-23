@@ -20,34 +20,15 @@
 #include <QPainter>
 #include <QPaintEvent>
 #include <QScrollBar>
-#include <QSpinBox>
-#include <QPushButton>
-#include <QComboBox>
-#include <QLineEdit>
-#include <QCheckBox>
 #include <QKeyEvent>
 #include <QMouseEvent>
 #include <QFocusEvent>
 #include <QWheelEvent>
-#include <QHBoxLayout>
-#include <QLabel>
-#include <QApplication>
 #include <emcrk/r40.h>
 #include "memlisting.h"
 #include "memsearch.h"
 #include "libem400.h"
 #include "theme.h"
-
-// -----------------------------------------------------------------------
-static QPushButton *make_toggle_btn(const QString &text, bool checked = false)
-{
-	QPushButton *b = new QPushButton(text);
-	b->setCheckable(true);
-	b->setChecked(checked);
-	b->setFlat(true);
-	b->setSizePolicy(QSizePolicy::Minimum, QSizePolicy::Preferred);
-	return b;
-}
 
 // -----------------------------------------------------------------------
 MemListing::MemListing(QWidget *parent) : QWidget(parent)
@@ -56,136 +37,25 @@ MemListing::MemListing(QWidget *parent) : QWidget(parent)
 
 	setFocusPolicy(Qt::WheelFocus);
 
-	// header bar
-	header = new QWidget(this);
-	header->setFont(QApplication::font());
-	QHBoxLayout *hlay = new QHBoxLayout(header);
-	hlay->setContentsMargins(4, 2, 4, 2);
-	hlay->setSpacing(4);
-
-	hlay->addWidget(new QLabel(tr("NB:")));
-	nb_spin = new QSpinBox();
-	nb_spin->setRange(0, 15);
-	nb_spin->setValue(0);
-	nb_spin->setFixedWidth(48);
-	nb_spin->setToolTip(tr("Memory segment"));
-	hlay->addWidget(nb_spin);
-	hlay->addSpacing(8);
-
-	btn_hex  = make_toggle_btn(tr("HEX"),  true);
-	btn_udec = make_toggle_btn(tr("DEC"), false);
-	btn_sdec = make_toggle_btn(tr("-DEC"), false);
-	hlay->addWidget(btn_hex);
-	hlay->addWidget(btn_udec);
-	hlay->addWidget(btn_sdec);
-	hlay->addSpacing(8);
-
-	btn_ascii = make_toggle_btn(tr("ASCII"), true);
-	btn_r40   = make_toggle_btn(tr("R40"),   false);
-	hlay->addWidget(btn_ascii);
-	hlay->addWidget(btn_r40);
-	hlay->addStretch();
-
-	// scrollbar
 	scroll = new QScrollBar(Qt::Vertical, this);
 	scroll->setMinimum(0);
 	scroll->setSingleStep(1);
 	scroll->setVisible(false);
 	update_scroll_range();
 
-	// connections
 	connect(scroll, &QScrollBar::valueChanged, this, &MemListing::update_contents_no_nb);
-
-	connect(nb_spin, QOverload<int>::of(&QSpinBox::valueChanged), this, [this](int nb) {
-		cancel_edit();
-		cnb = nb;
-		// the search cursor was scoped to the old segment; restart from the top
-		search_origin = -1;
-		set_search_status(QString(), false);
-		update();
-	});
-
-	connect(btn_hex, &QPushButton::clicked, this, [this]() { set_format(FMT_HEX); });
-	connect(btn_udec, &QPushButton::clicked, this, [this]() { set_format(FMT_UDEC); });
-	connect(btn_sdec, &QPushButton::clicked, this, [this]() { set_format(FMT_SDEC); });
-
-	connect(btn_ascii, &QPushButton::clicked, this, [this]() { toggle_panel(PANEL_ASCII); });
-	connect(btn_r40, &QPushButton::clicked, this, [this]() { toggle_panel(PANEL_R40); });
-
-	build_search_bar();
 }
 
 // -----------------------------------------------------------------------
 MemListing::~MemListing() {}
 
 // -----------------------------------------------------------------------
-void MemListing::build_search_bar()
+void MemListing::set_nb(int nb)
 {
-	search_bar = new QWidget(this);
-	search_bar->setFont(QApplication::font()); // pin to the UI font, not Monospace
-	QHBoxLayout *slay = new QHBoxLayout(search_bar);
-	slay->setContentsMargins(4, 2, 4, 2);
-	slay->setSpacing(4);
-
-	slay->addWidget(new QLabel(tr("Find:")));
-	search_mode = new QComboBox();
-	search_mode->addItems({tr("Numeric"), tr("ASCII"), tr("R40")});
-	slay->addWidget(search_mode);
-
-	search_entry = new QLineEdit();
-	slay->addWidget(search_entry, 1);
-
-	search_prev = new QPushButton(tr("Prev"));
-	search_next = new QPushButton(tr("Next"));
-	slay->addWidget(search_prev);
-	slay->addWidget(search_next);
-	slay->addSpacing(8);
-
-	search_all = new QCheckBox(tr("all segments"));
-	slay->addWidget(search_all);
-
-	// The transient cue ("not found" / "wrapped") sits at the far right. Reserve
-	// a fixed width sized to the longest message and right-align the text, so the
-	// cue appearing or clearing never reflows the Prev/Next buttons or the
-	// checkbox to its left (the entry, the sole stretch item, absorbs all width
-	// changes instead).
-	search_status = new QLabel();
-	search_status->setAlignment(Qt::AlignRight | Qt::AlignVCenter);
-	QFontMetrics sfm(search_status->fontMetrics());
-	search_status->setFixedWidth(qMax(sfm.horizontalAdvance(tr("not found")),
-	                                  sfm.horizontalAdvance(tr("wrapped"))) + 4);
-	slay->addSpacing(8);
-	slay->addWidget(search_status);
-
-	search_bar->hide();
-
-	// re-validate (red border) on text or mode change; keep the literal text on
-	// a mode switch rather than clearing or auto-converting it. Editing the query
-	// or switching mode also resets the search cursor (search from the top again)
-	// and clears any stale "wrapped" / "not found" cue.
-	connect(search_entry, &QLineEdit::textChanged, this, [this](const QString &) {
-		validate_search();
-		search_origin = -1;
-		set_search_status(QString(), false);
-	});
-	connect(search_mode, &QComboBox::currentIndexChanged, this, [this](int) {
-		validate_search();
-		search_origin = -1;
-		set_search_status(QString(), false);
-	});
-	// Changing the scope doesn't edit the query (so the search cursor stays a
-	// valid linear position to resume from), but a stale "not found" / "wrapped"
-	// cue from the old scope would mislead - drop it so the next search speaks
-	// for the new scope.
-	connect(search_all, &QCheckBox::toggled, this, [this](bool) {
-		set_search_status(QString(), false);
-	});
-	connect(search_prev, &QPushButton::clicked, this, [this]() { search_prev_match(); });
-	connect(search_next, &QPushButton::clicked, this, [this]() { search_next_match(); });
-
-	// Esc / Enter / Shift+Enter are handled in eventFilter so the entry can
-	// drive close + next/prev while it holds keyboard focus
-	search_entry->installEventFilter(this);
+	cancel_edit();
+	cnb = nb;
+	search_origin = -1; // the cursor was scoped to the old segment
+	update();
 }
 
 // -----------------------------------------------------------------------
@@ -289,36 +159,19 @@ void MemListing::apply_wpl_change()
 }
 
 // -----------------------------------------------------------------------
-void MemListing::sync_format_buttons()
-{
-	btn_hex->setChecked(fmt == FMT_HEX);
-	btn_udec->setChecked(fmt == FMT_UDEC);
-	btn_sdec->setChecked(fmt == FMT_SDEC);
-}
-
-// -----------------------------------------------------------------------
-void MemListing::sync_panel_buttons()
-{
-	btn_ascii->setChecked(panel == PANEL_ASCII);
-	btn_r40->setChecked(panel == PANEL_R40);
-}
-
-// -----------------------------------------------------------------------
 void MemListing::set_format(DisplayFormat f)
 {
 	// clicking the active format toggles the numeric column off; refuse if that
 	// would leave nothing visible (never let the view go fully blank)
 	DisplayFormat nf = (fmt == f) ? FMT_OFF : f;
 	if (nf == FMT_OFF && panel == PANEL_OFF) {
-		// a checkable button already flipped its own checked state on the click;
-		// restore it so the refused toggle leaves no visible trace
-		sync_format_buttons();
+		emit format_changed(fmt); // refuse: restore the controls to the live format
 		return;
 	}
 	if (fmt == nf) return;
 	cancel_edit();
 	fmt = nf;
-	sync_format_buttons();
+	emit format_changed(fmt);
 	apply_wpl_change();
 	update();
 }
@@ -329,13 +182,12 @@ void MemListing::toggle_panel(SidePanel p)
 	// same invariant as set_format: refuse to turn off the last visible column
 	SidePanel np = (panel == p) ? PANEL_OFF : p;
 	if (np == PANEL_OFF && fmt == FMT_OFF) {
-		// restore the button's checked state, flipped by the click itself
-		sync_panel_buttons();
+		emit panel_changed(panel);
 		return;
 	}
 	cancel_edit();
 	panel = np;
-	sync_panel_buttons();
+	emit panel_changed(panel);
 	apply_wpl_change();
 	update();
 }
@@ -390,8 +242,7 @@ void MemListing::update_contents(int new_nb, int new_addr)
 {
 	cnb = new_nb;
 	caddr = (new_addr / words_per_line) * words_per_line;
-	QSignalBlocker blk(nb_spin);
-	nb_spin->setValue(cnb);
+	emit nb_changed(cnb);
 	QSignalBlocker blk2(scroll);
 	scroll->setValue(caddr / words_per_line);
 	update();
@@ -429,8 +280,7 @@ void MemListing::locate_cell(int nb, int addr)
 
 	sel_nb = nb;
 	sel_anchor = sel_caret = addr;
-	QSignalBlocker blk(nb_spin);
-	nb_spin->setValue(cnb);
+	emit nb_changed(cnb);
 	QSignalBlocker blk2(scroll);
 	scroll->setValue(caddr / words_per_line);
 	update();
@@ -849,131 +699,40 @@ void MemListing::focusOutEvent(QFocusEvent *event)
 }
 
 // -----------------------------------------------------------------------
-// Open the search strip if hidden, then focus and select the entry. The
-// window-wide Ctrl-F routes here; pressing it again re-focuses for a fresh
-// query rather than toggling off (Esc is the only way to close). The query
-// text persists across hide/show.
-void MemListing::open_search()
-{
-	search_bar->setVisible(true); // the dock's layout reflows the grid below it
-	search_entry->setFocus();
-	search_entry->selectAll();
-}
-
-// -----------------------------------------------------------------------
-void MemListing::close_search()
-{
-	if (!search_bar->isVisible()) return;
-	search_bar->setVisible(false);
-	setFocus(); // hand keyboard focus back to the grid
-}
-
-// -----------------------------------------------------------------------
-void MemListing::validate_search()
-{
-	// Red outline on invalid input. The QSS border replaces the native frame
-	// (and its green focus ring); round the corners so it reads as a deliberate
-	// frame, and pad the text back in by 1px so it doesn't shift versus the
-	// native frame's content inset.
-	MemSearch::Mode mode = (MemSearch::Mode)search_mode->currentIndex();
-	bool ok = MemSearch::query_valid(search_entry->text(), mode);
-	search_entry->setStyleSheet(ok ? QString()
-		: QString("QLineEdit { border: 1px solid %1; border-radius: 3px; padding: 1px; }")
-			.arg(em400_red_color(palette()).name()));
-}
-
-// -----------------------------------------------------------------------
-// Show a transient search cue ("wrapped" / "not found") next to the entry.
-// error picks the red accent; otherwise the dim text colour. An empty msg
-// clears it.
-void MemListing::set_search_status(const QString &msg, bool error)
-{
-	if (!search_status) return;
-	search_status->setText(msg);
-	QColor c = error ? em400_red_color(palette()) : em400_dim_text_color(palette());
-	search_status->setStyleSheet(QString("color: %1;").arg(c.name()));
-}
-
-// -----------------------------------------------------------------------
 // Run the search from the cursor in the given direction (via MemSearch) and, on
 // a hit, follow the view to it: switch to the hit's segment, reveal the matching
 // side pane, frame the matched word run with the green selection box (the hit IS
-// the current locus) and remember it as the cursor NEXT / PREV resumes from. A
-// miss shows the "not found" cue; a wrapped hit shows "wrapped".
-void MemListing::do_search(bool forward)
+// the current locus) and remember it as the cursor NEXT / PREV resumes from. The
+// dock supplies the query and renders the outcome we return as a cue.
+MemListing::SearchOutcome MemListing::search(const QString &query, MemSearch::Mode mode, bool all_segments, bool forward)
 {
-	if (!e) return;
-	const QString q = search_entry->text();
-	const MemSearch::Mode mode = (MemSearch::Mode)search_mode->currentIndex();
-	if (q.trimmed().isEmpty() || !MemSearch::query_valid(q, mode)) return;
+	if (!e) return SEARCH_NONE;
+	if (query.trimmed().isEmpty() || !MemSearch::query_valid(query, mode)) return SEARCH_NONE;
 
 	MemSearch search(e);
 	MemSearch::Result r;
-	if (!search.find(q, mode, search_all->isChecked(), cnb, search_origin, forward, r)) {
-		set_search_status(tr("not found"), true);
-		return;
+	if (!search.find(query, mode, all_segments, cnb, search_origin, forward, r)) {
+		return SEARCH_MISS;
 	}
 
 	// the view follows the match: switch to its segment if it landed elsewhere
 	if (r.nb != cnb) {
 		cancel_edit();
 		cnb = r.nb;
-		QSignalBlocker blk(nb_spin);
-		nb_spin->setValue(cnb);
+		emit nb_changed(cnb);
 	}
 	// a stream search matched characters, so reveal the matching side pane (the
 	// hit boxes whole cells, but the chars that matched only read in that pane).
 	// toggle_panel toggles, so only call it when the pane isn't already showing.
-	SidePanel want = (mode == MemSearch::ASCII) ? PANEL_ASCII
-	               : (mode == MemSearch::R40)   ? PANEL_R40 : panel;
+	SidePanel want = (mode == MemSearch::ASCII) ? PANEL_ASCII : (mode == MemSearch::R40) ? PANEL_R40 : panel;
 	if (want != panel) toggle_panel(want);
 	search_origin = r.found;
 	sel_nb = cnb;
 	sel_anchor = r.found;
 	sel_caret = r.last;
 	ensure_addr_visible(r.found);
-	set_search_status(r.wrapped ? tr("wrapped") : QString(), false);
 	update();
-}
-
-// -----------------------------------------------------------------------
-void MemListing::search_next_match()
-{
-	do_search(true);
-}
-
-// -----------------------------------------------------------------------
-void MemListing::search_prev_match()
-{
-	do_search(false);
-}
-
-// -----------------------------------------------------------------------
-// The entry has keyboard focus while the strip is open, so route its Esc /
-// Enter / Shift+Enter here. Ctrl-F is a window shortcut (handled in MainWindow),
-// so it never reaches this filter. Everything else falls through to the
-// QLineEdit (normal text editing).
-bool MemListing::eventFilter(QObject *obj, QEvent *event)
-{
-	if (obj == search_entry && event->type() == QEvent::KeyPress) {
-		QKeyEvent *ke = static_cast<QKeyEvent *>(event);
-		switch (ke->key()) {
-			case Qt::Key_Escape:
-				close_search();
-				return true;
-			case Qt::Key_Return:
-			case Qt::Key_Enter:
-				if (ke->modifiers() & Qt::ShiftModifier) {
-					search_prev_match();
-				} else {
-					search_next_match();
-				}
-				return true;
-			default:
-				break;
-		}
-	}
-	return QWidget::eventFilter(obj, event);
+	return r.wrapped ? SEARCH_WRAPPED : SEARCH_FOUND;
 }
 
 // -----------------------------------------------------------------------
@@ -1007,8 +766,7 @@ QString MemListing::panel_text(int val) const
 		if (val < 0) return "..";
 		unsigned char hi = (val >> 8) & 0xff;
 		unsigned char lo = val & 0xff;
-		return QString(QChar(isprint(hi) ? hi : '.'))
-		     + QString(QChar(isprint(lo) ? lo : '.'));
+		return QString(QChar(isprint(hi) ? hi : '.')) + QString(QChar(isprint(lo) ? lo : '.'));
 	}
 	// R40
 	if (val < 0) return "???";

@@ -22,25 +22,20 @@
 #include <QFont>
 #include <QHash>
 #include "emumodel.h"
+#include "memsearch.h"
 
 // only used as pointers / by-pointer override params below; full definitions
 // are pulled into the .cpp
 class QPainter;
-class QLabel;
 class QScrollBar;
-class QSpinBox;
-class QPushButton;
-class QComboBox;
-class QLineEdit;
-class QCheckBox;
 class QKeyEvent;
 class QMouseEvent;
 class QFocusEvent;
 
 // -----------------------------------------------------------------------
-// The scrolling memory grid: a plain 0,0-relative painted box. The header and
-// search strip are built here (Stage 1) but handed to the surrounding dock to
-// host as flush siblings, so the grid itself only paints its canvas.
+// The scrolling memory grid: a plain 0,0-relative painted box. Segment, display
+// format, side panel and search are driven from outside (the dock owns those
+// controls); the grid performs the work and signals back so the controls track.
 class MemListing : public QWidget {
 
 	Q_OBJECT
@@ -49,6 +44,7 @@ public:
 	enum DisplayFormat { FMT_HEX, FMT_UDEC, FMT_SDEC, FMT_OFF };
 	enum SidePanel { PANEL_OFF, PANEL_ASCII, PANEL_R40 };
 	enum EditKind { EDIT_VALUE, EDIT_TEXT };
+	enum SearchOutcome { SEARCH_NONE, SEARCH_FOUND, SEARCH_WRAPPED, SEARCH_MISS };
 
 	explicit MemListing(QWidget *parent = nullptr);
 	~MemListing();
@@ -56,28 +52,37 @@ public:
 
 	QSize sizeHint() const override;
 
-	// the dock reparents these into its own layout (above the margined grid)
-	QWidget *take_header() { return header; }
-	QWidget *take_search_bar() { return search_bar; }
+	// Run a search from the current cursor and follow the view to a hit. The dock
+	// supplies the query from its strip; the grid scans (via MemSearch), moves
+	// itself to the match and reports the outcome so the dock can show the cue.
+	SearchOutcome search(const QString &query, MemSearch::Mode mode, bool all_segments, bool forward);
+	// the cursor resumes from the last hit; reset it when query / mode change
+	void reset_search_origin() { search_origin = -1; }
 
 public slots:
 	void update_contents(int nb, int addr);
-	void update_contents_no_nb(int new_line);
 	// jump to a segment+address and frame that cell with a green accent box (same
 	// accent the editor uses); the box stays until the cell is clicked again,
 	// another cell is selected, or an edit begins
 	void locate_cell(int nb, int addr);
-	// open the search strip and focus its entry (the window-wide Ctrl-F entry point)
-	void open_search();
+	void set_nb(int nb);
+	void set_format(DisplayFormat f);
+	void toggle_panel(SidePanel p);
 
 private slots:
 	void slot_state_changed(int state);
 	void slot_reg_changed(int reg, uint16_t val);
+	void update_contents_no_nb(int new_line);
 
 signals:
 	// editing==false means no cell is being edited; insert reflects the
 	// current insert/overwrite mode while editing
 	void signal_edit_mode_changed(bool editing, bool insert);
+	// the grid changed what it shows on its own (a followed search hit / a refused
+	// or toggled column); the dock's controls mirror these
+	void nb_changed(int nb);
+	void format_changed(DisplayFormat fmt);
+	void panel_changed(SidePanel panel);
 
 private:
 	// geometry
@@ -86,7 +91,7 @@ private:
 	int bottom = 100, right = 100;
 	int half_font_width;
 	int line_height;
-	int col_hdr_h;   // height of the non-scrolling column offset row (= line_height)
+	int col_hdr_h; // height of the non-scrolling column offset row (= line_height)
 	int addr_x_start, addr_y_start;
 	int addr_len;
 	int mem_x_start, mem_y_start;
@@ -150,48 +155,21 @@ private:
 
 	int wheel_tick_accumulator = 0;
 
-	// child widgets
-	QWidget *header = nullptr;
-	QSpinBox *nb_spin = nullptr;
-	QPushButton *btn_hex = nullptr, *btn_udec = nullptr, *btn_sdec = nullptr;
-	QPushButton *btn_ascii = nullptr, *btn_r40 = nullptr;
 	QScrollBar *scroll = nullptr;
-	void sync_format_buttons();   // reflect fmt onto the HEX/DEC/-DEC buttons
-	void sync_panel_buttons();    // reflect panel onto the ASCII/R40 buttons
 
-	// search strip (Ctrl-F), sits between the header and the grid. The scan logic
-	// lives in MemSearch (memsearch.h); this is the strip UI plus the glue that
-	// follows the view to a hit.
-	QWidget *search_bar = nullptr;
-	QComboBox *search_mode;
-	QLineEdit *search_entry;
-	QPushButton *search_prev, *search_next;
-	QCheckBox *search_all;
-	QLabel *search_status = nullptr;  // transient "wrapped" / "not found" cue
-	void build_search_bar();
-	void close_search();   // hide the strip and return focus to the grid
-	void relayout_grid();  // recompute grid geometry after a height change
-	void validate_search();   // red-border the entry when the query is invalid
-	void set_search_status(const QString &msg, bool error);
-	void search_next_match();
-	void search_prev_match();
-	// Start word of the last match (the search cursor): NEXT resumes one word
-	// past it, PREV one word before. -1 means search from the top (NEXT) /
-	// bottom (PREV); reset whenever the query, mode or segment changes.
+	// the search cursor: start word of the last match. NEXT resumes one word past
+	// it, PREV one word before. -1 means search from the top (NEXT) / bottom (PREV).
 	int search_origin = -1;
-	void do_search(bool forward);
 
 	EmuModel *e = nullptr;
-	QFont font;        // the regular grid font
-	QFont font_bold;   // bold variant for the address gutter and offset headers
+	QFont font; // the regular grid font
+	QFont font_bold; // bold variant for the address gutter and offset headers
 	int font_height, font_width;
 
 	int val_chars() const;
 	int panel_chars() const;
 	int compute_words_per_line() const;
 	void apply_wpl_change();
-	void set_format(DisplayFormat f);
-	void toggle_panel(SidePanel p);
 
 	// paintEvent helpers
 	void draw_offset_row(QPainter &painter, int cell_w, int pcell_w, int side_x);
@@ -208,6 +186,7 @@ private:
 	void set_font(QString name, int size = 0);
 	void update_font_related_dimensions();
 	void update_scroll_range();
+	void relayout_grid();
 	int calculate_scroll_lines(int angle_delta);
 
 protected:
@@ -217,7 +196,6 @@ protected:
 	void mouseMoveEvent(QMouseEvent *event) override;
 	void mouseDoubleClickEvent(QMouseEvent *event) override;
 	void focusOutEvent(QFocusEvent *event) override;
-	bool eventFilter(QObject *obj, QEvent *event) override;
 	void wheelEvent(QWheelEvent *event) override;
 	void enterEvent(QEnterEvent *event) override;
 	void leaveEvent(QEvent *event) override;

@@ -598,7 +598,7 @@ Brak ramki: przerwanie niemaskowalne</translation>
     </message>
 </context>
 <context>
-    <name>MemListing</name>
+    <name>MemView</name>
     <message>
         <source>NB:</source>
         <translation>NB:</translation>

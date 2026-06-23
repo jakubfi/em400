@@ -22,9 +22,18 @@
 #include "emumodel.h"
 #include "memlisting.h"
 
+class QSpinBox;
+class QPushButton;
+class QComboBox;
+class QLineEdit;
+class QCheckBox;
+class QLabel;
+class QEvent;
+
 // -----------------------------------------------------------------------
-// The Memory dock: a header (segment / format / panel) and a search strip above
-// the margined grid, composed like the other docks' views.
+// The Memory dock: a header (segment / format / panel) and a Ctrl-F search strip
+// above the margined grid. It owns those controls and drives the grid through
+// its public API, mirroring back the changes the grid makes on its own.
 class MemView : public QWidget {
 
 	Q_OBJECT
@@ -36,13 +45,41 @@ public:
 public slots:
 	void update_contents(int nb, int addr) { listing->update_contents(nb, addr); }
 	void locate_cell(int nb, int addr) { listing->locate_cell(nb, addr); }
-	void open_search() { listing->open_search(); }
+	// open the search strip and focus its entry (the window-wide Ctrl-F entry point)
+	void open_search();
 
 signals:
 	void signal_edit_mode_changed(bool editing, bool insert);
 
+protected:
+	// Esc / Enter / Shift+Enter on the search entry drive close + next/prev while
+	// it holds keyboard focus
+	bool eventFilter(QObject *obj, QEvent *event) override;
+
+private slots:
+	void sync_format_buttons(MemListing::DisplayFormat fmt);
+	void sync_panel_buttons(MemListing::SidePanel panel);
+
 private:
+	QWidget *build_header();
+	QWidget *build_search_bar();
+	void validate_search(); // red-border the entry when the query is invalid
+	void set_search_status(const QString &msg, bool error);
+	void run_search(bool forward);
+	void close_search(); // hide the strip and return focus to the grid
+
 	MemListing *listing;
+
+	QSpinBox *nb_spin;
+	QPushButton *btn_hex, *btn_udec, *btn_sdec;
+	QPushButton *btn_ascii, *btn_r40;
+
+	QWidget *search_bar;
+	QComboBox *search_mode;
+	QLineEdit *search_entry;
+	QPushButton *search_prev, *search_next;
+	QCheckBox *search_all;
+	QLabel *search_status;
 
 };
 
