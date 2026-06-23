@@ -14,12 +14,22 @@ jobs:
       BUILD_TYPE: Release
       # linuxdeploy-plugin-qt needs to locate the Qt6 qmake.
       QMAKE: /usr/lib/qt6/bin/qmake6
+      # ubuntu-22.04 ships GCC 11, too old for the C23 the sources use; the
+      # 22.04 pin is only for the old glibc baseline, so use a newer compiler.
+      CC: gcc-13
+      CXX: g++-13
 
     steps:
       - name: Checkout
         uses: actions/checkout@v4
         with:
           fetch-depth: 0     # so `git describe --tags` resolves the version
+
+      - name: Install GCC 13
+        run: |
+          sudo add-apt-repository -y ppa:ubuntu-toolchain-r/test
+          sudo apt-get update
+          sudo apt-get install -y gcc-13 g++-13
 
       - name: Update apt
         run: sudo apt-get update
