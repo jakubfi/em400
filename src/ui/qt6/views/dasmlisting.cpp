@@ -338,16 +338,17 @@ void DasmListing::resizeEvent(QResizeEvent *event)
 }
 
 // -----------------------------------------------------------------------
-int DasmListing::calculate_scroll_lines(int angleDelta) {
-    const int native_wheel_step = 120; // standard OS notch size
+int DasmListing::calculate_scroll_lines(int angleDelta)
+{
+	const int native_wheel_step = 120; // standard OS notch size
 	const int lines_per_click = 3;
 	const int one_line_advance = native_wheel_step / lines_per_click;
 
-    wheel_tick_accumulator += angleDelta;
-    int lines = wheel_tick_accumulator / one_line_advance;
-    wheel_tick_accumulator %= one_line_advance;
+	wheel_tick_accumulator += angleDelta;
+	int lines = wheel_tick_accumulator / one_line_advance;
+	wheel_tick_accumulator %= one_line_advance;
 
-    return lines;
+	return lines;
 }
 
 // -----------------------------------------------------------------------
