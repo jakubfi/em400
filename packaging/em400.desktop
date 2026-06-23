@@ -1,0 +1,9 @@
+[Desktop Entry]
+Type=Application
+Name=em400
+GenericName=MERA-400 emulator
+Comment=Emulator of the Polish MERA-400 minicomputer
+Exec=em400
+Icon=em400
+Terminal=false
+Categories=System;Emulator;
