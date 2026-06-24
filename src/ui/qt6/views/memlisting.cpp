@@ -791,10 +791,7 @@ void MemListing::draw_offset_row(QPainter &painter, int cell_w, int pcell_w, int
 	painter.setPen(QPen(em400_sep_color(palette()), 2));
 	painter.drawLine(divider_x_pos, col_hdr_h, right - 1, col_hdr_h);
 
-	// no contents if not powered on
-	if (!e || !e->is_powered()) {
-		return;
-	}
+	if (!e) return;
 
 	painter.setFont(font_bold);
 	painter.setPen(palette().color(QPalette::Text));
@@ -1041,10 +1038,7 @@ void MemListing::paintEvent(QPaintEvent *event)
 
 	draw_offset_row(painter, cell_w, pcell_w, side_x);
 
-	// no contents if not powered on
-	if (!e || !e->is_powered()) {
-		return;
-	}
+	if (!e) return;
 
 	for (int y = 0; y < total_lines; y++) {
 		int base_addr = caddr + y * words_per_line;

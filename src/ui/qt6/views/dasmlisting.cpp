@@ -30,9 +30,8 @@
 // -----------------------------------------------------------------------
 // emdas reads memory through this. It bypasses EmuModel, so it must enforce the
 // power gate itself: after a power-off the library is torn down and em400_mem_read
-// would dereference freed page pointers (returning garbage that disassembles into
-// noise). Report a read failure when off, which emdas renders as unreadable -
-// exactly like an unmapped segment.
+// would dereference freed page pointers. Report a read failure when off, which
+// emdas renders as unreadable - exactly like an unmapped segment while powered on.
 static int dbg_mem_get(int nb, uint16_t addr, uint16_t *data)
 {
 	if (!em400_is_powered()) {
@@ -51,7 +50,10 @@ DasmListing::DasmListing(QWidget *parent) :
 	emdas_set_features(emd, EMD_FEAT_UMNEMO);
 	emdas_set_tabs(emd, 0, 0, 5, 4);
 
-	cnb = caddr = ic_addr = ic_nb = -1;
+	// segment 0 from the top so the listing renders (unreadable, until powered) even
+	// before the first power-on; ic_* stay -1 until an IC location is known
+	cnb = caddr = 0;
+	ic_addr = ic_nb = -1;
 
 	set_font("Monospace");
 
@@ -191,13 +193,6 @@ int DasmListing::max_first_addr()
 void DasmListing::internal_update_contents()
 {
 	if (cnb < 0) return;
-
-	// no display if powered off
-	if (e && !e->is_powered()) {
-		listing.clear();
-		update();
-		return;
-	}
 
 	// cap so we don't scroll past the end of memory (wrap / hide 0xffff)
 	const int max_top = max_first_addr();
