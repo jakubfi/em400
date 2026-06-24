@@ -173,7 +173,7 @@ static void on_new_tcp_connection(uv_stream_t *handle, int status)
 	int res = uv_tcp_init(ioloop, client);
 	if (res) {
 		free(client);
-		LOGERR("Client connection initialization failed:", uv_strerror(res));
+		LOG(L_TERM, "Client connection initialization failed: %s", uv_strerror(res));
 		return;
 	}
 	uv_handle_set_data((uv_handle_t*) client, terminal);
