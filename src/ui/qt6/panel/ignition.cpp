@@ -26,6 +26,10 @@ Ignition::Ignition(QPixmap gfx[3], const QUrl snd_rs[3], const QUrl snd_ls[3], Q
 	power_on_timer.setSingleShot(true);
 	connect(&power_on_timer, &QTimer::timeout, this, &Ignition::power_on);
 
+	step_timer.setInterval(80);
+	step_timer.setSingleShot(true);
+	connect(&step_timer, &QTimer::timeout, this, [this]() { step(pending_pos); });
+
 	setMouseTracking(true);
 }
 
@@ -78,6 +82,36 @@ void Ignition::paintEvent(QPaintEvent *event)
 	painter.end();
 }
 
+// -----------------------------------------------------------------------
+void Ignition::step(int new_pos)
+{
+	if (new_pos > position) snd_r[new_pos].play();
+	else snd_l[new_pos].play();
+	if ((position == 0) && (new_pos == 1)) power_on_timer.start();
+	if (new_pos == 0) {
+		power_on_timer.stop();
+		emit signal_power(false);
+	}
+	if (new_pos == 2) emit signal_locked(true);
+	if ((position == 2) && (new_pos == 1)) emit signal_locked(false);
+	position = new_pos;
+	update();
+}
+
+// -----------------------------------------------------------------------
+void Ignition::move_to(int new_pos)
+{
+	int delta = new_pos - position;
+	if (abs(delta) == 1) {
+		step(new_pos);
+	} else if (abs(delta) == 2) {
+		// direct OFF<->LOCK: pass quickly through ON
+		step(position + delta/2);
+		pending_pos = new_pos;
+		step_timer.start();
+	}
+}
+
 // --------------------------------------------------------------------------
 int Ignition::pos_from_point(QPoint &m)
 {
@@ -108,19 +142,7 @@ void Ignition::mousePressEvent(QMouseEvent *event)
 		int new_pos = pos_from_point(m);
 		// only 3 positions for ignition
 		if (new_pos == 3) new_pos = 2;
-		if (abs(new_pos-position) == 1) {
-			if (new_pos > position) snd_r[new_pos].play();
-			else snd_l[new_pos].play();
-			if ((position == 0) && (new_pos == 1)) power_on_timer.start();
-			if (new_pos == 0) {
-				power_on_timer.stop();
-				emit signal_power(false);
-			}
-			if (new_pos == 2) emit signal_locked(true);
-			if ((position == 2) && (new_pos == 1)) emit signal_locked(false);
-			position = new_pos;
-			update();
-		}
+		move_to(new_pos);
 	} else if (can_interact_inner) {
 		dragging = true;
 	}
@@ -140,19 +162,7 @@ void Ignition::mouseMoveEvent(QMouseEvent *event)
 		if (sqrt(pow(center.x()-m.x(), 2) + pow(center.y()-m.y(), 2)) >= radius_inner) {
 			int new_pos = pos_from_point(m);
 			if (new_pos == 3) new_pos = 2;
-			if (abs(new_pos-position) == 1) {
-				if (new_pos > position) snd_r[new_pos].play();
-				else snd_l[new_pos].play();
-				if ((position == 0) && (new_pos == 1)) power_on_timer.start();
-				if (new_pos == 0) {
-					power_on_timer.stop();
-					emit signal_power(false);
-				}
-				if (new_pos == 2) emit signal_locked(true);
-				if ((position == 2) && (new_pos == 1)) emit signal_locked(false);
-				position = new_pos;
-				update();
-			}
+			move_to(new_pos);
 		}
 	} else {
 		QPoint m = event->pos();

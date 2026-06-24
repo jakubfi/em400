@@ -16,12 +16,16 @@ private:
 	QSoundEffect snd_r[3], snd_l[3];
 	QPoint center;
 	QTimer power_on_timer;
+	QTimer step_timer;
+	int pending_pos = 0;
 	int radius_main, radius_outer, radius_inner;
 	bool dragging = false;
 	bool can_interact_outer = false;
 	bool can_interact_inner = false;
 
 	int pos_from_point(QPoint &m);
+	void step(int new_pos);
+	void move_to(int new_pos);
 
 public:
 	explicit Ignition(QPixmap gfx[3], const QUrl snd_rs[3], const QUrl snd_ls[3], QWidget *parent = nullptr);
