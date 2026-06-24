@@ -146,22 +146,37 @@ static char * str_concat(const char *a, const char *b)
 	return p;
 }
 
+#ifdef _WIN32
+#define PATH_SEP "\\"
+#else
+#define PATH_SEP "/"
+#endif
+
 // -----------------------------------------------------------------------
-// XDG config base: $XDG_CONFIG_HOME, or ~/.config when unset/empty
-static char * xdg_config_base()
+// Config base directory: %APPDATA% on Windows, $XDG_CONFIG_HOME (or
+// ~/.config when unset/empty) elsewhere.
+static char * config_base()
 {
+#ifdef _WIN32
+	const char *appdata = getenv("APPDATA");
+	if (appdata && *appdata) {
+		return strdup(appdata);
+	}
+	return NULL;
+#else
 	const char *xdg = getenv("XDG_CONFIG_HOME");
 	if (xdg && *xdg) {
 		return strdup(xdg);
 	}
 	return str_concat(getenv("HOME"), "/.config");
+#endif
 }
 
 // -----------------------------------------------------------------------
-static char * xdg_config_path()
+static char * config_path()
 {
-	char *base = xdg_config_base();
-	char *path = str_concat(base, "/em400/em400.ini");
+	char *base = config_base();
+	char *path = str_concat(base, PATH_SEP "em400" PATH_SEP "em400.ini");
 	free(base);
 	return path;
 }
@@ -169,13 +184,17 @@ static char * xdg_config_path()
 // -----------------------------------------------------------------------
 static char * legacy_config_path()
 {
+#ifdef _WIN32
+	return NULL; // no legacy ~/.em400 location on Windows
+#else
 	return str_concat(getenv("HOME"), "/.em400/em400.ini");
+#endif
 }
 
 // -----------------------------------------------------------------------
 void em400_mkconfdir()
 {
-	char *base = xdg_config_base();
+	char *base = config_base();
 	if (!base) return;
 #ifdef _WIN32
 	mkdir(base);
@@ -183,7 +202,7 @@ void em400_mkconfdir()
 	mkdir(base, 0700); // ensure the XDG base (e.g. ~/.config) exists first
 #endif
 
-	char *dir = str_concat(base, "/em400");
+	char *dir = str_concat(base, PATH_SEP "em400");
 	if (dir) {
 #ifdef _WIN32
 		mkdir(dir);
@@ -314,7 +333,7 @@ int main(int argc, char** argv)
 	}
 
 	if (!config) {
-		config = xdg_config_path();
+		config = config_path();
 		if (!config) {
 			LOGERR("Config filename memory allocation error");
 			goto done;
