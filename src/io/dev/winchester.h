@@ -31,6 +31,7 @@ struct winchester {
 };
 
 em400_dev_t * winchester_create(const char *image);
+bool winchester_ready(em400_dev_t *dev);
 int winchester_sector_rd(winchester_t *winchester, uint8_t *buf, unsigned c, unsigned h, unsigned s);
 int winchester_sector_wr(winchester_t *winchester, uint8_t *buf, unsigned c, unsigned h, unsigned s);
 

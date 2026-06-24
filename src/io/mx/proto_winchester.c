@@ -252,6 +252,7 @@ static int mx_winch_read(chan_mx_t *multix, struct mx_line *line, winchester_t *
 
 		// sector read failed
 		if (res != DEV_STATUS_OK) {
+			LOG(L_WNCH, "Read failed at sector %i/%i/%i, device status %i", chs.c, chs.h, chs.s, res);
 			proto_data->ret_status = MX_WS_ERR | MX_WS_NO_SECTOR;
 			return MX_IRQ_ITRER;
 		}
@@ -295,6 +296,7 @@ static int mx_winch_write(chan_mx_t *multix, struct mx_line *line, winchester_t 
 
 		// sector not found or incomplete
 		if (res != DEV_STATUS_OK) {
+			LOG(L_WNCH, "Write failed at sector %i/%i/%i, device status %i", chs.c, chs.h, chs.s, res);
 			proto_data->ret_status = MX_WS_ERR | MX_WS_NO_SECTOR;
 			return MX_IRQ_ITRER;
 		}
@@ -321,6 +323,7 @@ static int mx_winch_format(chan_mx_t *multix, struct mx_line *line, winchester_t
 
 		// sector not found or incomplete
 		if (res != DEV_STATUS_OK) {
+			LOG(L_WNCH, "Format failed at sector %i/%i/%i, device status %i", chs.c, chs.h, chs.s, res);
 			proto_data->ret_status = MX_WS_ERR | MX_WS_NO_SECTOR;
 			return MX_IRQ_ITRER;
 		}
@@ -338,8 +341,11 @@ int mx_winch_transmit(struct mx_line *line, uint16_t *cmd_data)
 
 	struct proto_winchester_data *proto_data = (struct proto_winchester_data *) line->proto_data;
 
-	// check if there is a device connected
-	if (!line->dev) {
+	// check if there is a device connected and ready
+	if (!line->dev || !winchester_ready(line->dev)) {
+		LOG(L_WNCH, "Transmit operation %i: %s rejected, winchester not ready (%s)",
+			proto_data->op, winch_op_names[proto_data->op],
+			line->dev ? "no medium" : "no drive connected");
 		proto_data->ret_len = 0;
 		proto_data->ret_status = MX_WS_NOT_READY;
 		irq = MX_IRQ_ITRER;

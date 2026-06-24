@@ -46,13 +46,21 @@ static int e4i_res(int res)
 // -----------------------------------------------------------------------
 int winchester_sector_rd(winchester_t *winchester, uint8_t *buf, unsigned c, unsigned h, unsigned s)
 {
+	if (!winchester->e4image) return DEV_STATUS_NOMEDIUM;
 	return e4i_res(e4i_sread(winchester->e4image, buf, c, h, s));
 }
 
 // -----------------------------------------------------------------------
 int winchester_sector_wr(winchester_t *winchester, uint8_t *buf, unsigned c, unsigned h, unsigned s)
 {
+	if (!winchester->e4image) return DEV_STATUS_NOMEDIUM;
 	return e4i_res(e4i_swrite(winchester->e4image, buf, c, h, s, 512));
+}
+
+// -----------------------------------------------------------------------
+bool winchester_ready(em400_dev_t *dev)
+{
+	return dev && ((winchester_t *) dev)->e4image != NULL;
 }
 
 // -----------------------------------------------------------------------
@@ -117,16 +125,21 @@ em400_dev_t * winchester_create(const char *image_name)
 	winchester->base.eject = NULL;
 	winchester->base.image = winchester_image;
 
+	// No image means no winchester: the winchester comes up "not ready"
+	// (no medium) instead of failing. A given-but-unopenable image is still
+	// an error - the user asked for a specific disk that is not there.
 	if (image_name && *image_name) {
 		winchester->image_name = strdup(image_name);
-	}
-
-	LOG(L_WNCH, "Opening image: %s", winchester->image_name);
-	winchester->e4image = e4i_open(winchester->image_name);
-	if (!winchester->e4image) {
-		LOGERR("Failed to open Winchester image: \"%s\": %s.", winchester->image_name, e4i_get_err(e4i_err));
-		free(winchester->image_name);
-		return NULL;
+		LOG(L_WNCH, "Opening image: %s", winchester->image_name);
+		winchester->e4image = e4i_open(winchester->image_name);
+		if (!winchester->e4image) {
+			LOGERR("Failed to open Winchester image: \"%s\": %s.", winchester->image_name, e4i_get_err(e4i_err));
+			free(winchester->image_name);
+			free(winchester);
+			return NULL;
+		}
+	} else {
+		LOG(L_WNCH, "No image, winchester starts not ready (no medium)");
 	}
 
 	return (em400_dev_t *) winchester;
