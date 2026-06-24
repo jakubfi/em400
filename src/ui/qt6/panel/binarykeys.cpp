@@ -84,6 +84,7 @@ void BinaryKeys::paintEvent(QPaintEvent *event)
 {
 	QPainter painter;
 	painter.begin(this);
+	painter.setRenderHint(QPainter::SmoothPixmapTransform);
 
 	for (int i=0 ; i<16 ; i++) {
 		if (key[i].state) painter.drawPixmap(sw_x[i] - m_origin.x(), 0, key[i].on);

@@ -223,6 +223,7 @@ void ControlPanel::paintEvent(QPaintEvent *event)
 {
 	QPainter painter;
 	painter.begin(this);
+	painter.setRenderHint(QPainter::SmoothPixmapTransform);
 
 	painter.drawPixmap(0, 0, plane[0].copy(crop));
 

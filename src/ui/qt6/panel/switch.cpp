@@ -29,6 +29,7 @@ void Switch::paintEvent(QPaintEvent *event)
 {
 	QPainter painter;
 	painter.begin(this);
+	painter.setRenderHint(QPainter::SmoothPixmapTransform);
 
 	if (state) painter.drawPixmap(0, 0, gfx_on);
 

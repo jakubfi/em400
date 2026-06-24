@@ -20,6 +20,7 @@ void LED::paintEvent(QPaintEvent *event)
 {
 	QPainter painter;
 	painter.begin(this);
+	painter.setRenderHint(QPainter::SmoothPixmapTransform);
 
 	if (state) {
 		painter.setOpacity(dim_on);
