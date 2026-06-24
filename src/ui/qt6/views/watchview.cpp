@@ -45,6 +45,11 @@ WatchView::WatchView(EmuModel *emu, QWidget *parent) :
 	QWidget(parent),
 	e(emu)
 {
+	// horizontally hug content (memory beside us takes the surplus width); vertically
+	// expand so watches take the surplus height (brk above caps at its preferred height)
+	// and the list never ends up shorter than brk
+	setSizePolicy(QSizePolicy::Maximum, QSizePolicy::Expanding);
+
 	QVBoxLayout *outer = new QVBoxLayout(this);
 	outer->setContentsMargins(4, 4, 4, 4);
 	outer->setSpacing(4);
@@ -119,6 +124,7 @@ WatchView::WatchView(EmuModel *emu, QWidget *parent) :
 	input->setPlaceholderText(tr("new watch, e.g. [r1+12]"));
 	input->installEventFilter(this); // Esc clears the entry field
 	add_btn = new QPushButton(tr("Add"), row);
+	add_btn->setMaximumWidth(add_btn->sizeHint().width() / 2);
 	rl->addWidget(input, 1);
 	rl->addWidget(add_btn);
 	outer->addWidget(row);

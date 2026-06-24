@@ -45,6 +45,9 @@ static QPushButton *make_toggle_btn(const QString &text, bool checked = false)
 MemView::MemView(QWidget *parent) :
 	QWidget(parent)
 {
+	// claim the surplus width beside the brk/watch column, which hugs its content
+	setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Preferred);
+
 	listing = new MemListing();
 
 	QVBoxLayout *outer = new QVBoxLayout(this);

@@ -95,6 +95,11 @@ BrkView::BrkView(EmuModel *emu, QWidget *parent) :
 	QWidget(parent),
 	e(emu)
 {
+	// horizontally hug content (memory beside us takes the surplus width); vertically
+	// cap at the preferred height so the watch view below claims any surplus height -
+	// breakpoints should never be taller than watches
+	setSizePolicy(QSizePolicy::Maximum, QSizePolicy::Maximum);
+
 	QVBoxLayout *outer = new QVBoxLayout(this);
 	outer->setContentsMargins(4, 4, 4, 4);
 	outer->setSpacing(4);
@@ -153,6 +158,7 @@ BrkView::BrkView(EmuModel *emu, QWidget *parent) :
 	input->setPlaceholderText(tr("new breakpoint, e.g. ic == 0x40"));
 	input->installEventFilter(this); // Esc clears the entry field
 	add_btn = new QPushButton(tr("Add"), row);
+	add_btn->setMaximumWidth(add_btn->sizeHint().width() / 2);
 	rl->addWidget(input, 1);
 	rl->addWidget(add_btn);
 	outer->addWidget(row);

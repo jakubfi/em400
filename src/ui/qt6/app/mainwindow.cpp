@@ -360,10 +360,10 @@ QDockWidget *MainWindow::register_dock(QWidget *view, const QString &title, cons
 void MainWindow::apply_default_layout()
 {
 	addDockWidget(Qt::LeftDockWidgetArea, dock_dasm); // narrow, full height
-	splitDockWidget(dock_dasm, dock_brk, Qt::Vertical); // breakpoints under dasm
 
-	addDockWidget(Qt::BottomDockWidgetArea, dock_mem); // panel width, under panel
-	splitDockWidget(dock_mem, dock_watch, Qt::Horizontal); // watches beside memory
+	addDockWidget(Qt::BottomDockWidgetArea, dock_brk); // under panel, left of memory
+	splitDockWidget(dock_brk, dock_mem, Qt::Horizontal); // memory beside breakpoints
+	splitDockWidget(dock_brk, dock_watch, Qt::Vertical); // watches under breakpoints
 
 	addDockWidget(Qt::RightDockWidgetArea, dock_uregs); // small modules, stacked
 	addDockWidget(Qt::RightDockWidgetArea, dock_sregs);
@@ -378,11 +378,8 @@ void MainWindow::apply_default_layout()
 		d->show();
 	}
 
-	// breakpoints sit under dasm but the list is usually 1-3 rows: shrink it to
-	// as little height as it will take so dasm keeps the rest of the left column
-	resizeDocks({dock_brk}, {1}, Qt::Vertical);
-	// memory is the focus of the bottom row; give watches a moderate slice beside it
-	resizeDocks({dock_mem, dock_watch}, {2, 1}, Qt::Horizontal);
+	// brk/watch widths hug their content (their own size policies cap horizontal growth)
+	// and memory expands to take the rest, so the column is sized independently of memory.
 
 	// show interrupts as the front tab of the interrupts/stack pair
 	dock_ints->raise();
