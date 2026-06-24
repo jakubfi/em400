@@ -56,8 +56,10 @@ public:
 	// no-op unless powered and the device permits it. Config side is ConfigController's.
 	void reload_media(unsigned chan, unsigned dev, unsigned slot, const char *path);
 
-	// interrupt view helpers (structural, language-free)
-	int int_mask_bit(int n) { return is_powered() ? em400_int_mask_bit(n) : 0; }
+	// interrupt view helpers (structural, language-free). The mask topology is
+	// fixed hardware wiring (a const table), so it is not power-gated: gating it
+	// would collapse every interrupt onto mask bit 0 and break the grouping.
+	int int_mask_bit(int n) { return em400_int_mask_bit(n); }
 	void set_int(int n, bool on) { if (!is_powered()) return; if (on) em400_int_set(n); else em400_int_clear(n); }
 
 	// breakpoint editing/listing API. The list only ever changes through these
