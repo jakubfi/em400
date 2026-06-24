@@ -25,9 +25,15 @@
 struct appcfg appcfg;
 
 // -----------------------------------------------------------------------
-static char * dup_str(const char *s)
+static inline char * dup_str(const char *s)
 {
 	return s ? strdup(s) : NULL;
+}
+
+// -----------------------------------------------------------------------
+static inline char * dup_path(const char *s)
+{
+	return (s && *s) ? strdup(s) : NULL;
 }
 
 // ---- lenient reads: try keys in order, accept old/renamed spellings --------
@@ -214,17 +220,17 @@ static int build_device(em400_cfg *cfg, int chnum, int devnum, struct em400_devi
 		dev->terminal.speed = speed;
 	} else if (!strcasecmp(dev_type_name, "winchester")) {
 		dev->type = EM400_DEV_WINCHESTER;
-		dev->winchester.image = dup_str(cfg_fgetstr(cfg, "dev%i.%i:image", chnum, devnum));
+		dev->winchester.image = dup_path(cfg_fgetstr(cfg, "dev%i.%i:image", chnum, devnum));
 	} else if (!strcasecmp(dev_type_name, "floppy")) {
 		dev->type = EM400_DEV_FLOP5;
 	} else if (!strcasecmp(dev_type_name, "floppy8")) {
 		dev->type = EM400_DEV_SP45DE;
 		for (int slot=0 ; slot<EM400_SP45DE_SLOT_COUNT ; slot++) {
-			dev->sp45de.images[slot] = dup_str(cfg_fgetstr(cfg, "dev%i.%i:image_%i", chnum, devnum, slot));
+			dev->sp45de.images[slot] = dup_path(cfg_fgetstr(cfg, "dev%i.%i:image_%i", chnum, devnum, slot));
 		}
 	} else if (!strcasecmp(dev_type_name, "rtclock")) {
 		dev->type = EM400_DEV_RTCLOCK;
-		dev->rtclock.prom = dup_str(cfg_fgetstr(cfg, "dev%i.%i:prom", chnum, devnum));
+		dev->rtclock.prom = dup_path(cfg_fgetstr(cfg, "dev%i.%i:prom", chnum, devnum));
 	} else {
 		return LOGERR("Unknown device type: %s", dev_type_name);
 	}
@@ -282,8 +288,8 @@ static int build_machine(em400_cfg *cfg, struct em400_machine_cfg *machine)
 			.elwro_modules = cfg_getint(cfg, "memory:elwro_modules", CFG_DEFAULT_MEMORY_ELWRO_MODULES),
 			.mega_modules = cfg_getint(cfg, "memory:mega_modules", CFG_DEFAULT_MEMORY_MEGA_MODULES),
 			.os_segments = cfg_getint(cfg, "memory:hardwired_segments", CFG_DEFAULT_MEMORY_HARDWIRED_SEGMENTS),
-			.mega_prom_image = dup_str(cfg_getstr(cfg, "memory:mega_prom", CFG_DEFAULT_MEMORY_MEGA_PROM)),
-			.preload_image = dup_str(cfg_getstr(cfg, "memory:preload", CFG_DEFAULT_MEMORY_PRELOAD)),
+			.mega_prom_image = dup_path(cfg_getstr(cfg, "memory:mega_prom", CFG_DEFAULT_MEMORY_MEGA_PROM)),
+			.preload_image = dup_path(cfg_getstr(cfg, "memory:preload", CFG_DEFAULT_MEMORY_PRELOAD)),
 		},
 	};
 
@@ -319,7 +325,7 @@ static int build_device_new(em400_cfg *cfg, const char *sec, int chnum, int devn
 		dev->terminal.speed = speed;
 	} else if (!strcasecmp(dev_type_name, "winchester")) {
 		dev->type = EM400_DEV_WINCHESTER;
-		dev->winchester.image = dup_str(cfg_fgetstr(cfg, "%s:dev.%i.%i.image", sec, chnum, devnum));
+		dev->winchester.image = dup_path(cfg_fgetstr(cfg, "%s:dev.%i.%i.image", sec, chnum, devnum));
 	} else if (!strcasecmp(dev_type_name, "floppy")) {
 		dev->type = EM400_DEV_FLOP5;
 	} else if (!strcasecmp(dev_type_name, "sp45de") || !strcasecmp(dev_type_name, "floppy8")) {
@@ -329,12 +335,11 @@ static int build_device_new(em400_cfg *cfg, const char *sec, int chnum, int devn
 			if (!img) {
 				img = cfg_fgetstr(cfg, "%s:dev.%i.%i.image_%i", sec, chnum, devnum, slot);
 			}
-			// empty placeholder (the writer emits "slot.N = ") means no media
-			dev->sp45de.images[slot] = (img && *img) ? strdup(img) : NULL;
+			dev->sp45de.images[slot] = dup_path(img);
 		}
 	} else if (!strcasecmp(dev_type_name, "rtclock")) {
 		dev->type = EM400_DEV_RTCLOCK;
-		dev->rtclock.prom = dup_str(cfg_fgetstr(cfg, "%s:dev.%i.%i.prom", sec, chnum, devnum));
+		dev->rtclock.prom = dup_path(cfg_fgetstr(cfg, "%s:dev.%i.%i.prom", sec, chnum, devnum));
 	} else {
 		return LOGERR("Unknown device type: %s", dev_type_name);
 	}
@@ -392,8 +397,8 @@ static int build_machine_new(em400_cfg *cfg, const char *sec, struct em400_machi
 			.elwro_modules = cfg_fgetint_def(cfg, CFG_DEFAULT_MEMORY_ELWRO_MODULES, "%s:memory.elwro_modules", sec),
 			.mega_modules = cfg_fgetint_def(cfg, CFG_DEFAULT_MEMORY_MEGA_MODULES, "%s:memory.mega_modules", sec),
 			.os_segments = cfg_fgetint_def(cfg, CFG_DEFAULT_MEMORY_HARDWIRED_SEGMENTS, "%s:memory.hardwired_segments", sec),
-			.mega_prom_image = dup_str(cfg_fgetstr(cfg, "%s:memory.mega_prom", sec)),
-			.preload_image = dup_str(cfg_fgetstr(cfg, "%s:memory.preload", sec)),
+			.mega_prom_image = dup_path(cfg_fgetstr(cfg, "%s:memory.mega_prom", sec)),
+			.preload_image = dup_path(cfg_fgetstr(cfg, "%s:memory.preload", sec)),
 		},
 	};
 

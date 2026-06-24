@@ -157,7 +157,7 @@ int em400_init(const struct em400_machine_cfg *machine, const struct em400_host_
 
 	if (io_run() != E_OK) return LOGERR("Failed to start the I/O loop.");
 
-	if (machine->mem.preload_image && !em400_load_os_image_path(machine->mem.preload_image)) {
+	if (machine->mem.preload_image && *machine->mem.preload_image && !em400_load_os_image_path(machine->mem.preload_image)) {
 		return LOGERR("Failed to preload OS memory.");
 	}
 

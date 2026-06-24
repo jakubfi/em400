@@ -234,8 +234,8 @@ static int sp45de_image_replace(em400_dev_t *dev, unsigned slot, const char *ima
 		sp45de->image_name[slot] = NULL;
 	}
 
-	// no new image, nothing to insert
-	if (!image_name) {
+	// no new image (NULL or empty), nothing to insert
+	if (!image_name || !*image_name) {
 		ret = E_OK;
 		goto fin;
 	}

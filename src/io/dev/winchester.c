@@ -117,7 +117,7 @@ em400_dev_t * winchester_create(const char *image_name)
 	winchester->base.eject = NULL;
 	winchester->base.image = winchester_image;
 
-	if (image_name) {
+	if (image_name && *image_name) {
 		winchester->image_name = strdup(image_name);
 	}
 
