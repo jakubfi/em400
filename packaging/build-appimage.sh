@@ -69,8 +69,6 @@ cmake --install "$BUILD_DIR" --prefix "$APPDIR/usr"
 # .desktop + icon (neither is installed by CMake)
 install -Dm644 "$SCRIPT_DIR/em400.desktop" "$APPDIR/usr/share/applications/em400.desktop"
 install -Dm644 "$REPO_ROOT/src/ui/qt6/icons/em400/em400_256.png" "$APPDIR/usr/share/icons/hicolor/256x256/apps/em400.png"
-# config template for reference (not required at runtime)
-install -Dm644 "$REPO_ROOT/cfg/em400.ini.template" "$APPDIR/usr/share/doc/em400/em400.ini.template"
 
 # QtMultimedia (panel QSoundEffect clicks) loads its backend as a plugin that
 # linuxdeploy-plugin-qt does not pull from the linked lib. Stage it into the
