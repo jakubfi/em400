@@ -87,11 +87,11 @@ QWidget *MemView::build_header()
 	hlay->addSpacing(8);
 
 	btn_hex = make_toggle_btn(tr("HEX"), true);
-	btn_udec = make_toggle_btn(tr("DEC"), false);
-	btn_sdec = make_toggle_btn(tr("-DEC"), false);
+	btn_sdec = make_toggle_btn(tr("DEC"), false);
+	btn_udec = make_toggle_btn(tr("UDEC"), false);
 	hlay->addWidget(btn_hex);
-	hlay->addWidget(btn_udec);
 	hlay->addWidget(btn_sdec);
+	hlay->addWidget(btn_udec);
 	hlay->addSpacing(8);
 
 	btn_ascii = make_toggle_btn(tr("ASCII"), true);

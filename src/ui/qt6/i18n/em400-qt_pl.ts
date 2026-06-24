@@ -616,8 +616,8 @@ Brak ramki: przerwanie niemaskowalne</translation>
         <translation>DEC</translation>
     </message>
     <message>
-        <source>-DEC</source>
-        <translation>-DEC</translation>
+        <source>UDEC</source>
+        <translation>UDEC</translation>
     </message>
     <message>
         <source>ASCII</source>
@@ -659,16 +659,20 @@ Brak ramki: przerwanie niemaskowalne</translation>
 <context>
     <name>RegCompact</name>
     <message>
-        <source>hex</source>
-        <translation>hex</translation>
+        <source>HEX</source>
+        <translation>HEX</translation>
     </message>
     <message>
-        <source>dec</source>
-        <translation>dec</translation>
+        <source>DEC</source>
+        <translation>DEC</translation>
     </message>
     <message>
-        <source>oct</source>
-        <translation>oct</translation>
+        <source>UDEC</source>
+        <translation>UDEC</translation>
+    </message>
+    <message>
+        <source>OCT</source>
+        <translation>OCT</translation>
     </message>
 </context>
 <context>
