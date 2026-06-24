@@ -43,7 +43,7 @@
 // low-level stuff
 
 static const char * log_component_names[] = {
-	"ALL", "EM4H", "FDBR", "CRK5",
+	"ALL", "EM4H", "CRK5",
 	"MEM", "CPU", "OP", "INT", "IO",
 	"MX", "CCHR", "CMEM",
 	"UZDAT", "UZFX", "MECLO",
