@@ -13,11 +13,13 @@ private:
 	QPixmap gfx_on;
 	QSoundEffect snd_on, snd_off;
 	bool state = false;
+	bool locked = false;
 
 public:
 	explicit Switch(QPixmap gfx_on, QString snd_on, QString snd_off, bool momentary = false, QWidget *parent = nullptr);
 	bool get() { return state; }
 	void set(bool state);
+	void set_locked(bool locked) { this->locked = locked; }
 	void set_volume(qreal linear_volume);
 
 protected:

@@ -55,8 +55,11 @@ void Switch::mousePressEvent(QMouseEvent *event)
 		snd_off.play();
 	}
 
-	if (momentary && state) emit signal_clicked();
-	else emit signal_toggled(state);
+	// locked: the switch still moves and clicks, but drives nothing
+	if (!locked) {
+		if (momentary && state) emit signal_clicked();
+		else emit signal_toggled(state);
+	}
 
 	update();
 }

@@ -218,6 +218,14 @@ void IntView::toggle_mask(int sr_bit)
 // the inactive colour comes from the palette so it tracks the theme.
 void IntView::render_cell(int n)
 {
+	// powered off: the explicit per-cell stylesheet would otherwise defeat Qt's
+	// disabled greying, so paint the cell in the disabled palette colour by hand.
+	if (!isEnabled()) {
+		QString off = palette().color(QPalette::Disabled, QPalette::WindowText).name();
+		cell[n]->setStyleSheet(QString("QPushButton{background:transparent; color:%1; border:none;}").arg(off));
+		return;
+	}
+
 	bool pending = rz & (1u << (31 - n));
 	int bit = mask_bit[n];
 	bool unmasked = (bit < 0) || ((sr >> bit) & 1);
@@ -250,9 +258,10 @@ void IntView::render_cell(int n)
 // so the box recedes.
 void IntView::render_box(MaskBox *b)
 {
-	bool unmasked = (sr >> b->sr_bit) & 1;
+	QPalette::ColorGroup grp = isEnabled() ? QPalette::Active : QPalette::Disabled;
+	bool unmasked = isEnabled() && ((sr >> b->sr_bit) & 1);
 	QColor c = unmasked ? em400_mask_color(palette())
-	                    : palette().color(QPalette::Mid);
+	                    : palette().color(grp, QPalette::Mid);
 	b->setStyleSheet(QString("MaskBox{border:1px solid %1; border-radius:2px;}").arg(c.name()));
 }
 
@@ -266,7 +275,8 @@ void IntView::render_box(MaskBox *b)
 // come from the live palette so the badge tracks a runtime theme switch.
 void IntView::render_help()
 {
-	QString c = em400_dim_text_color(palette()).name();
+	QString c = isEnabled() ? em400_dim_text_color(palette()).name()
+	                        : palette().color(QPalette::Disabled, QPalette::WindowText).name();
 	help->setStyleSheet(QString(
 		"QLabel{color:%1; border:1px solid %1; border-radius:4px; padding:0 4px;}").arg(c));
 }
@@ -301,7 +311,8 @@ bool IntView::eventFilter(QObject *obj, QEvent *ev)
 void IntView::changeEvent(QEvent *ev)
 {
 	QWidget::changeEvent(ev);
-	if (ev->type() == QEvent::PaletteChange || ev->type() == QEvent::StyleChange) {
+	if (ev->type() == QEvent::PaletteChange || ev->type() == QEvent::StyleChange
+			|| ev->type() == QEvent::EnabledChange) {
 		render_all();
 	}
 }

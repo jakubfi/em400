@@ -177,9 +177,9 @@ ControlPanel::ControlPanel(QWidget *parent):
 void ControlPanel::slot_set_locked(bool locked)
 {
 	for (int i=0 ; i<SW_CNT ; i++) {
-		sw[i]->setEnabled(!locked);
+		sw[i]->set_locked(locked);
 	}
-	keys->setEnabled(!locked);
+	keys->set_locked(locked);
 }
 
 // -----------------------------------------------------------------------

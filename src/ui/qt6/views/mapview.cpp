@@ -119,13 +119,12 @@ void MapView::paintEvent(QPaintEvent *)
 	QColor on   = em400_mask_color(palette());
 	QColor off  = palette().color(QPalette::Mid);
 	QColor text = palette().color(QPalette::WindowText);
-	QColor dim  = palette().color(QPalette::Disabled, QPalette::WindowText);
 
 	const int gx = grid_x();
 	const int gy = grid_y();
 
 	// column headers (page index, 0..f) centred over each cell column
-	p.setPen(dim);
+	p.setPen(text);
 	for (int c=0 ; c<PAGES ; c++) {
 		int x = gx + c * (cell + gap);
 		QRect r(x, margin, cell, hdr_h);

@@ -15,6 +15,7 @@ public:
 	QPoint origin() const { return m_origin; }
 
 	uint16_t value() const;
+	void set_locked(bool locked) { this->locked = locked; }
 	void set_volume(qreal linear_volume);
 
 signals:
@@ -43,6 +44,7 @@ private:
 	QPoint m_origin;
 	bool sweeping = false;
 	bool sweep_target = false;
+	bool locked = false;
 };
 
 #endif // BINARYKEYS_H

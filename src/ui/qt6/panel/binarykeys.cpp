@@ -76,7 +76,8 @@ void BinaryKeys::set_key(int i, bool state)
 	}
 
 	update();
-	emit signal_value_changed(value());
+	// locked: keys still move and click, but the value drives nothing
+	if (!locked) emit signal_value_changed(value());
 }
 
 // -----------------------------------------------------------------------

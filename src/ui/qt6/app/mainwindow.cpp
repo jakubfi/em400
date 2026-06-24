@@ -90,6 +90,7 @@ MainWindow::MainWindow(QWidget *parent) :
 		emit ui->cp->ignition->signal_power(true);
 	}
 	update_window_title();
+	update_docks_enabled(e.is_powered());
 
 	restore_layout();
 }
@@ -202,6 +203,7 @@ void MainWindow::wire_connections()
 		if (on) e.slot_reg_select(ui->cp->rotary->get_position());
 	});
 	connect(&e, &EmuModel::signal_power_changed, this, &MainWindow::update_window_title);
+	connect(&e, &EmuModel::signal_power_changed, this, &MainWindow::update_docks_enabled);
 	connect(ui->cp, &ControlPanel::signal_start_toggled, &e, &EmuModel::slot_cpu_start);
 	connect(ui->cp, &ControlPanel::signal_clear_clicked, &e, &EmuModel::slot_clear);
 	connect(ui->cp, &ControlPanel::signal_oprq_clicked,  &e, &EmuModel::slot_oprq);
@@ -492,6 +494,17 @@ void MainWindow::update_window_title()
 		setWindowTitle(QString("EM400 — %1").arg(QString::fromUtf8(label)));
 	} else {
 		setWindowTitle(QStringLiteral("EM400"));
+	}
+}
+
+// -----------------------------------------------------------------------
+// Powered-off machine has no state to inspect or edit, so make the debugger
+// dock contents inert (and visibly greyed). The title bars stay live so docks
+// can still be moved, floated or closed.
+void MainWindow::update_docks_enabled(bool powered)
+{
+	for (QDockWidget *d : docks) {
+		if (d->widget()) d->widget()->setEnabled(powered);
 	}
 }
 
