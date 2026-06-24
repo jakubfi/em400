@@ -255,6 +255,17 @@ if (UI_QT)
 	list(APPEND SOURCES_EM400 src/ui/qt6/panel/ignition.h src/ui/qt6/panel/ignition.cpp)
 endif()
 
+# --- embedded default config (cfg/em400.ini as a NUL-terminated byte array)
+
+set(EMBED_CONFIG_SRC ${CMAKE_BINARY_DIR}/default_config.c)
+set_property(DIRECTORY APPEND PROPERTY CMAKE_CONFIGURE_DEPENDS
+	${CMAKE_SOURCE_DIR}/cfg/em400.ini)
+file(READ ${CMAKE_SOURCE_DIR}/cfg/em400.ini EMBED_CONFIG_HEX HEX)
+string(REGEX REPLACE "(..)" "0x\\1," EMBED_CONFIG_BYTES "${EMBED_CONFIG_HEX}")
+file(WRITE ${EMBED_CONFIG_SRC}
+	"#include \"default_config.h\"\n\nconst char default_config_ini[] = {\n${EMBED_CONFIG_BYTES}0x00\n};\n")
+list(APPEND SOURCES_EM400 src/default_config.h ${EMBED_CONFIG_SRC})
+
 # --- internal parser
 
 bison_target(eval_parser
@@ -306,6 +317,7 @@ if (UI_QT)
 	set_property(SOURCE ${CMAKE_CURRENT_BINARY_DIR}/eval_parser.c PROPERTY SKIP_AUTOGEN ON)
 	set_property(SOURCE ${CMAKE_CURRENT_BINARY_DIR}/eval_parser.h PROPERTY SKIP_AUTOGEN ON)
 	set_property(SOURCE ${CMAKE_CURRENT_BINARY_DIR}/eval_scanner.c PROPERTY SKIP_AUTOGEN ON)
+		set_property(SOURCE ${EMBED_CONFIG_SRC} PROPERTY SKIP_AUTOGEN ON)
 	target_include_directories(em400 PRIVATE ${Qt6Widgets_INCLUDE_DIRS})
 	# qt6 sources live in subdirs (app/, panel/, views/) but include each
 	# other with bare "foo.h" includes; expose the subdirs on the search path

@@ -30,6 +30,7 @@
 #include "appcfg.h"
 #include "cfg.h"
 #include "log.h"
+#include "default_config.h"
 
 static bool machine_powered;
 
@@ -194,6 +195,21 @@ void em400_mkconfdir()
 	free(base);
 }
 
+// -----------------------------------------------------------------------
+static int write_default_config(const char *path)
+{
+	FILE *f = fopen(path, "wb");
+	if (!f) {
+		return E_ERR;
+	}
+	size_t len = strlen(default_config_ini);
+	int ok = (fwrite(default_config_ini, 1, len, f) == len);
+	if (fclose(f) != 0) {
+		ok = 0;
+	}
+	return ok ? E_OK : E_ERR;
+}
+
 const char em400_cmdline_opts[] = "hc:m:p:l:Lu:O:";
 
 // -----------------------------------------------------------------------
@@ -318,6 +334,13 @@ int main(int argc, char** argv)
 				config = legacy;
 			} else {
 				free(legacy);
+				// genuine first run: no config anywhere. Create one from
+				// the embedded default so the user can boot and edit it.
+				fprintf(stderr, "em400: creating a default configuration at:\n  %s\n", config);
+				if (write_default_config(config) != E_OK) {
+					LOGERR("Failed to create default config file: %s", config);
+					goto done;
+				}
 			}
 		}
 	}
