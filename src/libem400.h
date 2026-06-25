@@ -162,7 +162,7 @@ extern const char *em400_reg_names[];
 
 enum em400_log_components {
 	L_ALL = 0,
-	L_EM4H, L_CRK5,
+	L_LIB, L_APP, L_CRK5,
 	L_MEM, L_CPU, L_OP, L_INT, L_IO,
 	L_MX, L_CCHR, L_CMEM,
 	L_UZDAT, L_UZFX, L_MECLO,

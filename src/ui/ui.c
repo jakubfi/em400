@@ -73,7 +73,7 @@ struct ui * ui_create(const char *name)
 				LOGERR("Failed to setup UI: %s.", name);
 				return NULL;
 			} else {
-				LOG(L_EM4H, "UI started: %s", name);
+				LOG(L_APP, "UI started: %s", name);
 			}
 			return ui;
 		}

@@ -911,7 +911,7 @@ QWidget *ConfigDialog::build_log_page()
 			if (neg) on.remove(id); else on.insert(id);
 		}
 	}
-	on.insert(L_EM4H); // the core always keeps EM4H on
+	on.insert(L_LIB); // the core always keeps the library/error bucket on
 
 	QGroupBox *comp_box = new QGroupBox(tr("Components"));
 	QVBoxLayout *comp_layout = new QVBoxLayout(comp_box);
@@ -920,7 +920,7 @@ QWidget *ConfigDialog::build_log_page()
 		QCheckBox *cb = new QCheckBox(QString(em400_log_component_name(i)));
 		cb->setProperty("compid", i);
 		cb->setChecked(on.contains(i));
-		if (i == L_EM4H) cb->setEnabled(false);
+		if (i == L_LIB) cb->setEnabled(false);
 		else gate(cb, "live");
 		connect(cb, &QCheckBox::toggled, this, [this]() { rebuild_log_components(); });
 		comp_grid->addWidget(cb, (i - 1) / 3, (i - 1) % 3);

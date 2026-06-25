@@ -171,22 +171,22 @@ static ma_device_id *resolve_device(const char *needle)
 	ma_device_info *infos = NULL;
 	ma_uint32 count = 0;
 	if (ma_context_get_devices(&context, &infos, &count, NULL, NULL) != MA_SUCCESS) {
-		LOG(L_EM4H, "Sound device enumeration failed; using default");
+		LOG(L_LIB, "Sound device enumeration failed; using default");
 		return NULL;
 	}
 
 	for (ma_uint32 i=0 ; i<count ; i++) {
 		if (name_matches(infos[i].name, needle)) {
 			matched_device_id = infos[i].id;
-			LOG(L_EM4H, "Sound device matched: %s", infos[i].name);
+			LOG(L_LIB, "Sound device matched: %s", infos[i].name);
 			return &matched_device_id;
 		}
 	}
 
-	LOG(L_EM4H, "Sound device '%s' not found on backend %s; using default. Available device names:",
+	LOG(L_LIB, "Sound device '%s' not found on backend %s; using default. Available device names:",
 		needle, ma_get_backend_name(context.backend));
 	for (ma_uint32 i=0 ; i<count ; i++) {
-		LOG(L_EM4H, "  - \"%s\"", infos[i].name);
+		LOG(L_LIB, "  - \"%s\"", infos[i].name);
 	}
 	return NULL;
 }
@@ -199,7 +199,7 @@ int sound_init(const struct em400_sound_cfg *cfg)
 	ma_backend forced;
 	int bres = parse_backend(cfg->backend, &forced);
 	if (bres < 0) {
-		LOG(L_EM4H, "Unknown sound backend '%s'; falling back to auto", cfg->backend);
+		LOG(L_LIB, "Unknown sound backend '%s'; falling back to auto", cfg->backend);
 	}
 
 	ma_result mr;
@@ -253,7 +253,7 @@ int sound_init(const struct em400_sound_cfg *cfg)
 	}
 
 	initialized = true;
-	LOG(L_EM4H, "Sound initialized (%s). Rate: %i Hz, period: %u ms x %u",
+	LOG(L_LIB, "Sound initialized (%s). Rate: %i Hz, period: %u ms x %u",
 		ma_get_backend_name(context.backend),
 		cfg->sample_rate, dc.periodSizeInMilliseconds, dc.periods);
 	return E_OK;

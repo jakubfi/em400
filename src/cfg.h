@@ -24,7 +24,7 @@
 typedef dictionary em400_cfg;
 
 #define CFG_DEFAULT_LOG_FILE "em400.log"
-#define CFG_DEFAULT_LOG_COMPONENTS "em4h"
+#define CFG_DEFAULT_LOG_COMPONENTS "lib,app"
 #define CFG_DEFAULT_LOG_LINE_BUFFERED 1
 #define CFG_DEFAULT_LOG_ENABLED 0
 

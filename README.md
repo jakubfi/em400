@@ -77,7 +77,7 @@ Where *options* are:
 * **-h** - Display help
 * **-c config** - Config file to use instead of the default one (*~/.em400/em400.ini*)
 * **-p program** - Load program image into OS memory at address 0
-* **-l component,component,...** - Enable logging for specified components. Available components: reg, mem, cpu, op, int, io, mx, px, cchar, cmem, term, wnch, flop, pnch, pnrd, crk5, em4h, all.
+* **-l component,component,...** - Enable logging for specified components. Prefix a component with '-' to exclude it (e.g. "all,-cpu"). lib is always logged and cannot be excluded. Available components: lib, app, crk5, mem, cpu, op, int, io, mx, cchr, cmem, uzdat, uzfx, meclo, term, 9425, wnch, flop, pnch, pnrd, tape, all.
 * **-L** -  Disable logging
 * **-u ui** - User interface to use. Available UIs: qt (default), cmd (minimal, for remote control)
 * **-O sec:key=value**  : Override configuration entry "key" in section [sec] with a specific value

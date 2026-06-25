@@ -18,7 +18,6 @@ set cpo&vim
 
 syn match em400logHALT			"HALT \d\+[ \t]*(alarm:.*)" contained
 
-syn match em400logREG			"^[ \t]*REG |.*"
 syn match em400logMEM			"^[ \t]*MEM |.*"
 syn match em400logCPU			"^[ \t]*CPU |.*"
 syn match em400logOP			"^[ \t]*OP |.*" contains=em400logHALT
@@ -27,19 +26,22 @@ syn match em400logINT			"^[ \t]*INT |.*"
 syn match em400logIO			"^[ \t]*IO |.*"
 
 syn match em400logMX			"^[ \t]*MX |.*"
-syn match em400logPX			"^[ \t]*PX |.*"
 syn match em400logCCHR			"^[ \t]*CCHR |.*"
 syn match em400logCMEM			"^[ \t]*CMEM |.*"
+syn match em400logUZDAT			"^[ \t]*UZDAT |.*"
+syn match em400logUZFX			"^[ \t]*UZFX |.*"
 
+syn match em400logMECLO			"^[ \t]*MECLO |.*"
 syn match em400logTERM			"^[ \t]*TERM |.*"
-syn match em400logFDBR			"^[ \t]*FDBR |.*"
 syn match em400log9425			"^[ \t]*9425 |.*"
 syn match em400logWNCH			"^[ \t]*WNCH |.*"
 syn match em400logFLOP			"^[ \t]*FLOP |.*"
 syn match em400logPNCH			"^[ \t]*PNCH |.*"
 syn match em400logPNRD			"^[ \t]*PNRD |.*"
+syn match em400logTAPE			"^[ \t]*TAPE |.*"
 syn match em400logCRK5			"^[ \t]*CRK5 |.*"
-syn match em400logEM4H			"^[ \t]*EM4H |.*"
+syn match em400logLIB			"^[ \t]*LIB |.*"
+syn match em400logAPP			"^[ \t]*APP |.*"
 
 " Define the default highlighting.
 " For version 5.7 and earlier: only when not done already
@@ -54,7 +56,6 @@ if version >= 508 || !exists("did_em400log_syntax_inits")
 
 	HiLink em400logHALT		Error
 
-	HiLink em400logREG		Label
 	HiLink em400logMEM		Special
 "	HiLink em400logCPU		Label
 	HiLink em400logOP		Label
@@ -63,20 +64,23 @@ if version >= 508 || !exists("did_em400log_syntax_inits")
 	HiLink em400logIO		Identifier
 
 	HiLink em400logMX		Type
-	HiLink em400logPX		Type
 	HiLink em400logCCHR		Type
 	HiLink em400logCMEM		Type
+	HiLink em400logUZDAT		Type
+	HiLink em400logUZFX		Type
 
+	HiLink em400logMECLO		PreProc
 	HiLink em400logTERM		PreProc
-	HiLink em400logFDBR		PreProc
 	HiLink em400log9425		PreProc
 	HiLink em400logWNCH		PreProc
 	HiLink em400logFLOP		PreProc
 	HiLink em400logPNCH		PreProc
 	HiLink em400logPNRD		PreProc
+	HiLink em400logTAPE		PreProc
 
 	HiLink em400logCRK5		Statement
-	HiLink em400logEM4H		Label
+	HiLink em400logLIB		Label
+	HiLink em400logAPP		Label
 
   syntax sync minlines=50
 

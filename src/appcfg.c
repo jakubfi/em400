@@ -198,7 +198,7 @@ static int build_device(em400_cfg *cfg, int chnum, int devnum, struct em400_devi
 		return E_OK;
 	}
 
-	LOG(L_EM4H, "Configuring device %i.%i (%s)", chnum, devnum, dev_type_name);
+	LOG(L_APP, "Configuring device %i.%i (%s)", chnum, devnum, dev_type_name);
 
 	if (!strcasecmp(dev_type_name, "terminal")) {
 		// TODO: remove dead "transport"
@@ -212,7 +212,7 @@ static int build_device(em400_cfg *cfg, int chnum, int devnum, struct em400_devi
 		}
 		int speed = cfg_fgetint(cfg, "dev%i.%i:speed", chnum, devnum);
 		if (speed == -1) {
-			LOG(L_EM4H, "Device %i.%i: terminal speed not set, defaulting to 9600", chnum, devnum);
+			LOG(L_APP, "Device %i.%i: terminal speed not set, defaulting to 9600", chnum, devnum);
 			speed = 9600;
 		}
 		dev->type = EM400_DEV_TERMINAL;
@@ -251,7 +251,7 @@ static int build_io(em400_cfg *cfg, struct em400_machine_cfg *machine)
 		const char *ch_name = cfg_fgetstr(cfg, "io:channel_%i", chnum);
 		if (!ch_name) continue;
 
-		LOG(L_EM4H, "Configuring I/O channel %i: %s", chnum, ch_name);
+		LOG(L_APP, "Configuring I/O channel %i: %s", chnum, ch_name);
 
 		if (!strcasecmp(ch_name, "char")) {
 			chan->type = EM400_CHANNEL_CHAR;
@@ -309,7 +309,7 @@ static int build_device_new(em400_cfg *cfg, const char *sec, int chnum, int devn
 		return E_OK;
 	}
 
-	LOG(L_EM4H, "Configuring device %i.%i (%s)", chnum, devnum, dev_type_name);
+	LOG(L_APP, "Configuring device %i.%i (%s)", chnum, devnum, dev_type_name);
 
 	if (!strcasecmp(dev_type_name, "terminal")) {
 		const int port = cfg_fgetint(cfg, "%s:dev.%i.%i.port", sec, chnum, devnum);
@@ -360,7 +360,7 @@ static int build_io_new(em400_cfg *cfg, const char *sec, struct em400_machine_cf
 		const char *ch_name = cfg_fgetstr(cfg, "%s:channel.%i", sec, chnum);
 		if (!ch_name) continue;
 
-		LOG(L_EM4H, "Configuring I/O channel %i: %s", chnum, ch_name);
+		LOG(L_APP, "Configuring I/O channel %i: %s", chnum, ch_name);
 
 		if (!strcasecmp(ch_name, "char")) {
 			chan->type = EM400_CHANNEL_CHAR;
@@ -426,7 +426,7 @@ static int build_new(em400_cfg *cfg)
 
 		const char *id = sec + 8;
 		const char *name = cfg_fgetstr(cfg, "%s:name", sec);
-		LOG(L_EM4H, "Configuring machine '%s' (%s)", id, name ? name : "unnamed");
+		LOG(L_APP, "Configuring machine '%s' (%s)", id, name ? name : "unnamed");
 		struct appcfg_machine *m = appcfg_machine_add(&appcfg, id, name);
 		if (!m) {
 			return LOGERR("Failed to allocate machine configuration: %s", id);
@@ -438,7 +438,7 @@ static int build_new(em400_cfg *cfg)
 
 	// unresolvable/missing active id is tolerated: appcfg_active_machine falls back to the first
 	appcfg.active_id = dup_str(cfg_getstr(cfg, "general:machine", NULL));
-	LOG(L_EM4H, "Configured %i machine(s), active: %s", appcfg.n_machines,
+	LOG(L_APP, "Configured %i machine(s), active: %s", appcfg.n_machines,
 		appcfg.active_id ? appcfg.active_id : "(unset, will use the first one)");
 
 	return E_OK;
@@ -477,7 +477,7 @@ static void build_host(em400_cfg *cfg)
 		.line_buffered = cfg_getbool(cfg, "log:line_buffered", CFG_DEFAULT_LOG_LINE_BUFFERED),
 	};
 
-	LOG(L_EM4H, "Host config: speed_real=%s, emulation_quantum=%ius, sound=%s",
+	LOG(L_APP, "Host config: speed_real=%s, emulation_quantum=%ius, sound=%s",
 		appcfg.host.emu.speed_real ? "true" : "false",
 		appcfg.host.emu.emulation_quantum_us,
 		appcfg.host.sound.enabled ? "enabled" : "disabled");
@@ -489,12 +489,12 @@ int appcfg_build_from_ini(em400_cfg *cfg)
 	build_host(cfg);
 
 	if (has_machine_sections(cfg)) {
-		LOG(L_EM4H, "Reading new-format configuration (per-machine sections)");
+		LOG(L_APP, "Reading new-format configuration (per-machine sections)");
 		return build_new(cfg);
 	}
 
 	// legacy format describes exactly one unnamed machine
-	LOG(L_EM4H, "Reading legacy-format configuration, importing it as machine '%s'", APPCFG_IMPORTED_MACHINE_ID);
+	LOG(L_APP, "Reading legacy-format configuration, importing it as machine '%s'", APPCFG_IMPORTED_MACHINE_ID);
 	struct appcfg_machine *m = appcfg_machine_add(&appcfg, APPCFG_IMPORTED_MACHINE_ID, "Imported configuration");
 	if (!m) {
 		return LOGERR("Failed to allocate machine configuration");
@@ -630,7 +630,7 @@ static void write_machine(FILE *f, const struct appcfg_machine *m)
 // -----------------------------------------------------------------------
 int appcfg_write(const struct appcfg *c, const char *path)
 {
-	LOG(L_EM4H, "Writing configuration (%i machine(s)) to %s", c->n_machines, path);
+	LOG(L_APP, "Writing configuration (%i machine(s)) to %s", c->n_machines, path);
 
 	FILE *f = fopen(path, "w");
 	if (!f) {

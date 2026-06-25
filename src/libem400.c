@@ -126,7 +126,7 @@ static int channel_build(unsigned chnum, const struct em400_channel_cfg *ccfg)
 		return E_OK;
 	}
 
-	LOG(L_EM4H, "Initializing I/O channel %i (type %i)", chnum, ccfg->type);
+	LOG(L_LIB, "Initializing I/O channel %i (type %i)", chnum, ccfg->type);
 	if (io_channel_init(chnum, ccfg->type) != E_OK) {
 		return LOGERR("Channel %i initialization error", chnum);
 	}
@@ -168,7 +168,7 @@ int em400_init(const struct em400_machine_cfg *machine, const struct em400_host_
 // -----------------------------------------------------------------------
 void em400_shutdown()
 {
-	LOG(L_EM4H, "Shutting down EM400 instance");
+	LOG(L_LIB, "Shutting down EM400 instance");
 #ifdef _WIN32
 	timeEndPeriod(1);
 #endif
@@ -228,11 +228,11 @@ const char * em400_dev_get_image(unsigned chnum, unsigned devnum, unsigned slot)
 // -----------------------------------------------------------------------
 void em400_logf(const char *func, const char *fmt, ...)
 {
-	if (!LOG_WANTS(L_EM4H)) return;
+	if (!LOG_WANTS(L_APP)) return;
 
 	va_list vl;
 	va_start(vl, fmt);
-	log_log_va(L_EM4H, func, fmt, vl);
+	log_log_va(L_APP, func, fmt, vl);
 	va_end(vl);
 }
 

@@ -665,7 +665,7 @@ static inline void cpu_latency_stats(int policy, long late_ns)
 	stats.timing_policy[policy]++;
 
 	if (stats.samples >= ticks_per_2s) {
-		LOG(L_EM4H,
+		LOG(L_LIB,
 			"<1us: %-6u <10us: %-6u <100us: %-6u"
 			" <1ms: %-6u <10ms: %-6u <100ms: %-6u"
 			" >=100ms: %-6u"

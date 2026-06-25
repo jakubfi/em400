@@ -19,7 +19,6 @@ Work notes:
 * generalize constructors?
 * cchar controllers don't use parameters - generic initialization?
 * generic callback registration for cchar controllers?
-* reserve L_EM4H for UIs?
 * ensure consistent device naming
 * check for unconnected devices, unset callbacks
 

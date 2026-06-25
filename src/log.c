@@ -43,7 +43,7 @@
 // low-level stuff
 
 static const char * log_component_names[] = {
-	"ALL", "EM4H", "CRK5",
+	"ALL", "LIB", "APP", "CRK5",
 	"MEM", "CPU", "OP", "INT", "IO",
 	"MX", "CCHR", "CMEM",
 	"UZDAT", "UZFX", "MECLO",
@@ -51,7 +51,9 @@ static const char * log_component_names[] = {
 };
 
 atomic_uint log_components_enabled = 0; // components currently enabled or 0 if logging is disabled
-static atomic_uint log_components_selected = 1 << L_EM4H; // components selected by user, EM4H always selected
+// L_LIB carries library-general output and all error lines (log_err), so it is
+// always selected and can never be silenced. L_APP is on by default but excludable.
+static atomic_uint log_components_selected = 1 << L_LIB;
 static pthread_mutex_t log_mutex = PTHREAD_MUTEX_INITIALIZER;
 static char *log_file_name;
 static FILE *log_file;
@@ -121,7 +123,7 @@ void log_disable()
 {
 	if (!log_is_enabled()) return;
 
-	log_log_timestamp(L_EM4H, "EM400 version " EM400_VERSION " closing log file", __func__);
+	log_log_timestamp(L_LIB, "EM400 version " EM400_VERSION " closing log file", __func__);
 
 	pthread_mutex_lock(&log_mutex);
 	atomic_store_explicit(&log_components_enabled, 0, memory_order_relaxed);
@@ -150,7 +152,7 @@ int log_enable()
 
 	atomic_store_explicit(&log_components_enabled, log_components_selected, memory_order_relaxed);
 
-	log_log_timestamp(L_EM4H, "EM400 version " EM400_VERSION " opened log file", __func__);
+	log_log_timestamp(L_LIB, "EM400 version " EM400_VERSION " opened log file", __func__);
 
 	return E_OK;
 }
@@ -178,9 +180,9 @@ void log_component_enable(unsigned component)
 void log_component_disable(unsigned component)
 {
 	if (component == L_ALL) {
-		atomic_store_explicit(&log_components_selected, (1 << L_EM4H), memory_order_relaxed);
+		atomic_store_explicit(&log_components_selected, (1 << L_LIB), memory_order_relaxed);
 	} else {
-		atomic_fetch_and_explicit(&log_components_selected, ~(1 << component) | (1 << L_EM4H), memory_order_relaxed);
+		atomic_fetch_and_explicit(&log_components_selected, ~(1 << component) | (1 << L_LIB), memory_order_relaxed);
 	}
 	if (log_is_enabled()) {
 		atomic_store_explicit(&log_components_enabled, log_components_selected, memory_order_relaxed);
@@ -272,7 +274,7 @@ int log_err(const char *func, const char *msgfmt, ...)
 		va_start(vl, msgfmt);
 		pthread_mutex_lock(&log_mutex);
 		if (log_file) {
-			fprintf(log_file, LOG_F_COMP LOG_F_FUN, log_component_names[L_EM4H], thname, func);
+			fprintf(log_file, LOG_F_COMP LOG_F_FUN, log_component_names[L_LIB], thname, func);
 			fprintf(log_file, "ERROR: ");
 			vfprintf(log_file, msgfmt, vl);
 			fprintf(log_file, "\n");

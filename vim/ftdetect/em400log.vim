@@ -9,7 +9,8 @@ au! BufNewFile,BufRead *.[Ll][Oo][Gg] call s:FTem400log()
 
 			" log levels
 			if 1 == 2
-			elseif (ln =~? '^\(EM4H\| MEM\| CPU\| INT  IO\|CCHR\|TERM\|  MX\) |')
+			" component | thread | function() | ... (the LOG_F_COMP/LOG_F_FUN header)
+			elseif (ln =~? '^\s*[A-Z0-9]\+ |\s\+\w\+ |\s\+\w\+() |')
 				let level = level + 1
 			" emulator initialization
 			elseif (ln =~ 'Effective configuration')

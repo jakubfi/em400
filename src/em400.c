@@ -57,7 +57,7 @@ int em400_top_init(em400_cfg *cfg, const char *machine_id)
 		if (!appcfg_machine_find(&appcfg, machine_id)) {
 			return LOGERR("No such machine in configuration: %s", machine_id);
 		}
-		LOG(L_EM4H, "Active machine overridden from commandline: %s", machine_id);
+		LOG(L_APP, "Active machine overridden from commandline: %s", machine_id);
 		free(appcfg.active_id);
 		appcfg.active_id = strdup(machine_id);
 	}
@@ -115,8 +115,8 @@ void em400_usage()
 		"   -p program       : Load program image into OS memory at address 0\n"
 		"   -l cmp,cmp,...   : Enable logging for specified components. Prefix a component\n"
 		"                      with '-' to exclude it, e.g. \"all,-cpu\" logs everything but cpu\n"
-		"                      (em4h is always logged and cannot be excluded). Components:\n"
-		"                      em4h, crk5, mem, cpu, op, int, io, mx, cchr, cmem, uzdat, uzfx,\n"
+		"                      (lib is always logged and cannot be excluded). Components:\n"
+		"                      lib, app, crk5, mem, cpu, op, int, io, mx, cchr, cmem, uzdat, uzfx,\n"
 		"                      meclo, term, 9425, wnch, flop, pnch, pnrd, tape, all\n"
 		"   -L               : Disable logging\n"
 		"   -u ui            : User interface to use. Available UIs (first is the default):"
@@ -374,12 +374,12 @@ int main(int argc, char** argv)
 		LOGERR("Failed to initialize EM400");
 		goto done;
 	}
-	LOG(L_EM4H, "Configuration loaded from: %s", config);
+	LOG(L_APP, "Configuration loaded from: %s", config);
 
 	// persist the converted new-format config; a failed migration is fatal
 	// so the user is not left booting on a config that did not get saved
 	if (migrate_to) {
-		LOG(L_EM4H, "First-run migration: converting legacy config to new format");
+		LOG(L_APP, "First-run migration: converting legacy config to new format");
 		if (appcfg_write(&appcfg, migrate_to) != E_OK) {
 			LOGERR("Failed to write migrated configuration to %s", migrate_to);
 			goto done;
