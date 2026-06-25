@@ -17,6 +17,7 @@
 
 #include <strings.h>
 #include <stdlib.h>
+#include <stdarg.h>
 #include <stdatomic.h>
 #ifdef _WIN32
 #include <winsock2.h> // must precede windows.h, else libuv's uv.h warns
@@ -223,6 +224,17 @@ const char * em400_dev_get_image(unsigned chnum, unsigned devnum, unsigned slot)
 // -----------------------------------------------------------------------
 // --- LOGGING -----------------------------------------------------------
 // -----------------------------------------------------------------------
+
+// -----------------------------------------------------------------------
+void em400_logf(const char *func, const char *fmt, ...)
+{
+	if (!LOG_WANTS(L_EM4H)) return;
+
+	va_list vl;
+	va_start(vl, fmt);
+	log_log_va(L_EM4H, func, fmt, vl);
+	va_end(vl);
+}
 
 // -----------------------------------------------------------------------
 int em400_log_init(const char *file, em400_log_buf_type_t buf_type, const char *components, bool enabled)

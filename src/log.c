@@ -286,11 +286,8 @@ int log_err(const char *func, const char *msgfmt, ...)
 }
 
 // -----------------------------------------------------------------------
-void log_log(unsigned component, const char *func, const char *msgfmt, ...)
+void log_log_va(unsigned component, const char *func, const char *msgfmt, va_list vl)
 {
-	va_list vl;
-	va_start(vl, msgfmt);
-
 	char thname[16];
 	pthread_getname_np(pthread_self(), thname, 16);
 
@@ -301,7 +298,14 @@ void log_log(unsigned component, const char *func, const char *msgfmt, ...)
 		fprintf(log_file, "\n");
 	}
 	pthread_mutex_unlock(&log_mutex);
+}
 
+// -----------------------------------------------------------------------
+void log_log(unsigned component, const char *func, const char *msgfmt, ...)
+{
+	va_list vl;
+	va_start(vl, msgfmt);
+	log_log_va(component, func, msgfmt, vl);
 	va_end(vl);
 }
 

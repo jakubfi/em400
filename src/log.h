@@ -20,6 +20,7 @@
 
 #define _WITH_DPRINTF
 #include <stdio.h>
+#include <stdarg.h>
 #include <inttypes.h>
 #include <stdatomic.h>
 #include <ctype.h>
@@ -49,6 +50,7 @@ int log_get_component_id(const char *name);
 
 int log_err(const char *func, const char *msgfmt, ...);
 void log_log(unsigned component, const char *func, const char *format, ...);
+void log_log_va(unsigned component, const char *func, const char *format, va_list args);
 void log_splitlog(unsigned component, const char *func, const char *text);
 
 void log_store_cycle_state(uint16_t sr, uint16_t ic);
