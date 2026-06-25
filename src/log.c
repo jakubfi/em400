@@ -122,11 +122,14 @@ void log_disable()
 	if (!log_is_enabled()) return;
 
 	log_log_timestamp(L_EM4H, "EM400 version " EM400_VERSION " closing log file", __func__);
+
+	pthread_mutex_lock(&log_mutex);
 	atomic_store_explicit(&log_components_enabled, 0, memory_order_relaxed);
 	if (log_file) {
 		fclose(log_file);
 		log_file = NULL;
 	}
+	pthread_mutex_unlock(&log_mutex);
 }
 
 // -----------------------------------------------------------------------
@@ -268,10 +271,12 @@ int log_err(const char *func, const char *msgfmt, ...)
 	if (log_is_enabled()) {
 		va_start(vl, msgfmt);
 		pthread_mutex_lock(&log_mutex);
-		fprintf(log_file, LOG_F_COMP LOG_F_FUN, log_component_names[L_EM4H], thname, func);
-		fprintf(log_file, "ERROR: ");
-		vfprintf(log_file, msgfmt, vl);
-		fprintf(log_file, "\n");
+		if (log_file) {
+			fprintf(log_file, LOG_F_COMP LOG_F_FUN, log_component_names[L_EM4H], thname, func);
+			fprintf(log_file, "ERROR: ");
+			vfprintf(log_file, msgfmt, vl);
+			fprintf(log_file, "\n");
+		}
 		pthread_mutex_unlock(&log_mutex);
 
 		va_end(vl);
@@ -290,9 +295,11 @@ void log_log(unsigned component, const char *func, const char *msgfmt, ...)
 	pthread_getname_np(pthread_self(), thname, 16);
 
 	pthread_mutex_lock(&log_mutex);
-	fprintf(log_file, LOG_F_COMP LOG_F_FUN, log_component_names[component], thname, func);
-	vfprintf(log_file, msgfmt, vl);
-	fprintf(log_file, "\n");
+	if (log_file) {
+		fprintf(log_file, LOG_F_COMP LOG_F_FUN, log_component_names[component], thname, func);
+		vfprintf(log_file, msgfmt, vl);
+		fprintf(log_file, "\n");
+	}
 	pthread_mutex_unlock(&log_mutex);
 
 	va_end(vl);
@@ -308,16 +315,18 @@ void log_cpu(unsigned component, const char *msgfmt, ...)
 	pthread_getname_np(pthread_self(), thname, 16);
 
 	pthread_mutex_lock(&log_mutex);
-	fprintf(log_file, LOG_F_COMP LOG_F_CPU,
-		log_component_names[component],
-		thname,
-		(log_cycle_sr & 0b0000000000100000) ? (log_cycle_sr & 0b0000000000001111) : 0,
-		log_cycle_ic,
-		log_get_current_process(),
-		log_int_indent + log_int_level
-	);
-	vfprintf(log_file, msgfmt, vl);
-	fprintf(log_file, "\n");
+	if (log_file) {
+		fprintf(log_file, LOG_F_COMP LOG_F_CPU,
+			log_component_names[component],
+			thname,
+			(log_cycle_sr & 0b0000000000100000) ? (log_cycle_sr & 0b0000000000001111) : 0,
+			log_cycle_ic,
+			log_get_current_process(),
+			log_int_indent + log_int_level
+		);
+		vfprintf(log_file, msgfmt, vl);
+		fprintf(log_file, "\n");
+	}
 	pthread_mutex_unlock(&log_mutex);
 
 	va_end(vl);
@@ -335,6 +344,10 @@ void log_splitlog(unsigned component, const char *func, const char *text)
     pthread_getname_np(pthread_self(), thname, 16);
 
 	pthread_mutex_lock(&log_mutex);
+	if (!log_file) {
+		pthread_mutex_unlock(&log_mutex);
+		return;
+	}
 	fprintf(log_file,
 		LOG_F_COMP LOG_F_FUN ".-------------------------------------------------------------------\n",
 		log_component_names[component],
