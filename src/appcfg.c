@@ -20,7 +20,7 @@
 #include <strings.h>
 
 #include "appcfg.h"
-#include "log.h"
+#include "app_err.h"
 
 struct appcfg appcfg;
 
@@ -198,21 +198,21 @@ static int build_device(em400_cfg *cfg, int chnum, int devnum, struct em400_devi
 		return E_OK;
 	}
 
-	LOG(L_APP, "Configuring device %i.%i (%s)", chnum, devnum, dev_type_name);
+	em400_log("Configuring device %i.%i (%s)", chnum, devnum, dev_type_name);
 
 	if (!strcasecmp(dev_type_name, "terminal")) {
 		// TODO: remove dead "transport"
 		const char *transport = cfg_fgetstr(cfg, "dev%i.%i:transport", chnum, devnum);
 		if (transport && strcasecmp(transport, "tcp")) {
-			return LOGERR("Terminal only supports TCP transport type");
+			return app_err("Terminal only supports TCP transport type");
 		}
 		const int port = cfg_fgetint(cfg, "dev%i.%i:port", chnum, devnum);
 		if (port == -1) {
-			return LOGERR("Device %i.%i: terminal needs TCP port to be set.", chnum, devnum);
+			return app_err("Device %i.%i: terminal needs TCP port to be set.", chnum, devnum);
 		}
 		int speed = cfg_fgetint(cfg, "dev%i.%i:speed", chnum, devnum);
 		if (speed == -1) {
-			LOG(L_APP, "Device %i.%i: terminal speed not set, defaulting to 9600", chnum, devnum);
+			em400_log("Device %i.%i: terminal speed not set, defaulting to 9600", chnum, devnum);
 			speed = 9600;
 		}
 		dev->type = EM400_DEV_TERMINAL;
@@ -232,7 +232,7 @@ static int build_device(em400_cfg *cfg, int chnum, int devnum, struct em400_devi
 		dev->type = EM400_DEV_RTCLOCK;
 		dev->rtclock.prom = dup_path(cfg_fgetstr(cfg, "dev%i.%i:prom", chnum, devnum));
 	} else {
-		return LOGERR("Unknown device type: %s", dev_type_name);
+		return app_err("Unknown device type: %s", dev_type_name);
 	}
 
 	return E_OK;
@@ -251,7 +251,7 @@ static int build_io(em400_cfg *cfg, struct em400_machine_cfg *machine)
 		const char *ch_name = cfg_fgetstr(cfg, "io:channel_%i", chnum);
 		if (!ch_name) continue;
 
-		LOG(L_APP, "Configuring I/O channel %i: %s", chnum, ch_name);
+		em400_log("Configuring I/O channel %i: %s", chnum, ch_name);
 
 		if (!strcasecmp(ch_name, "char")) {
 			chan->type = EM400_CHANNEL_CHAR;
@@ -260,12 +260,12 @@ static int build_io(em400_cfg *cfg, struct em400_machine_cfg *machine)
 		} else if (!strcasecmp(ch_name, "iotester")) {
 			chan->type = EM400_CHANNEL_IOTESTER;
 		} else {
-			return LOGERR("Unknown channel %i type: %s", chnum, ch_name);
+			return app_err("Unknown channel %i type: %s", chnum, ch_name);
 		}
 
 		for (int devnum=0 ; devnum<EM400_CHAN_MAX_DEV ; devnum++) {
 			if (build_device(cfg, chnum, devnum, &chan->device[devnum]) != E_OK) {
-				return LOGERR("Device %i:%i configuration error", chnum, devnum);
+				return app_err("Device %i:%i configuration error", chnum, devnum);
 			}
 		}
 	}
@@ -309,12 +309,12 @@ static int build_device_new(em400_cfg *cfg, const char *sec, int chnum, int devn
 		return E_OK;
 	}
 
-	LOG(L_APP, "Configuring device %i.%i (%s)", chnum, devnum, dev_type_name);
+	em400_log("Configuring device %i.%i (%s)", chnum, devnum, dev_type_name);
 
 	if (!strcasecmp(dev_type_name, "terminal")) {
 		const int port = cfg_fgetint(cfg, "%s:dev.%i.%i.port", sec, chnum, devnum);
 		if (port == -1) {
-			return LOGERR("Device %i.%i: terminal needs TCP port to be set.", chnum, devnum);
+			return app_err("Device %i.%i: terminal needs TCP port to be set.", chnum, devnum);
 		}
 		int speed = cfg_fgetint(cfg, "%s:dev.%i.%i.speed", sec, chnum, devnum);
 		if (speed == -1) {
@@ -341,7 +341,7 @@ static int build_device_new(em400_cfg *cfg, const char *sec, int chnum, int devn
 		dev->type = EM400_DEV_RTCLOCK;
 		dev->rtclock.prom = dup_path(cfg_fgetstr(cfg, "%s:dev.%i.%i.prom", sec, chnum, devnum));
 	} else {
-		return LOGERR("Unknown device type: %s", dev_type_name);
+		return app_err("Unknown device type: %s", dev_type_name);
 	}
 
 	return E_OK;
@@ -360,7 +360,7 @@ static int build_io_new(em400_cfg *cfg, const char *sec, struct em400_machine_cf
 		const char *ch_name = cfg_fgetstr(cfg, "%s:channel.%i", sec, chnum);
 		if (!ch_name) continue;
 
-		LOG(L_APP, "Configuring I/O channel %i: %s", chnum, ch_name);
+		em400_log("Configuring I/O channel %i: %s", chnum, ch_name);
 
 		if (!strcasecmp(ch_name, "char")) {
 			chan->type = EM400_CHANNEL_CHAR;
@@ -369,12 +369,12 @@ static int build_io_new(em400_cfg *cfg, const char *sec, struct em400_machine_cf
 		} else if (!strcasecmp(ch_name, "iotester")) {
 			chan->type = EM400_CHANNEL_IOTESTER;
 		} else {
-			return LOGERR("Unknown channel %i type: %s", chnum, ch_name);
+			return app_err("Unknown channel %i type: %s", chnum, ch_name);
 		}
 
 		for (int devnum=0 ; devnum<EM400_CHAN_MAX_DEV ; devnum++) {
 			if (build_device_new(cfg, sec, chnum, devnum, &chan->device[devnum]) != E_OK) {
-				return LOGERR("Device %i:%i configuration error", chnum, devnum);
+				return app_err("Device %i:%i configuration error", chnum, devnum);
 			}
 		}
 	}
@@ -426,19 +426,19 @@ static int build_new(em400_cfg *cfg)
 
 		const char *id = sec + 8;
 		const char *name = cfg_fgetstr(cfg, "%s:name", sec);
-		LOG(L_APP, "Configuring machine '%s' (%s)", id, name ? name : "unnamed");
+		em400_log("Configuring machine '%s' (%s)", id, name ? name : "unnamed");
 		struct appcfg_machine *m = appcfg_machine_add(&appcfg, id, name);
 		if (!m) {
-			return LOGERR("Failed to allocate machine configuration: %s", id);
+			return app_err("Failed to allocate machine configuration: %s", id);
 		}
 		if (build_machine_new(cfg, sec, &m->cfg) != E_OK) {
-			return LOGERR("Failed to build configuration for machine: %s", id);
+			return app_err("Failed to build configuration for machine: %s", id);
 		}
 	}
 
 	// unresolvable/missing active id is tolerated: appcfg_active_machine falls back to the first
 	appcfg.active_id = dup_str(cfg_getstr(cfg, "general:machine", NULL));
-	LOG(L_APP, "Configured %i machine(s), active: %s", appcfg.n_machines,
+	em400_log("Configured %i machine(s), active: %s", appcfg.n_machines,
 		appcfg.active_id ? appcfg.active_id : "(unset, will use the first one)");
 
 	return E_OK;
@@ -477,7 +477,7 @@ static void build_host(em400_cfg *cfg)
 		.line_buffered = cfg_getbool(cfg, "log:line_buffered", CFG_DEFAULT_LOG_LINE_BUFFERED),
 	};
 
-	LOG(L_APP, "Host config: speed_real=%s, emulation_quantum=%ius, sound=%s",
+	em400_log("Host config: speed_real=%s, emulation_quantum=%ius, sound=%s",
 		appcfg.host.emu.speed_real ? "true" : "false",
 		appcfg.host.emu.emulation_quantum_us,
 		appcfg.host.sound.enabled ? "enabled" : "disabled");
@@ -489,18 +489,18 @@ int appcfg_build_from_ini(em400_cfg *cfg)
 	build_host(cfg);
 
 	if (has_machine_sections(cfg)) {
-		LOG(L_APP, "Reading new-format configuration (per-machine sections)");
+		em400_log("Reading new-format configuration (per-machine sections)");
 		return build_new(cfg);
 	}
 
 	// legacy format describes exactly one unnamed machine
-	LOG(L_APP, "Reading legacy-format configuration, importing it as machine '%s'", APPCFG_IMPORTED_MACHINE_ID);
+	em400_log("Reading legacy-format configuration, importing it as machine '%s'", APPCFG_IMPORTED_MACHINE_ID);
 	struct appcfg_machine *m = appcfg_machine_add(&appcfg, APPCFG_IMPORTED_MACHINE_ID, "Imported configuration");
 	if (!m) {
-		return LOGERR("Failed to allocate machine configuration");
+		return app_err("Failed to allocate machine configuration");
 	}
 	if (build_machine(cfg, &m->cfg) != E_OK) {
-		return LOGERR("Failed to build EM400 I/O configuration");
+		return app_err("Failed to build EM400 I/O configuration");
 	}
 	appcfg.active_id = dup_str(APPCFG_IMPORTED_MACHINE_ID);
 
@@ -630,11 +630,11 @@ static void write_machine(FILE *f, const struct appcfg_machine *m)
 // -----------------------------------------------------------------------
 int appcfg_write(const struct appcfg *c, const char *path)
 {
-	LOG(L_APP, "Writing configuration (%i machine(s)) to %s", c->n_machines, path);
+	em400_log("Writing configuration (%i machine(s)) to %s", c->n_machines, path);
 
 	FILE *f = fopen(path, "w");
 	if (!f) {
-		return LOGERR("Cannot open config file for writing: %s", path);
+		return app_err("Cannot open config file for writing: %s", path);
 	}
 
 	fprintf(f, "[general]\n");

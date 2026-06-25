@@ -24,7 +24,8 @@
 #include <string.h>
 #include <strings.h>
 
-#include "log.h"
+#include "libem400.h"
+#include "app_err.h"
 #include "ui/ui.h"
 
 extern struct ui_drv ui_cmd;
@@ -62,7 +63,7 @@ struct ui * ui_create(const char *name)
 		if (!strncasecmp(name, (*drv)->name, strlen((*drv)->name))) {
 			struct ui *ui = (struct ui *) calloc(1, sizeof(struct ui));
 			if (!ui) {
-				LOGERR("Memory allocation error when creating UI.");
+				app_err("Memory allocation error when creating UI.");
 				return NULL;
 			}
 			ui->drv = *drv;
@@ -70,17 +71,17 @@ struct ui * ui_create(const char *name)
 			// setup the UI
 			ui->data = ui->drv->setup(name);
 			if (!ui->data) {
-				LOGERR("Failed to setup UI: %s.", name);
+				app_err("Failed to setup UI: %s.", name);
 				return NULL;
 			} else {
-				LOG(L_APP, "UI started: %s", name);
+				em400_log("UI started: %s", name);
 			}
 			return ui;
 		}
 		drv++;
 	}
 
-	LOGERR("Unknown UI: %s.", name);
+	app_err("Unknown UI: %s.", name);
 	return NULL;
 }
 

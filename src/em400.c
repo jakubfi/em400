@@ -29,7 +29,7 @@
 #include "ui/ui.h"
 #include "appcfg.h"
 #include "cfg.h"
-#include "log.h"
+#include "app_err.h"
 #include "default_config.h"
 
 static bool machine_powered;
@@ -50,14 +50,14 @@ int em400_top_init(em400_cfg *cfg, const char *machine_id)
 	}
 
 	if (appcfg_build_from_ini(cfg) != E_OK) {
-		return LOGERR("Failed to build EM400 configuration");
+		return app_err("Failed to build EM400 configuration");
 	}
 
 	if (machine_id) {
 		if (!appcfg_machine_find(&appcfg, machine_id)) {
-			return LOGERR("No such machine in configuration: %s", machine_id);
+			return app_err("No such machine in configuration: %s", machine_id);
 		}
-		LOG(L_APP, "Active machine overridden from commandline: %s", machine_id);
+		em400_log("Active machine overridden from commandline: %s", machine_id);
 		free(appcfg.active_id);
 		appcfg.active_id = strdup(machine_id);
 	}
@@ -79,7 +79,7 @@ int em400_power_on()
 		return E_OK;
 	}
 	if (em400_init(appcfg_active_machine(&appcfg), &appcfg.host) != E_OK) {
-		return LOGERR("Failed to initialize EM400 core");
+		return app_err("Failed to initialize EM400 core");
 	}
 	machine_powered = true;
 	return E_OK;
@@ -285,7 +285,7 @@ int em400_cmdline_2(em400_cfg *cfg, int argc, char **argv, const char **program,
 				const char *key = strtok(optarg, "=");
 				const char *val = strtok(NULL, "=");
 				if (!colon || !key || !val) {
-					return LOGERR("Syntax error for -O switch. Should be: -O section:key=value");
+					return app_err("Syntax error for -O switch. Should be: -O section:key=value");
 				}
 				cfg_set(cfg, key, val);
 				break;
@@ -316,7 +316,7 @@ int main(int argc, char** argv)
 	em400_mkconfdir();
 
 	if (em400_cmdline_1(argc, argv, &print_help, &config) != E_OK) {
-		LOGERR("Failed to parse commandline arguments (pass 1)");
+		app_err("Failed to parse commandline arguments (pass 1)");
 		goto done;
 	}
 
@@ -329,7 +329,7 @@ int main(int argc, char** argv)
 	if (!config) {
 		config = config_path();
 		if (!config) {
-			LOGERR("Config filename memory allocation error");
+			app_err("Config filename memory allocation error");
 			goto done;
 		}
 		// first-run migration: no XDG config yet but a legacy one exists.
@@ -351,7 +351,7 @@ int main(int argc, char** argv)
 				// the embedded default so the user can boot and edit it.
 				fprintf(stderr, "em400: creating a default configuration at:\n  %s\n", config);
 				if (write_default_config(config) != E_OK) {
-					LOGERR("Failed to create default config file: %s", config);
+					app_err("Failed to create default config file: %s", config);
 					goto done;
 				}
 			}
@@ -360,28 +360,28 @@ int main(int argc, char** argv)
 
 	cfg = cfg_load(config);
 	if (!cfg) {
-		LOGERR("Failed to load config file: %s", config);
+		app_err("Failed to load config file: %s", config);
 		goto done;
 	}
 
 	// read the commandline again to build final configuration
 	if (em400_cmdline_2(cfg, argc, argv, &program, &machine_id, &ui_name) != E_OK) {
-		LOGERR("Failed to parse commandline arguments (pass 2)");
+		app_err("Failed to parse commandline arguments (pass 2)");
 		goto done;
 	}
 
 	if (em400_top_init(cfg, machine_id) != E_OK) {
-		LOGERR("Failed to initialize EM400");
+		app_err("Failed to initialize EM400");
 		goto done;
 	}
-	LOG(L_APP, "Configuration loaded from: %s", config);
+	em400_log("Configuration loaded from: %s", config);
 
 	// persist the converted new-format config; a failed migration is fatal
 	// so the user is not left booting on a config that did not get saved
 	if (migrate_to) {
-		LOG(L_APP, "First-run migration: converting legacy config to new format");
+		em400_log("First-run migration: converting legacy config to new format");
 		if (appcfg_write(&appcfg, migrate_to) != E_OK) {
-			LOGERR("Failed to write migrated configuration to %s", migrate_to);
+			app_err("Failed to write migrated configuration to %s", migrate_to);
 			goto done;
 		}
 	}
@@ -391,7 +391,7 @@ int main(int argc, char** argv)
 	cfg = NULL;
 
 	if (!(ui = ui_create(ui_name))) {
-		LOGERR("Failed to initialize UI");
+		app_err("Failed to initialize UI");
 		goto done;
 	}
 
@@ -400,19 +400,19 @@ int main(int argc, char** argv)
 	// (e.g. its own "start powered on" preference).
 	if (!ui->drv->deferred_power || program) {
 		if (em400_power_on() != E_OK) {
-			LOGERR("Failed to power on EM400");
+			app_err("Failed to power on EM400");
 			goto done;
 		}
 	}
 
 	// -p is session-only load, kept out of cfg so it can't be persisted
 	if (program && !em400_load_os_image_path(program)) {
-		LOGERR("Preloading OS memory failed: %s", program);
+		app_err("Preloading OS memory failed: %s", program);
 		goto done;
 	}
 
 	if (ui_run(ui) != E_OK) {
-		LOGERR("Failed to start the UI: %s", ui->drv->name);
+		app_err("Failed to start the UI: %s", ui->drv->name);
 		goto done;
 	}
 
