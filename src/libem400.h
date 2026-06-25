@@ -209,6 +209,8 @@ const char * em400_dev_get_image(unsigned chnum, unsigned devnum, unsigned slot)
 // --- LOGGING -----------------------------------------------------------
 // -----------------------------------------------------------------------
 
+int em400_log_init(const char *file, em400_log_buf_type_t buf_type, const char *components, bool enabled);
+void em400_log_shutdown();
 bool em400_log_state();
 int em400_log_set(bool state);
 bool em400_log_component_state(unsigned component);

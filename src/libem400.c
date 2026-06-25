@@ -225,6 +225,29 @@ const char * em400_dev_get_image(unsigned chnum, unsigned devnum, unsigned slot)
 // -----------------------------------------------------------------------
 
 // -----------------------------------------------------------------------
+int em400_log_init(const char *file, em400_log_buf_type_t buf_type, const char *components, bool enabled)
+{
+	if (log_init(file, buf_type) != E_OK) {
+		return LOGERR("Failed to initialize logging");
+	}
+	if (enabled) {
+		if (log_enable() != E_OK) {
+			return LOGERR("Failed to enable logging");
+		}
+	}
+	if (log_setup_components(components) != E_OK) {
+		return LOGERR("Failed to set which components to log");
+	}
+	return E_OK;
+}
+
+// -----------------------------------------------------------------------
+void em400_log_shutdown()
+{
+	log_shutdown();
+}
+
+// -----------------------------------------------------------------------
 bool em400_log_state()
 {
 	return log_is_enabled() ? true : false;

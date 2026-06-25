@@ -45,16 +45,8 @@ int em400_top_init(em400_cfg *cfg, const char *machine_id)
 	const char *log_components = cfg_getstr(cfg, "log:components", CFG_DEFAULT_LOG_COMPONENTS);
 	bool log_enabled = cfg_getbool(cfg, "log:enabled", CFG_DEFAULT_LOG_ENABLED);
 
-	if (log_init(log_file_name, log_buf_type) != E_OK) {
-		return LOGERR("Failed to initialize logging");
-	}
-	if (log_enabled) {
-		if (log_enable() != E_OK) {
-			return LOGERR("Failed to enable logging");
-		}
-	}
-	if (log_setup_components(log_components)) {
-		return LOGERR("Failed to set which components to log");
+	if (em400_log_init(log_file_name, log_buf_type, log_components, log_enabled) != E_OK) {
+		return E_ERR;
 	}
 
 	if (appcfg_build_from_ini(cfg) != E_OK) {
@@ -77,7 +69,7 @@ int em400_top_init(em400_cfg *cfg, const char *machine_id)
 void em400_top_shutdown()
 {
 	appcfg_free();
-	log_shutdown();
+	em400_log_shutdown();
 }
 
 // -----------------------------------------------------------------------
