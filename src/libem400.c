@@ -632,6 +632,12 @@ int em400_brk_add(char *expr, char **err_msg, int *err_beg, int *err_end)
 }
 
 // -----------------------------------------------------------------------
+int em400_brk_edit(unsigned id, char *expr, char **err_msg, int *err_beg, int *err_end)
+{
+	return brk_edit(id, expr, err_msg, err_beg, err_end);
+}
+
+// -----------------------------------------------------------------------
 int em400_brk_delete(unsigned id)
 {
 	return brk_delete(id);

@@ -33,6 +33,7 @@ bool brk_check();
 int brk_hit_get();
 void brk_hit_clear();
 int brk_add(char *expression, char **err_msg, int *err_beg, int *err_end);
+int brk_edit(unsigned id, char *expression, char **err_msg, int *err_beg, int *err_end);
 
 #endif
 

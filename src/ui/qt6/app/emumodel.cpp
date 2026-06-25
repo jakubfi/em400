@@ -263,6 +263,22 @@ int EmuModel::brk_add(const QString &expr, QString &err)
 }
 
 // -----------------------------------------------------------------------
+// In-place edit: keeps the id and list position, so the view updates the row
+// itself and this deliberately does NOT emit signal_brk_list_changed.
+int EmuModel::brk_edit(unsigned id, const QString &expr, QString &err)
+{
+	QByteArray ba = expr.toUtf8();
+	char *err_msg = nullptr;
+	int err_beg = 0, err_end = 0;
+	int ret = em400_brk_edit(id, ba.data(), &err_msg, &err_beg, &err_end);
+	if (ret < 0 && err_msg) {
+		err = QString::fromUtf8(err_msg);
+	}
+	free(err_msg); // NULL-safe
+	return ret;
+}
+
+// -----------------------------------------------------------------------
 QVector<WatchInfo> EmuModel::watch_list()
 {
 	QVector<WatchInfo> out;

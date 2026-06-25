@@ -29,19 +29,29 @@
 #include "libem400.h"
 
 typedef _Atomic(struct brk_point *) atomic_brk_ptr;
+typedef _Atomic(struct eval_est *) atomic_tree_ptr;
 
 struct brk_point {
 	unsigned id;
 	char *expr;
-	struct eval_est *tree;
+	atomic_tree_ptr tree; // swapped under brk_check() on edit, hence atomic
 	atomic_brk_ptr next;
 	atomic_int deleted;
 	atomic_int enabled;
 };
 
+// Trees retired by brk_edit() while the CPU runs: brk_check() may still hold the
+// old pointer, so the free is deferred to the next stopped-CPU cleanup. UI thread
+// only, like brk_id.
+struct tree_garbage {
+	struct eval_est *tree;
+	struct tree_garbage *next;
+};
+
 static atomic_brk_ptr brk_list;
 static int brk_id = 0; // UI thread only, so no atomic needed
 static atomic_int brk_hit = -1;
+static struct tree_garbage *brk_garbage; // UI thread only
 
 // -----------------------------------------------------------------------
 static int brk_insert(struct eval_est *tree, const char *expr)
@@ -56,9 +66,9 @@ static int brk_insert(struct eval_est *tree, const char *expr)
 	}
 
 	brkp->id = brk_id;
-	brkp->tree = tree;
 	brkp->expr = strdup(expr);
 	// node not published yet, so relaxed stores are enough
+	atomic_store_explicit(&brkp->tree, tree, memory_order_relaxed);
 	atomic_store_explicit(&brkp->next, atomic_load_explicit(&brk_list, memory_order_acquire), memory_order_relaxed);
 	atomic_store_explicit(&brkp->deleted, 0, memory_order_relaxed);
 	atomic_store_explicit(&brkp->enabled, 1, memory_order_relaxed);
@@ -74,9 +84,22 @@ static void brk_free(struct brk_point *brkp)
 {
 	if (!brkp) return;
 
-	eval_est_delete(brkp->tree);
+	eval_est_delete(atomic_load_explicit(&brkp->tree, memory_order_relaxed));
 	free(brkp->expr);
 	free(brkp);
+}
+
+// -----------------------------------------------------------------------
+// Frees trees retired by brk_edit(). Callers must hold the same precondition as
+// brk_free(): the CPU thread is stopped, so no brk_check() can hold a stale tree.
+static void brk_garbage_free()
+{
+	while (brk_garbage) {
+		struct tree_garbage *next = brk_garbage->next;
+		eval_est_delete(brk_garbage->tree);
+		free(brk_garbage);
+		brk_garbage = next;
+	}
 }
 
 // -----------------------------------------------------------------------
@@ -92,6 +115,7 @@ void brk_del_all()
 	}
 
 	atomic_store_explicit(&brk_list, NULL, memory_order_release);
+	brk_garbage_free();
 	brk_id = 0;
 	atomic_store_explicit(&brk_hit, -1, memory_order_relaxed);
 }
@@ -116,6 +140,8 @@ static void brk_cleanup()
 		}
 		brkp = next;
 	}
+
+	brk_garbage_free();
 
 	if (!atomic_load_explicit(&brk_list, memory_order_acquire)) {
 		brk_id = 0;
@@ -205,7 +231,7 @@ bool brk_check()
 		// skip deleted and disabled nodes, they may sit anywhere in the list
 		if (!atomic_load_explicit(&brkp->deleted, memory_order_relaxed)
 			&& atomic_load_explicit(&brkp->enabled, memory_order_relaxed)
-			&& eval_est_eval(brkp->tree) > 0) {
+			&& eval_est_eval(atomic_load_explicit(&brkp->tree, memory_order_acquire)) > 0) {
 			atomic_store_explicit(&brk_hit, (int) brkp->id, memory_order_relaxed);
 			return true;
 		}
@@ -245,6 +271,55 @@ int brk_add(char *expression, char **err_msg, int *err_beg, int *err_end)
 	}
 
 	return id;
+}
+
+// -----------------------------------------------------------------------
+// Swaps a breakpoint's expression in place, keeping its id, enabled flag and
+// list position. The new tree is parsed first, so a bad expression leaves the
+// breakpoint untouched. The old tree may still be walked by brk_check() on a
+// running CPU, so its free is deferred to the next stopped-CPU cleanup.
+int brk_edit(unsigned id, char *expression, char **err_msg, int *err_beg, int *err_end)
+{
+	struct eval_est *tree = eval_str_parse(expression, err_msg, err_beg, err_end);
+	if (!tree) {
+		return -1;
+	}
+
+	struct brk_point *brkp = atomic_load_explicit(&brk_list, memory_order_acquire);
+	while (brkp) {
+		if (brkp->id == id && !atomic_load_explicit(&brkp->deleted, memory_order_relaxed)) {
+			break;
+		}
+		brkp = atomic_load_explicit(&brkp->next, memory_order_acquire);
+	}
+	if (!brkp) {
+		*err_msg = strdup("No such breakpoint");
+		*err_beg = 0;
+		*err_end = 0;
+		eval_est_delete(tree);
+		return -1;
+	}
+
+	char *expr = strdup(expression);
+	struct eval_est *old_tree = atomic_load_explicit(&brkp->tree, memory_order_relaxed);
+
+	// expr is read only on the UI thread, the tree also on the CPU thread
+	free(brkp->expr);
+	brkp->expr = expr;
+	atomic_store_explicit(&brkp->tree, tree, memory_order_release);
+
+	if (cpu_state_get() == EM400_STATE_STOP) {
+		eval_est_delete(old_tree);
+	} else {
+		struct tree_garbage *g = (struct tree_garbage *) malloc(sizeof(struct tree_garbage));
+		if (g) {
+			g->tree = old_tree;
+			g->next = brk_garbage;
+			brk_garbage = g;
+		}
+	}
+
+	return 0;
 }
 
 // vim: tabstop=4 shiftwidth=4 autoindent

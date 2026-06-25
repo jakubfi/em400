@@ -296,6 +296,7 @@ unsigned em400_cpu_state();
 typedef void (*em400_brk_cb)(unsigned id, const char *expr, bool enabled, void *ctx);
 
 int em400_brk_add(char *expr, char **err_msg, int *err_beg, int *err_end);
+int em400_brk_edit(unsigned id, char *expr, char **err_msg, int *err_beg, int *err_end);
 int em400_brk_delete(unsigned id);
 int em400_brk_enable(unsigned id, bool enabled);
 int em400_brk_eval(unsigned id, int *result, char **err_msg, int *err_beg, int *err_end);

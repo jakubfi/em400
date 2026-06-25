@@ -68,6 +68,7 @@ public:
 	// `err` with the parser message on failure.
 	QVector<BrkInfo> brk_list();
 	int brk_add(const QString &expr, QString &err);
+	int brk_edit(unsigned id, const QString &expr, QString &err);
 	void brk_del(unsigned id) { if (is_powered()) em400_brk_delete(id); }
 	void brk_set_enabled(unsigned id, bool en) { if (is_powered()) em400_brk_enable(id, en); }
 

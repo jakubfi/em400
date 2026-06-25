@@ -289,10 +289,10 @@ void BrkView::slot_add()
 }
 
 // -----------------------------------------------------------------------
-// Commit an in-place expression edit. The core has no edit op, so we validate
-// the new text, add it as a new breakpoint, then delete the old one and re-home
-// the row's id onto the replacement - keeping the row in place and its enabled
-// state. A parse error (or empty text) restores the previous expression.
+// Commit an in-place expression edit via the core's brk_edit, which keeps the id
+// and list position, so the row stays put and emits no list-changed signal (no
+// refresh runs under us). A parse error (or empty text) restores the previous
+// expression.
 void BrkView::slot_item_changed(QTableWidgetItem *item)
 {
 	if (building || item->column() != COL_EXPR) return;
@@ -316,27 +316,17 @@ void BrkView::slot_item_changed(QTableWidgetItem *item)
 	}
 
 	QString err;
-	int newid = e->brk_add(new_expr, err);
-	if (newid < 0) {
+	if (e->brk_edit(item->data(IdRole).toUInt(), new_expr, err) < 0) {
 		show_error(err.isEmpty() ? tr("invalid expression") : err);
 		restore();
 		return;
 	}
 
-	int r = item->row();
-	unsigned oldid = item->data(IdRole).toUInt();
-	bool enabled = item->data(EnabledRole).toBool(); // carry the row's enabled state over
-	e->brk_del(oldid);
-	if (!enabled) e->brk_set_enabled((unsigned) newid, false); // new breakpoints start enabled
-
 	building = true;
-	item->setData(IdRole, newid);
 	item->setData(ExprRole, new_expr);
 	item->setText(new_expr); // normalised (trimmed) text
-	item->setToolTip(tr("double-click to edit"));
 	building = false;
 
-	if (BrkLed *led = qobject_cast<BrkLed*>(table->cellWidget(r, COL_LED))) led->id = newid;
 	clear_error();
 }
 
