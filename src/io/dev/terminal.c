@@ -327,7 +327,7 @@ static int terminal_ioloop_setup(terminal_t *terminal)
 
 	res = uv_tcp_init(ioloop, &terminal->tcp_handle);
 	if (res) {
-		return LOGERR("Terminal TCP init error: %s", uv_strerror(res));
+		return LOGERR("Terminal (port %i) TCP init error: %s", terminal->port, uv_strerror(res));
 	}
 	uv_handle_set_data((uv_handle_t*) &terminal->tcp_handle, (void*) terminal);
 	terminal->open_handles++;
@@ -336,7 +336,7 @@ static int terminal_ioloop_setup(terminal_t *terminal)
 	res = uv_ip4_addr("127.0.0.1", terminal->port, &addr);
 	if (res) {
 		uv_close((uv_handle_t *) &terminal->tcp_handle, on_handle_close);
-		return LOGERR("Terminal IPv4 address set error: %s", uv_strerror(res));
+		return LOGERR("Terminal (port %i) IPv4 address set error: %s", terminal->port, uv_strerror(res));
 	}
 	res = uv_tcp_bind(&terminal->tcp_handle, (const struct sockaddr*) &addr, 0);
 	if (res) {
@@ -352,7 +352,7 @@ static int terminal_ioloop_setup(terminal_t *terminal)
 	res = uv_timer_init(ioloop, &terminal->timer_write);
 	if (res) {
 		uv_close((uv_handle_t *) &terminal->tcp_handle, on_handle_close);
-		return LOGERR("Write timer setup error: %s", uv_strerror(res));
+		return LOGERR("Terminal (port %i) write timer setup error: %s", terminal->port, uv_strerror(res));
 	}
 	uv_handle_set_data((uv_handle_t*) &terminal->timer_write, terminal);
 	terminal->open_handles++;
@@ -361,7 +361,7 @@ static int terminal_ioloop_setup(terminal_t *terminal)
 	if (res) {
 		uv_close((uv_handle_t *) &terminal->tcp_handle, on_handle_close);
 		uv_close((uv_handle_t *) &terminal->timer_write, on_handle_close);
-		return LOGERR("Read timer setup error: %s", uv_strerror(res));
+		return LOGERR("Terminal (port %i) read timer setup error: %s", terminal->port, uv_strerror(res));
 	}
 	uv_handle_set_data((uv_handle_t*) &terminal->timer_read, terminal);
 	terminal->open_handles++;
@@ -384,16 +384,18 @@ em400_dev_t * terminal_create(unsigned port, unsigned speed)
 	LOG(L_TERM, "Creating terminal: speed %i, TCP port %i", speed, port);
 
 	if ((speed > 9600) || (speed < 150) || (speed % 150)) {
-		LOGERR("Wrong terminal speed. Allowed values: 9600, 4800, 2400, 1200, 600, 300, 150");
+		LOGERR("Wrong terminal (port %i) speed. Allowed values: 9600, 4800, 2400, 1200, 600, 300, 150", port);
 		return NULL;
 	}
 
 	terminal_t *terminal = calloc(1, sizeof(terminal_t));
 	if (!terminal) {
+		LOGERR("Terminal (port %i) memory allocation failed", port);
 		return NULL;
 	}
 
 	if (pthread_mutex_init(&terminal->mutex, NULL)) {
+		LOGERR("Terminal (port %i) mutex init failed", port);
 		free(terminal);
 		return NULL;
 	}

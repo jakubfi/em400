@@ -161,7 +161,8 @@ int io_channel_init(unsigned chnum, unsigned channel_type)
 {
 	io_chan[chnum] = chan_create(chnum, channel_type);
 	if (!io_chan[chnum]) {
-		return LOGERR("Failed to initialize channel %i", chnum);
+		LOG(L_IO, "Failed to initialize channel %i", chnum);
+		return E_ERR;
 	}
 
 	return E_OK;

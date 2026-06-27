@@ -22,13 +22,13 @@
 extern "C" {
 #endif
 
-// App-side error reporting. Writes the message to stderr unconditionally (so
-// failures are visible even with logging off, which is the default), also logs
-// it as a diagnostic line under L_APP via the library, and returns E_ERR so it
-// reads as `return app_err(...)`. The stderr write is a placeholder for a future
-// UI error handler (cmd -> stderr, qt -> dialog).
+// App-side error reporting. Writes the message to stderr unconditionally
+// (so failures are visible even with logging off, which is the default),
+// also logs it as a diagnostic line under L_APP via the library.
+// The stderr write is a placeholder for a future UI error handler
 int app_errf(const char *func, const char *fmt, ...);
 #define app_err(fmt, ...) app_errf(__func__, fmt, ##__VA_ARGS__)
+void app_msg_drain(void);
 
 #ifdef __cplusplus
 }

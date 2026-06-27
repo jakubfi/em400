@@ -111,6 +111,7 @@ em400_dev_t * winchester_create(const char *image_name)
 
 	winchester_t *winchester = calloc(1, sizeof(winchester_t));
 	if (!winchester) {
+		LOGERR("Failed to allocate memory for winchester device with image %s", image_name);
 		goto fail;
 	}
 

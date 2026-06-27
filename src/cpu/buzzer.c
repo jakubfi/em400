@@ -111,7 +111,8 @@ void buzzer_shutdown()
 int buzzer_init(const struct em400_sound_cfg *cfg)
 {
 	if (sound_ready) {
-		return LOGERR("Buzzer already initialized");
+		LOG(L_CPU, "Buzzer already initialized");
+		return E_ERR;
 	}
 
 	sample_period_ns = 1000000000.0f / cfg->sample_rate;
@@ -119,10 +120,10 @@ int buzzer_init(const struct em400_sound_cfg *cfg)
 
 	int volume = cfg->volume;
 	if (volume > 100) {
-		LOGERR("Adjusting sound volume from %i to 100 (max allowed).", volume);
+		LOG(L_CPU, "Adjusting sound volume from %i to 100 (max allowed).", volume);
 		volume = 100;
 	} else if (volume < 0) {
-		LOGERR("Adjusting sound volume from %i to 0 (min allowed).", volume);
+		LOG(L_CPU, "Adjusting sound volume from %i to 0 (min allowed).", volume);
 		volume = 0;
 	}
 	// f32 full-scale is +/-1.0; /4 headroom to accommodate the resonant
@@ -131,7 +132,7 @@ int buzzer_init(const struct em400_sound_cfg *cfg)
 
 	snd_buf_float = malloc(sizeof(float) * buffer_len);
 	if (!snd_buf_float) {
-		LOGERR("Cannot allocate memory for input sound buffer.");
+		LOG(L_CPU, "Cannot allocate memory for input sound buffer.");
 		goto cleanup;
 	}
 
@@ -139,7 +140,7 @@ int buzzer_init(const struct em400_sound_cfg *cfg)
 	snd_buf_end = snd_buf_float + buffer_len;
 
 	if (sound_init(cfg) != E_OK) {
-		LOGERR("Could not initialize sound subsystem.");
+		LOG(L_CPU, "Could not initialize sound subsystem.");
 		goto cleanup;
 	}
 	sound_ready = true;

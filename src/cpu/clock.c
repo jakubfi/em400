@@ -64,11 +64,11 @@ static void * clock_thread(void *ptr)
 int clock_init(unsigned period_ms)
 {
 	if (clock_initialized) {
-		return LOGERR("Clock already initialized");
+		return LOGERR("CPU timer (clock) already initialized");
 	}
 
 	if ((period_ms != 2) && (period_ms != 4) && (period_ms != 8) && (period_ms != 10) && (period_ms != 20)) {
-		return LOGERR("Valid clock periods are: 2, 4, 8, 10, 20 ms, not %i", period_ms);
+		return LOGERR("Valid CPU timer (clock) periods are: 2, 4, 8, 10, 20 ms, not %i", period_ms);
 	}
 
 	clock_period = period_ms;
@@ -76,19 +76,19 @@ int clock_init(unsigned period_ms)
 	atomic_store_explicit(&clock_int, INT_CLOCK, memory_order_relaxed);
 
 	if (sem_init(&clock_quit, 0, 0)) {
-		return LOGERR("Failed to initialize clock semaphore.");
+		return LOGERR("Failed to initialize CPU timer (clock) semaphore.");
 	}
 	if (pthread_create(&clock_th, NULL, clock_thread, NULL)) {
-		LOGERR("Failed to spawn clock thread.");
+		LOGERR("Failed to spawn CPU timer (clock) thread.");
 		sem_destroy(&clock_quit);
 		return E_ERR;
 	}
 	if (pthread_setname_np(clock_th, "clock")) {
-		LOG(L_CPU, "Failed to set clock thread name.");
+		LOG(L_CPU, "Failed to set CPU timer (clock) thread name.");
 	}
 
 	clock_initialized = true;
-	LOG(L_CPU, "Clock period: %i ms", period_ms);
+	LOG(L_CPU, "CPU timer (clock) period: %i ms", period_ms);
 
 	return E_OK;
 }
@@ -96,7 +96,7 @@ int clock_init(unsigned period_ms)
 // -----------------------------------------------------------------------
 void clock_shutdown()
 {
-	LOG(L_CPU, "Shutting down clock");
+	LOG(L_CPU, "Shutting down CPU timer (clock)");
 
 	if (!clock_initialized) {
 		return;
@@ -111,7 +111,7 @@ void clock_shutdown()
 // -----------------------------------------------------------------------
 void clock_set(bool state)
 {
-	LOG(L_CPU, "Set clock state: %s", state ? "ON" : "OFF");
+	LOG(L_CPU, "Set cpu timer (clock) state: %s", state ? "ON" : "OFF");
 	atomic_store_explicit(&clock_enabled, state, memory_order_relaxed);
 }
 
@@ -124,7 +124,7 @@ bool clock_get()
 // -----------------------------------------------------------------------
 void clock_set_int(unsigned interrupt)
 {
-	LOG(L_CPU, "Set clock interrupt: %d", interrupt);
+	LOG(L_CPU, "Set CPU timer (clock) interrupt: %d", interrupt);
 	atomic_store_explicit(&clock_int, interrupt, memory_order_relaxed);
 }
 

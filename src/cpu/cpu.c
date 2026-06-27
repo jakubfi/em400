@@ -283,7 +283,7 @@ static void cpu_mem_fail(bool barnb)
 bool cpu_mem_read_1(bool barnb, uint16_t addr, uint16_t *data)
 {
 	if (!mem_read_1(barnb * nb, addr, data)) {
-		LOGCPU(L_CPU, "Read segmentation fault @ %i:0x%04x", barnb*nb, addr);
+		LOGCPU(L_CPU, "CPU read segmentation fault @ %i:0x%04x", barnb*nb, addr);
 		cpu_mem_fail(barnb);
 		return false;
 	}
@@ -294,7 +294,7 @@ bool cpu_mem_read_1(bool barnb, uint16_t addr, uint16_t *data)
 bool cpu_mem_write_1(bool barnb, uint16_t addr, uint16_t data)
 {
 	if (!mem_write_1(barnb * nb, addr, data)) {
-		LOGCPU(L_CPU, "Write segmentation fault @ %i:0x%04x (data: 0x%04x)", barnb*nb, addr, data);
+		LOGCPU(L_CPU, "CPU write segmentation fault @ %i:0x%04x (data: 0x%04x)", barnb*nb, addr, data);
 		cpu_mem_fail(barnb);
 		return false;
 	}
@@ -341,24 +341,23 @@ int cpu_init(const struct em400_host_cfg *host, const struct em400_machine_cfg *
 	cpu_state = cp_start_get() ? EM400_STATE_RUN : EM400_STATE_STOP;
 
 	if (clock_init(machine->cpu.clock_period_ms) != E_OK) {
-		LOGERR("Failed to initialize clock");
+		LOG(L_CPU, "Failed to initialize CPU timer (clock)");
 		goto fail;
 	}
 
 	if (sound_enabled) {
 		if (!speed_real) {
-			LOGERR("WARNING: sound won't work with speed_real=false. Buzzer emulation is disabled.");
+			LOGERR("Sound requires real CPU speed: set emu.speed_real=true or sound.enabled=false.");
+			goto fail;
+		}
+		if (buzzer_init(&host->sound) != E_OK) {
+			LOGWARN("Sound unavailable; continuing without sound.");
 			sound_enabled = false;
-		} else {
-			if (buzzer_init(&host->sound) != E_OK) {
-				LOGERR("WARNING: could not initialize buzzer; continuing without sound.");
-				sound_enabled = false;
-			}
 		}
 	}
 
 	if (pthread_create(&cpu_thread, NULL, cpu_loop, NULL)) {
-		LOGERR("Failed to spawn cpu thread.");
+		LOGERR("Failed to spawn the CPU thread.");
 		goto fail;
 	}
 	if (pthread_setname_np(cpu_thread, "cpu")) {

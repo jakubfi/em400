@@ -292,10 +292,12 @@ em400_dev_t * sp45de_create()
 
 	sp45de_t *sp45de = calloc(1, sizeof(sp45de_t));
 	if (!sp45de) {
+		LOGERR("Failed to allocate memory for SP45DE device");
 		return NULL;
 	}
 
 	if (pthread_mutex_init(&sp45de->media_mutex, NULL)) {
+		LOGERR("Failed to initialize SP45DE media mutex");
 		free(sp45de);
 		return NULL;
 	}

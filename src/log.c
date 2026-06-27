@@ -59,6 +59,10 @@ static char *log_file_name;
 static FILE *log_file;
 static bool log_buf_type;
 
+// Pending error/warning message in a stable library-owned buffer
+static em400_sev_t msg_sev = EM400_MSG_NONE;
+static char msg_text[512];
+
 // high-level stuff
 
 #define LOG_F_COMP "%5s | %8s | "
@@ -83,7 +87,7 @@ int log_init(const char *cfg_log_file_name, em400_log_buf_type_t cfg_log_buf_typ
 	log_buf_type = cfg_log_buf_type;
 	log_file_name = strdup(cfg_log_file_name);
 	if (!log_file_name) {
-		LOGERR("Memory allocation error.");
+		LOGERR("Log memory allocation error.");
 		goto cleanup;
 	}
 
@@ -146,7 +150,7 @@ int log_enable()
 	}
 	if (log_buf_type == EM400_LOG_LINE_BUFFERED) {
 		if (setvbuf(log_file, NULL, _IOLBF, BUFSIZ)) {
-			return LOGERR("cannot set line buffering for log file \"%s\"", log_file);
+			return LOGERR("Cannot set line buffering for log file \"%s\"", log_file);
 		}
 	}
 
@@ -257,34 +261,71 @@ int log_setup_components(const char *components)
 }
 
 // -----------------------------------------------------------------------
+static const char * log_sev_prefix(em400_sev_t sev)
+{
+	switch (sev) {
+		case EM400_MSG_ERROR: return "ERROR: ";
+		case EM400_MSG_WARNING: return "WARNING: ";
+		default: return "";
+	}
+}
+
+// -----------------------------------------------------------------------
+static void log_msg_store(em400_sev_t sev, const char *text)
+{
+	if (sev > msg_sev) {
+		snprintf(msg_text, sizeof msg_text, "%s", text);
+		msg_sev = sev;
+	}
+}
+
+// -----------------------------------------------------------------------
+const char * log_msg_take(em400_sev_t *sev)
+{
+	const char *text = msg_sev != EM400_MSG_NONE ? msg_text : NULL;
+	if (sev) *sev = msg_sev;
+	msg_sev = EM400_MSG_NONE;
+	return text;
+}
+
+// -----------------------------------------------------------------------
+static void log_msg(em400_sev_t sev, const char *func, const char *msgfmt, va_list vl)
+{
+	char buf[512];
+	vsnprintf(buf, sizeof buf, msgfmt, vl);
+
+	log_msg_store(sev, buf);
+
+	if (log_is_enabled()) {
+		char thname[16];
+		pthread_getname_np(pthread_self(), thname, 16);
+		pthread_mutex_lock(&log_mutex);
+		if (log_file) {
+			fprintf(log_file, LOG_F_COMP LOG_F_FUN "%s%s\n",
+				log_component_names[L_LIB], thname, func, log_sev_prefix(sev), buf);
+		}
+		pthread_mutex_unlock(&log_mutex);
+	}
+}
+
+// -----------------------------------------------------------------------
 int log_err(const char *func, const char *msgfmt, ...)
 {
 	va_list vl;
 	va_start(vl, msgfmt);
-
-	char thname[16];
-	pthread_getname_np(pthread_self(), thname, 16);
-
-	vfprintf(stderr, msgfmt, vl);
-	fprintf(stderr, "\n");
-
+	log_msg(EM400_MSG_ERROR, func, msgfmt, vl);
 	va_end(vl);
-
-	if (log_is_enabled()) {
-		va_start(vl, msgfmt);
-		pthread_mutex_lock(&log_mutex);
-		if (log_file) {
-			fprintf(log_file, LOG_F_COMP LOG_F_FUN, log_component_names[L_LIB], thname, func);
-			fprintf(log_file, "ERROR: ");
-			vfprintf(log_file, msgfmt, vl);
-			fprintf(log_file, "\n");
-		}
-		pthread_mutex_unlock(&log_mutex);
-
-		va_end(vl);
-	}
-
 	return E_ERR;
+}
+
+// -----------------------------------------------------------------------
+int log_warn(const char *func, const char *msgfmt, ...)
+{
+	va_list vl;
+	va_start(vl, msgfmt);
+	log_msg(EM400_MSG_WARNING, func, msgfmt, vl);
+	va_end(vl);
+	return E_OK;
 }
 
 // -----------------------------------------------------------------------

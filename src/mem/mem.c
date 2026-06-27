@@ -78,7 +78,8 @@ int mem_init(const struct em400_mem_cfg *c_mem)
 
 	res = mem_elwro_init(elwro_modules, c_mem->os_segments);
 	if (res != E_OK) {
-		return LOGERR("Failed to initialize Elwro memory.");
+		LOG(L_MEM, "Failed to initialize Elwro memory.");
+		return E_ERR;
 	}
 	for (int module=0 ; module<elwro_modules ; module++) {
 		mem_cmd_handlers[module] = mem_elwro_cmd;
@@ -86,7 +87,8 @@ int mem_init(const struct em400_mem_cfg *c_mem)
 
 	res = mem_mega_init(mega_modules, c_mem->mega_prom_image);
 	if (res != E_OK) {
-		return LOGERR("Failed to initialize MEGA memory.");
+		LOG(L_MEM, "Failed to initialize MEGA memory.");
+		return E_ERR;
 	}
 	// no mem_cmd_handlers[] are set for MEGA,
 	// as the decision is made based on the command, not the module number

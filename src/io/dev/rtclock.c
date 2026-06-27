@@ -53,12 +53,14 @@ em400_dev_t * rtclock_create(const char *prom_filename)
 
 	rtclock_t *rtclock = calloc(1, sizeof(rtclock_t));
 	if (!rtclock) {
+		LOGERR("Failed to allocate memory for RTCLOCK device");
 		return NULL;
 	}
 
 	if (prom_filename) {
 		rtclock->prom_filename = strdup(prom_filename);
 		if (!rtclock->prom_filename) {
+			LOGERR("Failed to allocate memory for RTCLOCK PROM filename");
 			free(rtclock);
 			return NULL;
 		}

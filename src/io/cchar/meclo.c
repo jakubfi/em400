@@ -336,7 +336,7 @@ fail_timer_clock_tick:
 fail_timer_display_update:
 	uv_close((uv_handle_t *) &meclo->async_display_update, on_handle_close);
 fail_async_display_update:
-	return LOGERR("MECLO I/O loop resources initialization error: %s", uv_strerror(res));
+	return LOGERR("Device %i: MECLO I/O loop resources initialization error: %s", meclo->base.num, uv_strerror(res));
 }
 
 // -----------------------------------------------------------------------
@@ -368,13 +368,13 @@ static int meclo_prom_load(meclo_t *meclo, const char *prom_filename)
 {
 	FILE *f = fopen(prom_filename, "rb");
 	if (!f) {
-		return LOGERR("Failed to open MECLO PROM image: %s", prom_filename);
+		return LOGERR("Device %i: failed to open MECLO PROM image: %s", meclo->base.num, prom_filename);
 	}
 	// reads smaller than MECLO_PROM_SIZE are allowed
 	int res = fread(meclo_prom_data, sizeof(uint8_t), MECLO_PROM_SIZE, f);
 	fclose(f);
 	if (res <= 0) {
-		return LOGERR("Failed to read MECLO PROM image: %s", prom_filename);
+		return LOGERR("Device %i: failed to read MECLO PROM image: %s", meclo->base.num, prom_filename);
 	}
 	LOG(L_MECLO, "Loaded %i bytes into MECLO PROM", res);
 

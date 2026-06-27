@@ -37,4 +37,13 @@ int app_errf(const char *func, const char *fmt, ...)
 	return E_ERR;
 }
 
+// -----------------------------------------------------------------------
+void app_msg_drain(void)
+{
+	const char *text = em400_msg_take(NULL);
+	if (text) {
+		fprintf(stderr, "%s\n", text);
+	}
+}
+
 // vim: tabstop=4 shiftwidth=4 autoindent

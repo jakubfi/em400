@@ -123,7 +123,7 @@ static int uzdat_ioloop_setup(uzdat_t *uzdat)
 
 	res = uv_async_init(ioloop, &uzdat->async_write, uzdat_on_async_write);
 	if (res) {
-		return LOGERR("UZDAT async_write handler init error: %s", uv_strerror(res));
+		return LOGERR("Device %i: UZDAT async_write handler init error: %s", uzdat->base.num, uv_strerror(res));
 	}
 	uv_handle_set_data((uv_handle_t*) &uzdat->async_write, uzdat);
 	uzdat->open_handles++;
@@ -131,7 +131,7 @@ static int uzdat_ioloop_setup(uzdat_t *uzdat)
 	res = uv_async_init(ioloop, &uzdat->async_switch_transmit, uzdat_on_async_switch_dir);
 	if (res) {
 		uv_close((uv_handle_t *) &uzdat->async_write, on_handle_close);
-		return LOGERR("UZDAT async_switch_transmit handler init error: %s", uv_strerror(res));
+		return LOGERR("Device %i: UZDAT async_switch_transmit handler init error: %s", uzdat->base.num, uv_strerror(res));
 	}
 	uv_handle_set_data((uv_handle_t*) &uzdat->async_switch_transmit, uzdat);
 	uzdat->open_handles++;
@@ -140,7 +140,7 @@ static int uzdat_ioloop_setup(uzdat_t *uzdat)
 	if (res) {
 		uv_close((uv_handle_t *) &uzdat->async_write, on_handle_close);
 		uv_close((uv_handle_t *) &uzdat->async_switch_transmit, on_handle_close);
-		return LOGERR("UZDAT timer init error: %s", uv_strerror(res));
+		return LOGERR("Device %i: UZDAT timer init error: %s", uzdat->base.num, uv_strerror(res));
 	}
 	uv_handle_set_data((uv_handle_t*) &uzdat->timer_switch_transmit, uzdat);
 	uzdat->open_handles++;

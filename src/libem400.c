@@ -110,10 +110,12 @@ static int device_build(unsigned chnum, unsigned devnum, const struct em400_devi
 	}
 
 	if (!dev) {
-		return LOGERR("Device %i.%i: creation failed", chnum, devnum);
+		LOG(L_LIB, "Device %i.%i: creation failed", chnum, devnum);
+		return E_ERR;
 	}
 	if (io_dev_connect(chnum, devnum, dev) != E_OK) {
-		return LOGERR("Device %i.%i: failed to connect to channel", chnum, devnum);
+		LOG(L_LIB, "Device %i.%i: failed to connect to channel", chnum, devnum);
+		return E_ERR;
 	}
 
 	return E_OK;
@@ -128,12 +130,14 @@ static int channel_build(unsigned chnum, const struct em400_channel_cfg *ccfg)
 
 	LOG(L_LIB, "Initializing I/O channel %i (type %i)", chnum, ccfg->type);
 	if (io_channel_init(chnum, ccfg->type) != E_OK) {
-		return LOGERR("Channel %i initialization error", chnum);
+		LOG(L_LIB, "Channel %i initialization error", chnum);
+		return E_ERR;
 	}
 
 	for (unsigned devnum=0 ; devnum<EM400_CHAN_MAX_DEV ; devnum++) {
 		if (device_build(chnum, devnum, &ccfg->device[devnum]) != E_OK) {
-			return LOGERR("Channel %i: device %i initialization error", chnum, devnum);
+			LOG(L_LIB, "Channel %i: device %i initialization error", chnum, devnum);
+			return E_ERR;
 		}
 	}
 
@@ -146,20 +150,33 @@ int em400_init(const struct em400_machine_cfg *machine, const struct em400_host_
 #ifdef _WIN32
 	timeBeginPeriod(1);
 #endif
-	if (mem_init(&machine->mem) != E_OK) return LOGERR("Failed to initialize memory.");
-	if (cpu_init(host, machine) != E_OK) return LOGERR("Failed to initialize CPU.");
-	if (io_init() != E_OK) return LOGERR("Failed to initialize I/O.");
+	if (mem_init(&machine->mem) != E_OK) {
+		LOG(L_LIB, "Failed to initialize memory.");
+		return E_ERR;
+	}
+	if (cpu_init(host, machine) != E_OK) {
+		LOG(L_LIB, "Failed to initialize CPU.");
+		return E_ERR;
+	}
+	if (io_init() != E_OK) {
+		LOG(L_LIB, "Failed to initialize I/O.");
+		return E_ERR;
+	}
 
 	for (unsigned chnum=0 ; chnum<EM400_IO_MAX_CHAN ; chnum++) {
 		if (channel_build(chnum, &machine->channel[chnum]) != E_OK) {
-			return LOGERR("Failed to initialize I/O channels.");
+			LOG(L_LIB, "Failed to initialize I/O channels.");
+			return E_ERR;
 		}
 	}
 
-	if (io_run() != E_OK) return LOGERR("Failed to start the I/O loop.");
+	if (io_run() != E_OK) {
+		LOG(L_LIB, "Failed to start the I/O loop.");
+		return E_ERR;
+	}
 
 	if (machine->mem.preload_image && *machine->mem.preload_image && !em400_load_os_image_path(machine->mem.preload_image)) {
-		return LOGERR("Failed to preload OS memory.");
+		return LOGERR("Failed to preload OS image: %s", machine->mem.preload_image);
 	}
 
 	return E_OK;
@@ -251,6 +268,12 @@ int em400_log_init(const char *file, em400_log_buf_type_t buf_type, const char *
 		return LOGERR("Failed to set which components to log");
 	}
 	return E_OK;
+}
+
+// -----------------------------------------------------------------------
+const char * em400_msg_take(em400_sev_t *sev)
+{
+	return log_msg_take(sev);
 }
 
 // -----------------------------------------------------------------------
@@ -576,13 +599,13 @@ int em400_load_os_image_path(const char *path)
 {
 	FILE *f = fopen(path, "rb");
 	if (!f) {
-		LOGERR("Failed to open OS image file: %s", path);
+		LOG(L_LIB, "Failed to open OS image file: %s", path);
 		return 0;
 	}
 	int words = em400_load_os_image(f);
 	fclose(f);
 	if (!words) {
-		LOGERR("Failed to load OS image file: %s", path);
+		LOG(L_LIB, "Failed to load OS image file: %s", path);
 	}
 	return words;
 }

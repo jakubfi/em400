@@ -50,7 +50,7 @@ int chan_max_devices(unsigned type)
 chan_t * chan_create(unsigned num, unsigned type)
 {
 	if ((type >= EM400_CHANNEL_TYPE_COUNT) || !chan_kinds[type].create) {
-		LOGERR("Unknown channel type: %d", type);
+		LOGERR("Channel %i: unknown channel type: %d", num, type);
 		return NULL;
 	}
 

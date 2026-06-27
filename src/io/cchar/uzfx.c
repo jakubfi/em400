@@ -140,13 +140,13 @@ static void uzfx_set_address(uzfx_t *uzfx, uint16_t addr)
 cchar_unit_t * uzfx_create(int dev_num, em400_dev_t *dev)
 {
 	if (dev->type != EM400_DEV_SP45DE) {
-		LOGERR("UZFX can only connect SP45DE");
+		LOGERR("Device %i: UZFX can only connect SP45DE", dev_num);
 		return NULL;
 	}
 
 	uzfx_t *uzfx = (uzfx_t *) calloc(1, sizeof(uzfx_t));
 	if (!uzfx) {
-		LOGERR("UZFX unit %i failed to allocate memory for its structure", dev_num);
+		LOGERR("Device %i: UZFX failed to allocate memory for its structure", dev_num);
 		goto fail;
 	}
 
@@ -160,17 +160,17 @@ cchar_unit_t * uzfx_create(int dev_num, em400_dev_t *dev)
 	uzfx->base.has_interrupt = uzfx_has_interrupt;
 
 	if (pthread_mutex_init(&uzfx->state_mutex, NULL)) {
-		LOGERR("UZFX failed to initialize status mutex.");
+		LOGERR("Device %i: UZFX failed to initialize status mutex.", dev_num);
 		goto fail;
 	}
 
 	if (pthread_cond_init(&uzfx->state_cond, NULL)) {
-		LOGERR("UZFX failed to initialize status conditional");
+		LOGERR("Device %i: UZFX failed to initialize status conditional", dev_num);
 		goto fail;
 	}
 
 	if (pthread_create(&uzfx->worker, NULL, uzfx_worker_loop, uzfx)) {
-		LOGERR("UZFX failed to spawn worker thread.");
+		LOGERR("Device %i: UZFX failed to spawn worker thread.", dev_num);
 		goto fail;
 	}
 

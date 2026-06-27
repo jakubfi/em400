@@ -66,11 +66,12 @@ int cchar_connect_dev(chan_t *chan, int devnum, em400_dev_t *dev)
 			unit = meclo_create(devnum, dev);
 			break;
 		default:
-			return LOGERR("Device type unknown or incompatibile with character channel");
+			return LOGERR("Channel %i device %i: type %i unknown or incompatibile with character channel", chan->num, devnum, dev->type);
 	}
 
 	if (!unit) {
-		return LOGERR("Error creating device controller");
+		LOG(L_CCHR, "Channel %i device %i: error creating device controller", chan->num, devnum);
+		return E_ERR;
 	}
 
 	unit->chan = cchar;
@@ -84,7 +85,7 @@ chan_t * cchar_create(int ch_num)
 {
 	chan_char_t *chan = calloc(1, sizeof(chan_char_t));
 	if (!chan) {
-		LOGERR("Memory allocation error");
+		LOGERR("Channel %i: memory allocation error", ch_num);
 		return NULL;
 	}
 
@@ -106,7 +107,7 @@ void cchar_shutdown(chan_t *chan)
 	if (!chan) return;
 	chan_char_t *ch = (chan_char_t *) chan;
 
-	LOG(L_CCHR, "Shutting down CHAR channel %i", ch->base.num);
+	LOG(L_CCHR, "Shutting down character channel %i", chan->num);
 
 	// stop all connected controllers
 	for (int i=0 ; i<CCHAR_MAX_DEVICES ; i++) {
@@ -116,7 +117,7 @@ void cchar_shutdown(chan_t *chan)
 		}
 	}
 
-	LOG(L_CCHR, "All units shut down");
+	LOG(L_CCHR, "All units shut down in character channel %i", chan->num);
 	free(chan);
 }
 

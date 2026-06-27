@@ -156,6 +156,13 @@ typedef enum em400_log_buf_type_e {
 	EM400_LOG_LINE_BUFFERED
 } em400_log_buf_type_t;
 
+typedef enum em400_sev_e {
+	EM400_MSG_NONE = 0,
+	EM400_MSG_INFO,
+	EM400_MSG_WARNING,
+	EM400_MSG_ERROR,
+} em400_sev_t;
+
 extern const char *em400_reg_names[];
 
 #define EM400_REG_COUNT EM400_REG_KB2
@@ -219,6 +226,7 @@ bool em400_log_component_state(unsigned component);
 int em400_log_component_set(unsigned component, bool state);
 const char * em400_log_component_name(unsigned component);
 int em400_log_component_id(const char *name);
+const char * em400_msg_take(em400_sev_t *sev);
 
 
 // -----------------------------------------------------------------------

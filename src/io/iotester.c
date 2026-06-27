@@ -106,7 +106,7 @@ chan_t * it_create(int chnum)
 {
 	struct iotester *it = (struct iotester *) calloc(1, sizeof(struct iotester));
 	if (!it) {
-		LOGERR("Memory allocation error.");
+		LOGERR("Channel %i: memory allocation error.", chnum);
 		return NULL;
 	}
 
@@ -121,13 +121,13 @@ chan_t * it_create(int chnum)
 
 	it->evq = elst_create(1024, it_event_destructor);
 	if (!it->evq) {
-		LOGERR("Failed to create event queue.");
+		LOGERR("Channel %i: failed to create event queue.", chnum);
 		free(it);
 		return NULL;
 	}
 
 	if (pthread_create(&it->thread, NULL, it_cmdproc, it)) {
-		LOGERR("Failed to spawn main I/O tester thread.");
+		LOGERR("Channel %i: failed to spawn main I/O tester thread.", chnum);
 		elst_destroy(it->evq);
 		free(it);
 		return NULL;
@@ -136,10 +136,10 @@ chan_t * it_create(int chnum)
 	char name[16];
 	snprintf(name, sizeof(name), "iotest%02i", it->base.num);
 	if (pthread_setname_np(it->thread, name)) {
-		LOG(L_IO, "Failed to set iotester thread name");
+		LOG(L_IO, "Channel %i: failed to set iotester thread name", chnum);
 	}
 
-	LOG(L_IO, "I/O tester created");
+	LOG(L_IO, "Channel %i: I/O tester created", chnum);
 
 	return (chan_t *) it;
 }
@@ -189,7 +189,7 @@ void it_reset(chan_t *ch)
 // -----------------------------------------------------------------------
 int it_connect_dev(chan_t *chan, int devnum, em400_dev_t *dev)
 {
-	return LOGERR("I/O tester does not allow connecting devices, ignoding device %i", devnum);
+	return LOGERR("Channel %i device %i: I/O tester does not allow connecting devices, ignoring.", chan->num, devnum);
 }
 
 // -----------------------------------------------------------------------

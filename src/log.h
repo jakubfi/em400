@@ -49,6 +49,8 @@ const char * log_get_component_name(unsigned component);
 int log_get_component_id(const char *name);
 
 int log_err(const char *func, const char *msgfmt, ...);
+int log_warn(const char *func, const char *msgfmt, ...);
+const char * log_msg_take(em400_sev_t *sev);
 void log_log(unsigned component, const char *func, const char *format, ...);
 void log_log_va(unsigned component, const char *func, const char *format, va_list args);
 void log_splitlog(unsigned component, const char *func, const char *text);
@@ -69,6 +71,7 @@ void log_cpu(unsigned component, const char *msgfmt, ...);
 #define LOGCPU(component, format, ...) \
 	if (LOG_WANTS(component)) log_cpu(component, format, ##__VA_ARGS__)
 #define LOGERR(format, ...) log_err(__func__, format, ##__VA_ARGS__)
+#define LOGWARN(format, ...) log_warn(__func__, format, ##__VA_ARGS__)
 #define LOGBLOB(component, txt) \
 	if (LOG_WANTS(component)) log_splitlog(component, __func__, txt)
 #define LOGCHAR(component, format, str, ch) \

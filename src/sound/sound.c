@@ -210,13 +210,16 @@ int sound_init(const struct em400_sound_cfg *cfg)
 		mr = ma_context_init(NULL, 0, NULL, &context);
 	}
 	if (mr != MA_SUCCESS) {
-		if (bres == 1) LOGERR("Failed to initialize sound context for backend %s", ma_get_backend_name(forced));
-		else LOGERR("Failed to initialize sound context");
+		if (bres == 1) {
+			LOG(L_LIB, "Failed to initialize sound context for backend %s", ma_get_backend_name(forced));
+		} else {
+			LOG(L_LIB, "Failed to initialize sound context");
+		}
 		goto fail_context;
 	}
 
 	if (ma_pcm_rb_init(ma_format_f32, channels, RING_FRAMES, NULL, NULL, &rb) != MA_SUCCESS) {
-		LOGERR("Failed to initialize sound ring buffer");
+		LOG(L_LIB, "Failed to initialize sound ring buffer");
 		goto fail_rb;
 	}
 
@@ -230,7 +233,7 @@ int sound_init(const struct em400_sound_cfg *cfg)
 	dc.dataCallback = data_callback;
 
 	if (ma_device_init(&context, &dc, &device) != MA_SUCCESS) {
-		LOGERR("Failed to initialize sound playback device");
+		LOG(L_LIB, "Failed to initialize sound playback device");
 		goto fail_device;
 	}
 
@@ -238,17 +241,17 @@ int sound_init(const struct em400_sound_cfg *cfg)
 	ma_hpf2_config hpc = ma_hpf2_config_init(ma_format_f32, channels, cfg->sample_rate, SPEAKER_HP_FREQ, SPEAKER_HP_Q);
 	ma_lpf2_config lpc = ma_lpf2_config_init(ma_format_f32, channels, cfg->sample_rate, SPEAKER_LP_FREQ, SPEAKER_LP_Q);
 	if (ma_hpf2_init(&hpc, NULL, &speaker_hp) != MA_SUCCESS || ma_lpf2_init(&lpc, NULL, &speaker_lp) != MA_SUCCESS) {
-		LOGERR("Failed to initialize speaker model filters");
+		LOG(L_LIB, "Failed to initialize speaker model filters");
 		goto fail_start;
 	}
 	ma_peak2_config bc = ma_peak2_config_init(ma_format_f32, channels, cfg->sample_rate, BOX_GAIN, BOX_Q, BOX_FREQ);
 	if (ma_peak2_init(&bc, NULL, &speaker_box) != MA_SUCCESS) {
-		LOGERR("Failed to initialize chassis box filter");
+		LOG(L_LIB, "Failed to initialize chassis box filter");
 		goto fail_start;
 	}
 
 	if (ma_device_start(&device) != MA_SUCCESS) {
-		LOGERR("Failed to start sound playback device");
+		LOG(L_LIB, "Failed to start sound playback device");
 		goto fail_start;
 	}
 

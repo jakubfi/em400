@@ -113,7 +113,7 @@ chan_t * mx_create(int ch_num)
 
 	chan_mx_t *multix = (chan_mx_t *) calloc(1, sizeof(chan_mx_t));
 	if (!multix) {
-		LOGERR("Memory allocation error.");
+		LOGERR("Channel %i: memory allocation error.", ch_num);
 		return NULL;
 	}
 
@@ -132,16 +132,16 @@ chan_t * mx_create(int ch_num)
 		pline->multix = multix;
 		pline->protoq = elst_create(1024, mx_event_destructor);
 		if (!pline->protoq) {
-			LOGERR("Failed to create protocol event queue.");
+			LOGERR("Channel %i: failed to create protocol event queue.", ch_num);
 			goto cleanup;
 		}
 		pline->statusq = elst_create(1024, mx_event_destructor);
 		if (!pline->statusq) {
-			LOGERR("Failed to create status event queue.");
+			LOGERR("Channel %i: failed to create status event queue.", ch_num);
 			goto cleanup;
 		}
 		if (pthread_mutex_init(&pline->status_mutex, NULL)) {
-			LOGERR("Failed to initialize line %i status mutex.", i);
+			LOGERR("Channel %i: failed to initialize line %i status mutex.", ch_num, i);
 			goto cleanup;
 		}
 	}
@@ -149,12 +149,12 @@ chan_t * mx_create(int ch_num)
 	// --- create interrupt system (devices need it)
 
 	if (pthread_mutex_init(&multix->int_mutex, NULL)) {
-		LOGERR("Failed to initialize interrupt mutex.");
+		LOGERR("Channel %i: failed to initialize interrupt mutex.", ch_num);
 		goto cleanup;
 	}
 	multix->intq = elst_create(1024, mx_event_destructor);
 	if (!multix->intq) {
-		LOGERR("Failed to create interrupt queue.");
+		LOGERR("Channel %i: failed to create interrupt queue.", ch_num);
 		goto cleanup;
 	}
 
@@ -162,11 +162,11 @@ chan_t * mx_create(int ch_num)
 
 	multix->eventq = elst_create(1024, mx_event_destructor);
 	if (!multix->eventq) {
-		LOGERR("Failed to create event queue.");
+		LOGERR("Channel %i: failed to create event queue.", ch_num);
 		goto cleanup;
 	}
 	if (pthread_create(&multix->ev_thread, NULL, mx_event_loop, multix)) {
-		LOGERR("Failed to spawn event processor thread.");
+		LOGERR("Channel %i: failed to spawn event processor thread.", ch_num);
 		goto cleanup;
 	}
 

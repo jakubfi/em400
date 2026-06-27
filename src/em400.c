@@ -46,6 +46,7 @@ int em400_top_init(em400_cfg *cfg, const char *machine_id)
 	bool log_enabled = cfg_getbool(cfg, "log:enabled", CFG_DEFAULT_LOG_ENABLED);
 
 	if (em400_log_init(log_file_name, log_buf_type, log_components, log_enabled) != E_OK) {
+		app_msg_drain();
 		return E_ERR;
 	}
 
@@ -78,7 +79,9 @@ int em400_power_on()
 	if (machine_powered) {
 		return E_OK;
 	}
-	if (em400_init(appcfg_active_machine(&appcfg), &appcfg.host) != E_OK) {
+	int res = em400_init(appcfg_active_machine(&appcfg), &appcfg.host);
+	app_msg_drain();
+	if (res != E_OK) {
 		return app_err("Failed to initialize EM400 core");
 	}
 	machine_powered = true;
