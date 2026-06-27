@@ -51,7 +51,8 @@ int em400_top_init(em400_cfg *cfg, const char *machine_id)
 	}
 
 	if (appcfg_build_from_ini(cfg) != E_OK) {
-		return app_err("Failed to build EM400 configuration");
+		em400_log("Failed to build EM400 configuration");
+		return E_ERR;
 	}
 
 	if (machine_id) {
@@ -82,7 +83,8 @@ int em400_power_on()
 	int res = em400_init(appcfg_active_machine(&appcfg), &appcfg.host);
 	app_msg_drain();
 	if (res != E_OK) {
-		return app_err("Failed to initialize EM400 core");
+		em400_log("Failed to initialize EM400 core");
+		return E_ERR;
 	}
 	machine_powered = true;
 	return E_OK;
@@ -374,7 +376,6 @@ int main(int argc, char** argv)
 	}
 
 	if (em400_top_init(cfg, machine_id) != E_OK) {
-		app_err("Failed to initialize EM400");
 		goto done;
 	}
 	em400_log("Configuration loaded from: %s", config);
@@ -384,7 +385,6 @@ int main(int argc, char** argv)
 	if (migrate_to) {
 		em400_log("First-run migration: converting legacy config to new format");
 		if (appcfg_write(&appcfg, migrate_to) != E_OK) {
-			app_err("Failed to write migrated configuration to %s", migrate_to);
 			goto done;
 		}
 	}
@@ -394,7 +394,6 @@ int main(int argc, char** argv)
 	cfg = NULL;
 
 	if (!(ui = ui_create(ui_name))) {
-		app_err("Failed to initialize UI");
 		goto done;
 	}
 
@@ -403,7 +402,6 @@ int main(int argc, char** argv)
 	// (e.g. its own "start powered on" preference).
 	if (!ui->drv->deferred_power || program) {
 		if (em400_power_on() != E_OK) {
-			app_err("Failed to power on EM400");
 			goto done;
 		}
 	}

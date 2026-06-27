@@ -265,7 +265,8 @@ static int build_io(em400_cfg *cfg, struct em400_machine_cfg *machine)
 
 		for (int devnum=0 ; devnum<EM400_CHAN_MAX_DEV ; devnum++) {
 			if (build_device(cfg, chnum, devnum, &chan->device[devnum]) != E_OK) {
-				return app_err("Device %i:%i configuration error", chnum, devnum);
+				em400_log("Device %i:%i configuration error", chnum, devnum);
+				return E_ERR;
 			}
 		}
 	}
@@ -374,7 +375,8 @@ static int build_io_new(em400_cfg *cfg, const char *sec, struct em400_machine_cf
 
 		for (int devnum=0 ; devnum<EM400_CHAN_MAX_DEV ; devnum++) {
 			if (build_device_new(cfg, sec, chnum, devnum, &chan->device[devnum]) != E_OK) {
-				return app_err("Device %i:%i configuration error", chnum, devnum);
+				em400_log("Device %i:%i configuration error", chnum, devnum);
+				return E_ERR;
 			}
 		}
 	}
@@ -432,7 +434,8 @@ static int build_new(em400_cfg *cfg)
 			return app_err("Failed to allocate machine configuration: %s", id);
 		}
 		if (build_machine_new(cfg, sec, &m->cfg) != E_OK) {
-			return app_err("Failed to build configuration for machine: %s", id);
+			em400_log("Failed to build configuration for machine: %s", id);
+			return E_ERR;
 		}
 	}
 
@@ -500,7 +503,8 @@ int appcfg_build_from_ini(em400_cfg *cfg)
 		return app_err("Failed to allocate machine configuration");
 	}
 	if (build_machine(cfg, &m->cfg) != E_OK) {
-		return app_err("Failed to build EM400 I/O configuration");
+		em400_log("Failed to build EM400 I/O configuration");
+		return E_ERR;
 	}
 	appcfg.active_id = dup_str(APPCFG_IMPORTED_MACHINE_ID);
 
