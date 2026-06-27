@@ -41,6 +41,21 @@ jobs:
         run: cmake --build ${{github.workspace}}/build --config ${{env.BUILD_TYPE}}
       - name: Install
         run: sudo cmake --install ${{github.workspace}}/build
+      - name: First run creates default config
+        env:
+          XDG_CONFIG_HOME: ${{runner.temp}}/em400-cfg
+        run: |
+          CONFIG="$XDG_CONFIG_HOME/em400/em400.ini"
+          echo quit | timeout 60 em400 -u cmd
+          test -f "$CONFIG" || { echo "default config was not created at $CONFIG"; exit 1; }
+      - name: Default machines start
+        env:
+          XDG_CONFIG_HOME: ${{runner.temp}}/em400-cfg
+        run: |
+          for m in mera400 mx16; do
+            echo "booting machine: $m"
+            echo quit | timeout 60 em400 -u cmd -m "$m" || { echo "machine $m failed to run"; exit 1; }
+          done
       - name: Prepare test disk images
         working-directory: ${{github.workspace}}/tests
         run: cd images && make 
@@ -89,3 +104,16 @@ jobs:
         run: cmake --build build
       - name: Install
         run: cmake --install build
+      - name: First run creates default config
+        run: |
+          export APPDATA="$(cygpath -w "$PWD/em400-cfg")"
+          CONFIG="$PWD/em400-cfg/em400/em400.ini"
+          echo quit | timeout 60 em400 -u cmd
+          test -f "$CONFIG" || { echo "default config was not created at $CONFIG"; exit 1; }
+      - name: Default machines start
+        run: |
+          export APPDATA="$(cygpath -w "$PWD/em400-cfg")"
+          for m in mera400 mx16; do
+            echo "booting machine: $m"
+            echo quit | timeout 60 em400 -u cmd -m "$m" || { echo "machine $m failed to run"; exit 1; }
+          done
