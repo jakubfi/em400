@@ -86,8 +86,12 @@ struct ui * ui_create(const char *name)
 }
 
 // -----------------------------------------------------------------------
-int ui_run(struct ui *ui)
+int ui_run(struct ui *ui, const char *program)
 {
+	if (ui->drv->poweron && ui->drv->poweron(ui->data, program) != E_OK) {
+		return E_ERR;
+	}
+
 	ui->drv->loop(ui->data);
 
 	return E_OK;
@@ -100,6 +104,9 @@ void ui_shutdown(struct ui *ui)
 		return;
 	}
 
+	if (ui->drv->poweroff) {
+		ui->drv->poweroff(ui->data);
+	}
 	ui->drv->destroy(ui->data);
 	free(ui);
 }

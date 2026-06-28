@@ -31,6 +31,9 @@ typedef int socklen_t;
 #include <string.h>
 #include <unistd.h>
 
+#include "libem400.h"
+#include "appcfg.h"
+#include "app_err.h"
 #include "ui/ui.h"
 #include "ui/cmd/commands.h"
 #include "ui/cmd/utils.h"
@@ -232,6 +235,20 @@ static void ui_cmd_session(struct ui_cmd_data *ui)
 }
 
 // -----------------------------------------------------------------------
+static int ui_cmd_poweron(void *data, const char *program)
+{
+	int res = em400_init(appcfg_active_machine(&appcfg), &appcfg.host);
+	app_msg_drain();
+	if (res != E_OK) {
+		return E_ERR;
+	}
+	if (program && !em400_load_os_image_path(program)) {
+		return app_err("Preloading OS memory failed: %s", program);
+	}
+	return E_OK;
+}
+
+// -----------------------------------------------------------------------
 void ui_cmd_loop(void *data)
 {
 	struct ui_cmd_data *ui = (struct ui_cmd_data *) data;
@@ -265,6 +282,12 @@ void ui_cmd_ui_stop(void *data)
 }
 
 // -----------------------------------------------------------------------
+static void ui_cmd_poweroff(void *data)
+{
+	em400_shutdown();
+}
+
+// -----------------------------------------------------------------------
 void ui_cmd_destroy(void *data)
 {
 	struct ui_cmd_data *ui = (struct ui_cmd_data *) data;
@@ -285,7 +308,9 @@ void ui_cmd_destroy(void *data)
 struct ui_drv ui_cmd = {
 	.name = "cmd",
 	.setup = ui_cmd_setup,
+	.poweron = ui_cmd_poweron,
 	.loop = ui_cmd_loop,
+	.poweroff = ui_cmd_poweroff,
 	.destroy = ui_cmd_destroy
 };
 

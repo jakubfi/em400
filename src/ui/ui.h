@@ -21,15 +21,18 @@
 #include <stdio.h>
 
 typedef void * (*ui_f_setup)(const char *);
+typedef int (*ui_f_poweron)(void *, const char *);
 typedef void (*ui_f_loop)(void*);
+typedef void (*ui_f_poweroff)(void*);
 typedef void (*ui_f_destroy)(void*);
 
 struct ui_drv {
 	const char *name;
 	ui_f_setup setup;
+	ui_f_poweron poweron;
 	ui_f_loop loop;
+	ui_f_poweroff poweroff;
 	ui_f_destroy destroy;
-	bool deferred_power;
 };
 
 struct ui {
@@ -39,7 +42,7 @@ struct ui {
 
 void ui_print_uis(FILE *fd);
 struct ui * ui_create(const char *name);
-int ui_run(struct ui *ui);
+int ui_run(struct ui *ui, const char *program);
 void ui_shutdown(struct ui *ui);
 
 #endif

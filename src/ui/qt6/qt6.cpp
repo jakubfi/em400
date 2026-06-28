@@ -24,10 +24,15 @@
 #include "theme.h"
 
 #include "ui/ui.h"
-#include "em400.h"
+#include "libem400.h"
+#include "appcfg.h"
+#include "app_err.h"
 
 struct ui_qt6_data {
 };
+
+static const char *ORG_NAME = "em400";
+static const char *APP_NAME = "em400-qt";
 
 // -----------------------------------------------------------------------
 void * ui_qt6_setup(const char *call_name)
@@ -41,13 +46,31 @@ void * ui_qt6_setup(const char *call_name)
 }
 
 // -----------------------------------------------------------------------
+static int ui_qt6_poweron(void *data, const char *program)
+{
+	QSettings settings(ORG_NAME, APP_NAME);
+	if (!program && !settings.value("ui/startPoweredOn", false).toBool()) {
+		return E_OK;
+	}
+	int res = em400_init(appcfg_active_machine(&appcfg), &appcfg.host);
+	app_msg_drain();
+	if (res != E_OK) {
+		return E_ERR;
+	}
+	if (program && !em400_load_os_image_path(program)) {
+		return app_err("Preloading OS memory failed: %s", program);
+	}
+	return E_OK;
+}
+
+// -----------------------------------------------------------------------
 void ui_qt6_loop(void *data)
 {
 	int argv = 1;
 	char *argc[] = { (char*)"em400" };
 	QApplication a(argv, argc);
-	QApplication::setOrganizationName("em400");
-	QApplication::setApplicationName("em400-qt");
+	QApplication::setOrganizationName(ORG_NAME);
+	QApplication::setApplicationName(APP_NAME);
 
 	QTranslator *translator = new QTranslator(&a);
 	if (translator->load(QLocale::system(), "em400-qt", "_", ":/i18n")) {
@@ -58,14 +81,16 @@ void ui_qt6_loop(void *data)
 	QSettings settings;
 	em400_apply_theme(settings.value("ui/panelTheme", true).toBool());
 
-	if (settings.value("ui/startPoweredOn", false).toBool()) {
-		em400_power_on();
-	}
-
 	MainWindow w;
 
 	w.show();
 	a.exec();
+}
+
+// -----------------------------------------------------------------------
+static void ui_qt6_poweroff(void *data)
+{
+	em400_shutdown();
 }
 
 // -----------------------------------------------------------------------
@@ -79,9 +104,10 @@ void ui_qt6_destroy(void *data)
 struct ui_drv ui_qt6 = {
 	.name = "qt",
 	.setup = ui_qt6_setup,
+	.poweron = ui_qt6_poweron,
 	.loop = ui_qt6_loop,
+	.poweroff = ui_qt6_poweroff,
 	.destroy = ui_qt6_destroy,
-	.deferred_power = true
 };
 
 // vim: tabstop=4 shiftwidth=4 autoindent

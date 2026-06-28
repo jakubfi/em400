@@ -24,7 +24,7 @@
 #include <emdas.h>
 #include "dasmlisting.h"
 #include "theme.h"
-#include "em400.h"
+#include "libem400.h"
 
 
 // -----------------------------------------------------------------------

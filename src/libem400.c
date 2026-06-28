@@ -65,6 +65,7 @@ const char *em400_cpu_state_names[] = {
 	"???"
 };
 
+static bool powered;
 
 // -----------------------------------------------------------------------
 // --- LIBRARY -----------------------------------------------------------
@@ -147,6 +148,9 @@ static int channel_build(unsigned chnum, const struct em400_channel_cfg *ccfg)
 // -----------------------------------------------------------------------
 int em400_init(const struct em400_machine_cfg *machine, const struct em400_host_cfg *host)
 {
+	if (powered) {
+		return E_OK;
+	}
 #ifdef _WIN32
 	timeBeginPeriod(1);
 #endif
@@ -179,12 +183,16 @@ int em400_init(const struct em400_machine_cfg *machine, const struct em400_host_
 		return LOGERR("Failed to preload OS image: %s", machine->mem.preload_image);
 	}
 
+	powered = true;
 	return E_OK;
 }
 
 // -----------------------------------------------------------------------
 void em400_shutdown()
 {
+	if (!powered) {
+		return;
+	}
 	LOG(L_LIB, "Shutting down EM400 instance");
 #ifdef _WIN32
 	timeEndPeriod(1);
@@ -194,6 +202,13 @@ void em400_shutdown()
 	brk_del_all();
 	watch_del_all();
 	mem_shutdown();
+	powered = false;
+}
+
+// -----------------------------------------------------------------------
+bool em400_is_powered()
+{
+	return powered;
 }
 
 // -----------------------------------------------------------------------

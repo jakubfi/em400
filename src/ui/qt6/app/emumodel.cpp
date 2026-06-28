@@ -3,6 +3,8 @@
 #include <cstdlib>
 #include "emumodel.h"
 #include "libem400.h"
+#include "appcfg.h"
+#include "app_err.h"
 
 
 // -----------------------------------------------------------------------
@@ -52,12 +54,14 @@ void EmuModel::stop()
 void EmuModel::slot_power(bool on)
 {
 	if (on) {
-		if (em400_power_on() == E_OK) {
+		int res = em400_init(appcfg_active_machine(&appcfg), &appcfg.host);
+		app_msg_drain();
+		if (res == E_OK) {
 			run();
 		}
 	} else {
 		stop();
-		em400_power_off();
+		em400_shutdown();
 		emit_off_state();
 	}
 	emit signal_power_changed(is_powered());

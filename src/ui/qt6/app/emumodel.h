@@ -6,7 +6,6 @@
 #include <QVector>
 #include <QString>
 #include "libem400.h"
-#include "em400.h"
 #include <emdas.h>
 
 struct BrkInfo {
@@ -32,7 +31,6 @@ public:
 	void stop();
 	bool load_os_image(QString filename);
 
-	// power gating: here or libem400?
 	bool is_powered() { return em400_is_powered(); }
 
 	void set_reg(int i, int v) { if (is_powered()) em400_reg_set(i, v); }
@@ -115,8 +113,8 @@ private slots:
 	void on_timer_ips_timeout();
 
 public slots:
-	// the ignition switch drives this; on->em400_power_on()+run(), off->stop()+
-	// em400_power_off(), then blank the views so the panel reads as dead
+	// the ignition switch drives this; on->em400_init()+run(), off->stop()+
+	// em400_shutdown(), then blank the views so the panel reads as dead
 	void slot_power(bool on);
 
 	// not power-gated like its siblings: cp_start records the switch position in

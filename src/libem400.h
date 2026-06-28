@@ -199,6 +199,7 @@ enum em400_cpu_states {
 const char * em400_version();
 int em400_init(const struct em400_machine_cfg *machine, const struct em400_host_cfg *host);
 void em400_shutdown();
+bool em400_is_powered(void);
 
 // -----------------------------------------------------------------------
 // --- I/O ---------------------------------------------------------------

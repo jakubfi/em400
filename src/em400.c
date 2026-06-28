@@ -25,17 +25,14 @@
 #include <sys/types.h>
 
 #include "libem400.h"
-#include "em400.h"
 #include "ui/ui.h"
 #include "appcfg.h"
 #include "cfg.h"
 #include "app_err.h"
 #include "default_config.h"
 
-static bool machine_powered;
-
 // -----------------------------------------------------------------------
-int em400_top_init(em400_cfg *cfg, const char *machine_id)
+static int em400_top_init(em400_cfg *cfg, const char *machine_id)
 {
 	const char *log_file_name = cfg_getstr(cfg, "log:file", CFG_DEFAULT_LOG_FILE);
 	em400_log_buf_type_t log_buf_type =
@@ -68,46 +65,14 @@ int em400_top_init(em400_cfg *cfg, const char *machine_id)
 }
 
 // -----------------------------------------------------------------------
-void em400_top_shutdown()
+static void em400_top_shutdown()
 {
 	appcfg_free();
 	em400_log_shutdown();
 }
 
 // -----------------------------------------------------------------------
-int em400_power_on()
-{
-	if (machine_powered) {
-		return E_OK;
-	}
-	int res = em400_init(appcfg_active_machine(&appcfg), &appcfg.host);
-	app_msg_drain();
-	if (res != E_OK) {
-		em400_log("Failed to initialize EM400 core");
-		return E_ERR;
-	}
-	machine_powered = true;
-	return E_OK;
-}
-
-// -----------------------------------------------------------------------
-void em400_power_off()
-{
-	if (!machine_powered) {
-		return;
-	}
-	em400_shutdown();
-	machine_powered = false;
-}
-
-// -----------------------------------------------------------------------
-bool em400_is_powered()
-{
-	return machine_powered;
-}
-
-// -----------------------------------------------------------------------
-void em400_usage()
+static void em400_usage()
 {
 	fprintf(stdout, "EM400 version %s\n", em400_version());
 	fprintf(stdout,
@@ -191,7 +156,7 @@ static char * legacy_config_path()
 }
 
 // -----------------------------------------------------------------------
-void em400_mkconfdir()
+static void em400_mkconfdir()
 {
 	char *base = config_base();
 	if (!base) return;
@@ -231,7 +196,7 @@ static int write_default_config(const char *path)
 const char em400_cmdline_opts[] = "hc:m:p:l:Lu:O:";
 
 // -----------------------------------------------------------------------
-int em400_cmdline_1(int argc, char **argv, int *print_help, char **config)
+static int em400_cmdline_1(int argc, char **argv, int *print_help, char **config)
 {
 	int option;
 
@@ -259,7 +224,7 @@ int em400_cmdline_1(int argc, char **argv, int *print_help, char **config)
 }
 
 // -----------------------------------------------------------------------
-int em400_cmdline_2(em400_cfg *cfg, int argc, char **argv, const char **program, const char **machine, const char **ui)
+static int em400_cmdline_2(em400_cfg *cfg, int argc, char **argv, const char **program, const char **machine, const char **ui)
 {
 	int option;
 	optind = 1; // reset to 1 so consecutive calls work
@@ -397,23 +362,7 @@ int main(int argc, char** argv)
 		goto done;
 	}
 
-	// Boot powered-on unless the UI defers power to its own ignition switch. A -p
-	// preload forces power on regardless; a deferred-power UI owns any other policy
-	// (e.g. its own "start powered on" preference).
-	if (!ui->drv->deferred_power || program) {
-		if (em400_power_on() != E_OK) {
-			goto done;
-		}
-	}
-
-	// -p is session-only load, kept out of cfg so it can't be persisted
-	if (program && !em400_load_os_image_path(program)) {
-		app_err("Preloading OS memory failed: %s", program);
-		goto done;
-	}
-
-	if (ui_run(ui) != E_OK) {
-		app_err("Failed to start the UI: %s", ui->drv->name);
+	if (ui_run(ui, program) != E_OK) {
 		goto done;
 	}
 
@@ -421,7 +370,6 @@ int main(int argc, char** argv)
 
 done:
 	ui_shutdown(ui);
-	em400_power_off();
 	em400_top_shutdown();
 	cfg_free(cfg);
 	free(config);
