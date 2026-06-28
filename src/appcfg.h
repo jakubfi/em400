@@ -56,6 +56,10 @@ extern "C" {
 
 int appcfg_build_from_ini(em400_cfg *cfg);
 int appcfg_write(const struct appcfg *c, const char *path);
+int appcfg_copy(struct appcfg *dst, const struct appcfg *src);
+void appcfg_set_path(const char *path);
+const char * appcfg_path(void);
+void appcfg_free_contents(struct appcfg *c);
 void appcfg_free(void);
 
 struct appcfg_machine *appcfg_machine_add(struct appcfg *c, const char *id, const char *name);

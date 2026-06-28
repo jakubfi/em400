@@ -274,6 +274,10 @@
         <translation>%1: %2</translation>
     </message>
     <message>
+        <source>Failed to save the configuration file.</source>
+        <translation>Nie udało się zapisać pliku konfiguracji.</translation>
+    </message>
+    <message>
         <source>Channel type:</source>
         <translation>Typ kanału:</translation>
     </message>

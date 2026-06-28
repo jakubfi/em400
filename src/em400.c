@@ -345,6 +345,8 @@ int main(int argc, char** argv)
 	}
 	em400_log("Configuration loaded from: %s", config);
 
+	appcfg_set_path(migrate_to ? migrate_to : config);
+
 	// persist the converted new-format config; a failed migration is fatal
 	// so the user is not left booting on a config that did not get saved
 	if (migrate_to) {

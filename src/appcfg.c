@@ -24,6 +24,8 @@
 
 struct appcfg appcfg;
 
+static char *appcfg_resolved_path;
+
 // -----------------------------------------------------------------------
 static inline char * dup_str(const char *s)
 {
@@ -93,6 +95,67 @@ static void machine_free(struct em400_machine_cfg *machine)
 			}
 		}
 	}
+}
+
+// -----------------------------------------------------------------------
+static void machine_cfg_copy(struct em400_machine_cfg *dst, const struct em400_machine_cfg *src)
+{
+	*dst = *src;
+	dst->mem.mega_prom_image = dup_str(src->mem.mega_prom_image);
+	dst->mem.preload_image = dup_str(src->mem.preload_image);
+
+	for (int chnum=0 ; chnum<EM400_IO_MAX_CHAN ; chnum++) {
+		struct em400_channel_cfg *chan = &dst->channel[chnum];
+		for (int devnum=0 ; devnum<EM400_CHAN_MAX_DEV ; devnum++) {
+			struct em400_device_cfg *dev = &chan->device[devnum];
+			switch (dev->type) {
+				case EM400_DEV_WINCHESTER:
+					dev->winchester.image = dup_str(dev->winchester.image);
+					break;
+				case EM400_DEV_RTCLOCK:
+					dev->rtclock.prom = dup_str(dev->rtclock.prom);
+					break;
+				case EM400_DEV_SP45DE:
+					for (int slot=0 ; slot<EM400_SP45DE_SLOT_COUNT ; slot++) {
+						dev->sp45de.images[slot] = dup_str(dev->sp45de.images[slot]);
+					}
+					break;
+				default:
+					break;
+			}
+		}
+	}
+}
+
+// -----------------------------------------------------------------------
+int appcfg_copy(struct appcfg *dst, const struct appcfg *src)
+{
+	appcfg_free_contents(dst);
+
+	if (src->n_machines) {
+		dst->machines = malloc(src->n_machines * sizeof(*dst->machines));
+		if (!dst->machines) return app_err("Failed to allocate machine configuration copy");
+		dst->cap_machines = src->n_machines;
+	}
+	for (int i=0 ; i<src->n_machines ; i++) {
+		struct appcfg_machine *d = &dst->machines[i];
+		const struct appcfg_machine *s = &src->machines[i];
+		d->id = dup_str(s->id);
+		d->name = dup_str(s->name);
+		machine_cfg_copy(&d->cfg, &s->cfg);
+	}
+	dst->n_machines = src->n_machines;
+	dst->active_id = dup_str(src->active_id);
+
+	dst->log = src->log;
+	dst->log.components = dup_str(src->log.components);
+	dst->log.file = dup_str(src->log.file);
+
+	dst->host = src->host;
+	dst->host.sound.backend = dup_str(src->host.sound.backend);
+	dst->host.sound.device = dup_str(src->host.sound.device);
+
+	return E_OK;
 }
 
 // -----------------------------------------------------------------------
@@ -681,22 +744,43 @@ int appcfg_write(const struct appcfg *c, const char *path)
 }
 
 // -----------------------------------------------------------------------
+void appcfg_set_path(const char *path)
+{
+	free(appcfg_resolved_path);
+	appcfg_resolved_path = dup_str(path);
+}
+
+// -----------------------------------------------------------------------
+const char * appcfg_path(void)
+{
+	return appcfg_resolved_path;
+}
+
+// -----------------------------------------------------------------------
+void appcfg_free_contents(struct appcfg *c)
+{
+	for (int i=0 ; i<c->n_machines ; i++) {
+		machine_free(&c->machines[i].cfg);
+		free(c->machines[i].id);
+		free(c->machines[i].name);
+	}
+	free(c->machines);
+	free(c->active_id);
+	free(c->log.components);
+	free(c->log.file);
+
+	free((void *) c->host.sound.backend);
+	free((void *) c->host.sound.device);
+
+	*c = (struct appcfg) {0};
+}
+
+// -----------------------------------------------------------------------
 void appcfg_free(void)
 {
-	for (int i=0 ; i<appcfg.n_machines ; i++) {
-		machine_free(&appcfg.machines[i].cfg);
-		free(appcfg.machines[i].id);
-		free(appcfg.machines[i].name);
-	}
-	free(appcfg.machines);
-	free(appcfg.active_id);
-	free(appcfg.log.components);
-	free(appcfg.log.file);
-
-	free((void *) appcfg.host.sound.backend);
-	free((void *) appcfg.host.sound.device);
-
-	appcfg = (struct appcfg) {0};
+	appcfg_free_contents(&appcfg);
+	free(appcfg_resolved_path);
+	appcfg_resolved_path = NULL;
 }
 
 // vim: tabstop=4 shiftwidth=4 autoindent

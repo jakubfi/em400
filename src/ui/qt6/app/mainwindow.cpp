@@ -509,12 +509,17 @@ void MainWindow::update_docks_enabled(bool powered)
 // -----------------------------------------------------------------------
 void MainWindow::open_config()
 {
-	if (!config_dialog) {
-		config_dialog = new ConfigDialog(&cfg_ctl, this);
-		connect(&e, &EmuModel::signal_power_changed, config_dialog, &ConfigDialog::update_enabled_states);
-		connect(config_dialog, &ConfigDialog::signal_machine_renamed, this, &MainWindow::update_window_title);
-		connect(config_dialog, &ConfigDialog::signal_gui_volume_changed, ui->cp, &ControlPanel::set_volume);
+	if (config_dialog) {
+		config_dialog->raise();
+		config_dialog->activateWindow();
+		return;
 	}
+
+	config_dialog = new ConfigDialog(&cfg_ctl, this);
+	connect(config_dialog, &QDialog::finished, config_dialog, &QObject::deleteLater);
+	connect(&e, &EmuModel::signal_power_changed, config_dialog, &ConfigDialog::update_enabled_states);
+	connect(config_dialog, &ConfigDialog::signal_machine_renamed, this, &MainWindow::update_window_title);
+	connect(config_dialog, &ConfigDialog::signal_gui_volume_changed, ui->cp, &ControlPanel::set_volume);
 	config_dialog->show();
 	config_dialog->raise();
 	config_dialog->activateWindow();

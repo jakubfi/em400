@@ -41,6 +41,7 @@
 #include <QSettings>
 #include <QTreeWidget>
 #include <QTreeWidgetItem>
+#include <QMessageBox>
 
 #include "configdialog.h"
 #include "configcontroller.h"
@@ -91,9 +92,13 @@ ConfigDialog::ConfigDialog(ConfigController *ctl, QWidget *parent) :
 {
 	setWindowTitle(tr("Configuration"));
 
-	machine = appcfg_machine_find(&appcfg, appcfg.active_id);
-	if (!machine && appcfg.n_machines) {
-		machine = &appcfg.machines[0];
+	// edit a private deep copy; OK commits it back to appcfg, Cancel discards it
+	appcfg_copy(&work, &appcfg);
+	orig_volume = work.host.sound.volume;
+
+	machine = appcfg_machine_find(&work, work.active_id);
+	if (!machine && work.n_machines) {
+		machine = &work.machines[0];
 	}
 
 	sections = new QListWidget();
@@ -112,8 +117,9 @@ ConfigDialog::ConfigDialog(ConfigController *ctl, QWidget *parent) :
 	connect(sections, &QListWidget::currentRowChanged, stack, &QStackedWidget::setCurrentIndex);
 	sections->setCurrentRow(0);
 
-	QDialogButtonBox *buttons = new QDialogButtonBox(QDialogButtonBox::Close);
-	connect(buttons, &QDialogButtonBox::rejected, this, &QDialog::accept);
+	QDialogButtonBox *buttons = new QDialogButtonBox(QDialogButtonBox::Ok | QDialogButtonBox::Cancel);
+	connect(buttons, &QDialogButtonBox::accepted, this, &ConfigDialog::accept_config);
+	connect(buttons, &QDialogButtonBox::rejected, this, &QDialog::reject);
 
 	QHBoxLayout *body = new QHBoxLayout();
 	body->addWidget(sections);
@@ -128,6 +134,12 @@ ConfigDialog::ConfigDialog(ConfigController *ctl, QWidget *parent) :
 	// pages are children of `this` only now that the layout is built, so the
 	// reload_machine_page() pass above could not reach them via findChildren
 	update_enabled_states();
+}
+
+// -----------------------------------------------------------------------
+ConfigDialog::~ConfigDialog()
+{
+	appcfg_free_contents(&work);
 }
 
 // -----------------------------------------------------------------------
@@ -156,9 +168,9 @@ QWidget *ConfigDialog::build_general_page()
 	form->addRow(QString(), powered);
 
 	QCheckBox *speed_real = new QCheckBox(tr("Emulate real CPU speed"));
-	speed_real->setChecked(appcfg.host.emu.speed_real);
-	connect(speed_real, &QCheckBox::toggled, this, [](bool on) {
-		appcfg.host.emu.speed_real = on;
+	speed_real->setChecked(work.host.emu.speed_real);
+	connect(speed_real, &QCheckBox::toggled, this, [this](bool on) {
+		work.host.emu.speed_real = on;
 	});
 	gate(speed_real, "cold");
 	form->addRow(QString(), speed_real);
@@ -167,9 +179,9 @@ QWidget *ConfigDialog::build_general_page()
 	quantum->setRange(50, 900);
 	quantum->setSingleStep(10);
 	quantum->setSuffix(tr(" us"));
-	quantum->setValue(appcfg.host.emu.emulation_quantum_us);
-	connect(quantum, &QSpinBox::valueChanged, this, [](int v) {
-		appcfg.host.emu.emulation_quantum_us = v;
+	quantum->setValue(work.host.emu.emulation_quantum_us);
+	connect(quantum, &QSpinBox::valueChanged, this, [this](int v) {
+		work.host.emu.emulation_quantum_us = v;
 	});
 	gate(quantum, "cold");
 	form->addRow(tr("Emulation quantum:"), quantum);
@@ -211,13 +223,13 @@ QWidget *ConfigDialog::build_sound_page()
 	QVBoxLayout *buzzer_layout = new QVBoxLayout(buzzer_box);
 
 	QCheckBox *enabled = new QCheckBox(tr("Sound output enabled"));
-	enabled->setChecked(appcfg.host.sound.enabled);
+	enabled->setChecked(work.host.sound.enabled);
 	gate(enabled, "cold");
 	buzzer_layout->addWidget(enabled);
 
 	QWidget *config_box = new QWidget();
-	connect(enabled, &QCheckBox::toggled, this, [](bool on) {
-		appcfg.host.sound.enabled = on;
+	connect(enabled, &QCheckBox::toggled, this, [this](bool on) {
+		work.host.sound.enabled = on;
 	});
 	buzzer_layout->addWidget(config_box);
 
@@ -229,11 +241,12 @@ QWidget *ConfigDialog::build_sound_page()
 	QSlider *volume = new QSlider(Qt::Horizontal);
 	volume->setRange(0, 100);
 	volume->setMinimumWidth(200);
-	volume->setValue(appcfg.host.sound.volume);
-	QLabel *volume_val = new QLabel(QString::number(appcfg.host.sound.volume));
+	volume->setValue(work.host.sound.volume);
+	QLabel *volume_val = new QLabel(QString::number(work.host.sound.volume));
 	volume_val->setMinimumWidth(volume_val->fontMetrics().horizontalAdvance("100"));
 	connect(volume, &QSlider::valueChanged, this, [this, volume_val](int v) {
-		ctl->set_volume(v);
+		work.host.sound.volume = v;
+		ctl->preview_volume(v);
 		volume_val->setText(QString::number(v));
 	});
 	gate(volume, "live");
@@ -246,12 +259,12 @@ QWidget *ConfigDialog::build_sound_page()
 	for (int r : {8000, 11025, 16000, 22050, 32000, 44100, 48000, 88200, 96000, 192000}) {
 		rate->addItem(tr("%1 Hz").arg(r), r);
 	}
-	if (rate->findData(appcfg.host.sound.sample_rate) < 0) {
-		rate->addItem(tr("%1 Hz").arg(appcfg.host.sound.sample_rate), appcfg.host.sound.sample_rate);
+	if (rate->findData(work.host.sound.sample_rate) < 0) {
+		rate->addItem(tr("%1 Hz").arg(work.host.sound.sample_rate), work.host.sound.sample_rate);
 	}
-	rate->setCurrentIndex(rate->findData(appcfg.host.sound.sample_rate));
-	connect(rate, &QComboBox::currentIndexChanged, this, [rate]() {
-		appcfg.host.sound.sample_rate = rate->currentData().toInt();
+	rate->setCurrentIndex(rate->findData(work.host.sound.sample_rate));
+	connect(rate, &QComboBox::currentIndexChanged, this, [this, rate]() {
+		work.host.sound.sample_rate = rate->currentData().toInt();
 	});
 	gate(rate, "cold");
 	form->addRow(tr("Sample rate:"), rate);
@@ -260,12 +273,12 @@ QWidget *ConfigDialog::build_sound_page()
 	for (int b=16 ; b<=8192 ; b*=2) {
 		buffer->addItem(QString::number(b), b);
 	}
-	if (buffer->findData(appcfg.host.sound.buffer_len) < 0) {
-		buffer->addItem(QString::number(appcfg.host.sound.buffer_len), appcfg.host.sound.buffer_len);
+	if (buffer->findData(work.host.sound.buffer_len) < 0) {
+		buffer->addItem(QString::number(work.host.sound.buffer_len), work.host.sound.buffer_len);
 	}
-	buffer->setCurrentIndex(buffer->findData(appcfg.host.sound.buffer_len));
-	connect(buffer, &QComboBox::currentIndexChanged, this, [buffer]() {
-		appcfg.host.sound.buffer_len = buffer->currentData().toInt();
+	buffer->setCurrentIndex(buffer->findData(work.host.sound.buffer_len));
+	connect(buffer, &QComboBox::currentIndexChanged, this, [this, buffer]() {
+		work.host.sound.buffer_len = buffer->currentData().toInt();
 	});
 	gate(buffer, "cold");
 	form->addRow(tr("Buffer length (frames):"), buffer);
@@ -273,27 +286,27 @@ QWidget *ConfigDialog::build_sound_page()
 	QSpinBox *latency = new QSpinBox();
 	latency->setRange(0, 1000);
 	latency->setSuffix(tr(" ms"));
-	latency->setValue(appcfg.host.sound.latency);
-	connect(latency, &QSpinBox::valueChanged, this, [](int v) {
-		appcfg.host.sound.latency = v;
+	latency->setValue(work.host.sound.latency);
+	connect(latency, &QSpinBox::valueChanged, this, [this](int v) {
+		work.host.sound.latency = v;
 	});
 	gate(latency, "cold");
 	form->addRow(tr("Latency:"), latency);
 
 	QLineEdit *backend = new QLineEdit();
 	backend->setMinimumWidth(180);
-	backend->setText(appcfg.host.sound.backend ? QString(appcfg.host.sound.backend) : QString());
-	connect(backend, &QLineEdit::editingFinished, this, [backend]() {
-		set_cstr(&appcfg.host.sound.backend, backend->text());
+	backend->setText(work.host.sound.backend ? QString(work.host.sound.backend) : QString());
+	connect(backend, &QLineEdit::editingFinished, this, [this, backend]() {
+		set_cstr(&work.host.sound.backend, backend->text());
 	});
 	gate(backend, "cold");
 	form->addRow(tr("Backend:"), backend);
 
 	QLineEdit *device = new QLineEdit();
 	device->setMinimumWidth(180);
-	device->setText(appcfg.host.sound.device ? QString(appcfg.host.sound.device) : QString());
-	connect(device, &QLineEdit::editingFinished, this, [device]() {
-		set_cstr(&appcfg.host.sound.device, device->text());
+	device->setText(work.host.sound.device ? QString(work.host.sound.device) : QString());
+	connect(device, &QLineEdit::editingFinished, this, [this, device]() {
+		set_cstr(&work.host.sound.device, device->text());
 	});
 	gate(device, "cold");
 	form->addRow(tr("Device:"), device);
@@ -313,11 +326,11 @@ QWidget *ConfigDialog::build_machine_page()
 	id_form->setVerticalSpacing(10);
 
 	m_active = new QComboBox();
-	for (int i=0 ; i<appcfg.n_machines ; i++) {
-		const struct appcfg_machine *m = &appcfg.machines[i];
+	for (int i=0 ; i<work.n_machines ; i++) {
+		const struct appcfg_machine *m = &work.machines[i];
 		m_active->addItem(m->name ? QString(m->name) : QString(m->id), QString(m->id));
 	}
-	int act_idx = m_active->findData(appcfg.active_id ? QString(appcfg.active_id) : QString());
+	int act_idx = m_active->findData(work.active_id ? QString(work.active_id) : QString());
 	if (act_idx >= 0) m_active->setCurrentIndex(act_idx);
 	connect(m_active, &QComboBox::currentIndexChanged, this, &ConfigDialog::slot_active_machine_changed);
 	gate(m_active, "cold");
@@ -329,7 +342,6 @@ QWidget *ConfigDialog::build_machine_page()
 		appcfg_machine_set_name(machine, m_name->text().toUtf8().constData());
 		m_active->setItemText(m_active->currentIndex(),
 			machine->name ? QString(machine->name) : QString(machine->id));
-		if (machine == appcfg_machine_find(&appcfg, appcfg.active_id)) emit signal_machine_renamed();
 	});
 	gate(m_name, "live");
 	id_form->addRow(tr("Name:"), m_name);
@@ -838,7 +850,7 @@ void ConfigDialog::io_rebuild_dev_params()
 		QLineEdit *edit = new QLineEdit();
 		edit->setText(cur ? QString(cur) : QString());
 		auto commit = [this, ch, d, slot, edit]() {
-			ctl->set_disk_image(machine, ch, d, slot, edit->text().toUtf8().constData());
+			appcfg_set_image(machine, ch, d, slot, edit->text().toUtf8().constData());
 		};
 		connect(edit, &QLineEdit::editingFinished, this, commit);
 		QPushButton *browse = new QPushButton(tr("Browse..."));
@@ -910,7 +922,7 @@ QWidget *ConfigDialog::build_log_page()
 	form->setVerticalSpacing(10);
 
 	QCheckBox *enabled = new QCheckBox(tr("Logging enabled"));
-	enabled->setChecked(appcfg.log.enabled);
+	enabled->setChecked(work.log.enabled);
 	gate(enabled, "live");
 	form->addRow(QString(), enabled);
 
@@ -918,12 +930,12 @@ QWidget *ConfigDialog::build_log_page()
 	QFormLayout *config_form = new QFormLayout(config_box);
 	config_form->setVerticalSpacing(10);
 	config_form->setContentsMargins(0, 0, 0, 0);
-	connect(enabled, &QCheckBox::toggled, this, [](bool on) {
-		appcfg.log.enabled = on;
+	connect(enabled, &QCheckBox::toggled, this, [this](bool on) {
+		work.log.enabled = on;
 	});
 
 	QSet<int> on;
-	QString comps = appcfg.log.components ? QString(appcfg.log.components) : QString();
+	QString comps = work.log.components ? QString(work.log.components) : QString();
 	for (const QString &raw : comps.split(',', Qt::SkipEmptyParts)) {
 		QString tok = raw.trimmed();
 		if (tok.isEmpty()) continue;
@@ -987,9 +999,9 @@ QWidget *ConfigDialog::build_log_page()
 	config_form->addRow(comp_box);
 
 	QLineEdit *file = new QLineEdit();
-	file->setText(appcfg.log.file ? QString(appcfg.log.file) : QString());
-	connect(file, &QLineEdit::editingFinished, this, [file]() {
-		set_cstr((const char **) &appcfg.log.file, file->text());
+	file->setText(work.log.file ? QString(work.log.file) : QString());
+	connect(file, &QLineEdit::editingFinished, this, [this, file]() {
+		set_cstr((const char **) &work.log.file, file->text());
 	});
 	QPushButton *file_browse = new QPushButton(tr("Browse..."));
 	connect(file_browse, &QPushButton::clicked, this, [this, file]() {
@@ -1004,9 +1016,9 @@ QWidget *ConfigDialog::build_log_page()
 	config_form->addRow(tr("Log file:"), file_row);
 
 	QCheckBox *line_buffered = new QCheckBox(tr("Line buffered"));
-	line_buffered->setChecked(appcfg.log.line_buffered);
-	connect(line_buffered, &QCheckBox::toggled, this, [](bool on) {
-		appcfg.log.line_buffered = on;
+	line_buffered->setChecked(work.log.line_buffered);
+	connect(line_buffered, &QCheckBox::toggled, this, [this](bool on) {
+		work.log.line_buffered = on;
 	});
 	gate(line_buffered, "cold");
 	config_form->addRow(QString(), line_buffered);
@@ -1026,7 +1038,7 @@ void ConfigDialog::rebuild_log_components()
 			names << QString(em400_log_component_name(id)).toLower();
 		}
 	}
-	set_cstr((const char **) &appcfg.log.components, names.join(','));
+	set_cstr((const char **) &work.log.components, names.join(','));
 }
 
 // -----------------------------------------------------------------------
@@ -1106,12 +1118,32 @@ void ConfigDialog::reload_machine_page()
 }
 
 // -----------------------------------------------------------------------
+void ConfigDialog::accept_config()
+{
+	// the file write is the commit point: on failure nothing is applied or
+	// persisted, so Cancel stays meaningful and the dialog can be retried
+	if (!ctl->apply_and_save(&work)) {
+		QMessageBox::warning(this, tr("Configuration"), tr("Failed to save the configuration file."));
+		return;
+	}
+	emit signal_machine_renamed(); // committed active machine name may have changed
+	accept();
+}
+
+// -----------------------------------------------------------------------
+void ConfigDialog::reject()
+{
+	ctl->preview_volume(orig_volume); // undo the live volume preview
+	QDialog::reject();
+}
+
+// -----------------------------------------------------------------------
 void ConfigDialog::slot_active_machine_changed(int index)
 {
 	(void) index;
 	QString id = m_active->currentData().toString();
-	set_cstr((const char **) &appcfg.active_id, id);
-	machine = appcfg_machine_find(&appcfg, appcfg.active_id);
+	set_cstr((const char **) &work.active_id, id);
+	machine = appcfg_machine_find(&work, work.active_id);
 	reload_machine_page();
 }
 

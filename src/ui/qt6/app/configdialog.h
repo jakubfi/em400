@@ -33,20 +33,29 @@ class QTreeWidget;
 class QPushButton;
 class ConfigController;
 
-// Edits `appcfg` in place; no apply/restart and no file write yet (later steps).
+// Edits a private working copy of `appcfg`; OK commits it (write file, apply live
+// media + volume, overwrite appcfg), Cancel discards it. Cold edits materialize at
+// the next power-on; removable-media swaps apply live on OK.
 class ConfigDialog : public QDialog
 {
 	Q_OBJECT
 
 public:
 	explicit ConfigDialog(ConfigController *ctl, QWidget *parent = nullptr);
+	~ConfigDialog() override;
+
+	// restores the live volume preview before discarding the working copy
+	void reject() override;
 
 private:
 	ConfigController *ctl;
 	QListWidget *sections;
 	QStackedWidget *stack;
 
-	struct appcfg_machine *machine = nullptr;
+	// working copy: all edits land here and are committed to appcfg only on OK
+	struct appcfg work {};
+	struct appcfg_machine *machine = nullptr; // points into `work`
+	int orig_volume = 0; // live buzzer volume at open, restored on Cancel
 	QWidget *machine_page = nullptr;
 
 	QComboBox *m_active = nullptr;
@@ -105,6 +114,7 @@ signals:
 
 private slots:
 	void slot_active_machine_changed(int index);
+	void accept_config();
 };
 
 #endif // CONFIGDIALOG_H

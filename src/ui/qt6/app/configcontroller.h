@@ -31,9 +31,16 @@ class ConfigController
 public:
 	ConfigController(struct appcfg *cfg, EmuModel *emu) : cfg(cfg), emu(emu) {}
 
-	void set_disk_image(struct appcfg_machine *m, unsigned chan, unsigned dev, unsigned slot, const char *path);
-	void set_volume(int volume);
 	bool is_powered() const;
+
+	// drive the live buzzer volume without touching appcfg (preview); the working
+	// copy holds the value for commit, the dialog snapshots the original to revert
+	void preview_volume(int volume);
+
+	// Commit a dialog's working copy: write it to the config file (the commit
+	// point - on write failure nothing else changes), then overwrite appcfg,
+	// apply live removable-media swaps and volume. Returns false on failure.
+	bool apply_and_save(const struct appcfg *work);
 
 private:
 	struct appcfg *cfg;

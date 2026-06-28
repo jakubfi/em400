@@ -7,6 +7,7 @@
 #include <QSpinBox>
 #include <QDockWidget>
 #include <QList>
+#include <QPointer>
 #include <emdas.h>
 #include "emumodel.h"
 #include "configcontroller.h"
@@ -38,7 +39,9 @@ private:
 	ConfigController cfg_ctl;
 	Ui::MainWindow *ui;
 
-	ConfigDialog *config_dialog = nullptr;
+	// fresh instance per open (deleted on close); the guard auto-nulls so a
+	// second open just raises the existing one
+	QPointer<ConfigDialog> config_dialog;
 
 	QLabel *ips;
 	QLabel *q, *bs, *nb, *flags, *mc;
