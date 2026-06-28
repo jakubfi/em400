@@ -29,6 +29,13 @@ void ConfigController::set_disk_image(struct appcfg_machine *m, unsigned chan, u
 }
 
 // -----------------------------------------------------------------------
+void ConfigController::set_volume(int volume)
+{
+	cfg->host.sound.volume = volume;
+	emu->set_volume(volume);
+}
+
+// -----------------------------------------------------------------------
 bool ConfigController::is_powered() const
 {
 	return emu->is_powered();

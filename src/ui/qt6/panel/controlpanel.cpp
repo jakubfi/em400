@@ -187,8 +187,9 @@ void ControlPanel::set_volume(int volume_percent)
 {
 	qreal log_volume = volume_percent / (qreal) 100.0;
 	qreal linear_volume = QAudio::convertVolume(log_volume, QAudio::LogarithmicVolumeScale, QAudio::LinearVolumeScale);
-	rotary->set_volume(linear_volume);
-	ignition->set_volume(linear_volume);
+	// rotary and ignition samples are hotter than the switches; trim them to match
+	rotary->set_volume(linear_volume * 0.9);
+	ignition->set_volume(linear_volume * 0.9);
 	keys->set_volume(linear_volume);
 	for (int i=0 ; i<SW_CNT ; i++) {
 		sw[i]->set_volume(linear_volume);

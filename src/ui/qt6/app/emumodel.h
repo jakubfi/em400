@@ -54,6 +54,10 @@ public:
 	// no-op unless powered and the device permits it. Config side is ConfigController's.
 	void reload_media(unsigned chan, unsigned dev, unsigned slot, const char *path);
 
+	// host-side buzzer volume; the core just stores it atomically, so it is safe
+	// to push whether or not the machine is powered. Config side is ConfigController's.
+	void set_volume(int v) { em400_volume_pct_set(v); }
+
 	// interrupt view helpers (structural, language-free). The mask topology is
 	// fixed hardware wiring (a const table), so it is not power-gated: gating it
 	// would collapse every interrupt onto mask bit 0 and break the grouping.

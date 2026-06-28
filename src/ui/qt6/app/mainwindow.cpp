@@ -297,6 +297,7 @@ void MainWindow::restore_layout()
 		QSignalBlocker block(ui->actionPanel_Theme);
 		ui->actionPanel_Theme->setChecked(settings.value("ui/panelTheme", true).toBool());
 	}
+	ui->cp->set_volume(settings.value("ui/guiVolume", 100).toInt());
 	// restore the small/large panel choice first; setChecked() fires the toggled
 	// signal which applies the crop (only when it actually differs from default)
 	ui->actionSmall_Control_Panel->setChecked(settings.value("layout/smallPanel", false).toBool());
@@ -512,6 +513,7 @@ void MainWindow::open_config()
 		config_dialog = new ConfigDialog(&cfg_ctl, this);
 		connect(&e, &EmuModel::signal_power_changed, config_dialog, &ConfigDialog::update_enabled_states);
 		connect(config_dialog, &ConfigDialog::signal_machine_renamed, this, &MainWindow::update_window_title);
+		connect(config_dialog, &ConfigDialog::signal_gui_volume_changed, ui->cp, &ControlPanel::set_volume);
 	}
 	config_dialog->show();
 	config_dialog->raise();

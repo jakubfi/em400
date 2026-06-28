@@ -183,16 +183,43 @@ QWidget *ConfigDialog::build_sound_page()
 	QWidget *page = new QWidget();
 	QVBoxLayout *outer = new QVBoxLayout(page);
 
+	QGroupBox *gui_box = new QGroupBox(tr("GUI sounds"));
+	gui_box->setSizePolicy(QSizePolicy::Maximum, QSizePolicy::Fixed);
+	QFormLayout *gui_form = new QFormLayout(gui_box);
+	gui_form->setVerticalSpacing(10);
+	gui_form->setFieldGrowthPolicy(QFormLayout::FieldsStayAtSizeHint);
+
+	QSlider *gui_volume = new QSlider(Qt::Horizontal);
+	gui_volume->setRange(0, 100);
+	gui_volume->setMinimumWidth(200);
+	gui_volume->setValue(QSettings().value("ui/guiVolume", 100).toInt());
+	QLabel *gui_volume_val = new QLabel(QString::number(gui_volume->value()));
+	gui_volume_val->setMinimumWidth(gui_volume_val->fontMetrics().horizontalAdvance("100"));
+	connect(gui_volume, &QSlider::valueChanged, this, [this, gui_volume_val](int v) {
+		QSettings().setValue("ui/guiVolume", v);
+		gui_volume_val->setText(QString::number(v));
+		emit signal_gui_volume_changed(v);
+	});
+	gate(gui_volume, "live");
+	QHBoxLayout *gui_volume_row = new QHBoxLayout();
+	gui_volume_row->addWidget(gui_volume, 1);
+	gui_volume_row->addWidget(gui_volume_val);
+	gui_form->addRow(tr("Volume:"), gui_volume_row);
+	outer->addWidget(gui_box);
+
+	QGroupBox *buzzer_box = new QGroupBox(tr("CPU speaker"));
+	QVBoxLayout *buzzer_layout = new QVBoxLayout(buzzer_box);
+
 	QCheckBox *enabled = new QCheckBox(tr("Sound output enabled"));
 	enabled->setChecked(appcfg.host.sound.enabled);
 	gate(enabled, "cold");
-	outer->addWidget(enabled);
+	buzzer_layout->addWidget(enabled);
 
 	QWidget *config_box = new QWidget();
 	connect(enabled, &QCheckBox::toggled, this, [](bool on) {
 		appcfg.host.sound.enabled = on;
 	});
-	outer->addWidget(config_box);
+	buzzer_layout->addWidget(config_box);
 
 	QFormLayout *form = new QFormLayout(config_box);
 	form->setContentsMargins(0, 0, 0, 0);
@@ -205,8 +232,8 @@ QWidget *ConfigDialog::build_sound_page()
 	volume->setValue(appcfg.host.sound.volume);
 	QLabel *volume_val = new QLabel(QString::number(appcfg.host.sound.volume));
 	volume_val->setMinimumWidth(volume_val->fontMetrics().horizontalAdvance("100"));
-	connect(volume, &QSlider::valueChanged, this, [volume_val](int v) {
-		appcfg.host.sound.volume = v;
+	connect(volume, &QSlider::valueChanged, this, [this, volume_val](int v) {
+		ctl->set_volume(v);
 		volume_val->setText(QString::number(v));
 	});
 	gate(volume, "live");
@@ -270,6 +297,8 @@ QWidget *ConfigDialog::build_sound_page()
 	});
 	gate(device, "cold");
 	form->addRow(tr("Device:"), device);
+
+	outer->addWidget(buzzer_box);
 
 	return page;
 }

@@ -102,10 +102,6 @@
         <translation>Wyjście dźwięku włączone</translation>
     </message>
     <message>
-        <source>Volume:</source>
-        <translation>Głośność:</translation>
-    </message>
-    <message>
         <source>Sample rate:</source>
         <translation>Częstotliwość próbkowania:</translation>
     </message>
@@ -280,6 +276,18 @@
     <message>
         <source>Channel type:</source>
         <translation>Typ kanału:</translation>
+    </message>
+    <message>
+        <source>GUI sounds</source>
+        <translation>Dźwięki interfejsu</translation>
+    </message>
+    <message>
+        <source>Volume:</source>
+        <translation>Głośność:</translation>
+    </message>
+    <message>
+        <source>CPU speaker</source>
+        <translation>Głośniczek CPU</translation>
     </message>
     <message>
         <source>Device number:</source>

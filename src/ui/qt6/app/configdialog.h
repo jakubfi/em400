@@ -99,6 +99,10 @@ signals:
 	// window title tracks it
 	void signal_machine_renamed();
 
+	// GUI sound volume (panel switches, rotary, ignition) changed; the control
+	// panel applies it live. Persisted to QSettings independently.
+	void signal_gui_volume_changed(int volume);
+
 private slots:
 	void slot_active_machine_changed(int index);
 };

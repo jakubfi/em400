@@ -28,6 +28,7 @@
 #include "libem400.h"
 #include "mem/mem.h"
 #include "cpu/cpu.h"
+#include "cpu/buzzer.h"
 #include "cpu/interrupts.h"
 #include "io/io.h"
 #include "io/chan.h"
@@ -657,6 +658,18 @@ const char * em400_cpu_state_name(unsigned state)
 unsigned em400_cpu_state()
 {
 	return cpu_state_get();
+}
+
+// -----------------------------------------------------------------------
+int em400_volume_pct_get()
+{
+	return buzzer_volume_pct_get();
+}
+
+// -----------------------------------------------------------------------
+void em400_volume_pct_set(int volume_pct)
+{
+	buzzer_volume_pct_set(volume_pct);
 }
 
 // -----------------------------------------------------------------------

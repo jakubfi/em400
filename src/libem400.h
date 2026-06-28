@@ -298,6 +298,9 @@ unsigned long em400_ips_get();
 const char * em400_cpu_state_name(unsigned state);
 unsigned em400_cpu_state();
 
+int em400_volume_pct_get();
+void em400_volume_pct_set(int volume_pct);
+
 // -----------------------------------------------------------------------
 // --- BREAKPOINTS -------------------------------------------------------
 // -----------------------------------------------------------------------

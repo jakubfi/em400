@@ -15,8 +15,8 @@
 //  Foundation, Inc.,
 //  51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 
-#ifndef SOUND_H
-#define SOUND_H
+#ifndef BUZZER_H
+#define BUZZER_H
 
 #include "libem400.h"
 
@@ -26,6 +26,8 @@ void buzzer_update(int ir, unsigned instruction_time);
 void buzzer_stop();
 void buzzer_start();
 void buzzer_shutdown();
+int buzzer_volume_pct_get();
+void buzzer_volume_pct_set(int volume_pct);
 
 #endif
 
