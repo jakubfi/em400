@@ -79,9 +79,10 @@ private:
 	// Devices menu: rebuilt on open (aboutToShow) from the active machine's media
 	// slots, so it always reflects current images and power-gated editability.
 	QMenu *menu_devices = nullptr;
-	void rebuild_devices_menu();
-	void add_media_slot(int chan, int dev, int slot, const QString &title, const char *image, bool powered);
+	void populate_devices_menu(QMenu *menu);
+	void add_media_slot(QMenu *menu, int chan, int dev, int slot, const QString &title, const char *image, bool powered);
 	void open_terminal(int port);
+	void show_cp_context_menu(const QPoint &pos);
 
 	QDockWidget *register_dock(QWidget *view, const QString &title, const QString &objname);
 	void apply_default_layout();

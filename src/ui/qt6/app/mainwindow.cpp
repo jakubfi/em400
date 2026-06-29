@@ -185,7 +185,10 @@ void MainWindow::wire_connections()
 	connect(ui->actionPanel_Theme, &QAction::toggled, this, &MainWindow::slot_panel_theme_changed);
 
 	menu_devices = menuBar()->addMenu(tr("Devices"));
-	connect(menu_devices, &QMenu::aboutToShow, this, &MainWindow::rebuild_devices_menu);
+	connect(menu_devices, &QMenu::aboutToShow, this, [this]() { populate_devices_menu(menu_devices); });
+
+	ui->cp->setContextMenuPolicy(Qt::CustomContextMenu);
+	connect(ui->cp, &QWidget::customContextMenuRequested, this, &MainWindow::show_cp_context_menu);
 
 	// EmuModel -> MainWindow
 	connect(&e, &EmuModel::signal_reg_changed, this, &MainWindow::slot_cpu_reg_changed);
@@ -536,9 +539,9 @@ void MainWindow::open_config()
 }
 
 // -----------------------------------------------------------------------
-void MainWindow::rebuild_devices_menu()
+void MainWindow::populate_devices_menu(QMenu *menu)
 {
-	menu_devices->clear();
+	menu->clear();
 
 	struct appcfg_machine *m = appcfg_machine_find(&appcfg, appcfg.active_id);
 	if (!m) return;
@@ -551,11 +554,11 @@ void MainWindow::rebuild_devices_menu()
 		for (int d=0 ; d<EM400_CHAN_MAX_DEV ; d++) {
 			struct em400_device_cfg *dev = &chan->device[d];
 			if (dev->type == EM400_DEV_WINCHESTER) {
-				add_media_slot(ch, d, 0, tr("Winchester (%1:%2)").arg(ch).arg(d), dev->winchester.image, powered);
+				add_media_slot(menu, ch, d, 0, tr("Winchester (%1:%2)").arg(ch).arg(d), dev->winchester.image, powered);
 				any = true;
 			} else if (dev->type == EM400_DEV_SP45DE) {
 				for (int s=0 ; s<EM400_SP45DE_SLOT_COUNT ; s++) {
-					add_media_slot(ch, d, s, tr("SP45DE (%1:%2) slot %3").arg(ch).arg(d).arg(s), dev->sp45de.images[s], powered);
+					add_media_slot(menu, ch, d, s, tr("SP45DE (%1:%2) slot %3").arg(ch).arg(d).arg(s), dev->sp45de.images[s], powered);
 					any = true;
 				}
 			}
@@ -563,7 +566,7 @@ void MainWindow::rebuild_devices_menu()
 	}
 
 	if (!any) {
-		QAction *none = menu_devices->addAction(tr("(no removable media)"));
+		QAction *none = menu->addAction(tr("(no removable media)"));
 		none->setEnabled(false);
 	}
 
@@ -574,11 +577,11 @@ void MainWindow::rebuild_devices_menu()
 			struct em400_device_cfg *dev = &chan->device[d];
 			if (dev->type != EM400_DEV_TERMINAL) continue;
 			if (!sep) {
-				menu_devices->addSeparator();
+				menu->addSeparator();
 				sep = true;
 			}
 			int port = dev->terminal.port;
-			QAction *open = menu_devices->addAction(tr("Open terminal (%1:%2)").arg(ch).arg(d));
+			QAction *open = menu->addAction(tr("Open terminal (%1:%2)").arg(ch).arg(d));
 			connect(open, &QAction::triggered, this, [this, port]() {
 				open_terminal(port);
 			});
@@ -587,9 +590,19 @@ void MainWindow::rebuild_devices_menu()
 }
 
 // -----------------------------------------------------------------------
-void MainWindow::add_media_slot(int chan, int dev, int slot, const QString &title, const char *image, bool powered)
+void MainWindow::show_cp_context_menu(const QPoint &pos)
 {
-	QMenu *sub = menu_devices->addMenu(title);
+	QMenu menu(this);
+	populate_devices_menu(&menu);
+	menu.addSeparator();
+	menu.addAction(ui->actionPreferences);
+	menu.exec(ui->cp->mapToGlobal(pos));
+}
+
+// -----------------------------------------------------------------------
+void MainWindow::add_media_slot(QMenu *menu, int chan, int dev, int slot, const QString &title, const char *image, bool powered)
+{
+	QMenu *sub = menu->addMenu(title);
 	bool can_swap = !powered || em400_dev_can_eject(chan, dev, slot);
 
 	QAction *load = sub->addAction(tr("Load..."));
