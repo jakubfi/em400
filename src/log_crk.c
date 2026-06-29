@@ -50,7 +50,9 @@ void log_crk_init()
 void log_crk_shutdown()
 {
 	crk5_process_delete(process);
+	process = NULL;
 	crk5_kern_res_drop(kernel);
+	kernel = NULL;
 }
 
 // -----------------------------------------------------------------------

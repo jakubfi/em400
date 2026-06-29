@@ -114,6 +114,11 @@ void mem_shutdown()
 		return;
 	}
 
+	// clear the maps before freeing frames: accessors (mem_read_1 etc.) are
+	// called straight from other threads, so a dangling map entry would be a UAF
+	memset(mem_map_reads, 0, sizeof(mem_map_reads));
+	memset(mem_map_writes, 0, sizeof(mem_map_writes));
+
 	mem_mega_shutdown();
 	mem_elwro_shutdown();
 	mem_initialized = false;

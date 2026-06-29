@@ -117,6 +117,7 @@ void log_shutdown()
 	log_disable();
 	emdas_destroy(emd);
 	emd = NULL;
+	dasm_buf = NULL;
 	log_crk_shutdown();
 	free(log_file_name);
 	log_file_name = NULL;
