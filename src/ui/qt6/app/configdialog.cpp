@@ -154,18 +154,12 @@ void ConfigDialog::add_section(const QString &title, const QString &icon_name, Q
 QWidget *ConfigDialog::build_general_page()
 {
 	QWidget *page = new QWidget();
-	QFormLayout *form = new QFormLayout(page);
-	form->setVerticalSpacing(10);
-	form->setFieldGrowthPolicy(QFormLayout::FieldsStayAtSizeHint);
+	QVBoxLayout *outer = new QVBoxLayout(page);
 
-	QCheckBox *powered = new QCheckBox(tr("Start with the machine powered on"));
-	powered->setToolTip(tr("When off, the graphical UI starts with the machine powered down - turn the ignition key to power it on."));
-	powered->setChecked(QSettings().value("ui/startPoweredOn", false).toBool());
-	connect(powered, &QCheckBox::toggled, this, [](bool on) {
-		QSettings().setValue("ui/startPoweredOn", on);
-	});
-	gate(powered, "live");
-	form->addRow(QString(), powered);
+	QGroupBox *emu_box = new QGroupBox(tr("Emulation"));
+	QFormLayout *emu_form = new QFormLayout(emu_box);
+	emu_form->setVerticalSpacing(10);
+	emu_form->setFieldGrowthPolicy(QFormLayout::ExpandingFieldsGrow);
 
 	QCheckBox *speed_real = new QCheckBox(tr("Emulate real CPU speed"));
 	speed_real->setChecked(work.host.emu.speed_real);
@@ -173,7 +167,7 @@ QWidget *ConfigDialog::build_general_page()
 		work.host.emu.speed_real = on;
 	});
 	gate(speed_real, "cold");
-	form->addRow(QString(), speed_real);
+	emu_form->addRow(QString(), speed_real);
 
 	QSpinBox *quantum = new QSpinBox();
 	quantum->setRange(50, 900);
@@ -184,7 +178,33 @@ QWidget *ConfigDialog::build_general_page()
 		work.host.emu.emulation_quantum_us = v;
 	});
 	gate(quantum, "cold");
-	form->addRow(tr("Emulation quantum:"), quantum);
+	emu_form->addRow(tr("Emulation quantum:"), quantum);
+
+	QGroupBox *ui_box = new QGroupBox(tr("User interface"));
+	QFormLayout *ui_form = new QFormLayout(ui_box);
+	ui_form->setVerticalSpacing(10);
+	ui_form->setFieldGrowthPolicy(QFormLayout::ExpandingFieldsGrow);
+
+	QCheckBox *powered = new QCheckBox(tr("Start with the machine powered on"));
+	powered->setToolTip(tr("When off, the graphical UI starts with the machine powered down - turn the ignition key to power it on."));
+	powered->setChecked(QSettings().value("ui/startPoweredOn", false).toBool());
+	connect(powered, &QCheckBox::toggled, this, [](bool on) {
+		QSettings().setValue("ui/startPoweredOn", on);
+	});
+	gate(powered, "live");
+	ui_form->addRow(QString(), powered);
+
+	QLineEdit *terminal_cmd = new QLineEdit();
+	terminal_cmd->setToolTip(tr("Command launched by Devices -> Open terminal.\n{port} is replaced with the terminal device's TCP port.\nThe default uses the bundled emterm helper."));
+	terminal_cmd->setText(QSettings().value("ui/terminalCommand", "xterm -e emterm {port}").toString());
+	connect(terminal_cmd, &QLineEdit::editingFinished, this, [terminal_cmd]() {
+		QSettings().setValue("ui/terminalCommand", terminal_cmd->text());
+	});
+	ui_form->addRow(tr("Terminal command:"), terminal_cmd);
+
+	outer->addWidget(emu_box);
+	outer->addWidget(ui_box);
+	outer->addStretch();
 
 	return page;
 }
@@ -196,7 +216,6 @@ QWidget *ConfigDialog::build_sound_page()
 	QVBoxLayout *outer = new QVBoxLayout(page);
 
 	QGroupBox *gui_box = new QGroupBox(tr("GUI sounds"));
-	gui_box->setSizePolicy(QSizePolicy::Maximum, QSizePolicy::Fixed);
 	QFormLayout *gui_form = new QFormLayout(gui_box);
 	gui_form->setVerticalSpacing(10);
 	gui_form->setFieldGrowthPolicy(QFormLayout::FieldsStayAtSizeHint);
@@ -312,6 +331,7 @@ QWidget *ConfigDialog::build_sound_page()
 	form->addRow(tr("Device:"), device);
 
 	outer->addWidget(buzzer_box);
+	outer->addStretch();
 
 	return page;
 }

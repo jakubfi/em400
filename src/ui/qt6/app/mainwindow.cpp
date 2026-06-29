@@ -20,6 +20,11 @@
 #include <QDebug>
 #include <QFileDialog>
 #include <QSettings>
+#include <QProcess>
+#include <QMessageBox>
+#include <QFileInfo>
+#include <QCoreApplication>
+#include <QRegularExpression>
 #include <QAction>
 #include <QMenu>
 #include <QMenuBar>
@@ -561,6 +566,24 @@ void MainWindow::rebuild_devices_menu()
 		QAction *none = menu_devices->addAction(tr("(no removable media)"));
 		none->setEnabled(false);
 	}
+
+	bool sep = false;
+	for (int ch=0 ; ch<EM400_IO_MAX_CHAN ; ch++) {
+		struct em400_channel_cfg *chan = &m->cfg.channel[ch];
+		for (int d=0 ; d<EM400_CHAN_MAX_DEV ; d++) {
+			struct em400_device_cfg *dev = &chan->device[d];
+			if (dev->type != EM400_DEV_TERMINAL) continue;
+			if (!sep) {
+				menu_devices->addSeparator();
+				sep = true;
+			}
+			int port = dev->terminal.port;
+			QAction *open = menu_devices->addAction(tr("Open terminal (%1:%2)").arg(ch).arg(d));
+			connect(open, &QAction::triggered, this, [this, port]() {
+				open_terminal(port);
+			});
+		}
+	}
 }
 
 // -----------------------------------------------------------------------
@@ -581,6 +604,29 @@ void MainWindow::add_media_slot(int chan, int dev, int slot, const QString &titl
 	connect(eject, &QAction::triggered, this, [this, chan, dev, slot]() {
 		cfg_ctl.set_disk_image(chan, dev, slot, QString());
 	});
+}
+
+// -----------------------------------------------------------------------
+void MainWindow::open_terminal(int port)
+{
+	QString tmpl = QSettings().value("ui/terminalCommand", "xterm -e emterm {port}").toString();
+	tmpl.replace("{port}", QString::number(port));
+
+	QStringList parts = QProcess::splitCommand(tmpl);
+	if (parts.isEmpty()) {
+		QMessageBox::warning(this, tr("Open terminal"), tr("The terminal command is empty. Set it in Configuration -> General."));
+		return;
+	}
+
+	QString bundled = QCoreApplication::applicationDirPath() + "/emterm";
+	if (QFileInfo::exists(bundled)) {
+		parts.replaceInStrings(QRegularExpression("^emterm$"), bundled);
+	}
+
+	QString program = parts.takeFirst();
+	if (!QProcess::startDetached(program, parts)) {
+		QMessageBox::warning(this, tr("Open terminal"), tr("Could not launch the terminal command:\n%1\n\nCheck the setting in Configuration -> General.").arg(tmpl));
+	}
 }
 
 // -----------------------------------------------------------------------

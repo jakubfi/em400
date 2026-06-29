@@ -166,12 +166,24 @@
         <translation>Moduły Elwro:</translation>
     </message>
     <message>
+        <source>Emulation</source>
+        <translation>Emulacja</translation>
+    </message>
+    <message>
+        <source>User interface</source>
+        <translation>Interfejs użytkownika</translation>
+    </message>
+    <message>
         <source>Start with the machine powered on</source>
         <translation>Uruchom z włączoną maszyną</translation>
     </message>
     <message>
         <source>When off, the graphical UI starts with the machine powered down - turn the ignition key to power it on.</source>
         <translation>Gdy wyłączone, interfejs graficzny startuje z wyłączoną maszyną - przekręć kluczyk, aby ją włączyć.</translation>
+    </message>
+    <message>
+        <source>Terminal command:</source>
+        <translation>Polecenie terminala:</translation>
     </message>
     <message>
         <source>MEGA modules:</source>
@@ -280,6 +292,14 @@
     <message>
         <source>Channel type:</source>
         <translation>Typ kanału:</translation>
+    </message>
+    <message>
+        <source>Command launched by Devices -&gt; Open terminal.
+{port} is replaced with the terminal device&apos;s TCP port.
+The default uses the bundled emterm helper.</source>
+        <translation>Polecenie uruchamiane przez Urządzenia -&gt; Otwórz terminal.
+{port} jest zastępowany portem TCP terminala.
+Domyślnie używany jest dołączony pomocniczy program emterm.</translation>
     </message>
     <message>
         <source>GUI sounds</source>
@@ -614,6 +634,10 @@ Brak ramki: przerwanie niemaskowalne</translation>
         <translation>(brak nośników wymiennych)</translation>
     </message>
     <message>
+        <source>Open terminal (%1:%2)</source>
+        <translation>Otwórz terminal (%1:%2)</translation>
+    </message>
+    <message>
         <source>Load...</source>
         <translation>Załaduj...</translation>
     </message>
@@ -628,6 +652,24 @@ Brak ramki: przerwanie niemaskowalne</translation>
     <message>
         <source>Eject</source>
         <translation>Wysuń</translation>
+    </message>
+    <message>
+        <source>Open terminal</source>
+        <translation>Otwórz terminal</translation>
+    </message>
+    <message>
+        <source>The terminal command is empty. Set it in Configuration -&gt; General.</source>
+        <translation>Polecenie terminala jest puste. Ustaw je w Konfiguracja -&gt; Ogólne.</translation>
+    </message>
+    <message>
+        <source>Could not launch the terminal command:
+%1
+
+Check the setting in Configuration -&gt; General.</source>
+        <translation>Nie udało się uruchomić polecenia terminala:
+%1
+
+Sprawdź ustawienie w Konfiguracja -&gt; Ogólne.</translation>
     </message>
     <message>
         <source>Open OS image...</source>

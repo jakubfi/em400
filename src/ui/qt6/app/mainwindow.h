@@ -81,6 +81,7 @@ private:
 	QMenu *menu_devices = nullptr;
 	void rebuild_devices_menu();
 	void add_media_slot(int chan, int dev, int slot, const QString &title, const char *image, bool powered);
+	void open_terminal(int port);
 
 	QDockWidget *register_dock(QWidget *view, const QString &title, const QString &objname);
 	void apply_default_layout();
