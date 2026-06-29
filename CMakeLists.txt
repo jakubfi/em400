@@ -367,14 +367,6 @@ install(TARGETS em400
 	RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
 )
 
-install(FILES
-	${CMAKE_SOURCE_DIR}/tools/e4term
-	PERMISSIONS OWNER_EXECUTE GROUP_EXECUTE WORLD_EXECUTE
-				OWNER_READ GROUP_READ WORLD_READ
-				OWNER_WRITE
-	DESTINATION ${CMAKE_INSTALL_BINDIR}
-)
-
 # ---- Target: emitool ---------------------------------------------------
 
 add_executable(emitool
@@ -410,5 +402,17 @@ target_compile_options(embin PUBLIC -Wall)
 install(TARGETS embin
 	RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
 )
+
+# ---- Target: emterm ----------------------------------------------------
+
+if(NOT WIN32)
+	add_executable(emterm src/emterm.c)
+	set_property(TARGET emterm PROPERTY C_STANDARD 23)
+	target_compile_options(emterm PUBLIC -Wall)
+
+	install(TARGETS emterm
+		RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
+	)
+endif()
 
 # vim: tabstop=4
