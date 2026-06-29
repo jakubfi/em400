@@ -103,6 +103,11 @@ public slots:
 	// ignition while the (non-modal) dialog is open updates cold-field enabledness
 	void update_enabled_states();
 
+	// a Devices-menu swap landed while we are open: mirror it into the working copy
+	// (menu wins over any pending edit to the same slot) so OK can't commit a stale
+	// value, and refresh the field if that device is on screen
+	void on_media_changed(unsigned chan, unsigned dev, unsigned slot, QString path);
+
 signals:
 	// active machine's display name changed (live-editable while running); the
 	// window title tracks it

@@ -91,4 +91,23 @@ bool ConfigController::apply_and_save(const struct appcfg *work)
 	return true;
 }
 
+// -----------------------------------------------------------------------
+void ConfigController::set_disk_image(unsigned chan, unsigned dev, unsigned slot, const QString &path)
+{
+	struct appcfg_machine *m = appcfg_machine_find(cfg, cfg->active_id);
+	if (!m) return;
+
+	QByteArray p = path.toUtf8();
+	if (!appcfg_set_image(m, chan, dev, slot, p.constData())) return;
+
+	emu->reload_media(chan, dev, slot, p.constData());
+
+	const char *cfgpath = appcfg_path();
+	if (!cfgpath || appcfg_write(cfg, cfgpath) != E_OK) {
+		app_err("Failed to save configuration after media change");
+	}
+
+	emit media_changed(chan, dev, slot, path);
+}
+
 // vim: tabstop=4 shiftwidth=4 autoindent

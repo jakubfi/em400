@@ -18,6 +18,9 @@
 #ifndef CONFIGCONTROLLER_H
 #define CONFIGCONTROLLER_H
 
+#include <QObject>
+#include <QString>
+
 struct appcfg;
 struct appcfg_machine;
 class EmuModel;
@@ -26,8 +29,10 @@ class EmuModel;
 // of truth) and drives EmuModel to make the running machine match. EmuModel stays
 // the live facade; this is the policy layer above it. Power-cycle on cold change,
 // machine switch and persistence land here in later steps.
-class ConfigController
+class ConfigController : public QObject
 {
+	Q_OBJECT
+
 public:
 	ConfigController(struct appcfg *cfg, EmuModel *emu) : cfg(cfg), emu(emu) {}
 
@@ -41,6 +46,17 @@ public:
 	// point - on write failure nothing else changes), then overwrite appcfg,
 	// apply live removable-media swaps and volume. Returns false on failure.
 	bool apply_and_save(const struct appcfg *work);
+
+	// Immediate media swap (Devices menu): mutate appcfg, apply the live swap when
+	// the device permits it, and persist now - a per-op auto-save, deliberately
+	// distinct from the dialog's buffered OK-commit path. No-op when nothing
+	// changes. Empty path ejects.
+	void set_disk_image(unsigned chan, unsigned dev, unsigned slot, const QString &path);
+
+signals:
+	// a menu swap landed; an open config dialog routes it into its working copy so
+	// OK cannot clobber it with a stale value. Empty path means ejected.
+	void media_changed(unsigned chan, unsigned dev, unsigned slot, QString path);
 
 private:
 	struct appcfg *cfg;

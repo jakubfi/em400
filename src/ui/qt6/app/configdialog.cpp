@@ -1073,6 +1073,19 @@ void ConfigDialog::update_enabled_states()
 }
 
 // -----------------------------------------------------------------------
+void ConfigDialog::on_media_changed(unsigned chan, unsigned dev, unsigned slot, QString path)
+{
+	struct appcfg_machine *wm = appcfg_machine_find(&work, appcfg.active_id);
+	if (!wm) return;
+
+	appcfg_set_image(wm, chan, dev, slot, path.toUtf8().constData());
+
+	if ((wm == machine) && (io_sel_chan == (int)chan) && (io_sel_dev == (int)dev)) {
+		io_rebuild_dev_params();
+	}
+}
+
+// -----------------------------------------------------------------------
 void ConfigDialog::reload_machine_page()
 {
 	bool have = machine != nullptr;

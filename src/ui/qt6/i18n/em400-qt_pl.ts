@@ -566,6 +566,10 @@ Brak ramki: przerwanie niemaskowalne</translation>
         <translation>Resetuj układ</translation>
     </message>
     <message>
+        <source>Devices</source>
+        <translation>Urządzenia</translation>
+    </message>
+    <message>
         <source>Flags:</source>
         <translation>Flagi:</translation>
     </message>
@@ -596,6 +600,34 @@ Brak ramki: przerwanie niemaskowalne</translation>
     <message>
         <source> (powered off)</source>
         <translation> (wyłączony)</translation>
+    </message>
+    <message>
+        <source>Winchester (%1:%2)</source>
+        <translation>Winchester (%1:%2)</translation>
+    </message>
+    <message>
+        <source>SP45DE (%1:%2) slot %3</source>
+        <translation>SP45DE (%1:%2) drzwiczki %3</translation>
+    </message>
+    <message>
+        <source>(no removable media)</source>
+        <translation>(brak nośników wymiennych)</translation>
+    </message>
+    <message>
+        <source>Load...</source>
+        <translation>Załaduj...</translation>
+    </message>
+    <message>
+        <source>Load disk image</source>
+        <translation>Załaduj obraz dysku</translation>
+    </message>
+    <message>
+        <source>Eject (%1)</source>
+        <translation>Wysuń (%1)</translation>
+    </message>
+    <message>
+        <source>Eject</source>
+        <translation>Wysuń</translation>
     </message>
     <message>
         <source>Open OS image...</source>

@@ -21,6 +21,8 @@
 #include <QFileDialog>
 #include <QSettings>
 #include <QAction>
+#include <QMenu>
+#include <QMenuBar>
 #include <QSignalBlocker>
 #include <QGridLayout>
 #include <QHBoxLayout>
@@ -176,6 +178,9 @@ void MainWindow::wire_connections()
 	connect(ui->actionSmall_Control_Panel, &QAction::toggled, this, &MainWindow::slot_smallcp_changed);
 	connect(ui->actionDebugger, &QAction::toggled, this, &MainWindow::slot_debugger_enabled_changed);
 	connect(ui->actionPanel_Theme, &QAction::toggled, this, &MainWindow::slot_panel_theme_changed);
+
+	menu_devices = menuBar()->addMenu(tr("Devices"));
+	connect(menu_devices, &QMenu::aboutToShow, this, &MainWindow::rebuild_devices_menu);
 
 	// EmuModel -> MainWindow
 	connect(&e, &EmuModel::signal_reg_changed, this, &MainWindow::slot_cpu_reg_changed);
@@ -517,11 +522,65 @@ void MainWindow::open_config()
 	config_dialog = new ConfigDialog(&cfg_ctl, this);
 	connect(config_dialog, &QDialog::finished, config_dialog, &QObject::deleteLater);
 	connect(&e, &EmuModel::signal_power_changed, config_dialog, &ConfigDialog::update_enabled_states);
+	connect(&cfg_ctl, &ConfigController::media_changed, config_dialog, &ConfigDialog::on_media_changed);
 	connect(config_dialog, &ConfigDialog::signal_machine_renamed, this, &MainWindow::update_window_title);
 	connect(config_dialog, &ConfigDialog::signal_gui_volume_changed, ui->cp, &ControlPanel::set_volume);
 	config_dialog->show();
 	config_dialog->raise();
 	config_dialog->activateWindow();
+}
+
+// -----------------------------------------------------------------------
+void MainWindow::rebuild_devices_menu()
+{
+	menu_devices->clear();
+
+	struct appcfg_machine *m = appcfg_machine_find(&appcfg, appcfg.active_id);
+	if (!m) return;
+
+	bool powered = e.is_powered();
+	bool any = false;
+
+	for (int ch=0 ; ch<EM400_IO_MAX_CHAN ; ch++) {
+		struct em400_channel_cfg *chan = &m->cfg.channel[ch];
+		for (int d=0 ; d<EM400_CHAN_MAX_DEV ; d++) {
+			struct em400_device_cfg *dev = &chan->device[d];
+			if (dev->type == EM400_DEV_WINCHESTER) {
+				add_media_slot(ch, d, 0, tr("Winchester (%1:%2)").arg(ch).arg(d), dev->winchester.image, powered);
+				any = true;
+			} else if (dev->type == EM400_DEV_SP45DE) {
+				for (int s=0 ; s<EM400_SP45DE_SLOT_COUNT ; s++) {
+					add_media_slot(ch, d, s, tr("SP45DE (%1:%2) slot %3").arg(ch).arg(d).arg(s), dev->sp45de.images[s], powered);
+					any = true;
+				}
+			}
+		}
+	}
+
+	if (!any) {
+		QAction *none = menu_devices->addAction(tr("(no removable media)"));
+		none->setEnabled(false);
+	}
+}
+
+// -----------------------------------------------------------------------
+void MainWindow::add_media_slot(int chan, int dev, int slot, const QString &title, const char *image, bool powered)
+{
+	QMenu *sub = menu_devices->addMenu(title);
+	sub->setEnabled(!powered || em400_dev_can_eject(chan, dev, slot));
+
+	QAction *load = sub->addAction(tr("Load..."));
+	connect(load, &QAction::triggered, this, [this, chan, dev, slot]() {
+		QString f = QFileDialog::getOpenFileName(this, tr("Load disk image"));
+		if (!f.isEmpty()) cfg_ctl.set_disk_image(chan, dev, slot, f);
+	});
+
+	bool loaded = image && *image;
+	QAction *eject = sub->addAction(loaded ? tr("Eject (%1)").arg(QString::fromUtf8(image)) : tr("Eject"));
+	eject->setEnabled(loaded);
+	connect(eject, &QAction::triggered, this, [this, chan, dev, slot]() {
+		cfg_ctl.set_disk_image(chan, dev, slot, QString());
+	});
 }
 
 // -----------------------------------------------------------------------

@@ -25,6 +25,7 @@ class MainWindow;
 }
 
 class ConfigDialog;
+class QMenu;
 
 class MainWindow : public QMainWindow
 {
@@ -74,6 +75,12 @@ private:
 	void wire_connections();
 	void build_statusbar();
 	void restore_layout();
+
+	// Devices menu: rebuilt on open (aboutToShow) from the active machine's media
+	// slots, so it always reflects current images and power-gated editability.
+	QMenu *menu_devices = nullptr;
+	void rebuild_devices_menu();
+	void add_media_slot(int chan, int dev, int slot, const QString &title, const char *image, bool powered);
 
 	QDockWidget *register_dock(QWidget *view, const QString &title, const QString &objname);
 	void apply_default_layout();
