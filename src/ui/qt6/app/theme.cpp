@@ -115,11 +115,16 @@ void em400_apply_theme(bool panel)
 	if (panel) {
 		qApp->setStyle(QStyleFactory::create("Fusion"));
 		qApp->setPalette(em400_panel_palette());
+		// Fusion's default separator rule is darker than the gunmetal menu and
+		// nearly invisible on it; lift it a touch above the background instead.
+		const QColor sep = c_background.lighter(155);
+		qApp->setStyleSheet(QString("QMenu::separator { height: 1px; background: %1; margin: 4px 8px; }").arg(sep.name()));
 	} else {
 		if (!default_style.isEmpty()) {
 			qApp->setStyle(QStyleFactory::create(default_style));
 		}
 		qApp->setPalette(default_palette);
+		qApp->setStyleSheet(QString());
 	}
 }
 
