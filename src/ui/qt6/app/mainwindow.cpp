@@ -590,9 +590,10 @@ void MainWindow::rebuild_devices_menu()
 void MainWindow::add_media_slot(int chan, int dev, int slot, const QString &title, const char *image, bool powered)
 {
 	QMenu *sub = menu_devices->addMenu(title);
-	sub->setEnabled(!powered || em400_dev_can_eject(chan, dev, slot));
+	bool can_swap = !powered || em400_dev_can_eject(chan, dev, slot);
 
 	QAction *load = sub->addAction(tr("Load..."));
+	load->setEnabled(can_swap);
 	connect(load, &QAction::triggered, this, [this, chan, dev, slot]() {
 		QString f = QFileDialog::getOpenFileName(this, tr("Load disk image"));
 		if (!f.isEmpty()) cfg_ctl.set_disk_image(chan, dev, slot, f);
@@ -600,7 +601,7 @@ void MainWindow::add_media_slot(int chan, int dev, int slot, const QString &titl
 
 	bool loaded = image && *image;
 	QAction *eject = sub->addAction(loaded ? tr("Eject (%1)").arg(QString::fromUtf8(image)) : tr("Eject"));
-	eject->setEnabled(loaded);
+	eject->setEnabled(loaded && can_swap);
 	connect(eject, &QAction::triggered, this, [this, chan, dev, slot]() {
 		cfg_ctl.set_disk_image(chan, dev, slot, QString());
 	});
