@@ -808,7 +808,8 @@ void MemListing::draw_offset_row(QPainter &painter, int cell_w, int pcell_w, int
 	if (panel != PANEL_OFF) {
 		int step = (panel == PANEL_R40) ? 1 : 2;
 		for (int x=0 ; x<words_per_line ; x+=step) {
-			painter.drawText(side_x + x * pcell_w, font_height, QString::number(x, 16));
+			QString off_str = QString("%1").arg(x, panel_chars(), 16, QLatin1Char(' '));
+			painter.drawText(side_x + x * pcell_w, font_height, off_str);
 		}
 	}
 }
