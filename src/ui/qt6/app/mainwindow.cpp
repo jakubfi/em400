@@ -481,18 +481,17 @@ void MainWindow::slot_edit_mode_changed(bool editing, bool insert)
 // -----------------------------------------------------------------------
 void MainWindow::update_window_title()
 {
-	if (!e.is_powered()) {
-		setWindowTitle(tr("EM400 — (powered off)"));
-		return;
-	}
-
 	struct appcfg_machine *m = appcfg_machine_find(&appcfg, appcfg.active_id);
 	const char *label = m ? (m->name ? m->name : m->id) : nullptr;
+
+	QString title = QStringLiteral("EM400");
 	if (label && *label) {
-		setWindowTitle(QString("EM400 — %1").arg(QString::fromUtf8(label)));
-	} else {
-		setWindowTitle(QStringLiteral("EM400"));
+		title += QString(" — %1").arg(QString::fromUtf8(label));
 	}
+	if (!e.is_powered()) {
+		title += tr(" (powered off)");
+	}
+	setWindowTitle(title);
 }
 
 // -----------------------------------------------------------------------

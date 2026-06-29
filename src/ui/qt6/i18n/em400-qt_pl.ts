@@ -594,8 +594,8 @@ Brak ramki: przerwanie niemaskowalne</translation>
         <translation>Edycja: nadpisywanie</translation>
     </message>
     <message>
-        <source>EM400 — (powered off)</source>
-        <translation>EM400 — (wyłączony)</translation>
+        <source> (powered off)</source>
+        <translation> (wyłączony)</translation>
     </message>
     <message>
         <source>Open OS image...</source>
