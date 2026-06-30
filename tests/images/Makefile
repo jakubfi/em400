@@ -1,5 +1,5 @@
-IMAGE_W0=winchester0.e4i
-IMAGE_W1=winchester1.e4i
+IMAGE_W0=winchester0.img
+IMAGE_W1=winchester1.img
 IMAGE_F8_PREWRITE_0=flop8_prewrite_0.img
 IMAGE_F8_PREWRITE_1=flop8_prewrite_1.img
 IMAGE_F8_PREWRITE_2=flop8_prewrite_2.img
@@ -12,10 +12,10 @@ IMAGE_F8_EMPTY_3=flop8_empty_3.img
 all:	$(IMAGE_W0) $(IMAGE_W1) $(IMAGE_F8_PREWRITE_0) $(IMAGE_F8_PREWRITE_1) $(IMAGE_F8_PREWRITE_2) $(IMAGE_F8_PREWRITE_3) $(IMAGE_F8_EMPTY_0) $(IMAGE_F8_EMPTY_1) $(IMAGE_F8_EMPTY_2) $(IMAGE_F8_EMPTY_3)
 
 $(IMAGE_W0):
-	../../build/emitool --preset win20 --spt 16 --image $(IMAGE_W0)
-	./fillimage.py $(IMAGE_W0) $$((0x1a + 1*4*16*512)) 0 614 4 16 512
+	dd if=/dev/zero of=$(IMAGE_W0) bs=512 count=$$((615*4*16))
+	./fillimage.py $(IMAGE_W0) $$((1*4*16*512)) 0 614 4 16 512
 $(IMAGE_W1):
-	../../build/emitool --preset win20 --spt 16 --image $(IMAGE_W1)
+	dd if=/dev/zero of=$(IMAGE_W1) bs=512 count=$$((615*4*16))
 
 $(IMAGE_F8_PREWRITE_0):
 	dd if=/dev/zero of=$(IMAGE_F8_PREWRITE_0) bs=128 count=$$((77*26))
