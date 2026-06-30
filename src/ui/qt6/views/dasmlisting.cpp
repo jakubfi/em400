@@ -28,16 +28,12 @@
 
 
 // -----------------------------------------------------------------------
-// emdas reads memory through this. It bypasses EmuModel, so it must enforce the
-// power gate itself: after a power-off the library is torn down and em400_mem_read
-// would dereference freed page pointers. Report a read failure when off, which
-// emdas renders as unreadable - exactly like an unmapped segment while powered on.
+// Adapts em400_mem_read to emdas_getfun (no count arg). No power gate needed:
+// off the machine the memory maps are unconfigured, so em400_mem_read returns
+// not-present and emdas renders it unreadable - same as an unmapped segment
+// while powered.
 static int dbg_mem_get(int nb, uint16_t addr, uint16_t *data)
 {
-	if (!em400_is_powered()) {
-		*data = 0;
-		return 0;
-	}
 	return em400_mem_read(nb, addr, data, 1);
 }
 
