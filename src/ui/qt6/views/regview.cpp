@@ -36,6 +36,7 @@ RegCompact::RegCompact(EmuModel *emu, Kind kind, QWidget *parent) :
 	cur.resize(n);
 
 	QFont mono("Monospace");
+	mono.setStyleHint(QFont::Monospace);
 
 	QGridLayout *grid = new QGridLayout(this);
 	grid->setContentsMargins(4, 4, 4, 4);

@@ -25,6 +25,7 @@ StackView::StackView(EmuModel *emu, QWidget *parent) :
 	// QFont("Monospace") has no size set, which makes a later setPointSize jump to
 	// an unrelated default), then just swap the family.
 	fnt = font();
+	fnt.setStyleHint(QFont::Monospace);
 	fnt.setFamily("Monospace");
 
 	compute_geometry();

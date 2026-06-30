@@ -195,6 +195,7 @@ void MemListing::toggle_panel(SidePanel p)
 // -----------------------------------------------------------------------
 void MemListing::set_font(QString name, int size)
 {
+	font.setStyleHint(QFont::Monospace);
 	font.setFamily(name);
 	if (size > 0) font.setPixelSize(size);
 	setFont(font);

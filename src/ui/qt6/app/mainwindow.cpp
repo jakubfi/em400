@@ -246,6 +246,7 @@ void MainWindow::wire_connections()
 void MainWindow::build_statusbar()
 {
 	QFont font("Monospace");
+	font.setStyleHint(QFont::Monospace);
 
 	ips = new QLabel();
 	ui->statusbar->addWidget(ips);
