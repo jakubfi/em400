@@ -23,44 +23,47 @@
 #include "io/dev/winchester.h"
 #include "io/dev/e4image.h"
 
+#define WINCH_CYLS 615
+#define WINCH_HEADS 4
+#define WINCH_SPT 16
+#define WINCH_SECTOR_SIZE 512
+
 // -----------------------------------------------------------------------
-static int e4i_res(int res)
+static long winchester_offset(winchester_t *winchester, unsigned c, unsigned h, unsigned s)
 {
-	switch (res) {
-		case E4I_E_OK:
-			return DEV_STATUS_OK;
-		case E4I_E_UNFORMATTED:
-		case E4I_E_NO_SECTOR:
-			return DEV_STATUS_SEEKERR;
-		case E4I_E_WRPROTECT:
-			return DEV_STATUS_WRPROTECT;
-		case E4I_E_WRITE:
-			return DEV_STATUS_WRERR;
-		case E4I_E_READ:
-			return DEV_STATUS_RDERR;
-		default:
-			return DEV_STATUS_ERR;
-	}
+	if ((c >= WINCH_CYLS) || (h >= WINCH_HEADS) || (s >= WINCH_SPT)) return -1;
+	long block = s + (h * WINCH_SPT) + (c * WINCH_HEADS * WINCH_SPT);
+	return winchester->data_offset + block * WINCH_SECTOR_SIZE;
 }
 
 // -----------------------------------------------------------------------
 int winchester_sector_rd(winchester_t *winchester, uint8_t *buf, unsigned c, unsigned h, unsigned s)
 {
-	if (!winchester->e4image) return DEV_STATUS_NOMEDIUM;
-	return e4i_res(e4i_sread(winchester->e4image, buf, c, h, s));
+	if (!winchester->image) return DEV_STATUS_NOMEDIUM;
+
+	long offset = winchester_offset(winchester, c, h, s);
+	if ((offset < 0) || fseek(winchester->image, offset, SEEK_SET)) return DEV_STATUS_SEEKERR;
+	if (fread(buf, 1, WINCH_SECTOR_SIZE, winchester->image) != WINCH_SECTOR_SIZE) return DEV_STATUS_RDERR;
+
+	return DEV_STATUS_OK;
 }
 
 // -----------------------------------------------------------------------
 int winchester_sector_wr(winchester_t *winchester, uint8_t *buf, unsigned c, unsigned h, unsigned s)
 {
-	if (!winchester->e4image) return DEV_STATUS_NOMEDIUM;
-	return e4i_res(e4i_swrite(winchester->e4image, buf, c, h, s, 512));
+	if (!winchester->image) return DEV_STATUS_NOMEDIUM;
+
+	long offset = winchester_offset(winchester, c, h, s);
+	if ((offset < 0) || fseek(winchester->image, offset, SEEK_SET)) return DEV_STATUS_SEEKERR;
+	if (fwrite(buf, 1, WINCH_SECTOR_SIZE, winchester->image) != WINCH_SECTOR_SIZE) return DEV_STATUS_WRERR;
+
+	return DEV_STATUS_OK;
 }
 
 // -----------------------------------------------------------------------
 bool winchester_ready(em400_dev_t *dev)
 {
-	return dev && ((winchester_t *) dev)->e4image != NULL;
+	return dev && ((winchester_t *) dev)->image != NULL;
 }
 
 // -----------------------------------------------------------------------
@@ -78,7 +81,7 @@ void winchester_shutdown(em400_dev_t *dev)
 	LOG(L_WNCH, "Winchester shutting down");
 
 	winchester_ioloop_teardown(winchester);
-	e4i_close(winchester->e4image);
+	if (winchester->image) fclose(winchester->image);
 	free(winchester->image_name);
 	free(winchester);
 }
@@ -132,9 +135,25 @@ em400_dev_t * winchester_create(const char *image_name)
 	if (image_name && *image_name) {
 		winchester->image_name = strdup(image_name);
 		LOG(L_WNCH, "Opening image: %s", winchester->image_name);
-		winchester->e4image = e4i_open(winchester->image_name);
-		if (!winchester->e4image) {
-			LOGERR("Failed to open Winchester image: \"%s\": %s.", winchester->image_name, e4i_get_err(e4i_err));
+
+		// Legacy e4image carries a header before the raw sector data; probe
+		// for it so we can skip past it. A bare raw image starts at offset 0.
+		struct e4i_t *probe = e4i_open(winchester->image_name);
+		winchester->data_offset = probe ? E4I_HEADER_SIZE : 0;
+		e4i_close(probe);
+
+		winchester->image = fopen(winchester->image_name, "rb+");
+		if (!winchester->image) {
+			LOGERR("Failed to open Winchester image: \"%s\".", winchester->image_name);
+			free(winchester->image_name);
+			free(winchester);
+			return NULL;
+		}
+
+		long expected = winchester->data_offset + (long) WINCH_CYLS * WINCH_HEADS * WINCH_SPT * WINCH_SECTOR_SIZE;
+		if (fseek(winchester->image, 0, SEEK_END) || (ftell(winchester->image) != expected)) {
+			LOGERR("Winchester image \"%s\" size does not match the %i/%i/%i geometry (expected %li bytes).", winchester->image_name, WINCH_CYLS, WINCH_HEADS, WINCH_SPT, expected);
+			fclose(winchester->image);
 			free(winchester->image_name);
 			free(winchester);
 			return NULL;

@@ -18,8 +18,9 @@
 #ifndef WINCHESTER_H
 #define WINCHESTER_H
 
+#include <stdio.h>
+
 #include "io/dev/dev.h"
-#include "io/dev/e4image.h"
 
 typedef struct winchester winchester_t;
 
@@ -27,7 +28,8 @@ struct winchester {
 	struct em400_dev base;
 
 	char *image_name;
-	struct e4i_t *e4image;
+	FILE *image;
+	long data_offset;
 };
 
 em400_dev_t * winchester_create(const char *image);
