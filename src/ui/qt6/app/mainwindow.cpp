@@ -391,8 +391,11 @@ void MainWindow::apply_default_layout()
 		d->show();
 	}
 
-	// brk/watch widths hug their content (their own size policies cap horizontal growth)
-	// and memory expands to take the rest, so the column is sized independently of memory.
+	// start the brk/watch column at its minimum allowed width instead of the wider
+	// split default: resizeDocks only sets the current size (it leaves min/max alone,
+	// so the column still expands and its contents still fill), and Qt clamps a
+	// below-floor request up to the column minimum.
+	resizeDocks({dock_brk, dock_watch}, {watch->minimumWidth(), watch->minimumWidth()}, Qt::Horizontal);
 
 	// show interrupts as the front tab of the interrupts/stack pair
 	dock_ints->raise();
