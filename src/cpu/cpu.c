@@ -376,6 +376,19 @@ void cpu_shutdown()
 
 	cpu_state_change(EM400_STATE_OFF, EM400_STATE_ANY);
 	pthread_join(cpu_thread, NULL);
+
+	// machine powered off: zero the register file, flags and interrupts so
+	// reads through the library seam return 0 instead of stale powered-on values
+	for (int i=0 ; i<8 ; i++) r[i] = 0;
+	ic = ir = ac = ar = at = 0;
+	w = 0;
+	rALARM = false;
+	p = false;
+	mc = 0;
+	SR_WRITE(0);
+	int_clear_all();
+	atomic_store_explicit(&ips_counter, 0, memory_order_relaxed);
+
 	clock_shutdown();
 	if (sound_enabled) {
 		buzzer_shutdown();

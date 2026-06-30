@@ -636,9 +636,10 @@ unsigned long em400_ips_get()
 
 	unsigned long ips_now = atomic_load_explicit(&ips_counter, memory_order_relaxed);
 	double elapsed_ns = stopwatch_ns();
-	if (elapsed_ns > 0) {
+	if ((ips_now >= oips) && (elapsed_ns > 0)) {
 		ips = (1000000000.0 * (ips_now - oips)) / elapsed_ns;
 	} else {
+		// first call, idle, or counter reset to 0 on power-off
 		ips = 0;
 	}
 	oips = ips_now;

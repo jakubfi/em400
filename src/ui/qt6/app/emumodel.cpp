@@ -62,7 +62,7 @@ void EmuModel::slot_power(bool on)
 	} else {
 		stop();
 		em400_shutdown();
-		emit_off_state();
+		sync_all(true);
 	}
 	emit signal_power_changed(is_powered());
 }
@@ -77,36 +77,20 @@ void EmuModel::reload_media(unsigned chan, unsigned dev, unsigned slot, const ch
 }
 
 // -----------------------------------------------------------------------
-// Push a dead-machine snapshot so the panel and views read as off after a
-// power-down: the polling timers are stopped, so nothing would otherwise
-// overwrite the last live values. Cached last_* are zeroed too, so on-demand
-// getters (e.g. get_reg) return blanks until the next power-on re-syncs.
-void EmuModel::emit_off_state()
+// Re-read every field through the library seam in one pass; force repaints all
+// views. Used on power-off to pull the post-shutdown state in, since stop()
+// halted the polling timers.
+void EmuModel::sync_all(bool force)
 {
-	for (int i=EM400_REG_R0 ; i<EM400_REG_COUNT ; i++) {
-		last_reg[i] = 0;
-		emit signal_reg_changed(i, 0);
-	}
-	last_bus_w = 0;
-	last_rz = 0;
-	last_mc = 0;
-	last_alarm = last_p = last_clock = false;
-	last_cpu_state = EM400_STATE_OFF;
-	last_brk_hit = -1;
-
-	emit signal_bus_w_changed(0);
-	emit signal_rz_changed(0);
-	emit signal_mc_changed(0);
-	emit signal_alarm_changed(false);
-	emit signal_p_changed(false);
-	emit signal_clock_changed(false);
-	emit signal_state_changed(EM400_STATE_STOP);
-	emit signal_brk_hit_changed(-1);
-	emit signal_cpu_ips_tick(0);
-	for (int seg=0 ; seg<16 ; seg++) {
-		last_map[seg] = 0;
-		emit signal_mem_map_changed(seg, 0);
-	}
+	sync_bus_w(force);
+	sync_flags(force);
+	sync_state(force);
+	sync_regs(force);
+	sync_rz(force);
+	sync_map(force);
+	sync_clock(force);
+	sync_brk_hit(force);
+	sync_ips();
 }
 
 // -----------------------------------------------------------------------

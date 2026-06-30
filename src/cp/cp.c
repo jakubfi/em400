@@ -89,7 +89,8 @@ void cp_clock_set(int state)
 // -----------------------------------------------------------------------
 int cp_clock_get()
 {
-	return atomic_load_explicit(&clock_switch, memory_order_relaxed);
+	bool on = atomic_load_explicit(&clock_switch, memory_order_relaxed);
+	return on && (cpu_state_get() != EM400_STATE_OFF);
 }
 
 // -----------------------------------------------------------------------

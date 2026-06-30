@@ -109,7 +109,7 @@ private:
 	void sync_flags(bool force=false);
 	void sync_brk_hit(bool force=false);
 	void sync_ips();
-	void emit_off_state();
+	void sync_all(bool force=false);
 
 private slots:
 	void on_timer_realtime_timeout();
