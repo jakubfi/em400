@@ -100,6 +100,10 @@ MainWindow::MainWindow(QWidget *parent) :
 	update_docks_enabled(e.is_powered());
 
 	restore_layout();
+
+	// keep startup focus off the debugger input fields (e.g. the dasm NB spinbox)
+	setFocusPolicy(Qt::StrongFocus);
+	setFocus();
 }
 
 // -----------------------------------------------------------------------
