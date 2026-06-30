@@ -436,7 +436,7 @@ QWidget *ConfigDialog::build_machine_page()
 	});
 	QPushButton *prom_browse = new QPushButton(tr("Browse..."));
 	connect(prom_browse, &QPushButton::clicked, this, [this]() {
-		QString f = QFileDialog::getOpenFileName(this, tr("MEGA PROM image"));
+		QString f = QFileDialog::getOpenFileName(this, tr("MEGA PROM image"), m_mega_prom->text());
 		if (!f.isNull()) m_mega_prom->setText(f);
 	});
 	QHBoxLayout *prom_row = new QHBoxLayout();
@@ -451,7 +451,7 @@ QWidget *ConfigDialog::build_machine_page()
 	});
 	QPushButton *preload_browse = new QPushButton(tr("Browse..."));
 	connect(preload_browse, &QPushButton::clicked, this, [this]() {
-		QString f = QFileDialog::getOpenFileName(this, tr("Preload OS image"));
+		QString f = QFileDialog::getOpenFileName(this, tr("Preload OS image"), m_preload->text());
 		if (!f.isNull()) m_preload->setText(f);
 	});
 	QHBoxLayout *preload_row = new QHBoxLayout();
@@ -855,7 +855,7 @@ void ConfigDialog::io_rebuild_dev_params()
 		});
 		QPushButton *browse = new QPushButton(tr("Browse..."));
 		connect(browse, &QPushButton::clicked, this, [this, edit, caption]() {
-			QString f = QFileDialog::getOpenFileName(this, caption);
+			QString f = QFileDialog::getOpenFileName(this, caption, edit->text());
 			if (!f.isNull()) edit->setText(f);
 		});
 		gate(edit, "cold");
@@ -875,7 +875,7 @@ void ConfigDialog::io_rebuild_dev_params()
 		connect(edit, &QLineEdit::editingFinished, this, commit);
 		QPushButton *browse = new QPushButton(tr("Browse..."));
 		connect(browse, &QPushButton::clicked, this, [this, edit, caption, commit]() {
-			QString f = QFileDialog::getOpenFileName(this, caption);
+			QString f = QFileDialog::getOpenFileName(this, caption, edit->text());
 			if (!f.isNull()) {
 				edit->setText(f);
 				commit();

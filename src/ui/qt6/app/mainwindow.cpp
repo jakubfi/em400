@@ -610,8 +610,9 @@ void MainWindow::add_media_slot(QMenu *menu, int chan, int dev, int slot, const 
 
 	QAction *load = sub->addAction(tr("Load..."));
 	load->setEnabled(can_swap);
-	connect(load, &QAction::triggered, this, [this, chan, dev, slot]() {
-		QString f = QFileDialog::getOpenFileName(this, tr("Load disk image"));
+	QString cur = QString::fromUtf8(image ? image : "");
+	connect(load, &QAction::triggered, this, [this, chan, dev, slot, cur]() {
+		QString f = QFileDialog::getOpenFileName(this, tr("Load disk image"), cur);
 		if (!f.isEmpty()) cfg_ctl.set_disk_image(chan, dev, slot, f);
 	});
 
