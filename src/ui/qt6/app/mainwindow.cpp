@@ -210,11 +210,6 @@ void MainWindow::wire_connections()
 	// the ignition's power signal drives the machine lifecycle (the lock signal
 	// is panel-internal, handled in ControlPanel itself)
 	connect(ui->cp->ignition, &Ignition::signal_power, &e, &EmuModel::slot_power);
-	// power-on resets the core's selected display register, so re-push the rotary
-	// position; connected after slot_power so it runs once the machine is powered.
-	connect(ui->cp->ignition, &Ignition::signal_power, this, [this](bool on) {
-		if (on) e.slot_reg_select(ui->cp->rotary->get_position());
-	});
 	connect(&e, &EmuModel::signal_power_changed, this, &MainWindow::update_window_title);
 	connect(&e, &EmuModel::signal_power_changed, this, &MainWindow::update_docks_enabled);
 	connect(ui->cp, &ControlPanel::signal_start_toggled, &e, &EmuModel::slot_cpu_start);

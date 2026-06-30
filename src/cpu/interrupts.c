@@ -110,7 +110,7 @@ void int_update_xmask()
 	pthread_mutex_lock(&int_mutex);
 	int_xmask = tmp_xmask;
 	atomic_store_explicit(&irq, rz & int_xmask, memory_order_relaxed);
-	cpu_wake_up();
+	cpu_wake_up_nlock();
 	pthread_mutex_unlock(&int_mutex);
 }
 
@@ -122,7 +122,7 @@ void int_set(int int_num)
 	pthread_mutex_lock(&int_mutex);
 	rz |= INT_BIT(int_num);
 	atomic_store_explicit(&irq, rz & int_xmask, memory_order_relaxed);
-	cpu_wake_up();
+	cpu_wake_up_nlock();
 	pthread_mutex_unlock(&int_mutex);
 }
 
@@ -132,7 +132,7 @@ void int_clear_all()
 	pthread_mutex_lock(&int_mutex);
 	rz = 0;
 	atomic_store_explicit(&irq, rz & int_xmask, memory_order_relaxed);
-	cpu_wake_up();
+	cpu_wake_up_nlock();
 	pthread_mutex_unlock(&int_mutex);
 }
 
@@ -144,7 +144,7 @@ void int_clear(int int_num)
 	pthread_mutex_lock(&int_mutex);
 	rz &= ~INT_BIT(int_num);
 	atomic_store_explicit(&irq, rz & int_xmask, memory_order_relaxed);
-	cpu_wake_up();
+	cpu_wake_up_nlock();
 	pthread_mutex_unlock(&int_mutex);
 }
 
@@ -174,7 +174,7 @@ void int_put_nchan(uint16_t r)
 	pthread_mutex_lock(&int_mutex);
 	rz = (rz & RZ_CHAN_BITMASK) | ((r & R_NCHAN_HIGH_BITMASK) << 16) | (r & R_NCHAN_LOW_BITMASK);
 	atomic_store_explicit(&irq, rz & int_xmask, memory_order_relaxed);
-	cpu_wake_up();
+	cpu_wake_up_nlock();
 	pthread_mutex_unlock(&int_mutex);
 }
 

@@ -29,6 +29,7 @@
 #include "utils/utils.h"
 
 static atomic_bool start_switch;
+static atomic_int reg_select_switch;
 
 // -----------------------------------------------------------------------
 uint16_t cp_bus_w()
@@ -45,7 +46,7 @@ void cp_kb_set(uint16_t val)
 // -----------------------------------------------------------------------
 void cp_start(bool state)
 {
-	atomic_store_explicit(&start_switch, state, memory_order_release);
+	atomic_store_explicit(&start_switch, state, memory_order_relaxed);
 	if (cpu_state_get() == EM400_STATE_OFF) return;
 	if (state) {
 		cpu_state_change(EM400_STATE_RUN, EM400_STATE_STOP);
@@ -57,7 +58,7 @@ void cp_start(bool state)
 // -----------------------------------------------------------------------
 bool cp_start_get()
 {
-	return atomic_load_explicit(&start_switch, memory_order_acquire);
+	return atomic_load_explicit(&start_switch, memory_order_relaxed);
 }
 
 // -----------------------------------------------------------------------
@@ -106,7 +107,15 @@ int cp_stopn(bool state)
 // -----------------------------------------------------------------------
 void cp_reg_select(int reg_id)
 {
-	cpu_reg_select(reg_id);
+	atomic_store_explicit(&reg_select_switch, reg_id, memory_order_relaxed);
+	if (cpu_state_get() == EM400_STATE_OFF) return;
+	cpu_w_refresh();
+}
+
+// -----------------------------------------------------------------------
+int cp_reg_select_get()
+{
+	return atomic_load_explicit(&reg_select_switch, memory_order_relaxed);
 }
 
 // -----------------------------------------------------------------------

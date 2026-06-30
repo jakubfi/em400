@@ -128,7 +128,7 @@ public slots:
 	void slot_cycle() { if (is_powered()) em400_cp_cycle(); }
 	void slot_clock_enabled(bool state) { if (is_powered()) em400_cp_clock(state); }
 	void slot_oprq() { if (is_powered()) em400_cp_oprq(); }
-	void slot_reg_select(int r) { if (is_powered()) em400_cp_reg_select(r); }
+	void slot_reg_select(int r) { em400_cp_reg_select(r); }
 	void slot_load() { if (is_powered()) em400_cp_load(); }
 	void slot_bin() { if (is_powered()) em400_cp_bin(); }
 	void slot_fetch() { if (is_powered()) em400_cp_fetch(); }

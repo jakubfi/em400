@@ -42,7 +42,8 @@ bool cp_p_get();
 int cp_mc_get();
 bool cp_irq_get();
 void cp_oprq();
-void cp_reg_select(int id); // TODO: store position
+void cp_reg_select(int id);
+int cp_reg_select_get();
 bool cp_run_get();
 bool cp_wait_get();
 bool cp_alarm_get();

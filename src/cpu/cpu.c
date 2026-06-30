@@ -65,7 +65,6 @@ int mc;
 unsigned rm, nb;
 bool p, q, bs;
 uint16_t w;
-int r_selected;
 
 bool zc17;
 
@@ -110,7 +109,7 @@ void cpu_kb_set(uint16_t val)
 
 	pthread_mutex_lock(&cpu_wake_mutex);
 	kb = val;
-	cpu_wake_up();
+	cpu_wake_up_nlock();
 	pthread_mutex_unlock(&cpu_wake_mutex);
 }
 
@@ -144,17 +143,15 @@ void cpu_reg_load(unsigned reg_id, uint16_t val)
 	pthread_mutex_lock(&cpu_wake_mutex);
 	if (cpu_state_get() == EM400_STATE_STOP) {
 		cpu_do_load(reg_id, val);
-		cpu_wake_up();
+		cpu_wake_up_nlock();
 	}
 	pthread_mutex_unlock(&cpu_wake_mutex);
 }
 
 // -----------------------------------------------------------------------
-void cpu_reg_select(unsigned reg_id)
+void cpu_w_refresh()
 {
-	LOG(L_CPU, "Select register: %s", em400_reg_name(reg_id));
 	pthread_mutex_lock(&cpu_wake_mutex);
-	r_selected = reg_id;
 	pthread_cond_signal(&cpu_wake_cond);
 	pthread_mutex_unlock(&cpu_wake_mutex);
 }
@@ -186,14 +183,14 @@ int cpu_reg_fetch(unsigned reg_id)
 // -----------------------------------------------------------------------
 static inline void cpu_reg_selected_to_w()
 {
-	w = cpu_reg_fetch(r_selected);
+	w = cpu_reg_fetch(cp_reg_select_get());
 }
 
 // -----------------------------------------------------------------------
 static void cpu_do_fetch()
 {
 	cpu_mem_read_1(false, ar, &w);
-	cpu_do_load(r_selected, w);
+	cpu_do_load(cp_reg_select_get(), w);
 	ar++;
 }
 
@@ -222,7 +219,7 @@ static int cpu_do_wait()
 }
 
 // -----------------------------------------------------------------------
-void cpu_wake_up()
+void cpu_wake_up_nlock()
 {
 	pthread_cond_signal(&cpu_wake_cond);
 }
@@ -832,7 +829,7 @@ __attribute__((hot)) static void * cpu_loop(void *ptr)
 				break;
 			case EM400_STATE_LOAD:
 				w = kb;
-				cpu_do_load(r_selected, w);
+				cpu_do_load(cp_reg_select_get(), w);
 				cpu_state_change(EM400_STATE_STOP, EM400_STATE_LOAD);
 				break;
 			case EM400_STATE_STORE:

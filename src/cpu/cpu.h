@@ -77,7 +77,6 @@ extern int mc;
 extern unsigned rm, nb;
 extern bool p, q, bs;
 extern uint16_t w;
-extern int r_selected;
 extern atomic_ulong ips_counter;
 extern bool zc17;
 
@@ -92,11 +91,11 @@ void cpu_shutdown();
 void cpu_mod_on();
 void cpu_mod_off();
 
-void cpu_wake_up();
+void cpu_wake_up_nlock();
 int cpu_state_change(unsigned to, unsigned from);
 unsigned cpu_state_get();
 
-void cpu_reg_select(unsigned reg_id);
+void cpu_w_refresh();
 void cpu_reg_load(unsigned reg_id, uint16_t val);
 int cpu_reg_fetch(unsigned reg_id);
 void cpu_kb_set(uint16_t val);
