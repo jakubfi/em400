@@ -22,7 +22,8 @@
 #include <stdbool.h>
 
 uint16_t cp_bus_w();
-void cp_kb_set(uint16_t val); // TODO: stored in CP?
+void cp_kb_set(uint16_t val);
+uint16_t cp_kb_get();
 // TODO: step
 // TODO: mode + LED
 int cp_stopn(bool state); // TODO: flip-flop

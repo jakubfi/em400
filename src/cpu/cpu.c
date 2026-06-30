@@ -59,7 +59,7 @@ bool cpu_initialized;
 static atomic_uint cpu_state = EM400_STATE_OFF;
 
 uint16_t r[8];
-uint16_t ic, kb, ir, ac, ar, at;
+uint16_t ic, ir, ac, ar, at;
 bool rALARM;
 int mc;
 unsigned rm, nb;
@@ -101,17 +101,6 @@ pthread_mutex_t cpu_wake_mutex = PTHREAD_MUTEX_INITIALIZER;
 pthread_cond_t cpu_wake_cond = PTHREAD_COND_INITIALIZER;
 
 static void * cpu_loop(void *ptr);
-
-// -----------------------------------------------------------------------
-void cpu_kb_set(uint16_t val)
-{
-	LOG(L_CPU, "KB := 0x%04x", val);
-
-	pthread_mutex_lock(&cpu_wake_mutex);
-	kb = val;
-	cpu_wake_up_nlock();
-	pthread_mutex_unlock(&cpu_wake_mutex);
-}
 
 // -----------------------------------------------------------------------
 static void cpu_do_load(int reg_id, uint16_t val)
@@ -175,7 +164,7 @@ int cpu_reg_fetch(unsigned reg_id)
 		case EM400_REG_SR: return SR_READ();
 		case EM400_REG_RZ: return int_get_nchan();
 		case EM400_REG_KB:
-		case EM400_REG_KB2: return kb;
+		case EM400_REG_KB2: return cp_kb_get();
 		default: return -1;
 	}
 }
@@ -828,7 +817,7 @@ __attribute__((hot)) static void * cpu_loop(void *ptr)
 				cpu_state_change(EM400_STATE_STOP, EM400_STATE_BIN);
 				break;
 			case EM400_STATE_LOAD:
-				w = kb;
+				w = cp_kb_get();
 				cpu_do_load(cp_reg_select_get(), w);
 				cpu_state_change(EM400_STATE_STOP, EM400_STATE_LOAD);
 				break;

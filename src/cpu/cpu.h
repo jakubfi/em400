@@ -71,7 +71,7 @@
 #define REG_RESTRICT_WRITE(i, v) r[i] = ((i)|!q) ? (v) : (r[i] & 0xff00) | ((v) & 0x00ff)
 
 extern uint16_t r[8];
-extern uint16_t ic, kb, ir, ac, ar, at;
+extern uint16_t ic, ir, ac, ar, at;
 extern bool rALARM;
 extern int mc;
 extern unsigned rm, nb;
@@ -98,7 +98,6 @@ unsigned cpu_state_get();
 void cpu_w_refresh();
 void cpu_reg_load(unsigned reg_id, uint16_t val);
 int cpu_reg_fetch(unsigned reg_id);
-void cpu_kb_set(uint16_t val);
 bool cpu_mem_read_1(bool barnb, uint16_t addr, uint16_t *data);
 bool cpu_mem_write_1(bool barnb, uint16_t addr, uint16_t data);
 void cpu_do_clear(bool clo);

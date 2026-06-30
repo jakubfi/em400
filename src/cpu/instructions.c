@@ -18,6 +18,7 @@
 #include "cpu/cpu.h"
 #include "cpu/interrupts.h"
 #include "cpu/alu.h"
+#include "cp/cp.h"
 #include "io/defs.h"
 #include "io/io.h"
 
@@ -890,7 +891,7 @@ WX:
 void op_72_rky()
 {
 // WA:
-	w = kb;
+	w = cp_kb_get();
 	step_point();
 	REG_RESTRICT_WRITE(IR_A, w);
 }

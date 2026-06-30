@@ -32,6 +32,7 @@
 static atomic_bool start_switch;
 static atomic_int reg_select_switch;
 static atomic_bool clock_switch;
+static atomic_uint kb_switch;
 
 // -----------------------------------------------------------------------
 uint16_t cp_bus_w()
@@ -42,8 +43,16 @@ uint16_t cp_bus_w()
 // -----------------------------------------------------------------------
 void cp_kb_set(uint16_t val)
 {
+	LOG(L_CPU, "KB := 0x%04x", val);
+	atomic_store_explicit(&kb_switch, val, memory_order_relaxed);
 	if (cpu_state_get() == EM400_STATE_OFF) return;
-	cpu_kb_set(val);
+	cpu_w_refresh();
+}
+
+// -----------------------------------------------------------------------
+uint16_t cp_kb_get()
+{
+	return atomic_load_explicit(&kb_switch, memory_order_relaxed);
 }
 
 // -----------------------------------------------------------------------
