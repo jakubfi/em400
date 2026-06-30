@@ -26,6 +26,7 @@
 
 #include "cpu/clock.h"
 #include "cpu/interrupts.h"
+#include "cp/cp.h"
 
 #include "log.h"
 
@@ -35,7 +36,6 @@ static bool clock_initialized;
 
 static unsigned clock_period;
 static atomic_uint clock_int;
-static atomic_bool clock_enabled;
 
 // -----------------------------------------------------------------------
 static void * clock_thread(void *ptr)
@@ -52,7 +52,7 @@ static void * clock_thread(void *ptr)
 		if (!sem_timedwait(&clock_quit, &ts)) {
 			break;
 		}
-		if (atomic_load_explicit(&clock_enabled, memory_order_relaxed)) {
+		if (cp_clock_get()) {
 			int_set(atomic_load_explicit(&clock_int, memory_order_relaxed));
 		}
 	}
@@ -72,7 +72,6 @@ int clock_init(unsigned period_ms)
 	}
 
 	clock_period = period_ms;
-	atomic_store_explicit(&clock_enabled, false, memory_order_relaxed);
 	atomic_store_explicit(&clock_int, INT_CLOCK, memory_order_relaxed);
 
 	if (sem_init(&clock_quit, 0, 0)) {
@@ -106,19 +105,6 @@ void clock_shutdown()
 	pthread_join(clock_th, NULL);
 	sem_destroy(&clock_quit);
 	clock_initialized = false;
-}
-
-// -----------------------------------------------------------------------
-void clock_set(bool state)
-{
-	LOG(L_CPU, "Set cpu timer (clock) state: %s", state ? "ON" : "OFF");
-	atomic_store_explicit(&clock_enabled, state, memory_order_relaxed);
-}
-
-// -----------------------------------------------------------------------
-bool clock_get()
-{
-	return atomic_load_explicit(&clock_enabled, memory_order_relaxed);
 }
 
 // -----------------------------------------------------------------------

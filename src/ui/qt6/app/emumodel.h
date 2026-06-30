@@ -121,12 +121,10 @@ public slots:
 	// em400_shutdown(), then blank the views so the panel reads as dead
 	void slot_power(bool on);
 
-	// not power-gated like its siblings: cp_start records the switch position in
-	// the core even when off (cpu_init reads it on power-on) and self-guards on OFF
 	void slot_cpu_start(bool state) { em400_cp_start(state); }
 	void slot_clear() { if (is_powered()) em400_cp_clear(); }
 	void slot_cycle() { if (is_powered()) em400_cp_cycle(); }
-	void slot_clock_enabled(bool state) { if (is_powered()) em400_cp_clock(state); }
+	void slot_clock_enabled(bool state) { em400_cp_clock(state); }
 	void slot_oprq() { if (is_powered()) em400_cp_oprq(); }
 	void slot_reg_select(int r) { em400_cp_reg_select(r); }
 	void slot_load() { if (is_powered()) em400_cp_load(); }

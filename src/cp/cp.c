@@ -20,16 +20,18 @@
 #include <stdbool.h>
 #include <stdatomic.h>
 
+#include "libem400.h"
 #include "cpu/cpu.h"
 #include "cpu/interrupts.h"
-#include "cpu/clock.h"
 #include "mem/mem.h"
 #include "io/defs.h"
 #include "io/io.h"
 #include "utils/utils.h"
+#include "log.h"
 
 static atomic_bool start_switch;
 static atomic_int reg_select_switch;
+static atomic_bool clock_switch;
 
 // -----------------------------------------------------------------------
 uint16_t cp_bus_w()
@@ -70,13 +72,14 @@ void cp_cycle()
 // -----------------------------------------------------------------------
 void cp_clock_set(int state)
 {
-	clock_set(state);
+	LOG(L_CPU, "Set cpu timer (clock) state: %s", state ? "ON" : "OFF");
+	atomic_store_explicit(&clock_switch, state, memory_order_relaxed);
 }
 
 // -----------------------------------------------------------------------
 int cp_clock_get()
 {
-	return clock_get();
+	return atomic_load_explicit(&clock_switch, memory_order_relaxed);
 }
 
 // -----------------------------------------------------------------------
@@ -107,6 +110,7 @@ int cp_stopn(bool state)
 // -----------------------------------------------------------------------
 void cp_reg_select(int reg_id)
 {
+	LOG(L_CPU, "Selected register on the rotary switch: %s", em400_reg_name(reg_id));
 	atomic_store_explicit(&reg_select_switch, reg_id, memory_order_relaxed);
 	if (cpu_state_get() == EM400_STATE_OFF) return;
 	cpu_w_refresh();

@@ -35,7 +35,7 @@ void cp_start(bool state);
 bool cp_start_get();
 void cp_bin();
 void cp_clear();
-void cp_clock_set(int state); // TODO: flip-flop
+void cp_clock_set(int state);
 int cp_clock_get();
 bool cp_q_get();
 bool cp_p_get();
