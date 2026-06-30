@@ -555,6 +555,7 @@ int em400_int_set(unsigned interrupt)
 	if (interrupt >= 32) {
 		return E_ERR;
 	}
+	if (!powered) return E_OK;
 	int_set(interrupt);
 	return E_OK;
 }
@@ -565,6 +566,7 @@ int em400_int_clear(unsigned interrupt)
 	if (interrupt >= 32) {
 		return E_ERR;
 	}
+	if (!powered) return E_OK;
 	int_clear(interrupt);
 	return E_OK;
 }

@@ -348,14 +348,12 @@ bool EmuModel::watch_eval(unsigned id, int &value, QString &err)
 // -----------------------------------------------------------------------
 int EmuModel::get_mem(int nb, int addr, uint16_t *m, int count)
 {
-	if (!is_powered()) return 0;
 	return em400_mem_read(nb, addr, m, count);
 }
 
 // -----------------------------------------------------------------------
 int EmuModel::get_mem(int nb, int addr)
 {
-	if (!is_powered()) return -1;
 	uint16_t v;
 	if (em400_mem_read(nb, addr, &v, 1)) {
 		return v;
@@ -367,7 +365,6 @@ int EmuModel::get_mem(int nb, int addr)
 // -----------------------------------------------------------------------
 bool EmuModel::load_os_image(QString filename)
 {
-	if (!is_powered()) return false;
 	QFile file;
 	file.setFileName(filename);
 

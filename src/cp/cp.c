@@ -42,6 +42,7 @@ uint16_t cp_bus_w()
 // -----------------------------------------------------------------------
 void cp_kb_set(uint16_t val)
 {
+	if (cpu_state_get() == EM400_STATE_OFF) return;
 	cpu_kb_set(val);
 }
 
@@ -85,6 +86,7 @@ int cp_clock_get()
 // -----------------------------------------------------------------------
 void cp_clear()
 {
+	if (cpu_state_get() == EM400_STATE_OFF) return;
 	cpu_state_change(EM400_STATE_CLO, EM400_STATE_ANY);
 }
 
@@ -97,6 +99,7 @@ void cp_bin()
 // -----------------------------------------------------------------------
 void cp_oprq()
 {
+	if (cpu_state_get() == EM400_STATE_OFF) return;
 	int_set(INT_OPRQ);
 }
 
