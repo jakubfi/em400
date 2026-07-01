@@ -42,9 +42,12 @@
 #include <QTreeWidget>
 #include <QTreeWidgetItem>
 #include <QMessageBox>
+#include <QFontDialog>
+#include <QFontInfo>
 
 #include "configdialog.h"
 #include "configcontroller.h"
+#include "theme.h"
 
 // -----------------------------------------------------------------------
 // strdup/free, not new/delete: appcfg_free() releases these with free().
@@ -95,6 +98,13 @@ ConfigDialog::ConfigDialog(ConfigController *ctl, QWidget *parent) :
 	// edit a private deep copy; OK commits it back to appcfg, Cancel discards it
 	appcfg_copy(&work, &appcfg);
 	orig_volume = work.host.sound.volume;
+
+	{
+		QSettings s;
+		orig_mono_font_set = s.contains("ui/monoFontFamily");
+		orig_mono_font_family = s.value("ui/monoFontFamily").toString();
+		orig_mono_font_size = s.value("ui/monoFontSize", 0).toInt();
+	}
 
 	machine = appcfg_machine_find(&work, work.active_id);
 	if (!machine && work.n_machines) {
@@ -201,6 +211,52 @@ QWidget *ConfigDialog::build_general_page()
 		QSettings().setValue("ui/terminalCommand", terminal_cmd->text());
 	});
 	ui_form->addRow(tr("Terminal command:"), terminal_cmd);
+
+	// Debugger monospace font (memory/disassembly/registers/...)
+	// Empty = the platform default resolved by em400_apply_mono_font()
+	QLabel *font_label = new QLabel();
+	font_label->setToolTip(tr("Font used by the memory, disassembly, register and other debugger views."));
+	auto describe_font = [this, font_label]() {
+		QSettings s;
+		const QString fam = s.value("ui/monoFontFamily").toString();
+		const int size = s.value("ui/monoFontSize", 0).toInt();
+		QFont f;
+		em400_apply_mono_font(f);
+		const QString name = fam.isEmpty() ? QFontInfo(f).family() : fam;
+		const int pt = size > 0 ? size : QFontInfo(f).pointSize();
+		font_label->setText(fam.isEmpty() && size <= 0
+			? tr("%1 %2 pt (default)").arg(name).arg(pt)
+			: tr("%1 %2 pt").arg(name).arg(pt));
+	};
+	describe_font();
+	QPushButton *font_change = new QPushButton(tr("Change..."));
+	connect(font_change, &QPushButton::clicked, this, [this, describe_font]() {
+		QFont initial;
+		em400_apply_mono_font(initial);
+		bool ok = false;
+		QFont chosen = QFontDialog::getFont(&ok, initial, this, tr("Monospace font"), QFontDialog::MonospacedFonts);
+		if (!ok) return;
+		QSettings s;
+		s.setValue("ui/monoFontFamily", chosen.family());
+		s.setValue("ui/monoFontSize", chosen.pointSize());
+		mono_font_touched = true;
+		describe_font();
+		emit signal_mono_font_changed();
+	});
+	QPushButton *font_reset = new QPushButton(tr("Reset"));
+	connect(font_reset, &QPushButton::clicked, this, [this, describe_font]() {
+		QSettings s;
+		s.remove("ui/monoFontFamily");
+		s.remove("ui/monoFontSize");
+		mono_font_touched = true;
+		describe_font();
+		emit signal_mono_font_changed();
+	});
+	QHBoxLayout *font_row = new QHBoxLayout();
+	font_row->addWidget(font_label, 1);
+	font_row->addWidget(font_change);
+	font_row->addWidget(font_reset);
+	ui_form->addRow(tr("Debugger font:"), font_row);
 
 	outer->addWidget(emu_box);
 	outer->addWidget(ui_box);
@@ -1167,6 +1223,20 @@ void ConfigDialog::accept_config()
 void ConfigDialog::reject()
 {
 	ctl->preview_volume(orig_volume); // undo the live volume preview
+
+	// the mono font applied live on each Change/Reset; restore what was set at open
+	if (mono_font_touched) {
+		QSettings s;
+		if (orig_mono_font_set) {
+			s.setValue("ui/monoFontFamily", orig_mono_font_family);
+			s.setValue("ui/monoFontSize", orig_mono_font_size);
+		} else {
+			s.remove("ui/monoFontFamily");
+			s.remove("ui/monoFontSize");
+		}
+		emit signal_mono_font_changed();
+	}
+
 	QDialog::reject();
 }
 

@@ -20,14 +20,7 @@ StackView::StackView(EmuModel *emu, QWidget *parent) :
 	QWidget(parent),
 	e(emu)
 {
-	// monospace, like the disassembly and memory views (addresses/values align).
-	// Start from the widget font so we inherit a concrete point size (a bare
-	// QFont("Monospace") has no size set, which makes a later setPointSize jump to
-	// an unrelated default), then just swap the family.
-	fnt = font();
-	em400_apply_mono_font(fnt);
-
-	compute_geometry();
+	apply_font();
 
 	// the stack lives in memory, not a register, but it only changes as the
 	// machine executes - which also moves the registers. Refreshing on the
@@ -38,6 +31,25 @@ StackView::StackView(EmuModel *emu, QWidget *parent) :
 	connect(e, &EmuModel::signal_state_changed, this, [this](int){ refresh(); });
 
 	refresh();
+}
+
+// -----------------------------------------------------------------------
+// Start from the widget font so we inherit a concrete point size (a bare
+// QFont("Monospace") has none, which makes a later setPointSize jump to an
+// unrelated default), then let em400_apply_mono_font swap in the mono family.
+void StackView::apply_font()
+{
+	fnt = font();
+	em400_apply_mono_font(fnt);
+	compute_geometry();
+}
+
+// -----------------------------------------------------------------------
+void StackView::refresh_font()
+{
+	apply_font();
+	updateGeometry();
+	update();
 }
 
 // -----------------------------------------------------------------------

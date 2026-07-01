@@ -28,6 +28,7 @@ class RegCompact : public QWidget {
 public:
 	enum Kind { USER, SYSTEM };
 	explicit RegCompact(EmuModel *emu, Kind kind, QWidget *parent = nullptr);
+	void refresh_font() { apply_font(); updateGeometry(); update(); }
 
 private slots:
 	void slot_reg_changed(int reg, uint16_t val);
@@ -43,11 +44,13 @@ private:
 	int radix = 16;                    // 16 (hex) or 8 (oct)
 	QPushButton *btn_radix;
 	QVector<Row> rows;
+	QVector<QLabel*> names;             // row name label (R0.., IC..)
 	QVector<QLineEdit*> num;            // hex/oct field (every row)
 	QVector<QLineEdit*> dec;            // signed-decimal field (data rows, else nullptr)
 	QVector<QLineEdit*> udec;          // dimmed unsigned value, read-only (data rows, else nullptr)
 	QVector<uint16_t> cur;
 
+	void apply_font();
 	void set_reg_value(int reg_id, uint16_t v);
 	void commit_num(int row);
 	void commit_dec(int row);

@@ -26,23 +26,14 @@
 #include <QFont>
 #include "emumodel.h"
 
-// -----------------------------------------------------------------------
-// Watch list: one expression per row with its current value, plus an entry
-// field below to add new ones and a per-row "x" to delete. Double-click (or the
-// context menu) edits an expression in place; unlike breakpoints the core has a
-// real edit op (watch_edit), so a commit keeps the row's id with a single call.
-// The list is the single source of truth in cp/watch.c (via em400_watch_*); this
-// view edits and lists it, rebuilding after each structural edit rather than
-// polling. The hex and decimal value columns are re-evaluated whenever the
-// machine state moves (run / single-step / stop); like the register and memory
-// views the values read live state, so while the CPU runs they update and are
-// transient/meaningless until it stops.
+
 // -----------------------------------------------------------------------
 class WatchView : public QWidget {
 	Q_OBJECT
 
 public:
 	explicit WatchView(EmuModel *emu, QWidget *parent = nullptr);
+	void refresh_font();
 
 protected:
 	void changeEvent(QEvent *ev) override;
@@ -71,6 +62,7 @@ private:
 	enum { IdRole = Qt::UserRole, ExprRole };
 	enum { COL_EXPR = 0, COL_HEX, COL_DEC, COL_DEL, COL_COUNT };
 
+	void apply_font();
 	void refresh();
 	void refresh_values();
 	void add_row(const WatchInfo &info);

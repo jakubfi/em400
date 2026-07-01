@@ -30,13 +30,11 @@ RegCompact::RegCompact(EmuModel *emu, Kind kind, QWidget *parent) :
 	}
 
 	int n = rows.size();
+	names.resize(n);
 	num.resize(n);
 	dec.resize(n);
 	udec.resize(n);
 	cur.resize(n);
-
-	QFont mono;
-	em400_apply_mono_font(mono);
 
 	QGridLayout *grid = new QGridLayout(this);
 	grid->setContentsMargins(4, 4, 4, 4);
@@ -45,8 +43,6 @@ RegCompact::RegCompact(EmuModel *emu, Kind kind, QWidget *parent) :
 
 	// column 1 header is the hex/oct toggle button; all rows switch together
 	btn_radix = new QPushButton(tr("HEX"), this);
-	btn_radix->setFont(mono);
-	btn_radix->setMaximumHeight(QFontMetrics(mono).height() + 6);
 	connect(btn_radix, &QPushButton::clicked, this, &RegCompact::toggle_radix);
 	grid->addWidget(btn_radix, 0, 1);
 
@@ -58,46 +54,26 @@ RegCompact::RegCompact(EmuModel *emu, Kind kind, QWidget *parent) :
 	udec_hdr->setAlignment(Qt::AlignCenter);
 	grid->addWidget(udec_hdr, 0, 3);
 
-	// size the fields to their widest possible content (octal "177777" / signed
-	// "-32768") with light padding, and pin the height near the font height with
-	// trimmed text margins - the right-hand dock stack is vertical-space starved.
-	QFontMetrics fm(mono);
-	int num_w = fm.horizontalAdvance("177777") + 10;
-	int dec_w = fm.horizontalAdvance("-32768") + 10;
-	int udec_w = fm.horizontalAdvance("65535") + 10;
-	int field_h = fm.height() + 4;
-
-	// pin the toggle button to the field width so column 1 doesn't stretch to
-	// the button's natural (padded) width and open a gap before the dec column.
-	btn_radix->setFixedWidth(num_w);
-
 	for (int row=0 ; row<n ; row++) {
-		QLabel *name = new QLabel(rows[row].name, this);
-		name->setFont(mono);
-		grid->addWidget(name, row + 1, 0);
+		names[row] = new QLabel(rows[row].name, this);
+		grid->addWidget(names[row], row + 1, 0);
 
 		num[row] = new QLineEdit(this);
-		num[row]->setFont(mono);
 		num[row]->setAlignment(Qt::AlignRight);
-		num[row]->setFixedSize(num_w, field_h);
 		num[row]->setTextMargins(2, 0, 2, 0);
 		grid->addWidget(num[row], row + 1, 1);
 		connect(num[row], &QLineEdit::editingFinished, this, [=](){ commit_num(row); });
 
 		dec[row] = new QLineEdit(this);
-		dec[row]->setFont(mono);
 		dec[row]->setAlignment(Qt::AlignRight);
-		dec[row]->setFixedSize(dec_w, field_h);
 		dec[row]->setTextMargins(2, 0, 2, 0);
 		grid->addWidget(dec[row], row + 1, 2);
 		connect(dec[row], &QLineEdit::editingFinished, this, [=](){ commit_dec(row); });
 
 		udec[row] = new QLineEdit(this);
-		udec[row]->setFont(mono);
 		udec[row]->setAlignment(Qt::AlignRight);
 		udec[row]->setReadOnly(true);
 		udec[row]->setFocusPolicy(Qt::NoFocus);
-		udec[row]->setFixedSize(udec_w, field_h);
 		udec[row]->setTextMargins(2, 0, 2, 0);
 		grid->addWidget(udec[row], row + 1, 3);
 	}
@@ -105,6 +81,7 @@ RegCompact::RegCompact(EmuModel *emu, Kind kind, QWidget *parent) :
 	grid->setColumnStretch(4, 1);
 	grid->setRowStretch(n + 1, 1);
 
+	apply_font();
 	apply_udec_color();
 
 	for (int row=0 ; row<n ; row++) {
@@ -113,6 +90,34 @@ RegCompact::RegCompact(EmuModel *emu, Kind kind, QWidget *parent) :
 	}
 
 	connect(e, &EmuModel::signal_reg_changed, this, &RegCompact::slot_reg_changed);
+}
+
+// -----------------------------------------------------------------------
+// Apply the mono font to the value fields and size the fields to their widest
+// possible content with light padding
+void RegCompact::apply_font()
+{
+	QFont mono;
+	em400_apply_mono_font(mono);
+	QFontMetrics fm(mono);
+	int num_w = fm.horizontalAdvance("177777") + 10;
+	int dec_w = fm.horizontalAdvance("-32768") + 10;
+	int udec_w = fm.horizontalAdvance("65535") + 10;
+	int field_h = fm.height() + 4;
+
+	btn_radix->setFont(QFont());
+	btn_radix->setMaximumHeight(fm.height() + 6);
+	btn_radix->setFixedWidth(num_w);
+
+	for (int row=0 ; row<rows.size() ; row++) {
+		names[row]->setFont(QFont());
+		num[row]->setFont(mono);
+		num[row]->setFixedSize(num_w, field_h);
+		dec[row]->setFont(mono);
+		dec[row]->setFixedSize(dec_w, field_h);
+		udec[row]->setFont(mono);
+		udec[row]->setFixedSize(udec_w, field_h);
+	}
 }
 
 // -----------------------------------------------------------------------

@@ -7,6 +7,7 @@
 #include <QSpinBox>
 #include <QDockWidget>
 #include <QList>
+#include <QVector>
 #include <QPointer>
 #include <emdas.h>
 #include "emumodel.h"
@@ -48,6 +49,7 @@ private:
 	QLabel *q, *bs, *nb, *flags, *mc;
 	QLabel *edit_mode;
 	QWidget *edit_box;
+	QVector<QLabel *> mono_status_labels; // statusbar labels that track the mono font
 
 	// All debugger docks, in View-menu order. Built by register_dock(); the
 	// named handles below alias entries here and exist only for the bespoke
@@ -74,6 +76,8 @@ private:
 	void init_layout();
 	void wire_connections();
 	void build_statusbar();
+	void apply_statusbar_font();
+	void refresh_fonts();
 	void restore_layout();
 
 	// Devices menu: rebuilt on open (aboutToShow) from the active machine's media

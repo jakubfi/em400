@@ -91,6 +91,10 @@ DasmListing::~DasmListing()
 // -----------------------------------------------------------------------
 void DasmListing::apply_font()
 {
+	// fresh app-default base: em400_apply_mono_font leaves the size untouched when
+	// none is saved, so reusing the member would keep a stale explicit size after a
+	// Reset back to default
+	font = QFont();
 	em400_apply_mono_font(font);
 	setFont(font);
 	QFontMetrics fm(font);
@@ -312,7 +316,7 @@ void DasmListing::paintEvent(QPaintEvent *event)
 }
 
 // -----------------------------------------------------------------------
-void DasmListing::resizeEvent(QResizeEvent *event)
+void DasmListing::relayout()
 {
 	const int content_h = height();
 	dasm_total_lines = (content_h / line_height) + 1; // +1 for the line at the bottom edge of the window
@@ -323,8 +327,22 @@ void DasmListing::resizeEvent(QResizeEvent *event)
 
 	scroll->setGeometry(width() - scroll->sizeHint().width(), 0,
 		scroll->sizeHint().width(), content_h);
+}
 
+// -----------------------------------------------------------------------
+void DasmListing::resizeEvent(QResizeEvent *event)
+{
+	relayout();
 	QWidget::resizeEvent(event);
+}
+
+// -----------------------------------------------------------------------
+void DasmListing::refresh_font()
+{
+	apply_font();
+	relayout();
+	updateGeometry();
+	update();
 }
 
 // -----------------------------------------------------------------------

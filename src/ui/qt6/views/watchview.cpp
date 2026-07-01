@@ -76,33 +76,7 @@ WatchView::WatchView(EmuModel *emu, QWidget *parent) :
 	// square button instead of being clamped wider
 	table->horizontalHeader()->setMinimumSectionSize(1);
 
-	// compact rows: ~30% under Qt's natural row height; the delete button is kept
-	// square and exactly fills the fixed row height
-	row_h = qMax(14, fontMetrics().height() + 2);
-	btn_side = row_h;
-	table->verticalHeader()->setDefaultSectionSize(row_h);
-	table->verticalHeader()->setSectionResizeMode(QHeaderView::Fixed);
-	table->setColumnWidth(COL_DEL, btn_side);
-
-	// monospace value columns pinned to the widest content they can ever hold -
-	// 4 hex digits, and signed 16-bit decimal "-32768" (6 chars) - so the digits
-	// line up down the column and the width never moves as values change
-	mono_font = font();
-	em400_apply_mono_font(mono_font);
-	QFontMetrics mfm(mono_font);
-	int pad = mfm.horizontalAdvance(QLatin1Char('0')) * 2;
-	int hex_w = mfm.horizontalAdvance(QStringLiteral("0000")) + pad;
-	int dec_w = mfm.horizontalAdvance(QStringLiteral("-00000")) + pad;
-	table->setColumnWidth(COL_HEX, hex_w);
-	table->setColumnWidth(COL_DEC, dec_w);
-
-	// floor the dock width so the fixed value columns are always visible: a short
-	// expression + both value columns + the delete button, with slack for the
-	// layout margins and a vertical scrollbar. Without this floor a narrow dock
-	// (or a thin default split) pushes the value columns off the right edge, so
-	// they only "appear" once the panel is widened.
-	int expr_min = fontMetrics().horizontalAdvance(QStringLiteral("[r4+0x10] "));
-	setMinimumWidth(expr_min + hex_w + dec_w + btn_side + 28);
+	apply_font();
 
 	table->setContextMenuPolicy(Qt::CustomContextMenu);
 	outer->addWidget(table, 1);
@@ -136,6 +110,47 @@ WatchView::WatchView(EmuModel *emu, QWidget *parent) :
 	connect(e, &EmuModel::signal_reg_changed, this, &WatchView::slot_reg_changed);
 
 	refresh();
+}
+
+// -----------------------------------------------------------------------
+// Row height, the square delete button, and the fixed monospace value columns
+// all derive from the fonts; re-run whenever the mono font changes.
+void WatchView::apply_font()
+{
+	// compact rows: ~30% under Qt's natural row height; the delete button is kept
+	// square and exactly fills the fixed row height
+	row_h = qMax(14, fontMetrics().height() + 2);
+	btn_side = row_h;
+	table->verticalHeader()->setDefaultSectionSize(row_h);
+	table->verticalHeader()->setSectionResizeMode(QHeaderView::Fixed);
+	table->setColumnWidth(COL_DEL, btn_side);
+
+	// monospace value columns pinned to the widest content they can ever hold -
+	// 4 hex digits, and signed 16-bit decimal "-32768" (6 chars) - so the digits
+	// line up down the column and the width never moves as values change
+	mono_font = font();
+	em400_apply_mono_font(mono_font);
+	QFontMetrics mfm(mono_font);
+	int pad = mfm.horizontalAdvance(QLatin1Char('0')) * 2;
+	int hex_w = mfm.horizontalAdvance(QStringLiteral("0000")) + pad;
+	int dec_w = mfm.horizontalAdvance(QStringLiteral("-00000")) + pad;
+	table->setColumnWidth(COL_HEX, hex_w);
+	table->setColumnWidth(COL_DEC, dec_w);
+
+	// floor the dock width so the fixed value columns are always visible: a short
+	// expression + both value columns + the delete button, with slack for the
+	// layout margins and a vertical scrollbar. Without this floor a narrow dock
+	// (or a thin default split) pushes the value columns off the right edge, so
+	// they only "appear" once the panel is widened.
+	int expr_min = fontMetrics().horizontalAdvance(QStringLiteral("[r4+0x10] "));
+	setMinimumWidth(expr_min + hex_w + dec_w + btn_side + 28);
+}
+
+// -----------------------------------------------------------------------
+void WatchView::refresh_font()
+{
+	apply_font();
+	refresh(); // rebuild rows so existing value cells pick up the new mono font
 }
 
 // -----------------------------------------------------------------------

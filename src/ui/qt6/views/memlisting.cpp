@@ -194,8 +194,21 @@ void MemListing::toggle_panel(SidePanel p)
 }
 
 // -----------------------------------------------------------------------
+void MemListing::refresh_font()
+{
+	apply_font();
+	relayout_grid();
+	updateGeometry();
+	update();
+}
+
+// -----------------------------------------------------------------------
 void MemListing::apply_font()
 {
+	// rebuild from a fresh app-default base, not the accumulated member: when no
+	// size is saved em400_apply_mono_font leaves the size as-is, so deriving -1
+	// off the member would shrink it again on every refresh
+	font = QFont();
 	em400_apply_mono_font(font);
 	// one point below the app default so a default-width window fits 16 words/line
 	font.setPointSize(QFontInfo(font).pointSize() - 1);

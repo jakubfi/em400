@@ -32,6 +32,7 @@ class StackView : public QWidget {
 
 public:
 	explicit StackView(EmuModel *emu, QWidget *parent = nullptr);
+	void refresh_font();
 
 	QSize sizeHint() const override { return content_size(); }
 	QSize minimumSizeHint() const override { return content_size(); }
@@ -61,6 +62,7 @@ private:
 	// geometry, computed once from the font (fixed-size content)
 	int margin, line_h, hdr_h, hdr_top, hdr_line, addr_w, role_w, val_w, gap;
 
+	void apply_font();
 	void compute_geometry();
 	QSize content_size() const;
 	// the hex text under a point (SP / an address / a value), or null if the

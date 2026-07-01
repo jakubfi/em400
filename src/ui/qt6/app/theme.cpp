@@ -19,6 +19,7 @@
 #include <QStyle>
 #include <QStyleFactory>
 #include <QFont>
+#include <QSettings>
 
 #include "theme.h"
 
@@ -26,13 +27,24 @@
 void em400_apply_mono_font(QFont &f)
 {
 	f.setStyleHint(QFont::Monospace);
+
+	QSettings s;
+	const QString family = s.value(QStringLiteral("ui/monoFontFamily")).toString();
+	if (!family.isEmpty()) {
+		f.setFamily(family);
+	} else {
+		// no user choice: the platform's best default.
 #if defined(Q_OS_WIN)
-	f.setFamilies({QStringLiteral("Cascadia Mono"), QStringLiteral("Consolas")});
+		f.setFamilies({QStringLiteral("Cascadia Mono"), QStringLiteral("Consolas")});
 #elif defined(Q_OS_MACOS)
-	f.setFamilies({QStringLiteral("Menlo")});
+		f.setFamilies({QStringLiteral("Menlo")});
 #else
-	f.setFamily(QStringLiteral("Monospace"));
+		f.setFamily(QStringLiteral("Monospace"));
 #endif
+	}
+
+	const int size = s.value(QStringLiteral("ui/monoFontSize"), 0).toInt();
+	if (size > 0) f.setPointSize(size);
 }
 
 // The "MERA-400 LED" palette, derived by eye from the control-panel look.

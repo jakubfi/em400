@@ -32,6 +32,7 @@ class DasmView : public QWidget {
 public:
 	explicit DasmView(QWidget *parent = nullptr);
 	void connect_emu(EmuModel *emu) { listing->connect_emu(emu); }
+	void refresh_font() { listing->refresh_font(); }
 
 public slots:
 	void update_contents(int nb, int addr) { listing->update_contents(nb, addr); }

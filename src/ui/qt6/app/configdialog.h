@@ -56,6 +56,14 @@ private:
 	struct appcfg work {};
 	struct appcfg_machine *machine = nullptr; // points into `work`
 	int orig_volume = 0; // live buzzer volume at open, restored on Cancel
+
+	// mono font (QSettings) captured at open
+	// the font applies live, so Cancel restores this state.
+	bool orig_mono_font_set = false;
+	QString orig_mono_font_family;
+	int orig_mono_font_size = 0;
+	bool mono_font_touched = false; // any Change/Reset happened this session
+
 	QWidget *machine_page = nullptr;
 
 	QComboBox *m_active = nullptr;
@@ -109,13 +117,9 @@ public slots:
 	void on_media_changed(unsigned chan, unsigned dev, unsigned slot, QString path);
 
 signals:
-	// active machine's display name changed (live-editable while running); the
-	// window title tracks it
 	void signal_machine_renamed();
-
-	// GUI sound volume (panel switches, rotary, ignition) changed; the control
-	// panel applies it live. Persisted to QSettings independently.
 	void signal_gui_volume_changed(int volume);
+	void signal_mono_font_changed();
 
 private slots:
 	void slot_active_machine_changed(int index);

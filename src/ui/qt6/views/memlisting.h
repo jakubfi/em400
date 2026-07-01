@@ -68,6 +68,7 @@ public slots:
 	void set_nb(int nb);
 	void set_format(DisplayFormat f);
 	void toggle_panel(SidePanel p);
+	void refresh_font();
 
 private slots:
 	void slot_state_changed(int state);

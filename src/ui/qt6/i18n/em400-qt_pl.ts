@@ -186,6 +186,34 @@
         <translation>Polecenie terminala:</translation>
     </message>
     <message>
+        <source>Font used by the memory, disassembly, register and other debugger views.</source>
+        <translation>Czcionka używana przez widoki pamięci, deasemblacji, rejestrów i pozostałe widoki debugera.</translation>
+    </message>
+    <message>
+        <source>%1 %2 pt (default)</source>
+        <translation>%1 %2 pt (domyślna)</translation>
+    </message>
+    <message>
+        <source>%1 %2 pt</source>
+        <translation>%1 %2 pt</translation>
+    </message>
+    <message>
+        <source>Change...</source>
+        <translation>Zmień...</translation>
+    </message>
+    <message>
+        <source>Monospace font</source>
+        <translation>Czcionka o stałej szerokości</translation>
+    </message>
+    <message>
+        <source>Reset</source>
+        <translation>Resetuj</translation>
+    </message>
+    <message>
+        <source>Debugger font:</source>
+        <translation>Czcionka debugera:</translation>
+    </message>
+    <message>
         <source>MEGA modules:</source>
         <translation>Moduły MEGA:</translation>
     </message>

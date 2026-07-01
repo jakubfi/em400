@@ -35,6 +35,7 @@ public:
 	explicit DasmListing(QWidget *parent = nullptr);
 	~DasmListing();
 	void connect_emu(EmuModel *emu) { e = emu; }
+	void refresh_font();
 
 public slots:
 	void update_contents(int nb, int addr);
@@ -76,6 +77,7 @@ private:
 	QList<AsmLine> listing;
 
 	void apply_font();
+	void relayout();
 	void internal_update_contents();
 	void recenter_on_ic();
 	void snap_to_ic();

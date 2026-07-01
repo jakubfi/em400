@@ -31,6 +31,7 @@
 #include <QSignalBlocker>
 #include <QGridLayout>
 #include <QHBoxLayout>
+#include <QStyle>
 #include <QLabel>
 #include <QFrame>
 #include <QShortcut>
@@ -249,6 +250,7 @@ void MainWindow::build_statusbar()
 	em400_apply_mono_font(font);
 
 	ips = new QLabel();
+	ips->setFont(font);
 	ui->statusbar->addWidget(ips);
 	ui->statusbar->addWidget(make_vsep());
 
@@ -270,13 +272,13 @@ void MainWindow::build_statusbar()
 	bs = new QLabel("<span>BS</span>");
 	bs->setFont(font);
 	ui->statusbar->addWidget(bs);
-	nb = new QLabel("<span>NB=0</span>");
+	nb = new QLabel("<span>NB=<b>0</b></span>");
 	nb->setFont(font);
 	nb->setToolTip(tr("Current memory segment"));
 	ui->statusbar->addWidget(nb);
 	ui->statusbar->addWidget(make_vsep());
 
-	mc = new QLabel("<span>MC=0</span>");
+	mc = new QLabel("<span>MC=<b>0</b></span>");
 	mc->setFont(font);
 	mc->setToolTip(tr("Modification Counter"));
 	ui->statusbar->addWidget(mc);
@@ -293,6 +295,38 @@ void MainWindow::build_statusbar()
 	ui->statusbar->addPermanentWidget(edit_box);
 	edit_box->setVisible(false);
 	connect(mem, &MemView::signal_edit_mode_changed, this, &MainWindow::slot_edit_mode_changed);
+
+	mono_status_labels = {ips, flags_label, flags, status_label, q, bs, nb, mc};
+
+	// nudge the leftmost item (MIPS) off the window edge by the same gap the layout
+	// puts between items, so the left margin matches the counter-to-divider spacing
+	int gap = ui->statusbar->layout() ? ui->statusbar->layout()->spacing() : -1;
+	if (gap < 0) gap = style()->pixelMetric(QStyle::PM_LayoutHorizontalSpacing, nullptr, ui->statusbar);
+	if (gap < 0) gap = 6;
+	QMargins m = ui->statusbar->contentsMargins();
+	m.setLeft(m.left() + gap);
+	ui->statusbar->setContentsMargins(m);
+}
+
+// -----------------------------------------------------------------------
+void MainWindow::apply_statusbar_font()
+{
+	QFont font;
+	em400_apply_mono_font(font);
+	for (QLabel *l : mono_status_labels) l->setFont(font);
+}
+
+// -----------------------------------------------------------------------
+// The config changed the mono font: re-apply it across every view that uses it.
+void MainWindow::refresh_fonts()
+{
+	apply_statusbar_font();
+	dasm->refresh_font();
+	mem->refresh_font();
+	uregs->refresh_font();
+	sregs->refresh_font();
+	watch->refresh_font();
+	stack->refresh_font();
 }
 
 // -----------------------------------------------------------------------
@@ -423,7 +457,7 @@ void MainWindow::sync_debugger_action()
 // -----------------------------------------------------------------------
 void MainWindow::update_mc_status(int value)
 {
-	mc->setText(QString("<span>MC=%1</span>").arg(value));
+	mc->setText(QString("<span>MC=<b>%1</b></span>").arg(value));
 }
 
 // -----------------------------------------------------------------------
@@ -439,7 +473,7 @@ void MainWindow::update_sr_status(uint16_t sr)
 	if (vbs) bs->setStyleSheet("font-weight: bold; color: palette(text);");
 	else bs->setStyleSheet("font-weight: normal; color: palette(mid);");
 
-	nb->setText(QString("<span>NB=%1</span>").arg(vnb));
+	nb->setText(QString("<span>NB=<b>%1</b></span>").arg(vnb));
 }
 
 // -----------------------------------------------------------------------
@@ -483,7 +517,7 @@ void MainWindow::slot_dasm_update()
 // -----------------------------------------------------------------------
 void MainWindow::slot_ips_update(unsigned long ips)
 {
-	QString mips_t = QString("%1 MIPS").arg(QString::number(ips/1000000.0, 'f', 3));
+	QString mips_t = QString("<span><b>%1</b> MIPS</span>").arg(QString::number(ips/1000000.0, 'f', 3));
 	this->ips->setText(mips_t);
 }
 
@@ -536,6 +570,7 @@ void MainWindow::open_config()
 	connect(&cfg_ctl, &ConfigController::media_changed, config_dialog, &ConfigDialog::on_media_changed);
 	connect(config_dialog, &ConfigDialog::signal_machine_renamed, this, &MainWindow::update_window_title);
 	connect(config_dialog, &ConfigDialog::signal_gui_volume_changed, ui->cp, &ControlPanel::set_volume);
+	connect(config_dialog, &ConfigDialog::signal_mono_font_changed, this, &MainWindow::refresh_fonts);
 	config_dialog->show();
 	config_dialog->raise();
 	config_dialog->activateWindow();
