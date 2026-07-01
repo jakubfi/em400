@@ -24,6 +24,7 @@
 #include <QMouseEvent>
 #include <QFocusEvent>
 #include <QWheelEvent>
+#include <QFontInfo>
 #include <emcrk/r40.h>
 #include "memlisting.h"
 #include "memsearch.h"
@@ -33,7 +34,7 @@
 // -----------------------------------------------------------------------
 MemListing::MemListing(QWidget *parent) : QWidget(parent)
 {
-	set_font("Monospace", 12);
+	apply_font();
 
 	setFocusPolicy(Qt::WheelFocus);
 
@@ -193,25 +194,21 @@ void MemListing::toggle_panel(SidePanel p)
 }
 
 // -----------------------------------------------------------------------
-void MemListing::set_font(QString name, int size)
+void MemListing::apply_font()
 {
-	font.setStyleHint(QFont::Monospace);
-	font.setFamily(name);
-	if (size > 0) font.setPixelSize(size);
+	em400_apply_mono_font(font);
+	// one point below the app default so a default-width window fits 16 words/line
+	font.setPointSize(QFontInfo(font).pointSize() - 1);
 	setFont(font);
 	font_bold = font;
 	font_bold.setBold(true);
+
 	QFontMetrics fm(font);
 	font_height = fm.lineSpacing();
 	font_width = fm.horizontalAdvance('9');
-	update_font_related_dimensions();
-}
-
-// -----------------------------------------------------------------------
-void MemListing::update_font_related_dimensions()
-{
-	const int interline = 4;
 	half_font_width = font_width / 2;
+
+	const int interline = 4;
 	line_height = font_height + interline;
 	col_hdr_h = line_height;
 

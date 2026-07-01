@@ -75,7 +75,7 @@ private:
 	struct emdas *emd;
 	QList<AsmLine> listing;
 
-	void set_font(QString name, int size=0);
+	void apply_font();
 	void internal_update_contents();
 	void recenter_on_ic();
 	void snap_to_ic();

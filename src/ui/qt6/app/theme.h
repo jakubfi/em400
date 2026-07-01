@@ -21,6 +21,14 @@
 #include <QPalette>
 #include <QColor>
 
+class QFont;
+
+// Make `f` a monospace font using the platform's best default, leaving its size
+// untouched. Linux keeps the fontconfig "Monospace" generic (honoring the user's
+// configured monospace); Windows/macOS name concrete fonts because they have no
+// such generic and would otherwise fall back to Courier New.
+void em400_apply_mono_font(QFont &f);
+
 // Dark palette derived from the control-panel ("pulpit") artwork colors.
 QPalette em400_panel_palette();
 

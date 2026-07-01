@@ -183,8 +183,7 @@ private:
 	QString value_text(int val) const;
 	QString panel_text(int val) const;
 
-	void set_font(QString name, int size = 0);
-	void update_font_related_dimensions();
+	void apply_font();
 	void update_scroll_range();
 	void relayout_grid();
 	int calculate_scroll_lines(int angle_delta);

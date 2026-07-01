@@ -88,8 +88,7 @@ WatchView::WatchView(EmuModel *emu, QWidget *parent) :
 	// 4 hex digits, and signed 16-bit decimal "-32768" (6 chars) - so the digits
 	// line up down the column and the width never moves as values change
 	mono_font = font();
-	mono_font.setStyleHint(QFont::Monospace);
-	mono_font.setFamily(QStringLiteral("Monospace"));
+	em400_apply_mono_font(mono_font);
 	QFontMetrics mfm(mono_font);
 	int pad = mfm.horizontalAdvance(QLatin1Char('0')) * 2;
 	int hex_w = mfm.horizontalAdvance(QStringLiteral("0000")) + pad;

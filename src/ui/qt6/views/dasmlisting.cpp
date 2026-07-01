@@ -51,7 +51,7 @@ DasmListing::DasmListing(QWidget *parent) :
 	cnb = caddr = 0;
 	ic_addr = ic_nb = -1;
 
-	set_font("Monospace");
+	apply_font();
 
 	setFocusPolicy(Qt::WheelFocus);
 
@@ -89,11 +89,9 @@ DasmListing::~DasmListing()
 }
 
 // -----------------------------------------------------------------------
-void DasmListing::set_font(QString name, int size)
+void DasmListing::apply_font()
 {
-	font.setStyleHint(QFont::Monospace);
-	font.setFamily(name);
-	if (size > 0) font.setPixelSize(size);
+	em400_apply_mono_font(font);
 	setFont(font);
 	QFontMetrics fm(font);
 	font_height = fm.lineSpacing();

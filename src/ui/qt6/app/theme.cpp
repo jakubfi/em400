@@ -18,8 +18,22 @@
 #include <QApplication>
 #include <QStyle>
 #include <QStyleFactory>
+#include <QFont>
 
 #include "theme.h"
+
+// -----------------------------------------------------------------------
+void em400_apply_mono_font(QFont &f)
+{
+	f.setStyleHint(QFont::Monospace);
+#if defined(Q_OS_WIN)
+	f.setFamilies({QStringLiteral("Cascadia Mono"), QStringLiteral("Consolas")});
+#elif defined(Q_OS_MACOS)
+	f.setFamilies({QStringLiteral("Menlo")});
+#else
+	f.setFamily(QStringLiteral("Monospace"));
+#endif
+}
 
 // The "MERA-400 LED" palette, derived by eye from the control-panel look.
 // The accents are intensity-matched bright LED primaries (green/yellow/red)
