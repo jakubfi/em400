@@ -204,7 +204,7 @@ void ui_cmd_help(FILE *out, char *args)
 // -----------------------------------------------------------------------
 void ui_cmd_info(FILE *out, char *args)
 {
-	ui_cmd_resp(out, RESP_OK, UI_EOL, " EM400 %s", em400_version());
+	ui_cmd_resp(out, RESP_OK, UI_EOL, "EM400 %s", em400_version());
 }
 
 // -----------------------------------------------------------------------
