@@ -15,6 +15,11 @@
 //  Foundation, Inc.,
 //  51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 
+#define _XOPEN_SOURCE 600
+#ifndef _GNU_SOURCE
+#define _GNU_SOURCE
+#endif
+
 #include "compat_time.h"
 
 #ifdef _WIN32
@@ -63,6 +68,16 @@ void compat_sleep_until(const struct timespec *deadline)
 
 	SetWaitableTimer(htimer, &due, 0, NULL, NULL, FALSE);
 	WaitForSingleObject(htimer, INFINITE);
+}
+
+#else
+
+#include <errno.h>
+
+// -----------------------------------------------------------------------
+void compat_sleep_until(const struct timespec *deadline)
+{
+	while (clock_nanosleep(CLOCK_MONOTONIC, TIMER_ABSTIME, deadline, NULL) == EINTR);
 }
 
 #endif // _WIN32

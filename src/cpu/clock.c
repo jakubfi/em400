@@ -20,7 +20,6 @@
 #define _GNU_SOURCE
 #endif
 
-#include <semaphore.h>
 #include <time.h>
 #include <stdatomic.h>
 #include <pthread.h>
@@ -32,8 +31,10 @@
 
 #include "log.h"
 
+#define CLOCK_MAX_BACKLOG_TICKS 2
+
 static pthread_t clock_th;
-static sem_t clock_quit;
+static atomic_bool clock_quit;
 static bool clock_initialized;
 
 static unsigned clock_period;
@@ -43,33 +44,31 @@ static atomic_uint clock_int;
 static void * clock_thread(void *ptr)
 {
 	struct timespec ts;
-	unsigned clock_tick_nsec = clock_period * 1000000;
-	unsigned new_nsec;
-#ifdef _WIN32
+	long clock_tick_nsec = clock_period * 1000000L;
+	long new_nsec;
 	clock_gettime(CLOCK_MONOTONIC, &ts);
-#else
-	clock_gettime(CLOCK_REALTIME, &ts);
-#endif
 
 	while (1) {
 		new_nsec = ts.tv_nsec + clock_tick_nsec;
 		ts.tv_sec += new_nsec / 1000000000L;
 		ts.tv_nsec = new_nsec % 1000000000L;
-#ifdef _WIN32
-		// winpthreads sem_timedwait only resolves to the scheduler tick, which
-		// makes the deadline slip and fire INT_CLOCK in catch-up bursts. Sleep
-		// on the high-res waitable timer instead and poll quit non-blocking.
+
 		compat_sleep_until(&ts);
-		if (!sem_trywait(&clock_quit)) {
+		if (atomic_load_explicit(&clock_quit, memory_order_relaxed)) {
 			break;
 		}
-#else
-		if (!sem_timedwait(&clock_quit, &ts)) {
-			break;
-		}
-#endif
+
 		if (cp_clock_get()) {
 			int_set(atomic_load_explicit(&clock_int, memory_order_relaxed));
+		}
+
+		// A backlog deeper than CLOCK_MAX_BACKLOG_TICKS discards missed ticks
+		// They coalesce into one INT_CLOCK anyway, catching up only spins the thread.
+		struct timespec now;
+		clock_gettime(CLOCK_MONOTONIC, &now);
+		long late_ns = (now.tv_sec - ts.tv_sec) * 1000000000L + (now.tv_nsec - ts.tv_nsec);
+		if (late_ns > CLOCK_MAX_BACKLOG_TICKS * clock_tick_nsec) {
+			ts = now;
 		}
 	}
 
@@ -89,14 +88,10 @@ int clock_init(unsigned period_ms)
 
 	clock_period = period_ms;
 	atomic_store_explicit(&clock_int, INT_CLOCK, memory_order_relaxed);
+	atomic_store_explicit(&clock_quit, false, memory_order_relaxed);
 
-	if (sem_init(&clock_quit, 0, 0)) {
-		return LOGERR("Failed to initialize CPU timer (clock) semaphore.");
-	}
 	if (pthread_create(&clock_th, NULL, clock_thread, NULL)) {
-		LOGERR("Failed to spawn CPU timer (clock) thread.");
-		sem_destroy(&clock_quit);
-		return E_ERR;
+		return LOGERR("Failed to spawn CPU timer (clock) thread.");
 	}
 	if (pthread_setname_np(clock_th, "clock")) {
 		LOG(L_CPU, "Failed to set CPU timer (clock) thread name.");
@@ -117,9 +112,8 @@ void clock_shutdown()
 		return;
 	}
 
-	sem_post(&clock_quit);
+	atomic_store_explicit(&clock_quit, true, memory_order_relaxed);
 	pthread_join(clock_th, NULL);
-	sem_destroy(&clock_quit);
 	clock_initialized = false;
 }
 

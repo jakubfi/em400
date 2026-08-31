@@ -79,6 +79,8 @@ set(SOURCES_EM400
 	src/utils/utils.h
 	src/utils/elst.c
 	src/utils/elst.h
+	src/utils/compat_time.c
+	src/utils/compat_time.h
 	#src/utils/serial.c
 	#src/utils/serial.h
 
@@ -198,8 +200,6 @@ set(SOURCES_EM400
 )
 
 if(WIN32)
-	list(APPEND SOURCES_EM400 src/utils/compat_time.h)
-	list(APPEND SOURCES_EM400 src/utils/compat_time.c)
 	enable_language(RC)
 	set(EM400_ICO ${CMAKE_SOURCE_DIR}/packaging/windows/em400.ico)
 	configure_file(packaging/windows/em400.rc.in ${CMAKE_BINARY_DIR}/em400.rc @ONLY)

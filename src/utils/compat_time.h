@@ -18,16 +18,12 @@
 #ifndef COMPAT_TIME_H
 #define COMPAT_TIME_H
 
-#ifdef _WIN32
-
 #include <time.h>
 
 // Sleep until the absolute CLOCK_MONOTONIC deadline in *deadline.
-// Replaces winpthreads clock_nanosleep, which rejects any non-CLOCK_REALTIME
-// clock with EINVAL up front (returns immediately without sleeping).
+// On Windows this replaces winpthreads clock_nanosleep, which rejects any
+// non-CLOCK_REALTIME clock with EINVAL up front (returns without sleeping).
 void compat_sleep_until(const struct timespec *deadline);
-
-#endif // _WIN32
 
 #endif // COMPAT_TIME_H
 
