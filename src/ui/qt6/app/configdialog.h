@@ -74,6 +74,7 @@ private:
 	QCheckBox *m_awp = nullptr, *m_mod = nullptr, *m_user_io_illegal = nullptr, *m_nomem_stop = nullptr;
 	QComboBox *m_clock_period = nullptr;
 	QSpinBox *m_elwro = nullptr, *m_mega = nullptr, *m_os_segments = nullptr;
+	QLabel *m_elwro_size = nullptr, *m_mega_size = nullptr, *m_os_segments_size = nullptr;
 	QLineEdit *m_mega_prom = nullptr, *m_preload = nullptr;
 
 	QVector<QCheckBox *> m_log_components;
@@ -100,6 +101,7 @@ private:
 	void machine_add(bool duplicate);
 	void machine_delete();
 	void rebuild_log_components();
+	void update_mem_sizes();
 	void apply_log_live();
 
 	QString chan_type_label(int type);

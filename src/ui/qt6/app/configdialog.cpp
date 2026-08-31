@@ -669,20 +669,41 @@ QWidget *ConfigDialog::build_machine_page()
 	m_elwro->setRange(0, 16);
 	connect(m_elwro, &QSpinBox::valueChanged, this, [this](int v) {
 		if (machine) machine->cfg.mem.elwro_modules = v;
+		update_mem_sizes();
 	});
-	mem->addRow(tr("Elwro modules:"), m_elwro);
+	m_elwro_size = new QLabel();
+	QHBoxLayout *elwro_row = new QHBoxLayout();
+	elwro_row->setSpacing(10);
+	elwro_row->addWidget(m_elwro);
+	elwro_row->addWidget(m_elwro_size);
+	elwro_row->addStretch(1);
+	mem->addRow(tr("Elwro modules:"), elwro_row);
 	m_mega = new QSpinBox();
 	m_mega->setRange(0, 16);
 	connect(m_mega, &QSpinBox::valueChanged, this, [this](int v) {
 		if (machine) machine->cfg.mem.mega_modules = v;
+		update_mem_sizes();
 	});
-	mem->addRow(tr("MEGA modules:"), m_mega);
+	m_mega_size = new QLabel();
+	QHBoxLayout *mega_row = new QHBoxLayout();
+	mega_row->setSpacing(10);
+	mega_row->addWidget(m_mega);
+	mega_row->addWidget(m_mega_size);
+	mega_row->addStretch(1);
+	mem->addRow(tr("MEGA modules:"), mega_row);
 	m_os_segments = new QSpinBox();
 	m_os_segments->setRange(1, 2);
 	connect(m_os_segments, &QSpinBox::valueChanged, this, [this](int v) {
 		if (machine) machine->cfg.mem.os_segments = v;
+		update_mem_sizes();
 	});
-	mem->addRow(tr("Hardwired OS pages:"), m_os_segments);
+	m_os_segments_size = new QLabel();
+	QHBoxLayout *os_segments_row = new QHBoxLayout();
+	os_segments_row->setSpacing(10);
+	os_segments_row->addWidget(m_os_segments);
+	os_segments_row->addWidget(m_os_segments_size);
+	os_segments_row->addStretch(1);
+	mem->addRow(tr("Hardwired OS pages:"), os_segments_row);
 
 	m_mega_prom = new QLineEdit();
 	m_mega_prom->setMinimumWidth(280);
@@ -713,7 +734,7 @@ QWidget *ConfigDialog::build_machine_page()
 	preload_row->addWidget(m_preload, 1);
 	preload_row->addWidget(preload_browse);
 	mem->addRow(tr("Preload program:"), preload_row);
-	for (QWidget *w : std::initializer_list<QWidget *>{m_elwro, m_mega, m_os_segments, m_mega_prom,
+	for (QWidget *w : std::initializer_list<QWidget *>{m_elwro, m_elwro_size, m_mega, m_mega_size, m_os_segments, m_os_segments_size, m_mega_prom,
 			prom_browse, m_preload, preload_browse}) {
 		gate(w, "cold");
 	}
@@ -1553,6 +1574,15 @@ void ConfigDialog::reload_machine_page()
 	m_os_segments->setValue(cfg->mem.os_segments);
 	m_mega_prom->setText(cfg->mem.mega_prom_image ? QString(cfg->mem.mega_prom_image) : QString());
 	m_preload->setText(cfg->mem.preload_image ? QString(cfg->mem.preload_image) : QString());
+	update_mem_sizes();
+}
+
+// -----------------------------------------------------------------------
+void ConfigDialog::update_mem_sizes()
+{
+	m_elwro_size->setText(tr("(%n kwords)", nullptr, m_elwro->value() * 32));
+	m_mega_size->setText(tr("(%n kwords)", nullptr, m_mega->value() * 64));
+	m_os_segments_size->setText(tr("(%n kwords)", nullptr, m_os_segments->value() * 4));
 }
 
 // -----------------------------------------------------------------------

@@ -1,9 +1,11 @@
 Bugs:
 
- * AppImage sample cuts
+ * AppImage sample cuts at the beginning on first sound
 
 Awaiting implementation:
 
+ * wybór backendu audio z listy
+ * nie powtarzać "obraz w kieszeni" (inne?)
  * about
  * keyboard shortcuts
  * hover help? pytajnik-help?
@@ -30,4 +32,4 @@ Potential, for the future:
  * commandline - only if it proves genuinely superior to using existing UI elements
  * micro-panel
  * dasm syntax highlight
-
+ * zapamiętywanie pozycji kluczy?

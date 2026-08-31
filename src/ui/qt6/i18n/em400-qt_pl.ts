@@ -433,6 +433,14 @@ i dla opcji linii poleceń -m.</translation>
         <source>Delete machine &quot;%1&quot;?</source>
         <translation>Usunąć maszynę &quot;%1&quot;?</translation>
     </message>
+    <message numerus="yes">
+        <source>(%n kwords)</source>
+        <translation>
+            <numerusform>(%n ksłowo)</numerusform>
+            <numerusform>(%n ksłowa)</numerusform>
+            <numerusform>(%n ksłów)</numerusform>
+        </translation>
+    </message>
     <message>
         <source>Failed to save the configuration file.</source>
         <translation>Nie udało się zapisać pliku konfiguracji.</translation>
