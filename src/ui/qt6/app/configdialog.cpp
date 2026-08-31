@@ -1221,8 +1221,9 @@ void ConfigDialog::io_rebuild_dev_params()
 		image_row(tr("PROM image:"), &dev->rtclock.prom, tr("RTC PROM image"));
 		break;
 	case EM400_DEV_SP45DE:
+		form->addRow(new QLabel(tr("Slot images:")));
 		for (int s=0 ; s<EM400_SP45DE_SLOT_COUNT ; s++) {
-			disk_image_row(tr("Slot %1 image:").arg(s), s, dev->sp45de.images[s], tr("Floppy image"));
+			disk_image_row(QStringLiteral("%1:").arg(s), s, dev->sp45de.images[s], tr("Floppy image for slot %1").arg(s));
 		}
 		break;
 	default:

@@ -306,6 +306,14 @@ Domyślne polecenie korzysta z dołączonego narzędzia emterm.</translation>
         <translation>Usuń</translation>
     </message>
     <message>
+        <source>Slot images:</source>
+        <translation>Obrazy w kieszeniach:</translation>
+    </message>
+    <message>
+        <source>Floppy image for slot %1</source>
+        <translation>Obraz dyskietki w kieszeni %1</translation>
+    </message>
+    <message>
         <source>The last machine cannot be deleted.</source>
         <translation>Nie można usunąć ostatniej maszyny.</translation>
     </message>
@@ -524,14 +532,6 @@ i dla opcji linii poleceń -m.</translation>
     <message>
         <source>RTC PROM image</source>
         <translation>Obraz PROM zegara</translation>
-    </message>
-    <message>
-        <source>Slot %1 image:</source>
-        <translation>Obraz w kieszeni %1:</translation>
-    </message>
-    <message>
-        <source>Floppy image</source>
-        <translation>Obraz dyskietki</translation>
     </message>
     <message>
         <source>Logging enabled</source>

@@ -1,11 +1,11 @@
 Bugs:
 
  * AppImage sample cuts at the beginning on first sound
+ * cewki nie piszczą po włączeniu z automatycznym włączaniem
 
 Awaiting implementation:
 
  * wybór backendu audio z listy
- * nie powtarzać "obraz w kieszeni" (inne?)
  * about
  * keyboard shortcuts
  * hover help? pytajnik-help?
