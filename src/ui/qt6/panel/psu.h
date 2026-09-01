@@ -31,9 +31,9 @@ class Psu : public QObject
 private:
 	QSoundEffect snd_start, snd_stop, snd_loop;
 	QTimer fade_timer;
-	QElapsedTimer start_clock;
+	QElapsedTimer start_clock, fade_clock;
 	QSoundEffect *fade_in = nullptr, *fade_out = nullptr;
-	int fade_ms = 0;
+	qreal fade_out_volume = 0.0;
 	qreal volume = 1.0;
 	bool running = false;
 	bool enabled = false;
@@ -42,7 +42,7 @@ private:
 	// finishes; cleared before any deliberate stop so restarts don't trigger it
 	bool chaining = false;
 
-	void crossfade(QSoundEffect *in, QSoundEffect *out, int duration_ms);
+	void crossfade(QSoundEffect *in, QSoundEffect *out);
 
 public:
 	explicit Psu(const QUrl &snd_start_rs, const QUrl &snd_stop_rs, const QUrl &snd_loop_rs, QObject *parent = nullptr);
@@ -50,7 +50,7 @@ public:
 	void set_enabled(bool on);
 
 public slots:
-	void slot_set_power(bool on, bool audible = true);
+	void slot_set_power(bool on);
 
 private slots:
 	void fade_step();

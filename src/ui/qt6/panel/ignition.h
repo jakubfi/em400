@@ -46,7 +46,7 @@ signals:
 	void signal_locked(bool state);
 	// PSU tracks the key position directly, not the (delayed, init-gated) power
 	// lifecycle: it whirs up the instant the key reaches ON and down at OFF.
-	void signal_psu(bool on, bool audible = true);
+	void signal_psu(bool on);
 
 private slots:
 	void power_on();

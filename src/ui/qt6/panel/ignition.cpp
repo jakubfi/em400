@@ -54,13 +54,13 @@ void Ignition::power_on()
 
 // -----------------------------------------------------------------------
 // Startup power-on: drive the key to ON and emit, skipping the drag/timer
-// path. Silent - startup restores an already-on machine, not a key turn.
+// path.
 void Ignition::force_on()
 {
 	power_on_timer.stop();
 	position = 1;
 	update();
-	emit signal_psu(true, false);
+	emit signal_psu(true);
 	emit signal_power(true);
 }
 

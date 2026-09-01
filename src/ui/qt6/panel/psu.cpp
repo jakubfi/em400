@@ -54,15 +54,16 @@ void Psu::set_enabled(bool on)
 }
 
 // -----------------------------------------------------------------------
-void Psu::crossfade(QSoundEffect *in, QSoundEffect *out, int duration_ms)
+void Psu::crossfade(QSoundEffect *in, QSoundEffect *out)
 {
 	fade_in = in;
 	fade_out = out;
-	fade_ms = duration_ms;
+	fade_out_volume = out->volume();
 	chaining = false;
 	fade_in->stop();
 	fade_in->setVolume(0.0);
 	fade_in->play();
+	fade_clock.start();
 	fade_timer.start();
 }
 
@@ -80,27 +81,27 @@ void Psu::spin_up_finished()
 // -----------------------------------------------------------------------
 void Psu::fade_step()
 {
-	qreal step = volume * ((qreal) FADE_TICK_MS / fade_ms);
-	qreal vin = qMin(volume, fade_in->volume() + step);
-	qreal vout = qMax((qreal) 0.0, fade_out->volume() - step);
-	fade_in->setVolume(vin);
-	fade_out->setVolume(vout);
-	if ((vin >= volume) && (vout <= 0.0)) {
+	// ramp on elapsed time, not on volume-scaled steps: a mid-fade volume
+	// change (0 especially) must not stall the ramp
+	qreal p = qMin((qreal) 1.0, (qreal) fade_clock.elapsed() / FADE_MS);
+	fade_in->setVolume(volume * p);
+	fade_out->setVolume(fade_out_volume * (1.0 - p));
+	if (p >= 1.0) {
 		fade_out->stop();
 		fade_timer.stop();
 	}
 }
 
 // -----------------------------------------------------------------------
-void Psu::slot_set_power(bool on, bool audible)
+void Psu::slot_set_power(bool on)
 {
 	if (on == running) return;
 	running = on;
 	if (on) enabled = pending_enabled;
-	if (!audible || !enabled) return;
+	if (!enabled) return;
 	if (on && snd_stop.isPlaying()) {
 		// blend the spin-up in over a still-ringing spin-down
-		crossfade(&snd_start, &snd_stop, FADE_MS);
+		crossfade(&snd_start, &snd_stop);
 		start_clock.start();
 		chaining = true;
 	} else if (on) {
@@ -115,7 +116,7 @@ void Psu::slot_set_power(bool on, bool audible)
 		// aborted spin-up: crossfade the spin-down in over it
 		chaining = false;
 		snd_loop.stop();
-		crossfade(&snd_stop, &snd_start, FADE_MS);
+		crossfade(&snd_stop, &snd_start);
 	} else {
 		chaining = false;
 		fade_timer.stop();
