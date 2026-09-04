@@ -394,9 +394,9 @@ void cpu_shutdown()
 	cpu_state_change(EM400_STATE_OFF, EM400_STATE_ANY);
 	pthread_join(cpu_thread, NULL);
 	clock_shutdown();
+	if (sound_enabled) buzzer_shutdown();
 
-	// machine powered off: zero the register file, flags and interrupts so
-	// reads through the library seam return 0 instead of stale powered-on values
+	// cosmetic only so any UI->library reads with machine switched off return "0"s
 	for (int i=0 ; i<8 ; i++) r[i] = 0;
 	ic = ir = ac = ar = at = 0;
 	w = 0;
@@ -407,9 +407,6 @@ void cpu_shutdown()
 	int_clear_all();
 	atomic_store_explicit(&ips_counter, 0, memory_order_relaxed);
 
-	if (sound_enabled) {
-		buzzer_shutdown();
-	}
 	cpu_initialized = false;
 }
 

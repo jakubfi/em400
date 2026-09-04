@@ -190,8 +190,8 @@ int em400_init(const struct em400_machine_cfg *machine, const struct em400_host_
 	return E_OK;
 
 fail:
-	io_shutdown();
 	cpu_shutdown();
+	io_shutdown();
 	mem_shutdown();
 #ifdef _WIN32
 	timeEndPeriod(1);
@@ -210,8 +210,8 @@ void em400_shutdown()
 #ifdef _WIN32
 	timeEndPeriod(1);
 #endif
-	io_shutdown();
 	cpu_shutdown();
+	io_shutdown();
 	brk_del_all();
 	watch_del_all();
 	mem_shutdown();
