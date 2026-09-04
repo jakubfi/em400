@@ -23,14 +23,16 @@
 #include <stdio.h>
 #include <unistd.h>
 #include <pthread.h>
+#include <uv.h>
 
 #include "io/defs.h"
-#include "io/cchar/cchar.h"
 #include "io/cchar/cchar.h"
 #include "io/cchar/uzfx.h"
 #include "log.h"
 
 #include "io/dev/sp45de.h"
+
+extern uv_loop_t *ioloop;
 
 enum uzfx_states {
 	UZFX_ST0_IDLE,				// St.0 idle state
@@ -41,7 +43,6 @@ enum uzfx_states {
 	UZFX_ST3_BUF_WR_CANCEL,		// St.3 start buffer cancel
 	UZFX_ST5_BUF_WR,			// cpu to buffer write St.3 (bad sector mark, F8) St.5 (regular data FB)
 	UZFX_ST7_SECT_WR,			// buffer to disk write St.6 (with check), St.7 (no check)
-	UZFX_STX_QUIT,
 };
 
 static const char *uzfx_state_names[] = {
@@ -53,7 +54,6 @@ static const char *uzfx_state_names[] = {
 	[UZFX_ST3_BUF_WR_CANCEL] = "buffer write cancel",
 	[UZFX_ST5_BUF_WR] = "buffer write",
 	[UZFX_ST7_SECT_WR] = "sector write",
-	[UZFX_STX_QUIT] = "quit",
 };
 
 
@@ -63,8 +63,6 @@ enum uzfx_ou_commands {
 	UZFX_CMD_CTL_B	= 0b111110, // control for bad sector
 	UZFX_CMD_CTL_R	= 0b111010, // control for read
 };
-
-#define UZFX_CMD_QUIT -1
 
 #define UZFX_INT_NONE 0
 enum uzfx_interrupt_priorities {
@@ -105,24 +103,29 @@ typedef struct uzfx uzfx_t;
 struct uzfx {
 	cchar_unit_t base;
 	int drive, side, track, sector;
-	pthread_t worker;
 	pthread_mutex_t state_mutex;
-	pthread_cond_t state_cond;
 	int state;
 	int operation;
 	bool pending_buf_write;
-	bool interrupt_required;
+	bool pending_detach_int;
 	int interrupts;
+	unsigned xfer_gen; // reset generation to track which "live" a transfer belongs to
+	unsigned xfer_gen_active;
+	bool xfer_in_flight;
 	sp45de_t *sp45de;
+	uv_async_t async_work;
 };
 
-static void * uzfx_worker_loop(void *ptr);
 static void uzfx_reset_state(uzfx_t *u);
 void uzfx_shutdown(cchar_unit_t *unit);
 void uzfx_reset(cchar_unit_t *unit);
 int uzfx_cmd(cchar_unit_t *unit, int dir, int cmd, uint16_t *r_arg);
 int uzfx_intspec(cchar_unit_t *unit);
 bool uzfx_has_interrupt(cchar_unit_t *unit);
+
+static void uzfx_on_async_work(uv_async_t *handle);
+static void uzfx_on_sector_read(void *ctx, int result);
+static void uzfx_on_sector_write(void *ctx, int result);
 
 // -----------------------------------------------------------------------
 static void uzfx_set_address(uzfx_t *uzfx, uint16_t addr)
@@ -137,6 +140,36 @@ static void uzfx_set_address(uzfx_t *uzfx, uint16_t addr)
 }
 
 // -----------------------------------------------------------------------
+static void uzfx_on_handle_close(uv_handle_t *handle)
+{
+	uzfx_t *uzfx = (uzfx_t *) uv_handle_get_data(handle);
+
+	LOG(L_UZFX, "UZFX freeing resources");
+	pthread_mutex_destroy(&uzfx->state_mutex);
+	free(uzfx);
+}
+
+// -----------------------------------------------------------------------
+static void uzfx_ioloop_teardown(uzfx_t *uzfx)
+{
+	if (!uv_is_closing((uv_handle_t *) &uzfx->async_work)) {
+		uv_close((uv_handle_t *) &uzfx->async_work, uzfx_on_handle_close);
+	}
+}
+
+// -----------------------------------------------------------------------
+static int uzfx_ioloop_setup(uzfx_t *uzfx)
+{
+	int res = uv_async_init(ioloop, &uzfx->async_work, uzfx_on_async_work);
+	if (res) {
+		return LOGERR("Device %i: UZFX async_work handler init error: %s", uzfx->base.num, uv_strerror(res));
+	}
+	uv_handle_set_data((uv_handle_t *) &uzfx->async_work, uzfx);
+
+	return E_OK;
+}
+
+// -----------------------------------------------------------------------
 cchar_unit_t * uzfx_create(int dev_num, em400_dev_t *dev)
 {
 	if (dev->type != EM400_DEV_SP45DE) {
@@ -147,7 +180,7 @@ cchar_unit_t * uzfx_create(int dev_num, em400_dev_t *dev)
 	uzfx_t *uzfx = (uzfx_t *) calloc(1, sizeof(uzfx_t));
 	if (!uzfx) {
 		LOGERR("Device %i: UZFX failed to allocate memory for its structure", dev_num);
-		goto fail;
+		return NULL;
 	}
 
 	uzfx->sp45de = (sp45de_t *) dev;
@@ -160,27 +193,20 @@ cchar_unit_t * uzfx_create(int dev_num, em400_dev_t *dev)
 	uzfx->base.has_interrupt = uzfx_has_interrupt;
 
 	if (pthread_mutex_init(&uzfx->state_mutex, NULL)) {
-		LOGERR("Device %i: UZFX failed to initialize status mutex.", dev_num);
-		goto fail;
+		LOGERR("Device %i: UZFX failed to initialize state mutex", dev_num);
+		free(uzfx);
+		return NULL;
 	}
 
-	if (pthread_cond_init(&uzfx->state_cond, NULL)) {
-		LOGERR("Device %i: UZFX failed to initialize status conditional", dev_num);
-		goto fail;
-	}
-
-	if (pthread_create(&uzfx->worker, NULL, uzfx_worker_loop, uzfx)) {
-		LOGERR("Device %i: UZFX failed to spawn worker thread.", dev_num);
-		goto fail;
+	if (uzfx_ioloop_setup(uzfx) != E_OK) {
+		pthread_mutex_destroy(&uzfx->state_mutex);
+		free(uzfx);
+		return NULL;
 	}
 
 	uzfx_reset_state(uzfx);
 
 	return (cchar_unit_t *) uzfx;
-
-fail:
-	uzfx_shutdown((cchar_unit_t *) uzfx);
-	return NULL;
 }
 
 // -----------------------------------------------------------------------
@@ -190,8 +216,9 @@ static void uzfx_reset_state(uzfx_t *uzfx)
 	uzfx_set_address(uzfx, INITIAL_ADDRESS);
 	uzfx->state = UZFX_ST0_IDLE;
 	uzfx->pending_buf_write = false;
-	uzfx->interrupt_required = false;
+	uzfx->pending_detach_int = false;
 	uzfx->interrupts = UZFX_INT_NONE;
+	uzfx->xfer_gen++;
 	pthread_mutex_unlock(&uzfx->state_mutex);
 }
 
@@ -201,18 +228,11 @@ void uzfx_shutdown(cchar_unit_t *unit)
 	uzfx_t *uzfx = (uzfx_t *) unit;
 	if (!uzfx) return;
 
-	pthread_mutex_lock(&uzfx->state_mutex);
-	uzfx->state = UZFX_STX_QUIT;
-	pthread_cond_signal(&uzfx->state_cond);
-	pthread_mutex_unlock(&uzfx->state_mutex);
+	LOG(L_UZFX, "UZFX shutting down");
 
-	if (uzfx->worker) pthread_join(uzfx->worker, NULL);
-	pthread_mutex_destroy(&uzfx->state_mutex);
-	pthread_cond_destroy(&uzfx->state_cond);
+	uzfx_ioloop_teardown(uzfx);
 
 	uzfx->sp45de->base.shutdown((em400_dev_t *) uzfx->sp45de);
-
-	free(uzfx);
 }
 
 // -----------------------------------------------------------------------
@@ -247,96 +267,195 @@ static bool uzfx_address_advance(uzfx_t *uzfx)
 }
 
 // -----------------------------------------------------------------------
-static void * uzfx_worker_loop(void *ptr)
+static int uzfx_disk_end_int(uzfx_t *uzfx)
 {
-	uzfx_t *uzfx = (uzfx_t *) ptr;
-	bool quit = false;
+	if ((uzfx->sector == SP45DE_SECTOR_PER_TRACK) && (uzfx->track == SP45DE_TRACK_LAST)) {
+		return 1 << UZFX_INT_DISK_END;
+	}
+	return UZFX_INT_NONE;
+}
 
-	while (!quit) {
-		pthread_mutex_lock(&uzfx->state_mutex);
-		// last two states are not handled here
-		// TODO: multithreading fixes... (or just migrate to libuv)
-		while ((uzfx->state == UZFX_ST0_IDLE) || (uzfx->state == UZFX_ST2_BUF_RD) || (uzfx->state == UZFX_ST5_BUF_WR)) {
-			LOG(L_UZFX, "Worker waiting for state change");
-			pthread_cond_wait(&uzfx->state_cond, &uzfx->state_mutex);
-		}
-		int interrupt = UZFX_INT_NONE;
-		int state = uzfx->state;
+// -----------------------------------------------------------------------
+static void uzfx_int_set(uzfx_t *uzfx, int interrupts)
+{
+	if (interrupts == UZFX_INT_NONE) return;
 
-		LOG(L_UZFX, "Worker processing state: %s", uzfx_state_names[state]);
-		switch (state) {
-			case UZFX_STX_QUIT:
+	uzfx->interrupts = interrupts;
+	uzfx->pending_detach_int = false;
+}
 
-				quit = true;
-				break;
-			case UZFX_ST1_SECT_RD:
-				if ((uzfx->sector == 26) && (uzfx->track == 73)) {
-					interrupt |= 1 << UZFX_INT_DISK_END;
-				}
-				if (sp45de_blk_read(uzfx->sp45de, uzfx->drive, uzfx->track, uzfx->sector) != E_OK) {
-					interrupt |= 1 << UZFX_INT_HW_ERR;
-					uzfx->state = UZFX_ST0_IDLE;
-				} else {
-					interrupt |= 1 << UZFX_INT_READY;
-					uzfx->state = UZFX_ST2_BUF_RD;
-				}
-				break;
-			case UZFX_ST2_BUF_RD_CANCEL:
-				uint8_t c;
-				while (sp45de_read(uzfx->sp45de, &c) == SP45DE_BUF_OK);
-				interrupt |= 1 << UZFX_INT_READY;
-				uzfx->state = UZFX_ST0_IDLE;
-				uzfx_address_advance(uzfx); // TODO: error checking?
-				break;
-			case UZFX_ST3_BUF_WR_START:
-				// TODO: start the engine
-				// TODO: ustalenie sposobu/rodzaju zapisu
-				if ((uzfx->sector == 26) && (uzfx->track == 73)) {
-					interrupt |= 1 << UZFX_INT_DISK_END;
-				}
-				interrupt |= 1 << UZFX_INT_READY;
-				uzfx->state = UZFX_ST5_BUF_WR;
-				break;
-			case UZFX_ST3_BUF_WR_CANCEL:
-				while (sp45de_write(uzfx->sp45de, 0) == SP45DE_BUF_OK);
-				interrupt |= 1 << UZFX_INT_READY;
-				// fallthrough
-			case UZFX_ST7_SECT_WR:
-				sp45de_blk_write(uzfx->sp45de, uzfx->drive, uzfx->track, uzfx->sector);
-				uzfx_address_advance(uzfx); // TODO: error checking?
-				// TODO: jeśli z kontrolą - odczyt
-				if (uzfx->interrupt_required) {
-					interrupt |= 1 << UZFX_INT_READY;
-				}
-				// during sector write, another buffer write came. honor it.
-				if (uzfx->pending_buf_write) {
-					uzfx->state = UZFX_ST3_BUF_WR_START;
-					uzfx->pending_buf_write = false;
-				} else {
-					uzfx->state = UZFX_ST0_IDLE;
-				}
-				break;
-		}
+// -----------------------------------------------------------------------
+static int uzfx_sector_read_done(uzfx_t *uzfx, int result)
+{
+	int interrupt = uzfx_disk_end_int(uzfx);
 
-		if (uzfx->state != state) {
-			LOG(L_UZFX, "Worker changed state to: %s", uzfx_state_names[uzfx->state]);
-		}
-
-		if (interrupt != UZFX_INT_NONE) {
-			uzfx->interrupts = interrupt;
-			uzfx->interrupt_required = false;
-		}
-		pthread_mutex_unlock(&uzfx->state_mutex);
-
-		if (interrupt != UZFX_INT_NONE) {
-			LOG(L_UZFX, "Worker sending interrupt");
-			cchar_int_trigger(uzfx->base.chan);
-		}
-
+	if (result != E_OK) {
+		interrupt |= 1 << UZFX_INT_HW_ERR;
+		uzfx->state = UZFX_ST0_IDLE;
+	} else {
+		interrupt |= 1 << UZFX_INT_READY;
+		uzfx->state = UZFX_ST2_BUF_RD;
 	}
 
-	LOG(L_UZFX, "Leaving worker loop");
-	return NULL;
+	return interrupt;
+}
+
+// -----------------------------------------------------------------------
+static int uzfx_sector_read_start(uzfx_t *uzfx)
+{
+	if (sp45de_blk_read(uzfx->sp45de, uzfx->drive, uzfx->track, uzfx->sector, uzfx_on_sector_read, uzfx) == E_OK) {
+		uzfx->xfer_in_flight = true;
+		uzfx->xfer_gen_active = uzfx->xfer_gen;
+		return UZFX_INT_NONE;
+	}
+
+	return uzfx_sector_read_done(uzfx, E_ERR);
+}
+
+// -----------------------------------------------------------------------
+static void uzfx_on_sector_read(void *ctx, int result)
+{
+	uzfx_t *uzfx = (uzfx_t *) ctx;
+
+	pthread_mutex_lock(&uzfx->state_mutex);
+	uzfx->xfer_in_flight = false;
+	if (uzfx->xfer_gen_active != uzfx->xfer_gen) {
+		pthread_mutex_unlock(&uzfx->state_mutex);
+		LOG(L_UZFX, "Dropping sector read result after a reset");
+		// loop early-returns with xfer_in_flight, need to trigger it
+		// so a potential waiting transfer is picked up
+		uv_async_send(&uzfx->async_work);
+		return;
+	}
+	int interrupt = uzfx_sector_read_done(uzfx, result);
+	LOG(L_UZFX, "Sector read finished, state: %s", uzfx_state_names[uzfx->state]);
+	uzfx_int_set(uzfx, interrupt);
+	pthread_mutex_unlock(&uzfx->state_mutex);
+
+	if (interrupt != UZFX_INT_NONE) {
+		cchar_int_trigger(uzfx->base.chan);
+	}
+}
+
+// -----------------------------------------------------------------------
+static int uzfx_sector_write_done(uzfx_t *uzfx)
+{
+	int interrupt = UZFX_INT_NONE;
+
+	uzfx_address_advance(uzfx); // TODO: error checking?
+	// TODO: jeśli z kontrolą - odczyt
+	if (uzfx->pending_detach_int) {
+		interrupt |= 1 << UZFX_INT_READY;
+	}
+	// during sector write, another buffer write came. honor it.
+	if (uzfx->pending_buf_write) {
+		uzfx->state = UZFX_ST3_BUF_WR_START;
+		uzfx->pending_buf_write = false;
+		uv_async_send(&uzfx->async_work);
+	} else {
+		uzfx->state = UZFX_ST0_IDLE;
+	}
+
+	return interrupt;
+}
+
+// -----------------------------------------------------------------------
+static int uzfx_sector_write_start(uzfx_t *uzfx)
+{
+	if (sp45de_blk_write(uzfx->sp45de, uzfx->drive, uzfx->track, uzfx->sector, uzfx_on_sector_write, uzfx) == E_OK) {
+		uzfx->xfer_in_flight = true;
+		uzfx->xfer_gen_active = uzfx->xfer_gen;
+		return UZFX_INT_NONE;
+	}
+
+	// TODO: actual error checking?
+	return uzfx_sector_write_done(uzfx);
+}
+
+// -----------------------------------------------------------------------
+static void uzfx_on_sector_write(void *ctx, int result)
+{
+	(void) result;
+	uzfx_t *uzfx = (uzfx_t *) ctx;
+
+	pthread_mutex_lock(&uzfx->state_mutex);
+	uzfx->xfer_in_flight = false;
+	if (uzfx->xfer_gen_active != uzfx->xfer_gen) {
+		pthread_mutex_unlock(&uzfx->state_mutex);
+		LOG(L_UZFX, "Dropping sector write result after a reset");
+		uv_async_send(&uzfx->async_work);
+		return;
+	}
+	int interrupt = uzfx_sector_write_done(uzfx);
+	LOG(L_UZFX, "Sector write finished, state: %s", uzfx_state_names[uzfx->state]);
+	uzfx_int_set(uzfx, interrupt);
+	pthread_mutex_unlock(&uzfx->state_mutex);
+
+	if (interrupt != UZFX_INT_NONE) {
+		cchar_int_trigger(uzfx->base.chan);
+	}
+}
+
+// -----------------------------------------------------------------------
+static void uzfx_on_async_work(uv_async_t *handle)
+{
+	uzfx_t *uzfx = (uzfx_t *) uv_handle_get_data((uv_handle_t *) handle);
+	int interrupt = UZFX_INT_NONE;
+
+	pthread_mutex_lock(&uzfx->state_mutex);
+	// an orphaned transfer still owns the drive; its completion re-triggers the loop
+	if (uzfx->xfer_in_flight) {
+		pthread_mutex_unlock(&uzfx->state_mutex);
+		return;
+	}
+	int state = uzfx->state;
+
+	LOG(L_UZFX, "Processing state: %s", uzfx_state_names[state]);
+	switch (state) {
+		case UZFX_ST1_SECT_RD:
+			interrupt = uzfx_sector_read_start(uzfx);
+			break;
+		case UZFX_ST2_BUF_RD_CANCEL:
+			uint8_t c;
+			while (sp45de_buf_read(uzfx->sp45de, &c) == SP45DE_BUF_OK) {
+			}
+			interrupt = 1 << UZFX_INT_READY;
+			uzfx->state = UZFX_ST0_IDLE;
+			uzfx_address_advance(uzfx); // TODO: error checking?
+			break;
+		case UZFX_ST3_BUF_WR_START:
+			// TODO: start the engine
+			// TODO: ustalenie sposobu/rodzaju zapisu
+			interrupt = uzfx_disk_end_int(uzfx) | (1 << UZFX_INT_READY);
+			uzfx->state = UZFX_ST5_BUF_WR;
+			break;
+		case UZFX_ST3_BUF_WR_CANCEL:
+			while (sp45de_buf_write(uzfx->sp45de, 0) == SP45DE_BUF_OK) {
+			}
+			// since DETACH responded with EN, we need to
+			// send the interrupt once the write is done
+			uzfx->pending_detach_int = true;
+			uzfx->state = UZFX_ST7_SECT_WR;
+			interrupt = uzfx_sector_write_start(uzfx);
+			break;
+		case UZFX_ST7_SECT_WR:
+			interrupt = uzfx_sector_write_start(uzfx);
+			break;
+		default:
+			break;
+	}
+
+	if (uzfx->state != state) {
+		LOG(L_UZFX, "State changed to: %s", uzfx_state_names[uzfx->state]);
+	}
+
+	uzfx_int_set(uzfx, interrupt);
+	pthread_mutex_unlock(&uzfx->state_mutex);
+
+	if (interrupt != UZFX_INT_NONE) {
+		LOG(L_UZFX, "Sending interrupt");
+		cchar_int_trigger(uzfx->base.chan);
+	}
 }
 
 // -----------------------------------------------------------------------
@@ -376,6 +495,7 @@ static int uzfx_cmd_read(cchar_unit_t *unit, uint16_t *r_arg)
 {
 	uzfx_t *uzfx = (uzfx_t *) unit;
 	int io_ret;
+	bool loop_trigger = false;
 
 	pthread_mutex_lock(&uzfx->state_mutex);
 	int old_state = uzfx->state;
@@ -384,12 +504,12 @@ static int uzfx_cmd_read(cchar_unit_t *unit, uint16_t *r_arg)
 		case UZFX_ST0_IDLE:
 			uzfx->state = UZFX_ST1_SECT_RD;
 			sp45de_motor_start(uzfx->sp45de);
-			pthread_cond_signal(&uzfx->state_cond);
+			loop_trigger = true;
 			io_ret = IO_EN;
 			break;
 		case UZFX_ST2_BUF_RD:
 			uint8_t c;
-			if (sp45de_read(uzfx->sp45de, &c) == SP45DE_BUF_END) {
+			if (sp45de_buf_read(uzfx->sp45de, &c) == SP45DE_BUF_END) {
 				// last byte, set next sector address
 				uzfx_address_advance(uzfx);
 				uzfx->state = UZFX_ST0_IDLE;
@@ -407,6 +527,10 @@ static int uzfx_cmd_read(cchar_unit_t *unit, uint16_t *r_arg)
 	}
 	pthread_mutex_unlock(&uzfx->state_mutex);
 
+	if (loop_trigger) {
+		uv_async_send(&uzfx->async_work);
+	}
+
 	return io_ret;
 }
 
@@ -415,6 +539,7 @@ static int uzfx_cmd_write(cchar_unit_t *unit, const uint16_t *r_arg)
 {
 	uzfx_t *uzfx = (uzfx_t *) unit;
 	int io_ret;
+	bool loop_trigger = false;
 
 	pthread_mutex_lock(&uzfx->state_mutex);
 	int old_state = uzfx->state;
@@ -423,13 +548,13 @@ static int uzfx_cmd_write(cchar_unit_t *unit, const uint16_t *r_arg)
 		case UZFX_ST0_IDLE:
 			uzfx->state = UZFX_ST3_BUF_WR_START;
 			sp45de_motor_start(uzfx->sp45de);
-			pthread_cond_signal(&uzfx->state_cond);
+			loop_trigger = true;
 			io_ret = IO_EN;
 			break;
 		case UZFX_ST5_BUF_WR:
-			if (sp45de_write(uzfx->sp45de, (uint8_t) *r_arg) == SP45DE_BUF_END) {
+			if (sp45de_buf_write(uzfx->sp45de, (uint8_t) *r_arg) == SP45DE_BUF_END) {
 				uzfx->state = UZFX_ST7_SECT_WR;
-				pthread_cond_signal(&uzfx->state_cond);
+				loop_trigger = true;
 			}
 			io_ret = IO_OK;
 			break;
@@ -446,6 +571,10 @@ static int uzfx_cmd_write(cchar_unit_t *unit, const uint16_t *r_arg)
 		LOG(L_UZFX, "State changed to: %s", uzfx_state_names[uzfx->state]);
 	}
 	pthread_mutex_unlock(&uzfx->state_mutex);
+
+	if (loop_trigger) {
+		uv_async_send(&uzfx->async_work);
+	}
 
 	return io_ret;
 }
@@ -467,7 +596,8 @@ static int uzfx_cmd_control(cchar_unit_t *unit, const uint16_t *r_arg, int cmd)
 			io_ret = IO_OK;
 			break;
 		default:
-			// this is illegal and puts the controllen in a state that won't send an interrupt
+			// such operation is a programming error (per docs)
+			// and puts the controller in a state in which it won't send an interrupt
 			io_ret = IO_EN;
 			break;
 	}
@@ -500,13 +630,14 @@ static int uzfx_cmd_detach(cchar_unit_t *unit)
 {
 	uzfx_t *uzfx = (uzfx_t *) unit;
 	int io_ret;
+	bool loop_trigger = false;
 
 	// TODO: detach zakończony EN nie jest wykonanym detachem w rozumieniu następnych komend
 	// (i.e. następujące "STERUJ" zakończy się EN i nie będzie się dało z tego wyjść)
 	// TODO: test
 	pthread_mutex_lock(&uzfx->state_mutex);
 	int old_state = uzfx->state;
-	LOG(L_UZFX, "command: detach (state: %s -> %s)", uzfx_state_names[old_state], uzfx_state_names[uzfx->state]);
+	LOG(L_UZFX, "command: detach (state: %s)", uzfx_state_names[old_state]);
 	switch (uzfx->state) {
 		case UZFX_ST0_IDLE:
 			sp45de_motor_stop(uzfx->sp45de);
@@ -515,19 +646,19 @@ static int uzfx_cmd_detach(cchar_unit_t *unit)
 			break;
 		case UZFX_ST2_BUF_RD:
 			uzfx->state = UZFX_ST2_BUF_RD_CANCEL;
-			pthread_cond_signal(&uzfx->state_cond);
+			loop_trigger = true;
 			io_ret = IO_EN;
 			break;
 		case UZFX_ST5_BUF_WR:
 			uzfx->state = UZFX_ST3_BUF_WR_CANCEL;
-			pthread_cond_signal(&uzfx->state_cond);
+			loop_trigger = true;
 			io_ret = IO_EN;
 			break;
 		case UZFX_ST7_SECT_WR:
-			// in normal flow, finished sector write does not send an interrupt,
-			// but since now, after failed detach CPU waits for an interrupt,
-			// make sure we send it
-			uzfx->interrupt_required = true;
+			// in normal flow, finished sector write does not send an interrupt.
+			// but since we need to respond with EN here and wait for the sector
+			// write to finish, make sure the interrupt is sent then
+			uzfx->pending_detach_int = true;
 			io_ret = IO_EN;
 			break;
 		default:
@@ -538,6 +669,10 @@ static int uzfx_cmd_detach(cchar_unit_t *unit)
 		LOG(L_UZFX, "State changed to: %s", uzfx_state_names[uzfx->state]);
 	}
 	pthread_mutex_unlock(&uzfx->state_mutex);
+
+	if (loop_trigger) {
+		uv_async_send(&uzfx->async_work);
+	}
 
 	return io_ret;
 }

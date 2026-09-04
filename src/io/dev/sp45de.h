@@ -19,7 +19,7 @@
 #define SP45DE_H
 
 #include <inttypes.h>
-#include <stdio.h>
+#include <uv.h>
 #include <pthread.h>
 
 #include "io/dev/dev.h"
@@ -36,22 +36,31 @@ enum sp45de_buf_state {
 
 typedef struct sp45de sp45de_t;
 
+typedef void (*sp45de_blk_cb_f)(void *ctx, int result);
+
 struct sp45de {
 	struct em400_dev base;
 
 	pthread_mutex_t media_mutex;
+	bool shutting_down;
 	char *image_name[EM400_SP45DE_SLOT_COUNT];
-	FILE *image[EM400_SP45DE_SLOT_COUNT];
+	uv_file image[EM400_SP45DE_SLOT_COUNT];
 	bool doors_locked;
 	uint8_t buf[SP45DE_BLK_SIZE];
 	unsigned buf_pos;
+
+	uv_fs_t fs_req;
+	uv_file blk_image;
+	uv_file zombie_image; // media that was swapped out from under an active transfer
+	sp45de_blk_cb_f blk_cb;
+	void *blk_ctx;
 };
 
 em400_dev_t * sp45de_create();
-int sp45de_blk_read(sp45de_t *sp45de, unsigned slot, unsigned track, unsigned sector);
-int sp45de_blk_write(sp45de_t *sp45de, unsigned slot, unsigned track, unsigned sector);
-int sp45de_read(sp45de_t *sp45de, uint8_t *c);
-int sp45de_write(sp45de_t *sp45de, uint8_t c);
+int sp45de_blk_read(sp45de_t *sp45de, unsigned slot, unsigned track, unsigned sector, sp45de_blk_cb_f cb, void *ctx);
+int sp45de_blk_write(sp45de_t *sp45de, unsigned slot, unsigned track, unsigned sector, sp45de_blk_cb_f cb, void *ctx);
+int sp45de_buf_read(sp45de_t *sp45de, uint8_t *c);
+int sp45de_buf_write(sp45de_t *sp45de, uint8_t c);
 int sp45de_motor_start(sp45de_t *sp45de);
 int sp45de_motor_stop(sp45de_t *sp45de);
 
