@@ -75,7 +75,6 @@ struct cchar_unit {
 chan_t *cchar_create(int num);
 bool cchar_dev_compatible(int dev_type);
 void cchar_int_trigger(chan_char_t *chan);
-void cchar_int_cancel(chan_char_t *chan, int unit_n);
 
 #endif
 

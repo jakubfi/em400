@@ -486,6 +486,7 @@ void meclo_reset(cchar_unit_t *unit)
 	meclo->seconds_read = false;
 	meclo->cycle_seconds = false;
 	meclo->clock_stopped = false;
+	meclo->has_int = false;
 	pthread_mutex_unlock(&meclo->mutex);
 }
 

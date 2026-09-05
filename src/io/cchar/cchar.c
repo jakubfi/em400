@@ -37,10 +37,7 @@ struct chan_char {
 	chan_t base;
 
 	pthread_mutex_t int_mutex;
-	int int_mask;
 	int interrupting_device;
-	int was_en;
-	int untransmitted;
 
 	cchar_unit_t *unit[CCHAR_MAX_DEVICES];
 };
@@ -174,20 +171,6 @@ void cchar_int_trigger(chan_char_t *chan)
 		LOG(L_CCHR, "CCHAR (ch:%i) No more interrupt lines active", chan->base.num);
 	}
 	pthread_mutex_unlock(&chan->int_mutex);
-}
-
-// -----------------------------------------------------------------------
-void cchar_int_cancel(chan_char_t *chan, int unit_n)
-{
-	LOG(L_CCHR, "CCHAR (ch:%i) unit: %i cancel interrupt", chan->base.num, unit_n);
-
-	pthread_mutex_lock(&chan->int_mutex);
-	if (chan->interrupting_device == unit_n) {
-		chan->interrupting_device = NO_INTERRUPT_REPORTED;
-	}
-	pthread_mutex_unlock(&chan->int_mutex);
-
-	cchar_int_trigger(chan);
 }
 
 // -----------------------------------------------------------------------

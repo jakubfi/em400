@@ -432,6 +432,7 @@ void uzdat_reset(cchar_unit_t *unit)
 	uzdat->dir = UZDAT_DIR_NONE;
 	uzdat->xfer_busy = false;
 	uzdat->buf_rd_ready = false;
+	uzdat->intspec = CCHAR_INT_OUTDATED;
 	pthread_mutex_unlock(&uzdat->mutex);
 }
 
