@@ -63,6 +63,7 @@ int sp45de_buf_read(sp45de_t *sp45de, uint8_t *c);
 int sp45de_buf_write(sp45de_t *sp45de, uint8_t c);
 int sp45de_motor_start(sp45de_t *sp45de);
 int sp45de_motor_stop(sp45de_t *sp45de);
+void sp45de_reset(sp45de_t *sp45de);
 
 
 #endif

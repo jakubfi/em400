@@ -65,21 +65,22 @@ enum uzfx_ou_commands {
 };
 
 #define UZFX_INT_NONE 0
-enum uzfx_interrupt_priorities {
-	UZFX_INT_SECT_NOT_FOUND, // highest prio
+enum uzfx_interrupts {
+	UZFX_INT_SECT_NOT_FOUND, // highest priority
 	UZFX_INT_CRC_ERR,
 	UZFX_INT_SECT_BAD,
 	UZFX_INT_HW_ERR,
 	UZFX_INT_DISK_END,
-	UZFX_INT_READY, // lowest prio
+	UZFX_INT_READY,
+	UZFX_INT_MAX = UZFX_INT_READY
 };
 static const int uzfx_interrupt_specs[] = {
-	0b11010, // sector not found
-	0b01010, // data CRC error
-	0b10010, // sector marked as bad
-	0b00010, // hardware error
-	0b00100, // track==73 && sector==26
-	0b00001, // device is ready
+	[UZFX_INT_SECT_NOT_FOUND]	= 0b11010,
+	[UZFX_INT_CRC_ERR]			= 0b01010,
+	[UZFX_INT_SECT_BAD]			= 0b10010,
+	[UZFX_INT_HW_ERR]			= 0b00010,
+	[UZFX_INT_DISK_END]			= 0b00100,
+	[UZFX_INT_READY]			= 0b00001
 };
 
 enum uzfx_drives {
@@ -116,7 +117,7 @@ struct uzfx {
 	uv_async_t async_work;
 };
 
-static void uzfx_reset_state(uzfx_t *u);
+static void uzfx_reset__nolock(uzfx_t *uzfx);
 void uzfx_shutdown(cchar_unit_t *unit);
 void uzfx_reset(cchar_unit_t *unit);
 int uzfx_cmd(cchar_unit_t *unit, int dir, int cmd, uint16_t *r_arg);
@@ -204,22 +205,22 @@ cchar_unit_t * uzfx_create(int dev_num, em400_dev_t *dev)
 		return NULL;
 	}
 
-	uzfx_reset_state(uzfx);
+	uzfx_reset(&uzfx->base);
 
 	return (cchar_unit_t *) uzfx;
 }
 
 // -----------------------------------------------------------------------
-static void uzfx_reset_state(uzfx_t *uzfx)
+static void uzfx_reset__nolock(uzfx_t *uzfx)
 {
-	pthread_mutex_lock(&uzfx->state_mutex);
 	uzfx_set_address(uzfx, INITIAL_ADDRESS);
 	uzfx->state = UZFX_ST0_IDLE;
 	uzfx->pending_buf_write = false;
 	uzfx->pending_detach_int = false;
 	uzfx->interrupts = UZFX_INT_NONE;
 	uzfx->xfer_gen++;
-	pthread_mutex_unlock(&uzfx->state_mutex);
+	sp45de_motor_stop(uzfx->sp45de);
+	sp45de_reset(uzfx->sp45de);
 }
 
 // -----------------------------------------------------------------------
@@ -240,9 +241,9 @@ void uzfx_reset(cchar_unit_t *unit)
 {
 	uzfx_t *uzfx = (uzfx_t *) unit;
 	LOG(L_UZFX, "Reset");
-	uzfx_reset_state(uzfx);
-	sp45de_motor_stop(uzfx->sp45de);
-	cchar_int_cancel(uzfx->base.chan, uzfx->base.num);
+	pthread_mutex_lock(&uzfx->state_mutex);
+	uzfx_reset__nolock(uzfx);
+	pthread_mutex_unlock(&uzfx->state_mutex);
 }
 
 // -----------------------------------------------------------------------
@@ -459,6 +460,20 @@ static void uzfx_on_async_work(uv_async_t *handle)
 }
 
 // -----------------------------------------------------------------------
+static bool uzfx_int_is_error(int interrupt)
+{
+	switch (interrupt) {
+		case UZFX_INT_SECT_NOT_FOUND:
+		case UZFX_INT_CRC_ERR:
+		case UZFX_INT_SECT_BAD:
+		case UZFX_INT_HW_ERR:
+			return true;
+		default:
+			return false;
+	}
+}
+
+// -----------------------------------------------------------------------
 bool uzfx_has_interrupt(cchar_unit_t *unit)
 {
 	uzfx_t *uzfx = (uzfx_t *) unit;
@@ -478,10 +493,14 @@ int uzfx_intspec(cchar_unit_t *unit)
 	int spec = UZFX_INT_NONE;
 
 	pthread_mutex_lock(&uzfx->state_mutex);
-	for (int shift=0 ; shift<=5 ; shift++) {
-		if (uzfx->interrupts & (1<<shift)) {
-			spec = uzfx_interrupt_specs[shift];
-			uzfx->interrupts &= ~(1<<shift);
+	for (int interrupt=0 ; interrupt<=UZFX_INT_MAX ; interrupt++) {
+		if (uzfx->interrupts & (1<<interrupt)) {
+			spec = uzfx_interrupt_specs[interrupt];
+			uzfx->interrupts &= ~(1<<interrupt);
+			// hard errors reset the controller
+			if (uzfx_int_is_error(interrupt)) {
+				uzfx_reset__nolock(uzfx);
+			}
 			break;
 		}
 	}
@@ -610,9 +629,7 @@ static int uzfx_cmd_control(cchar_unit_t *unit, const uint16_t *r_arg, int cmd)
 static int uzfx_cmd_reset(cchar_unit_t *unit)
 {
 	LOG(L_UZFX, "command: reset");
-	uzfx_t *uzfx = (uzfx_t*) unit;
-	uzfx_reset_state(uzfx);
-	cchar_int_cancel(uzfx->base.chan, uzfx->base.num);
+	uzfx_reset(unit);
 
 	return IO_OK;
 }
@@ -640,7 +657,6 @@ static int uzfx_cmd_detach(cchar_unit_t *unit)
 	LOG(L_UZFX, "command: detach (state: %s)", uzfx_state_names[old_state]);
 	switch (uzfx->state) {
 		case UZFX_ST0_IDLE:
-			sp45de_motor_stop(uzfx->sp45de);
 			uzfx->interrupts = UZFX_INT_NONE;
 			io_ret = IO_OK;
 			break;

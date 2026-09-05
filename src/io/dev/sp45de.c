@@ -100,13 +100,13 @@ void sp45de_shutdown(em400_dev_t *dev)
 }
 
 // -----------------------------------------------------------------------
-void sp45de_reset(em400_dev_t *dev)
+void sp45de_reset(sp45de_t *sp45de)
 {
-	if (!dev) return;
-
-	sp45de_t *sp45de = (sp45de_t *) dev;
-	sp45de_motor_stop(sp45de);
 	LOG(L_FLOP, "SP45DE reset");
+
+	pthread_mutex_lock(&sp45de->media_mutex);
+	sp45de->buf_pos = 0;
+	pthread_mutex_unlock(&sp45de->media_mutex);
 }
 
 // -----------------------------------------------------------------------
