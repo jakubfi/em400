@@ -29,12 +29,12 @@ typedef void (*elst_data_destructor)(void *ptr);
 ELST elst_create(int capacity, elst_data_destructor d);
 void elst_destroy(ELST l);
 
-void elst_nlock_clear(ELST l);
-int elst_nlock_count(ELST l);
-int elst_nlock_append(ELST l, void *ptr);
-int elst_nlock_prepend(ELST l, void *ptr);
-int elst_nlock_insert(ELST l, void *ptr, int prio);
-void * elst_nlock_pop(ELST l);
+void elst_clear__unlocked(ELST l);
+int elst_count__unlocked(ELST l);
+int elst_append__unlocked(ELST l, void *ptr);
+int elst_prepend__unlocked(ELST l, void *ptr);
+int elst_insert__unlocked(ELST l, void *ptr, int prio);
+void * elst_pop__unlocked(ELST l);
 
 void elst_clear(ELST l);
 int elst_count(ELST l);

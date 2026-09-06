@@ -118,8 +118,7 @@ static void on_handle_close(uv_handle_t* handle)
 }
 
 // -----------------------------------------------------------------------
-// NOTE: call with mutex locked
-static void meclo_clock_advance__locked(meclo_t *meclo, int m_days)
+static void meclo_clock_advance__unlocked(meclo_t *meclo, int m_days)
 {
 	if (meclo->seconds_advance) {
 		if (++meclo->second > 59) {
@@ -143,8 +142,7 @@ static void meclo_clock_advance__locked(meclo_t *meclo, int m_days)
 }
 
 // -----------------------------------------------------------------------
-// NOTE: call with mutex locked
-static void meclo_clock_set__locked(meclo_t *meclo, int m_days)
+static void meclo_clock_set__unlocked(meclo_t *meclo, int m_days)
 {
 	if (meclo->hs) {
 		if (meclo->dr) {
@@ -180,9 +178,9 @@ static void meclo_on_clock_tick_timeout(uv_timer_t *handle)
 	}
 
 	int m_days = month_days[meclo->month-1];
-	meclo_clock_set__locked(meclo, m_days);
+	meclo_clock_set__unlocked(meclo, m_days);
 	if (!meclo->clock_stopped) {
-		meclo_clock_advance__locked(meclo, m_days);
+		meclo_clock_advance__unlocked(meclo, m_days);
 	}
 
 	bool report_irq = meclo->has_int = meclo->irq;
@@ -504,8 +502,7 @@ static uint16_t meclo_prom_read(meclo_t *meclo)
 }
 
 // -----------------------------------------------------------------------
-// NOTE: call with mutex locked
-static void meclo_decode_cmd__locked(meclo_t *meclo, int cmd)
+static void meclo_decode_cmd__unlocked(meclo_t *meclo, int cmd)
 {
 	meclo->hs = !(cmd & MECLO_CMD_HS);
 	meclo->ms = !(cmd & MECLO_CMD_MS);
@@ -523,7 +520,7 @@ static uint16_t meclo_clock_op(meclo_t *meclo, int cmd)
 
 	pthread_mutex_lock(&meclo->mutex);
 
-	meclo_decode_cmd__locked(meclo, cmd);
+	meclo_decode_cmd__unlocked(meclo, cmd);
 
 	if (meclo->tr) {
 		// tr triggers displaying seconds after a delay,

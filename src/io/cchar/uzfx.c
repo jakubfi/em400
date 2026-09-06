@@ -117,7 +117,7 @@ struct uzfx {
 	uv_async_t async_work;
 };
 
-static void uzfx_reset__nolock(uzfx_t *uzfx);
+static void uzfx_reset__unlocked(uzfx_t *uzfx);
 void uzfx_shutdown(cchar_unit_t *unit);
 void uzfx_reset(cchar_unit_t *unit);
 int uzfx_cmd(cchar_unit_t *unit, int dir, int cmd, uint16_t *r_arg);
@@ -211,7 +211,7 @@ cchar_unit_t * uzfx_create(int dev_num, em400_dev_t *dev)
 }
 
 // -----------------------------------------------------------------------
-static void uzfx_reset__nolock(uzfx_t *uzfx)
+static void uzfx_reset__unlocked(uzfx_t *uzfx)
 {
 	uzfx_set_address(uzfx, INITIAL_ADDRESS);
 	uzfx->state = UZFX_ST0_IDLE;
@@ -242,7 +242,7 @@ void uzfx_reset(cchar_unit_t *unit)
 	uzfx_t *uzfx = (uzfx_t *) unit;
 	LOG(L_UZFX, "Reset");
 	pthread_mutex_lock(&uzfx->state_mutex);
-	uzfx_reset__nolock(uzfx);
+	uzfx_reset__unlocked(uzfx);
 	pthread_mutex_unlock(&uzfx->state_mutex);
 }
 
@@ -491,7 +491,7 @@ int uzfx_intspec(cchar_unit_t *unit)
 			uzfx->interrupts &= ~(1<<interrupt);
 			// hard errors reset the controller
 			if (uzfx_int_is_error(interrupt)) {
-				uzfx_reset__nolock(uzfx);
+				uzfx_reset__unlocked(uzfx);
 			}
 			break;
 		}

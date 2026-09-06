@@ -360,7 +360,7 @@ static void mx_int_push(chan_mx_t *multix)
 
 	pthread_mutex_lock(&multix->int_mutex);
 	if (multix->intspec == MX_IRQ_INIEA) {
-		uint16_t *i = (uint16_t *) elst_nlock_pop(multix->intq);
+		uint16_t *i = (uint16_t *) elst_pop__unlocked(multix->intq);
 		if (i) {
 			multix->intspec = *i;
 			send = 1;
@@ -385,7 +385,7 @@ int mx_int_enqueue(chan_mx_t *multix, int intr, int line)
 	*i = (intr << 8) | line;
 
 	pthread_mutex_lock(&multix->int_mutex);
-	int res = elst_nlock_append(multix->intq, i);
+	int res = elst_append__unlocked(multix->intq, i);
 	pthread_mutex_unlock(&multix->int_mutex);
 
 	mx_int_push(multix);
@@ -413,7 +413,7 @@ void mx_int_reset(chan_mx_t *multix)
 {
 	pthread_mutex_lock(&multix->int_mutex);
 	multix->intspec = MX_IRQ_INIEA;
-	elst_nlock_clear(multix->intq);
+	elst_clear__unlocked(multix->intq);
 	pthread_mutex_unlock(&multix->int_mutex);
 }
 
@@ -692,7 +692,7 @@ static int mx_cmd_requeue(chan_mx_t *multix)
 		uint16_t *i = (uint16_t *) malloc(sizeof(uint16_t));
 		*i = multix->intspec;
 		// TODO: handle queue full
-		elst_nlock_prepend(multix->intq, i);
+		elst_prepend__unlocked(multix->intq, i);
 		multix->intspec = MX_IRQ_INIEA;
 	}
 	pthread_mutex_unlock(&multix->int_mutex);

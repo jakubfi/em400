@@ -44,7 +44,7 @@ struct elst {
 	elst_data_destructor destructor;
 };
 
-void elst_nlock_clear(ELST l);
+void elst_clear__unlocked(ELST l);
 
 // -----------------------------------------------------------------------
 ELST elst_create(int capacity, elst_data_destructor d)
@@ -104,11 +104,11 @@ void elst_destroy(ELST l)
 }
 
 // -----------------------------------------------------------------------
-void elst_nlock_clear(ELST l)
+void elst_clear__unlocked(ELST l)
 {
 	assert(l);
 	void *p;
-	while ((p = elst_nlock_pop(l))) {
+	while ((p = elst_pop__unlocked(l))) {
 		l->destructor(p);
 	}
 }
@@ -119,12 +119,12 @@ void elst_clear(ELST l)
 	assert(l);
 
 	pthread_mutex_lock(&l->mutex);
-	elst_nlock_clear(l);
+	elst_clear__unlocked(l);
 	pthread_mutex_unlock(&l->mutex);
 }
 
 // -----------------------------------------------------------------------
-int elst_nlock_count(ELST l)
+int elst_count__unlocked(ELST l)
 {
 	assert(l);
 
@@ -196,7 +196,7 @@ static inline int __put(ELST l, void *ptr, int prio, int p, int n)
 }
 
 // -----------------------------------------------------------------------
-int elst_nlock_append(ELST l, void *ptr)
+int elst_append__unlocked(ELST l, void *ptr)
 {
 	assert(l);
 
@@ -209,14 +209,14 @@ int elst_append(ELST l, void *ptr)
 	assert(l);
 
 	pthread_mutex_lock(&l->mutex);
-	int count = elst_nlock_append(l, ptr);
+	int count = elst_append__unlocked(l, ptr);
 	pthread_cond_signal(&l->cond);
 	pthread_mutex_unlock(&l->mutex);
 	return count;
 }
 
 // -----------------------------------------------------------------------
-int elst_nlock_prepend(ELST l, void *ptr)
+int elst_prepend__unlocked(ELST l, void *ptr)
 {
 	assert(l);
 
@@ -230,14 +230,14 @@ int elst_prepend(ELST l, void *ptr)
 	assert(l);
 
 	pthread_mutex_lock(&l->mutex);
-	int count = elst_nlock_prepend(l, ptr);
+	int count = elst_prepend__unlocked(l, ptr);
 	pthread_cond_signal(&l->cond);
 	pthread_mutex_unlock(&l->mutex);
 	return count;
 }
 
 // -----------------------------------------------------------------------
-int elst_nlock_insert(ELST l, void *ptr, int prio)
+int elst_insert__unlocked(ELST l, void *ptr, int prio)
 {
 	assert(l);
 
@@ -259,7 +259,7 @@ int elst_insert(ELST l, void *ptr, int prio)
 	assert(l);
 
 	pthread_mutex_lock(&l->mutex);
-	int count = elst_nlock_insert(l, ptr, prio);
+	int count = elst_insert__unlocked(l, ptr, prio);
 	pthread_cond_signal(&l->cond);
 	pthread_mutex_unlock(&l->mutex);
 
@@ -267,7 +267,7 @@ int elst_insert(ELST l, void *ptr, int prio)
 }
 
 // -----------------------------------------------------------------------
-void * elst_nlock_pop(ELST l)
+void * elst_pop__unlocked(ELST l)
 {
 	assert(l);
 
@@ -289,7 +289,7 @@ void * elst_pop(ELST l)
 	assert(l);
 
 	pthread_mutex_lock(&l->mutex);
-	void *ptr = elst_nlock_pop(l);
+	void *ptr = elst_pop__unlocked(l);
 	pthread_mutex_unlock(&l->mutex);
 
 	return ptr;
