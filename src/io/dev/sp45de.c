@@ -129,13 +129,16 @@ static void sp45de_on_blk_done(uv_fs_t *req)
 
 	int ret;
 	if (media_changed) {
-		ret = E_ERR;
+		ret = SP45DE_ERR_NOT_READY;
 		LOG(L_FLOP, "Block transfer torn by a media change");
+	} else if (transferred < 0) {
+		ret = SP45DE_ERR_MEDIA;
+		LOG(L_FLOP, "Block transfer failed: %s", uv_strerror((int) transferred));
 	} else if (transferred != SP45DE_BLK_SIZE) {
-		ret = E_ERR;
-		LOG(L_FLOP, "Block transfer failed: %s", (transferred < 0) ? uv_strerror((int) transferred) : "short transfer");
+		ret = SP45DE_ERR_NOT_FOUND;
+		LOG(L_FLOP, "Block transfer short (%zi bytes), image truncated?", transferred);
 	} else {
-		ret = E_OK;
+		ret = SP45DE_OK;
 		LOG(L_FLOP, "Block transferred (%2x %2x %2x %2x ...)", sp45de->buf[0], sp45de->buf[1], sp45de->buf[2], sp45de->buf[3]);
 	}
 
@@ -145,7 +148,7 @@ static void sp45de_on_blk_done(uv_fs_t *req)
 // -----------------------------------------------------------------------
 static int sp45de_blk_start(sp45de_t *sp45de, bool write, unsigned slot, unsigned track, unsigned sector, sp45de_blk_cb_f cb, void *ctx)
 {
-	int ret = E_ERR;
+	int ret = SP45DE_ERR_NOT_READY;
 
 	pthread_mutex_lock(&sp45de->media_mutex);
 
@@ -164,6 +167,7 @@ static int sp45de_blk_start(sp45de_t *sp45de, bool write, unsigned slot, unsigne
 
 	if ((track >= SP45DE_TRACK_CNT) || (sector < 1) || (sector > SP45DE_SECTOR_PER_TRACK)) {
 		LOG(L_FLOP, "Block transfer with address out of range: track %i, sector %i", track, sector);
+		ret = SP45DE_ERR_NOT_FOUND;
 		goto fin;
 	}
 
@@ -189,7 +193,7 @@ static int sp45de_blk_start(sp45de_t *sp45de, bool write, unsigned slot, unsigne
 
 	LOG(L_FLOP, "Queued %s of track %i, sector %i in slot %i", write ? "write" : "read", track, sector, slot);
 	sp45de->blk_image = sp45de->image[slot];
-	ret = E_OK;
+	ret = SP45DE_OK;
 
 fin:
 	pthread_mutex_unlock(&sp45de->media_mutex);

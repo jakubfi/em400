@@ -33,6 +33,13 @@ enum sp45de_buf_state {
 	SP45DE_BUF_OK, SP45DE_BUF_END
 };
 
+enum sp45de_result_e {
+	SP45DE_OK,
+	SP45DE_ERR_NOT_READY, // DO1: no medium, drive not connected
+	SP45DE_ERR_NOT_FOUND, // DO2/DO3: no such track, sector not found
+	SP45DE_ERR_MEDIA, // DO4: data error
+};
+
 typedef struct sp45de sp45de_t;
 
 typedef void (*sp45de_blk_cb_f)(void *ctx, int result);
