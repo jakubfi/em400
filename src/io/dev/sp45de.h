@@ -26,7 +26,6 @@
 #include "libem400.h"
 
 #define SP45DE_TRACK_CNT 77
-#define SP45DE_TRACK_LAST 73
 #define SP45DE_SECTOR_PER_TRACK 26
 #define SP45DE_BLK_SIZE 128
 

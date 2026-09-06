@@ -97,7 +97,7 @@ enum uzfx_sides {
 
 #define UZFX_ADDR_TRACK(n) (n << 5)
 #define UZFX_ADDR_SECTOR(n) (n)
-
+#define UZFX_TRACK_LAST 73
 #define INITIAL_ADDRESS (UZFX_DRV_0 | UZFX_SIDE_A | UZFX_ADDR_TRACK(1) | UZFX_ADDR_SECTOR(1))
 
 typedef struct uzfx uzfx_t;
@@ -247,30 +247,22 @@ void uzfx_reset(cchar_unit_t *unit)
 }
 
 // -----------------------------------------------------------------------
-static bool uzfx_address_advance(uzfx_t *uzfx)
+static void uzfx_address_advance(uzfx_t *uzfx)
 {
-	// TODO: where to advance? where to check for last track? where to set interrupt?
 	uzfx->sector++;
 
 	if (uzfx->sector > SP45DE_SECTOR_PER_TRACK) {
 		uzfx->sector = 1;
 		uzfx->track++;
-		if (uzfx->track > SP45DE_TRACK_LAST) {
-			uzfx->track = 1;
-			LOG(L_UZFX, "Disk end");
-			return true;
-		}
 	}
 
 	LOG(L_UZFX, "Advanced to track: %i, sector: %i", uzfx->track, uzfx->sector);
-
-	return false;
 }
 
 // -----------------------------------------------------------------------
 static int uzfx_disk_end_int(uzfx_t *uzfx)
 {
-	if ((uzfx->sector == SP45DE_SECTOR_PER_TRACK) && (uzfx->track == SP45DE_TRACK_LAST)) {
+	if ((uzfx->sector == SP45DE_SECTOR_PER_TRACK) && (uzfx->track == UZFX_TRACK_LAST)) {
 		return 1 << UZFX_INT_DISK_END;
 	}
 	return UZFX_INT_NONE;
