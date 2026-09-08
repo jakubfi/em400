@@ -139,6 +139,10 @@ int buzzer_init(const struct em400_sound_cfg *cfg)
 		return E_ERR;
 	}
 
+	if ((cfg->sample_rate <= 0) || (cfg->buffer_len <= 0)) {
+		return LOGERR("Invalid sound configuration: rate %i, buffer length %i", cfg->sample_rate, cfg->buffer_len);
+	}
+
 	sample_period_ns = 1000000000.0f / cfg->sample_rate;
 	buffer_len = cfg->buffer_len;
 
