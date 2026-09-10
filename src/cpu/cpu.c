@@ -722,43 +722,18 @@ static inline long cpu_timing_sleep_wait(struct timespec *now, const struct time
 }
 
 // -----------------------------------------------------------------------
-static void cpu_timekeeping(int cpu_time_ns)
+static void cpu_timing_wait(const struct timespec *deadline)
 {
-	bool skip_sleep = false;
-
 	static enum timing_policy_e timing_policy = TIMING_POLICY_BUSY;
 	static int busy_probe_delay = TIMING_PROBE_DELAY;
 	static int busy_probes_ok = 0;
 	struct timespec now;
 	long late_ns;
 
-	if (cpu_time_ns < 0) {
-		cpu_time_ns = -cpu_time_ns;
-		skip_sleep = true;
-	}
-
-	pacing.cumulative_ns += cpu_time_ns;
-
-	if (sound_enabled) {
-		buzzer_update(ir, cpu_time_ns);
-	}
-
-	if (skip_sleep || (pacing.cumulative_ns < pacing.quantum_ns)) {
-		return;
-	}
-
-	pacing.deadline.tv_nsec += pacing.cumulative_ns;
-	while (pacing.deadline.tv_nsec >= 1000000000) {
-		pacing.deadline.tv_nsec -= 1000000000;
-		pacing.deadline.tv_sec++;
-	}
-	pacing.cumulative_ns = 0;
-
-	// wait
 	if (timing_policy == TIMING_POLICY_BUSY) {
-		late_ns = cpu_timing_busy_wait(&now, &pacing.deadline);
+		late_ns = cpu_timing_busy_wait(&now, deadline);
 	} else {
-		late_ns = cpu_timing_sleep_wait(&now, &pacing.deadline);
+		late_ns = cpu_timing_sleep_wait(&now, deadline);
 	}
 
 	cpu_latency_stats(timing_policy, late_ns);
@@ -805,11 +780,54 @@ static void cpu_timekeeping(int cpu_time_ns)
 }
 
 // -----------------------------------------------------------------------
+static void cpu_pacing_reset()
+{
+	clock_gettime(CLOCK_MONOTONIC, &pacing.deadline);
+	pacing.cumulative_ns = 0;
+}
+
+// -----------------------------------------------------------------------
+static inline void cpu_pacing(bool skip_sleep)
+{
+	if ((pacing.cumulative_ns < pacing.quantum_ns) || skip_sleep) {
+		return;
+	}
+
+	pacing.deadline.tv_nsec += pacing.cumulative_ns;
+	while (pacing.deadline.tv_nsec >= 1000000000) {
+		pacing.deadline.tv_nsec -= 1000000000;
+		pacing.deadline.tv_sec++;
+	}
+	pacing.cumulative_ns = 0;
+
+	cpu_timing_wait(&pacing.deadline);
+}
+
+// -----------------------------------------------------------------------
+static void cpu_timekeeping(int cpu_time_ns)
+{
+	bool skip_sleep = false;
+
+	if (cpu_time_ns < 0) {
+		cpu_time_ns = -cpu_time_ns;
+		skip_sleep = true;
+	}
+
+	pacing.cumulative_ns += cpu_time_ns;
+
+	if (sound_enabled) {
+		buzzer_update(ir, cpu_time_ns);
+	}
+
+	cpu_pacing(skip_sleep);
+}
+
+// -----------------------------------------------------------------------
 __attribute__((hot)) static void * cpu_loop(void *ptr)
 {
 	LOG(L_CPU, "Starting CPU loop");
 	bool quit = false;
-	clock_gettime(CLOCK_MONOTONIC, &pacing.deadline);
+	cpu_pacing_reset();
 
 	while (!quit) {
 		int cpu_time_ns = 0;
@@ -860,8 +878,7 @@ __attribute__((hot)) static void * cpu_loop(void *ptr)
 				int res = cpu_do_wait();
 				if (res == EM400_STATE_RUN) {
 					if (sound_enabled) buzzer_start();
-					clock_gettime(CLOCK_MONOTONIC, &pacing.deadline);
-					pacing.cumulative_ns = 0;
+					cpu_pacing_reset();
 				}
 				break;
 			case EM400_STATE_WAIT:
