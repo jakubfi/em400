@@ -15,15 +15,12 @@
 //  Foundation, Inc.,
 //  51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 
-#include <errno.h>
 #include <inttypes.h>
-#include <pthread.h>
 #include <stdbool.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <strings.h>
-#include <time.h>
 
 #include "external/miniaudio/miniaudio.h"
 #include "libem400.h"
@@ -34,14 +31,6 @@
 // almost never finds it full in steady state. Underrun-on-empty (callback)
 // and block-on-full (play) handle the off-nominal cases.
 #define RING_FRAMES 8192
-
-// Upper bound on how long sound_play parks waiting for the audio callback to
-// drain the ring. In steady state the callback frees a period (~tens of ms)
-// long before this; tripping it means the backend has stalled. We then give up
-// on the pending frames rather than block the CPU thread forever - the
-// alternative is an unrecoverable hang, because cpu_shutdown joins the CPU
-// thread *before* sound_shutdown gets to broadcast the wakeup.
-#define PLAY_WAIT_TIMEOUT_NS (250 * 1000 * 1000L)
 
 // MERA-400 Tonsil GD 6/0,5 speaker + steel-chassis "boxiness" model.
 // Tuned by ear against the real machine (a H/W-vs-emulator freq sweep helped
@@ -74,9 +63,6 @@ static bool initialized;
 static ma_hpf2 speaker_hp;
 static ma_lpf2 speaker_lp;
 static ma_peak2 speaker_box;
-
-static pthread_mutex_t mu = PTHREAD_MUTEX_INITIALIZER;
-static pthread_cond_t cv = PTHREAD_COND_INITIALIZER;
 
 // -----------------------------------------------------------------------
 static void data_callback(ma_device *dev, void *out, const void *in, ma_uint32 frame_count)
@@ -111,10 +97,6 @@ static void data_callback(ma_device *dev, void *out, const void *in, ma_uint32 f
 	ma_hpf2_process_pcm_frames(&speaker_hp, out, out, frame_count);
 	ma_lpf2_process_pcm_frames(&speaker_lp, out, out, frame_count);
 	ma_peak2_process_pcm_frames(&speaker_box, out, out, frame_count);
-
-	pthread_mutex_lock(&mu);
-	pthread_cond_signal(&cv);
-	pthread_mutex_unlock(&mu);
 }
 
 // -----------------------------------------------------------------------
@@ -278,11 +260,6 @@ void sound_shutdown(void)
 
 	initialized = false;
 
-	// Unblock any producer that's parked in sound_play().
-	pthread_mutex_lock(&mu);
-	pthread_cond_broadcast(&cv);
-	pthread_mutex_unlock(&mu);
-
 	// Device is stopped; the callback won't touch the filters anymore.
 	ma_device_uninit(&device);
 	ma_hpf2_uninit(&speaker_hp, NULL);
@@ -302,36 +279,8 @@ long sound_play(float *buf, size_t frames)
 	while (written < frames) {
 		ma_uint32 to_write = (ma_uint32)(frames - written);
 		void *dst;
-		if (ma_pcm_rb_acquire_write(&rb, &to_write, &dst) != MA_SUCCESS) {
-			return (long)written;
-		}
-		if (to_write == 0) {
-			// Ring full. Wait for the audio callback to drain some.
-			pthread_mutex_lock(&mu);
-			// Re-check under the lock to avoid lost-wakeup races
-			// against the callback's signal.
-			ma_uint32 recheck = (ma_uint32)(frames - written);
-			// potential failure is handled by the top-of-loop acquire on continue.
-			ma_pcm_rb_acquire_write(&rb, &recheck, &dst);
-			if (recheck == 0 && initialized) {
-				// Bounded wait: a stalled backend must not park the CPU
-				// thread indefinitely (would deadlock shutdown's join).
-				struct timespec ts;
-				clock_gettime(CLOCK_REALTIME, &ts);
-				ts.tv_nsec += PLAY_WAIT_TIMEOUT_NS;
-				ts.tv_sec += ts.tv_nsec / 1000000000L;
-				ts.tv_nsec %= 1000000000L;
-				if (pthread_cond_timedwait(&cv, &mu, &ts) == ETIMEDOUT) {
-					// Backend stalled: drop the pending frames (audible
-					// glitch) instead of hanging.
-					pthread_mutex_unlock(&mu);
-					return (long)written;
-				}
-			}
-			pthread_mutex_unlock(&mu);
-			if (!initialized) return (long)written;
-			continue;
-		}
+		if (ma_pcm_rb_acquire_write(&rb, &to_write, &dst) != MA_SUCCESS) break;
+		if (to_write == 0) break;
 		memcpy(dst, buf + written, to_write * sizeof(float));
 		ma_pcm_rb_commit_write(&rb, to_write);
 		written += to_write;

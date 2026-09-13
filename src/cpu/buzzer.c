@@ -32,6 +32,9 @@ static unsigned buffer_len;
 static int sample_sign = 1;
 static atomic_int volume_pct;
 
+static unsigned dropped_frames;
+static unsigned drop_log_threshold;
+
 static float *snd_buf_end;
 static float *snd_buf_pos;
 static float *snd_buf_float;
@@ -60,15 +63,14 @@ static void buzzer_flush()
 {
 	// Push the raw /16 square wave to the sound layer. The speaker-model
 	// filtering runs on the audio thread (see src/sound/sound.c).
-	int written = 0;
-	while (written != buffer_len) {
-		long res = sound_play(snd_buf_float+written, buffer_len-written);
-		if (res > 0) {
-			written += res;
-		} else {
-			// res <= 0: sound_play made no progress (shutdown or a
-			// ring error); retrying with the same args can't help.
-			break;
+	long written = sound_play(snd_buf_float, buffer_len);
+	if (written < 0) return;
+
+	if ((unsigned)written < buffer_len) {
+		dropped_frames += buffer_len - written;
+		if (dropped_frames >= drop_log_threshold) {
+			LOG(L_LIB, "Sound ring overflow, dropped %u frames", dropped_frames);
+			dropped_frames = 0;
 		}
 	}
 }
@@ -145,6 +147,7 @@ int buzzer_init(const struct em400_sound_cfg *cfg)
 
 	sample_period_ns = 1000000000.0f / cfg->sample_rate;
 	buffer_len = cfg->buffer_len;
+	drop_log_threshold = cfg->sample_rate;
 
 	buzzer_volume_pct_set(cfg->volume);
 
