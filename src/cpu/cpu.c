@@ -319,6 +319,10 @@ int cpu_init(const struct em400_host_cfg *host, const struct em400_machine_cfg *
 		return LOGERR("CPU already initialized");
 	}
 
+	if (host->emu.emulation_quantum_us < 10) {
+		return LOGERR("Emulation quantum %i is lower than allowed 10 us", host->emu.emulation_quantum_us);
+	}
+
 	awp_enabled = machine->cpu.awp;
 	cpu_mod_present = machine->cpu.mod;
 	cpu_user_io_illegal = machine->cpu.user_io_illegal;
