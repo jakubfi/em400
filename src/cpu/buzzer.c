@@ -16,14 +16,24 @@
 //  51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 
 #include <inttypes.h>
+#include <limits.h>
 #include <stdatomic.h>
 #include <stdbool.h>
 #include <stdlib.h>
 #include <string.h>
 
+#include "cpu/cpu.h"
 #include "sound/sound.h"
 #include "libem400.h"
 #include "log.h"
+
+// smoothing time of the ring fill error (covering several periods)
+#define ADJUST_ERROR_TIME_CONST_S 2.0f
+// CPU pacing correction for each millisecond of audio above or below the ring target
+// set for the "default" 48kHz sampling rate
+#define ADJUST_GAIN_PPM_PER_MS 48.0f
+// allowed max +/- adjust
+#define ADJUST_PPM_MAX 300
 
 static bool sound_ready;
 
@@ -32,8 +42,12 @@ static unsigned buffer_len;
 static int sample_sign = 1;
 static atomic_int volume_pct;
 
+static float ring_fill_error; // how far off from the target fill, in frames
+static float adjust_error_weight; // error smoothing weight
+static float adjust_gain_ppm_per_frame; // ADJUST_GAIN_PPM_PER_MS as ppm per frame
 static unsigned dropped_frames;
 static unsigned drop_log_threshold;
+static unsigned adjust_log_interval;
 
 static float *snd_buf_end;
 static float *snd_buf_pos;
@@ -59,6 +73,51 @@ void buzzer_volume_pct_set(int volume_pct_new)
 
 
 // -----------------------------------------------------------------------
+static void buzzer_adjust_update()
+{
+	static unsigned ticks;
+	static long fill_min = LONG_MAX;
+	static long fill_max = 0;
+
+	long fill = sound_ring_fill();
+	long target = sound_ring_target();
+
+	if ((fill < 0) || (target < 0)) {
+		ring_fill_error = 0;
+		cpu_pacing_adjust(0);
+		return;
+	}
+
+	// exponential moving average of the ring error, in frames
+	ring_fill_error += ((float)(fill - target) - ring_fill_error) * adjust_error_weight;
+
+	// clamp the error, not the ppm
+	// error past the ppm limit only delays recovery
+	float error_limit = ADJUST_PPM_MAX / adjust_gain_ppm_per_frame;
+	if (ring_fill_error > error_limit) {
+		ring_fill_error = error_limit;
+	} else if (ring_fill_error < -error_limit) {
+		ring_fill_error = -error_limit;
+	}
+
+	int ppm = ring_fill_error * adjust_gain_ppm_per_frame;
+	cpu_pacing_adjust(ppm);
+
+	// update and log stats
+	if (fill < fill_min) fill_min = fill;
+	if (fill > fill_max) fill_max = fill;
+	if (++ticks >= adjust_log_interval) {
+		ticks = 0;
+		LOG(L_LIB,
+			"Sound ring min..max: %ld..%ld frames, target: %ld frames, CPU pacing adjust: %+i ppm",
+			fill_min, fill_max, target, ppm
+		);
+		fill_min = LONG_MAX;
+		fill_max = 0;
+	}
+}
+
+// -----------------------------------------------------------------------
 static void buzzer_flush()
 {
 	// Push the raw /16 square wave to the sound layer. The speaker-model
@@ -73,6 +132,8 @@ static void buzzer_flush()
 			dropped_frames = 0;
 		}
 	}
+
+	buzzer_adjust_update();
 }
 
 // -----------------------------------------------------------------------
@@ -122,6 +183,8 @@ void buzzer_stop()
 	// Drop the remaining audio in the buzzer buffer,
 	// so the next START doesn't start with audio garbage
 	snd_buf_pos = snd_buf_float;
+	ring_fill_error = 0;
+	cpu_pacing_adjust(0);
 }
 
 // -----------------------------------------------------------------------
@@ -148,9 +211,18 @@ int buzzer_init(const struct em400_sound_cfg *cfg)
 		return LOGERR("Invalid sound configuration: rate %i, buffer length %i", cfg->sample_rate, cfg->buffer_len);
 	}
 
+	adjust_log_interval = 2 * cfg->sample_rate / cfg->buffer_len;
+	if (adjust_log_interval < 1) adjust_log_interval = 1;
+
 	sample_period_ns = 1000000000.0f / cfg->sample_rate;
 	buffer_len = cfg->buffer_len;
 	drop_log_threshold = cfg->sample_rate;
+
+	adjust_gain_ppm_per_frame = ADJUST_GAIN_PPM_PER_MS * 1000.0f / cfg->sample_rate;
+
+	float buffer_time_s = (float) buffer_len / cfg->sample_rate;
+	adjust_error_weight = buffer_time_s / ADJUST_ERROR_TIME_CONST_S;
+	if (adjust_error_weight > 1.0f) adjust_error_weight = 1.0f;
 
 	buzzer_volume_pct_set(cfg->volume);
 
