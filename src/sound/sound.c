@@ -28,6 +28,10 @@
 #include "log.h"
 #include "sound/sound.h"
 
+// two periods: device plays one, CPU thread fills the other
+#define SOUND_PERIODS 2
+// 1ms is the smallest period in miniaudio
+#define SOUND_LATENCY_MIN_MS (SOUND_PERIODS * 1)
 #define RING_FRAMES_MIN 8192
 
 // MERA-400 Tonsil GD 6/0,5 speaker + steel-chassis "boxiness" model.
@@ -220,8 +224,14 @@ int sound_init(const struct em400_sound_cfg *cfg)
 	dc.playback.channels = channels;
 	dc.playback.pDeviceID = resolve_device(cfg->device);
 	dc.sampleRate = cfg->sample_rate;
-	dc.periodSizeInMilliseconds = cfg->latency > 0 ? (ma_uint32)cfg->latency : 20;
-	dc.periods = 2;
+
+	int latency_ms = cfg->latency;
+	if (latency_ms < SOUND_LATENCY_MIN_MS) {
+		LOGWARN("Sound latency of %i ms is too low, using %i ms", latency_ms, SOUND_LATENCY_MIN_MS);
+		latency_ms = SOUND_LATENCY_MIN_MS;
+	}
+	dc.periodSizeInMilliseconds = (ma_uint32)latency_ms / SOUND_PERIODS;
+	dc.periods = SOUND_PERIODS;
 	dc.dataCallback = data_callback;
 
 	if (ma_device_init(&context, &dc, &device) != MA_SUCCESS) {
@@ -236,7 +246,7 @@ int sound_init(const struct em400_sound_cfg *cfg)
 		period_frames = (ma_uint32)((ma_uint64)period_frames * device.sampleRate / device.playback.internalSampleRate);
 	}
 
-	ring_target = 2 * period_frames;
+	ring_target = SOUND_PERIODS * period_frames;
 	if (ring_target < 2 * (ma_uint32)cfg->buffer_len) {
 		ring_target = 2 * (ma_uint32)cfg->buffer_len;
 	}
