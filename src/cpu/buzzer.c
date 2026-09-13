@@ -119,6 +119,9 @@ void buzzer_start()
 void buzzer_stop()
 {
 	sound_stop();
+	// Drop the remaining audio in the buzzer buffer,
+	// so the next START doesn't start with audio garbage
+	snd_buf_pos = snd_buf_float;
 }
 
 // -----------------------------------------------------------------------

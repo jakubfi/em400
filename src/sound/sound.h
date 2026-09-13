@@ -25,6 +25,8 @@
 int sound_init(const struct em400_sound_cfg *cfg);
 void sound_shutdown(void);
 long sound_play(float *buf, size_t frames);
+long sound_ring_fill();
+long sound_ring_target();
 void sound_start(void);
 void sound_stop(void);
 
