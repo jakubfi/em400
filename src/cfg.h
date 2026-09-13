@@ -48,7 +48,6 @@ typedef dictionary em400_cfg;
 #define CFG_DEFAULT_SOUND_VOLUME 14
 #define CFG_DEFAULT_SOUND_RATE 48000
 #define CFG_DEFAULT_SOUND_LATENCY 20
-#define CFG_DEFAULT_SOUND_BUFFER_LEN 128
 
 #define cfg_getdouble iniparser_getdouble
 #define cfg_getint iniparser_getint

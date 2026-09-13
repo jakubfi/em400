@@ -64,7 +64,6 @@ struct em400_sound_cfg {
 	bool enabled;
 	int volume;
 	int sample_rate;
-	int buffer_len;
 	int latency;
 	const char *backend;
 	const char *device;

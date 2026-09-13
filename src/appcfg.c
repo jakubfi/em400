@@ -613,8 +613,6 @@ static void build_host(em400_cfg *cfg)
 		},
 		.sound = {
 			.enabled = cfg_getbool(cfg, "sound:enabled", CFG_DEFAULT_SOUND_ENABLED),
-			.buffer_len = getint_any(cfg, CFG_DEFAULT_SOUND_BUFFER_LEN,
-				(const char *[]){"sound:buffer_len", "sound:buffer", NULL}),
 			.volume = cfg_getint(cfg, "sound:volume", CFG_DEFAULT_SOUND_VOLUME),
 			.sample_rate = cfg_getint(cfg, "sound:rate", CFG_DEFAULT_SOUND_RATE),
 			.latency = cfg_getint(cfg, "sound:latency", CFG_DEFAULT_SOUND_LATENCY),
@@ -822,7 +820,6 @@ int appcfg_write(const struct appcfg *c, const char *path)
 	fprintf(f, "\n[sound]\n");
 	fprintf(f, "enabled = %s\n", bstr(snd->enabled));
 	fprintf(f, "rate = %i\n", snd->sample_rate);
-	fprintf(f, "buffer_len = %i\n", snd->buffer_len);
 	fprintf(f, "latency = %i\n", snd->latency);
 	fprintf(f, "volume = %i\n", snd->volume);
 	if (snd->backend && strcmp(snd->backend, CFG_DEFAULT_SOUND_BACKEND)) {

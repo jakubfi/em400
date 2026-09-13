@@ -38,7 +38,6 @@
 static bool sound_ready;
 
 static float sample_period_ns;
-static unsigned buffer_len;
 static int sample_sign = 1;
 static atomic_int volume_pct;
 
@@ -49,9 +48,9 @@ static unsigned dropped_frames;
 static unsigned drop_log_threshold;
 static unsigned adjust_log_interval;
 
-static float *snd_buf_end;
-static float *snd_buf_pos;
-static float *snd_buf_float;
+static float snd_buf_float[SOUND_FLUSH_FRAMES];
+static float *snd_buf_end = snd_buf_float + SOUND_FLUSH_FRAMES;
+static float *snd_buf_pos = snd_buf_float;
 
 
 // -----------------------------------------------------------------------
@@ -122,11 +121,11 @@ static void buzzer_flush()
 {
 	// Push the raw /16 square wave to the sound layer. The speaker-model
 	// filtering runs on the audio thread (see src/sound/sound.c).
-	long written = sound_play(snd_buf_float, buffer_len);
+	long written = sound_play(snd_buf_float, SOUND_FLUSH_FRAMES);
 	if (written < 0) return;
 
-	if ((unsigned)written < buffer_len) {
-		dropped_frames += buffer_len - written;
+	if (written < SOUND_FLUSH_FRAMES) {
+		dropped_frames += SOUND_FLUSH_FRAMES - written;
 		if (dropped_frames >= drop_log_threshold) {
 			LOG(L_LIB, "Sound ring overflow, dropped %u frames", dropped_frames);
 			dropped_frames = 0;
@@ -190,9 +189,6 @@ void buzzer_stop()
 // -----------------------------------------------------------------------
 void buzzer_shutdown()
 {
-	free(snd_buf_float);
-	snd_buf_float = NULL;
-
 	if (sound_ready) {
 		sound_shutdown();
 		sound_ready = false;
@@ -207,47 +203,35 @@ int buzzer_init(const struct em400_sound_cfg *cfg)
 		return E_ERR;
 	}
 
-	if ((cfg->sample_rate <= 0) || (cfg->buffer_len <= 0)) {
-		return LOGERR("Invalid sound configuration: rate %i, buffer length %i", cfg->sample_rate, cfg->buffer_len);
+	if (cfg->sample_rate <= 0) {
+		return LOGERR("Invalid sample rate: %i", cfg->sample_rate);
 	}
 
-	adjust_log_interval = 2 * cfg->sample_rate / cfg->buffer_len;
+	adjust_log_interval = 2 * cfg->sample_rate / SOUND_FLUSH_FRAMES;
 	if (adjust_log_interval < 1) adjust_log_interval = 1;
 
 	sample_period_ns = 1000000000.0f / cfg->sample_rate;
-	buffer_len = cfg->buffer_len;
 	drop_log_threshold = cfg->sample_rate;
 
 	adjust_gain_ppm_per_frame = ADJUST_GAIN_PPM_PER_MS * 1000.0f / cfg->sample_rate;
 
-	float buffer_time_s = (float) buffer_len / cfg->sample_rate;
-	adjust_error_weight = buffer_time_s / ADJUST_ERROR_TIME_CONST_S;
+	float flush_time_s = (float) SOUND_FLUSH_FRAMES / cfg->sample_rate;
+	adjust_error_weight = flush_time_s / ADJUST_ERROR_TIME_CONST_S;
 	if (adjust_error_weight > 1.0f) adjust_error_weight = 1.0f;
 
 	buzzer_volume_pct_set(cfg->volume);
 
-	snd_buf_float = malloc(sizeof(float) * buffer_len);
-	if (!snd_buf_float) {
-		LOG(L_CPU, "Cannot allocate memory for input sound buffer.");
-		goto cleanup;
-	}
-
 	snd_buf_pos = snd_buf_float;
-	snd_buf_end = snd_buf_float + buffer_len;
 
 	if (sound_init(cfg) != E_OK) {
 		LOG(L_CPU, "Could not initialize sound subsystem.");
-		goto cleanup;
+		return E_ERR;
 	}
 	sound_ready = true;
 
-	LOG(L_CPU, "Buzzer enabled. Volume: %i, buffer length: %i frames", buzzer_volume_pct_get(), buffer_len);
+	LOG(L_CPU, "Buzzer enabled. Volume: %i", buzzer_volume_pct_get());
 
 	return E_OK;
-
-cleanup:
-	buzzer_shutdown();
-	return E_ERR;
 }
 
 // vim: tabstop=4 shiftwidth=4 autoindent

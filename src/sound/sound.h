@@ -22,6 +22,8 @@
 #include <stdlib.h>
 #include "libem400.h"
 
+#define SOUND_FLUSH_FRAMES 128
+
 int sound_init(const struct em400_sound_cfg *cfg);
 void sound_shutdown(void);
 long sound_play(float *buf, size_t frames);

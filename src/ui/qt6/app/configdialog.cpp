@@ -523,20 +523,6 @@ QWidget *ConfigDialog::build_sound_page()
 	gate(rate, "cold");
 	form->addRow(tr("Sample rate:"), rate);
 
-	QComboBox *buffer = new QComboBox();
-	for (int b=16 ; b<=8192 ; b*=2) {
-		buffer->addItem(QString::number(b), b);
-	}
-	if (buffer->findData(work.host.sound.buffer_len) < 0) {
-		buffer->addItem(QString::number(work.host.sound.buffer_len), work.host.sound.buffer_len);
-	}
-	buffer->setCurrentIndex(buffer->findData(work.host.sound.buffer_len));
-	connect(buffer, &QComboBox::currentIndexChanged, this, [this, buffer]() {
-		work.host.sound.buffer_len = buffer->currentData().toInt();
-	});
-	gate(buffer, "cold");
-	form->addRow(tr("Buffer length (frames):"), buffer);
-
 	QSpinBox *latency = new QSpinBox();
 	latency->setRange(0, 1000);
 	latency->setSuffix(tr(" ms"));

@@ -247,14 +247,14 @@ int sound_init(const struct em400_sound_cfg *cfg)
 	}
 
 	ring_target = SOUND_PERIODS * period_frames;
-	if (ring_target < 2 * (ma_uint32)cfg->buffer_len) {
-		ring_target = 2 * (ma_uint32)cfg->buffer_len;
+	if (ring_target < 2 * SOUND_FLUSH_FRAMES) {
+		ring_target = 2 * SOUND_FLUSH_FRAMES;
 	}
 
 	// slack above the target, so ordinary peaks don't trigger the discard
 	ring_discard_thr = ring_target + 2 * period_frames;
 
-	ring_frames = ring_discard_thr + 2 * period_frames + 2 * (ma_uint32)cfg->buffer_len;
+	ring_frames = ring_discard_thr + 2 * period_frames + 2 * SOUND_FLUSH_FRAMES;
 	if (ring_frames < RING_FRAMES_MIN) {
 		ring_frames = RING_FRAMES_MIN;
 	}
@@ -286,7 +286,7 @@ int sound_init(const struct em400_sound_cfg *cfg)
 	initialized = true;
 	ma_uint32 cushion_ms = 1000 * ring_target / (ma_uint32)cfg->sample_rate;
 	if (cushion_ms > 250) {
-		LOGWARN("Sound buffer_len/latency give %u ms of buzzer latency", cushion_ms);
+		LOGWARN("Sound latency gives %u ms of buzzer latency", cushion_ms);
 	}
 	LOG(L_LIB, "Sound initialized (%s). Rate: %i Hz, period: %u ms x %u, ring: %u frames, cushion: %u frames (%u ms)",
 		ma_get_backend_name(context.backend),

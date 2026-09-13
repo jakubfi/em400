@@ -134,10 +134,6 @@ Domyślne polecenie korzysta z dołączonego narzędzia emterm.</translation>
         <translation>Częstotliwość próbkowania:</translation>
     </message>
     <message>
-        <source>Buffer length (frames):</source>
-        <translation>Długość bufora (ramki):</translation>
-    </message>
-    <message>
         <source> ms</source>
         <translation> ms</translation>
     </message>
