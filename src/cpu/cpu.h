@@ -102,6 +102,8 @@ bool cpu_mem_read_1(bool barnb, uint16_t addr, uint16_t *data);
 bool cpu_mem_write_1(bool barnb, uint16_t addr, uint16_t data);
 void cpu_do_clear(bool clo);
 
+void cpu_pacing_adjust(int ppm);
+
 #endif
 
 // vim: tabstop=4 shiftwidth=4 autoindent

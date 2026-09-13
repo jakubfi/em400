@@ -85,6 +85,8 @@ static struct {
 	struct timespec deadline;
 	int cumulative_ns;
 	int quantum_ns;
+	atomic_int adjust_ppm;
+	long long adjust_carry_fs; // adjustment carried over to the next loop, scaled to femtoseconds
 } pacing;
 
 #define TIMING_PROBE_DELAY			10
@@ -324,6 +326,7 @@ int cpu_init(const struct em400_host_cfg *host, const struct em400_machine_cfg *
 	speed_real = host->emu.timing != EM400_TIMING_NONE;
 	pacing.quantum_ns = 1000 * host->emu.emulation_quantum_us;
 	ticks_per_2s = 2000000000L / pacing.quantum_ns;
+	cpu_pacing_adjust(0);
 
 	sound_enabled = host->sound.enabled;
 
@@ -780,10 +783,28 @@ static void cpu_timing_wait(const struct timespec *deadline)
 }
 
 // -----------------------------------------------------------------------
+void cpu_pacing_adjust(int ppm)
+{
+	atomic_store_explicit(&pacing.adjust_ppm, ppm, memory_order_relaxed);
+}
+
+// -----------------------------------------------------------------------
 static void cpu_pacing_reset()
 {
 	clock_gettime(CLOCK_MONOTONIC, &pacing.deadline);
 	pacing.cumulative_ns = 0;
+	pacing.adjust_carry_fs = 0;
+}
+
+// -----------------------------------------------------------------------
+static long long cpu_pacing_adjustment_ns(int elapsed_ns)
+{
+	const long long fs_per_ns = 1000000;
+	int ppm = atomic_load_explicit(&pacing.adjust_ppm, memory_order_relaxed);
+
+	long long adjust_fs = pacing.adjust_carry_fs + (long long) elapsed_ns * ppm;
+	pacing.adjust_carry_fs = adjust_fs % fs_per_ns;
+	return adjust_fs / fs_per_ns;
 }
 
 // -----------------------------------------------------------------------
@@ -794,6 +815,7 @@ static inline void cpu_pacing(bool skip_sleep)
 	}
 
 	pacing.deadline.tv_nsec += pacing.cumulative_ns;
+	pacing.deadline.tv_nsec += cpu_pacing_adjustment_ns(pacing.cumulative_ns);
 	while (pacing.deadline.tv_nsec >= 1000000000) {
 		pacing.deadline.tv_nsec -= 1000000000;
 		pacing.deadline.tv_sec++;
