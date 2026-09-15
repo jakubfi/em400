@@ -96,8 +96,8 @@ fetch "$LINUXDEPLOY_QT_URL" "$TOOLS_DIR/linuxdeploy-plugin-qt.AppImage"
 
 # --- run linuxdeploy --------------------------------------------------------
 
-# Do NOT bundle the host's audio libs: miniaudio dlopen()s ALSA/Pulse/JACK at
-# runtime, so the AppImage should use whatever the target system provides
+# ALSA and JACK must match the host (sound card config, JACK server ABI).
+# libpulse is bundled anyway: libQt6Multimedia links it directly.
 export LINUXDEPLOY_OUTPUT_VERSION="$VERSION"
 export PATH="$TOOLS_DIR:$PATH"
 
@@ -111,9 +111,19 @@ cd "$OUTDIR"
 	--desktop-file "$APPDIR/usr/share/applications/em400.desktop" \
 	--icon-file "$APPDIR/usr/share/icons/hicolor/256x256/apps/em400.png" \
 	--exclude-library "libasound.so*" \
-	--exclude-library "libpulse*.so*" \
 	--exclude-library "libjack.so*" \
-	--plugin qt \
+	--plugin qt
+
+# miniaudio dlopen()s "libpulse.so" before "libpulse.so.0". Without this link a host
+# dev symlink loads a second, newer libpulse that binds into the bundled libpulsecommon.
+if [ ! -e "$APPDIR/usr/lib/libpulse.so.0" ]; then
+	echo "error: libpulse.so.0 was not bundled" >&2
+	exit 1
+fi
+ln -sf libpulse.so.0 "$APPDIR/usr/lib/libpulse.so"
+
+"$TOOLS_DIR/linuxdeploy.AppImage" \
+	--appdir "$APPDIR" \
 	--output appimage
 
 # linuxdeploy names the file from the .desktop name + version + arch
