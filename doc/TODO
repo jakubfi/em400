@@ -8,7 +8,6 @@ Work notes:
 * drop e4i/emitool sources
 
 * reconsider terminal input buffering
-* make uzfx/sp45de async?
 * make winchester async
 * make MX terminal working
 * make MX async?
@@ -21,6 +20,9 @@ Work notes:
 
 Known issues:
 
+Packaging:
+
+ * windows installer and appimage use deps github master
 
 Cleanups:
 

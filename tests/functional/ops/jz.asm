@@ -1,8 +1,9 @@
 
-	lw	r1, 14
-	nr	r1, 1
+	lw	r0, ~?Z & 0xffff
+	jz	fail
+	lw	r0, ?Z
 	jz	fin
-	hlt	040
+fail:	hlt	040
 fin:	hlt	077
 
 ; XPCT rz[6] : 0

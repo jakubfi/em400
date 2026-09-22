@@ -1,9 +1,10 @@
 
-	lw	r1, 15
-	cw	r1, 15
+	lw	r0, ?E
+	jn	fail
+	lw	r0, ~?E
 	jn	fin
-	hlt	077
-fin:	hlt	040
+fail:	hlt	040
+fin:	hlt	077
 
 ; XPCT rz[6] : 0
 ; XPCT sr : 0
