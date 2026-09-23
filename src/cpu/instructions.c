@@ -857,7 +857,7 @@ void op_72_ngl()
 {
 	uint16_t data = ~r[IR_A];
 	alu_16_set_Z_bool(data);
-	r[IR_A] = data;
+	REG_RESTRICT_WRITE(IR_A, data);
 }
 
 // -----------------------------------------------------------------------
