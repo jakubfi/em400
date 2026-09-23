@@ -13,21 +13,20 @@ ok:
 	mb	blk
 	im	blk
 
-	lwt	r1, 0
+	lw	r1, 0b1111111100000000
 	pw	r1, 10
+	lw	r1, 0b0000000011111111
 	pw	r1, 11
 
-	lw	r1, 0b1111111100000000
-	om	r1, 10
 	lw	r1, 0b1010101010101010
 	xm	r1, 10
 
-	lw	r2, 0
+	lw	r2, 0b0000000011111111
 	xm	r2, 11
 
 	hlt	077
 
-err:	hlt	077
+err:	hlt	040
 blk:	.word	IMASK_NOMEM | 1
 
 nomem_proc:
@@ -36,6 +35,7 @@ stack:
 
 ; XPCT rz[6] : 0
 ; XPCT sr : 0b0100000000000001
+; XPCT ir : 0xec3f
 
 ; XPCT [1:10] : 0b0101010110101010
 ; XPCT [1:11] : 0

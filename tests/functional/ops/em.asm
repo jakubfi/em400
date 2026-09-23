@@ -13,15 +13,15 @@ ok:
 	mb	blk
 	im	blk
 
-	lwt	r1, 0
-	pw	r1, 10
-	pw	r1, 11
 	lw	r1, 0b1111111100000000
-	om	r1, 10
+	pw	r1, 10
+	lw	r1, 0b0000000011111111
+	pw	r1, 11
+
 	lw	r1, 0b1010101010101010
 	em	r1, 10
 
-	lw	r2, 0
+	lw	r2, 0b1111111111111111
 	em	r2, 11
 
 	hlt	077
@@ -35,6 +35,7 @@ stack:
 
 ; XPCT rz[6] : 0
 ; XPCT sr : 0b0100000000000001
+; XPCT ir : 0xec3f
 
 ; XPCT [1:10] : 0b0101010100000000
 ; XPCT [1:11] : 0
