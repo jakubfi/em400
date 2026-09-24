@@ -74,5 +74,3 @@ fail_sysnum:
 	hlt	045
 
 stack:
-
-; XPCT ir : 0xec3f

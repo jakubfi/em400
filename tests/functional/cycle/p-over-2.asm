@@ -15,4 +15,3 @@ err:
 ; XPCT rz[6] : 0
 
 ; XPCT r1 : 15
-; XPCT ir : 0xec3f

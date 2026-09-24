@@ -50,4 +50,3 @@ ok:	im	mask
 stack:
 
 ; XPCT r2 : 0x00ba
-; XPCT ir : 0xec3f

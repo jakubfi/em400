@@ -32,5 +32,3 @@ start:
 	im	mask_0
 	hlt	044
 stack:
-
-; XPCT ir : 0xec3f

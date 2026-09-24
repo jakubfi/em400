@@ -38,6 +38,3 @@ a0:
 
 err:	hlt	040
 done:	hlt	077
-
-; XPCT ir : 0xec3f
-

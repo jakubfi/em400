@@ -63,4 +63,3 @@ stack:
 ; XPCT r3 : 0x0055
 ; XPCT r4 : 0x0055
 ; XPCT r5 : 0x0055
-; XPCT ir : 0xec3f

@@ -29,8 +29,8 @@ nomem_proc:
 mask:	.word	IMASK_NOMEM
 stack:
 
-; XPCT ir : 0xec3f
 ; XPCT rz[6] : 0
+; XPCT alarm : 1
 
 ; XPCT r2 : 5
 ; XPCT r4 : 1

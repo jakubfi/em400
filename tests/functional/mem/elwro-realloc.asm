@@ -60,4 +60,3 @@ stack:
 
 ; XPCT r2 : 0x5a5a
 ; XPCT r7 : 1
-; XPCT ir : 0xec3f

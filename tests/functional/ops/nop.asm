@@ -7,4 +7,3 @@
 ; XPCT sr : 0
 
 ; XPCT ic: 2
-; XPCT ir : 0xec3f

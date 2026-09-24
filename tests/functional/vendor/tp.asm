@@ -5959,5 +5959,3 @@ x1aec:	lw	r1, stack
 x1aee:	rw	r1, stackp
 x1af0:	mcl
 x1af1:	uj	[reset_stack]
-
-; XPCT ir : 0xec3f

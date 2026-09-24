@@ -11,4 +11,5 @@ test:
 	lw	r1, [1]
 
 ; XPCT rz[6] : 0
+; XPCT alarm : 1
 ; XPCT r1 : 0x4040

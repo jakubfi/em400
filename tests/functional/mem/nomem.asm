@@ -24,4 +24,3 @@ start:
 stack:
 
 ; XPCT rz[6] : 0
-; XPCT ir : 0xec3f

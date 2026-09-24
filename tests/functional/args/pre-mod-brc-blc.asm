@@ -11,5 +11,3 @@
 	hlt	041
 
 	hlt	077
-
-; XPCT ir : 0xec3f

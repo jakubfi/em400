@@ -1,3 +1,5 @@
+; BENCHMARK
+
 	.cpu mera400
 
 	.include cpu.inc

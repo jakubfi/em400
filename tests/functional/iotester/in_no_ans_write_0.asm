@@ -23,5 +23,3 @@ ok:	hlt	041
 pe:	hlt	042
 
 ; XPCT r4 : 0
-; XPCT ir : 0xec3f
-

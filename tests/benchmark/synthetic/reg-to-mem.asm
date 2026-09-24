@@ -1,3 +1,5 @@
+; BENCHMARK
+
 	lw	r3, 1
 	lw	r2, 4000
 loop:

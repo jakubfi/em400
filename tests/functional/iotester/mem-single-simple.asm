@@ -63,5 +63,3 @@ cmploop:
 fail:	hlt	050
 
 prog_end:
-
-; XPCT ir : 0xec3f

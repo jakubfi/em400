@@ -70,6 +70,3 @@ reset:
 	ujs .hltloop
 
 stack:
-
-; XPCT ir : 0xec3f
-; XPCT alarm : 0

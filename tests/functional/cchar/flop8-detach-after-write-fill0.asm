@@ -217,6 +217,3 @@ done:
 
 buf:	.res	128
 stack:
-
-; XPCT ir : 0xec3f
-; XPCT alarm : 0

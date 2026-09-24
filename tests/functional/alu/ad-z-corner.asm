@@ -22,5 +22,3 @@ a:	.dword	-2147483648
 b:	.dword	-2147483648
 r0_res:	.word	?MVC
 res:	.dword	0
-
-; XPCT ir : 0xec3f

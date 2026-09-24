@@ -48,4 +48,3 @@ ok:	hlt	077
 stack:
 
 ; XPCT r7 : 0
-; XPCT ir : 0xec3f

@@ -33,5 +33,3 @@ fail:
 	hlt	040
 
 stack:
-
-; XPCT ir : 0xec3f

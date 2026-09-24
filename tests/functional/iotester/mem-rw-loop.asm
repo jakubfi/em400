@@ -187,5 +187,3 @@ loop_counter:
 stack:	.res	32*4
 
 prog_end:
-
-; XPCT ir : 0xec3f

@@ -1,3 +1,5 @@
+; BENCHMARK
+
 	lw	r0, 1
 	lw	r1, data
 loop:

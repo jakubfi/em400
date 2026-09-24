@@ -110,5 +110,3 @@ user_prog:
 stack:	.res	12*4
 
 user_prog_end:
-
-; XPCT ir : 0xec3f

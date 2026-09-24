@@ -201,5 +201,4 @@ fail:
 stack:
 
 ; XPCT rz[6] : 0
-; XPCT ir : 0xec3f
 ; XPCT r5 : 24

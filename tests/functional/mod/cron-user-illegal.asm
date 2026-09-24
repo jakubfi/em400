@@ -78,5 +78,3 @@ user_prog:
 	cron
 
 user_prog_end:
-
-; XPCT ir : 0xec3f

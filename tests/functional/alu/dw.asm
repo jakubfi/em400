@@ -44,4 +44,3 @@ tests:
 fin:
 
 ; XPCT sr : 0
-; XPCT ir : 0xec3f

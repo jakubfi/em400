@@ -1,3 +1,5 @@
+; BENCHMARK
+
 	lw	r7, -10_000
 
 	lf	d1m

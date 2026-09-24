@@ -34,6 +34,3 @@ start:
 	cw	r1, 0b1000000
 	jn	.next
 	hlt	077
-
-; XPCT ir : 0xec3f
-; XPCT alarm : 0

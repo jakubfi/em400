@@ -42,4 +42,3 @@ start:
 stack:
 
 ; XPCT r7 : 14
-; XPCT ir : 0xec3f

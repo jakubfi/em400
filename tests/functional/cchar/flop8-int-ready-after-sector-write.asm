@@ -88,6 +88,3 @@ sector_done:
 test_done:
 	hlt	077
 stack:
-
-; XPCT ir : 0xec3f
-; XPCT alarm : 0

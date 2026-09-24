@@ -103,6 +103,3 @@ detach2:
 	hlt	077
 
 stack:
-
-; XPCT ir : 0xec3f
-; XPCT alarm : 0

@@ -1,3 +1,5 @@
+; BENCHMARK
+
 	lwt	r1, 1
 loop:
 	lw	r2, r1

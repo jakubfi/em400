@@ -214,6 +214,3 @@ start:
 	lj	positioned_write
 
 	hlt	077
-
-; XPCT ir : 0xec3f
-; XPCT alarm : 0

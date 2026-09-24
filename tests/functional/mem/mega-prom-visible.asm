@@ -27,5 +27,3 @@ test_ro:
 	hlt	077
 
 stack:
-
-; XPCT ir : 0xec3f

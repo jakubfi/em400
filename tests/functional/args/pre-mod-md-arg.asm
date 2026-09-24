@@ -24,7 +24,6 @@
 
 tab:	.word	10, 20, 30, 40
 
-; XPCT ir : 0xec3f
 ; XPCT rz[6] : 0
 
 ; XPCT r4 : 11

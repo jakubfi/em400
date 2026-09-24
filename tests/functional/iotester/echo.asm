@@ -39,5 +39,3 @@ nxtb:
 
 err:	hlt	040
 errv:	hlt	041
-
-; XPCT ir : 0xec3f

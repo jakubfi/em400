@@ -46,5 +46,3 @@ start:
 	hlt	077
 
 test_start:
-
-; XPCT ir : 0xec3f

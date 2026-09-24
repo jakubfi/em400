@@ -72,8 +72,6 @@ start:
 
 stack:
 
-; XPCT ir : 0xec3f
 ; XPCT r6 : 1
 ; XPCT r5 : 0
 ; XPCT r7 : 0
-; XPCT alarm : 0

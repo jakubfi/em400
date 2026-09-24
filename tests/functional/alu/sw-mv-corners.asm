@@ -53,5 +53,3 @@ tests:
 	.word ?ZMVC, -32768, -32768
 	.word ?ZVC, 0
 tests_end:
-
-; XPCT ir : 0xec3f

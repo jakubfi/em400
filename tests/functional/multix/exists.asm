@@ -44,6 +44,4 @@ stack:
 
 ; XPCT rz[15] : 0
 ; XPCT rz[6] : 0
-; XPCT alarm : 0
 ; XPCT r4 : 0b0000001000000000
-; XPCT ir : 0xec3f

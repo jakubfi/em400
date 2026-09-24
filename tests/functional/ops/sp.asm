@@ -12,4 +12,3 @@ fin_ok:
 
 ; XPCT sr : 0b0110000000000001
 ; XPCT r0 : 0xfafa
-; XPCT ir : 0xec3f

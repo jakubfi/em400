@@ -1,3 +1,4 @@
+; BENCHMARK
 
 	.include cpu.inc
 

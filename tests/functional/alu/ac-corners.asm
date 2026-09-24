@@ -31,5 +31,3 @@ tests:
 	.word	?C,	32767,	0,	?V,	-32768
 	.word	?C,	-32768,	-32768,	?MVC,	1
 tests_end:
-
-; XPCT ir : 0xec3f

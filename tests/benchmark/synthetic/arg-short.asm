@@ -1,3 +1,5 @@
+; BENCHMARK
+
 	.cpu mera400
 
 start:

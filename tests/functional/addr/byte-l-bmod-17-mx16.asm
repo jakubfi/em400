@@ -58,5 +58,3 @@ next_t:
 	uj	[run_test]
 
 test_start:
-
-; XPCT ir : 0xec3f

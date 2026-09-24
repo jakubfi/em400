@@ -45,5 +45,3 @@ loop:
 	im	mask_0
 	hlt	077
 stack:
-
-; XPCT ir : 0xec3f

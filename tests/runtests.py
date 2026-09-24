@@ -32,6 +32,12 @@ R_OK = 0
 R_ERR = 1
 R_UNK = 2
 
+HLT_PASS = "hlt 077"
+
+# ------------------------------------------------------------------------
+def normalize_expr(expr):
+    return re.sub(r"\s", "", expr).lower()
+
 # ------------------------------------------------------------------------
 class EM400:
 
@@ -108,13 +114,13 @@ class EM400:
             hung = False
             s = self.state()
             if s == "STOP":
-                break
+                return "stop"
             if s == "WAIT":
                 ir = self.reg("ir")
                 if self.ips() == 0:
                     # HLT with an argument >= 0o40 means "test finished"
                     if (ir & 0b1111110111000000) == 0b1110110000000000 and (ir & 0b0000000000111111) >= 0o40:
-                        break
+                        return "hlt %03o" % (ir & 0b0000000000111111)
                     hung = True
             if not hung:
                 hung_since = None
@@ -210,7 +216,7 @@ class TestResult:
             ret = "%-60s %s" % (self.name, pf[self.status])
             for expr, expected, got in self.checks:
                 if expected != got:
-                    ret += " %s=%i!=%i" % (expr, got, expected)
+                    ret += " %s=%s!=%s" % (expr, got, expected)
             return ret + self.__elapsed()
 
         return "%-60s no result%s" % (self.name, self.__elapsed())
@@ -300,10 +306,14 @@ class TestBed:
     # --------------------------------------------------------------------
     def __getparams(self, source):
         opts = []
+        benchmark = False
         xpct = []
         precmd = []
         postcmd = []
         for l in open(source, "r"):
+            if re.match(r"[ \t]*;[ \t]*BENCHMARK[ \t]*$", l):
+                benchmark = True
+                continue
             m = re.match(r"[ \t]*;[ \t]*(CONFIG|XPCT|PRECMD|POSTCMD)[ \t]+(.+?)[ \t]*$", l)
             if not m:
                 continue
@@ -325,7 +335,10 @@ class TestBed:
             elif directive == "POSTCMD":
                 postcmd += [arg]
 
-        return opts, xpct, precmd, postcmd
+        if benchmark and xpct:
+            raise SyntaxError("BENCHMARK with XPCT")
+
+        return opts, benchmark, xpct, precmd, postcmd
 
     # --------------------------------------------------------------------
     def run(self, source):
@@ -333,22 +346,22 @@ class TestBed:
         started = time.monotonic()
 
         try:
-            opts, xpct, precmd, postcmd = self.__getparams(source)
+            opts, benchmark, xpct, precmd, postcmd = self.__getparams(source)
             aout = self.__assembly(source)
             self.__runemu(["-c", self.config_override or self.default_config] + opts)
             self.e.wait_for_stop()
+            self.e.cmd("CLOCK OFF")
             self.e.clear()
             self.e.load(0, 0, aout)
-            self.e.cmd("CLOCK OFF")
             self.e.cmd("REG IC 0")
             if precmd:
                 for c in precmd:
                     self.e.cmd(c)
 
-            if xpct:
-                self.__passfail(result, xpct)
-            else:
+            if benchmark:
                 self.__benchmark(result, source)
+            else:
+                self.__passfail(result, xpct + self.__health_checks(xpct))
 
             if postcmd:
                 for c in postcmd:
@@ -372,12 +385,24 @@ class TestBed:
         return result
 
     # --------------------------------------------------------------------
+    def __health_checks(self, xpct):
+        declared = {normalize_expr(expr) for expr, val in xpct}
+        if "alarm" in declared:
+            return []
+        return [("alarm", 0)]
+
+    # --------------------------------------------------------------------
     def __passfail(self, result, xpct):
         self.e.start()
-        self.e.wait_for_finish()
+        finished = self.e.wait_for_finish()
+        # pressing STOP clears the alarm
+        alarm = self.e.eval("alarm")
         self.e.stop()
-        for x in xpct:
-            result.add_check(x[0], x[1], self.e.eval(x[0]))
+        if finished != "stop":
+            result.add_check("finish", HLT_PASS, finished)
+        for expr, expected in xpct:
+            got = alarm if normalize_expr(expr) == "alarm" else self.e.eval(expr)
+            result.add_check(expr, expected, got)
 
     # --------------------------------------------------------------------
     def __benchmark(self, result, source):

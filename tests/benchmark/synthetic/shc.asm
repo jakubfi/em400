@@ -1,3 +1,5 @@
+; BENCHMARK
+
 	lwt	r1, 1
 loop:
 	shc	r2, 1

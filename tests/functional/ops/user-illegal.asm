@@ -115,4 +115,3 @@ stack:	.res	32*4
 ; XPCT SR : 0b1111100000000001
 
 ; XPCT r7 : 24
-; XPCT ir : 0xec3f

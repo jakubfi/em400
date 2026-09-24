@@ -26,7 +26,6 @@
 ; XPCT r6 : -32000
 ; XPCT r7 : 0
 ; XPCT KB : 9
-; XPCT ir&0x3f : 0o77
 ; XPCT IC : 201
 ; XPCT SR : 11
 ; XPCT AR : 63

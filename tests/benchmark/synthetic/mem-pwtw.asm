@@ -1,3 +1,5 @@
+; BENCHMARK
+
 	.cpu mera400
 again:
 	lw	r1, 0x1fff

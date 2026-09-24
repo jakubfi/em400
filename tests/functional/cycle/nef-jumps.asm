@@ -19,6 +19,5 @@
 	hlt	077
 
 
-; XPCT ir : 0xec3f
 ; XPCT rz[2] : 0
 ; XPCT rz[6] : 0

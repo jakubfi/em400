@@ -1,3 +1,5 @@
+; BENCHMARK
+
 	lw	r1, 1
 loop:
 	ujs	0

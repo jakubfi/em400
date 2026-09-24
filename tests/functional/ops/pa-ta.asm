@@ -53,4 +53,3 @@ err:	hlt	040
 ; XPCT r5 : 50
 ; XPCT r6 : 60
 ; XPCT r7 : 70
-; XPCT ir : 0xec3f

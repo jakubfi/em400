@@ -30,5 +30,3 @@ start:
 .pe:	hlt	043
 
 stack:
-
-; XPCT ir : 0xec3f

@@ -13,5 +13,3 @@ fail:
 a:	.dword	2147483647
 b:	.word	-32768
 regs:	.word	32767, 1
-
-; XPCT ir : 0xec3f

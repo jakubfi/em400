@@ -75,4 +75,3 @@ ok:
 ; XPCT r5 : 0xf0f0
 ; XPCT r6 : 0x0f0f
 ; XPCT r7 : 0x1234
-; XPCT ir : 0xec3f

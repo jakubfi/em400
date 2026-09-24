@@ -72,5 +72,3 @@ stack:
 
 ; XPCT r1 : 0x21b1
 ; XPCT r2 : 0x12b1
-; XPCT ir : 0xec3f
-

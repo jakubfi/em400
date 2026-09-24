@@ -49,5 +49,3 @@ ok:	mb	ba
 	hlt	046
 
 stack:
-
-; XPCT ir : 0xec3f

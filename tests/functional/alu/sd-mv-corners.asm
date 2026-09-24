@@ -49,5 +49,3 @@ tests:
 	.word	?ZC
 	.dword	0
 tests_end:
-
-; XPCT ir : 0xec3f

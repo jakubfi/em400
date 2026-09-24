@@ -34,7 +34,6 @@ stack:
 
 ; XPCT rz[6] : 0
 ; XPCT sr : 0b0100000000000001
-; XPCT ir : 0xec3f
 
 ; XPCT [1:10] : 0b0101010100000000
 ; XPCT [1:11] : 0
