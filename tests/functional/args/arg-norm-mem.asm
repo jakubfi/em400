@@ -6,6 +6,7 @@
 	lw	r4, [dt1 + 1]
 	lw	r5, [r2 - 1]
 	lw	r6, [r1 + r2]
+	lw	r7, [dt1 + r3]
 
 	hlt	077
 
@@ -18,8 +19,9 @@ dt4:	.word	0x0004
 ; XPCT sr : 0
 
 ; XPCT r1 : 0x0001
-; XPCT r2 : 0x000d
+; XPCT r2 : 0x000f
 ; XPCT r3 : 0x0003
-; XPCT r4 : 0x000d
-; XPCT r5 : 0x000d
+; XPCT r4 : 0x000f
+; XPCT r5 : 0x000f
 ; XPCT r6 : 0x0004
+; XPCT r7 : 0x0004
