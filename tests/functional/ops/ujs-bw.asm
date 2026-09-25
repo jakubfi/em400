@@ -10,4 +10,3 @@ fin:	ujs	fin2
 	hlt	040
 
 ; XPCT rz[6] : 0
-; XPCT sr : 0

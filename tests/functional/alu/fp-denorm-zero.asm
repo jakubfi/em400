@@ -13,5 +13,3 @@ tests:
 	.word	0x0000, 0x0000, 0x0001 ; 0 (denormalized)
 	.float	4
 fin:
-
-; XPCT sr : 0

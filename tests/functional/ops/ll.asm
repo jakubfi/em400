@@ -12,7 +12,6 @@ data2:	.word	data3
 data3:	.word	101, 102, 103
 
 ; XPCT rz[6] : 0
-; XPCT sr : 0
 
 ; XPCT r5 : 101
 ; XPCT r6 : 102

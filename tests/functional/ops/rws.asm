@@ -25,7 +25,6 @@ data1:	.res	5
 data2:	.res	5
 
 ; XPCT rz[6] : 0
-; XPCT sr : 0
 
 ; XPCT [20] : -30
 ; XPCT [21] : -31

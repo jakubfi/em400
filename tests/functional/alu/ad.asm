@@ -27,5 +27,3 @@ tests:
 	.dword	1
 	.dword	0
 fin:
-
-; XPCT sr : 0

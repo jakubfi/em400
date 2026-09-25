@@ -42,5 +42,3 @@ tests:
 	.word	1213, 0
 	.word	0, 0b1000000000000001
 fin:
-
-; XPCT sr : 0

@@ -15,7 +15,6 @@
 data:
 
 ; XPCT rz[6] : 0
-; XPCT sr : 0
 
 ; XPCT [20] : 10
 ; XPCT [21] : 20

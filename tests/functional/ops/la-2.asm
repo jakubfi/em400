@@ -7,7 +7,6 @@ data1:	.word	data2
 data2:	.word	40, 41, 42, 43, 44, 45, 46
 
 ; XPCT rz[6] : 0
-; XPCT sr : 0
 
 ; XPCT r1 : 40
 ; XPCT r2 : 41

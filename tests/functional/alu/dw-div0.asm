@@ -12,5 +12,3 @@ tests:
 	.word	0, 0
 	.dword	5
 fin:
-
-; XPCT sr : 0

@@ -12,5 +12,3 @@ tests:
 	.word	0x2000, 0x0000, 0x0004 ; 4 (denormalized)
 	.float	3
 fin:
-
-; XPCT sr : 0

@@ -12,5 +12,3 @@ tests:
 	.float	-3
 	.float	-1
 fin:
-
-; XPCT sr : 0

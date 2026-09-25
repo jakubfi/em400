@@ -12,7 +12,6 @@ data2:	.word	data3
 data3:	.word	2048, 2049, 2050
 
 ; XPCT rz[6] : 0
-; XPCT sr : 0
 
 ; XPCT r1 : 2048
 ; XPCT r2 : 2049

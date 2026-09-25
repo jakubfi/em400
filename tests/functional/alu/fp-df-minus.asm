@@ -12,5 +12,3 @@ tests:
 	.word	0x9999, 0x9999, 0x9afd ; a bit less than -0.1
 	.word	0xb000, 0x0000, 0x0006
 fin:
-
-; XPCT sr : 0

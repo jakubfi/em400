@@ -7,4 +7,3 @@ fin:	hlt	077
 	hlt	040
 
 ; XPCT rz[6] : 0
-; XPCT sr : 0

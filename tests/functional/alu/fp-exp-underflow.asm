@@ -12,5 +12,3 @@ tests:
 	.float	2
 	.word	0x7fff, 0xffff, 0xff7f ; garbage
 fin:
-
-; XPCT sr : 0

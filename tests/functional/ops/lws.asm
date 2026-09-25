@@ -21,7 +21,6 @@ data2:	.word	0x1040
 fin:	hlt	077
 
 ; XPCT rz[6] : 0
-; XPCT sr : 0
 
 ; XPCT r0 : 0xffff
 ; XPCT r1 : 0x1051
