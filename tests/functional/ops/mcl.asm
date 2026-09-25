@@ -18,9 +18,9 @@
 	mcl
 	hlt	077
 
-the_sr:	.word	0b1000011110010000
+the_sr:	.word	0b1000011110011111
 
-; XPCT rz[6] : 0
+; XPCT rz : 0
 ; XPCT sr : 0
 
 ; XPCT r0 : 0
