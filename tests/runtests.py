@@ -285,7 +285,7 @@ class TestBed:
                 t = line.split()
                 if len(t) >= 2:
                     try:
-                        baseline[t[0]] = float(t[1])
+                        baseline[os.path.normpath(t[0])] = float(t[1])
                     except ValueError:
                         pass
 
@@ -424,12 +424,12 @@ def collect_tests(i):
     tests = []
 
     if os.path.isfile(i) and i.endswith(".asm"):
-        tests.append(i)
+        tests.append(os.path.normpath(i))
     elif os.path.isdir(i):
         for path, dirs, files in os.walk(i):
             for f in files:
                 if f.endswith(".asm"):
-                    tests.append("{}/{}".format(path, f))
+                    tests.append(os.path.normpath(os.path.join(path, f)))
     elif os.path.isfile(i) and i.endswith(".set"):
         with open(i) as f:
             for line in f:
