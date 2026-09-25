@@ -1,26 +1,33 @@
-
-	lw	r0, ?VX
-	lw	r1, 0b0010000000000001
+	; svx should shift left with X in, set Y from MSB, not clear V, not touch other flags
+	lw	r0, ~?Y
+	lw	r1, 0b1101010101010101
 	svx	r1
-	lw	r3, r1
 	rpc	r2
 
-	lw	r0, ?X
-	svx	r1
-	lw	r4, r1
-	rpc	r5
+	; svx should shift in X=0 (not Y), clear Y from MSB, set V on 0->1 sign change
+	lw	r0, ?Y
+	lw	r3, 0b0101010101010101
+	svx	r3
+	rpc	r4
 
-	lw	r0, ?X
-	svx	r1
+	; svx should set V on 1->0 sign change
+	lwt	r0, 0
+	lw	r5, 0b1010101010101010
+	svx	r5
+	rpc	r6
+
+	; svx should not set V without sign change
+	lwt	r0, 0
+	lw	r7, 0b0010101010101010
+	svx	r7
 
 	hlt	077
 
-
-; XPCT r3 : 0b0100000000000011
-; XPCT r2 : 0b0010000010000000
-
-; XPCT r4 : 0b1000000000000111
-; XPCT r5 : 0b0010000010000000
-
-; XPCT r1 : 0b0000000000001111
-; XPCT r0 : 0b0010000110000000
+; XPCT r1 : 0b1010101010101011
+; XPCT r2 : 0b1111111111111111
+; XPCT r3 : 0b1010101010101010
+; XPCT r4 : 0b0010000000000000
+; XPCT r5 : 0b0101010101010100
+; XPCT r6 : 0b0010000100000000
+; XPCT r7 : 0b0101010101010100
+; XPCT r0 : 0b0000000000000000
