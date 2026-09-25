@@ -6,6 +6,5 @@
 fail:	hlt	040
 fin:	hlt	077
 
-; XPCT rz[6] : 0
 
 ; XPCT r0 : 0b0000000000000000

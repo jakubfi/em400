@@ -385,11 +385,17 @@ class TestBed:
         return result
 
     # --------------------------------------------------------------------
+    # Checks that every test should pass (except when explicitely set otherwise by the test)
     def __health_checks(self, xpct):
         declared = {normalize_expr(expr) for expr, val in xpct}
-        if "alarm" in declared:
-            return []
-        return [("alarm", 0)]
+        checks = []
+        # no alarm
+        if "alarm" not in declared:
+            checks += [("alarm", 0)]
+        # no pending illegal instruction interrupt
+        if not declared & {"rz", "rz[6]"}:
+            checks += [("rz[6]", 0)]
+        return checks
 
     # --------------------------------------------------------------------
     def __passfail(self, result, xpct):

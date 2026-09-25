@@ -58,3 +58,5 @@ next_t:
 	uj	[run_test]
 
 test_start:
+
+; XPCT rz[6] : 1

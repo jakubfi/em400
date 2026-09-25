@@ -89,7 +89,6 @@ user_prog:
 user_prog_end:
 stack:	.res	32*4
 
-; XPCT rz[6] : 0
 ; XPCT SR : 0b1111100000000001
 
 ; XPCT r7 : 22

@@ -13,7 +13,6 @@ data:	.org	200
 	.word	ok, 0xfafa, 0b1100000000000001, 0
 stack:
 
-; XPCT rz[6] : 0
 
 ; new process vector
 

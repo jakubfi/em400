@@ -67,7 +67,6 @@ user_prog:
 
 stack:
 
-; XPCT rz[6] : 0
 ; XPCT SR : 0b0100000000000001
 
 ; XPCT r1 : 0x21b1

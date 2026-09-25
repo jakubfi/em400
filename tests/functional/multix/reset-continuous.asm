@@ -61,5 +61,4 @@ loop:	hlt
 stack:
 
 ; XPCT rz[15] : 0
-; XPCT rz[6] : 0
 ; XPCT r1 : 0

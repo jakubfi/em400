@@ -23,7 +23,6 @@ start:
 exlp:
 	hlt	077
 
-; XPCT rz[6] : 0
 
 ; new process vector
 

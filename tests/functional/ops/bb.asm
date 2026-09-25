@@ -6,4 +6,3 @@
 	hlt	077
 	hlt	040
 
-; XPCT rz[6] : 0

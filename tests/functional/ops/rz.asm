@@ -5,6 +5,5 @@
 	.org	110
 	.word	-1
 
-; XPCT rz[6] : 0
 
 ; XPCT [110] : 0

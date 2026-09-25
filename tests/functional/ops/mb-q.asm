@@ -20,5 +20,4 @@ start:
 	.org	0x100
 stack:
 
-; XPCT rz[6] : 0
 ; XPCT [0x102] : 0b0101010101110000

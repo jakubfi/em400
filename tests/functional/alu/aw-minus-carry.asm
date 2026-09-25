@@ -4,7 +4,6 @@
 	aw	r1, 0b1111111111111111
 	hlt	077
 
-; XPCT rz[6] : 0
 
 ; XPCT r1 : -2
 ; XPCT Z : 0

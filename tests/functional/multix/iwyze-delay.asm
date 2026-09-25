@@ -58,4 +58,3 @@ loop:	hlt		; wait for multix interrupt (or timeout)
 	ujs	loop
 
 ; XPCT rz[15] : 0
-; XPCT rz[6] : 0

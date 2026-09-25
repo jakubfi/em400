@@ -43,7 +43,6 @@ stack:
 
 err:	hlt	040
 
-; XPCT rz[6] : 0
 ; XPCT sr : 0b0100000000000001
 
 ; XPCT r1 : 1

@@ -5,7 +5,6 @@
 
 	hlt	077
 
-; XPCT rz[6] : 0
 
 ; XPCT r1 : 0
 ; XPCT r2 : 63

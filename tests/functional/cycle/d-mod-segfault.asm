@@ -5,6 +5,5 @@
 	lw	r1, [0x8000]
 	hlt	077
 
-; XPCT rz[6] : 0
 ; XPCT alarm : 1
 ; XPCT r1 : 0

@@ -11,6 +11,5 @@ exitok:
 err:
 	hlt	040
 
-; XPCT rz[6] : 0
 
 ; XPCT r1 : 15

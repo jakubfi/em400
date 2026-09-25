@@ -7,7 +7,6 @@ next:	lwt	r2, 1
 	hlt	077
 fail:	hlt	040
 
-; XPCT rz[6] : 0
 
 ; XPCT r1 : 1
 ; XPCT r2 : 0

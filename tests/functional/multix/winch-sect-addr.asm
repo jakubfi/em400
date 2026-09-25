@@ -153,4 +153,3 @@ prog_end:
 	.const	stack rdbuf+SSIZE
 
 ; XPCT rz[15] : 0
-; XPCT rz[6] : 0

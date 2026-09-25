@@ -14,6 +14,5 @@ fin:	hlt	077
 mask:	.word	IMASK_GROUP_H
 stack:
 
-; XPCT rz[6] : 0
 
 ; XPCT sr : 0

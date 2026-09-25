@@ -26,3 +26,5 @@ done:	hlt	077
 mask:	.word	IMASK_CPU_H
 ints:	.word	0x7fff
 stack:
+
+; XPCT rz : 0x6fff

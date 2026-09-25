@@ -9,4 +9,3 @@ fin:	ujs	fin2
 	.res	5
 	hlt	040
 
-; XPCT rz[6] : 0

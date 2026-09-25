@@ -6,4 +6,3 @@
 ; XPCT rz[13] : 0
 ; XPCT rz[14] : 0
 ; XPCT rz[15] : 0
-; XPCT rz[6] : 0

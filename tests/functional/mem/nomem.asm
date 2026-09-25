@@ -23,4 +23,3 @@ start:
 
 stack:
 
-; XPCT rz[6] : 0

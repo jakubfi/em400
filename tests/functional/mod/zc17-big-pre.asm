@@ -57,3 +57,4 @@ ok:	im	mask
 stack:
 
 ; XPCT r3 : 0x00ba
+; XPCT rz[6] : 1

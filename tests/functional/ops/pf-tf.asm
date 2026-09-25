@@ -34,7 +34,6 @@ nomem_proc:
 	hlt	040
 stack:
 
-; XPCT rz[6] : 0
 ; XPCT sr : 0b0100000000000001
 
 ; XPCT r1 : 50

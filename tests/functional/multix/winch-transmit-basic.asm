@@ -213,4 +213,3 @@ prog_end:
 
 
 ; XPCT rz[15] : 0
-; XPCT rz[6] : 0

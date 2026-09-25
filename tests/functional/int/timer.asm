@@ -12,6 +12,5 @@ loop1:	trb	r1, 1
 	ujs	loop1
 	ujs	loop2
 
-; XPCT rz[6] : 0
 
 ; XPCT rz[5] : 1

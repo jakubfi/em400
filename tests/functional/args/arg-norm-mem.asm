@@ -15,7 +15,6 @@ dt2:	.word	dt3
 dt3:	.word	0x0003
 dt4:	.word	0x0004
 
-; XPCT rz[6] : 0
 
 ; XPCT r1 : 0x0001
 ; XPCT r2 : 0x000f
