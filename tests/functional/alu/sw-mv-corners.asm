@@ -23,6 +23,15 @@ err_r1:
 	hlt	041
 
 tests:
+	.word 0, 10, 100
+	.word ?M, -90
+
+	.word 0, -1, 1
+	.word ?MC, -2
+
+	.word 0, -32768, 1
+	.word ?MVC, 32767
+
 	.word 0, 0, -32768
 	.word ?V, -32768
 
