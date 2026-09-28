@@ -1,22 +1,18 @@
-
 	.include cpu.inc
 
-start:
+	; lip should restore IC, r0 and SR from the stack and pull the stack pointer back by 4
 	lw	r1, stack
 	rw	r1, STACKP
-
+	lwt	r0, 0
 	lip
-ok:	hlt	077
 	hlt	040
 
-data:	.org	200
-	.word	ok, 0xfafa, 0b1100000000000001, 0
+kim:	hlt	077
+
+	.org	200
+	.word	kim, 0xfafa, IMASK_ALL_MEM | 1, 0
 stack:
 
-
-; new process vector
-
-; XPCT sr : 0b1100000000000001
 ; XPCT r0 : 0xfafa
-
-; XPCT [97] : 200
+; XPCT sr : 0xc001
+; XPCT [0x61] : 200
