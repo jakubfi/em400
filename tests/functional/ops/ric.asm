@@ -1,13 +1,11 @@
-
-	ric	r1
-	ric	r2
-	ric	r3
-	ric	r4
+	; ric should load IC of the next instruction, not touch flags
+	lwt	r0, -1
+	uj	start
+	.org	0x1234
+start:	ric	r1
+	rpc	r2
 
 	hlt	077
 
-
-; XPCT r1 : 1
-; XPCT r2 : 2
-; XPCT r3 : 3
-; XPCT r4 : 4
+; XPCT r1 : 0x1235
+; XPCT r2 : 0xffff
