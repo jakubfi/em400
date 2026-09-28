@@ -1,35 +1,25 @@
+	; rws should store to the farthest backward IC-relative address, not touch flags or the register
+	lwt	r0, -1
+	lw	r1, 0x5a3c
+	ujs	start
+bw:	.word	0
+	.res	61
+start:	rws	r1, bw
+	rpc	r2
 
-	lwt	r0, -30
-	lwt	r1, -31
-	lwt	r2, -32
-	lwt	r3, -33
-	lwt	r4, -34
-	lwt	r5, -35
-	lwt	r6, -36
-	lwt	r7, -37
-
-	rws	r0, data1
-	rws	r1, data1+1
-	rws	r2, data1+2
-	rws	r3, data1+3
-	rws	r4, data2
-	rws	r5, data2+1
-	rws	r6, data2+2
-	rws	r7, data2+3
+	; rws should store to the farthest forward IC-relative address, not set Z on zero
+	lwt	r0, 0
+	lwt	r3, 0
+	rws	r3, fw
+	rpc	r4
 
 	hlt	077
+	.res	61
+fw:	.word	-1
 
-	.org	20
-data1:	.res	5
-	.org	30
-data2:	.res	5
-
-
-; XPCT [20] : -30
-; XPCT [21] : -31
-; XPCT [22] : -32
-; XPCT [23] : -33
-; XPCT [30] : -34
-; XPCT [31] : -35
-; XPCT [32] : -36
-; XPCT [33] : -37
+; XPCT [4] : 0x5a3c
+; XPCT r1 : 0x5a3c
+; XPCT r2 : 0xffff
+; XPCT [134] : 0
+; XPCT r3 : 0
+; XPCT r4 : 0
