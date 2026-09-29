@@ -1,12 +1,10 @@
-
-	lw	r1, -1
+	lwt	r1, -10
 	nga	r1
 
-	lw	r2, 1
+	lwt	r2, 10
 	nga	r2
 
 	hlt	077
 
-
-; XPCT r1 : 1
-; XPCT r2 : -1
+; XPCT r1 : 10
+; XPCT r2 : -10

@@ -1,13 +1,14 @@
-
-	lw	r0, ?C
-	lw	r1, 0b1111111111111111
+	; without carry ngc is a bitwise negation
+	lwt	r0, 0
+	lw	r1, 0x5a3c
 	ngc	r1
 
-	lw	r2, 0b0000000000000001
+	; with carry ngc is an arithmetic negation
+	lw	r0, ?C
+	lw	r2, 0x5a3c
 	ngc	r2
 
 	hlt	077
 
-
-; XPCT r1 : 0b0000000000000001
-; XPCT r2 : 0b1111111111111110
+; XPCT r1 : 0xa5c3
+; XPCT r2 : 0xa5c4

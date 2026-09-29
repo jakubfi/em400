@@ -1,18 +1,18 @@
-
-	lw	r0, 0b0111111111111111
-	lw	r1, 0b1111111111111111
+	; ngl should set Z on zero result, not clear other flags
+	lw	r0, 0x7fff
+	lwt	r1, -1
 	ngl	r1
-	rpc	r3
+	rpc	r2
 
-	lw	r0, 0b1111111111111111
-	lw	r2, 0b0000000000000001
-	ngl	r2
+	; ngl should clear Z on non-zero result, not set other flags (especially M on negative result)
+	lw	r0, ?Z
+	lw	r3, 0x5a3c
+	ngl	r3
 	rpc	r4
 
 	hlt	077
 
-
-; XPCT r1 : 0b0000000000000000
-; XPCT r2 : 0b1111111111111110
-; XPCT r3 : 0b1111111111111111
-; XPCT r4 : 0b0111111111111111
+; XPCT r1 : 0
+; XPCT r2 : 0xffff
+; XPCT r3 : 0xa5c3
+; XPCT r4 : 0
