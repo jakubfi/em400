@@ -129,7 +129,8 @@ class EM400:
         return int(val, 0)
 
     # --------------------------------------------------------------------
-    def wait_for_finish(self):
+    def wait_for_finish(self, max_runtime=0):
+        started = time.monotonic()
         hung_since = None
         while True:
             hung = False
@@ -149,6 +150,8 @@ class EM400:
                 hung_since = time.monotonic()
             elif time.monotonic() - hung_since >= self.timeout:
                 raise TimeoutError("halted with no activity for %gs" % self.timeout)
+            if max_runtime and time.monotonic() - started >= max_runtime:
+                raise TimeoutError("still running after %gs" % max_runtime)
             if self.polldelay:
                 time.sleep(self.polldelay)
 
@@ -246,12 +249,13 @@ class TestResult:
 class TestBed:
 
     # --------------------------------------------------------------------
-    def __init__(self, emas, binary, blfile, benchmark_duration=0.5, failcmd=None, log="", options=None, timeout=5, config=None):
+    def __init__(self, emas, binary, blfile, benchmark_duration=0.5, failcmd=None, log="", options=None, timeout=5, max_runtime=20, config=None):
         self.emas = emas
         self.binary = binary
         self.failcmd = failcmd
         self.benchmark_duration = benchmark_duration
         self.timeout = timeout
+        self.max_runtime = max_runtime
         self.e = None
         self.add_opts = None
         self.default_config = "configs/minimal.ini"
@@ -331,17 +335,27 @@ class TestBed:
         xpct = []
         precmd = []
         postcmd = []
+        max_runtime = self.max_runtime
         for l in open(source, "r"):
             if re.match(r"[ \t]*;[ \t]*BENCHMARK[ \t]*$", l):
                 benchmark = True
                 continue
-            m = re.match(r"[ \t]*;[ \t]*(CONFIG|XPCT|PRECMD|POSTCMD)[ \t]+(.+?)[ \t]*$", l)
+            m = re.match(r"[ \t]*;[ \t]*(CONFIG|XPCT|PRECMD|POSTCMD|TIMEOUT)[ \t]+(.+?)[ \t]*$", l)
             if not m:
                 continue
             directive, arg = m.groups()
             if directive == "CONFIG":
                 if not self.config_override:
                     opts += ["-c", arg]
+            elif directive == "TIMEOUT":
+                try:
+                    t = float(arg)
+                    if t <= 0:
+                        raise ValueError
+                except ValueError:
+                    raise SyntaxError("Malformed TIMEOUT: %s" % arg)
+                if self.max_runtime:
+                    max_runtime = t
             elif directive == "XPCT":
                 # split on the last colon, the expression itself may contain ':' ("[seg:addr]")
                 expr, sep, val = arg.rpartition(":")
@@ -359,7 +373,7 @@ class TestBed:
         if benchmark and xpct:
             raise SyntaxError("BENCHMARK with XPCT")
 
-        return opts, benchmark, xpct, precmd, postcmd
+        return opts, benchmark, xpct, precmd, postcmd, max_runtime
 
     # --------------------------------------------------------------------
     def run(self, source):
@@ -367,7 +381,7 @@ class TestBed:
         started = time.monotonic()
 
         try:
-            opts, benchmark, xpct, precmd, postcmd = self.__getparams(source)
+            opts, benchmark, xpct, precmd, postcmd, max_runtime = self.__getparams(source)
             aout = self.__assembly(source)
             self.__runemu(["-c", self.config_override or self.default_config] + opts)
             self.e.wait_for_stop()
@@ -382,7 +396,7 @@ class TestBed:
             if benchmark:
                 self.__benchmark(result, source)
             else:
-                self.__passfail(result, xpct + self.__health_checks(xpct))
+                self.__passfail(result, xpct + self.__health_checks(xpct), max_runtime)
 
             if postcmd:
                 for c in postcmd:
@@ -423,9 +437,9 @@ class TestBed:
         return checks
 
     # --------------------------------------------------------------------
-    def __passfail(self, result, xpct):
+    def __passfail(self, result, xpct, max_runtime):
         self.e.start()
-        finished = self.e.wait_for_finish()
+        finished = self.e.wait_for_finish(max_runtime)
         # pressing STOP clears the alarm
         alarm = self.e.eval("alarm")
         self.e.stop()
@@ -484,7 +498,8 @@ parser.add_argument("-e", "--emulator", help="emulator binary to run", default="
 parser.add_argument("-f", "--failcmd", help="command to run when test fails", action='append')
 parser.add_argument("-l", "--log", help="configure em400 logging", default="")
 parser.add_argument("-O", "--option", help="add the following option when running em400", action='append')
-parser.add_argument("-t", "--timeout", help="per-test timeout in seconds (default: 5)", type=float, default=5)
+parser.add_argument("-t", "--timeout", help="fail a test halted with no activity for this many seconds (default: 5)", type=float, default=5)
+parser.add_argument("-T", "--max-runtime", help="fail a test still running after this many seconds, overridden by a test's TIMEOUT directive, 0 disables (default: 20)", type=float, default=20)
 parser.add_argument("-x", "--exitfirst", help="stop after the first failed test", action="store_true")
 parser.add_argument("-v", "--verbose", help="be verbose", action="store_const", const=1, default=0)
 parser.add_argument('test', nargs='*', help='Test to run (asm source, directory or test set). Default set is run when no tests are provided.')
@@ -505,7 +520,7 @@ tests.sort()
 # run tests
 total = 0
 failed = 0
-tb = TestBed("emas", args.emulator, args.baseline, benchmark_duration=0.5, failcmd=args.failcmd, log=args.log, options=args.option, timeout=args.timeout, config=args.config)
+tb = TestBed("emas", args.emulator, args.baseline, benchmark_duration=0.5, failcmd=args.failcmd, log=args.log, options=args.option, timeout=args.timeout, max_runtime=args.max_runtime, config=args.config)
 for t in tests:
     if not DEBUG:
         if sys.stdout.isatty():
