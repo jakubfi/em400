@@ -39,6 +39,10 @@ def normalize_expr(expr):
     return re.sub(r"\s", "", expr).lower()
 
 # ------------------------------------------------------------------------
+class EmulatorDied(Exception):
+    pass
+
+# ------------------------------------------------------------------------
 class EM400:
 
     # --------------------------------------------------------------------
@@ -51,25 +55,42 @@ class EM400:
 
     # --------------------------------------------------------------------
     def close(self):
-        self.quit()
+        try:
+            self.quit()
+        except EmulatorDied:
+            return
         self.p.wait()
 
     # --------------------------------------------------------------------
     def kill(self):
         self.p.kill()
         self.p.wait()
+        for f in (self.p.stdin, self.p.stdout):
+            try:
+                f.close()
+            except BrokenPipeError:
+                pass
+
+    # --------------------------------------------------------------------
+    def __send(self, command):
+        try:
+            self.p.stdin.write("%s\n" % command)
+            resp = self.p.stdout.readline()
+        except BrokenPipeError:
+            resp = ""
+        if not resp:
+            self.kill()
+            raise EmulatorDied("em400 died (exit code %i)" % self.p.returncode)
+        return resp
 
     # --------------------------------------------------------------------
     def cmd_raw(self, command):
-
-        self.p.stdin.write("%s\n" % command)
-        return self.p.stdout.readline().strip()
+        return self.__send(command).strip()
 
     # --------------------------------------------------------------------
     def cmd(self, command):
         if DEBUG: print("--> %s" % command)
-        self.p.stdin.write("%s\n" % command)
-        resp = self.p.stdout.readline()
+        resp = self.__send(command)
         if DEBUG: print("<-- %s" % resp)
 
         ret = R_UNK
@@ -372,6 +393,10 @@ class TestBed:
             result.error = str(e)
             # em400 state is unknown at this point, don't reuse the instance
             self.__killemu()
+        except EmulatorDied as e:
+            result.status = TestResult.ERROR
+            result.error = str(e)
+            self.e = None
         except Exception as e:
             result.status = TestResult.ERROR
             result.error = str(e).rstrip()
