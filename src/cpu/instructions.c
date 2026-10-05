@@ -717,7 +717,7 @@ void op_71_brc()
 // -----------------------------------------------------------------------
 void op_71_nrf()
 {
-	int nrf_op = IR_A & 0b011; // used by soft-awp, apparently (TODO: check in h/w)
+	int nrf_op = IR_A & 0b011; // selects soft-AWP vector only, AWP ignores it
 	awp_dispatch(nrf_op, ar);
 }
 

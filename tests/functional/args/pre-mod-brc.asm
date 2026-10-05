@@ -2,7 +2,7 @@
 ; premodified argument is 16-bit, but BRC tests only the right byte of r0
 ; so bits in the left byte always cause a skip
 
-	lw	r0, 1
+	lwt	r0, 1
 	md	1
 	brc	1	; arg = 2
 	hlt	040
@@ -23,7 +23,7 @@
 	brc	0	; arg = 0xff00
 	hlt	043
 
-	lw	r0, 0
+	lwt	r0, 0
 	md	0xffff
 	brc	1	; arg = 0
 	ujs	1
