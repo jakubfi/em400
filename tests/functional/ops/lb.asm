@@ -1,35 +1,23 @@
+	; lb should load the left byte (even address) into the right byte of the register, keep the left byte of the register
+	; lb should not touch flags
+	lwt	r0, -1
+	lw	r1, 0x1122
+	lb	r1, 200
+	rpc	r2
 
-	.include cpu.inc
+	; lb should load the right byte (odd address), not set Z on zero byte
+	lwt	r0, 0
+	lw	r3, 0x3344
+	lb	r3, 203
+	rpc	r4
 
-	lw	r3, stack
-	rw	r3, STACKP
-	lw	r3, nomem_proc
-	rw	r3, INTV_NOMEM
-
-	lw	r1, 0b0000000000000001
-	ou	r1, 0b0000000000000011
-	.word	err, err, ok, err
-ok:	
-	mb	blk
-	im	blk
-
-	lw	r1, 0b0101010111001100
-	pw	r1, 10
-
-	lw	r1, 0b1010101010101010
-	lb	r1, 21
-	lw	r2, 0b0101010101010101
-	lb	r2, 20
 	hlt	077
 
-err:	hlt	040
-blk:	.word	IMASK_NOMEM | 1
+	.org	100
+	.word	0xa5c3
+	.word	0x5a00
 
-nomem_proc:
-	hlt	040
-stack:
-
-; XPCT sr : 0b0100000000000001
-
-; XPCT r1 : 0b1010101011001100
-; XPCT r2 : 0b0101010101010101
+; XPCT r1 : 0x11a5
+; XPCT r2 : 0xffff
+; XPCT r3 : 0x3300
+; XPCT r4 : 0

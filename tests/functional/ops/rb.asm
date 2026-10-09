@@ -1,33 +1,25 @@
+	; rb should store the right byte of the register into the left byte (even address), keep the right byte of memory
+	; rb should not touch flags or the register
+	lwt	r0, -1
+	lw	r1, 0x11a5
+	rb	r1, 200
+	rpc	r2
 
-	.include cpu.inc
-
-	lw	r3, stack
-	rw	r3, STACKP
-	lw	r3, nomem_proc
-	rw	r3, INTV_NOMEM
-
-	lw	r1, 0b0000000000000001
-	ou	r1, 0b0000000000000011
-	.word	err, err, ok, err
-ok:
-	mb	blk
-	im	blk
-
-	lw	r1, 0b0001100010101010
-	rb	r1, 20
-
-	lw	r2, 0b0001100011001100
-	rb	r2, 21
+	; rb should store into the right byte (odd address), keep the left byte of memory, not set Z on zero byte
+	lwt	r0, 0
+	lw	r3, 0x3300
+	rb	r3, 203
+	rpc	r4
 
 	hlt	077
 
-err:	hlt	040
-blk:	.word	IMASK_NOMEM | 1
+	.org	100
+	.word	0x5a3c
+	.word	0x5a3c
 
-nomem_proc:
-	hlt	040
-stack:
-
-; XPCT sr : 0b0100000000000001
-
-; XPCT [1:10] : 0b1010101011001100
+; XPCT [100] : 0xa53c
+; XPCT r1 : 0x11a5
+; XPCT r2 : 0xffff
+; XPCT [101] : 0x5a00
+; XPCT r3 : 0x3300
+; XPCT r4 : 0
