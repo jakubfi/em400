@@ -30,4 +30,9 @@ tests:
 	.word	?C,	-32768,	32767,	?ZC,	0
 	.word	?C,	32767,	0,	?V,	-32768
 	.word	?C,	-32768,	-32768,	?MVC,	1
+	.word	?C,	-1,	-1,	?MC,	-1
+	.word	?C,	32767,	32767,	?V,	-1
+	.word	?V,	0,	1,	?V,	1
+	.word	?VC,	0,	1,	?V,	2
+	.word	?ZMVCLEGYX1234567,	1,	1,	?VLEGYX1234567,	3
 tests_end:
