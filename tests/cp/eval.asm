@@ -57,6 +57,14 @@ data:	.word	0b_0000_0000_0000_0111
 ; XPCT 16>>2 : 4
 ; XPCT 8>>1<<2 : 16
 ; XPCT 16>>2<<1 : 8
+; XPCT 1<<15 : 0x8000
+; XPCT 0xffff<<15 : 0x8000
+; XPCT 0x8000>>15 : 1
+; XPCT 1<<16 : 0
+; XPCT 0xffff>>16 : 0
+; XPCT 1<<40 : 0
+; XPCT 0xffff>>40 : 0
+; XPCT 0xffff<<0xffff : 0
 
 ; XPCT 1||0||0||0||0 : 1
 ; XPCT 0||0||0||0||1 : 1

@@ -370,8 +370,16 @@ static int eval_est_eval_op(struct eval_est * n)
 		case '|': return (uint16_t) (v1 | v2);
 		case '&': return (uint16_t) (v1 & v2);
 		case '^': return (uint16_t) (v1 ^ v2);
-		case SHR: return (uint16_t) (v1 >> v2);
-		case SHL: return (uint16_t) (v1 << v2);
+		case SHR:
+			if (v2 >= 16) {
+				return 0;
+			}
+			return (uint16_t) (v1 >> v2);
+		case SHL:
+			if (v2 >= 16) {
+				return 0;
+			}
+			return (uint16_t) (v1 << v2);
 		case EQ: return (v1 == v2);
 		case NEQ: return (v1 != v2);
 		case '>': return (v1 > v2);
