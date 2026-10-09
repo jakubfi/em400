@@ -1,20 +1,29 @@
+	; lf should read from block Q (0), not NB (unconfigured)
+	mb	blk
 
-	lf	data1
-	lw	r4, r1
-	lw	r5, r2
-	lw	r6, r3
-	lf	[data2]
+	; lf should not touch flags or r4
+	lwt	r0, -1
+	lwt	r4, -1
+	lf	fill
+	rpc	r5
+
+	; lf should load r1-r3 from consecutive words, using the address computed before r1 is overwritten
+	; lf should not set Z on zero, M on negative
+	lwt	r0, 0
+	lw	r1, data
+	lf	r1
+	rpc	r6
 
 	hlt	077
 
-data1:	.word	1024, 1025, 1026
-data2:	.word	data3
-data3:	.word	2048, 2049, 2050
+blk:	.word	0b001111
+fill:	.word	0x1111, 0x1111, 0x1111
+data:	.word	0, 0x8000, 0x5a3c
 
-
-; XPCT r1 : 2048
-; XPCT r2 : 2049
-; XPCT r3 : 2050
-; XPCT r4 : 1024
-; XPCT r5 : 1025
-; XPCT r6 : 1026
+; XPCT rz[2] : 0
+; XPCT r5 : 0xffff
+; XPCT r4 : 0xffff
+; XPCT r1 : 0
+; XPCT r2 : 0x8000
+; XPCT r3 : 0x5a3c
+; XPCT r6 : 0
