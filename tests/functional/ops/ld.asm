@@ -1,4 +1,4 @@
-	; ld should read from block Q (0), not NB (unconfigured)
+	; ld should read from block 0 (Q=0), not NB (unconfigured)
 	mb	blk
 
 	; ld should not touch flags or r3

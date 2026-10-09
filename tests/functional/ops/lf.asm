@@ -1,4 +1,4 @@
-	; lf should read from block Q (0), not NB (unconfigured)
+	; lf should read from block 0 (Q=0), not NB (unconfigured)
 	mb	blk
 
 	; lf should not touch flags or r4

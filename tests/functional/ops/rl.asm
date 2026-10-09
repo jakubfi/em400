@@ -1,16 +1,50 @@
+	; rl should write to block 0 (Q=0), not NB (unconfigured)
+	mb	blk
 
-	lwt	r5, 10
-	lwt	r6, 20
-	lwt	r7, 30
+	; rl should store r5-r7 at consecutive addresses, not touch flags or neighbouring words
+	lwt	r0, -1
+	lw	r5, 0x5a3c
+	lw	r6, 0xa5c3
+	lw	r7, 0x0f0f
+	rl	101
+	rpc	r1
 
-	rl	data
+	; rl should not set Z on zero, M on negative
+	lwt	r0, 0
+	lwt	r5, 0
+	lw	r6, 0x8000
+	rl	201
+	rpc	r2
+
+	; rl should store the register used as the argument, not touch registers
+	lw	r5, 301
+	rl	r5
 
 	hlt	077
 
-	.org	20
-data:
+blk:	.word	0b001111
 
+	.org	100
+	.word	-1, 0x1111, 0x1111, 0x1111, -1
+	.org	201
+	.word	-1, -1, -1
+	.org	301
+	.word	-1, -1, -1
 
-; XPCT [20] : 10
-; XPCT [21] : 20
-; XPCT [22] : 30
+; XPCT rz[2] : 0
+; XPCT [100] : 0xffff
+; XPCT [101] : 0x5a3c
+; XPCT [102] : 0xa5c3
+; XPCT [103] : 0x0f0f
+; XPCT [104] : 0xffff
+; XPCT r1 : 0xffff
+; XPCT [201] : 0
+; XPCT [202] : 0x8000
+; XPCT [203] : 0x0f0f
+; XPCT r2 : 0
+; XPCT [301] : 301
+; XPCT [302] : 0x8000
+; XPCT [303] : 0x0f0f
+; XPCT r5 : 301
+; XPCT r6 : 0x8000
+; XPCT r7 : 0x0f0f

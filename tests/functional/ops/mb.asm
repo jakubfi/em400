@@ -5,7 +5,7 @@
 	rpc	r1
 
 	; mb should replace Q/BS/NB, not merge them
-	; mb should read from block Q (0), not NB (unconfigured)
+	; mb should read from block 0 (Q=0), not NB (unconfigured)
 	mb	blk2
 	hlt	077
 

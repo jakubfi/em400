@@ -1,5 +1,5 @@
 	; im should load RM, not touch Q/BS/NB, not touch flags
-	; im should read from block Q (0), not NB (unconfigured)
+	; im should read from block 0 (Q=0), not NB (unconfigured)
 	lwt	r0, -1
 	mb	blk
 	im	rm
