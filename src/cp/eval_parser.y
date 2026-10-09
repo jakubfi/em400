@@ -74,11 +74,9 @@ extern int eval_yycolumn;
 %left '|'
 %left '^'
 %left '&'
-%left EQ
-%left NEQ
+%left EQ NEQ
 %left GE LE '>' '<'
-%left SHR
-%left SHL
+%left SHR SHL
 %left '+' '-'
 %left '*' '/'
 %left '~' '!'
