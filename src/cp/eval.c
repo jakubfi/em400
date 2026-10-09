@@ -288,9 +288,6 @@ static int eval_est_eval_mem(struct eval_est *n)
 	if (addr < 0) {
 		return -1;
 	}
-	if (seg > 15) {
-		return __esterr(n->n1, "Wrong memory segment: %i", seg);
-	}
 
 	uint16_t data;
 	if (seg < 0) {

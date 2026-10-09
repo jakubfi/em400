@@ -105,7 +105,15 @@ expr:
 	| REG					{ MK($$, @$, eval_est_leaf(EVAL_AST_N_REG, $1)); }
 	| FLAG					{ MK($$, @$, eval_est_leaf(EVAL_AST_N_FLAG, $1)); }
 	| '[' expr ']'			{ MK($$, @$, eval_est_mem(eval_est_leaf(EVAL_AST_N_VAL, -1), $2)); }
-	| '[' VALUE ':' expr ']'{ MK($$, @$, eval_est_mem(eval_est_span(eval_est_leaf(EVAL_AST_N_VAL, $2), @2.first_column, @2.last_column), $4)); }
+	| '[' VALUE ':' expr ']'{
+		if (($2 < 0) || ($2 > 15)) {
+			eval_est_delete($4);
+			eval_yyerror(tree, "Wrong memory segment: %i", $2);
+			eval_est_span(*tree, @2.first_column, @2.last_column);
+			YYERROR;
+		}
+		MK($$, @$, eval_est_mem(eval_est_leaf(EVAL_AST_N_VAL, $2), $4));
+	}
 	| '@' VALUE ':' VALUE	{ MK($$, @$, eval_est_loc($2, $4)); }
 	| IRZ					{ MK($$, @$, eval_est_leaf(EVAL_AST_N_RZ, 0)); }
 	| IRZ '[' VALUE ']'		{ MK($$, @$, eval_est_leaf(EVAL_AST_N_RZ_BIT, $3)); }
