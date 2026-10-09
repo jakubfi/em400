@@ -266,7 +266,7 @@ void int_ctx_restore(bool barnb)
 	uint16_t sr_tmp;
 	uint16_t *vector[] = { &ic, r+0, &sr_tmp };
 	for (int i=0 ; i<3 ; i++, ar++) {
-		if (!cpu_mem_read_1(barnb, ar, vector[i])) return;
+		cpu_mem_read_1(barnb, ar, vector[i]);
 	}
 	SR_WRITE(sr_tmp);
 	int_update_xmask();
