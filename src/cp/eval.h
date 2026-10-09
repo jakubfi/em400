@@ -48,6 +48,7 @@ struct eval_est * eval_est_op(int oper, struct eval_est *n1, struct eval_est *n2
 struct eval_est * eval_est_mem(struct eval_est *n1, struct eval_est *n2);
 struct eval_est * eval_est_loc(int nb, int addr);
 struct eval_est * eval_est_err(const char *err);
+struct eval_est * eval_est_span(struct eval_est *n, int beg, int end);
 
 // node evaluation
 int eval_est_eval(struct eval_est *n);

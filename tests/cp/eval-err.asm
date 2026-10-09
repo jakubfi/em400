@@ -1,21 +1,25 @@
 ; Evaluator error paths: each expression must be rejected with the given message.
+; The (at b-e) column range must span exactly the failing subexpression.
 
 	hlt	077
 
-; XPCT_ERR 1/0 : "Division by zero"
-; XPCT_ERR 1/(2-2) : "Division by zero"
-; XPCT_ERR [16:0] : "Wrong memory segment: 16"
-; XPCT_ERR [1:0] : "Memory at 1:0 is not configured"
-; XPCT_ERR rz[32] : "Wrong interrupt: 32"
+; XPCT_ERR 1/0 : "Division by zero (at 0-2)"
+; XPCT_ERR 1/(2-2) : "Division by zero (at 0-6)"
+; XPCT_ERR [16:0] : "Wrong memory segment: 16 (at 1-2)"
+; XPCT_ERR [ 16 : 0] : "Wrong memory segment: 16 (at 2-3)"
+; XPCT_ERR [1:0] : "Memory at 1:0 is not configured (at 0-4)"
+; XPCT_ERR rz[32] : "Wrong interrupt: 32 (at 0-5)"
 ; XPCT_ERR 1+ : "incomplete expression"
 ; XPCT_ERR (1 : "incomplete expression"
 ; XPCT_ERR foo : "Invalid input: 'foo' (at 0-2)"
 ; XPCT_ERR 1 $ : "Invalid input: '$' (at 2-2)"
-; XPCT_ERR 1 2 : "unexpected value"
+; XPCT_ERR 1 2 : "unexpected value (at 2-2)"
 
-; errors propagate up through operators
-; XPCT_ERR 1 + 1/0 : "Division by zero"
-; XPCT_ERR -(1/0) : "Division by zero"
+; errors propagate up through operators, the range stays on the failing part
+; XPCT_ERR 1 + 1/0 : "Division by zero (at 4-6)"
+; XPCT_ERR 1 + 1/(2-2) : "Division by zero (at 4-10)"
+; XPCT_ERR -(1/0) : "Division by zero (at 2-4)"
+; XPCT_ERR 1 + [1:5]*2 : "Memory at 1:5 is not configured (at 4-8)"
 
 ; message is optional
 ; XPCT_ERR 5/0

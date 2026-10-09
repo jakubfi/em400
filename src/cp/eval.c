@@ -150,6 +150,16 @@ struct eval_est * eval_est_err(const char *err)
 }
 
 // -----------------------------------------------------------------------
+struct eval_est * eval_est_span(struct eval_est *n, int beg, int end)
+{
+	if (!n) return NULL;
+
+	n->c_beg = beg;
+	n->c_end = end;
+	return n;
+}
+
+// -----------------------------------------------------------------------
 static int __esterr(struct eval_est * n, const char *format, ...)
 {
 	char buf[1024];

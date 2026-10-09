@@ -26,11 +26,12 @@ void eval_yyerror(struct eval_est **tree, const char *s, ...);
 int eval_yylex(void);
 extern int eval_yycolumn;
 
-#define MK(dst, ctor) \
+#define MK(dst, loc, ctor) \
     (dst) = (ctor); \
 	if (!(dst)) { \
 	    eval_yyerror(tree, "out of memory"); YYABORT; \
-	}
+	} \
+	eval_est_span((dst), (loc).first_column, (loc).last_column);
 
 %}
 
@@ -94,40 +95,40 @@ statement:
 	;
 
 expr:
-    VALUE					{ MK($$, eval_est_leaf(EVAL_AST_N_VAL, $1)); }
-	| ALARM					{ MK($$, eval_est_leaf(EVAL_AST_N_ALARM, 0)); }
-	| MC					{ MK($$, eval_est_leaf(EVAL_AST_N_MC, 0)); }
-	| NB					{ MK($$, eval_est_leaf(EVAL_AST_N_NB, 0)); }
-	| Q						{ MK($$, eval_est_leaf(EVAL_AST_N_Q, 0)); }
-	| BS					{ MK($$, eval_est_leaf(EVAL_AST_N_BS, 0)); }
-	| RM					{ MK($$, eval_est_leaf(EVAL_AST_N_RM, 0)); }
-	| REG					{ MK($$, eval_est_leaf(EVAL_AST_N_REG, $1)); }
-	| FLAG					{ MK($$, eval_est_leaf(EVAL_AST_N_FLAG, $1)); }
-	| '[' expr ']'			{ MK($$, eval_est_mem(eval_est_leaf(EVAL_AST_N_VAL, -1), $2)); }
-	| '[' VALUE ':' expr ']'{ MK($$, eval_est_mem(eval_est_leaf(EVAL_AST_N_VAL, $2), $4)); }
-	| '@' VALUE ':' VALUE	{ MK($$, eval_est_loc($2, $4)); }
-	| IRZ					{ MK($$, eval_est_leaf(EVAL_AST_N_RZ, 0)); }
-	| IRZ '[' VALUE ']'		{ MK($$, eval_est_leaf(EVAL_AST_N_RZ_BIT, $3)); }
-	| '-' expr %prec UMINUS	{ MK($$, eval_est_op(UMINUS, $2, NULL)); }
-	| expr '+' expr			{ MK($$, eval_est_op('+', $1, $3)); }
-	| expr '-' expr			{ MK($$, eval_est_op('-', $1, $3)); }
-	| expr '*' expr			{ MK($$, eval_est_op('*', $1, $3)); }
-	| expr '/' expr			{ MK($$, eval_est_op('/', $1, $3)); }
-	| expr '^' expr			{ MK($$, eval_est_op('^', $1, $3)); }
-	| expr '|' expr			{ MK($$, eval_est_op('|', $1, $3)); }
-	| expr '&' expr			{ MK($$, eval_est_op('&', $1, $3)); }
-	| expr SHR expr			{ MK($$, eval_est_op(SHR, $1, $3)); }
-	| expr SHL expr			{ MK($$, eval_est_op(SHL, $1, $3)); }
-	| expr OR expr			{ MK($$, eval_est_op(OR, $1, $3)); }
-	| expr AND expr			{ MK($$, eval_est_op(AND, $1, $3)); }
-	| expr EQ expr			{ MK($$, eval_est_op(EQ, $1, $3)); }
-	| expr NEQ expr			{ MK($$, eval_est_op(NEQ, $1, $3)); }
-	| expr GE expr			{ MK($$, eval_est_op(GE, $1, $3)); }
-	| expr LE expr			{ MK($$, eval_est_op(LE, $1, $3)); }
-	| expr '>' expr			{ MK($$, eval_est_op('>', $1, $3)); }
-	| expr '<' expr			{ MK($$, eval_est_op('<', $1, $3)); }
-	| '~' expr				{ MK($$, eval_est_op('~', $2, NULL)); }
-	| '!' expr				{ MK($$, eval_est_op('!', $2, NULL)); }
+    VALUE					{ MK($$, @$, eval_est_leaf(EVAL_AST_N_VAL, $1)); }
+	| ALARM					{ MK($$, @$, eval_est_leaf(EVAL_AST_N_ALARM, 0)); }
+	| MC					{ MK($$, @$, eval_est_leaf(EVAL_AST_N_MC, 0)); }
+	| NB					{ MK($$, @$, eval_est_leaf(EVAL_AST_N_NB, 0)); }
+	| Q						{ MK($$, @$, eval_est_leaf(EVAL_AST_N_Q, 0)); }
+	| BS					{ MK($$, @$, eval_est_leaf(EVAL_AST_N_BS, 0)); }
+	| RM					{ MK($$, @$, eval_est_leaf(EVAL_AST_N_RM, 0)); }
+	| REG					{ MK($$, @$, eval_est_leaf(EVAL_AST_N_REG, $1)); }
+	| FLAG					{ MK($$, @$, eval_est_leaf(EVAL_AST_N_FLAG, $1)); }
+	| '[' expr ']'			{ MK($$, @$, eval_est_mem(eval_est_leaf(EVAL_AST_N_VAL, -1), $2)); }
+	| '[' VALUE ':' expr ']'{ MK($$, @$, eval_est_mem(eval_est_span(eval_est_leaf(EVAL_AST_N_VAL, $2), @2.first_column, @2.last_column), $4)); }
+	| '@' VALUE ':' VALUE	{ MK($$, @$, eval_est_loc($2, $4)); }
+	| IRZ					{ MK($$, @$, eval_est_leaf(EVAL_AST_N_RZ, 0)); }
+	| IRZ '[' VALUE ']'		{ MK($$, @$, eval_est_leaf(EVAL_AST_N_RZ_BIT, $3)); }
+	| '-' expr %prec UMINUS	{ MK($$, @$, eval_est_op(UMINUS, $2, NULL)); }
+	| expr '+' expr			{ MK($$, @$, eval_est_op('+', $1, $3)); }
+	| expr '-' expr			{ MK($$, @$, eval_est_op('-', $1, $3)); }
+	| expr '*' expr			{ MK($$, @$, eval_est_op('*', $1, $3)); }
+	| expr '/' expr			{ MK($$, @$, eval_est_op('/', $1, $3)); }
+	| expr '^' expr			{ MK($$, @$, eval_est_op('^', $1, $3)); }
+	| expr '|' expr			{ MK($$, @$, eval_est_op('|', $1, $3)); }
+	| expr '&' expr			{ MK($$, @$, eval_est_op('&', $1, $3)); }
+	| expr SHR expr			{ MK($$, @$, eval_est_op(SHR, $1, $3)); }
+	| expr SHL expr			{ MK($$, @$, eval_est_op(SHL, $1, $3)); }
+	| expr OR expr			{ MK($$, @$, eval_est_op(OR, $1, $3)); }
+	| expr AND expr			{ MK($$, @$, eval_est_op(AND, $1, $3)); }
+	| expr EQ expr			{ MK($$, @$, eval_est_op(EQ, $1, $3)); }
+	| expr NEQ expr			{ MK($$, @$, eval_est_op(NEQ, $1, $3)); }
+	| expr GE expr			{ MK($$, @$, eval_est_op(GE, $1, $3)); }
+	| expr LE expr			{ MK($$, @$, eval_est_op(LE, $1, $3)); }
+	| expr '>' expr			{ MK($$, @$, eval_est_op('>', $1, $3)); }
+	| expr '<' expr			{ MK($$, @$, eval_est_op('<', $1, $3)); }
+	| '~' expr				{ MK($$, @$, eval_est_op('~', $2, NULL)); }
+	| '!' expr				{ MK($$, @$, eval_est_op('!', $2, NULL)); }
 	| '(' expr ')'			{ $$ = $2; }
 	| TOK_INVALID			{ $$ = NULL; eval_yyerror(tree, "Invalid input: '%s'", $1); yyclearin; YYERROR; }
 	| expr TOK_INVALID 		{ $$ = NULL; eval_est_delete($1); eval_yyerror(tree, "Invalid input: '%s'", $2); yyclearin; YYERROR; }
