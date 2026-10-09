@@ -1,30 +1,34 @@
+	; rw should store the register at the argument address, not touch flags or the register
+	lwt	r0, -1
+	lw	r1, 0x5a3c
+	rw	r1, 100
+	rpc	r2
 
-	lwt	r0, -10
-	lwt	r1, -11
-	lwt	r2, -12
-	lwt	r3, -13
-	lwt	r4, -14
-	lwt	r5, -15
-	lwt	r6, -16
-	lwt	r7, -17
+	; rw should not set Z on zero
+	lwt	r0, 0
+	lwt	r3, 0
+	rw	r3, 101
+	rpc	r4
 
-	rw	r0, 120
-	rw	r1, 121
-	rw	r2, 122
-	rw	r3, 123
-	rw	r4, 124
-	rw	r5, 125
-	rw	r6, 126
-	rw	r7, 127
+	; rw should store the register used as the argument
+	lw	r5, 102
+	rw	r5, r5
+
+	; rw r0 should store flags
+	lw	r0, 0xa5c3
+	rw	r0, 103
 
 	hlt	077
 
+	.org	101
+	.word	-1
 
-; XPCT [120] : -10
-; XPCT [121] : -11
-; XPCT [122] : -12
-; XPCT [123] : -13
-; XPCT [124] : -14
-; XPCT [125] : -15
-; XPCT [126] : -16
-; XPCT [127] : -17
+; XPCT [100] : 0x5a3c
+; XPCT r1 : 0x5a3c
+; XPCT r2 : 0xffff
+; XPCT [101] : 0
+; XPCT r3 : 0
+; XPCT r4 : 0
+; XPCT [102] : 102
+; XPCT r5 : 102
+; XPCT [103] : 0xa5c3
