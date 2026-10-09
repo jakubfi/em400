@@ -129,6 +129,14 @@ class EM400:
         return int(val, 0)
 
     # --------------------------------------------------------------------
+    def eval_err(self, expr):
+        resp = self.cmd_raw("EVAL %s" % expr)
+        m = re.match(r"ERR:\s*(.*)", resp)
+        if m:
+            return True, m.group(1)
+        return False, resp
+
+    # --------------------------------------------------------------------
     def wait_for_finish(self, max_runtime=0):
         started = time.monotonic()
         hung_since = None
@@ -207,9 +215,11 @@ class TestResult:
         return self.status not in (self.PASS, self.BENCH)
 
     # --------------------------------------------------------------------
-    def add_check(self, expr, expected, got):
-        self.checks += [(expr, expected, got)]
-        if expected != got:
+    def add_check(self, expr, expected, got, passed=None):
+        if passed is None:
+            passed = expected == got
+        self.checks += [(expr, expected, got, passed)]
+        if not passed:
             self.status = self.FAIL
         elif self.status is None:
             self.status = self.PASS
@@ -238,8 +248,8 @@ class TestResult:
         if self.status in (self.PASS, self.FAIL):
             pf = { self.FAIL: "\033[91mFAILED\033[0m", self.PASS: "\033[92mPASSED\033[0m" }
             ret = "%-60s %s" % (self.name, pf[self.status])
-            for expr, expected, got in self.checks:
-                if expected != got:
+            for expr, expected, got, passed in self.checks:
+                if not passed:
                     ret += " %s=%s!=%s" % (expr, got, expected)
             return ret + self.__elapsed()
 
@@ -333,6 +343,7 @@ class TestBed:
         opts = []
         benchmark = False
         xpct = []
+        xpct_err = []
         precmd = []
         postcmd = []
         max_runtime = self.max_runtime
@@ -340,7 +351,7 @@ class TestBed:
             if re.match(r"[ \t]*;[ \t]*BENCHMARK[ \t]*$", l):
                 benchmark = True
                 continue
-            m = re.match(r"[ \t]*;[ \t]*(CONFIG|XPCT|PRECMD|POSTCMD|TIMEOUT)[ \t]+(.+?)[ \t]*$", l)
+            m = re.match(r"[ \t]*;[ \t]*(CONFIG|XPCT|XPCT_ERR|PRECMD|POSTCMD|TIMEOUT)[ \t]+(.+?)[ \t]*$", l)
             if not m:
                 continue
             directive, arg = m.groups()
@@ -365,15 +376,21 @@ class TestBed:
                     xpct += [(expr.strip(), int(val, 0) & 0xffff)]
                 except ValueError:
                     raise SyntaxError("Malformed XPCT: %s" % arg)
+            elif directive == "XPCT_ERR":
+                m = re.match(r'(.*?)\s*:\s*"(.*)"$', arg)
+                expr, msg = m.groups() if m else (arg, "")
+                if not expr:
+                    raise SyntaxError("Malformed XPCT_ERR: %s" % arg)
+                xpct_err += [(expr, msg)]
             elif directive == "PRECMD":
                 precmd += [arg]
             elif directive == "POSTCMD":
                 postcmd += [arg]
 
-        if benchmark and xpct:
+        if benchmark and (xpct or xpct_err):
             raise SyntaxError("BENCHMARK with XPCT")
 
-        return opts, benchmark, xpct, precmd, postcmd, max_runtime
+        return opts, benchmark, xpct, xpct_err, precmd, postcmd, max_runtime
 
     # --------------------------------------------------------------------
     def run(self, source):
@@ -381,7 +398,7 @@ class TestBed:
         started = time.monotonic()
 
         try:
-            opts, benchmark, xpct, precmd, postcmd, max_runtime = self.__getparams(source)
+            opts, benchmark, xpct, xpct_err, precmd, postcmd, max_runtime = self.__getparams(source)
             aout = self.__assembly(source)
             self.__runemu(["-c", self.config_override or self.default_config] + opts)
             self.e.wait_for_stop()
@@ -396,7 +413,7 @@ class TestBed:
             if benchmark:
                 self.__benchmark(result, source)
             else:
-                self.__passfail(result, xpct + self.__health_checks(xpct), max_runtime)
+                self.__passfail(result, xpct + self.__health_checks(xpct), xpct_err, max_runtime)
 
             if postcmd:
                 for c in postcmd:
@@ -437,7 +454,7 @@ class TestBed:
         return checks
 
     # --------------------------------------------------------------------
-    def __passfail(self, result, xpct, max_runtime):
+    def __passfail(self, result, xpct, xpct_err, max_runtime):
         self.e.start()
         finished = self.e.wait_for_finish(max_runtime)
         # pressing STOP clears the alarm
@@ -448,6 +465,11 @@ class TestBed:
         for expr, expected in xpct:
             got = alarm if normalize_expr(expr) == "alarm" else self.e.eval(expr)
             result.add_check(expr, expected, got)
+        for expr, msg in xpct_err:
+            is_err, resp = self.e.eval_err(expr)
+            got = 'ERR "%s"' % resp if is_err else resp
+            expected = 'ERR "%s"' % msg if msg else "ERR"
+            result.add_check(expr, expected, got, is_err and msg in resp)
 
     # --------------------------------------------------------------------
     def __benchmark(self, result, source):
