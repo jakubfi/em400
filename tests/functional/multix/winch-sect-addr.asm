@@ -1,5 +1,6 @@
 ; CONFIG configs/winchester0.ini
 ; PRECMD CLOCK OFF
+; TIMEOUT 40
 
 	.cpu	mx16
 
