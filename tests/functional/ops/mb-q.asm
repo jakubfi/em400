@@ -6,8 +6,9 @@ exl_handler:
 	hlt	077
 
 rm:	.word	0b0101010101000000
-blk:	.word	0b1111111111110000
+blk:	.word	0b1111111111100000
 
+	; mb with Q=1 should switch to user mode, SR is checked in the frame saved by exl
 start:
 	lwt	r1, exl_handler
 	rw	r1, EXLV
@@ -20,4 +21,4 @@ start:
 	.org	0x100
 stack:
 
-; XPCT [0x102] : 0b0101010101110000
+; XPCT [0x102] : 0b0101010101100000
