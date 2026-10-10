@@ -31,6 +31,17 @@ int eval_yycolumn = 0;
 	eval_yylloc.last_column = eval_yycolumn + eval_yyleng-1; \
 	eval_yycolumn += eval_yyleng;
 
+// -----------------------------------------------------------------------
+static int scan_value(const char *s, int base)
+{
+	unsigned long v = strtoul(s, NULL, base);
+	if (v > 0xffff) {
+		return TOK_RANGE;
+	}
+	eval_yylval.value = v;
+	return VALUE;
+}
+
 %}
 
 %top{
@@ -44,10 +55,10 @@ int eval_yycolumn = 0;
 
 %%
 
-0x[0-9a-f]+	{ eval_yylval.value = strtoul(yytext, NULL, 16); return VALUE; }
-0b[01]+		{ eval_yylval.value = strtoul(yytext+2, NULL, 2); return VALUE; }
-0[0-7]+		{ eval_yylval.value = strtoul(yytext, NULL, 8); return VALUE; }
-[0-9]+		{ eval_yylval.value = atoi(yytext); return VALUE; }
+0x[0-9a-f]+	{ return scan_value(yytext, 16); }
+0b[01]+		{ return scan_value(yytext+2, 2); }
+0[0-7]+		{ return scan_value(yytext, 8); }
+[0-9]+		{ return scan_value(yytext, 10); }
 r[0-7]		{ eval_yylval.value = atoi(yytext+1); return REG; }
 ic			{ eval_yylval.value = EM400_REG_IC; return REG; }
 sr			{ eval_yylval.value = EM400_REG_SR; return REG; }

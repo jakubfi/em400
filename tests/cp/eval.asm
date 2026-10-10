@@ -19,6 +19,10 @@ data:	.word	0b_0000_0000_0000_0111
 ; XPCT 0xffff : -1
 ; XPCT 0b1001 : 9
 ; XPCT 010 : 8
+; XPCT 65535 : 0xffff
+; XPCT 0177777 : 0xffff
+; XPCT 0b1111111111111111 : 0xffff
+; XPCT 0x0000ffff : 0xffff
 
 ; XPCT r1 : 1
 ; XPCT r2 : 2

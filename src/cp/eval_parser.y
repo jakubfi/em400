@@ -50,6 +50,7 @@ extern int eval_yycolumn;
 %token <value> FLAG "CPU flag"
 %token <value> VALUE "value"
 %token <str> TOK_INVALID "error"
+%token TOK_RANGE "out of range value"
 %token ':' '&' '|' '(' ')' '@'
 %token IRZ "RZ"
 %token ALARM "ALARM"
@@ -147,7 +148,9 @@ expr:
 int yyreport_syntax_error(const yypcontext_t *ctx, struct eval_est **tree)
 {
 	yysymbol_kind_t tok = yypcontext_token(ctx);
-	if (tok == YYSYMBOL_YYEOF) {
+	if (tok == YYSYMBOL_TOK_RANGE) {
+		eval_yyerror(tree, "Value out of range");
+	} else if (tok == YYSYMBOL_YYEOF) {
 		eval_yyerror(tree, "incomplete expression");
 	} else if (tok != YYSYMBOL_YYEMPTY) {
 		eval_yyerror(tree, "unexpected %s", yysymbol_name(tok));
