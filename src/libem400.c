@@ -744,6 +744,12 @@ int em400_brk_enable(unsigned id, bool enabled)
 }
 
 // -----------------------------------------------------------------------
+int em400_brk_get(unsigned id, char **expr, bool *enabled)
+{
+	return brk_get(id, expr, enabled);
+}
+
+// -----------------------------------------------------------------------
 int em400_brk_eval(unsigned id, int *result, char **err_msg, int *err_beg, int *err_end)
 {
 	return brk_eval(id, result, err_msg, err_beg, err_end);

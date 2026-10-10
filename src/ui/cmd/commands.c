@@ -50,6 +50,11 @@ void ui_cmd_help(FILE *out, char *args);
 void ui_cmd_brk(FILE *out, char *args);
 void ui_cmd_brkdel(FILE *out, char *args);
 void ui_cmd_brkhit(FILE *out, char *args);
+void ui_cmd_brken(FILE *out, char *args);
+void ui_cmd_brkedit(FILE *out, char *args);
+void ui_cmd_brkeval(FILE *out, char *args);
+void ui_cmd_brkget(FILE *out, char *args);
+void ui_cmd_brklist(FILE *out, char *args);
 void ui_cmd_stopn(FILE *out, char *args);
 
 struct ui_cmd_command commands[] = {
@@ -64,6 +69,11 @@ struct ui_cmd_command commands[] = {
 	{ UI_CMD_FLAG_NONE, "brk",		"<expr>",					"Add breakpoint",					ui_cmd_brk },
 	{ UI_CMD_FLAG_NONE, "brkdel",	"<id>",						"Delete breakpoint",				ui_cmd_brkdel },
 	{ UI_CMD_FLAG_NONE, "brkhit",	"",							"Get breakpoint hit (-1: none)",	ui_cmd_brkhit },
+	{ UI_CMD_FLAG_NONE, "brken",	"<id> on|off",				"Enable/disable breakpoint",		ui_cmd_brken },
+	{ UI_CMD_FLAG_NONE, "brkedit",	"<id> <expr>",				"Change breakpoint condition",		ui_cmd_brkedit },
+	{ UI_CMD_FLAG_NONE, "brkeval",	"<id>",						"Evaluate breakpoint condition",	ui_cmd_brkeval },
+	{ UI_CMD_FLAG_NONE, "brkget",	"<id>",						"Get breakpoint state and condition",	ui_cmd_brkget },
+	{ UI_CMD_FLAG_NONE, "brklist",	"",							"List breakpoint ids",				ui_cmd_brklist },
 	{ UI_CMD_FLAG_NONE, "stopn",	"<addr>|off",				"Stop CPU on address",				ui_cmd_stopn },
 	{ UI_CMD_FLAG_NONE, "clock",	"[on|off]",					"Manipulate clock state",			ui_cmd_clock },
 	{ UI_CMD_FLAG_NONE, "oprq",		"",							"Send operator request",			ui_cmd_oprq },
@@ -620,6 +630,185 @@ void ui_cmd_brkdel(FILE *out, char *args)
 void ui_cmd_brkhit(FILE *out, char *args)
 {
 	ui_cmd_resp(out, RESP_OK, UI_EOL, "%i", em400_brk_hit());
+}
+
+// -----------------------------------------------------------------------
+static bool brk_exists(unsigned id)
+{
+	char *expr;
+	bool enabled;
+
+	if (em400_brk_get(id, &expr, &enabled)) {
+		return false;
+	}
+	free(expr);
+	return true;
+}
+
+// -----------------------------------------------------------------------
+void ui_cmd_brken(FILE *out, char *args)
+{
+	char *tok_brk, *tok_state, *remainder;
+
+	int brk_num = ui_cmd_gettok_int(args, &tok_brk, &remainder);
+	if (!tok_brk) {
+		ui_cmd_resp(out, RESP_ERR, UI_EOL, "Missing argument (breakpoint number)");
+		return;
+	}
+
+	int state = ui_cmd_gettok_bool(remainder, &tok_state, &remainder);
+	if (!tok_state) {
+		ui_cmd_resp(out, RESP_ERR, UI_EOL, "Missing argument (state)");
+		return;
+	}
+	if (state < 0) {
+		ui_cmd_resp(out, RESP_ERR, UI_EOL, "Wrong state: %s", tok_state);
+		return;
+	}
+
+	if (em400_brk_enable(brk_num, state)) {
+		ui_cmd_resp(out, RESP_ERR, UI_EOL, "No such breakpoint");
+		return;
+	}
+	ui_cmd_resp(out, RESP_OK, UI_EOL, "%s breakpoint: %i", state ? "Enabled" : "Disabled", brk_num);
+}
+
+// -----------------------------------------------------------------------
+void ui_cmd_brkedit(FILE *out, char *args)
+{
+	char *tok_brk, *remainder;
+
+	int brk_num = ui_cmd_gettok_int(args, &tok_brk, &remainder);
+	if (!tok_brk) {
+		ui_cmd_resp(out, RESP_ERR, UI_EOL, "Missing argument (breakpoint number)");
+		return;
+	}
+
+	char *tok_expr = ui_cmd_skip_ws(remainder);
+	if (!tok_expr || !*tok_expr) {
+		ui_cmd_resp(out, RESP_ERR, UI_EOL, "Missing argument (expression)");
+		return;
+	}
+
+	if (!brk_exists(brk_num)) {
+		ui_cmd_resp(out, RESP_ERR, UI_EOL, "No such breakpoint");
+		return;
+	}
+
+	char *error_msg = NULL;
+	int err_beg, err_end;
+	if (em400_brk_edit(brk_num, tok_expr, &error_msg, &err_beg, &err_end)) {
+		ui_cmd_resp(out, RESP_ERR, UI_EOL, "%s (at %i-%i)", error_msg, err_beg, err_end);
+		free(error_msg);
+		return;
+	}
+	ui_cmd_resp(out, RESP_OK, UI_EOL, "Changed breakpoint: %i", brk_num);
+}
+
+// -----------------------------------------------------------------------
+void ui_cmd_brkeval(FILE *out, char *args)
+{
+	char *tok_brk, *remainder;
+
+	int brk_num = ui_cmd_gettok_int(args, &tok_brk, &remainder);
+	if (!tok_brk) {
+		ui_cmd_resp(out, RESP_ERR, UI_EOL, "Missing argument (breakpoint number)");
+		return;
+	}
+
+	char *error_msg = NULL;
+	int err_beg, err_end, res;
+	if (em400_brk_eval(brk_num, &res, &error_msg, &err_beg, &err_end)) {
+		ui_cmd_resp(out, RESP_ERR, UI_EOL, "No such breakpoint");
+		return;
+	}
+	if (res < 0) {
+		ui_cmd_resp(out, RESP_ERR, UI_EOL, "%s (at %i-%i)", error_msg, err_beg, err_end);
+		free(error_msg);
+		return;
+	}
+	ui_cmd_resp(out, RESP_OK, UI_EOL, "%i", res);
+}
+
+// -----------------------------------------------------------------------
+void ui_cmd_brkget(FILE *out, char *args)
+{
+	char *tok_brk, *remainder;
+
+	int brk_num = ui_cmd_gettok_int(args, &tok_brk, &remainder);
+	if (!tok_brk) {
+		ui_cmd_resp(out, RESP_ERR, UI_EOL, "Missing argument (breakpoint number)");
+		return;
+	}
+
+	char *expr;
+	bool enabled;
+	if (em400_brk_get(brk_num, &expr, &enabled)) {
+		ui_cmd_resp(out, RESP_ERR, UI_EOL, "No such breakpoint");
+		return;
+	}
+	ui_cmd_resp(out, RESP_OK, UI_EOL, "%s %s", enabled ? "on" : "off", expr);
+	free(expr);
+}
+
+// -----------------------------------------------------------------------
+struct brk_ids {
+	unsigned *ids;
+	int count;
+	int size;
+	bool oom;
+};
+
+// -----------------------------------------------------------------------
+static void brk_collect_id(unsigned id, const char *expr, bool enabled, void *ctx)
+{
+	struct brk_ids *l = (struct brk_ids *) ctx;
+
+	if (l->oom) return;
+
+	if (l->count == l->size) {
+		int size = l->size ? 2 * l->size : 16;
+		unsigned *ids = (unsigned *) realloc(l->ids, size * sizeof(unsigned));
+		if (!ids) {
+			l->oom = true;
+			return;
+		}
+		l->ids = ids;
+		l->size = size;
+	}
+	l->ids[l->count++] = id;
+}
+
+// -----------------------------------------------------------------------
+static int cmp_unsigned(const void *p1, const void *p2)
+{
+	unsigned a = * (const unsigned *) p1;
+	unsigned b = * (const unsigned *) p2;
+	return (a > b) - (a < b);
+}
+
+// -----------------------------------------------------------------------
+void ui_cmd_brklist(FILE *out, char *args)
+{
+	struct brk_ids l = { 0 };
+
+	em400_brk_foreach(brk_collect_id, &l);
+	if (l.oom) {
+		free(l.ids);
+		ui_cmd_resp(out, RESP_ERR, UI_EOL, "Out of memory");
+		return;
+	}
+
+	if (l.count) {
+		qsort(l.ids, l.count, sizeof(unsigned), cmp_unsigned);
+	}
+
+	ui_cmd_resp(out, RESP_OK, UI_NOEOL, "");
+	for (int i=0 ; i<l.count ; i++) {
+		fprintf(out, " %u", l.ids[i]);
+	}
+	fprintf(out, "\n");
+	free(l.ids);
 }
 
 // -----------------------------------------------------------------------

@@ -191,6 +191,23 @@ int brk_enable(unsigned id, bool enabled)
 }
 
 // -----------------------------------------------------------------------
+int brk_get(unsigned id, char **expr, bool *enabled)
+{
+	struct brk_point *brkp = atomic_load_explicit(&brk_list, memory_order_acquire);
+
+	while (brkp) {
+		if (brkp->id == id && !atomic_load_explicit(&brkp->deleted, memory_order_relaxed)) {
+			*expr = strdup(brkp->expr);
+			*enabled = atomic_load_explicit(&brkp->enabled, memory_order_relaxed);
+			return 0;
+		}
+		brkp = atomic_load_explicit(&brkp->next, memory_order_acquire);
+	}
+
+	return -1;
+}
+
+// -----------------------------------------------------------------------
 // Runs on the UI thread. Evaluates a fresh parse of the stored expression
 // rather than the live tree that brk_check() walks on the CPU thread, so the
 // two threads never mutate the same eval_est node on a runtime eval error.
