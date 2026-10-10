@@ -346,12 +346,13 @@ class TestBed:
         xpct_err = []
         precmd = []
         postcmd = []
+        resume = 0
         max_runtime = self.max_runtime
         for l in open(source, "r"):
             if re.match(r"[ \t]*;[ \t]*BENCHMARK[ \t]*$", l):
                 benchmark = True
                 continue
-            m = re.match(r"[ \t]*;[ \t]*(CONFIG|XPCT|XPCT_ERR|PRECMD|POSTCMD|TIMEOUT)[ \t]+(.+?)[ \t]*$", l)
+            m = re.match(r"[ \t]*;[ \t]*(CONFIG|XPCT|XPCT_ERR|PRECMD|POSTCMD|TIMEOUT|RESUME)[ \t]+(.+?)[ \t]*$", l)
             if not m:
                 continue
             directive, arg = m.groups()
@@ -367,6 +368,13 @@ class TestBed:
                     raise SyntaxError("Malformed TIMEOUT: %s" % arg)
                 if self.max_runtime:
                     max_runtime = t
+            elif directive == "RESUME":
+                try:
+                    resume = int(arg)
+                    if resume <= 0:
+                        raise ValueError
+                except ValueError:
+                    raise SyntaxError("Malformed RESUME: %s" % arg)
             elif directive == "XPCT":
                 # split on the last colon, the expression itself may contain ':' ("[seg:addr]")
                 expr, sep, val = arg.rpartition(":")
@@ -389,8 +397,10 @@ class TestBed:
 
         if benchmark and (xpct or xpct_err):
             raise SyntaxError("BENCHMARK with XPCT")
+        if benchmark and resume:
+            raise SyntaxError("BENCHMARK with RESUME")
 
-        return opts, benchmark, xpct, xpct_err, precmd, postcmd, max_runtime
+        return opts, benchmark, xpct, xpct_err, precmd, postcmd, resume, max_runtime
 
     # --------------------------------------------------------------------
     def run(self, source):
@@ -398,7 +408,7 @@ class TestBed:
         started = time.monotonic()
 
         try:
-            opts, benchmark, xpct, xpct_err, precmd, postcmd, max_runtime = self.__getparams(source)
+            opts, benchmark, xpct, xpct_err, precmd, postcmd, resume, max_runtime = self.__getparams(source)
             aout = self.__assembly(source)
             self.__runemu(["-c", self.config_override or self.default_config] + opts)
             self.e.wait_for_stop()
@@ -413,7 +423,7 @@ class TestBed:
             if benchmark:
                 self.__benchmark(result, source)
             else:
-                self.__passfail(result, xpct + self.__health_checks(xpct), xpct_err, max_runtime)
+                self.__passfail(result, xpct + self.__health_checks(xpct), xpct_err, resume, max_runtime)
 
             if postcmd:
                 for c in postcmd:
@@ -454,9 +464,15 @@ class TestBed:
         return checks
 
     # --------------------------------------------------------------------
-    def __passfail(self, result, xpct, xpct_err, max_runtime):
+    def __passfail(self, result, xpct, xpct_err, resume, max_runtime):
         self.e.start()
         finished = self.e.wait_for_finish(max_runtime)
+        for i in range(resume):
+            if finished != "stop":
+                result.add_check("resume %i" % (i+1), "stop", finished)
+                break
+            self.e.start()
+            finished = self.e.wait_for_finish(max_runtime)
         # pressing STOP clears the alarm
         alarm = self.e.eval("alarm")
         self.e.stop()
