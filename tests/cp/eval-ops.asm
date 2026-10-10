@@ -17,6 +17,26 @@
 ; XPCT 1*2*3*4 : 24
 ; XPCT 100/2/2/5 : 5
 
+; results wrap around to 16 bits
+; XPCT 0xffff+1 : 0
+; XPCT 0xffff+0xffff : 0xfffe
+; XPCT 0-1 : 0xffff
+; XPCT 0x8000-0x8001 : 0xffff
+; XPCT 300*300 : 0x5f90
+; XPCT 0x100*0x100 : 0
+; XPCT 0xffff*0xffff : 1
+; XPCT -2*3 : -6
+; XPCT -3*(-3) : 9
+; XPCT -0x8000 : 0x8000
+; XPCT -0 : 0
+; XPCT -(-1) : 1
+
+; intermediate results are truncated before the next operator
+; XPCT (0xffff+1)/2 : 0
+; XPCT (300*300)/16 : 0x5f9
+; XPCT (0-1)>>15 : 1
+; XPCT 0xffff+2==1 : 1
+
 ; XPCT 0b1100 ^ 0b0110 : 0b1010
 ; XPCT 0b1100 | 0b0110 : 0b1110
 ; XPCT 0b1100 & 0b0110 : 0b0100

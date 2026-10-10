@@ -368,7 +368,7 @@ static int eval_est_eval_op(struct eval_est * n)
 		case UMINUS: return (uint16_t) -v1;
 		case '-': return (uint16_t) (v1 - v2);
 		case '+': return (uint16_t) (v1 + v2);
-		case '*': return (uint16_t) (v1 * v2);
+		case '*': return (uint16_t) ((unsigned) v1 * (unsigned) v2);
 		case '/':
 			if (v2 == 0) {
 				return __esterr(n, "Division by zero");
