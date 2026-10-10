@@ -31,6 +31,18 @@
 ; XPCT -0 : 0
 ; XPCT -(-1) : 1
 
+; values are unsigned: no signed compare, division or right shift
+; XPCT -1<0 : 0
+; XPCT -1>0 : 1
+; XPCT -1<=0 : 0
+; XPCT -1>=0x8000 : 1
+; XPCT -0x8000>0x7fff : 1
+; XPCT -1==0xffff : 1
+; XPCT -6/2 : 0x7ffd
+; XPCT -1/2 : 0x7fff
+; XPCT 6/-2 : 0
+; XPCT -2>>1 : 0x7fff
+
 ; intermediate results are truncated before the next operator
 ; XPCT (0xffff+1)/2 : 0
 ; XPCT (300*300)/16 : 0x5f9
