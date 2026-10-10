@@ -1,6 +1,6 @@
 ; CONFIG configs/mod.ini
 
-; CRON is illegal for modified (MX-16) CPU
+; CRON still raises illegal instruction on modified (MX-16) CPU
 
 	.cpu	mx16
 
