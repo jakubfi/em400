@@ -11,7 +11,7 @@
 	rpc	r3
 
 	lw	r0, 0xffff
-	or	r0, 0
+	or	r0, 0xffff
 	rpc	r4
 
 	hlt	077

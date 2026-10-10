@@ -1,4 +1,4 @@
-	; sets Z
+	; clears ZMC
 	lw	r0, 0xffff
 	ngc	r0
 	rpc	r1
