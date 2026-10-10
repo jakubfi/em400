@@ -107,3 +107,17 @@
 ; XPCT 2+2*2 : 6
 ; XPCT (2+2)*2 : 8
 ; XPCT (2+2)*2*(4-2) : 16
+
+; precedence of adjacent levels: the wrong grouping gives a different result
+; XPCT 1 || 0 && 0 : 1
+; XPCT 0 && 0 | 1 : 0
+; XPCT 1 | 1 ^ 1 : 1
+; XPCT 1 ^ 1 & 0 : 1
+; XPCT 1 & 2 == 0 : 0
+; XPCT 2 == 1 < 3 : 0
+; XPCT 1 < 1 << 1 : 1
+; XPCT 1 << 1 + 1 : 4
+; XPCT -2/2 : 0x7fff
+; XPCT ~0>>8 : 0xff
+; XPCT !0+1 : 2
+; XPCT 3>2>1 : 0
