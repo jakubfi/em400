@@ -425,6 +425,7 @@ class TestBed:
             if precmd:
                 for c in precmd:
                     self.e.cmd(c)
+                    self.e.wait_for_stop()
 
             if benchmark:
                 self.__benchmark(result, source)
@@ -434,6 +435,7 @@ class TestBed:
             if postcmd:
                 for c in postcmd:
                     self.e.cmd(c)
+                    self.e.wait_for_stop()
 
         except TimeoutError as e:
             result.status = TestResult.TIMEOUT
@@ -494,6 +496,7 @@ class TestBed:
             result.add_check(expr, expected, got, is_err and msg in resp)
         for command, expected in xpct_cmd:
             result.add_check(command, expected, self.e.cmd_raw(command))
+            self.e.wait_for_stop()
 
     # --------------------------------------------------------------------
     def __benchmark(self, result, source):
