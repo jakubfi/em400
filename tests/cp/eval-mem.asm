@@ -1,4 +1,4 @@
-; Memory expressions in the evaluator: register-indexed, computed-address and
+; Memory expressions in the evaluator: plain, register-indexed, computed-address and
 ; indirect reads - the forms users actually write for watches/breakpoints
 ; (e.g. [r1+12], [[ptr]]).
 
@@ -7,6 +7,9 @@
 ; PRECMD reg r2 1
 
 	hlt	077
+
+; XPCT [200] : 201
+; XPCT [0:202] : 9029
 
 ; register-indexed reads
 ; XPCT [r1] : 201
