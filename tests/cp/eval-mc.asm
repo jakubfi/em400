@@ -8,9 +8,9 @@
 	md	0x0034
 	hlt	077
 
-; POSTCMD brkdel 0
-
 ; XPCT ic : 6
 ; XPCT mc : 3
 ; XPCT ar : 0x1234
 ; XPCT ac : 0x1234
+
+; POSTCMD brkdel 0

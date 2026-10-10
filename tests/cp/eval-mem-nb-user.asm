@@ -46,11 +46,11 @@ copy:
 	.org	DATA
 	.word	0x1111
 
-; POSTCMD brkdel 0
-
 ; XPCT q : 1
 ; XPCT nb : 2
 ; XPCT [0x200] : 0x2222
 ; XPCT [2:0x200] : 0x2222
 ; XPCT [0:0x200] : 0x1111
 ; XPCT_ERR [0x1000] : "Memory at 2:4096 is not configured (at 0-7)"
+
+; POSTCMD brkdel 0

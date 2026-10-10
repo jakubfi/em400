@@ -30,6 +30,6 @@
 	nop
 	hlt	040
 
-; POSTCMD brkdel 0
-
 ; XPCT IC : 10
+
+; POSTCMD brkdel 0

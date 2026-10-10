@@ -16,8 +16,6 @@
 	ri	r7, 0x5555
 	hlt	077
 
-; POSTCMD brkdel 0
-
 ; XPCT ic : 12
 ; XPCT r1 : 1
 ; XPCT r2 : 2
@@ -45,3 +43,5 @@
 ; XPCT ar + ac : 0x5755
 ; XPCT kb & 0xff : 0xef
 ; XPCT mc : 0
+
+; POSTCMD brkdel 0

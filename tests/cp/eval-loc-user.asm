@@ -41,8 +41,6 @@ copy:
 	mb	sys_sr
 	sp	userv
 
-; POSTCMD brkdel 0
-
 ; XPCT q : 1
 ; XPCT nb : 2
 ; XPCT ic : 0x102
@@ -54,3 +52,5 @@ copy:
 ; XPCT !@2:0x102 : 0
 ; XPCT @2:0x102 && q : 1
 ; XPCT @2:0x102 + @2:0x102 : 2
+
+; POSTCMD brkdel 0

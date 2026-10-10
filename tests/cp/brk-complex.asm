@@ -8,8 +8,8 @@ loop:	nop
 	irb	r1, loop
 	hlt	040
 
-; POSTCMD brkdel 0
-
 ; XPCT r1 : 1000
 ; XPCT ic : 3
 ; XPCT ir : 0b1110000000000000
+
+; POSTCMD brkdel 0

@@ -8,7 +8,7 @@
 loop:	awt	r1, 1
 	ujs	loop
 
-; POSTCMD brkdel 0
-
 ; XPCT ic : 1
 ; XPCT r1 : 2
+
+; POSTCMD brkdel 0

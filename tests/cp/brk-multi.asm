@@ -13,9 +13,9 @@ loop:	awt	r1, 1
 	ujs	loop
 	hlt	040
 
+; XPCT r1 : 25
+; XPCT r2 : 50
+
 ; POSTCMD brkdel 0
 ; POSTCMD brkdel 1
 ; POSTCMD brkdel 2
-
-; XPCT r1 : 25
-; XPCT r2 : 50
