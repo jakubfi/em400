@@ -49,6 +49,7 @@ void ui_cmd_quit(FILE *out, char *args);
 void ui_cmd_help(FILE *out, char *args);
 void ui_cmd_brk(FILE *out, char *args);
 void ui_cmd_brkdel(FILE *out, char *args);
+void ui_cmd_brkhit(FILE *out, char *args);
 void ui_cmd_stopn(FILE *out, char *args);
 
 struct ui_cmd_command commands[] = {
@@ -62,6 +63,7 @@ struct ui_cmd_command commands[] = {
 	{ UI_CMD_FLAG_NONE, "bin",		"<cmd> <addr>",				"Initiate binary load",				ui_cmd_bin },
 	{ UI_CMD_FLAG_NONE, "brk",		"<expr>",					"Add breakpoint",					ui_cmd_brk },
 	{ UI_CMD_FLAG_NONE, "brkdel",	"<id>",						"Delete breakpoint",				ui_cmd_brkdel },
+	{ UI_CMD_FLAG_NONE, "brkhit",	"",							"Get breakpoint hit (-1: none)",	ui_cmd_brkhit },
 	{ UI_CMD_FLAG_NONE, "stopn",	"<addr>|off",				"Stop CPU on address",				ui_cmd_stopn },
 	{ UI_CMD_FLAG_NONE, "clock",	"[on|off]",					"Manipulate clock state",			ui_cmd_clock },
 	{ UI_CMD_FLAG_NONE, "oprq",		"",							"Send operator request",			ui_cmd_oprq },
@@ -612,6 +614,12 @@ void ui_cmd_brkdel(FILE *out, char *args)
 		return;
 	}
 	ui_cmd_resp(out, RESP_OK, UI_EOL, "Removed breakpoint: %i", brk_num);
+}
+
+// -----------------------------------------------------------------------
+void ui_cmd_brkhit(FILE *out, char *args)
+{
+	ui_cmd_resp(out, RESP_OK, UI_EOL, "%i", em400_brk_hit());
 }
 
 // -----------------------------------------------------------------------
