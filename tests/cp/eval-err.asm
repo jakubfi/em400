@@ -37,6 +37,13 @@
 ; XPCT_ERR -(1/0) : "Division by zero (at 2-4)"
 ; XPCT_ERR 1 + [1:5]*2 : "Memory at 1:5 is not configured (at 4-8)"
 
+; logical operators evaluate the right operand when the left one doesn't decide
+; XPCT_ERR 1 && 1/0 : "Division by zero (at 5-7)"
+; XPCT_ERR 0 || 1/0 : "Division by zero (at 5-7)"
+; XPCT_ERR 1/0 || 1 : "Division by zero (at 0-2)"
+; XPCT_ERR 1/0 && 0 : "Division by zero (at 0-2)"
+; XPCT_ERR 1 && [1:0] : "Memory at 1:0 is not configured (at 5-9)"
+
 ; errors in a memory address are not masked by the outer read
 ; XPCT_ERR [[16:0]] : "Wrong memory segment: 16 (at 2-3)"
 ; XPCT_ERR [1/0] : "Division by zero (at 1-3)"

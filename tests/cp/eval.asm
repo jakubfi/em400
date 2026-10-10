@@ -79,6 +79,16 @@ data:	.word	0b_0000_0000_0000_0111
 ; XPCT 1&&1&&1&&1&&0 : 0
 ; XPCT 1&&1&&0&&1&&1 : 0
 
+; short-circuit: the right operand is not evaluated
+; XPCT 0 && 1/0 : 0
+; XPCT 1 || 1/0 : 1
+; XPCT 0 && [1:0] : 0
+; XPCT 1 || [1:0] : 1
+; XPCT 0 && 1/0 || 1 : 1
+; XPCT 1 || 0 && 1/0 : 1
+; XPCT 1 || 1/0 || [1:0] : 1
+; XPCT 0 && (1/0 || 1) : 0
+
 ; XPCT 1000==1000 : 1
 ; XPCT 1000<=1000 : 1
 ; XPCT 1000>=1000 : 1
