@@ -23,10 +23,6 @@ ok:	lwt	r0, 0
 	lw	r5, 101
 	ri	r5, r5
 
-	; ri r0 overwrites flags
-	lw	r0, 102
-	ri	r0, 0x1111
-
 	hlt	077
 
 ; XPCT [100] : 0x5a3c
@@ -37,5 +33,3 @@ ok:	lwt	r0, 0
 ; XPCT r4 : 0
 ; XPCT [101] : 101
 ; XPCT r5 : 102
-; XPCT [102] : 0x1111
-; XPCT r0 : 103

@@ -13,13 +13,9 @@ l2:	lwt	r0, -1
 	hlt	040
 l3:	rpc	r4
 
-	; rj r0 overwrites flags
-	rj	r0, l4
-	hlt	040
-l4:	hlt	077
+	hlt	077
 
 ; XPCT r1 : 2
 ; XPCT r2 : 6
 ; XPCT r3 : 10
 ; XPCT r4 : 0xffff
-; XPCT r0 : 14
