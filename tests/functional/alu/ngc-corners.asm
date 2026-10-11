@@ -31,5 +31,6 @@ tests:
 	.word	?C,	32767,	?M,	-32767
 	.word	0,	-32768,	0,	32767
 	.word	?C,	-32768,	?V,	-32768
+	.word	?V,	1,	?MV,	-2
 	.word	?ZMCLEGYX1234567,	-2,	?LEGYX1234567,	2
 tests_end:
