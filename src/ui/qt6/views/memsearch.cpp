@@ -122,7 +122,7 @@ QString MemSearch::build_search_stream(int nb, Mode mode) const
 			for (int i = 0 ; i < 0x1000 ; i++) {
 				char dec[4];
 				// not a valid R40 string
-				if (!r40_to_ascii(&buf[i], 1, dec)) {
+				if (!r40_to_ascii(&buf[i], 1, dec, R40_STRICT)) {
 					s += QStringLiteral("   ");
 					continue;
 				}

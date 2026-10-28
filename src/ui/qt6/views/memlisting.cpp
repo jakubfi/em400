@@ -467,7 +467,7 @@ void MemListing::text_write_char(QChar c)
 		char tmp[2] = { (char)c.toLatin1(), 0 };
 		unsigned len = 0;
 		uint16_t enc = 0;
-		if (!ascii_to_r40(tmp, &len, &enc)) return;
+		if (!ascii_to_r40(tmp, &len, &enc, R40_STRICT)) return;
 		static const int place[3] = { 1600, 40, 1 };
 		// R40 strings fill left-to-right; a glyph after a blank slot is not a
 		// valid string. Clamp the write to the first blank slot so typing into
@@ -866,7 +866,7 @@ QString MemListing::panel_text(int val) const
 	// A word that isn't a valid R40 string (e.g. a glyph after a blank slot)
 	// is no more a string than an all-blank word, so render both as blanks
 	// rather than cluttering the column with "???".
-	if (!r40_to_ascii(&word, 1, buf)) return "   ";
+	if (!r40_to_ascii(&word, 1, buf, R40_STRICT)) return "   ";
 	// r40_to_ascii now stops at the first blank slot (code 0) and terminates,
 	// so the result is 0..3 chars. Right-pad with spaces to keep the monospace
 	// cell width fixed for caret placement and click hit-testing.
