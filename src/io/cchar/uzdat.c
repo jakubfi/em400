@@ -46,6 +46,7 @@ struct uzdat_s {
 	pthread_mutex_t mutex;
 	int intspec;
 	int state;
+	bool en_detach;
 	int dir;
 	bool xfer_busy;
 	bool buf_rd_ready;
@@ -63,7 +64,7 @@ struct uzdat_s {
 enum uzdat_states {
 	UZDAT_STATE_OFF,
 	UZDAT_STATE_OK,
-	UZDAT_STATE_EN
+	UZDAT_STATE_EN_RW
 };
 
 enum uzdat_dirs {
@@ -197,7 +198,7 @@ void uzdat_on_data_received(uzdat_t *uzdat, char data)
 	if ((uzdat->dir == UZDAT_DIR_IN) && (uzdat->state != UZDAT_STATE_OFF)) {
 		if (uzdat->buf_rd_ready) {
 			uzdat->intspec = CCHAR_INT_TOO_SLOW;
-		} else if (uzdat->state == UZDAT_STATE_EN) {
+		} else if (uzdat->state == UZDAT_STATE_EN_RW) {
 			uzdat->intspec = CCHAR_INT_READY;
 		}
 		uzdat->buf_rd = data;
@@ -220,7 +221,8 @@ void uzdat_on_data_sent(uzdat_t *uzdat)
 
 	pthread_mutex_lock(&uzdat->mutex);
 	uzdat->xfer_busy = false;
-	if (uzdat->state == UZDAT_STATE_EN) {
+	// a READ refused during the send has already switched dir to IN, its READY waits for a character
+	if (((uzdat->state == UZDAT_STATE_EN_RW) && (uzdat->dir == UZDAT_DIR_OUT)) || uzdat->en_detach) {
 		uzdat->intspec = CCHAR_INT_READY;
 		trigger_interrupt = true;
 	}
@@ -278,6 +280,7 @@ int uzdat_intspec(cchar_unit_t *unit)
 	int spec = uzdat->intspec;
 	uzdat->intspec = CCHAR_INT_OUTDATED;
 	uzdat->state = UZDAT_STATE_OK;
+	uzdat->en_detach = false;
 	pthread_mutex_unlock(&uzdat->mutex);
 
 	return spec;
@@ -309,7 +312,7 @@ static int uzdat_read(uzdat_t *uzdat, uint16_t *r_arg)
 		uzdat->state = UZDAT_STATE_OK;
 		ret = IO_OK;
 	} else {
-		uzdat->state = UZDAT_STATE_EN;
+		uzdat->state = UZDAT_STATE_EN_RW;
 		ret = IO_EN;
 	}
 	pthread_mutex_unlock(&uzdat->mutex);
@@ -336,7 +339,7 @@ static void uzdat_on_transmit_switch_timeout(uv_timer_t *handle)
 	// only if UZDAT has not been reset
 	if (uzdat->state != UZDAT_STATE_OFF) {
 		uzdat->dir = UZDAT_DIR_OUT;
-		if (uzdat->state == UZDAT_STATE_EN) {
+		if (uzdat->state == UZDAT_STATE_EN_RW) {
 			uzdat->intspec = CCHAR_INT_READY;
 			trigger_interrupt = true;
 		}
@@ -383,7 +386,7 @@ static int uzdat_write(uzdat_t *uzdat, const uint16_t *r_arg)
 		if (uzdat->dir != UZDAT_DIR_OUT) {
 			trigger = &uzdat->async_switch_transmit;
 		}
-		uzdat->state = UZDAT_STATE_EN;
+		uzdat->state = UZDAT_STATE_EN_RW;
 		log_msg = log_msgs[1];
 		ret = IO_EN;
 	}
@@ -408,11 +411,12 @@ static int uzdat_disconnect(uzdat_t *uzdat)
 	pthread_mutex_lock(&uzdat->mutex);
 	if (!uzdat->xfer_busy) {
 		uzdat->state = UZDAT_STATE_OFF;
+		uzdat->en_detach = false;
 		uzdat->dir = UZDAT_DIR_NONE;
 		uzdat->buf_rd_ready = false;
 		ret = IO_OK;
 	} else {
-		uzdat->state = UZDAT_STATE_EN;
+		uzdat->en_detach = true;
 		ret = IO_EN;
 	}
 	pthread_mutex_unlock(&uzdat->mutex);
@@ -429,6 +433,7 @@ void uzdat_reset(cchar_unit_t *unit)
 
 	pthread_mutex_lock(&uzdat->mutex);
 	uzdat->state = UZDAT_STATE_OFF;
+	uzdat->en_detach = false;
 	uzdat->dir = UZDAT_DIR_NONE;
 	uzdat->xfer_busy = false;
 	uzdat->buf_rd_ready = false;
