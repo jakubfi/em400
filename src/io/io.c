@@ -304,8 +304,7 @@ int io_dispatch(int dir, uint16_t n, uint16_t *r)
 			res = IO_NO;
 		}
 
-		// Bus contains "0" if the IN command fails with EN or times out,
-		// and "0" is written to the register.
+		// nothing drives the data lines without OK
 		if ((dir == IO_IN) && ((res == IO_EN) || (res == IO_NO))) *r = 0;
 
 		LOG(L_IO, "I/O result: %s, r_arg = 0x%04x", io_result_names[res], *r);

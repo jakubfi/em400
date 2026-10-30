@@ -233,7 +233,11 @@ void op_ou()
 void op_in()
 {
 	// TODO: FSM
-	ic += io_dispatch(IO_IN, ar, r+IR_A);
+	int io_result = io_dispatch(IO_IN, ar, &w);
+	if ((io_result == IO_OK) || (io_result == IO_PE)) {
+		REG_RESTRICT_WRITE(IR_A, w);
+	}
+	ic += io_result;
 	cpu_mem_read_1(q, ic, &ic);
 }
 
