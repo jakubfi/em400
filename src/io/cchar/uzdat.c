@@ -48,6 +48,7 @@ struct uzdat_s {
 	int state;
 	bool en_detach;
 	int dir;
+	int dir_req;
 	bool xfer_busy;
 	bool buf_rd_ready;
 	uint8_t buf_wr;
@@ -315,6 +316,7 @@ static int uzdat_read(uzdat_t *uzdat, uint16_t *r_arg)
 
 	pthread_mutex_lock(&uzdat->mutex);
 	uzdat->dir = UZDAT_DIR_IN;
+	uzdat->dir_req = UZDAT_DIR_IN;
 	if (uzdat->buf_rd_ready) {
 		*r_arg = uzdat->buf_rd;
 		uzdat->buf_rd_ready = false;
@@ -342,19 +344,25 @@ static void uzdat_on_transmit_switch_timeout(uv_timer_t *handle)
 	uzdat_t *uzdat = (uzdat_t*) handle->data;
 
 	bool trigger_interrupt = false;
-
-	LOG(L_UZDAT, "Switched direction to transmit");
+	bool switched = false;
 
 	pthread_mutex_lock(&uzdat->mutex);
-	// only if UZDAT has not been reset
-	if (uzdat->state != UZDAT_STATE_OFF) {
+	// a reset or a later READ withdraws the request
+	if (uzdat->dir_req == UZDAT_DIR_OUT) {
 		uzdat->dir = UZDAT_DIR_OUT;
+		switched = true;
 		if (uzdat->state == UZDAT_STATE_EN_RW) {
 			uzdat->intspec = CCHAR_INT_READY;
 			trigger_interrupt = true;
 		}
 	}
 	pthread_mutex_unlock(&uzdat->mutex);
+
+	if (switched) {
+		LOG(L_UZDAT, "Switched direction to transmit");
+	} else {
+		LOG(L_UZDAT, "Switch to transmit withdrawn");
+	}
 
 	if (trigger_interrupt) {
 		cchar_int_trigger(uzdat->base.chan);
@@ -385,6 +393,7 @@ static int uzdat_write(uzdat_t *uzdat, const uint16_t *r_arg)
 	LOG(L_UZDAT, "Command: WRITE");
 
 	pthread_mutex_lock(&uzdat->mutex);
+	uzdat->dir_req = UZDAT_DIR_OUT;
 	if ((!uzdat->xfer_busy) && (uzdat->dir == UZDAT_DIR_OUT)) {
 		uzdat->state = UZDAT_STATE_OK;
 		uzdat->buf_wr = *r_arg;
@@ -424,6 +433,7 @@ static int uzdat_disconnect(uzdat_t *uzdat)
 		uzdat->state = UZDAT_STATE_OFF;
 		uzdat->en_detach = false;
 		uzdat->dir = UZDAT_DIR_NONE;
+		uzdat->dir_req = UZDAT_DIR_NONE;
 		uzdat->buf_rd_ready = false;
 		uzdat->intspec = CCHAR_INT_OUTDATED;
 		ret = IO_OK;
@@ -447,6 +457,7 @@ void uzdat_reset(cchar_unit_t *unit)
 	uzdat->state = UZDAT_STATE_OFF;
 	uzdat->en_detach = false;
 	uzdat->dir = UZDAT_DIR_NONE;
+	uzdat->dir_req = UZDAT_DIR_NONE;
 	uzdat->xfer_busy = false;
 	uzdat->buf_rd_ready = false;
 	uzdat->intspec = CCHAR_INT_OUTDATED;
