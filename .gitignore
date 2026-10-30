@@ -1,5 +1,5 @@
 /docs
-/build
+/build*
 /tests/images/*.e4i
 /tests/images/*.img
 *.swp

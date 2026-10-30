@@ -299,6 +299,15 @@ bool uzdat_has_interrupt(cchar_unit_t *unit)
 }
 
 // -----------------------------------------------------------------------
+static void uzdat_outdate_ready(uzdat_t *uzdat)
+{
+	// READY is combinational in hardware: it is gone once no EN term holds it up
+	if ((uzdat->intspec == CCHAR_INT_READY) && !(uzdat->en_detach && !uzdat->xfer_busy)) {
+		uzdat->intspec = CCHAR_INT_OUTDATED;
+	}
+}
+
+// -----------------------------------------------------------------------
 static int uzdat_read(uzdat_t *uzdat, uint16_t *r_arg)
 {
 	int ret;
@@ -310,6 +319,7 @@ static int uzdat_read(uzdat_t *uzdat, uint16_t *r_arg)
 		*r_arg = uzdat->buf_rd;
 		uzdat->buf_rd_ready = false;
 		uzdat->state = UZDAT_STATE_OK;
+		uzdat_outdate_ready(uzdat);
 		ret = IO_OK;
 	} else {
 		uzdat->state = UZDAT_STATE_EN_RW;
@@ -379,6 +389,7 @@ static int uzdat_write(uzdat_t *uzdat, const uint16_t *r_arg)
 		uzdat->state = UZDAT_STATE_OK;
 		uzdat->buf_wr = *r_arg;
 		uzdat->xfer_busy = true;
+		uzdat_outdate_ready(uzdat);
 		trigger = &uzdat->async_write;
 		log_msg = log_msgs[0];
 		ret = IO_OK;
@@ -414,6 +425,7 @@ static int uzdat_disconnect(uzdat_t *uzdat)
 		uzdat->en_detach = false;
 		uzdat->dir = UZDAT_DIR_NONE;
 		uzdat->buf_rd_ready = false;
+		uzdat->intspec = CCHAR_INT_OUTDATED;
 		ret = IO_OK;
 	} else {
 		uzdat->en_detach = true;
