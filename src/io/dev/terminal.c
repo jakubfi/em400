@@ -132,7 +132,7 @@ static void on_read_delay_timeout(uv_timer_t *handle)
 	terminal_t *terminal = (terminal_t*) handle->data;
 
 	int data = term_buf_get(terminal);
-	if ((data > 0) && (terminal->controller) && (terminal->on_data_received)) {
+	if ((data >= 0) && (terminal->controller) && (terminal->on_data_received)) {
 		terminal->on_data_received(terminal->controller, data);
 	}
 
