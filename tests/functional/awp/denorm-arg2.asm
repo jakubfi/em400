@@ -11,4 +11,9 @@ tests:
 	.float	3
 	.word	0x2000, 0x0000, 0x0004 ; 4 (denormalized)
 	.float	3
+
+	.word	?ZMVC, ?ZMVC, I_FP_ERR
+	.float	3
+	.word	0x2000, 0x0000, 0x0004 ; 4 (denormalized)
+	.float	3
 fin:
