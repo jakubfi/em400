@@ -1,0 +1,49 @@
+; AF where rounding carries the result to a power of two (hardware values).
+; A: 0.11...1 + ulp overflows to 0.5; the shift right takes M[-1] from T39 (C clear).
+; B: -0.5 is not normalized; the shift left moves M[-1] into the last bit
+;    and C comes from the next bit of M.
+
+	.include awp-fp.inc
+
+operation:
+	lf	r7+ARG1
+	af	r7+ARG2
+	uj	r5
+
+tests:
+	; A
+	.word	0, 0, 0
+	.word	0xbfff, 0xffff, 0xfee5
+	.word	0x4400, 0x0000, 0x00e9
+	.word	0x4000, 0x0000, 0x00e9
+
+	; A
+	.word	0, 0, 0
+	.word	0xbfff, 0xffff, 0xf812
+	.word	0x4100, 0x0000, 0x0018
+	.word	0x4000, 0x0000, 0x0018
+
+	; B
+	.word	0, ?M, 0
+	.word	0x8000, 0x0000, 0x000c
+	.word	0xbfff, 0xffff, 0xff0d
+	.word	0x8000, 0x0000, 0x010d
+
+	; B
+	.word	0, ?M, 0
+	.word	0x749d, 0x0b10, 0xe7e8
+	.word	0xbfff, 0xffff, 0xfc0d
+	.word	0x8000, 0x0000, 0x010c
+
+	; B
+	.word	0, ?M | ?C, 0
+	.word	0xbfff, 0xffff, 0xe013
+	.word	0x7fc4, 0x0bc6, 0x5af1
+	.word	0x8000, 0x0000, 0x0112
+
+	; B
+	.word	0, ?M | ?C, 0
+	.word	0x7ecc, 0xcf31, 0x47ed
+	.word	0xbfff, 0xffff, 0xf010
+	.word	0x8000, 0x0000, 0x010f
+fin:
