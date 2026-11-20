@@ -84,6 +84,8 @@ jobs:
           update: true
           install: >-
             base-devel
+            bison
+            flex
             git
             mingw-w64-ucrt-x86_64-toolchain
             mingw-w64-ucrt-x86_64-cmake
