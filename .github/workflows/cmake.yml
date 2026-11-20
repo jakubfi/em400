@@ -76,22 +76,22 @@ jobs:
       BUILD_TYPE: Release
       CC: gcc
       CXX: g++
-      INSTALL_PREFIX: /mingw64
+      INSTALL_PREFIX: /ucrt64
     steps:
       - uses: msys2/setup-msys2@v2
         with:
-          msystem: MINGW64
+          msystem: UCRT64
           update: true
           install: >-
             base-devel
             git
-            mingw-w64-x86_64-toolchain
-            mingw-w64-x86_64-cmake
-            mingw-w64-x86_64-libuv
-            mingw-w64-x86_64-qt6-base
-            mingw-w64-x86_64-qt6-multimedia
-            mingw-w64-x86_64-qt6-multimedia-wmf
-            mingw-w64-x86_64-qt6-tools
+            mingw-w64-ucrt-x86_64-toolchain
+            mingw-w64-ucrt-x86_64-cmake
+            mingw-w64-ucrt-x86_64-libuv
+            mingw-w64-ucrt-x86_64-qt6-base
+            mingw-w64-ucrt-x86_64-qt6-multimedia
+            mingw-w64-ucrt-x86_64-qt6-multimedia-wmf
+            mingw-w64-ucrt-x86_64-qt6-tools
             python
       - uses: actions/checkout@v7
         with:
